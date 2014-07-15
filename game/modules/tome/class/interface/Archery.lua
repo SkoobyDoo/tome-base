@@ -429,12 +429,9 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	-- Temporal cast
 	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
 		local dam = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local burst_damage = 0
-		local burst_radius = 0
 		if self:knowTalent(self.T_FRAYED_THREADS) then
-			burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			dam = dam - burst_damage
+			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
+			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
 			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
 		end
 		if dam > 0 and not target.dead then
@@ -444,13 +441,10 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	if hitted and self:knowTalent(self.T_IMPACT) and self:isTalentActive(self.T_IMPACT) then
 		local dam = self:callTalent(self.T_IMPACT, "getDamage")
 		local power = self:callTalent(self.T_IMPACT, "getApplyPower")
-		local burst_damage = 0
-		local burst_radius = 0
 		if self:knowTalent(self.T_FRAYED_THREADS) then
-			burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			dam = dam - burst_damage
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=dam/2, power_check=power})
+			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
+			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
+			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=burst_damage/2, power_check=power})
 		end
 		if dam > 0 and not target.dead then
 			DamageType:get(DamageType.IMPACT).projector(self, target.x, target.y, DamageType.IMPACT, {dam=dam, daze=dam/2, power_check=power}, tmp)
@@ -492,7 +486,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	-- Resource regen on hit
 	if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
 	if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
-
+	
 	-- Ablative armor
 	if hitted and not target.dead and target:attr("carbon_spikes") then
 		if target.carbon_armor >= 1 then

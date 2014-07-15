@@ -1012,7 +1012,7 @@ newInscription{
 
 		if target:attr("timetravel_immune") then
 			game.logSeen(target, "%s is immune!", target.name:capitalize())
-			return
+			return true
 		end
 
 		local hit = self:checkHit(self:combatSpellpower(), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
@@ -1021,6 +1021,7 @@ newInscription{
 		self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getDamage(self, t)))
 		game.level.map:particleEmitter(x, y, 1, "temporal_thrust")
 		game:playSoundNear(self, "talents/arcane")
+		self:incParadox(-25)
 		if target.dead or target.player then return true end
 		target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self:combatSpellpower(0.3)})
 		
@@ -1044,9 +1045,12 @@ newInscription{
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
 					local mx, my = util.findFreeGrid(self.target.x, self.target.y, 20, true, {[engine.Map.ACTOR]=true})
 					local old_levelup = self.target.forceLevelup
+					local old_check = self.target.check
 					self.target.forceLevelup = function() end
+					self.target.check = function() end
 					game.zone:addEntity(game.level, self.target, "actor", mx, my)
 					self.target.forceLevelup = old_levelup
+					self.target.check = old_check
 				end
 			end,
 			summoner_gain_exp = true, summoner = self,
@@ -1064,6 +1068,7 @@ newInscription{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		return ([[Inflicts %0.2f temporal damage.  If your target survives, it will be sent %d turns into the future.
+		It will also lower your paradox by 25 (if you have any).
 		Note that messing with the spacetime continuum may have unforeseen consequences.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration)
 	end,
 	short_info = function(self, t)

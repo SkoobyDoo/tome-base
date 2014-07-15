@@ -263,6 +263,10 @@ function _M:use(item)
 		self.actor:updateModdableTile()
 		self.actor:check("on_resurrect", "lichform")
 		game:saveGame()
+	elseif act == "threads" then
+		game:chronoRestore("see_threads_base", true)
+		game:onTickEnd(function()game.player:removeEffect(game.player.EFF_SEE_THREADS)end)
+		game:saveGame()
 	elseif act == "easy_mode" then
 		self:eidolonPlane()
 	elseif act == "skeleton" then
@@ -308,6 +312,11 @@ function _M:generateList()
 
 	if config.settings.cheat then list[#list+1] = {name="Resurrect by cheating", action="cheat"} end
 	if not self.actor.no_resurrect and allow_res then
+		if self.actor:hasEffect(self.actor.EFF_SEE_THREADS) and game._chronoworlds then
+			self:use{action="threads"}
+			self.dont_show =true
+			return
+		end
 		if self.actor:isTalentActive(self.actor.T_LICHFORM) then
 			self:use{action="lichform"}
 			self.dont_show = true

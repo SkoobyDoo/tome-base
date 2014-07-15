@@ -1388,10 +1388,6 @@ function _M:move(x, y, force)
 			local eff = self:hasEffect(self.EFF_CURSE_OF_SHROUDS)
 			if eff then eff.moved = true end
 
-			if self:knowTalent(self.T_CELERITY) then
-				self:callTalent(self.T_CELERITY, "doCelerity")
-			end
-
 			if self:attr("move_stamina_instead_of_energy") and self:getStamina() > self:attr("move_stamina_instead_of_energy") then
 				self:incStamina(-self:attr("move_stamina_instead_of_energy"))
 			else
@@ -1453,11 +1449,15 @@ function _M:move(x, y, force)
 		self:forceUseTalent(self.T_BODY_OF_STONE, {ignore_energy=true})
 	end
 
-	-- Chronomancy auras
+	-- Celerity
+	if moved and ox and oy and (ox ~= self.x or oy ~= self.y) and self:knowTalent(self.T_CELERITY) then
+		self:callTalent(self.T_CELERITY, "doCelerity")
+	end
 
-
+	-- Break channels
 	if moved then
 		self:breakPsionicChannel()
+		self:breakSpacetimeTuning()
 	end
 
 	if not force and moved and ox and oy and (ox ~= self.x or oy ~= self.y) and self:knowTalent(self.T_LIGHT_OF_FOOT) then
@@ -1468,6 +1468,7 @@ function _M:move(x, y, force)
 		local blur = 0
 		if game.level.data.zero_gravity then blur = 2 end
 		if self:attr("lightning_speed") or self:attr("step_up") or self:attr("wild_speed") then blur = 3 end
+		if self:hasEffect(self.EFF_CELERITY) then local eff = self:hasEffect(self.EFF_CELERITY) blur = eff.charges end
 		self:setMoveAnim(ox, oy, config.settings.tome.smooth_move, blur, 8, config.settings.tome.twitch_move and 0.15 or 0)
 	end
 
@@ -1494,6 +1495,16 @@ function _M:waitTurn()
 		local reloaded = self:reload()
 		if not reloaded and self.reloadQS then
 			self:reloadQS()
+		end
+	end
+	
+	-- Tune paradox up or down
+	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox()) then
+		local power = 0
+		if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
+			local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
+			power = (self.preferred_paradox - self:getParadox())/duration
+			self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
 		end
 	end
 
@@ -1583,23 +1594,44 @@ function _M:teleportRandom(x, y, dist, min_dist)
 	if game.level.data.no_teleport_south and y + dist > self.y then
 		y = self.y - dist
 	end
+	
+	-- Dimensional Anchor, prevent teleports and deal damage
 	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
 		local p = self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR)
-		DamageType:get(DamageType.MATTER).projector(p.src or self, self.x, self.y, DamageType.MATTER, p.damage)
+		DamageType:get(DamageType.WARP).projector(p.src or self, self.x, self.y, DamageType.WARP, p.damage)
 		return
 	end
+	
 	local ox, oy = self.x, self.y
 	local ret = engine.Actor.teleportRandom(self, x, y, dist, min_dist)
 	if self.x ~= ox or self.y ~= oy then
+			-- Phase Pulse
+		if self:isTalentActive(self.T_PHASE_PULSE) then
+			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy)
+		end	
+	
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
 		self:dropNoTeleportObjects()
 		if self:attr("defense_on_teleport") or self:attr("resist_all_on_teleport") or self:attr("effect_reduction_on_teleport") then
 			self:setEffect(self.EFF_OUT_OF_PHASE, 5, {defense=self:attr("defense_on_teleport") or 0, resists=self:attr("resist_all_on_teleport") or 0, effect_reduction=self:attr("effect_reduction_on_teleport") or 0})
 		end
-		if self:knowTalent(self.T_PHASE_SHIFT) then
-			self:callTalent(self.T_PHASE_SHIFT, "doPhaseShift")
+		
+		-- Dimensional shift, chance to clear effects on teleport
+		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
+			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
 		end
+		
+		-- Teleportation does not clear Time Dilation
+		if self:isTalentActive(self.T_TIME_DILATION) then
+			self:callTalent(self.T_TIME_DILATION, "updateOnTeleport", ox, oy)
+		end			
+		
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
+	else
+		-- Phase Blast failure
+		if self:isTalentActive(self.T_PHASE_PULSE) then
+			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy, true)
+		end
 	end
 	return ret
 end
@@ -2131,6 +2163,21 @@ function _M:onTakeHit(value, src, death_note)
 			return 0
 		end
 	end
+	if self:attr("phase_shift_chrono") and not self.turn_procs.phase_shift_chrono and value > self.max_life *0.1 then
+		self.turn_procs.phase_shift_chrono = true
+		local nx, ny = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
+		if nx then
+			local ox, oy = self.x, self.y
+			if not self:teleportRandom(nx, ny, 0) then
+				game.logSeen(self, "The spell fizzles!")
+			else
+				game.level.map:particleEmitter(ox, oy, 1, "temporal_teleport")
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+				game:delayedLogDamage(src or {}, self, 0, ("#STEEL_BLUE#(%d shifted)#LAST#"):format(value/2), nil)
+				value = value/2
+			end
+		end
+	end
 
 	if self:attr("retribution") then
 	-- Absorb damage into the retribution
@@ -2261,7 +2308,7 @@ function _M:onTakeHit(value, src, death_note)
 			self:removeEffect(self.EFF_PSI_DAMAGE_SHIELD)
 		end
 	end
-
+	
 	if value > 0 and self:attr("shadow_empathy") then
 		-- Absorb damage into a random shadow
 		local shadow = self:callTalent(self.T_SHADOW_EMPATHY, "getRandomShadow")
@@ -2328,6 +2375,11 @@ function _M:onTakeHit(value, src, death_note)
 			game:delayedLogDamage(src, self, 0, ("#SLATE#(%d to bones)#LAST#"):format(value), false)
 			value = 0
 		end
+	end
+	
+	-- Paradox Shield
+	if value > 0 and self:isTalentActive(self.T_PRESERVE_PATTERN) then
+		value = self:callTalent(self.T_PRESERVE_PATTERN, "doPerservePattern", src, value)
 	end
 
 	if value <=0 then return 0 end
@@ -2989,7 +3041,7 @@ function _M:die(src, death_note)
 	if src and src.attr and src:attr("psi_per_kill") then
 		src:incPsi(src:attr("psi_per_kill"))
 	end
-
+	
 	-- Increases blood frenzy
 	if src and src.knowTalent and src:knowTalent(src.T_BLOOD_FRENZY) and src:isTalentActive(src.T_BLOOD_FRENZY) then
 		src.blood_frenzy = src.blood_frenzy + src:callTalent(src.T_BLOOD_FRENZY,"bonuspower")
@@ -3008,7 +3060,7 @@ function _M:die(src, death_note)
 			rsrc.changed = true
 		end
 	end
-
+	
 	-- handle hate changes on kill
 	if src and src.knowTalent and src:knowTalent(src.T_HATE_POOL) then
 		local t = src:getTalentFromId(src.T_HATE_POOL)
@@ -3077,6 +3129,7 @@ function _M:die(src, death_note)
 		p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.ACID, p.explosion, {type="acid"})
 	end
 
+	-- Chronomancy stuff
 	if self:hasEffect(self.EFF_TEMPORAL_DESTABILIZATION) then
 		local p = self:hasEffect(self.EFF_TEMPORAL_DESTABILIZATION)
 		if self:hasEffect(self.EFF_CONTINUUM_DESTABILIZATION) then
@@ -3105,6 +3158,11 @@ function _M:die(src, death_note)
 			end
 		end)
 	end
+	
+	if self:hasEffect(self.EFF_TRIM_THREADS) then
+		local p = self:hasEffect(self.EFF_TRIM_THREADS)
+		p.src:incParadox(-p.reduction)
+	end	
 
 	if self:hasEffect(self.EFF_GHOUL_ROT) then
 		local p = self:hasEffect(self.EFF_GHOUL_ROT)
@@ -3218,6 +3276,7 @@ function _M:resetToFull()
 	self.air = self.max_air
 	self.psi = self.max_psi
 	self.hate = self.max_hate
+	self.paradox = self.preferred_paradox or 300
 end
 
 -- Level up talents to match actor level
@@ -4341,7 +4400,7 @@ end
 
 --- Paradox checks
 function _M:getModifiedParadox()
-	local will_modifier = 2 + self:callTalent(self.T_PARADOX_MASTERY,"WilMult")
+	local will_modifier = (1 + (self:attr("paradox_will_multi") or 0)) * 2
 	will_modifier = (self:getWil() + (self:attr("paradox_reduce_anomalies") or 0)) * will_modifier
 	local sustain_modifier = self:getMinParadox()
 	local modified_paradox = math.max(0, self:getParadox() - will_modifier + sustain_modifier)
@@ -4375,8 +4434,9 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 	end
 
 	-- See if we create an anomaly
-	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") and not self.turn_procs.anomalies_checked then
-		self.turn_procs.anomalies_checked = true -- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
+	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") then
+		if not forced and self.turn_procs.anomalies_checked then return false end  -- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
+		if not forced then self.turn_procs.anomalies_checked = true end
 
 		-- return true if we roll an anomly
 		if rng.percent(chance) then
@@ -4385,42 +4445,45 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				anomaly_type = "major"
 			else
 				-- Check for Bias?
-				if self.anomaly_bias and rng.percent(self.anomaly_bias.chance) then
-					anomaly_type = self.anomaly_bias.type
-				end
+				if self.anomaly_bias and rng.percent(self.anomaly_bias.chance) then anomaly_type = self.anomaly_bias.type end
+				-- Revert no-major to random
+				if anomaly_type == "no-major" then anomaly_type = "random" end
 			end
 
 			-- Now pick anomalies filtered by type
 			local ts = {}
 			for id, t in pairs(self.talents_def) do
-				if anomaly_type ~= "random" and anomaly_type ~= "no-major" then
-					if t.type[1] == "chronomancy/anomalies" and t.anomaly_type and t.anomaly_type == anomaly_type then ts[#ts+1] = id end
+				if anomaly_type ~= "random" then
+					if t.type[1] == "chronomancy/anomalies" and t.anomaly_type and t.anomaly_type == anomaly_type and not self:isTalentCoolingDown(t) then ts[#ts+1] = id end
 				else
-					if t.type[1] == "chronomancy/anomalies" and t.anomaly_type and t.anomaly_type ~= "major" then ts[#ts+1] = id end
+					if t.type[1] == "chronomancy/anomalies" and t.anomaly_type and t.anomaly_type ~= "major" and not self:isTalentCoolingDown(t) then ts[#ts+1] = id end
 				end
 			end
 
 			-- Did we find anomalies?
 			if ts[1] then
 				-- Do we have a target?  If not we pass to anomaly targeting
-				-- The ignore energy calls here allow anomalies to be cast even when it's not the players turn (i.e. Preserve Pattern)
+				-- The ignore energy calls here allow anomalies to be cast even when it's not the players turn
 				if target then
-					self:forceUseTalent(rng.table(ts), {ignore_cooldown=true, ignore_energy=true, force_target=target})
+					self:attr("anomaly_forced_target", 1)
+					self:forceUseTalent(rng.table(ts), {ignore_energy=true, force_target=target})
+					self:attr("anomaly_forced_target", -1)
 				else
-					self:forceUseTalent(rng.table(ts), {ignore_cooldown=true, ignore_energy=true})
+					self:forceUseTalent(rng.table(ts), {ignore_energy=true})
 				end
-				-- Drop some game messages
-				if not silent then
-					if forced then
-						game.logPlayer(self, "#STEEL_BLUE#You've moved to another time thread.")
-					else
-						game.logPlayer(self, "#LIGHT_RED#You lose control and unleash an anomaly!")
-					end
+			end
+			
+			-- Drop some game messages; these happen so Paradox gets reduced even if an anomaly isn't found
+			if not silent then
+				if forced then
+					game.logPlayer(self, "#STEEL_BLUE#You've moved to another time thread.")
+				else
+					game.logPlayer(self, "#LIGHT_RED#You lose control and unleash an anomaly!")
 				end
-				-- Reduce Paradox
-				if reduction and reduction > 0 then
-					self:incParadox(-reduction)
-				end
+			end
+			-- Reduce Paradox
+			if reduction and reduction > 0 then
+				self:incParadox(-reduction)
 			end
 
 			return true
@@ -4443,9 +4506,15 @@ function _M:incParadox(paradox)
 	if self:getModifiedParadox() < 600 and self:getModifiedParadox() + paradox >= 600 then
 		game.logPlayer(self, "#LIGHT_RED#Spacetime fights against your control!")
 	end
-	if self:getParadox() > 600 and self:getParadox() + paradox <= 600 then
+	if self:getModifiedParadox() > 600 and self:getModifiedParadox() + paradox <= 600 then
 		game.logPlayer(self, "#LIGHT_BLUE#Spacetime has calmed...  somewhat.")
 	end
+	
+	-- Cosmic Cycle
+	if self:isTalentActive(self.T_COSMIC_CYCLE) then
+		self:callTalent(self.T_COSMIC_CYCLE, "doCosmicCycle")
+	end
+	
 	return previous_incParadox(self, paradox)
 end
 
@@ -4839,7 +4908,11 @@ function _M:getTalentSpeed(t)
 	local speed_type = self:getTalentSpeedType(t)
 	local speed = self:getSpeed(speed_type)
 
-	-- EDGE: Put Quicken Here?
+	-- Quicken
+	local p = self:isTalentActive(self.T_QUICKEN)
+	if p and p.talent == t.id then
+		speed = math.max(0.1, speed - self:callTalent(self.T_QUICKEN, "getPower"))
+	end
 
 	local hd = {"Actor:getTalentSpeed", talent = t, speed_type = speed_type, speed = speed,}
 	if self:triggerHook(hd) then speed = hd.speed end
@@ -5038,6 +5111,7 @@ function _M:postUseTalent(ab, ret, silent)
 	if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
 	if not ab.no_reload_break then self:breakReloading() end
 	self:breakStepUp()
+	self:breakSpacetimeTuning()
 	--if not (util.getval(ab.no_energy, self, ab) or ab.no_break_channel) and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) then self:breakPsionicChannel(ab.id) end
 
 	for tid, _ in pairs(self.sustain_talents) do
@@ -5045,12 +5119,6 @@ function _M:postUseTalent(ab, ret, silent)
 		if t and t.callbackBreakOnTalent then
 			self:callTalent(tid, "callbackBreakOnTalent", ab)
 		end
-	end
-
-	if ab.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) and ab.type[1]:find("^chronomancy/") and ab.mode == "activated" and self:getTalentLevel(self.T_REDUX) >= self:getTalentLevel(ab.id) then
-		self:removeEffect(self.EFF_REDUX)
-		-- this still consumes energy but works as the talent suggests it does
-		self:forceUseTalent(ab.id, {ignore_energy=true, ignore_cd = true})
 	end
 
 	if not ab.innate and self:hasEffect(self.EFF_RAMPAGE) and ab.id ~= self.T_RAMPAGE and ab.id ~= self.T_SLAM then
@@ -5141,9 +5209,6 @@ function _M:breakStepUp()
 	if self:hasEffect(self.EFF_SKIRMISHER_DIRECTED_SPEED) then
 		self:removeEffect(self.EFF_SKIRMISHER_DIRECTED_SPEED)
 	end
-	if self:hasEffect(self.EFF_CELERITY) then
-		self:removeEffect(self.EFF_CELERITY)
-	end
 end
 
 --- Breaks lightning speed if active
@@ -5157,6 +5222,12 @@ end
 function _M:breakChronoSpells()
 	if self:hasEffect(self.EFF_GATHER_THE_THREADS) then
 		self:removeEffect(self.EFF_GATHER_THE_THREADS)
+	end
+end
+
+function _M:breakSpacetimeTuning()
+	if self:hasEffect(self.EFF_SPACETIME_TUNING) then
+		self:removeEffect(self.EFF_SPACETIME_TUNING)
 	end
 end
 
@@ -5212,7 +5283,7 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		if t.positive then d:add({"color",0x6f,0xff,0x83}, "Positive energy cost: ", {"color",255, 215, 0}, ""..math.round(util.getval(t.positive, self, t) * (100 + self:combatFatigue()) / 100, 0.1), true) end
 		if t.negative then d:add({"color",0x6f,0xff,0x83}, "Negative energy cost: ", {"color", 127, 127, 127}, ""..math.round(util.getval(t.negative, self, t) * (100 + self:combatFatigue()) / 100, 0.1), true) end
 		if t.hate then d:add({"color",0x6f,0xff,0x83}, "Hate cost:  ", {"color", 127, 127, 127}, ""..math.round(util.getval(t.hate, self, t) * (100 + 2 * self:combatFatigue()) / 100, 0.1), true) end
-		if t.paradox then d:add({"color",0x6f,0xff,0x83}, "Paradox cost: ", {"color",  176, 196, 222}, ""..math.round(util.getval(t.paradox, self, t), 0.1), true) end
+		if t.paradox then d:add({"color",0x6f,0xff,0x83}, "Paradox cost: ", {"color",  176, 196, 222}, ""..math.round(util.getval(t.paradox, self, t)), true) end
 		if t.psi then d:add({"color",0x6f,0xff,0x83}, "Psi cost: ", {"color",0x7f,0xff,0xd4}, ""..math.round(util.getval(t.psi, self, t) * (100 + 2 * self:combatFatigue()) / 100, 0.1), true) end
 		if t.feedback then d:add({"color",0x6f,0xff,0x83}, "Feedback cost: ", {"color",0xFF, 0xFF, 0x00}, ""..math.round(util.getval(t.feedback, self, t) * (100 + 2 * self:combatFatigue()) / 100, 0.1), true) end
 		if t.fortress_energy then d:add({"color",0x6f,0xff,0x83}, "Fortress Energy cost: ", {"color",0x00,0xff,0xa0}, ""..math.round(t.fortress_energy, 0.1), true) end
@@ -5236,7 +5307,7 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		else d:add({"color",0x6f,0xff,0x83}, "Range: ", {"color",0xFF,0xFF,0xFF}, "melee/personal", true)
 		end
 		if not config.ignore_ressources then
-			if self:getTalentCooldown(t) then d:add({"color",0x6f,0xff,0x83}, "Cooldown: ", {"color",0xFF,0xFF,0xFF}, ""..self:getTalentCooldown(t), true) end
+			if self:getTalentCooldown(t) then d:add({"color",0x6f,0xff,0x83}, ("%sCooldown: "):format(t.fixed_cooldown and "Fixed " or ""), {"color",0xFF,0xFF,0xFF}, ""..self:getTalentCooldown(t), true) end
 		end
 		local speed = self:getTalentProjectileSpeed(t)
 		if speed then d:add({"color",0x6f,0xff,0x83}, "Travel Speed: ", {"color",0xFF,0xFF,0xFF}, ""..(speed * 100).."% of base", true)
@@ -5273,7 +5344,7 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		end
 	else
 		if not config.ignore_ressources then
-			if self:getTalentCooldown(t) then d:add({"color",0x6f,0xff,0x83}, "Cooldown: ", {"color",0xFF,0xFF,0xFF}, ""..self:getTalentCooldown(t), true) end
+			if self:getTalentCooldown(t) then d:add({"color",0x6f,0xff,0x83}, ("%sCooldown: "):format(t.fixed_cooldown and "Fixed " or ""), {"color",0xFF,0xFF,0xFF}, ""..self:getTalentCooldown(t), true) end
 		end
 	end
 
@@ -5320,7 +5391,12 @@ function _M:getTalentCooldown(t)
 	if eff and not self:attr("talent_reuse") then
 		cd = 1 + cd * eff.power
 	end
-
+	
+	local p = self:isTalentActive(self.T_MATRIX)
+	if p and p.talent == t.id then
+		cd = math.floor(cd * (1 - self:callTalent(self.T_MATRIX, "getPower")))
+	end
+	
 	if t.is_spell then
 		return math.ceil(cd * (1 - (self.spell_cooldown_reduction or 0)))
 	elseif t.is_summon then
@@ -5340,6 +5416,12 @@ function _M:startTalentCooldown(t, v)
 		self.talents_cd[t.id] = math.max(v, self.talents_cd[t.id] or 0)
 	else
 		if not t.cooldown then return end
+		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
+			local eff = self:hasEffect(self.EFF_REDUX) 
+			if t.type[1]:find("^chronomancy/") and self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
+				return
+			end
+		end
 		self.talents_cd[t.id] = self:getTalentCooldown(t)
 	end
 	if self.talents_cd[t.id] <= 0 then self.talents_cd[t.id] = nil end

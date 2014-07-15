@@ -43,7 +43,7 @@ function _M:init(actor)
 	Dialog.init(self, "Contingency", game.w * 0.6, game.h * 0.8)
 
 	self.c_tut = Textzone.new{width=math.floor(self.iw / 2 - 10), height=1, auto_height=true, no_color_bleed=true, text=[[
-You may select a spell for Contingency to automatically use when your life falls below 25%.  Only active spells that do not require a target may be chosen.
+You may select a spell for Contingency to automatically use when your life falls below a percentage.  Only active spells that do not require a target may be chosen.
 ]]}
 	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - self.c_tut.h - 20, scrollbar=true, no_color_bleed=true}
 
@@ -104,7 +104,7 @@ function _M:generateList()
 
 	-- Generate lists of all talents by category
 	for j, t in pairs(self.actor.talents_def) do
-		if self.actor:knowTalent(t.id) and t.mode == "activated" and t.is_spell and not t.requires_target and not t.hide then
+		if self.actor:knowTalent(t.id) and t.mode == "activated" and t.is_spell and not t.requires_target and not t.hide and not t.fixed_cooldown then
 			local nodes = talents
 			local status = tstring{{"color", "LIGHT_GREEN"}, "Talents"}
 			
