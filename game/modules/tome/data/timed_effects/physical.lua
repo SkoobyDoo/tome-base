@@ -1025,7 +1025,7 @@ newEffect{
 newEffect{
 	name = "BURROW", image = "talents/burrow.png",
 	desc = "Burrow",
-	long_desc = function(self, eff) return "The target is able to burrow into walls." end,
+	long_desc = function(self, eff) return ("The target is able to burrow into walls, and additionally has %d more APR and %d%% more physical resistance penetration."):format(eff.power, eff.power / 2) end,
 	type = "physical",
 	subtype = { earth=true },
 	status = "beneficial",
@@ -1033,6 +1033,8 @@ newEffect{
 	activate = function(self, eff)
 		eff.pass = self:addTemporaryValue("can_pass", {pass_wall=1})
 		eff.dig = self:addTemporaryValue("move_project", {[DamageType.DIG]=1})
+		self:effectTemporaryValue(eff, "combat_apr", eff.power)
+		self:effectTemporaryValue(eff, "resists_pen", {[DamageType.PHYSICAL]=eff.power / 2 })
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("can_pass", eff.pass)
