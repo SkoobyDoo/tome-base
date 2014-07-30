@@ -129,9 +129,25 @@ function _M:canStack(o)
 	return false
 end
 
+--- Adds an object to the stack
+-- @param o = object to stack onto self
+-- @param force boolean to stack unstackable objects
+-- @param num = maximum number stacked objects to move
+-- @return true if stacking worked or false if not, and boolean if all of the stack was moved
+function _M:stack(o, force, num)
+	local last = true
+	num = num or math.huge
+	if (not force and not self:canStack(o)) or num < 1 then return false end
+	self.stacked = self.stacked or {}
+	for i = 1, math.min(o:getNumber(), num) do
+		self.stacked[#self.stacked+1], last = o:unstack()
+	end
+	return true, last
+end
+
 --- Adds object to the stack
 -- @return true if stacking worked, false if not
-function _M:stack(o, force)
+function _M:stackOld(o, force)
 	if not force and not self:canStack(o) then return false end
 	self.stacked = self.stacked or {}
 	self.stacked[#self.stacked+1] = o
@@ -146,9 +162,60 @@ function _M:stack(o, force)
 	return true
 end
 
+--- Removes one or more objects from a the stack
+-- @param num = maximum number to remove (always removes at least one)
+-- @return object, true if the last, or object, false if more on the stack
+function _M:unstackAlt(num)
+	if not self:stackable() or not self.stacked or #self.stacked == 0 then return self, true end
+	num = math.min(num or 1, #self.stacked + 1)
+	local last, o = false, table.remove(self.stacked)
+	o.stacked = {}
+	while num - 1 > 0 do
+		num = num - 1
+		o.stacked[#o.stacked+1] = table.remove(self.stacked) or self
+	end
+	if #self.stacked == 0 then self.stacked = nil last = true end
+	if #o.stacked == 0 then o.stacked = nil end
+	return o, last
+end
+
+--- Removes one or more objects from a stack of objects
+-- @param num = maximum number to remove 
+-- @return self or new object, true if the last or false if more on the stack
+function _M:unstack(num)
+	if not self:stackable() or not self.stacked or #self.stacked == 0 then return self, true end
+	num = math.min(num or 1, #self.stacked + 1)
+	if num < 1 then return self.stacked[1], false end -- next item to remove
+
+--	local o = table.remove(self.stacked)
+	local o
+	local last, uo = false
+--	o.stacked = {}
+	repeat
+--	while num - 1 > 0 do
+--		if num <= 0 then break end
+		num = num - 1
+		uo = table.remove(self.stacked)
+		if not o then
+			o = uo; o.stacked = {}
+		else
+			if uo then
+				o.stacked[#o.stacked+1] = uo
+			else
+				o.stacked[#o.stacked+1] = self; last = true; break
+			end
+		end
+--		o.stacked[#o.stacked+1] = table.remove(self.stacked) or self
+--	end
+	until num <= 0 or last
+	if #self.stacked == 0 then self.stacked = nil end
+	if #o.stacked == 0 then o.stacked = nil end
+	return o, last
+end
+
 --- Removes an object of the stack
 -- @return object, true if the last, or object, false if more
-function _M:unstack()
+function _M:unstackOld()
 	if not self:stackable() or not self.stacked or #self.stacked == 0 then return self, true end
 	local o = table.remove(self.stacked)
 	if #self.stacked == 0 then self.stacked = nil end
