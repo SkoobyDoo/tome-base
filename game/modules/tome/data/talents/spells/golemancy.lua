@@ -42,8 +42,7 @@ local function makeGolem(self)
 
 		combat = { dam=10, atk=10, apr=0, dammod={str=1} },
 
---		body = { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, BODY=1, GEM=2 },
-		body = { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, BODY=1, GEM={max = 2, stack_limit = 3} },
+		body = { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, BODY=1, GEM={max = 2, stack_limit = 1} },
 		canWearObjectCustom = function(self, o)
 			if o.type ~= "gem" then return end
 			if not self.summoner then return "Golem has no master" end

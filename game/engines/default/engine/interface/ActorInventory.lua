@@ -72,7 +72,6 @@ function _M:initBody()
 	if self.body then
 		local def
 		for inven, max in pairs(self.body) do
---			self.inven[self["INVEN_"..inven]] = {max=max, worn=self.inven_def[self["INVEN_"..inven]].is_worn, id=self["INVEN_"..inven], name=inven}
 			def = self.inven_def[self["INVEN_"..inven]]
 			assert(def, "inventory slot undefined")
 			self.inven[self["INVEN_"..inven]] = {worn=def.is_worn, id=self["INVEN_"..inven], name=inven, stack_limit = def.stack_limit}
@@ -107,83 +106,7 @@ function _M:canAddToInven(id)
 		return id
 	end
 end
---[[
---- Adds an object to an inventory
--- @param inven_id = inventory id to add to
--- @param o = object to add
--- @param no_unstack = boolean to prevent unstacking the object to be added
--- @return false if the object could not be added or true, inventory index it was moved to, and remaining stack if any
-function _M:addObject(inven_id, o, no_unstack)
-	local inven = self:getInven(inven_id)
-	local slot
-	local stack, rs, ok
-	local stackable, stack_limit = o and o:stackable(), inven.stack_limit or math.huge
 
-game.logSeen(self, "addObject: adding to inventory %s %s (stack_limit %s): %s", self.name, inven_id, tostring(stack_limit), o:getName{do_color=true})
-	-- No room, stackable ?
-	if #inven >= inven.max then
-		if stackable and not no_unstack then -- try to find a stack to add to
---			local pos = self:itemPosition(inven_id, o)
-			for i, obj in ipairs(inven) do
-				if o:canStack(obj) and obj:getNumber() < stack_limit then
-game.logSeen(self, "found object stack %s[%d]: %s", inven_id, i, obj.name)
-					slot = i
-					stack = obj break
-				end
-			end
-			if not stack then return false end
-		else
-			return false
-		end
-	end
-
-	if o:check("on_preaddobject", self, inven) then return false end
-
-	-- if no stack found and getnumber > stack limit then
-	-- create new stack for extra objects
-	-- Ok add it
-	if stackable and not no_unstack then
-		rs = true
-		local uo, last
-		if not stack then -- create new stack
-			stack, last = o:unstack()
-			table.insert(inven, stack)
-game.logSeen(self, "creating new stack %s for %s ", stack.name, o.name)
-		end
---		while not last and stack:getNumber() < stack_limit do -- move stack one item at a time
---game.logSeen(self, "moving %s to stack %s", o.name, stack.name)
---			uo, last = o:unstack()
---			stack:stack(uo)
---		end
---		while not last and stack:getNumber() < stack_limit do -- move stack one item at a time
-		if not last then
-game.logSeen(self, "moving %s to stack %s", o:getName{do_color=true}, stack:getName{do_color=true})
---			uo, last = o:unstack()
-			ok, last = stack:stack(o, false, stack_limit - stack:getNumber())
-		end
-
-game.logSeen(self, " remaining stack: %s(%d) last = %s", o.name, o:getNumber(), tostring(last))
-		if last then
-			--table.remove(inven, item)
-			rs = false
-		end 
-	else
-		table.insert(inven, o)
-	end
-	
-	-- Do whatever is needed when wearing this object
-	if inven.worn then
-		self:onWear(o, self.inven_def[inven.id].short_name)
-	end
-
-	self:onAddObject(o)
-
-	-- Make sure the object is registered with the game, if need be
-	if not game:hasEntity(o) then game:addEntity(o) end
---	return true, #inven, rs and o
-	return true, slot or #inven, rs and o
-end
---]]
 --- Adds an object to an inventory
 -- @param inven_id = inventory id to add to
 -- @param o = object to add
@@ -262,28 +185,112 @@ function _M:itemPosition(inven, o)
 	return nil
 end
 
+--- Picks an object from the floor
+function _M:pickupFloor(i, vocal, no_sort)
+	if not self:getInven(self.INVEN_INVEN) then return end
+	local o = game.level.map:getObject(self.x, self.y, i)
+	if o then
+		local prepickup = o:check("on_prepickup", self, i)
+		if not prepickup and self:addObject(self.INVEN_INVEN, o) then
+			game.level.map:removeObject(self.x, self.y, i)
+			if not no_sort then self:sortInven(self.INVEN_INVEN) end
+
+			o:check("on_pickup", self)
+			self:check("on_pickup_object", o)
+
+			local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, o) or 1)
+			if vocal then game.logSeen(self, "%s picks up (%s.): %s.", self.name:capitalize(), letter, o:getName{do_color=true}) end
+			return o
+		elseif not prepickup then
+			if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), o:getName{do_color=true}) end
+			return
+		elseif prepickup == "skip" then
+			return
+		else
+			return true
+		end
+	else
+		if vocal then game.logSeen(self, "There is nothing to pick up there.") end
+	end
+end
+
 --- Pick up an object from the floor
 -- @param i = object position on map at self.x, self.y
--- @param vocal = boolean set true to post messages to log
+-- @param vocal = boolean to post messages to log
 -- @param no_sort = boolen to suppress automatic sorting of inventory
 --	puts picked up objects in self.INVEN_INVEN
+-- @return the object picked up (from self.INVEN_INVEN) or true if o:on_prepickup(i) returns true (not "skip") or nil
+--	checks obj.on_pickup and self.on_pickup_object functions after pickup (includes stacks)
 function _M:pickupFloor(i, vocal, no_sort)
 	local inven = self:getInven(self.INVEN_INVEN)
 	if not inven then return end
 	local o = game.level.map:getObject(self.x, self.y, i)
 	if o then
 		local prepickup = o:check("on_prepickup", self, i)
---		if not prepickup and self:addObject(self.INVEN_INVEN, o) then -- Assumes no stacking limit
 		if not prepickup then
+--			local name = o:getName{do_color=true}
+--			local name, num = o:getName{do_color=true}, o:getNumber()
+			local num = o:getNumber()
+			local ok, slot, ro = self:addObject(self.INVEN_INVEN, o)
+			if ok then
+				local newo, part = inven[slot], "" -- get exact object added or stack (in case of duplicates)
+				game.level.map:removeObject(self.x, self.y, i)
+game.logSeen(self, "o = %s, newo = %s",tostring(o), tostring(newo))
+				if ro then -- return remaining stack to floor
+					game.level.map:addObject(self.x, self.y, ro)
+					num = num - ro:getNumber()
+					part = "partially"
+				end
+--				o = inven[slot] -- get object added or stack it was added to (in case of duplicates)
+				if not no_sort then self:sortInven(self.INVEN_INVEN) end
+				-- Note: applies to whole stack including already carried
+				newo:check("on_pickup", self)
+				self:check("on_pickup_object", newo)
+--				o:check("on_pickup", self)
+--				self:check("on_pickup_object", o)
+--				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, o) or 1)
+				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo) or 1)
+--				if vocal then game.logSeen(self, "%s picks up (%s.): %s.", self.name:capitalize(), letter, o:getName{do_color=true}) end
+				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", newo:getName{do_color=true, no_count = true}) end
+				return newo
+			else
+--				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), name) end
+				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), o:getName{do_color=true}) end
+				return
+			end
+		elseif prepickup == "skip" then
+			return
+		else
+			return true
+		end
+	else
+		if vocal then game.logSeen(self, "There is nothing to pick up here.") end
+	end
+end
+
+--- Pick up an object from the floor
+-- @param i = object position on map at self.x, self.y
+-- @param vocal = boolean set true to post messages to log
+-- @param no_sort = boolen to suppress automatic sorting of inventory
+--	puts picked up objects in self.INVEN_INVEN
+function _M:pickupFloorAlt(i, vocal, no_sort)
+	local inven = self:getInven(self.INVEN_INVEN)
+	if not inven then return end
+	local o = game.level.map:getObject(self.x, self.y, i)
+	if o then
+		local prepickup = o:check("on_prepickup", self, i)
+		if not prepickup then
+--			local name = o:getName{do_color=true}
 			local name = o:getName{do_color=true}
 			local ok, slot, ro = self:addObject(self.INVEN_INVEN, o)
 			if ok then
 				local newo, part = inven[slot], "" -- get exact object added or stack (in case of duplicates)
 				game.level.map:removeObject(self.x, self.y, i)
+game.logSeen(self, "o = %s, newo = %s",tostring(o), tostring(newo))
 				if ro then -- return remaining stack to floor
 					game.level.map:addObject(self.x, self.y, ro)
 					part = "partially"
-				end 
+				end
 --				o = inven[slot] -- get object added or stack it was added to (in case of duplicates)
 				if not no_sort then self:sortInven(self.INVEN_INVEN) end				
 				o:check("on_pickup", self)
@@ -291,6 +298,7 @@ function _M:pickupFloor(i, vocal, no_sort)
 --				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, o) or 1)
 				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo) or 1)
 				if vocal then game.logSeen(self, "%s %s picks up (%s.): %s.", self.name:capitalize(), part, letter, name) end
+				if vocal then game.logSeen(self, "%s picks up (%s.): %s.", self.name:capitalize(), letter, o:getName{do_color=true}) end
 				return newo
 			else
 				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), name) end
@@ -306,40 +314,6 @@ function _M:pickupFloor(i, vocal, no_sort)
 	end
 end
 
---- Removes an object from inventory
--- @param inven the inventory to drop from
--- @param item the item id to drop
--- @param no_unstack if the item was a stack takes off the whole stack if true
--- @return the object removed or nil if no item existed and a boolean saying if there is no more objects
-function _M:removeObjectOld(inven_id, item, no_unstack)
-	local inven = self:getInven(inven_id)
-
-	if not inven[item] then return false, true end
-
-	local o, finish = inven[item], true
-
-	if o:check("on_preremoveobject", self, inven) then return false, true end
-
-	if not no_unstack then
-		o, finish = o:unstack()
-	end
-	if finish then
-		table.remove(inven, item)
-	end
-
-	-- Do whatever is needed when taking off this object
-	if inven.worn then
-		self:onTakeoff(o, self.inven_def[inven.id].short_name)
-	end
-
-	self:onRemoveObject(o)
-
-	-- Make sure the object is registered with the game, if need be
-	if not game:hasEntity(o) then game:addEntity(o) end
-
-	return o, finish
-end
---]]
 --- Removes an object from inventory
 -- @param inven the inventory to remove from
 -- @param item inven slot of the item to remove
@@ -408,31 +382,7 @@ end
 --- Drop an object on the floor
 -- @param inven the inventory to drop from
 -- @param item the item id to drop
--- @return the object removed or nil if no item existed
-function _M:dropFloorOld(inven, item, vocal, all)
-	local o = self:getInven(inven)[item]
-	if not o then
-		if vocal then game.logSeen(self, "There is nothing to drop.") end
-		return
-	end
-	if o:check("on_drop", self) then return false end
-
-	o = self:removeObject(inven, item, all)
-
-	self:onDropObject(o)
-
-	local ok, idx = game.level.map:addObject(self.x, self.y, o)
-
-	if vocal then game.logSeen(self, "%s drops on the floor: %s.", self.name:capitalize(), o:getName{do_color=true}) end
-	if ok and game.level.map.attrs(self.x, self.y, "on_drop") then
-		game.level.map.attrs(self.x, self.y, "on_drop")(self, self.x, self.y, idx, o)
-	end
-	return true
-end
-
---- Drop an object on the floor
--- @param inven the inventory to drop from
--- @param item the item id to drop
+-- @param all set to remove part (if number) or all (if true) a stack
 -- @return the object removed or nil if no item existed
 function _M:dropFloor(inven, item, vocal, all)
 	local o = self:getInven(inven)[item]
@@ -454,6 +404,33 @@ function _M:dropFloor(inven, item, vocal, all)
 	end
 	return o
 end
+
+--[[
+--- Drop an object on the floor
+-- @param inven the inventory to drop from
+-- @param item the item id to drop
+-- @return the object removed or nil if no item existed
+function _M:dropFloorOld(inven, item, vocal, all)
+	local o = self:getInven(inven)[item]
+	if not o then
+		if vocal then game.logSeen(self, "There is nothing to drop.") end
+		return
+	end
+	if o:check("on_drop", self) then return false end
+
+	o = self:removeObject(inven, item, all)
+
+	self:onDropObject(o)
+
+	local ok, idx = game.level.map:addObject(self.x, self.y, o)
+
+	if vocal then game.logSeen(self, "%s drops on the floor: %s.", self.name:capitalize(), o:getName{do_color=true}) end
+	if ok and game.level.map.attrs(self.x, self.y, "on_drop") then
+		game.level.map.attrs(self.x, self.y, "on_drop")(self, self.x, self.y, idx, o)
+	end
+	return true
+end
+--]]
 
 --- Show combined equipment/inventory dialog
 -- @param inven the inventory (from self:getInven())
@@ -612,52 +589,6 @@ game.logSeen(self, "  Replace allowed: %s is stackable", o.name)
 	end
 end
 
---- Wear/wield an item
---	returns true if succeeded, false if not
-function _M:wearObjectOld(o, replace, vocal)
-	local inven = o:wornInven()
-	if not inven then
-		if vocal then game.logSeen(self, "%s is not wearable.", o:getName{do_color=true}) end
-		return false
-	end
-	if not self.inven[inven] then
-		if vocal then game.logSeen(self, "%s can not wear %s.", self.name, o:getName{do_color=true}) end
-		return false
-	end
-
-	local ok, err = self:canWearObject(o)
-	if not ok then
-		if vocal then game.logSeen(self, "%s can not wear: %s (%s).", self.name:capitalize(), o:getName{do_color=true}, err) end
-		return false
-	end
-	if o:check("on_canwear", self, inven) then return false end
-	local offslot = self:getObjectOffslot(o)
-
-	if self:addObject(inven, o) then
-		if vocal then game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true}) end
-		return true
-	elseif offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
-		if vocal then game.logSeen(self, "%s wears(offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
-		-- Warning: assume there is now space
-		self:addObject(self:getInven(offslot), o)
-		return true
-	elseif replace then
-		local ro = self:removeObject(inven, 1, true)
-
-		if vocal then game.logSeen(self, "%s wears(replacing): %s.", self.name:capitalize(), o:getName{do_color=true}) end
-
-		-- Can we stack the old and new one ?
-		if o:stack(ro) then ro = true end
-
-		-- Warning: assume there is now space
-		self:addObject(inven, o)
-		return ro -- handled by mod.Actor.doWear
-	else
-		if vocal then game.logSeen(self, "%s can not wear: %s.", self.name:capitalize(), o:getName{do_color=true}) end
-		return false
-	end
-end
-
 --- Takeoff item
 -- @param inven_id = inventory id
 -- @param item = slot to remove from
@@ -700,6 +631,7 @@ function _M:onTakeoff(o, inven_id)
 end
 
 --- Re-order inventory, sorting and stacking it
+-- sort order is type > subtype > name > getNumber
 function _M:sortInven(inven)
 	if not inven then inven = self.inven[self.INVEN_INVEN] end
 	inven = self:getInven(inven)
@@ -746,52 +678,11 @@ function _M:sortInven(inven)
 	self.changed = true
 end
 
---- Re-order inventory, sorting and stacking it
-function _M:sortInvenAlt(inven)
-	if not inven then inven = self.inven[self.INVEN_INVEN] end
-	inven = self:getInven(inven)
-	if not inven then return end
-	local last, stacklimit = false, self.inven_def[inven.id].stack_limit or math.huge
-
-	-- Stack objects first, from bottom
-	for i = #inven, 1, -1 do
-		-- If it is stackable, look for objects before it that it could stack into
-		if inven[i]:stackable() then
-			for j = i - 1, 1, -1 do
-			-- apply stack limit here
-				if inven[j]:stack(inven[i], false, stacklimit - inven[j]:getNumber()) then
-					table.remove(inven, i)
-					break
-				end
---				if inven[j]:stack(inven[i]) then
---					table.remove(inven, i)
---					break
---				end
-			end
-		end
-	end
-
-	-- Sort them
-	table.sort(inven, function(a, b)
-		local ta, tb = a:getTypeOrder(), b:getTypeOrder()
-		local sa, sb = a:getSubtypeOrder(), b:getSubtypeOrder()
-		if ta == tb then
-			if sa == sb then
-				return a.name < b.name
-			else
-				return sa < sb
-			end
-		else
-			return ta < tb
-		end
-	end)
-	self.changed = true
-end
-
 --- Finds an object by name in an inventory
 -- @param inven the inventory to look into
 -- @param name the name to look for
 -- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
+-- @return object, position or nil if not found
 function _M:findInInventory(inven, name, getname)
 	getname = getname or {no_count=true, force_id=true}
 	for item, o in ipairs(inven) do
@@ -802,6 +693,7 @@ end
 --- Finds an object by name in all the actor's inventories
 -- @param name the name to look for
 -- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
+-- @return object, position, inven_id or nil if not found
 function _M:findInAllInventories(name, getname)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventory(inven, name, getname)
@@ -813,6 +705,7 @@ end
 -- @param inven the inventory to look into
 -- @param prop the property to look for
 -- @param value the value to look for, can be a function
+-- @return object, position or nil if not found
 function _M:findInInventoryBy(inven, prop, value)
 	if type(value) == "function" then
 		for item, o in ipairs(inven) do
@@ -828,6 +721,7 @@ end
 --- Finds an object by property in all the actor's inventories
 -- @param prop the property to look for
 -- @param value the value to look for, can be a function
+-- @return object, position, inven_id or nil if not found
 function _M:findInAllInventoriesBy(prop, value)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventoryBy(inven, prop, value)
@@ -835,19 +729,20 @@ function _M:findInAllInventoriesBy(prop, value)
 	end
 end
 
---- Finds an object by property in an inventory
+--- Finds an object by reference in an inventory
 -- @param inven the inventory to look into
--- @param prop the property to look for
--- @param value the value to look for, can be a function
+-- @param so the object(reference) to look for
+-- @return object, position or nil if not found
 function _M:findInInventoryByObject(inven, so)
 	for item, o in ipairs(inven) do
 		if o == so then return o, item end
 	end
 end
 
---- Finds an object by property in all the actor's inventories
--- @param prop the property to look for
--- @param value the value to look for, can be a function
+--- Finds an object by reference in all the actor's inventories
+-- @param inven the inventory to look into
+-- @param so the object(reference) to look for
+-- @return object, position, inven_id or nil if not found
 function _M:findInAllInventoriesByObject(so)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventoryByObject(inven, so)

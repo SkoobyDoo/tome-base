@@ -49,6 +49,19 @@ function _M:on_register()
 	game:onTickEnd(function() self.key:unicodeInput(true) end)
 end
 
+function _M:use(item)
+	if not item or not item.actor:canAddToInven(item.actor.INVEN_INVEN) then return end
+	game:unregisterDialog(self)
+	self.source:removeObject(self.inven, self.item, true)
+	self.source:sortInven(self.inven)
+	self.o.__transmo = nil
+	item.actor:addObject(item.actor.INVEN_INVEN, self.o, true) -- force full stack transfer
+	game.log("You give %s to %s.", self.o:getName{do_color=true}, item.actor.name)
+	item.actor:sortInven(item.actor.INVEN_INVEN)
+	self.on_end()
+end
+
+--[[
 function _M:useOld(item)
 --	if not item then return end
 	if not item or not item.actor:canAddToInven(item.actor.INVEN_INVEN) then return end
@@ -62,29 +75,13 @@ function _M:useOld(item)
 	game.log("You give %s to %s.", self.o:getName{do_color=true}, item.actor.name)
 	self.on_end()
 end
-
-function _M:use(item)
---	if not item then return end
-	if not item or not item.actor:canAddToInven(item.actor.INVEN_INVEN) then return end
-	game:unregisterDialog(self)
---game.log("##1Transfer %s(%s) to %s.", self.o:getName{do_color=true},tostring(self.o), item.actor.name)
-	self.source:removeObject(self.inven, self.item, true)
---game.log("##2Transfer %s(%s) to %s.", self.o:getName{do_color=true},tostring(self.o), item.actor.name)
-	self.source:sortInven(self.inven)
-	self.o.__transmo = nil
-	item.actor:addObject(item.actor.INVEN_INVEN, self.o, true) -- force full stack transfer
---game.log("##3Transfer %s(%s) to %s.", self.o:getName{do_color=true},tostring(self.o), item.actor.name)
-	game.log("You give %s to %s.", self.o:getName{do_color=true}, item.actor.name)
-	item.actor:sortInven(item.actor.INVEN_INVEN)
-	self.on_end()
-end
+--]]
 
 function _M:generateList()
 	local list = {}
 
 	for i, act in ipairs(game.party.m_list) do
 		if not act.no_inventory_access and act ~= game.player then
---			list[#list+1] = {name=act.name, actor=act}
 			list[#list+1] = {name=act.name..(act:canAddToInven(act.INVEN_INVEN) and "" or " #YELLOW#[NO ROOM]#LAST#"), actor=act}
 		end
 	end

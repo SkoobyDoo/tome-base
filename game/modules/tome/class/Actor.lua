@@ -6009,32 +6009,13 @@ function _M:doDrop(inven, item, on_done, nb)
 	else
 		local stack = self:removeObject(inven, item, nb)
 		game.logSeen(self, "%s drops on the floor: %s.", self.name:capitalize(), stack:getName{do_color=true, do_count=true})
---		game.logSeen(self, "%s drops on the floor: %s.", self.name:capitalize(), o:getName{do_color=true})
 		game.level.map:addObject(self.x, self.y, stack)
---		for i = 1, nb do self:dropFloor(inven, item, true) end
 	end
 	self:sortInven(inven)
 	self:useEnergy()
 	self.changed = true
 	game:playSound("actions/drop")
 	if on_done then on_done() end
-end
-
-function _M:doWearAlt(inven, item, o, dst)
-	if self.no_inventory_access then return end
-	dst = dst or self
-	dst:removeObject(inven, item, true) -- no_unstack flag need to get remaining stack if needed
-	local ro = self:wearObject(o, true, true)
-	if ro then
-		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end
-		if self:attr("quick_wear_takeoff") then self:setEffect(self.EFF_SWIFT_HANDS_CD, 1, {}) self.tmp[self.EFF_SWIFT_HANDS_CD].dur = 0 end
-		if type(ro) == "table" then dst:addObject(inven, ro) end
-	elseif not ro then
-		dst:addObject(inven, o)
-	end
-	dst:sortInven()
-	self:actorCheckSustains()
-	self.changed = true
 end
 
 --- wear an object from an inventory

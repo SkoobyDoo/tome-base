@@ -100,10 +100,8 @@ function _M:use(item)
 	elseif act == "debug-inventory" then
 		local d
 		local actor = item.actor
-game.log("actor = %s", tostring(actor and actor.name))
 		d = item.actor:showEquipInven(item.actor.name..": Inventory", nil, function(o, inven, item, button, event)
 			if not o then return end
---			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", item.actor, o, item, inven, function(_, _, _, stop)
 			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", actor, o, item, inven, function(_, _, _, stop)
 				d:generate()
 				d:generateList()
@@ -111,17 +109,6 @@ game.log("actor = %s", tostring(actor and actor.name))
 			end)
 			game:registerDialog(ud)
 		end)
---	elseif act == "debug-inventory" then
---		local d
---		d = item.actor:showEquipInven(item.actor.name..": Inventory", nil, function(o, inven, item, button, event)
---			if not o then return end
---			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", item.actor, o, item, inven, function(_, _, _, stop)
---				d:generate()
---				d:generateList()
---				if stop then self:unregisterDialog(d) end
---			end)
---			self:registerDialog(ud)
---		end)
 	end
 end
 
