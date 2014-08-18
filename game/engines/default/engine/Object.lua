@@ -132,7 +132,7 @@ end
 --- Adds an object to the stack
 -- @param o = object to stack onto self
 -- @param force boolean to stack unstackable objects
--- @param num = maximum number stacked objects to move
+-- @param num = maximum number of stacked objects to move
 -- @return true if stacking worked or false if not, and boolean if all of the stack was moved
 function _M:stack(o, force, num)
 	local last = true
@@ -173,8 +173,9 @@ function _M:unstack(num)
 end
 
 --- Applies a function to all items of the stack
+--  stops after fct(so, i) returns true
 function _M:forAllStack(fct)
-	fct(self)
+	if fct(self) then return end
 	if not self.stacked then return end
 	for i, so in ipairs(self.stacked) do
 		if fct(so, i) then break end

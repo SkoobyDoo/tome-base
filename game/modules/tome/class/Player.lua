@@ -1395,6 +1395,7 @@ end
 
 --- Notify of object pickup
 function _M:on_pickup_object(o)
+game.logSeen(self, "Player on_pickup_object %s[%d] for %s[%d]", self.name, self.uid, o.name, o.uid)
 	if self:attr("auto_id") and o:getPowerRank() <= self.auto_id then
 		o:identify(true)
 	end

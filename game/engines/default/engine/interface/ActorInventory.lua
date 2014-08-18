@@ -111,7 +111,7 @@ end
 -- @param inven_id = inventory id to add to
 -- @param o = object to add
 -- @param no_unstack = boolean to prevent unstacking the object to be added
--- @return false if the object could not be added or true, inventory index it was moved to, and remaining stack if any or false
+-- @return false if the object could not be added or true, inventory index it was moved to, remaining stack if any or false
 function _M:addObject(inven_id, o, no_unstack)
 	local inven = self:getInven(inven_id)
 	local slot
@@ -173,7 +173,7 @@ game.logSeen(self, " addObject to slot %d: remaining stack(%s): %s last = %s", t
 end
 
 --- Returns the position of an item in the given inventory, or nil
-function _M:itemPosition(inven, o)
+function _M:itemPositionOld(inven, o)
 	inven = self:getInven(inven)
 	for i, p in ipairs(inven) do
 		local found = nil
@@ -185,8 +185,29 @@ function _M:itemPosition(inven, o)
 	return nil
 end
 
+-- reference by UID?
+
+--- Returns the position of an item in the given inventory, or nil
+-- @param by_reference set true to match by exact (memory) reference, otherwise matches by o.name
+function _M:itemPosition(inven, o, by_reference)
+	inven = self:getInven(inven)
+--print("trying")
+	local found, pos = nil, nil
+	for i, p in ipairs(inven) do
+		p:forAllStack(function(so, j)
+--print(so, j)
+--print(("checking slot %d[%s], %s vs %s"):format(i, tostring(j), tostring(so), tostring(o)))
+			if (not by_reference and (so.name == o.name) or (so == o)) then
+				found = i pos = j return true
+			end
+		end)
+		if found then return found, pos end
+	end
+	return nil
+end
+
 --- Picks an object from the floor
-function _M:pickupFloor(i, vocal, no_sort)
+function _M:pickupFloorOld(i, vocal, no_sort)
 	if not self:getInven(self.INVEN_INVEN) then return end
 	local o = game.level.map:getObject(self.x, self.y, i)
 	if o then
@@ -219,8 +240,8 @@ end
 -- @param vocal = boolean to post messages to log
 -- @param no_sort = boolen to suppress automatic sorting of inventory
 --	puts picked up objects in self.INVEN_INVEN
--- @return the object picked up (from self.INVEN_INVEN) or true if o:on_prepickup(i) returns true (not "skip") or nil
---	checks obj.on_pickup and self.on_pickup_object functions after pickup (includes stacks)
+-- @return the object picked up (or stack added to) or true if o:on_prepickup(i) returns true (not "skip") or nil
+--	checks obj:on_pickup(who, num) and self:on_pickup_object(obj, num) functions after pickup (includes stacks)
 function _M:pickupFloor(i, vocal, no_sort)
 	local inven = self:getInven(self.INVEN_INVEN)
 	if not inven then return end
@@ -233,26 +254,99 @@ function _M:pickupFloor(i, vocal, no_sort)
 			local num = o:getNumber()
 			local ok, slot, ro = self:addObject(self.INVEN_INVEN, o)
 			if ok then
-				local newo, part = inven[slot], "" -- get exact object added or stack (in case of duplicates)
+--				local newo, part = inven[slot], "" -- get exact object added or stack (in case of duplicates)
+				local newo = inven[slot] -- get exact object added or stack (resolves duplicates)
 				game.level.map:removeObject(self.x, self.y, i)
-game.logSeen(self, "o = %s, newo = %s",tostring(o), tostring(newo))
+game.logSeen(self, "o = %s, newo = %s, ro= %s",tostring(o), tostring(newo),tostring(ro))
 				if ro then -- return remaining stack to floor
+-- add extra stack to inventory? (no - to be handled by module code)
 					game.level.map:addObject(self.x, self.y, ro)
 					num = num - ro:getNumber()
-					part = "partially"
+--					part = "partially"
 				end
 --				o = inven[slot] -- get object added or stack it was added to (in case of duplicates)
 				if not no_sort then self:sortInven(self.INVEN_INVEN) end
-				-- Note: applies to whole stack including already carried
-				newo:check("on_pickup", self)
-				self:check("on_pickup_object", newo)
---				o:check("on_pickup", self)
---				self:check("on_pickup_object", o)
+				-- Apply checks to whole stack (including already carried) assuming homogeneous stack
+				-- num added passed to functions to allow checks on part of the stack
+				newo:check("on_pickup", self, num)
+				self:check("on_pickup_object", newo, num)
+
+--game.logSeen(self, "check functions on o = %s [%d]",tostring(o), o:getNumber())
+				-- Apply to object picked up or remaining stack on floor
+--				o:check("on_pickup", self, num)
+--				self:check("on_pickup_object", o, num)
+
 --				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, o) or 1)
-				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo) or 1)
+--				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo) or 1)
+				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo, true) or 1)
 --				if vocal then game.logSeen(self, "%s picks up (%s.): %s.", self.name:capitalize(), letter, o:getName{do_color=true}) end
-				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", newo:getName{do_color=true, no_count = true}) end
+--				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", newo:getName{do_color=true, no_count = true}) end
+				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", o:getName{do_color=true, no_count = true}) end
 				return newo
+--				return o
+			else
+--				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), name) end
+				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), o:getName{do_color=true}) end
+				return
+			end
+		elseif prepickup == "skip" then
+			return
+		else
+			return true
+		end
+	else
+		if vocal then game.logSeen(self, "There is nothing to pick up here.") end
+	end
+end
+
+--- Pick up an object from the floor
+-- @param i = object position on map at self.x, self.y
+-- @param vocal = boolean to post messages to log
+-- @param no_sort = boolen to suppress automatic sorting of inventory
+--	puts picked up objects in self.INVEN_INVEN
+-- @return the object picked up (or stack added to) or true if o:on_prepickup(i) returns true (not "skip") or nil
+--	checks obj.on_pickup and self.on_pickup_object functions after pickup (includes stacks)
+function _M:pickupFloorAlt1(i, vocal, no_sort)
+	local inven = self:getInven(self.INVEN_INVEN)
+	if not inven then return end
+	local o = game.level.map:getObject(self.x, self.y, i)
+	if o then
+		local prepickup = o:check("on_prepickup", self, i)
+		if not prepickup then
+--			local name = o:getName{do_color=true}
+--			local name, num = o:getName{do_color=true}, o:getNumber()
+			local num = o:getNumber()
+			local ok, slot, ro = self:addObject(self.INVEN_INVEN, o)
+			if ok then
+--				local newo, part = inven[slot], "" -- get exact object added or stack (in case of duplicates)
+				local newo = inven[slot] -- get exact object added or stack (resolves duplicates)
+				game.level.map:removeObject(self.x, self.y, i)
+game.logSeen(self, "o = %s, newo = %s, ro= %s",tostring(o), tostring(newo),tostring(ro))
+				if ro then -- return remaining stack to floor
+-- add extra stack to inventory? (no - only applies if inven is full)
+					game.level.map:addObject(self.x, self.y, ro)
+					num = num - ro:getNumber()
+--					part = "partially"
+				end
+--				o = inven[slot] -- get object added or stack it was added to (in case of duplicates)
+				if not no_sort then self:sortInven(self.INVEN_INVEN) end
+				-- Apply checks to whole stack (including already carried) assuming homogeneous stack
+				newo:check("on_pickup", self, num)
+				self:check("on_pickup_object", newo, num)
+
+--game.logSeen(self, "check functions on o = %s [%d]",tostring(o), o:getNumber())
+				-- Apply to object picked up or remaining stack on floor
+--				o:check("on_pickup", self, num)
+--				self:check("on_pickup_object", o, num)
+
+--				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, o) or 1)
+--				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo) or 1)
+				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo, true) or 1)
+--				if vocal then game.logSeen(self, "%s picks up (%s.): %s.", self.name:capitalize(), letter, o:getName{do_color=true}) end
+--				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", newo:getName{do_color=true, no_count = true}) end
+				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", o:getName{do_color=true, no_count = true}) end
+				return newo
+--				return o
 			else
 --				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), name) end
 				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), o:getName{do_color=true}) end
@@ -273,7 +367,7 @@ end
 -- @param vocal = boolean set true to post messages to log
 -- @param no_sort = boolen to suppress automatic sorting of inventory
 --	puts picked up objects in self.INVEN_INVEN
-function _M:pickupFloorAlt(i, vocal, no_sort)
+function _M:pickupFloorAlt2(i, vocal, no_sort)
 	local inven = self:getInven(self.INVEN_INVEN)
 	if not inven then return end
 	local o = game.level.map:getObject(self.x, self.y, i)

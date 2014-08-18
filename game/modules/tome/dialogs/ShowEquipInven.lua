@@ -240,6 +240,7 @@ end
 
 function _M:unload()
 	for inven_id = 1, #self.inven_actor.inven_def do if self.inven_actor.inven[inven_id] then for item, o in ipairs(self.inven_actor.inven[inven_id]) do o.__new_pickup = nil end end end
+	-- forAllStack call to clear .__new_pickup
 end
 
 function _M:updateTitle(title)
