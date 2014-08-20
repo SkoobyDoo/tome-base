@@ -91,6 +91,7 @@ _M.temporary_values_conf.force_use_resist = "last"
 _M.temporary_values_conf.force_use_resist_percent = "last"
 _M.temporary_values_conf.all_damage_convert = "last"
 _M.temporary_values_conf.all_damage_convert_percent = "last"
+_M.temporary_values_conf.force_melee_damtype = "last"
 
 -- AI
 _M.temporary_values_conf.ai_move = "last"
@@ -3561,7 +3562,9 @@ function _M:updateModdableTile()
 		end
 	end
 
-	add[#add+1] = {image = base..(self.moddable_tile_base or "base_01.png")}
+	local basebody = self.moddable_tile_base or "base_01.png"
+	if self.moddable_tile_base_alter then basebody = self:moddable_tile_base_alter(basebody) end
+	add[#add+1] = {image = base..basebody}
 
 	if not self:attr("disarmed") then
 		i = self.inven[self.INVEN_MAINHAND]; if i and i[1] and i[1].moddable_tile_back then
@@ -6205,7 +6208,6 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 	local forbid = wear_o:check("on_tinker", base_o, self)
 	if wear_o.object_tinker then
 		for k, e in pairs(wear_o.object_tinker) do
-			table.print(e)
 			wear_o.tinkered[k] = base_o:addTemporaryValue(k, e)
 		end
 	end
