@@ -1139,10 +1139,11 @@ function _M:playerPickup()
 		end)
 	else
 		local o = self:pickupFloor(1, true)
-		self:sortInven()
+--		self:sortInven()
 		if o and type(o) == "table" then
 			self:useEnergy()
 			o.__new_pickup = true
+--game.logSeen(self, "playerPickup: %s picks up %s[%s]", self.name:capitalize(), o:getName{do_color=true}, tostring(o))
 		end
 		self.changed = true
 	end

@@ -151,6 +151,7 @@ function _M:transfer(src, dest, item, nb)
 	src:sortInven(src_inven)
 	dest:sortInven(dest_inven)
 end
+
 --- assumes buyer has room
 function _M:doBuy(who, o, item, nb, store_dialog)
 	nb = math.min(nb, o:getNumber())

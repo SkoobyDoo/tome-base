@@ -6064,7 +6064,6 @@ end
 --	@param simple set true to skip equipment takeoff checks and energy use
 --	@param dst = actor to receive object (in dst.INVEN_INVEN)
 function _M:doTakeoff(inven, item, o, simple, dst)
---	if self.no_inventory_access then return end
 	dst = dst or self
 game.log("  doTakeoff %s:inven = %s(%s), item = %s", self.name, tostring(inven.name), tostring(inven.max), tostring(item))
 	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
