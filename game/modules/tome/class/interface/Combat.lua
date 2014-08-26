@@ -1061,6 +1061,10 @@ _M.weapon_talents = {
 }
 
 --- Static!
+-- Training Talents can have the following fields:
+-- getMasteryPriority(self, t, kind) - Only the talent with the highest is used. Defaults to the talent level.
+-- getDamage(self, t, kind) - Extra physical power granted. Defaults to level * 10.
+-- getPercentInc(self, t, kind) - Percentage increase to damage overall. Defaults to sqrt(level / 5) / 2.
 function _M:addCombatTraining(kind, tid)
 	local wt = _M.weapon_talents
 	if not wt[kind] then wt[kind] = tid return end
@@ -1079,35 +1083,42 @@ function _M:combatGetTraining(weapon)
 	if not weapon.talented then return nil end
 	if not _M.weapon_talents[weapon.talented] then return nil end
 	if type(_M.weapon_talents[weapon.talented]) == "table" then
-		local ktid, max = _M.weapon_talents[weapon.talented][1], self:getTalentLevel(_M.weapon_talents[weapon.talented][1])
-		for i, tid in ipairs(_M.weapon_talents[weapon.talented]) do
+		local get_priority = function(tid)
+			local t = self:getTalentFromId(tid)
+			if t.getMasteryPriority then return util.getval(t.getMasteryPriority, self, t, weapon.talented) end
+			return self:getTalentLevel(t)
+		end
+		local max_tid -- = _M.weapon_talents[weapon.talented][1]
+		local max_priority = -math.huge -- get_priority(max_tid)
+		for _, tid in ipairs(_M.weapon_talents[weapon.talented]) do
 			if self:knowTalent(tid) then
-				if self:getTalentLevel(tid) > max then
-					ktid = tid
-					max = self:getTalentLevel(tid)
+				local priority = get_priority(tid)
+				if priority > max_priority then
+					max_tid = tid
+					max_priority = priority
 				end
 			end
 		end
-		return self:getTalentFromId(ktid)
+		return self:getTalentFromId(max_tid)
 	else
 		return self:getTalentFromId(_M.weapon_talents[weapon.talented])
 	end
 end
 
---- Checks weapon training
-function _M:combatCheckTraining(weapon)
-	if not weapon then return 0 end
-	if not weapon.talented then return 0 end
-	if not _M.weapon_talents[weapon.talented] then return 0 end
-	if type(_M.weapon_talents[weapon.talented]) == "table" then
-		local max = 0
-		for i, tid in ipairs(_M.weapon_talents[weapon.talented]) do
-			max = math.max(max, self:getTalentLevel(tid))
-		end
-		return max
-	else
-		return self:getTalentLevel(_M.weapon_talents[weapon.talented])
-	end
+-- Gets the added damage for a weapon based on training.
+function _M:combatTrainingDamage(weapon)
+	local t = self:combatGetTraining(weapon)
+	if not t then return 0 end
+	if t.getDamage then return util.getval(t.getDamage, self, t, weapon.talented) end
+	return self:getTalentLevel(t) * 10
+end
+
+-- Gets the percent increase for a weapon based on training.
+function _M:combatTrainingPercentInc(weapon)
+	local t = self:combatGetTraining(weapon)
+	if not t then return 0 end
+	if t.getPercentInc then return util.getval(t.getPercentInc, self, t, weapon.talented) end
+	return math.sqrt(self:getTalentLevel(t) / 5) / 2
 end
 
 --- Gets the defense
@@ -1481,22 +1492,46 @@ function _M:combatStatLimit(stat, limit, low, high)
 	end
 end
 
+--- Gets the dammod table for a given weapon.
+function _M:getDammod(combat)
+	combat = combat or self.combat or {}
+
+	local dammod = table.clone(combat.dammod or {str = 0.6}, true)
+
+	local sub = function(from, to)
+		dammod[to] = (dammod[from] or 0) + (dammod[to] or 0)
+		dammod[from] = nil
+	end
+
+	if combat.talented == 'knife' and self:knowTalent('T_LETHALITY') then sub('str', 'cun') end
+	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
+	if self:attr 'use_psi_combat' then
+		sub('str', 'wil')
+		sub('dex', 'cun')
+	end
+
+	-- Add stuff like lethality here.
+	local hd = {"Combat:getDammod:subs", combat=combat, dammod=dammod, sub=sub}
+	if self:triggerHook(hd) then dammod = hd.dammod end
+
+	local add = function(stat, val)
+		dammod[stat] = (dammod[stat] or 0) + val
+	end
+
+	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.3) end
+	if self:knowTalent(self.T_ARCANE_MIGHT) then add('mag', 0.5) end
+
+	return dammod
+end
+
 --- Gets the damage
 function _M:combatDamage(weapon, adddammod)
 	weapon = weapon or self.combat or {}
 
-	local sub_cun_to_str = false
-	if weapon.talented and weapon.talented == "knife" and self:knowTalent(Talents.T_LETHALITY) then sub_cun_to_str = true end
-	local sub_mag_to_str = false
-	if weapon.talented and self:knowTalent(Talents.T_STRENGTH_OF_PURPOSE) then sub_mag_to_str = true end
+	local dammod = self:getDammod(weapon)
 
 	local totstat = 0
-	local dammod = weapon.dammod or {str=0.6}
 	for stat, mod in pairs(dammod) do
-		if sub_cun_to_str and stat == "str" then stat = "cun" end
-		if sub_mag_to_str and stat == "str" then stat = "mag" end
-		if self:attr("use_psi_combat") and stat == "str" then stat = "wil" end
-		if self:attr("use_psi_combat") and stat == "dex" then stat = "cun" end
 		totstat = totstat + self:getStat(stat) * mod
 	end
 	if adddammod then
@@ -1509,15 +1544,7 @@ function _M:combatDamage(weapon, adddammod)
 		totstat = totstat * (0.8 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	end
 
-	if self:knowTalent(self.T_SUPERPOWER) then
-		totstat = totstat + self:getStat("wil") * 0.3
-	end
-
-	if self:knowTalent(self.T_ARCANE_MIGHT) then
-		totstat = totstat + self:getStat("mag") * 0.5
-	end
-
-	local talented_mod = math.sqrt(self:combatCheckTraining(weapon) / 5) / 2 + 1
+	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
 
 	local power = math.max((weapon.dam or 1), 1)
 	power = (math.sqrt(power / 10) - 1) * 0.5 + 1
@@ -1550,7 +1577,7 @@ function _M:combatPhysicalpower(mod, weapon, add)
 		if inven and inven[1] then weapon = self:getObjectCombat(inven[1], "mainhand") else weapon = self.combat end
 	end
 
-	add = add + 10 * self:combatCheckTraining(weapon)
+	add = add + self:combatTrainingDamage(weapon)
 
 	local str = self:getStr()
 	if self:knowTalent(Talents.T_STRENGTH_OF_PURPOSE) then
