@@ -6031,13 +6031,11 @@ function _M:doWear(inven, item, o, dst)
 	dst = dst or self
 	dst:removeObject(inven, item, true)
 	local ro, rs = self:wearObject(o, true, true) -- removed object and remaining stack if any
-game.logSeen(self, "doWear for %s (from inven %s[%d}): %s, ro=%s, rs=%s", self.name, inven, item, o:getName{do_color = true},tostring(type(ro) == "table" and ro:getName{do_color=true} or ro), tostring(type(rs) == "table" and rs:getName{do_color=true}) or rs)
 	local added, slot
 	if ro then
 		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end
 		if self:attr("quick_wear_takeoff") then self:setEffect(self.EFF_SWIFT_HANDS_CD, 1, {}) self.tmp[self.EFF_SWIFT_HANDS_CD].dur = 0 end
 		if type(ro) == "table" then dst:addObject(inven, ro, true) end -- always give full stack back
---	elseif not ro then
 	else -- failed, add object back
 		dst:addObject(inven, o, true)
 	end
@@ -6065,7 +6063,6 @@ end
 --	@param dst = actor to receive object (in dst.INVEN_INVEN)
 function _M:doTakeoff(inven, item, o, simple, dst)
 	dst = dst or self
-game.log("  doTakeoff %s:inven = %s(%s), item = %s", self.name, tostring(inven.name), tostring(inven.max), tostring(item))
 	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
 	if self:takeoffObject(inven, item) then
 		dst:addObject(dst.INVEN_INVEN, o, true) --note: moves a whole stack

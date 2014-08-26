@@ -108,7 +108,7 @@ function _M:canAddToInven(id)
 end
 
 --- Get stacking limit for an inventory
---  @param id inventory id or table (stack_limit in inventory table takes precedence
+--  @param id inventory id or table (stack_limit in inventory table takes precedence)
 function _M:invenStackLimit(id)
 	local inven = self:getInven(id)
 	return inven.stack_limit or self.inven_def[inven.id].stack_limit or math.huge
@@ -124,16 +124,13 @@ function _M:addObject(inven_id, o, no_unstack)
 	local inven = self:getInven(inven_id)
 	local slot
 	local stack, rs, ok
---	local stackable, stack_limit = o and o:stackable(), inven.stack_limit or math.huge
 	local stackable, stack_limit = o and o:stackable(), self:invenStackLimit(inven_id)
 
-game.logSeen(self, "addObject: adding to %s inventory %s (stack_limit %s, no_unstack = %s): %s", self.name, inven_id, tostring(stack_limit), tostring(no_unstack), o:getName{do_color=true})
 	-- No room, stackable ?
 	if #inven >= inven.max then
 		if stackable and not no_unstack then -- try to find a stack to add to
 			for i, obj in ipairs(inven) do
 				if o:canStack(obj) and obj:getNumber() < stack_limit then
-game.logSeen(self, "found object stack %s[%d]: %s", inven_id, i, obj.name)
 					slot = i
 					stack = obj break -- only room left
 				end
@@ -151,11 +148,9 @@ game.logSeen(self, "found object stack %s[%d]: %s", inven_id, i, obj.name)
 		local last = true
 		rs = true
 		if stack then -- add to stack already found
-game.logSeen(self, "moving [%d] %s to stack %s", stack_limit - stack:getNumber(), o:getName{do_color=true}, stack:getName{do_color=true})
 			ok, last = stack:stack(o, false, stack_limit - stack:getNumber())
 		elseif o:getNumber() > stack_limit then -- stack too big - unstack some before adding
 			stack, last = o:unstack(o:getNumber() - stack_limit)
-game.logSeen(self, "created new stack %s from %s ", stack:getName{do_color=true}, o:getName{do_color=true})
 			table.insert(inven, o)
 			o = stack
 		else
@@ -175,8 +170,6 @@ game.logSeen(self, "created new stack %s from %s ", stack:getName{do_color=true}
 
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
-game.logSeen(self, " addObject to slot %d: remaining stack(%s): %s last = %s", tostring(slot or #inven), tostring(rs), o:getName{do_color=true},  tostring(last))
---	return true, #inven, rs and o
 	return true, slot or #inven, rs and o
 end
 
@@ -219,12 +212,9 @@ function _M:pickupFloor(i, vocal, no_sort)
 			if ok then
 				local newo = inven[slot] -- get exact object added or stack (resolves duplicates)
 				game.level.map:removeObject(self.x, self.y, i)
-game.logSeen(self, "o = %s, newo = %s, ro= %s",tostring(o), tostring(newo),tostring(ro))
 				if ro then -- return remaining stack to floor
--- add extra stack to inventory? (no - to be handled by module code)
 					game.level.map:addObject(self.x, self.y, ro)
 					num = num - ro:getNumber()
---					part = "partially"
 				end
 				if not no_sort then self:sortInven(self.INVEN_INVEN) end
 				-- Apply checks to whole stack (including already carried) assuming homogeneous stack
@@ -232,22 +222,12 @@ game.logSeen(self, "o = %s, newo = %s, ro= %s",tostring(o), tostring(newo),tostr
 				newo:check("on_pickup", self, num)
 				self:check("on_pickup_object", newo, num)
 
---game.logSeen(self, "check functions on o = %s [%d]",tostring(o), o:getNumber())
-				-- Apply to object picked up or remaining stack on floor
---				o:check("on_pickup", self, num)
---				self:check("on_pickup_object", o, num)
-
---				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, o) or 1)
 				slot = self:itemPosition(self.INVEN_INVEN, newo, true) or 1
 				local letter = ShowPickupFloor:makeKeyChar(slot)
---				local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, newo, true) or 1)
---				if vocal then game.logSeen(self, "%s picks up (%s.): %s.", self.name:capitalize(), letter, o:getName{do_color=true}) end
+
 				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", o:getName{do_color=true, no_count = true}) end
---				return newo
 				return inven[slot], num
---				return o
 			else
---				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), name) end
 				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), o:getName{do_color=true}) end
 				return
 			end
@@ -275,7 +255,6 @@ function _M:removeObject(inven_id, item, no_unstack)
 	local o, finish = inven[item], true
 
 	if o:check("on_preremoveobject", self, inven) then return false, true end
-game.logSeen(self, "removeObject: removing from %s inventory %s [%d]: %s (no_unstack = %s)", self.name, inven_id, item, o:getName{do_color=true}, tostring(no_unstack))
 	if no_unstack then
 		if type(no_unstack) == "number" then
 			o, finish = o:unstack(no_unstack)
@@ -489,17 +468,12 @@ function _M:wearObject(o, replace, vocal)
 		if vocal then game.logSeen(self, "%s wears(offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
 		added, slot, stack = self:addObject(self:getInven(offslot), o)
 		return added, stack
---game.logSeen(self, " No replace: %s is stackable", o.name)
 	elseif replace then -- no room but replacement is allowed
 		if stackable then 
-game.logSeen(self, "  Replace allowed: %s is stackable", o.name)
 		end
 		local ro = self:removeObject(inven, 1, true)
 		added, slot, stack = self:addObject(inven, o)
---		if vocal then game.logSeen(self, "%s wears(replacing): %s.", self.name:capitalize(), o:getName{do_color=true}) end
---		if vocal then game.logSeen(self, "%s wears(replacing %s): %s.", self.name:capitalize(), ro:getName{do_color=true}, (self:getInven(inven)[slot] or o):getName{do_color=true}) end
 		if vocal then game.logSeen(self, "%s wears(replacing %s): %s.", self.name:capitalize(), ro:getName{do_color=true}, o:getName{do_color=true}) end
---		if o:stack(ro) then ro = true end
 		if stack and ro:stack(stack) then -- stack remaining stack with old if possible (ignores stack limits)
 			stack = nil
 		end
@@ -559,7 +533,7 @@ function _M:onTakeoff(o, inven_id)
 end
 
 --- Re-order inventory, sorting and stacking it
--- sort order is type > subtype > name > getNumber
+-- sort order is type > subtype > name > getNumber()
 function _M:sortInven(inven)
 	if not inven then inven = self.inven[self.INVEN_INVEN] end
 	inven = self:getInven(inven)
