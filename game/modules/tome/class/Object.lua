@@ -900,8 +900,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "combat_armor", "%+d", "Armour: ")
 		compare_fields(w, compare_with, field, "combat_armor_hardiness", "%+d%%", "Armour Hardiness: ")
 		compare_scaled(w, compare_with, field, "combat_def", {"combatDefense", true}, "%+d (%+d effective)", "Defense: ")
-		compare_scaled(w, compare_with, field, "combat_def_ranged", {"combatDefenseRanged", true}, "%+d (%+d effective)", "Defense: ")
-		compare_fields(w, compare_with, field, "combat_def_ranged", "%+d", "Ranged Defense: ")
+		compare_scaled(w, compare_with, field, "combat_def_ranged", {"combatDefenseRanged", true}, "%+d (%+d effective)", "Ranged Defense: ")
 
 		compare_fields(w, compare_with, field, "fatigue", "%+d%%", "Fatigue: ", 1, true, true)
 
