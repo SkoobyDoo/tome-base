@@ -344,6 +344,15 @@ function _M:generateListUi()
 		if game.player.updateMainShader then game.player:updateMainShader() end
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Toggles advanced weapon statistics display.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Advanced Weapon Statistics#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.advanced_weapon_stats and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.advanced_weapon_stats = not config.settings.tome.advanced_weapon_stats
+		game:saveSettings("tome.advanced_weapon_stats", ("tome.advanced_weapon_stats = %s\n"):format(tostring(config.settings.tome.advanced_weapon_stats)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 

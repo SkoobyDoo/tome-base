@@ -66,7 +66,7 @@ function _M:getRequirementDesc(who)
 		if self.require.stat and self.require.stat.str then
 			self.require.stat.mag, self.require.stat.str = self.require.stat.str, nil
 		end
-		
+
 		local desc = base_getRequirementDesc(self, who)
 
 		self.require = oldreq
@@ -171,6 +171,13 @@ end
 
 --- Describes an attribute, to expand object name
 function _M:descAttribute(attr)
+	local power = function(c)
+		if config.settings.tome.advanced_weapon_stats then
+			return math.floor(Combat.combatDamagePower({}, self.combat)*1000).." power"
+		else
+			return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power"
+		end
+	end
 	if attr == "MASTERY" then
 		local tms = {}
 		for ttn, i in pairs(self.wielder.talents_types_mastery) do
@@ -194,20 +201,20 @@ function _M:descAttribute(attr)
 		return ("%s%0.2f/turn"):format(i > 0 and "+" or "-", math.abs(i))
 	elseif attr == "COMBAT" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..(c.apr or 0).." apr"
+		return power(c)..", "..(c.apr or 0).." apr"
 	elseif attr == "COMBAT_AMMO" then
 		local c = self.combat
-		return c.shots_left.."/"..math.floor(c.capacity)..", "..c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..(c.apr or 0).." apr"
+		return c.shots_left.."/"..math.floor(c.capacity)..", "..power(c)..", "..(c.apr or 0).." apr"
 	elseif attr == "COMBAT_DAMTYPE" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.damtype).name.." damage"
+		return power(c)..", "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.damtype).name.." damage"
 	elseif attr == "COMBAT_ELEMENT" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.element or DamageType.PHYSICAL).name.." element"
+		return power(c)..", "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.element or DamageType.PHYSICAL).name.." element"
 	elseif attr == "SHIELD" then
 		local c = self.special_combat
 		if c and (game.player:knowTalentType("technique/shield-offense") or game.player:knowTalentType("technique/shield-defense") or game.player:attr("show_shield_combat")) then
-			return c.dam.." dam, "..c.block.." block"
+			return power(c)..", "..c.block.." block"
 		else
 			return c.block.." block"
 		end
@@ -311,7 +318,7 @@ function _M:getName(t)
 	if not t.no_add_name and (self.been_reshaped or self.been_imbued) then
 		name = (type(self.been_reshaped) == "string" and self.been_reshaped or "") .. name .. (type(self.been_imbued) == "string" and self.been_imbued or "")
 	end
-	
+
 	if not self:isIdentified() and not t.force_id and self:getUnidentifiedName() then name = self:getUnidentifiedName() end
 
 	-- To extend later
@@ -580,7 +587,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 			else
 				power_diff = ("(%s)"):format(power_diff)
 			end
-			desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+			if config.settings.tome.advanced_weapon_stats then
+				desc:add(("Power: %4d  Range: %.1fx"):format(use_actor:combatDamagePower(combat, add_table.dam) * 1000, use_actor:combatDamageRange(combat, add_table.damrange)))
+			else
+				desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+			end
 			desc:merge(power_diff:toTString())
 			desc:add(true)
 			desc:add(("Uses stat%s: %s"):format(#dm > 1 and "s" or "",table.concat(dm, ', ')), true)
@@ -1089,7 +1100,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			desc:add(("Talent master%s: "):format(any_mastery > 1 and "ies" or "y"))
 			for ttn, ttid in pairs(masteries) do
 				local tt = Talents.talents_types_def[ttn]
-				if tt then				
+				if tt then
 					local cat = tt.type:gsub("/.*", "")
 					local name = cat:capitalize().." / "..tt.name:capitalize()
 					local diff = (ttid[2] or 0) - (ttid[1] or 0)

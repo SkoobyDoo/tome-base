@@ -1311,9 +1311,9 @@ function _M:combatCrit(weapon)
 end
 
 --- Gets the damage range
-function _M:combatDamageRange(weapon)
+function _M:combatDamageRange(weapon, add)
 	weapon = weapon or self.combat or {}
-	return (self.combat_damrange or 0) + (weapon.damrange or 1.1)
+	return (self.combat_damrange or 0) + (weapon.damrange or 1.1) + (add or 0)
 end
 
 --- Scale damage values
@@ -1546,10 +1546,15 @@ function _M:combatDamage(weapon, adddammod)
 
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
 
-	local power = math.max((weapon.dam or 1), 1)
-	power = (math.sqrt(power / 10) - 1) * 0.5 + 1
+	local power = self:combatDamagePower(weapon)
 --	print(("[COMBAT DAMAGE] power(%f) totstat(%f) talent_mod(%f)"):format(power, totstat, talented_mod))
 	return self:rescaleDamage(0.3*(self:combatPhysicalpower(nil, weapon) + totstat) * power * talented_mod)
+end
+
+--- Gets the 'power' portion of the damage
+function _M:combatDamagePower(weapon_combat, add)
+	local power = math.max((weapon_combat.dam or 1) + (add or 0), 1)
+	return (math.sqrt(power / 10) - 1) * 0.5 + 1
 end
 
 function _M:combatPhysicalpower(mod, weapon, add)
