@@ -28,8 +28,14 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 3, 6.9, 5.5)) end, -- Limit >=3
 	tactical = { ATTACK = { ACID = 2 } },
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5.5, 7.5)) end,
-	on_learn = function(self, t) self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 1 end,
-	on_unlearn = function(self, t) self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) - 1 end,
+	on_learn = function(self, t) 
+		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 1 
+		self.combat_mindpower = self.combat_mindpower + 4
+	end,
+	on_unlearn = function(self, t) 
+		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) - 1 
+		self.combat_mindpower = self.combat_mindpower - 4
+	end,
 	direct_hit = function(self, t) if self:getTalentLevel(t) >= 5 then return true else return false end end,
 	requires_target = true,
 	target = function(self, t)
@@ -58,6 +64,7 @@ newTalent{
 		The target will take %0.2f Mindpower-based acid damage.
 		Enemies struck have a 25%% chance to be Disarmed for three turns, as their weapon is rendered useless by an acid coating.
 		At Talent Level 5, this becomes a piercing line of acid.
+		Every level in Acidic Spray additionally raises your Mindpower by 4, passively.
 		Each point in acid drake talents also increases your acid resistance by 1%%.]]):format(damDesc(self, DamageType.ACID, damage))
 	end,
 }
@@ -68,15 +75,15 @@ newTalent{
 	require = gifts_req2,
 	points = 5,
 	random_ego = "attack",
-	equilibrium = 15,
-	cooldown = 25,
+	equilibrium = 10,
+	cooldown = 15,
 	tactical = { ATTACKAREA = { ACID = 2 } },
 	range = 0,
 	on_learn = function(self, t) self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 1 end,
 	on_unlearn = function(self, t) self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) - 1 end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	requires_target = true,
-	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 70) end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 15, 70) end,
 	getDuration = function(self, t) return math.floor(self:combatScale(self:combatMindpower(0.04) + self:getTalentLevel(t)/2, 6, 0, 7.67, 5.67)) end,
 	getCorrodeDur = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.8)) end,
 	getAtk = function(self, t) return self:combatTalentMindDamage(t, 2, 20) end,
@@ -175,11 +182,14 @@ newTalent{
 	target = function(self, t)
 		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
+	getDisarm = function(self, t) 
+		return 20+self:combatTalentMindDamage(t, 10, 30) 
+	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.ACID_DISARM, self:mindCrit(self:combatTalentStatDamage(t, "str", 30, 420)))
+		self:project(tg, x, y, DamageType.ACID_DISARM, {dam=self:mindCrit(self:combatTalentStatDamage(t, "str", 30, 520)), chance=t.getDisarm(self, t),})
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "breath_acid", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
 		game:playSoundNear(self, "talents/breath")
 		
@@ -190,9 +200,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
+		local disarm = t.getDisarm(self, t)
 		return ([[You breathe acid in a frontal cone of radius %d. Any target caught in the area will take %0.2f acid damage. 
-		Enemies caught in the acid have a 25%% chance of their weapons becoming useless for three turns.
-		The damage will increase with your Strength, and the critical chance is based on your Mental crit rate.
-		Each point in acid drake talents also increases your acid resistance by 1%%.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.ACID, self:combatTalentStatDamage(t, "str", 30, 420)))
+		Enemies caught in the acid have a %d%% chance of their weapons becoming useless for three turns.
+		The damage will increase with your Strength, and the critical chance is based on your Mental crit rate. The Disarm chance is based on your Mindpower.
+		Each point in acid drake talents also increases your acid resistance by 1%%.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.ACID, self:combatTalentStatDamage(t, "str", 30, 520)), disarm)
 	end,
 }

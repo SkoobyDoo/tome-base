@@ -1034,6 +1034,29 @@ newDamageType{
 		return init_dam
 	end,
 }
+
+-- Fire damage + DOT + 25% chance of Fireflash
+newDamageType{
+	name = "stunning fire", type = "FIRE_STUN", text_color = "#LIGHT_RED#",
+	projector = function(src, x, y, type, dam)
+		local chance = 25
+		local dur = 3
+		local perc = 50
+		if _G.type(dam) == "table" then dam, dur, perc = dam.dam, dam.dur, (dam.initial or perc) end
+		local init_dam = dam * perc / 100
+		if init_dam > 0 then DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, init_dam) end
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			dam = dam - init_dam
+			target:setEffect(target.EFF_BURNING, dur, {src=src, power=dam / dur, no_ct_effect=true})
+				if rng.percent(chance) then
+					DamageType:get(DamageType.FLAMESHOCK).projector(src, x, y, DamageType.FLAMESHOCK, {dur=3, dam=15, apply_power=src:combatMindpower()})
+			end
+		end
+		return init_dam
+	end,
+}
+
 newDamageType{
 	name = "fire burn", type = "GOLEM_FIREBURN",
 	projector = function(src, x, y, type, dam)
@@ -1041,6 +1064,21 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target ~= src and target ~= src.summoner then
 			realdam = DamageType:get(DamageType.FIREBURN).projector(src, x, y, DamageType.FIREBURN, dam)
+		end
+		return realdam
+	end,
+}
+
+-- Drain Life... with fire!
+newDamageType{
+	name = "devouring flames", type = "FIRE_DRAIN", text_color = "#LIGHT_RED#",
+	projector = function(src, x, y, type, dam)
+		if _G.type(dam) == "number" then dam = {dam=dam, healfactor=0.1} end
+		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
+		local realdam = DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam.dam)
+		if target and realdam > 0 then
+			src:heal(realdam * dam.healfactor, target)
+			src:logCombat(target, "#Source# drains life from #Target#!")
 		end
 		return realdam
 	end,
@@ -1136,6 +1174,24 @@ newDamageType{
 		local realdam = DamageType:get(DamageType.COLD).projector(src, x, y, DamageType.COLD, dam)
 		if rng.percent(chance) then
 			DamageType:get(DamageType.FREEZE).projector(src, x, y, DamageType.FREEZE, {dur=2, hp=70+dam*1.5})
+		end
+		return realdam
+	end,
+}
+
+-- Cold damage + freeze chance + 20% slow
+newDamageType{
+	name = "slowing ice", type = "ICE_SLOW", text_color = "#1133F3#",
+	projector = function(src, x, y, type, dam)
+		local chance = 25
+		local target = game.level.map(x, y, Map.ACTOR)
+		if _G.type(dam) == "table" then chance, dam = dam.chance, dam.dam end
+		local realdam = DamageType:get(DamageType.COLD).projector(src, x, y, DamageType.COLD, dam)
+		if target then
+			target:setEffect(target.EFF_SLOW, 3, {power=0.2, no_ct_effect=true})
+			if rng.percent(chance) then
+				DamageType:get(DamageType.FREEZE).projector(src, x, y, DamageType.FREEZE, {dur=2, hp=70+dam*1.5})
+			end
 		end
 		return realdam
 	end,

@@ -131,7 +131,7 @@ function _M:onBuy(who, o, item, nb, before)
 	local price = self:getObjectPrice(o, "buy")
 	if who.money >= price * nb then
 		who:incMoney(- price * nb)
-		game.log("Bought: %s for %0.2f gold.", o:getName{do_color=true}, price * nb)
+		game.log("Bought: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price * nb)
 	end
 end
 
@@ -150,7 +150,7 @@ function _M:onSell(who, o, item, nb, before)
 	price = math.min(price * nb, self.store.purse * nb)
 	who:incMoney(price)
 	o:forAllStack(function(so) so.__force_store_forget = true end) -- Make sure the store does forget about it when it restocks
-	game.log("Sold: %s for %0.2f gold.", o:getName{do_color=true}, price)
+	game.log("Sold: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price)
 end
 
 --- Override the default
