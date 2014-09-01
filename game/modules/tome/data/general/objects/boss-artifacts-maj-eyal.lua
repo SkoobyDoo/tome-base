@@ -28,6 +28,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	power_source = {arcane=true},
 	define_as = "LONGSWORD_WINTERTIDE", unided_name = "glittering longsword", image="object/artifact/wintertide.png",
 	name = "Wintertide", unique=true,
+	moddable_tile = "special/%s_wintertide",
+	moddable_tile_big = true,
 	desc = [[The air seems to freeze around the blade of this sword, draining all heat from the area.
 It is said the Conclave created this weapon for their warmaster during the dark times of the first allure war.]],
 	require = { stat = { str=35 }, },
