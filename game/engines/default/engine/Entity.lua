@@ -877,19 +877,13 @@ end
 -- @param ... arguments to pass to result_attr if it is a function
 -- @return the difference, the from result, the to result
 function _M:getAttrChange(changed_attr, from, to, result_attr, ...)
-	print("GET_ATTR_CHANGE:", changed_attr, result_attr)
-
 	local temp = self:addTemporaryValue(changed_attr, from)
 	local from_result = util.getval(self[result_attr], self, ...)
 	self:removeTemporaryValue(changed_attr, temp)
 
-	print(("%s"):format(from_result))
-
 	temp = self:addTemporaryValue(changed_attr, to)
 	local to_result = util.getval(self[result_attr], self, ...)
 	self:removeTemporaryValue(changed_attr, temp)
-
-	print(("%s"):format(to_result))
 
 	return to_result - from_result, from_result, to_result
 end
