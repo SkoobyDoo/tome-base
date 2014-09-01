@@ -868,6 +868,32 @@ end
 function _M:onTemporaryValueChange(prop, v, base)
 end
 
+--- Gets the change in an attribute/function based on changing another.
+-- Measures the difference in result_attr from adding temporary values from and to to changed_attr.
+-- @param changed_attr the attribute being changed
+-- @param from the temp value added to changed_attr which we are starting from
+-- @param to the temp value added to changed_attr which we are ending on
+-- @param result_attr the result we are measuring the difference in
+-- @param ... arguments to pass to result_attr if it is a function
+-- @return the difference, the from result, the to result
+function _M:getAttrChange(changed_attr, from, to, result_attr, ...)
+	print("GET_ATTR_CHANGE:", changed_attr, result_attr)
+
+	local temp = self:addTemporaryValue(changed_attr, from)
+	local from_result = util.getval(self[result_attr], self, ...)
+	self:removeTemporaryValue(changed_attr, temp)
+
+	print(("%s"):format(from_result))
+
+	temp = self:addTemporaryValue(changed_attr, to)
+	local to_result = util.getval(self[result_attr], self, ...)
+	self:removeTemporaryValue(changed_attr, temp)
+
+	print(("%s"):format(to_result))
+
+	return to_result - from_result, from_result, to_result
+end
+
 --- Increases/decreases an attribute
 -- The attributes are just actor properties, but this ensures they are numbers and not booleans
 -- thus making them compatible with temporary values system
@@ -1002,4 +1028,3 @@ end
 function _M:checkClassification(type_str)
 	return false
 end
-
