@@ -173,7 +173,7 @@ end
 function _M:descAttribute(attr)
 	local power = function(c)
 		if config.settings.tome.advanced_weapon_stats then
-			return math.floor(Combat.combatDamagePower({}, self.combat)*1000).." power"
+			return math.floor(Combat.combatDamagePower({}, self.combat)*100).."% power"
 		else
 			return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power"
 		end
@@ -610,7 +610,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 				power_diff = ("(%s)"):format(power_diff)
 			end
 			if config.settings.tome.advanced_weapon_stats then
-				desc:add(("Power: %4d  Range: %.1fx"):format(use_actor:combatDamagePower(combat, add_table.dam) * 1000, use_actor:combatDamageRange(combat, add_table.damrange)))
+				desc:add(("Power: %3d%%  Range: %.1fx"):format(use_actor:combatDamagePower(combat, add_table.dam) * 100, use_actor:combatDamageRange(combat, add_table.damrange)))
 			else
 				desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
 			end
