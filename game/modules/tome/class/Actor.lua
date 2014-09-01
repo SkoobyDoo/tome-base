@@ -6010,7 +6010,9 @@ function _M:doDrop(inven, item, on_done, nb)
 	if nb == nil or nb >= self:getInven(inven)[item]:getNumber() then
 		self:dropFloor(inven, item, true, true)
 	else
-		for i = 1, nb do self:dropFloor(inven, item, true) end
+		local stack = self:removeObject(inven, item, nb)
+		game.logSeen(self, "%s drops on the floor: %s.", self.name:capitalize(), stack:getName{do_color=true, do_count=true})
+		game.level.map:addObject(self.x, self.y, stack)
 	end
 	self:sortInven(inven)
 	self:useEnergy()
@@ -6019,28 +6021,51 @@ function _M:doDrop(inven, item, on_done, nb)
 	if on_done then on_done() end
 end
 
+--- wear an object from an inventory
+--	@param inven = inventory id to take object from
+--	@param item = inventory slot to take from
+--	@param o = object to wear
+--	@param dst = actor holding object to be worn <self>
 function _M:doWear(inven, item, o, dst)
 	if self.no_inventory_access then return end
 	dst = dst or self
 	dst:removeObject(inven, item, true)
-	local ro = self:wearObject(o, true, true)
+	local ro, rs = self:wearObject(o, true, true) -- removed object and remaining stack if any
+	local added, slot
 	if ro then
 		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end
 		if self:attr("quick_wear_takeoff") then self:setEffect(self.EFF_SWIFT_HANDS_CD, 1, {}) self.tmp[self.EFF_SWIFT_HANDS_CD].dur = 0 end
-		if type(ro) == "table" then dst:addObject(inven, ro) end
-	elseif not ro then
-		dst:addObject(inven, o)
+		if type(ro) == "table" then dst:addObject(inven, ro, true) end -- always give full stack back
+	else -- failed, add object back
+		dst:addObject(inven, o, true)
+	end
+	if type(rs) == "table" then
+		local rrs
+		repeat -- handles a case of stacking limits causing part of a stack to be discarded
+			rrs = rs
+			added, slot, rs = dst:addObject(inven, rs)
+		until not added or not rs
+		if not added then
+			game.logPlayer(self, "You had to drop %s due to lack of space.", rrs:getName{do_color = true})
+			if rrs and not game.zone.wilderness then game.level.map:addObject(self.x, self.y, rrs) end -- extra stack discarded in wilderness
+		end
 	end
 	dst:sortInven()
 	self:actorCheckSustains()
 	self.changed = true
 end
 
+---	Take off an item
+--	@param inven = inven id
+--	@param item = slot to remove from
+--	@param o = object to remove
+--	@param simple set true to skip equipment takeoff checks and energy use
+--	@param dst = actor to receive object (in dst.INVEN_INVEN)
 function _M:doTakeoff(inven, item, o, simple, dst)
-	if self.no_inventory_access then return end
 	dst = dst or self
+	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
 	if self:takeoffObject(inven, item) then
-		dst:addObject(self.INVEN_INVEN, o)
+		dst:addObject(dst.INVEN_INVEN, o, true) --note: moves a whole stack
 	end
 	if not simple then
 		dst:sortInven()

@@ -239,7 +239,7 @@ function _M:use(item, button, event)
 end
 
 function _M:unload()
-	for inven_id = 1, #self.inven_actor.inven_def do if self.inven_actor.inven[inven_id] then for item, o in ipairs(self.inven_actor.inven[inven_id]) do o.__new_pickup = nil end end end
+	for inven_id = 1, #self.inven_actor.inven_def do if self.inven_actor.inven[inven_id] then for item, o in ipairs(self.inven_actor.inven[inven_id]) do o:forAllStack(function(so) so.__new_pickup = nil end) end end end
 end
 
 function _M:updateTitle(title)
