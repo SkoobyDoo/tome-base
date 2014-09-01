@@ -66,7 +66,7 @@ function _M:getRequirementDesc(who)
 		if self.require.stat and self.require.stat.str then
 			self.require.stat.mag, self.require.stat.str = self.require.stat.str, nil
 		end
-		
+
 		local desc = base_getRequirementDesc(self, who)
 
 		self.require = oldreq
@@ -311,7 +311,7 @@ function _M:getName(t)
 	if not t.no_add_name and (self.been_reshaped or self.been_imbued) then
 		name = (type(self.been_reshaped) == "string" and self.been_reshaped or "") .. name .. (type(self.been_imbued) == "string" and self.been_imbued or "")
 	end
-	
+
 	if not self:isIdentified() and not t.force_id and self:getUnidentifiedName() then name = self:getUnidentifiedName() end
 
 	-- To extend later
@@ -432,8 +432,13 @@ function _M:getTextualDesc(compare_with, use_actor)
 		local add = false
 		ret:add(text)
 		local outformatres
-		if type(outformat) == "function" then outformatres = outformat()
-		else outformatres = outformat:format(((item1[field] or 0) + (add_table[field] or 0)) * mod) end
+		local resvalue = ((item1[field] or 0) + (add_table[field] or 0)) * mod
+		if type(outformat) == "function" then
+			local unworn_base =
+				(item1.wielded and resvalue) or
+				table.get(items, 1, infield, field)
+			outformatres = outformat(resvalue, unworn_base)
+		else outformatres = outformat:format(resvalue) end
 		if isinversed then
 			ret:add(((item1[field] or 0) + (add_table[field] or 0)) > 0 and {"color","RED"} or {"color","LIGHT_GREEN"}, outformatres, {"color", "LAST"})
 		else
@@ -453,8 +458,10 @@ function _M:getTextualDesc(compare_with, use_actor)
 				add = true
 				if items[i][infield][field] ~= (item1[field] or 0) then
 					local outformatres
-					if type(outformat) == "function" then outformatres = outformat()
-					else outformatres = outformat:format(((item1[field] or 0) - items[i][infield][field]) * mod) end
+					local resvalue = ((item1[field] or 0) - items[i][infield][field]) * mod
+					if type(outformat) == "function" then
+						outformatres = outformat(resvalue, resvalue)
+					else outformatres = outformat:format(resvalue) end
 					if isdiffinversed then
 						ret:add(items[i][infield][field] < (item1[field] or 0) and {"color","RED"} or {"color","LIGHT_GREEN"}, outformatres, {"color", "LAST"})
 					else
@@ -472,6 +479,21 @@ function _M:getTextualDesc(compare_with, use_actor)
 			desc:merge(ret)
 			desc:add(true)
 		end
+	end
+
+	-- included - if we should include the value in the present total.
+	-- total_call - function to call on the actor to get the current total
+	local compare_scaled = function(item1, items, infield, change_field, results, outformat, text, included, mod, isinversed, isdiffinversed, add_table)
+		local out = function(base_change, unworn_base)
+			local from, to = 0, base_change
+			if unworn_base then
+				from = from - unworn_base
+				to = to - unworn_base
+			end
+			local scale_change = use_actor:getAttrChange(change_field, from, to, unpack(results))
+			return outformat:format(base_change, scale_change)
+		end
+		return compare_fields(item1, items, infield, change_field, out, text, mod, isinversed, isdiffinversed, add_table)
 	end
 
 	local compare_table_fields = function(item1, items, infield, field, outformat, text, kfunct, mod, isinversed, filter)
@@ -870,15 +892,15 @@ function _M:getTextualDesc(compare_with, use_actor)
 	local desc_wielder = function(w, compare_with, field)
 		w = w or {}
 		w = w[field] or {}
-		compare_fields(w, compare_with, field, "combat_atk", "%+d", "Accuracy: ")
+		compare_scaled(w, compare_with, field, "combat_atk", {"combatAttack"}, "%+d (%+d effective)", "Accuracy: ")
 		compare_fields(w, compare_with, field, "combat_apr", "%+d", "Armour penetration: ")
 		compare_fields(w, compare_with, field, "combat_physcrit", "%+.1f%%", "Physical crit. chance: ")
-		compare_fields(w, compare_with, field, "combat_dam", "%+d", "Physical power: ")
+		compare_scaled(w, compare_with, field, "combat_dam", {"combatPhysicalpower"}, "%+d (%+d effective)", "Physical power: ")
 
 		compare_fields(w, compare_with, field, "combat_armor", "%+d", "Armour: ")
 		compare_fields(w, compare_with, field, "combat_armor_hardiness", "%+d%%", "Armour Hardiness: ")
-		compare_fields(w, compare_with, field, "combat_def", "%+d", "Defense: ")
-		compare_fields(w, compare_with, field, "combat_def_ranged", "%+d", "Ranged Defense: ")
+		compare_scaled(w, compare_with, field, "combat_def", {"combatDefense", true}, "%+d (%+d effective)", "Defense: ")
+		compare_scaled(w, compare_with, field, "combat_def_ranged", {"combatDefenseRanged", true}, "%+d (%+d effective)", "Ranged Defense: ")
 
 		compare_fields(w, compare_with, field, "fatigue", "%+d%%", "Fatigue: ", 1, true, true)
 
@@ -1089,7 +1111,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			desc:add(("Talent master%s: "):format(any_mastery > 1 and "ies" or "y"))
 			for ttn, ttid in pairs(masteries) do
 				local tt = Talents.talents_types_def[ttn]
-				if tt then				
+				if tt then
 					local cat = tt.type:gsub("/.*", "")
 					local name = cat:capitalize().." / "..tt.name:capitalize()
 					local diff = (ttid[2] or 0) - (ttid[1] or 0)
@@ -1211,9 +1233,9 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "inc_stealth", "%+d", "Stealth bonus: ")
 		compare_fields(w, compare_with, field, "max_encumber", "%+d", "Maximum encumbrance: ")
 
-		compare_fields(w, compare_with, field, "combat_physresist", "%+d", "Physical save: ")
-		compare_fields(w, compare_with, field, "combat_spellresist", "%+d", "Spell save: ")
-		compare_fields(w, compare_with, field, "combat_mentalresist", "%+d", "Mental save: ")
+		compare_scaled(w, compare_with, field, "combat_physresist", {"combatPhysicalResist", true}, "%+d (%+d effective)", "Physical save: ")
+		compare_scaled(w, compare_with, field, "combat_spellresist", {"combatSpellResist", true}, "%+d (%+d effective)", "Spell save: ")
+		compare_scaled(w, compare_with, field, "combat_mentalresist", {"combatMentalResist", true}, "%+d (%+d effective)", "Mental save: ")
 
 		compare_fields(w, compare_with, field, "blind_immune", "%+d%%", "Blindness immunity: ", 100)
 		compare_fields(w, compare_with, field, "poison_immune", "%+d%%", "Poison immunity: ", 100)
@@ -1270,11 +1292,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "max_negative", "%+.2f", "Maximum neg.energy: ")
 		compare_fields(w, compare_with, field, "max_air", "%+.2f", "Maximum air capacity: ")
 
-		compare_fields(w, compare_with, field, "combat_spellpower", "%+d", "Spellpower: ")
+		compare_scaled(w, compare_with, field, "combat_spellpower", {"combatSpellpower"}, "%+d (%+d effective)", "Spellpower: ")
 		compare_fields(w, compare_with, field, "combat_spellcrit", "%+d%%", "Spell crit. chance: ")
 		compare_fields(w, compare_with, field, "spell_cooldown_reduction", "%d%%", "Lowers spell cool-downs by: ", 100)
 
-		compare_fields(w, compare_with, field, "combat_mindpower", "%+d", "Mindpower: ")
+		compare_scaled(w, compare_with, field, "combat_mindpower", {"combatMindpower"}, "%+d (%+d effective)", "Mindpower: ")
 		compare_fields(w, compare_with, field, "combat_mindcrit", "%+d%%", "Mental crit. chance: ")
 
 		compare_fields(w, compare_with, field, "lite", "%+d", "Light radius: ")

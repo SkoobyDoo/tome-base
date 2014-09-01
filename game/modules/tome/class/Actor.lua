@@ -3780,6 +3780,7 @@ function _M:onWear(o, inven_id, bypass_set)
 		for k, e in pairs(o.wielder) do
 			o.wielded[k] = self:addTemporaryValue(k, e)
 		end
+		o.wielder.wielded = true
 	end
 
 	if o.talent_on_spell then
@@ -3919,6 +3920,10 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 	if self:knowTalent(self.T_PSYCHOMETRY) then
 		local t = self:getTalentFromId(self.T_PSYCHOMETRY)
 		t.updatePsychometryCount(self, t)
+	end
+
+	if o.wielder then
+		o.wielder.wielded = nil
 	end
 
 	if o.wielder and o.wielder.learn_talent then
