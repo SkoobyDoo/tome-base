@@ -162,7 +162,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local cooldown = t.getMaxCooldown(self, t)
-		return ([[For the next %d turns chronomancy spells with a cooldown of %d or less do not go on cooldown when cast.]]):
+		return ([[For the next %d turns chronomancy spells with a cooldown of %d or less have a cooldown of one.]]):
 		format(duration, cooldown)
 	end,
 }
