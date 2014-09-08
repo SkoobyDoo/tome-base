@@ -1231,7 +1231,7 @@ function _M:defineDisplayCallback()
 		for i = 1, #ps do
 			e = ps[i]
 			e:checkDisplay()
-			if e.ps:isAlive() then e.ps:toScreen(x + w / 2, y + dy + h / 2, true, w / (game.level and game.level.map.tile_w or w))
+			if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
 			else self:removeParticles(e)
 			end
 		end
@@ -1247,7 +1247,7 @@ function _M:defineDisplayCallback()
 		for i = 1, #backps do
 			e = backps[i]
 			e:checkDisplay()
-			if e.ps:isAlive() then e.ps:toScreen(x + w / 2, y + dy + h / 2, true, w / (game.level and game.level.map.tile_w or w))
+			if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
 			else self:removeParticles(e)
 			end
 		end
