@@ -110,7 +110,7 @@ function _M:defineDisplayCallback()
 		for i = 1, #ps do
 			e = ps[i]
 			e:checkDisplay()
-			if e.ps:isAlive() then e.ps:toScreen(x + w / 2, y + h / 2, true, w / game.level.map.tile_w)
+			if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + h / 2 + (e.dy or 0) * h, true, w / game.level.map.tile_w)
 			elseif weak[1] then weak[1]:removeParticles(e)
 			end
 		end
