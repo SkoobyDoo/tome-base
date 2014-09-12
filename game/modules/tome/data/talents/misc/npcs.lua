@@ -1550,7 +1550,7 @@ newTalent{
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 		local x, y = self:getTarget(tg)
@@ -1637,7 +1637,7 @@ newTalent{
 	range = 10,
 	direct_hit = true,
 	requires_target = true,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self)) * 10000 end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) * 10000 end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 		local x, y = self:getTarget(tg)

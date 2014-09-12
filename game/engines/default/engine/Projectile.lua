@@ -250,8 +250,15 @@ function _M:on_move(x, y, target)
 	self.src.__project_source = self -- intermediate projector source
 	if self.project and self.project.def.typ.line then self.src:projectDoAct(self.project.def.typ, self.project.def.tg, self.project.def.damtype, self.project.def.dam, self.project.def.particles, self.x, self.y, self.tmp_proj) end
 	if self.project and self.project.def.typ.stop_block then
-
 		self.src:projectDoStop(self.project.def.typ, self.project.def.tg, self.project.def.damtype, self.project.def.dam, self.project.def.particles, self.x, self.y, self.tmp_proj, self.x, self.y, self)
+	elseif self.homing then
+		if (self.x == self.homing.target.x and self.y == self.homing.target.y) then
+			game.level:removeEntity(self, true)
+			self.dead = true
+			self.homing.on_hit(self, self.src, self.homing.target)
+		else
+			self.homing.on_move(self, self.src)
+		end
 	end
 	self.src.__project_source = nil
 end

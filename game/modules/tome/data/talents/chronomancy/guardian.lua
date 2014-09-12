@@ -17,7 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- EDGE TODO: Icons, Particles, Timed Effect Particles
+-- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
 	name = "Strength of Purpose",
@@ -46,9 +46,8 @@ newTalent{
 	cooldown = 24,
 	fixed_cooldown = true,
 	tactical = { HEAL = 1 },
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(self:getTalentLevel(t), 14, 4, 8)) end, -- Limit < 14
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self)) end,
-	getNumber = function(self, t) return math.ceil(self:getTalentLevel(t)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(self:getTalentLevel(t), 14, 4, 8))) end, -- Limit < 14
+	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		self:setEffect(self.EFF_INVIGORATE, t.getDuration(self,t), {power=t.getPower(self, t)})
 		return true
@@ -67,24 +66,24 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	mode = "passive",
-	getSplit = function(self, t) return math.min(100, self:combatTalentSpellDamage(t, 20, 50, getParadoxSpellpower(self)))/100 end,
-	getDuration = function(self, t) return 2 end,
+	getSplit = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 40, 24)	end,
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
 		local split = cb.value * t.getSplit(self, t)
 	
 		-- If we already split this turn pass damage to our clone
-		if self.turn_procs.double_edge and self.turn_procs.double_edge ~= self and not self.turn_procs.double_edge.dead then
+		if self.turn_procs.double_edge and self.turn_procs.double_edge ~= self and game.level:hasEntity(self.turn_procs.double_edge) then
 			split = split/2
 			-- split the damage
-			game:delayedLogDamage(src, self.turn_procs.double_edge, split, ("#PINK#%d displaced#LAST#"):format(split), false)
+			game:delayedLogDamage(src, self.turn_procs.double_edge, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
 			cb.value = cb.value - split
 			self.turn_procs.double_edge:takeHit(split, src)
 		end
 			
 		-- Do our split
-		if self.max_life and cb.value >= self.max_life * t.getLifeTrigger(self, t) * 0.01 and not self.turn_procs.double_edge then
+		if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.double_edge then
 			-- Look for space first
 			local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
 			if tx and ty then
@@ -92,17 +91,6 @@ newTalent{
 								
 				-- clone our caster
 				local m = makeParadoxClone(self, self, t.getDuration(self, t))
-				
-				-- remove some talents; note most of this is handled by makeParadoxClone already but we don't want to keep splitting
-				local tids = {}
-				for tid, _ in pairs(m.talents) do
-					local t = m:getTalentFromId(tid)
-					if t.remove_on_clone then tids[#tids+1] = t end
-				end
-				for i, t in ipairs(tids) do
-					if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
-					m.talents[t.id] = nil
-				end
 				
 				-- add our clone
 				game.zone:addEntity(game.level, m, "actor", tx, ty)
@@ -125,7 +113,8 @@ newTalent{
 				self.turn_procs.double_edge = m
 				m:takeHit(split, src)
 				m:setTarget(src or nil)
-				game:delayedLogDamage(src, m, split, ("#PINK#%d displaced#LAST#"):format(split), false)
+				game:delayedLogMessage(self, nil, "guardian_damage", "#STEEL_BLUE##Source# shares damage with %s guardian!", string.his_her(self))
+				game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
 												
 			else
 				game.logPlayer(self, "Not enough space to summon warden!")
@@ -154,9 +143,9 @@ newTalent{
 	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
 	requires_target = true,
 	range = archery_range,
-	no_energy = "fake",
+	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
 		target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {})
@@ -166,19 +155,19 @@ newTalent{
 		
 		if self:hasArcheryWeapon("bow") then
 			-- Ranged attack
-			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
+			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
 			if not targets then return end
-			self:archeryShoot(targets, t, nil, {mult=t.getDamage(self, t)})
+			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
 		elseif mainhand then
 			-- Melee attack
 			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 			local x, y, target = self:getTarget(tg)
 			if not x or not y or not target then return nil end
 			if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
-			local hitted = self:attackTarget(target, nil, t.getDamage(self, t))
+			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 			if hitted then
-				target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self)})
+				target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 			end
 		else
 			game.logPlayer(self, "You cannot use Breach without an appropriate weapon!")

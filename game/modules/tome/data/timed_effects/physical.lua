@@ -2825,30 +2825,68 @@ newEffect {
 newEffect{
 	name = "CELERITY", image = "talents/celerity.png",
 	desc = "Celerity",
-	long_desc = function(self, eff) return ("The target is moving is %d%% faster."):format(eff.speed * 100 * eff.stack) end,
+	long_desc = function(self, eff) return ("The target is moving is %d%% faster."):format(eff.speed * 100 * eff.charges) end,
 	type = "physical",
-	display_desc = function(self, eff) return eff.stack.." Celerity" end,
-	charges = function(self, eff) return eff.stack end,
+	display_desc = function(self, eff) return eff.charges.." Celerity" end,
+	charges = function(self, eff) return eff.charges end,
 	subtype = { speed=true, temporal=true },
 	status = "beneficial",
-	parameters = {speed=0.1, stack=1, max_stack=3},
+	parameters = {speed=0.1, charges=1, max_charges=3},
 	on_merge = function(self, old_eff, new_eff)
 		-- remove the old value
 		self:removeTemporaryValue("movement_speed", old_eff.tmpid)
 		
 		-- add a charge
-		old_eff.stack = math.min(old_eff.stack + 1, new_eff.max_stack)
+		old_eff.charges = math.min(old_eff.charges + 1, new_eff.max_charges)
 		
 		-- and apply the current values	
-		old_eff.tmpid = self:addTemporaryValue("movement_speed", old_eff.speed * old_eff.stack)
+		old_eff.tmpid = self:addTemporaryValue("movement_speed", old_eff.speed * old_eff.charges)
 		
 		old_eff.dur = new_eff.dur
 		return old_eff
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("movement_speed", eff.speed * eff.stack)
+		eff.tmpid = self:addTemporaryValue("movement_speed", eff.speed * eff.charges)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("movement_speed", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "GRAVITY_SLOW", image = "talents/gravity_well.png",
+	desc = "Gravity Slow",
+	long_desc = function(self, eff) return ("The target is caught in a gravity well, reducing movement speed by %d%%."):format(eff.slow* 100) end,
+	type = "physical",
+	subtype = { speed=true },
+	status = "detrimental",
+	parameters = { slow=0.15 },
+	on_gain = function(self, err) return "#Target# is slowed by gravity.", "+Gravity Slow" end,
+	on_lose = function(self, err) return "#Target# is free from the gravity well.", "-Gravity Slow" end,
+	activate = function(self, eff)
+		eff.slowid = self:addTemporaryValue("movement_speed", -eff.slow)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("movement_speed", eff.slowid)
+	end,
+}
+
+newEffect{
+	name = "ANTI_GRAVITY", image = "talents/gravity_locus.png",
+	desc = "Anti-Gravity",
+	long_desc = function(self, eff) return ("Target is caught in an anti-gravity field, halving its knockback resistance."):format() end,
+	type = "physical",
+	subtype = { spacetime=true },
+	status = "detrimental",
+	on_gain = function(self, err) return nil, "+Anti-Gravity" end,
+	on_lose = function(self, err) return nil, "-Anti-Gravity" end,
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = new_eff.dur
+		return old_eff
+	end,
+	activate = function(self, eff)
+		if self:attr("knockback_immune") then
+			self:effectTemporaryValue(eff, "knockback_immune", -self:attr("knockback_immune") / 2)
+		end
 	end,
 }

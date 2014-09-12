@@ -32,7 +32,7 @@ newTalent{
 	target = function(self, t)
 		return {type="beam", range=self:getTalentRange(t), talent=t}
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
@@ -60,8 +60,8 @@ newTalent{
 	sustain_paradox = 20,
 	cooldown = 12,
 	tactical = { BUFF =2, DEFEND = 2 },
-	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 1, 150, getParadoxSpellpower(self)) end,
-	getArmor = function(self, t) return math.ceil(self:combatTalentSpellDamage(t, 20, 50, getParadoxSpellpower(self))) end,
+	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 1, 150, getParadoxSpellpower(self, t)) end,
+	getArmor = function(self, t) return math.ceil(self:combatTalentSpellDamage(t, 20, 50, getParadoxSpellpower(self, t))) end,
 	do_carbonRegrowth = function(self, t)
 		local maxspikes = t.getArmor(self, t)
 		if self.carbon_armor < maxspikes then
@@ -112,8 +112,8 @@ newTalent{
 	tactical = { ATTACK = 2 },
 	requires_target = true,
 	direct_hit = true,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 60, getParadoxSpellpower(self)) end,
-	getExplosion = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 60, getParadoxSpellpower(self, t)) end,
+	getExplosion = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 		local x, y = self:getTarget(tg)
@@ -152,7 +152,7 @@ newTalent{
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300, getParadoxSpellpower(self)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
@@ -197,4 +197,3 @@ newTalent{
 		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage/2), damDesc(self, DamageType.PHYSICAL, damage/2))
 	end,
 }
-

@@ -29,12 +29,13 @@ newTalent{
 	reflectable = true,
 	requires_target = true,
 	proj_speed = 5,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 150, getParadoxSpellpower(self)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 150, getParadoxSpellpower(self, t)) end,
 	getDamageStat = function(self, t) return 2 + math.ceil(t.getDamage(self, t) / 15) end,
 	action = function(self, t)
 		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="temporal_bolt"}}
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
+		
 		self:projectile(tg, x, y, DamageType.CLOCK, self:spellCrit(t.getDamage(self, t)))
 		game:playSoundNear(self, "talents/spell_generic2")
 
@@ -64,7 +65,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Temporal Fugue",
+	name = "Temporal Fugue Old",
 	type = {"chronomancy/age-manipulation", 2},
 	require = chrono_req2,
 	points = 5,
@@ -114,7 +115,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false}
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 8, 135, getParadoxSpellpower(self)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 8, 135, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return 5 + math.ceil(self:getTalentLevel(t)) end,
 	direct_hit = true,
 	requires_target = true,
@@ -163,7 +164,7 @@ newTalent{
 		return nb
 	end },
 	is_heal = true,
-	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 40, 440, getParadoxSpellpower(self)) end,
+	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 40, 440, getParadoxSpellpower(self, t)) end,
 	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	action = function(self, t)
 		self:attr("allow_on_heal", 1)

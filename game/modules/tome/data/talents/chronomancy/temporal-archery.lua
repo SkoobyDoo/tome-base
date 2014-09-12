@@ -80,7 +80,7 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	no_energy = true,
-	getPower = function(self, t) return 10 + self:combatTalentSpellDamage(t, 10, 40, getParadoxSpellpower(self)) end,
+	getPower = function(self, t) return 10 + self:combatTalentSpellDamage(t, 10, 40, getParadoxSpellpower(self, t)) end,
 	activate = function(self, t)
 		local power = t.getPower(self, t)
 		return {

@@ -17,7 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- EDGE TODO: Icons, Particles, Timed Effect Particles
+-- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
 	name = "Precognition",
@@ -27,8 +27,8 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 20,
 	no_npc_use = true,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 14)) end,
-	range = function(self, t) return 10 + math.min(self:combatTalentSpellDamage(t, 10, 20, getParadoxSpellpower(self))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 14))) end,
+	range = function(self, t) return 10 + math.min(self:combatTalentSpellDamage(t, 10, 20, getParadoxSpellpower(self, t))) end,
 	action = function(self, t)
 		-- Foresight bonuses
 		local defense = 0
@@ -86,13 +86,16 @@ newTalent{
 	sustain_paradox = 36,
 	mode = "sustained",
 	no_sustain_autoreset = true,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 15, 45, 25)) end, -- Limit >15
+	cooldown = 50,
+	getTrigger= function(self, t) return self:combatTalentScale(t, 0.25, 0.45, 0.6) end,
 	tactical = { DEFEND = 2 },
-	no_npc_use = true,
+	no_npc_use = true,  -- so rares don't learn useless talents
+	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
+	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
 	callbackOnHit = function(self, t, cb)
 		local p = self:isTalentActive(t.id)
 		local life_after = self.life - cb.value
-		local cont_trigger = self.max_life * 0.3
+		local cont_trigger = self.max_life * t.getTrigger(self, t)
 		
 		-- Cast our contingent spell
 		if p and p.rest_count <= 0 and cont_trigger > life_after then
@@ -100,15 +103,18 @@ newTalent{
 			local cont_id = self:getTalentFromId(cont_t)
 			local t_level = math.min(self:getTalentLevel(t), self:getTalentLevel(cont_t))
 			
-			-- Make sure we still know the talent and that the preuse conditions apply
-			if t_level == 0 or not self:preUseTalent(cont_id, true, true) then
+			-- Make sure we still know the talent and that the pre-use conditions apply
+			if t_level == 0 or not self:knowTalent(cont_id) or not self:preUseTalent(cont_id, true, true) then
 				game.logPlayer(self, "#LIGHT_RED#Your Contingency has failed to cast %s!", self:getTalentFromId(cont_t).name)
 			else
-				self:forceUseTalent(cont_t, {ignore_ressources=true, ignore_cd=true, ignore_energy=true, force_level=t_level})
 				game.logPlayer(self, "#STEEL_BLUE#Your Contingency triggered %s!", self:getTalentFromId(cont_t).name)
+				p.rest_count = self:getTalentCooldown(t)
+				game:onTickEnd(function()
+					if not self.dead then
+						self:forceUseTalent(cont_t, {ignore_ressources=true, ignore_cd=true, ignore_energy=true, force_level=t_level})
+					end
+				end)
 			end
-			
-			p.rest_count = self:getTalentCooldown(t)
 		end
 		
 		return cb.value
@@ -135,14 +141,15 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
+		local trigger = t.getTrigger(self, t) * 100
 		local cooldown = self:getTalentCooldown(t)
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
-		return ([[Choose an activatable spell that's not targeted.  When you take damage that reduces your life below 30%% the spell will automatically cast.
+		return ([[Choose an activatable spell that's not targeted.  When you take damage that reduces your life below %d%% the spell will automatically cast.
 		This spell will cast even if it is currently on cooldown, will not consume a turn or resources, and uses the talent level of Contingency or its own, whichever is lower.
 		This effect can only occur once every %d turns and takes place after the damage is resolved.
 		
 		Current Contingency Spell: %s]]):
-		format(cooldown, talent)
+		format(trigger, cooldown, talent)
 	end,
 }
 
@@ -153,8 +160,10 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 50,
-	no_npc_use = true,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(t), 10, 25)) end,
+	no_npc_use = true,  -- so rares don't learn useless talents
+	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
+	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(self:getTalentLevel(t), 10, 25))) end,
 	on_pre_use = function(self, t, silent)
 		if checkTimeline(self) then
 			if not silent then
@@ -191,7 +200,7 @@ newTalent{
 		return ([[You peer into three possible futures, allowing you to explore each for %d turns.  When the effect expires, you'll choose which of the three futures becomes your present.
 		If you know Foresight you'll gain additional defense and chance to shrug off critical hits (equal to your Foresight values) while See the Threads is active.
 		This spell splits the timeline.  Attempting to use another spell that also splits the timeline while this effect is active will be unsuccessful.
-		Note that seeing visions of your own death can still be fatal.
+		If you die in any thread you'll revert the timeline to the point when you first cast the spell and the effect will end.
 		This spell may only be used once per zone level.]])
 		:format(duration)
 	end,

@@ -89,6 +89,7 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 
 	-- Break before we do the blow, because it might start step up, we dont want to insta-cancel it
 	self:breakStepUp()
+	self:breakSpacetimeTuning()
 
 	if self:attr("feared") then
 		if not noenergy then
@@ -625,9 +626,8 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		local burst_damage = 0
 		local burst_radius = 0
 		if self:knowTalent(self.T_FRAYED_THREADS) then
-			burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			dam = dam - burst_damage
+			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
+			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
 			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
 		end
 		if dam > 0 and not target.dead then
@@ -637,13 +637,10 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	if hitted and self:knowTalent(self.T_IMPACT) and self:isTalentActive(self.T_IMPACT) then
 		local dam = self:callTalent(self.T_IMPACT, "getDamage")
 		local power = self:callTalent(self.T_IMPACT, "getApplyPower")
-		local burst_damage = 0
-		local burst_radius = 0
 		if self:knowTalent(self.T_FRAYED_THREADS) then
-			burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			dam = dam - burst_damage
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=dam/2, power_check=power})
+			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
+			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
+			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=burst_damage/2, power_check=power})
 		end
 		if dam > 0 and not target.dead then
 			DamageType:get(DamageType.IMPACT).projector(self, target.x, target.y, DamageType.IMPACT, {dam=dam, daze=dam/2, power_check=power}, tmp)
@@ -886,17 +883,21 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
 	if hitted and self:attr("psi_regen_on_hit") then self:incPsi(self.psi_regen_on_hit) end
 
+	-- Ablative armor
+	if hitted and not target.dead and target:attr("carbon_spikes") then
+		if target.carbon_armor >= 1 then
+			target.carbon_armor = target.carbon_armor - 1
+		else
+			-- Deactivate without loosing energy
+			target:forceUseTalent(target.T_CARBON_SPIKES, {ignore_energy=true})
+		end
+	end
+	
 	if hitted and not target.dead and target:knowTalent(target.T_STONESHIELD) then
 		local t = target:getTalentFromId(target.T_STONESHIELD)
 		local m, mm, e, em = t.getValues(self, t)
 		target:incMana(math.min(dam * m, mm))
 		target:incEquilibrium(-math.min(dam * e, em))
-	end
-
-	-- Ablative Armor
-	if hitted and not target.dead and target:attr("carbon_spikes") then
-		local t = target:getTalentFromId(target.T_CARBON_SPIKES)
-		t.do_carbonLoss(target, t)
 	end
 
 	-- Set Up
@@ -1190,11 +1191,11 @@ function _M:combatArmor()
 			add = add + ga.getArmor(self, ga)
 		end
 	end
-	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
-		add = add + self.carbon_armor
-	end
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + self:callTalent(self.T_ARMOUR_OF_SHADOWS,"ArmourBonus")
+	end
+	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
+		add = add + self.carbon_armor
 	end
 	return self.combat_armor + add
 end
