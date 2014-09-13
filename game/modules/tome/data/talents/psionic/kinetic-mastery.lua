@@ -43,7 +43,7 @@ newTalent{
 		return ([[For %d turns your telekinesis transcends your normal limits, increasing your Physical damage by %d%% and you Physical resistance penetration by %d%%.
 		In addition:
 		The cooldowns of Kinetic Shield, Kinetic Leech, Kinetic Aura and Mindlash are reset.
-		Kinetic Aura will either increase in radius to 2, or apply its damage bonus to all of your weapons, whichever is applicable.
+		Kinetic Aura effects will have their radius increased by 1.
 		Your Kinetic Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Mindlash will also inflict stun.
 		Kinetic Leech will put enemies to sleep.
@@ -52,7 +52,6 @@ newTalent{
 		Only one Transcendent talent may be in effect at a time.]]):format(t.getDuration(self, t), t.getPower(self, t), t.getPenetration(self, t))
 	end,
 }
-
 
 newTalent{
 	name = "Kinetic Surge", image = "talents/telekinetic_throw.png",
@@ -63,7 +62,7 @@ newTalent{
 	cooldown = 15,
 	psi = 20,
 	tactical = { CLOSEIN = 2, ATTACK = { PHYSICAL = 2 }, ESCAPE = 2 },
-	range = function(self, t) return self:combatTalentLimit(t, 10, 6, 9) end,
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 6, 9)) end,
 	getDamage = function (self, t)
 		return math.floor(self:combatTalentMindDamage(t, 20, 180))
 	end,

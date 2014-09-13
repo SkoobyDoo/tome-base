@@ -200,8 +200,10 @@ newTalent{
 					violet = {DamageType.ARCANE, "manathrust"},
 					white = {DamageType.COLD, "freeze"},
 					yellow = {DamageType.LIGHT, "light"},
+					["multi-hued"] = {DamageType.MIND, "light"},
 				}
-				local bolt = elem[gem.subtype]
+				local bolt = {DamageType.MIND, "light"}
+				if gem.subtype and elem[gem.subtype] then bolt = elem[gem.subtype] end
 				
 				table.sort(list, "dist")
 				local a = list[1].a
@@ -273,7 +275,7 @@ newTalent{
 		local base = [[Allows you to wield a physical melee weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
 		A gem will provide +3 bonus to all primary stats per tier of the gem.
 		A mindstar will randomly try to telekinetically grab a far away foe (5% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
-		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations (for all melee weapons).
+		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
 
 		]]
 

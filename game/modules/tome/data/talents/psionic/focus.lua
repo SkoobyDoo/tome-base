@@ -74,7 +74,7 @@ newTalent{
 	psi = 20,
 	tactical = { ATTACK = { FIRE = 2 } },
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 4, 6) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
 	getDamage = function (self, t)
 		return self:combatTalentMindDamage(t, 20, 450)
 	end,
@@ -107,8 +107,8 @@ newTalent{
 	require = psi_wil_req3,
 	psi = 15,
 	cooldown = 10,
-	range = function(self,t) return self:combatTalentScale(t, 3, 5) end,
-	radius = function(self,t) return self:combatTalentScale(t, 2, 3) end,
+	range = function(self,t) return math.floor(self:combatTalentScale(t, 3, 5)) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 3)) end,
 	tactical = { DISABLE = 2, ATTACKAREA = { LIGHTNING = 2 } },
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 290) end,
 	action = function(self, t)		

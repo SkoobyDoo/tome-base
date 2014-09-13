@@ -227,7 +227,7 @@ newTalent{
 		local inc = t.bonus(self,t)
 		return ([[By carefully synchronizing your mind to the resonant frequencies of your psionic focus, you strengthen its effects.
 		For conventional weapons, this increases the percentage of your willpower and cunning that is used in place of strength and dexterity, from 60%% to %d%%.
-		For mindstars, this increases the amount of Psi you can store by +%d.
+		For mindstars, this increases the chance to pull enemies to you by +%d%%.
 		For gems, this increases the bonus stats by %d.]]):
 		format(60+inc, inc, math.ceil(inc/5))
 	end,

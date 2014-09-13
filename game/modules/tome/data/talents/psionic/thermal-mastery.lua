@@ -44,7 +44,7 @@ newTalent{
 		return ([[For %d turns your pyrokinesis transcends your normal limits, increasing your Fire and Cold damage by %d%% and your Fire and Cold resistance penetration by %d%%.
 		In addition:
 		The cooldowns of Thermal Shield, Thermal Leech, Thermal Aura and Pyrokinesis are reset.
-		Thermal Aura will either increase in radius to 2, or apply its damage bonus to all of your weapons, whichever is applicable.
+		Thermal Aura effects will have their radius increased by 1.
 		Your Thermal Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Pyrokinesis will inflict Flameshock.
 		Thermal Leech will reduce enemy damage by %d%%.
@@ -63,7 +63,7 @@ newTalent{
 	cooldown = 8,
 	psi = 20,
 	tactical = { ATTACK = { COLD = 3} },
-	range = function(self,t) return self:combatTalentScale(t, 4, 6) end,
+	range = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
 	getDamage = function (self, t)
 		return self:combatTalentMindDamage(t, 12, 340)
 	end,
@@ -101,7 +101,7 @@ newTalent{
 	psi = 35,
 	tactical = { DISABLE = 4 },
 	range = 6,
-	radius = function(self,t) return self:combatTalentScale(t, 2, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
 	getDuration = function (self, t)
 		return math.floor(self:combatTalentMindDamage(t, 4, 8))
 	end,
@@ -153,8 +153,8 @@ newTalent{
 	points = 5,
 	psi = 0,
 	cooldown = 10,
-	range = function(self,t) return self:combatTalentScale(t, 4, 6) end,
-	radius = function(self,t) return self:combatTalentScale(t, 2, 4) end,
+	range = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
 	tactical = { ATTACKAREA = { FIRE = 3, COLD = 2 }, PSI = 2 },
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 50, 150) end,
 	action = function(self, t)

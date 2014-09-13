@@ -44,7 +44,7 @@ newTalent{
 		return ([[For %d turns your electrokinesis transcends your normal limits, increasing your Lightning damage by %d%% and your Lightning resistance penetration by %d%%.
 		In addition:
 		The cooldowns of Charged Shield, Charged Leech, Charged Aura and Brainstorm are reset.
-		Charged Aura will either increase in radius to 2, or apply its damage bonus to all of your weapons, whichever is applicable.
+		Charged Aura effects will have their radius increased by 1.
 		Your Charged Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Brainstorm will also inflict blindness.
 		Charge Leech will also inflict confusion (%d%% effect).
@@ -86,7 +86,7 @@ newTalent{
 	cooldown = 13,
 	tactical = { ATTACKAREA = { LIGHTNING = 2 } },
 	range = 8,
-	radius = function(self,t) return self:combatTalentScale(t, 2, 5) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 5)) end,
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
@@ -130,6 +130,7 @@ newTalent{
 	require = psi_cun_high4,
 	points = 5,
 	mode = "sustained",
+	no_sustain_autoreset = true,
 	sustain_psi = 30,
 	cooldown = 60,
 	tactical = { BUFF = 10},

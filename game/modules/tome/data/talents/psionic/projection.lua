@@ -137,7 +137,14 @@ newTalent{
 	end,
 	do_combat = function(self, t, target) -- called by  _M:attackTargetWith in mod.class.interface.Combat.lua
 		local k_dam = t.getAuraStrength(self, t)
-		DamageType:get(DamageType.PHYSICAL).projector(self, target.x, target.y, DamageType.PHYSICAL, k_dam)
+		if self:hasEffect(self.EFF_TRANSCENDENT_TELEKINESIS) then
+			local tg = {type="ball", range=10, radius=1, selffire=false, friendlyfire=false}
+			self:project(tg, target.x, target.y, function(tx, ty)
+				DamageType:get(DamageType.PHYSICAL).projector(self, tx, ty, DamageType.PHYSICAL, k_dam)
+			end)
+		else
+			DamageType:get(DamageType.PHYSICAL).projector(self, target.x, target.y, DamageType.PHYSICAL, k_dam)
+		end
 	end,
 	activate = function(self, t)
 		self.energy.value = self.energy.value + game.energy_to_act * self:combatMindSpeed()
@@ -174,7 +181,7 @@ newTalent{
 		return ([[Fills the air around you with reactive currents of force.
 		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Physical damage to all who approach. 
 		All damage done by the aura will drain one point of energy per %0.1f points of damage dealt.
-		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Physical damage to its hits.
+		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Physical damage to all your weapon hits.
 		When deactivated, if you have at least %d energy, a massive spike of kinetic energy is released as a range %d beam, smashing targets for up to %d physical damage and sending them flying.
 		#{bold}#Activating the aura takes no time but de-activating it does.#{normal}#
 		To turn off an aura without spiking it, deactivate it and target yourself.  The damage will improve with your Mindpower.]]):
@@ -253,7 +260,14 @@ newTalent{
 	end,
 	do_combat = function(self, t, target) -- called by  _M:attackTargetWith in mod.class.interface.Combat.lua
 		local t_dam = t.getAuraStrength(self, t)
-		DamageType:get(DamageType.FIRE).projector(self, target.x, target.y, DamageType.FIRE, t_dam)
+		if self:hasEffect(self.EFF_TRANSCENDENT_PYROKINESIS) then
+			local tg = {type="ball", range=10, radius=1, selffire=false, friendlyfire=false}
+			self:project(tg, target.x, target.y, function(tx, ty)
+				DamageType:get(DamageType.FIRE).projector(self, tx, ty, DamageType.FIRE, t_dam)
+			end)
+		else
+			DamageType:get(DamageType.FIRE).projector(self, target.x, target.y, DamageType.FIRE, t_dam)
+		end
 	end,
 	activate = function(self, t)
 		self.energy.value = self.energy.value + game.energy_to_act * self:combatMindSpeed()
@@ -291,7 +305,7 @@ newTalent{
 		return ([[Fills the air around you with reactive currents of furnace-like heat.
 		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Fire damage to all who approach. 
 		All damage done by the aura will drain one point of energy per %0.1f points of damage dealt.
-		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Fire damage to its hits.
+		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Fire damage to all your weapon hits.
 		When deactivated, if you have at least %d energy, a massive spike of thermal energy is released as a conical blast (radius %d) of superheated air. Anybody caught in it will suffer up to %d fire damage over several turns.
 		#{bold}#Activating the aura takes no time but de-activating it does.#{normal}#
 		To turn off an aura without spiking it, deactivate it and target yourself.  The damage will improve with your Mindpower.]]):
@@ -373,7 +387,14 @@ newTalent{
 	end,
 	do_combat = function(self, t, target) -- called by  _M:attackTargetWith in mod.class.interface.Combat.lua
 		local c_dam = t.getAuraStrength(self, t)
-		DamageType:get(DamageType.LIGHTNING).projector(self, target.x, target.y, DamageType.LIGHTNING, c_dam)
+		if self:hasEffect(self.EFF_TRANSCENDENT_ELECTROKINESIS) then
+			local tg = {type="ball", range=10, radius=1, selffire=false, friendlyfire=false}
+			self:project(tg, target.x, target.y, function(tx, ty)
+				DamageType:get(DamageType.LIGHTNING).projector(self, tx, ty, DamageType.LIGHTNING, c_dam)
+			end)
+		else
+			DamageType:get(DamageType.LIGHTNING).projector(self, target.x, target.y, DamageType.LIGHTNING, c_dam)
+		end
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/thunderstorm")
@@ -451,7 +472,7 @@ newTalent{
 		return ([[Fills the air around you with crackling energy.
 		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Lightning damage to all who approach. 
 		All damage done by the aura will drain one point of energy per %0.1f points of damage dealt.
-		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Lightning damage to its hits.
+		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Lightning damage to all your weapon hits.
 		When deactivated, if you have at least %d energy, a massive spike of electrical energy jumps between up to %d nearby targets, doing up to %0.1f Lightning damage to each with a 50%% chance of dazing them.
 		#{bold}#Activating the aura takes no time but de-activating it does.#{normal}#
 		To turn off an aura without spiking it, deactivate it and target yourself.]]):
@@ -483,7 +504,8 @@ newTalent{
 		local dur = t.duration(self,t)
 		return ([[Overcharge your psionic focus with energy for %d turns, producing a different effect depending on what it is.
 		A telekinetically wielded weapon enters a frenzy, striking up to %d times every turn, also increases the radius by %d.
-		A mindstar or a gem will fire an energy bolt at a random enemy in range 6, each turn for %0.1f damage. The type is determined by the colour of the gem or mindstar base damage. Damage scales with Mindpower. The mindstar will stop its normal attacks.]]):
+		A mindstar will attempt to pull in all enemies within its normal range.
+		A gem will fire an energy bolt at a random enemy in range 6, each turn for %0.1f damage. The type is determined by the colour of the gem. Damage scales with Mindpower.]]):
 		format(dur, targets, targets, t.getDamage(self,t))
 	end,
 }

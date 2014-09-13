@@ -142,7 +142,7 @@ newTalent{
 	action = function(self, t)
 		local weapon = self:getInven(self.INVEN_PSIONIC_FOCUS) and self:getInven(self.INVEN_PSIONIC_FOCUS)[1]
 		if type(weapon) == "boolean" then weapon = nil end
-		if not weapon or self:attr("disarmed")then
+		if not weapon or not weapon.combat or self:attr("disarmed") then
 			game.logPlayer(self, "You cannot do that without a weapon in your telekinetic slot.")
 			return nil
 		end
