@@ -171,6 +171,13 @@ end
 
 --- Describes an attribute, to expand object name
 function _M:descAttribute(attr)
+	local power = function(c)
+		if config.settings.tome.advanced_weapon_stats then
+			return math.floor(Combat.combatDamagePower({}, self.combat)*100).."% power"
+		else
+			return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power"
+		end
+	end
 	if attr == "MASTERY" then
 		local tms = {}
 		for ttn, i in pairs(self.wielder.talents_types_mastery) do
@@ -194,20 +201,20 @@ function _M:descAttribute(attr)
 		return ("%s%0.2f/turn"):format(i > 0 and "+" or "-", math.abs(i))
 	elseif attr == "COMBAT" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..(c.apr or 0).." apr"
+		return power(c)..", "..(c.apr or 0).." apr"
 	elseif attr == "COMBAT_AMMO" then
 		local c = self.combat
-		return c.shots_left.."/"..math.floor(c.capacity)..", "..c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..(c.apr or 0).." apr"
+		return c.shots_left.."/"..math.floor(c.capacity)..", "..power(c)..", "..(c.apr or 0).." apr"
 	elseif attr == "COMBAT_DAMTYPE" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.damtype).name.." damage"
+		return power(c)..", "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.damtype).name.." damage"
 	elseif attr == "COMBAT_ELEMENT" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.element or DamageType.PHYSICAL).name.." element"
+		return power(c)..", "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.element or DamageType.PHYSICAL).name.." element"
 	elseif attr == "SHIELD" then
 		local c = self.special_combat
 		if c and (game.player:knowTalentType("technique/shield-offense") or game.player:knowTalentType("technique/shield-defense") or game.player:attr("show_shield_combat")) then
-			return c.dam.." dam, "..c.block.." block"
+			return power(c)..", "..c.block.." block"
 		else
 			return c.block.." block"
 		end
@@ -602,7 +609,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 			else
 				power_diff = ("(%s)"):format(power_diff)
 			end
-			desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+			if config.settings.tome.advanced_weapon_stats then
+				desc:add(("Power: %3d%%  Range: %.1fx"):format(use_actor:combatDamagePower(combat, add_table.dam) * 100, use_actor:combatDamageRange(combat, add_table.damrange)))
+			else
+				desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+			end
 			desc:merge(power_diff:toTString())
 			desc:add(true)
 			desc:add(("Uses stat%s: %s"):format(#dm > 1 and "s" or "",table.concat(dm, ', ')), true)
