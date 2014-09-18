@@ -43,12 +43,12 @@ newTalent{
 	info = function(self, t)
 		return ([[For %d turns your electrokinesis transcends your normal limits, increasing your Lightning damage by %d%% and your Lightning resistance penetration by %d%%.
 		In addition:
-		The cooldowns of Charged Shield, Charged Leech, Charged Aura and Brainstorm are reset.
+		The cooldowns of Charged Shield, Charged Leech, Charged Aura, Charged Strike and Brainstorm are reset.
 		Charged Aura effects will have their radius increased by 1.
 		Your Charged Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Brainstorm will also inflict blindness.
 		Charge Leech will also inflict confusion (%d%% effect).
-		Charged Strike will have its secondary lightning/blind burst chain to up to 3 targets in a radius of 3.
+		Charged Strike will have its secondary lightning burst chain to up to 3 targets in a radius of 3.
 		The damage bonus and resistance penetration scale with your Mindpower.
 		Only one Transcendent talent may be in effect at a time.]]):format(t.getDuration(self, t), t.getPower(self, t), t.getPenetration(self, t), t.getConfuse(self, t))
 	end,
@@ -72,7 +72,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Detect the mental activity of creatures in a radius of %d for %d turns.
 		This reveals their location and boosts your defense by %d.
-		The duration, defense, and radius scale with your Mindpower.]]):format(t.radius(self, t), t.getDuration(self, t), t.getDefense(self, t))
+		The defense scales with you Mindpower and the range with your Willpower.]]):format(t.radius(self, t), t.getDuration(self, t), t.getDefense(self, t))
 	end,
 }
 
@@ -83,19 +83,19 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	psi = 32,
-	cooldown = 13,
+	cooldown = 23,
 	tactical = { ATTACKAREA = { LIGHTNING = 2 } },
 	range = 8,
-	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 5)) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
 	getSlow = function(self, t) return self:combatLimit(self:combatTalentMindDamage(t, 5, 50), 50, 4, 4, 34, 34) end, -- Limit < 50%
-	getDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 130) end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 100) end,
 	getWeaponDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 50) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 9)) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 6)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)

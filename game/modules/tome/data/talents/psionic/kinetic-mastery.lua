@@ -42,7 +42,7 @@ newTalent{
 	info = function(self, t)
 		return ([[For %d turns your telekinesis transcends your normal limits, increasing your Physical damage by %d%% and you Physical resistance penetration by %d%%.
 		In addition:
-		The cooldowns of Kinetic Shield, Kinetic Leech, Kinetic Aura and Mindlash are reset.
+		The cooldowns of Kinetic Shield, Kinetic Leech, Kinetic Aura, Kinetic Strike and Mindlash are reset.
 		Kinetic Aura effects will have their radius increased by 1.
 		Your Kinetic Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Mindlash will also inflict stun.
@@ -146,7 +146,7 @@ newTalent{
 		
 		When used on yourself, you will launch in a straight line, knocking enemies flying and doing %0.1f Physical damage to each.
 		You can break through %d walls while doing this.
-		The damage improves with your Mindpower and the range increases with both Mindpower and Strength.]]):
+		The damage improves with your Mindpower and the range increases with Mindpower.]]):
 		format(range, dam, math.floor(range/2), dam/2, t.getKBResistPen(self, t), dam, math.floor(range/2))
 	end,
 }
@@ -234,11 +234,14 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.IMPLOSION, {dur=dur, dam=dam})
-		local target = game.level.map(x, y, Map.ACTOR)
-		if target then
-			target:setEffect(self.EFF_PSIONIC_BIND, dur, {power=1, apply_power=self:combatMindpower()})
-		end
+		
+		self:project(tg, x, y, function(px, py)
+			DamageType:get(DamageType.IMPLOSION).projector(self, px, py, DamageType.IMPLOSION, {dur=dur, dam=dam})
+			local act = game.level.map(px, py, Map.ACTOR)
+			if not act then return end
+			act:setEffect(self.EFF_PSIONIC_BIND, dur, {power=1, apply_power=self:combatMindpower()})
+		end)
+		
 		return true
 	end,
 	info = function(self, t)

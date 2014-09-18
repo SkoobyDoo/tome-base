@@ -43,7 +43,7 @@ newTalent{
 	info = function(self, t)
 		return ([[For %d turns your pyrokinesis transcends your normal limits, increasing your Fire and Cold damage by %d%% and your Fire and Cold resistance penetration by %d%%.
 		In addition:
-		The cooldowns of Thermal Shield, Thermal Leech, Thermal Aura and Pyrokinesis are reset.
+		The cooldowns of Thermal Shield, Thermal Leech, Thermal Aura, Thermal Strike and Pyrokinesis are reset.
 		Thermal Aura effects will have their radius increased by 1.
 		Your Thermal Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Pyrokinesis will inflict Flameshock.
@@ -77,8 +77,12 @@ newTalent{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if not target then return end
 		
-		self:project(tg, x, y, DamageType.COLD, self:mindCrit(rng.avg(0.8*dam, dam)), {type="mindsear"})
-		target:setEffect(target.EFF_BRAINLOCKED, 4, {apply_power=self:combatMindpower()})
+		self:project(tg, x, y, function(px, py)
+			DamageType:get(DamageType.COLD).projector(self, px, py, DamageType.COLD, self:mindCrit(rng.avg(0.8*dam, dam)))
+			local act = game.level.map(px, py, Map.ACTOR)
+			if not act then return end
+			act:setEffect(target.EFF_BRAINLOCKED, 4, {apply_power=self:combatMindpower()})
+		end, {type="mindsear"})
 		
 		return true
 	end,

@@ -31,7 +31,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 1, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 1, 4)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
@@ -97,7 +97,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 1, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 1, 4)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
@@ -157,7 +157,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 1, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 1, 4)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,

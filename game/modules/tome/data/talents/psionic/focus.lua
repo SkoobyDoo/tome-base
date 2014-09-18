@@ -66,7 +66,7 @@ newTalent{
 
 newTalent{
 	name = "Pyrokinesis",
-	type = {"psionic/focus", 2},
+	type = {"psionic/focus", 1},
 	require = psi_wil_req2,
 	points = 5,
 	random_ego = "attack",
@@ -96,13 +96,13 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local dam = t.getDamage(self, t)
 		return ([[Telekinetically energize the matter of all foes within %d squares at the molecular level, setting them ablaze. This does %0.1f fire damage over six turns.]]):
-		format(radius, damDesc(self, DamageType.FIREBURN, dam))
+		format(radius, damDesc(self, DamageType.FIRE, dam))
 	end,
 }
 
 newTalent{
 	name = "Brain Storm",
-	type = {"psionic/focus", 3},
+	type = {"psionic/focus", 1},
 	points = 5, 
 	require = psi_wil_req3,
 	psi = 15,
