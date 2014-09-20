@@ -74,12 +74,13 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then return nil end
 		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
-		local dam = self:mindCrit(t.getDamage(self, t))
 				
 		if target ~= self then
 			local tg = self:getTalentTarget(t)
 			local x, y = self:getTarget(tg)
 			if not x or not y then return nil end
+			
+			local dam = self:mindCrit(t.getDamage(self, t))
 
 			if target:canBe("knockback") or rng.percent(t.getKBResistPen(self, t)) then
 				self:project({type="hit", range=tg.range}, target.x, target.y, DamageType.PHYSICAL, dam) --Direct Damage
@@ -109,6 +110,9 @@ newTalent{
 			local x, y = self:getTarget(tg)
 			if not x or not y then return nil end
 			if core.fov.distance(self.x, self.y, x, y) > tg.range then return nil end
+			
+			local dam = self:mindCrit(t.getDamage(self, t))
+			
 			for i = 1, math.floor(self:getTalentRange(t) / 2) do
 				self:project(tg, x, y, DamageType.DIG, 1)
 			end

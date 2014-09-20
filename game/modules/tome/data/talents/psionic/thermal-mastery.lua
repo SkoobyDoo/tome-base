@@ -120,7 +120,7 @@ newTalent{
 		local dur = t.getDuration(self, t)
 		local dam = t.getDamage(self, t)
 		local armor = t.getArmor(self, t)
-		self:project(tg, self.x, self.y, function(tx, ty)
+		self:project(tg, x, y, function(tx, ty)
 			local act = game.level.map(tx, ty, engine.Map.ACTOR)
 			if act then
 				local cold = DamageType:get("COLD").projector(self, tx, ty, DamageType.COLD, dam)

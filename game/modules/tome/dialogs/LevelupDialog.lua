@@ -803,9 +803,9 @@ function _M:getStatDesc(item)
 		text:add("Mindpower: ", color, ("%0.2f"):format(diff * 0.7), dc, true)
 		text:add("Mental save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
 		text:add("Spell save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		if self.actor:attr("use_psi_combat") then
-			text:add("Accuracy: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		end
+--		if self.actor:attr("use_psi_combat") then
+--			text:add("Accuracy: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
+--		end
 	elseif stat_id == self.actor.STAT_STR then
 		text:add("Physical power: ", color, ("%0.2f"):format(diff), dc, true)
 		text:add("Max encumbrance: ", color, ("%0.2f"):format(diff * 1.8), dc, true)
