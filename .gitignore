@@ -1,0 +1,13 @@
+cef3spawn
+build/*.make
+libte4-web.so
+Makefile
+bin
+divx2pass.log
+game/addons/**
+game/dlcs/**
+obj/**
+out.avi
+out.ogv
+te4_log_web.txt
+t-engine
