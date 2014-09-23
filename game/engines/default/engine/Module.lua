@@ -286,6 +286,73 @@ function _M:listVaultSavesForCurrent()
 	return lss
 end
 
+--- List all available background alterations
+function _M:listBackgrounds(mod)
+	local defs = {}
+	local load = function(dir, teaa)
+		local add_def = loadfile(dir.."/boot-screen/init.lua")
+		if add_def then
+			local add = {}
+			setfenv(add_def, add)
+			add_def()
+			table.print(add)
+
+			add.for_modules = table.reverse(add.for_modules)
+			if add.for_modules[mod.short_name] then
+				if add.add_backgrounds then 
+					for i, d in ipairs(add.add_backgrounds) do
+						local nd = {chance=d.chance, name=dir.."/boot-screen/"..d.name}
+						if d.logo then nd.logo = dir.."/boot-screen/"..d.logo end
+						if teaa then 
+							nd.mount = function() fs.mount(fs.getRealPath(teaa), "/testload", false) end
+							nd.umount = function() fs.umount(fs.getRealPath(teaa)) end
+						end
+						defs[#defs+1] = nd
+					end
+				end
+			end
+		end
+	end
+
+	local parse = function(basedir)
+		for i, short_name in ipairs(fs.list(basedir)) do if short_name:find("^.+%-.+") or short_name:find(".teaac$") then
+			local dir = basedir..short_name
+			-- print("Checking background", short_name, ":: (as dir)", fs.exists(dir.."/init.lua"), ":: (as teaa)", short_name:find(".teaa$"), "")
+			if fs.exists(dir.."/boot-screen/init.lua") then
+				load(dir, nil)
+			elseif short_name:find(".teaa$") or short_name:find(".teaac$") then
+				fs.mount(fs.getRealPath(dir), "/testload", false)
+				local mod
+				if fs.exists("/testload/boot-screen/init.lua") then
+					load("/testload", dir)
+				end
+				fs.umount(fs.getRealPath(dir))
+			end
+		end end
+	end
+	parse("/addons/")
+	parse("/dlcs/")
+
+	-- Add the default one
+	local backname = util.getval(mod.background_name) or "tome"
+	defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	
+	-- os.exit()
+
+	local def = nil
+	while not def or not rng.percent(def.chance or 100) do
+		def = rng.table(defs)
+	end
+
+	if def.mount then def.mount() end
+	local bkgs = core.display.loadImage(def.name) or core.display.loadImage("/data/gfx/background/tome.png")
+	local logo = nil
+	if def.logo then logo = {(core.display.loadImage(def.logo) or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()} end
+	if def.umount then def.umount() end
+
+	return bkgs, logo
+end
+
 --- List all available addons
 function _M:listAddons(mod, ignore_compat)
 	local adds = {}
@@ -553,14 +620,12 @@ function _M:loadScreen(mod)
 		local has_max = mod.loading_wait_ticks
 		if has_max then core.wait.addMaxTicks(has_max) end
 		local i, max, dir = has_max or 20, has_max or 20, -1
-		local backname = util.getval(mod.background_name) or "tome"
+		local bkgs, logo = self:listBackgrounds(mod)
 
-		local bkgs = core.display.loadImage("/data/gfx/background/"..backname..".png") or core.display.loadImage("/data/gfx/background/tome.png")
 		local sw, sh = core.display.size()
 		local bw, bh = bkgs:getSize()
 		local bkg = {bkgs:glTexture()}
 
-		local logo = {(core.display.loadImage("/data/gfx/background/"..backname.."-logo.png") or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()}
 		local pubimg, publisher = nil, nil
 		if mod.publisher_logo then
 			pubimg, publisher = core.display.loadImage("/data/gfx/background/"..mod.publisher_logo..".png"), nil
@@ -662,7 +727,7 @@ function _M:loadScreen(mod)
 			bkg[1]:toScreenFull(x, y, bw, bh, bw * bkg[4], bh * bkg[5])
 
 			-- Logo
-			logo[1]:toScreenFull(0, 0, logo[6], logo[7], logo[2], logo[3])
+			if logo then logo[1]:toScreenFull(0, 0, logo[6], logo[7], logo[2], logo[3]) end
 
 			-- Publisher Logo
 			if publisher then publisher[1]:toScreenFull(sw - publisher[6], 0, publisher[6], publisher[7], publisher[2], publisher[3]) end

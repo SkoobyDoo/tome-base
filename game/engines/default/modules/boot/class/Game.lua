@@ -57,7 +57,11 @@ function _M:init()
 	if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
 	else background_name = {"tome3"}
 	end
-	
+
+	local value = {name=background_name}
+	local hd = {"Boot:loadBackground", value=value}
+	if self:triggerHook(hd) then background_name = hd.value.name end
+
 	self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
 	if self.background then
 		self.background_w, self.background_h = self.background:getSize()
