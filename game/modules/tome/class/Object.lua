@@ -999,12 +999,12 @@ function _M:getTextualDesc(compare_with, use_actor)
 		local any_esp = false
 		local esps_compare = {}
 		for i, v in ipairs(compare_with or {}) do
-			if v[field] and v[field].esp_all then
+			if v[field] and v[field].esp_all and v[field].esp_all > 0 then
 				esps_compare["All"] = esps_compare["All"] or {}
 				esps_compare["All"][1] = true
 				any_esp = true
 			end
-			for type, i in pairs(v[field] and (v[field].esp or {}) or {}) do
+			for type, i in pairs(v[field] and (v[field].esp or {}) or {}) do if i and i > 0 then
 				local _, _, t, st = type:find("^([^/]+)/?(.*)$")
 				local esp = ""
 				if st and st ~= "" then
@@ -1015,17 +1015,17 @@ function _M:getTextualDesc(compare_with, use_actor)
 				esps_compare[esp] = esps_compare[esp] or {}
 				esps_compare[esp][1] = true
 				any_esp = true
-			end
+			end end
 		end
 
 		local esps = {}
-		if w.esp_all then
+		if w.esp_all and w.esp_all > 0 then
 			esps[#esps+1] = "All"
 			esps_compare[esps[#esps]] = esps_compare[esps[#esps]] or {}
 			esps_compare[esps[#esps]][2] = true
 			any_esp = true
 		end
-		for type, i in pairs(w.esp or {}) do
+		for type, i in pairs(w.esp or {}) do if i and i > 0 then
 			local _, _, t, st = type:find("^([^/]+)/?(.*)$")
 			if st and st ~= "" then
 				esps[#esps+1] = t:capitalize().."/"..st:capitalize()
@@ -1035,7 +1035,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			esps_compare[esps[#esps]] = esps_compare[esps[#esps]] or {}
 			esps_compare[esps[#esps]][2] = true
 			any_esp = true
-		end
+		end end
 		if any_esp then
 			desc:add("Grants telepathy: ")
 			for esp, isin in pairs(esps_compare) do
@@ -1124,18 +1124,18 @@ function _M:getTextualDesc(compare_with, use_actor)
 		local learn_talents = {}
 		for i, v in ipairs(compare_with or {}) do
 			if v[field] and v[field].learn_talent then
-				for tid, tl in pairs(v[field].learn_talent) do
+				for tid, tl in pairs(v[field].learn_talent) do if tl > 0 then
 					learn_talents[tid] = learn_talents[tid] or {}
 					learn_talents[tid][1] = tl
 					any_learn_talent = any_learn_talent + 1
-				end
+				end end
 			end
 		end
-		for tid, tl in pairs(w.learn_talent or {}) do
+		for tid, tl in pairs(w.learn_talent or {}) do if tl > 0 then
 			learn_talents[tid] = learn_talents[tid] or {}
 			learn_talents[tid][2] = tl
 			any_learn_talent = any_learn_talent + 1
-		end
+		end end
 		if any_learn_talent > 0 then
 			desc:add(("Talent%s granted: "):format(any_learn_talent > 1 and "s" or ""))
 			for tid, tl in pairs(learn_talents) do
