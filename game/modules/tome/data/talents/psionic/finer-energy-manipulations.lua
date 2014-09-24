@@ -100,63 +100,66 @@ newTalent{
 	fat_red = function(self, t)
 		return math.floor(self:combatTalentMindDamage(t, 2, 10))
 	end,
+	reshape = function(self, t, o, in_dialog)
+		if o.combat then
+			local atk_boost = t.boost(self, t)
+			local dam_boost = atk_boost
+			if (o.old_atk or 0) < atk_boost or (o.old_dam or 0) < dam_boost then
+				if not o.been_reshaped then
+					o.orig_atk = (o.combat.atk or 0)
+					o.orig_dam = (o.combat.dam or 0)
+				elseif o.been_reshaped == true then --Update items affected by older versions of this talent
+					o.name = o.name:gsub("reshaped ", "", 1)
+					o.orig_atk = o.combat.atk - (o.old_atk or 0)
+					o.orig_dam = o.combat.dam - (o.old_dam or 0)
+				end
+				o.combat.atk = o.orig_atk + atk_boost
+				o.combat.dam = o.orig_dam + dam_boost
+				o.old_atk = atk_boost
+				o.old_dam = dam_boost
+				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
+				o.special = true
+				o.been_reshaped = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") "
+				if in_dialog then self:talentDialogReturn(true) end
+			else
+				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
+			end
+		else
+			local armour = t.arm_boost(self, t)
+			local fat = t.fat_red(self, t)
+			if (o.old_fat or 0) < fat or o.wielder.combat_armor < (o.orig_arm or 0) + armour then
+				o.wielder = o.wielder or {}
+				if not o.been_reshaped then
+					o.orig_arm = (o.wielder.combat_armor or 0)
+					o.orig_fat = (o.wielder.fatigue or 0)
+				end
+				o.wielder.combat_armor = o.orig_arm
+				o.wielder.fatigue = o.orig_fat
+				o.wielder.combat_armor = (o.wielder.combat_armor or 0) + armour
+				o.wielder.fatigue = (o.wielder.fatigue or 0) - fat
+				if o.wielder.fatigue < 0 and not (o.orig_fat < 0) then
+					o.wielder.fatigue = 0
+				elseif o.wielder.fatigue < 0 and o.orig_fat < 0 then
+					o.wielder.fatigue = o.orig_fat
+				end
+				o.old_fat = fat
+				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
+				o.special = true
+				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
+				o.been_reshaped = "reshaped["..tostring(armour)..","..tostring(o.wielder.fatigue-o.orig_fat).."%] "
+				if in_dialog then self:talentDialogReturn(true) end
+			else
+				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
+			end
+		end
+	end,
 	action = function(self, t)
 		local ret = self:talentDialog(self:showInventory("Reshape which weapon or armor?", self:getInven("INVEN"),
 			function(o)
 				return not o.quest and (o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" )) and not o.fully_reshaped --Exclude fully reshaped?
 			end
 			, function(o, item)
-			if o.combat then
-				local atk_boost = t.boost(self, t)
-				local dam_boost = atk_boost
-				if (o.old_atk or 0) < atk_boost or (o.old_dam or 0) < dam_boost then
-					if not o.been_reshaped then
-						o.orig_atk = (o.combat.atk or 0)
-						o.orig_dam = (o.combat.dam or 0)
-					elseif o.been_reshaped == true then --Update items affected by older versions of this talent
-						o.name = o.name:gsub("reshaped ", "", 1)
-						o.orig_atk = o.combat.atk - (o.old_atk or 0)
-						o.orig_dam = o.combat.dam - (o.old_dam or 0)
-					end
-					o.combat.atk = o.orig_atk + atk_boost
-					o.combat.dam = o.orig_dam + dam_boost
-					o.old_atk = atk_boost
-					o.old_dam = dam_boost
-					game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-					o.special = true
-					o.been_reshaped = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") "
-					self:talentDialogReturn(true)
-				else
-					game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
-				end
-			else
-				local armour = t.arm_boost(self, t)
-				local fat = t.fat_red(self, t)
-				if (o.old_fat or 0) < fat or o.wielder.combat_armor < (o.orig_arm or 0) + armour then
-					o.wielder = o.wielder or {}
-					if not o.been_reshaped then
-						o.orig_arm = (o.wielder.combat_armor or 0)
-						o.orig_fat = (o.wielder.fatigue or 0)
-					end
-					o.wielder.combat_armor = o.orig_arm
-					o.wielder.fatigue = o.orig_fat
-					o.wielder.combat_armor = (o.wielder.combat_armor or 0) + armour
-					o.wielder.fatigue = (o.wielder.fatigue or 0) - fat
-					if o.wielder.fatigue < 0 and not (o.orig_fat < 0) then
-						o.wielder.fatigue = 0
-					elseif o.wielder.fatigue < 0 and o.orig_fat < 0 then
-						o.wielder.fatigue = o.orig_fat
-					end
-					o.old_fat = fat
-					game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-					o.special = true
-					if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
-					o.been_reshaped = "reshaped["..tostring(armour)..","..tostring(o.wielder.fatigue-o.orig_fat).."%] "
-					self:talentDialogReturn(true)
-				else
-					game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
-				end
-			end
+			t.reshape(self, t, o, true)
 		end))
 		if not ret then return nil end
 		return true
@@ -167,7 +170,8 @@ newTalent{
 		local fat = t.fat_red(self, t)
 		return ([[Manipulate forces on the molecular level to realign, rebalance, and hone a weapon, set of body armor, or a shield.  (Mindstars resist being adjusted because they are already in an ideal natural state.)
 		This permanently increases the Accuracy and damage of any weapon by %d or increases the armour rating of any piece of Armour by %d, while reducing its fatigue rating by %d.
-		The effects increase with your Mindpower and can only be applied (or reapplied) once to any item.]]):
+		The effects increase with your Mindpower and multiple uses on an item only increase the effect if your skill has improved.
+		These bonusses are automatically updated on equipped items when you level up.]]):
 		format(weapon_boost, arm, fat)
 	end,
 }

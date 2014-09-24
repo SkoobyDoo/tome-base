@@ -179,6 +179,24 @@ function _M:finish()
 		if self.actor:knowTalent(tid) then self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
 	end
 
+	-- Reshape autoupdate
+	if self.actor:knowTalent(self.actor["T_RESHAPE_WEAPON/ARMOUR"]) then
+		for inven_id, inven in pairs(self.actor.inven) do
+			for item = #inven, 1, -1 do
+				local o = inven[item]
+				if o.been_reshaped then
+					if o.wielded then
+						o = self.actor:takeoffObject(inven, item)
+						local t = self.actor:getTalentFromId(self.actor["T_RESHAPE_WEAPON/ARMOUR"])
+						t.reshape(self.actor, t, o, false)
+						self.actor:addObject(inven, o)
+						--self.actor:wearObject(o, true, true)
+					end
+				end
+			end
+		end
+	end
+	
 	-- Prodigies
 	if self.on_finish_prodigies then
 		for tid, ok in pairs(self.on_finish_prodigies) do if ok then self.actor:learnTalent(tid, true, nil, {no_unlearn=true}) end end
