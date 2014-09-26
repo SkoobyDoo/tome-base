@@ -3669,7 +3669,7 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 	wielder = {
 		combat_def = 6,
 		fatigue = 1,
-		spellpower=5,
+		combat_spellpower=5,
 		inc_stats = { [Stats.STAT_MAG] = 8, [Stats.STAT_CUN] = 8,},
 		resists={
 			[DamageType.ARCANE] = 12,
