@@ -70,7 +70,7 @@ newTalent{
 	requires_target = true,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=2, selffire=false, talent=t} end,
 	action = function(self, t)
-		local tg = {type="hit", range=1, nowarning=true }
+		local tg = {type="hit", range=1, nowarning=true, nolock=true }
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then return nil end
 		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
@@ -95,7 +95,7 @@ newTalent{
 					end
 				end
 				tg.act_exclude = {[target.uid]=true} -- Don't hit primary target with AOE
-				self:project(tg, target.x, target.y, DamageType.SPELLKNOCKBACK, dam/2) --AOE damage
+				self:project(tg, target.x, target.y, DamageType.MINDKNOCKBACK, dam/2) --AOE damage
 				if target:canBe("stun") then
 					target:setEffect(target.EFF_STUNNED, math.floor(self:getTalentRange(t) / 2), {apply_power=self:combatMindpower()})
 				else
