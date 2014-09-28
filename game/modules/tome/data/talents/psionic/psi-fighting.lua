@@ -74,7 +74,7 @@ newTalent{
 	sustain_psi = 10,
 	no_energy = true,
 	tactical = { BUFF = 2 },
-	getMult = function(self, t) return self:combatTalentScale(t, 0.07, 0.25) end,
+	getMult = function(self, t) return self:combatTalentScale(t, 0.1, 0.3) end,
 	activate = function(self, t)
 		local str_power = t.getMult(self, t)*self:getWil()
 		local dex_power = t.getMult(self, t)*self:getCun()
@@ -106,7 +106,7 @@ newTalent{
 	require = psi_cun_req3,
 	points = 5,
 	cooldown = 10,
-	psi = 15,
+	psi = 10,
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.75, 1.1) end,
@@ -119,7 +119,7 @@ newTalent{
 		return ([[Assume a defensive mental state.
 		For one turn, you will fully block the next melee attack used against you with your telekinetically-wielded weapon and then strike the attacker with it for %d%% weapon damage. 
 		At raw talent level 3 you will also disarm the attacker for 3 turns.
-		At raw talent level 5 you will be able to reflexively block up to one attack per turn with a %d%% chance, based on your cunning. Each trigger requires and uses 15 Psi.
+		At raw talent level 5 you will be able to reflexively block up to one attack per turn with a %d%% chance, based on your cunning. Each trigger requires and uses 10 Psi.
 		This requires a telekinetically-wielded weapon.]]):
 		format(100 * t.getWeaponDamage(self, t), t.getChance(self, t))
 	end,
@@ -182,11 +182,7 @@ newTalent{
 		return ([[Focus your will into a powerful thrust of your telekinetically-wielded weapon to impale your target and then viciously rip it free.
 		This deals %d%% weapon damage and then causes the victim to bleed for %0.1f Physical damage over four turns. 
 		At level 3 the thrust is so powerful that it has %d%% chance to shatter a temporary damage shield if one exists.
-		Your Willpower and Cunning are used instead of Strength and Dexterity to determine Accuracy and damage.
 		The bleeding damage increases with your Mindpower.]]):
 		format(100 * t.getWeaponDamage(self, t), damDesc(self, DamageType.PHYSICAL, t.getDamage(self,t)), t.getShatter(self, t))
 	end,
 }
-
-
-

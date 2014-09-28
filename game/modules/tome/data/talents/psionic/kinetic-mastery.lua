@@ -164,22 +164,24 @@ newTalent{
 	mode = "sustained", no_sustain_autoreset = true,
 	sustain_psi = 25,
 	cooldown = 10,
-	range = function(self, t) return math.floor(self:combatTalentScale(t, 3, 5, "log")) end, 
+	range = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8, "log")) end, 
 	radius = 10,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), selffire=false, talent=t}
 	end,
-	getEvasion = function(self, t) return self:combatTalentLimit(t, 100, 17, 45), self:getTalentLevel(t) >= 4 and 2 or 1 end, -- Limit chance <100%
+	getEvasion = function(self, t) return self:combatTalentLimit(t, 90, 15, 40), self:getTalentLevel(t) >= 4 and 2 or 1 end, -- Limit chance <90%
 	activate = function(self, t)
 		local chance, spread = t.getEvasion(self, t)
 		return {
 			chance = self:addTemporaryValue("projectile_evasion", chance),
+			slow = self:addTemporaryValue("slow_projectiles", slow),
 			spread = self:addTemporaryValue("projectile_evasion_spread", spread),
 		}
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("projectile_evasion", p.chance)
 		self:removeTemporaryValue("projectile_evasion_spread", p.spread)
+		self:removeTemporaryValue("slow_projectiles", p.slow)
 		if self:attr("save_cleanup") then return true end
 	
 		local tg = self:getTalentTarget(t)
@@ -207,10 +209,10 @@ newTalent{
 	info = function(self, t)
 		local chance, spread = t.getEvasion(self, t)
 		return ([[You learn to devote a portion of your attention to mentally swatting, grabbing, or otherwise deflecting incoming projectiles.
-		All projectiles targeting you have a %d%% chance to instead target another spot within radius %d.
+		All projectiles targeting you have a %d%% chance to instead target another spot within radius %d and move %d%% slower.
 		If you choose, you can use your mind to grab all projectiles within radius 10 of you and hurl them toward any location within range %d of you, but this will break your concentration.
 		To do this, deactivate this sustained talent.]]):
-		format(chance, spread, self:getTalentRange(t))
+		format(chance, spread, chance, self:getTalentRange(t))
 	end,
 }
 

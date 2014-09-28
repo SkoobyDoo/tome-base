@@ -65,7 +65,7 @@ newTalent{
 	tactical = { ATTACK = { COLD = 3} },
 	range = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
 	getDamage = function (self, t)
-		return self:combatTalentMindDamage(t, 12, 340)
+		return self:combatTalentMindDamage(t, 12, 300)
 	end,
 	requires_target = true,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=0, selffire=false, talent=t} end,
@@ -109,7 +109,7 @@ newTalent{
 	getDuration = function (self, t)
 		return math.floor(self:combatTalentMindDamage(t, 4, 8))
 	end,
-	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 60) end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 80) end,
 	getArmor = function(self, t) return self:combatTalentMindDamage(t, 10, 20) end,
 	requires_target = true,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t, friendlyfire=false} end,

@@ -207,7 +207,7 @@ newTalent{
 				
 				table.sort(list, "dist")
 				local a = list[1].a
-				self:project({type="ball", range=6, radius=0, selffire=false, talent=t}, a.x, a.y, bolt[1], self:hasEffect(self.EFF_PSIFRENZY).damage, {type=bolt[2]})
+				self:project({type="ball", range=6, radius=0, selffire=false, talent=t}, a.x, a.y, bolt[1], self:mindCrit(self:hasEffect(self.EFF_PSIFRENZY).damage), {type=bolt[2]})
 				
 			end
 			return
