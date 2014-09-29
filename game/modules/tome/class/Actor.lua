@@ -3158,11 +3158,11 @@ function _M:die(src, death_note)
 			end
 		end)
 	end
-	
+
 	if self:hasEffect(self.EFF_TRIM_THREADS) then
 		local p = self:hasEffect(self.EFF_TRIM_THREADS)
 		p.src:incParadox(-p.reduction)
-	end	
+	end
 
 	if self:hasEffect(self.EFF_GHOUL_ROT) then
 		local p = self:hasEffect(self.EFF_GHOUL_ROT)
@@ -5838,12 +5838,17 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		if not p.no_ct_effect and not e.no_ct_effect and e.status == "detrimental" then self:crossTierEffect(eff_id, p.apply_power, p.apply_save or save_for_effects[e.type]) end
 		p.total_dur = p.dur
 
-		if e.status == "detrimental" and self:checkHit(save, p.apply_power, 0, 95) and p.dur > 0 then
-			game.logSeen(self, "#ORANGE#%s shrugs off the effect '%s'!", self.name:capitalize(), e.desc)
-			p.dur = 0
+		if p.dur > 0 and e.status == "detrimental" then
+			local saved = self:checkHit(save, p.apply_power, 0, 95)
+			local hd = {"Actor:effectSave", saved = saved, save_type = save_type, eff_id = eff_id, e = e, p = p,}
+			self:triggerHook(hd)
+			self:fireTalentCheck("callbackOnEffectSave", hd)
+			saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p
+			if saved then
+				game.logSeen(self, "#ORANGE#%s shrugs off the effect '%s'!", self.name:capitalize(), e.desc)
+				return true
+			end
 		end
-
-		p.apply_power = nil
 	end
 
 	if e.status == "detrimental" and self:knowTalent(self.T_RESILIENT_BONES) then

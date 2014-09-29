@@ -106,8 +106,8 @@ function _M:setEffect(eff_id, dur, p, silent)
 	end
 	p.dur = dur
 	p.effect_id = eff_id
-	self:check("on_set_temporary_effect", eff_id, _M.tempeffect_def[eff_id], p)
-	if p.dur <= 0 then return end
+	if self:check("on_set_temporary_effect", eff_id, _M.tempeffect_def[eff_id], p) then return end
+	if p.dur <= 0 then return self:removeEffect(eff_id) end
 
 	-- If we already have it, we check if it knows how to "merge", or else we remove it and re-add it
 	if self:hasEffect(eff_id) then
