@@ -4465,6 +4465,17 @@ function _M:preUseTalent(ab, silent, fake)
 		if rng.percent(self:attr("spell_failure")) then
 			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
 			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+			return false
+		end
+	end
+
+	-- Nature can fail
+	if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
+		if rng.percent(self:attr("nature_failure")) then
+			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
+			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 			return false
 		end
 	end
@@ -4588,6 +4599,7 @@ local sustainCallbackCheck = {
 	callbackOnTakeoff = "talents_on_takeoff",
 	callbackOnTalentPost = "talents_on_talent_post",
 	callbackOnTemporaryEffect = "talents_on_tmp",
+	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
