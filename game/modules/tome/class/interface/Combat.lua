@@ -1045,7 +1045,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		self:attr("silent_heal", -1)
 	end
 
-	return self:combatSpeed(weapon), hitted
+	return self:combatSpeed(weapon), hitted, dam
 end
 
 _M.weapon_talents = {
