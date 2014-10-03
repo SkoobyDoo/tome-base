@@ -1216,6 +1216,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "mana_regen", "%+.2f", "Mana each turn: ")
 		compare_fields(w, compare_with, field, "hate_regen", "%+.2f", "Hate each turn: ")
 		compare_fields(w, compare_with, field, "psi_regen", "%+.2f", "Psi each turn: ")
+		compare_fields(w, compare_with, field, "vim_regen", "%+.2f", "Vim each turn: ")
 		compare_fields(w, compare_with, field, "positive_regen_ref_mod", "%+.2f", "P.Energy each turn: ")
 		compare_fields(w, compare_with, field, "negative_regen_ref_mod", "%+.2f", "N.Energy each turn: ")
 
