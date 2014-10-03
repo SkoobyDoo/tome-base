@@ -4860,6 +4860,7 @@ local sustainCallbackCheck = {
 	callbackOnActBase = "talents_on_act_base",
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
+	callbackOnRun = "talents_on_run",
 	callbackOnDeath = "talents_on_death",
 	callbackOnKill = "talents_on_kill",
 	callbackOnMeleeAttack = "talents_on_melee_attack",

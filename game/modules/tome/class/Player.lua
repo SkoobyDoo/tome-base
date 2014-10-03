@@ -986,6 +986,8 @@ function _M:runCheck(ignore_memory)
 		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].actor.name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
 	end
 
+	if self:fireTalentCheck("callbackOnRun") then return false, "talent prevented" end
+
 	if self.air_regen < 0 and self.air < 0.75 * self.max_air then return false, "losing breath!" end
 
 	-- Notice any noticeable terrain
