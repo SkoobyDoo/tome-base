@@ -52,7 +52,7 @@ local reward_types = {
 			types = {
 				["wild-gift/call"] = 0.8,
 			},
-			saves = { mind = 4 },
+			saves = { mental = 4 },
 			talents = {
 				[Talents.T_NATURE_TOUCH] = 1,
 				[Talents.T_EARTH_S_EYES] = 1,
@@ -153,7 +153,7 @@ local reward_types = {
 				[Talents.T_TRACK] = 1,
 				[Talents.T_HEAVE] = 1,
 			},
-			saves = { spell = 4, mind = 4 },
+			saves = { spell = 4, mental = 4 },
 			stats = {
 				[Stats.STAT_CUN] = 1,
 				[Stats.STAT_WIL] = 2,
@@ -215,8 +215,8 @@ if quest.to_zigur and reward.antimagic then reward = reward.antimagic reward.is_
 
 game.player:registerEscorts(quest.to_zigur and "zigur" or "saved")
 
-local saves_name = { mind="mental", spell="spell", phys="physical"}
-local saves_tooltips = { mind="MENTAL", spell="SPELL", phys="PHYS"}
+local saves_name = { mental="mental", spell="spell", phys="physical"}
+local saves_tooltips = { mental="MENTAL", spell="SPELL", phys="PHYS"}
 
 local function generate_rewards()
 	local answers = {}
