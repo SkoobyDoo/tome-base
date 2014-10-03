@@ -22,20 +22,23 @@ newTalent{
 	type = {"corruption/shadowflame", 1},
 	require = corrs_req1,
 	points = 5,
-	vim = 20,
+	vim = 12,
 	cooldown = 30,
+	no_energy = true,
 	tactical = { BUFF = 2, ESCAPE = 1, CLOSEIN = 1 },
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 5, 9)) end, -- Limit < 30 (make sure they can't hide forever)
+	getDefs = function(self, t) return self:combatTalentScale(t, 5, 20), self:combatTalentScale(t, 5, 16) end,
 	action = function(self, t)
-		self:setEffect(self.EFF_WRAITHFORM, t.getDuration(self, t), {def=self:combatTalentSpellDamage(t, 5, 19), armor=self:combatTalentSpellDamage(t, 5, 15)})
+		local def, armor = t.getDefs(self, t)
+		self:setEffect(self.EFF_WRAITHFORM, t.getDuration(self, t), {def=def, armor=armor})
 		return true
 	end,
 	info = function(self, t)
 		return ([[Turn into a wraith, allowing you to walk through walls (but not preventing suffocation) for %d turns.
-		Also increases your Defense and Armour by %d and %d, respectively.
+		Also increases your defense and armour by %d and %d, respectively.
 		If you are still in a wall when the effect ends you will randomly teleport.
-		The bonuses will increase with your Spellpower.]]):
-		format(t.getDuration(self, t), self:combatTalentSpellDamage(t, 5, 19), self:combatTalentSpellDamage(t, 5, 15))
+		]]):
+		format(t.getDuration(self, t), t.getDefs(self, t))
 	end,
 }
 
