@@ -42,8 +42,8 @@ newTalent{
 	info = function(self, t)
 		return ([[For %d turns your telekinesis transcends your normal limits, increasing your Physical damage by %d%% and you Physical resistance penetration by %d%%.
 		In addition:
-		The cooldowns of Kinetic Shield, Kinetic Leech, Kinetic Aura and Mindlash are reset.
-		Kinetic Aura will either increase in radius to 2, or apply its damage bonus to all of your weapons, whichever is applicable.
+		The cooldowns of Kinetic Shield, Kinetic Leech, Kinetic Aura, Kinetic Strike and Mindlash are reset.
+		Kinetic Aura effects will have their radius increased by 1.
 		Your Kinetic Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Mindlash will also inflict stun.
 		Kinetic Leech will put enemies to sleep.
@@ -52,7 +52,6 @@ newTalent{
 		Only one Transcendent talent may be in effect at a time.]]):format(t.getDuration(self, t), t.getPower(self, t), t.getPenetration(self, t))
 	end,
 }
-
 
 newTalent{
 	name = "Kinetic Surge", image = "talents/telekinetic_throw.png",
@@ -63,7 +62,7 @@ newTalent{
 	cooldown = 15,
 	psi = 20,
 	tactical = { CLOSEIN = 2, ATTACK = { PHYSICAL = 2 }, ESCAPE = 2 },
-	range = function(self, t) return self:combatTalentLimit(t, 10, 6, 9) end,
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 6, 9)) end,
 	getDamage = function (self, t)
 		return math.floor(self:combatTalentMindDamage(t, 20, 180))
 	end,
@@ -71,16 +70,17 @@ newTalent{
 	requires_target = true,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=2, selffire=false, talent=t} end,
 	action = function(self, t)
-		local tg = {type="hit", range=1, nowarning=true }
+		local tg = {type="hit", range=1, nowarning=true, nolock=true }
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then return nil end
 		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
-		local dam = self:mindCrit(t.getDamage(self, t))
 				
 		if target ~= self then
 			local tg = self:getTalentTarget(t)
 			local x, y = self:getTarget(tg)
 			if not x or not y then return nil end
+			
+			local dam = self:mindCrit(t.getDamage(self, t))
 
 			if target:canBe("knockback") or rng.percent(t.getKBResistPen(self, t)) then
 				self:project({type="hit", range=tg.range}, target.x, target.y, DamageType.PHYSICAL, dam) --Direct Damage
@@ -95,7 +95,7 @@ newTalent{
 					end
 				end
 				tg.act_exclude = {[target.uid]=true} -- Don't hit primary target with AOE
-				self:project(tg, target.x, target.y, DamageType.SPELLKNOCKBACK, dam/2) --AOE damage
+				self:project(tg, target.x, target.y, DamageType.MINDKNOCKBACK, dam/2) --AOE damage
 				if target:canBe("stun") then
 					target:setEffect(target.EFF_STUNNED, math.floor(self:getTalentRange(t) / 2), {apply_power=self:combatMindpower()})
 				else
@@ -110,6 +110,9 @@ newTalent{
 			local x, y = self:getTarget(tg)
 			if not x or not y then return nil end
 			if core.fov.distance(self.x, self.y, x, y) > tg.range then return nil end
+			
+			local dam = self:mindCrit(t.getDamage(self, t))
+			
 			for i = 1, math.floor(self:getTalentRange(t) / 2) do
 				self:project(tg, x, y, DamageType.DIG, 1)
 			end
@@ -147,7 +150,7 @@ newTalent{
 		
 		When used on yourself, you will launch in a straight line, knocking enemies flying and doing %0.1f Physical damage to each.
 		You can break through %d walls while doing this.
-		The damage improves with your Mindpower and the range increases with both Mindpower and Strength.]]):
+		The damage improves with your Mindpower and the range increases with Mindpower.]]):
 		format(range, dam, math.floor(range/2), dam/2, t.getKBResistPen(self, t), dam, math.floor(range/2))
 	end,
 }
@@ -161,22 +164,24 @@ newTalent{
 	mode = "sustained", no_sustain_autoreset = true,
 	sustain_psi = 25,
 	cooldown = 10,
-	range = function(self, t) return math.floor(self:combatTalentScale(t, 3, 5, "log")) end, 
+	range = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8, "log")) end, 
 	radius = 10,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), selffire=false, talent=t}
 	end,
-	getEvasion = function(self, t) return self:combatTalentLimit(t, 100, 17, 45), self:getTalentLevel(t) >= 4 and 2 or 1 end, -- Limit chance <100%
+	getEvasion = function(self, t) return self:combatTalentLimit(t, 90, 15, 40), self:getTalentLevel(t) >= 4 and 2 or 1 end, -- Limit chance <90%
 	activate = function(self, t)
 		local chance, spread = t.getEvasion(self, t)
 		return {
 			chance = self:addTemporaryValue("projectile_evasion", chance),
+			slow = self:addTemporaryValue("slow_projectiles", slow),
 			spread = self:addTemporaryValue("projectile_evasion_spread", spread),
 		}
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("projectile_evasion", p.chance)
 		self:removeTemporaryValue("projectile_evasion_spread", p.spread)
+		self:removeTemporaryValue("slow_projectiles", p.slow)
 		if self:attr("save_cleanup") then return true end
 	
 		local tg = self:getTalentTarget(t)
@@ -204,10 +209,10 @@ newTalent{
 	info = function(self, t)
 		local chance, spread = t.getEvasion(self, t)
 		return ([[You learn to devote a portion of your attention to mentally swatting, grabbing, or otherwise deflecting incoming projectiles.
-		All projectiles targeting you have a %d%% chance to instead target another spot within radius %d.
+		All projectiles targeting you have a %d%% chance to instead target another spot within radius %d and move %d%% slower.
 		If you choose, you can use your mind to grab all projectiles within radius 10 of you and hurl them toward any location within range %d of you, but this will break your concentration.
 		To do this, deactivate this sustained talent.]]):
-		format(chance, spread, self:getTalentRange(t))
+		format(chance, spread, chance, self:getTalentRange(t))
 	end,
 }
 
@@ -235,11 +240,14 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.IMPLOSION, {dur=dur, dam=dam})
-		local target = game.level.map(x, y, Map.ACTOR)
-		if target then
-			target:setEffect(self.EFF_PSIONIC_BIND, dur, {power=1, apply_power=self:combatMindpower()})
-		end
+		
+		self:project(tg, x, y, function(px, py)
+			DamageType:get(DamageType.IMPLOSION).projector(self, px, py, DamageType.IMPLOSION, {dur=dur, dam=dam})
+			local act = game.level.map(px, py, Map.ACTOR)
+			if not act then return end
+			act:setEffect(self.EFF_PSIONIC_BIND, dur, {power=1, apply_power=self:combatMindpower()})
+		end)
+		
 		return true
 	end,
 	info = function(self, t)

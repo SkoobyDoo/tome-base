@@ -783,15 +783,15 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	-- Psi Auras
 	local psiweapon = self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1]
 	if psiweapon and psiweapon.combat and psiweapon.subtype ~= "mindstar"  then
-		if hitted and not target.dead and self:knowTalent(self.T_KINETIC_AURA) and self:isTalentActive(self.T_KINETIC_AURA) and (self.use_psi_combat or self:hasEffect(EFF_TRANSCENDENT_TELEKINESIS)) then
+		if hitted and not target.dead and self:knowTalent(self.T_KINETIC_AURA) and self:isTalentActive(self.T_KINETIC_AURA) and self.use_psi_combat then
 			local t = self:getTalentFromId(self.T_KINETIC_AURA)
 			t.do_combat(self, t, target)
 		end
-		if hitted and not target.dead and self:knowTalent(self.T_THERMAL_AURA) and self:isTalentActive(self.T_THERMAL_AURA) and (self.use_psi_combat or self:hasEffect(EFF_TRANSCENDENT_TELEKINESIS)) then
+		if hitted and not target.dead and self:knowTalent(self.T_THERMAL_AURA) and self:isTalentActive(self.T_THERMAL_AURA) and self.use_psi_combat then
 			local t = self:getTalentFromId(self.T_THERMAL_AURA)
 			t.do_combat(self, t, target)
 		end
-		if hitted and not target.dead and self:knowTalent(self.T_CHARGED_AURA) and self:isTalentActive(self.T_CHARGED_AURA) and (self.use_psi_combat or self:hasEffect(EFF_TRANSCENDENT_TELEKINESIS)) then
+		if hitted and not target.dead and self:knowTalent(self.T_CHARGED_AURA) and self:isTalentActive(self.T_CHARGED_AURA) and self.use_psi_combat then
 			local t = self:getTalentFromId(self.T_CHARGED_AURA)
 			t.do_combat(self, t, target)
 		end

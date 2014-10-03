@@ -46,6 +46,7 @@ newTalent{
 
 		for i, o in ipairs(self:getInven("MAINHAND") or {}) do self:onTakeoff(o, self.INVEN_MAINHAND, true) self:onWear(o, self.INVEN_MAINHAND, true) end
 		for i, o in ipairs(self:getInven("OFFHAND") or {}) do self:onTakeoff(o, self.INVEN_OFFHAND, true) self:onWear(o, self.INVEN_OFFHAND, true) end
+		for i, o in ipairs(self:getInven("PSIONIC_FOCUS") or {}) do self:onTakeoff(o, self.INVEN_PSIONIC_FOCUS, true) self:onWear(o, self.INVEN_PSIONIC_FOCUS, true) end
 		self:updateModdableTile()
 
 		return r
@@ -55,6 +56,7 @@ newTalent{
 
 		for i, o in ipairs(self:getInven("MAINHAND") or {}) do self:onTakeoff(o, self.INVEN_MAINHAND, true) self:checkMindstar(o) self:onWear(o, self.INVEN_MAINHAND, true) end
 		for i, o in ipairs(self:getInven("OFFHAND") or {}) do self:onTakeoff(o, self.INVEN_OFFHAND, true) self:checkMindstar(o) self:onWear(o, self.INVEN_OFFHAND, true) end
+		for i, o in ipairs(self:getInven("PSIONIC_FOCUS") or {}) do self:onTakeoff(o, self.INVEN_PSIONIC_FOCUS, true) self:checkMindstar(o) self:onWear(o, self.INVEN_PSIONIC_FOCUS, true) end
 		self:updateModdableTile()
 
 		return true

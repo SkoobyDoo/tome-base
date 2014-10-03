@@ -2997,35 +2997,10 @@ newEffect{
 	parameters = { },
 	on_gain = function(self, err) return "#Target# glints with a crystaline aura", "+Crystal Resonance" end,
 	on_lose = function(self, err) return "#Target# is no longer glinting.", "-Crystal Resonance" end,
-	gem_types = {
-		GEM_DIAMOND = function(self, eff) return {self:effectTemporaryValue(eff, "inc_stats", {[Stats.STAT_STR] = 5, [Stats.STAT_DEX] = 5, [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 5, [Stats.STAT_CON] = 5 }), } end,
-		GEM_PEARL = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 5}), self:effectTemporaryValue(eff,"combat_armour", 5) } end,
-		GEM_MOONSTONE = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 10), self:effectTemporaryValue(eff,"combat_mentalresist", 10), self:effectTemporaryValue(eff,"combat_spellresist", 10), self:effectTemporaryValue(eff,"combat_physresist", 10), } end,
-		GEM_FIRE_OPAL = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 10}), self:effectTemporaryValue(eff,"combat_physcrit", 5), self:effectTemporaryValue(eff,"combat_mindcrit", 5), self:effectTemporaryValue(eff,"combat_spellcrit", 5) } end,
-		GEM_BLOODSTONE = function(self, eff) return {self:effectTemporaryValue(eff,"stun_immune", 0.6) } end,
-		GEM_RUBY = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 4, [Stats.STAT_DEX] = 4, [Stats.STAT_MAG] = 4, [Stats.STAT_WIL] = 4, [Stats.STAT_CUN] = 4, [Stats.STAT_CON] = 4 }) } end,
-		GEM_AMBER = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 8}), self:effectTemporaryValue(eff,"combat_physcrit", 4), self:effectTemporaryValue(eff,"combat_mindcrit", 4), self:effectTemporaryValue(eff,"combat_spellcrit", 4) } end,
-		GEM_TURQUOISE = function(self, eff) return {self:effectTemporaryValue(eff,"see_stealth", 10), self:effectTemporaryValue(eff,"see_invisible", 10) } end,
-		GEM_JADE = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 4}), self:effectTemporaryValue(eff,"combat_armour", 4) } end,
-		GEM_SAPPHIRE = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 8), self:effectTemporaryValue(eff,"combat_mentalresist", 8), self:effectTemporaryValue(eff,"combat_spellresist", 8), self:effectTemporaryValue(eff,"combat_physresist", 8), } end,
-		GEM_QUARTZ = function(self, eff) return {self:effectTemporaryValue(eff,"stun_immune", 0.3) } end,
-		GEM_EMERALD = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 3}), self:effectTemporaryValue(eff,"combat_armour", 3) } end,
-		GEM_LAPIS_LAZULI = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 6), self:effectTemporaryValue(eff,"combat_mentalresist", 6), self:effectTemporaryValue(eff,"combat_spellresist", 6), self:effectTemporaryValue(eff,"combat_physresist", 6), } end,
-		GEM_GARNET = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 6}), self:effectTemporaryValue(eff,"combat_physcrit", 3), self:effectTemporaryValue(eff,"combat_mindcrit", 3), self:effectTemporaryValue(eff,"combat_spellcrit", 3) } end,
-		GEM_ONYX = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 3, [Stats.STAT_DEX] = 3, [Stats.STAT_MAG] = 3, [Stats.STAT_WIL] = 3, [Stats.STAT_CUN] = 3, [Stats.STAT_CON] = 3 }) } end,
-		GEM_AMETHYST = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 4}), self:effectTemporaryValue(eff,"combat_physcrit", 2), self:effectTemporaryValue(eff,"combat_mindcrit", 2), self:effectTemporaryValue(eff,"combat_spellcrit", 2) } end,
-		GEM_OPAL = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 2, [Stats.STAT_DEX] = 2, [Stats.STAT_MAG] = 2, [Stats.STAT_WIL] = 2, [Stats.STAT_CUN] = 2, [Stats.STAT_CON] = 2 }) } end,
-		GEM_TOPAZ = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 4), self:effectTemporaryValue(eff,"combat_mentalresist", 4), self:effectTemporaryValue(eff,"combat_spellresist", 4), self:effectTemporaryValue(eff,"combat_physresist", 4), } end,
-		GEM_AQUAMARINE = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 2}), self:effectTemporaryValue(eff,"combat_armour", 2) } end,
-		GEM_AMETRINE = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 2}), self:effectTemporaryValue(eff,"combat_physcrit", 1), self:effectTemporaryValue(eff,"combat_mindcrit", 1), self:effectTemporaryValue(eff,"combat_spellcrit", 1) } end,
-		GEM_ZIRCON = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 1}), self:effectTemporaryValue(eff,"combat_armour", 1) } end,
-		GEM_SPINEL = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 2), self:effectTemporaryValue(eff,"combat_mentalresist", 2), self:effectTemporaryValue(eff,"combat_spellresist", 2), self:effectTemporaryValue(eff,"combat_physresist", 2), } end,
-		GEM_CITRINE = function(self, eff) return {self:effectTemporaryValue(eff,"lite", 1), self:effectTemporaryValue(eff,"infravision", 2) } end,
-		GEM_AGATE = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 1, [Stats.STAT_DEX] = 1, [Stats.STAT_MAG] = 1, [Stats.STAT_WIL] = 1, [Stats.STAT_CUN] = 1, [Stats.STAT_CON] = 1 }) } end,
-	},
 	activate = function(self, eff)
-		local buff = self.tempeffect_def.EFF_CRYSTAL_BUFF.gem_types[eff.gem]
-		eff.id1 = buff(self, eff)
+		for a, b in pairs(eff.effects) do
+			self:effectTemporaryValue(eff, a, b)
+		end
 	end,
 	deactivate = function(self, eff)
 

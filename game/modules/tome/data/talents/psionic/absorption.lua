@@ -217,9 +217,10 @@ newTalent{
 		local s_str = getShieldStrength(self, t)
 		local absorb = 100*getEfficiency(self,t)
 		return ([[Surround yourself with a shield that will absorb %d%% of any physical/acid/nature/temporal attack, up to a maximum of %d damage per attack.
-		Every time your shield absorbs damage, you convert some of the attack into energy, gaining two points of Psi, plus an additional point for every %0.1f points of damage absorbed, up to a maximum %0.1f points each turn.
+		Every time your shield absorbs damage, you convert some of the attack into energy, gaining one point of Psi, plus an additional point for every %0.1f points of damage absorbed, up to a maximum %0.1f points each turn.
 		At talent level 3, when you de-activate the shield twice the absorbed damage (if any) in the last 3 turns is released as a full psionic shield (absorbing all damage).
-		The maximum amount of damage your shield can absorb and the efficiency of the psi gain scale with your mindpower.]]):
+		The maximum amount of damage your shield can absorb and the efficiency of the psi gain scale with your mindpower.
+		You can only have two of these shields active at once.]]):
 		format(absorb, s_str, shieldMastery(self, t), maxPsiAbsorb(self,t))
 	end,
 }
@@ -359,9 +360,10 @@ newTalent{
 		local s_str = getShieldStrength(self, t)
 		local absorb = 100*getEfficiency(self,t)
 		return ([[Surround yourself with a shield that will absorb %d%% of any fire/cold/light/arcane attack, up to a maximum of %d damage per attack. 
-		Every time your shield absorbs damage, you convert some of the attack into energy, gaining two points of Psi, plus an additional point for every %0.1f points of damage absorbed, up to a maximum %0.1f points each turn.
+		Every time your shield absorbs damage, you convert some of the attack into energy, gaining one point of Psi, plus an additional point for every %0.1f points of damage absorbed, up to a maximum %0.1f points each turn.
 		At talent level 3, when you de-activate the shield twice the absorbed damage (if any) in the last 3 turns is released as a full psionic shield (absorbing all damage).
-		The maximum amount of damage your shield can absorb and the efficiency of the psi gain scale with your mindpower.]]):
+		The maximum amount of damage your shield can absorb and the efficiency of the psi gain scale with your mindpower.
+		You can only have two of these shields active at once.]]):
 		format(absorb, s_str, shieldMastery(self, t), maxPsiAbsorb(self,t))
 	end,
 }
@@ -501,9 +503,10 @@ newTalent{
 		local s_str = getShieldStrength(self, t)
 		local absorb = 100*getEfficiency(self,t)
 		return ([[Surround yourself with a shield that will absorb %d%% of any lightning/blight/darkness/mind attack, up to a maximum of %d damage per attack.
-		Every time your shield absorbs damage, you convert some of the attack into energy, gaining two points of Psi, plus an additional point for every %0.1f points of damage absorbed, up to a maximum %0.1f points each turn.
+		Every time your shield absorbs damage, you convert some of the attack into energy, gaining one point of Psi, plus an additional point for every %0.1f points of damage absorbed, up to a maximum %0.1f points each turn.
 		At talent level 3, when you de-activate the shield twice the absorbed damage (if any) in the last 3 turns is released as a full psionic shield (absorbing all damage).
-		The maximum amount of damage your shield can absorb and the efficiency of the psi gain scale with your mindpower.]]):
+		The maximum amount of damage your shield can absorb and the efficiency of the psi gain scale with your mindpower.
+		You can only have two of these shields active at once.]]):
 		format(absorb, s_str, shieldMastery(self, t), maxPsiAbsorb(self,t))
 	end,
 }

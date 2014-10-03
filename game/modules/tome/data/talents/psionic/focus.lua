@@ -66,7 +66,7 @@ newTalent{
 
 newTalent{
 	name = "Pyrokinesis",
-	type = {"psionic/focus", 2},
+	type = {"psionic/focus", 1},
 	require = psi_wil_req2,
 	points = 5,
 	random_ego = "attack",
@@ -74,7 +74,7 @@ newTalent{
 	psi = 20,
 	tactical = { ATTACK = { FIRE = 2 } },
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 4, 6) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
 	getDamage = function (self, t)
 		return self:combatTalentMindDamage(t, 20, 450)
 	end,
@@ -96,19 +96,19 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local dam = t.getDamage(self, t)
 		return ([[Telekinetically energize the matter of all foes within %d squares at the molecular level, setting them ablaze. This does %0.1f fire damage over six turns.]]):
-		format(radius, damDesc(self, DamageType.FIREBURN, dam))
+		format(radius, damDesc(self, DamageType.FIRE, dam))
 	end,
 }
 
 newTalent{
 	name = "Brain Storm",
-	type = {"psionic/focus", 3},
+	type = {"psionic/focus", 1},
 	points = 5, 
 	require = psi_wil_req3,
 	psi = 15,
 	cooldown = 10,
-	range = function(self,t) return self:combatTalentScale(t, 3, 5) end,
-	radius = function(self,t) return self:combatTalentScale(t, 2, 3) end,
+	range = function(self,t) return math.floor(self:combatTalentScale(t, 3, 5)) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 3)) end,
 	tactical = { DISABLE = 2, ATTACKAREA = { LIGHTNING = 2 } },
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 290) end,
 	action = function(self, t)		
