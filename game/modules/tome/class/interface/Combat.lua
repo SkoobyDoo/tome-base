@@ -1556,6 +1556,7 @@ end
 
 --- Gets the 'power' portion of the damage
 function _M:combatDamagePower(weapon_combat, add)
+	if not weapon_combat then return 1 end
 	local power = math.max((weapon_combat.dam or 1) + (add or 0), 1)
 	return (math.sqrt(power / 10) - 1) * 0.5 + 1
 end
