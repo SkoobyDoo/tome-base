@@ -5886,6 +5886,7 @@ function _M:canUseTinker(tinker)
 	if not tinker.is_tinker then return nil, "not an attachable item" end
 	if not self.can_tinker then return nil, "can not use attachements" end
 	if not self.can_tinker[tinker.is_tinker] then return nil, "can not use attachements of this type" end
+	if tinker:tinker_allow_attach() then return nil, tinker:tinker_allow_attach() end
 	return true
 end
 
