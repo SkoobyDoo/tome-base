@@ -22,6 +22,9 @@ base_size = 32
 local nb = 0
 x = x or 0
 y = y or 0
+life = life or nil
+
+local first = true
 
 return {
 	blend_mode=additive and core.particles.BLEND_SHINY or nil,
@@ -31,7 +34,7 @@ return {
 
 	return {
 		trail = 0,
-		life = 100,
+		life = life or 100,
 		size = fs, sizev = 0, sizea = 0,
 
 		x = x * base_size, xv = 0, xa = 0,
@@ -46,6 +49,7 @@ return {
 	}
 end, },
 function(self)
-	self.ps:emit(1)
+	if first or not life then self.ps:emit(1) end
+	first = false
 end,
 1, "particles_images/"..(img or "square"), true
