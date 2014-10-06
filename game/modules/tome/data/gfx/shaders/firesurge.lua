@@ -25,11 +25,10 @@ return {
 		ellipsoidalFactor = ellipsoidalFactor or {1,1}, --1 is perfect circle, >1 is ellipsoidal
 		side = noup or 0,
 		timeScale = timeScale or 2.0,
-		renderCore = 1.0,
-		renderArcs = 1.0,
-		isPermanent = 0.0,
-		coreRadiusMult = 1.0,
-		verticalIntensityAdjust = verticalIntensityAdjust or 0,
+		renderCore = renderCore or 1.0,
+		renderArcs = renderArcs or 1.0,
+		isPermanent = isPermanent or 0.0,
+		coreRadiusMult = coreRadiusMult or 1.0,
 	},
 	resetargs = {
 		tick_start = function() return core.game.getFrameTime() end,
