@@ -50,6 +50,8 @@ function _M:onLoadZoneFile(basedir)
 		local f = loadfile(basedir.."events.lua")
 		setfenv(f, setmetatable({self=self}, {__index=_G}))
 		self.events = f()
+
+		self:triggerHook{"Zone:loadEvents", zone=self.short_name, events=self.events}
 	end
 end
 
