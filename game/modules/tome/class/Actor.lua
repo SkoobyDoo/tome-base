@@ -1852,23 +1852,34 @@ function _M:tooltip(x, y, seen_by)
 	local effother = tstring{}
 	local effbeneficial = tstring{}
 
+	local desceffect = function(e, p, dur)
+		local dur = e.decrease > 0 and dur or nil
+		local charges = nil
+		if e.charges then charges = e.charges and tostring(e.charges(self, p)) end
+
+		if dur and charges then return ("%s(%d, %s)"):format(e.desc, dur, charges)
+		elseif dur and not charges then return ("%s(%d)"):format(e.desc, dur)
+		elseif not dur and charges then return ("%s(%s)"):format(e.desc, charges)
+		else return e.desc end
+	end
+
 	for eff_id, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eff_id]
 		local dur = p.dur + 1
 		if e.status == "detrimental" then
 			if e.type == "physical" then
-				effphysical:add(true, "- ", {"color", "LIGHT_RED"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effphysical:add(true, "- ", {"color", "LIGHT_RED"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "magical" then
-				effmagical:add(true, "- ", {"color", "DARK_ORCHID"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effmagical:add(true, "- ", {"color", "DARK_ORCHID"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "mental" then
-				effmental:add(true, "- ", {"color", "YELLOW"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effmental:add(true, "- ", {"color", "YELLOW"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "other" then
-				effother:add(true, "- ", {"color", "ORCHID"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effother:add(true, "- ", {"color", "ORCHID"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			else
-				ts:add(true, "- ", {"color", "LIGHT_RED"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
-			end		
+				ts:add(true, "- ", {"color", "LIGHT_RED"}, desceffect(e, p, dur), {"color", "WHITE"} )
+			end
 		else
-			effbeneficial:add(true, "- ", {"color", "LIGHT_GREEN"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+			effbeneficial:add(true, "- ", {"color", "LIGHT_GREEN"}, desceffect(e, p, dur), {"color", "WHITE"} )
 		end
 	end
 
