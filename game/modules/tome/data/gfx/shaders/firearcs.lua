@@ -18,15 +18,13 @@
 -- darkgod@te4.org
 
 return {
-	frag = "firesurge",
+	frag = "firearcs",
 	vert = nil,
 	args = {
 		tex = { texture = 0 },
 		ellipsoidalFactor = ellipsoidalFactor or {1,1}, --1 is perfect circle, >1 is ellipsoidal
-		side = noup or 0,
 		timeScale = timeScale or 2.0,
 		isPermanent = isPermanent or 0.0,
-		coreRadiusMult = coreRadiusMult or 1.0,
 	},
 	resetargs = {
 		tick_start = function() return core.game.getFrameTime() end,
