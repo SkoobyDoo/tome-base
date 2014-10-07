@@ -586,10 +586,24 @@ function string.a_an(str)
 	else return "a "..str end
 end
 
+function string.he_she(actor)
+	if actor.female then return "she"
+	elseif actor.neuter then return "it"
+	else return "he"
+	end
+end
+
 function string.his_her(actor)
 	if actor.female then return "her"
 	elseif actor.neuter then return "it"
 	else return "his"
+	end
+end
+
+function string.him_her(actor)
+	if actor.female then return "her"
+	elseif actor.neuter then return "it"
+	else return "him"
 	end
 end
 
