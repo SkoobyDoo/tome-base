@@ -2334,6 +2334,7 @@ function util.removeForceSafeBoot()
 end
 
 -- Alias os.exit to our own exit method for cleanliness
+os.crash = os.exit
 os.exit = core.game.exit_engine
 
 -- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
