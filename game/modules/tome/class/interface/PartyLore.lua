@@ -66,7 +66,9 @@ function _M:getLore(lore, silent)
 	self.lore_known = self.lore_known or {}
 	self.additional_lore = self.additional_lore or {}
 	if not silent then assert(self.lore_defs[lore] or self.additional_lore[lore], "bad lore id "..lore) end
-	local l = table.clone(self.lore_defs[lore] or self.additional_lore[lore])
+	local l = self.lore_defs[lore] or self.additional_lore[lore]
+	if not l then return end
+	l = table.clone(l)
 
 	if l.template then
 		local tpl = slt2.loadstring(l.lore)
