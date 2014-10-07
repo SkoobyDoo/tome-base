@@ -510,3 +510,8 @@ end
 function _M:getEntityKind()
 	return "actor"
 end
+
+function _M:he_she() return string.he_she(self) end
+function _M:his_her() return string.his_her(self) end
+function _M:him_her() return string.him_her(self) end
+function _M:his_her_self() return string.his_her_self(self) end
