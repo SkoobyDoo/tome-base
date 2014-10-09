@@ -66,6 +66,9 @@ if not config.settings.censor_boot then background_name = {"tome","tome2","tome3
 else background_name = {"tome3"}
 end
 
+font_package_id = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.type end
+font_package_size = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.size end
+
 load_tips = {
 	{image="/data/gfx/shockbolt/npc/humanoid_human_linaniil_supreme_archmage.png", img_y_off=-50, text=[[Though magic is still shunned in Maj'Eyal, rumours abound of secret havens of mages.]]},
 	{image="/data/gfx/shockbolt/npc/humanoid_orc_orc_elite_berserker.png", text=[[The Rush talent lets you close in on an enemy quickly and daze them, disabling them whilst you hack down their friends.]]},

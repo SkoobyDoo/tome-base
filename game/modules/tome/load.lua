@@ -28,6 +28,7 @@ Entity.ascii_outline = {x=2, y=2, r=0, g=0, b=0, a=0.8}
 local UIBase = require "engine.ui.Base"
 local Map = require "engine.Map"
 local Level = require "engine.Level"
+local FontPackage = require "engine.FontPackage"
 
 -- Init settings
 config.settings.tome = config.settings.tome or {}
@@ -80,26 +81,13 @@ UIBase.ui = config.settings.tome.ui_theme2
 UIBase:setTextShadow(0.6)
 
 -- Dialogs fonts
-if config.settings.tome.fonts.type == "fantasy" then
-	local size = ({normal=16, small=12, big=18})[config.settings.tome.fonts.size]
-	UIBase.font = core.display.newFont("/data/font/DroidSans.ttf", size)
-	UIBase.font_bold = core.display.newFont("/data/font/DroidSans.ttf", size)
-	UIBase.font_mono = core.display.newFont("/data/font/DroidSansMono.ttf", size)
-	UIBase.font_bold:setStyle("bold")
-	UIBase.font_h = UIBase.font:lineSkip()
-	UIBase.font_bold_h = UIBase.font_bold:lineSkip()
-	UIBase.font_mono_w = UIBase.font_mono:size(" ")
-	UIBase.font_mono_h = UIBase.font_mono:lineSkip()+2
-else
-	local size = ({normal=12, small=10, big=14})[config.settings.tome.fonts.size]
-	UIBase.font = core.display.newFont("/data/font/Vera.ttf", size)
-	UIBase.font_mono = core.display.newFont("/data/font/VeraMono.ttf", size)
-	UIBase.font_bold = core.display.newFont("/data/font/VeraBd.ttf", size)
-	UIBase.font_h = 	UIBase.font:lineSkip()
-	UIBase.font_mono_w = 	UIBase.font_mono:size(" ")
-	UIBase.font_mono_h = 	UIBase.font_mono:lineSkip()
-	UIBase.font_bold_h = 	UIBase.font_bold:lineSkip()
-end
+UIBase.font = FontPackage:get("default")
+UIBase.font_bold = FontPackage:get("bold")
+UIBase.font_mono = FontPackage:get("mono")
+UIBase.font_h = UIBase.font:lineSkip()
+UIBase.font_bold_h = UIBase.font_bold:lineSkip()
+UIBase.font_mono_w = UIBase.font_mono:size(" ")
+UIBase.font_mono_h = UIBase.font_mono:lineSkip()+2
 
 local Savefile = require "engine.Savefile"
 local KeyBind = require "engine.KeyBind"

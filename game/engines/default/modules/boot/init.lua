@@ -36,3 +36,6 @@ allow_userchat = {"mainmenu"} -- We can talk to the online community but not joi
 if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
 else background_name = {"tome3"}
 end
+
+font_package_id = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.type end
+font_package_size = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.size end
