@@ -389,6 +389,12 @@ function _M:display(nb_keyframes)
 			if w > h then
 				h = w * self.background_h / self.background_w
 				y = (self.h - h) / 2
+				if h < self.h then
+					h = self.h
+					w = h * self.background_w / self.background_h
+					x = (self.w - w) / 2
+					y = 0
+				end
 			else
 				w = h * self.background_w / self.background_h
 				x = (self.w - w) / 2
