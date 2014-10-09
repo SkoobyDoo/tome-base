@@ -2826,6 +2826,7 @@ function _M:die(src, death_note)
 	end
 
 	if self:fireTalentCheck("callbackOnDeath", src, death_note) then return end
+	if self.summoner and self.summoner.fireTalentCheck and self.summoner:fireTalentCheck("callbackOnSummonDeath", self, src, death_note) then return end
 
 	mod.class.interface.ActorLife.die(self, src, death_note)
 
@@ -4594,6 +4595,7 @@ local sustainCallbackCheck = {
 	callbackOnRest = "talents_on_rest",
 	callbackOnRun = "talents_on_run",
 	callbackOnDeath = "talents_on_death",
+	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnKill = "talents_on_kill",
 	callbackOnMeleeAttack = "talents_on_melee_attack",
 	callbackOnMeleeHit = "talents_on_melee_hit",
