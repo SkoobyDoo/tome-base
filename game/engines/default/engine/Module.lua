@@ -310,6 +310,18 @@ function _M:listBackgrounds(mod)
 						defs[#defs+1] = nd
 					end
 				end
+				if add.replace_backgrounds then
+					defs = {}
+					for i, d in ipairs(add.replace_backgrounds) do
+						local nd = {chance=d.chance, name=dir.."/boot-screen/"..d.name}
+						if d.logo then nd.logo = dir.."/boot-screen/"..d.logo end
+						if teaa then 
+							nd.mount = function() fs.mount(fs.getRealPath(teaa), "/testload", false) end
+							nd.umount = function() fs.umount(fs.getRealPath(teaa)) end
+						end
+						defs[#defs+1] = nd
+					end
+				end
 			end
 		end
 	end
@@ -330,12 +342,14 @@ function _M:listBackgrounds(mod)
 			end
 		end end
 	end
-	parse("/addons/")
-	parse("/dlcs/")
 
 	-- Add the default one
 	local backname = util.getval(mod.background_name) or "tome"
 	defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+
+	-- Look for more
+	parse("/addons/")
+	parse("/dlcs/")
 	
 	-- os.exit()
 
@@ -624,6 +638,7 @@ function _M:loadScreen(mod)
 
 		local sw, sh = core.display.size()
 		local bw, bh = bkgs:getSize()
+		local obw, obh = bkgs:getSize()
 		local bkg = {bkgs:glTexture()}
 
 		local pubimg, publisher = nil, nil
@@ -715,16 +730,21 @@ function _M:loadScreen(mod)
 		return function()
 			-- Background
 			local x, y = 0, 0
+			bw, bh = sw, sh
 			if bw > bh then
-				bh = sw * bh / bw
-				bw = sw
+				bh = bw * obh / obw
 				y = (sh - bh) / 2
+				if bh < sh then
+					bh = sh
+					bw = bh * obw / obh
+					x = (sw - bw) / 2
+					y = 0
+				end
 			else
-				bw = sh * bw / bh
-				bh = sh
+				bw = bh * obw / obh
 				x = (sw - bw) / 2
 			end
-			bkg[1]:toScreenFull(x, y, bw, bh, bw * bkg[4], bh * bkg[5])
+			bkg[1]:toScreenFull(x, y, bw, bh, bw * bkg[2] / obw, bh * bkg[3] / obh)
 
 			-- Logo
 			if logo then logo[1]:toScreenFull(0, 0, logo[6], logo[7], logo[2], logo[3]) end
