@@ -28,6 +28,7 @@ local SurfaceZone = require "engine.ui.SurfaceZone"
 local Separator = require "engine.ui.Separator"
 local Stats = require "engine.interface.ActorStats"
 local Textzone = require "engine.ui.Textzone"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog, mod.class.interface.TooltipsData))
 
@@ -39,7 +40,7 @@ function _M:init(actor)
 	self.actor = actor
 	Dialog.init(self, "Character Sheet: "..self.actor.name, math.max(game.w * 0.7, 950), 500)
 
-	self.font = core.display.newFont("/data/font/DroidSansMono.ttf", 12)
+	self.font = core.display.newFont(FontPackage:getFont("mono_small", "mono"))
 	self.font_h = self.font:lineSkip()
 
 	self.talent_sorting = config.settings.tome.charsheet_talent_sorting or 1

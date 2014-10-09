@@ -33,6 +33,7 @@ local Tooltip = require "mod.class.Tooltip"
 local TooltipsData = require "mod.class.interface.TooltipsData"
 local Dialog = require "engine.ui.Dialog"
 local Map = require "engine.Map"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(UISet, TooltipsData))
 
@@ -130,10 +131,8 @@ ammo_shot = {core.display.loadImage("/data/gfx/ui/resources/ammo_shot.png"):glTe
 _M['ammo_shadow_alchemist-gem'] = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_alchemist-gem.png"):glTexture()}
 _M['ammo_alchemist-gem'] = {core.display.loadImage("/data/gfx/ui/resources/ammo_alchemist-gem.png"):glTexture()}
 
-font_sha = core.display.newFont("/data/font/DroidSans.ttf", 14, true)
-font_sha:setStyle("bold")
-sfont_sha = core.display.newFont("/data/font/DroidSans.ttf", 12, true)
-sfont_sha:setStyle("bold")
+font_sha = FontPackage:get("resources_normal", true)
+sfont_sha = FontPackage:get("resources_small", true)
 
 icon_green = { core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):glTexture() }
 icon_yellow = { core.display.loadImage("/data/gfx/ui/talent_frame_sustain.png"):glTexture() }
@@ -343,18 +342,10 @@ end
 function _M:activate()
 	Shader:setDefault("textoutline", "textoutline")
 
-	local size, size_mono, font, font_mono, font_mono_h, font_h
-	if config.settings.tome.fonts.type == "fantasy" then
-		size = ({normal=16, small=14, big=18})[config.settings.tome.fonts.size]
-		size_mono = ({normal=14, small=10, big=16})[config.settings.tome.fonts.size]
-		font = "/data/font/DroidSans.ttf"
-		font_mono = "/data/font/DroidSansMono.ttf"
-	else
-		size = ({normal=12, small=10, big=14})[config.settings.tome.fonts.size]
-		size_mono = ({normal=12, small=10, big=14})[config.settings.tome.fonts.size]
-		font = "/data/font/Vera.ttf"
-		font_mono = "/data/font/VeraMono.ttf"
-	end
+	local font, size = FontPackage:getFont("default")
+	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
+	local font_mono_h, font_h
+
 	local f = core.display.newFont(font, size)
 	font_h = f:lineSkip()
 	f = core.display.newFont(font_mono, size_mono)

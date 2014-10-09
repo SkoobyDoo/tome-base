@@ -35,6 +35,7 @@ local Map = require "engine.Map"
 local Level = require "engine.Level"
 local LogDisplay = require "engine.LogDisplay"
 local FlyingText = require "engine.FlyingText"
+local FontPackage = require "engine.FontPackage"
 
 local NicerTiles = require "mod.class.NicerTiles"
 local Grid = require "mod.class.Grid"
@@ -51,7 +52,7 @@ function _M:init()
 	engine.interface.GameMusic.init(self)
 	engine.interface.GameSound.init(self)
 	engine.GameEnergyBased.init(self, engine.KeyBind.new(), 100, 100)
-	self.profile_font = core.display.newFont("/data/font/DroidSerif-Italic.ttf", 14)
+	self.profile_font = FontPackage:get("default")
 
 	local background_name
 	if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
@@ -72,7 +73,8 @@ function _M:init()
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
-	self.stopped = config.settings.boot_menu_background
+	-- self.stopped = config.settings.boot_menu_background
+	self.stopped = true
 	if core.display.safeMode() then self.stopped = true end
 	if self.stopped then
 		core.game.setRealtime(0)

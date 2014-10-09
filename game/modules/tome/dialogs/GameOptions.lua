@@ -25,6 +25,7 @@ local Separator = require "engine.ui.Separator"
 local GetQuantity = require "engine.dialogs.GetQuantity"
 local Tabs = require "engine.ui.Tabs"
 local GraphicMode = require("mod.dialogs.GraphicMode")
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog))
 
@@ -158,10 +159,11 @@ function _M:generateListUi()
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Font Style#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.fonts.type):capitalize()
 	end, fct=function(item)
-		Dialog:listPopup("Font style", "Select font", {{name="Fantasy", type="fantasy"}, {name="Basic", type="basic"}}, 300, 200, function(sel)
+		local list = FontPackage:list()
+		Dialog:listPopup("Font style", "Select font", list, 300, 200, function(sel)
 			if not sel or not sel.type then return end
-			game:saveSettings("tome.fonts", ("tome.fonts = { type = %q, size = %q }\n"):format(sel.type, config.settings.tome.fonts.size))
-			config.settings.tome.fonts.type = sel.type
+			game:saveSettings("tome.fonts", ("tome.fonts = { type = %q, size = %q }\n"):format(sel.id, config.settings.tome.fonts.size))
+			config.settings.tome.fonts.type = sel.id
 			self.c_list:drawItem(item)
 		end)
 	end,}

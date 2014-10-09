@@ -21,6 +21,7 @@
 require "engine.class"
 local Savefile = require "engine.Savefile"
 local UIBase = require "engine.ui.Base"
+local FontPackage = require "engine.FontPackage"
 require "engine.PlayerProfile"
 
 --- Handles dialog windows
@@ -55,7 +56,6 @@ function _M:listModules(incompatible, moddir_filter)
 	end
 
 	table.sort(ms, function(a, b)
-	print(a.short_name,b.short_name)
 		if a.short_name == "tome" then return 1
 		elseif b.short_name == "tome" then return nil
 		else return a.name < b.name
@@ -652,8 +652,8 @@ function _M:loadScreen(mod)
 		local middle = {core.display.loadImage("/data/gfx/metal-ui/waiter/middle.png"):glTexture()}
 		local bar = {core.display.loadImage("/data/gfx/metal-ui/waiter/bar.png"):glTexture()}
 
-		local font = core.display.newFont("/data/font/DroidSans.ttf", 12)
-		local bfont = core.display.newFont("/data/font/DroidSans.ttf", 16)
+		local font = FontPackage:get("small")
+		local bfont = FontPackage:get("default")
 
 		local dw, dh = math.floor(sw / 2), left[7]
 		local dx, dy = math.floor((sw - dw) / 2), sh - dh
@@ -826,6 +826,12 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	-- Init the module directories
 	fs.mount(engine.homepath, "/")
 	mod.load("setup")
+
+	-- Load font packages
+	FontPackage:loadDefinition("/data/font/packages/default.lua")
+	if mod.font_packages_definitions then FontPackage:loadDefinition(mod.font_packages_definitions) end
+	FontPackage:setDefaultId(util.getval(mod.font_package_id))
+	FontPackage:setDefaultSize(util.getval(mod.font_package_size))
 
 	-- Check the savefile if possible, to add to the progress bar size
 	local savesize = 0
