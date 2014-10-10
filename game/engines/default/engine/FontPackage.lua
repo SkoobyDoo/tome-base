@@ -61,7 +61,6 @@ function _M:getFont(name, orname)
 end
 
 function _M:get(name, force)
-	local name, size = self:getFont(name, size)
 	local font, size = self:resolveFont(name, orname)
 	local f = core.display.newFont(font.font, font[size], font.bold or force)
 	if font.bold then f:setStyle("bold") end
