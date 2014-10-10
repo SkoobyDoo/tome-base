@@ -156,7 +156,7 @@ function _M:runReal()
 	self.caps_scroll = {s:glTexture()}
 	self.caps_scroll.w, self.caps_scroll.h = s:getSize()
 
-	self.zone_font = FontPackage:get("normal")
+	self.zone_font = FontPackage:get("zone")
 
 	self.inited = true
 
@@ -1168,9 +1168,7 @@ function _M:updateZoneName()
 	end
 	if self.zone_name_s and self.old_zone_name == name then return end
 
-	self.zone_font:setStyle("bold")
 	local s = core.display.drawStringBlendedNewSurface(self.zone_font, name, unpack(colors.simple(colors.GOLD)))
-	self.zone_font:setStyle("normal")
 	self.zone_name_w, self.zone_name_h = s:getSize()
 	self.zone_name_s, self.zone_name_tw, self.zone_name_th = s:glTexture()
 	self.old_zone_name = name
