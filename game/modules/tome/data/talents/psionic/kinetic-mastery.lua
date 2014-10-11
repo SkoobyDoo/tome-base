@@ -174,7 +174,7 @@ newTalent{
 		local chance, spread = t.getEvasion(self, t)
 		return {
 			chance = self:addTemporaryValue("projectile_evasion", chance),
-			slow = self:addTemporaryValue("slow_projectiles", slow),
+			slow = self:addTemporaryValue("slow_projectiles", chance),
 			spread = self:addTemporaryValue("projectile_evasion_spread", spread),
 		}
 	end,

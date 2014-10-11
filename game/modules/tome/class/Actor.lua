@@ -706,23 +706,6 @@ function _M:act()
 		end
 	end
 
-	-- Conduit talent prevents all auras from cooling down
-	if self:isTalentActive(self.T_CONDUIT) then
-		local auras = self:isTalentActive(self.T_CONDUIT)
-		if auras.k_aura_on then
-			local t_kinetic_aura = self:getTalentFromId(self.T_KINETIC_AURA)
-			self:startTalentCooldown(self.T_KINETIC_AURA, t_kinetic_aura.cooldown(self, t))
-		end
-		if auras.t_aura_on then
-			local t_thermal_aura = self:getTalentFromId(self.T_THERMAL_AURA)
-			self:startTalentCooldown(self.T_THERMAL_AURA, t_thermal_aura.cooldown(self, t))
-		end
-		if auras.c_aura_on then
-			local t_charged_aura = self:getTalentFromId(self.T_CHARGED_AURA)
-			self:startTalentCooldown(self.T_CHARGED_AURA, t_charged_aura.cooldown(self, t))
-		end
-	end
-
 	if self:attr("paralyzed") then
 		self.paralyzed_counter = (self.paralyzed_counter or 0) + (self:attr("stun_immune") or 0) * 100
 		if self.paralyzed_counter < 100 then
