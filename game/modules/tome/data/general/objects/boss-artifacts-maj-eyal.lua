@@ -1062,6 +1062,7 @@ newEntity{ base = "BASE_DIGGER",
 	desc = [[A huge tooth taken from the Mouth, in the Deep Bellow.]],
 	level_range = {5, 12},
 	cost = 50,
+	rarity = 200,
 	material_level = 1,
 	digspeed = 12,
 	wielder = {
