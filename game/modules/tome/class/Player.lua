@@ -943,9 +943,10 @@ function _M:restCheck()
 
 	if self.resting.wait_cooldowns then
 		for tid, cd in pairs(self.talents_cd) do
-			if self:isTalentActive(self.T_CONDUIT) and (tid == self.T_KINETIC_AURA or tid == self.T_CHARGED_AURA or tid == self.T_THERMAL_AURA) then
+--			if self:isTalentActive(self.T_CONDUIT) and (tid == self.T_KINETIC_AURA or tid == self.T_CHARGED_AURA or tid == self.T_THERMAL_AURA) then
 				-- nothing
-			elseif self.talents_auto[tid] then
+--			else
+			if self.talents_auto[tid] then
 				-- nothing
 			else
 				if cd > 0 then return true end

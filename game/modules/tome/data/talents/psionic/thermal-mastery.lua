@@ -168,7 +168,7 @@ newTalent{
 		
 		local dam=self:mindCrit(t.getDamage(self, t))
 		local dam1 = dam * (self:getMaxPsi() - self:getPsi()) / self:getMaxPsi()
-		local dam2 = dam * self:getPsi() / self:getMaxPsi()
+		local dam2 = dam * self:getPsi() / self:getMaxPsi() * 2
 		
 		self:project(tg, x, y, DamageType.COLD, dam1)
 		self:project(tg, x, y, DamageType.FIRE, dam2)

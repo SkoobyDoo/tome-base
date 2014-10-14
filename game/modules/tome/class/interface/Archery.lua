@@ -451,30 +451,6 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		end
 	end
 
-	-- Conduit (Psi)
-	if hitted and not target.dead and self:knowTalent(self.T_CONDUIT) and self:isTalentActive(self.T_CONDUIT) and self:attr("use_psi_combat") then
-		local t =  self:getTalentFromId(self.T_CONDUIT)
-		--t.do_combat(self, t, target)
-		local mult = 1 + 0.2*(self:getTalentLevel(t))
-		local auras = self:isTalentActive(t.id)
-		if auras.k_aura_on then
-			local k_aura = self:getTalentFromId(self.T_KINETIC_AURA)
-			local k_dam = mult * k_aura.getAuraStrength(self, k_aura)
-			DamageType:get(DamageType.PHYSICAL).projector(self, target.x, target.y, DamageType.PHYSICAL, k_dam, tmp)
-		end
-		if auras.t_aura_on then
-			local t_aura = self:getTalentFromId(self.T_THERMAL_AURA)
-			local t_dam = mult * t_aura.getAuraStrength(self, t_aura)
-			DamageType:get(DamageType.FIRE).projector(self, target.x, target.y, DamageType.FIRE, t_dam, tmp)
-		end
-		if auras.c_aura_on then
-			local c_aura = self:getTalentFromId(self.T_CHARGED_AURA)
-			local c_dam = mult * c_aura.getAuraStrength(self, c_aura)
-			DamageType:get(DamageType.LIGHTNING).projector(self, target.x, target.y, DamageType.LIGHTNING, c_dam, tmp)
-		end
-	end
-
-
 	-- Regen on being hit
 	if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
 	if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
