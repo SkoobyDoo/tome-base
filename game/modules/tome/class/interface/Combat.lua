@@ -545,6 +545,8 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		target:fireTalentCheck("callbackOnMeleeHit", self, dam)
 
 		hitted = true
+
+		if self:attr("vim_on_melee") then self:incVim(self:attr("vim_on_melee")) end
 	else
 		self:logCombat(target, "#Source# misses #Target#.")
 		target:fireTalentCheck("callbackOnMeleeMiss", self, dam)
@@ -1022,7 +1024,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		self:attr("silent_heal", -1)
 	end
 
-	return self:combatSpeed(weapon), hitted
+	return self:combatSpeed(weapon), hitted, dam
 end
 
 _M.weapon_talents = {

@@ -633,15 +633,15 @@ function _M:act()
 		local auras = self:isTalentActive(self.T_CONDUIT)
 		if auras.k_aura_on then
 			local t_kinetic_aura = self:getTalentFromId(self.T_KINETIC_AURA)
-			self.talents_cd[self.T_KINETIC_AURA] = t_kinetic_aura.cooldown(self, t)
+			self:startTalentCooldown(self.T_KINETIC_AURA, t_kinetic_aura.cooldown(self, t))
 		end
 		if auras.t_aura_on then
 			local t_thermal_aura = self:getTalentFromId(self.T_THERMAL_AURA)
-			self.talents_cd[self.T_THERMAL_AURA] = t_thermal_aura.cooldown(self, t)
+			self:startTalentCooldown(self.T_THERMAL_AURA, t_thermal_aura.cooldown(self, t))
 		end
 		if auras.c_aura_on then
 			local t_charged_aura = self:getTalentFromId(self.T_CHARGED_AURA)
-			self.talents_cd[self.T_CHARGED_AURA] = t_charged_aura.cooldown(self, t)
+			self:startTalentCooldown(self.T_CHARGED_AURA, t_charged_aura.cooldown(self, t))
 		end
 	end
 
@@ -1401,7 +1401,7 @@ function _M:move(x, y, force)
 		end
 	end
 
-	self:fireTalentCheck("callbackOnMove", moved, force, ox, oy)
+	self:fireTalentCheck("callbackOnMove", moved, force, ox, oy, x, y)
 
 	self:triggerHook{"Actor:move", moved=moved, force=force, ox=ox, oy=oy}
 
@@ -1852,23 +1852,34 @@ function _M:tooltip(x, y, seen_by)
 	local effother = tstring{}
 	local effbeneficial = tstring{}
 
+	local desceffect = function(e, p, dur)
+		local dur = e.decrease > 0 and dur or nil
+		local charges = nil
+		if e.charges then charges = e.charges and tostring(e.charges(self, p)) end
+
+		if dur and charges then return ("%s(%d, %s)"):format(e.desc, dur, charges)
+		elseif dur and not charges then return ("%s(%d)"):format(e.desc, dur)
+		elseif not dur and charges then return ("%s(%s)"):format(e.desc, charges)
+		else return e.desc end
+	end
+
 	for eff_id, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eff_id]
 		local dur = p.dur + 1
 		if e.status == "detrimental" then
 			if e.type == "physical" then
-				effphysical:add(true, "- ", {"color", "LIGHT_RED"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effphysical:add(true, "- ", {"color", "LIGHT_RED"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "magical" then
-				effmagical:add(true, "- ", {"color", "DARK_ORCHID"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effmagical:add(true, "- ", {"color", "DARK_ORCHID"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "mental" then
-				effmental:add(true, "- ", {"color", "YELLOW"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effmental:add(true, "- ", {"color", "YELLOW"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "other" then
-				effother:add(true, "- ", {"color", "ORCHID"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effother:add(true, "- ", {"color", "ORCHID"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			else
-				ts:add(true, "- ", {"color", "LIGHT_RED"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
-			end		
+				ts:add(true, "- ", {"color", "LIGHT_RED"}, desceffect(e, p, dur), {"color", "WHITE"} )
+			end
 		else
-			effbeneficial:add(true, "- ", {"color", "LIGHT_GREEN"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+			effbeneficial:add(true, "- ", {"color", "LIGHT_GREEN"}, desceffect(e, p, dur), {"color", "WHITE"} )
 		end
 	end
 
@@ -2623,11 +2634,10 @@ function _M:onTakeHit(value, src, death_note)
 	if self:attr("reduce_spell_cooldown_on_hit") and value >= self.max_life * self:attr("reduce_spell_cooldown_on_hit") / 100 then
 		local alt = {}
 		for tid, cd in pairs(self.talents_cd) do
-			if rng.percent(self:attr("reduce_spell_cooldown_on_hit_chance")) then alt[tid] = cd - 1 end
+			if rng.percent(self:attr("reduce_spell_cooldown_on_hit_chance")) then alt[tid] = true end
 		end
 		for tid, cd in pairs(alt) do
-			if cd <= 0 then self.talents_cd[tid] = nil
-			else self.talents_cd[tid] = cd end
+			self:alterTalentCoolingdown(tid, -1)
 		end
 	end
 
@@ -2816,6 +2826,7 @@ function _M:die(src, death_note)
 	end
 
 	if self:fireTalentCheck("callbackOnDeath", src, death_note) then return end
+	if self.summoner and self.summoner.fireTalentCheck and self.summoner:fireTalentCheck("callbackOnSummonDeath", self, src, death_note) then return end
 
 	mod.class.interface.ActorLife.die(self, src, death_note)
 
@@ -2999,8 +3010,7 @@ function _M:die(src, death_note)
 
 	if src and self.reset_rush_on_death and self.reset_rush_on_death == src then
 		game:onTickEnd(function()
-			src.talents_cd[src.T_RUSH] = nil
-			src.changed = true
+			src:alterTalentCoolingdown(src.T_RUSH, -1000)
 		end)
 	end
 
@@ -4465,6 +4475,17 @@ function _M:preUseTalent(ab, silent, fake)
 		if rng.percent(self:attr("spell_failure")) then
 			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
 			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+			return false
+		end
+	end
+
+	-- Nature can fail
+	if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
+		if rng.percent(self:attr("nature_failure")) then
+			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
+			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 			return false
 		end
 	end
@@ -4572,7 +4593,9 @@ local sustainCallbackCheck = {
 	callbackOnActBase = "talents_on_act_base",
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
+	callbackOnRun = "talents_on_run",
 	callbackOnDeath = "talents_on_death",
+	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnKill = "talents_on_kill",
 	callbackOnMeleeAttack = "talents_on_melee_attack",
 	callbackOnMeleeHit = "talents_on_melee_hit",
@@ -4588,6 +4611,8 @@ local sustainCallbackCheck = {
 	callbackOnTakeoff = "talents_on_takeoff",
 	callbackOnTalentPost = "talents_on_talent_post",
 	callbackOnTemporaryEffect = "talents_on_tmp",
+	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
+	callbackOnBlock = "talents_on_block",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -4857,7 +4882,7 @@ function _M:postUseTalent(ab, ret, silent)
 		for i = 1, self:attr("random_talent_cooldown_on_use_nb") do
 			local t = rng.tableRemove(tids)
 			if not t then break end
-			self.talents_cd[t.id] = self:attr("random_talent_cooldown_on_use_turns")
+			self:startTalentCooldown(t.id, self:attr("random_talent_cooldown_on_use_turns"))
 			game.logSeen(self, "%s talent '%s%s' is disrupted by the mind parasite.", self.name:capitalize(), (t.display_entity and t.display_entity:getDisplayString() or ""), t.name)
 		end
 	end
@@ -5092,12 +5117,31 @@ end
 
 --- Starts a talent cooldown; overloaded from the default to handle talent cooldown reduction
 -- @param t the talent to cooldown
-function _M:startTalentCooldown(t)
+-- @param v override the normal cooldown that that, nil to get the normal effect
+function _M:startTalentCooldown(t, v)
 	t = self:getTalentFromId(t)
-	if not t.cooldown then return end
-	self.talents_cd[t.id] = self:getTalentCooldown(t)
+	if t.cooldown_override then t = self:getTalentFromId(t.cooldown_override) end
+	if v then
+		self.talents_cd[t.id] = math.max(v, self.talents_cd[t.id] or 0)
+	else
+		if not t.cooldown then return end
+		self.talents_cd[t.id] = self:getTalentCooldown(t)
+	end
 	if self.talents_cd[t.id] <= 0 then self.talents_cd[t.id] = nil end
 	self.changed = true
+	if t.cooldownStart then t.cooldownStart(self, t) end
+end
+
+--- Alter the remanining cooldown of a talent
+-- @param t the talent affect cooldown
+-- @param v the value to add/remove to the cooldown
+function _M:alterTalentCoolingdown(t, v)
+	t = self:getTalentFromId(t)
+	if t.cooldown_override then t = self:getTalentFromId(t.cooldown_override) end
+	if not self.talents_cd[t.id] then return nil end
+	self.talents_cd[t.id] = self.talents_cd[t.id] + v
+	if self.talents_cd[t.id] <= 0 then self.talents_cd[t.id] = nil end
+	return self.talents_cd[t.id]
 end
 
 --- Setup the talent as autocast
@@ -5256,16 +5300,7 @@ function _M:talentCooldownFilter(t, change, nb, duplicate)
 		local t = talents[i]
 		local removed = false
 
-		---[[ Change the cooldown to the reduced value or mark it as off cooldown
-		t[2] = t[2] - change
-		if t[2] <= 0 then
-			self.talents_cd[ t[1] ] = nil
-			table.remove(talents, i)
-			removed = true
-		else
-			self.talents_cd[ t[1] ] = t[2]
-		end
-		--]]
+		self:alterTalentCoolingdown(t[1], -change)
 
 		if not duplicate then
 			if not removed then table.remove(talents, i) end -- only remove if it hasn't already been removed
@@ -5872,6 +5907,7 @@ function _M:canUseTinker(tinker)
 	if not tinker.is_tinker then return nil, "not an attachable item" end
 	if not self.can_tinker then return nil, "can not use attachements" end
 	if not self.can_tinker[tinker.is_tinker] then return nil, "can not use attachements of this type" end
+	if tinker:tinker_allow_attach() then return nil, tinker:tinker_allow_attach() end
 	return true
 end
 

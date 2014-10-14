@@ -1998,7 +1998,7 @@ end
 function _M:canEventGridRadius(level, x, y, radius, min)
 	local list = {}
 	for i = -radius, radius do for j = -radius, radius do
-		if game.state:canEventGrid(level, x+i, y+j) then list[#list+1] = {x=x+i, y=y+j} end
+		if game.state:canEventGrid(level, x+i, y+j) then list[#list+1] = {x=x+i, y=y+j, bx=x, by=y} end
 	end end
 
 	if #list < min then return false

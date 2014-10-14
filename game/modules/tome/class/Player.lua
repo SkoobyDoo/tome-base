@@ -868,6 +868,7 @@ function _M:onRestStart()
 			self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
 		end
 	end
+	self:fireTalentCheck("callbackOnRest", "start")
 end
 
 --- We stopped resting
@@ -880,6 +881,7 @@ function _M:onRestStop()
 		self:attr("mana_regen", -self.resting.mana_regen)
 		self.resting.mana_regen = nil
 	end
+	self:fireTalentCheck("callbackOnRest", "stop")
 end
 
 --- Can we continue resting ?
@@ -921,6 +923,7 @@ function _M:restCheck()
 		if self:getMana() < self:getMaxMana() and self.mana_regen > 0 then return true end
 		if self:getStamina() < self:getMaxStamina() and self.stamina_regen > 0 then return true end
 		if self:getPsi() < self:getMaxPsi() and self.psi_regen > 0 then return true end
+		if self:getVim() < self:getMaxVim() and self.vim_regen > 0 then return true end
 		if self:getEquilibrium() > self:getMinEquilibrium() and self.equilibrium_regen < 0 then return true end
 		if self.life < self.max_life and self.life_regen> 0 then return true end
 		for act, def in pairs(game.party.members) do if game.level:hasEntity(act) and not act.dead then
@@ -928,7 +931,7 @@ function _M:restCheck()
 		end end
 		if ammo and ammo.combat.shots_left < ammo.combat.capacity then return true end
 
-		if self:fireTalentCheck("callbackOnRest") then return true end
+		if self:fireTalentCheck("callbackOnRest", "check") then return true end
 	else
 		return true
 	end
@@ -981,6 +984,8 @@ function _M:runCheck(ignore_memory)
 		local dir = game.level.map:compassDirection(spotted[1].x - self.x, spotted[1].y - self.y)
 		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].actor.name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
 	end
+
+	if self:fireTalentCheck("callbackOnRun") then return false, "talent prevented" end
 
 	if self.air_regen < 0 and self.air < 0.75 * self.max_air then return false, "losing breath!" end
 

@@ -586,10 +586,24 @@ function string.a_an(str)
 	else return "a "..str end
 end
 
+function string.he_she(actor)
+	if actor.female then return "she"
+	elseif actor.neuter then return "it"
+	else return "he"
+	end
+end
+
 function string.his_her(actor)
 	if actor.female then return "her"
 	elseif actor.neuter then return "it"
 	else return "his"
+	end
+end
+
+function string.him_her(actor)
+	if actor.female then return "her"
+	elseif actor.neuter then return "it"
+	else return "him"
 	end
 end
 
@@ -2320,6 +2334,7 @@ function util.removeForceSafeBoot()
 end
 
 -- Alias os.exit to our own exit method for cleanliness
+os.crash = os.exit
 os.exit = core.game.exit_engine
 
 -- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...

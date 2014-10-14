@@ -439,7 +439,7 @@ newEffect{
 		for i = 1, 4 do
 			local t = rng.tableRemove(tids)
 			if not t then break end
-			self.talents_cd[t.id] = 1 -- Just set cooldown to 1 since cooldown does not decrease while stunned
+			self:startTalentCooldown(t.id, 1) -- Just set cooldown to 1 since cooldown does not decrease while stunned
 		end
 	end,
 	on_timeout = function(self, eff)
@@ -475,7 +475,7 @@ newEffect{
 		for i = 1, 3 do
 			local t = rng.tableRemove(tids)
 			if not t then break end
-			self.talents_cd[t.id] = 1 -- Just set cooldown to 1 since cooldown does not decrease while stunned
+			self:startTalentCooldown(t.id, 1) -- Just set cooldown to 1 since cooldown does not decrease while stunned
 		end
 	end,
 	deactivate = function(self, eff)
@@ -2048,7 +2048,9 @@ newEffect{
 			game:delayedLogMessage(self, src, "block_heal", "#CRIMSON##Source# heals from blocking with %s shield!", string.his_her(self))
 		end
 		if eff.properties.ref and src.life then DamageType.defaultProjector(src, src.x, src.y, type, blocked, tmp, true) end
+		local full = false
 		if (self:knowTalent(self.T_RIPOSTE) or amt == 0) and src.life then
+			full = true
 			src:setEffect(src.EFF_COUNTERSTRIKE, (1 + dur_inc) * math.max(1, (src.global_speed or 1)), {power=eff.power, no_ct_effect=true, src=self, crit_inc=crit_inc, nb=nb})
 			if eff.properties.sb then
 				if src:canBe("disarm") then
@@ -2061,6 +2063,9 @@ newEffect{
 				eff.properties.on_cs(self, eff, dam, type, src)
 			end
 		end-- specify duration here to avoid stacking for high speed attackers
+
+		self:fireTalentCheck("callbackOnBlock", eff, dam, type, src)
+
 		return amt
 	end,
 	activate = function(self, eff)

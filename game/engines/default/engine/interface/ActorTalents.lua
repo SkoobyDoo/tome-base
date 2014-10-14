@@ -325,7 +325,7 @@ function _M:learnTalent(t_id, force, nb)
 
 	if not self.talents[t_id] then
 		-- Auto assign to hotkey
-		if t.mode ~= "passive" and self.hotkey then
+		if t.mode ~= "passive" and not t.no_auto_hotkey and self.hotkey then
 			local position
 
 			if self.player then
@@ -700,10 +700,12 @@ end
 
 --- Starts a talent cooldown
 -- @param t the talent to cooldown
-function _M:startTalentCooldown(t)
+-- @param v override the normal cooldown that that, nil to get the normal effect
+function _M:startTalentCooldown(t, v)
 	t = self:getTalentFromId(t)
-	if not t.cooldown then return end
 	local cd = t.cooldown
+	if v then cd = math.max(v, self.talents_cd[t.id] or 0) end
+	if not cd then return end
 	if type(cd) == "function" then cd = cd(self, t) end
 	self.talents_cd[t.id] = cd
 	self.changed = true
@@ -859,4 +861,36 @@ function _M:talentCallbackOn(on, ...)
 			self:callTalent(tid, on, ...)
 		end
 	end
+end
+
+local dialog_returns_list = setmetatable({}, {__mode="v"})
+local dialog_returns = setmetatable({}, {__mode="k"})
+
+--- Set the result for a talent dialog
+function _M:talentDialogReturn(...)
+	local d = dialog_returns_list[#dialog_returns_list]
+	if not d then return end
+
+	dialog_returns[d] = {...}
+end
+
+--- Get the dialog
+function _M:talentDialogGet()
+	return dialog_returns_list[#dialog_returns_list]
+end
+
+--- Show a dialog and wait for it to end in a talent
+function _M:talentDialog(d)
+	if not game:hasDialog(d) then game:registerDialog(d) end
+
+	dialog_returns_list[#dialog_returns_list+1] = d
+
+	local co = coroutine.running()
+	d.unload = function(self) coroutine.resume(co, dialog_returns[d]) end
+	local ret = coroutine.yield()
+
+	dialog_returns[d] = nil
+	table.removeFromList(dialog_returns_list, d)
+
+	return unpack(ret)
 end

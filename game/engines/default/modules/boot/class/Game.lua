@@ -35,6 +35,7 @@ local Map = require "engine.Map"
 local Level = require "engine.Level"
 local LogDisplay = require "engine.LogDisplay"
 local FlyingText = require "engine.FlyingText"
+local FontPackage = require "engine.FontPackage"
 
 local NicerTiles = require "mod.class.NicerTiles"
 local Grid = require "mod.class.Grid"
@@ -51,13 +52,17 @@ function _M:init()
 	engine.interface.GameMusic.init(self)
 	engine.interface.GameSound.init(self)
 	engine.GameEnergyBased.init(self, engine.KeyBind.new(), 100, 100)
-	self.profile_font = core.display.newFont("/data/font/DroidSerif-Italic.ttf", 14)
+	self.profile_font = FontPackage:get("default")
 
 	local background_name
 	if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
 	else background_name = {"tome3"}
 	end
-	
+
+	local value = {name=background_name}
+	local hd = {"Boot:loadBackground", value=value}
+	if self:triggerHook(hd) then background_name = hd.value.name end
+
 	self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
 	if self.background then
 		self.background_w, self.background_h = self.background:getSize()
@@ -68,7 +73,8 @@ function _M:init()
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
-	self.stopped = config.settings.boot_menu_background
+	-- self.stopped = config.settings.boot_menu_background
+	self.stopped = true
 	if core.display.safeMode() then self.stopped = true end
 	if self.stopped then
 		core.game.setRealtime(0)
@@ -385,6 +391,12 @@ function _M:display(nb_keyframes)
 			if w > h then
 				h = w * self.background_h / self.background_w
 				y = (self.h - h) / 2
+				if h < self.h then
+					h = self.h
+					w = h * self.background_w / self.background_h
+					x = (self.w - w) / 2
+					y = 0
+				end
 			else
 				w = h * self.background_w / self.background_h
 				x = (self.w - w) / 2
