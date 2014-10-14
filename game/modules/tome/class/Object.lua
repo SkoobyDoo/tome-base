@@ -1239,6 +1239,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		compare_fields(w, compare_with, field, "hate_per_kill", "+%0.2f", "Hate per kill: ")
 		compare_fields(w, compare_with, field, "psi_per_kill", "+%0.2f", "Psi per kill: ")
+		compare_fields(w, compare_with, field, "vim_on_death", "%+.2f", "Vim per kill: ")
 
 		compare_fields(w, compare_with, field, "die_at", "%+.2f life", "Only die when reaching: ", 1, true, true)
 		compare_fields(w, compare_with, field, "max_life", "%+.2f", "Maximum life: ")
