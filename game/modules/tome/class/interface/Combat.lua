@@ -550,7 +550,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 
 		hitted = true
 
-		if self:attr("vim_on_melee") then self:incVim(self:attr("vim_on_melee")) end
+		if self:attr("vim_on_melee") and self ~= target then self:incVim(self:attr("vim_on_melee")) end
 	else
 		self:logCombat(target, "#Source# misses #Target#.")
 		target:fireTalentCheck("callbackOnMeleeMiss", self, dam)
@@ -876,17 +876,19 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	end
 
 	-- Regen on being hit
-	if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
-	if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
-	if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
-	if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
-	if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
-	if hitted and not target.dead and target:attr("vim_regen_when_hit") then target:incVim(target.vim_regen_when_hit) end
-
-	-- Resource regen on hit
-	if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
-	if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
-	if hitted and self:attr("psi_regen_on_hit") then self:incPsi(self.psi_regen_on_hit) end
+	if self ~= target then
+		if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
+		if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
+		if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
+		if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
+		if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
+		if hitted and not target.dead and target:attr("vim_regen_when_hit") then target:incVim(target.vim_regen_when_hit) end
+	
+		-- Resource regen on hit
+		if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
+		if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
+		if hitted and self:attr("psi_regen_on_hit") then self:incPsi(self.psi_regen_on_hit) end
+	end
 
 	-- Ablative armor
 	if hitted and not target.dead and target:attr("carbon_spikes") then
