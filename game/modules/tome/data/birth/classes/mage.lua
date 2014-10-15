@@ -200,7 +200,7 @@ newBirthDescriptor{
 	copy = {
 		-- Mages start in angolwen
 		class_start_check = function(self)
-			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race == "Human" or self.descriptor.race == "Elf" or self.descriptor.race == "Halfling") then
+			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race == "Human" or self.descriptor.race == "Elf" or self.descriptor.race == "Halfling") and not self._forbid_start_override then
 				self.archmage_race_start_quest = self.starting_quest
 				self.default_wilderness = {"zone-pop", "angolwen-portal"}
 				self.starting_zone = "town-angolwen"
