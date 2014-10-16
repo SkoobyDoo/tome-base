@@ -2558,6 +2558,14 @@ newEffect{
 		self:project({type="cone", cone_angle=25, range=0, radius=4}, src.x, src.y, DamageType.ACID, eff.dam)
 		game.level.map:particleEmitter(self.x, self.y, 4, "breath_acid", {radius=4, tx=src.x-self.x, ty=src.y-self.y, spread=20})
 	end,
+	activate = function(self, eff)
+		if core.shader.active(4) then
+			eff.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {z=5, rotation=0, radius=1.1, img="alchie_acid"}, {type="lightningshield"}))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle)
+	end,
 }
 
 newEffect{

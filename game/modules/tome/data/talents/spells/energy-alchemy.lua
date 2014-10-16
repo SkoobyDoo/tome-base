@@ -187,9 +187,15 @@ newTalent{
 		local ret = {name = self.name:capitalize().."'s "..t.name}
 		self:talentTemporaryValue(ret, "movement_speed", t.getSpeed(self, t))
 		ret.last_life = self.life
+
+		if core.shader.active(4) then
+			ret.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {z=5, rotation=0, radius=1.1, img="alchie_lightning"}, {type="lightningshield"}))
+		end
+
 		return ret
 	end,
 	deactivate = function(self, t, p)
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
