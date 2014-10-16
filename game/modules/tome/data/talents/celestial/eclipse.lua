@@ -114,11 +114,12 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		local ret = {
-		}
+		local ret = {}
+		ret.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="corona_02", radius=0}))
 		return ret
 	end,
 	deactivate = function(self, t, p)
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
