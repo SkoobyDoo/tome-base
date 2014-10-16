@@ -37,7 +37,7 @@ newBirthDescriptor{
 	},
 	copy = {
 		class_start_check = function(self)
-			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race == "Human" or self.descriptor.race == "Elf") then
+			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race == "Human" or self.descriptor.race == "Elf") and not self._forbid_start_override then
 				self.celestial_race_start_quest = self.starting_quest
 				self.default_wilderness = {"zone-pop", "ruined-gates-of-morning"}
 				self.starting_zone = "town-gates-of-morning"
