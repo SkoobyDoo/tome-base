@@ -3454,6 +3454,7 @@ newEntity{ base = "BASE_SHIELD",
 	unique = true,
 	name = "Summertide",
 	unided_name = "shining gold shield", image = "object/artifact/summertide.png",
+	moddable_tile = "special/%s_hand_summertide", moddable_tile_big = true,
 	level_range = {38, 50},
 	color=colors.GOLD,
 	rarity = 350,
@@ -6253,6 +6254,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	color = colors.BLUE,
 	name = "Tirakai's Maul", image = "object/artifact/tirakais_maul.png",
 	desc = [[This massive hammer is formed from a thick mass of strange crystalline growths. In the side of the hammer itself you see an empty slot; it looks like a gem of your own could easily fit inside it.]],
+	moddable_tile = "special/tirakais_maul", moddable_tile_big = true,
 	gemDesc = "None", -- Defined by the elemental properties and used by special_desc
 	special_desc = function(self)
 	-- You'll want to color this and such
