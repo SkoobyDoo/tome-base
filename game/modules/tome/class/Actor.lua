@@ -3892,6 +3892,14 @@ function _M:onWear(o, inven_id, bypass_set)
 		end
 	end
 
+	-- Callbacks!
+	if not o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store] = self[store] or {}
+			self[store][o] = "object"
+		end
+	end end
+
 	self:breakReloading()
 
 	self:fireTalentCheck("callbackOnWear", o, bypass_set)
@@ -3986,6 +3994,14 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 		end
 	end
 
+	-- Callbacks
+	if not o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store][o] = nil
+			if not next(self[store]) then self[store] = nil end
+		end
+	end end
+
 	self:checkMindstar(o)
 
 	self:breakReloading()
@@ -4063,6 +4079,14 @@ function _M:onAddObject(o)
 		end
 	end
 
+	-- Callbacks!
+	if o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store] = self[store] or {}
+			self[store][o] = "object"
+		end
+	end end
+
 	self:checkEncumbrance()
 
 	-- Achievement checks
@@ -4083,6 +4107,14 @@ function _M:onRemoveObject(o)
 			self:unlearnItemTalent(o, tid, level)
 		end
 	end
+
+	-- Callbacks
+	if o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store][o] = nil
+			if not next(self[store]) then self[store] = nil end
+		end
+	end end
 
 	self:checkEncumbrance()
 end
@@ -4886,6 +4918,9 @@ function _M:fireTalentCheck(event, ...)
 			if kind == "effect" then
 				self.__project_source = self.tmp[tid]
 				ret = self:callEffect(tid, event, ...) or ret
+			elseif kind == "object" then
+				self.__project_source = self.tmp[tid]
+				ret = tid:check(event, self, ...) or ret
 			else
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
