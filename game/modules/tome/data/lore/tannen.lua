@@ -33,7 +33,7 @@ See, my funding comes from the merchants of Last Hope, who want a functioning po
 
 #{italic}#As you move on to the next paragraph, you notice that everything above it has faded away, and the scroll is beginning to grow warm in your hands.#{normal}#
 
-Worry not, though - you can still help the world, by devoting yourself to my quest for knowledge!  My sources have told me that you've grown exponentially more powerful since you first stepped out of [insert racial starter dungeon here], and you continue to cause prodigious amounts of destruction.  The modified portal I used on you had about a 33% chance of draining some of the power you've accumulated; if you're feeling exhausted, simply lay down and wait for my imp servants to collect you for further testing.  If you aren't, however: I've sealed the way up, and placed the switches in each of the subject holding pens on this floor.  You can fight your way through them, and I'll be watching to see how a creature of your power fares against different types of foes.  I'm sure you'll want to get to the top floor and kill me in revenge, and I encourage you to try!  You may die, but the data you provide will be immortal - and if I can have my drolem subdue you non-lethally, I'll send you back to the bottom and repeat the experiment with tweaked parameters.  We can keep repeating this until I find your breaking point, or figure out what makes you so special, at which point you'll be held until I can work on a reliable method of controlling your mind.  And on the off chance that you do actually manage to kill me...  try not to do too much damage to my notes, please?  Knowledge and progress are bigger matters than either of us; don't let your spite doom thousands of lives that could rely on my research in the future.
+Worry not, though - you can still help the world, by devoting yourself to my quest for knowledge!  My sources have told me that you've grown exponentially more powerful since you first started making a name for yourself, and you continue to cause prodigious amounts of destruction.  The modified portal I used on you had about a 33% chance of draining some of the power you've accumulated; if you're feeling exhausted, simply lay down and wait for my imp servants to collect you for further testing.  If you aren't, however: I've sealed the way up, and placed the switches in each of the subject holding pens on this floor.  You can fight your way through them, and I'll be watching to see how a creature of your power fares against different types of foes.  I'm sure you'll want to get to the top floor and kill me in revenge, and I encourage you to try!  You may die, but the data you provide will be immortal - and if I can have my drolem subdue you non-lethally, I'll send you back to the bottom and repeat the experiment with tweaked parameters.  We can keep repeating this until I find your breaking point, or figure out what makes you so special, at which point you'll be held until I can work on a reliable method of controlling your mind.  And on the off chance that you do actually manage to kill me...  try not to do too much damage to my notes, please?  Knowledge and progress are bigger matters than either of us; don't let your spite doom thousands of lives that could rely on my research in the future.
 
 Oh, and I can't risk this note getting into anyone else's hands, can I?  It's going to catch fire a few seconds after you're done reading.  Please drop it before it does - you having burnt hands isn't part of the experiment.
 
@@ -41,7 +41,7 @@ Oh, and I can't risk this note getting into anyone else's hands, can I?  It's go
 }
 
 newLore{
-	id = "tannen-level3",
+	id = "tannen-level2",
 	category = "tannen's tower",
 	name = "Personal note (1)",
 	lore = [[Angolwen is too timid.  Too paranoid about repeating the mistakes of the past.  Too cautious and infuriatingly non-pragmatic.  Too prone to avoiding the "little sins," ignoring the big picture.  I've told them again and again that our ancestors' mistake wasn't trying to use the Sher'Tul portals, it was trying to weaponize them before we understood how they worked - couldn't we have plundered the Nargol facility for more data, or started kidnapping orc scouting parties as experimental subjects?  Couldn't we have tried to learn more about the Sher'Tul _before_ desperation pushed us into blowing up half of the world?  No, that was "forbidden" magic, "too powerful for mortals to tamper with," right up until we realized we needed all that power after all.  Like a pacifist finally picking up a flail to defend himself, only to bash himself in the head with it, our lack of familiarity led to catastrophe.
@@ -53,7 +53,7 @@ Well, I won't have it.  I've been selling potions and inscriptions on the side f
 }
 
 newLore{
-	id = "tannen-level4",
+	id = "tannen-level3",
 	category = "tannen's tower",
 	name = "Personal note (2)",
 	lore = [[
@@ -71,7 +71,7 @@ Now, I just need to get a genuine orb before the demons catch on...]],
 }
 
 newLore{
-	id = "tannen-level2",
+	id = "tannen-level4",
 	category = "tannen's tower",
 	name = "Demon Orders",
 	lore = [[Order to the Portal Excursion Team:
