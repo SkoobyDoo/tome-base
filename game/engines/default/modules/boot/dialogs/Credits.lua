@@ -275,7 +275,7 @@ function _M:innerDisplay(x, y, nb_keyframes)
 		local txt = self.list[i]
 		self:displayCredit(txt, x, y)
 
-		txt.y = txt.y - nb_keyframes * 15
+		txt.y = txt.y - nb_keyframes * 1.5
 		if i == #self.list and txt.y < game.h then
 			if credits[self.next_credit] ~= nil then
 				local t = self:makeEntry(credits[self.next_credit])
