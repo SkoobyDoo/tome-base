@@ -39,6 +39,7 @@ defineTile(".", "FLOOR")
 defineTile(" ", "OLD_FLOOR")
 defineTile("!", "WALL")
 defineTile("T", "TREE")
+defineTile("l", "FLOOR", "NOTE1")
 
 -- ASCII map section
 return [[
@@ -57,7 +58,7 @@ X+XXXXXXXXXX*XXXXXXXXXX+X
 X.+........*<*........+.X
 X+XXXXXXXXXX*XXX+XXXXXX+X
 X..XX.....&X.XX,,,XXXX..X
-XX.XX......X.XEE,EEXXX.XX
+XX.XX....l.X.XEE,EEXXX.XX
 XX.XX......X.XEETEEXXX.XX
 XX..X....$$X.XEE,EEXX..XX
 XXX.XXXXXX+X.XX,,,XXX.XXX
