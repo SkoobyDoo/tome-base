@@ -163,6 +163,7 @@ newTalent{
 			self:removeAllMOs()
 			game.level.map:updateMap(self.x, self.y)
 		end
+		ret.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="darkest_light", radius=0}))
 		self:resetCanSeeCacheOf()
 		return ret
 	end,
@@ -178,6 +179,7 @@ newTalent{
 		self:removeTemporaryValue("negative_regen_ref", p.drain)
 		self:removeTemporaryValue("positive_at_rest_disable", p.pstop)
 		self:removeTemporaryValue("negative_at_rest_disable", p.nstop)
+		self:removeParticles(p.particle)
 		local tg = {type="ball", range=0, selffire=true, radius= t.getRadius(self, t), talent=t}
 		self:project(tg, self.x, self.y, DamageType.LITE, 1)
 		tg.selffire = false
