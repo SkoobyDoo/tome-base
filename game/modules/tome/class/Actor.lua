@@ -3895,12 +3895,7 @@ function _M:onWear(o, inven_id, bypass_set)
 	end
 
 	-- Callbacks!
-	if not o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
-		if o[event] then
-			self[store] = self[store] or {}
-			self[store][o] = "object"
-		end
-	end end
+	if not o.carrier_callbacks then self:registerCallbacks(o, o, "object") end
 
 	self:breakReloading()
 
@@ -3997,12 +3992,7 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 	end
 
 	-- Callbacks
-	if not o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
-		if o[event] then
-			self[store][o] = nil
-			if not next(self[store]) then self[store] = nil end
-		end
-	end end
+	if not o.carrier_callbacks then self:unregisterCallbacks(o, o) end
 
 	self:checkMindstar(o)
 
@@ -4082,12 +4072,7 @@ function _M:onAddObject(o)
 	end
 
 	-- Callbacks!
-	if o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
-		if o[event] then
-			self[store] = self[store] or {}
-			self[store][o] = "object"
-		end
-	end end
+	if o.carrier_callbacks then self:registerCallbacks(o, o, "object") end
 
 	self:checkEncumbrance()
 
@@ -4111,12 +4096,7 @@ function _M:onRemoveObject(o)
 	end
 
 	-- Callbacks
-	if o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
-		if o[event] then
-			self[store][o] = nil
-			if not next(self[store]) then self[store] = nil end
-		end
-	end end
+	if o.carrier_callbacks then self:unregisterCallback(o, o) end
 
 	self:checkEncumbrance()
 end
@@ -4191,13 +4171,8 @@ function _M:learnTalent(t_id, force, nb, extra)
 	-- If we learned a spell, get mana, if you learned a technique get stamina, if we learned a wild gift, get power
 	local t = _M.talents_def[t_id]
 
-	if just_learnt then
-		for event, store in pairs(sustainCallbackCheck) do
-			if t[event] and t.mode ~= "sustained" then
-				self[store] = self[store] or {}
-				self[store][t_id] = "talent"
-			end
-		end
+	if just_learnt and t.mode ~= "sustained" then
+		self:registerCallbacks(t, t_id, "talent")
 	end
 
 	extra = extra or {}
@@ -4358,13 +4333,8 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 
 	local t = _M.talents_def[t_id]
 
-	if not self:knowTalent(t_id) then
-		for event, store in pairs(sustainCallbackCheck) do
-			if t[event] and t.mode ~= "sustained" then
-				self[store][t_id] = nil
-				if not next(self[store]) then self[store] = nil end
-			end
-		end
+	if not self:knowTalent(t_id) and t.mode ~= "sustained" then
+		self:unregisterCallbacks(t, t_id)
 	end
 
 	extra = extra or {}
@@ -4912,6 +4882,24 @@ local sustainCallbackCheck = {
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
+function _M:registerCallbacks(objdef, objid, objtype)
+	for event, store in pairs(sustainCallbackCheck) do
+		if objdef[event] then
+			self[store] = self[store] or {}
+			self[store][objid] = objtype
+		end
+	end
+end
+
+function _M:unregisterCallbacks(objdef, objid)
+	for event, store in pairs(sustainCallbackCheck) do
+		if self[store] and self[store][objid] then
+			self[store][objid] = nil
+			if not next(self[store]) then self[store] = nil end
+		end
+	end
+end
+
 function _M:fireTalentCheck(event, ...)
 	local store = sustainCallbackCheck[event]
 	local ret = false
@@ -5061,12 +5049,7 @@ function _M:postUseTalent(ab, ret, silent)
 					self.sustain_slots[slot] = ab.id
 				end
 			end
-			for event, store in pairs(sustainCallbackCheck) do
-				if ab[event] then
-					self[store] = self[store] or {}
-					self[store][ab.id] = "talent"
-				end
-			end
+			self:registerCallbacks(ab, ab.id, "talent")
 		else
 			if ab.sustain_mana then
 				self:incMaxMana(util.getval(ab.sustain_mana, self, ab))
@@ -5110,12 +5093,7 @@ function _M:postUseTalent(ab, ret, silent)
 					end
 				end
 			end
-			for event, store in pairs(sustainCallbackCheck) do
-				if ab[event] then
-					self[store][ab.id] = nil
-					if not next(self[store]) then self[store] = nil end
-				end
-			end
+			self:unregisterCallbacks(ab, ab.id)
 		end
 	elseif not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource then
 		if ab.mana and not self:attr("zero_resource_cost") then
@@ -5996,21 +5974,11 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 end
 
 function _M:on_temporary_effect_added(eff_id, e, p)
-	for event, store in pairs(sustainCallbackCheck) do
-		if e[event] then
-			self[store] = self[store] or {}
-			self[store][eff_id] = "effect"
-		end
-	end
+	self:registerCallbacks(e, eff_id, "event")
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
-	for event, store in pairs(sustainCallbackCheck) do
-		if e[event] then
-			self[store][eff_id] = nil
-			if not next(self[store]) then self[store] = nil end
-		end
-	end
+	self:unregisterCallbacks(e, eff_id)
 end
 
 --- Called when we are initiating a projection
