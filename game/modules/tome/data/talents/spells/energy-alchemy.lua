@@ -189,7 +189,7 @@ newTalent{
 		ret.last_life = self.life
 
 		if core.shader.active(4) then
-			ret.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {z=5, rotation=0, radius=1.1, img="alchie_lightning"}, {type="lightningshield"}))
+			ret.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {z=5, rotation=0, radius=1.4, img="alchie_lightning"}, {type="lightningshield", time_factor = 4000, ellipsoidalFactor = {1.7, 1.4}}))
 		end
 
 		return ret
