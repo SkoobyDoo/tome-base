@@ -28,6 +28,7 @@ defineTile("+", "DOOR")
 defineTile("<", "TUP")
 defineTile(">", "TDOWN")
 defineTile(".", "FLOOR")
+defineTile("l", "FLOOR", "NOTE3")
 
 -- addSpot section
 
@@ -41,7 +42,7 @@ XXXX..XXX...X...XXX>.XXXX
 XXX..XX.....X.....XX..XXX
 XXX.XX......+......XX.XXX
 XX..X.......X.......X..XX
-XX.XX.......X.......XX.XX
+XX.XX..l....X.......XX.XX
 XX.X......XXXX.......X.XX
 X..X......+..XX......X..X
 X.XX.....XX...XX.....XX.X

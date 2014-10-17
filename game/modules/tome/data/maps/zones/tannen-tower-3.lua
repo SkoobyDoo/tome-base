@@ -28,6 +28,7 @@ defineTile("~", "DEEP_WATER")
 defineTile("<", "TUP")
 defineTile(">", "TDOWN")
 defineTile(".", "FLOOR")
+defineTile("l", "DEEP_WATER", "NOTE2")
 
 -- addSpot section
 
@@ -47,7 +48,7 @@ X~~XXX~X~X~~~~~X~X~XXX~~X
 X~XXXX~X~X~XXX~X~X~XXXX~X
 X~XXXX~X~X~~>X~X~X~XXXX~X
 X~XXXX~X~XXXXX~X~X~XXXX~X
-X~~XXX.X~~~~~~~X~X~XXX~~X
+X~~XXX.X~~~l~~~X~X~XXX~~X
 XX~XXX~XXXXXXXXX~X~XXX~XX
 XX.XXX~~~~~~~~~~~X~XXX~XX
 XX~~XXXXXXXXXXXXXX~XX~.XX
