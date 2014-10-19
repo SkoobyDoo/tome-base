@@ -172,7 +172,7 @@ newTalent{
 	getResistance = function(self, t) return self:combatTalentSpellDamage(t, 5, 45) end,
 	getFireDamageInSight = function(self, t) return self:combatTalentSpellDamage(t, 15, 70) end,
 	getManaDrain = function(self, t) return -0.1 * self:getTalentLevelRaw(t) end,
-	do_fire = function(self, t)
+	callbackOnActBase = function(self, t)
 		if self:getMana() <= 0 then
 			self:forceUseTalent(t.id, {ignore_energy=true})
 			return

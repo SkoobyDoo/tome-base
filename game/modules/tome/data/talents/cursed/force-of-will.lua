@@ -174,7 +174,8 @@ newTalent{
 		p.particles = nil
 		return true
 	end,
-	do_act = function(self, t, p)
+	callbackOnActBase = function(self, t)
+		local p = self:isTalentActive(t.id)
 		local maxDamage = t.getMaxDamage(self, t)
 		if p.value < maxDamage and self.hate >= 0.2 then
 			self:incHate(-0.2)
@@ -328,7 +329,7 @@ newTalent{
 		self.unseenForce = { duration = duration, particles = particles }
 		return true
 	end,
-	do_unseenForce = function(self, t)
+	callbackOnActBase = function(self, t)
 		local targets = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 5, true)
 		for x, yy in pairs(grids) do

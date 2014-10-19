@@ -135,9 +135,7 @@ newTalent{
 	direct_hit = true,
 	tactical = { BUFF = 3 },
 	duration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
-	do_tkautoshoot = function(self, t)
-		if game.zone.wilderness then return end
-
+	callbackOnActBase = function(self, t)
 		local targnum = 1
 		if self:hasEffect(self.EFF_PSIFRENZY) then targnum = self:callTalent(self.T_FRENZIED_PSIFIGHTING, "getTargNum")  end
 		local speed, hit = nil, false

@@ -255,6 +255,13 @@ newTalent{
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
 	getBonusDamage = function(self, t) return self:combatTalentMindDamage(t, 5, 30) end,
+	callbackOnActBase = function(self, t)
+		-- Break mind links
+		local p = self:isTalentActive(self.T_MIND_LINK)
+		if not p.target or p.target.dead or not p.target:hasEffect(p.target.EFF_MIND_LINK_TARGET) or not game.level:hasEntity(p.target) then
+			self:forceUseTalent(t.id, {ignore_energy=true})
+		end
+	end,
 	activate = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)

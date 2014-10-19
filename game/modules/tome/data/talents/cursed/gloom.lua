@@ -55,9 +55,7 @@ newTalent{
 		self:removeParticles(p.particle)
 		return true
 	end,
-	do_gloom = function(self, tGloom)
-		if game.zone.wilderness then return end
-
+	callbackOnActBase = function(self, tGloom)
 		-- all gloom effects are handled here
 		local tWeakness = self:getTalentFromId(self.T_WEAKNESS)
 		local tDismay = self:getTalentFromId(self.T_DISMAY)

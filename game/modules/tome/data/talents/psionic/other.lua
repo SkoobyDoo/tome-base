@@ -93,7 +93,7 @@ newTalent{
 	no_energy = true,
 	no_unlearn_last = true,
 	tactical = { BUFF = 3 },
-	do_tkautoattack = function(self, t)
+	callbackOnActBase = function(self, t)
 		if game.zone.wilderness then return end
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
 		if type(tkweapon) == "boolean" then tkweapon = nil end
