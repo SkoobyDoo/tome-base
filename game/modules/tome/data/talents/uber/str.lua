@@ -171,7 +171,7 @@ uberTalent{
 	end} },
 	-- _M:levelup function in mod.class.Actor.lua updates the talent levels with character level
 	bonusLevel = function(self, t) return math.ceil(self.level/10) end,
-	updateTalent = function(self, t)
+	callbackOnLevelup = function(self, t, new_level)
 		local p = self.talents_learn_vals[t.id] or {}
 		if p.__tmpvals then
 			for i = 1, #p.__tmpvals do
