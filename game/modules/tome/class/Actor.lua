@@ -4171,7 +4171,7 @@ function _M:learnTalent(t_id, force, nb, extra)
 	-- If we learned a spell, get mana, if you learned a technique get stamina, if we learned a wild gift, get power
 	local t = _M.talents_def[t_id]
 
-	if just_learnt and t.mode ~= "sustained" then
+	if just_learnt and (t.mode ~= "sustained" or t.passive_callbacks) then
 		self:registerCallbacks(t, t_id, "talent")
 	end
 
@@ -4333,7 +4333,7 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 
 	local t = _M.talents_def[t_id]
 
-	if not self:knowTalent(t_id) and t.mode ~= "sustained" then
+	if not self:knowTalent(t_id) and (t.mode ~= "sustained" or t.passive_callbacks) then
 		self:unregisterCallbacks(t, t_id)
 	end
 
@@ -5082,7 +5082,7 @@ function _M:postUseTalent(ab, ret, silent)
 					self.sustain_slots[slot] = ab.id
 				end
 			end
-			self:registerCallbacks(ab, ab.id, "talent")
+			if not ab.passive_callbacks then self:registerCallbacks(ab, ab.id, "talent") end
 		else
 			if ab.sustain_mana then
 				self:incMaxMana(util.getval(ab.sustain_mana, self, ab))
@@ -5126,7 +5126,7 @@ function _M:postUseTalent(ab, ret, silent)
 					end
 				end
 			end
-			self:unregisterCallbacks(ab, ab.id)
+			if not ab.passive_callbacks then self:unregisterCallbacks(ab, ab.id) end
 		end
 	elseif not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource then
 		if ab.mana and not self:attr("zero_resource_cost") then
