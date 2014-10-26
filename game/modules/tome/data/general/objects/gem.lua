@@ -59,7 +59,12 @@ local gem_color_attributes = {
 		damage_type = 'LIGHT',
 		alt_damage_type = 'LIGHT_BLIND',
 		particle = 'light',},}
-mod.class.Object.gem_color_attributes = gem_color_attributes
+
+-- Let addons alter colors before the gems are created. This is weird,
+-- since there's no base class to call it for, since it's just a
+-- table. To bind:
+-- class.bindHook('GemColorAttributes', function(gem_color_attributes) ... end)
+class.triggerHook(gem_color_attributes, {'GemColorAttributes',})
 
 local function newGem(name, image, cost, rarity, color, min_level, max_level, tier, power, imbue, bomb)
 	-- Gems, randomly lootable
