@@ -405,6 +405,30 @@ function _M:orderCheckBatchHash(o)
 	end
 end
 
+function _M:orderCheckAddonUpdates(o)
+	if not self.sock then cprofile.pushEvent("e='CheckAddonUpdates' ok=false not_connected=true") end
+	local data = zlib.compress(table.serialize(o.list))
+	self:command("ADDN SHOULD_UPDATE", #data)
+	if self:read("200") then
+		self.sock:send(data)
+		if self:read("200") then
+			local _, _, size = self.last_line:find("^([0-9]+)")
+			size = tonumber(size)
+			local list = {}
+			if size and size > 1 then
+				local body = self:receive(size)
+				if body then body = zlib.decompress(body) end
+				if body then body = body:unserialize() end
+				if body then list = body end
+			end
+
+			cprofile.pushEvent(("e='CheckAddonUpdates' ok=%q"):format(table.serialize(list)))
+			return
+		end
+	end
+	cprofile.pushEvent("e='CheckAddonUpdates' ok=false")
+end
+
 function _M:orderRegisterNewCharacter(o)
 	self:command("CHAR", "NEW", o.module)
 	if self:read("200") then

@@ -690,6 +690,21 @@ function _M:checkAddonHash(module, addon, md5)
 	return true
 end
 
+function _M:checkAddonUpdates(list)
+	if not self.auth then return nil, "no online profile active" end
+	if #list == 0 then return nil, "nothing to update" end
+	core.profile.pushOrder(table.serialize{o="CheckAddonUpdates", list=list})
+
+	local ok = false
+	self:waitEvent("CheckAddonUpdates", function(e) ok = e.ok end, 10000)
+
+	if not ok then return nil, "bad game addon version" end
+	ok = ok:unserialize()
+	print("[ONLINE PROFILE] addon update list returned")
+	table.print(ok)
+	return ok
+end
+
 function _M:checkBatchHash(list)
 	if not self.auth then return nil, "no online profile active" end
 	if config.settings.cheat then return nil, "cheat mode active" end
