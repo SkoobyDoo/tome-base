@@ -28,6 +28,7 @@ local Module = require "engine.Module"
 local Dialog = require "engine.ui.Dialog"
 local Tooltip = require "engine.Tooltip"
 local MainMenu = require "mod.dialogs.MainMenu"
+local Downloader = require "engine.dialogs.Downloader"
 
 local Shader = require "engine.Shader"
 local Zone = require "engine.Zone"
@@ -209,13 +210,15 @@ A usual problem is shaders and thus should be your first target to disable.]], 7
 end
 
 function _M:grabAddons()
+	if config.settings.no_auto_update_addons then return end
+
 	if core.steam then
 		self.updating_addons = {}
-		self.logdisplay("#{italic}##ROYAL_BLUe#Retrieving addons to update/download from Steam...#{normal}#")
+		self.logdisplay("#{italic}##ROYAL_BLUE#Retrieving addons to update/download from Steam...#{normal}#")
 		core.steam.grabSubscribedAddons(function(mode, teaa, title)
 			if mode == "end" then
 				self.updating_addons = nil
-				self.logdisplay("#{italic}##ROYAL_BLUe#Addons update finished.#{normal}#")
+				self.logdisplay("#{italic}##ROYAL_BLUE#Addons update finished.#{normal}#")
 				return
 			end
 
@@ -228,6 +231,57 @@ function _M:grabAddons()
 				self.logdisplay("#{italic}#Download of #LIGHT_RED#%s#LAST# failed.#{normal}#", self.updating_addons[teaa] or "???")
 			end
 		end)
+	else
+		if not core.webview then return end
+		self.logdisplay("#{italic}##ROYAL_BLUE#Retrieving addons to update/download from te4.org...#{normal}#")
+		local mlist = Module:listModules(true)
+		list = {}
+		for i = 1, #mlist do
+			for j, mod in ipairs(mlist[i].versions) do
+				if j > 1 then break end
+				if not mod.is_boot then
+					local adds = Module:listAddons(mod, true)
+					for k, add in ipairs(adds) do
+						if add.addon_version and add.teaa then
+							local a = {
+								long_name = add.long_name,
+								name = add.for_module..'-'..add.short_name,
+								version = add.addon_version,
+								id_dlc = add.id_dlc and add.id_dlc[1],
+								file = add.teaa,
+							}
+							table.insert(list, a)
+							list[a.name] = a
+						end
+					end
+				end
+			end
+		end
+		table.print(list)
+		local update_list = profile:checkAddonUpdates(list)
+		if update_list then
+			local co co = coroutine.create(function()
+			for i, add in ipairs(update_list) do
+				if core.webview then
+					local d = Downloader.new{title="Updating addon: #LIGHT_GREEN#"..list[add.name].long_name, co=co, dest=add.file..".tmp", url=add.download_url, allow_downloads={addons=true}}
+					local ok = d:start()
+					if ok then
+						local wdir = fs.getWritePath()
+						local _, _, dir, name = add.file:find("(.+)/([^/]+)$")
+						if dir then
+							fs.setWritePath(fs.getRealPath(dir))
+							fs.delete(name)
+							fs.rename(name..".tmp", name)
+							fs.setWritePath(wdir)
+							self.logdisplay("#{italic}#Download of #LIGHT_GREEN#%s#LAST# finished.#{normal}#", list[add.name].long_name)
+						end
+					end
+				end
+			end
+			self.logdisplay("#{italic}##ROYAL_BLUE#Addons update finished.#{normal}#")
+			end)
+			coroutine.resume(co)
+		end
 	end
 end
 

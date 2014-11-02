@@ -70,6 +70,14 @@ function table.max(t)
 	return m
 end
 
+function table.print_shallow(src, offset, ret)
+	if type(src) ~= "table" then print("table.print has no table:", src) return end
+	offset = offset or ""
+	for k, e in pairs(src) do
+		print(("%s[%s] = %s"):format(offset, tostring(k), tostring(e)))
+	end
+end
+
 function table.print(src, offset, ret)
 	if type(src) ~= "table" then print("table.print has no table:", src) return end
 	offset = offset or ""
