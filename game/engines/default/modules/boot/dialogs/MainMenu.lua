@@ -80,11 +80,7 @@ function _M:init()
 		{right=0, bottom=0, absolute=true, ui=self.c_twitter},
 	}
 
-	if core.webview and game.webtooltip then
-		self.c_tooltip = game.webtooltip
-		self.base_uis[#self.base_uis+1] = {left=9, top=9, absolute=true, ui=self.c_tooltip}
-
-	end
+	self:enableWebtooltip()
 
 	if game.__mod_info.publisher_logo then
 		local c_pub = ButtonImage.new{no_decoration=true, alpha_unfocus=1, file="background/"..game.__mod_info.publisher_logo..".png", fct=function()
@@ -96,6 +92,13 @@ function _M:init()
 	end
 
 	self:updateUI()	
+end
+
+function _M:enableWebtooltip()
+	if core.webview and game.webtooltip and not self.c_tooltip then
+		self.c_tooltip = game.webtooltip
+		self.base_uis[#self.base_uis+1] = {left=9, top=9, absolute=true, ui=self.c_tooltip}
+	end
 end
 
 function _M:updateUI()
