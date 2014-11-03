@@ -165,11 +165,7 @@ function _M:display(nb_keyframes)
 	end
 
 	-- Check profile thread events
-	local evt = profile:popEvent()
-	while evt do
-		self:handleProfileEvent(evt)
-		evt = profile:popEvent()
-	end
+	self:handleEvents()
 
 	-- Check timers
 	if self._timers_cb and nb_keyframes > 0 then
@@ -200,6 +196,16 @@ end
 function _M:idling(focus)
 	self.has_os_focus = focus
 --	print("Game got focus/unfocus", focus)
+end
+
+
+--- Handle pending events
+function _M:handleEvents()
+	local evt = profile:popEvent()
+	while evt do
+		self:handleProfileEvent(evt)
+		evt = profile:popEvent()
+	end
 end
 
 --- Receives a profile event

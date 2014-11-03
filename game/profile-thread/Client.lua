@@ -36,7 +36,7 @@ end
 function _M:connected()
 	if self.sock then return true end
 	self.sock = socket.connect("profiles.te4.org", mport)
-	if not self.sock then return false end
+	if not self.sock then self:disconnect() return false end
 --	self.sock:settimeout(10)
 	print("[PROFILE] Thread connected to profiles.te4.org")
 	self:login()
@@ -63,12 +63,10 @@ end
 
 function _M:disconnect()
 	cprofile.pushEvent("e='Disconnected'")
-	if self.psock then
-		self.psock:close()
-		self.psock = nil
-	end
-	self.sock:close()
+	if self.psock then self.psock:close() end
+	if self.sock then self.sock:close() end
 	self.sock = nil
+	self.psock = nil
 	self.auth = nil
 	core.game.sleep(5000) -- Wait 5 secs
 end
@@ -267,9 +265,12 @@ function _M:orderLogin(o)
 	self.user_login = o.l
 	self.user_pass = o.p
 
+	if not self.sock then cprofile.pushEvent("e='Disconnected'") return end
+
 	-- Already logged?
 	if self.auth and self.auth.login == o.l then
 		print("[PROFILE] reusing login", self.auth.name)
+		if self.sock then cprofile.pushEvent("e='Connected'") end
 		cprofile.pushEvent(string.format("e='Auth' ok=%q", table.serialize(self.auth)))
 		self.chat:forwardFriends()
 	else
@@ -282,9 +283,12 @@ function _M:orderSteamLogin(o)
 	self.steam_token_name = o.name
 	if o.email and #o.email > 1 then self.steam_token_email = o.email end
 
+	if not self.sock then cprofile.pushEvent("e='Disconnected'") return end
+
 	-- Already logged?
 	if self.auth then
 		print("[PROFILE] reusing login", self.auth.name)
+		if self.sock then cprofile.pushEvent("e='Connected'") end
 		cprofile.pushEvent(string.format("e='Auth' ok=%q", table.serialize(self.auth)))
 	else
 		self:login()
