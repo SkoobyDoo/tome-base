@@ -70,6 +70,8 @@ function _M:init()
 		self.background, self.background_tw, self.background_th = self.background:glTexture()
 	end
 	
+	self:handleEvents()
+	if not profile.connected then core.webview = nil end
 	if not core.webview then self.tooltip = Tooltip.new(nil, 14, nil, colors.DARK_GREY, 380) end
 
 --	self.refuse_threads = true
