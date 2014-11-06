@@ -123,12 +123,15 @@ function _M:init(t, no_default)
 	end
 
 	if config.settings.cheat then
-		local ok, err = table.check(self, function(t, where, v, tv)
+		local ok, err = table.check(
+			self,
+			function(t, where, v, tv)
 				if tv ~= "function" then return true end
 				local n, v = debug.getupvalue(v, 1)
 				if not n then return true end
 				return nil, ("Entity closure checker: %s has upvalue %s"):format(tostring(where), tostring(n))
-			end)
+			end,
+			function(value) return not value._allow_upvalues end)
 		if not ok then
 			error("Entity definition has a closure: "..err)
 		end

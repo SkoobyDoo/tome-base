@@ -45,6 +45,7 @@ end
 --- Defines one talent type(group)
 -- Static!
 function _M:newTalentType(t)
+	t.__CLASSNAME = 'engine.interface.ActorTalents.TalentType'
 	assert(t.name, "no talent type name")
 	assert(t.type, "no talent type type")
 	t.description = t.description or ""
@@ -57,6 +58,7 @@ end
 --- Defines one talent
 -- Static!
 function _M:newTalent(t)
+	t.__CLASSNAME = 'engine.interface.ActorTalents.Talent'
 	assert(t.name, "no talent name")
 	assert(t.type, "no or unknown talent type")
 	if type(t.type) == "string" then t.type = {t.type, 1} end
