@@ -263,22 +263,23 @@ function table.removeFromList(t, ...)
 	end
 end
 
-function table.check(t, fct)
+function table.check(t, fct, path)
+	if path then path = path..'/' else path = '' end
 	for k, e in pairs(t) do
 		local tk, te = type(k), type(e)
 		if te == "table" and not e.__CLASSNAME then
-			local ok, err = table.check(e, fct)
+			local ok, err = table.check(e, fct, path..tostring(k))
 			if not ok then return nil, err end
 		else
-			local ok, err = fct(t, "value["..tostring(k).."]", e, te)
+			local ok, err = fct(t, path..tostring(k), e, te)
 			if not ok then return nil, err end
 		end
-		
+
 		if tk == "table" and not k.__CLASSNAME then
-			local ok, err = table.check(k, fct)
+			local ok, err = table.check(k, fct, path..tostring(k))
 			if not ok then return nil, err end
 		else
-			local ok, err = fct(t, "key", k, tk)
+			local ok, err = fct(t, path.."<key>", k, tk)
 			if not ok then return nil, err end
 		end
 	end
