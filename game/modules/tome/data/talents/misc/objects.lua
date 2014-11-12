@@ -249,9 +249,9 @@ newTalent{
 			e_string = DamageType.dam_def[next(bt)].name
 		else
 			local list = table.keys(bt)
-			for i = 1, #list do
+			for i = 1, #list do if DamageType.dam_def[list[i]] then
 				list[i] = DamageType.dam_def[list[i]].name
-			end
+			end end
 			e_string = table.concat(list, ", ")
 		end
 		return bt, e_string
