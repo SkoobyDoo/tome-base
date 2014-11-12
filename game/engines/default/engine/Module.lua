@@ -607,6 +607,7 @@ end
 -- Grab some fun facts!
 function _M:selectFunFact(ffdata)
 	local l = {}
+	local ok = false
 
 	print("Computing fun facts")
 	print(pcall(function()
@@ -620,8 +621,9 @@ function _M:selectFunFact(ffdata)
 		if ffdata.total_deaths then l[#l+1] = ("The character's vault has registered a total of #RED#%d#WHITE# character's deaths"):format(ffdata.total_deaths) end
 		if ffdata.wins_this_version then l[#l+1] = ("The character's vault has registered a total of #LIGHT_BLUE#%d#WHITE# winners for the current version"):format(ffdata.wins_this_version) end
 		if ffdata.latest_donator then l[#l+1] = ("The latest donator is #LIGHT_GREEN#%s#WHITE#. Many thanks to all donators, you are keeping this game alive!"):format(ffdata.latest_donator) end
-
+		ok = true
 	end))
+	if not ok then return false end
 	table.print(l)
 
 	return #l > 0 and rng.table(l) or false
