@@ -240,6 +240,8 @@ newTalent{
 			bt[DamageType.TEMPORAL] = true
 		end
 
+		bt.all = nil
+
 		local n = 0
 		for t, _ in pairs(bt) do n = n + 1 end
 
