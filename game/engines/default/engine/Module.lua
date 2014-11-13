@@ -624,7 +624,7 @@ function _M:selectFunFact(ffdata)
 		ok = true
 	end))
 	if not ok then return false end
-	table.print(l)
+	-- table.print(l)
 
 	return #l > 0 and rng.table(l) or false
 end
