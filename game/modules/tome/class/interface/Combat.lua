@@ -66,10 +66,12 @@ function _M:bumpInto(target, x, y)
 			if target.describeFloor then target:describeFloor(target.x, target.y, true) end
 			if self.describeFloor then self:describeFloor(self.x, self.y, true) end
 
+			local energy = game.energy_to_act * self:combatMovementSpeed(x, y)
 			if self:attr("bump_swap_speed_divide") then
-				self:useEnergy(game.energy_to_act * self:combatMovementSpeed(x, y) / self:attr("bump_swap_speed_divide"))
-				self.did_energy = true
+				energy = energy / self:attr("bump_swap_speed_divide")
 			end
+			self:useEnergy(energy)
+			self.did_energy = true
 		end
 	end
 end
@@ -883,7 +885,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
 		if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
 		if hitted and not target.dead and target:attr("vim_regen_when_hit") then target:incVim(target.vim_regen_when_hit) end
-	
+
 		-- Resource regen on hit
 		if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
 		if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
@@ -899,7 +901,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			target:forceUseTalent(target.T_CARBON_SPIKES, {ignore_energy=true})
 		end
 	end
-	
+
 	if hitted and not target.dead and target:knowTalent(target.T_STONESHIELD) then
 		local t = target:getTalentFromId(target.T_STONESHIELD)
 		local m, mm, e, em = t.getValues(self, t)
