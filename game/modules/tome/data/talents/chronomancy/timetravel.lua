@@ -66,13 +66,14 @@ newTalent{
 				{speed=3, name="Temporal Bolt", dam=dam, apply=getParadoxSpellpower(self, t), start_x=x, start_y=y},
 				self, self:getTalentRange(t),
 				function(self, src)
+					local talent = src:getTalentFromId 'T_TEMPORAL_BOLT'
 					local target = game.level.map(self.x, self.y, engine.Map.ACTOR)
 					if target and not target.dead and src:reactionToward(target) < 0 then
 						local DT = require("engine.DamageType")
 						local multi = (10 - self.homing.count)/20
 						local dam = self.def.dam * (1 + multi)
-						src:project({type="hit", friendlyfire=false, talent=t}, self.x, self.y, DT.TEMPORAL, dam)
-						
+						src:project({type="hit", friendlyfire=false, talent=talent}, self.x, self.y, DT.TEMPORAL, dam)
+
 						-- Refresh talent
 						for tid, cd in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
