@@ -488,6 +488,7 @@ function _M:finishEntity(level, type, e, ego_filter)
 				print("applying addon", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
 				ego.unided_name = nil
 				ego.__CLASSNAME = nil
+				ego.__ATOMIC = nil
 				-- The ego requested instant resolving before merge ?
 				if ego.instant_resolve then ego:resolve(nil, nil, e) end
 				ego.instant_resolve = nil
@@ -576,6 +577,7 @@ function _M:finishEntity(level, type, e, ego_filter)
 				print("applying ego", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
 				ego.unided_name = nil
 				ego.__CLASSNAME = nil
+				ego.__ATOMIC = nil
 				-- The ego requested instant resolving before merge ?
 				if ego.instant_resolve then ego:resolve(nil, nil, e) end
 				ego.instant_resolve = nil
@@ -703,7 +705,7 @@ end
 
 local recurs = function(t)
 	local nt = {}
-	for k, e in pairs(nt) do if k ~= "__CLASSNAME" then nt[k] = e end end
+	for k, e in pairs(nt) do if k ~= "__CLASSNAME" and k ~= "__ATOMIC" then nt[k] = e end end
 	return nt
 end
 function _M:getLevelData(lev)
@@ -714,6 +716,7 @@ function _M:getLevelData(lev)
 	if res.alter_level_data then res.alter_level_data(self, lev, res) end
 	-- Make sure it is not considered a class
 	res.__CLASSNAME = nil
+	res.__ATOMIC = nil
 	return res
 end
 

@@ -45,6 +45,7 @@ end
 --- Defines one talent type(group)
 -- Static!
 function _M:newTalentType(t)
+	t.__ATOMIC = true
 	assert(t.name, "no talent type name")
 	assert(t.type, "no talent type type")
 	t.description = t.description or ""
@@ -57,6 +58,7 @@ end
 --- Defines one talent
 -- Static!
 function _M:newTalent(t)
+	t.__ATOMIC = true
 	assert(t.name, "no talent name")
 	assert(t.type, "no or unknown talent type")
 	if type(t.type) == "string" then t.type = {t.type, 1} end
@@ -116,7 +118,7 @@ end
 -- Make the actor use the talent
 -- @param id talent ID
 -- @param who talent user
--- @param force_level talent level(raw) override 
+-- @param force_level talent level(raw) override
 -- @param ignore_cd do not affect or consider cooldown
 -- @param force_target the target of the talent (override)
 -- @param silent do not display messages about use
@@ -355,7 +357,7 @@ function _M:learnTalent(t_id, force, nb)
 
 	for i = 1, (nb or 1) do
 		self.talents[t_id] = (self.talents[t_id] or 0) + 1
-		if t.on_learn then 
+		if t.on_learn then
 			local ret = t.on_learn(self, t)
 			if ret then
 				if ret == true then ret = {} end
@@ -365,7 +367,7 @@ function _M:learnTalent(t_id, force, nb)
 		end
 	end
 
-	if t.passives then 
+	if t.passives then
 		self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
 		local p = self.talents_learn_vals[t.id]
 
@@ -411,7 +413,7 @@ function _M:unlearnTalent(t_id, nb)
 		self.talents[t_id] = self.talents[t_id] - 1
 		if self.talents[t_id] == 0 then self.talents[t_id] = nil end
 
-		if t.on_unlearn then 
+		if t.on_unlearn then
 			local p = nil
 			if self.talents_learn_vals[t.id] and self.talents_learn_vals[t.id][(self.talents[t_id] or 0) + 1] then
 				p = self.talents_learn_vals[t.id][(self.talents[t_id] or 0) + 1]
@@ -425,7 +427,7 @@ function _M:unlearnTalent(t_id, nb)
 		end
 	end
 
-	if t.passives then 
+	if t.passives then
 		self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
 		local p = self.talents_learn_vals[t.id]
 
@@ -451,7 +453,7 @@ end
 function _M:updateTalentPassives(tid)
 	if not self:knowTalent(tid) then return end
 
-	local t = self:getTalentFromId(tid)	
+	local t = self:getTalentFromId(tid)
 	if not t.passives then return end
 
 	self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
