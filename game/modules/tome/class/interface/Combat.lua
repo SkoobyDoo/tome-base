@@ -138,7 +138,8 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 		local gems = self:getInven(self.INVEN_GEM)
 		local types = {}
 		for i = 1, #gems do
-			if gems[i] and gems[i].attack_type then types[#types+1] = gems[i].attack_type end
+			local damtype = table.get(gems[i], 'color_attributes', 'damage_type')
+			if damtype then table.insert(types, damtype) end
 		end
 		if #types > 0 then
 			damtype = rng.table(types)

@@ -30,15 +30,41 @@ newEntity{
 	desc = [[Gems can be sold for money or used in arcane rituals.]],
 }
 
-local colors_attacks = {
-	black = DamageType.ACID,
-	blue = DamageType.LIGHTNING,
-	green = DamageType.NATURE,
-	red = DamageType.FIRE,
-	violet = DamageType.ARCANE,
-	white = DamageType.COLD,
-	yellow = DamageType.LIGHT,
-}
+local gem_color_attributes = {
+	black = {
+		damage_type = 'ACID',
+		alt_damage_type = 'ACID_DISARM',
+		particle = 'acid',},
+	blue = {
+		damage_type = 'LIGHTNING',
+		alt_damage_type = 'LIGHTNING_DAZE',
+		particle = 'lightning_explosion',},
+	green = {
+		damage_type = 'NATURE',
+		alt_damage_type = 'SPYDRIC_POISON',
+		particle = 'slime',},
+	red = {
+		damage_type = 'FIRE',
+		alt_damage_type = 'FLAMESHOCK',
+		particle = 'flame',},
+	violet = {
+		damage_type = 'ARCANE',
+		alt_damage_type = 'ARCANE_SILENCE',
+		particle = 'manathrust',},
+	white = {
+		damage_type = 'COLD',
+		alt_damage_type = 'ICE',
+		particle = 'freeze',},
+	yellow = {
+		damage_type = 'LIGHT',
+		alt_damage_type = 'LIGHT_BLIND',
+		particle = 'light',},}
+
+-- Let addons alter colors before the gems are created. This is weird,
+-- since there's no base class to call it for, since it's just a
+-- table. To bind:
+-- class.bindHook('GemColorAttributes', function(gem_color_attributes) ... end)
+class.triggerHook(gem_color_attributes, {'GemColorAttributes',})
 
 local function newGem(name, image, cost, rarity, color, min_level, max_level, tier, power, imbue, bomb)
 	-- Gems, randomly lootable
@@ -50,7 +76,8 @@ local function newGem(name, image, cost, rarity, color, min_level, max_level, ti
 		material_level = tier,
 		imbue_powers = imbue,
 		wielder = imbue,
-		attack_type = colors_attacks[color],
+		attack_type = gem_color_attributes[color].damage_type, -- deprecated, hopefully nothing's still using it.
+		color_attributes = gem_color_attributes[color],
 	}
 	-- Alchemist gems, not lootable, only created by talents
 	newEntity{ base = "BASE_GEM", define_as = "ALCHEMIST_GEM_"..name:gsub(" ", "_"):upper(),		name = "alchemist "..name:lower(), type='alchemist-gem', subtype = color,

@@ -1049,7 +1049,7 @@ newDamageType{
 
 -- Darkness + Fire
 newDamageType{
-	name = "shadowflame", type = "SHADOWFLAME",
+	name = "shadowflame", type = "SHADOWFLAME", text_color = "#BF7F73#",
 	projector = function(src, x, y, type, dam)
 		DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam / 2)
 		DamageType:get(DamageType.DARKNESS).projector(src, x, y, DamageType.DARKNESS, dam / 2)

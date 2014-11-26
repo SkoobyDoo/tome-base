@@ -6272,6 +6272,17 @@ newEntity{ base = "BASE_GREATMAUL",
 		damrange=1.3,
 		dammod = {str=1.2, mag=0.1},
 	},
+	-- executed for specific gems.
+	-- key corresponds to: gem.define_as or gem.name
+	unique_gems = {
+		GOEDALATH_ROCK = function(maul, gem)
+			maul.combat.damtype = 'SHADOWFLAME'
+			table.mergeAdd(maul.wielder, {
+					inc_damage = {FIRE = 3 * gem.material_level, DARKNESS = 3 * gem.material_level,},
+					resists_pen = {all = 2 * gem.material_level},},
+				true)
+			maul.gemDesc = "Demonic"
+		end,},
 	max_power = 10, power_regen = 1,
 	use_power = { name = "imbue the hammer with a gem of your choice", power = 10,
 		use = function(self, who)
@@ -6318,96 +6329,41 @@ newEntity{ base = "BASE_GREATMAUL",
 					self.combat.physcrit = 4 + (2 * combatFactor)
 					self.combat.dammod = {str=1.2, mag=0.1}
 					self.combat.damrange = 1.3
-							
+
 					self.wielder = {
 						inc_stats = {[Stats.STAT_MAG] = (2 * scalingFactor), [Stats.STAT_CUN] = (2 * scalingFactor), [Stats.STAT_DEX] = (2 * scalingFactor),},
 					}
-					
+
 
 					-- Each element merges its effect into the combat/wielder tables (or anything else) after the base stats are scaled
 					-- You can modify damage and such here too but you should probably make static tables instead of merging
-					if gem.subtype =="black" then -- Acid
-						self.combat.damtype = DamageType.ACID
-						table.mergeAdd(self.wielder, {inc_damage = { [DamageType.ACID] = 4 * scalingFactor} }, true)
-						
-						self.combat.burst_on_crit = {[DamageType.ACID_DISARM] = 12 * scalingFactor,}
-						self.gemDesc = "Acid"
-					end
-					if gem.subtype =="blue" then  -- Lightning
-						self.combat.damtype = DamageType.LIGHTNING
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.LIGHTNING] = 4 * scalingFactor} 
-						
-							}, true)
-						self.combat.burst_on_crit = {[DamageType.LIGHTNING_DAZE] = 12 * scalingFactor,}
-						self.gemDesc = "Lightning"
-					end
-					if gem.subtype =="green" then  -- Nature
-						self.combat.damtype = DamageType.NATURE
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.NATURE] = 4 * scalingFactor} 
-							
-							}, true)
-						self.combat.burst_on_crit = {[DamageType.SPYDRIC_POISON] = 12 * scalingFactor,}
-						self.gemDesc = "Nature"
-					end
-					if gem.subtype =="red" then  -- Fire					
-						self.combat.damtype = DamageType.FIRE
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.FIRE] = 4 * scalingFactor}, 
-						}, true)
-						self.combat.burst_on_crit = {[DamageType.FLAMESHOCK] = 12 * scalingFactor,}
-						self.gemDesc = "Fire"
-					end
-					if gem.subtype =="violet" then -- Arcane
-						self.combat.damtype = DamageType.ARCANE
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.ARCANE] = 4 * scalingFactor} 
-							
-						}, true)
-						self.combat.burst_on_crit = {[DamageType.ARCANE_SILENCE] = 12 * scalingFactor,}
-						self.gemDesc = "Arcane"
-					end
-					if gem.subtype =="white" then  -- Cold
-						self.combat.damtype = DamageType.COLD
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.COLD] = 4 * scalingFactor} 
-							
-						}, true)
-						self.combat.burst_on_crit = {[DamageType.ICE] = 12 * scalingFactor,}
-						self.gemDesc = "Cold"
-					end
-					if gem.subtype =="yellow" then -- Light
-						self.combat.damtype = DamageType.LIGHT
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.LIGHT] = 4 * scalingFactor} 
-							
-						}, true)	
-						self.combat.burst_on_crit = {[DamageType.LIGHT_BLIND] = 12 * scalingFactor,}
-						self.gemDesc = "Light"
-					end
-					if gem.subtype == "multi-hued"  then -- Some but not all artifacts, if you want to do artifact specific effects make conditionals by name, don't use this
+
+					if gem.on_tirakai_maul_equip then
+						gem:on_tirakai_maul_equip(self)
+					elseif self.unique_gems[gem.define_as or gem.name] then
+						self.unique_gems[gem.define_as or gem.name](self, gem)
+					elseif gem.color_attributes then
+						self.combat.damtype = gem.color_attributes.damage_type
+						table.mergeAdd(self.wielder,
+							{inc_damage = {[gem.color_attributes.damage_type] = 4 * scalingFactor},},
+							true)
+						self.combat.burst_on_crit = {[gem.color_attributes.alt_damage_type] = 12 * scalingFactor,}
+						self.gemDesc = gem.color_attributes.desc or gem.color_attributes.damage_type:lower():capitalize()
+					else -- Backup for weird artifacts.
 						table.mergeAdd(self.combat, {convert_damage = {[DamageType.COLD] = 25, [DamageType.FIRE] = 25, [DamageType.LIGHTNING] = 25, [DamageType.ARCANE] = 25,} }, true)
 						table.mergeAdd(self.wielder, {
 							inc_damage = { all = 2 * scalingFactor},
 							resists_pen = { all = 2 * scalingFactor},
-							}, true)	
-							self.gemDesc = "Unique"							
+							}, true)
+							self.gemDesc = 'Unique'
 					end
-					if gem.subtype == "demonic"  then -- Goedalath Rock
-						self.combat.damtype = DamageType.SHADOWFLAME
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.FIRE] = 3 * scalingFactor, [DamageType.DARKNESS] = 3 * scalingFactor,},
-							resists_pen = { all = 2 * scalingFactor},
-							}, true)	
-							self.gemDesc = "Demonic"							
-					end
+
 					game.logPlayer(who, "You imbue your %s with %s.", self:getName{do_colour=true, no_count=true}, gem:getName{do_colour=true, no_count=true})
 
 					--self.name = (gem.name .. " of Divinity")
-					
+
 					table.mergeAdd(self.wielder, gem.imbue_powers, true)
-					
+
 					if gem.talent_on_spell then
 						self.talent_on_spell = self.talent_on_spell or {}
 						table.append(self.talent_on_spell, gem.talent_on_spell)

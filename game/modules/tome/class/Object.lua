@@ -1541,6 +1541,13 @@ function _M:getTextualDesc(compare_with, use_actor)
 		end
 	end
 
+	local latent = table.get(self.color_attributes, 'damage_type')
+	if latent then
+		latent = DamageType:get(latent) or {}
+		desc:add({"color","YELLOW",}, "Latent Damage Type: ", {"color","LAST",},
+			latent.text_color or "#WHITE#", latent.name:capitalize(), {"color", "LAST",}, true)
+	end
+
 	if self.inscription_data and self.inscription_talent then
 		use_actor.__inscription_data_fake = self.inscription_data
 		local t = self:getTalentFromId("T_"..self.inscription_talent.."_1")
