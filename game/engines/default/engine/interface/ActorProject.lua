@@ -56,6 +56,7 @@ function _M:project(t, x, y, damtype, dam, particles)
 
 	local grids = {}
 	local function addGrid(x, y)
+		if typ.filter and not typ.filter(x, y) then return end
 		if not grids[x] then grids[x] = {} end
 		grids[x][y] = true
 	end
@@ -112,7 +113,9 @@ function _M:project(t, x, y, damtype, dam, particles)
 		end
 	end
 
+	local single_target = true
 	if typ.ball and typ.ball > 0 then
+		single_target = false
 		core.fov.calc_circle(
 			stop_radius_x,
 			stop_radius_y,
@@ -128,7 +131,10 @@ function _M:project(t, x, y, damtype, dam, particles)
 			end,
 		nil)
 		addGrid(stop_x, stop_y)
-	elseif typ.cone and typ.cone > 0 then
+	end
+
+	if typ.cone and typ.cone > 0 then
+		single_target = false
 		--local dir_angle = math.deg(math.atan2(y - self.y, x - self.x))
 		core.fov.calc_beam_any_angle(
 			stop_radius_x,
@@ -149,7 +155,10 @@ function _M:project(t, x, y, damtype, dam, particles)
 			end,
 		nil)
 		addGrid(stop_x, stop_y)
-	elseif typ.wall and typ.wall > 0 then
+	end
+
+	if typ.wall and typ.wall > 0 then
+		single_target = false
 		core.fov.calc_wall(
 			stop_radius_x,
 			stop_radius_y,
@@ -168,10 +177,10 @@ function _M:project(t, x, y, damtype, dam, particles)
 				addGrid(px, py)
 			end,
 		nil)
-	else
-		-- Deal damage: single
-		addGrid(stop_x, stop_y)
 	end
+
+	-- Deal damage: single
+	if single_target then addGrid(stop_x, stop_y) end
 
 	-- Check for minimum range
 	if typ.min_range and core.fov.distance(typ.start_x, typ.start_y, stop_x, stop_y) < typ.min_range then
@@ -188,7 +197,7 @@ function _M:project(t, x, y, damtype, dam, particles)
 			end
 		end
 	end
-	
+
 	self:check("on_project_grids", grids)
 
 	-- Now project on each grid, one type
