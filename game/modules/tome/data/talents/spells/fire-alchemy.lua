@@ -28,8 +28,8 @@ newTalent{
 	cooldown = 30,
 	tactical = { BUFF = 2 },
 	getIncrease = function(self, t) return self:combatTalentScale(t, 0.05, 0.25) * 100 end,
+	sustain_slots = 'alchemy_infusion',
 	activate = function(self, t)
-		cancelAlchemyInfusions(self)
 		game:playSoundNear(self, "talents/arcane")
 		local ret = {}
 		self:talentTemporaryValue(ret, "inc_damage", {[DamageType.FIRE] = t.getIncrease(self, t)})
@@ -95,7 +95,7 @@ newTalent{
 			self:project(tg, x, y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
 				if target and not target:hasEffect(target.EFF_BURNING) and self:reactionToward(target) < 0 then
-					target:setEffect(target.EFF_BURNING, heat.dur + math.ceil(t.getDuration(self, t)/3), {src=self, power=heat.power}) 
+					target:setEffect(target.EFF_BURNING, heat.dur + math.ceil(t.getDuration(self, t)/3), {src=self, power=heat.power})
 				end
 			end)
 		end

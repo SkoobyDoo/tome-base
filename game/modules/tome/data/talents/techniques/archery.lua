@@ -177,6 +177,7 @@ newTalent{
 			apr = self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 3, 0, 53, 50)}
 		return vals
 	end,
+	sustain_slots = 'stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
@@ -184,7 +185,6 @@ newTalent{
 			return nil
 		end
 
-		if self:isTalentActive(self.T_RAPID_SHOT) then self:forceUseTalent(self.T_RAPID_SHOT, {ignore_energy=true}) end
 		local vals = t.getCombatVals(self, t)
 		return {
 			speed = self:addTemporaryValue("combat_physspeed", vals.speed),
@@ -229,6 +229,7 @@ newTalent{
 			}
 		return vals
 	end,
+	sustain_slots = 'stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
@@ -236,7 +237,6 @@ newTalent{
 			return nil
 		end
 
-		if self:isTalentActive(self.T_AIM) then self:forceUseTalent(self.T_AIM, {ignore_energy=true}) end
 		local vals = t.getCombatVals(self, t)
 		return {
 			speed = self:addTemporaryValue("combat_physspeed", vals.speed),
