@@ -28,8 +28,8 @@ newTalent{
 	cooldown = 30,
 	tactical = { BUFF = 2 },
 	getIncrease = function(self, t) return self:combatTalentScale(t, 0.05, 0.25) * 100 end,
+	sustain_slots = 'alchemy_infusion',
 	activate = function(self, t)
-		cancelAlchemyInfusions(self)
 		game:playSoundNear(self, "talents/arcane")
 		local ret = {}
 		self:talentTemporaryValue(ret, "inc_damage", {[DamageType.ACID] = t.getIncrease(self, t)})

@@ -28,6 +28,7 @@ local UIContainer = require "engine.ui.UIContainer"
 local TalentTrees = require "mod.dialogs.elements.TalentTrees"
 local Separator = require "engine.ui.Separator"
 local DamageType = require "engine.DamageType"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog, mod.class.interface.TooltipsData))
 
@@ -65,7 +66,7 @@ function _M:init(actor, on_finish, on_birth)
 	self.talent_types_learned = {}
 	self.stats_increased = {}
 
-	self.font = core.display.newFont("/data/font/DroidSansMono.ttf", 12)
+	self.font = core.display.newFont(FontPackage:getFont("mono_small", "mono"))
 	self.font_h = self.font:lineSkip()
 
 	self.actor.__hidden_talent_types = self.actor.__hidden_talent_types or {}

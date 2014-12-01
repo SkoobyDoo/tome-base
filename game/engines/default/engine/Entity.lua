@@ -43,7 +43,7 @@ end
 
 local function copy_recurs(dst, src, deep)
 	for k, e in pairs(src) do
-		if type(e) == "table" and e.__CLASSNAME then
+		if type(e) == "table" and e.__ATOMIC then
 			dst[k] = e
 		elseif dst[k] == nil then
 			if deep then
@@ -52,7 +52,7 @@ local function copy_recurs(dst, src, deep)
 			else
 				dst[k] = e
 			end
-		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__CLASSNAME then
+		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__ATOMIC then
 			copy_recurs(dst[k], e, deep)
 		end
 	end
@@ -64,6 +64,7 @@ end
 -- @usage Entity.new{display='#', color_r=255, color_g=255, color_b=255}
 function _M:init(t, no_default)
 	t = t or {}
+
 	self.uid = next_uid
 	__uids[self.uid] = self
 	next_uid = next_uid + 1
@@ -71,7 +72,7 @@ function _M:init(t, no_default)
 	for k, e in pairs(t) do
 		if k ~= "__CLASSNAME" and k ~= "uid" then
 			local ee = e
-			if type(e) == "table" and not e.__CLASSNAME then ee = table.clone(e, true) end
+			if type(e) == "table" and not e.__ATOMIC then ee = table.clone(e, true) end
 			self[k] = ee
 		end
 	end
@@ -118,6 +119,21 @@ function _M:init(t, no_default)
 		local Particles = require "engine.Particles"
 		for i, pd in ipairs(self.embed_particles) do
 			self:addParticles(Particles.new(pd.name, pd.rad or 1, pd.args))
+		end
+	end
+
+	if config.settings.cheat then
+		local ok, err = table.check(
+			self,
+			function(t, where, v, tv)
+				if tv ~= "function" then return true end
+				local n, v = debug.getupvalue(v, 1)
+				if not n then return true end
+				return nil, ("%s has upvalue %s"):format(tostring(where), tostring(n))
+			end,
+			function(value) return not value._allow_upvalues end)
+		if not ok then
+			error("Entity definition has a closure: "..err)
 		end
 	end
 end
@@ -560,7 +576,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(t) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			list[k] = e
-		elseif type(e) == "table" and not e.__CLASSNAME then
+		elseif type(e) == "table" and not e.__ATOMIC then
 			list[k] = e
 		end
 	end
@@ -569,7 +585,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(list) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
-		elseif type(e) == "table" and not e.__CLASSNAME then
+		elseif type(e) == "table" and not e.__ATOMIC then
 			local key_chain = table.clone(key_chain)
 			key_chain[#key_chain+1] = k
 			self:resolve(e, last, on_entity, key_chain)
@@ -974,18 +990,6 @@ function _M:loadList(file, no_default, res, mod, loaded)
 
 			local e = newenv.class.new(t, no_default)
 			if type(mod) == "function" then mod(e) end
-
-			if config.settings.cheat then
-				local ok, err = table.check(e, function(t, where, v, tv)
-					if tv ~= "function" then return true end
-					local n, v = debug.getupvalue(v, 1)
-					if not n then return true end
-					return nil, ("Entity closure checker: %s has upvalue %s"):format(tostring(where), tostring(n))
-				end)
-				if not ok then
-					error("Entity definition has a closure: "..err)
-				end
-			end
 
 			res[#res+1] = e
 			if t.define_as then res[t.define_as] = e end

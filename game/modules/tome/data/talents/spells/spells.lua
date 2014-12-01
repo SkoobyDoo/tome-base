@@ -239,16 +239,6 @@ function necroEssenceDead(self, checkonly)
 end
 -------------------------------------------
 
-function cancelAlchemyInfusions(self)
-	local chants = {self.T_FIRE_INFUSION, self.T_FROST_INFUSION, self.T_ACID_INFUSION, self.T_LIGHTNING_INFUSION}
-	for i, t in ipairs(chants) do
-		if self:isTalentActive(t) then
-			self:forceUseTalent(t, {ignore_energy=true})
-		end
-	end
-end
-
-
 load("/data/talents/spells/arcane.lua")
 load("/data/talents/spells/aether.lua")
 load("/data/talents/spells/fire.lua")

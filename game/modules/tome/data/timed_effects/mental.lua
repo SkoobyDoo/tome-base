@@ -109,7 +109,7 @@ newEffect{
 			ai = self.ai,
 		}
 		self.faction = eff.src.faction
-		
+
 		self.ai_state.tactic_leash = 100
 		self.remove_from_party_on_death = true
 		self.no_inventory_access = true
@@ -219,7 +219,7 @@ newEffect{
 newEffect{
 	name = "GLOOM_WEAKNESS", image = "effects/gloom_weakness.png",
 	desc = "Gloom Weakness",
-	long_desc = function(self, eff) return ("The gloom reduces damage the target inflicts by %d%%."):format(-eff.incDamageChange) end,
+	long_desc = function(self, eff) return ("The gloom reduces damage the target inflicts by %d%%."):format(eff.incDamageChange) end,
 	type = "mental",
 	subtype = { gloom=true },
 	status = "detrimental",
@@ -228,7 +228,7 @@ newEffect{
 	on_lose = function(self, err) return "#F53CBE##Target# is no longer weakened." end,
 	activate = function(self, eff)
 		eff.particle = self:addParticles(Particles.new("gloom_weakness", 1))
-		eff.incDamageId = self:addTemporaryValue("inc_damage", {all = eff.incDamageChange})
+		eff.incDamageId = self:addTemporaryValue("inc_damage", {all = -eff.incDamageChange})
 	end,
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
@@ -1843,7 +1843,7 @@ newEffect{
 		self:removeTemporaryValue("max_life", eff.life_id)
 		self:removeTemporaryValue("life_regen", eff.life_regen_id)
 		self:removeTemporaryValue("stamina_regen", eff.stamina_regen_id)
-		
+
 		self:removeTemporaryValue("life",eff.templife_id) -- remove extra hps to prevent excessive heals at high level
 		game.logSeen(self, "%s no longer revels in blood quite so much.",self.name:capitalize())
 	end,
@@ -2438,7 +2438,7 @@ newEffect{
 			eff.what = "physical, nature, acid, temporal"
 		elseif eff.kind == "thermal" then
 			eff.sid = self:addTemporaryValue("flat_damage_armor", {
-				[DamageType.FIRE] = eff.power, 
+				[DamageType.FIRE] = eff.power,
 				[DamageType.COLD] = eff.power,
 				[DamageType.LIGHT] = eff.power,
 				[DamageType.ARCANE] = eff.power,
@@ -2446,7 +2446,7 @@ newEffect{
 			eff.what = "fire, cold, light, arcane"
 		elseif eff.kind == "charged" then
 			eff.sid = self:addTemporaryValue("flat_damage_armor", {
-				[DamageType.LIGHTNING] = eff.power, 
+				[DamageType.LIGHTNING] = eff.power,
 				[DamageType.BLIGHT] = eff.power,
 				[DamageType.MIND] = eff.power,
 				[DamageType.DARKNESS] = eff.power,
@@ -2965,7 +2965,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)		
+		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -2982,7 +2982,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)		
+		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -3105,7 +3105,7 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "die_at", -eff.power)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 	end,
 }
 
@@ -3123,7 +3123,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_tele", radius=0}))
 		self:callTalent(self.T_KINETIC_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_KINETIC_SHIELD, "adjust_shield_gfx", false)
 	end,
@@ -3143,7 +3143,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_pyro", radius=0}))
 		self:callTalent(self.T_THERMAL_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_THERMAL_SHIELD, "adjust_shield_gfx", false)
 	end,
@@ -3163,7 +3163,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_electro", radius=0}))
 		self:callTalent(self.T_CHARGED_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_CHARGED_SHIELD, "adjust_shield_gfx", false)
 	end,

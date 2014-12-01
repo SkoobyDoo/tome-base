@@ -103,3 +103,13 @@ If used near a portal, it could probably activate it.]],
 		end
 	end,
 }
+
+for i = 1, 4 do
+newEntity{ base = "BASE_LORE",
+	define_as = "NOTE"..i,
+	name = "tattered paper scrap", lore="tannen-level"..i,
+	desc = [[A paper scrap, left by Tannen.]],
+	rarity = false,
+	encumberance = 0,
+}
+end

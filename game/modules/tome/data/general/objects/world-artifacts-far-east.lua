@@ -162,6 +162,7 @@ newEntity{ base = "BASE_GEM",
 	unique = true,
 	unided_name = "unearthly black stone",
 	name = "Goedalath Rock", subtype = "demonic", image = "object/artifact/goedalath_rock.png",
+	define_as = 'GOEDALATH_ROCK',
 	color = colors.PURPLE,
 	level_range = {42, 50},
 	desc = [[A small rock that seems from beyond this world, vibrating with a fierce energy.  It feels warped and terrible and evil... and yet oh so powerful.]],
@@ -187,7 +188,7 @@ newEntity{ base = "BASE_GEM",
 		on_melee_hit = {[DamageType.DARKNESS] = 34},
 		healing_factor = 0.5,
 	},
-}
+	color_attributes = {damage_type = 'SHADOWFLAME',},}
 
 newEntity{ base = "BASE_CLOAK",
 	power_source = {arcane=true}, define_as = "THREADS_FATE",
@@ -400,7 +401,7 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "SWORD_DAWN",
 		inc_damage_type={
 			undead=25,
 			demon=25,
-		},		
+		},
 	},
 	on_wear = function(self, who)
 		if who.descriptor and who.descriptor.subclass == "Sun Paladin" then

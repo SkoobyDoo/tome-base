@@ -933,7 +933,7 @@ function _M:alterMakeMapObject(tiles, mo, z, lastmo)
 	local tex, texx, texy, pos_x, pos_y = tiles:get("", 0, 0, 0, 0, 0, 0, "invis.png", false, false, true)
 	submo:texture(0, tex, false, texx, texy, pos_x, pos_y)
 	submo:chain(mo)
-	if lastmo == mo then lastmo = submo end
+	-- if lastmo == mo then lastmo = submo end
 	mo = submo
 	self._mo = mo
 
@@ -1958,23 +1958,34 @@ function _M:tooltip(x, y, seen_by)
 	local effother = tstring{}
 	local effbeneficial = tstring{}
 
+	local desceffect = function(e, p, dur)
+		local dur = e.decrease > 0 and dur or nil
+		local charges = nil
+		if e.charges then charges = e.charges and tostring(e.charges(self, p)) end
+
+		if dur and charges then return ("%s(%d, %s)"):format(e.desc, dur, charges)
+		elseif dur and not charges then return ("%s(%d)"):format(e.desc, dur)
+		elseif not dur and charges then return ("%s(%s)"):format(e.desc, charges)
+		else return e.desc end
+	end
+
 	for eff_id, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eff_id]
 		local dur = p.dur + 1
 		if e.status == "detrimental" then
 			if e.type == "physical" then
-				effphysical:add(true, "- ", {"color", "LIGHT_RED"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effphysical:add(true, "- ", {"color", "LIGHT_RED"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "magical" then
-				effmagical:add(true, "- ", {"color", "DARK_ORCHID"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effmagical:add(true, "- ", {"color", "DARK_ORCHID"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "mental" then
-				effmental:add(true, "- ", {"color", "YELLOW"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effmental:add(true, "- ", {"color", "YELLOW"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			elseif e.type == "other" then
-				effother:add(true, "- ", {"color", "ORCHID"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				effother:add(true, "- ", {"color", "ORCHID"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			else
-				ts:add(true, "- ", {"color", "LIGHT_RED"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+				ts:add(true, "- ", {"color", "LIGHT_RED"}, desceffect(e, p, dur), {"color", "WHITE"} )
 			end
 		else
-			effbeneficial:add(true, "- ", {"color", "LIGHT_GREEN"}, (e.decrease > 0) and ("%s(%d)"):format(e.desc,dur) or e.desc, {"color", "WHITE"} )
+			effbeneficial:add(true, "- ", {"color", "LIGHT_GREEN"}, desceffect(e, p, dur), {"color", "WHITE"} )
 		end
 	end
 
@@ -2920,6 +2931,7 @@ function _M:die(src, death_note)
 	end
 
 	if self:fireTalentCheck("callbackOnDeath", src, death_note) then return end
+	if self.summoner and self.summoner.fireTalentCheck and self.summoner:fireTalentCheck("callbackOnSummonDeath", self, src, death_note) then return end
 
 	mod.class.interface.ActorLife.die(self, src, death_note)
 
@@ -3141,11 +3153,11 @@ function _M:die(src, death_note)
 			end
 		end)
 	end
-	
+
 	if self:hasEffect(self.EFF_TRIM_THREADS) then
 		local p = self:hasEffect(self.EFF_TRIM_THREADS)
 		p.src:incParadox(-p.reduction)
-	end	
+	end
 
 	if self:hasEffect(self.EFF_GHOUL_ROT) then
 		local p = self:hasEffect(self.EFF_GHOUL_ROT)
@@ -3880,6 +3892,14 @@ function _M:onWear(o, inven_id, bypass_set)
 		end
 	end
 
+	-- Callbacks!
+	if not o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store] = self[store] or {}
+			self[store][o] = "object"
+		end
+	end end
+
 	self:breakReloading()
 
 	self:fireTalentCheck("callbackOnWear", o, bypass_set)
@@ -3974,6 +3994,14 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 		end
 	end
 
+	-- Callbacks
+	if not o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store][o] = nil
+			if not next(self[store]) then self[store] = nil end
+		end
+	end end
+
 	self:checkMindstar(o)
 
 	self:breakReloading()
@@ -4051,6 +4079,14 @@ function _M:onAddObject(o)
 		end
 	end
 
+	-- Callbacks!
+	if o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store] = self[store] or {}
+			self[store][o] = "object"
+		end
+	end end
+
 	self:checkEncumbrance()
 
 	-- Achievement checks
@@ -4071,6 +4107,14 @@ function _M:onRemoveObject(o)
 			self:unlearnItemTalent(o, tid, level)
 		end
 	end
+
+	-- Callbacks
+	if o.carrier_callbacks then for event, store in pairs(sustainCallbackCheck) do
+		if o[event] then
+			self[store][o] = nil
+			if not next(self[store]) then self[store] = nil end
+		end
+	end end
 
 	self:checkEncumbrance()
 end
@@ -4737,6 +4781,17 @@ function _M:preUseTalent(ab, silent, fake)
 		if rng.percent(self:attr("spell_failure")) then
 			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
 			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+			return false
+		end
+	end
+
+	-- Nature can fail
+	if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
+		if rng.percent(self:attr("nature_failure")) then
+			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
+			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 			return false
 		end
 	end
@@ -4832,7 +4887,9 @@ local sustainCallbackCheck = {
 	callbackOnActBase = "talents_on_act_base",
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
+	callbackOnRun = "talents_on_run",
 	callbackOnDeath = "talents_on_death",
+	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnKill = "talents_on_kill",
 	callbackOnMeleeAttack = "talents_on_melee_attack",
 	callbackOnMeleeHit = "talents_on_melee_hit",
@@ -4848,6 +4905,8 @@ local sustainCallbackCheck = {
 	callbackOnTakeoff = "talents_on_takeoff",
 	callbackOnTalentPost = "talents_on_talent_post",
 	callbackOnTemporaryEffect = "talents_on_tmp",
+	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
+	callbackOnBlock = "talents_on_block",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -4859,6 +4918,9 @@ function _M:fireTalentCheck(event, ...)
 			if kind == "effect" then
 				self.__project_source = self.tmp[tid]
 				ret = self:callEffect(tid, event, ...) or ret
+			elseif kind == "object" then
+				self.__project_source = self.tmp[tid]
+				ret = tid:check(event, self, ...) or ret
 			else
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
@@ -4987,6 +5049,16 @@ function _M:postUseTalent(ab, ret, silent)
 			if ab.sustain_feedback then
 				trigger = true; self:incMaxFeedback(-util.getval(ab.sustain_feedback, self, ab))
 			end
+			if ab.sustain_slots then
+				if not self.sustain_slots then self.sustain_slots = {} end
+				local slots = ab.sustain_slots
+				if 'string' == type(slots) then slots = {slots} end
+				for _, slot in pairs(slots) do
+					local t = self.sustain_slots[slot]
+					if t and self:isTalentActive(t) then self:forceUseTalent(t, {ignore_energy=true}) end
+					self.sustain_slots[slot] = ab.id
+				end
+			end
 			for event, store in pairs(sustainCallbackCheck) do
 				if ab[event] then
 					self[store] = self[store] or {}
@@ -5026,6 +5098,15 @@ function _M:postUseTalent(ab, ret, silent)
 			end
 			if ab.sustain_feedback then
 				self:incMaxFeedback(util.getval(ab.sustain_feedback, self, ab))
+				end
+			if ab.sustain_slots then
+				local slots = ab.sustain_slots
+				if 'string' == type(slots) then slots = {slots} end
+				for _, slot in pairs(slots) do
+					if self.sustain_slots[slot] == ab.id then
+						self.sustain_slots[slot] = nil
+					end
+				end
 			end
 			for event, store in pairs(sustainCallbackCheck) do
 				if ab[event] then
@@ -5136,6 +5217,25 @@ function _M:postUseTalent(ab, ret, silent)
 	if self.turn_procs.anomalies_checked then self.turn_procs.anomalies_checked = nil end  -- clears out anomaly checks
 
 	return true
+end
+
+-- Return the talent currently taking up a given sustain slot.
+function _M:getSustainSlot(slot)
+	if not self.sustain_slots then return end
+	return self.sustain_slots[slot]
+end
+
+-- Get the sustain which a talent will replace.
+function _M:getReplacedSustains(talent)
+	if 'string' == type(talent) then talent = self:getTalentFromId(talent) end
+	local slots = talent.sustain_slots or {}
+	if 'string' == type(slots) then slots = {slots} end
+	local ret = {}
+	for _, slot in pairs(slots) do
+		local t = self:getSustainSlot(slot)
+		if t ~= talent.id then table.insert(ret, t) end
+	end
+	return ret
 end
 
 --- Force a talent to activate without using energy or such
@@ -5331,6 +5431,14 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		end
 	end
 
+	if t.mode == 'sustained' then
+		local replaces = self:getReplacedSustains(t)
+		if #replaces > 0 then
+			for k, v in pairs(replaces) do replaces[k] = self:getTalentFromId(v).name end
+			d:add({"color",0x6f,0xff,0x83}, "Will Deactivate: ", {"color",0xFF,0xFF,0xFF}, table.concat(replaces, ', '), true)
+		end
+	end
+
 	self:triggerHook{"Actor:getTalentFullDescription", str=d, t=t, addlevel=addlevel, config=config, fake_mastery=fake_mastery}
 
 	d:add({"color",0x6f,0xff,0x83}, "Description: ", {"color",0xFF,0xFF,0xFF})
@@ -5374,12 +5482,12 @@ function _M:getTalentCooldown(t)
 	if eff and not self:attr("talent_reuse") then
 		cd = 1 + cd * eff.power
 	end
-	
+
 	local p = self:isTalentActive(self.T_MATRIX)
 	if p and p.talent == t.id then
 		cd = math.floor(cd * (1 - self:callTalent(self.T_MATRIX, "getPower")))
 	end
-	
+
 	if t.is_spell then
 		return math.ceil(cd * (1 - (self.spell_cooldown_reduction or 0)))
 	elseif t.is_summon then
@@ -5400,9 +5508,9 @@ function _M:startTalentCooldown(t, v)
 	else
 		if not t.cooldown then return end
 		self.talents_cd[t.id] = self:getTalentCooldown(t)
-		
+
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
-			local eff = self:hasEffect(self.EFF_REDUX) 
+			local eff = self:hasEffect(self.EFF_REDUX)
 			if t.type[1]:find("^chronomancy/") and self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
 				self.talents_cd[t.id] = 1
 			end
@@ -5821,12 +5929,17 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		if not p.no_ct_effect and not e.no_ct_effect and e.status == "detrimental" then self:crossTierEffect(eff_id, p.apply_power, p.apply_save or save_for_effects[e.type]) end
 		p.total_dur = p.dur
 
-		if e.status == "detrimental" and self:checkHit(save, p.apply_power, 0, 95) and p.dur > 0 then
-			game.logSeen(self, "#ORANGE#%s shrugs off the effect '%s'!", self.name:capitalize(), e.desc)
-			p.dur = 0
+		if p.dur > 0 and e.status == "detrimental" then
+			local saved = self:checkHit(save, p.apply_power, 0, 95)
+			local hd = {"Actor:effectSave", saved = saved, save_type = save_type, eff_id = eff_id, e = e, p = p,}
+			self:triggerHook(hd)
+			self:fireTalentCheck("callbackOnEffectSave", hd)
+			saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p
+			if saved then
+				game.logSeen(self, "#ORANGE#%s shrugs off the effect '%s'!", self.name:capitalize(), e.desc)
+				return true
+			end
 		end
-
-		p.apply_power = nil
 	end
 
 	if e.status == "detrimental" and self:knowTalent(self.T_RESILIENT_BONES) then
@@ -6214,6 +6327,7 @@ function _M:canUseTinker(tinker)
 	if not tinker.is_tinker then return nil, "not an attachable item" end
 	if not self.can_tinker then return nil, "can not use attachements" end
 	if not self.can_tinker[tinker.is_tinker] then return nil, "can not use attachements of this type" end
+	if tinker.tinker_allow_attach and tinker:tinker_allow_attach() then return nil, tinker:tinker_allow_attach() end
 	return true
 end
 

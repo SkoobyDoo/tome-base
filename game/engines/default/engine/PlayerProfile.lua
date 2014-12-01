@@ -88,6 +88,7 @@ function _M:init()
 		["^donations$"] = { invalid = { read={offline=true}, write="offline" }, valid = { read={offline=true}, write="offline" } },
 	}
 	self.auth = false
+	self.connected = nil
 end
 
 function _M:start()
@@ -457,6 +458,7 @@ function _M:waitFirstAuth(timeout)
 	if self.auth_tried and self.auth_tried >= 1 then return end
 	if not self.waiting_auth then return end
 	print("[PROFILE] waiting for first auth")
+	if self.connected == false then print("[PROFILE] waiting cancelled, connected = false") return end -- Set to false when we got a disconnect event, at boot it is nil
 	local first = true
 	timeout = timeout or 120
 	while self.waiting_auth and timeout > 0 do
@@ -466,8 +468,10 @@ function _M:waitFirstAuth(timeout)
 		end
 		local evt = self:popEvent()
 		while evt do
-			if type(game) == "table" then game:handleProfileEvent(evt)
-			else self:handleEvent(evt) end
+			local e
+			if type(game) == "table" then e = game:handleProfileEvent(evt)
+			else e = self:handleEvent(evt) end
+			if e and e.e == "Disconnected" then print("[PROFILE] waiting cancelled, got disconnect event") timeout = 0 break end
 			if not self.waiting_auth then break end
 			evt = self:popEvent()
 		end
@@ -534,10 +538,12 @@ end
 
 function _M:eventConnected(e)
 	if game and type(game) == "table" and game.log then game.log("#YELLOW#Connection to online server established.") end
+	self.connected = true
 end
 
 function _M:eventDisconnected(e)
-	if game and type(game) == "table" and game.log then game.log("#YELLOW#Connection to online server lost, trying to reconnect.") end
+	if game and type(game) == "table" and game.log and self.connected then game.log("#YELLOW#Connection to online server lost, trying to reconnect.") end
+	self.connected = false
 end
 
 function _M:eventFunFacts(e)
@@ -688,6 +694,21 @@ function _M:checkAddonHash(module, addon, md5)
 	if not ok then return nil, "bad game addon version" end
 	print("[ONLINE PROFILE] addon hash is valid")
 	return true
+end
+
+function _M:checkAddonUpdates(list)
+	if not self.auth then return nil, "no online profile active" end
+	if #list == 0 then return nil, "nothing to update" end
+	core.profile.pushOrder(table.serialize{o="CheckAddonUpdates", list=list})
+
+	local ok = false
+	self:waitEvent("CheckAddonUpdates", function(e) ok = e.ok end, 10000)
+
+	if not ok then return nil, "bad game addon version" end
+	ok = ok:unserialize()
+	print("[ONLINE PROFILE] addon update list returned")
+	table.print(ok)
+	return ok
 end
 
 function _M:checkBatchHash(list)

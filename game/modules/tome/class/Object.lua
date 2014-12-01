@@ -171,6 +171,13 @@ end
 
 --- Describes an attribute, to expand object name
 function _M:descAttribute(attr)
+	local power = function(c)
+		if config.settings.tome.advanced_weapon_stats then
+			return math.floor(Combat.combatDamagePower({}, self.combat)*100).."% power"
+		else
+			return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power"
+		end
+	end
 	if attr == "MASTERY" then
 		local tms = {}
 		for ttn, i in pairs(self.wielder.talents_types_mastery) do
@@ -194,20 +201,20 @@ function _M:descAttribute(attr)
 		return ("%s%0.2f/turn"):format(i > 0 and "+" or "-", math.abs(i))
 	elseif attr == "COMBAT" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..(c.apr or 0).." apr"
+		return power(c)..", "..(c.apr or 0).." apr"
 	elseif attr == "COMBAT_AMMO" then
 		local c = self.combat
-		return c.shots_left.."/"..math.floor(c.capacity)..", "..c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..(c.apr or 0).." apr"
+		return c.shots_left.."/"..math.floor(c.capacity)..", "..power(c)..", "..(c.apr or 0).." apr"
 	elseif attr == "COMBAT_DAMTYPE" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.damtype).name.." damage"
+		return power(c)..", "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.damtype).name.." damage"
 	elseif attr == "COMBAT_ELEMENT" then
 		local c = self.combat
-		return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power, "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.element or DamageType.PHYSICAL).name.." element"
+		return power(c)..", "..("%d"):format((c.apr or 0)).." apr, "..DamageType:get(c.element or DamageType.PHYSICAL).name.." element"
 	elseif attr == "SHIELD" then
 		local c = self.special_combat
 		if c and (game.player:knowTalentType("technique/shield-offense") or game.player:knowTalentType("technique/shield-defense") or game.player:attr("show_shield_combat")) then
-			return c.dam.." dam, "..c.block.." block"
+			return power(c)..", "..c.block.." block"
 		else
 			return c.block.." block"
 		end
@@ -602,7 +609,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 			else
 				power_diff = ("(%s)"):format(power_diff)
 			end
-			desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+			if config.settings.tome.advanced_weapon_stats then
+				desc:add(("Power: %3d%%  Range: %.1fx"):format(use_actor:combatDamagePower(combat, add_table.dam) * 100, use_actor:combatDamageRange(combat, add_table.damrange)))
+			else
+				desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+			end
 			desc:merge(power_diff:toTString())
 			desc:add(true)
 			desc:add(("Uses stat%s: %s"):format(#dm > 1 and "s" or "",table.concat(dm, ', ')), true)
@@ -1042,12 +1053,12 @@ function _M:getTextualDesc(compare_with, use_actor)
 		local any_esp = false
 		local esps_compare = {}
 		for i, v in ipairs(compare_with or {}) do
-			if v[field] and v[field].esp_all then
+			if v[field] and v[field].esp_all and v[field].esp_all > 0 then
 				esps_compare["All"] = esps_compare["All"] or {}
 				esps_compare["All"][1] = true
 				any_esp = true
 			end
-			for type, i in pairs(v[field] and (v[field].esp or {}) or {}) do
+			for type, i in pairs(v[field] and (v[field].esp or {}) or {}) do if i and i > 0 then
 				local _, _, t, st = type:find("^([^/]+)/?(.*)$")
 				local esp = ""
 				if st and st ~= "" then
@@ -1058,17 +1069,17 @@ function _M:getTextualDesc(compare_with, use_actor)
 				esps_compare[esp] = esps_compare[esp] or {}
 				esps_compare[esp][1] = true
 				any_esp = true
-			end
+			end end
 		end
 
 		local esps = {}
-		if w.esp_all then
+		if w.esp_all and w.esp_all > 0 then
 			esps[#esps+1] = "All"
 			esps_compare[esps[#esps]] = esps_compare[esps[#esps]] or {}
 			esps_compare[esps[#esps]][2] = true
 			any_esp = true
 		end
-		for type, i in pairs(w.esp or {}) do
+		for type, i in pairs(w.esp or {}) do if i and i > 0 then
 			local _, _, t, st = type:find("^([^/]+)/?(.*)$")
 			if st and st ~= "" then
 				esps[#esps+1] = t:capitalize().."/"..st:capitalize()
@@ -1078,7 +1089,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			esps_compare[esps[#esps]] = esps_compare[esps[#esps]] or {}
 			esps_compare[esps[#esps]][2] = true
 			any_esp = true
-		end
+		end end
 		if any_esp then
 			desc:add("Grants telepathy: ")
 			for esp, isin in pairs(esps_compare) do
@@ -1167,18 +1178,18 @@ function _M:getTextualDesc(compare_with, use_actor)
 		local learn_talents = {}
 		for i, v in ipairs(compare_with or {}) do
 			if v[field] and v[field].learn_talent then
-				for tid, tl in pairs(v[field].learn_talent) do
+				for tid, tl in pairs(v[field].learn_talent) do if tl > 0 then
 					learn_talents[tid] = learn_talents[tid] or {}
 					learn_talents[tid][1] = tl
 					any_learn_talent = any_learn_talent + 1
-				end
+				end end
 			end
 		end
-		for tid, tl in pairs(w.learn_talent or {}) do
+		for tid, tl in pairs(w.learn_talent or {}) do if tl > 0 then
 			learn_talents[tid] = learn_talents[tid] or {}
 			learn_talents[tid][2] = tl
 			any_learn_talent = any_learn_talent + 1
-		end
+		end end
 		if any_learn_talent > 0 then
 			desc:add(("Talent%s granted: "):format(any_learn_talent > 1 and "s" or ""))
 			for tid, tl in pairs(learn_talents) do
@@ -1259,6 +1270,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "mana_regen", "%+.2f", "Mana each turn: ")
 		compare_fields(w, compare_with, field, "hate_regen", "%+.2f", "Hate each turn: ")
 		compare_fields(w, compare_with, field, "psi_regen", "%+.2f", "Psi each turn: ")
+		compare_fields(w, compare_with, field, "vim_regen", "%+.2f", "Vim each turn: ")
 		compare_fields(w, compare_with, field, "positive_regen_ref_mod", "%+.2f", "P.Energy each turn: ")
 		compare_fields(w, compare_with, field, "negative_regen_ref_mod", "%+.2f", "N.Energy each turn: ")
 
@@ -1268,6 +1280,8 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "psi_regen_when_hit", "%+.2f", "Psi when hit: ")
 		compare_fields(w, compare_with, field, "hate_regen_when_hit", "%+.2f", "Hate when hit: ")
 		compare_fields(w, compare_with, field, "vim_regen_when_hit", "%+.2f", "Vim when hit: ")
+
+		compare_fields(w, compare_with, field, "vim_on_melee", "%+.2f", "Vim when hitting in melee: ")
 
 		compare_fields(w, compare_with, field, "mana_on_crit", "%+.2f", "Mana when firing critical spell: ")
 		compare_fields(w, compare_with, field, "vim_on_crit", "%+.2f", "Vim when firing critical spell: ")
@@ -1279,6 +1293,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		compare_fields(w, compare_with, field, "hate_per_kill", "+%0.2f", "Hate per kill: ")
 		compare_fields(w, compare_with, field, "psi_per_kill", "+%0.2f", "Psi per kill: ")
+		compare_fields(w, compare_with, field, "vim_on_death", "%+.2f", "Vim per kill: ")
 
 		compare_fields(w, compare_with, field, "die_at", "%+.2f life", "Only die when reaching: ", 1, true, true)
 		compare_fields(w, compare_with, field, "max_life", "%+.2f", "Maximum life: ")
@@ -1524,6 +1539,13 @@ function _M:getTextualDesc(compare_with, use_actor)
 			end
 			if a.leech then desc:add(("Life regen %d%% of max life"):format(a.leech), true) end
 		end
+	end
+
+	local latent = table.get(self.color_attributes, 'damage_type')
+	if latent then
+		latent = DamageType:get(latent) or {}
+		desc:add({"color","YELLOW",}, "Latent Damage Type: ", {"color","LAST",},
+			latent.text_color or "#WHITE#", latent.name:capitalize(), {"color", "LAST",}, true)
 	end
 
 	if self.inscription_data and self.inscription_talent then

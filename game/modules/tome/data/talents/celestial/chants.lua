@@ -17,15 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local function cancelChants(self)
-	local chants = {self.T_CHANT_OF_FORTITUDE, self.T_CHANT_OF_FORTRESS, self.T_CHANT_OF_RESISTANCE, self.T_CHANT_OF_LIGHT}
-	for i, t in ipairs(chants) do
-		if self:isTalentActive(t) then
-			self:forceUseTalent(t, {ignore_energy=true})
-		end
-	end
-end
-
 -- Synergizes with melee classes (escort), Weapon of Wrath, healing mod (avoid overheal > healing efficiency), and low spellpower
 newTalent{
 	name = "Chant of Fortitude",
@@ -42,11 +33,11 @@ newTalent{
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 70) end,
 	getLifePct = function(self, t) return self:combatTalentLimit(t, 1, 0.05, 0.20) end, -- Limit < 100% bonus
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		local power = t.getResists(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
-		
+
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.LIGHT]=t.getDamageOnMeleeHit(self, t)}),
 			phys = self:addTemporaryValue("combat_physresist", power),
@@ -95,8 +86,8 @@ newTalent{
 	getDamageChange = function(self, t)
 		return -self:combatTalentLimit(t, 50, 14, 30) -- Limit < 50% damage reduction
 	end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.LIGHT]=t.getDamageOnMeleeHit(self, t)}),
@@ -137,8 +128,8 @@ newTalent{
 	range = 10,
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		local power = t.getResists(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
@@ -182,8 +173,8 @@ newTalent{
 	getLightDamageIncrease = function(self, t) return self:combatTalentSpellDamage(t, 20, 50) end,
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
 	getLite = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.LIGHT]=t.getDamageOnMeleeHit(self, t)}),

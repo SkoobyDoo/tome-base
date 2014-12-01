@@ -70,12 +70,20 @@ function table.max(t)
 	return m
 end
 
+function table.print_shallow(src, offset, ret)
+	if type(src) ~= "table" then print("table.print has no table:", src) return end
+	offset = offset or ""
+	for k, e in pairs(src) do
+		print(("%s[%s] = %s"):format(offset, tostring(k), tostring(e)))
+	end
+end
+
 function table.print(src, offset, ret)
 	if type(src) ~= "table" then print("table.print has no table:", src) return end
 	offset = offset or ""
 	for k, e in pairs(src) do
 		-- Deep copy subtables, but not objects!
-		if type(e) == "table" and not e.__CLASSNAME then
+		if type(e) == "table" and not e.__ATOMIC then
 			print(("%s[%s] = {"):format(offset, tostring(k)))
 			table.print(e, offset.."  ")
 			print(("%s}"):format(offset))
@@ -89,7 +97,7 @@ function table.iprint(src, offset)
 	offset = offset or ""
 	for k, e in ipairs(src) do
 		-- Deep copy subtables, but not objects!
-		if type(e) == "table" and not e.__CLASSNAME then
+		if type(e) == "table" and not e.__ATOMIC then
 			print(("%s[%s] = {"):format(offset, tostring(k)))
 			table.print(e, offset.."  ")
 			print(("%s}"):format(offset))
@@ -127,7 +135,7 @@ function table.clone(tbl, deep, k_skip)
 	for k, e in pairs(tbl) do
 		if not k_skip[k] then
 			-- Deep copy subtables, but not objects!
-			if deep and type(e) == "table" and not e.__CLASSNAME then
+			if deep and type(e) == "table" and not e.__ATOMIC then
 				n[k] = table.clone(e, true, k_skip)
 			else
 				n[k] = e
@@ -153,10 +161,10 @@ function table.merge(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 	for k, e in pairs(src) do
 		if not k_skip[k] and not k_skip_deep[k] then
 			-- Recursively merge tables
-			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__CLASSNAME then
+			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC then
 				table.merge(dst[k], e, deep, nil, k_skip_deep, addnumbers)
 			-- Clone tables if into the destination
-			elseif deep and not dst[k] and type(e) == "table" and not e.__CLASSNAME then
+			elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC then
 				dst[k] = table.clone(e, deep, nil, k_skip_deep)
 			-- Nil out any NIL_MERGE entries
 			elseif e == table.NIL_MERGE then
@@ -180,7 +188,7 @@ function table.mergeAppendArray(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 		k_skip[i] = true
 		local b = src[i]
 		if deep and type(b) == "table" then
-			if b.__CLASSNAME then
+			if b.__ATOMIC then
 				b = b:clone()
 			else
 				b = table.clone(b, true)
@@ -255,22 +263,24 @@ function table.removeFromList(t, ...)
 	end
 end
 
-function table.check(t, fct)
+function table.check(t, fct, do_recurse, path)
+	if path and path ~= '' then path = path..'/' else path = '' end
+	do_recurse = do_recurse or function() return true end
 	for k, e in pairs(t) do
 		local tk, te = type(k), type(e)
-		if te == "table" and not e.__CLASSNAME then
-			local ok, err = table.check(e, fct)
+		if te == "table" and not e.__ATOMIC and do_recurse(e) then
+			local ok, err = table.check(e, fct, do_recurse, path..tostring(k))
 			if not ok then return nil, err end
 		else
-			local ok, err = fct(t, "value["..tostring(k).."]", e, te)
+			local ok, err = fct(t, path..tostring(k), e, te)
 			if not ok then return nil, err end
 		end
-		
-		if tk == "table" and not k.__CLASSNAME then
-			local ok, err = table.check(k, fct)
+
+		if tk == "table" and not k.__ATOMIC and do_recurse(k) then
+			local ok, err = table.check(k, fct, do_recurse, path..tostring(k))
 			if not ok then return nil, err end
 		else
-			local ok, err = fct(t, "key", k, tk)
+			local ok, err = fct(t, path.."<key>", k, tk)
 			if not ok then return nil, err end
 		end
 	end
@@ -283,9 +293,9 @@ end
 -- @param deep Boolean that determines if tables will be recursively merged.
 function table.update(dst, src, deep)
 	for k, e in pairs(src) do
-		if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__CLASSNAME then
+		if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC then
 			table.update(dst[k], e, deep)
-		elseif deep and not dst[k] and type(e) == "table" and not e.__CLASSNAME then
+		elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC then
 			dst[k] = table.clone(e, deep)
 		elseif not dst[k] and type(dst[k]) ~= "boolean" then
 			dst[k] = e
@@ -490,7 +500,7 @@ end
 table.rules.overwrite = function(dvalue, svalue, key, dst)
 	if svalue == table.NIL_MERGE then
 		svalue = nil
-	elseif type(svalue) == 'table' and not svalue.__CLASSNAME then
+	elseif type(svalue) == 'table' and not svalue.__ATOMIC then
 		svalue = table.clone(svalue, true)
 	end
 	dst[key] = svalue
@@ -499,7 +509,7 @@ end
 -- Does the recursion.
 table.rules.recurse = function(dvalue, svalue, key, dst, src, rules, state)
 	if type(svalue) ~= 'table' or
-		svalue.__CLASSNAME or
+		svalue.__ATOMIC or
 		(type(dvalue) ~= 'table' and svalue == table.NIL_MERGE)
 	then return end
 	if type(dvalue) ~= 'table' then
@@ -516,7 +526,7 @@ end
 table.rules.append = function(dvalue, svalue, key, dst, src, rules, state)
 	if type(key) ~= 'number' then return end
 	if type(svalue) == 'table' then
-		if svalue.__CLASSNAME then
+		if svalue.__ATOMIC then
 			svalue = svalue:clone()
 		else
 			svalue = table.clone(svalue, true)
@@ -530,7 +540,7 @@ table.rules.append_top = function(dvalue, svalue, key, dst, src, rules, state)
 	if state.path and #state.path > 0 then return end
 	if type(key) ~= 'number' then return end
 	if type(svalue) == 'table' then
-		if svalue.__CLASSNAME then
+		if svalue.__ATOMIC then
 			svalue = svalue:clone()
 		else
 			svalue = table.clone(svalue, true)
@@ -586,10 +596,24 @@ function string.a_an(str)
 	else return "a "..str end
 end
 
+function string.he_she(actor)
+	if actor.female then return "she"
+	elseif actor.neuter then return "it"
+	else return "he"
+	end
+end
+
 function string.his_her(actor)
 	if actor.female then return "her"
 	elseif actor.neuter then return "it"
 	else return "his"
+	end
+end
+
+function string.him_her(actor)
+	if actor.female then return "her"
+	elseif actor.neuter then return "it"
+	else return "him"
 	end
 end
 
@@ -1844,8 +1868,8 @@ function util.findAllReferences(t, what)
 			if type(e) == "function" then
 				local fenv = getfenv(e)
 				local data = table.clone(data)
-				if fenv.__CLASSNAME then
-					data[#data+1] = "e:fenv["..fenv.__CLASSNAME"]:"..tostring(k)
+				if fenv.__ATOMIC then
+					data[#data+1] = "e:fenv["..(fenv.__CLASSNAME or true)"]:"..tostring(k)
 				else
 					data[#data+1] = "e:fenv[--]:"..tostring(k)
 				end
@@ -2320,6 +2344,7 @@ function util.removeForceSafeBoot()
 end
 
 -- Alias os.exit to our own exit method for cleanliness
+os.crash = os.exit
 os.exit = core.game.exit_engine
 
 -- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...

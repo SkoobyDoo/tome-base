@@ -191,28 +191,18 @@ newTalent{
 					end
 				end)
 				if #list <= 0 then return end
-				
-				local elem = {
-					black = {DamageType.ACID, "acid"},
-					blue = {DamageType.LIGHTNING, "lightning_explosion"},
-					green = {DamageType.NATURE, "slime"},
-					red = {DamageType.FIRE, "flame"},
-					violet = {DamageType.ARCANE, "manathrust"},
-					white = {DamageType.COLD, "freeze"},
-					yellow = {DamageType.LIGHT, "light"},
-					["multi-hued"] = {DamageType.MIND, "light"},
-				}
-				local bolt = {DamageType.MIND, "light"}
-				if gem.subtype and elem[gem.subtype] then bolt = elem[gem.subtype] end
-				
+
+				local color = gem.color_attributes or {}
+				local bolt = {color.damage_type or 'MIND', color.particle or 'light'}
+
 				table.sort(list, "dist")
 				local a = list[1].a
 				self:project({type="ball", range=6, radius=0, selffire=false, talent=t}, a.x, a.y, bolt[1], self:mindCrit(self:hasEffect(self.EFF_PSIFRENZY).damage), {type=bolt[2]})
-				
+
 			end
 			return
 		end
-		
+
 		if not p.mindstar_grab then return end
 		if not rng.percent(p.mindstar_grab.chance) then return end
 

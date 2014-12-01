@@ -64,6 +64,8 @@ newEntity{ base = "BASE_TRIDENT",
 	define_as = "TRIDENT_TIDES",
 	unided_name = "ever-dripping trident",
 	name = "Trident of the Tides", unique=true, image = "object/artifact/trident_of_the_tides.png",
+	moddable_tile = "special/%s_trident_of_the_tides",
+	moddable_tile_big = true,
 	desc = [[The power of the tides rush through this trident.
 Tridents require the exotic weapons mastery talent to use correctly.]],
 	require = { stat = { str=35 }, },

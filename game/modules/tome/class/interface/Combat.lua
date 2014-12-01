@@ -66,10 +66,12 @@ function _M:bumpInto(target, x, y)
 			if target.describeFloor then target:describeFloor(target.x, target.y, true) end
 			if self.describeFloor then self:describeFloor(self.x, self.y, true) end
 
+			local energy = game.energy_to_act * self:combatMovementSpeed(x, y)
 			if self:attr("bump_swap_speed_divide") then
-				self:useEnergy(game.energy_to_act * self:combatMovementSpeed(x, y) / self:attr("bump_swap_speed_divide"))
-				self.did_energy = true
+				energy = energy / self:attr("bump_swap_speed_divide")
 			end
+			self:useEnergy(energy)
+			self.did_energy = true
 		end
 	end
 end
@@ -136,7 +138,8 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 		local gems = self:getInven(self.INVEN_GEM)
 		local types = {}
 		for i = 1, #gems do
-			if gems[i] and gems[i].attack_type then types[#types+1] = gems[i].attack_type end
+			local damtype = table.get(gems[i], 'color_attributes', 'damage_type')
+			if damtype then table.insert(types, damtype) end
 		end
 		if #types > 0 then
 			damtype = rng.table(types)
@@ -549,6 +552,8 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		target:fireTalentCheck("callbackOnMeleeHit", self, dam)
 
 		hitted = true
+
+		if self:attr("vim_on_melee") and self ~= target then self:incVim(self:attr("vim_on_melee")) end
 	else
 		self:logCombat(target, "#Source# misses #Target#.")
 		target:fireTalentCheck("callbackOnMeleeMiss", self, dam)
@@ -874,17 +879,19 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	end
 
 	-- Regen on being hit
-	if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
-	if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
-	if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
-	if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
-	if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
-	if hitted and not target.dead and target:attr("vim_regen_when_hit") then target:incVim(target.vim_regen_when_hit) end
+	if self ~= target then
+		if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
+		if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
+		if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
+		if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
+		if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
+		if hitted and not target.dead and target:attr("vim_regen_when_hit") then target:incVim(target.vim_regen_when_hit) end
 
-	-- Resource regen on hit
-	if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
-	if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
-	if hitted and self:attr("psi_regen_on_hit") then self:incPsi(self.psi_regen_on_hit) end
+		-- Resource regen on hit
+		if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
+		if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
+		if hitted and self:attr("psi_regen_on_hit") then self:incPsi(self.psi_regen_on_hit) end
+	end
 
 	-- Ablative armor
 	if hitted and not target.dead and target:attr("carbon_spikes") then
@@ -895,7 +902,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			target:forceUseTalent(target.T_CARBON_SPIKES, {ignore_energy=true})
 		end
 	end
-	
+
 	if hitted and not target.dead and target:knowTalent(target.T_STONESHIELD) then
 		local t = target:getTalentFromId(target.T_STONESHIELD)
 		local m, mm, e, em = t.getValues(self, t)
@@ -1046,7 +1053,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		self:attr("silent_heal", -1)
 	end
 
-	return self:combatSpeed(weapon), hitted
+	return self:combatSpeed(weapon), hitted, dam
 end
 
 _M.weapon_talents = {
@@ -1315,9 +1322,9 @@ function _M:combatCrit(weapon)
 end
 
 --- Gets the damage range
-function _M:combatDamageRange(weapon)
+function _M:combatDamageRange(weapon, add)
 	weapon = weapon or self.combat or {}
-	return (self.combat_damrange or 0) + (weapon.damrange or 1.1)
+	return (self.combat_damrange or 0) + (weapon.damrange or 1.1) + (add or 0)
 end
 
 --- Scale damage values
@@ -1550,10 +1557,16 @@ function _M:combatDamage(weapon, adddammod)
 
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
 
-	local power = math.max((weapon.dam or 1), 1)
-	power = (math.sqrt(power / 10) - 1) * 0.5 + 1
+	local power = self:combatDamagePower(weapon)
 --	print(("[COMBAT DAMAGE] power(%f) totstat(%f) talent_mod(%f)"):format(power, totstat, talented_mod))
 	return self:rescaleDamage(0.3*(self:combatPhysicalpower(nil, weapon) + totstat) * power * talented_mod)
+end
+
+--- Gets the 'power' portion of the damage
+function _M:combatDamagePower(weapon_combat, add)
+	if not weapon_combat then return 1 end
+	local power = math.max((weapon_combat.dam or 1) + (add or 0), 1)
+	return (math.sqrt(power / 10) - 1) * 0.5 + 1
 end
 
 function _M:combatPhysicalpower(mod, weapon, add)

@@ -378,20 +378,17 @@ newTalent{
 		if self ~= game.player and (self:isTalentActive(self.T_CLEAVE) or self:isTalentActive(self.T_SURGE)) then return false end
 		return true
 	end,
+	sustain_slots = 'cursed_combat_style',
 	activate = function(self, t)
-		-- deactivate other talents and place on cooldown
-		if self:isTalentActive(self.T_CLEAVE) then
-			self:useTalent(self.T_CLEAVE)
-		elseif self:knowTalent(self.T_CLEAVE) then
-			local tCleave = self:getTalentFromId(self.T_CLEAVE)
-			self.talents_cd[self.T_CLEAVE] = tCleave.cooldown
-		end
-
-		if self:isTalentActive(self.T_SURGE) then
-			self:useTalent(self.T_SURGE)
-		elseif self:knowTalent(self.T_SURGE) then
+		-- Place other talents on cooldown.
+		if self:knowTalent(self.T_SURGE) and not self:isTalentActive(self.T_SURGE) then
 			local tSurge = self:getTalentFromId(self.T_SURGE)
 			self.talents_cd[self.T_SURGE] = tSurge.cooldown
+		end
+
+		if self:knowTalent(self.T_CLEAVE) and not self:isTalentActive(self.T_CLEAVE) then
+			local tCleave = self:getTalentFromId(self.T_CLEAVE)
+			self.talents_cd[self.T_CLEAVE] = tCleave.cooldown
 		end
 
 		return {
@@ -409,7 +406,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local chance = t.getChance(self, t)
-		return ([[Rather than hide from the onslaught, you face down every threat. While active you have a %d%% chance of repelling a melee attack. The recklessness of your defense brings you bad luck (Luck -3). 
+		return ([[Rather than hide from the onslaught, you face down every threat. While active you have a %d%% chance of repelling a melee attack. The recklessness of your defense brings you bad luck (Luck -3).
 		Cleave, Repel and Surge cannot be active simultaneously, and activating one will place the others in cooldown.
 		Repel chance increases with your Strength, and when equipped with a shield.]]):format(chance)
 	end,

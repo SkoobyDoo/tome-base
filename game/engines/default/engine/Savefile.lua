@@ -367,7 +367,7 @@ function _M:saveEntity(e, no_dialog)
 end
 
 local function resolveSelf(o, base, allow_object)
-	if o.__CLASSNAME and not allow_object then return end
+	if o.__ATOMIC and not allow_object then return end
 
 	local change = {}
 	for k, e in pairs(o) do
