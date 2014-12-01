@@ -177,7 +177,7 @@ newTalent{
 			apr = self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 3, 0, 53, 50)}
 		return vals
 	end,
-	sustain_slots = 'stance',
+	sustain_slots = 'archery_stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
@@ -229,7 +229,7 @@ newTalent{
 			}
 		return vals
 	end,
-	sustain_slots = 'stance',
+	sustain_slots = 'archery_stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
