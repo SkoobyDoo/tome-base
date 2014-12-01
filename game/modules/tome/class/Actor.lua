@@ -5049,6 +5049,16 @@ function _M:postUseTalent(ab, ret, silent)
 			if ab.sustain_feedback then
 				trigger = true; self:incMaxFeedback(-util.getval(ab.sustain_feedback, self, ab))
 			end
+			if ab.sustain_slots then
+				if not self.sustain_slots then self.sustain_slots = {} end
+				local slots = ab.sustain_slots
+				if 'string' == type(slots) then slots = {slots} end
+				for _, slot in pairs(slots) do
+					local t = self.sustain_slots[slot]
+					if t and self:isTalentActive(t) then self:forceUseTalent(t, {ignore_energy=true}) end
+					self.sustain_slots[slot] = ab.id
+				end
+			end
 			for event, store in pairs(sustainCallbackCheck) do
 				if ab[event] then
 					self[store] = self[store] or {}
@@ -5088,6 +5098,15 @@ function _M:postUseTalent(ab, ret, silent)
 			end
 			if ab.sustain_feedback then
 				self:incMaxFeedback(util.getval(ab.sustain_feedback, self, ab))
+				end
+			if ab.sustain_slots then
+				local slots = ab.sustain_slots
+				if 'string' == type(slots) then slots = {slots} end
+				for _, slot in pairs(slots) do
+					if self.sustain_slots[slot] == ab.id then
+						self.sustain_slots[slot] = nil
+					end
+				end
 			end
 			for event, store in pairs(sustainCallbackCheck) do
 				if ab[event] then
@@ -5198,6 +5217,25 @@ function _M:postUseTalent(ab, ret, silent)
 	if self.turn_procs.anomalies_checked then self.turn_procs.anomalies_checked = nil end  -- clears out anomaly checks
 
 	return true
+end
+
+-- Return the talent currently taking up a given sustain slot.
+function _M:getSustainSlot(slot)
+	if not self.sustain_slots then return end
+	return self.sustain_slots[slot]
+end
+
+-- Get the sustain which a talent will replace.
+function _M:getReplacedSustains(talent)
+	if 'string' == type(talent) then talent = self:getTalentFromId(talent) end
+	local slots = talent.sustain_slots or {}
+	if 'string' == type(slots) then slots = {slots} end
+	local ret = {}
+	for _, slot in pairs(slots) do
+		local t = self:getSustainSlot(slot)
+		if t ~= talent.id then table.insert(ret, t) end
+	end
+	return ret
 end
 
 --- Force a talent to activate without using energy or such
@@ -5393,6 +5431,14 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		end
 	end
 
+	if t.mode == 'sustained' then
+		local replaces = self:getReplacedSustains(t)
+		if #replaces > 0 then
+			for k, v in pairs(replaces) do replaces[k] = self:getTalentFromId(v).name end
+			d:add({"color",0x6f,0xff,0x83}, "Will Deactivate: ", {"color",0xFF,0xFF,0xFF}, table.concat(replaces, ', '), true)
+		end
+	end
+
 	self:triggerHook{"Actor:getTalentFullDescription", str=d, t=t, addlevel=addlevel, config=config, fake_mastery=fake_mastery}
 
 	d:add({"color",0x6f,0xff,0x83}, "Description: ", {"color",0xFF,0xFF,0xFF})
@@ -5436,12 +5482,12 @@ function _M:getTalentCooldown(t)
 	if eff and not self:attr("talent_reuse") then
 		cd = 1 + cd * eff.power
 	end
-	
+
 	local p = self:isTalentActive(self.T_MATRIX)
 	if p and p.talent == t.id then
 		cd = math.floor(cd * (1 - self:callTalent(self.T_MATRIX, "getPower")))
 	end
-	
+
 	if t.is_spell then
 		return math.ceil(cd * (1 - (self.spell_cooldown_reduction or 0)))
 	elseif t.is_summon then
@@ -5462,9 +5508,9 @@ function _M:startTalentCooldown(t, v)
 	else
 		if not t.cooldown then return end
 		self.talents_cd[t.id] = self:getTalentCooldown(t)
-		
+
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
-			local eff = self:hasEffect(self.EFF_REDUX) 
+			local eff = self:hasEffect(self.EFF_REDUX)
 			if t.type[1]:find("^chronomancy/") and self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
 				self.talents_cd[t.id] = 1
 			end

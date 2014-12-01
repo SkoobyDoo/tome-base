@@ -303,18 +303,15 @@ newTalent{
 		if self ~= game.player and (self:isTalentActive(self.T_SURGE) or self:isTalentActive(self.T_REPEL)) then return false end
 		return true
 	end,
+	sustain_slots = 'cursed_combat_style',
 	activate = function(self, t)
-		-- deactivate other talents and place on cooldown
-		if self:isTalentActive(self.T_SURGE) then
-			self:useTalent(self.T_SURGE)
-		elseif self:knowTalent(self.T_SURGE) then
+		-- Place other talents on cooldown.
+		if self:knowTalent(self.T_SURGE) and not self:isTalentActive(self.T_SURGE) then
 			local tSurge = self:getTalentFromId(self.T_SURGE)
 			self.talents_cd[self.T_SURGE] = tSurge.cooldown
 		end
 
-		if self:isTalentActive(self.T_REPEL) then
-			self:useTalent(self.T_REPEL)
-		elseif self:knowTalent(self.T_REPEL) then
+		if self:knowTalent(self.T_REPEL) and not self:isTalentActive(self.T_REPEL) then
 			local tRepel = self:getTalentFromId(self.T_REPEL)
 			self.talents_cd[self.T_REPEL] = tRepel.cooldown
 		end
@@ -353,10 +350,9 @@ newTalent{
 	info = function(self, t)
 		local chance = t.getChance(self, t, 0)
 		local chance2h = t.getChance(self, t, 1)
-		return ([[While active, every swing of your weapon has a %d%% (if one-handed) or %d%% (if two-handed) chance of striking a second nearby target for %d%% (at 0 Hate) to %d%% (at 100+ Hate) damage (+25%% for two-handed weapons). The recklessness of your attacks brings you bad luck (luck -3). 
+		return ([[While active, every swing of your weapon has a %d%% (if one-handed) or %d%% (if two-handed) chance of striking a second nearby target for %d%% (at 0 Hate) to %d%% (at 100+ Hate) damage (+25%% for two-handed weapons). The recklessness of your attacks brings you bad luck (luck -3).
 		Cleave, Repel and Surge cannot be active simultaneously, and activating one will place the others in cooldown.
 		The Cleave chance and damage increase with your Strength.]]):
 		format(chance, chance2h, t.getDamageMultiplier(self, t, 0) * 100, t.getDamageMultiplier(self, t, 100) * 100)
 	end,
 }
-
