@@ -53,8 +53,6 @@ function _M:bumpInto(target, x, y)
 		elseif target.cant_be_moved and self.cant_be_moved and target.x and target.y and self.x and self.y then
 			-- Displace
 			local tx, ty, sx, sy = target.x, target.y, self.x, self.y
-			target.x = nil target.y = nil
-			self.x = nil self.y = nil
 			target:move(sx, sy, true)
 			self:move(tx, ty, true)
 		end

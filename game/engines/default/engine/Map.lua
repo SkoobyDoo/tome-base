@@ -545,9 +545,11 @@ end
 -- @param x position
 -- @param y position
 -- @param pos what kind of entity to set(Map.TERRAIN, Map.OBJECT, Map.ACTOR)
-function _M:remove(x, y, pos)
+-- @param only only remove if the value was equal to that entity
+function _M:remove(x, y, pos, only)
 	if self.map[x + y * self.w] then
 		local e = self.map[x + y * self.w][pos]
+		if only and only ~= e then return end
 		self.map[x + y * self.w][pos]= nil
 		self:updateMap(x, y)
 		self.changed = true

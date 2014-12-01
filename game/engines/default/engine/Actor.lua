@@ -193,7 +193,7 @@ function _M:move(x, y, force)
 	if not force and map:checkAllEntities(x, y, "block_move", self, true) then return true end
 
 	if self.x and self.y then
-		map:remove(self.x, self.y, Map.ACTOR)
+		map:remove(self.x, self.y, Map.ACTOR, self)
 	else
 --		print("[MOVE] actor moved without a starting position", self.name, x, y)
 	end
@@ -392,7 +392,8 @@ end
 
 function _M:deleteFromMap(map)
 	if self.x and self.y and map then
-		map:remove(self.x, self.y, engine.Map.ACTOR)
+		map:remove(self.x, self.y, engine.Map.ACTOR, self)
+		-- self.x, self.y = nil, nil
 		self:closeParticles()
 	end
 end
