@@ -33,8 +33,9 @@ struct s_map_object {
 	shader_type *shader;
 	int shader_ref;
 	int cur_x, cur_y;
-	float dx, dy, scale;
+	float dx, dy, scale, world_x, world_y;
 	float animdx, animdy;
+	float oldrawdx, oldrawdy;
 	float dw, dh;
 	float tint_r;
 	float tint_g;

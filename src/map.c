@@ -93,6 +93,7 @@ static int map_object_new(lua_State *L)
 	obj->mm_b = -1;
 
 	obj->valid = TRUE;
+	obj->world_x = obj->world_y = 0;
 	obj->dx = luaL_checknumber(L, 6);
 	obj->dy = luaL_checknumber(L, 7);
 	obj->dw = luaL_checknumber(L, 8);
@@ -315,6 +316,9 @@ static int map_object_set_move_anim(lua_State *L)
 	obj->move_blur = lua_tonumber(L, 7); // defaults to 0
 	obj->move_twitch_dir = lua_tonumber(L, 8); // defaults to 0 (which is equivalent to up or 8)
 	obj->move_twitch = lua_tonumber(L, 9); // defaults to 0
+	obj->animdx = obj->animdx - ((float)obj->cur_x - obj->oldx);
+	obj->animdy = obj->animdy - ((float)obj->cur_y - obj->oldy);
+
 	return 0;
 }
 
@@ -349,11 +353,11 @@ static int map_object_get_move_anim(lua_State *L)
 	return 2;
 }
 
-static int map_object_get_move_anim_raw(lua_State *L)
+static int map_object_get_world_pos(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
-	lua_pushnumber(L, obj->animdx);
-	lua_pushnumber(L, obj->animdy);
+	lua_pushnumber(L, obj->world_x);
+	lua_pushnumber(L, obj->world_y);
 	return 2;
 }
 
@@ -1365,8 +1369,8 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 	}
 }
 
-inline void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx, map_type *map, int dx, int dy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
-void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx, map_type *map, int dx, int dy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
+inline void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
+void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
 {
 	map_object *dm;
 	float r, g, b;
@@ -1376,6 +1380,8 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 	bool up_important = FALSE;
 	float anim;
 	int anim_step;
+	int dx = scrollx + bdx;
+	int dy = scrolly + bdy;
 
 	/********************************************************
 	 ** Select the color to use
@@ -1556,6 +1562,8 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 			}
 			anim = (float)anim_step / dm->anim_max;
 		}
+		dm->world_x = bdx + (dm->dx + animdx) * map->tile_w;
+		dm->world_y = bdy + (dm->dy + animdy) * map->tile_h;
 		do_quad(L, m, dm, map, vertices, texcoords, colors,
 			vert_idx,
 			col_idx,
@@ -1672,8 +1680,8 @@ static int map_to_screen(lua_State *L)
 		{
 			for (i = mini; i < maxi; i++)
 			{
-				int dx = x + i * map->tile_w;
-				int dy = y + j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
+				int dx = i * map->tile_w;
+				int dy = j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
 				map_object *mo = map->grids[i][j][z];
 				if (!mo) continue;
 
@@ -1681,11 +1689,11 @@ static int map_to_screen(lua_State *L)
 				{
 					if (map->grids_seens[j*map->w+i])
 					{
-						display_map_quad(L, &cur_tex, &vert_idx, &col_idx, map, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
+						display_map_quad(L, &cur_tex, &vert_idx, &col_idx, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
 					}
 					else
 					{
-						display_map_quad(L, &cur_tex, &vert_idx, &col_idx, map, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+						display_map_quad(L, &cur_tex, &vert_idx, &col_idx, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
 					}
 				}
 			}
@@ -1931,7 +1939,7 @@ static const struct luaL_Reg map_object_reg[] =
 	{"resetMoveAnim", map_object_reset_move_anim},
 	{"setMoveAnim", map_object_set_move_anim},
 	{"getMoveAnim", map_object_get_move_anim},
-	{"getMoveAnimRaw", map_object_get_move_anim_raw},
+	{"getWorldPos", map_object_get_world_pos},
 	{"setAnim", map_object_set_anim},
 	{NULL, NULL},
 };
