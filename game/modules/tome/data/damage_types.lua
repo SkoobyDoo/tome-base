@@ -692,6 +692,14 @@ newDamageType{
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam)
+		
+		if realdam > 0 and src:attr("lightning_brainlocks") then
+			local target = game.level.map(x, y, Map.ACTOR)
+			if realdam > target.max_life / 10 then
+				target:crossTierEffect(target.EFF_BRAINLOCKED, src:combatMindpower())
+			end
+		end	
+		
 		return realdam
 	end,
 	death_message = {"electrocuted", "shocked", "bolted", "volted", "amped", "zapped"},

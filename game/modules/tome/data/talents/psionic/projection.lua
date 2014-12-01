@@ -506,7 +506,7 @@ newTalent{
 		local targets = t.getTargNum(self,t)
 		local dur = t.duration(self,t)
 		return ([[Overcharge your psionic focus with energy for %d turns, producing a different effect depending on what it is.
-		A telekinetically wielded weapon enters a frenzy, striking up to %d times every turn, also increases the radius by %d.
+		A telekinetically wielded weapon enters a frenzy, striking up to %d enemies per turn, also increases the radius by %d.
 		A mindstar will attempt to pull in all enemies within its normal range.
 		A gem will fire an energy bolt at a random enemy in range 6, each turn for %0.1f damage. The type is determined by the colour of the gem. Damage scales with Mindpower.]]):
 		format(dur, targets, targets, t.getDamage(self,t))

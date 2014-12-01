@@ -624,3 +624,32 @@ newTalent{
 		return ([[Can block up to 1 hit per 10 turns.]])
 	end,
 }
+
+newTalent{
+	name = "Psionic Maelstrom",
+	type = {"misc/objects", 1},
+	points = 5,
+	psi = 50,
+	cooldown = 50,
+	range = 10,
+	tactical = { AREAATTACK = 4 },
+	getDuration = function(self, t) return 8 end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 30, 300) end,
+	action = function(self, t)
+		local kinetic, charged, thermal = false, false, false
+		local object, index, object_inven_id = self:findInAllInventoriesBy("define_as", "KINETIC_FOCUS")
+		if object and self:getInven(object_inven_id).worn then kinetic = true end
+		object, index, object_inven_id = self:findInAllInventoriesBy("define_as", "CHARGED_FOCUS")
+		if object and self:getInven(object_inven_id).worn then charged = true end
+		object, index, object_inven_id = self:findInAllInventoriesBy("define_as", "THERMAL_FOCUS")
+		if object and self:getInven(object_inven_id).worn then thermal = true end
+		
+		self:setEffect(self.EFF_PSIONIC_MAELSTROM, t.getDuration(self, t), {kinetic=kinetic, charged=charged, thermal=thermal, dam=self:mindCrit(t.getDamage(self, t))})
+		
+		game:playSoundNear(self, "talents/spell_generic2")
+		return true
+	end,
+	info = function(self, t)
+		return ([[For the next 8 turns, powerful blasts of psionic energies will erupt from you, doing %d damage.]]):format(t.getDamage(self, t))
+	end,
+}

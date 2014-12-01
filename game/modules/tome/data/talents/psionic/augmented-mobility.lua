@@ -29,7 +29,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.2, 0.5, 0.75) end,
-	getKBVulnerable = function(self, t) return self:combatTalentLimit(t, 1, 0.2, 0.8) end,
+	getKBVulnerable = function(self, t) return 1 - self:combatTalentLimit(t, 1, 0.3, 0.7) end,
 	activate = function(self, t)
 		return {
 			speed = self:addTemporaryValue("movement_speed", t.getSpeed(self, t)),
