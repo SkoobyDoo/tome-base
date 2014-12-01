@@ -26,13 +26,31 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	getSaveBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 8, 0.75)) end,
-	doSpinFate = function(self, t)
-		local save_bonus = t.getSaveBonus(self, t)
-		local resists = self:knowTalent(self.T_FATEWEAVER) and self:callTalent(self.T_FATEWEAVER, "getResist") or 0
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp, no_martyr)
+		if dam > 0 and src ~= self then
+			if self.turn_procs and not self.turn_procs.spin_fate then
+				
+				self:setEffect(self.EFF_SPIN_FATE, 3, {save_bonus=t.getSaveBonus(self, t), spin=1, max_spin=3})
+				
+				-- Set our turn procs, we do spin_fate last since it's the only one checked above
+				if self.hasEffect and self:hasEffect(self.EFF_WEBS_OF_FATE) and not self.turn_procs.spin_webs then
+					self.turn_procs.spin_webs = true
+				elseif self.hasEffect and self:hasEffect(self.EFF_SEAL_FATE) and not self.turn_procs.spin_seal then
+					self.turn_procs.spin_seal = true
+				else
+					self.turn_procs.spin_fate = true
+				end
+				
+				-- Reduce damage if we know Fateweaver
+				if self:knowTalent(self.T_FATEWEAVER) then
+					local reduction = dam * self:callTalent(self.T_FATEWEAVER, "getReduction")
+					dam = dam - reduction
+					game:delayedLogDamage(src, self, 0, ("%s(%d fatewever)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
+				end				
+			end
+		end
 		
-		self:setEffect(self.EFF_SPIN_FATE, 3, {save_bonus=save_bonus, resists=resists, spin=1, max_spin=3})
-		
-		return true
+		return {dam=dam}
 	end,
 	info = function(self, t)
 		local save = t.getSaveBonus(self, t)
@@ -41,7 +59,6 @@ newTalent{
 		format(save, save * 3)
 	end,
 }
-
 newTalent{
 	name = "Webs of Fate",
 	type = {"chronomancy/fate-weaving", 2},
@@ -50,15 +67,16 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 12,
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 20, 100, getParadoxSpellpower(self))/100 end,
-	getDuration = function(self, t) return 5 end,
+	getPower = function(self, t) return paradoxTalentScale(self, t, 15, 30, 50)/100 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
+	no_energy = true,
 	action = function(self, t)
 		local effs = {}
 			
 		-- Find all pins
 		for eff_id, p in pairs(self.tmp) do
 			local e = self.tempeffect_def[eff_id]
-			if e.subtype.pin then
+			if e.subtype.pin or e.subtype.stun then
 				effs[#effs+1] = {"effect", eff_id}
 			end
 		end
@@ -73,27 +91,23 @@ newTalent{
 		end
 		
 		-- Set our power based on current spin
-		local move = t.getPower(self, t)
-		local pin = t.getPower(self, t)/2
+		local imm = t.getPower(self, t)
 		local eff = self:hasEffect(self.EFF_SPIN_FATE)
 		if eff then 
-			move = move * (1 + eff.spin/3)
-			pin = pin * (1 + eff.spin/3)
+			imm = imm * (1 + eff.spin/3)
 		end
-		pin = math.min(1, pin) -- Limit 100%
 		
-		self:setEffect(self.EFF_WEBS_OF_FATE, t.getDuration(self, t), {move=move, pin=pin})
+		self:setEffect(self.EFF_WEBS_OF_FATE, t.getDuration(self, t), {imm=imm})
 		
 		return true
 	end,
 	info = function(self, t)
 		local power = t.getPower(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[Activate to remove pins.  You also gain %d%% movement speed and %d%% pin immunity for %d turns.
-		If you have Spin Fate active these bonuses will be increased by 33%% per spin (up to a maximum of %d%% and %d%% respectively).
-		This spell will automatically cast when you're hit by most anomalies.  This will not consume a turn or put the spell on cooldown.
-		While Webs of Fate is active you may gain one additional spin per turn.
-		These bonuses will scale with your Spellpower.]]):format(power, math.min(100, power/2), duration, power * 2, math.min(100, power/2 * 2))
+		return ([[Activate to remove pins and stuns.  You also gain %d%% pin and stun immunity for %d turns.
+		If you have Spin Fate active these bonuses will be increased by 33%% per spin (up to a maximum of %d%%).
+		While Webs of Fate is active you may gain one additional spin per turn.  These bonuses will scale with your Spellpower.]])
+		:format(power, duration, power * 2)
 	end,
 }
 
@@ -103,11 +117,12 @@ newTalent{
 	require = chrono_req3,
 	mode = "passive",
 	points = 5,
-	getResist = function(self, t) return self:combatTalentScale(t, 2, 8, 0.75) end,
+	getReduction = function(self, t) return paradoxTalentScale(self, t, 10, 30, 40)/100 end,
 	info = function(self, t)
-		local resist = t.getResist(self, t)
-		return ([[You now gain %0.1f%% resist all when you gain spin with Spin Fate (up to a maximum of %0.1f%% resist all at three spin).]]):
-		format(resist, resist*3)
+		local reduction = t.getReduction(self, t)*100
+		return ([[When Spin Fate is triggered you reduce the triggering damage by %d%%.
+		This effect scales with your Spellpower.]]):
+		format(reduction)
 	end,
 }
 
@@ -119,27 +134,18 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 24,
 	tactical = { BUFF = 2 },
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 25, getParadoxSpellpower(self)) end,
-	getDuration = function(self, t) return 5 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
+	getProcs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
+	no_energy = true,
 	action = function(self, t)
-		-- Set our power based on current spin
-		local crits = t.getPower(self, t)
-		local eff = self:hasEffect(self.EFF_SPIN_FATE)
-		if eff then 
-			crits = crits * (1 + eff.spin/3)
-		end
-			
-		self:setEffect(self.EFF_SEAL_FATE, t.getDuration(self, t), {crit=crits})
-		
+		self:setEffect(self.EFF_SEAL_FATE, t.getDuration(self, t), {procs=t.getProcs(self, t)})
 		return true
 	end,
 	info = function(self, t)
-		local power = t.getPower(self, t)
+		local procs = t.getProcs(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Activate to increase critical hit chance and critical damage by %d%% for five turns.
-		If you have Spin Fate active these bonuses will be increased by 33%% per spin (up to a maximum of %d%%).
-		This spell will automatically cast when you're hit by most anomalies.  This will not consume a turn or put the spell on cooldown.
-		While Seal Fate is active you may gain one additional spin per turn.
-		These bonuses will scale with your Spellpower.]]):format(power, power * 2)
+		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
+		If you have Spin Fate active the chance twill be increased by 33%% per Spin (to a maximum of 100%% at three Spin.)
+		This can occur at most %d times per turn.  While Seal Fate is active you may gain one additional spin per turn.]]):format(duration, procs)
 	end,
 }

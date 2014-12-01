@@ -187,6 +187,7 @@ newTalent{
 	cooldown = function(self, t)
 		return 8 - util.bound(self:getTalentLevelRaw(t), 1, 5)
 	end,
+	speed = 'shield',
 	points = 5,
 	hard_cap = 5,
 	range = 1,
@@ -239,6 +240,8 @@ newTalent{
 			bt[DamageType.TEMPORAL] = true
 		end
 
+		bt.all = nil
+
 		local n = 0
 		for t, _ in pairs(bt) do n = n + 1 end
 
@@ -248,9 +251,9 @@ newTalent{
 			e_string = DamageType.dam_def[next(bt)].name
 		else
 			local list = table.keys(bt)
-			for i = 1, #list do
+			for i = 1, #list do if DamageType.dam_def[list[i]] then
 				list[i] = DamageType.dam_def[list[i]].name
-			end
+			end end
 			e_string = table.concat(list, ", ")
 		end
 		return bt, e_string
@@ -510,14 +513,17 @@ newTalent{
 	equilibrium = 20,
 	cooldown = 50,
 	range = 10,
+	fixed_cooldown = true,
 	tactical = { BUFF = 2 },
 	action = function(self, t)
 		local nb = 3
 		local tids = {}
 		for tid, _ in pairs(self.talents_cd) do
 			local tt = self:getTalentFromId(tid)
-			if tt.type[1]:find("^wild%-gift/") or tt.type[1]:find("psionic/") or tt.type[1]:find("cursed/") then
-				tids[#tids+1] = tid
+			if not tt.fixed_cooldown then
+				if tt.type[1]:find("^wild%-gift/") or tt.type[1]:find("psionic/") or tt.type[1]:find("cursed/") then
+					tids[#tids+1] = tid
+				end
 			end
 		end
 		for i = 1, nb do

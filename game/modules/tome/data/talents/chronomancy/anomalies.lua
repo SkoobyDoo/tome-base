@@ -25,37 +25,37 @@ local Object = require "engine.Object"
 local Trap = require "mod.class.Trap"
 
 -- All anomaly damage functions come from here with a bit of randomness thrown in to mix it up
-getAnomalyDamage = function(self)
-	local dam = self:combatScale(getParadoxSpellpower(self), 20, 10, 220, 100, 0.75)
+getAnomalyDamage = function(self, t)
+	local dam = self:combatScale(getParadoxSpellpower(self, t), 20, 10, 220, 100, 0.75)
 	return rng.avg(dam / 3, dam, 3)
 end
 
-getAnomalyDamageAoE = function(self)
-	local dam = self:combatScale(getParadoxSpellpower(self), 10, 10, 50, 100, 0.75)
+getAnomalyDamageAoE = function(self, t)
+	local dam = self:combatScale(getParadoxSpellpower(self, t), 10, 10, 50, 100, 0.75)
 	return rng.avg(dam / 3, dam, 3)
 end
 
 -- Here we have Effect Power and Anomaly duration, similar to damage but less random
-getAnomalyEffectPower = function(self)
-	local dam = self:combatScale(getParadoxSpellpower(self), 10, 10, 50, 100, 0.75)
+getAnomalyEffectPower = function(self, t)
+	local dam = self:combatScale(getParadoxSpellpower(self, t), 10, 10, 50, 100, 0.75)
 	return math.ceil(rng.avg(dam / 2, dam, 3))
 end
 
-getAnomalyDuration = function(self)
-	local dam = self:combatScale(getParadoxSpellpower(self), 4, 10, 12, 100, 0.75)
+getAnomalyDuration = function(self, t)
+	local dam = self:combatScale(getParadoxSpellpower(self, t), 4, 10, 12, 100, 0.75)
 	return math.ceil(rng.avg(dam / 2, dam, 3))
 end
 
 -- Determines the anomaly range based on current spellpower
 -- Generally we just use range = 10 for anomalies, this is for stuff with much longer range (such as teleports)
-getAnomalyRange = function(self)
-	local range = math.floor(self:combatLimit(getParadoxSpellpower(self), 80, 20, 20, 40, 100))
+getAnomalyRange = function(self, t)
+	local range = math.floor(self:combatLimit(getParadoxSpellpower(self, t), 80, 20, 20, 40, 100))
 	return range
 end
 
 -- Determines the anomaly radius based on current spellpower
-getAnomalyRadius = function(self)
-	local radius = math.floor(self:combatLimit(getParadoxSpellpower(self),8, 2, 20, 6, 100))
+getAnomalyRadius = function(self, t)
+	local radius = math.floor(self:combatLimit(getParadoxSpellpower(self, t), 6, 2, 20, 4, 100))
 	return radius
 end
 
@@ -102,7 +102,7 @@ end
 -- For this to work all anomalies have to have no_energy set to true in the talent table, otherwise it will use two turns
 checkAnomalyTargeting = function(self, t, tg)
 	local x, y = self.x, self.y
-	if self:knowTalent(self.T_BIAS_WEAVE) and rng.percent(self:callTalent(self.T_BIAS_WEAVE, "getTargetChance")) then
+	if self:knowTalent(self.T_BIAS_WEAVE) and rng.percent(self:callTalent(self.T_BIAS_WEAVE, "getTargetChance")) and not self:attr("anomaly_forced_target") then
 		if self == game.player then
 			game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", t.name)
 		end
@@ -121,12 +121,6 @@ end
 -- Check for effects when hit by an anomaly
 -- This is called before immunity is checked
 checkAnomalyTriggers = function(self, target)
-	if target:knowTalent(target.T_WEBS_OF_FATE) then
-		target:forceUseTalent(target.T_WEBS_OF_FATE, {ignore_cd=true, ignore_energy=true, ignore_ressources=true})
-	end
-	if target:knowTalent(target.T_SEAL_FATE) then
-		target:forceUseTalent(target.T_SEAL_FATE, {ignore_cd=true, ignore_energy=true, ignore_ressources=true})
-	end
 	if target:hasEffect(target.EFF_TRIM_THREADS) then
 		local eff = target:hasEffect(target.EFF_TRIM_THREADS)
 		eff.src:callTalent(eff.src.T_TRIM_THREADS, "doAnomaly", target, eff)
@@ -142,9 +136,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -186,9 +180,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
-	range = function(self, t) return getAnomalyRange(self) end,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	cooldown =0,
+	range = function(self, t) return getAnomalyRange(self, t) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -231,9 +225,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -244,7 +238,7 @@ newTalent{
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = checkAnomalyTargeting(self, t, tg)
-		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t), true)
+		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRange(t), true)
 
 		-- Randomly take targets
 		if #tgts <= 0 then return nil end
@@ -286,9 +280,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -309,7 +303,7 @@ newTalent{
 		checkAnomalyTriggers(self, self)
 		
 		if a:canBe("anomaly") then
-			self:setEffect(self.EFF_DISPLACEMENT_SHIELD, getAnomalyDuration(self)*2, {power=getAnomalyDamage(self)*4, target=a, chance=50})
+			self:setEffect(self.EFF_DISPLACEMENT_SHIELD, getAnomalyDuration(self, t)*2, {power=getAnomalyDamage(self, t)*4, target=a, chance=50})
 		end
 		
 		game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
@@ -319,7 +313,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[50%% chance that damage the caster takes will be warped to a set target.
-		Once the maximum damage (%d) is absorbed, the time runs out, or the target dies, the shield will crumble.]]):format(getAnomalyDamage(self)*2)
+		Once the maximum damage (%d) is absorbed, the time runs out, or the target dies, the shield will crumble.]]):format(getAnomalyDamage(self, t)*2)
 	end,
 }
 
@@ -331,7 +325,7 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
 	direct_hit = true,
 	no_energy = true, 
@@ -356,7 +350,7 @@ newTalent{
 			image = "terrain/wormhole.png",
 			display = '&', color_r=255, color_g=255, color_b=255, back_color=colors.STEEL_BLUE,
 			message = "@Target@ moves onto the wormhole.",
-			temporary = getAnomalyDuration(self),
+			temporary = getAnomalyDuration(self, t),
 			x = start_x, y = start_y,
 			canAct = false,
 			energy = {value=0},
@@ -364,12 +358,12 @@ newTalent{
 			summoned_by = self, -- "summoner" is immune to it's own traps
 			triggered = function(self, x, y, who)
 				if who == self.summoned_by or who:canBe("teleport") then
-					-- since we're using a precise teleport we'll look for a free grid first
-					local tx, ty = util.findFreeGrid(self.dest.x, self.dest.y, 5, true, {[engine.Map.ACTOR]=true})
-					if tx and ty then
-						if not who:teleportRandom(tx, ty, 0) then
-							game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())
-						end
+					game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
+					if not who:teleportRandom(self.dest.x, self.dest.y, 3, 1) then
+						game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())
+					elseif who ~= self.summoned_by then
+						who:setEffect(who.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power})
+						game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 					end
 				else
 					game.logSeen(who, "%s ignores the wormhole.", who.name:capitalize())
@@ -423,9 +417,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -444,7 +438,7 @@ newTalent{
 			table.remove(tgts, id)
 			checkAnomalyTriggers(self, a)
 
-			a:setEffect(a.EFF_PROBABILITY_TRAVEL, getAnomalyDuration(self)*2, {power=getAnomalyDuration(self)})
+			a:setEffect(a.EFF_PROBABILITY_TRAVEL, getAnomalyDuration(self, t)*2, {power=getAnomalyDuration(self, t)})
 			game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
 
 			game:playSoundNear(self, "talents/spell_generic")
@@ -454,7 +448,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Allows up to five targets in a radius of %d to travel up to %d tiles through walls.]]):
-		format(getAnomalyDuration(self)*2, getAnomalyDuration(self))
+		format(getAnomalyDuration(self, t)*2, getAnomalyDuration(self, t))
 	end,
 }
 
@@ -466,9 +460,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -487,7 +481,7 @@ newTalent{
 			table.remove(tgts, id)
 			checkAnomalyTriggers(self, a)
 
-			a:setEffect(a.EFF_BLINK, getAnomalyDuration(self)*2, {power=getAnomalyDuration(self)})
+			a:setEffect(a.EFF_BLINK, getAnomalyDuration(self, t)*2, {power=getAnomalyDuration(self, t)})
 			game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
 
 			game:playSoundNear(self, "talents/spell_generic")
@@ -497,7 +491,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Up to five targets in a radius of %d are teleporting %d tiles every turn.]]):
-		format(self:getTalentRadius(t), getAnomalyDuration(self))
+		format(self:getTalentRadius(t), getAnomalyDuration(self, t))
 	end,
 }
 
@@ -509,16 +503,16 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	requires_target = true,
 	no_energy = true, 
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
-	getSummonTime = function(self, t) return math.ceil(getAnomalyDuration(self)*2) end,
+	getSummonTime = function(self, t) return math.ceil(getAnomalyDuration(self, t)*2) end,
 	message = "Some innocent bystanders have been teleported into the fight.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -618,16 +612,16 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
-	getSlow = function(self, t) return 1 - 1 / (1 + (getAnomalyEffectPower(self)) / 100) end,
+	getSlow = function(self, t) return 1 - 1 / (1 + (getAnomalyEffectPower(self, t)) / 100) end,
 	message = "@Source@ creates a bubble of slow time.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -641,7 +635,7 @@ newTalent{
 			checkAnomalyTriggers(self, a)
 			
 			if a:canBe("anomaly") then
-				a:setEffect(a.EFF_SLOW, getAnomalyDuration(self), {power=t.getSlow(self, t), no_ct_effect=true})
+				a:setEffect(a.EFF_SLOW, getAnomalyDuration(self, t), {power=t.getSlow(self, t), no_ct_effect=true})
 			end
 			game.level.map:particleEmitter(x, y, tg.radius, "ball_temporal", {radius=self:getTalentRadius(t), tx=x, ty=y})
 			game:playSoundNear(self, "talents/spell_generic")
@@ -662,16 +656,16 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
 	end,
-	getHaste = function(self, t) return 1 - 1 / (1 + (getAnomalyEffectPower(self)) / 100) end,
+	getHaste = function(self, t) return 1 - 1 / (1 + (getAnomalyEffectPower(self, t)) / 100) end,
 	message = "@Source@ creates a bubble of fast time.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -684,7 +678,7 @@ newTalent{
 			table.remove(tgts, id)
 			checkAnomalyTriggers(self, a)
 
-			a:setEffect(a.EFF_SPEED, getAnomalyDuration(self), {power=t.getHaste(self, t)})
+			a:setEffect(a.EFF_SPEED, getAnomalyDuration(self, t), {power=t.getHaste(self, t)})
 			game.level.map:particleEmitter(x, y, tg.radius, "ball_temporal", {radius=self:getTalentRadius(t), tx=x, ty=y})
 			game:playSoundNear(self, "talents/spell_generic")
 		end
@@ -705,9 +699,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -727,7 +721,7 @@ newTalent{
 			checkAnomalyTriggers(self, a)
 
 			if a:canBe("anomaly") and a:canBe("stun") then
-				a:setEffect(a.EFF_STUNNED, getAnomalyDuration(self)/2, {no_ct_effect=true, apply_power=getParadoxSpellpower(self)})
+				a:setEffect(a.EFF_STUNNED, getAnomalyDuration(self, t)/2, {no_ct_effect=true, apply_power=getParadoxSpellpower(self, t)})
 			end
 			game.level.map:particleEmitter(x, y, tg.radius, "ball_temporal", {radius=self:getTalentRadius(t), tx=x, ty=y})
 			game:playSoundNear(self, "talents/spell_generic")
@@ -749,9 +743,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -771,7 +765,7 @@ newTalent{
 			checkAnomalyTriggers(self, a)
 
 			if a:canBe("anomaly") then
-				a:setEffect(a.EFF_TIME_PRISON, getAnomalyDuration(self), {no_ct_effect=true})
+				a:setEffect(a.EFF_TIME_PRISON, getAnomalyDuration(self, t), {no_ct_effect=true})
 			end
 			game.level.map:particleEmitter(x, y, tg.radius, "ball_temporal", {radius=self:getTalentRadius(t), tx=x, ty=y})
 			game:playSoundNear(self, "talents/spell_generic")
@@ -793,9 +787,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -814,7 +808,7 @@ newTalent{
 			table.remove(tgts, id)
 			checkAnomalyTriggers(self, a)
 
-			a:setEffect(a.EFF_TIME_SHIELD, getAnomalyDuration(self), {power=getAnomalyDamage(self)*4, dot_dur=5, time_reducer=40})
+			a:setEffect(a.EFF_TIME_SHIELD, getAnomalyDuration(self, t), {power=getAnomalyDamage(self, t)*4, dot_dur=5, time_reducer=40})
 			game.level.map:particleEmitter(x, y, tg.radius, "ball_temporal", {radius=self:getTalentRadius(t), tx=x, ty=y})
 			game:playSoundNear(self, "talents/spell_generic")
 		end
@@ -835,9 +829,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -856,7 +850,7 @@ newTalent{
 			table.remove(tgts, id)
 			checkAnomalyTriggers(self, a)
 
-			a:setEffect(a.EFF_INVIGORATE, getAnomalyDuration(self), {power=getAnomalyEffectPower(self)/10})
+			a:setEffect(a.EFF_INVIGORATE, getAnomalyDuration(self, t), {power=getAnomalyEffectPower(self, t)/10})
 			game.level.map:particleEmitter(x, y, tg.radius, "ball_temporal", {radius=self:getTalentRadius(t), tx=x, ty=y})
 			game:playSoundNear(self, "talents/spell_generic")
 		end
@@ -877,9 +871,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -893,20 +887,22 @@ newTalent{
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
-		if #tgts <= 0 then return end
+		if #tgts <= 0 then return true end
 		local a, id = rng.table(tgts)
 		table.remove(tgts, id)
 		checkAnomalyTriggers(self, a)
 		
 		local x, y = util.findFreeGrid(a.x, a.y, 3, true, {[Map.ACTOR]=true})
 		if not x then
-			return
+			return true
 		end
 		if a:attr("summon_time") then return end
-		local m = makeParadoxClone(self, a, getAnomalyDuration(self)*2)
+		local m = makeParadoxClone(self, a, getAnomalyDuration(self, t)*2)
 		m.ai_state = { talent_in=2, ally_compassion=10}
 		game.zone:addEntity(game.level, m, "actor", x, y)
 		game.level.map:particleEmitter(x, y, 1, "generic_teleport", {rm=60, rM=130, gm=20, gM=110, bm=90, bM=130, am=70, aM=180})
+		
+		return true
 	end,
 	info = function(self, t)
 		return ([[Clones a random creature within range.]]):format()
@@ -921,9 +917,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown = 0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -937,8 +933,8 @@ newTalent{
 		
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
-			x, y, getAnomalyDuration(self),
-			DamageType.TEMPORAL, getAnomalyDamageAoE(self),
+			x, y, getAnomalyDuration(self, t)/2,
+			DamageType.TEMPORAL, getAnomalyDamageAoE(self, t),
 			tg.radius,
 			5, nil,
 			engine.MapEffect.new{alpha=85, color_br=200, color_bg=200, color_bb=0, effect_shader="shader_images/paradox_effect.png"},
@@ -947,8 +943,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Creates a temporal storm for %d turns that deals %d temporal damage each turn.]])
-		:format(getAnomalyDuration(self), damDesc(self, DamageType.TEMPORAL, getAnomalyDamageAoE(self)))
+		local duration = self:combatScale(getParadoxSpellpower(self, t), 4, 10, 12, 100, 0.75)/2
+		local damage = self:combatScale(getParadoxSpellpower(self, t), 10, 10, 50, 100, 0.75)
+		return ([[Creates a temporal storm for %d to %d turns that deals between %0.2f and %0.2f temporal damage each turn.]])
+		:format(duration/2, duration, damDesc(self, DamageType.TEMPORAL, damage/3),  damDesc(self, DamageType.TEMPORAL, damage))
 	end,
 }
 
@@ -961,9 +959,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -1005,9 +1003,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -1037,7 +1035,7 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
 	radius = 1,
 	direct_hit = true,
@@ -1070,7 +1068,7 @@ newTalent{
 					show_tooltip = true,
 					block_move = true,
 					block_sight = true,
-					temporary = getAnomalyDuration(self),
+					temporary = getAnomalyDuration(self, t),
 					x = x + i, y = y + j,
 					canAct = false,
 					act = function(self)
@@ -1113,9 +1111,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1146,7 +1144,7 @@ newTalent{
 						if not target.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
 					end
 					for i = 1, rng.avg(3, 6, 3) do
-						local power = getAnomalyDuration(self)
+						local power = getAnomalyDuration(self, t)
 						local t = rng.tableRemove(tids)
 						if not t then break end
 						target.talents_cd[t.id] = rng.range(2, power)
@@ -1160,7 +1158,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Places between three and six talents of up to 5 targets in a radius %d ball on cooldown for up to %d turns.]]):
-		format(getAnomalyRadius(self), getAnomalyDuration(self))
+		format(getAnomalyRadius(self, t), getAnomalyDuration(self, t))
 	end,
 }
 
@@ -1172,9 +1170,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -1195,7 +1193,7 @@ newTalent{
 			checkAnomalyTriggers(self, a)
 			
 			if a:canBe("anomaly") and a:canBe("pin") then
-				a:setEffect(self.EFF_PINNED, getAnomalyDuration(self), {apply_power=getParadoxSpellpower(self)})
+				a:setEffect(self.EFF_PINNED, getAnomalyDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 			end
 		end
 		
@@ -1216,9 +1214,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1231,8 +1229,8 @@ newTalent{
 		local x, y = checkAnomalyTargeting(self, t, tg)
 		
 		-- Don't bury the player
-		if self ~= game.player and not game.player:knowTalent(game.player.T_DIG_OBJECT) then
-			return
+		if not game.player:knowTalent(game.player.T_DIG_OBJECT) then
+			return true
 		end
 
 		self:doQuake(tg, x, y)
@@ -1240,50 +1238,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Causes an earthquake in a radius of %d.]]):
-		format(getAnomalyRadius(self))
-	end,
-}
-
-newTalent{
-	name = "Anomaly Calcify",
-	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "physical",
-	type_no_req = true,
-	no_unlearn_last = true,
-	points = 1,
-	paradox = 0,
-	cooldown = 1,
-	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
-	direct_hit = true,
-	no_energy = true,
-	requires_target = true,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
-	end,
-	message = "@Source@ calcifies several targets.",
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
-		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
-
-		-- Randomly take targets
-		for i = 1, rng.avg(1, 5, 3) do
-			if #tgts <= 0 then break end
-			local a, id = rng.table(tgts)
-			table.remove(tgts, id)
-			checkAnomalyTriggers(self, a)
-			
-			if a:canBe("anomaly") and a:canBe("stun") and a:canBe("stone") and a:canBe("instakill")then
-				a:setEffect(a.EFF_STONED, getAnomalyDuration(self), {apply_power=getParadoxSpellpower(self)})
-				game.level.map:particleEmitter(a.x, a.y, 1, "archery")
-			end
-		end
-		return true
-	end,
-	info = function(self, t)
-		return ([[Turns up to 5 targets in a radius %d ball to stone for %d turns.]]):
-		format(getAnomalyRadius(self), getAnomalyDuration(self))
+		format(getAnomalyRadius(self, t))
 	end,
 }
 
@@ -1295,9 +1250,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1317,14 +1272,14 @@ newTalent{
 			table.remove(tgts, id)
 			checkAnomalyTriggers(self, a)
 
-			a:setEffect(self.EFF_FLAWED_DESIGN, getAnomalyDuration(self), {power=getAnomalyEffectPower(self)})
+			a:setEffect(self.EFF_FLAWED_DESIGN, getAnomalyDuration(self, t), {power=getAnomalyEffectPower(self, t)})
 			game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
 			game:playSoundNear(self, "talents/spell_generic")
 		end
 		return true
 	end,
 	info = function(self, t)
-		return ([[Reduces the resistances of up to five targets in a ball of radius %d by %d%%.]]):format(self:getTalentRadius(t), getAnomalyEffectPower(self))
+		return ([[Reduces the resistances of up to five targets in a ball of radius %d by %d%%.]]):format(self:getTalentRadius(t), getAnomalyEffectPower(self, t))
 	end,
 }
 
@@ -1336,9 +1291,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1351,7 +1306,7 @@ newTalent{
 		local x, y = checkAnomalyTargeting(self, t, tg)
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRange(t))
 		
-		local dam = getAnomalyRadius(self) -- not a typo, very low damage since this isn't a major anomaly
+		local dam = getAnomalyRadius(self, t) -- not a typo, very low damage since this isn't a major anomaly
 
 		-- Randomly take targets
 		for i = 1, rng.avg(3, 6, 3) do
@@ -1398,9 +1353,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1412,7 +1367,7 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local tgts = getAnomalyTargets(self, t, self.x, self.y, "ACTOR", self:getTalentRange(t))
 		
-		local movedam = self:spellCrit(getAnomalyDamageAoE(self))
+		local movedam = self:spellCrit(getAnomalyDamage(self, t))
 
 		-- Randomly take targets
 		for i = 1, rng.avg(3, 6, 3) do
@@ -1449,6 +1404,49 @@ newTalent{
 }
 
 newTalent{
+	name = "Anomaly Calcify",
+	type = {"chronomancy/anomalies", 1},
+	anomaly_type = "major",
+	type_no_req = true,
+	no_unlearn_last = true,
+	points = 1,
+	paradox = 0,
+	cooldown =0,
+	range = 10,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
+	direct_hit = true,
+	no_energy = true,
+	requires_target = true,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+	end,
+	message = "@Source@ calcifies several targets.",
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y = checkAnomalyTargeting(self, t, tg)
+		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
+
+		-- Randomly take targets
+		for i = 1, rng.avg(1, 5, 3) do
+			if #tgts <= 0 then break end
+			local a, id = rng.table(tgts)
+			table.remove(tgts, id)
+			checkAnomalyTriggers(self, a)
+			
+			if a:canBe("anomaly") and a:canBe("stun") and a:canBe("stone") and a:canBe("instakill")then
+				a:setEffect(a.EFF_STONED, getAnomalyDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
+				game.level.map:particleEmitter(a.x, a.y, 1, "archery")
+			end
+		end
+		return true
+	end,
+	info = function(self, t)
+		return ([[Turns up to 5 targets in a radius %d ball to stone for %d turns.]]):
+		format(getAnomalyRadius(self, t), getAnomalyDuration(self, t))
+	end,
+}
+
+newTalent{
 	name = "Anomaly Call",
 	type = {"chronomancy/anomalies", 1},
 	anomaly_type = "major",
@@ -1456,9 +1454,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 50,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1499,16 +1497,16 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
-	getHaste = function(self, t) return 1 - 1 / (1 + (getAnomalyEffectPower(self)) / 100) end,
+	getHaste = function(self, t) return 1 - 1 / (1 + (getAnomalyEffectPower(self, t)) / 100) end,
 	message = "The odds have tilted.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -1520,15 +1518,15 @@ newTalent{
 		table.remove(tgts, id)
 		checkAnomalyTriggers(self, a)
 
-		a:setEffect(self.EFF_SPEED, getAnomalyDuration(self), {power=t.getHaste(self, t)})
-		a:setEffect(self.EFF_REGENERATION,  getAnomalyDuration(self), {power=getAnomalyEffectPower(self)})
-		a:setEffect(self.EFF_PAIN_SUPPRESSION,  getAnomalyDuration(self), {power=getAnomalyEffectPower(self)})
+		a:setEffect(self.EFF_SPEED, getAnomalyDuration(self, t), {power=t.getHaste(self, t)})
+		a:setEffect(self.EFF_REGENERATION,  getAnomalyDuration(self, t), {power=getAnomalyEffectPower(self, t)})
+		a:setEffect(self.EFF_PAIN_SUPPRESSION,  getAnomalyDuration(self, t), {power=getAnomalyEffectPower(self, t)})
 		game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)
-		return ([[Substantially toughens and hastes one target for %d turns.]]):format(getAnomalyDuration(self))
+		return ([[Substantially toughens and hastes one target for %d turns.]]):format(getAnomalyDuration(self, t))
 	end,
 }
 
@@ -1540,9 +1538,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1558,7 +1556,7 @@ newTalent{
 			return
 		end
 		if self:attr("summon_time") then return end
-		local m = makeParadoxClone(self, self, getAnomalyDuration(self)*2)
+		local m = makeParadoxClone(self, self, getAnomalyDuration(self, t)*2)
 		game.zone:addEntity(game.level, m, "actor", x, y)
 		m.faction = "enemies"
 		m.summoner = nil
@@ -1569,7 +1567,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Clones the caster.]]):format(getAnomalyDuration(self))
+		return ([[Clones the caster.]]):format(getAnomalyDuration(self, t))
 	end,
 }
 
@@ -1581,9 +1579,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1607,7 +1605,7 @@ newTalent{
 				return
 			end
 			if a:attr("summon_time") then return end
-			local m = makeParadoxClone(self, a, getAnomalyDuration(self)*2)
+			local m = makeParadoxClone(self, a, getAnomalyDuration(self, t)*2)
 			game.zone:addEntity(game.level, m, "actor", x, y)
 			m.ai_state = { talent_in=1, ally_compassion=10}
 			game.level.map:particleEmitter(x, y, 1, "generic_teleport", {rm=60, rM=130, gm=20, gM=110, bm=90, bM=130, am=70, aM=180})
@@ -1616,7 +1614,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Clones all creatures in a radius of 10.]]):format(getAnomalyDuration(self))
+		return ([[Clones all creatures in a radius of 10.]]):format(getAnomalyDuration(self, t))
 	end,
 }
 
@@ -1628,9 +1626,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true, 
 	requires_target = true,
@@ -1662,9 +1660,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1676,7 +1674,7 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local tgts = getAnomalyTargets(self, t, self.x, self.y, "ACTOR", self:getTalentRange(t))
 		
-		local movedam = self:spellCrit(getAnomalyDamage(self)) -- High damage
+		local movedam = self:spellCrit(getAnomalyDamage(self, t)) -- High damage
 
 		-- Randomly take targets
 		if #tgts <= 0 then return end
@@ -1720,9 +1718,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1734,8 +1732,9 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local tgts = getAnomalyTargets(self, t, self.x, self.y, "ACTOR", self:getTalentRange(t))
 
-		local movedam = self:spellCrit(getAnomalyDamageAoE(self))
-		local dam = self:spellCrit(getAnomalyDamage(self)/2)
+		local movedam = self:spellCrit(getAnomalyDamage(self, t))
+		local dam = self:spellCrit(getAnomalyDamage(self, t)/2)
+		local apply_power = getParadoxSpellpower(self, t)
 
 		-- Randomly take targets
 		for i = 1, rng.avg(3, 6, 3) do
@@ -1748,7 +1747,7 @@ newTalent{
 			local proj = require("mod.class.Projectile"):makeHoming(
 				self,
 				{particle="bolt_lightning", trail="lightningtrail"},
-				{speed=2, name="Tornado", dam=dam, movedam=movedam, start_x=orig_x, start_y=orig_y},
+				{speed=2, name="Tornado", dam=dam, movedam=movedam, start_x=orig_x, start_y=orig_y, apply=apply_power},
 				target,
 				self:getTalentRange(t),
 				function(self, src)
@@ -1760,7 +1759,7 @@ newTalent{
 					src:project({type="ball", radius=1, x=self.x, y=self.y}, self.x, self.y, DT.LIGHTNING, self.def.dam)
 					src:project({type="ball", radius=1, x=self.x, y=self.y}, self.x, self.y, DT.MINDKNOCKBACK, self.def.dam)
 					if target:canBe("stun") then
-						target:setEffect(target.EFF_STUNNED, 4, {apply_power=getParadoxSpellpower(src)})
+						target:setEffect(target.EFF_STUNNED, 4, {apply_power=self.def.apply})
 					else
 						game.logSeen(target, "%s resists the tornado!", target.name:capitalize())
 					end
@@ -1796,9 +1795,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1860,7 +1859,7 @@ newTalent{
 					local target = game.level.map(px, py, engine.Map.ACTOR)
 					if target then
 						if target:canBe("stun") then
-							target:setEffect(target.EFF_STUNNED, 3, {apply_power=src:combatSpellpower()})
+							target:setEffect(target.EFF_STUNNED, 3, {apply_power=getParadoxSpellpower(src, t)})
 						else
 							game.logSeen(target, "%s resists the stun!", target.name:capitalize())
 						end
@@ -1871,7 +1870,7 @@ newTalent{
 			end
 		end
 
-		local dam = self:spellCrit(getAnomalyDamage(self))
+		local dam = self:spellCrit(getAnomalyDamage(self, t))
 		meteor(self, x, y, dam)
 
 		return true
@@ -1890,9 +1889,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,
@@ -1923,7 +1922,7 @@ newTalent{
 				end
 				return true
 			end,
-			temporary = getAnomalyDuration(self)*10,
+			temporary = getAnomalyDuration(self, t)*10,
 			x = tx, y = ty,
 			canAct = false,
 			energy = {value=0},
@@ -1972,9 +1971,9 @@ newTalent{
 	no_unlearn_last = true,
 	points = 1,
 	paradox = 0,
-	cooldown = 1,
+	cooldown =0,
 	range = 10,
-	radius = function(self, t) return getAnomalyRadius(self) end,
+	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	no_energy = true,
 	requires_target = true,

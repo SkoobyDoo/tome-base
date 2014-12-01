@@ -545,9 +545,11 @@ end
 -- @param x position
 -- @param y position
 -- @param pos what kind of entity to set(Map.TERRAIN, Map.OBJECT, Map.ACTOR)
-function _M:remove(x, y, pos)
+-- @param only only remove if the value was equal to that entity
+function _M:remove(x, y, pos, only)
 	if self.map[x + y * self.w] then
 		local e = self.map[x + y * self.w][pos]
+		if only and only ~= e then return end
 		self.map[x + y * self.w][pos]= nil
 		self:updateMap(x, y)
 		self.changed = true
@@ -1040,13 +1042,13 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 
 	local e = {
 		src=src, x=x, y=y, duration=duration, damtype=damtype, dam=dam, radius=radius, dir=dir, angle=angle,
-		overlay=overlay and overlay.__CLASSNAME and overlay,
+		overlay=overlay and overlay.__ATOMIC and overlay,
 		grids = grids,
 		update_fct=update_fct, selffire=selffire, friendlyfire=friendlyfire,
 	}
 
 	local overlay_particle = nil
-	if overlay and not overlay.__CLASSNAME then
+	if overlay and not overlay.__ATOMIC then
 		overlay_particle = overlay
 	elseif overlay then
 		if overlay.overlay_particle then overlay_particle = overlay.overlay_particle end
@@ -1343,16 +1345,16 @@ function _M:displayParticles(z, nb_keyframes)
 	end
 end
 
--- Returns the compass direction from a vector 
+-- Returns the compass direction from a vector
 -- dx, dy = x change (+ is east), y change (+ is south)
 function _M:compassDirection(dx, dy)
 	local dir = ""
-	if dx == 0 and dy == 0 then 
+	if dx == 0 and dy == 0 then
 		return nil
 	else
 		local dydx, dxdy = dy/math.abs(dx), dx/math.abs(dy)
 		if dydx <= -0.5 then dir = "north" elseif dydx >= 0.5 then dir="south" end
-		if dxdy < -0.5 then dir = dir.."west" 
+		if dxdy < -0.5 then dir = dir.."west"
 		elseif dxdy > 0.5 then dir = dir.."east" end
 	end
 	return dir

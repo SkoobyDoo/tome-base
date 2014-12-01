@@ -28,6 +28,7 @@ Entity.ascii_outline = {x=2, y=2, r=0, g=0, b=0, a=0.8}
 local UIBase = require "engine.ui.Base"
 local Map = require "engine.Map"
 local Level = require "engine.Level"
+local FontPackage = require "engine.FontPackage"
 
 -- Init settings
 config.settings.tome = config.settings.tome or {}
@@ -80,26 +81,13 @@ UIBase.ui = config.settings.tome.ui_theme2
 UIBase:setTextShadow(0.6)
 
 -- Dialogs fonts
-if config.settings.tome.fonts.type == "fantasy" then
-	local size = ({normal=16, small=12, big=18})[config.settings.tome.fonts.size]
-	UIBase.font = core.display.newFont("/data/font/DroidSans.ttf", size)
-	UIBase.font_bold = core.display.newFont("/data/font/DroidSans.ttf", size)
-	UIBase.font_mono = core.display.newFont("/data/font/DroidSansMono.ttf", size)
-	UIBase.font_bold:setStyle("bold")
-	UIBase.font_h = UIBase.font:lineSkip()
-	UIBase.font_bold_h = UIBase.font_bold:lineSkip()
-	UIBase.font_mono_w = UIBase.font_mono:size(" ")
-	UIBase.font_mono_h = UIBase.font_mono:lineSkip()+2
-else
-	local size = ({normal=12, small=10, big=14})[config.settings.tome.fonts.size]
-	UIBase.font = core.display.newFont("/data/font/Vera.ttf", size)
-	UIBase.font_mono = core.display.newFont("/data/font/VeraMono.ttf", size)
-	UIBase.font_bold = core.display.newFont("/data/font/VeraBd.ttf", size)
-	UIBase.font_h = 	UIBase.font:lineSkip()
-	UIBase.font_mono_w = 	UIBase.font_mono:size(" ")
-	UIBase.font_mono_h = 	UIBase.font_mono:lineSkip()
-	UIBase.font_bold_h = 	UIBase.font_bold:lineSkip()
-end
+UIBase.font = FontPackage:get("default")
+UIBase.font_bold = FontPackage:get("bold")
+UIBase.font_mono = FontPackage:get("mono")
+UIBase.font_h = UIBase.font:lineSkip()
+UIBase.font_bold_h = UIBase.font_bold:lineSkip()
+UIBase.font_mono_w = UIBase.font_mono:size(" ")
+UIBase.font_mono_h = UIBase.font_mono:lineSkip()+2
 
 local Savefile = require "engine.Savefile"
 local KeyBind = require "engine.KeyBind"
@@ -176,27 +164,27 @@ ActorInventory:defineInventory("HANDS", "On hands", true, "Various gloves can be
 ActorInventory:defineInventory("FEET", "On feet", true, "Sandals or boots can be worn on your feet.", nil, {equipdoll_back="ui/equipdoll/boots_inv.png"})
 ActorInventory:defineInventory("TOOL", "Tool", true, "This is your readied tool, always available immediately.", nil, {equipdoll_back="ui/equipdoll/tool_inv.png"})
 ActorInventory:defineInventory("QUIVER", "Quiver", true, "Your readied ammo.", nil, {equipdoll_back="ui/equipdoll/ammo_inv.png"})
-ActorInventory:defineInventory("GEM", "Socketed Gems", true, "Socketed gems.", nil, {equipdoll_back="ui/equipdoll/gem_inv.png"})
+ActorInventory:defineInventory("GEM", "Socketed Gems", true, "Gems worn in/on the body, providing their worn bonuses.", nil, {equipdoll_back="ui/equipdoll/gem_inv.png", stack_limit = 1})
 ActorInventory:defineInventory("QS_MAINHAND", "Second weapon set: In main hand", false, "Weapon Set 2: Most weapons are wielded in the main hand. Press 'x' to switch weapon sets.", true)
 ActorInventory:defineInventory("QS_OFFHAND", "Second weapon set: In off hand", false, "Weapon Set 2: You can use shields or a second weapon in your off-hand, if you have the talents for it. Press 'x' to switch weapon sets.", true)
 ActorInventory:defineInventory("QS_PSIONIC_FOCUS", "Second weapon set: psionic focus", false, "Weapon Set 2: Object held in your telekinetic grasp. It can be a weapon or some other item to provide a benefit to your psionic powers. Press 'x' to switch weapon sets.", true)
 ActorInventory:defineInventory("QS_QUIVER", "Second weapon set: Quiver", false, "Weapon Set 2: Your readied ammo.", true)
 ActorInventory.equipdolls = {
 	default = { w=48, h=48, itemframe="ui/equipdoll/itemframe48.png", itemframe_sel="ui/equipdoll/itemframe-sel48.png", ix=3, iy=3, iw=42, ih=42, doll_x=116, doll_y=168+64, list={
-		PSIONIC_FOCUS = {{weight=1, x=48, y=48}},
-		MAINHAND = {{weight=2, x=48, y=120}},
-		OFFHAND = {{weight=3, x=48, y=192}},
-		BODY = {{weight=4, x=48, y=264}},
-		QUIVER = {{weight=5, x=48, y=336}},
-		FINGER = {{weight=6, x=48, y=408}, {weight=7, x=120, y=408, text="bottom"}},
-		LITE = {{weight=8, x=192, y=408}},
-		TOOL = {{weight=9, x=264, y=408, text="bottom"}},
+		PSIONIC_FOCUS = {{weight=1, x=48, y=48, subshift="left"}},
+		MAINHAND = {{weight=2, x=48, y=120, subshift="left"}},
+		OFFHAND = {{weight=3, x=48, y=192, subshift="left"}},
+		BODY = {{weight=4, x=48, y=264, subshift="left"}},
+		QUIVER = {{weight=5, x=48, y=336, subshift="left"}},
+		FINGER = {{weight=6, x=48, y=408, subshift="bottom"}, {weight=7, x=120, y=408, text="bottom", subshift="bottom"}},
+		LITE = {{weight=8, x=192, y=408, subshift="bottom"}},
+		TOOL = {{weight=9, x=264, y=408, subshift="bottom", text="bottom"}},
 		FEET = {{weight=10, x=264, y=336}},
 		BELT = {{weight=11, x=264, y=264}},
 		HANDS = {{weight=12, x=264, y=192}},
 		CLOAK = {{weight=13, x=264, y=120}},
-		NECK = {{weight=14, x=192, y=48, text="topright"}},
-		HEAD = {{weight=15, x=120, y=48, text="topleft"}},
+		NECK = {{weight=14, x=192, y=48, subshift="bottom", text="topright"}},
+		HEAD = {{weight=15, x=120, y=48, subshift="bottom", text="topleft"}},
 	}},
 	alchemist_golem = { w=48, h=48, itemframe="ui/equipdoll/itemframe48.png", itemframe_sel="ui/equipdoll/itemframe-sel48.png", ix=3, iy=3, iw=42, ih=42, doll_x=116, doll_y=168+64, list={
 		MAINHAND = {{weight=1, x=48, y=120}},

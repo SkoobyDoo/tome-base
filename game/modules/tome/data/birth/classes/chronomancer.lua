@@ -37,7 +37,7 @@ newBirthDescriptor{
 	copy = {
 		-- Chronomancers start in Point Zero
 		class_start_check = function(self)
-			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race ~= "Undead" and self.descriptor.race ~= "Dwarf" and self.descriptor.race ~= "Yeek") then
+			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race ~= "Undead" and self.descriptor.race ~= "Dwarf" and self.descriptor.race ~= "Yeek") and not self._forbid_start_override then
 				self.chronomancer_race_start_quest = self.starting_quest
 				self.default_wilderness = {"zone-pop", "angolwen-portal"}
 				self.starting_zone = "town-point-zero"
@@ -69,25 +69,32 @@ newBirthDescriptor{
 	random_rarity = 2,
 	stats = { mag=5, wil=2, con=2, },
 	talents_types = {
-		["chronomancy/age-manipulation"]={true, 0.3},
-	--	["chronomancy/anomalies"]={true, 0},
-		["chronomancy/chronomancy"]={true, 0.3},
-		["chronomancy/energy"]={true, 0.3},
+		-- class
 		["chronomancy/fate-threading"]={true, 0.3},
 		["chronomancy/gravity"]={true, 0.3},
-		["chronomancy/matter"]={true, 0.3},
-		["chronomancy/paradox"]={false, 0.3},
+		["chronomancy/spacetime-folding"]={true, 0.3},
 		["chronomancy/speed-control"]={true, 0.3},
-		["chronomancy/timeline-threading"]={false, 0.3},
+		["chronomancy/timeline-threading"]={true, 0.3},
 		["chronomancy/timetravel"]={true, 0.3},
+		
+		-- locked class
+		["chronomancy/spellbinding"]={false, 0.3},
+		["chronomancy/spatial-tears"]={false, 0.3},
+
+		-- generic
+		["chronomancy/chronomancy"]={true, 0.3},
+		["chronomancy/fate-weaving"]={true, 0.3},
 		["chronomancy/spacetime-weaving"]={true, 0.3},
-		["cunning/survival"]={false, 0},
+
+		-- locked generic
+		["chronomancy/energy"]={false, 0.3},
+		["cunning/survival"]={false, 0},	
 	},
 	talents = {
-		[ActorTalents.T_DISENTANGLE] = 1,
+		[ActorTalents.T_TEMPORAL_BOLT] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
-		[ActorTalents.T_DUST_TO_DUST] = 1,
-		[ActorTalents.T_TURN_BACK_THE_CLOCK] = 1,
+		[ActorTalents.T_RETHREAD] = 1,
+		[ActorTalents.T_DISENTANGLE] = 1,
 	},
 	copy = {
 		max_life = 90,
@@ -119,21 +126,25 @@ newBirthDescriptor{
 		-- class
 		["chronomancy/blade-threading"]={true, 0.3},
 		["chronomancy/bow-threading"]={true, 0.3},
-		["chronomancy/fate-threading"]={true, 0.3},
+		["chronomancy/fate-threading"]={true, 0.1},
 		["chronomancy/spacetime-folding"]={true, 0.3},
-		["chronomancy/speed-control"]={true, 0.1},
+		["chronomancy/speed-control"]={true, 0.3},
 		["chronomancy/guardian"]={true, 0.3},
 		
+		-- class locked
 		["chronomancy/threaded-combat"]={false, 0.3},
 		["chronomancy/temporal-hounds"]={false, 0.3},
 		["chronomancy/timetravel"]={false, 0.1},
 		
 		-- generic
-		["cunning/survival"]={false, 0},
 		["technique/combat-training"]={true, 0.3},
+		
 		["chronomancy/chronomancy"]={true, 0.3},
-		["chronomancy/fate-weaving"]={false, 0.1},
 		["chronomancy/spacetime-weaving"]={true, 0.3},
+		
+		-- generic locked
+		["chronomancy/fate-weaving"]={false, 0.1},
+		["cunning/survival"]={false, 0},
 	},
 	birth_example_particles = "temporal_focus",
 	talents = {

@@ -119,7 +119,7 @@ newTalent{
 		local chance = t.getChance(self, t)
 		return ([[You learn to finely craft and tune your offensive spells.
 		You try to carve a hole in spells that affect an area to avoid damaging yourself.  The chance of success is %d%%.
-		In addition, you hone your damaging spells to spellshock their targets. This talent gives a bonus of %d to Spellpower solely for the purposes of overcoming the target's Spell Save. Spellshocked targets suffer a temporary 20%% penalty to damage resistances.]]):
+		In addition, you hone your damaging spells to spellshock their targets. Whenever you deal damage with a spell you attempt to spellshock them with %d more Spellpower than normal. Spellshocked targets suffer a temporary 20%% penalty to damage resistances.]]):
 		format(chance, self:combatTalentSpellDamage(t, 10, 320) / 4)
 	end,
 }
@@ -158,6 +158,7 @@ newTalent{
 	points = 5,
 	mana = 70,
 	cooldown = 50,
+	fixed_cooldown = true,
 	tactical = { BUFF = 2 },
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,
 	getMaxLevel = function(self, t) return self:getTalentLevel(t) end,
@@ -165,8 +166,10 @@ newTalent{
 		local tids = {}
 		for tid, _ in pairs(self.talents_cd) do
 			local tt = self:getTalentFromId(tid)
-			if tt.type[2] <= t.getMaxLevel(self, t) and tt.is_spell then
-				tids[#tids+1] = tid
+			if not tt.fixed_cooldown then
+				if tt.type[2] <= t.getMaxLevel(self, t) and tt.is_spell then
+					tids[#tids+1] = tid
+				end
 			end
 		end
 		for i = 1, t.getTalentCount(self, t) do
@@ -181,7 +184,7 @@ newTalent{
 	info = function(self, t)
 		local talentcount = t.getTalentCount(self, t)
 		local maxlevel = t.getMaxLevel(self, t)
-		return ([[Your mastery of the arcane flows allow you to reset the cooldown of %d of your spells of tier %d or less.]]):
+		return ([[Your mastery of the arcane flows allow you to reset the cooldown of %d of most of your spells of tier %d or less.]]):
 		format(talentcount, maxlevel)
 	end,
 }

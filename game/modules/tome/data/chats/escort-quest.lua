@@ -52,7 +52,7 @@ local reward_types = {
 			types = {
 				["wild-gift/call"] = 0.8,
 			},
-			saves = { mind = 4 },
+			saves = { mental = 4 },
 			talents = {
 				[Talents.T_NATURE_TOUCH] = 1,
 				[Talents.T_EARTH_S_EYES] = 1,
@@ -153,7 +153,7 @@ local reward_types = {
 				[Talents.T_TRACK] = 1,
 				[Talents.T_HEAVE] = 1,
 			},
-			saves = { spell = 4, mind = 4 },
+			saves = { spell = 4, mental = 4 },
 			stats = {
 				[Stats.STAT_CUN] = 1,
 				[Stats.STAT_WIL] = 2,
@@ -164,11 +164,11 @@ local reward_types = {
 		types = {
 			["chronomancy/chronomancy"] = 0.8,
 		},
-		talents = {								--- Note to Darkgod; burn this comment after reading
-			[Talents.T_CONTINGENCY] = 1,		--- Quick explanation; Precognition is really similar to track now so there's the overlap argument
-			[Talents.T_SEE_THE_THREADS] = 1,	--- The other thought is that these are both some pretty cool effects and may help to hook players that otherwise
-		--	[Talents.T_PRECOGNITION] = 1,		--- wouldn't stick around long enough to unlock Chronomancers.  Anyway that's my thoughts on it, if it doesn't feel right
-		},										--- feel free to change it.
+		talents = {
+			[Talents.T_CONTINGENCY] = 1,
+		--	[Talents.T_SEE_THE_THREADS] = 1,
+			[Talents.T_PRECOGNITION] = 1,
+		},										
 		stats = {
 			[Stats.STAT_MAG] = 2,
 			[Stats.STAT_CUN] = 1,
@@ -215,8 +215,8 @@ if quest.to_zigur and reward.antimagic then reward = reward.antimagic reward.is_
 
 game.player:registerEscorts(quest.to_zigur and "zigur" or "saved")
 
-local saves_name = { mind="mental", spell="spell", phys="physical"}
-local saves_tooltips = { mind="MENTAL", spell="SPELL", phys="PHYS"}
+local saves_name = { mental="mental", spell="spell", phys="physical"}
+local saves_tooltips = { mental="MENTAL", spell="SPELL", phys="PHYS"}
 
 local function generate_rewards()
 	local answers = {}

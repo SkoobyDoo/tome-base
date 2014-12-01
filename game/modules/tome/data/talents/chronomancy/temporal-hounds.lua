@@ -29,7 +29,7 @@ summonTemporalHound = function(self, t)
 	end
 	
 	local m = require("mod.class.NPC").new{
-		type = "animal", subtype = "hounds",
+		type = "animal", subtype = "canine",
 		display = "C", image = "npc/summoner_wardog.png",
 		color=colors.LIGHT_DARK, shader = "shadow_simulacrum",
 		shader_args = { color = {0.6, 0.6, 0.2}, base = 0.8, time_factor = 1500 },
@@ -51,9 +51,10 @@ summonTemporalHound = function(self, t)
 		infravision = 10,
 
 		combat_armor = 2, combat_def = 4,
-		combat = { dam=self:getTalentLevel(t) * 10 + rng.avg(12,25), atk=10, apr=10, dammod={str=0.8}, damtype=DamageType.MATTER, sound="creatures/wolves/wolf_attack_1" },
+		combat = { dam=self:getTalentLevel(t) * 10 + rng.avg(12,25), atk=10, apr=10, dammod={str=0.8, mag=0.8}, damtype=DamageType.WARP, sound="creatures/wolves/wolf_attack_1" },
 		
 		summoner = self, summoner_gain_exp=true,
+		resolvers.sustains_at_birth(),
 	}
 	
 	m:resolve()
@@ -130,6 +131,7 @@ summonTemporalHound = function(self, t)
 		})
 	end
 	
+	self:attr("summoned_times", 1)
 end
 
 newTalent{
@@ -187,7 +189,7 @@ newTalent{
 		
 		-- unsummon the hounds :(
 		for _, e in pairs(game.level.entities) do
-			if e.summoner and e.summoner == self and e.subtype == "hounds" then
+			if e.summoner and e.summoner == self and e.name == "temporal hound" then
 				e.summon_time = 0
 			end
 		end
@@ -217,7 +219,7 @@ newTalent{
 	requires_target = true,
 	on_pre_use = function(self, t, silent)
 		local p = self:isTalentActive(self.T_TEMPORAL_HOUNDS)
-		if not p then
+		if not p or p.hounds < 1 then
 			if not silent then
 				game.logPlayer(self, "You must have temporal hounds to use this talent.")
 			end
@@ -230,7 +232,7 @@ newTalent{
 	end,
 	direct_hit = true,
 	getDefense = function(self, t)
-		return self:combatTalentSpellDamage(t, 10, 40, getParadoxSpellpower(self))
+		return self:combatTalentSpellDamage(t, 10, 40, getParadoxSpellpower(self, t))
 	end,
 	action = function(self, t)
 		-- Pick our target
@@ -244,17 +246,19 @@ newTalent{
 		local __, x, y = self:canProject(tg, x, y)
 	
 		-- Summon a new Hound
-		local p = self:isTalentActive(self.T_TEMPORAL_HOUNDS)
-		local talent = self:getTalentFromId(self.T_TEMPORAL_HOUNDS)
-		if p.hounds < p.max_hounds then
-			summonTemporalHound(self, talent)
-			p.hounds = p.hounds + 1
-		end		
+		if self:getTalentLevel(t) >=5 then
+			local p = self:isTalentActive(self.T_TEMPORAL_HOUNDS)
+			local talent = self:getTalentFromId(self.T_TEMPORAL_HOUNDS)
+			if p.hounds < p.max_hounds then
+				summonTemporalHound(self, talent)
+				p.hounds = p.hounds + 1
+			end
+		end
 	
 		-- Find our hounds
 		local hnds = {}
 		for _, e in pairs(game.level.entities) do
-			if e.summoner and e.summoner == self and e.subtype == "hounds" then
+			if e.summoner and e.summoner == self and e.name == "temporal hound" then
 				hnds[#hnds+1] = e
 			end
 		end
@@ -290,7 +294,7 @@ newTalent{
 		local defense = t.getDefense(self, t)
 		return ([[Command your Temporal Hounds to teleport to the targeted location.  If you target a creature with this effect your hounds will set that creature as their target.
 		When you learn this talent, your hounds gain %d defense and %d%% resist all after any teleport.
-		If you're not at your maximum number of hounds when you cast this spell a new one will be summoned.
+		At talent level five, if you're not at your maximum number of hounds when you cast this spell a new one will be summoned.
 		The teleportation bonuses scale with your Spellpower.]]):format(defense, defense, defense/2, defense/2)
 	end,
 }
@@ -304,9 +308,9 @@ newTalent{
 	getImmunities = function(self, t)
 		return self:combatTalentLimit(t, 1, 0.15, 0.50) -- Limit <100%
 	end,
-	getRegen = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self)) end,
-	getHaste = function(self, t) return self:combatScale(self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self)), 0, 0, 0.57, 57, 0.75) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	getRegen = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
+	getHaste = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 6))) end,
 	doBlink = function(self, t, hound)  -- Triggered when the hounds is hit
 		local regen, haste = t.getRegen(self, t), t.getHaste(self, t)
 		if hound:hasEffect(hound.EFF_UNRAVEL) then
@@ -348,7 +352,7 @@ newTalent{
 	direct_hit = true,
 	on_pre_use = function(self, t, silent)
 		local p = self:isTalentActive(self.T_TEMPORAL_HOUNDS)
-		if not p then
+		if not p or p.hounds < 1 then
 			if not silent then
 				game.logPlayer(self, "You must have temporal hounds to use this talent.")
 			end
@@ -359,7 +363,7 @@ newTalent{
 	getResists = function(self, t)
 		return self:combatTalentLimit(t, 100, 15, 50) -- Limit <100%
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 150, getParadoxSpellpower(self)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 150, getParadoxSpellpower(self, t)) end,
 	getDamageStat = function(self, t) return 2 + math.ceil(t.getDamage(self, t) / 15) end,
 	target = function(self, t)
 		return {type="cone", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
@@ -371,7 +375,7 @@ newTalent{
 		local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 			local a = game.level.map(x, y, Map.ACTOR)
-			if a and a.summoner == self and a.subtype == "hounds" then
+			if a and a.summoner == self and a.name == "temporal hound" then
 				hounds[#hounds+1] = a
 				tg[#tg+1] = {type="cone", range=0, radius=self:getTalentRadius(t), start_x=a.x, start_y=a.y, selffire=false, talent=t}
 			end
@@ -397,7 +401,7 @@ newTalent{
 				DamageType:get(DamageType.TEMPORAL).projector(a, px, py, DamageType.TEMPORAL, dam)
 				-- Don't turn back the clock other hounds
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and target.subtype ~= "hounds" then
+				if target and target.name ~= "temporal hound" then
 					target:setEffect(target.EFF_TURN_BACK_THE_CLOCK, 3, {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(), min_dur=1})
 				end	
 			end)

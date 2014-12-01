@@ -429,12 +429,9 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	-- Temporal cast
 	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
 		local dam = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local burst_damage = 0
-		local burst_radius = 0
 		if self:knowTalent(self.T_FRAYED_THREADS) then
-			burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			dam = dam - burst_damage
+			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
+			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
 			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
 		end
 		if dam > 0 and not target.dead then
@@ -444,54 +441,30 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	if hitted and self:knowTalent(self.T_IMPACT) and self:isTalentActive(self.T_IMPACT) then
 		local dam = self:callTalent(self.T_IMPACT, "getDamage")
 		local power = self:callTalent(self.T_IMPACT, "getApplyPower")
-		local burst_damage = 0
-		local burst_radius = 0
 		if self:knowTalent(self.T_FRAYED_THREADS) then
-			burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			dam = dam - burst_damage
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=dam/2, power_check=power})
+			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
+			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
+			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=burst_damage/2, power_check=power})
 		end
 		if dam > 0 and not target.dead then
 			DamageType:get(DamageType.IMPACT).projector(self, target.x, target.y, DamageType.IMPACT, {dam=dam, daze=dam/2, power_check=power}, tmp)
 		end
 	end
 
-	-- Conduit (Psi)
-	if hitted and not target.dead and self:knowTalent(self.T_CONDUIT) and self:isTalentActive(self.T_CONDUIT) and self:attr("use_psi_combat") then
-		local t =  self:getTalentFromId(self.T_CONDUIT)
-		--t.do_combat(self, t, target)
-		local mult = 1 + 0.2*(self:getTalentLevel(t))
-		local auras = self:isTalentActive(t.id)
-		if auras.k_aura_on then
-			local k_aura = self:getTalentFromId(self.T_KINETIC_AURA)
-			local k_dam = mult * k_aura.getAuraStrength(self, k_aura)
-			DamageType:get(DamageType.PHYSICAL).projector(self, target.x, target.y, DamageType.PHYSICAL, k_dam, tmp)
-		end
-		if auras.t_aura_on then
-			local t_aura = self:getTalentFromId(self.T_THERMAL_AURA)
-			local t_dam = mult * t_aura.getAuraStrength(self, t_aura)
-			DamageType:get(DamageType.FIRE).projector(self, target.x, target.y, DamageType.FIRE, t_dam, tmp)
-		end
-		if auras.c_aura_on then
-			local c_aura = self:getTalentFromId(self.T_CHARGED_AURA)
-			local c_dam = mult * c_aura.getAuraStrength(self, c_aura)
-			DamageType:get(DamageType.LIGHTNING).projector(self, target.x, target.y, DamageType.LIGHTNING, c_dam, tmp)
-		end
+	if self ~= target then
+		-- Regen on being hit
+		if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
+		if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
+		if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
+		if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
+		if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
+		if hitted and not target.dead and target:attr("vim_regen_when_hit") then target:incVim(target.vim_regen_when_hit) end
+
+		-- Resource regen on hit
+		if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
+		if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
 	end
-
-
-	-- Regen on being hit
-	if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
-	if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
-	if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
-	if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
-	if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
-
-	-- Resource regen on hit
-	if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
-	if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
-
+	
 	-- Ablative armor
 	if hitted and not target.dead and target:attr("carbon_spikes") then
 		if target.carbon_armor >= 1 then

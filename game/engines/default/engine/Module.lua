@@ -21,6 +21,7 @@
 require "engine.class"
 local Savefile = require "engine.Savefile"
 local UIBase = require "engine.ui.Base"
+local FontPackage = require "engine.FontPackage"
 require "engine.PlayerProfile"
 
 --- Handles dialog windows
@@ -55,7 +56,6 @@ function _M:listModules(incompatible, moddir_filter)
 	end
 
 	table.sort(ms, function(a, b)
-	print(a.short_name,b.short_name)
 		if a.short_name == "tome" then return 1
 		elseif b.short_name == "tome" then return nil
 		else return a.name < b.name
@@ -286,10 +286,91 @@ function _M:listVaultSavesForCurrent()
 	return lss
 end
 
+--- List all available background alterations
+function _M:listBackgrounds(mod)
+	local defs = {}
+	local load = function(dir, teaa)
+		local add_def = loadfile(dir.."/boot-screen/init.lua")
+		if add_def then
+			local add = {}
+			setfenv(add_def, add)
+			add_def()
+			table.print(add)
+
+			add.for_modules = table.reverse(add.for_modules)
+			if add.for_modules[mod.short_name] then
+				if add.add_backgrounds then 
+					for i, d in ipairs(add.add_backgrounds) do
+						local nd = {chance=d.chance, name=dir.."/boot-screen/"..d.name}
+						if d.logo then nd.logo = dir.."/boot-screen/"..d.logo end
+						if teaa then 
+							nd.mount = function() fs.mount(fs.getRealPath(teaa), "/testload", false) end
+							nd.umount = function() fs.umount(fs.getRealPath(teaa)) end
+						end
+						defs[#defs+1] = nd
+					end
+				end
+				if add.replace_backgrounds then
+					defs = {}
+					for i, d in ipairs(add.replace_backgrounds) do
+						local nd = {chance=d.chance, name=dir.."/boot-screen/"..d.name}
+						if d.logo then nd.logo = dir.."/boot-screen/"..d.logo end
+						if teaa then 
+							nd.mount = function() fs.mount(fs.getRealPath(teaa), "/testload", false) end
+							nd.umount = function() fs.umount(fs.getRealPath(teaa)) end
+						end
+						defs[#defs+1] = nd
+					end
+				end
+			end
+		end
+	end
+
+	local parse = function(basedir)
+		for i, short_name in ipairs(fs.list(basedir)) do if short_name:find("^.+%-.+") or short_name:find(".teaac$") then
+			local dir = basedir..short_name
+			-- print("Checking background", short_name, ":: (as dir)", fs.exists(dir.."/init.lua"), ":: (as teaa)", short_name:find(".teaa$"), "")
+			if fs.exists(dir.."/boot-screen/init.lua") then
+				load(dir, nil)
+			elseif short_name:find(".teaa$") or short_name:find(".teaac$") then
+				fs.mount(fs.getRealPath(dir), "/testload", false)
+				local mod
+				if fs.exists("/testload/boot-screen/init.lua") then
+					load("/testload", dir)
+				end
+				fs.umount(fs.getRealPath(dir))
+			end
+		end end
+	end
+
+	-- Add the default one
+	local backname = util.getval(mod.background_name) or "tome"
+	defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+
+	-- Look for more
+	parse("/addons/")
+	parse("/dlcs/")
+	
+	-- os.exit()
+
+	local def = nil
+	while not def or not rng.percent(def.chance or 100) do
+		def = rng.table(defs)
+	end
+
+	if def.mount then def.mount() end
+	local bkgs = core.display.loadImage(def.name) or core.display.loadImage("/data/gfx/background/tome.png")
+	local logo = nil
+	if def.logo then logo = {(core.display.loadImage(def.logo) or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()} end
+	if def.umount then def.umount() end
+
+	return bkgs, logo
+end
+
 --- List all available addons
 function _M:listAddons(mod, ignore_compat)
 	local adds = {}
-	local load = function(dir, teaa)
+	local load = function(dir, teaa, teaac)
 		local add_def = loadfile(dir.."/init.lua")
 		if add_def then
 			local add = {}
@@ -299,6 +380,7 @@ function _M:listAddons(mod, ignore_compat)
 			if (ignore_compat or engine.version_nearly_same(mod.version, add.version)) and add.for_module == mod.short_name then
 				add.dir = dir
 				add.teaa = teaa
+				add.teaac = teaac
 				add.natural_compatible = engine.version_nearly_same(mod.version, add.version)
 				add.version_txt = ("%d.%d.%d"):format(add.version[1], add.version[2], add.version[3])
 				if add.dlc and not profile:isDonator(add.dlc) then add.dlc = "no" end
@@ -309,7 +391,7 @@ function _M:listAddons(mod, ignore_compat)
 	end
 
 	local parse = function(basedir)
-		for i, short_name in ipairs(fs.list(basedir)) do if short_name:find("^"..mod.short_name.."%-") then
+		for i, short_name in ipairs(fs.list(basedir)) do if short_name:find("^"..mod.short_name.."%-") or short_name:find(".teaac$") then
 			local dir = basedir..short_name
 			print("Checking addon", short_name, ":: (as dir)", fs.exists(dir.."/init.lua"), ":: (as teaa)", short_name:find(".teaa$"), "")
 			if fs.exists(dir.."/init.lua") then
@@ -319,6 +401,16 @@ function _M:listAddons(mod, ignore_compat)
 				local mod
 				if fs.exists("/testload/init.lua") then
 					load("/testload", dir)
+				end
+				fs.umount(fs.getRealPath(dir))
+			elseif short_name:find(".teaac$") then
+				fs.mount(fs.getRealPath(dir), "/testload", false)
+				for sdir in fs.iterate("/testload", function(p) return p:find("%-") end) do
+					print(" * Addon collection subaddon", sdir)
+					local mod
+					if fs.exists("/testload/"..sdir.."/init.lua") then
+						load("/testload/"..sdir, dir, sdir)
+					end
 				end
 				fs.umount(fs.getRealPath(dir))
 			end
@@ -454,13 +546,15 @@ You may try to force loading if you are sure the savefile does not use that addo
 
 		if add.data then
 			print(" * with data")
-			if add.teaa then fs.mount("subdir:/data/|"..fs.getRealPath(add.teaa), "/data-"..add.short_name, true)
+			if add.teaac then fs.mount("subdir:/"..add.teaac.."/data/|"..fs.getRealPath(add.teaa), "/data-"..add.short_name, true)
+			elseif add.teaa then fs.mount("subdir:/data/|"..fs.getRealPath(add.teaa), "/data-"..add.short_name, true)
 			else fs.mount(base.."/data", "/data-"..add.short_name, true)
 			end
 		end
 		if add.superload then 
 			print(" * with superload")
-			if add.teaa then fs.mount("subdir:/superload/|"..fs.getRealPath(add.teaa), "/mod/addons/"..add.short_name.."/superload", true)
+			if add.teaac then fs.mount("subdir:/"..add.teaac.."/superload/|"..fs.getRealPath(add.teaa), "/mod/addons/"..add.short_name.."/superload", true)
+			elseif add.teaa then fs.mount("subdir:/superload/|"..fs.getRealPath(add.teaa), "/mod/addons/"..add.short_name.."/superload", true)
 			else fs.mount(base.."/superload", "/mod/addons/"..add.short_name.."/superload", true)
 			end
 			
@@ -468,12 +562,14 @@ You may try to force loading if you are sure the savefile does not use that addo
 		end
 		if add.overload then
 			print(" * with overload")
-			if add.teaa then fs.mount("subdir:/overload/|"..fs.getRealPath(add.teaa), "/", false)
+			if add.teaac then fs.mount("subdir:/"..add.teaac.."/overload/|"..fs.getRealPath(add.teaa), "/", false)
+			elseif add.teaa then fs.mount("subdir:/overload/|"..fs.getRealPath(add.teaa), "/", false)
 			else fs.mount(base.."/overload", "/", false)
 			end
 		end
 		if add.hooks then
-			if add.teaa then fs.mount("subdir:/hooks/|"..fs.getRealPath(add.teaa), "/hooks/"..add.short_name, true)
+			if add.teaac then fs.mount("subdir:/"..add.teaac.."/hooks/|"..fs.getRealPath(add.teaa), "/hooks/"..add.short_name, true)
+			elseif add.teaa then fs.mount("subdir:/hooks/|"..fs.getRealPath(add.teaa), "/hooks/"..add.short_name, true)
 			else fs.mount(base.."/hooks", "/hooks/"..add.short_name, true)
 			end
 
@@ -511,6 +607,7 @@ end
 -- Grab some fun facts!
 function _M:selectFunFact(ffdata)
 	local l = {}
+	local ok = false
 
 	print("Computing fun facts")
 	print(pcall(function()
@@ -524,9 +621,10 @@ function _M:selectFunFact(ffdata)
 		if ffdata.total_deaths then l[#l+1] = ("The character's vault has registered a total of #RED#%d#WHITE# character's deaths"):format(ffdata.total_deaths) end
 		if ffdata.wins_this_version then l[#l+1] = ("The character's vault has registered a total of #LIGHT_BLUE#%d#WHITE# winners for the current version"):format(ffdata.wins_this_version) end
 		if ffdata.latest_donator then l[#l+1] = ("The latest donator is #LIGHT_GREEN#%s#WHITE#. Many thanks to all donators, you are keeping this game alive!"):format(ffdata.latest_donator) end
-
+		ok = true
 	end))
-	table.print(l)
+	if not ok then return false end
+	-- table.print(l)
 
 	return #l > 0 and rng.table(l) or false
 end
@@ -538,14 +636,13 @@ function _M:loadScreen(mod)
 		local has_max = mod.loading_wait_ticks
 		if has_max then core.wait.addMaxTicks(has_max) end
 		local i, max, dir = has_max or 20, has_max or 20, -1
-		local backname = util.getval(mod.background_name) or "tome"
+		local bkgs, logo = self:listBackgrounds(mod)
 
-		local bkgs = core.display.loadImage("/data/gfx/background/"..backname..".png") or core.display.loadImage("/data/gfx/background/tome.png")
 		local sw, sh = core.display.size()
 		local bw, bh = bkgs:getSize()
+		local obw, obh = bkgs:getSize()
 		local bkg = {bkgs:glTexture()}
 
-		local logo = {(core.display.loadImage("/data/gfx/background/"..backname.."-logo.png") or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()}
 		local pubimg, publisher = nil, nil
 		if mod.publisher_logo then
 			pubimg, publisher = core.display.loadImage("/data/gfx/background/"..mod.publisher_logo..".png"), nil
@@ -557,8 +654,8 @@ function _M:loadScreen(mod)
 		local middle = {core.display.loadImage("/data/gfx/metal-ui/waiter/middle.png"):glTexture()}
 		local bar = {core.display.loadImage("/data/gfx/metal-ui/waiter/bar.png"):glTexture()}
 
-		local font = core.display.newFont("/data/font/DroidSans.ttf", 12)
-		local bfont = core.display.newFont("/data/font/DroidSans.ttf", 16)
+		local font = FontPackage:get("small")
+		local bfont = FontPackage:get("default")
 
 		local dw, dh = math.floor(sw / 2), left[7]
 		local dx, dy = math.floor((sw - dw) / 2), sh - dh
@@ -635,19 +732,24 @@ function _M:loadScreen(mod)
 		return function()
 			-- Background
 			local x, y = 0, 0
+			bw, bh = sw, sh
 			if bw > bh then
-				bh = sw * bh / bw
-				bw = sw
+				bh = bw * obh / obw
 				y = (sh - bh) / 2
+				if bh < sh then
+					bh = sh
+					bw = bh * obw / obh
+					x = (sw - bw) / 2
+					y = 0
+				end
 			else
-				bw = sh * bw / bh
-				bh = sh
+				bw = bh * obw / obh
 				x = (sw - bw) / 2
 			end
-			bkg[1]:toScreenFull(x, y, bw, bh, bw * bkg[4], bh * bkg[5])
+			bkg[1]:toScreenFull(x, y, bw, bh, bw * bkg[2] / obw, bh * bkg[3] / obh)
 
 			-- Logo
-			logo[1]:toScreenFull(0, 0, logo[6], logo[7], logo[2], logo[3])
+			if logo then logo[1]:toScreenFull(0, 0, logo[6], logo[7], logo[2], logo[3]) end
 
 			-- Publisher Logo
 			if publisher then publisher[1]:toScreenFull(sw - publisher[6], 0, publisher[6], publisher[7], publisher[2], publisher[3]) end
@@ -726,6 +828,12 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	-- Init the module directories
 	fs.mount(engine.homepath, "/")
 	mod.load("setup")
+
+	-- Load font packages
+	FontPackage:loadDefinition("/data/font/packages/default.lua")
+	if mod.font_packages_definitions then FontPackage:loadDefinition(mod.font_packages_definitions) end
+	FontPackage:setDefaultId(util.getval(mod.font_package_id))
+	FontPackage:setDefaultSize(util.getval(mod.font_package_size))
 
 	-- Check the savefile if possible, to add to the progress bar size
 	local savesize = 0

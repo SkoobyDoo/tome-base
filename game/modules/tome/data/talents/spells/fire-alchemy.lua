@@ -28,8 +28,8 @@ newTalent{
 	cooldown = 30,
 	tactical = { BUFF = 2 },
 	getIncrease = function(self, t) return self:combatTalentScale(t, 0.05, 0.25) * 100 end,
+	sustain_slots = 'alchemy_infusion',
 	activate = function(self, t)
-		cancelAlchemyInfusions(self)
 		game:playSoundNear(self, "talents/arcane")
 		local ret = {}
 		self:talentTemporaryValue(ret, "inc_damage", {[DamageType.FIRE] = t.getIncrease(self, t)})
@@ -95,7 +95,7 @@ newTalent{
 			self:project(tg, x, y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
 				if target and not target:hasEffect(target.EFF_BURNING) and self:reactionToward(target) < 0 then
-					target:setEffect(target.EFF_BURNING, heat.dur + math.ceil(t.getDuration(self, t)/3), {src=self, power=heat.power}) 
+					target:setEffect(target.EFF_BURNING, heat.dur + math.ceil(t.getDuration(self, t)/3), {src=self, power=heat.power})
 				end
 			end)
 		end
@@ -221,7 +221,7 @@ newTalent{
 		local insightdam = t.getFireDamageInSight(self, t)
 		local res = t.getResistance(self, t)
 		local manadrain = t.getManaDrain(self, t)
-		return ([[Turn your body into pure flame, increasing your fire resistance by %d%%, burning any creatures attacking you for %0.2f fire damage, and projecting %d random slow-moving fire bolts per turns at targets in sight, doing %0.2f fire damage with each bolt.
+		return ([[Turn your body into pure flame, increasing your fire resistance by %d%%, burning any creatures attacking you for %0.2f fire damage, and projecting %d random slow-moving fire bolts per turn at targets in sight, doing %0.2f fire damage with each bolt.
 		The projectiles safely go through your friends without harming them.
 		This powerful spell drains %0.2f mana while active.
 		The damage and resistance will increase with your Spellpower.]]):

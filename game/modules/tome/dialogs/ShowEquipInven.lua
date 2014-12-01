@@ -52,19 +52,34 @@ function _M:init(title, equip_actor, filter, action, on_select, inven_actor)
 		end
 	end
 
-	self.c_doll = EquipDoll.new{actor=equip_actor, drag_enable=true, filter=filter,
+	self.c_doll = EquipDoll.new{
+		subobject=equip_actor:attr("can_tinker") and "getTinker" or nil,
+		subobject_restrict_slots=equip_actor.tinker_restrict_slots,
+		actor=equip_actor, drag_enable=true, filter=filter,
 		fct = function(item, button, event) self:use(item, button, event) end,
 		on_select = function(ui, inven, item, o) if ui.ui.last_display_x then self:select{last_display_x=ui.ui.last_display_x+ui.ui.w, last_display_y=ui.ui.last_display_y, object=o} end end,
 		actorWear = function(ui, wear_inven, wear_item, wear_o)
-			if ui:getItem() then 
-				local bi = self.equip_actor:getInven(ui.inven)
-				local ws = self.equip_actor:getInven(wear_o:wornInven())
-				local os = self.equip_actor:getObjectOffslot(wear_o)
-				if bi and ((ws and ws.id == bi.id) or (os and self.equip_actor:getInven(os).id == bi.id)) then
-					self.equip_actor:doTakeoff(ui.inven, ui.item, ui:getItem(), true, self.inven_actor)
+			if wear_o.is_tinker then
+				local base_inven, base_item = ui.inven, ui.item
+				-- Find appropriate slot
+				if not base_inven or not base_item then
+					base_inven, base_item = self:findTinkerSpot(wear_o)
 				end
+				if base_inven and base_item then
+					local base_o = base_inven[base_item]
+					self.equip_actor:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, base_o, true)
+				end
+			else
+				if ui:getItem() then
+					local bi = self.equip_actor:getInven(ui.inven)
+					local ws = self.equip_actor:getInven(wear_o:wornInven())
+					local os = self.equip_actor:getObjectOffslot(wear_o)
+					if bi and ((ws and ws.id == bi.id) or (os and self.equip_actor:getInven(os).id == bi.id)) then
+						self.equip_actor:doTakeoff(ui.inven, ui.item, ui:getItem(), true, self.inven_actor)
+					end
+				end
+				self.equip_actor:doWear(wear_inven, wear_item, wear_o, self.inven_actor)
 			end
-			self.equip_actor:doWear(wear_inven, wear_item, wear_o, self.inven_actor)
 			self.c_inven:generateList()
 		end
 	}
@@ -224,7 +239,7 @@ function _M:use(item, button, event)
 end
 
 function _M:unload()
-	for inven_id = 1, #self.inven_actor.inven_def do if self.inven_actor.inven[inven_id] then for item, o in ipairs(self.inven_actor.inven[inven_id]) do o.__new_pickup = nil end end end
+	for inven_id = 1, #self.inven_actor.inven_def do if self.inven_actor.inven[inven_id] then for item, o in ipairs(self.inven_actor.inven[inven_id]) do o:forAllStack(function(so) so.__new_pickup = nil end) end end end
 end
 
 function _M:updateTitle(title)
@@ -261,7 +276,12 @@ end
 
 function _M:onDragTakeoff()
 	local drag = game.mouse.dragged.payload
-	if drag.kind == "inventory" and drag.inven and self.equip_actor:getInven(drag.inven) and self.equip_actor:getInven(drag.inven).worn then
+
+	if drag.kind == "inventory" and drag.inven and self.equip_actor:getInven(drag.inven) and self.equip_actor:getInven(drag.inven).worn and drag.object.is_tinker then
+		self.equip_actor:doTakeoffTinker(self.equip_actor:getInven(drag.inven)[drag.item_idx], drag.object)
+		self.c_inven:generateList()
+		game.mouse:usedDrag()
+	elseif drag.kind == "inventory" and drag.inven and self.equip_actor:getInven(drag.inven) and self.equip_actor:getInven(drag.inven).worn then
 		self.equip_actor:doTakeoff(drag.inven, drag.item_idx, drag.object, nil, self.inven_actor)
 		self.c_inven:generateList()
 		game.mouse:usedDrag()
@@ -279,4 +299,8 @@ end
 
 function _M:generateList()
 	self.c_inven:generateList()
+end
+
+function _M:findTinkerSpot(tinker)
+	return self.equip_actor:findTinkerSpot(tinker)
 end

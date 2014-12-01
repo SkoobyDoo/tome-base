@@ -108,8 +108,7 @@ uberTalent{
 	info = function(self, t)
 		return ([[You can wrap temporal threads around you, assuming the form of a telugoroth for 10 turns.
 		While in this form you gain pinning, bleeding, blindness and stun immunity, 30%% temporal resistance, your temporal damage bonus is set to your current highest damage bonus + 30%%, 50%% of the damage you deal becomes temporal, and you gain 20%% temporal resistance penetration.
-		You also are able to cast two anomalies: Anomaly Rearrange and Anomaly Temporal Storm.
-		Transforming to this form will increase your paradox by 400 but also grant the equivalent of +200 willpower to control paradoxes and failures. This reverts back at the end of the effect.]])
+		You also are able to cast two anomalies: Anomaly Rearrange and Anomaly Temporal Storm.]])
 		:format()
 	end,
 }
@@ -182,6 +181,8 @@ uberTalent{
 			who:learnTalent(who.T_BONE_SHIELD,true,math.ceil(tlevel*2/3))
 		elseif who.name == "mucus ooze" then
 			who:learnTalent(who.T_VIRULENT_DISEASE,true,tlevel)
+		elseif who.name == "temporal hound" then
+			who:learnTalent(who.T_ELEMENTAL_DISCORD,true,tlevel)
 		else
 --			print("Error: attempting to apply talent Blighted Summoning to incorrect creature type")
 			return false
@@ -214,6 +215,7 @@ uberTalent{
 		- Yeek Wayists: Dark Portal
 		- Bloated Oozes: Bone Shield (level %d)
 		- Mucus Oozes: Virulent Disease
+		- Temporal Hounds: Elemental Discord
 		Your necrotic minions and wild-summons get a bonus to Magic equal to yours.
 		The talent levels increase with your level, and other race- or object-based summons may also be affected.
 		]]):format(tl,math.ceil(tl*2/3))

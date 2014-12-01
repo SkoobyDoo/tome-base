@@ -20,61 +20,13 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
-	name = "Trim Threads",
+	name = "Disentangle",
 	type = {"chronomancy/fate-threading", 1},
 	require = chrono_req1,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	cooldown = 4,
-	tactical = { ATTACKAREA = { TEMPORAL = 2 } },
-	range = 10,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.5, 2.5)) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self)) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
-	end,
-	requires_target = true,
-	direct_hit = true,
-	doAnomaly = function(self, t, target, eff)
-		self:project({type=hit}, target.x, target.y, DamageType.TEMPORAL, eff.power * eff.dur)
-		target:removeEffect(target.EFF_TRIM_THREADS)
-	end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		local _ _, x, y = self:canProject(tg, x, y)
-		
-		local damage = self:spellCrit(t.getDamage(self, t))
-		self:project(tg, x, y, function(px, py)
-			local target = game.level.map(px, py, Map.ACTOR)
-			if not target then return end
-			target:setEffect(target.EFF_TRIM_THREADS, 3, {power=damage/3, src=self, apply_power=getParadoxSpellpower(self)})
-		end)
-
-		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
-
-		game:playSoundNear(self, "talents/dispel")
-
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local radius = self:getTalentRadius(t)
-		return ([[Deals %0.2f temporal damage over three turns to all targets in a radius of %d.  If the target is hit by an Anomaly the remaining damage will be done instantly.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), radius)
-	end,
-}
-
-newTalent{
-	name = "Disentangle",
-	type = {"chronomancy/fate-threading", 2},
-	require = chrono_req2,
-	points = 5,
 	cooldown = 12,
 	tactical = { PARADOX = 2 },
-	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self)) end,
+	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
 	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
 	anomaly_type = "no-major",
 	no_energy = true,
@@ -96,14 +48,131 @@ newTalent{
 }
 
 newTalent{
-	name = "Bias Weave",
+	name = "Preserve Pattern",
+	type = {"chronomancy/fate-threading", 2},
+	require = chrono_req2,
+	mode = "sustained", 
+	sustain_paradox = 0,
+	points = 5,
+	cooldown = 10,
+	tactical = { DEFEND = 2 },
+	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 6))) end,
+	getConversionRatio = function(self, t) return 200 / self:combatTalentSpellDamage(t, 60, 600) end,
+	damage_feedback = function(self, t, p, src)
+		if p.particle and p.particle._shader and p.particle._shader.shad and src and src.x and src.y then
+			local r = -rng.float(0.2, 0.4)
+			local a = math.atan2(src.y - self.y, src.x - self.x)
+			p.particle._shader:setUniform("impact", {math.cos(a) * r, math.sin(a) * r})
+			p.particle._shader:setUniform("impact_tick", core.game.getTime())
+		end
+	end,
+	iconOverlay = function(self, t, p)
+		local val = p.rest_count or 0
+		if val <= 0 then return "" end
+		local fnt = "buff_font"
+		return tostring(math.ceil(val)), fnt
+	end,
+	doPerservePattern = function(self, t, src, dam)
+		local absorb = dam * t.getPercent(self, t)
+		local paradox = absorb*t.getConversionRatio(self, t)
+		self:setEffect(self.EFF_PRESERVE_PATTERN, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
+		game:delayedLogMessage(self, nil,  "preserve pattern", "#LIGHT_BLUE##Source# converts damage to paradox!")
+		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
+		dam = dam - absorb
+		
+		return dam
+	end,
+	activate = function(self, t)
+		game:playSoundNear(self, "talents/arcane")
+
+		local particle
+		if core.shader.active(4) then
+			particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="runicshield"}, {type="runicshield", shieldIntensity=0.14, ellipsoidalFactor=1, scrollingSpeed=-1, time_factor=12000, bubbleColor={1, 0.5, 0.3, 0.2}, auraColor={1, 0.5, 0.3, 1}}))
+		else
+			particle = self:addParticles(Particles.new("time_shield", 1))
+		end
+
+		return {
+			particle = particle,
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeParticles(p.particle)
+		return true
+	end,
+	info = function(self, t)
+		local ratio = t.getPercent(self, t) * 100
+		local absorb = t.getConversionRatio(self, t) * 100
+		local duration = t.getDuration(self, t)
+		return ([[While active, %d%% of all damage you take increases your Paradox by %d%% of the damage absorbed over %d turns.
+		The amount of Paradox damage you recieve will be reduced by your Spellpower.]]):
+		format(ratio, absorb, duration)
+	end,
+}
+
+newTalent{
+	name = "Trim Threads",
 	type = {"chronomancy/fate-threading", 3},
 	require = chrono_req3,
+	points = 5,
+	cooldown = 4,
+	tactical = { ATTACKAREA = { TEMPORAL = 2 } },
+	range = 10,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
+	getReduction = function(self, t) return self:getTalentLevel(t) * 2 end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, nowarning=true, talent=t}
+	end,
+	requires_target = true,
+	direct_hit = true,
+	doAnomaly = function(self, t, target, eff)
+		self:project({type=hit}, target.x, target.y, DamageType.TEMPORAL, eff.power * eff.dur)
+		target:removeEffect(target.EFF_TRIM_THREADS)
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, x, y = self:canProject(tg, x, y)
+		
+		local damage = self:spellCrit(t.getDamage(self, t))
+		self:project(tg, x, y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if not target then return end
+			target:setEffect(target.EFF_TRIM_THREADS, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
+		end)
+
+		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
+
+		game:playSoundNear(self, "talents/tidalwave")
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local duration = t.getDuration(self, t)
+		local radius = self:getTalentRadius(t)
+		local reduction = t.getReduction(self, t)
+		return ([[Deals %0.2f temporal damage over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
+		If the target is hit by an Anomaly the remaining damage will be done instantly.
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, reduction)
+	end,
+}
+
+newTalent{
+	name = "Bias Weave",
+	type = {"chronomancy/fate-threading", 4},
+	require = chrono_req4,
 	points = 5,
 	cooldown = 10,
 	-- Anomaly biases can be set manually for monsters
 	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
-	on_pre_use = function(self, t, silent) if not self == game.player then return false end	return true end,
+	no_npc_use = true,  -- so rares don't learn useless talents
+	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
+	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
 	getBiasChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
 	getTargetChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
 	getAnomalySpeed = function(self, t) return self:combatTalentLimit(t, 1, 0.10, .75) end,
@@ -140,73 +209,5 @@ newTalent{
 		You also may bias the type of anomaly effects you produce with %d%% probability.
 		Additionally random anomalies only cost you %d%% of a turn rather than a full turn when they occur.
 		Major anomalies, those occuring when your modified Paradox is over 600, are not affected by this talent.]]):format(target_chance, bias_chance, anomaly_recovery)
-	end,
-}
-
-newTalent{
-	name = "Preserve Pattern",
-	type = {"chronomancy/fate-threading", 4},
-	require = chrono_req4,
-	points = 5,
-	mode = "sustained",
-	sustain_paradox = 48,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 15, 45, 25)) end, -- Limit >15
-	tactical = { DEFEND = 2 },
-	getHeal = function(self, t) return self.max_life * self:combatTalentLimit(t, 1.5, 0.09, 0.4) end, -- Limit < 150% max life (to survive a large string of hits between turns)
-	callbackOnHit = function(self, t, cb)
-		local p = self:isTalentActive(t.id)
-		
-		if p and p.rest_count <= 0 and cb.value >= self.life then
-			-- Save them from the hit and heal up
-			cb.value = 0
-			self.life = 1
-			self:heal(t.getHeal(self, t))
-			
-			-- Make them invulnerable so they don't die to anomalies
-			game.logSeen(self, "#STEEL_BLUE#%s is rapidly shunted into another timeline!#LAST#", self.name:capitalize())
-			local invuln = self.invulnerable
-			self.invulnerable = 1
-			
-			-- Make some anomalies and remove invulnerability
-			for i = 1, rng.avg(3, 6, 3) do self:paradoxDoAnomaly(0, nil, "forced", self, true) end
-			self.invulnerable = invuln
-			
-			-- Set the counter on the sustain
-			p.rest_count = self:getTalentCooldown(t)
-			if self.player then world:gainAchievement("AVOID_DEATH", self) end
-		end
-		
-		return cb.value
-	end,
-	callbackOnActBase = function(self, t)
-		local p = self:isTalentActive(t.id)
-		if p.rest_count > 0 then p.rest_count = p.rest_count - 1 end
-	end,
-	iconOverlay = function(self, t, p)
-		local val = p.rest_count or 0
-		if val <= 0 then return "" end
-		local fnt = "buff_font"
-		return tostring(math.ceil(val)), fnt
-	end,
-	activate = function(self, t)
-		game:playSoundNear(self, "talents/heal")
-		local ret = { rest_count = 0 }
-	--[[if core.shader.active(4) then
-			ret.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {toback=true, a=0.6, rotation=0, radius=2, img="flamesgeneric"}, {type="sunaura", time_factor=6000}))
-		else
-			ret.particle = self:addParticles(Particles.new("golden_shield", 1))
-		end]]
-		return ret
-	end,
-	deactivate = function(self, t, p)
-	--	self:removeParticles(p.particle)
-		return true
-	end,
-	info = function(self, t)
-		local heal = t.getHeal(self, t)
-		local cooldown = self:getTalentCooldown(t)
-		return ([[Any attack that would drop you below 1 hit point instead triggers Preserve Pattern, setting your life to 1, then healing you for %d.
-		This effect causes three to six anomalies to occur as you move from timeline to timeline until you find one in which you're still alive.
-		These anomalies may not be targeted though they may be biased.  This effect can only occur once every %d turns.]]):format(heal, cooldown)
 	end,
 }

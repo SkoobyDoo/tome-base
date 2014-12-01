@@ -28,7 +28,7 @@ newTalent{
 	no_npc_use = true,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
-		local d d = self:showInventory("Telekinetically grasp which item?", inven, function(o)
+		local ret = self:talentDialog(self:showInventory("Telekinetically grasp which item?", inven, function(o)
 			return (o.type == "weapon" or o.type == "gem") and o.subtype ~= "sling"
 		end, function(o, item)
 			local pf = self:getInven("PSIONIC_FOCUS")
@@ -71,11 +71,9 @@ newTalent{
 			game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true})
 
 			self:sortInven()
-			d.used_talent = true
-		end)
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent) end
-		if not coroutine.yield() then return nil end
+			self:talentDialogReturn(true)
+		end))
+		if not ret then return nil end
 		return true
 	end,
 	info = function(self, t)
@@ -193,26 +191,18 @@ newTalent{
 					end
 				end)
 				if #list <= 0 then return end
-				
-				local elem = {
-					black = {DamageType.ACID, "acid"},
-					blue = {DamageType.LIGHTNING, "lightning_explosion"},
-					green = {DamageType.NATURE, "slime"},
-					red = {DamageType.FIRE, "flame"},
-					violet = {DamageType.ARCANE, "manathrust"},
-					white = {DamageType.COLD, "freeze"},
-					yellow = {DamageType.LIGHT, "light"},
-				}
-				local bolt = elem[gem.subtype]
-				
+
+				local color = gem.color_attributes or {}
+				local bolt = {color.damage_type or 'MIND', color.particle or 'light'}
+
 				table.sort(list, "dist")
 				local a = list[1].a
-				self:project({type="ball", range=6, radius=0, selffire=false, talent=t}, a.x, a.y, bolt[1], self:hasEffect(self.EFF_PSIFRENZY).damage, {type=bolt[2]})
-				
+				self:project({type="ball", range=6, radius=0, selffire=false, talent=t}, a.x, a.y, bolt[1], self:mindCrit(self:hasEffect(self.EFF_PSIFRENZY).damage), {type=bolt[2]})
+
 			end
 			return
 		end
-		
+
 		if not p.mindstar_grab then return end
 		if not rng.percent(p.mindstar_grab.chance) then return end
 
@@ -274,8 +264,8 @@ newTalent{
 	info = function(self, t)
 		local base = [[Allows you to wield a physical melee weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
 		A gem will provide +3 bonus to all primary stats per tier of the gem.
-		A mindstar will randomly try to telekinetically grab a far away foe (5% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
-		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations (for all melee weapons).
+		A mindstar will randomly try to telekinetically grab a far away foe (10% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
+		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
 
 		]]
 
@@ -290,7 +280,7 @@ newTalent{
 		local speed = 1
 		if o.type == "gem" then
 			local ml = o.material_level or 1
-			base = base..([[The telekinetically-wielded gem grants you +%d stats.]]):format(ml * 4)
+			base = base..([[The telekinetically-wielded gem grants you +%d stats.]]):format(ml * 3)
 		elseif o.subtype == "mindstar" then
 			local ml = o.material_level or 1			
 			base = base..([[The telekinetically-wielded mindstar has a %d%% chance to grab a foe up to %d range away.]]):format((ml + 1) * 5, ml + 2)

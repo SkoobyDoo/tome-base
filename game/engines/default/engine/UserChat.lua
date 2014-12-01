@@ -444,7 +444,8 @@ function _M:talkBox(on_end, only_friends)
 	if not profile.auth then return end
 	local Talkbox = require "engine.dialogs.Talkbox"
 	local d = Talkbox.new(self, on_end, only_friends)
-	if not d.nobody then game:registerDialog(d) end
+	if not d.nobody then game:registerDialog(d)
+	else game.log("#CRIMSON#You are not subscribed to any channel, you can change that in the game options.#LAST#") end
 
 	self:updateChanList()
 end

@@ -87,7 +87,7 @@ newTalent{
 	psi = 10,
 	points = 5,
 	tactical = { CLOSEIN = 2 },
-	range = function(self, t) return self:combatTalentLimit(t, 10, 3, 7) end, -- Limit base range to 10
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 7)) end, -- Limit base range to 10
 	action = function(self, t)
 		local tg = {type="bolt", range=self:getTalentRange(t)}
 		local x, y = self:getTarget(tg)

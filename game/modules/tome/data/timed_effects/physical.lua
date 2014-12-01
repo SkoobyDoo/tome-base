@@ -439,7 +439,7 @@ newEffect{
 		for i = 1, 4 do
 			local t = rng.tableRemove(tids)
 			if not t then break end
-			self.talents_cd[t.id] = 1 -- Just set cooldown to 1 since cooldown does not decrease while stunned
+			self:startTalentCooldown(t.id, 1) -- Just set cooldown to 1 since cooldown does not decrease while stunned
 		end
 	end,
 	on_timeout = function(self, eff)
@@ -475,7 +475,7 @@ newEffect{
 		for i = 1, 3 do
 			local t = rng.tableRemove(tids)
 			if not t then break end
-			self.talents_cd[t.id] = 1 -- Just set cooldown to 1 since cooldown does not decrease while stunned
+			self:startTalentCooldown(t.id, 1) -- Just set cooldown to 1 since cooldown does not decrease while stunned
 		end
 	end,
 	deactivate = function(self, eff)
@@ -1025,7 +1025,7 @@ newEffect{
 newEffect{
 	name = "BURROW", image = "talents/burrow.png",
 	desc = "Burrow",
-	long_desc = function(self, eff) return "The target is able to burrow into walls." end,
+	long_desc = function(self, eff) return ("The target is able to burrow into walls, and additionally has %d more APR and %d%% more physical resistance penetration."):format(eff.power, eff.power / 2) end,
 	type = "physical",
 	subtype = { earth=true },
 	status = "beneficial",
@@ -1033,6 +1033,8 @@ newEffect{
 	activate = function(self, eff)
 		eff.pass = self:addTemporaryValue("can_pass", {pass_wall=1})
 		eff.dig = self:addTemporaryValue("move_project", {[DamageType.DIG]=1})
+		self:effectTemporaryValue(eff, "combat_apr", eff.power)
+		self:effectTemporaryValue(eff, "resists_pen", {[DamageType.PHYSICAL]=eff.power / 2 })
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("can_pass", eff.pass)
@@ -2051,7 +2053,9 @@ newEffect{
 			game:delayedLogMessage(self, src, "block_heal", "#CRIMSON##Source# heals from blocking with %s shield!", string.his_her(self))
 		end
 		if eff.properties.ref and src.life then DamageType.defaultProjector(src, src.x, src.y, type, blocked, tmp, true) end
+		local full = false
 		if (self:knowTalent(self.T_RIPOSTE) or amt == 0) and src.life then
+			full = true
 			src:setEffect(src.EFF_COUNTERSTRIKE, (1 + dur_inc) * math.max(1, (src.global_speed or 1)), {power=eff.power, no_ct_effect=true, src=self, crit_inc=crit_inc, nb=nb})
 			if eff.properties.sb then
 				if src:canBe("disarm") then
@@ -2060,7 +2064,13 @@ newEffect{
 					game.logSeen(src, "%s resists the disarming attempt!", src.name:capitalize())
 				end
 			end
+			if eff.properties.on_cs then
+				eff.properties.on_cs(self, eff, dam, type, src)
+			end
 		end-- specify duration here to avoid stacking for high speed attackers
+
+		self:fireTalentCheck("callbackOnBlock", eff, dam, type, src)
+
 		return amt
 	end,
 	activate = function(self, eff)
@@ -2820,30 +2830,68 @@ newEffect {
 newEffect{
 	name = "CELERITY", image = "talents/celerity.png",
 	desc = "Celerity",
-	long_desc = function(self, eff) return ("The target is moving is %d%% faster."):format(eff.speed * 100 * eff.stack) end,
+	long_desc = function(self, eff) return ("The target is moving is %d%% faster."):format(eff.speed * 100 * eff.charges) end,
 	type = "physical",
-	display_desc = function(self, eff) return eff.stack.." Celerity" end,
-	charges = function(self, eff) return eff.stack end,
+	display_desc = function(self, eff) return eff.charges.." Celerity" end,
+	charges = function(self, eff) return eff.charges end,
 	subtype = { speed=true, temporal=true },
 	status = "beneficial",
-	parameters = {speed=0.1, stack=1, max_stack=3},
+	parameters = {speed=0.1, charges=1, max_charges=3},
 	on_merge = function(self, old_eff, new_eff)
 		-- remove the old value
 		self:removeTemporaryValue("movement_speed", old_eff.tmpid)
 		
 		-- add a charge
-		old_eff.stack = math.min(old_eff.stack + 1, new_eff.max_stack)
+		old_eff.charges = math.min(old_eff.charges + 1, new_eff.max_charges)
 		
 		-- and apply the current values	
-		old_eff.tmpid = self:addTemporaryValue("movement_speed", old_eff.speed * old_eff.stack)
+		old_eff.tmpid = self:addTemporaryValue("movement_speed", old_eff.speed * old_eff.charges)
 		
 		old_eff.dur = new_eff.dur
 		return old_eff
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("movement_speed", eff.speed * eff.stack)
+		eff.tmpid = self:addTemporaryValue("movement_speed", eff.speed * eff.charges)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("movement_speed", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "GRAVITY_SLOW", image = "talents/gravity_well.png",
+	desc = "Gravity Slow",
+	long_desc = function(self, eff) return ("The target is caught in a gravity well, reducing movement speed by %d%%."):format(eff.slow* 100) end,
+	type = "physical",
+	subtype = { speed=true },
+	status = "detrimental",
+	parameters = { slow=0.15 },
+	on_gain = function(self, err) return "#Target# is slowed by gravity.", "+Gravity Slow" end,
+	on_lose = function(self, err) return "#Target# is free from the gravity well.", "-Gravity Slow" end,
+	activate = function(self, eff)
+		eff.slowid = self:addTemporaryValue("movement_speed", -eff.slow)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("movement_speed", eff.slowid)
+	end,
+}
+
+newEffect{
+	name = "ANTI_GRAVITY", image = "talents/gravity_locus.png",
+	desc = "Anti-Gravity",
+	long_desc = function(self, eff) return ("Target is caught in an anti-gravity field, halving its knockback resistance."):format() end,
+	type = "physical",
+	subtype = { spacetime=true },
+	status = "detrimental",
+	on_gain = function(self, err) return nil, "+Anti-Gravity" end,
+	on_lose = function(self, err) return nil, "-Anti-Gravity" end,
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = new_eff.dur
+		return old_eff
+	end,
+	activate = function(self, eff)
+		if self:attr("knockback_immune") then
+			self:effectTemporaryValue(eff, "knockback_immune", -self:attr("knockback_immune") / 2)
+		end
 	end,
 }

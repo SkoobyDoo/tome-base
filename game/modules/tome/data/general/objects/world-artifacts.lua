@@ -673,6 +673,8 @@ newEntity{ base = "BASE_KNIFE",
 	unique = true,
 	name = "Silent Blade", image = "object/artifact/dagger_silent_blade.png",
 	unided_name = "shining dagger",
+	moddable_tile = "special/%s_dagger_silent_blade",
+	moddable_tile_big = true,
 	desc = [[A thin, dark dagger that seems to meld seamlessly into the shadows.]],
 	level_range = {23, 28},
 	rarity = 200,
@@ -695,6 +697,8 @@ newEntity{ base = "BASE_KNIFE", define_as = "ART_PAIR_MOON",
 	unique = true,
 	name = "Moon", image = "object/artifact/dagger_moon.png",
 	unided_name = "crescent blade",
+	moddable_tile = "special/%s_dagger_moon",
+	moddable_tile_big = true,
 	desc = [[A viciously curved blade that a folk story says is made from a material that originates from the moon.  Devouring the light around it, it fades.]],
 	level_range = {20, 30},
 	rarity = 200,
@@ -731,6 +735,8 @@ newEntity{ base = "BASE_KNIFE", define_as = "ART_PAIR_STAR",
 	unique = true,
 	name = "Star",
 	unided_name = "jagged blade", image = "object/artifact/dagger_star.png",
+	moddable_tile = "special/%s_dagger_star",
+	moddable_tile_big = true,
 	desc = [[Legend tells of a blade, shining bright as a star. Forged from a material fallen from the skies, it glows.]],
 	level_range = {20, 30},
 	rarity = 200,
@@ -834,6 +840,8 @@ newEntity{ base = "BASE_MACE",
 	unique = true,
 	name = "Crooked Club", color = colors.GREEN, image = "object/artifact/weapon_crooked_club.png",
 	unided_name = "weird club",
+	moddable_tile = "special/%s_weapon_crooked_club",
+	moddable_tile_big = true,
 	desc = [[An oddly twisted club with a hefty weight on the end. There's something very strange about it.]],
 	level_range = {12, 20},
 	rarity = 192,
@@ -1270,6 +1278,8 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "crude iron battle axe",
 	name = "Crude Iron Battle Axe of Kroll", color = colors.GREY, image = "object/artifact/crude_iron_battleaxe_of_kroll.png",
+	moddable = "special/crude_iron_battleaxe_of_kroll",
+	moddable_tile_big = true,
 	desc = [[Made in times before the Dwarves learned beautiful craftsmanship, the rough appearance of this axe belies its great power. Only Dwarves may harness its true strength, however.]],
 	require = { stat = { str=50 }, },
 	level_range = {39, 46},
@@ -1415,6 +1425,9 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
 	unique = true,
 	name = "Skin of Many", image = "object/artifact/robe_skin_of_many.png",
 	unided_name = "stitched skin armour",
+	moddable_tile = "special/skin_of_many",
+	moddable_tile2 = "special/skin_of_many_legs",
+	moddable_tile_big = true,
 	desc = [[The stitched-together skins of many creatures. Some eyes and mouths still decorate the robe, and some still live, screaming in tortured agony.]],
 	color = colors.BROWN,
 	level_range = {12, 22},
@@ -1589,6 +1602,8 @@ newEntity{ base = "BASE_MACE",
 	power_source = {nature=true},
 	name = "Ureslak's Femur", define_as = "URESLAK_FEMUR", image="object/artifact/club_ureslaks_femur.png",
 	unided_name = "a strangely colored bone", unique = true,
+	moddable_tile = "special/%s_club_ureslaks_femur",
+	moddable_tile_big = true,
 	desc = [[A shortened femur of the mighty prismatic dragon, this erratic club still pulses with Ureslak's volatile nature.]],
 	level_range = {42, 50},
 	require = { stat = { str=45, dex=30 }, },
@@ -1657,6 +1672,8 @@ newEntity{ base = "BASE_WARAXE",
 	power_source = {psionic=true},
 	unique = true, unided_name = "razor sharp war axe",
 	name = "Razorblade, the Cursed Waraxe", color = colors.LIGHT_BLUE, image = "object/artifact/razorblade_the_cursed_waraxe.png",
+	moddable_tile = "special/%s_razorblade_the_cursed_waraxe",
+	moddable_tile_big = true,
 	desc = [[This mighty axe can cleave through armour like the sharpest swords, yet hit with all the impact of a heavy club.
 It is said the wielder will slowly grow mad. This, however, has never been proven - no known possessor of this item has lived to tell the tale.]],
 	require = { stat = { str=42 }, },
@@ -1683,6 +1700,8 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "ART_PAIR_TWSWORD",
 	unique = true,
 	name = "Sword of Potential Futures", image = "object/artifact/sword_of_potential_futures.png",
 	unided_name = "under-wrought blade",
+	moddable_tile = "special/%s_sword_of_potential_futures",
+	moddable_tile_big = true,
 	desc = [[Legend has it this blade is one of a pair: twin blades forged in the earliest of days of the Wardens. To an untrained wielder it is less than perfect; to a Warden, it represents the untapped potential of time.]],
 	level_range = {20, 30},
 	rarity = 250,
@@ -1734,6 +1753,8 @@ newEntity{ base = "BASE_KNIFE", define_as = "ART_PAIR_TWDAG",
 	unique = true,
 	name = "Dagger of the Past", image = "object/artifact/dagger_of_the_past.png",
 	unided_name = "rusted blade",
+	moddable_tile = "special/%s_dagger_of_the_past",
+	moddable_tile_big = true,
 	desc = [[Legend has it this blade is one of a pair: twin blades forged in the earliest of days of the Wardens. To an untrained wielder it is less than perfect; to a Warden, it represents the opportunity to learn from the mistakes of the past.]],
 	level_range = {20, 30},
 	rarity = 250,
@@ -2562,6 +2583,8 @@ newEntity{ base = "BASE_KNIFE",
 	unique = true,
 	name = "Umbral Razor", image = "object/artifact/dagger_silent_blade.png",
 	unided_name = "shadowy dagger",
+	moddable_tile = "special/%s_dagger_silent_blade",
+	moddable_tile_big = true,
 	desc = [[This dagger seems to be formed of pure shadows, with a strange miasma surrounding it.]],
 	level_range = {12, 25},
 	rarity = 200,
@@ -2935,6 +2958,8 @@ newEntity{ base = "BASE_LONGSWORD", define_as="CORPUS",
 	unique = true,
 	name = "Corpathus", image = "object/artifact/corpus.png",
 	unided_name = "bound sword",
+	moddable_tile = "special/%s_corpus",
+	moddable_tile_big = true,
 	desc = [[Thick straps encircle this blade. Jagged edges like teeth travel down the blade, bisecting it. It fights to overcome the straps, but lacks the strength.]],
 	level_range = {20, 30},
 	rarity = 250,
@@ -3029,6 +3054,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	unique = true,
 	name = "Anmalice", image = "object/artifact/anima.png", define_as = "ANIMA",
 	unided_name = "twisted blade",
+	moddable_tile = "special/%s_anmalice",
+	moddable_tile_big = true,
 	desc = [[The eye on the hilt of this blade seems to glare at you, piercing your soul and mind. Tentacles surround the hilt, latching onto your hand.]],
 	level_range = {30, 40},
 	rarity = 250,
@@ -3114,6 +3141,8 @@ newEntity{ base = "BASE_LONGSWORD", define_as="MORRIGOR",
 	power_source = {arcane=true, unknown=true},
 	unique = true, sentient = true,
 	name = "Morrigor", image = "object/artifact/morrigor.png",
+	moddable_tile = "special/%s_morrigor",
+	moddable_tile_big = true,
 	unided_name = "jagged, segmented, sword",
 	desc = [[This heavy, ridged blade emanates magical power, yet as you grasp the handle an icy chill runs its course through your spine. You feel the disembodied presence of all those slain by it. In unison, they demand company.]],
 	level_range = {20, 30},
@@ -3425,6 +3454,7 @@ newEntity{ base = "BASE_SHIELD",
 	unique = true,
 	name = "Summertide",
 	unided_name = "shining gold shield", image = "object/artifact/summertide.png",
+	moddable_tile = "special/%s_hand_summertide", moddable_tile_big = true,
 	level_range = {38, 50},
 	color=colors.GOLD,
 	rarity = 350,
@@ -3640,7 +3670,7 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 	wielder = {
 		combat_def = 6,
 		fatigue = 1,
-		spellpower=5,
+		combat_spellpower=5,
 		inc_stats = { [Stats.STAT_MAG] = 8, [Stats.STAT_CUN] = 8,},
 		resists={
 			[DamageType.ARCANE] = 12,
@@ -5051,6 +5081,8 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "gore stained battleaxe",
 	name = "Eksatin's Ultimatum", color = colors.GREY, image = "object/artifact/eskatins_ultimatum.png",
+	moddable_tile = "special/eskatins_ultimatum",
+	moddable_tile_big = true,
 	desc = [[This gore-stained battleaxe was once used by an infamously sadistic king, who took the time to personally perform each and every execution he ordered. He kept a vault of every head he ever removed, each and every one of them carefully preserved. When he was overthrown, his own head was added as the centrepiece of the vault, which was maintained as a testament to his cruelty.]],
 	require = { stat = { str=50 }, },
 	level_range = {39, 46},
@@ -5375,6 +5407,8 @@ newEntity{ base = "BASE_KNIFE", --Thanks FearCatalyst/FlarePusher!
 	unique = true,
 	name = "Spelldrinker", image = "object/artifact/spelldrinker.png",
 	unided_name = "eerie black dagger",
+	moddable_tile = "special/%s_spelldrinker",
+	moddable_tile_big = true,
 	desc = [[Countless mages have fallen victim to the sharp sting of this blade, betrayed by those among them with greed for ever greater power.
 Passed on and on, this blade has developed a thirst of its own.]],
 	level_range = {20, 30},
@@ -5438,6 +5472,8 @@ newEntity{ base = "BASE_LONGSWORD", --Thanks BadBadger?
 	unique = true,
 	name = "Twilight's Edge", image = "object/artifact/twilights_edge.png",
 	unided_name = "shining long sword",
+	moddable_tile = "special/%s_twilights_edge",
+	moddable_tile_big = true,
 	level_range = {32, 42},
 	color=colors.GREY,
 	rarity = 250,
@@ -5500,6 +5536,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	unique = true,
 	name = "Acera",
 	unided_name = "corroded sword", image = "object/artifact/acera.png",
+	moddable_tile = "special/%s_acera",
+	moddable_tile_big = true,
 	level_range = {25, 35},
 	color=colors.GREEN,
 	rarity = 300,
@@ -5567,6 +5605,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	power_source = {technique=true, psionic=true}, define_as = "BUTCHER",
 	name = "Butcher", unique=true, image="object/artifact/butcher.png",
 	unided_name = "blood drenched shortsword", color=colors.CRIMSON,
+	moddable_tile = "special/%s_butcher",
+	moddable_tile_big = true,
 	desc = [[Be it corruption, madness or eccentric boredom, the halfling butcher by the name of Caleb once took to eating his kin instead of cattle. His spree was never ended and nobody knows where he disappeared to. Only the blade remained, stuck fast in bloodied block. Beneath, a carving said "This was fun, let's do it again some time."]],
 	require = { stat = { str=40 }, },
 	level_range = {36, 48},
@@ -5929,6 +5969,8 @@ newEntity{ base = "BASE_LONGSWORD", --For whatever artists draws this: it's a ra
 	unique = true,
 	name = "Punae's Blade",
 	unided_name = "thin blade", image = "object/artifact/punaes_blade.png",
+	moddable_tile = "special/%s_punaes_blade",
+	moddable_tile_big = true,
 	level_range = {28, 38},
 	color=colors.GREY,
 	rarity = 300,
@@ -6076,6 +6118,8 @@ newEntity{ base = "BASE_KNIFE", --Shibari's #1
 	unique = true,
 	name = "Shantiz the Stormblade",
 	unided_name = "thin stormy blade", image = "object/artifact/shantiz_the_stromblade.png",
+	moddable_tile = "special/%s_shantiz_the_stromblade",
+	moddable_tile_big = true,
 	level_range = {18, 33},
 	material_level = 3,
 	rarity = 300,
@@ -6137,6 +6181,8 @@ newEntity{ base = "BASE_KNIFE",
 	unique = true,
 	name = "Swordbreaker", image = "object/artifact/swordbreaker.png",
 	unided_name = "hooked blade",
+	moddable_tile = "special/%s_swordbreaker",
+	moddable_tile_big = true,
 	desc = [[This ordinary blade is made of fine, sturdy voratun and outfitted with jagged hooks along the edge. This simple appearance belies a great power - the hooked maw of this dagger broke many a blade and the stride of many would-be warriors.]],
 	level_range = {20, 30},
 	rarity = 250,
@@ -6208,6 +6254,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	color = colors.BLUE,
 	name = "Tirakai's Maul", image = "object/artifact/tirakais_maul.png",
 	desc = [[This massive hammer is formed from a thick mass of strange crystalline growths. In the side of the hammer itself you see an empty slot; it looks like a gem of your own could easily fit inside it.]],
+	moddable_tile = "special/tirakais_maul", moddable_tile_big = true,
 	gemDesc = "None", -- Defined by the elemental properties and used by special_desc
 	special_desc = function(self)
 	-- You'll want to color this and such
@@ -6225,6 +6272,17 @@ newEntity{ base = "BASE_GREATMAUL",
 		damrange=1.3,
 		dammod = {str=1.2, mag=0.1},
 	},
+	-- executed for specific gems.
+	-- key corresponds to: gem.define_as or gem.name
+	unique_gems = {
+		GOEDALATH_ROCK = function(maul, gem)
+			maul.combat.damtype = 'SHADOWFLAME'
+			table.mergeAdd(maul.wielder, {
+					inc_damage = {FIRE = 3 * gem.material_level, DARKNESS = 3 * gem.material_level,},
+					resists_pen = {all = 2 * gem.material_level},},
+				true)
+			maul.gemDesc = "Demonic"
+		end,},
 	max_power = 10, power_regen = 1,
 	use_power = { name = "imbue the hammer with a gem of your choice", power = 10,
 		use = function(self, who)
@@ -6260,105 +6318,52 @@ newEntity{ base = "BASE_GREATMAUL",
 					self.act = mod.class.Object.act
 					
 					self.talent_on_spell = nil
-					
-					self.material_level=gem.material_level
-					local scalingFactor = self.material_level
 
-					self.combat.dam = 8 + (12 * scalingFactor)
-					self.combat.apr = (3 * scalingFactor)
-					self.combat.physcrit = 4 + (2 * scalingFactor)
+					local scalingFactor = gem.material_level
+					local combatFactor = math.max(scalingFactor, 2) -- Prevent tier 1 gems from degrading the maul
+
+					self.material_level=combatFactor
+
+					self.combat.dam = 8 + (12 * combatFactor)
+					self.combat.apr = (3 * combatFactor)
+					self.combat.physcrit = 4 + (2 * combatFactor)
 					self.combat.dammod = {str=1.2, mag=0.1}
 					self.combat.damrange = 1.3
-							
+
 					self.wielder = {
 						inc_stats = {[Stats.STAT_MAG] = (2 * scalingFactor), [Stats.STAT_CUN] = (2 * scalingFactor), [Stats.STAT_DEX] = (2 * scalingFactor),},
 					}
-					
+
 
 					-- Each element merges its effect into the combat/wielder tables (or anything else) after the base stats are scaled
 					-- You can modify damage and such here too but you should probably make static tables instead of merging
-					if gem.subtype =="black" then -- Acid
-						self.combat.damtype = DamageType.ACID
-						table.mergeAdd(self.wielder, {inc_damage = { [DamageType.ACID] = 4 * scalingFactor} }, true)
-						
-						self.combat.burst_on_crit = {[DamageType.ACID_DISARM] = 12 * scalingFactor,}
-						self.gemDesc = "Acid"
-					end
-					if gem.subtype =="blue" then  -- Lightning
-						self.combat.damtype = DamageType.LIGHTNING
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.LIGHTNING] = 4 * scalingFactor} 
-						
-							}, true)
-						self.combat.burst_on_crit = {[DamageType.LIGHTNING_DAZE] = 12 * scalingFactor,}
-						self.gemDesc = "Lightning"
-					end
-					if gem.subtype =="green" then  -- Nature
-						self.combat.damtype = DamageType.NATURE
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.NATURE] = 4 * scalingFactor} 
-							
-							}, true)
-						self.combat.burst_on_crit = {[DamageType.SPYDRIC_POISON] = 12 * scalingFactor,}
-						self.gemDesc = "Nature"
-					end
-					if gem.subtype =="red" then  -- Fire					
-						self.combat.damtype = DamageType.FIRE
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.FIRE] = 4 * scalingFactor}, 
-						}, true)
-						self.combat.burst_on_crit = {[DamageType.FLAMESHOCK] = 12 * scalingFactor,}
-						self.gemDesc = "Fire"
-					end
-					if gem.subtype =="violet" then -- Arcane
-						self.combat.damtype = DamageType.ARCANE
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.ARCANE] = 4 * scalingFactor} 
-							
-						}, true)
-						self.combat.burst_on_crit = {[DamageType.ARCANE_SILENCE] = 12 * scalingFactor,}
-						self.gemDesc = "Arcane"
-					end
-					if gem.subtype =="white" then  -- Cold
-						self.combat.damtype = DamageType.COLD
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.COLD] = 4 * scalingFactor} 
-							
-						}, true)
-						self.combat.burst_on_crit = {[DamageType.ICE] = 12 * scalingFactor,}
-						self.gemDesc = "Cold"
-					end
-					if gem.subtype =="yellow" then -- Light
-						self.combat.damtype = DamageType.LIGHT
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.LIGHT] = 4 * scalingFactor} 
-							
-						}, true)	
-						self.combat.burst_on_crit = {[DamageType.LIGHT_BLIND] = 12 * scalingFactor,}
-						self.gemDesc = "Light"
-					end
-					if gem.subtype == "multi-hued"  then -- Some but not all artifacts, if you want to do artifact specific effects make conditionals by name, don't use this
+
+					if gem.on_tirakai_maul_equip then
+						gem:on_tirakai_maul_equip(self)
+					elseif self.unique_gems[gem.define_as or gem.name] then
+						self.unique_gems[gem.define_as or gem.name](self, gem)
+					elseif gem.color_attributes then
+						self.combat.damtype = gem.color_attributes.damage_type
+						table.mergeAdd(self.wielder,
+							{inc_damage = {[gem.color_attributes.damage_type] = 4 * scalingFactor},},
+							true)
+						self.combat.burst_on_crit = {[gem.color_attributes.alt_damage_type] = 12 * scalingFactor,}
+						self.gemDesc = gem.color_attributes.desc or gem.color_attributes.damage_type:lower():capitalize()
+					else -- Backup for weird artifacts.
 						table.mergeAdd(self.combat, {convert_damage = {[DamageType.COLD] = 25, [DamageType.FIRE] = 25, [DamageType.LIGHTNING] = 25, [DamageType.ARCANE] = 25,} }, true)
 						table.mergeAdd(self.wielder, {
 							inc_damage = { all = 2 * scalingFactor},
 							resists_pen = { all = 2 * scalingFactor},
-							}, true)	
-							self.gemDesc = "Unique"							
+							}, true)
+							self.gemDesc = 'Unique'
 					end
-					if gem.subtype == "demonic"  then -- Goedalath Rock
-						self.combat.damtype = DamageType.SHADOWFLAME
-						table.mergeAdd(self.wielder, {
-							inc_damage = { [DamageType.FIRE] = 3 * scalingFactor, [DamageType.DARKNESS] = 3 * scalingFactor,},
-							resists_pen = { all = 2 * scalingFactor},
-							}, true)	
-							self.gemDesc = "Demonic"							
-					end
+
 					game.logPlayer(who, "You imbue your %s with %s.", self:getName{do_colour=true, no_count=true}, gem:getName{do_colour=true, no_count=true})
 
 					--self.name = (gem.name .. " of Divinity")
-					
+
 					table.mergeAdd(self.wielder, gem.imbue_powers, true)
-					
+
 					if gem.talent_on_spell then
 						self.talent_on_spell = self.talent_on_spell or {}
 						table.append(self.talent_on_spell, gem.talent_on_spell)
@@ -6828,3 +6833,73 @@ newEntity{
 	},
 }
 ]=]
+
+-- Semi-random Artifacts
+newEntity{ base = "BASE_LEATHER_CAP", define_as = "DECAYED_VISAGE",
+	power_source = {arcane=true},
+	unique = true,
+	name = "Decayed Visage",
+	unided_name = "mask of mummified skin", image = "object/artifact/bone_runed_skull.png",
+	level_range = {24, 32},
+	color=colors.GRAY,
+	rarity = 200,
+	desc = [[A desiccated mask of human skin, all that remains of a necromancer from the Age of Pyre who failed to achieve lichdom.  The transformative process partially succeeded, leaving him unable to die as his body slowly rotted from the inside out over several years.  Now his spirit resides within this last bit of mummified flesh, still hungering for eternal life.]],
+	cost = 200,
+	material_level=3,
+	encumber = 1,
+	require = { stat = { mag=25, wil=20 }, },
+	wielder = {
+		on_melee_hit = {[DamageType.DRAIN_VIM]=10},
+		max_vim = 25,
+	},
+	max_power = 45, power_regen = 1,
+	use_talent = { id = Talents.T_VIMSENSE, level = 2, power = 25 },
+	finish = function(self, zone, level) -- add the blood magic ego, another arcane or psionic powered ego, and some random powers (at level 25)
+		game.state:addRandartProperties(self, {lev = 25, egos = 2,
+			force_egos = {"of blood magic"},
+--			forbid_power_source = {antimagic=true}, power_source = {arcane = true, psionic=true},
+			power_source = {arcane = true, psionic=true},
+			force_themes = {"dark", "arcane", "blight"}})
+	end,
+}
+
+newEntity{ base = "BASE_GREATMAUL", define_as = "DREAM_MALLEUS",
+	power_source = {technique=true, psionic=true},
+	unique = true,
+	name = "Dream Malleus", color = colors.UMBER, image = "object/artifact/unstoppable_mauler.png",
+	unided_name = "keening hammer",
+	desc = [[A large shimmering maul that seems to produce a ringing in your ears.  It is both as malleable as thought and as hard as the strongest steel.]],
+	level_range = {25, 40},
+	rarity = 300,
+	require = { stat = { str=25, wil=25 }, },
+	cost = 250,
+	material_level = 4,
+	combat = {
+		dam = 56,
+		apr = 5,
+		dammod = {str=1.1, wil=1.2},
+		melee_project={[DamageType.MIND] = 10}
+	},
+	wielder = {
+		combat_mindpower = 15,
+		combat_mindcrit = 5,
+		psi_regen = 0.1,
+		inc_damage={
+			[DamageType.MIND] = 10,
+			[DamageType.PHYSICAL] = 10,
+			},
+		learn_talent = {[Talents.T_DREAM_HAMMER] = 3, [Talents.T_HAMMER_TOSS] = 3},
+		talent_cd_reduction={[Talents.T_HAMMER_TOSS]=2},
+	},
+	finish = function(self, zone, level) -- add the projection and thought-forged egos, plus another possibly physical or mental themed ego, and 25 points of physical or mental themed random powers
+		game.state:addRandartProperties(self, {lev = 0, nb_points_add=25, egos = 3,
+			force_egos = {"of projection", "thought-forged"},
+			force_themes = {'physical', 'mental'},
+			ego_special = function(e) -- reject egos (charms) that could overwrite the ability of the projection ego
+				for i, r in ipairs(e) do
+					if r.__resolver == "charm" then return false end
+				end
+				return true
+			end})
+	end,
+}

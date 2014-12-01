@@ -109,7 +109,7 @@ newEffect{
 			ai = self.ai,
 		}
 		self.faction = eff.src.faction
-		
+
 		self.ai_state.tactic_leash = 100
 		self.remove_from_party_on_death = true
 		self.no_inventory_access = true
@@ -219,7 +219,7 @@ newEffect{
 newEffect{
 	name = "GLOOM_WEAKNESS", image = "effects/gloom_weakness.png",
 	desc = "Gloom Weakness",
-	long_desc = function(self, eff) return ("The gloom reduces damage the target inflicts by %d%%."):format(-eff.incDamageChange) end,
+	long_desc = function(self, eff) return ("The gloom reduces damage the target inflicts by %d%%."):format(eff.incDamageChange) end,
 	type = "mental",
 	subtype = { gloom=true },
 	status = "detrimental",
@@ -228,7 +228,7 @@ newEffect{
 	on_lose = function(self, err) return "#F53CBE##Target# is no longer weakened." end,
 	activate = function(self, eff)
 		eff.particle = self:addParticles(Particles.new("gloom_weakness", 1))
-		eff.incDamageId = self:addTemporaryValue("inc_damage", {all = eff.incDamageChange})
+		eff.incDamageId = self:addTemporaryValue("inc_damage", {all = -eff.incDamageChange})
 	end,
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
@@ -1843,7 +1843,7 @@ newEffect{
 		self:removeTemporaryValue("max_life", eff.life_id)
 		self:removeTemporaryValue("life_regen", eff.life_regen_id)
 		self:removeTemporaryValue("stamina_regen", eff.stamina_regen_id)
-		
+
 		self:removeTemporaryValue("life",eff.templife_id) -- remove extra hps to prevent excessive heals at high level
 		game.logSeen(self, "%s no longer revels in blood quite so much.",self.name:capitalize())
 	end,
@@ -2438,7 +2438,7 @@ newEffect{
 			eff.what = "physical, nature, acid, temporal"
 		elseif eff.kind == "thermal" then
 			eff.sid = self:addTemporaryValue("flat_damage_armor", {
-				[DamageType.FIRE] = eff.power, 
+				[DamageType.FIRE] = eff.power,
 				[DamageType.COLD] = eff.power,
 				[DamageType.LIGHT] = eff.power,
 				[DamageType.ARCANE] = eff.power,
@@ -2446,7 +2446,7 @@ newEffect{
 			eff.what = "fire, cold, light, arcane"
 		elseif eff.kind == "charged" then
 			eff.sid = self:addTemporaryValue("flat_damage_armor", {
-				[DamageType.LIGHTNING] = eff.power, 
+				[DamageType.LIGHTNING] = eff.power,
 				[DamageType.BLIGHT] = eff.power,
 				[DamageType.MIND] = eff.power,
 				[DamageType.DARKNESS] = eff.power,
@@ -2889,21 +2889,6 @@ newEffect{
 }
 
 newEffect{
-	name = "DRACONIC_WILL", image = "talents/draconic_will.png",
-	desc = "Draconic Will",
-	long_desc = function(self, eff) return "The target is immune to all detrimental effects." end,
-	type = "mental",
-	subtype = { nature=true },
-	status = "beneficial",
-	on_gain = function(self, err) return "#Target#'s skin hardens.", "+Draconic Will" end,
-	on_lose = function(self, err) return "#Target#'s skin is back to normal.", "-Draconic Will" end,
-	parameters = { },
-	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "negative_status_effect_immune", 1)
-	end,
-}
-
-newEffect{
 	name = "HIDDEN_RESOURCES", image = "talents/hidden_resources.png",
 	desc = "Hidden Resources",
 	long_desc = function(self, eff) return "The target does not consume any resources." end,
@@ -2980,7 +2965,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)		
+		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -2997,7 +2982,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)		
+		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -3012,35 +2997,10 @@ newEffect{
 	parameters = { },
 	on_gain = function(self, err) return "#Target# glints with a crystaline aura", "+Crystal Resonance" end,
 	on_lose = function(self, err) return "#Target# is no longer glinting.", "-Crystal Resonance" end,
-	gem_types = {
-		GEM_DIAMOND = function(self, eff) return {self:effectTemporaryValue(eff, "inc_stats", {[Stats.STAT_STR] = 5, [Stats.STAT_DEX] = 5, [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 5, [Stats.STAT_CON] = 5 }), } end,
-		GEM_PEARL = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 5}), self:effectTemporaryValue(eff,"combat_armour", 5) } end,
-		GEM_MOONSTONE = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 10), self:effectTemporaryValue(eff,"combat_mentalresist", 10), self:effectTemporaryValue(eff,"combat_spellresist", 10), self:effectTemporaryValue(eff,"combat_physresist", 10), } end,
-		GEM_FIRE_OPAL = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 10}), self:effectTemporaryValue(eff,"combat_physcrit", 5), self:effectTemporaryValue(eff,"combat_mindcrit", 5), self:effectTemporaryValue(eff,"combat_spellcrit", 5) } end,
-		GEM_BLOODSTONE = function(self, eff) return {self:effectTemporaryValue(eff,"stun_immune", 0.6) } end,
-		GEM_RUBY = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 4, [Stats.STAT_DEX] = 4, [Stats.STAT_MAG] = 4, [Stats.STAT_WIL] = 4, [Stats.STAT_CUN] = 4, [Stats.STAT_CON] = 4 }) } end,
-		GEM_AMBER = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 8}), self:effectTemporaryValue(eff,"combat_physcrit", 4), self:effectTemporaryValue(eff,"combat_mindcrit", 4), self:effectTemporaryValue(eff,"combat_spellcrit", 4) } end,
-		GEM_TURQUOISE = function(self, eff) return {self:effectTemporaryValue(eff,"see_stealth", 10), self:effectTemporaryValue(eff,"see_invisible", 10) } end,
-		GEM_JADE = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 4}), self:effectTemporaryValue(eff,"combat_armour", 4) } end,
-		GEM_SAPPHIRE = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 8), self:effectTemporaryValue(eff,"combat_mentalresist", 8), self:effectTemporaryValue(eff,"combat_spellresist", 8), self:effectTemporaryValue(eff,"combat_physresist", 8), } end,
-		GEM_QUARTZ = function(self, eff) return {self:effectTemporaryValue(eff,"stun_immune", 0.3) } end,
-		GEM_EMERALD = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 3}), self:effectTemporaryValue(eff,"combat_armour", 3) } end,
-		GEM_LAPIS_LAZULI = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 6), self:effectTemporaryValue(eff,"combat_mentalresist", 6), self:effectTemporaryValue(eff,"combat_spellresist", 6), self:effectTemporaryValue(eff,"combat_physresist", 6), } end,
-		GEM_GARNET = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 6}), self:effectTemporaryValue(eff,"combat_physcrit", 3), self:effectTemporaryValue(eff,"combat_mindcrit", 3), self:effectTemporaryValue(eff,"combat_spellcrit", 3) } end,
-		GEM_ONYX = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 3, [Stats.STAT_DEX] = 3, [Stats.STAT_MAG] = 3, [Stats.STAT_WIL] = 3, [Stats.STAT_CUN] = 3, [Stats.STAT_CON] = 3 }) } end,
-		GEM_AMETHYST = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 4}), self:effectTemporaryValue(eff,"combat_physcrit", 2), self:effectTemporaryValue(eff,"combat_mindcrit", 2), self:effectTemporaryValue(eff,"combat_spellcrit", 2) } end,
-		GEM_OPAL = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 2, [Stats.STAT_DEX] = 2, [Stats.STAT_MAG] = 2, [Stats.STAT_WIL] = 2, [Stats.STAT_CUN] = 2, [Stats.STAT_CON] = 2 }) } end,
-		GEM_TOPAZ = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 4), self:effectTemporaryValue(eff,"combat_mentalresist", 4), self:effectTemporaryValue(eff,"combat_spellresist", 4), self:effectTemporaryValue(eff,"combat_physresist", 4), } end,
-		GEM_AQUAMARINE = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 2}), self:effectTemporaryValue(eff,"combat_armour", 2) } end,
-		GEM_AMETRINE = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 2}), self:effectTemporaryValue(eff,"combat_physcrit", 1), self:effectTemporaryValue(eff,"combat_mindcrit", 1), self:effectTemporaryValue(eff,"combat_spellcrit", 1) } end,
-		GEM_ZIRCON = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 1}), self:effectTemporaryValue(eff,"combat_armour", 1) } end,
-		GEM_SPINEL = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 2), self:effectTemporaryValue(eff,"combat_mentalresist", 2), self:effectTemporaryValue(eff,"combat_spellresist", 2), self:effectTemporaryValue(eff,"combat_physresist", 2), } end,
-		GEM_CITRINE = function(self, eff) return {self:effectTemporaryValue(eff,"lite", 1), self:effectTemporaryValue(eff,"infravision", 2) } end,
-		GEM_AGATE = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 1, [Stats.STAT_DEX] = 1, [Stats.STAT_MAG] = 1, [Stats.STAT_WIL] = 1, [Stats.STAT_CUN] = 1, [Stats.STAT_CON] = 1 }) } end,
-	},
 	activate = function(self, eff)
-		local buff = self.tempeffect_def.EFF_CRYSTAL_BUFF.gem_types[eff.gem]
-		eff.id1 = buff(self, eff)
+		for a, b in pairs(eff.effects) do
+			self:effectTemporaryValue(eff, a, b)
+		end
 	end,
 	deactivate = function(self, eff)
 
@@ -3145,7 +3105,7 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "die_at", -eff.power)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 	end,
 }
 
@@ -3163,7 +3123,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_tele", radius=0}))
 		self:callTalent(self.T_KINETIC_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_KINETIC_SHIELD, "adjust_shield_gfx", false)
 	end,
@@ -3183,7 +3143,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_pyro", radius=0}))
 		self:callTalent(self.T_THERMAL_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_THERMAL_SHIELD, "adjust_shield_gfx", false)
 	end,
@@ -3203,7 +3163,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_electro", radius=0}))
 		self:callTalent(self.T_CHARGED_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_CHARGED_SHIELD, "adjust_shield_gfx", false)
 	end,

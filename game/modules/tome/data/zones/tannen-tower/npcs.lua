@@ -56,6 +56,7 @@ newEntity{ define_as = "TANNEN",
 	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
 	resolvers.drops{chance=100, nb=1, {defined="ORB_MANY_WAYS2"} },
 	resolvers.drops{chance=100, nb=1, {defined="ATHAME_WEST2"} },
+	resolvers.drops{chance=100, nb=1, {defined="NOTE4"} },
 
 	resists = { [DamageType.ACID] = 100, },
 

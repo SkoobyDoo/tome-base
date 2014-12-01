@@ -180,21 +180,24 @@ static int particles_set_sub(lua_State *L)
 static void do_shift(particles_type *ps, float sx, float sy) {
 	SDL_mutexP(ps->lock);
 
-	int w;
-	for (w = 0; w < ps->nb; w++)
-	{
-		particle_type *p = &ps->particles[w];
-
-		if (p->life > 0)
+	if (ps->alive) {
+		int w;
+		for (w = 0; w < ps->nb; w++)
 		{
-			p->x += sx;
-			p->ox += sx;
-			p->y += sy;
-			p->oy += sy;
-		}
-	}
+			particle_type *p = &ps->particles[w];
+			if (!p) break;
 
-	ps->recompile = TRUE;
+			if (p->life > 0)
+			{
+				p->x += sx;
+				p->ox += sx;
+				p->y += sy;
+				p->oy += sy;
+			}
+		}
+
+		ps->recompile = TRUE;
+	}
 
 	SDL_mutexV(ps->lock);
 

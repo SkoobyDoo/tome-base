@@ -22,6 +22,7 @@ newTalent{
 	name = "Shoot",
 	type = {"technique/archery-base", 1},
 	no_energy = "fake",
+	speed = 'archery',
 	hide = true,
 	innate = true,
 	points = 1,
@@ -112,7 +113,7 @@ newTalent{
 		local q = self:hasAmmo()
 		if not q then if not silent then game.logPlayer(self, "You must have a quiver or pouch equipped.") end return false end
 		if q.combat.shots_left >= q.combat.capacity then return false end
-		return true 
+		return true
 	end,
 	no_unlearn_last = true,
 	action = function(self, t)
@@ -176,6 +177,7 @@ newTalent{
 			apr = self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 3, 0, 53, 50)}
 		return vals
 	end,
+	sustain_slots = 'archery_stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
@@ -183,7 +185,6 @@ newTalent{
 			return nil
 		end
 
-		if self:isTalentActive(self.T_RAPID_SHOT) then self:forceUseTalent(self.T_RAPID_SHOT, {ignore_energy=true}) end
 		local vals = t.getCombatVals(self, t)
 		return {
 			speed = self:addTemporaryValue("combat_physspeed", vals.speed),
@@ -228,6 +229,7 @@ newTalent{
 			}
 		return vals
 	end,
+	sustain_slots = 'archery_stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
@@ -235,7 +237,6 @@ newTalent{
 			return nil
 		end
 
-		if self:isTalentActive(self.T_AIM) then self:forceUseTalent(self.T_AIM, {ignore_energy=true}) end
 		local vals = t.getCombatVals(self, t)
 		return {
 			speed = self:addTemporaryValue("combat_physspeed", vals.speed),

@@ -23,23 +23,18 @@ newTalent{
 	require = gifts_req_high1,
 	points = 5,
 	random_ego = "attack",
-	equilibrium = 20,
-	cooldown = 16,
+	equilibrium = 10,
+	cooldown = 12,
 	range = 1,
 	tactical = { ATTACK = { PHYSICAL = 1, COLD = 1, FIRE = 1, LIGHTNING = 1, ACID = 1 } },
 	requires_target = true,
-	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.0) end,
+	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.6, 2.3) end,
 	getBurstDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 230) end,
+	getPassiveSpeed = function(self, t) return (self:combatTalentScale(t, 2, 10, 0.5)/100) end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.5, 3.5)) end,
-	on_learn = function(self, t) 
-		self.combat_physresist = self.combat_physresist + 1
-		self.combat_spellresist = self.combat_spellresist + 1
-		self.combat_mentalresist = self.combat_mentalresist + 1
-	end,
-	on_unlearn = function(self, t) 
-		self.combat_physresist = self.combat_physresist - 1
-		self.combat_spellresist = self.combat_spellresist - 1
-		self.combat_mentalresist = self.combat_mentalresist - 1
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "combat_physspeed", t.getPassiveSpeed(self, t))
+		self:talentTemporaryValue(p, "combat_mindspeed", t.getPassiveSpeed(self, t))
 	end,
 	action = function(self, t)
 
@@ -59,13 +54,13 @@ newTalent{
 			elseif elem == "cold" then
 				self:attackTarget(target, DamageType.ICE, t.getWeaponDamage(self, t), true)
 				local tg = {type="ball", range=1, selffire=false, radius=self:getTalentRadius(t), talent=t}
-				local grids = self:project(tg, x, y, DamageType.ICE, self:mindCrit(t.getBurstDamage(self, t)))
+				local grids = self:project(tg, x, y, DamageType.ICE_SLOW, self:mindCrit(t.getBurstDamage(self, t)))
 				game.level.map:particleEmitter(x, y, tg.radius, "ball_ice", {radius=tg.radius, grids=grids, tx=x, ty=y, max_alpha=80})
 				game:playSoundNear(self, "talents/flame")
 			elseif elem == "fire" then
 				self:attackTarget(target, DamageType.FIREBURN, t.getWeaponDamage(self, t), true)
 				local tg = {type="ball", range=1, selffire=false, radius=self:getTalentRadius(t), talent=t}
-				local grids = self:project(tg, x, y, DamageType.FIREBURN, self:mindCrit(t.getBurstDamage(self, t)))
+				local grids = self:project(tg, x, y, DamageType.FIRE_STUN, self:mindCrit(t.getBurstDamage(self, t)))
 				game.level.map:particleEmitter(x, y, tg.radius, "ball_fire", {radius=tg.radius, grids=grids, tx=x, ty=y, max_alpha=80})
 				game:playSoundNear(self, "talents/flame")
 			elseif elem == "lightning" then
@@ -86,10 +81,11 @@ newTalent{
 	info = function(self, t)
 		local burstdamage = t.getBurstDamage(self, t)
 		local radius = self:getTalentRadius(t)
+		local speed = t.getPassiveSpeed(self, t)
 		return ([[Unleash raw, chaotic elemental damage upon your enemy.
-		You strike your enemy for %d%% weapon damage in one of blinding sand, disarming acid, freezing ice, stunning lightning or burning flames, with equal odds.
+		You strike your enemy for %d%% weapon damage in one of blinding sand, disarming acid, freezing and slowing ice, dazing lightning or stunning flames, with equal odds.
 		Additionally, you will cause a burst that deals %0.2f of that damage to enemies in radius %d, regardless of if you hit with the blow.
-		Each point in Prismatic Slash increase your Physical, Spell and Mind Saves by 1.]]):format(100 * self:combatTalentWeaponDamage(t, 1.2, 2.0), burstdamage, radius)
+		Levels in Prismatic Slash increase your Physical and Mental attack speeds by %d%%.]]):format(100 * self:combatTalentWeaponDamage(t, 1.2, 2.0), burstdamage, radius, 100*speed)
 	end,
 }
 
@@ -105,12 +101,17 @@ newTalent{
 	tactical = { ATTACKAREA = { poison = 2 } },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	direct_hit = true,
 	requires_target = true,
-	getDamage = function(self, t) return self:combatTalentStatDamage(t, "str", 60, 650) end,
-	getEffect = function(self, t) return self:combatTalentLimit(t, 100, 18, 50) end, -- Limit < 100%
-	on_learn = function(self, t) self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) + 2 end,
-	on_unlearn = function(self, t) self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) - 2 end,
+	getDamage = function(self, t) return self:combatTalentStatDamage(t, "str", 60, 750) end,
+	getEffect = function(self, t) return math.ceil(self:combatTalentLimit(t, 50, 10, 20)) end,
+	on_learn = function(self, t) 
+		self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) + 3 
+		self.inc_damage[DamageType.NATURE] = (self.inc_damage[DamageType.NATURE] or 0) + 4
+		end,
+	on_unlearn = function(self, t) 
+		self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) - 3 
+		self.inc_damage[DamageType.NATURE] = (self.inc_damage[DamageType.NATURE] or 0) - 4
+		end,
 	target = function(self, t)
 		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
@@ -118,7 +119,14 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.INSIDIOUS_POISON, {dam=self:mindCrit(t.getDamage(self,t)), dur=6, heal_factor=t.getEffect(self,t)})
+		local dam = self:mindCrit(t.getDamage(self, t))
+		self:project(tg, x, y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target and target:canBe("poison") then
+				target:setEffect(self.EFF_CRIPPLING_POISON, 6, {src=self, power=dam/6, fail=math.ceil(self:combatTalentLimit(t, 100, 10, 20))})
+			end
+		end)
+
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "breath_slime", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
 		game:playSoundNear(self, "talents/breath")
 		
@@ -130,10 +138,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local effect = t.getEffect(self, t)
-		return ([[You breathe insidious poison in a frontal cone of radius %d. Any target caught in the area will take %0.2f nature damage each turn for 6 turns.
-		The poison also reduces the healing of enemies poisoned by %d%% while it is in effect.
+		return ([[You breathe crippling poison in a frontal cone of radius %d. Any target caught in the area will take %0.2f nature damage each turn for 6 turns.
+		The poison also gives enemies a %d%% chance to fail actions more complicated than basic attacks and movement, while it is in effect.
 		The damage will increase with your Strength, and the critical chance is based on your Mental crit rate.
-		Each point in Venomous Breath also increases your nature resistance by 2%%.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.NATURE, t.getDamage(self,t)/6), effect)
+		Each point in Venomous Breath also increases your nature resistance by 3%%, and your nature damage by 4%%.]] ):format(self:getTalentRadius(t), damDesc(self, DamageType.NATURE, t.getDamage(self,t)/6), effect)
 	end,
 }
 
@@ -145,6 +153,7 @@ newTalent{
 	mode = "passive",
 	resistKnockback = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- Limit < 100%
 	resistBlindStun = function(self, t) return self:combatTalentLimit(t, 1, .07, .25) end, -- Limit < 100%
+	CDreduce = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 1, 6)) end, -- Limit < 8
 	on_learn = function(self, t)
 		self.inc_stats[self.STAT_CUN] = self.inc_stats[self.STAT_CUN] + 2
 	end,
@@ -152,14 +161,17 @@ newTalent{
 		self.inc_stats[self.STAT_CUN] = self.inc_stats[self.STAT_CUN] - 2
 	end,
 	passives = function(self, t, p)
+		local cdr = t.CDreduce(self, t)
 		self:talentTemporaryValue(p, "knockback_immune", t.resistKnockback(self, t))
 		self:talentTemporaryValue(p, "stun_immune", t.resistBlindStun(self, t))
 		self:talentTemporaryValue(p, "blind_immune", t.resistBlindStun(self, t))
+		self:talentTemporaryValue(p, "talent_cd_reduction",
+{[Talents.T_VENOMOUS_BREATH]=cdr, [Talents.T_ICE_BREATH]=cdr, [Talents.T_FIRE_BREATH]=cdr, [Talents.T_LIGHTNING_BREATH]=cdr, [Talents.T_CORROSIVE_BREATH]=cdr, [Talents.T_SAND_BREATH]=cdr})
 	end,
 	info = function(self, t)
 		return ([[You have the mental prowess of a Wyrm.
-		Your Cunning is increased by %d.
-		You gain %d%% knockback resistance, and your blindness and stun resistances are increased by %d%%.]]):format(2*self:getTalentLevelRaw(t), 100*t.resistKnockback(self, t), 100*t.resistBlindStun(self, t))
+		Your Cunning is increased by %d, and your breath attack cooldowns are reduced by %d.
+		You gain %d%% knockback resistance, and your blindness and stun resistances are increased by %d%%.]]):format(2*self:getTalentLevelRaw(t), t.CDreduce(self, t), 100*t.resistKnockback(self, t), 100*t.resistBlindStun(self, t))
 	end,
 }
 

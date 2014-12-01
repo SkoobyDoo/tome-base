@@ -1110,8 +1110,12 @@ function _M:setTile(f, w, h, last)
 	end
 end
 
+local to_reset_cosmetic = {}
 function _M:applyCosmeticActor(last)
-	self.actor.is_redhaed = nil -- Booh this is ugly
+	for i, d in ipairs(to_reset_cosmetic) do
+		d.reset(self.actor)
+	end
+	to_reset_cosmetic = {}
 
 	local list = {}
 	for i, d in ipairs(self.cosmetic_unlocks) do
@@ -1120,6 +1124,9 @@ function _M:applyCosmeticActor(last)
 	table.sort(list, function(a,b) return a.priority < b.priority end)
 	for i, d in ipairs(list) do
 		d.on_actor(self.actor, self, last)
+		if not last and d.reset then
+			to_reset_cosmetic[#to_reset_cosmetic+1] = d
+		end
 	end
 end
 
@@ -1394,11 +1401,26 @@ function _M:selectTile()
 		"player/ascii_player_exotic_01.png",
 		"player/ascii_player_shopper_01.png",
 	}
+
+	fs.mkdir("/data/gfx/custom-tiles/")
+	for file in fs.iterate("/data/gfx/custom-tiles/", function(file) return file:find("%.png") end) do
+		list[#list+1] = "custom-tiles/"..file
+	end	
+
 	self:triggerHook{"Birther:donatorTiles", list=list}
-	local remove = Button.new{text="Use default tile", width=500, fct=function()
+	local remove = Button.new{text="Use default tile", width=240, fct=function()
 		game:unregisterDialog(d)
 		self.has_custom_tile = nil
 		self:setTile()
+	end}
+	local custom = Button.new{text="Use custom-made tile", width=240, fct=function()
+		self:simpleLongPopup("Howto: Custom-made tiles", ([[You can use your own custom tiles if you are a donator.
+For the game to use them you must simply respect a few rules:
+- they must be 64x64 or 64x128 tiles
+- they must be saved as PNG files
+- you must place them in folder #LIGHT_BLUE#%s#WHITE#
+
+Once you have done so, simply restart the game and the tiles will be listed at the bottom of the list.]]):format(fs.getRealPath("/data/gfx/custom-tiles/")), 500)
 	end}
 	local list = ImageList.new{width=500, height=500, tile_w=64, tile_h=64, padding=10, scrollbar=true, list=list, fct=function(item)
 		game:unregisterDialog(d)
@@ -1411,6 +1433,7 @@ function _M:selectTile()
 	d:loadUI{
 		{left=0, top=0, ui=list},
 		{left=0, bottom=0, ui=remove},
+		{left=250, bottom=0, ui=custom},
 	}
 	d:setupUI(true, true)
 	d.key:addBind("EXIT", function() game:unregisterDialog(d) end)

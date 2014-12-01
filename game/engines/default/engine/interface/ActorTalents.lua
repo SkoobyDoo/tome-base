@@ -45,6 +45,7 @@ end
 --- Defines one talent type(group)
 -- Static!
 function _M:newTalentType(t)
+	t.__ATOMIC = true
 	assert(t.name, "no talent type name")
 	assert(t.type, "no talent type type")
 	t.description = t.description or ""
@@ -57,6 +58,7 @@ end
 --- Defines one talent
 -- Static!
 function _M:newTalent(t)
+	t.__ATOMIC = true
 	assert(t.name, "no talent name")
 	assert(t.type, "no or unknown talent type")
 	if type(t.type) == "string" then t.type = {t.type, 1} end
@@ -116,7 +118,7 @@ end
 -- Make the actor use the talent
 -- @param id talent ID
 -- @param who talent user
--- @param force_level talent level(raw) override 
+-- @param force_level talent level(raw) override
 -- @param ignore_cd do not affect or consider cooldown
 -- @param force_target the target of the talent (override)
 -- @param silent do not display messages about use
@@ -325,7 +327,7 @@ function _M:learnTalent(t_id, force, nb)
 
 	if not self.talents[t_id] then
 		-- Auto assign to hotkey
-		if t.mode ~= "passive" and self.hotkey then
+		if t.mode ~= "passive" and not t.no_auto_hotkey and self.hotkey then
 			local position
 
 			if self.player then
@@ -355,7 +357,7 @@ function _M:learnTalent(t_id, force, nb)
 
 	for i = 1, (nb or 1) do
 		self.talents[t_id] = (self.talents[t_id] or 0) + 1
-		if t.on_learn then 
+		if t.on_learn then
 			local ret = t.on_learn(self, t)
 			if ret then
 				if ret == true then ret = {} end
@@ -365,7 +367,7 @@ function _M:learnTalent(t_id, force, nb)
 		end
 	end
 
-	if t.passives then 
+	if t.passives then
 		self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
 		local p = self.talents_learn_vals[t.id]
 
@@ -411,7 +413,7 @@ function _M:unlearnTalent(t_id, nb)
 		self.talents[t_id] = self.talents[t_id] - 1
 		if self.talents[t_id] == 0 then self.talents[t_id] = nil end
 
-		if t.on_unlearn then 
+		if t.on_unlearn then
 			local p = nil
 			if self.talents_learn_vals[t.id] and self.talents_learn_vals[t.id][(self.talents[t_id] or 0) + 1] then
 				p = self.talents_learn_vals[t.id][(self.talents[t_id] or 0) + 1]
@@ -425,7 +427,7 @@ function _M:unlearnTalent(t_id, nb)
 		end
 	end
 
-	if t.passives then 
+	if t.passives then
 		self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
 		local p = self.talents_learn_vals[t.id]
 
@@ -451,7 +453,7 @@ end
 function _M:updateTalentPassives(tid)
 	if not self:knowTalent(tid) then return end
 
-	local t = self:getTalentFromId(tid)	
+	local t = self:getTalentFromId(tid)
 	if not t.passives then return end
 
 	self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
@@ -700,10 +702,12 @@ end
 
 --- Starts a talent cooldown
 -- @param t the talent to cooldown
-function _M:startTalentCooldown(t)
+-- @param v override the normal cooldown that that, nil to get the normal effect
+function _M:startTalentCooldown(t, v)
 	t = self:getTalentFromId(t)
-	if not t.cooldown then return end
 	local cd = t.cooldown
+	if v then cd = math.max(v, self.talents_cd[t.id] or 0) end
+	if not cd then return end
 	if type(cd) == "function" then cd = cd(self, t) end
 	self.talents_cd[t.id] = cd
 	self.changed = true
@@ -859,4 +863,36 @@ function _M:talentCallbackOn(on, ...)
 			self:callTalent(tid, on, ...)
 		end
 	end
+end
+
+local dialog_returns_list = setmetatable({}, {__mode="v"})
+local dialog_returns = setmetatable({}, {__mode="k"})
+
+--- Set the result for a talent dialog
+function _M:talentDialogReturn(...)
+	local d = dialog_returns_list[#dialog_returns_list]
+	if not d then return end
+
+	dialog_returns[d] = {...}
+end
+
+--- Get the dialog
+function _M:talentDialogGet()
+	return dialog_returns_list[#dialog_returns_list]
+end
+
+--- Show a dialog and wait for it to end in a talent
+function _M:talentDialog(d)
+	if not game:hasDialog(d) then game:registerDialog(d) end
+
+	dialog_returns_list[#dialog_returns_list+1] = d
+
+	local co = coroutine.running()
+	d.unload = function(self) coroutine.resume(co, dialog_returns[d]) end
+	local ret = coroutine.yield()
+
+	dialog_returns[d] = nil
+	table.removeFromList(dialog_returns_list, d)
+
+	return unpack(ret)
 end

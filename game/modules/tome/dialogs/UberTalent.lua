@@ -27,6 +27,7 @@ local TextzoneList = require "engine.ui.TextzoneList"
 local TalentGrid = require "mod.dialogs.elements.TalentGrid"
 local Separator = require "engine.ui.Separator"
 local DamageType = require "engine.DamageType"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog, mod.class.interface.TooltipsData))
 
@@ -34,7 +35,7 @@ function _M:init(actor, levelup_end_prodigies)
 	self.actor = actor
 	self.levelup_end_prodigies = levelup_end_prodigies
 
-	self.font = core.display.newFont("/data/font/DroidSansMono.ttf", 12)
+	self.font = core.display.newFont(FontPackage:getFont("mono_small", "mono"))
 	self.font_h = self.font:lineSkip()
 
 	self.actor_dup = actor:clone()

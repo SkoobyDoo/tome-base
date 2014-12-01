@@ -43,7 +43,7 @@ end
 
 local function copy_recurs(dst, src, deep)
 	for k, e in pairs(src) do
-		if type(e) == "table" and e.__CLASSNAME then
+		if type(e) == "table" and e.__ATOMIC then
 			dst[k] = e
 		elseif dst[k] == nil then
 			if deep then
@@ -52,7 +52,7 @@ local function copy_recurs(dst, src, deep)
 			else
 				dst[k] = e
 			end
-		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__CLASSNAME then
+		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__ATOMIC then
 			copy_recurs(dst[k], e, deep)
 		end
 	end
@@ -64,6 +64,7 @@ end
 -- @usage Entity.new{display='#', color_r=255, color_g=255, color_b=255}
 function _M:init(t, no_default)
 	t = t or {}
+
 	self.uid = next_uid
 	__uids[self.uid] = self
 	next_uid = next_uid + 1
@@ -71,7 +72,7 @@ function _M:init(t, no_default)
 	for k, e in pairs(t) do
 		if k ~= "__CLASSNAME" and k ~= "uid" then
 			local ee = e
-			if type(e) == "table" and not e.__CLASSNAME then ee = table.clone(e, true) end
+			if type(e) == "table" and not e.__ATOMIC then ee = table.clone(e, true) end
 			self[k] = ee
 		end
 	end
@@ -118,6 +119,21 @@ function _M:init(t, no_default)
 		local Particles = require "engine.Particles"
 		for i, pd in ipairs(self.embed_particles) do
 			self:addParticles(Particles.new(pd.name, pd.rad or 1, pd.args))
+		end
+	end
+
+	if config.settings.cheat then
+		local ok, err = table.check(
+			self,
+			function(t, where, v, tv)
+				if tv ~= "function" then return true end
+				local n, v = debug.getupvalue(v, 1)
+				if not n then return true end
+				return nil, ("%s has upvalue %s"):format(tostring(where), tostring(n))
+			end,
+			function(value) return not value._allow_upvalues end)
+		if not ok then
+			error("Entity definition has a closure: "..err)
 		end
 	end
 end
@@ -248,7 +264,7 @@ function _M:defineDisplayCallback()
 			e:checkDisplay()
 			if e.ps:isAlive() then
 				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
-				e.ps:toScreen(x + w / 2, y + h / 2, true, w / (game.level and game.level.map.tile_w or w))
+				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + h / 2 + (e.dy or 0) * h, true, w / game.level.map.tile_w)
 			else self:removeParticles(e)
 			end
 		end
@@ -571,7 +587,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(t) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			list[k] = e
-		elseif type(e) == "table" and not e.__CLASSNAME then
+		elseif type(e) == "table" and not e.__ATOMIC then
 			list[k] = e
 		end
 	end
@@ -580,7 +596,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(list) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
-		elseif type(e) == "table" and not e.__CLASSNAME then
+		elseif type(e) == "table" and not e.__ATOMIC then
 			local key_chain = table.clone(key_chain)
 			key_chain[#key_chain+1] = k
 			self:resolve(e, last, on_entity, key_chain)
@@ -879,6 +895,26 @@ end
 function _M:onTemporaryValueChange(prop, v, base)
 end
 
+--- Gets the change in an attribute/function based on changing another.
+-- Measures the difference in result_attr from adding temporary values from and to to changed_attr.
+-- @param changed_attr the attribute being changed
+-- @param from the temp value added to changed_attr which we are starting from
+-- @param to the temp value added to changed_attr which we are ending on
+-- @param result_attr the result we are measuring the difference in
+-- @param ... arguments to pass to result_attr if it is a function
+-- @return the difference, the from result, the to result
+function _M:getAttrChange(changed_attr, from, to, result_attr, ...)
+	local temp = self:addTemporaryValue(changed_attr, from)
+	local from_result = util.getval(self[result_attr], self, ...)
+	self:removeTemporaryValue(changed_attr, temp)
+
+	temp = self:addTemporaryValue(changed_attr, to)
+	local to_result = util.getval(self[result_attr], self, ...)
+	self:removeTemporaryValue(changed_attr, temp)
+
+	return to_result - from_result, from_result, to_result
+end
+
 --- Increases/decreases an attribute
 -- The attributes are just actor properties, but this ensures they are numbers and not booleans
 -- thus making them compatible with temporary values system
@@ -966,18 +1002,6 @@ function _M:loadList(file, no_default, res, mod, loaded)
 			local e = newenv.class.new(t, no_default)
 			if type(mod) == "function" then mod(e) end
 
-			if config.settings.cheat then
-				local ok, err = table.check(e, function(t, where, v, tv)
-					if tv ~= "function" then return true end
-					local n, v = debug.getupvalue(v, 1)
-					if not n then return true end
-					return nil, ("Entity closure checker: %s has upvalue %s"):format(tostring(where), tostring(n))
-				end)
-				if not ok then
-					error("Entity definition has a closure: "..err)
-				end
-			end
-
 			res[#res+1] = e
 			if t.define_as then res[t.define_as] = e end
 		end,
@@ -1013,4 +1037,3 @@ end
 function _M:checkClassification(type_str)
 	return false
 end
-

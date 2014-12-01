@@ -396,48 +396,24 @@ newEffect{
 newEffect{
 	name = "DAMAGE_SMEARING", image = "talents/damage_smearing.png",
 	desc = "Damage Smearing",
-	long_desc = function(self, eff) return ("Passes damage received in the present onto the future self."):format(eff.power) end,
-	type = "other",
-	subtype = { time=true },
-	status = "beneficial",
-	parameters = { power=10 },
-	on_gain = function(self, err) return "The fabric of time alters around #target#.", "+Damage Smearing" end,
-	on_lose = function(self, err) return "The fabric of time around #target# stabilizes.", "-Damage Smearing" end,
-	activate = function(self, eff)
-		eff.particle = self:addParticles(Particles.new("time_shield", 1))
-	end,
-	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
-	end,
-}
-
-newEffect{
-	name = "SMEARED",
-	desc = "Smeared",
-	long_desc = function(self, eff) return ("Damage received in the past is returned as %0.2f temporal damage per turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Damage received in the past is returned as %0.2f temporal damage per turn."):format(eff.dam) end,
 	type = "other",
 	subtype = { time=true },
 	status = "detrimental",
-	parameters = { power=10 },
+	parameters = { dam=10 },
 	on_gain = function(self, err) return "#Target# is taking damage received in the past!", "+Smeared" end,
 	on_lose = function(self, err) return "#Target# stops taking damage received in the past.", "-Smeared" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the flames!
-		local olddam = old_eff.power * old_eff.dur
-		local newdam = new_eff.power * new_eff.dur
-		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
-		old_eff.dur = dur
-		old_eff.power = (olddam + newdam) / dur
-		return old_eff
+		local olddam = old_eff.dam * old_eff.dur
+		local newdam = new_eff.dam * new_eff.dur
+		new_eff.dam = (olddam + newdam) / new_eff.dur
+		return new_eff
 	end,
 	on_timeout = function(self, eff)
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
-	end,
-	activate = function(self, eff)
-		eff.particle = self:addParticles(Particles.new("time_shield", 1))
-	end,
-	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
+		local dead, val = self:takeHit(eff.dam, self, {special_death_msg="was smeared across all space and time"})
+
+		game:delayedLogDamage(eff, self, val, ("%s%d %s#LAST#"):format(DamageType:get(DamageType.TEMPORAL).text_color or "#aaaaaa#", math.ceil(val), DamageType:get(DamageType.TEMPORAL).name), false)
 	end,
 }
 
@@ -2260,7 +2236,14 @@ newEffect{
 		self:effectTemporaryValue(eff, "status_effect_immune", 1)
 		self.energy.value = 0
 	end,
-	deactivate = function(self, eff)
+	deactivate = function(self, eff) --wake up vaulted npcs in LOS
+	  self:computeFOV(5, nil, 
+		function(x, y, dx, dy, sqdist)
+			local act = game.level.map(x, y, Map.ACTOR)
+			if act then
+				act:removeEffect(act.EFF_VAULTED, true, true)
+			end
+		end, true, false, false)
 	end,
 }
 
@@ -2462,13 +2445,9 @@ newEffect{
 	subtype = { time=true },
 	status = "beneficial",
 	parameters = { power=10},
-	on_gain = function(self, err) return "#Target# retunes the fabric of spaceime.", "+Spacetime Tuning" end,
+	on_gain = function(self, err) return "#Target# retunes the fabric of spacetime.", "+Spacetime Tuning" end,
 	on_timeout = function(self, eff)
-		if not self.resting then
-			self:removeEffect(self.EFF_SPACETIME_TUNING)
-		else
-			self:incParadox(eff.power)
-		end
+		self:incParadox(eff.power)
 	end,
 }
 
@@ -2479,17 +2458,17 @@ newEffect{
 		return ("The target has stopped time and is dealing %d%% less damage."):format(eff.power)
 	end,
 	charges = function(self, eff)
-		local energy = self.energy.value
-		if energy < 2000 then
+		local charges = math.floor(self.energy.value/1000) - 1
+		if charges <= 0 then
 			self:removeEffect(self.EFF_TIME_STOP)
 		end
-		return math.floor(energy/1000) 
+		return charges
 	end,
 	type = "other",
 	subtype = {time=true},
 	status = "detrimental",
-	decrease = 0,
-	no_stop_enter_worlmap = true, no_stop_resting = true,
+	--decrease = 0,
+	--no_stop_enter_worlmap = true, no_stop_resting = true,
 	parameters = {power=50},
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
@@ -2509,18 +2488,8 @@ newEffect{
 	on_timeout = function(self, eff)
 		-- Clone protection
 		if not self.on_die then return end
-		-- Certain talents don't cooldown in the reprieve
-		if not self:attr("no_talents_cooldown") then
-			for tid, _ in pairs(self.talents_cd) do
-				local t = self:getTalentFromId(tid)
-				if t and t.fixed_cooldown then
-					self.talents_cd[tid] = self.talents_cd[tid] + 1
-				end
-			end
-		end
 	end,
 	activate = function(self, eff)
-
 	end,
 	deactivate = function(self, eff)
 		-- Clone protection
@@ -2580,5 +2549,107 @@ newEffect{
 			game.logPlayer(game.player, "#STEEL_BLUE#You are brought back from your repreive!")
 
 		end)
+	end,
+}
+
+newEffect{
+	name = "TEMPORAL_FUGUE", image = "talents/temporal_fugue.png",
+	desc = "Temporal Fugue",
+	long_desc = function(self, eff) return "This target is splitting all damage with its fugue clones." end,
+	type = "other",
+	subtype = { time=true },
+	status = "beneficial",
+	parameters = { power=10 },
+	decrease = 0,
+	callbackOnHit = function(self, eff, cb, src)
+		local clones = {}
+		-- Find our clones
+		for i = 1, #eff.targets do
+			local target = eff.targets[i]
+			if target ~= self and not target.dead and game.level:hasEntity(target) then
+				clones[#clones+1] = target
+			end
+		end
+		
+		-- Split the damage
+		if #clones > 0 and not src.turn_procs.temporal_fugue_damage then
+			self.turn_procs.temporal_fugue_damage = true
+			cb.value = cb.value/#clones
+			game:delayedLogMessage(self, nil, "fugue_damage", "#STEEL_BLUE##Source# shares damage with %s fugue clones!", string.his_her(self))
+			for i = 1, #clones do
+				local target = clones[i]
+				if target ~= self then
+					target:takeHit(cb.value, self)
+					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(cb.value), nil)
+				end
+			end
+			
+			self.turn_procs.temporal_fugue_damage = nil
+		end
+		
+		-- If we're the last clone remove the effect
+		if #clones <= 0 then
+			self:removeEffect(self.EFF_TEMPORAL_FUGUE)
+		end
+		
+		return cb.value
+	end,
+	on_timeout = function(self, eff)
+		-- Temporal Fugue does not cooldown while active
+		if self.talents_cd[self.T_TEMPORAL_FUGUE] then
+			self.talents_cd[self.T_TEMPORAL_FUGUE] = self.talents_cd[self.T_TEMPORAL_FUGUE] + 1
+		end
+	
+		local alive = false
+		for i = 1, #eff.targets do
+			local target = eff.targets[i]
+			if target ~=self and not target.dead then
+				alive = true
+				break
+			end
+		end
+		if not alive then
+			self:removeEffect(self.EFF_TEMPORAL_FUGUE)
+		end
+	end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "generic_damage_penalty", 66)
+	end,
+}
+
+newEffect{
+	name = "DRACONIC_WILL", image = "talents/draconic_will.png",
+	desc = "Draconic Will",
+	long_desc = function(self, eff) return "The target is immune to all detrimental effects." end,
+	type = "other",
+	subtype = { nature=true },
+	status = "beneficial",
+	on_gain = function(self, err) return "#Target#'s skin hardens.", "+Draconic Will" end,
+	on_lose = function(self, err) return "#Target#'s skin is back to normal.", "-Draconic Will" end,
+	parameters = { },
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "negative_status_effect_immune", 1)
+	end,
+}
+
+newEffect{
+	name = "PRESERVE_PATTERN", image = "talents/preserve_pattern.png",
+	desc = "Preserve Pattern",
+	long_desc = function(self, eff) return ("Damage received in the past is returned as %0.2f paradox damage per turn."):format(eff.paradox) end,
+	type = "other",
+	subtype = { time=true },
+	status = "detrimental",
+	parameters = { paradox=10 },
+	on_gain = function(self, err) return "#Target# converts damage into paradox.", "+Preserve" end,
+	on_lose = function(self, err) return "#Target# stops converting damage to paradox..", "-Preserve" end,
+	on_merge = function(self, old_eff, new_eff)
+		-- Merge the flames!
+		local oldparadox = old_eff.paradox * old_eff.dur
+		local newparadox = new_eff.paradox * new_eff.dur
+		new_eff.paradox = (oldparadox + newparadox) / new_eff.dur
+		return new_eff
+	end,
+	on_timeout = function(self, eff)
+		self:incParadox(eff.paradox)
 	end,
 }

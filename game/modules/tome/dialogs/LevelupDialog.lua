@@ -28,6 +28,7 @@ local UIContainer = require "engine.ui.UIContainer"
 local TalentTrees = require "mod.dialogs.elements.TalentTrees"
 local Separator = require "engine.ui.Separator"
 local DamageType = require "engine.DamageType"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog, mod.class.interface.TooltipsData))
 
@@ -65,7 +66,7 @@ function _M:init(actor, on_finish, on_birth)
 	self.talent_types_learned = {}
 	self.stats_increased = {}
 
-	self.font = core.display.newFont("/data/font/DroidSansMono.ttf", 12)
+	self.font = core.display.newFont(FontPackage:getFont("mono_small", "mono"))
 	self.font_h = self.font:lineSkip()
 
 	self.actor.__hidden_talent_types = self.actor.__hidden_talent_types or {}
@@ -179,6 +180,24 @@ function _M:finish()
 		if self.actor:knowTalent(tid) then self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
 	end
 
+	-- Reshape autoupdate
+	if self.actor:knowTalent(self.actor["T_RESHAPE_WEAPON/ARMOUR"]) then
+		for inven_id, inven in pairs(self.actor.inven) do
+			for item = #inven, 1, -1 do
+				local o = inven[item]
+				if o.been_reshaped then
+					if o.wielded then
+						o = self.actor:takeoffObject(inven, item)
+						local t = self.actor:getTalentFromId(self.actor["T_RESHAPE_WEAPON/ARMOUR"])
+						t.reshape(self.actor, t, o, false)
+						self.actor:addObject(inven, o)
+						--self.actor:wearObject(o, true, true)
+					end
+				end
+			end
+		end
+	end
+	
 	-- Prodigies
 	if self.on_finish_prodigies then
 		for tid, ok in pairs(self.on_finish_prodigies) do if ok then self.actor:learnTalent(tid, true, nil, {no_unlearn=true}) end end
@@ -803,9 +822,9 @@ function _M:getStatDesc(item)
 		text:add("Mindpower: ", color, ("%0.2f"):format(diff * 0.7), dc, true)
 		text:add("Mental save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
 		text:add("Spell save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		if self.actor:attr("use_psi_combat") then
-			text:add("Accuracy: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		end
+--		if self.actor:attr("use_psi_combat") then
+--			text:add("Accuracy: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
+--		end
 	elseif stat_id == self.actor.STAT_STR then
 		text:add("Physical power: ", color, ("%0.2f"):format(diff), dc, true)
 		text:add("Max encumbrance: ", color, ("%0.2f"):format(diff * 1.8), dc, true)

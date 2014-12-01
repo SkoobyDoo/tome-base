@@ -132,7 +132,7 @@ end
 function _M:shift(map, mo)
 	if not self.can_shift then return end
 
-	local adx, ady = mo:getMoveAnimRaw(map._map)
+	local adx, ady = mo:getWorldPos()
 	if self._adx then
 		self.ps:shift(self._adx - adx, self._ady - ady)
 	end					

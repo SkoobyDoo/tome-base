@@ -17,7 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- EDGE TODO: Talents, Icons, Particles, Timed Effect Particles
+-- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
 	name = "Frayed Threads",
@@ -25,12 +25,12 @@ newTalent{
 	require = chrono_req_high1,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return math.min(100, self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self)))/100 end,
+	getPercent = function(self, t) return paradoxTalentScale(self, t, 40, 80, 100)/100 end,
 	getRadius = function(self, t) return self:getTalentLevel(t) > 4 and 2 or 1 end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
 		local radius = t.getRadius(self, t)
-		return ([[Your Weapon Folding and Impact spells now deal %d%% of their damage in a radius of %d.
+		return ([[Your Weapon Folding and Impact spells now deal an additional %d%% damage in a radius of %d.
 		The damage percent will scale with your Spellpower.]])
 		:format(percent, radius)
 	end
@@ -46,7 +46,7 @@ newTalent{
 	tactical = { ATTACKAREA = { weapon = 3 } , DISABLE = 3 },
 	requires_target = true,
 	range = archery_range,
-	no_energy = "fake",
+	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 1.9) end,
 	getCooldown = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
@@ -62,7 +62,7 @@ newTalent{
 		for tid, cd in pairs(self.talents_cd) do
 			local tt = self:getTalentFromId(tid)
 			if tt.type[1]:find("^chronomancy/blade") then
-				self.talents_cd[tid] = cd - t.getCooldown(self, t)
+				self:alterTalentCoolingdown(tt, - t.getCooldown(self, t))
 			end
 		end
 	end,
@@ -73,7 +73,7 @@ newTalent{
 				
 		if self:hasArcheryWeapon("bow") then
 			-- Ranged attack
-			local targets = self:archeryAcquireTargets(tg, {one_shot=true})
+			local targets = self:archeryAcquireTargets(tg, {one_shot=true, no_energy = true})
 			if not targets then return end
 			self:archeryShoot(targets, t, tg, {mult=dam})
 		elseif mainhand then
@@ -81,13 +81,13 @@ newTalent{
 			self:project(tg, self.x, self.y, function(px, py, tg, self)
 				local target = game.level.map(px, py, Map.ACTOR)
 				if target and target ~= self then
-					local hit = self:attackTarget(target, nil, dam)
+					local hit = self:attackTarget(target, nil, dam, true)
 					-- Refresh bow talents
 					if hit then
 						for tid, cd in pairs(self.talents_cd) do
 							local tt = self:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/bow") then
-								self.talents_cd[tid] = cd - t.getCooldown(self, t)
+								self:alterTalentCoolingdown(tt, - t.getCooldown(self, t))
 							end
 						end
 					end
@@ -118,7 +118,7 @@ newTalent{
 	require = chrono_req_high3,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return math.min(50, 10 + self:combatTalentSpellDamage(t, 0, 30, getParadoxSpellpower(self)))/100 end,
+	getPercent = function(self, t) return paradoxTalentScale(self, t, 10, 30, 50)/100 end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
 		return ([[Your Bow Threading and Blade Threading spells now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initated the attack.
@@ -136,8 +136,8 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 15, 45, 25)) end, -- Limit >15
 	tactical = { ATTACK = {weapon = 4} },
 	range = 10,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 12)) end,
-	getDamagePenalty = function(self, t) return 60 - math.min(self:combatTalentSpellDamage(t, 0, 20, getParadoxSpellpower(self)), 30) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 12))) end,
+	getDamagePenalty = function(self, t) return 60 - paradoxTalentScale(self, t, 0, 20, 30) end,
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t)}
@@ -168,7 +168,6 @@ newTalent{
 			local tids = {}
 			for tid, _ in pairs(m.talents) do
 				local t = m:getTalentFromId(tid)
-				if t.remove_on_clone then tids[#tids+1] = t end
 				local tt = self:getTalentFromId(tid)
 				if not tt.type[1]:find("^chronomancy/blade") and not tt.type[1]:find("^chronomancy/threaded") and not tt.type[1]:find("^chronomancy/guardian") then
 					tids[#tids+1] = t 
@@ -181,10 +180,11 @@ newTalent{
 			
 			m.ai_state = { talent_in=2, ally_compassion=10 }	
 			m.generic_damage_penalty = t.getDamagePenalty(self, t)
-			m:setTarget(target or nil)
 			m.remove_from_party_on_death = true
 			
 			game.zone:addEntity(game.level, m, "actor", tx, ty)
+			
+			m:setTarget(target or nil)
 			
 			if game.party:hasMember(self) then
 				game.party:addMember(m, {
@@ -234,7 +234,6 @@ newTalent{
 			local tids = {}
 			for tid, _ in pairs(m.talents) do
 				local t = m:getTalentFromId(tid)
-				if t.remove_on_clone then tids[#tids+1] = t end
 				local tt = self:getTalentFromId(tid)
 				if not tt.type[1]:find("^chronomancy/bow") and not tt.type[1]:find("^chronomancy/threaded") and not tt.type[1]:find("^chronomancy/guardian") and not t.innate then
 					tids[#tids+1] = t 
@@ -248,10 +247,11 @@ newTalent{
 			m.ai_state = { talent_in=2, ally_compassion=10 }
 			m.generic_damage_penalty = t.getDamagePenalty(self, t)
 			m:attr("archery_pass_friendly", 1)
-			m:setTarget(target or nil)
 			m.remove_from_party_on_death = true
 			
 			game.zone:addEntity(game.level, m, "actor", tx, ty)
+			
+			m:setTarget(target or nil)
 			
 			if game.party:hasMember(self) then
 				game.party:addMember(m, {
@@ -283,6 +283,6 @@ newTalent{
 		local damage_penalty = t.getDamagePenalty(self, t)
 		return ([[Summons a blade warden and a bow warden from an alternate timeline for %d turns.  The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
 		Each warden knows all Threaded Combat, Temporal Guardian, and Blade Threading or Bow Threading spells you know.
-		The damage reduction penalty will be lessened by your Spellpower.]]):format(duration, damage_penalty)
+		The damage penalty will be lessened by your Spellpower.]]):format(duration, damage_penalty)
 	end,
 }

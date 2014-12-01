@@ -43,8 +43,8 @@ newTalent{
 	info = function(self, t)
 		return ([[For %d turns your pyrokinesis transcends your normal limits, increasing your Fire and Cold damage by %d%% and your Fire and Cold resistance penetration by %d%%.
 		In addition:
-		The cooldowns of Thermal Shield, Thermal Leech, Thermal Aura and Pyrokinesis are reset.
-		Thermal Aura will either increase in radius to 2, or apply its damage bonus to all of your weapons, whichever is applicable.
+		The cooldowns of Thermal Shield, Thermal Leech, Thermal Aura, Thermal Strike and Pyrokinesis are reset.
+		Thermal Aura effects will have their radius increased by 1.
 		Your Thermal Shield will have 100%% absorption efficiency and will absorb twice the normal amount of damage.
 		Pyrokinesis will inflict Flameshock.
 		Thermal Leech will reduce enemy damage by %d%%.
@@ -63,9 +63,9 @@ newTalent{
 	cooldown = 8,
 	psi = 20,
 	tactical = { ATTACK = { COLD = 3} },
-	range = function(self,t) return self:combatTalentScale(t, 4, 6) end,
+	range = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
 	getDamage = function (self, t)
-		return self:combatTalentMindDamage(t, 12, 340)
+		return self:combatTalentMindDamage(t, 12, 300)
 	end,
 	requires_target = true,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=0, selffire=false, talent=t} end,
@@ -77,8 +77,12 @@ newTalent{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if not target then return end
 		
-		self:project(tg, x, y, DamageType.COLD, self:mindCrit(rng.avg(0.8*dam, dam)), {type="mindsear"})
-		target:setEffect(target.EFF_BRAINLOCKED, 4, {apply_power=self:combatMindpower()})
+		self:project(tg, x, y, function(px, py)
+			DamageType:get(DamageType.COLD).projector(self, px, py, DamageType.COLD, self:mindCrit(rng.avg(0.8*dam, dam)))
+			local act = game.level.map(px, py, Map.ACTOR)
+			if not act then return end
+			act:setEffect(target.EFF_BRAINLOCKED, 4, {apply_power=self:combatMindpower()})
+		end, {type="mindsear"})
 		
 		return true
 	end,
@@ -101,11 +105,11 @@ newTalent{
 	psi = 35,
 	tactical = { DISABLE = 4 },
 	range = 6,
-	radius = function(self,t) return self:combatTalentScale(t, 2, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
 	getDuration = function (self, t)
 		return math.floor(self:combatTalentMindDamage(t, 4, 8))
 	end,
-	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 60) end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 80) end,
 	getArmor = function(self, t) return self:combatTalentMindDamage(t, 10, 20) end,
 	requires_target = true,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t, friendlyfire=false} end,
@@ -116,7 +120,7 @@ newTalent{
 		local dur = t.getDuration(self, t)
 		local dam = t.getDamage(self, t)
 		local armor = t.getArmor(self, t)
-		self:project(tg, self.x, self.y, function(tx, ty)
+		self:project(tg, x, y, function(tx, ty)
 			local act = game.level.map(tx, ty, engine.Map.ACTOR)
 			if act then
 				local cold = DamageType:get("COLD").projector(self, tx, ty, DamageType.COLD, dam)
@@ -153,8 +157,8 @@ newTalent{
 	points = 5,
 	psi = 0,
 	cooldown = 10,
-	range = function(self,t) return self:combatTalentScale(t, 4, 6) end,
-	radius = function(self,t) return self:combatTalentScale(t, 2, 4) end,
+	range = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
 	tactical = { ATTACKAREA = { FIRE = 3, COLD = 2 }, PSI = 2 },
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 50, 150) end,
 	action = function(self, t)
@@ -164,7 +168,7 @@ newTalent{
 		
 		local dam=self:mindCrit(t.getDamage(self, t))
 		local dam1 = dam * (self:getMaxPsi() - self:getPsi()) / self:getMaxPsi()
-		local dam2 = dam * self:getPsi() / self:getMaxPsi()
+		local dam2 = dam * self:getPsi() / self:getMaxPsi() * 2
 		
 		self:project(tg, x, y, DamageType.COLD, dam1)
 		self:project(tg, x, y, DamageType.FIRE, dam2)

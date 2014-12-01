@@ -24,18 +24,18 @@ newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronoma
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/threaded-combat", name = "Threaded Combat", min_lev = 10, description = "A blend of ranged and dual-weapon combat." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/temporal-hounds", name = "Temporal Hounds", min_lev = 10, description = "Call temporal hounds to aid you in combat." }
 
-newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/energy", name = "energy", generic = true, description = "Manipulate raw energy by addition or subtraction." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/fate-threading", name = "Fate Threading", description = "Manipulate the threads of fate." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/gravity", name = "gravity", description = "Call upon the force of gravity to crush, push, and pull your foes." }
-newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/matter", name = "matter", description = "Change and shape matter itself." }
-newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/paradox", name = "paradox", min_lev = 10, description = "Create loopholes in the laws of spacetime." }
-newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/speed-control", name = "Speed Control", description = "Control how fast objects and creatures move through spacetime." }
-newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/timeline-threading", name = "Timeline Threading", min_lev = 10, description = "Examine and alter the timelines that make up the spacetime continuum." }
-newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/timetravel", name = "Time Travel", min_lev = 10, description = "Travel through time yourself, or send your foes into the future." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/spacetime-folding", name = "Spacetime Folding", description = "Mastery of folding points in space." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/speed-control", name = "Speed Control", description = "Control how fast objects and creatures move through spacetime." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/timeline-threading", name = "Timeline Threading", description = "Examine and alter the timelines that make up the spacetime continuum." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/timetravel", name = "timetravel", description = "Directly manipulate the flow of time" }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/spatial-tears", name = "Spatial Tears", min_lev = 10, description = "Manipulate topological defects in the fabric of spacetime." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/spellbinding", name = "Spellbinding", min_lev = 10, description = "Manipulate chronomantic spells." }
 
 -- Generic Chronomancy
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/chronomancy", name = "Chronomancy", generic = true, description = "Allows you to glimpse the future, or become more aware of the present." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/energy", name = "energy", generic = true, min_lev = 10, description = "Manipulate raw energy by addition or subtraction." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/fate-weaving", name = "Fate Weaving", generic = true, description = "Weave the threads of fate." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/spacetime-weaving", name = "Spacetime Weaving", generic = true, description = "Weave the threads of spacetime." }
 
@@ -43,10 +43,10 @@ newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronoma
 newTalentType{ no_silence=true, is_spell=true, type="chronomancy/other", name = "Other", generic = true, description = "Miscellaneous Chronomancy effects." }
 
 newTalentType{ no_silence=true, is_spell=true, type="chronomancy/age-manipulation", name = "Age Manipulation", description = "Manipulate the age of creatures you encounter." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/matter", name = "matter", description = "Change and shape matter itself." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="chronomancy/paradox", name = "paradox", description = "Break the laws of spacetime." }
 newTalentType{ no_silence=true, is_spell=true, type="chronomancy/temporal-archery", name = "Temporal Archery", description = "A blend of chronomancy and ranged combat." }
 newTalentType{ no_silence=true, is_spell=true, type="chronomancy/temporal-combat", name = "Temporal Combat", description = "A blend of chronomancy and physical combat." }
-
-
 
 -- Anomalies are not learnable but can occur instead of an intended spell when paradox gets to high.
 newTalentType{ no_silence=true, is_spell=true, type="chronomancy/anomalies", name = "anomalies", description = "Spacetime anomalies that can randomly occur when paradox is to high." }
@@ -127,6 +127,7 @@ load("/data/talents/chronomancy/gravity.lua")
 load("/data/talents/chronomancy/matter.lua")
 load("/data/talents/chronomancy/paradox.lua")
 load("/data/talents/chronomancy/speed-control.lua")
+load("/data/talents/chronomancy/spellbinding.lua")
 load("/data/talents/chronomancy/temporal-archery.lua")
 load("/data/talents/chronomancy/temporal-combat.lua")
 load("/data/talents/chronomancy/guardian.lua")
@@ -136,6 +137,7 @@ load("/data/talents/chronomancy/timeline-threading.lua")
 load("/data/talents/chronomancy/timetravel.lua")
 load("/data/talents/chronomancy/spacetime-folding.lua")
 load("/data/talents/chronomancy/spacetime-weaving.lua")
+load("/data/talents/chronomancy/spatial-tears.lua")
 
 -- Loads many functions and misc. talents
 load("/data/talents/chronomancy/other.lua")

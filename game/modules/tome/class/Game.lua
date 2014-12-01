@@ -34,6 +34,7 @@ local Astar = require "engine.Astar"
 local DirectPath = require "engine.DirectPath"
 local Shader = require "engine.Shader"
 local HighScores = require "engine.HighScores"
+local FontPackage = require "engine.FontPackage"
 
 local NicerTiles = require "mod.class.NicerTiles"
 local GameState = require "mod.class.GameState"
@@ -100,14 +101,14 @@ function _M:runReal()
 
 	self.uiset:activate()
 
-	local flysize = ({normal=14, small=12, big=16})[config.settings.tome.fonts.size]
+	local flyfont, flysize = FontPackage:getFont("flyer")
 	self.tooltip = Tooltip.new(self.uiset.init_font_mono, self.uiset.init_size_mono, {255,255,255}, {30,30,30,230})
 	self.tooltip2 = Tooltip.new(self.uiset.init_font_mono, self.uiset.init_size_mono, {255,255,255}, {30,30,30,230})
-	self.flyers = FlyingText.new("/data/font/INSULA__.ttf", flysize, "/data/font/INSULA__.ttf", flysize + 3)
+	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
 	self.flyers:enableShadow(0.6)
 	game:setFlyingText(self.flyers)
 
-	self.bignews = BigNews.new("/data/font/DroidSansMono.ttf", 30)
+	self.bignews = BigNews.new(FontPackage:getFont("bignews"))
 
 	self.nicer_tiles = NicerTiles.new()
 
@@ -148,14 +149,14 @@ function _M:runReal()
 	end)
 
 	-- Create the map scroll text overlay
-	local lfont = core.display.newFont("/data/font/DroidSans.ttf", 30)
+	local lfont = FontPackage:get("bignews", true)
 	lfont:setStyle("bold")
 	local s = core.display.drawStringBlendedNewSurface(lfont, "<Scroll mode, press keys to scroll, caps lock to exit>", unpack(colors.simple(colors.GOLD)))
 	lfont:setStyle("normal")
 	self.caps_scroll = {s:glTexture()}
 	self.caps_scroll.w, self.caps_scroll.h = s:getSize()
 
-	self.zone_font = core.display.newFont("/data/font/DroidSans.ttf", 12)
+	self.zone_font = FontPackage:get("zone")
 
 	self.inited = true
 
@@ -268,7 +269,7 @@ function _M:newGame()
 			self.paused = true
 			print("[PLAYER BIRTH] resolved!")
 			local birthend = function()
-				local d = require("engine.dialogs.ShowText").new("Welcome to ToME", "intro-"..self.player.starting_intro, {name=self.player.name}, nil, nil, function()
+				local d = require("engine.dialogs.ShowText").new("Welcome to #LIGHT_BLUE#Tales of Maj'Eyal", "intro-"..self.player.starting_intro, {name=self.player.name}, nil, nil, function()
 					self.player:resetToFull()
 					self.player:registerCharacterPlayed()
 					self.player:onBirth(birth)
@@ -1167,9 +1168,7 @@ function _M:updateZoneName()
 	end
 	if self.zone_name_s and self.old_zone_name == name then return end
 
-	self.zone_font:setStyle("bold")
 	local s = core.display.drawStringBlendedNewSurface(self.zone_font, name, unpack(colors.simple(colors.GOLD)))
-	self.zone_font:setStyle("normal")
 	self.zone_name_w, self.zone_name_h = s:getSize()
 	self.zone_name_s, self.zone_name_tw, self.zone_name_th = s:glTexture()
 	self.old_zone_name = name
@@ -1581,6 +1580,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			self.player:setEffect("EFF_STUNNED", 10, {})
+do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="staff", random_object=true}, nil, true)
 			if o then
 				o:identify(true)

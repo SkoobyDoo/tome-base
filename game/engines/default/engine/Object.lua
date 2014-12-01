@@ -129,35 +129,53 @@ function _M:canStack(o)
 	return false
 end
 
---- Adds object to the stack
--- @return true if stacking worked, false if not
-function _M:stack(o, force)
-	if not force and not self:canStack(o) then return false end
+--- Adds an object to the stack
+-- @param o = object to stack onto self
+-- @param force boolean to stack unstackable objects
+-- @param num = maximum number of stacked objects to move
+-- @return true if stacking worked or false if not, and boolean if all of the stack was moved
+function _M:stack(o, force, num)
+	local last = true
+	num = num or math.huge
+	if (not force and not self:canStack(o)) or num < 1 then return false end
 	self.stacked = self.stacked or {}
-	self.stacked[#self.stacked+1] = o
-
-	-- Merge stacks
-	if o.stacked then
-		for i = 1, #o.stacked do
-			self.stacked[#self.stacked+1] = o.stacked[i]
-		end
-		o.stacked = nil
+	for i = 1, math.min(o:getNumber(), num) do
+		self.stacked[#self.stacked+1], last = o:unstack()
 	end
-	return true
+	return true, last
 end
 
---- Removes an object of the stack
--- @return object, true if the last, or object, false if more
-function _M:unstack()
+--- Removes one or more objects from a stack of objects
+-- @param num = maximum number to remove 
+-- @return self or new object, true if last item was removed (self is not deleted) or false if more on the stack
+function _M:unstack(num)
 	if not self:stackable() or not self.stacked or #self.stacked == 0 then return self, true end
-	local o = table.remove(self.stacked)
+	num = math.min(num or 1, #self.stacked + 1)
+	if num < 1 then return self.stacked[1], false end -- next item to remove
+	local o
+	local last, uo = false
+	repeat
+		num = num - 1
+		uo = table.remove(self.stacked)
+		if not o then
+			o = uo; o.stacked = {}
+		else
+			if uo then
+				o.stacked[#o.stacked+1] = uo
+			else
+				o.stacked[#o.stacked+1] = self; last = true; break
+			end
+		end
+	until num <= 0 or last
 	if #self.stacked == 0 then self.stacked = nil end
-	return o, false
+	if #o.stacked == 0 then o.stacked = nil end
+	return o, last
 end
 
 --- Applies a function to all items of the stack
+--  stops after fct(so, i) returns true
 function _M:forAllStack(fct)
-	fct(self)
+	if fct(self) then return end
 	if not self.stacked then return end
 	for i, so in ipairs(self.stacked) do
 		if fct(so, i) then break end
