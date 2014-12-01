@@ -28,10 +28,10 @@ newTalent{
 	tactical = { ATTACK = { FIRE = 2 } },
 	range = 10,
 	reflectable = true,
-	proj_speed = 1,
+	proj_speed = 20,
 	requires_target = true,
 	target = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_acid"}}
+		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_fire", trail="firetrail"}}
 		if self:getTalentLevel(t) >= 5 then tg.type = "beam" end
 		return tg
 	end,
