@@ -1172,6 +1172,7 @@ function _M:processEffects()
 				else e.grids = core.fov.beam_grids(e.x, e.y, e.radius, e.dir, e.angle, true) end
 				if e.particles then
 					if e.particles_only_one then
+						e.particles[1]:shiftCustom(self.tile_w * (e.particles[1].x - e.x), self.tile_h * (e.particles[1].y - e.y))
 						e.particles[1].x = e.x
 						e.particles[1].y = e.y
 					else

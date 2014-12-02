@@ -138,3 +138,9 @@ function _M:shift(map, mo)
 	end					
 	self._adx, self._ady = adx, ady
 end
+
+function _M:shiftCustom(dx, dy)
+	if not self.can_shift then return end
+
+	self.ps:shift(dx, dy)
+end
