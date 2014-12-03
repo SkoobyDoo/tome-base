@@ -22,6 +22,7 @@ if core.shader.allow("distort") then
 end
 
 base_size = 32
+can_shift = true
 
 return { generator = function()
 	local ad = rng.range(0, 360)
