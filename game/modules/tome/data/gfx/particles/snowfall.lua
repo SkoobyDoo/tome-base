@@ -19,6 +19,7 @@
 
 base_size = 32
 toback = true
+can_shift = true
 
 return { generator = function()
 	local ad = rng.range(0, 360)
