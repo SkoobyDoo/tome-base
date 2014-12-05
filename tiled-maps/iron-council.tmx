@@ -150,6 +150,11 @@
  </tileset>
  <tileset firstgid="361" name="dg_town132" tilewidth="32" tileheight="32">
   <image source="gfx/dg_town132.gif" width="288" height="128"/>
+  <tile id="3">
+   <properties>
+    <property name="display" value="a"/>
+   </properties>
+  </tile>
   <tile id="4">
    <properties>
     <property name="display" value="2"/>
@@ -1499,7 +1504,7 @@
    <tile gid="1"/>
    <tile gid="218"/>
    <tile gid="218"/>
-   <tile gid="218"/>
+   <tile gid="364"/>
    <tile gid="218"/>
    <tile gid="1"/>
    <tile gid="1"/>

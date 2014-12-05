@@ -227,6 +227,20 @@ newEntity{
 	},
 }
 
+newEntity{
+	define_as = "LITEDIGSTORE",
+	name = "tool store",
+	display = '8', color=colors.UMBER,
+	store = {
+		purse = 10,
+		empty_before_restock = false,
+		filters = {
+			{type="lite", id=true, tome_drops="store"},
+			{type="tool", subtype="digger", id=true, tome_drops="store"},
+		},
+	},
+}
+
 
 -------------------------------------------------------------
 -- Angolwen
