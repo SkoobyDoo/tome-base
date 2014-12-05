@@ -61,6 +61,12 @@ newEntity{ base = "BASE_STORE", define_as = "JEWELRY",
 	resolvers.store("GEMSTORE", "allied-kingdoms", "store/shop_door.png", "store/shop_sign_jewelry.png"),
 }
 
+newEntity{ base = "BASE_STORE", define_as = "TOOLSHOP",
+	name="Survival Supplies",
+	display='8', color=colors.UMBER,
+	resolvers.store("LITEDIGSTORE", "allied-kingdoms", "store/shop_door.png", "store/shop_sign_trainer.png"),
+}
+
 newEntity{ base = "BASE_STORE", define_as = "ALCHEMIST",
 	name="Home of Stire the Alchemist",
 	display='*', color=colors.UMBER, image = "store/shop_door_barred.png",
