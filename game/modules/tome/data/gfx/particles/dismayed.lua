@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 base_size = 32
+can_shift = true
 
 local toggle = false
 

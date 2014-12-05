@@ -19,6 +19,7 @@
 
 base_size = 32
 
+can_shift = true
 local toggle = false
 
 return { generator = function()

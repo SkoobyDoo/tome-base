@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 base_size = 32
+can_shift = true
 
 density = density or 1
 return { generator = function()

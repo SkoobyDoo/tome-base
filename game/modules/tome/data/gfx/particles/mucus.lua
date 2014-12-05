@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 base_size = 64
+can_shift = true
 
 local nb = 0
 

@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 base_size = 32
+can_shift = true
 
 return { generator = function()
 	local ad = rng.range(20+90, 160+90)
