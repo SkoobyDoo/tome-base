@@ -220,7 +220,6 @@ newBirthDescriptor{
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Nonrandom bosses will have randomly selected talents",
 		"All enemies have 20% more life",
-		"Player rank is normal instead of elite",
 		"Player can earn Insane version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -229,8 +228,8 @@ newBirthDescriptor{
 		class = { ["Tutorial Adventurer"] = "forbid", },
 	},
 	copy = {
+		instakill_immune = 1,
 		__game_difficulty = 4,
-		rank = 2,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
@@ -251,7 +250,6 @@ newBirthDescriptor{
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Bosses will have randomly selected talents",
 		"Player is being hunted! Randomly all foes in a radius will get a feeling of where she/he is",
-		"Player rank is normal instead of elite",
 		"Player can earn Madness version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -263,8 +261,8 @@ newBirthDescriptor{
 		[ActorTalents.T_HUNTED_PLAYER] = 1,
 	},
 	copy = {
+		instakill_immune = 1,
 		__game_difficulty = 5,
-		rank = 2,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
