@@ -144,6 +144,6 @@ end
 function resolvers.generic(fct)
 	return {__resolver="generic", fct}
 end
-function resolvers.calc.generic(t, e)
-	return t[1](e)
+function resolvers.calc.generic(t, e, ...)
+	return t[1](e, ...)
 end

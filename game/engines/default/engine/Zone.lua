@@ -490,6 +490,7 @@ function _M:finishEntity(level, type, e, ego_filter)
 				ego.__CLASSNAME = nil
 				-- The ego requested instant resolving before merge ?
 				if ego.instant_resolve then ego:resolve(nil, nil, e) end
+				if ego.instant_resolve == "last" then ego:resolve(nil, true, e) end
 				ego.instant_resolve = nil
 				-- Void the uid, we dont want to erase the base entity's one
 				ego.uid = nil
@@ -578,6 +579,7 @@ function _M:finishEntity(level, type, e, ego_filter)
 				ego.__CLASSNAME = nil
 				-- The ego requested instant resolving before merge ?
 				if ego.instant_resolve then ego:resolve(nil, nil, e) end
+				if ego.instant_resolve == "last" then ego:resolve(nil, true, e) end
 				ego.instant_resolve = nil
 				-- Void the uid, we dont want to erase the base entity's one
 				ego.uid = nil
