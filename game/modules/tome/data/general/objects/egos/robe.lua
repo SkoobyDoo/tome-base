@@ -36,7 +36,7 @@ newEntity{
 		inc_damage = { [DamageType.FIRE] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.FIRE] = (ego.wielder.resists[engine.DamageType.FIRE] or 0) + math.floor(ego.wielder.inc_damage[engine.DamageType.FIRE]*1.5) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.FIRE] = math.floor(ego.wielder.inc_damage[engine.DamageType.FIRE]*1.5) end),
 }
 
 newEntity{
@@ -50,7 +50,7 @@ newEntity{
 		inc_damage = { [DamageType.COLD] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.COLD] = (ego.wielder.resists[engine.DamageType.COLD] or 0) + math.floor(ego.wielder.inc_damage[engine.DamageType.COLD]*1.5) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.COLD] = math.floor(ego.wielder.inc_damage[engine.DamageType.COLD]*1.5) end),
 }
 
 newEntity{
@@ -64,7 +64,7 @@ newEntity{
 		inc_damage = { [DamageType.NATURE] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.NATURE] = (ego.wielder.resists[engine.DamageType.NATURE] or 0) + math.floor(ego.wielder.inc_damage[engine.DamageType.NATURE]*1.5) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.NATURE] = math.floor(ego.wielder.inc_damage[engine.DamageType.NATURE]*1.5) end),
 }
 
 newEntity{
@@ -78,7 +78,7 @@ newEntity{
 		inc_damage = { [DamageType.LIGHTNING] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.LIGHTNING] = (ego.wielder.resists[engine.DamageType.LIGHTNING] or 0) + math.floor(ego.wielder.inc_damage[engine.DamageType.LIGHTNING]*1.5) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.LIGHTNING] = math.floor(ego.wielder.inc_damage[engine.DamageType.LIGHTNING]*1.5) end),
 }
 
 newEntity{
@@ -92,7 +92,7 @@ newEntity{
 		inc_damage = { [DamageType.LIGHT] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.LIGHT] = (ego.wielder.resists[engine.DamageType.LIGHT] or 0) + math.floor(ego.wielder.inc_damage[engine.DamageType.LIGHT]*1.5) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.LIGHT] = math.floor(ego.wielder.inc_damage[engine.DamageType.LIGHT]*1.5) end),
 }
 
 newEntity{
@@ -106,7 +106,7 @@ newEntity{
 		inc_damage = { [DamageType.DARKNESS] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.DARKNESS] = (ego.wielder.resists[engine.DamageType.DARKNESS] or 0) + math.floor(ego.wielder.inc_damage[engine.DamageType.DARKNESS]*1.5) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.DARKNESS] = math.floor(ego.wielder.inc_damage[engine.DamageType.DARKNESS]*1.5) end),
 }
 
 newEntity{
@@ -120,7 +120,7 @@ newEntity{
 		inc_damage = { [DamageType.ACID] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.ACID] = (ego.wielder.resists[engine.DamageType.ACID] or 0) + math.floor(ego.wielder.inc_damage[engine.DamageType.ACID]*1.5) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.ACID] = math.floor(ego.wielder.inc_damage[engine.DamageType.ACID]*1.5) end),
 }
 
 -- rare resists
@@ -135,7 +135,7 @@ newEntity{
 		inc_damage = { [DamageType.BLIGHT] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.BLIGHT] = (ego.wielder.resists[engine.DamageType.BLIGHT] or 0) + (ego.wielder.inc_damage[engine.DamageType.BLIGHT]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.BLIGHT] = (ego.wielder.inc_damage[engine.DamageType.BLIGHT]) end),
 }
 
 newEntity{
@@ -149,7 +149,7 @@ newEntity{
 		inc_damage = { [DamageType.PHYSICAL] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.PHYSICAL] = (ego.wielder.resists[engine.DamageType.PHYSICAL] or 0) + (ego.wielder.inc_damage[engine.DamageType.PHYSICAL]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.PHYSICAL] = ego.wielder.inc_damage[engine.DamageType.PHYSICAL] end),
 }
 
 newEntity{
@@ -163,7 +163,7 @@ newEntity{
 		inc_damage = { [DamageType.MIND] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.MIND] = (ego.wielder.resists[engine.DamageType.MIND] or 0) + (ego.wielder.inc_damage[engine.DamageType.MIND]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.MIND] = ego.wielder.inc_damage[engine.DamageType.MIND] end),
 }
 
 newEntity{
@@ -177,7 +177,7 @@ newEntity{
 		inc_damage = { [DamageType.TEMPORAL] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.TEMPORAL] = (ego.wielder.resists[engine.DamageType.TEMPORAL] or 0) + (ego.wielder.inc_damage[engine.DamageType.TEMPORAL]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.TEMPORAL] = ego.wielder.inc_damage[engine.DamageType.TEMPORAL] end),
 }
 -- Arcane Damage doesn't get resist too so we give it +mana instead
 newEntity{
