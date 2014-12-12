@@ -577,6 +577,7 @@ function _M:generateRandart(data)
 				ego = ego:clone()
 				if ego.greater_ego then been_greater = been_greater + 1 end
 				if ego.instant_resolve then ego:resolve(nil, nil, o) end -- Don't allow resolvers.generic here (conflict)
+				if ego.instant_resolve == "last" then ego:resolve(nil, true, e) end
 				ego.instant_resolve = nil
 				ego.uid = nil
 

@@ -100,7 +100,7 @@ newEntity{
 
 newEntity{
 	power_source = {nature=true},
-	name = " of fire (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of fire (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {fire=true},
 	level_range = {1, 50},
 	rarity = 6,
@@ -109,12 +109,12 @@ newEntity{
 		inc_damage = { [DamageType.FIRE] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.FIRE] = (e.wielder.resists[engine.DamageType.FIRE] or 0) + (e.wielder.inc_damage[engine.DamageType.FIRE]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.FIRE] = ego.wielder.inc_damage[engine.DamageType.FIRE]*2 end),
 }
 
 newEntity{
 	power_source = {nature=true},
-	name = " of frost (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of frost (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {frost=true},
 	level_range = {1, 50},
 	rarity = 6,
@@ -123,12 +123,12 @@ newEntity{
 		inc_damage = { [DamageType.COLD] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.COLD] = (e.wielder.resists[engine.DamageType.COLD] or 0) + (e.wielder.inc_damage[engine.DamageType.COLD]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.COLD] = ego.wielder.inc_damage[engine.DamageType.COLD]*2 end),
 }
 
 newEntity{
 	power_source = {nature=true},
-	name = " of nature (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of nature (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {nature=true},
 	level_range = {1, 50},
 	rarity = 6,
@@ -137,12 +137,12 @@ newEntity{
 		inc_damage = { [DamageType.NATURE] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.NATURE] = (e.wielder.resists[engine.DamageType.NATURE] or 0) + (e.wielder.inc_damage[engine.DamageType.NATURE]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.NATURE] = ego.wielder.inc_damage[engine.DamageType.NATURE]*2 end),
 }
 
 newEntity{
 	power_source = {nature=true},
-	name = " of lightning (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of lightning (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {lightning=true},
 	level_range = {1, 50},
 	rarity = 6,
@@ -151,12 +151,12 @@ newEntity{
 		inc_damage = { [DamageType.LIGHTNING] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.LIGHTNING] = (e.wielder.resists[engine.DamageType.LIGHTNING] or 0) + (e.wielder.inc_damage[engine.DamageType.LIGHTNING]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.LIGHTNING] = ego.wielder.inc_damage[engine.DamageType.LIGHTNING]*2 end),
 }
 
 newEntity{
 	power_source = {arcane=true},
-	name = " of light (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of light (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {light=true},
 	level_range = {1, 50},
 	rarity = 6,
@@ -165,12 +165,12 @@ newEntity{
 		inc_damage = { [DamageType.LIGHT] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.LIGHT] = (e.wielder.resists[engine.DamageType.LIGHT] or 0) + (e.wielder.inc_damage[engine.DamageType.LIGHT]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.LIGHT] = ego.wielder.inc_damage[engine.DamageType.LIGHT]*2 end),
 }
 
 newEntity{
 	power_source = {arcane=true},
-	name = " of darkness (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of darkness (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {darkness=true},
 	level_range = {1, 50},
 	rarity = 6,
@@ -179,12 +179,12 @@ newEntity{
 		inc_damage = { [DamageType.DARKNESS] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.DARKNESS] = (e.wielder.resists[engine.DamageType.DARKNESS] or 0) + (e.wielder.inc_damage[engine.DamageType.DARKNESS]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.DARKNESS] = ego.wielder.inc_damage[engine.DamageType.DARKNESS]*2 end),
 }
 
 newEntity{
 	power_source = {nature=true},
-	name = " of corrosion (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of corrosion (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {corrosion=true},
 	level_range = {1, 50},
 	rarity = 6,
@@ -193,7 +193,7 @@ newEntity{
 		inc_damage = { [DamageType.ACID] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.ACID] = (e.wielder.resists[engine.DamageType.ACID] or 0) + (e.wielder.inc_damage[engine.DamageType.ACID]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.ACID] = ego.wielder.inc_damage[engine.DamageType.ACID]*2 end),
 }
 
 ----------------------------------------------------------------
@@ -201,7 +201,7 @@ newEntity{
 ----------------------------------------------------------------
 newEntity{
 	power_source = {arcane=true},
-	name = " of aether (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of aether (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {aether=true},
 	level_range = {1, 50},
 	rarity = 24,
@@ -210,12 +210,12 @@ newEntity{
 		inc_damage = { [DamageType.ARCANE] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.ARCANE] = (e.wielder.resists[engine.DamageType.ARCANE] or 0) + (e.wielder.inc_damage[engine.DamageType.ARCANE]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.ARCANE] = ego.wielder.inc_damage[engine.DamageType.ARCANE] end),
 }
 
 newEntity{
 	power_source = {arcane=true},
-	name = " of blight (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of blight (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {blight=true},
 	level_range = {1, 50},
 	rarity = 12,
@@ -224,12 +224,12 @@ newEntity{
 		inc_damage = { [DamageType.BLIGHT] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.BLIGHT] = (e.wielder.resists[engine.DamageType.BLIGHT] or 0) + (e.wielder.inc_damage[engine.DamageType.BLIGHT]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.BLIGHT] = ego.wielder.inc_damage[engine.DamageType.BLIGHT] end),
 }
 
 newEntity{
 	power_source = {nature=true},
-	name = " of the mountain (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of the mountain (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {mountain=true},
 	level_range = {1, 50},
 	rarity = 24,
@@ -238,12 +238,12 @@ newEntity{
 		inc_damage = { [DamageType.PHYSICAL] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.PHYSICAL] = (e.wielder.resists[engine.DamageType.PHYSICAL] or 0) + (e.wielder.inc_damage[engine.DamageType.PHYSICAL]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.PHYSICAL] = ego.wielder.inc_damage[engine.DamageType.PHYSICAL] end),
 }
 
 newEntity{
 	power_source = {psionic=true},
-	name = " of the mind (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of the mind (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {mind=true},
 	level_range = {1, 50},
 	rarity = 12,
@@ -252,12 +252,12 @@ newEntity{
 		inc_damage = { [DamageType.MIND] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.MIND] = (e.wielder.resists[engine.DamageType.MIND] or 0) + (e.wielder.inc_damage[engine.DamageType.MIND]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.MIND] = ego.wielder.inc_damage[engine.DamageType.MIND] end),
 }
 
 newEntity{
 	power_source = {arcane=true},
-	name = " of time (#RESIST#)", suffix=true, instant_resolve=true,
+	name = " of time (#RESIST#)", suffix=true, instant_resolve="last",
 	keywords = {time=true},
 	level_range = {1, 50},
 	rarity = 24,
@@ -266,7 +266,7 @@ newEntity{
 		inc_damage = { [DamageType.TEMPORAL] = resolvers.mbonus_material(10, 10) },
 		resists = {},
 	},
-	resolvers.genericlast(function(e) e.wielder.resists[engine.DamageType.TEMPORAL] = (e.wielder.resists[engine.DamageType.TEMPORAL] or 0) + (e.wielder.inc_damage[engine.DamageType.TEMPORAL]) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.resists[engine.DamageType.TEMPORAL] = ego.wielder.inc_damage[engine.DamageType.TEMPORAL] end),
 }
 
 
@@ -276,7 +276,7 @@ newEntity{
 
 newEntity{
 	power_source = {technique=true},
-	name = "warrior's ", prefix=true, instant_resolve=true,
+	name = "warrior's ", prefix=true, instant_resolve="last",
 	keywords = {warrior=true},
 	level_range = {1, 50},
 	rarity = 7,
@@ -284,12 +284,12 @@ newEntity{
 	wielder = {
 		inc_stats = { [Stats.STAT_STR] = resolvers.mbonus_material(8, 2) },
 	},
-	resolvers.genericlast(function(e) e.wielder.combat_armor = (e.wielder.combat_armor or 0) + (e.wielder.inc_stats[engine.interface.ActorStats.STAT_STR]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.combat_armor = ego.wielder.inc_stats[engine.interface.ActorStats.STAT_STR]*2 end),
 }
 
 newEntity{
 	power_source = {technique=true},
-	name = "rogue's ", prefix=true, instant_resolve=true,
+	name = "rogue's ", prefix=true, instant_resolve="last",
 	keywords = {rogue=true},
 	level_range = {1, 50},
 	rarity = 7,
@@ -297,12 +297,12 @@ newEntity{
 	wielder = {
 		inc_stats = { [Stats.STAT_CUN] = resolvers.mbonus_material(8, 2) },
 	},
-	resolvers.genericlast(function(e) e.wielder.combat_def = (e.wielder.combat_def or 0) + (e.wielder.inc_stats[engine.interface.ActorStats.STAT_CUN]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.combat_def = ego.wielder.inc_stats[engine.interface.ActorStats.STAT_CUN]*2 end),
 }
 
 newEntity{
 	power_source = {technique=true},
-	name = "marksman's ", prefix=true, instant_resolve=true,
+	name = "marksman's ", prefix=true, instant_resolve="last",
 	keywords = {marskman=true},
 	level_range = {1, 50},
 	rarity = 7,
@@ -310,12 +310,12 @@ newEntity{
 	wielder = {
 		inc_stats = { [Stats.STAT_DEX] = resolvers.mbonus_material(8, 2) },
 	},
-	resolvers.genericlast(function(e) e.wielder.combat_atk = (e.wielder.combat_atk or 0) + (e.wielder.inc_stats[engine.interface.ActorStats.STAT_DEX]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.combat_atk = ego.wielder.inc_stats[engine.interface.ActorStats.STAT_DEX]*2 end),
 }
 
 newEntity{
 	power_source = {nature=true},
-	name = "titan's ", prefix=true, instant_resolve=true,
+	name = "titan's ", prefix=true, instant_resolve="last",
 	keywords = {titan=true},
 	level_range = {1, 50},
 	rarity = 7,
@@ -323,12 +323,12 @@ newEntity{
 	wielder = {
 		inc_stats = { [Stats.STAT_CON] = resolvers.mbonus_material(8, 2) },
 	},
-	resolvers.genericlast(function(e) e.wielder.combat_physresist = (e.wielder.combat_physresist or 0) + (e.wielder.inc_stats[engine.interface.ActorStats.STAT_CON]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.combat_physresist = ego.wielder.inc_stats[engine.interface.ActorStats.STAT_CON]*2 end),
 }
 
 newEntity{
 	power_source = {arcane=true},
-	name = "wizard's ", prefix=true, instant_resolve=true,
+	name = "wizard's ", prefix=true, instant_resolve="last",
 	keywords = {wizard=true},
 	level_range = {1, 50},
 	rarity = 7,
@@ -336,12 +336,12 @@ newEntity{
 	wielder = {
 		inc_stats = { [Stats.STAT_MAG] = resolvers.mbonus_material(8, 2) },
 	},
-	resolvers.genericlast(function(e) e.wielder.combat_spellresist = (e.wielder.combat_spellresist or 0) + (e.wielder.inc_stats[engine.interface.ActorStats.STAT_MAG]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.combat_spellresist = ego.wielder.inc_stats[engine.interface.ActorStats.STAT_MAG]*2 end),
 }
 
 newEntity{
 	power_source = {psionic=true},
-	name = "psionicist's ", prefix=true, instant_resolve=true,
+	name = "psionicist's ", prefix=true, instant_resolve="last",
 	keywords = {psionic=true},
 	level_range = {1, 50},
 	rarity = 7,
@@ -349,7 +349,7 @@ newEntity{
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = resolvers.mbonus_material(8, 2) },
 	},
-	resolvers.genericlast(function(e) e.wielder.combat_mentalresist = (e.wielder.combat_mentalresist or 0) + (e.wielder.inc_stats[engine.interface.ActorStats.STAT_WIL]*2) end),
+	resolvers.genericlast(function(e, ego) ego.wielder.combat_mentalresist = ego.wielder.inc_stats[engine.interface.ActorStats.STAT_WIL]*2 end),
 }
 
 ----------------------------------------------------------------

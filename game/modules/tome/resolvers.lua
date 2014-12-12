@@ -459,8 +459,8 @@ end
 function resolvers.genericlast(fct)
 	return {__resolver="genericlast", __resolve_last=true, fct}
 end
-function resolvers.calc.genericlast(t, e)
-	return t[1](e)
+function resolvers.calc.genericlast(t, e, ...)
+	return t[1](e, ...)
 end
 
 --- Charges resolver, gives a random use talent
