@@ -150,53 +150,64 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		-- Increases damage
 		local mind_linked = false
+		local inc = 0
 		if src.inc_damage then
-			local inc
 			if src.combatGetDamageIncrease then inc = src:combatGetDamageIncrease(type)
 			else inc = (src.inc_damage.all or 0) + (src.inc_damage[type] or 0) end
 			if src.getVim and src:attr("demonblood_dam") then inc = inc + ((src.demonblood_dam or 0) * (src:getVim() or 0)) end
+		end
 
-			-- Increases damage for the entity type (Demon, Undead, etc)
-			if target.type and src and src.inc_damage_actor_type then
-				local increase = 0
-				for k, v in pairs(src.inc_damage_actor_type) do
-					if target:checkClassification(tostring(k)) then increase = math.max(increase, v) end
-				end
-				if increase and increase~= 0 then
-					print("[PROJECTOR] before inc_damage_actor_type", dam + (dam * inc / 100))
-					inc = inc + increase
-					print("[PROJECTOR] after inc_damage_actor_type", dam + (dam * inc / 100))
-				end
+		-- Increases damage for the entity type (Demon, Undead, etc)
+		if target.type and src and src.inc_damage_actor_type then
+			local increase = 0
+			for k, v in pairs(src.inc_damage_actor_type) do
+				if target:checkClassification(tostring(k)) then increase = math.max(increase, v) end
 			end
+			if increase and increase~= 0 then
+				print("[PROJECTOR] before inc_damage_actor_type", dam + (dam * inc / 100))
+				inc = inc + increase
+				print("[PROJECTOR] after inc_damage_actor_type", dam + (dam * inc / 100))
+			end
+		end
 
-			-- Increases damage to sleeping targets
-			if target:attr("sleep") and src.attr and src:attr("night_terror") then
-				inc = inc + src:attr("night_terror")
-				print("[PROJECTOR] after night_terror", dam + (dam * inc / 100))
+		-- Increases damage to sleeping targets
+		if target:attr("sleep") and src.attr and src:attr("night_terror") then
+			inc = inc + src:attr("night_terror")
+			print("[PROJECTOR] after night_terror", dam + (dam * inc / 100))
+		end
+		-- Increases damage to targets with Insomnia
+		if src.attr and src:attr("lucid_dreamer") and target:hasEffect(target.EFF_INSOMNIA) then
+			inc = inc + src:attr("lucid_dreamer")
+			print("[PROJECTOR] after lucid_dreamer", dam + (dam * inc / 100))
+		end
+		-- Mind Link
+		if type == DamageType.MIND and target:hasEffect(target.EFF_MIND_LINK_TARGET) then
+			local eff = target:hasEffect(target.EFF_MIND_LINK_TARGET)
+			if eff.src == src or eff.src == src.summoner then
+				mind_linked = true
+				inc = inc + eff.power
+				print("[PROJECTOR] after mind_link", dam + (dam * inc / 100))
 			end
-			-- Increases damage to targets with Insomnia
-			if src.attr and src:attr("lucid_dreamer") and target:hasEffect(target.EFF_INSOMNIA) then
-				inc = inc + src:attr("lucid_dreamer")
-				print("[PROJECTOR] after lucid_dreamer", dam + (dam * inc / 100))
-			end
-			-- Mind Link
-			if type == DamageType.MIND and target:hasEffect(target.EFF_MIND_LINK_TARGET) then
-				local eff = target:hasEffect(target.EFF_MIND_LINK_TARGET)
-				if eff.src == src or eff.src == src.summoner then
-					mind_linked = true
-					inc = inc + eff.power
-					print("[PROJECTOR] after mind_link", dam + (dam * inc / 100))
-				end
-			end
-
-			dam = dam + (dam * inc / 100)
 		end
 
 		-- Rigor mortis
 		if src.necrotic_minion and target:attr("inc_necrotic_minions") then
-			dam = dam + dam * target:attr("inc_necrotic_minions") / 100
-			print("[PROJECTOR] after necrotic increase dam", dam)
+			inc = inc + target:attr("inc_necrotic_minions")
+			print("[PROJECTOR] after necrotic increase dam", dam + (dam * inc) / 100)
 		end
+
+		-- dark vision increases damage done in creeping dark
+		if src and src ~= target and game.level.map:checkAllEntities(x, y, "creepingDark") then
+			local dark = game.level.map:checkAllEntities(x, y, "creepingDark")
+			if dark.summoner == src and dark.damageIncrease > 0 and not dark.projecting then
+				local source = src.__project_source or src
+				inc = inc + dark.damageIncrease
+				game:delayedLogMessage(source, target, "dark_strike"..(source.uid or ""), "#Source# strikes #Target# in the darkness (%+d%%%%%%%% damage).", dark.damageIncrease) -- resolve %% 3 levels deep
+			end
+		end
+
+		dam = dam + (dam * inc / 100)
+
 
 		-- Blast the iceblock
 		if src.attr and src:attr("encased_in_ice") then
@@ -217,15 +228,6 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			return 0 + add_dam
 		end
 
-		-- dark vision increases damage done in creeping dark
-		if src and src ~= target and game.level.map:checkAllEntities(x, y, "creepingDark") then
-			local dark = game.level.map:checkAllEntities(x, y, "creepingDark")
-			if dark.summoner == src and dark.damageIncrease > 0 and not dark.projecting then
-				local source = src.__project_source or src
-				dam = dam + (dam * dark.damageIncrease / 100)
-				game:delayedLogMessage(source, target, "dark_strike"..(source.uid or ""), "#Source# strikes #Target# in the darkness (%+d%%%%%%%% damage).", dark.damageIncrease) -- resolve %% 3 levels deep
-			end
-		end
 		lastdam = dam
 		-- Static reduce damage for psionic kinetic shield
 		if target.isTalentActive and target:isTalentActive(target.T_KINETIC_SHIELD) then
