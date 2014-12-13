@@ -4885,31 +4885,64 @@ _M.sustainCallbackCheck = sustainCallbackCheck
 function _M:registerCallbacks(objdef, objid, objtype)
 	for event, store in pairs(sustainCallbackCheck) do
 		if objdef[event] then
-			self[store] = self[store] or {}
-			self[store][objid] = objtype
+			local cb = self[store] or {}
+			cb.types = cb.types or {}
+			cb.priorities = cb.priorities or {}
+			cb.__sorted = nil
+			cb.types[objid] = objtype
+			-- extract a priority, 0 by default
+			cb.priorities[objid] = (objdef.callbackPriorities and objdef.callbackPriorities[event]) or 0
+			self[store] = cb
 		end
 	end
 end
 
 function _M:unregisterCallbacks(objdef, objid)
 	for event, store in pairs(sustainCallbackCheck) do
-		if self[store] and self[store][objid] then
-			self[store][objid] = nil
-			if not next(self[store]) then self[store] = nil end
+		if self[store] and self[store].types and self[store].types[objid] then
+			self[store].types[objid] = nil
+			self[store].priorities[objid] = nil
+			self[store].__sorted = nil
+			if not next(self[store].types) then self[store] = nil end
 		end
 	end
+end
+
+local function convertToString(id)
+	if _G.type(id) == "table" then return id.name or tostring(id) end
+	return tostring(id)
 end
 
 function _M:fireTalentCheck(event, ...)
 	local store = sustainCallbackCheck[event]
 	local ret = false
-	if self[store] and next(self[store]) then
-		for tid, kind in pairs(self[store]) do
+	if self[store] and next(self[store].types) then
+		local sorted = self[store].__sorted
+		if not sorted then
+			sorted = {}
+			for id, _ in pairs(self[store].types) do
+				sorted[#sorted + 1] = {self[store].priorities[id], self[store].types[id], convertToString(id), id}
+			end
+			table.sort(sorted,
+				function(x, y)
+					local ap, bp = x[1], y[1]
+					-- edge case: equal priorities
+					if ap == bp then
+						if x[2] < y[2] or
+							(x[2] == y[2] and x[3] < y[3]) then return true end
+						return false
+					else return ap < bp end
+				end)
+			self[store].__sorted = sorted
+		end
+
+		for _, info in ipairs(sorted) do
+			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
 				self.__project_source = self.tmp[tid]
 				ret = self:callEffect(tid, event, ...) or ret
 			elseif kind == "object" then
-				self.__project_source = self.tmp[tid]
+				self.__project_source = tid
 				ret = tid:check(event, self, ...) or ret
 			else
 				self.__project_source = self.sustain_talents[tid]
