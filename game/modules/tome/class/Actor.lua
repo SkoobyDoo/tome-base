@@ -2597,8 +2597,6 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
-	if self.on_takehit then value = self:check("on_takehit", value, src, death_note) end
-
 	-- Apply Solipsism hit
 	if damage_to_psi > 0 then
 		local t = self:getTalentFromId(self.T_SOLIPSISM)
@@ -2775,6 +2773,8 @@ function _M:onTakeHit(value, src, death_note)
 			print("[TAKE HIT] after flat damage cap", value)
 		end
 	end
+
+	if self.on_takehit then value = self:check("on_takehit", value, src, death_note) end
 
 	local cb = {value=value}
 	if self:fireTalentCheck("callbackOnHit", cb, src, death_note) then
