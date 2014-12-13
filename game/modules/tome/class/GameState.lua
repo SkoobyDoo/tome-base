@@ -574,22 +574,15 @@ function _M:generateRandart(data)
 			if ego then
 				table.insert(picked_egos, ego)
 				print(" ** selected ego", ego.name, (ego.greater_ego and "(greater)" or "(normal)"), ego.power_source and table.concat(table.keys(ego.power_source), ","))
-				ego = ego:clone()
 				if ego.greater_ego then been_greater = been_greater + 1 end
-				if ego.instant_resolve then ego:resolve(nil, nil, o) end -- Don't allow resolvers.generic here (conflict)
-				if ego.instant_resolve == "last" then ego:resolve(nil, true, e) end
-				ego.instant_resolve = nil
-				ego.uid = nil
-
-				ego.name = nil
-				ego.unided_name = nil
 				-- OMFG this is ugly, there is a very rare combination that can result in a crash there, so we .. well, ignore it :/
 				-- Sorry.
 				-- Fixed against overflow
-				local ok, err = pcall(table.mergeAddAppendArray, o, ego, true)
+				local ok, err = pcall(game.zone.applyEgo, game.zone, o, ego, "object", true)
 				if not ok then
 					data.fails = (data.fails or 0) + 1
-					print("table.mergeAddAppendArray failed at creating a randart, retrying", data.fails)
+					print("randart creation error", err)
+					print("game.zone.applyEgo failed at creating a randart, retrying", data.fails)
 					game.level.level = oldlev
 					resolvers.current_level = oldclev
 					if data.fails < 4 then return self:generateRandart(data) else return end
@@ -609,34 +602,31 @@ function _M:generateRandart(data)
 	-----------------------------------------------------------
 	-- Imbue random powers into the randart according to themes
 	-----------------------------------------------------------
-	local function merger(dst, src, scale) --scale: factor to adjust power limits for levels higher than 50
-		scale = scale or 1
-		for k, e in pairs(src) do
-			if type(e) == "table" then
-				if e.__resolver and e.__resolver == "randartmax" then
-					dst[k] = (dst[k] or 0) + e.v
-					if e.max < 0 then
-						if dst[k] < e.max * scale then --Adjust maximum values for higher levels
-							dst[k] = math.floor(e.max * scale)
-						end
-					else
-						if dst[k] > e.max * scale then --Adjust maximum values for higher levels
-							dst[k] = math.floor(e.max * scale)
-						end
-					end
-				else
-					if not dst[k] then dst[k] = {} end
-					merger(dst[k], e, scale)
-				end
-			elseif type(e) == "number" then
-				dst[k] = (dst[k] or 0) + e
-			else
-				error("Type "..type(e).. " for randart property unsupported!")
+	local function merger(d, e, k, dst, src, rules, state) --scale: factor to adjust power limits for levels higher than 50
+		if (not state.path or #state.path == 0) and not state.copy then
+			if k == "copy" then -- copy into root
+				table.applyRules(dst, e, rules, state)
 			end
+		end
+		local scale = state.scale or 1
+		if type(e) == "table" and e.__resolver and e.__resolver == "randartmax" and d then
+			d.v = d.v + e.v
+			d.max = e.max
+			if e.max < 0 then
+				if d.v < e.max * scale then --Adjust maximum values for higher levels
+					d.v = math.floor(e.max * scale)
+				end
+			else
+				if d.v > e.max * scale then --Adjust maximum values for higher levels
+					d.v = math.floor(e.max * scale)
+				end
+			end
+			return true
 		end
 	end
 
 	-- Distribute points: half to any powers and half to a shortened list of powers to focus their effects
+	local selected_powers = {}
 	local hpoints = math.ceil(points / 2)
 	local i = 0
 	local fails = 0
@@ -644,21 +634,10 @@ function _M:generateRandart(data)
 		i = util.boundWrap(i + 1, 1, #powers)
 		local p = powers[i]
 		if p and p.points <= hpoints*2 then -- Intentionally allow the budget to be exceeded slightly to guarantee powers at low levels
-			local scaleup = math.max(1,(lev/(p.level_range[2] or 50))^0.5) --Adjust scaleup factor for each power based on lev and level_range max
+			local state = {scaleup = math.max(1,(lev/(p.level_range[2] or 50))^0.5)} --Adjust scaleup factor for each power based on lev and level_range max
 --			print(" * adding power: "..p.name.."("..p.points.." points)")
-			if p.wielder then
-				o.wielder = o.wielder or {}
-				merger(o.wielder, p.wielder, scaleup)
-			end
-			if p.combat then
-				o.combat = o.combat or {}
-				merger(o.combat, p.combat, scaleup)
-			end
-			if p.special_combat then
-				o.special_combat = o.special_combat or {}
-				merger(o.special_combat, p.special_combat, scaleup)
-			end
-			if p.copy then merger(o, p.copy, scaleup) end 
+			selected_powers[p.name] = selected_powers[p.name] or {}
+			table.ruleMergeAppendAdd(selected_powers[p.name], p, {merger}, state)
 			hpoints = hpoints - p.points 
 			p.points = p.points * 1.5 --increased cost (=diminishing returns) on extra applications of the same power
 		else
@@ -679,27 +658,22 @@ function _M:generateRandart(data)
 
 		local p = bias_powers[i] and bias_powers[i]
 		if p and p.points <= hpoints * 2 then
-			local scaleup = math.max(1,(lev/(p.level_range[2] or 50))^0.5) -- Adjust scaleup factor for each power based on lev and level_range max
+			local state = {scaleup = math.max(1,(lev/(p.level_range[2] or 50))^0.5)} --Adjust scaleup factor for each power based on lev and level_range max
 --			print(" * adding bias power: "..p.name.."("..p.points.." points)")
-			if p.wielder then
-				o.wielder = o.wielder or {}
-				merger(o.wielder, p.wielder, scaleup)
-			end
-			if p.combat then
-				o.combat = o.combat or {}
-				merger(o.combat, p.combat, scaleup)
-			end
-			if p.special_combat then
-				o.special_combat = o.special_combat or {}
-				merger(o.special_combat, p.special_combat, scaleup)
-			end
-			if p.copy then merger(o, p.copy, scaleup) end
+			selected_powers[p.name] = selected_powers[p.name] or {}
+			table.ruleMergeAppendAdd(selected_powers[p.name], p, {merger}, state)
 			hpoints = hpoints - p.points
 			p.points = p.points * 1.5 --increased cost (=diminishing returns) on extra applications of the same power
 		else
 			fails = fails + 1
 		end
 	end
+
+	for _, ego in pairs(selected_powers) do
+		ego = engine.Entity.new(ego) -- get a real uid
+		game.zone:applyEgo(o, ego, "object", true)
+	end
+
 	o:resolve() o:resolve(nil, true)
 
 	-- Always assign at least one power source based on themes and restrictions

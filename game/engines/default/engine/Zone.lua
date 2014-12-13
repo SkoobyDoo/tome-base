@@ -469,14 +469,16 @@ end
 
 -- Applies a single ego to a (pre-resolved) entity
 -- May be in need to resolve afterwards
-function _M:applyEgo(e, ego, type)
+function _M:applyEgo(e, ego, type, no_name_change)
 	if not e.__original then e.__original = e:clone() end
 	print("ego", ego.__CLASSNAME, ego.name, getmetatable(ego))
 	local orig_ego = ego
 	ego = ego:clone()
-	local newname
-	if ego.prefix then newname = ego.name .. e.name
-	else newname = e.name .. ego.name end
+	local newname = e.name
+	if not no_name_change then
+		if ego.prefix then newname = ego.name .. e.name
+		else newname = e.name .. ego.name end
+	end
 	print("applying ego", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
 	ego.unided_name = nil
 	ego.__CLASSNAME = nil
@@ -495,7 +497,7 @@ function _M:applyEgo(e, ego, type)
 	e.name = newname
 	e.egoed = true
 	e.ego_list = e.ego_list or {}
-	e.ego_list[#e.ego_list + 1] = {orig_ego, type}
+	e.ego_list[#e.ego_list + 1] = {orig_ego, type, no_name_change}
 end
 
 local function reapplyEgos(e)
