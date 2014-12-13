@@ -101,54 +101,72 @@ newTalent{
 		return math.floor(self:combatTalentMindDamage(t, 2, 10))
 	end,
 	reshape = function(self, t, o, in_dialog)
+		local Entity = require("engine.Entity")
 		if o.combat then
 			local atk_boost = t.boost(self, t)
 			local dam_boost = atk_boost
-			if (o.old_atk or 0) < atk_boost or (o.old_dam or 0) < dam_boost then
-				if not o.been_reshaped then
-					o.orig_atk = (o.combat.atk or 0)
-					o.orig_dam = (o.combat.dam or 0)
-				elseif o.been_reshaped == true then --Update items affected by older versions of this talent
+			local old_atk = (o.old_atk or 0)
+			local old_dam = (o.old_dam or 0)
+			local old_ego = game.zone:removeEgoByName(o, "reshape weapon")
+			if not old_ego and o.been_reshaped then --Update items affected by older versions of this talent
+				if o.been_reshaped == true then
 					o.name = o.name:gsub("reshaped ", "", 1)
-					o.orig_atk = o.combat.atk - (o.old_atk or 0)
-					o.orig_dam = o.combat.dam - (o.old_dam or 0)
+					o.combat.atk = o.combat.atk - (o.old_atk or 0)
+					o.combat.dam = o.combat.dam - (o.old_dam or 0)
+				else
+					o.combat.atk = o.orig_atk
+					o.combat.dam = o.orig_dam
 				end
-				o.combat.atk = o.orig_atk + atk_boost
-				o.combat.dam = o.orig_dam + dam_boost
-				o.old_atk = atk_boost
-				o.old_dam = dam_boost
+				o.been_reshaped = nil
+			elseif old_ego then
+				old_atk = old_ego.combat.atk
+				old_dam = old_ego.combat.dam
+			end
+			if old_atk < atk_boost or old_dam < dam_boost then
+				local new_ego = Entity.new{
+					name = "reshape weapon",
+					been_reshaped = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") ",
+					special = true,
+					combat = {atk=atk_boost, dam=dam_boost},
+				}
 				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-				o.special = true
-				o.been_reshaped = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") "
+				game.zone:applyEgo(o, new_ego, "object", true)
 				if in_dialog then self:talentDialogReturn(true) end
 			else
+				game.zone:applyEgo(o, old_ego, "object", true) -- nohing happened
 				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
 			end
 		else
 			local armour = t.arm_boost(self, t)
 			local fat = t.fat_red(self, t)
-			if (o.old_fat or 0) < fat or o.wielder.combat_armor < (o.orig_arm or 0) + armour then
-				o.wielder = o.wielder or {}
-				if not o.been_reshaped then
-					o.orig_arm = (o.wielder.combat_armor or 0)
-					o.orig_fat = (o.wielder.fatigue or 0)
-				end
+			local old_fat = (o.old_fat or 0)
+			local old_arm
+			old_arm = o.wielder.combat_armor
+			local old_ego = game.zone:removeEgoByName(o, "reshape armour")
+			if not old_ego and o.been_reshaped then
 				o.wielder.combat_armor = o.orig_arm
 				o.wielder.fatigue = o.orig_fat
-				o.wielder.combat_armor = (o.wielder.combat_armor or 0) + armour
-				o.wielder.fatigue = (o.wielder.fatigue or 0) - fat
-				if o.wielder.fatigue < 0 and not (o.orig_fat < 0) then
-					o.wielder.fatigue = 0
-				elseif o.wielder.fatigue < 0 and o.orig_fat < 0 then
-					o.wielder.fatigue = o.orig_fat
-				end
-				o.old_fat = fat
+				o.been_reshaped = nil
+			elseif old_ego then
+				old_fat = old_ego.fatigue_reduction
+			end
+			if old_fat < fat or old_arm < o.wielder.combat_armor + armour then
+				local real_fat
+				if e.wielder.fatigue < 0 then real_fat = 0
+				else real_fat = min(fat, e.wielder.fatigue) end
+				local new_ego = Entity.new{
+					name = "reshape armour",
+					been_reshaped = "reshaped["..tostring(armour)..","..tostring(o.wielder.fatigue-o.orig_fat).."%] ",
+					special = true,
+					wielder = {combat_armour=arm, fatigue=-real_fat},
+					fatigue_reduction = fat,
+				}
 				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-				o.special = true
 				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
-				o.been_reshaped = "reshaped["..tostring(armour)..","..tostring(o.wielder.fatigue-o.orig_fat).."%] "
+				game.zone:applyEgo(o, new_ego, "object", true)
 				if in_dialog then self:talentDialogReturn(true) end
 			else
+				game.zone:applyEgo(o, old_ego, "object", true)
 				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
 			end
 		end

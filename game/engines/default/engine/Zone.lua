@@ -525,9 +525,15 @@ function _M:removeEgo(e, ego)
 	return ego
 end
 
+function _M:getEgoByName(e, ego_name)
+	for i, v in ipairs(e.ego_list or {}) do
+		if v[1].name == ego_name then return v[1] end
+	end
+end
+
 function _M:removeEgoByName(e, ego_name)
 	for i, v in ipairs(e.ego_list or {}) do
-		if v[1].name == ego_name then return self:removeEgo(e, v) end
+		if v[1].name == ego_name then return self:removeEgo(e, v[1]) end
 	end
 end
 
