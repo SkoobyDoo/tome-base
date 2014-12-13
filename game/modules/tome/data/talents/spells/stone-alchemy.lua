@@ -126,15 +126,18 @@ newTalent{
 		local ret = self:talentDialog(self:showInventory("Use which gem?", self:getInven("INVEN"), function(gem) return gem.type == "gem" and gem.imbue_powers and gem.material_level and gem.material_level <= self:getTalentLevelRaw(t) end, function(gem, gem_item)
 			local nd = self:showInventory("Imbue which armour?", self:getInven("INVEN"), function(o) return o.type == "armor" and (o.slot == "BODY" or (self:knowTalent(self.T_CRAFTY_HANDS) and (o.slot == "HEAD" or o.slot == "BELT"))) and not o.been_imbued end, function(o, item)
 				self:removeObject(self:getInven("INVEN"), gem_item)
-				o.wielder = o.wielder or {}
-				table.mergeAdd(o.wielder, gem.imbue_powers, true)
-				if gem.talent_on_spell then
-					o.talent_on_spell = o.talent_on_spell or {}
-					table.append(o.talent_on_spell, gem.talent_on_spell)
-				end
-				o.been_imbued = " <"..gem.name..">"
-				game.logPlayer(self, "You imbue your %s with %s.", o:getName{do_colour=true, no_count=true}, gem:getName{do_colour=true, no_count=true})
-				o.special = true
+				-- create an ego
+				local Entity = require("engine.Entity")
+				local ego = Entity.new{
+					name = "imbue "..gem.name,
+					been_imbued = " <"..gem.name..">",
+					special = true,
+					wielder = table.clone(gem.imbue_powers),
+					talent_on_spell = gem.talent_on_spell,
+				}
+				local name = o:getName{do_colour=true, no_count=true}
+				game.zone:applyEgo(o, ego, "object", true)
+				game.logPlayer(self, "You imbue your %s with %s.", name, gem:getName{do_colour=true, no_count=true})
 				self:talentDialogReturn(true)
 				game:unregisterDialog(self:talentDialogGet())
 			end)
