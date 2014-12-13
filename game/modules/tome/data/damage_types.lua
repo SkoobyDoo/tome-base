@@ -349,22 +349,9 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			dam = dam * target:callTalent(target.T_ROLL_WITH_IT, "getMult")
 			print("[PROJECTOR] after Roll With It dam", dam)
 		end
-
-		-- Curse of Misfortune: Unfortunate End (chance to increase damage enough to kill)
-		if src and src.hasEffect and src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE) then
-			local eff = src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE)
-			local def = src.tempeffect_def[src.EFF_CURSE_OF_MISFORTUNE]
-			dam = def.doUnfortunateEnd(src, eff, target, dam)
-		end
 		
 		if src and src.hasEffect and src:hasEffect(src.EFF_SEAL_FATE) then
 			src:callEffect(src.EFF_SEAL_FATE, "doDamage", target)
-		end
-
-
-		if src:attr("crushing_blow") and (dam * (1.25 + (src.combat_critical_power or 0)/200)) > target.life then
-			dam = dam * (1.25 + (src.combat_critical_power or 0)/200)
-			game.logPlayer(src, "You end your target with a crushing blow!")
 		end
 
 		if target:attr("resist_unseen") and not target:canSee(src) then
@@ -412,6 +399,18 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		if src.necrotic_minion_be_nice and src.summoner == target then
 			dam = dam * (1 - src.necrotic_minion_be_nice)
+		end
+
+		-- Curse of Misfortune: Unfortunate End (chance to increase damage enough to kill)
+		if src and src.hasEffect and src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE) then
+			local eff = src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE)
+			local def = src.tempeffect_def[src.EFF_CURSE_OF_MISFORTUNE]
+			dam = def.doUnfortunateEnd(src, eff, target, dam)
+		end
+		
+		if src:attr("crushing_blow") and (dam * (1.25 + (src.combat_critical_power or 0)/200)) > target.life then
+			dam = dam * (1.25 + (src.combat_critical_power or 0)/200)
+			game.logPlayer(src, "You end your target with a crushing blow!")
 		end
 
 		print("[PROJECTOR] final dam after static checks", dam)
