@@ -228,41 +228,6 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			return 0 + add_dam
 		end
 
-		lastdam = dam
-		-- Static reduce damage for psionic kinetic shield
-		if target.isTalentActive and target:isTalentActive(target.T_KINETIC_SHIELD) then
-			local t = target:getTalentFromId(target.T_KINETIC_SHIELD)
-			dam = t.ks_on_damage(target, t, type, dam)
-		end
-		-- Static reduce damage for psionic spiked kinetic shield
-		if target:attr("kinspike_shield") then
-			local t = target:getTalentFromId(target.T_KINETIC_SHIELD)
-			dam = t.kss_on_damage(target, t, type, dam)
-		end
-		-- Static reduce damage for psionic thermal shield
-		if target.isTalentActive and target:isTalentActive(target.T_THERMAL_SHIELD) then
-			local t = target:getTalentFromId(target.T_THERMAL_SHIELD)
-			dam = t.ts_on_damage(target, t, type, dam)
-		end
-		-- Static reduce damage for psionic spiked thermal shield
-		if target:attr("thermspike_shield") then
-			local t = target:getTalentFromId(target.T_THERMAL_SHIELD)
-			dam = t.tss_on_damage(target, t, type, dam)
-		end
-		-- Static reduce damage for psionic charged shield
-		if target.isTalentActive and target:isTalentActive(target.T_CHARGED_SHIELD) then
-			local t = target:getTalentFromId(target.T_CHARGED_SHIELD)
-			dam = t.cs_on_damage(target, t, type, dam)
-		end
-		-- Static reduce damage for psionic spiked charged shield
-		if target:attr("chargespike_shield") then
-			local t = target:getTalentFromId(target.T_CHARGED_SHIELD)
-			dam = t.css_on_damage(target, t, type, dam)
-		end
-		if dam ~= lastdam then
-			game:delayedLogDamage(src, target, 0, ("%s(%d to psi shield)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", lastdam-dam), false)
-		end
-
 		--target.T_STONE_FORTRESS could be checked/applied here (ReduceDamage function in Dwarven Fortress talent)
 
 		-- affinity healing, we store it to apply it after damage is resolved
@@ -319,6 +284,41 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			else dam = dam * ((100 - res) / 100)
 			end
 			print("[PROJECTOR] after self-resists dam", dam)
+		end
+		
+		lastdam = dam
+		-- Static reduce damage for psionic kinetic shield
+		if target.isTalentActive and target:isTalentActive(target.T_KINETIC_SHIELD) then
+			local t = target:getTalentFromId(target.T_KINETIC_SHIELD)
+			dam = t.ks_on_damage(target, t, type, dam)
+		end
+		-- Static reduce damage for psionic spiked kinetic shield
+		if target:attr("kinspike_shield") then
+			local t = target:getTalentFromId(target.T_KINETIC_SHIELD)
+			dam = t.kss_on_damage(target, t, type, dam)
+		end
+		-- Static reduce damage for psionic thermal shield
+		if target.isTalentActive and target:isTalentActive(target.T_THERMAL_SHIELD) then
+			local t = target:getTalentFromId(target.T_THERMAL_SHIELD)
+			dam = t.ts_on_damage(target, t, type, dam)
+		end
+		-- Static reduce damage for psionic spiked thermal shield
+		if target:attr("thermspike_shield") then
+			local t = target:getTalentFromId(target.T_THERMAL_SHIELD)
+			dam = t.tss_on_damage(target, t, type, dam)
+		end
+		-- Static reduce damage for psionic charged shield
+		if target.isTalentActive and target:isTalentActive(target.T_CHARGED_SHIELD) then
+			local t = target:getTalentFromId(target.T_CHARGED_SHIELD)
+			dam = t.cs_on_damage(target, t, type, dam)
+		end
+		-- Static reduce damage for psionic spiked charged shield
+		if target:attr("chargespike_shield") then
+			local t = target:getTalentFromId(target.T_CHARGED_SHIELD)
+			dam = t.css_on_damage(target, t, type, dam)
+		end
+		if dam ~= lastdam then
+			game:delayedLogDamage(src, target, 0, ("%s(%d to psi shield)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", lastdam-dam), false)
 		end
 
 		--Vim based defence
