@@ -82,6 +82,60 @@ local function shieldOverlay(self, t, p)
 	return tostring(math.ceil(val)), fnt
 end
 
+local function shieldOnDamage(self, t, elementTest, transcendId, dam)
+	if not elementTest then return dam end
+	local shield = self:isTalentActive(t.id)
+	if shield.game_turn + 10 <= game.turn then
+		shield.psi_gain = 0
+		shield.game_turn = game.turn
+	end
+	local mast = shieldMastery(self, t)
+	local total_dam = dam
+	local absorbable_dam = getEfficiency(self, t) * total_dam
+	local strength = getShieldStrength(self, t)
+	if self:hasEffect(transcendId) then
+		absorbable = total_dam
+		strength = strength * 2
+	end
+	local guaranteed_dam = total_dam - absorbable_dam
+	dam = absorbable_dam		
+
+	local psigain = 0
+	if dam <= strength then
+		psigain = 1 + dam/mast
+		shieldAbsorb(self, t, shield, dam)
+		dam = 0
+	else
+		psigain = 1 + strength/mast
+		dam = dam - strength
+		shieldAbsorb(self, t, shield, strength)
+	end
+	psigain = math.min(maxPsiAbsorb(self, t) - shield.psi_gain, psigain)
+	shield.psi_gain = shield.psi_gain + psigain
+	self:incPsi(psigain)
+
+	game.log("Kinetic %d %d %d", dam, absorbable_dam, guaranteed_dam)
+
+	return dam + guaranteed_dam
+end
+
+local function adjustShieldGFX(self, t, v, p, r, g, b)
+	if not p then p = self:isTalentActive(t.id) end
+	if not p then return end
+	self:removeParticles(p.particle)
+	if v then
+		if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="shield5"},
+			{type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor={r, g, b, 0.6}, auraColor={r, g, b, 1}}))
+		else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=r, g=g, b=b, a=1}))
+		end
+	else
+		if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.1, img="shield5"},
+			{type="shield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=3, color={r, g, b}}))
+		else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=r, g=g, b=b, a=0.5}))
+		end
+	end
+end
+
 newTalent{
 	name = "Kinetic Shield",
 	type = {"psionic/absorption", 1},
@@ -105,59 +159,17 @@ newTalent{
 	end,
 	--called when damage gets absorbed by kinetic shield
 	ks_on_damage = function(self, t, damtype, dam)
-		local ks = self:isTalentActive(self.T_KINETIC_SHIELD)
-		if not ks then return dam end
-		if ks.game_turn + 10 <= game.turn then
-			ks.psi_gain = 0
-			ks.game_turn = game.turn
-		end
-		local kinetic_shield = self.kinetic_shield
-		local mast = shieldMastery(self, t)
-		local total_dam = dam
-		local absorbable_dam = getEfficiency(self,t)* total_dam
-		if self:hasEffect(self.EFF_TRANSCENDENT_TELEKINESIS) then absorbable_dam = total_dam kinetic_shield = kinetic_shield * 2 end
-		local guaranteed_dam = total_dam - absorbable_dam
-		dam = absorbable_dam
-		if not kineticElement(self, t, damtype) then return total_dam end		
-
-		local psigain = 0
-		if dam <= kinetic_shield then
-			psigain = 1 + dam/mast
-			shieldAbsorb(self, t, ks, dam)
-			dam = 0
-		else
-			psigain = 1 + kinetic_shield/mast
-			dam = dam - kinetic_shield
-			shieldAbsorb(self, t, ks, kinetic_shield)
-		end
-		psigain = math.min(maxPsiAbsorb(self, t) - ks.psi_gain, psigain)
-		ks.psi_gain = ks.psi_gain + psigain
-		self:incPsi(psigain)
-
-		return dam + guaranteed_dam
+		return shieldOnDamage(self, t, kineticElement(self, t, damtype),
+			self.EFF_TRANSCENDENT_TELEKINESIS, dam)
 	end,
 	adjust_shield_gfx = function(self, t, v, p)
-		if not p then p = self:isTalentActive(t.id) end
-		if not p then return end
-
-		self:removeParticles(p.particle)
-		if v then
-			if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="shield5"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor={1, 0, 0.3, 0.6}, auraColor={1, 0, 0.3, 1}}))
-			else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=1, g=0, b=0.3, a=1}))
-			end
-		else
-			if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.1, img="shield5"}, {type="shield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=3, color={1, 0, 0.3}}))
-			else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=1, g=0, b=0.3, a=0.5}))
-			end
-		end
+		return adjustShieldGFX(self, t, v, p, 1, 0, 0.3)
 	end,
 	iconOverlay = shieldOverlay,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
-		local s_str = getShieldStrength(self, t)
 
 		local ret = {
-			am = self:addTemporaryValue("kinetic_shield", s_str),
 			game_turn = game.turn,
 			psi_gain = 0,
 			last_absorbs = {last_turn=math.floor(game.turn / 10), values={}},
@@ -167,51 +179,10 @@ newTalent{
 	end,
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
-		self:removeTemporaryValue("kinetic_shield", p.am)
 		if self:attr("save_cleanup") then return true end
 
 		if self:getTalentLevel(t) >= 3 then shieldSpike(self, t, p) end
 		return true
-	end,
-	--called when damage gets absorbed by kinetic shield spike
-	kss_on_damage = function(self, t, damtype, dam)
-		local kss = self:hasEffect(self.EFF_KINSPIKE_SHIELD)
-		if not kss then return dam end
-		if kss.game_turn + 10 <= game.turn then
-			kss.psi_gain = 0
-			kss.game_turn = game.turn
-		end
-		local mast = shieldMastery(self, t)
-		local total_dam = dam
-		local absorbable_dam = 1*total_dam
-		local guaranteed_dam = total_dam - absorbable_dam
-		dam = absorbable_dam
-
---		local psigain = 0
-		if kineticElement(self, t, damtype) then
-			-- Absorb damage into the shield
-			if dam <= self.kinspike_shield_absorb then
-			self.kinspike_shield_absorb = self.kinspike_shield_absorb - dam
---				psigain = 2 + 2*dam/mast
-				dam = 0
-			else
---				psigain = 2 + 2*self.kinspike_shield_absorb/mast 
-				dam = dam - self.kinspike_shield_absorb
-				self.kinspike_shield_absorb = 0
-			end
-
---			psigain = math.min(2*maxPsiAbsorb(self, t) - kss.psi_gain, psigain)
---			kss.psi_gain = kss.psi_gain + psigain
---			self:incPsi(psigain)
-
-			if self.kinspike_shield_absorb <= 0 then
-				game.logPlayer(self, "Your spiked kinetic shield crumbles under the damage!")
-				self:removeEffect(self.EFF_KINSPIKE_SHIELD)
-			end
-			return dam + guaranteed_dam
-		else
-			return total_dam
-		end
 	end,
 	info = function(self, t)
 		local s_str = getShieldStrength(self, t)
@@ -249,52 +220,11 @@ newTalent{
 
 	--called when damage gets absorbed by thermal shield
 	ts_on_damage = function(self, t, damtype, dam)
-		local ts = self:isTalentActive(self.T_THERMAL_SHIELD)
-		if not ts then return dam end
-		if ts.game_turn + 10 <= game.turn then
-			ts.psi_gain = 0
-			ts.game_turn = game.turn
-		end
-		local mast = shieldMastery(self, t)
-		local thermal_shield = self.thermal_shield
-		local total_dam = dam
-		local absorbable_dam = getEfficiency(self,t)* total_dam
-		if self:hasEffect(self.EFF_TRANSCENDENT_PYROKINESIS) then absorbable_dam = total_dam thermal_shield = thermal_shield * 2 end
-		local guaranteed_dam = total_dam - absorbable_dam
-		dam = absorbable_dam
-		if not thermalElement(self, t, damtype) then return total_dam end
-		
-		local psigain = 0
-		if dam <= thermal_shield then
-			psigain = 1 + dam/mast
-			shieldAbsorb(self, t, ts, dam)
-			dam = 0
-		else
-			psigain = 1 + thermal_shield/mast
-			shieldAbsorb(self, t, ts, thermal_shield)
-			dam = dam - thermal_shield
-		end
-		
-		psigain = math.min(maxPsiAbsorb(self, t) - ts.psi_gain, psigain)
-		ts.psi_gain = ts.psi_gain + psigain
-		self:incPsi(psigain)
-		
-		return dam + guaranteed_dam
+		return shieldOnDamage(self, t, thermalElement(self, t, damtype),
+			self.EFF_TRANSCENDENT_PYROKINESIS, dam)
 	end,
 	adjust_shield_gfx = function(self, t, v, p)
-		if not p then p = self:isTalentActive(t.id) end
-		if not p then return end
-
-		self:removeParticles(p.particle)
-		if v then
-			if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="shield5"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor={0.3, 1, 1, 0.6}, auraColor={0.3, 1, 1, 1}}))
-			else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=0.3, g=1, b=1, a=1}))
-			end
-		else
-			if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.1, img="shield5"}, {type="shield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=3, color={0.3, 1, 1}}))
-			else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=0.3, g=1, b=1, a=0.5}))
-			end
-		end
+		return adjustShieldGFX(self, t, v, p, 0.3, 1, 1)
 	end,
 	iconOverlay = shieldOverlay,
 	activate = function(self, t)
@@ -302,7 +232,6 @@ newTalent{
 		local s_str = getShieldStrength(self, t)
 
 		local ret = {
-			am = self:addTemporaryValue("thermal_shield", s_str),
 			game_turn = game.turn,
 			psi_gain = 0,
 			last_absorbs = {last_turn=math.floor(game.turn / 10), values={}},
@@ -312,49 +241,10 @@ newTalent{
 	end,
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
-		self:removeTemporaryValue("thermal_shield", p.am)
 		if self:attr("save_cleanup") then return true end
 
 		if self:getTalentLevel(t) >= 3 then shieldSpike(self, t, p) end
 		return true
-	end,
-	--called when damage gets absorbed by thermal shield spike
-	tss_on_damage = function(self, t, damtype, dam)
-		local tss = self:hasEffect(self.EFF_THERMSPIKE_SHIELD)
-		if not tss then return dam end
-		if tss.game_turn + 10 <= game.turn then
-			tss.psi_gain = 0
-			tss.game_turn = game.turn
-		end
-		local mast = shieldMastery(self, t)
-		local total_dam = dam
-		local absorbable_dam = 1* total_dam
-		local guaranteed_dam = total_dam - absorbable_dam
-		dam = absorbable_dam
-
---		local psigain = 0
-		if thermalElement(self, t, damtype) then
-			-- Absorb damage into the shield
-			if dam <= self.thermspike_shield_absorb then
-				self.thermspike_shield_absorb = self.thermspike_shield_absorb - dam
---				psigain = 2 + 2*dam/mast
-				dam = 0
-			else
---				psigain = 2 + 2*self.thermspike_shield_absorb/mast
-				dam = dam - self.thermspike_shield_absorb
-				self.thermspike_shield_absorb = 0
-			end
---			psigain = math.min(2*maxPsiAbsorb(self, t) - tss.psi_gain, psigain)
---			tss.psi_gain = tss.psi_gain + psigain
---			self:incPsi(psigain)
-			if self.thermspike_shield_absorb <= 0 then
-				game.logPlayer(self, "Your spiked thermal shield crumbles under the damage!")
-				self:removeEffect(self.EFF_THERMSPIKE_SHIELD)
-			end
-			return dam + guaranteed_dam
-		else
-			return total_dam
-		end
 	end,
 	info = function(self, t)
 		local s_str = getShieldStrength(self, t)
@@ -392,50 +282,11 @@ newTalent{
 	end,
 	--called when damage gets absorbed by charged shield
 	cs_on_damage = function(self, t, damtype, dam)
-		local cs = self:isTalentActive(self.T_CHARGED_SHIELD)
-		if not cs then return dam end
-		if cs.game_turn + 10 <= game.turn then
-			cs.psi_gain = 0
-			cs.game_turn = game.turn
-		end
-		local mast = shieldMastery(self, t)
-		local charged_shield = self.charged_shield
-		local total_dam = dam
-		local absorbable_dam = getEfficiency(self,t)* total_dam
-		if self:hasEffect(self.EFF_TRANSCENDENT_ELECTROKINESIS) then absorbable_dam = total_dam charged_shield = charged_shield * 2 end
-		local guaranteed_dam = total_dam - absorbable_dam
-		dam = absorbable_dam
-		if not chargedElement(self, t, damtype) then return total_dam end
-
-		local psigain = 0
-		if dam <= charged_shield then
-			psigain = 1 + dam/mast
-			shieldAbsorb(self, t, cs, dam)
-			dam = 0
-		else
-			psigain = 1 + charged_shield/mast
-			dam = dam - charged_shield
-			shieldAbsorb(self, t, cs, charged_shield)
-		end
-		psigain = math.min(maxPsiAbsorb(self, t) - cs.psi_gain, psigain)
-		cs.psi_gain = cs.psi_gain + psigain
-		self:incPsi(psigain)
-		return dam + guaranteed_dam
+		return shieldOnDamage(self, t, chargedElement(self, t, damtype),
+			self.EFF_TRANSCENDENT_ELECTROKINESIS, dam)
 	end,
 	adjust_shield_gfx = function(self, t, v, p)
-		if not p then p = self:isTalentActive(t.id) end
-		if not p then return end
-
-		self:removeParticles(p.particle)
-		if v then
-			if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="shield5"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor={0.8, 1, 0.2, 0.6}, auraColor={0.8, 1, 0.2, 1}}))
-			else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=0.8, g=1, b=0.2, a=1}))
-			end
-		else
-			if core.shader.active(4) then p.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.1, img="shield5"}, {type="shield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=3, color={0.8, 1, 0.2}}))
-			else p.particle = self:addParticles(Particles.new("generic_shield", 1, {r=0.8, g=1, b=0.2, a=0.5}))
-			end
-		end
+		return adjustShieldGFX(self, t, v, p, 0.8, 1, 0.2)
 	end,
 	iconOverlay = shieldOverlay,
 	activate = function(self, t)
@@ -443,7 +294,6 @@ newTalent{
 		local s_str = getShieldStrength(self, t)
 
 		local ret = {
-			am = self:addTemporaryValue("charged_shield", s_str),
 			game_turn = game.turn,
 			psi_gain = 0,
 			last_absorbs = {last_turn=math.floor(game.turn / 10), values={}},
@@ -453,51 +303,10 @@ newTalent{
 	end,
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
-		self:removeTemporaryValue("charged_shield", p.am)
 		if self:attr("save_cleanup") then return true end
 
 		if self:getTalentLevel(t) >= 3 then shieldSpike(self, t, p) end
 		return true
-	end,
-	--called when damage gets absorbed by charged shield spike
-	css_on_damage = function(self, t, damtype, dam)
-		local css = self:hasEffect(self.EFF_CHARGESPIKE_SHIELD)
-		if not css then return dam end
-		if css.game_turn + 10 <= game.turn then
-			css.psi_gain = 0
-			css.game_turn = game.turn
-		end
-		local mast = shieldMastery(self, t)
-		local total_dam = dam
-		local absorbable_dam = 1* total_dam
-		local guaranteed_dam = total_dam - absorbable_dam
-		dam = absorbable_dam
-	
---		local psigain = 0
-		if chargedElement(self, t, damtype) then	
-			-- Absorb damage into the shield
-			if dam <= self.chargespike_shield_absorb then
-				self.chargespike_shield_absorb = self.chargespike_shield_absorb - dam
---				psigain = 2 + 2*dam/mast
-				dam = 0
-			else
---				psigain = 2 + 2*self.chargespike_shield_absorb/mast
-				dam = dam - self.chargespike_shield_absorb
-				self.chargespike_shield_absorb = 0
-			end
-			
---			psigain = math.min(2*maxPsiAbsorb(self, t) - css.psi_gain, psigain)
---			css.psi_gain = css.psi_gain + psigain
---			self:incPsi(psigain)
-
-			if self.chargespike_shield_absorb <= 0 then
-				game.logPlayer(self, "Your spiked charged shield crumbles under the damage!")
-				self:removeEffect(self.EFF_CHARGESPIKE_SHIELD)
-			end
-			return dam + guaranteed_dam
-		else
-			return total_dam
-		end
 	end,
 	info = function(self, t)
 		local s_str = getShieldStrength(self, t)
@@ -557,7 +366,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Surround yourself with a forcefield, reducing all incoming damage by %d%%. 
-		Such a shield is very expensive to maintain, and will drain 5%% of your maximum psi each turn, for each turn you have it maintained. eg. turn 2 it will drain 10%%.]]):
+		Such a shield is very expensive to maintain, and will drain 5%% of your maximum psi each turn and 5%% more for each turn you have it maintained. For example, on turn 2 it will drain 10%%.]]):
 		format(t.getResist(self,t))
 	end,
 }
