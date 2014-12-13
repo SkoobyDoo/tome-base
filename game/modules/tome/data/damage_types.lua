@@ -101,6 +101,23 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			dam = dam * 0.5
 		end
 
+		if src:attr("stunned") then
+			dam = dam * 0.4
+			print("[PROJECTOR] stunned dam", dam)
+		end
+		if src:attr("invisible_damage_penalty") then
+			dam = dam * util.bound(1 - (src.invisible_damage_penalty / (src.invisible_damage_penalty_divisor or 1)), 0, 1)
+			print("[PROJECTOR] invisible dam", dam)
+		end
+		if src:attr("numbed") then
+			dam = dam - dam * src:attr("numbed") / 100
+			print("[PROJECTOR] numbed dam", dam)
+		end
+		if src:attr("generic_damage_penalty") then
+			dam = dam - dam * math.min(100, src:attr("generic_damage_penalty")) / 100
+			print("[PROJECTOR] generic dam", dam)
+		end
+
 		-- Preemptive shielding
 		if target.isTalentActive and target:isTalentActive(target.T_PREMONITION) then
 			local t = target:getTalentFromId(target.T_PREMONITION)
@@ -329,23 +346,6 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 		if type == DamageType.PHYSICAL and target:knowTalent(target.T_ROLL_WITH_IT) and not target:attr("never_move") then
 			dam = dam * target:callTalent(target.T_ROLL_WITH_IT, "getMult")
 			print("[PROJECTOR] after Roll With It dam", dam)
-		end
-
-		if src:attr("stunned") then
-			dam = dam * 0.4
-			print("[PROJECTOR] stunned dam", dam)
-		end
-		if src:attr("invisible_damage_penalty") then
-			dam = dam * util.bound(1 - (src.invisible_damage_penalty / (src.invisible_damage_penalty_divisor or 1)), 0, 1)
-			print("[PROJECTOR] invisible dam", dam)
-		end
-		if src:attr("numbed") then
-			dam = dam - dam * src:attr("numbed") / 100
-			print("[PROJECTOR] numbed dam", dam)
-		end
-		if src:attr("generic_damage_penalty") then
-			dam = dam - dam * math.min(100, src:attr("generic_damage_penalty")) / 100
-			print("[PROJECTOR] generic dam", dam)
 		end
 
 		-- Curse of Misfortune: Unfortunate End (chance to increase damage enough to kill)
