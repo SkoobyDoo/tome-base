@@ -179,12 +179,12 @@ newTalent{
 							game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
 							game.nicer_tiles:updateAround(game.level, self.x, self.y)
 							game.level:removeEntity(self)
---							game.level.map:redisplay()
+							game.level.map:scheduleRedisplay()
 						end
 					end,
 					dig = function(src, x, y, old)
 						game.level:removeEntity(old)
---						game.level.map:redisplay()
+						game.level.map:scheduleRedisplay()
 						return nil, old.old_feat
 					end,
 					summoner_gain_exp = true,

@@ -82,7 +82,7 @@ newTalent{
 						if self.temporary <= 0 then
 							game.level.map:remove(self.x, self.y, engine.Map.TERRAIN+2)
 							game.level:removeEntity(self)
-							game.level.map:redisplay()
+							game.level.map:scheduleRedisplay()
 						end
 					end,
 					summoner_gain_exp = true,
@@ -100,6 +100,7 @@ newTalent{
 			end)
 		end
 		game:playSoundNear(self, "talents/breath")
+		game.level.map:redisplay()
 		return true
 	end,
 	info = function(self, t)
