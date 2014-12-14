@@ -26,6 +26,7 @@ local Textzone = require "engine.ui.Textzone"
 local TextzoneList = require "engine.ui.TextzoneList"
 local UIContainer = require "engine.ui.UIContainer"
 local TalentTrees = require "mod.dialogs.elements.TalentTrees"
+local StatusBox = require "mod.dialogs.elements.StatusBox"
 local Separator = require "engine.ui.Separator"
 local DamageType = require "engine.DamageType"
 local FontPackage = require "engine.FontPackage"
@@ -152,6 +153,15 @@ function _M:getMaxTPoints(t)
 	return t.points + math.max(0, math.floor((self.actor.level - 50) / 10)) + (self.actor.talents_inc_cap and self.actor.talents_inc_cap[t.id] or 0)
 end
 
+function _M:subtleMessage(title, message, color)
+	if not self.t_messages then return self:simplePopup(title, message) end
+	return self.t_messages:setTextColor(message, color)
+end
+
+-- Some common colors
+local subtleMessageErrorColor = {r=255, g=100, b=100}
+local subtleMessageWarningColor = {r=255, g=255, b=80}
+
 function _M:finish()
 	local ok, dep_miss = self:checkDeps(true, true)
 	if not ok then
@@ -215,20 +225,20 @@ end
 function _M:incStat(sid, v)
 	if v == 1 then
 		if self.actor.unused_stats <= 0 then
-			self:simplePopup("Not enough stat points", "You have no stat points left!")
+			self:subtleMessage("Not enough stat points", "You have no stat points left!", subtleMessageErrorColor)
 			return
 		end
 		if self.actor:getStat(sid, nil, nil, true) >= self.actor.level * 1.4 + 20 then
-			self:simplePopup("Stat is at the maximum for your level", "You cannot increase this stat further until next level!")
+			self:subtleMessage("Stat is at the maximum for your level", "You cannot increase this stat further until next level!", 255, 215, 0)
 			return
 		end
 		if self.actor:isStatMax(sid) or self.actor:getStat(sid, nil, nil, true) >= 60 + math.max(0, (self.actor.level - 50)) then
-			self:simplePopup("Stat is at the maximum", "You cannot increase this stat further!")
+			self:subtleMessage("Stat is at the maximum", "You cannot increase this stat further!", subtleMessageWarningColor)
 			return
 		end
 	else
 		if self.actor_dup:getStat(sid, nil, nil, true) == self.actor:getStat(sid, nil, nil, true) then
-			self:simplePopup("Impossible", "You cannot take out more points!")
+			self:subtleMessage("Impossible", "You cannot take out more points!", subtleMessageErrorColor)
 			return
 		end
 	end
@@ -332,15 +342,15 @@ function _M:learnTalent(t_id, v)
 	if t.generic then t_type, t_index = "generic", "unused_generics" end
 	if v then
 		if self.actor[t_index] < 1 then
-			self:simplePopup("Not enough "..t_type.." talent points", "You have no "..t_type.." talent points left!")
+			self:subtleMessage("Not enough "..t_type.." talent points", "You have no "..t_type.." talent points left!", subtleMessageErrorColor)
 			return
 		end
 		if not self.actor:canLearnTalent(t) then
-			self:simplePopup("Cannot learn talent", "Prerequisites not met!")
+			self:subtleMessage("Cannot learn talent", "Prerequisites not met!", subtleMessageErrorColor)
 			return
 		end
 		if self.actor:getTalentLevelRaw(t_id) >= self:getMaxTPoints(t) then
-			self:simplePopup("Already known", "You already fully know this talent!")
+			self:subtleMessage("Already known", "You already fully know this talent!", subtleMessageWarningColor)
 			return
 		end
 		self.actor:learnTalent(t_id, true)
@@ -350,15 +360,15 @@ function _M:learnTalent(t_id, v)
 		self.new_talents_changed = true
 	else
 		if not self.actor:knowTalent(t_id) then
-			self:simplePopup("Impossible", "You do not know this talent!")
+			self:subtleMessage("Impossible", "You do not know this talent!", subtleMessageErrorColor)
 			return
 		end
 		if not self:isUnlearnable(t, true) and self.actor_dup:getTalentLevelRaw(t_id) >= self.actor:getTalentLevelRaw(t_id) then
 			local _, could = self:isUnlearnable(t, true)
 			if could then
-				self:simplePopup("Impossible here", "You could unlearn this talent in a quiet place, like a #{bold}#town#{normal}#.")
+				self:subtleMessage("Impossible here", "You could unlearn this talent in a quiet place, like a #{bold}#town#{normal}#.", {r=200, g=200, b=255})
 			else
-				self:simplePopup("Impossible", "You cannot unlearn this talent!")
+				self:subtleMessage("Impossible", "You cannot unlearn this talent!", subtleMessageErrorColor)
 			end
 			return
 		end
@@ -384,11 +394,11 @@ function _M:learnType(tt, v)
 	self.talent_types_learned[tt] = self.talent_types_learned[tt] or {}
 	if v then
 		if self.actor:knowTalentType(tt) and self.actor.__increased_talent_types[tt] and self.actor.__increased_talent_types[tt] >= 1 then
-			self:simplePopup("Impossible", "You can only improve a category mastery once!")
+			self:subtleMessage("Impossible", "You can only improve a category mastery once!", subtleMessageWarningColor)
 			return
 		end
 		if self.actor.unused_talents_types <= 0 then
-			self:simplePopup("Not enough talent category points", "You have no category points left!")
+			self:subtleMessage("Not enough talent category points", "You have no category points left!", subtleMessageErrorColor)
 			return
 		end
 		if not self.actor.talents_types_def[tt] or (self.actor.talents_types_def[tt].min_lev or 0) > self.actor.level then
@@ -408,15 +418,15 @@ function _M:learnType(tt, v)
 		self.new_talents_changed = true
 	else
 		if self.actor_dup:knowTalentType(tt) == true and self.actor:knowTalentType(tt) == true and (self.actor_dup.__increased_talent_types[tt] or 0) >= (self.actor.__increased_talent_types[tt] or 0) then
-			self:simplePopup("Impossible", "You cannot take out more points!")
+			self:subtleMessage("Impossible", "You cannot take out more points!", subtleMessageErrorColor)
 			return
 		end
 		if self.actor_dup:knowTalentType(tt) == true and self.actor:knowTalentType(tt) == true and (self.actor.__increased_talent_types[tt] or 0) == 0 then
-			self:simplePopup("Impossible", "You cannot unlearn this category!")
+			self:subtleMessage("Impossible", "You cannot unlearn this category!", subtleMessageWarningColor)
 			return
 		end
 		if not self.actor:knowTalentType(tt) then
-			self:simplePopup("Impossible", "You do not know this category!")
+			self:subtleMessage("Impossible", "You do not know this category!", subtleMessageErrorColor)
 			return
 		end
 
@@ -674,6 +684,7 @@ function _M:createDisplay()
 		on_use = function(item, inc) self:onUseTalent(item, inc) end,
 		on_expand = function(item) self.actor.__hidden_talent_types[item.type] = not item.shown end,
 		scrollbar = true, no_tooltip = self.no_tooltip,
+		message_box = self.t_
 	}
 
 	self.c_gtree = TalentTrees.new{
@@ -757,6 +768,15 @@ function _M:createDisplay()
 		end
 	end}
 
+	-- align it with Category Points button, to be nice
+	local btypes_center = 330 + self.b_types.w / 2
+	local msg_halfwidth = math.min(btypes_center, self.iw - btypes_center)
+	local msg_leftedge = btypes_center - msg_halfwidth
+	self.t_messages = StatusBox.new{
+		font = core.display.newFont("/data/font/DroidSans.ttf", 16),
+		width = msg_halfwidth * 2, delay = 1,
+	}
+
 
 	local ret = {
 		{left=-10, top=0, ui=self.b_stat},
@@ -775,6 +795,8 @@ function _M:createDisplay()
 		{left=330, top=0, ui=self.b_types},
 
 		{right=0, bottom=0, ui=self.b_prodigies},
+
+		{left=msg_leftedge, top=-self.t_messages.h, ui=self.t_messages},
 	}
 	if self.b_inscriptions then table.insert(ret, {right=self.b_prodigies.w, bottom=0, ui=self.b_inscriptions}) end
 
