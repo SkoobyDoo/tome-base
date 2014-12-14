@@ -124,10 +124,11 @@ newTalent{
 				atk_boost = math.max(old_atk, atk_boost)
 				dam_boost = math.max(old_dam, dam_boost)
 				force_reshape = true
-			elseif old_ego then
+			elseif old_ego and old_atk == 0 then  -- in case of future backward compatibility removal
 				old_atk = old_ego.combat.atk
 				old_dam = old_ego.combat.dam
 			end
+			o.old_atk, o.old_dam, o.orig_atk, o.orig_dam = nil, nil, nil, nil
 			if force_reshape or old_atk < atk_boost or old_dam < dam_boost then
 				local new_ego = Entity.new{
 					name = "reshape weapon",
@@ -160,9 +161,10 @@ newTalent{
 				fat = math.max(fat, old_fat)
 				armour = math.max(armour, o.wielder.combat_armour - old_arm)
 				force_reshape = true
-			elseif old_ego then
+			elseif old_ego and old_fat == 0 then  -- in case of future backward compatibility removal
 				old_fat = old_ego.fatigue_reduction
 			end
+			o.old_fat, o.orig_fat, o.orig_arm = nil, nil, nil
 			if force_reshape or old_fat < fat or old_arm < o.wielder.combat_armor + armour then
 				local real_fat
 				if e.wielder.fatigue < 0 then real_fat = 0
