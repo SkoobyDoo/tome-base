@@ -236,7 +236,7 @@ newTalent{
 					game.level.map:remove(self.x, self.y, Map.TERRAIN+3)
 					game.level:removeEntity(self, true)
 					self.creepingDark = nil
-					--game.level.map:redisplay()
+					game.level.map:scheduleRedisplay()
 				else
 					self.duration = self.duration - 1
 

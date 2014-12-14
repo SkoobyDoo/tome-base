@@ -388,6 +388,11 @@ function _M:redisplay()
 	end end
 end
 
+-- Schedules a redisplay, use this in places where multiple redisplays might happen on the same tick
+function _M:scheduleRedisplay()
+	game:onTickEnd(function() self:redisplay() end, "map_redisplay")
+end
+
 --- Closes things in the object to allow it to be garbage collected
 -- Map objects are NOT automatically garbage collected because they contain FOV C structure, which themselves have a reference
 -- to the map. Cyclic references! BAD BAD BAD !<br/>
