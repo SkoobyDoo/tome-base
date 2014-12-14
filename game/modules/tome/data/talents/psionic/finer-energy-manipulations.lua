@@ -108,6 +108,7 @@ newTalent{
 			local old_atk = (o.old_atk or 0)
 			local old_dam = (o.old_dam or 0)
 			local old_ego = game.zone:removeEgoByName(o, "reshape weapon")
+			local force_reshape = false
 			if not old_ego and o.been_reshaped then --Update items affected by older versions of this talent
 				if o.been_reshaped == true then
 					o.name = o.name:gsub("reshaped ", "", 1)
@@ -118,22 +119,28 @@ newTalent{
 					o.combat.dam = o.orig_dam
 				end
 				o.been_reshaped = nil
+				-- if an older version, just reshape anyway
+				-- if reshapen by better TL, keep it
+				atk_boost = math.max(old_atk, atk_boost)
+				dam_boost = math.max(old_dam, dam_boost)
+				force_reshape = true
 			elseif old_ego then
 				old_atk = old_ego.combat.atk
 				old_dam = old_ego.combat.dam
 			end
-			if old_atk < atk_boost or old_dam < dam_boost then
+			if force_reshape or old_atk < atk_boost or old_dam < dam_boost then
 				local new_ego = Entity.new{
 					name = "reshape weapon",
 					been_reshaped = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") ",
 					special = true,
 					combat = {atk=atk_boost, dam=dam_boost},
+					old_atk = atk_boost, old_dam = dam_boost, orig_atk = o.combat.atk, orig_dam = o.combat.dam  -- Backwards compatibility
 				}
 				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
 				game.zone:applyEgo(o, new_ego, "object", true)
 				if in_dialog then self:talentDialogReturn(true) end
 			else
-				game.zone:applyEgo(o, old_ego, "object", true) -- nohing happened
+				if old_ego then game.zone:applyEgo(o, old_ego, "object", true) end -- nothing happened
 				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
 			end
 		else
@@ -143,23 +150,30 @@ newTalent{
 			local old_arm
 			old_arm = o.wielder.combat_armor
 			local old_ego = game.zone:removeEgoByName(o, "reshape armour")
+			local force_reshape = false
 			if not old_ego and o.been_reshaped then
 				o.wielder.combat_armor = o.orig_arm
 				o.wielder.fatigue = o.orig_fat
 				o.been_reshaped = nil
+				-- if an older version, just reshape anyway
+				-- if reshapen by better TL, keep it
+				fat = math.max(fat, old_fat)
+				armour = math.max(armour, o.wielder.combat_armour - old_arm)
+				force_reshape = true
 			elseif old_ego then
 				old_fat = old_ego.fatigue_reduction
 			end
-			if old_fat < fat or old_arm < o.wielder.combat_armor + armour then
+			if force_reshape or old_fat < fat or old_arm < o.wielder.combat_armor + armour then
 				local real_fat
 				if e.wielder.fatigue < 0 then real_fat = 0
 				else real_fat = min(fat, e.wielder.fatigue) end
 				local new_ego = Entity.new{
 					name = "reshape armour",
-					been_reshaped = "reshaped["..tostring(armour)..","..tostring(o.wielder.fatigue-o.orig_fat).."%] ",
+					been_reshaped = "reshaped["..tostring(armour)..","..tostring(real_fat).."%] ",
 					special = true,
 					wielder = {combat_armour=arm, fatigue=-real_fat},
 					fatigue_reduction = fat,
+					old_fat = fat, orig_fat = o.wielder.fatigue, orig_arm = o.wielder.armour  -- Backwards compatibility
 				}
 				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
 				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
