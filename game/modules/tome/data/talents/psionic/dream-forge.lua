@@ -232,7 +232,8 @@ newTalent{
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 5, 25) end, --Limit < 100%
 	getFailChance = function(self, t) return self:combatLimit(self:combatTalentMindDamage(t, 5, 25), 67, 0, 0, 16.34, 16.34) end, -- Limit to <67%
 	
-	doForgeStrike = function(self, t, p)
+	callbackOnActBase = function(self, t, p)
+		local p = self:isTalentActive(t.id)
 		-- If we moved reset the forge
 		if self.x ~= p.x or self.y ~= p.y or p.new then
 			p.x = self.x; p.y=self.y; p.radius=0; p.damage=0; p.power=0; p.new = nil;

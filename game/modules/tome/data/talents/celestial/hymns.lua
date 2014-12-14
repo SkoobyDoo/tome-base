@@ -168,7 +168,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 7, 80) end,
 	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
 	getNegativeDrain = function(self, t) return self:combatTalentLimit(t, 0, 8, 3) end, -- Limit > 0, no regen at high levels
-	do_beams = function(self, t)
+	callbackOnActBase = function(self, t)
 		if self:getNegative() < t.getNegativeDrain(self, t) then return end
 
 		local tgts = {}

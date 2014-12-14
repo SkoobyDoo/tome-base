@@ -54,7 +54,7 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	getChance = function(self, t) return self:combatStatLimit("con", 1, .28, .745)*self:combatTalentLimit(t,100, 28,74.8) end, -- Limit < 100%
-	do_unflinching_resolve = function(self, t)
+	callbackOnActBase = function(self, t)
 		local effs = {}
 		-- Go through all spell effects
 		for eff_id, p in pairs(self.tmp) do
@@ -120,6 +120,11 @@ newTalent{
 				end
 			end
 		end)
+	end,
+	callbackOnActBase = function(self, t)
+		if self.life < t.getMinimumLife(self, t) then
+			self:forceUseTalent(t.id, {ignore_energy=true})
+		end
 	end,
 	activate = function(self, t)
 		local ret = {	}

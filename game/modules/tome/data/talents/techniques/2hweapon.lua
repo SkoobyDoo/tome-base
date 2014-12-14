@@ -363,7 +363,7 @@ newTalent{
 	sustain_stamina = 70,
 	no_energy = true,
 	tactical = { BUFF = 1 },
-	do_turn = function(self, t)
+	callbackOnActBase = function(self, t)
 		if self.blood_frenzy > 0 then
 			self.blood_frenzy = math.max(self.blood_frenzy - 2, 0)
 		end

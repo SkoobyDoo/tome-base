@@ -62,7 +62,8 @@ newTalent{
 		local fnt = "buff_font"
 		return tostring(math.ceil(val)), fnt
 	end,
-	doTimeDilation = function(self, t, p)
+	callbackOnActBase = function(self, t)
+		local p = self:isTalentActive(t.id)
 		-- If we moved lower the power
 		if self.x ~= p.x or self.y ~= p.y then
 			p.x = self.x; p.y=self.y; p.charges = math.max(0, p.charges - 1)

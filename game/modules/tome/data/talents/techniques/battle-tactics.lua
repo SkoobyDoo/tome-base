@@ -109,7 +109,7 @@ newTalent{
 	--Note: this can result in > 100% resistancs (before cap) at high talent levels to keep up with opposing resistance lowering talents
 	resistCoeff = function(self, t) return self:combatTalentScale(t, 25, 45) end,
 	getCapApproach = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.5) end,
-	do_turn = function(self, t) --called by mod.class.Actor:actBase
+	callbackOnActBase = function(self, t) --called by mod.class.Actor:actBase
 		local p = self:isTalentActive(t.id)
 		if p.resid then self:removeTemporaryValue("resists", p.resid) end
 		if p.cresid then self:removeTemporaryValue("resists_cap", p.cresid) end
