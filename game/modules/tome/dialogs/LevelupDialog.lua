@@ -161,6 +161,7 @@ end
 -- Some common colors
 local subtleMessageErrorColor = {r=255, g=100, b=100}
 local subtleMessageWarningColor = {r=255, g=255, b=80}
+local subtleMessageOtherColor = {r=255, g=215, b=0}
 
 function _M:finish()
 	local ok, dep_miss = self:checkDeps(true, true)
@@ -229,7 +230,7 @@ function _M:incStat(sid, v)
 			return
 		end
 		if self.actor:getStat(sid, nil, nil, true) >= self.actor.level * 1.4 + 20 then
-			self:subtleMessage("Stat is at the maximum for your level", "You cannot increase this stat further until next level!", 255, 215, 0)
+			self:subtleMessage("Stat is at the maximum for your level", "You cannot increase this stat further until next level!", subtleMessageOtherColor)
 			return
 		end
 		if self.actor:isStatMax(sid) or self.actor:getStat(sid, nil, nil, true) >= 60 + math.max(0, (self.actor.level - 50)) then

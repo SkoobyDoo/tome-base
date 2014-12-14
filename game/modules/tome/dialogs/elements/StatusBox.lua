@@ -57,7 +57,7 @@ function _M:setTextColor(text, color)
 	self.color = color or self.color
 
 	self.text_surf:erase(0, 0, 0, 0)
-	self.text_surf:drawColorStringCentered(self.font, self.text, 0, 0, self.iw, self.ih, self.color.r, self.color.g, self.color.b)
+	self.text_surf:drawColorStringCentered(self.font_bold, self.text, 0, 0, self.iw, self.ih, self.color.r, self.color.g, self.color.b)
 	self.text_surf:updateTexture(self.text_tex[1])
 	self.frame_decay = 0
 end
