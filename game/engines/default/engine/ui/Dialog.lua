@@ -384,6 +384,8 @@ end
 function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 	local mw, mh = nil, nil
 
+	local padding = 3 -- to not glue stuff to each other
+
 --	resizex, resizey = true, true
 	if resizex or resizey then
 		mw, mh = 0, 0
@@ -427,24 +429,36 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 			ux, uy = self.ix, self.iy
 
 			if ui.top then
-				if type(ui.top) == "table" then ui.top = self.ui_by_ui[ui.top].y end
+				if type(ui.top) == "table" then ui.top = self.ui_by_ui[ui.top].y - self.iy + ui.top.h + padding end
 				uy = uy + ui.top
 			elseif ui.bottom then
-				if type(ui.bottom) == "table" then ui.bottom = self.ui_by_ui[ui.bottom].y end
+				if type(ui.bottom) == "table" then
+					local top = self.ui_by_ui[ui.bottom].y - self.iy - padding
+					ui.bottom = self.ih - top - ui.ui.h
+				end
 				uy = uy + self.ih - ui.bottom - ui.ui.h
 			elseif ui.vcenter then
-				if type(ui.vcenter) == "table" then ui.vcenter = self.ui_by_ui[ui.vcenter].y + ui.vcenter.h end
+				if type(ui.vcenter) == "table" then
+					local vcenter = self.ui_by_ui[ui.vcenter].y + ui.vcenter.h
+					ui.vcenter = = math.floor(vcenter - self.ih / 2)
+				end
 				uy = uy + math.floor(self.ih / 2) + ui.vcenter - ui.ui.h / 2
 			end
 
 			if ui.left then
-				if type(ui.left) == "table" then ui.left = self.ui_by_ui[ui.left].x + ui.left.w end
+				if type(ui.left) == "table" then ui.left = self.ui_by_ui[ui.left].x - self.ix + ui.left.w + padding end
 				ux = ux + ui.left
 			elseif ui.right then
-				if type(ui.right) == "table" then ui.right = self.ui_by_ui[ui.right].x end
+				if type(ui.right) == "table" then
+					local left = self.ui_by_ui[ui.right].x - self.ix - padding
+					ui.right = self.iw - left - ui.ui.w
+				end
 				ux = ux + self.iw - ui.right - ui.ui.w
 			elseif ui.hcenter then
-				if type(ui.hcenter) == "table" then ui.hcenter = self.ui_by_ui[ui.hcenter].x + ui.hcenter.w end
+				if type(ui.hcenter) == "table" then
+					local hcenter = self.ui_by_ui[ui.hcenter].x - self.ix + ui.hcenter.w / 2
+					ui.hcenter = math.floor(hcenter - self.iw / 2)
+				end
 				ux = ux + math.floor(self.iw / 2) + ui.hcenter - ui.ui.w / 2
 			elseif ui.hcenter_left then
 				if type(ui.hcenter_left) == "table" then 
