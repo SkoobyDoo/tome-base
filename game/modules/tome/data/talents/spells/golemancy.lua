@@ -316,6 +316,12 @@ newTalent{
 		game:playSoundNear(self, "talents/arcane")
 		return true
 	end,
+	-- This is an all-catch talent, and it is auto-learned on anything involving golems, so this is a good place to stick that onto
+	callbackOnLevelup = function(self, t, new_level)
+		local _, golem = getGolem(self)
+		golem.max_level = self.max_level
+		golem:forceLevelup(new_level)
+	end,
 	info = function(self, t)
 		local heal = t.getHeal(self, t)
 		return ([[Take care of your golem:

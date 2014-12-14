@@ -3323,8 +3323,6 @@ function _M:levelup()
 		self:no_points_on_levelup()
 	end
 
-	if self:knowTalent(self.T_LEGACY_OF_THE_NALOREN) then self:callTalent(self.T_LEGACY_OF_THE_NALOREN,"updateTalent") end-- Update Bonus Talent levels
-
 	-- Gain some basic resistances
 	if not self.no_auto_resists then
 		-- Make up a random list of resists the first time
@@ -3386,11 +3384,7 @@ function _M:levelup()
 		engine.Autolevel:autoLevel(self)
 	end
 
-	-- Force levelup of the golem
-	if self.alchemy_golem then
-		self.alchemy_golem.max_level = self.max_level  -- make sure golem can level up with master
-		self.alchemy_golem:forceLevelup(self.level)
-	end
+	self:fireTalentCheck("callbackOnLevelup", self.level)
 
 	-- Notify party levelups
 	if self.x and self.y and game.party:hasMember(self) and not self.silent_levelup then
@@ -4890,6 +4884,7 @@ local sustainCallbackCheck = {
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
 	callbackOnRun = "talents_on_run",
+	callbackOnLevelup = "talents_on_levelup",
 	callbackOnDeath = "talents_on_death",
 	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnKill = "talents_on_kill",
