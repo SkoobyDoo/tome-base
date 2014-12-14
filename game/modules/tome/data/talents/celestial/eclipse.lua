@@ -146,6 +146,12 @@ newTalent{
 	getEnergyConvert = function(self, t) return math.max(0, 6 - self:getTalentLevelRaw(t)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100) end,
 	getRadius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
+	callbackOnActBase = function(self, t)
+		if self.positive > self.negative then
+			self:forceUseTalent(t.id, {ignore_energy=true})
+			game.logSeen(self, "%s's darkness can no longer hold back the light!", self.name:capitalize())
+		end
+	end,
 	activate = function(self, t)
 		local timer = t.getEnergyConvert(self, t)
 		game:playSoundNear(self, "talents/heal")

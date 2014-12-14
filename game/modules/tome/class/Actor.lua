@@ -474,21 +474,6 @@ function _M:actBase()
 		self:useBuildOrder()
 	end
 
-	-- Break darkest light
-	if self:isTalentActive (self.T_DARKEST_LIGHT) and self.positive > self.negative then
-		self:forceUseTalent(self.T_DARKEST_LIGHT, {ignore_energy=true})
-		game.logSeen(self, "%s's darkness can no longer hold back the light!", self.name:capitalize())
-	end
-	-- Break mind links
-	if self:isTalentActive(self.T_MIND_LINK) then
-		local p = self:isTalentActive(self.T_MIND_LINK)
-		if not p.target or p.target.dead or not p.target:hasEffect(p.target.EFF_MIND_LINK_TARGET) or not game.level:hasEntity(p.target) then
-			self:forceUseTalent(self.T_MIND_LINK, {ignore_energy=true})
-		end
-	end
-
-	-- Cooldown talents
-	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
 	-- Regen resources
 	self:regenLife()
 	self:regenAmmo()
@@ -549,117 +534,12 @@ function _M:actBase()
 
 	-- Handle thunderstorm, even if the actor is stunned or incapacitated it still works
 	if not game.zone.wilderness and not self.dead then
-		if self:isTalentActive(self.T_THUNDERSTORM) then
-			local t = self:getTalentFromId(self.T_THUNDERSTORM)
-			t.do_storm(self, t)
-		end
-		if self:isTalentActive(self.T_BODY_OF_FIRE) then
-			local t = self:getTalentFromId(self.T_BODY_OF_FIRE)
-			t.do_fire(self, t)
-		end
-		if self:isTalentActive(self.T_HYMN_OF_MOONLIGHT) then
-			local t = self:getTalentFromId(self.T_HYMN_OF_MOONLIGHT)
-			t.do_beams(self, t)
-		end
-		if self:isTalentActive(self.T_BLOOD_FRENZY) then
-			local t = self:getTalentFromId(self.T_BLOOD_FRENZY)
-			t.do_turn(self, t)
-		end
-		if self:isTalentActive(self.T_TRUE_GRIT) then
-			local t = self:getTalentFromId(self.T_TRUE_GRIT)
-			t.do_turn(self, t)
-		end
-		-- this handles cursed gloom turn based effects
-		if self:isTalentActive(self.T_GLOOM) then
-			local t = self:getTalentFromId(self.T_GLOOM)
-			t.do_gloom(self, t)
-		end
-		-- this handles cursed call shadows turn based effects
-		if self:isTalentActive(self.T_CALL_SHADOWS) then
-			local t = self:getTalentFromId(self.T_CALL_SHADOWS)
-			t.do_callShadows(self, t)
-		end
-		-- this handles cursed deflection turn based effects
-		if self:isTalentActive(self.T_DEFLECTION) then
-			local t = self:getTalentFromId(self.T_DEFLECTION)
-			t.do_act(self, t, self:isTalentActive(self.T_DEFLECTION))
-		end
-		-- this handles doomed unseen force turn based effects
-		if self.unseenForce then
-			local t = self:getTalentFromId(self.T_UNSEEN_FORCE)
-			t.do_unseenForce(self, t)
-		end
-		-- Curse of Nightmares: Nightmare
-		if not self.dead and self:hasEffect(self.EFF_CURSE_OF_NIGHTMARES) then
-			local eff = self:hasEffect(self.EFF_CURSE_OF_NIGHTMARES)
-			if eff.isHit then
-				eff.isHit = false
-				self.tempeffect_def[self.EFF_CURSE_OF_NIGHTMARES].doNightmare(self, eff)
-			end
-		end
-		-- this handles Carbon Spike regrowth
-		if self:isTalentActive(self.T_CARBON_SPIKES) then
-			local t = self:getTalentFromId(self.T_CARBON_SPIKES)
-			t.do_carbonRegrowth(self, t)
-		end
-		-- this handles conditioning talents
-		if self:knowTalent(self.T_UNFLINCHING_RESOLVE) then
-			local t = self:getTalentFromId(self.T_UNFLINCHING_RESOLVE)
-			t.do_unflinching_resolve(self, t)
-		end
-		if self:isTalentActive(self.T_DAUNTING_PRESENCE) then
-			local t = self:getTalentFromId(self.T_DAUNTING_PRESENCE)
-			if self.life < t.getMinimumLife(self, t) then
-				self:forceUseTalent(self.T_DAUNTING_PRESENCE, {ignore_energy=true})
-			end
-		end
-		-- this handles Mind Storm
-		if self:isTalentActive(self.T_MIND_STORM) then
-			local t, p = self:getTalentFromId(self.T_MIND_STORM), self:isTalentActive(self.T_MIND_STORM)
-			if self:getFeedback() >=5 or p.overcharge >=1 then
-				t.doMindStorm(self, t, p)
-			end
-		end
-
-		if self:isTalentActive(self.T_DREAMFORGE) then
-			local t, p = self:getTalentFromId(self.T_DREAMFORGE), self:isTalentActive(self.T_DREAMFORGE)
-			t.doForgeStrike(self, t, p)
-		end
-
-		if self:isTalentActive(self.T_TIME_DILATION) then
-			local t, p = self:getTalentFromId(self.T_TIME_DILATION), self:isTalentActive(self.T_TIME_DILATION)
-			t.doTimeDilation(self, t, p)
-		end
-
-		local psiweapon = self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1]
-		if (psiweapon and ( not psiweapon.combat or psiweapon.subtype == "mindstar" )) or not psiweapon then
-			if self:isTalentActive(self.T_KINETIC_AURA) then
-				local t = self:getTalentFromId(self.T_KINETIC_AURA)
-				t.do_kineticaura(self, t)
-			end
-			if self:isTalentActive(self.T_THERMAL_AURA) then
-				local t = self:getTalentFromId(self.T_THERMAL_AURA)
-				t.do_thermalaura(self, t)
-			end
-			if self:isTalentActive(self.T_CHARGED_AURA) then
-				local t = self:getTalentFromId(self.T_CHARGED_AURA)
-				t.do_chargedaura(self, t)
-			end
-		end
-
-		if self:isTalentActive(self.T_BEYOND_THE_FLESH) then
-			local t = self:getTalentFromId(self.T_BEYOND_THE_FLESH)
-			t.do_tkautoattack(self, t)
-		end
-		if self:hasEffect(self.EFF_MASTERFUL_TELEKINETIC_ARCHERY) then
-			local t = self:getTalentFromId(self.T_MASTERFUL_TELEKINETIC_ARCHERY)
-			t.do_tkautoshoot(self, t)
-		end
-
 		self:triggerHook{"Actor:actBase:Effects"}
-
 		self:fireTalentCheck("callbackOnActBase")
 	end
+
+	-- Cooldown talents after effects, because some of them involve breaking sustains.
+	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
 
 	-- Suffocate ?
 	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
@@ -3320,8 +3200,6 @@ function _M:levelup()
 		self:no_points_on_levelup()
 	end
 
-	if self:knowTalent(self.T_LEGACY_OF_THE_NALOREN) then self:callTalent(self.T_LEGACY_OF_THE_NALOREN,"updateTalent") end-- Update Bonus Talent levels
-
 	-- Gain some basic resistances
 	if not self.no_auto_resists then
 		-- Make up a random list of resists the first time
@@ -3383,11 +3261,7 @@ function _M:levelup()
 		engine.Autolevel:autoLevel(self)
 	end
 
-	-- Force levelup of the golem
-	if self.alchemy_golem then
-		self.alchemy_golem.max_level = self.max_level  -- make sure golem can level up with master
-		self.alchemy_golem:forceLevelup(self.level)
-	end
+	self:fireTalentCheck("callbackOnLevelup", self.level)
 
 	-- Notify party levelups
 	if self.x and self.y and game.party:hasMember(self) and not self.silent_levelup then
@@ -4887,6 +4761,7 @@ local sustainCallbackCheck = {
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
 	callbackOnRun = "talents_on_run",
+	callbackOnLevelup = "talents_on_levelup",
 	callbackOnDeath = "talents_on_death",
 	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnKill = "talents_on_kill",

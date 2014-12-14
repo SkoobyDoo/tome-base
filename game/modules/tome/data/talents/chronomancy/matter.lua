@@ -62,7 +62,7 @@ newTalent{
 	tactical = { BUFF =2, DEFEND = 2 },
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 1, 150, getParadoxSpellpower(self, t)) end,
 	getArmor = function(self, t) return math.ceil(self:combatTalentSpellDamage(t, 20, 50, getParadoxSpellpower(self, t))) end,
-	do_carbonRegrowth = function(self, t)
+	callbackOnActBase = function(self, t)
 		local maxspikes = t.getArmor(self, t)
 		if self.carbon_armor < maxspikes then
 			self.carbon_armor = self.carbon_armor + 1

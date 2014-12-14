@@ -64,6 +64,11 @@ local function aura_target(self, t)
 	end
 end
 
+local function aura_should_proc(self, t)
+	local psiweapon = self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1]
+	return (psiweapon and ( not psiweapon.combat or psiweapon.subtype == "mindstar" )) or not psiweapon
+end
+
 newTalent{
 	name = "Kinetic Aura",
 	type = {"psionic/projection", 1},
@@ -122,7 +127,8 @@ newTalent{
 	getKnockback = function(self, t)
 		return 3 + math.floor(self:getTalentLevel(t))
 	end,
-	do_kineticaura = function(self, t)
+	callbackOnActBase = function(self, t)
+		if not aura_should_proc(self, t) then return end
 		local mast = aura_mastery(self, t)
 		local dam = t.getAuraStrength(self, t)
 		local tg = t.getNormalTarget(self, t)
@@ -246,7 +252,8 @@ newTalent{
 	getSpikeCost = function(self, t)
 		return t.sustain_psi*2/3
 	end,
-	do_thermalaura = function(self, t)
+	callbackOnActBase = function(self, t)
+		if not aura_should_proc(self, t) then return end
 		local mast = aura_mastery(self, t)
 		local dam = t.getAuraStrength(self, t)
 		local tg = t.getNormalTarget(self, t)
@@ -374,7 +381,8 @@ newTalent{
 	getNumSpikeTargets = function(self, t)
 		return 3 + math.floor(0.5*self:getTalentLevel(t))
 	end,
-	do_chargedaura = function(self, t)
+	callbackOnActBase = function(self, t)
+		if not aura_should_proc(self, t) then return end
 		local mast = aura_mastery(self, t)
 		local dam = t.getAuraStrength(self, t)
 		local tg = t.getNormalTarget(self, t)

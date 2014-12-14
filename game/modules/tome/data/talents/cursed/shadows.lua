@@ -355,7 +355,7 @@ newTalent{
 
 		return true
 	end,
-	do_callShadows = function(self, t)
+	callbackOnActBase = function(self, t)
 		if not self.shadows then
 			self.shadows = {
 				remainingCooldown = 0

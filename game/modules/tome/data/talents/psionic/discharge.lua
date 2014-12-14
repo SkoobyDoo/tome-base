@@ -35,7 +35,9 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 100) end,
 	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	getOverchargeRatio = function(self, t) return self:combatTalentLimit(t, 10, 19, 15) end, -- Limit >10
-	doMindStorm = function(self, t, p)
+	callbackOnActBase = function(self, t)
+		local p = self:isTalentActive(t.id)
+		if not (self:getFeedback() >= 5 or p.overcharge >= 1) then return end
 		local tgts = {}
 		local tgts_oc = {}
 		local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)

@@ -199,7 +199,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 80) end,
 	getTargetCount = function(self, t) return math.floor(self:getTalentLevel(t)) end,
 	getManaDrain = function(self, t) return -1.5 * self:getTalentLevelRaw(t) end,
-	do_storm = function(self, t)
+	callbackOnActBase = function(self, t)
 		local mana = t.getManaDrain(self, t)
 		if self:getMana() <= mana + 1 then return end
 
