@@ -4882,9 +4882,26 @@ local sustainCallbackCheck = {
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
+-- Upgrade from pre-
+local function upgradeStore(store, storename)
+	if store.types then return end
+	print("[CALLBACK] upgrading to prioritized", storename)
+	local types = {}
+	local priorities = {}
+	while next(store) do
+		local k = next(store)
+		priorities[k] = 0
+		types[k] = store[k]
+		store[k] = nil
+	end
+	store.types = types
+	store.priorities = priorities
+end
+
 function _M:registerCallbacks(objdef, objid, objtype)
 	for event, store in pairs(sustainCallbackCheck) do
 		if objdef[event] then
+			if self[store] then upgradeStore(self[store], store) end
 			local cb = self[store] or {}
 			cb.types = cb.types or {}
 			cb.priorities = cb.priorities or {}
@@ -4900,6 +4917,7 @@ end
 function _M:unregisterCallbacks(objdef, objid)
 	for event, store in pairs(sustainCallbackCheck) do
 		if self[store] and self[store].types and self[store].types[objid] then
+			upgradeStore(self[store], store)
 			self[store].types[objid] = nil
 			self[store].priorities[objid] = nil
 			self[store].__sorted = nil
@@ -4916,6 +4934,7 @@ end
 function _M:fireTalentCheck(event, ...)
 	local store = sustainCallbackCheck[event]
 	local ret = false
+	if self[store] then upgradeStore(self[store], store) end
 	if self[store] and next(self[store].types) then
 		local sorted = self[store].__sorted
 		if not sorted then
