@@ -440,7 +440,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 			elseif ui.vcenter then
 				if type(ui.vcenter) == "table" then
 					local vcenter = self.ui_by_ui[ui.vcenter].y + ui.vcenter.h
-					ui.vcenter  = vcenter - math.floor(self.ih / 2)
+					ui.vcenter = = math.floor(vcenter - self.ih / 2)
 				end
 				uy = uy + math.floor(self.ih / 2) + ui.vcenter - ui.ui.h / 2
 			end
@@ -457,7 +457,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 			elseif ui.hcenter then
 				if type(ui.hcenter) == "table" then
 					local hcenter = self.ui_by_ui[ui.hcenter].x - self.ix + ui.hcenter.w / 2
-					ui.hcenter = hcenter - math.floor(self.iw / 2)
+					ui.hcenter = math.floor(hcenter - self.iw / 2)
 				end
 				ux = ux + math.floor(self.iw / 2) + ui.hcenter - ui.ui.w / 2
 			elseif ui.hcenter_left then
