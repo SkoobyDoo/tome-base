@@ -126,20 +126,23 @@ end
 
 --- Requests a long yes-no dialog
 function _M:yesnoLongPopup(title, text, w, fct, yes_text, no_text, no_leave, escape)
-	local list = text:splitLines(w - 10, font)
-	local d = new(title, 1, 1)
-
---	d.key:addBind("EXIT", function() game:unregisterDialog(d) fct(false) end)
 	local ok = require("engine.ui.Button").new{text=yes_text or "Yes", fct=function() game:unregisterDialog(d) fct(true) end}
 	local cancel = require("engine.ui.Button").new{text=no_text or "No", fct=function() game:unregisterDialog(d) fct(false) end}
+
+	w = math.max(w + 20, ok.w + cancel.w + 10)
+
+	local list = text:splitLines(w - 10, self.font)
+	local d = new(title, w + 6, 1)
+
+--	d.key:addBind("EXIT", function() game:unregisterDialog(d) fct(false) end)
 	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) fct(escape) end) end
 	d:loadUI{
-		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+20, height=self.font_h * #list, text=text}},
+		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w, height=self.font_h * #list, text=text}},
 		{left = 3, bottom = 3, ui=ok},
 		{right = 3, bottom = 3, ui=cancel},
 	}
 	d:setFocus(ok)
-	d:setupUI(true, true)
+	d:setupUI(false, true)
 
 	game:registerDialog(d)
 	return d
@@ -440,7 +443,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 			elseif ui.vcenter then
 				if type(ui.vcenter) == "table" then
 					local vcenter = self.ui_by_ui[ui.vcenter].y + ui.vcenter.h
-					ui.vcenter = = math.floor(vcenter - self.ih / 2)
+					ui.vcenter = math.floor(vcenter - self.ih / 2)
 				end
 				uy = uy + math.floor(self.ih / 2) + ui.vcenter - ui.ui.h / 2
 			end
