@@ -143,37 +143,12 @@ newInscription{
 		local target = self
 		local effs = {}
 		local force = {}
-		local known = false
+		local removed = 0
 
-		-- Go through all temporary effects
-		for eff_id, p in pairs(target.tmp) do
-			local e = target.tempeffect_def[eff_id]
-			if data.what[e.type] and e.status == "detrimental" and e.subtype["cross tier"] then
-				force[#force+1] = {"effect", eff_id}
-			elseif data.what[e.type] and e.status == "detrimental" then
-				effs[#effs+1] = {"effect", eff_id}
-			end
-		end
+		removed = target:removeEffectsFilter({types=data.what, subtype={["cross tier"] = true}, status="detrimental"})
+		removed = removed + target:removeEffectsFilter({types=data.what, status="detrimental"}, 1)
 
-		-- Cross tier effects are always removed and not part of the random game, otherwise it is a huge nerf to wild infusion
-		for i = 1, #force do
-			local eff = force[i]
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-
-		for i = 1, 1 do
-			if #effs == 0 then break end
-			local eff = rng.tableRemove(effs)
-
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-		if known then
+		if removed > 0 then
 			game.logSeen(self, "%s is cured!", self.name:capitalize())
 		end
 		self:setEffect(self.EFF_PAIN_SUPPRESSION, data.dur, {power=data.power + data.inc_stat})
@@ -220,37 +195,11 @@ newInscription{
 		local target = self
 		local effs = {}
 		local force = {}
-		local known = false
+		local removed = 0
 
-		-- Go through all temporary effects
-		for eff_id, p in pairs(target.tmp) do
-			local e = target.tempeffect_def[eff_id]
-			if data.what[e.type] and e.status == "detrimental" and e.subtype["cross tier"] then
-				force[#force+1] = {"effect", eff_id}
-			elseif data.what[e.type] and e.status == "detrimental" then
-				effs[#effs+1] = {"effect", eff_id}
-			end
-		end
-
-		-- Cross tier effects are always removed and not part of the random game, otherwise it is a huge nerf to wild infusion
-		for i = 1, #force do
-			local eff = force[i]
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-
-		for i = 1, 1 do
-			if #effs == 0 then break end
-			local eff = rng.tableRemove(effs)
-
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-		if known then
+		removed = target:removeEffectsFilter({types=data.what, subtype={["cross tier"] = true}, status="detrimental"})
+		removed = removed + target:removeEffectsFilter({types=data.what, status="detrimental"}, 1)
+		if removed > 0 then
 			game.logSeen(self, "%s is cured!", self.name:capitalize())
 		end
 		self:setEffect(self.EFF_PRIMAL_ATTUNEMENT, data.dur, {power=data.power + data.inc_stat})
