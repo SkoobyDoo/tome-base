@@ -5522,8 +5522,18 @@ function _M:removeEffectsFilter(t, nb, silent, force)
 		local e = self.tempeffect_def[eff_id]
 		if type(t) == "function" then
 			if t(e) then effs[#effs+1] = eff_id end
-		elseif (not t.type or t.type == e.type) and (not t.status or e.status == t.status) and (not t.ignore_crosstier or not e.subtype["cross tier"]) then
-			effs[#effs+1] = eff_id
+		else
+			local test = true
+			test = (not t.ignore_crosstier or not e.subtype["cross tier"])
+			test = test and (not t.type or t.type == e.type)
+			test = test and (not t.types or t.types[e.type])
+			if t.subtype then
+				local valid = false
+				for k, _ in pairs(t.subtype) do valid = valid or e.subtype[k] end
+				test = test and valid
+			end
+			test = test and (not t.status or e.status == t.status)
+			if test then effs[#effs+1] = eff_id end
 		end
 	end
 
