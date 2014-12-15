@@ -5551,15 +5551,13 @@ function _M:effectsFilter(t, nb)
 	end
 end
 
-function _M:removeEffects(effs, silent, force)
-	for _, eff_id in ipairs(effs) do
-		self:removeEffect(eff_id, silent, force)
-	end
-end
-
-function _M:removeEffectsFilter(t, nb, silent, force)
+function _M:removeEffectsFilter(t, nb, silent, force, check_remove)
 	local eff_ids = self:effectsFilter(t, nb)
-	self:removeEffects(eff_ids, silent, force)
+	for _, eff_id in ipairs(eff_ids) do
+		if not check_remove or check_remove(self, eff_id) then
+			self:removeEffect(eff_id, silent, force)
+		end
+	end
 	return #eff_ids
 end
 
@@ -5597,15 +5595,17 @@ function _M:sustainsFilter(t, nb)
 	end
 end
 
-function _M:removeSustainsFilter(t, nb)
+function _M:removeSustainsFilter(t, nb, check_remove)
 	local found = self:sustainsFilter(t, nb)
 	for _, tid in ipairs(found) do
-		self:forceUseTalent(tid, {ignore_energy=true})
+		if not check_remove or check_remove(self, tid) then
+			self:forceUseTalent(tid, {ignore_energy=true})
+		end
 	end
 	return #found
 end
 
-function _M:removeEffectsSustainsFilter(t, nb, allow_other)
+function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	local objects = {}
 	for _, eff_id in ipairs(self:effectsFilter(t)) do
 		objects[#objects + 1] = {"effect", eff_id}
@@ -5623,10 +5623,12 @@ function _M:removeEffectsSustainsFilter(t, nb, allow_other)
 		found = objects
 	end
 	for _, obj in ipairs(found) do
-		if obj[1] == "effect" then
-			self:removeEffect(obj[2])
-		else
-			self:forceUseTalent(obj[2], {ignore_energy=true})
+		if not check_remove or check_remove(self, obj) then
+			if obj[1] == "effect" then
+				self:removeEffect(obj[2])
+			else
+				self:forceUseTalent(obj[2], {ignore_energy=true})
+			end
 		end
 	end
 end
