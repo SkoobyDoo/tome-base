@@ -4850,6 +4850,42 @@ function _M:fireTalentCheck(event, ...)
 	return ret
 end
 
+function _M:listCallbacks(event)
+	local store = sustainCallbackCheck[event]
+	local cbs = {}
+	if self[store] then upgradeStore(self[store], store) end
+	if self[store] and next(self[store].__priorities) then
+		for _, info in ipairs(self[store].__sorted) do
+			local priority, kind, stringId, tid = unpack(info)
+			if kind == "effect" then
+				self.__project_source = self.tmp[tid]
+				cbs[#cbs+1] = function(...)
+					self.__project_source = self.tmp[tid]
+					local ret = self:callEffect(tid, event, ...)
+					self.__project_source = nil
+					return ret
+				end
+			elseif kind == "object" then
+				self.__project_source = tid
+				cbs[#cbs+1] = function(...)
+					self.__project_source = tid
+					local ret = tid:check(event, self, ...) end
+					self.__project_source = nil
+					return ret
+				end
+			else
+				cbs[#cbs+1] = function(...)
+					self.__project_source = self.sustain_talents[tid]
+					local ret = self:callTalent(tid, event, ...)
+					self.__project_source = nil
+					return ret
+				end
+			end
+		end
+	end
+	return cbs
+end
+
 function _M:getTalentSpeedType(t)
 	if t.speed then
 		return util.getval(t.speed, self, t)
