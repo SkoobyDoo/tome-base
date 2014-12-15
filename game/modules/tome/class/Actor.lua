@@ -5513,10 +5513,9 @@ function _M:worthExp(target)
 	end
 end
 
---- Remove all effects based on a filter
-function _M:removeEffectsFilter(t, nb, silent, force)
+--- Find effects based on a filter, up to nb.
+function _M:effectsFilter(t, nb)
 	local effs = {}
-	local removed = 0
 
 	for eff_id, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eff_id]
@@ -5540,19 +5539,28 @@ function _M:removeEffectsFilter(t, nb, silent, force)
 	end
 
 	if nb then
+		local found = {}
 		while #effs > 0 and nb > 0 do
 			local eff = rng.tableRemove(effs)
-			self:removeEffect(eff, silent, force)
+			found[#found + 1] = eff
 			nb = nb - 1
-			removed = removed + 1
 		end
+		return found
 	else
-		removed = #effs
-		for i = 1,#effs do
-			self:removeEffect(effs[i], silent, force)
-		end
+		return effs
 	end
-	return removed
+end
+
+function _M:removeEffects(effs, silent, force)
+	for _, eff_id in ipairs(effs) do
+		self:removeEffect(eff_id, silent, force)
+	end
+end
+
+function _M:removeEffectsFilter(t, nb, silent, force)
+	local eff_ids = self:effectsFilter(t, nb)
+	self:removeEffects(eff_ids, silent, force)
+	return #eff_ids
 end
 
 --- Randomly reduce talent cooldowns based on a filter

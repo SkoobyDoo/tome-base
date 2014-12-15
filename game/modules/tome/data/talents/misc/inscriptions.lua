@@ -126,15 +126,8 @@ newInscription{
 	tactical = {
 		DEFEND = 3,
 		CURE = function(self, t, target)
-			local nb = 0
 			local data = self:getInscriptionData(t.short_name)
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if data.what[e.type] and e.status == "detrimental" then
-					nb = nb + 1
-				end
-			end
-			return nb
+			return #self:effectsFilter({types=data.what, status="detrimental"})
 		end
 	},
 	action = function(self, t)
@@ -178,15 +171,8 @@ newInscription{
 	tactical = {
 		DEFEND = 3,
 		CURE = function(self, t, target)
-			local nb = 0
 			local data = self:getInscriptionData(t.short_name)
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if data.what[e.type] and e.status == "detrimental" then
-					nb = nb + 1
-				end
-			end
-			return nb
+			return #self:effectsFilter({types=data.what, status="detrimental"})
 		end
 	},
 	action = function(self, t)
