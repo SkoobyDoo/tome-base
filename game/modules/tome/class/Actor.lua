@@ -5548,28 +5548,124 @@ function _M:worthExp(target)
 	end
 end
 
---- Remove all effects based on a filter
-function _M:removeEffectsFilter(t, nb, silent, force)
-	nb = nb or 100000
+--- Find effects based on a filter, up to nb.
+function _M:effectsFilter(t, nb)
 	local effs = {}
-	local removed = 0
 
 	for eff_id, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eff_id]
 		if type(t) == "function" then
 			if t(e) then effs[#effs+1] = eff_id end
-		elseif (not t.type or t.type == e.type) and (not t.status or e.status == t.status) and (not t.ignore_crosstier or not e.subtype["cross tier"]) then
-			effs[#effs+1] = eff_id
+		else
+			local test = true
+			local include_other = (t.type and t.type=="other") or (t.types and t.types.other)
+			test = (not t.ignore_crosstier or not e.subtype["cross tier"])
+			test = test and (include_other or e.type ~= "other")  -- only remove other explicitly
+			test = test and (not t.type or t.type == e.type)
+			test = test and (not t.types or t.types[e.type])
+			if t.subtype then
+				local valid = false
+				for k, _ in pairs(t.subtype) do valid = valid or e.subtype[k] end
+				test = test and valid
+			end
+			test = test and (not t.status or e.status == t.status)
+			if test then effs[#effs+1] = eff_id end
 		end
 	end
 
-	while #effs > 0 and nb > 0 do
-		local eff = rng.tableRemove(effs)
-		self:removeEffect(eff, silent, force)
-		nb = nb - 1
-		removed = removed + 1
+	if nb then
+		local found = {}
+		while #effs > 0 and nb > 0 do
+			local eff = rng.tableRemove(effs)
+			found[#found + 1] = eff
+			nb = nb - 1
+		end
+		return found
+	else
+		return effs
 	end
-	return removed
+end
+
+function _M:removeEffectsFilter(t, nb, silent, force, check_remove)
+	local eff_ids = self:effectsFilter(t, nb)
+	for _, eff_id in ipairs(eff_ids) do
+		if not check_remove or check_remove(self, eff_id) then
+			self:removeEffect(eff_id, silent, force)
+		end
+	end
+	return #eff_ids
+end
+
+-- Mix in sustains
+local function getSustainType(talent_def)
+	if talent_def.is_mind then return "mental"
+	elseif talent_def.is_spell then return "spell"
+	else return "sustain_generic" end
+end
+
+function _M:sustainsFilter(t, nb)
+	local ids = {}
+	for tid, active in pairs(self.sustain_talents) do
+		if active then
+			local talent = self:getTalentFromId(tid)
+			local ttype = getSustainType(talent)
+			local test
+			if type(t) == "function" then test = t(talent)
+			else
+				test = (not t.type or t.type == ttype) and (not t.types or t.types[ttype])
+			end
+			if test then ids[#ids + 1] = tid end
+		end
+	end
+	if nb then
+		local found = {}
+		while #ids > 0 and nb > 0 do
+			local tid = rng.tableRemove(ids)
+			found[#found + 1] = tid
+			nb = nb - 1
+		end
+		return found
+	else
+		return ids
+	end
+end
+
+function _M:removeSustainsFilter(t, nb, check_remove)
+	local found = self:sustainsFilter(t, nb)
+	for _, tid in ipairs(found) do
+		if not check_remove or check_remove(self, tid) then
+			self:forceUseTalent(tid, {ignore_energy=true})
+		end
+	end
+	return #found
+end
+
+function _M:removeEffectsSustainsFilter(t, nb, check_remove)
+	local objects = {}
+	for _, eff_id in ipairs(self:effectsFilter(t)) do
+		objects[#objects + 1] = {"effect", eff_id}
+	end
+	for _, tid in ipairs(self:sustainsFilter(t)) do
+		objects[#objects + 1] = {"talent", tid}
+	end
+	local found
+	if nb then
+		while #objects > 0 and nb > 0 do
+			found[#found + 1] = rng.tableRemove(objects)
+			nb = nb - 1
+		end
+	else
+		found = objects
+	end
+	for _, obj in ipairs(found) do
+		if not check_remove or check_remove(self, obj) then
+			if obj[1] == "effect" then
+				self:removeEffect(obj[2])
+			else
+				self:forceUseTalent(obj[2], {ignore_energy=true})
+			end
+		end
+	end
 end
 
 --- Randomly reduce talent cooldowns based on a filter
