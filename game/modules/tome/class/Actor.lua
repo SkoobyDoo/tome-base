@@ -5515,7 +5515,6 @@ end
 
 --- Remove all effects based on a filter
 function _M:removeEffectsFilter(t, nb, silent, force)
-	nb = nb or 100000
 	local effs = {}
 	local removed = 0
 
@@ -5528,11 +5527,18 @@ function _M:removeEffectsFilter(t, nb, silent, force)
 		end
 	end
 
-	while #effs > 0 and nb > 0 do
-		local eff = rng.tableRemove(effs)
-		self:removeEffect(eff, silent, force)
-		nb = nb - 1
-		removed = removed + 1
+	if nb then
+		while #effs > 0 and nb > 0 do
+			local eff = rng.tableRemove(effs)
+			self:removeEffect(eff, silent, force)
+			nb = nb - 1
+			removed = removed + 1
+		end
+	else
+		removed = #effs
+		for i = 1,#effs do
+			self:removeEffect(effs[i], silent, force)
+		end
 	end
 	return removed
 end
