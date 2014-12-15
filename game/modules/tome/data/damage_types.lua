@@ -414,7 +414,7 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		local source_talent = src.__projecting_for and src.__projecting_for.project_type and (src.__projecting_for.project_type.talent_id or src.__projecting_for.project_type.talent) and src.getTalentFromId and src:getTalentFromId(src.__projecting_for.project_type.talent or src.__projecting_for.project_type.talent_id)
 		local dead
-		dead, dam = target:takeHit(dam, src, {damtype=type, source_talent=source_talent})
+		dead, dam = target:takeHit(dam, src, {damtype=type, source_talent=source_talent, initial_dam=dam})
 
 		-- Log damage for later
 		if not DamageType:get(type).hideMessage then

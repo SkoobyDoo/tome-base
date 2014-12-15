@@ -179,7 +179,7 @@ newTalent{
 	points = 5,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 47, 35)) end, -- Limit > 5
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 21, 45) end, -- Limit < 100%
-	getInvis = function(self, t) return self:combatStatScale("mag" , 7, 25) end,
+	getInvis = function(self, t) return math.ceil(self:combatStatScale("mag" , 7, 25)) end,
 	mode = "sustained",
 	no_energy = true,
 	activate = function(self, t)
@@ -915,5 +915,121 @@ newTalent{
 	info = function(self, t)
 		return ([[You merge your mind with the rest of the Way for a brief moment; the sum of all yeek knowledge gathers in your mind,
 		and allows you to identify any item you could not recognize yourself.]])
+	end,
+}
+
+------------------------------------------------------------------
+-- Ogre' powers
+------------------------------------------------------------------
+newTalentType{ type="race/ogre", name = "ogre", is_spell=true, generic = true, description = "The various racial bonuses a character can have." }
+newTalent{
+	short_name = "OGRE_WRATH",
+	name = "Ogric Wrath",
+	type = {"race/ogre", 1},
+	require = racial_req1,
+	points = 5,
+	no_energy = true,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 47, 35)) end, -- Limit >10
+	getduration = function(self) return math.floor(self:combatStatScale("str", 5, 12)) end,
+	range = 4,
+	no_npc_use = true,
+	requires_target = true,
+	direct_hit = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
+	action = function(self, t)
+		self:setEffect(self.EFF_OGRIC_WRATH, t.getduration(self, t), {})
+		return true
+	end,
+	info = function(self, t)
+		return ([[You enter an ogric wrath for %d turns.
+		Whenever you miss a melee attack or one of your damage is reduced by a damage shield or effect you gain a charge of Ogre Fury(up to 5 charges).
+		Each charge grants 10%% stun and confusion resistance, 20%% critical damage power and 5%% critical strike chance.
+		You loose a charge each time you deal a critical strike.
+		The duration will increase with your Strength.]]):format(t.getduration(self))
+	end,
+}
+
+newTalent{
+	name = "Grisly Constitution",
+	type = {"race/ogre", 2},
+	require = racial_req2,
+	points = 5,
+	mode = "passive",
+	getSave = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
+	getMult = function(self, t) return self:combatTalentScale(t, 15, 40) / 100 end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "combat_spellresist", t.getSave(self, t))
+		self:talentTemporaryValue(p, "inscriptions_stat_multiplier", t.getMult(self, t))
+	end,
+	info = function(self, t)
+		return ([[An ogre's body is used to spells and inscriptions.
+		Increases spell save by %d and improves the contibution of primary stats on infusions and runes by %d%%.]]):
+		format(t.getSave(self, t), t.getMult(self, t) * 100)
+	end,
+}
+
+newTalent{
+	name = "Scar-Scripted Flesh",
+	type = {"race/ogre", 3},
+	require = racial_req3,
+	points = 5,
+	mode = "passive",
+	getChance = function(self, t) return self:combatTalentLimit(t, 100, 20, 45) end, -- Limit < 100%
+	callbackOnCrit = function(self, t)
+		if not rng.percent(t.getChance(self, t)) then return end
+		self:alterEffectDuration(self.EFF_RUNE_COOLDOWN, -1)
+		self:alterEffectDuration(self.EFF_INFUSION_COOLDOWN, -1)
+
+		local list = {}
+		for tid, c in pairs(self.talents_cd) do
+			local t = self:getTalentFromId(tid)
+			if t and t.is_inscription then
+				list[#list+1] = tid
+			end
+		end
+		if #list > 0 then
+			local tid = rng.table(list)
+			self:alterTalentCoolingdown(tid, -1)
+		end
+	end,
+	info = function(self, t)
+		return ([[When you crit you have %d%% chances to reduce the remaining cooldown of one of your inscriptions and of any saturations effects.
+		This effect can only happen once per turn.]]):
+		format(t.getChance(self, t))
+	end,
+}
+
+newTalent{
+	name = "Writ Large",
+	type = {"race/ogre", 4},
+	require = racial_req4,
+	points = 5,
+	no_energy = true,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 6, 47, 35)) end, -- Limit >6
+	range = 4,
+	no_unlearn_last = true,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 15, 5, 10)) end,
+	on_learn = function(self, t)
+		if self:getTalentLevelRaw(t) == 5 then
+			self.max_inscriptions = self.max_inscriptions + 1
+		end
+	end,
+	on_unlearn = function(self, t)
+		if self:getTalentLevelRaw(t) == 4 then
+			self.max_inscriptions = self.max_inscriptions - 1
+		end
+	end,
+	action = function(self, t)
+		self:removeEffect(self.EFF_RUNE_COOLDOWN)
+		self:removeEffect(self.EFF_INFUSION_COOLDOWN)
+		self:setEffect(self.EFF_WRIT_LARGE, t.getDuration(self, t), {power=1})
+		game:playSoundNear(self, "talents/spell_generic")
+		return true
+	end,
+	info = function(self, t)
+		return ([[Instantly removes runic and infusion saturations.
+		For %d turns your inscriptions cooldown twice as fast.
+		At level 5 your command over inscriptions is so good that you can use one more.]]):
+		format(t.getDuration(self, t))
 	end,
 }

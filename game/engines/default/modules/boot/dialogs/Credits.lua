@@ -59,6 +59,7 @@ local credits = {
 
 	{"World Builders", title=1},
 	{"Aaron 'Sage Acrin' Vandegrift"},
+	{"Alexander '0player' Sedov"},
 	{"Chris 'Shibari' Davidson"},
 	{"Doctornull"},
 	{"Em 'Susramanian' Jay"},

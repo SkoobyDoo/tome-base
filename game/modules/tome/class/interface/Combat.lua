@@ -1313,7 +1313,7 @@ function _M:combatCrit(weapon)
 	if weapon.talented and self:knowTalent(Talents.T_LETHALITY) then
 		addcrit = 1 + self:callTalent(Talents.T_LETHALITY, "getCriticalChance")
 	end
-	local crit = self.combat_physcrit + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + (weapon.physcrit or 1) + addcrit
+	local crit = self.combat_physcrit + (self.combat_generic_crit or 0) + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + (weapon.physcrit or 1) + addcrit
 
 	return math.max(crit, 0) -- note: crit > 100% may be offset by crit reduction elsewhere
 end
@@ -1690,7 +1690,7 @@ end
 
 --- Gets spellcrit
 function _M:combatSpellCrit()
-	local crit = self.combat_spellcrit + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + 1
+	local crit = self.combat_spellcrit + (self.combat_generic_crit or 0) + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + 1
 
 	return util.bound(crit, 0, 100)
 end
@@ -1703,7 +1703,7 @@ function _M:combatMindCrit(add)
 		add = t.getMindCritChange(self, t)
 	end
 
-	local crit = self.combat_mindcrit + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + 1 + add
+	local crit = self.combat_mindcrit + (self.combat_generic_crit or 0) + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + 1 + add
 
 	return util.bound(crit, 0, 100)
 end

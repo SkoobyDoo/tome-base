@@ -28,6 +28,7 @@ local default_eyal_descriptors = function(add)
 		Dwarf = "allow",
 		Halfling = "allow",
 		Yeek = "allow",
+		Giant = "allow",
 		Undead = "allow",
 		Construct = "allow",
 	},

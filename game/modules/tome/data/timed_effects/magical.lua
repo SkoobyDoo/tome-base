@@ -3160,3 +3160,104 @@ newEffect{
 		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
 	end,
 }
+
+newEffect{
+	name = "OGRIC_WRATH", image = "talents/ogric_wrath.png",
+	desc = "Ogric Wrath",
+	long_desc = function(self, eff) return ("Do not try to resist it!"):format() end,
+	type = "magical",
+	subtype = { runic=true },
+	status = "beneficial",
+	parameters = { power=1 },
+	on_gain = function(self, err) return "#Target# enters an ogric frenzy.", "+Ogric Wrath" end,
+	on_lose = function(self, err) return "#Target# calms down.", "-Ogric Wrath" end,
+	callbackOnDealDamage = function(self, eff, val, target, dead, death_note)
+		if not death_note or not death_note.initial_dam then return end
+		if val >= death_note.initial_dam then return end
+		if self:reactionToward(target) >= 0 then return end
+		if self.turn_procs.ogric_wrath then return end
+
+		self.turn_procs.ogric_wrath = true
+		self:setEffect(self.EFF_OGRE_FURY, 1, {})
+	end,
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
+		if hitted then return true end
+		if self:reactionToward(target) >= 0 then return end
+		if self.turn_procs.ogric_wrath then return end
+
+		self.turn_procs.ogric_wrath = true
+		self:setEffect(self.EFF_OGRE_FURY, 1, {})
+	end,
+}
+
+newEffect{
+	name = "OGRE_FURY", image = "talents/ogric_wrath.png",
+	desc = "Ogre Fury",
+	long_desc = function(self, eff) return ("Inscriptions cooldown twice as fast."):format(eff.power) end,
+	type = "magical", decrease = 0,
+	subtype = { runic=true },
+	status = "beneficial",
+	parameters = { stacks=1, max_stacks=5 },
+	charges = function(self, eff) return eff.stacks end,
+	do_effect = function(self, eff, add)
+		if eff.stun then self:removeTemporaryValue("stun_immune", eff.stun) end
+		if eff.conf then self:removeTemporaryValue("confusion_immune", eff.conf) end
+		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) end
+		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) end
+		if add then
+			eff.stun = self:addTemporaryValue("stun_immune", eff.stacks * 0.1)
+			eff.conf = self:addTemporaryValue("confusion_immune", eff.stacks * 0.1)
+			eff.cdam = self:addTemporaryValue("combat_critical_power", eff.stacks * 20)
+			eff.crit = self:addTemporaryValue("combat_generic_crit", eff.stacks * 5)
+		end
+	end,
+	callbackOnCrit = function(self, eff)
+		eff.stacks = eff.stacks - 1
+		if eff.stacks == 0 then
+			self:removeEffect(self.EFF_OGRE_FURY)
+		else
+			local e = self:getEffectFromId(self.EFF_OGRE_FURY)
+			e.do_effect(self, eff, true)
+		end
+	end,
+	on_merge = function(self, old_eff, new_eff, e)
+		old_eff.dur = new_eff.dur
+		old_eff.stacks = util.bound(old_eff.stacks + 1, 1, new_eff.max_stacks)
+		e.do_effect(self, old_eff, true)
+		return old_eff
+	end,
+	activate = function(self, eff, e)
+		e.do_effect(self, eff, true)
+	end,
+	deactivate = function(self, eff, e)
+		e.do_effect(self, eff, false)
+	end,
+}
+
+newEffect{
+	name = "WRIT_LARGE", image = "talents/writ_large.png",
+	desc = "Writ Large",
+	long_desc = function(self, eff) return ("Inscriptions cooldown twice as fast."):format(eff.power) end,
+	type = "magical",
+	subtype = { runic=true },
+	status = "beneficial",
+	parameters = { power=1 },
+	on_gain = function(self, err) return nil, "+Writ Large" end,
+	on_lose = function(self, err) return nil, "-Writ Large" end,
+	callbackOnActBase = function(self, eff)
+		if not self:attr("no_talents_cooldown") then
+			for tid, c in pairs(self.talents_cd) do
+				local t = self:getTalentFromId(tid)
+				if t and t.is_inscription then
+					self.changed = true
+					self.talents_cd[tid] = self.talents_cd[tid] - eff.power
+					if self.talents_cd[tid] <= 0 then
+						self.talents_cd[tid] = nil
+						if self.onTalentCooledDown then self:onTalentCooledDown(tid) end
+						if t.cooldownStop then t.cooldownStop(self, t) end
+					end
+				end
+			end
+		end
+	end,
+}

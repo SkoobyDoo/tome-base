@@ -329,6 +329,7 @@ load("/data/birth/races/elf.lua")
 load("/data/birth/races/halfling.lua")
 load("/data/birth/races/dwarf.lua")
 load("/data/birth/races/yeek.lua")
+load("/data/birth/races/ogre.lua")
 load("/data/birth/races/undead.lua")
 load("/data/birth/races/construct.lua")
 
