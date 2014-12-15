@@ -4882,6 +4882,21 @@ local sustainCallbackCheck = {
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
+local function convertToString(id)
+	if _G.type(id) == "table" then return id.name or tostring(id) end
+	return tostring(id)
+end
+
+local function callbackKeyLess(x, y)
+	local ap, bp = x[1], y[1]
+	-- edge case: equal priorities
+	if ap == bp then
+		if x[2] < y[2] or
+			(x[2] == y[2] and x[3] < y[3]) then return true end
+		return false
+	else return ap < bp end
+end
+
 -- Upgrade from pre-
 local function upgradeStore(store, storename)
 	if store.__priorities then return end
@@ -4889,18 +4904,34 @@ local function upgradeStore(store, storename)
 	local priorities = {}
 	for k,_ in pairs(store) do priorities[k] = 0 end
 	store.__priorities = priorities
+	local sorted = {}
+	for id, _ in pairs(self[store].__priorities) do
+		sorted[#sorted + 1] = {self[store].__priorities[id], self[store][id], convertToString(id), id}
+	end
+	table.sort(sorted, callbackKeyLess)
+	store.__sorted = sorted
 end
+
 
 function _M:registerCallbacks(objdef, objid, objtype)
 	for event, store in pairs(sustainCallbackCheck) do
 		if objdef[event] then
 			local cb = self[store] or {}
 			upgradeStore(cb, store)
-			cb.__sorted = nil
 			cb[objid] = objtype
 			-- extract a priority, 0 by default
 			cb.__priorities[objid] = (objdef.callbackPriorities and objdef.callbackPriorities[event]) or 0
 			self[store] = cb
+			-- insert into priorities
+			local sortedkey = {cb.__priorities[objid], objtype, convertToString(id), id}
+			local idx = #cb.__sorted + 1
+			for i, key in ipairs(cb.__sorted) do
+				if callbackKeyLess(sortedkey, key) then
+					idx = i
+					break
+				end
+			end
+			table.insert(cb.__sorted, idx, sortedkey)  -- may be nil, which means to the
 		end
 	end
 end
@@ -4911,15 +4942,17 @@ function _M:unregisterCallbacks(objdef, objid)
 			upgradeStore(self[store], store)
 			self[store][objid] = nil
 			self[store].__priorities[objid] = nil
-			self[store].__sorted = nil
+			local idx = nil
+			for i, key in ipairs(self[store].__sorted) do
+				if key[4] == objid then
+					idx = i
+					break
+				end
+			end
+			if idx then table.remove(self[store].__sorted, idx) end
 			if not next(self[store].__priorities) then self[store] = nil end
 		end
 	end
-end
-
-local function convertToString(id)
-	if _G.type(id) == "table" then return id.name or tostring(id) end
-	return tostring(id)
 end
 
 function _M:fireTalentCheck(event, ...)
@@ -4927,26 +4960,7 @@ function _M:fireTalentCheck(event, ...)
 	local ret = false
 	if self[store] then upgradeStore(self[store], store) end
 	if self[store] and next(self[store].__priorities) then
-		local sorted = self[store].__sorted
-		if not sorted then
-			sorted = {}
-			for id, _ in pairs(self[store].__priorities) do
-				sorted[#sorted + 1] = {self[store].__priorities[id], self[store][id], convertToString(id), id}
-			end
-			table.sort(sorted,
-				function(x, y)
-					local ap, bp = x[1], y[1]
-					-- edge case: equal priorities
-					if ap == bp then
-						if x[2] < y[2] or
-							(x[2] == y[2] and x[3] < y[3]) then return true end
-						return false
-					else return ap < bp end
-				end)
-			self[store].__sorted = sorted
-		end
-
-		for _, info in ipairs(sorted) do
+		for _, info in ipairs(self[store].__sorted) do
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
 				self.__project_source = self.tmp[tid]
