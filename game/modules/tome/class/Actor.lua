@@ -5563,6 +5563,74 @@ function _M:removeEffectsFilter(t, nb, silent, force)
 	return #eff_ids
 end
 
+-- Mix in sustains
+local function getSustainType(talent_def)
+	if talent_def.is_mind then return "mental"
+	elseif talent_def.is_spell then return "spell"
+	else return "sustain_generic" end
+end
+
+function _M:sustainsFilter(t, nb)
+	local ids = {}
+	for tid, active in pairs(self.sustain_talents) do
+		if active then
+			local talent = self:getTalentFromId(tid)
+			local ttype = getSustainType(talent)
+			local test
+			if type(t) == "function" then test = t(talent)
+			else
+				test = (not t.type or t.type == ttype) and (not t.types or t.types[ttype])
+			end
+			if test then ids[#ids + 1] = tid end
+		end
+	end
+	if nb then
+		local found = {}
+		while #ids > 0 and nb > 0 do
+			local tid = rng.tableRemove(ids)
+			found[#found + 1] = tid
+			nb = nb - 1
+		end
+		return found
+	else
+		return ids
+	end
+end
+
+function _M:removeSustainsFilter(t, nb)
+	local found = self:sustainsFilter(t, nb)
+	for _, tid in ipairs(found) do
+		self:forceUseTalent(tid, {ignore_energy=true})
+	end
+	return #found
+end
+
+function _M:removeEffectsSustainsFilter(t, nb, allow_other)
+	local objects = {}
+	for _, eff_id in ipairs(self:effectsFilter(t)) do
+		objects[#objects + 1] = {"effect", eff_id}
+	end
+	for _, tid in ipairs(self:sustainsFilter(t)) do
+		objects[#objects + 1] = {"talent", tid}
+	end
+	local found
+	if nb then
+		while #objects > 0 and nb > 0 do
+			found[#found + 1] = rng.tableRemove(objects)
+			nb = nb - 1
+		end
+	else
+		found = objects
+	end
+	for _, obj in ipairs(found) do
+		if obj[1] == "effect" then
+			self:removeEffect(obj[2])
+		else
+			self:forceUseTalent(obj[2], {ignore_energy=true})
+		end
+	end
+end
+
 --- Randomly reduce talent cooldowns based on a filter
 -- @param t the function to use as a filter on the talent definition or nil to apply to all talents on cooldown
 -- @param change the amount to change the cooldown by
