@@ -563,12 +563,12 @@ end
 A convenience method for merging tables, appending numeric indices,
 and adding number values in addition to other rules.
 --]]
-function table.ruleMergeAppendAdd(dst, src, rules)
+function table.ruleMergeAppendAdd(dst, src, rules, state)
 	rules = table.clone(rules)
 	for _, rule in pairs {'append_top', 'recurse', 'add', 'overwrite'} do
 		table.insert(rules, table.rules[rule])
 	end
-	table.applyRules(dst, src, rules)
+	table.applyRules(dst, src, rules, state)
 end
 
 
