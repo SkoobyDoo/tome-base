@@ -399,6 +399,8 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		print("[PROJECTOR] final dam after static checks", dam)
 
+		local initial_dam = dam
+
 		local hd = {"DamageProjector:final", src=src, x=x, y=y, type=type, dam=dam, tmp=tmp, no_martyr=no_martyr}
 		if src:triggerHook(hd) then dam = hd.dam if hd.stopped then return hd.stopped end end
 		if target.fireTalentCheck then
@@ -414,7 +416,7 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		local source_talent = src.__projecting_for and src.__projecting_for.project_type and (src.__projecting_for.project_type.talent_id or src.__projecting_for.project_type.talent) and src.getTalentFromId and src:getTalentFromId(src.__projecting_for.project_type.talent or src.__projecting_for.project_type.talent_id)
 		local dead
-		dead, dam = target:takeHit(dam, src, {damtype=type, source_talent=source_talent, initial_dam=dam})
+		dead, dam = target:takeHit(dam, src, {damtype=type, source_talent=source_talent, initial_dam=initial_dam})
 
 		-- Log damage for later
 		if not DamageType:get(type).hideMessage then
