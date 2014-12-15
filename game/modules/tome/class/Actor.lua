@@ -1970,8 +1970,10 @@ function _M:onHeal(value, src)
 		end
 	end
 
-	local ret = self:fireTalentCheck("callbackOnHeal", value, src)
-	if ret then value = ret.value end
+	for _, cb in self:listCallbacks("callbackOnHeal") do
+		local ret = cb(value, src)
+		if ret then value = ret.value end
+	end
 
 --	print("[HEALING]", self.uid, self.name, "for", value)
 	if (not self.resting and (not game.party:hasMember(self) or not game:getPlayer(true).resting)) and value + psi_heal >= 1 and not self:attr("silent_heal") then
@@ -4858,7 +4860,6 @@ function _M:listCallbacks(event)
 		for _, info in ipairs(self[store].__sorted) do
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
-				self.__project_source = self.tmp[tid]
 				cbs[#cbs+1] = function(...)
 					self.__project_source = self.tmp[tid]
 					local ret = self:callEffect(tid, event, ...)
@@ -4866,10 +4867,9 @@ function _M:listCallbacks(event)
 					return ret
 				end
 			elseif kind == "object" then
-				self.__project_source = tid
 				cbs[#cbs+1] = function(...)
 					self.__project_source = tid
-					local ret = tid:check(event, self, ...) end
+					local ret = tid:check(event, self, ...)
 					self.__project_source = nil
 					return ret
 				end
