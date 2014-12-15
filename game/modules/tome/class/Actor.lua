@@ -5524,7 +5524,9 @@ function _M:removeEffectsFilter(t, nb, silent, force)
 			if t(e) then effs[#effs+1] = eff_id end
 		else
 			local test = true
+			local include_other = (t.type and t.type=="other") or (t.types and t.types.other)
 			test = (not t.ignore_crosstier or not e.subtype["cross tier"])
+			test = test and (include_other or e.type ~= "other")  -- only remove other explicitly
 			test = test and (not t.type or t.type == e.type)
 			test = test and (not t.types or t.types[e.type])
 			if t.subtype then
