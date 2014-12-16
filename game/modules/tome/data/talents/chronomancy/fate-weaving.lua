@@ -145,7 +145,7 @@ newTalent{
 		local procs = t.getProcs(self, t)
 		local duration = t.getDuration(self, t)
 		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
-		If you have Spin Fate active the chance twill be increased by 33%% per Spin (to a maximum of 100%% at three Spin.)
+		If you have Spin Fate active the chance will be increased by 33%% per Spin (to a maximum of 100%% at three Spin.)
 		This can occur at most %d times per turn.  While Seal Fate is active you may gain one additional spin per turn.]]):format(duration, procs)
 	end,
 }

@@ -980,5 +980,11 @@
     <property name="type" value="&quot;world-encounter&quot;"/>
    </properties>
   </object>
+  <object name="Conclave vault" x="1508" y="1093" width="21" height="20">
+   <properties>
+    <property name="subtype" value="&quot;conclave-vault&quot;"/>
+    <property name="type" value="&quot;world-encounter&quot;"/>
+   </properties>
+  </object>
  </objectgroup>
 </map>

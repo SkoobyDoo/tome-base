@@ -36,7 +36,7 @@ makeWarpMine = function(self, t, x, y, type)
 		type = "temporal", id_by_type=true, unided_name = "trap",
 		display = '^', color=colors.BLUE, image = ("trap/chronomine_%s_0%d.png"):format(type == "toward" and "blue" or "red", rng.avg(1, 4, 3)),
 		shader = "shadow_simulacrum", shader_args = { color = {0.2, 0.2, 0.2}, base = 0.8, time_factor = 1500 },
-		dam = dam, t=t, power = power, dest_power = dest_power,
+		dam = dam, t=t.id, power = power, dest_power = dest_power,
 		temporary = duration,
 		x = x, y = y, type = type,
 		summoner = self, summoner_gain_exp = true,
@@ -47,7 +47,7 @@ makeWarpMine = function(self, t, x, y, type)
 		end,
 		triggered = function(self, x, y, who)
 			-- Project our damage
-			self.summoner:project({type="hit",x=x,y=y, talent=t}, x, y, engine.DamageType.WARP, self.dam)
+			self.summoner:project({type="hit",x=x,y=y, talent=self.t}, x, y, engine.DamageType.WARP, self.dam)
 			
 			-- Teleport?
 			if not who.dead then

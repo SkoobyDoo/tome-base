@@ -47,7 +47,7 @@ fs.setWritePath(fs.getHomePath())
 -- Loads default config & user config
 fs.mount(engine.homepath, "/")
 config.loadString[[
-audio.music_volume = 60
+audio.music_volume = 40
 audio.effects_volume = 100
 audio.enable = true
 aa_text = true

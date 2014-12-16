@@ -17,8 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-return {
-	{name="noxious-caldera", percent=30, special=function() if game:getPlayer(true) and game:getPlayer(true).descriptor and game:getPlayer(true).descriptor.race == "Yeek" then return true end end},
-	{name="sludgenest", percent=30, special=function() if game:getPlayer(true) and game:getPlayer(true).descriptor and game:getPlayer(true).descriptor.subrace == "Thalore" then return true end end},
-	{name="conclave-vault", percent=30, special=function() if game:getPlayer(true) and game:getPlayer(true).descriptor and game:getPlayer(true).descriptor.subrace == "Shalore" then return true end end},
-}
+load("/data/general/grids/basic.lua")
+load("/data/general/grids/forest.lua")
+load("/data/general/grids/water.lua")
