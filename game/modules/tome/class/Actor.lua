@@ -4835,6 +4835,8 @@ function _M:fireTalentCheck(event, ...)
 	local ret = false
 	if self[store] then upgradeStore(self[store], store) end
 	if self[store] and next(self[store].__priorities) then
+		print('[CALLBACK] calling', event)
+		table.print(self[store])
 		for _, info in ipairs(self[store].__sorted) do
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
@@ -6002,7 +6004,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 end
 
 function _M:on_temporary_effect_added(eff_id, e, p)
-	self:registerCallbacks(e, eff_id, "event")
+	self:registerCallbacks(e, eff_id, "effect")
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
