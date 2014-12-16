@@ -42,10 +42,11 @@ function _M:init(actor)
 	actor.hotkey = actor.hotkey or {}
 	Dialog.init(self, "Empower", game.w * 0.6, game.h * 0.8)
 
-	self.c_tut = Textzone.new{width=math.floor(self.iw / 2 - 10), height=1, auto_height=true, no_color_bleed=true, text=[[
+	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_tut = Textzone.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=1, auto_height=true, no_color_bleed=true, text=[[
 You may select a chronomancy spell to Empower, increasing your effective spellpower when casting that spell.
 ]]}
-	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - self.c_tut.h - 20, scrollbar=true, no_color_bleed=true}
+	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - self.c_tut.h - 20, scrollbar=true, no_color_bleed=true}
 
 	self:generateList()
 
@@ -53,7 +54,7 @@ You may select a chronomancy spell to Empower, increasing your effective spellpo
 		{name="", width={40,"fixed"}, display_prop="char"},
 		{name="Talent", width=80, display_prop="name"},
 	}
-	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - 10, all_clicks=true, scrollbar=true, columns=cols, tree=self.list, fct=function(item, sel, button) self:use(item, button) end, select=function(item, sel) self:select(item) end}
+	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, all_clicks=true, scrollbar=true, columns=cols, tree=self.list, fct=function(item, sel, button) self:use(item, button) end, select=function(item, sel) self:select(item) end}
 	self.c_list.cur_col = 2
 
 	self:loadUI{
