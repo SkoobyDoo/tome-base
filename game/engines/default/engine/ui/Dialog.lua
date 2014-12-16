@@ -431,45 +431,60 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		if not ui.absolute then
 			ux, uy = self.ix, self.iy
 
+			-- At first, calculate ALL dependencies
+			if ui.top and type(ui.top) == "table" then ui.top = self.ui_by_ui[ui.top].y - self.iy + ui.top.h + padding end
+			if ui.bottom and type(ui.bottom) == "table" then
+				local top = self.ui_by_ui[ui.bottom].y - self.iy - padding
+				ui.bottom = self.ih - top - ui.ui.h
+			end
+			if ui.vcenter and type(ui.vcenter) == "table" then
+				local vcenter = self.ui_by_ui[ui.vcenter].y + ui.vcenter.h
+				ui.vcenter = math.floor(vcenter - self.ih / 2)
+			end
+
+			if ui.left and type(ui.left) == "table" then ui.left = self.ui_by_ui[ui.left].x - self.ix + ui.left.w + padding end
+			if ui.right and type(ui.right)== "table" then
+				local left = self.ui_by_ui[ui.right].x - self.ix - padding
+				ui.right = self.iw - left - ui.ui.w
+			end
+			if ui.hcenter and type(ui.hcenter) == "table" then
+				local hcenter = self.ui_by_ui[ui.hcenter].x - self.ix + ui.hcenter.w / 2
+				ui.hcenter = math.floor(hcenter - self.iw / 2)
+			end
+			if ui.hcenter_left and type(ui.hcenter_left) == "table" then  -- I still have no idea what that does
+				ui.hcenter_left = self.ui_by_ui[ui.hcenter_left].x + ui.hcenter_left.w
+			end
+
+			local regenerate = false
+			if ui.calc_width then
+				ui.ui.w = self.iw - (ui.right + ui.left)
+				regenerate = true
+			end
+			if ui.calc_height then
+				ui.ui.h = self.ih - (ui.top + ui.bottom)
+				regenerate = true
+			end
+			if regenerate then
+				ui.ui:generate()
+			end
+
+
 			if ui.top then
-				if type(ui.top) == "table" then ui.top = self.ui_by_ui[ui.top].y - self.iy + ui.top.h + padding end
 				uy = uy + ui.top
 			elseif ui.bottom then
-				if type(ui.bottom) == "table" then
-					local top = self.ui_by_ui[ui.bottom].y - self.iy - padding
-					ui.bottom = self.ih - top - ui.ui.h
-				end
 				uy = uy + self.ih - ui.bottom - ui.ui.h
 			elseif ui.vcenter then
-				if type(ui.vcenter) == "table" then
-					local vcenter = self.ui_by_ui[ui.vcenter].y + ui.vcenter.h
-					ui.vcenter = math.floor(vcenter - self.ih / 2)
-				end
 				uy = uy + math.floor(self.ih / 2) + ui.vcenter - ui.ui.h / 2
 			end
 
-			if ui.left then
-				if type(ui.left) == "table" then ui.left = self.ui_by_ui[ui.left].x - self.ix + ui.left.w + padding end
+			if ui.left then 
 				ux = ux + ui.left
 			elseif ui.right then
-				if type(ui.right) == "table" then
-					local left = self.ui_by_ui[ui.right].x - self.ix - padding
-					ui.right = self.iw - left - ui.ui.w
-				end
 				ux = ux + self.iw - ui.right - ui.ui.w
 			elseif ui.hcenter then
-				if type(ui.hcenter) == "table" then
-					local hcenter = self.ui_by_ui[ui.hcenter].x - self.ix + ui.hcenter.w / 2
-					ui.hcenter = math.floor(hcenter - self.iw / 2)
-				end
 				ux = ux + math.floor(self.iw / 2) + ui.hcenter - ui.ui.w / 2
 			elseif ui.hcenter_left then
-				if type(ui.hcenter_left) == "table" then 
-					ui.hcenter_left = self.ui_by_ui[ui.hcenter_left].x + ui.hcenter_left.w
-					ux = ux + ui.hcenter_left - self.ix
-				else
-					ux = ux + math.floor(self.iw / 2) + ui.hcenter_left
-				end
+				ux = ux + math.floor(self.iw / 2) + ui.hcenter_left
 			end
 		else
 			ux, uy = 0, 0
