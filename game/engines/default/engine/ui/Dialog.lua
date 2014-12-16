@@ -434,8 +434,8 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 			-- At first, calculate ALL dependencies
 			if ui.top and type(ui.top) == "table" then ui.top = self.ui_by_ui[ui.top].y - self.iy + ui.top.h + padding end
 			if ui.bottom and type(ui.bottom) == "table" then
-				local top = self.ui_by_ui[ui.bottom].y - self.iy - padding
-				ui.bottom = self.ih - top - ui.ui.h
+				local top = self.ui_by_ui[ui.bottom].y - self.iy  -- top of ui.bottom
+				ui.bottom = self.ih - top + padding
 			end
 			if ui.vcenter and type(ui.vcenter) == "table" then
 				local vcenter = self.ui_by_ui[ui.vcenter].y + ui.vcenter.h
@@ -444,8 +444,8 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 			if ui.left and type(ui.left) == "table" then ui.left = self.ui_by_ui[ui.left].x - self.ix + ui.left.w + padding end
 			if ui.right and type(ui.right)== "table" then
-				local left = self.ui_by_ui[ui.right].x - self.ix - padding
-				ui.right = self.iw - left - ui.ui.w
+				local left = self.ui_by_ui[ui.right].x - self.ix -- left of ui.right
+				ui.right = self.iw - left + padding
 			end
 			if ui.hcenter and type(ui.hcenter) == "table" then
 				local hcenter = self.ui_by_ui[ui.hcenter].x - self.ix + ui.hcenter.w / 2
