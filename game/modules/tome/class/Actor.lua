@@ -4798,7 +4798,7 @@ function _M:registerCallbacks(objdef, objid, objtype)
 			cb.__priorities[objid] = (objdef.callbackPriorities and objdef.callbackPriorities[event]) or 0
 			self[store] = cb
 			-- insert into priorities
-			local sortedkey = {cb.__priorities[objid], objtype, convertToString(id), id}
+			local sortedkey = {cb.__priorities[objid], objtype, convertToString(objid), objid}
 			local idx = #cb.__sorted + 1
 			for i, key in ipairs(cb.__sorted) do
 				if callbackKeyLess(sortedkey, key) then
