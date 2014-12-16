@@ -3162,7 +3162,7 @@ newEffect{
 }
 
 newEffect{
-	name = "OGRIC_WRATH", image = "talents/ogric_wrath.png",
+	name = "OGRIC_WRATH", image = "talents/ogre_wrath.png",
 	desc = "Ogric Wrath",
 	long_desc = function(self, eff) return ("Do not try to resist it!"):format() end,
 	type = "magical",
@@ -3191,7 +3191,7 @@ newEffect{
 }
 
 newEffect{
-	name = "OGRE_FURY", image = "talents/ogric_wrath.png",
+	name = "OGRE_FURY", image = "effects/ogre_fury.png",
 	desc = "Ogre Fury",
 	long_desc = function(self, eff) return ("Inscriptions cooldown twice as fast."):format(eff.power) end,
 	type = "magical", decrease = 0,
