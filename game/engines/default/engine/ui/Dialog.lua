@@ -457,11 +457,23 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 			local regenerate = false
 			if ui.calc_width then
-				ui.ui.w = self.iw - (ui.right + ui.left)
+				if ui.left and ui.right then
+					ui.ui.w = self.iw - (ui.right + ui.left)
+				elseif ui.left and ui.hcenter then
+					ui.ui.w = self.iw + 2 * (ui.hcenter - ui.left)
+				elseif ui.hcenter and ui.right then
+					ui.ui.w = self.iw + 2 * (-ui.hcenter - ui.right)
+				end
 				regenerate = true
 			end
 			if ui.calc_height then
-				ui.ui.h = self.ih - (ui.top + ui.bottom)
+				if ui.top and ui.bottom then
+					ui.ui.h = self.ih - (ui.bottom + ui.top)
+				elseif ui.top and ui.vcenter then
+					ui.ui.h = self.ih + 2 * (ui.vcenter - ui.top)
+				elseif ui.vcenter and ui.bottom then
+					ui.ui.h = self.ih + 2 * (-ui.vcenter - ui.bottom)
+				end
 				regenerate = true
 			end
 			if regenerate then
