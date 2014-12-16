@@ -4780,8 +4780,8 @@ local function upgradeStore(store, storename)
 	for k,_ in pairs(store) do priorities[k] = 0 end
 	store.__priorities = priorities
 	local sorted = {}
-	for id, _ in pairs(self[store].__priorities) do
-		sorted[#sorted + 1] = {self[store].__priorities[id], self[store][id], convertToString(id), id}
+	for id, _ in pairs(store.__priorities) do
+		sorted[#sorted + 1] = {store.__priorities[id], store[id], convertToString(id), id}
 	end
 	table.sort(sorted, callbackKeyLess)
 	store.__sorted = sorted

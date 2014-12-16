@@ -849,6 +849,12 @@ local racials = {
 		T_QUICKENED = {last=10, base=0, every=4, max=5},
 		T_WAYIST = {last=20, base=0, every=4, max=5},
 	},
+	ogre = {
+		T_OGRE_WRATH = {base=0, every=4, max=5},
+		T_GRISLY_CONSTITUTION = {last=10, base=0, every=4, max=5},
+		T_SCAR_SCRIPTED_FLESH = {last=20, base=0, every=4, max=5},
+		T_WRIT_LARGE = {last=30, base=0, every=4, max=5},
+	},
 	dwarf = {
 		T_POWER_IS_MONEY = {last=20, base=0, every=4, max=5},
 		T_STONESKIN = {base=0, every=4, max=5},
