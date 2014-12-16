@@ -773,8 +773,8 @@ function _M:createDisplay()
 	local vsep1 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
 	local vsep2 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
 	local hsep = Separator.new{dir="vertical", size=180}
-	align_empty1 = Empty.new{width=0,height=10}
-	align_empty2 = Empty.new{width=0,height=0}
+	local align_empty1 = Empty.new{width=0,height=10}
+	local align_empty2 = Empty.new{width=0,height=0}
 
 
 	local ret = {
