@@ -44,7 +44,8 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 		if i then  self.faction_image = {i:glTexture()} end
 	end
 
-	self.c_inven = Inventory.new{actor=actor_actor, inven=actor_inven, filter=actor_filter, width=math.floor(self.iw / 2 - 10), height=self.ih - 10,
+	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_inven = Inventory.new{actor=actor_actor, inven=actor_inven, filter=actor_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10,
 		columns={
 			{name="", width={20,"fixed"}, display_prop="char", sort="id"},
 			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, x, y) item.object:toScreen(nil, x+4, y, 16, 16) end},
@@ -80,7 +81,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 		return 0, 0, 0, 0, 0, 0
 	end
 
-	self.c_store = Inventory.new{actor=store_actor, inven=store_inven, filter=store_filter, width=math.floor(self.iw / 2 - 10), height=self.ih - 10, tabslist=false,
+	self.c_store = Inventory.new{actor=store_actor, inven=store_inven, filter=store_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, tabslist=false,
 		columns={
 			{name="", width={20,"fixed"}, display_prop="char", sort="id"},
 			{name="", width={24,"fixed"}, display_prop="object", direct_draw=direct_draw},
@@ -97,7 +98,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 	self:loadUI{
 		{left=0, top=0, ui=self.c_store},
 		{right=0, top=0, ui=self.c_inven},
-		{hcenter=0, top=5, ui=Separator.new{dir="horizontal", size=self.ih - 10}},
+		{hcenter=0, top=5, ui=vsep},
 	}
 
 	self.c_inven.c_inven.on_focus_change = function(ui_self, status) if status == true then self:select(ui_self.list[ui_self.sel]) end end
