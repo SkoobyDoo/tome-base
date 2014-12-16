@@ -32,7 +32,8 @@ module(..., package.seeall, class.inherit(Dialog))
 function _M:init()
 	Dialog.init(self, "Game Options", game.w * 0.8, game.h * 0.8)
 
-	self.c_desc = Textzone.new{width=math.floor(self.iw / 2 - 10), height=self.ih, text=""}
+	self.vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_desc = Textzone.new{width=math.floor((self.iw - self.vsep.w)/2), height=self.ih, text=""}
 
 	local tabs = {
 		{title="UI", kind="ui"},
@@ -52,7 +53,7 @@ function _M:init()
 		{left=0, top=0, ui=self.c_tabs},
 		{left=0, top=self.c_tabs.h, ui=self.c_list},
 		{right=0, top=self.c_tabs.h, ui=self.c_desc},
-		{hcenter=0, top=5+self.c_tabs.h, ui=Separator.new{dir="horizontal", size=self.ih - 10}},
+		{hcenter=0, top=5+self.c_tabs.h, ui=self.vsep},
 	}
 	self:setFocus(self.c_list)
 	self:setupUI()
@@ -72,7 +73,7 @@ function _M:switchTo(kind)
 	self['generateList'..kind:capitalize()](self)
 	self:triggerHook{"GameOptions:generateList", list=self.list, kind=kind}
 
-	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - 10, scrollbar=true, columns={
+	self.c_list = TreeList.new{width=math.floor((self.iw - self.vsep.w)/2), height=self.ih - 10, scrollbar=true, columns={
 		{width=60, display_prop="name"},
 		{width=40, display_prop="status"},
 	}, tree=self.list, fct=function(item) end, select=function(item, sel) self:select(item) end}
