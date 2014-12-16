@@ -56,12 +56,13 @@ function _M:init(actor)
 	actor.hotkey = actor.hotkey or {}
 	Dialog.init(self, "Use Talents: "..actor.name, game.w * 0.8, game.h * 0.8)
 
-	self.c_tut = Textzone.new{width=math.floor(self.iw / 2 - 10), height=1, auto_height=true, no_color_bleed=true, text=[[
+	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_tut = Textzone.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=1, auto_height=true, no_color_bleed=true, text=[[
 You can bind a non-passive talent to a hotkey by pressing the corresponding hotkey while selecting a talent or by right-clicking on the talent.
 Check out the keybinding screen in the game menu to bind hotkeys to a key (default is 1-0 plus control, shift, or alt).
 Right click or press '~' to configure talent confirmation and automatic use.
 ]]}
-	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - self.c_tut.h - 20, scrollbar=true, no_color_bleed=true}
+	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - self.c_tut.h - 20, scrollbar=true, no_color_bleed=true}
 
 	self:generateList()
 
@@ -78,14 +79,14 @@ Right click or press '~' to configure talent confirmation and automatic use.
 			else return "" end
 		end},
 	}
-	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - 10, all_clicks=true, scrollbar=true, columns=cols, tree=self.list, fct=function(item, sel, button) self:use(item, button) end, select=function(item, sel) self:select(item) end, on_drag=function(item, sel) self:onDrag(item) end}
+	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, all_clicks=true, scrollbar=true, columns=cols, tree=self.list, fct=function(item, sel, button) self:use(item, button) end, select=function(item, sel) self:select(item) end, on_drag=function(item, sel) self:onDrag(item) end}
 	self.c_list.cur_col = 2
 
 	self:loadUI{
 		{left=0, top=0, ui=self.c_list},
 		{right=0, top=self.c_tut.h + 20, ui=self.c_desc},
 		{right=0, top=0, ui=self.c_tut},
-		{hcenter=0, top=5, ui=Separator.new{dir="horizontal", size=self.ih - 10}},
+		{hcenter=0, top=5, ui=vsep},
 	}
 	self:setFocus(self.c_list)
 	self:setupUI()

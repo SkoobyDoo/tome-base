@@ -35,7 +35,8 @@ function _M:init(party)
 
 	self:generateList()
 
-	self.c_list = ListColumns.new{width=math.floor(self.iw / 2 - 10), height=self.ih - 10, scrollbar=true, sortable=true, columns={
+	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_list = ListColumns.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, scrollbar=true, sortable=true, columns={
 		{name="Ingredient", width=50, display_prop="name", sort="name"},
 		{name="Category", width=30, display_prop="cat", sort="cat"},
 		{name="Quantity", width=20, display_prop="nb", sort="nb"},
@@ -44,7 +45,7 @@ function _M:init(party)
 	self:loadUI{
 		{left=0, top=0, ui=self.c_list},
 		{right=0, top=0, ui=self.c_desc},
-		{hcenter=0, top=5, ui=Separator.new{dir="horizontal", size=self.ih - 10}},
+		{hcenter=0, top=5, ui=vsep},
 	}
 	self:setFocus(self.c_list)
 	self:setupUI()

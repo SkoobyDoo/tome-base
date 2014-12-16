@@ -936,8 +936,9 @@ function _M:loadPremadeUI()
 	local d = Dialog.new("Characters Vault", 600, 550)
 
 	local sel = nil
+	local sep = Separator.new{dir="horizontal", size=400}
 	local desc = TextzoneList.new{width=220, height=400}
-	local list list = List.new{width=350, list=lss, height=400,
+	local list = List.new{width=600 - desc.w - sep.w, list=lss, height=400,
 		fct=function(item)
 			local oldsel, oldscroll = list.sel, list.scroll
 			if sel == item then self:loadPremade(sel) game:unregisterDialog(d) end
@@ -949,7 +950,6 @@ function _M:loadPremadeUI()
 		end,
 		select=function(item) desc:switchItem(item, item.description) end
 	}
-	local sep = Separator.new{dir="horizontal", size=400}
 
 	local load = Button.new{text=" Load ", fct=function() if sel then self:loadPremade(sel) game:unregisterDialog(d) end end}
 	local del = Button.new{text="Delete", fct=function() if sel then
@@ -967,7 +967,7 @@ function _M:loadPremadeUI()
 	d:loadUI{
 		{left=0, top=0, ui=list},
 		{left=list.w, top=0, ui=sep},
-		{right=0, top=0, ui=desc},
+		{left=sep, right=0, top=0, ui=desc},
 
 		{left=0, bottom=0, ui=load},
 		{right=0, bottom=0, ui=del},

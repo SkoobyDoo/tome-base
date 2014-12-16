@@ -28,6 +28,7 @@ local UIContainer = require "engine.ui.UIContainer"
 local TalentTrees = require "mod.dialogs.elements.TalentTrees"
 local StatusBox = require "mod.dialogs.elements.StatusBox"
 local Separator = require "engine.ui.Separator"
+local Empty = require "engine.ui.Empty"
 local DamageType = require "engine.DamageType"
 local FontPackage = require "engine.FontPackage"
 
@@ -728,10 +729,6 @@ function _M:createDisplay()
 		no_tooltip = self.no_tooltip,
 	}
 
-	local vsep1 = Separator.new{dir="horizontal", size=self.ih - 20}
-	local vsep2 = Separator.new{dir="horizontal", size=self.ih - 20}
-	local hsep = Separator.new{dir="vertical", size=180}
-
 	self.b_stat = Button.new{can_focus = false, can_focus_mouse=true, text="Stats: "..self.actor.unused_stats, fct=function() end, on_select=function()
 		local str = desc_stats
 		if self.no_tooltip then
@@ -769,44 +766,49 @@ function _M:createDisplay()
 		end
 	end}
 
-	-- align it with Category Points button, to be nice
-	local btypes_center = 330 + self.b_types.w / 2
-	local msg_halfwidth = math.min(btypes_center, self.iw - btypes_center)
-	local msg_leftedge = btypes_center - msg_halfwidth
 	self.t_messages = StatusBox.new{
 		font = core.display.newFont("/data/font/DroidSans.ttf", 16),
-		width = msg_halfwidth * 2, delay = 1,
+		width = math.floor(2 * self.iw / 3), delay = 1,
 	}
+	local vsep1 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
+	local vsep2 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
+	local hsep = Separator.new{dir="vertical", size=180}
+	local align_empty1 = Empty.new{width=0,height=10}
+	local align_empty2 = Empty.new{width=0,height=0}
 
 
 	local ret = {
 		{left=-10, top=0, ui=self.b_stat},
-		{left=0, top=self.b_stat.h+10, ui=self.c_stat},
+		{left=0, top=self.b_stat, ui=align_empty1},
+		{left=0, top=align_empty1, ui=self.c_stat},
 
-		{left=self.c_stat, top=40, ui=vsep1},
+		{left=self.c_stat, top=align_empty1, ui=vsep1},
 
 		{left=vsep1, top=0, ui=self.b_class},
-		{left=vsep1, top=self.b_class.h + 10, ui=self.c_ctree},
+		{left=vsep1, top=align_empty1, ui=self.c_ctree},
 
-		{left=self.c_ctree, top=40, ui=vsep2},
+		{left=self.c_ctree, top=align_empty1, ui=vsep2},
 
-		{left=580, top=0, ui=self.b_generic},
-		{left=vsep2, top=self.b_generic.h + 10, ui=self.c_gtree},
+		{left=vsep2, top=align_empty1, ui=self.c_gtree},
+		{left=self.c_gtree, top=0, ui=align_empty2},
+		{right=align_empty2, top=0, ui=self.b_generic},
 
-		{left=330, top=0, ui=self.b_types},
+		{hcenter=vsep2, top=0, ui=self.b_types},
 
 		{right=0, bottom=0, ui=self.b_prodigies},
 
-		{left=msg_leftedge, top=-self.t_messages.h, ui=self.t_messages},
+		{hcenter=self.b_types, top=-self.t_messages.h, ui=self.t_messages},
 	}
 	if self.b_inscriptions then table.insert(ret, {right=self.b_prodigies.w, bottom=0, ui=self.b_inscriptions}) end
 
 	if self.no_tooltip then
-		local vsep3 = Separator.new{dir="horizontal", size=self.ih - 20}
-		self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, width=self.iw - 200 - 530 - 40, height = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0), dest_area = { h = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0) } }
-		ret[#ret+1] = {right=0, top=0, ui=self.c_desc}
-		ret[#ret+1] = {right=self.c_desc.w + 5, top=40, ui=vsep3}
+		local vsep3 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
+		-- will be recalculated
+		self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, width=200, height = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0), dest_area = { h = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0) } }
+		ret[#ret+1] = {left=self.c_gtree, top=align_empty1, ui=vsep3}
+		ret[#ret+1] = {left=vsep3, right=0, top=0, ui=self.c_desc, calc_width=3}
 	end
+	table.print(ret)
 
 	return ret
 end

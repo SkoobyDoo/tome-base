@@ -33,9 +33,10 @@ function _M:init(title, inven, filter, action, actor)
 	self.actor = actor
 	Dialog.init(self, title or "Inventory", math.max(800, game.w * 0.8), math.max(600, game.h * 0.8))
 
-	self.c_desc = TextzoneList.new{scrollbar = true, width=math.floor(self.iw / 2 - 10), height=self.ih}
+	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_desc = TextzoneList.new{scrollbar = true, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih}
 
-	self.c_inven = Inventory.new{actor=actor, inven=inven, filter=filter, width=math.floor(self.iw / 2 - 10), height=self.ih - 10,
+	self.c_inven = Inventory.new{actor=actor, inven=inven, filter=filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10,
 		fct=function(item, sel, button, event) self:use(item, button, event) end,
 		select=function(item, force) self:select(item, force) end,
 		select_tab=function(item) self:select(item) end,
@@ -55,7 +56,7 @@ function _M:init(title, inven, filter, action, actor)
 	self:loadUI{
 		{left=0, top=0, ui=self.c_inven},
 		{right=0, top=0, ui=self.c_desc},
-		{hcenter=0, top=5, ui=Separator.new{dir="horizontal", size=self.ih - 10}},
+		{hcenter=0, top=5, ui=vsep},
 	}
 	self:setFocus(self.c_inven)
 	self:setupUI()

@@ -42,10 +42,11 @@ function _M:init(actor)
 	actor.hotkey = actor.hotkey or {}
 	Dialog.init(self, "Contingency", game.w * 0.6, game.h * 0.8)
 
-	self.c_tut = Textzone.new{width=math.floor(self.iw / 2 - 10), height=1, auto_height=true, no_color_bleed=true, text=[[
+	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_tut = Textzone.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=1, auto_height=true, no_color_bleed=true, text=[[
 You may select a spell for Contingency to automatically use when your life falls below a percentage.  Only active spells that do not require a target may be chosen.
 ]]}
-	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - self.c_tut.h - 20, scrollbar=true, no_color_bleed=true}
+	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - self.c_tut.h - 20, scrollbar=true, no_color_bleed=true}
 
 	self:generateList()
 
@@ -53,14 +54,14 @@ You may select a spell for Contingency to automatically use when your life falls
 		{name="", width={40,"fixed"}, display_prop="char"},
 		{name="Talent", width=80, display_prop="name"},
 	}
-	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - 10), height=self.ih - 10, all_clicks=true, scrollbar=true, columns=cols, tree=self.list, fct=function(item, sel, button) self:use(item, button) end, select=function(item, sel) self:select(item) end}
+	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, all_clicks=true, scrollbar=true, columns=cols, tree=self.list, fct=function(item, sel, button) self:use(item, button) end, select=function(item, sel) self:select(item) end}
 	self.c_list.cur_col = 2
 
 	self:loadUI{
 		{left=0, top=0, ui=self.c_list},
 		{right=0, top=self.c_tut.h + 20, ui=self.c_desc},
 		{right=0, top=0, ui=self.c_tut},
-		{hcenter=0, top=5, ui=Separator.new{dir="horizontal", size=self.ih - 10}},
+		{hcenter=0, top=5, ui=vsep},
 	}
 	self:setFocus(self.c_list)
 	self:setupUI()
