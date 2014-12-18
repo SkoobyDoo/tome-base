@@ -421,7 +421,7 @@ newTalent{
 						if not self.target:teleportRandom(tx, ty, 1, 0) then
 							game.logSeen(self, "The teleport fizzles!")
 						else
-							if target ~= self.summoner then 
+							if self.target ~= self.summoner then 
 								self.target:setEffect(self.target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power})
 							end
 							game.level.map:particleEmitter(self.target.x, self.target.y, 1, "temporal_teleport")
@@ -482,6 +482,13 @@ newTalent{
 		if not x or not y then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 
+		local particle
+		if core.shader.active(4) then
+			particle = {type="volumetric", args={radius=self:getTalentRadius(t)+2, kind="fast_sphere", img="moony_01", density=60, shininess=50, scrollingSpeed=-0.004}, only_one=true}
+		else
+			particle = {type="temporal_cloud"}
+		end
+
 		-- Add a lasting map effect
 		local dam = self:spellCrit(t.getDamage(self, t))
 		game.level.map:addEffect(self,
@@ -489,7 +496,7 @@ newTalent{
 			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, dur=1, src=self, apply=getParadoxSpellpower(self, t)},
 			self:getTalentRadius(t),
 			5, nil,
-			{type="temporal_cloud"},
+			particle,
 			nil, false, false
 		)
 

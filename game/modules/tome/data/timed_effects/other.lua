@@ -2472,8 +2472,13 @@ newEffect{
 	parameters = {power=50},
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
+		if core.shader.active(4) then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.4, growSpeed=0.004, img="coggy_00"})
+		end
 	end,
 	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 

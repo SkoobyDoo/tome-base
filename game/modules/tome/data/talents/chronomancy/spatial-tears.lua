@@ -140,8 +140,9 @@ newTalent{
 				x = px, y = py,
 				dam = damage,
 				canAct = false,
+				t = t.id,
 				act = function(self)
-					local tg = {type="ball", range=0, friendlyfire=false, radius = 1, talent=t, x=self.x, y=self.y,}
+					local tg = {type="ball", range=0, friendlyfire=false, radius = 1, talent=self.t, x=self.x, y=self.y,}
 					self.summoner.__project_source = self
 					local grids = self.summoner:project(tg, self.x, self.y, engine.DamageType.WARP, self.dam)
 					if core.shader.active() then
@@ -255,7 +256,11 @@ newTalent{
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
-		local tg = {type="beam", range=self:getTalentRange(t), talent=t, display={particle="icestorm"}}
+		local particle = {particle="icestorm"}
+		if core.shader.active(4) then
+			particle = {particle="volumetric", particle_args={kind="fast_sphere", shininess=60, density=80, scrollingSpeed=0.02, radius=1.2, img="moony_bright_01"}}
+		end
+		local tg = {type="beam", range=self:getTalentRange(t), talent=t, display=particle}
 		local x, y = self:getTarget(tg)
 		if not x or not y  then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)

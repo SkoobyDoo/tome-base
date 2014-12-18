@@ -22,6 +22,7 @@
 -- Usually there is no need to use it directly, and it is better to use specific engine.Grid, engine.Actor or engine.Object
 -- classes. Most modules will want to subclass those anyway to add new comportments
 local Shader = require "engine.Shader"
+local Particles = require "engine.Particles"
 
 module(..., package.seeall, class.make)
 
@@ -203,6 +204,27 @@ function _M:addParticles(ps)
 		self:defineDisplayCallback()
 	end
 	return ps
+end
+
+--- Adds a particles emitter following the entity and duplicate it for the back
+function _M:addParticles3D(def, args, shader)
+	local args1, args2 = table.clone(args or {}), table.clone(args or {})
+	args1.noup = 2
+	args2.noup = 1
+	local shader1, shader2 = nil, nil
+	if shader then 
+		shader1, shader2 = table.clone(shader), table.clone(shader)
+		shader1.noup = 2
+		shader2.noup = 1
+	end
+	local ps1 = Particles.new(def, 1, args1, shader1)
+	ps1.toback = true
+	local ps2 = Particles.new(def, 1, args2, shader2)
+
+	self:addParticles(ps1)
+	self:addParticles(ps2)
+
+	return ps1, ps2
 end
 
 --- Removes a particles emitter following the entity

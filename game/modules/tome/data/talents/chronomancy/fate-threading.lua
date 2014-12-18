@@ -86,19 +86,17 @@ newTalent{
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/arcane")
 
-		local particle
+		local ret = {}
 		if core.shader.active(4) then
-			particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="runicshield"}, {type="runicshield", shieldIntensity=0.14, ellipsoidalFactor=1, scrollingSpeed=-1, time_factor=12000, bubbleColor={1, 0.5, 0.3, 0.2}, auraColor={1, 0.5, 0.3, 1}}))
+			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="conic_cylinder", radius=1.4, base_rotation=180, growSpeed=0.004, img="freehand_labyrinth_01"})
 		else
-			particle = self:addParticles(Particles.new("time_shield", 1))
+			ret.particle1 = self:addParticles(Particles.new("time_shield", 1))
 		end
-
-		return {
-			particle = particle,
-		}
+		return ret
 	end,
 	deactivate = function(self, t, p)
-		self:removeParticles(p.particle)
+		if p.particle1 then self:removeParticles(p.particle1) end
+		if p.particle2 then self:removeParticles(p.particle2) end
 		return true
 	end,
 	info = function(self, t)
