@@ -17,6 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+-- "summoned" AI is checked in mod.class.NPC to count down summon timer.
 newAI("summoned", function(self)
 	if self:runAI(self.ai_state.ai_target or "target_simple") then
 		return self:runAI(self.ai_real)
