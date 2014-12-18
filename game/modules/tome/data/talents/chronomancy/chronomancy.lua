@@ -133,11 +133,18 @@ newTalent{
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyContingency").new(self))
 		if not talent then return nil end
 
-		return {
+		local ret = {
 			talent = talent, rest_count = 0
 		}
+		if core.shader.active(4) then
+			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", radius=1.4, shininess=40, growSpeed=0.004, img="circles2_01"})
+		end
+
+		return ret
 	end,
 	deactivate = function(self, t, p)
+		self:removeParticles(p.particle1)
+		self:removeParticles(p.particle2)
 		return true
 	end,
 	info = function(self, t)
