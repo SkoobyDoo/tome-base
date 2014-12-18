@@ -46,7 +46,7 @@ function _M:actBase()
 		end
 	end
 	-- Run out of time ?
-	if self.ai and self.ai == "summoned" and self.summon_time then
+	if self.ai and self.ai == "summoned" and not self:attr("no_timeflow") and self.summon_time then
 		self.summon_time = self.summon_time - 1
 		if self.summon_time <= 0 then
 			if not self.summon_quiet then
