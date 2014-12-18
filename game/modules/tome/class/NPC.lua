@@ -45,6 +45,17 @@ function _M:actBase()
 			self.shove_pressure = self.shove_pressure / 2
 		end
 	end
+	-- Run out of time ?
+	if self.summon_time then
+		self.summon_time = self.summon_time - 1
+		if self.summon_time <= 0 then
+			if not self.summon_quiet then
+				game.logPlayer(self.summoner, "#PINK#Your summoned %s disappears.", self.name)
+			end
+			self:die()
+			self.dead_by_unsummon = true
+		end
+	end
 	return mod.class.Actor.actBase(self)
 end
 
