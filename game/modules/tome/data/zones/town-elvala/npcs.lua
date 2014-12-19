@@ -109,7 +109,7 @@ newEntity{ base = "BASE_NPC_ELVALA_OGRE_TOWN",
 	level_range = {1, nil}, exp_worth = 1,
 	rarity = 3,
 
-	resolvers.inscriptions(4, "rune"),
+	resolvers.inscriptions(3, {"shielding rune", "phase door rune", "heat beam rune", "acid wave rune", "lightning rune"}),
 	max_life = resolvers.rngavg(70,80),
 	resolvers.equip{
 		{type="weapon", subtype="longsword", autoreq=true},

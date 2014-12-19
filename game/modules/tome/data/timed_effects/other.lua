@@ -2475,10 +2475,17 @@ newEffect{
 		if core.shader.active(4) then
 			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.4, growSpeed=0.004, img="coggy_00"})
 		end
+		self:effectTemporaryValue(eff, "timestopping", 1)
+		self.no_leave_control = true
+		core.display.pauseAnims(true)
+		self:updateMainShader()
 	end,
 	deactivate = function(self, eff)
+		self.no_leave_control = false
+		core.display.pauseAnims(false)
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
+		self:updateMainShader()
 	end,
 }
 

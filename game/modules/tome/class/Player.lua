@@ -458,6 +458,12 @@ function _M:updateMainShader()
 			end
 		end
 
+		-- Timestop shader
+		if self:attr("timestopping") and pf.timestop and pf.timestop.shad then
+			effects[pf.timestop.shad] = true
+			pf.timestop.shad:paramNumber("tick_start", core.game.getTime())
+		end
+
 		game.posteffects_use = table.keys(effects)
 		game.posteffects_use[#game.posteffects_use+1] = game.fbo_shader.shad
 	end

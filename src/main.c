@@ -75,12 +75,14 @@ bool no_sound = FALSE;
 bool no_steam = FALSE;
 bool isActive = TRUE;
 bool tickPaused = FALSE;
+bool anims_paused = FALSE;
 int mouse_cursor_ox, mouse_cursor_oy;
 int mouse_drag_w = 32, mouse_drag_h = 32;
 int mouse_drag_tex = 0, mouse_drag_tex_ref = LUA_NOREF;
 int mousex = 0, mousey = 0;
 float gamma_correction = 1;
 int cur_frame_tick = 0;
+int frame_tick_paused_time = 0;
 /* The currently requested fps for the program */
 int requested_fps = 30;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
@@ -516,7 +518,7 @@ void call_draw(int nb_keyframes)
 	if (nb_keyframes > 30) nb_keyframes = 30;
 
 	// Notify the particles threads that there are new keyframes
-	thread_particle_new_keyframes(nb_keyframes);
+	if (!anims_paused) thread_particle_new_keyframes(nb_keyframes);
 
 	if (current_game != LUA_NOREF)
 	{
@@ -578,7 +580,8 @@ void on_redraw()
 	/* Gather our frames per second */
 	Frames++;
 	if (!is_waiting()) {
-		int t = cur_frame_tick = SDL_GetTicks();
+		int t = SDL_GetTicks();
+		if (!anims_paused) cur_frame_tick = t - frame_tick_paused_time;
 		if (t - T0 >= 1000) {
 			float seconds = (t - T0) / 1000.0;
 			float fps = Frames / seconds;

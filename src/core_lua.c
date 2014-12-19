@@ -3077,6 +3077,22 @@ static int fbo_texture_bind(lua_State *L)
 	return 0;
 }
 
+static int pause_anims_started = 0;
+static int display_pause_anims(lua_State *L) {
+	bool new_state = lua_toboolean(L, 1);
+	if (new_state == anims_paused) return 0;
+
+	if (new_state) {
+		anims_paused = TRUE;
+		pause_anims_started = SDL_GetTicks();
+	} else {
+		anims_paused = FALSE;
+		frame_tick_paused_time += SDL_GetTicks() - pause_anims_started;
+	}
+	printf("[DISPLAY] Animations paused: %d\n", anims_paused);
+	return 0;
+}
+
 static const struct luaL_Reg displaylib[] =
 {
 	{"setTextBlended", set_text_aa},
@@ -3108,6 +3124,7 @@ static const struct luaL_Reg displaylib[] =
 	{"setMouseCursor", sdl_set_mouse_cursor},
 	{"setMouseDrag", sdl_set_mouse_cursor_drag},
 	{"setGamma", sdl_set_gamma},
+	{"pauseAnims", display_pause_anims},
 	{"glTranslate", gl_translate},
 	{"glScale", gl_scale},
 	{"glRotate", gl_rotate},

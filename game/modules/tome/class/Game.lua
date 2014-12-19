@@ -532,6 +532,7 @@ function _M:createFBOs()
 			underwater = Shader.new("main_fbo/underwater"),
 			motionblur = Shader.new("main_fbo/motionblur"),
 			blur = Shader.new("main_fbo/blur"),
+			timestop = Shader.new("main_fbo/timestop"),
 		}
 		self.posteffects_use = { self.fbo_shader.shad }
 		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end 
@@ -1392,6 +1393,14 @@ function _M:displayMap(nb_keyframes)
 		-- Display the map and compute FOV for the player if needed
 		local changed = map.changed
 		if changed then self:updateFOV() end
+
+		-- Ugh I dont like that but .. special case for timestop, for now it'll do!
+		if self.player and self.player:attr("timestopping") and self.player.x and self.posteffects and self.posteffects.timestop and self.posteffects.timestop.shad then
+			self.posteffects.timestop.shad:paramNumber2("texSize", map.viewport.width, map.viewport.height)
+			local sx, sy = map:getTileToScreen(self.player.x, self.player.y)
+			self.posteffects.timestop.shad:paramNumber2("playerPos", sx + map.tile_w / 2, sy + map.tile_h / 2)
+			self.posteffects.timestop.shad:paramNumber("tick_real", core.game.getTime())
+		end
 
 		-- Display using Framebuffer, so that we can use shaders and all
 		if self.fbo then
