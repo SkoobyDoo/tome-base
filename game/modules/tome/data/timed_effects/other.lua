@@ -1610,23 +1610,6 @@ newEffect{
 	end,
 }
 
-newEffect{
-	name = "POSSESSION", image = "talents/possess.png",
-	desc = "Psionic Consume",
-	long_desc = function(self, eff) return "This creature's mind has been destroyed and a possessor is now controlling the husk. However, the intense psionic energies are burning the body away, and it will soon disappear." end,
-	type = "other",
-	subtype = { psionic=true, possess=true },
-	status = "detrimental",
-	no_stop_resting = true,
-	parameters = { },
-	activate = function(self, eff)
-	end,
-	deactivate = function(self, eff)
-		self.summoner = nil
-		self:die(self)
-	end,
-}
-
 -- Borrowed Time and the Borrowed Time stun effect
 newEffect{
 	name = "HIGHBORN_S_BLOOM", image = "talents/highborn_s_bloom.png",
