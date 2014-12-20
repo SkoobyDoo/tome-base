@@ -26,7 +26,7 @@ newBirthDescriptor{
 	locked = function() return profile.mod.allow_build.race_giant end,
 	locked_desc = "WRITE ME",
 	desc = {
-		"WRITE ME",
+		[[#{italic}#"Giant"#{normal}# is a catch-all term for humanoids which are typically over nine feet in height.  Their origins, cultures, and relationships to other races differ wildly, but they tend to live as refugees and outcasts, shunned by smaller sentient races who usually see them as a threat.]],
 	},
 	descriptor_choices =
 	{
@@ -38,9 +38,6 @@ newBirthDescriptor{
 	},
 	copy = {
 		type = "giant", subtype="giant",
-		starting_zone = "trollmire",
-		starting_quest = "start-allied",
-		resolvers.inventory{ id=true, {defined="ORB_SCRYING"} },
 	},
 }
 
@@ -52,10 +49,17 @@ newBirthDescriptor
 	type = "subrace",
 	name = "Ogre",
 	locked = function() return profile.mod.allow_build.race_ogre end,
-	locked_desc = "WRITE ME",
+	locked_desc = [[Forged in the hatred of ages long passed,
+made for a war that they've come to outlast.
+Their forgotten birthplace lies deep underground,
+its tunnels ruined so it wouldn't be found.
+Past burglars have failed, but their data's immortal;
+to start, look where halflings once tinkered with portals...]],
 	desc = {
-		"WRITE ME",
-		"They possess the #GOLD#Ogric Wrath#WHITE# talent which allows them a boost of speed every once in a while.",
+		"Ogres are an altered form of Human, created in the Age of Allure as workers and warriors for the Conclave.",
+		"Inscriptions have granted them magical and physical power far beyond their natural limits, but their dependence on runic magic made them a favored target during the Spellhunt, forcing them to take refuge among the Shalore.",
+		"Their preference for simple and direct solutions has given them an undeserved reputation as dumb brutes, despite their extraordinary talent with runes and their humble, dutiful nature.",
+		"They possess the #GOLD#Ogric Wrath#WHITE# talent, which grants them critical chance and power, as well as resistance to confusion and stuns, when their attacks miss or are blocked.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +3 Strength, -1 Dexterity, +0 Constitution",
 		"#LIGHT_BLUE# * +2 Magic, -2 Willpower, +2 Cunning",
@@ -79,6 +83,7 @@ newBirthDescriptor
 		size_category = 4,
 		resolvers.inscription("RUNE:_SHIELDING", {cooldown=14, dur=5, power=100}),
 		resolvers.inscription("RUNE:_PHASE_DOOR", {cooldown=7, range=10, dur=5, power=15}),
+		resolvers.inventory{ id=true, {defined="ORB_SCRYING"} },
 	},
 	experience = 1.3,
 	random_escort_possibilities = { {"tier1.1", 1, 2}, {"tier1.2", 1, 2}, {"daikara", 1, 2}, {"old-forest", 1, 4}, {"dreadfell", 1, 8}, {"reknor", 1, 2}, },

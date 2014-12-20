@@ -1589,6 +1589,13 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			local npc = game.zone:makeEntity(game.level, "actor", {random_boss = {name_scheme="#rng# the Fearsome", class_filter=function(d) return d.name == "Demonologist" end}}, nil, true)
+			local nx, ny = util.findFreeGrid(game.player.x, game.player.y, 10, true, {[engine.Map.ACTOR]=true})
+			if npc and nx then
+				game.zone:addEntity(game.level, npc, "actor", nx, ny)
+			end
+
+do return end
 			self.player:setEffect("EFF_STUNNED", 10, {})
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="staff", random_object=true}, nil, true)

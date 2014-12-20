@@ -18,15 +18,14 @@
 -- darkgod@te4.org
 
 return [[Welcome #LIGHT_GREEN#@name@#WHITE#.
-WRITE ME
+You are an Ogre, hailing from Elvala.
 
-You are of the Shaloren, the Elven race with the closest ties to magic, and you are despised.
-While your people are at peace with the other kingdoms, many have not forgotten it was your race that created the terrible Spellblaze, thousands of years ago.
-
-You have decided to venture into the old and wild places looking for ancient treasures and glory.
+You face contempt and fear from a world your kind have never wronged, and the Spellhunt would have eradicated your race entirely, had the Shalore not shown sympathy and granted your ancestors refuge in Elvala.
+Nowadays, your people are beginning to shake their old image, but that's not why you've set out for adventure; you've learned of countless problems facing your world, and you intend to fix them yourself.
+Your kind were made for combat and hard work, and Maj'Eyal needs a lot of both.  
 
 You have come to the north of the Shaloren capital city of Elvala, in search of the Scintillating Caves. It is infested with vermin and seemingly alive crystals.
-To the west lies another dangerous place: a camp of Rhaloren. They are renegade Shaloren who do not wish to restrict their magic usage. Stopping them is good for both your race and your treasure hunt.
+To the west lies another dangerous place: a camp of Rhaloren. They are renegade Shaloren who do not wish to restrict their magic usage.
 
 After days of travel, you have found the caves and entered it. What will you find there...?
 ]]

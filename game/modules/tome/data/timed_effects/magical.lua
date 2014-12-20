@@ -3193,7 +3193,7 @@ newEffect{
 newEffect{
 	name = "OGRE_FURY", image = "effects/ogre_fury.png",
 	desc = "Ogre Fury",
-	long_desc = function(self, eff) return ("Inscriptions cooldown twice as fast."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Increases stun and confusion resistances by %d%%, crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 10, eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
 	type = "magical", decrease = 0,
 	subtype = { runic=true },
 	status = "beneficial",
