@@ -197,6 +197,19 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 				if not self:postUseTalent(ab, ret) then return end
 
 				self.sustain_talents[id] = ret
+
+				if ab.sustain_lists then
+					local lists = ab.sustain_lists
+					if 'table' ~= type(lists) then lists = {lists} end
+					for _, list in ipairs(lists) do
+						if 'table' == type(list) then
+							list = table.getTable(self, unpack(list))
+						else
+							list = table.getTable(self, list)
+						end
+						table.insert(list, id)
+					end
+				end
 			else
 				local old_level
 				if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
@@ -214,6 +227,19 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 				-- Everything went ok? then start cooldown if any
 				if not ignore_cd then self:startTalentCooldown(ab) end
 				self.sustain_talents[id] = nil
+
+				if ab.sustain_lists then
+					local lists = ab.sustain_lists
+					if 'table' ~= type(lists) then lists = {lists} end
+					for _, list in ipairs(lists) do
+						if 'table' == type(list) then
+							list = table.getTable(self, unpack(list))
+						else
+							list = table.getTable(self, list)
+						end
+						table.removeFromList(list, id)
+					end
+				end
 			end
 		end)
 		local success, err
@@ -353,6 +379,19 @@ function _M:learnTalent(t_id, force, nb)
 				end
 			end
 		end
+
+		if t.learn_lists then
+			local lists = t.learn_lists
+			if 'table' ~= type(lists) then lists = {lists} end
+			for _, list in ipairs(lists) do
+				if 'table' == type(list) then
+					list = table.getTable(self, unpack(list))
+				else
+					list = table.getTable(self, list)
+				end
+				table.insert(list, t.id)
+			end
+		end
 	end
 
 	for i = 1, (nb or 1) do
@@ -440,6 +479,19 @@ function _M:unlearnTalent(t_id, nb)
 			t.passives(self, t, self.talents_learn_vals[t.id])
 		else
 			self.talents_learn_vals[t.id] = nil
+		end
+	end
+
+	if t.learn_lists and not self:knowTalent(t_id) then
+		local lists = t.learn_lists
+		if 'table' ~= type(lists) then lists = {lists} end
+		for _, list in ipairs(lists) do
+			if 'table' == type(list) then
+				list = table.getTable(self, unpack(list))
+			else
+				list = table.getTable(self, list)
+			end
+			table.removeFromList(list, t.id)
 		end
 	end
 

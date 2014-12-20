@@ -394,6 +394,26 @@ function table.set(table, ...)
 	table[args[#args - 1]] = args[#args]
 end
 
+--[=[
+	Decends recursively through a table by the given list of keys,
+	returning the table at the end. Missing keys will have tables
+	created for them. If a non-table value is encountered, return nil.
+]=]
+function table.getTable(table, ...)
+	if 'table' ~= type(table) then return end
+	local args = {...}
+	for i = 1, #args do
+		local key = args[i]
+		local subtable = table[key]
+		if not subtable then
+			subtable = {}
+			table[key] = subtable
+		end
+		if 'table' ~= type(subtable) then return end
+		table = subtable
+	end
+	return table
+end
 
 -- Taken from http://lua-users.org/wiki/SortedIteration and modified
 local function cmp_multitype(op1, op2)
