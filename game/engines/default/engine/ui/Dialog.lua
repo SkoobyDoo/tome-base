@@ -396,27 +396,30 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 		for i, ui in ipairs(self.uis) do
 			if not ui.absolute then
+				if ui.top and type(ui.top) == "table" then ui.top = self.ui_by_ui[ui.top].top + self.ui_by_ui[ui.top].ui.h + padding end
+				if ui.bottom and type(ui.bottom) == "table" then ui.bottom = self.ui_by_ui[ui.bottom].bottom + self.ui_by_ui[ui.bottom].ui.h + padding end
+				if ui.left and type(ui.left) == "table" then ui.left = self.ui_by_ui[ui.left].left + self.ui_by_ui[ui.left].ui.w + padding end
+				if ui.right and type(ui.right) == "table" then ui.right = self.ui_by_ui[ui.right].right + self.ui_by_ui[ui.right].ui.w + padding end
+				
 				if ui.top then mh = math.max(mh, ui.top + ui.ui.h + (ui.padding_h or 0))
 				elseif ui.bottom then addh = math.max(addh, ui.bottom + ui.ui.h + (ui.padding_h or 0))
 				end
-			end
 
 --		print("ui", ui.left, ui.right, ui.ui.w)
-			if not ui.absolute then
 				if ui.left then mw = math.max(mw, ui.left + ui.ui.w + (ui.padding_w or 0))
 				elseif ui.right then addw = math.max(addw, ui.right + ui.ui.w + (ui.padding_w or 0))
 				end
 			end
 		end
 --		print("===", mw, addw)
-		mw = mw + addw + 5 * 2 + (addmw or 0)
+		mw = mw + addw + 5 * 2 + (addmw or 0) + padding
 
 --		print("===", mw, addw)
 		local tw, th = 0, 0
 		if self.title then tw, th = self.font_bold:size(self.title) end
 		mw = math.max(tw + 6, mw)
 
-		mh = mh + addh + 5 + 22 + 3 + (addmh or 0) + th
+		mh = mh + addh + 5 + 22 + 3 + (addmh or 0) + th + padding
 
 		if on_resize then on_resize(resizex and mw or self.w, resizey and mh or self.h) end
 		self:resize(resizex and mw or self.w, resizey and mh or self.h)
