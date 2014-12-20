@@ -940,7 +940,7 @@ function _M:loadPremadeUI()
 	local sel = nil
 	local sep = Separator.new{dir="horizontal", size=400}
 	local desc = TextzoneList.new{width=220, height=400}
-	local list = List.new{width=350, list=lss, height=400,
+	local list list = List.new{width=350, list=lss, height=400,
 		fct=function(item)
 			local oldsel, oldscroll = list.sel, list.scroll
 			if sel == item then self:loadPremade(sel) game:unregisterDialog(d) end
