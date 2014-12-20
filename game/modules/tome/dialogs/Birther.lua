@@ -938,7 +938,7 @@ function _M:loadPremadeUI()
 	local sel = nil
 	local sep = Separator.new{dir="horizontal", size=400}
 	local desc = TextzoneList.new{width=220, height=400}
-	local list = List.new{width=600 - desc.w - sep.w, list=lss, height=400,
+	local list = List.new{width=350, list=lss, height=400,
 		fct=function(item)
 			local oldsel, oldscroll = list.sel, list.scroll
 			if sel == item then self:loadPremade(sel) game:unregisterDialog(d) end
@@ -966,8 +966,8 @@ function _M:loadPremadeUI()
 
 	d:loadUI{
 		{left=0, top=0, ui=list},
-		{left=list.w, top=0, ui=sep},
-		{left=sep, right=0, top=0, ui=desc},
+		{left=list, top=0, ui=sep},
+		{right=0, top=0, ui=desc},
 
 		{left=0, bottom=0, ui=load},
 		{right=0, bottom=0, ui=del},
