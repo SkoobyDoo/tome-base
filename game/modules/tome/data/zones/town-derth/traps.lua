@@ -64,7 +64,7 @@ newEntity{ base = "BASE_STORE", define_as = "JEWELRY",
 newEntity{ base = "BASE_STORE", define_as = "TOOLSHOP",
 	name="Survival Supplies",
 	display='8', color=colors.UMBER,
-	resolvers.store("LITEDIGSTORE", "allied-kingdoms", "store/shop_door.png", "store/shop_sign_trainer.png"),
+	resolvers.store("LITEDIGSTORE", "allied-kingdoms", "store/shop_door.png", "store/shop_sign_utility_store.png"),
 }
 
 newEntity{ base = "BASE_STORE", define_as = "ALCHEMIST",

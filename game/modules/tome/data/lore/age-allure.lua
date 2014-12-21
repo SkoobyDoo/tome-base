@@ -138,3 +138,86 @@ Subject Z has vanished! This is terrible! It was not even during a portal transi
 The military are annoying me to no end. I told them to find me more test subjects immediately, but they gave some excuses about enemy patrols in the area. Do they think I care about such trivial things?! And now I hear them practising their fighting in the corridors. They are even grunting and screaming in fake battle noises like stupid children. Do they not realise what an important facility this is? Can they not understand how my genius is disturbed by---
 ]]
 }
+
+newLore{
+	id = "conclave-vault-start",
+	category = "age of allure",
+	name = "order for director Hompalan",
+	lore = [[#{italic}#To: Research Director Hompalan - #{bold}#TOP PRIORITY#{normal}#
+
+Thanks to one of our scouting parties catching a Conclave lieutenant's squad off-guard, we have found directions to a noteworthy laboratory hidden underground, in what's newly Nargol territory.  Unfortunately, the long-legs scuttled the entrances before we could arrive, and it'd take us years to dig ourselves in, even if we could afford recalling our geomancers from the front lines to work on it - which we can't.  
+
+Your new objective is to find a way to warp a recovery team inside to scavenge it, then get them back safely with their data in tow.  I don't want to hear any of your nonsense about it being "impossible" without a linked portal near the destination; thirty years ago, you would've told me that almost everything you're now doing on a daily basis is impossible.
+
+I know you think yourself "above" such "petty politics" like how vital this facility would be to our survival, so I won't bore you with stressing how important this is to us.  Accordingly, let me put this in terms you can relate to: This is an order, and your usual excuses won't cut it.  Your job is on the line.  #{bold}#Make.  It.  Work.#{normal}#
+
+-General Martolep
+
+#{italic}#(Some coordinates are enclosed.  You think you can figure out, roughly, where this sealed Conclave facility is.)#{normal}#
+]]
+}
+
+newLore{
+	id = "conclave-vault-1",
+	category = "age of allure",
+	name = "healer Astelrid log 1",
+	lore = [[Work in a hospital like this is more draining than I thought it'd be.  I thought I'd have no trouble with motivation, helping our wounded get back to health again, but seeing so many of them, and knowing there are some I cannot help...  it weighs heavily on my mind.  It would be difficult to go on, if I did not keep a few things in mind: 
+
+One, that I am truly doing the best I can to minimize the world's suffering, both directly by healing, and indirectly by ensuring that the world will be united under the wise, thoughtful rule of the Conclave.  Ready access to regeneration infusions ensures that even the most dire of wounds can be healed in a matter of days, and the soldiers can return to the battlefield; furthermore, the Overseers have granted us access to their amnesia-inducing spells, allowing us to properly treat those who have been traumatized by the horrors of battle.  May the eyes of the Higher watch over this world for thousands of years to come.
+
+Two, that the "side project" the Overseers have assigned me to is working out very well.  Those wounded who have consented to our trial treatments, consisting of a unique combination of experimental variations on heroism infusions and shielding runes, have experienced slightly increased physical strength and endurance, with no sign of the effects wearing off.  There is one mild side effect which has given me cause to worry, though I dare not speak of my misgivings to anyone else; some of those treated have needed to be disciplined for getting too "enthusiastic" in battle.  The Overseers have assured me that this is actually having a net positive effect on morale, and thus I can wait to cure these aggressive tendencies until the war is over.  In the meantime, I am proud of my work, and although it's nothing so glorious as the creation of the Higher race, it will be a tremendous boon to our society in the long term.
+
+And three, that the war will soon be over, and with it we shall no longer have to bear the maiming of our proud soldiers and the impudence of the Nargol.  We have made impressive gains in territory in the last few days, thwarting numerous ambushes and keeping our momentum as we expand further into Nargol lands.  Granted, one cannot be sure of how much of what we're hearing has been "cleaned up" by the Overseers, but one recent statement from the Nargol leads me to believe it is the truth:
+
+"This is your last chance to back down.  A great tragedy will ensue if you continue to push further, and do not accept our previously-stated terms of peaceful resolution.  Do not force us to do this."
+
+After waging a war of trickery and deceit, those halflings think they can bluff us!  Once their military is broken, we can bring their citizens into our fold and enlighten them, and then the true healing can begin.]]
+}
+
+newLore{
+	id = "conclave-vault-2",
+	category = "age of allure",
+	name = "healer Astelrid log 2",
+	lore = [[The Nargol were not bluffing, and what they did was worse than anything we could've imagined.  The details coming from the survivors - of which there are both far too many and far too few - are conflicting at times, but from what I can tell...
+
+As our forces began their final push, the ground began to rumble and give way behind them, and the bones of the war's fallen (halflings and Conclave alike) began to rise up, then draw their once-discarded weapons and rush at our soldiers in a frenzy.  There were so many...  those who were on higher ground when it happened said it was like a sea of bones and rotting flesh.  Outnumbered, our forces broke ranks and tried to retreat, but with the halflings in front of them and the abominations behind them, we took tremendous losses...  and our humble medical center is overflowing with the gravely wounded.  Many come to us with a terrible sickness passed on by the Nargol's ghouls; there is no cure for this, and I have already had to "mercifully" end the lives of over a dozen men and women to save them from a long, drawn-out death, ending in their transfiguration into one of those horrid creatures.
+
+No...  the real horrid creatures here are the halflings.  We've seen necromancy before, but mostly as a parlor trick by deranged cults; we never dreamed that any large organization would tolerate it, let alone hide necromantic charms on every one of its ranking officers.  They've been planning to do this since the start of the war, and only sprung the trap now...  Any misgivings I had about the aggression associated with our new treatment are gone forever; we cannot be ferocious enough in purging these fiends from Maj'Eyal.  I have requested an audience with the Overseers to broaden the scope of our experiments, setting our sights higher so we may crush this evil empire as swiftly as possible.  
+
+May the Conclave prevail, and may the Empire's fate serve as a warning to all who would defy our wisdom.]]
+}
+
+newLore{
+	id = "conclave-vault-3",
+	category = "age of allure",
+	name = "healer Astelrid log 3",
+	lore = [[The Overseers were ecstatic about my ideas!  Our staff has been relocated to a more secure location, deep underground with several extensive tunnels leading in from different locations.  Although this means we can no longer leave to harvest herbs for our infusions, the increased budget the Overseers have given us does more than enough to compensate.  Many wounded are still brought to me through the tunnels, but now our goal is not simply to make them as strong and healthy as they were before, but far stronger and far healthier than they could've dreamed.  They are brought to us unconscious, with amnesia spells already applied to ensure they do not resist our experiments; although they are not told they will be test subjects before being brought here, we are sure they would consent to these experiments, if they knew how valuable they were to help the Conclave.  I do not see any moral problem with this, and nobody else at this facility has expressed any concerns to me.  After all, those who join the Conclave as soldiers have already volunteered to give their lives in service to the Overseers' enlightened rule, and this is surely a much more productive way to do so than dying to a Nargol sling-bullet.
+
+With access to better components, we can make the same basic improvements to their strength as we could before, but the changes do not stop there!  With so many subjects to work with, and the Overseers' encouragement to take risks, we've made them much larger (with associated multiplying effects on their effectiveness in combat), and reinforced their constitution to be capable of bearing more inscriptions without collapsing under the stress.  A fellow researcher had the brilliant idea to use this runic affinity to both enhance their connection to magic's weave, and make them biologically and structurally dependent on it; now, our front-line soldiers can conjure devastating fireballs with little training, and should those hairy-footed vermin attempt to raise one of these soldiers from the dead, they will collapse, having lost the magic that kept them intact when they still lived.  
+
+The Overseers have been working with us personally to make psychological changes as well; with the blank slate provided by the amnesia spell, we've managed to give them a mindset that will serve them well both during the war and for our glorious reign that shall follow.  Extraordinarily dutiful, helpful and striving for excellence in their daily lives without lusting for power or personal glory, wise about their place in the world, and slow to anger...  but utterly ferocious when needed.  Just as the Higher were created to be leaders and scholars, and have proven successful in this role beyond the Conclave's wildest dreams, these new "Ogres" (as the staff has taken to nicknaming them) shall be our laborers and soldiers, a solid foundation of hard work and dutiful enforcement on which our society shall be built.  There will still be a place for the unaltered races, of course; their natural adaptability will make them perfect to fill in the gaps, as the glue that holds everything else together, and the perspective granted by elves' long lives will make them invaluable as advisers, researchers, and policy-makers.
+
+These Ogres are integrating into our military very well!  The rank-and-file soldiers know better than to attract attention from the Overseers by asking too many questions about where their new, giant allies came from, and thus acceptance came rather swiftly once they saw these creations in action.  We received one report that an Ogre sergeant was seen eating a particularly insolent halfling alive, after he feigned surrender and attempted to cast a lightning spell; this spectacle was both highly motivating to our troops and demoralized the remnants of that halfling's squad into surrendering, so I shall be enhancing their digestive capabilities as well.  
+
+For the most part, though, our research work is done.  All that's left to do is get a response from the Overseers as to whether to increase their birth rate or not (currently set very low as a precaution against future overpopulation), and improve the training we give freshly-created Ogres for runic magic, given that regular maintenance of their runes is necessary to keep them alive.  This is not to say we have idle staff, however!  Some of us have made a project for after the war ends - a potion compatible with Ogric biology, capable of putting them in a "sleeping" state where they do not age or starve.  We can keep these "sleeping" Ogres stationed near bridges that may need regular maintenance, stashed in reserve armories, or any other place where you'd need a batch of dependable workers or guards, without having to incur all the other costs associated with keeping extra citizens around.]]
+}
+
+newLore{
+	id = "conclave-vault-4",
+	category = "age of allure",
+	name = "healer Astelrid log 4",
+	lore = [[Announcement to All Staff:
+
+I'm sure you've all heard the rumors about what our scryers saw, and why we've been on lockdown the past few days; it is with a heavy heart that I must confirm that they are true.  The Nargol have taken the land above our facility, and are combing the area with golems to find the entrances.  We've already lost one entrance to the failsafe explosive-rune traps set in place to collapse it, and now they'll be looking to defuse those as well.  In short, we have no means of escape, and if allowed the time, they will find the way in, kill us, and steal our precious work for themselves.  The Empire has been enough of a problem without Ogres; we CANNOT take the risk of them finding us and tipping the balance in their favor.
+
+We are doomed, no matter what happens.  My orders from the Overseers in such a situation would be to destroy our findings, then put an alchemical vial they gave me in the ventilation system, painlessly suffocating us.  I have no intention of throwing away our rightfully-earned place in the history books by doing this.  Instead, I have prematurely detonated all the remaining explosive traps, thoroughly sealing the way in.  We are very, very deep underground, and without any tunnels to follow, it could be decades before a Nargol excavation team reached us.  In other words, we are completely sealed off from the Nargol...  and the rest of the Conclave.
+
+We have a small supply of emergency rations, but it would last us a couple of months at the longest, and we cannot assume the Conclave will reclaim this territory in that time.  We could try to repurpose the infusion herb-garden for making edible crops, but that would only buy us a month after that before the grow-lights lost their magic.  Without drastic steps, we will surely die of starvation; fortunately, we have drastic steps available to us.
+
+This is my last order: I have prepared a golem to apply the Ogric inscriptions to us, and updated all of our records to reflect our best current knowledge of their effects and effectiveness.  I have also brewed several doses of the "stasis" potion for each of us.  By the time you find this note, I will have already undergone this process myself, and will be hibernating in one of the storage rooms.  If you do not wish to die, you should acquire a weapon from the armory, then follow my lead, after scattering yourselves evenly throughout the facility.  When we are sleeping, we will be immune to the ravages of time, and prepared to greet whoever finally digs their way down and finds us.  Hopefully, it will be Conclave reinforcements, in which case we will stand down, give them our notes, and await further orders.  And if it isn't the Conclave...  make them regret it.  Send a message stronger than any NO TRESPASSING sign ever could, then resume your sleep.
+
+It has been an honor working with such talented individuals, and an honor doing everything I can for a noble cause.  Perhaps we still had some progress to make, but overall I'm proud of what we've accomplished, and the contributions the Ogre race will make to all of Maj'Eyal.  
+
+Long live the Conclave,
+Healer Astelrid]]
+}

@@ -22,4 +22,5 @@ return { one_per_level=true,
 	{name="protective-aura", minor=true, percent=50},
 	{name="necrotic-air", minor=true, percent=50},
 	{name="glowing-chest", minor=true, percent=20},
+	{name="conclave-vault", percent=30, forbid={1, 2, 4}, special=function() if game:getPlayer(true) and game:getPlayer(true).descriptor and game:getPlayer(true).descriptor.subrace == "Shalore" then return true end end},
 }

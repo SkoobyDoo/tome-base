@@ -66,5 +66,5 @@ newEntity{ base = "BASE_STORE", define_as = "GEM_STORE",
 newEntity{ base = "BASE_STORE", define_as = "TOOLSHOP",
 	name="Delver's Delights",
 	display='8', color=colors.UMBER,
-	resolvers.store("LITEDIGSTORE", "iron-throne", "store/shop_door.png", "store/shop_sign_trainer.png"),
+	resolvers.store("LITEDIGSTORE", "iron-throne", "store/shop_door.png", "store/shop_sign_utility_store.png"),
 }

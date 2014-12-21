@@ -28,6 +28,13 @@ newEntity{ base = "BASE_LORE",
 	encumberance = 0,
 }
 end
+newEntity{ base = "BASE_LORE",
+	define_as = "DIRECTOR_HOMPALAN_ORDER",
+	name = "order for Director Hompalan", lore="conclave-vault-start",
+	desc = [[A very faded note, nearly unreadable.]],
+	rarity = false,
+	encumberance = 0,
+}
 
 newEntity{ base = "BASE_CLOTH_ARMOR",
 	power_source = {psionic=true},

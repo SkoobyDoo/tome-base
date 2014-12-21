@@ -59,6 +59,24 @@ local function copy_recurs(dst, src, deep)
 	end
 end
 
+local function importBase(t, base)
+	local temp = table.clone(base, true, {uid=true, define_as = true})
+	if base.onEntityMerge then base:onEntityMerge(temp) end
+	table.mergeAppendArray(temp, t, true)
+	t = temp
+	t.base = nil
+	return t
+end
+
+--- Create a new entity with a base
+-- STATIC
+function _M:fromBase(t, base)
+	if not base then base = t.base end
+	assert(base, "no base given to Entity.fromBase")
+	t = importBase(t, base)
+	return self.new(t)
+end
+
 --- Initialize an entity
 -- Any subclass MUST call this constructor
 -- @param t a table defining the basic properties of the entity
@@ -1014,11 +1032,8 @@ function _M:loadList(file, no_default, res, mod, loaded)
 			if t.base then
 				local base = res[t.base]
 				if not base and res.import_source then base = res.import_source[t.base] end
-				local temp = table.clone(base, true, {uid=true, define_as = true})
-				if base.onEntityMerge then base:onEntityMerge(temp) end
-				table.mergeAppendArray(temp, t, true)
-				t = temp
-				t.base = nil
+
+				t = importBase(t, base)
 			end
 
 			local e = newenv.class.new(t, no_default)
