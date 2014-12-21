@@ -33,6 +33,7 @@ newTalent{
 		game:playSoundNear(self, "talents/arcane")
 		return {
 			res = self:addTemporaryValue("resists", {[DamageType.ARCANE] = t.getArcaneResist(self, t)}),
+			display_resist = t.getArcaneResist(self, t),
 			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
 			particle = self:addParticles(Particles.new("arcane_power", 1)),
 		}
@@ -44,8 +45,9 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
+		local resist = self.sustain_talents[t.id] and self.sustain_talents[t.id].display_resist or t.getArcaneResist(self, t)
 		return ([[Your mastery of magic allows you to enter a state of deep concentration, increasing your Spellpower by %d and arcane resistance by %d%%.]]):
-		format(t.getSpellpowerIncrease(self, t), t.getArcaneResist(self, t))
+		format(t.getSpellpowerIncrease(self, t), resist)
 	end,
 }
 
