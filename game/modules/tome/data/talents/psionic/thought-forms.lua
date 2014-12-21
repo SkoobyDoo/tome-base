@@ -212,7 +212,7 @@ newTalent{
 				con = stat_bonus / 2,
 			},
 			
-			resolvers.generic(function(e) buildTile(e) end), -- Make a moddable tile
+			resolvers.generic(buildTile), -- Make a moddable tile
 			resolvers.talents{ 
 				[Talents.T_WEAPON_COMBAT]= math.ceil(self.level/10),
 				[Talents.T_BOW_MASTERY]= math.ceil(self.level/10),
@@ -324,7 +324,7 @@ newTalent{
 				con = stat_bonus / 2,
 			},
 
-			resolvers.generic(function(e) buildTile(e) end), -- Make a moddable tile
+			resolvers.generic(buildTile), -- Make a moddable tile
 			resolvers.talents{ 
 				[Talents.T_ARMOUR_TRAINING]= 2,
 				[Talents.T_WEAPON_COMBAT]= math.ceil(self.level/10),

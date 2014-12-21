@@ -154,7 +154,25 @@ I know you think yourself "above" such "petty politics" like how vital this faci
 -General Martolep
 
 #{italic}#(Some coordinates are enclosed.  You think you can figure out, roughly, where this sealed Conclave facility is.)#{normal}#
-]]
+]],
+	on_learn = function(who)
+		if not game.state.can_conclave_vault then return end
+		game:onLevelLoad("wilderness-1", function(zone, level)
+			local spot = game.level:pickSpot{type="world-encounter", subtype="conclave-vault"}
+			if not spot then return end
+
+			local g = game.level.map(spot.x, spot.y, engine.Map.TERRAIN):cloneFull()
+			g.name = "Door to an old Conclave vault"
+			g.display='>' g.color_r=100 g.color_g=0 g.color_b=255 g.notice = true
+			g.change_level=1 g.change_zone="conclave-vault" g.glow=true
+			g.add_displays = g.add_displays or {}
+			g.add_displays[#g.add_displays+1] = mod.class.Grid.new{image="terrain/dungeon_entrance02.png", z=5}
+			g:altered()
+			g:initGlow()
+			game.zone:addEntity(game.level, g, "terrain", spot.x, spot.y)
+			print("[WORLDMAP] conclave vault at", spot.x, spot.y)
+		end)
+	end,
 }
 
 newLore{
