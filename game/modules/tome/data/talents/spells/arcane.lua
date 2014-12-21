@@ -32,8 +32,8 @@ newTalent{
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/arcane")
 		return {
-			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
 			res = self:addTemporaryValue("resists", {[DamageType.ARCANE] = t.getArcaneResist(self, t)}),
+			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
 			particle = self:addParticles(Particles.new("arcane_power", 1)),
 		}
 	end,
