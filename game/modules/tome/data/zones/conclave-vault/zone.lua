@@ -35,8 +35,7 @@ return {
 		map = {
 			class = "engine.generator.map.Roomer",
 			nb_rooms = 10,
-			rooms = {"random_room", {"money_vault",5}, {"lesser_vault",8}},
-			lesser_vaults_list = {"circle","rat-nest","skeleton-mage-cabal"},
+			rooms = {"zones/conclave-vault-ogre-room-1"},
 			lite_room_chance = 100,
 			['.'] = "FLOOR",
 			['#'] = "WALL",
@@ -47,7 +46,7 @@ return {
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",
-			nb_npc = {20, 30},
+			nb_npc = {0, 0},
 		},
 		object = {
 			class = "engine.generator.object.Random",
@@ -61,51 +60,16 @@ return {
 	levels =
 	{
 		[1] = {
-			day_night = true,
 			generator = { map = {
-				class = "engine.generator.map.Town",
-				building_chance = 70,
-				max_building_w = 8, max_building_h = 8,
-				edge_entrances = {6,4},
-				floor = "FLOOR",
-				external_floor = "FLOOR",
-				up = "FLAT_UP_WILDERNESS",
-				wall = "WALL",
-				down = "FLAT_DOWN4",
-				door = "DOOR",
-
-				nb_rooms = false,
-				rooms = false,
 			}, },
 		},
 		[4] = {
-			decay = false,
 			generator = {
-				map = {
-					class = "engine.generator.map.Static",
-					map = "zones/halfling-ruins-last",
-				},
-				actor = {
-					area = {x1=0, x2=49, y1=0, y2=40},
-				},
-				trap = {
-					nb_trap = {0, 0},
-				},
 			},
 		},
 	},
 	post_process = function(level)
 		-- Place a lore note on each level
 		game:placeRandomLoreObject("NOTE"..level.level)
-	end,
-	on_enter = function(lev, old_lev, newzone)
-		if newzone then
-			game:onLevelLoad("wilderness-1", function(zone, level)
-				local p = game.party:findMember{main=true}
-				local spot = level:pickSpot{type="zone-pop", subtype="halfling-ruins"}
-				p.wild_x = spot.x
-				p.wild_y = spot.y
-			end)
-		end
 	end,
 }

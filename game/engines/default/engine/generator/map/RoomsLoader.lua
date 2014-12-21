@@ -140,6 +140,49 @@ function _M:makePod(x, y, radius, room_id, data, floor, wall)
 	return { id="podroom"..room_id, x=x, y=y, cx=x, cy=y }
 end
 
+--- Generates parse data for from an ascii def, for function room generators
+function _M:roomParse(def)
+	local room = { w=def[1]:len(), h=#def, spots={} }
+
+	-- Read the room map
+	for j, line in ipairs(def) do
+		local i = 1
+		for c in line:gmatch(".") do
+			room[i] = room[i] or {}
+
+			if tonumber(c) then
+				c = tonumber(c)
+				room.spots[c] = room.spots[c] or {}
+				room.spots[c][#room.spots[c]+1] = {x=i-1, y=j-1}
+				c = '.'
+			end
+
+			room[i][j] = c
+
+			i = i + 1
+		end
+	end
+	return room
+end
+
+--- Generates map data from an ascii def, for function room generators
+function _M:roomFrom(id, x, y, is_lit, room)
+	for i = 1, room.w do
+		for j = 1, room.h do
+			self.map.room_map[i-1+x][j-1+y].room = id
+			local c = room[i][j]
+			if c == '!' then
+				self.map.room_map[i-1+x][j-1+y].room = nil
+				self.map.room_map[i-1+x][j-1+y].can_open = true
+				self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve('#'))
+			else
+				self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve(c))
+			end
+			if is_lit then self.map.lites(i-1+x, j-1+y, true) end
+		end
+	end
+end
+
 --- Generates a room
 function _M:roomGen(room, id, lev, old_lev)
 	if type(room) == 'function' then

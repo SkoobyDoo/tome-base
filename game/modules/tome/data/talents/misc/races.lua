@@ -969,7 +969,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Scar-Scripted Flesh",
+	name = "Scar-Scripted Flesh", short_name = "SCAR_SCRIPTED_FLESH",
 	type = {"race/ogre", 3},
 	require = racial_req3,
 	points = 5,

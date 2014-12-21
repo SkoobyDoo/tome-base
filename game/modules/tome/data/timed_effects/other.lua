@@ -2648,3 +2648,31 @@ newEffect{
 		self:incParadox(eff.paradox)
 	end,
 }
+
+newEffect{
+	name = "AEONS_STASIS",
+	desc = "Aeons Stasis",
+	long_desc = function(self, eff) return "The target is in temporal stasis." end,
+	type = "other", decrease = 0, no_remove = true,
+	subtype = { temporal=true },
+	status = "beneficial",
+	on_lose = function(self, err) return "#Target#'s is back to the normal timeflow.", "-Aeons Stasis" end,
+	parameters = { },
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "status_effect_immune", 1)
+		self:effectTemporaryValue(eff, "invulnerable", 1)
+		self.never_act = true
+	end,
+	deactivate = function(self, eff)
+		self.never_act = nil
+		-- FINISH ME
+	end,
+	on_timeout = function(self, eff)
+		if eff.timeout then
+			eff.timeout = eff.timeout - 1
+			if eff.timeout <= 0 then
+				self:removeEffect(self.EFF_AEONS_STASIS, nil, true)
+			end
+		end
+	end,
+}
