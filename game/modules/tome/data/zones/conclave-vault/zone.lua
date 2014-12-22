@@ -61,7 +61,11 @@ return {
 	{
 		[1] = {
 			generator = { map = {
-			}, },
+				class = "engine.generator.map.Static",
+				map = "zones/conclave-vault-entrance",
+			}, object = {
+				nb_object = {0, 0},
+			}},
 		},
 		[4] = {
 			generator = {
@@ -70,6 +74,20 @@ return {
 	},
 	post_process = function(level)
 		-- Place a lore note on each level
-		game:placeRandomLoreObject("NOTE"..level.level)
+		if level.level > 1 then game:placeRandomLoreObject("NOTE"..(level.level-1)) end
+	end,
+
+	awaken_ogres = function(who, x, y, radius, dur)
+		core.fov.calc_circle(x, y, game.level.map.w, game.level.map.h, radius or 4, function(_, i, j)
+			if game.level.map:checkAllEntities(i, j, "block_sight") then return true end
+		end, function(_, i, j)
+			local a = game.level.map(i, j, engine.Map.ACTOR)
+			if not a then return end
+			local eff = a:hasEffect(a.EFF_AEONS_STASIS)
+			if not eff or eff.timeout then return end
+			dur = dur or {3,6}
+			eff.timeout = rng.range(dur[1], dur[2])
+			a:setTarget(who)
+		end, nil)
 	end,
 }

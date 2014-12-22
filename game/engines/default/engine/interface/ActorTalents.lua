@@ -206,6 +206,11 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 						self:removeTemporaryValue(p.__tmpvals[i][1], p.__tmpvals[i][2])
 					end
 				end
+				if p and type(p) == "table" and p.__tmpparticles then
+					for i = 1, #p.__tmpparticles do
+						self:removeParticles(p.__tmpparticles[i])
+					end
+				end
 				local ret = ab.deactivate(who, ab, p)
 				if force_level then who.talents[id] = old_level end
 
@@ -837,6 +842,14 @@ end
 function _M:talentTemporaryValue(p, k, v)
 	if not p.__tmpvals then p.__tmpvals = {} end
 	p.__tmpvals[#p.__tmpvals+1] = {k, self:addTemporaryValue(k, v)}
+end
+
+--- Helper function to add temporary particles and not have to remove them manualy
+function _M:talentParticles(p, ...)
+	if not p.__tmpparticles then p.__tmpparticles = {} end
+	for _, ps in ipairs{...} do
+		p.__tmpparticles[#p.__tmpparticles+1] = ps
+	end
 end
 
 --- Trigger a talent method

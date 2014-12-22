@@ -176,6 +176,11 @@ function _M:removeEffect(eff, silent, force)
 			self:removeTemporaryValue(p.__tmpvals[i][1], p.__tmpvals[i][2])
 		end
 	end
+	if p.__tmpparticles then
+		for i = 1, #p.__tmpparticles do
+			self:removeParticles(p.__tmpparticles[i])
+		end
+	end
 	if _M.tempeffect_def[eff].deactivate then _M.tempeffect_def[eff].deactivate(self, p, _M.tempeffect_def[eff]) end
 	self:check("on_temporary_effect_removed", eff, _M.tempeffect_def[eff], p)
 end
@@ -215,6 +220,14 @@ end
 function _M:effectTemporaryValue(eff, k, v)
 	if not eff.__tmpvals then eff.__tmpvals = {} end
 	eff.__tmpvals[#eff.__tmpvals+1] = {k, self:addTemporaryValue(k, v)}
+end
+
+--- Helper function to add particles and not have to remove them manualy
+function _M:effectParticles(eff, ...)
+	if not eff.__tmpparticles then eff.__tmpparticles = {} end
+	for _, p in ipairs{...} do
+		eff.__tmpparticles[#eff.__tmpparticles+1] = p
+	end
 end
 
 --- Trigger an effect method

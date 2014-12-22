@@ -1121,7 +1121,7 @@ newEntity{ base = "BASE_CLOAK",
 	use_talent = { id = Talents.T_PHASE_DOOR, level = 2, power = 30 },
 }
 
-newEntity{ base = "BASE_CLOTH_ARMOR",
+newEntity{ base = "BASE_CLOTH_ARMOR", define_as = "CONCLAVE_ROBE",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Vestments of the Conclave", color = colors.DARK_GREY, image = "object/artifact/robe_vestments_of_the_conclave.png",

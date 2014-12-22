@@ -25,7 +25,7 @@ Nowadays, your people are beginning to shake their old image, but that's not why
 Your kind were made for combat and hard work, and Maj'Eyal needs a lot of both.  
 
 You have come to the north of the Shaloren capital city of Elvala, in search of the Scintillating Caves. It is infested with vermin and seemingly alive crystals.
-To the west lies another dangerous place: a camp of Rhaloren. They are renegade Shaloren who do not wish to restrict their magic usage.
+To the west lies another dangerous place: a camp of Rhaloren. They are renegade Shaloren who do not wish to restrict their magic usage. Stopping them would be good for the world in general, but especially for your Shaloren benefactors.
 
 After days of travel, you have found the caves and entered it. What will you find there...?
 ]]

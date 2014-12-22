@@ -19,7 +19,7 @@
 
 local def = {
 [[#!!!!!!!!!!#]],
-[[!..........!]],
+[[!..2....2..!]],
 [[!.#.#..#.#.!]],
 [[!.#1#..#1#.!]],
 [[!.###..###.!]],
@@ -27,7 +27,7 @@ local def = {
 [[!.###..###.!]],
 [[!.#1#..#1#.!]],
 [[!.#.#..#.#.!]],
-[[!..........!]],
+[[!..2....2..!]],
 [[#!!!!!!!!!!#]],
 }
 
@@ -40,6 +40,11 @@ return function(gen, id)
 		for _, spot in ipairs(room.spots[1]) do
 			local e = gen.zone:makeEntity(gen.level, "actor", {type="giant", subtype="ogre"}, nil, true)
 			if e then gen:roomMapAddEntity(x + spot.x, y + spot.y, "actor", e) end
+		end
+		for _, spot in ipairs(room.spots[2]) do
+			game.level.map(x + spot.x, y + spot.y, gen.map.TRIGGER, engine.Entity.new{ on_move = function(self, x, y, who) if who and game.zone.awaken_ogres then
+				game.zone.awaken_ogres(who, x, y, 4)
+			end end})
 		end
 	end}
 end

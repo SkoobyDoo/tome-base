@@ -45,6 +45,8 @@ ACTOR = 100
 PROJECTILE = 500
 --- The place of an object entity in a map grid
 OBJECT = 1000
+--- The place of a trigger entity in a map grid
+TRIGGER = 10000
 
 --- The order of checks for checkAllEntities
 searchOrder = { ACTOR, TERRAIN, PROJECTILE, TRAP, OBJECT }

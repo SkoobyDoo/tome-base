@@ -28,3 +28,27 @@ newEntity{ base = "BASE_LORE",
 	encumberance = 0,
 }
 end
+
+newEntity{ base = "BASE_GREATMAUL",
+	power_source = {arcane=true},
+	name = "Astelrid's Clubstaff", color = colors.GREEN,
+	unided_name = "huge maul", unique = true,
+	desc = [[Like its former owner, this was once an instrument of altruistic healing, before fury and fear caused its twisting into a sadistic weapon.  Surges of restorative magic can be faintly felt under the layers of plaster and sharp surgical equipment.]],
+	level_range = {10, 20},
+	rarity = 300,
+	require = { stat = { str=20 }, },
+	cost = 650,
+	material_level = 2,
+	combat = {
+		dam = 32,
+		apr = 4,
+		physcrit = 4,
+		dammod = {str=1, mag=0.4},
+	},
+	wielder = {
+		inc_damage= {[DamageType.NATURE] = 25},
+		inc_stats = {[Stats.STAT_MAG] = 4},
+		combat_spellpower = 15,
+		healing_factor = 0.25,
+	},
+}

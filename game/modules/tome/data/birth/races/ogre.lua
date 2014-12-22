@@ -24,7 +24,7 @@ newBirthDescriptor{
 	type = "race",
 	name = "Giant",
 	locked = function() return profile.mod.allow_build.race_giant end,
-	locked_desc = "WRITE ME",
+	locked_desc = "Powerful beings that tower over all, but the bigger they are, the harder they fall...",
 	desc = {
 		[[#{italic}#"Giant"#{normal}# is a catch-all term for humanoids which are typically over nine feet in height.  Their origins, cultures, and relationships to other races differ wildly, but they tend to live as refugees and outcasts, shunned by smaller sentient races who usually see them as a threat.]],
 	},
