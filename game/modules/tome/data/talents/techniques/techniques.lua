@@ -296,15 +296,6 @@ cancelStances = function(self)
 	self.cancelling_stances = nil
 end
 
-damDesc = function(self, type, dam)
-	-- Increases damage
-	if self.inc_damage then
-		local inc = (self.inc_damage.all or 0) + (self.inc_damage[type] or 0)
-		dam = dam + (dam * inc / 100)
-	end
-	return dam
-end
-
 -- Archery range talents
 archery_range = function(self, t)
 	local weapon, ammo, offweapon = self:hasArcheryWeapon()
