@@ -29,6 +29,9 @@ newTalent{
 	hate = 2,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
 	requires_target = true,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	-- note that EFF_CURSED_WOUND in mod.data.timed_effects.physical.lua has a cap of -75% healing per application
 	getDamageMultiplier = function(self, t, hate)
 		return 1 + self:combatTalentIntervalDamage(t, "str", 0.3, 1.5, 0.4) * getHateMultiplier(self, 0.3, 1, false, hate)
@@ -41,10 +44,9 @@ newTalent{
 		return 15
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local damageMultiplier = t.getDamageMultiplier(self, t)
 		local hit = self:attackTarget(target, nil, damageMultiplier, true)
@@ -147,11 +149,11 @@ newTalent{
 		--return self:combatTalentIntervalDamage(t, "str", 0.8, 1.7, 0.4) * getHateMultiplier(self, 0.5, 1, false, hate)
 	end,
 	getMaxAttackCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), nolock=true} end,
 	action = function(self, t)
-		local targeting = {type="bolt", range=self:getTalentRange(t), nolock=true}
+		local targeting = self:getTalentTarget(t)
 		local targetX, targetY, actualTarget = self:getTarget(targeting)
-		if not targetX or not targetY then return nil end
-		if core.fov.distance(self.x, self.y, targetX, targetY) > self:getTalentRange(t) then return nil end
+		if not self:canProject(targeting, targetX, targetY) then return nil end
 
 		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", target) end
 		local lineFunction = core.fov.line(self.x, self.y, targetX, targetY, block_actor)

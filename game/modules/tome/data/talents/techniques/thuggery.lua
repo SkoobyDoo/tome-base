@@ -28,6 +28,8 @@ newTalent{
 	tactical = { DISABLE = { confusion = 2 }, ATTACK = { PHYSICAL = 1 } },
 	require = techs_req1,
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	getDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 3.2, 5.3)) end,
 	getConfusion = function(self, t) return self:combatStatLimit("dex", 50, 25, 45) end, --Limit < 50%
 	getDamage = function(self, t)
@@ -46,10 +48,9 @@ newTalent{
 		return self:rescaleDamage(totstat / 1.5 * power * talented_mod)
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local dam = t.getDamage(self, t)
 
@@ -147,4 +148,3 @@ newTalent{
 		format(t.getCrit(self, t), t.getPen(self, t), t.getDrain(self, t))
 	end,
 }
-

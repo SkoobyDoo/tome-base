@@ -60,13 +60,15 @@ newTalent{
 	cooldown = 12,
 	stamina = 24,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	tactical = { ATTACK = { weapon = 1, cut = 1 }, DISABLE = 2 },
 	healloss = function(self,t) return self:combatTalentLimit(t, 100, 17, 50) end, -- Limit to < 100%
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
 		if hit then
@@ -145,4 +147,3 @@ newTalent{
 		format(resistC, resistC*0.7, t.getCapApproach(self, t)*100, drain)
 	end,
 }
-

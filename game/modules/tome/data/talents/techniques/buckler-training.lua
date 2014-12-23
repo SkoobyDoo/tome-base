@@ -66,6 +66,9 @@ newTalent {
 	stamina = 15,
 	requires_target = true,
 	tactical = { ATTACK = 2, ESCAPE = { knockback = 1 }, DISABLE = { knockback = 1 } },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	is_special_melee = true,
 	on_pre_use = function(self, t, silent)
 		if not self:hasShield() or not self:hasArcheryWeapon() then
 			if not silent then game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.") end
@@ -73,7 +76,6 @@ newTalent {
 		end
 		return true
 	end,
-
 	getDist = function(self, t)
 		if self:getTalentLevelRaw(t) >= 3 then
 			return 3
@@ -95,10 +97,9 @@ newTalent {
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local autocrit = false
 		if self:knowTalent(self.T_SKIRMISHER_BUCKLER_MASTERY) then

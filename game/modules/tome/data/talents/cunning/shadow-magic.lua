@@ -69,7 +69,7 @@ newTalent{
 	require = cuns_req3,
 	range = 10,
 	tactical = { BUFF = 2 },
-	getManaRegen = function(self, t) return self:combatTalentScale(t, 1.5/5, 1, 0.75) / (1 - t.getAtkSpeed(self, t)/100) end, -- scale with atk speed bonus to allow enough mana for one shadow combat proc per turn at talent level 5 
+	getManaRegen = function(self, t) return self:combatTalentScale(t, 1.5/5, 1, 0.75) / (1 - t.getAtkSpeed(self, t)/100) end, -- scale with atk speed bonus to allow enough mana for one shadow combat proc per turn at talent level 5
 	getAtkSpeed = function(self, t) return self:combatTalentScale(t, 2.2, 11, 0.75) end,
 	activate = function(self, t)
 		local speed = t.getAtkSpeed(self, t)/100
@@ -105,17 +105,16 @@ newTalent{
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
 	direct_hit = true,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.min(5, 2 + math.ceil(self:getTalentLevel(t) / 2)) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.5) end,
 	action = function(self, t)
 		if self:attr("never_move") then game.logPlayer(self, "You cannot do that currently.") return end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > tg.range then return nil end
-		local target = game.level.map(x, y, Map.ACTOR)
-		if not target then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		if game.level.map.attrs(x, y, "no_teleport") then
 			if not game.level.map.seens(x, y) or not self:hasLOS(x, y) then return nil end
 		else
@@ -144,4 +143,3 @@ newTalent{
 		format(duration, t.getDamage(self, t) * 100)
 	end,
 }
-

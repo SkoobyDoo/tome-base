@@ -72,7 +72,7 @@ newTalent{
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
 		local split = cb.value * t.getSplit(self, t)
-	
+
 		-- If we already split this turn pass damage to our clone
 		if self.turn_procs.double_edge and self.turn_procs.double_edge ~= self and game.level:hasEntity(self.turn_procs.double_edge) then
 			split = split/2
@@ -81,24 +81,24 @@ newTalent{
 			cb.value = cb.value - split
 			self.turn_procs.double_edge:takeHit(split, src)
 		end
-			
+
 		-- Do our split
 		if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.double_edge then
 			-- Look for space first
 			local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
 			if tx and ty then
 				game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
-								
+
 				-- clone our caster
 				local m = makeParadoxClone(self, self, t.getDuration(self, t))
-				
+
 				-- add our clone
 				game.zone:addEntity(game.level, m, "actor", tx, ty)
 				m.ai_state = { talent_in=2, ally_compassion=10 }
-				m.remove_from_party_on_death = true	
+				m.remove_from_party_on_death = true
 				m:attr("archery_pass_friendly", 1)
 				m.generic_damage_penalty = 50
-				
+
 				if game.party:hasMember(self) then
 					game.party:addMember(m, {
 						control="no",
@@ -115,12 +115,12 @@ newTalent{
 				m:setTarget(src or nil)
 				game:delayedLogMessage(self, nil, "guardian_damage", "#STEEL_BLUE##Source# shares damage with %s guardian!", string.his_her(self))
 				game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
-												
+
 			else
 				game.logPlayer(self, "Not enough space to summon warden!")
 			end
 		end
-		
+
 		return cb.value
 	end,
 	info = function(self, t)
@@ -142,7 +142,11 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
 	requires_target = true,
-	range = archery_range,
+	range = function(self, t)
+		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
+		return 1
+	end,
+	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
@@ -152,7 +156,7 @@ newTalent{
 	end,
 	action = function(self, t)
 		local mainhand, offhand = self:hasDualWeapon()
-		
+
 		if self:hasArcheryWeapon("bow") then
 			-- Ranged attack
 			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
@@ -162,8 +166,7 @@ newTalent{
 			-- Melee attack
 			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 			local x, y, target = self:getTarget(tg)
-			if not x or not y or not target then return nil end
-			if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+			if not target or not self:canProject(tg, x, y) then return nil end
 			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 			if hitted then

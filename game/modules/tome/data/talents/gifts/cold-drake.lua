@@ -32,18 +32,18 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	tactical = { ATTACK = { COLD = 2 } },
-	requires_target = true,
-	on_learn = function(self, t) 
+	is_melee = true,
+	on_learn = function(self, t)
 		self.combat_physresist = self.combat_physresist + 4
 		self.combat_spellresist = self.combat_spellresist + 4
 		self.combat_mentalresist = self.combat_mentalresist + 4
-		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 1 
+		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 1
 	end,
-	on_unlearn = function(self, t) 
+	on_unlearn = function(self, t)
 		self.combat_physresist = self.combat_physresist - 4
-		self.combat_spellresist = self.combat_spellresist - 4	
+		self.combat_spellresist = self.combat_spellresist - 4
 		self.combat_mentalresist = self.combat_mentalresist - 4
-		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) - 1 
+		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) - 1
 	end,
 	damagemult = function(self, t) return self:combatTalentScale(t, 1.6, 2.3) end,
 	target = function(self, t)
@@ -117,6 +117,7 @@ newTalent{
 	range = 10,
 	tactical = { DISABLE = 2 },
 	requires_target = true,
+	target = function(self, t) return {type="wall", range=self:getTalentRange(t), halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block} end,
 	on_learn = function(self, t) self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 1 end,
 	on_unlearn = function(self, t) self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) - 1 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
@@ -128,7 +129,7 @@ newTalent{
 		local block = function(_, lx, ly)
 			return game.level.map:checkAllEntities(lx, ly, "block_move")
 		end
-		local tg = {type="wall", range=self:getTalentRange(t), halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local ice_damage = self:mindCrit(t.getIceDamage(self, t))
@@ -221,7 +222,7 @@ newTalent{
 		self:project(tg, x, y, DamageType.ICE_SLOW, self:mindCrit(self:combatTalentStatDamage(t, "str", 30, 500)))
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "breath_cold", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
 		game:playSoundNear(self, "talents/breath")
-		
+
 		if core.shader.active(4) then
 			local bx, by = self:attachementSpot("back", true)
 			self:addParticles(Particles.new("shader_wings", 1, {img="icewings", x=bx, y=by, life=18, fade=-0.006, deploy_speed=14}))
@@ -234,4 +235,3 @@ newTalent{
 		Each point in cold drake talents also increases your cold resistance by 1%%.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.COLD, self:combatTalentStatDamage(t, "str", 30, 500)))
 	end,
 }
-

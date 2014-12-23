@@ -1362,7 +1362,7 @@ function _M:waitTurn()
 			self:reloadQS()
 		end
 	end
-	
+
 	-- Tune paradox up or down
 	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox()) then
 		local power = 0
@@ -1459,38 +1459,38 @@ function _M:teleportRandom(x, y, dist, min_dist)
 	if game.level.data.no_teleport_south and y + dist > self.y then
 		y = self.y - dist
 	end
-	
+
 	-- Dimensional Anchor, prevent teleports and deal damage
 	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
 		local p = self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR)
 		DamageType:get(DamageType.WARP).projector(p.src or self, self.x, self.y, DamageType.WARP, p.damage)
 		return
 	end
-	
+
 	local ox, oy = self.x, self.y
 	local ret = engine.Actor.teleportRandom(self, x, y, dist, min_dist)
 	if self.x ~= ox or self.y ~= oy then
 			-- Phase Pulse
 		if self:isTalentActive(self.T_PHASE_PULSE) then
 			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy)
-		end	
-	
+		end
+
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
 		self:dropNoTeleportObjects()
 		if self:attr("defense_on_teleport") or self:attr("resist_all_on_teleport") or self:attr("effect_reduction_on_teleport") then
 			self:setEffect(self.EFF_OUT_OF_PHASE, 5, {defense=self:attr("defense_on_teleport") or 0, resists=self:attr("resist_all_on_teleport") or 0, effect_reduction=self:attr("effect_reduction_on_teleport") or 0})
 		end
-		
+
 		-- Dimensional shift, chance to clear effects on teleport
 		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
 			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
 		end
-		
+
 		-- Teleportation does not clear Time Dilation
 		if self:isTalentActive(self.T_TIME_DILATION) then
 			self:callTalent(self.T_TIME_DILATION, "updateOnTeleport", ox, oy)
-		end			
-		
+		end
+
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
 	else
 		-- Phase Blast failure
@@ -2184,7 +2184,7 @@ function _M:onTakeHit(value, src, death_note)
 			self:removeEffect(self.EFF_PSI_DAMAGE_SHIELD)
 		end
 	end
-	
+
 	if value > 0 and self:attr("shadow_empathy") then
 		-- Absorb damage into a random shadow
 		local shadow = self:callTalent(self.T_SHADOW_EMPATHY, "getRandomShadow")
@@ -2252,7 +2252,7 @@ function _M:onTakeHit(value, src, death_note)
 			value = 0
 		end
 	end
-	
+
 	-- Paradox Shield
 	if value > 0 and self:isTalentActive(self.T_PRESERVE_PATTERN) then
 		value = self:callTalent(self.T_PRESERVE_PATTERN, "doPerservePattern", src, value)
@@ -2918,7 +2918,7 @@ function _M:die(src, death_note)
 	if src and src.attr and src:attr("psi_per_kill") then
 		src:incPsi(src:attr("psi_per_kill"))
 	end
-	
+
 	-- Increases blood frenzy
 	if src and src.knowTalent and src:knowTalent(src.T_BLOOD_FRENZY) and src:isTalentActive(src.T_BLOOD_FRENZY) then
 		src.blood_frenzy = src.blood_frenzy + src:callTalent(src.T_BLOOD_FRENZY,"bonuspower")
@@ -2937,7 +2937,7 @@ function _M:die(src, death_note)
 			rsrc.changed = true
 		end
 	end
-	
+
 	-- handle hate changes on kill
 	if src and src.knowTalent and src:knowTalent(src.T_HATE_POOL) then
 		local t = src:getTalentFromId(src.T_HATE_POOL)
@@ -4345,7 +4345,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 					self:forceUseTalent(rng.table(ts), {ignore_energy=true})
 				end
 			end
-			
+
 			-- Drop some game messages; these happen so Paradox gets reduced even if an anomaly isn't found
 			if not silent then
 				if forced then
@@ -4382,12 +4382,12 @@ function _M:incParadox(paradox)
 	if self:getModifiedParadox() > 600 and self:getModifiedParadox() + paradox <= 600 then
 		game.logPlayer(self, "#LIGHT_BLUE#Spacetime has calmed...  somewhat.")
 	end
-	
+
 	-- Cosmic Cycle
 	if self:isTalentActive(self.T_COSMIC_CYCLE) then
 		self:callTalent(self.T_COSMIC_CYCLE, "doCosmicCycle")
 	end
-	
+
 	return previous_incParadox(self, paradox)
 end
 

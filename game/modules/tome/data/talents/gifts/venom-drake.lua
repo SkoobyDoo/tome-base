@@ -28,12 +28,12 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 3, 6.9, 5.5)) end, -- Limit >=3
 	tactical = { ATTACK = { ACID = 2 } },
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5.5, 7.5)) end,
-	on_learn = function(self, t) 
-		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 1 
+	on_learn = function(self, t)
+		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 1
 		self.combat_mindpower = self.combat_mindpower + 4
 	end,
-	on_unlearn = function(self, t) 
-		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) - 1 
+	on_unlearn = function(self, t)
+		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) - 1
 		self.combat_mindpower = self.combat_mindpower - 4
 	end,
 	direct_hit = function(self, t) if self:getTalentLevel(t) >= 5 then return true else return false end end,
@@ -104,7 +104,7 @@ newTalent{
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
 			self.x, self.y, duration,
-			DamageType.ACID_CORRODE, {dam=damage, dur=cordur, atk=atk, armor=armor, defense=defense}, 
+			DamageType.ACID_CORRODE, {dam=damage, dur=cordur, atk=atk, armor=armor, defense=defense},
 			radius,
 			5, nil,
 			{type="acidstorm", only_one=true},
@@ -140,15 +140,16 @@ newTalent{
 	equilibrium = 10,
 	cooldown = 12,
 	range = 1,
+	is_melee = true,
 	tactical = { ATTACK = { ACID = 2 } },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_learn = function(self, t) self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 1 end,
 	on_unlearn = function(self, t) self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) - 1 end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		self:attackTarget(target, (self:getTalentLevel(t) >= 2) and DamageType.ACID_BLIND or DamageType.ACID, self:combatTalentWeaponDamage(t, 0.1, 0.60), true)
 		self:attackTarget(target, (self:getTalentLevel(t) >= 4) and DamageType.ACID_BLIND or DamageType.ACID, self:combatTalentWeaponDamage(t, 0.1, 0.60), true)
@@ -182,8 +183,8 @@ newTalent{
 	target = function(self, t)
 		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
-	getDisarm = function(self, t) 
-		return 20+self:combatTalentMindDamage(t, 10, 30) 
+	getDisarm = function(self, t)
+		return 20+self:combatTalentMindDamage(t, 10, 30)
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -192,7 +193,7 @@ newTalent{
 		self:project(tg, x, y, DamageType.ACID_DISARM, {dam=self:mindCrit(self:combatTalentStatDamage(t, "str", 30, 520)), chance=t.getDisarm(self, t),})
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "breath_acid", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
 		game:playSoundNear(self, "talents/breath")
-		
+
 		if core.shader.active(4) then
 			local bx, by = self:attachementSpot("back", true)
 			self:addParticles(Particles.new("shader_wings", 1, {img="acidwings", x=bx, y=by, life=18, fade=-0.006, deploy_speed=14}))
@@ -201,7 +202,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local disarm = t.getDisarm(self, t)
-		return ([[You breathe acid in a frontal cone of radius %d. Any target caught in the area will take %0.2f acid damage. 
+		return ([[You breathe acid in a frontal cone of radius %d. Any target caught in the area will take %0.2f acid damage.
 		Enemies caught in the acid have a %d%% chance of their weapons becoming useless for three turns.
 		The damage will increase with your Strength, and the critical chance is based on your Mental crit rate. The Disarm chance is based on your Mindpower.
 		Each point in acid drake talents also increases your acid resistance by 1%%.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.ACID, self:combatTalentStatDamage(t, "str", 30, 520)), disarm)

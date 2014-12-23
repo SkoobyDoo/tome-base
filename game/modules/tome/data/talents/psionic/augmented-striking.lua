@@ -29,7 +29,9 @@ newTalent{
 	psi = 10,
 	range = 1,
 	requires_target = true,
+	is_melee = true,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDam = function(self, t) return self:combatTalentMindDamage(t, 20, 200) end,
 	getDur = function(self, t) return self:combatTalentScale(t, 2.0, 6.0) end,
 	action = function(self, t)
@@ -39,10 +41,9 @@ newTalent{
 			game.logPlayer(self, "You cannot do that without a weapon in your hands.")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local dam = self:mindCrit(t.getDam(self, t))
 		local dur = t.getDur(self, t)
 
@@ -57,7 +58,7 @@ newTalent{
 				DamageType:get(DamageType.PHYSICAL).projector(self, x, y, DamageType.PHYSICAL, dam)
 			end
 		end
-		
+
 		if self:hasEffect(self.EFF_TRANSCENDENT_TELEKINESIS) then
 			local dir = util.getDir(x, y, self.x, self.y)
 			if dir == 5 then return nil end
@@ -67,7 +68,7 @@ newTalent{
 
 			local hit
 			if lt then
-				hit = self:attackTarget(lt, DamageType.PHYSICAL, self:combatTalentWeaponDamage(t, 0.5, 3.0), true)		
+				hit = self:attackTarget(lt, DamageType.PHYSICAL, self:combatTalentWeaponDamage(t, 0.5, 3.0), true)
 				if hit then
 					if lt:canBe("pin") then
 						lt:setEffect(lt.EFF_PINNED, dur, {apply_power=self:combatMindpower()})
@@ -117,6 +118,7 @@ newTalent{
 	range = 1,
 	requires_target = true,
 	tactical = { ATTACK = { COLD = 2 } },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDam = function(self, t) return self:combatTalentMindDamage(t, 20, 200) end,
 	getDur = function(self, t) return self:combatTalentScale(t, 2.0, 6.0) end,
 	action = function(self, t)
@@ -126,10 +128,9 @@ newTalent{
 			game.logPlayer(self, "You cannot do that without a weapon in your hands.")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local dam = self:mindCrit(t.getDam(self, t))
 		local dur = t.getDur(self, t)
 
@@ -213,6 +214,7 @@ newTalent{
 	psi = 10,
 	range = 1,
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = { LIGHTNING = 2 } },
 	getDam = function(self, t) return self:combatTalentMindDamage(t, 20, 200) end,
 	getDur = function(self, t) return self:combatTalentScale(t, 2.0, 6.0) end,
@@ -223,10 +225,9 @@ newTalent{
 			game.logPlayer(self, "You cannot do that without a weapon in your hands.")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local dam = self:mindCrit(t.getDam(self, t))
 		local dur = t.getDur(self, t)
 
@@ -334,4 +335,3 @@ newTalent{
 		return ([[Wrap a psionic energy field around your weapons, increasing their armour penentration by %d and allowing you to siphon excess energy from each weapon hit you land, gaining %0.1f psi per hit.]]):format(t.getPsiRecover(self, t)*3, t.getPsiRecover(self, t))
 	end,
 }
-

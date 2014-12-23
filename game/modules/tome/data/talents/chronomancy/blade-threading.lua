@@ -29,34 +29,39 @@ newTalent{
 	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
 	requires_target = true,
 	speed = "weapon",
+	range = 1,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getWarp = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
-		
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap then doWardenWeaponSwap(self, t, nil, "bow") end return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then if swap then doWardenWeaponSwap(self, t, nil, "bow") end return nil end
-		
+		if not target or not self:canProject(tg, x, y) then
+			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			return nil
+		end
+
 		-- Hit?
 		local hitted = self:attackTarget(target, nil, dam, true)
-		
+
 		-- Project our warp
 		if hitted then
 			self:project({type="hit"}, target.x, target.y, DamageType.WARP, {dam=self:spellCrit(t.getWarp(self, t)), chance=100, dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
 			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
 		end
-		
+
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local duration = t.getDuration(self, t)
 		local warp = t.getWarp(self, t)
-		return ([[Attack the target with your melee weapons for %d%%.  
+		return ([[Attack the target with your melee weapons for %d%%.
 		If the attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical damage, and may stun, blind, pin, or confuse them for %d turns.
 		The bonus damage improves with your Spellpower.]])
 		:format(damage, damDesc(self, DamageType.TEMPORAL, warp/2), damDesc(self, DamageType.PHYSICAL, warp/2), duration)
@@ -96,51 +101,52 @@ newTalent{
 	tactical = { ATTACKAREA = {weapon = 2}, DISABLE = 3 },
 	requires_target = true,
 	speed = "weapon",
+	range = 1,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 50, 150, getParadoxSpellpower(self, t)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap then doWardenWeaponSwap(self, t, nil, "bow") end return nil end
-		local braid_targets = {}
-
-		-- do the braid
-		if core.fov.distance(self.x, self.y, x, y) == 1 then
-			-- get left and right side
-			local dir = util.getDir(x, y, self.x, self.y)
-			local lx, ly = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).left)
-			local rx, ry = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).right)
-			local lt, rt = game.level.map(lx, ly, Map.ACTOR), game.level.map(rx, ry, Map.ACTOR)
-			
-			-- target hit
-			local hit1 = self:attackTarget(target, nil, damage, true)
-			if hit1 then braid_targets[#braid_targets+1] = target end
-			
-			--left hit
-			if lt and self:reactionToward(lt) < 0 then
-				local hit2 = self:attackTarget(lt, nil, damage, true)
-				if hit2 then braid_targets[#braid_targets+1] = lt end
-			end
-			--right hit
-			if rt and self:reactionToward(rt) < 0 then
-				local hit3 = self:attackTarget(rt, nil, damage, true)
-				if hit3 then braid_targets[#braid_targets+1] = rt end
-			end
-			
-			-- if we hit more than one, braid them
-			if #braid_targets > 1 then
-				for i = 1, #braid_targets do
-					local target = braid_targets[i]
-					target:setEffect(target.EFF_BRAIDED, t.getDuration(self, t), {power=t.getPower(self, t), src=self, targets=braid_targets})
-				end
-			end
-
-		else
+		if not target or not self:canProject(tg, x, y) then
 			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
+		end
+
+		local braid_targets = {}
+
+		-- get left and right side
+		local dir = util.getDir(x, y, self.x, self.y)
+		local lx, ly = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).left)
+		local rx, ry = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).right)
+		local lt, rt = game.level.map(lx, ly, Map.ACTOR), game.level.map(rx, ry, Map.ACTOR)
+
+		-- target hit
+		local hit1 = self:attackTarget(target, nil, damage, true)
+		if hit1 then braid_targets[#braid_targets+1] = target end
+
+		--left hit
+		if lt and self:reactionToward(lt) < 0 then
+			local hit2 = self:attackTarget(lt, nil, damage, true)
+			if hit2 then braid_targets[#braid_targets+1] = lt end
+		end
+		--right hit
+		if rt and self:reactionToward(rt) < 0 then
+			local hit3 = self:attackTarget(rt, nil, damage, true)
+			if hit3 then braid_targets[#braid_targets+1] = rt end
+		end
+
+		-- if we hit more than one, braid them
+		if #braid_targets > 1 then
+			for i = 1, #braid_targets do
+				local target = braid_targets[i]
+				target:setEffect(target.EFF_BRAIDED, t.getDuration(self, t), {power=t.getPower(self, t), src=self, targets=braid_targets})
+			end
 		end
 
 		return true
@@ -167,17 +173,23 @@ newTalent{
 	requires_target = true,
 	is_teleport = true,
 	speed = "weapon",
+	range = 1,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.6, 1.2) end,
 	getTeleports = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap then doWardenWeaponSwap(self, t, nil, "bow") end return nil end
-			
+		if not target or not self:canProject(tg, x, y) then
+			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			return nil
+		end
+
 		-- Hit the target
-		if core.fov.distance(self.x, self.y, target.x, target.y) > 1 then if swap then doWardenWeaponSwap(self, t, nil, "bow") end return nil end
 		local hitted = self:attackTarget(target, nil, dam, true)
 
 		if hitted then
@@ -192,7 +204,7 @@ newTalent{
 					print("Temporal Assault Target %s", a.name)
 				end
 			end end
-			
+
 			-- Randomly take targets
 			local teleports = t.getTeleports(self, t)
 			local attempts = 10
@@ -216,7 +228,7 @@ newTalent{
 				end
 			end
 		end
-		
+
 		game:playSoundNear(self, "talents/teleport")
 
 		return true

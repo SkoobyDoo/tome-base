@@ -26,8 +26,10 @@ newTalent{
 	equilibrium = 10,
 	cooldown = 12,
 	range = 1,
+	is_melee = true,
 	tactical = { ATTACK = { PHYSICAL = 1, COLD = 1, FIRE = 1, LIGHTNING = 1, ACID = 1 } },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.6, 2.3) end,
 	getBurstDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 230) end,
 	getPassiveSpeed = function(self, t) return (self:combatTalentScale(t, 2, 10, 0.5)/100) end,
@@ -38,10 +40,9 @@ newTalent{
 	end,
 	action = function(self, t)
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local elem = rng.table{"phys", "cold", "fire", "lightning", "acid",}
 
@@ -104,12 +105,12 @@ newTalent{
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentStatDamage(t, "str", 60, 750) end,
 	getEffect = function(self, t) return math.ceil(self:combatTalentLimit(t, 50, 10, 20)) end,
-	on_learn = function(self, t) 
-		self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) + 3 
+	on_learn = function(self, t)
+		self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) + 3
 		self.inc_damage[DamageType.NATURE] = (self.inc_damage[DamageType.NATURE] or 0) + 4
 		end,
-	on_unlearn = function(self, t) 
-		self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) - 3 
+	on_unlearn = function(self, t)
+		self.resists[DamageType.NATURE] = (self.resists[DamageType.NATURE] or 0) - 3
 		self.inc_damage[DamageType.NATURE] = (self.inc_damage[DamageType.NATURE] or 0) - 4
 		end,
 	target = function(self, t)
@@ -129,7 +130,7 @@ newTalent{
 
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "breath_slime", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
 		game:playSoundNear(self, "talents/breath")
-		
+
 		if core.shader.active(4) then
 			local bx, by = self:attachementSpot("back", true)
 			self:addParticles(Particles.new("shader_wings", 1, {img="poisonwings", x=bx, y=by, life=18, fade=-0.006, deploy_speed=14}))
@@ -193,11 +194,11 @@ newTalent{
 		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 0.5
 
 		local rpchange = t.resistPen(self:getTalentLevelRaw(t)) - t.resistPen(self:getTalentLevelRaw(t)-1)
-		self.resists_pen[DamageType.PHYSICAL] = (self.resists_pen[DamageType.PHYSICAL] or 0) + rpchange 
-		self.resists_pen[DamageType.COLD] = (self.resists_pen[DamageType.COLD] or 0) + rpchange 
+		self.resists_pen[DamageType.PHYSICAL] = (self.resists_pen[DamageType.PHYSICAL] or 0) + rpchange
+		self.resists_pen[DamageType.COLD] = (self.resists_pen[DamageType.COLD] or 0) + rpchange
 		self.resists_pen[DamageType.FIRE] = (self.resists_pen[DamageType.FIRE] or 0) + rpchange
 		self.resists_pen[DamageType.LIGHTNING] = (self.resists_pen[DamageType.LIGHTNING] or 0) + rpchange
-		self.resists_pen[DamageType.ACID] = (self.resists_pen[DamageType.ACID] or 0) + rpchange 
+		self.resists_pen[DamageType.ACID] = (self.resists_pen[DamageType.ACID] or 0) + rpchange
 
 		self.inc_damage[DamageType.PHYSICAL] = (self.inc_damage[DamageType.PHYSICAL] or 0) + 2
 		self.inc_damage[DamageType.COLD] = (self.inc_damage[DamageType.COLD] or 0) + 2

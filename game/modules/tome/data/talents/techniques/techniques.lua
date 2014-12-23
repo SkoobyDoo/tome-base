@@ -283,7 +283,7 @@ getUnarmedTrainingBonus = function(self)
 	local damage = t.getPercentInc(self, t) or 0
 	return damage + 1
 end
-	
+
 cancelStances = function(self)
 	if self.cancelling_stances then return end
 	local stances = {self.T_STRIKING_STANCE, self.T_GRAPPLING_STANCE}
@@ -294,13 +294,6 @@ cancelStances = function(self)
 		end
 	end
 	self.cancelling_stances = nil
-end
-
--- Archery range talents
-archery_range = function(self, t)
-	local weapon, ammo, offweapon = self:hasArcheryWeapon()
-	if not weapon or not weapon.combat then return 1 end
-	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
 end
 
 -- Use the appropriate amount of stamina. Return false if we don't have enough.

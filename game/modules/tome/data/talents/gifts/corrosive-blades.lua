@@ -72,7 +72,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You gain %d%% Acid resistance.
-		When you deal Nature damage to a creature, you gain a %0.1f%% bonus to Acid damage for %d turns. 
+		When you deal Nature damage to a creature, you gain a %0.1f%% bonus to Acid damage for %d turns.
 		This damage bonus will improve up to 4 times (no more than once each turn) with later Nature damage you do, up to a maximum of %0.1f%%.
 		The resistance and damage increase improve with your Mindpower.]]):
 		format(t.getResist(self, t), t.getAcidDamage(self, t, 1), t.getDuration(self, t), t.getAcidDamage(self, t, 5))
@@ -123,7 +123,7 @@ newTalent{
 	target = function(self, t) return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 290) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 12, 5, 8)) end, -- Limit < 12
-	getNb = function(self, t) local l = self:getTalentLevel(t) 
+	getNb = function(self, t) local l = self:getTalentLevel(t)
 		if l < 3 then return 2
 		elseif l < 5 then return 3
 		else return 4
@@ -136,9 +136,8 @@ newTalent{
 		local _ _, x, y = self:canProject(tg, x, y)
 		if game.level.map(x, y, Map.TRAP) then game.logPlayer(self, "You somehow fail to set the corrosive seed.") return nil end
 
-		local tg = {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t)}
 		local grids = {}
-		self:project(tg, x, y, function(px, py) 
+		self:project(tg, x, y, function(px, py)
 			if not ((px == x and py == y) or game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move") or game.level.map(px, py, Map.TRAP)) then grids[#grids+1] = {x=px, y=py} end
 		end)
 		for i = 1, t.getNb(self, t) do

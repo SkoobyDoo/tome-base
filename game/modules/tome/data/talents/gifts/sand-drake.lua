@@ -29,6 +29,8 @@ newTalent{
 	tactical = { ATTACK = { weapon = 1 }, EQUILIBRIUM = 0.5},
 	requires_target = true,
 	no_npc_use = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	maxSwallow = function(self, t, target) return -- Limit < 50%
 		self:combatLimit(self:getTalentLevel(t)*(self.size_category or 3)/(target.size_category or 3), 50, 13, 1, 25, 5)
 	end,
@@ -40,10 +42,10 @@ newTalent{
 		self:talentTemporaryValue(p, "combat_mindcrit", t.getPassiveCrit(self, t))
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
+
 		self:logCombat(target, "#Source# tries to swallow #Target#!")
 		local hit = self:attackTarget(target, DamageType.NATURE, self:combatTalentWeaponDamage(t, 1.6, 2.5), true)
 		if not hit then return true end
@@ -171,7 +173,7 @@ newTalent{
 		self:project(tg, x, y, DamageType.SAND, {dur=t.getDuration(self, t), dam=self:mindCrit(t.getDamage(self, t))})
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "breath_earth", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
 		game:playSoundNear(self, "talents/breath")
-		
+
 		if core.shader.active(4) then
 			local bx, by = self:attachementSpot("back", true)
 			self:addParticles(Particles.new("shader_wings", 1, {img="sandwings", x=bx, y=by, life=18, fade=-0.006, deploy_speed=14}))
@@ -186,4 +188,3 @@ newTalent{
 		Each point in sand drake talents also increases your physical resistance by 0.5%%.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.PHYSICAL, damage), duration)
 	end,
 }
-

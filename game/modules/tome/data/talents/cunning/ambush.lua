@@ -30,13 +30,14 @@ newTalent{
 	range = 1,
 	tactical = { DISABLE = {disarm = 2} },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
 	speed = "weapon",
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		if target:canBe("disarm") then
 			target:setEffect(target.EFF_DISARMED, t.getDuration(self, t), {apply_power=self:combatAttack()})

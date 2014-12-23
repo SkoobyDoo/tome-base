@@ -38,15 +38,17 @@ newTalent{
 	stamina = 24,
 	tactical = { ATTACK = { PHYSICAL = 1 }, DISABLE = { cut = 2 } },
 	message = "In a frenzy @Source@ bites at @Target@!",
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_FRENZY) then return false end return true end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.7) end,
 	getBleedDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.5, 3) end,
 	getHealingPenalty = function(self, t) return self:combatTalentLimit(t, 100, 15, 50) end, -- Limit to <100%
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
 		if hit then
@@ -116,6 +118,8 @@ newTalent{
 	stamina = 8,
 	message = "@Source@ tries to bite @Target@ with razor sharp teeth!",
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1) end,
 	getBleedDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.5) end,
@@ -148,10 +152,9 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hit and target:canBe("cut") then
@@ -363,6 +366,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 5, 50) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	proj_speed = 6,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}} end,
 	spawn_carrion_worm = function (self, target, t)
 		local x, y = util.findFreeGrid(target.x, target.y, 10, true, {[Map.ACTOR]=true})
 		if not x then return nil end
@@ -377,7 +381,7 @@ newTalent{
 		game.zone:addEntity(game.level, m, "actor", x, y)
 	end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 
@@ -573,10 +577,11 @@ newTalent{
 	range = 6,
 	tactical = { DISABLE = 1, CLOSEIN = 3 },
 	requires_target = true,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 5, 70) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTarget(t)
 		local x, y = self:getTarget(tg)
 		local target = game.level.map(x, y, engine.Map.ACTOR)
 		if not x or not y or not target then return nil end

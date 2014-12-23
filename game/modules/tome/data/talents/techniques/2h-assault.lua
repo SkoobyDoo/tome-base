@@ -29,14 +29,15 @@ newTalent{
 	requires_target = true,
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	action = function(self, t)
 		local weapon = self:hasTwoHandedWeapon()
 		if not weapon then return nil end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5))
 
 		-- Try to stun !
@@ -66,16 +67,18 @@ newTalent{
 	stamina = 16,
 	tactical = { ATTACK = { weapon = 2 }, CLOSEIN = 0.5 },
 	requires_target = true,
+	is_melee = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.7, 1.8) end,
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), simple_dir_request=true} end,
 	action = function(self, t)
 		local weapon = self:hasTwoHandedWeapon()
 		if not weapon then return nil end
 
-		local tg = {type="hit", range=self:getTalentRange(t), simple_dir_request=true}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not self:canProject(tg, x, y) then return nil end
 		local dir = util.getDir(x, y, self.x, self.y) or 6
 		local moved = 0.5
 		if self:canMove(x, y) then
@@ -166,14 +169,15 @@ newTalent{
 	tactical = { ATTACK = { weapon = 1 } },
 	getPower = function(self, t) return self:combatTalentScale(t, 1.0, 2.5, "log") end, -- +125% bonus against 50% damaged foe at talent level 5.0
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	is_melee = true,
 	action = function(self, t)
 		local weapon = self:hasTwoHandedWeapon()
 		if not weapon then return nil end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local perc = 1 - (target.life / target.max_life)
 		local power = t.getPower(self, t)

@@ -45,7 +45,11 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { ATTACKAREA = { weapon = 3 } , DISABLE = 3 },
 	requires_target = true,
-	range = archery_range,
+	range = function(self, t)
+		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end,
+		return 0
+	end,
+	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 1.9) end,
 	getCooldown = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
@@ -70,7 +74,7 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local damage = t.getDamage(self, t)
 		local mainhand, offhand = self:hasDualWeapon()
-				
+
 		if self:hasArcheryWeapon("bow") then
 			-- Ranged attack
 			local targets = self:archeryAcquireTargets(tg, {one_shot=true, no_energy = true})
@@ -160,32 +164,32 @@ newTalent{
 		-- Create our melee clone
 		if tx and ty then
 			game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
-			
+
 			-- clone our caster
 			local m = makeParadoxClone(self, self, t.getDuration(self, t))
-			
+
 			-- remove some talents; note most of this is handled by makeParadoxClone, but we want to be more extensive
 			local tids = {}
 			for tid, _ in pairs(m.talents) do
 				local t = m:getTalentFromId(tid)
 				local tt = self:getTalentFromId(tid)
 				if not tt.type[1]:find("^chronomancy/blade") and not tt.type[1]:find("^chronomancy/threaded") and not tt.type[1]:find("^chronomancy/guardian") then
-					tids[#tids+1] = t 
+					tids[#tids+1] = t
 				end
 			end
 			for i, t in ipairs(tids) do
 				if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
 				m.talents[t.id] = nil
 			end
-			
-			m.ai_state = { talent_in=2, ally_compassion=10 }	
+
+			m.ai_state = { talent_in=2, ally_compassion=10 }
 			m.generic_damage_penalty = t.getDamagePenalty(self, t)
 			m.remove_from_party_on_death = true
-			
+
 			game.zone:addEntity(game.level, m, "actor", tx, ty)
-			
+
 			m:setTarget(target or nil)
-			
+
 			if game.party:hasMember(self) then
 				game.party:addMember(m, {
 					control="no",
@@ -194,14 +198,14 @@ newTalent{
 					orders = {target=true},
 				})
 			end
-			
+
 			-- Swap to our blade if needed
 			doWardenWeaponSwap(m, t, 0, "blade")
 			blade_warden = true
 		else
 			game.logPlayer(self, "Not enough space to summon blade warden!")
 		end
-		
+
 		-- First find a position
 		local bow_warden = false
 		local poss = {}
@@ -226,33 +230,33 @@ newTalent{
 			local pos = poss[rng.range(1, #poss)]
 			tx, ty = pos[1], pos[2]
 			game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
-			
+
 			-- clone our caster
 			local m = makeParadoxClone(self, self, t.getDuration(self, t))
-			
+
 			-- remove some talents; note most of this is handled by makeParadoxClone, but we want to be more extensive
 			local tids = {}
 			for tid, _ in pairs(m.talents) do
 				local t = m:getTalentFromId(tid)
 				local tt = self:getTalentFromId(tid)
 				if not tt.type[1]:find("^chronomancy/bow") and not tt.type[1]:find("^chronomancy/threaded") and not tt.type[1]:find("^chronomancy/guardian") and not t.innate then
-					tids[#tids+1] = t 
+					tids[#tids+1] = t
 				end
 			end
 			for i, t in ipairs(tids) do
 				if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
 				m.talents[t.id] = nil
 			end
-			
+
 			m.ai_state = { talent_in=2, ally_compassion=10 }
 			m.generic_damage_penalty = t.getDamagePenalty(self, t)
 			m:attr("archery_pass_friendly", 1)
 			m.remove_from_party_on_death = true
-			
+
 			game.zone:addEntity(game.level, m, "actor", tx, ty)
-			
+
 			m:setTarget(target or nil)
-			
+
 			if game.party:hasMember(self) then
 				game.party:addMember(m, {
 					control="no",
@@ -261,7 +265,7 @@ newTalent{
 					orders = {target=true},
 				})
 			end
-				
+
 			-- Swap to our bow if needed
 			doWardenWeaponSwap(m, t, 0, "bow")
 			bow_warden = true
@@ -270,7 +274,7 @@ newTalent{
 		end
 
 		game:playSoundNear(self, "talents/teleport")
-		
+
 		if not blade_warden and not bow_warden then  -- If neither summons then don't punish the player
 			game.logPlayer(self, "Not enough space to summon!")
 			return
