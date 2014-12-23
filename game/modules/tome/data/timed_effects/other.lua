@@ -2661,10 +2661,14 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "status_effect_immune", 1)
 		self:effectTemporaryValue(eff, "invulnerable", 1)
+		self:effectTemporaryValue(eff, "cant_be_moved", 1)
 		self:effectParticles(eff, self:addParticles3D("volumetric", {kind="dense_cylinder", radius=1.4, shininess=35, growSpeed=0.004, img="coggy_outline_01"}))
 		self.never_act = true
+		eff.old_faction = self.faction
+		self.faction = "neutral"
 	end,
 	deactivate = function(self, eff)
+		self.faction = eff.old_faction
 		self.never_act = nil		
 	end,
 	on_timeout = function(self, eff)

@@ -35,7 +35,7 @@ return {
 		map = {
 			class = "engine.generator.map.Roomer",
 			nb_rooms = 10,
-			rooms = {"!room1", "!room2", },
+			rooms = {"!room1", "!room2", {"!room3", 3}, "small_x", "!room4", "!room5"},
 			lite_room_chance = 100,
 			['.'] = "FLOOR",
 			['#'] = "WALL",
@@ -47,7 +47,8 @@ return {
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",
-			nb_npc = {0, 0},
+			filters = {{special_rarity="special_rarity"}},
+			nb_npc = {12, 15},
 		},
 		object = {
 			class = "engine.generator.object.Random",
@@ -64,6 +65,8 @@ return {
 			generator = { map = {
 				class = "engine.generator.map.Static",
 				map = "!conclave-vault-entrance",
+			}, actor = {
+				nb_npc = {0, 0},
 			}, object = {
 				nb_object = {0, 0},
 			}, trap = {
@@ -82,6 +85,7 @@ return {
 	end,
 
 	awaken_ogres = function(who, x, y, radius, dur)
+		if not who or who.special_rarity then return end
 		core.fov.calc_circle(x, y, game.level.map.w, game.level.map.h, radius or 4, function(_, i, j)
 			if game.level.map:checkAllEntities(i, j, "block_sight") then return true end
 		end, function(_, i, j)

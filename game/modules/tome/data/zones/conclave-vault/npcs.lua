@@ -17,8 +17,11 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- load("/data/general/npcs/skeleton.lua", rarity(0))
-
+local special_rarity = function(e) e.special_rarity, e.rarity = e.rarity, nil end
+load("/data/general/npcs/jelly.lua", special_rarity)
+load("/data/general/npcs/ooze.lua", special_rarity)
+load("/data/general/npcs/mold.lua", special_rarity)
+load("/data/general/npcs/slime.lua", special_rarity)
 
 local Talents = require("engine.interface.ActorTalents")
 
