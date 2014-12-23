@@ -50,7 +50,7 @@
  </tileset>
  <layer name="Terrain" width="16" height="16">
   <data encoding="base64" compression="zlib">
-   eJxjZGBgYBzFgxZbQTGt9AsCMTuSOlKwwCBw/yimDAMADdkF0w==
+   eJxjZGBgYBzFgxZbQTGt9AsiqSEVCwwC949iyjAAcw0GBg==
   </data>
  </layer>
  <objectgroup name="Actor" width="16" height="16">

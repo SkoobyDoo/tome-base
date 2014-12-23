@@ -937,6 +937,11 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	-- Generate the map
 	local generator = self:getGenerator("map", level, level_data.generator.map)
 	local ux, uy, dx, dy, spots = generator:generate(lev, old_lev)
+	if level.force_recreate then
+		level:removed()
+		return self:newLevel(level_data, lev, old_lev, game)
+	end
+
 	spots = spots or {}
 
 	for i = 1, #spots do print("[NEW LEVEL] spot", spots[i].x, spots[i].y, spots[i].type, spots[i].subtype) end

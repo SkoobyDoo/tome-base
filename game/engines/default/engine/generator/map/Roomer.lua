@@ -119,6 +119,26 @@ function _M:generate(lev, old_lev)
 
 	local nb_room = util.getval(self.data.nb_rooms or 10)
 	local rooms = {}
+
+	-- Those we are required to have
+	if #self.required_rooms > 0 then
+		for i, rroom in ipairs(self.required_rooms) do
+			local ok = false
+			if type(rroom) == "table" and rroom.chance_room then
+				if rng.percent(rroom.chance_room) then rroom = rroom[1] ok = true end
+			else ok = true
+			end
+
+			if ok then
+				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
+				if r then rooms[#rooms+1] = r
+				else self.force_recreate = true return end
+				nb_room = nb_room - 1
+			end
+		end
+	end
+
+	-- Normal, random rooms	
 	while nb_room > 0 do
 		local rroom
 		while true do

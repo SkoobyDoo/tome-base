@@ -1784,6 +1784,12 @@ function util.bound(i, min, max)
 	return i
 end
 
+function util.squareApply(x, y, w, h, fct)
+	for i = x, x + w do for j = y, y + h do
+		fct(i, j)
+	end end
+end
+
 function util.minBound(i, min, max)
 	return math.max(math.min(max, i), min)
 end

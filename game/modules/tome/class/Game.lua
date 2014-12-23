@@ -1589,7 +1589,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			game:changeLevel(1, "conclave-vault")
+			game:changeLevel(4, "conclave-vault")
 do return end
 			local npc = game.zone:makeEntity(game.level, "actor", {random_boss = {name_scheme="#rng# the Fearsome", class_filter=function(d) return d.name == "Demonologist" end}}, nil, true)
 			local nx, ny = util.findFreeGrid(game.player.x, game.player.y, 10, true, {[engine.Map.ACTOR]=true})

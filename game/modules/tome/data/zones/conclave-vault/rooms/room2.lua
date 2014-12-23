@@ -17,29 +17,32 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local def = {
-[[#!!!!!!!!!!#]],
-[[!..2....2..!]],
-[[!.#.#..#.#.!]],
-[[!.#1#..#1#.!]],
-[[!.###..###.!]],
-[[!..........!]],
-[[!.###..###.!]],
-[[!.#1#..#1#.!]],
-[[!.#.#..#.#.!]],
-[[!..2....2..!]],
-[[#!!!!!!!!!!#]],
+local def = { numbers = '.',
+[[###!!!!###]],
+[[###....###]],
+[[#1#....#1#]],
+[[#1#....#1#]],
+[[##222222##]],
+[[!.222222.!]],
+[[!.222222.!]],
+[[!.222222.!]],
+[[!.222222.!]],
+[[##222222##]],
+[[#1#....#1#]],
+[[#1#....#1#]],
+[[###....###]],
+[[###!!!!###]],
 }
 
 return function(gen, id)
 	local room = gen:roomParse(def)
-	return { name="conclave-ogre"..room.w.."x"..room.h, w=room.w, h=room.h, generator = function(self, x, y, is_lit)
+	return { name="conclave-ogre-2"..room.w.."x"..room.h, w=room.w, h=room.h, generator = function(self, x, y, is_lit)
 
 		gen:roomFrom(id, x, y, is_lit, room)
 
 		for _, spot in ipairs(room.spots[1]) do
 			local e = gen.zone:makeEntity(gen.level, "actor", {type="giant", subtype="ogre"}, nil, true)
-			if e then gen:roomMapAddEntity(x + spot.x, y + spot.y, "actor", e) end
+			if e then gen:roomMapAddEntity(x + spot.x, y + spot.y, "actor", e) gen.map.room_map[x + spot.x][y + spot.y].special = true end
 		end
 		for _, spot in ipairs(room.spots[2]) do
 			game.level.map(x + spot.x, y + spot.y, gen.map.TRIGGER, engine.Entity.new{ on_move = function(self, x, y, who) if who and game.zone.awaken_ogres then

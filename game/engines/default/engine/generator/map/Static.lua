@@ -43,6 +43,9 @@ function _M:init(zone, map, level, data)
 end
 
 function _M:getMapFile(file)
+	-- Found in the zone itself ?
+	if file:find("^!") then return self.zone:getBaseName().."/maps/"..file:sub(2)..".lua" end
+
 	local _, _, addon, rfile = file:find("^([^+]+)%+(.+)$")
 	if addon and rfile then
 		return "/data-"..addon.."/maps/"..rfile..".lua"

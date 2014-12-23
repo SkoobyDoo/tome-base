@@ -243,5 +243,9 @@ This is my last order: I have prepared a golem to apply the Ogric inscriptions t
 It has been an honor working with such talented individuals, and an honor doing everything I can for a noble cause.  Perhaps we still had some progress to make, but overall I'm proud of what we've accomplished, and the contributions the Ogre race will make to all of Maj'Eyal.  
 
 Long live the Conclave,
-Healer Astelrid]]
+Healer Astelrid]],
+	on_learn = function(who)
+		game:setAllowedBuild("race_giant")
+		game:setAllowedBuild("race_ogre", true)
+   	end,
 }

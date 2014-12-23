@@ -25,19 +25,26 @@ module(..., package.seeall, class.make)
 
 function _M:init(data)
 	self.rooms = {}
+	self.required_rooms = {}
 
 	data.tunnel_change = self.data.tunnel_change or 30
 	data.tunnel_random = self.data.tunnel_random or 10
 
-	if not data.rooms then return end
-
-	for i, file in ipairs(data.rooms) do
+	if data.rooms then for i, file in ipairs(data.rooms) do
 		if type(file) == "table" then
 			table.insert(self.rooms, {self:loadRoom(file[1]), chance_room=file[2]})
 		else
 			table.insert(self.rooms, self:loadRoom(file))
 		end
-	end
+	end end
+
+	if data.required_rooms then for i, file in ipairs(data.required_rooms) do
+		if type(file) == "table" then
+			table.insert(self.required_rooms, {self:loadRoom(file[1]), chance_room=file[2]})
+		else
+			table.insert(self.required_rooms, self:loadRoom(file))
+		end
+	end end
 end
 
 local rooms_cache = {}
@@ -45,7 +52,10 @@ local rooms_cache = {}
 function _M:loadRoom(file)
 	if rooms_cache[file] then return rooms_cache[file] end
 
-	local f, err = loadfile("/data/rooms/"..file..".lua")
+	local filename = "/data/rooms/"..file..".lua"
+	-- Found in the zone itself ?
+	if file:find("^!") then filename = self.zone:getBaseName().."/rooms/"..file:sub(2)..".lua" end
+	local f, err = loadfile(filename)
 	if not f and err then error(err) end
 	setfenv(f, setmetatable({
 		Map = require("engine.Map"),
@@ -142,7 +152,7 @@ end
 
 --- Generates parse data for from an ascii def, for function room generators
 function _M:roomParse(def)
-	local room = { w=def[1]:len(), h=#def, spots={} }
+	local room = { w=def[1]:len(), h=#def, spots={}, special=def.special }
 
 	-- Read the room map
 	for j, line in ipairs(def) do
@@ -154,7 +164,7 @@ function _M:roomParse(def)
 				c = tonumber(c)
 				room.spots[c] = room.spots[c] or {}
 				room.spots[c][#room.spots[c]+1] = {x=i-1, y=j-1}
-				c = '.'
+				c = def.numbers or '.'
 			end
 
 			room[i][j] = c
@@ -178,6 +188,7 @@ function _M:roomFrom(id, x, y, is_lit, room)
 			else
 				self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve(c))
 			end
+			if room.special then self.map.room_map[i-1+x][j-1+y].special = true end
 			if is_lit then self.map.lites(i-1+x, j-1+y, true) end
 		end
 	end

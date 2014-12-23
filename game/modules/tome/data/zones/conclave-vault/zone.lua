@@ -19,7 +19,7 @@
 
 return {
 	name = "Old Conclave Vault",
-	level_range = {25, 35},
+	level_range = {20, 30},
 	level_scheme = "player",
 	max_level = 4,
 	decay = {300, 800, only={object=true}},
@@ -28,17 +28,18 @@ return {
 	persistent = "zone",
 --	all_remembered = true,
 	all_lited = true,
-	ambient_music = "Far away.ogg",
+	ambient_music = "Sinestra.ogg",
 	min_material_level = 2,
 	max_material_level = 3,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",
 			nb_rooms = 10,
-			rooms = {"zones/conclave-vault-ogre-room-1"},
+			rooms = {"!room1", "!room2", },
 			lite_room_chance = 100,
 			['.'] = "FLOOR",
 			['#'] = "WALL",
+			['+'] = "DOOR",
 			up = "UP",
 			down = "DOWN",
 			door = "DOOR",
@@ -54,7 +55,7 @@ return {
 		},
 		trap = {
 			class = "engine.generator.trap.Random",
-			nb_trap = {0, 0},
+			nb_trap = {4, 4},
 		},
 	},
 	levels =
@@ -62,14 +63,17 @@ return {
 		[1] = {
 			generator = { map = {
 				class = "engine.generator.map.Static",
-				map = "zones/conclave-vault-entrance",
+				map = "!conclave-vault-entrance",
 			}, object = {
 				nb_object = {0, 0},
+			}, trap = {
+				nb_trap = {2, 2},
 			}},
 		},
 		[4] = {
-			generator = {
-			},
+			generator = { map = {
+				required_rooms = {"!boss"},
+			} },
 		},
 	},
 	post_process = function(level)

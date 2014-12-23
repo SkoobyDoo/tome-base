@@ -17,6 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local Stats = require "engine.interface.ActorStats"
+local Talents = require "engine.interface.ActorTalents"
+
 load("/data/general/objects/objects-maj-eyal.lua")
 
 for i = 1, 4 do
@@ -29,20 +32,19 @@ newEntity{ base = "BASE_LORE",
 }
 end
 
-newEntity{ base = "BASE_GREATMAUL",
+newEntity{ base = "BASE_GREATMAUL", define_as = "ASTELRID_CLUBSTAFF",
 	power_source = {arcane=true},
 	name = "Astelrid's Clubstaff", color = colors.GREEN,
 	unided_name = "huge maul", unique = true,
 	desc = [[Like its former owner, this was once an instrument of altruistic healing, before fury and fear caused its twisting into a sadistic weapon.  Surges of restorative magic can be faintly felt under the layers of plaster and sharp surgical equipment.]],
-	level_range = {10, 20},
-	rarity = 300,
-	require = { stat = { str=20 }, },
+	level_range = {20, 30},
+	require = { stat = { str=23 }, },
 	cost = 650,
-	material_level = 2,
+	material_level = 3,
 	combat = {
-		dam = 32,
+		dam = 45,
 		apr = 4,
-		physcrit = 4,
+		physcrit = 8,
 		dammod = {str=1, mag=0.4},
 	},
 	wielder = {
@@ -50,5 +52,7 @@ newEntity{ base = "BASE_GREATMAUL",
 		inc_stats = {[Stats.STAT_MAG] = 4},
 		combat_spellpower = 15,
 		healing_factor = 0.25,
+		inscriptions_stat_multiplier = 0.15,
 	},
+	special_desc = function(self) return "Improves the contribution of primary stats on infusions and runes by 15%" end,
 }

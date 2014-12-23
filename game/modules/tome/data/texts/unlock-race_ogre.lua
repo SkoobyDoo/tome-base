@@ -17,39 +17,15 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-startx = 15
-starty = 8
-endx = 0
-endy = 8
+return "New Race: #LIGHT_GREEN#Ogre",
+[[
+WRITE ME
 
--- defineTile section
-defineTile("#", "HARDWALL")
-defineTile("*", "GUARDING_DOOR")
-defineTile("<", "FLAT_UP6")
-defineTile("O", "FLOOR", nil, "OGRE_SENTRY2")
-defineTile("o", "FLOOR", nil, "OGRE_SENTRY")
-defineTile(">", "FLAT_DOWN4")
-defineTile(".", "FLOOR")
+You have discovered the truth about the creation of the Ogres and can now create a new character with the #LIGHT_GREEN#Ogre race#WHITE#.
 
--- addSpot section
-
--- addZone section
-
--- ASCII map section
-return [[
-################
-################
-################
-################
-################
-################
-########.O######
-########..######
->*.............<
-########..######
-########.o######
-################
-################
-################
-################
-################]]
+Race features:#YELLOW#
+- Strong but not stupid
+- Efficient at using all kind of runes and infusions
+- Imbued with arcane forces
+#WHITE#
+]]

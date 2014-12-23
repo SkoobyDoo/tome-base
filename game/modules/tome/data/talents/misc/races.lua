@@ -963,7 +963,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[An ogre's body is used to spells and inscriptions.
-		Increases spell save by %d and improves the contibution of primary stats on infusions and runes by %d%%.]]):
+		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.]]):
 		format(t.getSave(self, t), t.getMult(self, t) * 100)
 	end,
 }
