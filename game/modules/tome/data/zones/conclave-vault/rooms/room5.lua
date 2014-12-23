@@ -30,6 +30,7 @@ local def = { numbers = '.',
 [[!2#......###]],
 [[!2.........!]],
 [[#!!!!!!!!!!#]],
+}
 
 return function(gen, id)
 	local room = gen:roomParse(def)
