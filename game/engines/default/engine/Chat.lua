@@ -35,7 +35,7 @@ function _M:init(name, npc, player, data)
 	if not data.player then data.player = player end
 	if not data.npc then data.npc = npc end
 
-	local f, err = loadfile("/data/chats/"..name..".lua")
+	local f, err = loadfile(self:getChatFile(name))
 	if not f and err then error(err) end
 	setfenv(f, setmetatable({
 		newChat = function(c) self:addChat(c) end,
@@ -43,6 +43,14 @@ function _M:init(name, npc, player, data)
 	self.default_id = f()
 
 	self:triggerHook{"Chat:load", data=data}
+end
+
+function _M:getChatFile(file)
+	local _, _, addon, rfile = file:find("^([^+]+)%+(.+)$")
+	if addon and rfile then
+		return "/data-"..addon.."/chats/"..rfile..".lua"
+	end
+	return "/data/chats/"..file..".lua"
 end
 
 --- Switch the NPC talking
