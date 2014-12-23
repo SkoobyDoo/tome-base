@@ -18,18 +18,19 @@
 -- darkgod@te4.org
 
 local def = { numbers = '.',
-[[#!!!!!!!!!!#]],
-[[!..........!]],
-[[###......#2!]],
-[[!1#......#2!]],
-[[!1#......#2!]],
-[[!1#......#1!]],
-[[!1#......#1!]],
-[[!2#......#1!]],
-[[!2#......#1!]],
-[[!2#......###]],
-[[!2.........!]],
-[[#!!!!!!!!!!#]],
+[[#!!!!!!!!!!!#]],
+[[!...........!]],
+[[!...........!]],
+[[!.####.####.!]],
+[[!....#.#11#.!]],
+[[!.#..###11#.!]],
+[[###2222222###]],
+[[!.#11###..#.!]],
+[[!.#11#.#....!]],
+[[!.####.####.!]],
+[[!...........!]],
+[[!...........!]],
+[[#!!!!!!!!!!!#]],
 }
 
 return function(gen, id)
@@ -44,7 +45,7 @@ return function(gen, id)
 		end
 		for _, spot in ipairs(room.spots[2]) do
 			game.level.map(x + spot.x, y + spot.y, gen.map.TRIGGER, engine.Entity.new{ on_move = function(self, x, y, who) if who and game.zone.awaken_ogres then
-				game.zone.awaken_ogres(who, x, y, 8, {8, 12})
+				game.zone.awaken_ogres(who, x, y, 8, {2, 3})
 			end end})
 		end
 	end}
