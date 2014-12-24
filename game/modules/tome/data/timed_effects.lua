@@ -57,7 +57,7 @@ TemporaryEffects.newEffect = function(self, t)
 	if not t.image then
 		t.image = "effects/"..(t.name):lower():gsub("[^a-z0-9_]", "_")..".png"
 	end
-	if fs.exists(Tiles.concatPrefix("/data/gfx/", t.image)) then t.display_entity = Entity.new{image=t.image, is_effect=true}
+	if fs.exists(Tiles.baseImageFile(t.image)) then t.display_entity = Entity.new{image=t.image, is_effect=true}
 	else t.display_entity = Entity.new{image="effects/default.png", is_effect=true} print("===", t.type, t.name)
 	end
 	t.getName = getName

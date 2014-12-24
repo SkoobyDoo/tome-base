@@ -49,7 +49,7 @@ function _M:init(w, h, fontname, fontsize, texture, allow_backcolor)
 	self.texture_store = {}
 end
 
-function _M.concatPrefix(prefix, image_file)
+function concatPrefix(prefix, image_file)
 	if image_file:sub(1, 1) == "/" then
 		return image_file
 	else
@@ -57,9 +57,18 @@ function _M.concatPrefix(prefix, image_file)
 	end
 end
 
+function baseImageFile(image_file)
+	local _, _, addon, rfile = image_file:find("^([^+]+)%+(.+)$")
+	if addon and rfile then
+		return "/data-"..addon.."/gfx/"..rfile
+	else
+		return concatPrefix(base_prefix, image_file)
+	end
+end
+
 function _M:loadImage(image)
 	local s = core.display.loadImage(concatPrefix(self.prefix, image))
-	if not s then s = core.display.loadImage(concatPrefix(self.base_prefix, image)) end
+	if not s then s = core.display.loadImage(baseImageFile(image)) end
 	return s
 end
 
@@ -110,7 +119,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 			end
 			print("Loading tile", image)
 			s = core.display.loadImage(concatPrefix(self.prefix, image))
-			if not s then s = core.display.loadImage(concatPrefix(self.base_prefix, image)) end
+			if not s then s = core.display.loadImage(baseImageFile(image)) end
 			if s then is_image = true end
 		end
 
