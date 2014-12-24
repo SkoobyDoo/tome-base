@@ -19,9 +19,12 @@
 
 return "New Race: #LIGHT_GREEN#Ogre",
 [[
-WRITE ME
+Ogres are magically-altered Humans, taking refuge in Elvala among the Shalore. 
+Their enormous bodies, bolstered by (and dependent on) an intricate web of glowing runes covering their skin, make them an intimidating sight that belies their conscientious and modest nature.
+Ogres were created (and subsequently abandoned) by the Conclave during the Allure Wars, to serve as their warriors and workers.  Their massive size and glowing runes made it impossible for them to hide during the Spellhunt, and only those who fled to Shalore lands survived extermination.
+Their talent with inscriptions is unparalleled, as they need to be able to maintain their own inscriptions to survive, and have passed down the knowledge of how to do so; while their tendency to solve problems in the most simple and direct manner available (combined with an...  intense temper) has given them an unfair reputation as unintelligent brutes, a growing trade industry in inscription production is gradually eroding this image.
 
-You have discovered the truth about the creation of the Ogres and can now create a new character with the #LIGHT_GREEN#Ogre race#WHITE#.
+You have learned the details of the Ogres' past and put their terrified creators to rest, and have technically brought the Allure Wars to their long-overdue conclusion by eliminating the last remnants of the Conclave.  You can now create new #LIGHT_GREEN#Ogre#WHITE# characters to see their magical might in action!
 
 Race features:#YELLOW#
 - Strong but not stupid
