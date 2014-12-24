@@ -32,6 +32,7 @@ local Entity = require "engine.Entity"
 local Chat = require "engine.Chat"
 local Map = require "engine.Map"
 local Level = require "engine.Level"
+local Tiles = require "engine.Tiles"
 
 local resolveSource = function(self)
 	if self.src and self.src.resolveSource then
@@ -56,7 +57,7 @@ TemporaryEffects.newEffect = function(self, t)
 	if not t.image then
 		t.image = "effects/"..(t.name):lower():gsub("[^a-z0-9_]", "_")..".png"
 	end
-	if fs.exists("/data/gfx/"..t.image) then t.display_entity = Entity.new{image=t.image, is_effect=true}
+	if fs.exists(Tiles.concatPrefix("/data/gfx/", t.image)) then t.display_entity = Entity.new{image=t.image, is_effect=true}
 	else t.display_entity = Entity.new{image="effects/default.png", is_effect=true} print("===", t.type, t.name)
 	end
 	t.getName = getName

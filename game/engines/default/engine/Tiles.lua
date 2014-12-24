@@ -49,9 +49,17 @@ function _M:init(w, h, fontname, fontsize, texture, allow_backcolor)
 	self.texture_store = {}
 end
 
+function _M.concatPrefix(prefix, image_file)
+	if image_file:sub(1, 1) == "/" then
+		return image_file
+	else
+		return prefix..image_file
+	end
+end
+
 function _M:loadImage(image)
-	local s = core.display.loadImage(self.prefix..image)
-	if not s then s = core.display.loadImage(self.base_prefix..image) end
+	local s = core.display.loadImage(concatPrefix(self.prefix, image))
+	if not s then s = core.display.loadImage(concatPrefix(self.base_prefix, image)) end
 	return s
 end
 
@@ -92,7 +100,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 		local is_image = false
 		if (self.use_images or not dochar) and image and #image > 4 then
 			if allow_tileset and self.texture then
-				local ts, fx, fy, tsx, tsy = self:checkTileset(self.prefix..image)
+				local ts, fx, fy, tsx, tsy = self:checkTileset(concatPrefix(self.prefix, image))
 				if ts then
 					self.repo[char] = self.repo[char] or {}
 					self.repo[char][fgidx] = self.repo[char][fgidx] or {}
@@ -101,8 +109,8 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 				end
 			end
 			print("Loading tile", image)
-			s = core.display.loadImage(self.prefix..image)
-			if not s then s = core.display.loadImage(self.base_prefix..image) end
+			s = core.display.loadImage(concatPrefix(self.prefix, image))
+			if not s then s = core.display.loadImage(concatPrefix(self.base_prefix, image)) end
 			if s then is_image = true end
 		end
 
