@@ -808,7 +808,6 @@ function _M:createDisplay()
 		ret[#ret+1] = {left=self.c_gtree, top=align_empty1, ui=vsep3}
 		ret[#ret+1] = {left=vsep3, right=0, top=0, ui=self.c_desc, calc_width=3}
 	end
-	table.print(ret)
 
 	return ret
 end
