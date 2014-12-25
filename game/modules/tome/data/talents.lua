@@ -19,6 +19,7 @@
 
 local tacticals = {}
 local Entity = require "engine.Entity"
+local Tiles = require "engine.Tiles"
 
 local oldNewTalent = Talents.newTalent
 Talents.newTalent = function(self, t)
@@ -47,7 +48,7 @@ Talents.newTalent = function(self, t)
 	if not t.image then
 		t.image = "talents/"..(t.short_name or t.name):lower():gsub("[^a-z0-9_]", "_")..".png"
 	end
-	if fs.exists("/data/gfx/"..t.image) then t.display_entity = Entity.new{image=t.image, is_talent=true}
+	if fs.exists(Tiles.baseImageFile(t.image)) then t.display_entity = Entity.new{image=t.image, is_talent=true}
 	else t.display_entity = Entity.new{image="talents/default.png", is_talent=true}
 	end
 	return oldNewTalent(self, t)
