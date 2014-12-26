@@ -5548,6 +5548,22 @@ function _M:worthExp(target)
 	end
 end
 
+--- Burn arcane resources
+-- @param damage how much to burn
+-- @return how much have been burned
+function _M:burnArcaneResources(damage)
+	local mana = math.min(self:getMana(), damage)
+	local vim = math.min(self:getVim(), damage/2)
+	local pos = math.min(self:getPositive(), damage/4)
+	local neg = math.min(self:getNegative(), damage/4)
+	self:incMana(-mana)
+	self:incVim(-vim)
+	self:incPositive(-pos)
+	self:incNegative(-neg)
+
+	return math.max(mana, vim * 2, pos * 4, neg * 4)
+end
+
 --- Find effects based on a filter, up to nb.
 function _M:effectsFilter(t, nb)
 	local effs = {}

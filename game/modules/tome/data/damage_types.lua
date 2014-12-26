@@ -2030,23 +2030,7 @@ newDamageType{
 	projector = function(src, x, y, type, dam)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			-- Note:  Standardize this conversion somewhere in Actor.lua
-			local mana = dam
-			local vim = dam / 2
-			local positive = dam / 4
-			local negative = dam / 4
-
-			mana = math.min(target:getMana(), mana)
-			vim = math.min(target:getVim(), vim)
-			positive = math.min(target:getPositive(), positive)
-			negative = math.min(target:getNegative(), negative)
-
-			target:incMana(-mana)
-			target:incVim(-vim)
-			target:incPositive(-positive)
-			target:incNegative(-negative)
-
-			local dam = math.max(mana, vim * 2, positive * 4, negative * 4)
+			dam = target.burnArcaneResources and target:burnArcaneResources(dam) or 0
 			return DamageType:get(DamageType.ARCANE).projector(src, x, y, DamageType.ARCANE, dam)
 		end
 		return 0
@@ -3046,22 +3030,7 @@ newDamageType{
 	projector = function(src, x, y, type, dam)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			local mana = dam
-			local vim = dam / 2
-			local positive = dam / 4
-			local negative = dam / 4
-
-			mana = math.min(target:getMana(), mana)
-			vim = math.min(target:getVim(), vim)
-			positive = math.min(target:getPositive(), positive)
-			negative = math.min(target:getNegative(), negative)
-
-			target:incMana(-mana)
-			target:incVim(-vim)
-			target:incPositive(-positive)
-			target:incNegative(-negative)
-
-			local dam = math.max(mana, vim * 2, positive * 4, negative * 4)
+			dam = target.burnArcaneResources and target:burnArcaneResources(dam) or 0
 			return DamageType:get(DamageType.ARCANE).projector(src, x, y, DamageType.ARCANE, dam)
 		end
 		return 0
