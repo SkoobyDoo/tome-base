@@ -574,7 +574,8 @@ static int program_use(lua_State *L)
 	if (active)
 	{
 		tglUseProgramObject(p->shader);
-		GLfloat t = SDL_GetTicks();
+		// GLfloat t = SDL_GetTicks();
+		GLfloat t = cur_frame_tick;
 		glUniform1fvARB(p->p_tick, 1, &t);
 	}
 	else
