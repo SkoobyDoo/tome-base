@@ -174,7 +174,11 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			-- cancel checked in coroutine
 			success, err = coroutine.resume(co)
 		end
-		if not success and err then print(debug.traceback(co)) error(err) end
+		if not success and err then
+			print(debug.traceback(co))
+			self:onTalentLuaError(err)
+			error(err)
+		end
 	elseif ab.mode == "sustained" and ab.activate and ab.deactivate then
 		if self:isTalentCoolingDown(ab) and not ignore_cd then
 			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
@@ -278,6 +282,13 @@ end
 -- @return true to continue, false to stop
 function _M:postUseTalent(talent, ret, silent)
 	return true
+end
+
+--- Called if a talent errors out
+-- @param ab the talent
+-- @param err the error
+function _M:onTalentLuaError(ab, err)
+	return
 end
 
 --- Force a talent to activate without using energy or such

@@ -108,6 +108,10 @@ local function spotHostiles(self)
 	return seen
 end
 
+function _M:onTalentLuaError(ab, err)
+	self:useEnergy()  -- prevent infinitely long erroring out turns
+end
+
 --- Try to auto use listed talents
 -- This should be called in your actors "act()" method
 function _M:automaticTalents()
