@@ -46,7 +46,7 @@ newTalent{
 	tactical = { ATTACKAREA = { weapon = 3 } , DISABLE = 3 },
 	requires_target = true,
 	range = function(self, t)
-		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end,
+		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
 		return 0
 	end,
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,

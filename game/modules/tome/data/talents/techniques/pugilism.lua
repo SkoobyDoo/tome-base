@@ -94,7 +94,7 @@ newTalent{
 		return self:isTalentActive(self.T_STRIKING_STANCE) and not self:isTalentCoolingDown(t)
 	end,
 	action = function(self, t)
-		local tg = self:getTalentRange(t)
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 
