@@ -126,13 +126,14 @@ end
 
 --- Requests a long yes-no dialog
 function _M:yesnoLongPopup(title, text, w, fct, yes_text, no_text, no_leave, escape)
+	local d
 	local ok = require("engine.ui.Button").new{text=yes_text or "Yes", fct=function() game:unregisterDialog(d) fct(true) end}
 	local cancel = require("engine.ui.Button").new{text=no_text or "No", fct=function() game:unregisterDialog(d) fct(false) end}
 
 	w = math.max(w + 20, ok.w + cancel.w + 10)
 
 	local list = text:splitLines(w - 10, self.font)
-	local d = new(title, w + 6, 1)
+	d = new(title, w + 6, 1)
 
 --	d.key:addBind("EXIT", function() game:unregisterDialog(d) fct(false) end)
 	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) fct(escape) end) end

@@ -1166,7 +1166,7 @@ function _M:playerDrop()
 	local inven = self:getInven(self.INVEN_INVEN)
 	local titleupdator = self:getEncumberTitleUpdator("Drop object")
 	local d d = self:showInventory(titleupdator(), inven, nil, function(o, item)
-		self:doDrop(inven, item)
+		self:doDrop(inven, item, function() d:updateList() end)
 		d:updateTitle(titleupdator())
 		return true
 	end)

@@ -94,9 +94,13 @@ function _M:use(item)
 	if item and item.object then
 		dont_end = self.action(item.object, item.item)
 	end
+	self:updateList()
+	if not dont_end then game:unregisterDialog(self) end
+end
+
+function _M:updateList()
 	self.c_inven:generateList()
 	self:select(self.c_inven.c_inven.list[self.c_inven.c_inven.sel])
-	if not dont_end then game:unregisterDialog(self) end
 end
 
 function _M:updateTitle(title)
