@@ -36,6 +36,7 @@ newEntity{
 	can_pass = {pass_wall=1},
 	does_block_move = true,
 	block_sight = true,
+	display_z = 90,
 	air_level = -20,
 	dig = "ROCKY_GROUND",
 	nice_editer = mountain_editer,

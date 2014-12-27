@@ -1627,8 +1627,11 @@ static int map_to_screen(lua_State *L)
 				if (mo) {
 					map->sort_mos[smax  ].mo = mo;
 					map->sort_mos[smax  ].i = i;
-					map->sort_mos[smax  ].j = j;
-					map->sort_mos[smax++].z = z;
+					map->sort_mos[smax  ].j = j + roundf(mo->dy);
+					map->sort_mos[smax  ].z = mo->dz;
+					map->sort_mos[smax  ].di = i;
+					map->sort_mos[smax  ].dj = j;
+					map->sort_mos[smax++].dz = z;
 				}
 			}
 		}
@@ -1637,9 +1640,9 @@ static int map_to_screen(lua_State *L)
 
 	for (spos = 0; spos < smax; spos++) {
 		mo = map->sort_mos[spos].mo;
-		i = map->sort_mos[spos].i;
-		j = map->sort_mos[spos].j;
-		z = map->sort_mos[spos].z;
+		i = map->sort_mos[spos].di;
+		j = map->sort_mos[spos].dj;
+		z = map->sort_mos[spos].dz;
 		int dx = x + i * map->tile_w;
 		int dy = y + j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
 

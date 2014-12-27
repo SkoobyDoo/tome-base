@@ -40,6 +40,7 @@ newEntity{
 	can_pass = {pass_tree=1},
 	does_block_move = true,
 	block_sight = true,
+	display_z = 85,
 	dig = "GRASS",
 	nice_tiler = { method="replace", base={"TREE", 100, 1, 30}},
 	nice_editer = grass_editer,

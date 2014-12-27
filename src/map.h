@@ -63,6 +63,7 @@ typedef struct s_map_object map_object;
 typedef struct {
 	map_object *mo;
 	float i, j, z;
+	float di, dj, dz;
 } map_object_sort;
 
 typedef struct {
