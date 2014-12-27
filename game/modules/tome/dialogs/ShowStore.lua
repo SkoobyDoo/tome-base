@@ -47,7 +47,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
 	self.c_inven = Inventory.new{actor=actor_actor, inven=actor_inven, filter=actor_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10,
 		columns={
-			{name="", width={20,"fixed"}, display_prop="char", sort="id"},
+			{name="", width={30,"fixed"}, display_prop="char", sort="id"},
 			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, x, y) item.object:toScreen(nil, x+4, y, 16, 16) end},
 			{name="Inventory", width=80, display_prop="name", sort="name"},
 			{name="Category", width=20, display_prop="cat", sort="cat"},
@@ -83,7 +83,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 
 	self.c_store = Inventory.new{actor=store_actor, inven=store_inven, filter=store_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, tabslist=false,
 		columns={
-			{name="", width={20,"fixed"}, display_prop="char", sort="id"},
+			{name="", width={30,"fixed"}, display_prop="char", sort="id"},
 			{name="", width={24,"fixed"}, display_prop="object", direct_draw=direct_draw},
 			{name="Store", width=80, display_prop="name"},
 			{name="Category", width=20, display_prop="cat"},
