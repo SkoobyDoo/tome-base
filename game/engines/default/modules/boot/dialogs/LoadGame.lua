@@ -239,6 +239,7 @@ function _M:installOldGame(version_string)
 	print("[OLD MODULE] checking for install", version_string)
 
 	local dls = {}
+	-- Later on we can request the server for a list, but heh
 	if version_string == "tome-1.2.5" then
 		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
 		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
