@@ -344,11 +344,12 @@ end
 --- Returns how many talents of this type the actor knows
 -- @param type the talent type to count
 -- @param exclude_id if not nil the count will ignore this talent id
-function _M:numberKnownTalent(type, exclude_id)
+-- @param limit_type if not nil the count will ignore talents with talent category level equal or higher that this
+function _M:numberKnownTalent(type, exclude_id, limit_type)
 	local nb = 0
 	for id, _ in pairs(self.talents) do
 		local t = _M.talents_def[id]
-		if t.type[1] == type and (not exclude_id or exclude_id ~= id) then nb = nb + 1 end
+		if t.type[1] == type and (not exclude_id or exclude_id ~= id) and (not limit_type or not t.type[2] or t.type[2] < limit_type) then nb = nb + 1 end
 	end
 	return nb
 end
@@ -580,7 +581,7 @@ function _M:canLearnTalent(t, offset, ignore_special)
 	if not self:knowTalentType(t.type[1]) and not t.type_no_req then return nil, "unknown talent type" end
 
 	-- Check talent type
-	local known = self:numberKnownTalent(t.type[1], t.id)
+	local known = self:numberKnownTalent(t.type[1], t.id, t.type[2])
 	if t.type[2] and known < t.type[2] - 1 then
 		return nil, "not enough talents of this type known"
 	end
@@ -607,9 +608,9 @@ function _M:getTalentReqDesc(t_id, levmod)
 	end
 
 	if t.type[2] and t.type[2] > 1 then
-		local known = self:numberKnownTalent(t.type[1], t.id)
+		local known = self:numberKnownTalent(t.type[1], t.id, t.type[2])
 		local c = (known >= t.type[2] - 1) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
-		str:add(c, ("- Talents of the same category: %d"):format(t.type[2] - 1), true)
+		str:add(c, ("- Lower talents of the same category: %d"):format(t.type[2] - 1), true)
 	end
 
 	-- Obviously this requires the ActorStats interface
