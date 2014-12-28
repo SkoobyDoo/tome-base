@@ -807,6 +807,8 @@ function _M:createDisplay()
 		self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, width=200, height = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0), dest_area = { h = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0) } }
 		ret[#ret+1] = {left=self.c_gtree, top=align_empty1, ui=vsep3}
 		ret[#ret+1] = {left=vsep3, right=0, top=0, ui=self.c_desc, calc_width=3}
+		self.c_gtree.h = self.ih - 50
+		self.c_gtree:generate()
 	end
 
 	return ret
