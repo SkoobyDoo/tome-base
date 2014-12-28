@@ -2456,18 +2456,6 @@ function _M:onTakeHit(value, src, death_note)
 		t:onTakeHit(self, value / self.max_life)
 	end
 
-	if self:attr("unstoppable") then
-		if value > self.life - 1 then
-			game:delayedLogDamage(src, self, 0, ("#RED#(%d refused)#LAST#"):format(value - self.life - 1), false)
-			value = self.life - 1
-			self.life = 1
-			game:delayedLogMessage(self, nil, "unstoppable", "#RED##Source# is unstoppable!")
-			if self.life <= 1 then
-				value = 0
-			end
-		end
-	end
-
 	-- Split ?
 	if self.clone_on_hit and value >= self.clone_on_hit.min_dam_pct * self.max_life / 100 and rng.percent(self.clone_on_hit.chance) then
 		-- Find space
@@ -2488,8 +2476,6 @@ function _M:onTakeHit(value, src, death_note)
 			value = value / 2
 		end
 	end
-
-	if self.on_takehit then value = self:check("on_takehit", value, src, death_note) end
 
 	-- Apply Solipsism hit
 	if damage_to_psi > 0 then
@@ -2541,6 +2527,15 @@ function _M:onTakeHit(value, src, death_note)
 			end
 
 			self:heal(self.shield_of_light_heal, tal)
+		end
+	end
+	
+	if self:attr("unstoppable") then
+		if value > self.life - 1 then
+			game:delayedLogDamage(src, self, 0, ("#RED#(%d refused)#LAST#"):format(value - (self.life - 1)), false)
+			value = self.life - 1
+			if self.life <= 1 then value = 0 end
+			game:delayedLogMessage(self, nil, "unstoppable", "#RED##Source# is unstoppable!")
 		end
 	end
 
@@ -2658,6 +2653,8 @@ function _M:onTakeHit(value, src, death_note)
 			print("[TAKE HIT] after flat damage cap", value)
 		end
 	end
+
+	if self.on_takehit then value = self:check("on_takehit", value, src, death_note) end
 
 	local cb = {value=value}
 	if self:fireTalentCheck("callbackOnHit", cb, src, death_note) then

@@ -101,6 +101,23 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			dam = dam * 0.5
 		end
 
+		if src:attr("stunned") then
+			dam = dam * 0.4
+			print("[PROJECTOR] stunned dam", dam)
+		end
+		if src:attr("invisible_damage_penalty") then
+			dam = dam * util.bound(1 - (src.invisible_damage_penalty / (src.invisible_damage_penalty_divisor or 1)), 0, 1)
+			print("[PROJECTOR] invisible dam", dam)
+		end
+		if src:attr("numbed") then
+			dam = dam - dam * src:attr("numbed") / 100
+			print("[PROJECTOR] numbed dam", dam)
+		end
+		if src:attr("generic_damage_penalty") then
+			dam = dam - dam * math.min(100, src:attr("generic_damage_penalty")) / 100
+			print("[PROJECTOR] generic dam", dam)
+		end
+
 		-- Preemptive shielding
 		if target.isTalentActive and target:isTalentActive(target.T_PREMONITION) then
 			local t = target:getTalentFromId(target.T_PREMONITION)
@@ -133,53 +150,64 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		-- Increases damage
 		local mind_linked = false
+		local inc = 0
 		if src.inc_damage then
-			local inc
 			if src.combatGetDamageIncrease then inc = src:combatGetDamageIncrease(type)
 			else inc = (src.inc_damage.all or 0) + (src.inc_damage[type] or 0) end
 			if src.getVim and src:attr("demonblood_dam") then inc = inc + ((src.demonblood_dam or 0) * (src:getVim() or 0)) end
+		end
 
-			-- Increases damage for the entity type (Demon, Undead, etc)
-			if target.type and src and src.inc_damage_actor_type then
-				local increase = 0
-				for k, v in pairs(src.inc_damage_actor_type) do
-					if target:checkClassification(tostring(k)) then increase = math.max(increase, v) end
-				end
-				if increase and increase~= 0 then
-					print("[PROJECTOR] before inc_damage_actor_type", dam + (dam * inc / 100))
-					inc = inc + increase
-					print("[PROJECTOR] after inc_damage_actor_type", dam + (dam * inc / 100))
-				end
+		-- Increases damage for the entity type (Demon, Undead, etc)
+		if target.type and src and src.inc_damage_actor_type then
+			local increase = 0
+			for k, v in pairs(src.inc_damage_actor_type) do
+				if target:checkClassification(tostring(k)) then increase = math.max(increase, v) end
 			end
+			if increase and increase~= 0 then
+				print("[PROJECTOR] before inc_damage_actor_type", dam + (dam * inc / 100))
+				inc = inc + increase
+				print("[PROJECTOR] after inc_damage_actor_type", dam + (dam * inc / 100))
+			end
+		end
 
-			-- Increases damage to sleeping targets
-			if target:attr("sleep") and src.attr and src:attr("night_terror") then
-				inc = inc + src:attr("night_terror")
-				print("[PROJECTOR] after night_terror", dam + (dam * inc / 100))
+		-- Increases damage to sleeping targets
+		if target:attr("sleep") and src.attr and src:attr("night_terror") then
+			inc = inc + src:attr("night_terror")
+			print("[PROJECTOR] after night_terror", dam + (dam * inc / 100))
+		end
+		-- Increases damage to targets with Insomnia
+		if src.attr and src:attr("lucid_dreamer") and target:hasEffect(target.EFF_INSOMNIA) then
+			inc = inc + src:attr("lucid_dreamer")
+			print("[PROJECTOR] after lucid_dreamer", dam + (dam * inc / 100))
+		end
+		-- Mind Link
+		if type == DamageType.MIND and target:hasEffect(target.EFF_MIND_LINK_TARGET) then
+			local eff = target:hasEffect(target.EFF_MIND_LINK_TARGET)
+			if eff.src == src or eff.src == src.summoner then
+				mind_linked = true
+				inc = inc + eff.power
+				print("[PROJECTOR] after mind_link", dam + (dam * inc / 100))
 			end
-			-- Increases damage to targets with Insomnia
-			if src.attr and src:attr("lucid_dreamer") and target:hasEffect(target.EFF_INSOMNIA) then
-				inc = inc + src:attr("lucid_dreamer")
-				print("[PROJECTOR] after lucid_dreamer", dam + (dam * inc / 100))
-			end
-			-- Mind Link
-			if type == DamageType.MIND and target:hasEffect(target.EFF_MIND_LINK_TARGET) then
-				local eff = target:hasEffect(target.EFF_MIND_LINK_TARGET)
-				if eff.src == src or eff.src == src.summoner then
-					mind_linked = true
-					inc = inc + eff.power
-					print("[PROJECTOR] after mind_link", dam + (dam * inc / 100))
-				end
-			end
-
-			dam = dam + (dam * inc / 100)
 		end
 
 		-- Rigor mortis
 		if src.necrotic_minion and target:attr("inc_necrotic_minions") then
-			dam = dam + dam * target:attr("inc_necrotic_minions") / 100
-			print("[PROJECTOR] after necrotic increase dam", dam)
+			inc = inc + target:attr("inc_necrotic_minions")
+			print("[PROJECTOR] after necrotic increase dam", dam + (dam * inc) / 100)
 		end
+
+		-- dark vision increases damage done in creeping dark
+		if src and src ~= target and game.level.map:checkAllEntities(x, y, "creepingDark") then
+			local dark = game.level.map:checkAllEntities(x, y, "creepingDark")
+			if dark.summoner == src and dark.damageIncrease > 0 and not dark.projecting then
+				local source = src.__project_source or src
+				inc = inc + dark.damageIncrease
+				game:delayedLogMessage(source, target, "dark_strike"..(source.uid or ""), "#Source# strikes #Target# in the darkness (%+d%%%%%%%% damage).", dark.damageIncrease) -- resolve %% 3 levels deep
+			end
+		end
+
+		dam = dam + (dam * inc / 100)
+
 
 		-- Blast the iceblock
 		if src.attr and src:attr("encased_in_ice") then
@@ -198,35 +226,6 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 				end
 			end
 			return 0 + add_dam
-		end
-
-		-- dark vision increases damage done in creeping dark
-		if src and src ~= target and game.level.map:checkAllEntities(x, y, "creepingDark") then
-			local dark = game.level.map:checkAllEntities(x, y, "creepingDark")
-			if dark.summoner == src and dark.damageIncrease > 0 and not dark.projecting then
-				local source = src.__project_source or src
-				dam = dam + (dam * dark.damageIncrease / 100)
-				game:delayedLogMessage(source, target, "dark_strike"..(source.uid or ""), "#Source# strikes #Target# in the darkness (%+d%%%%%%%% damage).", dark.damageIncrease) -- resolve %% 3 levels deep
-			end
-		end
-		lastdam = dam
-		-- Static reduce damage for psionic kinetic shield
-		if target.isTalentActive and target:isTalentActive(target.T_KINETIC_SHIELD) then
-			local t = target:getTalentFromId(target.T_KINETIC_SHIELD)
-			dam = t.ks_on_damage(target, t, type, dam)
-		end
-		-- Static reduce damage for psionic thermal shield
-		if target.isTalentActive and target:isTalentActive(target.T_THERMAL_SHIELD) then
-			local t = target:getTalentFromId(target.T_THERMAL_SHIELD)
-			dam = t.ts_on_damage(target, t, type, dam)
-		end
-		-- Static reduce damage for psionic charged shield
-		if target.isTalentActive and target:isTalentActive(target.T_CHARGED_SHIELD) then
-			local t = target:getTalentFromId(target.T_CHARGED_SHIELD)
-			dam = t.cs_on_damage(target, t, type, dam)
-		end
-		if dam ~= lastdam then
-			game:delayedLogDamage(src, target, 0, ("%s(%d to psi shield)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", lastdam-dam), false)
 		end
 
 		--target.T_STONE_FORTRESS could be checked/applied here (ReduceDamage function in Dwarven Fortress talent)
@@ -286,6 +285,26 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			end
 			print("[PROJECTOR] after self-resists dam", dam)
 		end
+		
+		lastdam = dam
+		-- Static reduce damage for psionic kinetic shield
+		if target.isTalentActive and target:isTalentActive(target.T_KINETIC_SHIELD) then
+			local t = target:getTalentFromId(target.T_KINETIC_SHIELD)
+			dam = t.ks_on_damage(target, t, type, dam)
+		end
+		-- Static reduce damage for psionic thermal shield
+		if target.isTalentActive and target:isTalentActive(target.T_THERMAL_SHIELD) then
+			local t = target:getTalentFromId(target.T_THERMAL_SHIELD)
+			dam = t.ts_on_damage(target, t, type, dam)
+		end
+		-- Static reduce damage for psionic charged shield
+		if target.isTalentActive and target:isTalentActive(target.T_CHARGED_SHIELD) then
+			local t = target:getTalentFromId(target.T_CHARGED_SHIELD)
+			dam = t.cs_on_damage(target, t, type, dam)
+		end
+		if dam ~= lastdam then
+			game:delayedLogDamage(src, target, 0, ("%s(%d to psi shield)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", lastdam-dam), false)
+		end
 
 		--Vim based defence
 		if target:attr("demonblood_def") and target.getVim then
@@ -315,39 +334,9 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			dam = dam * target:callTalent(target.T_ROLL_WITH_IT, "getMult")
 			print("[PROJECTOR] after Roll With It dam", dam)
 		end
-
-		if src:attr("stunned") then
-			dam = dam * 0.4
-			print("[PROJECTOR] stunned dam", dam)
-		end
-		if src:attr("invisible_damage_penalty") then
-			dam = dam * util.bound(1 - (src.invisible_damage_penalty / (src.invisible_damage_penalty_divisor or 1)), 0, 1)
-			print("[PROJECTOR] invisible dam", dam)
-		end
-		if src:attr("numbed") then
-			dam = dam - dam * src:attr("numbed") / 100
-			print("[PROJECTOR] numbed dam", dam)
-		end
-		if src:attr("generic_damage_penalty") then
-			dam = dam - dam * math.min(100, src:attr("generic_damage_penalty")) / 100
-			print("[PROJECTOR] generic dam", dam)
-		end
-
-		-- Curse of Misfortune: Unfortunate End (chance to increase damage enough to kill)
-		if src and src.hasEffect and src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE) then
-			local eff = src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE)
-			local def = src.tempeffect_def[src.EFF_CURSE_OF_MISFORTUNE]
-			dam = def.doUnfortunateEnd(src, eff, target, dam)
-		end
 		
 		if src and src.hasEffect and src:hasEffect(src.EFF_SEAL_FATE) then
 			src:callEffect(src.EFF_SEAL_FATE, "doDamage", target)
-		end
-
-
-		if src:attr("crushing_blow") and (dam * (1.25 + (src.combat_critical_power or 0)/200)) > target.life then
-			dam = dam * (1.25 + (src.combat_critical_power or 0)/200)
-			game.logPlayer(src, "You end your target with a crushing blow!")
 		end
 
 		if target:attr("resist_unseen") and not target:canSee(src) then
@@ -395,6 +384,18 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		if src.necrotic_minion_be_nice and src.summoner == target then
 			dam = dam * (1 - src.necrotic_minion_be_nice)
+		end
+
+		-- Curse of Misfortune: Unfortunate End (chance to increase damage enough to kill)
+		if src and src.hasEffect and src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE) then
+			local eff = src:hasEffect(src.EFF_CURSE_OF_MISFORTUNE)
+			local def = src.tempeffect_def[src.EFF_CURSE_OF_MISFORTUNE]
+			dam = def.doUnfortunateEnd(src, eff, target, dam)
+		end
+		
+		if src:attr("crushing_blow") and (dam * (1.25 + (src.combat_critical_power or 0)/200)) > target.life then
+			dam = dam * (1.25 + (src.combat_critical_power or 0)/200)
+			game.logPlayer(src, "You end your target with a crushing blow!")
 		end
 
 		print("[PROJECTOR] final dam after static checks", dam)
