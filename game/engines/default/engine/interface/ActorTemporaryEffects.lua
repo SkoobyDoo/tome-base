@@ -195,7 +195,8 @@ function _M:removeEffect(eff, silent, force)
 			self:removeParticles(p.__tmpparticles[i])
 		end
 	end
-	if _M.tempeffect_def[eff].deactivate then _M.tempeffect_def[eff].deactivate(self, p, _M.tempeffect_def[eff]) end
+	local ed = _M.tempeffect_def[eff]
+	if ed.deactivate then ed.deactivate(self, p, ed) end
 	if ed.lists then
 		local lists = ed.lists
 		if 'table' ~= type(lists) then lists = {lists} end
@@ -209,7 +210,7 @@ function _M:removeEffect(eff, silent, force)
 		table.removeFromList(list, eff_id)
 	end
 
-	self:check("on_temporary_effect_removed", eff, _M.tempeffect_def[eff], p)
+	self:check("on_temporary_effect_removed", eff, ed, p)
 end
 
 --- Copy an effect ensuring temporary values are managed properly
