@@ -41,6 +41,8 @@ function _M:init(t)
 		end
 	end
 
+	print("[DOWNLOADER] downloading", self.url, "to", self.dest)
+
 	self.allow_downloads = t.allow_downloads or {}
 	self.allow_login = t.allow_login
 	self.custom_calls = t.custom_calls or {}

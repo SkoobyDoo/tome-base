@@ -170,7 +170,7 @@ end
 
 --- List all available savefiles
 -- Static
-function _M:listSavefiles(moddir_filter)
+function _M:listSavefiles(incompatible_module, moddir_filter)
 	local allmounts = fs.getSearchPath(true)
 	fs.mount(engine.homepath..fs.getPathSeparator(), "/tmp/listsaves")
 
@@ -186,7 +186,7 @@ function _M:listSavefiles(moddir_filter)
 		end
 	end
 
-	local mods = self:listModules(nil, moddir_filter)
+	local mods = self:listModules(incompatible_module, moddir_filter)
 	for _, mod in ipairs(mods) do
 		local lss = {}
 		print("Listing saves for module", mod.short_name)
@@ -816,6 +816,8 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	if mod.short_name == "boot" then profile.hash_valid = true end
 
 	mod.version_name = ("%s-%d.%d.%d"):format(mod.short_name, mod.version[1], mod.version[2], mod.version[3])
+
+	print("[MODULE] booting module version", mod.version_name)
 
 	-- Make sure locale is correct
 	core.game.resetLocale()
