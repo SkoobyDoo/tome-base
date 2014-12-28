@@ -460,12 +460,14 @@ function _M:getMapObjects(tiles, mos, z)
 	local tgt = self
 	if self.replace_display then tgt = self.replace_display end
 
+	print("===make", self.name)
 	local i = -1
 	local nextz = 0
 	local mo, dz, lm
 	local last_mo
 	repeat
 		i = i + 1
+		print(" =submo", i)
 		mo, dz, lm = tgt:makeMapObject(tiles, 1+i)
 		if mo then
 			if i == 0 then self._mo = mo end

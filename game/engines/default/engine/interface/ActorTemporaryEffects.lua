@@ -151,8 +151,8 @@ function _M:setEffect(eff_id, dur, p, silent)
 			else
 				list = table.getTable(self, list)
 			end
+			table.insert(list, eff_id)
 		end
-		table.insert(list, eff_id)
 	end
 
 	self.changed = true
@@ -206,8 +206,8 @@ function _M:removeEffect(eff, silent, force)
 			else
 				list = table.getTable(self, list)
 			end
+			table.removeFromList(list, eff_id)
 		end
-		table.removeFromList(list, eff_id)
 	end
 
 	self:check("on_temporary_effect_removed", eff, ed, p)
