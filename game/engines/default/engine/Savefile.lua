@@ -367,7 +367,8 @@ function _M:saveEntity(e, no_dialog)
 end
 
 local function resolveSelf(o, base, allow_object)
-	if o.__ATOMIC and not allow_object then return end
+	-- we check both to ensure compatibility with old saves; including world.teaw which is vital to not make everything explode
+	if o.__ATOMIC or o.__CLASSNAME and not allow_object then return end
 
 	local change = {}
 	for k, e in pairs(o) do
