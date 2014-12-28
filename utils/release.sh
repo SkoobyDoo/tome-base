@@ -76,23 +76,23 @@ rm -rf tome
 cd ../../
 
 cd ..
-# tar cvjf t-engine4-src-"$ver".tar.bz2 t-engine4-src-"$ver"
+tar cvjf t-engine4-src-"$ver".tar.bz2 t-engine4-src-"$ver"
 
 # windows
-# echo "******************** Windows"
-# cd t-engine4-windows-"$ver"
-# cp -a ../../bootstrap/  ../t-engine4-src-"$ver"/game/ ../../C* ../../dlls/* .
-# find . -name '*~' -or -name '.svn' | xargs rm -rf
-# cd ..
-# zip -r -9 t-engine4-windows-"$ver".zip t-engine4-windows-"$ver"
+echo "******************** Windows"
+cd t-engine4-windows-"$ver"
+cp -a ../../bootstrap/  ../t-engine4-src-"$ver"/game/ ../../C* ../../dlls/* .
+find . -name '*~' -or -name '.svn' | xargs rm -rf
+cd ..
+zip -r -9 t-engine4-windows-"$ver".zip t-engine4-windows-"$ver"
 
 # linux 32
-# echo "******************** linux32"
-# cd t-engine4-linux32-"$ver"
-# cp -a ../../bootstrap/  ../t-engine4-src-"$ver"/game/ ../../C* ../../linux-bin/* .
-# find . -name '*~' -or -name '.svn' | xargs rm -rf
-# cd ..
-# tar -cvjf t-engine4-linux32-"$ver".tar.bz2 t-engine4-linux32-"$ver"
+echo "******************** linux32"
+cd t-engine4-linux32-"$ver"
+cp -a ../../bootstrap/  ../t-engine4-src-"$ver"/game/ ../../C* ../../linux-bin/* .
+find . -name '*~' -or -name '.svn' | xargs rm -rf
+cd ..
+tar -cvjf t-engine4-linux32-"$ver".tar.bz2 t-engine4-linux32-"$ver"
 
 # linux 64
 echo "******************** linux64"
@@ -103,70 +103,70 @@ cd ..
 tar -cvjf t-engine4-linux64-"$ver".tar.bz2 t-engine4-linux64-"$ver"
 
 # OSX
-# echo "******************** OSX"
-# cd t-engine4-osx-"$ver"
-# mkdir T-Engine.app/
-# cp -a ../../mac/base_app/* T-Engine.app/
-# cp -a ../../bootstrap/ T-Engine.app/Contents/MacOS/
-# cp -a ../t-engine4-src-"$ver"/game/ .
-# cp -a ../../C* .
-# find . -name '*~' -or -name '.svn' | xargs rm -rf
-# zip -r -9 ../t-engine4-osx-"$ver".zip *
-# cd ..
+echo "******************** OSX"
+cd t-engine4-osx-"$ver"
+mkdir T-Engine.app/
+cp -a ../../mac/base_app/* T-Engine.app/
+cp -a ../../bootstrap/ T-Engine.app/Contents/MacOS/
+cp -a ../t-engine4-src-"$ver"/game/ .
+cp -a ../../C* .
+find . -name '*~' -or -name '.svn' | xargs rm -rf
+zip -r -9 ../t-engine4-osx-"$ver".zip *
+cd ..
 
 #### Music less
 
 # src
-# echo "******************** Src n/m"
-# cd t-engine4-src-"$ver"
-# IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
-# 	echo "$i"|grep '/music/' -q
-# 	if test $? -eq 0; then rm "$i"; fi
-# done
-# rm game/modules/tome*-music.team
-# rm game/modules/boot*team
-# cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
-# cd ..
-# tar cvjf t-engine4-src-"$ver"-nomusic.tar.bz2 t-engine4-src-"$ver"
+echo "******************** Src n/m"
+cd t-engine4-src-"$ver"
+IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
+	echo "$i"|grep '/music/' -q
+	if test $? -eq 0; then rm "$i"; fi
+done
+rm game/modules/tome*-music.team
+rm game/modules/boot*team
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cd ..
+tar cvjf t-engine4-src-"$ver"-nomusic.tar.bz2 t-engine4-src-"$ver"
 
 # windows
-# echo "******************** Windows n/m"
-# cd t-engine4-windows-"$ver"
-# IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
-# 	echo "$i"|grep '/music/' -q
-# 	if test $? -eq 0; then rm "$i"; fi
-# done
-# rm game/modules/tome*-music.team
-# rm game/modules/boot*team
-# cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
-# cd ..
-# zip -r -9 t-engine4-windows-"$ver"-nomusic.zip t-engine4-windows-"$ver"
+echo "******************** Windows n/m"
+cd t-engine4-windows-"$ver"
+IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
+	echo "$i"|grep '/music/' -q
+	if test $? -eq 0; then rm "$i"; fi
+done
+rm game/modules/tome*-music.team
+rm game/modules/boot*team
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cd ..
+zip -r -9 t-engine4-windows-"$ver"-nomusic.zip t-engine4-windows-"$ver"
 
 # linux 32
-# echo "******************** linux32 n/m"
-# cd t-engine4-linux32-"$ver"
-# IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
-# 	echo "$i"|grep '/music/' -q
-# 	if test $? -eq 0; then rm "$i"; fi
-# done
-# rm game/modules/tome*-music.team
-# rm game/modules/boot*team
-# cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
-# cd ..
-# tar -cvjf t-engine4-linux32-"$ver"-nomusic.tar.bz2 t-engine4-linux32-"$ver"
+echo "******************** linux32 n/m"
+cd t-engine4-linux32-"$ver"
+IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
+	echo "$i"|grep '/music/' -q
+	if test $? -eq 0; then rm "$i"; fi
+done
+rm game/modules/tome*-music.team
+rm game/modules/boot*team
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cd ..
+tar -cvjf t-engine4-linux32-"$ver"-nomusic.tar.bz2 t-engine4-linux32-"$ver"
 
 # linux 64
-# echo "******************** linux64 n/m"
-# cd t-engine4-linux64-"$ver"
-# IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
-# 	echo "$i"|grep '/music/' -q
-# 	if test $? -eq 0; then rm "$i"; fi
-# done
-# rm game/modules/tome*-music.team
-# rm game/modules/boot*team
-# cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
-# cd ..
-# tar -cvjf t-engine4-linux64-"$ver"-nomusic.tar.bz2 t-engine4-linux64-"$ver"
+echo "******************** linux64 n/m"
+cd t-engine4-linux64-"$ver"
+IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
+	echo "$i"|grep '/music/' -q
+	if test $? -eq 0; then rm "$i"; fi
+done
+rm game/modules/tome*-music.team
+rm game/modules/boot*team
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cd ..
+tar -cvjf t-engine4-linux64-"$ver"-nomusic.tar.bz2 t-engine4-linux64-"$ver"
 
 cp *zip *bz2 *dmg.gz /foreign/eyal/var/www/te4.org/htdocs/dl/t-engine
 
