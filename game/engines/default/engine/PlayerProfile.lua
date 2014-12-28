@@ -581,6 +581,10 @@ function _M:tryAuth()
 		core.profile.pushOrder(table.serialize{o="Login", l=self.login, p=self.pass})
 	end
 	self.waiting_auth = true
+	if __module_extra_info.sleep_on_auth then
+		core.game.sleep((tonumber(__module_extra_info.sleep_on_auth) or 5) * 1000)
+		self:waitEvent("Auth", function(e) end, 10000)
+	end
 end
 
 function _M:logOut()
