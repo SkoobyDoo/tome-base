@@ -370,7 +370,10 @@ function _M:makeMapObject(tiles, idx)
 			local dy, dh = amo.display_y or 0, amo.display_h or 1
 			-- Create a simple additional chained MO
 			if amo.image_alter == "sdm" then
-				tex = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, true)
+				local oldrepo = tiles.repo
+				tiles.repo = {}
+				tex = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, false)
+				tiles.repo = oldrepo
 				tex = tex:generateSDM(amo.sdm_double)
 				texx, texy = 1,1,nil,nil
 			elseif amo.image then
