@@ -10,6 +10,7 @@ uniform vec2 texSize;
 uniform float tick;
 uniform sampler2D tex;
 uniform vec2 mapCoord;
+uniform vec4 texCoord;
 
 const float PI = 3.1415926535897932;
 
@@ -79,7 +80,8 @@ void main(void)
 	float ddy = dy - reflectionCutOff;
 	if (ddx > 0. && ddy > 0.)
 		alpha = pow(alpha, ddx*ddy*reflectionIntence);
-		
-	vec4 col = texture2D(tex,c1)*(alpha);
+	
+	c1 = clamp(c1, texCoord.xy, texCoord.xy + texCoord.zw);
+	vec4 col = texture2D(tex, texCoord.xy + c1 * texCoord.zw)*(alpha);
 	gl_FragColor = col;
 }

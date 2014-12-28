@@ -1,3 +1,17 @@
+function table.print(src, offset, ret)
+	if type(src) ~= "table" then print("table.print has no table:", src) return end
+	offset = offset or ""
+	for k, e in pairs(src) do
+		-- Deep copy subtables, but not objects!
+		if type(e) == "table" and not e.__ATOMIC then
+			print(("%s[%s] = {"):format(offset, tostring(k)))
+			table.print(e, offset.."  ")
+			print(("%s}"):format(offset))
+		else
+			print(("%s[%s] = %s"):format(offset, tostring(k), tostring(e)))
+		end
+	end
+end
 --- This is a really naive algorithm, it will not handle objects and such.
 -- Use only for small tables
 function table.serialize(src, sub, no_G)
@@ -46,17 +60,17 @@ function makeSet(w, h)
 	im:saveAlpha(true)
 	im:filledRectangle(0, 0, w, h, im:colorAllocateAlpha(0, 0, 0, 127))
 
-	for i = 0, 512, 64 do
-		used[i] = {}
-		for j = 0, 512, 64 do
-			used[i][j] = false
+	for i = 0, 1024-64, 68 do
+		used[i/68] = {}
+		for j = 0, 1024-64, 68 do
+			used[i/68][j/68] = false
 		end
 	end
 
 	return im, used
 end
 
-local w, h = 512, 512
+local w, h = 1024, 1024
 local id = 1
 
 local pos = {}
@@ -65,75 +79,83 @@ local list = {...}
 local basename = table.remove(list, 1)
 local prefix = table.remove(list, 1)
 
+function findPlace(used, d)
+	for i = 0, #used do
+		for j = 0, #used[i] do if not used[i][j] then
+			-- print("Spot", i, j)
+			local ok = true
+			for a = i, i + d.sw - 1 do for b = j, j + d.sh - 1 do
+				-- print("SubSpot", a, b)
+				if not used[a] or used[a][b] == true or used[a][b] == nil then ok = false end
+			end end
+			if ok then return i, j end
+		end end
+	end
+end
+
 function fillSet(rlist)
 	local im, used = makeSet(w, h)
 	local i, j = 0, 0
 	while #rlist > 0 do
 		local d = table.remove(rlist)
-		print("SRC", d.file, d.mw, d.mh)
+		print("SRC", d.file, d.mw, d.mh, d.sw, d.sh)
 
-		if i + d.mw > w then
-			i = 0 j = j + d.mh
-		end
-		if j + d.mh > h then
+		local i, j = findPlace(used, d)
+		if not i then
 			im:png(basename..id..".png")
 			im, used = makeSet(w, h)
-			i, j = 0, 0
+			i, j = findPlace(used, d)
 			id = id + 1
 		end
 
-		im:copyResampled(d.src, i, j, 0, 0, d.mw, d.mh, d.mw, d.mh)
-		pos[prefix..d.file] = {x=i/w, y=j/h, factorx=d.mw/w, factory=d.mh/h, w=d.mw, h=d.mh, set=prefix..basename..id..".png"}
+		local ri, rj = i * 68, j * 68
+		im:copyResampled(d.src, ri, rj, 0, 0, d.mw, d.mh, d.mw, d.mh)
+		pos[prefix..d.file] = {x=ri/w, y=rj/h, factorx=d.mw/w, factory=d.mh/h, w=d.mw, h=d.mh, set=prefix..basename..id..".png"}
 
-		used[i][j] = true
-		if d.mw > 64 then used[i+64][j] = true end
-		if d.mh > 64 then used[i][j+64] = true end
-		if d.mw > 64 and d.mh > 64 then used[i+64][j+64] = true end
+		for x = i, i - 1 + d.sw do for y = j, j - 1 + d.sh do 
+			used[x][y] = true
+		end end
 
 		i = i + d.mw
 	end
+	table.print(used)
 	im:png(basename..id..".png")
 end
 
------------------------------------------------------------------------
--- 64x64
------------------------------------------------------------------------
+local total = 0
+
 local rlist = {}
-for _, file in ipairs(list) do
+for i = #list, 1, -1 do
+	local file = list[i]
 	if file:sub(1, 2) == "./" then file = file:sub(3) end
 
 	local src = gd.createFromPng(file)
 	local mw, mh = src:sizeXY()
-	if mw == 64 and mh == 64 then rlist[#rlist+1] = {file=file, src=src, mw=mw, mh=mh} end
+	rlist[#rlist+1] = {file=file, src=src, mw=mw, mh=mh, sw=math.ceil(mw/64), sh=math.ceil(mh/64)}
+	table.remove(list, i)
 end
 table.sort(rlist, function(a,b)
-	local ai, bi = a.mw + a.mh, b.mw + b.mh
-	if ai == bi then return a.file < b.file end
-	return ai < bi
+	return a.file < b.file
+	-- local ai, bi = a.mw + a.mh, b.mw + b.mh
+	-- if ai == bi then return a.file < b.file end
+	-- return ai < bi
 end)
 
+total = total + #rlist
 fillSet(rlist)
 
------------------------------------------------------------------------
--- 64x128
------------------------------------------------------------------------
-local rlist = {}
-for _, file in ipairs(list) do
+-- Missing ones ?
+for i = #list, 1, -1 do
+	local file = list[i]
 	if file:sub(1, 2) == "./" then file = file:sub(3) end
 
 	local src = gd.createFromPng(file)
 	local mw, mh = src:sizeXY()
-	if mw == 64 and mh == 128 then rlist[#rlist+1] = {file=file, src=src, mw=mw, mh=mh} end
+	print("Missed: ", mw, mh, file)
 end
-table.sort(rlist, function(a,b)
-	local ai, bi = a.mw + a.mh, b.mw + b.mh
-	if ai == bi then return a.file < b.file end
-	return ai < bi
-end)
-
-fillSet(rlist)
 
 local f = io.open(basename..".lua", "w")
 f:write(table.serialize(pos))
 f:close()
 
+print("Total for", basename, " contains ", total, "images")

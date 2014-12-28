@@ -2638,7 +2638,7 @@ static int gl_fbo_toscreen(lua_State *L)
 	if (lua_isuserdata(L, 6))
 	{
 		shader_type *s = (shader_type*)lua_touserdata(L, 6);
-		useShader(s, fbo->w, fbo->h, w, h, r, g, b, a);
+		useShader(s, fbo->w, fbo->h, w, h, 0, 0, 1, 1, r, g, b, a);
 	}
 
 	if (!allowblend) glDisable(GL_BLEND);
@@ -2728,7 +2728,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	int shad_idx = 8;
 	while (lua_isuserdata(L, shad_idx) && lua_isuserdata(L, shad_idx+1)) {
 		shader_type *s = (shader_type*)lua_touserdata(L, shad_idx);
-		useShader(s, fbo->w, fbo->h, w, h, 1, 1, 1, 1);
+		useShader(s, fbo->w, fbo->h, w, h, 0, 0, 1, 1, 1, 1, 1, 1);
 
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -2743,7 +2743,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 	// Bind final fbo (must have bee previously activated)
 	shader_type *s = (shader_type*)lua_touserdata(L, shad_idx);
-	useShader(s, fbo_final->w, fbo_final->h, w, h, 1, 1, 1, 1);
+	useShader(s, fbo_final->w, fbo_final->h, w, h, 0, 0, 1, 1, 1, 1, 1, 1);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);

@@ -17,11 +17,11 @@ typedef struct s_shader_reset_uniform shader_reset_uniform;
 typedef struct {
 	bool clone;
 	GLuint shader;
-	GLint p_tick, p_color, p_mapcoord, p_texsize;
+	GLint p_tick, p_color, p_mapcoord, p_texsize, p_texcoord;
 	struct s_shader_reset_uniform *reset_uniforms;
 } shader_type;
 
 extern bool shaders_active;
-extern void useShader(shader_type *p, int x, int y, int w, int h, float r, float g, float b, float a);
+extern void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, float tw, float th, float r, float g, float b, float a);
 
 #endif

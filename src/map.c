@@ -430,7 +430,7 @@ static int map_objects_toscreen(lua_State *L)
 		map_object *dm;
 
 		int z;
-		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 1, 1, 1, a);
+		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
 		for (z = (!shaders_active) ? 0 : (m->nb_textures - 1); z >= 0; z--)
 		{
 			if (multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0+z);
@@ -454,7 +454,7 @@ static int map_objects_toscreen(lua_State *L)
 				}
 				if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
 
-		 		useShader(dm->shader, 0, 0, w, h, 1, 1, 1, a);
+		 		useShader(dm->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
 		 	}
 
 			tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
@@ -471,7 +471,7 @@ static int map_objects_toscreen(lua_State *L)
 			glDrawArrays(GL_QUADS, 0, 4);
 
 			if (m != dm) {
-		 		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 1, 1, 1, a);
+		 		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
 		 		else tglUseProgramObject(0);
 		 	}
 
@@ -500,7 +500,7 @@ static int map_objects_toscreen(lua_State *L)
 				}
 				lua_pop(L, 1);
 
-				if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 1, 1, 1, a);
+				if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
 			}
 
 			dm = dm->next;
@@ -591,7 +591,7 @@ static int map_objects_display(lua_State *L)
 		map_object *dm;
 
 		int z;
-		if (m->shader) useShader(m->shader, 1, 1, 1, 1, 1, 1, 1, 1);
+		if (m->shader) useShader(m->shader, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1);
 		for (z = (!shaders_active) ? 0 : (m->nb_textures - 1); z >= 0; z--)
 		{
 			if (multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0+z);
@@ -1365,7 +1365,7 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 			glColorPointer(4, GL_FLOAT, 0, colors);
 		}
 		lua_pop(L, 1);
-		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, r, g, b, a);
+		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	}
 }
 
@@ -1446,7 +1446,7 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 	 ********************************************************/
 	a = (a > 1) ? 1 : ((a < 0) ? 0 : a);
 	int z;
-	if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, r, g, b, a);
+	if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, m->tex_x[0], m->tex_y[0], m->tex_factorx[0], m->tex_factory[0], r, g, b, a);
 	for (z = (!shaders_active) ? 0 : (m->nb_textures - 1); z > 0; z--)
 	{
 		if (multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0+z);
@@ -1547,7 +1547,7 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 			}
 			if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
 
-	 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, r, g, b, a);
+	 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 	}
 
 		tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
@@ -1578,7 +1578,7 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 			(m->next || dm->shader) ? 1 : 0,
 			i, j);
 		if (m != dm) {
-	 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, r, g, b, a);
+	 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 		else tglUseProgramObject(0);
 	 	}
 		dm->animdx = animdx;

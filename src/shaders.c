@@ -32,7 +32,7 @@
 
 bool shaders_active = TRUE;
 
-void useShader(shader_type *p, int x, int y, int w, int h, float r, float g, float b, float a)
+void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, float tw, float th, float r, float g, float b, float a)
 {
 	tglUseProgramObject(p->shader);
 	GLfloat t = cur_frame_tick;
@@ -52,6 +52,12 @@ void useShader(shader_type *p, int x, int y, int w, int h, float r, float g, flo
 	c[0] = w;
 	c[1] = h;
 	glUniform2fvARB(p->p_texsize, 1, c);
+
+	d[0] = tx;
+	d[1] = ty;
+	d[2] = tw;
+	d[3] = th;
+	glUniform4fvARB(p->p_texcoord, 1, d);
 
 	shader_reset_uniform *ru = p->reset_uniforms;
 	while (ru) {
@@ -186,6 +192,7 @@ static int program_clone(lua_State *L)
 	np->p_color = p->p_color;
 	np->p_mapcoord = p->p_mapcoord;
 	np->p_texsize = p->p_texsize;
+	np->p_texcoord = p->p_texcoord;
 	np->reset_uniforms = NULL;
 
 	lua_getmetatable(L, 1); // 3
@@ -561,6 +568,7 @@ static int program_compile(lua_State *L)
 	p->p_color = glGetUniformLocationARB(p->shader, "displayColor");
 	p->p_mapcoord = glGetUniformLocationARB(p->shader, "mapCoord");
 	p->p_texsize = glGetUniformLocationARB(p->shader, "texSize");
+	p->p_texcoord = glGetUniformLocationARB(p->shader, "texCoord");
 
 	lua_pushboolean(L, TRUE);
 	return 1;

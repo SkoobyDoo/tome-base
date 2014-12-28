@@ -32,6 +32,7 @@ sharp_scaling = nil
 tilesets = {}
 tilesets_texs = {}
 function _M:loadTileset(file)
+	if not fs.exists(file) then print("Tileset file "..file.." does not exists.") return end
 	local f, err = loadfile(file)
 	if err then error(err) end
 	local env = {}
@@ -72,17 +73,23 @@ function _M:loadImage(image)
 	return s
 end
 
-function _M:checkTileset(f)
-	if not self.tilesets[f] then return end
+function _M:checkTileset(image, base)
+	local f
+	if not base then f = concatPrefix(self.prefix, image)
+	else f = baseImageFile(image) end
+	if not self.tilesets[f] then
+		if not base then return self:checkTileset(image, true) end
+		return
+	end
 	local d = self.tilesets[f]
---	print("Loading tile from tileset", f)
+	print("Loading tile from tileset", f)
 	local tex = self.tilesets_texs[d.set]
 	if not tex then
 		tex = core.display.loadImage(d.set):glTexture()
 		self.tilesets_texs[d.set] = tex
 		print("Loading tileset", d.set)
 	end
-	return tex, d.factorx, d.factory, d.x, d.y
+	return tex, d.factorx, d.factory, d.x, d.y, d.w, d.h
 end
 
 function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_tileset, force_texture_repeat)
@@ -103,18 +110,18 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 
 	if self.repo[char] and self.repo[char][fgidx] and self.repo[char][fgidx][bgidx] then
 		local s = self.repo[char][fgidx][bgidx]
-		return s[1], s[2], s[3], s[4], s[5]
+		return s[1], s[2], s[3], s[4], s[5], s[6], s[7]
 	else
 		local s, sw, sh, w, h
 		local is_image = false
 		if (self.use_images or not dochar) and image and #image > 4 then
 			if allow_tileset and self.texture then
-				local ts, fx, fy, tsx, tsy = self:checkTileset(concatPrefix(self.prefix, image))
+				local ts, fx, fy, tsx, tsy, tw, th = self:checkTileset(image)
 				if ts then
 					self.repo[char] = self.repo[char] or {}
 					self.repo[char][fgidx] = self.repo[char][fgidx] or {}
-					self.repo[char][fgidx][bgidx] = {ts, fx, fy, tsx, tsy}
-					return ts, fx, fy, tsx, tsy
+					self.repo[char][fgidx][bgidx] = {ts, fx, fy, tw, th, tsx, tsy}
+					return ts, fx, fy, tw, th, tsx, tsy
 				end
 			end
 			print("Loading tile", image)
@@ -154,7 +161,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 
 		self.repo[char] = self.repo[char] or {}
 		self.repo[char][fgidx] = self.repo[char][fgidx] or {}
-		self.repo[char][fgidx][bgidx] = {s, sw, sh, w, h}
+		self.repo[char][fgidx][bgidx] = {s, sw, sh, w, h, 0, 0}
 		return s, sw, sh, w, h
 	end
 end
