@@ -2184,7 +2184,7 @@ function _M:onTakeHit(value, src, death_note)
 			self:removeEffect(self.EFF_PSI_DAMAGE_SHIELD)
 		end
 	end
-	
+
 	if value > 0 and self:attr("shadow_empathy") then
 		-- Absorb damage into a random shadow
 		local shadow = self:callTalent(self.T_SHADOW_EMPATHY, "getRandomShadow")
@@ -5082,7 +5082,7 @@ function _M:postUseTalent(ab, ret, silent)
 	end
 
 	-- Cancel stealth!
-	if ab.id ~= self.T_STEALTH and ab.id ~= self.T_HIDE_IN_PLAIN_SIGHT and not util.getval(ab.no_break_stealth, self, ab) then self:breakStealth() end
+	if not util.getval(ab.no_break_stealth, self, ab) then self:breakStealth() end
 	if ab.id ~= self.T_LIGHTNING_SPEED then self:breakLightningSpeed() end
 	if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
 	if not ab.no_reload_break then self:breakReloading() end
@@ -5166,6 +5166,22 @@ function _M:forceUseTalent(t, def)
 	return unpack(ret)
 end
 
+-- Remove an effect or sustain.
+function _M:removeModifier(id)
+	if 'T_' == id:sub(1, 2) then
+		self:forceUseTalent(id, {ignore_energy=true})
+	elseif 'EFF_' == id:sub(1, 4) then
+		self:removeEffect(id)
+	end
+end
+
+-- Remove a list of effects or sustains.
+function _M:removeModifierList(list)
+	for _, id in ipairs(list) do
+		self:removeModifier(id)
+	end
+end
+
 function _M:breakReloading()
 	if self:hasEffect(self.EFF_RELOADING) then
 		self:removeEffect(self.EFF_RELOADING)
@@ -5174,7 +5190,8 @@ end
 
 --- Breaks stealth if active
 function _M:breakStealth()
-	if self:isTalentActive(self.T_STEALTH) then
+	local breaks = self.break_with_stealth
+	if breaks and #breaks > 0 then
 		local chance = 0
 		if self:knowTalent(self.T_UNSEEN_ACTIONS) then
 			chance = self:callTalent(self.T_UNSEEN_ACTIONS,"getChance") + (self:getLck() - 50) * 0.2
@@ -5182,28 +5199,15 @@ function _M:breakStealth()
 		-- Do not break stealth
 		if rng.percent(chance) then return end
 
-		self:forceUseTalent(self.T_STEALTH, {ignore_energy=true})
+		self:removeModifierList(breaks)
 		self.changed = true
 	end
 end
 
 --- Breaks step up if active
 function _M:breakStepUp()
-	if self:hasEffect(self.EFF_STEP_UP) then
-		self:removeEffect(self.EFF_STEP_UP)
-	end
-	if self:hasEffect(self.EFF_WILD_SPEED) then
-		self:removeEffect(self.EFF_WILD_SPEED)
-	end
-	if self:hasEffect(self.EFF_HUNTER_SPEED) then
-		self:removeEffect(self.EFF_HUNTER_SPEED)
-	end
-	if self:hasEffect(self.EFF_REFLEXIVE_DODGING) then
-		self:removeEffect(self.EFF_REFLEXIVE_DODGING)
-	end
-	if self:hasEffect(self.EFF_SKIRMISHER_DIRECTED_SPEED) then
-		self:removeEffect(self.EFF_SKIRMISHER_DIRECTED_SPEED)
-	end
+	local breaks = self.break_with_step_up
+	if breaks and #breaks > 0 then self:removeModifierList(breaks) end
 end
 
 --- Breaks lightning speed if active

@@ -45,6 +45,7 @@ newTalent{
 	allow_autocast = true,
 	no_energy = true,
 	tactical = { BUFF = 3 },
+	no_break_stealth = true,
 	getStealthPower = function(self, t) return 10 + self:combatScale(math.max(1,self:getCun(10, true) * self:getTalentLevel(t)), 5, 1, 54, 50) end, --TL 5, cun 100 = 54
 	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.6)) end, -- Limit to range >= 1
 	on_pre_use = function(self, t, silent)
@@ -58,13 +59,14 @@ newTalent{
 		-- Check nearby actors detection ability
 		if not self.x or not self.y or not game.level then return end
 		if not rng.percent(self.hide_chance or 0) then
-			if stealthDetection(self, t.getRadius(self, t)) > 0 then 
+			if stealthDetection(self, t.getRadius(self, t)) > 0 then
 				if not silent then game.logPlayer(self, "You are being observed too closely to enter Stealth!") end
 				return nil
 			end
 		end
 		return true
 	end,
+	sustain_lists = "break_with_stealth",
 	activate = function(self, t)
 		local res = {
 			stealth = self:addTemporaryValue("stealth", t.getStealthPower(self, t)),
@@ -123,6 +125,7 @@ newTalent{
 	-- 90% (~= 47% chance against 1 opponent (range 1) at talent level 1, 270% (~= 75% chance against 1 opponent (range 1) and 3 opponents (range 6) at talent level 5
 	-- vs flat 47% at 1, 75% @ 5 previous
 	stealthMult = function(self, t) return self:combatTalentScale(t, 0.9, 2.7) end,
+	no_break_stealth = true,
 	getChance = function(self, t, fake)
 		local netstealth = t.stealthMult(self, t) * (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
 		if fake then return netstealth end

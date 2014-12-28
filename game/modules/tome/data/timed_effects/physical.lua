@@ -1096,6 +1096,7 @@ newEffect{
 		local d = game.turn - eff.start_turn
 		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
 	end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.start_turn = game.turn
 		eff.possible_end_turns = 10 * (eff.dur+1)
@@ -1124,6 +1125,7 @@ newEffect{
 		local d = game.turn - eff.start_turn
 		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
 	end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.start_turn = game.turn
 		eff.possible_end_turns = 10 * (eff.dur+1)
@@ -1152,6 +1154,7 @@ newEffect{
 		local d = game.turn - eff.start_turn
 		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
 	end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.start_turn = game.turn
 		eff.possible_end_turns = 10 * (eff.dur+1)
@@ -1281,14 +1284,14 @@ newEffect{
 	callbackOnHit = function(self, eff, cb, src)
 		if not src then return cb.value end
 		local share = cb.value * eff.sharePct
-		
+
 		-- deal the redirected damage as physical because I don't know how to preserve the damage type in a callback
 		if not self.__grapling_feedback_damage then
 			self.__grapling_feedback_damage = true
 			DamageType:get(DamageType.PHYSICAL).projector(self or eff.src, eff.trgt.x, eff.trgt.y, DamageType.PHYSICAL, share)
 			self.__grapling_feedback_damage = nil
 		end
-		
+
 		return cb.value - share
 	end,
 }
@@ -1502,6 +1505,7 @@ newEffect{
 	parameters = { power=0.1 },
 	on_gain = function(self, err) return "#Target# speeds up.", "+Reflexive Dodging" end,
 	on_lose = function(self, err) return "#Target# slows down.", "-Reflexive Dodging" end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.power)
 	end,
@@ -2653,6 +2657,7 @@ newEffect {
 	},
 	status = "beneficial",
 	on_lose = function(self, eff) return "#Target# loses speed.", "-Directed Speed" end,
+	lists = 'break_with_step_up',
 	callbackOnMove = function(self, eff, moved, force, ox, oy)
 		local angle_start = normalize_direction(math.atan2(self.y - eff.start_y, self.x - eff.start_x))
 		local angle_last = normalize_direction(math.atan2(self.y - eff.last_y, self.x - eff.last_x))

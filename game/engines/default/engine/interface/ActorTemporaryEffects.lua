@@ -141,6 +141,20 @@ function _M:setEffect(eff_id, dur, p, silent)
 		end
 	end
 	if ed.activate then ed.activate(self, p, ed) end
+
+	if ed.lists then
+		local lists = ed.lists
+		if 'table' ~= type(lists) then lists = {lists} end
+		for _, list in ipairs(lists) do
+			if 'table' == type(list) then
+				list = table.getTable(self, unpack(list))
+			else
+				list = table.getTable(self, list)
+			end
+		end
+		table.insert(list, eff_id)
+	end
+
 	self.changed = true
 	self:check("on_temporary_effect_added", eff_id, ed, p)
 end
@@ -182,6 +196,19 @@ function _M:removeEffect(eff, silent, force)
 		end
 	end
 	if _M.tempeffect_def[eff].deactivate then _M.tempeffect_def[eff].deactivate(self, p, _M.tempeffect_def[eff]) end
+	if ed.lists then
+		local lists = ed.lists
+		if 'table' ~= type(lists) then lists = {lists} end
+		for _, list in ipairs(lists) do
+			if 'table' == type(list) then
+				list = table.getTable(self, unpack(list))
+			else
+				list = table.getTable(self, list)
+			end
+		end
+		table.removeFromList(list, eff_id)
+	end
+
 	self:check("on_temporary_effect_removed", eff, _M.tempeffect_def[eff], p)
 end
 
