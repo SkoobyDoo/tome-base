@@ -459,6 +459,13 @@ function _M:addonMD5(add, base)
 	table.print(md5s)
 	local fmd5 = md5.sumhexa(table.concat(md5s))
 	print("[MODULE LOADER] addon ", add.short_name, " MD5", fmd5, "computed in ", core.game.getTime() - t, vbase)
+
+	if __module_extra_info.compute_md5_only then
+		local f = io.open(__module_extra_info.compute_md5_only, "a")
+		f:write(("%s : addon[%s] md5\n"):format(fmd5, add.version_name))
+		f:close()
+	end
+
 	return fmd5
 end
 
@@ -579,7 +586,7 @@ You may try to force loading if you are sure the savefile does not use that addo
 
 		-- Compute addon md5
 		local hash_valid, hash_err
-		if config.settings.cheat then
+		if config.settings.cheat and not __module_extra_info.compute_md5_only then
 			hash_valid, hash_err = false, "cheat mode skipping addon validation"
 		else
 			local fmd5 = self:addonMD5(add)
@@ -878,7 +885,7 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	local hash_valid, hash_err
 	local t = core.game.getTime()
 	local module_md5 = "--"
-	if config.settings.cheat then
+	if config.settings.cheat and not __module_extra_info.compute_md5_only then
 		hash_valid, hash_err = false, "cheat mode skipping validation"
 	else
 		if mod.short_name ~= "boot" then
@@ -888,6 +895,12 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 			table.sort(md5s)
 			module_md5 = md5.sumhexa(table.concat(md5s))
 			print("[MODULE LOADER] module MD5", module_md5, "computed in ", core.game.getTime() - t)
+
+			if __module_extra_info.compute_md5_only then
+				local f = io.open(__module_extra_info.compute_md5_only, "w")
+				f:write(("%s : module[%s] md5\n"):format(module_md5, mod.version_string))
+				f:close()
+			end
 		end
 	end
 
@@ -897,6 +910,9 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	hashlist[#hashlist+1] = {module=mod.version_name, md5=module_md5}
 	hash_valid, hash_err = profile:checkBatchHash(hashlist)
 	print("[MODULE] All hashes validation: ", hash_valid, hash_err)
+
+	-- Finish now
+	if __module_extra_info.compute_md5_only then os.crash() end
 
 	-- Now that addons are loaded we can load UI definitions
 	for _, file in ipairs(fs.list("/data/gfx/ui/definitions")) do
