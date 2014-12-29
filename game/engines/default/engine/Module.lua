@@ -383,6 +383,11 @@ function _M:listAddons(mod, ignore_compat)
 				add.teaac = teaac
 				add.natural_compatible = engine.version_nearly_same(mod.version, add.version)
 				add.version_txt = ("%d.%d.%d"):format(add.version[1], add.version[2], add.version[3])
+				if add.addon_version then
+					add.addon_version_txt = ("%d.%d.%d"):format(add.addon_version[1], add.addon_version[2], add.addon_version[3])
+				else
+					add.addon_version_txt = "--"
+				end
 				if add.dlc and not profile:isDonator(add.dlc) then add.dlc = "no" end
 				if add.id_dlc and not profile:allowDLC(add.id_dlc) then add.id_dlc = "no" end
 				adds[#adds+1] = add

@@ -60,7 +60,7 @@ function _M:init()
 	}, list=self.list, fct=function(item) end, select=function(item, sel) self:select(item) end}
 
 	self.c_adds = ListColumns.new{width=math.floor(self.iw * 2 / 3 - 10), height=self.ih - 10 - self.c_compat.h, scrollbar=true, columns={
-		{name="Addon", width=60, display_prop="long_name"},
+		{name="Addon", width=50, display_prop="long_name"},
 		{name="Active", width=20, display_prop=function(item)
 			if item.cheat_only and not config.settings.cheat then
 				return "#GREY#Developer tool"
@@ -72,7 +72,8 @@ function _M:init()
 				return (item.natural_compatible and "#LIGHT_GREEN#Auto: Active" or "#LIGHT_RED#Auto: Incompatible"):toTString()
 			end
 		end},
-		{name="Version", width=20, display_prop="version_txt"},
+		{name="Addon Version", width=15, display_prop="addon_version_txt"},
+		{name="Game Version", width=15, display_prop="version_txt"},
 	}, list={}, fct=function(item) self:switchAddon(item) end, select=function(item, sel) self:select(item) end}
 
 	local sep = Separator.new{dir="horizontal", size=self.ih - 10}
