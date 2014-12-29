@@ -1647,7 +1647,9 @@ function _M:displayPlayer(scale, bx, by)
 
 	pf_shadow[1]:toScreenFull(0, 0, pf_shadow[6], pf_shadow[7], pf_shadow[2], pf_shadow[3])
 	pf_bg[1]:toScreenFull(pf_bg_x, pf_bg_y, pf_bg[6], pf_bg[7], pf_bg[2], pf_bg[3])
+	core.display.glScissor(true, 15, 15, 54, 54)
 	player:toScreen(nil, 22, 22, 40, 40)
+	core.display.glScissor(false)
 
 	if (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled then
 		pf_defend[1]:toScreenFull(22 + pf_attackdefend_x, 67 + pf_attackdefend_y, pf_defend[6], pf_defend[7], pf_defend[2], pf_defend[3])
