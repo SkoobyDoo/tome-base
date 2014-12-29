@@ -4230,7 +4230,11 @@ newEntity{ base = "BASE_SHOT", --Thanks Grayswandir!
 			[DamageType.MIND] = 25,
 			[DamageType.MINDSLOW] = 30,
 		},
-		talent_on_hit = { [Talents.T_RELOAD] = {level=1, chance=50} },
+		special_on_hit = {desc="50% chance to reload 1 ammo", on_kill=1, fct=function(combat, who, target)
+			if not rng.percent(50) then return end
+			local ammo = who:hasAmmo()
+			ammo.combat.shots_left = util.bound(ammo.combat.shots_left + 1, 0, ammo.combat.capacity)
+		end},
 	},
 }
 

@@ -109,6 +109,7 @@ newTalent{
 	no_energy = true,
 	no_reload_break = true,
 	no_break_stealth = true,
+	no_dumb_use = true,
 	on_pre_use = function(self, t, silent)
 		local q = self:hasAmmo()
 		if not q then if not silent then game.logPlayer(self, "You must have a quiver or pouch equipped.") end return false end
