@@ -699,7 +699,7 @@ function _M:reload()
 	local ammo, err = self:hasAmmo()
 	if not ammo then return end
 	if ammo.combat.shots_left >= ammo.combat.capacity then return end
-	local reloads = self:reloadRateQS()
+	local reloads = self:reloadRate()
 	ammo.combat.shots_left = math.min(ammo.combat.capacity, ammo.combat.shots_left + reloads)
 	return true
 end
