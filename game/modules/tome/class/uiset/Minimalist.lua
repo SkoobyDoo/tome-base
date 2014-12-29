@@ -1591,7 +1591,11 @@ function _M:displayParty(scale, bx, by)
 					core.display.drawQuad(x+1, y+1 + (1-p)*hs, 38, p*38, life_c[1]*255, life_c[2]*255, life_c[3]*255, 178)
 					if life_sha.shad then life_sha.shad:use(false) end
 
+					local scale, bx, by = self.places.party.scale, self.places.party.x, self.places.party.y
+					core.display.glScissor(true, bx+x*scale, by+y*scale, 40*scale, 40*scale)
 					a:toScreen(nil, x+4, y+4, 32, 32)
+					core.display.glScissor(false)
+
 					local p = (game.player == a) and portrait or portrait_unsel
 					if a.unused_stats > 0 or a.unused_talents > 0 or a.unused_generics > 0 or a.unused_talents_types > 0 and def.control == "full" then
 						p = (game.player == a) and portrait_lev or portrait_unsel_lev
@@ -1647,7 +1651,7 @@ function _M:displayPlayer(scale, bx, by)
 
 	pf_shadow[1]:toScreenFull(0, 0, pf_shadow[6], pf_shadow[7], pf_shadow[2], pf_shadow[3])
 	pf_bg[1]:toScreenFull(pf_bg_x, pf_bg_y, pf_bg[6], pf_bg[7], pf_bg[2], pf_bg[3])
-	core.display.glScissor(true, 15, 15, 54, 54)
+	core.display.glScissor(true, bx+15*scale, by+15*scale, 54*scale, 54*scale)
 	player:toScreen(nil, 22, 22, 40, 40)
 	core.display.glScissor(false)
 
