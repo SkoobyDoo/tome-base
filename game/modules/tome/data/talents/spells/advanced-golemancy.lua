@@ -132,6 +132,7 @@ newTalent{
 	points = 5,
 	no_unlearn_last = true,
 	on_learn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem.life_regen = self.alchemy_golem.life_regen + 1
 		self.alchemy_golem.mana_regen = self.alchemy_golem.mana_regen + 1
 		self.alchemy_golem.stamina_regen = self.alchemy_golem.stamina_regen + 1
@@ -142,6 +143,7 @@ newTalent{
 		end
 	end,
 	on_unlearn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem.life_regen = self.alchemy_golem.life_regen - 1
 		self.alchemy_golem.mana_regen = self.alchemy_golem.mana_regen - 1
 		self.alchemy_golem.stamina_regen = self.alchemy_golem.stamina_regen - 1

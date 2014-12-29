@@ -341,7 +341,7 @@ newTalent{
 		if self:getTalentLevelRaw(t) == 1 and not self.innate_alchemy_golem then
 			self:learnTalent(self.T_REFIT_GOLEM, true)
 		end
-
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:learnTalent(Talents.T_WEAPON_COMBAT, true, nil, {no_unlearn=true})
 		self.alchemy_golem:learnTalent(Talents.T_STAFF_MASTERY, true, nil, {no_unlearn=true})
 		self.alchemy_golem:learnTalent(Talents.T_KNIFE_MASTERY, true, nil, {no_unlearn=true})
@@ -349,6 +349,7 @@ newTalent{
 		self.alchemy_golem:learnTalent(Talents.T_EXOTIC_WEAPONS_MASTERY, true, nil, {no_unlearn=true})
 	end,
 	on_unlearn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:unlearnTalent(Talents.T_WEAPON_COMBAT, nil, nil, {no_unlearn=true})
 		self.alchemy_golem:unlearnTalent(Talents.T_STAFF_MASTERY, nil, nil, {no_unlearn=true})
 		self.alchemy_golem:unlearnTalent(Talents.T_KNIFE_MASTERY, nil, nil, {no_unlearn=true})
@@ -381,11 +382,13 @@ newTalent{
 	require = spells_req2,
 	points = 5,
 	on_learn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:learnTalent(Talents.T_THICK_SKIN, true, nil, {no_unlearn=true})
 		self.alchemy_golem:learnTalent(Talents.T_GOLEM_ARMOUR, true, nil, {no_unlearn=true})
 		self.alchemy_golem.healing_factor = (self.alchemy_golem.healing_factor or 1) + 0.1
 	end,
 	on_unlearn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:unlearnTalent(Talents.T_THICK_SKIN, nil, nil, {no_unlearn=true})
 		self.alchemy_golem:unlearnTalent(Talents.T_GOLEM_ARMOUR, nil, nil, {no_unlearn=true})
 		self.alchemy_golem.healing_factor = (self.alchemy_golem.healing_factor or 1) - 0.1
