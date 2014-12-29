@@ -693,7 +693,7 @@ function _M:createDisplay()
 		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
 		tiles=game.uiset.hotkeys_display_icons,
 		tree=self.gtree,
-		width=320, height=self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
+		width=320, height=(self.no_tooltip and self.ih - 50) or self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
 		tooltip=function(item)
 			local x = self.display_x + self.uis[8].x - game.tooltip.max
 			if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
