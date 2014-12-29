@@ -44,7 +44,7 @@ end
 
 local function copy_recurs(dst, src, deep)
 	for k, e in pairs(src) do
-		if type(e) == "table" and e.__ATOMIC then
+		if type(e) == "table" and (e.__ATOMIC or e.__CLASSNAME) then
 			dst[k] = e
 		elseif dst[k] == nil then
 			if deep then
@@ -53,7 +53,7 @@ local function copy_recurs(dst, src, deep)
 			else
 				dst[k] = e
 			end
-		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__ATOMIC then
+		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			copy_recurs(dst[k], e, deep)
 		end
 	end
@@ -91,7 +91,7 @@ function _M:init(t, no_default)
 	for k, e in pairs(t) do
 		if k ~= "__CLASSNAME" and k ~= "uid" then
 			local ee = e
-			if type(e) == "table" and not e.__ATOMIC then ee = table.clone(e, true) end
+			if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then ee = table.clone(e, true) end
 			self[k] = ee
 		end
 	end
@@ -460,14 +460,12 @@ function _M:getMapObjects(tiles, mos, z)
 	local tgt = self
 	if self.replace_display then tgt = self.replace_display end
 
-	print("===make", self.name)
 	local i = -1
 	local nextz = 0
 	local mo, dz, lm
 	local last_mo
 	repeat
 		i = i + 1
-		print(" =submo", i)
 		mo, dz, lm = tgt:makeMapObject(tiles, 1+i)
 		if mo then
 			if i == 0 then self._mo = mo end
@@ -633,7 +631,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(t) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			list[k] = e
-		elseif type(e) == "table" and not e.__ATOMIC then
+		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			list[k] = e
 		end
 	end
@@ -642,7 +640,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(list) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
-		elseif type(e) == "table" and not e.__ATOMIC then
+		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			local key_chain = table.clone(key_chain)
 			key_chain[#key_chain+1] = k
 			self:resolve(e, last, on_entity, key_chain)

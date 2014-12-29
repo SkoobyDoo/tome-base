@@ -75,6 +75,7 @@ return {
 		},
 		[4] = {
 			generator = { map = {
+				down = "FLOOR",
 				required_rooms = {"!boss"},
 			} },
 		},

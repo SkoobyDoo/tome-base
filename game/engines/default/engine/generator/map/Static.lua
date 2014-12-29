@@ -202,7 +202,7 @@ function _M:resolve(typ, c)
 	local res = self.tiles[c][typ]
 	if type(res) == "function" then
 		return self.grid_list[res()]
-	elseif type(res) == "table" and res.__ATOMIC then
+	elseif type(res) == "table" and (res.__ATOMIC or res.__CLASSNAME) then
 		return res
 	elseif type(res) == "table" then
 		return self.grid_list[res[rng.range(1, #res)]]

@@ -1049,13 +1049,13 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 
 	local e = {
 		src=src, x=x, y=y, duration=duration, damtype=damtype, dam=dam, radius=radius, dir=dir, angle=angle,
-		overlay=overlay and overlay.__ATOMIC and overlay,
+		overlay=overlay and (overlay.__ATOMIC or overlay.__CLASSNAME) and overlay,
 		grids = grids,
 		update_fct=update_fct, selffire=selffire, friendlyfire=friendlyfire,
 	}
 
 	local overlay_particle = nil
-	if overlay and not overlay.__ATOMIC then
+	if overlay and not overlay.__ATOMIC and not overlay.__CLASSNAME then
 		overlay_particle = overlay
 	elseif overlay then
 		if overlay.overlay_particle then overlay_particle = overlay.overlay_particle end

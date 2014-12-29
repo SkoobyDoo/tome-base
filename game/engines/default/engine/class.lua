@@ -142,8 +142,8 @@ local function clonerecurs(d)
 	local n = {}
 	for k, e in pairs(d) do
 		local nk, ne = k, e
-		if type(k) == "table" and not k.__ATOMIC then nk = clonerecurs(k) end
-		if type(e) == "table" and not e.__ATOMIC then ne = clonerecurs(e) end
+		if type(k) == "table" and not k.__ATOMIC and not k.__CLASSNAME then nk = clonerecurs(k) end
+		if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then ne = clonerecurs(e) end
 		n[nk] = ne
 	end
 	return n
@@ -171,7 +171,7 @@ function _M:clone(t)
 end
 
 local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
-	if use_saveinstead and d.__ATOMIC and d.__SAVEINSTEAD then
+	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
 		d = d.__SAVEINSTEAD
 		if clonetable[d] then return d, 1 end
 	end
@@ -196,8 +196,8 @@ local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
 		k, e = next(d, k)
 	end
 	setmetatable(n, getmetatable(d))
-	if not noclonecall and n.cloned and n.__ATOMIC then n:cloned(d) end
-	if n.__ATOMIC then nb = nb + 1 end
+	if not noclonecall and n.cloned and (n.__ATOMIC or n.__CLASSNAME) then n:cloned(d) end
+	if n.__ATOMIC or n.__CLASSNAME then nb = nb + 1 end
 	return n, nb
 end
 

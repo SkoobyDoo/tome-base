@@ -83,7 +83,7 @@ function table.print(src, offset, ret)
 	offset = offset or ""
 	for k, e in pairs(src) do
 		-- Deep copy subtables, but not objects!
-		if type(e) == "table" and not e.__ATOMIC then
+		if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			print(("%s[%s] = {"):format(offset, tostring(k)))
 			table.print(e, offset.."  ")
 			print(("%s}"):format(offset))
@@ -97,7 +97,7 @@ function table.iprint(src, offset)
 	offset = offset or ""
 	for k, e in ipairs(src) do
 		-- Deep copy subtables, but not objects!
-		if type(e) == "table" and not e.__ATOMIC then
+		if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			print(("%s[%s] = {"):format(offset, tostring(k)))
 			table.print(e, offset.."  ")
 			print(("%s}"):format(offset))
@@ -135,7 +135,7 @@ function table.clone(tbl, deep, k_skip)
 	for k, e in pairs(tbl) do
 		if not k_skip[k] then
 			-- Deep copy subtables, but not objects!
-			if deep and type(e) == "table" and not e.__ATOMIC then
+			if deep and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				n[k] = table.clone(e, true, k_skip)
 			else
 				n[k] = e
@@ -161,10 +161,10 @@ function table.merge(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 	for k, e in pairs(src) do
 		if not k_skip[k] and not k_skip_deep[k] then
 			-- Recursively merge tables
-			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC then
+			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				table.merge(dst[k], e, deep, nil, k_skip_deep, addnumbers)
 			-- Clone tables if into the destination
-			elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC then
+			elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				dst[k] = table.clone(e, deep, nil, k_skip_deep)
 			-- Nil out any NIL_MERGE entries
 			elseif e == table.NIL_MERGE then
@@ -188,7 +188,7 @@ function table.mergeAppendArray(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 		k_skip[i] = true
 		local b = src[i]
 		if deep and type(b) == "table" then
-			if b.__ATOMIC then
+			if b.__ATOMIC or b.__CLASSNAME then
 				b = b:clone()
 			else
 				b = table.clone(b, true)
@@ -268,7 +268,7 @@ function table.check(t, fct, do_recurse, path)
 	do_recurse = do_recurse or function() return true end
 	for k, e in pairs(t) do
 		local tk, te = type(k), type(e)
-		if te == "table" and not e.__ATOMIC and do_recurse(e) then
+		if te == "table" and not e.__ATOMIC and not e.__CLASSNAME and do_recurse(e) then
 			local ok, err = table.check(e, fct, do_recurse, path..tostring(k))
 			if not ok then return nil, err end
 		else
@@ -276,7 +276,7 @@ function table.check(t, fct, do_recurse, path)
 			if not ok then return nil, err end
 		end
 
-		if tk == "table" and not k.__ATOMIC and do_recurse(k) then
+		if tk == "table" and not k.__ATOMIC and not k.__CLASSNAME and do_recurse(k) then
 			local ok, err = table.check(k, fct, do_recurse, path..tostring(k))
 			if not ok then return nil, err end
 		else
@@ -293,9 +293,9 @@ end
 -- @param deep Boolean that determines if tables will be recursively merged.
 function table.update(dst, src, deep)
 	for k, e in pairs(src) do
-		if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC then
+		if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			table.update(dst[k], e, deep)
-		elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC then
+		elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			dst[k] = table.clone(e, deep)
 		elseif not dst[k] and type(dst[k]) ~= "boolean" then
 			dst[k] = e
@@ -520,7 +520,7 @@ end
 table.rules.overwrite = function(dvalue, svalue, key, dst)
 	if svalue == table.NIL_MERGE then
 		svalue = nil
-	elseif type(svalue) == 'table' and not svalue.__ATOMIC then
+	elseif type(svalue) == 'table' and not svalue.__ATOMIC and not svalue.__CLASSNAME then
 		svalue = table.clone(svalue, true)
 	end
 	dst[key] = svalue
@@ -529,7 +529,7 @@ end
 -- Does the recursion.
 table.rules.recurse = function(dvalue, svalue, key, dst, src, rules, state)
 	if type(svalue) ~= 'table' or
-		svalue.__ATOMIC or
+		svalue.__ATOMIC or svalue.__CLASSNAME or
 		(type(dvalue) ~= 'table' and svalue == table.NIL_MERGE)
 	then return end
 	if type(dvalue) ~= 'table' then
@@ -546,7 +546,7 @@ end
 table.rules.append = function(dvalue, svalue, key, dst, src, rules, state)
 	if type(key) ~= 'number' then return end
 	if type(svalue) == 'table' then
-		if svalue.__ATOMIC then
+		if svalue.__ATOMIC or svalue.__CLASSNAME then
 			svalue = svalue:clone()
 		else
 			svalue = table.clone(svalue, true)
@@ -560,7 +560,7 @@ table.rules.append_top = function(dvalue, svalue, key, dst, src, rules, state)
 	if state.path and #state.path > 0 then return end
 	if type(key) ~= 'number' then return end
 	if type(svalue) == 'table' then
-		if svalue.__ATOMIC then
+		if svalue.__ATOMIC or svalue.__CLASSNAME then
 			svalue = svalue:clone()
 		else
 			svalue = table.clone(svalue, true)
@@ -1894,7 +1894,7 @@ function util.findAllReferences(t, what)
 			if type(e) == "function" then
 				local fenv = getfenv(e)
 				local data = table.clone(data)
-				if fenv.__ATOMIC then
+				if fenv.__ATOMIC or fenv.__CLASSNAME then
 					data[#data+1] = "e:fenv["..(fenv.__CLASSNAME or true)"]:"..tostring(k)
 				else
 					data[#data+1] = "e:fenv[--]:"..tostring(k)
