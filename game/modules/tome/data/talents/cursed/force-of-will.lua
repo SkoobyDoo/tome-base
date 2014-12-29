@@ -330,6 +330,7 @@ newTalent{
 		return true
 	end,
 	callbackOnActBase = function(self, t)
+		if not self.unseenForce then return end
 		local targets = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 5, true)
 		for x, yy in pairs(grids) do
