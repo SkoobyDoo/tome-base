@@ -209,7 +209,7 @@ static int noise_texture2d(lua_State *L)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
 
 	free(map);
 
@@ -250,47 +250,6 @@ static float tilablenoise3d(noise_t *n, double ix, double iy, double iz, double 
 			noise3d(n, x, y-h, z-d) * (w-x) * (y) * (z))/(w*h*d));
 }
 
-static int noise_texture3d(lua_State *L)
-{
-	if (!shaders_active) return 0;
-
-	noise_t *n = (noise_t*)auxiliar_checkclass(L, "noise{core}", 1);
-	int w = luaL_checknumber(L, 2);
-	int h = luaL_checknumber(L, 3);
-	int d = luaL_checknumber(L, 4);
-	GLubyte *map = malloc(w * h * d * 3 * sizeof(GLubyte));
-
-	int i, j, k;
-	for (i = 0; i < w; i++)
-	{
-		for (j = 0; j < h; j++)
-		{
-			for (k = 0; k < d; k++)
-			{
-				float v = tilablenoise3d(n, i*4, j*4, k*4, w*4, h*4, d*4) * 255;
-				map[TEXEL3(i, j, k)] = (GLubyte)v;
-				map[TEXEL3(i, j, k)+1] = (GLubyte)v;
-				map[TEXEL3(i, j, k)+2] = (GLubyte)v;
-			}
-		}
-	}
-
-	GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
-	auxiliar_setclass(L, "gl{texture}", -1);
-
-	glGenTextures(1, t);
-	glBindTexture(GL_TEXTURE_3D, *t);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, w, h, d, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
-
-	free(map);
-	return 1;
-}
-
 static int noise_texture2d(lua_State *L)
 {
 	if (!shaders_active) return 0;
@@ -321,7 +280,7 @@ static int noise_texture2d(lua_State *L)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
 
 	free(map);
 	return 1;
@@ -364,7 +323,7 @@ static int noise_texture2dstack(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
 	}
 
 	free(map);
@@ -391,7 +350,6 @@ static const struct luaL_Reg noise_reg[] =
 	{"turbulence_wavelet", noise_turbulence_wavelet},
 	{"makeTexture2DStack", noise_texture2dstack},
 	{"makeTexture2D", noise_texture2d},
-	{"makeTexture3D", noise_texture3d},
 	{NULL, NULL},
 };
 

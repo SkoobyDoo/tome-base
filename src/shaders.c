@@ -30,6 +30,53 @@
 #include "shaders.h"
 #include "libtcod.h"
 
+#if defined(USE_GLES1)
+bool shaders_active = TRUE;
+
+void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, float tw, float th, float r, float g, float b, float a)
+{
+}
+
+static int shader_new(lua_State *L)
+{
+	if (!shaders_active) return 0;
+}
+
+static int program_new(lua_State *L)
+{
+	if (!shaders_active) return 0;
+}
+
+static int shader_is_active(lua_State *L)
+{
+	shaders_active = FALSE;
+	lua_pushboolean(L, shaders_active);
+	return 1;
+}
+static int shader_disable(lua_State *L)
+{
+	shaders_active = FALSE;
+	return 0;
+}
+
+static const struct luaL_Reg shaderlib[] =
+{
+	{"newShader", shader_new},
+	{"newProgram", program_new},
+	{"active", shader_is_active},
+	{"disable", shader_disable},
+	{NULL, NULL},
+};
+
+int luaopen_shaders(lua_State *L)
+{
+	luaL_openlib(L, "core.shader", shaderlib, 0);
+
+	lua_pop(L, 1);
+	return 1;
+}
+
+#else
 bool shaders_active = TRUE;
 
 void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, float tw, float th, float r, float g, float b, float a)
@@ -656,3 +703,4 @@ int luaopen_shaders(lua_State *L)
 	lua_pop(L, 1);
 	return 1;
 }
+#endif

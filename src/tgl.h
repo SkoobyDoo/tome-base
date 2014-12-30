@@ -1,16 +1,23 @@
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <OpenGL/glext.h>
+#if defined(USE_GLES1)
+	#include <GLES/gl.h>
+
+	// Hack
+	#define GL_TEXTURE_3D GL_TEXTURE_2D
 #else
-#ifdef _WIN32
-#include <windows.h>
-#endif
-#include <GL/gl.h>
-#include <GL/glu.h>
-#ifndef _WIN32
-#include <GL/glext.h>
-#endif
+	#ifdef __APPLE__
+	#include <OpenGL/gl.h>
+	#include <OpenGL/glu.h>
+	#include <OpenGL/glext.h>
+	#else
+	#ifdef _WIN32
+	#include <windows.h>
+	#endif
+	#include <GL/gl.h>
+	#include <GL/glu.h>
+	#ifndef _WIN32
+	#include <GL/glext.h>
+	#endif
+	#endif
 #endif
 
 extern float gl_c_r;
@@ -57,7 +64,11 @@ extern GLuint gl_c_fbo;
 	}
 
 extern GLuint gl_c_shader;
+#if defined(USE_GLES1)
+#define tglUseProgramObject(shad) {}
+#else
 #define tglUseProgramObject(shad) \
 	{ \
 	if ((shad) != gl_c_shader) { glUseProgramObjectARB((shad)); gl_c_shader=(shad); } \
 	}
+#endif

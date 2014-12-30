@@ -66,7 +66,7 @@ static int draw_last_frame(lua_State *L)
 	glColorPointer(4, GL_FLOAT, 0, bcolors);
 	tglBindTexture(GL_TEXTURE_2D, bkg_t);
 	glVertexPointer(2, GL_FLOAT, 0, bvertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	return 0;
 }
 

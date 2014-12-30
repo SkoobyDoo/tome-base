@@ -468,7 +468,7 @@ static int map_objects_toscreen(lua_State *L)
 			vertices[3] = dw + dx; vertices[4] = dy; vertices[5] = dz;
 			vertices[6] = dw + dx; vertices[7] = dh + dy; vertices[8] = dz;
 			vertices[9] = dx; vertices[10] = dh + dy; vertices[11] = dz;
-			glDrawArrays(GL_QUADS, 0, 4);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 			if (m != dm) {
 		 		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
@@ -520,7 +520,7 @@ static int map_objects_toscreen(lua_State *L)
 static int map_objects_display(lua_State *L)
 {
 	if (!fbo_active) return 0;
-
+#if !defined(USE_GLES1)
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
 
@@ -614,7 +614,7 @@ static int map_objects_display(lua_State *L)
 			vertices[3] = w + dx; vertices[4] = dy; vertices[5] = dz;
 			vertices[6] = w + dx; vertices[7] = h + dy; vertices[8] = dz;
 			vertices[9] = dx; vertices[10] = h + dy; vertices[11] = dz;
-			glDrawArrays(GL_QUADS, 0, 4);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 			dm = dm->next;
 			dz++;
@@ -651,6 +651,9 @@ static int map_objects_display(lua_State *L)
 	*t = img;
 
 	return 1;
+#else
+	return 0;
+#endif
 }
 
 static void setup_seens_texture(map_type *map)
@@ -672,7 +675,7 @@ static void setup_seens_texture(map_type *map)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	map->seens_map = calloc((map->seens_map_w)*(map->seens_map_h)*4, sizeof(GLubyte));
 	map->seen_changed = TRUE;
 
@@ -1190,7 +1193,7 @@ static void map_update_seen_texture(map_type *map)
 		// Skip the rest of the texture, silly GPUs not supporting NPOT textures!
 		//ptr += (map->seens_map_w - map->w) * 4;
 	}
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, GL_BGRA, GL_UNSIGNED_BYTE, seens);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, GL_RGBA, GL_UNSIGNED_BYTE, seens);
 }
 
 static int map_update_seen_texture_lua(lua_State *L)
@@ -1245,7 +1248,7 @@ static int map_draw_seen_texture(lua_State *L)
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	return 0;
 }
 
@@ -1337,7 +1340,7 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 	(*vert_idx) += 8;
 	(*col_idx) += 16;
 	if ((*vert_idx) >= 8*QUADS_PER_BATCH || force || dm->cb_ref != LUA_NOREF) {\
-		glDrawArrays(GL_QUADS, 0, (*vert_idx) / 2);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, (*vert_idx) / 2);
 		(*vert_idx) = 0;
 		(*col_idx) = 0;
 	}
@@ -1430,7 +1433,7 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 	if ((*cur_tex != m->textures[0]) || m->shader || (m->nb_textures > 1))
 	{
 		/* Draw remaining ones */
-		if (vert_idx) glDrawArrays(GL_QUADS, 0, (*vert_idx) / 2);
+		if (vert_idx) glDrawArrays(GL_TRIANGLE_FAN, 0, (*vert_idx) / 2);
 		/* Reset */
 		(*vert_idx) = 0;
 		(*col_idx) = 0;
@@ -1536,7 +1539,7 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 	while (dm)
 	{
 	 	if (m != dm && dm->shader) {
-			glDrawArrays(GL_QUADS, 0, (*vert_idx) / 2);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, (*vert_idx) / 2);
 			(*vert_idx) = 0;
 			(*col_idx) = 0;
 
@@ -1592,7 +1595,7 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 	if (m->shader || m->nb_textures || m->next)
 	{
 		/* Draw remaining ones */
-		if (vert_idx) glDrawArrays(GL_QUADS, 0, (*vert_idx) / 2);
+		if (vert_idx) glDrawArrays(GL_TRIANGLE_FAN, 0, (*vert_idx) / 2);
 		/* Reset */
 		(*vert_idx) = 0;
 		(*col_idx) = 0;
@@ -1701,7 +1704,7 @@ static int map_to_screen(lua_State *L)
 
 		if (map->z_callbacks[z] != LUA_NOREF) {
 			/* Draw remaining ones */
-			if (vert_idx) glDrawArrays(GL_QUADS, 0, (vert_idx) / 2);
+			if (vert_idx) glDrawArrays(GL_TRIANGLE_FAN, 0, (vert_idx) / 2);
 			/* Reset */
 			vert_idx = 0;
 			col_idx = 0;
@@ -1727,7 +1730,7 @@ static int map_to_screen(lua_State *L)
 	}
 
 	/* Display any leftovers */
-	if (vert_idx) glDrawArrays(GL_QUADS, 0, vert_idx / 2);
+	if (vert_idx) glDrawArrays(GL_TRIANGLE_FAN, 0, vert_idx / 2);
 
 	// "Decay" displayed status for all mos
 	lua_rawgeti(L, LUA_REGISTRYINDEX, map->mo_list_ref);
@@ -1800,7 +1803,7 @@ static int minimap_to_screen(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		map->minimap = calloc(realw*realh*4, sizeof(GLubyte));
 	}
 
@@ -1856,7 +1859,7 @@ static int minimap_to_screen(lua_State *L)
 			}
 		}
 	}
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_BGRA, GL_UNSIGNED_BYTE, mm);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_RGBA, GL_UNSIGNED_BYTE, mm);
 
 	// Display it
 	GLfloat texcoords[2*4] = {
@@ -1881,7 +1884,7 @@ static int minimap_to_screen(lua_State *L)
 		x + mdw * map->minimap_gridsize, y,
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 //	printf("display mm %dx%d :: %dx%d\n",x,y,mdw,mdh);
 	return 0;
 }

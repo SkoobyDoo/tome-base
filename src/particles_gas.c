@@ -380,7 +380,7 @@ static int gas_to_screen(lua_State *L)
 				col_idx += 16;
 				if (vert_idx >= 2*4*1000) {
 					// Draw them all in one fell swoop
-					glDrawArrays(GL_QUADS, 0, vert_idx / 2);
+					glDrawArrays(GL_TRIANGLE_FAN, 0, vert_idx / 2);
 					vert_idx = 0;
 					col_idx = 0;
 				}
@@ -389,7 +389,7 @@ static int gas_to_screen(lua_State *L)
 	}
 
 	// Draw them all in one fell swoop
-	if (vert_idx) glDrawArrays(GL_QUADS, 0, vert_idx / 2);
+	if (vert_idx) glDrawArrays(GL_TRIANGLE_FAN, 0, vert_idx / 2);
 
 	lua_pushboolean(L, 1);
 	return 1;

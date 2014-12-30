@@ -452,10 +452,10 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 	int remaining = ps->batch_nb;
 	while (remaining >= PARTICLES_PER_ARRAY)
 	{
-		glDrawArrays(GL_QUADS, remaining - PARTICLES_PER_ARRAY, PARTICLES_PER_ARRAY);
+		glDrawArrays(GL_TRIANGLE_FAN, remaining - PARTICLES_PER_ARRAY, PARTICLES_PER_ARRAY);
 		remaining -= PARTICLES_PER_ARRAY;
 	}
-	if (remaining) glDrawArrays(GL_QUADS, 0, remaining);
+	if (remaining) glDrawArrays(GL_TRIANGLE_FAN, 0, remaining);
 
 	if (ps->shader) tglUseProgramObject(0);
 

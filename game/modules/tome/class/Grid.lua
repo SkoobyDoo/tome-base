@@ -404,7 +404,7 @@ function _M:makeWater(z, prefix)
 	return { engine.Entity.new{
 		z = z and 16 or 9,
 		image = "terrain/"..prefix.."water_floor_alpha.png",
-		shader = prefix.."water", textures = { function() return _3DNoise, true end },
+		shader = prefix.."water",
 		display_on_seen = true,
 		display_on_remember = true,
 	} }

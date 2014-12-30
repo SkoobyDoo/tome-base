@@ -243,7 +243,7 @@ static GLenum sdl_gl_texture_format(SDL_Surface *s) {
 #endif
 			texture_format = GL_RGBA;
 		else
-			texture_format = GL_BGRA;
+			texture_format = GL_RGBA;
 	} else if (nOfColors == 3)	 // no alpha channel
 	{
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -253,7 +253,7 @@ static GLenum sdl_gl_texture_format(SDL_Surface *s) {
 #endif
 			texture_format = GL_RGB;
 		else
-			texture_format = GL_BGR;
+			texture_format = GL_RGB;
 	} else {
 		printf("warning: the image is not truecolor..  this will probably break %d\n", nOfColors);
 		// this error should not go unhandled
@@ -1216,6 +1216,14 @@ static int sdl_new_surface(lua_State *L)
 
 static int gl_texture_to_sdl(lua_State *L)
 {
+#if defined(USE_GLES1)
+	SDL_Surface **s = (SDL_Surface**)lua_newuserdata(L, sizeof(SDL_Surface*));
+	auxiliar_setclass(L, "sdl{surface}", -1);
+	int w = 64, h = 64;
+	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
+	*s = SDL_CreateRGBSurfaceFrom(tmp, w, h, 32, w*4, 0,0,0,0);
+	return 1;
+#else
 	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
 
 	SDL_Surface **s = (SDL_Surface**)lua_newuserdata(L, sizeof(SDL_Surface*));
@@ -1231,12 +1239,13 @@ static int gl_texture_to_sdl(lua_State *L)
 //	printf("Making surface from texture %dx%d\n", w, h);
 	// Get texture data
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
 
 	// Make sdl surface from it
 	*s = SDL_CreateRGBSurfaceFrom(tmp, w, h, 32, w*4, 0,0,0,0);
 
 	return 1;
+#endif
 }
 
 typedef struct
@@ -1407,6 +1416,9 @@ static void build_sdm_ex(const unsigned char *texData, int srcWidth, int srcHeig
 }
 
 static int gl_texture_alter_sdm(lua_State *L) {
+#if defined(USE_GLES1)
+	return 0;
+#else
 	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
 	bool doubleheight = lua_toboolean(L, 2);
 
@@ -1440,6 +1452,7 @@ printf("==SDM %dx%d :: %dx%d\n", w,h,w,dh);
 	lua_pushnumber(L, 1);
 
 	return 3;
+#endif
 }
 
 static int gl_tex_white = 0;
@@ -1522,7 +1535,7 @@ static int gl_draw_quad(lua_State *L)
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	return 0;
 }
 
@@ -1742,7 +1755,7 @@ static void draw_textured_quad(int x, int y, int w, int h) {
 		x + w, y,
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 static int sdl_surface_toscreen(lua_State *L)
@@ -1942,7 +1955,7 @@ static int sdl_texture_toscreen(lua_State *L)
 		x + w, y,
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	return 0;
 }
 
@@ -2062,7 +2075,7 @@ static int sdl_texture_toscreen_full(lua_State *L)
 		x + w, y,
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	return 0;
 }
 
@@ -2116,7 +2129,7 @@ static int sdl_texture_toscreen_precise(lua_State *L)
 		x + w, y,
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	return 0;
 }
 
@@ -2240,7 +2253,9 @@ static bool _CheckGL_Error(const char* GLcall, const char* file, const int line)
 static int sdl_texture_outline(lua_State *L)
 {
 	if (!fbo_active) return 0;
-
+#if defined(USE_GLES1)
+	return 0;
+#else
 	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
 	float x = luaL_checknumber(L, 2);
 	float y = luaL_checknumber(L, 3);
@@ -2315,7 +2330,7 @@ static int sdl_texture_outline(lua_State *L)
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 	/* Render to buffer: original */
 	for (i = 0; i < 4*4; i++) colors[i] = 1;
@@ -2323,7 +2338,7 @@ static int sdl_texture_outline(lua_State *L)
 	vertices[2] = w; vertices[3] = 0;
 	vertices[4] = w; vertices[5] = h;
 	vertices[6] = 0; vertices[7] = h;
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 	// Unbind texture from FBO and then unbind FBO
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
@@ -2342,6 +2357,7 @@ static int sdl_texture_outline(lua_State *L)
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	return 1;
+#endif
 }
 
 static int sdl_set_window_title(lua_State *L)
@@ -2477,21 +2493,27 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
  **************************************************************/
 static int gl_new_quadratic(lua_State *L)
 {
+#if !defined(USE_GLES1)
 	GLUquadricObj **quadratic = (GLUquadricObj**)lua_newuserdata(L, sizeof(GLUquadricObj*));
 	auxiliar_setclass(L, "gl{quadratic}", -1);
 
 	*quadratic = gluNewQuadric( );
 	gluQuadricNormals(*quadratic, GLU_SMOOTH);
 	gluQuadricTexture(*quadratic, GL_TRUE);
-
+#else
+	lua_newuserdata(L, 1);
+	auxiliar_setclass(L, "gl{quadratic}", -1);
+#endif
 	return 1;
 }
 
 static int gl_free_quadratic(lua_State *L)
 {
+#if !defined(USE_GLES1)
 	GLUquadricObj **quadratic = (GLUquadricObj**)auxiliar_checkclass(L, "gl{quadratic}", 1);
 
 	gluDeleteQuadric(*quadratic);
+#endif
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -2499,11 +2521,12 @@ static int gl_free_quadratic(lua_State *L)
 
 static int gl_quadratic_sphere(lua_State *L)
 {
+#if !defined(USE_GLES1)
 	GLUquadricObj **quadratic = (GLUquadricObj**)auxiliar_checkclass(L, "gl{quadratic}", 1);
 	float rad = luaL_checknumber(L, 2);
 
 	gluSphere(*quadratic, rad, 64, 64);
-
+#endif
 	return 0;
 }
 
@@ -2519,6 +2542,9 @@ static int gl_fbo_supports_transparency(lua_State *L) {
 static int gl_new_fbo(lua_State *L)
 {
 	if (!fbo_active) return 0;
+#if defined(USE_GLES1)
+	return 0;
+#else
 
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
@@ -2546,10 +2572,14 @@ static int gl_new_fbo(lua_State *L)
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	return 1;
+#endif
 }
 
 static int gl_free_fbo(lua_State *L)
 {
+#if defined(USE_GLES1)
+	return 0;
+#else
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
@@ -2561,10 +2591,14 @@ static int gl_free_fbo(lua_State *L)
 
 	lua_pushnumber(L, 1);
 	return 1;
+#endif
 }
 
 static int gl_fbo_use(lua_State *L)
 {
+#if defined(USE_GLES1)
+	return 0;
+#else
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	bool active = lua_toboolean(L, 2);
 	float r = 0, g = 0, b = 0, a = 1;
@@ -2617,10 +2651,14 @@ static int gl_fbo_use(lua_State *L)
 
 	}
 	return 0;
+#endif
 }
 
 static int gl_fbo_toscreen(lua_State *L)
 {
+#if defined(USE_GLES1)
+	return 0;
+#else
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
@@ -2667,15 +2705,19 @@ static int gl_fbo_toscreen(lua_State *L)
 		x + w, y,
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 	if (lua_isuserdata(L, 6)) tglUseProgramObject(0);
 	if (!allowblend) glEnable(GL_BLEND);
 	return 0;
+#endif
 }
 
 static int gl_fbo_posteffects(lua_State *L)
 {
+#if defined(USE_GLES1)
+	return 0;
+#else
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	lua_fbo *fbo2 = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 2);
 	lua_fbo *fbo_final = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 3);
@@ -2733,7 +2775,7 @@ static int gl_fbo_posteffects(lua_State *L)
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
 		tglBindTexture(GL_TEXTURE_2D, srcfbo->texture);
-		glDrawArrays(GL_QUADS, 0, 4);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 		shad_idx++;
 		tmpfbo = srcfbo;
@@ -2755,12 +2797,13 @@ static int gl_fbo_posteffects(lua_State *L)
 	vertices[2] = x; vertices[3] = y + h;
 	vertices[4] = x + w; vertices[5] = y + h;
 	vertices[6] = x + w; vertices[7] = y;
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 	tglUseProgramObject(0);
 
 	glEnable(GL_BLEND);
 	return 0;
+#endif
 }
 
 static int gl_fbo_is_active(lua_State *L)
@@ -2972,6 +3015,9 @@ static int sdl_get_png_screenshot(lua_State *L)
 
 static int gl_fbo_to_png(lua_State *L)
 {
+#if defined(USE_GLES1)
+	return 0;
+#else
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	unsigned int x = 0;
 	unsigned int y = 0;
@@ -3052,6 +3098,7 @@ static int gl_fbo_to_png(lua_State *L)
 	luaL_pushresult(&B);
 
 	return 1;
+#endif
 }
 
 

@@ -563,7 +563,7 @@ void call_draw(int nb_keyframes)
 			x + w, y - h,
 		};
 		glVertexPointer(2, GL_FLOAT, 0, vertices);
-		glDrawArrays(GL_QUADS, 0, 4);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	}
 }
 
@@ -770,7 +770,7 @@ int initGL()
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	/* Depth buffer setup */
-	glClearDepth( 1.0f );
+	glClearDepthf( 1.0f );
 
 	/* The Type Of Depth Test To Do */
 	glDepthFunc(GL_LEQUAL);
@@ -791,6 +791,8 @@ int resizeWindow(int width, int height)
 	GLfloat ratio;
 
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	initGL();
 
 	/* Protect against a divide by zero */
@@ -811,7 +813,7 @@ int resizeWindow(int width, int height)
 
 	/* Set our perspective */
 	//gluPerspective( 45.0f, ratio, 0.1f, 100.0f );
-	glOrtho(0, width, height, 0, -1001, 1001);
+	glOrthof(0, width, height, 0, -1001, 1001);
 
 	/* Make sure we're chaning the model view and not the projection */
 	glMatrixMode( GL_MODELVIEW );
@@ -915,7 +917,9 @@ void do_resize(int w, int h, bool fullscreen, bool borderless)
 		screen = SDL_GetWindowSurface(window);
 		maincontext = SDL_GL_CreateContext(window);
 		SDL_GL_MakeCurrent(window, maincontext);
+#if !defined(USE_GLES1)
 		glewInit();
+#endif
 
 		/* Set the window icon. */
 		windowIconSurface = IMG_Load_RW(PHYSFSRWOPS_openRead(WINDOW_ICON_PATH)
@@ -1329,6 +1333,11 @@ int main(int argc, char *argv[])
 	SDL_StartTextInput();
 
 	// Get OpenGL capabilities
+#if defined(USE_GLES1)
+	multitexture_active = FALSE;
+	shaders_active = FALSE;
+	fbo_active = FALSE;
+#else
 	multitexture_active = GLEW_ARB_multitexture;
 	shaders_active = GLEW_ARB_shader_objects;
 	fbo_active = GLEW_EXT_framebuffer_object || GLEW_ARB_framebuffer_object;
@@ -1339,6 +1348,7 @@ int main(int argc, char *argv[])
 		shaders_active = FALSE;
 		fbo_active = FALSE;
 	}
+#endif
 	if (safe_mode) printf("Safe mode activated\n");
 
 //	setupDisplayTimer(30);

@@ -33,6 +33,14 @@
 #include "web-external.h"
 #include "lua_externs.h"
 
+#if defined(USE_GLES1)
+void te4_web_load() {}
+void te4_web_init(lua_State *L) {}
+void te4_web_update(lua_State *L) {}
+void te4_web_terminate() {}
+int browsers_count = 0;
+#else
+
 /*
  * Grab web browser methods -- availabe only here
  */
@@ -137,7 +145,7 @@ static int lua_web_toscreen(lua_State *L) {
 		};
 		glVertexPointer(2, GL_FLOAT, 0, vertices);
 
-		glDrawArrays(GL_QUADS, 0, 4);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	}
 	return 0;
 }
@@ -442,7 +450,7 @@ static void *web_make_texture(int w, int h) {
 	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, largest_supported_anisotropy);
 	unsigned char *buffer = calloc(w * h * 4, sizeof(unsigned char));
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	free(buffer);
 
 	GLenum err = glGetError();
@@ -464,7 +472,7 @@ static void web_texture_update(void *tex, int w, int h, const void* buffer) {
 	if (!tex) return;
 	GLuint t = *((GLuint*)tex);
 	tglBindTexture(GL_TEXTURE_2D, t);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 }
 
 static void web_key_mods(bool *shift, bool *ctrl, bool *alt, bool *meta) {
@@ -617,3 +625,4 @@ void te4_web_terminate() {
 	if (!webcore) return;
 	te4_web_shutdown();
 }
+#endif

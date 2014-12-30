@@ -52,6 +52,8 @@ project "TEngine"
 
 	if _OPTIONS.no_rwops_size then defines{"NO_RWOPS_SIZE"} end
 
+	if _OPTIONS.gl == "es1" then defines{"USE_GLES1"} end
+
 	if _OPTIONS.steam then
 		dofile("../steamworks/build/steam-build.lua")
 	end
@@ -118,8 +120,14 @@ project "TEngine"
 		defines { [[TENGINE_HOME_PATH='"T-Engine"']], 'SELFEXE_WINDOWS' }
 
 	configuration "linux"
-		libdirs {"/opt/SDL-2.0/lib/"}
-		links { "dl", "SDL2", "SDL2_ttf", "SDL2_image", "png", "openal", "vorbisfile", "GL", "GLU", "m", "pthread" }
+		links { "dl", "SDL2", "SDL2_ttf", "SDL2_image", "png", "openal", "vorbisfile", "m", "pthread" }
+		if _OPTIONS.gl == "es1" then
+			libdirs {"/opt/SDL2.es1/lib/", "/opt/SDL-2.0/lib/"}
+			links { "GLESv1_CM", "GLU" }
+		else
+			libdirs {"/opt/SDL-2.0/lib/"}
+			links { "GL", "GLU" }
+		end
 		linkoptions { "-Wl,-E" }
 		defines { [[TENGINE_HOME_PATH='".t-engine"']], 'SELFEXE_LINUX' }
 		if steamlin64 then steamlin64() end

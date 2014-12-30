@@ -1,6 +1,8 @@
 #ifndef __SHADERS_H
 #define __SHADERS_H
 
+#if !defined(USE_GLES1)
+
 inline bool _CheckGL_Error(const char* GLcall, const char* file, const int line) ALWAYS_INLINE;
 bool _CheckGL_Error(const char* GLcall, const char* file, const int line)
 {
@@ -129,6 +131,6 @@ bool _CheckGLSLProgramValid(GLuint program)
 	if(!_CheckGLSLProgramValid( Program ))						\
 	return(0);
 
-
+#endif
 
 #endif

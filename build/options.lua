@@ -80,4 +80,13 @@ newoption {
 	description = "Enables cross-compilation for windows (from linux)"
 }
 
+newoption {
+	trigger     = "gl",
+	value       = "OpenGL renderer to use",
+	description = "",
+	allowed = {
+		{ "default",	"Default desktop OpenGL" },
+		{ "es1",	"OpenGL ES 1" },
+	}
+}
 _OPTIONS.lua = _OPTIONS.lua or "jit2"
