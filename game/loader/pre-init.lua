@@ -80,6 +80,18 @@ function rng.tableIndex(t, ignore)
 	return rng.table(rt)
 end
 
+function rng.tableSample(t, k)
+	local n = #t
+	if not k or k > n then k = n end
+	local sample = {}
+	for i=1,k do
+		local j = rng.range(i, n)
+		sample[i], sample[j] = (sample[j] or t[j]), (sample[i] or t[i])
+	end
+	for i=k+1,n do sample[i] = nil end
+	return sample
+end
+
 --- This is a really naive algorithm, it will not handle objects and such.
 -- Use only for small tables
 function table.serialize(src, sub, no_G, base)

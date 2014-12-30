@@ -3208,3 +3208,48 @@ newEffect{
 		self.damage_shield_absorb_max = nil
 	end,
 }
+
+newEffect{
+	name = "UNSEEN_FORCE", desc = "Unseen Force",
+	image="talents/unseen_force.png",
+	long_desc = function(self, eff)
+		local hits = (eff.extrahit > 0 and "from "..eff.hits.." to "..(eff.hits + 1)) or ""..eff.hits
+		return ("An unseen force strikes %s targets in a range of 5 around this creature "..
+		"every turn, doing %d damage and knocking them back for %d tiles."):format(hits, eff.damage, eff.knockback) end,
+	type = "mental",
+	subtype = {psionic=true},
+	status = "beneficial",
+	activate = function(self, eff)
+		game.logSeen(self, "An unseen force begins to swirl around %s!", self.name)
+		eff.particles = self:addParticles(Particles.new("force_area", 1, { radius = self:getTalentRange(self.T_UNSEEN_FORCE) }))
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particles)
+		game.logSeen(self, "The unseen force around %s subsides.", self.name)
+	end,
+	on_timeout = function(self, eff)
+		local targets = {}
+		local tmp = {}
+		local grids = core.fov.circle_grids(self.x, self.y, 5, true)
+		for x, yy in pairs(grids) do
+			for y, _ in pairs(grids[x]) do
+				local a = game.level.map(x, y, Map.ACTOR)
+				if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+					targets[#targets+1] = a
+				end
+			end
+		end
+
+		if #targets > 0 then
+			local hitCount = eff.hits
+			if rng.percent(eff.extrahit) then hitCount = hitCount + 1 end
+
+			local t = self:getTalentFromId(self.T_WILLFUL_STRIKE)
+			-- Randomly take targets
+			local sample = rng.tableSample(targets, hitCount)
+			for _, target in ipairs(sample) do
+				t.forceHit(self, t, target, target.x, target.y, eff.damage, eff.knockback, 7, 0.6, 10, tmp)
+			end
+		end
+	end,
+}
