@@ -98,9 +98,10 @@ newTalent{
 	points = 5,
 	cooldown = 45,
 	stamina = 120,
+	fixed_cooldown = true,
 	tactical = { DEFEND = 5, CLOSEIN = 2 },
 	getHealPercent = function(self,t) return self:combatTalentLimit(t, 50, 3.5, 17.5) end, -- Limit <50%
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 3, 7, true)) end, -- Limit < 25
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 15, 3, 7, true)) end, -- Limit < 25
 	action = function(self, t)
 		self:setEffect(self.EFF_UNSTOPPABLE, t.getDuration(self, t), {hp_per_kill=t.getHealPercent(self,t)})
 		return true
