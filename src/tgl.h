@@ -1,5 +1,6 @@
 #if defined(USE_GLES1)
 	#include <GLES/gl.h>
+	#include <GLES/glext.h>
 
 	// Hack
 	#define GL_TEXTURE_3D GL_TEXTURE_2D

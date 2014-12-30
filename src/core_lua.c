@@ -47,6 +47,8 @@
 
 extern SDL_Window *window;
 
+#define _DEBUG
+
 #define SDL_SRCALPHA        0x00010000
 int SDL_SetAlpha(SDL_Surface * surface, Uint32 flag, Uint8 value)
 {
@@ -294,7 +296,8 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 		largest_size = realh*realw*4;
 		printf("Upgrading black texture to size %d\n", largest_size);
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, realw, realh, 0, texture_format, GL_UNSIGNED_BYTE, largest_black);
+	printf("Making texture %dx%d, %d colors, tex format %d == %d\n", realw, realh, nOfColors, texture_format, GL_RGBA);
+	glTexImage2D(GL_TEXTURE_2D, 0, texture_format, realw, realh, 0, texture_format, GL_UNSIGNED_BYTE, largest_black);
 
 #ifdef _DEBUG
 	GLenum err = glGetError();
@@ -308,6 +311,7 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 void copy_surface_to_texture(SDL_Surface *s) {
 	GLenum texture_format = sdl_gl_texture_format(s);
 
+	printf("Updating texture %dx%d, tex format %d == %d\n", s->w, s->h, texture_format, GL_RGBA);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, s->w, s->h, texture_format, GL_UNSIGNED_BYTE, s->pixels);
 
 #ifdef _DEBUG
@@ -2239,7 +2243,6 @@ static bool _CheckGL_Error(const char* GLcall, const char* file, const int line)
     return TRUE;
 }
 
-//#define _DEBUG
 #ifdef _DEBUG
 #define CHECKGL( GLcall )                               		\
     GLcall;                                             		\

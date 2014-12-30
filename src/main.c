@@ -790,9 +790,6 @@ int resizeWindow(int width, int height)
 	/* Height / width ration */
 	GLfloat ratio;
 
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	initGL();
 
 	/* Protect against a divide by zero */
@@ -915,11 +912,18 @@ void do_resize(int w, int h, bool fullscreen, bool borderless)
 		is_fullscreen = fullscreen;
 		is_borderless = borderless;
 		screen = SDL_GetWindowSurface(window);
+
+		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+		// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+		// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
 		maincontext = SDL_GL_CreateContext(window);
 		SDL_GL_MakeCurrent(window, maincontext);
 #if !defined(USE_GLES1)
 		glewInit();
 #endif
+
+		printf("OpenGL version: %s\n", glGetString(GL_VERSION));
 
 		/* Set the window icon. */
 		windowIconSurface = IMG_Load_RW(PHYSFSRWOPS_openRead(WINDOW_ICON_PATH)
