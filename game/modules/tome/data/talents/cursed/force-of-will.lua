@@ -89,7 +89,7 @@ newTalent{
 					if nextTarget then
 						-- start a new force hit with the knockback damage and current knockback
 						if max > 0 then
-							t.forceHit(self, t, nextTarget, sourceX, sourceY, blockDamage, knockback, knockbackDamage, power / 2, max - 1)
+							t.forceHit(self, t, nextTarget, sourceX, sourceY, blockDamage, knockback, knockbackDamage, power / 2, max - 1, tmp)
 						end
 					end
 
