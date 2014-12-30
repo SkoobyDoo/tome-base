@@ -245,7 +245,7 @@ newTalent{
 		return 3
 	end,
 	critpower = function(self, t) return self:combatTalentScale(t, 4, 15) end,
-	action = function(self, t) --NOTE TO DG, SINCE I CAN'T UNDERSTAND A WORD OF BENLI'S CODE: EDIT SO THAT KNOCKBACK OCCURS AFTER DAMAGE, AND SEPARATELY, TO PREVENT ENEMIES BEING SHOVED INTO A NEW SPACE AND HIT AGAIN.
+	action = function(self, t)
 		local range = self:getTalentRange(t)
 		local radius = self:getTalentRadius(t)
 		local damage = t.getDamage(self, t)
