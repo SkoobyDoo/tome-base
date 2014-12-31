@@ -1442,7 +1442,7 @@ printf("==SDM %dx%d :: %dx%d\n", w,h,w,dh);
 	return 3;
 }
 
-static int gl_tex_white = 0;
+int gl_tex_white = 0;
 int init_blank_surface()
 {
 	Uint32 rmask, gmask, bmask, amask;

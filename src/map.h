@@ -75,6 +75,11 @@ typedef struct {
 	int mm_w, mm_h;
 	int mm_rw, mm_rh;
 
+	int nb_grid_lines_vertices;
+	GLfloat *grid_lines_vertices;
+	GLfloat *grid_lines_colors;
+	GLfloat *grid_lines_textures;
+
 	GLfloat *vertices;
 	GLfloat *colors;
 	GLfloat *texcoords;
@@ -103,6 +108,7 @@ typedef struct {
 	GLfloat tex_tile_w[3], tex_tile_h[3];
 
 	// Scrolling
+	float displayed_x, displayed_y;
 	int mx, my, mwidth, mheight;
 	float oldmx, oldmy;
 	int move_step, move_max;

@@ -105,6 +105,10 @@ function _M:setViewPort(x, y, w, h, tile_w, tile_h, fontname, fontsize, allow_ba
 	if otw ~= self.tile_w or oth ~= self.tile_h then print("[MAP] Reseting tiles caches") self:resetTiles() end
 end
 
+function _M:setupGridLines(size, r, g, b, a)
+	self.grid_lines = {size, r, g, b, a}
+end
+
 --- Setup a fbo/shader pair to display map effects
 -- If not set this just uses plain quads
 function _M:enableFBORenderer(shader)
@@ -240,6 +244,7 @@ function _M:makeCMap()
 	self._map = core.map.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))
+	self._map:setupGridLines(unpack(self.grid_lines))
 	self._fovcache =
 	{
 		block_sight = core.fov.newCache(self.w, self.h),
@@ -266,6 +271,12 @@ function _M:makeCMap()
 			end
 		end)
 	end
+end
+
+--- Regenetate grid lines definition if it changed
+function _M:regenGridLines()
+	if not self._map or not self.grid_lines then return end
+	self._map:setupGridLines(unpack(self.grid_lines))
 end
 
 --- Adds a "path string" to the map

@@ -156,6 +156,16 @@ function _M:generateListUi()
 		end)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Draw faint lines to separate each grid, making visual positioning easier to see.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Display map grid lines#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.show_grid_lines and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.show_grid_lines = not config.settings.tome.show_grid_lines
+		game:saveSettings("tome.show_grid_lines", ("tome.show_grid_lines = %s\n"):format(tostring(config.settings.tome.show_grid_lines)))
+		self.c_list:drawItem(item)
+		game:createMapGridLines()
+	end,}
+
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Select the fonts look. Fantasy is the default one. Basic is simplified and smaller.\nYou must restart the game for the change to take effect."}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Font Style#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.fonts.type):capitalize()
