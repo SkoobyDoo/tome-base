@@ -92,6 +92,21 @@ function rng.tableSample(t, k)
 	return sample
 end
 
+function rng.tableSampleIterator(t, k)
+	local n = #t
+	if not k or k > n then k = n end
+	local sample = {}
+	local i = 1
+	return function()
+		if i > k then return end
+		local j = rng.range(i, n)
+		local res = sample[j] or t[j]
+		sample[j] = sample[i] or t[i]
+		i = i + 1
+		return res
+	end
+end
+
 --- This is a really naive algorithm, it will not handle objects and such.
 -- Use only for small tables
 function table.serialize(src, sub, no_G, base)

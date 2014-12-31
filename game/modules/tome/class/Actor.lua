@@ -292,16 +292,7 @@ function _M:stripForExport()
 	self:setTarget(nil)
 
 	-- Disable all sustains, remove all effects
-	local list = {}
-	for eff_id, _ in pairs(self.tmp) do list[#list+1] = eff_id end
-	for _, eff_id in ipairs(list) do self:removeEffect(eff_id, true, true) end
-
-	list = {}
-	for tid, act in pairs(self.sustain_talents) do if act then list[#list+1] = tid end end
-	while #list > 0 do
-		local eff = rng.tableRemove(list)
-		self:forceUseTalent(eff, {silent=true, ignore_energy=true, no_equilibrium_fail=true, no_paradox_fail=true, save_cleanup=true})
-	end
+	self:removeEffectsSustainsFilter()
 end
 
 -- Dummy
@@ -2766,28 +2757,8 @@ function _M:die(src, death_note)
 
 		local effs = {}
 
-		-- Go through all spell effects
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			effs[#effs+1] = {"effect", eff_id}
-		end
+		self:removeEffectsSustainsFilter()
 
-		-- Go through all sustained spells
-		for tid, act in pairs(self.sustain_talents) do
-			if act then
-				effs[#effs+1] = {"talent", tid}
-			end
-		end
-
-		while #effs > 0 do
-			local eff = rng.tableRemove(effs)
-
-			if eff[1] == "effect" then
-				self:removeEffect(eff[2])
-			else
-				self:forceUseTalent(eff[2], {ignore_energy=true})
-			end
-		end
 		self.life = self.max_life
 		self.mana = self.max_mana
 		self.stamina = self.max_stamina
@@ -3213,8 +3184,7 @@ function _M:levelup()
 				DamageType.MIND,
 			}
 			self.auto_resists_list = {}
-			for i = 1, rng.range(1, self.auto_resists_nb or 2) do
-				local t = rng.tableRemove(list)
+			for t in rng.tableSampleIterator(list, rng.range(1, self.auto_resists_nb or 2)) do
 				-- Double the chance so that resist is more likely to happen
 				if rng.percent(30) then self.auto_resists_list[#self.auto_resists_list+1] = t end
 				self.auto_resists_list[#self.auto_resists_list+1] = t
@@ -5115,9 +5085,7 @@ function _M:postUseTalent(ab, ret, silent)
 			local t = self:getTalentFromId(tid)
 			if tid ~= ab.id and t and not self.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
 		end
-		for i = 1, self:attr("random_talent_cooldown_on_use_nb") do
-			local t = rng.tableRemove(tids)
-			if not t then break end
+		for t in rng.tableSampleIterator(tids, self:attr("random_talent_cooldown_on_use_nb")) do
 			self:startTalentCooldown(t.id, self:attr("random_talent_cooldown_on_use_turns"))
 			game.logSeen(self, "%s talent '%s%s' is disrupted by the mind parasite.", self.name:capitalize(), (t.display_entity and t.display_entity:getDisplayString() or ""), t.name)
 		end
@@ -5590,17 +5558,7 @@ function _M:effectsFilter(t, nb)
 		end
 	end
 
-	if nb then
-		local found = {}
-		while #effs > 0 and nb > 0 do
-			local eff = rng.tableRemove(effs)
-			found[#found + 1] = eff
-			nb = nb - 1
-		end
-		return found
-	else
-		return effs
-	end
+	return rng.tableSample(effs, nb)
 end
 
 function _M:removeEffectsFilter(t, nb, silent, force, check_remove)
@@ -5634,17 +5592,7 @@ function _M:sustainsFilter(t, nb)
 			if test then ids[#ids + 1] = tid end
 		end
 	end
-	if nb then
-		local found = {}
-		while #ids > 0 and nb > 0 do
-			local tid = rng.tableRemove(ids)
-			found[#found + 1] = tid
-			nb = nb - 1
-		end
-		return found
-	else
-		return ids
-	end
+	return rng.tableSample(ids, nb)
 end
 
 function _M:removeSustainsFilter(t, nb, check_remove)
@@ -5665,16 +5613,7 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	for _, tid in ipairs(self:sustainsFilter(t)) do
 		objects[#objects + 1] = {"talent", tid}
 	end
-	local found
-	if nb then
-		while #objects > 0 and nb > 0 do
-			found[#found + 1] = rng.tableRemove(objects)
-			nb = nb - 1
-		end
-	else
-		found = objects
-	end
-	for _, obj in ipairs(found) do
+	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
 				self:removeEffect(obj[2])
