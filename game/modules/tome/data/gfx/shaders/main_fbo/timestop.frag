@@ -57,8 +57,8 @@ void main(void)
 	float growRatio = clamp((tick_real - tick_start) * growSpeed, 0.0, 1.0);
 	growRatio = 1.0 - pow(1.0 - growRatio, 2.0);
 
-	innerRadius += innerRadius * 0.1 * sin(tick_real * growSpeed / 3);
-	outerRadius += outerRadius * 0.1 * cos(tick_real * growSpeed / 3);
+	innerRadius += innerRadius * 0.1 * sin(tick_real * growSpeed / 3.0);
+	outerRadius += outerRadius * 0.1 * cos(tick_real * growSpeed / 3.0);
 	float circleRatio = clamp((length(gl_FragCoord.xy - vec2(playerPos.x, texSize.y - playerPos.y)) - innerRadius) / (outerRadius - innerRadius), 0.0, 1.0);
 	// float circleRatio = clamp((length(gl_FragCoord.xy - playerPos) - innerRadius) / (outerRadius - innerRadius), 0.0, 1.0);
 	float scale = growRatio * wave(circleRatio);
