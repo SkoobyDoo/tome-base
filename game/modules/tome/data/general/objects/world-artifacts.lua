@@ -4431,7 +4431,7 @@ newEntity{ base = "BASE_GLOVES", --Thanks SageAcrin /AND/ Edge2054!
 			talent_on_hit = { [Talents.T_SHADOW_SIMULACRUM] = {level=1, chance=15}, [Talents.T_MIND_BLAST] = {level=1, chance=10}, [Talents.T_TURN_BACK_THE_CLOCK] = {level=1, chance=10} },
 		},
 	},
-	talent_on_spell = { {chance=10, talent=Talents.T_DUST_TO_DUST, level=2} },
+	talent_on_spell = { {chance=10, talent=Talents.T_ECHOES_FROM_THE_PAST, level=2} },
 }
 
 newEntity{ base = "BASE_GEM", --Thanks SageAcrin and Graziel!
