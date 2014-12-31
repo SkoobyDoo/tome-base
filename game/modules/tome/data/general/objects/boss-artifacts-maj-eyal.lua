@@ -86,10 +86,12 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 					1,
 					5, nil,
 					{type="icestorm", only_one=true},
-					function(e)
-						 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
-						if e.radius < 4 then
-						e.radius = e.radius + 0.2
+					function(e, update_shape_only)
+						if not update_shape_only then 
+							 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
+							if e.radius < 4 then
+							e.radius = e.radius + 0.2
+							end
 						end
 						return true
 					end,

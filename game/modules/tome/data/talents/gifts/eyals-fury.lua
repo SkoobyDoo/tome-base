@@ -137,7 +137,7 @@ newTalent{
 			self:getTalentRadius(t), -- radius
 			5, nil,
 			{type="vapour"},
-			function(eff) --update_fct(effect)
+			function(eff, update_shape_only) if not update_shape_only then 
 				local act
 				for i, g in pairs(eff.grids) do
 					for j, _ in pairs(eff.grids[i]) do
@@ -149,7 +149,7 @@ newTalent{
 						end
 					end
 				end
-			end,
+			end end,
 			false, -- no friendly fire
 			false -- no self fire
 		)
@@ -200,15 +200,17 @@ newTalent{
 			t.radius(self, t),
 			5, nil,
 			{type="generic_vortex", args = {radius = t.radius(self, t), rm = 5, rM=55, gm=250, gM=255, bm = 180, bM=255, am= 35, aM=90, density = 100}, only_one=true },
-			function(eff)
+			function(eff, update_shape_only)
 				eff.x = eff.src.x
 				eff.y = eff.src.y
-				local act
-				for i, g in pairs(eff.grids) do
-					for j, _ in pairs(eff.grids[i]) do
-						act = game.level.map(i, j, engine.Map.ACTOR)
-						if act and act ~= eff.src and act:reactionToward(eff.src) < 0 then
-							eff.drainMagic(eff, act)
+				if not update_shape_only then 
+					local act
+					for i, g in pairs(eff.grids) do
+						for j, _ in pairs(eff.grids[i]) do
+							act = game.level.map(i, j, engine.Map.ACTOR)
+							if act and act ~= eff.src and act:reactionToward(eff.src) < 0 then
+								eff.drainMagic(eff, act)
+							end
 						end
 					end
 				end

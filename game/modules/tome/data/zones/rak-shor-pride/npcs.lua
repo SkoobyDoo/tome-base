@@ -218,10 +218,7 @@ newEntity{ base = "BASE_NPC_GHOST", define_as = "GLACIAL_LEGION",
 			radius,
 			5, nil,
 			engine.MapEffect.new{color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/ice_effect.png"},
-			function(e)
-				e.radius = e.radius 
-				return true
-			end,
+			nil,
 			false
 		)
 	end,

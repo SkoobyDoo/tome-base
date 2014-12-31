@@ -431,8 +431,8 @@ newEntity{ base = "BASE_CLOAK", define_as="GLACIAL_CLOAK",
 				radius,
 				5, nil,
 				engine.MapEffect.new{color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/ice_effect.png"},
-				function(e)
-					e.radius = e.radius
+				function(e, update_shape_only)
+					if not update_shape_only then e.radius = e.radius end
 					return true
 				end,
 				false

@@ -572,8 +572,8 @@ newEntity{ base = "BASE_NPC_HORROR",
 				radius,
 				5, nil,
 				MapEffect.new{color_br=25, color_bg=140, color_bb=40, effect_shader="shader_images/retch_effect.png"},
-				function(e)
-					e.radius = e.radius
+				function(e, update_shape_only)
+					if not update_shape_only then e.radius = e.radius end
 					return true
 				end,
 				false

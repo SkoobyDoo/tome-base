@@ -1264,7 +1264,7 @@ newEffect{
 					radius,
 					5, nil,
 					engine.MapEffect.new{alpha=100, color_br=134, color_bg=60, color_bb=134, effect_shader="shader_images/darkness_effect.png"},
-					function(e)
+					function(e, update_shape_only) if not update_shape_only then 
 						-- attempt one summon per turn
 						if not e.src:canBe("summon") then return end
 
@@ -1298,7 +1298,7 @@ newEffect{
 						game.zone:addEntity(game.level, m, "actor", location[1], location[2])
 
 						return true
-					end,
+					end end,
 					false, false)
 
 				game.logSeen(self, "#F53CBE#The air around %s grows cold and terrifying shapes begin to coalesce. A nightmare has begun.", self.name:capitalize())

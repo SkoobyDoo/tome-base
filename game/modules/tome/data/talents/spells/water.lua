@@ -137,8 +137,8 @@ newTalent{
 			5, nil,
 			MapEffect.new{color_br=30, color_bg=60, color_bb=200, effect_shader="shader_images/water_effect1.png"},
 --			MapEffect.new{color_br=30, color_bg=60, color_bb=200, effect_shader={"shader_images/water_effect1.png","shader_images/water_effect2.png", max=6}},
-			function(e)
-				e.radius = e.radius + 0.5
+			function(e, update_shape_only)
+				if not update_shape_only then e.radius = e.radius + 0.5 end
 				return true
 			end,
 			false

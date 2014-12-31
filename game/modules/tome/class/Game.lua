@@ -1364,14 +1364,14 @@ function _M:onTurn()
 		if self.zone.on_turn then self.zone:on_turn() end
 	end
 
+	-- Process overlay effects
+	self.level.map:processEffects(self.turn % 10 ~= 0)
+
 	-- The following happens only every 10 game turns (once for every turn of 1 mod speed actors)
 	if self.turn % 10 ~= 0 then return end
 
 	-- Day/Night cycle
 	if self.level.data.day_night then self.state:dayNightCycle() end
-
-	-- Process overlay effects
-	self.level.map:processEffects()
 
 	if not self.day_of_year or self.day_of_year ~= self.calendar:getDayOfYear(self.turn) then
 		self.log(self.calendar:getTimeDate(self.turn))

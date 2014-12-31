@@ -1151,29 +1151,33 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 end
 
 --- Process the overlay effects, call it from your tick function
-function _M:processEffects()
+-- @param update_shape_only if true no damage is projected, no duration changes
+function _M:processEffects(update_shape_only)
 	local todel = {}
 	for i, e in ipairs(self.effects) do
-		-- Now display each grids
-		for lx, ys in pairs(e.grids) do
-			for ly, _ in pairs(ys) do
-				local act = game.level.map(lx, ly, engine.Map.ACTOR)
-				if act and act == e.src and not ((type(e.selffire) == "number" and rng.percent(e.selffire)) or (type(e.selffire) ~= "number" and e.selffire)) then
-				elseif act and e.src and e.src.reactionToward and (e.src:reactionToward(act) >= 0) and not ((type(e.friendlyfire) == "number" and rng.percent(e.friendlyfire)) or (type(e.friendlyfire) ~= "number" and e.friendlyfire)) then
-				-- Otherwise hit
-				else
-					e.src.__project_source = e -- intermediate projector source
-					DamageType:get(e.damtype).projector(e.src, lx, ly, e.damtype, e.dam)
-					e.src.__project_source = nil
+		-- Run damage and decrease duration only on certain ticks
+		if not update_shape_only then
+			for lx, ys in pairs(e.grids) do
+				for ly, _ in pairs(ys) do
+					local act = game.level.map(lx, ly, engine.Map.ACTOR)
+					if act and act == e.src and not ((type(e.selffire) == "number" and rng.percent(e.selffire)) or (type(e.selffire) ~= "number" and e.selffire)) then
+					elseif act and e.src and e.src.reactionToward and (e.src:reactionToward(act) >= 0) and not ((type(e.friendlyfire) == "number" and rng.percent(e.friendlyfire)) or (type(e.friendlyfire) ~= "number" and e.friendlyfire)) then
+					-- Otherwise hit
+					else
+						e.src.__project_source = e -- intermediate projector source
+						DamageType:get(e.damtype).projector(e.src, lx, ly, e.damtype, e.dam)
+						e.src.__project_source = nil
+					end
 				end
 			end
+
+			e.duration = e.duration - 1
 		end
 
-		e.duration = e.duration - 1
 		if e.duration <= 0 then
 			table.insert(todel, i)
 		elseif e.update_fct then
-			if e:update_fct() then
+			if e:update_fct(update_shape_only) then
 				if type(dir) == "table" then e.grids = core.fov.beam_any_angle_grids(e.x, e.y, e.radius, e.angle, e.dir.source_x or e.src.x or e.x, e.dir.source_y or e.src.y or e.y, e.dir.delta_x, e.dir.delta_y, true)
 				elseif e.dir == 5 then e.grids = core.fov.circle_grids(e.x, e.y, e.radius, true)
 				else e.grids = core.fov.beam_grids(e.x, e.y, e.radius, e.dir, e.angle, true) end

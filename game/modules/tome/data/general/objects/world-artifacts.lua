@@ -142,8 +142,8 @@ newEntity{ base = "BASE_RING",
 				radius,
 				5, nil,
 				engine.MapEffect.new{color_br=30, color_bg=60, color_bb=200, effect_shader="shader_images/water_effect1.png"},
-				function(e)
-					e.radius = e.radius + 0.4
+				function(e, update_shape_only)
+					if not update_shape_only then e.radius = e.radius + 0.4 end
 					return true
 				end,
 				false
@@ -2688,10 +2688,7 @@ newEntity{ base = "BASE_SHOT",
 				radius,
 				5, nil,
 				{type="ice_vapour"},
-				function(e)
-					e.radius = e.radius
-					return true
-				end,
+				nil,
 				false
 			)
 		end},
@@ -6721,10 +6718,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 				radius,
 				5, nil,
 				{type="inferno"},
-				function(e)
-					e.radius = e.radius 
-					return true
-				end,
+				nil,
 				false
 			)
 		end

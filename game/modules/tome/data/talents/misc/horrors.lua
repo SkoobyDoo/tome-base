@@ -545,8 +545,8 @@ newTalent{
 			1,
 			5, nil,
 			MapEffect.new{color_br=30, color_bg=200, color_bb=60, effect_shader="shader_images/retch_effect.png"},
-			function(e)
-				e.radius = e.radius + 0.5
+			function(e, update_shape_only)
+				if not update_shape_only then e.radius = e.radius + 0.5 end
 				return true
 			end,
 			false
