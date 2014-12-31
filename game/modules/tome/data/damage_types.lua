@@ -404,9 +404,8 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 
 		local hd = {"DamageProjector:final", src=src, x=x, y=y, type=type, dam=dam, tmp=tmp, no_martyr=no_martyr}
 		if src:triggerHook(hd) then dam = hd.dam if hd.stopped then return hd.stopped end end
-		if target.listCallbacks then
-			local cbs = target:listCallbacks("callbackOnTakeDamage")
-			for _, cb in ipairs(cbs) do
+		if target.iterCallbacks then
+			for cb in target:iterCallbacks("callbackOnTakeDamage") do
 				local ret = cb(src, x, y, type, dam, tmp, no_martyr)
 				if ret then
 					if ret.dam then dam = ret.dam end

@@ -1970,7 +1970,7 @@ function _M:onHeal(value, src)
 		end
 	end
 
-	for _, cb in self:listCallbacks("callbackOnHeal") do
+	for cb in self:iterCallbacks("callbackOnHeal") do
 		local ret = cb(value, src)
 		if ret then value = ret.value end
 	end
@@ -4852,38 +4852,42 @@ function _M:fireTalentCheck(event, ...)
 	return ret
 end
 
-function _M:listCallbacks(event)
+function _M:iterCallbacks(event)
 	local store = sustainCallbackCheck[event]
 	local cbs = {}
 	if self[store] then upgradeStore(self[store], store) end
 	if self[store] and next(self[store].__priorities) then
-		for _, info in ipairs(self[store].__sorted) do
+		local iter = 1
+		return function()
+			local info = self[store].__sorted[iter]
+			if not info then return end
+			iter = iter + 1
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
-				cbs[#cbs+1] = function(...)
+				return function(...)
 					self.__project_source = self.tmp[tid]
 					local ret = self:callEffect(tid, event, ...)
 					self.__project_source = nil
 					return ret
-				end
+				end, priority, kind
 			elseif kind == "object" then
-				cbs[#cbs+1] = function(...)
+				return function(...)
 					self.__project_source = tid
 					local ret = tid:check(event, self, ...)
 					self.__project_source = nil
 					return ret
-				end
+				end, priority, kind
 			else
-				cbs[#cbs+1] = function(...)
+				return function(...)
 					self.__project_source = self.sustain_talents[tid]
 					local ret = self:callTalent(tid, event, ...)
 					self.__project_source = nil
 					return ret
-				end
+				end, priority, kind
 			end
 		end
 	end
-	return cbs
+	return function() return end
 end
 
 function _M:getTalentSpeedType(t)
