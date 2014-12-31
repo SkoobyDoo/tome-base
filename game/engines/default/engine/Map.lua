@@ -68,6 +68,8 @@ color_shown   = { 1, 1, 1, 1 }
 color_obscure = { 0.6, 0.6, 0.6, 0.5 }
 smooth_scroll = 0
 
+grid_lines = {0, 0, 0, 0}
+
 faction_friend = "tactical_friend.png"
 faction_neutral = "tactical_neutral.png"
 faction_enemy = "tactical_enemy.png"
