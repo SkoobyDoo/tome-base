@@ -37,7 +37,7 @@ return function(gen, id)
 		util.squareApply(x+2, y+2, room.w-2, room.h-2, function(i, j) gen.map.room_map[i][j].special = true end)
 
 		for _, spot in ipairs(room.spots[1]) do
-			local e = gen.zone:makeEntity(gen.level, "actor", {type="giant", subtype="ogre"}, nil, true)
+			local e = gen.zone:makeEntity(gen.level, "actor", {type="giant", subtype="ogre", special_rarity="special_rarity"}, nil, true)
 			if e then gen:roomMapAddEntity(x + spot.x, y + spot.y, "actor", e) gen.map.room_map[x + spot.x][y + spot.y].special = true end
 		end
 		for _, spot in ipairs(room.spots[3]) do

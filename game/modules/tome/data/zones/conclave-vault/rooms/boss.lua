@@ -45,7 +45,7 @@ return function(gen, id)
 		end
 
 		for _, spot in ipairs(room.spots[2]) do
-			local e = gen.zone:makeEntity(gen.level, "actor", {type="giant", subtype="ogre"}, nil, true)
+			local e = gen.zone:makeEntity(gen.level, "actor", {type="giant", subtype="ogre", special_rarity="special_rarity"}, nil, true)
 			if e then
 				gen:roomMapAddEntity(x + spot.x, y + spot.y, "actor", e)
 				e.on_added_to_level = nil

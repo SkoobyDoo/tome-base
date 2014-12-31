@@ -47,7 +47,6 @@ return {
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",
-			filters = {{special_rarity="special_rarity"}},
 			nb_npc = {12, 15},
 		},
 		object = {
