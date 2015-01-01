@@ -181,7 +181,7 @@ function _M:update()
 
 	self.surface:erase(0,0,0,1)
 	self.surface:drawColorStringBlended(self.font, gesttxt, 0, 0, 255, 255, 255, true)
-	self.surface:updateTexture(self.texture)
+	-- self.surface:updateTexture(self.texture)
 end
 
 function _M:display(display_x, display_y)

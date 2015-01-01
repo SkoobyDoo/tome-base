@@ -317,7 +317,7 @@ void copy_surface_to_texture(SDL_Surface *s) {
 #ifdef _DEBUG
 	GLenum err = glGetError();
 	if (err != GL_NO_ERROR) {
-		printf("copy_surface_to_texture : glTexSubImage2D : %s\n",gluErrorString(err));
+		printf("copy_surface_to_texture : glTexSubImage2D : %s (%d)\n",gluErrorString(err), err);
 	}
 #endif
 }
