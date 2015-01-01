@@ -794,7 +794,7 @@
     <property name="type" value="&quot;world-encounter&quot;"/>
    </properties>
   </object>
-  <object name="Angolwen quest" x="447" y="703" width="158" height="159">
+  <object name="Angolwen quest" x="483" y="711" width="120" height="148">
    <properties>
     <property name="subtype" value="&quot;angolwen&quot;"/>
     <property name="type" value="&quot;world-encounter&quot;"/>

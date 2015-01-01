@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -729,12 +729,19 @@ static int map_new(lua_State *L)
 	map->colors = calloc(4*4*QUADS_PER_BATCH, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
 	map->texcoords = calloc(2*4*QUADS_PER_BATCH, sizeof(GLfloat));
 
+	map->displayed_x = map->displayed_y = 0;
 	map->w = w;
 	map->h = h;
 	map->zdepth = zdepth;
 	map->tile_w = tile_w;
 	map->tile_h = tile_h;
 	map->move_max = 0;
+
+	// Compute line grids array for fast drawing
+	map->nb_grid_lines_vertices = 0;
+	map->grid_lines_vertices = NULL;
+	map->grid_lines_textures = NULL;
+	map->grid_lines_colors = NULL;
 
 	// Make up the map objects list, thus we can iterate them later
 	lua_newtable(L);
@@ -827,6 +834,10 @@ static int map_free(lua_State *L)
 	free(map->texcoords);
 	free(map->vertices);
 
+	if (map->grid_lines_vertices) free(map->grid_lines_vertices);
+	if (map->grid_lines_colors) free(map->grid_lines_colors);
+	if (map->grid_lines_textures) free(map->grid_lines_textures);
+
 	luaL_unref(L, LUA_REGISTRYINDEX, map->mo_list_ref);
 
 	glDeleteTextures(1, &map->seens_texture);
@@ -837,6 +848,77 @@ static int map_free(lua_State *L)
 
 	lua_pushnumber(L, 1);
 	return 1;
+}
+
+static int map_define_grid_lines(lua_State *L) {
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	int size = luaL_checknumber(L, 2);
+	if (!size) {
+		if (map->grid_lines_vertices) free(map->grid_lines_vertices);
+		if (map->grid_lines_colors) free(map->grid_lines_colors);
+		if (map->grid_lines_textures) free(map->grid_lines_textures);
+		map->grid_lines_vertices = NULL;
+		map->grid_lines_colors = NULL;
+		map->grid_lines_textures = NULL;
+		map->nb_grid_lines_vertices = 0;
+		return 0;
+	}
+
+	float r = luaL_checknumber(L, 3);
+	float g = luaL_checknumber(L, 4);
+	float b = luaL_checknumber(L, 5);
+	float a = luaL_checknumber(L, 6);
+
+	if (map->grid_lines_vertices) free(map->grid_lines_vertices);
+	if (map->grid_lines_colors) free(map->grid_lines_colors);
+	if (map->grid_lines_textures) free(map->grid_lines_textures);
+
+	int mwidth = map->mwidth;
+	int mheight = map->mheight;
+	int tile_w = map->tile_w;
+	int tile_h = map->tile_h;
+	int grid_w = 1 + mwidth;
+	int grid_h = 1 + mheight;
+	map->nb_grid_lines_vertices = grid_w + grid_h;
+	map->grid_lines_vertices = calloc(2 * 4 * map->nb_grid_lines_vertices, sizeof(GLfloat)); // 4 coords per lines
+	map->grid_lines_textures = calloc(2 * 4 * map->nb_grid_lines_vertices, sizeof(GLfloat)); // 4 coords per lines
+	map->grid_lines_colors = calloc(4 * 4 * map->nb_grid_lines_vertices, sizeof(GLfloat)); // 4 coords per lines
+	int vi = 0, ci = 0, ti = 0, i;
+	// Verticals
+	for (i = 0; i < grid_w; i++) {
+		map->grid_lines_vertices[vi++] = i * tile_w - size / 2;	map->grid_lines_vertices[vi++] = 0;
+		map->grid_lines_vertices[vi++] = i * tile_w + size / 2;	map->grid_lines_vertices[vi++] = 0;
+		map->grid_lines_vertices[vi++] = i * tile_w + size / 2;	map->grid_lines_vertices[vi++] = mheight * tile_h;
+		map->grid_lines_vertices[vi++] = i * tile_w - size / 2;	map->grid_lines_vertices[vi++] = mheight * tile_h;
+
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+
+		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 0; 
+		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 0; 
+		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 1; 
+		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 1; 
+	}
+	// Horizontals
+	for (i = 0; i < grid_h; i++) {
+		map->grid_lines_vertices[vi++] = 0;			map->grid_lines_vertices[vi++] = i * tile_h - size / 2;
+		map->grid_lines_vertices[vi++] = 0;			map->grid_lines_vertices[vi++] = i * tile_h + size / 2;
+		map->grid_lines_vertices[vi++] = mwidth * tile_w;	map->grid_lines_vertices[vi++] = i * tile_h + size / 2;
+		map->grid_lines_vertices[vi++] = mwidth * tile_w;	map->grid_lines_vertices[vi++] = i * tile_h - size / 2;
+
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
+
+		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 0; 
+		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 0; 
+		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 1; 
+		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 1; 
+	}
+	return 0;
 }
 
 static int map_set_z_callback(lua_State *L)
@@ -1661,6 +1743,8 @@ static int map_to_screen(lua_State *L)
 	y -= map->tile_h * (animdy + map->oldmy);
 	map->used_animdx = animdx;
 	map->used_animdy = animdy;
+	map->displayed_x = x;
+	map->displayed_y = y;
 
 	map->used_mx = mx;
 	map->used_my = my;
@@ -1762,6 +1846,37 @@ static int map_to_screen(lua_State *L)
 	}
 
 	return 0;
+}
+
+extern int gl_tex_white;
+static int map_line_grids(lua_State *L) {
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	if (!map->grid_lines_vertices) return 0;
+
+	int x = luaL_checknumber(L, 2);
+	int y = luaL_checknumber(L, 3);
+
+	if (lua_isuserdata(L, 4))
+	{
+		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 4);
+		tglBindTexture(GL_TEXTURE_2D, *t);
+	}
+	else if (lua_toboolean(L, 4))
+	{
+		// Do nothing, we keep the currently bound texture
+	}
+	else
+	{
+		tfglBindTexture(GL_TEXTURE_2D, gl_tex_white);
+	}
+
+	glTranslatef(x - map->used_animdx * map->tile_w, y - map->used_animdy * map->tile_h, 0);
+	glVertexPointer(2, GL_FLOAT, 0, map->grid_lines_vertices);
+	glColorPointer(4, GL_FLOAT, 0, map->grid_lines_colors);
+	glTexCoordPointer(2, GL_FLOAT, 0, map->grid_lines_textures);
+	glDrawArrays(GL_QUADS, 0, map->nb_grid_lines_vertices * 4);
+	glTranslatef(-x + map->used_animdx * map->tile_w, -y + map->used_animdy * map->tile_h, 0);
+	return 0;	
 }
 
 static int minimap_to_screen(lua_State *L)
@@ -1922,6 +2037,8 @@ static const struct luaL_Reg map_reg[] =
 	{"getScroll", map_get_scroll},
 	{"toScreen", map_to_screen},
 	{"toScreenMiniMap", minimap_to_screen},
+	{"toScreenLineGrids", map_line_grids},
+	{"setupGridLines", map_define_grid_lines},
 	{"setupMiniMapGridSize", map_set_minimap_gridsize},
 	{NULL, NULL},
 };

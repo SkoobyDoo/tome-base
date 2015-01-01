@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -510,7 +510,7 @@ function _M:orderChatAchievement(o)
 end
 
 function _M:orderChatSerialData(o)
-	self:command("SERZ", o.channel, o.msg:len())
+	self:command("SERZ", o.channel, o.msg:len(), o.kind or "generic")
 	if not self:read("200") then return end
 	self.sock:send(o.msg)
 end

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -3178,7 +3178,7 @@ newEffect{
 		if self.turn_procs.ogric_wrath then return end
 
 		self.turn_procs.ogric_wrath = true
-		self:setEffect(self.EFF_OGRE_FURY, 1, {})
+		self:setEffect(self.EFF_OGRE_FURY, 7, {})
 	end,
 	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
 		if hitted then return true end
@@ -3194,7 +3194,7 @@ newEffect{
 	name = "OGRE_FURY", image = "effects/ogre_fury.png",
 	desc = "Ogre Fury",
 	long_desc = function(self, eff) return ("Increases stun and confusion resistances by %d%%, crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 10, eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
-	type = "magical", decrease = 0,
+	type = "magical",
 	subtype = { runic=true },
 	status = "beneficial",
 	parameters = { stacks=1, max_stacks=5 },
@@ -3232,6 +3232,13 @@ newEffect{
 	deactivate = function(self, eff, e)
 		e.do_effect(self, eff, false)
 	end,
+	on_timeout = function(self, eff, e)
+		if eff.stacks > 1 and eff.dur <= 1 then
+			eff.stacks = eff.stacks - 1
+			eff.dur = 7
+			e.do_effect(self, eff, false)
+		end
+	end
 }
 
 newEffect{

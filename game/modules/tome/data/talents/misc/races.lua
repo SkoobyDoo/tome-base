@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -942,7 +942,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You enter an ogric wrath for %d turns.
-		Whenever you miss a melee attack or any damage you deal is reduced by a damage shield or similar effect you gain a charge of Ogre Fury(up to 5 charges).
+		Whenever you miss a melee attack or any damage you deal is reduced by a damage shield or similar effect you gain a charge of Ogre Fury(up to 5 charges, each lasts 7 turns).
 		Each charge grants 10%% stun and confusion resistance, 20%% critical damage power and 5%% critical strike chance.
 		You loose a charge each time you deal a critical strike.
 		The duration will increase with your Strength.]]):format(t.getduration(self))

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -142,8 +142,8 @@ newEntity{ base = "BASE_RING",
 				radius,
 				5, nil,
 				engine.MapEffect.new{color_br=30, color_bg=60, color_bb=200, effect_shader="shader_images/water_effect1.png"},
-				function(e)
-					e.radius = e.radius + 0.4
+				function(e, update_shape_only)
+					if not update_shape_only then e.radius = e.radius + 0.4 end
 					return true
 				end,
 				false
@@ -2688,10 +2688,7 @@ newEntity{ base = "BASE_SHOT",
 				radius,
 				5, nil,
 				{type="ice_vapour"},
-				function(e)
-					e.radius = e.radius
-					return true
-				end,
+				nil,
 				false
 			)
 		end},
@@ -4431,7 +4428,7 @@ newEntity{ base = "BASE_GLOVES", --Thanks SageAcrin /AND/ Edge2054!
 			talent_on_hit = { [Talents.T_SHADOW_SIMULACRUM] = {level=1, chance=15}, [Talents.T_MIND_BLAST] = {level=1, chance=10}, [Talents.T_TURN_BACK_THE_CLOCK] = {level=1, chance=10} },
 		},
 	},
-	talent_on_spell = { {chance=10, talent=Talents.T_DUST_TO_DUST, level=2} },
+	talent_on_spell = { {chance=10, talent=Talents.T_ECHOES_FROM_THE_PAST, level=2} },
 }
 
 newEntity{ base = "BASE_GEM", --Thanks SageAcrin and Graziel!
@@ -6721,10 +6718,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 				radius,
 				5, nil,
 				{type="inferno"},
-				function(e)
-					e.radius = e.radius 
-					return true
-				end,
+				nil,
 				false
 			)
 		end

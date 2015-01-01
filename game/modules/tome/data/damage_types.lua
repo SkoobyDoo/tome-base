@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -286,6 +286,7 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 			print("[PROJECTOR] after self-resists dam", dam)
 		end
 		
+		local initial_dam = dam
 		lastdam = dam
 		-- Static reduce damage for psionic kinetic shield
 		if target.isTalentActive and target:isTalentActive(target.T_KINETIC_SHIELD) then
@@ -399,8 +400,6 @@ setDefaultProjector(function(src, x, y, type, dam, tmp, no_martyr)
 		end
 
 		print("[PROJECTOR] final dam after static checks", dam)
-
-		local initial_dam = dam
 
 		local hd = {"DamageProjector:final", src=src, x=x, y=y, type=type, dam=dam, tmp=tmp, no_martyr=no_martyr}
 		if src:triggerHook(hd) then dam = hd.dam if hd.stopped then return hd.stopped end end

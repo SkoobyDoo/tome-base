@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1459,7 +1459,7 @@ printf("==SDM %dx%d :: %dx%d\n", w,h,w,dh);
 #endif
 }
 
-static int gl_tex_white = 0;
+int gl_tex_white = 0;
 int init_blank_surface()
 {
 	Uint32 rmask, gmask, bmask, amask;

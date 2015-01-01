@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -79,9 +79,10 @@ function _M:onPartyDeath(src, death_note)
 			end
 		end
 
-		local msg
+		local msg, short_msg
 		if not death_note.special_death_msg then
 			msg = "%s the level %d %s %s was %s to death by %s%s%s on level %s of %s."
+			short_msg = "%s(%d %s %s) was %s to death by %s%s on %s %s."
 			local srcname = src.unique and src.name or src.name:a_an()
 			local killermsg = (src.killer_message and " "..src.killer_message or ""):gsub("#sex#", game.player.female and "her" or "him")
 			if src.name == game.player.name then
@@ -104,19 +105,32 @@ function _M:onPartyDeath(src, death_note)
 				killermsg,
 				game.level.level, game.zone.name
 			)
+			short_msg = short_msg:format(
+				game.player.name, game.player.level, game.player.descriptor.subrace:lower(), game.player.descriptor.subclass:lower(),
+				death_mean or "battered",
+				srcname,
+				killermsg,
+				game.zone.name, game.level.level
+			)
 		else
 			msg = "%s the level %d %s %s %s on level %s of %s."
+			short_msg = "%s(%d %s %s) %s on %s %s."
 			msg = msg:format(
 				game.player.name, game.player.level, game.player.descriptor.subrace:lower(), game.player.descriptor.subclass:lower(),
 				death_note.special_death_msg,
 				game.level.level, game.zone.name
+			)
+			short_msg = short_msg:format(
+				game.player.name, game.player.level, game.player.descriptor.subrace:lower(), game.player.descriptor.subclass:lower(),
+				death_note.special_death_msg,
+				game.zone.name, game.level.level
 			)
 		end
 
 		game:playSound("actions/death")
 		game.delayed_death_message = "#{bold}#"..msg.."#{normal}#"
 		if (not game.player.easy_mode_lifes or game.player.easy_mode_lifes <= 0) and not game.player.infinite_lifes then
-			profile.chat.uc_ext:sendKillerLink(msg, src)
+			profile.chat.uc_ext:sendKillerLink(msg, short_msg, src)
 		end
 	end
 end

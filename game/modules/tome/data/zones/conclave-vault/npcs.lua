@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,11 +17,10 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local special_rarity = function(e) e.special_rarity, e.rarity = e.rarity, nil end
-load("/data/general/npcs/jelly.lua", special_rarity)
-load("/data/general/npcs/ooze.lua", special_rarity)
-load("/data/general/npcs/mold.lua", special_rarity)
-load("/data/general/npcs/slime.lua", special_rarity)
+load("/data/general/npcs/jelly.lua")
+load("/data/general/npcs/ooze.lua")
+load("/data/general/npcs/mold.lua")
+load("/data/general/npcs/slime.lua")
 
 local Talents = require("engine.interface.ActorTalents")
 
@@ -56,7 +55,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 	name = "ogre guard", color=colors.LIGHT_GREY,
 	desc = [[A maul-wield ogre. Ready to CRUSH!]],
 	level_range = {20, nil}, exp_worth = 1,
-	rarity = 2,
+	special_rarity = 2,
 	rank = 2,
 	max_life = resolvers.rngavg(150,170), life_rating = 14,
 
@@ -72,7 +71,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 	name = "ogre warmaster", color=colors.CRIMSON,
 	desc = [[A master of combat, he is impatient to test his newfound skills.]],
 	level_range = {21, nil}, exp_worth = 1,
-	rarity = 4,
+	special_rarity = 4,
 	rank = 3,
 	max_life = resolvers.rngavg(110,120), life_rating = 15,
 
@@ -95,7 +94,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 	name = "ogre mauler", color=colors.LIGHT_UMBER,
 	desc = [[Crush! Destroy! Maim!]],
 	level_range = {22, nil}, exp_worth = 1,
-	rarity = 2,
+	special_rarity = 2,
 	rank = 2,
 	max_life = resolvers.rngavg(110,120), life_rating = 13,
 
@@ -111,7 +110,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 	name = "ogre pounder", color=colors.DARK_UMBER,
 	desc = [[This ogre closes in fast on you, arms open for the hug of death.]],
 	level_range = {20, nil}, exp_worth = 1,
-	rarity = 3,
+	special_rarity = 3,
 	rank = 3,
 	max_life = resolvers.rngavg(150,170), life_rating = 15,
 
@@ -131,7 +130,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 	name = "degenerated ogric mass", color=colors.BLUE,
 	desc = [[This huge mass of deformed flesh was probably once an ogre, but something had gone wrong.]],
 	level_range = {20, nil}, exp_worth = 1,
-	rarity = 2,
+	special_rarity = 2,
 	rank = 2,
 	max_life = resolvers.rngavg(110,120), life_rating = 13,
 
@@ -148,7 +147,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 	name = "ogric abomination", color=colors.LIGHT_GREY,
 	desc = [[This ogre seems to have tried to graft golem parts on its own body. To various interresting results.]],
 	level_range = {22, nil}, exp_worth = 1,
-	rarity = 4,
+	special_rarity = 4,
 	rank = 3,
 	max_life = resolvers.rngavg(110,120), life_rating = 13,
 
@@ -167,7 +166,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 	name = "ogre rune-spinner", color=colors.LIGHT_RED,
 	desc = [[A towering ogre guard, his skin covered in runes and arcane designs.]],
 	level_range = {23, nil}, exp_worth = 1,
-	rarity = 2,
+	special_rarity = 2,
 	rank = 3,
 	max_life = resolvers.rngavg(110,120), life_rating = 13,
 

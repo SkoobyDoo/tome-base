@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -5174,6 +5174,7 @@ end
 
 -- Remove a list of effects or sustains.
 function _M:removeModifierList(list)
+	if not list then return end
 	for _, id in ipairs(list) do
 		self:removeModifier(id)
 	end
@@ -5196,15 +5197,21 @@ function _M:breakStealth()
 		-- Do not break stealth
 		if rng.percent(chance) then return end
 
+		if self._breaking_stealth then return end
+		self._breaking_stealth = true
 		self:removeModifierList(breaks)
+		self._breaking_stealth = nil
 		self.changed = true
 	end
 end
 
 --- Breaks step up if active
 function _M:breakStepUp()
+	if self._breaking_step_up then return end
+	self._breaking_step_up = true
 	local breaks = self.break_with_step_up
 	if breaks and #breaks > 0 then self:removeModifierList(breaks) end
+	self._breaking_step_up = nil
 end
 
 --- Breaks lightning speed if active

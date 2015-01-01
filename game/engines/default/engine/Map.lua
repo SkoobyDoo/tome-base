@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -68,6 +68,8 @@ color_shown   = { 1, 1, 1, 1 }
 color_obscure = { 0.6, 0.6, 0.6, 0.5 }
 smooth_scroll = 0
 
+grid_lines = {0, 0, 0, 0}
+
 faction_friend = "tactical_friend.png"
 faction_neutral = "tactical_neutral.png"
 faction_enemy = "tactical_enemy.png"
@@ -103,6 +105,10 @@ function _M:setViewPort(x, y, w, h, tile_w, tile_h, fontname, fontsize, allow_ba
 	self.zoom = 1
 
 	if otw ~= self.tile_w or oth ~= self.tile_h then print("[MAP] Reseting tiles caches") self:resetTiles() end
+end
+
+function _M:setupGridLines(size, r, g, b, a)
+	self.grid_lines = {size, r, g, b, a}
 end
 
 --- Setup a fbo/shader pair to display map effects
@@ -240,6 +246,7 @@ function _M:makeCMap()
 	self._map = core.map.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))
+	self._map:setupGridLines(unpack(self.grid_lines))
 	self._fovcache =
 	{
 		block_sight = core.fov.newCache(self.w, self.h),
@@ -266,6 +273,12 @@ function _M:makeCMap()
 			end
 		end)
 	end
+end
+
+--- Regenetate grid lines definition if it changed
+function _M:regenGridLines()
+	if not self._map or not self.grid_lines then return end
+	self._map:setupGridLines(unpack(self.grid_lines))
 end
 
 --- Adds a "path string" to the map
@@ -1151,29 +1164,33 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 end
 
 --- Process the overlay effects, call it from your tick function
-function _M:processEffects()
+-- @param update_shape_only if true no damage is projected, no duration changes
+function _M:processEffects(update_shape_only)
 	local todel = {}
 	for i, e in ipairs(self.effects) do
-		-- Now display each grids
-		for lx, ys in pairs(e.grids) do
-			for ly, _ in pairs(ys) do
-				local act = game.level.map(lx, ly, engine.Map.ACTOR)
-				if act and act == e.src and not ((type(e.selffire) == "number" and rng.percent(e.selffire)) or (type(e.selffire) ~= "number" and e.selffire)) then
-				elseif act and e.src and e.src.reactionToward and (e.src:reactionToward(act) >= 0) and not ((type(e.friendlyfire) == "number" and rng.percent(e.friendlyfire)) or (type(e.friendlyfire) ~= "number" and e.friendlyfire)) then
-				-- Otherwise hit
-				else
-					e.src.__project_source = e -- intermediate projector source
-					DamageType:get(e.damtype).projector(e.src, lx, ly, e.damtype, e.dam)
-					e.src.__project_source = nil
+		-- Run damage and decrease duration only on certain ticks
+		if not update_shape_only then
+			for lx, ys in pairs(e.grids) do
+				for ly, _ in pairs(ys) do
+					local act = game.level.map(lx, ly, engine.Map.ACTOR)
+					if act and act == e.src and not ((type(e.selffire) == "number" and rng.percent(e.selffire)) or (type(e.selffire) ~= "number" and e.selffire)) then
+					elseif act and e.src and e.src.reactionToward and (e.src:reactionToward(act) >= 0) and not ((type(e.friendlyfire) == "number" and rng.percent(e.friendlyfire)) or (type(e.friendlyfire) ~= "number" and e.friendlyfire)) then
+					-- Otherwise hit
+					else
+						e.src.__project_source = e -- intermediate projector source
+						DamageType:get(e.damtype).projector(e.src, lx, ly, e.damtype, e.dam)
+						e.src.__project_source = nil
+					end
 				end
 			end
+
+			e.duration = e.duration - 1
 		end
 
-		e.duration = e.duration - 1
 		if e.duration <= 0 then
 			table.insert(todel, i)
 		elseif e.update_fct then
-			if e:update_fct() then
+			if e:update_fct(update_shape_only) then
 				if type(dir) == "table" then e.grids = core.fov.beam_any_angle_grids(e.x, e.y, e.radius, e.angle, e.dir.source_x or e.src.x or e.x, e.dir.source_y or e.src.y or e.y, e.dir.delta_x, e.dir.delta_y, true)
 				elseif e.dir == 5 then e.grids = core.fov.circle_grids(e.x, e.y, e.radius, true)
 				else e.grids = core.fov.beam_grids(e.x, e.y, e.radius, e.dir, e.angle, true) end

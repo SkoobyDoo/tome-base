@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -516,8 +516,21 @@ function _M:setupDisplayMode(reboot, mode)
 		end
 		self:setupMiniMap()
 
-		self:createFBOs()		
+		self:createFBOs()
+
+		self:createMapGridLines()
 	end
+end
+
+function _M:createMapGridLines()
+	if not config.settings.tome.show_grid_lines then
+		Map:setupGridLines(0, 0, 0, 0, 0)
+	elseif self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then
+		Map:setupGridLines(6, unpack(colors.hex1alpha"d5990880"))
+	else
+		Map:setupGridLines(2, unpack(colors.hex1alpha"d5990880"))
+	end
+	if self.level and self.level.map then self.level.map:regenGridLines() end
 end
 
 function _M:createFBOs()
@@ -533,6 +546,7 @@ function _M:createFBOs()
 			motionblur = Shader.new("main_fbo/motionblur"),
 			blur = Shader.new("main_fbo/blur"),
 			timestop = Shader.new("main_fbo/timestop"),
+			line_grids = Shader.new("main_fbo/line_grids"),
 		}
 		self.posteffects_use = { self.fbo_shader.shad }
 		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end 
@@ -1364,14 +1378,14 @@ function _M:onTurn()
 		if self.zone.on_turn then self.zone:on_turn() end
 	end
 
+	-- Process overlay effects
+	self.level.map:processEffects(self.turn % 10 ~= 0)
+
 	-- The following happens only every 10 game turns (once for every turn of 1 mod speed actors)
 	if self.turn % 10 ~= 0 then return end
 
 	-- Day/Night cycle
 	if self.level.data.day_night then self.state:dayNightCycle() end
-
-	-- Process overlay effects
-	self.level.map:processEffects()
 
 	if not self.day_of_year or self.day_of_year ~= self.calendar:getDayOfYear(self.turn) then
 		self.log(self.calendar:getTimeDate(self.turn))
@@ -1417,6 +1431,9 @@ function _M:displayMap(nb_keyframes)
 			self.fbo2:use(true)
 				self.fbo:toScreen(0, 0, map.viewport.width, map.viewport.height)
 				core.particles.drawAlterings()
+				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
+				map._map:toScreenLineGrids(map.display_x, map.display_y)
+				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
 				if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
 			self.fbo2:use(false, self.full_fbo)
 
@@ -1433,6 +1450,9 @@ function _M:displayMap(nb_keyframes)
 			if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 			if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
 			core.particles.drawAlterings()
+			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
+			map._map:toScreenLineGrids(map.display_x, map.display_y)
+			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
 			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(map.display_x, map.display_y, nb_keyframes) end
 		end
 

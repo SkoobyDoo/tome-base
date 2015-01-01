@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1264,7 +1264,7 @@ newEffect{
 					radius,
 					5, nil,
 					engine.MapEffect.new{alpha=100, color_br=134, color_bg=60, color_bb=134, effect_shader="shader_images/darkness_effect.png"},
-					function(e)
+					function(e, update_shape_only) if not update_shape_only then 
 						-- attempt one summon per turn
 						if not e.src:canBe("summon") then return end
 
@@ -1298,7 +1298,7 @@ newEffect{
 						game.zone:addEntity(game.level, m, "actor", location[1], location[2])
 
 						return true
-					end,
+					end end,
 					false, false)
 
 				game.logSeen(self, "#F53CBE#The air around %s grows cold and terrifying shapes begin to coalesce. A nightmare has begun.", self.name:capitalize())
@@ -2678,5 +2678,25 @@ newEffect{
 				self:removeEffect(self.EFF_AEONS_STASIS, nil, true)
 			end
 		end
+	end,
+}
+
+newEffect{
+	name = "UNSTOPPABLE", image = "talents/unstoppable.png",
+	desc = "Unstoppable",
+	long_desc = function(self, eff) return ("The target is unstoppable! It refuses to die, and at the end it will heal %d Life."):format(eff.kills * eff.hp_per_kill * self.max_life / 100) end,
+	type = "other",
+	subtype = { frenzy=true },
+	status = "beneficial",
+	parameters = { hp_per_kill=2 },
+	activate = function(self, eff)
+		eff.kills = 0
+		eff.tmpid = self:addTemporaryValue("unstoppable", 1)
+		eff.healid = self:addTemporaryValue("no_life_regen", 1)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("unstoppable", eff.tmpid)
+		self:removeTemporaryValue("no_life_regen", eff.healid)
+		self:heal(eff.kills * eff.hp_per_kill * self.max_life / 100, eff)
 	end,
 }
