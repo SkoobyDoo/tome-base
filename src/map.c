@@ -1874,7 +1874,7 @@ static int map_line_grids(lua_State *L) {
 	glVertexPointer(2, GL_FLOAT, 0, map->grid_lines_vertices);
 	glColorPointer(4, GL_FLOAT, 0, map->grid_lines_colors);
 	glTexCoordPointer(2, GL_FLOAT, 0, map->grid_lines_textures);
-	glDrawArrays(GL_QUADS, 0, map->nb_grid_lines_vertices * 4);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, map->nb_grid_lines_vertices * 4);
 	glTranslatef(-x + map->used_animdx * map->tile_w, -y + map->used_animdy * map->tile_h, 0);
 	return 0;	
 }
