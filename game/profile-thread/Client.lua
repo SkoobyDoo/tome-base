@@ -510,7 +510,7 @@ function _M:orderChatAchievement(o)
 end
 
 function _M:orderChatSerialData(o)
-	self:command("SERZ", o.channel, o.msg:len())
+	self:command("SERZ", o.channel, o.msg:len(), o.kind or "generic")
 	if not self:read("200") then return end
 	self.sock:send(o.msg)
 end
