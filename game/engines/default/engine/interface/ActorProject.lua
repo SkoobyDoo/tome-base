@@ -201,7 +201,7 @@ function _M:project(t, x, y, damtype, dam, particles)
 	self:check("on_project_grids", grids)
 
 	-- Now project on each grid, one type
-	local tmp = {}
+	local state = {}
 	local stop = false
 	DamageType:projectingFor(self, {project_type=typ})
 	for px, ys in pairs(grids) do
@@ -215,7 +215,7 @@ function _M:project(t, x, y, damtype, dam, particles)
 				-- Otherwise hit
 				else
 					if type(damtype) == "function" then if damtype(px, py, t, self) then stop=true break end
-					else DamageType:get(damtype).projector(self, px, py, damtype, dam, tmp, nil) end
+					else DamageType:get(damtype).projector(self, px, py, damtype, dam, state, nil) end
 					if particles then
 						game.level.map:particleEmitter(px, py, 1, particles.type, particles.args)
 					end
