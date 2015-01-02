@@ -37,7 +37,7 @@ newTalent{
 	message = "@Source@ shoots!",
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) if not (self:attr("warden_swap") and doWardenPreUse(self, "bow")) and not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
 	no_unlearn_last = true,
 	use_psi_archery = function(self, t)
 		local inven = self:getInven("PSIONIC_FOCUS")
@@ -50,6 +50,8 @@ newTalent{
 		end
 	end,
 	action = function(self, t)
+		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, 0, "bow")
+	
 		-- Most of the time use the normal shoot.
 		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
@@ -57,7 +59,7 @@ newTalent{
 			self:archeryShoot(targets, t, nil, {use_psi_archery = t.use_psi_archery(self, t)})
 			return true
 		end
-
+		
 		local weapon, ammo, offweapon = self:hasArcheryWeapon()
 		if not weapon then return nil end
 		local infinite = ammo.infinite or self:attr("infinite_ammo")

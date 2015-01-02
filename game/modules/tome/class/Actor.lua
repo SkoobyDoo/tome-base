@@ -4029,6 +4029,7 @@ function _M:learnTalent(t_id, force, nb, extra)
 
 	if t.is_spell then self:attr("has_arcane_knowledge", nb or 1) end
 	if t.is_antimagic then self:attr("forbid_arcane", nb or 1) end
+	if t.type[1]:find("^chronomancy/bow") or t.type[1]:find("^chronomancy/blade") then self:attr("warden_swap", nb or 1) end
 
 	if t.dont_provide_pool then return true end
 
@@ -4207,6 +4208,7 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 
 	if t.is_spell then self:attr("has_arcane_knowledge", -nb) end
 	if t.is_antimagic then self:attr("forbid_arcane", -nb) end
+	if t.type[1]:find("^chronomancy/bow") or t.type[1]:find("^chronomancy/blade") then self:attr("warden_swap", -nb) end
 
 	-- If we learn mindslayer things we learn telekinetic grasp & beyond the flesh
 	if t.autolearn_mindslayer then

@@ -52,6 +52,8 @@ newTalent{
 	speed = 'weapon',
 	is_melee = true,
 	action = function(self, t)
+		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, 0, "blade")
+	
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x then return end
