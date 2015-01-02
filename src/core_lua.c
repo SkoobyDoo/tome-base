@@ -296,7 +296,7 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 		largest_size = realh*realw*4;
 		printf("Upgrading black texture to size %d\n", largest_size);
 	}
-	printf("Making texture %dx%d, %d colors, tex format %d == %d\n", realw, realh, nOfColors, texture_format, GL_RGBA);
+	// printf("Making texture %dx%d, %d colors, tex format %d == %d\n", realw, realh, nOfColors, texture_format, GL_RGBA);
 	glTexImage2D(GL_TEXTURE_2D, 0, texture_format, realw, realh, 0, texture_format, GL_UNSIGNED_BYTE, largest_black);
 
 #ifdef _DEBUG
@@ -311,7 +311,7 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 void copy_surface_to_texture(SDL_Surface *s) {
 	GLenum texture_format = sdl_gl_texture_format(s);
 
-	printf("Updating texture %dx%d, tex format %d == %d\n", s->w, s->h, texture_format, GL_RGBA);
+	// printf("Updating texture %dx%d, tex format %d == %d\n", s->w, s->h, texture_format, GL_RGBA);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, s->w, s->h, texture_format, GL_UNSIGNED_BYTE, s->pixels);
 
 #ifdef _DEBUG
@@ -333,16 +333,16 @@ static int lua_get_mouse(lua_State *L)
 	int x = 0, y = 0;
 	int buttons = SDL_GetMouseState(&x, &y);
 
-	lua_pushnumber(L, x);
-	lua_pushnumber(L, y);
+	lua_pushnumber(L, x / zoom_factor);
+	lua_pushnumber(L, y / zoom_factor);
 	lua_pushnumber(L, SDL_BUTTON(buttons));
 
 	return 3;
 }
 static int lua_set_mouse(lua_State *L)
 {
-	int x = luaL_checknumber(L, 1);
-	int y = luaL_checknumber(L, 2);
+	int x = luaL_checknumber(L, 1) * zoom_factor;
+	int y = luaL_checknumber(L, 2) * zoom_factor;
 	SDL_WarpMouseInWindow(window, x, y);
 	return 0;
 }
@@ -597,10 +597,11 @@ static bool no_text_aa = FALSE;
 
 extern bool is_fullscreen;
 extern bool is_borderless;
+extern float zoom_factor;
 static int sdl_screen_size(lua_State *L)
 {
-	lua_pushnumber(L, screen->w);
-	lua_pushnumber(L, screen->h);
+	lua_pushnumber(L, screen->w / zoom_factor);
+	lua_pushnumber(L, screen->h / zoom_factor);
 	lua_pushboolean(L, is_fullscreen);
 	lua_pushboolean(L, is_borderless);
 	return 4;
@@ -2931,6 +2932,11 @@ static void png_output_flush_fn(png_structp png_ptr)
 {
 }
 
+#if defined(USE_GLES1)
+static int sdl_get_png_screenshot(lua_State *L) {
+	return 0;
+}
+#else
 #ifndef png_infopp_NULL
 #define png_infopp_NULL (png_infopp)NULL
 #endif
@@ -3015,6 +3021,7 @@ static int sdl_get_png_screenshot(lua_State *L)
 
 	return 1;
 }
+#endif
 
 static int gl_fbo_to_png(lua_State *L)
 {

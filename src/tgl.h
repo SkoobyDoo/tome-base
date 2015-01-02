@@ -1,3 +1,8 @@
+#ifdef USE_ANDROID
+#include <android/log.h>
+#define printf(...) __android_log_print(ANDROID_LOG_DEBUG, "ToME", __VA_ARGS__);
+#endif
+
 #if defined(USE_GLES1)
 	#include <GLES/gl.h>
 	#include <GLES/glext.h>

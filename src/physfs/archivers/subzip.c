@@ -123,7 +123,7 @@ static void *SUBZIP_openArchive(const char *name, int forWriting)
  * Result must be freed manually with allocator.Free
  * if not necessary anymore
  */
-char *append_assets(const char *subdir, const char *name)
+static char *append_assets(const char *subdir, const char *name)
 {
 	char *patched_name;
 	int sub_len = strlen(subdir);

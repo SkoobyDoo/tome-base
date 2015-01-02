@@ -62,6 +62,7 @@ SDL_Surface *windowIconSurface = NULL;
 SDL_GLContext maincontext; /* Our opengl context handle */
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
+float zoom_factor = 1;
 static lua_State *L = NULL;
 int nb_cpus;
 bool no_debug = FALSE;
@@ -269,6 +270,15 @@ int noprint(lua_State *L)
 	return 0;
 }
 
+#ifdef USE_ANDROID
+/* Print to android log */
+int androprint(lua_State *L)
+{
+	printf("%s\n", lua_tostring(L, 1));
+	return 0;
+}
+#endif
+
 // define our data that is passed to our redraw function
 typedef struct {
 	Uint32 color;
@@ -420,8 +430,8 @@ void on_event(SDL_Event *event)
 				lua_concat(L, 2);
 				break;
 			}
-			lua_pushnumber(L, event->button.x);
-			lua_pushnumber(L, event->button.y);
+			lua_pushnumber(L, event->button.x / zoom_factor);
+			lua_pushnumber(L, event->button.y / zoom_factor);
 			lua_pushboolean(L, (event->type == SDL_MOUSEBUTTONUP) ? TRUE : FALSE);
 			docall(L, 5, 0);
 		}
@@ -445,8 +455,8 @@ void on_event(SDL_Event *event)
 				else if (event->wheel.x > 0) lua_pushstring(L, "wheelleft");
 				else if (event->wheel.x < 0) lua_pushstring(L, "wheelright");
 				else lua_pushstring(L, "wheelnone");
-				lua_pushnumber(L, x);
-				lua_pushnumber(L, y);
+				lua_pushnumber(L, x / zoom_factor);
+				lua_pushnumber(L, y / zoom_factor);
 				lua_pushboolean(L, i);
 				docall(L, 5, 0);
 			}
@@ -469,10 +479,10 @@ void on_event(SDL_Event *event)
 			else if (event->motion.state & SDL_BUTTON(4)) lua_pushstring(L, "wheelup");
 			else if (event->motion.state & SDL_BUTTON(5)) lua_pushstring(L, "wheeldown");
 			else lua_pushstring(L, "none");
-			lua_pushnumber(L, event->motion.x);
-			lua_pushnumber(L, event->motion.y);
-			lua_pushnumber(L, event->motion.xrel);
-			lua_pushnumber(L, event->motion.yrel);
+			lua_pushnumber(L, event->motion.x / zoom_factor);
+			lua_pushnumber(L, event->motion.y / zoom_factor);
+			lua_pushnumber(L, event->motion.xrel / zoom_factor);
+			lua_pushnumber(L, event->motion.yrel / zoom_factor);
 			docall(L, 6, 0);
 		}
 		break;
@@ -614,7 +624,10 @@ void on_redraw()
 	count_keyframes += nb - last_keyframe;
 	total_keyframes += nb - last_keyframe;
 //	printf("keyframes: %f / %f by %f => %d\n", nb_keyframes, reference_fps, step, nb - (last_keyframe));
+	glPushMatrix();
+	glScalef(zoom_factor, zoom_factor, zoom_factor);
 	call_draw(nb - last_keyframe);
+	glPopMatrix();
 
 	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);
@@ -914,8 +927,10 @@ void do_resize(int w, int h, bool fullscreen, bool borderless)
 		screen = SDL_GetWindowSurface(window);
 
 		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-		// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-		// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#if defined(USE_GLES1)
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#endif
 
 		maincontext = SDL_GL_CreateContext(window);
 		SDL_GL_MakeCurrent(window, maincontext);
@@ -1014,6 +1029,9 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		/***************** Physfs Init *****************/
 		PHYSFS_init(argv[0]);
 
+		PHYSFS_mount(argv[1], "/", 1);
+		printf("ToME running from APK %s with bootmod %s and gamemod %s\n", argv[1], argv[2], argv[3]);
+
 		selfexe = get_self_executable(argc, argv);
 		if (selfexe && PHYSFS_mount(selfexe, "/", 1))
 		{
@@ -1027,6 +1045,14 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		/***************** Lua Init *****************/
 		L = lua_open();  /* create state */
 		luaL_openlibs(L);  /* open libraries */
+#ifdef USE_ANDROID
+		lua_pushcfunction(L, androprint);
+		lua_setglobal(L, "_androprint");
+		lua_pushstring(L, argv[2]);
+		lua_setglobal(L, "_androbootmod");
+		lua_pushstring(L, argv[3]);
+		lua_setglobal(L, "_androgamemod");
+#endif
 		luaopen_physfs(L);
 		luaopen_core(L);
 		luaopen_fov(L);
@@ -1036,7 +1062,9 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_profiler(L);
 		luaopen_bit(L);
 		luaopen_lpeg(L);
+#ifndef USE_ANDROID
 		luaopen_lxp(L);
+#endif
 		luaopen_md5_core(L);
 		luaopen_map(L);
 		luaopen_particles(L);
@@ -1078,6 +1106,10 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 #ifdef __APPLE__
 		lua_pushboolean(L, TRUE);
 		lua_setglobal(L, "__APPLE__");
+#endif
+#ifdef USE_ANDROID
+		lua_pushboolean(L, TRUE);
+		lua_setglobal(L, "__ANDROID__");
 #endif
 
 		// Run bootstrapping
@@ -1291,7 +1323,9 @@ int main(int argc, char *argv[])
 	if (!no_steam) te4_steam_init();
 #endif
 
+#ifndef USE_ANDROID // Doesnt work on android, dunno why yet. FIXME
 	init_openal();
+#endif
 
 	// RNG init
 	init_gen_rand(time(NULL));

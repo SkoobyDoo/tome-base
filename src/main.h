@@ -68,6 +68,7 @@ extern int cur_frame_tick;
 extern int g_argc;
 extern char **g_argv;
 extern char *override_home;
+extern float zoom_factor;
 
 /* Error handling */
 struct lua_err_type_s {
@@ -81,6 +82,10 @@ typedef struct lua_err_type_s lua_err_type;
 extern lua_err_type *last_lua_error_head, *last_lua_error_tail;
 extern void del_lua_error();
 extern core_boot_type *core_def;
+
+#ifdef USE_ANDROID
+extern int androprint(lua_State *L);
+#endif
 
 #ifdef STEAM_TE4
 #include "steam-te4.h"
