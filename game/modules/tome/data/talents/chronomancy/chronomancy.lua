@@ -111,7 +111,7 @@ newTalent{
 				p.rest_count = self:getTalentCooldown(t)
 				game:onTickEnd(function()
 					if not self.dead then
-						self:forceUseTalent(cont_t, {ignore_ressources=true, ignore_cd=true, ignore_energy=true, force_level=t_level})
+						self:forceUseTalent(cont_t, {ignore_ressources=true, ignore_cd=true, ignore_energy=true, force_target=self, force_level=t_level})
 					end
 				end)
 			end
