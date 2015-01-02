@@ -41,18 +41,26 @@ function _M:listModules(incompatible, moddir_filter)
 	fs.mount(engine.homepath, "/")
 
 	local knowns = {}
+	local tryLoad = function(short_name)
+		local mod = self:createModule(short_name, incompatible)
+		if mod then
+			if not knowns[mod.short_name] then
+				table.insert(ms, {short_name=mod.short_name, name=mod.name, versions={}})
+				knowns[mod.short_name] = ms[#ms]
+			end
+			local v = knowns[mod.short_name].versions
+			v[#v+1] = mod
+		end
+	end
 	for i, short_name in ipairs(fs.list("/modules/")) do
 		if not moddir_filter or moddir_filter(short_name) then
-			local mod = self:createModule(short_name, incompatible)
-			if mod then
-				if not knowns[mod.short_name] then
-					table.insert(ms, {short_name=mod.short_name, name=mod.name, versions={}})
-					knowns[mod.short_name] = ms[#ms]
-				end
-				local v = knowns[mod.short_name].versions
-				v[#v+1] = mod
-			end
+			tryLoad(short_name)
 		end
+	end
+
+	if __ANDROID__ then
+		tryLoad(_androbootmod)
+		tryLoad(_androgamemod)
 	end
 
 	table.sort(ms, function(a, b)
@@ -96,13 +104,22 @@ function _M:createModule(short_name, incompatible)
 		end
 		fs.umount(fs.getRealPath(dir))
 		if mod and mod.short_name then return mod end
+	elseif short_name:find(".obb$") then --Android
+		print("[MODULE] Loading android obb", short_name)
+		fs.mount(short_name, "/testload", false)
+		local mod
+		if fs.exists("/testload/mod/init.lua") then
+			mod = self:loadDefinition("/testload", short_name, incompatible)
+		end
+		fs.umount(short_name)
+		if mod and mod.short_name then return mod end
 	end
 end
 
 --- Get a module definition from the module init.lua file
 function _M:loadDefinition(dir, team, incompatible)
-	local mod_def = loadfile(team and (dir.."/mod/init.lua") or (dir.."/init.lua"))
---	print("Loading module definition from", team and (dir.."/mod/init.lua") or (dir.."/init.lua"))
+	local mod_def, err = loadfile(team and (dir.."/mod/init.lua") or (dir.."/init.lua"))
+	-- print("Loading module definition from", team and (dir.."/mod/init.lua") or (dir.."/init.lua"), tostring(mod_def), tostring(err))
 	if mod_def then
 		-- Call the file body inside its own private environment
 		local mod = {rng=rng, config=config}
@@ -134,7 +151,7 @@ function _M:loadDefinition(dir, team, incompatible)
 					fs.mount(fs.getRealPath(dir).."/data/", "/data", false)
 					if fs.exists(dir.."/engine") then fs.mount(fs.getRealPath(dir).."/engine/", "/engine", false) end
 				else
-					local src = fs.getRealPath(team)
+					local src = fs.getRealPath(team) or team
 					fs.mount(src, "/", false)
 
 					-- Addional teams

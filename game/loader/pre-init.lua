@@ -17,6 +17,15 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+if __ANDROID__ then
+	print = function(...)
+		local args = {...}
+		local l = {}
+		for i = 1, #args do l[#l+1] = tostring(args[i]) end
+		_androprint(table.concat(l, "\t"))
+	end
+end
+
 -- Turn on LuaJIT if available
 pcall(require, "jit")
 if jit then
