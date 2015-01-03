@@ -25,7 +25,7 @@ endy = 8
 -- defineTile section
 defineTile("#", "HARDWALL")
 defineTile("*", "GUARDING_DOOR")
-defineTile("<", "FLAT_UP6")
+defineTile("<", "FLAT_UP_WILDERNESS")
 defineTile("O", "FLOOR", nil, "OGRE_SENTRY2")
 defineTile("o", "FLOOR", nil, "OGRE_SENTRY")
 defineTile(">", "FLAT_DOWN4")
