@@ -191,7 +191,7 @@ newTalent{
 		local stat_bonus = math.floor(self:mindCrit(t.getStatBonus(self, t)))
 	
 		local NPC = require "mod.class.NPC"
-		local m = NPC.new{ _allow_upvalues=true,
+		local m = NPC.new{ _no_upvalues_check=true,
 			name = "thought-forged bowman", summoner = self,
 			color=colors.SANDY_BROWN, shader = "shadow_simulacrum",
 			shader_args = { color = {0.8, 0.8, 0.8}, base = 0.8, time_factor = 4000 },
@@ -303,7 +303,7 @@ newTalent{
 		local stat_bonus = math.floor(self:mindCrit(t.getStatBonus(self, t)))
 	
 		local NPC = require "mod.class.NPC"
-		local m = NPC.new{ _allow_upvalues=true,
+		local m = NPC.new{ _no_upvalues_check=true,
 			name = "thought-forged warrior", summoner = self, 
 			color=colors.ORANGE, shader = "shadow_simulacrum",
 			shader_args = { color = {0.8, 0.8, 0.8}, base = 0.8, time_factor = 4000 },
@@ -405,7 +405,7 @@ newTalent{
 		local stat_bonus = math.floor(self:mindCrit(t.getStatBonus(self, t)))
 	
 		local NPC = require "mod.class.NPC"
-		local m = NPC.new{ _allow_upvalues=true,
+		local m = NPC.new{ _no_upvalues_check=true,
 			name = "thought-forged defender", summoner = self,
 			color=colors.GOLD, shader = "shadow_simulacrum", 
 			shader_args = { color = {0.8, 0.8, 0.8}, base = 0.8, time_factor = 4000 },

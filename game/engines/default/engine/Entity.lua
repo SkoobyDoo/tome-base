@@ -141,7 +141,7 @@ function _M:init(t, no_default)
 		end
 	end
 
-	if config.settings.cheat then
+	if config.settings.cheat and not self._no_upvalues_check then
 		local ok, err = table.check(
 			self,
 			function(t, where, v, tv)
