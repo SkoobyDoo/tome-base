@@ -22,6 +22,7 @@
 -- Ode to Angband/Tome 2 and all the characters I lost to Time Hounds
 summonTemporalHound = function(self, t)  
 	if game.zone.wilderness then return false end
+	if self.summoner then return false end
 	
 	local x, y = util.findFreeGrid(self.x, self.y, 8, true, {[Map.ACTOR]=true})
 	if not x then
