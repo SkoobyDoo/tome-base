@@ -95,10 +95,31 @@ newTalent{
 }
 
 newTalent{
-	name = "Dimensional Shift",
+	name = "Phase Shift",
 	type = {"chronomancy/spacetime-weaving", 2},
-	mode = "passive",
 	require = chrono_req2,
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 24,
+	tactical = { DEFEND = 2 },
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 25, 3, 7, true))) end,
+	action = function(self, t)
+		self:setEffect(self.EFF_PHASE_SHIFT, t.getDuration(self, t), {})
+		game:playSoundNear(self, "talents/teleport")
+		return true
+	end,
+	info = function(self, t)
+		local duration = t.getDuration(self, t)
+		return ([[Phase shift yourself for %d turns; any damage greater than 10%% of your maximum life will teleport you to an adjacent tile and be reduced by 50%% (can only happen once per turn).]]):
+		format(duration)
+	end,
+}
+
+newTalent{
+	name = "Dimensional Shift",
+	type = {"chronomancy/spacetime-weaving", 3},
+	mode = "passive",
+	require = chrono_req3,
 	points = 5,
 	getReduction = function(self, t) return math.ceil(self:getTalentLevel(t)) end,
 	getCount = function(self, t)
@@ -132,75 +153,59 @@ newTalent{
 }
 
 newTalent{
-	name = "Phase Shift",
-	type = {"chronomancy/spacetime-weaving", 3},
-	require = chrono_req3,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
-	tactical = { DEFEND = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 25, 3, 7, true))) end,
-	action = function(self, t)
-		self:setEffect(self.EFF_PHASE_SHIFT, t.getDuration(self, t), {})
-		game:playSoundNear(self, "talents/teleport")
-		return true
-	end,
-	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[Phase shift yourself for %d turns; any damage greater than 10%% of your maximum life will teleport you to an adjacent tile and be reduced by 50%% (can only happen once per turn).]]):
-		format(duration)
-	end,
-}
-
-newTalent{
-	name = "Phase Pulse",
+	name = "Banish",
 	type = {"chronomancy/spacetime-weaving", 4},
 	require = chrono_req4,
-	tactical = { ATTACKAREA = {TEMPORAL = 1, PHYSICAL = 1} },
-	mode = "sustained",
-	sustain_paradox = 36,
-	cooldown = 10,
 	points = 5,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 70, getParadoxSpellpower(self, t)) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	cooldown = 10,
+	tactical = { ESCAPE = 2 },
 	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.5, 3.5)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5.5)) end,
+	getTeleport = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(t), 8, 16)) end,
 	target = function(self, t)
-		return {type="ball", range=100, radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
-	doPulse = function(self, t, ox, oy, fail)
+	requires_target = true,
+	direct_hit = true,
+	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local dam = self:spellCrit(t.getDamage(self, t))
-		local distance = core.fov.distance(self.x, self.y, ox, oy)
-		local chance = distance * 10
+		local hit = false
+
+		self:project(tg, self.x, self.y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if not target or target == self then return end
+			game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
+			if self:checkHit(getParadoxSpellpower(self, t), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0)) and target:canBe("teleport") then
+				if not target:teleportRandom(target.x, target.y, self:getTalentRadius(t) * 4, self:getTalentRadius(t) * 2) then
+					game.logSeen(target, "The spell fizzles on %s!", target.name:capitalize())
+				else
+					target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
+					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
+					hit = true
+				end
+			else
+				game.logSeen(target, "%s resists the banishment!", target.name:capitalize())
+			end
+		end)
 		
-		if not fail then
-			dam = dam * (1 + math.min(1, distance/10))
+		if not hit then
 			game:onTickEnd(function()
-				self:project(tg, ox, oy, DamageType.WARP, dam)
-				self:project(tg, self.x, self.y, DamageType.WARP, dam)
-			end)
-		else
-			dam = dam *2
-			chance = 100
-			tg.radius = tg.radius * 2
-			game:onTickEnd(function()
-				self:project(tg, self.x, self.y, DamageType.WARP, dam)
+				if not self:attr("no_talents_cooldown") then
+					self.talents_cd[self.T_BANISH] = self.talents_cd[self.T_BANISH] /2
+				end
 			end)
 		end
-	end,
-	activate = function(self, t)
-		game:playSoundNear(self, "talents/spell_generic")
-		return {}
-	end,
-	deactivate = function(self, t, p)
+
+		game:playSoundNear(self, "talents/teleport")
+
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)/2
 		local radius = self:getTalentRadius(t)
-		return ([[When you teleport with Phase Pulse active you deal %0.2f physical and %0.2f temporal (warp) damage to all targets in a radius of %d around you.
-		For each space you move from your original location the damage is increased by 10%% (to a maximum bonus of 100%%).  If the teleport fails, the blast radius and damage will be doubled.
-		This effect occurs both at the entrance and exist locations and the damage will scale with your Spellpower.]]):
-		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), radius)
+		local range = t.getTeleport(self, t)
+		return ([[Randomly teleports all targets within a radius of %d around you.  Targets will be teleported between %d and %d tiles from their current location.
+		If no targets are teleported the cooldown will be halved.
+		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
 	end,
 }
