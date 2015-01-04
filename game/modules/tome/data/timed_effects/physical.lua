@@ -2833,37 +2833,6 @@ newEffect {
 }
 
 newEffect{
-	name = "CELERITY", image = "talents/celerity.png",
-	desc = "Celerity",
-	long_desc = function(self, eff) return ("The target is moving is %d%% faster."):format(eff.speed * 100 * eff.charges) end,
-	type = "physical",
-	display_desc = function(self, eff) return eff.charges.." Celerity" end,
-	charges = function(self, eff) return eff.charges end,
-	subtype = { speed=true, temporal=true },
-	status = "beneficial",
-	parameters = {speed=0.1, charges=1, max_charges=3},
-	on_merge = function(self, old_eff, new_eff)
-		-- remove the old value
-		self:removeTemporaryValue("movement_speed", old_eff.tmpid)
-		
-		-- add a charge
-		old_eff.charges = math.min(old_eff.charges + 1, new_eff.max_charges)
-		
-		-- and apply the current values	
-		old_eff.tmpid = self:addTemporaryValue("movement_speed", old_eff.speed * old_eff.charges)
-		
-		old_eff.dur = new_eff.dur
-		return old_eff
-	end,
-	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("movement_speed", eff.speed * eff.charges)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("movement_speed", eff.tmpid)
-	end,
-}
-
-newEffect{
 	name = "GRAVITY_SLOW", image = "talents/gravity_well.png",
 	desc = "Gravity Slow",
 	long_desc = function(self, eff) return ("The target is caught in a gravity well, reducing movement speed by %d%%."):format(eff.slow* 100) end,

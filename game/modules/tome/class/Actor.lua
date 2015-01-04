@@ -1305,11 +1305,6 @@ function _M:move(x, y, force)
 		self:forceUseTalent(self.T_BODY_OF_STONE, {ignore_energy=true})
 	end
 
-	-- Celerity
-	if moved and ox and oy and (ox ~= self.x or oy ~= self.y) and self:knowTalent(self.T_CELERITY) then
-		self:callTalent(self.T_CELERITY, "doCelerity")
-	end
-
 	-- Break channels
 	if moved then
 		self:breakPsionicChannel()
@@ -1475,11 +1470,6 @@ function _M:teleportRandom(x, y, dist, min_dist)
 		-- Dimensional shift, chance to clear effects on teleport
 		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
 			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
-		end
-
-		-- Teleportation does not clear Time Dilation
-		if self:isTalentActive(self.T_TIME_DILATION) then
-			self:callTalent(self.T_TIME_DILATION, "updateOnTeleport", ox, oy)
 		end
 
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
@@ -5083,7 +5073,7 @@ function _M:postUseTalent(ab, ret, silent)
 	if self:triggerHook(hd) then
 		trigger = hd.trigger
 	end
-
+	
 	self:fireTalentCheck("callbackOnTalentPost", ab, ret, silent)
 
 	if trigger and self:hasEffect(self.EFF_BURNING_HEX) and not self:attr("talent_reuse") then

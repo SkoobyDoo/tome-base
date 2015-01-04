@@ -1527,23 +1527,90 @@ newEffect{
 }
 
 newEffect{
+	name = "CELERITY", image = "talents/celerity.png",
+	desc = "Celerity",
+	long_desc = function(self, eff) return ("The target is moving is %d%% faster."):format(eff.speed * 100 * eff.charges) end,
+	type = "magical",
+	display_desc = function(self, eff) return eff.charges.." Celerity" end,
+	charges = function(self, eff) return eff.charges end,
+	subtype = { speed=true, temporal=true },
+	status = "beneficial",
+	parameters = {speed=0.1, charges=1, max_charges=3},
+	on_merge = function(self, old_eff, new_eff)
+		-- remove the old value
+		self:removeTemporaryValue("movement_speed", old_eff.tmpid)
+		
+		-- add a charge
+		old_eff.charges = math.min(old_eff.charges + 1, new_eff.max_charges)
+		
+		-- and apply the current values	
+		old_eff.tmpid = self:addTemporaryValue("movement_speed", old_eff.speed * old_eff.charges)
+		
+		old_eff.dur = new_eff.dur
+		return old_eff
+	end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("movement_speed", eff.speed * eff.charges)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("movement_speed", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "TIME_DILATION", image = "talents/time_dilation.png",
+	desc = "Time Dilation",
+	long_desc = function(self, eff) return ("Increases attack, spell, and mind speed by %d%%."):format(eff.speed * 100 * eff.charges) end,
+	type = "magical",
+	display_desc = function(self, eff) return eff.charges.." Time Dilation" end,
+	charges = function(self, eff) return eff.charges end,
+	subtype = { speed=true, temporal=true },
+	status = "beneficial",
+	parameters = {speed=0.1, charges=1, max_charges=3},
+	on_merge = function(self, old_eff, new_eff)
+		-- remove the old value
+		self:removeTemporaryValue("combat_physspeed", old_eff.physid)
+		self:removeTemporaryValue("combat_spellspeed", old_eff.spellid)
+		self:removeTemporaryValue("combat_mindspeed", old_eff.mindid)
+		
+		-- add a charge
+		old_eff.charges = math.min(old_eff.charges + 1, new_eff.max_charges)
+		
+		-- and apply the current values	
+		old_eff.physid = self:addTemporaryValue("combat_physspeed", old_eff.speed * old_eff.charges)
+		old_eff.spellid = self:addTemporaryValue("combat_spellspeed", old_eff.speed * old_eff.charges)
+		old_eff.mindid = self:addTemporaryValue("combat_mindspeed", old_eff.speed * old_eff.charges)
+		
+		old_eff.dur = new_eff.dur
+		return old_eff
+	end,
+	activate = function(self, eff)
+		eff.physid = self:addTemporaryValue("combat_physspeed", eff.speed * eff.charges)
+		eff.spellid = self:addTemporaryValue("combat_spellspeed", eff.speed * eff.charges)
+		eff.mindid = self:addTemporaryValue("combat_mindspeed", eff.speed * eff.charges)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("combat_physspeed", eff.physid)
+		self:removeTemporaryValue("combat_spellspeed", eff.spellid)
+		self:removeTemporaryValue("combat_mindspeed", eff.mindid)
+	end,
+}
+
+newEffect{
 	name = "HASTE", image = "talents/haste.png",
 	desc = "Haste",
-	long_desc = function(self, eff) return ("Increases movement speed by %d%% and attack, spell, and mind speed by %d%%."):format(eff.move * 100, eff.speed * 100) end,
+	long_desc = function(self, eff) return ("Increases global action speed by %d%%."):format(eff.power * 100) end,
 	type = "magical",
-	subtype = { temporal=true },
+	subtype = { temporal=true, speed=true },
 	status = "beneficial",
 	parameters = { move=0.1, speed=0.1 },
 	on_gain = function(self, err) return "#Target# speeds up.", "+Haste" end,
 	on_lose = function(self, err) return "#Target# slows down.", "-Haste" end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "movement_speed", eff.move)
-		self:effectTemporaryValue(eff, "combat_physspeed", eff.speed)
-		self:effectTemporaryValue(eff, "combat_spellspeed", eff.speed)
-		self:effectTemporaryValue(eff, "combat_mindspeed", eff.speed)
+		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.power)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("global_speed_add", eff.glbid)
+		self:removeTemporaryValue("global_speed_add", eff.tmpid)
 	end,
 }
 
