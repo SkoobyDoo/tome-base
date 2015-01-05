@@ -61,3 +61,10 @@ extern GLuint gl_c_shader;
 	{ \
 	if ((shad) != gl_c_shader) { glUseProgramObjectARB((shad)); gl_c_shader=(shad); } \
 	}
+
+
+// extern int nb_draws;
+// #define glDrawArrays(a, b, c) \
+// 	{ \
+// 	glDrawArrays((a), (b), (c)); nb_draws++; \
+// 	}
