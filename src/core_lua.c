@@ -412,10 +412,36 @@ static int lua_flush_key_events(lua_State *L)
 	return 0;
 }
 
+static int lua_key_request(lua_State *L) {
+#ifdef USE_ANDROID
+	if (!Android_HasScreenKeyboardSupport()) return 0;
+	if (lua_isboolean(L, 1)) {
+		if (!Android_IsScreenKeyboardShown(window)) {
+			SDL_Rect area;
+			area.x = 0;
+			area.y = 0;
+			area.w = 100;
+			area.h = 20;
+
+			Android_SetTextInputRect(&area);
+			Android_StartTextInput();
+		}
+	} else {
+		if (Android_IsScreenKeyboardShown(window)) {
+			Android_StopTextInput();
+		}
+	}
+#endif
+	return 0;
+}
+
 static int lua_key_unicode(lua_State *L)
 {
-	if (lua_isboolean(L, 1)) SDL_StartTextInput();
-	else SDL_StopTextInput();
+	if (lua_isboolean(L, 1)) {
+		SDL_StartTextInput();
+	} else {
+		SDL_StopTextInput();
+	}
 	return 0;
 }
 
@@ -451,6 +477,7 @@ static const struct luaL_Reg keylib[] =
 	{"symName", lua_get_scancode_name},
 	{"flush", lua_flush_key_events},
 	{"unicodeInput", lua_key_unicode},
+	{"requestKeyboard", lua_key_request},
 	{"getClipboard", lua_key_get_clipboard},
 	{"setClipboard", lua_key_set_clipboard},
 	{NULL, NULL},

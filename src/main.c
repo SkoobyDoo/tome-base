@@ -486,6 +486,58 @@ void on_event(SDL_Event *event)
 			docall(L, 6, 0);
 		}
 		break;
+	case SDL_FINGERDOWN:
+	case SDL_FINGERUP:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveTouch");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->tfinger.fingerId);
+			lua_pushnumber(L, event->tfinger.x * screen->w / zoom_factor);
+			lua_pushnumber(L, event->tfinger.y * screen->h / zoom_factor);
+			lua_pushnumber(L, event->tfinger.dx * screen->w / zoom_factor);
+			lua_pushnumber(L, event->tfinger.dy * screen->h / zoom_factor);
+			lua_pushnumber(L, event->tfinger.pressure);
+			lua_pushboolean(L, (event->type == SDL_FINGERUP) ? TRUE : FALSE);
+			docall(L, 8, 0);
+		}
+		break;
+	case SDL_FINGERMOTION:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveTouchMotion");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->tfinger.fingerId);
+			lua_pushnumber(L, event->tfinger.x * screen->w / zoom_factor);
+			lua_pushnumber(L, event->tfinger.y * screen->h / zoom_factor);
+			lua_pushnumber(L, event->tfinger.dx * screen->w / zoom_factor);
+			lua_pushnumber(L, event->tfinger.dy * screen->h / zoom_factor);
+			lua_pushnumber(L, event->tfinger.pressure);
+			docall(L, 7, 0);
+		}
+		break;
+	case SDL_MULTIGESTURE:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveTouchGesture");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->mgesture.numFingers);
+			lua_pushnumber(L, event->mgesture.x * screen->w / zoom_factor);
+			lua_pushnumber(L, event->mgesture.y * screen->h / zoom_factor);
+			lua_pushnumber(L, event->mgesture.dTheta);
+			lua_pushnumber(L, event->mgesture.dDist);
+			docall(L, 6, 0);
+		}
+		break;
 	}
 }
 
@@ -1488,6 +1540,10 @@ int main(int argc, char *argv[])
 			case SDL_MOUSEWHEEL:
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
+			case SDL_FINGERUP:
+			case SDL_FINGERDOWN:
+			case SDL_FINGERMOTION:
+			case SDL_MULTIGESTURE:
 				/* handle key presses */
 				on_event(&event);
 				tickPaused = FALSE;

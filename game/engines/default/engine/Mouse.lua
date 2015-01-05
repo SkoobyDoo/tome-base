@@ -195,3 +195,36 @@ end
 function _M:usedDrag()
 	(_M.drag or _M.dragged).used = true
 end
+
+--- Called when a touch event is received
+-- @param fingerId id of the finger info
+-- @param x coordinate of the click
+-- @param y coordinate of the click
+-- @param dx delta coordinate of the click
+-- @param dy delta coordinate of the click
+-- @param isup true if the key was released, false if pressed
+function _M:receiveTouch(fingerId, x, y, dx, dy, pressure, isup)
+	print("=touch", fingerId, x, y, dx, dy, pressure, isup)
+end
+
+--- Called when a touch event is received
+-- @param fingerId id of the finger info
+-- @param x coordinate of the click
+-- @param y coordinate of the click
+-- @param dx delta coordinate of the click
+-- @param dy delta coordinate of the click
+-- @param isup true if the key was released, false if pressed
+function _M:receiveTouchMotion(fingerId, x, y, dx, dy, pressure)
+	print("=touch motion", fingerId, x, y, dx, dy, pressure)
+end
+
+--- Called when a touch event is received
+-- @param fingerId id of the finger info
+-- @param x coordinate of the click
+-- @param y coordinate of the click
+-- @param dx delta coordinate of the click
+-- @param dy delta coordinate of the click
+-- @param isup true if the key was released, false if pressed
+function _M:receiveTouchGesture(nb_fingers, x, y, d_rot, d_pinch)
+	print("=touch gesture", nb_fingers, x, y, d_rot, d_pinch)
+end

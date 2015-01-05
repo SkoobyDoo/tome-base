@@ -46,7 +46,10 @@ function _M:init(t)
 end
 
 function _M:on_focus(v)
-	game:onTickEnd(function() self.key:unicodeInput(v) end)
+	game:onTickEnd(function()
+		self.key:unicodeInput(v)
+		core.key.requestKeyboard(v)
+	end)
 end
 
 function _M:generate()
