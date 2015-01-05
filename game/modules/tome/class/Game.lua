@@ -547,10 +547,13 @@ function _M:createFBOs()
 			blur = Shader.new("main_fbo/blur"),
 			timestop = Shader.new("main_fbo/timestop"),
 			line_grids = Shader.new("main_fbo/line_grids"),
+			gestures = Shader.new("main_fbo/gestures"),
 		}
 		self.posteffects_use = { self.fbo_shader.shad }
 		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end 
 		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
+
+		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
 	end
 	
 	if self.player then self.player:updateMainShader() end
@@ -1466,7 +1469,8 @@ function _M:displayMap(nb_keyframes)
 
 		-- Mouse gestures
 		self.gestures:update()
-		self.gestures:display(map.display_x, map.display_y + map.viewport.height - self.gestures.font_h - 5)
+		-- self.gestures:display(map.display_x, map.display_y + map.viewport.height - self.gestures.font_h - 5)
+		self.gestures:display(map.display_x, map.display_y, nb_keyframes)
 
 		-- Inform the player that map is in scroll mode
 		if core.key.modState("caps") then
@@ -1588,6 +1592,7 @@ function _M:setupCommands()
 
 	-- Activate mouse gestures
 	self.gestures = Gestures.new("Gesture: ", self.key, true)
+	if self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
 
 	-- Helper function to not allow some actions on the wilderness map
 	local not_wild = function(f, bypass) return function(...) if self.zone and (not self.zone.wilderness or (bypass and bypass())) then f(...) else self.logPlayer(self.player, "You cannot do that on the world map.") end end end

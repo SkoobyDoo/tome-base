@@ -35,7 +35,7 @@ function colors.hex1(hex)
 end
 
 function colors.hex1unpack(hex)
-	return tonumber("0x"..hex:sub(1, 2)), tonumber("0x"..hex:sub(3, 4)), tonumber("0x"..hex:sub(5, 6))
+	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255
 end
 
 function colors.hex1alpha(hex)
@@ -44,7 +44,7 @@ function colors.hex1alpha(hex)
 end
 
 function colors.hex1alphaunpack(hex)
-	return tonumber("0x"..hex:sub(1, 2)), tonumber("0x"..hex:sub(3, 4)), tonumber("0x"..hex:sub(5, 6)), tonumber("0x"..hex:sub(7, 8))
+	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255, tonumber("0x"..hex:sub(7, 8)) / 255
 end
 
 defineColor('BLACK', 0, 0, 0)

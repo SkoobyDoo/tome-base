@@ -28,20 +28,19 @@ function _M:init(text, key_source, force_all)
 	self.gesture = ""
 	self.gestures = {}
 	self.font = core.display.newFont("/data/font/DroidSans.ttf", 12)
+	self.votex = nil
+	-- self.votex = core.display.loadImage("/data/gfx/te4-icon.png"):glTexture()
 
 	local gesttext = self.text.."WWWWW"
 	self.fontmax_w, self.font_h = self.font:size(gesttext)
-
-	self.surface = core.display.newSurface(self.fontmax_w, self.font_h)
-	self.surface:drawColorStringBlended(self.font, self.text, 0, 0, 255, 255, 255, true)
-	self.texture, self.texture_w, self.texture_h = self.surface:glTexture()
-	self.timeout = 1.7
+	self.timeout = 2
 	self.lastupdate = os.time()
 	self.gesturing = false
 	self.mousebuttondown = false
 	self.distance = 0
 	self.lastgesture = ""
 	self.lastgesturename = ""
+	self.min_distance = core.display.size() * .0208333333
 
 	self:loadGestures(key_source, force_all)
 end
@@ -74,46 +73,88 @@ function _M:loadGestures(key_source, force_all)
 	end
 end
 
-function _M:mouseMove(mx, my)
-	if #self.gesture >= 5 then return end
-	if self.omx and self.omy then
-		self.distance = self.distance + (self.omy - my)^2 + (self.omx - mx)^2
-		if math.abs(self.omx - mx) > math.abs(self.omy - my) and self.distance > 100 then
-			if self.omx > mx then
-				if self.lastgesture~="L" then
-					self.gesture = self.gesture.."L"
-					self.lastgesture = "L"
-				end
-			else
-				if self.lastgesture~="R" then
-					self.gesture = self.gesture.."R"
-					self.lastgesture = "R"
-				end
-			end
-			self.gesturing = true
-			self.lastupdate = os.time()
-			self.distance = 0
-		end
-		if math.abs(self.omx - mx) < math.abs(self.omy - my) and self.distance > 100 then
-			if self.omy > my then
-				if self.lastgesture~="U" then
-					self.gesture = self.gesture.."U"
-					self.lastgesture = "U"
-				end
-			else
-				if self.lastgesture~="D" then
-					self.gesture = self.gesture.."D"
-					self.lastgesture = "D"
-				end
-			end
-			self.gesturing = true
-			self.lastupdate = os.time()
-			self.distance = 0
-		end
-	end
+function _M:initGesturing()
+	if self.gesturing then return end
+	self.vo = core.display.newVO("quads")
+	self.gesturing = true
+	self.gesture = ""
+	self.lastupdate = os.time()
+	self.distance = 0
+	self.gx, self.gy = nil, nil
+end
 
+function _M:addGesturing(d, mx, my)
+	if self.lastgesture == d then return end
+	self.gesture = self.gesture..d
+	self.lastgesture = d
+	self.lastupdate = os.time()
+	self.distance = 0
 	self.omx = mx
 	self.omy = my
+
+	local x, y = self.gx or mx, self.gy or my
+
+	local start, stop = 3, 1
+	local a = 0.6
+	if self.shader then start, stop = 8, 3 a = 1 end
+
+	if d == "L" then
+		local r, g, b = colors.hex1unpack("ed1515")
+		self.vo:addPoint(x, y - start, 0, 0, r, g, b, a)
+		self.vo:addPoint(x, y + start, 1, 0, r, g, b, a)
+		self.vo:addPoint(x - 200, y + stop, 1, 0, r, g, b, a)
+		self.vo:addPoint(x - 200, y - stop, 0, 1, r, g, b, a)
+		self.gx, self.gy = x - 200, y
+	elseif d == "R" then
+		local r, g, b = colors.hex1unpack("d6ed15")
+		self.vo:addPoint(x, y - start, 0, 0, r, g, b, a)
+		self.vo:addPoint(x, y + start, 1, 0, r, g, b, a)
+		self.vo:addPoint(x + 200, y + stop, 1, 0, r, g, b, a)
+		self.vo:addPoint(x + 200, y - stop, 0, 1, r, g, b, a)
+		self.gx, self.gy = x + 200, y
+	elseif d == "U" then
+		local r, g, b = colors.hex1unpack("15ed2f")
+		self.vo:addPoint(x - start, y, 0, 0, r, g, b, a)
+		self.vo:addPoint(x + start, y, 1, 0, r, g, b, a)
+		self.vo:addPoint(x + stop, y - 200, 1, 0, r, g, b, a)
+		self.vo:addPoint(x - stop, y - 200, 0, 1, r, g, b, a)
+		self.gx, self.gy = x, y - 200
+	elseif d == "D" then
+		local r, g, b = colors.hex1unpack("1576ed")
+		self.vo:addPoint(x - start, y, 0, 0, r, g, b, a)
+		self.vo:addPoint(x + start, y, 1, 0, r, g, b, a)
+		self.vo:addPoint(x + stop, y + 200, 1, 0, r, g, b, a)
+		self.vo:addPoint(x - stop, y + 200, 0, 1, r, g, b, a)
+		self.gx, self.gy = x, y + 200
+	end
+end
+
+function _M:mouseMove(mx, my)
+	if #self.gesture >= 10 then return end
+	if self.omx and self.omy then
+		self.distance = math.sqrt((self.omy - my)^2 + (self.omx - mx)^2)
+		if self.distance > self.min_distance then
+			if math.abs(self.omx - mx) > math.abs(self.omy - my) then
+				self:initGesturing()
+				if self.omx > mx then
+					self:addGesturing("L", mx, my)
+				else
+					self:addGesturing("R", mx, my)
+				end
+			end
+			if math.abs(self.omx - mx) < math.abs(self.omy - my) then
+				self:initGesturing()
+				if self.omy > my then
+					self:addGesturing("U", mx, my)
+				else
+					self:addGesturing("D", mx, my)
+				end
+			end
+		end
+	else
+		self.omx = mx
+		self.omy = my
+	end
 end
 
 function _M:isGesturing()
@@ -135,6 +176,13 @@ function _M:useGesture()
 end
 
 function _M:reset()
+	if self.vo then
+		self.fading_vo = self.vo
+		self.fading = 1
+		if self.gestures[self.gesture] then self.fading_intensity = 1 else self.fading_intensity = 0.6 end
+	end
+
+	self.vo = nil
 	self.gesturing = false
 	self.omx = nil
 	self.omy = nil
@@ -168,35 +216,37 @@ function _M:getLastGesture()
 end
 
 function _M:update()
-	local gesttxt = ""
-
 	if self.gesturing == true then
-		gesttxt = self.text
 		if os.difftime(os.time(),  self.lastupdate) >= self.timeout then
 			self:reset()
 		end
 	end
-
-	gesttxt = gesttxt..self.gesture
-
-	self.surface:erase(0,0,0,1)
-	self.surface:drawColorStringBlended(self.font, gesttxt, 0, 0, 255, 255, 255, true)
-	self.surface:updateTexture(self.texture)
 end
 
-function _M:display(display_x, display_y)
-	self.texture:toScreenFull(display_x, display_y, self.fontmax_w, self.font_h, self.texture_w, self.texture_h)
+function _M:display(display_x, display_y, nb_keyframes)
+	local intensity = 0.6
+	if self.gestures[self.gesture] then intensity = 1 end
 
-	if self.gestures[self.gesture] then
-		if self.gestures[self.gesture].name == self.lastgesturename and self.gesturenametexure then
-			self.gesturenametexure:toScreenFull(display_x + self.fontmax_w, display_y, self.gesturenamefont_w , self.font_h, self.gesturenametexure_w, self.gesturenametexure_h)
-		else
-			self.gesturenamefont_w, _ = self.font:size(self.gestures[self.gesture].name)
-			local s = core.display.newSurface(self.gesturenamefont_w, self.font_h)
-			s:drawColorStringBlended(self.font, self.gestures[self.gesture].name, 0, 0, 255, 255, 255, true)
-			self.gesturenametexure, self.gesturenametexure_w, self.gesturenametexure_h = s:glTexture()
-			self.gesturenametexure:toScreenFull(display_x, display_y, self.fontmax_w, self.font_h, self.texture_w, self.texture_h)
+	if self.shader then self.shader:use(true) end
+
+	if self.vo then
+		if self.shader then
+			self.shader:uniIntensity(intensity)
+			self.shader:uniFade(1)
 		end
-		self.lastgesturename = self.gestures[self.gesture].name
+		self.vo:toScreen(display_x, display_y, self.votex, 1, 1, 1, self.shader and 1 or 1)
 	end
+
+	if self.fading_vo then
+		if self.shader then
+			self.shader:uniIntensity(self.fading_intensity)
+			self.shader:uniFade(self.fading)
+		end
+		self.fading_vo:toScreen(display_x - (1 - self.fading) * 20, display_y - (1 - self.fading) * 20, self.votex, 1, 1, 1, self.shader and 1 or self.fading)
+		self.fading = self.fading - nb_keyframes / 20
+		if self.fading <= 0 then
+			self.fading_vo = nil
+		end
+	end
+	if self.shader then self.shader:use(false) end
 end
