@@ -1671,7 +1671,7 @@ void display_map_quad(lua_State *L, GLuint *cur_tex, int *vert_idx, int *col_idx
 	/********************************************************
 	 ** Cleanup
 	 ********************************************************/
-	if (m->shader || m->nb_textures || m->next)
+	if (m->shader || m->nb_textures > 1 || m->next)
 	{
 		/* Draw remaining ones */
 		if (vert_idx) glDrawArrays(GL_QUADS, 0, (*vert_idx) / 2);
