@@ -35,7 +35,7 @@ newTalent{
 		return {type="bolt", range=self:getTalentRange(t), talent=t}
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
-	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
+	getTargetCount = function(self, t) return 3 end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local fx, fy = self:getTarget(tg)
@@ -79,7 +79,6 @@ newTalent{
 			local tgr = {type="beam", range=self:getTalentRange(t), selffire=false, talent=t, x=sx, y=sy}
 			self:project(tgr, actor.x, actor.y, function(px, py)
 				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
-				damage = damage * 0.67
 
 				-- Get our braid targets
 				local target = game.level.map(px, py, Map.ACTOR)
@@ -109,7 +108,6 @@ newTalent{
 		local targets = t.getTargetCount(self, t)
 		return ([[Rethread the timeline, dealing %0.2f temporal damage to the target before moving on to a second target.
 		Rethread can hit up to %d targets up to 10 grids apart, and will never hit the same one twice; nor will it hit the caster.
-		Each time it jumps target the damage is reduced by 33%%.
 		The damage will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.TEMPORAL, damage), targets)
 	end,
