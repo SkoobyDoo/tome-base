@@ -3098,7 +3098,7 @@ static int display_pause_anims(lua_State *L) {
  * Vertex Objects
  **************************************************************/
 
-static update_vertex_size(lua_vertexes *vx, int size) {
+static void update_vertex_size(lua_vertexes *vx, int size) {
 	if (size <= vx->size) return;
 	vx->size = size;
 	vx->vertices = realloc(vx->vertices, 2 * sizeof(GLfloat) * size);
@@ -3169,7 +3169,7 @@ static int gl_vertex_add(lua_State *L) {
 
 static int gl_vertex_toscreen(lua_State *L) {
 	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	if (!vx->nb) return;
+	if (!vx->nb) return 0;
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
 
