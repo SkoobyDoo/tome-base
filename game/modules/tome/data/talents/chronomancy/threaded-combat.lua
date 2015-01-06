@@ -27,6 +27,12 @@ newTalent{
 	points = 5,
 	getPercent = function(self, t) return paradoxTalentScale(self, t, 40, 80, 100)/100 end,
 	getRadius = function(self, t) return self:getTalentLevel(t) > 4 and 2 or 1 end,
+	doExplosion = function(self, t, target, damtype, base_dam)
+		local burst_damage = base_dam * t.getPercent(self, t)
+		local burst_radius = t.getRadius(self, t)
+		self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, damtype, burst_damage)
+		-- fixme: graphics by damage type?
+	end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
 		local radius = t.getRadius(self, t)

@@ -69,7 +69,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Weapon Folding",
+	name = "Weapon Folding", short_name = "WEAPON_FOLDING_BAD",
 	type = {"chronomancy/blade-threading", 2},
 	mode = "sustained",
 	require = chrono_req2,

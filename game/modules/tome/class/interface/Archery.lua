@@ -426,31 +426,6 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		self.shattering_impact_last_turn = game.turn
 	end
 
-	-- Temporal cast
-	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
-		local dam = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
-		end
-		if dam > 0 and not target.dead then
-			DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, dam, tmp)
-		end
-	end
-	if hitted and self:knowTalent(self.T_IMPACT) and self:isTalentActive(self.T_IMPACT) then
-		local dam = self:callTalent(self.T_IMPACT, "getDamage")
-		local power = self:callTalent(self.T_IMPACT, "getApplyPower")
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=burst_damage/2, power_check=power})
-		end
-		if dam > 0 and not target.dead then
-			DamageType:get(DamageType.IMPACT).projector(self, target.x, target.y, DamageType.IMPACT, {dam=dam, daze=dam/2, power_check=power}, tmp)
-		end
-	end
-
 	if self ~= target then
 		-- Regen on being hit
 		if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end

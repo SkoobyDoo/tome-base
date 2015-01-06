@@ -1320,7 +1320,7 @@ newEffect{
 newEffect{
 	name = "INVIGORATE", image = "talents/invigorate.png",
 	desc = "Invigorate",
-	long_desc = function(self, eff) return ("The target is regaining %d life per turn and refreshing chronomancy spells at twice the normal rate."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is regaining %d life per turn, %d stamina per turn, and refreshing chronomancy spells at twice the normal rate."):format(eff.power, eff.power/2) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "beneficial",
@@ -1338,7 +1338,8 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("life_regen", eff.power)
+		eff.regenid = self:addTemporaryValue("life_regen", eff.power)
+		eff.stamid = self:addTemporaryValue("stamina_regen", eff.power / 2)
 		if core.shader.active(4) then
 			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
 			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
@@ -1347,7 +1348,8 @@ newEffect{
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
-		self:removeTemporaryValue("life_regen", eff.tmpid)
+		self:removeTemporaryValue("life_regen", eff.regenid)
+		self:removeTemporaryValue("stamina_regen", eff.stamid)
 	end,
 }
 
@@ -3333,5 +3335,125 @@ newEffect{
 				end
 			end
 		end
+	end,
+}
+
+
+
+newEffect{
+	name = "FOLD_FATE", image = "talents/fold_fate.png",
+	desc = "Fold Fate",
+	long_desc = function(self, eff)	return ("A thread of fate is bound to the target's weapons: ranged and melee attacks have a %d%% to Confuse, and shifts Paradox towards the target's baseline."):format(eff.dam) end,
+	status = "beneficial",
+	type = "magical",
+	subtype = { weapon_manifold=true, fate=true, },
+	parameters = { dam = 50, paradox = 10 },
+	on_gain = function(self, err) return "#Target# threads fate into a weapon manifold!", "+Fold Fate" end,
+	on_lose = function(self, err) return "#Target#'s weapon manifold unravels.", "-Fold Fate" end,
+	handleEffect = function(self, eff, target)
+		if eff.src:knowTalent(self.T_FRAYED_THREADS) then
+			eff.src:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, DamageType.RANDOM_CONFUSION, eff.dam)
+		end
+		if not self.dead then
+			local dox = self:getParadox() - self.preferred_paradox
+			local fix = math.min( math.abs(dox), eff.paradox )
+			if dox > 0 then
+				self:incParadox( -fix )
+			elseif dox < 0 then
+				self:incParadox( fix )
+			end
+		end      
+	end,
+	callbackOnArcheryAttack = function(self, eff, target, hitted, crit, weapon, ammo, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
+		self.tempeffect_def[eff.effect_id].handleEffect(self, eff, target)
+	end,
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
+		self.tempeffect_def[eff.effect_id].handleEffect(self, eff, target)
+	end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "melee_project",  {[DamageType.RANDOM_CONFUSION] = eff.dam})
+		self:effectTemporaryValue(eff, "ranged_project", {[DamageType.RANDOM_CONFUSION] = eff.dam})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "FOLD_GRAVITY", image = "talents/fold_gravity.png",
+	desc = "Fold Gravity",
+	long_desc = function(self, eff) return ("A thread of gravity is bound to the target's weapons: ranged and melee attacks inflict +%0.1f Physical damage, and have a %d%% chance to pin."):format(eff.dam, eff.chance) end,
+	status = "beneficial",
+	type = "magical",
+	subtype = { weapon_manifold=true, gravity=true, physical=true },
+	parameters = { dam = 10, chance = 25 },
+	on_gain = function(self, err) return "#Target# threads gravity into a weapon manifold!", "+Fold Gravity" end,
+	on_lose = function(self, err) return "#Target#'s weapon manifold unravels.", "-Fold Gravity" end,
+	handleEffect = function(self, eff, target)
+		if self:knowTalent(self.T_FRAYED_THREADS) then
+			self:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, DamageType.RANDOM_CONFUSION, eff.dam)
+		end
+		if not target.dead and rng.percent(eff.chance) then
+			if target:canBe("pin") then
+			target:setEffect(target.EFF_PINNED, eff.dur, {apply_power=self:combatSpellpower()})
+			end
+		end      
+	end,
+	callbackOnArcheryAttack = function(self, eff, target, hitted, crit, weapon, ammo, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
+		self.tempeffect_def[eff.effect_id].handleEffect(self, eff, target)
+	end,
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
+		self.tempeffect_def[eff.effect_id].handleEffect(self, eff, target)
+	end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "melee_project",  {[DamageType.PHYSICAL] = eff.dam})
+		self:effectTemporaryValue(eff, "ranged_project", {[DamageType.PHYSICAL] = eff.dam})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "FOLD_VOID", image = "talents/fold_void.png",
+	desc = "Fold Void",
+	long_desc = function(self, eff) return ("A thread of the void is bound to the target's weapons: ranged and melee attacks deal +%0.1f Darkness damage, and have a %d%% chance to blind."):format(eff.dam, eff.chance) end,
+	status = "beneficial",
+	type = "magical",
+	subtype = { weapon_manifold=true, void=true, darkness=true },
+	parameters = { dam = 50, paradox = 10 },
+	on_gain = function(self, err) return "#Target# threads void into a weapon manifold!", "+Fold Void"	end,
+	on_lose = function(self, err) return "#Target#'s weapon manifold unravels.", "-Fold Void" end,
+	handleEffect = function(self, eff, target)
+		if eff.src:knowTalent(self.T_FRAYED_THREADS) then
+			eff.src:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, DamageType.RANDOM_CONFUSION, eff.dam)
+		end
+		if not target.dead and rng.percent( eff.chance ) then
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_BLINDED, 3, {src=self, apply_power=self:combatSpellpower()})
+			end
+		end
+	end,
+	callbackOnArcheryAttack = function(self, eff, target, hitted, crit, weapon, ammo, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
+		self.tempeffect_def[eff.effect_id].handleEffect(self, eff, target)
+	end,
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
+		self.tempeffect_def[eff.effect_id].handleEffect(self, eff, target)
+	end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "melee_project",  {[DamageType.DARKNESS] = eff.dam})
+		self:effectTemporaryValue(eff, "ranged_project", {[DamageType.DARKNESS] = eff.dam})
+	end,
+	deactivate = function(self, eff)
 	end,
 }

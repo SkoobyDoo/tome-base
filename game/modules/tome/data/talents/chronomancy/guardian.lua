@@ -37,28 +37,6 @@ newTalent{
 	end,
 }
 
-newTalent{
-	name = "Invigorate",
-	type = {"chronomancy/guardian", 2},
-	require = chrono_req2,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
-	fixed_cooldown = true,
-	tactical = { HEAL = 1 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(self:getTalentLevel(t), 14, 4, 8))) end, -- Limit < 14
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
-	action = function(self, t)
-		self:setEffect(self.EFF_INVIGORATE, t.getDuration(self,t), {power=t.getPower(self, t)})
-		return true
-	end,
-	info = function(self, t)
-		local power = t.getPower(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns, you recover %0.1f life per turn and most other talents on cooldown will refresh twice as fast as usual.
-		The amount healed will increase with your Spellpower.]]):format(duration, power)
-	end,
-}
 
 newTalent{
 	name = "Guardian Unity",
@@ -133,58 +111,11 @@ newTalent{
 	end,
 }
 
-newTalent{
-	name = "Breach",
-	type = {"chronomancy/guardian", 4},
-	require = chrono_req4,
-	points = 5,
-	cooldown = 8,
-	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
-	requires_target = true,
+
 	range = function(self, t)
 		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
 		return 1
 	end,
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
-	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
-	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
-	archery_onhit = function(self, t, target, x, y)
-		target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {})
-	end,
-	action = function(self, t)
-		local mainhand, offhand = self:hasDualWeapon()
 
-		if self:hasArcheryWeapon("bow") then
-			-- Ranged attack
-			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
-			if not targets then return end
-			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
-		elseif mainhand then
-			-- Melee attack
-			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-			local x, y, target = self:getTarget(tg)
 			if not target or not self:canProject(tg, x, y) then return nil end
-			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
-
-			if hitted then
-				target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
-			end
-		else
-			game.logPlayer(self, "You cannot use Breach without an appropriate weapon!")
-			return nil
-		end
-
-		return true
-	end,
-	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local damage = t.getDamage(self, t) * 100
-		return ([[Attack the target with either your bow or melee weapons for %d%% damage.
-		If the attack hits you'll breach the target's immunities, reducing armor hardiness, stun, pin, blindness, and confusion immunity by 50%% for %d turns.
-		Breach chance scales with your Spellpower.]])
-		:format(damage, duration)
-	end
-}
