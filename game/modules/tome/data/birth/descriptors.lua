@@ -140,6 +140,7 @@ newBirthDescriptor{
 	game_state = {
 		grab_online_event_forbid = true,
 		always_learn_birth_talents = true,
+		force_town_respec = false,
 	},
 }
 newBirthDescriptor{
@@ -285,8 +286,13 @@ newBirthDescriptor{
 		"This is not the way the game is meant to be played, but it allows you to have a more forgiving experience.",
 		"Remember though that dying is an integral part of the game and helps you become a better player.",
 		"Exploration version of achievements will be granted in this mode.",
+		"Full talent respec is always available.",
+	},
+	game_state = {
+		force_town_respec = false,
 	},
 	copy = {
+		infinite_respec = 1,
 		infinite_lifes = 1,
 	},
 }

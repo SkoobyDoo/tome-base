@@ -4022,6 +4022,7 @@ function _M:canWearObject(o, try_slot)
 end
 
 function _M:lastLearntTalentsMax(what)
+	if self:attr("infinite_respec") then return 99999 end
 	return what == "generic" and 3 or 4
 end
 
