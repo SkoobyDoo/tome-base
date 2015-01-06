@@ -566,7 +566,7 @@ void on_tick()
 		if (t - T0 >= 10000) {
 			float seconds = (t - T0) / 1000.0;
 			float fps = Frames / seconds;
-//			printf("%d ticks  in %g seconds = %g TPS\n", Frames, seconds, fps);
+			printf("%d ticks  in %g seconds = %g TPS\n", Frames, seconds, fps);
 			T0 = t;
 			Frames = 0;
 		}
@@ -648,7 +648,7 @@ void on_redraw()
 			float seconds = (t - T0) / 1000.0;
 			float fps = Frames / seconds;
 			reference_fps = fps;
-//			printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
+			printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
 			T0 = t;
 			Frames = 0;
 			last_keyframe = 0;
@@ -672,6 +672,7 @@ void on_redraw()
 	float step = 30 / reference_fps;
 	nb_keyframes += step;
 
+	nb_draws = 0;
 	int nb = ceilf(nb_keyframes);
 	count_keyframes += nb - last_keyframe;
 	total_keyframes += nb - last_keyframe;
@@ -680,6 +681,7 @@ void on_redraw()
 	glScalef(zoom_factor, zoom_factor, zoom_factor);
 	call_draw(nb - last_keyframe);
 	glPopMatrix();
+	// printf("total frame draws %d\n", nb_draws);
 
 	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);
@@ -817,7 +819,7 @@ void setupRealtime(float freq)
 void setupDisplayTimer(int fps)
 {
 	SDL_mutexP(renderingLock);
-	
+
 	if (display_timer_id) SDL_RemoveTimer(display_timer_id);
 	requested_fps = fps;
 	display_timer_id = SDL_AddTimer(1000 / fps, redraw_timer, NULL);

@@ -413,6 +413,7 @@ static int lua_flush_key_events(lua_State *L)
 }
 
 static int lua_key_request(lua_State *L) {
+	{ return 0; }
 #ifdef USE_ANDROID
 	if (!Android_HasScreenKeyboardSupport()) return 0;
 	if (lua_isboolean(L, 1)) {
@@ -3177,6 +3178,117 @@ static int display_pause_anims(lua_State *L) {
 	return 0;
 }
 
+
+/**************************************************************
+ * Vertex Objects
+ **************************************************************/
+
+static update_vertex_size(lua_vertexes *vx, int size) {
+	if (size <= vx->size) return;
+	vx->size = size;
+	vx->vertices = realloc(vx->vertices, 2 * sizeof(GLfloat) * size);
+	vx->colors = realloc(vx->colors, 4 * sizeof(GLfloat) * size);
+	vx->textures = realloc(vx->textures, 2 * sizeof(GLfloat) * size);
+}
+
+static int gl_new_vertex(lua_State *L) {
+	const char *mode = luaL_checkstring(L, 1);
+	int size = lua_tonumber(L, 2);
+	if (!size) size = 4;
+	lua_vertexes *vx = (lua_vertexes*)lua_newuserdata(L, sizeof(lua_vertexes));
+	auxiliar_setclass(L, "gl{vertexes}", -1);
+
+	vx->size = vx->nb = 0;
+	vx->vertices = NULL; vx->colors = NULL; vx->textures = NULL;
+	update_vertex_size(vx, size);
+
+	if (!strcmp(mode, "line")) {
+		// vx->mode = GL_LINE;
+	} else {
+		vx->mode = GL_TRIANGLE_FAN;
+	}
+
+	return 1;
+}
+
+static int gl_free_vertex(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+
+	if (vx->size > 0) {
+		free(vx->vertices);
+		free(vx->colors);
+		free(vx->textures);
+	}
+
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_vertex_add(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	float x = luaL_checknumber(L, 2);
+	float y = luaL_checknumber(L, 3);
+	float u = luaL_checknumber(L, 4);
+	float v = luaL_checknumber(L, 5);
+	float r = luaL_checknumber(L, 6);
+	float g = luaL_checknumber(L, 7);
+	float b = luaL_checknumber(L, 8);
+	float a = luaL_checknumber(L, 9);
+
+	if (vx->nb + 1 > vx->size) update_vertex_size(vx, vx->nb + 1);
+
+	vx->vertices[vx->nb * 2 + 0] = x;
+	vx->vertices[vx->nb * 2 + 1] = y;
+
+	vx->textures[vx->nb * 2 + 0] = u;
+	vx->textures[vx->nb * 2 + 1] = v;
+	
+	vx->colors[vx->nb * 4 + 0] = r;
+	vx->colors[vx->nb * 4 + 1] = g;
+	vx->colors[vx->nb * 4 + 2] = b;
+	vx->colors[vx->nb * 4 + 3] = a;
+
+	vx->nb++;
+	return 0;
+}
+
+static int gl_vertex_toscreen(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	if (!vx->nb) return;
+	int x = luaL_checknumber(L, 2);
+	int y = luaL_checknumber(L, 3);
+
+	if (lua_isuserdata(L, 4))
+	{
+		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 4);
+		tglBindTexture(GL_TEXTURE_2D, *t);
+	}
+	else if (lua_toboolean(L, 4))
+	{
+		// Do nothing, we keep the currently bound texture
+	}
+	else
+	{
+		tglBindTexture(GL_TEXTURE_2D, gl_tex_white);
+	}
+
+	float r = 1, g = 1, b = 1, a = 1;
+	if (lua_isnumber(L, 5)) {
+		r = luaL_checknumber(L, 5);
+		g = luaL_checknumber(L, 5);
+		b = luaL_checknumber(L, 5);
+		a = luaL_checknumber(L, 5);
+	}
+	tglColor4f(r, g, b, a);
+	glTranslatef(x, y, 0);
+	glVertexPointer(2, GL_FLOAT, 0, vx->vertices);
+	glColorPointer(4, GL_FLOAT, 0, vx->colors);
+	glTexCoordPointer(2, GL_FLOAT, 0, vx->textures);
+	glDrawArrays(vx->mode, 0, vx->nb);
+	glTranslatef(-x, -y, 0);
+	return 0;
+}
+
 static const struct luaL_Reg displaylib[] =
 {
 	{"setTextBlended", set_text_aa},
@@ -3188,6 +3300,7 @@ static const struct luaL_Reg displaylib[] =
 	{"newSurface", sdl_new_surface},
 	{"newTile", sdl_new_tile},
 	{"newFBO", gl_new_fbo},
+	{"newVO", gl_new_vertex},
 	{"fboSupportsTransparency", gl_fbo_supports_transparency},
 	{"newQuadratic", gl_new_quadratic},
 	{"drawQuad", gl_draw_quad},
@@ -3238,6 +3351,14 @@ static const struct luaL_Reg sdl_surface_reg[] =
 	{"drawStringBlended", sdl_surface_drawstring_aa},
 	{"alpha", sdl_surface_alpha},
 	{"glTexture", sdl_surface_to_texture},
+	{NULL, NULL},
+};
+
+static const struct luaL_Reg gl_vertexes_reg[] =
+{
+	{"__gc", gl_free_vertex},
+	{"addPoint", gl_vertex_add},
+	{"toScreen", gl_vertex_toscreen},
 	{NULL, NULL},
 };
 
@@ -3764,6 +3885,7 @@ int luaopen_core(lua_State *L)
 	auxiliar_newclass(L, "gl{texture}", sdl_texture_reg);
 	auxiliar_newclass(L, "gl{fbo}", gl_fbo_reg);
 	auxiliar_newclass(L, "gl{quadratic}", gl_quadratic_reg);
+	auxiliar_newclass(L, "gl{vertexes}", gl_vertexes_reg);
 	auxiliar_newclass(L, "sdl{surface}", sdl_surface_reg);
 	auxiliar_newclass(L, "sdl{font}", sdl_font_reg);
 	luaL_openlib(L, "core.display", displaylib, 0);

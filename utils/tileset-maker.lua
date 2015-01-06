@@ -52,6 +52,7 @@ end
 
 local gd = require "gd"
 
+local ts_size_w, ts_size_h = 1024 * 4, 1024 * 4
 
 function makeSet(w, h)
 	local used = {}
@@ -60,9 +61,9 @@ function makeSet(w, h)
 	im:saveAlpha(true)
 	im:filledRectangle(0, 0, w, h, im:colorAllocateAlpha(0, 0, 0, 127))
 
-	for i = 0, 1024-64, 68 do
+	for i = 0, ts_size_w-64, 68 do
 		used[i/68] = {}
-		for j = 0, 1024-64, 68 do
+		for j = 0, ts_size_h-64, 68 do
 			used[i/68][j/68] = false
 		end
 	end
@@ -70,7 +71,7 @@ function makeSet(w, h)
 	return im, used
 end
 
-local w, h = 1024, 1024
+local w, h = ts_size_w, ts_size_h
 local id = 1
 
 local pos = {}
@@ -118,7 +119,7 @@ function fillSet(rlist)
 
 		i = i + d.mw
 	end
-	table.print(used)
+	-- table.print(used)
 	im:png(basename..id..".png")
 end
 

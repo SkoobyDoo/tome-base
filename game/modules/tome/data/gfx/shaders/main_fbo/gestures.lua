@@ -17,39 +17,14 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-startx = 15
-starty = 8
-endx = 0
-endy = 8
-
--- defineTile section
-defineTile("#", "HARDWALL")
-defineTile("*", "GUARDING_DOOR")
-defineTile("<", "FLAT_UP_WILDERNESS")
-defineTile("O", "FLOOR", nil, "OGRE_SENTRY2")
-defineTile("o", "FLOOR", nil, "OGRE_SENTRY")
-defineTile(">", "FLAT_DOWN4")
-defineTile(".", "FLOOR")
-
--- addSpot section
-
--- addZone section
-
--- ASCII map section
-return [[
-################
-################
-################
-################
-################
-################
-########.O######
-########..######
->..............<
-########..######
-########.o######
-################
-################
-################
-################
-################]]
+return {
+	frag = "main_fbo/gestures",
+	vert = nil,
+	args = {
+		tex = { texture = 0 },
+		intensity = intensity or 0.6,
+		fade = fade or 0,
+	},
+	clone = false,
+	permanent = true,
+}

@@ -78,3 +78,26 @@ extern GLuint gl_c_shader;
 	if ((shad) != gl_c_shader) { glUseProgramObjectARB((shad)); gl_c_shader=(shad); } \
 	}
 #endif
+
+
+extern int nb_draws;
+#define glDrawArrays(a, b, c) \
+	{ \
+	glDrawArrays((a), (b), (c)); nb_draws++; \
+	}
+
+extern GLfloat *gl_c_vertices_ptr;
+extern GLfloat *gl_c_texcoords_ptr;
+extern GLfloat *gl_c_colors_ptr;
+#define glVertexPointer(nb, t, v, p) \
+{ \
+	if ((p) != gl_c_vertices_ptr) { glVertexPointer((nb), (t), (v), (p)); gl_c_vertices_ptr=(p); } \
+}
+#define glColorPointer(nb, t, v, p) \
+{ \
+	if ((p) != gl_c_colors_ptr) { glColorPointer((nb), (t), (v), (p)); gl_c_colors_ptr=(p); } \
+}
+#define glTexCoordPointer(nb, t, v, p) \
+{ \
+	if ((p) != gl_c_texcoords_ptr) { glTexCoordPointer((nb), (t), (v), (p)); gl_c_texcoords_ptr=(p); } \
+}
