@@ -554,6 +554,8 @@ function _M:createFBOs()
 		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
 
 		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
+
+		self.entity_default_shader = Shader.new("map/default")
 	end
 	
 	if self.player then self.player:updateMainShader() end

@@ -963,6 +963,7 @@ core.display.newFont = function(font, size, no_cache)
 	font_cache[font][size] = oldNewFont(font, size)
 	return font_cache[font][size]
 end
+core.display.getFontCache = function() return font_cache end
 
 local tmps = core.display.newFont("/data/font/Vera.ttf", 12)
 local word_size_cache = {}

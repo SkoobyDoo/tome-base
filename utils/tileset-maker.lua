@@ -52,7 +52,7 @@ end
 
 local gd = require "gd"
 
-local ts_size_w, ts_size_h = 1024 * 4, 1024 * 4
+local ts_size_w, ts_size_h = 1024 * 2, 1024 * 2
 
 function makeSet(w, h)
 	local used = {}

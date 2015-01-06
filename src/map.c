@@ -722,9 +722,9 @@ static int map_new(lua_State *L)
 	lua_pushnumber(L, map->is_hex);
 	lua_settable(L, LUA_REGISTRYINDEX);
 
-	map->vertices = calloc(2*4*QUADS_PER_BATCH, sizeof(GLfloat)); // 2 coords, 4 vertices per particles
-	map->colors = calloc(4*4*QUADS_PER_BATCH, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
-	map->texcoords = calloc(2*4*QUADS_PER_BATCH, sizeof(GLfloat));
+	map->vertices = calloc(2*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 2 coords, 4 vertices per particles
+	map->colors = calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
+	map->texcoords = calloc(2*6*QUADS_PER_BATCH, sizeof(GLfloat));
 
 	map->displayed_x = map->displayed_y = 0;
 	map->w = w;
@@ -1389,7 +1389,7 @@ static int map_get_scroll(lua_State *L)
 }
 
 #define unbatchQuads(vert, col) { \
-	if ((vert)) glDrawArrays(GL_QUADS, 0, (vert) / 2); \
+	if ((vert)) glDrawArrays(GL_TRIANGLES, 0, (vert) / 2); \
 	(vert) = 0; \
 	(col) = 0; \
 }
@@ -1403,28 +1403,34 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 
 	idx = *vert_idx;
 
-	vertices[idx + 0] = dx;                                vertices[idx + 1] = dy;
-	vertices[idx + 2] = map->tile_w * dw * dm->scale + dx; vertices[idx + 3] = dy;
-	vertices[idx + 4] = vertices[idx + 2];                 vertices[idx + 5] = map->tile_h * dh * dm->scale + dy;
-	vertices[idx + 6] = dx;                                vertices[idx + 7] = vertices[idx + 5];
+	float x1 = dx, x2 = map->tile_w * dw * dm->scale + dx;
+	float y1 = dy, y2 = map->tile_h * dh * dm->scale + dy;
+	vertices[idx + 0] = x1;   vertices[idx + 1] = y1;
+	vertices[idx + 2] = x2;   vertices[idx + 3] = y1;
+	vertices[idx + 4] = x2;   vertices[idx + 5] = y2;
+	vertices[idx + 6] = x1;   vertices[idx + 7] = y1;
+	vertices[idx + 8] = x2;   vertices[idx + 9] = y2;
+	vertices[idx +10] = x1;   vertices[idx +11] = y2;
 
 	texcoords[idx + 0] = dm->tex_x[0] + anim;                      texcoords[idx + 1] = dm->tex_y[0];
 	texcoords[idx + 2] = dm->tex_x[0] + anim + dm->tex_factorx[0]; texcoords[idx + 3] = dm->tex_y[0];
 	texcoords[idx + 4] = dm->tex_x[0] + anim + dm->tex_factorx[0]; texcoords[idx + 5] = dm->tex_y[0] + dm->tex_factory[0];
-	texcoords[idx + 6] = dm->tex_x[0] + anim;                      texcoords[idx + 7] = dm->tex_y[0] + dm->tex_factory[0];
+	texcoords[idx + 6] = dm->tex_x[0] + anim;                      texcoords[idx + 7] = dm->tex_y[0];
+	texcoords[idx + 8] = dm->tex_x[0] + anim + dm->tex_factorx[0]; texcoords[idx + 9] = dm->tex_y[0] + dm->tex_factory[0];
+	texcoords[idx +10] = dm->tex_x[0] + anim;                      texcoords[idx +11] = dm->tex_y[0] + dm->tex_factory[0];
 
 	idx = *col_idx;
 
-	for (row = 0; row < 4; row++) {
+	for (row = 0; row < 6; row++) {
 		colors[idx + (4 * row + 0)] = r;
 		colors[idx + (4 * row + 1)] = g;
 		colors[idx + (4 * row + 2)] = b;
 		colors[idx + (4 * row + 3)] = a;
 	}
 
-	(*vert_idx) += 8;
-	(*col_idx) += 16;
-	if ((*vert_idx) >= 8*QUADS_PER_BATCH || force || dm->cb_ref != LUA_NOREF) {\
+	(*vert_idx) += 2 * 6;
+	(*col_idx) += 4 * 6;
+	if ((*vert_idx) >= 2 * 6 * QUADS_PER_BATCH || force || dm->cb_ref != LUA_NOREF) {\
 		unbatchQuads((*vert_idx), (*col_idx));
 		// printf(" -- unbatch1 %d %d\n", force, dm->cb_ref != LUA_NOREF);
 	}
@@ -1716,7 +1722,7 @@ static int map_to_screen(lua_State *L)
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glColorPointer(4, GL_FLOAT, 0, colors);
 
-	// nb_draws = 0;
+	nb_draws = 0;
 
 	// Smooth scrolling
 	// If we use shaders for FOV display it means we must uses fbos for smooth scroll too
@@ -1814,9 +1820,9 @@ static int map_to_screen(lua_State *L)
 	}
 
 	/* Display any leftovers */
-	if (vert_idx) glDrawArrays(GL_QUADS, 0, vert_idx / 2);
+	unbatchQuads(vert_idx, col_idx);
 
-	// printf("draws %d\n", nb_draws);
+	printf("draws %d\n", nb_draws);
 
 	// "Decay" displayed status for all mos
 	lua_rawgeti(L, LUA_REGISTRYINDEX, map->mo_list_ref);
