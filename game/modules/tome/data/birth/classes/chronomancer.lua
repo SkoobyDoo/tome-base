@@ -77,10 +77,10 @@ newBirthDescriptor{
 		["chronomancy/timetravel"]={true, 0.3},
 		
 		-- locked class
-		["chronomancy/fate-threading"]={false, 0.3},
-		["chronomancy/timeline-threading"]={false, 0.3},
+		["chronomancy/flux"]={false, 0.3},
 		["chronomancy/spellbinding"]={false, 0.3},
-		["chronomancy/spatial-tears"]={false, 0.3},
+		["chronomancy/stasis"]={false, 0.3},
+		["chronomancy/timeline-threading"]={false, 0.3},
 
 		-- generic
 		["chronomancy/chronomancy"]={true, 0.3},
@@ -127,16 +127,15 @@ newBirthDescriptor{
 		-- class
 		["chronomancy/blade-threading"]={true, 0.3},
 		["chronomancy/bow-threading"]={true, 0.3},
+		["chronomancy/guardian"]={true, 0.3},
 		["chronomancy/spacetime-folding"]={true, 0.3},
 		["chronomancy/speed-control"]={true, 0.3},
-		["chronomancy/guardian"]={true, 0.3},
 		["chronomancy/temporal-combat"]={true, 0.3},
 		
 		-- class locked
-		["chronomancy/fate-threading"]={false, 0.1},
+		["chronomancy/stasis"]={false, 0.1},
 		["chronomancy/threaded-combat"]={false, 0.3},
 		["chronomancy/temporal-hounds"]={false, 0.3},
-		["chronomancy/timetravel"]={false, 0.1},
 		
 		-- generic
 		["technique/combat-training"]={true, 0.3},

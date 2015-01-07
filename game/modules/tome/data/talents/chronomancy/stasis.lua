@@ -23,7 +23,7 @@ local Object = require "mod.class.Object"
 
 newTalent{
 	name = "Spatial Fragments",
-	type = {"chronomancy/spatial-tears",1},
+	type = {"chronomancy/stasis",1},
 	require = chrono_req_high1,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
@@ -90,7 +90,7 @@ newTalent{
 
 newTalent{
 	name = "Discontinuity",
-	type = {"chronomancy/spatial-tears", 2},
+	type = {"chronomancy/stasis", 2},
 	require = chrono_req_high2,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
@@ -191,7 +191,7 @@ newTalent{
 
 newTalent{
 	name = "Fractured Space",
-	type = {"chronomancy/spatial-tears",3},
+	type = {"chronomancy/stasis",3},
 	require = chrono_req_high3,
 	mode = "sustained",
 	sustain_paradox = 24,
@@ -242,7 +242,7 @@ newTalent{
 
 newTalent{
 	name = "Sphere of Destruction",
-	type = {"chronomancy/spatial-tears", 4},
+	type = {"chronomancy/stasis", 4},
 	require = chrono_req_high4,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 18) end,

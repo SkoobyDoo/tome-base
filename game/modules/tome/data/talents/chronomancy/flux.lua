@@ -21,7 +21,7 @@
 
 newTalent{
 	name = "Disentangle",
-	type = {"chronomancy/fate-threading", 1},
+	type = {"chronomancy/flux", 1},
 	require = chrono_req1,
 	points = 5,
 	cooldown = 12,
@@ -49,7 +49,7 @@ newTalent{
 
 newTalent{
 	name = "Preserve Pattern",
-	type = {"chronomancy/fate-threading", 2},
+	type = {"chronomancy/flux", 2},
 	require = chrono_req2,
 	mode = "sustained", 
 	sustain_paradox = 0,
@@ -111,7 +111,7 @@ newTalent{
 
 newTalent{
 	name = "Trim Threads",
-	type = {"chronomancy/fate-threading", 3},
+	type = {"chronomancy/flux", 3},
 	require = chrono_req3,
 	points = 5,
 	cooldown = 4,
@@ -162,7 +162,7 @@ newTalent{
 
 newTalent{
 	name = "Bias Weave",
-	type = {"chronomancy/fate-threading", 4},
+	type = {"chronomancy/flux", 4},
 	require = chrono_req4,
 	points = 5,
 	cooldown = 10,
