@@ -19,7 +19,7 @@
 
 return {
 	frag = "map/default",
-	vert = nil,
+	vert = "map/default",
 	args = {
 		tex = { texture = 0 },
 	},

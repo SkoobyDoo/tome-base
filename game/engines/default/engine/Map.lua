@@ -69,6 +69,7 @@ color_obscure = { 0.6, 0.6, 0.6, 0.5 }
 smooth_scroll = 0
 
 grid_lines = {0, 0, 0, 0}
+default_shader = false
 
 faction_friend = "tactical_friend.png"
 faction_neutral = "tactical_neutral.png"
@@ -109,6 +110,10 @@ end
 
 function _M:setupGridLines(size, r, g, b, a)
 	self.grid_lines = {size, r, g, b, a}
+end
+
+function _M:setDefaultShader(shad)
+	default_shader = shad
 end
 
 --- Setup a fbo/shader pair to display map effects
@@ -247,6 +252,7 @@ function _M:makeCMap()
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))
 	self._map:setupGridLines(unpack(self.grid_lines))
+	self._map:setDefaultShader(default_shader)
 	self._fovcache =
 	{
 		block_sight = core.fov.newCache(self.w, self.h),
@@ -279,6 +285,12 @@ end
 function _M:regenGridLines()
 	if not self._map or not self.grid_lines then return end
 	self._map:setupGridLines(unpack(self.grid_lines))
+end
+
+--- Reset default shader
+function _M:resetDefaultShader()
+	if not self._map then return end
+	self._map:setDefaultShader(self.default_shader)
 end
 
 --- Adds a "path string" to the map

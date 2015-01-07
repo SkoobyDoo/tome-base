@@ -63,8 +63,8 @@ extern GLuint gl_c_shader;
 	}
 
 
-extern int nb_draws;
-#define glDrawArrays(a, b, c) \
-	{ \
-	glDrawArrays((a), (b), (c)); nb_draws++; \
-	}
+// extern int nb_draws;
+// #define glDrawArrays(a, b, c) \
+// 	{ \
+// 	glDrawArrays((a), (b), (c)); nb_draws++; \
+// 	}
