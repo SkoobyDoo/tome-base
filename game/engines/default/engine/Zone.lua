@@ -476,8 +476,9 @@ function _M:applyEgo(e, ego, type, no_name_change)
 	ego = ego:clone()
 	local newname = e.name
 	if not no_name_change then
-		if ego.prefix then newname = ego.name .. e.name
-		else newname = e.name .. ego.name end
+		local display = ego.display_string or ego.name
+		if ego.prefix or ego.display_prefix then newname = display .. e.name
+		else newname = e.name .. display end
 	end
 	print("applying ego", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
 	ego.unided_name = nil
@@ -495,9 +496,12 @@ function _M:applyEgo(e, ego, type, no_name_change)
 	table.ruleMergeAppendAdd(e, ego, self.ego_rules[type] or {})
 	
 	e.name = newname
-	e.egoed = true
+	if not ego.fake_ego then
+		e.egoed = true
+	end
 	e.ego_list = e.ego_list or {}
 	e.ego_list[#e.ego_list + 1] = {orig_ego, type, no_name_change}
+	e:resolve()
 end
 
 local function reapplyEgos(e)
@@ -508,6 +512,7 @@ local function reapplyEgos(e)
 			self:applyEgo(brandNew, unpack(ego_args))
 		end
 	end
+	brandNew:resolve(nil, true)
 	e:replaceWith(brandNew)
 end
 
