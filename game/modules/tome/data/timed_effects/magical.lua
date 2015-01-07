@@ -3175,19 +3175,6 @@ newEffect{
 }
 
 newEffect{
-	name = "PHASE_SHIFT", image = "talents/phase_shift.png",
-	desc = "Phase Shift",
-	long_desc = function(self, eff) return ("When hit for more than 10%% of your maximum life you teleport and reappear near where you were, reducuing the damage by 50%%.") end,
-	type = "magical",
-	subtype = { arcane=true },
-	status = "beneficial",
-	parameters = { },
-	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "phase_shift_chrono", 1)
-	end,
-}
-
-newEffect{
 	name = "REGRESSION", image = "talents/temporal_bolt.png",
 	desc = "Regression",
 	long_desc = function(self, eff)	return ("Reduces your three highest stats by %d."):format(eff.power) end,

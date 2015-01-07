@@ -252,37 +252,69 @@ newTalent{
 	name = "Phase Pulse",
 	type = {"chronomancy/spacetime-weaving", 4},
 	require = chrono_req4,
-	tactical = { ATTACKAREA = {TEMPORAL = 1, PHYSICAL = 1} },
+	tactical = { DISABLE = 2 },
 	mode = "sustained",
 	sustain_paradox = 36,
 	cooldown = 10,
 	points = 5,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 70, getParadoxSpellpower(self, t)) end,
 	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.5, 3.5)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	target = function(self, t)
 		return {type="ball", range=100, radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 3))) end,
+	getChance = function(self, t) return math.floor(self:combatTalentScale(t, 2, 10)) end,
 	doPulse = function(self, t, ox, oy, fail)
 		local tg = self:getTalentTarget(t)
-		local dam = self:spellCrit(t.getDamage(self, t))
 		local distance = core.fov.distance(self.x, self.y, ox, oy)
-		local chance = distance * 10
+		local chance = distance * t.getChance(self, t)
 		
-		if not fail then
-			dam = dam * (1 + math.min(1, distance/10))
-			game:onTickEnd(function()
-				self:project(tg, ox, oy, DamageType.WARP, dam)
-				self:project(tg, self.x, self.y, DamageType.WARP, dam)
-			end)
-		else
-			dam = dam *2
-			chance = 100
-			tg.radius = tg.radius * 2
-			game:onTickEnd(function()
-				self:project(tg, self.x, self.y, DamageType.WARP, dam)
-			end)
+		-- Sets a random effect
+		local function random_status(target)
+			local eff = rng.range(1, 4)
+			local power = getParadoxSpellpower(self, t)
+			
+			-- Pull random effect
+			if eff == 1 then
+				if target:canBe("stun") then
+					target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=power})
+				else
+					game.logSeen(target, "%s resists the stun!", target.name:capitalize())
+				end
+			elseif eff == 2 then
+				if target:canBe("blind") then
+					target:setEffect(target.EFF_BLINDED, t.getDuration(self, t), {apply_power=power})
+				else
+					game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
+				end
+			elseif eff == 3 then
+				if target:canBe("pin") then
+					target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=power})
+				else
+					game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+				end
+			elseif eff == 4 then
+				if target:canBe("confusion") then
+					target:setEffect(target.EFF_CONFUSED, t.getDuration(self, t), {power=50, apply_power=power})
+				else
+					game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
+				end
+			end
 		end
+		
+		-- Project our status effects at the end of the turn
+		game:onTickEnd(function()
+			-- Project at both the entrance and exit
+			self:project(tg, self.x, self.y, function(px, py)
+				local target = game.level.map(px, py, Map.ACTOR)
+				if target and rng.percent(chance) then random_status(target) end
+			end)
+			self:project(tg, ox, oy, function(px, py)
+				local target = game.level.map(px, py, Map.ACTOR)
+				if target and rng.percent(chance) then random_status(target) end
+			end)
+		end)
+			
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")
@@ -292,11 +324,11 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)/2
+		local chance = t.getChance(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[When you teleport with Phase Pulse active you deal %0.2f physical and %0.2f temporal (warp) damage to all targets in a radius of %d around you.
-		For each space you move from your original location the damage is increased by 10%% (to a maximum bonus of 100%%).  If the teleport fails, the blast radius and damage will be doubled.
-		This effect occurs both at the entrance and exist locations and the damage will scale with your Spellpower.]]):
-		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), radius)
+		local duration = t.getDuration(self, t)
+		return ([[When you teleport you fire a pulse that jolts enemies out of phase in a radius of %d around both the start and the destination point. 
+		Each target has a %d%% chance per tile you travelled to be stunned, blinded, confused, or pinned for %d turns.]]):
+		format(radius, chance, duration)
 	end,
 }

@@ -2022,21 +2022,6 @@ function _M:onTakeHit(value, src, death_note)
 			return 0
 		end
 	end
-	if self:attr("phase_shift_chrono") and not self.turn_procs.phase_shift_chrono and value > self.max_life *0.1 then
-		self.turn_procs.phase_shift_chrono = true
-		local nx, ny = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
-		if nx then
-			local ox, oy = self.x, self.y
-			if not self:teleportRandom(nx, ny, 0) then
-				game.logSeen(self, "The spell fizzles!")
-			else
-				game.level.map:particleEmitter(ox, oy, 1, "temporal_teleport")
-				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				game:delayedLogDamage(src or {}, self, 0, ("#STEEL_BLUE#(%d shifted)#LAST#"):format(value/2), nil)
-				value = value/2
-			end
-		end
-	end
 
 	if self:attr("retribution") then
 	-- Absorb damage into the retribution
@@ -2973,7 +2958,7 @@ function _M:die(src, death_note)
 			p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.TEMPORAL, p.explosion, nil)
 			game.level.map:particleEmitter(self.x, self.y, 4, "ball_temporal", {radius=4})
 		else
-			p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.MATTER, p.explosion, nil)
+			p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.WARP, p.explosion, nil)
 			game.level.map:particleEmitter(self.x, self.y, 4, "ball_matter", {radius=4})
 		end
 		game:playSoundNear(self, "talents/breath")

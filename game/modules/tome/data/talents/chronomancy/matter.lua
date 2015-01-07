@@ -37,7 +37,7 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.MATTER, self:spellCrit(t.getDamage(self, t)))
+		self:project(tg, x, y, DamageType.WARP, self:spellCrit(t.getDamage(self, t)))
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
 		game:playSoundNear(self, "talents/arcane")
@@ -45,7 +45,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[Fires a beam that turns matter into dust, inflicting %0.2f temporal damage and %0.2f physical damage.
+		return ([[Fires a beam that turns matter into dust, inflicting %0.2f temporal damage and %0.2f physical (warp) damage.
 		The damage will scale with your Spellpower.]]):
 		format(damDesc(self, DamageType.TEMPORAL, damage / 2), damDesc(self, DamageType.PHYSICAL, damage / 2))
 	end,

@@ -2624,7 +2624,7 @@ newDamageType{
 
 -- Temporal/Physical damage
 newDamageType{
-	name = "temporal shear", type = "MATTER",
+	name = "warp", type = "WARP",
 	projector = function(src, x, y, type, dam, state, no_martyr)
 		state = state or {}
 		useImplicitCrit(src, state)
@@ -3612,7 +3612,9 @@ newDamageType{
 			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam.dam, src=src, apply_power=dam.apply_power, no_ct_effect=true})
 		end
 	end,
-}newDamageType{
+}
+
+newDamageType{
 	name = "brain storm", type = "BRAINSTORM",
 	projector = function(src, x, y, type, dam, state, no_martyr)
 		state = state or {}
@@ -3650,85 +3652,7 @@ newDamageType{
 		end
 	end,
 }
-
--- Physical damage + daze chance
-newDamageType{
-	name = "impact", type = "IMPACT",
-	projector = function(src, x, y, type, dam, state, no_martyr)
 		state = state or {}
 		useImplicitCrit(src, state)
-		if _G.type(dam) == "number" then dam = {dam=dam, daze=dam/2} end
-		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam, state, no_martyr)
-		local target = game.level.map(x, y, Map.ACTOR)
-		dam.daze = math.min(25, dam.daze) -- 25% daze chance cap
-		if target and dam.daze > 0 and rng.percent(dam.daze) then
-			if target:canBe("stun") then
-				game:onTickEnd(function() target:setEffect(target.EFF_DAZED, 2, {src=src, apply_power=dam.power_check or math.max(src:combatSpellpower(), src:combatMindpower(), src:combatAttack())}) end) -- Do it at the end so we don't break our own daze
-			else
-				game.logSeen(target, "%s resists!", target.name:capitalize())
-			end
-		end
-	end,
-}
-
--- Temporal/Physical damage with possible chance to debalitate
-newDamageType{
-	name = "warp", type = "WARP",
-	projector = function(src, x, y, type, dam, state, no_martyr)
 		state = state or {}
 		useImplicitCrit(src, state)
-		local target = game.level.map(x, y, Map.ACTOR)
-		if not target then return end
-		if _G.type(dam) == "number" then dam = {dam=dam, chance=chance or 0, dur=dur or 3, apply_power=apply_power or src:combatSpellpower()} end
-
-		-- Factor in fractured space bonuses
-		local fracture = false
-		if src.isTalentActive and src:isTalentActive(src.T_FRACTURED_SPACE) then
-			fracture = src:isTalentActive(src.T_FRACTURED_SPACE)
-		end
-		if fracture then
-			dam.chance = math.min(100, dam.chance + (src:callTalent(src.T_FRACTURED_SPACE, "getChance")*fracture.charges))
-			dam.dam = dam.dam * (1 + (src:callTalent(src.T_FRACTURED_SPACE, "getDamage")*fracture.charges)/100)
-		end
-
-		-- Deal Damage
-		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam / 2, state, no_martyr)
-		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam.dam / 2, state, no_martyr)
-
-		 -- Increase fracture charges and refresh decay rate
-		 if fracture then
-			fracture.charges = math.min(6, fracture.charges + 1)
-			fracture.decay = 0
-		end
-
-		-- Pull random effect
-		if rng.percent(dam.chance) then
-			local effect = rng.range(1, 4)
-			if effect == 1 then
-				if target:canBe("stun") then
-					target:setEffect(target.EFF_STUNNED, dam.dur, {apply_power=dam.apply_power})
-				else
-					game.logSeen(target, "%s resists the stun!", target.name:capitalize())
-				end
-			elseif effect == 2 then
-				if target:canBe("blind") then
-					target:setEffect(target.EFF_BLINDED, dam.dur, {apply_power=dam.apply_power})
-				else
-					game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
-				end
-			elseif effect == 3 then
-				if target:canBe("pin") then
-					target:setEffect(target.EFF_PINNED, dam.dur, {apply_power=dam.apply_power})
-				else
-					game.logSeen(target, "%s resists the pin!", target.name:capitalize())
-				end
-			elseif effect == 4 then
-				if target:canBe("confusion") then
-					target:setEffect(target.EFF_CONFUSED, dam.dur, {power=50, apply_power=dam.apply_power})
-				else
-					game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
-				end
-			end
-		end
-	end,
-}
