@@ -149,7 +149,7 @@ Thanks to one of our scouting parties catching a Conclave lieutenant's squad off
 
 Your new objective is to find a way to warp a recovery team inside to scavenge it, then get them back safely with their data in tow.  It's possible that they've figured out a way to ward it against teleportation; enclosed is a key, in case it's necessary to target a point between the obstruction and the entrance.  I don't want to hear any of your nonsense about it being "impossible" without a linked portal near the destination; thirty years ago, you would've told me that almost everything you're now doing on a daily basis is impossible.
 
-I know you think yourself "above" such "petty politics" like how vital this facility would be to our survival, so I won't bore you with stressing how important this is to us.  Accordingly, let me put this in terms you can relate to: This is an order, and your usual excuses won't cut it.  Your job is on the line.  Make.  It.  Work.
+I know you think yourself "above" such "petty politics" like how vital this facility would be to our survival, so I won't bore you with stressing how important this is to us.  Accordingly, let me put this in terms you can relate to: This is an order, and your usual excuses won't cut it.  Your job is on the line.  #{bold}#Make.  It.  Work.#{normal}#
 
 -General Martolep
 
@@ -172,7 +172,7 @@ I know you think yourself "above" such "petty politics" like how vital this faci
 			g.on_move = function(self, x, y, who)
 				if not who or not who.player then return end
 				self.on_move = nil
-				require("engine.ui.Dialog"):simpleLongPopup("Conclave Vault", [[Arriving at the location given by the coordinates, you see a massive crack in the ground; peering down, the gleam of exposed metal catches your eye, and you recognize it as a massive door.  It would seem that the Cataclysm's tectonic upheaval has carved a path right to one of its entrances, bypassing the ruined tunnels entirely. You climb down, just outside the door.]], 400)
+				require("engine.ui.Dialog"):simpleLongPopup("Conclave Vault", [[Arriving at the location given by the coordinates, you see an enormous crack in the ground; peering down, the gleam of exposed metal catches your eye, and you recognize it as a massive door.  It would seem that the Cataclysm's tectonic upheaval has carved a path right to one of its entrances, bypassing the ruined tunnels entirely. You climb down, just outside the door.]], 400)
 			end
 			game.zone:addEntity(game.level, g, "terrain", spot.x, spot.y)
 			print("[WORLDMAP] conclave vault at", spot.x, spot.y)

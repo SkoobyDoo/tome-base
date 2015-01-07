@@ -3491,7 +3491,7 @@ function _M:updateModdableTile()
 
 	local basebody = self.moddable_tile_base or "base_01.png"
 	if self.moddable_tile_base_alter then basebody = self:moddable_tile_base_alter(basebody) end
-	add[#add+1] = {image = base..basebody}
+	add[#add+1] = {image = base..basebody, auto_tall=1}
 
 	if not self:attr("disarmed") then
 		i = self.inven[self.INVEN_MAINHAND]; if i and i[1] and i[1].moddable_tile_back then
@@ -4022,6 +4022,7 @@ function _M:canWearObject(o, try_slot)
 end
 
 function _M:lastLearntTalentsMax(what)
+	if self:attr("infinite_respec") then return 99999 end
 	return what == "generic" and 3 or 4
 end
 

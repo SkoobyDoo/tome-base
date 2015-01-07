@@ -19,6 +19,6 @@ void main(void)
 
 //	xy.x = xy.x + (1.0-xy.y) * sin(time + mapCoord.x / 40 + mapCoord.y) / attenuation;
 
-	xy = clamp(xy, texCoord.xy, texCoord.xy + texCoord.zw);
+	xy = clamp(xy, tx, tx + ts);
 	gl_FragColor = texture2D(tex, xy) * gl_Color;
 }
