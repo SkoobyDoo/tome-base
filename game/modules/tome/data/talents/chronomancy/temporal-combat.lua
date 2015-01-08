@@ -260,7 +260,11 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
 	requires_target = true,
-	range = archery_range,
+	range = function(self, t)
+		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
+		return 1
+	end,
+	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
@@ -280,12 +284,11 @@ newTalent{
 			-- Melee attack
 			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 			local x, y, target = self:getTarget(tg)
-			if not x or not y or not target then return nil end
-			if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+			if not target or not self:canProject(tg, x, y) then return nil end
 			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 			if hitted then
-			target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
+				target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 			end
 		else
 			game.logPlayer(self, "You cannot use Breach without an appropriate weapon!")

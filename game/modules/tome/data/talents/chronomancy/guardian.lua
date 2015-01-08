@@ -110,12 +110,3 @@ newTalent{
 		This effect can only occur once per turn and the amount of damage split scales with your Spellpower.]]):format(trigger, split, split/2, duration)
 	end,
 }
-
-
-	range = function(self, t)
-		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
-		return 1
-	end,
-	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
-
-			if not target or not self:canProject(tg, x, y) then return nil end

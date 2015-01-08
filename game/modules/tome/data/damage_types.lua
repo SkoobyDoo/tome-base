@@ -3652,7 +3652,3 @@ newDamageType{
 		end
 	end,
 }
-		state = state or {}
-		useImplicitCrit(src, state)
-		state = state or {}
-		useImplicitCrit(src, state)
