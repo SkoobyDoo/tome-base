@@ -3107,8 +3107,7 @@ static void update_vertex_size(lua_vertexes *vx, int size) {
 }
 
 static int gl_new_vertex(lua_State *L) {
-	const char *mode = luaL_checkstring(L, 1);
-	int size = lua_tonumber(L, 2);
+	int size = lua_tonumber(L, 1);
 	if (!size) size = 4;
 	lua_vertexes *vx = (lua_vertexes*)lua_newuserdata(L, sizeof(lua_vertexes));
 	auxiliar_setclass(L, "gl{vertexes}", -1);
@@ -3116,12 +3115,6 @@ static int gl_new_vertex(lua_State *L) {
 	vx->size = vx->nb = 0;
 	vx->vertices = NULL; vx->colors = NULL; vx->textures = NULL;
 	update_vertex_size(vx, size);
-
-	if (!strcmp(mode, "line")) {
-		vx->mode = GL_LINE;
-	} else {
-		vx->mode = GL_QUADS;
-	}
 
 	return 1;
 }
@@ -3163,7 +3156,53 @@ static int gl_vertex_add(lua_State *L) {
 	vx->colors[vx->nb * 4 + 2] = b;
 	vx->colors[vx->nb * 4 + 3] = a;
 
-	vx->nb++;
+	lua_pushnumber(L, vx->nb++);
+	return 1;
+}
+
+static int gl_vertex_add_quad(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	float r = luaL_checknumber(L, 2);
+	float g = luaL_checknumber(L, 3);
+	float b = luaL_checknumber(L, 4);
+	float a = luaL_checknumber(L, 5);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 6); float x1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 6); float y1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 6); float u1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 6); float v1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 7); float x2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 7); float y2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 7); float u2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 7); float v2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 8); float x3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 8); float y3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 8); float u3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 8); float v3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 9); float x4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 9); float y4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 9); float u4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 9); float v4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	if (vx->nb + 4 > vx->size) update_vertex_size(vx, vx->nb + 4);
+
+	int i = vx->nb;
+	vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
+	vx->vertices[i * 2 + 0] = x2; vx->vertices[i * 2 + 1] = y2; vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2; i++;
+	vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
+	// vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
+	// vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
+	vx->vertices[i * 2 + 0] = x4; vx->vertices[i * 2 + 1] = y4; vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4; i++;
+	
+	for (i = vx->nb; i < vx->nb + 4; i++) {
+		// printf("===c %d\n",i);
+		vx->colors[i * 4 + 0] = r; vx->colors[i * 4 + 1] = g; vx->colors[i * 4 + 2] = b; vx->colors[i * 4 + 3] = a;
+	}
+
+	lua_pushnumber(L, vx->nb += 4);
 	return 0;
 }
 
@@ -3199,7 +3238,7 @@ static int gl_vertex_toscreen(lua_State *L) {
 	glVertexPointer(2, GL_FLOAT, 0, vx->vertices);
 	glColorPointer(4, GL_FLOAT, 0, vx->colors);
 	glTexCoordPointer(2, GL_FLOAT, 0, vx->textures);
-	glDrawArrays(vx->mode, 0, vx->nb);
+	glDrawArrays(GL_QUADS, 0, vx->nb);
 	glTranslatef(-x, -y, 0);
 	return 0;
 }
@@ -3273,6 +3312,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 {
 	{"__gc", gl_free_vertex},
 	{"addPoint", gl_vertex_add},
+	{"addQuad", gl_vertex_add_quad},
 	{"toScreen", gl_vertex_toscreen},
 	{NULL, NULL},
 };

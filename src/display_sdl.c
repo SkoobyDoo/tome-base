@@ -76,3 +76,7 @@ GLenum gl_c_texture_unit = GL_TEXTURE0;
 GLuint gl_c_fbo = 0;
 GLuint gl_c_shader = 0;
 int nb_draws = 0;
+int gl_c_vertices_nb = 0, gl_c_texcoords_nb = 0, gl_c_colors_nb = 0;
+GLfloat *gl_c_vertices_ptr = NULL;
+GLfloat *gl_c_texcoords_ptr = NULL;
+GLfloat *gl_c_colors_ptr = NULL;
