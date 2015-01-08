@@ -82,6 +82,13 @@ cuns_req_high5 = {
 	level = function(level) return 26 + (level-1)  end,
 }
 
+-- Archery range talents
+archery_range = function(self, t)
+	local weapon, ammo, offweapon = self:hasArcheryWeapon()
+	if not weapon or not weapon.combat then return 1 end
+	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
+end
+
 load("/data/talents/cunning/stealth.lua")
 load("/data/talents/cunning/traps.lua")
 load("/data/talents/cunning/poisons.lua")

@@ -49,14 +49,15 @@ newTalent{
 	tactical = { ATTACK = {weapon = 2} },
 	no_energy = true,
 	requires_target = true,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.4) end,
 	getArmorPierce = function(self, t) return self:combatTalentStatDamage(t, "cun", 5, 45) end,  -- Adjust to scale like armor progression elsewhere
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 12, 6, 10)) end, --Limit to <12
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hitted then

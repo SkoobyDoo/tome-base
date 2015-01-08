@@ -239,6 +239,7 @@ end
 -- @param y target coords
 -- @return can_project, stop_x, stop_y, radius_x, radius_y.
 function _M:canProject(t, x, y)
+	if not x or not y then return end
 	local typ = Target:getType(t)
 	typ.source_actor = self
 	typ.start_x = typ.start_x or typ.x or typ.source_actor and typ.source_actor.x or self.x

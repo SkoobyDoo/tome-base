@@ -30,6 +30,9 @@ newTalent{
 	stamina = 40,
 	message = "@Source@ unleashes a flurry of disrupting kicks.",
 	tactical = { ATTACK = { weapon = 2 }, },
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	requires_target = true,
 	--on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_COMBO) then if not silent then game.logPlayer(self, "You must have a combo going to use this ability.") end return false end return true end,
 	getStrikes = function(self, t) return self:getCombo() end,
@@ -41,14 +44,12 @@ newTalent{
 		if talent.is_mind and self:getTalentLevel(t) < 5 then
 			return false
 		end
-
 		return true
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- breaks active grapples if the target is not grappled
 		if not target:isGrappled(self) then
@@ -97,7 +98,7 @@ newTalent{
 	require = techs_dex_req2,
 	mode = "passive",
 	points = 5,
-	-- Limit defensive throws/turn for balance using a buff (warns attacking players of the talent)	
+	-- Limit defensive throws/turn for balance using a buff (warns attacking players of the talent)
 	-- EFF_DEFENSIVE_GRAPPLING effect is refreshed each turn in _M:actBase in mod.class.Actor.lua
 	getDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 5, 50) * getUnarmedTrainingBonus(self) end,
 	getDamageTwo = function(self, t) return self:combatTalentPhysicalDamage(t, 10, 75) * getUnarmedTrainingBonus(self) end,
@@ -115,7 +116,7 @@ newTalent{
 		local hit = self:checkHit(self:combatAttack(), target:combatDefense(), 0, 95) and (grappled or not self:checkEvasion(target)) -- grappled target can't evade
 		ef.throws = ef.throws - 1
 		if ef.throws <= 0 then self:removeEffect(self.EFF_DEFENSIVE_GRAPPLING) end
-		
+
 		if hit then
 			self:project(target, target.x, target.y, DamageType.PHYSICAL, self:physicalCrit(t.getDamageTwo(self, t), nil, target, self:combatAttack(), target:combatDefense()))
 			-- if grappled stun
@@ -228,7 +229,7 @@ newTalent{
 	getDamage = function(self, t) return math.min(10, math.floor(self:combatTalentScale(t, 1, 4))) end,
 	getDefense = function(self, t) return math.floor(self:combatTalentScale(t, 1, 8)) end,
 	getResist = function(self, t) return 20 end,
-	activate = function(self, t)		
+	activate = function(self, t)
 		return {
 
 		}
@@ -258,7 +259,7 @@ newTalent{
 			This effect lasts 2 turns and stacks up to 5 times.
 			At talent level 3 you gain %d%% All Resistance upon reaching 5 stacks.
 		 ):
-		--format(stamina, defense, damage, resistance ) -- 
+		--format(stamina, defense, damage, resistance ) --
 	--end,
 --}
 --]]

@@ -121,9 +121,9 @@ newTalent{
 	action = function(self, t)
 		local range = self:getTalentRange(t)
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = {type="hit", range=self:getTalentRange(t), t=t}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target or core.fov.distance(self.x, self.y, x, y) > range then return nil end
+		if not self:canProject(tg, x, y) then return nil end
 
 		--local distance = math.max(1, core.fov.distance(self.x, self.y, x, y))
 		local power = 1 --(1 - ((distance - 1) / range))
@@ -220,7 +220,7 @@ newTalent{
 	end,
 }
 
-newTalent{ 
+newTalent{
 	name = "Blast",
 	type = {"cursed/force-of-will", 3},
 	require = cursed_wil_req3,
@@ -253,7 +253,7 @@ newTalent{
 
 		local tg = self:getTalentTarget(t)
 		local blastX, blastY = self:getTarget(tg)
-		if not blastX or not blastY or core.fov.distance(self.x, self.y, blastX, blastY) > range then return nil end
+		if not self:canProject(tg, blastX, blastY) then return nil end
 
 		local tmp = {}
 		local grids = self:project(tg, blastX, blastY,
@@ -346,4 +346,3 @@ newTalent{
 		Damage increases with your Mindpower.]]):format(duration, hits, chance, hits+1, damDesc(self, DamageType.PHYSICAL, damage), knockback, t.critpower(self, t), self.combat_critical_power or 0)
 	end,
 }
-

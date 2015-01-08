@@ -31,21 +31,22 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 36, 20)) end, --Limit to >0
 	tactical = { ATTACK = { weapon = 1, stun = 1 }, CLOSEIN = 3 },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
 	on_pre_use = function(self, t)
 		if self:attr("never_move") then return false end
 		return true
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
 		local linestep = self:lineFOV(x, y, block_actor)
-		
-		local tx, ty, lx, ly, is_corner_blocked 
+
+		local tx, ty, lx, ly, is_corner_blocked
 		repeat  -- make sure each tile is passable
 			tx, ty = lx, ly
 			lx, ly, is_corner_blocked = linestep:step()
@@ -218,4 +219,3 @@ newTalent{
 		return ([[You revel in the death of your foes, regaining %0.1f stamina with each death you cause.]]):format(t.getStamRecover(self, t))
 	end,
 }
-

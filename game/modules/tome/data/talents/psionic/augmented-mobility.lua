@@ -43,9 +43,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You telekinetically float just off the ground.
-		This allows you to slide around the battle quickly, increasing your movement speed by %d%%. 
-		It also makes you more vulnerable to being pushed around (-%d%% knockback resistance).]]): 
-		format(t.getSpeed(self, t)*100, t.getKBVulnerable(self, t)*100) 
+		This allows you to slide around the battle quickly, increasing your movement speed by %d%%.
+		It also makes you more vulnerable to being pushed around (-%d%% knockback resistance).]]):
+		format(t.getSpeed(self, t)*100, t.getKBVulnerable(self, t)*100)
 	end,
 }
 
@@ -88,8 +88,9 @@ newTalent{
 	points = 5,
 	tactical = { CLOSEIN = 2 },
 	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 7)) end, -- Limit base range to 10
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -107,7 +108,7 @@ newTalent{
 	info = function(self, t)
 		local range = self:getTalentRange(t)
 		return ([[Briefly extend your telekinetic reach to grab an enemy and haul them towards you.
-		Works on enemies up to %d squares away. 
+		Works on enemies up to %d squares away.
 		The cooldown decreases, and the range increases, with additional talent points spent.]]):
 		format(range)
 	end,
@@ -124,8 +125,11 @@ newTalent{
 	range = function(self, t)
 		return math.floor(self:combatTalentLimit(t, 10, 2, 7.5)) -- Limit < 10
 	end,
+	target = function(self, t)
+		return {default_target=self, type="ball", nolock=true, pass_terrain=false, nowarning=true, range=self:getTalentRange(t), radius=0, requires_knowledge=false}
+	end,
 	action = function(self, t)
-		local tg = {default_target=self, type="ball", nolock=true, pass_terrain=false, nowarning=true, range=self:getTalentRange(t), radius=0, requires_knowledge=false}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
