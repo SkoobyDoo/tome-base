@@ -3093,6 +3093,10 @@ static int display_pause_anims(lua_State *L) {
 	return 0;
 }
 
+static int gl_get_max_texture_size(lua_State *L) {
+	lua_pushnumber(L, max_texture_size);
+	return 1;
+}
 
 /**************************************************************
  * Vertex Objects
@@ -3287,6 +3291,7 @@ static const struct luaL_Reg displaylib[] =
 	{"glDepthTest", gl_depth_test},
 	{"glScissor", gl_scissor},
 	{"getScreenshot", sdl_get_png_screenshot},
+	{"glMaxTextureSize", gl_get_max_texture_size},
 	{NULL, NULL},
 };
 

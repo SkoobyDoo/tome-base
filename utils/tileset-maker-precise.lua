@@ -52,10 +52,7 @@ end
 
 local gd = require "gd"
 
-local list = {...}
-local ts_size_w, ts_size_h = tonumber(table.remove(list, 1)) or 1024, tonumber(table.remove(list, 1)) or 1024
-local basename = table.remove(list, 1)
-local prefix = table.remove(list, 1)
+local ts_size = 512
 
 function makeSet(w, h)
 	local used = {}
@@ -64,22 +61,24 @@ function makeSet(w, h)
 	im:saveAlpha(true)
 	im:filledRectangle(0, 0, w, h, im:colorAllocateAlpha(0, 0, 0, 127))
 
-	for i = 0, ts_size_w-64, 68 do
-		used[i/68] = {}
-		for j = 0, ts_size_h-64, 68 do
-			used[i/68][j/68] = false
+	for i = 0, ts_size-1, 1 do
+		used[i] = {}
+		for j = 0, ts_size-1, 1 do
+			used[i][j] = false
 		end
 	end
 
 	return im, used
 end
 
-local w, h = ts_size_w, ts_size_h
+local w, h = ts_size, ts_size
 local id = 1
 
 local pos = {}
-pos.__width = w
-pos.__height = h
+
+local list = {...}
+local basename = table.remove(list, 1)
+local prefix = table.remove(list, 1)
 
 function findPlace(used, d)
 	for i = 0, #used do
@@ -110,7 +109,7 @@ function fillSet(rlist)
 			id = id + 1
 		end
 
-		local ri, rj = i * 68, j * 68
+		local ri, rj = i, j
 		im:copyResampled(d.src, ri, rj, 0, 0, d.mw, d.mh, d.mw, d.mh)
 		pos[prefix..d.file] = {x=ri/w, y=rj/h, factorx=d.mw/w, factory=d.mh/h, w=d.mw, h=d.mh, set=prefix..basename..id..".png"}
 
@@ -133,7 +132,7 @@ for i = #list, 1, -1 do
 
 	local src = gd.createFromPng(file)
 	local mw, mh = src:sizeXY()
-	rlist[#rlist+1] = {file=file, src=src, mw=mw, mh=mh, sw=math.ceil(mw/64), sh=math.ceil(mh/64)}
+	rlist[#rlist+1] = {file=file, src=src, mw=mw, mh=mh, sw=mw+4, sh=mh+4}
 	table.remove(list, i)
 end
 table.sort(rlist, function(a,b)
