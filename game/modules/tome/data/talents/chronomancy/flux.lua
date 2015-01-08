@@ -20,18 +20,18 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
-	name = "Disentangle",
+	name = "Induce Anomaly",
 	type = {"chronomancy/flux", 1},
 	require = chrono_req1,
 	points = 5,
 	cooldown = 12,
 	tactical = { PARADOX = 2 },
 	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
+	getAnomalySpeed = function(self, t) return self:combatTalentLimit(t, 1, 0.10, .75) end,
 	anomaly_type = "no-major",
 	no_energy = true,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "anomaly_paradox_recovery", t.getParadoxMulti(self, t))
+		self:talentTemporaryValue(p, "anomaly_recovery_speed", t.getAnomalySpeed(self, t))
 	end,
 	action = function(self, t)
 		local reduction = self:spellCrit(t.getReduction(self, t))
@@ -40,15 +40,15 @@ newTalent{
 	end,
 	info = function(self, t)
 		local reduction = t.getReduction(self, t)
-		local paradox = 100 * t.getParadoxMulti(self, t)
-		return ([[Disentangle the timeline, reducing your Paradox by %d and creating an anomaly.  This spell will never produce a major anomaly.
-		Additionally you recover %d%% more Paradox from random anomalies (%d%% total).
-		The Paradox reduction will increase with your Spellpower.]]):format(reduction, paradox, paradox + 200)
+		local anomaly_speed = (1 - t.getAnomalySpeed(self, t)) * 100
+		return ([[Create an anomaly, reducing your Paradox by %d.  This spell will never produce a major anomaly.
+		Additionally random anomalies only cost you %d%% of a turn rather than a full turn when they occur.
+		The Paradox reduction will increase with your Spellpower.]]):format(reduction, anomaly_speed)
 	end,
 }
 
 newTalent{
-	name = "Preserve Pattern",
+	name = "Reality Smearing",
 	type = {"chronomancy/flux", 2},
 	require = chrono_req2,
 	mode = "sustained", 
@@ -73,11 +73,11 @@ newTalent{
 		local fnt = "buff_font"
 		return tostring(math.ceil(val)), fnt
 	end,
-	doPerservePattern = function(self, t, src, dam)
+	doRealitySmearing = function(self, t, src, dam)
 		local absorb = dam * t.getPercent(self, t)
 		local paradox = absorb*t.getConversionRatio(self, t)
-		self:setEffect(self.EFF_PRESERVE_PATTERN, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
-		game:delayedLogMessage(self, nil,  "preserve pattern", "#LIGHT_BLUE##Source# converts damage to paradox!")
+		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
+		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
 		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
 		dam = dam - absorb
 		
@@ -110,7 +110,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Trim Threads",
+	name = "Attenuate",
 	type = {"chronomancy/flux", 3},
 	require = chrono_req3,
 	points = 5,
@@ -126,9 +126,18 @@ newTalent{
 	end,
 	requires_target = true,
 	direct_hit = true,
+	getDamageType = function(self, t)
+		local damage_type = DamageType.TEMPORAL
+		local dt_name = "temporal"
+		if self:isTalentActive(self.T_GRAVITY_LOCUS) then
+			damage_type = DamageType.PHYSICAL
+			dt_name = "physical"
+		end
+		return damage_type, dt_name
+	end,
 	doAnomaly = function(self, t, target, eff)
-		self:project({type=hit}, target.x, target.y, DamageType.TEMPORAL, eff.power * eff.dur)
-		target:removeEffect(target.EFF_TRIM_THREADS)
+		self:project({type=hit}, target.x, target.y, t.getDamageType(self, t), eff.power * eff.dur)
+		target:removeEffect(target.EFF_ATTENUATE)
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -137,10 +146,11 @@ newTalent{
 		local _ _, x, y = self:canProject(tg, x, y)
 		
 		local damage = self:spellCrit(t.getDamage(self, t))
+		local dt_type, dt_name = t.getDamageType(self, t)
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			target:setEffect(target.EFF_TRIM_THREADS, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
+			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, dt_type=dt_type, dt_name=dt_name, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end)
 
 		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
@@ -154,14 +164,15 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
 		local reduction = t.getReduction(self, t)
-		return ([[Deals %0.2f temporal damage over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
+		local dt_type, dt_name = t.getDamageType(self, t)
+		return ([[Deals %0.2f %s over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
 		If the target is hit by an Anomaly the remaining damage will be done instantly.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, reduction)
+		The damage will scale with your Spellpower.]]):format(damDesc(self, dt_type, damage), dt_name, duration, radius, reduction)
 	end,
 }
 
 newTalent{
-	name = "Bias Weave",
+	name = "Flux Control",
 	type = {"chronomancy/flux", 4},
 	require = chrono_req4,
 	points = 5,
@@ -173,9 +184,9 @@ newTalent{
 	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
 	getBiasChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
 	getTargetChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
-	getAnomalySpeed = function(self, t) return self:combatTalentLimit(t, 1, 0.10, .75) end,
+	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "anomaly_recovery_speed", t.getAnomalySpeed(self, t))
+		self:talentTemporaryValue(p, "anomaly_paradox_recovery", t.getParadoxMulti(self, t))
 	end,
 	on_learn = function(self, t)
 		if self.anomaly_bias and self.anomaly_bias.chance then
@@ -202,10 +213,9 @@ newTalent{
 	info = function(self, t)
 		local target_chance = t.getTargetChance(self, t)
 		local bias_chance = t.getBiasChance(self, t)
-		local anomaly_recovery = (1 - t.getAnomalySpeed(self, t)) * 100
-		return ([[You've learned to focus most anomalies when they occur and may choose the target area with %d%% probability.
-		You also may bias the type of anomaly effects you produce with %d%% probability.
-		Additionally random anomalies only cost you %d%% of a turn rather than a full turn when they occur.
-		Major anomalies, those occuring when your modified Paradox is over 600, are not affected by this talent.]]):format(target_chance, bias_chance, anomaly_recovery)
+		local paradox = 100 * t.getParadoxMulti(self, t)
+		return ([[You've learned to focus non-major anomalies and may choose the target area with %d%% probability.
+		You may also activate this talent to pick an anomaly bias; choosing the type of anomaly effects you produce with %d%% probability (%d%% for major anomalies).
+		Additionally you recover %d%% more Paradox from random anomalies (%d%% total).]]):format(target_chance, bias_chance, bias_chance/2, paradox, paradox + 200)
 	end,
 }

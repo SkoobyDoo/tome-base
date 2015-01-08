@@ -102,7 +102,7 @@ end
 -- For this to work all anomalies have to have no_energy set to true in the talent table, otherwise it will use two turns
 checkAnomalyTargeting = function(self, t, tg)
 	local x, y = self.x, self.y
-	if self:knowTalent(self.T_BIAS_WEAVE) and rng.percent(self:callTalent(self.T_BIAS_WEAVE, "getTargetChance")) and not self:attr("anomaly_forced_target") then
+	if self:knowTalent(self.T_FLUX_CONTROL) and rng.percent(self:callTalent(self.T_FLUX_CONTROL, "getTargetChance")) and not self:attr("anomaly_forced_target") then
 		if self == game.player then
 			game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", t.name)
 		end
@@ -121,9 +121,9 @@ end
 -- Check for effects when hit by an anomaly
 -- This is called before immunity is checked
 checkAnomalyTriggers = function(self, target)
-	if target:hasEffect(target.EFF_TRIM_THREADS) then
-		local eff = target:hasEffect(target.EFF_TRIM_THREADS)
-		eff.src:callTalent(eff.src.T_TRIM_THREADS, "doAnomaly", target, eff)
+	if target:hasEffect(target.EFF_ATTENUATE) then
+		local eff = target:hasEffect(target.EFF_ATTENUATE)
+		eff.src:callTalent(eff.src.T_ATTENUATE, "doAnomaly", target, eff)
 	end
 end
 

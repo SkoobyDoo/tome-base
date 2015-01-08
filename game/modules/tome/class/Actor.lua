@@ -2222,8 +2222,8 @@ function _M:onTakeHit(value, src, death_note)
 	end
 
 	-- Paradox Shield
-	if value > 0 and self:isTalentActive(self.T_PRESERVE_PATTERN) then
-		value = self:callTalent(self.T_PRESERVE_PATTERN, "doPerservePattern", src, value)
+	if value > 0 and self:isTalentActive(self.T_REALITY_SMEARING) then
+		value = self:callTalent(self.T_REALITY_SMEARING, "doRealitySmearing", src, value)
 	end
 
 	if value <=0 then return 0 end
@@ -2981,8 +2981,8 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if self:hasEffect(self.EFF_TRIM_THREADS) then
-		local p = self:hasEffect(self.EFF_TRIM_THREADS)
+	if self:hasEffect(self.EFF_ATTENUATE) then
+		local p = self:hasEffect(self.EFF_ATTENUATE)
 		p.src:incParadox(-p.reduction)
 	end
 
@@ -4258,16 +4258,24 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 		if not forced and self.turn_procs.anomalies_checked then return false end  -- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
 		if not forced then self.turn_procs.anomalies_checked = true end
 
-		-- return true if we roll an anomly
+		local function check_bias(major)
+			if self.anomaly_bias then
+				local bias_chance = self.anomaly_bias.chance
+				if major then bias_chance = bias_chance/2 end
+				if rng.percent(bias_chance) then 
+					anomaly_type = self.anomaly_bias.type
+					return true
+				end
+			end
+		end
+		
 		if rng.percent(chance) then
 			-- If our Paradox is over 600 do a major anomaly
 			if anomaly_type ~= "no-major" and self:getModifiedParadox() > 600 then
-				anomaly_type = "major"
+				if not check_bias(true) then anomaly_type = "major" end
 			else
 				-- Check for Bias?
-				if self.anomaly_bias and rng.percent(self.anomaly_bias.chance) then anomaly_type = self.anomaly_bias.type end
-				-- Revert no-major to random
-				if anomaly_type == "no-major" then anomaly_type = "random" end
+				if not check_bias() then anomaly_type ="random" end
 			end
 
 			-- Now pick anomalies filtered by type

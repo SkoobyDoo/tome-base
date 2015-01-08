@@ -94,8 +94,8 @@ newBirthDescriptor{
 	talents = {
 		[ActorTalents.T_TEMPORAL_BOLT] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
-		[ActorTalents.T_RETHREAD] = 1,
-		[ActorTalents.T_DISENTANGLE] = 1,
+--		[ActorTalents.T_RETHREAD] = 1,
+--		[ActorTalents.T_INDUCE_ANOMALY] = 1,
 	},
 	copy = {
 		max_life = 90,
@@ -153,7 +153,7 @@ newBirthDescriptor{
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
 		
 		[ActorTalents.T_WARP_BLADE] = 1,
-		[ActorTalents.T_IMPACT] = 1,
+		[ActorTalents.T_WEAPON_FOLDING] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
 		[ActorTalents.T_STRENGTH_OF_PURPOSE] = 1,
 	},

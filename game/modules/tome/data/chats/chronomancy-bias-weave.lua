@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 local src = version
-local chance = src:knowTalent(src.T_BIAS_WEAVE) and src:callTalent(src.T_BIAS_WEAVE, "getBiasChance") or 0
+local chance = src:knowTalent(src.T_FLUX_CONTROL) and src:callTalent(src.T_FLUX_CONTROL, "getBiasChance") or 0
 
 local function set_bias(which)
 	src.anomaly_bias = {}

@@ -3194,15 +3194,15 @@ newEffect{
 }
 
 newEffect{
-	name = "TRIM_THREADS", image = "talents/trim_threads.png",
-	desc = "Trim Threads",
-	long_desc = function(self, eff) return ("The target is being cut from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power) end,
+	name = "ATTENUATE", image = "talents/attenuate.png",
+	desc = "Attenuate",
+	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f %s damage per turn."):format(eff.power, eff.dt_name) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
 	parameters = { power=10 },
-	on_gain = function(self, err) return "#Target# is being cut from the timeline!", "+Trim Threads" end,
-	on_lose = function(self, err) return "#Target# is no longer being cut from the timeline.", "-Trim Threads" end,
+	on_gain = function(self, err) return "#Target# is being being removed from the timeline!", "+Attenuate" end,
+	on_lose = function(self, err) return "#Target# survived the attenuation.", "-Attenuate" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the flames!
 		local olddam = old_eff.power * old_eff.dur
@@ -3213,7 +3213,7 @@ newEffect{
 		return old_eff
 	end,
 	on_timeout = function(self, eff)
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
+		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, eff.dt_type, eff.power)
 	end,
 }
 
