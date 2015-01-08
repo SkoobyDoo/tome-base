@@ -1970,8 +1970,10 @@ function _M:onHeal(value, src)
 		end
 	end
 
-	local ret = self:fireTalentCheck("callbackOnHeal", value, src)
-	if ret then value = ret.value end
+	for cb in self:iterCallbacks("callbackOnHeal") do
+		local ret = cb(value, src)
+		if ret then value = ret.value end
+	end
 
 --	print("[HEALING]", self.uid, self.name, "for", value)
 	if (not self.resting and (not game.party:hasMember(self) or not game:getPlayer(true).resting)) and value + psi_heal >= 1 and not self:attr("silent_heal") then
@@ -4849,6 +4851,44 @@ function _M:fireTalentCheck(event, ...)
 		end
 	end
 	return ret
+end
+
+function _M:iterCallbacks(event)
+	local store = sustainCallbackCheck[event]
+	local cbs = {}
+	if self[store] then upgradeStore(self[store], store) end
+	if self[store] and next(self[store].__priorities) then
+		local iter = 1
+		return function()
+			local info = self[store].__sorted[iter]
+			if not info then return end
+			iter = iter + 1
+			local priority, kind, stringId, tid = unpack(info)
+			if kind == "effect" then
+				return function(...)
+					self.__project_source = self.tmp[tid]
+					local ret = self:callEffect(tid, event, ...)
+					self.__project_source = nil
+					return ret
+				end, priority, kind
+			elseif kind == "object" then
+				return function(...)
+					self.__project_source = tid
+					local ret = tid:check(event, self, ...)
+					self.__project_source = nil
+					return ret
+				end, priority, kind
+			else
+				return function(...)
+					self.__project_source = self.sustain_talents[tid]
+					local ret = self:callTalent(tid, event, ...)
+					self.__project_source = nil
+					return ret
+				end, priority, kind
+			end
+		end
+	end
+	return function() return end
 end
 
 function _M:getTalentSpeedType(t)
