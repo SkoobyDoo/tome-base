@@ -360,9 +360,17 @@ static int lua_is_touch_enabled(lua_State *L)
 	lua_pushboolean(L, SDL_GetNumTouchDevices() > 0);
 	return 1;
 }
+static int lua_is_gamepad_enabled(lua_State *L)
+{
+	if (!SDL_NumJoysticks()) return 0;
+	const char *str = SDL_JoystickNameForIndex(0);
+	lua_pushstring(L, str);
+	return 1;
+}
 static const struct luaL_Reg mouselib[] =
 {
 	{"touchCapable", lua_is_touch_enabled},
+	{"gamepadCapable", lua_is_gamepad_enabled},
 	{"get", lua_get_mouse},
 	{"set", lua_set_mouse},
 	{"set_current_handler", lua_set_current_mousehandler},
