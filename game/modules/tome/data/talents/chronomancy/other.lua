@@ -228,8 +228,11 @@ newTalent{
 		if self.preferred_paradox then self.preferred_paradox = nil end
 	end,
 	getDuration = function(self, t) 
-		local power = math.floor(self:combatSpellpower()/10)
-		return math.max(20 - power, 10)
+		local duration = 20
+		if self:knowTalent(self.T_SPACETIME_STABILITY) then
+			duration = duration - self:callTalent(self.T_SPACETIME_STABILITY, "getTuningAdjustment")
+		end
+		return math.max(duration, 10)
 	end,
 	action = function(self, t)
 		local function getQuantity(title, prompt, default, min, max)
@@ -271,7 +274,6 @@ newTalent{
 		local after_will, will_modifier, sustain_modifier = self:getModifiedParadox()
 		local anomaly = self:paradoxFailChance()
 		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number over %d turns.
-		The time it takes you to adjust your Paradox scales down with your Spellpower to a minimum of 10 turns.
 		
 		Preferred Paradox          :  %d
 		Spellpower for Chronomancy :  %d
@@ -283,45 +285,6 @@ newTalent{
 }
 
 -- Talents from older versions to keep save files compatable
-newTalent{
-	name = "Stop",
-	type = {"chronomancy/other",1},
-	require = chrono_req1,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 12,
-	tactical = { ATTACKAREA = 1, DISABLE = 3 },
-	range = 6,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
-	direct_hit = true,
-	requires_target = true,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), talent=t}
-	end,
-	getDuration = function(self, t) return math.ceil(self:combatTalentScale(self:getTalentLevel(t), 2.3, 4.3)) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 170, getParadoxSpellpower(self, t)) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		local grids = self:project(tg, x, y, DamageType.STOP, t.getDuration(self, t))
-		self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getDamage(self, t)))
-
-		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius, tx=x, ty=y})
-		game:playSoundNear(self, "talents/tidalwave")
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local radius = self:getTalentRadius(t)
-		local duration = t.getDuration(self, t)
-		return ([[Inflicts %0.2f temporal damage, and attempts to stun all creatures in a radius %d ball for %d turns.
-		The damage will scale with your Spellpower.]]):
-		format(damage, radius, duration)
-	end,
-}
-
 newTalent{
 	name = "Slow",
 	type = {"chronomancy/other", 1},

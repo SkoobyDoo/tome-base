@@ -3449,7 +3449,7 @@ newEffect{
 	name = "STATIC_HISTORY",
 	desc = "Static History",
 	long_desc = function(self, eff) return ("Chronomancy spells cast by the target cost %d%% less Paradox"):format(eff.power *100) end,
-	type = "other",
+	type = "magical",
 	subtype = { time=true },
 	status = "beneficial",
 	parameters = { power=0.1 },
