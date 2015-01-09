@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 -- EDGE TODO: Particles, Timed Effect Particles
+-- CLEANUP STOP!!  Move away from damage types and use project functions.  It's currently not using paradox spellpower for saving throws.  The particles are also ugly :/  Look at Attenuate (flux) too as far as particles go.
 
 newTalent{
 	name = "Spacetime Stability",
@@ -50,7 +51,7 @@ newTalent{
 	range = 10,
 	no_energy = true,
 	getMaxAbsorb = function(self, t) return 50 + self:combatTalentSpellDamage(t, 50, 450, getParadoxSpellpower(self, t)) end,
-	getDuration = function(self, t) return util.bound(5 + math.floor(self:getTalentLevel(t)), 5, 15) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, util.bound(5 + math.floor(self:getTalentLevel(t)), 5, 15)) end,
 	getTimeReduction = function(self, t) return 25 + util.bound(15 + math.floor(self:getTalentLevel(t) * 2), 15, 35) end,
 	action = function(self, t)
 		self:setEffect(self.EFF_TIME_SHIELD, t.getDuration(self, t), {power=t.getMaxAbsorb(self, t), dot_dur=5, time_reducer=t.getTimeReduction(self, t)})
@@ -85,7 +86,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), talent=t}
 	end,
-	getDuration = function(self, t) return math.ceil(self:combatTalentScale(self:getTalentLevel(t), 2.3, 4.3)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(self:getTalentLevel(t), 2.3, 4.3))) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 170, getParadoxSpellpower(self, t)) end,
 	getDamageType = function(self, t)
 		local damage_type = DamageType.TEMPORAL
@@ -131,7 +132,7 @@ newTalent{
 	points = 5,
 	cooldown = 24,
 	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3.5, 6.5)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3.5, 6.5))) end,
 	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.40, .60) end,
 	no_energy = true,
 	action = function(self, t)

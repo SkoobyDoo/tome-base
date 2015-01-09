@@ -3446,7 +3446,7 @@ newEffect{
 }
 
 newEffect{
-	name = "STATIC_HISTORY",
+	name = "STATIC_HISTORY", image = "talents/static_history.png",
 	desc = "Static History",
 	long_desc = function(self, eff) return ("Chronomancy spells cast by the target cost %d%% less Paradox"):format(eff.power *100) end,
 	type = "magical",
