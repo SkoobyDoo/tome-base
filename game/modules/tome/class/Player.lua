@@ -1260,8 +1260,8 @@ end
 
 --- Call when an object is worn
 -- This doesnt call the base interface onWear, it copies the code because we need some tricky stuff
-function _M:onWear(o, bypass_set, slot)
-	mod.class.Actor.onWear(self, o, bypass_set, slot)
+function _M:onWear(o, slot, bypass_set)
+	mod.class.Actor.onWear(self, o, slot, bypass_set)
 
 	if not self.no_power_reset_on_wear then
 		o:forAllStack(function(so)
