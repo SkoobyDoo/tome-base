@@ -35,16 +35,21 @@ function _M:init(on_change)
 	self.c_list = List.new{width=self.iw, nb_items=#self.list, list=self.list, fct=function(item) self:use(item) end}
 	self.c_fs = Checkbox.new{title="Fullscreen", default=fullscreen,
 		fct=function() end,
-		on_change=function(s) if s then self.c_bl.checked = false end end
+		on_change=function(s) if s then self.c_wn.checked = false self.c_bl.checked = false  end end
 	}
 	self.c_bl = Checkbox.new{title="Borderless", default=borderless,
 		fct=function() end,
-		on_change=function(s) if s then self.c_fs.checked = false end end
+		on_change=function(s) if s then self.c_wn.checked = false self.c_fs.checked = false end end
+	}
+	self.c_wn = Checkbox.new{title="Windowed", default=not borderless and not fullscreen,
+		fct=function() end,
+		on_change=function(s) if s then self.c_fs.checked = false self.c_bl.checked = false end end
 	}
 
 	self:loadUI{
 		{left=0, top=0, ui=self.c_fs},
 		{left=self.c_fs.w + 5, top=0, ui=self.c_bl},
+		{left=self.c_fs.w + 5 + self.c_bl.w + 5, top=0, ui=self.c_wn},
 		{left=0, top=self.c_fs.h, ui=self.c_list},
 	}
 	self:setFocus(self.c_list)
