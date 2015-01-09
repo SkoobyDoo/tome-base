@@ -37,6 +37,20 @@ local function TalentStatus(who,t)
 	return tostring(status) 
 end
 
+-- check if the talent is already bound to another sustain
+local function spellbound(who, t)
+	for tid, active in pairs(who.sustain_talents) do
+		if active then
+			local tt = who:getTalentFromId(tid)
+			if tt.type[1]:find("^chronomancy/spellbinding") then
+				if who:isTalentActive(tid).talent == t then
+					return true
+				end
+			end
+		end
+	end
+end
+
 function _M:init(actor)
 	self.actor = actor
 	actor.hotkey = actor.hotkey or {}
@@ -105,7 +119,7 @@ function _M:generateList()
 
 	-- Generate lists of all talents by category
 	for j, t in pairs(self.actor.talents_def) do
-		if self.actor:knowTalent(t.id) and t.type[1]:find("^chronomancy/") and not t.type[1]:find("^chronomancy/spellbinding") and not t.hide and not t.no_energy and t.mode ~= "passive" then
+		if self.actor:knowTalent(t.id) and t.type[1]:find("^chronomancy/") and not t.type[1]:find("^chronomancy/spellbinding") and not t.hide and not t.no_energy and t.mode ~= "passive" and not spellbound(self.actor, t.id) then
 			local nodes = talents
 			local status = tstring{{"color", "LIGHT_GREEN"}, "Talents"}
 			
