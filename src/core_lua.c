@@ -355,8 +355,14 @@ static int lua_set_current_mousehandler(lua_State *L)
 
 	return 0;
 }
+static int lua_is_touch_enabled(lua_State *L)
+{
+	lua_pushboolean(L, SDL_GetNumTouchDevices() > 0);
+	return 1;
+}
 static const struct luaL_Reg mouselib[] =
 {
+	{"touchCapable", lua_is_touch_enabled},
 	{"get", lua_get_mouse},
 	{"set", lua_set_mouse},
 	{"set_current_handler", lua_set_current_mousehandler},
