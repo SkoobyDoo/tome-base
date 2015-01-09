@@ -152,9 +152,10 @@ newTalent{
 			if not target then return end
 			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, dt_type=dt_type, dt_name=dt_name, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end)
-
-		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
-
+		
+		local particle_name = "temporal_flash"
+		if dt_name == "physical" then particle_name = "gravity_spike" end
+		game.level.map:particleEmitter(x, y, tg.radius, particle_name, {radius=tg.radius})
 		game:playSoundNear(self, "talents/tidalwave")
 
 		return true

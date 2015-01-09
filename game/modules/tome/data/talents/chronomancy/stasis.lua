@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 -- EDGE TODO: Particles, Timed Effect Particles
--- CLEANUP STOP!!  Move away from damage types and use project functions.  It's currently not using paradox spellpower for saving throws.  The particles are also ugly :/  Look at Attenuate (flux) too as far as particles go.
 
 newTalent{
 	name = "Spacetime Stability",
@@ -102,11 +101,33 @@ newTalent{
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		local dt_type, dt_name = t.getDamageType(self, t)
 		
-		self:project(tg, x, y, dt_type, self:spellCrit(t.getDamage(self, t)))
-		local dt_two = (self:hasEffect(self.EFF_STATIC_HISTORY) and DamageType.TIME_PRISON) or  DamageType.STOP
-		local grids = self:project(tg, x, y, dt_two, t.getDuration(self, t))
+		
+		local dt_type, dt_name = t.getDamageType(self, t)
+		local dam = self:spellCrit(t.getDamage(self, t))
+		local dur = t.getDuration(self, t)
+		
+		local grids = self:project(tg, x, y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target then
+				self:project({type="hit"}, px, py, dt_type, dam)
+				
+				-- Apply Stun or Time Prison
+				if self:hasEffect(self.EFF_STATIC_HISTORY) then
+					-- Freeze it, if we pass the test
+					local sx, sy = game.level.map:getTileToScreen(px, py)
+					local hit = self:checkHit(getParadoxSpellpower(self, t) - (target:attr("continuum_destabilization") or 0), target:combatSpellResist(), 0, 95, 15)
+					if hit then
+						if target ~= self then target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3), no_ct_effect=true}) end
+						target:setEffect(target.EFF_TIME_PRISON, dur, {})
+					else
+						game.logSeen(target, "%s resists the time prison.", target.name:capitalize())
+					end
+				elseif target:canBe("stun") then
+					target:setEffect(target.EFF_STUNNED, dur, {apply_power=getParadoxSpellpower(self, t)})
+				end
+			end
+		end)
 		
 		local particle_name = "temporal_flash"
 		if dt_name == "physical" then particle_name = "gravity_spike" end
