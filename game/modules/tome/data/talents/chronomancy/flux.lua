@@ -166,6 +166,7 @@ newTalent{
 		local reduction = t.getReduction(self, t)
 		local dt_type, dt_name = t.getDamageType(self, t)
 		return ([[Deals %0.2f %s damage over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
+		If you have Gravity Locus sustained this spell will deal physical damage, otherwise it deals temporal damage.
 		If the target is hit by an Anomaly the remaining damage will be done instantly.
 		The damage will scale with your Spellpower.]]):format(damDesc(self, dt_type, damage), dt_name, duration, radius, reduction)
 	end,

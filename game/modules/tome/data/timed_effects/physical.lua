@@ -2833,24 +2833,6 @@ newEffect {
 }
 
 newEffect{
-	name = "GRAVITY_SLOW", image = "talents/gravity_well.png",
-	desc = "Gravity Slow",
-	long_desc = function(self, eff) return ("The target is caught in a gravity well, reducing movement speed by %d%%."):format(eff.slow* 100) end,
-	type = "physical",
-	subtype = { speed=true },
-	status = "detrimental",
-	parameters = { slow=0.15 },
-	on_gain = function(self, err) return "#Target# is slowed by gravity.", "+Gravity Slow" end,
-	on_lose = function(self, err) return "#Target# is free from the gravity well.", "-Gravity Slow" end,
-	activate = function(self, eff)
-		eff.slowid = self:addTemporaryValue("movement_speed", -eff.slow)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("movement_speed", eff.slowid)
-	end,
-}
-
-newEffect{
 	name = "ANTI_GRAVITY", image = "talents/gravity_locus.png",
 	desc = "Anti-Gravity",
 	long_desc = function(self, eff) return ("Target is caught in an anti-gravity field, halving its knockback resistance."):format() end,

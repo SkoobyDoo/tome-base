@@ -120,6 +120,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local dt_type, dt_name = t.getDamageType(self, t)
 		return ([[Inflicts %0.2f %s damage, and attempts to stun all creatures in a radius %d ball for %d turns.
+		If you have Gravity Locus sustained this spell will deal physical damage, otherwise it deals temporal damage.
 		The damage will scale with your Spellpower.]]):
 		format(damDesc(self, dt_type, damage), dt_name, radius, duration)
 	end,

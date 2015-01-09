@@ -2656,10 +2656,7 @@ newDamageType{
 		if target then
 			if target:isTalentActive(target.T_GRAVITY_LOCUS) then return end
 			if dam.slow then
-				target:setEffect(target.EFF_GRAVITY_SLOW, dam.dur, {dam.slow, apply_power=apply, no_ct_effect=true})
-			end
-			if dam.anti then
-				target:setEffect(target.EFF_ANTI_GRAVITY, dam.dur, {apply_power=apply, no_ct_effect=true})
+				target:setEffect(target.EFF_SLOW, dam.dur, {power=dam.slow, apply_power=apply, no_ct_effect=true})
 			end
 		end
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam, state, no_martyr)
