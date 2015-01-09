@@ -85,7 +85,6 @@ newTalent{
 		local def = self.tempeffect_def[curse]
 		local ego = Entity.new{
 			name = "curse",
-			special = true,
 			display_string = " ("..def.short_desc..")",
 			curse = curse,
 			fake_ego = true, unvault_ego = true,

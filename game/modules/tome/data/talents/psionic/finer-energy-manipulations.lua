@@ -133,7 +133,7 @@ newTalent{
 				local new_ego = Entity.new{
 					name = "reshape weapon",
 					display_string = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") ", display_prefix = true,
-					special = true,
+					been_reshaped = true,
 					combat = {atk=atk_boost, dam=dam_boost},
 					old_atk = atk_boost, old_dam = dam_boost, orig_atk = o.combat.atk, orig_dam = o.combat.dam,  -- Easier this way
 					fake_ego = true, unvault_ego = true,
@@ -174,7 +174,6 @@ newTalent{
 					name = "reshape armour",
 					display_string = "reshaped["..tostring(armour)..","..tostring(real_fat).."%] ", display_prefix = true,
 					been_reshaped = true,
-					special = true,
 					wielder = {combat_armour=arm, fatigue=-real_fat},
 					fatigue_reduction = fat,
 					old_fat = fat, orig_fat = o.wielder.fatigue, orig_arm = o.wielder.armour,  -- Easier this way

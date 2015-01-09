@@ -501,10 +501,10 @@ function _M:applyEgo(e, ego, type, no_name_change)
 	end
 	e.ego_list = e.ego_list or {}
 	e.ego_list[#e.ego_list + 1] = {orig_ego, type, no_name_change}
-	e:resolve()
 end
 
-local function reapplyEgos(e)
+-- WARNING the thing may be in need of re-identifying after this
+local function reapplyEgos(self, e)
 	if not e.__original then return e end
 	local brandNew = e.__original -- it will be cloned upon first ego application
 	if e.ego_list and #e.ego_list > 0 then
@@ -512,7 +512,6 @@ local function reapplyEgos(e)
 			self:applyEgo(brandNew, unpack(ego_args))
 		end
 	end
-	brandNew:resolve(nil, true)
 	e:replaceWith(brandNew)
 end
 
@@ -526,7 +525,7 @@ function _M:removeEgo(e, ego)
 	end
 	if not idx then return end
 	table.remove(e.ego_list, idx)
-	reapplyEgos(e)
+	reapplyEgos(self, e)
 	return ego
 end
 
@@ -540,6 +539,12 @@ function _M:removeEgoByName(e, ego_name)
 	for i, v in ipairs(e.ego_list or {}) do
 		if v[1].name == ego_name then return self:removeEgo(e, v[1]) end
 	end
+end
+
+function _M:setEntityEgoList(e, list)
+	e.ego_list = table.clone(list)
+	reapplyEgos(self, e)
+	return e
 end
 
 --- Finishes generating an entity
