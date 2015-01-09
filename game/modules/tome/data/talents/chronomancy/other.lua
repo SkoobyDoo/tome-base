@@ -31,7 +31,11 @@ end
 -- Paradox cost (regulates the cost of paradox talents)
 getParadoxCost = function (self, t, value)
 	local pm = getParadoxModifier(self)
-	return value * pm
+	local multi = 1
+	if self:attr("paradox_cost_multiplier") then
+		multi = 1 - self:attr("paradox_cost_multiplier")
+	end
+	return (value * pm) * multi
 end
 
 -- Paradox Spellpower (regulates spellpower for chronomancy)
@@ -385,37 +389,6 @@ newTalent{
 		return ([[Your mastery of spacetime reduces the cooldown of Banish, Dimensional Step, Swap, and Temporal Wake by %d, and the cooldown of Wormhole by %d.  Also improves your Spellpower for purposes of hitting targets with chronomancy effects that may cause continuum destabilization (Banish, Time Skip, etc.), as well as your chance of overcoming continuum destabilization, by %d%%.]]):
 		format(cooldown, wormhole, t.getPower(self, t)*100)
 		
-	end,
-}
-
-newTalent{
-	name = "Static History",
-	type = {"chronomancy/other", 1},
-	require = chrono_req1,
-	points = 5,
-	message = "@Source@ rearranges history.",
-	cooldown = 24,
-	tactical = { PARADOX = 2 },
-	getDuration = function(self, t)
-		local duration = math.floor(self:combatTalentScale(t, 1.5, 3.5))
-		if self:knowTalent(self.T_PARADOX_MASTERY) then
-			duration = duration + self:callTalent(self.T_PARADOX_MASTERY, "stabilityDuration")
-		end
-		return duration
-	end,
-	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 200) end,
-	action = function(self, t)
-		self:incParadox (- t.getReduction(self, t))
-		game:playSoundNear(self, "talents/spell_generic")
-		self:setEffect(self.EFF_SPACETIME_STABILITY, t.getDuration(self, t), {})
-		return true
-	end,
-	info = function(self, t)
-		local reduction = t.getReduction(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[By slightly reorganizing history, you reduce your Paradox by %d and temporarily stabilize the timeline; this allows chronomancy to be used without chance of failure for %d turns (backfires and anomalies may still occur).
-		The paradox reduction will increase with your Spellpower.]]):
-		format(reduction, duration)
 	end,
 }
 
@@ -827,23 +800,6 @@ newTalent{
 		If you clone a hostile creature the clone will target the creature it was cloned from.
 		The life and damage penalties will be lessened by your Spellpower.]]):
 		format(duration, 100 - damage_penalty, damage_penalty)
-	end,
-}
-
-newTalent{
-	name = "Paradox Mastery",
-	type = {"chronomancy/other", 1},
-	mode = "passive",
-	points = 5,
-	-- Static history bonus handled in timetravel.lua, backfire calcs performed by _M:getModifiedParadox function in mod\class\Actor.lua	
-	WilMult = function(self, t) return self:combatTalentScale(t, 0.15, 0.5) end,
-	stabilityDuration = function(self, t) return math.floor(self:combatTalentScale(t, 0.4, 2.7, "log")) end,  --This is still used by an older talent, leave it here for backwards compatability
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "paradox_will_mutli", t.WilMult(self, t))
-	end,
-	info = function(self, t)
-		return ([[You've learned to focus your control over the spacetime continuum, and quell anomalous effects.  Increases your effective Willpower for anomaly calculations by %d%%.]]):
-		format(t.WilMult(self, t) * 100)
 	end,
 }
 

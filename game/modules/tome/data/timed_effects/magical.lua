@@ -3444,3 +3444,20 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "STATIC_HISTORY",
+	desc = "Static History",
+	long_desc = function(self, eff) return ("Chronomancy spells cast by the target cost %d%% less Paradox"):format(eff.power *100) end,
+	type = "other",
+	subtype = { time=true },
+	status = "beneficial",
+	parameters = { power=0.1 },
+	on_gain = function(self, err) return "Spacetime has stabilized around #Target#.", "+Static History" end,
+	on_lose = function(self, err) return "The fabric of spacetime around #Target# has returned to normal.", "-Static History" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "paradox_cost_multiplier", eff.power)
+	end,
+	deactivate = function(self, eff)
+	end,
+}

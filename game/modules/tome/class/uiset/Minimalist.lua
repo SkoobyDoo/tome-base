@@ -929,7 +929,8 @@ function _M:displayResources(scale, bx, by, a)
 				paradox_sha:setUniform("speed", 10000 - s * 7000)
 				paradox_sha.shad:use(true)
 			end
-			local p = 1 - chance / 100
+			local p = util.bound(600-player:getModifiedParadox(), 0, 300) / 300
+			--local p = 1 - chance / 100
 			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], paradox_c[1], paradox_c[2], paradox_c[3], a)
 			if paradox_sha.shad then paradox_sha.shad:use(false) end
 
@@ -937,7 +938,7 @@ function _M:displayResources(scale, bx, by, a)
 				self.res.paradox = {
 					hidable = "Paradox",
 					vc = player.paradox, vr = chance,
-					cur = {core.display.drawStringBlendedNewSurface(font_sha, ("%d"):format(player.paradox), 255, 255, 255):glTexture()},
+					cur = {core.display.drawStringBlendedNewSurface(font_sha, ("%d (%d%%)"):format(player:getModifiedParadox(), player.paradox), 255, 255, 255):glTexture()},
 					regen={core.display.drawStringBlendedNewSurface(sfont_sha, ("%d%%"):format(chance), 255, 255, 255):glTexture()},
 				}
 			end

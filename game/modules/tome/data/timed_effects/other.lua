@@ -602,22 +602,6 @@ newEffect{
 }
 
 newEffect{
-	name = "SPACETIME_STABILITY",
-	desc = "Spacetime Stability",
-	long_desc = function(self, eff) return "Chronomancy spells cast by the target will not fail." end,
-	type = "other",
-	subtype = { time=true },
-	status = "beneficial",
-	parameters = { power=0.1 },
-	on_gain = function(self, err) return "Spacetime has stabilized around #Target#.", "+Spactime Stability" end,
-	on_lose = function(self, err) return "The fabric of spacetime around #Target# has returned to normal.", "-Spacetime Stability" end,
-	activate = function(self, eff)
-	end,
-	deactivate = function(self, eff)
-	end,
-}
-
-newEffect{
 	name = "FADE_FROM_TIME", image = "talents/fade_from_time.png",
 	desc = "Fade From Time",
 	long_desc = function(self, eff) return ("The target is partially removed from the timeline, reducing all damage dealt by %d%%, all damage received by %d%%, and the duration of all detrimental effects by %d%%."):
