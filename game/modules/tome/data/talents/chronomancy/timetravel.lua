@@ -106,7 +106,7 @@ newTalent{
 	type = {"chronomancy/timetravel",2},
 	require = chrono_req2,
 	points = 5,
-	cooldown = 4,
+	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {TEMPORAL = 1}, DISABLE = 2 },
 	range = 10,

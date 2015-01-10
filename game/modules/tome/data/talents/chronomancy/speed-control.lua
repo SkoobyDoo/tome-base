@@ -103,13 +103,9 @@ newTalent{
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
 	no_energy = true,
 	on_pre_use = function(self, t, silent)
-		local can_stop = false
-		if self:hasEffect(self.EFF_TIME_DILATION) and self:hasEffect(self.EFF_TIME_DILATION).charges == 3 then 
-			can_stop = true
-		elseif self:hasEffect(self.EFF_CELERITY) and self:hasEffect(self.EFF_CELERITY).charges == 3 then 
-			can_stop = true
-		end
-		if not can_stop then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be at full power in order to cast Time Stop.") end return false end return true 
+		local dilation = self:hasEffect(self.EFF_TIME_DILATION) and self:hasEffect(self.EFF_TIME_DILATION).charges == 3 
+		local celerity = self:hasEffect(self.EFF_CELERITY) and self:hasEffect(self.EFF_CELERITY).charges == 3
+		if not dilation and celerity then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be at full power in order to cast Time Stop.") end return false end return true 
 	end,
 	getReduction = function(self, t) return 80 - paradoxTalentScale(self, t, 0, 20, 40) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
@@ -123,7 +119,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local reduction = t.getReduction(self, t)
 		return ([[Gain %d turns.  During this time your damage will be reduced by %d%%.
-		Time Dilation or Celerity must be fully stacked in order to use this talent.
+		Time Dilation and Celerity must be fully stacked in order to use this talent.
 		The damage reduction penalty will be lessened by your Spellpower.]]):format(duration, reduction)
 	end,
 }
