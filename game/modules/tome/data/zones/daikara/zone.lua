@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 local layout = game.state:alternateZone(short_name, {"VOLCANO", 2})
-layout="VOLCANO"
 local is_volcano = layout == "VOLCANO"
 
 return {
