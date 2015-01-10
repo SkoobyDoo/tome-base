@@ -28,15 +28,17 @@ newTalent{
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	callbackOnTalentPost = function(self, t,  ab)
-		if not ab.no_energy or ab.no_energy == "fake" then
+		if ab.type[1]:find("^chronomancy/") then
+			if self.turn_procs.celerity then return end -- temp fix to prevent over stacking
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_CELERITY, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
+			self.turn_procs.celerity = true
 		end
 	end,
 	info = function(self, t)
 		local speed = t.getSpeed(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[When you use a non-instant talent you gain %d%% movement speed for %d turn.  This effect stacks up to three times.
+		return ([[When you use a chronomancy spell you gain %d%% movement speed for %d turn.  This effect stacks up to three times but can only occur once per turn.
 		]]):format(speed, duration)
 	end,
 }
@@ -51,14 +53,16 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	callbackOnMove = function(self, t, moved, force, ox, oy)
 		if not force and moved and ox and oy and (ox ~= self.x or oy ~= self.y) then
+			if self.turn_procs.time_dilation then return end -- temp fix to prevent over stacking
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_TIME_DILATION, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
+			self.turn_procs.time_dilation = true
 		end
 	end,
 	info = function(self, t)
 		local speed = t.getSpeed(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[When you move you gain %d%% attack, spell, and mind speed for %d turns.  This effect stacks up to three times.
+		return ([[When you move you gain %d%% attack, spell, and mind speed for %d turns.  This effect stacks up to three times but can only occur once per turn.
 		]]):format(speed, duration)
 	end,
 }
