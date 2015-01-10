@@ -23,7 +23,7 @@ newTalent{
 	name = "Energy Decomposition",
 	type = {"chronomancy/energy",1},
 	mode = "sustained",
-	require = chrono_req_high1,
+	require = chrono_req1,
 	points = 5,
 	sustain_paradox = 24,
 	cooldown = 10,
@@ -59,7 +59,7 @@ newTalent{
 newTalent{
 	name = "Energy Absorption",
 	type = {"chronomancy/energy", 2},
-	require = chrono_req_high2,
+	require = chrono_req2,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 6,
@@ -71,7 +71,6 @@ newTalent{
 	getTalentCount = function(self, t)
 		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
 	getCooldown = function(self, t) return math.ceil(self:combatTalentScale(t, 1, 2.6)) end,
 	target = function (self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -120,9 +119,6 @@ newTalent{
 				local tid = rng.tableRemove(tids)
 				self:alterTalentCoolingdown(tid, - cdr)
 			end
-			
-			-- Deal our damage in one lump sum
-			self:project(tg, target.x, target.y, DamageType.TEMPORAL, self:spellCrit(count * t.getDamage(self, t)))
 		end
 		
 		target:crossTierEffect(target.EFF_SPELLSHOCKED, getParadoxSpellpower(self, t))
@@ -134,18 +130,17 @@ newTalent{
 	info = function(self, t)
 		local talentcount = t.getTalentCount(self, t)
 		local cooldown = t.getCooldown(self, t)
-		local damage = t.getDamage(self, t)
 		return ([[You sap the target's energy and add it to your own, placing up to %d random talents on cooldown for %d turns.  
-		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns and deal %0.2f temporal damage to the target.
+		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns.
 		The damage done will scale with your Spellpower.]]):
-		format(talentcount, cooldown, cooldown, damDesc(self, DamageType.TEMPORAL, damage))
+		format(talentcount, cooldown, cooldown)
 	end,
 }
 
 newTalent{
 	name = "Redux",
 	type = {"chronomancy/energy",3},
-	require = chrono_req_high3,
+	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 24,
@@ -170,7 +165,7 @@ newTalent{
 newTalent{
 	name = "Entropy",
 	type = {"chronomancy/energy",4},
-	require = chrono_req_high4,
+	require = chrono_req4,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
