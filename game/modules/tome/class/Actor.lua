@@ -6333,8 +6333,9 @@ function _M:canUseTinker(tinker)
 	return true
 end
 
-function _M:doTakeoffTinker(base_o, oldo, base_inven)
+function _M:doTakeoffTinker(base_o, oldo)
 	if base_o.tinker ~= oldo then return end
+	local _, _, base_inven = self:findInAllInventoriesByObject(base_o)
 
 	local mustwear = base_o.wielded
 	if mustwear then self:onTakeoff(base_o, true) end
@@ -6380,7 +6381,7 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 			game.logPlayer(self, "You already have a tinker on this item.")
 			return
 		else
-			self:doTakeoffTinker(base_o, base_o.tinker, base_inven)
+			self:doTakeoffTinker(base_o, base_o.tinker)
 		end
 	end
 
