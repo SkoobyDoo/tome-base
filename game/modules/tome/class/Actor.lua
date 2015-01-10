@@ -6336,7 +6336,7 @@ end
 function _M:doTakeoffTinker(base_o, oldo)
 	if base_o.tinker ~= oldo then return end
 
-	local base_inven
+	local _, base_inven
 	local mustwear = base_o.wielded
 	if mustwear then
 		_, _, base_inven = self:findInAllInventoriesByObject(base_o)
