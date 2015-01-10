@@ -938,7 +938,7 @@ function _M:displayResources(scale, bx, by, a)
 				self.res.paradox = {
 					hidable = "Paradox",
 					vc = player.paradox, vr = chance,
-					cur = {core.display.drawStringBlendedNewSurface(font_sha, ("%d (%d%%)"):format(player:getModifiedParadox(), player.paradox), 255, 255, 255):glTexture()},
+					cur = {core.display.drawStringBlendedNewSurface(font_sha, ("%d (%d)"):format(player:getModifiedParadox(), player.paradox), 255, 255, 255):glTexture()},
 					regen={core.display.drawStringBlendedNewSurface(sfont_sha, ("%d%%"):format(chance), 255, 255, 255):glTexture()},
 				}
 			end
