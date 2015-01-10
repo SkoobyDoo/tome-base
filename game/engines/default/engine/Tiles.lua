@@ -37,14 +37,14 @@ function _M:loadTileset(file)
 	if err then error(err) end
 	local env = {}
 	local ts = {}
-	setfenv(f, setmetatable(self.tilesets, {__index={_G=ts}}))
+	setfenv(f, setmetatable(ts, {__index={_G=ts}}))
+	local ok, err = pcall(f)
+	if not ok then error(err) end
 	if ts.__width > core.display.glMaxTextureSize() or ts.__height > core.display.glMaxTextureSize() then
 		print("[TILESET] Refusing tileset "..file.." due to texture size "..ts.__width.."x"..ts.__height.." over max of "..core.display.glMaxTextureSize())
 		return
 	end
 	for k, e in pairs(ts) do self.tilesets[k] = e end
-	local ok, err = pcall(f)
-	if not ok then error(err) end
 end
 
 function _M:init(w, h, fontname, fontsize, texture, allow_backcolor)

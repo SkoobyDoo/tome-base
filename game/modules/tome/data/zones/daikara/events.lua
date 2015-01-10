@@ -21,7 +21,7 @@ local events = { one_per_level=true,
 	{group="outdoor-majeyal-gloomy"},
 	{group="outdoor-majeyal-generic"},
 	{group="majeyal-generic"},
-	{name="cultists", percent=10},
+	{name="cultists", percent=100,forbid={1,3,4}},
 	{name="font-life", minor=true, percent=30},
 	{name="whistling-vortex", minor=true, percent=30},
 }

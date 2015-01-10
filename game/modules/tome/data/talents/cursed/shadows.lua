@@ -572,7 +572,7 @@ newTalent{
 	range = 6,
 	requires_target = true,
 	tactical = { ATTACK = 2 },
-	target = function(self, t) return {type="hit", range=self:getTalentRange(range), nowarning=true} end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), nowarning=true} end,
 	getDefenseDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4.4, 10.1)) end,
 	getBlindsideChance = function(self, t) return self:combatTalentLimit(t, 100, 40, 80) end, -- Limit < 100%
 	action = function(self, t)
