@@ -250,7 +250,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local clones = t.getClones(self, t)
-		return ([[Fire upon the target for %d%% damage and summon up to %d temporal clones (depending on available space).
+		return ([[Fire upon the target for %d%% damage and summon up to %d temporal clones (depending on available space) that will each fire a single shot before returning to their timelines.
 		These clones are out of phase with normal reality and deal 50%% damage but shoot through friendly targets.
 		At talent level three and five you can summon an additional clone.]])
 		:format(damage, clones)

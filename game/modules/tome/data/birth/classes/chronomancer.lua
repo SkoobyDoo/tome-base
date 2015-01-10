@@ -94,8 +94,8 @@ newBirthDescriptor{
 	talents = {
 		[ActorTalents.T_TEMPORAL_BOLT] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
---		[ActorTalents.T_RETHREAD] = 1,
---		[ActorTalents.T_INDUCE_ANOMALY] = 1,
+		[ActorTalents.T_REPULSION_BLAST] = 1,
+		[ActorTalents.T_PRECOGNITION] = 1,
 	},
 	copy = {
 		max_life = 90,
