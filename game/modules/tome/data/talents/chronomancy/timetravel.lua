@@ -102,135 +102,9 @@ newTalent{
 }
 
 newTalent{
-	name = "Echoes From The Past",
-	type = {"chronomancy/timetravel", 2},
-	require = chrono_req2,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 10,
-	tactical = { ATTACKAREA = {TEMPORAL = 2} },
-	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
-	end,
-	direct_hit = true,
-	requires_target = true,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 18, 160, getParadoxSpellpower(self, t)) end,
-	getPercent = function(self, t) return paradoxTalentScale(self, t, 20, 40, 60)/100 end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		
-		local damage = self:spellCrit(t.getDamage(self, t))
-		self:project(tg, self.x, self.y, function(px, py)
-			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
-			
-			-- Echo
-			local target = game.level.map(px, py, Map.ACTOR)
-			if not target then return end
-			local percent = t.getPercent(self, t)/target.rank
-			local dam = (target.max_life - target.life) * percent
-			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, dam)
-		end)
-		
-		game.level.map:particleEmitter(self.x, self.y, tg.radius, "ball_temporal", {radius=tg.radius})
-		game:playSoundNear(self, "talents/teleport")
-		return true
-	end,
-	info = function(self, t)
-		local percent = t.getPercent(self, t) * 100
-		local radius = self:getTalentRadius(t)
-		local damage = t.getDamage(self, t)
-		return ([[Creates a temporal echo in a radius of %d around you.  Affected targets will take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
-		The additional damage will be divided by the target's rank and the damage scales with your Spellpower.]]):
-		format(radius, damDesc(self, DamageType.TEMPORAL, damage), percent)
-	end,
-}
-
-newTalent{
-	name = "Temporal Reprieve",
-	type = {"chronomancy/timetravel", 3},
-	require = chrono_req3,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 40,
-	no_npc_use = true,
-	fixed_cooldown = true,
-	on_pre_use = function(self, t) return self:canBe("planechange") end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 6))) end,
-	action = function(self, t)
-		if game.zone.is_temporal_reprieve then
-			game.logPlayer(self, "This talent cannot be used from within the reprieve.")
-			return
-		end
-		if game.zone.no_planechange then
-			game.logPlayer(self, "This talent cannot be used here.")
-			return
-		end
-		if not (self.player and self.game_ender) then return nil end
-
-		if not self:canBe("planechange") or self.summon_time or self.summon then
-			game.logPlayer(self, "The spell fizzles...")
-			return
-		end
-
-		game:onTickEnd(function()
-			if self:attr("dead") then return end
-			local oldzone = game.zone
-			local oldlevel = game.level
-
-			-- Remove them before making the new elvel, this way party memebrs are not removed from the old
-			if oldlevel:hasEntity(self) then oldlevel:removeEntity(self) end
-
-			oldlevel.no_remove_entities = true
-			local zone = mod.class.Zone.new("temporal-reprieve-talent")
-			local level = zone:getLevel(game, 1, 0)
-			oldlevel.no_remove_entities = nil
-
-			level:addEntity(self)
-
-			level.source_zone = oldzone
-			level.source_level = oldlevel
-			game.zone = zone
-			game.level = level
-			game.zone_name_s = nil
-
-			local x1, y1 = util.findFreeGrid(4, 4, 20, true, {[Map.ACTOR]=true})
-			if x1 then
-				self:move(x1, y1, true)
-				game.level.map:particleEmitter(x1, y1, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})
-			end
-
-			self.temporal_reprieve_on_die = self.on_die
-			self.on_die = function(self, ...)
-				self:removeEffect(self.EFF_TEMPORAL_REPRIEVE)
-				local args = {...}
-				game:onTickEnd(function()
-					if self.temporal_reprieve_on_die then self:temporal_reprieve_on_die(unpack(args)) end
-					self.on_die, self.temporal_reprieve_on_die = self.temporal_reprieve_on_die, nil
-				end)
-			end
-
-			game.logPlayer(game.player, "#STEEL_BLUE#You time travel to a quiet place.")
-			game.nicer_tiles:postProcessLevelTiles(game.level)
-
-		end)
-
-		self:setEffect(self.EFF_TEMPORAL_REPRIEVE, t.getDuration(self, t), {x=self.x, y=self.y})
-		game:playSoundNear(self, "talents/teleport")
-		return true
-	end,
-	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[Transport yourself to a safe place for %d turns.]]):
-		format(duration)
-	end,
-}
-
-newTalent{
 	name = "Time Skip",
-	type = {"chronomancy/timetravel",4},
-	require = chrono_req4,
+	type = {"chronomancy/timetravel",2},
+	require = chrono_req2,
 	points = 5,
 	cooldown = 4,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
@@ -319,5 +193,131 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		return ([[Inflicts %0.2f temporal damage.  If your target survives, it may be removed from time for %d turns.
 		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration)
+	end,
+}
+
+newTalent{
+	name = "Temporal Reprieve",
+	type = {"chronomancy/timetravel", 3},
+	require = chrono_req3,
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 40,
+	no_npc_use = true,
+	fixed_cooldown = true,
+	on_pre_use = function(self, t) return self:canBe("planechange") end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 6))) end,
+	action = function(self, t)
+		if game.zone.is_temporal_reprieve then
+			game.logPlayer(self, "This talent cannot be used from within the reprieve.")
+			return
+		end
+		if game.zone.no_planechange then
+			game.logPlayer(self, "This talent cannot be used here.")
+			return
+		end
+		if not (self.player and self.game_ender) then return nil end
+
+		if not self:canBe("planechange") or self.summon_time or self.summon then
+			game.logPlayer(self, "The spell fizzles...")
+			return
+		end
+
+		game:onTickEnd(function()
+			if self:attr("dead") then return end
+			local oldzone = game.zone
+			local oldlevel = game.level
+
+			-- Remove them before making the new elvel, this way party memebrs are not removed from the old
+			if oldlevel:hasEntity(self) then oldlevel:removeEntity(self) end
+
+			oldlevel.no_remove_entities = true
+			local zone = mod.class.Zone.new("temporal-reprieve-talent")
+			local level = zone:getLevel(game, 1, 0)
+			oldlevel.no_remove_entities = nil
+
+			level:addEntity(self)
+
+			level.source_zone = oldzone
+			level.source_level = oldlevel
+			game.zone = zone
+			game.level = level
+			game.zone_name_s = nil
+
+			local x1, y1 = util.findFreeGrid(4, 4, 20, true, {[Map.ACTOR]=true})
+			if x1 then
+				self:move(x1, y1, true)
+				game.level.map:particleEmitter(x1, y1, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})
+			end
+
+			self.temporal_reprieve_on_die = self.on_die
+			self.on_die = function(self, ...)
+				self:removeEffect(self.EFF_TEMPORAL_REPRIEVE)
+				local args = {...}
+				game:onTickEnd(function()
+					if self.temporal_reprieve_on_die then self:temporal_reprieve_on_die(unpack(args)) end
+					self.on_die, self.temporal_reprieve_on_die = self.temporal_reprieve_on_die, nil
+				end)
+			end
+
+			game.logPlayer(game.player, "#STEEL_BLUE#You time travel to a quiet place.")
+			game.nicer_tiles:postProcessLevelTiles(game.level)
+
+		end)
+
+		self:setEffect(self.EFF_TEMPORAL_REPRIEVE, t.getDuration(self, t), {x=self.x, y=self.y})
+		game:playSoundNear(self, "talents/teleport")
+		return true
+	end,
+	info = function(self, t)
+		local duration = t.getDuration(self, t)
+		return ([[Transport yourself to a safe place for %d turns.]]):
+		format(duration)
+	end,
+}
+
+newTalent{
+	name = "Echoes From The Past",
+	type = {"chronomancy/timetravel", 4},
+	require = chrono_req4,
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 10,
+	tactical = { ATTACKAREA = {TEMPORAL = 2} },
+	range = 0,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
+	direct_hit = true,
+	requires_target = true,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 18, 160, getParadoxSpellpower(self, t)) end,
+	getPercent = function(self, t) return paradoxTalentScale(self, t, 20, 40, 60)/100 end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		
+		local damage = self:spellCrit(t.getDamage(self, t))
+		self:project(tg, self.x, self.y, function(px, py)
+			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
+			
+			-- Echo
+			local target = game.level.map(px, py, Map.ACTOR)
+			if not target then return end
+			local percent = t.getPercent(self, t)/target.rank
+			local dam = (target.max_life - target.life) * percent
+			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, dam)
+		end)
+		
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "ball_temporal", {radius=tg.radius})
+		game:playSoundNear(self, "talents/teleport")
+		return true
+	end,
+	info = function(self, t)
+		local percent = t.getPercent(self, t) * 100
+		local radius = self:getTalentRadius(t)
+		local damage = t.getDamage(self, t)
+		return ([[Creates a temporal echo in a radius of %d around you.  Affected targets will take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
+		The additional damage will be divided by the target's rank and the damage scales with your Spellpower.]]):
+		format(radius, damDesc(self, DamageType.TEMPORAL, damage), percent)
 	end,
 }
