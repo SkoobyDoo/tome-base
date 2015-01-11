@@ -597,7 +597,6 @@ function _M:generateRandart(data)
 	end
 	-- Re-resolve with the (possibly) new resolvers
 	o:resolve()
-	o:resolve(nil, true)
 
 	-----------------------------------------------------------
 	-- Imbue random powers into the randart according to themes
@@ -674,7 +673,8 @@ function _M:generateRandart(data)
 		game.zone:applyEgo(o, ego, "object", true)
 	end
 
-	o:resolve() o:resolve(nil, true)
+	o:resolve()
+	o:resolve(nil, true)
 
 	-- Always assign at least one power source based on themes and restrictions
 	if not o.power_source then
