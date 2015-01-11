@@ -761,7 +761,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	end end
 
 	-- Acid splash
-	if hitted and target:knowTalent(target.T_ACID_BLOOD) then
+	if hitted and not target.dead and target:knowTalent(target.T_ACID_BLOOD) then
 		local t = target:getTalentFromId(target.T_ACID_BLOOD)
 		t.do_splash(target, t, self)
 	end
