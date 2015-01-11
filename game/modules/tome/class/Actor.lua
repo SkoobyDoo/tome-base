@@ -3953,6 +3953,17 @@ function _M:getObjectOffslot(o)
 	end
 end
 
+--- Checks if the given item should respect its slot_forbid value
+-- @param o the item to check
+-- @param in_inven the inventory id in which the item is worn or tries to be worn
+function _M:slotForbidCheck(o, in_inven_id)
+	in_inven_id = self:getInven(in_inven_id).id
+	if self:attr("allow_mainhand_2h_in_1h") and in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" then
+		return false
+	end
+	return true
+end
+
 --- Can we wear this item?
 function _M:canWearObject(o, try_slot)
 	if self:attr("forbid_arcane") and o.power_source and o.power_source.arcane then
