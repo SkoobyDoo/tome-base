@@ -286,7 +286,7 @@ newTalent{
 	cooldown = 12,
 	tactical = { ATTACKAREA = {TEMPORAL = 2} },
 	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
