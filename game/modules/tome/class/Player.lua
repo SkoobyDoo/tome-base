@@ -797,7 +797,7 @@ function _M:setTarget(target)
 	return game:targetSetForPlayer(target)
 end
 
-local function spotHostiles(self)
+local function spotHostiles(self, actors_only)
 	local seen = {}
 	if not self.x then return seen end
 
@@ -805,9 +805,36 @@ local function spotHostiles(self)
 	core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, self.sight or 10, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
 		local actor = game.level.map(x, y, game.level.map.ACTOR)
 		if actor and self:reactionToward(actor) < 0 and self:canSee(actor) and game.level.map.seens(x, y) then
-			seen[#seen + 1] = {x=x,y=y,actor=actor}
+			seen[#seen + 1] = {x=x,y=y,actor=actor, entity=actor, name=actor.name}
 		end
 	end, nil)
+
+	if not actors_only then
+		-- Check for projectiles in line of sight
+		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, self.sight or 10, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
+			local proj = game.level.map(x, y, game.level.map.PROJECTILE)
+			if not proj then return end
+
+			-- trust ourselves but not our friends
+			if proj.src and self == proj.src then return end
+			local sx, sy = proj.start_x, proj.start_y
+			local tx, ty
+
+			-- Bresenham is too so check if we're anywhere near the mathematical line of flight
+			if proj.project then
+				tx, ty = proj.project.def.x, proj.project.def.y
+			elseif proj.homing then
+				tx, ty = proj.homing.target.x, proj.homing.target.y
+			end
+			if tx and ty then
+				local dist_to_line = math.abs((self.x - sx) * (ty - sy) - (self.y - sy) * (tx - sx)) / core.fov.distance(sx, sy, tx, ty)
+				local our_way = ((self.x - x) * (tx - x) + (self.y - y) * (ty - y)) > 0
+				if our_way and dist_to_line < 1.5 then
+					seen[#seen+1] = {x=x, y=y, projectile=proj, entity=proj, name=(proj.getName and proj:getName()) or proj.name}
+				end
+			end
+		end, nil)
+	end
 	return seen
 end
 
@@ -820,7 +847,7 @@ function _M:automaticTalents()
 	local uses = {}
 	for tid, c in pairs(self.talents_auto) do
 		local t = self.talents_def[tid]
-		local spotted = spotHostiles(self)
+		local spotted = spotHostiles(self, true)
 		if (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
 			if (c == 1) or (c == 2 and #spotted <= 0) or (c == 3 and #spotted > 0) then
 				if c ~= 2 then
@@ -900,10 +927,10 @@ function _M:restCheck()
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
 		for _, node in ipairs(spotted) do
-			node.actor:addParticles(engine.Particles.new("notice_enemy", 1))
+			node.entity:addParticles(engine.Particles.new("notice_enemy", 1))
 		end
 		local dir = game.level.map:compassDirection(spotted[1].x - self.x, spotted[1].y - self.y)
-		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].actor.name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
+		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
 	end
 
 	-- Resting improves regen
@@ -996,7 +1023,7 @@ function _M:runCheck(ignore_memory)
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
 		local dir = game.level.map:compassDirection(spotted[1].x - self.x, spotted[1].y - self.y)
-		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].actor.name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
+		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
 	end
 
 	if self:fireTalentCheck("callbackOnRun") then return false, "talent prevented" end
@@ -1097,7 +1124,7 @@ function _M:runStopped()
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
 		for _, node in ipairs(spotted) do
-			node.actor:addParticles(engine.Particles.new("notice_enemy", 1))
+			node.entity:addParticles(engine.Particles.new("notice_enemy", 1))
 		end
 	end
 
@@ -1338,7 +1365,7 @@ end
 function _M:useOrbPortal(portal)
 	if portal.special then portal:special(self) return end
 
-	local spotted = spotHostiles(self)
+	local spotted = spotHostiles(self, true)
 	if #spotted > 0 then
 		local dir = game.level.map:compassDirection(spotted[1].x - self.x, spotted[1].y - self.y)
 		self:logCombat(spotted[1].actor, "You can not use the Orb with foes watching (#Target# to the %s%s)",dir, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
