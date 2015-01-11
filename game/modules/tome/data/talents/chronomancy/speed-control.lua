@@ -105,7 +105,7 @@ newTalent{
 	on_pre_use = function(self, t, silent)
 		local dilation = self:hasEffect(self.EFF_TIME_DILATION) and self:hasEffect(self.EFF_TIME_DILATION).charges == 3 
 		local celerity = self:hasEffect(self.EFF_CELERITY) and self:hasEffect(self.EFF_CELERITY).charges == 3
-		if not dilation and celerity then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be at full power in order to cast Time Stop.") end return false end return true 
+		if not (dilation and celerity) then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be at full power in order to cast Time Stop.") end return false end return true 
 	end,
 	getReduction = function(self, t) return 80 - paradoxTalentScale(self, t, 0, 20, 40) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,

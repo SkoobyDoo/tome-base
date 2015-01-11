@@ -62,7 +62,7 @@ newTalent{
 		self:project(tg, x, y, function(x, y)
 			local proj = require("mod.class.Projectile"):makeHoming(
 				self,
-				{particle="arrow", particle_args={tile="particles_images/temporal_bolt", proj_x=self.x, proj_y=self.y, src_x=x, src_y=y},  trail="trail_paradox"},
+				{particle="arrow", particle_args={tile="particles_images/temporal_bolt", proj_x=self.x, proj_y=self.y, src_x=x, src_y=y}, trail="trail_paradox"},
 				{speed=3, name="Temporal Bolt", dam=dam, apply=getParadoxSpellpower(self, t), start_x=x, start_y=y},
 				self, self:getTalentRange(t),
 				function(self, src)
