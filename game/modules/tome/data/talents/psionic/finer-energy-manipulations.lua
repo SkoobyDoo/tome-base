@@ -142,16 +142,19 @@ newTalent{
 				game.zone:applyEgo(o, new_ego, "object")
 				if in_dialog then self:talentDialogReturn(true) end
 			else
-				if old_ego then game.zone:applyEgo(o, old_ego, "object", true) end -- nothing happened
+				if old_ego then game.zone:applyEgo(o, old_ego, "object") end -- nothing happened
 				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
 			end
 		else
 			local armour = t.arm_boost(self, t)
 			local fat = t.fat_red(self, t)
 			local old_fat = (o.old_fat or 0)
-			local old_arm
-			old_arm = o.wielder.combat_armor
+			local old_arm = o.wielder and o.wielder.combat_armor or 0
 			local old_ego = game.zone:removeEgoByName(o, "reshape armour")
+			-- Not a huge deal
+			o.wielder = o.wielder or {}
+			o.wielder.combat_armor = o.wielder.combat_armor or 0
+			o.wielder.fatigue = o.wielder.fatigue or 0
 			local force_reshape = false
 			if not old_ego and o.been_reshaped then
 				o.wielder.combat_armor = o.orig_arm
@@ -160,7 +163,7 @@ newTalent{
 				-- if an older version, just reshape anyway
 				-- if reshapen by better TL, keep it
 				fat = math.max(fat, old_fat)
-				armour = math.max(armour, o.wielder.combat_armour - old_arm)
+				armour = math.max(armour, o.wielder.combat_armor - old_arm)
 				force_reshape = true
 			elseif old_ego and old_fat == 0 then  -- in case of future backward compatibility removal
 				old_fat = old_ego.fatigue_reduction
@@ -168,23 +171,23 @@ newTalent{
 			o.old_fat, o.orig_fat, o.orig_arm = nil, nil, nil
 			if force_reshape or old_fat < fat or old_arm < o.wielder.combat_armor + armour then
 				local real_fat
-				if e.wielder.fatigue < 0 then real_fat = 0
-				else real_fat = min(fat, e.wielder.fatigue) end
+				if o.wielder.fatigue < 0 then real_fat = 0
+				else real_fat = math.min(fat, o.wielder.fatigue) end
 				local new_ego = Entity.new{
 					name = "reshape armour",
 					display_string = "reshaped["..tostring(armour)..","..tostring(real_fat).."%] ", display_prefix = true,
 					been_reshaped = true,
-					wielder = {combat_armour=arm, fatigue=-real_fat},
+					wielder = {combat_armor=armour, fatigue=-real_fat},
 					fatigue_reduction = fat,
 					old_fat = fat, orig_fat = o.wielder.fatigue, orig_arm = o.wielder.armour,  -- Easier this way
 					fake_ego = true, unvault_ego = true,
 				}
 				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
 				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
-				game.zone:applyEgo(o, new_ego, "object", true)
+				game.zone:applyEgo(o, new_ego, "object")
 				if in_dialog then self:talentDialogReturn(true) end
 			else
-				game.zone:applyEgo(o, old_ego, "object", true)
+				game.zone:applyEgo(o, old_ego, "object")
 				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
 			end
 		end
