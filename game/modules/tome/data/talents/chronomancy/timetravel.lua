@@ -282,7 +282,7 @@ newTalent{
 	require = chrono_req4,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 10,
+	cooldown = 12,
 	tactical = { ATTACKAREA = {TEMPORAL = 2} },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,

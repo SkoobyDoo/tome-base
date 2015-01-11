@@ -147,7 +147,7 @@ newTalent{
 	tactical = { BUFF = 2 },
 	fixed_cooldown = true,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	getMaxCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 3, 8)) end,
+	getMaxCooldown = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 8)) end,
 	action = function(self, t)
 		-- effect is handled in actor postUse
 		self:setEffect(self.EFF_REDUX, t.getDuration(self, t), {max_cd=t.getMaxCooldown(self, t)})
