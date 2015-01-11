@@ -224,7 +224,14 @@ function _M:runStep()
 		if not self.running then return false end
 		if not self.running.busy then
 			self.running.cnt = self.running.cnt + 1
-		elseif self.running.busy.no_energy then
+		end
+		-- Check after running to spot actors that may slip away from us; we still won't get a turn but we'll get the next one
+		ret, msg = self:runCheck()
+		if not ret then
+			self:runStop(msg)
+			return false
+		end
+		if self.running.busy and self.running.busy.no_energy then
 			return self:runStep()
 		end
 		return true
