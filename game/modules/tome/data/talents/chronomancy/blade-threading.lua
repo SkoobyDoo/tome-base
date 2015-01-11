@@ -51,7 +51,7 @@ newTalent{
 
 		-- Project our warp
 		if hitted then
-			self:project({type="hit"}, target.x, target.y, DamageType.WARP, {dam=self:spellCrit(t.getWarp(self, t)), chance=100, dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
+			self:project({type="hit"}, target.x, target.y, DamageType.WARP, self:spellCrit(t.getWarp(self, t)))
 			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
 		end
 

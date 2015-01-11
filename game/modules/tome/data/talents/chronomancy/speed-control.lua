@@ -78,6 +78,9 @@ newTalent{
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/200 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	no_energy = true,
+	on_pre_use = function(self, t, silent)
+		if not (self:hasEffect(self.EFF_CELERITY) or self:hasEffect(self.EFF_TIME_DILATION)) then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be active to use Haste") end return false end return true 
+	end,
 	action = function(self, t)
 		local celerity = self:hasEffect(self.EFF_CELERITY) and self:hasEffect(self.EFF_CELERITY).charges or 0
 		local dilation = self:hasEffect(self.EFF_TIME_DILATION) and self:hasEffect(self.EFF_TIME_DILATION).charges or 0

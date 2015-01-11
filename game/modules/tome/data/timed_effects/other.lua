@@ -2613,7 +2613,7 @@ newEffect{
 
 newEffect{
 	name = "REALITY_SMEARING", image = "talents/reality_smearing.png",
-	desc = "Preserve Pattern",
+	desc = "Reality Smearing",
 	long_desc = function(self, eff) return ("Damage received in the past is returned as %0.2f paradox damage per turn."):format(eff.paradox) end,
 	type = "other",
 	subtype = { time=true },
