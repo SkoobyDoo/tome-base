@@ -24,10 +24,15 @@ if not config.settings.cheat then print = function() end end
 function DamageType.useImplicitCrit(src, state)
 	if state.crit_set then return end
 	state.crit_set = true
-	state.crit_type = src.turn_procs.is_crit
-	state.crit_power = src.turn_procs.crit_power or 1
-	src.turn_procs.is_crit = nil
-	src.turn_procs.crit_power = nil
+	if not src.turn_procs then
+		state.crit_type = false
+		state.crit_power = 1
+	else
+		state.crit_type = src.turn_procs.is_crit
+		state.crit_power = src.turn_procs.crit_power or 1
+		src.turn_procs.is_crit = nil
+		src.turn_procs.crit_power = nil
+	end
 end
 
 local useImplicitCrit = DamageType.useImplicitCrit
