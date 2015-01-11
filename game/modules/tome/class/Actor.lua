@@ -6336,8 +6336,12 @@ end
 function _M:doTakeoffTinker(base_o, oldo)
 	if base_o.tinker ~= oldo then return end
 
+	local _, base_inven
 	local mustwear = base_o.wielded
-	if mustwear then self:onTakeoff(base_o, true) end
+	if mustwear then
+		_, _, base_inven = self:findInAllInventoriesByObject(base_o)
+		self:onTakeoff(base_o, base_inven, true)
+	end
 	base_o.tinker = nil
 	local forbid = oldo:check("on_untinker", base_o, self)
 	if oldo.tinkered then
@@ -6348,7 +6352,9 @@ function _M:doTakeoffTinker(base_o, oldo)
 		end
 	end
 	oldo.tinkered = nil
-	if mustwear then self:onWear(base_o, true) end
+	if mustwear then
+		self:onWear(base_o, base_inven, true)
+	end
 
 	self:addObject(self.INVEN_INVEN, oldo)
 	game.logPlayer(self, "You detach %s from your %s.", oldo:getName{do_color=true}, base_o:getName{do_color=true})
@@ -6385,7 +6391,7 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 	end
 
 	local mustwear = base_o.wielded
-	if mustwear then self:onTakeoff(base_o, true) end
+	if mustwear then self:onTakeoff(base_o, base_inven, true) end
 
 	wear_o.tinkered = {}
 	local forbid = wear_o:check("on_tinker", base_o, self)
@@ -6395,7 +6401,7 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 		end
 	end
 
-	if mustwear then self:onWear(base_o, true) end
+	if mustwear then self:onWear(base_o, base_inven, true) end
 
 	if not forbid then
 		base_o.tinker = wear_o
