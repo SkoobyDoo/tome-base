@@ -263,7 +263,7 @@ newTalent{
 		return {type="ball", range=100, radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 3))) end,
-	getChance = function(self, t) return math.floor(self:combatTalentScale(t, 2, 10)) end,
+	getChance = function(self, t) return 2 + math.floor(self:combatTalentScale(t, 2, 10)) end,
 	doPulse = function(self, t, ox, oy, fail)
 		local tg = self:getTalentTarget(t)
 		local distance = core.fov.distance(self.x, self.y, ox, oy)

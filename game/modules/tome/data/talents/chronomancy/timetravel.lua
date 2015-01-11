@@ -182,6 +182,7 @@ newTalent{
 		-- Replace the target with the instability and update the map
 		game.logSeen(target, "%s has moved forward in time!", target.name:capitalize())
 		game.level:removeEntity(target, true)
+		e.tooltip = mod.class.Grid.tooltip
 		game.level:addEntity(e)
 		game.level.map(x, y, Map.TERRAIN, e)
 		game.nicer_tiles:updateAround(game.level, x, y)
