@@ -1749,31 +1749,33 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 	local chance = self:combatCrit(weapon) + (add_chance or 0)
 	crit_power_add = crit_power_add or 0
 
-	if target:hasEffect(target.EFF_DISMAYED) then
+	if target and target:hasEffect(target.EFF_DISMAYED) then
 		chance = 100
 	end
 
 	local crit = false
-	if self:knowTalent(self.T_BACKSTAB) and target:attr("stunned") then chance = chance + self:callTalent(self.T_BACKSTAB,"getCriticalChance") end
+	if self:knowTalent(self.T_BACKSTAB) and target and target:attr("stunned") then chance = chance + self:callTalent(self.T_BACKSTAB,"getCriticalChance") end
 
-	if target:attr("combat_crit_vulnerable") then
+	if target and target:attr("combat_crit_vulnerable") then
 		chance = chance + target:attr("combat_crit_vulnerable")
 	end
-	if target:hasEffect(target.EFF_SET_UP) then
+	if target and target:hasEffect(target.EFF_SET_UP) then
 		local p = target:hasEffect(target.EFF_SET_UP)
 		if p and p.src == self then
 			chance = chance + p.power
 		end
 	end
 
-	chance = chance - target:combatCritReduction()
+	if target then
+		chance = chance - target:combatCritReduction()
+	end
 
 	-- Scoundrel's Strategies
-	if self:attr("cut") and target:knowTalent(self.T_SCOUNDREL) then
+	if self:attr("cut") and target and target:knowTalent(self.T_SCOUNDREL) then
 		chance = chance - target:callTalent(target.T_SCOUNDREL,"getCritPenalty")
 	end
 
-	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) and not target:canSee(self) then -- bug fix
+	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) and target and not target:canSee(self) then -- bug fix
 		chance = 100
 		self.turn_procs.shadowstrike_crit = self:callTalent(self.T_SHADOWSTRIKE,"getMultiplier")
 		crit_power_add = crit_power_add + self.turn_procs.shadowstrike_crit
@@ -1789,7 +1791,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 
 	print("[PHYS CRIT %]", self.turn_procs.auto_phys_crit and 100 or chance)
 	if self.turn_procs.auto_phys_crit or rng.percent(chance) then
-		if target:hasEffect(target.EFF_OFFGUARD) then
+		if target and target:hasEffect(target.EFF_OFFGUARD) then
 			crit_power_add = crit_power_add + 0.1
 		end
 
