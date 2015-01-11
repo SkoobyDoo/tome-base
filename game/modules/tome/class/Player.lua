@@ -336,8 +336,8 @@ function _M:move(x, y, force)
 	return moved
 end
 
-function _M:act()
-	if not mod.class.Actor.act(self) then return end
+function _M:actBase()
+	mod.class.Actor.actBase(self)
 
 	-- Run out of time ?
 	if self.summon_time then
@@ -348,6 +348,10 @@ function _M:act()
 			return true
 		end
 	end
+end
+
+function _M:act()
+	if not mod.class.Actor.act(self) then return end
 
 	-- Funky shader things !
 	self:updateMainShader()
