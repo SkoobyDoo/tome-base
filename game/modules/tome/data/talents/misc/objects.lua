@@ -441,6 +441,7 @@ newTalent{
 	points = 1,
 	hard_cap = 1,
 	no_npc_use = true,
+	on_pre_use = function(self, t) return not self.resting end,
 	action = function(self, t)
 		local best = t.findBest(self, t)
 		if not best then game.logPlayer(self, "You require a digger to dig.") return end
