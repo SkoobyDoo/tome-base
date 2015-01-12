@@ -105,16 +105,17 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 45, 25)) end, -- Limit >10
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
 	no_energy = true,
+	no_npc_use = true,
 	on_pre_use = function(self, t, silent)
 		local dilation = self:hasEffect(self.EFF_TIME_DILATION) and self:hasEffect(self.EFF_TIME_DILATION).charges == 3 
 		local celerity = self:hasEffect(self.EFF_CELERITY) and self:hasEffect(self.EFF_CELERITY).charges == 3
-		if not (dilation and celerity) then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be at full power in order to cast Time Stop.") end return false end return true 
+		if not (dilation or celerity) then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be at full power in order to cast Time Stop.") end return false end return true 
 	end,
-	getReduction = function(self, t) return 80 - paradoxTalentScale(self, t, 0, 20, 40) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
+	getReduction = function(self, t) return 100 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 4, 1, 3))) end,
 	action = function(self, t)
 		self.energy.value = self.energy.value + (t.getDuration(self, t) * 1000)
-		self:setEffect(self.EFF_TIME_STOP, 1, {power=t.getReduction(self, t)})
+		self:setEffect(self.EFF_TIME_STOP, 1, {power=100})
 		game.logSeen(self, "#STEEL_BLUE#%s has stopped time!#LAST#", self.name:capitalize())
 		return true
 	end,
@@ -122,7 +123,6 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local reduction = t.getReduction(self, t)
 		return ([[Gain %d turns.  During this time your damage will be reduced by %d%%.
-		Time Dilation and Celerity must be fully stacked in order to use this talent.
-		The damage reduction penalty will be lessened by your Spellpower.]]):format(duration, reduction)
+		Time Dilation or Celerity must be fully stacked in order to use this talent.]]):format(duration, reduction)
 	end,
 }

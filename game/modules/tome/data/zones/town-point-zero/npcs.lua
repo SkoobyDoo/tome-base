@@ -185,7 +185,6 @@ newEntity{ base = "BASE_NPC_POINT_ZERO_TOWN", define_as = "ZEMEKKYS",
 		[Talents.T_CELERITY]=5,
 		[Talents.T_TIME_DILATION]=5,
 		[Talents.T_HASTE]=5,
-		[Talents.T_TIME_STOP]=5,
 		
 		[Talents.T_REPULSION_BLAST]=5,
 		[Talents.T_GRAVITY_SPIKE]=5,
