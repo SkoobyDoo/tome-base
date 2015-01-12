@@ -129,24 +129,27 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 	assert(ab, "trying to cast talent "..tostring(id).." but it is not defined")
 
 	local cancel = false
+	-- Stub some stuff
+	local old_level, old_target, old_target_set = nil, nil, false
+	if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
+	if ab.mode == "activated" then
+		if ab.onAIGetTarget and not who.player then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function() return ab.onAIGetTarget(self, ab) end end
+		if force_target and not old_target then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function(a) return force_target.x, force_target.y, not force_target.__no_self and force_target end end
+		self.__talent_running = ab
+	end
+	local co, success, err
 	if ab.mode == "activated" and ab.action then
 		if self:isTalentCoolingDown(ab) and not ignore_cd then
 			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
 			return
 		end
-		local co = coroutine.create(function()
+		co = coroutine.create(function()
 			if cancel then
 				success = false
 				return false
 			end
 			if not self:preUseTalent(ab, silent) then return end
-			local old_level
-			local old_target, old_target_set = nil, false
-
-			if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
-			if ab.onAIGetTarget and not who.player then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function() return ab.onAIGetTarget(self, ab) end end
-			if force_target and not old_target then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function(a) return force_target.x, force_target.y, not force_target.__no_self and force_target end end
-			self.__talent_running = ab
+			
 			local ok, ret, special = xpcall(function() return ab.action(who, ab) end, debug.traceback)
 			self.__talent_running = nil
 			if old_target_set then who.getTarget = old_target end
@@ -159,40 +162,18 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			-- Everything went ok? then start cooldown if any
 			if not ignore_cd and (not special or not special.ignore_cd) then self:startTalentCooldown(ab) end
 		end)
-		local success, err
-		if not no_confirm and self:isTalentConfirmable(ab) then
-			local abname = game:getGenericTextTiles(ab)..ab.name
-			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
-			function(quit)
-				if quit ~= false then
-					cancel = true
-				end
-				success, err = coroutine.resume(co)
-			end,
-			"Cancel","Continue")
-		else
-			-- cancel checked in coroutine
-			success, err = coroutine.resume(co)
-		end
-		if not success and err then
-			print(debug.traceback(co))
-			self:onTalentLuaError(err)
-			error(err)
-		end
 	elseif ab.mode == "sustained" and ab.activate and ab.deactivate then
 		if self:isTalentCoolingDown(ab) and not ignore_cd then
 			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
 			return
 		end
-		local co = coroutine.create(function()
+		co = coroutine.create(function()
 			if cancel then
 				success = false
 				return false
 			end
 			if not self:preUseTalent(ab, silent) then return end
 			if not self.sustain_talents[id] then
-				local old_level
-				if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
 				local ret = ab.activate(who, ab)
 				if ret == true then ret = {} end -- fix for badly coded talents
 				if ret then ret.name = ret.name or ab.name end
@@ -215,8 +196,6 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 					end
 				end
 			else
-				local old_level
-				if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
 				local p = self.sustain_talents[id]
 				if p and type(p) == "table" and p.__tmpvals then
 					for i = 1, #p.__tmpvals do
@@ -251,11 +230,13 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 				end
 			end
 		end)
-		local success, err
+	else
+		print("Activating non activable or sustainable talent: "..id.." :: "..ab.name.." :: "..ab.mode)
+	end
+	if co then
 		if not no_confirm and self:isTalentConfirmable(ab) then
 			local abname = game:getGenericTextTiles(ab)..ab.name
-			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("%s %s?"):
-			format(self:isTalentActive(ab.id) and "Deactivate" or "Activate",abname),
+			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
 			function(quit)
 				if quit ~= false then
 					cancel = true
@@ -267,9 +248,15 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			-- cancel checked in coroutine
 			success, err = coroutine.resume(co)
 		end
-		if not success and err then print(debug.traceback(co)) error(err) end
-	else
-		print("Activating non activable or sustainable talent: "..id.." :: "..ab.name.." :: "..ab.mode)
+		-- Cleanup in case we coroutine'd out
+		self.__talent_running = nil
+		if old_target_set then who.getTarget = old_target end
+		if force_level then who.talents[id] = old_level end
+		if not success and err then
+			print(debug.traceback(co))
+			self:onTalentLuaError(err)
+			error(err)
+		end
 	end
 	self.changed = true
 	return true
