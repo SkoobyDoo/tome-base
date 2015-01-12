@@ -129,14 +129,6 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 	assert(ab, "trying to cast talent "..tostring(id).." but it is not defined")
 
 	local cancel = false
-	-- Stub some stuff
-	local old_level, old_target, old_target_set = nil, nil, false
-	if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
-	if ab.mode == "activated" then
-		if ab.onAIGetTarget and not who.player then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function() return ab.onAIGetTarget(self, ab) end end
-		if force_target and not old_target then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function(a) return force_target.x, force_target.y, not force_target.__no_self and force_target end end
-		self.__talent_running = ab
-	end
 	local co, success, err
 	if ab.mode == "activated" and ab.action then
 		if self:isTalentCoolingDown(ab) and not ignore_cd then
@@ -234,6 +226,33 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 		print("Activating non activable or sustainable talent: "..id.." :: "..ab.name.." :: "..ab.mode)
 	end
 	if co then
+		-- Stub some stuff
+		local old_level, old_target, new_target = nil, nil, nil
+		if force_level then old_level = who.talents[id] end
+		if ab.mode == "activated" then
+			if ab.onAIGetTarget and not who.player then old_target = rawget(who, "getTarget"); new_target = function() return ab.onAIGetTarget(self, ab) end end
+			if force_target and not old_target then old_target = rawget(who, "getTarget"); new_target = function(a) return force_target.x, force_target.y, not force_target.__no_self and force_target end end
+		end
+		local co_wrapper = coroutine.create(function()
+			success = true
+			local ok
+			while success do
+				if new_target then who.getTarget = new_target end
+				if force_level then who.talents[id] = force_level end
+				self.__talent_running = ab
+				ok, err = coroutine.resume(co)
+				success = success and ok
+				if new_target then who.getTarget = old_target end
+				if force_level then who.talents[id] = old_level end
+				self.__talent_running = nil
+				if ok and coroutine.status(co) == "dead" then
+					-- terminated
+					return
+				end
+				coroutine.yield()
+			end
+			if err then error(err) end  --propagate
+		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
 			local abname = game:getGenericTextTiles(ab)..ab.name
 			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
@@ -241,19 +260,19 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 				if quit ~= false then
 					cancel = true
 				end
-				success, err = coroutine.resume(co)
+				success, err = coroutine.resume(co_wrapper)
 			end,
 			"Cancel","Continue")
 		else
 			-- cancel checked in coroutine
-			success, err = coroutine.resume(co)
+			success, err = coroutine.resume(co_wrapper)
 		end
 		-- Cleanup in case we coroutine'd out
 		self.__talent_running = nil
 		if old_target_set then who.getTarget = old_target end
 		if force_level then who.talents[id] = old_level end
 		if not success and err then
-			print(debug.traceback(co))
+			print(debug.traceback(co_wrapper))
 			self:onTalentLuaError(err)
 			error(err)
 		end
