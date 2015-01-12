@@ -144,8 +144,6 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			
 			local ok, ret, special = xpcall(function() return ab.action(who, ab) end, debug.traceback)
 			self.__talent_running = nil
-			if old_target_set then who.getTarget = old_target end
-			if force_level then who.talents[id] = old_level end
 
 			if not ok then error(ret) end
 
@@ -169,7 +167,6 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 				local ret = ab.activate(who, ab)
 				if ret == true then ret = {} end -- fix for badly coded talents
 				if ret then ret.name = ret.name or ab.name end
-				if force_level then who.talents[id] = old_level end
 
 				if not self:postUseTalent(ab, ret) then return end
 
@@ -200,7 +197,6 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 					end
 				end
 				local ret = ab.deactivate(who, ab, p)
-				if force_level then who.talents[id] = old_level end
 
 				if not self:postUseTalent(ab, ret, silent) then return end
 
@@ -269,8 +265,6 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 		end
 		-- Cleanup in case we coroutine'd out
 		self.__talent_running = nil
-		if old_target_set then who.getTarget = old_target end
-		if force_level then who.talents[id] = old_level end
 		if not success and err then
 			print(debug.traceback(co_wrapper))
 			self:onTalentLuaError(err)
