@@ -852,27 +852,31 @@ function _M:automaticTalents()
 	for tid, c in pairs(self.talents_auto) do
 		local t = self.talents_def[tid]
 		local spotted = spotHostiles(self, true)
-		if (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
+		local cd = self:getTalentCooldown(t) or 0
+		local turns_used = util.getval(t.no_energy, self, t)  == true and 0 or 1
+		if cd <= turns_used then
+			game.logPlayer(self, "Automatic use of talent %s skipped: cooldown too low (%d).", t.name, cd)
+		elseif (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
 			if (c == 1) or (c == 2 and #spotted <= 0) or (c == 3 and #spotted > 0) then
 				if c ~= 2 then
-					uses[#uses+1] = {name=t.name, no_energy=util.getval(t.no_energy, self, t) == true and 0 or 1, cd=self:getTalentCooldown(t) or 0, fct=function() self:useTalent(tid) end}
+					uses[#uses+1] = {name=t.name, turns_used=turns_used, cd=cd, fct=function() self:useTalent(tid) end}
 				else
 					if not self:attr("blind") then
-						uses[#uses+1] = {name=t.name, no_energy=util.getval(t.no_energy, self, t) == true and 0 or 1, cd=self:getTalentCooldown(t) or 0, fct=function() self:useTalent(tid,nil,nil,nil,self) end}
+						uses[#uses+1] = {name=t.name, turns_used=turns_used, cd=cd, fct=function() self:useTalent(tid,nil,nil,nil,self) end}
 					end
 				end
 			end
 			if c == 4 and #spotted > 0 then
 				for fid, foe in pairs(spotted) do
 					if foe.x >= self.x-1 and foe.x <= self.x+1 and foe.y >= self.y-1 and foe.y <= self.y+1 then
-						uses[#uses+1] = {name=t.name, no_energy=util.getval(t.no_energy, self, t) == true and 0 or 1, cd=self:getTalentCooldown(t) or 0, fct=function() self:useTalent(tid) end}
+						uses[#uses+1] = {name=t.name, turns_used=turns_used, cd=cd, fct=function() self:useTalent(tid) end}
 					end
 				end
 			end
 		end
 	end
 	table.sort(uses, function(a, b)
-		local an, nb = util.getval(a.no_energy, self, a), util.getval(b.no_energy, self, b)
+		local an, nb = a.tunrs_used, b.turns_used
 		if an < nb then return true
 		elseif an > nb then return false
 		else
@@ -884,7 +888,7 @@ function _M:automaticTalents()
 	table.print(uses)
 	for _, use in ipairs(uses) do
 		use.fct()
-		if util.getval(use.no_energy, self, use) == 1 then break end
+		if use.turns_used > 0 then break end
 	end
 	self:attr("_forbid_sounds", -1)
 end
