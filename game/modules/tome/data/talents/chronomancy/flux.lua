@@ -199,8 +199,9 @@ newTalent{
 		local talent = "None"
 		if eff then talent = self:getTalentFromId(eff.talent).name end
 		local duration = t.getDuration(self, t)
-		return ([[If Twist Fate is not on cooldown minor anomalies will be held for %d turns.  While held you may cast Twist Fate in order to trigger the anomaly and may choose the target area.
-		If a second anomaly occurs while a prior one is held or the timed effect expires the first anomaly will trigger immediately.  Paradox reductions from held anomalies occur when triggered.  
+		return ([[If Twist Fate is not on cooldown minor anomalies will be held for %d turns, allowing your spell to cast as normal.  While held you may cast Twist Fate in order to trigger the anomaly and may choose the target area.
+		If a second anomaly occurs while a prior one is held or the timed effect expires the first anomaly will trigger immediately, interrupting your current turn or action.
+		Paradox reductions from held anomalies occur when triggered.
 				
 		Current Twisted Anomaly: %s]]):
 		format(duration, talent)
