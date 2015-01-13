@@ -4242,40 +4242,39 @@ end
 -- This handles anomalies
 -- Reduction is the Paradox recovered
 -- Anomaly Type is used to force an anomaly type for the talent, generally set to ab.anomaly_type
--- Chance use this for the anomaly chance, generally set to getAnomalyChance() or "forced"
+-- Chance use this for the anomaly chance, generally set to paradoxFailChance() or "forced"
 -- Target, if we're forcing an anomaly target
 function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 	local anomaly_type = anomaly_type or "random"
-	local forced = false
 	local chance = chance or self:paradoxFailChance()
-	if chance == "forced" then
-		forced = true
-		chance = 100
+	if chance == "forced" then chance = 100	end
+	
+	-- Anomaly biases can be set manually for monsters or classes
+	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
+	-- Additionally anomaly biases could be set by a talent; see the data/chats/chromonacy-bias-weave for an example
+	local function check_bias(major)
+		if self.anomaly_bias then
+			local bias_chance = self.anomaly_bias.chance
+			if rng.percent(bias_chance) then 
+				anomaly_type = self.anomaly_bias.type
+				return true
+			end
+		end
 	end
 
 	-- See if we create an anomaly
 	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") then
-		if not forced and self.turn_procs.anomalies_checked then return false end  -- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
-		if not forced then self.turn_procs.anomalies_checked = true end
+		-- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
+		if not chance == 100 and self.turn_procs.anomalies_checked then return false end  
+		if not chance == 100 then self.turn_procs.anomalies_checked = true end
 
-		local function check_bias(major)
-			if self.anomaly_bias then
-				local bias_chance = self.anomaly_bias.chance
-				if major then bias_chance = bias_chance/2 end
-				if rng.percent(bias_chance) then 
-					anomaly_type = self.anomaly_bias.type
-					return true
-				end
-			end
-		end
-		
 		if rng.percent(chance) then
 			-- If our Paradox is over 600 do a major anomaly
-			if anomaly_type ~= "no-major" and self:getModifiedParadox() > 600 then
-				if not check_bias(true) then anomaly_type = "major" end
+			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() > 600) then
+				anomaly_type = "major"
 			else
 				-- Check for Bias?
-				if not check_bias() then anomaly_type ="random" end
+				if not check_bias(true) then anomaly_type ="random" end
 			end
 
 			-- Now pick anomalies filtered by type
@@ -4288,22 +4287,29 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				end
 			end
 
-			-- Did we find anomalies?
+			-- Be sure we found an anomly first
 			if ts[1] then
-				-- Do we have a target?  If not we pass to anomaly targeting
-				-- The ignore energy calls here allow anomalies to be cast even when it's not the players turn
-				if target then
-					self:attr("anomaly_forced_target", 1)
-					self:forceUseTalent(rng.table(ts), {ignore_energy=true, force_target=target})
-					self:attr("anomaly_forced_target", -1)
+				local anomaly = rng.table(ts)
+				local anomaly_triggered = true
+				
+				if self:knowTalent(self.T_TWIST_FATE) and anomaly_type ~= "major" then
+					if self:hasEffect(self.EFF_TWIST_FATE) then
+						self:callEffect(self.EFF_TWIST_FATE, "doAnomalyTrigger")
+						self:callTalent(self.T_TWIST_FATE, "doTwistFate", anomaly, reduction)
+					else
+						self:callTalent(self.T_TWIST_FATE, "doTwistFate", anomaly, reduction)
+						anomaly_triggered = false
+					end
 				else
-					self:forceUseTalent(rng.table(ts), {ignore_energy=true})
+					self:forceUseTalent(anomaly, {ignore_energy=true, force_target=target or self})
 				end
 			end
 
 			-- Drop some game messages; these happen so Paradox gets reduced even if an anomaly isn't found
 			if not silent then
-				if forced then
+				if anomaly_triggered == false then
+					game.logPlayer(self, "#STEEL_BLUE#You bend the timestream to your will.")
+				elseif chance == 100 then
 					game.logPlayer(self, "#STEEL_BLUE#You've moved to another time thread.")
 				else
 					game.logPlayer(self, "#LIGHT_RED#You lose control and unleash an anomaly!")
@@ -4314,7 +4320,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				self:incParadox(-reduction)
 			end
 
-			return true
+			return anomaly_triggered
 		end
 	end
 end

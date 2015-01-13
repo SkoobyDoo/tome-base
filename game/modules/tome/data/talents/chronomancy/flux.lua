@@ -27,11 +27,11 @@ newTalent{
 	cooldown = 12,
 	tactical = { PARADOX = 2 },
 	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
-	getAnomalySpeed = function(self, t) return self:combatTalentLimit(t, 1, 0.10, .75) end,
+	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
 	anomaly_type = "no-major",
 	no_energy = true,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "anomaly_recovery_speed", t.getAnomalySpeed(self, t))
+		self:talentTemporaryValue(p, "anomaly_paradox_recovery", t.getParadoxMulti(self, t))
 	end,
 	action = function(self, t)
 		local reduction = self:spellCrit(t.getReduction(self, t))
@@ -40,10 +40,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local reduction = t.getReduction(self, t)
-		local anomaly_speed = (1 - t.getAnomalySpeed(self, t)) * 100
+		local paradox = 100 * t.getParadoxMulti(self, t)
 		return ([[Create an anomaly, reducing your Paradox by %d.  This spell will never produce a major anomaly.
-		Additionally random anomalies only cost you %d%% of a turn rather than a full turn when they occur.
-		The Paradox reduction will increase with your Spellpower.]]):format(reduction, anomaly_speed)
+		Additionally you recover %d%% more Paradox from random anomalies when they occur (%d%% total).
+		The Paradox reduction will increase with your Spellpower.]]):format(reduction, paradox, paradox + 200)
 	end,
 }
 
@@ -174,34 +174,13 @@ newTalent{
 }
 
 newTalent{
-	name = "Flux Control",
+	name = "Twist Fate",
 	type = {"chronomancy/flux", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 10,
-	-- Anomaly biases can be set manually for monsters
-	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
-	no_npc_use = true,  -- so rares don't learn useless talents
-	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
-	getBiasChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
-	getTargetChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "anomaly_paradox_recovery", t.getParadoxMulti(self, t))
-	end,
-	on_learn = function(self, t)
-		if self.anomaly_bias and self.anomaly_bias.chance then
-			self.anomaly_bias.chance = t.getBiasChance(self, t)
-		end
-	end,
- 	on_unlearn = function(self, t)
-		if self:getTalentLevel(t) == 0 then
-			self.anomaly_bias = nil
-		elseif self.anomaly_bias and self.anomaly_bias.chance then
-			self.anomaly_bias.chance = t.getBiasChance(self, t)
-		end
- 	end,
+	cooldown = 3,
+	no_npc_use = true,
+	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then return false end return true end,
 	action = function(self, t)
 		local state = {}
 		local Chat = require("engine.Chat")
@@ -213,11 +192,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local target_chance = t.getTargetChance(self, t)
-		local bias_chance = t.getBiasChance(self, t)
-		local paradox = 100 * t.getParadoxMulti(self, t)
-		return ([[You've learned to focus non-major anomalies and may choose the target area with %d%% probability.
-		You may also activate this talent to pick an anomaly bias; choosing the type of anomaly effects you produce with %d%% probability (%d%% for major anomalies).
-		Additionally you recover %d%% more Paradox from random anomalies (%d%% total).]]):format(target_chance, bias_chance, bias_chance/2, paradox, paradox + 200)
+
+		return ([[]]):format()
 	end,
 }
