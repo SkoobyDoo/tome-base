@@ -4269,6 +4269,8 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 		if not chance == 100 then self.turn_procs.anomalies_checked = true end
 
 		if rng.percent(chance) then
+			local anomaly_triggered = true
+			
 			-- If our Paradox is over 600 do a major anomaly
 			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() > 600) then
 				anomaly_type = "major"
@@ -4290,7 +4292,6 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 			-- Be sure we found an anomly first
 			if ts[1] then
 				local anomaly = rng.table(ts)
-				local anomaly_triggered = true
 				
 				if self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) and anomaly_type ~= "major" then
 					if self:hasEffect(self.EFF_TWIST_FATE) then
