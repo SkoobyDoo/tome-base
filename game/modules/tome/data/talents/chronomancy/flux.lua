@@ -180,14 +180,15 @@ newTalent{
 	points = 5,
 	cooldown = 3,
 	no_npc_use = true,
-	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then if not silent then game.logPlayer(self, "You must have a pending anomaly to cast this spell.") end return false end return true end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
+	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then if not silent then game.logPlayer(self, "You must have a twisted anomaly to cast this spell.") end return false end return true end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 5))) end,
 	doTwistFate = function(self, t, twist)
 		local eff = self:hasEffect(self.EFF_TWIST_FATE)
 		eff.twisted = twist or false
 		self:removeEffect(self.EFF_TWIST_FATE)
 	end,
 	setEffect = function(self, t, talent, paradox)
+		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)
 		self:setEffect(self.EFF_TWIST_FATE, t.getDuration(self, t), {talent=talent, paradox=paradox})
 	end,
 	action = function(self, t)

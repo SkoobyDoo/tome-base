@@ -4306,19 +4306,19 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				end
 			end
 
-			-- Drop some game messages; these happen so Paradox gets reduced even if an anomaly isn't found
-			if not silent then
-				if anomaly_triggered == false then
-					game.logPlayer(self, "#STEEL_BLUE#You bend the timestream to your will.")
-				elseif chance == 100 then
-					game.logPlayer(self, "#STEEL_BLUE#You've moved to another time thread.")
-				else
-					game.logPlayer(self, "#LIGHT_RED#You lose control and unleash an anomaly!")
+			-- reduce paradox and handle messages
+			if anomaly_triggered then
+				if not silent then
+					if chance == 100 then
+						game.logPlayer(self, "#STEEL_BLUE#You've moved to another time thread.")
+					else
+						game.logPlayer(self, "#LIGHT_RED#You lose control and unleash an anomaly!")
+					end
 				end
-			end
-			-- Reduce Paradox
-			if reduction and reduction > 0 then
-				self:incParadox(-reduction)
+				-- Reduce Paradox
+				if reduction and reduction > 0 then
+					self:incParadox(-reduction)
+				end
 			end
 
 			return anomaly_triggered
