@@ -182,13 +182,7 @@ newTalent{
 	no_npc_use = true,
 	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then return false end return true end,
 	action = function(self, t)
-		local state = {}
-		local Chat = require("engine.Chat")
-		local chat = Chat.new("chronomancy-bias-weave", {name="Bias Weave"}, self, {version=self, state=state})
-		local d = chat:invoke()
-		local co = coroutine.running()
-		d.unload = function() coroutine.resume(co, state.set_bias) end
-		if not coroutine.yield() then return nil end
+		
 		return true
 	end,
 	info = function(self, t)

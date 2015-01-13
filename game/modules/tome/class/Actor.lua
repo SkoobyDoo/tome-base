@@ -4294,8 +4294,8 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				
 				if self:knowTalent(self.T_TWIST_FATE) and anomaly_type ~= "major" then
 					if self:hasEffect(self.EFF_TWIST_FATE) then
-						self:callEffect(self.EFF_TWIST_FATE, "doAnomalyTrigger")
-						self:callTalent(self.T_TWIST_FATE, "doTwistFate", anomaly, reduction)
+						self:callTalent(self.T_TWIST_FATE, "doTwistFate")
+						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
 					else
 						self:callTalent(self.T_TWIST_FATE, "doTwistFate", anomaly, reduction)
 						anomaly_triggered = false

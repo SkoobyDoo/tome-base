@@ -148,7 +148,10 @@ newTalent{
 	message = "@Source@ causes a spacetime hiccup.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
+
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
@@ -192,7 +195,9 @@ newTalent{
 	message = "@Source@ shifts reality.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
@@ -237,7 +242,9 @@ newTalent{
 	message = "@Source@ swaps places with a nearby target.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRange(t), true)
 
 		-- Randomly take targets
@@ -292,7 +299,9 @@ newTalent{
 	message = "@Source@ transfers damage to a nearby target.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t), true)
 
 		-- Randomly take targets
@@ -336,7 +345,9 @@ newTalent{
 	message = "@Source@ folds the space between two points.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		if (x == self.x and y == self.y) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move")then
 			x, y = getAnomalyPosition(self, self:getTalentRange(t))
 		end
@@ -429,7 +440,9 @@ newTalent{
 	message = "@Source@ places several targets out of phase.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -472,7 +485,9 @@ newTalent{
 	message = "@Source@ makes several targets blink uncontrollably.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -516,7 +531,9 @@ newTalent{
 	message = "Some innocent bystanders have been teleported into the fight.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		
 		-- Randomly pick a race
 		local race = rng.range(1, 4)
@@ -625,7 +642,9 @@ newTalent{
 	message = "@Source@ creates a bubble of slow time.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -669,7 +688,9 @@ newTalent{
 	message = "@Source@ creates a bubble of fast time.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -711,7 +732,9 @@ newTalent{
 	message = "@Source@ creates a bubble of nul time.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -755,7 +778,9 @@ newTalent{
 	message = "@Source@ removes several targets from time.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -796,10 +821,12 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
 	end,
-	message = "@Source@ smears several targets.",
+	message = "@Source@ creates a temporal shield around several targets.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -841,7 +868,9 @@ newTalent{
 	message = "@Source@ energizes several targets.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		for i = 1, rng.avg(1, 5, 3) do
@@ -883,7 +912,9 @@ newTalent{
 	message = "@Source@ clones a nearby creature.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
@@ -929,7 +960,9 @@ newTalent{
 	message = "@Source@ creates a temporal storm.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
@@ -971,7 +1004,9 @@ newTalent{
 	message = "@Source@ increases local gravity.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
@@ -1015,7 +1050,9 @@ newTalent{
 	message = "@Source@ turns matter to dust.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 
 		self:project(tg, x, y, DamageType.DIG, 1)
 		game.level.map:particleEmitter(x, y, tg.radius, "ball_earth", {radius=tg.radius})
@@ -1047,7 +1084,9 @@ newTalent{
 	message = "@Source@ creates a stone wall.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		
 		for i = -1, 1 do for j = -1, 1 do if game.level.map:isBound(x + i, y + j) then
 			local oe = game.level.map(x + i, y + j, Map.TERRAIN)
@@ -1123,7 +1162,9 @@ newTalent{
 	message = "@Source@ increases local entropy.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
@@ -1182,7 +1223,9 @@ newTalent{
 	message = "@Source@ increases local gravity.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
@@ -1226,7 +1269,9 @@ newTalent{
 	message = "@Source@ causes an earthquake.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		
 		-- Don't bury the player
 		if not game.player:knowTalent(game.player.T_DIG_OBJECT) then
@@ -1262,7 +1307,9 @@ newTalent{
 	message = "@Source@ crumbles the resistances of several targets.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
@@ -1303,7 +1350,9 @@ newTalent{
 	message = "@Source@ causes a dust storm.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if not x or not y then x, y = self.x, self.y end
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRange(t))
 		
 		local dam = getAnomalyRadius(self, t) -- not a typo, very low damage since this isn't a major anomaly
@@ -1345,6 +1394,7 @@ newTalent{
 }
 
 -- Major
+-- Major anomalies can't be manually targeted
 newTalent{
 	name = "Anomaly Blazing Fire",
 	type = {"chronomancy/anomalies", 1},
@@ -1423,7 +1473,7 @@ newTalent{
 	message = "@Source@ calcifies several targets.",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = checkAnomalyTargeting(self, t, tg)
+		local x, y = self:getTarget(tg)
 		local tgts = getAnomalyTargets(self, t, x, y, "ACTOR", self:getTalentRadius(t))
 
 		-- Randomly take targets
