@@ -4292,7 +4292,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				local anomaly = rng.table(ts)
 				local anomaly_triggered = true
 				
-				if self:knowTalent(self.T_TWIST_FATE) and anomaly_type ~= "major" then
+				if self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) and anomaly_type ~= "major" then
 					if self:hasEffect(self.EFF_TWIST_FATE) then
 						self:callTalent(self.T_TWIST_FATE, "doTwistFate")
 						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
@@ -4611,8 +4611,7 @@ function _M:preUseTalent(ab, silent, fake)
 		if cost > 0 then
 			local multi = 2 + (self:attr("anomaly_paradox_recovery") or 0)
 			if self:paradoxDoAnomaly(cost * multi, ab.anomaly_type or nil, self:paradoxFailChance(), nil, silent) then
-				local speed = math.max(0, 1 - (self:attr("anomaly_recovery_speed") or 0))
-				self:useEnergy(game.energy_to_act * speed)
+				self:useEnergy(self:getTalentSpeed(ab) * game.energy_to_act)
 				game:playSoundNear(self, "talents/dispel")
 				return false
 			end

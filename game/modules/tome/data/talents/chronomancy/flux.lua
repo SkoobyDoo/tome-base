@@ -24,12 +24,11 @@ newTalent{
 	type = {"chronomancy/flux", 1},
 	require = chrono_req1,
 	points = 5,
-	--cooldown = 12,
+	cooldown = 12,
 	tactical = { PARADOX = 2 },
 	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
 	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
 	anomaly_type = "no-major",
-	no_energy = true,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "anomaly_paradox_recovery", t.getParadoxMulti(self, t))
 	end,
@@ -178,8 +177,8 @@ newTalent{
 	type = {"chronomancy/flux", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 3,
-	no_npc_use = true,
+	cooldown = 6,
+	tactical = { ATTACKAREA = 2 },
 	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then if not silent then game.logPlayer(self, "You must have a twisted anomaly to cast this spell.") end return false end return true end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 5))) end,
 	doTwistFate = function(self, t, twist)
@@ -200,10 +199,9 @@ newTalent{
 		local talent = "None"
 		if eff then talent = self:getTalentFromId(eff.talent).name end
 		local duration = t.getDuration(self, t)
-		return ([[Minor anomalies you produce are now held for %d turns.  While held you may cast Twist Fate in order to trigger the anomaly and may choose the target area.
-		If a second anomaly occurs while a prior one is held the first anomaly will trigger immediately.
-		Paradox reductions from held anomalies occur when triggered.
-		
+		return ([[If Twist Fate is not on cooldown minor anomalies will be held for %d turns.  While held you may cast Twist Fate in order to trigger the anomaly and may choose the target area.
+		If a second anomaly occurs while a prior one is held or the timed effect expires the first anomaly will trigger immediately.  Paradox reductions from held anomalies occur when triggered.  
+				
 		Current Twisted Anomaly: %s]]):
 		format(duration, talent)
 	end,
