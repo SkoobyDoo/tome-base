@@ -520,12 +520,6 @@ function _M:actBase()
 	if self:knowTalent(self.T_COUNTER_ATTACK) then self:setEffect(self.EFF_COUNTER_ATTACKING,1,{}) end
 	if self:knowTalent(self.T_DEFENSIVE_THROW) then self:setEffect(self.EFF_DEFENSIVE_GRAPPLING,1,{}) end
 	
-	-- Check if Twist Fate is about to run out
-	if self:hasEffect(self.EFF_TWIST_FATE) and self:hasEffect(self.EFF_TWIST_FATE).dur <= 0 then
-		 self:useEnergy(self:getSpeed("spell") * game.energy_to_act)
-	end
-
-	-- Compute timed effects
 	self:timedEffects()
 
 	-- Handle thunderstorm, even if the actor is stunned or incapacitated it still works

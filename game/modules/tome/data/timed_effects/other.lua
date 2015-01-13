@@ -2704,6 +2704,7 @@ newEffect{
 			else
 				self:forceUseTalent(eff.talent, {ignore_energy=true, force_target=self})
 				self:incParadox(-eff.paradox)
+				self:useEnergy(self:getSpeed("spell") * game.energy_to_act)
 			end
 		end
 	end,
