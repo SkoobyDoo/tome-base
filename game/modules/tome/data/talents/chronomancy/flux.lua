@@ -24,7 +24,7 @@ newTalent{
 	type = {"chronomancy/flux", 1},
 	require = chrono_req1,
 	points = 5,
-	cooldown = 12,
+	--cooldown = 12,
 	tactical = { PARADOX = 2 },
 	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
 	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
@@ -180,13 +180,30 @@ newTalent{
 	points = 5,
 	cooldown = 3,
 	no_npc_use = true,
-	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then return false end return true end,
+	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then if not silent then game.logPlayer(self, "You must have a pending anomaly to cast this spell.") end return false end return true end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
+	doTwistFate = function(self, t, twist)
+		local eff = self:hasEffect(self.EFF_TWIST_FATE)
+		eff.twisted = twist or false
+		self:removeEffect(self.EFF_TWIST_FATE)
+	end,
+	setEffect = function(self, t, talent, paradox)
+		self:setEffect(self.EFF_TWIST_FATE, t.getDuration(self, t), {talent=talent, paradox=paradox})
+	end,
 	action = function(self, t)
-		
+		t.doTwistFate(self, t, true)
 		return true
 	end,
 	info = function(self, t)
-
-		return ([[]]):format()
+		local eff = self:hasEffect(self.EFF_TWIST_FATE)
+		local talent = "None"
+		if eff then talent = self:getTalentFromId(eff.talent).name end
+		local duration = t.getDuration(self, t)
+		return ([[Minor anomalies you produce are now held for %d turns.  While held you may cast Twist Fate in order to trigger the anomaly and may choose the target area.
+		If a second anomaly occurs while a prior one is held the first anomaly will trigger immediately.
+		Paradox reductions from held anomalies occur when triggered.
+		
+		Current Twisted Anomaly: %s]]):
+		format(duration, talent)
 	end,
 }

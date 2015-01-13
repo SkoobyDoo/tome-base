@@ -98,26 +98,6 @@ getAnomalyPosition = function(self, range)
 	return x, y
 end
 
--- Allows the caster to target the anomaly
--- For this to work all anomalies have to have no_energy set to true in the talent table, otherwise it will use two turns
-checkAnomalyTargeting = function(self, t, tg)
-	local x, y = self.x, self.y
-	if self:knowTalent(self.T_FLUX_CONTROL) and rng.percent(self:callTalent(self.T_FLUX_CONTROL, "getTargetChance")) and not self:attr("anomaly_forced_target") then
-		if self == game.player then
-			game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", t.name)
-		end
-		
-		x, y = self:getTarget(tg)
-		
-		-- If the player cancels target them anyway
-		if not x or not y then
-			x, y = self.x, self.y
-		end
-	end
-	local _ _, _, _, x, y = self:canProject(tg, x, y)
-	return x, y
-end
-
 -- Check for effects when hit by an anomaly
 -- This is called before immunity is checked
 checkAnomalyTriggers = function(self, target)

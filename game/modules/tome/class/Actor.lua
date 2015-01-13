@@ -4297,10 +4297,11 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 						self:callTalent(self.T_TWIST_FATE, "doTwistFate")
 						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
 					else
-						self:callTalent(self.T_TWIST_FATE, "doTwistFate", anomaly, reduction)
+						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
 						anomaly_triggered = false
 					end
 				else
+					--self:forceUseTalent(anomaly, {ignore_energy=true})
 					self:forceUseTalent(anomaly, {ignore_energy=true, force_target=target or self})
 				end
 			end

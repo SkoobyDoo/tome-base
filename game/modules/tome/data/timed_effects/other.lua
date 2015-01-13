@@ -2434,8 +2434,6 @@ newEffect{
 	type = "other",
 	subtype = {time=true},
 	status = "detrimental",
-	--decrease = 0,
-	--no_stop_enter_worlmap = true, no_stop_resting = true,
 	parameters = {power=50},
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
@@ -2682,5 +2680,31 @@ newEffect{
 		self:removeTemporaryValue("unstoppable", eff.tmpid)
 		self:removeTemporaryValue("no_life_regen", eff.healid)
 		self:heal(eff.kills * eff.hp_per_kill * self.max_life / 100, eff)
+	end,
+}
+
+
+newEffect{
+	name = "TWIST_FATE", image = "talents/twist_fate.png",
+	desc = "Twist Fate",
+	long_desc = function(self, eff) return ("Currently Twisted Anomlay: %s"):format(self:getTalentFromId(eff.talent).name or nil) end,
+	type = "other",
+	subtype = { time=true },
+	status = "detrimental",
+	parameters = { paradox=0, twisted=false },
+	on_gain = function(self, err) return nil, "+Twist Fate" end,
+	on_lose = function(self, err) return nil, "-Twist Fate" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+		if not game.zone.wilderness and not self.dead then
+			if eff.twisted then
+				self:forceUseTalent(eff.talent, {ignore_energy=true})
+				self:incParadox(-eff.paradox)
+			else
+				self:forceUseTalent(eff.talent, {ignore_energy=true, force_target=self})
+				self:incParadox(-eff.paradox)
+			end
+		end
 	end,
 }
