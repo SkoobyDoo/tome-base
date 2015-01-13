@@ -75,6 +75,8 @@ newTalent{
 	positive = 25,
 	tactical = { ATTACK = {LIGHT = 2} },
 	requires_target = true,
+	range = 1,
+	is_melee = true,
 	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 3) end,
 	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 2, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
 	getLightDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200) end,
@@ -88,8 +90,8 @@ newTalent{
 
 		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target then return nil end
+		if not self:canProject(tg, x, y) then return nil end
 
 		-- First attack with weapon
 		self:attackTarget(target, nil, t.getWeaponDamage(self, t), true)
@@ -170,7 +172,7 @@ newTalent{
 }
 
 -- Moderate damage but very short CD
--- Spamming this on cooldown keeps positive energy up and gives a lot of cooldown management 
+-- Spamming this on cooldown keeps positive energy up and gives a lot of cooldown management
 newTalent{
 	name = "Crusade",
 	type = {"celestial/guardian", 4},
@@ -182,6 +184,8 @@ newTalent{
 	tactical = { ATTACK = {LIGHT = 2} },
 	range = 1,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type = 'hit', range = self:getTalentRange(t)} end,
 	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.3, 1.2) end,
 	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.3, 1.2, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
 	getCooldownReduction = function(self, t) return math.ceil(self:combatTalentScale(t, 1, 3)) end,
@@ -192,11 +196,12 @@ newTalent{
 			game.logPlayer(self, "You cannot use Crusade without a shield!")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
-		
+		if not target then return nil end
+		if not self:canProject(tg, x, y) then return nil end
+
 		local hit = self:attackTarget(target, DamageType.LIGHT, t.getWeaponDamage(self, t), true)
 		if hit then self:talentCooldownFilter(nil, 1, t.getCooldownReduction(self, t), true) end
 
@@ -216,4 +221,3 @@ newTalent{
 		format(weapon, shield, cooldown, cleanse)
 	end,
 }
-

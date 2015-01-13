@@ -1622,7 +1622,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 								dm->dw,
 								dm->dh,
 								r, g, b, a,
-								(m->next) ? 1 : 0,
+								(dm->shader && dm->shader != m->shader) ? 1 : 0,
 								i, j);
 							dm = dm->next;
 						}
@@ -1703,8 +1703,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 			dm->dw,
 			dm->dh,
 			r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
-			// (m->next || dm->shader) ? 1 : 0,
-			0,
+			(dm->shader && dm->shader != m->shader) ? 1 : 0,
 			i, j);
 		if (m != dm) {
 	 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);

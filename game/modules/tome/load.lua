@@ -258,12 +258,11 @@ os.exit()
 --]]
 
 -- Load tilesets, to speed up image loads
-Tiles:loadTileset("/data/gfx/ts-shockbolt-npc.lua")
-Tiles:loadTileset("/data/gfx/ts-shockbolt-object.lua")
-Tiles:loadTileset("/data/gfx/ts-shockbolt-trap.lua")
-Tiles:loadTileset("/data/gfx/ts-shockbolt-terrain.lua")
-Tiles:loadTileset("/data/gfx/ts-talents.lua")
-Tiles:loadTileset("/data/gfx/ts-effects.lua")
+Tiles:loadTileset("/data/gfx/ts-npc.lua")
+Tiles:loadTileset("/data/gfx/ts-object.lua")
+Tiles:loadTileset("/data/gfx/ts-trap.lua")
+Tiles:loadTileset("/data/gfx/ts-terrain.lua")
+Tiles:loadTileset("/data/gfx/ts-talents-effects.lua")
 
 -- Factions
 dofile("/data/factions.lua")

@@ -941,9 +941,9 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[You enter an ogric wrath for %d turns.
-		Whenever you miss a melee attack or any damage you deal is reduced by a damage shield or similar effect you gain a charge of Ogre Fury(up to 5 charges, each lasts 7 turns).
-		Each charge grants 10%% stun and confusion resistance, 20%% critical damage power and 5%% critical strike chance.
+		return ([[You enter an ogric wrath for %d turns, increasing your stun and pinning resistances by 20%% and all damage done by 10%%.
+		In addition, whenever you miss a melee attack or any damage you deal is reduced by a damage shield or similar effect you gain a charge of Ogre Fury(up to 5 charges, each lasts 7 turns).
+		Each charge grants 20%% critical damage power and 5%% critical strike chance.
 		You loose a charge each time you deal a critical strike.
 		The duration will increase with your Strength.]]):format(t.getduration(self))
 	end,
@@ -955,15 +955,24 @@ newTalent{
 	require = racial_req2,
 	points = 5,
 	mode = "passive",
+	no_unlearn_last = true,
 	getSave = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
 	getMult = function(self, t) return self:combatTalentScale(t, 15, 40) / 100 end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_spellresist", t.getSave(self, t))
 		self:talentTemporaryValue(p, "inscriptions_stat_multiplier", t.getMult(self, t))
 	end,
+	on_learn = function(self, t)
+		if self:getTalentLevelRaw(t) == 5 then self:attr("allow_mainhand_2h_in_1h", 1) end
+	end,
+	on_unlearn = function(self, t)
+		if self:getTalentLevelRaw(t) == 4 then self:attr("allow_mainhand_2h_in_1h", -1) end
+	end,
 	info = function(self, t)
 		return ([[An ogre's body is used to spells and inscriptions.
-		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.]]):
+		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.
+		At level 5 your body is so strong you can use a two handed weapon in your main hand while still using an offhand item.
+		When using a two handed weapon this way you suffer a 20%% hit chance pernalty, decreasing by 5%% per size category above #{italic}#big#{normal}#.]]):
 		format(t.getSave(self, t), t.getMult(self, t) * 100)
 	end,
 }

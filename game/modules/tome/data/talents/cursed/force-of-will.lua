@@ -17,88 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-
--- damage: initial physical damage and used for fractional knockback damage
--- knockback: distance to knockback
--- knockbackDamage: when knockback strikes something, both parties take damage - percent of damage * remaining knockback
--- power: used to determine the initial radius of particles
-local function forceHit(self, t, target, sourceX, sourceY, damage, knockback, knockbackDamage, power, max)
-	-- apply initial damage
-	if damage > 0 then
-		damage = self:mindCrit(damage)
-		self:project({type="hit", range=10, talent=t, pass_terrain=true}, target.x, target.y, DamageType.PHYSICAL, damage)
-		game.level.map:particleEmitter(target.x, target.y, 1, "force_hit", {power=power, dx=target.x - sourceX, dy=target.y - sourceY})
-	end
-
-	-- knockback?
-	if not target.dead and knockback and knockback > 0 and target:canBe("knockback") and (target.never_move or 0) < 1 then
-		-- give direct hit a direction?
-		if sourceX == target.x and sourceY == target.y then
-			local newDirection = rng.table(util.adjacentDirs())
-			local dx, dy = util.dirToCoord(newDirection, sourceX, sourceY)
-			sourceX = sourceX + dx
-			sourceY = sourceY + dy
-		end
-
-		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", target) end
-		local lineFunction = core.fov.line(sourceX, sourceY, target.x, target.y, block_actor, true)
-		local finalX, finalY = target.x, target.y
-		local knockbackCount = 0
-		local blocked = false
-		while knockback > 0 do
-			local x, y, is_corner_blocked = lineFunction:step(true)
-
-			if not game.level.map:isBound(x, y) or is_corner_blocked or game.level.map:checkAllEntities(x, y, "block_move", target) then
-				-- blocked
-				local nextTarget = game.level.map(x, y, Map.ACTOR)
-				if nextTarget then
-					if knockbackCount > 0 then
-						target:logCombat(nextTarget, "#Source# was blasted %d spaces into #Target#!", knockbackCount)
-					else
-						target:logCombat(nextTarget, "#Source# was blasted into #Target#!")
-					end
-				elseif knockbackCount > 0 then
-					game.logSeen(target, "%s was smashed back %d spaces!", target.name:capitalize(), knockbackCount)
-				else
-					game.logSeen(target, "%s was smashed!", target.name:capitalize())
-				end
-
-				-- take partial damage
-				local blockDamage = damage * util.bound(knockback * (knockbackDamage / 100), 0, 1.5)
-				self:project({type="hit", range=10, talent=t}, target.x, target.y, DamageType.PHYSICAL, blockDamage)
-
-				if nextTarget then
-					-- start a new force hit with the knockback damage and current knockback
-					if max > 0 then
-						forceHit(self, t, nextTarget, sourceX, sourceY, blockDamage, knockback, knockbackDamage, power / 2, max - 1)
-					end
-				end
-
-				knockback = 0
-				blocked = true
-			else
-				-- allow move
-				finalX, finalY = x, y
-				knockback = knockback - 1
-				knockbackCount = knockbackCount + 1
-			end
-		end
-
-		if not blocked and knockbackCount > 0 then
-			game.logSeen(target, "%s was blasted back %d spaces!", target.name:capitalize(), knockbackCount)
-		end
-
-		if not target.dead and (finalX ~= target.x or finalY ~= target.y) then
-			local ox, oy = target.x, target.y
-			target:move(finalX, finalY, true)
-			if config.settings.tome.smooth_move > 0 then
-				target:resetMoveAnim()
-				target:setMoveAnim(ox, oy, 9, 5)
-			end
-		end
-	end
-end
-
 newTalent{
 	name = "Willful Strike",
 	type = {"cursed/force-of-will", 1},
@@ -117,19 +35,101 @@ newTalent{
 	getKnockback = function(self, t)
 		return 2
 	end,
+		-- damage: initial physical damage and used for fractional knockback damage
+	-- knockback: distance to knockback
+	-- knockbackDamage: when knockback strikes something, both parties take damage - percent of damage * remaining knockback
+	-- power: used to determine the initial radius of particles
+	forceHit = function(self, t, target, sourceX, sourceY, damage, knockback, knockbackDamage, power, max, tmp)
+		tmp = tmp or {}
+		if tmp[target] then return end
+		-- apply initial damage
+		if damage > 0 then
+			damage = self:mindCrit(damage)
+			self:project({type="hit", range=10, talent=t, pass_terrain=true}, target.x, target.y, DamageType.PHYSICAL, damage)
+			game.level.map:particleEmitter(target.x, target.y, 1, "force_hit", {power=power, dx=target.x - sourceX, dy=target.y - sourceY})
+		end
+
+		-- knockback?
+		if not target.dead and knockback and knockback > 0 and target:canBe("knockback") and (target.never_move or 0) < 1 then
+			-- give direct hit a direction?
+			if sourceX == target.x and sourceY == target.y then
+				local newDirection = rng.table(util.adjacentDirs())
+				local dx, dy = util.dirToCoord(newDirection, sourceX, sourceY)
+				sourceX = sourceX + dx
+				sourceY = sourceY + dy
+			end
+
+			local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", target) end
+			local lineFunction = core.fov.line(sourceX, sourceY, target.x, target.y, block_actor, true)
+			local finalX, finalY = target.x, target.y
+			local knockbackCount = 0
+			local blocked = false
+			while knockback > 0 do
+				local x, y, is_corner_blocked = lineFunction:step(true)
+
+				if not game.level.map:isBound(x, y) or is_corner_blocked or game.level.map:checkAllEntities(x, y, "block_move", target) then
+					-- blocked
+					local nextTarget = game.level.map(x, y, Map.ACTOR)
+					if nextTarget then
+						if knockbackCount > 0 then
+							target:logCombat(nextTarget, "#Source# was blasted %d spaces into #Target#!", knockbackCount)
+						else
+							target:logCombat(nextTarget, "#Source# was blasted into #Target#!")
+						end
+					elseif knockbackCount > 0 then
+						game.logSeen(target, "%s was smashed back %d spaces!", target.name:capitalize(), knockbackCount)
+					else
+						game.logSeen(target, "%s was smashed!", target.name:capitalize())
+					end
+
+					-- take partial damage
+					local blockDamage = damage * util.bound(knockback * (knockbackDamage / 100), 0, 1.5)
+					self:project({type="hit", range=10, talent=t}, target.x, target.y, DamageType.PHYSICAL, blockDamage)
+
+					if nextTarget then
+						-- start a new force hit with the knockback damage and current knockback
+						if max > 0 then
+							t.forceHit(self, t, nextTarget, sourceX, sourceY, blockDamage, knockback, knockbackDamage, power / 2, max - 1, tmp)
+						end
+					end
+
+					knockback = 0
+					blocked = true
+				else
+					-- allow move
+					finalX, finalY = x, y
+					knockback = knockback - 1
+					knockbackCount = knockbackCount + 1
+				end
+			end
+
+			if not blocked and knockbackCount > 0 then
+				game.logSeen(target, "%s was blasted back %d spaces!", target.name:capitalize(), knockbackCount)
+			end
+
+			if not target.dead and (finalX ~= target.x or finalY ~= target.y) then
+				local ox, oy = target.x, target.y
+				target:move(finalX, finalY, true)
+				if config.settings.tome.smooth_move > 0 then
+					target:resetMoveAnim()
+					target:setMoveAnim(ox, oy, 9, 5)
+				end
+			end
+		end
+	end,
 	critpower = function(self, t) return self:combatTalentScale(t, 4, 15) end,
 	action = function(self, t)
 		local range = self:getTalentRange(t)
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = {type="hit", range=self:getTalentRange(t), t=t}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target or core.fov.distance(self.x, self.y, x, y) > range then return nil end
+		if not self:canProject(tg, x, y) then return nil end
 
 		--local distance = math.max(1, core.fov.distance(self.x, self.y, x, y))
 		local power = 1 --(1 - ((distance - 1) / range))
 		local damage = t.getDamage(self, t) * power
 		local knockback = t.getKnockback(self, t)
-		forceHit(self, t, target, self.x, self.y, damage, knockback, 7, power, 10)
+		t.forceHit(self, t, target, self.x, self.y, damage, knockback, 7, power, 10)
 		return true
 	end,
 	passives = function(self, t, p)
@@ -220,7 +220,7 @@ newTalent{
 	end,
 }
 
-newTalent{ 
+newTalent{
 	name = "Blast",
 	type = {"cursed/force-of-will", 3},
 	require = cursed_wil_req3,
@@ -245,7 +245,7 @@ newTalent{
 		return 3
 	end,
 	critpower = function(self, t) return self:combatTalentScale(t, 4, 15) end,
-	action = function(self, t) --NOTE TO DG, SINCE I CAN'T UNDERSTAND A WORD OF BENLI'S CODE: EDIT SO THAT KNOCKBACK OCCURS AFTER DAMAGE, AND SEPARATELY, TO PREVENT ENEMIES BEING SHOVED INTO A NEW SPACE AND HIT AGAIN.
+	action = function(self, t)
 		local range = self:getTalentRange(t)
 		local radius = self:getTalentRadius(t)
 		local damage = t.getDamage(self, t)
@@ -253,8 +253,9 @@ newTalent{
 
 		local tg = self:getTalentTarget(t)
 		local blastX, blastY = self:getTarget(tg)
-		if not blastX or not blastY or core.fov.distance(self.x, self.y, blastX, blastY) > range then return nil end
+		if not self:canProject(tg, blastX, blastY) then return nil end
 
+		local tmp = {}
 		local grids = self:project(tg, blastX, blastY,
 			function(x, y, target, self)
 				-- your will ignores friendly targets (except for knockback hits)
@@ -265,7 +266,7 @@ newTalent{
 					local localDamage = damage * power
 					local dazeDuration = t.getDazeDuration(self, t)
 
-					forceHit(self, t, target, blastX, blastY, damage, math.max(0, knockback - distance), 7, power, 10)
+					self:callTalent(self.T_WILLFUL_STRIKE, "forceHit", target, blastX, blastY, damage, math.max(0, knockback - distance), 7, power, 10, tmp)
 					if target:canBe("stun") then
 						target:setEffect(target.EFF_DAZED, dazeDuration, {src=self})
 					end
@@ -322,47 +323,12 @@ newTalent{
 		return self:combatTalentScale(t.getAdjustedTalentLevel(self, t), 15, 35)
 	end,
 	action = function(self, t)
-		game.logSeen(self, "An unseen force begins to swirl around %s!", self.name)
-		local duration = t.getDuration(self, t)
-		local particles = self:addParticles(Particles.new("force_area", 1, { radius = self:getTalentRange(t) }))
-
-		self.unseenForce = { duration = duration, particles = particles }
+		local secondchance = t.getSecondHitChance(self, t)
+		self:setEffect(self.EFF_UNSEEN_FORCE, t.getDuration(self, t), {
+			damage = t.getDamage(self, t), knockback = t.getKnockback(self, t),
+			hits = 1 + math.floor(secondchance / 100), extrahit = secondchance % 100,
+		})
 		return true
-	end,
-	callbackOnActBase = function(self, t)
-		if not self.unseenForce then return end
-		local targets = {}
-		local grids = core.fov.circle_grids(self.x, self.y, 5, true)
-		for x, yy in pairs(grids) do
-			for y, _ in pairs(grids[x]) do
-				local a = game.level.map(x, y, Map.ACTOR)
-				if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-					targets[#targets+1] = a
-				end
-			end
-		end
-
-		if #targets > 0 then
-			local damage = t.getDamage(self, t)
-			local knockback = t.getKnockback(self, t)
-
-			local xtrahits = t.getSecondHitChance(self,t)/100
-			local hitCount = 1 + math.floor(xtrahits)
-			if rng.percent(xtrahits - math.floor(xtrahits)*100) then hitCount = hitCount + 1 end
-
-			-- Randomly take targets
-			for i = 1, hitCount do
-				local target, index = rng.table(targets)
-				forceHit(self, t, target, target.x, target.y, damage, knockback, 7, 0.6, 10)
-			end
-		end
-
-		self.unseenForce.duration = self.unseenForce.duration - 1
-		if self.unseenForce.duration <= 0 then
-			self:removeParticles(self.unseenForce.particles)
-			self.unseenForce = nil
-			game.logSeen(self, "The unseen force around %s subsides.", self.name)
-		end
 	end,
 	critpower = function(self, t) return self:combatTalentScale(t, 4, 15) end,
 	passives = function(self, t, p)
@@ -380,4 +346,3 @@ newTalent{
 		Damage increases with your Mindpower.]]):format(duration, hits, chance, hits+1, damDesc(self, DamageType.PHYSICAL, damage), knockback, t.critpower(self, t), self.combat_critical_power or 0)
 	end,
 }
-

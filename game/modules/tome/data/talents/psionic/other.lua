@@ -26,11 +26,10 @@ newTalent{
 	type_no_req = true,
 	no_unlearn_last = true,
 	no_npc_use = true,
+	filter = function(o) return (o.type == "weapon" or o.type == "gem") and o.subtype ~= "sling" end,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
-		local ret = self:talentDialog(self:showInventory("Telekinetically grasp which item?", inven, function(o)
-			return (o.type == "weapon" or o.type == "gem") and o.subtype ~= "sling"
-		end, function(o, item)
+		local ret = self:talentDialog(self:showInventory("Telekinetically grasp which item?", inven, t.filter, function(o, item)
 			local pf = self:getInven("PSIONIC_FOCUS")
 			if not pf then return end
 			-- Put back the old one in inventory
@@ -165,14 +164,14 @@ newTalent{
 	end,
 	callbackOnActBase = function(self, t, p)
 		local p = self.sustain_talents[t.id]
-		
+
 		if self:hasEffect(self.EFF_PSIFRENZY) then
 			if p.mindstar_grab then
 				self:project({type="ball", radius=p.mindstar_grab.range}, self.x, self.y, function(px, py)
 					local a = game.level.map(px, py, Map.ACTOR)
 					if a and self:reactionToward(a) < 0 then
 						local dist = core.fov.distance(self.x, self.y, px, py)
-						if dist > 1 and rng.percent(p.mindstar_grab.chance) then 
+						if dist > 1 and rng.percent(p.mindstar_grab.chance) then
 							local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
 							if tx and ty and a:canBe("knockback") then
 								a:move(tx, ty, true)
@@ -215,7 +214,7 @@ newTalent{
 			end
 		end)
 		if #list <= 0 then return end
-		
+
 		table.sort(list, "dist")
 		local a = list[#list].a
 		local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
@@ -282,7 +281,7 @@ newTalent{
 			local ml = o.material_level or 1
 			base = base..([[The telekinetically-wielded gem grants you +%d stats.]]):format(ml * 3)
 		elseif o.subtype == "mindstar" then
-			local ml = o.material_level or 1			
+			local ml = o.material_level or 1
 			base = base..([[The telekinetically-wielded mindstar has a %d%% chance to grab a foe up to %d range away.]]):format((ml + 1) * 5, ml + 2)
 		else
 			self:attr("use_psi_combat", 1)

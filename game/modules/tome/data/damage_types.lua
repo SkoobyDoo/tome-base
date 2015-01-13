@@ -24,10 +24,15 @@ if not config.settings.cheat then print = function() end end
 function DamageType.useImplicitCrit(src, state)
 	if state.crit_set then return end
 	state.crit_set = true
-	state.crit_type = src.turn_procs.is_crit
-	state.crit_power = src.turn_procs.crit_power or 1
-	src.turn_procs.is_crit = nil
-	src.turn_procs.crit_power = nil
+	if not src.turn_procs then
+		state.crit_type = false
+		state.crit_power = 1
+	else
+		state.crit_type = src.turn_procs.is_crit
+		state.crit_power = src.turn_procs.crit_power or 1
+		src.turn_procs.is_crit = nil
+		src.turn_procs.crit_power = nil
+	end
 end
 
 local useImplicitCrit = DamageType.useImplicitCrit
@@ -424,11 +429,13 @@ setDefaultProjector(function(src, x, y, type, dam, state, no_martyr)
 
 		local hd = {"DamageProjector:final", src=src, x=x, y=y, type=type, dam=dam, state=state, no_martyr=no_martyr}
 		if src:triggerHook(hd) then dam = hd.dam if hd.stopped then return hd.stopped end end
-		if target.fireTalentCheck then
-			local ret = target:fireTalentCheck("callbackOnTakeDamage", src, x, y, type, dam, state, no_martyr)
-			if ret then
-				if ret.dam then dam = ret.dam end
-				if ret.stopped then return ret.stopped end
+		if target.iterCallbacks then
+			for cb in target:iterCallbacks("callbackOnTakeDamage") do
+				local ret = cb(src, x, y, type, dam, state, no_martyr)
+				if ret then
+					if ret.dam then dam = ret.dam end
+					if ret.stopped then return ret.stopped end
+				end
 			end
 		end
 

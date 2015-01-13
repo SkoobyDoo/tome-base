@@ -81,13 +81,14 @@ newTalent{
 	cooldown = 5,
 	range = 1,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = { NATURE = 1, poison = 1} },
 	getMult = function(self, t) return self:combatTalentScale(t, 3, 7, "log") end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		self.combat_apr = self.combat_apr + 1000
 		self:attackTarget(target, DamageType.POISON, t.getMult(self, t), true)
 		self.combat_apr = self.combat_apr - 1000
@@ -109,11 +110,12 @@ newTalent{
 	range = 1,
 	tactical = { ATTACK = { ACID = 2 } },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		self.combat_apr = self.combat_apr + 1000
 		self:attackTarget(target, DamageType.ACID, self:combatTalentWeaponDamage(t, 1, 1.8), true)
 		self.combat_apr = self.combat_apr - 1000
@@ -134,12 +136,12 @@ newTalent{
 	range = 1,
 	tactical = { DISABLE = { blind = 2 } },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, DamageType.LIGHT, self:combatTalentWeaponDamage(t, 1, 1.8), true)
 
 		-- Try to blind !
@@ -170,11 +172,11 @@ newTalent{
 	tactical = { ATTACK = { NATURE = 1, poison = 1} },
 	requires_target = true,
 	getMult = function(self, t) return self:combatTalentScale(t, 3, 7, "log") end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		self.combat_apr = self.combat_apr + 1000
 		self:attackTarget(target, DamageType.POISON, t.getMult(self, t), true)
 		self.combat_apr = self.combat_apr - 1000
@@ -195,12 +197,13 @@ newTalent{
 	require = { stat = { str=12 }, },
 	tactical = { ATTACK = { PHYSICAL = 1 }, DISABLE = { stun = 2 } },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.5, 1), true)
 
 		-- Try to stun !
@@ -229,13 +232,14 @@ newTalent{
 	stamina = 8,
 	require = { stat = { str=12 }, },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = { PHYSICAL = 1 }, DISABLE = { disarm = 2 } },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.5, 1), true)
 
 		if hit and target:canBe("disarm") then
@@ -263,10 +267,11 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = { PHYSICAL = 2 }, DISABLE = { stun = 1 } },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 15, 52)) end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.5, 1), true)
 
@@ -297,11 +302,12 @@ newTalent{
 	require = { stat = { str=12 }, },
 	requires_target = true,
 	tactical = { ATTACK = 1, DISABLE = { knockback = 2 } },
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1.5, 2), true)
 
 		-- Try to knockback !
@@ -332,11 +338,11 @@ newTalent{
 	tactical = { ATTACK = { NATURE = 1, poison = 1} },
 	requires_target = true,
 	getMult = function(self, t) return self:combatTalentScale(t, 3, 7, "log") end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		self:attackTarget(target, DamageType.POISON, t.getMult(self, t), true)
 		return true
 	end,
@@ -421,11 +427,13 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = { BLIGHT = 2 }, DISABLE = { disease = 1 } },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 13, 25)) end,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.5, 1), true)
 
 		-- Try to rot !
@@ -454,11 +462,13 @@ newTalent{
 	tactical = { ATTACK = { BLIGHT = 2 }, DISABLE = { disease = 1 } },
 	requires_target = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 13, 25)) end,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.5, 1), true)
 
 		-- Try to rot !
@@ -487,11 +497,13 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = { BLIGHT = 2 }, DISABLE = { disease = 1 } },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 13, 25)) end,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.5, 1), true)
 
 		-- Try to rot !
@@ -521,9 +533,10 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	tactical = { DISABLE = { confusion = 3 } },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		self:project(tg, x, y, DamageType.CONFUSION, {dur=t.getDuration(self, t), dam=50+self:getTalentLevelRaw(t)*10}, {type="manathrust"})
@@ -804,12 +817,13 @@ newTalent{
 	require = { stat = { str=12 }, },
 	requires_target = true,
 	tactical = { DISABLE = { pin = 2 }, ATTACK = { PHYSICAL = 1 } },
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.8, 1.4), true)
 
 		-- Try to pin !
@@ -868,11 +882,12 @@ newTalent{
 	range = 10,
 	requires_target = true,
 	tactical = { ATTACK = { NATURE = 1, poison = 1} },
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t)
 		return self:combatScale(math.max(self:getStr(), self:getDex())*self:getTalentLevel(t), 20, 0, 420, 500)
 	end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local s = math.max(self:getDex(), self:getStr())
@@ -896,11 +911,12 @@ newTalent{
 	range = 10,
 	requires_target = true,
 	tactical = { ATTACK = { BLIGHT = 2 } },
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t)
 		return self:combatScale(self:getMag()*self:getTalentLevel(t), 20, 0, 420, 500)
 	end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		self:project(tg, x, y, DamageType.BLIGHT, t.getDamage(self,t), {type="slime"})
@@ -923,13 +939,14 @@ newTalent{
 	tactical = { DISABLE = 2, CLOSEIN = 3 },
 	requires_target = true,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
 		if self:attr("never_move") then game.logPlayer(self, "You cannot do that currently.") return end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
 		local l = self:lineFOV(x, y, block_actor)
@@ -1194,6 +1211,8 @@ newTalent{
 	stamina = 12,
 	requires_target = true,
 	tactical = { ATTACK = { PHYSICAL = 1 }, DISABLE = { stun = 2 } },
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
 		local weapon = self:hasTwoHandedWeapon()
@@ -1202,10 +1221,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, self:combatTalentWeaponDamage(t, 1, 1.4))
 
 		-- Try to pin !
@@ -1235,9 +1253,10 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	tactical = { DISABLE = { silence = 3 } },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		self:project(tg, x, y, DamageType.SILENCE, {dur=t.getDuration(self, t)}, {type="mind"})
@@ -1374,12 +1393,12 @@ newTalent{
 	range = 1,
 	requires_target = true,
 	tactical = { ATTACK = { LIGHT = 1 } },
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatScale(self:combatSpellpower() * self:getTalentLevel(t), 0, 0, 66.25 , 265, 0.67) end,
 	action = function(self, t)
-		local tg = {type="bolt", range=1}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not self:canProject(tg, x, y) then return nil end
 		self:project(tg, x, y, DamageType.LIGHT, t.getDamage(self, t), {type="light"})
 		game.level.map:particleEmitter(self.x, self.y, 1, "ball_fire", {radius = 1, r = 1, g = 0, b = 0})
 		self:die(self)
@@ -1400,12 +1419,12 @@ newTalent{
 	cooldown = 1,
 	range = 1,
 	requires_target = true,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = { COLD = 1 } },
 	action = function(self, t)
-		local tg = {type="bolt", range=1}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not self:canProject(tg, x, y) then return nil end
 		self:project(tg, x, y, DamageType.COLD, self.will_o_wisp_dam or 1)
 		game.level.map:particleEmitter(self.x, self.y, 1, "ball_ice", {radius = 1, r = 1, g = 0, b = 0})
 		self:die(self)
@@ -1424,13 +1443,14 @@ newTalent{
 	mana = 10,
 	message = "@Source@ casts Elemental Bolt!",
 	cooldown = 3,
-	range = 10,
+	range = 20,
 	proj_speed = 2,
 	requires_target = true,
 	tactical = { ATTACK = 2 },
+	target = function(self, t) return {type = "bolt", range = self:getTalentRange(t), talent = t} end,
 	getDamage = function(self, t) return self:combatScale(self:getMag() * self:getTalentLevel(t), 0, 0, 450, 500) end,
 	action = function(self, t)
-		local tg = {type = "bolt", range = 20, talent = t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 			local elem = rng.table{
@@ -1466,11 +1486,12 @@ newTalent{
 	proj_speed = 2,
 	requires_target = true,
 	tactical = { ATTACK = { FIRE = 1, PHYSICAL = 1 } },
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), nolock=true, talent=t} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	nbProj = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 80) end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), nolock=true, talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -1550,9 +1571,10 @@ newTalent{
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget()
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		self:project(tg, x, y, DamageType.WASTING, self:spellCrit(t.getDamage(self, t)))
@@ -1620,7 +1642,7 @@ newTalent{
 		local range = t.radius(self,t)
 		local power = t.getPower(self,t) * 100
 		return ([[Sends Dredges in a radius of %d into a frenzy for %d turns.
-		The frenzy will increase global speed by %d%%, physical crit chance by %d%%, and prevent death until -%d%% life.]]):		
+		The frenzy will increase global speed by %d%%, physical crit chance by %d%%, and prevent death until -%d%% life.]]):
 		format(range, t.getDuration(self, t), power, power, power)
 	end,
 }
@@ -1637,9 +1659,10 @@ newTalent{
 	range = 10,
 	direct_hit = true,
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) * 10000 end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -1706,7 +1729,7 @@ newTalent{
 
 		-- Find space
 		local x, y = util.findFreeGrid(tx, ty, 3, true, {[Map.ACTOR]=true})
-		if not x then	
+		if not x then
 			game.logPlayer(self, "Not enough space to invoke!")
 			return
 		end
@@ -1748,9 +1771,10 @@ newTalent{
 	reflectable = true,
 	proj_speed = 6,
 	requires_target = true,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_earth", trail="earthtrail"}} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 8, 230) end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_earth", trail="earthtrail"}}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		self:projectile(tg, x, y, DamageType.SPELLKNOCKBACK, self:spellCrit(t.getDamage(self, t)))
@@ -2094,11 +2118,14 @@ newTalent{
 	range = 10,
 	requires_target = true,
 	tactical = { CLOSEIN = 2 },
+	is_melee = true,
+	target = function(self, t) return {type="hit", pass_terrain = true, range=self:getTalentRange(t)} end,
+	melee_target = function(self, t) return {type="hit", range=1} end,
 	action = function(self, t)
-		local tg = {type="hit", pass_terrain = true, range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		tg = util.getval(t.melee_target, self, t)
+		if not target then return nil end
 
 		local start = rng.range(0, 8)
 		for i = start, start + 8 do
@@ -2157,8 +2184,9 @@ newTalent{
 	tactical = { DISABLE = 1, CLOSEIN = 3 },
 	requires_target = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t} end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 
@@ -2199,11 +2227,12 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 1.8) + getStrikingStyle(self, dam) end,
 	getDuration = function(self, t, comb) return math.ceil(self:combatTalentScale(t, 1, 5) * (0.25 + comb/5)) end,
 	getDrain = function(self, t) return self:combatTalentScale(t, 2, 10, 0.75) * self:getCombo(combo) end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- breaks active grapples if the target is not grappled
 		if not target:isGrappled(self) then
@@ -2297,15 +2326,16 @@ newTalent{
 	stamina = 10,
 	tactical = { ATTACK = { PHYSICAL = 2 }, DISABLE = 2 },
 	requires_target = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	getDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 10, 100) * getUnarmedTrainingBonus(self) end,
 	getMaim = function(self, t) return self:combatTalentPhysicalDamage(t, 5, 30) end,
 	-- Learn the appropriate stance
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local grappled = false
 
@@ -2401,6 +2431,9 @@ newTalent{
 	cooldown = 8,
 	stamina = 22,
 	requires_target = true,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = 2, ESCAPE = { knockback = 1 }, DISABLE = { knockback = 1 } },
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	action = function(self, t)
@@ -2410,10 +2443,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- First attack with weapon
 		self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3), true)
@@ -2534,7 +2566,7 @@ newTalent{
 	info = function(self, t)
 		local range = self:getTalentRange(t)
 		local dam = damDesc(self, DamageType.PHYSICAL, t.getDam(self, t))
-		return ([[You expend massive amounts of energy to launch yourself across %d squares at incredible speed. All enemies in your path will be knocked flying and dealt between %d and %d Physical damage. 
+		return ([[You expend massive amounts of energy to launch yourself across %d squares at incredible speed. All enemies in your path will be knocked flying and dealt between %d and %d Physical damage.
 		At talent level 5, you can batter through solid walls.]]):
 		format(range, 2*dam/3, dam)
 	end,
@@ -2561,12 +2593,12 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then return nil end
 		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
-		
+
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local dam = self:mindCrit(t.getDamage(self, t))
-		
+
 		if target:canBe("knockback") or rng.percent(t.getKBResistPen(self, t)) then
 			self:project({type="hit", range=tg.range}, target.x, target.y, DamageType.PHYSICAL, dam) --Direct Damage
 			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
@@ -2594,7 +2626,7 @@ newTalent{
 	info = function(self, t)
 		local range = self:getTalentRange(t)
 		local dam = damDesc(self, DamageType.PHYSICAL, t.getDamage(self, t))
-		return ([[Use your telekinetic power to enhance your strength, allowing you to pick up an adjacent enemy and hurl it anywhere within radius %d. 
+		return ([[Use your telekinetic power to enhance your strength, allowing you to pick up an adjacent enemy and hurl it anywhere within radius %d.
 		Upon landing, your target takes %0.1f Physical damage and is stunned for 4 turns.  All other creatures within radius 2 of the landing point take %0.1f Physical damage and are knocked away from you.
 		This talent ignores %d%% of the knockback resistance of the thrown target, which takes half damage if it resists being thrown.
 		The damage improves with your Mindpower and the range increases with both Mindpower and Strength.]]):

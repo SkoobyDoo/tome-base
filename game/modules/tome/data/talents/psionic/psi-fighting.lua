@@ -28,6 +28,8 @@ newTalent{
 	range = 1,
 	requires_target = true,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	duration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
 	action = function(self, t)
 		local weapon = self:getInven("MAINHAND") and self:getInven("MAINHAND")[1]
@@ -36,10 +38,9 @@ newTalent{
 			game.logPlayer(self, "You cannot do that without a weapon in your hands.")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		self:attr("use_psi_combat", 1)
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.9, 1.5), true)
 		if self:getInven(self.INVEN_PSIONIC_FOCUS) then
@@ -56,7 +57,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Gather your will, and brutally smash the target with your mainhand weapon and then your telekinetically wielded weapon, doing %d%% weapon damage. 
+		return ([[Gather your will, and brutally smash the target with your mainhand weapon and then your telekinetically wielded weapon, doing %d%% weapon damage.
 		If your mainhand weapon hits, you will also stun the target for %d turns.
 		This attack uses your Willpower and Cunning instead of Strength and Dexterity to determine Accuracy and damage.
 		Any active Aura damage bonusses will extend to the weapons used for this attack.]]):
@@ -117,7 +118,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Assume a defensive mental state.
-		For one turn, you will fully block the next melee attack used against you with your telekinetically-wielded weapon and then strike the attacker with it for %d%% weapon damage. 
+		For one turn, you will fully block the next melee attack used against you with your telekinetically-wielded weapon and then strike the attacker with it for %d%% weapon damage.
 		At raw talent level 3 you will also disarm the attacker for 3 turns.
 		At raw talent level 5 you will be able to reflexively block up to one attack per turn with a %d%% chance, based on your cunning. Each trigger requires and uses 10 Psi.
 		This requires a telekinetically-wielded weapon.]]):
@@ -139,6 +140,8 @@ newTalent{
 	getDamage = function (self, t) return math.floor(self:combatTalentMindDamage(t, 12, 340)) end,
 	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.5, 2.6) end,
 	getShatter = function(self, t) return self:combatTalentLimit(t, 100, 10, 85) end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	is_melee = true,
 	action = function(self, t)
 		local weapon = self:getInven(self.INVEN_PSIONIC_FOCUS) and self:getInven(self.INVEN_PSIONIC_FOCUS)[1]
 		if type(weapon) == "boolean" then weapon = nil end
@@ -146,10 +149,9 @@ newTalent{
 			game.logPlayer(self, "You cannot do that without a weapon in your telekinetic slot.")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 3 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, t.getWeaponDamage(self, t))
 		if hit and target:canBe("cut") then
 			target:setEffect(target.EFF_CUT, 4, {power=t.getDamage(self,t)/4, apply_power=self:combatMindpower()})
@@ -180,7 +182,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Focus your will into a powerful thrust of your telekinetically-wielded weapon to impale your target and then viciously rip it free.
-		This deals %d%% weapon damage and then causes the victim to bleed for %0.1f Physical damage over four turns. 
+		This deals %d%% weapon damage and then causes the victim to bleed for %0.1f Physical damage over four turns.
 		At level 3 the thrust is so powerful that it has %d%% chance to shatter a temporary damage shield if one exists.
 		The bleeding damage increases with your Mindpower.]]):
 		format(100 * t.getWeaponDamage(self, t), damDesc(self, DamageType.PHYSICAL, t.getDamage(self,t)), t.getShatter(self, t))

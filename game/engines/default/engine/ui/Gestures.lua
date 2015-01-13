@@ -75,7 +75,7 @@ end
 
 function _M:initGesturing()
 	if self.gesturing then return end
-	self.vo = core.display.newVO("quads")
+	self.vo = core.display.newVO()
 	self.gesturing = true
 	self.gesture = ""
 	self.lastupdate = os.time()
@@ -100,31 +100,39 @@ function _M:addGesturing(d, mx, my)
 
 	if d == "L" then
 		local r, g, b = colors.hex1unpack("ed1515")
-		self.vo:addPoint(x, y - start, 0, 0, r, g, b, a)
-		self.vo:addPoint(x, y + start, 1, 0, r, g, b, a)
-		self.vo:addPoint(x - 200, y + stop, 1, 0, r, g, b, a)
-		self.vo:addPoint(x - 200, y - stop, 0, 1, r, g, b, a)
+		self.vo:addQuad(r, g, b, a,
+			{x, y - start, 0, 0},
+			{x, y + start, 1, 0},
+			{x - 200, y + stop, 1, 0},
+			{x - 200, y - stop, 0, 1}
+		)
 		self.gx, self.gy = x - 200, y
 	elseif d == "R" then
 		local r, g, b = colors.hex1unpack("d6ed15")
-		self.vo:addPoint(x, y - start, 0, 0, r, g, b, a)
-		self.vo:addPoint(x, y + start, 1, 0, r, g, b, a)
-		self.vo:addPoint(x + 200, y + stop, 1, 0, r, g, b, a)
-		self.vo:addPoint(x + 200, y - stop, 0, 1, r, g, b, a)
+		self.vo:addQuad(r, g, b, a,
+			{x, y - start, 0, 0},
+			{x, y + start, 1, 0},
+			{x + 200, y + stop, 1, 0},
+			{x + 200, y - stop, 0, 1}
+		)
 		self.gx, self.gy = x + 200, y
 	elseif d == "U" then
 		local r, g, b = colors.hex1unpack("15ed2f")
-		self.vo:addPoint(x - start, y, 0, 0, r, g, b, a)
-		self.vo:addPoint(x + start, y, 1, 0, r, g, b, a)
-		self.vo:addPoint(x + stop, y - 200, 1, 0, r, g, b, a)
-		self.vo:addPoint(x - stop, y - 200, 0, 1, r, g, b, a)
+		self.vo:addQuad(r, g, b, a,
+			{x - start, y, 0, 0},
+			{x + start, y, 1, 0},
+			{x + stop, y - 200, 1, 0},
+			{x - stop, y - 200, 0, 1}
+		)
 		self.gx, self.gy = x, y - 200
 	elseif d == "D" then
 		local r, g, b = colors.hex1unpack("1576ed")
-		self.vo:addPoint(x - start, y, 0, 0, r, g, b, a)
-		self.vo:addPoint(x + start, y, 1, 0, r, g, b, a)
-		self.vo:addPoint(x + stop, y + 200, 1, 0, r, g, b, a)
-		self.vo:addPoint(x - stop, y + 200, 0, 1, r, g, b, a)
+		self.vo:addQuad(r, g, b, a,
+			{x - start, y, 0, 0},
+			{x + start, y, 1, 0},
+			{x + stop, y + 200, 1, 0},
+			{x - stop, y + 200, 0, 1}
+		)
 		self.gx, self.gy = x, y + 200
 	end
 end

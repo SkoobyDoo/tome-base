@@ -42,11 +42,13 @@ uberTalent{
 	tactical = { ATTACK = 4 },
 	on_pre_use = function(self, t) return self.size_category and self.size_category >= 4 end,
 	cooldown = 10,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local hit = self:attackTarget(target, nil, 3.5 + 0.8 * (self.size_category - 4), true)
 
@@ -77,18 +79,20 @@ uberTalent{
 uberTalent{
 	name = "Massive Blow",
 	mode = "activated",
-	require = { special={desc="Have dug at least 30 walls/trees/etc. and have dealt over 50000 damage with two-handed weapons", fct=function(self) return 
-		self.dug_times and self.dug_times >= 30 and 
+	require = { special={desc="Have dug at least 30 walls/trees/etc. and have dealt over 50000 damage with two-handed weapons", fct=function(self) return
+		self.dug_times and self.dug_times >= 30 and
 		self.damage_log and self.damage_log.weapon.twohanded and self.damage_log.weapon.twohanded >= 50000
 	end} },
 	requires_target = true,
 	tactical = { ATTACK = 4 },
 	cooldown = 10,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local destroyed = false
 		target:knockback(self.x, self.y, 4, nil, function(g, x, y)

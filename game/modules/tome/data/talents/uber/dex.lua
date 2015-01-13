@@ -90,6 +90,7 @@ uberTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
+	is_melee = true,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		self:project(tg, self.x, self.y, function(px, py, tg, self)
@@ -135,7 +136,7 @@ uberTalent{
 uberTalent{
 	name = "Giant Leap",
 	mode = "activated",
-	require = { special={desc="Have dealt over 50000 damage with any weapon or unarmed", fct=function(self) return 
+	require = { special={desc="Have dealt over 50000 damage with any weapon or unarmed", fct=function(self) return
 		self.damage_log and (
 			(self.damage_log.weapon.twohanded and self.damage_log.weapon.twohanded >= 50000) or
 			(self.damage_log.weapon.shield and self.damage_log.weapon.shield >= 50000) or
@@ -146,6 +147,7 @@ uberTalent{
 	cooldown = 20,
 	radius = 1,
 	range = 10,
+	is_melee = true,
 	tactical = { CLOSEIN = 2, ATTACK = { PHYSICAL = 2 }, DISABLE = { daze = 1 } },
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}

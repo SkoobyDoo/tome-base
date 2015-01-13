@@ -105,7 +105,7 @@ local function createDarkTendrils(summoner, x, y, target, damage, duration, pinD
 
 				-- put in a final countdown for displaying
 				self.finalizing = true
-				duration = self.pinDuration
+				self.duration = self.pinDuration
 			end
 
 			self.duration = self.duration - 1

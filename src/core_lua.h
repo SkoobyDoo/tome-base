@@ -32,7 +32,6 @@ typedef struct
 
 typedef struct
 {
-	GLuint mode;
 	int nb, size;
 	GLfloat *vertices;
 	GLfloat *colors;

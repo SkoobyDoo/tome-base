@@ -251,6 +251,24 @@ function table.values(t)
 	return tt
 end
 
+function table.same_values(t1, t2)
+	for _, e1 in ipairs(t1) do
+		local ok = false
+		for _, e2 in ipairs(t2) do
+			if e1 == e2 then ok = true break end
+		end
+		if not ok then return false end
+	end
+	for _, e2 in ipairs(t2) do
+		local ok = false
+		for _, e1 in ipairs(t1) do
+			if e1 == e2 then ok = true break end
+		end
+		if not ok then return false end
+	end
+	return true
+end
+
 function table.from_list(t, k, v)
 	local tt = {}
 	for i, e in ipairs(t) do tt[e[k or 1]] = e[v or 2] end

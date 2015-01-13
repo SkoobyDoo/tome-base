@@ -292,16 +292,7 @@ function _M:stripForExport()
 	self:setTarget(nil)
 
 	-- Disable all sustains, remove all effects
-	local list = {}
-	for eff_id, _ in pairs(self.tmp) do list[#list+1] = eff_id end
-	for _, eff_id in ipairs(list) do self:removeEffect(eff_id, true, true) end
-
-	list = {}
-	for tid, act in pairs(self.sustain_talents) do if act then list[#list+1] = tid end end
-	while #list > 0 do
-		local eff = rng.tableRemove(list)
-		self:forceUseTalent(eff, {silent=true, ignore_energy=true, no_equilibrium_fail=true, no_paradox_fail=true, save_cleanup=true})
-	end
+	self:removeEffectsSustainsFilter()
 end
 
 -- Dummy
@@ -1362,7 +1353,7 @@ function _M:waitTurn()
 			self:reloadQS()
 		end
 	end
-	
+
 	-- Tune paradox up or down
 	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox()) then
 		local power = 0
@@ -1459,38 +1450,38 @@ function _M:teleportRandom(x, y, dist, min_dist)
 	if game.level.data.no_teleport_south and y + dist > self.y then
 		y = self.y - dist
 	end
-	
+
 	-- Dimensional Anchor, prevent teleports and deal damage
 	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
 		local p = self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR)
 		DamageType:get(DamageType.WARP).projector(p.src or self, self.x, self.y, DamageType.WARP, p.damage)
 		return
 	end
-	
+
 	local ox, oy = self.x, self.y
 	local ret = engine.Actor.teleportRandom(self, x, y, dist, min_dist)
 	if self.x ~= ox or self.y ~= oy then
 			-- Phase Pulse
 		if self:isTalentActive(self.T_PHASE_PULSE) then
 			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy)
-		end	
-	
+		end
+
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
 		self:dropNoTeleportObjects()
 		if self:attr("defense_on_teleport") or self:attr("resist_all_on_teleport") or self:attr("effect_reduction_on_teleport") then
 			self:setEffect(self.EFF_OUT_OF_PHASE, 5, {defense=self:attr("defense_on_teleport") or 0, resists=self:attr("resist_all_on_teleport") or 0, effect_reduction=self:attr("effect_reduction_on_teleport") or 0})
 		end
-		
+
 		-- Dimensional shift, chance to clear effects on teleport
 		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
 			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
 		end
-		
+
 		-- Teleportation does not clear Time Dilation
 		if self:isTalentActive(self.T_TIME_DILATION) then
 			self:callTalent(self.T_TIME_DILATION, "updateOnTeleport", ox, oy)
-		end			
-		
+		end
+
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
 	else
 		-- Phase Blast failure
@@ -1970,8 +1961,10 @@ function _M:onHeal(value, src)
 		end
 	end
 
-	local ret = self:fireTalentCheck("callbackOnHeal", value, src)
-	if ret then value = ret.value end
+	for cb in self:iterCallbacks("callbackOnHeal") do
+		local ret = cb(value, src)
+		if ret then value = ret.value end
+	end
 
 --	print("[HEALING]", self.uid, self.name, "for", value)
 	if (not self.resting and (not game.party:hasMember(self) or not game:getPlayer(true).resting)) and value + psi_heal >= 1 and not self:attr("silent_heal") then
@@ -2252,7 +2245,7 @@ function _M:onTakeHit(value, src, death_note)
 			value = 0
 		end
 	end
-	
+
 	-- Paradox Shield
 	if value > 0 and self:isTalentActive(self.T_PRESERVE_PATTERN) then
 		value = self:callTalent(self.T_PRESERVE_PATTERN, "doPerservePattern", src, value)
@@ -2766,28 +2759,8 @@ function _M:die(src, death_note)
 
 		local effs = {}
 
-		-- Go through all spell effects
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			effs[#effs+1] = {"effect", eff_id}
-		end
+		self:removeEffectsSustainsFilter()
 
-		-- Go through all sustained spells
-		for tid, act in pairs(self.sustain_talents) do
-			if act then
-				effs[#effs+1] = {"talent", tid}
-			end
-		end
-
-		while #effs > 0 do
-			local eff = rng.tableRemove(effs)
-
-			if eff[1] == "effect" then
-				self:removeEffect(eff[2])
-			else
-				self:forceUseTalent(eff[2], {ignore_energy=true})
-			end
-		end
 		self.life = self.max_life
 		self.mana = self.max_mana
 		self.stamina = self.max_stamina
@@ -2915,7 +2888,7 @@ function _M:die(src, death_note)
 	if src and src.attr and src:attr("psi_per_kill") then
 		src:incPsi(src:attr("psi_per_kill"))
 	end
-	
+
 	-- Increases blood frenzy
 	if src and src.knowTalent and src:knowTalent(src.T_BLOOD_FRENZY) and src:isTalentActive(src.T_BLOOD_FRENZY) then
 		src.blood_frenzy = src.blood_frenzy + src:callTalent(src.T_BLOOD_FRENZY,"bonuspower")
@@ -2934,7 +2907,7 @@ function _M:die(src, death_note)
 			rsrc.changed = true
 		end
 	end
-	
+
 	-- handle hate changes on kill
 	if src and src.knowTalent and src:knowTalent(src.T_HATE_POOL) then
 		local t = src:getTalentFromId(src.T_HATE_POOL)
@@ -3213,8 +3186,7 @@ function _M:levelup()
 				DamageType.MIND,
 			}
 			self.auto_resists_list = {}
-			for i = 1, rng.range(1, self.auto_resists_nb or 2) do
-				local t = rng.tableRemove(list)
+			for t in rng.tableSampleIterator(list, rng.range(1, self.auto_resists_nb or 2)) do
 				-- Double the chance so that resist is more likely to happen
 				if rng.percent(30) then self.auto_resists_list[#self.auto_resists_list+1] = t end
 				self.auto_resists_list[#self.auto_resists_list+1] = t
@@ -3772,6 +3744,8 @@ function _M:onWear(o, inven_id, bypass_set)
 
 	self:fireTalentCheck("callbackOnWear", o, bypass_set)
 
+	self:checkTwoHandedPenalty()
+
 	self:updateModdableTile()
 	if self == game.player and not bypass_set then game:playSound("actions/wear") end
 end
@@ -3870,8 +3844,22 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 	self:breakReloading()
 	self:fireTalentCheck("callbackOnTakeoff", o, bypass_set)
 
+	self:checkTwoHandedPenalty()
+
 	self:updateModdableTile()
 	if self == game.player and not bypass_set then game:playSound("actions/takeoff") end
+end
+
+function _M:checkTwoHandedPenalty()
+	self:removeEffect(self.EFF_2H_PENALTY, true, true)
+	if not self:attr("allow_mainhand_2h_in_1h") then return end
+	local mi, oi = self:getInven(self.INVEN_MAINHAND), self:getInven(self.INVEN_OFFHAND)
+	if not mi or not oi then return end
+	local mh, oh = mi[1], oi[1]
+	if not mh or not oh then return end
+	if mh.slot_forbid ~= "OFFHAND" then return end
+
+	self:setEffect(self.EFF_2H_PENALTY, 1, {})
 end
 
 function _M:checkMindstar(o)
@@ -3979,6 +3967,17 @@ function _M:getObjectOffslot(o)
 	else
 		return o.offslot
 	end
+end
+
+--- Checks if the given item should respect its slot_forbid value
+-- @param o the item to check
+-- @param in_inven the inventory id in which the item is worn or tries to be worn
+function _M:slotForbidCheck(o, in_inven_id)
+	in_inven_id = self:getInven(in_inven_id).id
+	if self:attr("allow_mainhand_2h_in_1h") and in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" then
+		return false
+	end
+	return true
 end
 
 --- Can we wear this item?
@@ -4343,7 +4342,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 					self:forceUseTalent(rng.table(ts), {ignore_energy=true})
 				end
 			end
-			
+
 			-- Drop some game messages; these happen so Paradox gets reduced even if an anomaly isn't found
 			if not silent then
 				if forced then
@@ -4380,12 +4379,12 @@ function _M:incParadox(paradox)
 	if self:getModifiedParadox() > 600 and self:getModifiedParadox() + paradox <= 600 then
 		game.logPlayer(self, "#LIGHT_BLUE#Spacetime has calmed...  somewhat.")
 	end
-	
+
 	-- Cosmic Cycle
 	if self:isTalentActive(self.T_COSMIC_CYCLE) then
 		self:callTalent(self.T_COSMIC_CYCLE, "doCosmicCycle")
 	end
-	
+
 	return previous_incParadox(self, paradox)
 end
 
@@ -4851,6 +4850,44 @@ function _M:fireTalentCheck(event, ...)
 	return ret
 end
 
+function _M:iterCallbacks(event)
+	local store = sustainCallbackCheck[event]
+	local cbs = {}
+	if self[store] then upgradeStore(self[store], store) end
+	if self[store] and next(self[store].__priorities) then
+		local iter = 1
+		return function()
+			local info = self[store].__sorted[iter]
+			if not info then return end
+			iter = iter + 1
+			local priority, kind, stringId, tid = unpack(info)
+			if kind == "effect" then
+				return function(...)
+					self.__project_source = self.tmp[tid]
+					local ret = self:callEffect(tid, event, ...)
+					self.__project_source = nil
+					return ret
+				end, priority, kind
+			elseif kind == "object" then
+				return function(...)
+					self.__project_source = tid
+					local ret = tid:check(event, self, ...)
+					self.__project_source = nil
+					return ret
+				end, priority, kind
+			else
+				return function(...)
+					self.__project_source = self.sustain_talents[tid]
+					local ret = self:callTalent(tid, event, ...)
+					self.__project_source = nil
+					return ret
+				end, priority, kind
+			end
+		end
+	end
+	return function() return end
+end
+
 function _M:getTalentSpeedType(t)
 	if t.speed then
 		return util.getval(t.speed, self, t)
@@ -5116,9 +5153,7 @@ function _M:postUseTalent(ab, ret, silent)
 			local t = self:getTalentFromId(tid)
 			if tid ~= ab.id and t and not self.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
 		end
-		for i = 1, self:attr("random_talent_cooldown_on_use_nb") do
-			local t = rng.tableRemove(tids)
-			if not t then break end
+		for t in rng.tableSampleIterator(tids, self:attr("random_talent_cooldown_on_use_nb")) do
 			self:startTalentCooldown(t.id, self:attr("random_talent_cooldown_on_use_turns"))
 			game.logSeen(self, "%s talent '%s%s' is disrupted by the mind parasite.", self.name:capitalize(), (t.display_entity and t.display_entity:getDisplayString() or ""), t.name)
 		end
@@ -5598,17 +5633,7 @@ function _M:effectsFilter(t, nb)
 		end
 	end
 
-	if nb then
-		local found = {}
-		while #effs > 0 and nb > 0 do
-			local eff = rng.tableRemove(effs)
-			found[#found + 1] = eff
-			nb = nb - 1
-		end
-		return found
-	else
-		return effs
-	end
+	return rng.tableSample(effs, nb)
 end
 
 function _M:removeEffectsFilter(t, nb, silent, force, check_remove)
@@ -5642,17 +5667,7 @@ function _M:sustainsFilter(t, nb)
 			if test then ids[#ids + 1] = tid end
 		end
 	end
-	if nb then
-		local found = {}
-		while #ids > 0 and nb > 0 do
-			local tid = rng.tableRemove(ids)
-			found[#found + 1] = tid
-			nb = nb - 1
-		end
-		return found
-	else
-		return ids
-	end
+	return rng.tableSample(ids, nb)
 end
 
 function _M:removeSustainsFilter(t, nb, check_remove)
@@ -5673,16 +5688,7 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	for _, tid in ipairs(self:sustainsFilter(t)) do
 		objects[#objects + 1] = {"talent", tid}
 	end
-	local found
-	if nb then
-		while #objects > 0 and nb > 0 do
-			found[#found + 1] = rng.tableRemove(objects)
-			nb = nb - 1
-		end
-	else
-		found = objects
-	end
-	for _, obj in ipairs(found) do
+	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
 				self:removeEffect(obj[2])
@@ -6357,8 +6363,12 @@ end
 function _M:doTakeoffTinker(base_o, oldo)
 	if base_o.tinker ~= oldo then return end
 
+	local _, base_inven
 	local mustwear = base_o.wielded
-	if mustwear then self:onTakeoff(base_o, true) end
+	if mustwear then
+		_, _, base_inven = self:findInAllInventoriesByObject(base_o)
+		self:onTakeoff(base_o, base_inven, true)
+	end
 	base_o.tinker = nil
 	local forbid = oldo:check("on_untinker", base_o, self)
 	if oldo.tinkered then
@@ -6369,7 +6379,9 @@ function _M:doTakeoffTinker(base_o, oldo)
 		end
 	end
 	oldo.tinkered = nil
-	if mustwear then self:onWear(base_o, true) end
+	if mustwear then
+		self:onWear(base_o, base_inven, true)
+	end
 
 	self:addObject(self.INVEN_INVEN, oldo)
 	game.logPlayer(self, "You detach %s from your %s.", oldo:getName{do_color=true}, base_o:getName{do_color=true})
@@ -6406,7 +6418,7 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 	end
 
 	local mustwear = base_o.wielded
-	if mustwear then self:onTakeoff(base_o, true) end
+	if mustwear then self:onTakeoff(base_o, base_inven, true) end
 
 	wear_o.tinkered = {}
 	local forbid = wear_o:check("on_tinker", base_o, self)
@@ -6416,7 +6428,7 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 		end
 	end
 
-	if mustwear then self:onWear(base_o, true) end
+	if mustwear then self:onWear(base_o, base_inven, true) end
 
 	if not forbid then
 		base_o.tinker = wear_o
