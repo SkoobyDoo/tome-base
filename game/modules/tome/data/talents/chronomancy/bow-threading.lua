@@ -78,8 +78,8 @@ newTalent{
 
 newTalent{
 	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
-	type = {"chronomancy/bow-threading", 1},
-	require = chrono_req1,
+	type = {"chronomancy/bow-threading", 2},
+	require = chrono_req2,
 	points = 5,
 	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
