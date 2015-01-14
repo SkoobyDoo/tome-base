@@ -37,17 +37,17 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
+		local swap = doWardenWeaponSwap(self, "blade")
 
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, "bow") end
 			return nil
 		end
 
 		-- Hit?
-		local hitted = self:attackTarget(target, nil, dam, true)
+		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		-- Project our warp
 		if hitted then
@@ -109,12 +109,12 @@ newTalent{
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 50, 150, getParadoxSpellpower(self, t)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
+		local swap = doWardenWeaponSwap(self, "blade")
 
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, "bow") end
 			return nil
 		end
 
@@ -127,17 +127,17 @@ newTalent{
 		local lt, rt = game.level.map(lx, ly, Map.ACTOR), game.level.map(rx, ry, Map.ACTOR)
 
 		-- target hit
-		local hit1 = self:attackTarget(target, nil, damage, true)
+		local hit1 = self:attackTarget(target, nil, t.getDamage(self, t), true)
 		if hit1 then braid_targets[#braid_targets+1] = target end
 
 		--left hit
 		if lt and self:reactionToward(lt) < 0 then
-			local hit2 = self:attackTarget(lt, nil, damage, true)
+			local hit2 = self:attackTarget(lt, nil, t.getDamage(self, t), true)
 			if hit2 then braid_targets[#braid_targets+1] = lt end
 		end
 		--right hit
 		if rt and self:reactionToward(rt) < 0 then
-			local hit3 = self:attackTarget(rt, nil, damage, true)
+			local hit3 = self:attackTarget(rt, nil, t.getDamage(self, t), true)
 			if hit3 then braid_targets[#braid_targets+1] = rt end
 		end
 
@@ -180,12 +180,12 @@ newTalent{
 	getTeleports = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
+		local swap = doWardenWeaponSwap(self, "blade")
 
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, "bow") end
 			return nil
 		end
 
@@ -209,7 +209,7 @@ newTalent{
 			local teleports = t.getTeleports(self, t)
 			local attempts = 10
 			while teleports > 0 and #tgts > 0 and attempts > 0 do
-				local a, id = rng.table(tgts)
+				local a, id = rng.tableRemove(tgts)
 				-- since we're using a precise teleport we'll look for a free grid first
 				local tx2, ty2 = util.findFreeGrid(a.x, a.y, 5, true, {[Map.ACTOR]=true})
 				if tx2 and ty2 and not a.dead then
@@ -219,7 +219,7 @@ newTalent{
 					else
 						game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 						if core.fov.distance(self.x, self.y, a.x, a.y) <= 1 then
-							self:attackTarget(a, nil, dam, true)
+							self:attackTarget(a, nil, t.getDamage(self, t), true)
 							teleports = teleports - 1
 						end
 					end

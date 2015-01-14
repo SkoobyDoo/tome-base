@@ -18,30 +18,47 @@
 -- darkgod@te4.org
 
 -- EDGE TODO: Particles, Timed Effect Particles
---[=[
-newTalent{
-	name = "Impact",
-	type = {"chronomancy/bow-threading", 1},
-	mode = "sustained",
-	require = chrono_req1,
-	sustain_paradox = 12,
-	cooldown = 10,
-	tactical = { BUFF = 2 },
-	points = 5,
-	getDamage = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
-	getApplyPower = function(self, t) return getParadoxSpellpower(self, t) end,
-	activate = function(self, t)
-		return {}
-	end,
-	deactivate = function(self, t, p)
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		return ([[Your weapons and ammo hit with greater force, dealing an additional %0.2f physical damage and having a %d%% chance to daze on hit.
-		The daze chance and damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.PHYSICAL, damage), math.min(25, damage/2))
-	end,
-}]=]
+
+local function blade_warden(self, target)
+	if self:knowTalent(self.T_FRAYED_THREADS) and not self.turn_procs.blade_warden then
+		self.turn_procs.blade_warden = true
+		local damage = 1
+		--self:callTalent(self.T_FRAYED_THREADS, "getDamage")
+		local m = makeParadoxClone(self, self, 2)
+		m.energy.value = 1000
+		
+		-- Search for targets
+		local tgts = {}
+		local grids = core.fov.circle_grids(target.x, target.y, 10, true)
+		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
+			local target_type = Map.ACTOR
+			local a = game.level.map(x, y, Map.ACTOR)
+			if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+				tgts[#tgts+1] = a
+				print("Blade Warden Target %s", a.name)
+			end
+		end end
+		
+		-- try very hard to find space
+		local attempts = 10
+		while #tgts > 0 and attempts > 0 do
+			local a, id = rng.tableRemove(tgts)
+			-- look for space
+			local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
+			if tx and ty and not a.dead then
+				if core.fov.distance(tx, ty, a.x, a.y) <= 1 then
+					game.zone:addEntity(game.level, m, "actor", tx, ty)
+					doWardenWeaponSwap(m, "blade")
+					m:attackTarget(a, nil, damage, true)
+					game.level.map:particleEmitter(m.x, m.y, 1, "temporal_teleport")
+					m:die()
+				end
+			else
+				attempts = attempts - 1
+			end
+		end
+	end
+end
 
 newTalent{
 	name = "Threaded Arrow",
@@ -59,11 +76,14 @@ newTalent{
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
+	archery_onhit = function(self, t, target, x, y)
+		blade_warden(self, target)
+	end,
 	action = function(self, t)
-		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
+		local swap = doWardenWeaponSwap(self, "bow")
 
 		local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, infinite=true, no_energy = true})
-		if not targets then if swap then doWardenWeaponSwap(self, t, nil, "blade") end return end
+		if not targets then if swap then doWardenWeaponSwap(self, "blade") end return end
 		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam, damtype=DamageType.TEMPORAL})
 
 		return true
@@ -185,12 +205,12 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
+		local swap = doWardenWeaponSwap(self, "bow")
 		
 		-- Pull x, y from getTarget and pass it so we can show the player the area of effect
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
-		if not x or not y then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
+		if not x or not y then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
 		
 		tg.type = "bolt" -- switch our targeting back to a bolt
 
@@ -231,12 +251,12 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
+		local swap = doWardenWeaponSwap(self, "bow")
 		
 		-- Grab our target so we can spawn clones
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
+		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
 		local __, x, y = self:canProject(tg, x, y)
 		
 		-- Don't cheese arrow stitching through walls
@@ -247,7 +267,7 @@ newTalent{
 				
 		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy = true})
 		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=dam})
+		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=t.getDamage(self, t)})
 		
 		-- Summon our clones
 		if not self.arrow_stitched_clone then

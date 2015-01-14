@@ -2419,7 +2419,7 @@ newEffect{
 }
 
 newEffect{
-	name = "TIME_STOP", image = "talents/stop.png",
+	name = "TIME_STOP", image = "talents/time_stop.png",
 	desc = "Time Stop",
 	long_desc = function(self, eff)
 		return ("The target has stopped time and is dealing %d%% less damage."):format(eff.power)
@@ -2435,6 +2435,7 @@ newEffect{
 	subtype = {time=true},
 	status = "detrimental",
 	parameters = {power=50},
+	remove_on_clone = true,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
 		if core.shader.active(4) then
@@ -2443,14 +2444,22 @@ newEffect{
 		self:effectTemporaryValue(eff, "timestopping", 1)
 		self.no_leave_control = true
 		core.display.pauseAnims(true)
-		self:updateMainShader()
+		
+		-- clone protection
+		if self.player then
+			self:updateMainShader()
+		end
 	end,
 	deactivate = function(self, eff)
 		self.no_leave_control = false
 		core.display.pauseAnims(false)
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
-		self:updateMainShader()
+		
+		-- clone protection
+		if self == game.player then
+			self:updateMainShader()
+		end
 	end,
 }
 

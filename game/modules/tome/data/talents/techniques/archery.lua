@@ -50,12 +50,12 @@ newTalent{
 		end
 	end,
 	action = function(self, t)
-		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, 0, "bow")
+		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, "bow")
 	
 		-- Most of the time use the normal shoot.
 		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
-			if not targets then return end
+			if not targets then if swap then doWardenWeaponSwap(self, "blade") end return end
 			self:archeryShoot(targets, t, nil, {use_psi_archery = t.use_psi_archery(self, t)})
 			return true
 		end

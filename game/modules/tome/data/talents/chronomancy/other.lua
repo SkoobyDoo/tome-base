@@ -92,40 +92,35 @@ doWardenPreUse = function(self, weapon, silent)
 end
 
 -- Swaps weapons if needed
-doWardenWeaponSwap = function(self, t, dam, type)
+doWardenWeaponSwap = function(self, type)
 	local swap = false
-	local dam = dam or 0
 	local warden_weapon
 
-	if t.type[1]:find("^chronomancy/blade") or type == "blade" then
+	
+	game.logPlayer("Quick swap?!?")
+	if type == "blade" then
 		local mainhand, offhand = self:hasDualWeapon()
 		if not mainhand then
 			swap = true
 			warden_weapon = "blade"
 		end
 	end
-	if t.type[1]:find("^chronomancy/bow") or type == "bow" then
+	if type == "bow" then
 		if not self:hasArcheryWeapon("bow") then
 			swap = true
 			warden_weapon = "bow"
 		end
 	end
+	
 	if swap == true then
+		game.logPlayer("Quick swap?!?")
 		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
 		self.no_inventory_access = nil
 		self:quickSwitchWeapons(true, "warden")
 		self.no_inventory_access = old_inv_access
-
-		if self:knowTalent(self.T_BLENDED_THREADS) then
-			if not self.turn_procs.blended_threads then
-				self.turn_procs.blended_threads = warden_weapon
-			end
-			if self.turn_procs.blended_threads == warden_weapon then
-				dam = dam * (1 + self:callTalent(self.T_BLENDED_THREADS, "getPercent"))
-			end
-		end
 	end
-	return dam, swap
+	
+	return swap
 end
 
 -- Spell functions
