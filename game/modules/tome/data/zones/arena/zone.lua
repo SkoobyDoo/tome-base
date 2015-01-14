@@ -208,6 +208,7 @@ return {
 				game.level.arena.rank = -1
 --				game.player:die(game.player)
 				master.version = game.__mod_info.version
+				master.addons = table.keys(game.__mod_info.addons)				
 				master.no_drops = true
 				master.energy.value = 0
 				master.player = nil

@@ -355,8 +355,31 @@ static int lua_set_current_mousehandler(lua_State *L)
 
 	return 0;
 }
+static int lua_mouse_show(lua_State *L)
+{
+	SDL_ShowCursor(lua_toboolean(L, 1) ? TRUE : FALSE);
+	return 0;
+}
+
+static int lua_is_touch_enabled(lua_State *L)
+{
+	lua_pushboolean(L, SDL_GetNumTouchDevices() > 0);
+	return 1;
+}
+
+static int lua_is_gamepad_enabled(lua_State *L)
+{
+	if (!SDL_NumJoysticks()) return 0;
+	const char *str = SDL_JoystickNameForIndex(0);
+	lua_pushstring(L, str);
+	return 1;
+}
+
 static const struct luaL_Reg mouselib[] =
 {
+	{"touchCapable", lua_is_touch_enabled},
+	{"gamepadCapable", lua_is_gamepad_enabled},
+	{"show", lua_mouse_show},
 	{"get", lua_get_mouse},
 	{"set", lua_set_mouse},
 	{"set_current_handler", lua_set_current_mousehandler},
@@ -2291,7 +2314,7 @@ static int sdl_texture_outline(lua_State *L)
 	glLoadIdentity();
 
 	/* Render to buffer: shadow */
-	glBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, *t);
 
 	GLfloat texcoords[2*4] = {
 		0, 0,
@@ -3093,6 +3116,10 @@ static int display_pause_anims(lua_State *L) {
 	return 0;
 }
 
+static int gl_get_max_texture_size(lua_State *L) {
+	lua_pushnumber(L, max_texture_size);
+	return 1;
+}
 
 /**************************************************************
  * Vertex Objects
@@ -3287,6 +3314,7 @@ static const struct luaL_Reg displaylib[] =
 	{"glDepthTest", gl_depth_test},
 	{"glScissor", gl_scissor},
 	{"getScreenshot", sdl_get_png_screenshot},
+	{"glMaxTextureSize", gl_get_max_texture_size},
 	{NULL, NULL},
 };
 

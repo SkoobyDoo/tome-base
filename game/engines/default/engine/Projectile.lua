@@ -232,10 +232,13 @@ function _M:act()
 			self:moveDirection(self.homing.target.x, self.homing.target.y)
 			self.homing.count = self.homing.count - 1
 			if self.src then self.src.__project_source = self end -- intermediate projector source
-			if (self.x == self.homing.target.x and self.y == self.homing.target.y) or self.homing.count <= 0 then
+			if self.x == self.homing.target.x and self.y == self.homing.target.y then
 				game.level:removeEntity(self, true)
 				self.dead = true
 				self.homing.on_hit(self, self.src, self.homing.target)
+			elseif self.homing.count <= 0 then
+				game.level:removeEntity(self, true)
+				self.dead = true
 			else
 				self.homing.on_move(self, self.src)
 			end

@@ -2727,7 +2727,7 @@ function _M:die(src, death_note)
 	-- Self resurrect, mouhaha!
 	if self:attr("self_resurrect") then
 		self:attr("self_resurrect", -1)
-		game.logSeen(self, "#LIGHT_RED#%s rises from the dead!", self.name:capitalize()) -- src, not self as the source, to make sure the player knows his doom ;>
+		game.logSeen(self, self.self_resurrect_msg or "#LIGHT_RED#%s rises from the dead!", self.name:capitalize()) -- src, not self as the source, to make sure the player knows his doom ;>
 		local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
 		game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -3, "RESURRECT!", {255,120,0})
 
@@ -2744,7 +2744,6 @@ function _M:die(src, death_note)
 		self.dead = false
 		self.died = (self.died or 0) + 1
 		self:move(self.x, self.y, true)
-
 		self:check("on_resurrect", "basic_resurrect")
 
 		if self:attr("self_resurrect_chat") then
@@ -3718,6 +3717,8 @@ function _M:onWear(o, inven_id, bypass_set)
 
 	self:fireTalentCheck("callbackOnWear", o, bypass_set)
 
+	self:checkTwoHandedPenalty()
+
 	self:updateModdableTile()
 	if self == game.player and not bypass_set then game:playSound("actions/wear") end
 end
@@ -3816,8 +3817,22 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 	self:breakReloading()
 	self:fireTalentCheck("callbackOnTakeoff", o, bypass_set)
 
+	self:checkTwoHandedPenalty()
+
 	self:updateModdableTile()
 	if self == game.player and not bypass_set then game:playSound("actions/takeoff") end
+end
+
+function _M:checkTwoHandedPenalty()
+	self:removeEffect(self.EFF_2H_PENALTY, true, true)
+	if not self:attr("allow_mainhand_2h_in_1h") then return end
+	local mi, oi = self:getInven(self.INVEN_MAINHAND), self:getInven(self.INVEN_OFFHAND)
+	if not mi or not oi then return end
+	local mh, oh = mi[1], oi[1]
+	if not mh or not oh then return end
+	if mh.slot_forbid ~= "OFFHAND" then return end
+
+	self:setEffect(self.EFF_2H_PENALTY, 1, {})
 end
 
 function _M:checkMindstar(o)
@@ -3925,6 +3940,17 @@ function _M:getObjectOffslot(o)
 	else
 		return o.offslot
 	end
+end
+
+--- Checks if the given item should respect its slot_forbid value
+-- @param o the item to check
+-- @param in_inven the inventory id in which the item is worn or tries to be worn
+function _M:slotForbidCheck(o, in_inven_id)
+	in_inven_id = self:getInven(in_inven_id).id
+	if self:attr("allow_mainhand_2h_in_1h") and in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" then
+		return false
+	end
+	return true
 end
 
 --- Can we wear this item?
@@ -5602,6 +5628,7 @@ function _M:effectsFilter(t, nb)
 end
 
 function _M:removeEffectsFilter(t, nb, silent, force, check_remove)
+	t = t or {}
 	local eff_ids = self:effectsFilter(t, nb)
 	for _, eff_id in ipairs(eff_ids) do
 		if not check_remove or check_remove(self, eff_id) then
@@ -5636,6 +5663,7 @@ function _M:sustainsFilter(t, nb)
 end
 
 function _M:removeSustainsFilter(t, nb, check_remove)
+	t = t or {}
 	local found = self:sustainsFilter(t, nb)
 	for _, tid in ipairs(found) do
 		if not check_remove or check_remove(self, tid) then
@@ -5646,6 +5674,7 @@ function _M:removeSustainsFilter(t, nb, check_remove)
 end
 
 function _M:removeEffectsSustainsFilter(t, nb, check_remove)
+	t = t or {}
 	local objects = {}
 	for _, eff_id in ipairs(self:effectsFilter(t)) do
 		objects[#objects + 1] = {"effect", eff_id}
@@ -6328,8 +6357,12 @@ end
 function _M:doTakeoffTinker(base_o, oldo)
 	if base_o.tinker ~= oldo then return end
 
+	local _, base_inven
 	local mustwear = base_o.wielded
-	if mustwear then self:onTakeoff(base_o, true) end
+	if mustwear then
+		_, _, base_inven = self:findInAllInventoriesByObject(base_o)
+		self:onTakeoff(base_o, base_inven, true)
+	end
 	base_o.tinker = nil
 	local forbid = oldo:check("on_untinker", base_o, self)
 	if oldo.tinkered then
@@ -6340,7 +6373,9 @@ function _M:doTakeoffTinker(base_o, oldo)
 		end
 	end
 	oldo.tinkered = nil
-	if mustwear then self:onWear(base_o, true) end
+	if mustwear then
+		self:onWear(base_o, base_inven, true)
+	end
 
 	self:addObject(self.INVEN_INVEN, oldo)
 	game.logPlayer(self, "You detach %s from your %s.", oldo:getName{do_color=true}, base_o:getName{do_color=true})
@@ -6377,7 +6412,7 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 	end
 
 	local mustwear = base_o.wielded
-	if mustwear then self:onTakeoff(base_o, true) end
+	if mustwear then self:onTakeoff(base_o, base_inven, true) end
 
 	wear_o.tinkered = {}
 	local forbid = wear_o:check("on_tinker", base_o, self)
@@ -6387,7 +6422,7 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 		end
 	end
 
-	if mustwear then self:onWear(base_o, true) end
+	if mustwear then self:onWear(base_o, base_inven, true) end
 
 	if not forbid then
 		base_o.tinker = wear_o

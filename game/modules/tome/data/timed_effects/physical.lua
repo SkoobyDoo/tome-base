@@ -1566,7 +1566,7 @@ newEffect{
 		if eff.type == DamageType.FIRE then return ("Increases global speed by %d%%."):format(100 * self:callTalent(self.T_ELEMENTAL_HARMONY, "fireSpeed"))
 		elseif eff.type == DamageType.COLD then return ("Increases armour by %d."):format(3 + eff.power *2)
 		elseif eff.type == DamageType.LIGHTNING then return ("Increases all stats by %d."):format(math.floor(eff.power))
-		elseif eff.type == DamageType.ACID then return ("Increases life regen by %0.2f%%."):format(5 + eff.power * 2)
+		elseif eff.type == DamageType.ACID then return ("Increases life regen by %0.2f."):format(5 + eff.power * 2)
 		elseif eff.type == DamageType.NATURE then return ("Increases all resists by %d%%."):format(5 + eff.power * 1.4)
 		end
 	end,

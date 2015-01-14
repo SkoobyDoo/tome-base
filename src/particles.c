@@ -433,7 +433,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 	else if (ps->blend_mode == BLEND_MIXED) glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, ps->texture);
+	tglBindTexture(GL_TEXTURE_2D, ps->texture);
 	if (multitexture_active && main_fbo) {
 		tglActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, main_fbo->texture);

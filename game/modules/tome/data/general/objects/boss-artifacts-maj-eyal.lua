@@ -877,49 +877,56 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 			who:removeObject(gem_inven, gem_item)
 			who:sortInven(gem_inven)
 
-			-- Change the weapon
-			o.name = "Crystalline "..o.name:capitalize()
-			o.unique = o.name
-			o.no_unique_lore = true
-			if o.combat and o.combat.dam then
-				o.combat.dam = o.combat.dam * 1.25
-				o.combat.damtype = engine.DamageType.ARCANE
-			elseif o.wielder.combat and o.wielder.combat.dam then
-				o.wielder.combat.dam = o.wielder.combat.dam * 1.25
-				o.wielder.combat.convert_damage = o.wielder.combat.convert_damage or {}
-				o.wielder.combat.convert_damage[engine.DamageType.ARCANE] = 100
-			end
-			o.is_crystalline_weapon = true
-			o.power_source = o.power_source or {}
-			o.power_source.arcane = true
-			o.wielder = o.wielder or {}
-			o.wielder.combat_spellpower = (o.wielder.combat_spellpower or 0) + 12
-			o.wielder.combat_dam = (o.wielder.combat_dam or 0) + 12
-			o.wielder.inc_stats = o.wielder.inc_stats or {}
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_WIL] = 3
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_CON] = 3
-			o.wielder.inc_damage = o.wielder.inc_damage or {}
-			o.wielder.inc_damage[engine.DamageType.ARCANE] = 10
-			if o.wielder.learn_talent then o.wielder.learn_talent[who.T_COMMAND_STAFF] = nil end
-
-			o.set_list = { {"is_crystalline_armor", true} }
-			o.on_set_complete = function(self, who)
-				self.talent_on_spell = { {chance=10, talent="T_MANATHRUST", level=3} }
-				if(self.combat) then self.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
-				else self.wielder.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
-				end
-				self:specialSetAdd({"wielder","combat_spellcrit"}, 10)
-				self:specialSetAdd({"wielder","combat_physcrit"}, 10)
-				self:specialSetAdd({"wielder","resists_pen"}, {[engine.DamageType.ARCANE]=20, [engine.DamageType.PHYSICAL]=15})
-				game.logPlayer(who, "#GOLD#As the crystalline weapon and armour are brought together, they begin to emit a constant humming.")
-			end
-			o.on_set_broken = function(self, who)
-				self.talent_on_spell = nil
-				if (self.combat) then self.combat.talent_on_hit = nil
-				else self.wielder.combat.talent_on_hit = nil
-				end
-				game.logPlayer(who, "#GOLD#The humming from the crystalline artifacts fades as they are separated.")
-			end
+			local Entity = require("engine.Entity")
+			local ActorStats = require("engine.interface.ActorStats")
+			local crystalline_ego = Entity.new{
+				name = "crystalline weapon",
+				no_unique_lore = true,
+				is_crystalline_weapon = true,
+				power_source = {arcane=true},
+				wielder = {
+					combat_spellpower = 12,
+					combat_dam = 12,
+					inc_stats = {
+						[ActorStats.STAT_WIL] = 3,
+						[ActorStats.STAT_CON] = 3,
+					},
+					inc_damage = {ARCANE=10},
+				},
+				set_list = { {"is_crystalline_armor", true} },
+				on_set_complete = function(self, wearer)
+					self.talent_on_spell = { {chance=10, talent="T_MANATHRUST", level=3} }
+					if(self.combat) then self.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
+					else self.wielder.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
+					end
+					self:specialSetAdd({"wielder","combat_spellcrit"}, 10)
+					self:specialSetAdd({"wielder","combat_physcrit"}, 10)
+					self:specialSetAdd({"wielder","resists_pen"}, {[engine.DamageType.ARCANE]=20, [engine.DamageType.PHYSICAL]=15})
+					game.logPlayer(wearer, "#GOLD#As the crystalline weapon and armour are brought together, they begin to emit a constant humming.")
+				end,
+				on_set_broken = function(self, wearer)
+					self.talent_on_spell = nil
+					if (self.combat) then self.combat.talent_on_hit = nil
+					else self.wielder.combat.talent_on_hit = nil
+					end
+					game.logPlayer(wearer, "#GOLD#The humming from the crystalline artifacts fades as they are separated.")
+				end,
+				resolvers.generic(function(o) o.name = "Crystalline "..o.name:capitalize() o.unique = o.name end),
+				resolvers.generic(function(o)
+					if o.combat and o.combat.dam then
+						o.combat.dam = o.combat.dam * 1.25
+						o.combat.damtype = engine.DamageType.ARCANE
+					elseif o.wielder.combat and o.wielder.combat.dam then
+						o.wielder.combat.dam = o.wielder.combat.dam * 1.25
+						o.wielder.combat.convert_damage = o.wielder.combat.convert_damage or {}
+						o.wielder.combat.convert_damage[engine.DamageType.ARCANE] = 100
+					end
+				end),
+				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
+				fake_ego = true,
+			}
+			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			o:resolve()
 
 			who:sortInven()
 			who.changed = true
@@ -952,35 +959,41 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 			who:removeObject(gem_inven, gem_item)
 			who:sortInven(gem_inven)
 
-			-- Change the weapon... err, armour. No, I'm not copy/pasting here, honest!
-			o.name = "Crystalline "..o.name:capitalize()
-			o.unique = o.name
-			o.no_unique_lore = true
-			o.is_crystalline_armor = true
-			o.power_source = o.power_source or {}
-			o.power_source.arcane = true
+			local Entity = require("engine.Entity")
+			local ActorStats = require("engine.interface.ActorStats")
+			local crystalline_ego = Entity.new{
+				name = "crystalline armour",
+				no_unique_lore = true,
+				is_crystalline_armor = true,
+				power_source = {arcane=true},
+				wielder = {
+					combat_spellresist = 35,
+					combat_physresist = 25,
+					inc_stats = {
+						[ActorStats.STAT_MAG] = 8,
+						[ActorStats.STAT_CON] = 8,
+						[ActorStats.STAT_LCK] = 12,
+					},
+					resists = {ARCANE=35, PHYSICAL=15},
+					poison_immune=0.6,
+					disease_immune=0.6,
+				},
+				set_list = { {"is_crystalline_weapon", true} },
+				on_set_complete = function(self, who)
+					self:specialSetAdd({"wielder","stun_immune"}, 0.5)
+					self:specialSetAdd({"wielder","blind_immune"}, 0.5)
+				end,
+				resolvers.generic(function(o) o.name = "Crystalline "..o.name:capitalize() o.unique = o.name end),
+				resolvers.generic(function(o)
+					-- This is supposed to add 1 def for crap cloth robes if for some reason you choose it instead of better robes, and then multiply by 1.25.
+					o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
+					-- Same for armour. Yay crap cloth!
+					o.wielder.combat_armor = ((o.wielder.combat_armor or 0) + 3) * 1.7
+				end),
+			}
+			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			o:resolve()
 
-			o.wielder = o.wielder or {}
-			-- This is supposed to add 1 def for crap cloth robes if for some reason you choose it instead of better robes, and then multiply by 1.25.
-			o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
-			-- Same for armour. Yay crap cloth!
-			o.wielder.combat_armor = ((o.wielder.combat_armor or 0) + 3) * 1.7
-			o.wielder.combat_spellresist = 35
-			o.wielder.combat_physresist = 25
-			o.wielder.inc_stats = o.wielder.inc_stats or {}
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_MAG] = 8
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_CON] = 8
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_LCK] = 12
-			o.wielder.resists = o.wielder.resists or {}
-			o.wielder.resists = { [engine.DamageType.ARCANE] = 35, [engine.DamageType.PHYSICAL] = 15 }
-			o.wielder.poison_immune = 0.6
-			o.wielder.disease_immune = 0.6
-
-			o.set_list = { {"is_crystalline_weapon", true} }
-			o.on_set_complete = function(self, who)
-				self:specialSetAdd({"wielder","stun_immune"}, 0.5)
-				self:specialSetAdd({"wielder","blind_immune"}, 0.5)
-			end
 			who:sortInven()
 			who.changed = true
 

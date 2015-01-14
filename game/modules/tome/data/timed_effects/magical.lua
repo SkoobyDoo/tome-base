@@ -3244,25 +3244,26 @@ newEffect{
 		self.turn_procs.ogric_wrath = true
 		self:setEffect(self.EFF_OGRE_FURY, 1, {})
 	end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "stun_immune", 0.2)
+		self:effectTemporaryValue(eff, "pin_immune", 0.2)
+		self:effectTemporaryValue(eff, "inc_damage", {all=0.1})
+	end,
 }
 
 newEffect{
 	name = "OGRE_FURY", image = "effects/ogre_fury.png",
 	desc = "Ogre Fury",
-	long_desc = function(self, eff) return ("Increases stun and confusion resistances by %d%%, crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 10, eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
+	long_desc = function(self, eff) return ("Increases crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 10, eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
 	type = "magical",
 	subtype = { runic=true },
 	status = "beneficial",
 	parameters = { stacks=1, max_stacks=5 },
 	charges = function(self, eff) return eff.stacks end,
 	do_effect = function(self, eff, add)
-		if eff.stun then self:removeTemporaryValue("stun_immune", eff.stun) end
-		if eff.conf then self:removeTemporaryValue("confusion_immune", eff.conf) end
 		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) end
 		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) end
 		if add then
-			eff.stun = self:addTemporaryValue("stun_immune", eff.stacks * 0.1)
-			eff.conf = self:addTemporaryValue("confusion_immune", eff.stacks * 0.1)
 			eff.cdam = self:addTemporaryValue("combat_critical_power", eff.stacks * 20)
 			eff.crit = self:addTemporaryValue("combat_generic_crit", eff.stacks * 5)
 		end

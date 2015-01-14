@@ -130,13 +130,14 @@ newTalent{
 				local Entity = require("engine.Entity")
 				local ego = Entity.new{
 					name = "imbue "..gem.name,
-					been_imbued = " <"..gem.name..">",
-					special = true,
+					display_string = " <"..gem.name..">",
+					been_imbued = true,
 					wielder = table.clone(gem.imbue_powers),
 					talent_on_spell = gem.talent_on_spell,
+					fake_ego = true, unvault_ego = true,
 				}
 				local name = o:getName{do_colour=true, no_count=true}
-				game.zone:applyEgo(o, ego, "object", true)
+				game.zone:applyEgo(o, ego, "object")
 				game.logPlayer(self, "You imbue your %s with %s.", name, gem:getName{do_colour=true, no_count=true})
 				self:talentDialogReturn(true)
 				game:unregisterDialog(self:talentDialogGet())

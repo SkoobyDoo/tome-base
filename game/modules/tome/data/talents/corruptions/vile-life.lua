@@ -66,7 +66,7 @@ newTalent{
 	getLightning = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 3, 5)) end,
 	getAcid = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 2, 5)) end,
 	getNature = function(self, t) return self:combatTalentLimit(t, 60, 15, 45) end,
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp, no_martyr)
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local p = self:isTalentActive(t.id)
 		if not p then return end
 		if not src.setEffect then return end
@@ -88,7 +88,7 @@ newTalent{
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/slime")
 		return {
-			last_turn = { 
+			last_turn = {
 				[DamageType.FIRE] = game.turn - 100,
 				[DamageType.COLD] = game.turn - 100,
 				[DamageType.ACID] = game.turn - 100,
@@ -189,7 +189,7 @@ newTalent{
 					local e = self.tempeffect_def[eff_id]
 					local effectParam = self:copyEffect(eff_id)
 					effectParam.src = self
-						
+
 					target:setEffect(eff_id, p.dur, effectParam)
 					self:removeEffect(eff_id)
 					local dead, val = self:takeHit(dam, self, {source_talent=t})

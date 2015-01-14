@@ -195,6 +195,7 @@ newTalent{
 	mana = 10,
 	no_npc_use = true,
 	no_unlearn_last = true,
+	on_pre_use = function(self, t) return not self.resting end,
 	getHeal = function(self, t)
 		if not self.alchemy_golem then return 0 end
 		local ammo = self:hasAlchemistWeapon()

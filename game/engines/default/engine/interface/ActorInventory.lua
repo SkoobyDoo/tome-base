@@ -402,7 +402,7 @@ function _M:canWearObject(o, try_slot)
 	end
 
 	-- Check forbidden slot
-	if o.slot_forbid then
+	if o.slot_forbid and self:slotForbidCheck(o, o.slot or try_slot) then
 		local inven = self:getInven(o.slot_forbid)
 		-- If the object cant coexist with that inventory slot and it exists and is not empty, refuse wearing
 		if inven and #inven > 0 then
@@ -415,7 +415,7 @@ function _M:canWearObject(o, try_slot)
 		if self.inven_def[id].is_worn and (not self.inven_def[id].infos or not self.inven_def[id].infos.etheral) then
 			for i, wo in ipairs(inven) do
 				print("fight: ", o.name, wo.name, "::", wo.slot_forbid, try_slot or o.slot)
-				if wo.slot_forbid and wo.slot_forbid == (try_slot or o.slot) then
+				if wo.slot_forbid and self:slotForbidCheck(wo, id) and wo.slot_forbid == (try_slot or o.slot) then
 					print(" impossible => ", o.name, wo.name, "::", wo.slot_forbid, try_slot or o.slot)
 					return nil, "cannot use currently due to an other worn object"
 				end
@@ -427,6 +427,13 @@ function _M:canWearObject(o, try_slot)
 	local err = self:check("canWearObjectCustom", o, try_slot)
 	if err then return nil, err end
 
+	return true
+end
+
+--- Checks if the given item should respect its slot_forbid value
+-- @param o the item to check
+-- @param in_inven the inventory id in which the item is worn or tries to be worn
+function _M:slotForbidCheck(o, in_inven_id)
 	return true
 end
 

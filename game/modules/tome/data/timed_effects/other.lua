@@ -2683,6 +2683,18 @@ newEffect{
 	end,
 }
 
+newEffect{
+	name = "2H_PENALTY", image = "talents/unstoppable.png",
+	desc = "Hit Penalty",
+	long_desc = function(self, eff) return ("The target is using a two handed weapon in a single hand, reducing chances to hit by %d%% (based on size)."):format(20 - math.min(self.size_category - 4, 4) * 5) end,
+	type = "other", decrease = 0, no_remove = true,
+	subtype = { combat=true, penalty=true },
+	status = "detrimental",
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "hit_penalty_2h", 1)
+	end,
+}
 
 newEffect{
 	name = "TWIST_FATE", image = "talents/twist_fate.png",

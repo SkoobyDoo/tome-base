@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 local Object = require "engine.Object"
+local Entity = require "engine.Entity"
 local Dialog = require "engine.ui.Dialog"
 
 local curses_detrimental
@@ -71,18 +72,24 @@ newTalent{
 		if item.curse then return end
 		if not t.canCurseItem(self, t, item) then return end
 
+		local curse
 		-- apply the curse
 		if item.define_as == "CLOAK_DECEPTION" then
 			-- cloak of deception is always Corpses..
-			item.curse = self.EFF_CURSE_OF_CORPSES
+			curse = self.EFF_CURSE_OF_CORPSES
 		else
 			local curses = t.getCurses(self, t)
-			item.curse = rng.table(curses)
+			curse = rng.table(curses)
 		end
 
-		local def = self.tempeffect_def[item.curse]
-		item.special = true
-		item.add_name = (item.add_name or "").." ("..def.short_desc..")"
+		local def = self.tempeffect_def[curse]
+		local ego = Entity.new{
+			name = "curse",
+			display_string = " ("..def.short_desc..")",
+			curse = curse,
+			fake_ego = true, unvault_ego = true,
+		}
+		game.zone:applyEgo(item, ego, "object")
 	end,
 	-- curses all items on the floor
 	curseFloor = function(self, t, x, y)

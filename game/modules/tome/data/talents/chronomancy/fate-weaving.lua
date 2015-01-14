@@ -26,12 +26,12 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	getSaveBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 8, 0.75)) end,
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp, no_martyr)
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		if dam > 0 and src ~= self then
 			if self.turn_procs and not self.turn_procs.spin_fate then
-				
+
 				self:setEffect(self.EFF_SPIN_FATE, 3, {save_bonus=t.getSaveBonus(self, t), spin=1, max_spin=3})
-				
+
 				-- Set our turn procs, we do spin_fate last since it's the only one checked above
 				if self.hasEffect and self:hasEffect(self.EFF_WEBS_OF_FATE) and not self.turn_procs.spin_webs then
 					self.turn_procs.spin_webs = true
@@ -40,16 +40,16 @@ newTalent{
 				else
 					self.turn_procs.spin_fate = true
 				end
-				
+
 				-- Reduce damage if we know Fateweaver
 				if self:knowTalent(self.T_FATEWEAVER) then
 					local reduction = dam * self:callTalent(self.T_FATEWEAVER, "getReduction")
 					dam = dam - reduction
 					game:delayedLogDamage(src, self, 0, ("%s(%d fatewever)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
-				end				
+				end
 			end
 		end
-		
+
 		return {dam=dam}
 	end,
 	info = function(self, t)
@@ -72,7 +72,7 @@ newTalent{
 	no_energy = true,
 	action = function(self, t)
 		local effs = {}
-			
+
 		-- Find all pins
 		for eff_id, p in pairs(self.tmp) do
 			local e = self.tempeffect_def[eff_id]
@@ -80,7 +80,7 @@ newTalent{
 				effs[#effs+1] = {"effect", eff_id}
 			end
 		end
-		
+
 		-- And remove them
 		while #effs > 0 do
 			local eff = rng.tableRemove(effs)
@@ -89,16 +89,16 @@ newTalent{
 				self:removeEffect(eff[2])
 			end
 		end
-		
+
 		-- Set our power based on current spin
 		local imm = t.getPower(self, t)
 		local eff = self:hasEffect(self.EFF_SPIN_FATE)
-		if eff then 
+		if eff then
 			imm = imm * (1 + eff.spin/3)
 		end
-		
+
 		self:setEffect(self.EFF_WEBS_OF_FATE, t.getDuration(self, t), {imm=imm})
-		
+
 		return true
 	end,
 	info = function(self, t)
