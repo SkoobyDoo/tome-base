@@ -96,8 +96,6 @@ doWardenWeaponSwap = function(self, type)
 	local swap = false
 	local warden_weapon
 
-	
-	game.logPlayer("Quick swap?!?")
 	if type == "blade" then
 		local mainhand, offhand = self:hasDualWeapon()
 		if not mainhand then
@@ -113,7 +111,6 @@ doWardenWeaponSwap = function(self, type)
 	end
 	
 	if swap == true then
-		game.logPlayer("Quick swap?!?")
 		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
 		self.no_inventory_access = nil
 		self:quickSwitchWeapons(true, "warden")

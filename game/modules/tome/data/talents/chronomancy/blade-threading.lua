@@ -19,6 +19,54 @@
 
 -- EDGE TODO: Particles, Timed Effect Particles
 
+local function bow_warden(self, target)
+	if self:knowTalent(self.T_FRAYED_THREADS) and not self.turn_procs.bow_warden then
+		self.turn_procs.bow_warden = true
+		local damage = self:callTalent(self.T_FRAYED_THREADS, "getDamage")
+		local m = makeParadoxClone(self, self, 2)
+		m.energy.value = 1000
+		doWardenWeaponSwap(m, "bow")
+		
+		-- Search for targets
+		local tgts = {}
+		local grids = core.fov.circle_grids(target.x, target.y, 10, true)
+		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
+			local target_type = Map.ACTOR
+			local a = game.level.map(x, y, Map.ACTOR)
+			if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+				tgts[#tgts+1] = a
+			end
+		end end
+		
+		local poss = {}
+		local range = archery_range(m)
+		for i = x - range, x + range do
+			for j = y - range, y + range do
+				if game.level.map:isBound(i, j) and
+					core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
+					core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
+					self:canMove(i, j) and target:hasLOS(i, j) then
+					poss[#poss+1] = {i,j}
+				end
+			end
+		end
+		
+		if #poss == 0 then return end
+		local pos = poss[rng.range(1, #poss)]
+		x, y = pos[1], pos[2]
+		game.zone:addEntity(game.level, m, "actor", x, y)
+		m.energy.value = 1000
+		m:attr("archery_pass_friendly", 1)
+		m.on_act = function(self)
+			if not self.shoot_target.dead then
+				self:forceUseTalent(self.T_ARROW_STITCHING, {force_level=t.leve, ignore_cd=true, ignore_energy=true, force_target=self.shoot_target, ignore_ressources=true, silent=true})
+			end
+			self:die()
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+		end
+	end
+end
+
 newTalent{
 	name = "Warp Blade",
 	type = {"chronomancy/blade-threading", 1},

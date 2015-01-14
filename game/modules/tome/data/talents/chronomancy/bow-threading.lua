@@ -22,10 +22,8 @@
 local function blade_warden(self, target)
 	if self:knowTalent(self.T_FRAYED_THREADS) and not self.turn_procs.blade_warden then
 		self.turn_procs.blade_warden = true
-		local damage = 1
-		--self:callTalent(self.T_FRAYED_THREADS, "getDamage")
+		local damage = self:callTalent(self.T_FRAYED_THREADS, "getDamage")
 		local m = makeParadoxClone(self, self, 2)
-		m.energy.value = 1000
 		
 		-- Search for targets
 		local tgts = {}
@@ -52,6 +50,7 @@ local function blade_warden(self, target)
 					m:attackTarget(a, nil, damage, true)
 					game.level.map:particleEmitter(m.x, m.y, 1, "temporal_teleport")
 					m:die()
+					break
 				end
 			else
 				attempts = attempts - 1
@@ -250,6 +249,9 @@ newTalent{
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	archery_onhit = function(self, t, target, x, y)
+		blade_warden(self, target)
+	end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, "bow")
 		
