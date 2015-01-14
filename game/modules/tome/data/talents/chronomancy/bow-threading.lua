@@ -110,7 +110,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local atk = t.getAttack(self, t)
 		local crit = t.getCrit(self, t)
-		return ([[Activate to focus fire on the target.  For the next %d turns all your ranged attacks will automatically aim at this target and you'll gain +%d accuracy and +%d%% to critical hit rates against it.
+		return ([[Activate to focus fire on the target.  For the next %d turns all your ranged attacks will automatically aim at this target and gain +%d accuracy and +%d%% critical hit rate against it.
 		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
 		:format(duration, atk, crit)
 	end
