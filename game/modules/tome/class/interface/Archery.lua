@@ -75,6 +75,16 @@ function _M:archeryAcquireTargets(tg, params)
 	print("[PROJECTILE SPEED] ::", tg.speed)
 
 	self:triggerHook{"Combat:archeryTargetKind", tg=tg, params=params, mode="target"}
+	
+	-- Warden's Focus
+	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then 
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if not eff.target.dead then
+			params.x, params.y = eff.target.x, eff.target.y
+		else
+			self:removeEffect(self.EFF_WARDEN_S_FOCUS)
+		end
+	end
 
 	local x, y = params.x, params.y
 	if not x or not y then x, y = self:getTarget(tg) end
@@ -184,6 +194,15 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	local mult = tg.archery.mult or 1
 
 	self.turn_procs.weapon_type = {kind=weapon and weapon.talented or "unknown", mode="archery"}
+	
+	-- Warden's Focus
+	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if target == eff.target then
+			tg.archery.atk = (tg.archery.atk or 0) + eff.atk
+			tg.archery.crit = (tg.archery.crit or 0) + eff.crit
+		end
+	end
 
 	-- Does the blow connect? yes .. complex :/
 	if tg.archery.use_psi_archery then self:attr("use_psi_combat", 1) end

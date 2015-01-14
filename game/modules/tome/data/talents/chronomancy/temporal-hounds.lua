@@ -179,15 +179,11 @@ newTalent{
 		summonTemporalHound(self, t)
 		
 		return {
-				-- Turn off friendly fire if we have this sustain; thanks dekar for the idea :)
-				proj = self:addTemporaryValue("archery_pass_friendly", 1),
 				rest_count = self:getTalentCooldown(t), 
 				hounds = 1, max_hounds = 3
 		}
 	end,
 	deactivate = function(self, t, p)
-		self:removeTemporaryValue("archery_pass_friendly", p.proj)
-		
 		-- unsummon the hounds :(
 		for _, e in pairs(game.level.entities) do
 			if e.summoner and e.summoner == self and e.name == "temporal hound" then
@@ -202,8 +198,7 @@ newTalent{
 		local resists = t.getResists(self, t)
 		return ([[Upon activation summon a Temporal Hound.  Every %d turns another hound will be summoned, up to a maximum of three hounds. If a hound dies you'll summon a new hound in %d turns.  
 		Your hounds inherit your increased damage percent and have %d%% physical resistance and %d%% temporal resistance.
-		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning ,based on your Spellpower.
-		While Temporal Hounds is active your arrows will shoot through friendly targets.]])
+		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning ,based on your Spellpower.]])
 		:format(cooldown, cooldown, resists/2, math.min(100, resists*2), incStats.str + 1, incStats.dex + 1, incStats.con + 1, incStats.mag + 1, incStats.wil +1, incStats.cun + 1)
 	end
 }

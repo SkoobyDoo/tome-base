@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 -- EDGE TODO: Particles, Timed Effect Particles
-
+--[=[
 newTalent{
 	name = "Impact",
 	type = {"chronomancy/bow-threading", 1},
@@ -41,23 +41,23 @@ newTalent{
 		return ([[Your weapons and ammo hit with greater force, dealing an additional %0.2f physical damage and having a %d%% chance to daze on hit.
 		The daze chance and damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.PHYSICAL, damage), math.min(25, damage/2))
 	end,
-}
+}]=]
 
 newTalent{
 	name = "Threaded Arrow",
-	type = {"chronomancy/bow-threading", 2},
-	require = chrono_req2,
+	type = {"chronomancy/bow-threading", 1},
+	require = chrono_req1,
 	points = 5,
 	cooldown = 4,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {weapon = 2} },
 	requires_target = true,
 	range = archery_range,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 2.2) end,
-	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 10, 20)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
-	archery_onhit = function(self, t, target, x, y)
-		self:incParadox(-t.getParadoxReduction(self, t))
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
 	action = function(self, t)
 		local dam, swap = doWardenWeaponSwap(self, t, t.getDamage(self, t))
@@ -69,11 +69,50 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local paradox = t.getParadoxReduction(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Fire a shot doing %d%% temporal damage.  If the arrow hits you recover %d Paradox.
-		This attack does not consume ammo.]])
+		return ([[Fire a shot doing %d%% temporal damage.  This attack does not consume ammo.
+		Learning this talent allows your arrows to shoot through friendly targets.]])
 		:format(damage, paradox)
+	end
+}
+
+newTalent{
+	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
+	type = {"chronomancy/bow-threading", 1},
+	require = chrono_req1,
+	points = 5,
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { BUFF = 2 },
+	direct_hit = true,
+	requires_target = true,
+	range = 10,
+	no_energy = true,
+	target = function (self, t)
+		return {type="hit", range=self:getTalentRange(t), talent=t}
+	end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 8, 16))) end,
+	getAttack = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
+	getCrit = function(self, t) return self:combatTalentSpellDamage(t, 5, 50, getParadoxSpellpower(self, t)) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local tx, ty = self:getTarget(tg)
+		if not tx or not ty then return nil end
+		local _ _, tx, ty = self:canProject(tg, tx, ty)
+		local target = game.level.map(tx, ty, Map.ACTOR)
+		if not target then return end
+		
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
+		
+		return true
+	end,
+	info = function(self, t)
+		local duration = t.getDuration(self, t)
+		local atk = t.getAttack(self, t)
+		local crit = t.getCrit(self, t)
+		return ([[Activate to focus fire on the target.  For the next %d turns all your ranged attacks will automatically aim at this target and you'll gain +%d accuracy and +%d%% to critical hit rates against it.
+		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
+		:format(duration, atk, crit)
 	end
 }
 

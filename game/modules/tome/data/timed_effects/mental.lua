@@ -3233,3 +3233,22 @@ newEffect{
 		end
 	end,
 }
+
+newEffect{
+	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
+	desc = "Warden's Focus",
+	long_desc = function(self, eff) return ("Focused on %s, +%d accuracy and +%d%% critical hit chance with ranged attacks against this target."):format(eff.target.name, eff.atk, eff.crit) end,
+	type = "mental",
+	subtype = { tactic=true },
+	status = "beneficial",
+	on_gain = function(self, err) return "#Target# focuses fire.", "+Warden's Focus" end,
+	on_lose = function(self, err) return nil, "-Warden's Focus" end,
+	parameters = { crit=0, atk=0 },
+	on_timeout = function(self, eff)
+		if eff.target.dead then
+			self:removeEffect(self.EFF_WARDEN_S_FOCUS)
+		end
+	end,
+	activate = function(self, eff)
+	end,
+}
