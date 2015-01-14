@@ -436,7 +436,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 	tglBindTexture(GL_TEXTURE_2D, ps->texture);
 	if (multitexture_active && main_fbo) {
 		tglActiveTexture(GL_TEXTURE1);
-		tglBindTexture(GL_TEXTURE_2D, main_fbo->texture);
+		glBindTexture(GL_TEXTURE_2D, main_fbo->texture);
 	}
 	glTexCoordPointer(2, GL_SHORT, 0, texcoords);
 	glColorPointer(4, GL_FLOAT, 0, colors);

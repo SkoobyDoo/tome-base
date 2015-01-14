@@ -2314,7 +2314,7 @@ static int sdl_texture_outline(lua_State *L)
 	glLoadIdentity();
 
 	/* Render to buffer: shadow */
-	glBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, *t);
 
 	GLfloat texcoords[2*4] = {
 		0, 0,

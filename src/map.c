@@ -1159,7 +1159,7 @@ static int map_get_seensinfo(lua_State *L)
 
 static void map_update_seen_texture(map_type *map)
 {
-	glBindTexture(GL_TEXTURE_2D, map->seens_texture);
+	tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
 	gl_c_texture = -1;
 
 	int mx = map->used_mx;
@@ -1352,7 +1352,7 @@ static int map_bind_seen_texture(lua_State *L)
 	if (unit > 0 && !multitexture_active) return 0;
 
 	if (unit > 0) tglActiveTexture(GL_TEXTURE0+unit);
-	glBindTexture(GL_TEXTURE_2D, map->seens_texture);
+	tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
 	if (unit > 0) tglActiveTexture(GL_TEXTURE0);
 
 	return 0;
