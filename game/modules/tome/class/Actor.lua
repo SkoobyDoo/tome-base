@@ -2753,7 +2753,7 @@ function _M:die(src, death_note)
 	-- Self resurrect, mouhaha!
 	if self:attr("self_resurrect") then
 		self:attr("self_resurrect", -1)
-		game.logSeen(self, "#LIGHT_RED#%s rises from the dead!", self.name:capitalize()) -- src, not self as the source, to make sure the player knows his doom ;>
+		game.logSeen(self, self.self_resurrect_msg or "#LIGHT_RED#%s rises from the dead!", self.name:capitalize()) -- src, not self as the source, to make sure the player knows his doom ;>
 		local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
 		game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -3, "RESURRECT!", {255,120,0})
 
@@ -2770,7 +2770,6 @@ function _M:die(src, death_note)
 		self.dead = false
 		self.died = (self.died or 0) + 1
 		self:move(self.x, self.y, true)
-
 		self:check("on_resurrect", "basic_resurrect")
 
 		if self:attr("self_resurrect_chat") then
@@ -5637,6 +5636,7 @@ function _M:effectsFilter(t, nb)
 end
 
 function _M:removeEffectsFilter(t, nb, silent, force, check_remove)
+	t = t or {}
 	local eff_ids = self:effectsFilter(t, nb)
 	for _, eff_id in ipairs(eff_ids) do
 		if not check_remove or check_remove(self, eff_id) then
@@ -5671,6 +5671,7 @@ function _M:sustainsFilter(t, nb)
 end
 
 function _M:removeSustainsFilter(t, nb, check_remove)
+	t = t or {}
 	local found = self:sustainsFilter(t, nb)
 	for _, tid in ipairs(found) do
 		if not check_remove or check_remove(self, tid) then
@@ -5681,6 +5682,7 @@ function _M:removeSustainsFilter(t, nb, check_remove)
 end
 
 function _M:removeEffectsSustainsFilter(t, nb, check_remove)
+	t = t or {}
 	local objects = {}
 	for _, eff_id in ipairs(self:effectsFilter(t)) do
 		objects[#objects + 1] = {"effect", eff_id}
