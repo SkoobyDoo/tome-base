@@ -139,7 +139,7 @@ newTalent{
 		if hitted then
 			bow_warden(self, target)
 			self:project(tg, target.x, target.y, DamageType.TEMPORAL, self:spellCrit(t.getSheer(self, t)))
-			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
+			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=target.x-self.x, ty=target.y-self.y})
 			game:playSoundNear(self, "talents/tidalwave")
 		end
 
