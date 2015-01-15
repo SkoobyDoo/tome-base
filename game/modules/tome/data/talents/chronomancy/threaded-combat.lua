@@ -27,113 +27,74 @@ newTalent{
 	points = 5,
 	getPercent = function(self, t) return paradoxTalentScale(self, t, 40, 80, 100)/100 end,
 	getRadius = function(self, t) return self:getTalentLevel(t) > 4 and 2 or 1 end,
-	doBladeWarden = function(self, t, target)
-		-- Sanity check
-		if not self.turn_procs.blade_warden then 
-			self.turn_procs.blade_warden = true
-		else
-			return
-		end
+	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
 		
-		-- Make our clone
-		local m = makeParadoxClone(self, self, 2)
-		m.energy.value = 1000
-		doWardenWeaponSwap(m, "blade")
-		m.on_act = function(self)
-			if not self.frayed_target.dead then
-				self:attackTarget(self.frayed_target, nil, self:callTalent(self.T_FRAYED_THREADS, "getDamage"), true)
-				self:useEnergy()
-			end
-			game:onTickEnd(function()self:die()end)
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-		end
+		-- Merge our tables
+		local total_ranged_project = {}
+		local weapon_ranged_project = weapon.ranged_project or {}
+		local ammo_ranged_project = ammo.ranged_project or {}
+		local self_ranged_project = self.ranged_project or {}
+		table.mergeAdd(total_ranged_project, weapon_ranged_project, true)
+		table.mergeAdd(total_ranged_project, ammo_ranged_project, true)
+		table.mergeAdd(total_ranged_project, self_ranged_project, true)
 		
-		-- If we find space, add the clone to the level, it will die after attacking
-		local tgts= t.findTarget(self, t)
-		local attempts = 10
-		while #tgts > 0 and attempts > 0 do
-			local a, id = rng.tableRemove(tgts)
-			-- look for space
-			local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-			if tx and ty and not a.dead then			
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
-				m.frayed_target = a
-				break
-			else
-				attempts = attempts - 1
+		-- Burst
+		local burst = 0
+		for typ, dam in pairs(total_ranged_project) do
+			if dam > 0 then
+				burst = burst + dam
 			end
+		end
+		if burst > 0 then
+			self:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, burst)
 		end
 	end,
-	doBowWarden = function(self, t, target)
-		-- Sanity check
-		if not self.turn_procs.blade_warden then
-			self.turn_procs.blade_warden = true
-		else
-			return
-		end
-	
-		-- Make our clone
-		local m = makeParadoxClone(self, self, 2)
-		m.energy.value = 1000
-		m:attr("archery_pass_friendly", 1)
-		doWardenWeaponSwap(m, "bow")
-		m.on_act = function(self)
-			if not self.frayed_target.dead then
-				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.frayed_target.x, y=self.frayed_target.y, no_energy = true})
-				if targets then
-					self:archeryShoot(targets, self:getTalentFromId(self.T_SHOOT), {type="bolt"}, {mult=self:callTalent(self.T_FRAYED_THREADS, "getDamage")})
-				end
-				self:useEnergy()
-			end
-			game:onTickEnd(function()self:die()end)
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-		end
-
-		-- Find space
-		local tgts= t.findTarget(self, t)
-		if #tgts > 0 then
-			local a, id = rng.table(tgts)
-			local poss = {}
-			local range = archery_range(m)
-			local x, y = a.x, a.y
-			for i = x - range, x + range do
-				for j = y - range, y + range do
-					if game.level.map:isBound(i, j) and
-						core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
-						core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
-						self:canMove(i, j) and target:hasLOS(i, j) then
-						poss[#poss+1] = {i,j}
-					end
-				end
-			end
-			-- Add the clone to the level, it will die after shooting
-			if #poss == 0 then return end
-			local pos = poss[rng.range(1, #poss)]
-			x, y = pos[1], pos[2]
-			game.zone:addEntity(game.level, m, "actor", x, y)
-			m.frayed_target = a
-		end
+	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		if not hitted then return end
+		if not target then return end
 		
+		-- Merge our tables
+		local total_melee_project = {}
+		local weapon_melee_project = weapon.melee_project or {}
+		local self_melee_project = self.melee_project or {}
+		table.mergeAdd(total_melee_project, weapon_melee_project, true)
+		table.mergeAdd(total_melee_project, self_melee_project, true)
+		
+		-- Burst
+		local burst = 0
+		for typ, dam in pairs(total_melee_project) do
+			if dam > 0 then
+				burst = burst + dam
+			end
+		end
+		if burst > 0 then
+			self:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, burst)
+		end
 	end,
-	findTarget = function(self, t)
-		local tgts = {}
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local target_type = Map.ACTOR
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-				tgts[#tgts+1] = a
-			end
-		end end
+	doExplosion = function(self, t, target, base_dam)
+		if self.turn_procs.frayed_threads then return end
+		self.turn_procs.frayed_threads = true
 		
-		return tgts
+		if self:isTalentActive(self.T_WEAPON_FOLDING) then
+			base_dam = base_dam + self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
+		end
+		local burst_damage = base_dam * t.getPercent(self, t)
+		local burst_radius = t.getRadius(self, t)
+		
+		
+		if burst_damage >= 1 then
+			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
+		end
+		-- fixme: graphics by damage type?
 	end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
-		return ([[When you hit with a blade-threading or a bow-threading talent a clone will shoot or attack a random enemy for %d%% weapon damage.
-		Each of these effects can only occur once per turn.
-		The damage percent will scale with your Spellpower.]])
-		:format(percent)
+		local radius = t.getRadius(self, t)
+		return ([[Your ranged and melee damage on hit, including the damage from Weapon Folding and Weapon Manifolds, now deals %d%% additional damage in a radius %d burst as temporal damage.
+		This effect may only happen once per turn and the damage percent will scale with your Spellpower.]])
+		:format(percent, radius)
 	end
 }
 
@@ -224,11 +185,112 @@ newTalent{
 	require = chrono_req_high3,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return paradoxTalentScale(self, t, 10, 30, 50)/100 end,
+	getPercent = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.1) end,
+	doBladeWarden = function(self, t, target)
+		-- Sanity check
+		if not self.turn_procs.blade_warden then 
+			self.turn_procs.blade_warden = true
+		else
+			return
+		end
+		
+		-- Make our clone
+		local m = makeParadoxClone(self, self, 2)
+		m.energy.value = 1000
+		doWardenWeaponSwap(m, "blade")
+		m.on_act = function(self)
+			if not self.blended_target.dead then
+				self:attackTarget(self.blended_target, nil, self:callTalent(self.T_FRAYED_THREADS, "getDamage"), true)
+				self:useEnergy()
+			end
+			game:onTickEnd(function()self:die()end)
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+		end
+		
+		-- If we find space, add the clone to the level, it will die after attacking
+		local tgts= t.findTarget(self, t)
+		local attempts = 10
+		while #tgts > 0 and attempts > 0 do
+			local a, id = rng.tableRemove(tgts)
+			-- look for space
+			local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
+			if tx and ty and not a.dead then			
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
+				m.blended_target = a
+				break
+			else
+				attempts = attempts - 1
+			end
+		end
+	end,
+	doBowWarden = function(self, t, target)
+		-- Sanity check
+		if not self.turn_procs.blade_warden then
+			self.turn_procs.blade_warden = true
+		else
+			return
+		end
+	
+		-- Make our clone
+		local m = makeParadoxClone(self, self, 2)
+		m.energy.value = 1000
+		m:attr("archery_pass_friendly", 1)
+		doWardenWeaponSwap(m, "bow")
+		m.on_act = function(self)
+			if not self.blended_target.dead then
+				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
+				if targets then
+					self:archeryShoot(targets, self:getTalentFromId(self.T_SHOOT), {type="bolt"}, {mult=self:callTalent(self.T_FRAYED_THREADS, "getDamage")})
+				end
+				self:useEnergy()
+			end
+			game:onTickEnd(function()self:die()end)
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+		end
+
+		-- Find space
+		local tgts= t.findTarget(self, t)
+		if #tgts > 0 then
+			local a, id = rng.table(tgts)
+			local poss = {}
+			local range = archery_range(m)
+			local x, y = a.x, a.y
+			for i = x - range, x + range do
+				for j = y - range, y + range do
+					if game.level.map:isBound(i, j) and
+						core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
+						core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
+						self:canMove(i, j) and target:hasLOS(i, j) then
+						poss[#poss+1] = {i,j}
+					end
+				end
+			end
+			-- Add the clone to the level, it will die after shooting
+			if #poss == 0 then return end
+			local pos = poss[rng.range(1, #poss)]
+			x, y = pos[1], pos[2]
+			game.zone:addEntity(game.level, m, "actor", x, y)
+			m.blended_target = a
+		end
+		
+	end,
+	findTarget = function(self, t)
+		local tgts = {}
+		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
+			local target_type = Map.ACTOR
+			local a = game.level.map(x, y, Map.ACTOR)
+			if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+				tgts[#tgts+1] = a
+			end
+		end end
+		
+		return tgts
+	end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
-		return ([[Your Bow Threading and Blade Threading spells now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initated the attack.
-		The damage percent will scale with your Spellpower.]])
+		return ([[When you hit with a blade-threading or a bow-threading talent a clone will shoot or attack a random enemy for %d%% weapon damage.
+		Each of these effects can only occur once per turn.]])
 		:format(percent)
 	end
 }
