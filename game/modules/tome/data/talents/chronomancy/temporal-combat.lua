@@ -31,7 +31,7 @@ end
 newTalent{
 	name = "Fold Fate",
 	type = {"chronomancy/other", 1},
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 12,
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 5,
@@ -62,7 +62,7 @@ newTalent{
 newTalent{
 	name = "Fold Gravity",
 	type = {"chronomancy/other", 1},
-	paradox = function (self, t) return getParadoxCost(self, t, 30) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 12,
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 1,
@@ -93,7 +93,7 @@ newTalent{
 newTalent{
 	name = "Fold Void",
 	type = {"chronomancy/other", 1},
-	paradox = function (self, t) return getParadoxCost(self, t, 30) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 12,
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 1,
@@ -137,7 +137,7 @@ newTalent{
 	deactivate = function(self, t, p)
 		return true
 	end,
-	getDamage = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
 	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
 		if not hitted then return end
 		if not target then return end

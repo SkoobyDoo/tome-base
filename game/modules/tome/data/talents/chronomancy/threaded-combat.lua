@@ -23,78 +23,42 @@ newTalent{
 	name = "Frayed Threads",
 	type = {"chronomancy/threaded-combat", 1},
 	require = chrono_req_high1,
-	mode = "passive",
+	mode = "sustained",
 	points = 5,
-	getPercent = function(self, t) return self:combatTalentLimit(t, 40, 80, 100)/100 end,
+	sustain_paradox = 24,
+	cooldown = 10,
+	tactical = { BUFF = 2 },
+	activate = function(self, t)
+		return {}
+	end,
+	deactivate = function(self, t, p)
+		return true
+	end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
 	getRadius = function(self, t) return self:getTalentLevel(t) > 4 and 2 or 1 end,
 	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
 		if not hitted then return end
 		if not target then return end
-		
-		-- Merge our tables
-		local total_ranged_project = {}
-		local weapon_ranged_project = weapon.ranged_project or {}
-		local ammo_ranged_project = ammo.ranged_project or {}
-		local self_ranged_project = self.ranged_project or {}
-		table.mergeAdd(total_ranged_project, weapon_ranged_project, true)
-		table.mergeAdd(total_ranged_project, ammo_ranged_project, true)
-		table.mergeAdd(total_ranged_project, self_ranged_project, true)
-		
-		-- Burst
-		local burst = 0
-		for typ, dam in pairs(total_ranged_project) do
-			if dam > 0 then
-				burst = burst + dam
-			end
-		end
-		if burst > 0 then
-			self:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, burst)
-		end
+		t.doExplosion(self, t, target)
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
 		if not hitted then return end
 		if not target then return end
-		
-		-- Merge our tables
-		local total_melee_project = {}
-		local weapon_melee_project = weapon.melee_project or {}
-		local self_melee_project = self.melee_project or {}
-		table.mergeAdd(total_melee_project, weapon_melee_project, true)
-		table.mergeAdd(total_melee_project, self_melee_project, true)
-		
-		-- Burst
-		local burst = 0
-		for typ, dam in pairs(total_melee_project) do
-			if dam > 0 then
-				burst = burst + dam
-			end
-		end
-		if burst > 0 then
-			self:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, burst)
-		end
+		t.doExplosion(self, t, target)
 	end,
-	doExplosion = function(self, t, target, base_dam)
+	doExplosion = function(self, t, target)
 		if self.turn_procs.frayed_threads then return end
 		self.turn_procs.frayed_threads = true
 		
-		if self:isTalentActive(self.T_WEAPON_FOLDING) then
-			base_dam = base_dam + self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		end
-		local burst_damage = base_dam * t.getPercent(self, t)
-		local burst_radius = t.getRadius(self, t)
-		
-		
-		if burst_damage >= 1 then
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
-		end
+		self:project({type="ball", radius=t.getRadius(self, t), friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, t.getDamage(self,t))
 		-- fixme: graphics by damage type?
 	end,
 	info = function(self, t)
-		local percent = t.getPercent(self, t) * 100
+		local damage = t.getDamage(self, t)
 		local radius = t.getRadius(self, t)
-		return ([[Your ranged and melee damage on hit, including the damage from Weapon Folding, now deals %d%% additional temporal damage in a radius %d burst.
-		This effect may only happen once per turn.]])
-		:format(percent, radius)
+		return ([[While active your ranged and melee attacks deal an %0.2f additional temporal damage in a radius %d burst.
+		This effect may only happen once per turn and the damage will scale with your Spellpower.]])
+		:format(damDesc(self, DamageType.TEMPORAL, damage), radius)
 	end
 }
 

@@ -170,18 +170,8 @@ makeParadoxClone = function(self, target, duration)
 	end
 
 	-- remove timed effects
-	local effs = {}
-	for eff_id, p in pairs(m.tmp) do
-		local e = m.tempeffect_def[eff_id]
-		effs[#effs+1] = {"effect", eff_id}
-	end
-
-	while #effs > 0 do
-		local eff = rng.tableRemove(effs)
-		if eff[1] == "effect" then
-			m:removeEffect(eff[2])
-		end
-	end
+	m:removeTimedEffectsOnClone()
+	
 	return m
 end
 

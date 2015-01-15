@@ -393,6 +393,14 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			atk = atk + effPredator.typeAttackChange
 		end
 	end
+	
+	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if target == eff.target then
+			atk = atk + eff.atk
+		end
+	end
+
 
 	-- track weakness for hate bonus before the target removes it
 	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
@@ -1739,6 +1747,13 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		local p = target:hasEffect(target.EFF_SET_UP)
 		if p and p.src == self then
 			chance = chance + p.power
+		end
+	end
+	
+	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if target == eff.target then
+			chance = chance + eff.power
 		end
 	end
 
