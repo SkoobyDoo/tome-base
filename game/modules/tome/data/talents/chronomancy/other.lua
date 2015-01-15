@@ -109,6 +109,16 @@ doWardenWeaponSwap = function(self, type)
 	return swap
 end
 
+-- Target helper function for focus fire
+checkWardenFocus = function(self)
+	local target
+	local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+	if eff then
+		target = eff.target
+	end
+	return target
+end
+
 -- Spell functions
 makeParadoxClone = function(self, target, duration)
 	local m = target:cloneFull{

@@ -1753,7 +1753,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
 		if target == eff.target then
-			chance = chance + eff.power
+			chance = chance + eff.crit
 		end
 	end
 

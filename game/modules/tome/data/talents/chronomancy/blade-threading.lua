@@ -20,7 +20,7 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 local function bow_warden(self, target)
-	if self:knowTalent(self.BLENDED_THREADS) then self:callTalent(self.T_BLENDED_THREADS, "doBowWarden", target) end
+	if self:knowTalent(self.T_BLENDED_THREADS) then self:callTalent(self.T_BLENDED_THREADS, "doBowWarden", target) end
 end
 
 newTalent{
@@ -225,39 +225,67 @@ newTalent{
 		local hitted = self:attackTarget(target, nil, dam, true)
 
 		if hitted then
-			-- Get available targets
-			local tgts = {}
-			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-				local target_type = Map.ACTOR
-				local a = game.level.map(x, y, Map.ACTOR)
-				if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-					tgts[#tgts+1] = a
-					print("Temporal Assault Target %s", a.name)
-				end
-			end end
-
-			-- Randomly take targets
 			local teleports = t.getTeleports(self, t)
 			local attempts = 10
-			while teleports > 0 and #tgts > 0 and attempts > 0 do
-				local a, id = rng.tableRemove(tgts)
-				-- since we're using a precise teleport we'll look for a free grid first
-				local tx2, ty2 = util.findFreeGrid(a.x, a.y, 5, true, {[Map.ACTOR]=true})
-				if tx2 and ty2 and not a.dead then
+			
+			-- Our teleport hit
+			local function teleport_hit(self, t, target, x, y)
+				local teleported = self:teleportRandom(x, y, 0)
+				
+				if teleported then
 					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-					if not self:teleportRandom(tx2, ty2, 0) then
-						attempts = attempts - 1
-					else
-						game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-						if core.fov.distance(self.x, self.y, a.x, a.y) <= 1 then
-							self:attackTarget(a, nil, t.getDamage(self, t), true)
+					if core.fov.distance(self.x, self.y, x, y) <= 1 then
+						self:attackTarget(target, nil, t.getDamage(self, t), true)
+					end
+				end
+				return teleported
+			end
+			
+			-- Check for Warden's focus
+			local wf = checkWardenFocus(self)
+			if wf and not wf.dead then
+				while teleports > 0  do
+					local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
+					if tx and ty and not wf.dead then
+						if teleport_hit(self, t, wf, tx, ty) then
 							teleports = teleports - 1
 						end
+					else
+						break
 					end
-				else
-					attempts = attempts - 1
+				end				
+			end
+			
+			-- Be sure we still have teleports left
+			if teleports > 0 and attempts > 0 then
+			
+				-- Get available targets
+				local tgts = {}
+				local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+				for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
+					local target_type = Map.ACTOR
+					local a = game.level.map(x, y, Map.ACTOR)
+					if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+						tgts[#tgts+1] = a
+					end
+				end end
+
+				-- Randomly take targets
+				while teleports > 0 and #tgts > 0 and attempts > 0 do
+					local a, id = rng.table(tgts)
+					local tx2, ty2 = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
+					if tx2 and ty2 and not a.dead then
+						if teleport_hit(self, t, a, tx2, ty2) then
+							teleports = teleports - 1
+						else
+							attempts = attempts - 1
+						end
+					else
+						-- find a different target?
+						attempts = attempts - 1
+					end
 				end
+			
 			end
 		end
 

@@ -164,31 +164,44 @@ newTalent{
 		doWardenWeaponSwap(m, "blade")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
-				self:attackTarget(self.blended_target, nil, self:callTalent(self.T_FRAYED_THREADS, "getDamage"), true)
+				self:attackTarget(self.blended_target, nil, self:callTalent(self.T_BLENDED_THREADS, "getDamage"), true)
 				self:useEnergy()
 			end
 			game:onTickEnd(function()self:die()end)
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end
 		
-		-- If we find space, add the clone to the level, it will die after attacking
-		local tgts= t.findTarget(self, t)
-		local attempts = 10
-		while #tgts > 0 and attempts > 0 do
-			local a, id = rng.tableRemove(tgts)
-			-- look for space
-			local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-			if tx and ty and not a.dead then			
+		-- Check Focus first
+		local wf = checkWardenFocus(self)
+		if wf and not wf.dead then
+			local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
+			if tx and ty then
 				game.zone:addEntity(game.level, m, "actor", tx, ty)
 				m.blended_target = a
-				break
-			else
-				attempts = attempts - 1
+			end
+		end
+		
+		-- Otherwise pick a random target and try to appear next to it
+		if not m.blended_target then
+			local tgts= t.findTarget(self, t)
+			local attempts = 10
+			while #tgts > 0 and attempts > 0 do
+				local a, id = rng.tableRemove(tgts)
+				-- look for space
+				local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
+				if tx and ty and not a.dead then			
+					game.zone:addEntity(game.level, m, "actor", tx, ty)
+					m.blended_target = a
+					break
+				else
+					attempts = attempts - 1
+				end
 			end
 		end
 	end,
 	doBowWarden = function(self, t, target)
 		-- Sanity check
+		game.logPlayer(self, "You are unable to move!")
 		if not self.turn_procs.blade_warden then
 			self.turn_procs.blade_warden = true
 		else
@@ -204,21 +217,19 @@ newTalent{
 			if not self.blended_target.dead then
 				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
 				if targets then
-					self:archeryShoot(targets, self:getTalentFromId(self.T_SHOOT), {type="bolt"}, {mult=self:callTalent(self.T_FRAYED_THREADS, "getDamage")})
+					self:archeryShoot(targets, self:getTalentFromId(self.T_SHOOT), {type="bolt"}, {mult=self:callTalent(self.T_BLENDED_THREADS, "getDamage")})
 				end
 				self:useEnergy()
 			end
 			game:onTickEnd(function()self:die()end)
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end
-
-		-- Find space
-		local tgts= t.findTarget(self, t)
-		if #tgts > 0 then
-			local a, id = rng.table(tgts)
+		
+		-- Find a good location for our shot
+		local function find_space(self, target, clone)
 			local poss = {}
-			local range = archery_range(m)
-			local x, y = a.x, a.y
+			local range = archery_range(clone)
+			local x, y = target.x, target.y
 			for i = x - range, x + range do
 				for j = y - range, y + range do
 					if game.level.map:isBound(i, j) and
@@ -229,14 +240,29 @@ newTalent{
 					end
 				end
 			end
-			-- Add the clone to the level, it will die after shooting
 			if #poss == 0 then return end
 			local pos = poss[rng.range(1, #poss)]
 			x, y = pos[1], pos[2]
-			game.zone:addEntity(game.level, m, "actor", x, y)
-			m.blended_target = a
+			return x, y
 		end
 		
+		-- Check Focus first
+		local wf = checkWardenFocus(self)
+		if wf and not wf.dead then
+			local tx, ty = find_space(self, target, m)
+			if tx and ty then
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
+				m.blended_target = wf
+			end
+		else
+			local tgts = t.findTarget(self, t)
+			if #tgts > 0 then
+				local a, id = rng.tableRemove(tgts)
+				local tx, ty = find_space(self, target, m)
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
+				m.blended_target = a
+			end
+		end
 	end,
 	findTarget = function(self, t)
 		local tgts = {}
