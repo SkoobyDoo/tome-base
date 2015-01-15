@@ -531,6 +531,34 @@ function _M:resetMoveAnim()
 	end
 end
 
+--- Sets the flip state of MO and associated MOs
+function _M:MOflipX(v)
+	if not self._mo then return end
+	self._mo:flipX(v)
+
+	if not self.add_displays then return end
+
+	for i = 1, #self.add_displays do
+		if self.add_displays[i]._mo then
+			self.add_displays[i]._mo:flipX(v)
+		end
+	end
+end
+
+--- Sets the flip state of MO and associated MOs
+function _M:MOflipY(v)
+	if not self._mo then return end
+	self._mo:flipY(v)
+
+	if not self.add_displays then return end
+
+	for i = 1, #self.add_displays do
+		if self.add_displays[i]._mo then
+			self.add_displays[i]._mo:flipY(v)
+		end
+	end
+end
+
 --- Get the entity image as an sdl surface and texture for the given tiles and size
 -- @param tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
 -- @param w the width
