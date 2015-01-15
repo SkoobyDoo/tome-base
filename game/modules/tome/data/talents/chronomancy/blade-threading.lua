@@ -20,61 +20,7 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 local function bow_warden(self, target)
-	if self:knowTalent(self.T_FRAYED_THREADS) and not self.turn_procs.bow_warden then
-		self.turn_procs.bow_warden = true
-
-		local m = makeParadoxClone(self, self, 2)
-		m.energy.value = 1000
-		m:attr("archery_pass_friendly", 1)
-		doWardenWeaponSwap(m, "bow")
-		m.on_act = function(self)
-			if not self.frayed_target.dead then
-				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.frayed_target.x, y=self.frayed_target.y, no_energy = true})
-				if targets then
-					self:archeryShoot(targets, self:getTalentFromId(self.T_SHOOT), {type="bolt"}, {mult=self:callTalent(self.T_FRAYED_THREADS, "getDamage")})
-				end
-				self:useEnergy()
-			end
-			game:onTickEnd(function()self:die()end)
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-		end
-		
-		-- Search for targets
-		local tgts = {}
-		local grids = core.fov.circle_grids(target.x, target.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local target_type = Map.ACTOR
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-				tgts[#tgts+1] = a
-			end
-		end end
-		
-		-- Choose a random target
-		if #tgts > 0 then
-			local a, id = rng.tableRemove(tgts)
-			
-			local poss = {}
-			local range = archery_range(m)
-			local x, y = a.x, a.y
-			for i = x - range, x + range do
-				for j = y - range, y + range do
-					if game.level.map:isBound(i, j) and
-						core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
-						core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
-						self:canMove(i, j) and target:hasLOS(i, j) then
-						poss[#poss+1] = {i,j}
-					end
-				end
-			end
-				
-			if #poss == 0 then return end
-			local pos = poss[rng.range(1, #poss)]
-			x, y = pos[1], pos[2]
-			game.zone:addEntity(game.level, m, "actor", x, y)
-			m.frayed_target = a
-		end
-	end
+	if self:knowTalent(self.T_FRAYED_THREADS) then self:callTalent(self.T_FRAYED_THREADS, "doBowWarden", target) end
 end
 
 newTalent{

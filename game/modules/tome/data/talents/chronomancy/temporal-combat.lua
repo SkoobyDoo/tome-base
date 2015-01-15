@@ -180,14 +180,9 @@ newTalent{
 	end,
 	doWeaponFolding = function(self, t, target)
 		local dam = t.getDamage(self,t)
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			self:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, DamageType.TEMPORAL, dam)
-		end
 		if not target.dead then
 			DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, dam)
 		end
-		
-		self:fireTalentCheck("callbackOnChronoWeaponFoldingHit", target, dam)
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)

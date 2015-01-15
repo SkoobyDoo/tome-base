@@ -3339,9 +3339,6 @@ newEffect{
 	on_gain = function(self, err) return "#Target# threads fate into a weapon manifold!", "+Fold Fate" end,
 	on_lose = function(self, err) return "#Target#'s weapon manifold unravels.", "-Fold Fate" end,
 	handleEffect = function(self, eff, target)
-		if eff.src:knowTalent(self.T_FRAYED_THREADS) then
-			eff.src:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, DamageType.RANDOM_CONFUSION, eff.dam)
-		end
 		if not self.dead then
 			local dox = self:getParadox() - self.preferred_paradox
 			local fix = math.min( math.abs(dox), eff.paradox )
@@ -3381,9 +3378,6 @@ newEffect{
 	on_gain = function(self, err) return "#Target# threads gravity into a weapon manifold!", "+Fold Gravity" end,
 	on_lose = function(self, err) return "#Target#'s weapon manifold unravels.", "-Fold Gravity" end,
 	handleEffect = function(self, eff, target)
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			self:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, DamageType.RANDOM_CONFUSION, eff.dam)
-		end
 		if not target.dead and rng.percent(eff.chance) then
 			if target:canBe("pin") then
 			target:setEffect(target.EFF_PINNED, eff.dur, {apply_power=self:combatSpellpower()})
@@ -3419,9 +3413,6 @@ newEffect{
 	on_gain = function(self, err) return "#Target# threads void into a weapon manifold!", "+Fold Void"	end,
 	on_lose = function(self, err) return "#Target#'s weapon manifold unravels.", "-Fold Void" end,
 	handleEffect = function(self, eff, target)
-		if eff.src:knowTalent(self.T_FRAYED_THREADS) then
-			eff.src:callTalent(self.T_FRAYED_THREADS, "doExplosion", target, DamageType.RANDOM_CONFUSION, eff.dam)
-		end
 		if not target.dead and rng.percent( eff.chance ) then
 			if target:canBe("blind") then
 				target:setEffect(target.EFF_BLINDED, 3, {src=self, apply_power=self:combatSpellpower()})

@@ -20,50 +20,7 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 local function blade_warden(self, target)
-	if self:knowTalent(self.T_FRAYED_THREADS) and not self.turn_procs.blade_warden then
-		self.turn_procs.blade_warden = true
-		
-		local m = makeParadoxClone(self, self, 2)
-		m.energy.value = 1000
-		doWardenWeaponSwap(m, "blade")
-		m.on_act = function(self)
-			if not self.frayed_target.dead then
-				self:attackTarget(self.frayed_target, nil, self:callTalent(self.T_FRAYED_THREADS, "getDamage"), true)
-				self:useEnergy()
-			end
-			game:onTickEnd(function()self:die()end)
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-		end
-		
-		-- Search for targets
-		local tgts = {}
-		local grids = core.fov.circle_grids(target.x, target.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local target_type = Map.ACTOR
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-				tgts[#tgts+1] = a
-				print("Blade Warden Target %s", a.name)
-			end
-		end end
-		
-		-- try very hard to find space
-		local attempts = 10
-		while #tgts > 0 and attempts > 0 do
-			local a, id = rng.tableRemove(tgts)
-			-- look for space
-			local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-			if tx and ty and not a.dead then
-				if core.fov.distance(tx, ty, a.x, a.y) <= 1 then
-					game.zone:addEntity(game.level, m, "actor", tx, ty)
-					m.frayed_target = a
-					break
-				end
-			else
-				attempts = attempts - 1
-			end
-		end
-	end
+	if self:knowTalent(self.T_FRAYED_THREADS) then self:callTalent(self.T_FRAYED_THREADS, "doBladeWarden", target) end
 end
 
 newTalent{
@@ -218,8 +175,6 @@ newTalent{
 		
 		-- Pull x, y from getTarget and pass it so we can show the player the area of effect
 		local tg = self:getTalentTarget(t)
-		if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-			
 		local x, y = self:getTarget(tg)
 		if not x or not y then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
 		
