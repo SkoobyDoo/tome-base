@@ -146,9 +146,6 @@ newBirthDescriptor{
 		["chronomancy/fate-weaving"]={false, 0.1},
 		["cunning/survival"]={false, 0},
 	},
-	unlockable_talents_types = {
-		["chronomancy/timeline-threading"]={false, 0.1, "chronomancer_paradox_mage"},
-	},
 	birth_example_particles = "temporal_focus",
 	talents = {
 		[ActorTalents.T_SHOOT] = 1,

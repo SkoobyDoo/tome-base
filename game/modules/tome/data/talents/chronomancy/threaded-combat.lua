@@ -289,7 +289,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Twin Threads",
+	name = "Something Else Bowie",
 	type = {"chronomancy/threaded-combat", 4},
 	require = chrono_req_high4,
 	points = 5,

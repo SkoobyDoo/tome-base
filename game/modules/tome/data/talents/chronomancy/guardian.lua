@@ -37,7 +37,6 @@ newTalent{
 	end,
 }
 
-
 newTalent{
 	name = "Guardian Unity",
 	type = {"chronomancy/guardian", 2},
@@ -109,4 +108,45 @@ newTalent{
 		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.  After %d turns it returns to its own timeline.
 		This effect can only occur once per turn.]]):format(trigger, split, split/2, duration)
 	end,
+}
+
+newTalent{
+	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
+	type = {"chronomancy/guardian", 3},
+	require = chrono_req3,
+	points = 5,
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { BUFF = 2 },
+	direct_hit = true,
+	requires_target = true,
+	range = 10,
+	no_energy = true,
+	target = function (self, t)
+		return {type="hit", range=self:getTalentRange(t), talent=t}
+	end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 8, 16))) end,
+	getAttack = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
+	getCrit = function(self, t) return self:combatTalentSpellDamage(t, 5, 50, getParadoxSpellpower(self, t)) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local tx, ty = self:getTarget(tg)
+		if not tx or not ty then return nil end
+		local _ _, tx, ty = self:canProject(tg, tx, ty)
+		local target = game.level.map(tx, ty, Map.ACTOR)
+		if not target then return end
+		
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
+		
+		return true
+	end,
+	info = function(self, t)
+		local duration = t.getDuration(self, t)
+		local atk = t.getAttack(self, t)
+		local crit = t.getCrit(self, t)
+		return ([[Activate to focus fire on the target.  For the next %d turns most of your ranged weapon attacks will automatically aim at this target, as well as Temporal Assault teleports and Blended Threads clones.
+		Additionally you gain +%d accuracy and +%d%% critical hit rate when attacking this target.
+		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
+		:format(duration, atk, crit)
+	end
 }

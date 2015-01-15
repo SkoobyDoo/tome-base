@@ -60,7 +60,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
+	name = "Something Bowie",
 	type = {"chronomancy/bow-threading", 2},
 	require = chrono_req2,
 	points = 5,
