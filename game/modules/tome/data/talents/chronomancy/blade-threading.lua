@@ -119,15 +119,22 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getSheer = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
-		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
+		return {type="cone", range=0, radius=self:getTalentRadius(t), talent=t, friendlyfire=false }
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, "blade")
-
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then
+		
+		if x and y then
+			local l = self:lineFOV(x, y)
+			l:set_corner_block()
+			local lx, ly, is_corner_blocked = l:step(true)
+			target = game.level.map(lx, ly, engine.Map.ACTOR)
+		end
+		
+		if not target then
 			if swap then doWardenWeaponSwap(self, "bow") end
 			return nil
 		end
@@ -138,7 +145,7 @@ newTalent{
 		-- Project our sheer
 		if hitted then
 			bow_warden(self, target)
-			self:project(tg, target.x, target.y, DamageType.TEMPORAL, self:spellCrit(t.getSheer(self, t)))
+			self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getSheer(self, t)))
 			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=target.x-self.x, ty=target.y-self.y})
 			game:playSoundNear(self, "talents/tidalwave")
 		end
