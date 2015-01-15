@@ -3245,7 +3245,7 @@ newEffect{
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,
 	parameters = { crit=0, atk=0 },
 	on_timeout = function(self, eff)
-		if eff.target.dead then
+		if eff.target.dead or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
 			self:removeEffect(self.EFF_WARDEN_S_FOCUS)
 		end
 	end,
