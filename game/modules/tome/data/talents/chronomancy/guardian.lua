@@ -40,11 +40,11 @@ newTalent{
 
 newTalent{
 	name = "Guardian Unity",
-	type = {"chronomancy/guardian", 3},
-	require = chrono_req3,
+	type = {"chronomancy/guardian", 2},
+	require = chrono_req2,
 	points = 5,
 	mode = "passive",
-	getSplit = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	getSplit = function(self, t) return self:combatTalentLimit(t, 20, 50, 80)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 40, 24)	end,
 	remove_on_clone = true,

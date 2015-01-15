@@ -205,19 +205,19 @@ newTalent{
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(self:getTalentLevel(t), 4, 8))) end,
 	getParadoxRegen = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t))/12 end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 10, 30, 40)/100 end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
 	info = function(self, t)
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
 		local dur    = t.getDuration(self, t)
 		local dox    = t.getParadoxRegen(self, t)
 		local chance = t.getChance(self, t)
-		return ([[Advanced weapon folding. For %d turns, enhance your melee and archery attacks with the power of fate, gravity or the void.
-		Fold Fate: 50%% chance to Confuse your target for 4 turns, and you regain %0.1f Paradox.
-		Fold Gravity: %0.1f Physical damage, and you have a 25%% chance to Pin your target for 4 turns.
-		Fold Void: %0.1f Darkness damage, and you have a 25%% chance to Blind your target for 4 turns.
+		return ([[For %d turns, enhance your melee and archery attacks with the power of fate, gravity or the void.
+		Fold Fate: Paradox tunes %0.1f towards baseline, and you have a %d%% chance to Confuse your target for 4 turns.
+		Fold Gravity: %0.2f Physical damage, and you have a %d%% chance to Pin your target for 4 turns.
+		Fold Void: %0.2f Darkness damage, and you have a %d%% chance to Blind your target for 4 turns.
 		
-		The ]]
-		):format( dur, dox, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.DARKNESS, damage) )
+		Damage is based on Weapon Folding and Paradox tuning scales with your Spellpower.]]
+		):format( dur, dox, chance, damDesc(self, DamageType.PHYSICAL, damage), chance, damDesc(self, DamageType.DARKNESS, damage), chance )
 	end,
 }
 
