@@ -491,7 +491,7 @@ newTalent{
 	range = 2,
 	requires_target = true,
 	no_npc_use = true,
-	getDuration = function(self, t)	return math.floor(self:combatTalentLimit(self:getTalentLevel(t), 50, 4, 8)) end, -- Limit <50
+	getDuration = function(self, t)	return math.floor(self:combatTalentLimit(t, 50, 4, 8)) end, -- Limit <50
 	getModifier = function(self, t) return rng.range(t.getDuration(self,t)*2, t.getDuration(self, t)*4) end,
 	action = function (self, t)
 		if checkTimeline(self) == true then

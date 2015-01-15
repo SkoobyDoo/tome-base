@@ -56,7 +56,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local radius = t.getRadius(self, t)
-		return ([[While active your ranged and melee attacks deal an %0.2f additional temporal damage in a radius %d burst.
+		return ([[While active your ranged and melee attacks deal an additional %0.2f temporal damage in a radius %d burst.
 		This effect may only happen once per turn and the damage will scale with your Spellpower.]])
 		:format(damDesc(self, DamageType.TEMPORAL, damage), radius)
 	end
@@ -149,7 +149,7 @@ newTalent{
 	require = chrono_req_high3,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.1) end,
+	getDamagePenalty = function(self, t) return 60 - self:combatTalentLimit(t, 30, 0, 20) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check
 		if not self.turn_procs.blade_warden then 
@@ -161,12 +161,13 @@ newTalent{
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
+		m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
 		doWardenWeaponSwap(m, "blade")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
-				self:attackTarget(self.blended_target, nil, self:callTalent(self.T_BLENDED_THREADS, "getDamage"), true)
-				self:useEnergy()
+				self:forceUseTalent(self.T_ATTACK, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
 			end
+			self:useEnergy()
 			game:onTickEnd(function()self:die()end)
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end
@@ -211,16 +212,17 @@ newTalent{
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
+		m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
 		m:attr("archery_pass_friendly", 1)
 		doWardenWeaponSwap(m, "bow")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
 				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
 				if targets then
-					self:archeryShoot(targets, self:getTalentFromId(self.T_SHOOT), {type="bolt"}, {mult=self:callTalent(self.T_BLENDED_THREADS, "getDamage")})
+					self:forceUseTalent(self.T_SHOOT, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
 				end
-				self:useEnergy()
 			end
+			self:useEnergy()
 			game:onTickEnd(function()self:die()end)
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end
@@ -278,10 +280,11 @@ newTalent{
 		return tgts
 	end,
 	info = function(self, t)
-		local percent = t.getPercent(self, t) * 100
-		return ([[When you hit with a blade-threading or a bow-threading talent a clone will shoot or attack a random enemy for %d%% weapon damage.
+		local damage_penalty = t.getDamagePenalty(self, t)
+		return ([[When you hit with a blade-threading or a bow-threading talent a warden will appear from another timeline and shoot or attack a random enemy.
+		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
 		Each of these effects can only occur once per turn.]])
-		:format(percent)
+		:format(damage_penalty)
 	end
 }
 

@@ -315,7 +315,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { DISABLE = 3 },
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 8))) end,
-	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(self, t, 0, 20, 40)end,
+	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 0, 20, 40)end,
 	getClones = function(self, t) return 3 end,
 	on_pre_use = function(self, t, silent) if self ~= game.player and self.fugue_clones then return false end return true end,
 	action = function(self, t)

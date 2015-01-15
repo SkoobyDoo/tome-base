@@ -44,7 +44,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	mode = "passive",
-	getSplit = function(self, t) return self:combatTalentLimit(t, 20, 50, 80)/100 end,
+	getSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 40, 24)	end,
 	remove_on_clone = true,
@@ -107,6 +107,6 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all other damage you take for the rest of the turn.
 		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.  After %d turns it returns to its own timeline.
-		This effect can only occur once per turn and the amount of damage split scales with your Spellpower.]]):format(trigger, split, split/2, duration)
+		This effect can only occur once per turn.]]):format(trigger, split, split/2, duration)
 	end,
 }

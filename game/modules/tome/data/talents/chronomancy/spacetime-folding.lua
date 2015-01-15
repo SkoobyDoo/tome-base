@@ -314,7 +314,7 @@ newTalent{
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
 	requires_target = true,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 10, 20, 30) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 30, 10, 20) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), nowarning=true, talent=t}

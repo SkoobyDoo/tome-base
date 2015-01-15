@@ -67,7 +67,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 12,
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
-	getPower = function(self, t) return self:combatTalentLimit(t, 15, 30, 50)/100 end, -- Limit < 50%
+	getPower = function(self, t) return self:combatTalentLimit(t, 50, 15, 30)/100 end, -- Limit < 50%
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
 	no_energy = true,
 	action = function(self, t)
@@ -117,7 +117,7 @@ newTalent{
 	require = chrono_req3,
 	mode = "passive",
 	points = 5,
-	getReduction = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end, -- Limit < 50%
+	getReduction = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end, -- Limit < 40%
 	info = function(self, t)
 		local reduction = t.getReduction(self, t)*100
 		return ([[When Spin Fate is triggered you reduce the triggering damage by %d%%.]]):

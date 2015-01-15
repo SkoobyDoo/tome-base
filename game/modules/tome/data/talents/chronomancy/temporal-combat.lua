@@ -211,7 +211,7 @@ newTalent{
 	cooldown = 24,
 	fixed_cooldown = true,
 	tactical = { HEAL = 1 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(self:getTalentLevel(t), 14, 4, 8))) end, -- Limit < 14
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 14, 4, 8))) end, -- Limit < 14
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		self:setEffect(self.EFF_INVIGORATE, t.getDuration(self,t), {power=t.getPower(self, t)})
