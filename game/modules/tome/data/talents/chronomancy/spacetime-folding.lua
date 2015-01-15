@@ -314,7 +314,7 @@ newTalent{
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
 	requires_target = true,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(self:getTalentLevel(t), 6, 10))) end,
-	getChance = function(self, t) return paradoxTalentScale(self, t, 10, 20, 30) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 10, 20, 30) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), nowarning=true, talent=t}
@@ -394,8 +394,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local chance = t.getChance(self, t)
-		return ([[Tethers the target to the location for %d turns.  For each tile the target moves away from the target location it has a %d%% chance each turn of being teleported back to the tether.
-		The teleportation chance scales with your Spellpower.]])
+		return ([[Tethers the target to the location for %d turns.  For each tile the target moves away from the target location it has a %d%% chance each turn of being teleported back to the tether.]])
 		:format(duration, chance)
 	end,
 }

@@ -191,7 +191,7 @@ newTalent{
 	tactical = { BUFF = 2 },
 	points = 5,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
-	getSlow = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80) end,
+	getSlow = function(self, t) return self:combatTalentLimit(t, 20, 50, 80) end,
 	getAnti = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
 	callbackOnMeleeHit = function(self, t, target)
 		if not self.dead and self:isTalentActive(self.T_GRAVITY_LOCUS) then
@@ -216,8 +216,7 @@ newTalent{
 		local anti = t.getAnti(self, t)
 		return ([[Create a gravity field around you that slows incoming projectiles by %d%% and protects you from all gravity damage and effects.
 		Additionally, damage dealt by Repulsion Blast has a %d%% chance to reduce the target's knockback resistance by half for two turns.
-		Some spells may have their damage type changed to physical by this spell.  See individual talent descriptions for details.
-		The projectile slowing and damage will scale with your spellpower.]]):format(proj, anti)
+		Some spells may have their damage type changed to physical by this spell.  See individual talent descriptions for details.]]):format(proj, anti)
 	end,
 }
 
@@ -237,7 +236,7 @@ newTalent{
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
-	getSlow = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	getSlow = function(self, t) return self:combatTalentLimit(t, 20, 50, 80)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 8))) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)

@@ -23,7 +23,7 @@ newTalent{
 	name = "Fold Fate",
 	type = {"chronomancy/other", 1},
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	cooldown = 30,
+	cooldown = 12,
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 5,
 	no_energy = true,
@@ -39,7 +39,6 @@ newTalent{
 		end
 		return true
 	end,
-	getChance = function(self, t) return 50	end,
 	action = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
 		local dam = t.getChance(self, t)
@@ -65,7 +64,7 @@ newTalent{
 	name = "Fold Gravity",
 	type = {"chronomancy/other", 1},
 	paradox = function (self, t) return getParadoxCost(self, t, 30) end,
-	cooldown = 30,
+	cooldown = 12,
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 1,
 	no_energy = true,
@@ -81,8 +80,6 @@ newTalent{
 		end
 		return true
 	end,
-	getChance = function(self, t) return 25	end,
-	getEffDur = function(self, t) return 4 end,
 	action = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
@@ -110,7 +107,7 @@ newTalent{
 	name = "Fold Void",
 	type = {"chronomancy/other", 1},
 	paradox = function (self, t) return getParadoxCost(self, t, 30) end,
-	cooldown = 30,
+	cooldown = 12,
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 1,
 	no_energy = true,
@@ -126,8 +123,6 @@ newTalent{
 		end
 		return true
 	end,
-	getChance = function(self, t) return 25	end,
-	getEffDur = function(self, t) return 4 end,
 	action = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
@@ -208,17 +203,20 @@ newTalent{
 		self:unlearnTalent(Talents.T_FOLD_GRAVITY)
 		self:unlearnTalent(Talents.T_FOLD_VOID)
 	end,
-	getDuration = function(self, t) return 5 + paradoxTalentScale(self, t, 5, 15, 25) end,
-	getParadoxRegen = function(self, t) return 5 + paradoxTalentScale(self, t, 4, 25, 45) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(self:getTalentLevel(t), 4, 8))) end,
+	getParadoxRegen = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t))/12 end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 10, 30, 40)/100 end,
 	info = function(self, t)
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
 		local dur    = t.getDuration(self, t)
 		local dox    = t.getParadoxRegen(self, t)
+		local chance = t.getChance(self, t)
 		return ([[Advanced weapon folding. For %d turns, enhance your melee and archery attacks with the power of fate, gravity or the void.
 		Fold Fate: 50%% chance to Confuse your target for 4 turns, and you regain %0.1f Paradox.
 		Fold Gravity: %0.1f Physical damage, and you have a 25%% chance to Pin your target for 4 turns.
 		Fold Void: %0.1f Darkness damage, and you have a 25%% chance to Blind your target for 4 turns.
-		The Physical and Temporal damage and duration will increase with your Paradox and with investment in Weapon Folding. The Paradox recovery will increase with your Paradox. The status effects will become harder to resist as you gain Spellpower.]]
+		
+		The ]]
 		):format( dur, dox, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.DARKNESS, damage) )
 	end,
 }

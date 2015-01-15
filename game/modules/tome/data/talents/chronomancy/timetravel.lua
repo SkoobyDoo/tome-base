@@ -296,7 +296,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 18, 160, getParadoxSpellpower(self, t)) end,
-	getPercent = function(self, t) return paradoxTalentScale(self, t, 20, 40, 60)/100 end,
+	getPercent = function(self, t) return self:combatTalentLimit(self, t, 20, 40, 60)/100 end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		

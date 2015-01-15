@@ -305,7 +305,7 @@ newTalent{
 		return self:combatTalentLimit(t, 1, 0.15, 0.50) -- Limit <100%
 	end,
 	getRegen = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
-	getHaste = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	getHaste = function(self, t) return self:combatTalentLimit(t, 20, 50, 80)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 6))) end,
 	doBlink = function(self, t, hound)  -- Triggered when the hounds is hit
 		local regen, haste = t.getRegen(self, t), t.getHaste(self, t)
@@ -330,7 +330,7 @@ newTalent{
 		return ([[Your hounds can now survive for up to %d turns after their hit points are reduced below 1.  While in this state they deal 50%% less damage but are immune to additional damage.
 		Command Blink will now regenerate your hounds for %d life per turn and increase their global speed by %d%% for five turns.  Hounds below 1 life when this effect occurs will have the bonuses doubled.
 		When you learn this talent, your hounds gain %d%% stun, blind, confusion, and pin resistance.
-		The regeneration and haste effects scale with your Spellpower.]]):format(duration, regen, haste, immunities)
+		The regeneration scales with your Spellpower.]]):format(duration, regen, haste, immunities)
 	end
 }
 

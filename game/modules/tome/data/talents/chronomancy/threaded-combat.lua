@@ -25,6 +25,7 @@ newTalent{
 	require = chrono_req_high1,
 	mode = "passive",
 	points = 5,
+	getPercent = function(self, t) return self:combatTalentLimit(t, 40, 80, 100)/100 end,
 	getPercent = function(self, t) return paradoxTalentScale(self, t, 40, 80, 100)/100 end,
 	getRadius = function(self, t) return self:getTalentLevel(t) > 4 and 2 or 1 end,
 	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
@@ -92,8 +93,8 @@ newTalent{
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
 		local radius = t.getRadius(self, t)
-		return ([[Your ranged and melee damage on hit, including the damage from Weapon Folding and Weapon Manifolds, now deals %d%% additional damage in a radius %d burst as temporal damage.
-		This effect may only happen once per turn and the damage percent will scale with your Spellpower.]])
+		return ([[Your ranged and melee damage on hit, including the damage from Weapon Folding, now deals %d%% additional temporal damage in a radius %d burst.
+		This effect may only happen once per turn.]])
 		:format(percent, radius)
 	end
 }
@@ -305,7 +306,7 @@ newTalent{
 	tactical = { ATTACK = {weapon = 4} },
 	range = 10,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 12))) end,
-	getDamagePenalty = function(self, t) return 60 - paradoxTalentScale(self, t, 0, 20, 30) end,
+	getDamagePenalty = function(self, t) return 60 - self:combatTalentLimit(t, 0, 20, 30) end,
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t)}

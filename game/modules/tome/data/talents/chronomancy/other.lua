@@ -53,17 +53,6 @@ getParadoxSpellpower = function(self, t, mod, add)
 	return spellpower
 end
 
--- Paradox Talent scaling based on Spellpower (thanks grayswandir)
-paradoxTalentScale = function(self, t, low, high, limit)
-        local low_power = 50
-        local high_power = 150
-        return self:combatLimit(
-                self:combatTalentSpellDamage(t, low_power, high_power, getParadoxSpellpower(self, t)),
-                limit,
-                low, low_power,
-                high, high_power)
-end
-
 -- Extension Spellbinding
 getExtensionModifier = function(self, t, value)
 	local mod = 1
