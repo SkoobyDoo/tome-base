@@ -98,7 +98,7 @@ local function shieldOnDamage(self, t, elementTest, transcendId, dam)
 		strength = strength * 2
 	end
 	local guaranteed_dam = total_dam - absorbable_dam
-	dam = absorbable_dam		
+	dam = absorbable_dam
 
 	local psigain = 0
 	if dam <= strength then
@@ -249,7 +249,7 @@ newTalent{
 	info = function(self, t)
 		local s_str = getShieldStrength(self, t)
 		local absorb = 100*getEfficiency(self,t)
-		return ([[Surround yourself with a shield that will absorb %d%% of any fire/cold/light/arcane attack, up to a maximum of %d damage per attack. 
+		return ([[Surround yourself with a shield that will absorb %d%% of any fire/cold/light/arcane attack, up to a maximum of %d damage per attack.
 		Every time your shield absorbs damage, you convert some of the attack into energy, gaining one point of Psi, plus an additional point for every %0.1f points of damage absorbed, up to a maximum %0.1f points each turn.
 		At talent level 3, when you de-activate the shield twice the absorbed damage (if any) in the last 3 turns is released as a full psionic shield (absorbing all damage).
 		The maximum amount of damage your shield can absorb and the efficiency of the psi gain scale with your mindpower.
@@ -351,7 +351,7 @@ newTalent{
 		self.forcefield_timer = nil
 		return true
 	end,
-	callbackOnTakeDamage = function(self, t, src, x, y, damtype, dam, tmp, no_martyr)
+	callbackOnTakeDamage = function(self, t, src, x, y, damtype, dam, tmp)
 		local ff = self:isTalentActive(t.id)
 		if not ff then return dam end
 		local total_dam = dam
@@ -365,7 +365,7 @@ newTalent{
 		self.forcefield_timer = self.forcefield_timer + 1
 	end,
 	info = function(self, t)
-		return ([[Surround yourself with a forcefield, reducing all incoming damage by %d%%. 
+		return ([[Surround yourself with a forcefield, reducing all incoming damage by %d%%.
 		Such a shield is very expensive to maintain, and will drain 5%% of your maximum psi each turn and 5%% more for each turn you have it maintained. For example, on turn 2 it will drain 10%%.]]):
 		format(t.getResist(self,t))
 	end,

@@ -29,10 +29,10 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	getDecomposition = function(self, t) return  self:combatTalentSpellDamage(t, 5, 150, getParadoxSpellpower(self, t)) end, -- Increase shield strength
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp, no_martyr)
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local decomp = t.getDecomposition(self, t)
 		local lastdam = dam
-		
+
 		-- works like armor with 30% hardiness
 		dam = math.max(dam * 0.3 - decomp, 0) + (dam * 0.7)
 		print("[PROJECTOR] after static reduction dam", dam)
@@ -114,17 +114,17 @@ newTalent{
 					tids[#tids+1] = tt
 				end
 			end
-	
+
 			for i = 1, count do
 				if #tids == 0 then break end
 				local tid = rng.tableRemove(tids)
 				self:alterTalentCoolingdown(tid, - cdr)
 			end
-			
+
 			-- Deal our damage in one lump sum
 			self:project(tg, target.x, target.y, DamageType.TEMPORAL, self:spellCrit(count * t.getDamage(self, t)))
 		end
-		
+
 		target:crossTierEffect(target.EFF_SPELLSHOCKED, getParadoxSpellpower(self, t))
 		game.level.map:particleEmitter(tx, ty, 1, "generic_charge", {rm=10, rM=110, gm=10, gM=50, bm=20, bM=125, am=25, aM=255})
 		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=200, rM=255, gm=200, gM=255, bm=200, bM=255, am=125, aM=125})
@@ -135,7 +135,7 @@ newTalent{
 		local talentcount = t.getTalentCount(self, t)
 		local cooldown = t.getCooldown(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[You sap the target's energy and add it to your own, placing up to %d random talents on cooldown for %d turns.  
+		return ([[You sap the target's energy and add it to your own, placing up to %d random talents on cooldown for %d turns.
 		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns and deal %0.2f temporal damage to the target.
 		The damage done will scale with your Spellpower.]]):
 		format(talentcount, cooldown, cooldown, damDesc(self, DamageType.TEMPORAL, damage))
@@ -188,7 +188,7 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
-		
+
 		local damage = self:spellCrit(t.getDamage(self, t))
 		target:setEffect(target.EFF_ENTROPY, t.getDuration(self, t), {power=damage, src=self, apply_power=getParadoxSpellpower(self, t)})
 
