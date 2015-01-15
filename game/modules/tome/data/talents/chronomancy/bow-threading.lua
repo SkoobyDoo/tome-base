@@ -22,8 +22,18 @@
 local function blade_warden(self, target)
 	if self:knowTalent(self.T_FRAYED_THREADS) and not self.turn_procs.blade_warden then
 		self.turn_procs.blade_warden = true
-		local damage = self:callTalent(self.T_FRAYED_THREADS, "getDamage")
+		
 		local m = makeParadoxClone(self, self, 2)
+		m.energy.value = 1000
+		doWardenWeaponSwap(m, "blade")
+		m.on_act = function(self)
+			if not self.frayed_target.dead then
+				self:attackTarget(self.frayed_target, nil, self:callTalent(self.T_FRAYED_THREADS, "getDamage"), true)
+				self:useEnergy()
+			end
+			game:onTickEnd(function()self:die()end)
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+		end
 		
 		-- Search for targets
 		local tgts = {}
@@ -46,10 +56,7 @@ local function blade_warden(self, target)
 			if tx and ty and not a.dead then
 				if core.fov.distance(tx, ty, a.x, a.y) <= 1 then
 					game.zone:addEntity(game.level, m, "actor", tx, ty)
-					doWardenWeaponSwap(m, "blade")
-					m:attackTarget(a, nil, damage, true)
-					game.level.map:particleEmitter(m.x, m.y, 1, "temporal_teleport")
-					m:die()
+					m.frayed_target = a
 					break
 				end
 			else
@@ -76,7 +83,7 @@ newTalent{
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
 	archery_onhit = function(self, t, target, x, y)
-		blade_warden(self, target)
+		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, "bow")
@@ -150,9 +157,12 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDamageAoE = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	archery_onhit = function(self, t, target, x, y)
+		game:onTickEnd(function()blade_warden(self, target)end)
+	end,
 	archery_onreach = function(self, t, x, y)
 		game:onTickEnd(function() -- Let the arrow hit first
 			local tg = self:getTalentTarget(t)
@@ -208,6 +218,8 @@ newTalent{
 		
 		-- Pull x, y from getTarget and pass it so we can show the player the area of effect
 		local tg = self:getTalentTarget(t)
+		if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+			
 		local x, y = self:getTarget(tg)
 		if not x or not y then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
 		
@@ -223,7 +235,7 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local radius = self:getTalentRadius(t)
 		local aoe = t.getDamageAoE(self, t)
-		return ([[Fire a shot doing %d%% damage.  When the arrow reaches its destination it will draw in creatures in a radius of %d and inflict %0.2f physical damage.
+		return ([[Fire a shot doing %d%% damage.  When the arrow reaches its destination it will draw in enemies in a radius of %d and inflict %0.2f physical damage.
 		Each target moved beyond the first deals an additional %0.2f physical damage (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The additional damage scales with your Spellpower.]])
@@ -250,7 +262,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
-		blade_warden(self, target)
+		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, "bow")
@@ -272,7 +284,7 @@ newTalent{
 		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=t.getDamage(self, t)})
 		
 		-- Summon our clones
-		if not self.arrow_stitched_clone then
+		if not self.arrow_stitching_done then
 			for i = 1, t.getClones(self, t) do
 				local m = makeParadoxClone(self, self, 2)
 				local poss = {}
@@ -291,16 +303,17 @@ newTalent{
 				local pos = poss[rng.range(1, #poss)]
 				x, y = pos[1], pos[2]
 				game.zone:addEntity(game.level, m, "actor", x, y)
-				m.shoot_target = target
-				m.arrow_stitched_clone = true
+				m.arrow_stitched_target = target
 				m.generic_damage_penalty = 50
 				m.energy.value = 1000
 				m:attr("archery_pass_friendly", 1)
 				m.on_act = function(self)
-					if not self.shoot_target.dead then
-						self:forceUseTalent(self.T_ARROW_STITCHING, {force_level=t.leve, ignore_cd=true, ignore_energy=true, force_target=self.shoot_target, ignore_ressources=true, silent=true})
+					if not self.arrow_stitched_target.dead then
+						self.arrow_stitching_done = true
+						self:forceUseTalent(self.T_ARROW_STITCHING, {force_level=t.level, ignore_cd=true, ignore_energy=true, force_target=self.arrow_stitched_target, ignore_ressources=true, silent=true})
+						self:useEnergy()
 					end
-					self:die()
+					game:onTickEnd(function()self:die()end)
 					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 				end
 			end

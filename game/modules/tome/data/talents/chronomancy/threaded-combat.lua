@@ -48,6 +48,7 @@ newTalent{
 	require = chrono_req_high2,
 	points = 5,
 	cooldown = 8,
+	fixed_cooldown = true,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { ATTACKAREA = { weapon = 3 } , DISABLE = 3 },
 	requires_target = true,

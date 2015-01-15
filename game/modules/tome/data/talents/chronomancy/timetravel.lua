@@ -34,6 +34,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 150, getParadoxSpellpower(self, t)) end,
+	getCooldown = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), friendlyfire=false, talent=t}
 	end,
@@ -43,6 +44,7 @@ newTalent{
 		if not x or not y then return nil end
 		
 		local dam = self:spellCrit(t.getDamage(self, t))
+		local cd = t.getCooldown(self, t)
 		
 		-- Hit our initial target; quality of life hack
 		self:project(tg, x, y, function(px, py)
@@ -52,7 +54,7 @@ newTalent{
 			for tid, cd in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
 				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-					self:alterTalentCoolingdown(tt, - 1)
+					self:alterTalentCoolingdown(tt, - cd)
 				end
 			end
 			DamageType:get(DamageType.TEMPORAL).projector(self, x, y, DamageType.TEMPORAL, dam)
@@ -63,7 +65,7 @@ newTalent{
 			local proj = require("mod.class.Projectile"):makeHoming(
 				self,
 				{particle="arrow", particle_args={tile="particles_images/temporal_bolt", proj_x=self.x, proj_y=self.y, src_x=x, src_y=y}, trail="trail_paradox"},
-				{speed=3, name="Temporal Bolt", dam=dam, apply=getParadoxSpellpower(self, t), start_x=x, start_y=y},
+				{speed=3, name="Temporal Bolt", dam=dam, cd=cd, start_x=x, start_y=y},
 				self, self:getTalentRange(t),
 				function(self, src)
 					local talent = src:getTalentFromId 'T_TEMPORAL_BOLT'
@@ -78,7 +80,7 @@ newTalent{
 						for tid, cd in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-								src:alterTalentCoolingdown(tt, - 1)
+								src:alterTalentCoolingdown(tt, - cd)
 							end
 						end
 					end
@@ -96,7 +98,8 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		return ([[Pull a bolt of temporal energy back through time.  The bolt will home in on your location, dealing %0.2f temporal damage to enemies, and reducing the cooldown of one chronomancy talent on cooldown by one turn per enemy hit.
-		The bolt gains 5%% damage each time it moves and the damage will scale with your Spellpower.]]):
+		The bolt gains 5%% damage each time it moves and the damage will scale with your Spellpower.
+		At talent level five cooldowns are reduced by two.]]):
 		format(damDesc(self, DamageType.TEMPORAL, damage))
 	end,
 }
