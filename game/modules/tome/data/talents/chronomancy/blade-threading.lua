@@ -37,7 +37,7 @@ newTalent{
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getWarp = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
+	getWarp = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
@@ -57,6 +57,36 @@ newTalent{
 		if hitted then
 			bow_warden(self, target)
 			self:project({type="hit"}, target.x, target.y, DamageType.WARP, self:spellCrit(t.getWarp(self, t)))
+			
+			local eff = rng.range(1, 4)
+			local power = getParadoxSpellpower(self, t)
+			-- Pull random effect
+			if eff == 1 then
+				if target:canBe("stun") then
+					target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=power})
+				else
+					game.logSeen(target, "%s resists the stun!", target.name:capitalize())
+				end
+			elseif eff == 2 then
+				if target:canBe("blind") then
+					target:setEffect(target.EFF_BLINDED, t.getDuration(self, t), {apply_power=power})
+				else
+					game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
+				end
+			elseif eff == 3 then
+				if target:canBe("pin") then
+					target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=power})
+				else
+					game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+				end
+			elseif eff == 4 then
+				if target:canBe("confusion") then
+					target:setEffect(target.EFF_CONFUSED, t.getDuration(self, t), {power=50, apply_power=power})
+				else
+					game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
+				end
+			end
+			
 			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
 		end
 
@@ -74,21 +104,23 @@ newTalent{
 }
 
 newTalent{
-	name = "Blade Sheer",
-	type = {"chronomancy/blade-threading", 1},
-	require = chrono_req1,
+	name = "Blade Sheer",  -- Fix ME!!
+	type = {"chronomancy/blade-threading", 2},
+	require = chrono_req2,
 	points = 5,
 	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
+	tactical = { ATTACK = {weapon = 2}, ATTACKAREA = { TEMPORAL = 2 }},
 	requires_target = true,
 	speed = "weapon",
 	range = 1,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
 	is_melee = true,
-	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getWarp = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
+	getSheer = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
+	target = function(self, t)
+		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
+	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, "blade")
@@ -103,23 +135,24 @@ newTalent{
 		-- Hit?
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
-		-- Project our warp
+		-- Project our sheer
 		if hitted then
 			bow_warden(self, target)
-			self:project({type="hit"}, target.x, target.y, DamageType.WARP, self:spellCrit(t.getWarp(self, t)))
-			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
+			self:project(tg, target.x, target.y, DamageType.TEMPORAL, self:spellCrit(t.getSheer(self, t)))
+			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
+			game:playSoundNear(self, "talents/tidalwave")
 		end
 
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local duration = t.getDuration(self, t)
-		local warp = t.getWarp(self, t)
+		local sheer = t.getSheer(self, t)
+		local radius = self:getTalentRadius(t)
 		return ([[Attack the target with your melee weapons for %d%%.
-		If the attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical damage, and may stun, blind, pin, or confuse them for %d turns.
+		If the attack hits you'll deal %0.2f temporal damage in a radius %d cone.
 		The bonus damage improves with your Spellpower.]])
-		:format(damage, damDesc(self, DamageType.TEMPORAL, warp/2), damDesc(self, DamageType.PHYSICAL, warp/2), duration)
+		:format(damage, damDesc(self, DamageType.TEMPORAL, sheer), radius)
 	end
 }
 
