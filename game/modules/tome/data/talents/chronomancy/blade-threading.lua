@@ -20,7 +20,7 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 local function bow_warden(self, target)
-	if self:knowTalent(self.T_FRAYED_THREADS) then self:callTalent(self.T_FRAYED_THREADS, "doBowWarden", target) end
+	if self:knowTalent(self.BLENDED_THREADS) then self:callTalent(self.T_BLENDED_THREADS, "doBowWarden", target) end
 end
 
 newTalent{
@@ -74,26 +74,53 @@ newTalent{
 }
 
 newTalent{
-	name = "Weapon Folding", short_name = "WEAPON_FOLDING_BAD",
-	type = {"chronomancy/blade-threading", 2},
-	mode = "sustained",
-	require = chrono_req2,
-	sustain_paradox = 12,
-	cooldown = 10,
-	tactical = { BUFF = 2 },
+	name = "Blade Sheer",
+	type = {"chronomancy/blade-threading", 1},
+	require = chrono_req1,
 	points = 5,
-	getDamage = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
-	activate = function(self, t)
-		return {}
-	end,
-	deactivate = function(self, t, p)
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
+	requires_target = true,
+	speed = "weapon",
+	range = 1,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getWarp = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
+	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	action = function(self, t)
+		local swap = doWardenWeaponSwap(self, "blade")
+
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then
+			if swap then doWardenWeaponSwap(self, "bow") end
+			return nil
+		end
+
+		-- Hit?
+		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+
+		-- Project our warp
+		if hitted then
+			bow_warden(self, target)
+			self:project({type="hit"}, target.x, target.y, DamageType.WARP, self:spellCrit(t.getWarp(self, t)))
+			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
+		end
+
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		return ([[Folds a single dimension of your weapons (or ammo) upon itself, adding %0.2f temporal damage to your strikes and  increasing your armour penetration by %d.
-		The armour penetration and damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), damage/2)
-	end,
+		local damage = t.getDamage(self, t) * 100
+		local duration = t.getDuration(self, t)
+		local warp = t.getWarp(self, t)
+		return ([[Attack the target with your melee weapons for %d%%.
+		If the attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical damage, and may stun, blind, pin, or confuse them for %d turns.
+		The bonus damage improves with your Spellpower.]])
+		:format(damage, damDesc(self, DamageType.TEMPORAL, warp/2), damDesc(self, DamageType.PHYSICAL, warp/2), duration)
+	end
 }
 
 newTalent{

@@ -255,7 +255,7 @@ newTalent{
 	tactical = { ESCAPE = 2 },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5.5)) end,
-	getTeleport = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(t), 8, 16)) end,
+	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
 	target = function(self, t)
 		return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
@@ -313,7 +313,7 @@ newTalent{
 	tactical = { DISABLE = 2 },
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
 	requires_target = true,
-	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(self:getTalentLevel(t), 6, 10))) end,
+	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 10, 20, 30) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)

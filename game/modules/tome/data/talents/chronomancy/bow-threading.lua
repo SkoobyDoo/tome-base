@@ -20,7 +20,7 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 local function blade_warden(self, target)
-	if self:knowTalent(self.T_FRAYED_THREADS) then self:callTalent(self.T_FRAYED_THREADS, "doBladeWarden", target) end
+	if self:knowTalent(self.T_BLENDED_THREADS) then self:callTalent(self.T_BLENDED_THREADS, "doBladeWarden", target) end
 end
 
 newTalent{

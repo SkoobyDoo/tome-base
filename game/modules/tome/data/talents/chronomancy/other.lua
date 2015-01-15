@@ -813,7 +813,7 @@ newTalent{
 	requires_target = true,
 	direct_hit = true,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
-	getConfuseDuration = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(t), 3, 7)) end,
+	getConfuseDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	getConfuseEfficency = function(self, t) return math.min(50, self:getTalentLevelRaw(t) * 10) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t)}

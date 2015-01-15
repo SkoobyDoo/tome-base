@@ -142,7 +142,7 @@ newTalent{
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
 	radius = function(self, t) return math.floor(self:combatTalentLimit(t, 1, 5, 2)) end, -- Limit to radius 1
 	requires_target = true,
-	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(self:getTalentLevel(t), 6, 10))) end,
+	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	no_npc_use = true,
 	action = function(self, t)
 		-- Target the entrance location

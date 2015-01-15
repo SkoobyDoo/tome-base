@@ -26,7 +26,6 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	getPercent = function(self, t) return self:combatTalentLimit(t, 40, 80, 100)/100 end,
-	getPercent = function(self, t) return paradoxTalentScale(self, t, 40, 80, 100)/100 end,
 	getRadius = function(self, t) return self:getTalentLevel(t) > 4 and 2 or 1 end,
 	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
 		if not hitted then return end

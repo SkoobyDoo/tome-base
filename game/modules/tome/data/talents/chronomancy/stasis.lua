@@ -85,7 +85,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), talent=t}
 	end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(self:getTalentLevel(t), 2.3, 4.3))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(t, 2.3, 4.3))) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 170, getParadoxSpellpower(self, t)) end,
 	getDamageType = function(self, t)
 		local damage_type = DamageType.TEMPORAL

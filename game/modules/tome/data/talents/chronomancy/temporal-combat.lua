@@ -19,6 +19,15 @@
 
 -- some helpers
 
+local function clear_folds(self)
+	for eff_id, p in pairs(self.tmp) do
+		local e = self.tempeffect_def[eff_id]
+		if e.subtype.weapon_manifold == true then
+			self:removeEffect(eff_id)
+		end
+	end
+end
+
 newTalent{
 	name = "Fold Fate",
 	type = {"chronomancy/other", 1},
@@ -27,30 +36,20 @@ newTalent{
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 5,
 	no_energy = true,
-	on_pre_use = function(self, t, silent)
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if true == e.subtype.weapon_manifold then
-				if not silent then
-					game.logPlayer(self, "You may only have one Weapon Manifold active at a time.")
-				end
-				return false
-			end
-		end
-		return true
-	end,
 	action = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local dam = t.getChance(self, t)
+		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
 		local dox = self:callTalent(self.T_WEAPON_MANIFOLD, "getParadoxRegen")
+		
+		clear_folds(self)
 
-		self:setEffect(self.EFF_FOLD_FATE, duration, {dam = dam, src = self, paradox = dox})
+		self:setEffect(self.EFF_FOLD_FATE, duration, {chance = chance, src = self, paradox = dox})
 
 		return true
 	end,
 	info = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local dam = t.getChance(self, t)
+		local dam = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
 		local dox = self:callTalent(self.T_WEAPON_MANIFOLD, "getParadoxRegen")
 		return (
 		[[Fold a thread of fate into your weapons for %d turns, causing confusing dissonance when it strikes your targets as you damage their fates to repair the timeline.
@@ -68,23 +67,12 @@ newTalent{
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 1,
 	no_energy = true,
-	on_pre_use = function(self, t, silent)
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if true == e.subtype.weapon_manifold then
-				if not silent then
-					game.logPlayer(self, "You may only have one Weapon Manifold active at a time.")
-				end
-				return false
-			end
-		end
-		return true
-	end,
 	action = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = t.getChance(self, t)
-		local eff_dur = t.getEffDur(self, t)
+		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
+		
+		clear_folds(self)
 
 		self:setEffect(self.EFF_FOLD_GRAVITY, duration, {dam = damage, src = self, chance = chance})
 
@@ -93,11 +81,10 @@ newTalent{
 	info = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = t.getChance(self, t)
-		local eff_dur = t.getEffDur(self, t)
+		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
 		return (
 		[[Fold a thread of gravity into your weapons for %d turns.
-		Your melee and archery attacks deal +%0.1f Physical damage, and each attack has a %d%% chance to Pin your target for %d turns.
+		Your melee and archery attacks deal +%0.1f Physical damage, and each attack has a %d%% chance to Pin your target for 4 turns.
 		The damage will improve with your Paradox, and the Pin will be applied with your Spellpower.]]
 		):format( duration, damDesc(self, DamageType.PHYSICAL, damage), chance, eff_dur )
 	end,
@@ -111,24 +98,13 @@ newTalent{
 	tactical = { BUFF = 2, DEBUFF = 2 },
 	points = 1,
 	no_energy = true,
-	on_pre_use = function(self, t, silent)
-		for eff_id, p in pairs(self.tmp) do
-		local e = self.tempeffect_def[eff_id]
-			if true == e.subtype.weapon_manifold then
-				if not silent then
-					game.logPlayer(self, "You may only have one Weapon Manifold active at a time.")
-				end
-				return false
-			end
-		end
-		return true
-	end,
 	action = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = t.getChance(self, t)
-		local eff_dur = t.getEffDur(self, t)
-
+		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
+		
+		clear_folds(self)
+		
 		self:setEffect(self.EFF_FOLD_VOID, duration, {dam = damage, src = self, chance = chance})
 
 		return true
@@ -136,13 +112,12 @@ newTalent{
 	info = function(self, t)
 		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = t.getChance(self, t)
-		local eff_dur = t.getEffDur(self, t)
+		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
 		return (
 		[[Fold a thread of the void into your weapons for %d turns.
-		Your melee and archery attacks deal +%0.1f Darkness damage, and each attack has a %d%% chance to Blind your target for %d turns.
+		Your melee and archery attacks deal +%0.1f Darkness damage, and each attack has a %d%% chance to Blind your target for 4 turns.
 		The damage will improve with your Paradox, and the Blindness will be applied with your Spellpower.]]
-		):format( duration, damDesc(self, DamageType.DARKNESS, damage), chance, eff_dur )
+		):format( duration, damDesc(self, DamageType.DARKNESS, damage), chance )
 	end,
 }
 
@@ -186,7 +161,6 @@ newTalent{
 	end,
 }
 
-
 newTalent{
 	name = "Weapon Manifold",
 	type = {"chronomancy/temporal-combat", 2},
@@ -194,16 +168,22 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	on_learn = function(self, t)
-		self:learnTalent(Talents.T_FOLD_FATE, true)
-		self:learnTalent(Talents.T_FOLD_GRAVITY, true)
-		self:learnTalent(Talents.T_FOLD_VOID, true)
+		local lev = self:getTalentLevelRaw(t)
+		if lev == 1 then
+			self:learnTalent(Talents.T_FOLD_FATE, true, nil, {no_unlearn=true})
+			self:learnTalent(Talents.T_FOLD_GRAVITY, true)
+			self:learnTalent(Talents.T_FOLD_VOID, true)
+		end
 	end,
 	on_unlearn = function(self, t)
-		self:unlearnTalent(Talents.T_FOLD_FATE)
-		self:unlearnTalent(Talents.T_FOLD_GRAVITY)
-		self:unlearnTalent(Talents.T_FOLD_VOID)
+		local lev = self:getTalentLevelRaw(t)
+		if lev == 0 then
+			self:unlearnTalent(Talents.T_FOLD_FATE)
+			self:unlearnTalent(Talents.T_FOLD_GRAVITY)
+			self:unlearnTalent(Talents.T_FOLD_VOID)
+		end
 	end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(self:getTalentLevel(t), 4, 8))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(t, 4, 8))) end,
 	getParadoxRegen = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t))/12 end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
 	info = function(self, t)
@@ -212,11 +192,12 @@ newTalent{
 		local dox    = t.getParadoxRegen(self, t)
 		local chance = t.getChance(self, t)
 		return ([[For %d turns, enhance your melee and archery attacks with the power of fate, gravity or the void.
-		Fold Fate: Paradox tunes %0.1f towards baseline, and you have a %d%% chance to Confuse your target for 4 turns.
-		Fold Gravity: %0.2f Physical damage, and you have a %d%% chance to Pin your target for 4 turns.
-		Fold Void: %0.2f Darkness damage, and you have a %d%% chance to Blind your target for 4 turns.
 		
-		Damage is based on Weapon Folding and Paradox tuning scales with your Spellpower.]]
+		Fold Fate: Paradox tunes %0.1f towards baseline, and you have a %d%% chance to Confuse your target for 4 turns on hit.
+		Fold Gravity: %0.2f Physical damage, and you have a %d%% chance to Pin your target for 4 turns on hit.
+		Fold Void: %0.2f Darkness damage, and you have a %d%% chance to Blind your target for 4 turns on hit.
+		
+		Only one fold may be active at a time, damage is based on Weapon Folding, and Paradox tuning scales with your Spellpower.]]
 		):format( dur, dox, chance, damDesc(self, DamageType.PHYSICAL, damage), chance, damDesc(self, DamageType.DARKNESS, damage), chance )
 	end,
 }
