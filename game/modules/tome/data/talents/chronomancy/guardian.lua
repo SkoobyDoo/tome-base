@@ -150,3 +150,29 @@ newTalent{
 		:format(duration, atk, crit)
 	end
 }
+
+newTalent{
+	name = "Vigilance",
+	type = {"chronomancy/guardian", 4},
+	require = chrono_req4,
+	points = 5,
+	mode = "passive",
+	getEnergy = function(self, t) return self:combatTalentLimit(t, 300, 50, 200) end,
+	gainEnergy = function(self, t)
+		if not self.turn_procs.vigilance then
+			self.turn_procs.vigilance = true
+			self.energy.value = self.energy.value + t.getEnergy(self, t)
+		end
+	end,
+	callbackOnArcheryMiss = function(self, t)
+		self:callTalent(self.T_VIGILANCE, "gainEnergy")
+	end,
+	callbackOnMeleeMiss = function(self, t)
+		self:callTalent(self.T_VIGILANCE, "gainEnergy")
+	end,
+	info = function(self, t)
+		local energy = t.getEnergy(self, t)/10
+		return ([[When a melee or ranged attack misses you or you shrug off a critical hit you gain %d%% of a turn.
+		This effect can only occur once per turn.]]):format(energy)
+	end,
+}

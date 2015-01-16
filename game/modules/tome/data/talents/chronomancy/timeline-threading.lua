@@ -22,7 +22,7 @@
 newTalent{
 	name = "Rethread",
 	type = {"chronomancy/timeline-threading", 1},
-	require = chrono_req1,
+	require = chrono_req_high1,
 	points = 5,
 	cooldown = 4,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
@@ -116,7 +116,7 @@ newTalent{
 newTalent{
 	name = "Temporal Fugue",
 	type = {"chronomancy/timeline-threading", 2},
-	require = chrono_req2,
+	require = chrono_req_high2,
 	points = 5,
 	cooldown = 24,
 	paradox = function(self, t) return getParadoxCost(self, t, 20) end,
@@ -196,7 +196,7 @@ newTalent{
 newTalent{
 	name = "Braid Lifelines",
 	type = {"chronomancy/timeline-threading", 3},
-	require = chrono_req3,
+	require = chrono_req_high3,
 	mode = "passive",
 	points = 5,
 	getBraid = function(self, t) return self:combatTalentSpellDamage(t, 25, 40, getParadoxSpellpower(self, t)) end,
@@ -213,7 +213,7 @@ newTalent{
 newTalent{
 	name = "Cease to Exist",
 	type = {"chronomancy/timeline-threading", 4},
-	require = chrono_req4,
+	require = chrono_req_high4,
 	points = 5,
 	cooldown = 24,
 	paradox = function (self, t) return getParadoxCost(self, t, 25) end,
@@ -309,7 +309,7 @@ newTalent{
 --[=[newTalent{
 	name = "Temporal Fugue",
 	type = {"chronomancy/timeline-threading", 2},
-	require = chrono_req2,
+	require = chrono_req_high2,
 	points = 5,
 	cooldown = 12,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
