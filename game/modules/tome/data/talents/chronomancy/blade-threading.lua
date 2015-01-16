@@ -41,17 +41,17 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "blade")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then
-			if swap then doWardenWeaponSwap(self, "bow") end
+			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
 
 		-- Hit?
-		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+		local hitted = self:attackTarget(target, nil, dam, true)
 
 		-- Project our warp
 		if hitted then
@@ -123,7 +123,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "blade")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		
@@ -137,12 +137,12 @@ newTalent{
 		
 		if not target then
 			game.logPlayer(self, "You need an adjacent melee target in order to use this talent.")
-			if swap then doWardenWeaponSwap(self, "bow") end
+			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
 
 		-- Hit?
-		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+		local hitted = self:attackTarget(target, nil, dam, true)
 
 		-- Project our sheer
 		if hitted then
@@ -187,7 +187,7 @@ newTalent{
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 50, 150, getParadoxSpellpower(self, t)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "blade")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		
@@ -201,12 +201,12 @@ newTalent{
 		
 		if not target then
 			game.logPlayer(self, "You need an adjacent melee target in order to use this talent.")
-			if swap then doWardenWeaponSwap(self, "bow") end
+			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
 		
 		-- Hit?
-		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+		local hitted = self:attackTarget(target, nil, dam, true)
 		
 		local braid_targets = {}
 		local damage = self:spellCrit(t.getBeamDamage(self, t))
@@ -270,12 +270,12 @@ newTalent{
 	getTeleports = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "blade")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then
-			if swap then doWardenWeaponSwap(self, "bow") end
+			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
 

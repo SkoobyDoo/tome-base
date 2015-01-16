@@ -149,6 +149,20 @@ newTalent{
 	require = chrono_req_high3,
 	mode = "passive",
 	points = 5,
+	getPercent = function(self, t) return self:combatTalentScale(t, 20, 50)/100 end,
+	info = function(self, t)
+		local percent = t.getPercent(self, t) * 100
+		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initated the attack.]])
+		:format(percent)
+	end
+}
+
+newTalent{
+	name = "Twinned Threads",  -- rename warden's call?
+	type = {"chronomancy/threaded-combat", 4},
+	require = chrono_req_high4,
+	mode = "passive",
+	points = 5,
 	getDamagePenalty = function(self, t) return 60 - self:combatTalentLimit(t, 30, 0, 20) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check
@@ -162,7 +176,7 @@ newTalent{
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
 		m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
-		doWardenWeaponSwap(m, "blade")
+		doWardenWeaponSwap(m, t, nil, "blade")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
 				self:forceUseTalent(self.T_ATTACK, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
@@ -214,7 +228,7 @@ newTalent{
 		m.energy.value = 1000
 		m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
 		m:attr("archery_pass_friendly", 1)
-		doWardenWeaponSwap(m, "bow")
+		doWardenWeaponSwap(m, t, nil, "bow")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
 				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
@@ -286,164 +300,4 @@ newTalent{
 		Each of these effects can only occur once per turn and the wardens return to their own timeline after attacking.]])
 		:format(damage_penalty)
 	end
-}
-
-newTalent{
-	name = "Something Else Bowie",
-	type = {"chronomancy/threaded-combat", 4},
-	require = chrono_req_high4,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 15, 45, 25)) end, -- Limit >15
-	tactical = { ATTACK = {weapon = 4} },
-	range = 10,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 12))) end,
-	getDamagePenalty = function(self, t) return 60 - self:combatTalentLimit(t, 0, 20, 30) end,
-	requires_target = true,
-	target = function(self, t)
-		return {type="hit", range=self:getTalentRange(t)}
-	end,
-	direct_hit = true,
-	remove_on_clone = true,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
-		if not self:hasLOS(x, y) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then
-			game.logSeen(self, "You do not have line of sight.")
-			return nil
-		end
-		local __, x, y = self:canProject(tg, x, y)
-
-		-- First find a position
-		local blade_warden = false
-		local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-		-- Create our melee clone
-		if tx and ty then
-			game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
-
-			-- clone our caster
-			local m = makeParadoxClone(self, self, t.getDuration(self, t))
-
-			-- remove some talents; note most of this is handled by makeParadoxClone, but we want to be more extensive
-			local tids = {}
-			for tid, _ in pairs(m.talents) do
-				local t = m:getTalentFromId(tid)
-				local tt = self:getTalentFromId(tid)
-				if not tt.type[1]:find("^chronomancy/blade") and not tt.type[1]:find("^chronomancy/threaded") and not tt.type[1]:find("^chronomancy/guardian") then
-					tids[#tids+1] = t
-				end
-			end
-			for i, t in ipairs(tids) do
-				if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
-				m.talents[t.id] = nil
-			end
-
-			m.ai_state = { talent_in=2, ally_compassion=10 }
-			m.generic_damage_penalty = t.getDamagePenalty(self, t)
-			m.remove_from_party_on_death = true
-
-			game.zone:addEntity(game.level, m, "actor", tx, ty)
-
-			m:setTarget(target or nil)
-
-			if game.party:hasMember(self) then
-				game.party:addMember(m, {
-					control="no",
-					type="temporal-clone",
-					title="Blade Warden",
-					orders = {target=true},
-				})
-			end
-
-			-- Swap to our blade if needed
-			doWardenWeaponSwap(m, t, 0, "blade")
-			blade_warden = true
-		else
-			game.logPlayer(self, "Not enough space to summon blade warden!")
-		end
-
-		-- First find a position
-		local bow_warden = false
-		local poss = {}
-		local range = 6
-		for i = x - range, x + range do
-			for j = y - range, y + range do
-				if game.level.map:isBound(i, j) and
-					core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
-					core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
-					self:canMove(i, j) and self:hasLOS(i, j) then -- try to keep them in LOS
-					-- Make sure our clone can shoot our target, if we have one
-					if target and target:hasLOS(i, j) then
-						poss[#poss+1] = {i,j}
-					elseif not target then
-						poss[#poss+1] = {i,j}
-					end
-				end
-			end
-		end
-		-- Create our archer clone
-		if #poss > 0 then
-			local pos = poss[rng.range(1, #poss)]
-			tx, ty = pos[1], pos[2]
-			game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
-
-			-- clone our caster
-			local m = makeParadoxClone(self, self, t.getDuration(self, t))
-
-			-- remove some talents; note most of this is handled by makeParadoxClone, but we want to be more extensive
-			local tids = {}
-			for tid, _ in pairs(m.talents) do
-				local t = m:getTalentFromId(tid)
-				local tt = self:getTalentFromId(tid)
-				if not tt.type[1]:find("^chronomancy/bow") and not tt.type[1]:find("^chronomancy/threaded") and not tt.type[1]:find("^chronomancy/guardian") and not t.innate then
-					tids[#tids+1] = t
-				end
-			end
-			for i, t in ipairs(tids) do
-				if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
-				m.talents[t.id] = nil
-			end
-
-			m.ai_state = { talent_in=2, ally_compassion=10 }
-			m.generic_damage_penalty = t.getDamagePenalty(self, t)
-			m:attr("archery_pass_friendly", 1)
-			m.remove_from_party_on_death = true
-
-			game.zone:addEntity(game.level, m, "actor", tx, ty)
-
-			m:setTarget(target or nil)
-
-			if game.party:hasMember(self) then
-				game.party:addMember(m, {
-					control="no",
-					type="temporal-clone",
-					title="Bow Warden",
-					orders = {target=true},
-				})
-			end
-
-			-- Swap to our bow if needed
-			doWardenWeaponSwap(m, t, 0, "bow")
-			bow_warden = true
-		else
-			game.logPlayer(self, "Not enough space to summon bow warden!")
-		end
-
-		game:playSoundNear(self, "talents/teleport")
-
-		if not blade_warden and not bow_warden then  -- If neither summons then don't punish the player
-			game.logPlayer(self, "Not enough space to summon!")
-			return
-		end
-
-		return true
-	end,
-	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local damage_penalty = t.getDamagePenalty(self, t)
-		return ([[Summons a blade warden and a bow warden from an alternate timeline for %d turns.  The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
-		Each warden knows all Threaded Combat, Temporal Guardian, and Blade Threading or Bow Threading spells you know.
-		The damage penalty will be lessened by your Spellpower.]]):format(duration, damage_penalty)
-	end,
 }

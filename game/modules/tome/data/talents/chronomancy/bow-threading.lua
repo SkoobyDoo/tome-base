@@ -43,10 +43,10 @@ newTalent{
 		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "bow")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
 
 		local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, infinite=true, no_energy = true})
-		if not targets then if swap then doWardenWeaponSwap(self, "blade") end return end
+		if not targets then if swap then doWardenWeaponSwap(self, t, nil, "blade") end return end
 		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam, damtype=DamageType.TEMPORAL})
 
 		return true
@@ -80,12 +80,12 @@ newTalent{
 		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "bow")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
 		
 		-- Grab our target so we can spawn clones
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
+		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
 		local __, x, y = self:canProject(tg, x, y)
 		
 		-- Don't cheese arrow stitching through walls
@@ -96,7 +96,7 @@ newTalent{
 				
 		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy = true})
 		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=t.getDamage(self, t)})
+		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=dam})
 		
 		-- Summon our clones
 		if not self.arrow_stitching_done then
@@ -218,12 +218,12 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "bow")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
 		
 		-- Pull x, y from getTarget and pass it so we can show the player the area of effect
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
-		if not x or not y then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
+		if not x or not y then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
 		
 		tg.type = "bolt" -- switch our targeting back to a bolt
 
@@ -274,12 +274,12 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "bow")
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
 		
 		-- Grab our target so we can set our echo
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
+		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
 		local __, x, y = self:canProject(tg, x, y)
 		
 		-- Sanity check
@@ -292,7 +292,7 @@ newTalent{
 		
 		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy=true})
 		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
+		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam})
 		
 		return true
 	end,
