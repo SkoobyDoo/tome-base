@@ -43,7 +43,7 @@ newTalent{
 		
 		clear_folds(self)
 
-		self:setEffect(self.EFF_FOLD_FATE, duration, {chance = chance, src = self, paradox = dox})
+		self:setEffect(self.EFF_FOLD_FATE, duration, {chance = chance, src = self, paradox = dox, apply=getParadoxSpellpower(self, t)})
 
 		return true
 	end,
@@ -74,7 +74,7 @@ newTalent{
 		
 		clear_folds(self)
 
-		self:setEffect(self.EFF_FOLD_GRAVITY, duration, {dam = damage, src = self, chance = chance})
+		self:setEffect(self.EFF_FOLD_GRAVITY, duration, {dam = damage, src = self, chance = chance, apply=getParadoxSpellpower(self, t)})
 
 		return true
 	end,
@@ -105,7 +105,7 @@ newTalent{
 		
 		clear_folds(self)
 		
-		self:setEffect(self.EFF_FOLD_VOID, duration, {dam = damage, src = self, chance = chance})
+		self:setEffect(self.EFF_FOLD_VOID, duration, {dam=damage, src=self, chance=chance, apply=getParadoxSpellpower(self, t)})
 
 		return true
 	end,
@@ -184,7 +184,7 @@ newTalent{
 		end
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(t, 4, 8))) end,
-	getParadoxRegen = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t))/12 end,
+	getParadoxRegen = function(self, t) return 3 + self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t))/12 end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
 	info = function(self, t)
 		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")

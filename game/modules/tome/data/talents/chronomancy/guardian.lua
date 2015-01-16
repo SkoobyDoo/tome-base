@@ -45,7 +45,7 @@ newTalent{
 	mode = "passive",
 	getSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
-	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 40, 24)	end,
+	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
 		local split = cb.value * t.getSplit(self, t)

@@ -3340,14 +3340,21 @@ newEffect{
 	on_lose = function(self, err) return "#Target#'s weapon manifold unravels.", "-Fold Fate" end,
 	handleEffect = function(self, eff, target)
 		if not self.dead then
-			local dox = self:getParadox() - self.preferred_paradox
+			local dox = self:getParadox() - (self.preferred_paradox or 300)
 			local fix = math.min( math.abs(dox), eff.paradox )
 			if dox > 0 then
 				self:incParadox( -fix )
 			elseif dox < 0 then
 				self:incParadox( fix )
 			end
-		end      
+		end
+		if not target.dead and rng.percent(eff.chance) then
+			if target:canBe("confusion") then
+				target:setEffect(target.EFF_CONFUSED, 4, {power=50, apply_power=eff.apply})
+			else
+				game.logSeen(target, "%s resists!", target.name:capitalize())
+			end
+		end
 	end,
 	callbackOnArcheryAttack = function(self, eff, target, hitted, crit, weapon, ammo, damtype, mult, dam)
 		if not hitted then return end
@@ -3360,8 +3367,6 @@ newEffect{
 		self.tempeffect_def[eff.effect_id].handleEffect(self, eff, target)
 	end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "melee_project",  {[DamageType.RANDOM_CONFUSION] = eff.dam})
-		self:effectTemporaryValue(eff, "ranged_project", {[DamageType.RANDOM_CONFUSION] = eff.dam})
 	end,
 	deactivate = function(self, eff)
 	end,
@@ -3380,7 +3385,7 @@ newEffect{
 	handleEffect = function(self, eff, target)
 		if not target.dead and rng.percent(eff.chance) then
 			if target:canBe("pin") then
-			target:setEffect(target.EFF_PINNED, eff.dur, {apply_power=self:combatSpellpower()})
+				target:setEffect(target.EFF_PINNED, 4, {apply_power=eff.apply})
 			end
 		end      
 	end,
@@ -3415,7 +3420,7 @@ newEffect{
 	handleEffect = function(self, eff, target)
 		if not target.dead and rng.percent( eff.chance ) then
 			if target:canBe("blind") then
-				target:setEffect(target.EFF_BLINDED, 3, {src=self, apply_power=self:combatSpellpower()})
+				target:setEffect(target.EFF_BLINDED, 4, {src=self, apply_power=eff.apply})
 			end
 		end
 	end,
