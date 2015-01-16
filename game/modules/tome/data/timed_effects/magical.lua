@@ -3453,3 +3453,26 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "ARROW_ECHOES", image = "talents/arrow_echoes.png",
+	desc = "Arrow Echoes",
+	long_desc = function(self, eff) return ("Each turn will fire an arrow at %s."):format(eff.target.name) end,
+	type = "magical",
+	subtype = { time=true },
+	status = "beneficial",
+	on_gain = function(self, err) return nil, "+Arrow Echoes" end,
+	on_lose = function(self, err) return nil, "-Arrow Echoes" end,
+	parameters = { shots = 1 },
+	on_timeout = function(self, eff)
+		if eff.shots <= 0 or eff.target.dead or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
+			self:removeEffect(self.EFF_ARROW_ECHOES)
+		else
+			self:callTalent(self.T_ARROW_ECHOES, "doEcho", eff)
+		end
+	end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}

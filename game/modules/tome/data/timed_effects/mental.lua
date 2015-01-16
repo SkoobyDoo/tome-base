@@ -3251,4 +3251,6 @@ newEffect{
 	end,
 	activate = function(self, eff)
 	end,
+	deactivate = function(self, eff)
+	end,
 }
