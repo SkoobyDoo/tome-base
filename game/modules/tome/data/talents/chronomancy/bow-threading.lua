@@ -60,43 +60,90 @@ newTalent{
 }
 
 newTalent{
-	name = "Something Bowie",
+	name = "Arrow Stitching",
 	type = {"chronomancy/bow-threading", 2},
 	require = chrono_req2,
 	points = 5,
-	cooldown = 6,
+	cooldown = 12,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { BUFF = 2 },
-	direct_hit = true,
+	tactical = { ATTACK = {weapon = 4} },
 	requires_target = true,
-	range = 10,
-	no_energy = true,
-	target = function (self, t)
-		return {type="hit", range=self:getTalentRange(t), talent=t}
+	range = archery_range,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.7)) end,
+	speed = 'archery',
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getClones = function(self, t) return self:getTalentLevel(t) >= 5 and 3 or self:getTalentLevel(t) >= 3 and 2 or 1 end,
+	target = function(self, t)
+		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 8, 16))) end,
-	getAttack = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
-	getCrit = function(self, t) return self:combatTalentSpellDamage(t, 5, 50, getParadoxSpellpower(self, t)) end,
+	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	archery_onhit = function(self, t, target, x, y)
+		game:onTickEnd(function()blade_warden(self, target)end)
+	end,
 	action = function(self, t)
+		local swap = doWardenWeaponSwap(self, "bow")
+		
+		-- Grab our target so we can spawn clones
 		local tg = self:getTalentTarget(t)
-		local tx, ty = self:getTarget(tg)
-		if not tx or not ty then return nil end
-		local _ _, tx, ty = self:canProject(tg, tx, ty)
-		local target = game.level.map(tx, ty, Map.ACTOR)
-		if not target then return end
+		local x, y, target = self:getTarget(tg)
+		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
+		local __, x, y = self:canProject(tg, x, y)
 		
-		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
+		-- Don't cheese arrow stitching through walls
+		if not self:hasLOS(x, y) then
+			game.logSeen(self, "You do not have line of sight.")
+			return nil
+		end
+				
+		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy = true})
+		if not targets then return end
+		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=t.getDamage(self, t)})
 		
+		-- Summon our clones
+		if not self.arrow_stitching_done then
+			for i = 1, t.getClones(self, t) do
+				local m = makeParadoxClone(self, self, 2)
+				local poss = {}
+				local range = self:getTalentRange(t)
+				for i = x - range, x + range do
+					for j = y - range, y + range do
+						if game.level.map:isBound(i, j) and
+							core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
+							core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
+							self:canMove(i, j) and target:hasLOS(i, j) then
+							poss[#poss+1] = {i,j}
+						end
+					end
+				end
+				if #poss == 0 then break  end
+				local pos = poss[rng.range(1, #poss)]
+				x, y = pos[1], pos[2]
+				game.zone:addEntity(game.level, m, "actor", x, y)
+				m.arrow_stitched_target = target
+				m.generic_damage_penalty = 50
+				m.energy.value = 1000
+				m:attr("archery_pass_friendly", 1)
+				m.on_act = function(self)
+					if not self.arrow_stitched_target.dead then
+						self.arrow_stitching_done = true
+						self:forceUseTalent(self.T_ARROW_STITCHING, {force_level=t.level, ignore_cd=true, ignore_energy=true, force_target=self.arrow_stitched_target, ignore_ressources=true, silent=true})
+						self:useEnergy()
+					end
+					game:onTickEnd(function()self:die()end)
+					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+				end
+			end
+		end
+
 		return true
 	end,
 	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local atk = t.getAttack(self, t)
-		local crit = t.getCrit(self, t)
-		return ([[Activate to focus fire on the target.  For the next %d turns most of your ranged weapon attacks will automatically aim at this target, as well as Temporal Assault teleports and Blended Threads clones.
-		Additionally you gain +%d accuracy and +%d%% critical hit rate when attacking this target.
-		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
-		:format(duration, atk, crit)
+		local damage = t.getDamage(self, t) * 100
+		local clones = t.getClones(self, t)
+		return ([[Fire upon the target for %d%% damage and summon up to %d temporal clones (depending on available space) that will each fire a single shot before returning to their timelines.
+		These clones are out of phase with normal reality and deal 50%% damage but shoot through friendly targets.
+		At talent level three and five you can summon an additional clone.]])
+		:format(damage, clones)
 	end
 }
 
@@ -200,89 +247,47 @@ newTalent{
 }
 
 newTalent{
-	name = "Arrow Stitching",
+	name = "Arrow Echo",
 	type = {"chronomancy/bow-threading", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 12,
+	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { ATTACK = {weapon = 4} },
+	tactical = { BUFF = 2 },
+	direct_hit = true,
 	requires_target = true,
-	range = archery_range,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.7)) end,
-	speed = 'archery',
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getClones = function(self, t) return self:getTalentLevel(t) >= 5 and 3 or self:getTalentLevel(t) >= 3 and 2 or 1 end,
-	target = function(self, t)
-		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
+	range = 10,
+	no_energy = true,
+	target = function (self, t)
+		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 8, 16))) end,
+	getAttack = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
+	getCrit = function(self, t) return self:combatTalentSpellDamage(t, 5, 50, getParadoxSpellpower(self, t)) end,
 	archery_onhit = function(self, t, target, x, y)
 		game:onTickEnd(function()blade_warden(self, target)end)
+		if self:hasEffect(self.EFF_ECHOING_SHOT) then
+		end
 	end,
 	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, "bow")
-		
-		-- Grab our target so we can spawn clones
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, "blade") end return nil end
-		local __, x, y = self:canProject(tg, x, y)
+		local tx, ty = self:getTarget(tg)
+		if not tx or not ty then return nil end
+		local _ _, tx, ty = self:canProject(tg, tx, ty)
+		local target = game.level.map(tx, ty, Map.ACTOR)
+		if not target then return end
 		
-		-- Don't cheese arrow stitching through walls
-		if not self:hasLOS(x, y) then
-			game.logSeen(self, "You do not have line of sight.")
-			return nil
-		end
-				
-		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy = true})
-		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=t.getDamage(self, t)})
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
 		
-		-- Summon our clones
-		if not self.arrow_stitching_done then
-			for i = 1, t.getClones(self, t) do
-				local m = makeParadoxClone(self, self, 2)
-				local poss = {}
-				local range = self:getTalentRange(t)
-				for i = x - range, x + range do
-					for j = y - range, y + range do
-						if game.level.map:isBound(i, j) and
-							core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
-							core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
-							self:canMove(i, j) and target:hasLOS(i, j) then
-							poss[#poss+1] = {i,j}
-						end
-					end
-				end
-				if #poss == 0 then break  end
-				local pos = poss[rng.range(1, #poss)]
-				x, y = pos[1], pos[2]
-				game.zone:addEntity(game.level, m, "actor", x, y)
-				m.arrow_stitched_target = target
-				m.generic_damage_penalty = 50
-				m.energy.value = 1000
-				m:attr("archery_pass_friendly", 1)
-				m.on_act = function(self)
-					if not self.arrow_stitched_target.dead then
-						self.arrow_stitching_done = true
-						self:forceUseTalent(self.T_ARROW_STITCHING, {force_level=t.level, ignore_cd=true, ignore_energy=true, force_target=self.arrow_stitched_target, ignore_ressources=true, silent=true})
-						self:useEnergy()
-					end
-					game:onTickEnd(function()self:die()end)
-					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				end
-			end
-		end
-
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t) * 100
-		local clones = t.getClones(self, t)
-		return ([[Fire upon the target for %d%% damage and summon up to %d temporal clones (depending on available space) that will each fire a single shot before returning to their timelines.
-		These clones are out of phase with normal reality and deal 50%% damage but shoot through friendly targets.
-		At talent level three and five you can summon an additional clone.]])
-		:format(damage, clones)
+		local duration = t.getDuration(self, t)
+		local atk = t.getAttack(self, t)
+		local crit = t.getCrit(self, t)
+		return ([[Activate to focus fire on the target.  For the next %d turns most of your ranged weapon attacks will automatically aim at this target, as well as Temporal Assault teleports and Blended Threads clones.
+		Additionally you gain +%d accuracy and +%d%% critical hit rate when attacking this target.
+		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
+		:format(duration, atk, crit)
 	end
 }
