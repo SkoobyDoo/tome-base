@@ -394,12 +394,15 @@ newTalent{
 			local dam = a:spellCrit(t.getDamage(self, t)) -- hound crit but our spellpower, mostly so it looks right
 			
 			a:project(tg, x, y, function(px, py)
-				DamageType:get(DamageType.TEMPORAL).projector(a, px, py, DamageType.TEMPORAL, dam)
-				-- Don't turn back the clock other hounds
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and target.name ~= "temporal hound" then
-					target:setEffect(target.EFF_TURN_BACK_THE_CLOCK, 3, {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(), min_dur=1})
-				end	
+				if target ~= self.summoner then
+					DamageType:get(DamageType.TEMPORAL).projector(a, px, py, DamageType.TEMPORAL, dam)
+					-- Don't turn back the clock other hounds
+					local target = game.level.map(px, py, Map.ACTOR)
+					if target and target.name ~= "temporal hound" then
+						target:setEffect(target.EFF_TURN_BACK_THE_CLOCK, 3, {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(), min_dur=1})
+					end
+				end
 			end)
 			
 			game.level.map:particleEmitter(a.x, a.y, tg.radius, "breath_time", {radius=tg.radius, tx=x-a.x, ty=y-a.y})
@@ -415,7 +418,7 @@ newTalent{
 		local stat_damage = t.getDamageStat(self, t)
 		local affinity = t.getResists(self, t)
 		return ([[Command your Temporal Hounds to breathe time, dealing %0.2f temporal damage and reducing the stats of all targets in a radius %d cone.
-		Affected targets will have their stats reduced by %d for 3 turns.  You are not immune to the breath of your own hounds, but your hounds are immune to stat damage from other hounds.
+		Affected targets will have their stats reduced by %d for 3 turns.  You are immune to the breath of your own hounds and your hounds are immune to stat damage from other hounds.
 		When you learn this talent, your hounds gain %d%% temporal damage affinity.]]):format(damDesc(self, DamageType.TEMPORAL, damage), radius, stat_damage, affinity)
 	end,
 }
