@@ -24,10 +24,11 @@ newTalent{
 	type = {"chronomancy/threaded-combat", 1},
 	require = chrono_req_high1,
 	points = 5,
-	cooldown = 4,
+	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { ATTACK = {weapon = 2} },
+	tactical = { ATTACK = {weapon = 2}, CLOSEIN = 2, ESCAPE = 2 },
 	requires_target = true,
+	is_teleport = true,
 	range = function(self, t)
 		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
 		return 1
@@ -35,11 +36,13 @@ newTalent{
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getTeleportRange = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
+		local accuracy = math.max(0, 10 - t.getTeleportRange(self, t))
 		game:onTickEnd(function()
 			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-			self:teleportRandom(tx, ty, 0)
+			self:teleportRandom(tx, ty, accuracy)
 		end)
 	end,
 	action = function(self, t)
@@ -64,7 +67,7 @@ newTalent{
 				local l = core.fov.line(x, y, self.x, self.y, block_move, true)
 				local lx, ly, is_corner_blocked = l:step(true)
 				local ox, oy
-				local dist = 9
+				local dist = t.getTeleportRange(self, t) - 1
 				
 				while game.level.map:isBound(lx, ly) and not is_corner_blocked and dist > 0 do
 					dist = dist - 1
@@ -86,9 +89,11 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
+		local range = t.getTeleportRange(self, t)
+		local accuracy = math.max(0, 10 - t.getTeleportRange(self, t))
 		return ([[Attack with your bow or dual-weapons for %d%% damage.
-		If you shoot an arrow you'll teleport to any target that the arrow hits.  If you hit with either of your dual-weapons you'll teleport up to ten tiles away.]])
-		:format(damage)
+		If you shoot an arrow you'll teleport near any target hit (radius %d accuracy).  If you hit with either of your dual-weapons you'll teleport up to %d tiles away from the target.]])
+		:format(damage, accuracy, range)
 	end
 }
 
