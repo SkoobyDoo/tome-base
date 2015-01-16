@@ -20,52 +20,65 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
-	name = "Frayed Threads",
+	name = "Thread Walk",
 	type = {"chronomancy/threaded-combat", 1},
 	require = chrono_req_high1,
-	mode = "sustained",
 	points = 5,
-	sustain_paradox = 24,
-	cooldown = 10,
-	tactical = { BUFF = 2 },
-	activate = function(self, t)
-		return {}
+	cooldown = 4,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { ATTACK = {weapon = 2} },
+	requires_target = true,
+	range = function(self, t)
+		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
+		return 0
 	end,
-	deactivate = function(self, t, p)
+	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
+	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 1.9) end,
+	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
+	archery_onhit = function(self, t, target, x, y)
+		game:onTickEnd(function()
+			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
+			self:teleportRandom(tx, ty, 0)
+		end)
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local damage = t.getDamage(self, t)
+		local mainhand, offhand = self:hasDualWeapon()
+
+		local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, infinite=true, no_energy = true})
+		if not targets then if swap then doWardenWeaponSwap(self, t, nil, "blade") end return end
+		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam, damtype=DamageType.TEMPORAL})
+
 		return true
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
-	getRadius = function(self, t) return self:getTalentLevel(t) > 4 and 2 or 1 end,
-	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
-		if not hitted then return end
-		if not target then return end
-		t.doExplosion(self, t, target)
-	end,
-	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if not hitted then return end
-		if not target then return end
-		t.doExplosion(self, t, target)
-	end,
-	doExplosion = function(self, t, target)
-		if self.turn_procs.frayed_threads then return end
-		self.turn_procs.frayed_threads = true
-		
-		self:project({type="ball", radius=t.getRadius(self, t), friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, t.getDamage(self,t))
-		-- fixme: graphics by damage type?
-	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local radius = t.getRadius(self, t)
-		return ([[While active your ranged and melee attacks deal an additional %0.2f temporal damage in a radius %d burst.
-		This effect may only happen once per turn and the damage will scale with your Spellpower.]])
-		:format(damDesc(self, DamageType.TEMPORAL, damage), radius)
+		local damage = t.getDamage(self, t) * 100
+		return ([[Fire a shot doing %d%% temporal damage.  This attack does not consume ammo.
+		You also learn how to phase your arrows through friendly targets without causing them harm.]])
+		:format(damage, paradox)
+	end
+}
+
+newTalent{
+	name = "Blended Threads",
+	type = {"chronomancy/threaded-combat", 2},
+	require = chrono_req_high2,
+	mode = "passive",
+	points = 5,
+	getPercent = function(self, t) return self:combatTalentScale(t, 20, 50)/100 end,
+	info = function(self, t)
+		local percent = t.getPercent(self, t) * 100
+		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initated the attack.]])
+		:format(percent)
 	end
 }
 
 newTalent{
 	name = "Thread the Needle",
-	type = {"chronomancy/threaded-combat", 2},
-	require = chrono_req_high2,
+	type = {"chronomancy/threaded-combat", 3},
+	require = chrono_req_high3,
 	points = 5,
 	cooldown = 8,
 	fixed_cooldown = true,
@@ -140,20 +153,6 @@ newTalent{
 		If you use your dual-weapons you'll attack all targets within a radius of one around you and each target hit will reduce the cooldown of one Bow Threading spell currently on cooldown by %d.
 		At talent level five cooldowns are reduced by two.]])
 		:format(damage, cooldown, cooldown)
-	end
-}
-
-newTalent{
-	name = "Blended Threads",
-	type = {"chronomancy/threaded-combat", 3},
-	require = chrono_req_high3,
-	mode = "passive",
-	points = 5,
-	getPercent = function(self, t) return self:combatTalentScale(t, 20, 50)/100 end,
-	info = function(self, t)
-		local percent = t.getPercent(self, t) * 100
-		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initated the attack.]])
-		:format(percent)
 	end
 }
 
@@ -244,7 +243,7 @@ newTalent{
 		-- Find a good location for our shot
 		local function find_space(self, target, clone)
 			local poss = {}
-			local range = archery_range(clone)
+			local range = util.getval(archery_range, clone, t)
 			local x, y = target.x, target.y
 			for i = x - range, x + range do
 				for j = y - range, y + range do
