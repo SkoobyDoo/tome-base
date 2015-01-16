@@ -20,7 +20,7 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 local function blade_warden(self, target)
-	if self:knowTalent(self.T_BLENDED_THREADS) then self:callTalent(self.T_BLENDED_THREADS, "doBladeWarden", target) end
+	if self:knowTalent(self.T_WARDEN_S_CALL) then self:callTalent(self.T_WARDEN_S_CALL, "doBladeWarden", target) end
 end
 
 newTalent{
@@ -54,7 +54,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		return ([[Fire a shot doing %d%% temporal damage.  This attack does not consume ammo.
-		Learning this talent allows your arrows to shoot through friendly targets.]])
+		You also learn how to phase your arrows through friendly targets without causing them harm.]])
 		:format(damage, paradox)
 	end
 }

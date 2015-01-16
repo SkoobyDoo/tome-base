@@ -158,7 +158,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Twinned Threads",  -- rename warden's call?
+	name = "Warden's Call", short_name = WARDEN_S_CALL,
 	type = {"chronomancy/threaded-combat", 4},
 	require = chrono_req_high4,
 	mode = "passive",
