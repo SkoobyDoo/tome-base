@@ -96,15 +96,15 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local duration = t.getDuration(self, t)
 		local warp = t.getWarp(self, t)
-		return ([[Attack the target with your melee weapons for %d%% damage.
-		If the attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical damage, and may stun, blind, pin, or confuse them for %d turns.
-		The bonus damage improves with your Spellpower.]])
+		return ([[Attack with your melee weapons for %d%% damage.
+		If either attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical damage, and may stun, blind, pin, or confuse them for %d turns.
+		The bonus damage scales with your Spellpower.]])
 		:format(damage, damDesc(self, DamageType.TEMPORAL, warp/2), damDesc(self, DamageType.PHYSICAL, warp/2), duration)
 	end
 }
 
 newTalent{
-	name = "Blade Sheer",  -- Fix ME!!
+	name = "Blade Sheer",
 	type = {"chronomancy/blade-threading", 2},
 	require = chrono_req2,
 	points = 5,
@@ -158,8 +158,8 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local sheer = t.getSheer(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Attack the target with your melee weapons for %d%% damage.
-		If the attack hits you'll deal %0.2f temporal damage in a radius %d cone
+		return ([[Attack with your melee weapons for %d%% damage.
+		If either attack hits you'll deal %0.2f temporal damage in a radius %d cone
 		The cone damage improves with your Spellpower.]])
 		:format(damage, damDesc(self, DamageType.TEMPORAL, sheer), radius)
 	end
@@ -244,7 +244,7 @@ newTalent{
 		local power = t.getPower(self, t)
 		local beam_range = t.getBeamRange(self, t)
 		local beam_damage = t.getBeamDamage(self, t)
-		return ([[Attack the target with your melee weapons for %d%% damage.  If the attack hits you'll fire a range %d beam that deals %0.2f temporal damage.
+		return ([[Attack with your melee weapons for %d%% damage.  If either you'll fire a range %d beam that deals %0.2f temporal damage.
 		If two or more targets are hit by the beam you'll braid their lifelines for %d turns.
 		Braided targets take %d%% of all damage dealt to other braided targets.
 		The damage transfered by the braid effect and beam damage scales with your Spellpower.]])
@@ -253,7 +253,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Temporal Assault",
+	name = "Blink Blade",
 	type = {"chronomancy/blade-threading", 4},
 	require = chrono_req4,
 	points = 5,
@@ -354,7 +354,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local teleports = t.getTeleports(self, t)
-		return ([[Attack the target with your melee weapons for %d%% damage.  If the attack hits you'll teleport next to up to %d random enemies, attacking for %d%% damage.
+		return ([[Attack with your melee weapons for %d%% damage.  If either you'll teleport next to up to %d random enemies, attacking for %d%% damage.
 		Temporal Assault can hit the same target multiple times and at talent level five you get an additional teleport.]])
 		:format(damage, teleports, damage)
 	end

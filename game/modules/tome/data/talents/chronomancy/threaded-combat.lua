@@ -30,11 +30,11 @@ newTalent{
 	requires_target = true,
 	range = function(self, t)
 		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
-		return 0
+		return 1
 	end,
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 1.9) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
 		game:onTickEnd(function()
@@ -43,21 +43,52 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local damage = t.getDamage(self, t)
 		local mainhand, offhand = self:hasDualWeapon()
 
-		local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, infinite=true, no_energy = true})
-		if not targets then if swap then doWardenWeaponSwap(self, t, nil, "blade") end return end
-		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam, damtype=DamageType.TEMPORAL})
+		if self:hasArcheryWeapon("bow") then
+			-- Ranged attack
+			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
+			if not targets then return end
+			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
+		elseif mainhand then
+			-- Melee attack
+			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+			local x, y, target = self:getTarget(tg)
+			if not target or not self:canProject(tg, x, y) then return nil end
+			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
+				
+			if hitted then
+			
+				local block_move = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+				local l = core.fov.line(x, y, self.x, self.y, block_move, true)
+				local lx, ly, is_corner_blocked = l:step(true)
+				local ox, oy
+				local dist = 9
+				
+				while game.level.map:isBound(lx, ly) and not is_corner_blocked and dist > 0 do
+					dist = dist - 1
+					if not game.level.map(lx, ly, Map.ACTOR) then ox, oy = lx, ly end
+					lx, ly, is_corner_blocked = l:step(true)
+				end
+				
+				-- ox, oy now contain the last square in line not blocked by actors.
+				if ox and oy then self:teleportRandom(ox, oy, 0) end
+
+			end
+
+		else
+			game.logPlayer(self, "You cannot use Thread Walk without an appropriate weapon!")
+			return nil
+		end
+		
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Fire a shot doing %d%% temporal damage.  This attack does not consume ammo.
-		You also learn how to phase your arrows through friendly targets without causing them harm.]])
-		:format(damage, paradox)
+		return ([[Attack with your bow or dual-weapons for %d%% damage.
+		If you shoot an arrow you'll teleport to any target that the arrow hits.  If you hit with either of your dual-weapons you'll teleport up to ten tiles away.]])
+		:format(damage)
 	end
 }
 
