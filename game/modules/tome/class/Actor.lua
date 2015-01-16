@@ -3384,6 +3384,14 @@ function _M:attachementSpot(kind, particle)
 	return game.tiles_attachements[as][kind].x + x, game.tiles_attachements[as][kind].y + y
 end
 
+--- Return tile flip mode
+function _M:isTileFlipped()
+	local as = self.attachement_spots or self.image
+	if not as then return end
+	if not game.tiles_facings or not game.tiles_facings[as] then return end
+	return game.tiles_facings[as].flipx
+end
+
 function _M:addShaderAura(kind, shader, shader_args, ...)
 	if not core.shader.active(4) then return false end
 
