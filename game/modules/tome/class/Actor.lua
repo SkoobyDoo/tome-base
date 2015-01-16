@@ -3976,7 +3976,7 @@ function _M:canWearObject(o, try_slot)
 			end
 		end end
 	end
-	if o.type == "weapon" and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
+	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
 		oldreq = rawget(o, "require")
 		o.require = table.clone(oldreq or {}, true)
 		if o.require.stat and o.require.stat.str then
