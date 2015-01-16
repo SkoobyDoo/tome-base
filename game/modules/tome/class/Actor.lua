@@ -4036,7 +4036,7 @@ end
 -- @param t_id the id of the talent to learn
 -- @return true if the talent was learnt, nil and an error message otherwise
 function _M:learnTalent(t_id, force, nb, extra)
-	local just_learnt = not self:knowTalent(tid)
+	local just_learnt = not self:knowTalent(t_id)
 	if not engine.interface.ActorTalents.learnTalent(self, t_id, force, nb) then return false end
 
 	-- If we learned a spell, get mana, if you learned a technique get stamina, if we learned a wild gift, get power
@@ -4790,20 +4790,22 @@ function _M:registerCallbacks(objdef, objid, objtype)
 		if objdef[event] then
 			local cb = self[store] or {}
 			upgradeStore(cb, store)
-			cb[objid] = objtype
-			-- extract a priority, 0 by default
-			cb.__priorities[objid] = (objdef.callbackPriorities and objdef.callbackPriorities[event]) or 0
-			self[store] = cb
-			-- insert into priorities
-			local sortedkey = {cb.__priorities[objid], objtype, convertToString(objid), objid}
-			local idx = #cb.__sorted + 1
-			for i, key in ipairs(cb.__sorted) do
-				if callbackKeyLess(sortedkey, key) then
-					idx = i
-					break
+			if not cb[objid] then
+				cb[objid] = objtype
+				-- extract a priority, 0 by default
+				cb.__priorities[objid] = (objdef.callbackPriorities and objdef.callbackPriorities[event]) or 0
+				self[store] = cb
+				-- insert into priorities
+				local sortedkey = {cb.__priorities[objid], objtype, convertToString(objid), objid}
+				local idx = #cb.__sorted + 1
+				for i, key in ipairs(cb.__sorted) do
+					if callbackKeyLess(sortedkey, key) then
+						idx = i
+						break
+					end
 				end
+				table.insert(cb.__sorted, idx, sortedkey)
 			end
-			table.insert(cb.__sorted, idx, sortedkey)  -- may be nil, which means to the
 		end
 	end
 end
