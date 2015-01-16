@@ -1327,7 +1327,7 @@ function _M:move(x, y, force)
 		if self:hasEffect(self.EFF_CELERITY) then local eff = self:hasEffect(self.EFF_CELERITY) blur = eff.charges end
 		self:setMoveAnim(ox, oy, config.settings.tome.smooth_move, blur, 8, config.settings.tome.twitch_move and 0.15 or 0)
 		-- Assume all creatures are drawn left faced, unless otherwise specified
-		if self.x < ox then self:MOflipX(false) elseif self.x > ox then self:MOflipX(true) end
+		if self.x < ox then self:MOflipX(self:isTileFlipped()) elseif self.x > ox then self:MOflipX(not self:isTileFlipped()) end
 	end
 
 	if moved and not force and ox and oy and (ox ~= self.x or oy ~= self.y) and self:hasEffect(self.EFF_RAMPAGE) then
@@ -3389,9 +3389,9 @@ end
 --- Return tile flip mode
 function _M:isTileFlipped()
 	local as = self.attachement_spots or self.image
-	if not as then return end
-	if not game.tiles_facings or not game.tiles_facings[as] then return end
-	return game.tiles_facings[as].flipx
+	if not as then return false end
+	if not game.tiles_facing or not game.tiles_facing[as] then return false end
+	return game.tiles_facing[as].flipx
 end
 
 function _M:addShaderAura(kind, shader, shader_args, ...)

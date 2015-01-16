@@ -1043,6 +1043,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 
 	-- Visual feedback
 	if hitted then game.level.map:particleEmitter(target.x, target.y, 1, "melee_attack", {color=target.blood_color}) end
+	if self.x and target.x then if target.x < self.x then self:MOflipX(self:isTileFlipped()) elseif target.x > self.x then self:MOflipX(not self:isTileFlipped()) end end
 
 	self.turn_procs.weapon_type = nil
 	self.__global_accuracy_damage_bonus = nil
