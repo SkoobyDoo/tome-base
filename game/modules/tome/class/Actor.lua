@@ -1326,7 +1326,6 @@ function _M:move(x, y, force)
 		if self:attr("lightning_speed") or self:attr("step_up") or self:attr("wild_speed") then blur = 3 end
 		if self:hasEffect(self.EFF_CELERITY) then local eff = self:hasEffect(self.EFF_CELERITY) blur = eff.charges end
 		self:setMoveAnim(ox, oy, config.settings.tome.smooth_move, blur, 8, config.settings.tome.twitch_move and 0.15 or 0)
-		-- Assume all creatures are drawn left faced, unless otherwise specified
 		if self.x < ox then self:MOflipX(self:isTileFlipped()) elseif self.x > ox then self:MOflipX(not self:isTileFlipped()) end
 	end
 
