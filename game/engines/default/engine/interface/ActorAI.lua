@@ -163,8 +163,14 @@ function _M:aiSeeTargetPos(target)
 	local LSeen = self.ai_state.target_last_seen
 	if type(LSeen) ~= "table" then return tx, ty end
 	local spread = 0
-	LSeen.GCache_turn = LSeen.GCache_turn or game.turn -- Guess Cache turn to update position guess (so it's consistent during a turn)
-	LSeen.GCknown_turn = LSeen.GCknown_turn or game.turn -- Guess Cache known turn for spread calculation (self.ai_state.target_last_seen.turn can't be used because it's needed by FOV code)
+
+	-- Guess Cache turn to update position guess (so it's consistent during a turn)
+	-- Start at -1000 to make sure ti gets run the first time.
+	LSeen.GCache_turn = LSeen.GCache_turn or game.turn - 1000
+
+	-- Guess Cache known turn for spread calculation (self.ai_state.target_last_seen.turn
+	-- can't be used because it's needed by FOV code)
+	LSeen.GCknown_turn = LSeen.GCknown_turn or game.turn - 1000
 
 	-- Check if target is currently seen
 	local see, chance = self:canSee(target)
