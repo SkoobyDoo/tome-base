@@ -85,6 +85,7 @@ function _M:init()
 
 	self.visited_zones = {}
 	self.tiles_attachements = {}
+	self.tiles_facing = {}
 end
 
 function _M:run()
@@ -443,6 +444,50 @@ function _M:computeAttachementSpots()
 	self:computeAttachementSpotsFromTable(t)
 end
 
+function _M:computeFacingsFromTable(ta)
+	local base = ta.default_base or 64
+	local res = { }
+
+	for tile, data in pairs(ta.tiles or {}) do
+		res[tile] = data
+	end
+
+	for race, data in pairs(ta.dolls or {}) do
+		local base = data.base or base
+		for sex, d in pairs(data) do if sex ~= "base" then
+			local t = {}
+			res["dolls_"..race.."_"..sex] = d
+		end end
+	end
+
+	self.tiles_facing = res
+end
+
+function _M:computeFacings()
+	local t = {}
+	if fs.exists(Tiles.prefix.."facings.lua") then
+		print("Loading tileset facings from ", Tiles.prefix.."facings.lua")
+		local f, err = loadfile(Tiles.prefix.."facings.lua")
+		if not f then print("Loading tileset facings error", err)
+		else
+			setfenv(f, t)
+			local ok, err = pcall(f)
+			if not ok then print("Loading tileset facings error", err) end
+		end		
+	end
+	for _, file in ipairs(fs.list(Tiles.prefix)) do if file:find("^facings%-.+.lua$") then
+		print("Loading tileset facings from ", Tiles.prefix..file)
+		local f, err = loadfile(Tiles.prefix..file)
+		if not f then print("Loading tileset facings error", err)
+		else
+			setfenv(f, t)
+			local ok, err = pcall(f)
+			if not ok then print("Loading tileset facings error", err) end
+		end		
+	end end
+	self:computeFacingsFromTable(t)
+end
+
 function _M:setupDisplayMode(reboot, mode)
 	if not mode or mode == "init" then
 		local gfx = config.settings.tome.gfx
@@ -470,6 +515,7 @@ function _M:setupDisplayMode(reboot, mode)
 
 		-- Load attachement spots for this tileset
 		self:computeAttachementSpots()
+		self:computeFacings()
 
 		local do_bg = gfx.tiles == "ascii_full"
 		local _, _, tw, th = gfx.size:find("^([0-9]+)x([0-9]+)$")

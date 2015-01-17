@@ -47,6 +47,7 @@ struct s_map_object {
 	bool on_remember;
 	bool on_unknown;
 	bool valid;
+	bool flip_x, flip_y;
 	float oldx, oldy;
 	int move_step, move_max, move_blur, move_twitch_dir;
 	float move_twitch;
