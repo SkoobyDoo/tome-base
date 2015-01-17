@@ -76,16 +76,6 @@ function _M:archeryAcquireTargets(tg, params)
 
 	self:triggerHook{"Combat:archeryTargetKind", tg=tg, params=params, mode="target"}
 	
-	-- Warden's Focus
-	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then 
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if not eff.target.dead then
-			params.x, params.y = eff.target.x, eff.target.y
-		else
-			self:removeEffect(self.EFF_WARDEN_S_FOCUS)
-		end
-	end
-
 	local x, y = params.x, params.y
 	if not x or not y then x, y = self:getTarget(tg) end
 	if not x or not y then return nil end

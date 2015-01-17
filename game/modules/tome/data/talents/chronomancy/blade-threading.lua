@@ -211,6 +211,8 @@ newTalent{
 		local braid_targets = {}
 		local damage = self:spellCrit(t.getBeamDamage(self, t))
 		if hitted then
+			bow_warden(self, target)
+			
 			self:project(tg, x, y, function(px, py)
 				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
 
@@ -283,6 +285,8 @@ newTalent{
 		local hitted = self:attackTarget(target, nil, dam, true)
 
 		if hitted then
+			bow_warden(self, target)
+			
 			local teleports = t.getTeleports(self, t)
 			local attempts = 10
 			

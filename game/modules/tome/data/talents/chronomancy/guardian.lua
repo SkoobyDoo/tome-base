@@ -144,7 +144,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local atk = t.getAttack(self, t)
 		local crit = t.getCrit(self, t)
-		return ([[Activate to focus fire on the target.  For the next %d turns most of your ranged weapon attacks will automatically aim at this target, as well as Temporal Assault teleports and Blended Threads clones.
+		return ([[For the next %d turns random targeting, such as from Blink Blade and Twin Threads, will focus on this target.
 		Additionally you gain +%d accuracy and +%d%% critical hit rate when attacking this target.
 		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
 		:format(duration, atk, crit)

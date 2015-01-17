@@ -44,7 +44,7 @@ newTalent{
 		if not x or not y then return nil end
 		
 		local dam = self:spellCrit(t.getDamage(self, t))
-		local cd = t.getCooldown(self, t)
+		local cdr = t.getCooldown(self, t)
 		
 		-- Hit our initial target; quality of life hack
 		self:project(tg, x, y, function(px, py)
@@ -54,7 +54,7 @@ newTalent{
 			for tid, cd in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
 				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-					self:alterTalentCoolingdown(tt, - cd)
+					self:alterTalentCoolingdown(tt, - cdr)
 				end
 			end
 			DamageType:get(DamageType.TEMPORAL).projector(self, x, y, DamageType.TEMPORAL, dam)
@@ -80,7 +80,8 @@ newTalent{
 						for tid, cd in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-								src:alterTalentCoolingdown(tt, - cd)
+								src:alterTalentCoolingdown(tt, - cdr)
+								break
 							end
 						end
 					end
