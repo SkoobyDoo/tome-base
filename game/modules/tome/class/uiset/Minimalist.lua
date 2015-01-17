@@ -415,7 +415,7 @@ function _M:resizeIconsHotkeysToolbar()
 		game:resizeMapViewport(game.w, self.map_h_stop)
 		self.logdisplay.display_y = self.logdisplay.display_y + self.map_h_stop_up - oldstop
 		profile.chat.display_y = profile.chat.display_y + self.map_h_stop_up - oldstop
-		game:setupMouse()
+		game:setupMouse(true)
 		return
 	end
 
@@ -423,7 +423,7 @@ function _M:resizeIconsHotkeysToolbar()
 		game:resizeMapViewport(game.w, self.map_h_stop)
 		self.logdisplay.display_y = self.logdisplay.display_y + self.map_h_stop_up - oldstop
 		profile.chat.display_y = profile.chat.display_y + self.map_h_stop_up - oldstop
-		game:setupMouse()
+		game:setupMouse(true)
 	end
 
 	self.hotkeys_display = config.settings.tome.hotkey_icons and self.hotkeys_display_icons or self.hotkeys_display_text
