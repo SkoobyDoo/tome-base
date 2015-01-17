@@ -2735,7 +2735,7 @@ newDamageType{
 		if feat then
 			if feat.grow then
 				local newfeat_name, newfeat, silence = feat.grow, nil, false
-				if type(feat.dig) == "function" then newfeat_name, newfeat, silence = feat.grow(src, x, y, feat) end
+				if type(feat.grow) == "function" then newfeat_name, newfeat, silence = feat.grow(src, x, y, feat) end
 				newfeat = newfeat or game.zone.grid_list[newfeat_name]
 				if newfeat then
 					game.level.map(x, y, Map.TERRAIN, newfeat)
