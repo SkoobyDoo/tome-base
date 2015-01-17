@@ -51,16 +51,16 @@ newTalent{
 		local split = cb.value * t.getSplit(self, t)
 
 		-- If we already split this turn pass damage to our clone
-		if self.turn_procs.double_edge and self.turn_procs.double_edge ~= self and game.level:hasEntity(self.turn_procs.double_edge) then
+		if self.turn_procs.unity_warden and self.turn_procs.unity_warden ~= self and game.level:hasEntity(self.turn_procs.unity_warden) then
 			split = split/2
 			-- split the damage
-			game:delayedLogDamage(src, self.turn_procs.double_edge, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
+			game:delayedLogDamage(src, self.turn_procs.unity_warden, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
 			cb.value = cb.value - split
-			self.turn_procs.double_edge:takeHit(split, src)
+			self.turn_procs.unity_warden:takeHit(split, src)
 		end
 
 		-- Do our split
-		if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.double_edge then
+		if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.unity_warden then
 			-- Look for space first
 			local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
 			if tx and ty then
@@ -87,7 +87,7 @@ newTalent{
 
 				-- split the damage
 				cb.value = cb.value - split
-				self.turn_procs.double_edge = m
+				self.turn_procs.unity_warden = m
 				m:takeHit(split, src)
 				m:setTarget(src or nil)
 				game:delayedLogMessage(self, nil, "guardian_damage", "#STEEL_BLUE##Source# shares damage with %s guardian!", string.his_her(self))

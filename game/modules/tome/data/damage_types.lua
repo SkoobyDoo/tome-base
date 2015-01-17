@@ -94,7 +94,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 
 		local ignore_direct_crits = target:attr 'ignore_direct_crits'
 		if crit_power > 1 and ignore_direct_crits and rng.percent(ignore_direct_crits) then
-			if target.knowTalent and target:knowTalent(self.T_VIGILANCE) then
+			if target:knowTalent(target.T_VIGILANCE) then
 				target:callTalent(target.T_VIGILANCE, "gainEnergy")
 			end
 			dam = dam / crit_power
