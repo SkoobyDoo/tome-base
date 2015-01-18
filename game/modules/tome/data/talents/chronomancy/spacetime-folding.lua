@@ -448,7 +448,7 @@ newTalent{
 		local damage = t.getDamage(self, t)/2
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self, t)
-		return ([[Create a radius %d anti-telport field for %d turns.  Enemies in the field will be anchored, preventing teleportation and taking %0.2f physical and %0.2f temporal (warp) damage on teleport attempts.
+		return ([[Create a radius %d anti-teleport field for %d turns.  Enemies in the field will be anchored, preventing teleportation and taking %0.2f physical and %0.2f temporal (warp) damage on teleport attempts.
 		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage))
 	end,
 }

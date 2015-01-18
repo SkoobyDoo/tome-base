@@ -104,7 +104,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Blade Sheer",
+	name = "Blade Shear",
 	type = {"chronomancy/blade-threading", 2},
 	require = chrono_req2,
 	points = 5,
@@ -246,7 +246,7 @@ newTalent{
 		local power = t.getPower(self, t)
 		local beam_range = t.getBeamRange(self, t)
 		local beam_damage = t.getBeamDamage(self, t)
-		return ([[Attack with your melee weapons for %d%% damage.  If either you'll fire a range %d beam that deals %0.2f temporal damage.
+		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll fire a range %d beam that deals %0.2f temporal damage.
 		If two or more targets are hit by the beam you'll braid their lifelines for %d turns.
 		Braided targets take %d%% of all damage dealt to other braided targets.
 		The damage transfered by the braid effect and beam damage scales with your Spellpower.]])

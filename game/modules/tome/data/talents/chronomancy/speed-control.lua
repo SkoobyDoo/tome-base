@@ -38,7 +38,7 @@ newTalent{
 	info = function(self, t)
 		local speed = t.getSpeed(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[When you use a chronomancy spell you gain %d%% movement speed for %d turn.  This effect stacks up to three times but can only occur once per turn.
+		return ([[When you use a chronomancy spell you gain %d%% movement speed for %d turns.  This effect stacks up to three times but can only occur once per turn.
 		]]):format(speed, duration)
 	end,
 }

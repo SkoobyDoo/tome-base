@@ -106,7 +106,7 @@ newTalent{
 	getPercent = function(self, t) return self:combatTalentScale(t, 20, 50)/100 end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
-		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initated the attack.]])
+		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initiated the attack.]])
 		:format(percent)
 	end
 }
