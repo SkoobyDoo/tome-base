@@ -29,17 +29,18 @@ newTalent{
 	require = chrono_req1,
 	points = 5,
 	cooldown = 4,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {weapon = 2} },
 	requires_target = true,
 	range = archery_range,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 2.2) end,
+	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 10, 20)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
 	archery_onhit = function(self, t, target, x, y)
+		self:incParadox(-t.getParadoxReduction(self, t))
 		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
@@ -53,9 +54,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Fire an arrow for %d%% temporal weapon damage.  This attack does not consume ammo.
+		local paradox = t.getParadoxReduction(self, t)
+		return ([[Fire an arrow for %d%% temporal weapon damage.  If the attack hits you recover %d Paradox.  This attack does not consume ammo.
 		You also learn how to phase your arrows through friendly targets without causing them harm.]])
-		:format(damage)
+		:format(damage, paradox)
 	end
 }
 

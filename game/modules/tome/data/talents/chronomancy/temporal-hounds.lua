@@ -288,7 +288,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local defense = t.getDefense(self, t)
-		return ([[Command your Temporal Hounds to teleport to the targeted location.  If you target a creature with this effect your hounds will set that creature as their target.
+		return ([[Command your Temporal Hounds to teleport to the targeted location.  If you target an enemy your hounds will set that enemy as their target.
 		When you learn this talent, your hounds gain %d defense and %d%% resist all after any teleport.
 		At talent level five, if you're not at your maximum number of hounds when you cast this spell a new one will be summoned.
 		The teleportation bonuses scale with your Spellpower.]]):format(defense, defense, defense/2, defense/2)
