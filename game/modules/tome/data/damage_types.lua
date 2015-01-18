@@ -94,9 +94,6 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 
 		local ignore_direct_crits = target:attr 'ignore_direct_crits'
 		if crit_power > 1 and ignore_direct_crits and rng.percent(ignore_direct_crits) then
-			if target:knowTalent(target.T_VIGILANCE) then
-				target:callTalent(target.T_VIGILANCE, "gainEnergy")
-			end
 			dam = dam / crit_power
 			crit_power = 1
 			print("[PROJECTOR] crit power reduce dam", dam)
@@ -224,6 +221,14 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			inc = inc + target:attr("inc_necrotic_minions")
 			print("[PROJECTOR] after necrotic increase dam", dam + (dam * inc) / 100)
 		end
+		
+		-- Increase damage from a talent
+		if src.knowTalent then
+			if src:knowTalent(src.T_VIGILANCE) then
+				inc = inc + src:callTalent(src.T_VIGILANCE, "doDamageIncrease", target)
+				print("[PROJECTOR] after vigilance increase dam", dam + (dam * inc) / 100)
+			end
+		end
 
 		-- dark vision increases damage done in creeping dark
 		if src and src ~= target and game.level.map:checkAllEntities(x, y, "creepingDark") then
@@ -236,7 +241,6 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		end
 
 		dam = dam + (dam * inc / 100)
-
 
 		-- Blast the iceblock
 		if src.attr and src:attr("encased_in_ice") then

@@ -121,7 +121,6 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	range = 10,
-	no_energy = true,
 	target = function (self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -157,22 +156,44 @@ newTalent{
 	require = chrono_req4,
 	points = 5,
 	mode = "passive",
-	getEnergy = function(self, t) return self:combatTalentLimit(t, 300, 50, 200) end,
-	gainEnergy = function(self, t)
-		if not self.turn_procs.vigilance then
-			self.turn_procs.vigilance = true
-			self.energy.value = self.energy.value + t.getEnergy(self, t)
+	mode = "passive",
+	require = chrono_req2,
+	points = 5,
+	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
+		self:talentTemporaryValue(p, "see_invisible", t.getSense(self, t))
+	end,
+	callbackOnStatChange = function(self, t, stat, v)
+		if stat == self.STAT_MAG then
+			self:updateTalentPassives(t)
 		end
 	end,
-	callbackOnArcheryMiss = function(self, t)
-		self:callTalent(self.T_VIGILANCE, "gainEnergy")
+	doDamageIncrease = function(self, t, target)
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		local inc = 0
+		if eff and eff.target == target then
+			inc = t.getPower(self, t)
+		end
+		return inc
 	end,
-	callbackOnMeleeMiss = function(self, t)
-		self:callTalent(self.T_VIGILANCE, "gainEnergy")
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and dam > 0 and eff.target ~= src and src ~= self then
+			-- Reduce damage
+			local reduction = dam * self:callTalent(self.T_VIGILANCE, "getPower")/100
+			dam = dam -  reduction
+			game:delayedLogDamage(src, self, 0, ("%s(%d vigilance)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
+		end
+		return {dam=dam}
 	end,
 	info = function(self, t)
-		local energy = t.getEnergy(self, t)/10
-		return ([[When a melee or ranged attack misses you or you shrug off a critical hit you gain %d%% of a turn.
-		This effect can only occur once per turn.]]):format(energy)
+		local sense = t.getSense(self, t)
+		local power = t.getPower(self, t)
+		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.
+		While Warden's Focus is active you deal %d%% additional damage when you hit your focused target and reduce incoming damage from all other sources by %d%%.
+		Sense abilities will scale with your Magic stat.]]):
+		format(sense, sense, power, power)
 	end,
 }
