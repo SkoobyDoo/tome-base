@@ -60,7 +60,7 @@ function _M:getRequirementDesc(who)
 		self.require = oldreq
 
 		return desc
-	elseif (self.type =="weapon" or self.type=="ammo")and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
+	elseif (self.type =="weapon" or self.type=="ammo") and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
 		local oldreq = rawget(self, "require")
 		self.require = table.clone(oldreq, true)
 		if self.require.stat and self.require.stat.str then
@@ -581,6 +581,9 @@ function _M:getTextualDesc(compare_with, use_actor)
 		if next(combat.dammod or {}) then dammod = use_actor:getDammod(combat) end
 		for stat, i in pairs(dammod) do
 			local name = Stats.stats_def[stat].short_name:capitalize()
+			if use_actor:knowTalent(use_actor.T_STRENGTH_OF_PURPOSE) then
+				if name == "Str" then name = "Mag" end
+			end
 			if self.subtype == "dagger" and use_actor:knowTalent(use_actor.T_LETHALITY) then
 				if name == "Str" then name = "Cun" end
 			end
