@@ -393,6 +393,11 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			t.proc(self, t, target, weapon)
 		end
 	end
+	
+	-- Temporal Cast
+	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
+		self:callTalent(self.T_WEAPON_FOLDING, "doWeaponFolding", target)
+	end
 
 	-- Special effect
 	if hitted and weapon and weapon.special_on_hit and weapon.special_on_hit.fct and (not target.dead or weapon.special_on_hit.on_kill) then

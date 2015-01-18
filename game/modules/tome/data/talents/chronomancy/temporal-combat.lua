@@ -60,7 +60,7 @@ newTalent{
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
-						self:project(tg, px, py, DamageType.TEMPORAL, (t.getDamage(self, t)))
+						DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, t.getDamage(self, t))
 					end
 				end)
 				
@@ -104,7 +104,7 @@ newTalent{
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
-						self:project(tg, px, py, DamageType.WARP, (t.getDamage(self, t)))
+						DamageType:get(DamageType.WARP).projector(self, target.x, target.y, DamageType.WARP, t.getDamage(self, t))
 						randomWarpEffect(self, t, target)
 					end
 				end)
@@ -146,14 +146,13 @@ newTalent{
 	doFold = function(self, t, target)
 		if rng.percent(t.getChance(self, t)) then
 			if not self:isTalentCoolingDown(t.id) then
-				game.logPlayer(self, "once")
 				-- Gravity Burst
 				local tg = self:getTalentTarget(t)
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
 						target:setEffect(target.EFF_SLOW, t.getDuration(self, t), {power=t.getSlow(self, t), apply_power=getParadoxSpellpower(self, t), no_ct_effect=true})
-						self:project(tg, px, py, DamageType.GRAVITY, (t.getDamage(self, t)))
+						DamageType:get(DamageType.GRAVITY).projector(self, target.x, target.y, DamageType.GRAVITY, t.getDamage(self, t))
 					end
 				end)
 				self:startTalentCooldown(t.id)
@@ -191,17 +190,7 @@ newTalent{
 		return true
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 40, getParadoxSpellpower(self, t)) end,
-	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
-		if not hitted then return end
-		if not target then return end
-		t.doWeaponFolding(self, t, target)
-	end,
-	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if not hitted then return end
-		if not target then return end
-		t.doWeaponFolding(self, t, target)
-	end,
-	doWeaponFolding = function(self, t, target)
+	doWeaponFolding = function(self, t, target)  
 		local dam = t.getDamage(self, t)
 		do_folds(self, target)
 		if not target.dead then
