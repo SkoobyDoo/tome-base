@@ -261,12 +261,13 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local slow = t.getSlow(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[You now have a %d%% chance to Fold Fate, Gravity, or Warp into your Weapon Folding damage.  Each of these effects has an eight turn cooldown.
-		If an effect is triggered while on cooldown it will reduce the cooldown of the other two folds by one turn.
+		return ([[You now have a %d%% chance to Fold Fate, Gravity, or Warp into your Weapon Folding damage.
 		
 		Fold Fate: Deals %0.2f temporal damage to enemies in a radius of %d.  For each enemy hit you gain 10%% of a turn.
 		Fold Warp: Deals %0.2f physical and %0.2f temporal damage to enemies in a radius of %d.  Affected targets may be stunned, blinded, confused, or pinned for %d turns.
-		Fold Void: Deals %0.2f physical damage to enemies in a radius of %d.  Affected targets will be slowed (%d%%) for %d turns.]]
+		Fold Gravity: Deals %0.2f physical damage to enemies in a radius of %d.  Affected targets will be slowed (%d%%) for %d turns.
+		
+		Each Fold has an eight turn cooldown.  If an effect is triggered while on cooldown it will reduce the cooldown of the other two folds by one turn.]]
 		):format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius, damDesc(self, DamageType.PHYSICAL, damage/2), damDesc(self, DamageType.TEMPORAL, damage/2), radius,
 		duration, damDesc(self, DamageType.PHYSICAL, damage), radius, slow, duration)
 	end,
