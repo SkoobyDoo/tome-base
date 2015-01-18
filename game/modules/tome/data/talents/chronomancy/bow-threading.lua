@@ -75,7 +75,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getClones = function(self, t) return self:getTalentLevel(t) >= 5 and 3 or self:getTalentLevel(t) >= 3 and 2 or 1 end,
 	target = function(self, t)
-		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
+		return {type="bolt", range=self:getTalentRange(t), talent=t}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
@@ -259,7 +259,7 @@ newTalent{
 	range = archery_range,
 	speed = 'archery',
 	target = function(self, t)
-		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
+		return {type="bolt", range=self:getTalentRange(t), talent=t}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,

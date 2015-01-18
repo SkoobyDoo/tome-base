@@ -19,109 +19,162 @@
 
 -- some helpers
 
-local function clear_folds(self)
-	for eff_id, p in pairs(self.tmp) do
-		local e = self.tempeffect_def[eff_id]
-		if e.subtype.weapon_manifold == true then
-			self:removeEffect(eff_id)
+local function cooldown_folds(self, t)
+	for tid, cd in pairs(self.talents_cd) do
+		local tt = self:getTalentFromId(tid)
+		if tt.type[1]:find("^chronomancy/manifold") and t ~= tt then
+			self:alterTalentCoolingdown(tt, -1)
+		end
+	end
+end
+
+local function do_folds(self, target)
+	for tid, _ in pairs(self.talents) do
+		local tt = self:getTalentFromId(tid)
+		if tt.type[1]:find("^chronomancy/manifold") and self:knowTalent(tid) then
+			game.logPlayer(self, "%s", tid)
+			self:callTalent(tid, "doFold", target)
 		end
 	end
 end
 
 newTalent{
 	name = "Fold Fate",
-	type = {"chronomancy/other", 1},
-	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
-	cooldown = 12,
-	tactical = { BUFF = 2, DEBUFF = 2 },
+	type = {"chronomancy/manifold", 1},
+	cooldown = 8,
 	points = 5,
-	no_energy = true,
-	action = function(self, t)
-		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
-		local dox = self:callTalent(self.T_WEAPON_MANIFOLD, "getParadoxRegen")
-		
-		clear_folds(self)
-
-		self:setEffect(self.EFF_FOLD_FATE, duration, {chance = chance, src = self, paradox = dox, apply=getParadoxSpellpower(self, t)})
-
-		return true
+	mode = "passive",
+	range = 10,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
+	end,
+	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
+	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
+	doFold = function(self, t, target)
+		if rng.percent(t.getChance(self, t)) then
+			if not self:isTalentCoolingDown(t.id) then
+				-- Temporal Burst
+				local tgts = 0
+				local tg = self:getTalentTarget(t)
+				self:project(tg, target.x, target.y, function(px, py, tg, self)
+					local target = game.level.map(px, py, Map.ACTOR)
+					if target then
+						self:project(tg, px, py, DamageType.TEMPORAL, (t.getDamage(self, t)))
+					end
+				end)
+				
+				self.energy.value = self.energy.value + (tgts*100)
+				self:startTalentCooldown(t.id)
+			else
+				cooldown_folds(self, t)
+			end
+		end	
 	end,
 	info = function(self, t)
-		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local dam = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
-		local dox = self:callTalent(self.T_WEAPON_MANIFOLD, "getParadoxRegen")
-		return (
-		[[Fold a thread of fate into your weapons for %d turns, causing confusing dissonance when it strikes your targets as you damage their fates to repair the timeline.
-		Your melee and archery attacks have a %d%% chance to confuse any target you strike, and each hit brings your Paradox up to %0.1f closer to your chosen baseline.
-		The damage and Paradox regeneration will improve with your Paradox.]]
-		):format( duration, dam, dox )
+		local chance = t.getChance(self, t)
+		local damage = t.getDamage(self, t)
+		local radius = self:getTalentRadius(t)
+		return ([[When you hit with Weapon Folding you have a %d%% chance of dealing an additional %0.2f temporal damage to enemies in a radius of %d.  For each target hit you gain 10%% of a turn.
+		This effect has a cooldown.  If it triggers while on cooldown it will reduce the cooldown of Fold Gravity and Fold Warp by one turn.]])
+		:format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius)
+	end,
+}
+
+newTalent{
+	name = "Fold Warp",
+	type = {"chronomancy/manifold", 1},
+	cooldown = 8,
+	points = 5,
+	mode = "passive",
+	range = 10,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
+	end,
+	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
+	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
+	getDuration = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration") end,
+	doFold = function(self, t, target)
+		if rng.percent(t.getChance(self, t)) then
+			if not self:isTalentCoolingDown(t.id) then
+				-- Warp Burst
+				local tgts = 0
+				local tg = self:getTalentTarget(t)
+				self:project(tg, target.x, target.y, function(px, py, tg, self)
+					local target = game.level.map(px, py, Map.ACTOR)
+					if target then
+						self:project(tg, px, py, DamageType.WARP, (t.getDamage(self, t)))
+						randomWarpEffect(self, t, target)
+					end
+				end)
+				
+				self.energy.value = self.energy.value + (tgts*100)
+				self:startTalentCooldown(t.id)
+			else
+				cooldown_folds(self, t)
+			end
+		end	
+	end,
+	info = function(self, t)
+		local chance = t.getChance(self, t)
+		local damage = t.getDamage(self, t)
+		local radius = self:getTalentRadius(t)
+		local duration = t.getDuration(self, t)
+		return ([[When you hit with Weapon Folding you have a %d%% chance of dealing an additional %0.2f physical and %0.2f temporal (warp) damage to enemies in a radius of %d.
+		Each target hit may be stunned, blinded, pinned, or confused for %d turns.
+		This effect has a cooldown.  If it triggers while on cooldown it will reduce the cooldown of Fold Gravity and Fold Fate by one turn.]])
+		:format(chance, damDesc(self, DamageType.TEMPORAL, damage/2), damDesc(self, DamageType.PHYSICAL, damage/2), radius, duration)
 	end,
 }
 
 newTalent{
 	name = "Fold Gravity",
-	type = {"chronomancy/other", 1},
-	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
-	cooldown = 12,
-	tactical = { BUFF = 2, DEBUFF = 2 },
-	points = 1,
-	no_energy = true,
-	action = function(self, t)
-		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
-		
-		clear_folds(self)
-
-		self:setEffect(self.EFF_FOLD_GRAVITY, duration, {dam = damage, src = self, chance = chance, apply=getParadoxSpellpower(self, t)})
-
-		return true
+	type = {"chronomancy/manifold", 1},
+	cooldown = 8,
+	points = 5,
+	mode = "passive",
+	range = 10,
+	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
+	end,
+	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
+	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
+	getDuration = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration") end,
+	getSlow = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getSlow") end,
+	doFold = function(self, t, target)
+		if rng.percent(t.getChance(self, t)) then
+			if not self:isTalentCoolingDown(t.id) then
+				game.logPlayer(self, "once")
+				-- Gravity Burst
+				local tg = self:getTalentTarget(t)
+				self:project(tg, target.x, target.y, function(px, py, tg, self)
+					local target = game.level.map(px, py, Map.ACTOR)
+					if target then
+						target:setEffect(target.EFF_SLOW, t.getDuration(self, t), {power=t.getSlow(self, t), apply_power=getParadoxSpellpower(self, t), no_ct_effect=true})
+						self:project(tg, px, py, DamageType.GRAVITY, (t.getDamage(self, t)))
+					end
+				end)
+				self:startTalentCooldown(t.id)
+			else
+				cooldown_folds(self, t)
+			end
+		end	
 	end,
 	info = function(self, t)
-		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
-		return (
-		[[Fold a thread of gravity into your weapons for %d turns.
-		Your melee and archery attacks deal +%0.1f Physical damage, and each attack has a %d%% chance to Pin your target for 4 turns.
-		The damage will improve with your Paradox, and the Pin will be applied with your Spellpower.]]
-		):format( duration, damDesc(self, DamageType.PHYSICAL, damage), chance, eff_dur )
+		local chance = t.getChance(self, t)
+		local damage = t.getDamage(self, t)
+		local radius = self:getTalentRadius(t)
+		local slow = t.getSlow(self, t)
+		local duration = t.getDuration(self, t)
+		return ([[When you hit with Weapon Folding you have a %d%% chance of dealing an additional %0.2f physical (gravity) damage to enemies in a radius of %d.
+		Affected targets may also be slowed, decreasing their global speed speed by %d%% for %d turns
+		This effect has a cooldown.  If it triggers while on cooldown it will reduce the cooldown of Fold Fate and Fold Warp by one turn.]])
+		:format(chance, damDesc(self, DamageType.PHYSICAL, damage), radius, slow, duration)
 	end,
 }
 
-newTalent{
-	name = "Fold Void",
-	type = {"chronomancy/other", 1},
-	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
-	cooldown = 12,
-	tactical = { BUFF = 2, DEBUFF = 2 },
-	points = 1,
-	no_energy = true,
-	action = function(self, t)
-		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
-		
-		clear_folds(self)
-		
-		self:setEffect(self.EFF_FOLD_VOID, duration, {dam=damage, src=self, chance=chance, apply=getParadoxSpellpower(self, t)})
-
-		return true
-	end,
-	info = function(self, t)
-		local duration = self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration")
-		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local chance = self:callTalent(self.T_WEAPON_MANIFOLD, "getChance")
-		return (
-		[[Fold a thread of the void into your weapons for %d turns.
-		Your melee and archery attacks deal +%0.1f Darkness damage, and each attack has a %d%% chance to Blind your target for 4 turns.
-		The damage will improve with your Paradox, and the Blindness will be applied with your Spellpower.]]
-		):format( duration, damDesc(self, DamageType.DARKNESS, damage), chance )
-	end,
-}
-
--- Temporal Combat proper
 newTalent{
 	name = "Weapon Folding",
 	type = {"chronomancy/temporal-combat", 1},
@@ -137,7 +190,7 @@ newTalent{
 	deactivate = function(self, t, p)
 		return true
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 40, getParadoxSpellpower(self, t)) end,
 	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
 		if not hitted then return end
 		if not target then return end
@@ -149,7 +202,8 @@ newTalent{
 		t.doWeaponFolding(self, t, target)
 	end,
 	doWeaponFolding = function(self, t, target)
-		local dam = t.getDamage(self,t)
+		local dam = t.getDamage(self, t)
+		do_folds(self, target)
 		if not target.dead then
 			DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, dam)
 		end
@@ -162,50 +216,9 @@ newTalent{
 }
 
 newTalent{
-	name = "Weapon Manifold",
+	name = "Invigorate",
 	type = {"chronomancy/temporal-combat", 2},
 	require = chrono_req2,
-	mode = "passive",
-	points = 5,
-	on_learn = function(self, t)
-		local lev = self:getTalentLevelRaw(t)
-		if lev == 1 then
-			self:learnTalent(Talents.T_FOLD_FATE, true, nil, {no_unlearn=true})
-			self:learnTalent(Talents.T_FOLD_GRAVITY, true)
-			self:learnTalent(Talents.T_FOLD_VOID, true)
-		end
-	end,
-	on_unlearn = function(self, t)
-		local lev = self:getTalentLevelRaw(t)
-		if lev == 0 then
-			self:unlearnTalent(Talents.T_FOLD_FATE)
-			self:unlearnTalent(Talents.T_FOLD_GRAVITY)
-			self:unlearnTalent(Talents.T_FOLD_VOID)
-		end
-	end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(t, 4, 8))) end,
-	getParadoxRegen = function(self, t) return 3 + self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t))/12 end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
-	info = function(self, t)
-		local damage = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local dur    = t.getDuration(self, t)
-		local dox    = t.getParadoxRegen(self, t)
-		local chance = t.getChance(self, t)
-		return ([[For %d turns, enhance your melee and archery attacks with the power of fate, gravity or the void.
-		
-		Fold Fate: Paradox tunes %0.1f towards baseline, and you have a %d%% chance to Confuse your target for 4 turns on hit.
-		Fold Gravity: %0.2f Physical damage, and you have a %d%% chance to Pin your target for 4 turns on hit.
-		Fold Void: %0.2f Darkness damage, and you have a %d%% chance to Blind your target for 4 turns on hit.
-		
-		Only one fold may be active at a time, damage is based on Weapon Folding, and Paradox tuning scales with your Spellpower.]]
-		):format( dur, dox, chance, damDesc(self, DamageType.PHYSICAL, damage), chance, damDesc(self, DamageType.DARKNESS, damage), chance )
-	end,
-}
-
-newTalent{
-	name = "Invigorate",
-	type = {"chronomancy/temporal-combat", 3},
-	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 24,
@@ -222,6 +235,51 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		return ([[For the next %d turns, you recover %0.1f life and %0.1f stamina per turn, and most other talents on cooldown will refresh twice as fast as usual.
 		The life and stamina regeneration will increase with your Spellpower.]]):format(duration, power, power/2)
+	end,
+}
+
+newTalent{
+	name = "Weapon Manifold",
+	type = {"chronomancy/temporal-combat", 3},
+	require = chrono_req3,
+	mode = "passive",
+	points = 5,
+	cooldown = 8,
+	on_learn = function(self, t)
+		local lev = self:getTalentLevelRaw(t)
+		if lev == 1 then
+			self:learnTalent(Talents.T_FOLD_FATE, true, nil, {no_unlearn=true})
+			self:learnTalent(Talents.T_FOLD_GRAVITY, true, nil, {no_unlearn=true})
+			self:learnTalent(Talents.T_FOLD_WARP, true, nil, {no_unlearn=true})
+		end
+	end,
+	on_unlearn = function(self, t)
+		local lev = self:getTalentLevelRaw(t)
+		if lev == 0 then
+			self:unlearnTalent(Talents.T_FOLD_FATE)
+			self:unlearnTalent(Talents.T_FOLD_GRAVITY)
+			self:unlearnTalent(Talents.T_FOLD_WARP)
+		end
+	end,
+	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	getDuration = function(self, t) return 4 end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 40, getParadoxSpellpower(self, t)) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
+	getSlow = function(self, t) return 30 end,
+	info = function(self, t)
+		local chance = t.getChance(self, t)
+		local damage = t.getDamage(self, t)
+		local radius = self:getTalentRadius(t)
+		local slow = t.getSlow(self, t)
+		local duration = t.getDuration(self, t)
+		return ([[You now have a %d%% chance to Fold Fate, Gravity, or Warp into your Weapon Folding damage.  Each of these effects has an eight turn cooldown.
+		If an effect is triggered while on cooldown it will reduce the cooldown of the other two folds by one turn.
+		
+		Fold Fate: Deals %0.2f temporal damage to enemies in a radius of %d.  For each enemy hit you gain 10%% of a turn.
+		Fold Warp: Deals %0.2f physical and %0.2f temporal damage to enemies in a radius of %d.  Affected targets may be stunned, blinded, confused, or pinned for %d turns.
+		Fold Void: Deals %0.2f physical damage to enemies in a radius of %d.  Affected targets will be slowed (%d%%) for %d turns.]]
+		):format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius, damDesc(self, DamageType.PHYSICAL, damage/2), damDesc(self, DamageType.TEMPORAL, damage/2), radius,
+		duration, damDesc(self, DamageType.PHYSICAL, damage), radius, slow, duration)
 	end,
 }
 

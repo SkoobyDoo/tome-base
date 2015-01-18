@@ -132,6 +132,37 @@ checkWardenFocus = function(self)
 end
 
 -- Spell functions
+randomWarpEffect = function(self, t, target)
+	local eff = rng.range(1, 4)
+	local power = getParadoxSpellpower(self, t)
+	-- Pull random effect
+	if eff == 1 then
+		if target:canBe("stun") then
+			target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=power})
+		else
+			game.logSeen(target, "%s resists the stun!", target.name:capitalize())
+		end
+	elseif eff == 2 then
+		if target:canBe("blind") then
+			target:setEffect(target.EFF_BLINDED, t.getDuration(self, t), {apply_power=power})
+		else
+			game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
+		end
+	elseif eff == 3 then
+		if target:canBe("pin") then
+			target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=power})
+		else
+			game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+		end
+	elseif eff == 4 then
+		if target:canBe("confusion") then
+			target:setEffect(target.EFF_CONFUSED, t.getDuration(self, t), {power=50, apply_power=power})
+		else
+			game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
+		end
+	end
+end
+
 makeParadoxClone = function(self, target, duration)
 	local m = target:cloneFull{
 		shader = "shadow_simulacrum",

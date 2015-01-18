@@ -269,49 +269,16 @@ newTalent{
 		local distance = core.fov.distance(self.x, self.y, ox, oy)
 		local chance = distance * t.getChance(self, t)
 		
-		-- Sets a random effect
-		local function random_status(target)
-			local eff = rng.range(1, 4)
-			local power = getParadoxSpellpower(self, t)
-			
-			-- Pull random effect
-			if eff == 1 then
-				if target:canBe("stun") then
-					target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=power})
-				else
-					game.logSeen(target, "%s resists the stun!", target.name:capitalize())
-				end
-			elseif eff == 2 then
-				if target:canBe("blind") then
-					target:setEffect(target.EFF_BLINDED, t.getDuration(self, t), {apply_power=power})
-				else
-					game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
-				end
-			elseif eff == 3 then
-				if target:canBe("pin") then
-					target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=power})
-				else
-					game.logSeen(target, "%s resists the pin!", target.name:capitalize())
-				end
-			elseif eff == 4 then
-				if target:canBe("confusion") then
-					target:setEffect(target.EFF_CONFUSED, t.getDuration(self, t), {power=50, apply_power=power})
-				else
-					game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
-				end
-			end
-		end
-		
 		-- Project our status effects at the end of the turn
 		game:onTickEnd(function()
 			-- Project at both the entrance and exit
 			self:project(tg, self.x, self.y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and rng.percent(chance) then random_status(target) end
+				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
 			end)
 			self:project(tg, ox, oy, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and rng.percent(chance) then random_status(target) end
+				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
 			end)
 		end)
 			

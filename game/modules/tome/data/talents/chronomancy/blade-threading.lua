@@ -58,35 +58,8 @@ newTalent{
 			bow_warden(self, target)
 			self:project({type="hit"}, target.x, target.y, DamageType.WARP, self:spellCrit(t.getWarp(self, t)))
 			
-			local eff = rng.range(1, 4)
-			local power = getParadoxSpellpower(self, t)
-			-- Pull random effect
-			if eff == 1 then
-				if target:canBe("stun") then
-					target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=power})
-				else
-					game.logSeen(target, "%s resists the stun!", target.name:capitalize())
-				end
-			elseif eff == 2 then
-				if target:canBe("blind") then
-					target:setEffect(target.EFF_BLINDED, t.getDuration(self, t), {apply_power=power})
-				else
-					game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
-				end
-			elseif eff == 3 then
-				if target:canBe("pin") then
-					target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=power})
-				else
-					game.logSeen(target, "%s resists the pin!", target.name:capitalize())
-				end
-			elseif eff == 4 then
-				if target:canBe("confusion") then
-					target:setEffect(target.EFF_CONFUSED, t.getDuration(self, t), {power=50, apply_power=power})
-				else
-					game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
-				end
-			end
-			
+			randomWarpEffect(self, t, target)
+		
 			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
 		end
 
@@ -97,7 +70,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local warp = t.getWarp(self, t)
 		return ([[Attack with your melee weapons for %d%% damage.
-		If either attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical damage, and may stun, blind, pin, or confuse them for %d turns.
+		If either attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical (warp) damage, and may stun, blind, pin, or confuse them for %d turns.
 		The bonus damage scales with your Spellpower.]])
 		:format(damage, damDesc(self, DamageType.TEMPORAL, warp/2), damDesc(self, DamageType.PHYSICAL, warp/2), duration)
 	end
