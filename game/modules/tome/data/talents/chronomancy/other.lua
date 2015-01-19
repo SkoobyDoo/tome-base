@@ -225,6 +225,14 @@ makeParadoxClone = function(self, target, duration)
 	-- remove timed effects
 	m:removeTimedEffectsOnClone()
 	
+	-- reset folds for our Warden clones
+	for tid, cd in pairs(m.talents_cd) do
+		local t = m:getTalentFromId(tid)
+		if t.type[1]:find("^chronomancy/manifold") and m:knowTalent(tid) then
+			m:alterTalentCoolingdown(t, -cd)
+		end
+	end
+	
 	return m
 end
 
