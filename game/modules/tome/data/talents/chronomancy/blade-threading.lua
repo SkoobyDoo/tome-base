@@ -58,9 +58,8 @@ newTalent{
 			bow_warden(self, target)
 			self:project({type="hit"}, target.x, target.y, DamageType.WARP, self:spellCrit(t.getWarp(self, t)))
 			
-			randomWarpEffect(self, t, target)
-		
 			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
+			randomWarpEffect(self, t, target)
 		end
 
 		return true

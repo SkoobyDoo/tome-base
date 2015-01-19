@@ -32,7 +32,6 @@ local function do_folds(self, target)
 	for tid, _ in pairs(self.talents) do
 		local tt = self:getTalentFromId(tid)
 		if tt.type[1]:find("^chronomancy/manifold") and self:knowTalent(tid) then
-			game.logPlayer(self, "%s", tid)
 			self:callTalent(tid, "doFold", target)
 		end
 	end
@@ -61,11 +60,13 @@ newTalent{
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
 						DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, t.getDamage(self, t))
+						
 					end
 				end)
 				
 				self.energy.value = self.energy.value + (tgts*100)
 				self:startTalentCooldown(t.id)
+				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=230, rM=255, gm=230, gM=255, bm=30, bM=51, am=35, aM=90, radius=tg.radius, basenb=120})
 			else
 				cooldown_folds(self, t)
 			end
@@ -109,8 +110,8 @@ newTalent{
 					end
 				end)
 				
-				self.energy.value = self.energy.value + (tgts*100)
 				self:startTalentCooldown(t.id)
+				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90, radius=tg.radius, basenb=120})
 			else
 				cooldown_folds(self, t)
 			end
@@ -155,7 +156,9 @@ newTalent{
 						DamageType:get(DamageType.GRAVITY).projector(self, target.x, target.y, DamageType.GRAVITY, t.getDamage(self, t))
 					end
 				end)
+				
 				self:startTalentCooldown(t.id)
+				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=210, rM=210, gm=105, gM=105, bm=30, bM=30, am=35, aM=90, radius=tg.radius, basenb=120})
 			else
 				cooldown_folds(self, t)
 			end
