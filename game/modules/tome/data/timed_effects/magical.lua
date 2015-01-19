@@ -3040,16 +3040,39 @@ newEffect{
 newEffect{
 	name = "WEBS_OF_FATE", image = "talents/webs_of_fate.png",
 	desc = "Webs of Fate",
-	long_desc = function(self, eff) return ("Moving along the webs of fate, increasing stun and pin immunity by %d%%."):format(eff.imm*100) end,
+	long_desc = function(self, eff) return ("Displacing %d%% of all damage on to a random enemy."):format(eff.power*100) end,
 	type = "magical",
-	subtype = { temporal=true, speed=true },
+	subtype = { temporal=true },
 	status = "beneficial",
 	on_gain = function(self, err) return "#Target# moves along the webs of fate.", "+Fate Webs" end,
 	on_lose = function(self, err) return "#Target# is no longer moving along the webs of fate.", "-Fate Webs" end,
-	parameters = { imm=0.1 },
+	parameters = { power=0.1 },
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+		local t = eff.talent
+		if dam > 0 and src ~= self then
+			-- find available targets
+			local tgts = {}
+			local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
+			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
+				local a = game.level.map(x, y, Map.ACTOR)
+				if a and self:reactionToward(a) < 0 then
+					tgts[#tgts+1] = a
+				end
+			end end
+
+			-- Displace the damage
+			local a = rng.table(tgts)
+			if a then
+				local displace = dam * eff.power
+				DamageType.defaultProjector(self, a.x, a.y, type, displace, {no_reflect=true})
+				dam = dam - displace
+				game:delayedLogDamage(src, self, 0, ("%s(%d webs of fate)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", displace), false)
+			end
+		end
+
+		return {dam=dam}
+	end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "pin_immune", eff.imm)
-		self:effectTemporaryValue(eff, "stun_immune", eff.imm)
 	end,
 	deactivate = function(self, eff)
 	end,
@@ -3384,5 +3407,54 @@ newEffect{
 	activate = function(self, eff)	
 	end,
 	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "FATEWEAVER", image = "talents/fateweaver.png",
+	desc = "Fateweaver",
+	long_desc = function(self, eff) return ("The target's accuracy and power have been increased by %d."):format(eff.power_bonus * eff.spin) end,
+	display_desc = function(self, eff) return eff.spin.." Spin" end,
+	charges = function(self, eff) return eff.spin end,
+	type = "magical",
+	subtype = { temporal=true },
+	status = "beneficial",
+	parameters = { power_bonus=0, spin=0, max_spin=3},
+	on_gain = function(self, err) return "#Target# weaves fate.", "+Fateweaver" end,
+	on_lose = function(self, err) return "#Target# stops weaving fate.", "-Fateweaver" end,
+	on_merge = function(self, old_eff, new_eff)
+		-- remove the four old values
+		self:removeTemporaryValue("combat_atk", old_eff.atkid)
+		self:removeTemporaryValue("combat_dam", old_eff.physid)
+		self:removeTemporaryValue("combat_spellpower", old_eff.spellid)
+		self:removeTemporaryValue("combat_mindpower", old_eff.mentalid)
+		
+		-- add some spin
+		old_eff.spin = math.min(old_eff.spin + 1, new_eff.max_spin)
+	
+		-- and apply the current values
+		old_eff.atkid = self:addTemporaryValue("combat_atk", old_eff.power_bonus * old_eff.spin)
+		old_eff.physid = self:addTemporaryValue("combat_dam", old_eff.power_bonus * old_eff.spin)
+		old_eff.spellid = self:addTemporaryValue("combat_spellpower", old_eff.power_bonus * old_eff.spin)
+		old_eff.mentalid = self:addTemporaryValue("combat_mindpower", old_eff.power_bonus * old_eff.spin)
+
+		old_eff.dur = new_eff.dur
+		
+		return old_eff
+	end,
+	activate = function(self, eff)
+		-- apply current values
+		eff.atkid = self:addTemporaryValue("combat_atk", eff.power_bonus * eff.spin)
+		eff.physid = self:addTemporaryValue("combat_dam", eff.power_bonus * eff.spin)
+		eff.spellid = self:addTemporaryValue("combat_spellpower", eff.power_bonus * eff.spin)
+		eff.mentalid = self:addTemporaryValue("combat_mindpower", eff.power_bonus * eff.spin)
+		eff.particle = self:addParticles(Particles.new("arcane_power", 1))
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("combat_atk", eff.atkid)
+		self:removeTemporaryValue("combat_dam", eff.physid)
+		self:removeTemporaryValue("combat_spellpower", eff.spellid)
+		self:removeTemporaryValue("combat_mindpower", eff.mentalid)
+		self:removeParticles(eff.particle)
 	end,
 }
