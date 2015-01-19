@@ -53,8 +53,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		local save = t.getSaveBonus(self, t)
-		return ([[Each time you take damage from someone else you gain one spin, increasing your defense and saves by %d for three turns.
-		This effect may occur once per turn and stacks up to three spin (for a maximum bonus of %d).]]):
+		return ([[Each time you take damage from someone else you gain one Spin, increasing your defense and saves by %d for three turns.
+		This effect may occur once per turn and stacks up to three Spin (for a maximum bonus of %d).]]):
 		format(save, save * 3)
 	end,
 }
@@ -98,7 +98,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local power = t.getPowerBonus(self, t)
-		return ([[You now gain %d combat accuracy, physical power, spellpower, and mindpower when you gain spin.]]):
+		return ([[You now gain %d combat accuracy, physical power, spellpower, and mindpower when you gain Spin.]]):
 		format(power)
 	end,
 }
@@ -125,7 +125,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local duration = t.getDuration(self, t)
 		return ([[For the next %d turns you displace %d%% of any damage you receive onto a random enemy within range.
-		While Webs of Fate is active you may gain one additional spin per turn and your maximum spin is doubled.]])
+		While Webs of Fate is active you may gain one additional Spin per turn and your maximum Spin is doubled.]])
 		:format(duration, power)
 	end,
 }

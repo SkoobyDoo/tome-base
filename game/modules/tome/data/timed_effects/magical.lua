@@ -3109,8 +3109,6 @@ newEffect{
 				
 				if #effs > 0 then
 					local p = rng.table(effs)
-					game.logPlayer(self, "%s", p.name)
-					game.logPlayer(self, "%s", p.dur)
 					p.dur = p.dur + 1
 				end
 			
