@@ -136,6 +136,7 @@ newTalent{
 		if not target then return end
 		
 		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
+		target:setEffect(target.EFF_WARDEN_S_TARGET, 10, {src=self, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
 		
 		game:playSoundNear(self, "talents/dispel")
 		

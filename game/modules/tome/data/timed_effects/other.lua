@@ -2730,3 +2730,32 @@ newEffect{
 		end
 	end,
 }
+
+newEffect{
+	name = "WARDEN_S_TARGET", image = "talents/warden_s_focus.png",
+	desc = "Warden's Focus Target",
+	long_desc = function(self, eff) return ("The target is being focused on by %s, +%d accuracy and +%d%% critical hit chance with ranged attacks against this target."):format(eff.src.name, eff.atk, eff.crit) end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	parameters = {atk = 1, crit= 1},
+	remove_on_clone = true, decrease = 0,
+	on_gain = function(self, err) return nil, "+Warden's Focus" end,
+	on_lose = function(self, err) return nil, "-Warden's Focus" end,
+	on_timeout = function(self, eff)
+		local p = eff.src:hasEffect(eff.src.EFF_WARDEN_S_FOCUS)
+		if not p or p.target ~= self or eff.src.dead or not game.level:hasEntity(eff.src) or core.fov.distance(self.x, self.y, eff.src.x, eff.src.y) > 10 then
+			self:removeEffect(self.EFF_WARDEN_S_TARGET)
+		end
+	end,
+	activate = function(self, eff)
+		if core.shader.active(4) then
+			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={229/255, 0/255, 0/255, 1}, beamColor2={299/255, 0/255, 0/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={229/255, 0/255, 0/255, 1}, beamColor2={229/255, 0/255, 0/255, 1}, circleColor={0.8,0,0,0.8}, beamsCount=5}))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+	end,
+}
