@@ -89,7 +89,7 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
 	is_melee = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getSheer = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
+	getSheer = function(self, t) return self:combatTalentSpellDamage(t, 20, 240, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
 		return {type="cone", range=0, radius=self:getTalentRadius(t), talent=t, selffire=false }
 	end,
