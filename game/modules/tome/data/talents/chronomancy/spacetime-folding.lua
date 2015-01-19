@@ -240,7 +240,7 @@ newTalent{
 		return ([[Lay Warp Mines in a radius of 1 that teleport enemies away from you and inflict %0.2f physical and %0.2f temporal (warp) damage.
 		The mines are hidden traps (%d detection and %d disarm power based on your Magic) and last for %d turns.
 		The damage caused by your Warp Mines will improve with your Spellpower.
-		Using this talent will trigger the cooldown on Warp Mine Away.]]):
+		Using this talent will trigger the cooldown on Warp Mine Toward.]]):
 		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), detect, disarm, duration) 
 	end,
 }

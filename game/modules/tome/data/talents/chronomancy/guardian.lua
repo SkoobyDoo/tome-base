@@ -159,9 +159,6 @@ newTalent{
 	require = chrono_req4,
 	points = 5,
 	mode = "passive",
-	mode = "passive",
-	require = chrono_req2,
-	points = 5,
 	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%end,
 	passives = function(self, t, p)

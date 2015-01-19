@@ -269,7 +269,7 @@ newTalent{
 		Fold Warp: Deals %0.2f physical and %0.2f temporal damage to enemies in a radius of %d.  Affected targets may be stunned, blinded, confused, or pinned for %d turns.
 		Fold Gravity: Deals %0.2f physical damage to enemies in a radius of %d.  Affected targets will be slowed (%d%%) for %d turns.
 		
-		Each Fold has an eight turn cooldown.  If an effect is triggered while on cooldown it will reduce the cooldown of the other two folds by one turn.]]
+		Each Fold has an eight turn cooldown.  If an effect would be triggered while on cooldown it will reduce the cooldown of the other two Folds by one turn.]]
 		):format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius, damDesc(self, DamageType.PHYSICAL, damage/2), damDesc(self, DamageType.TEMPORAL, damage/2), radius,
 		duration, damDesc(self, DamageType.PHYSICAL, damage), radius, slow, duration)
 	end,
