@@ -40,7 +40,13 @@ newTalent{
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
 	archery_onhit = function(self, t, target, x, y)
-		self:incParadox(-t.getParadoxReduction(self, t))
+		local dox = self:getParadox() - self.preferred_paradox
+		local fix = math.min( math.abs(dox), t.getParadoxReduction(self, t) )
+		if dox > 0 then
+			self:incParadox( -fix )
+		elseif dox < 0 then
+			self:incParadox( fix )
+		end
 		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
@@ -55,7 +61,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local paradox = t.getParadoxReduction(self, t)
-		return ([[Fire an arrow for %d%% temporal weapon damage.  If the attack hits you recover %d Paradox.  This attack does not consume ammo.
+		return ([[Fire an arrow for %d%% temporal weapon damage.  If the attack hits tune your Paradox up to %d towards your baseline.  This attack does not consume ammo.
 		You also learn how to phase your arrows through friendly targets without causing them harm.]])
 		:format(damage, paradox)
 	end

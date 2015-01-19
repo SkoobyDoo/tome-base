@@ -2414,7 +2414,9 @@ newEffect{
 	parameters = { power=10},
 	on_gain = function(self, err) return "#Target# retunes the fabric of spacetime.", "+Spacetime Tuning" end,
 	on_timeout = function(self, eff)
-		self:incParadox(eff.power)
+		local dox = self:getParadox() - self.preferred_paradox
+		local fix = math.min( math.abs(dox), eff.power )
+		self:incParadox(fix)
 	end,
 }
 
