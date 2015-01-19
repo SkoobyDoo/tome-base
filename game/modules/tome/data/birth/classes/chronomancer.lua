@@ -139,11 +139,11 @@ newBirthDescriptor{
 		
 		-- generic
 		["technique/combat-training"]={true, 0.3},
-		["chronomancy/chronomancy"]={true, 0.3},
+		["chronomancy/fate-weaving"]={true, 0.3},
 		["chronomancy/spacetime-weaving"]={true, 0.3},
 		
 		-- generic locked
-		["chronomancy/fate-weaving"]={false, 0.1},
+		["chronomancy/chronomancy"]={false, 0.1},
 		["cunning/survival"]={false, 0},
 	},
 	birth_example_particles = "temporal_focus",
@@ -161,7 +161,7 @@ newBirthDescriptor{
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
-			{type="armor", subtype="light", name="rough leather armour", autoreq=true, ego_chance=-1000},
+			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 		},
 		resolvers.inventorybirth{ id=true, inven="QS_MAINHAND",
 			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000},
