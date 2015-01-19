@@ -146,7 +146,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local atk = t.getAttack(self, t)
 		local crit = t.getCrit(self, t)
-		return ([[For the next %d turns random targeting, such as from Blink Blade and Twin Threads, will focus on this target.
+		return ([[For the next %d turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
 		Additionally you gain +%d accuracy and +%d%% critical hit rate when attacking this target.
 		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
 		:format(duration, atk, crit)
@@ -170,13 +170,25 @@ newTalent{
 			self:updateTalentPassives(t)
 		end
 	end,
-	doDamageIncrease = function(self, t, target)
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		local inc = 0
-		if eff and eff.target == target then
-			inc = t.getPower(self, t)
+	callbackOnActBase = function(self, t)
+		if rng.percent(t.getPower(self, t)) then
+			local effs = {}
+			-- Go through all spell effects
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type ~= "other" and e.status == "detrimental" and e.subtype ~= "cross tier" then
+					effs[#effs+1] = {"effect", eff_id}
+				end
+			end
+			
+			if #effs > 0 then
+				local eff = rng.tableRemove(effs)
+				if eff[1] == "effect" then
+					self:removeEffect(eff[2])
+					game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
+				end
+			end
 		end
-		return inc
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
@@ -191,8 +203,8 @@ newTalent{
 	info = function(self, t)
 		local sense = t.getSense(self, t)
 		local power = t.getPower(self, t)
-		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.
-		While Warden's Focus is active you deal %d%% additional damage when you hit your focused target and reduce incoming damage from all other sources by %d%%.
+		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  You also have a %d%% chance to recover from a single negative status effect each turn.
+		While Warden's Focus is active you reduce incoming damage from all targets other than your focus target by %d%%.
 		Sense abilities will scale with your Magic stat.]]):
 		format(sense, sense, power, power)
 	end,
