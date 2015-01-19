@@ -2409,3 +2409,7 @@ function require_first(...)
 	end
 	return nil
 end
+
+function util.steamCanCloud()
+	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then return true end
+end
