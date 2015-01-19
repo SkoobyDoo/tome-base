@@ -76,84 +76,20 @@ newTalent{
 }
 
 newTalent{
-	name = "Blade Shear",
+	name = "Braided Blade",
 	type = {"chronomancy/blade-threading", 2},
 	require = chrono_req2,
-	points = 5,
-	cooldown = 6,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { ATTACK = {weapon = 2}, ATTACKAREA = { TEMPORAL = 2 }},
-	requires_target = true,
-	speed = "weapon",
-	range = 1,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
-	is_melee = true,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getSheer = function(self, t) return self:combatTalentSpellDamage(t, 20, 240, getParadoxSpellpower(self, t)) end,
-	target = function(self, t)
-		return {type="cone", range=0, radius=self:getTalentRadius(t), talent=t, selffire=false }
-	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
-	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		
-		-- Quality of Life hack so we can show the cone and try to pick a melee target even if the player doesn't click one
-		if x and y then
-			local l = self:lineFOV(x, y)
-			l:set_corner_block()
-			local lx, ly, is_corner_blocked = l:step(true)
-			target = game.level.map(lx, ly, engine.Map.ACTOR)
-		end
-		
-		if not target then
-			game.logPlayer(self, "You need an adjacent melee target in order to use this talent.")
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
-			return nil
-		end
-
-		-- Hit?
-		local hitted = self:attackTarget(target, nil, dam, true)
-
-		-- Project our sheer
-		if hitted then
-			bow_warden(self, target)
-			self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getSheer(self, t)))
-			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=target.x-self.x, ty=target.y-self.y})
-			game:playSoundNear(self, "talents/tidalwave")
-		end
-
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t) * 100
-		local sheer = t.getSheer(self, t)
-		local radius = self:getTalentRadius(t)
-		return ([[Attack with your melee weapons for %d%% damage.
-		If either attack hits you'll deal %0.2f temporal damage in a radius %d cone
-		The cone damage improves with your Spellpower.]])
-		:format(damage, damDesc(self, DamageType.TEMPORAL, sheer), radius)
-	end
-}
-
-newTalent{
-	name = "Braided Blade",
-	type = {"chronomancy/blade-threading", 3},
-	require = chrono_req3,
 	points = 5,
 	cooldown = 8,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { ATTACKAREA = {weapon = 2}, DISABLE = 3 },
 	requires_target = true,
 	speed = "weapon",
-	range = 1,
+	range = function(self, t) return 3 + math.floor(self:combatTalentLimit(t, 7, 1, 4)) end,
 	is_melee = true,
 	target = function(self, t)
-		return {type="beam", range=t.getBeamRange(self, t), talent=t, selffire=false }
+		return {type="beam", range=self:getTalentRange(t), talent=t, selffire=false }
 	end,
-	getBeamRange = function(self, t) return 3 + math.floor(self:combatTalentLimit(t, 7, 1, 4)) end,
-	getBeamDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 50, 150, getParadoxSpellpower(self, t)) end,
@@ -161,40 +97,31 @@ newTalent{
 	action = function(self, t)
 		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		
-		-- Quality of Life hack so we can show the beam and try to pick a melee target even if the player doesn't click one
-		if x and y then
-			local l = self:lineFOV(x, y)
-			l:set_corner_block()
-			local lx, ly, is_corner_blocked = l:step(true)
-			target = game.level.map(lx, ly, engine.Map.ACTOR)
-		end
-		
-		if not target then
-			game.logPlayer(self, "You need an adjacent melee target in order to use this talent.")
+		local x, y = self:getTarget(tg)
+	
+		if not x or not y then
 			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
 		
-		-- Hit?
-		local hitted = self:attackTarget(target, nil, dam, true)
-		
 		local braid_targets = {}
-		local damage = self:spellCrit(t.getBeamDamage(self, t))
-		if hitted then
-			bow_warden(self, target)
-			
-			self:project(tg, x, y, function(px, py)
-				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
-
-				-- Get our braid targets
-				local target = game.level.map(px, py, Map.ACTOR)
-				if target and not target.dead then
-					braid_targets[#braid_targets+1] = target
+		local bow_done = false
+		
+		self:project(tg, x, y, function(px, py, tg, self)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target then
+				local hit = self:attackTarget(target, DamageType.TEMPORAL, t.getDamage(self, t), true)
+				if hit then
+					if not bow_done then
+						bow_done = true
+						bow_warden(self, target)
+					end
+					if not target.dead then
+						braid_targets[#braid_targets+1] = target
+					end
 				end
-			end)
-		end
+			end
+		end)
 
 		-- if we hit more than one, braid them
 		if #braid_targets > 1 then
@@ -204,32 +131,28 @@ newTalent{
 			end
 		end
 		
-		if hitted then
-			local _ _, _, _, x, y = self:canProject(tg, x, y)
-			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporalbeam", {tx=x-self.x, ty=y-self.y})
-			game:playSoundNear(self, "talents/heal")
-		end
-
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporalbeam", {tx=x-self.x, ty=y-self.y})
+		game:playSoundNear(self, "talents/heal")
+		
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local duration = t.getDuration(self, t)
 		local power = t.getPower(self, t)
-		local beam_range = t.getBeamRange(self, t)
-		local beam_damage = t.getBeamDamage(self, t)
-		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll fire a range %d beam that deals %0.2f temporal damage.
+		return ([[Attack all enemies in a beam with your melee weapons for %d%% temporal weapon damage.
 		If two or more targets are hit by the beam you'll braid their lifelines for %d turns.
 		Braided targets take %d%% of all damage dealt to other braided targets.
 		The damage transfered by the braid effect and beam damage scales with your Spellpower.]])
-		:format(damage, beam_range, damDesc(self, DamageType.TEMPORAL, beam_damage), duration, power)
+		:format(damage, duration, power)
 	end
 }
 
 newTalent{
 	name = "Blink Blade",
-	type = {"chronomancy/blade-threading", 4},
-	require = chrono_req4,
+	type = {"chronomancy/blade-threading", 3},
+	require = chrono_req3,
 	points = 5,
 	cooldown = 12,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
@@ -330,8 +253,70 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local teleports = t.getTeleports(self, t)
-		return ([[Attack with your melee weapons for %d%% damage.  If either you'll teleport next to up to %d random enemies, attacking for %d%% damage.
-		Temporal Assault can hit the same target multiple times and at talent level five you get an additional teleport.]])
+		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll teleport next to up to %d random enemies, attacking for %d%% damage.
+		Blink Blade can hit the same target multiple times and at talent level five you get an additional teleport.]])
 		:format(damage, teleports, damage)
+	end
+}
+
+newTalent{
+	name = "Blade Shear",
+	type = {"chronomancy/blade-threading", 4},
+	require = chrono_req4,
+	points = 5,
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { ATTACK = {weapon = 2}, ATTACKAREA = { TEMPORAL = 2 }},
+	requires_target = true,
+	speed = "weapon",
+	range = 1,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
+	is_melee = true,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getSheer = function(self, t) return self:combatTalentSpellDamage(t, 20, 240, getParadoxSpellpower(self, t)) end,
+	target = function(self, t)
+		return {type="cone", range=0, radius=self:getTalentRadius(t), talent=t, selffire=false }
+	end,
+	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	action = function(self, t)
+		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		
+		-- Quality of Life hack so we can show the cone and try to pick a melee target even if the player doesn't click one
+		if x and y then
+			local l = self:lineFOV(x, y)
+			l:set_corner_block()
+			local lx, ly, is_corner_blocked = l:step(true)
+			target = game.level.map(lx, ly, engine.Map.ACTOR)
+		end
+		
+		if not target then
+			game.logPlayer(self, "You need an adjacent melee target in order to use this talent.")
+			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			return nil
+		end
+
+		-- Hit?
+		local hitted = self:attackTarget(target, nil, dam, true)
+
+		-- Project our sheer
+		if hitted then
+			bow_warden(self, target)
+			self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getSheer(self, t)))
+			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=target.x-self.x, ty=target.y-self.y})
+			game:playSoundNear(self, "talents/tidalwave")
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t) * 100
+		local sheer = t.getSheer(self, t)
+		local radius = self:getTalentRadius(t)
+		return ([[Attack with your melee weapons for %d%% damage.
+		If either attack hits you'll deal %0.2f temporal damage in a radius %d cone
+		The cone damage improves with your Spellpower.]])
+		:format(damage, damDesc(self, DamageType.TEMPORAL, sheer), radius)
 	end
 }
