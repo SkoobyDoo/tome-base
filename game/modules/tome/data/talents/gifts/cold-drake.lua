@@ -131,10 +131,6 @@ newTalent{
 	getIceDamage = function(self, t) return self:combatTalentMindDamage(t, 3, 15) end,
 	getIceRadius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	action = function(self, t)
-		local halflength = math.floor(t.getLength(self,t)/2)
-		local block = function(_, lx, ly)
-			return game.level.map:checkAllEntities(lx, ly, "block_move")
-		end
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
