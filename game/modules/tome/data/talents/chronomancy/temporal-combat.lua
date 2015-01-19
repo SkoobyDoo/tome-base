@@ -60,7 +60,6 @@ newTalent{
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
 						DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, t.getDamage(self, t))
-						
 					end
 				end)
 				

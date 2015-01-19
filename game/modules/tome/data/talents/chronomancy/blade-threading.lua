@@ -116,7 +116,7 @@ newTalent{
 						bow_done = true
 						bow_warden(self, target)
 					end
-					if not target.dead then
+					if not target.dead and self:reactionToward(target) < 0 then
 						braid_targets[#braid_targets+1] = target
 					end
 				end
@@ -141,7 +141,7 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local duration = t.getDuration(self, t)
 		local power = t.getPower(self, t)
-		return ([[Attack all enemies in a beam with your melee weapons for %d%% temporal weapon damage.
+		return ([[Attack all targets in a beam with your melee weapons for %d%% temporal weapon damage.
 		If two or more targets are hit by the beam you'll braid their lifelines for %d turns.
 		Braided targets take %d%% of all damage dealt to other braided targets.
 		The damage transfered by the braid effect and beam damage scales with your Spellpower.]])
@@ -154,7 +154,7 @@ newTalent{
 	type = {"chronomancy/blade-threading", 3},
 	require = chrono_req3,
 	points = 5,
-	cooldown = 12,
+	cooldown = 8,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { ATTACKAREA = {weapon = 2}, ATTACK = {weapon = 2},  },
 	requires_target = true,
@@ -188,7 +188,6 @@ newTalent{
 			-- Our teleport hit
 			local function teleport_hit(self, t, target, x, y)
 				local teleported = self:teleportRandom(x, y, 0)
-				
 				if teleported then
 					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 					if core.fov.distance(self.x, self.y, x, y) <= 1 then
@@ -215,8 +214,7 @@ newTalent{
 			
 			-- Be sure we still have teleports left
 			if teleports > 0 and attempts > 0 then
-			
-				-- Get available targets
+							-- Get available targets
 				local tgts = {}
 				local grids = core.fov.circle_grids(self.x, self.y, 10, true)
 				for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
@@ -264,7 +262,7 @@ newTalent{
 	type = {"chronomancy/blade-threading", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 6,
+	cooldown = 12,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {weapon = 2}, ATTACKAREA = { TEMPORAL = 2 }},
 	requires_target = true,
@@ -273,7 +271,7 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
 	is_melee = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getSheer = function(self, t) return self:combatTalentSpellDamage(t, 20, 240, getParadoxSpellpower(self, t)) end,
+	getShear = function(self, t) return self:combatTalentSpellDamage(t, 20, 150, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
 		return {type="cone", range=0, radius=self:getTalentRadius(t), talent=t, selffire=false }
 	end,
@@ -281,30 +279,51 @@ newTalent{
 	action = function(self, t)
 		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		
-		-- Quality of Life hack so we can show the cone and try to pick a melee target even if the player doesn't click one
-		if x and y then
-			local l = self:lineFOV(x, y)
-			l:set_corner_block()
-			local lx, ly, is_corner_blocked = l:step(true)
-			target = game.level.map(lx, ly, engine.Map.ACTOR)
-		end
-		
-		if not target then
-			game.logPlayer(self, "You need an adjacent melee target in order to use this talent.")
+		local x, y = self:getTarget(tg)
+	
+		if not x or not y then
 			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
+	
+		-- Change our radius for the melee attacks
+		local old_radius = tg.radius
+		tg.radius = 1
+		
+		-- Project our melee hits
+		local total_hits = 0
+		self:project(tg, x, y, function(px, py, tg, self)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target then
+				local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
+				if hit then
+					total_hits = total_hits + 1
+				end
+			end
+		end)
 
-		-- Hit?
-		local hitted = self:attackTarget(target, nil, dam, true)
-
-		-- Project our sheer
-		if hitted then
+		if total_hits > 0 then
+			-- Project our shear
+			local multi = (total_hits - 1)/2
+			local damage = self:spellCrit(t.getShear(self, t)) * (1 + multi)
+			tg.radius = self:getTalentRadius(t)
+		
 			bow_warden(self, target)
-			self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getSheer(self, t)))
-			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=target.x-self.x, ty=target.y-self.y})
+			self:project(tg, x, y, function(px, py, tg, self)
+				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
+				local target = game.level.map(px, py, Map.ACTOR)
+				-- Try to insta-kill
+				if target then
+					if target:checkHit(getParadoxSpellpower(self, t), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("instakill") and target.life > 0 and target.life < target.max_life * 0.2 then
+						-- KILL IT !
+						game.logSeen(target, "%s has been cut from the timeline!", target.name:capitalize())
+						target:die(self)
+					elseif target.life > 0 and target.life < target.max_life * 0.2 then
+						game.logSeen(target, "%s resists the temporal shear!", target.name:capitalize())
+					end
+				end
+			end)
+			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
 			game:playSoundNear(self, "talents/tidalwave")
 		end
 
@@ -312,11 +331,11 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local sheer = t.getSheer(self, t)
+		local shear = t.getShear(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Attack with your melee weapons for %d%% damage.
-		If either attack hits you'll deal %0.2f temporal damage in a radius %d cone
+		return ([[Attack up to three adjacent targets for %d%% weapon damage.  If any attack hits you'll create a temporal shear dealing %0.2f temporal damage in a radius %d cone.
+		Each target you hit with your weapons beyond the first increases the damage of the shear by 50%%.  Targets reduced below 20%% of maximum life by the shear may be instantly slain.
 		The cone damage improves with your Spellpower.]])
-		:format(damage, damDesc(self, DamageType.TEMPORAL, sheer), radius)
+		:format(damage, damDesc(self, DamageType.TEMPORAL, shear), radius)
 	end
 }
