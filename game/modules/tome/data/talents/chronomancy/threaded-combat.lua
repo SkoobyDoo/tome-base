@@ -42,7 +42,9 @@ newTalent{
 		local accuracy = math.max(0, 10 - t.getTeleportRange(self, t))
 		game:onTickEnd(function()
 			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			self:teleportRandom(tx, ty, accuracy)
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end)
 	end,
 	action = function(self, t)
@@ -62,7 +64,7 @@ newTalent{
 
 				
 			if hitted then
-			
+				-- Find our teleport location
 				local block_move = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
 				local l = core.fov.line(x, y, self.x, self.y, block_move, true)
 				local lx, ly, is_corner_blocked = l:step(true)
@@ -75,8 +77,12 @@ newTalent{
 					lx, ly, is_corner_blocked = l:step(true)
 				end
 				
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 				-- ox, oy now contain the last square in line not blocked by actors.
-				if ox and oy then self:teleportRandom(ox, oy, 0) end
+				if ox and oy then 
+					self:teleportRandom(ox, oy, 0)
+					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+				end
 
 			end
 
@@ -227,11 +233,9 @@ newTalent{
 			local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
 			if tx and ty then
 				game.zone:addEntity(game.level, m, "actor", tx, ty)
-				m.blended_target = a
+				m.blended_target = wf
 			end
 		end
-		
-		-- Otherwise pick a random target and try to appear next to it
 		if not m.blended_target then
 			local tgts= t.findTarget(self, t)
 			local attempts = 10
