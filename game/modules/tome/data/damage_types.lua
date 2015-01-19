@@ -222,14 +222,6 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			print("[PROJECTOR] after necrotic increase dam", dam + (dam * inc) / 100)
 		end
 		
-		-- Increase damage from a talent
-		if src.knowTalent then
-			if src:knowTalent(src.T_VIGILANCE) then
-				inc = inc + src:callTalent(src.T_VIGILANCE, "doDamageIncrease", target)
-				print("[PROJECTOR] after vigilance increase dam", dam + (dam * inc) / 100)
-			end
-		end
-
 		-- dark vision increases damage done in creeping dark
 		if src and src ~= target and game.level.map:checkAllEntities(x, y, "creepingDark") then
 			local dark = game.level.map:checkAllEntities(x, y, "creepingDark")

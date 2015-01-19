@@ -144,7 +144,7 @@ newTalent{
 		return ([[Attack all targets in a beam with your melee weapons for %d%% temporal weapon damage.
 		If two or more targets are hit by the beam you'll braid their lifelines for %d turns.
 		Braided targets take %d%% of all damage dealt to other braided targets.
-		The damage transfered by the braid effect and beam damage scales with your Spellpower.]])
+		The damage transferred by the braid effect and beam damage scales with your Spellpower.]])
 		:format(damage, duration, power)
 	end
 }
