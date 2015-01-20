@@ -562,9 +562,9 @@ project "te4-web"
 
 	configuration "linux"
 		buildoptions{"-Wall -pthread -I/usr/include/gtk-2.0 -I/usr/lib64/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng15 -I/usr/include/libdrm"}
-		libdirs {"/opt/cef3/1547/out/Release/obj.target/", "/opt/cef3/1547/Release/"}
-		includedirs {"/opt/cef3/1547/include/", "/opt/cef3/1547/"}
-		links { "cef", "cef_dll_wrapper" }
+		libdirs {"/opt/cef3/2271/out/libcef_dll/", "/opt/cef3/2271/Release/"}
+		includedirs {"/opt/cef3/2271/include/", "/opt/cef3/2271/"}
+		links { "cef_dll_wrapper", "cef" }
 		defines { 'SELFEXE_LINUX' }
 
 
@@ -586,8 +586,8 @@ project "cef3spawn"
 
 	configuration "linux"
 		buildoptions{"-Wall -pthread -I/usr/include/gtk-2.0 -I/usr/lib64/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng15 -I/usr/include/libdrm"}
-		libdirs {"/opt/cef3/1547/out/Release/obj.target/", "/opt/cef3/1547/Release/"}
-		includedirs {"/opt/cef3/1547/include/", "/opt/cef3/1547/"}
+		libdirs {"/opt/cef3/2271/out/libcef_dll/", "/opt/cef3/2271/Release/"}
+		includedirs {"/opt/cef3/2271/include/", "/opt/cef3/2271/"}
 		links { "cef", "cef_dll_wrapper" }
 		if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib "} end
 		if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib64 "} end

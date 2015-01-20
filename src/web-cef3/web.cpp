@@ -238,7 +238,7 @@ public:
 		const char *mime = cstring_to_c(download_item->GetMimeType());
 		const char *url = cstring_to_c(download_item->GetURL());
 		const char *name = cstring_to_c(suggested_name);
-		fprintf(logfile, "[WEBCORE] Download request id %ld [name: %s] [mime: %s] [url: %s]\n", id, name, mime, url);
+		fprintf(logfile, "[WEBCORE] Download request id %d [name: %s] [mime: %s] [url: %s]\n", id, name, mime, url);
 
 		WebEvent *event = new WebEvent();
 		event->kind = TE4_WEB_EVENT_DOWNLOAD_REQUEST;
@@ -256,7 +256,7 @@ public:
 		if (!cd) { return; }
 		cd->cancel_cb = callback;
 
-		fprintf(logfile, "[WEBCORE] Download update id %ld [size: %ld / %ld] [completed: %d, canceled: %d, inprogress: %d, valid: %d]\n",
+		fprintf(logfile, "[WEBCORE] Download update id %d [size: %ld / %ld] [completed: %d, canceled: %d, inprogress: %d, valid: %d]\n",
 				id,
 				download_item->GetReceivedBytes(), download_item->GetTotalBytes(),
 				download_item->IsComplete(), download_item->IsCanceled(),
@@ -363,12 +363,11 @@ void te4_web_new(web_view_type *view, int w, int h) {
 	CefBrowserSettings browserSettings;
 	browserSettings.java = STATE_DISABLED;
 	browserSettings.plugins = STATE_DISABLED;
-	window_info.SetAsOffScreen(NULL);
-	window_info.SetTransparentPainting(true);
+	window_info.SetAsWindowless(NULL, true);
 	opaque->render = new RenderHandler(w, h);
 	opaque->view = new BrowserClient(opaque, opaque->render, view->handlers);
 	CefString curl("");
-	opaque->browser = CefBrowserHost::CreateBrowserSync(window_info, opaque->view.get(), curl, browserSettings);
+	opaque->browser = CefBrowserHost::CreateBrowserSync(window_info, opaque->view.get(), curl, browserSettings, NULL);
 	opaque->crashed = false;
 
 	view->w = w;
@@ -865,6 +864,8 @@ void te4_web_initialize(const char *locales, const char *pak) {
 
 		CefSettings settings;
 		settings.multi_threaded_message_loop = false;
+		settings.windowless_rendering_enabled = true;
+		settings.no_sandbox = true;
 
 		CefString spawn(spawnname);
 		CefString(&settings.browser_subprocess_path) = spawn;
@@ -872,7 +873,7 @@ void te4_web_initialize(const char *locales, const char *pak) {
 		CefString(&settings.locales_dir_path) = clocales;
 		CefString resources(pak);
 		CefString(&settings.resources_dir_path) = resources;
-		CefInitialize(args, settings, app.get());
+		CefInitialize(args, settings, app.get(), NULL);
 		web_core = true;
 	}
 

@@ -47,6 +47,6 @@ int main(int argc, char* argv[]) {
 #endif
 
 	CefRefPtr<ClientApp> app(new ClientApp);
-	int ret = CefExecuteProcess(args, app.get());
+	int ret = CefExecuteProcess(args, app.get(), NULL);
 	return ret;
 }
