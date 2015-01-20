@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local Object = require "mod.class.Object"
+
 newTalent{
 	name = "Dust to Dust",
 	type = {"chronomancy/matter",1},
@@ -44,7 +46,7 @@ newTalent{
 			tg = t.getAshes(self, t)
 			game.level.map:addEffect(self,
 				self.x, self.y, 3,
-				DamageType.MATTER, t.getDamage(self, t)/3,
+				DamageType.MATTER, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
 				engine.MapEffect.new{color_br=180, color_bg=100, color_bb=255, effect_shader="shader_images/magic_effect.png"},
@@ -86,13 +88,14 @@ newTalent{
 	mode = "sustained",
 	cooldown = 10,
 	tactical = { BUFF = 2 },
-	getResist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
-	getCap = function(self, t) return 100 - self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%end,
+	getStunResist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
+	getCutResist = function(self, t) return math.min(1, self:combatTalentScale(t, 0.2, 1)) end, -- Limit <100%
+	getCap = function(self, t) return 100 - self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 		local ret = {
-			stun = self:addTemporaryValue("stun_immune", t.getResist(self, t)),
-			cut = self:addTemporaryValue("cut_immune", t.getResist(self, t)),
+			stun = self:addTemporaryValue("stun_immune", t.getStunResist(self, t)),
+			cut = self:addTemporaryValue("cut_immune", t.getCutResist(self, t)),
 			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
 		}
 				if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={100/255, 100/255, 100/255}}, "particles_images/spikes.png") then
@@ -110,10 +113,11 @@ newTalent{
 	end,
 	info = function(self, t)
 		local cap = t.getCap(self, t)
-		local resist = t.getResist(self, t) * 100
+		local stun = t.getStunResist(self, t) * 100
+		local cut = t.getCutResist(self, t) * 100
 		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you can never take a blow that deals more than %d%% of your maximum life.
-		Additionally you gain %d%% resistance to stunning and cuts.]]):
-		format(cap, resist)
+		Additionally you gain %d%% resistance to stunning and %d%% resistance to cuts.]]):
+		format(cap, stun, cut)
 	end,
 }
 
@@ -122,32 +126,95 @@ newTalent{
 	type = {"chronomancy/matter",3},
 	require = chrono_req3,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	cooldown = 3,
-	tactical = { ATTACKAREA = {TEMPORAL = 1, PHYSICAL = 1} },
+	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
+	cooldown = 10,
+	tactical = { DISABLE = 2 },
 	range = 10,
 	direct_hit = true,
-	reflectable = true,
 	requires_target = true,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 120, getParadoxSpellpower(self, t)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 6))) end,
+	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
 	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t}
+		local halflength = math.floor(t.getLength(self,t)/2)
+		local block = function(_, lx, ly)
+			return game.level.map:checkAllEntities(lx, ly, "block_move")
+		end
+		return {type="wall", range=self:getTalentRange(t), halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block}
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.WARP, self:spellCrit(t.getDamage(self, t)))
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
-		game:playSoundNear(self, "talents/arcane")
+		if game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then return nil end
+
+		self:project(tg, x, y, function(px, py, tg, self)
+			local oe = game.level.map(px, py, Map.TERRAIN)
+			if not oe or oe.special then return end
+			if not oe or oe:attr("temporary") or game.level.map:checkAllEntities(px, py, "block_move") then return end
+				local e = Object.new{
+					old_feat = oe,
+					name = "stone wall", image = "terrain/rocky_mountain.png",
+					display = '#', color_r=255, color_g=255, color_b=255, back_color=colors.GREY,
+					shader = "shadow_simulacrum",
+					shader_args = { color = {0.6, 0.6, 0.2}, base = 0.9, time_factor = 1500 },
+					desc = "a summoned wall of stone",
+					type = "wall", --subtype = "floor",
+					always_remember = true,
+					can_pass = {pass_wall=1},
+					does_block_move = true,
+					show_tooltip = true,
+					block_move = true,
+					block_sight = true,
+					temporary = t.getDuration(self, t),
+					x = px, y = py,
+					canAct = false,
+					act = function(self)
+						self:useEnergy()
+						self.temporary = self.temporary - 1
+						if self.temporary <= 0 then
+							game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
+							game.nicer_tiles:updateAround(game.level, self.x, self.y)
+							game.level:removeEntity(self)
+							game.level.map:scheduleRedisplay()
+						end
+					end,
+					dig = function(src, x, y, old)
+						-- Explode!
+						local self = game.level.map(x, y, Map.TERRAIN)
+						local t = self.summoner:getTalentFromId(self.summoner.T_MATERIALIZE_BARRIER)
+						local tg = {type="ball", range=0, radius = self.summoner:getTalentRadius(t), talent=t, x=self.x, y=self.y}
+						self.summoner.__project_source = self
+						self.summoner:project(tg, self.x, self.y, engine.DamageType.BLEED, self.summoner:spellCrit(t.getDamage(self.summoner, t)))
+						self.summoner.__project_source = nil
+						game.level.map:particleEmitter(x, y, tg.radius, "ball_earth", {radius=tg.radius})
+						
+						game.level:removeEntity(old)
+						game.level.map:scheduleRedisplay()
+						return nil, old.old_feat
+					end,
+					summoner_gain_exp = true,
+					summoner = self,
+				}
+			e.tooltip = mod.class.Grid.tooltip
+			game.level:addEntity(e)
+			game.level.map(px, py, Map.TERRAIN, e)
+		end)
+		
+		game:playSoundNear(self, "talents/earth")
+		
 		return true
 	end,
 	info = function(self, t)
+		local length = t.getLength(self, t)
+		local duration = t.getDuration(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[Fires a beam that turns matter into dust, inflicting %0.2f temporal damage and %0.2f physical (warp) damage.
-		The damage will scale with your Spellpower.]]):
-		format(damDesc(self, DamageType.TEMPORAL, damage / 2), damDesc(self, DamageType.PHYSICAL, damage / 2))
+		local radius = self:getTalentRadius(t)
+		return ([[Create a tightly bound matter wall of up to a length of %d that lasts %d turns.
+		If any part of this wall is dug out it will explode, causing targets in a radius of %d to bleed for %0.2f physical damage over six turns.]])
+		:format(length, duration, damDesc(self, DamageType.PHYSICAL, damage), radius)
 	end,
 }
 
