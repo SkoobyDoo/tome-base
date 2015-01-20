@@ -3044,8 +3044,8 @@ newEffect{
 	type = "magical",
 	subtype = { temporal=true },
 	status = "beneficial",
-	on_gain = function(self, err) return "#Target# moves along the webs of fate.", "+Fate Webs" end,
-	on_lose = function(self, err) return "#Target# is no longer moving along the webs of fate.", "-Fate Webs" end,
+	on_gain = function(self, err) return nil, "+Webs of Fate" end,
+	on_lose = function(self, err) return nil, "-Webs of Fate" end,
 	parameters = { power=0.1 },
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
 		local t = eff.talent
@@ -3086,8 +3086,8 @@ newEffect{
 	subtype = { focus=true },
 	status = "beneficial",
 	parameters = { procs=1 },
-	on_gain = function(self, err) return "#Target# seals fate.", "+Seal Fate" end,
-	on_lose = function(self, err) return "#Target# is no longer sealing fate.", "-Seal Fate" end,
+	on_gain = function(self, err) return nil, "+Seal Fate" end,
+	on_lose = function(self, err) return nil, "-Seal Fate" end,
 	doDamage = function(self, eff, target)
 		if self.turn_procs and target.tmp then
 			if self.turn_procs.seal_fate and self.turn_procs.seal_fate >= eff.procs then return end

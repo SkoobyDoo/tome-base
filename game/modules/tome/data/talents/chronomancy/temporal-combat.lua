@@ -151,7 +151,7 @@ newTalent{
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
-						target:setEffect(target.EFF_SLOW, t.getDuration(self, t), {power=t.getSlow(self, t), apply_power=getParadoxSpellpower(self, t), no_ct_effect=true})
+						target:setEffect(target.EFF_SLOW, t.getDuration(self, t), {power=t.getSlow(self, t)/100, apply_power=getParadoxSpellpower(self, t), no_ct_effect=true})
 						DamageType:get(DamageType.GRAVITY).projector(self, target.x, target.y, DamageType.GRAVITY, t.getDamage(self, t))
 					end
 				end)
