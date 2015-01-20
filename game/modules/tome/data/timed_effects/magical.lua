@@ -3375,7 +3375,7 @@ newEffect{
 	on_lose = function(self, err) return nil, "-Arrow Echoes" end,
 	parameters = { shots = 1 },
 	on_timeout = function(self, eff)
-		if eff.shots <= 0 or eff.target.dead or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
+		if eff.shots <= 0 or eff.target.dead or not game.level:hasEntity(self) or not game.level:hasEntity(eff.target) or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
 			self:removeEffect(self.EFF_ARROW_ECHOES)
 		else
 			self:callTalent(self.T_ARROW_ECHOES, "doEcho", eff)

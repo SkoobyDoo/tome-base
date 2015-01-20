@@ -98,7 +98,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local power = t.getPowerBonus(self, t)
-		return ([[You now gain %d combat accuracy, physical power, spellpower, and mindpower when you gain Spin.]]):
+		return ([[You now gain %d combat accuracy, physical power, spellpower, and mindpower per Spin.]]):
 		format(power)
 	end,
 }

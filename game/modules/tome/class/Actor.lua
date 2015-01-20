@@ -3507,7 +3507,7 @@ function _M:actorCheckSustains()
 end
 
 -- Quick Switch Weapons
-function _M:quickSwitchWeapons(free_swap, message)
+function _M:quickSwitchWeapons(free_swap, message, silent)
 	if self.no_inventory_access then return end
 	local mh1, mh2 = self.inven[self.INVEN_MAINHAND], self.inven[self.INVEN_QS_MAINHAND]
 	local oh1, oh2 = self.inven[self.INVEN_OFFHAND], self.inven[self.INVEN_QS_OFFHAND]
@@ -3580,10 +3580,12 @@ function _M:quickSwitchWeapons(free_swap, message)
 	self:actorCheckSustains()
 
 	-- Special Messages
-	if message == "warden" then
-		game.logPlayer(self, "You teleport %s into your hands.", names)
-	else
-		game.logPlayer(self, "You switch your weapons to: %s.", names)
+	if not silent then
+		if message == "warden" then
+			game.logPlayer(self, "You teleport %s into your hands.", names)
+		else
+			game.logPlayer(self, "You switch your weapons to: %s.", names)
+		end
 	end
 
 	self.off_weapon_slots = not self.off_weapon_slots

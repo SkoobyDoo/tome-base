@@ -294,12 +294,17 @@ newTalent{
 		
 		-- Project our melee hits
 		local total_hits = 0
+		local bow_done = false
 		self:project(tg, x, y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
 				local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
 				if hit then
 					total_hits = total_hits + 1
+				end
+				if not bow_done then
+					bow_done = true
+					bow_warden(self, target)
 				end
 			end
 		end)
@@ -310,7 +315,6 @@ newTalent{
 			local damage = self:spellCrit(t.getShear(self, t)) * (1 + multi)
 			tg.radius = self:getTalentRadius(t)
 		
-			bow_warden(self, target)
 			self:project(tg, x, y, function(px, py, tg, self)
 				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
 				local target = game.level.map(px, py, Map.ACTOR)

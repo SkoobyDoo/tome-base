@@ -81,7 +81,7 @@ doWardenPreUse = function(self, weapon, silent)
 end
 
 -- Swaps weapons if needed
-doWardenWeaponSwap = function(self, t, dam, type)
+doWardenWeaponSwap = function(self, t, dam, type, silent)
 	local swap = false
 	local dam = dam or 0
 	local warden_weapon
@@ -103,7 +103,7 @@ doWardenWeaponSwap = function(self, t, dam, type)
 	if swap == true then
 		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
 		self.no_inventory_access = nil
-		self:quickSwitchWeapons(true, "warden")
+		self:quickSwitchWeapons(true, "warden", silent)
 		self.no_inventory_access = old_inv_access
 		
 		if t and (t.type[1]:find("^chronomancy/blade") or t.type[1]:find("^chronomancy/bow")) then

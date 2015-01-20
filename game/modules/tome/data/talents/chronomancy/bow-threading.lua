@@ -274,9 +274,14 @@ newTalent{
 	end,
 	doEcho = function(self, t, eff)
 		game:onTickEnd(function()
+			local swap = doWardenWeaponSwap(self, t, nil, "bow", true)
 			local target = eff.target
 			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, x=target.x, y=target.y, infinite=true, no_energy = true})
-			if not targets then return end
+			if not targets then
+			if swap == true then doWardenWeaponSwap(self, t, nil, "blade", true) end
+				return 
+			end
+			
 			self:archeryShoot(targets, t, {type="bolt", start_x=eff.x, start_y=eff.y}, {mult=t.getDamage(self, t)})
 			eff.shots = eff.shots - 1
 		end)

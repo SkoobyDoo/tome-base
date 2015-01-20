@@ -1622,7 +1622,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		desc:add(talents[tid][3] and {"color","GREEN"} or {"color","WHITE"}, ("Talent on hit(mindpower): %s (%d%% chance level %d)."):format(self:getTalentFromId(tid).name, talents[tid][1], talents[tid][2]), {"color","LAST"}, true)
 	end
 
-	if self.use_no_energy then
+	if self.use_no_energy and not self.use_no_energy == "fake" then
 		desc:add("Activating this item is instant.", true)
 	end
 
