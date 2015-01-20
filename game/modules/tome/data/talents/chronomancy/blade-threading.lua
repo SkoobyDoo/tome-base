@@ -200,11 +200,13 @@ newTalent{
 			-- Check for Warden's focus
 			local wf = checkWardenFocus(self)
 			if wf and not wf.dead then
-				while teleports > 0  do
+				while teleports > 0 and attempts > 0 do
 					local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
 					if tx and ty and not wf.dead then
 						if teleport_hit(self, t, wf, tx, ty) then
 							teleports = teleports - 1
+						else
+							attempts = attempts - 1
 						end
 					else
 						break
@@ -214,7 +216,7 @@ newTalent{
 			
 			-- Be sure we still have teleports left
 			if teleports > 0 and attempts > 0 then
-							-- Get available targets
+				-- Get available targets
 				local tgts = {}
 				local grids = core.fov.circle_grids(self.x, self.y, 10, true)
 				for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
