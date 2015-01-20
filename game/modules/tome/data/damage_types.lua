@@ -2641,6 +2641,20 @@ newDamageType{
 	end,
 }
 
+-- Warp damage that can destroy walls
+newDamageType{
+	name = "matter", type = "MATTER",
+	projector = function(src, x, y, type, dam, state)
+		state = state or {}
+		useImplicitCrit(src, state)
+		if src:knowTalent(src.T_DISINTEGRATION) then
+			DamageType:get(DamageType.DIG).projector(self, x, y, DamageType.DIG, 1)
+		end
+		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam / 2, state)
+		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam / 2, state)
+	end,
+}
+
 -- Temporal/Darkness damage
 newDamageType{
 	name = "temporal darkness", type = "VOID", text_color = "#GREY#",
