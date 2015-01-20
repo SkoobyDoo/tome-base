@@ -175,7 +175,7 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 	fs.mount(engine.homepath..fs.getPathSeparator(), "/tmp/listsaves")
 
 	local steamsaves = {}
-	if core.steam then
+	if util.steamCanCloud() then
 		local list = core.steam.listFilesEndingWith("game.teag")
 		for _, file in ipairs(list) do
 			local _, _, modname, char = file:find("^([^/]+)/save/([^/]+)/game%.teag$")
@@ -195,9 +195,9 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 		for i, short_name in ipairs(fs.list("/tmp/listsaves/"..mod.short_name.."/save/")) do
 			local sdir = "/save/"..short_name
 			local dir = "/tmp/listsaves/"..mod.short_name..sdir
-			if fs.exists(dir.."/game.teag") or (core.steam and core.steam.checkFile(sdir.."/game.teag")) then
+			if fs.exists(dir.."/game.teag") or (util.steamCanCloud() and core.steam.checkFile(sdir.."/game.teag")) then
 				if steamsaves[mod.short_name] then steamsaves[mod.short_name][short_name:lower()] = nil end
-				if core.steam then core.steam.readFile(sdir.."/desc.lua") end
+				if util.steamCanCloud() then core.steam.readFile(sdir.."/desc.lua") end
 				local def = self:loadSavefileDescription(dir)
 				if def then
 					if def.loadable and fs.exists(dir.."/cur.png") then
@@ -1039,7 +1039,7 @@ function _M:setupWrite(mod, nomount)
 	fs.setWritePath(engine.homepath)
 	fs.mkdir(mod.short_name)
 	fs.mkdir(mod.short_name.."/save")
-	if core.steam then core.steam.setFileNamespace(mod.short_name) end
+	if util.steamCanCloud() then core.steam.setFileNamespace(mod.short_name) end
 
 	-- Enter module directory
 	local base = engine.homepath .. fs.getPathSeparator() .. mod.short_name

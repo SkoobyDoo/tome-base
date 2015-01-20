@@ -47,7 +47,7 @@ end
 
 --- Cleanup old saves in steam cloud if needed
 function _M:steamCleanup()
-	if not core.steam then return end
+	if not util.steamCanCloud() then return end
 	local oldns = core.steam.getFileNamespace()
 	core.steam.setFileNamespace("")
 

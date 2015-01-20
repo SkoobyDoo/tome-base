@@ -125,6 +125,12 @@ end
 
 fs.umount(engine.homepath)
 
+-- Staem cloud saves, disabled until the user chooses otherwise
+if core.steam and not config.settings.steam_cloud_choose then
+	print("[STEAM] Disabling cloud saves until the user elects to use them")
+	core.steam.cloudEnable(false)
+end
+
 -- Setup a default key handler
 local key = engine.KeyBind.new()
 key:setCurrent()

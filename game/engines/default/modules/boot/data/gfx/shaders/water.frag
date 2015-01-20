@@ -1,21 +1,87 @@
+// Simple Water shader. (c) Victor Korsun, bitekas@gmail.com; 2012.
+//
+// Attribution-ShareAlike CC License.
+
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform vec2 texSize;
 uniform float tick;
-uniform sampler3D noisevol;
+uniform sampler2D tex;
 uniform vec2 mapCoord;
-uniform vec4 displayColor;
-uniform vec4 color1;
-uniform vec4 color2;
+uniform vec4 texCoord;
+
+const float PI = 3.1415926535897932;
+
+// play with these parameters to custimize the effect
+// ===================================================
+
+//speed
+const float speed = 0.2;
+const float speed_x = 0.3;
+const float speed_y = 0.3;
+
+// refraction
+const float emboss = 0.50;
+const float intensity = 2.4;
+const int steps = 10;
+const float frequency = 12.0;
+const int angle = 7; // better when a prime
+
+// reflection
+const float delta = 60.;
+const float intence = 700.;
+
+const float reflectionCutOff = 0.012;
+const float reflectionIntence = 200000.;
+
+// ===================================================
+
+float time = tick / 10000.0;
+
+float col(vec2 coord)
+{
+	float delta_theta = 2.0 * PI / float(angle);
+	float col = 0.0;
+	float theta = 0.0;
+	for (int i = 0; i < steps; i++)
+	{
+		vec2 adjc = coord;
+		theta = delta_theta*float(i);
+		adjc.x += cos(theta)*time*speed + time * speed_x;
+		adjc.y -= sin(theta)*time*speed - time * speed_y;
+		col = col + cos( (adjc.x*cos(theta) - adjc.y*sin(theta))*frequency)*intensity;
+	}
+
+	return cos(col);
+}
+
+//---------- main
 
 void main(void)
 {
-	float fTime0_X = tick / 100000.0;
-	vec2 coord = mapCoord+gl_TexCoord[0].xy;
-	float noisy = texture3D(noisevol,vec3(coord,fTime0_X)).r;
-	float noisy2 = texture3D(noisevol,vec3(coord/5.0,fTime0_X)).r;
-	float noisy3 = texture3D(noisevol,vec3(coord/7.0,fTime0_X)).r;
-	float noise = (noisy+noisy2+noisy3)/3.0;
+	vec2 p = (vec2(gl_FragCoord.x - mapCoord.x, texSize.y - gl_FragCoord.y - mapCoord.y)) / texSize.xy, c1 = p, c2 = p;
+	float cc1 = col(c1);
 
-	float bump = 1.0-abs((2.0 * noise)-1.0);
-	bump *= bump - 0.3;
-	gl_FragColor = mix(color1, color2, bump) * displayColor;
-	gl_FragColor.a = 0.4;
+	c2.x += texSize.x/delta;
+	float dx = emboss*(cc1-col(c2))/delta;
+
+	c2.x = p.x;
+	c2.y += texSize.y/delta;
+	float dy = emboss*(cc1-col(c2))/delta;
+
+	c1.x += dx*2.;
+	c1.y = -(c1.y+dy*2.);
+
+	float alpha = 1.+dot(dx,dy)*intence;
+		
+	float ddx = dx - reflectionCutOff;
+	float ddy = dy - reflectionCutOff;
+	if (ddx > 0. && ddy > 0.)
+		alpha = pow(alpha, ddx*ddy*reflectionIntence);
+	
+	c1 = clamp(c1, texCoord.xy, texCoord.xy + texCoord.zw);
+	vec4 col = texture2D(tex, texCoord.xy + c1 * texCoord.zw)*(alpha);
+	gl_FragColor = col;
 }

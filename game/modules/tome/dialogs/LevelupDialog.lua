@@ -79,7 +79,7 @@ function _M:init(actor, on_finish, on_birth)
 	if actor.alchemy_golem then self.golem_dup = backup(actor.alchemy_golem) end
 
 	if actor.descriptor then
-		for _, v in pairs(game.engine.Birther.birth_descriptor_def) do
+		for _, v in pairs(engine.Birther.birth_descriptor_def) do
 			if v.type == "subclass" and v.name == actor.descriptor.subclass then self.desc_def = v break end
 		end
 	end

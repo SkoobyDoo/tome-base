@@ -76,6 +76,7 @@ function _M:generateList()
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Cloud Saves#WHITE##{normal}#", status=function(item)
 		return tostring(core.steam.isCloudEnabled(true) and "enabled" or "disabled")
 	end, fct=function(item)
+		game:saveSettings("steam_cloud_choose", "steam_cloud_choose = true\n")
 		core.steam.cloudEnable(not core.steam.isCloudEnabled(true))
 		self.c_list:drawItem(item)
 	end,}

@@ -864,6 +864,7 @@ void setupRealtime(float freq)
 	else
 	{
 		float interval = 1000 / freq;
+		if (realtime_timer_id) SDL_RemoveTimer(realtime_timer_id);
 		realtime_timer_id = SDL_AddTimer((int)interval, realtime_timer, NULL);
 		printf("[ENGINE] Switching to realtime, interval %d ms\n", (int)interval);
 	}

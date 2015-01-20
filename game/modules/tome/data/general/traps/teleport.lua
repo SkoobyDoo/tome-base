@@ -32,7 +32,7 @@ newEntity{ base = "TRAP_TELEPORT",
 	message = "@Target@ is teleported away.",
 	pressure_trap = true,
 	triggered = function(self, x, y, who)
-		who:teleportRandom(x, y, 100)
+		game:onTickEnd(function()who:teleportRandom(x, y, 100)end)
 		return true
 	end
 }
