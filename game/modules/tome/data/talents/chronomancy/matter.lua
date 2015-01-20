@@ -29,25 +29,51 @@ newTalent{
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
 	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t}
+		return {type="beam", range=self:getTalentRange(t), talent=t, nowarning=true}
 	end,
+	getAshes = function(self, t) return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
+		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.MATTER, self:spellCrit(t.getDamage(self, t)))
-		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
-		game:playSoundNear(self, "talents/arcane")
+		
+		if target and target == self then
+			tg = t.getAshes(self, t)
+			game.level.map:addEffect(self,
+				self.x, self.y, 3,
+				DamageType.MATTER, t.getDamage(self, t)/3,
+				tg.radius,
+				5, nil,
+				engine.MapEffect.new{color_br=180, color_bg=100, color_bb=255, effect_shader="shader_images/magic_effect.png"},
+				function(e)
+					e.x = e.src.x
+					e.y = e.src.y
+					return true
+				end,
+				tg.selffire
+			)
+			
+			game:playSoundNear(self, "talents/cloud")
+		else		
+			self:project(tg, x, y, DamageType.MATTER, self:spellCrit(t.getDamage(self, t)))
+			local _ _, _, _, x, y = self:canProject(tg, x, y)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
+			game:playSoundNear(self, "talents/arcane")
+		end
+			
+
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
+		local radius = self:getTalentRadius(t)
 		return ([[Fires a beam that turns matter into dust, inflicting %0.2f temporal damage and %0.2f physical (warp) damage.
+		Alternatively you may target yourself, creating a field of radius %d around you that will inflict the damage over three turns.
 		The damage will scale with your Spellpower.]]):
-		format(damDesc(self, DamageType.TEMPORAL, damage / 2), damDesc(self, DamageType.PHYSICAL, damage / 2))
+		format(damDesc(self, DamageType.TEMPORAL, damage / 2), damDesc(self, DamageType.PHYSICAL, damage / 2), radius)
 	end,
 }
 

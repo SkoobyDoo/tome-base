@@ -2674,8 +2674,7 @@ newDamageType{
 		if src.isTalentActive and src:isTalentActive(src.T_DISINTEGRATION) then
 			DamageType:get(DamageType.DIG).projector(src, x, y, DamageType.DIG, src:callTalent(src.T_DISINTEGRATION, "getDigs"))
 		end
-		DamageType:get(DamageType.WARP).projector(src, x, y, DamageType.WARP, dam / 2, state)
-		DamageType:get(DamageType.WARP).projector(src, x, y, DamageType.WARP, dam / 2, state)
+		DamageType:get(DamageType.WARP).projector(src, x, y, DamageType.WARP, dam, state)
 	end,
 }
 
