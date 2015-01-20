@@ -33,7 +33,7 @@ newTalent{
 	requires_target = true,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
 	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t, nowarning=true}
+		return {type="beam", range=self:getTalentRange(t), talent=t, nowarning=true, selffire=false}
 	end,
 	getAshes = function(self, t) return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
