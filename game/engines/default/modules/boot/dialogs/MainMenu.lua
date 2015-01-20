@@ -27,6 +27,7 @@ local Textbox = require "engine.ui.Textbox"
 local Separator = require "engine.ui.Separator"
 local KeyBind = require "engine.KeyBind"
 local FontPackage = require "engine.FontPackage"
+local Module = require "engine.Module"
 
 module(..., package.seeall, class.inherit(Dialog))
 
@@ -48,6 +49,22 @@ function _M:init()
 		local list = {
 			"resume",
 			"keybinds_all",
+			{"Game Options", function()
+				-- OMFG this is such a nasty hack, I'm nearly pround of it !
+				local mod = Module:listModules().tome
+				if not mod then return end
+
+				local allmounts = fs.getSearchPath(true)
+				if not mod.team then fs.mount(fs.getRealPath(mod.dir), "/mod", false)
+				else fs.mount(fs.getRealPath(mod.team), "/", false) end
+
+				local d = require("mod.dialogs.GameOptions").new()
+				function d:unload()
+					fs.reset()
+					fs.mountAll(allmounts)
+				end
+				game:registerDialog(d)
+			end},
 			"video",
 			"sound",
 			"steam",
