@@ -653,6 +653,18 @@ newDamageType{
 
 newDamageType{
 	name = "physical", type = "PHYSICAL",
+	projector = function(src, x, y, type, dam, state)
+		state = state or {}
+		useImplicitCrit(src, state)
+		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
+		
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and src.isTalentActive and src:isTalentActive(src.T_DISINTEGRATION) then
+			src:callTalent(src.T_DISINTEGRATION, "doStrip", target, type)
+		end
+		
+		return realdam
+	end,
 	death_message = {"battered", "bludgeoned", "sliced", "maimed", "raked", "bled", "impaled", "dissected", "disembowelled", "decapitated", "stabbed", "pierced", "torn limb from limb", "crushed", "shattered", "smashed", "cleaved", "swiped", "struck", "mutilated", "tortured", "skewered", "squished", "mauled", "chopped into tiny pieces", "splattered", "ground", "minced", "punctured", "hacked apart", "eviscerated"},
 }
 
@@ -857,6 +869,18 @@ newDamageType{
 newDamageType{
 	name = "temporal", type = "TEMPORAL", text_color = "#LIGHT_STEEL_BLUE#",
 	antimagic_resolve = true,
+	projector = function(src, x, y, type, dam, state)
+		state = state or {}
+		useImplicitCrit(src, state)
+		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
+		
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and src.isTalentActive and src:isTalentActive(src.T_DISINTEGRATION) then
+			src:callTalent(src.T_DISINTEGRATION, "doStrip", target, type)
+		end
+		
+		return realdam
+	end,
 	death_message = {"timewarped", "temporally distorted", "spaghettified across the whole of space and time", "paradoxed", "replaced by a time clone (and no one ever knew the difference)", "grandfathered", "time dilated"},
 }
 
@@ -2647,11 +2671,11 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = state or {}
 		useImplicitCrit(src, state)
-		if src:knowTalent(src.T_DISINTEGRATION) then
-			DamageType:get(DamageType.DIG).projector(self, x, y, DamageType.DIG, 1)
+		if src.isTalentActive and src:isTalentActive(src.T_DISINTEGRATION) then
+			DamageType:get(DamageType.DIG).projector(src, x, y, DamageType.DIG, src:callTalent(src.T_DISINTEGRATION, "getDigs"))
 		end
-		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam / 2, state)
-		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam / 2, state)
+		DamageType:get(DamageType.WARP).projector(src, x, y, DamageType.WARP, dam / 2, state)
+		DamageType:get(DamageType.WARP).projector(src, x, y, DamageType.WARP, dam / 2, state)
 	end,
 }
 

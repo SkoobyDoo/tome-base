@@ -65,7 +65,7 @@ newTalent{
 			local proj = require("mod.class.Projectile"):makeHoming(
 				self,
 				{particle="arrow", particle_args={tile="particles_images/temporal_bolt", proj_x=self.x, proj_y=self.y, src_x=x, src_y=y}, trail="trail_paradox"},
-				{speed=3, name="Temporal Bolt", dam=dam, cd=cd, start_x=x, start_y=y},
+				{speed=3, name="Temporal Bolt", dam=dam, cdr=cdr, start_x=x, start_y=y},
 				self, self:getTalentRange(t),
 				function(self, src)
 					local talent = src:getTalentFromId 'T_TEMPORAL_BOLT'
@@ -80,7 +80,7 @@ newTalent{
 						for tid, cd in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-								src:alterTalentCoolingdown(tt, - cdr)
+								src:alterTalentCoolingdown(tt, - self.def.cdr)
 								break
 							end
 						end
