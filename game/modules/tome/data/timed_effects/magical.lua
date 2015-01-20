@@ -1707,7 +1707,7 @@ newEffect{
 	status = "beneficial",
 	parameters = { save_bonus=0, spin=0, max_spin=3},
 	on_gain = function(self, err) return "#Target# spins fate.", "+Spin Fate" end,
-	on_lose = function(self, err) return "#Target#'s fate is no longer being spun.", "-Spin Fate" end,
+	on_lose = function(self, err) return "#Target# stops spinning fate.", "-Spin Fate" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- remove the four old values
 		self:removeTemporaryValue("combat_def", old_eff.defid)
@@ -3394,7 +3394,7 @@ newEffect{
 	type = "magical",
 	subtype = { tactic=true },
 	status = "beneficial",
-	on_gain = function(self, err) return "#Target# focuses fire.", "+Warden's Focus" end,
+	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,
 	parameters = { crit=0, atk=0 },
 	on_timeout = function(self, eff)
