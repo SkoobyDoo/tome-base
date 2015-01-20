@@ -73,7 +73,7 @@ function _M:init()
 
 	self.base_uis = {
 		{left=0, top=0, ui=self.c_list},
-		-- {left=0, bottom=0, absolute=true, ui=self.c_background},
+		{left=0, bottom=0, absolute=true, ui=self.c_background},
 		{right=self.c_facebook.w, bottom=0, absolute=true, ui=self.c_version},
 		{right=0, bottom=self.c_facebook.h+self.c_twitter.h, absolute=true, ui=self.c_forums},
 		{right=0, bottom=self.c_twitter.h, absolute=true, ui=self.c_facebook},

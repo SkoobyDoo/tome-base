@@ -1,4 +1,4 @@
--- ToME - Tales of Middle-Earth
+-- ToME - Tales of Maj'Eyal
 -- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
@@ -18,12 +18,12 @@
 -- darkgod@te4.org
 
 return {
+	require_kind = "adv",
 	frag = "water",
 	vert = nil,
 	args = {
-		noisevol = { texture = 1 },
-		color1 = {0,0,1,1},
-		color2 = {0,0.6,0.8,1},
+		tex = { texture = 0 },
+		iResolution = size or {64.0, 64.0},
 	},
 	clone = false,
 }

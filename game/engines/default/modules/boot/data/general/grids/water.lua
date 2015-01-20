@@ -37,4 +37,5 @@ newEntity{
 newEntity{ base="WATER_BASE",
 	define_as = "DEEP_WATER",
 	image="terrain/water_grass_5_1.png",
+	shader = "water",
 }

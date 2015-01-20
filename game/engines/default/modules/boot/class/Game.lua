@@ -29,6 +29,7 @@ local Dialog = require "engine.ui.Dialog"
 local Tooltip = require "engine.Tooltip"
 local MainMenu = require "mod.dialogs.MainMenu"
 local Downloader = require "engine.dialogs.Downloader"
+local FontPackage = require "engine.FontPackage"
 
 local Shader = require "engine.Shader"
 local Zone = require "engine.Zone"
@@ -76,8 +77,8 @@ function _M:init()
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
-	-- self.stopped = config.settings.boot_menu_background
-	self.stopped = true
+	self.stopped = config.settings.boot_menu_background
+	-- self.stopped = true
 	if core.display.safeMode() then self.stopped = true end
 	if self.stopped then
 		core.game.setRealtime(0)
@@ -113,7 +114,9 @@ function _M:run()
 		self:makeWebtooltip()
 	end
 
-	self.flyers = FlyingText.new()
+	local flyfont, flysize = FontPackage:getFont("flyer")
+	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
+	self.flyers:enableShadow(0.6)
 	self:setFlyingText(self.flyers)
 	self.log = function(style, ...) end
 	self.logSeen = function(e, style, ...) end
