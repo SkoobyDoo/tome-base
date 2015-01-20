@@ -56,32 +56,38 @@ newTalent{
 	type = {"chronomancy/matter",2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	cooldown = 3,
-	tactical = { ATTACKAREA = {TEMPORAL = 1, PHYSICAL = 1} },
-	range = 10,
-	direct_hit = true,
-	reflectable = true,
-	requires_target = true,
-	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t}
+	sustain_paradox = 24,
+	mode = "sustained",
+	cooldown = 10,
+	tactical = { BUFF = 2 },
+	getResist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
+	getCap = function(self, t) return 100 - self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%end,
+	activate = function(self, t)
+		game:playSoundNear(self, "talents/earth")
+		local ret = {
+			stun = self:addTemporaryValue("stun_immune", t.getResist(self, t)),
+			cut = self:addTemporaryValue("cut_immune", t.getResist(self, t)),
+			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
+		}
+				if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={100/255, 100/255, 100/255}}, "particles_images/spikes.png") then
+			ret.particle = self:addParticles(Particles.new("stone_skin", 1))
+		end
+		return ret
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.WARP, self:spellCrit(t.getDamage(self, t)))
-		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
-		game:playSoundNear(self, "talents/arcane")
+	deactivate = function(self, t, p)
+		self:removeShaderAura("stone_skin")
+		self:removeParticles(p.particle)
+		self:removeTemporaryValue("stun_immune", p.stun)
+		self:removeTemporaryValue("cut_immune", p.cut)
+		self:removeTemporaryValue("flat_damage_cap", p.cap)
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		return ([[Fires a beam that turns matter into dust, inflicting %0.2f temporal damage and %0.2f physical (warp) damage.
-		The damage will scale with your Spellpower.]]):
-		format(damDesc(self, DamageType.TEMPORAL, damage / 2), damDesc(self, DamageType.PHYSICAL, damage / 2))
+		local cap = t.getCap(self, t)
+		local resist = t.getResist(self, t) * 100
+		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you can never take a blow that deals more than %d%% of your maximum life.
+		Additionally you gain %d%% resistance to stunning and cuts.]]):
+		format(cap, resist)
 	end,
 }
 
