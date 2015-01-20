@@ -46,6 +46,7 @@ newBirthDescriptor{
 				self.faction = "keepers-of-reality"
 				self:learnTalent(self.T_TELEPORT_POINT_ZERO, true, nil, {no_unlearn=true})
 			end
+			self:triggerHook{"BirthStartZone:chronomancer"}
 		end,
 	},
 }
