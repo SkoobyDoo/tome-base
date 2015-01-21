@@ -109,6 +109,8 @@ function _M:loadDefinition(dir, team, incompatible)
 		setfenv(mod_def, mod)
 		mod_def()
 		mod.rng = nil
+		mod.team = team
+		mod.dir = dir
 
 		if not mod.long_name or not mod.name or not mod.short_name or not mod.version or not mod.starter then
 			print("Bad module definition", mod.long_name, mod.name, mod.short_name, mod.version, mod.starter)
