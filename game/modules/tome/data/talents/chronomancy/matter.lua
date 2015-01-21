@@ -214,7 +214,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		return ([[Create a tightly bound matter wall of up to a length of %d that lasts %d turns.
 		If any part of this wall is dug out it will explode, causing targets in a radius of %d to bleed for %0.2f physical damage over six turns.]])
-		:format(length, duration, damDesc(self, DamageType.PHYSICAL, damage), radius)
+		:format(length, duration, radius, damDesc(self, DamageType.PHYSICAL, damage))
 	end,
 }
 
