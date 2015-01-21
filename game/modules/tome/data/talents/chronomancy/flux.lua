@@ -184,6 +184,9 @@ newTalent{
 	doTwistFate = function(self, t, twist)
 		local eff = self:hasEffect(self.EFF_TWIST_FATE)
 		eff.twisted = twist or false
+		local anom = self:getTalentFromId(eff.talent)
+		anom.action(self, anom)
+		self:incParadox(-eff.paradox)
 		self:removeEffect(self.EFF_TWIST_FATE)
 	end,
 	setEffect = function(self, t, talent, paradox)
