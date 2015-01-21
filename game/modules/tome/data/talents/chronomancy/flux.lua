@@ -72,15 +72,15 @@ newTalent{
 		local fnt = "buff_font"
 		return tostring(math.ceil(val)), fnt
 	end,
-	doRealitySmearing = function(self, t, src, dam)
-		local absorb = dam * t.getPercent(self, t)
+	callbackOnHit = function(self, t, cb, src)
+		local absorb = cb.value * t.getPercent(self, t)
 		local paradox = absorb*t.getConversionRatio(self, t)
 		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
 		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
 		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
-		dam = dam - absorb
+		cb.value = cb.value - absorb
 		
-		return dam
+		return cb.value
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/arcane")

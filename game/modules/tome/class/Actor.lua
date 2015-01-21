@@ -2221,11 +2221,6 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
-	-- Paradox Shield
-	if value > 0 and self:isTalentActive(self.T_REALITY_SMEARING) then
-		value = self:callTalent(self.T_REALITY_SMEARING, "doRealitySmearing", src, value)
-	end
-
 	if value <=0 then return 0 end
 	if self.knowTalent and (self:knowTalent(self.T_SEETHE) or self:knowTalent(self.T_GRIM_RESOLVE)) then
 		if not self:hasEffect(self.EFF_CURSED_FORM) then
