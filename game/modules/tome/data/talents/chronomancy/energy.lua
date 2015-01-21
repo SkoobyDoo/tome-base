@@ -131,8 +131,7 @@ newTalent{
 		local talentcount = t.getTalentCount(self, t)
 		local cooldown = t.getCooldown(self, t)
 		return ([[You sap the target's energy and add it to your own, placing up to %d random talents on cooldown for %d turns.
-		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns.
-		The damage done will scale with your Spellpower.]]):
+		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns.]]):
 		format(talentcount, cooldown, cooldown)
 	end,
 }
