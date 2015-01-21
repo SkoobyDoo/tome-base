@@ -860,42 +860,33 @@ local word_size_cache = {}
 local fontoldsize = getmetatable(tmps).__index.size
 getmetatable(tmps).__index.simplesize = fontoldsize
 getmetatable(tmps).__index.size = function(font, str)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
+	local tstr = str:toTString()
 	local mw, mh = 0, 0
 	local fstyle = font:getStyle()
 	word_size_cache[font] = word_size_cache[font] or {}
 	word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
 	local v
-	for i = 1, #list do
-		v = list[i]
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			-- Ignore
-		elseif col then
-			-- Ignore
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					mw = mw + w
-					if h > mh then mh = h end
+	for i = 1, #tstr do
+		v = tstr[i]
+		if type(v) == "table" then
+			if v[1] == "font" then
+				local fontstyle = v[2]
+				font:setStyle(fontstyle)
+				fstyle = fontstyle
+				word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
+			elseif v[1] == "uid" then
+				local uid = v[2]
+				local e = __uids[uid]
+				if e then
+					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
+					if surf then
+						local w, h = surf:getSize()
+						mw = mw + w
+						if h > mh then mh = h end
+					end
 				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-			fstyle = fontstyle
-			word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
-		elseif extra then
-			--
-		else
+			end -- ignore colors and all that
+		elseif type(v) == "string" then
 			local w, h
 			if word_size_cache[font][fstyle][v] then
 				w, h = word_size_cache[font][fstyle][v][1], word_size_cache[font][fstyle][v][2]
@@ -905,7 +896,7 @@ getmetatable(tmps).__index.size = function(font, str)
 			end
 			if h > mh then mh = h end
 			mw = mw + w
-		end
+		end -- ignore the rest
 	end
 	return mw, mh
 end
@@ -1028,7 +1019,7 @@ function string.toTString(str)
 		elseif col then
 			tstr:add({"color", col})
 		elseif uid and mo then
-			tstr:add({"uid", tonumber(uid)})
+			tstr:add({"uid", tonumber(uid), tonumber(mo)})
 		elseif fontstyle then
 			tstr:add({"font", fontstyle})
 		elseif extra then
