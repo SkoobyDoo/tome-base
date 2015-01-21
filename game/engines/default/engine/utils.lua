@@ -825,67 +825,8 @@ end
 
 local tmps = core.display.newSurface(1, 1)
 getmetatable(tmps).__index.drawColorStringBlended = function(s, font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
-	r = r or 255
-	g = g or 255
-	b = b or 255
-	limit_w = limit_w or 99999999
-	local oldr, oldg, oldb = r, g, b
-	local max_h = 0
-	local sw = 0
-	local bx, by = x, y
-	for i, v in ipairs(list) do
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			oldr, oldg, oldb = r, g, b
-			r, g, b = nr:parseHex(), ng:parseHex(), nb:parseHex()
-		elseif col then
-			if col == "LAST" then
-				r, g, b = oldr, oldg, oldb
-			else
-				oldr, oldg, oldb = r, g, b
-				r, g, b = colors[col].r, colors[col].g, colors[col].b
-			end
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					if sw + (w or 0) > limit_w then break end
-					s:merge(surf, x, y)
-					if h > max_h then max_h = h end
-					x = x + (w or 0)
-					sw = sw + (w or 0)
-				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-		elseif extra then
-			--
-		else
-			local w, h = font:size(v)
-			local stop = false
-			while sw + w > limit_w do
-				v = v:sub(1, #v - 1)
-				if #v == 0 then break end
-				w, h = font:size(v)
-				stop = true
-			end
-			if h > max_h then max_h = h end
-			s:drawStringBlended(font, v, x, y, r, g, b, alpha_from_texture)
-			x = x + w
-			sw = sw + w
-			if stop then break end
-		end
-	end
-	return r, g, b, sw, max_h, bx, by
+	local tstr = str:toTString()
+	return tstr:drawOnSurface(s, limit_w or 99999999, 1, font, x, y, r, g, b, not alpha_from_texture)
 end
 getmetatable(tmps).__index.drawColorString = getmetatable(tmps).__index.drawColorStringBlended
 
@@ -1067,8 +1008,12 @@ function tstring.from(str)
 	end
 end
 
+tstring.__tstr_cache = {}
+local tstring_cache = tstring.__tstr_cache
+
 --- Parse a string and return a tstring
 function string.toTString(str)
+	if tstring_cache[str] then return tstring(tstring_cache[str]) end
 	local tstr = tstring{}
 	local list = str:split(("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#") + lpeg.P"\n", true)
 	for i = 1, #list do
@@ -1094,7 +1039,8 @@ function string.toTString(str)
 			tstr:add(v)
 		end
 	end
-	return tstr
+	tstring_cache[str] = tstr
+	return tstring(tstr)
 end
 function string:toString() return self end
 
@@ -1304,6 +1250,9 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 	local oldr, oldg, oldb = r, g, b
 	local v, tv
 	local on_word_w, on_word_h
+	local last_line_h = 0
+	local max_w = 0
+	local lines_drawn = 0
 	for i = 1, #list do
 		v = list[i]
 		tv = type(v)
@@ -1312,12 +1261,17 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			if on_word_w and on_word_h then
 				w, h = on_word_w, on_word_h
 			else
+				local dw, dh = fontoldsize(font, v)
+				last_line_h = math.max(last_line_h, dh)
 				s:drawStringBlended(font, v, x + w, y + h, r, g, b, not no_alpha)
 				w = w + fontoldsize(font, v)
 			end
 		elseif tv == "boolean" then
+			max_w = math.max(max_w, w)
 			w = 0
 			h = h + fh
+			last_line_h = 0
+			lines_drawn = lines_drawn + 1
 			max_lines = max_lines - 1
 			if max_lines <= 0 then break end
 		else
@@ -1346,6 +1300,7 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			end
 		end
 	end
+	return r, g, b, math.max(max_w, w), fh * lines_drawn + last_line_h, x, y
 end
 
 function tstring:diffWith(str2, on_diff)
