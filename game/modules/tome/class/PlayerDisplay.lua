@@ -36,6 +36,10 @@ function _M:init(x, y, w, h, bgcolor, font, size)
 	self:resize(x, y, w, h)
 end
 
+local function glTexFromArgs(tex, tw, th, _, _, w, h)
+	return {_tex = tex, _tex_w = tw, _tex_h = th, w=w, h=h}
+end
+
 --- Resize the display area
 function _M:resize(x, y, w, h)
 	self.display_x, self.display_y = x, y
@@ -51,9 +55,9 @@ function _M:resize(x, y, w, h)
 	self.surface_portrait = core.display.newSurface(40, 40)
 	self.texture, self.texture_w, self.texture_h = self.surface:glTexture()
 
-	self.top = {core.display.loadImage("/data/gfx/ui/party_end.png")} self.top.tex = {self.top[1]:glTexture()}
-	self.party = {core.display.loadImage("/data/gfx/ui/party_top.png")} self.party.tex = {self.party[1]:glTexture()}
-	self.bg = {core.display.loadImage("/data/gfx/ui/player-display.png")} self.bg.tex = {self.bg[1]:glTexture()}
+	self.top = glTexFromArgs(core.display.loadImage("/data/gfx/ui/party_end.png"):glTexture())
+	self.party = glTexFromArgs(core.display.loadImage("/data/gfx/ui/party_top.png"):glTexture())
+	self.bg = glTexFromArgs(core.display.loadImage("/data/gfx/ui/player-display.png"):glTexture())
 
 	self.portrait = {core.display.loadImage("/data/gfx/ui/party-portrait.png"):glTexture()}
 	self.portrait_unsel = {core.display.loadImage("/data/gfx/ui/party-portrait-unselect.png"):glTexture()}
@@ -75,26 +79,19 @@ function _M:mouseTooltip(text, w, h, x, y, click)
 end
 
 function _M:makeTexture(text, x, y, r, g, b, max_w)
+	max_w = max_w or self.w
 	-- Check for cache
 	local cached = self.tex_cache.textures[text]
 	local cached_ok = cached and cached.r == r and cached.g == g and cached.b == b and cached.max_w == max_w
 	if not cached_ok then
-		local s = self.surface_line
-		s:erase(0, 0, 0, 0)
-		s:drawColorStringBlended(self.font, text, 0, 0, r, g, b, true, max_w)
-
-		local item = {r=r, g=g, b=b, max_w = max_w, s:glTexture()}
-		self.tex_cache.textures[text] = item
+		local item = self.font:draw(text, max_w, r, g, b, true)[1]
+		item = {r=r, g=g, b=b, max_w = max_w, item}
+		self.tex_cache.textures[text] = item 
 		cached = item
 	end
-	local item = table.clone(cached)
-	item.x = x
-	item.y = y
-	item.w = self.w
-	item.h = self.font_h
-	self.items[#self.items+1] = item
+	self.items[#self.items+1] = {cached[1], x=x, y=y}
 
-	return item.w, item.h, item.x, item.y
+	return self.w, self.font_h, x, y
 end
 
 local function samecolor(c1, c2)
@@ -107,38 +104,38 @@ function _M:makeTextureBar(text, nfmt, val, max, reg, x, y, r, g, b, bar_col, ba
 	local cached_ok = cached and (nfmt == cached.nfmt) and (val == cached.val) and (max == cached.max) and (reg == cached.reg) and
 		(r == cached.r) and (g == cached.g) and (b == cached.b) and samecolor(bar_col, cached.bar_col) and samecolor(bar_bgcol, cached.bar_bgcol)
 	if not cached_ok then
-		local s = self.surface_line
-		s:erase(0, 0, 0, 0)
-		s:erase(bar_bgcol.r, bar_bgcol.g, bar_bgcol.b, 255, self.bars_x, h, self.bars_w, self.font_h)
-		s:erase(bar_col.r, bar_col.g, bar_col.b, 255, self.bars_x, h, self.bars_w * val / max, self.font_h)
+		local items = {}
+		items[#items+1] = function(disp_x, disp_y)
+			core.display.drawQuad(disp_x + self.bars_x, disp_y, self.bars_w, self.font_h, bar_bgcol.r, bar_bgcol.g, bar_bgcol.b, 255)
+		end
+		items[#items+1] = function(disp_x, disp_y)
+			core.display.drawQuad(disp_x + self.bars_x, disp_y, self.bars_w * val / max, self.font_h, bar_col.r, bar_col.g, bar_col.b, 255)
+		end
+		items[#items+1] = {self.font:draw(text, self.w, r, g, b, true)[1], x=0, y=0}
+		items[#items+1] = {self.font:draw((nfmt or "%d/%d"):format(val, max), self.w, r, g, b, true)[1], x=self.bars_x + 5, y=0}
 
-		s:drawColorStringBlended(self.font, text, 0, 0, r, g, b, true)
-		s:drawColorStringBlended(self.font, (nfmt or "%d/%d"):format(val, max), self.bars_x + 5, 0, r, g, b)
 		if reg and reg ~= 0 then
 			local reg_txt = (" (%s%.2f)"):format((reg > 0 and "+") or "",reg)
-			local reg_txt_w = self.font:size(reg_txt)
-			s:drawColorStringBlended(self.font, reg_txt, self.bars_x + self.bars_w - reg_txt_w - 3, 0, r, g, b)
+			local tex = self.font:draw(reg_txt, self.w, r, g, b, true)[1]
+			items[#items+1] = {tex, x = self.bars_x + self.bars_w - self.font:size(reg_txt) - 3, y=0}
 		end
-		local item = {nfmt=nfmt, val=val, max=max, reg=reg, r=r, g=g, b=b, bar_col=bar_col, bar_bgcol=bar_bgcol, s:glTexture()}
-		self.tex_cache.texture_bars[text] = item
-		cached = item
+		cached = {nfmt=nfmt, val=val, max=max, reg=reg, r=r, g=g, b=b, bar_col=bar_col, bar_bgcol=bar_bgcol, items}
+		self.tex_cache.texture_bars[text] = cached
 	end
-	local item = table.clone(cached)
-	item.x = x
-	item.y = y
-	item.w = self.w
-	item.h = self.font_h
-	self.items[#self.items+1] = item
+	local items = cached[1]
+	for i = 1,#items do
+		if type(items[i]) == "table" then
+			self.items[#self.items+1] = {items[i][1], x=x+items[i].x, y=y+items[i].y}
+		else
+			self.items[#self.items+1] = function(dx, dy) return items[i](dx + x, dy + y) end
+		end
+	end
 
-	return item.w, item.h, item.x, item.y
+	return self.w, self.font_h, x, y
 end
 
 function _M:makePortrait(a, current, x, y)
-	local s = self.surface_portrait
 	local def = game.party.members[a]
-	s:erase(0, 0, 0, 255, 6, 6, 32, 32)
-	local hl = 32 * math.max(0, a.life) / a.max_life
-	s:erase(colors.RED.r * 0.7, colors.RED.g * 0.7, colors.RED.b * 0.7, 255, 6, 32+6-hl, 32, hl)
 
 	self:mouseTooltip("#GOLD##{bold}#"..a.name.."\n#WHITE##{normal}#Life: "..math.floor(100 * a.life / a.max_life).."%\nLevel: "..a.level.."\n"..def.title, 40, 40, x, y, function()
 		if def.control == "full" then
@@ -146,26 +143,15 @@ function _M:makePortrait(a, current, x, y)
 		end
 	end)
 
-	local item = { s:glTexture() }
-	item.x = x
-	item.y = y
-	item.w = 40
-	item.h = 40
-	self.items[#self.items+1] = item
-
-	local item = function(dx, dy)
+	self.items[#self.items+1] = function(disp_x, disp_y)
+		core.display.drawQuad(disp_x + x + 4, disp_y + y + 4, 32, 32, 0, 0, 0, 255)
+		core.display.drawQuad(disp_x + x + 4, disp_y + y + (40 - 4) - hl, 32, hl, 255 * 0.7, 0, 0, 255)
 		a:toScreen(nil, dx+x+4, dy+y+1, 32, 32)
 	end
-	self.items[#self.items+1] = item
 
 	local p = current and self.portrait or self.portrait_unsel
 
-	local item = { p[1], p[2], p[3], }
-	item.x = x
-	item.y = y
-	item.w = 40
-	item.h = 40
-	self.items[#self.items+1] = item
+	self.items[#self.items+1] = {p, x=x, y=y}
 end
 
 function _M:makeEntityIcon(e, tiles, x, y, desc, gtxt, frame)
@@ -231,12 +217,8 @@ function _M:display()
 
 	-- Party members
 	if #game.party.m_list >= 2 and game.level then
-		self.items[#self.items+1] = {unpack(self.party.tex)}
-		self.items[#self.items].w = self.party[2]
-		self.items[#self.items].h = self.party[3]
-		self.items[#self.items].x = 0
-		self.items[#self.items].y = h
-		h = h + self.party[3] + 3
+		self.items[#self.items+1] = {self.party, x=0, y=h}
+		h = h + self.party.w + 3
 
 		local nb = math.floor(self.w / 42)
 		local off = (self.w - nb * 42) /2
@@ -255,12 +237,8 @@ function _M:display()
 		h = h + 2
 	end
 
-	self.items[#self.items+1] = {unpack(self.top.tex)}
-	self.items[#self.items].w = self.top[2]
-	self.items[#self.items].h = self.top[3]
-	self.items[#self.items].x = 0
-	self.items[#self.items].y = h
-	h = h + self.top[3] + 5
+	self.items[#self.items+1] = {self.top, x=0, y=h}
+	h = h + self.top.w + 5
 
 	-- Player
 	if player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0 then
@@ -510,16 +488,16 @@ end
 function _M:toScreen(nb_keyframes)
 	self:display()
 
-	self.bg.tex[1]:toScreen(self.display_x, self.display_y, self.w, self.h)
+	self.bg._tex:toScreen(self.display_x, self.display_y, self.w, self.h)
 	for i = 1, #self.items do
 		local item = self.items[i]
 		if type(item) == "table" then
+			local glow = 255
 			if item.glow then
-				local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
-				item[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, item.w, item.h, item[2], item[3], 1, 1, 1, glow / 255)
-			else
-				item[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, item.w, item.h, item[2], item[3])
+				glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
 			end
+			local tex = item[1]
+			tex._tex:toScreenFull(self.display_x + item.x, self.display_y + item.y, tex.w, tex.h, tex._tex_w, tex._tex_h, 1, 1, 1, glow / 255)
 		else
 			item(self.display_x, self.display_y)
 		end
