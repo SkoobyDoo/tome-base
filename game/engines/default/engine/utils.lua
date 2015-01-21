@@ -860,6 +860,12 @@ local tmps = core.display.newFont("/data/font/Vera.ttf", 12)
 local word_size_cache = {}
 local fontoldsize = getmetatable(tmps).__index.size
 getmetatable(tmps).__index.simplesize = fontoldsize
+local fontcachewordsize = function(font, fstyle, v)
+	if not word_size_cache[font][fstyle][v] then
+		word_size_cache[font][fstyle][v] = {fontoldsize(font, v)}
+	end
+	return unpack(word_size_cache[font][fstyle][v])
+end
 getmetatable(tmps).__index.size = function(font, str)
 	local tstr = str:toTString()
 	local mw, mh = 0, 0
@@ -888,13 +894,7 @@ getmetatable(tmps).__index.size = function(font, str)
 				end
 			end -- ignore colors and all that
 		elseif type(v) == "string" then
-			local w, h
-			if word_size_cache[font][fstyle][v] then
-				w, h = word_size_cache[font][fstyle][v][1], word_size_cache[font][fstyle][v][2]
-			else
-				w, h = fontoldsize(font, v)
-				word_size_cache[font][fstyle][v] = {w, h}
-			end
+			local w, h = fontcachewordsize(font, fstyle, v)
 			if h > mh then mh = h end
 			mw = mw + w
 		end -- ignore the rest
@@ -1006,6 +1006,7 @@ end
 
 tstring.__tstr_cache = {}
 local tstring_cache = tstring.__tstr_cache
+setmetatable(tstring_cache, {__mode="v"})
 
 --- Parse a string and return a tstring
 function string.toTString(str)
@@ -1065,8 +1066,8 @@ function tstring:toTString() return self end
 --- Tablestrings can not be formated, this just returns self
 function tstring:format() return self end
 
-function tstring:splitLines(max_width, font)
-	local space_w = fontoldsize(font, " ")
+function tstring:splitLines(max_width, font, max_lines)
+	local fstyle = font:getStyle()
 	local ret = tstring{}
 	local cur_size = 0
 	local max_w = 0
@@ -1082,21 +1083,30 @@ function tstring:splitLines(max_width, font)
 					ret[#ret+1] = true
 					max_w = math.max(max_w, cur_size)
 					cur_size = 0
+					if max_lines then
+						max_lines = max_lines - 1
+						if max_lines <= 0 then break end
+					end
 				else
-					local w, h = fontoldsize(font, vv)
+					local w, h = fontcachewordsize(font, fstyle, vv)
 					if cur_size + w < max_width then
 						cur_size = cur_size + w
 						ret[#ret+1] = vv
 					else
 						ret[#ret+1] = true
-						ret[#ret+1] = vv
 						max_w = math.max(max_w, cur_size)
+						if max_lines then
+							max_lines = max_lines - 1
+							if max_lines <= 0 then break end
+						end
+						ret[#ret+1] = vv
 						cur_size = w
 					end
 				end
 			end
 		elseif tv == "table" and v[1] == "font" then
 			font:setStyle(v[2])
+			fstyle = v[2]
 			ret[#ret+1] = v
 		elseif tv == "table" and v[1] == "extra" then
 			ret[#ret+1] = v
@@ -1213,6 +1223,7 @@ function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
 				r, g, b = v[2], v[3], v[4]
 			elseif v[1] == "font" then
 				font:setStyle(v[2])
+				fstyle = v[2]
 			elseif v[1] == "extra" then
 				--
 			elseif v[1] == "uid" then
@@ -1238,9 +1249,10 @@ function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
 end
 
 function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_alpha, on_word)
-	local list = self:splitLines(max_width, font)
+	local list = self:splitLines(max_width, font, max_lines)
 	max_lines = util.bound(max_lines or #list, 1, #list)
 	local fh = font:lineSkip()
+	local fstyle = font:getStyle()
 	local w, h = 0, 0
 	r, g, b = r or 255, g or 255, b or 255
 	local oldr, oldg, oldb = r, g, b
@@ -1257,7 +1269,7 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			if on_word_w and on_word_h then
 				w, h = on_word_w, on_word_h
 			else
-				local dw, dh = fontoldsize(font, v)
+				local dw, dh = fontcachewordsize(font, fstyle, v)
 				last_line_h = math.max(last_line_h, dh)
 				s:drawStringBlended(font, v, x + w, y + h, r, g, b, not no_alpha)
 				w = w + fontoldsize(font, v)
