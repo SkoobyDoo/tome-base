@@ -718,7 +718,8 @@ function string.removeUIDCodes(str)
 end
 
 function string.splitLine(str, max_width, font)
-	local space_w = font:size(" ")
+	local fontoldsize = font.simplesize or font.size
+	local space_w = fontoldsize(font, " ")
 	local lines = {}
 	local cur_line, cur_size = "", 0
 	local v
@@ -726,7 +727,7 @@ function string.splitLine(str, max_width, font)
 	for i = 1, #ls do
 		local v = ls[i]
 		local shortv = v:lpegSub("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", "")
-		local w, h = font:size(shortv)
+		local w, h = fontoldsize(font, shortv)
 
 		if cur_size + space_w + w < max_width then
 			cur_line = cur_line..(cur_size==0 and "" or " ")..v
@@ -977,10 +978,10 @@ function tstring:maxWidth(font)
 	local old_style = font:getStyle()
 	local line_max = 0
 	local v
-	local w, h = font:size("")
+	local w, h = fontoldsize(font, "")
 	for i = 1, #self do
 		v = self[i]
-		if type(v) == "string" then line_max = line_max + font:size(v) + 1
+		if type(v) == "string" then line_max = line_max + fontoldsize(font, v) + 1
 	elseif type(v) == "table" then if v[1] == "uid" then line_max = line_max + h -- UID surface is same as font size
 		elseif v[1] == "font" and v[2] == "bold" then font:setStyle("bold")
 		elseif v[1] == "font" and v[2] == "normal" then font:setStyle("normal") end
@@ -1061,7 +1062,7 @@ function tstring:toTString() return self end
 function tstring:format() return self end
 
 function tstring:splitLines(max_width, font)
-	local space_w = font:size(" ")
+	local space_w = fontoldsize(font, " ")
 	local ret = tstring{}
 	local cur_size = 0
 	local max_w = 0
