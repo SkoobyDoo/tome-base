@@ -111,7 +111,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = chrono_req1,
-	getRange = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
+	getRange = 10,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end, -- Duration of mines
 	trapPower = function(self,t) return math.max(1,self:combatScale(self:getTalentLevel(t) * self:getMag(15, true), 0, 0, 75, 75)) end, -- Used to determine detection and disarm power, about 75 at level 50
@@ -311,7 +311,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 10,
 	tactical = { DISABLE = 2 },
-	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
+	range = 10,
 	requires_target = true,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 30, 10, 20) end,
@@ -319,7 +319,6 @@ newTalent{
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), nowarning=true, talent=t}
 	end,
-	no_energy=true,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
@@ -407,7 +406,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
 	tactical = { DISABLE = 2 },
-	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
+	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
