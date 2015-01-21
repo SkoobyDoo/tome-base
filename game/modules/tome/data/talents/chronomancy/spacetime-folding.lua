@@ -111,7 +111,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = chrono_req1,
-	getRange = = function(self, t) return 10 end,
+	getRange = function(self, t) return 10 end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end, -- Duration of mines
 	trapPower = function(self,t) return math.max(1,self:combatScale(self:getTalentLevel(t) * self:getMag(15, true), 0, 0, 75, 75)) end, -- Used to determine detection and disarm power, about 75 at level 50
