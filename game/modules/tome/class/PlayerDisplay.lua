@@ -32,6 +32,7 @@ function _M:init(x, y, w, h, bgcolor, font, size)
 	self.font = core.display.newFont(font, size)
 	self.fontbig = core.display.newFont(font, size * 2)
 	self.mouse = Mouse.new()
+	self.tex_cache = {textures={}, texture_bars={}}
 	self:resize(x, y, w, h)
 end
 
@@ -74,11 +75,19 @@ function _M:mouseTooltip(text, w, h, x, y, click)
 end
 
 function _M:makeTexture(text, x, y, r, g, b, max_w)
-	local s = self.surface_line
-	s:erase(0, 0, 0, 0)
-	s:drawColorStringBlended(self.font, text, 0, 0, r, g, b, true, max_w)
+	-- Check for cache
+	local cached = self.tex_cache.textures[text]
+	local cached_ok = cached and cached.r == r and cached.g == g and cached.b == b and cached.max_w == max_w
+	if not cached_ok then
+		local s = self.surface_line
+		s:erase(0, 0, 0, 0)
+		s:drawColorStringBlended(self.font, text, 0, 0, r, g, b, true, max_w)
 
-	local item = { s:glTexture() }
+		local item = {r=r, g=g, b=b, max_w = max_w, s:glTexture()}
+		self.tex_cache.textures[text] = item
+		cached = item
+	end
+	local item = table.clone(cached)
 	item.x = x
 	item.y = y
 	item.w = self.w
@@ -88,20 +97,33 @@ function _M:makeTexture(text, x, y, r, g, b, max_w)
 	return item.w, item.h, item.x, item.y
 end
 
-function _M:makeTextureBar(text, nfmt, val, max, reg, x, y, r, g, b, bar_col, bar_bgcol)
-	local s = self.surface_line
-	s:erase(0, 0, 0, 0)
-	s:erase(bar_bgcol.r, bar_bgcol.g, bar_bgcol.b, 255, self.bars_x, h, self.bars_w, self.font_h)
-	s:erase(bar_col.r, bar_col.g, bar_col.b, 255, self.bars_x, h, self.bars_w * val / max, self.font_h)
+local function samecolor(c1, c2)
+	return (c1 == c2) or (c1.r == c2.r and c1.g == c2.g and c1.b == c2.b)
+end
 
-	s:drawColorStringBlended(self.font, text, 0, 0, r, g, b, true)
-	s:drawColorStringBlended(self.font, (nfmt or "%d/%d"):format(val, max), self.bars_x + 5, 0, r, g, b)
-	if reg and reg ~= 0 then
-		local reg_txt = (" (%s%.2f)"):format((reg > 0 and "+") or "",reg)
-		local reg_txt_w = self.font:size(reg_txt)
-		s:drawColorStringBlended(self.font, reg_txt, self.bars_x + self.bars_w - reg_txt_w - 3, 0, r, g, b)
+function _M:makeTextureBar(text, nfmt, val, max, reg, x, y, r, g, b, bar_col, bar_bgcol)
+	local cached = self.tex_cache.texture_bars[text]
+	-- it's a bunch of number comparisons so it's sufficiently fast for jit
+	local cached_ok = cached and (nfmt == cached.nfmt) and (val == cached.val) and (max == cached.max) and (reg == cached.reg) and
+		(r == cached.r) and (g == cached.g) and (b == cached.b) and samecolor(bar_col, cached.bar_col) and samecolor(bar_bgcol, cached.bar_bgcol)
+	if not cached_ok then
+		local s = self.surface_line
+		s:erase(0, 0, 0, 0)
+		s:erase(bar_bgcol.r, bar_bgcol.g, bar_bgcol.b, 255, self.bars_x, h, self.bars_w, self.font_h)
+		s:erase(bar_col.r, bar_col.g, bar_col.b, 255, self.bars_x, h, self.bars_w * val / max, self.font_h)
+
+		s:drawColorStringBlended(self.font, text, 0, 0, r, g, b, true)
+		s:drawColorStringBlended(self.font, (nfmt or "%d/%d"):format(val, max), self.bars_x + 5, 0, r, g, b)
+		if reg and reg ~= 0 then
+			local reg_txt = (" (%s%.2f)"):format((reg > 0 and "+") or "",reg)
+			local reg_txt_w = self.font:size(reg_txt)
+			s:drawColorStringBlended(self.font, reg_txt, self.bars_x + self.bars_w - reg_txt_w - 3, 0, r, g, b)
+		end
+		local item = {nfmt=nfmt, val=val, max=max, reg=reg, r=r, g=g, b=b, bar_col=bar_col, bar_bgcol=bar_bgcol, s:glTexture()}
+		self.tex_cache.texture_bars[text] = item
+		cached = item
 	end
-	local item = { s:glTexture() }
+	local item = table.clone(cached)
 	item.x = x
 	item.y = y
 	item.w = self.w
