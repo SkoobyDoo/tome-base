@@ -963,6 +963,10 @@ function tstring:merge(v)
 	return self
 end
 
+function tstring:clone()
+	return tstring(table.clone(self))
+end
+
 function tstring:countLines()
 	local nb = 1
 	local v
@@ -1005,7 +1009,7 @@ local tstring_cache = tstring.__tstr_cache
 
 --- Parse a string and return a tstring
 function string.toTString(str)
-	if tstring_cache[str] then return tstring(tstring_cache[str]) end
+	if tstring_cache[str] then return tstring_cache[str]:clone() end
 	local tstr = tstring{}
 	local list = str:split(("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#") + lpeg.P"\n", true)
 	for i = 1, #list do
@@ -1032,7 +1036,7 @@ function string.toTString(str)
 		end
 	end
 	tstring_cache[str] = tstr
-	return tstring(tstr)
+	return tstr:clone()
 end
 function string:toString() return self end
 
