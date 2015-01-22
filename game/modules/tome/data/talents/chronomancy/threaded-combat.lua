@@ -109,7 +109,7 @@ newTalent{
 	require = chrono_req_high2,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return self:combatTalentScale(t, 20, 50)/100 end,
+	getPercent = function(self, t) return self:combatTalentScale(t, 10, 50)/100 end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t) * 100
 		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initiated the attack.]])
@@ -124,7 +124,7 @@ newTalent{
 	points = 5,
 	cooldown = 8,
 	fixed_cooldown = true,
-	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 18) end,
 	tactical = { ATTACKAREA = { weapon = 3 } , DISABLE = 3 },
 	requires_target = true,
 	range = function(self, t)
@@ -204,7 +204,7 @@ newTalent{
 	require = chrono_req_high4,
 	mode = "passive",
 	points = 5,
-	getDamagePenalty = function(self, t) return 60 - self:combatTalentLimit(t, 30, 0, 20) end,
+	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 60) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check
 		if not self.turn_procs.blade_warden then 

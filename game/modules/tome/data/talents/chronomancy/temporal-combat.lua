@@ -211,7 +211,7 @@ newTalent{
 	type = {"chronomancy/temporal-combat", 2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	cooldown = 24,
 	fixed_cooldown = true,
 	tactical = { HEAL = 1 },
@@ -281,15 +281,15 @@ newTalent{
 	require = chrono_req4,
 	points = 5,
 	cooldown = 8,
-	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
 	requires_target = true,
 	range = function(self, t)
-		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
+		if self:hasArcheryWeapon() then return util.getval(archery_range, self, t) end
 		return 1
 	end,
-	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
-	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
+	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
+	speed = function(self, t) return self:hasArcheryWeapon() and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
@@ -297,14 +297,13 @@ newTalent{
 		target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {})
 	end,
 	action = function(self, t)
-		local mainhand, offhand = self:hasDualWeapon()
 
-		if self:hasArcheryWeapon("bow") then
+		if self:hasArcheryWeapon() then
 			-- Ranged attack
 			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
 			if not targets then return end
 			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
-		elseif mainhand then
+		else
 			-- Melee attack
 			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 			local x, y, target = self:getTarget(tg)
@@ -324,7 +323,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Attack the target with either your bow or melee weapons for %d%% damage.
+		return ([[Attack the target with either your ranged or melee weapons for %d%% damage.
 		If the attack hits you'll breach the target's immunities, reducing armor hardiness, stun, pin, blindness, and confusion immunity by 50%% for %d turns.
 		Breach chance scales with your Spellpower.]])
 		:format(damage, duration)
