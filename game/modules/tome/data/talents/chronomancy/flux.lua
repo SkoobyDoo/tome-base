@@ -76,6 +76,7 @@ newTalent{
 	callbackOnHit = function(self, t, cb, src)
 		local absorb = cb.value * t.getPercent(self, t)
 		local paradox = absorb*t.getConversionRatio(self, t)
+		
 		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
 		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
 		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
@@ -185,9 +186,11 @@ newTalent{
 	doTwistFate = function(self, t, twist)
 		local eff = self:hasEffect(self.EFF_TWIST_FATE)
 		eff.twisted = twist or false
-		local anom = self:getTalentFromId(eff.talent)
 		
+		-- Call the anomoly action function directly
+		local anom = self:getTalentFromId(eff.talent)
 		anom.action(self, anom)
+
 		self:incParadox(-eff.paradox)
 		self:removeEffect(self.EFF_TWIST_FATE)
 	end,
