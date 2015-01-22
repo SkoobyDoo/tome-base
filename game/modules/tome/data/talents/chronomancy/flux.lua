@@ -29,6 +29,7 @@ newTalent{
 	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
 	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
 	anomaly_type = "no-major",
+	no_energy = true,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "anomaly_paradox_recovery", t.getParadoxMulti(self, t))
 	end,
@@ -185,6 +186,7 @@ newTalent{
 		local eff = self:hasEffect(self.EFF_TWIST_FATE)
 		eff.twisted = twist or false
 		local anom = self:getTalentFromId(eff.talent)
+		
 		anom.action(self, anom)
 		self:incParadox(-eff.paradox)
 		self:removeEffect(self.EFF_TWIST_FATE)

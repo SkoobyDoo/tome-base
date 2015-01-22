@@ -120,7 +120,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -167,7 +166,6 @@ newTalent{
 	range = function(self, t) return getAnomalyRange(self, t) end,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=10, radius=self:getTalentRadius(t)}
@@ -214,7 +212,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -271,7 +268,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), nowarning=true}
@@ -317,7 +313,6 @@ newTalent{
 	cooldown =0,
 	range = 10,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="bolt", nowarning=true, range=10, nolock=true, simple_dir_request=true, talent=t}
@@ -412,7 +407,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
@@ -457,7 +451,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -503,7 +496,6 @@ newTalent{
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
 	requires_target = true,
-	no_energy = true, 
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
@@ -612,8 +604,7 @@ newTalent{
 	cooldown =0,
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
-	direct_hit = true,
-	no_energy = true, 
+	direct_hit = true,	
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -658,8 +649,7 @@ newTalent{
 	cooldown =0,
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
-	direct_hit = true,
-	no_energy = true, 
+	direct_hit = true,	
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
@@ -704,7 +694,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -750,7 +739,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -796,7 +784,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
@@ -840,7 +827,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
@@ -884,7 +870,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
@@ -932,7 +917,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -976,7 +960,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1022,7 +1005,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1056,7 +1038,6 @@ newTalent{
 	range = 10,
 	radius = 1,
 	direct_hit = true,
-	no_energy = true, 
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true}
@@ -1134,7 +1115,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1195,8 +1175,8 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
-	requires_target = true,
+
+requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
@@ -1241,7 +1221,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1279,7 +1258,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1322,7 +1300,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1387,7 +1364,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1445,7 +1421,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1488,7 +1463,6 @@ newTalent{
 	range = 50,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -1531,7 +1505,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -1572,7 +1545,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -1613,7 +1585,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -1660,8 +1631,8 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true, 
-	requires_target = true,
+
+requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
@@ -1694,7 +1665,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1752,7 +1722,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1829,7 +1798,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -1923,7 +1891,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
@@ -2005,7 +1972,6 @@ newTalent{
 	range = 10,
 	radius = function(self, t) return getAnomalyRadius(self, t) end,
 	direct_hit = true,
-	no_energy = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}

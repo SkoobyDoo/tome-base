@@ -2722,9 +2722,8 @@ newEffect{
 	deactivate = function(self, eff)
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
-				self:forceUseTalent(eff.talent, {ignore_energy=true, force_target=self})
+				self:forceUseTalent(eff.talent, {force_target=self})
 				self:incParadox(-eff.paradox)
-				self:useEnergy(self:getSpeed("spell") * game.energy_to_act)
 			end
 		end
 	end,
