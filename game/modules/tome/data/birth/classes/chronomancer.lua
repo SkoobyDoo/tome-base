@@ -23,7 +23,9 @@ newBirthDescriptor{
 	locked = function() return profile.mod.allow_build.chronomancer end,
 	locked_desc = "Some do not walk upon the straight road others follow. Seek the hidden paths outside the normal course of life.",
 	desc = {
-		"With one foot literally in the past and one in the future, Chronomancers manipulate the present at a whim and wield a power that only bows to nature's own need to keep the balance. The wake in spacetime they leave behind them makes their own Chronomantic abilites that much stronger and that much harder to control.  The wise Chronomancer learns to maintain the balance between his own thirst for cosmic power and the universe's need to flow undisturbed, for the hole he tears that amplifies his own abilities just may be the same hole that one day swallows him.",
+		"Exploiting a hole in the fabric of spacetime, Chronomancers learn to pull threads from other timelines into their own.",
+		"Pulling these threads creates tension and the harder they pull the more tension is produced.",
+		"Constantly they manage this tension, which they call Paradox, to avoid or control the anomalies they inevitably unleash on the world around them.",
 	},
 	descriptor_choices =
 	{
