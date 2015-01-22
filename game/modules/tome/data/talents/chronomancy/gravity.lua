@@ -236,7 +236,7 @@ newTalent{
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
-	getSlow = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
+	getSlow = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 8))) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
