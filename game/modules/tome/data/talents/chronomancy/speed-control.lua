@@ -26,7 +26,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 2))) end,
 	callbackOnMove = function(self, t, moved, force, ox, oy)
 		if not force and moved and ox and oy and (ox ~= self.x or oy ~= self.y) then
 			if self.turn_procs.celerity then return end -- temp fix to prevent over stacking
@@ -50,7 +50,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/200 end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 2))) end,
 	callbackOnTalentPost = function(self, t,  ab)
 		if ab.type[1]:find("^chronomancy/") then
 			if self.turn_procs.time_dilation then return end -- temp fix to prevent over stacking
