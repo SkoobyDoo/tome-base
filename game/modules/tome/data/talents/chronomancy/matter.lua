@@ -38,12 +38,18 @@ newTalent{
 	getAshes = function(self, t) return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
+		-- Check for digs first
+		local digs = self:isTalentActive(self.T_DISINTEGRATION) and self:callTalent(self.T_DISINTEGRATION, "getDigs")
 		local tg = self:getTalentTarget(t)
+		
+		-- Just for targeting change to pass terrain
+		if digs then tg.pass_terrain = true end
 		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
 		
-		-- Check for digs
-		local digs = self:isTalentActive(self.T_DISINTEGRATION) and self:callTalent(self.T_DISINTEGRATION, "getDigs")
+		-- Change back pass terrain
+		tg.pass_terrain = nil
+		
 		
 		-- Ashes to Ashes
 		if target and target == self then
