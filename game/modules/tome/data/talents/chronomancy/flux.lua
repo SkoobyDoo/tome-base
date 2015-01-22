@@ -127,15 +127,6 @@ newTalent{
 	end,
 	requires_target = true,
 	direct_hit = true,
-	getDamageType = function(self, t)
-		local damage_type = DamageType.TEMPORAL
-		local dt_name = "temporal"
-		if self:isTalentActive(self.T_GRAVITY_LOCUS) then
-			damage_type = DamageType.PHYSICAL
-			dt_name = "physical"
-		end
-		return damage_type, dt_name
-	end,
 	doAnomaly = function(self, t, target, eff)
 		self:project({type=hit}, target.x, target.y, t.getDamageType(self, t), eff.power * eff.dur)
 		target:removeEffect(target.EFF_ATTENUATE)
@@ -147,16 +138,13 @@ newTalent{
 		local _ _, x, y = self:canProject(tg, x, y)
 		
 		local damage = self:spellCrit(t.getDamage(self, t))
-		local dt_type, dt_name = t.getDamageType(self, t)
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, dt_type=dt_type, dt_name=dt_name, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
+			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end)
-		
-		local particle_name = "temporal_flash"
-		if dt_name == "physical" then particle_name = "gravity_spike" end
-		game.level.map:particleEmitter(x, y, tg.radius, particle_name, {radius=tg.radius})
+
+		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
 		game:playSoundNear(self, "talents/tidalwave")
 
 		return true
@@ -166,11 +154,9 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
 		local reduction = t.getReduction(self, t)
-		local dt_type, dt_name = t.getDamageType(self, t)
-		return ([[Deals %0.2f %s damage over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
-		If you have Gravity Locus sustained this spell will deal physical damage, otherwise it deals temporal damage.
+		return ([[Deals %0.2f temporal damage over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
 		If the target is hit by an Anomaly the remaining damage will be done instantly.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, dt_type, damage), dt_name, duration, radius, reduction)
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, reduction)
 	end,
 }
 

@@ -3217,7 +3217,7 @@ newEffect{
 newEffect{
 	name = "ATTENUATE", image = "talents/attenuate.png",
 	desc = "Attenuate",
-	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f %s damage per turn."):format(eff.power, eff.dt_name) end,
+	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power, eff.dt_name) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
@@ -3234,7 +3234,7 @@ newEffect{
 		return old_eff
 	end,
 	on_timeout = function(self, eff)
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, eff.dt_type, eff.power)
+		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
 	end,
 }
 
