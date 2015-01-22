@@ -27,8 +27,8 @@ newTalent{
 	mode = "passive",
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	callbackOnTalentPost = function(self, t,  ab)
-		if ab.type[1]:find("^chronomancy/") then
+	callbackOnMove = function(self, t, moved, force, ox, oy)
+		if not force and moved and ox and oy and (ox ~= self.x or oy ~= self.y) then
 			if self.turn_procs.celerity then return end -- temp fix to prevent over stacking
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_CELERITY, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
@@ -51,8 +51,8 @@ newTalent{
 	mode = "passive",
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/200 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	callbackOnMove = function(self, t, moved, force, ox, oy)
-		if not force and moved and ox and oy and (ox ~= self.x or oy ~= self.y) then
+	callbackOnTalentPost = function(self, t,  ab)
+		if ab.type[1]:find("^chronomancy/") then
 			if self.turn_procs.time_dilation then return end -- temp fix to prevent over stacking
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_TIME_DILATION, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
@@ -75,24 +75,18 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 24,
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
-	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/200 end,
+	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	no_energy = true,
-	on_pre_use = function(self, t, silent)
-		if not (self:hasEffect(self.EFF_CELERITY) or self:hasEffect(self.EFF_TIME_DILATION)) then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be active to use Haste") end return false end return true 
-	end,
 	action = function(self, t)
-		local celerity = self:hasEffect(self.EFF_CELERITY) and self:hasEffect(self.EFF_CELERITY).charges or 0
-		local dilation = self:hasEffect(self.EFF_TIME_DILATION) and self:hasEffect(self.EFF_TIME_DILATION).charges or 0
-		local stacks = dilation + celerity
 		
-		self:setEffect(self.EFF_HASTE, t.getDuration(self, t), {power=stacks*t.getSpeed(self, t)})
+		self:setEffect(self.EFF_HASTE, t.getDuration(self, t), {power=t.getSpeend(self, t)})
 		return true
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local speed = t.getSpeed(self, t) * 100
-		return ([[Increases your global speed by %d%% per stack of Celerity and Time Dilation.  The effect lasts %d game turns.]]):format(speed, duration)
+		return ([[Increases your global speed by %d%% for %d game turns.]]):format(speed, duration)
 	end,
 }
 
@@ -106,11 +100,6 @@ newTalent{
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
 	no_energy = true,
 	no_npc_use = true,
-	on_pre_use = function(self, t, silent)
-		local dilation = self:hasEffect(self.EFF_TIME_DILATION) and self:hasEffect(self.EFF_TIME_DILATION).charges == 3 
-		local celerity = self:hasEffect(self.EFF_CELERITY) and self:hasEffect(self.EFF_CELERITY).charges == 3
-		if not (dilation or celerity) then if not silent then game.logPlayer(self, "Celerity or Time Dilation must be at full power in order to cast Time Stop.") end return false end return true 
-	end,
 	getReduction = function(self, t) return 100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 4, 1, 3))) end,
 	action = function(self, t)
@@ -122,7 +111,6 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local reduction = t.getReduction(self, t)
-		return ([[Gain %d turns.  During this time your damage will be reduced by %d%%.
-		Time Dilation or Celerity must be fully stacked in order to use this talent.]]):format(duration, reduction)
+		return ([[Gain %d turns.  During this time your damage will be reduced by %d%%.]]):format(duration, reduction)
 	end,
 }
