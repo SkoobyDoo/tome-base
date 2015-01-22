@@ -313,9 +313,6 @@ newTalent{
 			if hitted then
 				target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 			end
-		else
-			game.logPlayer(self, "You cannot use Breach without an appropriate weapon!")
-			return nil
 		end
 
 		return true
