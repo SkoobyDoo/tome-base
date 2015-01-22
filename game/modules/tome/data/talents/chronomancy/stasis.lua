@@ -28,7 +28,7 @@ newTalent{
 	getWilMult = function(self, t) return self:combatTalentScale(t, 0.15, 0.5) end,
 	getTuningAdjustment= function(self, t) return math.floor(self:combatTalentScale(t, 2, 8, "log")) end,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "paradox_will_mutli", t.getWilMult(self, t))
+		self:talentTemporaryValue(p, "paradox_will_multi", t.getWilMult(self, t))
 	end,
 	info = function(self, t)
 		local will = t.getWilMult(self, t)
