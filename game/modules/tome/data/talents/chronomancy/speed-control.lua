@@ -28,8 +28,8 @@ newTalent{
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 2))) end,
 	callbackOnMove = function(self, t, moved, force, ox, oy)
-		if not force and moved and ox and oy and (ox ~= self.x or oy ~= self.y) then
-			if self.turn_procs.celerity then return end -- temp fix to prevent over stacking
+		if moved and ox and oy and (ox ~= self.x or oy ~= self.y) then
+			if self.turn_procs.celerity then return end
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_CELERITY, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
 			self.turn_procs.celerity = true
@@ -38,8 +38,7 @@ newTalent{
 	info = function(self, t)
 		local speed = t.getSpeed(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[When you move you gain %d%% movement speed for %d turns.  This effect stacks up to three times but can only occur once per turn.
-		]]):format(speed, duration)
+		return ([[When you move you gain %d%% movement speed for %d turns.  This effect stacks up to three times but can only occur once per turn.]]):format(speed, duration)
 	end,
 }
 
@@ -53,7 +52,7 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 2))) end,
 	callbackOnTalentPost = function(self, t,  ab)
 		if ab.type[1]:find("^chronomancy/") then
-			if self.turn_procs.time_dilation then return end -- temp fix to prevent over stacking
+			if self.turn_procs.time_dilation then return end
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_TIME_DILATION, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
 			self.turn_procs.time_dilation = true
@@ -79,8 +78,7 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	no_energy = true,
 	action = function(self, t)
-		
-		self:setEffect(self.EFF_HASTE, t.getDuration(self, t), {power=t.getSpeend(self, t)})
+		self:setEffect(self.EFF_HASTE, t.getDuration(self, t), {power=t.getSpeed(self, t)})
 		return true
 	end,
 	info = function(self, t)
