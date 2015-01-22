@@ -48,9 +48,9 @@ function _M:display(x, y)
 	self.middle.t:toScreenFull(x, y + self.top.h, self.middle.w, self.h - self.top.h - self.bottom.h, self.middle.tw, self.middle.th)
 	self.pos = util.minBound(self.pos, 0, self.max)
 	if self.inverse then
-		y = y + self.h - (self.pos / self.max) * (self.h - self.bottom.h - self.top.h - self.sel.h * 0.5) + self.sel.h * 0.5
+		y = y + self.h - (self.pos / self.max) * (self.h - self.bottom.h - self.top.h - self.sel.h) - self.sel.h * 0.5 - self.bottom.h
 	else
-		y = y + (self.pos / self.max) * (self.h - self.bottom.h - self.top.h - self.sel.h * 0.5) + self.sel.h * 0.5
+		y = y + (self.pos / self.max) * (self.h - self.bottom.h - self.top.h - self.sel.h) - self.sel.h * 0.5 + self.top.h
 	end
 	self.sel.t:toScreenFull(x - (self.sel.w - self.top.w) * 0.5, y, self.sel.w, self.sel.h, self.sel.tw, self.sel.th)
 end
