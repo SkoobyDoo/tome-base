@@ -42,11 +42,31 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
 		
+		-- Check for digs
+		local digs = self:isTalentActive(self.T_DISINTEGRATION) and self:callTalent(self.T_DISINTEGRATION, "getDigs")
+		
+		-- Ashes to Ashes
 		if target and target == self then
 			tg = t.getAshes(self, t)
+			-- We do our digs seperatly and first so we can damage stuff on the other side
+			if digs then
+				game.level.map:addEffect(self,
+					self.x, self.y, 3,
+					DamageType.DIG, digs,
+					tg.radius,
+					5, nil,
+					nil,
+					function(e)
+						e.x = e.src.x
+						e.y = e.src.y
+						return true
+					end,
+					tg.selffire
+				)
+			end
 			game.level.map:addEffect(self,
 				self.x, self.y, 3,
-				DamageType.MATTER, self:spellCrit(t.getDamage(self, t)/3),
+				DamageType.WARP, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
 				engine.MapEffect.new{color_br=180, color_bg=100, color_bb=255, effect_shader="shader_images/magic_effect.png"},
@@ -59,8 +79,11 @@ newTalent{
 			)
 			
 			game:playSoundNear(self, "talents/cloud")
-		else		
-			self:project(tg, x, y, DamageType.MATTER, self:spellCrit(t.getDamage(self, t)))
+		else
+			-- and Dust to Dust
+			if digs then for i = 1, digs do self:project(tg, x, y, DamageType.DIG, 1) end end
+		
+			self:project(tg, x, y, DamageType.WARP, self:spellCrit(t.getDamage(self, t)))
 			local _ _, _, _, x, y = self:canProject(tg, x, y)
 			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
 			game:playSoundNear(self, "talents/arcane")
@@ -183,7 +206,7 @@ newTalent{
 					end,
 					dig = function(src, x, y, old)
 						-- Explode!
-						local self = game.level.map(x, y, Map.TERRAIN)
+						local self = game.level.map(x, y, engine.Map.TERRAIN)
 						local t = self.summoner:getTalentFromId(self.summoner.T_MATERIALIZE_BARRIER)
 						local tg = {type="ball", range=0, radius = self.summoner:getTalentRadius(t), talent=t, x=self.x, y=self.y}
 						self.summoner.__project_source = self
