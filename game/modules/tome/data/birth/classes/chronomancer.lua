@@ -113,8 +113,8 @@ newBirthDescriptor{
 	locked = function() return profile.mod.allow_build.chronomancer_temporal_warden end,
 	locked_desc = "We preserve the past to protect the future. The hands of time are guarded by the arms of war.",
 	desc = {
-		"The Temporal Wardens have learned to blend archery, dual-weapon fighting, and chronomancy into a fearsome whole.",
-		"Their study of chronomancy enables them to amplify their own physical and magical abilities, and to manipulate the speed of themselves and those around them.",
+		"Their lifelines braided, Temporal Wardens have learned to work with their other selves across multiple timelines.",
+		"Through their study of chronomancy, they learn to blend archery and duel-weapon fighting, seemlessly switching from one to the other.",
 		"Their most important stats are: Magic, Dexterity, Constitution, and Willpower",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +0 Strength, +2 Dexterity, +2 Constitution",
