@@ -193,11 +193,6 @@ newTalent{
 	getSlow = function(self, t) return self:combatTalentLimit(t, 80, 10, 50) end,
 	getAnti = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
 	getConversion= function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
-	callbackOnMeleeHit = function(self, t, target)
-		if not self.dead and self:isTalentActive(self.T_GRAVITY_LOCUS) then
-			self:project({type="hit", talent=t}, target.x, target.y, DamageType.GRAVITY, {dam=t.getDamage(self, t), anti=true, dur=2, apply=getParadoxSpellpower(self, t)})
-		end
-	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
 		local particle = Particles.new("ultrashield", 1, {rm=204, rM=220, gm=102, gM=120, bm=0, bM=0, am=35, aM=90, radius=0.5, density=10, life=28, instop=100})
