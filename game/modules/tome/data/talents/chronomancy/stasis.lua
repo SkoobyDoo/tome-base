@@ -76,41 +76,30 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 12,
+	cooldown = 8,
 	tactical = { ATTACKAREA = 1, DISABLE = 3 },
 	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(t, 2.3, 4.3))) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 170, getParadoxSpellpower(self, t)) end,
-	getDamageType = function(self, t)
-		local damage_type = DamageType.TEMPORAL
-		local dt_name = "temporal"
-		if self:isTalentActive(self.T_GRAVITY_LOCUS) then
-			damage_type = DamageType.PHYSICAL
-			dt_name = "physical"
-		end
-		return damage_type, dt_name
-	end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 		
-		
-		local dt_type, dt_name = t.getDamageType(self, t)
 		local dam = self:spellCrit(t.getDamage(self, t))
 		local dur = t.getDuration(self, t)
 		
 		local grids = self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
-				self:project({type="hit"}, px, py, dt_type, dam)
+				self:project({type="hit"}, px, py, DamageType.TEMPORAL, dam)
 				
 				-- Apply Stun or Time Prison
 				if self:hasEffect(self.EFF_STATIC_HISTORY) then
@@ -129,9 +118,7 @@ newTalent{
 			end
 		end)
 		
-		local particle_name = "temporal_flash"
-		if dt_name == "physical" then particle_name = "gravity_spike" end
-		game.level.map:particleEmitter(x, y, tg.radius, particle_name, {radius=tg.radius, tx=x, ty=y})
+		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius, tx=x, ty=y})
 		game:playSoundNear(self, "talents/tidalwave")
 		return true
 	end,
@@ -139,11 +126,9 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self, t)
-		local dt_type, dt_name = t.getDamageType(self, t)
-		return ([[Inflicts %0.2f %s damage, and attempts to stun all creatures in a radius %d ball for %d turns.
-		If you have Gravity Locus sustained this spell will deal physical damage, otherwise it deals temporal damage.
+		return ([[Inflicts %0.2f temporal damage, and attempts to stun all other creatures in a radius %d ball for %d turns.
 		The damage will scale with your Spellpower.]]):
-		format(damDesc(self, dt_type, damage), dt_name, radius, duration)
+		format(damDesc(self, DamageType.TEMPORAL, damage), radius, duration)
 	end,
 }
 
@@ -154,8 +139,8 @@ newTalent{
 	points = 5,
 	cooldown = 24,
 	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3.5, 6.5))) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.40, .60) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3.5, 8.5))) end,
+	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 1, 0.2, .60) end, -- limit 100%
 	no_energy = true,
 	action = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")

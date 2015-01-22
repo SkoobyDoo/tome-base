@@ -190,9 +190,9 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	points = 5,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
-	getSlow = function(self, t) return self:combatTalentLimit(t, 80, 20, 50) end,
+	getSlow = function(self, t) return self:combatTalentLimit(t, 80, 10, 50) end,
 	getAnti = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
+	getConversion= function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
 	callbackOnMeleeHit = function(self, t, target)
 		if not self.dead and self:isTalentActive(self.T_GRAVITY_LOCUS) then
 			self:project({type="hit", talent=t}, target.x, target.y, DamageType.GRAVITY, {dam=t.getDamage(self, t), anti=true, dur=2, apply=getParadoxSpellpower(self, t)})
@@ -202,21 +202,25 @@ newTalent{
 		game:playSoundNear(self, "talents/heal")
 		local particle = Particles.new("ultrashield", 1, {rm=204, rM=220, gm=102, gM=120, bm=0, bM=0, am=35, aM=90, radius=0.5, density=10, life=28, instop=100})
 		return {
+			converttype = self:addTemporaryValue("all_damage_convert", DamageType.PHYSICAL),
+			convertamount = self:addTemporaryValue("all_damage_convert_percent", t.getConversion(self, t)),
 			proj = self:addTemporaryValue("slow_projectiles", t.getSlow(self, t)),
 			particle = self:addParticles(particle)
 		}
 	end,
 	deactivate = function(self, t, p)
+		self:removeTemporaryValue("all_damage_convert", p.converttype)
+		self:removeTemporaryValue("all_damage_convert_percent", p.convertamount)
 		self:removeTemporaryValue("slow_projectiles", p.proj)
 		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
+		local conv = t.getConversion(self, t)
 		local proj = t.getSlow(self, t)
 		local anti = t.getAnti(self, t)
-		return ([[Create a gravity field around you that slows incoming projectiles by %d%% and protects you from all gravity damage and effects.
-		Additionally, damage dealt by Repulsion Blast has a %d%% chance to reduce the target's knockback resistance by half for two turns.
-		Some spells may have their damage type changed to physical by this spell.  See individual talent descriptions for details.]]):format(proj, anti)
+		return ([[Create a gravity field around you that converts %d%% of your damage to physical, slows incoming projectiles by %d%%, and protects you from all gravity damage and effects.
+		Additionally, damage dealt by Repulsion Blast has a %d%% chance to reduce the target's knockback resistance by half for two turns.]]):format(conv, proj, anti)
 	end,
 }
 

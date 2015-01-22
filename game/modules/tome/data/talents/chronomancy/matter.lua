@@ -133,7 +133,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 120, getParadoxSpellpower(self, t)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 6))) end,
 	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
 	target = function(self, t)
@@ -228,7 +228,7 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	getDigs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%end,
 	doStrip = function(self, t, target, type)
 		local what = type == "PHYSICAL" and "physical" or "magical"
 		local p = self:isTalentActive(self.T_DISINTEGRATION)

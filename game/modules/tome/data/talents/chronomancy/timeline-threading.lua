@@ -221,9 +221,6 @@ newTalent{
 	tactical = { ATTACK = 2 },
 	requires_target = true,
 	direct_hit = true,
-	no_npc_use = true,  -- so rares don't learn useless talents
-	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	getPower = function(self, t) return self:combatTalentScale(t, 20, 50, 100) end,
 	target = function(self, t)
