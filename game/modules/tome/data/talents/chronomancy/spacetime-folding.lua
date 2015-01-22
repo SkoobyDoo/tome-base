@@ -137,7 +137,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		return ([[Learn to lay Warp Mines in a radius of 1 out to a range of %d.
 		Warp Mines teleport targets that trigger them either toward you or away from you depending on the type of mine used and inflict %0.2f physical and %0.2f temporal (warp) damage.
-		The mines are hidden traps (%d detection and %d disarm power based on your Magic) and last for %d turns.
+		The mines are hidden traps (%d detection and %d disarm power based on your Magic), last for %d turns, and share a four turn cooldown.
 		The damage caused by your Warp Mines will improve with your Spellpower.]]):
 		format(range, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), detect, disarm, duration) --I5
 	end,
