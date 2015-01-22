@@ -90,6 +90,6 @@ function _M:ok()
 
 	local url = ("http://te4.org/ingame-donate/%s/%s/%s/EUR/%s"):format(self.c_donate.number, self.c_recur.checked and "monthly" or "onetime", (profile.auth and profile.auth.drupid) and profile.auth.drupid or "0", self.donation_source)
 
-	if inside then util.browserOpenUrl(url)
-	else util.browserOpenUrl(url, {webview=true}) end
+	if inside then util.browserOpenUrl(url, {is_external=true})
+	else util.browserOpenUrl(url, {webview=true, is_external=true}) end
 end

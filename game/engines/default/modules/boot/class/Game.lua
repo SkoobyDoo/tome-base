@@ -174,7 +174,7 @@ Now go and have some fun!]]
 	if self.s_log then
 		local w, h = self.s_log:getSize()
 		self.mouse:registerZone(self.w - w, self.h - h, w, h, function(button)
-			if button == "left" then util.browserOpenUrl(self.logged_url) end
+			if button == "left" then util.browserOpenUrl(self.logged_url, {is_external=true}) end
 		end, {button=true})
 	end
 
@@ -412,7 +412,7 @@ function _M:updateNews()
 
 	if self.news.link then
 		self.mouse:registerZone(5, self.tooltip.h - 30, self.tooltip.w, 30, function(button)
-			if button == "left" then util.browserOpenUrl(self.news.link) end
+			if button == "left" then util.browserOpenUrl(self.news.link, {is_external=true}) end
 		end, {button=true})
 	end
 end

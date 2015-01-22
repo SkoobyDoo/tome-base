@@ -150,7 +150,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 			end
 		elseif event == "button" then
 			if citem and citem.url and button == "left" then
-				util.browserOpenUrl(citem.url)
+				util.browserOpenUrl(citem.url, {is_external=true})
 			end
 
 			if gitem and button == "right" then
@@ -183,9 +183,9 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 							local UserInfo = require "engine.dialogs.UserInfo"
 							game:registerDialog(UserInfo.new(data))
 						elseif sel.ui == "profile" then
-							util.browserOpenUrl(data.profile)
+							util.browserOpenUrl(data.profile, {is_external=true})
 						elseif sel.ui == "charsheet" then
-							util.browserOpenUrl(data.char_link)
+							util.browserOpenUrl(data.char_link, {is_external=true})
 						elseif sel.ui == "whisper" then
 							profile.chat:setCurrentTarget(false, citem.login)
 							profile.chat:talkBox()
