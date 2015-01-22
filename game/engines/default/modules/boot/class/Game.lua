@@ -56,16 +56,19 @@ function _M:init()
 	engine.GameEnergyBased.init(self, engine.KeyBind.new(), 100, 100)
 	self.profile_font = FontPackage:get("default")
 
-	local background_name
-	if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
-	else background_name = {"tome3"}
+	self.background = self.__mod_info.keep_background_texture
+
+	if type(self.background) ~= "userdata" then
+		local background_name
+		if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
+		else background_name = {"tome3"}
+		end
+		local value = {name=background_name}
+		local hd = {"Boot:loadBackground", value=value}
+		if self:triggerHook(hd) then background_name = hd.value.name end
+		self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
 	end
 
-	local value = {name=background_name}
-	local hd = {"Boot:loadBackground", value=value}
-	if self:triggerHook(hd) then background_name = hd.value.name end
-
-	self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
 	if self.background then
 		self.background_w, self.background_h = self.background:getSize()
 		self.background, self.background_tw, self.background_th = self.background:glTexture()

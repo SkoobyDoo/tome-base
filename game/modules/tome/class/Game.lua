@@ -2351,6 +2351,18 @@ function _M:setAllowedBuild(what, notify)
 	return true
 end
 
+function _M:unlockBackground(kind, name)
+	if not config.settings['unlock_background_'..kind] then
+		game.log("#ANTIQUE_WHITE#Splash screen unlocked: #GOLD#"..name)
+	end
+	config.settings['unlock_background_'..kind] = true
+	local save = {}
+	for k, v in pairs(config.settings) do if k:find("^unlock_background_") then
+		save[#save+1] = k.."=true"
+	end end
+	game:saveSettings("unlock_background", table.concat(save, "\n"))
+end
+
 function _M:playSoundNear(who, name)
 	if who and (not who.attr or not who:attr("_forbid_sounds")) and self.level and self.level.map.seens(who.x, who.y) then
 		local pos = {x=0,y=0,z=0}

@@ -346,8 +346,11 @@ function _M:listBackgrounds(mod)
 	end
 
 	-- Add the default one
-	local backname = util.getval(mod.background_name) or "tome"
-	defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	-- local backname = util.getval(mod.background_name) or "tome"
+	-- defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	for i, backname in ipairs(mod.background_name) do
+		defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	end
 
 	-- Look for more
 	parse("/addons/")
@@ -365,6 +368,8 @@ function _M:listBackgrounds(mod)
 	local logo = nil
 	if def.logo then logo = {(core.display.loadImage(def.logo) or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()} end
 	if def.umount then def.umount() end
+
+	if mod.keep_background_texture then mod.keep_background_texture = bkgs end
 
 	return bkgs, logo
 end
