@@ -3638,7 +3638,7 @@ newDamageType{
 		if _G.type(dam) == "number" then dam = {dam=dam, apply_power=apply_power or src:combatSpellpower()} end
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam.dam, src=src, apply_power=dam.apply_power, no_ct_effect=true})
+			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam.dam, daze=dam.daze, src=src, apply_power=dam.apply_power, no_ct_effect=true})
 		end
 	end,
 }

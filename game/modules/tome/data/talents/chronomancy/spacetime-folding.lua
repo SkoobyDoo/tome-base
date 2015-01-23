@@ -352,6 +352,7 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
+	getDaze = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t}
 	end,
@@ -374,7 +375,7 @@ newTalent{
 		local dam = self:spellCrit(t.getDamage(self, t))
 		game.level.map:addEffect(self,
 			x, y, t.getDuration(self,t),
-			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, dur=1, src=self, apply=getParadoxSpellpower(self, t)},
+			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, dur=1, daze=t.getDaze(self, t), src=self, apply=getParadoxSpellpower(self, t)},
 			self:getTalentRadius(t),
 			5, nil,
 			particle,
@@ -389,8 +390,10 @@ newTalent{
 		local damage = t.getDamage(self, t)/2
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self, t)
-		return ([[Create a radius %d anti-teleport field for %d turns.  Enemies in the field will be anchored, preventing teleportation and taking %0.2f physical and %0.2f temporal (warp) damage on teleport attempts.
-		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage))
+		local daze = t.getDaze(self, t)
+		return ([[Create a radius %d anti-teleport field for %d turns.  
+		Enemies in the field will be anchored, preventing teleportation and taking %0.2f physical and %0.2f temporal (warp) damage, as well as becoming dazed for %d turns, on teleport attempts.
+		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), daze)
 	end,
 }
 

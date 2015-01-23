@@ -2710,7 +2710,13 @@ newEffect{
 newEffect{
 	name = "TWIST_FATE", image = "talents/twist_fate.png",
 	desc = "Twist Fate",
-	long_desc = function(self, eff) return ("Currently Twisted Anomlay: %s"):format(self:getTalentFromId(eff.talent).name or nil) end,
+	long_desc = function(self, eff) 
+		local t = self:getTalentFromId(eff.talent)
+		return 
+		([[Currently Twisted Anomlay: %s
+		
+		%s]]):format(t.name or "none", t.info(self, t) or "none")
+	end,
 	type = "other",
 	subtype = { time=true },
 	status = "detrimental",
@@ -2723,6 +2729,7 @@ newEffect{
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
 				self:forceUseTalent(eff.talent, {force_target=self})
+				game:playSoundNear(self, "talents/dispel")
 				self:incParadox(-eff.paradox)
 			end
 		end

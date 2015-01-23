@@ -1448,8 +1448,7 @@ function _M:teleportRandom(x, y, dist, min_dist)
 
 	-- Dimensional Anchor, prevent teleports and deal damage
 	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
-		local p = self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR)
-		DamageType:get(DamageType.WARP).projector(p.src or self, self.x, self.y, DamageType.WARP, p.damage)
+		self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport")
 		return
 	end
 
@@ -4334,7 +4333,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 					end
 				else
 					--self:forceUseTalent(anomaly, {ignore_energy=true})
-					self:forceUseTalent(anomaly, {ignore_energy=true, force_target=target or self})
+					self:forceUseTalent(anomaly, {force_target=target or self})
 				end
 			end
 
@@ -4643,7 +4642,6 @@ function _M:preUseTalent(ab, silent, fake)
 		if cost > 0 then
 			local multi = 2 + (self:attr("anomaly_paradox_recovery") or 0)
 			if self:paradoxDoAnomaly(cost * multi, ab.anomaly_type or nil, self:paradoxFailChance(), nil, silent) then
-				self:useEnergy(self:getTalentSpeed(ab) * game.energy_to_act)
 				game:playSoundNear(self, "talents/dispel")
 				return false
 			end

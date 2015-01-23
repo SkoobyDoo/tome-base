@@ -2943,9 +2943,17 @@ newEffect{
 	type = "magical",
 	subtype = { temporal=true, slow=true },
 	status = "detrimental",
-	parameters = { damage=0},
+	parameters = { damage=0, daze=1},
 	on_gain = function(self, err) return "#Target# is anchored.", "+Anchor" end,
 	on_lose = function(self, err) return "#Target# is no longer anchored.", "-Anchor" end,
+	onTeleport = function(self, eff)
+		DamageType:get(DamageType.WARP).projector(eff.src or self, self.x, self.y, DamageType.WARP, eff.damage)
+		game:onTickEnd(function()
+			if self:canBe("stun") then
+				self:setEffect(self.EFF_DAZED, eff.daze, {})
+			end
+		end)
+	end,
 }
 
 newEffect{

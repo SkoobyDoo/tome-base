@@ -36,6 +36,7 @@ newTalent{
 	action = function(self, t)
 		local reduction = self:spellCrit(t.getReduction(self, t))
 		self:paradoxDoAnomaly(reduction, t.anomaly_type, "forced")
+		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
@@ -183,9 +184,12 @@ newTalent{
 	setEffect = function(self, t, talent, paradox)
 		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)
 		self:setEffect(self.EFF_TWIST_FATE, t.getDuration(self, t), {talent=talent, paradox=paradox})
+		
+		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=70, rM=176, gm=130, gM=196, bm=180, bM=222, am=125, aM=125})
 	end,
 	action = function(self, t)
 		t.doTwistFate(self, t, true)
+		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
