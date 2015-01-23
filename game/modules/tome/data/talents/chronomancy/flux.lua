@@ -128,7 +128,7 @@ newTalent{
 	requires_target = true,
 	direct_hit = true,
 	doAnomaly = function(self, t, target, eff)
-		self:project({type=hit}, target.x, target.y, t.getDamageType(self, t), eff.power * eff.dur)
+		self:project({type=hit}, target.x, target.y, DamageType.TEMPORAL, eff.power * eff.dur)
 		target:removeEffect(target.EFF_ATTENUATE)
 	end,
 	action = function(self, t)
