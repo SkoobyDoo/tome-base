@@ -79,6 +79,8 @@ newTalent{
 	no_energy = true,
 	action = function(self, t)
 		self:setEffect(self.EFF_HASTE, t.getDuration(self, t), {power=t.getSpeed(self, t)})
+		
+		game:playSoundNear(self, "talents/heal")
 		return true
 	end,
 	info = function(self, t)
@@ -103,7 +105,9 @@ newTalent{
 	action = function(self, t)
 		self.energy.value = self.energy.value + (t.getDuration(self, t) * 1000)
 		self:setEffect(self.EFF_TIME_STOP, 1, {power=100})
+		
 		game.logSeen(self, "#STEEL_BLUE#%s has stopped time!#LAST#", self.name:capitalize())
+		game:playSoundNear(self, "talents/heal")
 		return true
 	end,
 	info = function(self, t)
