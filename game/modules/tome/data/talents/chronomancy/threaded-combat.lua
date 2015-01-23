@@ -24,7 +24,7 @@ newTalent{
 	type = {"chronomancy/threaded-combat", 1},
 	require = chrono_req_high1,
 	points = 5,
-	cooldown = 6,
+	--cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {weapon = 2}, CLOSEIN = 2, ESCAPE = 2 },
 	requires_target = true,
@@ -66,16 +66,15 @@ newTalent{
 				
 			if hitted then
 				-- Find our teleport location
-				local block_move = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
-				local l = core.fov.line(x, y, self.x, self.y, block_move, true)
-				local lx, ly, is_corner_blocked = l:step(true)
+				local dist = t.getTeleportRange(self, t) / core.fov.distance(x, y, self.x, self.y)
+				local destx, desty = math.floor((self.x - x) * dist + x), math.floor((self.y - y) * dist + y)
+				local l = core.fov.line(x, y, destx, desty, false)
+				local lx, ly, is_corner_blocked = l:step()
 				local ox, oy
-				local dist = t.getTeleportRange(self, t) - 1
 				
-				while game.level.map:isBound(lx, ly) and not is_corner_blocked and dist > 0 do
-					dist = dist - 1
+				while game.level.map:isBound(lx, ly) and not game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move") and not is_corner_blocked do
 					if not game.level.map(lx, ly, Map.ACTOR) then ox, oy = lx, ly end
-					lx, ly, is_corner_blocked = l:step(true)
+					lx, ly, is_corner_blocked = l:step()
 				end
 				
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
