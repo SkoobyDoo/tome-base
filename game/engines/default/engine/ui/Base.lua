@@ -27,6 +27,7 @@ module(..., package.seeall, class.make)
 local gfx_prefix = "/data/gfx/"
 local cache = {}
 local tcache = {}
+local fcache = {}
 
 -- Default font
 _M.font = core.display.newFont("/data/font/DroidSans.ttf", 12)
@@ -93,6 +94,7 @@ end
 function _M:clearCache()
 	cache = {}
 	tcache = {}
+	fcache = {}
 end
 
 function _M:getImage(file, noerror)
@@ -115,6 +117,19 @@ function _M:getUITexture(file)
 	local r = {t=t, w=w, h=h, tw=tw, th=th}
 	tcache[uifile] = r
 	return r
+end
+
+function _M:drawFontLine(font, text, width) -- always draw with white, outputting texture can have it changed
+	local cached = table.getTable(fcache, font, font:getStyle())
+	if cached[text] then return cached[text] end
+	local tex = font:draw(text, width, 255, 255, 255, true)[1]
+	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h}
+	cached[text] = r
+	return r
+end
+
+function _M:textureToScreen(tex, x, y, r, g, b, a)
+	return tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
 end
 
 function _M:makeFrame(base, w, h)
