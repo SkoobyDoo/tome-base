@@ -111,7 +111,7 @@ end
 newTalent{
 	name = "Anomaly Rearrange",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,
@@ -157,7 +157,7 @@ newTalent{
 newTalent{
 	name = "Anomaly Teleport",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,
@@ -203,7 +203,7 @@ newTalent{
 newTalent{
 	name = "Anomaly Swap",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,
@@ -259,7 +259,7 @@ newTalent{
 newTalent{
 	name = "Anomaly Displacement Shield",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,
@@ -305,7 +305,7 @@ newTalent{
 newTalent{
 	name = "Anomaly Wormhole",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,
@@ -398,7 +398,7 @@ newTalent{
 newTalent{
 	name = "Anomaly Probability Travel",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,
@@ -442,7 +442,7 @@ newTalent{
 newTalent{
 	name = "Anomaly Blink",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,
@@ -486,7 +486,7 @@ newTalent{
 newTalent{
 	name = "Anomaly Summon Townsfolk",
 	type = {"chronomancy/anomalies", 1},
-	anomaly_type = "teleport",
+	anomaly_type = "warp",
 	type_no_req = true,
 	no_unlearn_last = true,
 	points = 1,

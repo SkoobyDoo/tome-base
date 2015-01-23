@@ -35,10 +35,10 @@ newChat{ id="welcome",
 			return set_bias({type = "physical", chance=chance}) 
 			end,
 		},
-		{"Teleport", 
+		{"Warp", 
 			action = function() 
 				game.level.map:particleEmitter(game.player.x, game.player.y, 1, "temporal_teleport")
-			return set_bias({type = "teleport", chance=chance})
+			return set_bias({type = "Warp", chance=chance})
 			end,
 		},
 		{"Temporal",
