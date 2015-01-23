@@ -2440,7 +2440,7 @@ newEffect{
 	remove_on_clone = true,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
-		if core.shader.active(4) then
+		if core.shader.allow("volumetric") then
 			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.4, growSpeed=0.004, img="coggy_00"})
 		end
 		self:effectTemporaryValue(eff, "timestopping", 1)
