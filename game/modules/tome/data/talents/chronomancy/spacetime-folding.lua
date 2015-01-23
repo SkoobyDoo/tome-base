@@ -246,67 +246,9 @@ newTalent{
 }
 
 newTalent{
-	name = "Banish",
+	name = "Spatial Tether",
 	type = {"chronomancy/spacetime-folding", 2},
 	require = chrono_req2,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
-	cooldown = 6,
-	tactical = { ESCAPE = 2 },
-	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5.5)) end,
-	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
-	target = function(self, t)
-		return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
-	end,
-	requires_target = true,
-	direct_hit = true,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local hit = false
-
-		self:project(tg, self.x, self.y, function(px, py)
-			local target = game.level.map(px, py, Map.ACTOR)
-			if not target or target == self then return end
-			game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
-			if self:checkHit(getParadoxSpellpower(self, t), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0)) and target:canBe("teleport") then
-				if not target:teleportRandom(target.x, target.y, self:getTalentRadius(t) * 4, self:getTalentRadius(t) * 2) then
-					game.logSeen(target, "The spell fizzles on %s!", target.name:capitalize())
-				else
-					target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
-					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
-					hit = true
-				end
-			else
-				game.logSeen(target, "%s resists the banishment!", target.name:capitalize())
-			end
-		end)
-		
-		if not hit then
-			game:onTickEnd(function()
-				if not self:attr("no_talents_cooldown") then
-					self.talents_cd[self.T_BANISH] = self.talents_cd[self.T_BANISH] /2
-				end
-			end)
-		end
-
-		game:playSoundNear(self, "talents/teleport")
-
-		return true
-	end,
-	info = function(self, t)
-		local radius = self:getTalentRadius(t)
-		local range = t.getTeleport(self, t)
-		return ([[Randomly teleports all targets within a radius of %d around you.  Targets will be teleported between %d and %d tiles from their current location.
-		If no targets are teleported the cooldown will be halved.
-		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
-	end,
-}
-
-newTalent{
-	name = "Spatial Tether",
-	type = {"chronomancy/spacetime-folding", 3},
-	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 8,
@@ -400,8 +342,8 @@ newTalent{
 
 newTalent{
 	name = "Dimensional Anchor",
-	type = {"chronomancy/spacetime-folding", 4},
-	require = chrono_req4,
+	type = {"chronomancy/spacetime-folding", 3},
+	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
@@ -449,5 +391,64 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		return ([[Create a radius %d anti-teleport field for %d turns.  Enemies in the field will be anchored, preventing teleportation and taking %0.2f physical and %0.2f temporal (warp) damage on teleport attempts.
 		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage))
+	end,
+}
+
+
+newTalent{
+	name = "Banish",
+	type = {"chronomancy/spacetime-folding", 4},
+	require = chrono_req4,
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
+	cooldown = 6,
+	tactical = { ESCAPE = 2 },
+	range = 0,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5.5)) end,
+	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
+	target = function(self, t)
+		return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
+	requires_target = true,
+	direct_hit = true,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local hit = false
+
+		self:project(tg, self.x, self.y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if not target or target == self then return end
+			game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
+			if self:checkHit(getParadoxSpellpower(self, t), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0)) and target:canBe("teleport") then
+				if not target:teleportRandom(target.x, target.y, self:getTalentRadius(t) * 4, self:getTalentRadius(t) * 2) then
+					game.logSeen(target, "The spell fizzles on %s!", target.name:capitalize())
+				else
+					target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
+					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
+					hit = true
+				end
+			else
+				game.logSeen(target, "%s resists the banishment!", target.name:capitalize())
+			end
+		end)
+		
+		if not hit then
+			game:onTickEnd(function()
+				if not self:attr("no_talents_cooldown") then
+					self.talents_cd[self.T_BANISH] = self.talents_cd[self.T_BANISH] /2
+				end
+			end)
+		end
+
+		game:playSoundNear(self, "talents/teleport")
+
+		return true
+	end,
+	info = function(self, t)
+		local radius = self:getTalentRadius(t)
+		local range = t.getTeleport(self, t)
+		return ([[Randomly teleports all targets within a radius of %d around you.  Targets will be teleported between %d and %d tiles from their current location.
+		If no targets are teleported the cooldown will be halved.
+		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
 	end,
 }
