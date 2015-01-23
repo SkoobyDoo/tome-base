@@ -253,12 +253,11 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 8,
-	tactical = { ATTACKAREA = { TEMPORAL = 1, PHYSICAL = 1 }, DISABLE = 2 },
+	tactical = { DISABLE = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	requires_target = true,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 30, 10, 20) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 150, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), nowarning=true, talent=t}
 	end,
@@ -273,10 +272,8 @@ newTalent{
 		
 		-- Tether values
 		local power = getParadoxSpellpower(self, t)
-		local dam = self:spellCrit(t.getDamage(self, t))
 		local dest_power = getParadoxSpellpower(self, t, 0.3)
-		local range = self:getTalentRange(t)
-				
+		
 		-- Store the old terrain
 		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
 		if not oe or oe:attr("temporary") then return true end
@@ -288,8 +285,7 @@ newTalent{
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t), 
 			power = power, dest_power = dest_power, chance = t.getChance(self, t),
-			x = x, y = y, target = target, 
-			talent = t, range = range, dam =dam,
+			x = x, y = y, target = target,
 			summoner = self, summoner_gain_exp = true,
 			canAct = false,
 			energy = {value=0},
@@ -297,15 +293,8 @@ newTalent{
 				self:useEnergy()
 				self.temporary = self.temporary - 1
 				
+				-- Teleport
 				if not self.target.dead and (game.level and game.level:hasEntity(self.target)) then
-					-- Warp Beam
-					local tg = {type="beam", start_x=self.x, start_y=self.y, talent=talent, range=self.range}
-					self.summoner:project(tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
-					
-					game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(self.target.x-self.x), math.abs(self.target.y-self.y)), "temporal_lightning", {tx=self.target.x-self.x, ty=self.target.y-self.y})
-					game:playSoundNear(self, "talents/lightning")
-					
-					-- Teleport
 					local hit = self.summoner == self.target or (self.summoner:checkHit(self.power, self.target:combatSpellResist() + (self.target:attr("continuum_destabilization") or 0), 0, 95) and self.target:canBe("teleport"))
 					if hit and rng.percent(self.chance * core.fov.distance(self.x, self.y, self.target.x, self.target.y)) then	
 						game.level.map:particleEmitter(self.target.x, self.target.y, 1, "temporal_teleport")
@@ -326,7 +315,7 @@ newTalent{
 				end
 				
 				-- End the effect?
-				if self.temporary <= 0 or self.target.dead then
+				if self.temporary <= 0 then
 					game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
 					game.level:removeEntity(self)
@@ -346,11 +335,8 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local chance = t.getChance(self, t)
-		local damage = t.getDamage(self, t)/2
-		return ([[Tethers the target to the location for %d turns.  Each turn the tether will inflict %0.2f physical and %0.2f temporal (warp) damage to all targets between itself and the target.
-		For each tile the target moves away from the tether it has a %d%% chance each turn of being teleported back.
-		The damage will scale with your Spellpower.]])
-		:format(duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), chance)
+		return ([[Tethers the target to the location for %d turns.  For each tile the target moves away from the target location it has a %d%% chance each turn of being teleported back to the tether.]])
+		:format(duration, chance)
 	end,
 }
 
