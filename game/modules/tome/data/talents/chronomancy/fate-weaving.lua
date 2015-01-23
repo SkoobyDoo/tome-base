@@ -38,7 +38,7 @@ newTalent{
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		if dam > 0 and src ~= self then
 			if self.turn_procs and not self.turn_procs.spin_fate then
-				t.doSpinFate(self, t)
+				t.doSpin(self, t)
 				self.turn_procs.spin_fate = true
 			end
 		end
@@ -73,7 +73,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you gain Spin and have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
 		If you have Spin Fate active the chance will be increased by 33%% per Spin (to a maximum of 100%% at three Spin.)
-		The duration increase can occur %d times per turn.]]):format(duration, procs)
+		The duration increase can occur up to %d times per turn and the bonus Spin once per turn.]]):format(duration, procs)
 	end,
 }
 
