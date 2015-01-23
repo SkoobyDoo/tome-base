@@ -395,11 +395,10 @@ newTalent{
 			
 			a:project(tg, x, y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target ~= self.summoner then
+				if target and target ~= a.summoner then
 					DamageType:get(DamageType.TEMPORAL).projector(a, px, py, DamageType.TEMPORAL, dam)
 					-- Don't turn back the clock other hounds
-					local target = game.level.map(px, py, Map.ACTOR)
-					if target and target.name ~= "temporal hound" then
+					if target.name ~= "temporal hound" then
 						target:setEffect(target.EFF_TURN_BACK_THE_CLOCK, 3, {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(), min_dur=1})
 					end
 				end
