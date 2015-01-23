@@ -36,7 +36,7 @@ makeWarpMine = function(self, t, x, y, type)
 		type = "temporal", id_by_type=true, unided_name = "trap",
 		display = '^', color=colors.BLUE, image = ("trap/chronomine_%s_0%d.png"):format(type == "toward" and "blue" or "red", rng.avg(1, 4, 3)),
 		shader = "shadow_simulacrum", shader_args = { color = {0.2, 0.2, 0.2}, base = 0.8, time_factor = 1500 },
-		dam = dam, t=t.id, power = power, dest_power = dest_power,
+		dam = dam, talent=t, power = power, dest_power = dest_power,
 		temporary = duration,
 		x = x, y = y, type = type,
 		summoner = self, summoner_gain_exp = true,
@@ -47,7 +47,7 @@ makeWarpMine = function(self, t, x, y, type)
 		end,
 		triggered = function(self, x, y, who)
 			-- Project our damage
-			self.summoner:project({type="hit",x=x,y=y, talent=self.t}, x, y, engine.DamageType.WARP, self.dam)
+			self.summoner:project({type="hit",x=x,y=y, talent=self.talent}, x, y, engine.DamageType.WARP, self.dam)
 			
 			-- Teleport?
 			if not who.dead then
@@ -111,7 +111,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = chrono_req1,
-	getRange = function(self, t) return 10 end,
+	getRange = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end, -- Duration of mines
 	trapPower = function(self,t) return math.max(1,self:combatScale(self:getTalentLevel(t) * self:getMag(15, true), 0, 0, 75, 75)) end, -- Used to determine detection and disarm power, about 75 at level 50
@@ -135,11 +135,12 @@ newTalent{
 		local detect = t.trapPower(self,t)*0.8
 		local disarm = t.trapPower(self,t)
 		local duration = t.getDuration(self, t)
-		return ([[Learn to lay Warp Mines in a radius of 1 out to a range of %d.
-		Warp Mines teleport targets that trigger them either toward you or away from you depending on the type of mine used and inflict %0.2f physical and %0.2f temporal (warp) damage.
-		The mines are hidden traps (%d detection and %d disarm power based on your Magic), last for %d turns, and share a four turn cooldown.
-		The damage caused by your Warp Mines will improve with your Spellpower.]]):
-		format(range, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), detect, disarm, duration) --I5
+		return ([[Learn to lay Warp Mines in a radius of 1.  Warp Mines teleport targets that trigger them either toward you or away from you depending on the type of mine used and inflict %0.2f physical and %0.2f temporal (warp) damage.
+		The mines are hidden traps (%d detection and %d disarm power based on your Magic), last for %d turns, and share a ten turn cooldown.
+		The damage caused by your Warp Mines will improve with your Spellpower.
+		Investing in this talent improves the range of all Spacetime Folding talents.
+		Current Range: %d]]):
+		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), detect, disarm, duration, range) --I5
 	end,
 }
 
@@ -147,11 +148,11 @@ newTalent{
 	name = "Warp Mine Toward",
 	type = {"chronomancy/other", 1},
 	points = 1,
-	cooldown = 4,
+	cooldown = 10,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACKAREA = { TEMPORAL = 1, PHYSICAL = 1 }, CLOSEIN = 2  },
 	requires_target = true,
-	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange")end,
+	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	no_unlearn_last = true,
 	target = function(self, t) return {type="ball", nowarning=true, range=self:getTalentRange(t), radius=1, nolock=true, talent=t} end,	
 	action = function(self, t)
@@ -198,11 +199,11 @@ newTalent{
 	name = "Warp Mine Away",
 	type = {"chronomancy/other", 1},
 	points = 1,
-	cooldown = 4,
+	cooldown = 10,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACKAREA = { TEMPORAL = 1, PHYSICAL = 1 }, ESCAPE = 2  },
 	requires_target = true,
-	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") end,
+	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	no_unlearn_last = true,
 	target = function(self, t) return {type="ball", nowarning=true, range=self:getTalentRange(t), radius=1, nolock=true, talent=t} end,	
 	action = function(self, t)
@@ -252,12 +253,12 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 8,
-	tactical = { DISABLE = 2 },
-	range = 10,
+	tactical = { { ATTACKAREA = { TEMPORAL = 1, PHYSICAL = 1 }, DISABLE = 2 },
+	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	requires_target = true,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 30, 10, 20) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 150, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), nowarning=true, talent=t}
 	end,
@@ -272,8 +273,10 @@ newTalent{
 		
 		-- Tether values
 		local power = getParadoxSpellpower(self, t)
+		local dam = self:spellCrit(t.getDamage(self, t))
 		local dest_power = getParadoxSpellpower(self, t, 0.3)
-		
+		local range = self:getTalentRange(t)
+				
 		-- Store the old terrain
 		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
 		if not oe or oe:attr("temporary") then return true end
@@ -285,7 +288,8 @@ newTalent{
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t), 
 			power = power, dest_power = dest_power, chance = t.getChance(self, t),
-			x = x, y = y, target = target,
+			x = x, y = y, target = target, 
+			talent = t, range = range, dam =dam,
 			summoner = self, summoner_gain_exp = true,
 			canAct = false,
 			energy = {value=0},
@@ -293,8 +297,15 @@ newTalent{
 				self:useEnergy()
 				self.temporary = self.temporary - 1
 				
-				-- Teleport
 				if not self.target.dead and (game.level and game.level:hasEntity(self.target)) then
+					-- Warp Beam
+					local tg = {type="beam", start_x=self.x, start_y=self.y, talent=talent, range=self.range}
+					self.summoner:project(tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
+					
+					game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(self.target.x-self.x), math.abs(self.target.y-self.y)), "temporal_lightning", {tx=self.target.x-self.x, ty=self.target.y-self.y})
+					game:playSoundNear(self, "talents/lightning")
+					
+					-- Teleport
 					local hit = self.summoner == self.target or (self.summoner:checkHit(self.power, self.target:combatSpellResist() + (self.target:attr("continuum_destabilization") or 0), 0, 95) and self.target:canBe("teleport"))
 					if hit and rng.percent(self.chance * core.fov.distance(self.x, self.y, self.target.x, self.target.y)) then	
 						game.level.map:particleEmitter(self.target.x, self.target.y, 1, "temporal_teleport")
@@ -315,7 +326,7 @@ newTalent{
 				end
 				
 				-- End the effect?
-				if self.temporary <= 0 then
+				if self.temporary <= 0 or self.target.dead then
 					game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
 					game.level:removeEntity(self)
@@ -335,8 +346,11 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local chance = t.getChance(self, t)
-		return ([[Tethers the target to the location for %d turns.  For each tile the target moves away from the target location it has a %d%% chance each turn of being teleported back to the tether.]])
-		:format(duration, chance)
+		local damage = t.getDamage(self, t)/2
+		return ([[Tethers the target to the location for %d turns.  Each turn the tether will inflict %0.2f physical and %0.2f temporal (warp) damage to all targets between itself and the target.
+		For each tile the target moves away from the tether it has a %d%% chance each turn of being teleported back.
+		The damage will scale with your Spellpower.]])
+		:format(duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), chance)
 	end,
 }
 
@@ -348,7 +362,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
 	tactical = { DISABLE = 2 },
-	range = 10,
+	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
@@ -403,21 +417,24 @@ newTalent{
 	require = chrono_req4,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
-	cooldown = 6,
+	cooldown = 10,
 	tactical = { ESCAPE = 2 },
-	range = 0,
+	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5.5)) end,
 	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
 	target = function(self, t)
-		return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	requires_target = true,
 	direct_hit = true,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
 		local hit = false
 
-		self:project(tg, self.x, self.y, function(px, py)
+		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target or target == self then return end
 			game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
@@ -449,7 +466,7 @@ newTalent{
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
 		local range = t.getTeleport(self, t)
-		return ([[Randomly teleports all targets within a radius of %d around you.  Targets will be teleported between %d and %d tiles from their current location.
+		return ([[Randomly teleports all targets within a radius of %d.  Targets will be teleported between %d and %d tiles from their current location.
 		If no targets are teleported the cooldown will be halved.
 		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
 	end,
