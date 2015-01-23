@@ -35,6 +35,8 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyEmpower").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 
 		return {
 			talent = talent, rest_count = 0
@@ -70,6 +72,8 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyExtension").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 				
 		return {
 			talent = talent, rest_count = 0
@@ -105,7 +109,9 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyMatrix").new(self))
 		if not talent then return nil end
-				
+		
+		game:playSoundNear(self, "talents/spell_generic")
+		
 		return {
 			talent = talent, rest_count = 0
 		}
@@ -140,6 +146,8 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyQuicken").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 				
 		return {
 			talent = talent, rest_count = 0

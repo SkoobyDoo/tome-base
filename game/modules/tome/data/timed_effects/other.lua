@@ -2724,8 +2724,15 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Twist Fate" end,
 	on_lose = function(self, err) return nil, "-Twist Fate" end,
 	activate = function(self, eff)
+		if core.shader.active(4) then
+			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 0/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 255/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+		end
 	end,
 	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+		
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
 				self:forceUseTalent(eff.talent, {force_target=self})

@@ -121,6 +121,14 @@ newTalent{
 				self:removeEffect(eff.effect_id)
 			end
 		end
+		
+		-- Make sure we update the display for blind and such
+		game:onTickEnd(function()
+			if game.level then
+				self:resetCanSeeCache()
+				if self.player then for uid, e in pairs(game.level.entities) do if e.x then game.level.map:updateMap(e.x, e.y) end end game.level.map.changed = true end
+			end
+		end)
 
 	end,
 	info = function(self, t)

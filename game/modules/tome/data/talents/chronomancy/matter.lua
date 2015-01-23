@@ -94,8 +94,7 @@ newTalent{
 			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
 			game:playSoundNear(self, "talents/arcane")
 		end
-			
-
+		
 		return true
 	end,
 	info = function(self, t)
@@ -122,6 +121,7 @@ newTalent{
 	getCap = function(self, t) return 100 - self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
+		
 		local ret = {
 			stun = self:addTemporaryValue("stun_immune", t.getStunResist(self, t)),
 			cut = self:addTemporaryValue("cut_immune", t.getCutResist(self, t)),

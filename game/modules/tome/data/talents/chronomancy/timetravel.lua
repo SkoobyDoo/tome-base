@@ -92,7 +92,7 @@ newTalent{
 			game.zone:addEntity(game.level, proj, "projectile", x, y)
 		end)
 			
-		game:playSoundNear({x=x, y=y}, "talents/distortion")
+		game:playSoundNear({x=x, y=y}, "talents/spell_generic2")
 
 		return true
 	end,
@@ -314,7 +314,7 @@ newTalent{
 		end)
 		
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "ball_temporal", {radius=tg.radius})
-		game:playSoundNear(self, "talents/teleport")
+		game:playSoundNear(self, "talents/warp")
 		return true
 	end,
 	info = function(self, t)

@@ -186,6 +186,8 @@ newTalent{
 	tactical = { BUFF = 2 },
 	points = 5,
 	activate = function(self, t)
+		game:playSoundNear(self, "talents/spell_generic")
+		
 		return {}
 	end,
 	deactivate = function(self, t, p)
@@ -219,6 +221,8 @@ newTalent{
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		self:setEffect(self.EFF_INVIGORATE, t.getDuration(self,t), {power=t.getPower(self, t)})
+		
+		game:playSoundNear(self, "talents/heal")
 		return true
 	end,
 	info = function(self, t)

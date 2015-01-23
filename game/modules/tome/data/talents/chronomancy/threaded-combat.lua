@@ -44,6 +44,7 @@ newTalent{
 			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			self:teleportRandom(tx, ty, accuracy)
+			game:playSoundNear(self, "talents/teleport")
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end)
 	end,
@@ -78,6 +79,8 @@ newTalent{
 				end
 				
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+				game:playSoundNear(self, "talents/teleport")
+				
 				-- ox, oy now contain the last square in line not blocked by actors.
 				if ox and oy then 
 					self:teleportRandom(ox, oy, 0)

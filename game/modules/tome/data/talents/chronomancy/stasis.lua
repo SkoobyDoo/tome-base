@@ -143,8 +143,9 @@ newTalent{
 	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 1, 0.2, .60) end, -- limit 100%
 	no_energy = true,
 	action = function(self, t)
-		game:playSoundNear(self, "talents/spell_generic")
 		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {power=t.getParadoxMulti(self, t)})
+		
+		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)

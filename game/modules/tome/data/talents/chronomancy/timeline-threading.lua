@@ -287,7 +287,8 @@ newTalent{
 		
 		-- Set our effect
 		target:setEffect(target.EFF_CEASE_TO_EXIST, t.getDuration(self,t), {src=self, power=t.getPower(self,t)})
-				
+		game:playSoundNear(self, "talents/arcane")
+		
 		return true
 	end,
 	info = function(self, t)

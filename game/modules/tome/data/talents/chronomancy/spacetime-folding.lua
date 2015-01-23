@@ -176,7 +176,7 @@ newTalent{
 			game.zone:addEntity(game.level, trap, "trap", px, py)
 		end)
 
-		game:playSoundNear(self, "talents/heal")
+		game:playSoundNear(self, "talents/warp")
 		self:startTalentCooldown(self.T_WARP_MINE_AWAY)
 		
 		return true
@@ -227,7 +227,7 @@ newTalent{
 			game.zone:addEntity(game.level, trap, "trap", px, py)
 		end)
 
-		game:playSoundNear(self, "talents/heal")
+		game:playSoundNear(self, "talents/warp")
 		self:startTalentCooldown(self.T_WARP_MINE_TOWARD)
 		
 		return true
@@ -328,7 +328,7 @@ newTalent{
 		game.level.map(x, y, Map.TERRAIN, tether)
 		game.nicer_tiles:updateAround(game.level, x, y)
 		game.level.map:updateMap(x, y)
-		game:playSoundNear(self, "talents/heal")
+		game:playSoundNear(self, "talents/warp")
 		
 		return true
 	end,
@@ -382,7 +382,7 @@ newTalent{
 			nil, false, false
 		)
 
-		game:playSoundNear(self, "talents/teleport")
+		game:playSoundNear(self, "talents/warp")
 
 		return true
 	end,
@@ -396,7 +396,6 @@ newTalent{
 		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), daze)
 	end,
 }
-
 
 newTalent{
 	name = "Banish",
