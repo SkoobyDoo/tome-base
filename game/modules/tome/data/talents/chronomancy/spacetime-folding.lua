@@ -253,7 +253,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 8,
-	tactical = { { ATTACKAREA = { TEMPORAL = 1, PHYSICAL = 1 }, DISABLE = 2 },
+	tactical = { ATTACKAREA = { TEMPORAL = 1, PHYSICAL = 1 }, DISABLE = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	requires_target = true,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
