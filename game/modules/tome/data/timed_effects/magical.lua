@@ -3056,6 +3056,13 @@ newEffect{
 	on_lose = function(self, err) return nil, "-Webs of Fate" end,
 	parameters = { power=0.1 },
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+		-- Spin Fate?
+		if self.turn_procs and not self.turn_procs.spin_webs then
+			self.turn_procs.spin_webs = true
+			self:callTalent(self.T_SPIN_FATE, "doSpin")
+		end
+	
+		-- Displace Damage?
 		local t = eff.talent
 		if dam > 0 and src ~= self then
 			-- find available targets
@@ -3077,7 +3084,7 @@ newEffect{
 				game:delayedLogDamage(src, self, 0, ("%s(%d webs of fate)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", displace), false)
 			end
 		end
-
+		
 		return {dam=dam}
 	end,
 	activate = function(self, eff)
@@ -3096,7 +3103,16 @@ newEffect{
 	parameters = { procs=1 },
 	on_gain = function(self, err) return nil, "+Seal Fate" end,
 	on_lose = function(self, err) return nil, "-Seal Fate" end,
-	doDamage = function(self, eff, target)
+	callbackOnDealDamage = function(self, eff, dam, target)
+		if dam <=0 then return end
+		
+		-- Spin Fate?
+		if self.turn_procs and not self.turn_procs.spin_seal then
+			self.turn_procs.spin_seal = true
+			self:callTalent(self.T_SPIN_FATE, "doSpin")
+		end
+	
+	
 		if self.turn_procs and target.tmp then
 			if self.turn_procs.seal_fate and self.turn_procs.seal_fate >= eff.procs then return end
 			local chance = 50

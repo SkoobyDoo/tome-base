@@ -361,10 +361,6 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			print("[PROJECTOR] after Roll With It dam", dam)
 		end
 
-		if src and src.hasEffect and src:hasEffect(src.EFF_SEAL_FATE) then
-			src:callEffect(src.EFF_SEAL_FATE, "doDamage", target)
-		end
-
 		if target:attr("resist_unseen") and not target:canSee(src) then
 			dam = dam * (1 - math.min(target.resist_unseen,100)/100)
 		end

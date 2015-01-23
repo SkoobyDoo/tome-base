@@ -27,25 +27,19 @@ newTalent{
 	points = 5,
 	getSaveBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 8, 0.75)) end,
 	getMaxSpin = function(self, t) return self:hasEffect(self.EFF_WEBS_OF_FATE) and 6 or 3 end,
+	doSpin = function(self, t)
+		self:setEffect(self.EFF_SPIN_FATE, 3, {save_bonus=t.getSaveBonus(self, t), spin=1, max_spin=t.getMaxSpin(self, t)})
+		
+		-- Fateweaver
+		if self:knowTalent(self.T_FATEWEAVER) then
+			self:callTalent(self.T_FATEWEAVER, "doFateweaver")
+		end
+	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		if dam > 0 and src ~= self then
 			if self.turn_procs and not self.turn_procs.spin_fate then
-				
-				self:setEffect(self.EFF_SPIN_FATE, 3, {save_bonus=t.getSaveBonus(self, t), spin=1, max_spin=t.getMaxSpin(self, t)})
-				
-				if self:knowTalent(self.T_FATEWEAVER) then
-					self:callTalent(self.T_FATEWEAVER, "doFateweaver")
-				end
-
-				-- Set our turn procs, we do spin_fate last since it's the only one checked above
-				if self.hasEffect and self:hasEffect(self.EFF_WEBS_OF_FATE) and not self.turn_procs.spin_webs then
-					self.turn_procs.spin_webs = true
-				elseif self.hasEffect and self:hasEffect(self.EFF_SEAL_FATE) and not self.turn_procs.spin_seal then
-					self.turn_procs.spin_seal = true
-				else
-					self.turn_procs.spin_fate = true
-				end
-
+				t.doSpinFate(self, t)
+				self.turn_procs.spin_fate = true
 			end
 		end
 
@@ -77,9 +71,9 @@ newTalent{
 	info = function(self, t)
 		local procs = t.getProcs(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
+		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you gain Spin and have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
 		If you have Spin Fate active the chance will be increased by 33%% per Spin (to a maximum of 100%% at three Spin.)
-		This can occur at most %d times per turn.  While Seal Fate is active you may gain one additional spin per turn.]]):format(duration, procs)
+		The duration increase can occur %d times per turn.]]):format(duration, procs)
 	end,
 }
 
