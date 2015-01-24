@@ -49,6 +49,7 @@ Erase him.]],
 	answers = {
 		{"You can count on me, Protector.", action=function(npc, player)
 			player:hasQuest("lightning-overload"):create_entrance()
+			game:unlockBackground("myssil", "Protector Myssil")
 		end},
 	}
 }

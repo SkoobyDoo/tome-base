@@ -2701,6 +2701,7 @@ newEffect{
 	type = "other", decrease = 0, no_remove = true,
 	subtype = { combat=true, penalty=true },
 	status = "detrimental",
+	no_stop_enter_worlmap = true, no_stop_resting = true,
 	parameters = {},
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "hit_penalty_2h", 1)

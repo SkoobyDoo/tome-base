@@ -89,6 +89,7 @@ spawn_butler = function(self)
 	game.player:setQuestStatus(self.id, self.COMPLETED, "butler")
 
 	world:gainAchievement("SHERTUL_FORTRESS", game.player)
+	game:unlockBackground("fortress", "Yiilkgur, the Sher'Tul Fortress")
 end
 
 spawn_transmo_chest = function(self, energy)

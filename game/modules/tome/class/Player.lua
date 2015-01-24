@@ -825,7 +825,7 @@ local function spotHostiles(self, actors_only)
 			local tx, ty
 
 			-- Bresenham is too so check if we're anywhere near the mathematical line of flight
-			if proj.project then
+			if type(proj.project) == "table" then
 				tx, ty = proj.project.def.x, proj.project.def.y
 			elseif proj.homing then
 				tx, ty = proj.homing.target.x, proj.homing.target.y

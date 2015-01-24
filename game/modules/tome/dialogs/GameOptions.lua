@@ -507,6 +507,15 @@ function _M:generateListOnline()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Open links in external browser instead of the embedded one.\nThis does not affect addons browse and installation which always stays ingame."}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Open links in external browser#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.open_links_external and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.open_links_external = not config.settings.open_links_external
+		game:saveSettings("open_links_external", ("open_links_external = %s\n"):format(tostring(config.settings.open_links_external)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
