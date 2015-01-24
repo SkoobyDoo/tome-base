@@ -50,10 +50,6 @@ function _M:resize(x, y, w, h)
 	self.font_w = self.font:size(" ")
 	self.bars_x = self.font_w * 9
 	self.bars_w = self.w - self.bars_x - 5
-	self.surface = core.display.newSurface(w, h)
-	self.surface_line = core.display.newSurface(w, self.font_h)
-	self.surface_portrait = core.display.newSurface(40, 40)
-	self.texture, self.texture_w, self.texture_h = self.surface:glTexture()
 
 	self.top = glTexFromArgs(core.display.loadImage("/data/gfx/ui/party_end.png"):glTexture())
 	self.party = glTexFromArgs(core.display.loadImage("/data/gfx/ui/party_top.png"):glTexture())
