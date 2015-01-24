@@ -3126,7 +3126,7 @@ newEffect{
 				-- Go through all spell effects
 				for eff_id, p in pairs(target.tmp) do
 					local e = target.tempeffect_def[eff_id]
-					if e.status == "detrimental" and e.type ~= "other" then
+					if e.status == "detrimental" and e.type ~= "other" and e.subtype ~= "cross tier" then
 						effs[#effs+1] = p
 					end
 				end
