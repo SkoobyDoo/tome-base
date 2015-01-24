@@ -72,7 +72,6 @@ function _M:generate()
 	self.h = self.h + 6
 end
 
---[[
 function _M:drawFrame(f, x, y, r, g, b, a)
 	-- Sides
 	f.b8.t:toScreenFull(x + f.b7.w, y, f.w - f.b7.w - f.b9.w + 1, f.b8.h, f.b8.tw, f.b8.th, r, g, b, a)
@@ -86,7 +85,7 @@ function _M:drawFrame(f, x, y, r, g, b, a)
 	-- Corners
 	f.b7.t:toScreenFull(x, y, f.b7.w, f.b7.h, f.b7.tw, f.b7.th, r, g, b, a)
 	f.b9.t:toScreenFull(x + f.w - f.b9.w, y, f.b9.w, f.b9.h, f.b9.tw, f.b9.th, r, g, b, a)
-end]]
+end
 
 function _M:select()
 	self.selected = true
