@@ -718,7 +718,8 @@ function string.removeUIDCodes(str)
 end
 
 function string.splitLine(str, max_width, font)
-	local space_w = font:size(" ")
+	local fontoldsize = font.simplesize or font.size
+	local space_w = fontoldsize(font, " ")
 	local lines = {}
 	local cur_line, cur_size = "", 0
 	local v
@@ -726,7 +727,7 @@ function string.splitLine(str, max_width, font)
 	for i = 1, #ls do
 		local v = ls[i]
 		local shortv = v:lpegSub("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", "")
-		local w, h = font:size(shortv)
+		local w, h = fontoldsize(font, shortv)
 
 		if cur_size + space_w + w < max_width then
 			cur_line = cur_line..(cur_size==0 and "" or " ")..v
@@ -824,146 +825,18 @@ function __get_uid_entity(uid)
 end
 
 local tmps = core.display.newSurface(1, 1)
-getmetatable(tmps).__index.drawColorString = function(s, font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
-	r = r or 255
-	g = g or 255
-	b = b or 255
-	limit_w = limit_w or 99999999
-	local oldr, oldg, oldb = r, g, b
-	local max_h = 0
-	local sw = 0
-	local bx, by = x, y
-	for i, v in ipairs(list) do
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			oldr, oldg, oldb = r, g, b
-			r, g, b = nr:parseHex(), ng:parseHex(), nb:parseHex()
-		elseif col then
-			if col == "LAST" then
-				r, g, b = oldr, oldg, oldb
-			else
-				oldr, oldg, oldb = r, g, b
-				r, g, b = colors[col].r, colors[col].g, colors[col].b
-			end
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					if sw + w > limit_w then break end
-					s:merge(surf, x, y)
-					if h > max_h then max_h = h end
-					x = x + (w or 0)
-					sw = sw + (w or 0)
-				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-		elseif extra then
-			--
-		else
-			local w, h = font:size(v)
-			local stop = false
-			while sw + w > limit_w do
-				v = v:sub(1, #v - 1)
-				if #v == 0 then break end
-				w, h = font:size(v)
-				stop = true
-			end
-			if h > max_h then max_h = h end
-			s:drawStringBlended(font, v, x, y, r, g, b, alpha_from_texture)
-			x = x + w
-			sw = sw + w
-			if stop then break end
-		end
-	end
-	return r, g, b, sw, max_h, bx, by
-end
-
-getmetatable(tmps).__index.drawColorStringCentered = function(s, font, str, dx, dy, dw, dh, r, g, b, alpha_from_texture, limit_w)
-	local w, h = font:size(str)
-	local x, y = dx + (dw - w) / 2, dy + (dh - h) / 2
-	s:drawColorString(font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-end
-
-
 getmetatable(tmps).__index.drawColorStringBlended = function(s, font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
-	r = r or 255
-	g = g or 255
-	b = b or 255
-	limit_w = limit_w or 99999999
-	local oldr, oldg, oldb = r, g, b
-	local max_h = 0
-	local sw = 0
-	local bx, by = x, y
-	for i, v in ipairs(list) do
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			oldr, oldg, oldb = r, g, b
-			r, g, b = nr:parseHex(), ng:parseHex(), nb:parseHex()
-		elseif col then
-			if col == "LAST" then
-				r, g, b = oldr, oldg, oldb
-			else
-				oldr, oldg, oldb = r, g, b
-				r, g, b = colors[col].r, colors[col].g, colors[col].b
-			end
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					if sw + (w or 0) > limit_w then break end
-					s:merge(surf, x, y)
-					if h > max_h then max_h = h end
-					x = x + (w or 0)
-					sw = sw + (w or 0)
-				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-		elseif extra then
-			--
-		else
-			local w, h = font:size(v)
-			local stop = false
-			while sw + w > limit_w do
-				v = v:sub(1, #v - 1)
-				if #v == 0 then break end
-				w, h = font:size(v)
-				stop = true
-			end
-			if h > max_h then max_h = h end
-			s:drawStringBlended(font, v, x, y, r, g, b, alpha_from_texture)
-			x = x + w
-			sw = sw + w
-			if stop then break end
-		end
-	end
-	return r, g, b, sw, max_h, bx, by
+	local tstr = str:toTString()
+	return tstr:drawOnSurface(s, limit_w or 99999999, 1, font, x, y, r, g, b, not alpha_from_texture)
 end
+getmetatable(tmps).__index.drawColorString = getmetatable(tmps).__index.drawColorStringBlended
 
 getmetatable(tmps).__index.drawColorStringBlendedCentered = function(s, font, str, dx, dy, dw, dh, r, g, b, alpha_from_texture, limit_w)
 	local w, h = font:size(str)
 	local x, y = dx + (dw - w) / 2, dy + (dh - h) / 2
 	s:drawColorStringBlended(font, str, x, y, r, g, b, alpha_from_texture, limit_w)
 end
+getmetatable(tmps).__index.drawColorStringCentered = getmetatable(tmps).__index.drawColorStringBlendedCentered
 
 local font_cache = {}
 local oldNewFont = core.display.newFont
@@ -987,53 +860,44 @@ local tmps = core.display.newFont("/data/font/Vera.ttf", 12)
 local word_size_cache = {}
 local fontoldsize = getmetatable(tmps).__index.size
 getmetatable(tmps).__index.simplesize = fontoldsize
+local fontcachewordsize = function(font, fstyle, v)
+	if not word_size_cache[font][fstyle][v] then
+		word_size_cache[font][fstyle][v] = {fontoldsize(font, v)}
+	end
+	return unpack(word_size_cache[font][fstyle][v])
+end
 getmetatable(tmps).__index.size = function(font, str)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
+	local tstr = str:toTString()
 	local mw, mh = 0, 0
 	local fstyle = font:getStyle()
 	word_size_cache[font] = word_size_cache[font] or {}
 	word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
 	local v
-	for i = 1, #list do
-		v = list[i]
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			-- Ignore
-		elseif col then
-			-- Ignore
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					mw = mw + w
-					if h > mh then mh = h end
+	for i = 1, #tstr do
+		v = tstr[i]
+		if type(v) == "table" then
+			if v[1] == "font" then
+				local fontstyle = v[2]
+				font:setStyle(fontstyle)
+				fstyle = fontstyle
+				word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
+			elseif v[1] == "uid" then
+				local uid = v[2]
+				local e = __uids[uid]
+				if e then
+					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
+					if surf then
+						local w, h = surf:getSize()
+						mw = mw + w
+						if h > mh then mh = h end
+					end
 				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-			fstyle = fontstyle
-			word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
-		elseif extra then
-			--
-		else
-			local w, h
-			if word_size_cache[font][fstyle][v] then
-				w, h = word_size_cache[font][fstyle][v][1], word_size_cache[font][fstyle][v][2]
-			else
-				w, h = fontoldsize(font, v)
-				word_size_cache[font][fstyle][v] = {w, h}
-			end
+			end -- ignore colors and all that
+		elseif type(v) == "string" then
+			local w, h = fontcachewordsize(font, fstyle, v)
 			if h > mh then mh = h end
 			mw = mw + w
-		end
+		end -- ignore the rest
 	end
 	return mw, mh
 end
@@ -1099,6 +963,10 @@ function tstring:merge(v)
 	return self
 end
 
+function tstring:clone()
+	return tstring(table.clone(self))
+end
+
 function tstring:countLines()
 	local nb = 1
 	local v
@@ -1114,10 +982,10 @@ function tstring:maxWidth(font)
 	local old_style = font:getStyle()
 	local line_max = 0
 	local v
-	local w, h = font:size("")
+	local w, h = fontoldsize(font, "")
 	for i = 1, #self do
 		v = self[i]
-		if type(v) == "string" then line_max = line_max + font:size(v) + 1
+		if type(v) == "string" then line_max = line_max + fontoldsize(font, v) + 1
 	elseif type(v) == "table" then if v[1] == "uid" then line_max = line_max + h -- UID surface is same as font size
 		elseif v[1] == "font" and v[2] == "bold" then font:setStyle("bold")
 		elseif v[1] == "font" and v[2] == "normal" then font:setStyle("normal") end
@@ -1136,8 +1004,13 @@ function tstring.from(str)
 	end
 end
 
+tstring.__tstr_cache = {}
+local tstring_cache = tstring.__tstr_cache
+setmetatable(tstring_cache, {__mode="v"})
+
 --- Parse a string and return a tstring
 function string.toTString(str)
+	if tstring_cache[str] then return tstring_cache[str]:clone() end
 	local tstr = tstring{}
 	local list = str:split(("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#") + lpeg.P"\n", true)
 	for i = 1, #list do
@@ -1152,7 +1025,7 @@ function string.toTString(str)
 		elseif col then
 			tstr:add({"color", col})
 		elseif uid and mo then
-			tstr:add({"uid", tonumber(uid)})
+			tstr:add({"uid", tonumber(uid), tonumber(mo)})
 		elseif fontstyle then
 			tstr:add({"font", fontstyle})
 		elseif extra then
@@ -1163,7 +1036,8 @@ function string.toTString(str)
 			tstr:add(v)
 		end
 	end
-	return tstr
+	tstring_cache[str] = tstr
+	return tstr:clone()
 end
 function string:toString() return self end
 
@@ -1192,8 +1066,8 @@ function tstring:toTString() return self end
 --- Tablestrings can not be formated, this just returns self
 function tstring:format() return self end
 
-function tstring:splitLines(max_width, font)
-	local space_w = font:size(" ")
+function tstring:splitLines(max_width, font, max_lines)
+	local fstyle = font:getStyle()
 	local ret = tstring{}
 	local cur_size = 0
 	local max_w = 0
@@ -1209,21 +1083,30 @@ function tstring:splitLines(max_width, font)
 					ret[#ret+1] = true
 					max_w = math.max(max_w, cur_size)
 					cur_size = 0
+					if max_lines then
+						max_lines = max_lines - 1
+						if max_lines <= 0 then break end
+					end
 				else
-					local w, h = fontoldsize(font, vv)
+					local w, h = fontcachewordsize(font, fstyle, vv)
 					if cur_size + w < max_width then
 						cur_size = cur_size + w
 						ret[#ret+1] = vv
 					else
 						ret[#ret+1] = true
-						ret[#ret+1] = vv
 						max_w = math.max(max_w, cur_size)
+						if max_lines then
+							max_lines = max_lines - 1
+							if max_lines <= 0 then break end
+						end
+						ret[#ret+1] = vv
 						cur_size = w
 					end
 				end
 			end
 		elseif tv == "table" and v[1] == "font" then
 			font:setStyle(v[2])
+			fstyle = v[2]
 			ret[#ret+1] = v
 		elseif tv == "table" and v[1] == "extra" then
 			ret[#ret+1] = v
@@ -1340,6 +1223,7 @@ function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
 				r, g, b = v[2], v[3], v[4]
 			elseif v[1] == "font" then
 				font:setStyle(v[2])
+				fstyle = v[2]
 			elseif v[1] == "extra" then
 				--
 			elseif v[1] == "uid" then
@@ -1365,14 +1249,18 @@ function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
 end
 
 function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_alpha, on_word)
-	local list = self:splitLines(max_width, font)
+	local list = self:splitLines(max_width, font, max_lines)
 	max_lines = util.bound(max_lines or #list, 1, #list)
 	local fh = font:lineSkip()
+	local fstyle = font:getStyle()
 	local w, h = 0, 0
 	r, g, b = r or 255, g or 255, b or 255
 	local oldr, oldg, oldb = r, g, b
 	local v, tv
 	local on_word_w, on_word_h
+	local last_line_h = 0
+	local max_w = 0
+	local lines_drawn = 0
 	for i = 1, #list do
 		v = list[i]
 		tv = type(v)
@@ -1381,12 +1269,17 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			if on_word_w and on_word_h then
 				w, h = on_word_w, on_word_h
 			else
+				local dw, dh = fontcachewordsize(font, fstyle, v)
+				last_line_h = math.max(last_line_h, dh)
 				s:drawStringBlended(font, v, x + w, y + h, r, g, b, not no_alpha)
 				w = w + fontoldsize(font, v)
 			end
 		elseif tv == "boolean" then
+			max_w = math.max(max_w, w)
 			w = 0
 			h = h + fh
+			last_line_h = 0
+			lines_drawn = lines_drawn + 1
 			max_lines = max_lines - 1
 			if max_lines <= 0 then break end
 		else
@@ -1415,6 +1308,7 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			end
 		end
 	end
+	return r, g, b, math.max(max_w, w), fh * lines_drawn + last_line_h, x, y
 end
 
 function tstring:diffWith(str2, on_diff)
