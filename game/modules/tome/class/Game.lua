@@ -618,10 +618,14 @@ function _M:createFBOs()
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
 end
 
-function _M:resizeMapViewport(w, h)
+function _M:resizeMapViewport(w, h, x, y)
+	x = x and math.floor(x) or Map.display_x
+	y = y and math.floor(y) or Map.display_y
 	w = math.floor(w)
 	h = math.floor(h)
 
+	Map.display_x = x
+	Map.display_y = y
 	Map.viewport.width = w
 	Map.viewport.height = h
 	Map.viewport.mwidth = math.floor(w / Map.tile_w)
