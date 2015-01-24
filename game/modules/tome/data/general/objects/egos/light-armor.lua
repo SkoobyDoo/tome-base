@@ -190,7 +190,7 @@ newEntity{
 		[DamageType.DARKNESS] = resolvers.mbonus_material(5, 5),
 	  },
 	  ranged_project={
-		[DamageType.DARNKESS] = resolvers.mbonus_material(5, 5),
+		[DamageType.DARKNESS] = resolvers.mbonus_material(5, 5),
 	  },
    },
 

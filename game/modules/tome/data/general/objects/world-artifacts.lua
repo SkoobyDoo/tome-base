@@ -1211,13 +1211,25 @@ newEntity{ base = "BASE_CLOTH_ARMOR", define_as = "SET_TEMPORAL_ROBE",
 	material_level = 4,
 	wielder = {
 		combat_spellpower = 23,
-		inc_damage = {[DamageType.TEMPORAL]=20},
+		inc_damage = {
+			[DamageType.TEMPORAL]=20,
+			[DamageType.PHYSICAL]=20
+		},
 		combat_def = 9,
 		combat_armor = 3,
 		inc_stats = { [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 3, },
-		resists={[DamageType.TEMPORAL] = 20},
-		resists_pen = { [DamageType.TEMPORAL] = 20 },
-		on_melee_hit={[DamageType.TEMPORAL] = 10},
+		resists={
+			[DamageType.TEMPORAL] = 10,
+			[DamageType.PHYSICAL] = 10,
+		},
+		resists_pen = { 
+			[DamageType.TEMPORAL] = 20,
+			[DamageType.PHYSICAL] = 20, 
+		},
+		on_melee_hit={
+			[DamageType.TEMPORAL] = 10,
+			[DamageType.PHYSICAL] = 20,
+		},
 	},
 	max_power = 50, power_regen = 1,
 	use_talent = { id = Talents.T_TEMPORAL_REPRIEVE, level = 1, power = 50 },
@@ -1250,7 +1262,8 @@ newEntity{ base = "BASE_WIZARD_HAT", define_as = "SET_TEMPORAL_FEZ",
 		inc_stats = { [Stats.STAT_WIL] = 4, [Stats.STAT_CUN] = 8, },
 		paradox_reduce_anomalies = 5,
 		resists = {
-			[DamageType.TEMPORAL] = 20,
+			[DamageType.TEMPORAL] = 10,
+			[DamageType.PHYSICAL] = 10,
 		},
 		talents_types_mastery = {
 			["chronomancy/timetravel"]=0.2,
@@ -1266,6 +1279,7 @@ newEntity{ base = "BASE_WIZARD_HAT", define_as = "SET_TEMPORAL_FEZ",
 		self:specialSetAdd({"wielder","confusion_immune"}, 0.4)
 		self:specialSetAdd({"wielder","combat_spellspeed"}, 0.1)
 		self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.TEMPORAL] = 10 })
+		self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.PHYSICAL] = 10 })
 	end,
 	on_set_broken = function(self, who)
 		self.use_talent = nil
@@ -1717,7 +1731,7 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "ART_PAIR_TWSWORD",
 		melee_project={[DamageType.TEMPORAL] = 5},
 		convert_damage = {
 			[DamageType.TEMPORAL] = 30,
-	},
+		},
 	},
 	wielder = {
 		inc_damage={
@@ -2409,7 +2423,7 @@ newEntity{ base = "BASE_STAFF",
 		combat_spellcrit = 7,
 		inc_damage={
 			[DamageType.PHYSICAL] 	= 20,
-			[DamageType.TEMPORAL] 	= 12,
+			[DamageType.TEMPORAL] 	= 10,
 		},
 		resists={
 			[DamageType.PHYSICAL] 	= 15,
@@ -3770,7 +3784,8 @@ newEntity{ base = "BASE_ARROW", --Thanks Grayswandir!
 		physcrit = 6,
 		dammod = {dex=0.7, str=0.5, mag=0.1,},
 		damtype = DamageType.VOID,
-		talent_on_hit = { [Talents.T_QUANTUM_SPIKE] = {level=1, chance=10}, [Talents.T_TEMPORAL_CLONE] = {level=1, chance=5} },
+		-- Redo these when void talents are added
+		talent_on_hit = { [Talents.T_SPATIAL_TETHER] = {level=1, chance=10}, [Talents.T_DIMENSIONAL_ANCHOR] = {level=1, chance=5} },
 	},
 }
 
@@ -4428,7 +4443,8 @@ newEntity{ base = "BASE_GLOVES", --Thanks SageAcrin /AND/ Edge2054!
 			talent_on_hit = { [Talents.T_SHADOW_SIMULACRUM] = {level=1, chance=15}, [Talents.T_MIND_BLAST] = {level=1, chance=10}, [Talents.T_TURN_BACK_THE_CLOCK] = {level=1, chance=10} },
 		},
 	},
-	talent_on_spell = { {chance=10, talent=Talents.T_ECHOES_FROM_THE_PAST, level=2} },
+	-- Change when void talents are done
+	talent_on_spell = { {chance=10, talent=Talents.T_DUST_TO_DUST, level=2} },
 }
 
 newEntity{ base = "BASE_GEM", --Thanks SageAcrin and Graziel!
@@ -4594,6 +4610,8 @@ newEntity{ base = "BASE_CLOAK",
 		talents_types_mastery = {
 			["spell/earth"] = 0.2,
 			["spell/stone"] = 0.1,
+			["chronomancy/gravity"] = 0.2,
+			["chronomancy/matter"] = 0.1,
 		},
 		inc_damage={ [DamageType.PHYSICAL] = 5,},
 		resists={ [DamageType.PHYSICAL] = 5,},
