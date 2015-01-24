@@ -602,22 +602,6 @@ newEffect{
 }
 
 newEffect{
-	name = "SPACETIME_STABILITY",
-	desc = "Spacetime Stability",
-	long_desc = function(self, eff) return "Chronomancy spells cast by the target will not fail." end,
-	type = "other",
-	subtype = { time=true },
-	status = "beneficial",
-	parameters = { power=0.1 },
-	on_gain = function(self, err) return "Spacetime has stabilized around #Target#.", "+Spactime Stability" end,
-	on_lose = function(self, err) return "The fabric of spacetime around #Target# has returned to normal.", "-Spacetime Stability" end,
-	activate = function(self, eff)
-	end,
-	deactivate = function(self, eff)
-	end,
-}
-
-newEffect{
 	name = "FADE_FROM_TIME", image = "talents/fade_from_time.png",
 	desc = "Fade From Time",
 	long_desc = function(self, eff) return ("The target is partially removed from the timeline, reducing all damage dealt by %d%%, all damage received by %d%%, and the duration of all detrimental effects by %d%%."):
@@ -2430,12 +2414,14 @@ newEffect{
 	parameters = { power=10},
 	on_gain = function(self, err) return "#Target# retunes the fabric of spacetime.", "+Spacetime Tuning" end,
 	on_timeout = function(self, eff)
-		self:incParadox(eff.power)
+		local dox = self:getParadox() - self.preferred_paradox
+		local fix = math.min( math.abs(dox), eff.power )
+		self:incParadox(fix)
 	end,
 }
 
 newEffect{
-	name = "TIME_STOP", image = "talents/stop.png",
+	name = "TIME_STOP", image = "talents/time_stop.png",
 	desc = "Time Stop",
 	long_desc = function(self, eff)
 		return ("The target has stopped time and is dealing %d%% less damage."):format(eff.power)
@@ -2450,25 +2436,32 @@ newEffect{
 	type = "other",
 	subtype = {time=true},
 	status = "detrimental",
-	--decrease = 0,
-	--no_stop_enter_worlmap = true, no_stop_resting = true,
 	parameters = {power=50},
+	remove_on_clone = true,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
-		if core.shader.active(4) then
+		if core.shader.allow("volumetric") then
 			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.4, growSpeed=0.004, img="coggy_00"})
 		end
 		self:effectTemporaryValue(eff, "timestopping", 1)
 		self.no_leave_control = true
 		core.display.pauseAnims(true)
-		self:updateMainShader()
+		
+		-- clone protection
+		if self.player then
+			self:updateMainShader()
+		end
 	end,
 	deactivate = function(self, eff)
 		self.no_leave_control = false
 		core.display.pauseAnims(false)
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
-		self:updateMainShader()
+		
+		-- clone protection
+		if self == game.player then
+			self:updateMainShader()
+		end
 	end,
 }
 
@@ -2628,8 +2621,8 @@ newEffect{
 }
 
 newEffect{
-	name = "PRESERVE_PATTERN", image = "talents/preserve_pattern.png",
-	desc = "Preserve Pattern",
+	name = "REALITY_SMEARING", image = "talents/reality_smearing.png",
+	desc = "Reality Smearing",
 	long_desc = function(self, eff) return ("Damage received in the past is returned as %0.2f paradox damage per turn."):format(eff.paradox) end,
 	type = "other",
 	subtype = { time=true },
@@ -2712,5 +2705,70 @@ newEffect{
 	parameters = {},
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "hit_penalty_2h", 1)
+	end,
+}
+
+newEffect{
+	name = "TWIST_FATE", image = "talents/twist_fate.png",
+	desc = "Twist Fate",
+	long_desc = function(self, eff) 
+		local t = self:getTalentFromId(eff.talent)
+		return 
+		([[Currently Twisted Anomlay: %s
+		
+		%s]]):format(t.name or "none", t.info(self, t) or "none")
+	end,
+	type = "other",
+	subtype = { time=true },
+	status = "detrimental",
+	parameters = { paradox=0, twisted=false },
+	on_gain = function(self, err) return nil, "+Twist Fate" end,
+	on_lose = function(self, err) return nil, "-Twist Fate" end,
+	activate = function(self, eff)
+		if core.shader.active(4) then
+			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 0/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 255/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+		
+		if not game.zone.wilderness and not self.dead then
+			if not eff.twisted then
+				self:forceUseTalent(eff.talent, {force_target=self})
+				game:playSoundNear(self, "talents/dispel")
+				self:incParadox(-eff.paradox)
+			end
+		end
+	end,
+}
+
+newEffect{
+	name = "WARDEN_S_TARGET", image = "talents/warden_s_focus.png",
+	desc = "Warden's Focus Target",
+	long_desc = function(self, eff) return ("The target is being focused on by %s, +%d accuracy and +%d%% critical hit chance with ranged attacks against this target."):format(eff.src.name, eff.atk, eff.crit) end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	parameters = {atk = 1, crit= 1},
+	remove_on_clone = true, decrease = 0,
+	on_gain = function(self, err) return nil, "+Warden's Focus" end,
+	on_lose = function(self, err) return nil, "-Warden's Focus" end,
+	on_timeout = function(self, eff)
+		local p = eff.src:hasEffect(eff.src.EFF_WARDEN_S_FOCUS)
+		if not p or p.target ~= self or eff.src.dead or not game.level:hasEntity(eff.src) or core.fov.distance(self.x, self.y, eff.src.x, eff.src.y) > 10 then
+			self:removeEffect(self.EFF_WARDEN_S_TARGET)
+		end
+	end,
+	activate = function(self, eff)
+		if core.shader.active(4) then
+			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={229/255, 0/255, 0/255, 1}, beamColor2={299/255, 0/255, 0/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={229/255, 0/255, 0/255, 1}, beamColor2={229/255, 0/255, 0/255, 1}, circleColor={0.8,0,0,0.8}, beamsCount=5}))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }

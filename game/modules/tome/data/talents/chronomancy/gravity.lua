@@ -25,7 +25,7 @@ newTalent{
 	require = chrono_req1,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	cooldown = 3,
+	cooldown = 4,
 	tactical = { ATTACKAREA = {PHYSICAL = 2}, ESCAPE = 2 },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
@@ -54,6 +54,14 @@ newTalent{
 				for _, v in pairs(tgts) do
 					if v == target then
 						return
+					end
+				end
+				
+				-- Apply anti-gravity?
+				if self:isTalentActive(self.T_GRAVITY_LOCUS) then
+					local chance = self:callTalent(self.T_GRAVITY_LOCUS, "getAnti")
+					if rng.percent(chance) then
+						target:setEffect(target.EFF_ANTI_GRAVITY, 2, {})
 					end
 				end
 				
@@ -89,7 +97,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Sends out a blast wave of gravity in a radius %d cone, dealing %0.2f base physical damage and knocking back targets caught in the area.
+		return ([[Sends out a blast wave of gravity in a radius %d cone, dealing %0.2f base physical (gravity) damage and knocking back targets caught in the area.
 		Targets knocked into walls or other targets take 50%% additional damage and deal 50%% damage to targets they're knocked into.
 		Closer targets will be knocked back further and the damage will scale with your Spellpower.]]):
 		format(radius, damDesc(self, DamageType.PHYSICAL, t.getDamage(self, t)))
@@ -102,7 +110,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 4,
+	cooldown = 6,
 	tactical = { ATTACKAREA = {PHYSICAL = 2}, DISABLE = 2 },
 	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.7)) end,
@@ -111,7 +119,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 230, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
@@ -165,8 +173,8 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Creates a gravity spike in a radius of %d that moves all targets towards the spell's center and inflicts %0.2f physical damage.
-		Each target moved beyond the first deals an additional %0.2f physical damage (up to %0.2f bonus damage).
+		return ([[Creates a gravity spike in a radius of %d that moves all targets towards the spell's center and inflicts %0.2f physical (gravity) damage.
+		Each target moved beyond the first deals an additional %0.2f physical (gravity) damage (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The damage dealt will scale with your Spellpower.]])
 		:format(radius, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.PHYSICAL, damage/4), damDesc(self, DamageType.PHYSICAL, damage))
@@ -182,32 +190,32 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	points = 5,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
-	getSlow = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80) end,
-	callbackOnMeleeHit = function(self, t, target)
-		if not self.dead and self:isTalentActive(self.T_GRAVITY_LOCUS) then
-			self:project({type="hit", talent=t}, target.x, target.y, DamageType.GRAVITY, {dam=t.getDamage(self, t), anti=true, dur=2, apply=getParadoxSpellpower(self, t)})
-		end
-	end,
+	getSlow = function(self, t) return self:combatTalentLimit(t, 80, 10, 50) end,
+	getAnti = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
+	getConversion= function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
 		local particle = Particles.new("ultrashield", 1, {rm=204, rM=220, gm=102, gM=120, bm=0, bM=0, am=35, aM=90, radius=0.5, density=10, life=28, instop=100})
 		return {
+			converttype = self:addTemporaryValue("all_damage_convert", DamageType.PHYSICAL),
+			convertamount = self:addTemporaryValue("all_damage_convert_percent", t.getConversion(self, t)),
 			proj = self:addTemporaryValue("slow_projectiles", t.getSlow(self, t)),
 			particle = self:addParticles(particle)
 		}
 	end,
 	deactivate = function(self, t, p)
+		self:removeTemporaryValue("all_damage_convert", p.converttype)
+		self:removeTemporaryValue("all_damage_convert_percent", p.convertamount)
 		self:removeTemporaryValue("slow_projectiles", p.proj)
 		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
+		local conv = t.getConversion(self, t)
 		local proj = t.getSlow(self, t)
-		return ([[Create a gravity field around you that slows incoming projectiles by %d%% and protects you from all gravity effects.
-		While this spell is active creatures that hit you in melee combat will take %0.2f physical damage and have their knockback resistance reduced by half for two turns.
-		The projectile slowing and damage will scale with your spellpower.]]):format(proj, damDesc(self, DamageType.PHYSICAL, damage))
+		local anti = t.getAnti(self, t)
+		return ([[Create a gravity field around you that converts %d%% of your damage to physical, slows incoming projectiles by %d%%, and protects you from all gravity damage and effects.
+		Additionally, damage dealt by Repulsion Blast has a %d%% chance to reduce the target's knockback resistance by half for two turns.]]):format(conv, proj, anti)
 	end,
 }
 
@@ -219,15 +227,15 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
 	tactical = { ATTACKAREA = {PHYSICAL = 2}, DISABLE = 2 },
-	range = 10,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
+	range = 6,
+	radius = function(self, t) return 4 end,
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
-	getSlow = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	getSlow = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 8))) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -253,7 +261,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
 		local slow = t.getSlow(self, t)
-		return ([[Increases local gravity in a radius of %d for %d turns, dealing %0.2f physical damage and slowing the movement speed of all affected targets by %d%%.
+		return ([[Increases local gravity in a radius of %d for %d turns, dealing %0.2f physical (gravity) damage as well as decreasing the global speed of all affected targets by %d%%.
 		The damage done will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), slow*100)
 	end,
 }

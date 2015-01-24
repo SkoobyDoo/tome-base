@@ -52,13 +52,15 @@ newTalent{
 	speed = 'weapon',
 	is_melee = true,
 	action = function(self, t)
+		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, nil, "blade")
+	
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x then return end
 		local _ _, x, y = self:canProject(tg, x, y)
 		if not x then return end
 		local target = game.level.map(x, y, engine.Map.ACTOR)
-		if not target then return end
+		if not target then if swap then doWardenWeaponSwap(self, t, nil, "bow") end return end
 
 		local did_alternate = false
 		for _, alt_t in ipairs(t.alternate_attacks) do

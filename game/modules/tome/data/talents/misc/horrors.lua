@@ -581,7 +581,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 5, 70) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		local tg = self:getTarget(t)
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		local target = game.level.map(x, y, engine.Map.ACTOR)
 		if not x or not y or not target then return nil end

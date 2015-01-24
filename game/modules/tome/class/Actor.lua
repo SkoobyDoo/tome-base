@@ -519,8 +519,7 @@ function _M:actBase()
 	if self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then self:setEffect(self.EFF_DUAL_WEAPON_DEFENSE,1,{}) end
 	if self:knowTalent(self.T_COUNTER_ATTACK) then self:setEffect(self.EFF_COUNTER_ATTACKING,1,{}) end
 	if self:knowTalent(self.T_DEFENSIVE_THROW) then self:setEffect(self.EFF_DEFENSIVE_GRAPPLING,1,{}) end
-
-	-- Compute timed effects
+	
 	self:timedEffects()
 
 	-- Handle thunderstorm, even if the actor is stunned or incapacitated it still works
@@ -1305,11 +1304,6 @@ function _M:move(x, y, force)
 		self:forceUseTalent(self.T_BODY_OF_STONE, {ignore_energy=true})
 	end
 
-	-- Celerity
-	if moved and ox and oy and (ox ~= self.x or oy ~= self.y) and self:knowTalent(self.T_CELERITY) then
-		self:callTalent(self.T_CELERITY, "doCelerity")
-	end
-
 	-- Break channels
 	if moved then
 		self:breakPsionicChannel()
@@ -1454,8 +1448,7 @@ function _M:teleportRandom(x, y, dist, min_dist)
 
 	-- Dimensional Anchor, prevent teleports and deal damage
 	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
-		local p = self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR)
-		DamageType:get(DamageType.WARP).projector(p.src or self, self.x, self.y, DamageType.WARP, p.damage)
+		self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport")
 		return
 	end
 
@@ -1476,11 +1469,6 @@ function _M:teleportRandom(x, y, dist, min_dist)
 		-- Dimensional shift, chance to clear effects on teleport
 		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
 			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
-		end
-
-		-- Teleportation does not clear Time Dilation
-		if self:isTalentActive(self.T_TIME_DILATION) then
-			self:callTalent(self.T_TIME_DILATION, "updateOnTeleport", ox, oy)
 		end
 
 		self.x, self.y, ox, oy = ox, oy, self.x, self.y
@@ -2033,21 +2021,6 @@ function _M:onTakeHit(value, src, death_note)
 			return 0
 		end
 	end
-	if self:attr("phase_shift_chrono") and not self.turn_procs.phase_shift_chrono and value > self.max_life *0.1 then
-		self.turn_procs.phase_shift_chrono = true
-		local nx, ny = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
-		if nx then
-			local ox, oy = self.x, self.y
-			if not self:teleportRandom(nx, ny, 0) then
-				game.logSeen(self, "The spell fizzles!")
-			else
-				game.level.map:particleEmitter(ox, oy, 1, "temporal_teleport")
-				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				game:delayedLogDamage(src or {}, self, 0, ("#STEEL_BLUE#(%d shifted)#LAST#"):format(value/2), nil)
-				value = value/2
-			end
-		end
-	end
 
 	if self:attr("retribution") then
 	-- Absorb damage into the retribution
@@ -2245,11 +2218,6 @@ function _M:onTakeHit(value, src, death_note)
 			game:delayedLogDamage(src, self, 0, ("#SLATE#(%d to bones)#LAST#"):format(value), false)
 			value = 0
 		end
-	end
-
-	-- Paradox Shield
-	if value > 0 and self:isTalentActive(self.T_PRESERVE_PATTERN) then
-		value = self:callTalent(self.T_PRESERVE_PATTERN, "doPerservePattern", src, value)
 	end
 
 	if value <=0 then return 0 end
@@ -2983,7 +2951,7 @@ function _M:die(src, death_note)
 			p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.TEMPORAL, p.explosion, nil)
 			game.level.map:particleEmitter(self.x, self.y, 4, "ball_temporal", {radius=4})
 		else
-			p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.MATTER, p.explosion, nil)
+			p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.WARP, p.explosion, nil)
 			game.level.map:particleEmitter(self.x, self.y, 4, "ball_matter", {radius=4})
 		end
 		game:playSoundNear(self, "talents/breath")
@@ -3006,8 +2974,8 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if self:hasEffect(self.EFF_TRIM_THREADS) then
-		local p = self:hasEffect(self.EFF_TRIM_THREADS)
+	if self:hasEffect(self.EFF_ATTENUATE) then
+		local p = self:hasEffect(self.EFF_ATTENUATE)
 		p.src:incParadox(-p.reduction)
 	end
 
@@ -3533,7 +3501,7 @@ function _M:actorCheckSustains()
 end
 
 -- Quick Switch Weapons
-function _M:quickSwitchWeapons(free_swap, message)
+function _M:quickSwitchWeapons(free_swap, message, silent)
 	if self.no_inventory_access then return end
 	local mh1, mh2 = self.inven[self.INVEN_MAINHAND], self.inven[self.INVEN_QS_MAINHAND]
 	local oh1, oh2 = self.inven[self.INVEN_OFFHAND], self.inven[self.INVEN_QS_OFFHAND]
@@ -3606,10 +3574,12 @@ function _M:quickSwitchWeapons(free_swap, message)
 	self:actorCheckSustains()
 
 	-- Special Messages
-	if message == "warden" then
-		game.logPlayer(self, "You teleport %s into your hands.", names)
-	else
-		game.logPlayer(self, "You switch your weapons to: %s.", names)
+	if not silent then
+		if message == "warden" then
+			game.logPlayer(self, "You teleport %s into your hands.", names)
+		else
+			game.logPlayer(self, "You switch your weapons to: %s.", names)
+		end
 	end
 
 	self.off_weapon_slots = not self.off_weapon_slots
@@ -4011,7 +3981,7 @@ function _M:canWearObject(o, try_slot)
 			end
 		end end
 	end
-	if o.type == "weapon" and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
+	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
 		oldreq = rawget(o, "require")
 		o.require = table.clone(oldreq or {}, true)
 		if o.require.stat and o.require.stat.str then
@@ -4064,6 +4034,7 @@ function _M:learnTalent(t_id, force, nb, extra)
 
 	if t.is_spell then self:attr("has_arcane_knowledge", nb or 1) end
 	if t.is_antimagic then self:attr("forbid_arcane", nb or 1) end
+	if t.type[1]:find("^chronomancy/bow") or t.type[1]:find("^chronomancy/blade") then self:attr("warden_swap", nb or 1) end
 
 	if t.dont_provide_pool then return true end
 
@@ -4242,6 +4213,7 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 
 	if t.is_spell then self:attr("has_arcane_knowledge", -nb) end
 	if t.is_antimagic then self:attr("forbid_arcane", -nb) end
+	if t.type[1]:find("^chronomancy/bow") or t.type[1]:find("^chronomancy/blade") then self:attr("warden_swap", -nb) end
 
 	-- If we learn mindslayer things we learn telekinetic grasp & beyond the flesh
 	if t.autolearn_mindslayer then
@@ -4300,32 +4272,41 @@ end
 -- This handles anomalies
 -- Reduction is the Paradox recovered
 -- Anomaly Type is used to force an anomaly type for the talent, generally set to ab.anomaly_type
--- Chance use this for the anomaly chance, generally set to getAnomalyChance() or "forced"
+-- Chance use this for the anomaly chance, generally set to paradoxFailChance() or "forced"
 -- Target, if we're forcing an anomaly target
 function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 	local anomaly_type = anomaly_type or "random"
-	local forced = false
 	local chance = chance or self:paradoxFailChance()
-	if chance == "forced" then
-		forced = true
-		chance = 100
+	if chance == "forced" then chance = 100	end
+	
+	-- Anomaly biases can be set manually for monsters or classes
+	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
+	-- Additionally anomaly biases could be set by a talent; see the data/chats/chromonacy-bias-weave for an example
+	local function check_bias(major)
+		if self.anomaly_bias then
+			local bias_chance = self.anomaly_bias.chance
+			if rng.percent(bias_chance) then 
+				anomaly_type = self.anomaly_bias.type
+				return true
+			end
+		end
 	end
 
 	-- See if we create an anomaly
 	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") then
-		if not forced and self.turn_procs.anomalies_checked then return false end  -- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
-		if not forced then self.turn_procs.anomalies_checked = true end
+		-- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
+		if not chance == 100 and self.turn_procs.anomalies_checked then return false end  
+		if not chance == 100 then self.turn_procs.anomalies_checked = true end
 
-		-- return true if we roll an anomly
 		if rng.percent(chance) then
+			local anomaly_triggered = true
+			
 			-- If our Paradox is over 600 do a major anomaly
-			if anomaly_type ~= "no-major" and self:getModifiedParadox() > 600 then
+			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() > 600) then
 				anomaly_type = "major"
 			else
 				-- Check for Bias?
-				if self.anomaly_bias and rng.percent(self.anomaly_bias.chance) then anomaly_type = self.anomaly_bias.type end
-				-- Revert no-major to random
-				if anomaly_type == "no-major" then anomaly_type = "random" end
+				if not check_bias(true) then anomaly_type ="random" end
 			end
 
 			-- Now pick anomalies filtered by type
@@ -4338,33 +4319,40 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				end
 			end
 
-			-- Did we find anomalies?
+			-- Be sure we found an anomly first
 			if ts[1] then
-				-- Do we have a target?  If not we pass to anomaly targeting
-				-- The ignore energy calls here allow anomalies to be cast even when it's not the players turn
-				if target then
-					self:attr("anomaly_forced_target", 1)
-					self:forceUseTalent(rng.table(ts), {ignore_energy=true, force_target=target})
-					self:attr("anomaly_forced_target", -1)
+				local anomaly = rng.table(ts)
+				
+				if self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) and anomaly_type ~= "major" then
+					if self:hasEffect(self.EFF_TWIST_FATE) then
+						self:callTalent(self.T_TWIST_FATE, "doTwistFate")
+						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
+					else
+						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
+						anomaly_triggered = false
+					end
 				else
-					self:forceUseTalent(rng.table(ts), {ignore_energy=true})
+					--self:forceUseTalent(anomaly, {ignore_energy=true})
+					self:forceUseTalent(anomaly, {force_target=target or self})
 				end
 			end
 
-			-- Drop some game messages; these happen so Paradox gets reduced even if an anomaly isn't found
-			if not silent then
-				if forced then
-					game.logPlayer(self, "#STEEL_BLUE#You've moved to another time thread.")
-				else
-					game.logPlayer(self, "#LIGHT_RED#You lose control and unleash an anomaly!")
+			-- reduce paradox and handle messages
+			if anomaly_triggered then
+				if not silent then
+					if chance == 100 then
+						game.logPlayer(self, "#STEEL_BLUE#You've moved to another time thread.")
+					else
+						game.logPlayer(self, "#LIGHT_RED#You lose control and unleash an anomaly!")
+					end
+				end
+				-- Reduce Paradox
+				if reduction and reduction > 0 then
+					self:incParadox(-reduction)
 				end
 			end
-			-- Reduce Paradox
-			if reduction and reduction > 0 then
-				self:incParadox(-reduction)
-			end
 
-			return true
+			return anomaly_triggered
 		end
 	end
 end
@@ -4654,8 +4642,6 @@ function _M:preUseTalent(ab, silent, fake)
 		if cost > 0 then
 			local multi = 2 + (self:attr("anomaly_paradox_recovery") or 0)
 			if self:paradoxDoAnomaly(cost * multi, ab.anomaly_type or nil, self:paradoxFailChance(), nil, silent) then
-				local speed = math.max(0, 1 - (self:attr("anomaly_recovery_speed") or 0))
-				self:useEnergy(game.energy_to_act * speed)
 				game:playSoundNear(self, "talents/dispel")
 				return false
 			end
@@ -4759,6 +4745,7 @@ local sustainCallbackCheck = {
 	callbackOnTemporaryEffect = "talents_on_tmp",
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
+	callbackOnChronoWeaponFoldingHit = "talents_on_chrono_weapon_folding_hit",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -5118,7 +5105,7 @@ function _M:postUseTalent(ab, ret, silent)
 	if self:triggerHook(hd) then
 		trigger = hd.trigger
 	end
-
+	
 	self:fireTalentCheck("callbackOnTalentPost", ab, ret, silent)
 
 	if trigger and self:hasEffect(self.EFF_BURNING_HEX) and not self:attr("talent_reuse") then

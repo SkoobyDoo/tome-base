@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 local src = version
-local chance = src:knowTalent(src.T_BIAS_WEAVE) and src:callTalent(src.T_BIAS_WEAVE, "getBiasChance") or 0
+local chance = src:knowTalent(src.T_FLUX_CONTROL) and src:callTalent(src.T_FLUX_CONTROL, "getBiasChance") or 0
 
 local function set_bias(which)
 	src.anomaly_bias = {}
@@ -35,10 +35,10 @@ newChat{ id="welcome",
 			return set_bias({type = "physical", chance=chance}) 
 			end,
 		},
-		{"Teleport", 
+		{"Warp", 
 			action = function() 
 				game.level.map:particleEmitter(game.player.x, game.player.y, 1, "temporal_teleport")
-			return set_bias({type = "teleport", chance=chance})
+			return set_bias({type = "Warp", chance=chance})
 			end,
 		},
 		{"Temporal",

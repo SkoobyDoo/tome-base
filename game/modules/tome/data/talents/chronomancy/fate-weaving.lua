@@ -26,27 +26,20 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	getSaveBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 8, 0.75)) end,
+	getMaxSpin = function(self, t) return self:hasEffect(self.EFF_WEBS_OF_FATE) and 6 or 3 end,
+	doSpin = function(self, t)
+		self:setEffect(self.EFF_SPIN_FATE, 3, {save_bonus=t.getSaveBonus(self, t), spin=1, max_spin=t.getMaxSpin(self, t)})
+		
+		-- Fateweaver
+		if self:knowTalent(self.T_FATEWEAVER) then
+			self:callTalent(self.T_FATEWEAVER, "doFateweaver")
+		end
+	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		if dam > 0 and src ~= self then
 			if self.turn_procs and not self.turn_procs.spin_fate then
-
-				self:setEffect(self.EFF_SPIN_FATE, 3, {save_bonus=t.getSaveBonus(self, t), spin=1, max_spin=3})
-
-				-- Set our turn procs, we do spin_fate last since it's the only one checked above
-				if self.hasEffect and self:hasEffect(self.EFF_WEBS_OF_FATE) and not self.turn_procs.spin_webs then
-					self.turn_procs.spin_webs = true
-				elseif self.hasEffect and self:hasEffect(self.EFF_SEAL_FATE) and not self.turn_procs.spin_seal then
-					self.turn_procs.spin_seal = true
-				else
-					self.turn_procs.spin_fate = true
-				end
-
-				-- Reduce damage if we know Fateweaver
-				if self:knowTalent(self.T_FATEWEAVER) then
-					local reduction = dam * self:callTalent(self.T_FATEWEAVER, "getReduction")
-					dam = dam - reduction
-					game:delayedLogDamage(src, self, 0, ("%s(%d fatewever)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
-				end
+				t.doSpin(self, t)
+				self.turn_procs.spin_fate = true
 			end
 		end
 
@@ -54,85 +47,19 @@ newTalent{
 	end,
 	info = function(self, t)
 		local save = t.getSaveBonus(self, t)
-		return ([[Each time you take damage from someone else you gain one spin, increasing your defense and saves by %d for three turns.
-		This effect may occur once per turn and stacks up to three spin (for a maximum bonus of %d).]]):
+		return ([[Each time you take damage from someone else you gain one Spin, increasing your defense and saves by %d for three turns.
+		This effect may occur once per turn and stacks up to three Spin (for a maximum bonus of %d).]]):
 		format(save, save * 3)
-	end,
-}
-newTalent{
-	name = "Webs of Fate",
-	type = {"chronomancy/fate-weaving", 2},
-	require = chrono_req2,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	cooldown = 12,
-	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
-	getPower = function(self, t) return paradoxTalentScale(self, t, 15, 30, 50)/100 end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
-	no_energy = true,
-	action = function(self, t)
-		local effs = {}
-
-		-- Find all pins
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if e.subtype.pin or e.subtype.stun then
-				effs[#effs+1] = {"effect", eff_id}
-			end
-		end
-
-		-- And remove them
-		while #effs > 0 do
-			local eff = rng.tableRemove(effs)
-
-			if eff[1] == "effect" then
-				self:removeEffect(eff[2])
-			end
-		end
-
-		-- Set our power based on current spin
-		local imm = t.getPower(self, t)
-		local eff = self:hasEffect(self.EFF_SPIN_FATE)
-		if eff then
-			imm = imm * (1 + eff.spin/3)
-		end
-
-		self:setEffect(self.EFF_WEBS_OF_FATE, t.getDuration(self, t), {imm=imm})
-
-		return true
-	end,
-	info = function(self, t)
-		local power = t.getPower(self, t) * 100
-		local duration = t.getDuration(self, t)
-		return ([[Activate to remove pins and stuns.  You also gain %d%% pin and stun immunity for %d turns.
-		If you have Spin Fate active these bonuses will be increased by 33%% per spin (up to a maximum of %d%%).
-		While Webs of Fate is active you may gain one additional spin per turn.  These bonuses will scale with your Spellpower.]])
-		:format(power, duration, power * 2)
-	end,
-}
-
-newTalent{
-	name = "Fateweaver",
-	type = {"chronomancy/fate-weaving", 3},
-	require = chrono_req3,
-	mode = "passive",
-	points = 5,
-	getReduction = function(self, t) return paradoxTalentScale(self, t, 10, 30, 40)/100 end,
-	info = function(self, t)
-		local reduction = t.getReduction(self, t)*100
-		return ([[When Spin Fate is triggered you reduce the triggering damage by %d%%.
-		This effect scales with your Spellpower.]]):
-		format(reduction)
 	end,
 }
 
 newTalent{
 	name = "Seal Fate",
-	type = {"chronomancy/fate-weaving", 4},
-	require = chrono_req4,
+	type = {"chronomancy/fate-weaving", 2},
+	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	cooldown = 12,
 	tactical = { BUFF = 2 },
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
 	getProcs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
@@ -144,8 +71,55 @@ newTalent{
 	info = function(self, t)
 		local procs = t.getProcs(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
+		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you gain Spin and have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
 		If you have Spin Fate active the chance will be increased by 33%% per Spin (to a maximum of 100%% at three Spin.)
-		This can occur at most %d times per turn.  While Seal Fate is active you may gain one additional spin per turn.]]):format(duration, procs)
+		The duration increase can occur up to %d times per turn and the bonus Spin once per turn.]]):format(duration, procs)
+	end,
+}
+
+newTalent{
+	name = "Fateweaver",
+	type = {"chronomancy/fate-weaving", 3},
+	require = chrono_req3,
+	mode = "passive",
+	points = 5,
+	getPowerBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 8, 0.75)) end,
+	getMaxSpin = function(self, t) return self:hasEffect(self.EFF_WEBS_OF_FATE) and 6 or 3 end,
+	doFateweaver = function(self, t)
+		local eff = self:hasEffect(self.EFF_SPIN_FATE)
+		if not eff then return end
+		self:setEffect(self.EFF_FATEWEAVER, 3, {power_bonus=t.getPowerBonus(self, t), spin=1, max_spin=t.getMaxSpin(self, t)})
+	end,
+	info = function(self, t)
+		local power = t.getPowerBonus(self, t)
+		return ([[You now gain %d combat accuracy, physical power, spellpower, and mindpower per Spin.]]):
+		format(power)
+	end,
+}
+
+newTalent{
+	name = "Webs of Fate",
+	type = {"chronomancy/fate-weaving", 4},
+	require = chrono_req4,
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 12,
+	tactical = { BUFF = 2, DEFEND = 2 },
+	range = 10,
+	getPower = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
+	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
+	no_energy = true,
+	action = function(self, t)
+	
+		self:setEffect(self.EFF_WEBS_OF_FATE, t.getDuration(self, t), {power=t.getPower(self, t), talent=t})
+		
+		return true
+	end,
+	info = function(self, t)
+		local power = t.getPower(self, t) * 100
+		local duration = t.getDuration(self, t)
+		return ([[For the next %d turns you displace %d%% of any damage you receive onto a random enemy within range.
+		While Webs of Fate is active you may gain one additional Spin per turn and your maximum Spin is doubled.]])
+		:format(duration, power)
 	end,
 }

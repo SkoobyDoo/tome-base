@@ -20,8 +20,8 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
-	name = "Disentangle",
-	type = {"chronomancy/fate-threading", 1},
+	name = "Induce Anomaly",
+	type = {"chronomancy/flux", 1},
 	require = chrono_req1,
 	points = 5,
 	cooldown = 12,
@@ -36,20 +36,21 @@ newTalent{
 	action = function(self, t)
 		local reduction = self:spellCrit(t.getReduction(self, t))
 		self:paradoxDoAnomaly(reduction, t.anomaly_type, "forced")
+		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
 		local reduction = t.getReduction(self, t)
 		local paradox = 100 * t.getParadoxMulti(self, t)
-		return ([[Disentangle the timeline, reducing your Paradox by %d and creating an anomaly.  This spell will never produce a major anomaly.
-		Additionally you recover %d%% more Paradox from random anomalies (%d%% total).
+		return ([[Create an anomaly, reducing your Paradox by %d.  This spell will never produce a major anomaly.
+		Additionally you recover %d%% more Paradox from random anomalies when they occur (%d%% total).
 		The Paradox reduction will increase with your Spellpower.]]):format(reduction, paradox, paradox + 200)
 	end,
 }
 
 newTalent{
-	name = "Preserve Pattern",
-	type = {"chronomancy/fate-threading", 2},
+	name = "Reality Smearing",
+	type = {"chronomancy/flux", 2},
 	require = chrono_req2,
 	mode = "sustained", 
 	sustain_paradox = 0,
@@ -73,15 +74,16 @@ newTalent{
 		local fnt = "buff_font"
 		return tostring(math.ceil(val)), fnt
 	end,
-	doPerservePattern = function(self, t, src, dam)
-		local absorb = dam * t.getPercent(self, t)
+	callbackOnHit = function(self, t, cb, src)
+		local absorb = cb.value * t.getPercent(self, t)
 		local paradox = absorb*t.getConversionRatio(self, t)
-		self:setEffect(self.EFF_PRESERVE_PATTERN, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
-		game:delayedLogMessage(self, nil,  "preserve pattern", "#LIGHT_BLUE##Source# converts damage to paradox!")
-		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
-		dam = dam - absorb
 		
-		return dam
+		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
+		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
+		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
+		cb.value = cb.value - absorb
+		
+		return cb.value
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/arcane")
@@ -110,8 +112,8 @@ newTalent{
 }
 
 newTalent{
-	name = "Trim Threads",
-	type = {"chronomancy/fate-threading", 3},
+	name = "Attenuate",
+	type = {"chronomancy/flux", 3},
 	require = chrono_req3,
 	points = 5,
 	cooldown = 4,
@@ -128,7 +130,7 @@ newTalent{
 	direct_hit = true,
 	doAnomaly = function(self, t, target, eff)
 		self:project({type=hit}, target.x, target.y, DamageType.TEMPORAL, eff.power * eff.dur)
-		target:removeEffect(target.EFF_TRIM_THREADS)
+		target:removeEffect(target.EFF_ATTENUATE)
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -140,11 +142,10 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			target:setEffect(target.EFF_TRIM_THREADS, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
+			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end)
 
 		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
-
 		game:playSoundNear(self, "talents/tidalwave")
 
 		return true
@@ -161,51 +162,46 @@ newTalent{
 }
 
 newTalent{
-	name = "Bias Weave",
-	type = {"chronomancy/fate-threading", 4},
+	name = "Twist Fate",
+	type = {"chronomancy/flux", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 10,
-	-- Anomaly biases can be set manually for monsters
-	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
-	no_npc_use = true,  -- so rares don't learn useless talents
-	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
-	getBiasChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
-	getTargetChance = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
-	getAnomalySpeed = function(self, t) return self:combatTalentLimit(t, 1, 0.10, .75) end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "anomaly_recovery_speed", t.getAnomalySpeed(self, t))
+	cooldown = 6,
+	tactical = { ATTACKAREA = 2 },
+	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then if not silent then game.logPlayer(self, "You must have a twisted anomaly to cast this spell.") end return false end return true end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 5))) end,
+	doTwistFate = function(self, t, twist)
+		local eff = self:hasEffect(self.EFF_TWIST_FATE)
+		eff.twisted = twist or false
+		
+		-- Call the anomoly action function directly
+		local anom = self:getTalentFromId(eff.talent)
+		anom.action(self, anom)
+
+		self:incParadox(-eff.paradox)
+		self:removeEffect(self.EFF_TWIST_FATE)
 	end,
-	on_learn = function(self, t)
-		if self.anomaly_bias and self.anomaly_bias.chance then
-			self.anomaly_bias.chance = t.getBiasChance(self, t)
-		end
+	setEffect = function(self, t, talent, paradox)
+		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)
+		self:setEffect(self.EFF_TWIST_FATE, t.getDuration(self, t), {talent=talent, paradox=paradox})
+		
+		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=70, rM=176, gm=130, gM=196, bm=180, bM=222, am=125, aM=125})
 	end,
- 	on_unlearn = function(self, t)
-		if self:getTalentLevel(t) == 0 then
-			self.anomaly_bias = nil
-		elseif self.anomaly_bias and self.anomaly_bias.chance then
-			self.anomaly_bias.chance = t.getBiasChance(self, t)
-		end
- 	end,
 	action = function(self, t)
-		local state = {}
-		local Chat = require("engine.Chat")
-		local chat = Chat.new("chronomancy-bias-weave", {name="Bias Weave"}, self, {version=self, state=state})
-		local d = chat:invoke()
-		local co = coroutine.running()
-		d.unload = function() coroutine.resume(co, state.set_bias) end
-		if not coroutine.yield() then return nil end
+		t.doTwistFate(self, t, true)
+		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
-		local target_chance = t.getTargetChance(self, t)
-		local bias_chance = t.getBiasChance(self, t)
-		local anomaly_recovery = (1 - t.getAnomalySpeed(self, t)) * 100
-		return ([[You've learned to focus most anomalies when they occur and may choose the target area with %d%% probability.
-		You also may bias the type of anomaly effects you produce with %d%% probability.
-		Additionally random anomalies only cost you %d%% of a turn rather than a full turn when they occur.
-		Major anomalies, those occuring when your modified Paradox is over 600, are not affected by this talent.]]):format(target_chance, bias_chance, anomaly_recovery)
+		local eff = self:hasEffect(self.EFF_TWIST_FATE)
+		local talent = "None"
+		if eff then talent = self:getTalentFromId(eff.talent).name end
+		local duration = t.getDuration(self, t)
+		return ([[If Twist Fate is not on cooldown minor anomalies will be held for %d turns, allowing your spell to cast as normal.  While held you may cast Twist Fate in order to trigger the anomaly and may choose the target area.
+		If a second anomaly occurs while a prior one is held or the timed effect expires the first anomaly will trigger immediately, interrupting your current turn or action.
+		Paradox reductions from held anomalies occur when triggered.
+				
+		Current Twisted Anomaly: %s]]):
+		format(duration, talent)
 	end,
 }

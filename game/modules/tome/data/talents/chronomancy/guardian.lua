@@ -31,59 +31,36 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local inc = t.getPercentInc(self, t)
 		return ([[Increases Physical Power by %d, and increases weapon damage by %d%% when using swords, axes, maces, knives, or bows.
-		You now also use your Magic in place of Strength when equipping weapons, calculating weapon damage, and physical power.
+		You now also use your Magic in place of Strength when equipping weapons and ammo, calculating weapon damage, and physical power.
 		These bonuses override rather than stack with weapon mastery, knife mastery, and bow mastery.]]):
 		format(damage, 100*inc)
 	end,
 }
 
 newTalent{
-	name = "Invigorate",
+	name = "Guardian Unity",
 	type = {"chronomancy/guardian", 2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
-	fixed_cooldown = true,
-	tactical = { HEAL = 1 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(self:getTalentLevel(t), 14, 4, 8))) end, -- Limit < 14
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
-	action = function(self, t)
-		self:setEffect(self.EFF_INVIGORATE, t.getDuration(self,t), {power=t.getPower(self, t)})
-		return true
-	end,
-	info = function(self, t)
-		local power = t.getPower(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns, you recover %0.1f life per turn and most other talents on cooldown will refresh twice as fast as usual.
-		The amount healed will increase with your Spellpower.]]):format(duration, power)
-	end,
-}
-
-newTalent{
-	name = "Guardian Unity",
-	type = {"chronomancy/guardian", 3},
-	require = chrono_req3,
-	points = 5,
 	mode = "passive",
-	getSplit = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	getSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
-	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 40, 24)	end,
+	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
 		local split = cb.value * t.getSplit(self, t)
 
 		-- If we already split this turn pass damage to our clone
-		if self.turn_procs.double_edge and self.turn_procs.double_edge ~= self and game.level:hasEntity(self.turn_procs.double_edge) then
+		if self.turn_procs.unity_warden and self.turn_procs.unity_warden ~= self and game.level:hasEntity(self.turn_procs.unity_warden) then
 			split = split/2
 			-- split the damage
-			game:delayedLogDamage(src, self.turn_procs.double_edge, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
+			game:delayedLogDamage(src, self.turn_procs.unity_warden, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
 			cb.value = cb.value - split
-			self.turn_procs.double_edge:takeHit(split, src)
+			self.turn_procs.unity_warden:takeHit(split, src)
 		end
 
 		-- Do our split
-		if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.double_edge then
+		if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.unity_warden then
 			-- Look for space first
 			local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
 			if tx and ty then
@@ -110,7 +87,7 @@ newTalent{
 
 				-- split the damage
 				cb.value = cb.value - split
-				self.turn_procs.double_edge = m
+				self.turn_procs.unity_warden = m
 				m:takeHit(split, src)
 				m:setTarget(src or nil)
 				game:delayedLogMessage(self, nil, "guardian_damage", "#STEEL_BLUE##Source# shares damage with %s guardian!", string.his_her(self))
@@ -129,62 +106,106 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all other damage you take for the rest of the turn.
 		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.  After %d turns it returns to its own timeline.
-		This effect can only occur once per turn and the amount of damage split scales with your Spellpower.]]):format(trigger, split, split/2, duration)
+		This effect can only occur once per turn.]]):format(trigger, split, split/2, duration)
 	end,
 }
 
 newTalent{
-	name = "Breach",
-	type = {"chronomancy/guardian", 4},
-	require = chrono_req4,
+	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
+	type = {"chronomancy/guardian", 3},
+	require = chrono_req3,
 	points = 5,
-	cooldown = 8,
-	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { BUFF = 2 },
+	direct_hit = true,
 	requires_target = true,
-	range = function(self, t)
-		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
-		return 1
+	range = 10,
+	target = function (self, t)
+		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
-	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
-	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
-	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
-	archery_onhit = function(self, t, target, x, y)
-		target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {})
-	end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 8, 16))) end,
+	getAttack = function(self, t) return self:combatTalentSpellDamage(t, 10, 100, getParadoxSpellpower(self, t)) end,
+	getCrit = function(self, t) return self:combatTalentSpellDamage(t, 5, 50, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
-		local mainhand, offhand = self:hasDualWeapon()
-
-		if self:hasArcheryWeapon("bow") then
-			-- Ranged attack
-			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
-			if not targets then return end
-			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
-		elseif mainhand then
-			-- Melee attack
-			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-			local x, y, target = self:getTarget(tg)
-			if not target or not self:canProject(tg, x, y) then return nil end
-			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
-
-			if hitted then
-				target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
-			end
-		else
-			game.logPlayer(self, "You cannot use Breach without an appropriate weapon!")
-			return nil
-		end
-
+		local tg = self:getTalentTarget(t)
+		local tx, ty = self:getTarget(tg)
+		if not tx or not ty then return nil end
+		local _ _, tx, ty = self:canProject(tg, tx, ty)
+		local target = game.level.map(tx, ty, Map.ACTOR)
+		if not target then return end
+		
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
+		target:setEffect(target.EFF_WARDEN_S_TARGET, 10, {src=self, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
+		
+		game:playSoundNear(self, "talents/dispel")
+		
 		return true
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
-		local damage = t.getDamage(self, t) * 100
-		return ([[Attack the target with either your bow or melee weapons for %d%% damage.
-		If the attack hits you'll breach the target's immunities, reducing armor hardiness, stun, pin, blindness, and confusion immunity by 50%% for %d turns.
-		Breach chance scales with your Spellpower.]])
-		:format(damage, duration)
+		local atk = t.getAttack(self, t)
+		local crit = t.getCrit(self, t)
+		return ([[For the next %d turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
+		Additionally you gain +%d accuracy and +%d%% critical hit rate when attacking this target.
+		The accuracy and critical hit rate bonuses will scale with your Spellpower.]])
+		:format(duration, atk, crit)
 	end
+}
+
+newTalent{
+	name = "Vigilance",
+	type = {"chronomancy/guardian", 4},
+	require = chrono_req4,
+	points = 5,
+	mode = "passive",
+	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
+		self:talentTemporaryValue(p, "see_invisible", t.getSense(self, t))
+	end,
+	callbackOnStatChange = function(self, t, stat, v)
+		if stat == self.STAT_MAG then
+			self:updateTalentPassives(t)
+		end
+	end,
+	callbackOnActBase = function(self, t)
+		if rng.percent(t.getPower(self, t)) then
+			local effs = {}
+			-- Go through all spell effects
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type ~= "other" and e.status == "detrimental" and e.subtype ~= "cross tier" then
+					effs[#effs+1] = {"effect", eff_id}
+				end
+			end
+			
+			if #effs > 0 then
+				local eff = rng.tableRemove(effs)
+				if eff[1] == "effect" then
+					self:removeEffect(eff[2])
+					game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
+				end
+			end
+		end
+	end,
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and dam > 0 and eff.target ~= src and src ~= self then
+			-- Reduce damage
+			local reduction = dam * self:callTalent(self.T_VIGILANCE, "getPower")/100
+			dam = dam -  reduction
+			game:delayedLogDamage(src, self, 0, ("%s(%d vigilance)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
+		end
+		return {dam=dam}
+	end,
+	info = function(self, t)
+		local sense = t.getSense(self, t)
+		local power = t.getPower(self, t)
+		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  You also have a %d%% chance to recover from a single negative status effect each turn.
+		While Warden's Focus is active you reduce incoming damage from all targets other than your focus target by %d%%.
+		Sense abilities will scale with your Magic stat.]]):
+		format(sense, sense, power, power)
+	end,
 }

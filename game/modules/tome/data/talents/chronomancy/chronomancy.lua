@@ -111,7 +111,7 @@ newTalent{
 				p.rest_count = self:getTalentCooldown(t)
 				game:onTickEnd(function()
 					if not self.dead then
-						self:forceUseTalent(cont_t, {ignore_ressources=true, ignore_cd=true, ignore_energy=true, force_level=t_level})
+						self:forceUseTalent(cont_t, {ignore_ressources=true, ignore_cd=true, ignore_energy=true, force_target=self, force_level=t_level})
 					end
 				end)
 			end
@@ -151,10 +151,10 @@ newTalent{
 		local trigger = t.getTrigger(self, t) * 100
 		local cooldown = self:getTalentCooldown(t)
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
-		return ([[Choose an activatable spell that's not targeted.  When you take damage that reduces your life below %d%% the spell will automatically cast.
+		return ([[Choose an activatable spell that's not targeted and does not have a fixed cooldown.  When you take damage that reduces your life below %d%% the spell will automatically cast.
 		This spell will cast even if it is currently on cooldown, will not consume a turn or resources, and uses the talent level of Contingency or its own, whichever is lower.
 		This effect can only occur once every %d turns and takes place after the damage is resolved.
-		
+
 		Current Contingency Spell: %s]]):
 		format(trigger, cooldown, talent)
 	end,
@@ -168,9 +168,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 50,
 	no_npc_use = true,  -- so rares don't learn useless talents
-	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(self:getTalentLevel(t), 10, 25))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 10, 25))) end,
 	on_pre_use = function(self, t, silent)
 		if checkTimeline(self) then
 			if not silent then

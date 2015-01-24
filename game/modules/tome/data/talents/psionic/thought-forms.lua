@@ -43,7 +43,7 @@ local function setupAct(self)
 	self.on_act = function(self)
 		local tid = self.summoning_tid
 		if not game.level:hasEntity(self.summoner) or self.summoner.dead or not self.summoner:isTalentActive(tid) then
-			self:die(self)
+			game:onTickEnd(function()self:die(self)end)
 		end
 		if game.level:hasEntity(self.summoner) and core.fov.distance(self.x, self.y, self.summoner.x, self.summoner.y) > 10 then
 			local Map = require "engine.Map"

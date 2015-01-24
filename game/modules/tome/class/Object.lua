@@ -60,7 +60,7 @@ function _M:getRequirementDesc(who)
 		self.require = oldreq
 
 		return desc
-	elseif self.type =="weapon" and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
+	elseif (self.type =="weapon" or self.type=="ammo") and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
 		local oldreq = rawget(self, "require")
 		self.require = table.clone(oldreq, true)
 		if self.require.stat and self.require.stat.str then
@@ -1622,7 +1622,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		desc:add(talents[tid][3] and {"color","GREEN"} or {"color","WHITE"}, ("Talent on hit(mindpower): %s (%d%% chance level %d)."):format(self:getTalentFromId(tid).name, talents[tid][1], talents[tid][2]), {"color","LAST"}, true)
 	end
 
-	if self.use_no_energy then
+	if self.use_no_energy and not self.use_no_energy == "fake" then
 		desc:add("Activating this item is instant.", true)
 	end
 
