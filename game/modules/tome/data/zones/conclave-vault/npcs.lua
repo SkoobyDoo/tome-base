@@ -192,6 +192,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 
 newEntity{ base = "BASE_NPC_OGRE", define_as = "OGRE_SENTRY",
 	name = "ogre sentry", color=colors.GREY,
+	resolvers.nice_tile{tall=1},
 	desc = [[This greatsword-wielding ogre looks at you with contempt and hatred.]],
 	level_range = {21, nil}, exp_worth = 1,
 	rank = 3,
