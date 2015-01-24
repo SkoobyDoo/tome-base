@@ -861,10 +861,11 @@ local word_size_cache = {}
 local fontoldsize = getmetatable(tmps).__index.size
 getmetatable(tmps).__index.simplesize = fontoldsize
 local fontcachewordsize = function(font, fstyle, v)
-	if not word_size_cache[font][fstyle][v] then
-		word_size_cache[font][fstyle][v] = {fontoldsize(font, v)}
+	local cache = table.getTable(word_size_cache, font, fstyle)
+	if not cache[v] then
+		cache[v] = {fontoldsize(font, v)}
 	end
-	return unpack(word_size_cache[font][fstyle][v])
+	return unpack(cache[v])
 end
 getmetatable(tmps).__index.size = function(font, str)
 	local tstr = str:toTString()
