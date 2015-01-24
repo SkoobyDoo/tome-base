@@ -44,12 +44,8 @@ function _M:generate()
 	self.key:reset()
 
 	-- Draw UI
-	self.title_w, self.title_h = self.font:size(self.title)
-	self.w, self.h = self.title_w - frame_ox1 + frame_ox2, self.title_h - frame_oy1 + frame_oy2
-
-	local s = core.display.newSurface(self.title_w, self.title_h)
-	s:drawColorStringBlended(self.font, self.title, 0, 0, 255, 255, 255, true)
-	self.tex = {s:glTexture()}
+	self.tex = self:drawFontLine(self.font, self.title)
+	self.w, self.h = self.tex.w - frame_ox1 + frame_ox2, self.tex.h - frame_oy1 + frame_oy2
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w+1, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
@@ -58,7 +54,7 @@ function _M:generate()
 		end
 	end)
 
-	self.rw, self.rh = self.title_w, self.title_h
+	self.rw, self.rh = self.tex.w, self.tex.h
 	self.frame = self:makeFrame("ui/button", self.w, self.h)
 --	self.frame.b2 = self:getUITexture("ui/border_hor_middle.png")
 
@@ -76,6 +72,7 @@ function _M:generate()
 	self.h = self.h + 6
 end
 
+--[[
 function _M:drawFrame(f, x, y, r, g, b, a)
 	-- Sides
 	f.b8.t:toScreenFull(x + f.b7.w, y, f.w - f.b7.w - f.b9.w + 1, f.b8.h, f.b8.tw, f.b8.th, r, g, b, a)
@@ -89,7 +86,7 @@ function _M:drawFrame(f, x, y, r, g, b, a)
 	-- Corners
 	f.b7.t:toScreenFull(x, y, f.b7.w, f.b7.h, f.b7.tw, f.b7.th, r, g, b, a)
 	f.b9.t:toScreenFull(x + f.w - f.b9.w, y, f.b9.w, f.b9.h, f.b9.tw, f.b9.th, r, g, b, a)
-end
+end]]
 
 function _M:select()
 	self.selected = true
@@ -111,6 +108,6 @@ function _M:display(x, y, nb_keyframes)
 	else
 		self:drawFrame(self.frame_sel, x, y, 1, 0.5, 0.5, 1)
 	end
-	if self.text_shadow then self.tex[1]:toScreenFull(x+1-frame_ox1, y+1-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3], 0, 0, 0, self.text_shadow) end
-	self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3])
+	if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 0, 0, 0, self.text_shadow) end
+	self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
 end
