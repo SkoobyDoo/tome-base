@@ -156,7 +156,9 @@ newTalent{
 		
 		-- 25% bonus damage per target beyond the first
 		local dam = self:spellCrit(t.getDamage(self, t))
-		dam = dam + math.min(dam, dam*(#tgts-1)/4)
+		if #tgts > 0 then
+			dam = dam + math.min(dam, dam*(#tgts-1)/4)
+		end
 		
 		-- Project our damage last based on number of targets hit
 		self:project(tg, x, y, function(px, py)
