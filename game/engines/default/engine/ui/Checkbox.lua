@@ -79,8 +79,8 @@ function _M:display(x, y, nb_keyframes)
 			self.tick.t:toScreenFull(x, y, self.tick.w, self.tick.h, self.tick.tw, self.tick.th)
 		end
 	else
-		if self.text_shadow then self.tex[1]:toScreenFull(x+1, y+1 + (self.h - self.tex.h) / 2, self.tex.w, self.tex.h, self.tex[2], self.tex[3], 0, 0, 0, self.text_shadow) end
-		self.tex[1]:toScreenFull(x, y + (self.h - self.tex.h) / 2, self.tex.w, self.tex.h, self.tex[2], self.tex[3])
+		if self.text_shadow then self:textureToScreen(self.tex, x+1, y+1 + (self.h - self.tex.h) / 2, 0, 0, 0, self.text_shadow) end
+		self:textureToScreen(self.tex, x, y + (self.h - self.tex.h) / 2)
 		if self.focused then
 			self.check.t:toScreenFull(x + self.tex.w, y, self.check.w, self.check.h, self.check.tw, self.check.th)
 		else
