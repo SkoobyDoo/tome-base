@@ -182,15 +182,15 @@ newEntity{
 	  effect_reduction_on_teleport = resolvers.mbonus_material(20, 10),
 
 	  resists={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(20, 10),
-	 [DamageType.DARKNESS] = resolvers.mbonus_material(20, 10),
+		 [DamageType.TEMPORAL] = resolvers.mbonus_material(20, 10),
+		 [DamageType.DARKNESS] = resolvers.mbonus_material(20, 10),
 	  },
 
 	  melee_project={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(5, 5),
+		[DamageType.DARKNESS] = resolvers.mbonus_material(5, 5),
 	  },
 	  ranged_project={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(5, 5),
+		[DamageType.DARNKESS] = resolvers.mbonus_material(5, 5),
 	  },
    },
 

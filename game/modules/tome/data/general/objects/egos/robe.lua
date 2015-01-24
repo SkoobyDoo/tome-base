@@ -351,7 +351,7 @@ newEntity{
 	keywords = {ancient=true},
 	level_range = {30, 50},
 	greater_ego = 1,
-	rarity = 40,
+	rarity = 15,
 	cost = 40,
 	wielder = {
 		inc_stats = {
@@ -359,12 +359,11 @@ newEntity{
 		},
 		inc_damage = {
 			[DamageType.TEMPORAL] = resolvers.mbonus_material(15, 5),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(15, 5),
 		},
 		resists_pen = { 
 			[DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5),
-		},
-		resists = {
-			[DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(10, 5),
 		},
 		paradox_reduce_anomalies = resolvers.mbonus_material(8, 8),
 	},	

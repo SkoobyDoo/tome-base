@@ -170,7 +170,7 @@ newEntity{
 	cost = 30,
 	wielder = {
 		resists = {
-			[DamageType.COLD] = resolvers.mbonus_material(10, 5),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(10, 5),
 			[DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5),
 	},
 		resist_all_on_teleport = resolvers.mbonus_material(20, 5),

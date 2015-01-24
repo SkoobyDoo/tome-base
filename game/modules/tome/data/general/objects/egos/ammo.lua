@@ -361,6 +361,34 @@ newEntity{
 	},
 }
 
+newEntity{
+	power_source = {magic=true},
+	name = " of warping", suffix=true, instant_resolve=true,
+	keywords = {warp=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 30,
+	cost = 30,
+	combat = {
+		ranged_project={
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(15, 5),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(15, 5),
+		},
+		special_on_hit = {desc="10% chance to stun, blind, pin, or confuse the target", fct=function(combat, who, target)
+			if not rng.percent(10) then return end
+			local eff = rng.table{"stun", "blind", "pin", "confusion"}
+			if not target:canBe(eff) then return end
+			local check = math.max(who:combatSpellpower(), who:combatMindpower(), who:combatAttack())
+			if not who:checkHit(check, target:combatMentalResist()) then return end
+			if eff == "stun" then target:setEffect(target.EFF_STUNNED, 4, {})
+			elseif eff == "blind" then target:setEffect(target.EFF_BLINDED, 4, {})
+			elseif eff == "pin" then target:setEffect(target.EFF_PINNED, 4, {})
+			elseif eff == "confusion" then target:setEffect(target.EFF_CONFUSED, 4, {power=50})
+			end
+		end},
+	},
+}
+
 -------------------------------------------------------
 -- Nature/Antimagic Egos:------------------------------
 -------------------------------------------------------
