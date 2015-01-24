@@ -361,7 +361,7 @@ function _M:display()
 	end
 	if player:knowTalent(player.T_PARADOX_POOL) then
 		local chance = player:paradoxFailChance()
-		self:mouseTooltip(self.TOOLTIP_PARADOX, self:makeTextureBar("#LIGHT_STEEL_BLUE#Paradox:", ("%d (%d%s)"):format(player:getParadox(), chance, "%%"), chance, 100, player.paradox_regen, x, h, 255, 255, 255,
+		self:mouseTooltip(self.TOOLTIP_PARADOX, self:makeTextureBar("#LIGHT_STEEL_BLUE#Paradox:", ("%d/%d (%d%s)"):format(player:getModifiedParadox(), player:getParadox(), chance, "%%"), chance, 100, chance, x, h, 255, 255, 255,
 			{r=176 / 2, g=196 / 2, b=222 / 2},
 			{r=176 / 5, g=196 / 5, b=222 / 5}
 		)) h = h + self.font_h

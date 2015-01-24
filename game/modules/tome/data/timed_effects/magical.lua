@@ -3115,7 +3115,7 @@ newEffect{
 	
 		if self.turn_procs and target.tmp then
 			if self.turn_procs.seal_fate and self.turn_procs.seal_fate >= eff.procs then return end
-			local chance = 50
+			local chance = eff.chance
 			local spin = self:hasEffect(self.EFF_SPIN_FATE)
 			if spin then
 				chance = chance * (1 + spin.spin/3)

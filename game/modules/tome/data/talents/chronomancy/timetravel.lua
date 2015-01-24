@@ -292,7 +292,7 @@ newTalent{
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
 	direct_hit = true,
 	requires_target = true,
@@ -321,7 +321,7 @@ newTalent{
 		local percent = t.getPercent(self, t) * 100
 		local radius = self:getTalentRadius(t)
 		local damage = t.getDamage(self, t)
-		return ([[Creates a temporal echo in a radius of %d around you.  Affected targets will take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
+		return ([[Creates a temporal echo in a radius of %d around you.  Affected enemies will take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
 		The additional damage will be divided by the target's rank and the damage scales with your Spellpower.]]):
 		format(radius, damDesc(self, DamageType.TEMPORAL, damage), percent)
 	end,

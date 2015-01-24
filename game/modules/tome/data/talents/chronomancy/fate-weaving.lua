@@ -62,6 +62,7 @@ newTalent{
 	cooldown = 12,
 	tactical = { BUFF = 2 },
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 40)/100 end, -- Limit < 50%end,
 	getProcs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
 	no_energy = true,
 	action = function(self, t)
@@ -71,9 +72,10 @@ newTalent{
 	info = function(self, t)
 		local procs = t.getProcs(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you gain Spin and have a 50%% chance to increase the duration of one detrimental status effect on it by one turn.
-		If you have Spin Fate active the chance will be increased by 33%% per Spin (to a maximum of 100%% at three Spin.)
-		The duration increase can occur up to %d times per turn and the bonus Spin once per turn.]]):format(duration, procs)
+		local chance = t.getChance(self, t)
+		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you gain Spin and have a %d%% chance to increase the duration of one detrimental status effect on it by one turn.
+		If you have Spin Fate active the chance will be increased by 33%% per Spin (for %d%% at three Spin.)
+		The duration increase can occur up to %d times per turn and the bonus Spin once per turn.]]):format(duration, procs, chance, chance * 2)
 	end,
 }
 

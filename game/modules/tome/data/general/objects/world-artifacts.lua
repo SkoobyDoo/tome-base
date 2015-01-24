@@ -4444,7 +4444,7 @@ newEntity{ base = "BASE_GLOVES", --Thanks SageAcrin /AND/ Edge2054!
 		},
 	},
 	-- Change when void talents are done
-	talent_on_spell = { {chance=10, talent=Talents.T_DUST_TO_DUST, level=2} },
+	talent_on_spell = { {chance=10, talent=Talents.T_ECHOES_FROM_THE_PAST, level=2} },
 }
 
 newEntity{ base = "BASE_GEM", --Thanks SageAcrin and Graziel!
