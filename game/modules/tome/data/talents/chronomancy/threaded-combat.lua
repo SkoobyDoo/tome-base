@@ -24,7 +24,7 @@ newTalent{
 	type = {"chronomancy/threaded-combat", 1},
 	require = chrono_req_high1,
 	points = 5,
-	--cooldown = 6,
+	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {weapon = 2}, CLOSEIN = 2, ESCAPE = 2 },
 	requires_target = true,

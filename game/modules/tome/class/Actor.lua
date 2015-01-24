@@ -1350,13 +1350,8 @@ function _M:waitTurn()
 	end
 
 	-- Tune paradox up or down
-	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox()) then
-		local power = 0
-		if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
-			local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
-			power = (self.preferred_paradox - self:getParadox())/duration
-			self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
-		end
+	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
+		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
 	end
 
 	self:useEnergy()

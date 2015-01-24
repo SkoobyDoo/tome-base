@@ -106,7 +106,7 @@ doWardenWeaponSwap = function(self, t, dam, type, silent)
 		self:quickSwitchWeapons(true, "warden", silent)
 		self.no_inventory_access = old_inv_access
 		
-		if t and (t.type[1]:find("^chronomancy/blade") or t.type[1]:find("^chronomancy/bow")) then
+		if t and dam > 0 and (t.type[1]:find("^chronomancy/blade") or t.type[1]:find("^chronomancy/bow")) then
 			if self:knowTalent(self.T_BLENDED_THREADS) then
 				if not self.turn_procs.blended_threads then
 					self.turn_procs.blended_threads = warden_weapon
@@ -266,6 +266,16 @@ newTalent{
 		end
 		return math.max(duration, 10)
 	end,
+	doTuning = function(self, t)
+		if self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox())then
+			local power = 0
+			if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
+				local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
+				power = (self.preferred_paradox - self:getParadox())/duration
+				self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
+			end
+		end
+	end,
 	action = function(self, t)
 		local function getQuantity(title, prompt, default, min, max)
 			local result
@@ -294,9 +304,9 @@ newTalent{
 			"Spacetime Tuning",
 			"What's your preferred paradox level?",
 			math.floor(self.paradox))
-		if not paradox then return end
-		if paradox > 1000 then paradox = 1000 end
-		self.preferred_paradox = paradox
+			if not paradox then return end
+			if paradox > 1000 then paradox = 1000 end
+			self.preferred_paradox = paradox
 		return true
 	end,
 	info = function(self, t)

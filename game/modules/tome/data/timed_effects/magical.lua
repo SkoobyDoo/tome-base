@@ -3445,7 +3445,7 @@ newEffect{
 	name = "FATEWEAVER", image = "talents/fateweaver.png",
 	desc = "Fateweaver",
 	long_desc = function(self, eff) return ("The target's accuracy and power have been increased by %d."):format(eff.power_bonus * eff.spin) end,
-	display_desc = function(self, eff) return eff.spin.." Spin" end,
+	display_desc = function(self, eff) return eff.spin.." Fateweaver" end,
 	charges = function(self, eff) return eff.spin end,
 	type = "magical",
 	subtype = { temporal=true },

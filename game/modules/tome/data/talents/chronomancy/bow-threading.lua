@@ -78,7 +78,7 @@ newTalent{
 	requires_target = true,
 	range = archery_range,
 	speed = 'archery',
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
 	getClones = function(self, t) return self:getTalentLevel(t) >= 5 and 3 or self:getTalentLevel(t) >= 3 and 2 or 1 end,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
