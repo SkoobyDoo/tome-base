@@ -59,12 +59,12 @@ function _M:resize(x, y, w, h)
 	self.party = glTexFromArgs(core.display.loadImage("/data/gfx/ui/party_top.png"):glTexture())
 	self.bg = glTexFromArgs(core.display.loadImage("/data/gfx/ui/player-display.png"):glTexture())
 
-	self.portrait = {core.display.loadImage("/data/gfx/ui/party-portrait.png"):glTexture()}
-	self.portrait_unsel = {core.display.loadImage("/data/gfx/ui/party-portrait-unselect.png"):glTexture()}
+	self.portrait = glTexFromArgs(core.display.loadImage("/data/gfx/ui/party-portrait.png"):glTexture())
+	self.portrait_unsel = glTexFromArgs(core.display.loadImage("/data/gfx/ui/party-portrait-unselect.png"):glTexture())
 
-	self.icon_green = { core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):glTexture() }
-	self.icon_yellow = { core.display.loadImage("/data/gfx/ui/talent_frame_sustain.png"):glTexture() }
-	self.icon_red = { core.display.loadImage("/data/gfx/ui/talent_frame_cooldown.png"):glTexture() }
+	self.icon_green = glTexFromArgs( core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):glTexture() )
+	self.icon_yellow = glTexFromArgs( core.display.loadImage("/data/gfx/ui/talent_frame_sustain.png"):glTexture() )
+	self.icon_red = glTexFromArgs( core.display.loadImage("/data/gfx/ui/talent_frame_cooldown.png"):glTexture() )
 
 	self.items = {}
 end
@@ -143,10 +143,11 @@ function _M:makePortrait(a, current, x, y)
 		end
 	end)
 
+	local hl = 32 * math.max(0, a.life) / a.max_life
 	self.items[#self.items+1] = function(disp_x, disp_y)
 		core.display.drawQuad(disp_x + x + 4, disp_y + y + 4, 32, 32, 0, 0, 0, 255)
 		core.display.drawQuad(disp_x + x + 4, disp_y + y + (40 - 4) - hl, 32, hl, 255 * 0.7, 0, 0, 255)
-		a:toScreen(nil, dx+x+4, dy+y+1, 32, 32)
+		a:toScreen(nil, disp_x+x+4, disp_y+y+1, 32, 32)
 	end
 
 	local p = current and self.portrait or self.portrait_unsel
@@ -163,7 +164,7 @@ function _M:makeEntityIcon(e, tiles, x, y, desc, gtxt, frame)
 			gtxt._tex:toScreenFull(dx+x+4+2 + (40 - gtxt.fw)/2, dy+y+4+2 + (40 - gtxt.fh)/2, gtxt.w, gtxt.h, gtxt._tex_w, gtxt._tex_h, 0, 0, 0, 0.7)
 			gtxt._tex:toScreenFull(dx+x+4 + (40 - gtxt.fw)/2, dy+y+4 + (40 - gtxt.fh)/2, gtxt.w, gtxt.h, gtxt._tex_w, gtxt._tex_h)
 		end
-		frame[1]:toScreenFull(dx+x, dy+y, 40, 40, frame[2] * 40 / frame[6], frame[3] * 40 / frame[7], 255, 255, 255, 255)
+		frame._tex:toScreenFull(dx+x, dy+y, 40, 40, frame._tex_w * 40 / frame.w, frame._tex_h * 40 / frame.h, 255, 255, 255, 255)
 	end
 	self.items[#self.items+1] = item
 end
@@ -218,7 +219,7 @@ function _M:display()
 	-- Party members
 	if #game.party.m_list >= 2 and game.level then
 		self.items[#self.items+1] = {self.party, x=0, y=h}
-		h = h + self.party.w + 3
+		h = h + self.party.h + 3
 
 		local nb = math.floor(self.w / 42)
 		local off = (self.w - nb * 42) /2
@@ -238,7 +239,7 @@ function _M:display()
 	end
 
 	self.items[#self.items+1] = {self.top, x=0, y=h}
-	h = h + self.top.w + 5
+	h = h + self.top.h + 5
 
 	-- Player
 	if player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0 then
