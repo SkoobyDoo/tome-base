@@ -117,6 +117,17 @@ function _M:getUITexture(file)
 	return r
 end
 
+function _M:drawFontLine(font, text, width) -- always draw with white, outputting texture can have it changed
+	width = width or font:size(text)
+	local tex = font:draw(text, width, 255, 255, 255, true)[1]
+	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h}
+	return r
+end
+
+function _M:textureToScreen(tex, x, y, r, g, b, a)
+	return tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
+end
+
 function _M:makeFrame(base, w, h)
 	local f = {}
 	if base then
