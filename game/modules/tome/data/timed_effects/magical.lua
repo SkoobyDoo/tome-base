@@ -1619,20 +1619,22 @@ newEffect{
 newEffect{
 	name = "CEASE_TO_EXIST", image = "talents/cease_to_exist.png",
 	desc = "Cease to Exist",
-	long_desc = function(self, eff) return ("The target is being removed from the timeline, all its resistances have been lowered by %d%%."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is being removed from the timeline, its resistance to physical and temporal damage have been reduced by %d%%."):format(eff.power) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
 	parameters = { power = 1, damage=1 },
 	on_gain = function(self, err) return "#Target# is being removed from the timeline.", "+Cease to Exist" end,
 	activate = function(self, eff)
-		eff.resists = self:addTemporaryValue("resists", { all = -eff.power})
+		eff.phys = self:addTemporaryValue("resists", { [DamageType.PHYSICAL] = -eff.power})
+		eff.temp = self:addTemporaryValue("resists", { [DamageType.TEMPORAL] = -eff.power})
 	end,
 	deactivate = function(self, eff)
 		if game._chronoworlds then
 			game._chronoworlds = nil
 		end
-		self:removeTemporaryValue("resists", eff.resists)
+		self:removeTemporaryValue("resists", eff.phys)
+		self:removeTemporaryValue("resists", eff.temp)
 	end,
 }
 
