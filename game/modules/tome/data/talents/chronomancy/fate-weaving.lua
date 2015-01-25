@@ -62,7 +62,7 @@ newTalent{
 	cooldown = 12,
 	tactical = { BUFF = 2 },
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 40)/100 end, -- Limit < 50%end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%end,
 	getProcs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
 	no_energy = true,
 	action = function(self, t)
