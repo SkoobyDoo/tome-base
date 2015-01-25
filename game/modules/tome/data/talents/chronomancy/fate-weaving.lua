@@ -75,7 +75,7 @@ newTalent{
 		local chance = t.getChance(self, t)
 		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you gain Spin and have a %d%% chance to increase the duration of one detrimental status effect on it by one turn.
 		If you have Spin Fate active the chance will be increased by 33%% per Spin (for %d%% at three Spin.)
-		The duration increase can occur up to %d times per turn and the bonus Spin once per turn.]]):format(duration, procs, chance, chance * 2)
+		The duration increase can occur up to %d times per turn and the bonus Spin once per turn.]]):format(duration, chance, chance * 2, procs)
 	end,
 }
 
