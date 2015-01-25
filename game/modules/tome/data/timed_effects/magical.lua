@@ -3182,41 +3182,27 @@ newEffect{
 newEffect{
 	name = "ENTROPY", image = "talents/entropy.png",
 	desc = "Entropy",
-	long_desc = function(self, eff) return ("The target's timed effects are ticking twice as fast and it's taking %d temporal damage per turn, per timed effect."):format(eff.power) end,
+	long_desc = function(self, eff) return "The target is losing one sustain per turn." end,
 	on_gain = function(self, err) return "#Target# is caught in an entropic field!", "+Entropy" end,
 	on_lose = function(self, err) return "#Target# is free from the entropy.", "-Entropy" end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
-	parameters = {power=10},
+	parameters = {},
 	on_timeout = function(self, eff)
-		local count = 0
-		local todel = {}
+		local effs = {}
 		
-		-- Go through all spell effects
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if e.type ~= "other" and e.status == "beneficial" then
-				if p.dur <= 0 then 
-					todel[#todel+1] = eff 
-				else
-					if e.on_timeout then
-						if p.src then p.src.__project_source = p end -- intermediate projector source
-						if e.on_timeout(self, p) then
-							todel[#todel+1] = eff
-						end
-						if p.src then p.src.__project_source = nil end
-					end
-				end
-				count = count + 1
-				p.dur = p.dur - e.decrease
+		-- Go through all sustained talents
+		for tid, act in pairs(self.sustain_talents) do
+			if act then
+				effs[#effs+1] = {"talent", tid}
 			end
 		end
-
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power*count)
-				
-		while #todel > 0 do
-			self:removeEffect(table.remove(todel))
+		
+		-- deactivate one at random
+		if #effs > 0 then
+			local eff = rng.tableRemove(effs)
+			self:forceUseTalent(eff[2], {ignore_energy=true})
 		end
 	end,
 }

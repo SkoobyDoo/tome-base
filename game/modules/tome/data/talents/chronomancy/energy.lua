@@ -168,10 +168,9 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
-	tactical = { ATTACK = { TEMPORAL = 2 }, DEBUFF=3 },
+	tactical = { DEBUFF=3 },
 	range = 10,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 100, getParadoxSpellpower(self, t)) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 7))) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -183,18 +182,14 @@ newTalent{
 		if not x or not y or not target then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
 
-		local damage = self:spellCrit(t.getDamage(self, t))
-		target:setEffect(target.EFF_ENTROPY, t.getDuration(self, t), {power=damage, src=self, apply_power=getParadoxSpellpower(self, t)})
+		target:setEffect(target.EFF_ENTROPY, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 
 		game:playSoundNear(self, "talents/dispel")
 
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Over the next %d turns all beneficial timed effects on the target tick twice as fast.
-		Each timed effect affected by this talent deals %0.2f temporal damage to the target.
-		The damage will scale with your Spellpower.]]):format(duration, damDesc(self, DamageType.TEMPORAL, damage))
+		return ([[Each turn, for the next %d turns, one of the target's sustained talents will be deactivated.]]):format(duration)
 	end,
 }
