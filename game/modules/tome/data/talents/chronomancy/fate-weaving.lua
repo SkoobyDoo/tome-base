@@ -66,7 +66,7 @@ newTalent{
 	getProcs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
 	no_energy = true,
 	action = function(self, t)
-		self:setEffect(self.EFF_SEAL_FATE, t.getDuration(self, t), {procs=t.getProcs(self, t)})
+		self:setEffect(self.EFF_SEAL_FATE, t.getDuration(self, t), {procs=t.getProcs(self, t), chance=t.getChance(self, t)})
 		return true
 	end,
 	info = function(self, t)
