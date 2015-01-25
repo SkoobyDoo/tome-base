@@ -46,7 +46,6 @@ According to legend it was made from the first ash sapling to sprout after the S
 		ranged_project={[DamageType.TEMPORAL] = 15},
 		talents_types_mastery = {
 			["chronomancy/bow-threading"] = 0.1,
-			["chronomancy/guardian"] = 0.1,
 		}
 	},
 }
