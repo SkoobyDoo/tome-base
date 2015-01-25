@@ -142,8 +142,10 @@ newTalent{
 			
 			-- Handle some AI stuff
 			m.ai_state = { talent_in=1, ally_compassion=10 }
-			m.ai_tactic = { closein=0, defend=4, disable=4, escape=4, heal=2, safe_range=3}
-			
+			m.ai_state.tactic_leash = 10
+			-- Try to use stored AI talents to preserve tweaking over multiple summons
+			m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+					
 			return m
 		end
 		
@@ -158,7 +160,7 @@ newTalent{
 						control="full",
 						type="fugue clone",
 						title="Fugue Clone",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
 				
