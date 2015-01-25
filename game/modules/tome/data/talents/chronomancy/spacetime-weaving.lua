@@ -268,7 +268,7 @@ newTalent{
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	target = function(self, t)
-		return {type="ball", range=100, radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=100, radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 3))) end,
 	getChance = function(self, t) return 2 + math.floor(self:combatTalentScale(t, 2, 10)) end,

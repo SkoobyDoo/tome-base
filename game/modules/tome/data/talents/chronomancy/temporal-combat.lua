@@ -99,7 +99,6 @@ newTalent{
 		if rng.percent(t.getChance(self, t)) then
 			if not self:isTalentCoolingDown(t.id) then
 				-- Warp Burst
-				local tgts = 0
 				local tg = self:getTalentTarget(t)
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
 					local target = game.level.map(px, py, Map.ACTOR)
