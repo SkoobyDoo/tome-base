@@ -36,8 +36,8 @@ According to legend it was made from the first ash sapling to sprout after the S
 	cost = 200,
 	material_level = 3,
 	combat = {
-		range = 9,
-		physspeed = 0.6,
+		range = 8,
+		physspeed = 0.7,
 	},
 	wielder = {
 		life_regen = 2.0,
