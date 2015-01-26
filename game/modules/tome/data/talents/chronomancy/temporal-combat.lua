@@ -269,7 +269,7 @@ newTalent{
 		end
 	end,
 	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
-	getDuration = function(self, t) return 4 end,
+	getDuration = function(self, t) return 2 end,
 	getDamage = function(self, t) return 7 + getParadoxSpellpower(self, t, 0.092) * self:combatTalentScale(t, 1, 7) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
 	getSlow = function(self, t) return 30 end,
