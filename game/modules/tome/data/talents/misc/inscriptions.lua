@@ -931,7 +931,7 @@ newInscription{
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
-	range = 4,
+	range = 6,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
