@@ -1502,7 +1502,6 @@ function _M:getDammod(combat)
 	end
 
 	if combat.talented == 'knife' and self:knowTalent('T_LETHALITY') then sub('str', 'cun') end
-	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
 	if self:attr 'use_psi_combat' then
 		sub('str', 'wil')
 		sub('dex', 'cun')
@@ -1584,9 +1583,6 @@ function _M:combatPhysicalpower(mod, weapon, add)
 	add = add + self:combatTrainingDamage(weapon)
 
 	local str = self:getStr()
-	if self:knowTalent(Talents.T_STRENGTH_OF_PURPOSE) then
-		str = self:getMag()
-	end
 
 	local d = math.max(0, (self.combat_dam or 0) + add + str) -- allows strong debuffs to offset strength
 	if self:attr("dazed") then d = d / 2 end
