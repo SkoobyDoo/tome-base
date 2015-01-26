@@ -184,6 +184,7 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	points = 5,
+	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")
 		
@@ -194,16 +195,24 @@ newTalent{
 	end,
 	getDamage = function(self, t) return 7 + getParadoxSpellpower(self, t, 0.092) * self:combatTalentScale(t, 1, 7) end,
 	doWeaponFolding = function(self, t, target)  
-		local dam = t.getDamage(self, t)
+		if rng.percent(t.getChance(self, t)) then
+			self.energy.value = self.energy.value + 100
+		end	
+		
+		-- Check folds?
 		do_folds(self, target)
+	
+		local dam = t.getDamage(self, t)
 		if not target.dead then
 			DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, dam)
 		end
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[Folds a single dimension of your weapons (or ammo) upon itself, adding %0.2f temporal damage to your strikes and increasing your armor penetration by %d.
-		The armor penetration and damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), damage/2)
+		local chance = t.getChance(self, t)
+		return ([[Folds a single dimension of your weapons (or ammo) upon itself, adding %0.2f temporal damage to your strikes.
+		Additionally you have a %d%% chance to gain 10%% of a turn when your weapons hit.
+		The armor penetration and damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), chance)
 	end,
 }
 

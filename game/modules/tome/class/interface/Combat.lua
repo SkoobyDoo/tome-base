@@ -1284,9 +1284,6 @@ end
 function _M:combatAPR(weapon)
 	weapon = weapon or self.combat or {}
 	local addapr = 0
-	if self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
-		addapr = addapr + (self:callTalent(self.T_WEAPON_FOLDING, "getDamage")/2)
-	end
 	return self.combat_apr + (weapon.apr or 0) + addapr
 end
 
