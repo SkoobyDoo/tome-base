@@ -123,7 +123,7 @@ newEntity{ base = "BASE_NPC_TELUGOROTH",
 	on_melee_hit = { [DamageType.TEMPORAL] = resolvers.mbonus(20, 10), },
 
 	resolvers.talents{
-		[Talents.T_TURN_BACK_THE_CLOCK]={base=3, every=10, max=7}
+		[Talents.T_TURN_BACK_THE_CLOCK]={base=3, every=10, max=7},
 		[Talents.T_ECHOES_FROM_THE_PAST]={base=3, every=10, max=7},
 	},
 	resolvers.sustains_at_birth(),
