@@ -74,7 +74,7 @@ newTalent{
 						local DT = require("engine.DamageType")
 						local multi = (10 - self.homing.count)/20
 						local dam = self.def.dam * (1 + multi)
-						src:project({type="hit", friendlyfire=false, talent=talent}, self.x, self.y, DT.TEMPORAL, dam)
+						src:project({type="hit", selffire=false, talent=talent}, self.x, self.y, DT.TEMPORAL, dam)
 
 						-- Refresh talent
 						for tid, cd in pairs(src.talents_cd) do
@@ -113,7 +113,7 @@ newTalent{
 	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {TEMPORAL = 1}, DISABLE = 2 },
-	range = 10,
+	range = 6,
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
