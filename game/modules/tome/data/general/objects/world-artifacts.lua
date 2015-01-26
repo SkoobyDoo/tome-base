@@ -2429,7 +2429,7 @@ newEntity{ base = "BASE_STAFF",
 			[DamageType.PHYSICAL] 	= 15,
 		},
 		talents_types_mastery = {
-			["chronomancy/gravity"] = 0.2,
+			["chronomancy/gravity"] = 0.1,
 			["chronomancy/matter"] = 0.1,
 			["spell/earth"] = 0.1,
 		}
