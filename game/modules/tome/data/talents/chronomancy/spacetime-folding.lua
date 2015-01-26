@@ -354,7 +354,7 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	getDaze = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t}
+		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t}
 	end,
 	requires_target = true,
 	direct_hit = true,
@@ -392,7 +392,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local daze = t.getDaze(self, t)
 		return ([[Create a radius %d anti-teleport field for %d turns.  
-		Enemies in the field will be anchored, preventing teleportation and taking %0.2f physical and %0.2f temporal (warp) damage, as well as becoming dazed for %d turns, on teleport attempts.
+		All other targets in the field will be anchored, preventing teleportation and taking %0.2f physical and %0.2f temporal (warp) damage, as well as becoming dazed for %d turns, on teleport attempts.
 		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), daze)
 	end,
 }
@@ -452,7 +452,7 @@ newTalent{
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
 		local range = t.getTeleport(self, t)
-		return ([[Randomly teleports all targets within a radius of %d.  Targets will be teleported between %d and %d tiles from their current location.
+		return ([[Randomly teleports all other targets within a radius of %d.  Targets will be teleported between %d and %d tiles from their current location.
 		If no targets are teleported the cooldown will be halved.
 		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
 	end,
