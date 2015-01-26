@@ -412,7 +412,7 @@ function _M:resizeIconsHotkeysToolbar()
 
 	if self.no_ui then
 		self.map_h_stop = game.h
-		game:resizeMapViewport(game.w, self.map_h_stop)
+		game:resizeMapViewport(game.w, self.map_h_stop, 0, 0)
 		self.logdisplay.display_y = self.logdisplay.display_y + self.map_h_stop_up - oldstop
 		profile.chat.display_y = profile.chat.display_y + self.map_h_stop_up - oldstop
 		game:setupMouse(true)
@@ -420,7 +420,7 @@ function _M:resizeIconsHotkeysToolbar()
 	end
 
 	if game.inited then
-		game:resizeMapViewport(game.w, self.map_h_stop)
+		game:resizeMapViewport(game.w, self.map_h_stop, 0, 0)
 		self.logdisplay.display_y = self.logdisplay.display_y + self.map_h_stop_up - oldstop
 		profile.chat.display_y = profile.chat.display_y + self.map_h_stop_up - oldstop
 		game:setupMouse(true)
