@@ -145,7 +145,7 @@ newTalent{
 			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end)
 
-		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
+		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=230, rM=255, gm=230, gM=255, bm=30, bM=51, am=35, aM=90, radius=tg.radius, basenb=120})
 		game:playSoundNear(self, "talents/tidalwave")
 
 		return true
