@@ -47,7 +47,6 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 18,
 	tactical = { DEFEND = 2 },
-	range = 10,
 	no_energy = true,
 	getMaxAbsorb = function(self, t) return 50 + self:combatTalentSpellDamage(t, 50, 450, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, util.bound(5 + math.floor(self:getTalentLevel(t)), 5, 15)) end,
@@ -78,12 +77,12 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 8,
 	tactical = { ATTACKAREA = 1, DISABLE = 3 },
-	range = 10,
+	range = 6,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), talent=t}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(t, 2.3, 4.3))) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,

@@ -118,13 +118,13 @@ newTalent{
 	points = 5,
 	cooldown = 4,
 	tactical = { ATTACKAREA = { TEMPORAL = 2 } },
-	range = 10,
+	range = 6,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getReduction = function(self, t) return self:getTalentLevel(t) * 2 end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, nowarning=true, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), nowarning=true, talent=t}
 	end,
 	requires_target = true,
 	direct_hit = true,
@@ -155,7 +155,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
 		local reduction = t.getReduction(self, t)
-		return ([[Deals %0.2f temporal damage over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
 		If the target is hit by an Anomaly the remaining damage will be done instantly.
 		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, reduction)
 	end,

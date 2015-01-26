@@ -107,7 +107,6 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
 	tactical = { BUFF = 2, DEFEND = 2 },
-	range = 10,
 	getPower = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
 	no_energy = true,
