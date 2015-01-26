@@ -563,9 +563,9 @@ newEntity{ base = "BASE_STAFF",
 			[Talents.T_ATTENUATE] = 1,
 		},
 		talents_types_mastery = {
-			["chronomancy/stasis"] = 0.2,
-			["chronomancy/flux"] = 0.2,
-			["spell/temporal"] = 0.2,
+			["chronomancy/stasis"] = 0.1,
+			["chronomancy/flux"] = 0.1,
+			["spell/temporal"] = 0.1,
 		},
 	},
 }
