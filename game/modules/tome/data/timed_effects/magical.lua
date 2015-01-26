@@ -3213,7 +3213,7 @@ newEffect{
 }
 
 newEffect{
-	name = "REGRESSION", image = "talents/temporal_bolt.png",
+	name = "REGRESSION", image = "talents/turn_back_the_clock.png",
 	desc = "Regression",
 	long_desc = function(self, eff)	return ("Reduces your three highest stats by %d."):format(eff.power) end,
 	on_gain = function(self, err) return "#Target# has regressed.", "+Regression" end,

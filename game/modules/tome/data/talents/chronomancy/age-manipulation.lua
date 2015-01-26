@@ -36,30 +36,15 @@ newTalent{
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		
-		self:projectile(tg, x, y, DamageType.CLOCK, self:spellCrit(t.getDamage(self, t)))
+		self:projectile(tg, x, y, DamageType.CLOCK, {dam=self:spellCrit(t.getDamage(self, t)), stat=t.getDamageStat(self, t), apply=getParadoxSpellpower(self, t)})
 		game:playSoundNear(self, "talents/spell_generic2")
-
-		--bolt #2 (Talent Level 4 Bonus Bolt)
-		if self:getTalentLevel(t) >= 4 then
-			local tg2 = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="temporal_bolt"}}
-			local x, y = self:getTarget(tg2)
-			if x and y then
-				if x and y then
-					self:projectile(tg2, x, y, DamageType.CLOCK, self:spellCrit(t.getDamage(self, t)))
-					game:playSoundNear(self, "talents/spell_generic2")
-				end
-			end
-		else end
-		
-		
 
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local damagestat = t.getDamageStat(self, t)
-		return ([[Projects a bolt of temporal energy that deals %0.2f temporal damage, and reduces all of the target's stats by %d for 3 turns.
-		At talent level 4 you may project a second bolt.
+		return ([[Projects a bolt of temporal energy that deals %0.2f temporal damage, and reduces the targets three highest by %d for 3 turns.
 		The damage dealt will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), damagestat)
 	end,
 }
