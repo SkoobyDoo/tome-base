@@ -168,7 +168,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDamageAoE = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, friendlyfire=false, friendlyblock=false}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, selffire=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
@@ -244,7 +244,7 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local radius = self:getTalentRadius(t)
 		local aoe = t.getDamageAoE(self, t)
-		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination or hits a target it will draw in enemies in a radius of %d and inflict %0.2f physical damage.
+		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination or hits a target it will draw in all creatures aside from you in a radius of %d and inflict %0.2f physical damage.
 		Each target moved beyond the first deals an additional %0.2f physical damage (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The additional damage scales with your Spellpower.]])
