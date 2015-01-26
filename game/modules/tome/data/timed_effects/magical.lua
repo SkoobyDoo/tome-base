@@ -3482,3 +3482,22 @@ newEffect{
 		self:removeParticles(eff.particle)
 	end,
 }
+
+newEffect{
+	name = "FOLD_FATE", image = "talents/fold_fate.png",
+	desc = "Fold Fate",
+	long_desc = function(self, eff) return ("The target is nearing the end, its resistance to physical and temporal damage have been reduced by %d%%."):format(eff.power) end,
+	type = "magical",
+	subtype = { temporal=true },
+	status = "detrimental",
+	parameters = { power = 1 },
+	on_gain = function(self, err) return "#Target# is nearing the end.", "+Fold Fate" end,
+	activate = function(self, eff)
+		eff.phys = self:addTemporaryValue("resists", { [DamageType.PHYSICAL] = -eff.power})
+		eff.temp = self:addTemporaryValue("resists", { [DamageType.TEMPORAL] = -eff.power})
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("resists", eff.phys)
+		self:removeTemporaryValue("resists", eff.temp)
+	end,
+}

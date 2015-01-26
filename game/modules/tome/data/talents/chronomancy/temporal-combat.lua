@@ -50,20 +50,21 @@ newTalent{
 	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
 	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
 	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
+	getResists = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getResists") end,
+	getDuration = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration") end,
 	doFold = function(self, t, target)
 		if rng.percent(t.getChance(self, t)) then
 			if not self:isTalentCoolingDown(t.id) then
 				-- Temporal Burst
-				local tgts = 0
 				local tg = self:getTalentTarget(t)
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
 						DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, t.getDamage(self, t))
+						target:setEffect(target.EFF_FOLD_FATE, t.getDuration(self, t), {power=t.getResists(self, t), apply_power=getParadoxSpellpower(self, t), no_ct_effect=true})
 					end
 				end)
 				
-				self.energy.value = self.energy.value + (tgts*100)
 				self:startTalentCooldown(t.id)
 				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=230, rM=255, gm=230, gM=255, bm=30, bM=51, am=35, aM=90, radius=tg.radius, basenb=120})
 			else
@@ -75,9 +76,12 @@ newTalent{
 		local chance = t.getChance(self, t)
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[When you hit with Weapon Folding you have a %d%% chance of dealing an additional %0.2f temporal damage to enemies in a radius of %d.  For each target hit you gain 10%% of a turn.
+		local resists = t.getResists(self, t)
+		local duration = t.getDuration(self, t)
+		return ([[When you hit with Weapon Folding you have a %d%% chance of dealing an additional %0.2f temporal damage to enemies in a radius of %d.
+		Affected targets may also have their physical and temporal resistance reduced by %d%% for %d turns.
 		This effect has a cooldown.  If it triggers while on cooldown it will reduce the cooldown of Fold Gravity and Fold Warp by one turn.]])
-		:format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius)
+		:format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius, resists, duration)
 	end,
 }
 
@@ -194,7 +198,7 @@ newTalent{
 		return true
 	end,
 	getDamage = function(self, t) return 7 + getParadoxSpellpower(self, t, 0.092) * self:combatTalentScale(t, 1, 7) end,
-	doWeaponFolding = function(self, t, target)  
+	doWeaponFolding = function(self, t, target)
 		if rng.percent(t.getChance(self, t)) then
 			self.energy.value = self.energy.value + 100
 		end	
@@ -269,20 +273,22 @@ newTalent{
 	getDamage = function(self, t) return 7 + getParadoxSpellpower(self, t, 0.092) * self:combatTalentScale(t, 1, 7) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
 	getSlow = function(self, t) return 30 end,
+	getResists = function(self, t) return 30 end,
 	info = function(self, t)
 		local chance = t.getChance(self, t)
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
 		local slow = t.getSlow(self, t)
 		local duration = t.getDuration(self, t)
+		local resists = t.getResists(self, t)
 		return ([[You now have a %d%% chance to Fold Fate, Gravity, or Warp into your Weapon Folding damage.
 		
-		Fold Fate: Deals %0.2f temporal damage to enemies in a radius of %d.  For each enemy hit you gain 10%% of a turn.
+		Fold Fate: Deals %0.2f temporal damage to enemies in a radius of %d.  Affected targets may lose %d%% physical and temporal resistance for %d turns.
 		Fold Warp: Deals %0.2f physical and %0.2f temporal damage to enemies in a radius of %d.  Affected targets may be stunned, blinded, confused, or pinned for %d turns.
 		Fold Gravity: Deals %0.2f physical damage to enemies in a radius of %d.  Affected targets will be slowed (%d%%) for %d turns.
 		
 		Each Fold has an eight turn cooldown.  If an effect would be triggered while on cooldown it will reduce the cooldown of the other two Folds by one turn.]]
-		):format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius, damDesc(self, DamageType.PHYSICAL, damage/2), damDesc(self, DamageType.TEMPORAL, damage/2), radius,
+		):format(chance, damDesc(self, DamageType.TEMPORAL, damage), radius, resists, duration, damDesc(self, DamageType.PHYSICAL, damage/2), damDesc(self, DamageType.TEMPORAL, damage/2), radius,
 		duration, damDesc(self, DamageType.PHYSICAL, damage), radius, slow, duration)
 	end,
 }
