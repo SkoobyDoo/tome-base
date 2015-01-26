@@ -78,6 +78,7 @@ local credits = {
 	{"Graphic Artists", title=2},
 	{"Assen 'Rexorcorum' Kanev"},
 	{"Matt 'Amagad' Hill"},
+	{"Jeffrey 'Jotwebe' Buschhorn"},
 	{"Raymond 'Shockbolt' Gaustadnes"},
 	false,
 	false,
