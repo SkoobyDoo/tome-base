@@ -168,7 +168,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
-	tactical = { DEBUFF=3 },
+	tactical = { DISABLE = 2 },
 	range = 6,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 7))) end,
 	target = function(self, t)

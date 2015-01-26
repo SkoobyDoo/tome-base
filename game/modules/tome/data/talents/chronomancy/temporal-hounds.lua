@@ -341,7 +341,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 10,
-	tactical = { ATTACKAREA = {TEMPORAL = 2}, DEBUFF = 2 },
+	tactical = { ATTACKAREA = {TEMPORAL = 2}, DISABLE = 2 },
 	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
 	requires_target = true,
