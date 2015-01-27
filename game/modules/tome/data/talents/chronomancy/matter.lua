@@ -130,12 +130,8 @@ newTalent{
 			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
 		}
 		
-		if not self.shader then
-			ret.set_shader = true
-			self.shader = "shadow_simulacrum"
-			self.shader_args = { color = {0.3, 0.3, 0.3}, base = 0.8, time_factor = 4000 }
-			self:removeAllMOs()
-			game.level.map:updateMap(self.x, self.y)
+		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={100/255, 100/255, 100/255}}, "particles_images/spikes.png") then
+			ret.particle = self:addParticles(Particles.new("stone_skin", 1))
 		end
 		return ret
 	end,
@@ -146,12 +142,6 @@ newTalent{
 		self:removeTemporaryValue("flat_damage_cap", p.cap)
 		
 		self:removeParticles(p.particle)
-		
-		if p.set_shader then
-			self.shader = nil
-			self:removeAllMOs()
-			game.level.map:updateMap(self.x, self.y)
-		end
 		return true
 	end,
 	info = function(self, t)
