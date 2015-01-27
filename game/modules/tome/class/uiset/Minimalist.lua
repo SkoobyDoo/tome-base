@@ -266,7 +266,7 @@ function _M:resetPlaces()
 	local w, h = core.display.size()
 
 	local th = 52
-	if config.settings.tome.hotkey_icons then th = (4 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
 	local hup = h - th
 
 	self.places = {
@@ -399,15 +399,19 @@ end
 
 function _M:resizeIconsHotkeysToolbar()
 	local h = 52
-	if config.settings.tome.hotkey_icons then h = (4 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+	if config.settings.tome.hotkey_icons then h = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
 
 	local oldstop = self.map_h_stop_up or (game.h - h)
 	self.map_h_stop = game.h
 	self.map_h_stop_up = game.h - h
 	self.map_h_stop_tooltip = self.map_h_stop_up
 
-	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, self.places.hotkeys.x, self.places.hotkeys.y, self.places.hotkeys.w, self.places.hotkeys.h, nil, self.init_font_mono, self.init_size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
-	self.hotkeys_display_icons:enableShadow(0.6)
+	if not self.hotkeys_display_icons then
+		self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, self.places.hotkeys.x, self.places.hotkeys.y, self.places.hotkeys.w, self.places.hotkeys.h, nil, self.init_font_mono, self.init_size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
+		self.hotkeys_display_icons:enableShadow(0.6)
+	else
+		self.hotkeys_display_icons:resize(self.places.hotkeys.x, self.places.hotkeys.y, self.places.hotkeys.w, self.places.hotkeys.h, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
+	end
 
 	if self.no_ui then
 		self.map_h_stop = game.h

@@ -39,27 +39,22 @@ function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize, icon_w, icon_h)
 	self.dragclics = {}
 	self.clics = {}
 	self.items = {}
-	self.cache = {}
-	setmetatable(self.cache, {__mode="v"})
-	self.icon_w, self.icon_h = icon_w, icon_h
-	self.tiles = Tiles.new(icon_w, icon_h, fontname or "/data/font/DroidSansMono.ttf", fontsize or 10, true, true)
-	self.tiles.use_images = true
-	self.tiles.force_back_color = {r=0, g=0, b=0}
+	self.fontname = fontname
+	self.fontsize = fontsize
 
-	local fw, fh = core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):getSize()
-	self.frames = {w=math.floor(fw * icon_w / 64), h=math.floor(fh * icon_h / 64), rw=icon_w / 64, rh=icon_h / 64}
-	self.frames.fx = math.floor((self.frames.w - icon_w) / 2)
-	self.frames.fy = math.floor((self.frames.h - icon_h) / 2)
+	--local fw, fh = core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):getSize()
+	--self.frames = {w=math.floor(fw * icon_w / 64), h=math.floor(fh * icon_h / 64), rw=icon_w / 64, rh=icon_h / 64}
+	self.frames = {}
 --	self.frames.ok = { core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):glTexture() }
 --	self.frames.disabled = { core.display.loadImage("/data/gfx/ui/talent_frame_disabled.png"):glTexture() }
 --	self.frames.cooldown = { core.display.loadImage("/data/gfx/ui/talent_frame_cooldown.png"):glTexture() }
 --	self.frames.sustain = { core.display.loadImage("/data/gfx/ui/talent_frame_sustain.png"):glTexture() }
-	self.frames.base = UI:makeFrame("ui/icon-frame/frame", self.frames.w, self.frames.h)
+	self.frames.base = UI:makeFrame("ui/icon-frame/frame", icon_w + 8, icon_h + 8)  --doesn't really matter since we pass a different size
 
 
 	self.default_entity = Entity.new{display='?', color=colors.WHITE}
 
-	self:resize(x, y, w, h)
+	self:resize(x, y, w, h, icon_w, icon_h)
 end
 
 --- Sets the display into nb columns
@@ -71,12 +66,24 @@ function _M:enableShadow(v)
 end
 
 --- Resize the display area
-function _M:resize(x, y, w, h)
+function _M:resize(x, y, w, h, iw, ih)
 	self.display_x, self.display_y = math.floor(x), math.floor(y)
 	self.w, self.h = math.floor(w), math.floor(h)
 	self.surface = core.display.newSurface(w, h)
 	self.texture, self.texture_w, self.texture_h = self.surface:glTexture()
 	if self.actor then self.actor.changed = true end
+
+	if iw and ih and (self.icon_w ~= iw or self.icon_h ~= ih) then
+		self.icon_w = iw
+		self.icon_h = ih
+		self.frames.w = iw + 8
+		self.frames.fx = 4
+		self.frames.h = ih + 8
+		self.frames.fy = 4
+		self.tiles = Tiles.new(iw, ih, self.fontname or "/data/font/DroidSansMono.ttf", self.fontsize or 10, true, true)
+		self.tiles.use_images = true
+		self.tiles.force_back_color = {r=0, g=0, b=0}
+	end
 
 	self.max_cols = math.floor(self.w / self.frames.w)
 	self.max_rows = math.floor(self.h / self.frames.h)
@@ -123,7 +130,7 @@ function _M:display()
 	self.dragclics = {}
 	self.clics = {}
 	self.items = {}
-	local w, h = self.icon_w, self.icon_h
+	local w, h = self.frames.w, self.frames.h
 
 	for page = bpage, #page_to_hotkey do for i = 1, 12 do
 		local ts = nil
@@ -222,7 +229,7 @@ function _M:display()
 			self.items[#self.items+1] = {i=i, x=x, y=y, e=display_entity or self.default_entity, color=color, angle=angle, key=key, gtxt=gtxt, frame=frame, pagesel=lpage==spage}
 			self.clics[i] = {x,y,w,h}
 		else
-			local i = i + (12 * (page - bpage))
+			local i = i + (12 * (page - 1))
 			local angle = 0
 			local color = {190,190,190}
 			local frame = "disabled"
@@ -260,7 +267,7 @@ function _M:toScreen()
 	if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
 	for i = 1, #self.items do
 		local item = self.items[i]
-		if not item.show_on_drag or (game.mouse and game.mouse.drag and self.cur_sel) then
+		if not item.show_on_drag or (game.mouse and game.mouse.drag) and self.cur_sel then
 			local key = item.key
 			local gtxt = item.gtxt
 			local frame = frames_colors[item.frame]
@@ -274,7 +281,7 @@ function _M:toScreen()
 
 	--		frame[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, self.frames.w, self.frames.h, frame[2] * self.frames.rw, frame[3] * self.frames.rh, pagesel, pagesel, pagesel, 255)
 	--		frame[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, self.frames.w, self.frames.h, frame[2] * self.frames.rw, frame[3] * self.frames.rh, pagesel, pagesel, pagesel, 255)
-			UI:drawFrame(self.frames.base, self.display_x + item.x, self.display_y + item.y, frame[1], frame[2], frame[3], 1)
+			UI:drawFrame(self.frames.base, self.display_x + item.x, self.display_y + item.y, frame[1], frame[2], frame[3], 1, self.frames.w, self.frames.h)
 
 			if self.shadow then
 				if shader then
@@ -364,8 +371,6 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 				a.changed = true
 			else
 				a.changed = true
-				local oldsel = self.cur_sel
-				self.cur_sel = i
 				if on_over and self.cur_sel ~= oldsel and not zone.fake then
 					local text = ""
 					if a.hotkey[i] and a.hotkey[i][1] == "talent" then
@@ -381,6 +386,8 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 					on_over(text)
 				end
 			end
+			local oldsel = self.cur_sel
+			self.cur_sel = i
 			return
 		end
 	end
