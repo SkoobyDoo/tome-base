@@ -314,7 +314,7 @@ newTalent{
 			physical = {}, magical ={}
 		}
 		if core.shader.active(4) then
-			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="horizontal_ellipsoid", radius=1.4, base_rotation=90, density=20, img="continuum_01_6"})
+			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.3, base_rotation=180, density=30, img="continuum_01_6"})
 		else
 			ret.particle1 = self:addParticles(Particles.new("ultrashield", 1, {rm=40, rM=40, gm=40, gM=40, bm=40, bM=40, am=120, aM=200, radius=0.4, density=50, life=8, instop=60}))
 		end

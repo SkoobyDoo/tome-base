@@ -41,12 +41,17 @@ newTalent{
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
-		return {
-			particle = self:addParticles(Particles.new("temporal_focus", 1)),
-		}
+		local ret = {}
+		if core.shader.active(4) then
+			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", radius=1, base_rotation=180, density=20, growSpeed=0.004, scrollingSpeed=-0.002, img="continuum_01_3"})
+		else
+			ret.particle1 = self:addParticles(Particles.new("temporal_focus", 1))
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
-		self:removeParticles(p.particle)
+		if p.particle1 then self:removeParticles(p.particle1) end
+		if p.particle2 then self:removeParticles(p.particle2) end
 		return true
 	end,
 	info = function(self, t)
