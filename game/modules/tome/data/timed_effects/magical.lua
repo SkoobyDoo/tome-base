@@ -3233,6 +3233,15 @@ newEffect{
 			self:forceUseTalent(eff[2], {ignore_energy=true})
 		end
 	end,
+	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", twist=2, base_rotation=90, radius=1.4, density=40,  scrollingSpeed=-0.0002, growSpeed=0.004, img="miasma_01_01"})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+	end,
 }
 
 newEffect{
