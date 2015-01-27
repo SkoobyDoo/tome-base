@@ -1754,6 +1754,7 @@ static int map_to_screen(lua_State *L)
 	useDefaultShader(map);
 
 	nb_draws = 0;
+	long ms = SDL_GetTicks();
 
 	// Smooth scrolling
 	// If we use shaders for FOV display it means we must uses fbos for smooth scroll too
@@ -1854,7 +1855,7 @@ static int map_to_screen(lua_State *L)
 	unbatchQuads(vert_idx, col_idx);
 	useNoShader();
 
-	printf("draws %d\n", nb_draws);
+	printf("draws %d in %ld ms (%d KB mem used)\n", nb_draws, SDL_GetTicks() - ms, lua_gc(L, LUA_GCCOUNT, 0));
 
 	// "Decay" displayed status for all mos
 	lua_rawgeti(L, LUA_REGISTRYINDEX, map->mo_list_ref);

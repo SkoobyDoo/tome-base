@@ -64,7 +64,7 @@ SDL_GLContext maincontext; /* Our opengl context handle */
 SDL_Joystick* gamepad = NULL;
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
-float zoom_factor = 1;
+float zoom_factor = 1.5;
 static lua_State *L = NULL;
 int nb_cpus;
 bool no_debug = FALSE;
@@ -491,58 +491,6 @@ bool on_event(SDL_Event *event)
 			docall(L, 6, 0);
 		}
 		break;
-	case SDL_FINGERDOWN:
-	case SDL_FINGERUP:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveTouch");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->tfinger.fingerId);
-			lua_pushnumber(L, event->tfinger.x * screen->w / zoom_factor);
-			lua_pushnumber(L, event->tfinger.y * screen->h / zoom_factor);
-			lua_pushnumber(L, event->tfinger.dx * screen->w / zoom_factor);
-			lua_pushnumber(L, event->tfinger.dy * screen->h / zoom_factor);
-			lua_pushnumber(L, event->tfinger.pressure);
-			lua_pushboolean(L, (event->type == SDL_FINGERUP) ? TRUE : FALSE);
-			docall(L, 8, 0);
-		}
-		break;
-	case SDL_FINGERMOTION:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveTouchMotion");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->tfinger.fingerId);
-			lua_pushnumber(L, event->tfinger.x * screen->w / zoom_factor);
-			lua_pushnumber(L, event->tfinger.y * screen->h / zoom_factor);
-			lua_pushnumber(L, event->tfinger.dx * screen->w / zoom_factor);
-			lua_pushnumber(L, event->tfinger.dy * screen->h / zoom_factor);
-			lua_pushnumber(L, event->tfinger.pressure);
-			docall(L, 7, 0);
-		}
-		break;
-	case SDL_MULTIGESTURE:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveTouchGesture");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->mgesture.numFingers);
-			lua_pushnumber(L, event->mgesture.x * screen->w / zoom_factor);
-			lua_pushnumber(L, event->mgesture.y * screen->h / zoom_factor);
-			lua_pushnumber(L, event->mgesture.dTheta);
-			lua_pushnumber(L, event->mgesture.dDist);
-			docall(L, 6, 0);
-		}
-		return TRUE;
 	case SDL_FINGERDOWN:
 	case SDL_FINGERUP:
 		if (current_mousehandler != LUA_NOREF)
