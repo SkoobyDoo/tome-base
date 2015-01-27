@@ -92,12 +92,10 @@ newTalent{
 	no_energy = true,
 	no_unlearn_last = true,
 	tactical = { BUFF = 3 },
-	callbackOnActBase = function(self, t)
-		if game.zone.wilderness then return end
+	do_tk_strike = function(self, t)
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
 		if type(tkweapon) == "boolean" then tkweapon = nil end
 		if not tkweapon or tkweapon.type ~= "weapon" or tkweapon.subtype == "mindstar" then return end
-
 
 		local targnum = 1
 		if self:hasEffect(self.EFF_PSIFRENZY) then targnum = self:hasEffect(self.EFF_PSIFRENZY).power end
@@ -142,27 +140,7 @@ newTalent{
 		end
 		return hit
 	end,
-	callbackOnWear = function(self, t, p)
-		if self.__to_recompute_beyond_the_flesh then return end
-		self.__to_recompute_beyond_the_flesh = true
-		game:onTickEnd(function()
-			self.__to_recompute_beyond_the_flesh = nil
-			local p = self.sustain_talents[t.id]
-			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
-			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
-		end)
-	end,
-	callbackOnTakeoff = function(self, t, p)
-		if self.__to_recompute_beyond_the_flesh then return end
-		self.__to_recompute_beyond_the_flesh = true
-		game:onTickEnd(function()
-			self.__to_recompute_beyond_the_flesh = nil
-			local p = self.sustain_talents[t.id]
-			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
-			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
-		end)
-	end,
-	callbackOnActBase = function(self, t, p)
+	do_mindstar_grab = function(self, t, p)
 		local p = self.sustain_talents[t.id]
 
 		if self:hasEffect(self.EFF_PSIFRENZY) then
@@ -222,6 +200,30 @@ newTalent{
 			a:move(tx, ty, true)
 			game.logSeen(a, "%s telekinetically grabs %s!", self.name:capitalize(), a.name)
 		end
+	end,
+	callbackOnActBase = function(self, t)
+		t.do_tk_strike(self, t)
+		t.do_mindstar_grab(self, t)
+	end,
+	callbackOnWear = function(self, t, p)
+		if self.__to_recompute_beyond_the_flesh then return end
+		self.__to_recompute_beyond_the_flesh = true
+		game:onTickEnd(function()
+			self.__to_recompute_beyond_the_flesh = nil
+			local p = self.sustain_talents[t.id]
+			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
+			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
+		end)
+	end,
+	callbackOnTakeoff = function(self, t, p)
+		if self.__to_recompute_beyond_the_flesh then return end
+		self.__to_recompute_beyond_the_flesh = true
+		game:onTickEnd(function()
+			self.__to_recompute_beyond_the_flesh = nil
+			local p = self.sustain_talents[t.id]
+			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
+			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
+		end)
 	end,
 	on_pre_use = function (self, t)
 		if not self:getInven("PSIONIC_FOCUS") then return false end
