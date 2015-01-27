@@ -42,12 +42,12 @@ newTalent{
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
 		local ret = {}
-		if core.shader.allow("adv") then
+	--[[	if core.shader.allow("adv") then
 			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="transparent_cylinder", radius=1.2, base_rotation=180, twist=30, density=10, growSpeed=0.004, scrollingSpeed=-0.002, img="continuum_01_3"})
 		else
 			ret.particle1 = self:addParticles(Particles.new("temporal_focus", 1))
 		end
-		return ret
+		return ret]]
 	end,
 	deactivate = function(self, t, p)
 		if p.particle1 then self:removeParticles(p.particle1) end
@@ -127,8 +127,8 @@ newTalent{
 		end
 
 		target:crossTierEffect(target.EFF_SPELLSHOCKED, getParadoxSpellpower(self, t))
-		game.level.map:particleEmitter(tx, ty, 1, "generic_charge", {rm=10, rM=110, gm=10, gM=50, bm=20, bM=125, am=25, aM=255})
-		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=200, rM=255, gm=200, gM=255, bm=200, bM=255, am=125, aM=125})
+		game.level.map:particleEmitter(tx, ty, 1, "generic_charge", {rm=10, rM=110, gm=10, gM=50, bm=20, bM=125, am=25, aM=125})
+		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=200, rM=255, gm=200, gM=255, bm=0, bM=0, am=25, aM=125})
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
