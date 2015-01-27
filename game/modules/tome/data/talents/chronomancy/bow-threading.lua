@@ -148,7 +148,7 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local penalty = t.getDamagePenalty(self, t)
 		return ([[Fire an arrow for %d%% weapon damage and call up to 2 wardens (depending on available space) that will each fire a single arrow before returning to their timelines.
-		The wardens are out of phase with normal reality and deal %d%% damage but shoot through friendly targets.]])
+		The wardens are out of phase with normal reality and deal %d%% less damage but shoot through friendly targets.]])
 		:format(damage, penalty)
 	end
 }

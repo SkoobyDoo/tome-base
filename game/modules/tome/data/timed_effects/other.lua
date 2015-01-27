@@ -2623,8 +2623,8 @@ newEffect{
 	subtype = { time=true },
 	status = "detrimental",
 	parameters = { paradox=10 },
-	on_gain = function(self, err) return "#Target# converts damage into paradox.", "+Preserve" end,
-	on_lose = function(self, err) return "#Target# stops converting damage to paradox..", "-Preserve" end,
+	on_gain = function(self, err) return "#Target# converts damage into paradox.", "+Smearing" end,
+	on_lose = function(self, err) return "#Target# stops converting damage to paradox..", "-Smearing" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the flames!
 		local oldparadox = old_eff.paradox * old_eff.dur
@@ -2637,7 +2637,9 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		if core.shader.allow("adv") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", radius=1.6, twist=30, density=30, growSpeed=0.004, scrollingSpeed=-0.004, img="continuum_01_3"})
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="conic_cylinder", radius=1, base_rotation=180, growSpeed=0.004, img="continuum_01_3"})
+		else
+			eff.particle1 = self:addParticles(Particles.new("time_shield", 1))
 		end
 	end,
 	deactivate = function(self, eff)
@@ -2729,8 +2731,13 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Twist Fate" end,
 	on_lose = function(self, err) return nil, "-Twist Fate" end,
 	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", appear=10, radius=1.6, twist=30, density=30, growSpeed=0.004, scrollingSpeed=-0.004, img="continuum_01_3"})
+		end
 	end,
 	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
 				self:forceUseTalent(eff.talent, {force_target=self})
