@@ -625,7 +625,7 @@ function _M:resizeMapViewport(w, h, x, y)
 	h = math.floor(h)
 
 	-- convert from older faulty versionsPg
-	if game.level.map and rawget(game.level.map, "display_x") == Map.display.x and rawget(game.level.map, "display_y") == Map.display_y then
+	if game.level.map and rawget(game.level.map, "display_x") == Map.display_x and rawget(game.level.map, "display_y") == Map.display_y then
 		game.level.map.display_x, game.level.map.display_y = nil, nil
 	end
 	Map.display_x = x
@@ -1939,6 +1939,7 @@ do return end
 			else
 				self.log("Displaying talents.")
 			end
+			if self.uiset.resizeIconsHotkeysToolbar then self.uiset:resizeIconsHotkeysToolbar() end
 		end,
 
 		SCREENSHOT = function() self:saveScreenshot() end,
