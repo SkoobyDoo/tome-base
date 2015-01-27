@@ -136,7 +136,7 @@ newTalent{
 		local ret = {
 			talent = talent, rest_count = 0
 		}
-		if core.shader.active(4) then
+		if core.shader.allow("adv") then
 			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", radius=1.4, shininess=40, growSpeed=0.004, img="circles2_01"})
 		end
 

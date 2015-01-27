@@ -2440,7 +2440,7 @@ newEffect{
 	remove_on_clone = true,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
-		if core.shader.active(4) then
+		if core.shader.allow("adv") then
 			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.4, growSpeed=0.004, img="coggy_00"})
 		end
 		self:effectTemporaryValue(eff, "timestopping", 1)
@@ -2725,9 +2725,8 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Twist Fate" end,
 	on_lose = function(self, err) return nil, "-Twist Fate" end,
 	activate = function(self, eff)
-		if core.shader.active(4) then
-			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 0/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
-			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 255/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="transparent_cylinder", radius=2, base_rotation=360, twist=30, density=10, growSpeed=0.004, scrollingSpeed=-0.004, img="continuum_01_3"})
 		end
 	end,
 	deactivate = function(self, eff)

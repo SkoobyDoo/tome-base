@@ -365,7 +365,7 @@ newTalent{
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 
 		local particle
-		if core.shader.active(4) then
+		if core.shader.allow("adv") then
 			particle = {type="volumetric", args={radius=self:getTalentRadius(t)+2, kind="fast_sphere", img="moony_01", density=60, shininess=50, scrollingSpeed=-0.004}, only_one=true}
 		else
 			particle = {type="temporal_cloud"}

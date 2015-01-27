@@ -3090,7 +3090,7 @@ newEffect{
 		return {dam=dam}
 	end,
 	activate = function(self, eff)
-		if core.shader.active(4) then
+		if core.shader.allow("adv") then
 			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="no_idea_but_looks_cool",  shininess=40, density=60, radius=1.4, growSpeed=0.004, img="octostar_01"})
 		end
 	end,
