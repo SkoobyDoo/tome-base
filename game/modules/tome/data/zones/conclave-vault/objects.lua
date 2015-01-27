@@ -34,7 +34,7 @@ end
 
 newEntity{ base = "BASE_GREATMAUL", define_as = "ASTELRID_CLUBSTAFF",
 	power_source = {arcane=true},
-	name = "Astelrid's Clubstaff", color = colors.GREEN,
+	name = "Astelrid's Clubstaff", color = colors.GREEN, image = "object/artifact/astelrids_clubstaff.png",
 	unided_name = "huge maul", unique = true,
 	desc = [[Like its former owner, this was once an instrument of altruistic healing, before fury and fear caused its twisting into a sadistic weapon.  Surges of restorative magic can be faintly felt under the layers of plaster and sharp surgical equipment.]],
 	level_range = {20, 30},
