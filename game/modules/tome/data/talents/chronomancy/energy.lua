@@ -43,7 +43,7 @@ newTalent{
 		game:playSoundNear(self, "talents/heal")
 		local ret = {}
 		if core.shader.active(4) then
-			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", radius=1, base_rotation=180, density=20, growSpeed=0.004, scrollingSpeed=-0.002, img="continuum_01_3"})
+			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="transparent_cylinder", radius=1.2, base_rotation=180, twist=30, density=10, growSpeed=0.004, scrollingSpeed=-0.002, img="continuum_01_3"})
 		else
 			ret.particle1 = self:addParticles(Particles.new("temporal_focus", 1))
 		end
