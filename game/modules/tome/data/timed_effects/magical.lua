@@ -1486,6 +1486,15 @@ newEffect{
 	subtype = { temporal=true },
 	status = "beneficial",
 	parameters = { max_cd=1},
+	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="transparent_cylinder", twist=1, shineness=10, density=10, radius=1.4, growSpeed=0.004, img="coggy_00"})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+	end,
 }
 
 newEffect{
@@ -1610,9 +1619,23 @@ newEffect{
 	on_lose = function(self, err) return "#Target# slows down.", "-Haste" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.power)
+		if not self.shader then
+			eff.set_shader = true
+			self.shader = "shadow_simulacrum"
+			self.shader_args = { color = {0.4, 0.4, 0}, base = 1, time_factor = 3000 }
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
+		end
 	end,
 	deactivate = function(self, eff)
+		if eff.set_shader then
+			self.shader = nil
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
+		end
 		self:removeTemporaryValue("global_speed_add", eff.tmpid)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 
