@@ -20,7 +20,7 @@
 require "engine.class"
 local UISet = require "mod.class.uiset.UISet"
 local DebugConsole = require "engine.DebugConsole"
-local PlayerDisplay = require "mod.class.PlayerDisplay"
+local PlayerDisplay = require "mod.class.uiset.ClassicPlayerDisplay"
 local HotkeysDisplay = require "engine.HotkeysDisplay"
 local HotkeysIconsDisplay = require "engine.HotkeysIconsDisplay"
 local ActorsSeenDisplay = require "engine.ActorsSeenDisplay"
