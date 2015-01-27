@@ -127,17 +127,29 @@ newTalent{
 			cut = self:addTemporaryValue("cut_immune", t.getCutResist(self, t)),
 			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
 		}
-				if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={100/255, 100/255, 100/255}}, "particles_images/spikes.png") then
-			ret.particle = self:addParticles(Particles.new("stone_skin", 1))
+		
+		if not self.shader then
+			ret.set_shader = true
+			self.shader = "shadow_simulacrum"
+			self.shader_args = { color = {0.3, 0.3, 0.3}, base = 0.8, time_factor = 4000 }
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
 		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeShaderAura("stone_skin")
-		self:removeParticles(p.particle)
 		self:removeTemporaryValue("stun_immune", p.stun)
 		self:removeTemporaryValue("cut_immune", p.cut)
 		self:removeTemporaryValue("flat_damage_cap", p.cap)
+		
+		self:removeParticles(p.particle)
+		
+		if p.set_shader then
+			self.shader = nil
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
+		end
 		return true
 	end,
 	info = function(self, t)
@@ -170,7 +182,7 @@ newTalent{
 		local block = function(_, lx, ly)
 			return game.level.map:checkAllEntities(lx, ly, "block_move")
 		end
-		return {type="wall", range=self:getTalentRange(t), halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block}
+		return {type="wall", range=self:getTalentRange(t), nolock=true, halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block}
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -295,10 +307,22 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		return { physical = {}, magical ={}
+		game:playSoundNear(self, "talents/earth")
+
+		local particle
+		local ret = { 
+			physical = {}, magical ={}
 		}
+		if core.shader.active(4) then
+			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="horizontal_ellipsoid", radius=1.4, base_rotation=90, density=20, img="continuum_01_6"})
+		else
+			ret.particle1 = self:addParticles(Particles.new("ultrashield", 1, {rm=40, rM=40, gm=40, gM=40, bm=40, bM=40, am=120, aM=200, radius=0.4, density=50, life=8, instop=60}))
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
+		if p.particle1 then self:removeParticles(p.particle1) end
+		if p.particle2 then self:removeParticles(p.particle2) end
 		return true
 	end,
 	info = function(self, t)
