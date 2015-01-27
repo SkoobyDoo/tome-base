@@ -3091,7 +3091,7 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		if core.shader.allow("adv") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", shininess=40, density=60, radius=1.6, scrollingSpeed=-0.002, growSpeed=0.004, img="squares_x3_01"})
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", shininess=40, density=60, radius=1.6, scrollingSpeed=0.002, growSpeed=0.004, img="squares_x3_01"})
 		end
 	end,
 	deactivate = function(self, eff)

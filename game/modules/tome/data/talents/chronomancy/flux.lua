@@ -89,16 +89,9 @@ newTalent{
 		game:playSoundNear(self, "talents/arcane")
 
 		local ret = {}
-		if core.shader.active(4) then
-			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="conic_cylinder", radius=1.4, base_rotation=180, growSpeed=0.004, img="freehand_labyrinth_01"})
-		else
-			ret.particle1 = self:addParticles(Particles.new("time_shield", 1))
-		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
-		if p.particle1 then self:removeParticles(p.particle1) end
-		if p.particle2 then self:removeParticles(p.particle2) end
 		return true
 	end,
 	info = function(self, t)
