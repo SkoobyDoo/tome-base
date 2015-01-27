@@ -2440,9 +2440,6 @@ newEffect{
 	remove_on_clone = true,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
-		if core.shader.allow("adv") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.4, growSpeed=0.004, img="coggy_00"})
-		end
 		self:effectTemporaryValue(eff, "timestopping", 1)
 		self.no_leave_control = true
 		core.display.pauseAnims(true)
@@ -2455,8 +2452,6 @@ newEffect{
 	deactivate = function(self, eff)
 		self.no_leave_control = false
 		core.display.pauseAnims(false)
-		self:removeParticles(eff.particle1)
-		self:removeParticles(eff.particle2)
 		
 		-- clone protection
 		if self == game.player then
@@ -2734,14 +2729,8 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Twist Fate" end,
 	on_lose = function(self, err) return nil, "-Twist Fate" end,
 	activate = function(self, eff)
-		if core.shader.allow("adv") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="transparent_cylinder", radius=2, base_rotation=360, twist=30, density=10, growSpeed=0.004, scrollingSpeed=-0.004, img="continuum_01_3"})
-		end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle1)
-		self:removeParticles(eff.particle2)
-		
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
 				self:forceUseTalent(eff.talent, {force_target=self})
