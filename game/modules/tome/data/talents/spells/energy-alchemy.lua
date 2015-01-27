@@ -159,7 +159,7 @@ newTalent{
 		end end
 
 		-- Randomly take targets
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t, selffire=self:spellFriendlyFire()}
+		local tg = {type="hit", range=self:getTalentRange(t), talent=t, friendlyfire=false} -- don't make it blocked by the golem
 		for i = 1, 1 do
 			if #tgts <= 0 then break end
 			local a, id = rng.table(tgts)
