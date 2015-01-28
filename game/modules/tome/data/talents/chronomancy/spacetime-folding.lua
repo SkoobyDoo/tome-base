@@ -428,6 +428,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local effect = t.getEffectDuration(self, t)
 		return ([[Create a radius %d anti-teleport field for %d turns and daze all enemies in the area of effect for two turns.
+		Enemies attempting to teleport while anchored take %0.2f physical and %0.2f temporal (warp) damage and may be stunned, blinded, confused, or pinned for %d turns.
 		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), effect)
 	end,
 }
