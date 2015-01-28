@@ -270,7 +270,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=100, radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 3))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	getChance = function(self, t) return 2 + math.floor(self:combatTalentScale(t, 2, 10)) end,
 	doPulse = function(self, t, ox, oy, fail)
 		local tg = self:getTalentTarget(t)
@@ -282,11 +282,15 @@ newTalent{
 			-- Project at both the entrance and exit
 			self:project(tg, self.x, self.y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
+				if target and rng.percent(chance) then
+					DamageType:get(DamageType.RANDOM_WARP).projector(self, px, py, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
+				end
 			end)
 			self:project(tg, ox, oy, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
+				if target and rng.percent(chance) then
+					DamageType:get(DamageType.RANDOM_WARP).projector(self, px, py, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
+				end
 			end)
 		end)
 			
