@@ -69,7 +69,7 @@ newTalent{
 	tactical = { DISABLE = 2 },
 	direct_hit = true,
 	requires_target = true,
-	range = 6,
+	range = 10,
 	getTalentCount = function(self, t)
 		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
 	end,
@@ -171,7 +171,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
 	tactical = { DISABLE = 2 },
-	range = 6,
+	range = 10,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 7))) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}

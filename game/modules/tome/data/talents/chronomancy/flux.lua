@@ -111,7 +111,7 @@ newTalent{
 	points = 5,
 	cooldown = 4,
 	tactical = { ATTACKAREA = { TEMPORAL = 2 } },
-	range = 6,
+	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
