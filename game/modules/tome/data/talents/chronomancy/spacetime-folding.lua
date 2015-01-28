@@ -297,7 +297,7 @@ newTalent{
 				self:useEnergy()
 				self.temporary = self.temporary - 1
 				
-				local trigger = rng.percent(self.chance * core.fov.distance(self.x, self.y, self.target.x, self.target.y))			
+				local trigger = rng.percent(self.chance * core.fov.distance(self.x, self.y, self.target.x, self.target.y))
 				if not self.target.dead and (game.level and game.level:hasEntity(self.target)) and trigger then
 				
 					-- Warp blast prior to teleporting, this happens even if we don't teleport for anchor synergy
@@ -311,7 +311,8 @@ newTalent{
 					end)
 				
 					-- Teleport
-					if self.summoner:checkHit(self.power, self.target:combatSpellResist() + (self.target:attr("continuum_destabilization") or 0), 0, 95) and self.target:canBe("teleport") then
+					local hit = self.summoner == self.target or (self.summoner:checkHit(self.power, self.target:combatSpellResist() + (self.target:attr("continuum_destabilization") or 0), 0, 95) and self.target:canBe("teleport"))
+					if hit then
 						-- Since we're using a precise teleport, find a free grit first
 						local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[engine.Map.ACTOR]=true})
 						if not self.target:teleportRandom(tx, ty, 1, 0) then
