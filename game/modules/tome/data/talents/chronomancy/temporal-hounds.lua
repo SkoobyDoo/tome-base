@@ -84,6 +84,9 @@ summonTemporalHound = function(self, t)
 	m.no_breath = 1
 	m.move_others = true
 	
+	-- Hounds are immune to hostile teleports, mostly so they don't get in the way of banish
+	m.teleport_immune = 1
+	
 	-- Make sure to update sustain counter when we die
 	m.on_die = function(self)
 		local p = self.summoner:isTalentActive(self.summoner.T_TEMPORAL_HOUNDS)
@@ -197,7 +200,7 @@ newTalent{
 		local cooldown = self:getTalentCooldown(t)
 		local resists = t.getResists(self, t)
 		return ([[Upon activation summon a Temporal Hound.  Every %d turns another hound will be summoned, up to a maximum of three hounds. If a hound dies you'll summon a new hound in %d turns.  
-		Your hounds inherit your increased damage percent and have %d%% physical resistance and %d%% temporal resistance.
+		Your hounds inherit your increased damage percent, have %d%% physical resistance and %d%% temporal resistance, and are immune to hostile teleportation effects.
 		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning ,based on your Spellpower.]])
 		:format(cooldown, cooldown, resists/2, math.min(100, resists*2), incStats.str + 1, incStats.dex + 1, incStats.con + 1, incStats.mag + 1, incStats.wil +1, incStats.cun + 1)
 	end
