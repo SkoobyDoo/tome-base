@@ -77,7 +77,7 @@ newTalent{
 				DamageType.WARP, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
-				engine.MapEffect.new{color_br=180, color_bg=100, color_bb=255, effect_shader="shader_images/magic_effect.png"},
+				engine.MapEffect.new{alpha=85, color_br=150, color_bg=150, color_bb=50, effect_shader="shader_images/paradox_effect.png"},
 				function(e)
 					e.x = e.src.x
 					e.y = e.src.y
@@ -130,7 +130,7 @@ newTalent{
 			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
 		}
 		
-		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={100/255, 100/255, 100/255}}, "particles_images/spikes.png") then
+		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1000, spikeOffset=0.123123, spikeLength=0.6, spikeWidth=4, growthSpeed=2, color={150/255, 150/255, 50/255}}, "particles_images/spikes.png") then
 			ret.particle = self:addParticles(Particles.new("stone_skin", 1))
 		end
 		return ret
@@ -301,20 +301,16 @@ newTalent{
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 
-		local particle
 		local ret = { 
 			physical = {}, magical ={}
 		}
-		if core.shader.allow("adv") then
-			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.3, base_rotation=180, density=30, img="continuum_01_6"})
-		else
-			ret.particle1 = self:addParticles(Particles.new("ultrashield", 1, {rm=40, rM=40, gm=40, gM=40, bm=40, bM=40, am=120, aM=200, radius=0.4, density=50, life=8, instop=60}))
+		if core.shader.active(4) then
+			ret.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {rotation=-0.01, radius=1.2}, {type="stone", hide_center=1, zoom=0.6, color1={0.4, 0.4, 0, 1}, color2={0.5, 0.5, 0, 1}, xy={self.x, self.y}}))
 		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
-		if p.particle1 then self:removeParticles(p.particle1) end
-		if p.particle2 then self:removeParticles(p.particle2) end
+		if p.particle then self:removeParticles(p.particle) end
 		return true
 	end,
 	info = function(self, t)

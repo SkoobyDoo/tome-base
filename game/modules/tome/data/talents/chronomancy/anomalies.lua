@@ -934,7 +934,7 @@ newTalent{
 			DamageType.TEMPORAL, getAnomalyDamageAoE(self, t),
 			tg.radius,
 			5, nil,
-			engine.MapEffect.new{alpha=85, color_br=200, color_bg=200, color_bb=0, effect_shader="shader_images/paradox_effect.png"},
+			engine.MapEffect.new{color_br=180, color_bg=100, color_bb=255, effect_shader="shader_images/magic_effect.png"},
 			nil, false
 		)
 		return true
