@@ -76,5 +76,5 @@ function _M:updateText(v)
 		Textbox.setText(self, text)
 	end
 
-	if self.on_change and old ~= self.number then self.on_number_change(self.number) end
+	if self.on_number_change and old ~= self.number then self.on_number_change(self.number) end
 end

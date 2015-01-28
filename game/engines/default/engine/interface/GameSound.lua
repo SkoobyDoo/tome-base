@@ -51,6 +51,7 @@ function _M:playSound(name, position)
 			local f = loadfile("/data/sound/"..name..".lua")
 			setfenv(f, setmetatable({}, {__index=_G}))
 			def = f()
+			if not def.file then def.file = name..".ogg" end
 			print("[SOUND] loading from", "/data/sound/"..name..".lua", ":=:", "/data/sound/"..def.file, ":>")
 			ok, def.sample = pcall(core.sound.load, "/data/sound/"..def.file, false)
 			if not ok then print("Failed loading sound", def.file, def.sample) return end
