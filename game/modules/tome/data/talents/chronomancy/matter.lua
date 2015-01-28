@@ -189,7 +189,7 @@ newTalent{
 			if not oe or oe:attr("temporary") or game.level.map:checkAllEntities(px, py, "block_move") then return end
 				local e = Object.new{
 					old_feat = oe,
-					name = "stone wall", image = "terrain/rocky_mountain.png",
+					name = "materialize barrier", image = "terrain/rocky_mountain.png",
 					display = '#', color_r=255, color_g=255, color_b=255, back_color=colors.GREY,
 					shader = "shadow_simulacrum",
 					shader_args = { color = {0.6, 0.6, 0.2}, base = 0.9, time_factor = 1500 },
@@ -237,6 +237,14 @@ newTalent{
 		end)
 		
 		game:playSoundNear(self, "talents/earth")
+		
+		-- Update so we don't see things move on the otherside of the wall...  at least not without precog >:)
+		game:onTickEnd(function()
+			if game.level then
+				self:resetCanSeeCache()
+				if self.player then for uid, e in pairs(game.level.entities) do if e.x then game.level.map:updateMap(e.x, e.y) end end game.level.map.changed = true end
+			end
+		end)
 		
 		return true
 	end,
