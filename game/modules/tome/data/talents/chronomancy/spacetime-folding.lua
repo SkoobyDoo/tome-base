@@ -299,16 +299,13 @@ newTalent{
 				
 				local trigger = rng.percent(self.chance * core.fov.distance(self.x, self.y, self.target.x, self.target.y))
 				if not self.target.dead and (game.level and game.level:hasEntity(self.target)) and trigger then
-				
-					-- Warp blast prior to teleporting, this happens even if we don't teleport for anchor synergy
-					game:onTickEnd(function()
-						self.summoner.__project_source = self
-						self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
-						self.summoner.__project_source = nil
-						if core.shader.allow("distort") then
-							game.level.map:particleEmitter(self.target.x, self.target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=self.target.x, ty=self.target.y})
-						end
-					end)
+
+					self.summoner.__project_source = self
+					self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
+					self.summoner.__project_source = nil
+					if core.shader.allow("distort") then
+						game.level.map:particleEmitter(self.target.x, self.target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=self.target.x, ty=self.target.y})
+					end
 				
 					-- Teleport
 					local hit = self.summoner == self.target or (self.summoner:checkHit(self.power, self.target:combatSpellResist() + (self.target:attr("continuum_destabilization") or 0), 0, 95) and self.target:canBe("teleport"))
@@ -324,7 +321,7 @@ newTalent{
 							game:playSoundNear(self, "talents/teleport")
 						end
 						
-						-- And one more warp blast after
+						-- And one more warp blast after, make sure the teleport is resolved
 						game:onTickEnd(function()
 							self.summoner.__project_source = self
 							self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
