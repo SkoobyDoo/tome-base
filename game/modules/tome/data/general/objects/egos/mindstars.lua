@@ -86,6 +86,21 @@ newEntity{
 
 newEntity{
 	power_source = {nature=true},
+	name = " of the jelly", suffix=true, instant_resolve=true,
+	keywords = {jelly=true},
+	level_range = {1, 50},
+	rarity = 4,
+	cost = 8,
+	wielder = {
+		inc_damage={
+			[DamageType.ACID] = resolvers.mbonus_material(8, 2),
+		},
+		equilibrium_regen_when_hit = resolvers.mbonus_material(20, 5, function(e, v) v=v/10 return 0, v end),
+	},
+}
+
+newEntity{
+	power_source = {nature=true},
 	name = " of life", suffix=true, instant_resolve=true,
 	keywords = {life=true},
 	level_range = {1, 50},
@@ -126,6 +141,11 @@ newEntity{
 			[DamageType.ITEM_ANTIMAGIC_MANABURN] = resolvers.mbonus_material(15, 10),
 		},
 	},
+	wielder = {
+		resists={
+			[DamageType.ARCANE] = resolvers.mbonus_material(8, 2),
+		},
+	},
 }
 
 newEntity{
@@ -163,6 +183,12 @@ newEntity{
 
 			game.logSeen(target, "%s's %s has been #ORCHID#burned#LAST#!", target.name:capitalize(), t.name)
 		end},
+	},
+	wielder = {
+		inc_damage={
+			[DamageType.ARCANE] = resolvers.mbonus_material(8, 2),
+		},
+		combat_spellresist = resolvers.mbonus_material(8, 2),
 	},
 }
 
@@ -220,6 +246,35 @@ newEntity{
 		max_psi = resolvers.mbonus_material(40, 10),
 	},
 }
+newEntity{
+	power_source = {psionic=true},
+	name = "creative ", prefix=true, instant_resolve=true,
+	keywords = {creative=true},
+	level_range = {1, 50},
+	rarity = 4,
+	cost = 8,
+	wielder = {
+		inc_stats = {
+			[Stats.STAT_CUN] = resolvers.mbonus_material(6, 2),
+		},
+		combat_critical_power = resolvers.mbonus_material(20, 5),
+	},
+}
+
+newEntity{
+	power_source = {psionic=true},
+	name = " of resolve", suffix=true, instant_resolve=true,
+	keywords = {resolve=true},
+	level_range = {1, 50},
+	rarity = 8,
+	cost = 8,
+	wielder = {
+		inc_stats = {
+			[Stats.STAT_WIL] = resolvers.mbonus_material(6, 2),
+		},
+		combat_physresist = resolvers.mbonus_material(8, 2),
+	},
+}
 
 newEntity{
 	power_source = {psionic=true},
@@ -269,13 +324,13 @@ newEntity{
 	cost = 40,
 	wielder = {
 		inc_damage={
-			[DamageType.DARKNESS] = resolvers.mbonus_material(8, 2),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(16, 4),
 		},
 		resists_pen={
-			[DamageType.DARKNESS] = resolvers.mbonus_material(8, 2),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(16, 4),
 		},
 		resists={
-			[DamageType.DARKNESS] = resolvers.mbonus_material(8, 2),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(16, 4),
 		},
 		blind_immune = resolvers.mbonus_material(15, 10, function(e, v) v=v/100 return 0, v end),
 		talents_types_mastery = {
@@ -343,6 +398,58 @@ newEntity{
 }
 
 newEntity{
+	power_source = {antimagic=true},
+	name = "purifying ", prefix=true, instant_resolve=true,
+	keywords = {purifying=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 35,
+	cost = 40,
+	wielder = {
+		on_melee_hit={
+			[DamageType.ITEM_ANTIMAGIC_MANABURN] = resolvers.mbonus_material(16, 4),
+		},
+		inc_damage={
+			[DamageType.ARCANE] = resolvers.mbonus_material(8, 2),
+		},
+		resists_pen={
+			[DamageType.ARCANE] = resolvers.mbonus_material(8, 2),
+		},
+		resists={
+			[DamageType.ARCANE] = resolvers.mbonus_material(8, 2),
+		},
+	},
+	resolvers.charmt(Talents.T_DESTROY_MAGIC, {3,4,5}, 30),
+	ms_set_harmonious = true, ms_set_resonating = true,
+	set_list = {
+		multiple = true,
+		harmonious = {{"ms_set_nature", true, inven_id = other_hand,},},
+		resonating = {{"ms_set_psionic", true, inven_id = other_hand,},},
+	},
+	on_set_complete = {
+		multiple = true,
+		harmonious = function(self, who, inven_id, set_objects)
+			for _, d in ipairs(set_objects) do
+				if d.object ~= self then
+					return d.object.on_set_complete.harmonious(self, who, inven_id, set_objects)
+				end
+			end
+		end,
+		resonating = function(self, who, inven_id, set_objects)
+			for _, d in ipairs(set_objects) do
+				if d.object ~= self then
+					return d.object.on_set_complete.resonating(self, who, inven_id, set_objects)
+				end
+			end
+		end,
+	},
+	on_set_broken = {
+		multiple = true,
+		harmonious = set_broken,
+		resonating = set_broken,},
+}
+
+newEntity{
 	power_source = {psionic=true},
 	name = "resonating ", prefix=true, instant_resolve=true,
 	keywords = {resonating=true},
@@ -362,6 +469,79 @@ newEntity{
 		resists={
 			[DamageType.MIND] = resolvers.mbonus_material(8, 2),
 		},
+	},
+	ms_set_resonating = true,
+	set_list = {
+		multiple = true,
+		resonating = {{"ms_set_psionic", true, inven_id = other_hand,},},},
+	on_set_complete = {
+		multiple = true,
+		resonating = function(self, who, inven_id, set_objects)
+			for _, d in ipairs(set_objects) do
+				if d.object ~= self then
+					return d.object.on_set_complete.resonating(self, who, inven_id, set_objects)
+				end
+			end
+		end,},
+	on_set_broken = {
+		multiple = true,
+		resonating = set_broken,},
+}
+
+newEntity{
+	power_source = {psionic=true},
+	name = "honing ", prefix=true, instant_resolve=true,
+	keywords = {honing=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 35,
+	cost = 40,
+	wielder = {
+		inc_damage={
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 2),
+		},
+		resists_pen={
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 2),
+		},
+		resists={
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 2),
+		},
+		inc_stats = {
+			[Stats.STAT_CUN] = resolvers.mbonus_material(3, 1),
+			[Stats.STAT_WIL] = resolvers.mbonus_material(3, 1),
+		},
+	},
+	ms_set_resonating = true,
+	set_list = {
+		multiple = true,
+		resonating = {{"ms_set_psionic", true, inven_id = other_hand,},},},
+	on_set_complete = {
+		multiple = true,
+		resonating = function(self, who, inven_id, set_objects)
+			for _, d in ipairs(set_objects) do
+				if d.object ~= self then
+					return d.object.on_set_complete.resonating(self, who, inven_id, set_objects)
+				end
+			end
+		end,},
+	on_set_broken = {
+		multiple = true,
+		resonating = set_broken,},
+}
+
+newEntity{
+	power_source = {psionic=true},
+	name = "parasitic ", prefix=true, instant_resolve=true,
+	keywords = {parasitic=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 35,
+	cost = 40,
+	wielder = {
+		hate_on_crit = resolvers.mbonus_material(5, 1),
+		max_hate = resolvers.mbonus_material(20, 5),
+		life_leech_chance = resolvers.mbonus_material(20, 5),
+		life_leech_value = resolvers.mbonus_material(20, 5),
 	},
 	ms_set_resonating = true,
 	set_list = {
@@ -618,18 +798,19 @@ newEntity{
 	cost = 40,
 	wielder = {
 		on_melee_hit={
-			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 2),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(16, 4),
 		},
 		inc_damage={
-			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 2),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(16, 4),
 		},
 		resists_pen={
-			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 2),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(16, 4),
 		},
 		resists={
-			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 2),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(16, 4),
 		},
 	},
+	resolvers.charmt(Talents.T_BURROW, 1, 30),
 	ms_set_drake = true, ms_set_nature = true,
 	set_list = {
 		multiple = true,
@@ -704,7 +885,53 @@ newEntity{
 		wyrm = set_broken,},
 }
 
--- Mentalist Set: For a yet to be written psi class and/or Mindslayers
+set_complete = function(self, who, inven_id)
+	if inven_id == "MAINHAND" then
+		game.logPlayer(who, "#PURPLE#You feel the spirit of the wyrm stirring inside you!")
+	end
+	local Stats = require "engine.interface.ActorStats"
+	self:specialSetAdd({"wielder","life_regen"}, self.material_level/2)
+end
+
+newEntity{
+	power_source = {nature=true}, is_drake_star = true,
+	name = " of venom", suffix=true, instant_resolve=true,
+	keywords = {venom=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 40,
+	cost = 40,
+	wielder = {
+		on_melee_hit={
+			[DamageType.ACID] = resolvers.mbonus_material(16, 4),
+		},
+		inc_damage={
+			[DamageType.ACID] = resolvers.mbonus_material(16, 4),
+		},
+		resists_pen={
+			[DamageType.ACID] = resolvers.mbonus_material(16, 4),
+		},
+		resists={
+			[DamageType.ACID] = resolvers.mbonus_material(16, 4),
+		},
+		life_regen = resolvers.mbonus_material(15, 5, function(e, v) v=v/10 return 0, v end),
+	},
+	ms_set_drake = true, ms_set_nature = true,
+	set_list = {
+		multiple = true,
+		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
+		wyrm = {{"ms_set_wyrm", true, inven_id = other_hand,},},},
+	on_set_complete = {
+		multiple = true,
+		harmonious = set_complete,
+		wyrm = set_complete,},
+	on_set_broken = {
+		multiple = true,
+		harmonious = set_broken,
+		wyrm = set_broken,},
+}
+
+-- Dreamer Set: For Solipsists
 
 set_complete = function(self, who, inven_id)
 	if inven_id == "MAINHAND" then
@@ -776,6 +1003,106 @@ newEntity{
 		dreamers = set_broken,},
 }
 
+-- Channelers Set: For Mindslayers
+
+set_complete = function(self, who, inven_id)
+	local Talents = require "engine.interface.ActorTalents"
+	if inven_id == "MAINHAND" then
+		game.logPlayer(who, "#YELLOW#Psionic energy flows through your mindstars.")
+	end
+	self:specialSetAdd({"wielder","talent_cd_reduction"}, {
+		[Talents.T_KINETIC_SHIELD]=1,
+		[Talents.T_THERMAL_SHIELD]=1,
+		[Talents.T_CHARGED_SHIELD]=1,
+		[Talents.T_KINETIC_LEECH]=1,
+		[Talents.T_THERMAL_LEECH]=1,
+		[Talents.T_CHARGE_LEECH]=1,
+	})
+end
+
+newEntity{
+	power_source = {psionic=true},  define_as = "MS_EGO_SET_ABSORBING",
+	name = "absorbing ", prefix=true, instant_resolve=true,
+	keywords = {absorbing=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 40,
+	cost = 40,
+	wielder = {
+		resists = { 
+			[DamageType.FIRE] = resolvers.mbonus_material(20, 5), 
+			[DamageType.COLD] = resolvers.mbonus_material(20, 5), 
+			[DamageType.LIGHTNING] = resolvers.mbonus_material(20, 5), 
+		},
+		talents_types_mastery = {
+			["psionic/voracity"] = resolvers.mbonus_material(1, 1, function(e, v) v=v/10 return 0, v end),
+			["psionic/absorption"] = resolvers.mbonus_material(1, 1, function(e, v) v=v/10 return 0, v end),
+		},
+	},
+	ms_set_channeler_absorbing = true, ms_set_psionic = true,
+	set_list = {
+		multiple = true,
+		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
+		channeler = {{"ms_set_channeler_projecting", true, inven_id = other_hand,},},},
+	on_set_complete = {
+		multiple = true,
+		resonating = set_complete,
+		channeler = set_complete,},
+	on_set_broken = {
+		multiple = true,
+		resonating = set_broken,
+		channeler = set_broken,},
+}
+
+set_complete = function(self, who, inven_id)
+	local Talents = require "engine.interface.ActorTalents"
+	if inven_id == "MAINHAND" then
+		game.logPlayer(who, "#YELLOW#Psionic energy flows through your mindstars.")
+	end
+	self:specialSetAdd({"wielder","talent_cd_reduction"}, {
+		[Talents.T_KINETIC_AURA]=1,
+		[Talents.T_THERMAL_AURA]=1,
+		[Talents.T_CHARGED_AURA]=1,
+		[Talents.T_FRENZIED_FOCUS]=1,
+		[Talents.T_PYROKINESIS]=1,
+		[Talents.T_BRAIN_STORM]=1,
+	})
+end
+
+newEntity{
+	power_source = {psionic=true}, define_as = "MS_EGO_SET_PROJECTING",
+	name = "projecting ", prefix=true, instant_resolve=true,
+	keywords = {projecting=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 30,
+	cost = 40,
+	wielder = {
+		inc_damage = { 
+			[DamageType.FIRE] = resolvers.mbonus_material(20, 5), 
+			[DamageType.COLD] = resolvers.mbonus_material(20, 5), 
+			[DamageType.LIGHTNING] = resolvers.mbonus_material(20, 5), 
+		},
+		talents_types_mastery = {
+			["psionic/projection"] = resolvers.mbonus_material(1, 1, function(e, v) v=v/10 return 0, v end),
+			["psionic/focus"] = resolvers.mbonus_material(1, 1, function(e, v) v=v/10 return 0, v end),
+		},
+	},
+	ms_set_channeler_projecting = true, ms_set_psionic = true,
+	set_list = {
+		multiple = true,
+		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
+		channeler = {{"ms_set_channeler_absorbing", true, inven_id = other_hand,},},},
+	on_set_complete = {
+		multiple = true,
+		resonating = set_complete,
+		channeler = set_complete,},
+	on_set_broken = {
+		multiple = true,
+		resonating = set_broken,
+		channeler = set_broken,},
+}
+
 -- Mitotic Set: Single Mindstar that splits in two
 newEntity{
 	power_source = {nature=true},
@@ -784,7 +1111,7 @@ newEntity{
 	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 45, -- Rarity is high because melee based mindstar use is rare and you get two items out of one drop
-	cost = 10,  -- cost is very low to discourage players from splitting them to make extra gold..  because that would be tedious and unfun
+	cost = 40,  -- cost is very low to discourage players from splitting them to make extra gold..  because that would be tedious and unfun
 	combat = {
 		physcrit = resolvers.mbonus_material(10, 2),
 		melee_project = { [DamageType.ITEM_ACID_CORRODE]= resolvers.mbonus_material(15, 5), [DamageType.ITEM_NATURE_SLOW]= resolvers.mbonus_material(15, 5),},
