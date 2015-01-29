@@ -107,8 +107,8 @@ newTalent{
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
 					local target = game.level.map(px, py, Map.ACTOR)
 					if target then
-						DamageType:get(DamageType.WARP).projector(self, target.x, target.y, DamageType.WARP, t.getDamage(self, t))
-						randomWarpEffect(self, t, target)
+						DamageType:get(DamageType.WARP).projector(self, px, py, DamageType.WARP, t.getDamage(self, t))
+						DamageType:get(DamageType.RANDOM_WARP).projector(self, px, py, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
 					end
 				end)
 				
