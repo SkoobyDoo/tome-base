@@ -664,10 +664,10 @@ void call_draw(int nb_keyframes)
 			1, 0,
 		};
 		GLfloat colors[4*4] = {
-			1, 1, 1, 1,
-			1, 1, 1, 1,
-			1, 1, 1, 1,
-			1, 1, 1, 1,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
 		};
 
 		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);

@@ -944,7 +944,7 @@ newTalent{
 		return ([[You enter an ogric wrath for %d turns, increasing your stun and pinning resistances by 20%% and all damage done by 10%%.
 		In addition, whenever you miss a melee attack or any damage you deal is reduced by a damage shield or similar effect you gain a charge of Ogre Fury(up to 5 charges, each lasts 7 turns).
 		Each charge grants 20%% critical damage power and 5%% critical strike chance.
-		You loose a charge each time you deal a critical strike.
+		You lose a charge each time you deal a critical strike.
 		The duration will increase with your Strength.]]):format(t.getduration(self))
 	end,
 }
@@ -969,10 +969,10 @@ newTalent{
 		if self:getTalentLevelRaw(t) == 4 then self:attr("allow_mainhand_2h_in_1h", -1) end
 	end,
 	info = function(self, t)
-		return ([[An ogre's body is used to spells and inscriptions.
+		return ([[An ogre's body is acclimated to spells and inscriptions.
 		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.
 		At level 5 your body is so strong you can use a two handed weapon in your main hand while still using an offhand item.
-		When using a two handed weapon this way you suffer a 20%% hit chance pernalty, decreasing by 5%% per size category above #{italic}#big#{normal}#.]]):
+		When using a two handed weapon this way you suffer a 20%% hit chance penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#.]]):
 		format(t.getSave(self, t), t.getMult(self, t) * 100)
 	end,
 }
@@ -1014,9 +1014,8 @@ newTalent{
 	require = racial_req4,
 	points = 5,
 	no_energy = true,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 6, 47, 35)) end, -- Limit >6
-	range = 4,
 	no_unlearn_last = true,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 6, 47, 35)) end, -- Limit >6
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 15, 5, 10)) end,
 	on_learn = function(self, t)
 		if self:getTalentLevelRaw(t) == 5 then

@@ -162,6 +162,7 @@ newEntity{ base = "BASE_RING",
 			[DamageType.COLD] = 25,
 			[DamageType.NATURE] = 10,
 		},
+		inc_damage={ [DamageType.COLD] = 15, },
 	},
 }
 
@@ -1592,7 +1593,7 @@ newEntity{ base = "BASE_GREATSWORD",
 	cost = 350,
 	rarity = 240,
 	material_level = 3,
-	moddable_tile = "special/golden_sword_right",
+	moddable_tile = "special/2H_golden_sword_%s",
 	moddable_tile_big = true,
 	combat = {
 		dam = 49,
@@ -2728,6 +2729,7 @@ newEntity{ base = "BASE_WHIP",
 	},
 	wielder = {
 		combat_atk = 7,
+		inc_damage={ [DamageType.LIGHTNING] = 10, },
 	},
 	max_power = 10, power_regen = 1,
 	use_power = { name = "strike an enemy in range 3, releasing a burst of lightning", power = 10,
@@ -2764,7 +2766,6 @@ newEntity{ base = "BASE_WHIP",
 	level_range = {18, 28},
 	material_level = 3,
 	combat = {
-		is_psionic_focus=true,
 		dam = 19,
 		apr = 7,
 		physcrit = 5,
@@ -3552,6 +3553,9 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 		pin_immune=1,
 		resists={
 			[DamageType.PHYSICAL] = 5,
+		},
+		talents_types_mastery = {
+			["psionic/augmented-mobility"] = 0.2,
 		},
 	},
 	max_power = 20, power_regen = 1,
@@ -6918,5 +6922,529 @@ newEntity{ base = "BASE_GREATMAUL", define_as = "DREAM_MALLEUS",
 				end
 				return true
 			end})
+	end,
+}
+
+newEntity{ base = "BASE_WIZARD_HAT",
+	power_source = {nature=true},
+	unique = true,
+	name = "Cloud Caller",
+	unided_name = "broad brimmed hat",
+	desc = [[This hat's broad brim protects you from harsh sunlight and sudden storms.]],
+	color = colors.BLUE, image = "object/artifact/cloud_caller.png",
+	moddable_tile = "special/cloud_caller",
+	level_range = {1, 10},
+	rarity = 300,
+	cost = 30,
+	material_level = 1,
+	wielder = {
+		resists = { 
+			[DamageType.LIGHT] 	= 10,
+			[DamageType.LIGHTNING]	= 10,
+		},
+		inc_damage={
+			[DamageType.LIGHT] 	= 10,
+			[DamageType.LIGHTNING]	= 10,
+		},
+	},
+	max_power = 30, power_regen = 1,
+	use_talent = { id = Talents.T_CALL_LIGHTNING, level=1, power = 20 },
+}
+
+newEntity{ base = "BASE_TOOL_MISC",
+	power_source = {psionic=true},
+	unique=true, rarity=300,
+	type = "charm", subtype="torque",
+	name = "The Jolt", image = "object/artifact/the_jolt.png",
+	unided_name = "tingling torque",
+	color = colors.BLUE,
+	level_range = {10, 20},
+	desc = [[This torque feels tingly to the touch, but seems to enhance your thinking.]],
+	special_desc = function(self) return "Any lightning damage you do that is more than 10% of the victim's maximum life will attempt to mental crosstier the target, which inflicts Brainlock if your mindpower is a tier above their mindsave." end,
+	cost = 100,
+	material_level = 2,
+	wielder = {
+		inc_damage={
+			[DamageType.MIND] 	= 10,
+			[DamageType.LIGHTNING]	= 10,
+		},
+		inc_stats = {[Stats.STAT_CUN] = 4,},
+		lightning_brainlocks = 1,
+	},
+}
+
+newEntity{ base = "BASE_BATTLEAXE",
+	power_source = {nature=true},
+	unique = true,
+	unided_name = "damp steel battle axe",
+	name = "Stormfront", color = colors.BLUE, image = "object/artifact/stormfront.png",
+	moddable_tile = "special/%s_stormfront",
+	desc = [[The blade glows faintly blue, and reflects a sky full of stormy clouds.]],
+	require = { stat = { str=16 }, },
+	level_range = {10, 20},
+	rarity = 300,
+	cost = 100,
+	material_level = 2,
+	combat = {
+		dam = 20,
+		apr = 2,
+		physcrit = 5,
+		dammod = {str=1.2},
+		melee_project={
+			[DamageType.LIGHTNING]=10,
+			[DamageType.COLD]=10,
+		},
+		special_on_crit = {desc="inflicts either shocked or wet, chosen at random", fct=function(combat, who, target)
+			if not target or target == self then return end
+			if rng.percent(50) then
+				target:setEffect(target.EFF_SHOCKED, 3, {src=who})
+			else
+				target:setEffect(target.EFF_WET, 3, {src=who})
+			end
+		end},
+	},
+	wielder = {
+		inc_damage = {
+			[DamageType.LIGHTNING]=10,
+			[DamageType.COLD]=10,
+		},
+	},
+}
+
+newEntity{ base = "BASE_MINDSTAR", define_as = "EYE_OF_SUMMER",
+	power_source = {nature=true},
+	unique = true,
+	name = "Eye of Summer",
+	unided_name = "warm mindstar",
+	level_range = {10, 20},
+	color=colors.RED, image = "object/artifact/eye_of_summer.png",
+	moddable_tile = "special/%s_eye_of_summer",
+	rarity = 300,
+	desc = [[This mindstar glows with a bright warm light, but seems somehow incomplete.]],
+	cost = 40,
+	require = { stat = { wil=18 }, },
+	material_level = 2,
+	combat = {
+		dam = 8,
+		apr = 18,
+		physcrit = 5,
+		dammod = {wil=0.35, cun=0.15},
+		damtype = DamageType.FIRE,
+	},
+	wielder = {
+		combat_mindpower = 6,
+		combat_mindcrit = 4,
+		inc_damage = { [DamageType.FIRE]=10 },
+		resists_pen = { [DamageType.FIRE] = 10 },
+		resists = { [DamageType.COLD]=-10 },
+		global_speed_add = 0.05,
+	},
+	talent_on_mind = {chance=10, talent=Talents.T_FLAME_FURY, level=2},
+	set_list = { {"define_as", "EYE_OF_WINTER"} },
+	on_set_complete = function(self, who)
+		local Talents = require "engine.interface.ActorTalents"
+		self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.COLD]=20 })
+		self:specialSetAdd({"wielder","combat_mindpower"}, 4)
+		game.logSeen(who, "#GREEN#You feel the seasons in perfect balance.")
+	end,
+	on_set_broken = function(self, who)
+		game.logPlayer(who, "#GREEN#The seasons not longer feel balanced.")
+	end,
+}
+
+newEntity{ base = "BASE_MINDSTAR", define_as = "EYE_OF_WINTER",
+	power_source = {nature=true},
+	unique = true,
+	name = "Eye of Winter",
+	unided_name = "cold mindstar",
+	level_range = {10, 20},
+	color=colors.BLUE, image = "object/artifact/eye_of_winter.png",
+	moddable_tile = "special/%s_eye_of_winter",
+	rarity = 300,
+	desc = [[This mindstar glows with a dim cool light, but seems somehow incomplete.]],
+	cost = 40,
+	require = { stat = { wil=18 }, },
+	material_level = 2,
+	combat = {
+		dam = 8,
+		apr = 18,
+		physcrit = 5,
+		dammod = {wil=0.35, cun=0.15},
+		damtype = DamageType.COLD,
+	},
+	wielder = {
+		combat_mindpower = 6,
+		combat_mindcrit = 4,
+		inc_damage = { [DamageType.COLD]=10 },
+		resists_pen = { [DamageType.COLD] = 10 },
+		resists = { [DamageType.FIRE]=-10 },
+		combat_armor = 10,
+	},
+	talent_on_mind = {chance=10, talent=Talents.T_WINTER_S_FURY, level=2},
+	set_list = { {"define_as", "EYE_OF_SUMMER"} },
+	on_set_complete = function(self, who)
+		local Talents = require "engine.interface.ActorTalents"
+		self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=20 })
+		self:specialSetAdd({"wielder","combat_mindpower"}, 4)
+	end,
+	on_set_broken = function(self, who)
+	end,
+}
+
+newEntity{ base = "BASE_GAUNTLETS",
+	power_source = {psionic=true},
+	unique = true,
+	name = "Ruthless Grip", color = colors.DARK_BLUE, image = "object/artifact/grip_of_death.png",
+	moddable_tile = "special/grip_of_death",
+	unided_name = "sinister gauntlets",
+	desc = [[Crafted for a warlord who wanted to keep his subjects under a stralite grip. Dark thoughts went into the making of these gauntlets, literally.]],
+	level_range = {30, 40},
+	rarity = 300,
+	cost = 300,
+	material_level = 4,
+	wielder = {
+		combat_armor = 5,
+		inc_damage = {
+			[DamageType.DARKNESS]=20,
+			[DamageType.COLD]=20,
+		},
+		melee_project = {
+			[DamageType.DARKNESS]=20,
+			[DamageType.COLD]=20,
+		},
+		max_hate = 20,
+		healing_factor = -0.2,
+		die_at = -100,
+		combat = {
+			dam = 30,
+			apr = 15,
+			physcrit = 10,
+			physspeed = 0.2,
+			dammod = {dex=0.4, str=-0.6, cun=0.4, wil=0.4 },
+			damrange = 0.3,
+		},
+	},
+	max_power = 30, power_regen = 1,
+	use_talent = { id = Talents.T_FROST_GRAB, level=4, power = 20 },
+}
+
+newEntity{ base = "BASE_KNIFE",
+	power_source = {psionic=true, nature=true},
+	unique = true,
+	name = "Icy Kill", image = "object/artifact/icy_kill.png",
+	moddable_tile = "special/%s_icy_kill",
+	unided_name = "sharpened icicle",
+	desc = [[As any scryer knows, the link between the murderer and the murdered is the murder weapon, and a scryer can follow that link from the murdered to the weapon to the murderer. 
+One rather cold blooded killer thought of a way around this. By carving blades out of ice, they could kill as they wished and the link would just melt away.
+Their killing spree ended when one of the victims got lucky and managed to stab the murderer in the heart with the icey blade. After being united with the cold heart that created it, the final ice blade has never melted.]],
+	level_range = {30, 40},
+	rarity = 300,
+	require = { stat = { dex=42 }, },
+	cost = 400,
+	material_level = 4,
+	combat = {
+		dam = 35,
+		apr = 10,
+		physcrit = 15,
+		dammod = {str=0.45, dex=0.45},
+		melee_project = { [DamageType.COLD]=30 },
+		special_on_crit = {desc="freezes the target", fct=function(combat, who, target)
+			if not target or target == self then return end
+			if target:canBe("stun") then
+				local check = math.max(who:combatSpellpower(), who:combatMindpower(), who:combatAttack())
+				target:setEffect(target.EFF_FROZEN, 4, {src=who, apply_power=check})
+			end
+		end},
+		special_on_kill = {desc="explodes a frozen creature (damage scales with willpower)", fct=function(combat, who, target)
+			if not target or target == self then return end
+			if target:hasEffect(target.EFF_FROZEN) then
+				local tg = {type="ball", range=0, radius=1, selffire=false}
+				local grids = who:project(tg, target.x, target.y, engine.DamageType.ICE, {chance=50, dam=30 + who:getWil()*0.5})
+				game.level.map:particleEmitter(target.x, target.y, tg.radius, "ball_ice", {radius=tg.radius})
+			end
+		end},
+	},
+	wielder = {
+		inc_stats = {[Stats.STAT_CUN] = 6, [Stats.STAT_WIL] = 6,},
+		inc_damage = { [DamageType.COLD]=25 },
+		iceblock_pierce = 50,
+		hate_per_kill = 4,
+	},
+}
+
+newEntity{ base = "BASE_MACE",
+	power_source = {psionic=true},
+	name = "Thunderfall", define_as = "THUNDERFALL", image="object/artifact/thunderfall.png",
+	unided_name = "a strangely colored bone", unique = true,
+	moddable_tile = "special/%s_thunderfall",
+	desc = [[Tremendous power is concentrated in this heavy mace. Just dropping it can knock down nearby walls.]],
+	level_range = {40, 50},
+	require = { stat = { str=50, wil=30 }, },
+	rarity = 400,
+	cost = 500,
+	material_level = 5,
+	combat = {
+		dam = 50,
+		apr = 6,
+		physcrit = 3,
+		dammod = {str=1},
+		burst_on_hit = {
+			[DamageType.PHYSICAL] = 50,
+			[DamageType.LIGHTNING] = 50,
+		},
+		burst_on_crit = {
+			[DamageType.PHYSICAL] = 100,
+			[DamageType.LIGHTNING] = 100,
+		},
+	},
+	max_power = 60, power_regen = 1,
+	use_power = { name = "strike a target at range for an automatic critical hit as lightning damage", power = 60,
+		use = function(self, who)
+			local tg = {type="hit", range=10}
+			local x, y = who:getTarget(tg)
+			if not x or not y then return nil end
+			local _ _, x, y = who:canProject(tg, x, y)
+			local target = game.level.map(x, y, engine.Map.ACTOR)
+			if target then
+				local x2, y2 = x + rng.range(-4, 4), y - rng.range(5, 10)
+				game.level.map:particleEmitter(x, y, math.max(math.abs(x2-x), math.abs(y2-y)), "lightning", {tx=x2-x, ty=y2-y})
+				game:playSoundNear({x=x,y=y}, "talents/thunderstorm")
+			
+				who.turn_procs.auto_phys_crit = true
+				who:attackTarget(target, engine.DamageType.LIGHTNING, 1.0, true)
+				who.turn_procs.auto_phys_crit = nil
+				
+				if core.shader.active() then game.level.map:particleEmitter(x, y, 2, "ball_lightning_beam", {radius=2, tx=x, ty=y}, {type="lightning"})
+				else game.level.map:particleEmitter(x, y, 2, "ball_lightning_beam", {radius=2, tx=x, ty=y}) end
+			else
+				return
+			end
+			return {id=true, used=true}
+		end
+	},
+}
+
+newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
+	power_source = {psionic=true},
+	unique = true,
+	name = "Kinetic Focus",
+	unided_name = "humming mindstar",
+	level_range = {10, 30},
+	color=colors.YELLOW, image = "object/artifact/kinetic_focus.png",
+	moddable_tile = "special/%s_kinetic_focus",
+	rarity = 300,
+	desc = [[Kinetic energies are focussed in the core of this mindstar.]],
+	special_desc = function(self) return "This item is part of a set." end,
+	cost = 50,
+	require = { stat = { wil=18 }, },
+	material_level = 2,
+	combat = {
+		dam = 6,
+		apr = 18,
+		physcrit = 5,
+		dammod = {wil=0.35, cun=0.15},
+		damtype = DamageType.PHYSICAL,
+	},
+	wielder = {
+		combat_mindpower = 6,
+		combat_mindcrit = 2,
+		inc_damage = { [DamageType.PHYSICAL]=10 },
+		resists_pen = { [DamageType.PHYSICAL] = 6 },
+		resists = { [DamageType.PHYSICAL]=10 },
+		psi_on_crit = 1,
+		combat_physresist = 6,
+		talents_types_mastery = { ["psionic/kinetic-mastery"] = 0.1 },
+		learn_talent = { [Talents.T_PSIONIC_MAELSTROM] = 1,},
+	},
+	set_list = { 
+		multiple = true,
+		kinchar = {{"define_as", "CHARGED_FOCUS"},},
+		kinther = {{"define_as", "THERMAL_FOCUS"},}, 
+	},
+	on_set_complete = { 
+		multiple = true,
+		kinchar = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 6)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 6)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.PHYSICAL]=10 })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.PHYSICAL]=6 })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.PHYSICAL]=10 })
+			self:specialSetAdd({"wielder","psi_on_crit"}, 1)
+			self:specialSetAdd({"wielder","combat_physresist"}, 6)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/kinetic-mastery"] = 0.1 })
+		end,
+		kinther = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 6)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 6)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.PHYSICAL]=10 })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.PHYSICAL]=6 })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.PHYSICAL]=10 })
+			self:specialSetAdd({"wielder","psi_on_crit"}, 1)
+			self:specialSetAdd({"wielder","combat_physresist"}, 6)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/kinetic-mastery"] = 0.1 })
+		end,
+	},
+	on_set_broken = function(self, who)
+	end,
+}
+
+newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
+	power_source = {psionic=true},
+	unique = true,
+	name = "Charged Focus",
+	unided_name = "sparking mindstar",
+	level_range = {20, 40},
+	color=colors.BLUE, image = "object/artifact/charged_focus.png",
+	moddable_tile = "special/%s_charged_focus",
+	rarity = 300,
+	desc = [[Electrical energies are focussed in the core of this mindstar.]],
+	special_desc = function(self) return "This item is part of a set." end,
+	cost = 100,
+	require = { stat = { wil=24 }, },
+	material_level = 3,
+	combat = {
+		dam = 10,
+		apr = 24,
+		physcrit = 5,
+		dammod = {wil=0.4, cun=0.2},
+		damtype = DamageType.LIGHTNING,
+	},
+	wielder = {
+		combat_mindpower = 9,
+		combat_mindcrit = 5,
+		inc_damage = { [DamageType.LIGHTNING]=15 },
+		resists_pen = { [DamageType.LIGHTNING] = 9 },
+		resists = { [DamageType.LIGHTNING]=15 },
+		max_psi = 30,
+		combat_mentalresist = 9,
+		talents_types_mastery = { ["psionic/charged-mastery"] = 0.15 },
+		learn_talent = { [Talents.T_PSIONIC_MAELSTROM] = 1,},
+	},
+	set_list = { 
+		multiple = true,
+		kinchar = {{"define_as", "KINETIC_FOCUS"},},
+		charther = {{"define_as", "THERMAL_FOCUS"},},
+	},
+	on_set_complete = { 
+		multiple = true,
+		kinchar = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.LIGHTNING]=5 })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.LIGHTNING]=3 })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.LIGHTNING]=5 })
+			self:specialSetAdd({"wielder","max_psi"}, 10)
+			self:specialSetAdd({"wielder","combat_mentalresist"}, 3)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/charged-mastery"] = 0.05 })
+		end,
+		charther = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 6)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 6)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.LIGHTNING]=10 })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.LIGHTNING]=6 })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.LIGHTNING]=10 })
+			self:specialSetAdd({"wielder","max_psi"}, 20)
+			self:specialSetAdd({"wielder","combat_mentalresist"}, 6)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/charged-mastery"] = 0.1 })
+		end,
+	},
+	on_set_broken = function(self, who)
+	end,
+}
+
+newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
+	power_source = {psionic=true},
+	unique = true,
+	name = "Thermal Focus",
+	unided_name = "blazing mindstar",
+	level_range = {30, 50},
+	color=colors.RED, image = "object/artifact/thermal_focus.png",
+	moddable_tile = "special/%s_thermal_focus",
+	rarity = 300,
+	desc = [[Thermal energies are focussed in the core of this mindstar.]],
+	special_desc = function(self) return "This item is part of a set." end,
+	cost = 400,
+	require = { stat = { wil=35 }, },
+	material_level = 4,
+	combat = {
+		dam = 14,
+		apr = 32,
+		physcrit = 5,
+		dammod = {wil=0.45, cun=0.25},
+		damtype = DamageType.FIRE,
+		convert_damage = {
+			[DamageType.COLD] = 50,
+		},
+	},
+	wielder = {
+		combat_mindpower = 12,
+		combat_mindcrit = 8,
+		inc_damage = { [DamageType.FIRE]=20, [DamageType.COLD]=20,  },
+		resists_pen = { [DamageType.FIRE] = 12, [DamageType.COLD]=12,  },
+		resists = { [DamageType.FIRE]=20, [DamageType.COLD]=20,  },
+		psi_regen = 1,
+		combat_spellresist = 12,
+		talents_types_mastery = { ["psionic/thermal-mastery"] = 0.2 },
+		learn_talent = { [Talents.T_PSIONIC_MAELSTROM] = 1,},
+	},
+	set_list = { 
+		multiple = true,
+		kinther = {{"define_as", "KINETIC_FOCUS"},},
+		charther = {{"define_as", "CHARGED_FOCUS"},}, 
+	},
+	on_set_complete = { 
+		multiple = true,
+		kinther = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.FIRE]=3, [engine.DamageType.COLD]=3, })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
+			self:specialSetAdd({"wielder","psi_regen"}, 1)
+			self:specialSetAdd({"wielder","combat_spellresist"}, 3)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/thermal-mastery"] = 0.05 })
+		end,
+		charther = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.FIRE]=3, [engine.DamageType.COLD]=3, })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
+			self:specialSetAdd({"wielder","psi_regen"}, 1)
+			self:specialSetAdd({"wielder","combat_spellresist"}, 3)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/thermal-mastery"] = 0.05 })
+		end,
+	},
+	on_set_broken = function(self, who)
+	end,
+}
+
+newEntity{ base = "BASE_LEATHER_BELT",
+	power_source = {psionic=true},
+	unique = true,
+	name = "Lightning Catcher", image = "object/artifact/lightning_collector.png",
+	unided_name = "coiled metal belt",
+	desc = [[A fine mesh of metal threads held together by a sturdy chain. Sparks dance across it.]],
+	special_desc = function(self) return [[Taking lightning damage or making critical hits builds 2 energy charges, which give you +5% lightning damage and +1 to all stats.
+The charges decay at a rate of 1 per turn.]] end,
+	color = colors.WHITE,
+	level_range = {40, 50},
+	rarity = 400,
+	cost = 750,
+	material_level = 5,
+	wielder = {
+		resists = {
+			[DamageType.LIGHTNING] = 30,
+		},
+		stun_immune = 0.3,
+		fatigue = 5,
+	},
+	callbackOnTakeDamage = function(self, src, x, y, type, dam, tmp, no_martyr)
+		if type == engine.DamageType.LIGHTNING then
+			self:setEffect(self.EFF_CAUGHT_LIGHTNING, 2, {})
+		end
+	end,
+	callbackOnCrit = function(self, src, type, dam, chance, target)
+		src:setEffect(src.EFF_CAUGHT_LIGHTNING, 2, {})
 	end,
 }

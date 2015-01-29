@@ -618,10 +618,18 @@ function _M:createFBOs()
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
 end
 
-function _M:resizeMapViewport(w, h)
+function _M:resizeMapViewport(w, h, x, y)
+	x = x and math.floor(x) or Map.display_x
+	y = y and math.floor(y) or Map.display_y
 	w = math.floor(w)
 	h = math.floor(h)
 
+	-- convert from older faulty versionsPg
+	if game.level.map and rawget(game.level.map, "display_x") == Map.display_x and rawget(game.level.map, "display_y") == Map.display_y then
+		game.level.map.display_x, game.level.map.display_y = nil, nil
+	end
+	Map.display_x = x
+	Map.display_y = y
 	Map.viewport.width = w
 	Map.viewport.height = h
 	Map.viewport.mwidth = math.floor(w / Map.tile_w)
@@ -1364,33 +1372,35 @@ end
 -- Note: There can be up to a 1 tick delay in displaying log information
 function _M:displayDelayedLogDamage()
 	if not self.uiset or not self.uiset.logdisplay then return end
-	for src, tgts in pairs(self.delayed_log_damage) do
-		for target, dams in pairs(tgts) do
-			if #dams.descs > 1 then
-				game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s (%0.0f total damage)%s.", table.concat(dams.descs, ", "), dams.total, dams.healing<0 and (" #LIGHT_GREEN#[%0.0f healing]#LAST#"):format(-dams.healing) or ""))
-			else
-				if dams.healing >= 0 then
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s damage.", table.concat(dams.descs, ", ")))
-				elseif src == target then
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# receives %s.", table.concat(dams.descs, ", ")))
+	for real_src, psrcs in pairs(self.delayed_log_damage) do
+		for src, tgts in pairs(psrcs) do
+			for target, dams in pairs(tgts) do
+				if #dams.descs > 1 then
+					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s (%0.0f total damage)%s.", table.concat(dams.descs, ", "), dams.total, dams.healing<0 and (" #LIGHT_GREEN#[%0.0f healing]#LAST#"):format(-dams.healing) or ""))
 				else
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Target# receives %s from #Source#.", table.concat(dams.descs, ", ")))
+					if dams.healing >= 0 then
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s damage.", table.concat(dams.descs, ", ")))
+					elseif src == target then
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# receives %s.", table.concat(dams.descs, ", ")))
+					else
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Target# receives %s from #Source#.", table.concat(dams.descs, ", ")))
+					end
 				end
-			end
-			local rsrc = src.resolveSource and src:resolveSource() or src
-			local rtarget = target.resolveSource and target:resolveSource() or target
-			local x, y = target.x or -1, target.y or -1
-			local sx, sy = self.level.map:getTileToScreen(x, y)
-			if target.dead then
-				if dams.tgtSeen and (rsrc == self.player or rtarget == self.player or self.party:hasMember(rsrc) or self.party:hasMember(rtarget)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), ("Kill (%d)!"):format(dams.total), {255,0,255}, true)
-					self:delayedLogMessage(target, nil,  "death", self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#{bold}##Source# killed #Target#!#{normal}#"))
-				end
-			elseif dams.total > 0 or dams.healing == 0 then
-				if dams.tgtSeen and (rsrc == self.player or self.party:hasMember(rsrc)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-3, -2), tostring(-math.ceil(dams.total)), {0,255,dams.is_crit and 200 or 0}, dams.is_crit)
-				elseif dams.tgtSeen and (rtarget == self.player or self.party:hasMember(rtarget)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -rng.float(-3, -2), tostring(-math.ceil(dams.total)), {255,dams.is_crit and 200 or 0,0}, dams.is_crit)
+				local rsrc = real_src.resolveSource and real_src:resolveSource() or real_src
+				local rtarget = target.resolveSource and target:resolveSource() or target
+				local x, y = target.x or -1, target.y or -1
+				local sx, sy = self.level.map:getTileToScreen(x, y)
+				if target.dead then
+					if dams.tgtSeen and (rsrc == self.player or rtarget == self.player or self.party:hasMember(rsrc) or self.party:hasMember(rtarget)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), ("Kill (%d)!"):format(dams.total), {255,0,255}, true)
+						self:delayedLogMessage(target, nil,  "death", self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#{bold}##Source# killed #Target#!#{normal}#"))
+					end
+				elseif dams.total > 0 or dams.healing == 0 then
+					if dams.tgtSeen and (rsrc == self.player or self.party:hasMember(rsrc)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-3, -2), tostring(-math.ceil(dams.total)), {0,255,dams.is_crit and 200 or 0}, dams.is_crit)
+					elseif dams.tgtSeen and (rtarget == self.player or self.party:hasMember(rtarget)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -rng.float(-3, -2), tostring(-math.ceil(dams.total)), {255,dams.is_crit and 200 or 0,0}, dams.is_crit)
+					end
 				end
 			end
 		end
@@ -1403,12 +1413,11 @@ end
 -- log and collate combat damage for later display with displayDelayedLogDamage
 function _M:delayedLogDamage(src, target, dam, desc, crit)
 	if not target or not src then return end
-	src = src.__project_source or src -- assign message to indirect damage source if available
+	local psrc = src.__project_source or src -- assign message to indirect damage source if available
 	local visible, srcSeen, tgtSeen = self:logVisible(src, target)
 	if visible then -- only log damage the player is aware of
-		self.delayed_log_damage[src] = self.delayed_log_damage[src] or {}
-		self.delayed_log_damage[src][target] = self.delayed_log_damage[src][target] or {total=0, healing=0, descs={}}
-		local t = self.delayed_log_damage[src][target]
+		local t = table.getTable(self.delayed_log_damage, src, psrc, target)
+		table.update(t, {total=0, healing=0, descs={}})
 		t.descs[#t.descs+1] = desc
 		if dam>=0 then
 			t.total = t.total + dam
@@ -1931,6 +1940,7 @@ do return end
 			else
 				self.log("Displaying talents.")
 			end
+			if self.uiset.resizeIconsHotkeysToolbar then self.uiset:resizeIconsHotkeysToolbar() end
 		end,
 
 		SCREENSHOT = function() self:saveScreenshot() end,

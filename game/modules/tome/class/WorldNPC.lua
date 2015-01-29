@@ -22,6 +22,7 @@ local ActorAI = require "engine.interface.ActorAI"
 local Faction = require "engine.Faction"
 local Emote = require("engine.Emote")
 local Map = require("engine.Map")
+local Chat = require("engine.Chat")
 require "mod.class.Actor"
 
 module(..., package.seeall, class.inherit(mod.class.Actor, engine.interface.ActorAI))

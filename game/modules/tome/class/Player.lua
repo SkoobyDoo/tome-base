@@ -970,6 +970,14 @@ function _M:restCheck()
 		end end
 		if ammo and ammo.combat.shots_left < ammo.combat.capacity then return true end
 
+		-- Check for detrimental effects
+		for id, _ in pairs(self.tmp) do
+			local def = self.tempeffect_def[id]
+			if def.status == "detrimental" and (def.decrease or 1) > 0 then
+				return true
+			end
+		end
+
 		if self:fireTalentCheck("callbackOnRest", "check") then return true end
 	else
 		return true

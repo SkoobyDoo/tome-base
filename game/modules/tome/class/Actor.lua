@@ -1505,8 +1505,8 @@ end
 
 --- What is our reaction toward the target
 -- This can modify faction reaction using specific actor to actor reactions
-function _M:reactionToward(target, no_reflection)
-	if target == self and self:attr("encased_in_ice") then return -100 end
+function _M:reactionToward(target, no_reflection, not_actually_us)
+	if target == self and self:attr("encased_in_ice") and not_actually_us then return -100 end
 
 	-- Neverending hatred
 	if self:attr("hates_everybody") and target ~= self then return -100 end
@@ -1514,7 +1514,7 @@ function _M:reactionToward(target, no_reflection)
 	if self:attr("hates_antimagic") and target:attr("forbid_arcane") then return -100 end
 
 	-- If self or target is a summon bound to a master's will, use the master instead
-	if self.summoner then return self.summoner:reactionToward(target, no_reflection) end
+	if self.summoner then return self.summoner:reactionToward(target, no_reflection, true) end
 	if target.summoner then target = target.summoner end
 
 	local v = engine.Actor.reactionToward(self, target)

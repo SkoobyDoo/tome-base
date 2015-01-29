@@ -20,7 +20,7 @@
 require "engine.class"
 local UISet = require "mod.class.uiset.UISet"
 local DebugConsole = require "engine.DebugConsole"
-local PlayerDisplay = require "mod.class.PlayerDisplay"
+local PlayerDisplay = require "mod.class.uiset.ClassicPlayerDisplay"
 local HotkeysDisplay = require "engine.HotkeysDisplay"
 local HotkeysIconsDisplay = require "engine.HotkeysIconsDisplay"
 local ActorsSeenDisplay = require "engine.ActorsSeenDisplay"
@@ -59,7 +59,8 @@ function _M:activate()
 	self.init_size_mono = size_mono
 	self.init_font_mono_h = font_mono_h
 
-	self.hotkeys_display_text = HotkeysDisplay.new(nil, 216, game.h - 52, game.w - 216, 52, "/data/gfx/ui/talents-list.png", font_mono, size_mono)
+	local text_display_h = font_mono_h * 4.2
+	self.hotkeys_display_text = HotkeysDisplay.new(nil, 216, game.h - text_display_h, game.w - 216, text_display_h, "/data/gfx/ui/talents-list.png", font_mono, size_mono)
 	self.hotkeys_display_text:enableShadow(0.6)
 	self.hotkeys_display_text:setColumns(3)
 	self:resizeIconsHotkeysToolbar()
@@ -76,7 +77,7 @@ function _M:activate()
 	profile.chat:enableFading(config.settings.tome.log_fade or 3)
 	profile.chat:enableDisplayChans(false)
 
-	self.npcs_display = ActorsSeenDisplay.new(nil, 216, game.h - font_mono_h * 4.2, game.w - 216, font_mono_h * 4.2, "/data/gfx/ui/talents-list.png", font_mono, size_mono)
+	self.npcs_display = ActorsSeenDisplay.new(nil, 216, game.h - text_display_h, game.w - 216, text_display_h, "/data/gfx/ui/talents-list.png", font_mono, size_mono)
 	self.npcs_display:setColumns(3)
 
 	self.minimap_bg, self.minimap_bg_w, self.minimap_bg_h = core.display.loadImage("/data/gfx/ui/minimap.png"):glTexture()
@@ -99,21 +100,31 @@ function _M:setupMinimap(level)
 end
 
 function _M:resizeIconsHotkeysToolbar()
-	local h = 52
-	if config.settings.tome.hotkey_icons then h = (4 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+	local h
+	if game.show_npc_list then
+		h = self.npcs_display.h
+	else
+		if config.settings.tome.hotkey_icons then h = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows
+		else h = self.hotkeys_display_text.h end
+	end
 
 	local oldstop = self.map_h_stop or (game.h - h)
 	self.map_h_stop = game.h - h
 	self.map_h_stop_tooltip = game.h - h
 
-	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 216, game.h - h, game.w - 216, h, "/data/gfx/ui/talents-list.png", self.init_font_mono, self.init_size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
-	self.hotkeys_display_icons:enableShadow(0.6)
+	if self.hotkeys_display_icons then
+		self.hotkeys_display_icons:resize(216, game.h - h, game.w - 216, h, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
+	else
+		self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 216, game.h - h, game.w - 216, h, "/data/gfx/ui/talents-list.png", self.init_font_mono, self.init_size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
+		self.hotkeys_display_icons:enableShadow(0.6)
+	end
+
 
 	if game.inited then
-		game:resizeMapViewport(game.w - 216, self.map_h_stop - 16)
+		game:resizeMapViewport(game.w - 216, self.map_h_stop - 16, 216, 0)
 		self.logdisplay.display_y = self.logdisplay.display_y + self.map_h_stop - oldstop
 		profile.chat.display_y = profile.chat.display_y + self.map_h_stop - oldstop
-		game:setupMouse()
+		game:setupMouse(true)
 	end
 
 	self.hotkeys_display = config.settings.tome.hotkey_icons and self.hotkeys_display_icons or self.hotkeys_display_text
@@ -160,7 +171,7 @@ function _M:displayUI()
 
 	-- Icons
 	local x, y = icon_x, icon_y
-	if (not self.show_npc_list) then
+	if (not game.show_npc_list) then
 		_talents_icon:toScreenFull(x, y, _talents_icon_w, _talents_icon_h, _talents_icon_w, _talents_icon_h)
 	else
 		_actors_icon:toScreenFull(x, y, _actors_icon_w, _actors_icon_h, _actors_icon_w, _actors_icon_h)
@@ -196,7 +207,7 @@ function _M:displayUI()
 	x = x + _talents_icon_w
 	_log_icon:toScreenFull(x, y, _log_icon_w, _log_icon_h, _log_icon_w, _log_icon_h)
 	x = x + _talents_icon_w
-	if (not config.settings.tome.actor_based_movement_mode and not self.bump_attack_disabled) or (config.settings.tome.actor_based_movement_mode and not game.player.bump_attack_disabled) then
+	if (not config.settings.tome.actor_based_movement_mode and not game.bump_attack_disabled) or (config.settings.tome.actor_based_movement_mode and not game.player.bump_attack_disabled) then
 		_mm_aggressive_icon:toScreenFull(x, y, _mm_aggressive_icon_w, _mm_aggressive_icon_h, _mm_aggressive_icon_w, _mm_aggressive_icon_h)
 	else
 		_mm_passive_icon:toScreenFull(x, y, _mm_passive_icon_w, _mm_passive_icon_h, _mm_passive_icon_w, _mm_passive_icon_h)
@@ -263,7 +274,7 @@ function _M:mouseIcon(bx, by)
 		virtual = "TOGGLE_NPC_LIST"
 		key = game.key.binds_remap[virtual] ~= nil and game.key.binds_remap[virtual][1] or game.key:findBoundKeys(virtual)
 		key = (key ~= nil and game.key:formatKeyString(key) or "unbound"):capitalize()
-		if (not self.show_npc_list) then
+		if (not game.show_npc_list) then
 			game:tooltipDisplayAtMap(game.w, game.h, "Displaying talents (#{bold}##GOLD#"..key.."#LAST##{normal}#)\nToggle for creature display")
 		else
 			game:tooltipDisplayAtMap(game.w, game.h, "Displaying creatures (#{bold}##GOLD#"..key.."#LAST##{normal}#)\nToggle for talent display#")
@@ -347,7 +358,7 @@ function _M:display(nb_keyframes)
 	self.logdisplay:toScreen()
 
 	self.player_display:toScreen(nb_keyframes)
-	if self.show_npc_list then
+	if game.show_npc_list then
 		self.npcs_display:toScreen()
 	else
 		self.hotkeys_display:toScreen()
@@ -364,7 +375,7 @@ function _M:setupMouse(mouse)
 	end)
 	-- Use hotkeys with mouse
 	mouse:registerZone(self.hotkeys_display.display_x, self.hotkeys_display.display_y, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
-		if self.show_npc_list then return end
+		if game.show_npc_list then return end
 		if event == "out" then self.hotkeys_display.cur_sel = nil return end
 		if event == "button" and button == "left" and ((game.zone and game.zone.wilderness) or (game.key ~= game.normal_key)) then return end
 		self.hotkeys_display:onMouse(button, mx, my, event == "button",

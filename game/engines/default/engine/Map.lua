@@ -602,7 +602,7 @@ end
 -- @param always_show tell the map code to force display unseed entities as remembered (used for smooth FOV shading)
 function _M:display(x, y, nb_keyframe, always_show, prevfbo)
 	nb_keyframes = nb_keyframes or 1
-	local ox, oy = self.display_x, self.display_y
+	local ox, oy = rawget(self, "display_x"), rawget(self, "display_y")
 	self.display_x, self.display_y = x or self.display_x, y or self.display_y
 
 	self._map:toScreen(self.display_x, self.display_y, nb_keyframe, always_show, self.changed, prevfbo)

@@ -893,7 +893,7 @@ static int sdl_font_draw(lua_State *L)
 	int b = luaL_checknumber(L, 6);
 	bool no_linefeed = lua_toboolean(L, 7);
 	bool direct_uid_draw = lua_toboolean(L, 8);
-	int h = TTF_FontLineSkip(*f);
+	int h = TTF_FontHeight(*f);
 	SDL_Color color = {r,g,b};
 
 	int fullmax = max_texture_size / 2;

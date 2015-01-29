@@ -445,11 +445,10 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		if not DamageType:get(type).hideMessage then
 			local visible, srcSeen, tgtSeen = game:logVisible(src, target)
 			if visible then -- don't log damage that the player doesn't know about
-				local source = src.__project_source or src
 				if crit_power > 1 then
-					game:delayedLogDamage(source, target, dam, ("#{bold}#%s%d %s#{normal}##LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), true)
+					game:delayedLogDamage(src, target, dam, ("#{bold}#%s%d %s#{normal}##LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), true)
 				else
-					game:delayedLogDamage(source, target, dam, ("%s%d %s#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), false)
+					game:delayedLogDamage(src, target, dam, ("%s%d %s#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), false)
 				end
 			end
 		end
@@ -725,6 +724,12 @@ newDamageType{
 		state = state or {}
 		useImplicitCrit(src, state)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
+		if realdam > 0 and src:attr("lightning_brainlocks") then
+			local target = game.level.map(x, y, Map.ACTOR)
+			if realdam > target.max_life / 10 then
+				target:crossTierEffect(target.EFF_BRAINLOCKED, src:combatMindpower())
+			end
+		end	
 		return realdam
 	end,
 	death_message = {"electrocuted", "shocked", "bolted", "volted", "amped", "zapped"},
