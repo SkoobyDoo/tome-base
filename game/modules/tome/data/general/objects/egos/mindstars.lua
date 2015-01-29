@@ -1111,7 +1111,7 @@ newEntity{
 	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 45, -- Rarity is high because melee based mindstar use is rare and you get two items out of one drop
-	cost = 10,  -- cost is very low to discourage players from splitting them to make extra gold..  because that would be tedious and unfun
+	cost = 40,  -- cost is very low to discourage players from splitting them to make extra gold..  because that would be tedious and unfun
 	combat = {
 		physcrit = resolvers.mbonus_material(10, 2),
 		melee_project = { [DamageType.ITEM_ACID_CORRODE]= resolvers.mbonus_material(15, 5), [DamageType.ITEM_NATURE_SLOW]= resolvers.mbonus_material(15, 5),},
