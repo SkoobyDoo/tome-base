@@ -3050,7 +3050,7 @@ newEffect{
 newEffect{
 	name = "STATIC_CHARGE", image = "talents/static_net.png",
 	desc = "Static Charge",
-	long_desc = function(self, eff) return ("You have accumulated an electric charge. Your next melee hit does %d extra lightning damage.."):format(eff.power) end,
+	long_desc = function(self, eff) return ("You have accumulated an electric charge. Your next melee hit does %d extra lightning damage."):format(eff.power) end,
 	type = "mental",
 	subtype = { lightning=true },
 	status = "beneficial",
@@ -3134,7 +3134,7 @@ newEffect{
 	desc = "Transcendent Electrokinesis",
 	long_desc = function(self, eff) return ("Your electrokinesis transcends normal limits. +%d%% Lightning damage and +%d%% Lightning damage penetration, and improved charged effects."):format(eff.power, eff.penetration) end,
 	type = "mental",
-	subtype = { lightning=true, mind=true },
+	subtype = { lightning=true },
 	status = "beneficial",
 	parameters = { power=10, penetration = 0 },
 	activate = function(self, eff)
@@ -3231,5 +3231,97 @@ newEffect{
 				t.forceHit(self, t, target, target.x, target.y, eff.damage, eff.knockback, 7, 0.6, 10, tmp)
 			end
 		end
+	end,
+}
+
+newEffect{
+	name = "PSIONIC_MAELSTROM", image = "talents/static_net.png",
+	desc = "Psionic Maelstrom",
+	long_desc = function(self, eff) return ("This creature is standing in the eye of a powerful storm of psionic forces."):format() end,
+	type = "mental",
+	subtype = { psionic=true },
+	status = "beneficial",
+	parameters = { },
+	on_gain = function(self, eff) return nil, nil end,
+	on_lose = function(self, eff) return nil, nil end,
+	activate = function(self, eff)
+		eff.dir = 0--rng.range(0, 7)
+	end,
+	deactivate = function(self, eff)
+	end,
+	on_timeout = function(self, eff)
+		local tg = {type="beam", range=4, selffire=false}
+		local x, y
+		if eff.kinetic then
+			x = self.x+math.modf(4*math.sin(math.pi*eff.dir/4))
+			y = self.y+math.modf(4*math.cos(math.pi*eff.dir/4))
+			self:project(tg, x, y, engine.DamageType.PHYSICAL, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
+		end
+		if eff.charged then
+			x = self.x+math.modf(4*math.sin(math.pi*(eff.dir+4)/4))
+			y = self.y+math.modf(4*math.cos(math.pi*(eff.dir+4)/4))
+			self:project(tg, x, y, engine.DamageType.LIGHTNING, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			if core.shader.active() then game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=x-self.x, ty=y-self.y}, {type="lightning"})
+			else game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=x-self.x, ty=y-self.y})
+			end
+		end
+		if eff.thermal then
+			x = self.x+math.modf(4*math.sin(math.pi*(eff.dir+2)/4))
+			y = self.y+math.modf(4*math.cos(math.pi*(eff.dir+2)/4))
+			self:project(tg, x, y, engine.DamageType.FIRE, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "flamebeam", {tx=x-self.x, ty=y-self.y})
+			x = self.x+math.modf(4*math.sin(math.pi*(eff.dir+6)/4))
+			y = self.y+math.modf(4*math.cos(math.pi*(eff.dir+6)/4))
+			self:project(tg, x, y, engine.DamageType.COLD, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "ice_beam", {tx=x-self.x, ty=y-self.y})
+		end
+		eff.dir = eff.dir+1
+	end,
+}
+
+newEffect{
+	name = "CAUGHT_LIGHTNING", image = "talents/transcendent_electrokinesis.png",
+	desc = "Caught Lightning",
+	long_desc = function(self, eff) return ("Lightning Catcher has caught energy and is empowering you for +%d%% lightning damage and +%d to all stats."):format((eff.dur+1)*5, eff.dur+1) end,
+	type = "mental",
+	subtype = { lightning=true },
+	status = "beneficial",
+	parameters = {  },
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = old_eff.dur + new_eff.dur
+		return old_eff
+	end,
+	activate = function(self, eff)
+		eff.lightning = self:addTemporaryValue("inc_damage", {[DamageType.LIGHTNING]=eff.dur*5})
+		eff.stats = self:addTemporaryValue("inc_stats", { 
+			[Stats.STAT_STR] = eff.dur,
+			[Stats.STAT_DEX] = eff.dur,
+			[Stats.STAT_CON] = eff.dur,
+			[Stats.STAT_MAG] = eff.dur,
+			[Stats.STAT_WIL] = eff.dur,
+			[Stats.STAT_CUN] = eff.dur,
+		})
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("inc_damage", eff.lightning)
+		self:removeTemporaryValue("inc_stats", eff.stats)
+	end,
+	on_timeout = function(self, eff)
+		self:removeTemporaryValue("inc_damage", eff.lightning)
+		self:removeTemporaryValue("inc_stats", eff.stats)
+		eff.lightning = self:addTemporaryValue("inc_damage", {[DamageType.LIGHTNING]=eff.dur*5})
+		eff.stats = self:addTemporaryValue("inc_stats", { 
+			[Stats.STAT_STR] = eff.dur,
+			[Stats.STAT_DEX] = eff.dur,
+			[Stats.STAT_CON] = eff.dur,
+			[Stats.STAT_MAG] = eff.dur,
+			[Stats.STAT_WIL] = eff.dur,
+			[Stats.STAT_CUN] = eff.dur,
+		})
 	end,
 }

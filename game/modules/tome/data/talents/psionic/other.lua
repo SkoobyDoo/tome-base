@@ -68,7 +68,7 @@ newTalent{
 			-- Force "wield"
 			self:addObject(pf, o)
 			game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true})
-
+			
 			self:sortInven()
 			self:talentDialogReturn(true)
 		end))
