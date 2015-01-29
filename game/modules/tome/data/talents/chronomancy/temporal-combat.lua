@@ -216,7 +216,7 @@ newTalent{
 		local chance = t.getChance(self, t)
 		return ([[Folds a single dimension of your weapons (or ammo) upon itself, adding %0.2f temporal damage to your strikes.
 		Additionally you have a %d%% chance to gain 10%% of a turn when your weapons hit.
-		The armor penetration and damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), chance)
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), chance)
 	end,
 }
 
