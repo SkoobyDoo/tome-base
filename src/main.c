@@ -1161,6 +1161,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_diamond_square(L);
 		luaopen_shaders(L);
 		luaopen_serial(L);
+		luaopen_spine(L);
 		luaopen_profile(L);
 		luaopen_zlib(L);
 		luaopen_bit(L);

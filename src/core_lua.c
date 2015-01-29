@@ -230,7 +230,7 @@ SDL_ListModes(const SDL_PixelFormat * format, Uint32 flags)
 
 
 /***** Helpers *****/
-static GLenum sdl_gl_texture_format(SDL_Surface *s) {
+GLenum sdl_gl_texture_format(SDL_Surface *s) {
 	// get the number of channels in the SDL surface
 	GLint nOfColors = s->format->BytesPerPixel;
 	GLenum texture_format;
