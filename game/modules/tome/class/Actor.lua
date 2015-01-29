@@ -1510,19 +1510,18 @@ end
 
 --- What is our reaction toward the target
 -- This can modify faction reaction using specific actor to actor reactions
-function _M:reactionToward(target, no_reflection, not_actually_us)
-	if target == self and self:attr("encased_in_ice") and not_actually_us then return -100 end
+function _M:reactionToward(target, no_reflection)
+	local rsrc, rtarget = self, target
+	while rsrc.summoner do rsrc = rsrc.summoner end
+	while rtarget.summoner do rtarget = rtarget.summoner end
+	if rsrc == target and self ~= target and target:attr("encased_in_ice") then return -50 end  -- summons shouldn't hate each other and shouldn't hate summoner more than enemies
 
 	-- Neverending hatred
-	if self:attr("hates_everybody") and target ~= self then return -100 end
-	if self:attr("hates_arcane") and target:attr("has_arcane_knowledge") and not target:attr("forbid_arcane") then return -100 end
-	if self:attr("hates_antimagic") and target:attr("forbid_arcane") then return -100 end
+	if rsrc:attr("hates_everybody") and rtarget ~= rsrc then return -100 end
+	if rsrc:attr("hates_arcane") and rtarget:attr("has_arcane_knowledge") and not rtarget:attr("forbid_arcane") then return -100 end
+	if rsrc:attr("hates_antimagic") and rtarget:attr("forbid_arcane") then return -100 end
 
-	-- If self or target is a summon bound to a master's will, use the master instead
-	if self.summoner then return self.summoner:reactionToward(target, no_reflection, true) end
-	if target.summoner then target = target.summoner end
-
-	local v = engine.Actor.reactionToward(self, target)
+	local v = engine.Actor.reactionToward(rsrc, rtarget)
 
 	if self.reaction_actor and self.reaction_actor[target.unique or target.name] then v = v + self.reaction_actor[target.unique or target.name] end
 
