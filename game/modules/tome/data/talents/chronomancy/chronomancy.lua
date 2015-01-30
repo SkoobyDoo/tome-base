@@ -136,15 +136,15 @@ newTalent{
 		local ret = {
 			talent = talent, rest_count = 0
 		}
-		if core.shader.allow("adv") then
-			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", radius=1.4, shininess=40, growSpeed=0.004, img="circles2_01"})
+		
+		if core.shader.active(4) then
+			ret.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.2, img="runicshield"}, {type="runicshield", shieldIntensity=0.10, ellipsoidalFactor=1, scrollingSpeed=1, time_factor=12000, bubbleColor={0.5, 1, 0.8, 0.2}, auraColor={0.5, 1, 0.8, 0.5}}))
 		end
 
 		return ret
 	end,
 	deactivate = function(self, t, p)
-		self:removeParticles(p.particle1)
-		self:removeParticles(p.particle2)
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
