@@ -77,7 +77,7 @@ newEntity{
 			if e.define_as == "ILLUSION_YEEK" then nb = nb + 1 end
 		end
 		if self.is_wife or nb <= 1 then
-			m = game.zone.npc_list.WIFE
+			m = game.zone.npc_list.WIFE:clone()
 		else
 			local list = require("mod.class.NPC"):loadList("/data/general/npcs/ghoul.lua")
 			m = list.GHOUL:clone()
