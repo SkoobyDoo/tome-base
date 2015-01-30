@@ -70,9 +70,9 @@ function _M:tick()
 		self.level = mainlev
 	end
 
-	local arr = self.entities
+	local arr = table.clone(self.entities)
 	for i, e in pairs(arr) do
-		e = arr[i]
+		e = self.entities[i]
 		if e and e.act and e.energy then
 			if e.energy.value < self.energy_to_act then
 				e.energy.value = (e.energy.value or 0) + self.energy_per_tick * (e.energy.mod or 1) * (e.global_speed or 1)
