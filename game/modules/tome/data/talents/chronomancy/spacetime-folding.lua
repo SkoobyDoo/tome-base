@@ -139,7 +139,6 @@ newTalent{
 		end)
 
 		game:playSoundNear(self, "talents/warp")
-		self:startTalentCooldown(self.T_WARP_MINE_AWAY)
 		
 		return true
 	end,
@@ -150,8 +149,7 @@ newTalent{
 		local disarm = self:callTalent(self.T_WARP_MINES, "trapPower")
 		return ([[Lay Warp Mines in a radius of 1 that teleport enemies to you and inflict %0.2f physical and %0.2f temporal (warp) damage.
 		The mines are hidden traps (%d detection and %d disarm power based on your Magic) and last for %d turns.
-		The damage caused by your Warp Mines will improve with your Spellpower.
-		Using this talent will trigger the cooldown on Warp Mine Away.]]):
+		The damage caused by your Warp Mines will improve with your Spellpower.]]):
 		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), detect, disarm, duration)
 	end,
 }
@@ -190,7 +188,6 @@ newTalent{
 		end)
 
 		game:playSoundNear(self, "talents/warp")
-		self:startTalentCooldown(self.T_WARP_MINE_TOWARD)
 		
 		return true
 	end,
@@ -201,8 +198,7 @@ newTalent{
 		local disarm = self:callTalent(self.T_WARP_MINES, "trapPower")
 		return ([[Lay Warp Mines in a radius of 1 that teleport enemies away from you and inflict %0.2f physical and %0.2f temporal (warp) damage.
 		The mines are hidden traps (%d detection and %d disarm power based on your Magic) and last for %d turns.
-		The damage caused by your Warp Mines will improve with your Spellpower.
-		Using this talent will trigger the cooldown on Warp Mine Toward.]]):
+		The damage caused by your Warp Mines will improve with your Spellpower.]]):
 		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), detect, disarm, duration) 
 	end,
 }
@@ -238,10 +234,10 @@ newTalent{
 		local disarm = t.trapPower(self,t)
 		local duration = t.getDuration(self, t)
 		return ([[Learn to lay Warp Mines in a radius of 1.  Warp Mines teleport targets that trigger them either toward you or away from you depending on the type of mine used and inflict %0.2f physical and %0.2f temporal (warp) damage.
-		The mines are hidden traps (%d detection and %d disarm power based on your Magic), last for %d turns, and share a ten turn cooldown.
-		The damage caused by your Warp Mines will improve with your Spellpower.
-		Investing in this talent improves the range of all Spacetime Folding talents.
-		Current Range: %d]]):
+		The mines are hidden traps (%d detection and %d disarm power based on your Magic), last for %d turns, and each have a ten turn cooldown.
+		Investing in this talent improves the range of all Spacetime Folding talents and the damage caused by your Warp Mines will improve with your Spellpower.
+		
+		Current Spacetime Folding Range: %d]]):
 		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), detect, disarm, duration, range) --I5
 	end,
 }
@@ -392,7 +388,8 @@ newTalent{
 
 		local particle
 		if core.shader.allow("adv") then
-			particle = {type="volumetric", args={radius=self:getTalentRadius(t)+2, kind="fast_sphere", img="moony_01", density=60, shininess=50, scrollingSpeed=-0.004}, only_one=true}
+			particle = {type="volumetric", args={kind="bright_cylinder", radius=self:getTalentRadius(t)*2, shininess=40, growSpeed=0.004, img="circles2_01"}, only_one=true}
+		--	particle = {type="volumetric", args={radius=self:getTalentRadius(t)+2, kind="fast_sphere", img="moony_01", density=60, shininess=50, scrollingSpeed=-0.004}, only_one=true}
 		else
 			particle = {type="temporal_cloud"}
 		end
