@@ -386,14 +386,6 @@ newTalent{
 		if not x or not y then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 
-		local particle
-		if core.shader.allow("adv") then
-			particle = {type="volumetric", args={kind="bright_cylinder", radius=self:getTalentRadius(t)*2, shininess=40, growSpeed=0.004, img="circles2_01"}, only_one=true}
-		--	particle = {type="volumetric", args={radius=self:getTalentRadius(t)+2, kind="fast_sphere", img="moony_01", density=60, shininess=50, scrollingSpeed=-0.004}, only_one=true}
-		else
-			particle = {type="temporal_cloud"}
-		end
-		
 		-- Project our daze..  no save as this is our main means of creating combos
 		self:project(tg, x, y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
@@ -404,6 +396,7 @@ newTalent{
 
 		-- Add a lasting map effect
 		local dam = self:spellCrit(t.getDamage(self, t))
+		local particle = MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, oversize=0, img="moon_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/magic_effect.png"}
 		game.level.map:addEffect(self,
 			x, y, t.getDuration(self,t),
 			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, status_dur=t.getEffectDuration(self, t), src=self, apply=getParadoxSpellpower(self, t)},
