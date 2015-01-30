@@ -1347,6 +1347,18 @@ local dir_to_angle = table.readonly{
 	[9] = 45,
 }
 
+local dir_to_angle_flipped = table.readonly{
+	[7] = 225,
+	[8] = 270,
+	[9] = 315,
+	[4] = 180,
+	[5] = 0,
+	[6] = 0,
+	[1] = 135,
+	[2] = 90,
+	[3] = 45,
+}
+
 local dir_to_coord = table.readonly{
 	[1] = {-1, 1},
 	[2] = { 0, 1},
@@ -1411,6 +1423,18 @@ local hex_dir_to_angle = table.readonly{
 	[7] = 150,
 	[8] = 90,
 	[9] = 30,
+}
+
+local hex_dir_to_angle_flipped = table.readonly{
+	[7] = 210,
+	[8] = 270,
+	[9] = 330,
+	[4] = 180,
+	[5] = 0,
+	[6] = 0,
+	[1] = 150,
+	[2] = 90,
+	[3] = 30,
 }
 
 local hex_dir_to_coord = table.readonly{
@@ -1622,6 +1646,10 @@ end
 
 function util.dirToAngle(dir)
 	return is_hex == 0 and dir_to_angle[dir] or hex_dir_to_angle[dir]
+end
+
+function util.dirToAngleFlipped(dir)
+	return is_hex == 0 and dir_to_angle_flipped[dir] or hex_dir_to_angle_flipped[dir]
 end
 
 function util.dirToCoord(dir, sx, sy)

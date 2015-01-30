@@ -30,7 +30,7 @@ local next_uid = 1
 local entities_load_functions = {}
 
 _M.__mo_final_repo = {}
-_M._no_save_fields = { _shader = true }
+_M._no_save_fields = { _shader = true, _spine = true }
 _M.__position_aware = false -- Subclasses can change it to know where they are on the map
 
 -- Setup the uids & MO repository as a weak value table, when the entities are no more used anywhere else they disappear from there too
@@ -327,7 +327,13 @@ function _M:makeMapObject(tiles, idx)
 	end
 
 	-- Texture
-	local ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
+	local ok, btex, btexx, btexy, w, h, tex_x, tex_y, spinedata
+	if not self.spine then
+		ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
+	else
+		ok, spinedata = pcall(tiles.getSpineData, tiles, self.spine, self.spine_scale or 1)
+		w, h = 1, 1
+	end
 
 	local dy, dh = 0, 0
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
@@ -353,12 +359,23 @@ function _M:makeMapObject(tiles, idx)
 	-- Texture 0 is always the normal image/ascii tile
 	-- we pcall it because some weird cases can not find a tile
 	if ok then
-		if self.anim then
-			self._mo:texture(0, btex, false, btexx / self.anim.max, btexy, tex_x, tex_y)
-			self._mo:setAnim(0, self.anim.max, self.anim.speed or 1, self.anim.loop or -1)
+		if not spinedata then
+			if self.anim then
+				self._mo:texture(0, btex, false, btexx / self.anim.max, btexy, tex_x, tex_y)
+				self._mo:setAnim(0, self.anim.max, self.anim.speed or 1, self.anim.loop or -1)
+			else
+				-- print("=======", self.image, btexx, btexy, te)
+				self._mo:texture(0, btex, false, btexx, btexy, tex_x, tex_y)
+			end
 		else
-			-- print("=======", self.image, btexx, btexy, te)
-			self._mo:texture(0, btex, false, btexx, btexy, tex_x, tex_y)
+			local spine = spinedata:spawn()
+			self._mo:spine(spine)
+			local weak = setmetatable({[1]=self}, {__mode="v"})
+			spine:onEvent(function(anim, event, what, n1, n2)
+				local self = weak[1] if not self then return end
+				self:check("onSpineEvent", anim, event, what, n1, n2)
+			end)
+			self._spine = spine
 		end
 	end
 
@@ -557,6 +574,24 @@ function _M:MOflipY(v)
 			self.add_displays[i]._mo:flipY(v)
 		end
 	end
+end
+
+--- Sets the rotation of the spine, if any
+function _M:spineRotation(v)
+	if self._spine then self._spine:rotation(v) end
+
+	if not self.add_displays then return end
+
+	for i = 1, #self.add_displays do
+		if self.add_displays[i]._spine then
+			self.add_displays[i]._spine:rotation(v)
+		end
+	end
+end
+
+--- Sets the animation of a spine, if any
+function _M:spineAnim(anim, loop)
+	if self._spine then self._spine:setAnim(anim, loop) end
 end
 
 --- Get the entity image as an sdl surface and texture for the given tiles and size

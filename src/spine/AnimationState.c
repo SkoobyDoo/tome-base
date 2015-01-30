@@ -263,6 +263,7 @@ void _spAnimationState_setCurrent (spAnimationState* self, int index, spTrackEnt
 spTrackEntry* spAnimationState_setAnimationByName (spAnimationState* self, int trackIndex, const char* animationName,
 		int/*bool*/loop) {
 	spAnimation* animation = spSkeletonData_findAnimation(self->data->skeletonData, animationName);
+	if (!animation) return NULL;
 	return spAnimationState_setAnimation(self, trackIndex, animation, loop);
 }
 

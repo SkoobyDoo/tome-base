@@ -29,9 +29,19 @@ typedef struct {
 	AnimationStateData *state_data;
 } spine_data_type;
 
+struct s_spine_events_list {
+	const char *anim, *event, *what;
+	int n1;
+	float n2;
+	struct s_spine_events_list *next;
+};
+typedef struct s_spine_events_list spine_events_list;
+
+
 typedef struct {
 	int data_ref;
-
+	int cb_ref;
+	
 	Skeleton* skeleton;
 	AnimationState* state;
 	float* worldVertices;
@@ -40,10 +50,14 @@ typedef struct {
 	GLfloat *vertices;
 	GLfloat *colors;
 	GLfloat *texcoords;
+
+	float rotation;
+
+	spine_events_list *cb_to_execute;
 } spine_type;
 
 extern int luaopen_spine(lua_State *L);
-extern void spine_draw(spine_type *s, float x, float y, float nb_keyframes);
+extern void spine_draw(lua_State *L, spine_type *s, float x, float y, float nb_keyframes);
 
 #endif
 

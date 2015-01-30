@@ -53,6 +53,7 @@ function _M:init(w, h, fontname, fontsize, texture, allow_backcolor)
 	self.w, self.h = w, h
 	self.font = core.display.newFont(fontname or "/data/font/DroidSansMono.ttf", fontsize or 14)
 	self.repo = {}
+	self.spines = {}
 	self.texture_store = {}
 end
 
@@ -96,6 +97,13 @@ function _M:checkTileset(image, base)
 		print("Loading tileset", d.set)
 	end
 	return tex, d.factorx, d.factory, d.x, d.y, d.w, d.h
+end
+
+function _M:getSpineData(name, scale)
+	local id = name.."-"..scale
+	if self.spines[id] then return self.spines[id] end
+	self.spines[id] = core.spine.data("/data/gfx/spines/"..name, scale)
+	return self.spines[id]
 end
 
 function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_tileset, force_texture_repeat)
@@ -174,6 +182,7 @@ end
 
 function _M:clean()
 	self.repo = {}
+	self.spines = {}
 	self.texture_store = {}
 	collectgarbage("collect")
 end

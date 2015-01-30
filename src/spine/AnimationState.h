@@ -71,6 +71,7 @@ struct spAnimationState {
 	spTrackEntry** tracks;
 
 	void* rendererObject;
+	void* udata;
 };
 
 /* @param data May be 0 for no mixing. */

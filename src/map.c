@@ -25,6 +25,7 @@
 #include "lualib.h"
 #include "auxiliar.h"
 #include "types.h"
+#include "spine.h"
 #include "map.h"
 #include "main.h"
 #include "script.h"
@@ -87,6 +88,9 @@ static int map_object_new(lua_State *L)
 	obj->anim_max = 0;
 	obj->flip_x = obj->flip_y = FALSE;
 
+	obj->spine = NULL;
+	obj->spine_ref = LUA_NOREF;
+
 	obj->cb_ref = LUA_NOREF;
 
 	obj->mm_r = -1;
@@ -137,6 +141,13 @@ static int map_object_free(lua_State *L)
 	{
 		luaL_unref(L, LUA_REGISTRYINDEX, obj->next_ref);
 		obj->next = NULL;
+	}
+
+	if (obj->spine_ref != LUA_NOREF)
+	{
+		luaL_unref(L, LUA_REGISTRYINDEX, obj->spine_ref);
+		obj->spine_ref = LUA_NOREF;
+		obj->spine = NULL;
 	}
 
 	if (obj->cb_ref != LUA_NOREF)
@@ -212,6 +223,17 @@ static int map_object_texture(lua_State *L)
 		obj->tex_x[i] = 0;
 		obj->tex_y[i] = 0;
 	}
+	return 0;
+}
+
+static int map_object_spine(lua_State *L)
+{
+	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
+	spine_type *s = (spine_type*)auxiliar_checkclass(L, "display{spine}", 2);
+	if (obj->spine_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, obj->spine_ref);
+	lua_pushvalue(L, 2);
+	obj->spine_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	obj->spine = s;
 	return 0;
 }
 
@@ -1680,7 +1702,6 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	 ** Display the entity
 	 ********************************************************/
 	dm = m;
-	tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
 	while (dm)
 	{
 	 	if (m != dm && dm->shader) {
@@ -1697,12 +1718,6 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 	}
 
-	 	if (gl_c_texture != dm->textures[0]) {
-			unbatchQuads((*vert_idx), (*col_idx));
-			// printf(" -- unbatch6\n");
-			tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-	 	}
-
 		if (!dm->anim_max) anim = 0;
 		else {
 			dm->anim_step += (dm->anim_speed * nb_keyframes);
@@ -1716,19 +1731,31 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 		}
 		dm->world_x = bdx + (dm->dx + animdx) * map->tile_w;
 		dm->world_y = bdy + (dm->dy + animdy) * map->tile_h;
-		do_quad(L, m, dm, map, vertices, texcoords, colors,
-			vert_idx,
-			col_idx,
-			anim,
-			dx + (dm->dx + animdx) * map->tile_w,
-			dy + (dm->dy + animdy) * map->tile_h,
-			dx + (dm->dx + tlanimdx) * map->tile_w,
-			dy + (dm->dy + tlanimdy) * map->tile_h,
-			dm->dw,
-			dm->dh,
-			r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
-			(dm->shader && dm->shader != m->shader) ? 1 : 0,
-			i, j);
+
+	 	if (!dm->spine) {
+		 	if (gl_c_texture != dm->textures[0]) {
+				unbatchQuads((*vert_idx), (*col_idx));
+				// printf(" -- unbatch6\n");
+				tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
+		 	}
+
+			do_quad(L, m, dm, map, vertices, texcoords, colors,
+				vert_idx,
+				col_idx,
+				anim,
+				dx + (dm->dx + animdx) * map->tile_w,
+				dy + (dm->dy + animdy) * map->tile_h,
+				dx + (dm->dx + tlanimdx) * map->tile_w,
+				dy + (dm->dy + tlanimdy) * map->tile_h,
+				dm->dw,
+				dm->dh,
+				r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
+				(dm->shader && dm->shader != m->shader) ? 1 : 0,
+				i, j);
+		} else {
+			spine_draw(L, dm->spine, dx + (dm->dx + animdx + 0.5) * map->tile_w, dy + (dm->dy + animdy + 0.5) * map->tile_h, nb_keyframes);
+		}
+
 		if (m != dm) {
 	 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 		else useDefaultShader(map);
@@ -2113,6 +2140,7 @@ static const struct luaL_Reg map_object_reg[] =
 {
 	{"__gc", map_object_free},
 	{"texture", map_object_texture},
+	{"spine", map_object_spine},
 	{"displayCallback", map_object_cb},
 	{"chain", map_object_chain},
 	{"tint", map_object_tint},

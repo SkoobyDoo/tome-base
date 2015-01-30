@@ -73,28 +73,6 @@ char* _spUtil_readFile(const char* path, int* length){
 	return data;
 }
 
-static void spine_callback(AnimationState* state, int trackIndex, EventType type, Event* event, int loopCount) {
-	TrackEntry* entry = AnimationState_getCurrent(state, trackIndex);
-	const char* animationName = (entry && entry->animation) ? entry->animation->name : 0;
-
-	switch (type) {
-	case ANIMATION_START:
-		printf("%d start: %s\n", trackIndex, animationName);
-		break;
-	case ANIMATION_END:
-		printf("%d end: %s\n", trackIndex, animationName);
-		break;
-	case ANIMATION_COMPLETE:
-		printf("%d complete: %s, %d\n", trackIndex, animationName, loopCount);
-		break;
-	case ANIMATION_EVENT:
-		printf("%d event: %s, %s: %d, %f, %s\n", trackIndex, animationName, event->data->name, event->intValue, event->floatValue,
-				event->stringValue);
-		break;
-	}
-}
-
-
 static int spine_new_data(lua_State *L)
 {
 	const char *path = lua_tostring(L, 1);
@@ -123,13 +101,14 @@ static int spine_new_data(lua_State *L)
 
 	sd->skeleton_data = skeletonData;
 	sd->state_data = stateData;
+	printf("[SPINE] New spine data for %s\n", path);
 
 	return 1;
 }
 
 static int spine_data_free(lua_State *L)
 {
-	spine_data_type *sd = (spine_data_type*)auxiliar_checkclass(L, "display{spine}", 1);
+	spine_data_type *sd = (spine_data_type*)auxiliar_checkclass(L, "display{spine-data}", 1);
 	AnimationStateData_dispose(sd->state_data);
 	SkeletonData_dispose(sd->skeleton_data);
 	lua_pushnumber(L, 1);
@@ -159,8 +138,10 @@ static int spine_new(lua_State *L)
 	s->skeleton->flipY = TRUE;
 
 	s->state = AnimationState_create(sd->state_data);
-	s->state->listener = spine_callback;
+	s->state->udata = s;
 
+	s->cb_to_execute = NULL;
+	s->rotation = 0;
 	s->timeScale = 1.0;
 	s->worldVertices = calloc(SPINE_MESH_VERTEX_COUNT_MAX, sizeof(float));
 
@@ -189,6 +170,8 @@ static int spine_new(lua_State *L)
 
 	lua_pushvalue(L, 1);
 	s->data_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	s->cb_ref = LUA_NOREF;
+	s->cb_to_execute = NULL;
 
 	return 1;
 }
@@ -196,13 +179,73 @@ static int spine_new(lua_State *L)
 static int spine_free(lua_State *L)
 {
 	spine_type *s = (spine_type*)auxiliar_checkclass(L, "display{spine}", 1);
-	AnimationStateData_dispose(s->state->data);
 	AnimationState_dispose(s->state);
 	Skeleton_dispose(s->skeleton);
 	free(s->worldVertices);
+	if (s->cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, s->cb_ref);
 	luaL_unref(L, LUA_REGISTRYINDEX, s->data_ref);
 	lua_pushnumber(L, 1);
 	return 1;
+}
+
+static void spine_add_event(spine_type *s, const char *anim, const char *event, const char *what, int n1, float n2) {
+	spine_events_list *e = malloc(sizeof(spine_events_list));
+	spine_events_list *next = s->cb_to_execute;
+
+	e->anim = anim;
+	e->event = event;
+	e->what = what;
+	e->n1 = n1;
+	e->n2 = n2;
+	e->next = NULL;
+
+	if (!next) s->cb_to_execute = e;
+	else {
+		while (next->next) next = next->next;
+		next->next = e;
+	}
+}
+
+static void spine_callback(AnimationState* state, int trackIndex, EventType type, Event* event, int loopCount) {
+	TrackEntry* entry = AnimationState_getCurrent(state, trackIndex);
+	const char* animationName = (entry && entry->animation) ? entry->animation->name : 0;
+	spine_type *s = (spine_type*)state->udata;
+
+	switch (type) {
+	case ANIMATION_START:
+		spine_add_event(s, animationName, "state", "start", 0, 0);
+		break;
+	case ANIMATION_END:
+		spine_add_event(s, animationName, "state", "end", 0, 0);
+		break;
+	case ANIMATION_COMPLETE:
+		spine_add_event(s, animationName, "state", "complete", 0, 0);
+		break;
+	case ANIMATION_EVENT:
+		spine_add_event(s, animationName, event->data->name, event->stringValue, event->intValue, event->floatValue);
+		break;
+	}
+}
+
+static int spine_cb(lua_State *L)
+{
+	spine_type *s = (spine_type*)auxiliar_checkclass(L, "display{spine}", 1);
+	if (s->cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, s->cb_ref);
+	if (lua_isfunction(L, 2)) {
+		s->cb_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+		s->state->listener = spine_callback;
+	} else {
+		s->cb_ref = LUA_NOREF;
+		s->state->listener = NULL;
+	}
+	return 0;
+}
+
+static int spine_rotation(lua_State *L)
+{
+	spine_type *s = (spine_type*)auxiliar_checkclass(L, "display{spine}", 1);
+	s->rotation = lua_tonumber(L, 2);
+	return 0;
 }
 
 static int spine_setanim(lua_State *L)
@@ -228,11 +271,11 @@ static int spine_addanim(lua_State *L)
 
 #define addVertex(x, y, u, v) { \
 	s->colors[c_idx++] = (r); s->colors[c_idx++] = (g); s->colors[c_idx++] = (b); s->colors[c_idx++] = (a); \
-	s->vertices[v_idx++] = (x) + bx; s->vertices[v_idx++] = (y) + by; \
+	s->vertices[v_idx++] = (x); s->vertices[v_idx++] = (y); \
 	s->texcoords[t_idx++] = (u); s->texcoords[t_idx++] = (v); \
 }
 
-void spine_draw(spine_type *s, float bx, float by, float nb_keyframes) {
+void spine_draw(lua_State *L, spine_type *s, float bx, float by, float nb_keyframes) {
 	Skeleton* skeleton = s->skeleton;
 	AnimationState* state = s->state;
 	float* worldVertices = s->worldVertices;
@@ -312,10 +355,28 @@ void spine_draw(spine_type *s, float bx, float by, float nb_keyframes) {
 		// 	// }
 		// }
 	}
-	printf("=== %d / %d\n", v_idx / 2, skeleton->data->bonesCount * 6);
 	if (v_idx) {
 		tfglBindTexture(GL_TEXTURE_2D, texture);
+		glTranslatef(bx, by, 0);
+		glRotatef(s->rotation, 0, 0, 1);
 		glDrawArrays(GL_TRIANGLES, 0, v_idx / 2);
+		glRotatef(-s->rotation, 0, 0, 1);
+		glTranslatef(-bx, -by, 0);
+	}
+
+	// Empty events if any
+	if (L) {
+		while (s->cb_to_execute) {
+			lua_rawgeti(L, LUA_REGISTRYINDEX, s->cb_ref);
+			lua_pushstring(L, s->cb_to_execute->anim);
+			lua_pushstring(L, s->cb_to_execute->event);
+			lua_pushstring(L, s->cb_to_execute->what);
+			lua_pushnumber(L, s->cb_to_execute->n1);
+			lua_pushnumber(L, s->cb_to_execute->n2);
+			if (lua_pcall(L, 5, 0, 0)) { printf("Spine event callback error: %s\n", lua_tostring(L, -1)); lua_pop(L, 1); }
+
+			s->cb_to_execute = s->cb_to_execute->next;
+		}
 	}
 }
 
@@ -326,7 +387,7 @@ static int spine_toscreen(lua_State *L)
 	float by = lua_tonumber(L, 3);
 	float nb_keyframes = lua_tonumber(L, 4);
 
-	spine_draw(s, bx, by, nb_keyframes);
+	spine_draw(L, s, bx, by, nb_keyframes);
 
 	return 0;
 }
@@ -341,7 +402,8 @@ static const struct luaL_Reg spine_reg[] =
 {
 	{"__gc", spine_free},
 	{"toScreen", spine_toscreen},
-	{"animMix", spine_animmix},
+	{"onEvent", spine_cb},
+	{"rotation", spine_rotation},
 	{"setAnim", spine_setanim},
 	{"addAnim", spine_addanim},
 	{NULL, NULL},

@@ -89,17 +89,6 @@ function _M:init()
 		core.game.setRealtime(8)
 	end
 
-	self.spineData = core.spine.data("/data/gfx/spines/spineboy", 0.3)
-	self.spineData:animMix("walk", "jump", 0.2)
-	self.spineData:animMix("jump", "walk", 0.2)
-
-	self.spine = self.spineData:spawn()
-	self.spine:setAnim("walk", true)
-	self.spine:addAnim("jump", false, 3)
-	self.spine:addAnim("walk", true)
-	self.spine:addAnim("jump", false, 3)
-	self.spine:addAnim("walk", true)
-
 	self:loaded()
 	profile:currentCharacter("Main Menu", "Main Menu")
 end
@@ -489,9 +478,6 @@ function _M:display(nb_keyframes)
 		self.logdisplay:toScreen()
 		engine.GameEnergyBased.display(self, nb_keyframes)
 		if self.full_fbo then self.full_fbo:use(false) self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad) end
-
-		self.spine:toScreen(400, 800, nb_keyframes)
-
 		return
 	end
 

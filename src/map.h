@@ -56,6 +56,9 @@ struct s_map_object {
 	enum {DL_NONE, DL_TRUE_LAST, DL_TRUE} display_last;
 	long uid;
 
+	spine_type *spine;
+	int spine_ref;
+
 	int cb_ref;
 
 	struct s_map_object *next;
