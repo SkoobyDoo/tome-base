@@ -2629,15 +2629,16 @@ newEffect{
 		-- Merge the flames!
 		local oldparadox = old_eff.paradox * old_eff.dur
 		local newparadox = new_eff.paradox * new_eff.dur
-		new_eff.paradox = (oldparadox + newparadox) / new_eff.dur
-		return new_eff
+		old_eff.paradox = (oldparadox + newparadox) / new_eff.dur
+		old_eff.dur = new_eff.dur
+		return old_eff
 	end,
 	on_timeout = function(self, eff)
 		self:incParadox(eff.paradox)
 	end,
 	activate = function(self, eff)
 		if core.shader.allow("adv") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="conic_cylinder", radius=1, base_rotation=180, growSpeed=0.004, img="continuum_01_3"})
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", density=20, radius=1.4, growSpeed=0.004, img="continuum_01_3"})
 		else
 			eff.particle1 = self:addParticles(Particles.new("time_shield", 1))
 		end
