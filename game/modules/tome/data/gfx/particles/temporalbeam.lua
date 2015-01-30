@@ -44,9 +44,9 @@ return { generator = function()
 		dir = ray.dir, dirv = 0, dira = 0,
 		vel = vel, velv = -0.1, vela = 0.01,
 
-		r = rng.range(176, 250)/255,   rv = 0, ra = 0,
-		g = rng.range(196, 250)/255,   gv = 0.005, ga = 0.0005,
-		b = rng.range(222, 0)/255,    bv = 0, ba = 0,
+		r = rng.range(222, 250)/255,   rv = 0, ra = 0,
+		g = rng.range(150, 176)/255,   gv = 0.005, ga = 0.0005,
+		b = rng.range(222, 250)/255,    bv = 0, ba = 0,
 		a = rng.range(25, 220)/255,    av = static and -0.034 or 0, aa = 0.005,
 	}
 end, },
