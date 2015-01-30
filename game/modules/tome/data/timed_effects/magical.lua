@@ -1759,14 +1759,20 @@ newEffect{
 		eff.physid = self:addTemporaryValue("combat_physresist", eff.save_bonus * eff.spin)
 		eff.spellid = self:addTemporaryValue("combat_spellresist", eff.save_bonus * eff.spin)
 		eff.mentalid = self:addTemporaryValue("combat_mentalresist", eff.save_bonus * eff.spin)
-		eff.particle = self:addParticles(Particles.new("arcane_power", 1))
+		
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="conic_cylinder", radius=1.4, base_rotation=180, growSpeed=0.004, img="squares_x3_01"})
+		else
+			eff.particle1 = self:addParticles(Particles.new("arcane_power", 1))
+		end
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_def", eff.defid)
 		self:removeTemporaryValue("combat_physresist", eff.physid)
 		self:removeTemporaryValue("combat_spellresist", eff.spellid)
 		self:removeTemporaryValue("combat_mentalresist", eff.mentalid)
-		self:removeParticles(eff.particle)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 
@@ -3110,7 +3116,7 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		if core.shader.allow("adv") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", shininess=40, density=60, radius=1.6, scrollingSpeed=0.002, growSpeed=0.004, img="squares_x3_01"})
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", shininess=40, density=40, radius=1.4, scrollingSpeed=0.001, growSpeed=0.004, img="squares_x3_01"})
 		end
 	end,
 	deactivate = function(self, eff)
@@ -3168,8 +3174,16 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="no_idea_but_looks_cool", shininess=60, density=40, scrollingSpeed=0.0002, radius=1.6, growSpeed=0.004, img="squares_x3_01"})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
+
 
 newEffect{
 	name = "UNRAVEL", image = "talents/temporal_vigour.png",
@@ -3500,14 +3514,12 @@ newEffect{
 		eff.physid = self:addTemporaryValue("combat_dam", eff.power_bonus * eff.spin)
 		eff.spellid = self:addTemporaryValue("combat_spellpower", eff.power_bonus * eff.spin)
 		eff.mentalid = self:addTemporaryValue("combat_mindpower", eff.power_bonus * eff.spin)
-		eff.particle = self:addParticles(Particles.new("arcane_power", 1))
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_atk", eff.atkid)
 		self:removeTemporaryValue("combat_dam", eff.physid)
 		self:removeTemporaryValue("combat_spellpower", eff.spellid)
 		self:removeTemporaryValue("combat_mindpower", eff.mentalid)
-		self:removeParticles(eff.particle)
 	end,
 }
 
