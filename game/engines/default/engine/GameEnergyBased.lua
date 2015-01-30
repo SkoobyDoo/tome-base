@@ -94,19 +94,19 @@ function _M:tickLevel(level)
 	local arr = level.e_array
 
 	if level.last_iteration then
-		i = nil
-
-		for ii = 1, #arr do if arr[ii] == level.last_iteration.e then i = ii + 1 break end end
-
-		if not i then i = level.last_iteration.i + 1 end
+		i = level.last_iteration.i + 1
 
 		if i > #arr then i = 1 end
 		level.last_iteration = nil
 --		print("=====LEVEL", level.level, level.sublevel_id, "resuming tick loop at ", i, arr[i].name)
 	end
 
-	for i = i, #arr do
+	level.last_iteration = {}  -- mark as iterating
+	local iter = level.last_iteration
+	local finished = true
+	while i <= #arr do
 		e = arr[i]
+		iter.e, iter.i = e, i
 		if e and e.act and e.energy then
 			if e.actBase and e.energyBase then
 				if e.energyBase < self.energy_to_act then
@@ -128,12 +128,14 @@ function _M:tickLevel(level)
 --			print(">ENERGY", e.name, e.uid, "::", e.energy.value, self.paused, "::", e.player)
 
 			if self.can_pause and self.paused then
-				level.last_iteration = {i=i, e=e}
+				finished = false
 --				print("====LEVEL", level.level, level.sublevel_id, "pausing tick loop at ", i, e.name)
 				break
 			end
 		end
+		i = iter.i + 1
 	end
+	if finished then level.last_iteration = nil end
 end
 
 --- Called every game turns

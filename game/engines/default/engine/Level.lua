@@ -106,6 +106,9 @@ function _M:addEntity(e, after, no_error)
 		end
 		if pos then
 			table.insert(self.e_array, pos+1, e)
+			if self.last_iteration and self.last_iteration.i >= pos then
+				self.last_iteration.i = self.last_iteration.i + 1
+			end
 		else
 			table.insert(self.e_array, e)
 		end
@@ -125,11 +128,18 @@ function _M:removeEntity(e, force)
 
 	if not self.entities[e.uid] and not force then error("Entity "..e.uid.."("..(e.name or "???")..") not present on the level") end
 	self.entities[e.uid] = nil
+	local pos = nil
 	for i = 1, #self.e_array do
 		if self.e_array[i] == e then
-			table.remove(self.e_array, i)
+			pos = i
 			break
 		end
+	end
+	if pos then
+		if self.last_iteration and self.last_iteration.i >= pos then
+			self.last_iteration.i = self.last_iteration.i - 1
+		end
+		table.remove(self.e_array, pos)
 	end
 	game:removeEntity(e)
 
