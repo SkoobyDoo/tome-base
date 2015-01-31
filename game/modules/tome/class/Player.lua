@@ -440,6 +440,7 @@ function _M:updateMainShader()
 		-- Blur shader
 		if config.settings.tome.fullscreen_confusion and pf.blur and pf.blur.shad then
 			if self:attr("confused") and self.confused >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
+			elseif self:attr("sleep") and not self:attr("lucid_dreamer") and self.sleep >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
 			end
 		end
 
