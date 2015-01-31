@@ -138,6 +138,6 @@ newTalent{
 		return ([[Turn your body into pure ice, increasing your Cold damage affinity by %d%% and your physical resistance by %d%%.
 		All direct critical hits (physical, mental, spells) against you have a %d%% lower Critical multiplier (but always do at least normal damage).
 		The effects increase with your Spellpower.]]):
-		format(t.getAffinity(self, t), resist, resist * 0.6, crit)
+		format(t.getAffinity(self, t), resist, crit)
 	end,
 }
