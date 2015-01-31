@@ -231,23 +231,19 @@ return {
 					T_PIERCING_SIGHT = 30,
 				},
 				on_die = function(self)
-					local danger = game.level.data.real_death
+					local danger = game.level.data.danger
 					game.level:addEntity(self.summoner)
 					game:onTickEnd(function()
 						local x, y, z = game.level.data.caldera_x, game.level.data.caldera_y, game.level.data.caldera_z
 						game:changeLevel(z, "noxious-caldera", {direct_switch=true})
 						game.player:move(x, y, true)
-						if self.success then
+						if self.success and danger then
 							require("engine.ui.Dialog"):simpleLongPopup("Deep slumber...", [[As your mind-mouse enters the dream portal you suddenly wake up.
 You feel good!]], 600)
 							game.player:setEffect(game.player.EFF_VICTORY_RUSH_ZIGUR, 4, {})
 							world:gainAchievement("ALL_DREAMS", self.summoner, "mice")
-						else
-							if not danger then
-								game.player:takeHit(game.player.life * 2 / 3, game.player)
-							else
-								game.player:die(game.player)
-							end
+						elseif danger then
+							game.player:takeHit(game.player.life * 2 / 3, game.player)
 						end
 					end)
 				end,
@@ -294,23 +290,19 @@ You feel like running away!]], 600)
 				resolvers.talents{
 				},
 				on_die = function(self)
-					local danger = game.level.data.real_death
+					local danger = game.level.data.danger
 					game.level:addEntity(self.summoner)
 					game:onTickEnd(function()
 						local x, y, z = game.level.data.caldera_x, game.level.data.caldera_y, game.level.data.caldera_z
 						game:changeLevel(z, "noxious-caldera", {direct_switch=true})
 						game.player:move(x, y, true)
-						if self.success then
+						if self.success and danger then
 							require("engine.ui.Dialog"):simpleLongPopup("Deep slumber...", [[As you enter the dream portal you suddenly wake up.
 You feel good!]], 600)
 							game.player:setEffect(game.player.EFF_VICTORY_RUSH_ZIGUR, 4, {})
-							world:gainAchievement("ALL_DREAMS", self.summoner, "lost")
-						else
-							if not danger then
-								game.player:takeHit(game.player.life * 2 / 3, game.player)
-							else
-								game.player:die(game.player)
-							end
+							world:gainAchievement("ALL_DREAMS", self.summoner, "mice")
+						elseif danger then
+							game.player:takeHit(game.player.life * 2 / 3, game.player)
 						end
 					end)
 				end,

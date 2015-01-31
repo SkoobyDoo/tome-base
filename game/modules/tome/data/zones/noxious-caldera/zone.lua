@@ -146,7 +146,7 @@ return {
 		if game.level.turn_counter < 0 then
 			game.level.turn_counter = nil
 			game.level.max_turn_counter = nil
-			game.level.data.run_dream(false)
+			game.level.data.run_dream(true)
 		end
 	end,
 
@@ -156,7 +156,7 @@ return {
 		local x, y, lev = game.player.x, game.player.y, game.level.level
 		local dream = dream or rng.range(1, game.zone.max_dreams)
 		game:changeLevel(dream, "dreams", {direct_switch=true})
-		game.level.data.real_death = dangerous
+		game.level.data.danger = dangerous
 		game.level.data.caldera_x = x
 		game.level.data.caldera_y = y
 		game.level.data.caldera_z = lev
