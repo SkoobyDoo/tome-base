@@ -423,6 +423,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 	if self.set_list then
 		desc:add({"color","GREEN"}, "It is part of a set of items.", {"color","LAST"}, true)
+		if self.set_desc then
+			for set_id, text in pairs(self.set_desc) do
+				desc:add({"color","GREEN"}, text, {"color","LAST"}, true)
+			end
+		end
 		if self.set_complete then desc:add({"color","LIGHT_GREEN"}, "The set is complete.", {"color","LAST"}, true) end
 	end
 

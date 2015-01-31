@@ -945,6 +945,9 @@ It hums faintly, as if great power is locked within, yet alone it seems incomple
 	max_power = 20, power_regen = 1,
 	use_talent = { id = Talents.T_ARCANE_SUPREMACY, level = 3, power = 20 },
 	set_list = { {"define_as", "SET_HAT_CHANNELERS"} },
+	set_desc = {
+		channelers = "A true understanding of the arcane is needed to release its full power.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","max_mana"}, 100)
 		game.logSeen(who, "#STEEL_BLUE#You feel a swell of arcane energy.")
@@ -978,6 +981,9 @@ Touching the cloth you feel a sense of knowledge and power from bygone ages, yet
 	},
 	max_power = 40, power_regen = 1,
 	set_list = { {"define_as", "SET_STAFF_CHANNELERS"} },
+	set_desc = {
+		channelers = "Only supremacy of the arcane can release its full power.",
+	},
 	on_set_complete = function(self, who)
 		local Talents = require "engine.interface.ActorTalents"
 		self.use_talent = { id = Talents.T_METAFLOW, level = 3, power = 40 }

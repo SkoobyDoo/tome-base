@@ -383,6 +383,9 @@ newEntity{
 	set_list = {
 		multiple = true,
 		harmonious = {{"ms_set_nature", true, inven_id = other_hand,},},},
+	set_desc = {
+		harmonious = "This harmonious mindstar will complement other natural mindstars.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = function(self, who, inven_id, set_objects)
@@ -425,6 +428,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_nature", true, inven_id = other_hand,},},
 		resonating = {{"ms_set_psionic", true, inven_id = other_hand,},},
+	},
+	set_desc = {
+		purifying = "This purifying mindstar will cleanse other mindstars.",
 	},
 	on_set_complete = {
 		multiple = true,
@@ -474,6 +480,9 @@ newEntity{
 	set_list = {
 		multiple = true,
 		resonating = {{"ms_set_psionic", true, inven_id = other_hand,},},},
+	set_desc = {
+		resonating = "This mindstar will resonate with other psionic mindstars.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = function(self, who, inven_id, set_objects)
@@ -515,6 +524,9 @@ newEntity{
 	set_list = {
 		multiple = true,
 		resonating = {{"ms_set_psionic", true, inven_id = other_hand,},},},
+	set_desc = {
+		honing = "This honing mindstar will focus other psionic mindstars.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = function(self, who, inven_id, set_objects)
@@ -547,6 +559,9 @@ newEntity{
 	set_list = {
 		multiple = true,
 		resonating = {{"ms_set_psionic", true, inven_id = other_hand,},},},
+	set_desc = {
+		parasitic = "This parasitic mindstar will draw strength from other psionic mindstars.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = function(self, who, inven_id, set_objects)
@@ -596,6 +611,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 		callers = {{"ms_set_callers_summoners", true, inven_id = other_hand,},},},
+	set_desc = {
+		callers = "This natural mindstar calls for a summoner.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -630,6 +648,9 @@ newEntity{
 			multiple = true,
 			harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 			callers = {{"ms_set_callers_callers", true, inven_id = other_hand,},},},
+	set_desc = {
+		summoners = "This natural mindstar summons a caller.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -679,6 +700,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 		wyrm = {{"ms_set_drake", true, inven_id = other_hand,},},},
+	set_desc = {
+		wyrm = "The natural wyrm seeks an element.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -724,6 +748,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 		wyrm = {{"ms_set_wyrm", true, inven_id = other_hand,},},},
+	set_desc = {
+		flames = "This natural fire should be returned to the wyrm.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -769,6 +796,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 		wyrm = {{"ms_set_wyrm", true, inven_id = other_hand,},},},
+	set_desc = {
+		frost = "This natural frost should be returned to the wyrm.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -816,6 +846,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 		wyrm = {{"ms_set_wyrm", true, inven_id = other_hand,},},},
+	set_desc = {
+		sand = "This natural sand should be returned to the wyrm.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -875,6 +908,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 		wyrm = {{"ms_set_wyrm", true, inven_id = other_hand,},},},
+	set_desc = {
+		storms = "This natural lightning should be returned to the wyrm.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -921,6 +957,9 @@ newEntity{
 		multiple = true,
 		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
 		wyrm = {{"ms_set_wyrm", true, inven_id = other_hand,},},},
+	set_desc = {
+		venom = "This natural venom should be returned to the wyrm.",
+	},
 	on_set_complete = {
 		multiple = true,
 		harmonious = set_complete,
@@ -958,6 +997,9 @@ newEntity{
 		multiple = true,
 		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
 		dreamers = {{"ms_set_dreamers_epiphanous", true, inven_id = other_hand,},},},
+	set_desc = {
+		dreamers = "This psionic mindstar dreams of an epiphany.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = set_complete,
@@ -993,6 +1035,9 @@ newEntity{
 		multiple = true,
 		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
 		dreamers = {{"ms_set_dreamers_dreamers", true, inven_id = other_hand,},},},
+	set_desc = {
+		epiphanous = "This psionic mindstar has an epiphany about dreams.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = set_complete,
@@ -1044,6 +1089,9 @@ newEntity{
 		multiple = true,
 		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
 		channeler = {{"ms_set_channeler_projecting", true, inven_id = other_hand,},},},
+	set_desc = {
+		absorbing = "This mindstar absorbs psionic energy that needs to be projected.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = set_complete,
@@ -1093,6 +1141,9 @@ newEntity{
 		multiple = true,
 		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
 		channeler = {{"ms_set_channeler_absorbing", true, inven_id = other_hand,},},},
+	set_desc = {
+		projecting = "This mindstar projects psionic energy if enough is absorbed.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = set_complete,
@@ -1198,6 +1249,9 @@ newEntity{
 		multiple = true,
 		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
 		wrathful = {{"ms_set_wrathful_wrathful", true, inven_id = other_hand,},},},
+	set_desc = {
+		hateful = "This psionic mindstar hates not to be wrathful.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = set_complete,
@@ -1233,6 +1287,9 @@ newEntity{
 		multiple = true,
 		resonating = {{"ms_set_resonating", true, inven_id = other_hand,},},
 		wrathful = {{"ms_set_wrathful_hateful", true, inven_id = other_hand,},},},
+	set_desc = {
+		wrathful = "This psionic mindstar is wrathful to the hated.",
+	},
 	on_set_complete = {
 		multiple = true,
 		resonating = set_complete,
