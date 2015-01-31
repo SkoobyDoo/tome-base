@@ -250,11 +250,11 @@ end
 function _M:removeObject(inven_id, item, no_unstack)
 	local inven = self:getInven(inven_id)
 
-	if not inven[item] then return false, true end
+	if not inven[item] then return nil, true end
 
 	local o, finish = inven[item], true
 
-	if o:check("on_preremoveobject", self, inven) then return false, true end
+	if o:check("on_preremoveobject", self, inven) then return nil, true end
 	if no_unstack then
 		if type(no_unstack) == "number" then
 			o, finish = o:unstack(no_unstack)
@@ -472,15 +472,21 @@ function _M:wearObject(o, replace, vocal)
 		if vocal then game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true}) end
 		return true, stack
 	elseif offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
-		if vocal then game.logSeen(self, "%s wears(offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
+		if vocal then game.logSeen(self, "%s wears (offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
 		added, slot, stack = self:addObject(self:getInven(offslot), o)
 		return added, stack
 	elseif replace then -- no room but replacement is allowed
-		if stackable then 
+		local ro = self:takeoffObject(inven, 1)
+		if not ro then return false end
+		-- Check if we still can wear it, to prevent the replace-abuse
+		local ok, err = self:canWearObject(o)
+		if not ok then
+			if vocal then game.logSeen(self, "%s can not wear: %s (%s).", self.name:capitalize(), o:getName{do_color=true}, err) end
+			if ro then self:addObject(inven, ro, true) end
+			return false
 		end
-		local ro = self:removeObject(inven, 1, true)
 		added, slot, stack = self:addObject(inven, o)
-		if vocal then game.logSeen(self, "%s wears(replacing %s): %s.", self.name:capitalize(), ro:getName{do_color=true}, o:getName{do_color=true}) end
+		if vocal then game.logSeen(self, "%s wears (replacing %s): %s.", self.name:capitalize(), ro:getName{do_color=true}, o:getName{do_color=true}) end
 		if stack and ro:stack(stack) then -- stack remaining stack with old if possible (ignores stack limits)
 			stack = nil
 		end
