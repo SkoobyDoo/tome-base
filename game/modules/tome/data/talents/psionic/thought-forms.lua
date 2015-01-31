@@ -307,7 +307,7 @@ newTalent{
 			name = "thought-forged warrior", summoner = self, 
 			color=colors.ORANGE, shader = "shadow_simulacrum",
 			shader_args = { color = {0.8, 0.8, 0.8}, base = 0.8, time_factor = 4000 },
-			desc = [[A thought-forged warrior wielding a massive hammer and clad in heavy armor.  It appears ready for battle.]],
+			desc = [[A thought-forged warrior wielding a massive battle-axe and clad in heavy armor.  It appears ready for battle.]],
 			body = { INVEN = 10, MAINHAND = 1, BODY = 1, HANDS = 1, FEET = 1},
 		
 			ai = "summoned", ai_real = "tactical",
