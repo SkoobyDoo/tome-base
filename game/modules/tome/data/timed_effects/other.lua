@@ -2787,3 +2787,15 @@ newEffect{
 		self:removeParticles(eff.particle2)
 	end,
 }
+
+newEffect{
+	name = "DEATH_DREAM", image = "talents/sleep.png",
+	desc = "Death in a Dream",
+	type = "other", subtype={mind=true},
+	status = "detrimental",
+	long_desc = function(self, eff) return ("The target had breathed in noxious sleep-induced fumes and is losing %d life per turn."):format(eff.power) end,
+	on_timeout = function(self, eff)
+		local dead, val = self:takeHit(eff.power, self, {special_death_msg="killed in a dream"})
+		game:delayedLogDamage(eff, self, val, ("%s%d %s#LAST#"):format(DamageType:get(DamageType.MIND).text_color or "#aaaaaa#", math.ceil(val), "dream"), false)
+	end,
+}
