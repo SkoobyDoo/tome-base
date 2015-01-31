@@ -44,6 +44,10 @@ newEntity{ base = "FLOOR", define_as = "ROCK",
 newEntity{ base = "DEEP_WATER", define_as = "FOUNTAIN",
 	name="fountain",
 	does_block_move = true,
+	block_move=function(self, x, y, e, act, couldpass)
+		if e and e.player and act then game.party:learnLore("angolwen-fountain") end
+		return true
+	end,
 }
 
 newEntity{ base = "DEEP_WATER", define_as = "FOUNTAIN_MAIN",
