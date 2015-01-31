@@ -124,6 +124,9 @@ newEntity{ base = "BASE_SHIELD", define_as = "SHIELD_UNSETTING",
 		learn_talent = { [Talents.T_BLOCK] = 5, },
 	},
 	set_list = { {"define_as","SWORD_DAWN"} },
+	set_desc = {
+		dawn = "Glows brightly in the light of dawn.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","life_regen"}, 0.25)
 		self:specialSetAdd({"wielder","lite"}, 1)
@@ -412,6 +415,9 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "SWORD_DAWN",
 	end,
 	
 	set_list = { {"define_as","SHIELD_UNSETTING"} },
+	set_desc = {
+		dawn = "If the sun doesn't set, dawn's power lasts forever.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"combat","melee_project"}, {[engine.DamageType.LIGHT]=15, [engine.DamageType.FIRE]=15})
 		self:specialSetAdd({"wielder","inc_damage"}, {[engine.DamageType.LIGHT]=12, [engine.DamageType.FIRE]=10})

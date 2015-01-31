@@ -257,6 +257,9 @@ newEntity{ base = "BASE_AMULET", define_as = "SET_GARKUL_TEETH",
 	use_talent = { id = Talents.T_SHATTERING_SHOUT, level = 4, power = 10 },
 
 	set_list = { {"define_as", "HELM_OF_GARKUL"} },
+	set_desc = {
+		garkul = "Another of Garkul's heirlooms would bring out his spirit.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","die_at"}, -100)
 		game.logSeen(who, "#CRIMSON#As you wear both Garkul's heirlooms you can feel the mighty warrior's spirit flowing through you.")
@@ -720,6 +723,9 @@ newEntity{ base = "BASE_KNIFE", define_as = "ART_PAIR_MOON",
 		},
 	},
 	set_list = { {"define_as","ART_PAIR_STAR"} },
+	set_desc = {
+		moon = "The moon shines alone in a starless sky.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","lite"}, 1)
 		self:specialSetAdd({"combat","melee_project"}, {[engine.DamageType.RANDOM_CONFUSION]=10})
@@ -758,6 +764,9 @@ newEntity{ base = "BASE_KNIFE", define_as = "ART_PAIR_STAR",
 		},
 	},
 	set_list = { {"define_as","ART_PAIR_MOON"} },
+	set_desc = {
+		star = "The star shines alone in a moonless sky.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","lite"}, 1)
 		self:specialSetAdd({"combat","melee_project"}, {[engine.DamageType.RANDOM_BLIND]=10})
@@ -908,6 +917,9 @@ newEntity{ base = "BASE_HELM", define_as = "HELM_KROLTAR",
 	max_power = 45, power_regen = 1,
 	use_talent = { id = Talents.T_WARSHOUT, level = 2, power = 45 },
 	set_list = { {"define_as","SCALE_MAIL_KROLTAR"} },
+	set_desc = {
+		kroltar = "Kroltar's power resides in his scales.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd("skullcracker_mult", 1)
 		self:specialSetAdd({"wielder","combat_spellresist"}, 15)
@@ -1068,6 +1080,9 @@ newEntity{ base = "BASE_GLOVES",
 	use_talent = { id = Talents.T_THROW_BOULDER, level = 2, power = 6 },
 
 	set_list = { {"define_as", "SET_MIGHTY_GIRDLE"} },
+	set_desc = {
+		giantset = "This would be great with a mighty matching belt.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","combat_dam"}, 10)
 		self:specialSetAdd({"wielder","combat_physresist"}, 10)
@@ -1092,6 +1107,9 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	},
 
 	set_list = { {"define_as", "SET_GIANT_WRAPS"} },
+	set_desc = {
+		giantset = "Some giant wraps would make you feel great.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","max_life"}, 100)
 		self:specialSetAdd({"wielder","size_category"}, 2)
@@ -1236,6 +1254,9 @@ newEntity{ base = "BASE_CLOTH_ARMOR", define_as = "SET_TEMPORAL_ROBE",
 	use_talent = { id = Talents.T_TEMPORAL_REPRIEVE, level = 1, power = 50 },
 
 	set_list = { {"define_as", "SET_TEMPORAL_FEZ"} },
+	set_desc = {
+		tardis = "Oddly it never produces a hat.",
+	},
 	on_set_complete = function(self, who)
 	end,
 	on_set_broken = function(self, who)
@@ -1274,6 +1295,9 @@ newEntity{ base = "BASE_WIZARD_HAT", define_as = "SET_TEMPORAL_FEZ",
 	use_talent = { id = Talents.T_WORMHOLE, level = 1, power = 15 },
 
 	set_list = { {"define_as", "SET_TEMPORAL_ROBE"} },
+	set_desc = {
+		tardis = "Needs something equally stylish and cool to go with it.",
+	},
 	on_set_complete = function(self, who)
 		game.logPlayer(who, "#STEEL_BLUE#A time vortex briefly appears in front of you.")
 		self:specialSetAdd({"wielder","paradox_reduce_anomalies"}, 20)
@@ -1534,6 +1558,9 @@ newEntity{ base = "BASE_HEAVY_ARMOR", define_as = "SCALE_MAIL_KROLTAR",
 	max_power = 80, power_regen = 1,
 	use_talent = { id = Talents.T_INFERNO, level = 3, power = 50 },
 	set_list = { {"define_as","HELM_KROLTAR"} },
+	set_desc = {
+		kroltar = "Kroltar's head would turn up the heat.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","max_life"}, 120)
 		self:specialSetAdd({"wielder","fatigue"}, -8)
@@ -1749,6 +1776,9 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "ART_PAIR_TWSWORD",
 		}
 	},
 	set_list = { {"define_as","ART_PAIR_TWDAG"} },
+	set_desc = {
+		twsword = "In the past there was a dagger with it.",
+	},
 	on_set_complete = function(self, who)
 		self.combat.special_on_hit = {desc="10% chance to reduce the target's resistances to all damage", fct=function(combat, who, target)
 			if not rng.percent(10) then return end
@@ -1803,6 +1833,9 @@ newEntity{ base = "BASE_KNIFE", define_as = "ART_PAIR_TWDAG",
 		}
 	},
 	set_list = { {"define_as","ART_PAIR_TWSWORD"} },
+	set_desc = {
+		twsword = "Potentially it would go with a sword in the future.",
+	},
 	on_set_complete = function(self, who)
 		self.combat.special_on_hit = {desc="10% chance to return the target to a much younger state", fct=function(combat, who, target)
 			if not rng.percent(10) then return end
@@ -2317,6 +2350,9 @@ newEntity{ base = "BASE_STAFF", define_as = "SET_SCEPTRE_LICH",
 		end
 	end,
 	set_list = { {"define_as", "SET_LICH_RING"} },
+	set_desc = {
+		archlich = "It desires to be surrounded by undeath.",
+	},
 	on_set_complete = function(self, who)
 	end,
 	on_set_broken = function(self, who)
@@ -5818,6 +5854,9 @@ Perhaps it feels all the death you will bring to others in the near future.]],
 	},
 	max_power = 40, power_regen = 1,
 	set_list = { {"define_as", "SET_SCEPTRE_LICH"} },
+	set_desc = {
+		archlich = "It desires to be surrounded by undeath.",
+	},
 	on_set_complete = function(self, who)
 		game.logPlayer(who, "#DARK_GREY#Your ring releases a burst of necromantic energy!")
 		self:specialSetAdd({"wielder","combat_spellpower"}, 10)
@@ -6456,6 +6495,9 @@ newEntity{ base = "BASE_GLOVES", define_as = "SET_GLOVE_DESTROYER",
 	max_power = 12, power_regen = 1,
 	use_talent = { id = Talents.T_DARKFIRE, level = 5, power = 12 },
 	set_list = { {"define_as", "SET_ARMOR_MASOCHISM"} },
+	set_desc = {
+		destroyer = "Only the masochistic can unlock its full power.",
+	},
 	on_set_complete = function(self, who)
 		game.logPlayer(who, "#STEEL_BLUE#The fist and the mangled clothing glow ominously!")
 		self:specialSetAdd({"wielder","demonblood_dam"}, 0.02)
@@ -6502,6 +6544,9 @@ newEntity{ base = "BASE_LIGHT_ARMOR", define_as = "SET_ARMOR_MASOCHISM",
 	max_power = 12, power_regen = 1,
 	use_talent = { id = Talents.T_BLOOD_GRASP, level = 5, power = 12 },
 	set_list = { {"define_as", "SET_GLOVE_DESTROYER"} },
+	set_desc = {
+		masochism = "With a better grip it would be the destroyer of your enemies.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","demonblood_def"}, 0.03)
 		self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE] = 15, [engine.DamageType.DARKNESS] = 15, all = 5 })
@@ -7039,16 +7084,31 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "EYE_OF_SUMMER",
 		resists = { [DamageType.COLD]=-10 },
 		global_speed_add = 0.05,
 	},
-	talent_on_mind = {chance=10, talent=Talents.T_FLAME_FURY, level=2},
-	set_list = { {"define_as", "EYE_OF_WINTER"} },
-	on_set_complete = function(self, who)
-		local Talents = require "engine.interface.ActorTalents"
-		self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.COLD]=20 })
-		self:specialSetAdd({"wielder","combat_mindpower"}, 4)
-		game.logSeen(who, "#GREEN#You feel the seasons in perfect balance.")
-	end,
+	talent_on_mind = {{chance=10, talent=Talents.T_FLAME_FURY, level=2},},
+	ms_set_nature = true,
+	set_list = {
+		multiple = true,
+		seasons = {{"define_as", "EYE_OF_WINTER"},},
+		harmonious = {{"ms_set_harmonious", true},},
+	},
+	set_desc = {
+		eyesummer = "Nature requires balance in these matters.",
+	},
+	on_set_complete = {
+		multiple = true,
+		seasons = function(self, who)
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.COLD]=20 })
+			self:specialSetAdd({"wielder","combat_mindpower"}, 4)
+			game.logSeen(who, "#GREEN#You feel the seasons in perfect balance.")
+		end,
+		harmonious = function(self, who)
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.COLD]=20 })
+			self:specialSetAdd({"wielder","combat_mindpower"}, 4)
+			game.logSeen(who, "#GREEN#You feel the seasons in perfect balance.")
+		end,
+	},
 	on_set_broken = function(self, who)
-		game.logPlayer(who, "#GREEN#The seasons not longer feel balanced.")
+		game.logPlayer(who, "#GREEN#The seasons no longer feel balanced.")
 	end,
 }
 
@@ -7080,13 +7140,27 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "EYE_OF_WINTER",
 		resists = { [DamageType.FIRE]=-10 },
 		combat_armor = 10,
 	},
-	talent_on_mind = {chance=10, talent=Talents.T_WINTER_S_FURY, level=2},
-	set_list = { {"define_as", "EYE_OF_SUMMER"} },
-	on_set_complete = function(self, who)
-		local Talents = require "engine.interface.ActorTalents"
-		self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=20 })
-		self:specialSetAdd({"wielder","combat_mindpower"}, 4)
-	end,
+	talent_on_mind = {{chance=10, talent=Talents.T_WINTER_S_FURY, level=2},},
+	ms_set_nature = true,
+	set_list = {
+		multiple = true,
+		seasons = {{"define_as", "EYE_OF_SUMMER"},},
+		harmonious = {{"ms_set_harmonious", true},},
+	},
+	set_desc = {
+		eyewinter = "Nature requires balance in these matters.",
+	},
+	on_set_complete = {
+		multiple = true,
+		seasons = function(self, who)
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=20 })
+			self:specialSetAdd({"wielder","combat_mindpower"}, 4)
+		end,
+		harmonious = function(self, who)
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=20 })
+			self:specialSetAdd({"wielder","combat_mindpower"}, 4)
+		end,
+	},
 	on_set_broken = function(self, who)
 	end,
 }
@@ -7175,7 +7249,7 @@ Their killing spree ended when one of the victims got lucky and managed to stab 
 newEntity{ base = "BASE_MACE",
 	power_source = {psionic=true},
 	name = "Thunderfall", define_as = "THUNDERFALL", image="object/artifact/thunderfall.png",
-	unided_name = "a strangely colored bone", unique = true,
+	unided_name = "large echoing mace", unique = true,
 	moddable_tile = "special/%s_thunderfall",
 	desc = [[Tremendous power is concentrated in this heavy mace. Just dropping it can knock down nearby walls.]],
 	level_range = {40, 50},
@@ -7234,7 +7308,6 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 	moddable_tile = "special/%s_kinetic_focus",
 	rarity = 300,
 	desc = [[Kinetic energies are focussed in the core of this mindstar.]],
-	special_desc = function(self) return "This item is part of a set." end,
 	cost = 50,
 	require = { stat = { wil=18 }, },
 	material_level = 2,
@@ -7256,10 +7329,15 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 		talents_types_mastery = { ["psionic/kinetic-mastery"] = 0.1 },
 		learn_talent = { [Talents.T_PSIONIC_MAELSTROM] = 1,},
 	},
-	set_list = { 
+	ms_set_psionic = true,
+	set_list = {
 		multiple = true,
 		kinchar = {{"define_as", "CHARGED_FOCUS"},},
-		kinther = {{"define_as", "THERMAL_FOCUS"},}, 
+		kinther = {{"define_as", "THERMAL_FOCUS"},},
+		resonating = {{"ms_set_resonating", true},},
+	},
+	set_desc = {
+		trifocus = "You feel two unconnected psionic channels on this item.",
 	},
 	on_set_complete = { 
 		multiple = true,
@@ -7272,6 +7350,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 			self:specialSetAdd({"wielder","psi_on_crit"}, 1)
 			self:specialSetAdd({"wielder","combat_physresist"}, 6)
 			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/kinetic-mastery"] = 0.1 })
+			game.logSeen(who, "#YELLOW#You feel psionic energy linking the mindstars.")
 		end,
 		kinther = function(self, who)
 			self:specialSetAdd({"wielder","combat_mindpower"}, 6)
@@ -7282,6 +7361,18 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 			self:specialSetAdd({"wielder","psi_on_crit"}, 1)
 			self:specialSetAdd({"wielder","combat_physresist"}, 6)
 			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/kinetic-mastery"] = 0.1 })
+			game.logSeen(who, "#YELLOW#You feel psionic energy linking the mindstars.")
+		end,
+		resonating = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.PHYSICAL]=5 })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.PHYSICAL]=3 })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.PHYSICAL]=5 })
+			self:specialSetAdd({"wielder","psi_on_crit"}, 0.5)
+			self:specialSetAdd({"wielder","combat_physresist"}, 3)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/kinetic-mastery"] = 0.05 })
+			game.logSeen(who, "#YELLOW#You feel psionic energy linking the mindstars.")
 		end,
 	},
 	on_set_broken = function(self, who)
@@ -7298,7 +7389,6 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
 	moddable_tile = "special/%s_charged_focus",
 	rarity = 300,
 	desc = [[Electrical energies are focussed in the core of this mindstar.]],
-	special_desc = function(self) return "This item is part of a set." end,
 	cost = 100,
 	require = { stat = { wil=24 }, },
 	material_level = 3,
@@ -7320,10 +7410,15 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
 		talents_types_mastery = { ["psionic/charged-mastery"] = 0.15 },
 		learn_talent = { [Talents.T_PSIONIC_MAELSTROM] = 1,},
 	},
+	ms_set_psionic = true,
 	set_list = { 
 		multiple = true,
 		kinchar = {{"define_as", "KINETIC_FOCUS"},},
 		charther = {{"define_as", "THERMAL_FOCUS"},},
+		resonating = {{"ms_set_resonating", true,},},
+	},
+	set_desc = {
+		trifocus = "You feel two unconnected psionic channels on this item.",
 	},
 	on_set_complete = { 
 		multiple = true,
@@ -7347,6 +7442,16 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
 			self:specialSetAdd({"wielder","combat_mentalresist"}, 6)
 			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/charged-mastery"] = 0.1 })
 		end,
+		resonating = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.LIGHTNING]=5 })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.LIGHTNING]=3 })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.LIGHTNING]=5 })
+			self:specialSetAdd({"wielder","max_psi"}, 10)
+			self:specialSetAdd({"wielder","combat_mentalresist"}, 3)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/charged-mastery"] = 0.05 })
+		end,
 	},
 	on_set_broken = function(self, who)
 	end,
@@ -7362,7 +7467,6 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 	moddable_tile = "special/%s_thermal_focus",
 	rarity = 300,
 	desc = [[Thermal energies are focussed in the core of this mindstar.]],
-	special_desc = function(self) return "This item is part of a set." end,
 	cost = 400,
 	require = { stat = { wil=35 }, },
 	material_level = 4,
@@ -7387,10 +7491,15 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 		talents_types_mastery = { ["psionic/thermal-mastery"] = 0.2 },
 		learn_talent = { [Talents.T_PSIONIC_MAELSTROM] = 1,},
 	},
+	ms_set_psionic = true,
 	set_list = { 
 		multiple = true,
 		kinther = {{"define_as", "KINETIC_FOCUS"},},
 		charther = {{"define_as", "CHARGED_FOCUS"},}, 
+		resonating = {{"ms_set_resonating", true,},},
+	},
+	set_desc = {
+		trifocus = "You feel two unconnected psionic channels on this item.",
 	},
 	on_set_complete = { 
 		multiple = true,
@@ -7405,6 +7514,16 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/thermal-mastery"] = 0.05 })
 		end,
 		charther = function(self, who)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
+			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.FIRE]=3, [engine.DamageType.COLD]=3, })
+			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
+			self:specialSetAdd({"wielder","psi_regen"}, 1)
+			self:specialSetAdd({"wielder","combat_spellresist"}, 3)
+			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/thermal-mastery"] = 0.05 })
+		end,
+		resonating = function(self, who)
 			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
 			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })

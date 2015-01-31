@@ -369,6 +369,9 @@ newEntity{ base = "BASE_HELM",
 	},
 
 	set_list = { {"define_as","SET_GARKUL_TEETH"} },
+	set_desc = {
+		garkul = "Another of Garkul's heirlooms would bring out his spirit.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd("skullcracker_mult", 1)
 		self:specialSetAdd({"wielder","melee_project"}, {[engine.DamageType.GARKUL_INVOKE]=5})

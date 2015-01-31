@@ -65,6 +65,9 @@ newEntity{ base = "BASE_MUMMY_WRAPPING", define_as = "BINDINGS_ETERNAL_NIGHT",
 	max_power = 80, power_regen = 1,
 
 	set_list = { {"define_as","CROWN_ETERNAL_NIGHT"} },
+	set_desc = {
+		eternalnight = "A complementing item would be your crowning glory.",
+	},
 	on_set_complete = function(self, who)
 		self.use_talent = { id = "T_ABYSSAL_SHROUD", level = 2, power = 47 }
 	end,
@@ -94,6 +97,9 @@ newEntity{ base = "BASE_LEATHER_CAP", define_as = "CROWN_ETERNAL_NIGHT",
 	max_power = 80, power_regen = 1,
 
 	set_list = { {"define_as","BINDINGS_ETERNAL_NIGHT"} },
+	set_desc = {
+		eternalnight = "You need to find something to bind its powers.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","lite"}, -1)
 		self:specialSetAdd({"wielder","confusion_immune"}, 0.3)
