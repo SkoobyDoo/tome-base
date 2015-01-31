@@ -581,9 +581,6 @@ function _M:getTextualDesc(compare_with, use_actor)
 		if next(combat.dammod or {}) then dammod = use_actor:getDammod(combat) end
 		for stat, i in pairs(dammod) do
 			local name = Stats.stats_def[stat].short_name:capitalize()
-			if use_actor:knowTalent(use_actor.T_STRENGTH_OF_PURPOSE) then
-				if name == "Str" then name = "Mag" end
-			end
 			if self.subtype == "dagger" and use_actor:knowTalent(use_actor.T_LETHALITY) then
 				if name == "Str" then name = "Cun" end
 			end
@@ -1622,7 +1619,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		desc:add(talents[tid][3] and {"color","GREEN"} or {"color","WHITE"}, ("Talent on hit(mindpower): %s (%d%% chance level %d)."):format(self:getTalentFromId(tid).name, talents[tid][1], talents[tid][2]), {"color","LAST"}, true)
 	end
 
-	if self.use_no_energy and not self.use_no_energy == "fake" then
+	if self.use_no_energy and self.use_no_energy ~= "fake" then
 		desc:add("Activating this item is instant.", true)
 	end
 

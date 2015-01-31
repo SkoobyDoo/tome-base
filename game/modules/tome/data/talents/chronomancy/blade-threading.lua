@@ -59,7 +59,7 @@ newTalent{
 			self:project({type="hit"}, target.x, target.y, DamageType.WARP, self:spellCrit(t.getWarp(self, t)))
 			
 			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
-			randomWarpEffect(self, t, target)
+			DamageType:get(DamageType.RANDOM_WARP).projector(self, target.x, target.y, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end
 
 		return true
@@ -164,7 +164,6 @@ newTalent{
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1) end,
-	getTeleports = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
@@ -182,7 +181,7 @@ newTalent{
 		if hitted then
 			bow_warden(self, target)
 			
-			local teleports = t.getTeleports(self, t)
+			local teleports = 2
 			local attempts = 10
 			
 			-- Our teleport hit
@@ -252,10 +251,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local teleports = t.getTeleports(self, t)
-		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll teleport next to up to %d random enemies, attacking for %d%% damage.
-		Blink Blade can hit the same target multiple times and at talent level five you get an additional teleport.]])
-		:format(damage, teleports, damage)
+		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll teleport next to up to 2 random enemies, attacking for %d%% damage.
+		Blink Blade can hit the same target multiple times.]])
+		:format(damage, damage)
 	end
 }
 

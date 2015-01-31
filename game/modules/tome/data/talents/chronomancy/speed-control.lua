@@ -75,7 +75,7 @@ newTalent{
 	cooldown = 24,
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 6) end,
 	no_energy = true,
 	action = function(self, t)
 		self:setEffect(self.EFF_HASTE, t.getDuration(self, t), {power=t.getSpeed(self, t)})

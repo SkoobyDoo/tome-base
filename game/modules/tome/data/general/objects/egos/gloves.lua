@@ -196,15 +196,15 @@ newEntity{
 	name = "temporal ", prefix=true, instant_resolve=true,
 	keywords = {temporal=true},
 	level_range = {1, 50},
-	rarity = 18, -- much rarer, that proc is very high damage so lets not kill the player with it to much
+	rarity = 9,
 	cost = 5,
 	wielder = {
 		inc_damage= { [DamageType.TEMPORAL] = resolvers.mbonus_material(8, 3), },
 		resists = { [DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5), },
 		melee_project= { [DamageType.TEMPORAL] = resolvers.mbonus_material(15, 5) },
+		ranged_project= { [DamageType.TEMPORAL] = resolvers.mbonus_material(15, 5) },
 		combat = {
 			melee_project= { [DamageType.ITEM_TEMPORAL_ENERGIZE] = resolvers.mbonus_material(10, 5) },
-			--talent_on_hit = { [Talents.T_QUANTUM_SPIKE] = {level=resolvers.genericlast(function(e) return e.material_level end), chance=20} },
 		},
 	},
 }

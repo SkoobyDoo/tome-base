@@ -2418,6 +2418,16 @@ newEffect{
 		local fix = math.min( math.abs(dox), eff.power )
 		self:incParadox(fix)
 	end,
+	activate = function(self, eff)
+		if core.shader.active(4) then
+			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true ,size_factor=1.5, y=-0.3, img="healparadox", life=25}, {type="healing", time_factor=3000, beamsCount=15, noup=2.0, beamColor1={0xb6/255, 0xde/255, 0xf3/255, 1}, beamColor2={0x5c/255, 0xb2/255, 0xc2/255, 1}}))
+			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false,size_factor=1.5, y=-0.3, img="healparadox", life=25}, {type="healing", time_factor=3000, beamsCount=15, noup=1.0, beamColor1={0xb6/255, 0xde/255, 0xf3/255, 1}, beamColor2={0x5c/255, 0xb2/255, 0xc2/255, 1}}))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+	end,
 }
 
 newEffect{
@@ -2440,9 +2450,6 @@ newEffect{
 	remove_on_clone = true,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "generic_damage_penalty", eff.power)
-		if core.shader.allow("volumetric") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="vertical_and_awesome", radius=1.4, growSpeed=0.004, img="coggy_00"})
-		end
 		self:effectTemporaryValue(eff, "timestopping", 1)
 		self.no_leave_control = true
 		core.display.pauseAnims(true)
@@ -2455,8 +2462,6 @@ newEffect{
 	deactivate = function(self, eff)
 		self.no_leave_control = false
 		core.display.pauseAnims(false)
-		self:removeParticles(eff.particle1)
-		self:removeParticles(eff.particle2)
 		
 		-- clone protection
 		if self == game.player then
@@ -2628,17 +2633,29 @@ newEffect{
 	subtype = { time=true },
 	status = "detrimental",
 	parameters = { paradox=10 },
-	on_gain = function(self, err) return "#Target# converts damage into paradox.", "+Preserve" end,
-	on_lose = function(self, err) return "#Target# stops converting damage to paradox..", "-Preserve" end,
+	on_gain = function(self, err) return "#Target# converts damage into paradox.", "+Smearing" end,
+	on_lose = function(self, err) return "#Target# stops converting damage to paradox..", "-Smearing" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the flames!
 		local oldparadox = old_eff.paradox * old_eff.dur
 		local newparadox = new_eff.paradox * new_eff.dur
-		new_eff.paradox = (oldparadox + newparadox) / new_eff.dur
-		return new_eff
+		old_eff.paradox = (oldparadox + newparadox) / new_eff.dur
+		old_eff.dur = new_eff.dur
+		return old_eff
 	end,
 	on_timeout = function(self, eff)
 		self:incParadox(eff.paradox)
+	end,
+	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", density=20, radius=1.4, growSpeed=0.004, img="continuum_01_3"})
+		else
+			eff.particle1 = self:addParticles(Particles.new("time_shield", 1))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 
@@ -2725,15 +2742,13 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Twist Fate" end,
 	on_lose = function(self, err) return nil, "-Twist Fate" end,
 	activate = function(self, eff)
-		if core.shader.active(4) then
-			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 0/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
-			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={70/255, 130/255, 180/255, 1}, beamColor2={0/255, 255/255, 255/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", appear=10, radius=1.6, twist=30, density=30, growSpeed=0.004, scrollingSpeed=-0.004, img="continuum_01_3"})
 		end
 	end,
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
-		
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
 				self:forceUseTalent(eff.talent, {force_target=self})
