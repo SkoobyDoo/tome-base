@@ -43,5 +43,16 @@ newEntity{ base = "FLOOR", define_as = "ROCK",
 
 newEntity{ base = "DEEP_WATER", define_as = "FOUNTAIN",
 	name="fountain",
-	does_block_move = true
+	does_block_move = true,
+}
+
+newEntity{ base = "DEEP_WATER", define_as = "FOUNTAIN_MAIN",
+	name="fountain",
+	does_block_move = true,
+	add_displays = {class.new{
+		z = 17,
+		image = "terrain/statues/angolwen_fountain.png",
+		display_w = 6, display_h = 5,
+		display_x = -2.5, display_y = -2,
+	}},
 }
