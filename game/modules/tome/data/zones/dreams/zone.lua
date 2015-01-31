@@ -277,6 +277,10 @@ You feel good!]],
 		})
 		local f = Player.new(t)
 		f:resolve() f:resolve(nil, true)
+		f.unused_talents = 0 f.unused_generics = 0
+		if f.unused_stats > 0 then
+			game.log("%s has %d stat point(s) to spend. Press p to use them.", f.name:capitalize(), f.unused_stats)
+		end
 		f.summoner = game:getPlayer(true)
 		f.x = game.player.x
 		f.y = game.player.y
