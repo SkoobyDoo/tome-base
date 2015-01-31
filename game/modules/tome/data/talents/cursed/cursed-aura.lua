@@ -475,6 +475,7 @@ newTalent{
 			if o.archery == "bow" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="arrow"}, nil, true)
 			elseif o.archery == "sling" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="shot"}, nil, true)
 			end
+			qo.no_drop = true
 			if qo then sentry:wearObject(qo, true, false) end
 		end
 
