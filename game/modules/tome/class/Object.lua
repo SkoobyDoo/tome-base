@@ -216,6 +216,11 @@ function _M:use(who, typ, inven, item)
 		game.logPlayer(who, "You can not use items during a battle frenzy!")
 		return
 	end
+	
+	if who:attr("sleep") and not who:attr("lucid_dreamer") then
+		game.logPlayer(who, "You can not use items while sleeping!")
+		return
+	end
 
 	local types = {}
 	if self:canUseObject() then types[#types+1] = "use" end

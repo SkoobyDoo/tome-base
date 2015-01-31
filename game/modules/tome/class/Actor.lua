@@ -588,7 +588,6 @@ function _M:act()
 	end
 	if self:attr("stoned") then self.energy.value = 0 end
 	if self:attr("dont_act") then self.energy.value = 0 end
-	if self:attr("sleep") and not self:attr("lucid_dreamer") then self.energy.value = 0 end
 	if self:attr("time_stun") then self.energy.value = 0 end
 	if self:attr("time_prison") then self.energy.value = 0 end
 
@@ -1218,9 +1217,12 @@ function _M:move(x, y, force)
 				x, y = self.x + rng.range(-1, 1), self.y + rng.range(-1, 1)
 			end
 		end
-
+		
+		-- Sleeping?  Do nothing..
+		if not force and self:attr("sleep") and not self:attr("lucid_dreamer") then
+			game.logPlayer(self, "You are asleep and unable to move!")	
 		-- Encased in ice, attack the ice
-		if not force and self:attr("encased_in_ice") then
+		elseif not force and self:attr("encased_in_ice") then
 			self:attackTarget(self)
 			moved = true
 		-- Should we prob travel through walls ?
@@ -4522,7 +4524,13 @@ function _M:preUseTalent(ab, silent, fake)
 			return false
 		end
 	end
-
+	
+	-- Sleeping prevents the use of all non-instant talents
+	if self:attr("sleep") and not self:attr("lucid_dreamer") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= (true or "fake") then
+		if not silent then game.logSeen(self, "%s is sleeping and unable to do this.", self.name:capitalize(), ab.name) end
+		return false
+	end
+	
 	if not self:enoughEnergy() and not fake then return false end
 
 	if ab.mode == "sustained" then
@@ -4654,7 +4662,7 @@ function _M:preUseTalent(ab, silent, fake)
 			return false
 		end
 	end
-
+	
 	-- Failure chance?
 	if self:attr("talent_fail_chance") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") and not ab.innate then
 		if rng.percent(self:attr("talent_fail_chance")) then
@@ -5916,7 +5924,7 @@ function _M:canBe(what)
 	if what == "disarm" and rng.percent(100 * (self:attr("disarm_immune") or 0)) then return false end
 	if what == "pin" and (rng.percent(100 * (self:attr("pin_immune") or 0)) or self:attr("levitation") or self:attr("fly")) then return false end
 	if what == "stun" and rng.percent(100 * (self:attr("stun_immune") or 0)) then return false end
-	if what == "sleep" and rng.percent(100 * math.max((self:attr("sleep_immune") or 0), (self:attr("confusion_immune") or 0))) then return false end
+	if what == "sleep" and rng.percent(100 * (self:attr("sleep_immune") or 0)) then return false end
 	if what == "fear" and rng.percent(100 * (self:attr("fear_immune") or 0)) then return false end
 	if what == "knockback" and (rng.percent(100 * (self:attr("knockback_immune") or 0)) or self:attr("never_move")) then return false end
 	if what == "stone" and rng.percent(100 * (self:attr("stone_immune") or 0)) then return false end
