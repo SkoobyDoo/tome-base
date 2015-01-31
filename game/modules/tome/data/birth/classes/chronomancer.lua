@@ -164,7 +164,7 @@ newBirthDescriptor{
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
-			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
+			{type="armor", subtype="light", name="rough leather armour", autoreq=true, ego_chance=-1000}
 		},
 		resolvers.inventorybirth{ id=true, inven="QS_MAINHAND",
 			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000},

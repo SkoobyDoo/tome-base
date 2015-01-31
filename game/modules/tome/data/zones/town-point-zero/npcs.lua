@@ -226,11 +226,11 @@ newEntity{ define_as = "TEMPORAL_DEFILER",
 	inc_damage = {all = -30},
 
 	resolvers.talents{
-		[Talents.T_PERFECT_AIM]={base=3, every=7, max=5},
-		[Talents.T_SPIN_FATE]=2,  -- Makes this fight really unfun on a TW so dropped the value
-		[Talents.T_STEALTH]={base=3, every=7, max=5},
-		[Talents.T_SHADOWSTRIKE]={base=3, every=7, max=5},
-		[Talents.T_UNSEEN_ACTIONS]={base=3, every=7, max=5},
+		[Talents.T_FATEWEAVER]={base=3, every=7, max=5},
+		[Talents.T_SPIN_FATE]={base=3, every=7, max=5},
+		[Talents.T_STEALTH]={base=1, every=7, max=5},
+		[Talents.T_SHADOWSTRIKE]={base=1, every=7, max=5},
+		[Talents.T_UNSEEN_ACTIONS]={base=1, every=7, max=5},
 	},
 
 	resolvers.inscriptions(1, "rune"),

@@ -1486,6 +1486,15 @@ newEffect{
 	subtype = { temporal=true },
 	status = "beneficial",
 	parameters = { max_cd=1},
+	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="transparent_cylinder", twist=1, shineness=10, density=10, radius=1.4, growSpeed=0.004, img="coggy_00"})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+	end,
 }
 
 newEffect{
@@ -1610,29 +1619,45 @@ newEffect{
 	on_lose = function(self, err) return "#Target# slows down.", "-Haste" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.power)
+		if not self.shader then
+			eff.set_shader = true
+			self.shader = "shadow_simulacrum"
+			self.shader_args = { color = {0.4, 0.4, 0}, base = 1, time_factor = 3000 }
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
+		end
 	end,
 	deactivate = function(self, eff)
+		if eff.set_shader then
+			self.shader = nil
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
+		end
 		self:removeTemporaryValue("global_speed_add", eff.tmpid)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 
 newEffect{
 	name = "CEASE_TO_EXIST", image = "talents/cease_to_exist.png",
 	desc = "Cease to Exist",
-	long_desc = function(self, eff) return ("The target is being removed from the timeline, all its resistances have been lowered by %d%%."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is being removed from the timeline, its resistance to physical and temporal damage have been reduced by %d%%."):format(eff.power) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
 	parameters = { power = 1, damage=1 },
 	on_gain = function(self, err) return "#Target# is being removed from the timeline.", "+Cease to Exist" end,
 	activate = function(self, eff)
-		eff.resists = self:addTemporaryValue("resists", { all = -eff.power})
+		eff.phys = self:addTemporaryValue("resists", { [DamageType.PHYSICAL] = -eff.power})
+		eff.temp = self:addTemporaryValue("resists", { [DamageType.TEMPORAL] = -eff.power})
 	end,
 	deactivate = function(self, eff)
 		if game._chronoworlds then
 			game._chronoworlds = nil
 		end
-		self:removeTemporaryValue("resists", eff.resists)
+		self:removeTemporaryValue("resists", eff.phys)
+		self:removeTemporaryValue("resists", eff.temp)
 	end,
 }
 
@@ -1734,14 +1759,20 @@ newEffect{
 		eff.physid = self:addTemporaryValue("combat_physresist", eff.save_bonus * eff.spin)
 		eff.spellid = self:addTemporaryValue("combat_spellresist", eff.save_bonus * eff.spin)
 		eff.mentalid = self:addTemporaryValue("combat_mentalresist", eff.save_bonus * eff.spin)
-		eff.particle = self:addParticles(Particles.new("arcane_power", 1))
+		
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="conic_cylinder", radius=1.4, base_rotation=180, growSpeed=0.004, img="squares_x3_01"})
+		else
+			eff.particle1 = self:addParticles(Particles.new("arcane_power", 1))
+		end
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_def", eff.defid)
 		self:removeTemporaryValue("combat_physresist", eff.physid)
 		self:removeTemporaryValue("combat_spellresist", eff.spellid)
 		self:removeTemporaryValue("combat_mentalresist", eff.mentalid)
-		self:removeParticles(eff.particle)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 
@@ -2943,16 +2974,12 @@ newEffect{
 	type = "magical",
 	subtype = { temporal=true, slow=true },
 	status = "detrimental",
-	parameters = { damage=0, daze=1},
+	parameters = { damage=0, status_dur=4},
 	on_gain = function(self, err) return "#Target# is anchored.", "+Anchor" end,
 	on_lose = function(self, err) return "#Target# is no longer anchored.", "-Anchor" end,
 	onTeleport = function(self, eff)
 		DamageType:get(DamageType.WARP).projector(eff.src or self, self.x, self.y, DamageType.WARP, eff.damage)
-		game:onTickEnd(function()
-			if self:canBe("stun") then
-				self:setEffect(self.EFF_DAZED, eff.daze, {})
-			end
-		end)
+		DamageType:get(DamageType.RANDOM_WARP).projector(eff.src or self, self.x, self.y, DamageType.RANDOM_WARP, {dur=eff.status_dur, apply_power=eff.apply_power})
 	end,
 }
 
@@ -3088,8 +3115,13 @@ newEffect{
 		return {dam=dam}
 	end,
 	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", shininess=40, density=40, radius=1.4, scrollingSpeed=0.001, growSpeed=0.004, img="squares_x3_01"})
+		end
 	end,
 	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 
@@ -3115,7 +3147,7 @@ newEffect{
 	
 		if self.turn_procs and target.tmp then
 			if self.turn_procs.seal_fate and self.turn_procs.seal_fate >= eff.procs then return end
-			local chance = 50
+			local chance = eff.chance
 			local spin = self:hasEffect(self.EFF_SPIN_FATE)
 			if spin then
 				chance = chance * (1 + spin.spin/3)
@@ -3126,7 +3158,7 @@ newEffect{
 				-- Go through all spell effects
 				for eff_id, p in pairs(target.tmp) do
 					local e = target.tempeffect_def[eff_id]
-					if e.status == "detrimental" and e.type ~= "other" then
+					if e.status == "detrimental" and e.type ~= "other" and e.subtype ~= "cross tier" then
 						effs[#effs+1] = p
 					end
 				end
@@ -3142,8 +3174,16 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="no_idea_but_looks_cool", shininess=60, density=40, scrollingSpeed=0.0002, radius=1.6, growSpeed=0.004, img="squares_x3_01"})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
+
 
 newEffect{
 	name = "UNRAVEL", image = "talents/temporal_vigour.png",
@@ -3180,47 +3220,42 @@ newEffect{
 newEffect{
 	name = "ENTROPY", image = "talents/entropy.png",
 	desc = "Entropy",
-	long_desc = function(self, eff) return ("The target's timed effects are ticking twice as fast and it's taking %d temporal damage per turn, per timed effect."):format(eff.power) end,
+	long_desc = function(self, eff) return "The target is losing one sustain per turn." end,
 	on_gain = function(self, err) return "#Target# is caught in an entropic field!", "+Entropy" end,
 	on_lose = function(self, err) return "#Target# is free from the entropy.", "-Entropy" end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
-	parameters = {power=10},
+	parameters = {},
 	on_timeout = function(self, eff)
-		local count = 0
-		local todel = {}
+		local effs = {}
 		
-		-- Go through all spell effects
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if e.type ~= "other" and e.status == "beneficial" then
-				if p.dur <= 0 then 
-					todel[#todel+1] = eff 
-				else
-					if e.on_timeout then
-						if p.src then p.src.__project_source = p end -- intermediate projector source
-						if e.on_timeout(self, p) then
-							todel[#todel+1] = eff
-						end
-						if p.src then p.src.__project_source = nil end
-					end
-				end
-				count = count + 1
-				p.dur = p.dur - e.decrease
+		-- Go through all sustained talents
+		for tid, act in pairs(self.sustain_talents) do
+			if act then
+				effs[#effs+1] = {"talent", tid}
 			end
 		end
-
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power*count)
-				
-		while #todel > 0 do
-			self:removeEffect(table.remove(todel))
+		
+		-- deactivate one at random
+		if #effs > 0 then
+			local eff = rng.tableRemove(effs)
+			self:forceUseTalent(eff[2], {ignore_energy=true})
 		end
+	end,
+	activate = function(self, eff)
+		if core.shader.allow("adv") then
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", twist=2, base_rotation=90, radius=1.4, density=40,  scrollingSpeed=-0.0002, growSpeed=0.004, img="miasma_01_01"})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
 	end,
 }
 
 newEffect{
-	name = "REGRESSION", image = "talents/temporal_bolt.png",
+	name = "REGRESSION", image = "talents/turn_back_the_clock.png",
 	desc = "Regression",
 	long_desc = function(self, eff)	return ("Reduces your three highest stats by %d."):format(eff.power) end,
 	on_gain = function(self, err) return "#Target# has regressed.", "+Regression" end,
@@ -3445,7 +3480,7 @@ newEffect{
 	name = "FATEWEAVER", image = "talents/fateweaver.png",
 	desc = "Fateweaver",
 	long_desc = function(self, eff) return ("The target's accuracy and power have been increased by %d."):format(eff.power_bonus * eff.spin) end,
-	display_desc = function(self, eff) return eff.spin.." Spin" end,
+	display_desc = function(self, eff) return eff.spin.." Fateweaver" end,
 	charges = function(self, eff) return eff.spin end,
 	type = "magical",
 	subtype = { temporal=true },
@@ -3479,13 +3514,30 @@ newEffect{
 		eff.physid = self:addTemporaryValue("combat_dam", eff.power_bonus * eff.spin)
 		eff.spellid = self:addTemporaryValue("combat_spellpower", eff.power_bonus * eff.spin)
 		eff.mentalid = self:addTemporaryValue("combat_mindpower", eff.power_bonus * eff.spin)
-		eff.particle = self:addParticles(Particles.new("arcane_power", 1))
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_atk", eff.atkid)
 		self:removeTemporaryValue("combat_dam", eff.physid)
 		self:removeTemporaryValue("combat_spellpower", eff.spellid)
 		self:removeTemporaryValue("combat_mindpower", eff.mentalid)
-		self:removeParticles(eff.particle)
+	end,
+}
+
+newEffect{
+	name = "FOLD_FATE", image = "talents/fold_fate.png",
+	desc = "Fold Fate",
+	long_desc = function(self, eff) return ("The target is nearing the end, its resistance to physical and temporal damage have been reduced by %d%%."):format(eff.power) end,
+	type = "magical",
+	subtype = { temporal=true },
+	status = "detrimental",
+	parameters = { power = 1 },
+	on_gain = function(self, err) return "#Target# is nearing the end.", "+Fold Fate" end,
+	activate = function(self, eff)
+		eff.phys = self:addTemporaryValue("resists", { [DamageType.PHYSICAL] = -eff.power})
+		eff.temp = self:addTemporaryValue("resists", { [DamageType.TEMPORAL] = -eff.power})
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("resists", eff.phys)
+		self:removeTemporaryValue("resists", eff.temp)
 	end,
 }

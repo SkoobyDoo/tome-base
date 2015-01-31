@@ -89,16 +89,9 @@ newTalent{
 		game:playSoundNear(self, "talents/arcane")
 
 		local ret = {}
-		if core.shader.active(4) then
-			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="conic_cylinder", radius=1.4, base_rotation=180, growSpeed=0.004, img="freehand_labyrinth_01"})
-		else
-			ret.particle1 = self:addParticles(Particles.new("time_shield", 1))
-		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
-		if p.particle1 then self:removeParticles(p.particle1) end
-		if p.particle2 then self:removeParticles(p.particle2) end
 		return true
 	end,
 	info = function(self, t)
@@ -124,7 +117,7 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getReduction = function(self, t) return self:getTalentLevel(t) * 2 end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, nowarning=true, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), nowarning=true, talent=t}
 	end,
 	requires_target = true,
 	direct_hit = true,
@@ -145,7 +138,7 @@ newTalent{
 			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end)
 
-		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius})
+		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=200, rM=230, gm=20, gM=30, bm=50, bM=80, am=35, aM=90, radius=tg.radius, basenb=120})
 		game:playSoundNear(self, "talents/tidalwave")
 
 		return true
@@ -155,7 +148,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
 		local reduction = t.getReduction(self, t)
-		return ([[Deals %0.2f temporal damage over %d turns to all other targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
 		If the target is hit by an Anomaly the remaining damage will be done instantly.
 		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, reduction)
 	end,
@@ -185,7 +178,6 @@ newTalent{
 		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)
 		self:setEffect(self.EFF_TWIST_FATE, t.getDuration(self, t), {talent=talent, paradox=paradox})
 		
-		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=70, rM=176, gm=130, gM=196, bm=180, bM=222, am=125, aM=125})
 	end,
 	action = function(self, t)
 		t.doTwistFate(self, t, true)
@@ -193,15 +185,23 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local eff = self:hasEffect(self.EFF_TWIST_FATE)
-		local talent = "None"
-		if eff then talent = self:getTalentFromId(eff.talent).name end
 		local duration = t.getDuration(self, t)
+		local talent
+		local t_name = "None"
+		local t_info = ""
+		local eff = self:hasEffect(self.EFF_TWIST_FATE)
+		if eff then
+			talent = self:getTalentFromId(eff.talent)
+			t_name = talent.name
+			t_info = talent.info(self, talent)
+		end
 		return ([[If Twist Fate is not on cooldown minor anomalies will be held for %d turns, allowing your spell to cast as normal.  While held you may cast Twist Fate in order to trigger the anomaly and may choose the target area.
 		If a second anomaly occurs while a prior one is held or the timed effect expires the first anomaly will trigger immediately, interrupting your current turn or action.
 		Paradox reductions from held anomalies occur when triggered.
 				
-		Current Twisted Anomaly: %s]]):
-		format(duration, talent)
+		Current Anomaly: %s
+		
+		%s]]):
+		format(duration, t_name, t_info)
 	end,
 }

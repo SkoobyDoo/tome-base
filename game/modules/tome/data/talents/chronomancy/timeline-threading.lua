@@ -87,7 +87,11 @@ newTalent{
 				end
 			end)
 
-			game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy})
+			if core.shader.active() then 
+				game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy}, {type="lightning"})
+			else
+				game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy}) 
+			end
 			sx, sy = actor.x, actor.y
 		end
 		
@@ -142,8 +146,10 @@ newTalent{
 			
 			-- Handle some AI stuff
 			m.ai_state = { talent_in=1, ally_compassion=10 }
-			m.ai_tactic = { closein=0, defend=4, disable=4, escape=4, heal=2, safe_range=3}
-			
+			m.ai_state.tactic_leash = 10
+			-- Try to use stored AI talents to preserve tweaking over multiple summons
+			m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+					
 			return m
 		end
 		
@@ -158,7 +164,7 @@ newTalent{
 						control="full",
 						type="fugue clone",
 						title="Fugue Clone",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
 				
@@ -222,7 +228,7 @@ newTalent{
 	requires_target = true,
 	direct_hit = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	getPower = function(self, t) return self:combatTalentScale(t, 20, 50, 100) end,
+	getPower = function(self, t) return self:combatTalentScale(t, 20, 50) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -294,7 +300,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local power = t.getPower(self, t)
-		return ([[Over the next %d turns, you attempt to remove the target from the timeline, lowering all its resistance by %d%%.
+		return ([[Over the next %d turns, you attempt to remove the target from the timeline, lowering its resistance to physical and temporal damage by %d%%.
 		If you manage to kill the target while the spell is in effect, you'll be returned to the point in time you cast this spell and the target will be slain.
 		This spell splits the timeline.  Attempting to use another spell that also splits the timeline while this effect is active will be unsuccessful.
 		The resistance penalty will scale with your Spellpower.]])

@@ -2962,13 +2962,13 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = state or {}
 		useImplicitCrit(src, state)
+		if _G.type(dam) == "number" then dam = {dam=dam, stat=2 + math.ceil(dam/15), apply=src:combatSpellpower()} end
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			local dam = 2 + math.ceil(dam / 15)
-			target:setEffect(target.EFF_TURN_BACK_THE_CLOCK, 3, {power=dam, apply_power=src:combatSpellpower(), min_dur=1})
+			target:setEffect(target.EFF_REGRESSION, 3, {power=dam.stat, apply_power=dam.apply,  min_dur=1, no_ct_effect=true})	
 		end
 		-- Reduce Con then deal the damage
-		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam, state)
+		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam.dam, state)
 	end,
 }
 
@@ -3636,10 +3636,52 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = state or {}
 		useImplicitCrit(src, state)
-		if _G.type(dam) == "number" then dam = {dam=dam, apply_power=apply_power or src:combatSpellpower()} end
+		if _G.type(dam) == "number" then dam = {dam=dam, dur=dur or 4, apply_power=apply_power or src:combatSpellpower()} end
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam.dam, daze=dam.daze, src=src, apply_power=dam.apply_power, no_ct_effect=true})
+			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam.dam, src=src, dur=dam.dur, apply_power=dam.apply_power, no_ct_effect=true})
+		end
+	end,
+}
+
+-- Causes a random warp status effect; these do cause cross tier effects
+newDamageType{
+	name = "phase pulse", type = "RANDOM_WARP",
+	projector = function(src, x, y, type, dam, state)
+		state = state or {}
+		useImplicitCrit(src, state)
+		
+		local target = game.level.map(x, y, Map.ACTOR)
+		if not target or target.dead then return end
+		
+		local eff = rng.range(1, 4)
+		local power = dam.apply_power or src:combatSpellpower()
+		local dur = dam.dur or 4
+		-- Pull random effect
+		if eff == 1 then
+			if target:canBe("stun") then
+				target:setEffect(target.EFF_STUNNED, dur, {apply_power=power})
+			else
+				game.logSeen(target, "%s resists the stun!", target.name:capitalize())
+			end
+		elseif eff == 2 then
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_BLINDED, dur, {apply_power=power})
+			else
+				game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
+			end
+		elseif eff == 3 then
+			if target:canBe("pin") then
+				target:setEffect(target.EFF_PINNED, dur, {apply_power=power})
+			else
+				game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+			end
+		elseif eff == 4 then
+			if target:canBe("confusion") then
+				target:setEffect(target.EFF_CONFUSED, dur, {power=50, apply_power=power})
+			else
+				game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
+			end
 		end
 	end,
 }

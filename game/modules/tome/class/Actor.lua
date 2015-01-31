@@ -1317,7 +1317,7 @@ function _M:move(x, y, force)
 	if moved and not force and ox and oy and (ox ~= self.x or oy ~= self.y) and config.settings.tome.smooth_move > 0 then
 		local blur = 0
 		if game.level.data.zero_gravity then blur = 2 end
-		if self:attr("lightning_speed") or self:attr("step_up") or self:attr("wild_speed") then blur = 3 end
+		if self:attr("lightning_speed") or self:attr("step_up") or self:attr("wild_speed") or self:hasEffect(self.EFF_HASTE) then blur = 3 end
 		if self:hasEffect(self.EFF_CELERITY) then local eff = self:hasEffect(self.EFF_CELERITY) blur = eff.charges end
 		self:setMoveAnim(ox, oy, config.settings.tome.smooth_move, blur, 8, config.settings.tome.twitch_move and 0.15 or 0)
 		if Map.tiles and Map.tiles.use_images then if self.x < ox then self:MOflipX(self:isTileFlipped()) elseif self.x > ox then self:MOflipX(not self:isTileFlipped()) end end
@@ -1350,13 +1350,8 @@ function _M:waitTurn()
 	end
 
 	-- Tune paradox up or down
-	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox()) then
-		local power = 0
-		if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
-			local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
-			power = (self.preferred_paradox - self:getParadox())/duration
-			self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
-		end
+	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
+		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
 	end
 
 	self:useEnergy()

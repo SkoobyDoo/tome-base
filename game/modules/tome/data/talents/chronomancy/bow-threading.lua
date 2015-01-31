@@ -78,8 +78,8 @@ newTalent{
 	requires_target = true,
 	range = archery_range,
 	speed = 'archery',
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getClones = function(self, t) return self:getTalentLevel(t) >= 5 and 3 or self:getTalentLevel(t) >= 3 and 2 or 1 end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
+	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 40) end,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
@@ -108,7 +108,7 @@ newTalent{
 		
 		-- Summon our clones
 		if not self.arrow_stitching_done then
-			for i = 1, t.getClones(self, t) do
+			for i = 1, 2 do
 				local m = makeParadoxClone(self, self, 2)
 				local poss = {}
 				local range = self:getTalentRange(t)
@@ -127,7 +127,7 @@ newTalent{
 				x, y = pos[1], pos[2]
 				game.zone:addEntity(game.level, m, "actor", x, y)
 				m.arrow_stitched_target = target
-				m.generic_damage_penalty = 50
+				m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
 				m.energy.value = 1000
 				m:attr("archery_pass_friendly", 1)
 				m.on_act = function(self)
@@ -146,11 +146,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local clones = t.getClones(self, t)
-		return ([[Fire an arrow for %d%% weapon damage and call up to %d wardens (depending on available space) that will each fire a single arrow before returning to their timelines.
-		The wardens are out of phase with normal reality and deal 50%% damage but shoot through friendly targets.
-		At talent level three and five you can summon an additional clone.]])
-		:format(damage, clones)
+		local penalty = t.getDamagePenalty(self, t)
+		return ([[Fire an arrow for %d%% weapon damage and call up to 2 wardens (depending on available space) that will each fire a single arrow before returning to their timelines.
+		The wardens are out of phase with normal reality and deal %d%% less damage but shoot through friendly targets.]])
+		:format(damage, penalty)
 	end
 }
 
@@ -167,9 +166,9 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.7)) end,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getDamageAoE = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
+	getDamageAoE = function(self, t) return self:combatTalentSpellDamage(t, 25, 230, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, friendlyfire=false, friendlyblock=false}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, stop_block=true, friendlyfire=false, friendlyblock=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
@@ -211,7 +210,9 @@ newTalent{
 			
 			-- 25% bonus damage per target beyond the first
 			local dam = self:spellCrit(t.getDamageAoE(self, t))
-			dam = dam + math.min(dam, dam*(#tgts-1)/4)
+			if #tgts > 0 then
+				dam = dam + math.min(dam, dam*(#tgts-1)/4)
+			end
 			
 			-- Project our damage last based on number of targets hit
 			self:project(tg, x, y, function(px, py)
@@ -245,7 +246,7 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local radius = self:getTalentRadius(t)
 		local aoe = t.getDamageAoE(self, t)
-		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination it will draw in enemies in a radius of %d and inflict %0.2f physical damage.
+		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination or hits a target it will draw in all enemies in a radius of %d and inflict %0.2f physical damage.
 		Each target moved beyond the first deals an additional %0.2f physical damage (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The additional damage scales with your Spellpower.]])
