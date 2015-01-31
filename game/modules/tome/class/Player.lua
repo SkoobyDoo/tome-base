@@ -1003,9 +1003,32 @@ function _M:restCheck()
 			local p = self:isTalentActive(tid)
 			if p and p.rest_count and p.rest_count > 0 then return true end
 		end
+		for inven_id, inven in pairs(self.inven) do
+			for _, o in ipairs(inven) do
+				local cd = o:getObjectCooldown(self)
+				if cd and cd > 0 then return true end
+			end
+		end
 	end
 
 	self.resting.wait_cooldowns = nil
+
+	-- Enter full recharge rest if we waited for cooldowns already
+	if self.resting.cnt == 0 then
+		self.resting.wait_powers = true
+	end
+
+	if self.resting.wait_powers then
+		for inven_id, inven in pairs(self.inven) do
+			for _, o in ipairs(inven) do
+				if o.power and o.power_regen and o.power_regen > 0 and o.power < o.max_power then
+					return true
+				end
+			end
+		end
+	end
+
+	self.resting.wait_powers = nil
 
 	-- Enter recall waiting rest if we are at max already
 	if self.resting.cnt == 0 and self:hasEffect(self.EFF_RECALL) then
