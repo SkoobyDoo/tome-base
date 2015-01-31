@@ -1924,9 +1924,9 @@ function _M:getPriceFlags()
 		if w.lite then price = price + w.lite * 10 end
 		if w.size_category then price = price + w.size_category * 25 end
 		if w.esp_all then price = price + w.esp_all * 25 end
+		if w.esp then price = price + table.count(w.esp) * 7 end
 		if w.esp_range then price = price + w.esp_range * 15 end
 		if w.can_breath then for t, v in pairs(w.can_breath) do price = price + v * 30 end end
-		if w.esp_all then price = price + w.esp_all * 25 end
 		if w.damage_shield_penetrate then price = price + w.damage_shield_penetrate * 1 end
 		if w.spellsurge_on_crit then price = price + w.spellsurge_on_crit * 5 end
 		if w.quick_weapon_swap then price = price + w.quick_weapon_swap * 50 end

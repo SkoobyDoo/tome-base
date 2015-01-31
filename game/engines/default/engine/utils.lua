@@ -50,6 +50,14 @@ function table.concatNice(t, sep, endsep)
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
 end
 
+function table.count(t)
+	local i = 0
+	for k, v in pairs(t) do
+		i = i + 1
+	end
+	return i
+end
+
 function table.min(t)
 	local m = nil
 	for _, v in pairs(t) do
