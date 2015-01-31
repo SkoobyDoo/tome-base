@@ -3380,7 +3380,7 @@ newDamageType{
 			state[target] = true
 			local old_pen = 0
 
-			game.level.map:particleEmitter(x, y, 1, "distortion")
+			if core.shader.allow("distort") then game.level.map:particleEmitter(x, y, 1, "distortion") end
 
 			-- Spike resists pen
 			if dam.penetrate then
