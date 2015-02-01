@@ -3542,8 +3542,24 @@ newEffect{
 	end,
 }
 
+-- These are cosmetic so they can be cleared or clicked off
 newEffect{
-	name = "SPATIAL_TETHER", image = "talents/spatial_tether.png",
+	name = "BEN_TETHER", image = "talents/spatial_tether.png",
+	desc = "Spatial Tether",
+	long_desc = function(self, eff) return ("The target has been tethered to the location and may be teleported back to it on any turn."):format() end,
+	type = "magical",
+	subtype = { teleport=true, temporal=true },
+	status = "beneficial",
+	parameters = { power = 1 },
+	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "DET_TETHER", image = "talents/spatial_tether.png",
 	desc = "Spatial Tether",
 	long_desc = function(self, eff) return ("The target has been tethered to the location and may be teleported back to it on any turn."):format() end,
 	type = "magical",

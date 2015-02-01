@@ -296,7 +296,7 @@ newTalent{
 				
 				-- Checks for target viability
 				local target = self.target
-				local tether = target:hasEffect(target.EFF_SPATIAL_TETHER) or self.summoner:reactionToward(target) >= 0
+				local tether = target:hasEffect(target.EFF_BEN_TETHER) or target:hasEffect(target.EFF_DET_TETHER)
 				local trigger = rng.percent(self.chance * core.fov.distance(self.x, self.y, target.x, target.y))
 				
 				if game.level and game.level:hasEntity(target) and tether and trigger and not target.dead then
@@ -312,7 +312,7 @@ newTalent{
 					end)
 								
 					-- Do we hit?
-					local hit = self.summoner:reactionToward(target) >= 0 or self.summoner:checkHit(self.power, target:combatSpellResist() + (target:attr("continuum_destabilization") or 0), 0, 95) and target:canBe("teleport")
+					local hit = target:hasEffect(target.EFF_BEN_TETHER) or self.summoner:checkHit(self.power, target:combatSpellResist() + (target:attr("continuum_destabilization") or 0), 0, 95) and target:canBe("teleport")
 					
 					if hit then
 						-- Since we're using a precise teleport, find a free grid first
@@ -321,7 +321,7 @@ newTalent{
 						if not self.target:teleportRandom(tx, ty, 1, 0) then
 							game.logSeen(self, "The teleport fizzles!")
 						else
-							if self.summoner:reactionToward(target) < 0 then 
+							if target:hasEffect(target.EFF_DET_TETHER) then 
 								self.target:setEffect(self.target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power})
 							end
 							game:playSoundNear(self, "talents/teleport")
@@ -359,9 +359,11 @@ newTalent{
 		game:playSoundNear(self, "talents/warp")
 		
 		-- Dummy timed effect, so players can remove the tether
-		if self:reactionToward(target) < 0 then
-			target:setEffect(target.EFF_SPATIAL_TETHER, t.getDuration(self, t), {})
-		end		
+		if self:reactionToward(target) >= 0 then
+			target:setEffect(target.EFF_BEN_TETHER, t.getDuration(self, t), {})
+		else
+			target:setEffect(target.EFF_DET_TETHER, t.getDuration(self, t), {})
+		end
 				
 		return true
 	end,
@@ -389,7 +391,7 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, nowarning=true, talent=t}
 	end,
 	requires_target = true,
 	direct_hit = true,
