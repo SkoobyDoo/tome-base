@@ -446,10 +446,11 @@ end
 --	@param o = object to be worn
 --	@param replace = boolean allow first object in wearable inventory to be removed to make space if needed
 --	@vocal = boolean to post messages to game.logSeen(self, ....)
+--  @force_inven = try to equip into this inventory only
 --	returns true or replaced object if succeeded or false if not, remaining stack of o if any
 --  checks o:on_canwear(self, inven) (return true to prevent wearing)
-function _M:wearObject(o, replace, vocal)
-	local inven = o:wornInven()
+function _M:wearObject(o, replace, vocal, force_inven)
+	local inven = force_inven or o:wornInven()
 	if not inven then
 		if vocal then game.logSeen(self, "%s is not wearable.", o:getName{do_color=true}) end
 		return false
@@ -471,7 +472,7 @@ function _M:wearObject(o, replace, vocal)
 	if added then
 		if vocal then game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true}) end
 		return true, stack
-	elseif offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
+	elseif not force_inven and offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
 		if vocal then game.logSeen(self, "%s wears (offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
 		added, slot, stack = self:addObject(self:getInven(offslot), o)
 		return added, stack

@@ -72,8 +72,17 @@ function _M:init(title, equip_actor, filter, action, on_select, inven_actor)
 					self.equip_actor:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, base_o, true)
 				end
 			else
+				local force_inven = nil
+				if ui:getItem() then
+					local bi = self.equip_actor:getInven(ui.inven)
+					local ws = self.equip_actor:getInven(wear_o:wornInven())
+					local os = self.equip_actor:getObjectOffslot(wear_o)
+					if bi and ((ws and ws.id == bi.id) or (os and self.equip_actor:getInven(os).id == bi.id)) then
+						force_inven = bi.id
+					end
+				end
 				-- Unequipping/replacing is handled by doWear
-				self.equip_actor:doWear(wear_inven, wear_item, wear_o, self.inven_actor)
+				self.equip_actor:doWear(wear_inven, wear_item, wear_o, self.inven_actor, force_inven)
 			end
 			self.c_inven:generateList()
 		end
