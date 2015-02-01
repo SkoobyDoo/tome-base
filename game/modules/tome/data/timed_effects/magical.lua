@@ -3228,20 +3228,7 @@ newEffect{
 	status = "detrimental",
 	parameters = {},
 	on_timeout = function(self, eff)
-		local effs = {}
-		
-		-- Go through all sustained talents
-		for tid, act in pairs(self.sustain_talents) do
-			if act then
-				effs[#effs+1] = {"talent", tid}
-			end
-		end
-		
-		-- deactivate one at random
-		if #effs > 0 then
-			local eff = rng.tableRemove(effs)
-			self:forceUseTalent(eff[2], {ignore_energy=true})
-		end
+		self:removeSustainsFilter(nil, 1)
 	end,
 	activate = function(self, eff)
 		if core.shader.allow("adv") then
