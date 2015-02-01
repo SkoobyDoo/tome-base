@@ -371,7 +371,7 @@ newTalent{
 	cooldown = 8,
 	tactical = { ESCAPE = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5.5)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
