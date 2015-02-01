@@ -173,6 +173,8 @@ newEntity{ base = "BASE_GEM",
 	cost = 300,
 	material_level = 5,
 	identified = false,
+	auto_pickup = false,  -- why would you do such a thing.
+	encumber = 0.1,  -- at least they'll see it on transmo screen.
 	carrier = {
 		on_melee_hit = {[DamageType.HEAL] = 34},
 		life_regen = -2,
@@ -191,6 +193,12 @@ newEntity{ base = "BASE_GEM",
 		on_melee_hit = {[DamageType.DARKNESS] = 34},
 		healing_factor = 0.5,
 	},
+	on_pickup = function(self, who)
+		if who == game.player then
+			who:runStop("evil touch")
+			who:restStop("evil touch")
+		end
+	end,
 	color_attributes = {damage_type = 'SHADOWFLAME',},}
 
 newEntity{ base = "BASE_CLOAK",
