@@ -363,68 +363,9 @@ newTalent{
 }
 
 newTalent{
-	name = "Dimensional Anchor",
+	name = "Banish",
 	type = {"chronomancy/spacetime-folding", 3},
 	require = chrono_req3,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 12,
-	tactical = { DISABLE = 2 },
-	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
-	getEffectDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t}
-	end,
-	requires_target = true,
-	direct_hit = true,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		local _ _, _, _, x, y = self:canProject(tg, x, y)
-
-		-- Project our daze..  no save as this is our main means of creating combos
-		self:project(tg, x, y, function(px, py, tg, self)
-			local target = game.level.map(px, py, Map.ACTOR)
-			if target and target:canBe("stun") then
-				target:setEffect(target.EFF_DAZED, 2, {})
-			end
-		end)
-
-		-- Add a lasting map effect
-		local dam = self:spellCrit(t.getDamage(self, t))
-		local particle = MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, oversize=0, img="moon_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/magic_effect.png"}
-		game.level.map:addEffect(self,
-			x, y, t.getDuration(self,t),
-			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, status_dur=t.getEffectDuration(self, t), src=self, apply=getParadoxSpellpower(self, t)},
-			self:getTalentRadius(t),
-			5, nil,
-			particle,
-			nil, false, false
-		)
-
-		game:playSoundNear(self, "talents/warp")
-
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t)/2
-		local radius = self:getTalentRadius(t)
-		local duration = t.getDuration(self, t)
-		local effect = t.getEffectDuration(self, t)
-		return ([[Create a radius %d anti-teleport field for %d turns and daze all enemies in the area of effect for two turns.
-		Enemies attempting to teleport while anchored take %0.2f physical and %0.2f temporal (warp) damage and may be stunned, blinded, confused, or pinned for %d turns.
-		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), effect)
-	end,
-}
-
-newTalent{
-	name = "Banish",
-	type = {"chronomancy/spacetime-folding", 4},
-	require = chrono_req4,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 8,
@@ -479,5 +420,64 @@ newTalent{
 		return ([[Randomly teleports all other targets within a radius of %d.  Targets will be teleported between %d and %d tiles from their current location.
 		If no targets are teleported the cooldown will be halved.
 		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
+	end,
+}
+
+newTalent{
+	name = "Dimensional Anchor",
+	type = {"chronomancy/spacetime-folding", 4},
+	require = chrono_req4,
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 12,
+	tactical = { DISABLE = 2 },
+	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
+	getEffectDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t}
+	end,
+	requires_target = true,
+	direct_hit = true,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+
+		-- Project our daze..  no save as this is our main means of creating combos
+		self:project(tg, x, y, function(px, py, tg, self)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target and target:canBe("stun") then
+				target:setEffect(target.EFF_DAZED, 2, {})
+			end
+		end)
+
+		-- Add a lasting map effect
+		local dam = self:spellCrit(t.getDamage(self, t))
+		local particle = MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, oversize=0, img="moon_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/magic_effect.png"}
+		game.level.map:addEffect(self,
+			x, y, t.getDuration(self,t),
+			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, status_dur=t.getEffectDuration(self, t), src=self, apply=getParadoxSpellpower(self, t)},
+			self:getTalentRadius(t),
+			5, nil,
+			particle,
+			nil, false, false
+		)
+
+		game:playSoundNear(self, "talents/warp")
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)/2
+		local radius = self:getTalentRadius(t)
+		local duration = t.getDuration(self, t)
+		local effect = t.getEffectDuration(self, t)
+		return ([[Create a radius %d anti-teleport field for %d turns and daze all enemies in the area of effect for two turns.
+		Enemies attempting to teleport while anchored take %0.2f physical and %0.2f temporal (warp) damage and may be stunned, blinded, confused, or pinned for %d turns.
+		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), effect)
 	end,
 }

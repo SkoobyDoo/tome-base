@@ -188,15 +188,15 @@ newTalent{
 				energy = {value=0},
 				disarm = function(self, x, y, who) return false end,
 				power = power, dest_power = dest_power,
-				summoned_by = self, -- "summoner" is immune to it's own traps
+				summoner = self, beneficial_trap = true,
 				triggered = function(self, x, y, who)
-					local hit = who == self.summoned_by or who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
+					local hit = who == self.summoner or who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
 					if hit then
 						game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 						if not who:teleportRandom(self.dest_x, self.dest_y, self.radius, 1) then
 							game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())
 						else
-							if who ~= self.summoned_by then who:setEffect(who.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power}) end
+							if who ~= self.summoner then who:setEffect(who.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power}) end
 							game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 							game:playSoundNear(self, "talents/teleport")
 						end
@@ -225,7 +225,6 @@ newTalent{
 		entrance:identify(true)
 		entrance:setKnown(self, true)
 		game.zone:addEntity(game.level, entrance, "trap", entrance_x, entrance_y)
-		entrance.faction = nil
 		game:playSoundNear(self, "talents/heal")
 
 		-- Adding the exit wormhole
@@ -236,7 +235,6 @@ newTalent{
 		exit:identify(true)
 		exit:setKnown(self, true)
 		game.zone:addEntity(game.level, exit, "trap", exit_x, exit_y)
-		exit.faction = nil
 
 		-- Linking the wormholes
 		entrance.dest = exit
