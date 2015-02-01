@@ -21,9 +21,8 @@
 
 local Trap = require "mod.class.Trap"
 
-makeWarpMine = function(self, t, x, y, type)
+makeWarpMine = function(self, t, x, y, type, dam)
 	-- Mine values
-	local dam = self:spellCrit(self:callTalent(self.T_WARP_MINES, "getDamage"))
 	local duration = self:callTalent(self.T_WARP_MINES, "getDuration")
 	local detect = math.floor(self:callTalent(self.T_WARP_MINES, "trapPower") * 0.8)
 	local disarm = math.floor(self:callTalent(self.T_WARP_MINES, "trapPower"))
@@ -123,13 +122,14 @@ newTalent{
 		local __, tx, ty = self:canProject(tg, tx, ty)
 	
 		-- Lay the mines in a ball
+		local dam = self:spellCrit(self:callTalent(self.T_WARP_MINES, "getDamage"))
 		self:project(tg, tx, ty, function(px, py)
 			local target_trap = game.level.map(px, py, Map.TRAP)
 			if target_trap then return end
 			if game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move") then return end
 			
 			-- Make our mine
-			local trap = makeWarpMine(self, t, px, py, "toward")
+			local trap = makeWarpMine(self, t, px, py, "toward", dam)
 			
 			-- Add the mine
 			game.level:addEntity(trap)
@@ -172,13 +172,14 @@ newTalent{
 		local _ _, tx, ty = self:canProject(tg, tx, ty)
 		
 		-- Lay the mines in a ball
+		local dam = self:spellCrit(self:callTalent(self.T_WARP_MINES, "getDamage"))
 		self:project(tg, tx, ty, function(px, py)
 			local target_trap = game.level.map(px, py, Map.TRAP)
 			if target_trap then return end
 			if game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move") then return end
 			
 			-- Make our mine
-			local trap = makeWarpMine(self, t, px, py, "away")
+			local trap = makeWarpMine(self, t, px, py, "away", dam)
 			
 			-- Add the mine
 			game.level:addEntity(trap)
@@ -281,7 +282,7 @@ newTalent{
 		-- Make our tether
 		local tether = mod.class.Object.new{
 			old_feat = oe, type = oe.type, subtype = oe.subtype,
-			name = "temporal instability", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
+			name = "spatial tether", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t), 
 			power = power, dest_power = dest_power, chance = t.getChance(self, t),
@@ -293,31 +294,40 @@ newTalent{
 				self:useEnergy()
 				self.temporary = self.temporary - 1
 				
-				local trigger = rng.percent(self.chance * core.fov.distance(self.x, self.y, self.target.x, self.target.y))
-				if not self.target.dead and (game.level and game.level:hasEntity(self.target)) and trigger then
-
-					self.summoner.__project_source = self
-					self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
-					self.summoner.__project_source = nil
-					if core.shader.allow("distort") then
-						game.level.map:particleEmitter(self.target.x, self.target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=self.target.x, ty=self.target.y})
-					end
+				-- Checks for target viability
+				local target = self.target
+				local tether = target:hasEffect(target.EFF_SPATIAL_TETHER) or self.summoner:reactionToward(target) >= 0
+				local trigger = rng.percent(self.chance * core.fov.distance(self.x, self.y, target.x, target.y))
 				
-					-- Teleport
-					local hit = self.summoner == self.target or (self.summoner:checkHit(self.power, self.target:combatSpellResist() + (self.target:attr("continuum_destabilization") or 0), 0, 95) and self.target:canBe("teleport"))
+				if game.level and game.level:hasEntity(target) and tether and trigger and not target.dead then
+				
+					-- Primary blast, even if the teleport is resisted or fails this triggers
+					game:onTickEnd(function()
+						self.summoner.__project_source = self
+						self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
+						self.summoner.__project_source = nil
+						if core.shader.allow("distort") then
+							game.level.map:particleEmitter(self.target.x, self.target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=self.target.x, ty=self.target.y})
+						end
+					end)
+								
+					-- Do we hit?
+					local hit = self.summoner:reactionToward(target) >= 0 or self.summoner:checkHit(self.power, target:combatSpellResist() + (target:attr("continuum_destabilization") or 0), 0, 95) and target:canBe("teleport")
+					
 					if hit then
-						-- Since we're using a precise teleport, find a free grit first
+						-- Since we're using a precise teleport, find a free grid first
 						local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[engine.Map.ACTOR]=true})
+						
 						if not self.target:teleportRandom(tx, ty, 1, 0) then
 							game.logSeen(self, "The teleport fizzles!")
 						else
-							if self.target ~= self.summoner then 
+							if self.summoner:reactionToward(target) < 0 then 
 								self.target:setEffect(self.target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power})
 							end
 							game:playSoundNear(self, "talents/teleport")
 						end
 						
-						-- And one more warp blast after, make sure the teleport is resolved
+						-- Secondary blast, this occurs as long as the teleport is not resisted, even if it fails, say from Anchor
 						game:onTickEnd(function()
 							self.summoner.__project_source = self
 							self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
@@ -333,7 +343,7 @@ newTalent{
 				end
 				
 				-- End the effect?
-				if self.temporary <= 0 or self.target.dead then
+				if self.temporary <= 0 or self.target.dead or not tether then
 					game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
 					game.level:removeEntity(self)
@@ -348,6 +358,11 @@ newTalent{
 		game.level.map:updateMap(x, y)
 		game:playSoundNear(self, "talents/warp")
 		
+		-- Dummy timed effect, so players can remove the tether
+		if self:reactionToward(target) < 0 then
+			target:setEffect(target.EFF_SPATIAL_TETHER, t.getDuration(self, t), {})
+		end		
+				
 		return true
 	end,
 	info = function(self, t)
