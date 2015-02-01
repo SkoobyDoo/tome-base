@@ -35,11 +35,12 @@ makeWarpMine = function(self, t, x, y, type, dam)
 		type = "temporal", id_by_type=true, unided_name = "trap",
 		display = '^', color=colors.BLUE, image = ("trap/chronomine_%s_0%d.png"):format(type == "toward" and "blue" or "red", rng.avg(1, 4, 3)),
 		shader = "shadow_simulacrum", shader_args = { color = {0.2, 0.2, 0.2}, base = 0.8, time_factor = 1500 },
-		dam = dam, talent=t, power = power, dest_power = dest_power,
 		temporary = duration,
 		x = x, y = y, type = type,
+		faction = self.faction,
 		summoner = self, summoner_gain_exp = true,
 		disarm_power = disarm,	detect_power = detect,
+		dam = dam, talent=t, power = power, dest_power = dest_power,
 		canTrigger = function(self, x, y, who)
 			if who:reactionToward(self.summoner) < 0 then return mod.class.Trap.canTrigger(self, x, y, who) end
 			return false
