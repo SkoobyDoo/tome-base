@@ -170,6 +170,7 @@ function necroSetupSummon(self, m, x, y, level, no_control, no_decay)
 	m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
 	m.inc_damage = table.clone(self.inc_damage, true)
 	m.no_breath = 1
+	m.no_drops = true
 
 	applyDarkEmpathy(self, m)
 
