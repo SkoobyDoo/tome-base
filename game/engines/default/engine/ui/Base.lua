@@ -47,6 +47,10 @@ sounds = {
 
 _M.ui_conf = {}
 
+_M.tilesets = {}
+_M.tilesets_texs = {}
+_M.atlas_cache = {}
+
 function _M:loadUIDefinitions(file)
 	local f, err = loadfile(file)
 	if not f then print("Error while loading UI definition from", file, ":", err) return end
@@ -117,8 +121,6 @@ function _M:getUITexture(file)
 	return r
 end
 
-tilesets = {}
-tilesets_texs = {}
 function _M:loadTileset(file)
 	if not fs.exists(file) then print("Tileset file "..file.." does not exists.") return end
 	local f, err = loadfile(file)
@@ -143,7 +145,7 @@ function _M:checkTileset(image)
 	print("Loading tile from tileset", f)
 	local tex = self.tilesets_texs[d.set]
 	if not tex then
-		tex = core.display.loadImage(d.set):glTexture()
+		tex = core.display.loadImage(d.set):glTexture(true, true)
 		self.tilesets_texs[d.set] = tex
 		print("Loading tileset", d.set)
 	end
@@ -151,11 +153,13 @@ function _M:checkTileset(image)
 end
 
 function _M:getAtlasTexture(file)
+	if self.atlas_cache[file] then return self.atlas_cache[file] end
 	local uifile = (self.ui ~= "" and self.ui.."-" or "")..file
-	print(uifile)
 	local ts, fx, fy, tsx, tsy, tw, th = self:checkTileset(uifile)
 	if ts then
-		return {t=ts, tx=fx, ty=fy, w=tw, h=th, tw=tsx, th=tsy}
+		local t = {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
+		self.atlas_cache[file] = t
+		return t
 	end
 end
 
@@ -195,49 +199,89 @@ function _M:makeVO()
 end
 
 function _M:addQuadVO(vo, at, x, y, w, h, r, g, b, a)
-	vo:addQuad(r or 1, g or 1, b or 1, a or 1,
+	return vo:addQuad(r or 1, g or 1, b or 1, a or 1,
 		{x, y, 			at.tx, at.ty},
 		{x + w, y, 		at.tx + at.tw, at.ty},
 		{x + w, y + h, 		at.tx + at.tw, at.ty + at.th},
 		{x, y + h, 		at.tx, at.ty + at.th}
 	)
-	print("===============")
-	print("===============VO ADD")
-	print("====", at.tx, at.ty, "::", at.tw, at.th)
-	print("===============")
-	print("===============")
+end
+
+function _M:updateQuadVO(vo, vo_id, at, x, y, w, h, r, g, b, a)
+	local x1, x2, y1, y2 = nil, nil, nil, nil
+	if x and y and w and h then x1, x2, y1, y2 = x, x + w, y, y + h end
+
+	local tx1, tx2, ty1, ty2 = nil, nil, nil, nil
+	if at then tx1, tx2, ty1, ty2 = at.tx, at.tx + at.tw, at.ty, at.ty + at.th end
+
+	vo:updateQuad(vo_id, r, g, b, a,
+		{x1, y1,		tx1, ty1},
+		{x2, y1, 		tx2, ty1},
+		{x2, y2, 		tx2, ty2},
+		{x1, y2, 		tx1, ty2}
+	)
 end
 
 function _M:makeFrameVO(vo, base, x, y, w, h, r, g, b, a)
-	local f = {}
-	f.b7 = self:getAtlasTexture(base.."7.png")
-	f.b9 = self:getAtlasTexture(base.."9.png")
-	f.b1 = self:getAtlasTexture(base.."1.png")
-	f.b3 = self:getAtlasTexture(base.."3.png")
-	f.b8 = self:getAtlasTexture(base.."8.png")
-	f.b4 = self:getAtlasTexture(base.."4.png")
-	f.b2 = self:getAtlasTexture(base.."2.png")
-	f.b6 = self:getAtlasTexture(base.."6.png")
-	f.b5 = self:getAtlasTexture(base.."5.png")
-	f.w = math.floor(w)
-	f.h = math.floor(h)
+	local b7 = self:getAtlasTexture(base.."7.png")
+	local b9 = self:getAtlasTexture(base.."9.png")
+	local b1 = self:getAtlasTexture(base.."1.png")
+	local b3 = self:getAtlasTexture(base.."3.png")
+	local b8 = self:getAtlasTexture(base.."8.png")
+	local b4 = self:getAtlasTexture(base.."4.png")
+	local b2 = self:getAtlasTexture(base.."2.png")
+	local b6 = self:getAtlasTexture(base.."6.png")
+	local b5 = self:getAtlasTexture(base.."5.png")
+	w = math.floor(w)
+	h = math.floor(h)
 
-	-- Sides
-	self:addQuadVO(vo, f.b8, x + f.b7.w, y, w - f.b7.w - f.b9.w, f.b8.h, f.b8.tw, f.b8.th, r, g, b, a)
-	self:addQuadVO(vo, f.b2, x + f.b7.w, y + h - f.b3.h, w - f.b7.w - f.b9.w, f.b2.h, f.b2.tw, f.b2.th, r, g, b, a)
-	self:addQuadVO(vo, f.b4, x, y + f.b7.h, f.b4.w, h - f.b7.h - f.b1.h, f.b4.tw, f.b4.th, r, g, b, a)
-	self:addQuadVO(vo, f.b6, x + w - f.b9.w, y + f.b7.h, f.b6.w, h - f.b7.h - f.b1.h, f.b6.tw, f.b6.th, r, g, b, a)
+	-- -- Sides
+	local vo_id = self:addQuadVO(vo, b8, x + b7.w, y, w - b7.w - b9.w, b8.h, r, g, b, a)
+	self:addQuadVO(vo, b2, x + b7.w, y + h - b3.h, w - b7.w - b9.w, b2.h, r, g, b, a)
+	self:addQuadVO(vo, b4, x, y + b7.h, b4.w, h - b7.h - b1.h, r, g, b, a)
+	self:addQuadVO(vo, b6, x + w - b9.w, y + b7.h, b6.w, h - b7.h - b1.h, r, g, b, a)
 
 	-- Corners
-	self:addQuadVO(vo, f.b1, x, y + h - f.b1.h, f.b1.w, f.b1.h, f.b1.tw, f.b1.th, r, g, b, a)
-	self:addQuadVO(vo, f.b7, x, y, f.b7.w, f.b7.h, f.b7.tw, f.b7.th, r, g, b, a)
-	self:addQuadVO(vo, f.b9, x + w - f.b9.w, y, f.b9.w, f.b9.h, f.b9.tw, f.b9.th, r, g, b, a)
-	self:addQuadVO(vo, f.b3, x + w - f.b3.w, y + h - f.b3.h, f.b3.w, f.b3.h, f.b3.tw, f.b3.th, r, g, b, a)
+	self:addQuadVO(vo, b1, x, y + h - b1.h, b1.w, b1.h, r, g, b, a)
+	self:addQuadVO(vo, b7, x, y, b7.w, b7.h, r, g, b, a)
+	self:addQuadVO(vo, b9, x + w - b9.w, y, b9.w, b9.h, r, g, b, a)
+	self:addQuadVO(vo, b3, x + w - b3.w, y + h - b3.h, b3.w, b3.h, r, g, b, a)
 
 	-- Body
-	self:addQuadVO(vo, f.b5, x + f.b7.w, y + f.b7.h, w - f.b7.w - f.b3.w , h - f.b7.h - f.b3.h, f.b5.tw, f.b5.th, r, g, b, a)
+	self:addQuadVO(vo, b5, x + b7.w, y + b7.h, w - b7.w - b3.w , h - b7.h - b3.h, r, g, b, a)
 
-	return f
+	return vo_id
+end
+
+function _M:updateFrameVO(vo, vo_id, base, x, y, w, h, r, g, b, a)
+	local b7 = base and self:getAtlasTexture(base.."7.png")
+	local b9 = base and self:getAtlasTexture(base.."9.png")
+	local b1 = base and self:getAtlasTexture(base.."1.png")
+	local b3 = base and self:getAtlasTexture(base.."3.png")
+	local b8 = base and self:getAtlasTexture(base.."8.png")
+	local b4 = base and self:getAtlasTexture(base.."4.png")
+	local b2 = base and self:getAtlasTexture(base.."2.png")
+	local b6 = base and self:getAtlasTexture(base.."6.png")
+	local b5 = base and self:getAtlasTexture(base.."5.png")
+
+	if x then
+		w = math.floor(w)
+		h = math.floor(h)
+	end
+
+	local id = vo:find(vo_id)
+	local s = vo:getQuadSize()
+
+	-- -- Sides
+	self:updateQuadVO(vo, id + 0*s, b8, x and x + b7.w,	x and y,		x and w - b7.w - b9.w,	x and b8.h,			r, g, b, a)
+	self:updateQuadVO(vo, id + 1*s, b2, x and x + b7.w,	x and y + h - b3.h,	x and w - b7.w - b9.w,	x and b2.h,			r, g, b, a)
+	self:updateQuadVO(vo, id + 2*s, b4, x and x,		x and y + b7.h,	x and b4.w,			x and h - b7.h - b1.h,	r, g, b, a)
+	self:updateQuadVO(vo, id + 3*s, b6, x and x + w - b9.w,	x and y + b7.h,	x and b6.w,			x and h - b7.h - b1.h,	r, g, b, a)
+	self:updateQuadVO(vo, id + 4*s, b1, x and x,		x and y + h - b1.h,	x and b1.w,			x and b1.h,			r, g, b, a)
+	self:updateQuadVO(vo, id + 5*s, b7, x and x,		x and y,		x and b7.w,			x and b7.h,			r, g, b, a)
+	self:updateQuadVO(vo, id + 6*s, b9, x and x + w - b9.w,	x and y,		x and b9.w,			x and b9.h,			r, g, b, a)
+	self:updateQuadVO(vo, id + 7*s, b3, x and x + w - b3.w,	x and y + h - b3.h,	x and b3.w,			x and b3.h, 			r, g, b, a)
+	self:updateQuadVO(vo, id + 8*s, b5, x and x + b7.w,	x and y + b7.h,	x and w - b7.w - b3.w ,	x and h - b7.h - b3.h, 	r, g, b, a)
 end
 
 function _M:drawFrame(f, x, y, r, g, b, a, w, h, total_w, total_h, loffset_x, loffset_y, clip_area)

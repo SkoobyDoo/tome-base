@@ -31,7 +31,7 @@ function table.serialize(src, sub, no_G)
 			elseif tk == "string" then nk = string.format("[%q]", nk)
 			else nk = "["..nk.."]"
 			end
-			if not sub then nk = "_G"..nk end
+			if not sub then nk = "\n_G"..nk end
 		end
 
 		if te == "table" then

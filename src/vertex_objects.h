@@ -33,6 +33,8 @@ typedef struct
 	GLfloat *colors;
 	GLfloat *textures;
 
+	bool changed;
+
 	GLuint tex;
 } lua_vertexes;
 

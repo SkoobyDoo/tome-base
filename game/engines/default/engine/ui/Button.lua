@@ -63,8 +63,9 @@ function _M:generate()
 	end)
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 
+	self.bw, self.bh = self.w, self.h
 	self.vo = self:makeVO()
-	self:makeFrameVO(self.vo, "ui/button", 0, 0, self.w, self.h)
+	self.vo_id = self:makeFrameVO(self.vo, "ui/button", 0, 0, self.bw, self.bh)
 
 	self.rw, self.rh = w, h
 	self.frame = self:makeFrame("ui/button", self.w, self.h)
@@ -73,6 +74,10 @@ function _M:generate()
 	-- Add a bit of padding
 	self.w = self.w + 6
 	self.h = self.h + 6
+end
+
+function _M:on_focus_change(status)
+	self:updateFrameVO(self.vo, self.vo_id, status and "ui/button_sel" or "ui/button")
 end
 
 function _M:display(x, y, nb_keyframes, ox, oy)
@@ -88,31 +93,31 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	local mx, my, button = core.mouse.get()
 	if self.focused then
 		if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
-			self:drawFrame(self.frame, x, y, 0, 1, 0, 1)
+			self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, 0, 1, 0, 1)
 		elseif self.glow then
 			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:drawFrame(self.frame, x, y, v*0.8, v, 0, 1)
-		else
-			self:drawFrame(self.frame_sel, x, y)
+			self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, v * 0.8, v, 0, 1)
 		end
+		self.vo:toScreen(x, y)
+
 		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow) end
 		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
 	else
 		if self.glow then
 			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:drawFrame(self.frame, x, y, v*0.8, v, 0, self.alpha_unfocus)
+			self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, v*0.8, v, 0, self.alpha_unfocus)
 		else
-			self:drawFrame(self.frame, x, y, 1, 1, 1, self.alpha_unfocus)
+			if self.focus_decay then
+				self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
+				self.focus_decay = self.focus_decay - nb_keyframes
+				if self.focus_decay <= 0 then self.focus_decay = nil end
+			else
+				self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, 1, 1, 1, self.alpha_unfocus)
+			end
 		end
+		self.vo:toScreen(x, y)
 
-		if self.focus_decay and not self.glow then
-			self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
-			self.focus_decay = self.focus_decay - nb_keyframes
-			if self.focus_decay <= 0 then self.focus_decay = nil end
-		end
 		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
 		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
 	end
-
-	self.vo:toScreen(100, 100, nil, 1, 1, 1, 1)
 end

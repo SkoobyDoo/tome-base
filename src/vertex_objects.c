@@ -58,6 +58,7 @@ static int gl_new_vertex(lua_State *L) {
 	lua_vertexes *vx = (lua_vertexes*)lua_newuserdata(L, sizeof(lua_vertexes));
 	auxiliar_setclass(L, "gl{vertexes}", -1);
 
+	vx->changed = TRUE;
 	vx->size = vx->nb = 0;
 	vx->next_id = 1;
 	vx->vertices = NULL; vx->colors = NULL; vx->textures = NULL; vx->ids = NULL;
@@ -86,12 +87,18 @@ static int gl_free_vertex(lua_State *L) {
 	return 1;
 }
 
-static int find_vertex(lua_vertexes *vx, int id) {
+static int gl_find_vertex(lua_State * L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	int id = luaL_checknumber(L, 2);
 	int i;
 	for (i = 0; i < vx->nb; i++) {
-		if (vx->ids[i] == id) return i;
+		if (vx->ids[i] == id) {
+			lua_pushnumber(L, i);
+			return 1;
+		}
 	}
-	return 0;
+	lua_pushboolean(L, FALSE);
+	return 1;
 }
 
 static int gl_vertex_add(lua_State *L) {
@@ -121,14 +128,13 @@ static int gl_vertex_add(lua_State *L) {
 	vx->ids[vx->nb] = vx->next_id;
 	lua_pushnumber(L, vx->next_id);
 	vx->next_id++;
+	vx->changed = TRUE;
 	return 1;
 }
 
 static int gl_vertex_update(lua_State *L) {
 	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	int id = luaL_checknumber(L, 2);
-	int i = find_vertex(vx, id);
-	if (!i) return 0;
+	int i = luaL_checknumber(L, 2);
 
 	float x = luaL_checknumber(L, 3);
 	float y = luaL_checknumber(L, 4);
@@ -151,6 +157,7 @@ static int gl_vertex_update(lua_State *L) {
 	vx->colors[i * 4 + 3] = a;
 
 	lua_pushboolean(L, TRUE);
+	vx->changed = TRUE;
 	return 1;
 }
 
@@ -197,50 +204,86 @@ static int gl_vertex_add_quad(lua_State *L) {
 
 	lua_pushnumber(L, vx->next_id);
 	vx->next_id++;
+	vx->changed = TRUE;
 	return 1;
 }
 
 static int gl_vertex_update_quad(lua_State *L) {
 	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	int id = luaL_checknumber(L, 2);
-	int i = find_vertex(vx, id);
-	if (!i) return 0;
+	int bi = luaL_checknumber(L, 2);
+	int i = bi;
 
-	float r = luaL_checknumber(L, 3);
-	float g = luaL_checknumber(L, 4);
-	float b = luaL_checknumber(L, 5);
-	float a = luaL_checknumber(L, 6);
+	lua_pushnumber(L, 1); lua_gettable(L, 7);
+	if (lua_isnumber(L, -1)) {
+		float x1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 2); lua_gettable(L, 7); float y1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1;
+	}
 
-	lua_pushnumber(L, 1); lua_gettable(L, 7); float x1 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 2); lua_gettable(L, 7); float y1 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 3); lua_gettable(L, 7); float u1 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 4); lua_gettable(L, 7); float v1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 7);
+	if (lua_isnumber(L, -1)) {
+		float u1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 4); lua_gettable(L, 7); float v1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1;
+	}
 
-	lua_pushnumber(L, 1); lua_gettable(L, 8); float x2 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 2); lua_gettable(L, 8); float y2 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 3); lua_gettable(L, 8); float u2 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 4); lua_gettable(L, 8); float v2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	i = bi + 1;
+	lua_pushnumber(L, 1); lua_gettable(L, 8);
+	if (lua_isnumber(L, -1)) {
+		float x2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 2); lua_gettable(L, 8); float y2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->vertices[i * 2 + 0] = x2; vx->vertices[i * 2 + 1] = y2;
+	}
 
-	lua_pushnumber(L, 1); lua_gettable(L, 9); float x3 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 2); lua_gettable(L, 9); float y3 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 3); lua_gettable(L, 9); float u3 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 4); lua_gettable(L, 9); float v3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 8);
+	if (lua_isnumber(L, -1)) {
+		float u2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 4); lua_gettable(L, 8); float v2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2;
+	}
 
-	lua_pushnumber(L, 1); lua_gettable(L, 10); float x4 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 2); lua_gettable(L, 10); float y4 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 3); lua_gettable(L, 10); float u4 = luaL_checknumber(L, -1); lua_pop(L, 1);
-	lua_pushnumber(L, 4); lua_gettable(L, 10); float v4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	i = bi + 2;
+	lua_pushnumber(L, 1); lua_gettable(L, 9);
+	if (lua_isnumber(L, -1)) {
+		float x3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 2); lua_gettable(L, 9); float y3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3;
+	}
 
-	vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
-	vx->vertices[i * 2 + 0] = x2; vx->vertices[i * 2 + 1] = y2; vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2; i++;
-	vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
-	vx->vertices[i * 2 + 0] = x4; vx->vertices[i * 2 + 1] = y4; vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4; i++;
-	
-	for (i = vx->nb; i < vx->nb + 4; i++) {
-		vx->colors[i * 4 + 0] = r; vx->colors[i * 4 + 1] = g; vx->colors[i * 4 + 2] = b; vx->colors[i * 4 + 3] = a;
+	lua_pushnumber(L, 3); lua_gettable(L, 9);
+	if (lua_isnumber(L, -1)) {
+		float u3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 4); lua_gettable(L, 9); float v3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3;
+	}
+
+	i = bi + 3;
+	lua_pushnumber(L, 1); lua_gettable(L, 10);
+	if (lua_isnumber(L, -1)) {
+		float x4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 2); lua_gettable(L, 10); float y4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->vertices[i * 2 + 0] = x4; vx->vertices[i * 2 + 1] = y4;
+	}
+
+	lua_pushnumber(L, 3); lua_gettable(L, 10);
+	if (lua_isnumber(L, -1)) {
+		float u4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		lua_pushnumber(L, 4); lua_gettable(L, 10); float v4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+		vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4;
+	}
+
+	if (lua_isnumber(L, 3))	{
+		float r = luaL_checknumber(L, 3);
+		float g = luaL_checknumber(L, 4);
+		float b = luaL_checknumber(L, 5);
+		float a = luaL_checknumber(L, 6);
+		for (i = bi; i < bi + 4; i++) {
+			vx->colors[i * 4 + 0] = r; vx->colors[i * 4 + 1] = g; vx->colors[i * 4 + 2] = b; vx->colors[i * 4 + 3] = a;
+		}
 	}
 
 	lua_pushboolean(L, TRUE);
+	vx->changed = TRUE;
 	return 1;
 }
 
@@ -279,12 +322,20 @@ static int gl_vertex_toscreen(lua_State *L) {
 	glTexCoordPointer(2, GL_FLOAT, 0, vx->textures);
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 	glTranslatef(-x, -y, 0);
+
 	return 0;
+}
+
+static int gl_get_quad_size(lua_State *L) {
+	lua_pushnumber(L, 4);
+	return 1;
 }
 
 
 const luaL_Reg voFuncs[] = {
 	{"__gc", gl_free_vertex},
+	{"find", gl_find_vertex},
+	{"getQuadSize", gl_get_quad_size},
 	{"addPoint", gl_vertex_add},
 	{"updatePoint", gl_vertex_update},
 	{"addQuad", gl_vertex_add_quad},
