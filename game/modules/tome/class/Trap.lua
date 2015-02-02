@@ -128,6 +128,9 @@ end
 
 --- Called when triggered
 function _M:canTrigger(x, y, who, no_random)
+	-- used for wormholes and any other self-buff style of trap
+	if self.beneficial_trap and self.faction and who.reactionToward and who:reactionToward(self) >= 0 then return true end
+	
 	if rng.percent(5) then
 		if self:knownBy(who) then game.logPlayer(who, "You somehow avoid the trap (%s).", self:getName()) end
 		return false

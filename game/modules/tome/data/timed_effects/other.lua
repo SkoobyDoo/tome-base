@@ -2759,10 +2759,11 @@ newEffect{
 	end,
 }
 
+-- Dummy effect for particles
 newEffect{
 	name = "WARDEN_S_TARGET", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus Target",
-	long_desc = function(self, eff) return ("The target is being focused on by %s, +%d accuracy and +%d%% critical hit chance with ranged attacks against this target."):format(eff.src.name, eff.atk, eff.crit) end,
+	long_desc = function(self, eff) return ("%s is focusing on this target, gaining +%d accuracy and +%d%% critical hit chance when attacking it."):format(eff.src.name, eff.atk, eff.crit) end,
 	type = "other",
 	subtype = { tactic=true },
 	status = "detrimental",

@@ -98,7 +98,8 @@ newTalent{
 		local ratio = t.getPercent(self, t) * 100
 		local absorb = t.getConversionRatio(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[While active, %d%% of all damage you take increases your Paradox by %d%% of the damage absorbed over %d turns.
+		return ([[While active, %d%% of the damage you take instead increases your Paradox.
+		Damage is converted into Paradox at a rate of %d%% over %d turns.
 		The amount of Paradox damage you recieve will be reduced by your Spellpower.]]):
 		format(ratio, absorb, duration)
 	end,

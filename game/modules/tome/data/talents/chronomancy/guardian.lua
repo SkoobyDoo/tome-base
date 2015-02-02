@@ -207,22 +207,8 @@ newTalent{
 	end,
 	callbackOnActBase = function(self, t)
 		if rng.percent(t.getPower(self, t)) then
-			local effs = {}
-			-- Go through all spell effects
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if e.type ~= "other" and e.status == "detrimental" and e.subtype ~= "cross tier" then
-					effs[#effs+1] = {"effect", eff_id}
-				end
-			end
-			
-			if #effs > 0 then
-				local eff = rng.tableRemove(effs)
-				if eff[1] == "effect" then
-					self:removeEffect(eff[2])
-					game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
-				end
-			end
+			self:removeEffectsFilter({status="detrimental", ignore_crosstier=true}, 1)
+			game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
 		end
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
