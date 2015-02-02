@@ -1430,52 +1430,73 @@ function _M:probabilityTravel(x, y, dist)
 end
 
 --- Teleports randomly to a passable grid
--- This simply calls the default actor teleportRandom but first checks for space-time stability
 -- @param x the coord of the teleportation
 -- @param y the coord of the teleportation
 -- @param dist the radius of the random effect, if set to 0 it is a precise teleport
 -- @param min_dist the minimum radius of of the effect, will never teleport closer. Defaults to 0 if not set
 -- @return true if the teleport worked
 function _M:teleportRandom(x, y, dist, min_dist)
+	-- can we teleport?
 	if self:attr("encased_in_ice") then return end
 	if self:attr("cant_teleport") then return end
+	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport") return end
+	
+	-- Special teleport handlers
 	if game.level.data.no_teleport_south and y + dist > self.y then
 		y = self.y - dist
 	end
+	
+	-- For precise teleports look for a free grid first
+	-- This helps the AI use precision teleporting more effectively and is a nice quality of life hack for the player
+	if dist == 0 then
+		x, y = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})	
+	end
+	
+	-- Store our old x, y to pass to our callback
+	local ox, oy = self.x, self.y
 
-	-- Dimensional Anchor, prevent teleports and deal damage
-	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
-		self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport")
-		return
+	-- Try to teleport
+	local poss = {}
+	local teleported
+	dist = math.floor(dist)
+	min_dist = math.floor(min_dist or 0)
+
+	-- Find possible locations
+	for i = x - dist, x + dist do
+		for j = y - dist, y + dist do
+			if game.level.map:isBound(i, j) and	core.fov.distance(x, y, i, j) <= dist and core.fov.distance(x, y, i, j) >= min_dist and	self:canMove(i, j) then
+				-- Check for no_teleport and vaults
+				if game.level.map.attrs(i, j, "no_teleport") then
+					local vault = game.level.map.attrs(self.x, self.y, "vault_id")
+					if vault and game.level.map.attrs(i, j, "vault_id") == vault then
+						poss[#poss+1] = {i,j}
+					end
+				else
+					poss[#poss+1] = {i,j}
+				end
+			end
+		end
 	end
 
-	local ox, oy = self.x, self.y
-	local ret = engine.Actor.teleportRandom(self, x, y, dist, min_dist)
-	if self.x ~= ox or self.y ~= oy then
-			-- Phase Pulse
-		if self:isTalentActive(self.T_PHASE_PULSE) then
-			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy)
-		end
-
-		self.x, self.y, ox, oy = ox, oy, self.x, self.y
+	-- If we find valid locations, pick one at random
+	if #poss > 0 then
+		-- prior to moving
 		self:dropNoTeleportObjects()
+	
+		-- Teleport
+		local pos = poss[rng.range(1, #poss)]
+		self:move(pos[1], pos[2], true)
+		teleported = true
+		
+		-- after moving
 		if self:attr("defense_on_teleport") or self:attr("resist_all_on_teleport") or self:attr("effect_reduction_on_teleport") then
 			self:setEffect(self.EFF_OUT_OF_PHASE, 5, {defense=self:attr("defense_on_teleport") or 0, resists=self:attr("resist_all_on_teleport") or 0, effect_reduction=self:attr("effect_reduction_on_teleport") or 0})
 		end
-
-		-- Dimensional shift, chance to clear effects on teleport
-		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
-			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
-		end
-
-		self.x, self.y, ox, oy = ox, oy, self.x, self.y
-	else
-		-- Phase Blast failure
-		if self:isTalentActive(self.T_PHASE_PULSE) then
-			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy, true)
-		end
 	end
-	return ret
+	
+	self:fireTalentCheck("callbackOnTeleport", teleported, ox, oy, self.x, self.y)
+
+	return teleported
 end
 
 --- Quake a zone
@@ -4720,6 +4741,7 @@ function _M:preUseTalent(ab, silent, fake)
 end
 
 local sustainCallbackCheck = {
+	callbackOnTeleport = "talents_on_teleport",
 	callbackOnDealDamage = "talents_on_deal_damage",
 	callbackOnHit = "talents_on_hit",
 	callbackOnAct = "talents_on_act",
