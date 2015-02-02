@@ -423,7 +423,7 @@ newTalent{
 		if not hit then
 			game:onTickEnd(function()
 				if not self:attr("no_talents_cooldown") then
-					self.talents_cd[self.T_BANISH] = self.talents_cd[self.T_BANISH] /2
+					self.talents_cd[self.T_BANISH] = math.floor(self.talents_cd[self.T_BANISH] /2)
 				end
 			end)
 		end

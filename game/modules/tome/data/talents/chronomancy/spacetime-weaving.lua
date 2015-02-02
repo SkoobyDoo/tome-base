@@ -270,7 +270,7 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local distance = core.fov.distance(self.x, self.y, ox, oy)
 		local chance = distance * t.getChance(self, t)
-		game.logPlayer(self, "%d%%", chance)
+		
 		
 		-- Project our status effects at the end of the turn
 		game:onTickEnd(function()
