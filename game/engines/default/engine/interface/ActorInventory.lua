@@ -152,7 +152,6 @@ function _M:addObject(inven_id, o, no_unstack)
 		elseif o:getNumber() > stack_limit then -- stack too big - unstack some before adding
 			stack, last = o:unstack(o:getNumber() - stack_limit)
 			table.insert(inven, o)
-			o = stack
 		else
 			table.insert(inven, o)
 		end
@@ -170,7 +169,7 @@ function _M:addObject(inven_id, o, no_unstack)
 
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
-	return true, slot or #inven, rs and o
+	return true, slot or #inven, rs and stack
 end
 
 --- Returns the position of an item in the given inventory, or nil
