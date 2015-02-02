@@ -835,7 +835,7 @@ function _M:addTemporaryValue(prop, v, noupdate)
 			end
 --			print("addTmpVal", base, prop, v, " :=: ", #t, id, method)
 		else
-			error("unsupported temporary value type: "..type(v).." :=: "..tostring(v))
+			error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." (on key "..tostring(prop)..")")
 		end
 	end
 

@@ -99,6 +99,10 @@ function _M:setupMinimap(level)
 	level.map._map:setupMiniMapGridSize(4)
 end
 
+function _M:handleResolutionChange(w, h, ow, oh)
+	self:resizeIconsHotkeysToolbar()
+end
+
 function _M:resizeIconsHotkeysToolbar()
 	local h
 	if game.show_npc_list then

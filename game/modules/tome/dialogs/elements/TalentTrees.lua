@@ -106,9 +106,8 @@ function _M:generate()
 			local mz = self.mousezones[i]
 			if x >= mz.x1 and x <= mz.x2 and y >= mz.y1 and y <= mz.y2 then
 				if not self.last_mz or mz.item ~= self.last_mz.item then
-					local str, fx, fy = self.tooltip(mz.item)
-					mz.tx, mz.ty = fx or (self.last_display_x + mz.x2), fy or (self.last_display_y + mz.y1)
-					if not self.no_tooltip then game:tooltipDisplayAtMap(mz.tx, mz.ty, str) end
+					self.last_mz = mz
+					self:updateTooltip()
 				end
 
 				if event == "button" and (button == "left" or button == "right") then
@@ -244,6 +243,8 @@ function _M:moveSel(i, j)
 			end
 		end
 	end
+
+	self:updateTooltip()
 end
 
 function _M:drawItem(item)
