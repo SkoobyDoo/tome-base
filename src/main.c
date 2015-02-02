@@ -1145,6 +1145,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaL_openlibs(L);  /* open libraries */
 		luaopen_physfs(L);
 		luaopen_core(L);
+		luaopen_vo(L);
 		luaopen_fov(L);
 		luaopen_socket_core(L);
 		luaopen_mime_core(L);

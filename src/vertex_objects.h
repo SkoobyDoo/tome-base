@@ -18,20 +18,20 @@
 	Nicolas Casalini "DarkGod"
 	darkgod@te4.org
 */
-#ifndef _CORELUA_H_
-#define _CORELUA_H_
+#ifndef _VO_H_
+#define _VO_H_
 
 #include "tgl.h"
 
+
 typedef struct
 {
-	GLuint fbo;
-	GLuint texture;
-	int w, h;
-} lua_fbo;
+	int nb, size;
+	GLfloat *vertices;
+	GLfloat *colors;
+	GLfloat *textures;
+} lua_vertexes;
 
-extern int luaopen_core(lua_State *L);
-extern int init_blank_surface();
-extern int gl_tex_white;
+extern int luaopen_vo(lua_State *L);
 
 #endif

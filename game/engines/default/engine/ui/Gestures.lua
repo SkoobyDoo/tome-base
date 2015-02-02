@@ -75,7 +75,7 @@ end
 
 function _M:initGesturing()
 	if self.gesturing then return end
-	self.vo = core.display.newVO()
+	self.vo = core.vo.new()
 	self.gesturing = true
 	self.gesture = ""
 	self.lastupdate = os.time()
