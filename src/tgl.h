@@ -63,11 +63,11 @@ extern GLuint gl_c_shader;
 	}
 
 
-// extern int nb_draws;
-// #define glDrawArrays(a, b, c) \
-// 	{ \
-// 	glDrawArrays((a), (b), (c)); nb_draws++; \
-// 	}
+extern int nb_draws;
+#define glDrawArrays(a, b, c) \
+	{ \
+	glDrawArrays((a), (b), (c)); nb_draws++; \
+	}
 
 extern int gl_c_vertices_nb, gl_c_texcoords_nb, gl_c_colors_nb;
 extern GLfloat *gl_c_vertices_ptr;
