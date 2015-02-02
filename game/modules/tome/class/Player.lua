@@ -276,7 +276,7 @@ function _M:openVault(vault_id)
 	print("Vault id", vault_id, "opens:", v.x, v.y, v.w, v.h)
 	for i = v.x, v.x + v.w - 1 do for j = v.y, v.y + v.h - 1 do
 		if  game.level.map.attrs(i, j, "vault_id") == vault_id then
-			 game.level.map.attrs(i, j, "vault_id", false)
+			-- game.level.map.attrs(i, j, "vault_id", false)
 			 local act = game.level.map(i, j, Map.ACTOR)
 			 if act and not act.player then
 			 	act:removeEffect(act.EFF_VAULTED, true, true)
