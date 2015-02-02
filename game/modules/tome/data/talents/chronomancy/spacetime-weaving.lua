@@ -104,7 +104,9 @@ newTalent{
 	getCount = function(self, t)
 		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
 	end,
-	doShift = function(self, t)
+	callbackOnTeleport = function(self, t, teleported)
+		if not teleported then return end
+		
 		-- Grab a random sample of timed effects
 		local eff_ids = self:effectsFilter({status="detrimental", ignore_crosstier=true}, t.getCount(self, t))
 		for _, eff_id in ipairs(eff_ids) do
@@ -259,14 +261,16 @@ newTalent{
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	target = function(self, t)
-		return {type="ball", range=100, radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
+		return {type="ball", range=100, radius=self:getTalentRadius(t), friendlyfire=false, talent=t}  -- range 100, this triggers when you teleport at both ends
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	getChance = function(self, t) return 2 + math.floor(self:combatTalentScale(t, 2, 10)) end,
-	doPulse = function(self, t, ox, oy, fail)
+	callbackOnTeleport = function(self, t, teleported, ox, oy, x, y)
+		if not teleported then return end
 		local tg = self:getTalentTarget(t)
 		local distance = core.fov.distance(self.x, self.y, ox, oy)
 		local chance = distance * t.getChance(self, t)
+		game.logPlayer(self, "%d%%", chance)
 		
 		-- Project our status effects at the end of the turn
 		game:onTickEnd(function()
@@ -284,7 +288,6 @@ newTalent{
 				end
 			end)
 		end)
-			
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")
