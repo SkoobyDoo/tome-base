@@ -36,6 +36,7 @@
 #include "physfs.h"
 #include "physfsrwops.h"
 #include "core_lua.h"
+#include "font.h"
 #include "getself.h"
 #include "music.h"
 #include "serial.h"
@@ -1145,6 +1146,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaL_openlibs(L);  /* open libraries */
 		luaopen_physfs(L);
 		luaopen_core(L);
+		luaopen_font(L);
 		luaopen_vo(L);
 		luaopen_fov(L);
 		luaopen_socket_core(L);

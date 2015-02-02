@@ -18,25 +18,19 @@
 	Nicolas Casalini "DarkGod"
 	darkgod@te4.org
 */
-#ifndef _CORELUA_H_
-#define _CORELUA_H_
+#ifndef _LUAFONT_H_
+#define _LUAFONT_H_
 
 #include "display.h"
 #include "tgl.h"
 
 typedef struct
 {
-	GLuint fbo;
-	GLuint texture;
-	int w, h;
-} lua_fbo;
+	TTF_Font *font;
+	SDL_Surface *atlas;
+	int atlas_w, atlas_h;
+} lua_font;
 
-extern int luaopen_core(lua_State *L);
-extern int init_blank_surface();
-extern int gl_tex_white;
-extern GLint max_texture_size;
-
-extern int sdl_surface_drawstring(lua_State *L);
-extern int sdl_surface_drawstring_aa(lua_State *L);
+extern int luaopen_font(lua_State *L);
 
 #endif
