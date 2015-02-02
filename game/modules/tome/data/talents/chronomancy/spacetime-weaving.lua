@@ -105,23 +105,16 @@ newTalent{
 		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
 	end,
 	doShift = function(self, t)
-		local effs = {}
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if e.type ~= "other" and e.status == "detrimental" and e.subtype ~= "cross tier" then
-				effs[#effs+1] = p
-			end
-		end
-		
-		for i=1, t.getCount(self, t) do
-			local eff = rng.tableRemove(effs)
-			if not eff then break end
+		-- Grab a random sample of timed effects
+		local eff_ids = self:effectsFilter({status="detrimental", ignore_crosstier=true}, t.getCount(self, t))
+		for _, eff_id in ipairs(eff_ids) do
+			local eff = self:hasEffect(eff_id)
 			eff.dur = eff.dur - t.getReduction(self, t)
 			if eff.dur <= 0 then
-				self:removeEffect(eff.effect_id)
+				self:removeEffect(eff_id)
 			end
 		end
-		
+
 		-- Make sure we update the display for blind and such
 		game:onTickEnd(function()
 			if game.level then

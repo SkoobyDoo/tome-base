@@ -3128,7 +3128,14 @@ newEffect{
 newEffect{
 	name = "SEAL_FATE", image = "talents/seal_fate.png",
 	desc = "Seal Fate",
-	long_desc = function(self, eff) return ("The target is sealing fate, increasing the duration of detrimental status effects on targets it damages by one."):format() end,
+	long_desc = function(self, eff)
+		local chance = eff.chance
+		local spin = self:hasEffect(self.EFF_SPIN_FATE)
+		if spin then
+			chance = chance * (1 + spin.spin/3)
+		end
+		return ("The target has a %d%% chance of increasing the duration of one detrimental status effects on targets it damages by one."):format(chance) 
+	end,
 	type = "magical",
 	subtype = { focus=true },
 	status = "beneficial",
@@ -3154,6 +3161,13 @@ newEffect{
 			end
 			
 			if rng.percent(chance) then
+				-- Grab a random effect
+				local eff_ids = target:effectsFilter({status="detrimental", ignore_crosstier=true}, 1)
+				for _, eff_id in ipairs(eff_ids) do
+					local eff = target:hasEffect(eff_id)
+					eff.dur = eff.dur +1
+				end
+				--[[
 				local effs = {}
 				-- Go through all spell effects
 				for eff_id, p in pairs(target.tmp) do
@@ -3166,7 +3180,7 @@ newEffect{
 				if #effs > 0 then
 					local p = rng.table(effs)
 					p.dur = p.dur + 1
-				end
+				end]]
 			
 				self.turn_procs.seal_fate = (self.turn_procs.seal_fate or 0) + 1
 			end
