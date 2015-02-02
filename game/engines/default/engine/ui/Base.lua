@@ -117,6 +117,48 @@ function _M:getUITexture(file)
 	return r
 end
 
+tilesets = {}
+tilesets_texs = {}
+function _M:loadTileset(file)
+	if not fs.exists(file) then print("Tileset file "..file.." does not exists.") return end
+	local f, err = loadfile(file)
+	if err then error(err) end
+	local env = {}
+	local ts = {}
+	setfenv(f, setmetatable(ts, {__index={_G=ts}}))
+	local ok, err = pcall(f)
+	if not ok then error(err) end
+	print("[TILESET] loading atlas", file, ok, err)
+	if ts.__width > core.display.glMaxTextureSize() or ts.__height > core.display.glMaxTextureSize() then
+		print("[TILESET] Refusing tileset "..file.." due to texture size "..ts.__width.."x"..ts.__height.." over max of "..core.display.glMaxTextureSize())
+		return
+	end
+	for k, e in pairs(ts) do self.tilesets[k] = e end
+end
+
+function _M:checkTileset(image)
+	local f = gfx_prefix..image
+	if not self.tilesets[f] then return end
+	local d = self.tilesets[f]
+	print("Loading tile from tileset", f)
+	local tex = self.tilesets_texs[d.set]
+	if not tex then
+		tex = core.display.loadImage(d.set):glTexture()
+		self.tilesets_texs[d.set] = tex
+		print("Loading tileset", d.set)
+	end
+	return tex, d.factorx, d.factory, d.x, d.y, d.w, d.h
+end
+
+function _M:getAtlasTexture(file)
+	local uifile = (self.ui ~= "" and self.ui.."-" or "")..file
+	print(uifile)
+	local ts, fx, fy, tsx, tsy, tw, th = self:checkTileset(uifile)
+	if ts then
+		return {t=ts, tx=fx, ty=fy, w=tw, h=th, tw=tsx, th=tsy}
+	end
+end
+
 function _M:drawFontLine(font, text, width) -- always draw with white, outputting texture can have it changed
 	width = width or font:size(text)
 	local tex = font:draw(text, width, 255, 255, 255, true)[1]
@@ -143,6 +185,58 @@ function _M:makeFrame(base, w, h)
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)
+	return f
+end
+
+function _M:makeVO()
+	-- We could take any image in the tileset
+	local t = self:getAtlasTexture("ui/button5.png")
+	return core.vo.new(16, t.t)
+end
+
+function _M:addQuadVO(vo, at, x, y, w, h, r, g, b, a)
+	vo:addQuad(r or 1, g or 1, b or 1, a or 1,
+		{x, y, 			at.tx, at.ty},
+		{x + w, y, 		at.tx + at.tw, at.ty},
+		{x + w, y + h, 		at.tx + at.tw, at.ty + at.th},
+		{x, y + h, 		at.tx, at.ty + at.th}
+	)
+	print("===============")
+	print("===============VO ADD")
+	print("====", at.tx, at.ty, "::", at.tw, at.th)
+	print("===============")
+	print("===============")
+end
+
+function _M:makeFrameVO(vo, base, x, y, w, h, r, g, b, a)
+	local f = {}
+	f.b7 = self:getAtlasTexture(base.."7.png")
+	f.b9 = self:getAtlasTexture(base.."9.png")
+	f.b1 = self:getAtlasTexture(base.."1.png")
+	f.b3 = self:getAtlasTexture(base.."3.png")
+	f.b8 = self:getAtlasTexture(base.."8.png")
+	f.b4 = self:getAtlasTexture(base.."4.png")
+	f.b2 = self:getAtlasTexture(base.."2.png")
+	f.b6 = self:getAtlasTexture(base.."6.png")
+	f.b5 = self:getAtlasTexture(base.."5.png")
+	f.w = math.floor(w)
+	f.h = math.floor(h)
+
+	-- Sides
+	self:addQuadVO(vo, f.b8, x + f.b7.w, y, w - f.b7.w - f.b9.w, f.b8.h, f.b8.tw, f.b8.th, r, g, b, a)
+	self:addQuadVO(vo, f.b2, x + f.b7.w, y + h - f.b3.h, w - f.b7.w - f.b9.w, f.b2.h, f.b2.tw, f.b2.th, r, g, b, a)
+	self:addQuadVO(vo, f.b4, x, y + f.b7.h, f.b4.w, h - f.b7.h - f.b1.h, f.b4.tw, f.b4.th, r, g, b, a)
+	self:addQuadVO(vo, f.b6, x + w - f.b9.w, y + f.b7.h, f.b6.w, h - f.b7.h - f.b1.h, f.b6.tw, f.b6.th, r, g, b, a)
+
+	-- Corners
+	self:addQuadVO(vo, f.b1, x, y + h - f.b1.h, f.b1.w, f.b1.h, f.b1.tw, f.b1.th, r, g, b, a)
+	self:addQuadVO(vo, f.b7, x, y, f.b7.w, f.b7.h, f.b7.tw, f.b7.th, r, g, b, a)
+	self:addQuadVO(vo, f.b9, x + w - f.b9.w, y, f.b9.w, f.b9.h, f.b9.tw, f.b9.th, r, g, b, a)
+	self:addQuadVO(vo, f.b3, x + w - f.b3.w, y + h - f.b3.h, f.b3.w, f.b3.h, f.b3.tw, f.b3.th, r, g, b, a)
+
+	-- Body
+	self:addQuadVO(vo, f.b5, x + f.b7.w, y + f.b7.h, w - f.b7.w - f.b3.w , h - f.b7.h - f.b3.h, f.b5.tw, f.b5.th, r, g, b, a)
+
 	return f
 end
 

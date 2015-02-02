@@ -75,6 +75,8 @@ local w, h = ts_size, ts_size
 local id = 1
 
 local pos = {}
+pos.__width = w
+pos.__height = h
 
 local list = {...}
 local basename = table.remove(list, 1)

@@ -23,14 +23,24 @@
 
 #include "tgl.h"
 
-
 typedef struct
 {
+	enum{ VO_SIMPLE, VO_TEXT } kind;
 	int nb, size;
+	int next_id;
+	int *ids;
 	GLfloat *vertices;
 	GLfloat *colors;
 	GLfloat *textures;
+
+	GLuint tex;
 } lua_vertexes;
+
+typedef struct
+{
+	lua_vertexes base;
+	SDL_Surface *atlas;	
+} lua_vertexes_text;
 
 extern int luaopen_vo(lua_State *L);
 

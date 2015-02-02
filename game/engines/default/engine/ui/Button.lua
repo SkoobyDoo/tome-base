@@ -63,6 +63,9 @@ function _M:generate()
 	end)
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 
+	self.vo = self:makeVO()
+	self:makeFrameVO(self.vo, "ui/button", 0, 0, self.w, self.h)
+
 	self.rw, self.rh = w, h
 	self.frame = self:makeFrame("ui/button", self.w, self.h)
 	self.frame_sel = self:makeFrame("ui/button_sel", self.w, self.h)
@@ -110,4 +113,6 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
 		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
 	end
+
+	self.vo:toScreen(100, 100, nil, 1, 1, 1, 1)
 end
