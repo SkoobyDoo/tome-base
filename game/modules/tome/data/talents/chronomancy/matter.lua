@@ -47,8 +47,6 @@ newTalent{
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		
-		game.logPlayer(self, "%d, %d", x, y)
-		
 		-- Change back pass terrain
 		tg.pass_terrain = nil
 			
