@@ -278,7 +278,7 @@ newTalent{
 		
 		-- Store the old terrain
 		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
-		if not oe or oe:attr("temporary") then return true end
+		if not oe or oe:attr("temporary") then game.logPlayer(self, "You can't place a tether here") return false end
 	
 		-- Make our tether
 		local tether = mod.class.Object.new{
