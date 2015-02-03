@@ -186,7 +186,7 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
 
-		if self.pingpong then
+		if self.pingpong and not self.focused then
 			local time = core.game.getTime()
 			if not self.pingpong_last then self.pingpong_last = time + self.scroll_delay * self.h / 3 end
 			local delta = math.max(time - self.pingpong_last, 0) / self.scroll_delay
