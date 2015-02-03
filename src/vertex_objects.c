@@ -39,7 +39,7 @@
  * Vertex Objects
  **************************************************************/
 
-static void update_vertex_size(lua_vertexes *vx, int size) {
+void update_vertex_size(lua_vertexes *vx, int size) {
 	if (size <= vx->size) return;
 	vx->size = size;
 	vx->vertices = realloc(vx->vertices, 2 * sizeof(GLfloat) * size);
@@ -179,7 +179,7 @@ int vertex_add_quad(lua_vertexes *vx,
 		vx->ids[i] = vx->next_id;
 	}
 
-	vx->nb += 4;
+	vx->nb += VERTEX_QUAD_SIZE;
 	vx->changed = TRUE;
 	return vx->next_id++;
 }
@@ -301,6 +301,47 @@ static int gl_vertex_update_quad(lua_State *L) {
 	return 1;
 }
 
+void vertex_remove(lua_vertexes *vx, int start, int nb) {
+	if (!nb) return;
+	if (start >= vx->nb) return;
+
+	vx->changed = TRUE;
+
+	// Removing from the end is very easy
+	if (start + nb >= vx->nb) {
+		vx->nb = start;
+		return;
+	}
+
+	int stop = start + nb;
+	int wordlen = 2 * sizeof(GLfloat);
+	printf("======== removing quads: %d to %d (len %d)\n", start, stop, nb);
+	memmove(vx->vertices + start * wordlen, vx->vertices + stop * wordlen, nb * wordlen);
+	memmove(vx->textures + start * wordlen, vx->textures + stop * wordlen, nb * wordlen);
+	wordlen = 4 * sizeof(GLfloat);
+	memmove(vx->colors + start * wordlen, vx->colors + stop * wordlen, nb * wordlen);
+	wordlen = 1 * sizeof(int);
+	memmove(vx->ids + start * wordlen, vx->ids + stop * wordlen, nb * wordlen);
+}
+
+static int gl_vertex_remove(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	int start = luaL_checknumber(L, 2);
+	int nb = luaL_checknumber(L, 3);
+
+	vertex_remove(vx, start, nb);
+	return 0;
+}
+
+static int gl_vertex_remove_quad(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	int start = luaL_checknumber(L, 2);
+	int nb = luaL_checknumber(L, 3);
+
+	vertex_remove(vx, start, nb * VERTEX_QUAD_SIZE);
+	return 0;
+}
+
 static int gl_vertex_toscreen(lua_State *L) {
 	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
 	if (!vx->nb) return 0;
@@ -341,8 +382,15 @@ static int gl_vertex_toscreen(lua_State *L) {
 }
 
 static int gl_get_quad_size(lua_State *L) {
-	lua_pushnumber(L, 4);
+	lua_pushnumber(L, VERTEX_QUAD_SIZE);
 	return 1;
+}
+
+static int gl_vertex_clear(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	vx->changed = TRUE;
+	vx->nb = 0;
+	return 0;
 }
 
 
@@ -354,6 +402,9 @@ const luaL_Reg voFuncs[] = {
 	{"updatePoint", gl_vertex_update},
 	{"addQuad", gl_vertex_add_quad},
 	{"updateQuad", gl_vertex_update_quad},
+	{"clear", gl_vertex_clear},
+	{"remove", gl_vertex_remove},
+	{"removeQuad", gl_vertex_remove_quad},
 	{"toScreen", gl_vertex_toscreen},
 	{NULL, NULL}
 };

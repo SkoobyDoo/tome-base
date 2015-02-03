@@ -837,6 +837,9 @@ static int sdl_font_draw_vo(lua_State *L)
 
 	vx->tex = f->atlas_tex;
 
+	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
+	update_vertex_size(vx, vx->size + len * VERTEX_QUAD_SIZE);
+
 	int font_h = TTF_FontHeight(f->font);
 	int id_dduid = 1;
 	int nb_lines = 1;

@@ -444,6 +444,7 @@ function _M:onTurn()
 end
 
 local plop = core.vo.new()
+_M.plop=plop
 engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", 35)
 
 function _M:display(nb_keyframes)

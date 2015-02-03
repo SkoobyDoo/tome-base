@@ -23,6 +23,8 @@
 
 #include "tgl.h"
 
+#define VERTEX_QUAD_SIZE 4
+
 typedef struct
 {
 	enum{ VO_SIMPLE, VO_TEXT } kind;
@@ -40,6 +42,7 @@ typedef struct
 
 extern int luaopen_vo(lua_State *L);
 extern int gl_new_vertex(lua_State *L);
+extern void update_vertex_size(lua_vertexes *vx, int size);
 extern int vertex_add_quad(lua_vertexes *vx,
 	float x1, float y1, float u1, float v1, 
 	float x2, float y2, float u2, float v2, 
