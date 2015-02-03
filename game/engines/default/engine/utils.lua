@@ -1737,8 +1737,8 @@ function util.minBound(i, min, max)
 end
 
 function util.scroll(sel, scroll, max)
-	scroll = math.max(scroll, sel - max + 1)
-	scroll = math.min(scroll, sel)
+	if sel > scroll + max - 1 then scroll = sel - max + 1 end
+	if sel < scroll then scroll = sel end
 	return scroll
 end
 
