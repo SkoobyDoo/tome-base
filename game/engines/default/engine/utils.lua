@@ -1722,7 +1722,7 @@ end
 
 function util.bound(i, min, max)
 	if min then i = math.max(i, min) end
-	elseif max then i = math.min(i, max) end
+	if max then i = math.min(i, max) end
 	return i
 end
 
