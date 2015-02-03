@@ -992,15 +992,15 @@ function _M:getTextualDesc(compare_with, use_actor)
 	local desc_wielder = function(w, compare_with, field)
 		w = w or {}
 		w = w[field] or {}
-		compare_scaled(w, compare_with, field, "combat_atk", {"combatAttack"}, "%+d (%+d effective)", "Accuracy: ")
+		compare_scaled(w, compare_with, field, "combat_atk", {"combatAttack"}, "%+d #LAST#(%+d eff.)", "Accuracy: ")
 		compare_fields(w, compare_with, field, "combat_apr", "%+d", "Armour penetration: ")
 		compare_fields(w, compare_with, field, "combat_physcrit", "%+.1f%%", "Physical crit. chance: ")
-		compare_scaled(w, compare_with, field, "combat_dam", {"combatPhysicalpower"}, "%+d (%+d effective)", "Physical power: ")
+		compare_scaled(w, compare_with, field, "combat_dam", {"combatPhysicalpower"}, "%+d #LAST#(%+d eff.)", "Physical power: ")
 
 		compare_fields(w, compare_with, field, "combat_armor", "%+d", "Armour: ")
 		compare_fields(w, compare_with, field, "combat_armor_hardiness", "%+d%%", "Armour Hardiness: ")
-		compare_scaled(w, compare_with, field, "combat_def", {"combatDefense", true}, "%+d (%+d effective)", "Defense: ")
-		compare_scaled(w, compare_with, field, "combat_def_ranged", {"combatDefenseRanged", true}, "%+d (%+d effective)", "Ranged Defense: ")
+		compare_scaled(w, compare_with, field, "combat_def", {"combatDefense", true}, "%+d #LAST#(%+d eff.)", "Defense: ")
+		compare_scaled(w, compare_with, field, "combat_def_ranged", {"combatDefenseRanged", true}, "%+d #LAST#(%+d eff.)", "Ranged Defense: ")
 
 		compare_fields(w, compare_with, field, "fatigue", "%+d%%", "Fatigue: ", 1, true, true)
 
@@ -1333,9 +1333,9 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "inc_stealth", "%+d", "Stealth bonus: ")
 		compare_fields(w, compare_with, field, "max_encumber", "%+d", "Maximum encumbrance: ")
 
-		compare_scaled(w, compare_with, field, "combat_physresist", {"combatPhysicalResist", true}, "%+d (%+d effective)", "Physical save: ")
-		compare_scaled(w, compare_with, field, "combat_spellresist", {"combatSpellResist", true}, "%+d (%+d effective)", "Spell save: ")
-		compare_scaled(w, compare_with, field, "combat_mentalresist", {"combatMentalResist", true}, "%+d (%+d effective)", "Mental save: ")
+		compare_scaled(w, compare_with, field, "combat_physresist", {"combatPhysicalResist", true}, "%+d #LAST#(%+d eff.)", "Physical save: ")
+		compare_scaled(w, compare_with, field, "combat_spellresist", {"combatSpellResist", true}, "%+d #LAST#(%+d eff.)", "Spell save: ")
+		compare_scaled(w, compare_with, field, "combat_mentalresist", {"combatMentalResist", true}, "%+d #LAST#(%+d eff.)", "Mental save: ")
 
 		compare_fields(w, compare_with, field, "blind_immune", "%+d%%", "Blindness immunity: ", 100)
 		compare_fields(w, compare_with, field, "poison_immune", "%+d%%", "Poison immunity: ", 100)
@@ -1396,11 +1396,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "max_negative", "%+.2f", "Maximum neg.energy: ")
 		compare_fields(w, compare_with, field, "max_air", "%+.2f", "Maximum air capacity: ")
 
-		compare_scaled(w, compare_with, field, "combat_spellpower", {"combatSpellpower"}, "%+d (%+d effective)", "Spellpower: ")
+		compare_scaled(w, compare_with, field, "combat_spellpower", {"combatSpellpower"}, "%+d #LAST#(%+d eff.)", "Spellpower: ")
 		compare_fields(w, compare_with, field, "combat_spellcrit", "%+d%%", "Spell crit. chance: ")
 		compare_fields(w, compare_with, field, "spell_cooldown_reduction", "%d%%", "Lowers spell cool-downs by: ", 100)
 
-		compare_scaled(w, compare_with, field, "combat_mindpower", {"combatMindpower"}, "%+d (%+d effective)", "Mindpower: ")
+		compare_scaled(w, compare_with, field, "combat_mindpower", {"combatMindpower"}, "%+d #LAST#(%+d eff.)", "Mindpower: ")
 		compare_fields(w, compare_with, field, "combat_mindcrit", "%+d%%", "Mental crit. chance: ")
 
 		compare_fields(w, compare_with, field, "lite", "%+d", "Light radius: ")
