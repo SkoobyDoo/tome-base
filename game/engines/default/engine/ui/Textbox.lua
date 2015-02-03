@@ -58,7 +58,7 @@ function _M:generate()
 	self.title_w = title_w
 	local frame_w = self.chars * self.font_mono_w + 12
 	self.w = title_w + frame_w
-	font_height = self.font_mono:height()
+	local font_height = self.font_mono:height()
 	self.h = font_height + 6
 
 	self.texcursor = self:getUITexture("ui/textbox-cursor.png")
