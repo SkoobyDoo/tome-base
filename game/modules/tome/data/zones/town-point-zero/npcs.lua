@@ -28,6 +28,7 @@ newEntity{
 	faction = "point-zero-guardians",
 	anger_emote = "Catch @himher@!",
 	hates_antimagic = 1,
+	never_anger = 1,
 
 	combat = { dam=resolvers.rngavg(1,2), atk=2, apr=0, dammod={str=0.4} },
 
@@ -54,7 +55,7 @@ newEntity{ base = "BASE_NPC_POINT_ZERO_TOWN", define_as = "DEFENDER_OF_REALITY",
 	subtype = resolvers.rngtable{"human", "shalore"},
 	shader = "moving_transparency", shader_args = {a_min=0.2, a_max=0.8},
 	desc = [[A stern-looking guardian, ever vigilant against the threats of the paradox.]],
-	level_range = {1, nil}, exp_worth = 1,
+	level_range = {1, nil}, exp_worth = 0,
 	rarity = false,
 	max_life = 400,
 	life_regen = 200,
