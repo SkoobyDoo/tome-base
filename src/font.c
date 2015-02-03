@@ -760,7 +760,7 @@ static int sdl_font_draw(lua_State *L)
 	return 3;
 }
 
-static int vo_font_add_string(lua_font *f, lua_vertexes *vx, const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
+static int vo_font_add_string(lua_font *f, lua_vertexes *vx, const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a, int *vertexes_start_id, int *vertexes_stop_id) {
 	int x = 0, y = by;
 	ssize_t off = 1;
 	int32_t c;
@@ -775,13 +775,14 @@ static int vo_font_add_string(lua_font *f, lua_vertexes *vx, const char *str, si
 			font_atlas_data_style *d = &f->atlas_data[c].data[style];
 			if (!d->w) font_add_atlas(f, c, style);
 			if (d->w) {
-				vertex_add_quad(vx,
+				*vertexes_stop_id = vertex_add_quad(vx,
 					d->w * italic + bx + x,		y,		d->tx1, d->ty1,
 					d->w * italic + bx + x + d->w,	y,		d->tx2, d->ty1,
 					bx + x + d->w,			y + d->h,	d->tx2, d->ty2,
 					bx + x,				y + d->h,	d->tx1, d->ty2,
 					r, g, b, a
 				);
+				if (*vertexes_start_id == -1) *vertexes_start_id = *vertexes_stop_id;
 				x += d->w;
 			}
 		}
@@ -826,9 +827,11 @@ static int sdl_font_draw_vo(lua_State *L)
 		r = luaL_checknumber(L, 5) / 255;
 		g = luaL_checknumber(L, 6) / 255;
 		b = luaL_checknumber(L, 7) / 255;
-		a = luaL_checknumber(L, 8) / 255;
+		if (lua_isnumber(L, 8)) a = luaL_checknumber(L, 8) / 255;
 	}
-	bool no_linefeed = lua_toboolean(L, 9);
+	int bx = lua_tonumber(L, 9);
+	int by = lua_tonumber(L, 10);
+	bool no_linefeed = lua_toboolean(L, 11);
 
 	if (!vx) {
 		gl_new_vertex(L);
@@ -840,6 +843,8 @@ static int sdl_font_draw_vo(lua_State *L)
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	update_vertex_size(vx, vx->size + len * VERTEX_QUAD_SIZE);
 
+	int vertexes_start_id = -1;
+	int vertexes_stop_id = -1;
 	int font_h = TTF_FontHeight(f->font);
 	int id_dduid = 1;
 	int nb_lines = 1;
@@ -894,7 +899,7 @@ static int sdl_font_draw_vo(lua_State *L)
 				if ((*start == '-') && (*(start+1) == '-') && (*(start+2) == '-') && !(*(start+3))) is_separator = TRUE;
 
 //				printf("Drawing word '%s'\n", start);
-				size += vo_font_add_string(f, vx, start, len, style, size, nb_lines * font_h, r, g, b, a);
+				size += vo_font_add_string(f, vx, start, len, style, bx + size, by + (nb_lines-1) * font_h, r, g, b, a, &vertexes_start_id, &vertexes_stop_id);
 			}
 			if (inced) next--;
 			start = next + 1;
@@ -1037,14 +1042,18 @@ static int sdl_font_draw_vo(lua_State *L)
 	if (size > max_size) max_size = size;
 
 
+	lua_pushnumber(L, vertexes_start_id);
+	lua_pushnumber(L, vertexes_stop_id);
 	lua_pushnumber(L, nb_lines);
 	lua_pushnumber(L, max_size);
+	lua_pushnumber(L, nb_lines * font_h);
+	lua_pushvalue(L, -6);
 
 	if (f->atlas_changed) {
 		tfglBindTexture(GL_TEXTURE_2D, f->atlas_tex);
 		copy_surface_to_texture(f->atlas);
 	}
-	return 3;
+	return 6;
 }
 
 static int set_text_aa(lua_State *L)

@@ -27,7 +27,7 @@
 
 typedef struct
 {
-	enum{ VO_SIMPLE, VO_TEXT } kind;
+	enum{ VO_POINTS, VO_QUADS } kind;
 	int nb, size;
 	int next_id;
 	int *ids;

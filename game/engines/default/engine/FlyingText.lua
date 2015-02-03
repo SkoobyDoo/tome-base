@@ -26,6 +26,8 @@ function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.bigfont = core.display.newFont(bigfontname or "/data/font/DroidSans-Bold.ttf", bigfontsize or 14)
 	self.font_h = self.font:lineSkip()
 	self.flyers = {}
+	self.vo = core.vo.new()
+	self.bigvo = core.vo.new()
 end
 
 function _M:enableShadow(v)
@@ -35,15 +37,14 @@ end
 function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	if not x or not y or not str then return end
 	color = color or {255,255,255}
-	local s = core.display.drawStringBlendedNewSurface(bigfont and self.bigfont or self.font, str, color[1], color[2], color[3])
-	if not s then return end
-	local w, h = s:getSize()
-	local t, tw, th = s:glTexture()
+	local vo = bigfont and self.bigvo or self.vo
+	local vstart, vstop, _, _, w, h = (bigfont and self.bigfont or self.font):drawVO(vo, str, nil, color[1], color[2], color[3], nil, x, y)
 	local f = {
+		vo = vo,
 		x=x,
 		y=y,
 		w=w, h=h,
-		tw=tw, th=th,
+		vstart=vstart, vstop=vstop,
 		duration=duration or 10,
 		xvel = xvel or 0,
 		yvel = yvel or 0,
@@ -67,23 +68,24 @@ function _M:display(nb_keyframes)
 		local zoom = nil
 		local x, y = fl.x, fl.y
 		local tx, ty = fl.x, fl.y
-		if fl.duration <= fl.popout_dur then
-			zoom = (fl.duration / fl.popout_dur)
-			x, y = -fl.w / 2 * zoom, -fl.h / 2 * zoom
-			core.display.glTranslate(tx, ty, 0)
-			core.display.glScale(zoom, zoom, zoom)
-		end
+		-- if fl.duration <= fl.popout_dur then
+		-- 	zoom = (fl.duration / fl.popout_dur)
+		-- 	x, y = -fl.w / 2 * zoom, -fl.h / 2 * zoom
+		-- 	core.display.glTranslate(tx, ty, 0)
+		-- 	core.display.glScale(zoom, zoom, zoom)
+		-- end
 
-		if self.shadow then fl.t:toScreenFull(x+1, y+1, fl.w, fl.h, fl.tw, fl.th, 0, 0, 0, self.shadow) end
-		fl.t:toScreenFull(x, y, fl.w, fl.h, fl.tw, fl.th)
-		fl.x = fl.x + fl.xvel * nb_keyframes
-		fl.y = fl.y + fl.yvel * nb_keyframes
+		-- if self.shadow then fl.t:toScreenFull(x+1, y+1, fl.w, fl.h, fl.tw, fl.th, 0, 0, 0, self.shadow) end
+		-- fl.t:toScreenFull(x, y, fl.w, fl.h, fl.tw, fl.th)
+		-- fl.x = fl.x + fl.xvel * nb_keyframes
+		-- fl.y = fl.y + fl.yvel * nb_keyframes
+		fl.vo:translate(fl.vstart, fl.vstop, fl.xvel * nb_keyframes, fl.yvel * nb_keyframes)
 		fl.duration = fl.duration - nb_keyframes
 
-		if zoom then
-			core.display.glScale()
-			core.display.glTranslate(-tx, -ty, 0)
-		end
+		-- if zoom then
+		-- 	core.display.glScale()
+		-- 	core.display.glTranslate(-tx, -ty, 0)
+		-- end
 
 		-- Delete the flyer
 		if fl.duration <= 0 then
@@ -91,5 +93,11 @@ function _M:display(nb_keyframes)
 		end
 	end
 
-	for i, fl in ipairs(dels) do self.flyers[fl] = nil end
+	for i, fl in ipairs(dels) do
+		fl.vo:remove(fl.vstart, fl.vstop)
+		self.flyers[fl] = nil
+	end
+
+	self.vo:toScreen(0, 0)
+	self.bigvo:toScreen(0, 0)
 end

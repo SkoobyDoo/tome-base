@@ -444,8 +444,11 @@ function _M:onTurn()
 end
 
 local plop = core.vo.new()
-_M.plop=plop
-engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", 35)
+_G.p=plop
+_G.p1={engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", nil, nil, nil, nil, nil, 0, 0)}
+_G.p2={engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", nil, nil, nil, nil, nil, 30, 30)}
+_G.p3={engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", nil, nil, nil, nil, nil, 60, 60)}
+-- engine.ui.Base.font:drawVO(plop, "toto", 350)
 
 function _M:display(nb_keyframes)
 	-- If switching resolution, blank everything but the dialog
