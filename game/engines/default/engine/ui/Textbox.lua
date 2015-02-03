@@ -58,14 +58,15 @@ function _M:generate()
 	self.title_w = title_w
 	local frame_w = self.chars * self.font_mono_w + 12
 	self.w = title_w + frame_w
-	self.h = self.font_h + 6
+	font_height = self.font_mono:height()
+	self.h = font_height + 6
 
 	self.texcursor = self:getUITexture("ui/textbox-cursor.png")
 	self.frame = self:makeFrame("ui/textbox", frame_w, self.h)
 	self.frame_sel = self:makeFrame("ui/textbox-sel", frame_w, self.h)
 
 	local w, h = self.w, self.h
-	local fw, fh = frame_w - 12, self.font_h
+	local fw, fh = frame_w - 12, font_height
 	self.fw, self.fh = fw, fh
 	self.text_x = 6 + title_w
 	self.text_y = (h - fh) / 2
@@ -176,7 +177,8 @@ function _M:display(x, y, nb_keyframes)
 	end
 	if self.focused then
 		self:drawFrame(self.frame_sel, x + self.title_w, y)
-		self:textureToScreen(self.texcursor, x + self.text_x + (self.cursor-self.scroll) * self.font_mono_w - (self.texcursor.w / 2), y + self.cursor_y)
+		local cursor_x = self.font_mono:size(self.text:sub(self.scroll, self.cursor - 1))
+		self:textureToScreen(self.texcursor, x + self.text_x + cursor_x - (self.texcursor.w / 2) + 2, y + self.cursor_y)
 	else
 		self:drawFrame(self.frame, x + self.title_w, y)
 		if self.focus_decay then
