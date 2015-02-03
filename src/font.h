@@ -24,11 +24,39 @@
 #include "display.h"
 #include "tgl.h"
 
+#define DEFAULT_ATLAS_W	512
+#define DEFAULT_ATLAS_H	512
+#define MAX_ATLAS_DATA	256*256
+
+typedef enum {
+	FONT_STYLE_NORMAL,
+	FONT_STYLE_BOLD,
+	FONT_STYLE_UNDERLINED,
+	FONT_STYLE_MAX,
+	FONT_STYLE_ITALIC,
+} font_style;
+
+typedef struct
+{
+	GLfloat tx1, tx2, ty1, ty2;
+	int w, h;
+} font_atlas_data_style;
+
+typedef struct
+{
+	font_atlas_data_style data[FONT_STYLE_MAX];
+} font_atlas_data;
+
 typedef struct
 {
 	TTF_Font *font;
+	
+	GLuint atlas_tex;
 	SDL_Surface *atlas;
 	int atlas_w, atlas_h;
+	int atlas_x, atlas_y;
+	font_atlas_data *atlas_data;
+	bool atlas_changed;
 } lua_font;
 
 extern int luaopen_font(lua_State *L);

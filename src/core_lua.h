@@ -38,5 +38,6 @@ extern GLint max_texture_size;
 
 extern int sdl_surface_drawstring(lua_State *L);
 extern int sdl_surface_drawstring_aa(lua_State *L);
+extern SDL_Surface *SDL_DisplayFormatAlpha(SDL_Surface *surface);
 
 #endif

@@ -48,7 +48,7 @@ static void update_vertex_size(lua_vertexes *vx, int size) {
 	vx->ids = realloc(vx->ids, sizeof(int) * size);
 }
 
-static int gl_new_vertex(lua_State *L) {
+int gl_new_vertex(lua_State *L) {
 	int size = lua_tonumber(L, 1);
 	if (!size) size = 4;
 	lua_vertexes *vx = (lua_vertexes*)lua_newuserdata(L, sizeof(lua_vertexes));
@@ -64,6 +64,8 @@ static int gl_new_vertex(lua_State *L) {
 	if (lua_isuserdata(L, 2)) {
 		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 2);
 		vx->tex = *t;	
+	} else if (lua_isnumber(L, 2)) {
+		vx->tex = lua_tonumber(L, 2);
 	}
 
 	return 1;
@@ -157,6 +159,31 @@ static int gl_vertex_update(lua_State *L) {
 	return 1;
 }
 
+int vertex_add_quad(lua_vertexes *vx,
+	float x1, float y1, float u1, float v1, 
+	float x2, float y2, float u2, float v2, 
+	float x3, float y3, float u3, float v3, 
+	float x4, float y4, float u4, float v4, 
+	float r, float g, float b, float a
+) {
+	if (vx->nb + 4 > vx->size) update_vertex_size(vx, vx->nb + 4);
+
+	int i = vx->nb;
+	vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
+	vx->vertices[i * 2 + 0] = x2; vx->vertices[i * 2 + 1] = y2; vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2; i++;
+	vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
+	vx->vertices[i * 2 + 0] = x4; vx->vertices[i * 2 + 1] = y4; vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4; i++;
+	
+	for (i = vx->nb; i < vx->nb + 4; i++) {
+		vx->colors[i * 4 + 0] = r; vx->colors[i * 4 + 1] = g; vx->colors[i * 4 + 2] = b; vx->colors[i * 4 + 3] = a;
+		vx->ids[i] = vx->next_id;
+	}
+
+	vx->nb += 4;
+	vx->changed = TRUE;
+	return vx->next_id++;
+}
+
 static int gl_vertex_add_quad(lua_State *L) {
 	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
 	float r = luaL_checknumber(L, 2);
@@ -184,23 +211,14 @@ static int gl_vertex_add_quad(lua_State *L) {
 	lua_pushnumber(L, 3); lua_gettable(L, 9); float u4 = luaL_checknumber(L, -1); lua_pop(L, 1);
 	lua_pushnumber(L, 4); lua_gettable(L, 9); float v4 = luaL_checknumber(L, -1); lua_pop(L, 1);
 
-	if (vx->nb + 4 > vx->size) update_vertex_size(vx, vx->nb + 4);
-
-	int i = vx->nb;
-	vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
-	vx->vertices[i * 2 + 0] = x2; vx->vertices[i * 2 + 1] = y2; vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2; i++;
-	vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
-	vx->vertices[i * 2 + 0] = x4; vx->vertices[i * 2 + 1] = y4; vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4; i++;
-	
-	for (i = vx->nb; i < vx->nb + 4; i++) {
-		vx->colors[i * 4 + 0] = r; vx->colors[i * 4 + 1] = g; vx->colors[i * 4 + 2] = b; vx->colors[i * 4 + 3] = a;
-		vx->ids[i] = vx->next_id;
-	}
-	vx->nb += 4;
-
-	lua_pushnumber(L, vx->next_id);
-	vx->next_id++;
-	vx->changed = TRUE;
+	int id = vertex_add_quad(vx,
+		x1, y1, u1, v1, 
+		x2, y2, u2, v2, 
+		x3, y3, u3, v3, 
+		x4, y4, u4, v4, 
+		r, g, b, a
+	);
+	lua_pushnumber(L, id);
 	return 1;
 }
 

@@ -38,12 +38,14 @@ typedef struct
 	GLuint tex;
 } lua_vertexes;
 
-typedef struct
-{
-	lua_vertexes base;
-	SDL_Surface *atlas;	
-} lua_vertexes_text;
-
 extern int luaopen_vo(lua_State *L);
+extern int gl_new_vertex(lua_State *L);
+extern int vertex_add_quad(lua_vertexes *vx,
+	float x1, float y1, float u1, float v1, 
+	float x2, float y2, float u2, float v2, 
+	float x3, float y3, float u3, float v3, 
+	float x4, float y4, float u4, float v4, 
+	float r, float g, float b, float a
+);
 
 #endif
