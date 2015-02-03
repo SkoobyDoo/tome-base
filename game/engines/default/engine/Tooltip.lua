@@ -38,7 +38,7 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	self.fontsize = fontsize
 	self.font = core.display.newFont(fontname or "/data/font/DroidSans.ttf", fontsize or 12)
 	self.font_line_skip = self.font:lineSkip()
-	self.scroll_delay = 15 -- ms/pixel
+	self.scroll_delay = 20 -- ms/pixel
 
 	self.default_ui = { TextzoneList.new{weakstore=true, width=self.max, height=500, variable_height=true, font=self.font, ui=self.ui} }
 	self.locked = false
@@ -208,7 +208,7 @@ function _M:toScreen(x, y, nb_keyframes)
 	local locked_w = ( (self.locked and self.uis_h > self.container.dest_area.h) and self.container.scrollbar.w or 0)
 	
 	local time = core.game.getTime()
-	if not self.pingpong_last then self.pingpong_last = time + self.scroll_delay * self.font_line_skip * 1.5 end
+	if not self.pingpong_last then self.pingpong_last = time + self.scroll_delay * self.container.h / 3 end
 	local delta = math.max(time - self.pingpong_last, 0) / self.scroll_delay
 
 	local scrollbar = self.container.scrollbar
@@ -216,18 +216,19 @@ function _M:toScreen(x, y, nb_keyframes)
 		local slowdown = 0.5 * scrollbar.pos / scrollbar.max
 		self.pingpong_last = time
 		if self.pingpong == 0 then
-			self.container.scrollbar.pos = scrollbar.pos + delta * (1 - slowdown)
+			scrollbar.pos = scrollbar.pos + delta * (0.5 + slowdown)
 			if scrollbar.pos >= scrollbar.max then 
 				scrollbar.pos = scrollbar.max 
 				self.pingpong = 1
-				self.pingpong_last = time + self.scroll_delay * self.font_line_skip * 1.5
+				self.pingpong_last = time + self.scroll_delay * self.container.h / 3
 			end
 		else
-			scrollbar.pos = scrollbar.pos - delta * (0.5 + slowdown)
+			-- scroll back twice as fast, since it's awkward to read during that time
+			scrollbar.pos = scrollbar.pos - delta * 2
 			if scrollbar.pos <= 0 then 
 				scrollbar.pos = 0
 				self.pingpong = 0
-				self.pingpong_last = time + self.scroll_delay * self.font_line_skip
+				self.pingpong_last = time + self.scroll_delay * self.container.h / 3
 			end
 		end
 	end
