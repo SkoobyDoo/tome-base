@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,15 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local function cancelHymns(self)
-	local hymns = {self.T_HYMN_OF_SHADOWS, self.T_HYMN_OF_DETECTION, self.T_HYMN_OF_PERSEVERANCE, self.T_HYMN_OF_MOONLIGHT}
-	for i, t in ipairs(hymns) do
-		if self:isTalentActive(t) then
-			self:forceUseTalent(t, {ignore_energy=true})
-		end
-	end
-end
-
 newTalent{
 	name = "Hymn of Shadows",
 	type = {"celestial/hymns", 1},
@@ -40,8 +31,8 @@ newTalent{
 	range = 10,
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
 	getDarknessDamageIncrease = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
+	sustain_slots = 'celestial_hymn',
 	activate = function(self, t)
-		cancelHymns(self)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.DARKNESS]= t.getDamageOnMeleeHit(self, t)}),
@@ -83,8 +74,8 @@ newTalent{
 	getSeeInvisible = function(self, t) return self:combatTalentSpellDamage(t, 2, 35) end,
 	getSeeStealth = function(self, t) return self:combatTalentSpellDamage(t, 2, 15) end,
 	getInfraVisionPower = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
+	sustain_slots = 'celestial_hymn',
 	activate = function(self, t)
-		cancelHymns(self)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.DARKNESS]= t.getDamageOnMeleeHit(self, t)}),
@@ -130,8 +121,8 @@ newTalent{
 	range = 10,
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
 	getImmunities = function(self, t) return self:combatTalentLimit(t, 1, 0.22, 0.5) end, -- Limit < 100%
+	sustain_slots = 'celestial_hymn',
 	activate = function(self, t)
-		cancelHymns(self)
 		local dam = self:combatTalentSpellDamage(t, 5, 25)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
@@ -177,7 +168,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 7, 80) end,
 	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
 	getNegativeDrain = function(self, t) return self:combatTalentLimit(t, 0, 8, 3) end, -- Limit > 0, no regen at high levels
-	do_beams = function(self, t)
+	callbackOnActBase = function(self, t)
 		if self:getNegative() < t.getNegativeDrain(self, t) then return end
 
 		local tgts = {}
@@ -205,8 +196,8 @@ newTalent{
 			self:incNegative(-drain)
 		end
 	end,
+	sustain_slots = 'celestial_hymn',
 	activate = function(self, t)
-		cancelHymns(self)
 		game:playSoundNear(self, "talents/spell_generic")
 		game.logSeen(self, "#DARK_GREY#A shroud of shadow dances around %s!", self.name)
 		return {

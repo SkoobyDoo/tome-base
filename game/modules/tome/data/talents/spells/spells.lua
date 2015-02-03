@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -170,6 +170,7 @@ function necroSetupSummon(self, m, x, y, level, no_control, no_decay)
 	m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
 	m.inc_damage = table.clone(self.inc_damage, true)
 	m.no_breath = 1
+	m.no_drops = true
 
 	applyDarkEmpathy(self, m)
 
@@ -238,16 +239,6 @@ function necroEssenceDead(self, checkonly)
 	end
 end
 -------------------------------------------
-
-function cancelAlchemyInfusions(self)
-	local chants = {self.T_FIRE_INFUSION, self.T_FROST_INFUSION, self.T_ACID_INFUSION, self.T_LIGHTNING_INFUSION}
-	for i, t in ipairs(chants) do
-		if self:isTalentActive(t) then
-			self:forceUseTalent(t, {ignore_energy=true})
-		end
-	end
-end
-
 
 load("/data/talents/spells/arcane.lua")
 load("/data/talents/spells/aether.lua")

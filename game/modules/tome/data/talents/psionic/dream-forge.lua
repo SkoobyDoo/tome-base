@@ -152,6 +152,7 @@ newTalent{
 				dam = forge_damage,
 				radius = self:getTalentRadius(t),
 				act = function(self)
+					local t = self.summoner:getTalentFromId(self.T_FORGE_BELLOWS)
 					local tg = {type="ball", range=0, friendlyfire=false, radius = 1, talent=t, x=self.x, y=self.y,}
 					self.summoner.__project_source = self
 					self.summoner:project(tg, self.x, self.y, engine.DamageType.DREAMFORGE, self.dam)
@@ -220,7 +221,7 @@ newTalent{
 	sustain_psi = 50,
 	mode = "sustained",
 	no_sustain_autoreset = true,
-	tactical = { ATTACKAREA = { FIRE = 2, MIND = 2}, DEBUFF = 2, },
+	tactical = { ATTACKAREA = { FIRE = 2, MIND = 2}, DISABLE = 2, },
 	range = 0,
 	radius = function(self, t) return math.min(5, 1 + math.ceil(self:getTalentLevel(t)/3)) end,
 	target = function(self, t)
@@ -232,7 +233,8 @@ newTalent{
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 5, 25) end, --Limit < 100%
 	getFailChance = function(self, t) return self:combatLimit(self:combatTalentMindDamage(t, 5, 25), 67, 0, 0, 16.34, 16.34) end, -- Limit to <67%
 	
-	doForgeStrike = function(self, t, p)
+	callbackOnActBase = function(self, t, p)
+		local p = self:isTalentActive(t.id)
 		-- If we moved reset the forge
 		if self.x ~= p.x or self.y ~= p.y or p.new then
 			p.x = self.x; p.y=self.y; p.radius=0; p.damage=0; p.power=0; p.new = nil;

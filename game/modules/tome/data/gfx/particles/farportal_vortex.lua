@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,22 +18,26 @@
 -- darkgod@te4.org
 
 base_size = 64
+size = size or 256
 
 return {
-	system_rotation = 0, system_rotationv = 0.5,
+	system_rotation = 0, system_rotationv = rot or 0.5, generator = function()
+	
+	return {
+		life = 100,
+		size = size, sizev = 0, sizea = 0,
 
-	base = 1000,
+		x = x or 0, xv = 0, xa = 0,
+		y = y or 0, yv = 0, ya = 0,
+		dir = 0, dirv = 0, dira = 0,
+		vel = 0, velv = 0, vela = 0,
 
-	angle = { 0, 0 }, anglev = { 0, 0 }, anglea = { 0, 0 },
-
-	life = { 100, 100 },
-	size = { 256, 256 }, sizev = {0, 0}, sizea = {0, 0},
-
-	r = {255, 255}, rv = {0, 0}, ra = {0, 0},
-	g = {255, 255}, gv = {0, 0}, ga = {0, 0},
-	b = {255, 255}, bv = {0, 0}, ba = {0, 0},
-	a = {255, 255}, av = {0, 0}, aa = {0, 0},
-
+		r = 1,   rv = 0, ra = 0,
+		g = 1,   gv = 0, ga = 0,
+		b = 1,   bv = 0, ba = 0,
+		a = 1,   av = 0, aa = 0,
+	}
+end
 }, function(self)
 	self.ps:emit(1)
 end, 1, vortex or "shockbolt/terrain/farportal-blue-vortex", true

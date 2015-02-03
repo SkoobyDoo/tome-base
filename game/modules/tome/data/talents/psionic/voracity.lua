@@ -31,17 +31,17 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 1, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 1, 4)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	getLeech = function(self, t, psi)
 		local psi = psi or self:getPsi()
-		return self:combatTalentScale(t, 10, 27)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
+		return self:combatTalentScale(t, 10, 20)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
 	end,
 	getDam = function(self, t, psi)
 		local psi = psi or self:getPsi()
-		return self:combatTalentMindDamage(t, 20, 200)*math.max(0.5, (1.5-psi/self:getMaxPsi())) --this looks high
+		return self:combatTalentMindDamage(t, 5, 45)*math.max(0.5, (1.5-psi/self:getMaxPsi())) --this looks high
 	end,
 	getSlow = function(self, t, psi)
 		local psi = psi or self:getPsi()
@@ -79,7 +79,7 @@ newTalent{
 		return ([[You draw kinetic energy from your surroundings to replenish your Psi.
 		This will slow all targets within radius %d by %d%% (max %d%%) for four turns, draining %0.1f (max %0.1f) stamina from each.
 		You replenish %d (max %d) Psi from the first target, with each additional target restoring 20%% less than the one before it.
-		The strength of these effects increases as your Psi depletes.]])
+		The strength of these effects increases as your Psi depletes and with your Mindpower.]])
 		:format(range, t.getSlow(self, t)*100, t.getSlow(self, t, 0)*100, t.getDam(self, t), t.getDam(self, t, 0), t.getLeech(self, t), t.getLeech(self, t, 0))
 	end,
 }
@@ -97,17 +97,17 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 1, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 1, 4)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	getLeech = function(self, t, psi)
 		local psi = psi or self:getPsi()
-		return self:combatTalentScale(t, 10, 27)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
+		return self:combatTalentScale(t, 10, 20)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
 	end,
 	getDam = function(self, t, psi)
 		local psi = psi or self:getPsi()
-		return self:combatTalentMindDamage(t, 20, 200)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
+		return self:combatTalentMindDamage(t, 20, 130)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
 	end,
 	getDur = function(self, t, psi)
 		local psi = psi or self:getPsi()
@@ -139,7 +139,7 @@ newTalent{
 		return ([[You draw thermal energy from your surroundings to replenish your Psi.
 		This will freeze all targets within radius %d for %d (max %d) turns, and deal %0.1f (max %0.1f) Cold damage.
 		You replenish %d (max %d) Psi from the first target, with each additional target restoring 20%% less than the one before it.
-		The damage and the strength of these effects increases as your Psi depletes.]])
+		The damage and the strength of these effects increases as your Psi depletes and with your Mindpower.]])
 		:format(range, t.getDur(self, t), t.getDur(self, t, 0), damDesc(self, DamageType.COLD, t.getDam(self, t)), damDesc(self, DamageType.COLD, t.getDam(self, t, 0)), t.getLeech(self, t), t.getLeech(self, t, 0))
 	end,
 }
@@ -157,17 +157,17 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	range = 0,
-	radius = function(self,t) return self:combatTalentScale(t, 1, 4) end,
+	radius = function(self,t) return math.floor(self:combatTalentScale(t, 1, 4)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	getLeech = function(self, t, psi)
 		local psi = psi or self:getPsi()
-		return self:combatTalentScale(t, 10, 27)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
+		return self:combatTalentScale(t, 10, 20)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
 	end,
 	getDam = function(self, t, psi)
 		local psi = psi or self:getPsi()
-		return self:combatTalentMindDamage(t, 20, 200)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
+		return self:combatTalentMindDamage(t, 20, 130)*math.max(0.5, (1.5-psi/self:getMaxPsi()))
 	end,
 	getDaze = function(self, t, psi)
 		local psi = psi or self:getPsi()
@@ -208,7 +208,7 @@ newTalent{
 		return ([[You draw electical potential energy from your surroundings to replenish your Psi.
 		This deals %0.1f (max %0.1f) Lightning damage to all targets around you within radius %d, and has a %d%% (max %d%%) chance to daze them for 3 turns.
 		You replenish %d (max %d) Psi from the first target, with each additional target restoring 20%% less than the one before it.
-		The strength of these effects increases as your Psi depletes.]])
+		The strength of these effects increases as your Psi depletes and with your Mindpower.]])
 		:format(t.getDam(self, t), t.getDam(self, t, 0), range, t.getDaze(self, t), t.getDaze(self, t, 0), t.getLeech(self, t), t.getLeech(self, t, 0))
 	end,
 }
@@ -222,13 +222,13 @@ newTalent{
 	getPsiRecover = function(self, t) return self:combatTalentScale(t, 1.5, 5, 0.75) end,
 	passives = function(self, t, p)
 		local recover = t.getPsiRecover(self, t)
-		self:talentTemporaryValue(p, "max_psi", self:getTalentLevel(t)*10)
-		self:talentTemporaryValue(p, "psi_per_kill", recover)
-		self:talentTemporaryValue(p, "psi_on_crit", recover*0.5)
+		self:talentTemporaryValue(p, "max_psi", recover*5)
+		self:talentTemporaryValue(p, "psi_per_kill", recover*0.5)
+		self:talentTemporaryValue(p, "psi_on_crit", recover)
 	end,
 	info = function(self, t)
 		local recover = t.getPsiRecover(self, t)
-		return ([[Increases your maximum energy by %d. You also gain %0.1f Psi for each kill and %0.1f Psi for each mind critical.]]):format(10 * self:getTalentLevel(t), recover, 0.5*recover)
+		return ([[Increases your maximum energy by %d. You also gain %0.1f Psi for each kill and %0.1f Psi for each mind critical.]]):format(5 * recover, 0.5*recover, recover)
 	end,
 }
 

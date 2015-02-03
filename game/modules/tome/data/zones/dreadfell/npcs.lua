@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -111,6 +111,8 @@ newEntity{ define_as = "THE_MASTER",
 		world:gainAchievement("VAMPIRE_CRUSHER", game.player:resolveSource())
 		game.player:resolveSource():grantQuest("dreadfell")
 		game.player:resolveSource():setQuestStatus("dreadfell", engine.Quest.COMPLETED)
+
+		game:unlockBackground("master", "The Master")
 
 		local ud = {}
 		if not profile.mod.allow_build.undead_skeleton then ud[#ud+1] = "undead_skeleton" end
@@ -404,7 +406,7 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 	on_move = function(self, x, y, self, force)
 		if not force and rng.percent(10) then
 			local traps = { self.T_BEAR_TRAP, self.T_CATAPULT_TRAP }
-			self:forceUseTalent(rng.table(traps), {ignore_energy=true, ignore_resources=true, ignore_cd=true, force_target=self})
+			self:forceUseTalent(rng.table(traps), {ignore_energy=true, ignore_ressources=true, ignore_cd=true, force_target=self})
 		end
 	end,
 }

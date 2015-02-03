@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -408,7 +408,7 @@ function _M:generateMaster()
 		master = world.arena.master60 or nil
 	end
 	if master then
-		if master.version[1] == game.__mod_info.version[1] and	master.version[2] == game.__mod_info.version[2] and master.version[3] == game.__mod_info.version[3] then
+		if master.version[1] == game.__mod_info.version[1] and	master.version[2] == game.__mod_info.version[2] and master.version[3] == game.__mod_info.version[3] and table.same_values(master.addons or {}, table.keys(game.__mod_info.addons)) then
 			defmaster = false
 		else
 			defmaster = true

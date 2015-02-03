@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ newEntity{ base = "BASE_KNIFE", define_as = "LIFE_DRINKER",
 	unique = true,
 	name = "Life Drinker", image = "object/artifact/dagger_life_drinker.png",
 	unided_name = "blood coated dagger",
+	moddable_tile = "special/%s_dagger_life_drinker",
+	moddable_tile_big = true,
 	desc = [[Black blood for foul deeds. This dagger serves evil.]],
 	level_range = {40, 50},
 	rarity = 300,
@@ -62,6 +64,8 @@ newEntity{ base = "BASE_TRIDENT",
 	define_as = "TRIDENT_TIDES",
 	unided_name = "ever-dripping trident",
 	name = "Trident of the Tides", unique=true, image = "object/artifact/trident_of_the_tides.png",
+	moddable_tile = "special/%s_trident_of_the_tides",
+	moddable_tile_big = true,
 	desc = [[The power of the tides rush through this trident.
 Tridents require the exotic weapons mastery talent to use correctly.]],
 	require = { stat = { str=35 }, },
@@ -427,8 +431,8 @@ newEntity{ base = "BASE_CLOAK", define_as="GLACIAL_CLOAK",
 				radius,
 				5, nil,
 				engine.MapEffect.new{color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/ice_effect.png"},
-				function(e)
-					e.radius = e.radius
+				function(e, update_shape_only)
+					if not update_shape_only then e.radius = e.radius end
 					return true
 				end,
 				false
@@ -528,6 +532,7 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
  			["spell/fire"] = 0.1,
  			["spell/wildfire"] = 0.1,
 			["celestial/sun"] = 0.1,
+			["celestial/sunlight"] = 0.1,
  		},
 	},
 	max_power = 16, power_regen = 1,

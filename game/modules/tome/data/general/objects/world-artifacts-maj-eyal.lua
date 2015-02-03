@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -268,6 +268,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	unique = true,
 	name = "Spellblade", image = "object/artifact/weapon_spellblade.png",
 	unided_name = "glowing long sword",
+	moddable_tile = "special/%s_weapon_spellblade",
+	moddable_tile_big = true,
 	level_range = {40, 45},
 	color=colors.AQUAMARINE,
 	rarity = 250,
@@ -425,6 +427,8 @@ newEntity{ base = "BASE_KNIFE",
 	unique = true,
 	name = "Orc Feller", image = "object/artifact/dagger_orc_feller.png",
 	unided_name = "shining dagger",
+	moddable_tile = "special/%s_dagger_orc_feller",
+	moddable_tile_big = true,
 	desc = [[During the invasion of Eldoral the Halfling Rogue Herah is said to have slain over one hundred orcs while defending a group of refugees.]],
 	level_range = {40, 50},
 	rarity = 300,
@@ -462,11 +466,14 @@ newEntity{ base = "BASE_MACE",
 	unique = true,
 	name = "Nature's Vengeance", color = colors.BROWN, image = "object/artifact/mace_natures_vengeance.png",
 	unided_name = "thick wooden mace",
+	moddable_tile = "special/%s_mace_natures_vengeance",
+	moddable_tile_big = true,
 	desc = [[This thick-set mace was used by the Spellhunter Vorlan, who crafted it from the wood of an ancient oak that was uprooted during the Spellblaze.  Many were the wizards and witches felled by this weapon, brought to justice for the crimes they committed against nature.]],
 	level_range = {20, 34},
 	rarity = 340,
 	require = { stat = { str=42 } },
 	cost = 350,
+	metallic = false,
 	material_level = 3,
 	combat = {
 		dam = 40,
@@ -578,6 +585,8 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "viciously sharp battle axe",
 	name = "Drake's Bane", image = "object/artifact/axe_drakes_bane.png",
+	moddable_tile = "special/axe_drakes_bane",
+	moddable_tile_big = true,
 	color = colors.RED,
 	desc = [[The killing of Kroltar, mightiest of wyrms, took seven months and the lives of 20,000 dwarven warriors.  Finally the beast was worn down and mastersmith Gruxim, standing atop the bodies of his fallen comrades, was able slit its throat with this axe crafted purely for the purpose of penetrating the wyrm's hide.]],
 	require = { stat = { str=45 }, },
@@ -605,6 +614,8 @@ newEntity{ base = "BASE_WARAXE",
 	unique = true,
 	name = "Blood-Letter", image = "object/artifact/weapon_axe_blood_letter.png",
 	unided_name = "glacial hatchet",
+	moddable_tile = "special/%s_weapon_axe_blood_letter",
+	moddable_tile_big = true,
 	desc = [[A hand axe carved out of the most frozen parts of the northern wasteland.]],
 	level_range = {25, 35},
 	rarity = 235,
@@ -857,6 +868,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	unique = true,
 	name = "Witch-Bane", color = colors.LIGHT_STEEL_BLUE, image = "object/artifact/sword_witch_bane.png",
 	unided_name = "an ivory handled voratun longsword",
+	moddable_tile = "special/%s_sword_witch_bane",
+	moddable_tile_big = true,
 	desc = [[A thin voratun blade with an ivory handle wrapped in purple cloth.  The weapon is nearly as legendary as its former owner, Marcus Dunn, and was thought to have been destroyed after Marcus was slain near the end of the Spellhunt.
 It seems somebody well versed in antimagic could use it to its fullest potential.]],
 	level_range = {38, 50},
@@ -932,6 +945,9 @@ It hums faintly, as if great power is locked within, yet alone it seems incomple
 	max_power = 20, power_regen = 1,
 	use_talent = { id = Talents.T_ARCANE_SUPREMACY, level = 3, power = 20 },
 	set_list = { {"define_as", "SET_HAT_CHANNELERS"} },
+	set_desc = {
+		channelers = "A true understanding of the arcane is needed to release its full power.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","max_mana"}, 100)
 		game.logSeen(who, "#STEEL_BLUE#You feel a swell of arcane energy.")
@@ -965,6 +981,9 @@ Touching the cloth you feel a sense of knowledge and power from bygone ages, yet
 	},
 	max_power = 40, power_regen = 1,
 	set_list = { {"define_as", "SET_STAFF_CHANNELERS"} },
+	set_desc = {
+		channelers = "Only supremacy of the arcane can release its full power.",
+	},
 	on_set_complete = function(self, who)
 		local Talents = require "engine.interface.ActorTalents"
 		self.use_talent = { id = Talents.T_METAFLOW, level = 3, power = 40 }
@@ -1036,6 +1055,8 @@ newEntity{ base = "BASE_KNIFE", -- Thanks Grayswandir!
 	unique = true,
 	name = "Spellblaze Shard", image = "object/artifact/spellblaze_shard.png",
 	unided_name = "crystalline dagger",
+	moddable_tile = "special/%s_spellblaze",
+	moddable_tile_big = true,
 	desc = [[This jagged crystal glows with an unnatural light. A strap of cloth is wrapped around one end, as a handle.]],
 	level_range = {12, 25},
 	rarity = 200,
@@ -1066,6 +1087,8 @@ newEntity{ base = "BASE_KNIFE", --Razakai's idea, slightly modified
 	unique = true,
 	name = "Mercy", image = "object/artifact/mercy.png",
 	unided_name = "wickedly sharp dagger",
+	moddable_tile = "special/%s_mercy",
+	moddable_tile_big = true,
 	desc = [[This dagger was used by a nameless healer during the Age of Dusk. The plagues that ravaged his town were beyond the ability of mortal man to treat, so he took to using his dagger to as an act of mercy when faced with hopeless patients. Despite his good intentions, it is now cursed with dark power, letting it kill in a single stroke against those already weakened.]],
 	level_range = {30, 40},
 	rarity = 250,

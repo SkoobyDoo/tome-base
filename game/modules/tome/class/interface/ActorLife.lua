@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,11 +42,6 @@ function _M:takeHit(value, src, death_note)
 	self.life = self.life - value
 	self.changed = true
 	if self.life <= self.die_at and not self.dead then
-		if self:hasEffect(self.EFF_PRECOGNITION) then
-			game.log("%s dies during precognition, ending the effect!", self.name:capitalize())
-			self:removeEffect(self.EFF_PRECOGNITION)
-			return false, 0
-		end
 		return oktodie(self, value, src, death_note)
 	-- Allow double-death ONLY for npcs
 	elseif self.life <= self.die_at and self.dead then

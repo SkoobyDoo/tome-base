@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,12 +42,12 @@ newTalent{
 		return -self:combatTalentStatDamage(t, "wil", 6, 45)
 	end,
 	getResistPenetration = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "wil", 30, 80), 100, 0, 0, 55, 55) end, -- Limit < 100%
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local range = self:getTalentRange(t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > range then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- attempt domination
 		local duration = t.getDuration(self, t)
@@ -230,14 +230,15 @@ newTalent{
 	range = 6,
 	tactical = { CLOSEIN = 2, ATTACK = { PHYSICAL = 0.5 } },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", pass_terrain = true, range=self:getTalentRange(t)} end,
 	getDefenseChange = function(self, t)
 		return self:combatTalentStatDamage(t, "str", 20, 50)
 	end,
 	action = function(self, t)
-		local tg = {type="hit", pass_terrain = true, range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local start = rng.range(0, 8)
 		for i = start, start + 8 do
@@ -378,20 +379,17 @@ newTalent{
 		if self ~= game.player and (self:isTalentActive(self.T_CLEAVE) or self:isTalentActive(self.T_SURGE)) then return false end
 		return true
 	end,
+	sustain_slots = 'cursed_combat_style',
 	activate = function(self, t)
-		-- deactivate other talents and place on cooldown
-		if self:isTalentActive(self.T_CLEAVE) then
-			self:useTalent(self.T_CLEAVE)
-		elseif self:knowTalent(self.T_CLEAVE) then
-			local tCleave = self:getTalentFromId(self.T_CLEAVE)
-			self.talents_cd[self.T_CLEAVE] = tCleave.cooldown
-		end
-
-		if self:isTalentActive(self.T_SURGE) then
-			self:useTalent(self.T_SURGE)
-		elseif self:knowTalent(self.T_SURGE) then
+		-- Place other talents on cooldown.
+		if self:knowTalent(self.T_SURGE) and not self:isTalentActive(self.T_SURGE) then
 			local tSurge = self:getTalentFromId(self.T_SURGE)
 			self.talents_cd[self.T_SURGE] = tSurge.cooldown
+		end
+
+		if self:knowTalent(self.T_CLEAVE) and not self:isTalentActive(self.T_CLEAVE) then
+			local tCleave = self:getTalentFromId(self.T_CLEAVE)
+			self.talents_cd[self.T_CLEAVE] = tCleave.cooldown
 		end
 
 		return {
@@ -409,7 +407,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local chance = t.getChance(self, t)
-		return ([[Rather than hide from the onslaught, you face down every threat. While active you have a %d%% chance of repelling a melee attack. The recklessness of your defense brings you bad luck (Luck -3). 
+		return ([[Rather than hide from the onslaught, you face down every threat. While active you have a %d%% chance of repelling a melee attack. The recklessness of your defense brings you bad luck (Luck -3).
 		Cleave, Repel and Surge cannot be active simultaneously, and activating one will place the others in cooldown.
 		Repel chance increases with your Strength, and when equipped with a shield.]]):format(chance)
 	end,

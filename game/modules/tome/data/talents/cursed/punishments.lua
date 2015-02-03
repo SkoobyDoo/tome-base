@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ newTalent{
 		local range = self:getTalentRange(t)
 		local tg = {type="hit", range=range}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target or core.fov.distance(self.x, self.y, x, y) > range or target:hasEffect(target.EFF_HATEFUL_WHISPER) then return nil end
+		if not target or not self:canProject(tg, x, y) or target:hasEffect(target.EFF_HATEFUL_WHISPER) then return nil end
 
 		local duration = t.getDuration(self, t)
 		local damage = self:mindCrit(t.getDamage(self, t))
@@ -282,7 +282,7 @@ newTalent{
 		local range = self:getTalentRange(t)
 		local tg = {type="hit", range=range}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target or core.fov.distance(self.x, self.y, x, y) > range then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local damage = self:mindCrit(t.getDamage(self, t))
 		local mindpower = self:combatMindpower()

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -176,7 +176,7 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +5 Willpower, +4 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# -3",
 	},
-	power_source = {nature=true},
+	power_source = {nature=true, antimagic=true},
 	random_rarity = 3,
 	getStatDesc = function(stat, actor)
 		if stat == actor.STAT_CUN then

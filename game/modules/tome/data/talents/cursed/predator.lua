@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ newTalent{
 	no_energy = true,
 	getMaxKillExperience = function(self, t)
 		local total = 0
-		
+
 		if t then total = total + self:getTalentLevelRaw(t) end
 		local t = self:getTalentFromId(self.T_ANATOMY)
 		if t then total = total + self:getTalentLevelRaw(t) end
@@ -36,7 +36,7 @@ newTalent{
 		if t then total = total + self:getTalentLevelRaw(t) end
 		local t = self:getTalentFromId(self.T_MIMIC)
 		if t then total = total + self:getTalentLevelRaw(t) end
-		
+
 		return self:combatLimit(total, 0, 19.5, 1, 10, 20) --  Limit > 0
 	end,
 	getSubtypeDamageChange = function(self, t)
@@ -50,16 +50,15 @@ newTalent{
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
-		
+		if not target or not self:canProject(tg, x, y) then return nil end
+
 		local eff = self:hasEffect(self.EFF_PREDATOR)
 		if eff and eff.type == target.type and eff.subtype == target.subtype then
 			return false
 		end
 		if eff then self:removeEffect(self.EFF_PREDATOR, true, true) end
 		self:setEffect(self.EFF_PREDATOR, 1, { type=target.type, subtype=target.subtype, killExperience = 0, subtypeKills = 0, typeKills = 0 })
-		
+
 		return true
 	end,
 	on_unlearn = function(self, t)

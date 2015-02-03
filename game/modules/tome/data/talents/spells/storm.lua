@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		return ([[Conjures up a bolt of lightning, doing %0.2f to %0.2f lightning damage and dazing the target for 3 turns.
-		If the target resists the daze effect it is instead shocked, which halves stun/daze resistance, for 5 turns.
+		If the target resists the daze effect it is instead shocked, which halves stun/daze/pin resistance, for 5 turns.
 		The damage will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.LIGHTNING, damage/3), damDesc(self, DamageType.LIGHTNING, damage))
 	end,

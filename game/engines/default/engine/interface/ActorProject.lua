@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ end
 -- @param t a type table describing the attack, passed to engine.Target:getType() for interpretation
 -- @param x target coords
 -- @param y target coords
--- @param damtype a damage type ID from the DamageType class
+-- @param damtype a damage type ID from the DamageType class or a function to be called as damtype(px, py, t, self) on each grid
 -- @param dam damage to be done
 -- @param particles particles effect configuration, or nil
 function _M:project(t, x, y, damtype, dam, particles)
@@ -56,6 +56,7 @@ function _M:project(t, x, y, damtype, dam, particles)
 
 	local grids = {}
 	local function addGrid(x, y)
+		if typ.filter and not typ.filter(x, y) then return end
 		if not grids[x] then grids[x] = {} end
 		grids[x][y] = true
 	end
@@ -112,7 +113,9 @@ function _M:project(t, x, y, damtype, dam, particles)
 		end
 	end
 
+	local single_target = true
 	if typ.ball and typ.ball > 0 then
+		single_target = false
 		core.fov.calc_circle(
 			stop_radius_x,
 			stop_radius_y,
@@ -128,7 +131,10 @@ function _M:project(t, x, y, damtype, dam, particles)
 			end,
 		nil)
 		addGrid(stop_x, stop_y)
-	elseif typ.cone and typ.cone > 0 then
+	end
+
+	if typ.cone and typ.cone > 0 then
+		single_target = false
 		--local dir_angle = math.deg(math.atan2(y - self.y, x - self.x))
 		core.fov.calc_beam_any_angle(
 			stop_radius_x,
@@ -149,7 +155,10 @@ function _M:project(t, x, y, damtype, dam, particles)
 			end,
 		nil)
 		addGrid(stop_x, stop_y)
-	elseif typ.wall and typ.wall > 0 then
+	end
+
+	if typ.wall and typ.wall > 0 then
+		single_target = false
 		core.fov.calc_wall(
 			stop_radius_x,
 			stop_radius_y,
@@ -168,34 +177,45 @@ function _M:project(t, x, y, damtype, dam, particles)
 				addGrid(px, py)
 			end,
 		nil)
-	else
-		-- Deal damage: single
-		addGrid(stop_x, stop_y)
 	end
+
+	-- Deal damage: single
+	if single_target then addGrid(stop_x, stop_y) end
 
 	-- Check for minimum range
 	if typ.min_range and core.fov.distance(typ.start_x, typ.start_y, stop_x, stop_y) < typ.min_range then
 		return
 	end
 
+	--Remove any excluded grids
+	if typ.grid_exclude then
+		for px, ys in pairs(typ.grid_exclude) do
+			if grids[px] then
+				for py, _ in pairs(ys) do
+					grids[px][py]=nil
+				end
+			end
+		end
+	end
+
 	self:check("on_project_grids", grids)
 
 	-- Now project on each grid, one type
-	local tmp = {}
+	local state = {}
 	local stop = false
 	DamageType:projectingFor(self, {project_type=typ})
 	for px, ys in pairs(grids) do
 		for py, _ in pairs(ys) do
 			-- Call the projected method of the target grid if possible
 			if not game.level.map:checkAllEntities(px, py, "projected", self, t, px, py, damtype, dam, particles) then
-				-- Check self- and friendly-fire, and if the projection "misses"
+				-- Check self- and friendly-fire, excluded Actors, and if the projection "misses"
 				local act = game.level.map(px, py, engine.Map.ACTOR)
-				if act and act == self and not ((type(typ.selffire) == "number" and rng.percent(typ.selffire)) or (type(typ.selffire) ~= "number" and typ.selffire)) then
+				if act and (typ.act_exclude and typ.act_exclude[act.uid]) or act == self and not ((type(typ.selffire) == "number" and rng.percent(typ.selffire)) or (type(typ.selffire) ~= "number" and typ.selffire)) then
 				elseif act and self.reactionToward and (self:reactionToward(act) >= 0) and not ((type(typ.friendlyfire) == "number" and rng.percent(typ.friendlyfire)) or (type(typ.friendlyfire) ~= "number" and typ.friendlyfire)) then
 				-- Otherwise hit
 				else
 					if type(damtype) == "function" then if damtype(px, py, t, self) then stop=true break end
-					else DamageType:get(damtype).projector(self, px, py, damtype, dam, tmp, nil) end
+					else DamageType:get(damtype).projector(self, px, py, damtype, dam, state, nil) end
 					if particles then
 						game.level.map:particleEmitter(px, py, 1, particles.type, particles.args)
 					end
@@ -219,6 +239,7 @@ end
 -- @param y target coords
 -- @return can_project, stop_x, stop_y, radius_x, radius_y.
 function _M:canProject(t, x, y)
+	if not x or not y then return end
 	local typ = Target:getType(t)
 	typ.source_actor = self
 	typ.start_x = typ.start_x or typ.x or typ.source_actor and typ.source_actor.x or self.x
@@ -307,7 +328,7 @@ function _M:projectile(t, x, y, damtype, dam, particles)
 
 	typ.line_function:set_corner_block(block_corner)
 
-	local proj = require(self.projectile_class):makeProject(self, t.display, {x=x, y=y, start_x=typ.start_x, start_y=typ.start_y, damtype=damtype, tg=t, typ=typ, dam=dam, particles=particles})
+	local proj = require(self.projectile_class):makeProject(self, t.display, {x=x, y=y, start_x=typ.start_x, start_y=typ.start_y, damtype=damtype, tg=t, typ=typ, dam=dam, particles=particles, _allow_upvalues = true,})
 	game.zone:addEntity(game.level, proj, "projectile", typ.start_x, typ.start_y)
 
 	self:check("on_projectile_fired", proj, typ, x, y, damtype, dam, particles)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ local TextzoneList = require "engine.ui.TextzoneList"
 local TalentGrid = require "mod.dialogs.elements.TalentGrid"
 local Separator = require "engine.ui.Separator"
 local DamageType = require "engine.DamageType"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog, mod.class.interface.TooltipsData))
 
@@ -34,7 +35,7 @@ function _M:init(actor, levelup_end_prodigies)
 	self.actor = actor
 	self.levelup_end_prodigies = levelup_end_prodigies
 
-	self.font = core.display.newFont("/data/font/DroidSansMono.ttf", 12)
+	self.font = core.display.newFont(FontPackage:getFont("mono_small", "mono"))
 	self.font_h = self.font:lineSkip()
 
 	self.actor_dup = actor:clone()
@@ -129,8 +130,7 @@ function _M:createDisplay()
 	self.c_tut = Textzone.new{ width=self.iw, auto_height = true, text=tuttext:format(self.actor.unused_prodigies or 0)}
 	
 	local vsep = Separator.new{dir="horizontal", size=self.ih - 20 - self.c_tut.h}
-	self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, width=self.iw - 380 - 30, height = self.ih - self.c_tut.h, dest_area = { h = self.ih - self.c_tut.h } }
-	
+	self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, pingpong = 20, width=self.iw - 370 - vsep.w - 20, height = self.ih - self.c_tut.h, dest_area = { h = self.ih - self.c_tut.h } }
 	self.c_list = TalentGrid.new{
 		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
 		tiles=game.uiset.hotkeys_display_icons,

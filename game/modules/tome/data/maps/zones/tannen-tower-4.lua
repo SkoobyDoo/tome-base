@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ defineTile(".", "FLOOR")
 defineTile(" ", "OLD_FLOOR")
 defineTile("!", "WALL")
 defineTile("T", "TREE")
+defineTile("l", "FLOOR", "NOTE1")
 
 -- ASCII map section
 return [[
@@ -57,7 +58,7 @@ X+XXXXXXXXXX*XXXXXXXXXX+X
 X.+........*<*........+.X
 X+XXXXXXXXXX*XXX+XXXXXX+X
 X..XX.....&X.XX,,,XXXX..X
-XX.XX......X.XEE,EEXXX.XX
+XX.XX....l.X.XEE,EEXXX.XX
 XX.XX......X.XEETEEXXX.XX
 XX..X....$$X.XEE,EEXX..XX
 XXX.XXXXXX+X.XX,,,XXX.XXX

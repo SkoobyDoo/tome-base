@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ module(..., package.seeall, class.inherit(Store))
 _M.stores_def = {}
 
 function _M:loadStores(f)
-	self.stores_def = self:loadList(f)
+	self:loadList(f, nil, self.stores_def)
 end
 
 function _M:init(t, no_default)
@@ -113,6 +113,7 @@ end
 -- @param nb number of items (if stacked) to sell
 -- @return true if allowed to sell
 function _M:trySell(who, o, item, nb)
+	if o.__tagged then return end
 	local price = self:getObjectPrice(o, "sell")
 	if price <= 0 or nb <= 0 then return end
 	price = math.min(price * nb, self.store.purse * nb)
@@ -131,7 +132,7 @@ function _M:onBuy(who, o, item, nb, before)
 	local price = self:getObjectPrice(o, "buy")
 	if who.money >= price * nb then
 		who:incMoney(- price * nb)
-		game.log("Bought: %s for %0.2f gold.", o:getName{do_color=true}, price * nb)
+		game.log("Bought: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price * nb)
 	end
 end
 
@@ -150,7 +151,7 @@ function _M:onSell(who, o, item, nb, before)
 	price = math.min(price * nb, self.store.purse * nb)
 	who:incMoney(price)
 	o:forAllStack(function(so) so.__force_store_forget = true end) -- Make sure the store does forget about it when it restocks
-	game.log("Sold: %s for %0.2f gold.", o:getName{do_color=true}, price)
+	game.log("Sold: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price)
 end
 
 --- Override the default

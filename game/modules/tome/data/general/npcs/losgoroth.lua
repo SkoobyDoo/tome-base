@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ newEntity{
 	blood_color = colors.DARK_GREY,
 	display = "E", color=colors.DARK_GREY,
 	desc = [[Losgoroth are mighty void elementals, native to the void between the stars. They are rarely seen on a planet's surface.]],
+	faction = "cosmic-fauna",
 
 	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 15), 1, 1.2), atk=15, apr=15, dammod={mag=0.8}, damtype=DamageType.ARCANE },
 

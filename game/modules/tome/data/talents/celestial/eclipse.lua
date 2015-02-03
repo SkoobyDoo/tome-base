@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ newTalent{
 	tactical = { BUFF = 2 },
 	positive = 10,
 	negative = 10,
+	fixed_cooldown = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	getResistancePenetration = function(self, t) return self:combatLimit(self:getCun()*self:getTalentLevel(t), 100, 5, 0, 55, 500) end, -- Limit to <100%
 	getCooldownReduction = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
@@ -113,11 +114,12 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		local ret = {
-		}
+		local ret = {}
+		ret.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="corona_02", radius=0}))
 		return ret
 	end,
 	deactivate = function(self, t, p)
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
@@ -144,6 +146,12 @@ newTalent{
 	getEnergyConvert = function(self, t) return math.max(0, 6 - self:getTalentLevelRaw(t)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 100) end,
 	getRadius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
+	callbackOnActBase = function(self, t)
+		if self.positive > self.negative then
+			self:forceUseTalent(t.id, {ignore_energy=true})
+			game.logSeen(self, "%s's darkness can no longer hold back the light!", self.name:capitalize())
+		end
+	end,
 	activate = function(self, t)
 		local timer = t.getEnergyConvert(self, t)
 		game:playSoundNear(self, "talents/heal")
@@ -162,6 +170,7 @@ newTalent{
 			self:removeAllMOs()
 			game.level.map:updateMap(self.x, self.y)
 		end
+		ret.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="darkest_light", radius=0}))
 		self:resetCanSeeCacheOf()
 		return ret
 	end,
@@ -177,6 +186,7 @@ newTalent{
 		self:removeTemporaryValue("negative_regen_ref", p.drain)
 		self:removeTemporaryValue("positive_at_rest_disable", p.pstop)
 		self:removeTemporaryValue("negative_at_rest_disable", p.nstop)
+		self:removeParticles(p.particle)
 		local tg = {type="ball", range=0, selffire=true, radius= t.getRadius(self, t), talent=t}
 		self:project(tg, self.x, self.y, DamageType.LITE, 1)
 		tg.selffire = false

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -100,6 +100,7 @@ newLore{
 	id = "last-hope-tolak-statue",
 	category = "last hope",
 	name = "All Hail King Tolak the Fair!",
+	always_pop = true,
 	lore = [[Twice blessed is he of the union of King Toknor of the humans and Queen Mirvenia of the halflings! Praise his glory!
 By royal decree it is under absolute conditions forbidden to show racial prejudice against humans or halflings. There shall be no preference of price or service, and no discrimination of trade or business or employment. No halfling shall be named fur-toes, midget or shortbum, and no human shall be named lanklegs, cloudhead or stumpfoot.
 The penalty for disobedience shall be flogging. Intolerance will not be tolerated!]],
@@ -109,6 +110,7 @@ newLore{
 	id = "last-hope-toknor-statue",
 	category = "last hope",
 	name = "All Hail King Toknor the Brave!",
+	always_pop = true,
 	lore = [[Born the 23th Allure, Year of Pyre 682
 Died the 2th Summertide, Year of Ascendancy 108
 
@@ -120,6 +122,7 @@ newLore{
 	id = "last-hope-mirvenia-statue",
 	category = "last hope",
 	name = "All Hail Queen Mirvenia the Inspirer!",
+	always_pop = true,
 	lore = [[Born the 5th Flare, Year of Pyre 688
 Died the 2th Summertide, Year of Ascendancy 113
 
@@ -204,6 +207,7 @@ newLore{
 	id = "last-hope-allied-kingdoms-foundation",
 	category = "last hope",
 	name = "Declaration of the Unification of the Allied Kingdoms",
+	always_pop = true,
 	lore = [[Herewith is set the constitutional declaration of the Allied Kingdoms under the rule of King Toknor and Queen Mirvenia. Any who defy or seek to undermine the laws here set shall suffer torment and death.
 
 As of the 1st of Allure, Age of Pyre year 714, henceforth to be known as the Age of Ascendancy year 1, all human and halfling kingdoms shall be united under the banner of the Allied Kingdoms. This shall include all towns, villages, serfdoms and farmsteads with over 50% human or halfling populace in the whole expanse of Maj'Eyal.

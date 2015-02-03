@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,32 +44,34 @@ newTalent{
 	message = false,
 	no_break_stealth = true, -- stealth is broken in attackTarget
 	requires_target = true,
-	target = {type="hit", range=1},
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = { PHYSICAL = 1 } },
 	no_unlearn_last = true,
 	ignored_by_hotkeyautotalents = true,
+	alternate_attacks = {'T_DOUBLE_STRIKE'},
+	speed = 'weapon',
+	is_melee = true,
 	action = function(self, t)
+		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, nil, "blade")
+	
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x then return end
 		local _ _, x, y = self:canProject(tg, x, y)
 		if not x then return end
 		local target = game.level.map(x, y, engine.Map.ACTOR)
-		if not target then return end
+		if not target then if swap then doWardenWeaponSwap(self, t, nil, "bow") end return end
 
-		local double_strike = false
-		if self:knowTalent(self.T_DOUBLE_STRIKE) and self:isTalentActive(self.T_STRIKING_STANCE) then
-			local t = self:getTalentFromId(self.T_DOUBLE_STRIKE)
-			if not self:isTalentCoolingDown(t) then
-				double_strike = true
+		local did_alternate = false
+		for _, alt_t in ipairs(t.alternate_attacks) do
+			if self:knowTalent(alt_t) and self:callTalent(alt_t, 'can_alternate_attack') then
+				self:forceUseTalent(alt_t, {force_target = target})
+				did_alternate = true
+				break
 			end
 		end
-		-- if double strike isn't on cooldown, throw a double strike; quality of life hack
-		if double_strike then
-			self:forceUseTalent(self.T_DOUBLE_STRIKE, {force_target=target}) -- uses energy because attack is 'fake'
-		else
-			self:attackTarget(target)
-		end
+
+		if not did_alternate then self:attackTarget(target) end
 
 		if config.settings.tome.smooth_move > 0 and config.settings.tome.twitch_move then
 			self:setMoveAnim(self.x, self.y, config.settings.tome.smooth_move, blur, util.getDir(x, y, self.x, self.y), 0.2)
@@ -252,7 +254,7 @@ newTalent{
 		end end end
 	end,
 	info = function(self, t) return ([[You are hunted!.
-		There is %d%% chances each turn that all foes in a %d radius get a glimpse of your position for 30 turns.]]):
+		There is a %d%% chance each turn that all foes in a %d radius get a glimpse of your position for 30 turns.]]):
 		format(1 + self.level / 7, 10 + self.level / 5)
 	end,
 }
@@ -311,7 +313,13 @@ newTalent{
 		-- Check for visible monsters, only see LOS actors, so telepathy wont prevent it
 		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 20, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
 			local actor = game.level.map(x, y, game.level.map.ACTOR)
-			if actor and actor ~= self then seen = true end
+			if actor and actor ~= self then
+				if actor.summoner and actor.summoner == self then
+					seen = false
+				else
+					seen = true
+				end
+			end
 		end, nil)
 		if seen then
 			game.log("There are creatures that could be watching you; you cannot take the risk.")

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -52,9 +52,7 @@ function _M:generate()
 	if self.force_w then w = self.force_w end
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
 
-	local s = core.display.newSurface(w, h)
-	s:drawColorStringBlended(self.font, self.text, 0, 0, 255, 255, 255, true)
-	self.tex = {s:glTexture()}
+	self.tex = self:drawFontLine(self.font, self.text, w)
 	self.font:setStyle("normal")
 
 	-- Add UI controls
@@ -94,8 +92,8 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 		else
 			self:drawFrame(self.frame_sel, x, y)
 		end
-		if self.text_shadow then self.tex[1]:toScreenFull(x-frame_ox1+1, y-frame_oy1+1, self.rw, self.rh, self.tex[2], self.tex[3], 0, 0, 0, self.text_shadow) end
-		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3])
+		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow) end
+		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
 	else
 		if self.glow then
 			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
@@ -109,7 +107,7 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 			self.focus_decay = self.focus_decay - nb_keyframes
 			if self.focus_decay <= 0 then self.focus_decay = nil end
 		end
-		if self.text_shadow then self.tex[1]:toScreenFull(x-frame_ox1+1, y-frame_oy1+1, self.rw, self.rh, self.tex[2], self.tex[3], 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
-		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3], 1, 1, 1, self.alpha_unfocus)
+		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
+		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
 	end
 end

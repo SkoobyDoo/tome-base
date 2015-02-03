@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -444,7 +444,8 @@ function _M:talkBox(on_end, only_friends)
 	if not profile.auth then return end
 	local Talkbox = require "engine.dialogs.Talkbox"
 	local d = Talkbox.new(self, on_end, only_friends)
-	if not d.nobody then game:registerDialog(d) end
+	if not d.nobody then game:registerDialog(d)
+	else game.log("#CRIMSON#You are not subscribed to any channel, you can change that in the game options.#LAST#") end
 
 	self:updateChanList()
 end
@@ -646,8 +647,8 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 			if item.dh and by >= item.dh - self.mouse.delegate_offset_y then citem = self.dlist[i].src ci=i break end
 		end
 
-		if citem and citem.url and button == "left" and event == "button" then
-			util.browserOpenUrl(citem.url)
+		if citem and citem.url and button == "left" and event == "button" and citem.fade > 0 then
+			util.browserOpenUrl(citem.url, {is_external=true})
 		else
 			self.on_mouse(citem and citem.login and self.channels[self.cur_channel] and self.channels[self.cur_channel].users and self.channels[self.cur_channel].users[citem.login], citem and citem.login and citem, button, event, x, y, xrel, yrel, bx, by)
 		end

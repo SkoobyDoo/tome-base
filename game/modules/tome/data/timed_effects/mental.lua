@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ newEffect{
 			ai = self.ai,
 		}
 		self.faction = eff.src.faction
-		
+
 		self.ai_state.tactic_leash = 100
 		self.remove_from_party_on_death = true
 		self.no_inventory_access = true
@@ -219,7 +219,7 @@ newEffect{
 newEffect{
 	name = "GLOOM_WEAKNESS", image = "effects/gloom_weakness.png",
 	desc = "Gloom Weakness",
-	long_desc = function(self, eff) return ("The gloom reduces damage the target inflicts by %d%%."):format(-eff.incDamageChange) end,
+	long_desc = function(self, eff) return ("The gloom reduces damage the target inflicts by %d%%."):format(eff.incDamageChange) end,
 	type = "mental",
 	subtype = { gloom=true },
 	status = "detrimental",
@@ -228,7 +228,7 @@ newEffect{
 	on_lose = function(self, err) return "#F53CBE##Target# is no longer weakened." end,
 	activate = function(self, eff)
 		eff.particle = self:addParticles(Particles.new("gloom_weakness", 1))
-		eff.incDamageId = self:addTemporaryValue("inc_damage", {all = eff.incDamageChange})
+		eff.incDamageId = self:addTemporaryValue("inc_damage", {all = -eff.incDamageChange})
 	end,
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
@@ -1336,7 +1336,7 @@ newEffect{
 newEffect{
 	name = "QUICKNESS", image = "effects/quickness.png",
 	desc = "Quick",
-	long_desc = function(self, eff) return ("Increases physical attack speed by %d%%."):format(eff.power * 100) end,
+	long_desc = function(self, eff) return ("Increases global speed by %d%%."):format(eff.power * 100) end,
 	type = "mental",
 	subtype = { telekinesis=true, speed=true },
 	status = "beneficial",
@@ -1344,12 +1344,13 @@ newEffect{
 	on_gain = function(self, err) return "#Target# speeds up.", "+Quick" end,
 	on_lose = function(self, err) return "#Target# slows down.", "-Quick" end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("combat_physspeed", eff.power)
+		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.power)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("combat_physspeed", eff.tmpid)
+		self:removeTemporaryValue("global_speed_add", eff.tmpid)
 	end,
 }
+
 newEffect{
 	name = "PSIFRENZY", image = "talents/frenzied_focus.png",
 	desc = "Frenzied Focus",
@@ -1785,7 +1786,7 @@ newEffect{
 		self:removeTemporaryValue("die_at", eff.dieatid)
 
 		-- check negative life first incase the creature has healing
-		if self.life <= self.die_at or 0 then
+		if self.life <= (self.die_at or 0) then
 			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
 			game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), "Falls dead!", {255,0,255})
 			game.logSeen(self, "%s dies when its frenzy ends!", self.name:capitalize())
@@ -1842,7 +1843,7 @@ newEffect{
 		self:removeTemporaryValue("max_life", eff.life_id)
 		self:removeTemporaryValue("life_regen", eff.life_regen_id)
 		self:removeTemporaryValue("stamina_regen", eff.stamina_regen_id)
-		
+
 		self:removeTemporaryValue("life",eff.templife_id) -- remove extra hps to prevent excessive heals at high level
 		game.logSeen(self, "%s no longer revels in blood quite so much.",self.name:capitalize())
 	end,
@@ -1870,26 +1871,6 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("inc_stats", eff.tmpid)
-	end,
-}
-
-newEffect{
-	name = "UNSTOPPABLE", image = "talents/unstoppable.png",
-	desc = "Unstoppable",
-	long_desc = function(self, eff) return ("The target is unstoppable! It refuses to die, and at the end it will heal %d Life."):format(eff.kills * eff.hp_per_kill * self.max_life / 100) end,
-	type = "mental",
-	subtype = { frenzy=true },
-	status = "beneficial",
-	parameters = { hp_per_kill=2 },
-	activate = function(self, eff)
-		eff.kills = 0
-		eff.tmpid = self:addTemporaryValue("unstoppable", 1)
-		eff.healid = self:addTemporaryValue("no_life_regen", 1)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("unstoppable", eff.tmpid)
-		self:removeTemporaryValue("no_life_regen", eff.healid)
-		self:heal(eff.kills * eff.hp_per_kill * self.max_life / 100, eff)
 	end,
 }
 
@@ -2437,7 +2418,7 @@ newEffect{
 			eff.what = "physical, nature, acid, temporal"
 		elseif eff.kind == "thermal" then
 			eff.sid = self:addTemporaryValue("flat_damage_armor", {
-				[DamageType.FIRE] = eff.power, 
+				[DamageType.FIRE] = eff.power,
 				[DamageType.COLD] = eff.power,
 				[DamageType.LIGHT] = eff.power,
 				[DamageType.ARCANE] = eff.power,
@@ -2445,7 +2426,7 @@ newEffect{
 			eff.what = "fire, cold, light, arcane"
 		elseif eff.kind == "charged" then
 			eff.sid = self:addTemporaryValue("flat_damage_armor", {
-				[DamageType.LIGHTNING] = eff.power, 
+				[DamageType.LIGHTNING] = eff.power,
 				[DamageType.BLIGHT] = eff.power,
 				[DamageType.MIND] = eff.power,
 				[DamageType.DARKNESS] = eff.power,
@@ -2888,21 +2869,6 @@ newEffect{
 }
 
 newEffect{
-	name = "DRACONIC_WILL", image = "talents/draconic_will.png",
-	desc = "Draconic Will",
-	long_desc = function(self, eff) return "The target is immune to all detrimental effects." end,
-	type = "mental",
-	subtype = { nature=true },
-	status = "beneficial",
-	on_gain = function(self, err) return "#Target#'s skin hardens.", "+Draconic Will" end,
-	on_lose = function(self, err) return "#Target#'s skin is back to normal.", "-Draconic Will" end,
-	parameters = { },
-	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "negative_status_effect_immune", 1)
-	end,
-}
-
-newEffect{
 	name = "HIDDEN_RESOURCES", image = "talents/hidden_resources.png",
 	desc = "Hidden Resources",
 	long_desc = function(self, eff) return "The target does not consume any resources." end,
@@ -2979,7 +2945,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)		
+		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -2996,7 +2962,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)		
+		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -3011,35 +2977,10 @@ newEffect{
 	parameters = { },
 	on_gain = function(self, err) return "#Target# glints with a crystaline aura", "+Crystal Resonance" end,
 	on_lose = function(self, err) return "#Target# is no longer glinting.", "-Crystal Resonance" end,
-	gem_types = {
-		GEM_DIAMOND = function(self, eff) return {self:effectTemporaryValue(eff, "inc_stats", {[Stats.STAT_STR] = 5, [Stats.STAT_DEX] = 5, [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 5, [Stats.STAT_CON] = 5 }), } end,
-		GEM_PEARL = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 5}), self:effectTemporaryValue(eff,"combat_armour", 5) } end,
-		GEM_MOONSTONE = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 10), self:effectTemporaryValue(eff,"combat_mentalresist", 10), self:effectTemporaryValue(eff,"combat_spellresist", 10), self:effectTemporaryValue(eff,"combat_physresist", 10), } end,
-		GEM_FIRE_OPAL = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 10}), self:effectTemporaryValue(eff,"combat_physcrit", 5), self:effectTemporaryValue(eff,"combat_mindcrit", 5), self:effectTemporaryValue(eff,"combat_spellcrit", 5) } end,
-		GEM_BLOODSTONE = function(self, eff) return {self:effectTemporaryValue(eff,"stun_immune", 0.6) } end,
-		GEM_RUBY = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 4, [Stats.STAT_DEX] = 4, [Stats.STAT_MAG] = 4, [Stats.STAT_WIL] = 4, [Stats.STAT_CUN] = 4, [Stats.STAT_CON] = 4 }) } end,
-		GEM_AMBER = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 8}), self:effectTemporaryValue(eff,"combat_physcrit", 4), self:effectTemporaryValue(eff,"combat_mindcrit", 4), self:effectTemporaryValue(eff,"combat_spellcrit", 4) } end,
-		GEM_TURQUOISE = function(self, eff) return {self:effectTemporaryValue(eff,"see_stealth", 10), self:effectTemporaryValue(eff,"see_invisible", 10) } end,
-		GEM_JADE = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 4}), self:effectTemporaryValue(eff,"combat_armour", 4) } end,
-		GEM_SAPPHIRE = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 8), self:effectTemporaryValue(eff,"combat_mentalresist", 8), self:effectTemporaryValue(eff,"combat_spellresist", 8), self:effectTemporaryValue(eff,"combat_physresist", 8), } end,
-		GEM_QUARTZ = function(self, eff) return {self:effectTemporaryValue(eff,"stun_immune", 0.3) } end,
-		GEM_EMERALD = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 3}), self:effectTemporaryValue(eff,"combat_armour", 3) } end,
-		GEM_LAPIS_LAZULI = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 6), self:effectTemporaryValue(eff,"combat_mentalresist", 6), self:effectTemporaryValue(eff,"combat_spellresist", 6), self:effectTemporaryValue(eff,"combat_physresist", 6), } end,
-		GEM_GARNET = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 6}), self:effectTemporaryValue(eff,"combat_physcrit", 3), self:effectTemporaryValue(eff,"combat_mindcrit", 3), self:effectTemporaryValue(eff,"combat_spellcrit", 3) } end,
-		GEM_ONYX = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 3, [Stats.STAT_DEX] = 3, [Stats.STAT_MAG] = 3, [Stats.STAT_WIL] = 3, [Stats.STAT_CUN] = 3, [Stats.STAT_CON] = 3 }) } end,
-		GEM_AMETHYST = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 4}), self:effectTemporaryValue(eff,"combat_physcrit", 2), self:effectTemporaryValue(eff,"combat_mindcrit", 2), self:effectTemporaryValue(eff,"combat_spellcrit", 2) } end,
-		GEM_OPAL = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 2, [Stats.STAT_DEX] = 2, [Stats.STAT_MAG] = 2, [Stats.STAT_WIL] = 2, [Stats.STAT_CUN] = 2, [Stats.STAT_CON] = 2 }) } end,
-		GEM_TOPAZ = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 4), self:effectTemporaryValue(eff,"combat_mentalresist", 4), self:effectTemporaryValue(eff,"combat_spellresist", 4), self:effectTemporaryValue(eff,"combat_physresist", 4), } end,
-		GEM_AQUAMARINE = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 2}), self:effectTemporaryValue(eff,"combat_armour", 2) } end,
-		GEM_AMETRINE = function(self, eff) return {self:effectTemporaryValue(eff,"inc_damage", { all = 2}), self:effectTemporaryValue(eff,"combat_physcrit", 1), self:effectTemporaryValue(eff,"combat_mindcrit", 1), self:effectTemporaryValue(eff,"combat_spellcrit", 1) } end,
-		GEM_ZIRCON = function(self, eff) return {self:effectTemporaryValue(eff,"resists", { all = 1}), self:effectTemporaryValue(eff,"combat_armour", 1) } end,
-		GEM_SPINEL = function(self, eff) return {self:effectTemporaryValue(eff,"combat_def", 2), self:effectTemporaryValue(eff,"combat_mentalresist", 2), self:effectTemporaryValue(eff,"combat_spellresist", 2), self:effectTemporaryValue(eff,"combat_physresist", 2), } end,
-		GEM_CITRINE = function(self, eff) return {self:effectTemporaryValue(eff,"lite", 1), self:effectTemporaryValue(eff,"infravision", 2) } end,
-		GEM_AGATE = function(self, eff) return {self:effectTemporaryValue(eff,"inc_stats", {[Stats.STAT_STR] = 1, [Stats.STAT_DEX] = 1, [Stats.STAT_MAG] = 1, [Stats.STAT_WIL] = 1, [Stats.STAT_CUN] = 1, [Stats.STAT_CON] = 1 }) } end,
-	},
 	activate = function(self, eff)
-		local buff = self.tempeffect_def.EFF_CRYSTAL_BUFF.gem_types[eff.gem]
-		eff.id1 = buff(self, eff)
+		for a, b in pairs(eff.effects) do
+			self:effectTemporaryValue(eff, a, b)
+		end
 	end,
 	deactivate = function(self, eff)
 
@@ -3109,7 +3050,7 @@ newEffect{
 newEffect{
 	name = "STATIC_CHARGE", image = "talents/static_net.png",
 	desc = "Static Charge",
-	long_desc = function(self, eff) return ("You have accumulated an electric charge. Your next melee hit does %d extra lightning damage.."):format(eff.power) end,
+	long_desc = function(self, eff) return ("You have accumulated an electric charge. Your next melee hit does %d extra lightning damage."):format(eff.power) end,
 	type = "mental",
 	subtype = { lightning=true },
 	status = "beneficial",
@@ -3118,6 +3059,7 @@ newEffect{
 	on_lose = function(self, eff) return nil, nil end,
 	on_merge = function(self, old_eff, new_eff)
 		old_eff.power = new_eff.power + old_eff.power
+		old_eff.dur = new_eff.dur
 		return old_eff
 	end,
 	activate = function(self, eff)
@@ -3143,7 +3085,7 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "die_at", -eff.power)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 	end,
 }
 
@@ -3161,7 +3103,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_tele", radius=0}))
 		self:callTalent(self.T_KINETIC_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_KINETIC_SHIELD, "adjust_shield_gfx", false)
 	end,
@@ -3181,7 +3123,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_pyro", radius=0}))
 		self:callTalent(self.T_THERMAL_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_THERMAL_SHIELD, "adjust_shield_gfx", false)
 	end,
@@ -3192,7 +3134,7 @@ newEffect{
 	desc = "Transcendent Electrokinesis",
 	long_desc = function(self, eff) return ("Your electrokinesis transcends normal limits. +%d%% Lightning damage and +%d%% Lightning damage penetration, and improved charged effects."):format(eff.power, eff.penetration) end,
 	type = "mental",
-	subtype = { lightning=true, mind=true },
+	subtype = { lightning=true },
 	status = "beneficial",
 	parameters = { power=10, penetration = 0 },
 	activate = function(self, eff)
@@ -3201,7 +3143,7 @@ newEffect{
 		eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, toback=true, oversize=1.7, a=155, appear=8, speed=0, img="transcend_electro", radius=0}))
 		self:callTalent(self.T_CHARGED_SHIELD, "adjust_shield_gfx", true)
 	end,
-	deactivate = function(self, eff)	
+	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 		self:callTalent(self.T_CHARGED_SHIELD, "adjust_shield_gfx", false)
 	end,
@@ -3244,5 +3186,142 @@ newEffect{
 		if eff.refid then self:removeTemporaryValue("damage_shield_reflect", eff.refid) end
 		self.damage_shield_absorb = nil
 		self.damage_shield_absorb_max = nil
+	end,
+}
+
+newEffect{
+	name = "UNSEEN_FORCE", desc = "Unseen Force",
+	image="talents/unseen_force.png",
+	long_desc = function(self, eff)
+		local hits = (eff.extrahit > 0 and "from "..eff.hits.." to "..(eff.hits + 1)) or ""..eff.hits
+		return ("An unseen force strikes %s targets in a range of 5 around this creature "..
+		"every turn, doing %d damage and knocking them back for %d tiles."):format(hits, eff.damage, eff.knockback) end,
+	type = "mental",
+	subtype = {psionic=true},
+	status = "beneficial",
+	activate = function(self, eff)
+		game.logSeen(self, "An unseen force begins to swirl around %s!", self.name)
+		eff.particles = self:addParticles(Particles.new("force_area", 1, { radius = self:getTalentRange(self.T_UNSEEN_FORCE) }))
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particles)
+		game.logSeen(self, "The unseen force around %s subsides.", self.name)
+	end,
+	on_timeout = function(self, eff)
+		local targets = {}
+		local tmp = {}
+		local grids = core.fov.circle_grids(self.x, self.y, 5, true)
+		for x, yy in pairs(grids) do
+			for y, _ in pairs(grids[x]) do
+				local a = game.level.map(x, y, Map.ACTOR)
+				if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+					targets[#targets+1] = a
+				end
+			end
+		end
+
+		if #targets > 0 then
+			local hitCount = eff.hits
+			if rng.percent(eff.extrahit) then hitCount = hitCount + 1 end
+
+			local t = self:getTalentFromId(self.T_WILLFUL_STRIKE)
+			-- Randomly take targets
+			local sample = rng.tableSample(targets, hitCount)
+			for _, target in ipairs(sample) do
+				t.forceHit(self, t, target, target.x, target.y, eff.damage, eff.knockback, 7, 0.6, 10, tmp)
+			end
+		end
+	end,
+}
+
+newEffect{
+	name = "PSIONIC_MAELSTROM", image = "talents/static_net.png",
+	desc = "Psionic Maelstrom",
+	long_desc = function(self, eff) return ("This creature is standing in the eye of a powerful storm of psionic forces."):format() end,
+	type = "mental",
+	subtype = { psionic=true },
+	status = "beneficial",
+	parameters = { },
+	on_gain = function(self, eff) return nil, nil end,
+	on_lose = function(self, eff) return nil, nil end,
+	activate = function(self, eff)
+		eff.dir = 0--rng.range(0, 7)
+	end,
+	deactivate = function(self, eff)
+	end,
+	on_timeout = function(self, eff)
+		local tg = {type="beam", range=4, selffire=false}
+		local x, y
+		if eff.kinetic then
+			x = self.x+math.modf(4*math.sin(math.pi*eff.dir/4))
+			y = self.y+math.modf(4*math.cos(math.pi*eff.dir/4))
+			self:project(tg, x, y, engine.DamageType.PHYSICAL, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
+		end
+		if eff.charged then
+			x = self.x+math.modf(4*math.sin(math.pi*(eff.dir+4)/4))
+			y = self.y+math.modf(4*math.cos(math.pi*(eff.dir+4)/4))
+			self:project(tg, x, y, engine.DamageType.LIGHTNING, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			if core.shader.active() then game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=x-self.x, ty=y-self.y}, {type="lightning"})
+			else game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=x-self.x, ty=y-self.y})
+			end
+		end
+		if eff.thermal then
+			x = self.x+math.modf(4*math.sin(math.pi*(eff.dir+2)/4))
+			y = self.y+math.modf(4*math.cos(math.pi*(eff.dir+2)/4))
+			self:project(tg, x, y, engine.DamageType.FIRE, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "flamebeam", {tx=x-self.x, ty=y-self.y})
+			x = self.x+math.modf(4*math.sin(math.pi*(eff.dir+6)/4))
+			y = self.y+math.modf(4*math.cos(math.pi*(eff.dir+6)/4))
+			self:project(tg, x, y, engine.DamageType.COLD, eff.dam, nil)
+			local _ _, x, y = self:canProject(tg, x, y)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "ice_beam", {tx=x-self.x, ty=y-self.y})
+		end
+		eff.dir = eff.dir+1
+	end,
+}
+
+newEffect{
+	name = "CAUGHT_LIGHTNING", image = "talents/transcendent_electrokinesis.png",
+	desc = "Caught Lightning",
+	long_desc = function(self, eff) return ("Lightning Catcher has caught energy and is empowering you for +%d%% lightning damage and +%d to all stats."):format((eff.dur+1)*5, eff.dur+1) end,
+	type = "mental",
+	subtype = { lightning=true },
+	status = "beneficial",
+	parameters = {  },
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = old_eff.dur + new_eff.dur
+		return old_eff
+	end,
+	activate = function(self, eff)
+		eff.lightning = self:addTemporaryValue("inc_damage", {[DamageType.LIGHTNING]=eff.dur*5})
+		eff.stats = self:addTemporaryValue("inc_stats", { 
+			[Stats.STAT_STR] = eff.dur,
+			[Stats.STAT_DEX] = eff.dur,
+			[Stats.STAT_CON] = eff.dur,
+			[Stats.STAT_MAG] = eff.dur,
+			[Stats.STAT_WIL] = eff.dur,
+			[Stats.STAT_CUN] = eff.dur,
+		})
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("inc_damage", eff.lightning)
+		self:removeTemporaryValue("inc_stats", eff.stats)
+	end,
+	on_timeout = function(self, eff)
+		self:removeTemporaryValue("inc_damage", eff.lightning)
+		self:removeTemporaryValue("inc_stats", eff.stats)
+		eff.lightning = self:addTemporaryValue("inc_damage", {[DamageType.LIGHTNING]=eff.dur*5})
+		eff.stats = self:addTemporaryValue("inc_stats", { 
+			[Stats.STAT_STR] = eff.dur,
+			[Stats.STAT_DEX] = eff.dur,
+			[Stats.STAT_CON] = eff.dur,
+			[Stats.STAT_MAG] = eff.dur,
+			[Stats.STAT_WIL] = eff.dur,
+			[Stats.STAT_CUN] = eff.dur,
+		})
 	end,
 }

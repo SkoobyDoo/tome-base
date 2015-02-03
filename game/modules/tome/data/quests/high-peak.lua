@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -137,6 +137,31 @@ function win(self, how)
 	local p = game:getPlayer(true)
 	p.winner = how
 	game:registerDialog(require("engine.dialogs.ShowText").new("Winner", "win", {playername=p.name, how=how}, game.w * 0.6))
+
+	-- Save the winner, if alive
+	if not p.dead then
+		local pwinner = p:cloneFull()
+		pwinner.version = game.__mod_info.version
+		pwinner.addons = table.keys(game.__mod_info.addons)				
+		pwinner.no_drops = true
+		pwinner.energy.value = 0
+		pwinner.player = nil
+		pwinner.rank = 5
+		pwinner:removeAllMOs()
+		pwinner.ai = "tactical"
+		pwinner.ai_state = {talent_in=1, ai_move="move_astar"}
+		pwinner.faction="enemies"
+		pwinner.life = pwinner.max_life
+		pwinner:removeEffectsFilter(function() return true end, 9999, true, true)
+		-- Remove some talents
+		local tids = {}
+		for tid, _ in pairs(pwinner.talents) do
+			local t = pwinner:getTalentFromId(tid)
+			if t.no_npc_use then tids[#tids+1] = t end
+		end
+		world.majeyal_campaign_last_winner = pwinner
+	end
+
 	game:saveGame()
 end
 

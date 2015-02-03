@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,6 +43,9 @@ function _M:init(zone, map, level, data)
 end
 
 function _M:getMapFile(file)
+	-- Found in the zone itself ?
+	if file:find("^!") then return self.zone:getBaseName().."/maps/"..file:sub(2)..".lua" end
+
 	local _, _, addon, rfile = file:find("^([^+]+)%+(.+)$")
 	if addon and rfile then
 		return "/data-"..addon.."/maps/"..rfile..".lua"
@@ -199,7 +202,7 @@ function _M:resolve(typ, c)
 	local res = self.tiles[c][typ]
 	if type(res) == "function" then
 		return self.grid_list[res()]
-	elseif type(res) == "table" and res.__CLASSNAME then
+	elseif type(res) == "table" and (res.__ATOMIC or res.__CLASSNAME) then
 		return res
 	elseif type(res) == "table" then
 		return self.grid_list[res[rng.range(1, #res)]]

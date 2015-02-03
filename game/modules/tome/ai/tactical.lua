@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -267,7 +267,7 @@ newAI("use_tactical", function(self)
 		-- Need to reduce paradox
 		if avail.paradox then
 			want.paradox = 0
-			local _, failure_chance = self:paradoxFailChance()
+			local failure_chance = self:paradoxFailChance()
 			if failure_chance > 10 then want.paradox = want.paradox + 0.5
 			elseif failure_chance > 20 then want.paradox = want.paradox + 1
 			elseif failure_chance > 50 then want.paradox = want.paradox + 2

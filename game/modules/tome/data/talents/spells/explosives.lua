@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ newTalent{
 					self:callTalent(self.T_DYNAMIC_RECHARGE, "applyEffect", golem)
 				end
 			else -- reduced damage to friendly npcs (could make random chance like friendlyfire instead)
-				if target and self:reactionToward(target) > 0 then d = dam * (1 - prot) end
+				if target and self:reactionToward(target) >= 0 then d = dam * (1 - prot) end
 			end
 			if d <= 0 then return end
 

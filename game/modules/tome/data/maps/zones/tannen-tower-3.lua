@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ defineTile("~", "DEEP_WATER")
 defineTile("<", "TUP")
 defineTile(">", "TDOWN")
 defineTile(".", "FLOOR")
+defineTile("l", "DEEP_WATER", "NOTE2")
 
 -- addSpot section
 
@@ -47,7 +48,7 @@ X~~XXX~X~X~~~~~X~X~XXX~~X
 X~XXXX~X~X~XXX~X~X~XXXX~X
 X~XXXX~X~X~~>X~X~X~XXXX~X
 X~XXXX~X~XXXXX~X~X~XXXX~X
-X~~XXX.X~~~~~~~X~X~XXX~~X
+X~~XXX.X~~~l~~~X~X~XXX~~X
 XX~XXX~XXXXXXXXX~X~XXX~XX
 XX.XXX~~~~~~~~~~~X~XXX~XX
 XX~~XXXXXXXXXXXXXX~XX~.XX

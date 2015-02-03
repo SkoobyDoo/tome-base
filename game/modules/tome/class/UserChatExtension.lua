@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ function _M:sendObjectLink(o)
 	local name = o:getName{do_color=true}:removeUIDCodes()
 	local desc = tostring(o:getDesc(nil, nil, true)):removeUIDCodes()
 	local ser = zlib.compress(table.serialize{kind="object-link", name=name, desc=desc})
-	core.profile.pushOrder(string.format("o='ChatSerialData' channel=%q msg=%q", self.chat.cur_channel, ser))
+	core.profile.pushOrder(string.format("o='ChatSerialData' kind='object-link' channel=%q msg=%q", self.chat.cur_channel, ser))
 end
 
 function _M:sendActorLink(m)
@@ -45,14 +45,14 @@ function _M:sendActorLink(m)
 	local desc = tostring(m:tooltip(m.x, m.y, game.player) or "???"):removeUIDCodes()
 	if not desc then return end
 	local ser = zlib.compress(table.serialize{kind="actor-link", name=name, desc=desc})
-	core.profile.pushOrder(string.format("o='ChatSerialData' channel=%q msg=%q", self.chat.cur_channel, ser))
+	core.profile.pushOrder(string.format("o='ChatSerialData' kind='actor-link' channel=%q msg=%q", self.chat.cur_channel, ser))
 end
 
-function _M:sendKillerLink(msg, src)
+function _M:sendKillerLink(msg, short_msg, src)
 	local desc = nil
 	if src.tooltip then desc = tostring(src:tooltip(src.x, src.y, game.player) or "???"):removeUIDCodes() end
-	local ser = zlib.compress(table.serialize{kind="killer-link", msg=msg, desc=desc})
-	core.profile.pushOrder(string.format("o='ChatSerialData' channel=%q msg=%q", self.chat.cur_channel, ser))
+	local ser = zlib.compress(table.serialize{kind="killer-link", msg=msg, short_msg=short_msg, desc=desc})
+	core.profile.pushOrder(string.format("o='ChatSerialData' kind='killer-link' channel=%q msg=%q", self.chat.cur_channel, ser))
 end
 
 -- Receive a custom event

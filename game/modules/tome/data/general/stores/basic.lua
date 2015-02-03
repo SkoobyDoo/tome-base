@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -223,6 +223,20 @@ newEntity{
 		empty_before_restock = false,
 		filters = {
 			{type="gem", id=true},
+		},
+	},
+}
+
+newEntity{
+	define_as = "LITEDIGSTORE",
+	name = "tool store",
+	display = '8', color=colors.UMBER,
+	store = {
+		purse = 10,
+		empty_before_restock = false,
+		filters = {
+			{type="lite", id=true, tome_drops="store"},
+			{type="tool", subtype="digger", id=true, tome_drops="store"},
 		},
 	},
 }

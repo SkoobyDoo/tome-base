@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,7 +45,8 @@ return {
 			force_down = true,
 		},
 		actor = {
-			class = "mod.class.generator.actor.Random",
+			class = "engine.generator.actor.Random",
+			--class = "mod.class.generator.actor.Random",
 			nb_npc = {50, 60},
 			filters = { {max_ood=2}, },
 			nb_spots = 2, on_spot_chance = 35,

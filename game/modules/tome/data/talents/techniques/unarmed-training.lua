@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,7 +81,6 @@ newTalent{
 	tactical = { BUFF = 2 },
 	getStr = function(self, t) return math.ceil(self:combatTalentScale(t, 1.5, 7.5, 0.75) + self:combatTalentStatDamage(t, "cun", 2, 10)) end,
 	getCon = function(self, t) return math.ceil(self:combatTalentScale(t, 1.5, 7.5, 0.75) + self:combatTalentStatDamage(t, "dex", 5, 25)) end,
-
 	passives = function(self, t, tmptable)
 		self:talentTemporaryValue(tmptable, "inc_stats", {[self.STAT_CON] = t.getCon(self, t)})
 		self:talentTemporaryValue(tmptable, "inc_stats", {[self.STAT_STR] = t.getStr(self, t)})	

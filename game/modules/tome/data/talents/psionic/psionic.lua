@@ -55,9 +55,6 @@ newTalentType{ allow_random=true, is_mind=true, type="psionic/mentalism", generi
 newTalentType{ allow_random=true, is_mind=true, type="psionic/feedback", generic = true, name = "feedback", description = "Store feedback as you get damaged and use it to protect and heal your body." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/trance", generic = true, name = "trance", description = "Put your mind into a deep trance." }
 
-newTalentType{ allow_random=true, is_mind=true, type="psionic/possession", name = "possession", description = "You have learnt to shed away your body, allowing you to possess any other." }
-
-
 -- Level 0 wil tree requirements:
 psi_absorb = {
 	stat = { wil=function(level) return 12 + (level-1) * 8 end },
@@ -214,8 +211,3 @@ load("/data/talents/psionic/slumber.lua")
 load("/data/talents/psionic/solipsism.lua")
 load("/data/talents/psionic/thought-forms.lua")
 --load("/data/talents/psionic/trance.lua")
-
-
-load("/data/talents/psionic/possession.lua")
-
-

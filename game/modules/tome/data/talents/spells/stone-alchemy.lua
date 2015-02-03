@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ newTalent{
 		return gem
 	end,
 	action = function(self, t)
-		local d d = self:showEquipInven("Use which gem?", function(o) return not o.unique and o.type == "gem" and not o.__tagged end, function(o, inven, item)
+		local ret = self:talentDialog(self:showEquipInven("Use which gem?", function(o) return not o.unique and o.type == "gem" and not o.__tagged end, function(o, inven, item)
 			if not o then return end
 			local gem = t.make_gem(self, t, o.define_as)
 			if not gem then return end
@@ -48,12 +48,10 @@ newTalent{
 			self:removeObject(inven, item)
 			game.logPlayer(self, "You create: %s", gem:getName{do_color=true, do_count=true})
 			self:sortInven()
-			d.used_talent = true
+			self:talentDialogReturn(true)
 			return true
-		end)
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent) end
-		if not coroutine.yield() then return nil end
+		end))
+		if not ret then return nil end
 
 		game:playSoundNear(self, "talents/arcane")
 		return true
@@ -95,15 +93,12 @@ newTalent{
 			self:addObject(self.INVEN_INVEN, gem)
 			game.logPlayer(self, "You extract %s from %s", gem:getName{do_color=true, do_count=true}, o:getName{do_color=true, do_count=true})
 			self:sortInven()
-			if d then d.used_talent = true end
+			self:talentDialogReturn(true)
 		end
 		return true
 	end,
 	action = function(self, t)
-		local d d = self:showEquipInven("Try to extract gems from which metallic item?", function(o) return t.filterGem(self, t, o) end, function(o, inven, item) return t.extractGem(self, t, o, inven, item, d) end)
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent) end
-		if not coroutine.yield() then return nil end
+		if not self:talentDialog(self:showEquipInven("Try to extract gems from which metallic item?", function(o) return t.filterGem(self, t, o) end, function(o, inven, item) return t.extractGem(self, t, o, inven, item, d) end)) then return nil end
 		return true
 	end,
 	info = function(self, t)
@@ -128,27 +123,29 @@ newTalent{
 	no_npc_use = true,
 	no_unlearn_last = true,
 	action = function(self, t)
-		local d d = self:showInventory("Use which gem?", self:getInven("INVEN"), function(gem) return gem.type == "gem" and gem.imbue_powers and gem.material_level and gem.material_level <= self:getTalentLevelRaw(t) end, function(gem, gem_item)
+		local ret = self:talentDialog(self:showInventory("Use which gem?", self:getInven("INVEN"), function(gem) return gem.type == "gem" and gem.imbue_powers and gem.material_level and gem.material_level <= self:getTalentLevelRaw(t) end, function(gem, gem_item)
 			local nd = self:showInventory("Imbue which armour?", self:getInven("INVEN"), function(o) return o.type == "armor" and (o.slot == "BODY" or (self:knowTalent(self.T_CRAFTY_HANDS) and (o.slot == "HEAD" or o.slot == "BELT"))) and not o.been_imbued end, function(o, item)
 				self:removeObject(self:getInven("INVEN"), gem_item)
-				o.wielder = o.wielder or {}
-				table.mergeAdd(o.wielder, gem.imbue_powers, true)
-				if gem.talent_on_spell then
-					o.talent_on_spell = o.talent_on_spell or {}
-					table.append(o.talent_on_spell, gem.talent_on_spell)
-				end
-				o.been_imbued = " <"..gem.name..">"
-				game.logPlayer(self, "You imbue your %s with %s.", o:getName{do_colour=true, no_count=true}, gem:getName{do_colour=true, no_count=true})
-				o.special = true
-				d.used_talent = true
-				game:unregisterDialog(d)
+				-- create an ego
+				local Entity = require("engine.Entity")
+				local ego = Entity.new{
+					name = "imbue "..gem.name,
+					display_string = " <"..gem.name..">",
+					been_imbued = true,
+					wielder = table.clone(gem.imbue_powers),
+					talent_on_spell = gem.talent_on_spell,
+					fake_ego = true, unvault_ego = true,
+				}
+				local name = o:getName{do_colour=true, no_count=true}
+				game.zone:applyEgo(o, ego, "object")
+				game.logPlayer(self, "You imbue your %s with %s.", name, gem:getName{do_colour=true, no_count=true})
+				self:talentDialogReturn(true)
+				game:unregisterDialog(self:talentDialogGet())
 			end)
-			nd.unload = function(self) game:unregisterDialog(d) end
+			nd.unload = function(_) game:unregisterDialog(self:talentDialogGet()) end
 			return true
-		end)
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent) end
-		if not coroutine.yield() then return nil end
+		end))
+		if not ret then return nil end
 		return true
 	end,
 	info = function(self, t)

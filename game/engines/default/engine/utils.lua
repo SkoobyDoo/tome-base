@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,6 +50,14 @@ function table.concatNice(t, sep, endsep)
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
 end
 
+function table.count(t)
+	local i = 0
+	for k, v in pairs(t) do
+		i = i + 1
+	end
+	return i
+end
+
 function table.min(t)
 	local m = nil
 	for _, v in pairs(t) do
@@ -70,12 +78,20 @@ function table.max(t)
 	return m
 end
 
+function table.print_shallow(src, offset, ret)
+	if type(src) ~= "table" then print("table.print has no table:", src) return end
+	offset = offset or ""
+	for k, e in pairs(src) do
+		print(("%s[%s] = %s"):format(offset, tostring(k), tostring(e)))
+	end
+end
+
 function table.print(src, offset, ret)
 	if type(src) ~= "table" then print("table.print has no table:", src) return end
 	offset = offset or ""
 	for k, e in pairs(src) do
 		-- Deep copy subtables, but not objects!
-		if type(e) == "table" and not e.__CLASSNAME then
+		if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			print(("%s[%s] = {"):format(offset, tostring(k)))
 			table.print(e, offset.."  ")
 			print(("%s}"):format(offset))
@@ -89,7 +105,7 @@ function table.iprint(src, offset)
 	offset = offset or ""
 	for k, e in ipairs(src) do
 		-- Deep copy subtables, but not objects!
-		if type(e) == "table" and not e.__CLASSNAME then
+		if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			print(("%s[%s] = {"):format(offset, tostring(k)))
 			table.print(e, offset.."  ")
 			print(("%s}"):format(offset))
@@ -127,7 +143,7 @@ function table.clone(tbl, deep, k_skip)
 	for k, e in pairs(tbl) do
 		if not k_skip[k] then
 			-- Deep copy subtables, but not objects!
-			if deep and type(e) == "table" and not e.__CLASSNAME then
+			if deep and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				n[k] = table.clone(e, true, k_skip)
 			else
 				n[k] = e
@@ -153,10 +169,10 @@ function table.merge(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 	for k, e in pairs(src) do
 		if not k_skip[k] and not k_skip_deep[k] then
 			-- Recursively merge tables
-			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__CLASSNAME then
+			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				table.merge(dst[k], e, deep, nil, k_skip_deep, addnumbers)
 			-- Clone tables if into the destination
-			elseif deep and not dst[k] and type(e) == "table" and not e.__CLASSNAME then
+			elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				dst[k] = table.clone(e, deep, nil, k_skip_deep)
 			-- Nil out any NIL_MERGE entries
 			elseif e == table.NIL_MERGE then
@@ -180,7 +196,7 @@ function table.mergeAppendArray(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 		k_skip[i] = true
 		local b = src[i]
 		if deep and type(b) == "table" then
-			if b.__CLASSNAME then
+			if b.__ATOMIC or b.__CLASSNAME then
 				b = b:clone()
 			else
 				b = table.clone(b, true)
@@ -243,6 +259,24 @@ function table.values(t)
 	return tt
 end
 
+function table.same_values(t1, t2)
+	for _, e1 in ipairs(t1) do
+		local ok = false
+		for _, e2 in ipairs(t2) do
+			if e1 == e2 then ok = true break end
+		end
+		if not ok then return false end
+	end
+	for _, e2 in ipairs(t2) do
+		local ok = false
+		for _, e1 in ipairs(t1) do
+			if e1 == e2 then ok = true break end
+		end
+		if not ok then return false end
+	end
+	return true
+end
+
 function table.from_list(t, k, v)
 	local tt = {}
 	for i, e in ipairs(t) do tt[e[k or 1]] = e[v or 2] end
@@ -255,15 +289,39 @@ function table.removeFromList(t, ...)
 	end
 end
 
+function table.check(t, fct, do_recurse, path)
+	if path and path ~= '' then path = path..'/' else path = '' end
+	do_recurse = do_recurse or function() return true end
+	for k, e in pairs(t) do
+		local tk, te = type(k), type(e)
+		if te == "table" and not e.__ATOMIC and not e.__CLASSNAME and do_recurse(e) then
+			local ok, err = table.check(e, fct, do_recurse, path..tostring(k))
+			if not ok then return nil, err end
+		else
+			local ok, err = fct(t, path..tostring(k), e, te)
+			if not ok then return nil, err end
+		end
+
+		if tk == "table" and not k.__ATOMIC and not k.__CLASSNAME and do_recurse(k) then
+			local ok, err = table.check(k, fct, do_recurse, path..tostring(k))
+			if not ok then return nil, err end
+		else
+			local ok, err = fct(t, path.."<key>", k, tk)
+			if not ok then return nil, err end
+		end
+	end
+	return true
+end
+
 --- Adds missing keys from the src table to the dst table.
 -- @param dst The destination table, which will have all merged values.
 -- @param src The source table, supplying values to be merged.
 -- @param deep Boolean that determines if tables will be recursively merged.
 function table.update(dst, src, deep)
 	for k, e in pairs(src) do
-		if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__CLASSNAME then
+		if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			table.update(dst[k], e, deep)
-		elseif deep and not dst[k] and type(e) == "table" and not e.__CLASSNAME then
+		elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			dst[k] = table.clone(e, deep)
 		elseif not dst[k] and type(dst[k]) ~= "boolean" then
 			dst[k] = e
@@ -362,6 +420,26 @@ function table.set(table, ...)
 	table[args[#args - 1]] = args[#args]
 end
 
+--[=[
+	Decends recursively through a table by the given list of keys,
+	returning the table at the end. Missing keys will have tables
+	created for them. If a non-table value is encountered, return nil.
+]=]
+function table.getTable(table, ...)
+	if 'table' ~= type(table) then return end
+	local args = {...}
+	for i = 1, #args do
+		local key = args[i]
+		local subtable = table[key]
+		if not subtable then
+			subtable = {}
+			table[key] = subtable
+		end
+		if 'table' ~= type(subtable) then return end
+		table = subtable
+	end
+	return table
+end
 
 -- Taken from http://lua-users.org/wiki/SortedIteration and modified
 local function cmp_multitype(op1, op2)
@@ -468,7 +546,7 @@ end
 table.rules.overwrite = function(dvalue, svalue, key, dst)
 	if svalue == table.NIL_MERGE then
 		svalue = nil
-	elseif type(svalue) == 'table' and not svalue.__CLASSNAME then
+	elseif type(svalue) == 'table' and not svalue.__ATOMIC and not svalue.__CLASSNAME then
 		svalue = table.clone(svalue, true)
 	end
 	dst[key] = svalue
@@ -477,7 +555,7 @@ end
 -- Does the recursion.
 table.rules.recurse = function(dvalue, svalue, key, dst, src, rules, state)
 	if type(svalue) ~= 'table' or
-		svalue.__CLASSNAME or
+		svalue.__ATOMIC or svalue.__CLASSNAME or
 		(type(dvalue) ~= 'table' and svalue == table.NIL_MERGE)
 	then return end
 	if type(dvalue) ~= 'table' then
@@ -494,7 +572,7 @@ end
 table.rules.append = function(dvalue, svalue, key, dst, src, rules, state)
 	if type(key) ~= 'number' then return end
 	if type(svalue) == 'table' then
-		if svalue.__CLASSNAME then
+		if svalue.__ATOMIC or svalue.__CLASSNAME then
 			svalue = svalue:clone()
 		else
 			svalue = table.clone(svalue, true)
@@ -508,7 +586,7 @@ table.rules.append_top = function(dvalue, svalue, key, dst, src, rules, state)
 	if state.path and #state.path > 0 then return end
 	if type(key) ~= 'number' then return end
 	if type(svalue) == 'table' then
-		if svalue.__CLASSNAME then
+		if svalue.__ATOMIC or svalue.__CLASSNAME then
 			svalue = svalue:clone()
 		else
 			svalue = table.clone(svalue, true)
@@ -531,12 +609,12 @@ end
 A convenience method for merging tables, appending numeric indices,
 and adding number values in addition to other rules.
 --]]
-function table.ruleMergeAppendAdd(dst, src, rules)
+function table.ruleMergeAppendAdd(dst, src, rules, state)
 	rules = table.clone(rules)
 	for _, rule in pairs {'append_top', 'recurse', 'add', 'overwrite'} do
 		table.insert(rules, table.rules[rule])
 	end
-	table.applyRules(dst, src, rules)
+	table.applyRules(dst, src, rules, state)
 end
 
 
@@ -564,10 +642,24 @@ function string.a_an(str)
 	else return "a "..str end
 end
 
+function string.he_she(actor)
+	if actor.female then return "she"
+	elseif actor.neuter then return "it"
+	else return "he"
+	end
+end
+
 function string.his_her(actor)
 	if actor.female then return "her"
 	elseif actor.neuter then return "it"
 	else return "his"
+	end
+end
+
+function string.him_her(actor)
+	if actor.female then return "her"
+	elseif actor.neuter then return "it"
+	else return "him"
 	end
 end
 
@@ -634,7 +726,8 @@ function string.removeUIDCodes(str)
 end
 
 function string.splitLine(str, max_width, font)
-	local space_w = font:size(" ")
+	local fontoldsize = font.simplesize or font.size
+	local space_w = fontoldsize(font, " ")
 	local lines = {}
 	local cur_line, cur_size = "", 0
 	local v
@@ -642,7 +735,7 @@ function string.splitLine(str, max_width, font)
 	for i = 1, #ls do
 		local v = ls[i]
 		local shortv = v:lpegSub("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", "")
-		local w, h = font:size(shortv)
+		local w, h = fontoldsize(font, shortv)
 
 		if cur_size + space_w + w < max_width then
 			cur_line = cur_line..(cur_size==0 and "" or " ")..v
@@ -740,146 +833,18 @@ function __get_uid_entity(uid)
 end
 
 local tmps = core.display.newSurface(1, 1)
-getmetatable(tmps).__index.drawColorString = function(s, font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
-	r = r or 255
-	g = g or 255
-	b = b or 255
-	limit_w = limit_w or 99999999
-	local oldr, oldg, oldb = r, g, b
-	local max_h = 0
-	local sw = 0
-	local bx, by = x, y
-	for i, v in ipairs(list) do
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			oldr, oldg, oldb = r, g, b
-			r, g, b = nr:parseHex(), ng:parseHex(), nb:parseHex()
-		elseif col then
-			if col == "LAST" then
-				r, g, b = oldr, oldg, oldb
-			else
-				oldr, oldg, oldb = r, g, b
-				r, g, b = colors[col].r, colors[col].g, colors[col].b
-			end
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					if sw + w > limit_w then break end
-					s:merge(surf, x, y)
-					if h > max_h then max_h = h end
-					x = x + (w or 0)
-					sw = sw + (w or 0)
-				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-		elseif extra then
-			--
-		else
-			local w, h = font:size(v)
-			local stop = false
-			while sw + w > limit_w do
-				v = v:sub(1, #v - 1)
-				if #v == 0 then break end
-				w, h = font:size(v)
-				stop = true
-			end
-			if h > max_h then max_h = h end
-			s:drawStringBlended(font, v, x, y, r, g, b, alpha_from_texture)
-			x = x + w
-			sw = sw + w
-			if stop then break end
-		end
-	end
-	return r, g, b, sw, max_h, bx, by
-end
-
-getmetatable(tmps).__index.drawColorStringCentered = function(s, font, str, dx, dy, dw, dh, r, g, b, alpha_from_texture, limit_w)
-	local w, h = font:size(str)
-	local x, y = dx + (dw - w) / 2, dy + (dh - h) / 2
-	s:drawColorString(font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-end
-
-
 getmetatable(tmps).__index.drawColorStringBlended = function(s, font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
-	r = r or 255
-	g = g or 255
-	b = b or 255
-	limit_w = limit_w or 99999999
-	local oldr, oldg, oldb = r, g, b
-	local max_h = 0
-	local sw = 0
-	local bx, by = x, y
-	for i, v in ipairs(list) do
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			oldr, oldg, oldb = r, g, b
-			r, g, b = nr:parseHex(), ng:parseHex(), nb:parseHex()
-		elseif col then
-			if col == "LAST" then
-				r, g, b = oldr, oldg, oldb
-			else
-				oldr, oldg, oldb = r, g, b
-				r, g, b = colors[col].r, colors[col].g, colors[col].b
-			end
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					if sw + (w or 0) > limit_w then break end
-					s:merge(surf, x, y)
-					if h > max_h then max_h = h end
-					x = x + (w or 0)
-					sw = sw + (w or 0)
-				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-		elseif extra then
-			--
-		else
-			local w, h = font:size(v)
-			local stop = false
-			while sw + w > limit_w do
-				v = v:sub(1, #v - 1)
-				if #v == 0 then break end
-				w, h = font:size(v)
-				stop = true
-			end
-			if h > max_h then max_h = h end
-			s:drawStringBlended(font, v, x, y, r, g, b, alpha_from_texture)
-			x = x + w
-			sw = sw + w
-			if stop then break end
-		end
-	end
-	return r, g, b, sw, max_h, bx, by
+	local tstr = str:toTString()
+	return tstr:drawOnSurface(s, limit_w or 99999999, 1, font, x, y, r, g, b, not alpha_from_texture)
 end
+getmetatable(tmps).__index.drawColorString = getmetatable(tmps).__index.drawColorStringBlended
 
 getmetatable(tmps).__index.drawColorStringBlendedCentered = function(s, font, str, dx, dy, dw, dh, r, g, b, alpha_from_texture, limit_w)
 	local w, h = font:size(str)
 	local x, y = dx + (dw - w) / 2, dy + (dh - h) / 2
 	s:drawColorStringBlended(font, str, x, y, r, g, b, alpha_from_texture, limit_w)
 end
+getmetatable(tmps).__index.drawColorStringCentered = getmetatable(tmps).__index.drawColorStringBlendedCentered
 
 local font_cache = {}
 local oldNewFont = core.display.newFont
@@ -897,58 +862,51 @@ core.display.newFont = function(font, size, no_cache)
 	font_cache[font][size] = oldNewFont(font, size)
 	return font_cache[font][size]
 end
+core.display.getFontCache = function() return font_cache end
 
 local tmps = core.display.newFont("/data/font/Vera.ttf", 12)
 local word_size_cache = {}
 local fontoldsize = getmetatable(tmps).__index.size
 getmetatable(tmps).__index.simplesize = fontoldsize
+local fontcachewordsize = function(font, fstyle, v)
+	local cache = table.getTable(word_size_cache, font, fstyle)
+	if not cache[v] then
+		cache[v] = {fontoldsize(font, v)}
+	end
+	return unpack(cache[v])
+end
 getmetatable(tmps).__index.size = function(font, str)
-	local list = str:split("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#", true)
+	local tstr = str:toTString()
 	local mw, mh = 0, 0
 	local fstyle = font:getStyle()
 	word_size_cache[font] = word_size_cache[font] or {}
 	word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
 	local v
-	for i = 1, #list do
-		v = list[i]
-		local nr, ng, nb = lpeg.match("#" * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * lpeg.C(Pcolorcode) * "#", v)
-		local col = lpeg.match("#" * lpeg.C(Pcolorname) * "#", v)
-		local uid, mo = lpeg.match("#" * Puid_cap * "#", v)
-		local fontstyle = lpeg.match("#" * Pfontstyle_cap * "#", v)
-		local extra = lpeg.match("#" * lpeg.C(Pextra) * "#", v)
-		if nr and ng and nb then
-			-- Ignore
-		elseif col then
-			-- Ignore
-		elseif uid and mo and game.level then
-			uid = tonumber(uid)
-			mo = tonumber(mo)
-			local e = __uids[uid]
-			if e then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					mw = mw + w
-					if h > mh then mh = h end
+	for i = 1, #tstr do
+		v = tstr[i]
+		if type(v) == "table" then
+			if v[1] == "font" then
+				local fontstyle = v[2]
+				font:setStyle(fontstyle)
+				fstyle = fontstyle
+				word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
+			elseif v[1] == "uid" then
+				local uid = v[2]
+				local e = __uids[uid]
+				if e then
+					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
+					if surf then
+						local w, h = surf:getSize()
+						mw = mw + w
+						if h > mh then mh = h end
+					end
 				end
-			end
-		elseif fontstyle then
-			font:setStyle(fontstyle)
-			fstyle = fontstyle
-			word_size_cache[font][fstyle] = word_size_cache[font][fstyle] or {}
-		elseif extra then
-			--
-		else
-			local w, h
-			if word_size_cache[font][fstyle][v] then
-				w, h = word_size_cache[font][fstyle][v][1], word_size_cache[font][fstyle][v][2]
-			else
-				w, h = fontoldsize(font, v)
-				word_size_cache[font][fstyle][v] = {w, h}
-			end
+			end -- ignore colors and all that
+		elseif type(v) == "string" then
+			local w, h = fontcachewordsize(font, fstyle, v)
 			if h > mh then mh = h end
 			mw = mw + w
-		end
+		end -- ignore the rest
 	end
 	return mw, mh
 end
@@ -964,6 +922,20 @@ local oldloadimage = core.display.loadImage
 function core.display.loadImage(path)
 	if virtualimages[path] then return core.display.loadImageMemory(virtualimages[path]) end
 	return oldloadimage(path)
+end
+
+function fs.iterate(path, filter)
+	local list = fs.list(path)
+	if filter then
+		for i = #list, 1, -1 do if not filter(list[i]) then
+			table.remove(list, i)
+		end end
+	end
+	local i = 0
+	return function()
+		i = i + 1
+		return list[i]
+	end
 end
 
 local oldfsexists = fs.exists
@@ -1000,6 +972,10 @@ function tstring:merge(v)
 	return self
 end
 
+function tstring:clone()
+	return tstring(table.clone(self))
+end
+
 function tstring:countLines()
 	local nb = 1
 	local v
@@ -1015,10 +991,10 @@ function tstring:maxWidth(font)
 	local old_style = font:getStyle()
 	local line_max = 0
 	local v
-	local w, h = font:size("")
+	local w, h = fontoldsize(font, "")
 	for i = 1, #self do
 		v = self[i]
-		if type(v) == "string" then line_max = line_max + font:size(v) + 1
+		if type(v) == "string" then line_max = line_max + fontoldsize(font, v) + 1
 	elseif type(v) == "table" then if v[1] == "uid" then line_max = line_max + h -- UID surface is same as font size
 		elseif v[1] == "font" and v[2] == "bold" then font:setStyle("bold")
 		elseif v[1] == "font" and v[2] == "normal" then font:setStyle("normal") end
@@ -1037,8 +1013,13 @@ function tstring.from(str)
 	end
 end
 
+tstring.__tstr_cache = {}
+local tstring_cache = tstring.__tstr_cache
+setmetatable(tstring_cache, {__mode="v"})
+
 --- Parse a string and return a tstring
 function string.toTString(str)
+	if tstring_cache[str] then return tstring_cache[str]:clone() end
 	local tstr = tstring{}
 	local list = str:split(("#" * (Puid + Pcolorcodefull + Pcolorname + Pfontstyle + Pextra) * "#") + lpeg.P"\n", true)
 	for i = 1, #list do
@@ -1053,7 +1034,7 @@ function string.toTString(str)
 		elseif col then
 			tstr:add({"color", col})
 		elseif uid and mo then
-			tstr:add({"uid", tonumber(uid)})
+			tstr:add({"uid", tonumber(uid), tonumber(mo)})
 		elseif fontstyle then
 			tstr:add({"font", fontstyle})
 		elseif extra then
@@ -1064,7 +1045,8 @@ function string.toTString(str)
 			tstr:add(v)
 		end
 	end
-	return tstr
+	tstring_cache[str] = tstr
+	return tstr:clone()
 end
 function string:toString() return self end
 
@@ -1093,8 +1075,8 @@ function tstring:toTString() return self end
 --- Tablestrings can not be formated, this just returns self
 function tstring:format() return self end
 
-function tstring:splitLines(max_width, font)
-	local space_w = font:size(" ")
+function tstring:splitLines(max_width, font, max_lines)
+	local fstyle = font:getStyle()
 	local ret = tstring{}
 	local cur_size = 0
 	local max_w = 0
@@ -1110,21 +1092,30 @@ function tstring:splitLines(max_width, font)
 					ret[#ret+1] = true
 					max_w = math.max(max_w, cur_size)
 					cur_size = 0
+					if max_lines then
+						max_lines = max_lines - 1
+						if max_lines <= 0 then break end
+					end
 				else
-					local w, h = fontoldsize(font, vv)
+					local w, h = fontcachewordsize(font, fstyle, vv)
 					if cur_size + w < max_width then
 						cur_size = cur_size + w
 						ret[#ret+1] = vv
 					else
 						ret[#ret+1] = true
-						ret[#ret+1] = vv
 						max_w = math.max(max_w, cur_size)
+						if max_lines then
+							max_lines = max_lines - 1
+							if max_lines <= 0 then break end
+						end
+						ret[#ret+1] = vv
 						cur_size = w
 					end
 				end
 			end
 		elseif tv == "table" and v[1] == "font" then
 			font:setStyle(v[2])
+			fstyle = v[2]
 			ret[#ret+1] = v
 		elseif tv == "table" and v[1] == "extra" then
 			ret[#ret+1] = v
@@ -1241,6 +1232,7 @@ function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
 				r, g, b = v[2], v[3], v[4]
 			elseif v[1] == "font" then
 				font:setStyle(v[2])
+				fstyle = v[2]
 			elseif v[1] == "extra" then
 				--
 			elseif v[1] == "uid" then
@@ -1266,14 +1258,18 @@ function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
 end
 
 function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_alpha, on_word)
-	local list = self:splitLines(max_width, font)
+	local list = self:splitLines(max_width, font, max_lines)
 	max_lines = util.bound(max_lines or #list, 1, #list)
 	local fh = font:lineSkip()
+	local fstyle = font:getStyle()
 	local w, h = 0, 0
 	r, g, b = r or 255, g or 255, b or 255
 	local oldr, oldg, oldb = r, g, b
 	local v, tv
 	local on_word_w, on_word_h
+	local last_line_h = 0
+	local max_w = 0
+	local lines_drawn = 0
 	for i = 1, #list do
 		v = list[i]
 		tv = type(v)
@@ -1282,12 +1278,17 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			if on_word_w and on_word_h then
 				w, h = on_word_w, on_word_h
 			else
+				local dw, dh = fontcachewordsize(font, fstyle, v)
+				last_line_h = math.max(last_line_h, dh)
 				s:drawStringBlended(font, v, x + w, y + h, r, g, b, not no_alpha)
 				w = w + fontoldsize(font, v)
 			end
 		elseif tv == "boolean" then
+			max_w = math.max(max_w, w)
 			w = 0
 			h = h + fh
+			last_line_h = 0
+			lines_drawn = lines_drawn + 1
 			max_lines = max_lines - 1
 			if max_lines <= 0 then break end
 		else
@@ -1316,6 +1317,7 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			end
 		end
 	end
+	return r, g, b, math.max(max_w, w), fh * lines_drawn + last_line_h, x, y
 end
 
 function tstring:diffWith(str2, on_diff)
@@ -1724,6 +1726,12 @@ function util.bound(i, min, max)
 	return i
 end
 
+function util.squareApply(x, y, w, h, fct)
+	for i = x, x + w do for j = y, y + h do
+		fct(i, j)
+	end end
+end
+
 function util.minBound(i, min, max)
 	return math.max(math.min(max, i), min)
 end
@@ -1808,8 +1816,8 @@ function util.findAllReferences(t, what)
 			if type(e) == "function" then
 				local fenv = getfenv(e)
 				local data = table.clone(data)
-				if fenv.__CLASSNAME then
-					data[#data+1] = "e:fenv["..fenv.__CLASSNAME"]:"..tostring(k)
+				if fenv.__ATOMIC or fenv.__CLASSNAME then
+					data[#data+1] = "e:fenv["..(fenv.__CLASSNAME or true)"]:"..tostring(k)
 				else
 					data[#data+1] = "e:fenv[--]:"..tostring(k)
 				end
@@ -2240,9 +2248,13 @@ end
 
 function util.browserOpenUrl(url, forbid_methods)
 	forbid_methods = forbid_methods or {}
+	if forbid_methods.is_external and config.settings.open_links_external then
+		forbid_methods.webview = true
+		forbid_methods.steam = true
+	end
+
 	if core.webview and not forbid_methods.webview then local d = require("engine.ui.Dialog"):webPopup(url) if d then return "webview", d end end
 	if core.steam and not forbid_methods.steam and core.steam.openOverlayUrl(url) then return "steam", true end
-
 	if forbid_methods.native then return false end
 
 	local tries = {
@@ -2284,6 +2296,7 @@ function util.removeForceSafeBoot()
 end
 
 -- Alias os.exit to our own exit method for cleanliness
+os.crash = os.exit
 os.exit = core.game.exit_engine
 
 -- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
@@ -2302,4 +2315,8 @@ function require_first(...)
 		if ok then return m end
 	end
 	return nil
+end
+
+function util.steamCanCloud()
+	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then return true end
 end

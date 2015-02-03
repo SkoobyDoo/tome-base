@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,13 +60,15 @@ newTalent{
 	cooldown = 12,
 	stamina = 24,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	tactical = { ATTACK = { weapon = 1, cut = 1 }, DISABLE = 2 },
 	healloss = function(self,t) return self:combatTalentLimit(t, 100, 17, 50) end, -- Limit to < 100%
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
 		if hit then
@@ -109,7 +111,7 @@ newTalent{
 	--Note: this can result in > 100% resistancs (before cap) at high talent levels to keep up with opposing resistance lowering talents
 	resistCoeff = function(self, t) return self:combatTalentScale(t, 25, 45) end,
 	getCapApproach = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.5) end,
-	do_turn = function(self, t) --called by mod.class.Actor:actBase
+	callbackOnActBase = function(self, t) --called by mod.class.Actor:actBase
 		local p = self:isTalentActive(t.id)
 		if p.resid then self:removeTemporaryValue("resists", p.resid) end
 		if p.cresid then self:removeTemporaryValue("resists_cap", p.cresid) end
@@ -145,4 +147,3 @@ newTalent{
 		format(resistC, resistC*0.7, t.getCapApproach(self, t)*100, drain)
 	end,
 }
-

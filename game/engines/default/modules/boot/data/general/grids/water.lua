@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -37,4 +37,5 @@ newEntity{
 newEntity{ base="WATER_BASE",
 	define_as = "DEEP_WATER",
 	image="terrain/water_grass_5_1.png",
+	shader = "water",
 }

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ newTalent{
 	vim = 9,
 	cooldown = 6,
 	range = 1,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = {PHYSICAL = 2} },
 	requires_target = true,
 	action = function(self, t)
@@ -36,10 +38,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		DamageType:projectingFor(self, {project_type={talent=t}})
 		local speed1, hit1 = self:attackTargetWith(target, weapon.combat, nil, self:combatTalentWeaponDamage(t, 0.8, 1.6))
@@ -107,6 +108,7 @@ newTalent{
 	range = 1,
 	radius = 1,
 	requires_target = true,
+	is_melee = true,
 	tactical = { ATTACK = {ACID = 2}, DISABLE = 1 },
 	target = function(self, t)
 		-- Tries to simulate the acid splash
@@ -121,8 +123,7 @@ newTalent{
 
 		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		DamageType:projectingFor(self, {project_type={talent=t}})
 		local speed1, hit1 = self:attackTargetWith(target, weapon.combat, DamageType.ACID, self:combatTalentWeaponDamage(t, 0.8, 1.6))
@@ -140,7 +141,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Strike with each of your weapons, doing %d%% acid weapon damage with each hit. 
+		return ([[Strike with each of your weapons, doing %d%% acid weapon damage with each hit.
 		If at least one of the strikes hits, an acid splash is generated, doing %0.2f acid damage to all targets other than yourself adjacent to the foe you struck.
 		The splash damage will increase with your Spellpower.]]):
 		format(100 * self:combatTalentWeaponDamage(t, 0.8, 1.6), damDesc(self, DamageType.ACID, self:combatTalentSpellDamage(t, 10, 130)))
@@ -155,8 +156,10 @@ newTalent{
 	vim = 14,
 	cooldown = 8,
 	range = 1,
+	is_melee = true,
 	requires_target = true,
 	tactical = { ATTACK = {DARKNESS = 1, BLIGHT = 1}, DISABLE = 2 },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
 		local weapon, offweapon = self:hasDualWeapon()
 		if not weapon then
@@ -164,10 +167,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		DamageType:projectingFor(self, {project_type={talent=t}})
 		local speed1, hit1 = self:attackTargetWith(target, weapon.combat, DamageType.DARKNESS, self:combatTalentWeaponDamage(t, 0.6, 1.4))
@@ -191,4 +193,3 @@ newTalent{
 		format(100 * self:combatTalentWeaponDamage(t, 0.6, 1.4), 100 * self:combatTalentWeaponDamage(t, 0.6, 1.4))
 	end,
 }
-

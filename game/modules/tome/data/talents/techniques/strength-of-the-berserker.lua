@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -82,6 +82,12 @@ newTalent{
 		if t.hasFoes(self) then
 			local v = (self.max_life * 0.02)
 			if v >= self.life then v = 0 end
+
+			if self:knowTalent(self.T_VITALITY) and self.life > self.max_life /2 and self.life - v <= self.max_life/2 then
+				local tt = self:getTalentFromId(self.T_VITALITY)
+				tt.do_vitality_recovery(self, tt)
+			end
+
 			self.life = self.life - v
 		end
 	end,
@@ -146,6 +152,9 @@ newTalent{
 	stamina = 12,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { stun = 2 } },
+	range = 1,
+	is_melee = true,
+	target = function(self ,t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
 	getShatter = function(self, t) return self:combatTalentLimit(t, 100, 10, 85) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
@@ -154,10 +163,9 @@ newTalent{
 		local weapon = self:hasTwoHandedWeapon()
 		if not weapon then return nil end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5))
 
 		-- Try to Sunder !

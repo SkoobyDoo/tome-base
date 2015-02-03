@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ function _M:init()
 	end
 
 	self.c_compat = Checkbox.new{default=false, width=math.floor(self.iw / 3 - 40), title="Show incompatible", on_change=function() self:switch() end}
+	self.c_auto_update = Checkbox.new{default=not config.settings.no_auto_update_addons, width=math.floor(self.iw / 3 - 40), title="Auto-update on start", on_change=function() self:switchAuto() end}
 
 	self:generateList()
 
@@ -59,7 +60,7 @@ function _M:init()
 	}, list=self.list, fct=function(item) end, select=function(item, sel) self:select(item) end}
 
 	self.c_adds = ListColumns.new{width=math.floor(self.iw * 2 / 3 - 10), height=self.ih - 10 - self.c_compat.h, scrollbar=true, columns={
-		{name="Addon", width=60, display_prop="long_name"},
+		{name="Addon", width=50, display_prop="long_name"},
 		{name="Active", width=20, display_prop=function(item)
 			if item.cheat_only and not config.settings.cheat then
 				return "#GREY#Developer tool"
@@ -71,7 +72,8 @@ function _M:init()
 				return (item.natural_compatible and "#LIGHT_GREEN#Auto: Active" or "#LIGHT_RED#Auto: Incompatible"):toTString()
 			end
 		end},
-		{name="Version", width=20, display_prop="version_txt"},
+		{name="Addon Version", width=15, display_prop="addon_version_txt"},
+		{name="Game Version", width=15, display_prop="version_txt"},
 	}, list={}, fct=function(item) self:switchAddon(item) end, select=function(item, sel) self:select(item) end}
 
 	local sep = Separator.new{dir="horizontal", size=self.ih - 10}
@@ -82,6 +84,7 @@ function _M:init()
 		{left=0, top=url1.h, ui=self.c_list},
 		{left=self.c_list.w+sep.w, top=url1.h, ui=self.c_adds},
 		{left=0, bottom=0, ui=self.c_compat},
+		{left=self.c_list.w-self.c_auto_update.w, bottom=0, ui=self.c_auto_update},
 		{left=self.c_list.w + 5, top=5+url1.h, ui=sep},
 	}
 	self:setFocus(self.c_list)
@@ -148,6 +151,11 @@ end
 function _M:switch()
 	self:generateList()
 	self.c_list:setList(self.list)
+end
+
+function _M:switchAuto()
+	config.settings.no_auto_update_addons = not self.c_auto_update.checked
+	game:saveSettings("no_auto_update_addons", ("no_auto_update_addons = %s"):format(config.settings.no_auto_update_addons and "true" or "false"))
 end
 
 function _M:unload()

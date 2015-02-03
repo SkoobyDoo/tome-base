@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -150,7 +150,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 			end
 		elseif event == "button" then
 			if citem and citem.url and button == "left" then
-				util.browserOpenUrl(citem.url)
+				util.browserOpenUrl(citem.url, {is_external=true})
 			end
 
 			if gitem and button == "right" then
@@ -183,9 +183,9 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 							local UserInfo = require "engine.dialogs.UserInfo"
 							game:registerDialog(UserInfo.new(data))
 						elseif sel.ui == "profile" then
-							util.browserOpenUrl(data.profile)
+							util.browserOpenUrl(data.profile, {is_external=true})
 						elseif sel.ui == "charsheet" then
-							util.browserOpenUrl(data.char_link)
+							util.browserOpenUrl(data.char_link, {is_external=true})
 						elseif sel.ui == "whisper" then
 							profile.chat:setCurrentTarget(false, citem.login)
 							profile.chat:talkBox()

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -218,10 +218,7 @@ newEntity{ base = "BASE_NPC_GHOST", define_as = "GLACIAL_LEGION",
 			radius,
 			5, nil,
 			engine.MapEffect.new{color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/ice_effect.png"},
-			function(e)
-				e.radius = e.radius 
-				return true
-			end,
+			nil,
 			false
 		)
 	end,

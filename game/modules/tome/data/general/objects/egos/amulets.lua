@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -229,7 +229,7 @@ newEntity{
 	},
 	charm_power = resolvers.mbonus_material(70, 30),
 	charm_power_def = {add=15, max=50, floor=true},
-	resolvers.charm("teleports you randomly (rad %d)", 15, function(self, who)
+	resolvers.charm("teleport you randomly (rad %d)", 15, function(self, who)
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 		who:teleportRandom(who.x, who.y, self:getCharmPower(who))
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
@@ -407,6 +407,29 @@ newEntity{
 			[DamageType.COLD] = resolvers.mbonus_material(4, 4),
 			[DamageType.ACID] = resolvers.mbonus_material(4, 4),
 			[DamageType.LIGHTNING] = resolvers.mbonus_material(4, 4),
+		},
+	},
+}
+
+newEntity{
+	power_source = {arcane=true},
+	name = "starseer's ", prefix=true, instant_resolve=true,
+	keywords = {starseer=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 16,
+	cost = 40,
+	wielder = {
+		combat_spellpower = resolvers.mbonus_material(3, 3),
+		combat_spellcrit = resolvers.mbonus_material(3, 3),
+		inc_stats = {
+			[Stats.STAT_MAG] = resolvers.mbonus_material(5, 1),
+		},
+		inc_damage = {
+			[DamageType.LIGHT] = resolvers.mbonus_material(4, 4),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(4, 4),
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(4, 4),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(4, 4),
 		},
 	},
 }

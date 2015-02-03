@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,8 +38,8 @@ You may find other ways to save yourself but they are not considered extra lives
 ]]
 
 TOOLTIP_LIFE = [[#GOLD#Life#LAST#
-This is your life force. When you take damage this is reduced more and more.
-If it reaches below zero you die.
+This is your life force, which is reduced each time you take damage.
+Normally, you will die if this drops below zero, though some effects will allow you survive with negative life.
 Death is usually permanent so beware!
 It is increased by Constitution.
 ]]
@@ -110,8 +110,9 @@ All afflicted talents are based on Hate, and many are more effective at higher l
 ]]
 
 TOOLTIP_PARADOX = [[#GOLD#Paradox#LAST#
-Paradox represents how much damage you've caused to the spacetime continuum.
-As your Paradox grows your spells will cost more to use and have greater effect; but they'll also become more difficult to control.
+Paradox represents how stable the current timeline is. 
+As your Paradox grows so does your Spellpower, but you may be shifted to a more stable timeline when you attempt to use your magic.
+When your modified Paradox is above 600 the shifts will become more violent.
 Your control over chronomancy spells increases with your Willpower.
 ]]
 

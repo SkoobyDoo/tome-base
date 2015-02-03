@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -79,6 +79,8 @@ function _M:use(item)
 		game.state.birth.ignore_prodigies_special_reqs = true
 		game.player.inc_damage.all = 500
 		game.player:incStat("str", 100) game.player:incStat("dex", 100) game.player:incStat("mag", 100) game.player:incStat("wil", 100) game.player:incStat("cun", 100) game.player:incStat("con", 100)
+	elseif act == "weakdamage" then
+		game.player.inc_damage.all = -90
 	elseif act == "all_arts" then
 		for i, e in ipairs(game.zone.object_list) do
 			if e.unique and e.define_as ~= "VOICE_SARUMAN" and e.define_as ~= "ORB_MANY_WAYS_DEMON" then
@@ -164,6 +166,7 @@ function _M:generateList()
 	list[#list+1] = {name="Remove all creatures", action="remove-all"}
 	list[#list+1] = {name="Semi-Godmode", action="semigodmode"}
 	list[#list+1] = {name="Give all ingredients", action="all-ingredients"}
+	list[#list+1] = {name="Weakdamage", action="weakdamage"}
 	self:triggerHook{"DebugMain:generate", menu=list}
 
 	local chars = {}

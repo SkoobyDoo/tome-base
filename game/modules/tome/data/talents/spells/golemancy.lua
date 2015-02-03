@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ local function makeGolem(self)
 
 		combat = { dam=10, atk=10, apr=0, dammod={str=1} },
 
-		body = { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, BODY=1, GEM=2 },
+		body = { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, BODY=1, GEM={max = 2, stack_limit = 1} },
 		canWearObjectCustom = function(self, o)
 			if o.type ~= "gem" then return end
 			if not self.summoner then return "Golem has no master" end
@@ -80,6 +80,7 @@ local function makeGolem(self)
 			["golem/arcane"] = 0.3,
 		},
 		forbid_nature = 1,
+		power_source = {arcane = true},
 		inscription_restrictions = { ["inscriptions/runes"] = true, },
 		resolvers.inscription("RUNE:_SHIELDING", {cooldown=14, dur=5, power=100}),
 
@@ -194,6 +195,7 @@ newTalent{
 	mana = 10,
 	no_npc_use = true,
 	no_unlearn_last = true,
+	on_pre_use = function(self, t) return not self.resting end,
 	getHeal = function(self, t)
 		if not self.alchemy_golem then return 0 end
 		local ammo = self:hasAlchemistWeapon()
@@ -315,6 +317,12 @@ newTalent{
 		game:playSoundNear(self, "talents/arcane")
 		return true
 	end,
+	-- This is an all-catch talent, and it is auto-learned on anything involving golems, so this is a good place to stick that onto
+	callbackOnLevelup = function(self, t, new_level)
+		local _, golem = getGolem(self)
+		golem.max_level = self.max_level
+		golem:forceLevelup(new_level)
+	end,
 	info = function(self, t)
 		local heal = t.getHeal(self, t)
 		return ([[Take care of your golem:
@@ -334,7 +342,7 @@ newTalent{
 		if self:getTalentLevelRaw(t) == 1 and not self.innate_alchemy_golem then
 			self:learnTalent(self.T_REFIT_GOLEM, true)
 		end
-
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:learnTalent(Talents.T_WEAPON_COMBAT, true, nil, {no_unlearn=true})
 		self.alchemy_golem:learnTalent(Talents.T_STAFF_MASTERY, true, nil, {no_unlearn=true})
 		self.alchemy_golem:learnTalent(Talents.T_KNIFE_MASTERY, true, nil, {no_unlearn=true})
@@ -342,6 +350,7 @@ newTalent{
 		self.alchemy_golem:learnTalent(Talents.T_EXOTIC_WEAPONS_MASTERY, true, nil, {no_unlearn=true})
 	end,
 	on_unlearn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:unlearnTalent(Talents.T_WEAPON_COMBAT, nil, nil, {no_unlearn=true})
 		self.alchemy_golem:unlearnTalent(Talents.T_STAFF_MASTERY, nil, nil, {no_unlearn=true})
 		self.alchemy_golem:unlearnTalent(Talents.T_KNIFE_MASTERY, nil, nil, {no_unlearn=true})
@@ -374,11 +383,13 @@ newTalent{
 	require = spells_req2,
 	points = 5,
 	on_learn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:learnTalent(Talents.T_THICK_SKIN, true, nil, {no_unlearn=true})
 		self.alchemy_golem:learnTalent(Talents.T_GOLEM_ARMOUR, true, nil, {no_unlearn=true})
 		self.alchemy_golem.healing_factor = (self.alchemy_golem.healing_factor or 1) + 0.1
 	end,
 	on_unlearn = function(self, t)
+		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:unlearnTalent(Talents.T_THICK_SKIN, nil, nil, {no_unlearn=true})
 		self.alchemy_golem:unlearnTalent(Talents.T_GOLEM_ARMOUR, nil, nil, {no_unlearn=true})
 		self.alchemy_golem.healing_factor = (self.alchemy_golem.healing_factor or 1) - 0.1

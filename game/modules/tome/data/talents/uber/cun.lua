@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ uberTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[When moving over 800%% speed for at least 3 turns in the same direction, you become so fast you can blink through obstacles as if they were not there.
+		return ([[When moving over 800%% speed for at least 3 steps in the same direction, you become so fast you can blink through obstacles as if they were not there.
 		Changing direction will break the effect.]])
 		:format()
 	end,
@@ -222,30 +222,32 @@ uberTalent{
 
 		for tid, _ in pairs(self.talents_cd) do
 			local t = self:getTalentFromId(tid)
-			if 
-				(kind == "physical" and
-					(
-						t.type[1]:find("^technique/") or
-						t.type[1]:find("^cunning/")
+			if not t.fixed_cooldown then
+				if
+					(kind == "physical" and
+						(
+							t.type[1]:find("^technique/") or
+							t.type[1]:find("^cunning/")
+						)
+					) or
+					(kind == "spell" and
+						(
+							t.type[1]:find("^spell/") or
+							t.type[1]:find("^corruption/") or
+							t.type[1]:find("^celestial/") or
+							t.type[1]:find("^chronomancy/")
+						)
+					) or
+					(kind == "mind" and
+						(
+							t.type[1]:find("^wild%-gift/") or
+							t.type[1]:find("^cursed/") or
+							t.type[1]:find("^psionic/")
+						)
 					)
-				) or
-				(kind == "spell" and
-					(
-						t.type[1]:find("^spell/") or
-						t.type[1]:find("^corruption/") or
-						t.type[1]:find("^celestial/") or
-						t.type[1]:find("^chronomancy/")
-					)
-				) or
-				(kind == "mind" and
-					(
-						t.type[1]:find("^wild%-gift/") or
-						t.type[1]:find("^cursed/") or
-						t.type[1]:find("^psionic/")
-					)
-				)
-				then
-				tids[#tids+1] = tid
+					then
+					tids[#tids+1] = tid
+				end
 			end
 		end
 		if #tids == 0 then return end

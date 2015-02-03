@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ newTalent{
 	tactical = { DISABLE = { confusion = 2 }, ATTACK = { PHYSICAL = 1 } },
 	require = techs_req1,
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	getDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 3.2, 5.3)) end,
 	getConfusion = function(self, t) return self:combatStatLimit("dex", 50, 25, 45) end, --Limit < 50%
 	getDamage = function(self, t)
@@ -46,10 +48,9 @@ newTalent{
 		return self:rescaleDamage(totstat / 1.5 * power * talented_mod)
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local dam = t.getDamage(self, t)
 
@@ -122,9 +123,8 @@ newTalent{
 	sustain_stamina = 40,
 	no_energy = true,
 	require = techs_req4,
-	requires_target = true,
 	range = 1,
-	tactical = { DISABLE = 2, ATTACK = 2 },
+	tactical = { BUFF = 2 },
 	getCrit = function(self, t) return self:combatTalentStatDamage(t, "dex", 10, 50) / 1.5 end,
 	getPen = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "str", 10, 50), 100, 0, 0, 35.7, 35.7) end, -- Limit to <100%
 	getDrain = function(self, t) return self:combatTalentLimit(t, 0, 11, 6) end, -- Limit to >0 stam
@@ -148,4 +148,3 @@ newTalent{
 		format(t.getCrit(self, t), t.getPen(self, t), t.getDrain(self, t))
 	end,
 }
-

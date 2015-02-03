@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,5 +43,20 @@ newEntity{ base = "FLOOR", define_as = "ROCK",
 
 newEntity{ base = "DEEP_WATER", define_as = "FOUNTAIN",
 	name="fountain",
-	does_block_move = true
+	does_block_move = true,
+	block_move=function(self, x, y, e, act, couldpass)
+		if e and e.player and act then game.party:learnLore("angolwen-fountain") end
+		return true
+	end,
+}
+
+newEntity{ base = "DEEP_WATER", define_as = "FOUNTAIN_MAIN",
+	name="fountain",
+	does_block_move = true,
+	add_displays = {class.new{
+		z = 17,
+		image = "terrain/statues/angolwen_fountain.png",
+		display_w = 6, display_h = 5,
+		display_x = -2.5, display_y = -2,
+	}},
 }

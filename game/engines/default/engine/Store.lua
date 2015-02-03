@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -152,6 +152,7 @@ function _M:transfer(src, dest, item, nb)
 	dest:sortInven(dest_inven)
 end
 
+--- assumes buyer has room
 function _M:doBuy(who, o, item, nb, store_dialog)
 	nb = math.min(nb, o:getNumber())
 	nb = self:tryBuy(who, o, item, nb)

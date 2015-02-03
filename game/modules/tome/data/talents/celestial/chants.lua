@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,15 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local function cancelChants(self)
-	local chants = {self.T_CHANT_OF_FORTITUDE, self.T_CHANT_OF_FORTRESS, self.T_CHANT_OF_RESISTANCE, self.T_CHANT_OF_LIGHT}
-	for i, t in ipairs(chants) do
-		if self:isTalentActive(t) then
-			self:forceUseTalent(t, {ignore_energy=true})
-		end
-	end
-end
-
 -- Synergizes with melee classes (escort), Weapon of Wrath, healing mod (avoid overheal > healing efficiency), and low spellpower
 newTalent{
 	name = "Chant of Fortitude",
@@ -42,11 +33,11 @@ newTalent{
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 70) end,
 	getLifePct = function(self, t) return self:combatTalentLimit(t, 1, 0.05, 0.20) end, -- Limit < 100% bonus
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		local power = t.getResists(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
-		
+
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.LIGHT]=t.getDamageOnMeleeHit(self, t)}),
 			phys = self:addTemporaryValue("combat_physresist", power),
@@ -95,8 +86,8 @@ newTalent{
 	getDamageChange = function(self, t)
 		return -self:combatTalentLimit(t, 50, 14, 30) -- Limit < 50% damage reduction
 	end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.LIGHT]=t.getDamageOnMeleeHit(self, t)}),
@@ -112,7 +103,7 @@ newTalent{
 	info = function(self, t)
 		local range = -t.getDamageChange(self, t)
 		local damageonmeleehit = t.getDamageOnMeleeHit(self, t)
-		return ([[You chant the glory of the Sun, reducing the damage enemies 2 or more spaces away deal by %d%%.
+		return ([[You chant the glory of the Sun, reducing the damage enemies 3 or more spaces away deal by %d%%.
 		In addition, this talent surrounds you with a shield of light, dealing %0.1f light damage to anything that hits you in melee.
 		You may only have one Chant active at once.
 		The damage reduction will increase with talent level and light damage will increase with your Spellpower.]]):
@@ -137,8 +128,8 @@ newTalent{
 	range = 10,
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		local power = t.getResists(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
@@ -182,8 +173,8 @@ newTalent{
 	getLightDamageIncrease = function(self, t) return self:combatTalentSpellDamage(t, 20, 50) end,
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
 	getLite = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
+	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
-		cancelChants(self)
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.LIGHT]=t.getDamageOnMeleeHit(self, t)}),

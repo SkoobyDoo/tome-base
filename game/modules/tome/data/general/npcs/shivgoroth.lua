@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ newEntity{
 	rank = 2,
 	size_category = 3,
 	levitation = 1,
-
+	power_source = {arcane=true},
 
 	autolevel = "dexmage",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=2, },

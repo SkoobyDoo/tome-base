@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -165,11 +165,7 @@ function _M:display(nb_keyframes)
 	end
 
 	-- Check profile thread events
-	local evt = profile:popEvent()
-	while evt do
-		self:handleProfileEvent(evt)
-		evt = profile:popEvent()
-	end
+	self:handleEvents()
 
 	-- Check timers
 	if self._timers_cb and nb_keyframes > 0 then
@@ -200,6 +196,16 @@ end
 function _M:idling(focus)
 	self.has_os_focus = focus
 --	print("Game got focus/unfocus", focus)
+end
+
+
+--- Handle pending events
+function _M:handleEvents()
+	local evt = profile:popEvent()
+	while evt do
+		self:handleProfileEvent(evt)
+		evt = profile:popEvent()
+	end
 end
 
 --- Receives a profile event
@@ -379,6 +385,11 @@ function _M:unregisterDialog(d)
 	if last.mouse then last.mouse:setCurrent() end
 	if self.onUnregisterDialog then self:onUnregisterDialog(d) end
 	if last.on_recover_focus then last:on_recover_focus() end
+end
+
+--- Do we have a specific dialog
+function _M:hasDialog(d)
+	return self.dialogs[d] and true or false
 end
 
 --- Do we have a dialog running

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -129,7 +129,7 @@ return {
 	fumes_active = true,
 
 	on_enter = function()
-		if not game.level.data.fumes_active or game.player:attr("no_breath") then return end
+		if not game.zone.fumes_active or game.player:attr("no_breath") then return end
 		if game.level.turn_counter then return end
 
 		game.level.turn_counter = 60 * 10 * (game.level.level == 1 and 10 or 1)
@@ -139,26 +139,31 @@ return {
 
 	on_turn = function(self)
 		if not game.level.turn_counter then return end
-		if not game.level.data.fumes_active or game.player:attr("no_breath") then return end
+		if not game.zone.fumes_active or game.player:attr("no_breath") then return end
 
 		game.level.turn_counter = game.level.turn_counter - 1
 		game.player.changed = true
 		if game.level.turn_counter < 0 then
 			game.level.turn_counter = nil
 			game.level.max_turn_counter = nil
-			game.level.data.run_dream(false)
+			game.level.data.run_dream(true)
 		end
 	end,
 
 	max_dreams = 2,
 	run_dream = function(dangerous, dream)
+		game.party:setPlayer(game:getPlayer(true))
 		if game.player.runStop then game.player:runStop("dream") end
-		local x, y, lev = game.player.x, game.player.y, game.level.level
+		local Map = require "engine.Map"
+		for pmem, def in pairs(game.party.members) do
+			if pmem.x and pmem.y and game.level.map(pmem.x, pmem.y, Map.ACTOR) == pmem then
+				pmem.caldera_x, pmem.caldera_y = pmem.x, pmem.y
+			end
+		end
+		local lev = game.level.level
 		local dream = dream or rng.range(1, game.zone.max_dreams)
 		game:changeLevel(dream, "dreams", {direct_switch=true})
-		game.level.data.real_death = dangerous
-		game.level.data.caldera_x = x
-		game.level.data.caldera_y = y
-		game.level.data.caldera_z = lev
+		game.level.data.danger = dangerous
+		game.level.data.caldera_lev = lev
 	end,
 }

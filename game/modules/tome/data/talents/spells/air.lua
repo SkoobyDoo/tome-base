@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -199,7 +199,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 80) end,
 	getTargetCount = function(self, t) return math.floor(self:getTalentLevel(t)) end,
 	getManaDrain = function(self, t) return -1.5 * self:getTalentLevelRaw(t) end,
-	do_storm = function(self, t)
+	callbackOnActBase = function(self, t)
 		local mana = t.getManaDrain(self, t)
 		if self:getMana() <= mana + 1 then return end
 
@@ -213,7 +213,7 @@ newTalent{
 		end end
 
 		-- Randomly take targets
-		local tg = {type="ball", radius=1, range=self:getTalentRange(t), talent=t, selffire=self:spellFriendlyFire()}
+		local tg = {type="ball", radius=1, range=self:getTalentRange(t), talent=t, friendlyfire=false}
 		for i = 1, t.getTargetCount(self, t) do
 			if #tgts <= 0 then break end
 			local a, id = rng.table(tgts)

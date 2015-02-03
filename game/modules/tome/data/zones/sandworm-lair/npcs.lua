@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -127,6 +127,31 @@ newEntity{ define_as = "SANDWORM_QUEEN",
 	ai = "tactical", ai_state = { talent_in=2, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
 	resolvers.inscriptions(2, "infusion"),
+	
+	-- Failsafe for if a player can't find the boss
+	awaken_sand_queen = 500,
+	on_act = function(self)
+		local target = self.ai_target.actor
+		
+		if target and self.awaken_sand_queen then
+			self.awaken_sand_queen = nil
+		end
+		
+		if self.awaken_sand_queen then 
+			if self.awaken_sand_queen > 0 then
+				self.awaken_sand_queen = self.awaken_sand_queen - 1
+			else
+				self:setTarget(game.player)
+				self.dont_pass_target = true
+				self.can_pass = {pass_wall=20}
+				self.move_project = {[engine.DamageType.DIG]=1}
+				
+				local Dialog = require("engine.ui.Dialog")
+				Dialog:simplePopup("Rumbling...", "The ground shakes.  Something very large is stirring in the distance.")				
+			end
+		end
+		
+	end,
 
 	on_die = function(self, who)
 		game.state:activateBackupGuardian("CORRUPTED_SAND_WYRM", 1, 45, "Did you hear? Something seems to have devoured all the last sandworms!", function(gen)

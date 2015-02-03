@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 -- Usually there is no need to use it directly, and it is better to use specific engine.Grid, engine.Actor or engine.Object
 -- classes. Most modules will want to subclass those anyway to add new comportments
 local Shader = require "engine.Shader"
+local Particles = require "engine.Particles"
 
 module(..., package.seeall, class.make)
 
@@ -43,7 +44,7 @@ end
 
 local function copy_recurs(dst, src, deep)
 	for k, e in pairs(src) do
-		if type(e) == "table" and e.__CLASSNAME then
+		if type(e) == "table" and (e.__ATOMIC or e.__CLASSNAME) then
 			dst[k] = e
 		elseif dst[k] == nil then
 			if deep then
@@ -52,10 +53,28 @@ local function copy_recurs(dst, src, deep)
 			else
 				dst[k] = e
 			end
-		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__CLASSNAME then
+		elseif type(dst[k]) == "table" and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			copy_recurs(dst[k], e, deep)
 		end
 	end
+end
+
+local function importBase(t, base)
+	local temp = table.clone(base, true, {uid=true, define_as = true})
+	if base.onEntityMerge then base:onEntityMerge(temp) end
+	table.mergeAppendArray(temp, t, true)
+	t = temp
+	t.base = nil
+	return t
+end
+
+--- Create a new entity with a base
+-- STATIC
+function _M:fromBase(t, base)
+	if not base then base = t.base end
+	assert(base, "no base given to Entity.fromBase")
+	t = importBase(t, base)
+	return self.new(t)
 end
 
 --- Initialize an entity
@@ -64,6 +83,7 @@ end
 -- @usage Entity.new{display='#', color_r=255, color_g=255, color_b=255}
 function _M:init(t, no_default)
 	t = t or {}
+
 	self.uid = next_uid
 	__uids[self.uid] = self
 	next_uid = next_uid + 1
@@ -71,8 +91,23 @@ function _M:init(t, no_default)
 	for k, e in pairs(t) do
 		if k ~= "__CLASSNAME" and k ~= "uid" then
 			local ee = e
-			if type(e) == "table" and not e.__CLASSNAME then ee = table.clone(e, true) end
+			if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then ee = table.clone(e, true) end
 			self[k] = ee
+		end
+	end
+
+	if config.settings.cheat and not self._no_upvalues_check then
+		local ok, err = table.check(
+			self,
+			function(t, where, v, tv)
+				if tv ~= "function" then return true end
+				local n, v = debug.getupvalue(v, 1)
+				if not n then return true end
+				return nil, ("%s has upvalue %s"):format(tostring(where), tostring(n))
+			end,
+			function(value) return not value._allow_upvalues end)
+		if not ok then
+			error("Entity definition has a closure: "..err)
 		end
 	end
 
@@ -120,6 +155,7 @@ function _M:init(t, no_default)
 			self:addParticles(Particles.new(pd.name, pd.rad or 1, pd.args))
 		end
 	end
+
 end
 
 --- If we are cloned we need a new uid
@@ -189,6 +225,27 @@ function _M:addParticles(ps)
 	return ps
 end
 
+--- Adds a particles emitter following the entity and duplicate it for the back
+function _M:addParticles3D(def, args, shader)
+	local args1, args2 = table.clone(args or {}), table.clone(args or {})
+	args1.noup = 2
+	args2.noup = 1
+	local shader1, shader2 = nil, nil
+	if shader then 
+		shader1, shader2 = table.clone(shader), table.clone(shader)
+		shader1.noup = 2
+		shader2.noup = 1
+	end
+	local ps1 = Particles.new(def, 1, args1, shader1)
+	ps1.toback = true
+	local ps2 = Particles.new(def, 1, args2, shader2)
+
+	self:addParticles(ps1)
+	self:addParticles(ps2)
+
+	return ps1, ps2
+end
+
 --- Removes a particles emitter following the entity
 function _M:removeParticles(ps)
 	if not ps then return end
@@ -230,15 +287,26 @@ function _M:defineDisplayCallback()
 	if not self._mo then return end
 	if not next(self.__particles) then self._mo:displayCallback(nil) return end
 
+	-- Cunning trick here!
+	-- the callback we give to mo:displayCallback is a function that references self
+	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
+	-- thus we store a reference to a weak table and put self into it
+	-- this way when self dies the weak reference dies and does not prevent GC'ing
+	local weak = setmetatable({[1]=self}, {__mode="v"})
+
 	local ps = self:getParticlesList()
 	self._mo:displayCallback(function(x, y, w, h)
+		local self = weak[1]
+		if not self or not self._mo then return end
+
 		local e
 		for i = 1, #ps do
 			e = ps[i]
 			e:checkDisplay()
 			if e.ps:isAlive() then
-				e.ps:toScreen(x + w / 2, y + h / 2, true, w / game.level.map.tile_w)
-			else
+				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
+				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + h / 2 + (e.dy or 0) * h, true, w / game.level.map.tile_w)
+			else self:removeParticles(e)
 			end
 		end
 		return true
@@ -259,7 +327,7 @@ function _M:makeMapObject(tiles, idx)
 	end
 
 	-- Texture
-	local ok, btex, btexx, btexy, w, h = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
+	local ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
 
 	local dy, dh = 0, 0
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
@@ -286,10 +354,11 @@ function _M:makeMapObject(tiles, idx)
 	-- we pcall it because some weird cases can not find a tile
 	if ok then
 		if self.anim then
-			self._mo:texture(0, btex, false, btexx / self.anim.max, btexy, nil, nil)
+			self._mo:texture(0, btex, false, btexx / self.anim.max, btexy, tex_x, tex_y)
 			self._mo:setAnim(0, self.anim.max, self.anim.speed or 1, self.anim.loop or -1)
 		else
-			self._mo:texture(0, btex, false, btexx, btexy, nil, nil)
+			-- print("=======", self.image, btexx, btexy, te)
+			self._mo:texture(0, btex, false, btexx, btexy, tex_x, tex_y)
 		end
 	end
 
@@ -302,16 +371,19 @@ function _M:makeMapObject(tiles, idx)
 			local dy, dh = amo.display_y or 0, amo.display_h or 1
 			-- Create a simple additional chained MO
 			if amo.image_alter == "sdm" then
-				tex = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, true)
+				local oldrepo = tiles.repo
+				tiles.repo = {}
+				tex = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, false)
+				tiles.repo = oldrepo
 				tex = tex:generateSDM(amo.sdm_double)
 				texx, texy = 1,1,nil,nil
 			elseif amo.image then
 				local w, h
-				tex, texx, texy, w, h = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, true)
+				tex, texx, texy, w, h, pos_x, pos_y = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, true)
 				if amo.auto_tall and h > w then dy = -1 dh = 2 end
 			end
 			local mo = core.map.newObject(self.uid, 1 + (tiles.use_images and amo.textures and #amo.textures or 0), false, false, false, amo.display_x or 0, dy, amo.display_w or 1, dh, amo.display_scale or 1)
-			mo:texture(0, tex, false, texx, texy, nil, nil)
+			mo:texture(0, tex, false, texx, texy, pos_x, pos_y)
 			if amo.particle then
 				local args = amo.particle_args or {}
 				local e = engine.Particles.new(amo.particle, 1, args)
@@ -328,7 +400,7 @@ function _M:makeMapObject(tiles, idx)
 					local t = amo.textures[i]
 					if type(t) == "function" then local tex, is3d = t(amo, tiles); if tex then mo:texture(i, tex, is3d, 1, 1) tiles.texture_store[tex] = true end
 					elseif type(t) == "table" then
-						if t[1] == "image" then local tex = tiles:get('', 0, 0, 0, 0, 0, 0, t[2]); mo:texture(i, tex, false, 1, 1) tiles.texture_store[tex] = true
+						if t[1] == "image" then local tex = tiles:get('', 0, 0, 0, 0, 0, 0, t[2], nil, nil, nil, true); mo:texture(i, tex, false, 1, 1) tiles.texture_store[tex] = true
 						end
 					end
 				end
@@ -459,6 +531,34 @@ function _M:resetMoveAnim()
 	end
 end
 
+--- Sets the flip state of MO and associated MOs
+function _M:MOflipX(v)
+	if not self._mo then return end
+	self._mo:flipX(v)
+
+	if not self.add_displays then return end
+
+	for i = 1, #self.add_displays do
+		if self.add_displays[i]._mo then
+			self.add_displays[i]._mo:flipX(v)
+		end
+	end
+end
+
+--- Sets the flip state of MO and associated MOs
+function _M:MOflipY(v)
+	if not self._mo then return end
+	self._mo:flipY(v)
+
+	if not self.add_displays then return end
+
+	for i = 1, #self.add_displays do
+		if self.add_displays[i]._mo then
+			self.add_displays[i]._mo:flipY(v)
+		end
+	end
+end
+
 --- Get the entity image as an sdl surface and texture for the given tiles and size
 -- @param tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
 -- @param w the width
@@ -560,7 +660,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(t) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			list[k] = e
-		elseif type(e) == "table" and not e.__CLASSNAME then
+		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			list[k] = e
 		end
 	end
@@ -569,7 +669,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	for k, e in pairs(list) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
-		elseif type(e) == "table" and not e.__CLASSNAME then
+		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			local key_chain = table.clone(key_chain)
 			key_chain[#key_chain+1] = k
 			self:resolve(e, last, on_entity, key_chain)
@@ -735,7 +835,7 @@ function _M:addTemporaryValue(prop, v, noupdate)
 			end
 --			print("addTmpVal", base, prop, v, " :=: ", #t, id, method)
 		else
-			error("unsupported temporary value type: "..type(v).." :=: "..tostring(v))
+			error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." (on key "..tostring(prop)..")")
 		end
 	end
 
@@ -868,6 +968,26 @@ end
 function _M:onTemporaryValueChange(prop, v, base)
 end
 
+--- Gets the change in an attribute/function based on changing another.
+-- Measures the difference in result_attr from adding temporary values from and to to changed_attr.
+-- @param changed_attr the attribute being changed
+-- @param from the temp value added to changed_attr which we are starting from
+-- @param to the temp value added to changed_attr which we are ending on
+-- @param result_attr the result we are measuring the difference in
+-- @param ... arguments to pass to result_attr if it is a function
+-- @return the difference, the from result, the to result
+function _M:getAttrChange(changed_attr, from, to, result_attr, ...)
+	local temp = self:addTemporaryValue(changed_attr, from)
+	local from_result = util.getval(self[result_attr], self, ...)
+	self:removeTemporaryValue(changed_attr, temp)
+
+	temp = self:addTemporaryValue(changed_attr, to)
+	local to_result = util.getval(self[result_attr], self, ...)
+	self:removeTemporaryValue(changed_attr, temp)
+
+	return to_result - from_result, from_result, to_result
+end
+
 --- Increases/decreases an attribute
 -- The attributes are just actor properties, but this ensures they are numbers and not booleans
 -- thus making them compatible with temporary values system
@@ -940,16 +1060,14 @@ function _M:loadList(file, no_default, res, mod, loaded)
 		loading_list = res,
 		ignoreLoaded = function(v) res.ignore_loaded = v end,
 		rarity = function(add, mult) add = add or 0; mult = mult or 1; return function(e) if e.rarity then e.rarity = math.ceil(e.rarity * mult + add) end end end,
+		switchRarity = function(name) return function(e) if e.rarity then e[name], e.rarity = e.rarity, nil end end end,
 		newEntity = function(t)
 			-- Do we inherit things ?
 			if t.base then
 				local base = res[t.base]
 				if not base and res.import_source then base = res.import_source[t.base] end
-				local temp = table.clone(base, true, {uid=true, define_as = true})
-				if base.onEntityMerge then base:onEntityMerge(temp) end
-				table.mergeAppendArray(temp, t, true)
-				t = temp
-				t.base = nil
+
+				t = importBase(t, base)
 			end
 
 			local e = newenv.class.new(t, no_default)
@@ -990,4 +1108,3 @@ end
 function _M:checkClassification(type_str)
 	return false
 end
-

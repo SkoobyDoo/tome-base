@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ newTalent{
 	name = "Shoot",
 	type = {"technique/archery-base", 1},
 	no_energy = "fake",
+	speed = 'archery',
 	hide = true,
 	innate = true,
 	points = 1,
@@ -36,7 +37,7 @@ newTalent{
 	message = "@Source@ shoots!",
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) if not (self:attr("warden_swap") and doWardenPreUse(self, "bow")) and not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
 	no_unlearn_last = true,
 	use_psi_archery = function(self, t)
 		local inven = self:getInven("PSIONIC_FOCUS")
@@ -49,14 +50,16 @@ newTalent{
 		end
 	end,
 	action = function(self, t)
+		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, nil, "bow")
+	
 		-- Most of the time use the normal shoot.
 		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
-			if not targets then return end
+			if not targets then if swap then doWardenWeaponSwap(self, t, nil, "blade") end return end
 			self:archeryShoot(targets, t, nil, {use_psi_archery = t.use_psi_archery(self, t)})
 			return true
 		end
-
+		
 		local weapon, ammo, offweapon = self:hasArcheryWeapon()
 		if not weapon then return nil end
 		local infinite = ammo.infinite or self:attr("infinite_ammo")
@@ -69,6 +72,7 @@ newTalent{
 		local weapon = self:hasArcheryWeapon("sling")
 		local bombardment = self:getTalentFromId("T_SKIRMISHER_BOMBARDMENT")
 		local shots = bombardment.bullet_count(self, bombardment)
+		local mult = bombardment.damage_multiplier(self, bombardment)
 
 		-- Do targeting.
 		local old_target_forced = game.target.forced
@@ -82,7 +86,7 @@ newTalent{
 		for i = 1, shots do
 			local targets = self:archeryAcquireTargets(nil, {no_energy=true, one_shot=true})
 			if not targets then break end
-			self:archeryShoot(targets, t, nil, {use_psi_archery = t.use_psi_archery(self, t)})
+			self:archeryShoot(targets, t, nil, {mult=mult, use_psi_archery = t.use_psi_archery(self, t)})
 		end
 
 		local speed = self:combatSpeed(weapon)
@@ -107,11 +111,12 @@ newTalent{
 	no_energy = true,
 	no_reload_break = true,
 	no_break_stealth = true,
+	no_dumb_use = true,
 	on_pre_use = function(self, t, silent)
 		local q = self:hasAmmo()
 		if not q then if not silent then game.logPlayer(self, "You must have a quiver or pouch equipped.") end return false end
 		if q.combat.shots_left >= q.combat.capacity then return false end
-		return true 
+		return true
 	end,
 	no_unlearn_last = true,
 	action = function(self, t)
@@ -175,6 +180,7 @@ newTalent{
 			apr = self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 3, 0, 53, 50)}
 		return vals
 	end,
+	sustain_slots = 'archery_stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
@@ -182,7 +188,6 @@ newTalent{
 			return nil
 		end
 
-		if self:isTalentActive(self.T_RAPID_SHOT) then self:forceUseTalent(self.T_RAPID_SHOT, {ignore_energy=true}) end
 		local vals = t.getCombatVals(self, t)
 		return {
 			speed = self:addTemporaryValue("combat_physspeed", vals.speed),
@@ -227,6 +232,7 @@ newTalent{
 			}
 		return vals
 	end,
+	sustain_slots = 'archery_stance',
 	activate = function(self, t)
 		local weapon = self:hasArcheryWeapon()
 		if not weapon then
@@ -234,7 +240,6 @@ newTalent{
 			return nil
 		end
 
-		if self:isTalentActive(self.T_AIM) then self:forceUseTalent(self.T_AIM, {ignore_energy=true}) end
 		local vals = t.getCombatVals(self, t)
 		return {
 			speed = self:addTemporaryValue("combat_physspeed", vals.speed),

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,10 +42,10 @@ return { generator = function()
 		dir = rng.percent(50) and ray.dir + math.rad(rng.range(50, 130)) or ray.dir - math.rad(rng.range(50, 130)), dirv = 0, dira = 0,
 		vel = rng.percent(30) and 1 or 0, velv = -0.1, vela = 0.01,
 
-		r = rng.range(10, 110)/255,  rv = 0, ra = 0,
-		g = rng.range(10, 50)/255,      gv = 0, ga = 0,
-		b = rng.range(20, 125)/255,      bv = 0, ba = 0,
-		a = rng.range(25, 255)/255,   av = 0, aa = 0,
+		r = rng.range(125, 150)/255,  rv = 0, ra = 0,
+		g = rng.range(125, 150)/255,  gv = 0, ga = 0,
+		b = rng.range(25, 50)/255,  bv = 0, ba = 0,
+		a = rng.range(125, 255)/255,   av = 0, aa = 0,
 	}
 end, },
 function(self)

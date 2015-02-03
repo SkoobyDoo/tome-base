@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,9 +55,7 @@ newTalent{
 		self:removeParticles(p.particle)
 		return true
 	end,
-	do_gloom = function(self, tGloom)
-		if game.zone.wilderness then return end
-
+	callbackOnActBase = function(self, tGloom)
 		-- all gloom effects are handled here
 		local tWeakness = self:getTalentFromId(self.T_WEAKNESS)
 		local tDismay = self:getTalentFromId(self.T_DISMAY)

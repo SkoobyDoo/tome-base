@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,6 +42,13 @@ end
 
 --- Called when a key is pressed, gives raw codes
 function _M:receiveKeyRaw(isup, scancode, sym, unicode, ctrl, shift, alt, meta)
+end
+
+--- Called when a gamepad key is pressed
+-- @param button the id
+-- @param isup false if pressed true if released
+function _M:receiveJoyButton(button, isup)
+	-- print("==joy button", button, isup)
 end
 
 --- Maintain the self.status table, which can be used to know if a key is currently pressed

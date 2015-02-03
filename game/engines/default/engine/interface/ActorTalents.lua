@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,18 +45,20 @@ end
 --- Defines one talent type(group)
 -- Static!
 function _M:newTalentType(t)
+	t.__ATOMIC = true
 	assert(t.name, "no talent type name")
 	assert(t.type, "no talent type type")
 	t.description = t.description or ""
 	t.points = t.points or 1
 	t.talents = {}
 	table.insert(self.talents_types_def, t)
-	self.talents_types_def[t.type] = t
+	self.talents_types_def[t.type] = self.talents_types_def[t.type] or t
 end
 
 --- Defines one talent
 -- Static!
 function _M:newTalent(t)
+	t.__ATOMIC = true
 	assert(t.name, "no talent name")
 	assert(t.type, "no or unknown talent type")
 	if type(t.type) == "string" then t.type = {t.type, 1} end
@@ -116,7 +118,7 @@ end
 -- Make the actor use the talent
 -- @param id talent ID
 -- @param who talent user
--- @param force_level talent level(raw) override 
+-- @param force_level talent level(raw) override
 -- @param ignore_cd do not affect or consider cooldown
 -- @param force_target the target of the talent (override)
 -- @param silent do not display messages about use
@@ -127,28 +129,21 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 	assert(ab, "trying to cast talent "..tostring(id).." but it is not defined")
 
 	local cancel = false
+	local co, success, err
 	if ab.mode == "activated" and ab.action then
 		if self:isTalentCoolingDown(ab) and not ignore_cd then
 			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
 			return
 		end
-		local co = coroutine.create(function()
+		co = coroutine.create(function()
 			if cancel then
 				success = false
 				return false
 			end
 			if not self:preUseTalent(ab, silent) then return end
-			local old_level
-			local old_target, old_target_set = nil, false
-
-			if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
-			if ab.onAIGetTarget and not who.player then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function() return ab.onAIGetTarget(self, ab) end end
-			if force_target and not old_target then old_target_set = true; old_target = rawget(who, "getTarget"); who.getTarget = function(a) return force_target.x, force_target.y, not force_target.__no_self and force_target end end
-			self.__talent_running = ab
+			
 			local ok, ret, special = xpcall(function() return ab.action(who, ab) end, debug.traceback)
 			self.__talent_running = nil
-			if old_target_set then who.getTarget = old_target end
-			if force_level then who.talents[id] = old_level end
 
 			if not ok then error(ret) end
 
@@ -157,7 +152,103 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			-- Everything went ok? then start cooldown if any
 			if not ignore_cd and (not special or not special.ignore_cd) then self:startTalentCooldown(ab) end
 		end)
-		local success, err
+	elseif ab.mode == "sustained" and ab.activate and ab.deactivate then
+		if self:isTalentCoolingDown(ab) and not ignore_cd then
+			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
+			return
+		end
+		co = coroutine.create(function()
+			if cancel then
+				success = false
+				return false
+			end
+			if not self:preUseTalent(ab, silent) then return end
+			if not self.sustain_talents[id] then
+				local ret = ab.activate(who, ab)
+				if ret == true then ret = {} end -- fix for badly coded talents
+				if ret then ret.name = ret.name or ab.name end
+
+				if not self:postUseTalent(ab, ret) then return end
+
+				self.sustain_talents[id] = ret
+
+				if ab.sustain_lists then
+					local lists = ab.sustain_lists
+					if 'table' ~= type(lists) then lists = {lists} end
+					for _, list in ipairs(lists) do
+						if 'table' == type(list) then
+							list = table.getTable(self, unpack(list))
+						else
+							list = table.getTable(self, list)
+						end
+						table.insert(list, id)
+					end
+				end
+			else
+				local p = self.sustain_talents[id]
+				if p and type(p) == "table" and p.__tmpvals then
+					for i = 1, #p.__tmpvals do
+						self:removeTemporaryValue(p.__tmpvals[i][1], p.__tmpvals[i][2])
+					end
+				end
+				if p and type(p) == "table" and p.__tmpparticles then
+					for i = 1, #p.__tmpparticles do
+						self:removeParticles(p.__tmpparticles[i])
+					end
+				end
+				local ret = ab.deactivate(who, ab, p)
+
+				if not self:postUseTalent(ab, ret, silent) then return end
+
+				-- Everything went ok? then start cooldown if any
+				if not ignore_cd then self:startTalentCooldown(ab) end
+				self.sustain_talents[id] = nil
+
+				if ab.sustain_lists then
+					local lists = ab.sustain_lists
+					if 'table' ~= type(lists) then lists = {lists} end
+					for _, list in ipairs(lists) do
+						if 'table' == type(list) then
+							list = table.getTable(self, unpack(list))
+						else
+							list = table.getTable(self, list)
+						end
+						table.removeFromList(list, id)
+					end
+				end
+			end
+		end)
+	else
+		print("Activating non activable or sustainable talent: "..id.." :: "..ab.name.." :: "..ab.mode)
+	end
+	if co then
+		-- Stub some stuff
+		local old_level, old_target, new_target = nil, nil, nil
+		if force_level then old_level = who.talents[id] end
+		if ab.mode == "activated" then
+			if ab.onAIGetTarget and not who.player then old_target = rawget(who, "getTarget"); new_target = function() return ab.onAIGetTarget(self, ab) end end
+			if force_target and not old_target then old_target = rawget(who, "getTarget"); new_target = function(a) return force_target.x, force_target.y, not force_target.__no_self and force_target end end
+		end
+		local co_wrapper = coroutine.create(function()
+			success = true
+			local ok
+			while success do
+				if new_target then who.getTarget = new_target end
+				if force_level then who.talents[id] = force_level end
+				self.__talent_running = ab
+				ok, err = coroutine.resume(co)
+				success = success and ok
+				if new_target then who.getTarget = old_target end
+				if force_level then who.talents[id] = old_level end
+				self.__talent_running = nil
+				if ok and coroutine.status(co) == "dead" then
+					-- terminated
+					return
+				end
+				coroutine.yield()
+			end
+			if err then error(err) end  --propagate
+		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
 			local abname = game:getGenericTextTiles(ab)..ab.name
 			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
@@ -165,74 +256,20 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 				if quit ~= false then
 					cancel = true
 				end
-				success, err = coroutine.resume(co)
+				success, err = coroutine.resume(co_wrapper)
 			end,
 			"Cancel","Continue")
 		else
 			-- cancel checked in coroutine
-			success, err = coroutine.resume(co)
+			success, err = coroutine.resume(co_wrapper)
 		end
-		if not success and err then print(debug.traceback(co)) error(err) end
-	elseif ab.mode == "sustained" and ab.activate and ab.deactivate then
-		if self:isTalentCoolingDown(ab) and not ignore_cd then
-			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
-			return
+		-- Cleanup in case we coroutine'd out
+		self.__talent_running = nil
+		if not success and err then
+			print(debug.traceback(co_wrapper))
+			self:onTalentLuaError(err)
+			error(err)
 		end
-		local co = coroutine.create(function()
-			if cancel then
-				success = false
-				return false
-			end
-			if not self:preUseTalent(ab, silent) then return end
-			if not self.sustain_talents[id] then
-				local old_level
-				if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
-				local ret = ab.activate(who, ab)
-				if ret == true then ret = {} end -- fix for badly coded talents
-				if ret then ret.name = ret.name or ab.name end
-				if force_level then who.talents[id] = old_level end
-
-				if not self:postUseTalent(ab, ret) then return end
-
-				self.sustain_talents[id] = ret
-			else
-				local old_level
-				if force_level then old_level = who.talents[id]; who.talents[id] = force_level end
-				local p = self.sustain_talents[id]
-				if p and type(p) == "table" and p.__tmpvals then
-					for i = 1, #p.__tmpvals do
-						self:removeTemporaryValue(p.__tmpvals[i][1], p.__tmpvals[i][2])
-					end
-				end
-				local ret = ab.deactivate(who, ab, p)
-				if force_level then who.talents[id] = old_level end
-
-				if not self:postUseTalent(ab, ret, silent) then return end
-
-				-- Everything went ok? then start cooldown if any
-				if not ignore_cd then self:startTalentCooldown(ab) end
-				self.sustain_talents[id] = nil
-			end
-		end)
-		local success, err
-		if not no_confirm and self:isTalentConfirmable(ab) then
-			local abname = game:getGenericTextTiles(ab)..ab.name
-			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("%s %s?"):
-			format(self:isTalentActive(ab.id) and "Deactivate" or "Activate",abname),
-			function(quit)
-				if quit ~= false then
-					cancel = true
-				end
-				success, err = coroutine.resume(co)
-			end,
-			"Cancel","Continue")
-		else
-			-- cancel checked in coroutine
-			success, err = coroutine.resume(co)
-		end
-		if not success and err then print(debug.traceback(co)) error(err) end
-	else
-		print("Activating non activable or sustainable talent: "..id.." :: "..ab.name.." :: "..ab.mode)
 	end
 	self.changed = true
 	return true
@@ -273,6 +310,13 @@ function _M:postUseTalent(talent, ret, silent)
 	return true
 end
 
+--- Called if a talent errors out
+-- @param ab the talent
+-- @param err the error
+function _M:onTalentLuaError(ab, err)
+	return
+end
+
 --- Force a talent to activate without using energy or such
 -- "def" can have a field "ignore_energy" to not consume energy; other parameters can be passed and handled by an overload of this method.
 -- Object activation interface calls this method with an "ignore_ressources" parameter
@@ -300,11 +344,12 @@ end
 --- Returns how many talents of this type the actor knows
 -- @param type the talent type to count
 -- @param exclude_id if not nil the count will ignore this talent id
-function _M:numberKnownTalent(type, exclude_id)
+-- @param limit_type if not nil the count will ignore talents with talent category level equal or higher that this
+function _M:numberKnownTalent(type, exclude_id, limit_type)
 	local nb = 0
 	for id, _ in pairs(self.talents) do
 		local t = _M.talents_def[id]
-		if t.type[1] == type and (not exclude_id or exclude_id ~= id) then nb = nb + 1 end
+		if t.type[1] == type and (not exclude_id or exclude_id ~= id) and (not limit_type or not t.type[2] or t.type[2] < limit_type) then nb = nb + 1 end
 	end
 	return nb
 end
@@ -325,7 +370,7 @@ function _M:learnTalent(t_id, force, nb)
 
 	if not self.talents[t_id] then
 		-- Auto assign to hotkey
-		if t.mode ~= "passive" and self.hotkey then
+		if t.mode ~= "passive" and not t.no_auto_hotkey and self.hotkey then
 			local position
 
 			if self.player then
@@ -351,11 +396,24 @@ function _M:learnTalent(t_id, force, nb)
 				end
 			end
 		end
+
+		if t.learn_lists then
+			local lists = t.learn_lists
+			if 'table' ~= type(lists) then lists = {lists} end
+			for _, list in ipairs(lists) do
+				if 'table' == type(list) then
+					list = table.getTable(self, unpack(list))
+				else
+					list = table.getTable(self, list)
+				end
+				table.insert(list, t.id)
+			end
+		end
 	end
 
 	for i = 1, (nb or 1) do
 		self.talents[t_id] = (self.talents[t_id] or 0) + 1
-		if t.on_learn then 
+		if t.on_learn then
 			local ret = t.on_learn(self, t)
 			if ret then
 				if ret == true then ret = {} end
@@ -365,7 +423,7 @@ function _M:learnTalent(t_id, force, nb)
 		end
 	end
 
-	if t.passives then 
+	if t.passives then
 		self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
 		local p = self.talents_learn_vals[t.id]
 
@@ -411,7 +469,7 @@ function _M:unlearnTalent(t_id, nb)
 		self.talents[t_id] = self.talents[t_id] - 1
 		if self.talents[t_id] == 0 then self.talents[t_id] = nil end
 
-		if t.on_unlearn then 
+		if t.on_unlearn then
 			local p = nil
 			if self.talents_learn_vals[t.id] and self.talents_learn_vals[t.id][(self.talents[t_id] or 0) + 1] then
 				p = self.talents_learn_vals[t.id][(self.talents[t_id] or 0) + 1]
@@ -425,7 +483,7 @@ function _M:unlearnTalent(t_id, nb)
 		end
 	end
 
-	if t.passives then 
+	if t.passives then
 		self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
 		local p = self.talents_learn_vals[t.id]
 
@@ -441,6 +499,19 @@ function _M:unlearnTalent(t_id, nb)
 		end
 	end
 
+	if t.learn_lists and not self:knowTalent(t_id) then
+		local lists = t.learn_lists
+		if 'table' ~= type(lists) then lists = {lists} end
+		for _, list in ipairs(lists) do
+			if 'table' == type(list) then
+				list = table.getTable(self, unpack(list))
+			else
+				list = table.getTable(self, list)
+			end
+			table.removeFromList(list, t.id)
+		end
+	end
+
 	if self.talents[t_id] == nil then self.talents_auto[t_id] = nil end
 
 	self.changed = true
@@ -451,7 +522,7 @@ end
 function _M:updateTalentPassives(tid)
 	if not self:knowTalent(tid) then return end
 
-	local t = self:getTalentFromId(tid)	
+	local t = self:getTalentFromId(tid)
 	if not t.passives then return end
 
 	self.talents_learn_vals[t.id] = self.talents_learn_vals[t.id] or {}
@@ -510,7 +581,7 @@ function _M:canLearnTalent(t, offset, ignore_special)
 	if not self:knowTalentType(t.type[1]) and not t.type_no_req then return nil, "unknown talent type" end
 
 	-- Check talent type
-	local known = self:numberKnownTalent(t.type[1], t.id)
+	local known = self:numberKnownTalent(t.type[1], t.id, t.type[2])
 	if t.type[2] and known < t.type[2] - 1 then
 		return nil, "not enough talents of this type known"
 	end
@@ -537,9 +608,9 @@ function _M:getTalentReqDesc(t_id, levmod)
 	end
 
 	if t.type[2] and t.type[2] > 1 then
-		local known = self:numberKnownTalent(t.type[1], t.id)
+		local known = self:numberKnownTalent(t.type[1], t.id, t.type[2])
 		local c = (known >= t.type[2] - 1) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
-		str:add(c, ("- Talents of the same category: %d"):format(t.type[2] - 1), true)
+		str:add(c, ("- Lower talents of the same category: %d"):format(t.type[2] - 1), true)
 	end
 
 	-- Obviously this requires the ActorStats interface
@@ -700,10 +771,12 @@ end
 
 --- Starts a talent cooldown
 -- @param t the talent to cooldown
-function _M:startTalentCooldown(t)
+-- @param v override the normal cooldown that that, nil to get the normal effect
+function _M:startTalentCooldown(t, v)
 	t = self:getTalentFromId(t)
-	if not t.cooldown then return end
 	local cd = t.cooldown
+	if v then cd = math.max(v, self.talents_cd[t.id] or 0) end
+	if not cd then return end
 	if type(cd) == "function" then cd = cd(self, t) end
 	self.talents_cd[t.id] = cd
 	self.changed = true
@@ -835,6 +908,14 @@ function _M:talentTemporaryValue(p, k, v)
 	p.__tmpvals[#p.__tmpvals+1] = {k, self:addTemporaryValue(k, v)}
 end
 
+--- Helper function to add temporary particles and not have to remove them manualy
+function _M:talentParticles(p, ...)
+	if not p.__tmpparticles then p.__tmpparticles = {} end
+	for _, ps in ipairs{...} do
+		p.__tmpparticles[#p.__tmpparticles+1] = ps
+	end
+end
+
 --- Trigger a talent method
 function _M:triggerTalent(tid, name, ...)
 	if self:isTalentCoolingDown(tid) then return end
@@ -859,4 +940,36 @@ function _M:talentCallbackOn(on, ...)
 			self:callTalent(tid, on, ...)
 		end
 	end
+end
+
+local dialog_returns_list = setmetatable({}, {__mode="v"})
+local dialog_returns = setmetatable({}, {__mode="k"})
+
+--- Set the result for a talent dialog
+function _M:talentDialogReturn(...)
+	local d = dialog_returns_list[#dialog_returns_list]
+	if not d then return end
+
+	dialog_returns[d] = {...}
+end
+
+--- Get the dialog
+function _M:talentDialogGet()
+	return dialog_returns_list[#dialog_returns_list]
+end
+
+--- Show a dialog and wait for it to end in a talent
+function _M:talentDialog(d)
+	if not game:hasDialog(d) then game:registerDialog(d) end
+
+	dialog_returns_list[#dialog_returns_list+1] = d
+
+	local co = coroutine.running()
+	d.unload = function(self) coroutine.resume(co, dialog_returns[d]) end
+	local ret = coroutine.yield()
+
+	dialog_returns[d] = nil
+	table.removeFromList(dialog_returns_list, d)
+
+	return unpack(ret)
 end

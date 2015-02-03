@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ newEntity{ define_as = "SHADE",
 	stats = { str=16, dex=12, cun=14, mag=25, con=16 },
 	instakill_immune = 1,
 	blind_immune = 1,
-	bleed_immune = 1,
+	cut_immune = 1,
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
@@ -141,7 +141,7 @@ newEntity{ define_as = "KOR_FURY",
 	stone_immune = 1,
 	confusion_immune = 1,
 	fear_immune = 1,
-	bleed_immune = 1,
+	cut_immune = 1,
 	teleport_immune = 0.5,
 	disease_immune = 1,
 	poison_immune = 1,

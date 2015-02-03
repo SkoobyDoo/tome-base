@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,6 +33,10 @@ As for your probable many questions, they will stay unanswered. I may help, but 
 		{"Thank you, but I fear I will not survive anyway, can you send me back somewhere else please?",
 			cond=function() return game.level.source_level and not game.level.source_level.no_return_from_eidolon and (not game.level.source_level.data or not game.level.source_level.data.no_worldport) end,
 			action=function() game.level.data.eidolon_exit(true) end
+		},
+		{"Thank you, but I fear I will not survive anyway, can you send me back somewhere else on the level please?",
+			cond=function() return game.level.source_zone and game.level.source_zone.infinite_dungeon end,
+			action=function() game.level.data.eidolon_exit("teleport") end
 		},
 		{"Thank you, I am ready to go back!",
 			cond=function() return not game.level.source_level or game.level.source_level.no_return_from_eidolon end,

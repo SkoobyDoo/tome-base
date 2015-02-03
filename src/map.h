@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,8 +33,9 @@ struct s_map_object {
 	shader_type *shader;
 	int shader_ref;
 	int cur_x, cur_y;
-	float dx, dy, scale;
+	float dx, dy, scale, world_x, world_y;
 	float animdx, animdy;
+	float oldrawdx, oldrawdy;
 	float dw, dh;
 	float tint_r;
 	float tint_g;
@@ -46,6 +47,7 @@ struct s_map_object {
 	bool on_remember;
 	bool on_unknown;
 	bool valid;
+	bool flip_x, flip_y;
 	float oldx, oldy;
 	int move_step, move_max, move_blur, move_twitch_dir;
 	float move_twitch;
@@ -74,11 +76,18 @@ typedef struct {
 	int mm_w, mm_h;
 	int mm_rw, mm_rh;
 
+	int nb_grid_lines_vertices;
+	GLfloat *grid_lines_vertices;
+	GLfloat *grid_lines_colors;
+	GLfloat *grid_lines_textures;
+
 	GLfloat *vertices;
 	GLfloat *colors;
 	GLfloat *texcoords;
 	GLubyte *seens_map;
 	int seens_map_w, seens_map_h;
+
+	shader_type *default_shader;
 
 	int *z_callbacks;
 
@@ -102,6 +111,7 @@ typedef struct {
 	GLfloat tex_tile_w[3], tex_tile_h[3];
 
 	// Scrolling
+	float displayed_x, displayed_y;
 	int mx, my, mwidth, mheight;
 	float oldmx, oldmy;
 	int move_step, move_max;

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -103,3 +103,13 @@ If used near a portal, it could probably activate it.]],
 		end
 	end,
 }
+
+for i = 1, 4 do
+newEntity{ base = "BASE_LORE",
+	define_as = "NOTE"..i,
+	name = "tattered paper scrap", lore="tannen-level"..i,
+	desc = [[A paper scrap, left by Tannen.]],
+	rarity = false,
+	encumberance = 0,
+}
+end

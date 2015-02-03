@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,19 +58,19 @@ function _M:generate()
 	local minh = 0
 	for i, item in ipairs(self.list) do
 		local color = item.color or {255,255,255}
-		local text = item[self.display_prop]:splitLines(fw - self.frame_sel.b4.w - self.frame_sel.b6.w, self.font)
-		local fh = fh * #text + self.frame_sel.b8.w / 3 * 2
-		local s = core.display.newSurface(fw, fh)
+		local width = fw - self.frame_sel.b4.w - self.frame_sel.b6.w
 
-		s:erase(0, 0, 0, 0)
-		local color_r, color_g, color_b = color[1], color[2], color[3]
-		for z = 1, #text do
-			color_r, color_g, color_b = s:drawColorStringBlended(self.font, text[z], self.frame_sel.b4.w, self.frame_sel.b8.w / 3 + self.font_h * (z-1), color_r, color_g, color_b, true)
+		local text = self.font:draw(item[self.display_prop], width, color[1], color[2], color[3])
+		local fh = fh * #text + self.frame_sel.b8.w / 3 * 2
+
+		local texs = {}
+		for z, tex in ipairs(text) do
+			texs[z] = {t=tex._tex, tw=tex._tex_w, th = tex._tex_h, w=tex.w, h=tex.h, y = (z - 1) * self.font_h + self.frame_sel.b8.w / 3}
 		end
 
 		item.start_h = sh
 		item.fh = fh
-		item._tex = {s:glTexture()}
+		item._texs = texs
 
 		sh = sh + fh
 		if i <= self.min_items_shown then minh = sh end
@@ -182,8 +182,10 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y)
 				if item.focus_decay <= 0 then item.focus_decay = nil end
 			end
 		end
-		if self.text_shadow then item._tex[1]:toScreenFull(x+1 + self.frame_sel.b4.w, y+1, self.fw, item.fh, item._tex[2], item._tex[3], 0, 0, 0, self.text_shadow) end
-		item._tex[1]:toScreenFull(x + self.frame_sel.b4.w, y, self.fw, item.fh, item._tex[2], item._tex[3])
+		for z, tex in pairs(item._texs) do
+			if self.text_shadow then self:textureToScreen(tex, x+1 + self.frame_sel.b4.w, y+1 + tex.y, 0, 0, 0, self.text_shadow) end
+			self:textureToScreen(tex, x + self.frame_sel.b4.w, y + tex.y)
+		end
 		y = y + item.fh
 	end
 

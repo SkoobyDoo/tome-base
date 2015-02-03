@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ end
 function _M:block_move(x, y, e, act, couldpass)
 	-- Open doors
 	if self.door_opened and act then
-		game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list.DOOR_OPEN)
+		game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
 		return true
 	elseif self.door_opened and not couldpass then
 		return true
@@ -56,36 +56,78 @@ function _M:on_move(x, y, who, forced)
 end
 
 --- Generate sub entities to make nice trees
-function _M:makeTrees(base, max, bigheight_limit, tint)
+function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
+	basedir = basedir or "terrain/trees/"
+	max_trees = max_trees or 3
+	g.add_displays = g.add_displays or {}
+	g.add_mos = g.add_mos or {}
+	local basemos = g.add_mos
+	local add = g.add_displays
+	add[#add+1] = engine.Entity.new{image="invis.png", z=3, display_on_seen = true, display_on_remember = true, add_mos={}}
+	local mos = add[#add].add_mos
+	local function getname(n)
+		if type(n) == "string" then return n end
+		return n[1]:format(rng.range(n[2], n[3]))
+	end
 	local function makeTree(nb, z)
 		local inb = 4 - nb
-		local treeid = rng.range(1, max or 5)
-		return engine.Entity.new{
+		local treedef = rng.table(kindsdefs)
+		local treeid = treedef[1]
+		local parts = treedef[2]
+		if not parts.tall then parts.tall = 0 end
+
+		local scale = rng.float(0.5 + inb / 6, 1)
+		local x = rng.float(-1 / 3 * nb / 3, 1 / 3 * nb / 3)
+		local y = rng.float(-1 / 5 * nb / 3, 1 / 4 * nb / 3)
+
+		for i = 1, #parts - 1 do
+			mos[#mos+1] = {image=basedir..treeid.."_"..getname(parts[i])..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+		end
+		if parts.base then
+			basemos[#basemos+1] = {image=basedir..treeid.."_"..getname(parts.base)..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+		end
+		if parts.adds then
+			local name = parts.adds[1]
+			local t = {
+				z = z,
+				display_x = x,
+				display_y = y,
+				display_w = scale,
+				display_h = scale,
+				display_on_seen = true,
+				display_on_remember = true,
+				image = basedir..treeid.."_"..getname(name)..".png",
+			}
+			table.merge(t, parts.adds)
+			add[#add+1] = engine.Entity.new(t)
+		end
+		add[#add+1] = engine.Entity.new{
 			z = z,
-			display_scale = 1,
-			display_scale = rng.float(0.5 + inb / 6, 1),
-			display_x = rng.float(-1 / 3 * nb / 3, 1 / 3 * nb / 3),
-			display_y = rng.float(-1 / 3 * nb / 3, 1 / 3 * nb / 3) - (treeid < (bigheight_limit or 9) and 0 or 1),
+			_st = y,
+			display_x = x,
+			display_y = y + scale * parts.tall,
+			display_w = scale,
+			display_h = scale * (1 - parts.tall),
 			display_on_seen = true,
 			display_on_remember = true,
-			display_h = treeid < (bigheight_limit or 9) and 1 or 2,
-			image = (base or "terrain/tree_alpha")..treeid..".png",
-			tint = tint,
+			image = basedir..treeid.."_"..getname(parts[#parts])..".png",
+			shader = "tree", shader_args = parts.shader_args,
 		}
+		return add[#add]
 	end
 
 	local v = rng.range(0, 100)
 	local tbl
-	if v < 33 then
+	if v < 33 and max_trees >= 3 then
 		tbl = { makeTree(3, 16), makeTree(3, 17), makeTree(3, 18), }
-	elseif v < 66 then
+	elseif v < 66 and max_trees >= 2 then
 		tbl = { makeTree(2, 16), makeTree(2, 17), }
 	else
 		tbl = { makeTree(1, 16), }
 	end
-	table.sort(tbl, function(a,b) return a.display_scale < b.display_scale end)
+	table.sort(tbl, function(a,b) return a._st < b._st end)
 	for i = 1, #tbl do tbl[i].z = 16 + i - 1 end
-	return tbl
+	return g
 end
 
 --- Generate sub entities to make nice crystals, same as trees but change tint

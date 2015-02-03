@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ newTalent{
 		local explosion = "flame"
 
 		local damtype = combat.element or combat.damtype or engine.DamageType.PHYSICAL
-		
+
 		if     damtype == DamageType.FIRE then      explosion = "flame"               particle = "bolt_fire"      trail = "firetrail"
 		elseif damtype == DamageType.COLD then      explosion = "freeze"              particle = "ice_shards"     trail = "icetrail"
 		elseif damtype == DamageType.ACID then      explosion = "acid"                particle = "bolt_acid"      trail = "acidtrail"
@@ -148,6 +148,7 @@ newTalent{
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t)}
 	end,
+	is_melee = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDazeDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
 	action = function(self, t)
@@ -159,12 +160,11 @@ newTalent{
 
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		if self:getTalentLevel(t) >= 5 then self.turn_procs.auto_melee_hit = true end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, t.getDamage(self, t))
 		if self:getTalentLevel(t) >= 5 then self.turn_procs.auto_melee_hit = nil end
-		
+
 		-- Try to stun !
 		if hit then
 			if target:canBe("stun") then
@@ -185,4 +185,3 @@ newTalent{
 		format(100 * damage, dazedur)
 	end,
 }
-

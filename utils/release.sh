@@ -5,15 +5,36 @@ if test $# -lt 3 ; then
 	exit
 fi
 
-echo "*********** Make sure bunbled addons are updated! *********"
-read
+if test -f game/modules/tome/data/gfx/ts-shockbolt-npc.lua; then
+	echo "***********************************************************"
+	echo "***********************************************************"
+	echo "**************** TILESET MODE already active! *************"
+	echo "***********************************************************"
+	echo "***********************************************************"
+	echo "Removing tilsets..."
+	rm -f game/modules/tome/data/gfx/ts-*lua game/modules/tome/data/gfx/ts-*png
+	echo "...done"
+	echo
+fi
+
+echo "*********** Compute tilesets? (Y/n)"
+read ok
+if test "$ok" '!=' 'n'; then
+	sh utils/tileset-maker.tome.sh 2>/dev/null
+fi
+
+echo "*********** Make sure bunbled addons are updated. Ok ? (Y/n)"
+read ok
+if test "$ok" '=' 'n'; then exit; fi
 
 # Check validity
+echo "Validating lua files..."
 find game/ bootstrap/ -name '*lua' | xargs -n1 luac -p
 if test $? -ne 0 ; then
 	echo "Invalid lua files!"
 	exit 1
 fi
+echo "...done"
 
 ever="$1"
 tver="$2"
@@ -42,13 +63,13 @@ find . -name '*~' -or -name '.svn' -or -name '.keep' | xargs rm -rf
 cd game/engines
 te4_pack_engine.sh default/ te4-"$ever"
 te4_pack_engine.sh default/ te4-"$ever" 1
-\cp -f te4-*.teae boot-te4-*.team /var/www/te4.org/htdocs/dl/engines
+\cp -f te4-*.teae boot-te4-*.team /foreign/eyal/var/www/te4.org/htdocs/dl/engines
 mv boot*team ../modules
 rm -rf default
 cd ../modules
 te4_pack_module_tome.sh tome "$tver"
 #te4_pack_module.sh tome "$tver" 1
-\cp -f tome*.team /var/www/te4.org/htdocs/dl/modules/tome/
+\cp -f tome*.team /foreign/eyal/var/www/te4.org/htdocs/dl/modules/tome/
 rm -f tome*nomusic.team
 rm -f boot*nomusic.team
 rm -rf tome
@@ -90,10 +111,6 @@ cp -a ../../bootstrap/ T-Engine.app/Contents/MacOS/
 cp -a ../t-engine4-src-"$ver"/game/ .
 cp -a ../../C* .
 find . -name '*~' -or -name '.svn' | xargs rm -rf
-#cd ..
-#size=`du -hsc t-engine4-osx-"$ver"|grep total|cut -dM -f1`
-#sudo makedmg t-engine4-osx-"$ver".dmg "Tales of Maj'Eyal" `expr $size + 10` t-engine4-osx-"$ver"
-#gzip t-engine4-osx-"$ver".dmg
 zip -r -9 ../t-engine4-osx-"$ver".zip *
 cd ..
 
@@ -107,10 +124,8 @@ IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
 	if test $? -eq 0; then rm "$i"; fi
 done
 rm game/modules/tome*-music.team
-#rm game/modules/tome*team
 rm game/modules/boot*team
-#cp /var/www/te4.org/htdocs/dl/modules/tome/tome-"$tver"-nomusic.team game/modules/
-cp /var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
 cd ..
 tar cvjf t-engine4-src-"$ver"-nomusic.tar.bz2 t-engine4-src-"$ver"
 
@@ -122,10 +137,8 @@ IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
 	if test $? -eq 0; then rm "$i"; fi
 done
 rm game/modules/tome*-music.team
-#rm game/modules/tome*team
 rm game/modules/boot*team
-#cp /var/www/te4.org/htdocs/dl/modules/tome/tome-"$tver"-nomusic.team game/modules/
-cp /var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
 cd ..
 zip -r -9 t-engine4-windows-"$ver"-nomusic.zip t-engine4-windows-"$ver"
 
@@ -137,10 +150,8 @@ IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
 	if test $? -eq 0; then rm "$i"; fi
 done
 rm game/modules/tome*-music.team
-#rm game/modules/tome*team
 rm game/modules/boot*team
-#cp /var/www/te4.org/htdocs/dl/modules/tome/tome-"$tver"-nomusic.team game/modules/
-cp /var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
 cd ..
 tar -cvjf t-engine4-linux32-"$ver"-nomusic.tar.bz2 t-engine4-linux32-"$ver"
 
@@ -152,17 +163,17 @@ IFS=$'\n'; for i in `find game/ -name '*.ogg'`; do
 	if test $? -eq 0; then rm "$i"; fi
 done
 rm game/modules/tome*-music.team
-#rm game/modules/tome*team
 rm game/modules/boot*team
-#cp /var/www/te4.org/htdocs/dl/modules/tome/tome-"$tver"-nomusic.team game/modules/
-cp /var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
+cp /foreign/eyal/var/www/te4.org/htdocs/dl/engines/boot-te4-"$ever"-nomusic.team game/modules/
 cd ..
 tar -cvjf t-engine4-linux64-"$ver"-nomusic.tar.bz2 t-engine4-linux64-"$ver"
 
-cp *zip *bz2 *dmg.gz /var/www/te4.org/htdocs/dl/t-engine
+cp *zip *bz2 *dmg.gz /foreign/eyal/var/www/te4.org/htdocs/dl/t-engine
 
 ########## Announce
 
+echo
+echo "Download links:"
 echo "http://te4.org/dl/t-engine/t-engine4-windows-$ver.zip"
 echo "http://te4.org/dl/t-engine/t-engine4-src-$ver.tar.bz2"
 echo "http://te4.org/dl/t-engine/t-engine4-linux32-$ver.tar.bz2"
@@ -172,3 +183,21 @@ echo "http://te4.org/dl/t-engine/t-engine4-src-$ver-nomusic.tar.bz2"
 echo "http://te4.org/dl/t-engine/t-engine4-linux32-$ver-nomusic.tar.bz2"
 echo "http://te4.org/dl/t-engine/t-engine4-linux64-$ver-nomusic.tar.bz2"
 echo "http://te4.org/dl/t-engine/t-engine4-osx-$ver.zip"
+
+########## MD5
+echo "Computing MD5s..."
+cd t-engine4-linux64-"$ver"
+rm lib64/libopenal.so.1
+rm -f all.md5
+DISPLAY=:1 ./t-engine -Mtome -n -E'compute_md5_only="all.md5" sleep_on_auth=2' > /dev/null 2>&1
+cd ..
+echo "..done"
+echo
+
+######### SQL
+echo "*********** Publish release? (Y/n)"
+cd ..
+read ok
+if test "$ok" '!=' 'n'; then
+	sh utils/publish_release.sh "$ver" tmp/t-engine4-linux64-"$ver"/all.md5
+fi

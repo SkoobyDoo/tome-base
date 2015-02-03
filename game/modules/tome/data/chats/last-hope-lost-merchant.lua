@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ local p = game:getPlayer(true)
 newChat{ id="welcome",
 	text = [[Ah, my #{italic}#good#{normal}# friend @playername@!
 Thanks to you I made it safely to this great city! I am planning to open my most excellent boutique soon, but since I am in your debt, perhaps I could open early for you if you are in need of rare goods.]]
-..((p:knowTalent(p.T_TRAP_MASTERY) and not p:knowTalent(p.T_FLASH_BANG_TRAP)) and "\nDuring our escape I found the plans for a #YELLOW#Flash Bang Trap#LAST#, you would not happen to be interested by any chances?" or "")
+..((p:knowTalent(p.T_TRAP_MASTERY) and not p:knowTalent(p.T_FLASH_BANG_TRAP)) and "\nDuring our escape I found the plans for a #YELLOW#Flash Bang Trap#LAST#, you would not happen to be interested by any chance?" or "")
 ..((game.state:isAdvanced() and "\nOh my friend, good news! As I told you I can now request a truly #{italic}#unique#{normal}# object to be crafted just for you. For a truly unique price..." or "\nI eventually plan to arrange a truly unique service for the most discerning of customers. If you come back later when I'm fully set up I shall be able to order for you something quite marvellous. For a perfectly #{italic}#suitable#{normal}# price, of course.")),
 	answers = {
 		{"Yes please, let me see your wares.", action=function(npc, player)
@@ -123,12 +123,8 @@ local maker_list = function()
 				local dname = nil
 				if type(name) == "table" then name, dname = name[1], name[2] end
 				local not_ps, force_themes
-				if player:attr("forbid_arcane") then -- no magic gear for antimatic characters
-					not_ps = {arcane=true}
-					force_themes = {'antimagic'}
-				else -- no antimagic gear for characters with arcane-powered classes or undeads
-					if player:attr("has_arcane_knowledge") or player:attr("undead") then not_ps = {antimagic=true} end
-				end
+				not_ps = game.state:attrPowers(player) -- make sure randart is compatible with player
+				if not_ps.arcane then force_themes = {'antimagic'} end
 				
 				local o, ok
 				local tries = 100
@@ -160,7 +156,7 @@ local maker_list = function()
 								game.log("#CRIMSON#Your timetravel has no effect on pre-determined outcomes such as this.")
 								game._chronoworlds = nil
 							end
-							game:saveGame()
+							if not config.settings.cheat then game:saveGame() end
 
 							newChat{ id="naming",
 								text = "Do you want to name your item?\n"..tostring(art:getTextualDesc()),

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -232,10 +232,13 @@ function _M:act()
 			self:moveDirection(self.homing.target.x, self.homing.target.y)
 			self.homing.count = self.homing.count - 1
 			if self.src then self.src.__project_source = self end -- intermediate projector source
-			if (self.x == self.homing.target.x and self.y == self.homing.target.y) or self.homing.count <= 0 then
+			if self.x == self.homing.target.x and self.y == self.homing.target.y then
 				game.level:removeEntity(self, true)
 				self.dead = true
 				self.homing.on_hit(self, self.src, self.homing.target)
+			elseif self.homing.count <= 0 then
+				game.level:removeEntity(self, true)
+				self.dead = true
 			else
 				self.homing.on_move(self, self.src)
 			end
@@ -250,8 +253,15 @@ function _M:on_move(x, y, target)
 	self.src.__project_source = self -- intermediate projector source
 	if self.project and self.project.def.typ.line then self.src:projectDoAct(self.project.def.typ, self.project.def.tg, self.project.def.damtype, self.project.def.dam, self.project.def.particles, self.x, self.y, self.tmp_proj) end
 	if self.project and self.project.def.typ.stop_block then
-
 		self.src:projectDoStop(self.project.def.typ, self.project.def.tg, self.project.def.damtype, self.project.def.dam, self.project.def.particles, self.x, self.y, self.tmp_proj, self.x, self.y, self)
+	elseif self.homing then
+		if (self.x == self.homing.target.x and self.y == self.homing.target.y) then
+			game.level:removeEntity(self, true)
+			self.dead = true
+			self.homing.on_hit(self, self.src, self.homing.target)
+		else
+			self.homing.on_move(self, self.src)
+		end
 	end
 	self.src.__project_source = nil
 end

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,8 +29,14 @@ module(..., package.seeall, class.make)
 
 _M.inven_def = {}
 
---- Defines stats
+--- Defines an Inventory slot
 -- Static!
+-- @param short_name = name for reference (required)
+-- @param name = name used for messages (required)
+-- @param is_worn = boolean true if equipment can be worn in this inventory
+-- @param desc = description (required)
+-- @param show_equip = boolean to show inventory when displaying equipment dialogs
+-- @param infos = additional information (including default stack_limit)
 function _M:defineInventory(short_name, name, is_worn, desc, show_equip, infos)
 	assert(name, "no inventory slot name")
 	assert(short_name, "no inventory slot short_name")
@@ -42,6 +48,7 @@ function _M:defineInventory(short_name, name, is_worn, desc, show_equip, infos)
 		is_worn = is_worn,
 		is_shown_equip = show_equip,
 		infos = infos,
+		stack_limit = infos and infos.stack_limit,
 	})
 	self.inven_def[#self.inven_def].id = #self.inven_def
 	self.inven_def[short_name] = self.inven_def[#self.inven_def]
@@ -50,7 +57,7 @@ function _M:defineInventory(short_name, name, is_worn, desc, show_equip, infos)
 end
 
 -- Auto define the inventory
-_M:defineInventory("INVEN", "In inventory", false, "")
+_M:defineInventory("INVEN", "In inventory", false, "") --INVEN_INVEN assumed to have no stacking limit
 
 --- Initialises inventories with default values if needed
 function _M:init(t)
@@ -58,10 +65,21 @@ function _M:init(t)
 	self:initBody()
 end
 
+--- generate inventories according to the body definition table
+--	@param self.body = {SLOT_ID = max, ...}
+--	@param max = number of slots if number or table of properties (max = , stack_limit = , ..) merged into definition
 function _M:initBody()
 	if self.body then
+		local def
 		for inven, max in pairs(self.body) do
-			self.inven[self["INVEN_"..inven]] = {max=max, worn=self.inven_def[self["INVEN_"..inven]].is_worn, id=self["INVEN_"..inven], name=inven}
+			def = self.inven_def[self["INVEN_"..inven]]
+			assert(def, "inventory slot undefined")
+			self.inven[self["INVEN_"..inven]] = {worn=def.is_worn, id=self["INVEN_"..inven], name=inven, stack_limit = def.stack_limit}
+			if type(max) == "table" then
+				table.merge(self.inven[self["INVEN_"..inven]], max, true)
+			else
+				self.inven[self["INVEN_"..inven]].max = max
+			end
 		end
 		self.body = nil
 	end
@@ -89,18 +107,58 @@ function _M:canAddToInven(id)
 	end
 end
 
---- Adds an object to an inventory
--- @return false if the object could not be added otherwise true and the inventory index where it is now
-function _M:addObject(inven_id, o)
-	local inven = self:getInven(inven_id)
+--- Get stacking limit for an inventory
+--  @param id inventory id or table (stack_limit in inventory table takes precedence)
+function _M:invenStackLimit(id)
+	local inven = self:getInven(id)
+	return inven.stack_limit or self.inven_def[inven.id].stack_limit or math.huge
+end
 
-	-- No room ?
-	if #inven >= inven.max then return false end
+--- Adds an object to an inventory
+-- @param inven_id = inventory id to add to
+-- @param o = object to add
+-- @param no_unstack = boolean to prevent unstacking the object to be added
+-- @return false if the object could not be added or true, inventory index it was moved to, remaining stack if any or false
+-- checks o:on_preaddobject(self, inven) (must return true to add to inventory)
+function _M:addObject(inven_id, o, no_unstack)
+	local inven = self:getInven(inven_id)
+	local slot
+	local stack, rs, ok
+	local stackable, stack_limit = o and o:stackable(), self:invenStackLimit(inven_id)
+
+	-- No room, stackable ?
+	if #inven >= inven.max then
+		if stackable and not no_unstack then -- try to find a stack to add to
+			for i, obj in ipairs(inven) do
+				if o:canStack(obj) and obj:getNumber() < stack_limit then
+					slot = i
+					stack = obj break -- only room left
+				end
+			end
+			if not stack then return false end
+		else
+			return false
+		end
+	end
 
 	if o:check("on_preaddobject", self, inven) then return false end
 
-	-- Ok add it
-	table.insert(inven, o)
+	-- Add the object
+	if stackable and not no_unstack then -- handle stackable objects
+		local last = true
+		rs = true
+		if stack then -- add to stack already found
+			ok, last = stack:stack(o, false, stack_limit - stack:getNumber())
+		elseif o:getNumber() > stack_limit then -- stack too big - unstack some before adding
+			stack, last = o:unstack(o:getNumber() - stack_limit)
+			table.insert(inven, o)
+		else
+			table.insert(inven, o)
+		end
+		if last then rs = false	end
+	else 
+		table.insert(inven, o)
+	end
 
 	-- Do whatever is needed when wearing this object
 	if inven.worn then
@@ -111,67 +169,96 @@ function _M:addObject(inven_id, o)
 
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
-
-	return true, #inven
+	return true, slot or #inven, rs and stack
 end
 
 --- Returns the position of an item in the given inventory, or nil
-function _M:itemPosition(inven, o)
+-- @param inven = inventory or inventory id to search
+-- @param o = object to look for
+-- @param by_reference set true to match by exact (memory) reference, otherwise matches by o.name
+-- @return nil or the inventory slot, stack position if stacked
+function _M:itemPosition(inven, o, by_reference)
 	inven = self:getInven(inven)
+	local found, pos = nil, nil
 	for i, p in ipairs(inven) do
-		local found = nil
-		o:forAllStack(function(so)
-			if p.name == so.name then found = i return true end
+		p:forAllStack(function(so, j)
+			if (not by_reference and (so.name == o.name) or (so == o)) then
+				found = i pos = j return true
+			end
 		end)
-		if found then return found end
+		if found then return found, pos end
 	end
 	return nil
 end
 
---- Picks an object from the floor
+--- Pick up an object from the floor
+-- @param i = object position on map at self.x, self.y
+-- @param vocal = boolean to post messages to log
+-- @param no_sort = boolen to suppress automatic sorting of inventory
+--	puts picked up objects in self.INVEN_INVEN
+-- @return the object picked up (or stack added to), num picked up or true if o:on_prepickup(i) returns true (not "skip") or nil
+--  checks obj:on_prepickup(self, i) (must return true to pickup)
+--	checks obj:on_pickup(self, num) and self:on_pickup_object(obj, num) functions after pickup (includes stacks)
 function _M:pickupFloor(i, vocal, no_sort)
-	if not self:getInven(self.INVEN_INVEN) then return end
+	local inven = self:getInven(self.INVEN_INVEN)
+	if not inven then return end
 	local o = game.level.map:getObject(self.x, self.y, i)
 	if o then
 		local prepickup = o:check("on_prepickup", self, i)
-		if not prepickup and self:addObject(self.INVEN_INVEN, o) then
-			game.level.map:removeObject(self.x, self.y, i)
-			if not no_sort then self:sortInven(self.INVEN_INVEN) end
+		if not prepickup then
+			local num = o:getNumber()
+			local ok, slot, ro = self:addObject(self.INVEN_INVEN, o)
+			if ok then
+				local newo = inven[slot] -- get exact object added or stack (resolves duplicates)
+				game.level.map:removeObject(self.x, self.y, i)
+				if ro then -- return remaining stack to floor
+					game.level.map:addObject(self.x, self.y, ro)
+					num = num - ro:getNumber()
+				end
+				if not no_sort then self:sortInven(self.INVEN_INVEN) end
+				-- Apply checks to whole stack (including already carried) assuming homogeneous stack
+				-- num added passed to functions to allow checks on part of the stack
+				newo:check("on_pickup", self, num)
+				self:check("on_pickup_object", newo, num)
 
-			o:check("on_pickup", self)
-			self:check("on_pickup_object", o)
+				slot = self:itemPosition(self.INVEN_INVEN, newo, true) or 1
+				local letter = ShowPickupFloor:makeKeyChar(slot)
 
-			local letter = ShowPickupFloor:makeKeyChar(self:itemPosition(self.INVEN_INVEN, o) or 1)
-			if vocal then game.logSeen(self, "%s picks up (%s.): %s.", self.name:capitalize(), letter, o:getName{do_color=true}) end
-			return o
-		elseif not prepickup then
-			if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), o:getName{do_color=true}) end
-			return
+				if vocal then game.logSeen(self, "%s picks up (%s.): %s%s.", self.name:capitalize(), letter, num>1 and ("%d "):format(num) or "", o:getName{do_color=true, no_count = true}) end
+				return inven[slot], num
+			else
+				if vocal then game.logSeen(self, "%s has no room for: %s.", self.name:capitalize(), o:getName{do_color=true}) end
+				return
+			end
 		elseif prepickup == "skip" then
 			return
 		else
 			return true
 		end
 	else
-		if vocal then game.logSeen(self, "There is nothing to pick up there.") end
+		if vocal then game.logSeen(self, "There is nothing to pick up here.") end
 	end
 end
 
 --- Removes an object from inventory
--- @param inven the inventory to drop from
--- @param item the item id to drop
--- @param no_unstack if the item was a stack takes off the whole stack if true
+-- @param inven the inventory to remove from
+-- @param item inven slot of the item to remove
+-- @param no_unstack = num items to remove into a new stack (set true to remove the original stack unchanged)
 -- @return the object removed or nil if no item existed and a boolean saying if there is no more objects
+--  checks obj:on_preremoveobject(self, inven) (return true to not remove)
 function _M:removeObject(inven_id, item, no_unstack)
 	local inven = self:getInven(inven_id)
 
-	if not inven[item] then return false, true end
+	if not inven[item] then return nil, true end
 
 	local o, finish = inven[item], true
 
-	if o:check("on_preremoveobject", self, inven) then return false, true end
-
-	if not no_unstack then
+	if o:check("on_preremoveobject", self, inven) then return nil, true end
+	if no_unstack then
+		if type(no_unstack) == "number" then
+			o, finish = o:unstack(no_unstack)
+		end
+	else
 		o, finish = o:unstack()
 	end
 	if finish then
@@ -221,7 +308,9 @@ end
 --- Drop an object on the floor
 -- @param inven the inventory to drop from
 -- @param item the item id to drop
+-- @param all set to remove part (if number) or all (if true) a stack
 -- @return the object removed or nil if no item existed
+--  checks obj:on_drop(self) (return true to not drop)
 function _M:dropFloor(inven, item, vocal, all)
 	local o = self:getInven(inven)[item]
 	if not o then
@@ -240,7 +329,7 @@ function _M:dropFloor(inven, item, vocal, all)
 	if ok and game.level.map.attrs(self.x, self.y, "on_drop") then
 		game.level.map.attrs(self.x, self.y, "on_drop")(self, self.x, self.y, idx, o)
 	end
-	return true
+	return o
 end
 
 --- Show combined equipment/inventory dialog
@@ -283,6 +372,9 @@ function _M:showPickupFloor(title, filter, action)
 end
 
 --- Can we wear this item?
+-- @param o = object to wear
+-- @param try_slot = inventory slot to wear (override)
+--  checks self:canWearObjectCustom(o, try_slot)  (return true to make unwearable)
 function _M:canWearObject(o, try_slot)
 	local req = rawget(o, "require")
 
@@ -309,7 +401,7 @@ function _M:canWearObject(o, try_slot)
 	end
 
 	-- Check forbidden slot
-	if o.slot_forbid then
+	if o.slot_forbid and self:slotForbidCheck(o, o.slot or try_slot) then
 		local inven = self:getInven(o.slot_forbid)
 		-- If the object cant coexist with that inventory slot and it exists and is not empty, refuse wearing
 		if inven and #inven > 0 then
@@ -322,7 +414,7 @@ function _M:canWearObject(o, try_slot)
 		if self.inven_def[id].is_worn and (not self.inven_def[id].infos or not self.inven_def[id].infos.etheral) then
 			for i, wo in ipairs(inven) do
 				print("fight: ", o.name, wo.name, "::", wo.slot_forbid, try_slot or o.slot)
-				if wo.slot_forbid and wo.slot_forbid == (try_slot or o.slot) then
+				if wo.slot_forbid and self:slotForbidCheck(wo, id) and wo.slot_forbid == (try_slot or o.slot) then
 					print(" impossible => ", o.name, wo.name, "::", wo.slot_forbid, try_slot or o.slot)
 					return nil, "cannot use currently due to an other worn object"
 				end
@@ -337,14 +429,27 @@ function _M:canWearObject(o, try_slot)
 	return true
 end
 
+--- Checks if the given item should respect its slot_forbid value
+-- @param o the item to check
+-- @param in_inven the inventory id in which the item is worn or tries to be worn
+function _M:slotForbidCheck(o, in_inven_id)
+	return true
+end
+
 --- Returns the possible offslot
 function _M:getObjectOffslot(o)
 	return o.offslot
 end
 
 --- Wear/wield an item
-function _M:wearObject(o, replace, vocal)
-	local inven = o:wornInven()
+--	@param o = object to be worn
+--	@param replace = boolean allow first object in wearable inventory to be removed to make space if needed
+--	@vocal = boolean to post messages to game.logSeen(self, ....)
+--  @force_inven = try to equip into this inventory only
+--	returns true or replaced object if succeeded or false if not, remaining stack of o if any
+--  checks o:on_canwear(self, inven) (return true to prevent wearing)
+function _M:wearObject(o, replace, vocal, force_inven)
+	local inven = force_inven or o:wornInven()
 	if not inven then
 		if vocal then game.logSeen(self, "%s is not wearable.", o:getName{do_color=true}) end
 		return false
@@ -360,27 +465,32 @@ function _M:wearObject(o, replace, vocal)
 		return false
 	end
 	if o:check("on_canwear", self, inven) then return false end
-	local offslot = self:getObjectOffslot(o)
+	local offslot, stackable = self:getObjectOffslot(o), o:stackable()
+	local added, slot, stack = self:addObject(inven, o)
 
-	if self:addObject(inven, o) then
+	if added then
 		if vocal then game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true}) end
-		return true
-	elseif offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
-		if vocal then game.logSeen(self, "%s wears(offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
-		-- Warning: assume there is now space
-		self:addObject(self:getInven(offslot), o)
-		return true
-	elseif replace then
-		local ro = self:removeObject(inven, 1, true)
-
-		if vocal then game.logSeen(self, "%s wears(replacing): %s.", self.name:capitalize(), o:getName{do_color=true}) end
-
-		-- Can we stack the old and new one ?
-		if o:stack(ro) then ro = true end
-
-		-- Warning: assume there is now space
-		self:addObject(inven, o)
-		return ro
+		return true, stack
+	elseif not force_inven and offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
+		if vocal then game.logSeen(self, "%s wears (offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
+		added, slot, stack = self:addObject(self:getInven(offslot), o)
+		return added, stack
+	elseif replace then -- no room but replacement is allowed
+		local ro = self:takeoffObject(inven, 1)
+		if not ro then return false end
+		-- Check if we still can wear it, to prevent the replace-abuse
+		local ok, err = self:canWearObject(o)
+		if not ok then
+			if vocal then game.logSeen(self, "%s can not wear: %s (%s).", self.name:capitalize(), o:getName{do_color=true}, err) end
+			if ro then self:addObject(inven, ro, true) end
+			return false
+		end
+		added, slot, stack = self:addObject(inven, o)
+		if vocal then game.logSeen(self, "%s wears (replacing %s): %s.", self.name:capitalize(), ro:getName{do_color=true}, o:getName{do_color=true}) end
+		if stack and ro:stack(stack) then -- stack remaining stack with old if possible (ignores stack limits)
+			stack = nil
+		end
+		return ro, stack -- caller handles the replaced object and remaining stack if any
 	else
 		if vocal then game.logSeen(self, "%s can not wear: %s.", self.name:capitalize(), o:getName{do_color=true}) end
 		return false
@@ -388,8 +498,11 @@ function _M:wearObject(o, replace, vocal)
 end
 
 --- Takeoff item
-function _M:takeoffObject(inven, item)
-	inven = self:getInven(inven)
+-- @param inven_id = inventory id
+-- @param item = slot to remove from
+--  checks obj:on_cantakeoff(self, inven) (return true to prevent taking off)
+function _M:takeoffObject(inven_id, item)
+	inven = self:getInven(inven_id)
 	if not inven then return false end
 
 	local o = inven[item]
@@ -400,6 +513,9 @@ function _M:takeoffObject(inven, item)
 end
 
 --- Call when an object is worn
+--  @param o = object being worn
+--  @param inven_id = inventory id
+--  checks o:on_wear(self, inven_id)
 function _M:onWear(o, inven_id)
 	-- Apply wielder properties
 	o.wielded = {}
@@ -412,6 +528,9 @@ function _M:onWear(o, inven_id)
 end
 
 --- Call when an object is taken off
+--  @param o = object being taken off
+--  @param inven_id = inventory id
+--  checks o:on_takeoff(self, inven_id)
 function _M:onTakeoff(o, inven_id)
 	if o.wielded then
 		for k, id in pairs(o.wielded) do
@@ -427,19 +546,28 @@ function _M:onTakeoff(o, inven_id)
 end
 
 --- Re-order inventory, sorting and stacking it
+-- sort order is type > subtype > name > getNumber()
 function _M:sortInven(inven)
 	if not inven then inven = self.inven[self.INVEN_INVEN] end
 	inven = self:getInven(inven)
 	if not inven then return end
+--	local stacked, last, stacklimit = false, false, inven.stack_limit or math.huge
+	local stacked, last, stacklimit = false, false, self:invenStackLimit(inven)
 
-	-- Stack objects first, from bottom
-	for i = #inven, 1, -1 do
-		-- If it is stackable, look for objects before it that it could stack into
+	-- First, stack objects from top
+	for i = 1, #inven do
+		if not inven[i] then break end
+		-- If it is stackable, look for objects after it that can stack into it
 		if inven[i]:stackable() then
-			for j = i - 1, 1, -1 do
-				if inven[j]:stack(inven[i]) then
-					table.remove(inven, i)
-					break
+			for j = #inven, i + 1, -1 do
+			-- check stack limit
+				stacked, last = inven[i]:stack(inven[j], false, stacklimit - inven[i]:getNumber())
+				if stacked then
+					if last then
+						table.remove(inven, j)
+					else
+						break
+					end
 				end
 			end
 		end
@@ -451,7 +579,11 @@ function _M:sortInven(inven)
 		local sa, sb = a:getSubtypeOrder(), b:getSubtypeOrder()
 		if ta == tb then
 			if sa == sb then
-				return a.name < b.name
+				if a.name == b.name then
+					return a:getNumber() > b:getNumber()
+				else
+					return a.name < b.name
+				end
 			else
 				return sa < sb
 			end
@@ -466,6 +598,7 @@ end
 -- @param inven the inventory to look into
 -- @param name the name to look for
 -- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
+-- @return object, position or nil if not found
 function _M:findInInventory(inven, name, getname)
 	getname = getname or {no_count=true, force_id=true}
 	for item, o in ipairs(inven) do
@@ -476,6 +609,7 @@ end
 --- Finds an object by name in all the actor's inventories
 -- @param name the name to look for
 -- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
+-- @return object, position, inven_id or nil if not found
 function _M:findInAllInventories(name, getname)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventory(inven, name, getname)
@@ -487,6 +621,7 @@ end
 -- @param inven the inventory to look into
 -- @param prop the property to look for
 -- @param value the value to look for, can be a function
+-- @return object, position or nil if not found
 function _M:findInInventoryBy(inven, prop, value)
 	if type(value) == "function" then
 		for item, o in ipairs(inven) do
@@ -502,6 +637,7 @@ end
 --- Finds an object by property in all the actor's inventories
 -- @param prop the property to look for
 -- @param value the value to look for, can be a function
+-- @return object, position, inven_id or nil if not found
 function _M:findInAllInventoriesBy(prop, value)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventoryBy(inven, prop, value)
@@ -509,19 +645,20 @@ function _M:findInAllInventoriesBy(prop, value)
 	end
 end
 
---- Finds an object by property in an inventory
+--- Finds an object by reference in an inventory
 -- @param inven the inventory to look into
--- @param prop the property to look for
--- @param value the value to look for, can be a function
+-- @param so the object(reference) to look for
+-- @return object, position or nil if not found
 function _M:findInInventoryByObject(inven, so)
 	for item, o in ipairs(inven) do
 		if o == so then return o, item end
 	end
 end
 
---- Finds an object by property in all the actor's inventories
--- @param prop the property to look for
--- @param value the value to look for, can be a function
+--- Finds an object by reference in all the actor's inventories
+-- @param inven the inventory to look into
+-- @param so the object(reference) to look for
+-- @return object, position, inven_id or nil if not found
 function _M:findInAllInventoriesByObject(so)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventoryByObject(inven, so)

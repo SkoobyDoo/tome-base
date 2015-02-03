@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -71,15 +71,10 @@ function _M:generate()
 	self.text_y = (h - fh) / 2
 	self.cursor_y = (h - self.texcursor.h) / 2
 	self.max_display = math.floor(fw / self.font_mono_w)
-	self.text_surf = core.display.newSurface(fw, fh)
-	self.text_tex, self.text_tex_w, self.text_tex_h = self.text_surf:glTexture()
 	self:updateText()
 
 	if title_w > 0 then
-		local s = core.display.newSurface(title_w, h)
-		s:erase(0, 0, 0, 0)
-		s:drawColorStringBlended(self.font, self.title, 0, (h - fh) / 2, 255, 255, 255, true)
-		self.tex, self.tex_w, self.tex_h = s:glTexture()
+		self.tex = self:drawFontLine(self.font, self.title, title_w)
 	end
 
 	-- Add UI controls
@@ -162,28 +157,26 @@ end
 function _M:updateText()
 	if not self.tmp[1] then self.tmp = {} end
 	self.text = table.concat(self.tmp)
-	local text = ""
-	for i = self.scroll, self.scroll + self.max_display - 1 do
-		if not self.tmp[i] then break end
-		if not self.hide then text = text .. self.tmp[i]
-		else text = text .. "*" end
-	end
+	local text
+	local b, e = self.scroll, math.min(self.scroll + self.max_display - 1, #self.tmp)
+	if not self.hide then text = table.concat(self.tmp, nil, b, e)
+	else text = string.rep("*", e - b + 1) end
 
-	self.text_surf:erase(0, 0, 0, 0)
-	self.text_surf:drawStringBlended(self.font_mono, text, 0, 0, 255, 255, 255, true)
-	self.text_surf:updateTexture(self.text_tex)
+	self.text_tex = self:drawFontLine(self.font_mono, text, self.fw)
+
 	if self.on_change and self.old_text ~= self.text then self.on_change(self.text) end
 	self.old_text = self.text
 end
 
 function _M:display(x, y, nb_keyframes)
+	local text_x, text_y = self.text_x, self.text_y
 	if self.tex then
-		if self.text_shadow then self.tex:toScreenFull(x+1, y+1, self.title_w, self.h, self.tex_w, self.tex_h, 0, 0, 0, self.text_shadow) end
-		self.tex:toScreenFull(x, y, self.title_w, self.h, self.tex_w, self.tex_h)
+		if self.text_shadow then self:textureToScreen(self.tex, x+1, y+text_y+1, 0, 0, 0, self.text_shadow) end
+		self:textureToScreen(self.tex, x, y+text_y)
 	end
 	if self.focused then
 		self:drawFrame(self.frame_sel, x + self.title_w, y)
-		self.texcursor.t:toScreenFull(x + self.text_x + (self.cursor-self.scroll) * self.font_mono_w - (self.texcursor.w / 2), y + self.cursor_y, self.texcursor.w, self.texcursor.h, self.texcursor.tw, self.texcursor.th)
+		self:textureToScreen(self.texcursor, x + self.text_x + (self.cursor-self.scroll) * self.font_mono_w - (self.texcursor.w / 2), y + self.cursor_y)
 	else
 		self:drawFrame(self.frame, x + self.title_w, y)
 		if self.focus_decay then
@@ -192,6 +185,6 @@ function _M:display(x, y, nb_keyframes)
 			if self.focus_decay <= 0 then self.focus_decay = nil end
 		end
 	end
-	if self.text_shadow then self.text_tex:toScreenFull(x+1 + self.text_x, y+1 + self.text_y, self.fw, self.fh, self.text_tex_w, self.text_tex_h, 0, 0, 0, self.text_shadow) end
-	self.text_tex:toScreenFull(x + self.text_x, y + self.text_y, self.fw, self.fh, self.text_tex_w, self.text_tex_h)
+	if self.text_shadow then self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y, 0, 0, 0, self.text_shadow) end
+	self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y)
 end

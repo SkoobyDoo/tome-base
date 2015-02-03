@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,8 +60,8 @@ newBirthDescriptor{
 			{priority=2, name="Donut [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.moddable_tile_ornament={female="donut_"..(actor.is_redhead and "redhead_" or "").."01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
 		},
 		cosmetic_race_human_redhead = {
-			{priority=1, name="Redhead [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.is_redhead = true actor.moddable_tile_base = "base_redhead_01.png" actor.moddable_tile_ornament2={male="beard_redhead_02"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Male" end},
-			{priority=1, name="Redhead [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.is_redhead = true actor.is_redhead = true actor.moddable_tile_base = "base_redhead_01.png" actor.moddable_tile_ornament2={female="braid_redhead_01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
+			{priority=1, name="Redhead [donator only]", donator=true, reset=function(actor) actor.is_redhead=false end, on_actor=function(actor) if actor.moddable_tile then actor.is_redhead = true actor.moddable_tile_base = "base_redhead_01.png" actor.moddable_tile_ornament2={male="beard_redhead_02"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Male" end},
+			{priority=1, name="Redhead [donator only]", donator=true, reset=function(actor) actor.is_redhead=false end, on_actor=function(actor) if actor.moddable_tile then actor.is_redhead = true actor.is_redhead = true actor.moddable_tile_base = "base_redhead_01.png" actor.moddable_tile_ornament2={female="braid_redhead_01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
 		},
 		cosmetic_bikini =  {
 			{name="Bikini [donator only]", donator=true, on_actor=function(actor, birther, last)

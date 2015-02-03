@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -106,9 +106,8 @@ function _M:generate()
 			local mz = self.mousezones[i]
 			if x >= mz.x1 and x <= mz.x2 and y >= mz.y1 and y <= mz.y2 then
 				if not self.last_mz or mz.item ~= self.last_mz.item then
-					local str, fx, fy = self.tooltip(mz.item)
-					mz.tx, mz.ty = fx or (self.last_display_x + mz.x2), fy or (self.last_display_y + mz.y1)
-					if not self.no_tooltip then game:tooltipDisplayAtMap(mz.tx, mz.ty, str) end
+					self.last_mz = mz
+					self:updateTooltip()
 				end
 
 				if event == "button" and (button == "left" or button == "right") then
@@ -232,7 +231,7 @@ function _M:moveSel(i, j)
 	if self.scrollbar and self.last_input_was_keyboard then
 		local pos = 0
 		for i = 1, #self.tree do
-			tree = self.tree[i]
+			local tree = self.tree[i]
 			pos = pos + tree.h
 			-- we've reached selected row
 			if self.sel_i == i then
@@ -244,6 +243,8 @@ function _M:moveSel(i, j)
 			end
 		end
 	end
+
+	self:updateTooltip()
 end
 
 function _M:drawItem(item)
@@ -344,7 +345,7 @@ end
 function _M:on_select(item, force)
 	if self.prev_item == item and not force then return end
 	local str, fx, fy = self.tooltip(item)
-	tx,ty = fx or (self.last_display_x + self.last_mz.x2), fy or (self.last_display_y + self.last_mz.y1)
+	local tx,ty = fx or (self.last_display_x + self.last_mz.x2), fy or (self.last_display_y + self.last_mz.y1)
 	if not self.no_tooltip then game:tooltipDisplayAtMap(tx, ty, str) end
 	self.prev_item = item
 end

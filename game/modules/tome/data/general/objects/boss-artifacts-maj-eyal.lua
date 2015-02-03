@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	power_source = {arcane=true},
 	define_as = "LONGSWORD_WINTERTIDE", unided_name = "glittering longsword", image="object/artifact/wintertide.png",
 	name = "Wintertide", unique=true,
+	moddable_tile = "special/%s_wintertide",
+	moddable_tile_big = true,
 	desc = [[The air seems to freeze around the blade of this sword, draining all heat from the area.
 It is said the Conclave created this weapon for their warmaster during the dark times of the first allure war.]],
 	require = { stat = { str=35 }, },
@@ -84,10 +86,12 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 					1,
 					5, nil,
 					{type="icestorm", only_one=true},
-					function(e)
-						 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
-						if e.radius < 4 then
-						e.radius = e.radius + 0.2
+					function(e, update_shape_only)
+						if not update_shape_only then 
+							 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
+							if e.radius < 4 then
+							e.radius = e.radius + 0.2
+							end
 						end
 						return true
 					end,
@@ -365,6 +369,9 @@ newEntity{ base = "BASE_HELM",
 	},
 
 	set_list = { {"define_as","SET_GARKUL_TEETH"} },
+	set_desc = {
+		garkul = "Another of Garkul's heirlooms would bring out his spirit.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd("skullcracker_mult", 1)
 		self:specialSetAdd({"wielder","melee_project"}, {[engine.DamageType.GARKUL_INVOKE]=5})
@@ -551,6 +558,8 @@ newEntity{ base = "BASE_WARAXE",
 	define_as = "MALEDICTION",
 	unided_name = "pestilent waraxe",
 	name = "Malediction", unique=true, image = "object/artifact/axe_malediction.png",
+	moddable_tile = "special/%s_axe_malediction",
+	moddable_tile_big = true,
 	desc = [[The land withers and crumbles wherever this cursed axe rests.]],
 	require = { stat = { str=55 }, },
 	level_range = {35, 45},
@@ -791,6 +800,7 @@ newEntity{ base = "BASE_SHIELD",
 	define_as = "SANGUINE_SHIELD",
 	unided_name = "bloody shield",
 	name = "Sanguine Shield", unique=true, image = "object/artifact/sanguine_shield.png",
+	moddable_tile = "special/%s_hand_sanguine_shield", moddable_tile_big = true,
 	desc = [[Though tarnished and spattered with blood, the emblem of the Sun still manages to shine through on this shield.]],
 	require = { stat = { str=39 }, },
 	level_range = {35, 45},
@@ -870,49 +880,56 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 			who:removeObject(gem_inven, gem_item)
 			who:sortInven(gem_inven)
 
-			-- Change the weapon
-			o.name = "Crystalline "..o.name:capitalize()
-			o.unique = o.name
-			o.no_unique_lore = true
-			if o.combat and o.combat.dam then
-				o.combat.dam = o.combat.dam * 1.25
-				o.combat.damtype = engine.DamageType.ARCANE
-			elseif o.wielder.combat and o.wielder.combat.dam then
-				o.wielder.combat.dam = o.wielder.combat.dam * 1.25
-				o.wielder.combat.convert_damage = o.wielder.combat.convert_damage or {}
-				o.wielder.combat.convert_damage[engine.DamageType.ARCANE] = 100
-			end
-			o.is_crystalline_weapon = true
-			o.power_source = o.power_source or {}
-			o.power_source.arcane = true
-			o.wielder = o.wielder or {}
-			o.wielder.combat_spellpower = (o.wielder.combat_spellpower or 0) + 12
-			o.wielder.combat_dam = (o.wielder.combat_dam or 0) + 12
-			o.wielder.inc_stats = o.wielder.inc_stats or {}
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_WIL] = 3
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_CON] = 3
-			o.wielder.inc_damage = o.wielder.inc_damage or {}
-			o.wielder.inc_damage[engine.DamageType.ARCANE] = 10
-			if o.wielder.learn_talent then o.wielder.learn_talent[who.T_COMMAND_STAFF] = nil end
-
-			o.set_list = { {"is_crystalline_armor", true} }
-			o.on_set_complete = function(self, who)
-				self.talent_on_spell = { {chance=10, talent="T_MANATHRUST", level=3} }
-				if(self.combat) then self.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
-				else self.wielder.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
-				end
-				self:specialSetAdd({"wielder","combat_spellcrit"}, 10)
-				self:specialSetAdd({"wielder","combat_physcrit"}, 10)
-				self:specialSetAdd({"wielder","resists_pen"}, {[engine.DamageType.ARCANE]=20, [engine.DamageType.PHYSICAL]=15})
-				game.logPlayer(who, "#GOLD#As the crystalline weapon and armour are brought together, they begin to emit a constant humming.")
-			end
-			o.on_set_broken = function(self, who)
-				self.talent_on_spell = nil
-				if (self.combat) then self.combat.talent_on_hit = nil
-				else self.wielder.combat.talent_on_hit = nil
-				end
-				game.logPlayer(who, "#GOLD#The humming from the crystalline artifacts fades as they are separated.")
-			end
+			local Entity = require("engine.Entity")
+			local ActorStats = require("engine.interface.ActorStats")
+			local crystalline_ego = Entity.new{
+				name = "crystalline weapon",
+				no_unique_lore = true,
+				is_crystalline_weapon = true,
+				power_source = {arcane=true},
+				wielder = {
+					combat_spellpower = 12,
+					combat_dam = 12,
+					inc_stats = {
+						[ActorStats.STAT_WIL] = 3,
+						[ActorStats.STAT_CON] = 3,
+					},
+					inc_damage = {ARCANE=10},
+				},
+				set_list = { {"is_crystalline_armor", true} },
+				on_set_complete = function(self, wearer)
+					self.talent_on_spell = { {chance=10, talent="T_MANATHRUST", level=3} }
+					if(self.combat) then self.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
+					else self.wielder.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
+					end
+					self:specialSetAdd({"wielder","combat_spellcrit"}, 10)
+					self:specialSetAdd({"wielder","combat_physcrit"}, 10)
+					self:specialSetAdd({"wielder","resists_pen"}, {[engine.DamageType.ARCANE]=20, [engine.DamageType.PHYSICAL]=15})
+					game.logPlayer(wearer, "#GOLD#As the crystalline weapon and armour are brought together, they begin to emit a constant humming.")
+				end,
+				on_set_broken = function(self, wearer)
+					self.talent_on_spell = nil
+					if (self.combat) then self.combat.talent_on_hit = nil
+					else self.wielder.combat.talent_on_hit = nil
+					end
+					game.logPlayer(wearer, "#GOLD#The humming from the crystalline artifacts fades as they are separated.")
+				end,
+				resolvers.generic(function(o) o.name = "Crystalline "..o.name:capitalize() o.unique = o.name end),
+				resolvers.generic(function(o)
+					if o.combat and o.combat.dam then
+						o.combat.dam = o.combat.dam * 1.25
+						o.combat.damtype = engine.DamageType.ARCANE
+					elseif o.wielder.combat and o.wielder.combat.dam then
+						o.wielder.combat.dam = o.wielder.combat.dam * 1.25
+						o.wielder.combat.convert_damage = o.wielder.combat.convert_damage or {}
+						o.wielder.combat.convert_damage[engine.DamageType.ARCANE] = 100
+					end
+				end),
+				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
+				fake_ego = true,
+			}
+			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			o:resolve()
 
 			who:sortInven()
 			who.changed = true
@@ -945,35 +962,41 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 			who:removeObject(gem_inven, gem_item)
 			who:sortInven(gem_inven)
 
-			-- Change the weapon... err, armour. No, I'm not copy/pasting here, honest!
-			o.name = "Crystalline "..o.name:capitalize()
-			o.unique = o.name
-			o.no_unique_lore = true
-			o.is_crystalline_armor = true
-			o.power_source = o.power_source or {}
-			o.power_source.arcane = true
+			local Entity = require("engine.Entity")
+			local ActorStats = require("engine.interface.ActorStats")
+			local crystalline_ego = Entity.new{
+				name = "crystalline armour",
+				no_unique_lore = true,
+				is_crystalline_armor = true,
+				power_source = {arcane=true},
+				wielder = {
+					combat_spellresist = 35,
+					combat_physresist = 25,
+					inc_stats = {
+						[ActorStats.STAT_MAG] = 8,
+						[ActorStats.STAT_CON] = 8,
+						[ActorStats.STAT_LCK] = 12,
+					},
+					resists = {ARCANE=35, PHYSICAL=15},
+					poison_immune=0.6,
+					disease_immune=0.6,
+				},
+				set_list = { {"is_crystalline_weapon", true} },
+				on_set_complete = function(self, who)
+					self:specialSetAdd({"wielder","stun_immune"}, 0.5)
+					self:specialSetAdd({"wielder","blind_immune"}, 0.5)
+				end,
+				resolvers.generic(function(o) o.name = "Crystalline "..o.name:capitalize() o.unique = o.name end),
+				resolvers.generic(function(o)
+					-- This is supposed to add 1 def for crap cloth robes if for some reason you choose it instead of better robes, and then multiply by 1.25.
+					o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
+					-- Same for armour. Yay crap cloth!
+					o.wielder.combat_armor = ((o.wielder.combat_armor or 0) + 3) * 1.7
+				end),
+			}
+			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			o:resolve()
 
-			o.wielder = o.wielder or {}
-			-- This is supposed to add 1 def for crap cloth robes if for some reason you choose it instead of better robes, and then multiply by 1.25.
-			o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
-			-- Same for armour. Yay crap cloth!
-			o.wielder.combat_armor = ((o.wielder.combat_armor or 0) + 3) * 1.7
-			o.wielder.combat_spellresist = 35
-			o.wielder.combat_physresist = 25
-			o.wielder.inc_stats = o.wielder.inc_stats or {}
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_MAG] = 8
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_CON] = 8
-			o.wielder.inc_stats[engine.interface.ActorStats.STAT_LCK] = 12
-			o.wielder.resists = o.wielder.resists or {}
-			o.wielder.resists = { [engine.DamageType.ARCANE] = 35, [engine.DamageType.PHYSICAL] = 15 }
-			o.wielder.poison_immune = 0.6
-			o.wielder.disease_immune = 0.6
-
-			o.set_list = { {"is_crystalline_weapon", true} }
-			o.on_set_complete = function(self, who)
-				self:specialSetAdd({"wielder","stun_immune"}, 0.5)
-				self:specialSetAdd({"wielder","blind_immune"}, 0.5)
-			end
 			who:sortInven()
 			who.changed = true
 
@@ -1028,6 +1051,8 @@ newEntity{ base = "BASE_WARAXE",
 	define_as = "SKULLCLEAVER",
 	unided_name = "crimson waraxe",
 	name = "Skullcleaver", unique=true, image = "object/artifact/axe_skullcleaver.png",
+	moddable_tile = "special/%s_axe_skullcleaver",
+	moddable_tile_big = true,
 	desc = [[A small but sharp axe, with a handle made of polished bone.  The blade has chopped through the skulls of many, and has been stained a deep crimson.]],
 	require = { stat = { str=18 }, },
 	level_range = {5, 12},
@@ -1056,6 +1081,7 @@ newEntity{ base = "BASE_DIGGER",
 	desc = [[A huge tooth taken from the Mouth, in the Deep Bellow.]],
 	level_range = {5, 12},
 	cost = 50,
+	rarity = 200,
 	material_level = 1,
 	digspeed = 12,
 	wielder = {
@@ -1390,6 +1416,8 @@ newEntity{ base = "BASE_TRIDENT",
 	define_as = "TRIDENT_STREAM",
 	unided_name = "ornate trident",
 	name = "The River's Fury", unique=true, image = "object/artifact/the_rivers_fury.png",
+	moddable_tile = "special/%s_the_rivers_fury",
+	moddable_tile_big = true,
 	desc = [[This gorgeous and ornate trident was wielded by Lady Nashva, and when you hold it, you can faintly hear the roar of a rushing river.]],
 	require = { stat = { str=12 }, },
 	level_range = {1, 10},
@@ -1424,6 +1452,8 @@ newEntity{ base = "BASE_KNIFE",
 	unique = true,
 	name = "Unerring Scalpel", image = "object/artifact/unerring_scalpel.png",
 	unided_name = "long sharp scalpel",
+	moddable_tile = "special/%s_unerring_scalpel",
+	moddable_tile_big = true,
 	desc = [[This scalpel was used by the dread sorcerer Kor'Pul when he began learning the necromantic arts in the Age of Dusk.  Many were the bodies, living and dead, that became unwilling victims of his terrible experiments.]],
 	level_range = {1, 12},
 	rarity = 200,
@@ -1485,7 +1515,8 @@ newEntity{ base = "BASE_TOOL_MISC", define_as = "EYE_OF_THE_DREAMING_ONE",
 	material_level = 1,
 	wielder = {
 		combat_mindpower=5,
-		sleep_immune=1,
+		sleep=1,
+		lucid_dreamer=1,
 		combat_mentalresist = 10,
 		inc_stats = {[Stats.STAT_WIL] = 5,},
 	},

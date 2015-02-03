@@ -794,7 +794,7 @@
     <property name="type" value="&quot;world-encounter&quot;"/>
    </properties>
   </object>
-  <object name="Angolwen quest" x="447" y="703" width="158" height="159">
+  <object name="Angolwen quest" x="483" y="711" width="120" height="148">
    <properties>
     <property name="subtype" value="&quot;angolwen&quot;"/>
     <property name="type" value="&quot;world-encounter&quot;"/>
@@ -977,6 +977,12 @@
   <object name="Breeding pits Spawn" x="5190" y="1894" width="17" height="19">
    <properties>
     <property name="subtype" value="&quot;orc-breeding-pits-spawn&quot;"/>
+    <property name="type" value="&quot;world-encounter&quot;"/>
+   </properties>
+  </object>
+  <object name="Conclave vault" x="1508" y="1093" width="21" height="20">
+   <properties>
+    <property name="subtype" value="&quot;conclave-vault&quot;"/>
     <property name="type" value="&quot;world-encounter&quot;"/>
    </properties>
   </object>

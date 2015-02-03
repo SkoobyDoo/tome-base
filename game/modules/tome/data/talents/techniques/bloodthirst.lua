@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,8 +81,8 @@ newTalent{
 	require = techs_req_high3,
 	points = 5,
 	mode = "passive",
-	getDam = function(self, t) return self:combatScale(self:getStr(7, true) * self:getTalentLevel(t), 5, 0, 40, 35) end,
-	getResist = function(self,t) return self:combatTalentLimit(t, 50, 10, 40) end,
+	getDam = function(self, t) return self:combatScale(self:getStr(5, true) * self:getTalentLevel(t), 5, 0, 40, 35) end,
+	getResist = function(self,t) return self:combatTalentScale(t, 10, 40) end,
 	info = function(self, t)
 		return ([[You delight in the inflicting of wounds, providing %d physical power.
 		In addition when you make a creature bleed its physical damage resistance is reduced by %d%% (but never below 0%%).
@@ -98,9 +98,10 @@ newTalent{
 	points = 5,
 	cooldown = 45,
 	stamina = 120,
+	fixed_cooldown = true,
 	tactical = { DEFEND = 5, CLOSEIN = 2 },
 	getHealPercent = function(self,t) return self:combatTalentLimit(t, 50, 3.5, 17.5) end, -- Limit <50%
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 3, 7, true)) end, -- Limit < 25
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 15, 3, 7, true)) end, -- Limit < 25
 	action = function(self, t)
 		self:setEffect(self.EFF_UNSTOPPABLE, t.getDuration(self, t), {hp_per_kill=t.getHealPercent(self,t)})
 		return true

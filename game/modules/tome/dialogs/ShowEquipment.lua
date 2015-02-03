@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,14 +41,15 @@ function _M:init(title, actor, filter, action)
 		on_select=function(ui, inven, item, o) self:select{item=item, object=o} end
 	}
 
-	self.c_desc = TextzoneList.new{width=self.iw - 20 - self.c_doll.w, height=self.ih, no_color_bleed=true}
+	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
+	self.c_desc = TextzoneList.new{width=self.iw - self.c_doll.w - vsep.w, height=self.ih, no_color_bleed=true}
 
 	self:loadUI{
 		{left=0, top=0, ui=self.c_main_set},
 		{left=self.c_main_set, top=0, ui=self.c_off_set},
 		{left=0, top=self.c_main_set, ui=self.c_doll},
-		{right=0, top=0, ui=self.c_desc},
-		{left=self.c_doll.w, top=5, ui=Separator.new{dir="horizontal", size=self.ih - 10}},
+		{left=self.c_doll, top=5, ui=vsep},
+		{left=vsep, right=0, top=0, ui=self.c_desc},
 	}
 	self:setFocus(self.c_doll)
 	self:setupUI()

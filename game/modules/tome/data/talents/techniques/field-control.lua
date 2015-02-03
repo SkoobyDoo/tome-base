@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,16 +29,16 @@ newTalent{
 	range = 7,
 	tactical = { ESCAPE = 2 },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t)
 		if self:attr("never_move") then return false end
 		return true
 	end,
 	getDist = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		self:knockback(target.x, target.y, t.getDist(self, t))
 		return true
@@ -83,12 +83,13 @@ newTalent{
 	stamina = 5,
 	tactical = { ESCAPE = { knockback = 1 }, DISABLE = { knockback = 3 } },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	getDist = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- Try to knockback !
 		local can = function(target)
@@ -99,7 +100,7 @@ newTalent{
 			end
 		end
 
-		if can(target) then 
+		if can(target) then
 			target:knockback(self.x, self.y, t.getDist(self, t), can)
 			target:crossTierEffect(target.EFF_OFFBALANCE, self:combatPhysicalpower())
 		end
@@ -139,4 +140,3 @@ newTalent{
 		format(math.min(90, 15 + self:getDex(10, true) * self:getTalentLevel(t)))
 	end,
 }
-

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ end,
 -- Default
 --------------------------------------------------------------------------------------
 else
+can_shift = true
 return { generator = function()
 	local radius = 0
 	local sradius = (radius + 0.5) * (engine.Map.tile_w + engine.Map.tile_h) / 2

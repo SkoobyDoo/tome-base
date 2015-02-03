@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local Shader = require "engine.Shader"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog))
 
 __show_only = true
 
-local title_font = core.display.newFont("/data/font/DroidSans-Bold.ttf", 32)
+local title_font = core.display.newFont(FontPackage:getFont("default"), 32)
 local aura = {
 	Shader.new("awesomeaura", {flameScale=0.6, time_factor=8000}),
 	Shader.new("awesomeaura", {flameScale=0.6, time_factor=8000}),
@@ -42,7 +43,7 @@ local fallback_colors = {
 local outline = Shader.new("textoutline", {})
 
 local credits = {
-	{img="/data/gfx/background/tome-logo.png"},
+	{img="/data/gfx/background/tome-logo.png", offset_x=30},
 	{"by"},
 	{img="/data/gfx/background/netcore-logo.png"},
 	false,
@@ -58,6 +59,7 @@ local credits = {
 
 	{"World Builders", title=1},
 	{"Aaron 'Sage Acrin' Vandegrift"},
+	{"Alexander '0player' Sedov"},
 	{"Chris 'Shibari' Davidson"},
 	{"Doctornull"},
 	{"Em 'Susramanian' Jay"},
@@ -66,6 +68,7 @@ local credits = {
 	{"Hetdegon"},
 	{"John 'Benli' Truchard"},
 	{"Nicolas 'DarkGod' Casalini"},
+	{"Simon 'HousePet' Curtis"},
 	{"Shoob"},
 	{"Taylor 'PureQuestion' Miller"},
 	{"Thomas 'Tomisgo' Cretan"},
@@ -74,8 +77,9 @@ local credits = {
 
 	{"Graphic Artists", title=2},
 	{"Assen 'Rexorcorum' Kanev"},
+	{"Matt 'Amagad' Hill"},
+	{"Jeffrey 'Jotwebe' Buschhorn"},
 	{"Raymond 'Shockbolt' Gaustadnes"},
-	{"Ross 'Daftigod' Raphael"},
 	false,
 	false,
 
@@ -100,6 +104,7 @@ local credits = {
 	{"Lore Creation and Writing", title=2},
 	{"Burb Lulls"},
 	{"Darren Grey"},
+	{"David Mott"},
 	{"Gwai"},
 	{"Nicolas 'DarkGod' Casalini"},
 	{"Ron Billingsley"},
@@ -168,6 +173,7 @@ local credits = {
 	{"Font: SVBasicManual: http://www.dafont.com/fr/johan-winge.d757"},
 	{"Font FSEX300: http://www.fixedsysexcelsior.com/"},
 	{"Font: square: http://strlen.com/square"},
+	{"Font: Salsa: http://www.google.com/fonts/specimen/Salsa"},
 }
 
 function _M:init()
@@ -180,17 +186,20 @@ function _M:init()
 		EXIT = function() game:unregisterDialog(self) end,
 	}
 
+	self:triggerHook{"Boot:credits", credits=credits}
+
 	self.list = { self:makeEntry(credits[1]) }
 	self.list[1].y = self.list[1].y - self.list[1].h
 	self.next_credit = 2
 end
 
-function _M:makeLogo(img)
+function _M:makeLogo(img, offx)
 	local txt = {y=game.h}
 	local i, w, h = core.display.loadImage(img)
 	txt._tex, txt._tex_w, txt._tex_h = i:glTexture()
 	txt.w, txt.h = w, h
 	txt.step_h = h
+	txt.offset_x = offx
 	txt.offset_y = 0
 	txt.img = true
 	return txt
@@ -199,7 +208,7 @@ end
 function _M:makeEntry(credit)
 	if not credit then return {none=true, y=game.h, h=32, step_h=32, offset_y=0} end
 
-	if credit.img then return self:makeLogo(credit.img) end
+	if credit.img then return self:makeLogo(credit.img, credit.offset_x) end
 
 	local txt
 	if credit.title then
@@ -214,7 +223,7 @@ function _M:makeEntry(credit)
 		txt.step_h = txt.h
 		txt.offset_y = 0
 	else
-		local w, h = title_font:size(credit[1]) + 20, 36
+		local w, h = title_font:size(credit[1]) + 20, 42
 		local s = core.display.newSurface(w, h)
 		s:alpha(0)
 		s:drawStringBlended(title_font, credit[1], 10, 0, 255, 255, 255, false)
@@ -237,28 +246,28 @@ function _M:displayCredit(txt, x, y)
 			aura[txt.title].shad:use(true)
 			if aura[txt.title].shad.uniQuadSize then aura[txt.title].shad:uniQuadSize(txt.w/txt._tex_w, txt.h/txt._tex_h) end
 			if aura[txt.title].shad.uniTexSize then aura[txt.title].shad:uniTexSize(txt._tex_w, txt._tex_h) end
-			txt._texf:toScreenPrecise(x, y, txt.w, txt.h, 0, txt.w/txt._tex_w, 0, txt.h/txt._tex_h)
+			txt._texf:toScreenPrecise(x + (txt.offset_x or 0), y, txt.w, txt.h, 0, txt.w/txt._tex_w, 0, txt.h/txt._tex_h)
 			aura[txt.title].shad:use(false)
 
 			outline.shad:use(true)
 			outline.shad:uniOutlineSize(0.7, 0.7)
 			outline.shad:uniTextSize(txt._tex_w, txt._tex_h)
-			txt._tex:toScreenFull(x, y, txt.w, txt.h, txt._tex_w, txt._tex_h)
+			txt._tex:toScreenFull(x + (txt.offset_x or 0), y, txt.w, txt.h, txt._tex_w, txt._tex_h)
 			outline.shad:use(false)
 		else
 			outline.shad:use(true)
 			outline.shad:uniOutlineSize(0.7, 0.7)
 			outline.shad:uniTextSize(txt._tex_w, txt._tex_h)
-			txt._tex:toScreenFull(x, y, txt.w, txt.h, txt._tex_w, txt._tex_h)
+			txt._tex:toScreenFull(x + (txt.offset_x or 0), y, txt.w, txt.h, txt._tex_w, txt._tex_h)
 			outline.shad:use(false)
 		end
 	else
-		if not txt.img then txt._tex:toScreenFull(x + 3, y + 3, txt.w, txt.h, txt._tex_w, txt._tex_h, 0, 0, 0, 1) end
+		if not txt.img then txt._tex:toScreenFull(x + 3 + (txt.offset_x or 0), y + 3, txt.w, txt.h, txt._tex_w, txt._tex_h, 0, 0, 0, 1) end
 		if txt.title and not txt.img then
 			local c = fallback_colors[txt.title]
-			txt._tex:toScreenFull(x, y, txt.w, txt.h, txt._tex_w, txt._tex_h, c.r/255, c.g/255, c.b/255, 1)
+			txt._tex:toScreenFull(x + (txt.offset_x or 0), y, txt.w, txt.h, txt._tex_w, txt._tex_h, c.r/255, c.g/255, c.b/255, 1)
 		else
-			txt._tex:toScreenFull(x, y, txt.w, txt.h, txt._tex_w, txt._tex_h)
+			txt._tex:toScreenFull(x + (txt.offset_x or 0), y, txt.w, txt.h, txt._tex_w, txt._tex_h)
 		end
 	end
 end

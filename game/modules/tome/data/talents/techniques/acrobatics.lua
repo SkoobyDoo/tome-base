@@ -121,7 +121,7 @@ newTalent {
 		local x, y, target = self:getTarget(tg)
 		if not x or not y then return end
 		if self.x == x and self.y == y then return end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return end
+		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return end
 
 		if target or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self) then
 			game.logPlayer(self, "You must have an empty space to roll to.")

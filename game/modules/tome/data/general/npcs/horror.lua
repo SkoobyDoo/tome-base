@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -433,6 +433,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 		{type="horror", subtype="eldritch", name="luminous horror", number=2, no_subescort=true},
 	},
 	ingredient_on_death = "LUMINOUS_HORROR_DUST",
+	power_source = {arcane=true},
 }
 
 newEntity{ base = "BASE_NPC_HORROR",
@@ -468,6 +469,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 	},
 
 	resolvers.sustains_at_birth(),
+	power_source = {arcane=true},
 
 	make_escort = {
 		{type="horror", subtype="eldritch", name="luminous horror", number=1, no_subescort=true},
@@ -570,8 +572,8 @@ newEntity{ base = "BASE_NPC_HORROR",
 				radius,
 				5, nil,
 				MapEffect.new{color_br=25, color_bg=140, color_bb=40, effect_shader="shader_images/retch_effect.png"},
-				function(e)
-					e.radius = e.radius
+				function(e, update_shape_only)
+					if not update_shape_only then e.radius = e.radius end
 					return true
 				end,
 				false
@@ -598,6 +600,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 			[Talents.T_SLIME_WAVE]={base=2, every=8, max=7},
 			[Talents.T_TENTACLE_GRAB]={base=2, every=7, max=6},
 	},
+	power_source = {antimagic=true},
 }
 
 newEntity{ base = "BASE_NPC_HORROR",
@@ -704,7 +707,7 @@ With each slow breath it takes reality distorts around it.  Blue twirls into red
 	},
 
 	resolvers.inscriptions(2, {"regeneration infusion", "phase door rune"}, nil, true),  -- Really has a phase door rune :P
-
+	power_source = {psionic=true},
 	resolvers.sustains_at_birth(),
 
 	-- Used to track if he's awake or spawning projections
@@ -797,6 +800,7 @@ newEntity{ base = "BASE_NPC_HORROR", define_as = "DREAM_SEED",
 	},
 
 	resolvers.sustains_at_birth(),
+	power_source = {psionic=true},
 
 	-- Remove ourselves from the dream seed limit
 	on_die = function(self)
@@ -959,7 +963,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 		[Talents.T_CHARGED_SHIELD]={base=5, every=2, max=9},
 		[Talents.T_KINETIC_LEECH]={base=3, every=3, max=5},
 		--TEMPORAL
-		[Talents.T_STATIC_HISTORY]={base=1, every=4, max=5},
+		[Talents.T_INDUCE_ANOMALY]={base=1, every=4, max=5},
 		[Talents.T_QUANTUM_SPIKE]={base=1, every=4, max=5},
 		[Talents.T_WEAPON_FOLDING]={base=1, every=4, max=5},
 		[Talents.T_RETHREAD]={base=2, every=4, max=5},

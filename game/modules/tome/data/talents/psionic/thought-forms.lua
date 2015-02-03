@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ local function setupAct(self)
 	self.on_act = function(self)
 		local tid = self.summoning_tid
 		if not game.level:hasEntity(self.summoner) or self.summoner.dead or not self.summoner:isTalentActive(tid) then
-			self:die(self)
+			game:onTickEnd(function()self:die(self)end)
 		end
 		if game.level:hasEntity(self.summoner) and core.fov.distance(self.x, self.y, self.summoner.x, self.summoner.y) > 10 then
 			local Map = require "engine.Map"
@@ -191,7 +191,7 @@ newTalent{
 		local stat_bonus = math.floor(self:mindCrit(t.getStatBonus(self, t)))
 	
 		local NPC = require "mod.class.NPC"
-		local m = NPC.new{
+		local m = NPC.new{ _no_upvalues_check=true,
 			name = "thought-forged bowman", summoner = self,
 			color=colors.SANDY_BROWN, shader = "shadow_simulacrum",
 			shader_args = { color = {0.8, 0.8, 0.8}, base = 0.8, time_factor = 4000 },
@@ -212,7 +212,7 @@ newTalent{
 				con = stat_bonus / 2,
 			},
 			
-			resolvers.generic(function(e) buildTile(e) end), -- Make a moddable tile
+			resolvers.generic(buildTile), -- Make a moddable tile
 			resolvers.talents{ 
 				[Talents.T_WEAPON_COMBAT]= math.ceil(self.level/10),
 				[Talents.T_BOW_MASTERY]= math.ceil(self.level/10),
@@ -303,11 +303,11 @@ newTalent{
 		local stat_bonus = math.floor(self:mindCrit(t.getStatBonus(self, t)))
 	
 		local NPC = require "mod.class.NPC"
-		local m = NPC.new{
+		local m = NPC.new{ _no_upvalues_check=true,
 			name = "thought-forged warrior", summoner = self, 
 			color=colors.ORANGE, shader = "shadow_simulacrum",
 			shader_args = { color = {0.8, 0.8, 0.8}, base = 0.8, time_factor = 4000 },
-			desc = [[A thought-forged warrior wielding a massive hammer and clad in heavy armor.  It appears ready for battle.]],
+			desc = [[A thought-forged warrior wielding a massive battle-axe and clad in heavy armor.  It appears ready for battle.]],
 			body = { INVEN = 10, MAINHAND = 1, BODY = 1, HANDS = 1, FEET = 1},
 		
 			ai = "summoned", ai_real = "tactical",
@@ -324,7 +324,7 @@ newTalent{
 				con = stat_bonus / 2,
 			},
 
-			resolvers.generic(function(e) buildTile(e) end), -- Make a moddable tile
+			resolvers.generic(buildTile), -- Make a moddable tile
 			resolvers.talents{ 
 				[Talents.T_ARMOUR_TRAINING]= 2,
 				[Talents.T_WEAPON_COMBAT]= math.ceil(self.level/10),
@@ -405,7 +405,7 @@ newTalent{
 		local stat_bonus = math.floor(self:mindCrit(t.getStatBonus(self, t)))
 	
 		local NPC = require "mod.class.NPC"
-		local m = NPC.new{
+		local m = NPC.new{ _no_upvalues_check=true,
 			name = "thought-forged defender", summoner = self,
 			color=colors.GOLD, shader = "shadow_simulacrum", 
 			shader_args = { color = {0.8, 0.8, 0.8}, base = 0.8, time_factor = 4000 },
@@ -473,7 +473,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local stat = t.getStatBonus(self, t)
-		return ([[Forge a defender wielding a sword and shield from your thoughts.  The solider learns Armor Rraining, Weapon Mastery, Combat Accuracy, Shield Pummel, and Shield Wall as it levels up, and has +%d Strength, +%d Dexterity, and +%d Constitution.
+		return ([[Forge a defender wielding a sword and shield from your thoughts.  The solider learns Armor Training, Weapon Mastery, Combat Accuracy, Shield Pummel, and Shield Wall as it levels up, and has +%d Strength, +%d Dexterity, and +%d Constitution.
 		Activating this talent will put all other thought-forms on cooldown.
 		The stat bonuses will improve with your Mindpower.]]):format(stat/2, stat/2, stat)
 	end,

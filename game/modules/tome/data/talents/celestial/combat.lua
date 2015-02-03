@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ newTalent{
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
 		if hitted and self:hasEffect(self.EFF_DAMAGE_SHIELD) and (self:reactionToward(target) < 0) then
-			-- Shields can't usually merge, so change the parameters manually 
+			-- Shields can't usually merge, so change the parameters manually
 			local shield = self:hasEffect(self.EFF_DAMAGE_SHIELD)
 			local shield_power = t.getShieldFlat(self, t)
 
@@ -89,6 +89,7 @@ newTalent{
 	positive = 15,
 	tactical = { ATTACK = 2 },
 	requires_target = true,
+	is_melee = true,
 	range = function(self, t) return 2 + math.max(0, self:combatStatScale("str", 0.8, 8)) end,
 	SecondStrikeChance = function(self, t, range)
 		return self:combatLimit(self:getTalentLevel(t)*range, 100, 15, 4, 70, 50)
@@ -178,7 +179,7 @@ newTalent{
 		Targets struck are also afflicted with a Martyrdom effect that causes them to take %d%% of all damage they deal for 4 turns.]]):
 		format(damagepct*100, t.getMaxDamage(self, t, 10, 400), damage, martyr)
 	end,
-} 
+}
 
 -- Core class defense to be compared with Bone Shield, Aegis, Indiscernable Anatomy, etc
 -- !H/Shield could conceivably reactivate this in the same fight with Crusade spam if it triggers with Suncloak up, 2H never will without running
@@ -211,6 +212,3 @@ newTalent{
 		format(t.getLife(self, t))
 	end,
 }
-
-
-

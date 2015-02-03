@@ -61,6 +61,7 @@ newTalent {
 	range = archery_range,
 	cooldown = 5,
 	stamina = 15,
+	requires_target = true,
 	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
 	getDamage = function(self, t)
 		return self:combatTalentWeaponDamage(t, 0.4, 1.6)
@@ -70,6 +71,11 @@ newTalent {
 		if cooldown > 0 then
 			self.talents_cd[t.id] = math.max(cooldown - 1, 0)
 		end
+	end,
+	speed = function(self, t) return self:getSpeed('archery') * 0.5 end,
+	display_speed = function(self, t)
+		return ("Double Archery (#LIGHT_GREEN#%d%%#LAST# of a turn)"):
+			format(self:getSpeed('archery') * 50)
 	end,
 	action = function(self, t)
 		local old_speed = self.combat_physspeed
@@ -105,12 +111,14 @@ newTalent {
 	require = techs_dex_req3,
 	points = 5,
 	no_energy = "fake",
+	speed = "archery",
 	random_ego = "attack",
 	tactical = {ATTACKALL = {weapon = 3}},
 	range = 0,
 	radius = archery_range,
 	cooldown = 7,
 	stamina = 45,
+	requires_target = true,
 	target = function(self, t)
 		return {
 			type = "cone",

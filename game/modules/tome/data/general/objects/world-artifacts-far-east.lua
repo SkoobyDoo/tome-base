@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -124,6 +124,9 @@ newEntity{ base = "BASE_SHIELD", define_as = "SHIELD_UNSETTING",
 		learn_talent = { [Talents.T_BLOCK] = 5, },
 	},
 	set_list = { {"define_as","SWORD_DAWN"} },
+	set_desc = {
+		dawn = "Glows brightly in the light of dawn.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","life_regen"}, 0.25)
 		self:specialSetAdd({"wielder","lite"}, 1)
@@ -162,6 +165,7 @@ newEntity{ base = "BASE_GEM",
 	unique = true,
 	unided_name = "unearthly black stone",
 	name = "Goedalath Rock", subtype = "demonic", image = "object/artifact/goedalath_rock.png",
+	define_as = 'GOEDALATH_ROCK',
 	color = colors.PURPLE,
 	level_range = {42, 50},
 	desc = [[A small rock that seems from beyond this world, vibrating with a fierce energy.  It feels warped and terrible and evil... and yet oh so powerful.]],
@@ -169,6 +173,8 @@ newEntity{ base = "BASE_GEM",
 	cost = 300,
 	material_level = 5,
 	identified = false,
+	auto_pickup = false,  -- why would you do such a thing.
+	encumber = 0.1,  -- at least they'll see it on transmo screen.
 	carrier = {
 		on_melee_hit = {[DamageType.HEAL] = 34},
 		life_regen = -2,
@@ -187,7 +193,13 @@ newEntity{ base = "BASE_GEM",
 		on_melee_hit = {[DamageType.DARKNESS] = 34},
 		healing_factor = 0.5,
 	},
-}
+	on_pickup = function(self, who)
+		if who == game.player then
+			who:runStop("evil touch")
+			who:restStop("evil touch")
+		end
+	end,
+	color_attributes = {damage_type = 'SHADOWFLAME',},}
 
 newEntity{ base = "BASE_CLOAK",
 	power_source = {arcane=true}, define_as = "THREADS_FATE",
@@ -230,6 +242,8 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "BLOODEDGE",
 	unique = true,
 	name = "Blood-Edge", image = "object/artifact/sword_blood_edge.png",
 	unided_name = "red crystalline sword",
+	moddable_tile = "special/%s_sword_blood_edge",
+	moddable_tile_big = true,
 	level_range = {36, 48},
 	color=colors.RED,
 	rarity = 260,
@@ -344,6 +358,8 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "SWORD_DAWN",
 	unique = true,
 	name = "Dawn's Blade",
 	unided_name = "shining longsword",
+	moddable_tile = "special/%s_dawn_blade",
+	moddable_tile_big = true,
 	level_range = {35, 42},
 	color=colors.YELLOW, image = "object/artifact/dawn_blade.png",
 	rarity = 260,
@@ -396,7 +412,7 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "SWORD_DAWN",
 		inc_damage_type={
 			undead=25,
 			demon=25,
-		},		
+		},
 	},
 	on_wear = function(self, who)
 		if who.descriptor and who.descriptor.subclass == "Sun Paladin" then
@@ -407,6 +423,9 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "SWORD_DAWN",
 	end,
 	
 	set_list = { {"define_as","SHIELD_UNSETTING"} },
+	set_desc = {
+		dawn = "If the sun doesn't set, dawn's power lasts forever.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"combat","melee_project"}, {[engine.DamageType.LIGHT]=15, [engine.DamageType.FIRE]=15})
 		self:specialSetAdd({"wielder","inc_damage"}, {[engine.DamageType.LIGHT]=12, [engine.DamageType.FIRE]=10})
@@ -428,6 +447,7 @@ newEntity{ base = "BASE_AMULET",
 	cost = 200,
 	material_level = 4,
 	metallic = false,
+	use_no_energy = true,
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = 4, },
 		inc_damage = { [DamageType.TEMPORAL]= 10 },
@@ -435,8 +455,8 @@ newEntity{ base = "BASE_AMULET",
 		resists_cap = { [DamageType.TEMPORAL] = 5 },
 		spell_cooldown_reduction = 0.1,
 	},
-	max_power = 20, power_regen = 1,
-	use_talent = { id = Talents.T_WORMHOLE, level = 4, power = 20 },
+	max_power = 80, power_regen = 1,
+	use_talent = { id = Talents.T_TIME_STOP, level = 1, power = 50 },
 }
 
 newEntity{ base = "BASE_KNIFE", define_as = "MANDIBLE_UNGOLMOR",
@@ -444,6 +464,8 @@ newEntity{ base = "BASE_KNIFE", define_as = "MANDIBLE_UNGOLMOR",
 	unique = true,
 	name = "Mandible of Ungolmor", image = "object/artifact/mandible_of_ungolmor.png",
 	unided_name = "curved, serrated black dagger",
+	moddable_tile = "special/%s_mandible_of_ungolmor",
+	moddable_tile_big = true,
 	desc = [[This obsidian-crafted, curved blade is studded with the deadly fangs of the Ungolmor. It seems to drain light from the world around it.]],
 	level_range = {40, 50},
 	rarity = 270,
@@ -480,6 +502,8 @@ newEntity{ base = "BASE_KNIFE", define_as = "KINETIC_SPIKE",
 	unique = true,
 	name = "Kinetic Spike", image = "object/artifact/kinetic_spike.png",
 	unided_name = "bladeless hilt",
+	moddable_tile = "special/%s_kinetic_spike",
+	moddable_tile_big = true,
 	desc = [[A simple, rudely crafted stone hilt, this object manifests a blade of wavering, nearly invisible force, like a heat haze, as you grasp it. Despite its simple appearance, it is capable of shearing through solid granite, in the hands of those with the necessary mental fortitude to use it properly.]],
 	level_range = {42, 50},
 	rarity = 310,
@@ -497,6 +521,9 @@ newEntity{ base = "BASE_KNIFE", define_as = "KINETIC_SPIKE",
 		combat_atk = 8,
 		combat_dam = 15,
 		resists_pen = {[DamageType.PHYSICAL] = 30},
+		talents_types_mastery = {
+			["psionic/augmented-striking"] = 0.2,
+		},
 	},
 	max_power = 10, power_regen = 1,
 	use_power = { name = "fires a bolt of kinetic force, doing 150% weapon damage", power = 10,
@@ -540,24 +567,22 @@ newEntity{ base = "BASE_STAFF",
 	},
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = 7, [Stats.STAT_MAG] = 8 },
-		paradox_reduce_fails = 50,
+		paradox_reduce_anomalies = 25,
 		combat_spellpower = 40,
 		combat_spellcrit = 15,
 		inc_damage = { [DamageType.TEMPORAL] = 40,  },
 		resists_pen = { [DamageType.TEMPORAL] = 30,  },
 		teleport_immune = 1,
 		talent_cd_reduction = {
-			[Talents.T_PARADOX_CLONE] = 7,
-			[Talents.T_TEMPORAL_CLONE] = 5,
-			[Talents.T_TEMPORAL_REPRIEVE] = 10,
-			[Talents.T_GRAVITY_WELL] = 6,
-			[Talents.T_BODY_REVERSION] = 2,
+			[Talents.T_CHRONO_TIME_SHIELD] = 3,
+			[Talents.T_TIME_SHIELD] = 3,
+			[Talents.T_STOP] = 2,
+			[Talents.T_ATTENUATE] = 1,
 		},
 		talents_types_mastery = {
-			["chronomancy/timeline-threading"] = 0.2,
-			["chronomancy/timetravel"] = 0.2,
-			["chronomancy/paradox"] = 0.2,
-			["spell/temporal"] = 0.2,
+			["chronomancy/stasis"] = 0.1,
+			["chronomancy/flux"] = 0.1,
+			["spell/temporal"] = 0.1,
 		},
 	},
 }

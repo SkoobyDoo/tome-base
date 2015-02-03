@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	
 	self.fontsize = fontsize
 	self.font = core.display.newFont(fontname or "/data/font/DroidSans.ttf", fontsize or 12)
+	self.font_line_skip = self.font:lineSkip()
+	self.scroll_delay = 20 -- ms/pixel
 
 	self.default_ui = { TextzoneList.new{weakstore=true, width=self.max, height=500, variable_height=true, font=self.font, ui=self.ui} }
 	self.locked = false
@@ -70,6 +72,7 @@ function _M:set(str, ...)
 	-- if locked change is forbiden
 	if self.locked then return end
 	self.pingpong = 0
+	self.pingpong_last = nil
 	str = str or {}
 	
 	if type(str) == "string" then str = ... and str:format(...):toTString() or str:toTString() end
@@ -117,7 +120,7 @@ function _M:set(str, ...)
 		for i=1, #str do
 			-- if the item is tstring then merge it with main ts
 			if str[i] then
-				if str[i].is_tstring then
+				if str[i].is_tstring or type(part) == "string" then
 					if i > 1 then 
 						if str[i - 1] and str[i - 1].is_tstring then 
 							ts:add(true) 
@@ -204,18 +207,28 @@ function _M:toScreen(x, y, nb_keyframes)
 	
 	local locked_w = ( (self.locked and self.uis_h > self.container.dest_area.h) and self.container.scrollbar.w or 0)
 	
-	if not self.locked then
+	local time = core.game.getTime()
+	if not self.pingpong_last then self.pingpong_last = time + self.scroll_delay * self.container.h / 3 end
+	local delta = math.max(time - self.pingpong_last, 0) / self.scroll_delay
+
+	local scrollbar = self.container.scrollbar
+	if not self.locked and delta > 0 and scrollbar.max > 0 then
+		local slowdown = 0.5 * scrollbar.pos / scrollbar.max
+		self.pingpong_last = time
 		if self.pingpong == 0 then
-			self.container.scrollbar.pos = self.container.scrollbar.pos + nb_keyframes
-			if self.container.scrollbar.pos > self.container.scrollbar.max then 
-				self.container.scrollbar.pos = self.container.scrollbar.max 
+			scrollbar.pos = scrollbar.pos + delta * (0.5 + slowdown)
+			if scrollbar.pos >= scrollbar.max then 
+				scrollbar.pos = scrollbar.max 
 				self.pingpong = 1
+				self.pingpong_last = time + self.scroll_delay * self.container.h / 3
 			end
 		else
-			self.container.scrollbar.pos = self.container.scrollbar.pos - nb_keyframes
-			if self.container.scrollbar.pos < 0 then 
-				self.container.scrollbar.pos = 0
+			-- scroll back twice as fast, since it's awkward to read during that time
+			scrollbar.pos = scrollbar.pos - delta * 2
+			if scrollbar.pos <= 0 then 
+				scrollbar.pos = 0
 				self.pingpong = 0
+				self.pingpong_last = time + self.scroll_delay * self.container.h / 3
 			end
 		end
 	end

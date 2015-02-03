@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@ long_name = "Tales of Maj'Eyal: Age of Ascendancy"
 short_name = "tome"
 author = { "DarkGod", "darkgod@te4.org" }
 homepage = "http://te4.org/"
-version = {1,2,2}
-engine = {1,2,2,"te4"}
+version = {1,3,0}
+engine = {1,3,0,"te4"}
 description = [[
 Welcome to Maj'Eyal.
 
@@ -65,6 +65,17 @@ publisher_logo = "netcore-logo"
 if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
 else background_name = {"tome3"}
 end
+if config.settings.unlock_background_linaniil then background_name[#background_name+1] = "cards/linaniil" end
+if config.settings.unlock_background_master then background_name[#background_name+1] = "cards/master" end
+if config.settings.unlock_background_garkul then background_name[#background_name+1] = "cards/garkul" end
+if config.settings.unlock_background_aeryn then background_name[#background_name+1] = "cards/aeryn" end
+if config.settings.unlock_background_myssil then background_name[#background_name+1] = "cards/myssil" end
+if config.settings.unlock_background_derth then background_name[#background_name+1] = "cards/derth" end
+if config.settings.unlock_background_fortress then background_name[#background_name+1] = "cards/fortress" end
+if config.settings.unlock_background_urkis then background_name[#background_name+1] = "cards/urkis" end
+
+font_package_id = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.type end
+font_package_size = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.size end
 
 load_tips = {
 	{image="/data/gfx/shockbolt/npc/humanoid_human_linaniil_supreme_archmage.png", img_y_off=-50, text=[[Though magic is still shunned in Maj'Eyal, rumours abound of secret havens of mages.]]},

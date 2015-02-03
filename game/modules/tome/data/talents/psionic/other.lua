@@ -26,11 +26,10 @@ newTalent{
 	type_no_req = true,
 	no_unlearn_last = true,
 	no_npc_use = true,
+	filter = function(o) return (o.type == "weapon" or o.type == "gem") and o.subtype ~= "sling" end,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
-		local d d = self:showInventory("Telekinetically grasp which item?", inven, function(o)
-			return (o.type == "weapon" or o.type == "gem") and o.subtype ~= "sling"
-		end, function(o, item)
+		local ret = self:talentDialog(self:showInventory("Telekinetically grasp which item?", inven, t.filter, function(o, item)
 			local pf = self:getInven("PSIONIC_FOCUS")
 			if not pf then return end
 			-- Put back the old one in inventory
@@ -69,13 +68,11 @@ newTalent{
 			-- Force "wield"
 			self:addObject(pf, o)
 			game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true})
-
+			
 			self:sortInven()
-			d.used_talent = true
-		end)
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent) end
-		if not coroutine.yield() then return nil end
+			self:talentDialogReturn(true)
+		end))
+		if not ret then return nil end
 		return true
 	end,
 	info = function(self, t)
@@ -95,12 +92,10 @@ newTalent{
 	no_energy = true,
 	no_unlearn_last = true,
 	tactical = { BUFF = 3 },
-	do_tkautoattack = function(self, t)
-		if game.zone.wilderness then return end
+	do_tk_strike = function(self, t)
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
 		if type(tkweapon) == "boolean" then tkweapon = nil end
 		if not tkweapon or tkweapon.type ~= "weapon" or tkweapon.subtype == "mindstar" then return end
-
 
 		local targnum = 1
 		if self:hasEffect(self.EFF_PSIFRENZY) then targnum = self:hasEffect(self.EFF_PSIFRENZY).power end
@@ -134,7 +129,7 @@ newTalent{
 						hit = hit or h
 						if hit and not sound then sound = o.combat.sound
 						elseif not hit and not sound_miss then sound_miss = o.combat.sound_miss end
-						if not o.combat.no_stealth_break then break_stealth = true end
+						if not o.combat.no_stealth_break then self:breakStealth() end
 						self:breakStepUp()
 					end
 				end
@@ -144,6 +139,71 @@ newTalent{
 
 		end
 		return hit
+	end,
+	do_mindstar_grab = function(self, t, p)
+		local p = self.sustain_talents[t.id]
+
+		if self:hasEffect(self.EFF_PSIFRENZY) then
+			if p.mindstar_grab then
+				self:project({type="ball", radius=p.mindstar_grab.range}, self.x, self.y, function(px, py)
+					local a = game.level.map(px, py, Map.ACTOR)
+					if a and self:reactionToward(a) < 0 then
+						local dist = core.fov.distance(self.x, self.y, px, py)
+						if dist > 1 and rng.percent(p.mindstar_grab.chance) then
+							local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
+							if tx and ty and a:canBe("knockback") then
+								a:move(tx, ty, true)
+							end
+						end
+					end
+				end)
+			elseif self:getInven("PSIONIC_FOCUS")[1] and self:getInven("PSIONIC_FOCUS")[1].type == "gem" then
+				local list = {}
+				local gem = self:getInven("PSIONIC_FOCUS")[1]
+				self:project({type="ball", radius=6}, self.x, self.y, function(px, py)
+					local a = game.level.map(px, py, Map.ACTOR)
+					if a and self:reactionToward(a) < 0 then
+						local dist = core.fov.distance(self.x, self.y, px, py)
+						list[#list+1] = {dist=dist, a=a}
+					end
+				end)
+				if #list <= 0 then return end
+
+				local color = gem.color_attributes or {}
+				local bolt = {color.damage_type or 'MIND', color.particle or 'light'}
+
+				table.sort(list, "dist")
+				local a = list[1].a
+				self:project({type="ball", range=6, radius=0, selffire=false, talent=t}, a.x, a.y, bolt[1], self:mindCrit(self:hasEffect(self.EFF_PSIFRENZY).damage), {type=bolt[2]})
+
+			end
+			return
+		end
+
+		if not p.mindstar_grab then return end
+		if not rng.percent(p.mindstar_grab.chance) then return end
+
+		local list = {}
+		self:project({type="ball", radius=p.mindstar_grab.range}, self.x, self.y, function(px, py)
+			local a = game.level.map(px, py, Map.ACTOR)
+			if a and self:reactionToward(a) < 0 then
+				local dist = core.fov.distance(self.x, self.y, px, py)
+				if dist > 1 then list[#list+1] = {dist=dist, a=a} end
+			end
+		end)
+		if #list <= 0 then return end
+
+		table.sort(list, "dist")
+		local a = list[#list].a
+		local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
+		if tx and ty and a:canBe("knockback") then
+			a:move(tx, ty, true)
+			game.logSeen(a, "%s telekinetically grabs %s!", self.name:capitalize(), a.name)
+		end
+	end,
+	callbackOnActBase = function(self, t)
+		t.do_tk_strike(self, t)
+		t.do_mindstar_grab(self, t)
 	end,
 	callbackOnWear = function(self, t, p)
 		if self.__to_recompute_beyond_the_flesh then return end
@@ -165,75 +225,6 @@ newTalent{
 			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
 		end)
 	end,
-	callbackOnActBase = function(self, t, p)
-		local p = self.sustain_talents[t.id]
-		
-		if self:hasEffect(self.EFF_PSIFRENZY) then
-			if p.mindstar_grab then
-				self:project({type="ball", radius=p.mindstar_grab.range}, self.x, self.y, function(px, py)
-					local a = game.level.map(px, py, Map.ACTOR)
-					if a and self:reactionToward(a) < 0 then
-						local dist = core.fov.distance(self.x, self.y, px, py)
-						if dist > 1 and rng.percent(p.mindstar_grab.chance) then 
-							local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
-							if tx and ty and a:canBe("knockback") then
-								a:move(tx, ty, true)
-							end
-						end
-					end
-				end)
-			elseif self:getInven("PSIONIC_FOCUS")[1] and self:getInven("PSIONIC_FOCUS")[1].type == "gem" then
-				local list = {}
-				local gem = self:getInven("PSIONIC_FOCUS")[1]
-				self:project({type="ball", radius=6}, self.x, self.y, function(px, py)
-					local a = game.level.map(px, py, Map.ACTOR)
-					if a and self:reactionToward(a) < 0 then
-						local dist = core.fov.distance(self.x, self.y, px, py)
-						list[#list+1] = {dist=dist, a=a}
-					end
-				end)
-				if #list <= 0 then return end
-				
-				local elem = {
-					black = {DamageType.ACID, "acid"},
-					blue = {DamageType.LIGHTNING, "lightning_explosion"},
-					green = {DamageType.NATURE, "slime"},
-					red = {DamageType.FIRE, "flame"},
-					violet = {DamageType.ARCANE, "manathrust"},
-					white = {DamageType.COLD, "freeze"},
-					yellow = {DamageType.LIGHT, "light"},
-				}
-				local bolt = elem[gem.subtype]
-				
-				table.sort(list, "dist")
-				local a = list[1].a
-				self:project({type="ball", range=6, radius=0, selffire=false, talent=t}, a.x, a.y, bolt[1], self:hasEffect(self.EFF_PSIFRENZY).damage, {type=bolt[2]})
-				
-			end
-			return
-		end
-		
-		if not p.mindstar_grab then return end
-		if not rng.percent(p.mindstar_grab.chance) then return end
-
-		local list = {}
-		self:project({type="ball", radius=p.mindstar_grab.range}, self.x, self.y, function(px, py)
-			local a = game.level.map(px, py, Map.ACTOR)
-			if a and self:reactionToward(a) < 0 then
-				local dist = core.fov.distance(self.x, self.y, px, py)
-				if dist > 1 then list[#list+1] = {dist=dist, a=a} end
-			end
-		end)
-		if #list <= 0 then return end
-		
-		table.sort(list, "dist")
-		local a = list[#list].a
-		local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
-		if tx and ty and a:canBe("knockback") then
-			a:move(tx, ty, true)
-			game.logSeen(a, "%s telekinetically grabs %s!", self.name:capitalize(), a.name)
-		end
-	end,
 	on_pre_use = function (self, t)
 		if not self:getInven("PSIONIC_FOCUS") then return false end
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
@@ -249,7 +240,7 @@ newTalent{
 
 		local ret = {}
 		if tk.type == "gem" then
-			local power = (tk.material_level or 1) * 4 + math.ceil(self:callTalent(self.T_RESONANT_FOCUS, "bonus") / 5)
+			local power = (tk.material_level or 1) * 3 + math.ceil(self:callTalent(self.T_RESONANT_FOCUS, "bonus") / 5)
 			self:talentTemporaryValue(ret, "inc_stats", {
 				[self.STAT_STR] = power,
 				[self.STAT_DEX] = power,
@@ -273,9 +264,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local base = [[Allows you to wield a physical melee weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
-		A gem will provide +4 bonus to all primary stats per tier of the gem.
-		A mindstar will randomly try to telekinetically grab a far away foe (5% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
-		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations (for all melee weapons).
+		A gem will provide +3 bonus to all primary stats per tier of the gem.
+		A mindstar will randomly try to telekinetically grab a far away foe (10% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
+		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
 
 		]]
 
@@ -290,9 +281,9 @@ newTalent{
 		local speed = 1
 		if o.type == "gem" then
 			local ml = o.material_level or 1
-			base = base..([[The telekinetically-wielded gem grants you +%d stats.]]):format(ml * 4)
+			base = base..([[The telekinetically-wielded gem grants you +%d stats.]]):format(ml * 3)
 		elseif o.subtype == "mindstar" then
-			local ml = o.material_level or 1			
+			local ml = o.material_level or 1
 			base = base..([[The telekinetically-wielded mindstar has a %d%% chance to grab a foe up to %d range away.]]):format((ml + 1) * 5, ml + 2)
 		else
 			self:attr("use_psi_combat", 1)

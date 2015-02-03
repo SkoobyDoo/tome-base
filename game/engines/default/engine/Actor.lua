@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -106,11 +106,16 @@ function _M:defineDisplayCallback()
 	local f_neutral = nil
 
 	local function particles(x, y, w, h)
+		local self = weak[1]
+		if not self or not self._mo then return end
+
 		local e
 		for i = 1, #ps do
 			e = ps[i]
 			e:checkDisplay()
-			if e.ps:isAlive() then e.ps:toScreen(x + w / 2, y + h / 2, true, w / game.level.map.tile_w)
+			if e.ps:isAlive() then
+				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
+				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + h / 2 + (e.dy or 0) * h, true, w / game.level.map.tile_w)
 			elseif weak[1] then weak[1]:removeParticles(e)
 			end
 		end
@@ -193,7 +198,7 @@ function _M:move(x, y, force)
 	if not force and map:checkAllEntities(x, y, "block_move", self, true) then return true end
 
 	if self.x and self.y then
-		map:remove(self.x, self.y, Map.ACTOR)
+		map:remove(self.x, self.y, Map.ACTOR, self)
 	else
 --		print("[MOVE] actor moved without a starting position", self.name, x, y)
 	end
@@ -392,7 +397,8 @@ end
 
 function _M:deleteFromMap(map)
 	if self.x and self.y and map then
-		map:remove(self.x, self.y, engine.Map.ACTOR)
+		map:remove(self.x, self.y, engine.Map.ACTOR, self)
+		-- self.x, self.y = nil, nil
 		self:closeParticles()
 	end
 end
@@ -510,3 +516,8 @@ end
 function _M:getEntityKind()
 	return "actor"
 end
+
+function _M:he_she() return string.he_she(self) end
+function _M:his_her() return string.his_her(self) end
+function _M:him_her() return string.him_her(self) end
+function _M:his_her_self() return string.his_her_self(self) end

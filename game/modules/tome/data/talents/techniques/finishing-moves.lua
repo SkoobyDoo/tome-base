@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,14 +28,16 @@ newTalent{
 	message = "@Source@ throws a finishing uppercut.",
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { stun = 2 } },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	is_melee = true,
 	--on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_COMBO) then if not silent then game.logPlayer(self, "You must have a combo going to use this ability.") end return false end return true end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 1.8) + getStrikingStyle(self, dam) end,
 	getDuration = function(self, t, comb) return 2 + math.ceil(self:combatTalentScale(t, 1, 5) * (0.25 + comb/5)) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- breaks active grapples if the target is not grappled
 		if not target:isGrappled(self) then
@@ -80,15 +82,17 @@ newTalent{
 	message = "@Source@ throws a concussive punch.",
 	tactical = { ATTACK = { weapon = 2 }, },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	is_melee = true,
 	--on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_COMBO) then if not silent then game.logPlayer(self, "You must have a combo going to use this ability.") end return false end return true end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.6, 1.5) + getStrikingStyle(self, dam) end,
 	getAreaDamage = function(self, t) return self:combatTalentStatDamage(t, "str", 10, 450) * (1 + getStrikingStyle(self, dam)) end,
 	radius = function(self, t) return (1 + self:getCombo(combo) ) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- breaks active grapples if the target is not grappled
 		if not target:isGrappled(self) then
@@ -140,14 +144,15 @@ newTalent{
 		return 1
 	end,
 	getDamage = function(self, t)
-		return self:combatTalentWeaponDamage(t, 1, 1.5) + getStrikingStyle(self, dam) 
+		return self:combatTalentWeaponDamage(t, 1, 1.5) + getStrikingStyle(self, dam)
 	end,
-	getBonusDamage = function(self, t) return (self:getCombo(combo)/10) or 0 end, 
+	getBonusDamage = function(self, t) return (self:getCombo(combo)/10) or 0 end,
 	requires_target = true,
 --	no_npc_use = true, -- I mark this by default if I don't understand how the AI might use something, which is always
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), nolock = true}
 	end,
+	is_melee = true,
 	action = function(self, t)
 		if not (self:getCombo(combo) > 0) then return end -- abort if we have no CP, this is to make it base 2+requires CP because base 1 autotargets in melee range
 		local tg = self:getTalentTarget(t)
@@ -173,18 +178,18 @@ newTalent{
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target and target ~= self then
 				local totalDamage = t.getDamage(self, t) * (1 + t.getBonusDamage(self, t) )
-				
+
 
 				local hit = self:attackTarget(target, nil, totalDamage, true)
 			end
 		end)
-		
+
 		self:clearCombo()
 		return true
 	end,
 	info = function(self, t)
 		return ([[You spin into a flying leap and deliver a powerful kick dealing %d%% weapon damage to all enemies in a radius of 1 as you land.  The range will increase by 1 per combo point and total damage will increase by 10%% per combo point.
-		Using this talent removes your combo points and you must have at least 1 combo point to use it.]]):format(t.getDamage(self, t)*100)	
+		Using this talent removes your combo points and you must have at least 1 combo point to use it.]]):format(t.getDamage(self, t)*100)
 	end,
 }
 
@@ -199,17 +204,19 @@ newTalent{
 	message = "@Source@ throws a wild haymaker!",
 	tactical = { ATTACK = { weapon = 2 } },
 	requires_target = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	--on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_COMBO) then if not silent then game.logPlayer(self, "You must have a combo going to use this ability.") end return false end return true end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 3) + getStrikingStyle(self, dam) end, 
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 3) + getStrikingStyle(self, dam) end,
 	getBonusDamage = function(self, t) return self:getCombo(combo)/5 end, -- shift more of the damage to CP
 	getStamina = function(self, t, comb)
 		return self:combatLimit((self:getTalentLevel(t) + comb), 0.5, 0, 0, 0.2, 10) * self.max_stamina
 	end, -- Limit 50% stamina gain
+	is_melee = true,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- breaks active grapples if the target is not grappled
 		if not target:isGrappled(self) then

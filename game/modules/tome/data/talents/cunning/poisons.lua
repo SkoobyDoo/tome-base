@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -102,12 +102,17 @@ newTalent{
 		end
 		tg.archery.mult = self:combatTalentWeaponDamage(t, 0.5 + nb * 0.6, 0.9 + nb * 1)
 	end,
+	speed = "weapon",
+	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
+	range = function(self, t)
+		if self:hasArcheryWeapon() then return util.getval(archery_range, self, t) end
+		return 1
+	end,
 	action = function(self, t)
 		if not self:hasArcheryWeapon() then
 			local tg = {type="hit", range=self:getTalentRange(t)}
 			local x, y, target = self:getTarget(tg)
-			if not x or not y or not target then return nil end
-			if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+			if not target or not self:canProject(tg, x, y) then return nil end
 
 			local nb = 0
 			for eff_id, p in pairs(target.tmp) do
@@ -150,11 +155,11 @@ newTalent{
 	requires_target = true,
 	no_energy = true,
 	tactical = { ATTACK = {NATURE = 1} },
+	range = 1,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local mod = (100 + self:combatTalentStatDamage(t, "cun", 40, 250)) / 100
 		for eff_id, p in pairs(target.tmp) do
@@ -442,4 +447,3 @@ newTalent{
 		format(damDesc(self, DamageType.NATURE, t.getDOT(self, t)), t.getDuration(self, t), t.getEffect(self, t))
 	end,
 }
-

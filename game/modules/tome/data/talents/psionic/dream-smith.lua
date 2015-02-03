@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ function useDreamHammer(self)
 
 		wil_attack = true,
 		damrange = 1.5,
-		physspeed = 1, 
+		physspeed = 1,
 		dam = 16,
 		apr = 0,
 		atk = 0,
@@ -55,10 +55,11 @@ newTalent{
 	name = "Dream Smith's Hammer",
 	short_name = "DREAM_HAMMER",
 	type = {"psionic/dream-smith", 1},
-	points = 5, 
+	points = 5,
 	require = psi_wil_req1,
 	cooldown = 6,
 	psi = 5,
+	range = 1,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.4, 2.1) end,
@@ -66,14 +67,14 @@ newTalent{
 	getBaseAtk = function(self, t) return self:combatTalentMindDamage(t, 0, 20) end,
 	getBaseApr = function(self, t) return self:combatTalentMindDamage(t, 0, 20) end,
 	getBaseCrit = function(self, t) return self:combatTalentMindDamage(t, 0, 20) end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, useDreamHammer(self), nil, t.getDamage(self, t))
 		game.level.map:particleEmitter(target.x, target.y, 1, "dreamhammer", {tile="shockbolt/object/dream_hammer", tx=target.x, ty=target.y, sx=self.x, sy=self.y})
-		
+
 		-- Reset Dream Smith talents
 		if hit then
 			local trigger_discharge = false
@@ -123,7 +124,7 @@ newTalent{
 newTalent{
 	name = "Hammer Toss",
 	type = {"psionic/dream-smith", 2},
-	points = 5, 
+	points = 5,
 	require = psi_wil_req2,
 	cooldown = 8,
 	psi = 10,
@@ -150,7 +151,7 @@ newTalent{
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
-		
+
 		print("[Dream Hammer Throw] Projection from", self.x, self.y, "to", x, y)
 		self:projectile(tg, x, y, function(px, py, tg, self)
 			local tmp_target = game.level.map(px, py, engine.Map.ACTOR)
@@ -172,7 +173,7 @@ newTalent{
 				end)
 			end
 		end)
-		
+
 		game:playSoundNear(self, "talents/warp")
 		return true
 	end,
@@ -187,7 +188,7 @@ newTalent{
 newTalent{
 	name = "Dream Crusher",
 	type = {"psionic/dream-smith", 3},
-	points = 5, 
+	points = 5,
 	require = psi_wil_req3,
 	cooldown = 12,
 	psi = 10,
@@ -197,14 +198,15 @@ newTalent{
 	getMasteryDamage = function(self, t) return self:getTalentLevel(t) * 10 end,
 	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 2 end,
 	getStun = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, useDreamHammer(self), nil, t.getDamage(self, t))
 		game.level.map:particleEmitter(target.x, target.y, 1, "dreamhammer", {tile="shockbolt/object/dream_hammer", tx=target.x, ty=target.y, sx=self.x, sy=self.y})
-		
+
 		-- Try to stun !
 		if hit then
 			if target:canBe("stun") then
@@ -225,7 +227,7 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local power = t.getMasteryDamage(self, t)
 		local percent = t.getPercentInc(self, t)
-		local stun = t.getStun(self, t)		
+		local stun = t.getStun(self, t)
 		return ([[Crush your enemy with your Dream Hammer, inflicting %d%% weapon damage.  If the attack hits, the target is stunned for %d turns.
 		Stun chance improves with your Mindpower.  Learning this talent increases your Physical Power for Dream Hammer damage calculations by %d and all damage with Dream Hammer attacks by %d%%.
 		]]):format(damage * 100, stun, power, percent * 100)
@@ -235,7 +237,7 @@ newTalent{
 newTalent{
 	name = "Forge Echoes",
 	type = {"psionic/dream-smith", 4},
-	points = 5, 
+	points = 5,
 	require = psi_wil_req4,
 	cooldown = 24,
 	psi = 20,
@@ -247,14 +249,14 @@ newTalent{
 	end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getProject = function(self, t) return self:combatTalentMindDamage(t, 10, 50) end,
+	range = 1,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, useDreamHammer(self), nil, t.getDamage(self, t))
 		game.level.map:particleEmitter(target.x, target.y, 1, "dreamhammer", {tile="shockbolt/object/dream_hammer", tx=target.x, ty=target.y, sx=self.x, sy=self.y})
-		
+
 		-- Forge Echoe
 		if hit then
 			local tg = self:getTalentTarget(t)

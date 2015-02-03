@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ newEntity{ base = "BASE_NPC_RITCH",
 }
 
 newEntity{ base = "BASE_NPC_RITCH",
-	name = "ritch hive mother", color=colors.light_RED,
+	name = "ritch hive mother", color=colors.LIGHT_RED,
 	level_range = {32, nil}, exp_worth = 1,
 	rarity = 4,
 	max_life = 250,

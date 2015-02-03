@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -62,6 +62,7 @@ struct s_particles_type {
 	bool alive;
 	bool i_want_to_die;
 	bool init;
+	bool recompile;
 
 	// R/W only by thread
 	int base;

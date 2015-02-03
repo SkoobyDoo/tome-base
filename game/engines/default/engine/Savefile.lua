@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,10 +77,10 @@ end
 function _M:delete()
 	for i, f in ipairs(fs.list(self.save_dir)) do
 		fs.delete(self.save_dir..f)
-		if core.steam then core.steam.deleteFile(self.save_dir..f) end
+		if util.steamCanCloud() then core.steam.deleteFile(self.save_dir..f) end
 	end
 	fs.delete(self.save_dir)
-	if core.steam then
+	if util.steamCanCloud() then
 		local namespace = core.steam.getFileNamespace()
 		local list = core.steam.listFilesStartingWith(namespace..self.save_dir)
 		core.steam.setFileNamespace("")
@@ -243,7 +243,7 @@ function _M:saveGame(game, no_dialog)
 	f:write(("cheat = %s\n"):format(game:isTainted() and "true" or "false"))
 	f:write(("description = %q\n"):format(desc.description))
 	f:close()
-	if core.steam then core.steam.writeFile(self.save_dir.."desc.lua") end
+	if util.steamCanCloud() then core.steam.writeFile(self.save_dir.."desc.lua") end
 
 	-- TODO: Replace this with saving quickhotkeys to the profile.
 	-- Add print_doable_table to utils.lua as table.print_doable?
@@ -367,7 +367,8 @@ function _M:saveEntity(e, no_dialog)
 end
 
 local function resolveSelf(o, base, allow_object)
-	if o.__CLASSNAME and not allow_object then return end
+	-- we check both to ensure compatibility with old saves; including world.teaw which is vital to not make everything explode
+	if (o.__ATOMIC or o.__CLASSNAME) and not allow_object then return end
 
 	local change = {}
 	for k, e in pairs(o) do
@@ -404,7 +405,7 @@ end
 
 --- Loads a world
 function _M:loadWorld()
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadWorld())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -435,7 +436,7 @@ end
 
 --- Loads a world
 function _M:loadWorldSize()
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadWorld())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -454,7 +455,7 @@ end
 
 --- Loads a game
 function _M:loadGame()
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadGame())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -488,7 +489,7 @@ end
 
 --- Loads a game
 function _M:loadGameSize()
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadGame())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -507,7 +508,7 @@ end
 
 --- Loads a zone
 function _M:loadZone(zone)
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadZone(zone)) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadZone(zone)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadZone(zone))
 	if not path or path == "" then return false end
 
@@ -546,7 +547,7 @@ end
 
 --- Loads a level
 function _M:loadLevel(zone, level)
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadLevel(zone, level)) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadLevel(zone, level)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadLevel(zone, level))
 	if not path or path == "" then return false end
 
@@ -583,7 +584,7 @@ end
 
 --- Loads an entity
 function _M:loadEntity(name)
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadEntity(name)) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadEntity(name)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadEntity(name))
 	if not path or path == "" then return false end
 
@@ -637,7 +638,7 @@ end
 
 --- Checks for existence
 function _M:check()
-	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
+	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	return fs.exists(self.save_dir..self:nameLoadGame())
 end
 

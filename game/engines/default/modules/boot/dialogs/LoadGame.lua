@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,13 +26,14 @@ local Textzone = require "engine.ui.Textzone"
 local Separator = require "engine.ui.Separator"
 local Checkbox = require "engine.ui.Checkbox"
 local Savefile = require "engine.Savefile"
+local Downloader = require "engine.dialogs.Downloader"
 
 module(..., package.seeall, class.inherit(Dialog))
 
-function _M:init()
+function _M:init(force_compat)
 	Dialog.init(self, "Load Game", game.w * 0.8, game.h * 0.8)
 
-	self.c_compat = Checkbox.new{default=false, width=math.floor(self.iw / 3 - 40), title="Show older versions", on_change=function() self:switch() end}
+	self.c_compat = Checkbox.new{default=force_compat, width=math.floor(self.iw / 3 - 40), title="Show older versions", on_change=function() self:switch() end}
 	self.c_force_addons = Checkbox.new{default=false, width=math.floor(self.iw / 3 - 40), title="Ignore unloadable addons"}
 	self.c_play = Button.new{text="  Play!  ", fct=function(text) self:playSave() end}
 	self.c_delete = Button.new{text="Delete", fct=function(text) self:deleteSave() end}
@@ -80,7 +81,7 @@ function _M:init()
 end
 
 function _M:generateList()
-	local list = Module:listSavefiles()
+	local list = Module:listSavefiles(self.c_compat.checked)
 	self.tree = {}
 	local found = false
 	for i = #list, 1, -1 do
@@ -92,6 +93,7 @@ function _M:generateList()
 
 		for j, save in ipairs(m.savefiles) do
 			local mod_string = ("%s-%d.%d.%d"):format(m.short_name, save.module_version and save.module_version[1] or -1, save.module_version and save.module_version[2] or -1, save.module_version and save.module_version[3] or -1)
+			save.module_string = mod_string
 			local mod = list[mod_string]
 			if not mod and self.c_compat.checked and m.versions and m.versions[1] then mod = m.versions[1] end
 			if mod and save.loadable then
@@ -172,10 +174,10 @@ function _M:innerDisplay(x, y, nb_keyframes)
 	s[1]:toScreenFull(x + self.ix + self.iw - self.c_desc.w + 10, y + self.ih - h - 20, w, h, s[2] * w / s.w, s[3] * h / s.h)
 end
 
-function _M:playSave()
+function _M:playSave(ignore_mod_compat)
 	if not self.save_sel then return end
 
-	if engine.version_compare(self.save_sel.module_version, {1, 2, 0}) == "lower" then
+	if self.save_sel.module == "tome" and engine.version_compare(self.save_sel.module_version, {1, 2, 0}) == "lower" then
 		Dialog:yesnoLongPopup("Incompatible savefile", [[Due to huge changes in 1.2.0 all previous savefiles will not work with it.
 This savefile requires a game version lower than 1.2.0 and thus can not be loaded.
 
@@ -186,6 +188,18 @@ We apologize for the annoyance, most of the time we try to keep compatibility bu
 				util.browserOpenUrl("http://te4.org/download", {webview=true, steam=true})
 			end end, "Go to download in your browser", "Cancel"
 		)
+		return
+	end
+
+	if not ignore_mod_compat and self.save_sel.module_string ~= self.save_sel.mod.version_string then
+		Dialog:yesnocancelLongPopup("Original game version not found", "This savefile was created with game version %s. You can try loading it with the current version if you wish or download the data files of the old version to ensure compatibility (this is a big download but only required once).", 500, function(ret, cancel)
+			if cancel then return end
+			if ret then
+				self:installOldGame(self.save_sel.module_string)
+			else
+				self:playSave(true)
+			end
+		end, "Install old data", "Run with newer version", "Cancel", true)
 		return
 	end
 
@@ -218,4 +232,53 @@ function _M:deleteSave()
 			game:replaceDialog(self, d)
 		end
 	end, "Delete", "Cancel")
+end
+
+function _M:installOldGame(version_string)
+	if not core.webview then return end
+	print("[OLD MODULE] checking for install", version_string)
+
+	local dls = {}
+	-- Later on we can request the server for a list, but heh
+	if version_string == "tome-1.2.5" then
+		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
+		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
+		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
+	end
+
+	if #dls == 0 then
+		Dialog:simplePopup("Old game data", "No data available for this game version.")
+		return
+	end
+
+	local co co = coroutine.create(function()
+	local all_ok = true
+	for i, dl in ipairs(dls) do
+		local modfile = "/modules/"..dl.name
+		print("[OLD MODULE] download file from", dl.url, "to", modfile)
+		local d = Downloader.new{title="Downloading old game data: #LIGHT_GREEN#"..dl.name, co=co, dest=modfile..".tmp", url=dl.url, allow_downloads={modules=true}}
+		local ok = d:start()
+		if ok then
+			local wdir = fs.getWritePath()
+			local _, _, dir, name = modfile:find("(.+)/([^/]+)$")
+			if dir then
+				fs.setWritePath(fs.getRealPath(dir))
+				fs.delete(name)
+				fs.rename(name..".tmp", name)
+				fs.setWritePath(wdir)
+			end
+		else all_ok = false
+		end
+	end
+	if all_ok then Dialog:simplePopup("Old game data", "Old game data for "..version_string.." correctly installed. You can now play.") self:regen()
+	else Dialog:simplePopup("Old game data", "Failed to install.") end
+	end)
+	print(coroutine.resume(co))
+end
+
+function _M:regen()
+	local d = new(self.c_compat.checked)
+	d.__showup = false
+	game:replaceDialog(self, d)
+	self.next_dialog = d
 end

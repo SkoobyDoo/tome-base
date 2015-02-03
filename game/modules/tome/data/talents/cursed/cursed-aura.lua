@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 local Object = require "engine.Object"
+local Entity = require "engine.Entity"
 local Dialog = require "engine.ui.Dialog"
 
 local curses_detrimental
@@ -71,18 +72,24 @@ newTalent{
 		if item.curse then return end
 		if not t.canCurseItem(self, t, item) then return end
 
+		local curse
 		-- apply the curse
 		if item.define_as == "CLOAK_DECEPTION" then
 			-- cloak of deception is always Corpses..
-			item.curse = self.EFF_CURSE_OF_CORPSES
+			curse = self.EFF_CURSE_OF_CORPSES
 		else
 			local curses = t.getCurses(self, t)
-			item.curse = rng.table(curses)
+			curse = rng.table(curses)
 		end
 
-		local def = self.tempeffect_def[item.curse]
-		item.special = true
-		item.add_name = (item.add_name or "").." ("..def.short_desc..")"
+		local def = self.tempeffect_def[curse]
+		local ego = Entity.new{
+			name = "curse",
+			display_string = " ("..def.short_desc..")",
+			curse = curse,
+			fake_ego = true, unvault_ego = true,
+		}
+		game.zone:applyEgo(item, ego, "object")
 	end,
 	-- curses all items on the floor
 	curseFloor = function(self, t, x, y)
@@ -378,22 +385,10 @@ newTalent{
 		if game.level.map(x, y, Map.ACTOR) or game.level.map:checkEntity(x, y, game.level.map.TERRAIN, "block_move") then return nil end
 
 		-- select the item
-		local d = self:showInventory("Which weapon will be your sentry?", inven,
-			function(o)
-				return o.type == "weapon"
-			end, nil)
-				d.action = function(o, item)
-				d.used_talent = true
-				d.selected_object = o
-				d.selected_item = item
-
-				return false
-			end
-
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent, self.selected_object, d.selected_item) end
-		local used_talent, o, item = coroutine.yield()
-		if not used_talent then return nil end
+		local d = self:showInventory("Which weapon will be your sentry?", inven, function(o) return o.type == "weapon" end, nil)
+		d.action = function(o, item) self:talentDialogReturn(true, o, item) return false end
+		local ret, o, item = self:talentDialog(d)
+		if not ret then return nil end
 
 		local result = self:removeObject(inven, item)
 
@@ -480,6 +475,7 @@ newTalent{
 			if o.archery == "bow" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="arrow"}, nil, true)
 			elseif o.archery == "sling" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="shot"}, nil, true)
 			end
+			qo.no_drop = true
 			if qo then sentry:wearObject(qo, true, false) end
 		end
 

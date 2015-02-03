@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -183,7 +183,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 			for di = 1, #citem.item._dduids do sub_es[#sub_es+1] = citem.item._dduids[di].e end
 
 			if citem.url and button == "left" and event == "button" then
-				util.browserOpenUrl(citem.url)
+				util.browserOpenUrl(citem.url, {is_external=true})
 			else
 				self.on_mouse(citem, sub_es, button, event, x, y, xrel, yrel, bx, by)
 			end

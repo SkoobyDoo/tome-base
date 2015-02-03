@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -134,6 +134,9 @@ function _M:getInscriptionData(name)
 		) * d.use_any_stat
 		d.inc_stat = max * d.use_stat_mod
 	elseif d.use_stat and d.use_stat_mod then d.inc_stat = self:getStat(d.use_stat) * d.use_stat_mod end
+	if self:attr("inscriptions_stat_multiplier") and d.inc_stat then
+		d.inc_stat = d.inc_stat * (1 + self.inscriptions_stat_multiplier)
+	end
 	return d
 end
 

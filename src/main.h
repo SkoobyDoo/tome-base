@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -62,6 +62,8 @@ extern bool safe_mode;
 extern bool fbo_active;
 extern bool multitexture_active;
 extern long total_keyframes;
+extern bool anims_paused;
+extern int frame_tick_paused_time;
 extern int cur_frame_tick;
 extern int g_argc;
 extern char **g_argv;

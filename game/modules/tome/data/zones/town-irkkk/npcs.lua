@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ newEntity{ base = "BASE_NPC_IRKKK_TOWN",
 
 newEntity{ base = "BASE_NPC_IRKKK_TOWN",
 	name = "yeek psionic", color=colors.YELLOW,
-	desc = [[You can literaly feel the mental energies emited by this yeek.]],
+	desc = [[You can literaly feel the mental energies emitted by this yeek.]],
 	level_range = {1, nil}, exp_worth = 1,
 	rarity = 3,
 	max_life = resolvers.rngavg(50,60),

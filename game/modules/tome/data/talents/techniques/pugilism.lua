@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -74,6 +74,9 @@ newTalent{
 	message = "@Source@ throws two quick punches.",
 	tactical = { ATTACK = { weapon = 2 } },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 0.8) + getStrikingStyle(self, dam) end,
 	-- Learn the appropriate stance
 	on_learn = function(self, t)
@@ -86,11 +89,14 @@ newTalent{
 			self:unlearnTalent(self.T_STRIKING_STANCE)
 		end
 	end,
+	-- Called by Attack to see if it wants to use this talent.
+	can_alternate_attack = function(self, t)
+		return self:isTalentActive(self.T_STRIKING_STANCE) and not self:isTalentCoolingDown(t)
+	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- force stance change
 		if target and not self:isTalentActive(self.T_STRIKING_STANCE) then
@@ -130,7 +136,6 @@ newTalent{
 		end
 
 		return true
-
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
@@ -151,6 +156,8 @@ newTalent{
 	--cooldown = function(self, t) return math.ceil(12 * getRelentless(self, cd)) end,
 	cooldown = 8,
 	stamina = 12,
+	is_melee = true,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
 	range = function(self, t) return math.ceil(2 + self:combatTalentScale(t, 2.2, 4.3)) end, -- being able to use this over rush without massive investment is much more fun
 	chargeBonus = function(self, t, dist) return self:combatScale(dist, 0.15, 1, 0.50, 5) end,
 	message = "@Source@ lashes out with a spinning backhand.",
@@ -159,10 +166,9 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.7) + getStrikingStyle(self, dam) end,
 	on_pre_use = function(self, t) return not self:attr("never_move") end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- bonus damage for charging
 		local charge = t.chargeBonus(self, t, (core.fov.distance(self.x, self.y, x, y) - 1))
@@ -247,7 +253,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Axe Kick", 
+	name = "Axe Kick",
 	type = {"technique/pugilism", 3},
 	require = techs_dex_req3,
 	points = 5,
@@ -259,15 +265,17 @@ newTalent{
 	getDuration = function(self, t)
 		return self:combatTalentLimit(t, 5, 1, 4)
 	end,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	message = "@Source@ raises their leg and snaps it downward in a devastating axe kick.",
 	tactical = { ATTACK = { weapon = 2 } },
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 2) + getStrikingStyle(self, dam) end, -- low damage scaling, investment gets the extra CP
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- breaks active grapples if the target is not grappled
 		if not target:isGrappled(self) then
@@ -275,13 +283,13 @@ newTalent{
 		end
 
 		local hit1 = false
-		
+
 		hit1 = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hit1 and target:canBe("confusion") then
 			target:setEffect(target.EFF_DELIRIOUS_CONCUSSION, t.getDuration(self, t), {})
 		end
-		
+
 		-- build combo points
 		if hit1 then
 			self:buildCombo()
@@ -309,12 +317,14 @@ newTalent{
 	message = "@Source@ lashes out with a flurry of fists.",
 	tactical = { ATTACK = { weapon = 2 } },
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.3, 1) + getStrikingStyle(self, dam) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- breaks active grapples if the target is not grappled
 		if not target:isGrappled(self) then

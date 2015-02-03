@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,6 +28,9 @@ newTalent{
 	tactical = { ESCAPE = 1, ATTACK = { weapon = 0.5 } },
 	require = techs_dex_req1,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1) end,
 	getDist = function(self, t) return math.ceil(self:combatTalentScale(t, 1.2, 3.3)) end,
 	on_pre_use = function(self, t)
@@ -35,10 +38,9 @@ newTalent{
 		return true
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hitted then
@@ -110,4 +112,3 @@ newTalent{
 		format(t.incspeed(self, t)*100,t.CDreduce(self, t))
 	end,
 }
-

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ newTalent{
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), min_range=2}
 	end,
+	is_melee = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.6) end,
 	tactical = { DEFEND = { knockback = 2 }, DISABLE = { knockback = 1 } },
 	action = function(self, t)
@@ -43,8 +44,7 @@ newTalent{
 		game.target.source_actor = self
 		local x, y, target = self:getTarget(tg)
 		game.target.source_actor = olds
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		if self.ai_target then self.ai_target.target = target end
 
@@ -130,7 +130,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[The golem taunts targets in a radius of %d, forcing them to attack it.]]):format(self:getTalentRadius(t)) 
+		return ([[The golem taunts targets in a radius of %d, forcing them to attack it.]]):format(self:getTalentRadius(t))
 	end,
 }
 
@@ -146,16 +146,17 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.6) end,
 	getPinDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	tactical = { ATTACK = { PHYSICAL = 0.5 }, DISABLE = { pin = 2 } },
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
 		if self:attr("never_move") then game.logPlayer(self, "Your golem cannot do that currently.") return end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local olds = game.target.source_actor
 		game.target.source_actor = self
 		local x, y, target = self:getTarget(tg)
 		game.target.source_actor = olds
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		if self.ai_target then self.ai_target.target = target end
 
@@ -233,8 +234,7 @@ newTalent{
 		game.target.source_actor = self
 		local x, y, target = self:getTarget(tg)
 		game.target.source_actor = olds
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		if core.fov.distance(self.x, self.y, x, y) > 1 then
 			local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end

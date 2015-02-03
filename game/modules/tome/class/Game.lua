@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ local Astar = require "engine.Astar"
 local DirectPath = require "engine.DirectPath"
 local Shader = require "engine.Shader"
 local HighScores = require "engine.HighScores"
+local FontPackage = require "engine.FontPackage"
 
 local NicerTiles = require "mod.class.NicerTiles"
 local GameState = require "mod.class.GameState"
@@ -84,6 +85,7 @@ function _M:init()
 
 	self.visited_zones = {}
 	self.tiles_attachements = {}
+	self.tiles_facing = {}
 end
 
 function _M:run()
@@ -100,14 +102,14 @@ function _M:runReal()
 
 	self.uiset:activate()
 
-	local flysize = ({normal=14, small=12, big=16})[config.settings.tome.fonts.size]
+	local flyfont, flysize = FontPackage:getFont("flyer")
 	self.tooltip = Tooltip.new(self.uiset.init_font_mono, self.uiset.init_size_mono, {255,255,255}, {30,30,30,230})
 	self.tooltip2 = Tooltip.new(self.uiset.init_font_mono, self.uiset.init_size_mono, {255,255,255}, {30,30,30,230})
-	self.flyers = FlyingText.new("/data/font/INSULA__.ttf", flysize, "/data/font/INSULA__.ttf", flysize + 3)
+	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
 	self.flyers:enableShadow(0.6)
 	game:setFlyingText(self.flyers)
 
-	self.bignews = BigNews.new("/data/font/DroidSansMono.ttf", 30)
+	self.bignews = BigNews.new(FontPackage:getFont("bignews"))
 
 	self.nicer_tiles = NicerTiles.new()
 
@@ -148,14 +150,14 @@ function _M:runReal()
 	end)
 
 	-- Create the map scroll text overlay
-	local lfont = core.display.newFont("/data/font/DroidSans.ttf", 30)
+	local lfont = FontPackage:get("bignews", true)
 	lfont:setStyle("bold")
 	local s = core.display.drawStringBlendedNewSurface(lfont, "<Scroll mode, press keys to scroll, caps lock to exit>", unpack(colors.simple(colors.GOLD)))
 	lfont:setStyle("normal")
 	self.caps_scroll = {s:glTexture()}
 	self.caps_scroll.w, self.caps_scroll.h = s:getSize()
 
-	self.zone_font = core.display.newFont("/data/font/DroidSans.ttf", 12)
+	self.zone_font = FontPackage:get("zone")
 
 	self.inited = true
 
@@ -268,7 +270,7 @@ function _M:newGame()
 			self.paused = true
 			print("[PLAYER BIRTH] resolved!")
 			local birthend = function()
-				local d = require("engine.dialogs.ShowText").new("Welcome to ToME", "intro-"..self.player.starting_intro, {name=self.player.name}, nil, nil, function()
+				local d = require("engine.dialogs.ShowText").new("Welcome to #LIGHT_BLUE#Tales of Maj'Eyal", "intro-"..self.player.starting_intro, {name=self.player.name}, nil, nil, function()
 					self.player:resetToFull()
 					self.player:registerCharacterPlayed()
 					self.player:onBirth(birth)
@@ -442,6 +444,50 @@ function _M:computeAttachementSpots()
 	self:computeAttachementSpotsFromTable(t)
 end
 
+function _M:computeFacingsFromTable(ta)
+	local base = ta.default_base or 64
+	local res = { }
+
+	for tile, data in pairs(ta.tiles or {}) do
+		res[tile] = data
+	end
+
+	for race, data in pairs(ta.dolls or {}) do
+		local base = data.base or base
+		for sex, d in pairs(data) do if sex ~= "base" then
+			local t = {}
+			res["dolls_"..race.."_"..sex] = d
+		end end
+	end
+
+	self.tiles_facing = res
+end
+
+function _M:computeFacings()
+	local t = {}
+	if fs.exists(Tiles.prefix.."facings.lua") then
+		print("Loading tileset facings from ", Tiles.prefix.."facings.lua")
+		local f, err = loadfile(Tiles.prefix.."facings.lua")
+		if not f then print("Loading tileset facings error", err)
+		else
+			setfenv(f, t)
+			local ok, err = pcall(f)
+			if not ok then print("Loading tileset facings error", err) end
+		end		
+	end
+	for _, file in ipairs(fs.list(Tiles.prefix)) do if file:find("^facings%-.+.lua$") then
+		print("Loading tileset facings from ", Tiles.prefix..file)
+		local f, err = loadfile(Tiles.prefix..file)
+		if not f then print("Loading tileset facings error", err)
+		else
+			setfenv(f, t)
+			local ok, err = pcall(f)
+			if not ok then print("Loading tileset facings error", err) end
+		end		
+	end end
+	self:computeFacingsFromTable(t)
+end
+
 function _M:setupDisplayMode(reboot, mode)
 	if not mode or mode == "init" then
 		local gfx = config.settings.tome.gfx
@@ -469,6 +515,7 @@ function _M:setupDisplayMode(reboot, mode)
 
 		-- Load attachement spots for this tileset
 		self:computeAttachementSpots()
+		self:computeFacings()
 
 		local do_bg = gfx.tiles == "ascii_full"
 		local _, _, tw, th = gfx.size:find("^([0-9]+)x([0-9]+)$")
@@ -515,8 +562,21 @@ function _M:setupDisplayMode(reboot, mode)
 		end
 		self:setupMiniMap()
 
-		self:createFBOs()		
+		self:createFBOs()
+
+		self:createMapGridLines()
 	end
+end
+
+function _M:createMapGridLines()
+	if not config.settings.tome.show_grid_lines then
+		Map:setupGridLines(0, 0, 0, 0, 0)
+	elseif self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then
+		Map:setupGridLines(6, unpack(colors.hex1alpha"d5990880"))
+	else
+		Map:setupGridLines(2, unpack(colors.hex1alpha"d5990880"))
+	end
+	if self.level and self.level.map then self.level.map:regenGridLines() end
 end
 
 function _M:createFBOs()
@@ -531,10 +591,15 @@ function _M:createFBOs()
 			underwater = Shader.new("main_fbo/underwater"),
 			motionblur = Shader.new("main_fbo/motionblur"),
 			blur = Shader.new("main_fbo/blur"),
+			timestop = Shader.new("main_fbo/timestop"),
+			line_grids = Shader.new("main_fbo/line_grids"),
+			gestures = Shader.new("main_fbo/gestures"),
 		}
 		self.posteffects_use = { self.fbo_shader.shad }
 		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end 
 		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
+
+		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
 	end
 	
 	if self.player then self.player:updateMainShader() end
@@ -553,10 +618,18 @@ function _M:createFBOs()
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
 end
 
-function _M:resizeMapViewport(w, h)
+function _M:resizeMapViewport(w, h, x, y)
+	x = x and math.floor(x) or Map.display_x
+	y = y and math.floor(y) or Map.display_y
 	w = math.floor(w)
 	h = math.floor(h)
 
+	-- convert from older faulty versions
+	if game.level and game.level.map and (rawget(game.level.map, "display_x") or rawget(game.level.map, "display_y")) then
+		game.level.map.display_x, game.level.map.display_y = nil, nil
+	end
+	Map.display_x = x
+	Map.display_y = y
 	Map.viewport.width = w
 	Map.viewport.height = h
 	Map.viewport.mwidth = math.floor(w / Map.tile_w)
@@ -611,7 +684,7 @@ Exploring level %d of %s.]]):format(
 		player.name, player.level, player.descriptor.subrace, player.descriptor.subclass,
 		player.descriptor.difficulty, player.descriptor.permadeath,
 		player.descriptor.world,
-		self.level.level, self.zone.name
+		self.level and self.level.level or "--", self.zone and self.zone.name or "--"
 		),
 	}
 end
@@ -632,6 +705,7 @@ Campaign: %s]]):format(
 end
 
 function _M:getStore(def)
+	print("[STORE] Grabbing", def)
 	return Store.stores_def[def]:clone()
 end
 
@@ -843,9 +917,10 @@ function _M:changeLevelReal(lev, zone, params)
 			end
 			if self.zone.tier1 then
 				if lev == 1 and game.state:tier1Killed(game.state.birth.start_tier1_skip or 3) then
-					lev = self.zone.max_level
 					self.zone.tier1 = nil
-					Dialog:simplePopup("Easy!", "This zone is so easy for you that you stroll to the last area with ease.")
+					Dialog:yesnoPopup("Easy!", "This zone is so easy for you that you stroll to the last area with ease.", function(ret) if ret then
+						game:changeLevel(self.zone.max_level)
+					end end, "Stroll", "Stay there")
 				end
 			end
 			if type(self.zone.save_per_level) == "nil" then self.zone.save_per_level = config.settings.tome.save_zone_levels and true or false end
@@ -1166,9 +1241,7 @@ function _M:updateZoneName()
 	end
 	if self.zone_name_s and self.old_zone_name == name then return end
 
-	self.zone_font:setStyle("bold")
 	local s = core.display.drawStringBlendedNewSurface(self.zone_font, name, unpack(colors.simple(colors.GOLD)))
-	self.zone_font:setStyle("normal")
 	self.zone_name_w, self.zone_name_h = s:getSize()
 	self.zone_name_s, self.zone_name_tw, self.zone_name_th = s:glTexture()
 	self.old_zone_name = name
@@ -1299,33 +1372,35 @@ end
 -- Note: There can be up to a 1 tick delay in displaying log information
 function _M:displayDelayedLogDamage()
 	if not self.uiset or not self.uiset.logdisplay then return end
-	for src, tgts in pairs(self.delayed_log_damage) do
-		for target, dams in pairs(tgts) do
-			if #dams.descs > 1 then
-				game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s (%0.0f total damage)%s.", table.concat(dams.descs, ", "), dams.total, dams.healing<0 and (" #LIGHT_GREEN#[%0.0f healing]#LAST#"):format(-dams.healing) or ""))
-			else
-				if dams.healing >= 0 then
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s damage.", table.concat(dams.descs, ", ")))
-				elseif src == target then
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# receives %s.", table.concat(dams.descs, ", ")))
+	for real_src, psrcs in pairs(self.delayed_log_damage) do
+		for src, tgts in pairs(psrcs) do
+			for target, dams in pairs(tgts) do
+				if #dams.descs > 1 then
+					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s (%0.0f total damage)%s.", table.concat(dams.descs, ", "), dams.total, dams.healing<0 and (" #LIGHT_GREEN#[%0.0f healing]#LAST#"):format(-dams.healing) or ""))
 				else
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Target# receives %s from #Source#.", table.concat(dams.descs, ", ")))
+					if dams.healing >= 0 then
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s damage.", table.concat(dams.descs, ", ")))
+					elseif src == target then
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# receives %s.", table.concat(dams.descs, ", ")))
+					else
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Target# receives %s from #Source#.", table.concat(dams.descs, ", ")))
+					end
 				end
-			end
-			local rsrc = src.resolveSource and src:resolveSource() or src
-			local rtarget = target.resolveSource and target:resolveSource() or target
-			local x, y = target.x or -1, target.y or -1
-			local sx, sy = self.level.map:getTileToScreen(x, y)
-			if target.dead then
-				if dams.tgtSeen and (rsrc == self.player or rtarget == self.player or self.party:hasMember(rsrc) or self.party:hasMember(rtarget)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), ("Kill (%d)!"):format(dams.total), {255,0,255}, true)
-					self:delayedLogMessage(target, nil,  "death", self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#{bold}##Source# killed #Target#!#{normal}#"))
-				end
-			elseif dams.total > 0 or dams.healing == 0 then
-				if dams.tgtSeen and (rsrc == self.player or self.party:hasMember(rsrc)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-3, -2), tostring(-math.ceil(dams.total)), {0,255,dams.is_crit and 200 or 0}, dams.is_crit)
-				elseif dams.tgtSeen and (rtarget == self.player or self.party:hasMember(rtarget)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -rng.float(-3, -2), tostring(-math.ceil(dams.total)), {255,dams.is_crit and 200 or 0,0}, dams.is_crit)
+				local rsrc = real_src.resolveSource and real_src:resolveSource() or real_src
+				local rtarget = target.resolveSource and target:resolveSource() or target
+				local x, y = target.x or -1, target.y or -1
+				local sx, sy = self.level.map:getTileToScreen(x, y)
+				if target.dead then
+					if dams.tgtSeen and (rsrc == self.player or rtarget == self.player or self.party:hasMember(rsrc) or self.party:hasMember(rtarget)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), ("Kill (%d)!"):format(dams.total), {255,0,255}, true)
+						self:delayedLogMessage(target, nil,  "death", self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#{bold}##Source# killed #Target#!#{normal}#"))
+					end
+				elseif dams.total > 0 or dams.healing == 0 then
+					if dams.tgtSeen and (rsrc == self.player or self.party:hasMember(rsrc)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-3, -2), tostring(-math.ceil(dams.total)), {0,255,dams.is_crit and 200 or 0}, dams.is_crit)
+					elseif dams.tgtSeen and (rtarget == self.player or self.party:hasMember(rtarget)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -rng.float(-3, -2), tostring(-math.ceil(dams.total)), {255,dams.is_crit and 200 or 0,0}, dams.is_crit)
+					end
 				end
 			end
 		end
@@ -1338,12 +1413,11 @@ end
 -- log and collate combat damage for later display with displayDelayedLogDamage
 function _M:delayedLogDamage(src, target, dam, desc, crit)
 	if not target or not src then return end
-	src = src.__project_source or src -- assign message to indirect damage source if available
+	local psrc = src.__project_source or src -- assign message to indirect damage source if available
 	local visible, srcSeen, tgtSeen = self:logVisible(src, target)
 	if visible then -- only log damage the player is aware of
-		self.delayed_log_damage[src] = self.delayed_log_damage[src] or {}
-		self.delayed_log_damage[src][target] = self.delayed_log_damage[src][target] or {total=0, healing=0, descs={}}
-		local t = self.delayed_log_damage[src][target]
+		local t = table.getTable(self.delayed_log_damage, src, psrc, target)
+		table.update(t, {total=0, healing=0, descs={}})
 		t.descs[#t.descs+1] = desc
 		if dam>=0 then
 			t.total = t.total + dam
@@ -1362,14 +1436,14 @@ function _M:onTurn()
 		if self.zone.on_turn then self.zone:on_turn() end
 	end
 
+	-- Process overlay effects
+	self.level.map:processEffects(self.turn % 10 ~= 0)
+
 	-- The following happens only every 10 game turns (once for every turn of 1 mod speed actors)
 	if self.turn % 10 ~= 0 then return end
 
 	-- Day/Night cycle
 	if self.level.data.day_night then self.state:dayNightCycle() end
-
-	-- Process overlay effects
-	self.level.map:processEffects()
 
 	if not self.day_of_year or self.day_of_year ~= self.calendar:getDayOfYear(self.turn) then
 		self.log(self.calendar:getTimeDate(self.turn))
@@ -1393,6 +1467,14 @@ function _M:displayMap(nb_keyframes)
 		local changed = map.changed
 		if changed then self:updateFOV() end
 
+		-- Ugh I dont like that but .. special case for timestop, for now it'll do!
+		if self.player and self.player:attr("timestopping") and self.player.x and self.posteffects and self.posteffects.timestop and self.posteffects.timestop.shad then
+			self.posteffects.timestop.shad:paramNumber2("texSize", map.viewport.width, map.viewport.height)
+			local sx, sy = map:getTileToScreen(self.player.x, self.player.y)
+			self.posteffects.timestop.shad:paramNumber2("playerPos", sx + map.tile_w / 2, sy + map.tile_h / 2)
+			self.posteffects.timestop.shad:paramNumber("tick_real", core.game.getTime())
+		end
+
 		-- Display using Framebuffer, so that we can use shaders and all
 		if self.fbo then
 			self.fbo:use(true)
@@ -1407,6 +1489,9 @@ function _M:displayMap(nb_keyframes)
 			self.fbo2:use(true)
 				self.fbo:toScreen(0, 0, map.viewport.width, map.viewport.height)
 				core.particles.drawAlterings()
+				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
+				map._map:toScreenLineGrids(map.display_x, map.display_y)
+				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
 				if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
 			self.fbo2:use(false, self.full_fbo)
 
@@ -1423,6 +1508,9 @@ function _M:displayMap(nb_keyframes)
 			if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 			if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
 			core.particles.drawAlterings()
+			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
+			map._map:toScreenLineGrids(map.display_x, map.display_y)
+			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
 			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(map.display_x, map.display_y, nb_keyframes) end
 		end
 
@@ -1436,7 +1524,8 @@ function _M:displayMap(nb_keyframes)
 
 		-- Mouse gestures
 		self.gestures:update()
-		self.gestures:display(map.display_x, map.display_y + map.viewport.height - self.gestures.font_h - 5)
+		-- self.gestures:display(map.display_x, map.display_y + map.viewport.height - self.gestures.font_h - 5)
+		self.gestures:display(map.display_x, map.display_y, nb_keyframes)
 
 		-- Inform the player that map is in scroll mode
 		if core.key.modState("caps") then
@@ -1558,6 +1647,7 @@ function _M:setupCommands()
 
 	-- Activate mouse gestures
 	self.gestures = Gestures.new("Gesture: ", self.key, true)
+	if self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
 
 	-- Helper function to not allow some actions on the wilderness map
 	local not_wild = function(f, bypass) return function(...) if self.zone and (not self.zone.wilderness or (bypass and bypass())) then f(...) else self.logPlayer(self.player, "You cannot do that on the world map.") end end end
@@ -1580,10 +1670,10 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			local o = game.zone:makeEntity(game.level, "object", {subtype="staff", random_object=true}, nil, true)
+			local o = game.zone:makeEntityByName(game.level, "object", "RIFT_SWORD", true)
 			if o then
 				o:identify(true)
-				game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y)
+				game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)
 			end
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
@@ -1850,6 +1940,7 @@ do return end
 			else
 				self.log("Displaying talents.")
 			end
+			if self.uiset.resizeIconsHotkeysToolbar then self.uiset:resizeIconsHotkeysToolbar() end
 		end,
 
 		SCREENSHOT = function() self:saveScreenshot() end,
@@ -2268,6 +2359,18 @@ function _M:setAllowedBuild(what, notify)
 	end
 
 	return true
+end
+
+function _M:unlockBackground(kind, name)
+	if not config.settings['unlock_background_'..kind] then
+		game.log("#ANTIQUE_WHITE#Splash screen unlocked: #GOLD#"..name)
+	end
+	config.settings['unlock_background_'..kind] = true
+	local save = {}
+	for k, v in pairs(config.settings) do if k:find("^unlock_background_") then
+		save[#save+1] = k.."=true"
+	end end
+	game:saveSettings("unlock_background", table.concat(save, "\n"))
 end
 
 function _M:playSoundNear(who, name)

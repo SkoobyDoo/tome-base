@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,8 +51,6 @@ function _M:generate()
 
 	local fw, fh = self.w, self.font_h + 6
 	self.fw, self.fh = fw, fh
-	if not self.surf then self.surf = core.display.newSurface(fw, fh) end
-	local s = self.surf
 
 	self.frame = self:makeFrame(nil, fw, fh)
 	self.frame_sel = self:makeFrame("ui/selector-sel", fw, fh)
@@ -60,11 +58,11 @@ function _M:generate()
 
 	if not self.h then self.h = self.nb_items * fh end
 
-	self.max_display = math.floor(self.h / fh)
+	self.max_display = math.min(self.max, math.floor(self.h / fh))
 
 	-- Draw the scrollbar
 	if self.scrollbar then
-		self.scrollbar = Slider.new{size=self.h - fh, max=self.max}
+		self.scrollbar = Slider.new{size=self.h - fh, max=self.max - 1}
 	end
 
 	-- Draw the list items
@@ -128,13 +126,11 @@ function _M:generate()
 end
 
 function _M:drawItem(item)
-	local s = self.surf
 	local color = item.color or {255,255,255}
 	local text = item[self.display_prop]
 
-	s:erase(0, 0, 0, 0)
-	s:drawColorStringBlended(self.font, text, 0, (self.fh - self.font_h) / 2, color[1], color[2], color[3], true, fw)
-	item._tex = {s:glTexture()}
+	item._tex = self:drawFontLine(self.font, text, self.fw)
+	item._tex_color = {color[1]/255, color[2]/255, color[3]/255}
 end
 
 function _M:select(i)
@@ -163,6 +159,7 @@ function _M:display(x, y, nb_keyframes)
 	local bx, by = x, y
 
 	local max = math.min(self.scroll + self.max_display - 1, self.max)
+	local cy = (self.fh - self.font_h) / 2
 	for i = self.scroll, max do
 		local item = self.list[i]
 		if not item then break end
@@ -178,13 +175,13 @@ function _M:display(x, y, nb_keyframes)
 				if item.focus_decay <= 0 then item.focus_decay = nil end
 			end
 		end
-		if self.text_shadow then item._tex[1]:toScreenFull(x+1 + self.frame_sel.b4.w, y+1, self.fw, self.fh, item._tex[2], item._tex[3], 0, 0, 0, self.text_shadow) end
-		item._tex[1]:toScreenFull(x + self.frame_sel.b4.w, y, self.fw, self.fh, item._tex[2], item._tex[3])
+		if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
+		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, item._tex_color[1], item._tex_color[2], item._tex_color[3], 1)
 		y = y + self.fh
 	end
 
 	if self.focused and self.scrollbar then
-		self.scrollbar.pos = self.sel
+		self.scrollbar.pos = self.sel - 1
 		self.scrollbar:display(bx + self.w - self.scrollbar.w, by, by + self.fh)
 	end
 end

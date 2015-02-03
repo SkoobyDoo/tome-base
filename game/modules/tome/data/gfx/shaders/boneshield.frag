@@ -14,7 +14,7 @@ vec4 Uberblend(vec4 col0, vec4 col1)
 //  return vec4((1.0 - col0.a) * (col1.rgb) + col0.a * (col1.rgb * col1.a + col0.rgb * (1.0 - col1.a)), min(1.0, col0.a + col1.a));
 //  return vec4((1.0 - col1.a) * (col0.rgb) + col1.a * (col1.rgb * col1.a + col0.rgb * (1.0 - col1.a)), min(1.0, col0.a + col1.a));
   return vec4(
-    (1.0 - col0.a) * (1.0 - col1.a) * (col0.rgb * col0.a + col1.rgb * col1.a) / (col0.a + col1.a + 1e-1) +
+    (1.0 - col0.a) * (1.0 - col1.a) * (col0.rgb * col0.a + col1.rgb * col1.a) / (col0.a + col1.a + 1e-2) +
     (1.0 - col0.a) * (0.0 + col1.a) * (col1.rgb) +
     (0.0 + col0.a) * (1.0 - col1.a) * (col0.rgb * (1.0 - col1.a) + col1.rgb * col1.a) +
     (0.0 + col0.a) * (0.0 + col1.a) * (col1.rgb),
@@ -67,7 +67,7 @@ void main(void)
 		intersections[spiralIndex].worldPoint.xy = pos;
 		intersections[spiralIndex].worldPoint.z = sin(spiralPhase);
 		intersections[spiralIndex].localPoint.y = clamp(0.5 + (length(pos) - baseRadius + spiralRadius * cos(spiralPhase) * (intensityAdjust * 0.2 + 1.0)) / spiralWidth, 0.0, 1.0);
-		intersections[spiralIndex].localPoint.x = (ang + float(spiralIndex) * 2.0 * pi / spiralsCount - tick * scrollingSpeed) / (pi * 2.0);
+		intersections[spiralIndex].localPoint.x = (ang + float(spiralIndex) * 2.0 * pi / chargesCount - tick * scrollingSpeed) / (pi * 2.0);
 	}
 
 	int i, j;

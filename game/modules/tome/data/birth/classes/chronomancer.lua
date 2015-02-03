@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@ newBirthDescriptor{
 	locked = function() return profile.mod.allow_build.chronomancer end,
 	locked_desc = "Some do not walk upon the straight road others follow. Seek the hidden paths outside the normal course of life.",
 	desc = {
-		"With one foot literally in the past and one in the future, Chronomancers manipulate the present at a whim and wield a power that only bows to nature's own need to keep the balance. The wake in spacetime they leave behind them makes their own Chronomantic abilites that much stronger and that much harder to control.  The wise Chronomancer learns to maintain the balance between his own thirst for cosmic power and the universe's need to flow undisturbed, for the hole he tears that amplifies his own abilities just may be the same hole that one day swallows him.",
+		"Exploiting a hole in the fabric of spacetime, Chronomancers learn to pull threads from other timelines into their own.",
+		"Pulling these threads creates tension and the harder they pull the more tension is produced.",
+		"Constantly they manage this tension, which they call Paradox, to avoid or control the anomalies they inevitably unleash on the world around them.",
 	},
 	descriptor_choices =
 	{
@@ -37,7 +39,7 @@ newBirthDescriptor{
 	copy = {
 		-- Chronomancers start in Point Zero
 		class_start_check = function(self)
-			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race ~= "Undead" and self.descriptor.race ~= "Dwarf" and self.descriptor.race ~= "Yeek") then
+			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race ~= "Undead" and self.descriptor.race ~= "Dwarf" and self.descriptor.race ~= "Yeek") and not self._forbid_start_override then
 				self.chronomancer_race_start_quest = self.starting_quest
 				self.default_wilderness = {"zone-pop", "angolwen-portal"}
 				self.starting_zone = "town-point-zero"
@@ -46,6 +48,7 @@ newBirthDescriptor{
 				self.faction = "keepers-of-reality"
 				self:learnTalent(self.T_TELEPORT_POINT_ZERO, true, nil, {no_unlearn=true})
 			end
+			self:triggerHook{"BirthStartZone:chronomancer"}
 		end,
 	},
 }
@@ -59,34 +62,43 @@ newBirthDescriptor{
 		"A Paradox Mage studies the very fabric of spacetime, learning not just to bend it but shape it and remake it.",
 		"Most Paradox Mages lack basic skills that others take for granted (like general fighting sense), but they make up for it through control of cosmic forces.",
 		"Paradox Mages start off with knowledge of all but the most complex Chronomantic schools.",
-		"Their most important stats are: Magic and Willpower",
+		"Their most important stats are: Magic, Constitution, and Willpower",
 		"#GOLD#Stat modifiers:",
-		"#LIGHT_BLUE# * +0 Strength, +0 Dexterity, +0 Constitution",
-		"#LIGHT_BLUE# * +5 Magic, +3 Willpower, +1 Cunning",
-		"#GOLD#Life per level:#LIGHT_BLUE# -4",
+		"#LIGHT_BLUE# * +0 Strength, +0 Dexterity, +2 Constitution",
+		"#LIGHT_BLUE# * +5 Magic, +2 Willpower, +0 Cunning",
+		"#GOLD#Life per level:#LIGHT_BLUE# +0",
 	},
 	power_source = {arcane=true},
 	random_rarity = 2,
-	stats = { mag=5, wil=3, cun=1, },
+	stats = { mag=5, wil=2, con=2, },
 	talents_types = {
-		["chronomancy/age-manipulation"]={true, 0.3},
-	--	["chronomancy/anomalies"]={true, 0},
-		["chronomancy/chronomancy"]={true, 0.3},
-		["chronomancy/energy"]={true, 0.3},
+		-- class
 		["chronomancy/gravity"]={true, 0.3},
 		["chronomancy/matter"]={true, 0.3},
-		["chronomancy/paradox"]={false, 0.3},
+		["chronomancy/spacetime-folding"]={true, 0.3},
 		["chronomancy/speed-control"]={true, 0.3},
-		["chronomancy/timeline-threading"]={false, 0.3},
 		["chronomancy/timetravel"]={true, 0.3},
+		
+		-- locked class
+		["chronomancy/flux"]={false, 0.3},
+		["chronomancy/spellbinding"]={false, 0.3},
+		["chronomancy/stasis"]={false, 0.3},
+		["chronomancy/timeline-threading"]={false, 0.3},
+
+		-- generic
+		["chronomancy/chronomancy"]={true, 0.3},
+		["chronomancy/fate-weaving"]={true, 0.3},
 		["chronomancy/spacetime-weaving"]={true, 0.3},
-		["cunning/survival"]={false, 0},
+
+		-- locked generic
+		["chronomancy/energy"]={false, 0.3},
+		["cunning/survival"]={false, 0},	
 	},
 	talents = {
-		[ActorTalents.T_STATIC_HISTORY] = 1,
+		[ActorTalents.T_TEMPORAL_BOLT] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
-		[ActorTalents.T_DUST_TO_DUST] = 1,
-		[ActorTalents.T_TURN_BACK_THE_CLOCK] = 1,
+		[ActorTalents.T_REPULSION_BLAST] = 1,
+		[ActorTalents.T_PRECOGNITION] = 1,
 	},
 	copy = {
 		max_life = 90,
@@ -94,9 +106,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 		},
-	},
-	copy_add = {
-		life_rating = -4,
 	},
 }
 
@@ -106,59 +115,68 @@ newBirthDescriptor{
 	locked = function() return profile.mod.allow_build.chronomancer_temporal_warden end,
 	locked_desc = "We preserve the past to protect the future. The hands of time are guarded by the arms of war.",
 	desc = {
-		"The Temporal Wardens have learned to blend archery, dual-weapon fighting, and chronomancy into a fearsome whole.",
-		"Through their use of the chronomantic arts, the Temporal Wardens seek to control the battlefield while peppering their foes with arrows or engaging in hand-to-hand combat.",
-		"Their study of chronomancy enables them to amplify their own physical and magical abilities, and to manipulate the speed of themselves and those around them.",
-		"Their most important stats are: Strength, Dexterity, Willpower, and Magic",
+		"Their lifelines braided, Temporal Wardens have learned to work with their other selves across multiple timelines.",
+		"Through their study of chronomancy, they learn to blend archery and duel-weapon fighting, seemlessly switching from one to the other.",
+		"Their most important stats are: Magic, Dexterity, Constitution, and Willpower",
 		"#GOLD#Stat modifiers:",
-		"#LIGHT_BLUE# * +2 Strength, +3 Dexterity, +0 Constitution",
-		"#LIGHT_BLUE# * +2 Magic, +2 Willpower, +0 Cunning",
-		"#GOLD#Life per level:#LIGHT_BLUE# +0",
+		"#LIGHT_BLUE# * +0 Strength, +2 Dexterity, +2 Constitution",
+		"#LIGHT_BLUE# * +3 Magic, +2 Willpower, +0 Cunning",
+		"#GOLD#Life per level:#LIGHT_BLUE# +2",
 	},
 	power_source = {technique=true, arcane=true},
 	random_rarity = 2,
-	stats = { str=2, wil=2, dex=3, mag=2},
+	stats = { con=2, wil=2, dex=3, mag=2},
 	talents_types = {
-		["technique/archery-bow"]={true, 0},
-		["technique/archery-utility"]={false, 0},
-		["technique/dualweapon-attack"]={true, 0},
-		["technique/dualweapon-training"]={false, 0},
-		["technique/combat-training"]={true, 0.1},
-		["cunning/survival"]={false, 0},
-		["chronomancy/chronomancy"]={true, 0.1},
-		["chronomancy/speed-control"]={true, 0.1},
-	--	["chronomancy/temporal-archery"]={true, 0.3},
-		["chronomancy/temporal-combat"]={true, 0.3},
-		["chronomancy/timetravel"]={false, 0},
-		["chronomancy/spacetime-weaving"]={true, 0},
+		-- class
+		["chronomancy/blade-threading"]={true, 0.3},
+		["chronomancy/bow-threading"]={true, 0.3},
+		["chronomancy/guardian"]={true, 0.3},
 		["chronomancy/spacetime-folding"]={true, 0.3},
+		["chronomancy/speed-control"]={true, 0.3},
+		["chronomancy/temporal-combat"]={true, 0.3},
+		
+		-- class locked
+		["chronomancy/stasis"]={false, 0.1},
+		["chronomancy/threaded-combat"]={false, 0.3},
+		["chronomancy/temporal-hounds"]={false, 0.3},
+		
+		-- generic
+		["technique/combat-training"]={true, 0.3},
+		["chronomancy/fate-weaving"]={true, 0.3},
+		["chronomancy/spacetime-weaving"]={true, 0.3},
+		
+		-- generic locked
+		["chronomancy/chronomancy"]={false, 0.1},
+		["cunning/survival"]={false, 0},
 	},
 	birth_example_particles = "temporal_focus",
 	talents = {
 		[ActorTalents.T_SHOOT] = 1,
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
-		[ActorTalents.T_DUAL_STRIKE] = 1,
-		[ActorTalents.T_CELERITY] = 1,
+		
+		[ActorTalents.T_WARP_BLADE] = 1,
+		[ActorTalents.T_THREADED_ARROW] = 1,
+		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
 		[ActorTalents.T_STRENGTH_OF_PURPOSE] = 1,
 	},
 	copy = {
 		max_life = 100,
 		resolvers.equipbirth{ id=true,
-			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000},
-			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},
-			{type="armor", subtype="light", name="rough leather armour", autoreq=true, ego_chance=-1000},
+			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
+			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
+			{type="armor", subtype="light", name="rough leather armour", autoreq=true, ego_chance=-1000}
 		},
 		resolvers.inventorybirth{ id=true, inven="QS_MAINHAND",
-			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
+			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000},
 		},
-		resolvers.inventorybirth{ id=true, inven="QS_QUIVER",
-			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
+		resolvers.inventorybirth{ id=true, inven="QS_OFFHAND",
+			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},	
 		},
 		resolvers.generic(function(e)
 			e.auto_shoot_talent = e.T_SHOOT
 		end),
 	},
 	copy_add = {
-		max_life = 25,
+		life_rating = 2,
 	},
 }

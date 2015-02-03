@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,13 +36,13 @@ newTalent{
 	end,
 	activate = function(self, t)
 		local ret = {}
-		
+
 		local boost = 1 + (self.enhance_meditate or 0)
 
 		local pt = (2 + self:combatTalentMindDamage(t, 20, 120) / 10) * boost
 		local save = (5 + self:combatTalentMindDamage(t, 10, 40)) * boost
 		local heal = (5 + self:combatTalentMindDamage(t, 12, 30)) * boost
-		
+
 		if self:knowTalent(self.T_EARTH_S_EYES) then
 			local te = self:getTalentFromId(self.T_EARTH_S_EYES)
 			self:talentTemporaryValue(ret, "esp_all", 1)
@@ -61,7 +61,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local boost = 1 + (self.enhance_meditate or 0)
-		
+
 		local pt = (2 + self:combatTalentMindDamage(t, 20, 120) / 10) * boost
 		local save = (5 + self:combatTalentMindDamage(t, 10, 40)) * boost
 		local heal = (5 + self:combatTalentMindDamage(t, 12, 30)) * boost
@@ -87,11 +87,11 @@ newTalent{ short_name = "NATURE_TOUCH",
 	requires_target = true,
 	tactical = { HEAL = 2 },
 	is_heal = true,
+	target = function(self, t) return {default_target=self, type="hit", nowarning=true, range=self:getTalentRange(t), first_target="friend"} end,
 	action = function(self, t)
-		local tg = {default_target=self, type="hit", nowarning=true, range=self:getTalentRange(t), first_target="friend"}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		if not target:attr("undead") then
 			target:attr("allow_on_heal", 1)
 			target:heal(self:mindCrit(20 + self:combatTalentMindDamage(t, 20, 500)), self)
@@ -146,6 +146,7 @@ newTalent{
 	cooldown = 50,
 	range = 10,
 	tactical = { BUFF = 2 },
+	fixed_cooldown = true,
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,
 	getMaxLevel = function(self, t) return self:getTalentLevel(t) end,
 	action = function(self, t)
@@ -154,8 +155,10 @@ newTalent{
 		local tids = {}
 		for tid, _ in pairs(self.talents_cd) do
 			local tt = self:getTalentFromId(tid)
-			if tt.type[2] <= maxlev and tt.type[1]:find("^wild%-gift/") then
-				tids[#tids+1] = tid
+			if not tt.fixed_cooldown then
+				if tt.type[2] <= maxlev and tt.type[1]:find("^wild%-gift/") then
+					tids[#tids+1] = tid
+				end
 			end
 		end
 		for i = 1, nb do
@@ -172,4 +175,3 @@ newTalent{
 		format(t.getTalentCount(self, t), t.getMaxLevel(self, t))
 	end,
 }
-

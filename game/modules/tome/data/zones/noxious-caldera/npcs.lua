@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -84,7 +84,8 @@ newEntity{ define_as = "MINDWORM",
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
 
 	on_die = function(self)
-		game.level.data.fumes_active = false
+		game.zone.fumes_active = false
+		game.level.turn_counter = nil
 		require("engine.ui.Dialog"):simplePopup("Fumes", "As Mindworm dies you can feel the fumes getting less poisonous for your mind.")
 	end,
 }

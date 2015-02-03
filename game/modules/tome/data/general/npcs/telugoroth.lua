@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -86,7 +86,15 @@ newEntity{
 
 	resists = { [DamageType.TEMPORAL] = 100, },
 
-	negative_status_effect_immune = 1,
+	no_breath = 1,
+	poison_immune = 1,
+	cut_immune = 1,
+	disease_immune = 1,
+	stun_immune = 1,
+	blind_immune = 1,
+	knockback_immune = 1,
+	confusion_immune = 1,
+	
 	not_power_source = {nature=true},
 }
 
@@ -100,7 +108,7 @@ newEntity{ base = "BASE_NPC_TELUGOROTH",
 	on_melee_hit = { [DamageType.TEMPORAL] = resolvers.mbonus(20, 10), },
 
 	resolvers.talents{
-		[Talents.T_TURN_BACK_THE_CLOCK]=3, -- At rank four this talent gets an extra bolt, no scaling
+		[Talents.T_TURN_BACK_THE_CLOCK]={base=3, every=10, max=7},
 	},
 }
 
@@ -115,7 +123,7 @@ newEntity{ base = "BASE_NPC_TELUGOROTH",
 	on_melee_hit = { [DamageType.TEMPORAL] = resolvers.mbonus(20, 10), },
 
 	resolvers.talents{
-		[Talents.T_TURN_BACK_THE_CLOCK]=3,
+		[Talents.T_TURN_BACK_THE_CLOCK]={base=3, every=10, max=7},
 		[Talents.T_ECHOES_FROM_THE_PAST]={base=3, every=10, max=7},
 	},
 	resolvers.sustains_at_birth(),
@@ -135,7 +143,7 @@ newEntity{ base = "BASE_NPC_TELUGOROTH",
 	ai = "tactical",
 
 	resolvers.talents{
-		[Talents.T_TURN_BACK_THE_CLOCK]=3,
+		[Talents.T_TURN_BACK_THE_CLOCK]={base=4, every=7},
 		[Talents.T_ECHOES_FROM_THE_PAST]={base=4, every=7},
 		[Talents.T_RETHREAD]={base=3, every=7},
 		[Talents.T_STOP]={base=4, every=7},
@@ -184,8 +192,8 @@ newEntity{ base = "BASE_NPC_TELUGOROTH",
 	talent_cd_reduction = {[Talents.T_DUST_TO_DUST]=-3},
 
 	resolvers.talents{
-		[Talents.T_DIMENSIONAL_STEP]={base=5, every=10, max=9},
 		[Talents.T_DUST_TO_DUST]={base=4, every=10, max=8},
+		[Talents.T_REALITY_SMEARING]={base=4, every=10, max=8},
 		[Talents.T_TEMPORAL_WAKE]={base=4, every=10, max=8},
 	},
 	resolvers.sustains_at_birth(),
@@ -213,10 +221,9 @@ newEntity{ base = "BASE_NPC_TELUGOROTH",
 	talent_cd_reduction = {[Talents.T_DUST_TO_DUST]=-3},
 
 	resolvers.talents{
-		[Talents.T_ANOMALY_TEMPORAL_STORM]=1,
+		[Talents.T_INDUCE_ANOMALY]=1,
 		[Talents.T_DUST_TO_DUST]={base=4, every=7},
-		[Talents.T_QUANTUM_SPIKE]={base=2, every=7},
-		[Talents.T_SWAP]={base=5, every=7},
+		[Talents.T_REALITY_SMEARING]={base=4, every=10, max=8},
 		[Talents.T_TEMPORAL_WAKE]={base=4, every=7},
 	},
 	resolvers.sustains_at_birth(),

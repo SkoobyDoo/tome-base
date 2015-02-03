@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,11 @@
 base_size = 32
 
 local nb = 0
+x = x or 0
+y = y or 0
+life = life or nil
+
+local first = true
 
 return {
 	blend_mode=additive and core.particles.BLEND_SHINY or nil,
@@ -29,11 +34,11 @@ return {
 
 	return {
 		trail = 0,
-		life = 100,
+		life = life or 100,
 		size = fs, sizev = 0, sizea = 0,
 
-		x = 0, xv = 0, xa = 0,
-		y = 0, yv = 0, ya = 0,
+		x = x * base_size, xv = 0, xa = 0,
+		y = y * base_size, yv = 0, ya = 0,
 		dir = 0, dirv = dirv, dira = 0,
 		vel = 0, velv = 0, vela = 0,
 
@@ -44,6 +49,7 @@ return {
 	}
 end, },
 function(self)
-	self.ps:emit(1)
+	if first or not life then self.ps:emit(1) end
+	first = false
 end,
 1, "particles_images/"..(img or "square"), true

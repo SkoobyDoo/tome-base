@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ function _M:init(adds)
 		{name = "Public chat", kind = "talk"},
 		{name = "Private whispers", kind = "whisper"},
 		{name = "Join/part messages", kind = "join"},
-		{name = "First time achievements (recommanded to keep them on)", kind = "achievement_first"},
-		{name = "Important achievements (recommanded to keep them on)", kind = "achievement_huge"},
+		{name = "First time achievements (recommended to keep them on)", kind = "achievement_first"},
+		{name = "Important achievements (recommended to keep them on)", kind = "achievement_huge"},
 		{name = "Other achievements", kind = "achievement_other"},
 	}
 	for i, l in ipairs(adds or {}) do list[#list+1] = l end

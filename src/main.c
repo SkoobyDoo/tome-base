@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@
 #define HEIGHT 600
 #define DEFAULT_IDLE_FPS (2)
 #define WINDOW_ICON_PATH ("/engines/default/data/gfx/te4-icon.png")
+#define JOY_DEADZONE 0.21
 
 int start_xpos = -1, start_ypos = -1;
 char *override_home = NULL;
@@ -60,6 +61,7 @@ char **g_argv;
 SDL_Window *window = NULL;
 SDL_Surface *windowIconSurface = NULL;
 SDL_GLContext maincontext; /* Our opengl context handle */
+SDL_Joystick* gamepad = NULL;
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
 static lua_State *L = NULL;
@@ -75,12 +77,14 @@ bool no_sound = FALSE;
 bool no_steam = FALSE;
 bool isActive = TRUE;
 bool tickPaused = FALSE;
+bool anims_paused = FALSE;
 int mouse_cursor_ox, mouse_cursor_oy;
 int mouse_drag_w = 32, mouse_drag_h = 32;
 int mouse_drag_tex = 0, mouse_drag_tex_ref = LUA_NOREF;
 int mousex = 0, mousey = 0;
 float gamma_correction = 1;
 int cur_frame_tick = 0;
+int frame_tick_paused_time = 0;
 /* The currently requested fps for the program */
 int requested_fps = 30;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
@@ -289,9 +293,12 @@ int event_filter(void *userdata, SDL_Event* event)
 	return 1;
 }
 
+#define MIN(a,b) ((a < b) ? a : b)
+#define MAX(a,b) ((a < b) ? b : a)
+
 extern SDL_Cursor *mouse_cursor;
 extern SDL_Cursor *mouse_cursor_down;
-void on_event(SDL_Event *event)
+bool on_event(SDL_Event *event)
 {
 	switch (event->type) {
 	case SDL_TEXTINPUT:
@@ -327,7 +334,7 @@ void on_event(SDL_Event *event)
 
 			docall(L, 11, 0);
 		}
-		break;
+		return TRUE;
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
 		if (current_keyhandler != LUA_NOREF)
@@ -380,7 +387,7 @@ void on_event(SDL_Event *event)
 
 			docall(L, 11, 0);
 		}
-		break;
+		return TRUE;
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
 		if (event->type == SDL_MOUSEBUTTONDOWN) SDL_SetCursor(mouse_cursor_down);
@@ -423,7 +430,7 @@ void on_event(SDL_Event *event)
 			lua_pushboolean(L, (event->type == SDL_MOUSEBUTTONUP) ? TRUE : FALSE);
 			docall(L, 5, 0);
 		}
-		break;
+		return TRUE;
 	case SDL_MOUSEWHEEL:
 		if (current_mousehandler != LUA_NOREF)
 		{
@@ -449,7 +456,7 @@ void on_event(SDL_Event *event)
 				docall(L, 5, 0);
 			}
 		}
-		break;
+		return TRUE;
 	case SDL_MOUSEMOTION:
 		mousex = event->motion.x;
 		mousey = event->motion.y;
@@ -473,8 +480,126 @@ void on_event(SDL_Event *event)
 			lua_pushnumber(L, event->motion.yrel);
 			docall(L, 6, 0);
 		}
-		break;
+		return TRUE;
+	case SDL_FINGERDOWN:
+	case SDL_FINGERUP:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveTouch");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->tfinger.fingerId);
+			lua_pushnumber(L, event->tfinger.x);
+			lua_pushnumber(L, event->tfinger.y);
+			lua_pushnumber(L, event->tfinger.dx);
+			lua_pushnumber(L, event->tfinger.dy);
+			lua_pushnumber(L, event->tfinger.pressure);
+			lua_pushboolean(L, (event->type == SDL_FINGERUP) ? TRUE : FALSE);
+			docall(L, 8, 0);
+		}
+		return TRUE;
+	case SDL_FINGERMOTION:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveTouchMotion");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->tfinger.fingerId);
+			lua_pushnumber(L, event->tfinger.x);
+			lua_pushnumber(L, event->tfinger.y);
+			lua_pushnumber(L, event->tfinger.dx);
+			lua_pushnumber(L, event->tfinger.dy);
+			lua_pushnumber(L, event->tfinger.pressure);
+			docall(L, 7, 0);
+		}
+		return TRUE;
+	case SDL_MULTIGESTURE:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveTouchGesture");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->mgesture.numFingers);
+			lua_pushnumber(L, event->mgesture.x);
+			lua_pushnumber(L, event->mgesture.y);
+			lua_pushnumber(L, event->mgesture.dTheta);
+			lua_pushnumber(L, event->mgesture.dDist);
+			docall(L, 6, 0);
+		}
+		return TRUE;
+	case SDL_JOYAXISMOTION:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			float v = (float)event->jaxis.value / 32770;
+			if (v > -JOY_DEADZONE && v < JOY_DEADZONE) return FALSE;
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveJoyAxis");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->jaxis.axis);
+			lua_pushnumber(L, MIN(1, MAX(-1, v)));
+			docall(L, 3, 0);
+		}
+		return TRUE;
+	case SDL_JOYBALLMOTION:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveJoyBall");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->jball.ball);
+			lua_pushnumber(L, event->jball.xrel);
+			lua_pushnumber(L, event->jball.yrel);
+			docall(L, 4, 0);
+		}
+		return TRUE;
+	case SDL_JOYHATMOTION:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushstring(L, "receiveJoyHat");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+			lua_pushnumber(L, event->jhat.hat);
+			switch (event->jhat.value) {
+				case SDL_HAT_UP: lua_pushnumber(L, 8); break;
+				case SDL_HAT_DOWN: lua_pushnumber(L, 2); break;
+				case SDL_HAT_LEFT: lua_pushnumber(L, 4); break;
+				case SDL_HAT_RIGHT: lua_pushnumber(L, 6); break;
+				case SDL_HAT_LEFTUP: lua_pushnumber(L, 7); break;
+				case SDL_HAT_LEFTDOWN: lua_pushnumber(L, 1); break;
+				case SDL_HAT_RIGHTUP: lua_pushnumber(L, 9); break;
+				case SDL_HAT_RIGHTDOWN: lua_pushnumber(L, 3); break;
+			}
+			docall(L, 3, 0);
+		}
+		return TRUE;
+	case SDL_JOYBUTTONDOWN:
+	case SDL_JOYBUTTONUP:
+		if (current_mousehandler != LUA_NOREF)
+		{
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
+			lua_pushstring(L, "receiveJoyButton");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
+			lua_pushnumber(L, event->jbutton.button);
+			lua_pushboolean(L, event->jbutton.state == SDL_RELEASED ? TRUE : FALSE);
+			docall(L, 3, 0);
+		}
+		return TRUE;
 	}
+	return FALSE;
 }
 
 // redraw the screen and update game logics, if any
@@ -516,7 +641,7 @@ void call_draw(int nb_keyframes)
 	if (nb_keyframes > 30) nb_keyframes = 30;
 
 	// Notify the particles threads that there are new keyframes
-	thread_particle_new_keyframes(nb_keyframes);
+	if (!anims_paused) thread_particle_new_keyframes(nb_keyframes);
 
 	if (current_game != LUA_NOREF)
 	{
@@ -539,10 +664,10 @@ void call_draw(int nb_keyframes)
 			1, 0,
 		};
 		GLfloat colors[4*4] = {
-			1, 1, 1, 1,
-			1, 1, 1, 1,
-			1, 1, 1, 1,
-			1, 1, 1, 1,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
 		};
 
 		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
@@ -578,7 +703,8 @@ void on_redraw()
 	/* Gather our frames per second */
 	Frames++;
 	if (!is_waiting()) {
-		int t = cur_frame_tick = SDL_GetTicks();
+		int t = SDL_GetTicks();
+		if (!anims_paused) cur_frame_tick = t - frame_tick_paused_time;
 		if (t - T0 >= 1000) {
 			float seconds = (t - T0) / 1000.0;
 			float fps = Frames / seconds;
@@ -738,6 +864,7 @@ void setupRealtime(float freq)
 	else
 	{
 		float interval = 1000 / freq;
+		if (realtime_timer_id) SDL_RemoveTimer(realtime_timer_id);
 		realtime_timer_id = SDL_AddTimer((int)interval, realtime_timer, NULL);
 		printf("[ENGINE] Switching to realtime, interval %d ms\n", (int)interval);
 	}
@@ -1029,7 +1156,6 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_md5_core(L);
 		luaopen_map(L);
 		luaopen_particles(L);
-		luaopen_gas(L);
 		luaopen_sound(L);
 		luaopen_noise(L);
 		luaopen_diamond_square(L);
@@ -1292,7 +1418,7 @@ int main(int argc, char *argv[])
 	}
 
 	// initialize engine and set up resolution and depth
-	Uint32 flags=SDL_INIT_TIMER;
+	Uint32 flags=SDL_INIT_TIMER | SDL_INIT_JOYSTICK;
 	if (SDL_Init (flags) < 0) {
 		printf("cannot initialize SDL: %s\n", SDL_GetError ());
 		return 1;
@@ -1303,6 +1429,11 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 
+	if (SDL_NumJoysticks() >= 1) {
+		if (gamepad = SDL_JoystickOpen(0)) {
+			printf("Found gamepad, enabling support\n");
+		}
+	}
 
 	// Filter events, to catch the quit event
 	SDL_SetEventFilter(event_filter, NULL);
@@ -1430,17 +1561,6 @@ int main(int argc, char *argv[])
 
 				}
 				break;
-			case SDL_TEXTINPUT:
-			case SDL_MOUSEBUTTONUP:
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEMOTION:
-			case SDL_MOUSEWHEEL:
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				/* handle key presses */
-				on_event(&event);
-				tickPaused = FALSE;
-				break;
 			case SDL_QUIT:
 				/* handle quit requests */
 				exit_engine = TRUE;
@@ -1476,6 +1596,10 @@ int main(int argc, char *argv[])
 				}
 				break;
 			default:
+				/* handle key presses */
+				if (on_event(&event)) {
+					tickPaused = FALSE;
+				}
 				break;
 			}
 		}

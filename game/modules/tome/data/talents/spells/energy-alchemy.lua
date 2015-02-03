@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@ newTalent{
 	cooldown = 30,
 	tactical = { BUFF = 2 },
 	getIncrease = function(self, t) return self:combatTalentScale(t, 0.05, 0.25) * 100 end,
+	sustain_slots = 'alchemy_infusion',
 	activate = function(self, t)
-		cancelAlchemyInfusions(self)
 		game:playSoundNear(self, "talents/arcane")
 		local ret = {}
 		self:talentTemporaryValue(ret, "inc_damage", {[DamageType.LIGHTNING] = t.getIncrease(self, t)})
@@ -159,7 +159,7 @@ newTalent{
 		end end
 
 		-- Randomly take targets
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t, selffire=self:spellFriendlyFire()}
+		local tg = {type="hit", range=self:getTalentRange(t), talent=t, friendlyfire=false} -- don't make it blocked by the golem
 		for i = 1, 1 do
 			if #tgts <= 0 then break end
 			local a, id = rng.table(tgts)
@@ -187,9 +187,15 @@ newTalent{
 		local ret = {name = self.name:capitalize().."'s "..t.name}
 		self:talentTemporaryValue(ret, "movement_speed", t.getSpeed(self, t))
 		ret.last_life = self.life
+
+		if core.shader.active(4) then
+			ret.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {z=5, rotation=0, radius=1.4, img="alchie_lightning"}, {type="lightningshield", time_factor = 4000, ellipsoidalFactor = {1.7, 1.4}}))
+		end
+
 		return ret
 	end,
 	deactivate = function(self, t, p)
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)

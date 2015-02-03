@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,14 +35,21 @@ Cleansing the skies will take much time. In the meanwhile, if thou art willing, 
 I will not lie to thee: we can send thee thence, but this could be a death trap, and we have no means for thou to depart his lair, as he lives atop a tall peak in the Daikara mountains.]],
 	answers = {
 		{"I need to prepare myself. I will be back soon.", action=function(npc, player) player:setQuestStatus("lightning-overload", engine.Quest.COMPLETED, "tempest-located") end},
-		{"I am ready. Send me. I will not let the good people of Derth down.", action=function(npc, player) player:setQuestStatus("lightning-overload", engine.Quest.COMPLETED, "tempest-located") player:hasQuest("lightning-overload"):teleport_urkis() end},
+		{"I am ready. Send me. I will not let the good people of Derth down.", action=function(npc, player)
+			player:setQuestStatus("lightning-overload", engine.Quest.COMPLETED, "tempest-located")
+			player:hasQuest("lightning-overload"):teleport_urkis()
+			game:unlockBackground("linaniil", "Archmage Linaniil")
+		end},
 	}
 }
 
 newChat{ id="teleport-urkis",
 	text = [[Good luck to thee. Thou hast the blessings of Angolwen.]],
 	answers = {
-		{"Thank you.", action=function(npc, player) player:hasQuest("lightning-overload"):teleport_urkis() end},
+		{"Thank you.", action=function(npc, player)
+			player:hasQuest("lightning-overload"):teleport_urkis()
+			game:unlockBackground("linaniil", "Archmage Linaniil")
+		end},
 	}
 }
 

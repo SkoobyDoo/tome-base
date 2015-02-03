@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,6 +81,13 @@ cuns_req_high5 = {
 	stat = { cun=function(level) return 54 + (level-1) * 2 end },
 	level = function(level) return 26 + (level-1)  end,
 }
+
+-- Archery range talents
+archery_range = function(self, t)
+	local weapon, ammo, offweapon = self:hasArcheryWeapon()
+	if not weapon or not weapon.combat then return 1 end
+	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
+end
 
 load("/data/talents/cunning/stealth.lua")
 load("/data/talents/cunning/traps.lua")

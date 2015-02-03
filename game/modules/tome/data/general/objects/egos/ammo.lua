@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ newEntity{
 	rarity = 7,
 	cost = 6,
 	combat = {
-		capacity = resolvers.generic(function(e) return e.combat.capacity * rng.float(1.3, 1.6) end),
+		capacity = resolvers.generic(function(e) return math.ceil(e.combat.capacity * rng.float(1.3, 1.6)) end),
 	},
 	wielder = {
 		ammo_reload_speed = resolvers.mbonus_material(4, 1),
@@ -327,7 +327,7 @@ newEntity{
 		dam = resolvers.mbonus_material(10, 2),
 		apr  = resolvers.mbonus_material(10, 2),
 		ammo_regen = resolvers.mbonus_material(3, 1),
-		capacity = resolvers.generic(function(e) return e.combat.capacity * rng.float(1.2, 1.5) end),
+		capacity = resolvers.generic(function(e) return math.ceil(e.combat.capacity * rng.float(1.2, 1.5)) end),
 	},
 	resolvers.genericlast(function(e)
 		e.combat.ammo_every = 6 - e.combat.ammo_regen
@@ -356,6 +356,34 @@ newEntity{
 			elseif eff == "defenseless" then target:setEffect(target.EFF_CURSE_DEFENSELESSNESS, 2, {power=20})
 			elseif eff == "impotence" then target:setEffect(target.EFF_CURSE_IMPOTENCE, 2, {power=20})
 			elseif eff == "death" then target:setEffect(target.EFF_CURSE_DEATH, 2, {src=who, dam=20})
+			end
+		end},
+	},
+}
+
+newEntity{
+	power_source = {magic=true},
+	name = " of warping", suffix=true, instant_resolve=true,
+	keywords = {warp=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 30,
+	cost = 30,
+	combat = {
+		ranged_project={
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(15, 5),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(15, 5),
+		},
+		special_on_hit = {desc="10% chance to stun, blind, pin, or confuse the target", fct=function(combat, who, target)
+			if not rng.percent(10) then return end
+			local eff = rng.table{"stun", "blind", "pin", "confusion"}
+			if not target:canBe(eff) then return end
+			local check = math.max(who:combatSpellpower(), who:combatMindpower(), who:combatAttack())
+			if not who:checkHit(check, target:combatMentalResist()) then return end
+			if eff == "stun" then target:setEffect(target.EFF_STUNNED, 4, {})
+			elseif eff == "blind" then target:setEffect(target.EFF_BLINDED, 4, {})
+			elseif eff == "pin" then target:setEffect(target.EFF_PINNED, 4, {})
+			elseif eff == "confusion" then target:setEffect(target.EFF_CONFUSED, 4, {power=50})
 			end
 		end},
 	},

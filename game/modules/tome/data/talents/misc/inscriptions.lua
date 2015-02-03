@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -126,15 +126,8 @@ newInscription{
 	tactical = {
 		DEFEND = 3,
 		CURE = function(self, t, target)
-			local nb = 0
 			local data = self:getInscriptionData(t.short_name)
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if data.what[e.type] and e.status == "detrimental" then
-					nb = nb + 1
-				end
-			end
-			return nb
+			return #self:effectsFilter({types=data.what, status="detrimental"})
 		end
 	},
 	action = function(self, t)
@@ -143,37 +136,12 @@ newInscription{
 		local target = self
 		local effs = {}
 		local force = {}
-		local known = false
+		local removed = 0
 
-		-- Go through all temporary effects
-		for eff_id, p in pairs(target.tmp) do
-			local e = target.tempeffect_def[eff_id]
-			if data.what[e.type] and e.status == "detrimental" and e.subtype["cross tier"] then
-				force[#force+1] = {"effect", eff_id}
-			elseif data.what[e.type] and e.status == "detrimental" then
-				effs[#effs+1] = {"effect", eff_id}
-			end
-		end
+		removed = target:removeEffectsFilter({types=data.what, subtype={["cross tier"] = true}, status="detrimental"})
+		removed = removed + target:removeEffectsFilter({types=data.what, status="detrimental"}, 1)
 
-		-- Cross tier effects are always removed and not part of the random game, otherwise it is a huge nerf to wild infusion
-		for i = 1, #force do
-			local eff = force[i]
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-
-		for i = 1, 1 do
-			if #effs == 0 then break end
-			local eff = rng.tableRemove(effs)
-
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-		if known then
+		if removed > 0 then
 			game.logSeen(self, "%s is cured!", self.name:capitalize())
 		end
 		self:setEffect(self.EFF_PAIN_SUPPRESSION, data.dur, {power=data.power + data.inc_stat})
@@ -181,8 +149,11 @@ newInscription{
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		local what = table.concat(table.keys(data.what), ", ")
-		return ([[Activate the infusion to cure yourself of %s effects and reduce all damage taken by %d%% for %d turns.]]):format(what, data.power+data.inc_stat, data.dur)
+		local what = table.concatNice(table.keys(data.what), ", ", " or ")
+
+		return ([[Activate the infusion to cure yourself of one random %s effect and reduce all damage taken by %d%% for %d turns.
+
+Also removes cross-tier effects of the affected types for free.]]):format(what, data.power+data.inc_stat, data.dur)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
@@ -200,15 +171,8 @@ newInscription{
 	tactical = {
 		DEFEND = 3,
 		CURE = function(self, t, target)
-			local nb = 0
 			local data = self:getInscriptionData(t.short_name)
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if data.what[e.type] and e.status == "detrimental" then
-					nb = nb + 1
-				end
-			end
-			return nb
+			return #self:effectsFilter({types=data.what, status="detrimental"})
 		end
 	},
 	action = function(self, t)
@@ -217,37 +181,11 @@ newInscription{
 		local target = self
 		local effs = {}
 		local force = {}
-		local known = false
+		local removed = 0
 
-		-- Go through all temporary effects
-		for eff_id, p in pairs(target.tmp) do
-			local e = target.tempeffect_def[eff_id]
-			if data.what[e.type] and e.status == "detrimental" and e.subtype["cross tier"] then
-				force[#force+1] = {"effect", eff_id}
-			elseif data.what[e.type] and e.status == "detrimental" then
-				effs[#effs+1] = {"effect", eff_id}
-			end
-		end
-
-		-- Cross tier effects are always removed and not part of the random game, otherwise it is a huge nerf to wild infusion
-		for i = 1, #force do
-			local eff = force[i]
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-
-		for i = 1, 1 do
-			if #effs == 0 then break end
-			local eff = rng.tableRemove(effs)
-
-			if eff[1] == "effect" then
-				target:removeEffect(eff[2])
-				known = true
-			end
-		end
-		if known then
+		removed = target:removeEffectsFilter({types=data.what, subtype={["cross tier"] = true}, status="detrimental"})
+		removed = removed + target:removeEffectsFilter({types=data.what, status="detrimental"}, 1)
+		if removed > 0 then
 			game.logSeen(self, "%s is cured!", self.name:capitalize())
 		end
 		self:setEffect(self.EFF_PRIMAL_ATTUNEMENT, data.dur, {power=data.power + data.inc_stat})
@@ -255,8 +193,11 @@ newInscription{
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		local what = table.concat(table.keys(data.what), ", ")
-		return ([[Activate the infusion to cure yourself of %s effects and increase affinity for all damage by %d%% for %d turns.]]):format(what, data.power+data.inc_stat, data.dur)
+		local what = table.concatNice(table.keys(data.what), ", ", " or ")
+
+		return ([[Activate the infusion to cure yourself of one random %s effect and increase affinity for all damage by %d%% for %d turns.
+
+Also removes cross-tier effects of the affected types for free.]]):format(what, data.power+data.inc_stat, data.dur)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
@@ -381,7 +322,7 @@ newInscription{
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the infusion to spit a bolt of poison doing %0.2f nature damage per turns for 7 turns, and reducing the target's healing received by %d%%.
+		return ([[Activate the infusion to spit a bolt of poison doing %0.2f nature damage per turn for 7 turns, and reducing the target's healing received by %d%%.
 		The sudden stream of natural forces also strips you of one random detrimental magical effect.]]):format(damDesc(self, DamageType.NATURE, data.power + data.inc_stat) / 7, data.heal_factor)
 	end,
 	short_info = function(self, t)
@@ -990,7 +931,7 @@ newInscription{
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
-	range = 4,
+	range = 6,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -1006,7 +947,7 @@ newInscription{
 
 		if target:attr("timetravel_immune") then
 			game.logSeen(target, "%s is immune!", target.name:capitalize())
-			return
+			return true
 		end
 
 		local hit = self:checkHit(self:combatSpellpower(), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
@@ -1015,7 +956,7 @@ newInscription{
 		self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getDamage(self, t)))
 		game.level.map:particleEmitter(x, y, 1, "temporal_thrust")
 		game:playSoundNear(self, "talents/arcane")
-		self:incParadox(-60)
+		self:incParadox(-25)
 		if target.dead or target.player then return true end
 		target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self:combatSpellpower(0.3)})
 		
@@ -1039,9 +980,12 @@ newInscription{
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
 					local mx, my = util.findFreeGrid(self.target.x, self.target.y, 20, true, {[engine.Map.ACTOR]=true})
 					local old_levelup = self.target.forceLevelup
+					local old_check = self.target.check
 					self.target.forceLevelup = function() end
+					self.target.check = function() end
 					game.zone:addEntity(game.level, self.target, "actor", mx, my)
 					self.target.forceLevelup = old_levelup
+					self.target.check = old_check
 				end
 			end,
 			summoner_gain_exp = true, summoner = self,
@@ -1059,7 +1003,7 @@ newInscription{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		return ([[Inflicts %0.2f temporal damage.  If your target survives, it will be sent %d turns into the future.
-		It will also lower your paradox by 60 (if you have any).
+		It will also lower your paradox by 25 (if you have any).
 		Note that messing with the spacetime continuum may have unforeseen consequences.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration)
 	end,
 	short_info = function(self, t)

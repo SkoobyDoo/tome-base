@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,7 +30,10 @@ newTalent{
 	cooldown = 6,
 	stamina = 8,
 	requires_target = true,
+	is_special_melee = true,
 	tactical = { ATTACK = 1, DISABLE = { stun = 3 } },
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	getStunDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	action = function(self, t)
@@ -40,10 +43,10 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
+
 		self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 1, 1.7, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
 		local speed, hit = self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 1.2, 2.1, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
 
@@ -98,6 +101,9 @@ newTalent{
 	cooldown = 15,
 	stamina = 15,
 	requires_target = true,
+	is_special_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.1, 0.8, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
 	tactical = { ATTACK = 2}, -- is there a way to make this consider the free Block?
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
@@ -108,14 +114,13 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local damage = t.getShieldDamage(self, t)
 		self:forceUseTalent(self.T_BLOCK, {ignore_energy=true, ignore_cd = true, silent = true})
-		
+
 		self:attackTargetWith(target, shield.special_combat, nil, damage)
 		self:attackTargetWith(target, shield.special_combat, nil, damage)
 		self:attackTargetWith(target, shield.special_combat, nil, damage)
@@ -139,6 +144,10 @@ newTalent{
 	stamina = 16,
 	requires_target = true,
 	tactical = { ATTACK = 4 },
+	is_melee = true,
+	is_special_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local shield = self:hasShield()
@@ -147,10 +156,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- First attack with shield
 		local speed, hit = self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
@@ -342,4 +350,3 @@ newTalent{
 		format(t.getDefense(self, t), hp, hp)
 	end,
 }
-

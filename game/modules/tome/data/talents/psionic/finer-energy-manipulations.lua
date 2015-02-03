@@ -53,11 +53,9 @@ newTalent{
 			end
 		end
 
-
 		for i = 1, t.numCure(self, t) do
 			if #effs == 0 then break end
 			local eff = rng.tableRemove(effs)
-
 
 			if eff[1] == "effect" then
 				self:removeEffect(eff[2])
@@ -102,67 +100,107 @@ newTalent{
 	fat_red = function(self, t)
 		return math.floor(self:combatTalentMindDamage(t, 2, 10))
 	end,
+	reshape = function(self, t, o, in_dialog)
+		local Entity = require("engine.Entity")
+		if o.combat then
+			local atk_boost = t.boost(self, t)
+			local dam_boost = atk_boost
+			local old_atk = (o.old_atk or 0)
+			local old_dam = (o.old_dam or 0)
+			local old_ego = game.zone:removeEgoByName(o, "reshape weapon")
+			local force_reshape = false
+			if not old_ego and o.been_reshaped then --Update items affected by older versions of this talent
+				if o.been_reshaped == true then
+					o.name = o.name:gsub("reshaped ", "", 1)
+					o.combat.atk = o.combat.atk - (o.old_atk or 0)
+					o.combat.dam = o.combat.dam - (o.old_dam or 0)
+				else
+					o.combat.atk = o.orig_atk
+					o.combat.dam = o.orig_dam
+				end
+				o.been_reshaped = nil
+				-- if an older version, just reshape anyway
+				-- if reshapen by better TL, keep it
+				atk_boost = math.max(old_atk, atk_boost)
+				dam_boost = math.max(old_dam, dam_boost)
+				force_reshape = true
+			elseif old_ego and old_atk == 0 then  -- in case of future backward compatibility removal
+				old_atk = old_ego.combat.atk
+				old_dam = old_ego.combat.dam
+			end
+			o.old_atk, o.old_dam, o.orig_atk, o.orig_dam = nil, nil, nil, nil
+			if force_reshape or old_atk < atk_boost or old_dam < dam_boost then
+				local new_ego = Entity.new{
+					name = "reshape weapon",
+					display_string = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") ", display_prefix = true,
+					been_reshaped = true,
+					combat = {atk=atk_boost, dam=dam_boost},
+					old_atk = atk_boost, old_dam = dam_boost, orig_atk = o.combat.atk, orig_dam = o.combat.dam,  -- Easier this way
+					fake_ego = true, unvault_ego = true,
+				}
+				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
+				game.zone:applyEgo(o, new_ego, "object")
+				if in_dialog then self:talentDialogReturn(true) end
+			else
+				if old_ego then game.zone:applyEgo(o, old_ego, "object") end -- nothing happened
+				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
+			end
+		else
+			local armour = t.arm_boost(self, t)
+			local fat = t.fat_red(self, t)
+			local old_fat = (o.old_fat or 0)
+			local old_arm = o.wielder and o.wielder.combat_armor or 0
+			local old_ego = game.zone:removeEgoByName(o, "reshape armour")
+			-- Not a huge deal
+			o.wielder = o.wielder or {}
+			o.wielder.combat_armor = o.wielder.combat_armor or 0
+			o.wielder.fatigue = o.wielder.fatigue or 0
+			local force_reshape = false
+			if not old_ego and o.been_reshaped then
+				o.wielder.combat_armor = o.orig_arm
+				o.wielder.fatigue = o.orig_fat
+				o.been_reshaped = nil
+				-- if an older version, just reshape anyway
+				-- if reshapen by better TL, keep it
+				fat = math.max(fat, old_fat)
+				armour = math.max(armour, o.wielder.combat_armor - old_arm)
+				force_reshape = true
+			elseif old_ego and old_fat == 0 then  -- in case of future backward compatibility removal
+				old_fat = old_ego.fatigue_reduction
+			end
+			o.old_fat, o.orig_fat, o.orig_arm = nil, nil, nil
+			if force_reshape or old_fat < fat or old_arm < o.wielder.combat_armor + armour then
+				local real_fat
+				if o.wielder.fatigue < 0 then real_fat = 0
+				else real_fat = math.min(fat, o.wielder.fatigue) end
+				local new_ego = Entity.new{
+					name = "reshape armour",
+					display_string = "reshaped["..tostring(armour)..","..tostring(real_fat).."%] ", display_prefix = true,
+					been_reshaped = true,
+					wielder = {combat_armor=armour, fatigue=-real_fat},
+					fatigue_reduction = fat,
+					old_fat = fat, orig_fat = o.wielder.fatigue, orig_arm = o.wielder.armour,  -- Easier this way
+					fake_ego = true, unvault_ego = true,
+				}
+				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
+				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
+				game.zone:applyEgo(o, new_ego, "object")
+				if in_dialog then self:talentDialogReturn(true) end
+			else
+				game.zone:applyEgo(o, old_ego, "object")
+				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
+			end
+		end
+	end,
 	action = function(self, t)
-		local d d = self:showInventory("Reshape which weapon or armor?", self:getInven("INVEN"),
+		local ret = self:talentDialog(self:showInventory("Reshape which weapon or armor?", self:getInven("INVEN"),
 			function(o)
 				return not o.quest and (o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" )) and not o.fully_reshaped --Exclude fully reshaped?
 			end
 			, function(o, item)
-			if o.combat then
-				local atk_boost = t.boost(self, t)
-				local dam_boost = atk_boost
-				if (o.old_atk or 0) < atk_boost or (o.old_dam or 0) < dam_boost then
-					if not o.been_reshaped then
-						o.orig_atk = (o.combat.atk or 0)
-						o.orig_dam = (o.combat.dam or 0)
-					elseif o.been_reshaped == true then --Update items affected by older versions of this talent
-						o.name = o.name:gsub("reshaped ", "", 1)
-						o.orig_atk = o.combat.atk - (o.old_atk or 0)
-						o.orig_dam = o.combat.dam - (o.old_dam or 0)
-					end
-					o.combat.atk = o.orig_atk + atk_boost
-					o.combat.dam = o.orig_dam + dam_boost
-					o.old_atk = atk_boost
-					o.old_dam = dam_boost
-					game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-					o.special = true
-					o.been_reshaped = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") "
-					d.used_talent = true
-				else
-					game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
-				end
-			else
-				local armour = t.arm_boost(self, t)
-				local fat = t.fat_red(self, t)
-				if (o.old_fat or 0) < fat or o.wielder.combat_armor < (o.orig_arm or 0) + armour then
-					o.wielder = o.wielder or {}
-					if not o.been_reshaped then
-						o.orig_arm = (o.wielder.combat_armor or 0)
-						o.orig_fat = (o.wielder.fatigue or 0)
-					end
-					o.wielder.combat_armor = o.orig_arm
-					o.wielder.fatigue = o.orig_fat
-					o.wielder.combat_armor = (o.wielder.combat_armor or 0) + armour
-					o.wielder.fatigue = (o.wielder.fatigue or 0) - fat
-					if o.wielder.fatigue < 0 and not (o.orig_fat < 0) then
-						o.wielder.fatigue = 0
-					elseif o.wielder.fatigue < 0 and o.orig_fat < 0 then
-						o.wielder.fatigue = o.orig_fat
-					end
-					o.old_fat = fat
-					game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-					o.special = true
-					if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
-					o.been_reshaped = "reshaped["..tostring(armour)..","..tostring(o.wielder.fatigue-o.orig_fat).."%] "
-					d.used_talent = true
-				else
-					game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
-				end
-			end
-		end)
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent) end
-		if not coroutine.yield() then return nil end
+			t.reshape(self, t, o, true)
+		end))
+		if not ret then return nil end
 		return true
 	end,
 	info = function(self, t)
@@ -171,7 +209,8 @@ newTalent{
 		local fat = t.fat_red(self, t)
 		return ([[Manipulate forces on the molecular level to realign, rebalance, and hone a weapon, set of body armor, or a shield.  (Mindstars resist being adjusted because they are already in an ideal natural state.)
 		This permanently increases the Accuracy and damage of any weapon by %d or increases the armour rating of any piece of Armour by %d, while reducing its fatigue rating by %d.
-		The effects increase with your Mindpower and can only be applied (or reapplied) once to any item.]]):
+		The effects increase with your Mindpower and multiple uses on an item only increase the effect if your skill has improved.
+		These bonusses are automatically updated on equipped items when you level up.]]):
 		format(weapon_boost, arm, fat)
 	end,
 }
@@ -188,44 +227,15 @@ newTalent{
 		return self:combatTalentMindDamage(t, 10, 40)
 	end,
 	action = function(self, t)
-		local d d = self:showInventory("Use which gem?", self:getInven("INVEN"), function(gem) return gem.type == "gem" and gem.material_level and not gem.unique end, function(gem, gem_item)
+		local ret = self:talentDialog(self:showInventory("Use which gem?", self:getInven("INVEN"), function(gem) return gem.type == "gem" and gem.material_level and not gem.unique end, function(gem, gem_item)
 			self:removeObject(self:getInven("INVEN"), gem_item)
 			local amt = t.energy_per_turn(self, t)
 			local dur = 3 + 2*(gem.material_level or 0)
 			self:setEffect(self.EFF_PSI_REGEN, dur, {power=amt})
-			self.changed = true
-			d.used_talent = true
-			local gem_names = {
-				GEM_DIAMOND = "Diamond",
-				GEM_PEARL = "Pearl",
-				GEM_MOONSTONE = "Moonstone", 
-				GEM_FIRE_OPAL = "Fire Opal",
-				GEM_BLOODSTONE = "Bloodstone",
-				GEM_RUBY = "Ruby",
-				GEM_AMBER = "Amber",
-				GEM_TURQUOISE = "Turquoise",
-				GEM_JADE = "Jade",
-				GEM_SAPPHIRE = "Sapphire",
-				GEM_QUARTZ = "Quartz",
-				GEM_EMERALD = "Emerald",
-				GEM_LAPIS_LAZULI = "Lapis Lazuli",
-				GEM_GARNET = "Garnet",
-				GEM_ONYX = "Onyx",
-				GEM_AMETHYST = "Amethyst", 
-				GEM_OPAL = "Opal", 
-				GEM_TOPAZ = "Topaz",
-				GEM_AQUAMARINE = "Aquamarine",
-				GEM_AMETRINE = "Ametrine",
-				GEM_ZIRCON = "Zircon",
-				GEM_SPINEL = "Spinel",
-				GEM_CITRINE = "Citrine",
-				GEM_AGATE = "Agate",
-			}
-			self:setEffect(self.EFF_CRYSTAL_BUFF, dur, {name=gem_names[gem.define_as], gem=gem.define_as})
-		end)
-		local co = coroutine.running()
-		d.unload = function(self) coroutine.resume(co, self.used_talent) end
-		if not coroutine.yield() then return nil end
+			self:setEffect(self.EFF_CRYSTAL_BUFF, dur, {name=gem.name, gem=gem.define_as, effects=gem.wielder})
+			self:talentDialogReturn(true)
+		end))
+		if not ret then return nil end
 		return true
 	end,
 	info = function(self, t)
@@ -259,9 +269,9 @@ newTalent{
 	info = function(self, t)
 		local inc = t.bonus(self,t)
 		return ([[By carefully synchronizing your mind to the resonant frequencies of your psionic focus, you strengthen its effects.
-		For conventional weapons, this increases the percentage of your willpower and cunning that is used in place of strength and dexterity, from 80%% to %d%%.
+		For conventional weapons, this increases the percentage of your willpower and cunning that is used in place of strength and dexterity, from 60%% to %d%%.
 		For mindstars, this increases the chance to pull enemies to you by +%d%%.
 		For gems, this increases the bonus stats by %d.]]):
-		format(80+inc, inc, math.ceil(inc/5))
+		format(60+inc, inc, math.ceil(inc/5))
 	end,
 }

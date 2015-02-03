@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,13 +29,14 @@ newEntity{ define_as = "EPOCH",
 	display = "E", color=colors.VIOLET,
 	desc = [[A huge being composed of sparking blue and yellow energy stands before you.  It shifts and flows as it moves, at once erratic and graceful.]],
 	level_range = {12, nil}, exp_worth = 2,
-	max_life = 200, life_rating = 17, fixed_rating = true,
+	max_life = 200, life_rating = 12, fixed_rating = true,
 	max_stamina = 85,
 	max_mana = 200,
 	stats = { str=10, dex=25, cun=20, mag=20, wil=20, con=20 },
 	rank = 4,
 
 	can_multiply = 2,
+	anomaly_bias = {type="teleport", chance=100},
 
 	no_breath = 1,
 	poison_immune = 1,
@@ -63,12 +64,15 @@ newEntity{ define_as = "EPOCH",
 
 	resolvers.talents{
 		[Talents.T_MULTIPLY]=1,
-		[Talents.T_TURN_BACK_THE_CLOCK]=3, -- TBTC gets an extra bolt at tl 4, very dangerous
+		[Talents.T_TEMPORAL_BOLT]=3,
+		[Talents.T_DIMENSIONAL_STEP]=5,
 		[Talents.T_CONGEAL_TIME]={base=3, every=7},
-		[Talents.T_STATIC_HISTORY]=5,
+		[Talents.T_INDUCE_ANOMALY]=5,
 		[Talents.T_BANISH]={base=3, every=7},
+		[Talents.T_TIME_DILATION]={base=3, every=7},
+		[Talents.T_CELERITY]={base=3, every=7},
 		[Talents.T_HASTE]={base=1, every=7},
-		[Talents.T_SWAP]={base=1, every=7},
+		[Talents.T_DIMENSIONAL_STEP]=5,
 	},
 
 	resolvers.sustains_at_birth(),
@@ -82,7 +86,7 @@ newEntity{ define_as = "EPOCH",
 
 	on_multiply = function(self, src)
 		self.on_die = nil
-		self.talents.T_SWAP = nil
+		self.talents.T_DIMENSIONAL_STEP = nil
 		self.talents.T_MULTIPLY = nil
 	end,
 	on_die = function(self, who)

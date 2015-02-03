@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,6 +45,8 @@ ACTOR = 100
 PROJECTILE = 500
 --- The place of an object entity in a map grid
 OBJECT = 1000
+--- The place of a trigger entity in a map grid
+TRIGGER = 10000
 
 --- The order of checks for checkAllEntities
 searchOrder = { ACTOR, TERRAIN, PROJECTILE, TRAP, OBJECT }
@@ -65,6 +67,9 @@ end
 color_shown   = { 1, 1, 1, 1 }
 color_obscure = { 0.6, 0.6, 0.6, 0.5 }
 smooth_scroll = 0
+
+grid_lines = {0, 0, 0, 0}
+default_shader = false
 
 faction_friend = "tactical_friend.png"
 faction_neutral = "tactical_neutral.png"
@@ -101,6 +106,14 @@ function _M:setViewPort(x, y, w, h, tile_w, tile_h, fontname, fontsize, allow_ba
 	self.zoom = 1
 
 	if otw ~= self.tile_w or oth ~= self.tile_h then print("[MAP] Reseting tiles caches") self:resetTiles() end
+end
+
+function _M:setupGridLines(size, r, g, b, a)
+	self.grid_lines = {size, r, g, b, a}
+end
+
+function _M:setDefaultShader(shad)
+	default_shader = shad
 end
 
 --- Setup a fbo/shader pair to display map effects
@@ -238,6 +251,8 @@ function _M:makeCMap()
 	self._map = core.map.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))
+	self._map:setupGridLines(unpack(self.grid_lines))
+	self._map:setDefaultShader(default_shader)
 	self._fovcache =
 	{
 		block_sight = core.fov.newCache(self.w, self.h),
@@ -264,6 +279,18 @@ function _M:makeCMap()
 			end
 		end)
 	end
+end
+
+--- Regenetate grid lines definition if it changed
+function _M:regenGridLines()
+	if not self._map or not self.grid_lines then return end
+	self._map:setupGridLines(unpack(self.grid_lines))
+end
+
+--- Reset default shader
+function _M:resetDefaultShader()
+	if not self._map then return end
+	self._map:setDefaultShader(self.default_shader)
 end
 
 --- Adds a "path string" to the map
@@ -386,6 +413,11 @@ function _M:redisplay()
 		self._map:setLite(i, j, self.lites(i, j))
 		self:updateMap(i, j)
 	end end
+end
+
+-- Schedules a redisplay, use this in places where multiple redisplays might happen on the same tick
+function _M:scheduleRedisplay()
+	game:onTickEnd(function() self:redisplay() end, "map_redisplay")
 end
 
 --- Closes things in the object to allow it to be garbage collected
@@ -545,9 +577,11 @@ end
 -- @param x position
 -- @param y position
 -- @param pos what kind of entity to set(Map.TERRAIN, Map.OBJECT, Map.ACTOR)
-function _M:remove(x, y, pos)
+-- @param only only remove if the value was equal to that entity
+function _M:remove(x, y, pos, only)
 	if self.map[x + y * self.w] then
 		local e = self.map[x + y * self.w][pos]
+		if only and only ~= e then return end
 		self.map[x + y * self.w][pos]= nil
 		self:updateMap(x, y)
 		self.changed = true
@@ -568,7 +602,7 @@ end
 -- @param always_show tell the map code to force display unseed entities as remembered (used for smooth FOV shading)
 function _M:display(x, y, nb_keyframe, always_show, prevfbo)
 	nb_keyframes = nb_keyframes or 1
-	local ox, oy = self.display_x, self.display_y
+	local ox, oy = rawget(self, "display_x"), rawget(self, "display_y")
 	self.display_x, self.display_y = x or self.display_x, y or self.display_y
 
 	self._map:toScreen(self.display_x, self.display_y, nb_keyframe, always_show, self.changed, prevfbo)
@@ -1040,13 +1074,13 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 
 	local e = {
 		src=src, x=x, y=y, duration=duration, damtype=damtype, dam=dam, radius=radius, dir=dir, angle=angle,
-		overlay=overlay and overlay.__CLASSNAME and overlay,
+		overlay=overlay and (overlay.__ATOMIC or overlay.__CLASSNAME) and overlay,
 		grids = grids,
 		update_fct=update_fct, selffire=selffire, friendlyfire=friendlyfire,
 	}
 
 	local overlay_particle = nil
-	if overlay and not overlay.__CLASSNAME then
+	if overlay and not overlay.__ATOMIC and not overlay.__CLASSNAME then
 		overlay_particle = overlay
 	elseif overlay then
 		if overlay.overlay_particle then overlay_particle = overlay.overlay_particle end
@@ -1142,34 +1176,39 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 end
 
 --- Process the overlay effects, call it from your tick function
-function _M:processEffects()
+-- @param update_shape_only if true no damage is projected, no duration changes
+function _M:processEffects(update_shape_only)
 	local todel = {}
 	for i, e in ipairs(self.effects) do
-		-- Now display each grids
-		for lx, ys in pairs(e.grids) do
-			for ly, _ in pairs(ys) do
-				local act = game.level.map(lx, ly, engine.Map.ACTOR)
-				if act and act == e.src and not ((type(e.selffire) == "number" and rng.percent(e.selffire)) or (type(e.selffire) ~= "number" and e.selffire)) then
-				elseif act and e.src and e.src.reactionToward and (e.src:reactionToward(act) >= 0) and not ((type(e.friendlyfire) == "number" and rng.percent(e.friendlyfire)) or (type(e.friendlyfire) ~= "number" and e.friendlyfire)) then
-				-- Otherwise hit
-				else
-					e.src.__project_source = e -- intermediate projector source
-					DamageType:get(e.damtype).projector(e.src, lx, ly, e.damtype, e.dam)
-					e.src.__project_source = nil
+		-- Run damage and decrease duration only on certain ticks
+		if not update_shape_only then
+			for lx, ys in pairs(e.grids) do
+				for ly, _ in pairs(ys) do
+					local act = game.level.map(lx, ly, engine.Map.ACTOR)
+					if act and act == e.src and not ((type(e.selffire) == "number" and rng.percent(e.selffire)) or (type(e.selffire) ~= "number" and e.selffire)) then
+					elseif act and e.src and e.src.reactionToward and (e.src:reactionToward(act) >= 0) and not ((type(e.friendlyfire) == "number" and rng.percent(e.friendlyfire)) or (type(e.friendlyfire) ~= "number" and e.friendlyfire)) then
+					-- Otherwise hit
+					else
+						e.src.__project_source = e -- intermediate projector source
+						DamageType:get(e.damtype).projector(e.src, lx, ly, e.damtype, e.dam)
+						e.src.__project_source = nil
+					end
 				end
 			end
+
+			e.duration = e.duration - 1
 		end
 
-		e.duration = e.duration - 1
 		if e.duration <= 0 then
 			table.insert(todel, i)
 		elseif e.update_fct then
-			if e:update_fct() then
+			if e:update_fct(update_shape_only) then
 				if type(dir) == "table" then e.grids = core.fov.beam_any_angle_grids(e.x, e.y, e.radius, e.angle, e.dir.source_x or e.src.x or e.x, e.dir.source_y or e.src.y or e.y, e.dir.delta_x, e.dir.delta_y, true)
 				elseif e.dir == 5 then e.grids = core.fov.circle_grids(e.x, e.y, e.radius, true)
 				else e.grids = core.fov.beam_grids(e.x, e.y, e.radius, e.dir, e.angle, true) end
 				if e.particles then
 					if e.particles_only_one then
+						e.particles[1]:shiftCustom(self.tile_w * (e.particles[1].x - e.x), self.tile_h * (e.particles[1].y - e.y))
 						e.particles[1].x = e.x
 						e.particles[1].y = e.y
 					else
@@ -1343,16 +1382,16 @@ function _M:displayParticles(z, nb_keyframes)
 	end
 end
 
--- Returns the compass direction from a vector 
+-- Returns the compass direction from a vector
 -- dx, dy = x change (+ is east), y change (+ is south)
 function _M:compassDirection(dx, dy)
 	local dir = ""
-	if dx == 0 and dy == 0 then 
+	if dx == 0 and dy == 0 then
 		return nil
 	else
 		local dydx, dxdy = dy/math.abs(dx), dx/math.abs(dy)
 		if dydx <= -0.5 then dir = "north" elseif dydx >= 0.5 then dir="south" end
-		if dxdy < -0.5 then dir = dir.."west" 
+		if dxdy < -0.5 then dir = dir.."west"
 		elseif dxdy > 0.5 then dir = dir.."east" end
 	end
 	return dir

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,6 +43,17 @@ function _M:actBase()
 		else
 			self._last_shove_pressure = self.shove_pressure
 			self.shove_pressure = self.shove_pressure / 2
+		end
+	end
+	-- Run out of time ?
+	if self.summon_time and not self:attr("no_timeflow") then
+		self.summon_time = self.summon_time - 1
+		if self.summon_time <= 0 then
+			if not self.summon_quiet then
+				game.logPlayer(self.summoner, "#PINK#Your summoned %s disappears.", self.name)
+			end
+			self:die()
+			self.dead_by_unsummon = true
 		end
 	end
 	return mod.class.Actor.actBase(self)
@@ -95,6 +106,10 @@ local function spotHostiles(self)
 		end
 	end, nil)
 	return seen
+end
+
+function _M:onTalentLuaError(ab, err)
+	self:useEnergy()  -- prevent infinitely long erroring out turns
 end
 
 --- Try to auto use listed talents

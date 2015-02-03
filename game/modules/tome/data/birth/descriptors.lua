@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -140,6 +140,7 @@ newBirthDescriptor{
 	game_state = {
 		grab_online_event_forbid = true,
 		always_learn_birth_talents = true,
+		force_town_respec = false,
 	},
 }
 newBirthDescriptor{
@@ -220,7 +221,6 @@ newBirthDescriptor{
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Nonrandom bosses will have randomly selected talents",
 		"All enemies have 20% more life",
-		"Player rank is normal instead of elite",
 		"Player can earn Insane version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -229,8 +229,8 @@ newBirthDescriptor{
 		class = { ["Tutorial Adventurer"] = "forbid", },
 	},
 	copy = {
+		instakill_immune = 1,
 		__game_difficulty = 4,
-		rank = 2,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
@@ -251,7 +251,6 @@ newBirthDescriptor{
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Bosses will have randomly selected talents",
 		"Player is being hunted! Randomly all foes in a radius will get a feeling of where she/he is",
-		"Player rank is normal instead of elite",
 		"Player can earn Madness version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -263,8 +262,8 @@ newBirthDescriptor{
 		[ActorTalents.T_HUNTED_PLAYER] = 1,
 	},
 	copy = {
+		instakill_immune = 1,
 		__game_difficulty = 5,
-		rank = 2,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
@@ -287,8 +286,13 @@ newBirthDescriptor{
 		"This is not the way the game is meant to be played, but it allows you to have a more forgiving experience.",
 		"Remember though that dying is an integral part of the game and helps you become a better player.",
 		"Exploration version of achievements will be granted in this mode.",
+		"Full talent respec is always available.",
+	},
+	game_state = {
+		force_town_respec = false,
 	},
 	copy = {
+		infinite_respec = 1,
 		infinite_lifes = 1,
 	},
 }
@@ -331,6 +335,7 @@ load("/data/birth/races/elf.lua")
 load("/data/birth/races/halfling.lua")
 load("/data/birth/races/dwarf.lua")
 load("/data/birth/races/yeek.lua")
+load("/data/birth/races/giant.lua")
 load("/data/birth/races/undead.lua")
 load("/data/birth/races/construct.lua")
 

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self.c_permadeath_text = Textzone.new{auto_width=true, auto_height=true, text="Permadeath: "}
 	self.c_permadeath = Dropdown.new{width=150, fct=function(item) self:permadeathUse(item) end, on_select=function(item) self:updateDesc(item) end, list=self.all_permadeaths, nb_items=#self.all_permadeaths}
 
-	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, no_color_bleed=true}
+	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, pingpong=20, no_color_bleed=true}
 
 	self:setDescriptor("base", "base")
 	self:setDescriptor("world", self.default_campaign)
@@ -329,7 +329,7 @@ function _M:makeDefault()
 	self:setDescriptor("difficulty", "Normal")
 	self:setDescriptor("permadeath", "Adventure")
 	self:setDescriptor("race", "Human")
-	self:setDescriptor("subrace", "Higher")
+	self:setDescriptor("subrace", "Cornac")
 	self:setDescriptor("class", "Warrior")
 	self:setDescriptor("subclass", "Berserker")
 	__module_extra_info.no_birth_popup = true
@@ -936,6 +936,7 @@ function _M:loadPremadeUI()
 	local d = Dialog.new("Characters Vault", 600, 550)
 
 	local sel = nil
+	local sep = Separator.new{dir="horizontal", size=400}
 	local desc = TextzoneList.new{width=220, height=400}
 	local list list = List.new{width=350, list=lss, height=400,
 		fct=function(item)
@@ -949,7 +950,6 @@ function _M:loadPremadeUI()
 		end,
 		select=function(item) desc:switchItem(item, item.description) end
 	}
-	local sep = Separator.new{dir="horizontal", size=400}
 
 	local load = Button.new{text=" Load ", fct=function() if sel then self:loadPremade(sel) game:unregisterDialog(d) end end}
 	local del = Button.new{text="Delete", fct=function() if sel then
@@ -966,7 +966,7 @@ function _M:loadPremadeUI()
 
 	d:loadUI{
 		{left=0, top=0, ui=list},
-		{left=list.w, top=0, ui=sep},
+		{left=list, top=0, ui=sep},
 		{right=0, top=0, ui=desc},
 
 		{left=0, bottom=0, ui=load},
@@ -1110,8 +1110,12 @@ function _M:setTile(f, w, h, last)
 	end
 end
 
+local to_reset_cosmetic = {}
 function _M:applyCosmeticActor(last)
-	self.actor.is_redhaed = nil -- Booh this is ugly
+	for i, d in ipairs(to_reset_cosmetic) do
+		d.reset(self.actor)
+	end
+	to_reset_cosmetic = {}
 
 	local list = {}
 	for i, d in ipairs(self.cosmetic_unlocks) do
@@ -1120,6 +1124,9 @@ function _M:applyCosmeticActor(last)
 	table.sort(list, function(a,b) return a.priority < b.priority end)
 	for i, d in ipairs(list) do
 		d.on_actor(self.actor, self, last)
+		if not last and d.reset then
+			to_reset_cosmetic[#to_reset_cosmetic+1] = d
+		end
 	end
 end
 
@@ -1394,11 +1401,26 @@ function _M:selectTile()
 		"player/ascii_player_exotic_01.png",
 		"player/ascii_player_shopper_01.png",
 	}
+
+	fs.mkdir("/data/gfx/custom-tiles/")
+	for file in fs.iterate("/data/gfx/custom-tiles/", function(file) return file:find("%.png") end) do
+		list[#list+1] = "custom-tiles/"..file
+	end	
+
 	self:triggerHook{"Birther:donatorTiles", list=list}
-	local remove = Button.new{text="Use default tile", width=500, fct=function()
+	local remove = Button.new{text="Use default tile", width=240, fct=function()
 		game:unregisterDialog(d)
 		self.has_custom_tile = nil
 		self:setTile()
+	end}
+	local custom = Button.new{text="Use custom-made tile", width=240, fct=function()
+		self:simpleLongPopup("Howto: Custom-made tiles", ([[You can use your own custom tiles if you are a donator.
+For the game to use them you must simply respect a few rules:
+- they must be 64x64 or 64x128 tiles
+- they must be saved as PNG files
+- you must place them in folder #LIGHT_BLUE#%s#WHITE#
+
+Once you have done so, simply restart the game and the tiles will be listed at the bottom of the list.]]):format(fs.getRealPath("/data/gfx/custom-tiles/")), 500)
 	end}
 	local list = ImageList.new{width=500, height=500, tile_w=64, tile_h=64, padding=10, scrollbar=true, list=list, fct=function(item)
 		game:unregisterDialog(d)
@@ -1411,6 +1433,7 @@ function _M:selectTile()
 	d:loadUI{
 		{left=0, top=0, ui=list},
 		{left=0, bottom=0, ui=remove},
+		{left=250, bottom=0, ui=custom},
 	}
 	d:setupUI(true, true)
 	d.key:addBind("EXIT", function() game:unregisterDialog(d) end)

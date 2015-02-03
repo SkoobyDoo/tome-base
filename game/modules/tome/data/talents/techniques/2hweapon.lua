@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ newTalent{
 	range = 0,
 	radius = 1,
 	requires_target = true,
+	is_melee = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
@@ -158,6 +159,9 @@ newTalent{
 	stamina = 15,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 } },
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local weapon = self:hasTwoHandedWeapon()
@@ -166,10 +170,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local inc = self.stamina / 2
 		if self:getTalentLevel(t) >= 4 then
@@ -216,6 +219,9 @@ newTalent{
 	stamina = 8,
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { stun = 2 } },
 	requires_target = true,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
@@ -225,10 +231,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5))
 
 		-- Try to stun !
@@ -258,6 +263,9 @@ newTalent{
 	cooldown = 6,
 	stamina = 12,
 	requires_target = true,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { stun = 2 } },
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
 	getShatter = function(self, t) return self:combatTalentLimit(t, 100, 10, 85) end,
@@ -270,10 +278,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5))
 
 		-- Try to Sunder !
@@ -323,6 +330,9 @@ newTalent{
 	stamina = 12,
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { stun = 2 } },
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	is_melee = true,
 	on_pre_use = function(self, t, silent) if not self:hasTwoHandedWeapon() then if not silent then game.logPlayer(self, "You require a two handed weapon to use this talent.") end return false end return true end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	action = function(self, t)
@@ -332,10 +342,9 @@ newTalent{
 			return nil
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5))
 
 		-- Try to Sunder !
@@ -363,7 +372,7 @@ newTalent{
 	sustain_stamina = 70,
 	no_energy = true,
 	tactical = { BUFF = 1 },
-	do_turn = function(self, t)
+	callbackOnActBase = function(self, t)
 		if self.blood_frenzy > 0 then
 			self.blood_frenzy = math.max(self.blood_frenzy - 2, 0)
 		end
@@ -392,4 +401,3 @@ newTalent{
 		format(t.bonuspower(self,t))
 	end,
 }
-

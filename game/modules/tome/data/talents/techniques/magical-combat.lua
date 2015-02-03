@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -144,7 +144,7 @@ newTalent{
 	getSPMult = function(self, t) return self:combatTalentScale(t, 1/7, 5/7) end,
 	info = function(self, t)
 		return ([[Raw magical damage channels through the caster's weapon, increasing Physical Power by %d.
-		Each time your crit with a melee blow, you will unleash a radius 2 ball of either fire, lightning or arcane damage, doing %0.2f.
+		Each time you crit with a melee blow, you will unleash a radius 2 ball of either fire, lightning or arcane damage, doing %0.2f.
 		The bonus scales with your Spellpower.
 		If you are using a shield this will only occur 75%% of the time.
 		If you are dual wielding this will only occur 50%% of the time.

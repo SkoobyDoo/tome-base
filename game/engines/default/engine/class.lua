@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ function make(c)
 	c.new = function(...)
 		local obj = {}
 		obj.__CLASSNAME = c._NAME
+		obj.__ATOMIC = true
 		setmetatable(obj, {__index=c})
 		if obj.init then obj:init(...) end
 		return obj
@@ -93,6 +94,7 @@ function inherit(...)
 		c.new = function(...)
 			local obj = {}
 			obj.__CLASSNAME = c._NAME
+			obj.__ATOMIC = true
 			setmetatable(obj, {__index=c})
 			if obj.init then obj:init(...) end
 			return obj
@@ -140,8 +142,8 @@ local function clonerecurs(d)
 	local n = {}
 	for k, e in pairs(d) do
 		local nk, ne = k, e
-		if type(k) == "table" and not k.__CLASSNAME then nk = clonerecurs(k) end
-		if type(e) == "table" and not e.__CLASSNAME then ne = clonerecurs(e) end
+		if type(k) == "table" and not k.__ATOMIC and not k.__CLASSNAME then nk = clonerecurs(k) end
+		if type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then ne = clonerecurs(e) end
 		n[nk] = ne
 	end
 	return n
@@ -169,7 +171,7 @@ function _M:clone(t)
 end
 
 local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
-	if use_saveinstead and d.__CLASSNAME and d.__SAVEINSTEAD then
+	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
 		d = d.__SAVEINSTEAD
 		if clonetable[d] then return d, 1 end
 	end
@@ -194,8 +196,8 @@ local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
 		k, e = next(d, k)
 	end
 	setmetatable(n, getmetatable(d))
-	if not noclonecall and n.cloned and n.__CLASSNAME then n:cloned(d) end
-	if n.__CLASSNAME then nb = nb + 1 end
+	if not noclonecall and n.cloned and (n.__ATOMIC or n.__CLASSNAME) then n:cloned(d) end
+	if n.__ATOMIC or n.__CLASSNAME then nb = nb + 1 end
 	return n, nb
 end
 
@@ -302,7 +304,7 @@ function _M:save(filter, allow)
 	local mt = getmetatable(self)
 	setmetatable(self, {})
 	local savefile = engine.Savefile.current_save
-	
+
 	local s = core.serial.new(
 		-- Zip to write to
 		savefile.current_save_zip,

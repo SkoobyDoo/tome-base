@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-use_shader = {type="distort", power=0.01, power_time=1000, blacken=0, power_amp=0.3} alterscreen = true
+use_shader = {type="distort", power=0.01, power_time=1000 * (speed_factor or 1), blacken=0, power_amp=0.3} alterscreen = true
 base_size = 64
 
 return {
@@ -26,7 +26,7 @@ return {
 	return {
 		trail = 0,
 		life = 32,
-		size = 70, sizev = 0, sizea = 0,
+		size = 70 * (size_factor or 1), sizev = 0, sizea = 0,
 
 		x = 0, xv = 0, xa = 0,
 		y = 0, yv = 0, ya = 0,

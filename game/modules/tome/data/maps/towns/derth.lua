@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ defineTile('1', "HARDWALL", nil, nil, "LIGHT_ARMOR_STORE")
 defineTile('4', "HARDWALL", nil, nil, "HERBALIST")
 defineTile('9', "HARDWALL", nil, nil, "JEWELRY")
 defineTile('a', "HARDWALL", nil, nil, "ALCHEMIST")
+defineTile('b', "HARDWALL", nil, nil, "TOOLSHOP")
 
 startx = 0
 starty = 20
@@ -88,7 +89,7 @@ tttttttttttt~~~tt.................ttt~~~tttttt~~~~
 ttttttttttt~~~~t....................t~~~~ttt~~~~~~
 ttttttttttt~~~tt..######....######...t~~~t~~~~~~~t
 tttttttttt~~~~t...######....######...tt~~~~~~~~~~t
-tttttttttt~~~tt...######....######....t~~~~~~~~ttt
+tttttttttt~~~tt...######....##b###....t~~~~~~~~ttt
 tttttttttt~~~t....###4##.....___......tt~~~~~~tttt
 tttttttttt~~tt......___......._........t~~~~tttttt
 ttttttttt...t........_........_........t~~~ttttttt

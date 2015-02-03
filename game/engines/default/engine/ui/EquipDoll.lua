@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ function _M:init(t)
 	self.actorWear = t.actorWear
 	self.filter = t.filter
 	self.subobject = t.subobject
+	self.subobject_restrict_slots = t.subobject_restrict_slots
 	self.focus_ui = nil
 
 	Base.init(self, t)
@@ -45,14 +46,8 @@ function _M:generate()
 	self:generateEquipDollFrames()
 
 	self.font_bold:setStyle("bold")
-	local tw, th = self.font_bold:size(self.actor.name)
-	local s = core.display.newSurface(tw, th)
-	s:erase(0, 0, 0, 0)
-	s:drawColorStringBlended(self.font_bold, self.actor.name, 0, 0, colors.GOLD.r, colors.GOLD.g, colors.GOLD.b, true)
+	self.charname_tex = self:drawFontLine(self.font_bold, self.actor.name)
 	self.font_bold:setStyle("normal")
-	self.charname_tex = {s:glTexture()}
-	self.charname_tex.w = tw
-	self.charname_tex.h = th
 
 	self.inner_scroll = self:makeFrame("ui/tooltip/", self.w, self.h)
 
@@ -122,13 +117,35 @@ function _M:generateEquipDollFrames()
 		local inven = self.actor:getInven(k)
 		if inven then
 			for item, def in ipairs(v) do
-				local frame = EquipDollFrame.new{actor=self.actor, inven=inven, name_pos=def.text, item=item, w=doll.w, h=doll.h, iw=doll.iw, ih=doll.ih, ix=doll.ix, iy=doll.iy, bg=doll.itemframe, bg_sel=doll.itemframe_sel, bg_empty=self.actor.inven_def[inven.name].infos and self.actor.inven_def[inven.name].infos.equipdoll_back, drag_enable=self.drag_enable, subobject=self.subobject}
+				if item > inven.max then break end
+
+				local frame = EquipDollFrame.new{actor=self.actor, inven=inven, name_pos=def.text, item=item, w=doll.w, h=doll.h, iw=doll.iw, ih=doll.ih, ix=doll.ix, iy=doll.iy, bg=doll.itemframe, bg_sel=doll.itemframe_sel, bg_empty=self.actor.inven_def[inven.name].infos and self.actor.inven_def[inven.name].infos.equipdoll_back, drag_enable=self.drag_enable}
 				frame.doll_select = true
 				frame.actorWear = function(_, ...) if self.actorWear then self.actorWear(frame, ...) end end
 				frame.fct=function(button, event) if frame:getItem() and self.fct then self.fct({inven=inven, item=item, object=frame:getItem()}, button, event) end end
 				frame.filter = self.filter
 				frame.on_focus_change=function(status) local ui = self.focus_ui if self.on_select and ui then self.on_select(ui, ui.ui.inven, ui.ui.item, ui.ui:getItem()) end end
 				uis[#uis+1] = {x=def.x, y=def.y, ui=frame, _weight=def.weight}
+				
+				if self.subobject and (not self.subobject_restrict_slots or (self.subobject_restrict_slots[inven.name] and self.subobject_restrict_slots[inven.name] >= item)) then
+					local frame = EquipDollFrame.new{actor=self.actor, inven=inven, name_pos=def.text, item=item, w=math.ceil(doll.w/2), h=math.ceil(doll.h/2), iw=math.ceil(doll.iw/2), ih=math.ceil(doll.ih/2), ix=math.floor(doll.ix/2), iy=math.floor(doll.iy/2), bg=doll.itemframe, bg_sel=doll.itemframe_sel, bg_empty=self.actor.inven_def[inven.name].infos and self.actor.inven_def[inven.name].infos.equipdoll_back, drag_enable=self.drag_enable, subobject=self.subobject}
+					frame.doll_select = true
+					frame.secondary = true
+					frame.no_name = true
+					frame.actorWear = function(_, ...) if self.actorWear then self.actorWear(frame, ...) end end
+					frame.fct=function(button, event) if frame:getItem() and self.fct then self.fct({inven=inven, item=item, object=frame:getItem()}, button, event) end end
+					frame.filter = self.filter
+					frame.on_focus_change=function(status) local ui = self.focus_ui if self.on_select and ui then self.on_select(ui, ui.ui.inven, ui.ui.item, ui.ui:getItem()) end end
+
+					local dsx, dsy = doll.w + 3, 0
+					if def.subshift == "up" then dsx, dsy = 0, -math.ceil(doll.h/2) - 3
+					elseif def.subshift == "bottom" then dsx, dsy = 0, doll.h + 3
+					elseif def.subshift == "left" then dsx, dsy = -math.ceil(doll.w/2) - 3, 0
+					end
+
+					uis[#uis+1] = {x=def.x + dsx, y=def.y + dsy, ui=frame, _weight=def.weight}
+				end
+
 				max_w = math.max(def.x, max_w)
 				max_h = math.max(def.y, max_h)
 			end
@@ -160,8 +177,8 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 
 	Base.drawFrame(self, self.inner_scroll, x, y + self.base_doll_y, 1, 1, 1, self.focused and 1 or 0.5)
 
-	if self.title_shadow then self.charname_tex[1]:toScreenFull(x + (self.w - self.charname_tex.w) / 2 + 2, y + self.base_doll_y + 5 + 2, self.charname_tex.w, self.charname_tex.h, self.charname_tex[2], self.charname_tex[3], 0, 0, 0, 0.5) end
-	self.charname_tex[1]:toScreenFull(x + (self.w - self.charname_tex.w) / 2, y + self.base_doll_y + 5, self.charname_tex.w, self.charname_tex.h, self.charname_tex[2], self.charname_tex[3])
+	if self.title_shadow then self:textureToScreen(self.charname_tex, x + (self.w - self.charname_tex.w) / 2 + 2, y + self.base_doll_y + 5 + 2, 0, 0, 0, 0.5) end
+	self:textureToScreen(self.charname_tex, x + (self.w - self.charname_tex.w) / 2, y + self.base_doll_y + 5)
 
 	local doll = self.actor.equipdolls[self.actor.equipdoll or "default"]
 	if not doll then return end

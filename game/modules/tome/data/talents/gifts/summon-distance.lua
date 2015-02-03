@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ newTalent{ short_name = "RITCH_FLAMESPITTER_BOLT",
 	type = {"wild-gift/other",1},
 	points = 5,
 	equilibrium = 2,
-	mesage = "@Source@ spits flames!",
+	message = "@Source@ spits flames!",
 	range = 10,
 	reflectable = true,
 	requires_target = true,

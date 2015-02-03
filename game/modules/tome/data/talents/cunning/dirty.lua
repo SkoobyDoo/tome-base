@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,13 +29,16 @@ newTalent{
 	tactical = { DISABLE = {stun = 2}, ATTACK = {weapon = 0.5} },
 	require = cuns_req1,
 	requires_target = true,
+	range = 1,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.2, 0.7) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
+	speed = "weapon",
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hitted then
@@ -44,7 +47,7 @@ newTalent{
 			end
 			if not target:hasEffect(target.EFF_STUNNED) then
 				self:logCombat(target, "#Target# resists the stun and #Source# quickly regains its footing!")
-				self.energy.value = self.energy.value + game.energy_to_act * self:combatSpeed()
+				self.energy.value = self.energy.value + game.energy_to_act * self:getSpeed("weapon")
 			end
 		end
 
@@ -86,16 +89,19 @@ newTalent{
 	require = cuns_req3,
 	requires_target = true,
 	tactical = { DISABLE = 2 },
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
 	on_pre_use = function(self, t)
 		if self:attr("never_move") then return false end
 		return true
 	end,
+	speed = "weapon",
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local tx, ty, sx, sy = target.x, target.y, self.x, self.y
 		local hitted = self:attackTarget(target, nil, 0, true)
 
@@ -103,13 +109,11 @@ newTalent{
 			if not self:canMove(tx,ty,true) or not target:canMove(sx,sy,true) then
 				self:logCombat(target, "Terrain prevents #Source# from switching places with #Target#.")
 				return true
-			end						
+			end
 			self:setEffect(self.EFF_EVASION, t.getDuration(self, t), {chance=50})
 			-- Displace
 			if not target.dead then
-				self.x = nil self.y = nil
 				self:move(tx, ty, true)
-				target.x = nil target.y = nil
 				target:move(sx, sy, true)
 			end
 		end
@@ -135,14 +139,17 @@ newTalent{
 	require = cuns_req4,
 	requires_target = true,
 	tactical = { DISABLE = 2, ATTACK = {weapon = 2} },
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.9) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	getSpeedPenalty = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "cun", 5, 50), 100, 20, 0, 55.7, 35.7) end, -- Limit < 100%
+	speed = "weapon",
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hitted then
@@ -161,4 +168,3 @@ newTalent{
 		format(100 * damage, duration, speedpen)
 	end,
 }
-

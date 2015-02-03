@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ local Module = require "engine.Module"
 local Dialog = require "engine.ui.Dialog"
 local Tooltip = require "engine.Tooltip"
 local MainMenu = require "mod.dialogs.MainMenu"
+local Downloader = require "engine.dialogs.Downloader"
+local FontPackage = require "engine.FontPackage"
 
 local Shader = require "engine.Shader"
 local Zone = require "engine.Zone"
@@ -35,6 +37,7 @@ local Map = require "engine.Map"
 local Level = require "engine.Level"
 local LogDisplay = require "engine.LogDisplay"
 local FlyingText = require "engine.FlyingText"
+local FontPackage = require "engine.FontPackage"
 
 local NicerTiles = require "mod.class.NicerTiles"
 local Grid = require "mod.class.Grid"
@@ -51,24 +54,34 @@ function _M:init()
 	engine.interface.GameMusic.init(self)
 	engine.interface.GameSound.init(self)
 	engine.GameEnergyBased.init(self, engine.KeyBind.new(), 100, 100)
-	self.profile_font = core.display.newFont("/data/font/DroidSerif-Italic.ttf", 14)
+	self.profile_font = FontPackage:get("default")
 
-	local background_name
-	if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
-	else background_name = {"tome3"}
+	self.background = self.__mod_info.keep_background_texture
+
+	if type(self.background) ~= "userdata" then
+		local background_name
+		if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
+		else background_name = {"tome3"}
+		end
+		local value = {name=background_name}
+		local hd = {"Boot:loadBackground", value=value}
+		if self:triggerHook(hd) then background_name = hd.value.name end
+		self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
 	end
-	
-	self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
+
 	if self.background then
 		self.background_w, self.background_h = self.background:getSize()
 		self.background, self.background_tw, self.background_th = self.background:glTexture()
 	end
 	
+	self:handleEvents()
+	if not profile.connected then core.webview, core.webview_inactive = nil, core.webview end
 	if not core.webview then self.tooltip = Tooltip.new(nil, 14, nil, colors.DARK_GREY, 380) end
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
 	self.stopped = config.settings.boot_menu_background
+	-- self.stopped = true
 	if core.display.safeMode() then self.stopped = true end
 	if self.stopped then
 		core.game.setRealtime(0)
@@ -86,21 +99,27 @@ function _M:loaded()
 	engine.interface.GameSound.loaded(self)
 end
 
+function _M:makeWebtooltip()
+	self.webtooltip = require("engine.ui.WebView").new{width=380, height=500, has_frame=true, never_clean=true, allow_popup=true,
+		url = ("http://te4.org/tooltip-ingame?steam=%d&vM=%d&vm=%d&vp=%d"):format(core.steam and 1 or 0, engine.version[1], engine.version[2], engine.version[3])
+	}
+	if self.webtooltip.unusable then
+		self.webtooltip = nil
+		self.tooltip = Tooltip.new(nil, 14, nil, colors.DARK_GREY, 380)
+	end
+end
+
 function _M:run()
 	self:triggerHook{"Boot:run"}
 
 	-- Web Tooltip?
 	if core.webview then
-		self.webtooltip = require("engine.ui.WebView").new{width=380, height=500, has_frame=true, never_clean=true, allow_popup=true,
-			url = ("http://te4.org/tooltip-ingame?steam=%d&vM=%d&vm=%d&vp=%d"):format(core.steam and 1 or 0, engine.version[1], engine.version[2], engine.version[3])
-		}
-		if self.webtooltip.unusable then
-			self.webtooltip = nil
-			self.tooltip = Tooltip.new(nil, 14, nil, colors.DARK_GREY, 380)
-		end
+		self:makeWebtooltip()
 	end
 
-	self.flyers = FlyingText.new()
+	local flyfont, flysize = FontPackage:getFont("flyer")
+	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
+	self.flyers:enableShadow(0.6)
 	self:setFlyingText(self.flyers)
 	self.log = function(style, ...) end
 	self.logSeen = function(e, style, ...) end
@@ -158,7 +177,7 @@ Now go and have some fun!]]
 	if self.s_log then
 		local w, h = self.s_log:getSize()
 		self.mouse:registerZone(self.w - w, self.h - h, w, h, function(button)
-			if button == "left" then util.browserOpenUrl(self.logged_url) end
+			if button == "left" then util.browserOpenUrl(self.logged_url, {is_external=true}) end
 		end, {button=true})
 	end
 
@@ -203,13 +222,15 @@ A usual problem is shaders and thus should be your first target to disable.]], 7
 end
 
 function _M:grabAddons()
+	if config.settings.no_auto_update_addons then return end
+
 	if core.steam then
 		self.updating_addons = {}
-		self.logdisplay("#{italic}##ROYAL_BLUe#Retrieving addons to update/download from Steam...#{normal}#")
+		self.logdisplay("#{italic}##ROYAL_BLUE#Retrieving addons to update/download from Steam...#{normal}#")
 		core.steam.grabSubscribedAddons(function(mode, teaa, title)
 			if mode == "end" then
 				self.updating_addons = nil
-				self.logdisplay("#{italic}##ROYAL_BLUe#Addons update finished.#{normal}#")
+				self.logdisplay("#{italic}##ROYAL_BLUE#Addons update finished.#{normal}#")
 				return
 			end
 
@@ -222,6 +243,57 @@ function _M:grabAddons()
 				self.logdisplay("#{italic}#Download of #LIGHT_RED#%s#LAST# failed.#{normal}#", self.updating_addons[teaa] or "???")
 			end
 		end)
+	else
+		if not core.webview then return end
+		self.logdisplay("#{italic}##ROYAL_BLUE#Retrieving addons to update/download from te4.org...#{normal}#")
+		local mlist = Module:listModules(true)
+		list = {}
+		for i = 1, #mlist do
+			for j, mod in ipairs(mlist[i].versions) do
+				if j > 1 then break end
+				if not mod.is_boot then
+					local adds = Module:listAddons(mod, true)
+					for k, add in ipairs(adds) do
+						if add.addon_version and add.teaa then
+							local a = {
+								long_name = add.long_name,
+								name = add.for_module..'-'..add.short_name,
+								version = add.addon_version,
+								id_dlc = add.id_dlc and add.id_dlc[1],
+								file = add.teaa,
+							}
+							table.insert(list, a)
+							list[a.name] = a
+						end
+					end
+				end
+			end
+		end
+		table.print(list)
+		local update_list = profile:checkAddonUpdates(list)
+		if update_list then
+			local co co = coroutine.create(function()
+			for i, add in ipairs(update_list) do
+				if core.webview then
+					local d = Downloader.new{title="Updating addon: #LIGHT_GREEN#"..list[add.name].long_name, co=co, dest=add.file..".tmp", url=add.download_url, allow_downloads={addons=true}}
+					local ok = d:start()
+					if ok then
+						local wdir = fs.getWritePath()
+						local _, _, dir, name = add.file:find("(.+)/([^/]+)$")
+						if dir then
+							fs.setWritePath(fs.getRealPath(dir))
+							fs.delete(name)
+							fs.rename(name..".tmp", name)
+							fs.setWritePath(wdir)
+							self.logdisplay("#{italic}#Download of #LIGHT_GREEN#%s#LAST# finished.#{normal}#", list[add.name].long_name)
+						end
+					end
+				end
+			end
+			self.logdisplay("#{italic}##ROYAL_BLUE#Addons update finished.#{normal}#")
+			end)
+			coroutine.resume(co)
+		end
 	end
 end
 
@@ -343,7 +415,7 @@ function _M:updateNews()
 
 	if self.news.link then
 		self.mouse:registerZone(5, self.tooltip.h - 30, self.tooltip.w, 30, function(button)
-			if button == "left" then util.browserOpenUrl(self.news.link) end
+			if button == "left" then util.browserOpenUrl(self.news.link, {is_external=true}) end
 		end, {button=true})
 	end
 end
@@ -385,6 +457,12 @@ function _M:display(nb_keyframes)
 			if w > h then
 				h = w * self.background_h / self.background_w
 				y = (self.h - h) / 2
+				if h < self.h then
+					h = self.h
+					w = h * self.background_w / self.background_h
+					x = (self.w - w) / 2
+					y = 0
+				end
 			else
 				w = h * self.background_w / self.background_h
 				x = (self.w - w) / 2
@@ -556,6 +634,18 @@ function _M:handleProfileEvent(evt)
 		local d = self.dialogs[#self.dialogs]
 		if d and d.__CLASSNAME == "mod.dialogs.MainMenu" then
 			d:on_recover_focus()
+		end
+	end
+	if evt and evt.e == "Connected" then
+		if core.webview_inactive then
+			core.webview, core.webview_inactive = core.webview_inactive, nil
+			self.tooltip = nil
+			self:makeWebtooltip()
+
+			local d = self.dialogs[#self.dialogs]
+			if d and d.__CLASSNAME == "mod.dialogs.MainMenu" then
+				d:on_recover_focus()
+			end
 		end
 	end
 	return evt

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -145,7 +145,7 @@ newEntity{ base = "BASE_NPC_HORROR_TEMPORAL",
 	resists = {all = 10, [DamageType.TEMPORAL] = 50},
 
 	resolvers.talents{
-		[Talents.T_PERFECT_AIM]={base=3, every=7, max=5},
+		[Talents.T_FATEWEAVER]={base=5, every=7, max=8},
 		[Talents.T_SPIN_FATE]={base=5, every=7, max=8},
 		[Talents.T_STEALTH]={base=3, every=7, max=5},
 		[Talents.T_SHADOWSTRIKE]={base=3, every=7, max=5},
@@ -171,19 +171,19 @@ newEntity{ base = "BASE_NPC_HORROR_TEMPORAL",
 	autolevel = "summoner",
 	ai = "dumb_talented_simple", ai_state = { talent_in=1, ai_move="move_snake" },
 	combat_armor = 1, combat_def = 10,
-	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 15), 1, 1.2), atk=15, apr=15, dammod={wil=0.8}, damtype=DamageType.TEMPORAL },
-	on_melee_hit = { [DamageType.TEMPORAL] = resolvers.mbonus(20, 10), },
+	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 15), 1, 1.2), atk=15, apr=15, dammod={wil=0.8}, damtype=DamageType.VOID },
+	on_melee_hit = { [DamageType.VOID] = resolvers.mbonus(20, 10), },
 
 	stun_immune = 1,
 	confusion_immune = 1,
 	silence_immune = 1,
 
-	resists = {[DamageType.TEMPORAL] = 50},
+	resists = {[DamageType.TEMPORAL] = 50, [DamageType.DARKNESS] = 50},
 
 	resolvers.talents{
 		[Talents.T_ENERGY_ABSORPTION]={base=3, every=7, max=5},
 		[Talents.T_ENERGY_DECOMPOSITION]={base=3, every=7, max=5},
-		[Talents.T_ENTROPIC_FIELD]={base=3, every=7, max=5},
+		[Talents.T_ENTROPY]={base=3, every=7, max=5},
 		[Talents.T_ECHOES_FROM_THE_VOID]={base=3, every=7, max=5},
 		[Talents.T_VOID_SHARDS]={base=2, every=7, max=5},
 	},

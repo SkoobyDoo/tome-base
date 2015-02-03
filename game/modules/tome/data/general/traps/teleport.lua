@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ newEntity{ base = "TRAP_TELEPORT",
 	message = "@Target@ is teleported away.",
 	pressure_trap = true,
 	triggered = function(self, x, y, who)
-		who:teleportRandom(x, y, 100)
+		game:onTickEnd(function()who:teleportRandom(x, y, 100)end)
 		return true
 	end
 }

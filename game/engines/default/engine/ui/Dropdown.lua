@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -94,7 +94,8 @@ function _M:display(x, y, nb_keyframes)
 
 	local item = self.c_list.list[self.c_list.sel]
 	if item then
-		if self.text_shadow then item._tex[1]:toScreenFull(x+1 + self.frame_sel.b4.w, y+1, self.c_list.fw, self.c_list.fh, item._tex[2], item._tex[3], 0, 0, 0, self.text_shadow) end
-		item._tex[1]:toScreenFull(x + self.frame_sel.b4.w, y, self.c_list.fw, self.c_list.fh, item._tex[2], item._tex[3])
+		local cy = (self.c_list.fh - self.c_list.font_h) / 2
+		if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
+		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, item._tex_color[1], item._tex_color[2], item._tex_color[3], 1)
 	end
 end

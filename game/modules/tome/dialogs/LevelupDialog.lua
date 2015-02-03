@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,8 +26,11 @@ local Textzone = require "engine.ui.Textzone"
 local TextzoneList = require "engine.ui.TextzoneList"
 local UIContainer = require "engine.ui.UIContainer"
 local TalentTrees = require "mod.dialogs.elements.TalentTrees"
+local StatusBox = require "mod.dialogs.elements.StatusBox"
 local Separator = require "engine.ui.Separator"
+local Empty = require "engine.ui.Empty"
 local DamageType = require "engine.DamageType"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog, mod.class.interface.TooltipsData))
 
@@ -65,7 +68,7 @@ function _M:init(actor, on_finish, on_birth)
 	self.talent_types_learned = {}
 	self.stats_increased = {}
 
-	self.font = core.display.newFont("/data/font/DroidSansMono.ttf", 12)
+	self.font = core.display.newFont(FontPackage:getFont("mono_small", "mono"))
 	self.font_h = self.font:lineSkip()
 
 	self.actor.__hidden_talent_types = self.actor.__hidden_talent_types or {}
@@ -76,7 +79,7 @@ function _M:init(actor, on_finish, on_birth)
 	if actor.alchemy_golem then self.golem_dup = backup(actor.alchemy_golem) end
 
 	if actor.descriptor then
-		for _, v in pairs(game.engine.Birther.birth_descriptor_def) do
+		for _, v in pairs(engine.Birther.birth_descriptor_def) do
 			if v.type == "subclass" and v.name == actor.descriptor.subclass then self.desc_def = v break end
 		end
 	end
@@ -151,6 +154,16 @@ function _M:getMaxTPoints(t)
 	return t.points + math.max(0, math.floor((self.actor.level - 50) / 10)) + (self.actor.talents_inc_cap and self.actor.talents_inc_cap[t.id] or 0)
 end
 
+function _M:subtleMessage(title, message, color)
+	if not self.t_messages then return self:simplePopup(title, message) end
+	return self.t_messages:setTextColor(message, color)
+end
+
+-- Some common colors
+local subtleMessageErrorColor = {r=255, g=100, b=100}
+local subtleMessageWarningColor = {r=255, g=255, b=80}
+local subtleMessageOtherColor = {r=255, g=215, b=0}
+
 function _M:finish()
 	local ok, dep_miss = self:checkDeps(true, true)
 	if not ok then
@@ -179,6 +192,24 @@ function _M:finish()
 		if self.actor:knowTalent(tid) then self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
 	end
 
+	-- Reshape autoupdate
+	if self.actor:knowTalent(self.actor["T_RESHAPE_WEAPON/ARMOUR"]) then
+		for inven_id, inven in pairs(self.actor.inven) do
+			for item = #inven, 1, -1 do
+				local o = inven[item]
+				if o.been_reshaped then
+					if o.wielded then
+						o = self.actor:takeoffObject(inven, item)
+						local t = self.actor:getTalentFromId(self.actor["T_RESHAPE_WEAPON/ARMOUR"])
+						t.reshape(self.actor, t, o, false)
+						self.actor:addObject(inven, o)
+						--self.actor:wearObject(o, true, true)
+					end
+				end
+			end
+		end
+	end
+	
 	-- Prodigies
 	if self.on_finish_prodigies then
 		for tid, ok in pairs(self.on_finish_prodigies) do if ok then self.actor:learnTalent(tid, true, nil, {no_unlearn=true}) end end
@@ -196,20 +227,20 @@ end
 function _M:incStat(sid, v)
 	if v == 1 then
 		if self.actor.unused_stats <= 0 then
-			self:simplePopup("Not enough stat points", "You have no stat points left!")
+			self:subtleMessage("Not enough stat points", "You have no stat points left!", subtleMessageErrorColor)
 			return
 		end
 		if self.actor:getStat(sid, nil, nil, true) >= self.actor.level * 1.4 + 20 then
-			self:simplePopup("Stat is at the maximum for your level", "You cannot increase this stat further until next level!")
+			self:subtleMessage("Stat is at the maximum for your level", "You cannot increase this stat further until next level!", subtleMessageOtherColor)
 			return
 		end
 		if self.actor:isStatMax(sid) or self.actor:getStat(sid, nil, nil, true) >= 60 + math.max(0, (self.actor.level - 50)) then
-			self:simplePopup("Stat is at the maximum", "You cannot increase this stat further!")
+			self:subtleMessage("Stat is at the maximum", "You cannot increase this stat further!", subtleMessageWarningColor)
 			return
 		end
 	else
 		if self.actor_dup:getStat(sid, nil, nil, true) == self.actor:getStat(sid, nil, nil, true) then
-			self:simplePopup("Impossible", "You cannot take out more points!")
+			self:subtleMessage("Impossible", "You cannot take out more points!", subtleMessageErrorColor)
 			return
 		end
 	end
@@ -313,15 +344,15 @@ function _M:learnTalent(t_id, v)
 	if t.generic then t_type, t_index = "generic", "unused_generics" end
 	if v then
 		if self.actor[t_index] < 1 then
-			self:simplePopup("Not enough "..t_type.." talent points", "You have no "..t_type.." talent points left!")
+			self:subtleMessage("Not enough "..t_type.." talent points", "You have no "..t_type.." talent points left!", subtleMessageErrorColor)
 			return
 		end
 		if not self.actor:canLearnTalent(t) then
-			self:simplePopup("Cannot learn talent", "Prerequisites not met!")
+			self:subtleMessage("Cannot learn talent", "Prerequisites not met!", subtleMessageErrorColor)
 			return
 		end
 		if self.actor:getTalentLevelRaw(t_id) >= self:getMaxTPoints(t) then
-			self:simplePopup("Already known", "You already fully know this talent!")
+			self:subtleMessage("Already known", "You already fully know this talent!", subtleMessageWarningColor)
 			return
 		end
 		self.actor:learnTalent(t_id, true)
@@ -331,15 +362,15 @@ function _M:learnTalent(t_id, v)
 		self.new_talents_changed = true
 	else
 		if not self.actor:knowTalent(t_id) then
-			self:simplePopup("Impossible", "You do not know this talent!")
+			self:subtleMessage("Impossible", "You do not know this talent!", subtleMessageErrorColor)
 			return
 		end
 		if not self:isUnlearnable(t, true) and self.actor_dup:getTalentLevelRaw(t_id) >= self.actor:getTalentLevelRaw(t_id) then
 			local _, could = self:isUnlearnable(t, true)
 			if could then
-				self:simplePopup("Impossible here", "You could unlearn this talent in a quiet place, like a #{bold}#town#{normal}#.")
+				self:subtleMessage("Impossible here", "You could unlearn this talent in a quiet place, like a #{bold}#town#{normal}#.", {r=200, g=200, b=255})
 			else
-				self:simplePopup("Impossible", "You cannot unlearn this talent!")
+				self:subtleMessage("Impossible", "You cannot unlearn this talent!", subtleMessageErrorColor)
 			end
 			return
 		end
@@ -365,11 +396,11 @@ function _M:learnType(tt, v)
 	self.talent_types_learned[tt] = self.talent_types_learned[tt] or {}
 	if v then
 		if self.actor:knowTalentType(tt) and self.actor.__increased_talent_types[tt] and self.actor.__increased_talent_types[tt] >= 1 then
-			self:simplePopup("Impossible", "You can only improve a category mastery once!")
+			self:subtleMessage("Impossible", "You can only improve a category mastery once!", subtleMessageWarningColor)
 			return
 		end
 		if self.actor.unused_talents_types <= 0 then
-			self:simplePopup("Not enough talent category points", "You have no category points left!")
+			self:subtleMessage("Not enough talent category points", "You have no category points left!", subtleMessageErrorColor)
 			return
 		end
 		if not self.actor.talents_types_def[tt] or (self.actor.talents_types_def[tt].min_lev or 0) > self.actor.level then
@@ -389,15 +420,15 @@ function _M:learnType(tt, v)
 		self.new_talents_changed = true
 	else
 		if self.actor_dup:knowTalentType(tt) == true and self.actor:knowTalentType(tt) == true and (self.actor_dup.__increased_talent_types[tt] or 0) >= (self.actor.__increased_talent_types[tt] or 0) then
-			self:simplePopup("Impossible", "You cannot take out more points!")
+			self:subtleMessage("Impossible", "You cannot take out more points!", subtleMessageErrorColor)
 			return
 		end
 		if self.actor_dup:knowTalentType(tt) == true and self.actor:knowTalentType(tt) == true and (self.actor.__increased_talent_types[tt] or 0) == 0 then
-			self:simplePopup("Impossible", "You cannot unlearn this category!")
+			self:subtleMessage("Impossible", "You cannot unlearn this category!", subtleMessageWarningColor)
 			return
 		end
 		if not self.actor:knowTalentType(tt) then
-			self:simplePopup("Impossible", "You do not know this category!")
+			self:subtleMessage("Impossible", "You do not know this category!", subtleMessageErrorColor)
 			return
 		end
 
@@ -655,13 +686,14 @@ function _M:createDisplay()
 		on_use = function(item, inc) self:onUseTalent(item, inc) end,
 		on_expand = function(item) self.actor.__hidden_talent_types[item.type] = not item.shown end,
 		scrollbar = true, no_tooltip = self.no_tooltip,
+		message_box = self.t_
 	}
 
 	self.c_gtree = TalentTrees.new{
 		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
 		tiles=game.uiset.hotkeys_display_icons,
 		tree=self.gtree,
-		width=320, height=self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
+		width=320, height=(self.no_tooltip and self.ih - 50) or self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
 		tooltip=function(item)
 			local x = self.display_x + self.uis[8].x - game.tooltip.max
 			if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
@@ -696,10 +728,6 @@ function _M:createDisplay()
 		on_use = function(item, inc) self:onUseTalent(item, inc) end,
 		no_tooltip = self.no_tooltip,
 	}
-
-	local vsep1 = Separator.new{dir="horizontal", size=self.ih - 20}
-	local vsep2 = Separator.new{dir="horizontal", size=self.ih - 20}
-	local hsep = Separator.new{dir="vertical", size=180}
 
 	self.b_stat = Button.new{can_focus = false, can_focus_mouse=true, text="Stats: "..self.actor.unused_stats, fct=function() end, on_select=function()
 		local str = desc_stats
@@ -738,32 +766,47 @@ function _M:createDisplay()
 		end
 	end}
 
+	self.t_messages = StatusBox.new{
+		font = core.display.newFont("/data/font/DroidSans.ttf", 16),
+		width = math.floor(2 * self.iw / 3), delay = 1,
+	}
+	local vsep1 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
+	local vsep2 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
+	local hsep = Separator.new{dir="vertical", size=180}
+	local align_empty1 = Empty.new{width=0,height=10}
+	local align_empty2 = Empty.new{width=0,height=0}
+
 
 	local ret = {
 		{left=-10, top=0, ui=self.b_stat},
-		{left=0, top=self.b_stat.h+10, ui=self.c_stat},
+		{left=0, top=self.b_stat, ui=align_empty1},
+		{left=0, top=align_empty1, ui=self.c_stat},
 
-		{left=self.c_stat, top=40, ui=vsep1},
+		{left=self.c_stat, top=align_empty1, ui=vsep1},
 
 		{left=vsep1, top=0, ui=self.b_class},
-		{left=vsep1, top=self.b_class.h + 10, ui=self.c_ctree},
+		{left=vsep1, top=align_empty1, ui=self.c_ctree},
 
-		{left=self.c_ctree, top=40, ui=vsep2},
+		{left=self.c_ctree, top=align_empty1, ui=vsep2},
 
-		{left=580, top=0, ui=self.b_generic},
-		{left=vsep2, top=self.b_generic.h + 10, ui=self.c_gtree},
+		{left=vsep2, top=align_empty1, ui=self.c_gtree},
+		{left=self.c_gtree, top=0, ui=align_empty2},
+		{right=align_empty2, top=0, ui=self.b_generic},
 
-		{left=330, top=0, ui=self.b_types},
+		{hcenter=vsep2, top=0, ui=self.b_types},
 
 		{right=0, bottom=0, ui=self.b_prodigies},
+
+		{hcenter=self.b_types, top=-self.t_messages.h, ui=self.t_messages},
 	}
 	if self.b_inscriptions then table.insert(ret, {right=self.b_prodigies.w, bottom=0, ui=self.b_inscriptions}) end
 
 	if self.no_tooltip then
-		local vsep3 = Separator.new{dir="horizontal", size=self.ih - 20}
-		self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, width=self.iw - 200 - 530 - 40, height = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0), dest_area = { h = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0) } }
-		ret[#ret+1] = {right=0, top=0, ui=self.c_desc}
-		ret[#ret+1] = {right=self.c_desc.w + 5, top=40, ui=vsep3}
+		local vsep3 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
+		-- will be recalculated
+		self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, pingpong=20, width=200, height = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0), dest_area = { h = self.ih - (self.b_prodigies and self.b_prodigies.h + 5 or 0) } }
+		ret[#ret+1] = {left=self.c_gtree, top=align_empty1, ui=vsep3}
+		ret[#ret+1] = {left=vsep3, right=0, top=0, ui=self.c_desc, calc_width=3}
 	end
 
 	return ret
@@ -803,9 +846,9 @@ function _M:getStatDesc(item)
 		text:add("Mindpower: ", color, ("%0.2f"):format(diff * 0.7), dc, true)
 		text:add("Mental save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
 		text:add("Spell save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		if self.actor:attr("use_psi_combat") then
-			text:add("Accuracy: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		end
+--		if self.actor:attr("use_psi_combat") then
+--			text:add("Accuracy: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
+--		end
 	elseif stat_id == self.actor.STAT_STR then
 		text:add("Physical power: ", color, ("%0.2f"):format(diff), dc, true)
 		text:add("Max encumbrance: ", color, ("%0.2f"):format(diff * 1.8), dc, true)

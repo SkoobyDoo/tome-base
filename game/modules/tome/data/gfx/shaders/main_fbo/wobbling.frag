@@ -1,9 +1,7 @@
 uniform float wobbling;
 uniform float tick;
-uniform sampler2D noisevol;
 uniform vec2 texSize;
 uniform sampler2D tex;
-uniform vec2 mapCoord;
 
 const float PI = 3.1415926535897932;
 

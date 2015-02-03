@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ defineTile("4", "HARDWALL", nil, nil, "MACE_WEAPON_STORE")
 defineTile("6", "HARDWALL", nil, nil, "SWORD_WEAPON_STORE")
 defineTile("5", "HARDWALL", nil, nil, "RUNIC_STORE")
 defineTile("9", "HARDWALL", nil, nil, "GEM_STORE")
+defineTile("a", "HARDWALL", nil, nil, "TOOLSHOP")
 
 -- addSpot section
 
@@ -78,7 +79,7 @@ return [[
 ####.....####.....F....&&&&....B......####....####
 ##############........&&&&&&.........#############
 ##############........&&&&&&.........#############
-####.....####.....E....&&&&....C......9#5#....####
+####.....##a#.....E....&&&&....C......9#5#....####
 ####....................&&....................####
 ####..........................................####
 ####..........................................####

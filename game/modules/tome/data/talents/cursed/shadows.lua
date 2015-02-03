@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -71,11 +71,12 @@ newTalent{
 	range = 10,
 	requires_target = true,
 	tactical = { CLOSEIN = 2 },
+	is_melee = true,
+	target = function(self, t) return {type="hit", pass_terrain = true, range=self:getTalentRange(t)} end,
 	action = function(self, t)
-		local tg = {type="hit", pass_terrain = true, range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		local start = rng.range(0, 8)
 		for i = start, start + 8 do
@@ -355,7 +356,7 @@ newTalent{
 
 		return true
 	end,
-	do_callShadows = function(self, t)
+	callbackOnActBase = function(self, t)
 		if not self.shadows then
 			self.shadows = {
 				remainingCooldown = 0
@@ -363,10 +364,6 @@ newTalent{
 		end
 
 		if game.zone.wilderness then return false end
-
-		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
-		if self.shadows.remainingCooldown > 0 then return false end
-		self.shadows.remainingCooldown = 10
 
 		local shadowCount = 0
 		for _, e in pairs(game.level.entities) do
@@ -376,6 +373,10 @@ newTalent{
 		if shadowCount >= t.getMaxShadows(self, t) then
 			return false
 		end
+		
+		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
+		if self.shadows.remainingCooldown > 0 then return false end
+		self.shadows.remainingCooldown = 10
 
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 8, true, {[Map.ACTOR]=true})
@@ -571,13 +572,13 @@ newTalent{
 	range = 6,
 	requires_target = true,
 	tactical = { ATTACK = 2 },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), nowarning=true} end,
 	getDefenseDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4.4, 10.1)) end,
 	getBlindsideChance = function(self, t) return self:combatTalentLimit(t, 100, 40, 80) end, -- Limit < 100%
 	action = function(self, t)
-		local range = self:getTalentRange(t)
-		local target = { type="hit", range=range, nowarning=true }
+		local target = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(target)
-		if not x or not y or not target or core.fov.distance(self.x, self.y, x, y) > range then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
 		if self:reactionToward(target) < 0 then
 			-- attack the target
@@ -633,4 +634,3 @@ newTalent{
 		This talent has no cost.]]):format(defenseDuration, blindsideChance)
 	end,
 }
-

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@ newEntity{ define_as = "TANNEN",
 	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
 	resolvers.drops{chance=100, nb=1, {defined="ORB_MANY_WAYS2"} },
 	resolvers.drops{chance=100, nb=1, {defined="ATHAME_WEST2"} },
+	resolvers.drops{chance=100, nb=1, {defined="NOTE4"} },
 
 	resists = { [DamageType.ACID] = 100, },
 

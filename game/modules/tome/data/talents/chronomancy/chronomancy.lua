@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,100 +17,37 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-newTalent{
-	name = "Spacetime Tuning",
-	type = {"chronomancy/other", 1},
-	points = 1,
-	tactical = { PARADOX = 2 },
-	no_npc_use = true,
-	no_unlearn_last = true,
-	on_learn = function(self, t)
-		if not self.preferred_paradox then self.preferred_paradox = 0 end
-	end,
-	on_unlearn = function(self, t)
-		if self.preferred_paradox then self.preferred_paradox = nil end
-	end,
-	getDuration = function(self, t) 
-		local power = math.floor(self:combatSpellpower()/10)
-		return math.max(20 - power, 10)
-	end,
-	action = function(self, t)
-		function getQuantity(title, prompt, default, min, max)
-			local result
-			local co = coroutine.running()
-
-			local dialog = engine.dialogs.GetQuantity.new(
-				title,
-				prompt,
-				default,
-				max,
-				function(qty)
-					result = qty
-					coroutine.resume(co)
-				end,
-				min)
-			dialog.unload = function(dialog)
-				if not dialog.qty then coroutine.resume(co) end
-			end
-
-			game:registerDialog(dialog)
-			coroutine.yield()
-			return result
-		end
-
-		local paradox = getQuantity(
-			"Spacetime Tuning",
-			"What's your preferred paradox level?",
-			math.floor(self.paradox))
-		if not paradox then return end
-		if paradox > 1000 then paradox = 1000 end
-		self.preferred_paradox = paradox
-		return true
-	end,
-	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local preference = self.preferred_paradox
-		local multiplier = getParadoxModifier(self, pm)*100
-		local _, will_modifier = self:getModifiedParadox()
-		local after_will = self:getModifiedParadox()
-		local _, failure = self:paradoxFailChance()
-		local _, anomaly = self:paradoxAnomalyChance()
-		local _, backfire = self:paradoxBackfireChance()
-		return ([[Use to set your preferred Paradox.  While resting you'll adjust your Paradox towards this number over %d turns.
-		The time it takes you to adjust your Paradox scales down with your Spellpower to a minimum of 10 turns.
-		
-		Preferred Paradox           : %d
-		Paradox effect multiplier   : %d%%
-		Willpower failure modifier  : %d
-		Paradox after Willpower     : %d
-		Current Failure chance      : %d%%
-		Current Anomaly chance      : %d%%
-		Current Backfire chance     : %d%%]]):format(duration, preference, multiplier, will_modifier, after_will, failure, anomaly, backfire)
-	end,
-}
+-- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
 	name = "Precognition",
 	type = {"chronomancy/chronomancy",1},
-	require = temporal_req1,
+	require = chrono_req1,
 	points = 5,
-	paradox = 5,
-	cooldown = 10,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	cooldown = 20,
 	no_npc_use = true,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 14)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 14))) end,
+	range = function(self, t) return 10 + math.min(self:combatTalentSpellDamage(t, 10, 20, getParadoxSpellpower(self, t))) end,
 	action = function(self, t)
-		if checkTimeline(self) == true then
-			return
+		-- Foresight bonuses
+		local defense = 0
+		local crits = 0
+		if self:knowTalent(self.T_FORESIGHT) then
+			defense = self:callTalent(self.T_FORESIGHT, "getDefense")
+			crits = self:callTalent(self.T_FORESIGHT, "getCritDefense")
 		end
-		game:playSoundNear(self, "talents/spell_generic")
-		self:setEffect(self.EFF_PRECOGNITION, t.getDuration(self, t), {})
+		
+		self:setEffect(self.EFF_PRECOGNITION, t.getDuration(self, t), {range=self:getTalentRange(t), actor=1, traps=1, defense=defense, crits=crits})
+		
 		return true
 	end,
 	info = function(self, t)
+		local range = self:getTalentRange(t)
 		local duration = t.getDuration(self, t)
-		return ([[You peer into the future, allowing you to explore your surroundings for %d turns.  When Precognition expires, you'll return to the point in time you first cast the spell.  Dying with precognition active will end the spell prematurely.
-		This spell splits the timeline.  Attempting to use another spell that also splits the timeline while this effect is active will be unsuccessful.
-		Splitting the timeline is difficult, you will only be protected after the current turn ends.]]):format(duration)
+		return ([[You peer into the future, sensing creatures and traps in a radius of %d for %d turns.
+		If you know Foresight you'll gain additional defense and chance to shrug off critical hits (equal to your Foresight bonuses) while Precognition is active.
+		The detection radius will scale with your Spellpower.]]):format(range, duration)
 	end,
 }
 
@@ -118,84 +55,158 @@ newTalent{
 	name = "Foresight",
 	type = {"chronomancy/chronomancy",2},
 	mode = "passive",
-	require = temporal_req2,
+	require = chrono_req2,
 	points = 5,
-	getRadius = function(self, t) return math.floor(self:combatTalentScale(t, 5, 13)) end,
-	do_precog_foresight = function(self, t)
-		self:magicMap(t.getRadius(self, t))
-		self:setEffect(self.EFF_SENSE, 1, {
-			range = t.getRadius(self, t),
-			actor = 1,
-			object = 1,
-			trap = 1,
-		})
+	getDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
+	getCritDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "combat_def", t.getDefense(self, t))
+		self:talentTemporaryValue(p, "ignore_direct_crits", t.getCritDefense(self, t))
 	end,
-	info = function(self, t)
-		local radius = t.getRadius(self, t)
-		return ([[When the duration of your Precognition expires, you'll be given a vision of your surroundings, sensing terrain, enemies, objects, and traps in a %d radius.]]):
-		format(radius)
-	end,
-}
-
-newTalent{
-	name = "Moment of Prescience",
-	type = {"chronomancy/chronomancy", 3},
-	require = temporal_req3,
-	points = 5,
-	paradox = 10,
-	cooldown = 18,
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 18, 3, 10.5)) end, -- Limit < 18
-	getPower = function(self, t) return self:combatTalentScale(t, 4, 15) end, -- Might need a buff
-	tactical = { BUFF = 4 },
-	no_energy = true,
-	no_npc_use = true,
-	action = function(self, t)
-		local power = t.getPower(self, t)
-		-- check for Spin Fate
-		local eff = self:hasEffect(self.EFF_SPIN_FATE)
-		if eff then
-			local bonus = math.max(0, (eff.cur_save_bonus or eff.save_bonus) / 2)
-			power = power + bonus
+	callbackOnStatChange = function(self, t, stat, v)
+		if stat == self.STAT_MAG then
+			self:updateTalentPassives(t)
 		end
-
-		self:setEffect(self.EFF_PRESCIENCE, t.getDuration(self, t), {power=power})
-		return true
 	end,
 	info = function(self, t)
-		local power = t.getPower(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[You pull your awareness fully into the moment, increasing your stealth detection, see invisibility, defense, and accuracy by %d for %d turns.
-		If you have Spin Fate active when you cast this spell, you'll gain a bonus to these values equal to 50%% of your spin.
-		This spell takes no time to cast.]]):
-		format(power, duration)
+		local defense = t.getDefense(self, t)
+		local crits = t.getCritDefense(self, t)
+		return ([[Gain %d defense and %d%% chance to shrug off critical hits.
+		If you have Precognition or See the Threads active these bonuses will be added to those effects, granting additional defense and chance to shrug off critical hits.
+		These bonuses scale with your Magic stat.]]):
+		format(defense, crits)
 	end,
 }
 
 newTalent{
-	name = "Spin Fate",
-	type = {"chronomancy/chronomancy", 4},
-	require = temporal_req4,
-	mode = "passive",
+	name = "Contingency",
+	type = {"chronomancy/chronomancy", 3},
+	require = chrono_req3,
 	points = 5,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
-	getSaveBonus = function(self, t) return self:combatTalentScale(t, 1, 5, 0.75) end,
-	do_spin_fate = function(self, t, type)
-		local save_bonus = t.getSaveBonus(self, t)
-	
-		if type ~= "defense" then
-			if not self:hasEffect(self.EFF_SPIN_FATE) then
-				game:playSoundNear(self, "talents/spell_generic")
+	sustain_paradox = 36,
+	mode = "sustained",
+	no_sustain_autoreset = true,
+	cooldown = 50,
+	getTrigger= function(self, t) return self:combatTalentScale(t, 0.25, 0.45, 0.6) end,
+	tactical = { DEFEND = 2 },
+	no_npc_use = true,  -- so rares don't learn useless talents
+	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
+	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
+	callbackOnHit = function(self, t, cb)
+		local p = self:isTalentActive(t.id)
+		local life_after = self.life - cb.value
+		local cont_trigger = self.max_life * t.getTrigger(self, t)
+		
+		-- Cast our contingent spell
+		if p and p.rest_count <= 0 and cont_trigger > life_after then
+			local cont_t = p.talent
+			local cont_id = self:getTalentFromId(cont_t)
+			local t_level = math.min(self:getTalentLevel(t), self:getTalentLevel(cont_t))
+			
+			-- Make sure we still know the talent and that the pre-use conditions apply
+			if t_level == 0 or not self:knowTalent(cont_id) or not self:preUseTalent(cont_id, true, true) then
+				game.logPlayer(self, "#LIGHT_RED#Your Contingency has failed to cast %s!", self:getTalentFromId(cont_t).name)
+			else
+				game.logPlayer(self, "#STEEL_BLUE#Your Contingency triggered %s!", self:getTalentFromId(cont_t).name)
+				p.rest_count = self:getTalentCooldown(t)
+				game:onTickEnd(function()
+					if not self.dead then
+						self:forceUseTalent(cont_t, {ignore_ressources=true, ignore_cd=true, ignore_energy=true, force_target=self, force_level=t_level})
+					end
+				end)
 			end
-			self:setEffect(self.EFF_SPIN_FATE, t.getDuration(self, t), {max_bonus = t.getSaveBonus(self, t) * 5, save_bonus = t.getSaveBonus(self, t)})
 		end
 		
+		return cb.value
+	end,
+	callbackOnActBase = function(self, t)
+		local p = self:isTalentActive(t.id)
+		if p.rest_count > 0 then p.rest_count = p.rest_count - 1 end
+	end,
+	iconOverlay = function(self, t, p)
+		local val = p.rest_count or 0
+		if val <= 0 then return "" end
+		local fnt = "buff_font"
+		return tostring(math.ceil(val)), fnt
+	end,
+	activate = function(self, t)
+		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyContingency").new(self))
+		if not talent then return nil end
+
+		local ret = {
+			talent = talent, rest_count = 0
+		}
+		
+		if core.shader.active(4) then
+			ret.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.2, img="runicshield_teal"}, {type="runicshield", shieldIntensity=0.10, ellipsoidalFactor=1, scrollingSpeed=1, time_factor=12000, bubbleColor={0.5, 1, 0.8, 0.2}, auraColor={0.5, 1, 0.8, 0.5}}))
+		end
+
+		return ret
+	end,
+	deactivate = function(self, t, p)
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
-		local save = t.getSaveBonus(self, t)
+		local trigger = t.getTrigger(self, t) * 100
+		local cooldown = self:getTalentCooldown(t)
+		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
+		return ([[Choose an activatable spell that's not targeted and does not have a fixed cooldown.  When you take damage that reduces your life below %d%% the spell will automatically cast.
+		This spell will cast even if it is currently on cooldown, will not consume a turn or resources, and uses the talent level of Contingency or its own, whichever is lower.
+		This effect can only occur once every %d turns and takes place after the damage is resolved.
+
+		Current Contingency Spell: %s]]):
+		format(trigger, cooldown, talent)
+	end,
+}
+
+newTalent{
+	name = "See the Threads",
+	type = {"chronomancy/chronomancy", 4},
+	require = chrono_req4,
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 50,
+	no_npc_use = true,  -- so rares don't learn useless talents
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 10, 25))) end,
+	on_pre_use = function(self, t, silent)
+		if checkTimeline(self) then
+			if not silent then
+				game.logPlayer(self, "The timeline is too fractured to do this now.")
+			end
+			return false
+		end
+		if game.level and game.level.data and game.level.data.see_the_threads_done then
+			if not silent then
+				game.logPlayer(self, "You've seen as much as you can here.")
+			end
+			return false
+		end
+		return true
+	end,
+	action = function(self, t)
+		-- Foresight Bonuses
+		local defense = 0
+		local crits = 0
+		if self:knowTalent(self.T_FORESIGHT) then
+			defense = self:callTalent(self.T_FORESIGHT, "getDefense")
+			crits = self:callTalent(self.T_FORESIGHT, "getCritDefense")
+		end
+		
+		if game.level and game.level.data then
+			game.level.data.see_the_threads_done = true
+		end
+		
+		self:setEffect(self.EFF_SEE_THREADS, t.getDuration(self, t), {defense=defense, crits=crits})
+		return true
+	end,
+	info = function(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[You've learned to make minor corrections in how future events unfold.  Each time you make a saving throw, all your saves are increased by %d (stacking up to a maximum increase of %d for each value).
-		The effect will last %d turns, but the duration will refresh everytime it's reapplied.]]):
-		format(save, save * 5, duration)
+		return ([[You peer into three possible futures, allowing you to explore each for %d turns.  When the effect expires, you'll choose which of the three futures becomes your present.
+		If you know Foresight you'll gain additional defense and chance to shrug off critical hits (equal to your Foresight values) while See the Threads is active.
+		This spell splits the timeline.  Attempting to use another spell that also splits the timeline while this effect is active will be unsuccessful.
+		If you die in any thread you'll revert the timeline to the point when you first cast the spell and the effect will end.
+		This spell may only be used once per zone level.]])
+		:format(duration)
 	end,
 }

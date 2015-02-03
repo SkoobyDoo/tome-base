@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ newTalent{
 	mode = "passive",
 	require = undeads_req1,
 	points = 5,
-	statBonus = function(self, t) return self:combatTalentScale(t, 2, 10, 0.75) end,
+	statBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 10, 0.75)) end,
 	getMaxDamage = function(self, t) return math.max(50, 100 - self:getTalentLevelRaw(t) * 10) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "inc_stats", {[self.STAT_STR]=t.statBonus(self, t)})
@@ -125,6 +125,8 @@ newTalent{
 	tactical = { ATTACK = {BLIGHT = 2} },
 	range = 1,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentScale(t, 0.28, 0.62) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	getDiseaseDamage = function(self, t) return self:combatTalentStatDamage(t, "con", 5, 50) end,
@@ -146,22 +148,21 @@ newTalent{
 		m.summon_time = 20
 		m.exp_worth = 0
 		m.no_drops = true
-		if self:knowTalent(self.T_BLIGHTED_SUMMONING) then 
-			m:incIncStat("mag", self:getMag()) 
+		if self:knowTalent(self.T_BLIGHTED_SUMMONING) then
+			m:incIncStat("mag", self:getMag())
 			m.blighted_summon_talent = self.T_REND
 		end
 		self:attr("summoned_times", 1)
-		
+
 		game.zone:addEntity(game.level, m, "actor", target.x, target.y)
 		game.level.map:particleEmitter(target.x, target.y, 1, "slime")
 		game:playSoundNear(target, "talents/slime")
 		m:logCombat(target, "A #GREY##Source##LAST# rises from the corpse of #Target#.")
 	end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		-- Damage Stats?
@@ -169,11 +170,11 @@ newTalent{
 		if self:getTalentLevel(t) >=2 then str_damage = t.getStatDamage(self, t) end
 		if self:getTalentLevel(t) >=3 then dex_damage = t.getStatDamage(self, t) end
 		if self:getTalentLevel(t) >=4 then con_damage = t.getStatDamage(self, t) end
-		
+
 		-- Ghoulify??
 		local ghoulify = 0
 		if self:getTalentLevel(t) >=5 then ghoulify = 1 end
-		
+
 		if hitted then
 			if target:canBe("disease") then
 				if target.dead and ghoulify > 0 then
@@ -199,4 +200,3 @@ newTalent{
 		format(100 * damage, duration, damDesc(self, DamageType.BLIGHT, disease_damage), stat_damage, stat_damage, stat_damage)
 	end,
 }
-

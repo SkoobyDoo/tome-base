@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ newEntity{ base = "BASE_LORE",
 }
 
 newEntity{
-	power_source = {nature=true},
+	power_source = {arcane=true},
 	define_as = "CORRUPTED_SANDQUEEN_HEART",
 	type = "corpse", subtype = "heart", image = "object/artifact/corrupted_queen_heart.png",
 	name = "Corrupted heart of the Sandworm Queen", unique=true, unided_name="pulsing organ",

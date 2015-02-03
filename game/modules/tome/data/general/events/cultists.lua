@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -128,128 +128,129 @@ end
 game.zone.cultist_event_levels = game.zone.cultist_event_levels or {}
 game.zone.cultist_event_levels[level.level] = true
 
-if not game.zone.cultist_event_on_turn then game.zone.cultist_event_on_turn = game.zone.on_turn or function() end end
-game.zone.on_turn = function()
-	if game.zone.cultist_event_on_turn then game.zone.cultist_event_on_turn() end
-	if not game.zone.cultist_event_levels[game.level.level] then return end
+if not game.zone.cultist_event_on_turn then
+	game.zone.cultist_event_on_turn = game.zone.on_turn or function() end
+	game.zone.on_turn = function()
+		if game.zone.cultist_event_on_turn then game.zone.cultist_event_on_turn() end
+		if not game.zone.cultist_event_levels[game.level.level] then return end
+		if game.level.turn_counter then
+			game.level.turn_counter = game.level.turn_counter - 1
+			game.player.changed = true
+			if game.level.turn_counter < 0 then
+				game.level.turn_counter = nil
 
-	if game.level.turn_counter then
-		game.level.turn_counter = game.level.turn_counter - 1
-		game.player.changed = true
-		if game.level.turn_counter < 0 then
-			game.level.turn_counter = nil
+				local scale = (7 - game.level.event_cultists.kill) / 6
 
-			local scale = (7 - game.level.event_cultists.kill) / 6
+				local Talents = require("engine.interface.ActorTalents")
+				local m = mod.class.NPC.new{
+					type = "demon", subtype = "major",
+					display = 'U',
+					name = "Shasshhiy'Kaish", color=colors.VIOLET, unique = true,
+					resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/demon_major_shasshhiy_kaish.png", display_h=2, display_y=-1}}},
+					desc = [[This demon would be very attractive if not for the hovering crown of flames, the three tails and sharp claws. As you watch her you can almost feel pain digging in your flesh. She wants you to suffer.]],
+					killer_message = "and used for her perverted desires",
+					level_range = {25, nil}, exp_worth = 2,
+					female = 1,
+					faction = "fearscape",
+					rank = 4,
+					size_category = 4,
+					max_life = 250, life_rating = 27, fixed_rating = true,
+					infravision = 10,
+					stats = { str=25, dex=25, cun=32, mag=26, con=14 },
+					move_others=true,
 
-			local Talents = require("engine.interface.ActorTalents")
-			local m = mod.class.NPC.new{
-				type = "demon", subtype = "major",
-				display = 'U',
-				name = "Shasshhiy'Kaish", color=colors.VIOLET, unique = true,
-				resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/demon_major_shasshhiy_kaish.png", display_h=2, display_y=-1}}},
-				desc = [[This demon would be very attractive if not for the hovering crown of flames, the three tails and sharp claws. As you watch her you can almost feel pain digging in your flesh. She wants you to suffer.]],
-				killer_message = "and used for her perverted desires",
-				level_range = {25, nil}, exp_worth = 2,
-				female = 1,
-				faction = "fearscape",
-				rank = 4,
-				size_category = 4,
-				max_life = 250, life_rating = 27, fixed_rating = true,
-				infravision = 10,
-				stats = { str=25, dex=25, cun=32, mag=26, con=14 },
-				move_others=true,
+					instakill_immune = 1,
+					stun_immune = 0.5,
+					blind_immune = 0.5,
+					combat_armor = 0, combat_def = 0,
 
-				instakill_immune = 1,
-				stun_immune = 0.5,
-				blind_immune = 0.5,
-				combat_armor = 0, combat_def = 0,
+					open_door = true,
 
-				open_door = true,
+					autolevel = "warriormage",
+					ai = "tactical", ai_state = { talent_in=2, ai_move="move_astar", },
+					ai_tactic = resolvers.tactic"melee",
+					resolvers.inscriptions(3, "rune"),
 
-				autolevel = "warriormage",
-				ai = "tactical", ai_state = { talent_in=2, ai_move="move_astar", },
-				ai_tactic = resolvers.tactic"melee",
-				resolvers.inscriptions(3, "rune"),
+					body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 
-				body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+					combat = { dam=resolvers.levelup(resolvers.mbonus(86, 20), 1, 1.4), atk=50, apr=30, dammod={str=1.1} },
 
-				combat = { dam=resolvers.levelup(resolvers.mbonus(86, 20), 1, 1.4), atk=50, apr=30, dammod={str=1.1} },
+					resolvers.drops{chance=100, nb=math.ceil(5 * scale), {tome_drops="boss"} },
 
-				resolvers.drops{chance=100, nb=math.ceil(5 * scale), {tome_drops="boss"} },
+					resolvers.talents{
+						[Talents.T_METEOR_RAIN]={base=4, every=5, max=7},
+						[Talents.T_INNER_DEMONS]={base=4, every=5, max=7},
+						[Talents.T_FLAME_OF_URH_ROK]={base=5, every=5, max=8},
+						[Talents.T_PACIFICATION_HEX]={base=5, every=5, max=8},
+						[Talents.T_BURNING_HEX]={base=5, every=5, max=8},
+						[Talents.T_BLOOD_LOCK]={base=5, every=5, max=8},
+						[Talents.T_SPELLCRAFT]=5,
+					},
+					resolvers.sustains_at_birth(),
 
-				resolvers.talents{
-					[Talents.T_METEOR_RAIN]={base=4, every=5, max=7},
-					[Talents.T_INNER_DEMONS]={base=4, every=5, max=7},
-					[Talents.T_FLAME_OF_URH_ROK]={base=5, every=5, max=8},
-					[Talents.T_PACIFICATION_HEX]={base=5, every=5, max=8},
-					[Talents.T_BURNING_HEX]={base=5, every=5, max=8},
-					[Talents.T_BLOOD_LOCK]={base=5, every=5, max=8},
-					[Talents.T_SPELLCRAFT]=5,
-				},
-				resolvers.sustains_at_birth(),
+					inc_damage = {all=90},
+				}
+				if game.level.event_cultists.kill == 1 then
+					m.on_die = function(self) world:gainAchievement("EVENT_CULTISTS", game:getPlayer(true)) end
+				end
+				m:resolve() m:resolve(nil, true)
 
-				inc_damage = {all=90},
-			}
-			if game.level.event_cultists.kill == 1 then
-				m.on_die = function(self) world:gainAchievement("EVENT_CULTISTS", game:getPlayer(true)) end
-			end
-			m:resolve() m:resolve(nil, true)
+				local o = mod.class.Object.new{
+					define_as = "METEORIC_CROWN",
+					slot = "HEAD",
+					type = "armor", subtype="head",
+					name = "Crown of Burning Pain", image = "object/artifact/crown_of_burning_pain.png",
+					unided_name = "burning crown",
+					desc = [[This crown of pure flames possesses a myriad of small molten rocks floating wildly above it. Each can be removed to throw as a true meteor.]],
+					add_name = " (#ARMOR#)",
+					power_source = {arcane=true},
+					display = "]", color=colors.SLATE,
+					moddable_tile = resolvers.moddable_tile("helm"),
+					require = { talent = { m.T_ARMOUR_TRAINING }, },
+					encumber = 4,
+					metallic = true,
+					unique = true,
+					require = { stat = { cun=25 } },
+					level_range = {20, 35},
+					cost = 300,
+					material_level = 3,
+					wielder = {
+						inc_stats = { [m.STAT_CUN] = math.floor(scale * 6), [m.STAT_WIL] = math.floor(scale * 6), },
+						combat_def = math.floor(3 + scale * 10),
+						combat_armor = 0,
+						fatigue = 4,
+						resists = { [engine.DamageType.FIRE] = 5 + math.floor(scale * 30)},
+						inc_damage = { [engine.DamageType.FIRE] = 5 + math.floor(scale * 30)},
+					},
+					max_power = 50, power_regen = 1,
+					use_talent = { id = m.T_METEOR_RAIN, level = 2, power = 50 - math.floor(scale * 25) },
+				}
+				o:resolve() o:resolve(nil, true)
 
-			local o = mod.class.Object.new{
-				define_as = "METEORIC_CROWN",
-				slot = "HEAD",
-				type = "armor", subtype="head",
-				name = "Crown of Burning Pain", image = "object/artifact/crown_of_burning_pain.png",
-				unided_name = "burning crown",
-				desc = [[This crown of pure flames possesses a myriad of small molten rocks floating wildly above it. Each can be removed to throw as a true meteor.]],
-				add_name = " (#ARMOR#)",
-				power_source = {arcane=true},
-				display = "]", color=colors.SLATE,
-				moddable_tile = resolvers.moddable_tile("helm"),
-				require = { talent = { m.T_ARMOUR_TRAINING }, },
-				encumber = 4,
-				metallic = true,
-				unique = true,
-				require = { stat = { cun=25 } },
-				level_range = {20, 35},
-				cost = 300,
-				material_level = 3,
-				wielder = {
-					inc_stats = { [m.STAT_CUN] = math.floor(scale * 6), [m.STAT_WIL] = math.floor(scale * 6), },
-					combat_def = math.floor(3 + scale * 10),
-					combat_armor = 0,
-					fatigue = 4,
-					resists = { [engine.DamageType.FIRE] = 5 + math.floor(scale * 30)},
-					inc_damage = { [engine.DamageType.FIRE] = 5 + math.floor(scale * 30)},
-				},
-				max_power = 50, power_regen = 1,
-				use_talent = { id = m.T_METEOR_RAIN, level = 2, power = 50 - math.floor(scale * 25) },
-			}
-			o:resolve() o:resolve(nil, true)
+				local x, y = util.findFreeGrid(game.level.event_cultists.queen_x-1, game.level.event_cultists.queen_y, 10, true, {[engine.Map.ACTOR]=true})
+				if x then
+					m.inc_damage.all = m.inc_damage.all - 10 * (game.level.event_cultists.kill)
+					m.max_life = m.max_life * (14 - game.level.event_cultists.kill) / 14
+					game.zone:addEntity(game.level, o, "object")
+					m:addObject(m:getInven("INVEN"), o)
 
-			local x, y = util.findFreeGrid(game.level.event_cultists.queen_x-1, game.level.event_cultists.queen_y, 10, true, {[engine.Map.ACTOR]=true})
-			if x then
-				m.inc_damage.all = m.inc_damage.all - 10 * (game.level.event_cultists.kill)
-				m.max_life = m.max_life * (14 - game.level.event_cultists.kill) / 14
-				game.zone:addEntity(game.level, o, "object")
-				m:addObject(m:getInven("INVEN"), o)
-
-				game.zone:addEntity(game.level, m, "actor", x, y)
-				require("engine.ui.Dialog"):simpleLongPopup("Cultist", "A terrible shout thunders across the level: 'Come my darling, come, I will be ssssooo *nice* to you!'\nYou should flee from this level!", 400)
-			end
-		elseif  game.level.turn_counter == 10 * 180 or
-			game.level.turn_counter == 10 * 150 or
-			game.level.turn_counter == 10 * 120 or
-			game.level.turn_counter == 10 * 90 or
-			game.level.turn_counter == 10 * 60 or
-			game.level.turn_counter == 10 * 30 then
-			local cultists = {}
-			for uid, e in pairs(game.level.entities) do if e.is_cultist_event then cultists[#cultists+1] = e end end
-			if #cultists > 0 then
-				local c = rng.table(cultists)
-				game.logSeen(c, "%s pulls a dagger and opens his own chest, piercing his beating heart. The stone glows with malevolent colors.", c.name:capitalize())
-				c.self_sacrifice = true
-				c:die()
+					game.zone:addEntity(game.level, m, "actor", x, y)
+					require("engine.ui.Dialog"):simpleLongPopup("Cultist", "A terrible shout thunders across the level: 'Come my darling, come, I will be ssssooo *nice* to you!'\nYou should flee from this level!", 400)
+				end
+			elseif  game.level.turn_counter == 10 * 180 or
+				game.level.turn_counter == 10 * 150 or
+				game.level.turn_counter == 10 * 120 or
+				game.level.turn_counter == 10 * 90 or
+				game.level.turn_counter == 10 * 60 or
+				game.level.turn_counter == 10 * 30 then
+				local cultists = {}
+				for uid, e in pairs(game.level.entities) do if e.is_cultist_event then cultists[#cultists+1] = e end end
+				if #cultists > 0 then
+					local c = rng.table(cultists)
+					game.logSeen(c, "%s pulls a dagger and opens his own chest, piercing his beating heart. The stone glows with malevolent colors.", c.name:capitalize())
+					c.self_sacrifice = true
+					c:die()
+				end
 			end
 		end
 	end

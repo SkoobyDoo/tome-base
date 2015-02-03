@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,6 +60,12 @@ function _M:archeryAcquireTargets(tg, params)
 
 	local tg = tg or {}
 	tg.type = tg.type or weapon.tg_type or ammo.combat.tg_type or tg.type or "bolt"
+	
+	-- Pass friendly actors
+	if self:attr("archery_pass_friendly") then
+		tg.friendlyfire=false	
+		tg.friendlyblock=false
+	end
 
 	if not tg.range then tg.range=math.max(math.min(weapon.range or 6, offweapon and offweapon.range or 40), self:attr("archery_range_override") or 1) end
 	tg.display = tg.display or {display='/'}
@@ -69,7 +75,7 @@ function _M:archeryAcquireTargets(tg, params)
 	print("[PROJECTILE SPEED] ::", tg.speed)
 
 	self:triggerHook{"Combat:archeryTargetKind", tg=tg, params=params, mode="target"}
-
+	
 	local x, y = params.x, params.y
 	if not x or not y then x, y = self:getTarget(tg) end
 	if not x or not y then return nil end
@@ -85,7 +91,7 @@ function _M:archeryAcquireTargets(tg, params)
 			end
 			if a then
 				local hd = {"Combat:archeryAcquire", tg=tg, params=params, weapon=weapon, ammo=a}
-				if self:triggerHook(hd) then hitted = hd.hitted end
+				self:triggerHook(hd)
 
 				if weapon.use_resource then
 					self['inc'..weapon.use_resource.kind:capitalize()](self, -weapon.use_resource.value)
@@ -114,7 +120,7 @@ function _M:archeryAcquireTargets(tg, params)
 					end
 					if a then 
 						local hd = {"Combat:archeryAcquire", tg=tg, params=params, weapon=weapon, ammo=a}
-						if self:triggerHook(hd) then hitted = hd.hitted end
+						self:triggerHook(hd)
 
 						targets[#targets+1] = {x=tx, y=ty, ammo=a.combat}
 
@@ -178,6 +184,15 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	local mult = tg.archery.mult or 1
 
 	self.turn_procs.weapon_type = {kind=weapon and weapon.talented or "unknown", mode="archery"}
+	
+	-- Warden's Focus
+	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if target == eff.target then
+			tg.archery.atk = (tg.archery.atk or 0) + eff.atk
+			tg.archery.crit = (tg.archery.crit or 0) + eff.crit
+		end
+	end
 
 	-- Does the blow connect? yes .. complex :/
 	if tg.archery.use_psi_archery then self:attr("use_psi_combat", 1) end
@@ -378,6 +393,11 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			t.proc(self, t, target, weapon)
 		end
 	end
+	
+	-- Temporal Cast
+	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
+		self:callTalent(self.T_WEAPON_FOLDING, "doWeaponFolding", target)
+	end
 
 	-- Special effect
 	if hitted and weapon and weapon.special_on_hit and weapon.special_on_hit.fct and (not target.dead or weapon.special_on_hit.on_kill) then
@@ -420,49 +440,20 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		self.shattering_impact_last_turn = game.turn
 	end
 
-	-- Temporal cast
-	if hitted and not target.dead and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
-		local t = self:getTalentFromId(self.T_WEAPON_FOLDING)
-		local dam = t.getDamage(self, t) * 2
-		DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, dam, tmp)
-		self:incParadox(- t.getParadoxReduction(self, t) * 2)
+	if self ~= target then
+		-- Regen on being hit
+		if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
+		if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
+		if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
+		if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
+		if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
+		if hitted and not target.dead and target:attr("vim_regen_when_hit") then target:incVim(target.vim_regen_when_hit) end
+
+		-- Resource regen on hit
+		if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
+		if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
 	end
-
-	-- Conduit (Psi)
-	if hitted and not target.dead and self:knowTalent(self.T_CONDUIT) and self:isTalentActive(self.T_CONDUIT) and self:attr("use_psi_combat") then
-		local t =  self:getTalentFromId(self.T_CONDUIT)
-		--t.do_combat(self, t, target)
-		local mult = 1 + 0.2*(self:getTalentLevel(t))
-		local auras = self:isTalentActive(t.id)
-		if auras.k_aura_on then
-			local k_aura = self:getTalentFromId(self.T_KINETIC_AURA)
-			local k_dam = mult * k_aura.getAuraStrength(self, k_aura)
-			DamageType:get(DamageType.PHYSICAL).projector(self, target.x, target.y, DamageType.PHYSICAL, k_dam, tmp)
-		end
-		if auras.t_aura_on then
-			local t_aura = self:getTalentFromId(self.T_THERMAL_AURA)
-			local t_dam = mult * t_aura.getAuraStrength(self, t_aura)
-			DamageType:get(DamageType.FIRE).projector(self, target.x, target.y, DamageType.FIRE, t_dam, tmp)
-		end
-		if auras.c_aura_on then
-			local c_aura = self:getTalentFromId(self.T_CHARGED_AURA)
-			local c_dam = mult * c_aura.getAuraStrength(self, c_aura)
-			DamageType:get(DamageType.LIGHTNING).projector(self, target.x, target.y, DamageType.LIGHTNING, c_dam, tmp)
-		end
-	end
-
-
-	-- Regen on being hit
-	if hitted and not target.dead and target:attr("stamina_regen_when_hit") then target:incStamina(target.stamina_regen_when_hit) end
-	if hitted and not target.dead and target:attr("mana_regen_when_hit") then target:incMana(target.mana_regen_when_hit) end
-	if hitted and not target.dead and target:attr("equilibrium_regen_when_hit") then target:incEquilibrium(-target.equilibrium_regen_when_hit) end
-	if hitted and not target.dead and target:attr("psi_regen_when_hit") then target:incPsi(target.psi_regen_when_hit) end
-	if hitted and not target.dead and target:attr("hate_regen_when_hit") then target:incHate(target.hate_regen_when_hit) end
-
-	-- Resource regen on hit
-	if hitted and self:attr("stamina_regen_on_hit") then self:incStamina(self.stamina_regen_on_hit) end
-	if hitted and self:attr("mana_regen_on_hit") then self:incMana(self.mana_regen_on_hit) end
-
+	
 	-- Ablative armor
 	if hitted and not target.dead and target:attr("carbon_spikes") then
 		if target.carbon_armor >= 1 then
@@ -517,6 +508,12 @@ function _M:archeryShoot(targets, talent, tg, params)
 	local tg = tg or {}
 	tg.type = tg.type or weapon.tg_type or ammo.combat.tg_type or tg.type or "bolt"
 	tg.talent = tg.talent or talent
+	
+	-- Pass friendly actors
+	if self:attr("archery_pass_friendly") then
+		tg.friendlyfire=false	
+		tg.friendlyblock=false
+	end
 
 	params = params or {}
 	self:triggerHook{"Combat:archeryTargetKind", tg=tg, params=params, mode="fire"}
@@ -566,6 +563,46 @@ function _M:hasArcheryWeapon(type)
 	local ammo = self:getInven("QUIVER")[1]
 	if self.inven[self.INVEN_PSIONIC_FOCUS] then
 		local pf_weapon = self:getInven("PSIONIC_FOCUS")[1]
+		if pf_weapon and pf_weapon.archery then
+			weapon = pf_weapon
+		end
+	end
+	if offweapon and not offweapon.archery then offweapon = nil end
+	if not weapon or not weapon.archery then
+		if self:attr("can_offshoot") and offweapon then
+			weapon, offweapon = offweapon, nil
+		else
+			return nil, "no shooter"
+		end
+	end
+	if not ammo then
+		return nil, "no ammo"
+	else
+		if not ammo.archery_ammo or weapon.archery ~= ammo.archery_ammo then
+			return nil, "bad ammo"
+		end
+		if offweapon and (not ammo.archery_ammo or offweapon.archery ~= ammo.archery_ammo) then
+			return nil, "bad ammo"
+		end
+	end
+	if type and weapon.archery_kind ~= type then return nil, "bad type" end
+	if type and offweapon and offweapon.archery_kind ~= type then return nil, "bad type" end
+	return weapon, ammo, offweapon
+end
+
+-- Get the shooter in the quick slot
+function _M:hasArcheryWeaponQS(type)
+	if self:attr("disarmed") then
+		return nil, "disarmed"
+	end
+
+	if not self:getInven("QS_MAINHAND") then return nil, "no shooter" end
+	if not self:getInven("QS_QUIVER") then return nil, "no ammo" end
+	local weapon = self:getInven("QS_MAINHAND")[1]
+	local offweapon = self:getInven("QS_OFFHAND") and self:getInven("QS_OFFHAND")[1]
+	local ammo = self:getInven("QS_QUIVER")[1]
+	if self.inven[self.INVEN_PSIONIC_FOCUS] then
+		local pf_weapon = self:getInven("QS_PSIONIC_FOCUS")[1]
 		if pf_weapon and pf_weapon.archery then
 			weapon = pf_weapon
 		end
@@ -651,7 +688,7 @@ function _M:reload()
 	local ammo, err = self:hasAmmo()
 	if not ammo then return end
 	if ammo.combat.shots_left >= ammo.combat.capacity then return end
-	local reloads = self:reloadRateQS()
+	local reloads = self:reloadRate()
 	ammo.combat.shots_left = math.min(ammo.combat.capacity, ammo.combat.shots_left + reloads)
 	return true
 end

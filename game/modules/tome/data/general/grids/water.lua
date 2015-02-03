@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -97,6 +97,7 @@ newEntity{ base = "WATER_DOOR_OPEN", define_as = "WATER_DOOR_OPEN_VERT", image =
 
 newEntity{
 	define_as = "WATER_FLOOR_BUBBLE",
+	type = "floor", subtype = "water",
 	name = "underwater air bubble", image = "terrain/underwater/subsea_floor_bubbles.png",
 	desc = "#LIGHT_BLUE#Replenishes air level when standing inside.#LAST#", show_tooltip = true,
 	display = ':', color=colors.LIGHT_BLUE, back_color=colors.DARK_BLUE,
@@ -183,6 +184,7 @@ for i = 1, 6 do newEntity{ base="POISON_DEEP_WATER", define_as = "POISON_DEEP_WA
 -----------------------------------------
 newEntity{
 	define_as = "WATER_UP_WILDERNESS",
+	type = "floor", subtype = "water",
 	name = "exit to the worldmap",
 	image = "terrain/underwater/subsea_floor_02.png", add_mos = {{image="terrain/underwater/subsea_stair_up_wild.png"}},
 	display = '<', color_r=255, color_g=0, color_b=255,
@@ -195,6 +197,7 @@ newEntity{
 
 newEntity{
 	define_as = "WATER_UP",
+	type = "floor", subtype = "water",
 	image = "terrain/underwater/subsea_floor_02.png", add_mos = {{image="terrain/underwater/subsea_stair_up.png"}},
 	name = "previous level",
 	display = '<', color_r=255, color_g=255, color_b=0,
@@ -206,6 +209,7 @@ newEntity{
 
 newEntity{
 	define_as = "WATER_DOWN",
+	type = "floor", subtype = "water",
 	image = "terrain/underwater/subsea_floor_02.png", add_mos = {{image="terrain/underwater/subsea_stair_down_03_64.png"}},
 	name = "next level",
 	display = '>', color_r=255, color_g=255, color_b=0,

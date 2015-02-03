@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,11 +34,11 @@ newEntity{
 	next_dream = 1,
 	block_move = function(self, x, y, who, act)
 		if who == game.player and act then
-			require("engine.ui.Dialog"):yesnoLongPopup("Altar of Dreams", "Looking into the altar will let you experience a dream. But should you die in it your real body might die too. Do you wish to look?", 400, function(ret)
+			require("engine.ui.Dialog"):yesnoLongPopup("Altar of Dreams", "Looking into the altar will let you experience a dream. Without the influence of Mindworm, it'll however have no power over your body. Do you wish to look?", 400, function(ret)
 				if ret then
 					local dream = self.next_dream
 					self.next_dream = util.boundWrap(self.next_dream+1, 1, game.zone.max_dreams)
-					game.level.data.run_dream(true, dream)
+					game.level.data.run_dream(false, dream)
 				end
 			end)
 		end

@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -279,7 +279,7 @@ static int noise_texture3d(lua_State *L)
 	auxiliar_setclass(L, "gl{texture}", -1);
 
 	glGenTextures(1, t);
-	glBindTexture(GL_TEXTURE_3D, *t);
+	tglBindTexture(GL_TEXTURE_3D, *t);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
@@ -316,7 +316,7 @@ static int noise_texture2d(lua_State *L)
 	auxiliar_setclass(L, "gl{texture}", -1);
 
 	glGenTextures(1, t);
-	glBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, *t);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -359,7 +359,7 @@ static int noise_texture2dstack(lua_State *L)
 		lua_settable(L, -3);
 
 		glGenTextures(1, t);
-		glBindTexture(GL_TEXTURE_2D, *t);
+		tglBindTexture(GL_TEXTURE_2D, *t);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

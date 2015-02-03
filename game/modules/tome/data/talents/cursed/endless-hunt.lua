@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -221,20 +221,17 @@ newTalent{
 		if self ~= game.player and (self:isTalentActive(self.T_CLEAVE) or self:isTalentActive(self.T_REPEL)) then return false end
 		return true
 	end,
+	sustain_slots = 'cursed_combat_style',
 	activate = function(self, t)
-		-- deactivate other talents and place on cooldown
-		if self:isTalentActive(self.T_CLEAVE) then
-			self:useTalent(self.T_CLEAVE)
-		elseif self:knowTalent(self.T_CLEAVE) then
-			local tCleave = self:getTalentFromId(self.T_CLEAVE)
-			self.talents_cd[self.T_CLEAVE] = tCleave.cooldown
-		end
-
-		if self:isTalentActive(self.T_REPEL) then
-			self:useTalent(self.T_REPEL)
-		elseif self:knowTalent(self.T_REPEL) then
+		-- Place other talents on cooldown.
+		if self:knowTalent(self.T_REPEL) and not self:isTalentActive(self.T_REPEL) then
 			local tRepel = self:getTalentFromId(self.T_REPEL)
 			self.talents_cd[self.T_REPEL] = tRepel.cooldown
+		end
+
+		if self:knowTalent(self.T_CLEAVE) and not self:isTalentActive(self.T_CLEAVE) then
+			local tCleave = self:getTalentFromId(self.T_CLEAVE)
+			self.talents_cd[self.T_CLEAVE] = tCleave.cooldown
 		end
 
 		local movementSpeedChange = t.getMovementSpeedChange(self, t)
@@ -252,8 +249,8 @@ newTalent{
 	info = function(self, t)
 		local movementSpeedChange = t.getMovementSpeedChange(self, t)
 		local defenseChange = t.getDefenseChange(self, t, true)
-		return ([[Let hate fuel your movements. While active, you gain %d%% movement speed. The recklessness of your movement brings you bad luck (Luck -3). 
-		Cleave, Repel and Surge cannot be active simultaneously, and activating one will place the others in cooldown. 
+		return ([[Let hate fuel your movements. While active, you gain %d%% movement speed. The recklessness of your movement brings you bad luck (Luck -3).
+		Cleave, Repel and Surge cannot be active simultaneously, and activating one will place the others in cooldown.
 		The speed of your movements, combined with the balance and utility of two weapons, gives you %d extra Defense while dual-wielding.
 		Movement speed and dual-wielding Defense both increase with with the Willpower stat.]]):format(movementSpeedChange * 100, defenseChange)
 	end,

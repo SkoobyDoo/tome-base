@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -115,6 +115,17 @@ function _M:getUITexture(file)
 	local r = {t=t, w=w, h=h, tw=tw, th=th}
 	tcache[uifile] = r
 	return r
+end
+
+function _M:drawFontLine(font, text, width) -- always draw with white, outputting texture can have it changed
+	width = width or font:size(text)
+	local tex = font:draw(text, width, 255, 255, 255, true)[1]
+	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h}
+	return r
+end
+
+function _M:textureToScreen(tex, x, y, r, g, b, a)
+	return tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
 end
 
 function _M:makeFrame(base, w, h)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,8 +32,9 @@ newTalent{
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/arcane")
 		return {
-			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
 			res = self:addTemporaryValue("resists", {[DamageType.ARCANE] = t.getArcaneResist(self, t)}),
+			display_resist = t.getArcaneResist(self, t),
+			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
 			particle = self:addParticles(Particles.new("arcane_power", 1)),
 		}
 	end,
@@ -44,8 +45,9 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
+		local resist = self.sustain_talents[t.id] and self.sustain_talents[t.id].display_resist or t.getArcaneResist(self, t)
 		return ([[Your mastery of magic allows you to enter a state of deep concentration, increasing your Spellpower by %d and arcane resistance by %d%%.]]):
-		format(t.getSpellpowerIncrease(self, t), t.getArcaneResist(self, t))
+		format(t.getSpellpowerIncrease(self, t), resist)
 	end,
 }
 
@@ -121,7 +123,7 @@ newTalent{
 	info = function(self, t)
 		local dam = t.getDamage(self, t)
 		return ([[Creates a vortex of arcane energies on the target for 6 turns. Each turn the vortex will look for another foe in sight and fire a manathrust doing %0.2f arcane damage to all foes in line.
-		If no foes are found, the target will take 150%% more arcane damage.
+		If no foes are found, the target will take 50%% more arcane damage.
 		If the target dies, the vortex explodes, releasing all remaining damage in a radius 2 ball of arcane force.
 		The damage will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.ARCANE, dam))

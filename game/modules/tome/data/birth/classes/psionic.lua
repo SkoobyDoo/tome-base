@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ newBirthDescriptor{
 		{
 			__ALL__ = "disallow",
 			Mindslayer = "allow",
-			Psion = "allow",
 			Solipsist = "allow",
 		},
 	},
@@ -105,6 +104,11 @@ newBirthDescriptor{
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000},
 		},
+		resolvers.inventorybirth{ id=true,
+			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
+			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
+			{type="gem",},
+		},
 		resolvers.generic(function(self)
 			-- Make and wield some alchemist gems
 			local gs = game.zone:makeEntity(game.level, "object", {type="weapon", subtype="greatsword", name="iron greatsword", ego_chance=-1000}, nil, true)
@@ -119,41 +123,6 @@ newBirthDescriptor{
 	},
 	copy_add = {
 		life_rating = -2,
-	},
-}
-
-newBirthDescriptor{
-	type = "subclass",
-	name = "Psion",
-	locked = function() return profile.mod.allow_build.psionic_psion and true or "hide"  end,
-	locked_desc = "TODO",
-	desc = {
-		"blahblah",
-		"Their most important stats are: Willpower and Cunning",
-		"#GOLD#Stat modifiers:",
-		"#LIGHT_BLUE# * +1 Strength, +0 Dexterity, +0 Constitution",
-		"#LIGHT_BLUE# * +0 Magic, +4 Willpower, +4 Cunning",
-		"#GOLD#Life per level:#LIGHT_BLUE# -4",
-	},
-	not_on_random_boss = true,
-	power_source = {psionic=true},
-	stats = { str=0, wil=5, cun=4, },
-	talents_types = {
-		["psionic/possession"]={true, 0.3},
-	},
-	talents = {
-		[ActorTalents.T_POSSESS] = 1,
-	},
-	copy = {
-		max_life = 90,
-		resolvers.equipbirth{ id=true,
-			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
-			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
-			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
-		},
-	},
-	copy_add = {
-		life_rating = -4,
 	},
 }
 

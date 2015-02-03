@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -467,6 +467,86 @@ local pick_ego = function(self, level, e, eegos, egos_list, type, picked_etype, 
 	if egos_list[#egos_list] then print("Picked ego", type.."/"..eegos..":"..etype, ":=>", egos_list[#egos_list].name) else print("Picked ego", type.."/"..eegos..":"..etype, ":=>", #egos_list) end
 end
 
+-- Applies a single ego to a (pre-resolved) entity
+-- May be in need to resolve afterwards
+function _M:applyEgo(e, ego, type, no_name_change)
+	if not e.__original then e.__original = e:clone() end
+	print("ego", ego.__CLASSNAME, ego.name, getmetatable(ego))
+	local orig_ego = ego
+	ego = ego:clone()
+	local newname = e.name
+	if not no_name_change then
+		local display = ego.display_string or ego.name
+		if ego.prefix or ego.display_prefix then newname = display .. e.name
+		else newname = e.name .. display end
+	end
+	print("applying ego", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
+	ego.unided_name = nil
+	ego.__CLASSNAME = nil
+	ego.__ATOMIC = nil
+	-- The ego requested instant resolving before merge ?
+	if ego.instant_resolve then ego:resolve(nil, nil, e) end
+	if ego.instant_resolve == "last" then ego:resolve(nil, true, e) end
+	ego.instant_resolve = nil
+	-- Void the uid, we dont want to erase the base entity's one
+	ego.uid = nil
+	ego.rarity = nil
+	ego.level_range = nil
+	-- Merge according to Object's ego rules.
+	table.ruleMergeAppendAdd(e, ego, self.ego_rules[type] or {})
+	
+	e.name = newname
+	if not ego.fake_ego then
+		e.egoed = true
+	end
+	e.ego_list = e.ego_list or {}
+	e.ego_list[#e.ego_list + 1] = {orig_ego, type, no_name_change}
+end
+
+-- WARNING the thing may be in need of re-identifying after this
+local function reapplyEgos(self, e)
+	if not e.__original then return e end
+	local brandNew = e.__original -- it will be cloned upon first ego application
+	if e.ego_list and #e.ego_list > 0 then
+		for _, ego_args in ipairs(e.ego_list) do
+			self:applyEgo(brandNew, unpack(ego_args))
+		end
+	end
+	e:replaceWith(brandNew)
+end
+
+-- Remove an ego
+function _M:removeEgo(e, ego)
+	local idx = nil
+	for i, v in ipairs(e.ego_list or {}) do
+		if v[1] == ego then
+			idx = i
+		end
+	end
+	if not idx then return end
+	table.remove(e.ego_list, idx)
+	reapplyEgos(self, e)
+	return ego
+end
+
+function _M:getEgoByName(e, ego_name)
+	for i, v in ipairs(e.ego_list or {}) do
+		if v[1].name == ego_name then return v[1] end
+	end
+end
+
+function _M:removeEgoByName(e, ego_name)
+	for i, v in ipairs(e.ego_list or {}) do
+		if v[1].name == ego_name then return self:removeEgo(e, v[1]) end
+	end
+end
+
+function _M:setEntityEgoList(e, list)
+	e.ego_list = table.clone(list)
+	reapplyEgos(self, e)
+	return e
+end
+
 --- Finishes generating an entity
 function _M:finishEntity(level, type, e, ego_filter)
 	e = e:clone()
@@ -480,23 +560,7 @@ function _M:finishEntity(level, type, e, ego_filter)
 
 		if #egos_list > 0 then
 			for ie, ego in ipairs(egos_list) do
-				print("addon", ego.__CLASSNAME, ego.name, getmetatable(ego))
-				ego = ego:clone()
-				local newname
-				if ego.prefix then newname = ego.name .. e.name
-				else newname = e.name .. ego.name end
-				print("applying addon", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
-				ego.unided_name = nil
-				ego.__CLASSNAME = nil
-				-- The ego requested instant resolving before merge ?
-				if ego.instant_resolve then ego:resolve(nil, nil, e) end
-				ego.instant_resolve = nil
-				-- Void the uid, we dont want to erase the base entity's one
-				ego.uid = nil
-				-- Merge according to Object's ego rules.
-				table.ruleMergeAppendAdd(e, ego, self.ego_rules[type] or {})
-				e.name = newname
-				e.egoed = true
+				self:applyEgo(e, ego, type)
 			end
 			-- Re-resolve with the (possibly) new resolvers
 			e:resolve()
@@ -568,23 +632,7 @@ function _M:finishEntity(level, type, e, ego_filter)
 
 		if #egos_list > 0 then
 			for ie, ego in ipairs(egos_list) do
-				print("ego", ego.__CLASSNAME, ego.name, getmetatable(ego))
-				ego = ego:clone()
-				local newname
-				if ego.prefix then newname = ego.name .. e.name
-				else newname = e.name .. ego.name end
-				print("applying ego", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
-				ego.unided_name = nil
-				ego.__CLASSNAME = nil
-				-- The ego requested instant resolving before merge ?
-				if ego.instant_resolve then ego:resolve(nil, nil, e) end
-				ego.instant_resolve = nil
-				-- Void the uid, we dont want to erase the base entity's one
-				ego.uid = nil
-				-- Merge according to Object's ego rules.
-				table.ruleMergeAppendAdd(e, ego, self.ego_rules[type] or {})
-				e.name = newname
-				e.egoed = true
+				self:applyEgo(e, ego, type)
 			end
 			-- Re-resolve with the (possibly) new resolvers
 			e:resolve()
@@ -605,7 +653,7 @@ function _M:finishEntity(level, type, e, ego_filter)
 	end
 
 	e:resolve(nil, true)
-
+	e:check("finish", e, self, level)
 	return e
 end
 
@@ -654,6 +702,7 @@ end
 --- If we are loaded we need a new uid
 function _M:loaded()
 	__zone_store[self] = true
+	self._tmp_data = {}
 
 	if type(self.reload_lists) ~= "boolean" or self.reload_lists then
 		self:loadBaseLists()
@@ -702,7 +751,7 @@ end
 
 local recurs = function(t)
 	local nt = {}
-	for k, e in pairs(nt) do if k ~= "__CLASSNAME" then nt[k] = e end end
+	for k, e in pairs(nt) do if k ~= "__CLASSNAME" and k ~= "__ATOMIC" then nt[k] = e end end
 	return nt
 end
 function _M:getLevelData(lev)
@@ -713,6 +762,7 @@ function _M:getLevelData(lev)
 	if res.alter_level_data then res.alter_level_data(self, lev, res) end
 	-- Make sure it is not considered a class
 	res.__CLASSNAME = nil
+	res.__ATOMIC = nil
 	return res
 end
 
@@ -897,6 +947,11 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	-- Generate the map
 	local generator = self:getGenerator("map", level, level_data.generator.map)
 	local ux, uy, dx, dy, spots = generator:generate(lev, old_lev)
+	if level.force_recreate then
+		level:removed()
+		return self:newLevel(level_data, lev, old_lev, game)
+	end
+
 	spots = spots or {}
 
 	for i = 1, #spots do print("[NEW LEVEL] spot", spots[i].x, spots[i].y, spots[i].type, spots[i].subtype) end

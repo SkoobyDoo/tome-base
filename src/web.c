@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ static int lua_web_toscreen(lua_State *L) {
 	if (tex) {
 		float r = 1, g = 1, b = 1, a = 1;
 
-		glBindTexture(GL_TEXTURE_2D, *tex);
+		tglBindTexture(GL_TEXTURE_2D, *tex);
 
 		GLfloat texcoords[2*4] = {
 			0, 0,

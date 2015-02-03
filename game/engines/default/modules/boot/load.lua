@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,11 +31,12 @@ local ActorLevel = require "engine.interface.ActorLevel"
 local ActorTemporaryEffects = require "engine.interface.ActorTemporaryEffects"
 local Birther = require "engine.Birther"
 local UIBase = require "engine.ui.Base"
+local FontPackage = require "engine.FontPackage"
 
-UIBase.font = core.display.newFont("/data/font/DroidSans.ttf", 16)
-UIBase.font_bold = core.display.newFont("/data/font/DroidSans.ttf", 16)
-UIBase.font_mono = core.display.newFont("/data/font/DroidSansMono.ttf", 16)
-UIBase.font_bold:setStyle("bold")
+-- Dialogs fonts
+UIBase.font = FontPackage:get("default")
+UIBase.font_bold = FontPackage:get("bold")
+UIBase.font_mono = FontPackage:get("mono")
 UIBase.font_h = UIBase.font:lineSkip()
 UIBase.font_bold_h = UIBase.font_bold:lineSkip()
 UIBase.font_mono_w = UIBase.font_mono:size(" ")

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -187,6 +187,7 @@ newTalent{
 	cooldown = function(self, t)
 		return 8 - util.bound(self:getTalentLevelRaw(t), 1, 5)
 	end,
+	speed = 'shield',
 	points = 5,
 	hard_cap = 5,
 	range = 1,
@@ -239,6 +240,8 @@ newTalent{
 			bt[DamageType.TEMPORAL] = true
 		end
 
+		bt.all = nil
+
 		local n = 0
 		for t, _ in pairs(bt) do n = n + 1 end
 
@@ -248,9 +251,9 @@ newTalent{
 			e_string = DamageType.dam_def[next(bt)].name
 		else
 			local list = table.keys(bt)
-			for i = 1, #list do
+			for i = 1, #list do if DamageType.dam_def[list[i]] then
 				list[i] = DamageType.dam_def[list[i]].name
-			end
+			end end
 			e_string = table.concat(list, ", ")
 		end
 		return bt, e_string
@@ -438,6 +441,7 @@ newTalent{
 	points = 1,
 	hard_cap = 1,
 	no_npc_use = true,
+	on_pre_use = function(self, t) return not self.resting end,
 	action = function(self, t)
 		local best = t.findBest(self, t)
 		if not best then game.logPlayer(self, "You require a digger to dig.") return end
@@ -510,14 +514,17 @@ newTalent{
 	equilibrium = 20,
 	cooldown = 50,
 	range = 10,
+	fixed_cooldown = true,
 	tactical = { BUFF = 2 },
 	action = function(self, t)
 		local nb = 3
 		local tids = {}
 		for tid, _ in pairs(self.talents_cd) do
 			local tt = self:getTalentFromId(tid)
-			if tt.type[1]:find("^wild%-gift/") or tt.type[1]:find("psionic/") or tt.type[1]:find("cursed/") then
-				tids[#tids+1] = tid
+			if not tt.fixed_cooldown then
+				if tt.type[1]:find("^wild%-gift/") or tt.type[1]:find("psionic/") or tt.type[1]:find("cursed/") then
+					tids[#tids+1] = tid
+				end
 			end
 		end
 		for i = 1, nb do
@@ -618,5 +625,34 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Can block up to 1 hit per 10 turns.]])
+	end,
+}
+
+newTalent{
+	name = "Psionic Maelstrom",
+	type = {"misc/objects", 1},
+	points = 5,
+	psi = 50,
+	cooldown = 50,
+	range = 10,
+	tactical = { AREAATTACK = 4 },
+	getDuration = function(self, t) return 8 end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 30, 300) end,
+	action = function(self, t)
+		local kinetic, charged, thermal = false, false, false
+		local object, index, object_inven_id = self:findInAllInventoriesBy("define_as", "KINETIC_FOCUS")
+		if object and self:getInven(object_inven_id).worn then kinetic = true end
+		object, index, object_inven_id = self:findInAllInventoriesBy("define_as", "CHARGED_FOCUS")
+		if object and self:getInven(object_inven_id).worn then charged = true end
+		object, index, object_inven_id = self:findInAllInventoriesBy("define_as", "THERMAL_FOCUS")
+		if object and self:getInven(object_inven_id).worn then thermal = true end
+		
+		self:setEffect(self.EFF_PSIONIC_MAELSTROM, t.getDuration(self, t), {kinetic=kinetic, charged=charged, thermal=thermal, dam=self:mindCrit(t.getDamage(self, t))})
+		
+		game:playSoundNear(self, "talents/spell_generic2")
+		return true
+	end,
+	info = function(self, t)
+		return ([[For the next 8 turns, powerful blasts of psionic energies will erupt from you, doing %d damage.]]):format(t.getDamage(self, t))
 	end,
 }

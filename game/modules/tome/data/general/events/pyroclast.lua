@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,44 +51,42 @@ end
 
 game.zone.pyroclast_event_levels = game.zone.pyroclast_event_levels or {}
 game.zone.pyroclast_event_levels[level.level] = list
-print("Pyroclast crash sites")
-table.print(list)
 
-if not game.zone.pyroclast_event_on_turn then game.zone.pyroclast_event_on_turn = game.zone.on_turn or function() end end
-game.zone.on_turn = function()
-	if game.zone.pyroclast_event_on_turn then game.zone.pyroclast_event_on_turn() end
+if not game.zone.pyroclast_event_on_turn then
+	game.zone.pyroclast_event_on_turn = game.zone.on_turn or function() end
+	game.zone.on_turn = function()
+		if game.zone.pyroclast_event_on_turn then game.zone.pyroclast_event_on_turn() end
+		if game.turn % 10 ~= 0 or not game.zone.pyroclast_event_levels[game.level.level] then return end
 
-	if game.turn % 10 ~= 0 or not game.zone.pyroclast_event_levels[game.level.level] then return end
+		local p = game:getPlayer(true)
+		local x, y, si = nil, nil, nil
+		for i = 1, #game.zone.pyroclast_event_levels[game.level.level] do
+			local fx, fy = game.zone.pyroclast_event_levels[game.level.level][i].x, game.zone.pyroclast_event_levels[game.level.level][i].y
+			if core.fov.distance(p.x, p.y, fx, fy) < 6 then x, y, si = fx, fy, i break end
+		end
 
-	local p = game:getPlayer(true)
-	local x, y, si = nil, nil, nil
-	for i = 1, #game.zone.pyroclast_event_levels[game.level.level] do
-		local fx, fy = game.zone.pyroclast_event_levels[game.level.level][i].x, game.zone.pyroclast_event_levels[game.level.level][i].y
-		if core.fov.distance(p.x, p.y, fx, fy) < 6 then x, y, si = fx, fy, i break end
-	end
+		if not x then return end
+		print("Crashing at ",x,y, si)
+		table.remove(game.zone.pyroclast_event_levels[game.level.level], si)
 
-	if not x then return end
-	print("Crashing at ",x,y, si)
-	table.remove(game.zone.pyroclast_event_levels[game.level.level], si)
+		game.level.data.meteor_x, game.level.data.meteor_y = x, y
+		game.level.map:particleEmitter(game.level.data.meteor_x, game.level.data.meteor_y, 10, "meteor").on_remove = function()
+			local x, y = game.level.data.meteor_x, game.level.data.meteor_y
+			game.level.map:particleEmitter(x, y, 5, "fireflash", {radius=5})
+			game:playSoundNear(game.player, "talents/fireflash")
 
-	game.level.data.meteor_x, game.level.data.meteor_y = x, y
-	game.level.map:particleEmitter(game.level.data.meteor_x, game.level.data.meteor_y, 10, "meteor").on_remove = function()
-		local x, y = game.level.data.meteor_x, game.level.data.meteor_y
-		game.level.map:particleEmitter(x, y, 5, "fireflash", {radius=5})
-		game:playSoundNear(game.player, "talents/fireflash")
-
-		for i = x-2, x+2 do for j = y-2, y+2 do
-			local og = game.level.map(i, j, engine.Map.TERRAIN)
-			if (core.fov.distance(x, y, i, j) <= 1 or rng.percent(40)) and og and not og.escort_portal and not og.change_level then
-				local g = game.zone.grid_list.LAVA_FLOOR:clone()
-				g:resolve() g:resolve(nil, true)
-				game.zone:addEntity(game.level, g, "terrain", i, j)
-			end
-		end end
-		for i = x-2, x+2 do for j = y-2, y+2 do
-			game.nicer_tiles:updateAround(game.level, i, j)
-		end end
+			for i = x-2, x+2 do for j = y-2, y+2 do
+				local og = game.level.map(i, j, engine.Map.TERRAIN)
+				if (core.fov.distance(x, y, i, j) <= 1 or rng.percent(40)) and og and not og.escort_portal and not og.change_level then
+					local g = game.zone.grid_list.LAVA_FLOOR:clone()
+					g:resolve() g:resolve(nil, true)
+					game.zone:addEntity(game.level, g, "terrain", i, j)
+				end
+			end end
+			for i = x-2, x+2 do for j = y-2, y+2 do
+				game.nicer_tiles:updateAround(game.level, i, j)
+			end end
+		end
 	end
 end
-
 return true

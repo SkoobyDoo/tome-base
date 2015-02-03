@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ newEntity{
 	power_source = {arcane=true},
 	name = "blighted ", prefix=true, instant_resolve=true,
 	keywords = {blight=true},
-	level_range = {15, 50},
+	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 30,
 	cost = 40,
@@ -170,13 +170,13 @@ newEntity{
 	cost = 30,
 	wielder = {
 		resists = {
-			[DamageType.COLD] = resolvers.mbonus_material(10, 5),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(10, 5),
 			[DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5),
 	},
 		resist_all_on_teleport = resolvers.mbonus_material(20, 5),
 		defense_on_teleport = resolvers.mbonus_material(30, 5),
 		effect_reduction_on_teleport = resolvers.mbonus_material(35, 10),
-		paradox_reduce_fails = resolvers.mbonus_material(30, 20),
+		paradox_reduce_anomalies = resolvers.mbonus_material(15, 10),
 	},
 }
 
@@ -355,6 +355,8 @@ newEntity{
 
 			local DamageType = require "engine.DamageType"
 			local damtype = combat.element
+			local explosion
+
 			if     damtype == DamageType.FIRE then      explosion = "flame"
 			elseif damtype == DamageType.COLD then      explosion = "freeze"
 			elseif damtype == DamageType.ACID then      explosion = "acid"
@@ -459,6 +461,8 @@ newEntity{
 
 			local DamageType = require "engine.DamageType"
 			local damtype = combat.element
+			local explosion
+			
 			if     damtype == DamageType.FIRE then      explosion = "flame"
 			elseif damtype == DamageType.COLD then      explosion = "freeze"
 			elseif damtype == DamageType.ACID then      explosion = "acid"
@@ -627,7 +631,7 @@ newEntity{
 	slot_forbid = false,
 	twohanded = false,
 	keywords = {magewarrior=true},
-	level_range = {20, 50},
+	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 35,
 	cost = 60,

@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2014 Nicolas Casalini
+    Copyright (C) 2009 - 2015 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -355,8 +355,31 @@ static int lua_set_current_mousehandler(lua_State *L)
 
 	return 0;
 }
+static int lua_mouse_show(lua_State *L)
+{
+	SDL_ShowCursor(lua_toboolean(L, 1) ? TRUE : FALSE);
+	return 0;
+}
+
+static int lua_is_touch_enabled(lua_State *L)
+{
+	lua_pushboolean(L, SDL_GetNumTouchDevices() > 0);
+	return 1;
+}
+
+static int lua_is_gamepad_enabled(lua_State *L)
+{
+	if (!SDL_NumJoysticks()) return 0;
+	const char *str = SDL_JoystickNameForIndex(0);
+	lua_pushstring(L, str);
+	return 1;
+}
+
 static const struct luaL_Reg mouselib[] =
 {
+	{"touchCapable", lua_is_touch_enabled},
+	{"gamepadCapable", lua_is_gamepad_enabled},
+	{"show", lua_mouse_show},
 	{"get", lua_get_mouse},
 	{"set", lua_set_mouse},
 	{"set_current_handler", lua_set_current_mousehandler},
@@ -870,7 +893,7 @@ static int sdl_font_draw(lua_State *L)
 	int b = luaL_checknumber(L, 6);
 	bool no_linefeed = lua_toboolean(L, 7);
 	bool direct_uid_draw = lua_toboolean(L, 8);
-	int h = TTF_FontLineSkip(*f);
+	int h = TTF_FontHeight(*f);
 	SDL_Color color = {r,g,b};
 
 	int fullmax = max_texture_size / 2;
@@ -1442,7 +1465,7 @@ printf("==SDM %dx%d :: %dx%d\n", w,h,w,dh);
 	return 3;
 }
 
-static int gl_tex_white = 0;
+int gl_tex_white = 0;
 int init_blank_surface()
 {
 	Uint32 rmask, gmask, bmask, amask;
@@ -2291,7 +2314,7 @@ static int sdl_texture_outline(lua_State *L)
 	glLoadIdentity();
 
 	/* Render to buffer: shadow */
-	glBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, *t);
 
 	GLfloat texcoords[2*4] = {
 		0, 0,
@@ -2638,7 +2661,7 @@ static int gl_fbo_toscreen(lua_State *L)
 	if (lua_isuserdata(L, 6))
 	{
 		shader_type *s = (shader_type*)lua_touserdata(L, 6);
-		useShader(s, fbo->w, fbo->h, w, h, r, g, b, a);
+		useShader(s, fbo->w, fbo->h, w, h, 0, 0, 1, 1, r, g, b, a);
 	}
 
 	if (!allowblend) glDisable(GL_BLEND);
@@ -2728,7 +2751,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	int shad_idx = 8;
 	while (lua_isuserdata(L, shad_idx) && lua_isuserdata(L, shad_idx+1)) {
 		shader_type *s = (shader_type*)lua_touserdata(L, shad_idx);
-		useShader(s, fbo->w, fbo->h, w, h, 1, 1, 1, 1);
+		useShader(s, fbo->w, fbo->h, w, h, 0, 0, 1, 1, 1, 1, 1, 1);
 
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -2743,7 +2766,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 	// Bind final fbo (must have bee previously activated)
 	shader_type *s = (shader_type*)lua_touserdata(L, shad_idx);
-	useShader(s, fbo_final->w, fbo_final->h, w, h, 1, 1, 1, 1);
+	useShader(s, fbo_final->w, fbo_final->h, w, h, 0, 0, 1, 1, 1, 1, 1, 1);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -3054,6 +3077,205 @@ static int gl_fbo_to_png(lua_State *L)
 	return 1;
 }
 
+
+static int fbo_texture_bind(lua_State *L)
+{
+	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
+	int i = luaL_checknumber(L, 2);
+
+	if (i > 0)
+	{
+		if (multitexture_active && shaders_active)
+		{
+			tglActiveTexture(GL_TEXTURE0+i);
+			tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+			tglActiveTexture(GL_TEXTURE0);
+		}
+	}
+	else
+	{
+		tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+	}
+
+	return 0;
+}
+
+static int pause_anims_started = 0;
+static int display_pause_anims(lua_State *L) {
+	bool new_state = lua_toboolean(L, 1);
+	if (new_state == anims_paused) return 0;
+
+	if (new_state) {
+		anims_paused = TRUE;
+		pause_anims_started = SDL_GetTicks();
+	} else {
+		anims_paused = FALSE;
+		frame_tick_paused_time += SDL_GetTicks() - pause_anims_started;
+	}
+	printf("[DISPLAY] Animations paused: %d\n", anims_paused);
+	return 0;
+}
+
+static int gl_get_max_texture_size(lua_State *L) {
+	lua_pushnumber(L, max_texture_size);
+	return 1;
+}
+
+/**************************************************************
+ * Vertex Objects
+ **************************************************************/
+
+static void update_vertex_size(lua_vertexes *vx, int size) {
+	if (size <= vx->size) return;
+	vx->size = size;
+	vx->vertices = realloc(vx->vertices, 2 * sizeof(GLfloat) * size);
+	vx->colors = realloc(vx->colors, 4 * sizeof(GLfloat) * size);
+	vx->textures = realloc(vx->textures, 2 * sizeof(GLfloat) * size);
+}
+
+static int gl_new_vertex(lua_State *L) {
+	int size = lua_tonumber(L, 1);
+	if (!size) size = 4;
+	lua_vertexes *vx = (lua_vertexes*)lua_newuserdata(L, sizeof(lua_vertexes));
+	auxiliar_setclass(L, "gl{vertexes}", -1);
+
+	vx->size = vx->nb = 0;
+	vx->vertices = NULL; vx->colors = NULL; vx->textures = NULL;
+	update_vertex_size(vx, size);
+
+	return 1;
+}
+
+static int gl_free_vertex(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+
+	if (vx->size > 0) {
+		free(vx->vertices);
+		free(vx->colors);
+		free(vx->textures);
+	}
+
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_vertex_add(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	float x = luaL_checknumber(L, 2);
+	float y = luaL_checknumber(L, 3);
+	float u = luaL_checknumber(L, 4);
+	float v = luaL_checknumber(L, 5);
+	float r = luaL_checknumber(L, 6);
+	float g = luaL_checknumber(L, 7);
+	float b = luaL_checknumber(L, 8);
+	float a = luaL_checknumber(L, 9);
+
+	if (vx->nb + 1 > vx->size) update_vertex_size(vx, vx->nb + 1);
+
+	vx->vertices[vx->nb * 2 + 0] = x;
+	vx->vertices[vx->nb * 2 + 1] = y;
+
+	vx->textures[vx->nb * 2 + 0] = u;
+	vx->textures[vx->nb * 2 + 1] = v;
+	
+	vx->colors[vx->nb * 4 + 0] = r;
+	vx->colors[vx->nb * 4 + 1] = g;
+	vx->colors[vx->nb * 4 + 2] = b;
+	vx->colors[vx->nb * 4 + 3] = a;
+
+	lua_pushnumber(L, vx->nb++);
+	return 1;
+}
+
+static int gl_vertex_add_quad(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	float r = luaL_checknumber(L, 2);
+	float g = luaL_checknumber(L, 3);
+	float b = luaL_checknumber(L, 4);
+	float a = luaL_checknumber(L, 5);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 6); float x1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 6); float y1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 6); float u1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 6); float v1 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 7); float x2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 7); float y2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 7); float u2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 7); float v2 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 8); float x3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 8); float y3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 8); float u3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 8); float v3 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	lua_pushnumber(L, 1); lua_gettable(L, 9); float x4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 2); lua_gettable(L, 9); float y4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 3); lua_gettable(L, 9); float u4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+	lua_pushnumber(L, 4); lua_gettable(L, 9); float v4 = luaL_checknumber(L, -1); lua_pop(L, 1);
+
+	if (vx->nb + 4 > vx->size) update_vertex_size(vx, vx->nb + 4);
+
+	int i = vx->nb;
+	vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
+	vx->vertices[i * 2 + 0] = x2; vx->vertices[i * 2 + 1] = y2; vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2; i++;
+	vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
+	// vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
+	// vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
+	vx->vertices[i * 2 + 0] = x4; vx->vertices[i * 2 + 1] = y4; vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4; i++;
+	
+	for (i = vx->nb; i < vx->nb + 4; i++) {
+		// printf("===c %d\n",i);
+		vx->colors[i * 4 + 0] = r; vx->colors[i * 4 + 1] = g; vx->colors[i * 4 + 2] = b; vx->colors[i * 4 + 3] = a;
+	}
+
+	lua_pushnumber(L, vx->nb += 4);
+	return 0;
+}
+
+static int gl_vertex_toscreen(lua_State *L) {
+	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	if (!vx->nb) return 0;
+	int x = luaL_checknumber(L, 2);
+	int y = luaL_checknumber(L, 3);
+
+	if (lua_isuserdata(L, 4))
+	{
+		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 4);
+		tglBindTexture(GL_TEXTURE_2D, *t);
+	}
+	else if (lua_toboolean(L, 4))
+	{
+		// Do nothing, we keep the currently bound texture
+	}
+	else
+	{
+		tglBindTexture(GL_TEXTURE_2D, gl_tex_white);
+	}
+
+	float r = 1, g = 1, b = 1, a = 1;
+	if (lua_isnumber(L, 5)) {
+		r = luaL_checknumber(L, 5);
+		g = luaL_checknumber(L, 5);
+		b = luaL_checknumber(L, 5);
+		a = luaL_checknumber(L, 5);
+	}
+	tglColor4f(r, g, b, a);
+	glTranslatef(x, y, 0);
+	glVertexPointer(2, GL_FLOAT, 0, vx->vertices);
+	glColorPointer(4, GL_FLOAT, 0, vx->colors);
+	glTexCoordPointer(2, GL_FLOAT, 0, vx->textures);
+	glDrawArrays(GL_QUADS, 0, vx->nb);
+	glTranslatef(-x, -y, 0);
+	return 0;
+}
+
+static int gl_counts_draws(lua_State *L) {
+	lua_pushnumber(L, nb_draws);
+	nb_draws = 0;
+	return 1;
+}
+
 static const struct luaL_Reg displaylib[] =
 {
 	{"setTextBlended", set_text_aa},
@@ -3065,6 +3287,7 @@ static const struct luaL_Reg displaylib[] =
 	{"newSurface", sdl_new_surface},
 	{"newTile", sdl_new_tile},
 	{"newFBO", gl_new_fbo},
+	{"newVO", gl_new_vertex},
 	{"fboSupportsTransparency", gl_fbo_supports_transparency},
 	{"newQuadratic", gl_new_quadratic},
 	{"drawQuad", gl_draw_quad},
@@ -3085,6 +3308,7 @@ static const struct luaL_Reg displaylib[] =
 	{"setMouseCursor", sdl_set_mouse_cursor},
 	{"setMouseDrag", sdl_set_mouse_cursor_drag},
 	{"setGamma", sdl_set_gamma},
+	{"pauseAnims", display_pause_anims},
 	{"glTranslate", gl_translate},
 	{"glScale", gl_scale},
 	{"glRotate", gl_rotate},
@@ -3096,6 +3320,8 @@ static const struct luaL_Reg displaylib[] =
 	{"glDepthTest", gl_depth_test},
 	{"glScissor", gl_scissor},
 	{"getScreenshot", sdl_get_png_screenshot},
+	{"glMaxTextureSize", gl_get_max_texture_size},
+	{"countDraws", gl_counts_draws},
 	{NULL, NULL},
 };
 
@@ -3114,6 +3340,15 @@ static const struct luaL_Reg sdl_surface_reg[] =
 	{"drawStringBlended", sdl_surface_drawstring_aa},
 	{"alpha", sdl_surface_alpha},
 	{"glTexture", sdl_surface_to_texture},
+	{NULL, NULL},
+};
+
+static const struct luaL_Reg gl_vertexes_reg[] =
+{
+	{"__gc", gl_free_vertex},
+	{"addPoint", gl_vertex_add},
+	{"addQuad", gl_vertex_add_quad},
+	{"toScreen", gl_vertex_toscreen},
 	{NULL, NULL},
 };
 
@@ -3150,6 +3385,7 @@ static const struct luaL_Reg gl_fbo_reg[] =
 	{"__gc", gl_free_fbo},
 	{"toScreen", gl_fbo_toscreen},
 	{"postEffects", gl_fbo_posteffects},
+	{"bind", fbo_texture_bind},
 	{"use", gl_fbo_use},
 	{"png", gl_fbo_to_png},
 	{NULL, NULL},
@@ -3639,6 +3875,7 @@ int luaopen_core(lua_State *L)
 	auxiliar_newclass(L, "gl{texture}", sdl_texture_reg);
 	auxiliar_newclass(L, "gl{fbo}", gl_fbo_reg);
 	auxiliar_newclass(L, "gl{quadratic}", gl_quadratic_reg);
+	auxiliar_newclass(L, "gl{vertexes}", gl_vertexes_reg);
 	auxiliar_newclass(L, "sdl{surface}", sdl_surface_reg);
 	auxiliar_newclass(L, "sdl{font}", sdl_font_reg);
 	luaL_openlib(L, "core.display", displaylib, 0);

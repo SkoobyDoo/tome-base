@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,18 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+-- "summoned" AI is checked in mod.class.NPC to count down summon timer.
 newAI("summoned", function(self)
-	-- Run out of time ?
-	if self.summon_time then
-		self.summon_time = self.summon_time - 1
-		if self.summon_time <= 0 then
-			if not self.summon_quiet then
-				game.logPlayer(self.summoner, "#PINK#Your summoned %s disappears.", self.name)
-			end
-			self:die()
-		end
-	end
-
 	if self:runAI(self.ai_state.ai_target or "target_simple") then
 		return self:runAI(self.ai_real)
 	end

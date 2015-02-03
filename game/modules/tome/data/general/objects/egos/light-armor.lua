@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -182,15 +182,15 @@ newEntity{
 	  effect_reduction_on_teleport = resolvers.mbonus_material(20, 10),
 
 	  resists={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(20, 10),
-	 [DamageType.DARKNESS] = resolvers.mbonus_material(20, 10),
+		 [DamageType.TEMPORAL] = resolvers.mbonus_material(20, 10),
+		 [DamageType.DARKNESS] = resolvers.mbonus_material(20, 10),
 	  },
 
 	  melee_project={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(5, 5),
+		[DamageType.DARKNESS] = resolvers.mbonus_material(5, 5),
 	  },
 	  ranged_project={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(5, 5),
+		[DamageType.DARKNESS] = resolvers.mbonus_material(5, 5),
 	  },
    },
 

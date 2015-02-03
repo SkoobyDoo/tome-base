@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ return {
 	zero_gravity = true,
 	no_autoexplore = true,
 	ambient_music = "Alchemist.ogg",
+	allow_respec = "limited",
 	generator =  {
 		map = {
 			class = "engine.generator.map.Empty",
@@ -162,7 +163,9 @@ return {
 				end
 			end
 
-			if to_worldmap then
+			if to_worldmap == "teleport" then
+				game.player:teleportRandom(math.floor(game.level.map.w / 2), math.floor(game.level.map.h / 2), 100, 10)
+			elseif to_worldmap then
 				game:changeLevel(1, game.player.last_wilderness or "wilderness", {temporary_zone_shift_back=game.level.temp_shift_zone and true or false, direct_switch=true})
 			end
 

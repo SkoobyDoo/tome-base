@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -166,6 +166,11 @@ newEffect{
 	on_lose = function(self, err) return "#Target# stops bleeding.", "-Deep Wounds" end,
 	activate = function(self, eff)
 		eff.healid = self:addTemporaryValue("healing_factor", -eff.heal_factor / 100)
+		if eff.src and eff.src:knowTalent(self.T_BLOODY_BUTCHER) then
+			local t = eff.src:getTalentFromId(eff.src.T_BLOODY_BUTCHER)
+			local resist = math.min(t.getResist(eff.src, t), math.max(0, self:combatGetResist(DamageType.PHYSICAL)))
+			self:effectTemporaryValue(eff, "resists", {[DamageType.PHYSICAL] = -resist})
+		end
 	end,
 	on_timeout = function(self, eff)
 		DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.power)
@@ -434,7 +439,7 @@ newEffect{
 		for i = 1, 4 do
 			local t = rng.tableRemove(tids)
 			if not t then break end
-			self.talents_cd[t.id] = 1 -- Just set cooldown to 1 since cooldown does not decrease while stunned
+			self:startTalentCooldown(t.id, 1) -- Just set cooldown to 1 since cooldown does not decrease while stunned
 		end
 	end,
 	on_timeout = function(self, eff)
@@ -470,7 +475,7 @@ newEffect{
 		for i = 1, 3 do
 			local t = rng.tableRemove(tids)
 			if not t then break end
-			self.talents_cd[t.id] = 1 -- Just set cooldown to 1 since cooldown does not decrease while stunned
+			self:startTalentCooldown(t.id, 1) -- Just set cooldown to 1 since cooldown does not decrease while stunned
 		end
 	end,
 	deactivate = function(self, eff)
@@ -885,11 +890,14 @@ newEffect{
 newEffect{
 	name = "HEROISM", image = "talents/infusion__heroism.png",
 	desc = "Heroism",
-	long_desc = function(self, eff) return ("Increases your three highest stats by %d."):format(eff.power) end,
+	long_desc = function(self, eff)
+		local xs = eff.die_at > 0 and (" and keeps you from dying even if your life drops to %+d"):format(-eff.die_at) or ""
+		return ("Increases your three highest stats by %d%s."):format(eff.power, xs) 
+	end,
 	type = "physical",
 	subtype = { nature=true },
 	status = "beneficial",
-	parameters = { power=1 },
+	parameters = { power=1, die_at = 0 },
 	activate = function(self, eff)
 		local l = { {Stats.STAT_STR, self:getStat("str")}, {Stats.STAT_DEX, self:getStat("dex")}, {Stats.STAT_CON, self:getStat("con")}, {Stats.STAT_MAG, self:getStat("mag")}, {Stats.STAT_WIL, self:getStat("wil")}, {Stats.STAT_CUN, self:getStat("cun")}, }
 		table.sort(l, function(a,b) return a[2] > b[2] end)
@@ -1017,7 +1025,7 @@ newEffect{
 newEffect{
 	name = "BURROW", image = "talents/burrow.png",
 	desc = "Burrow",
-	long_desc = function(self, eff) return "The target is able to burrow into walls." end,
+	long_desc = function(self, eff) return ("The target is able to burrow into walls, and additionally has %d more APR and %d%% more physical resistance penetration."):format(eff.power, eff.power / 2) end,
 	type = "physical",
 	subtype = { earth=true },
 	status = "beneficial",
@@ -1025,6 +1033,8 @@ newEffect{
 	activate = function(self, eff)
 		eff.pass = self:addTemporaryValue("can_pass", {pass_wall=1})
 		eff.dig = self:addTemporaryValue("move_project", {[DamageType.DIG]=1})
+		self:effectTemporaryValue(eff, "combat_apr", eff.power)
+		self:effectTemporaryValue(eff, "resists_pen", {[DamageType.PHYSICAL]=eff.power / 2 })
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("can_pass", eff.pass)
@@ -1086,6 +1096,7 @@ newEffect{
 		local d = game.turn - eff.start_turn
 		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
 	end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.start_turn = game.turn
 		eff.possible_end_turns = 10 * (eff.dur+1)
@@ -1114,6 +1125,7 @@ newEffect{
 		local d = game.turn - eff.start_turn
 		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
 	end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.start_turn = game.turn
 		eff.possible_end_turns = 10 * (eff.dur+1)
@@ -1142,6 +1154,7 @@ newEffect{
 		local d = game.turn - eff.start_turn
 		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
 	end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.start_turn = game.turn
 		eff.possible_end_turns = 10 * (eff.dur+1)
@@ -1271,14 +1284,14 @@ newEffect{
 	callbackOnHit = function(self, eff, cb, src)
 		if not src then return cb.value end
 		local share = cb.value * eff.sharePct
-		
+
 		-- deal the redirected damage as physical because I don't know how to preserve the damage type in a callback
 		if not self.__grapling_feedback_damage then
 			self.__grapling_feedback_damage = true
 			DamageType:get(DamageType.PHYSICAL).projector(self or eff.src, eff.trgt.x, eff.trgt.y, DamageType.PHYSICAL, share)
 			self.__grapling_feedback_damage = nil
 		end
-		
+
 		return cb.value - share
 	end,
 }
@@ -1492,6 +1505,7 @@ newEffect{
 	parameters = { power=0.1 },
 	on_gain = function(self, err) return "#Target# speeds up.", "+Reflexive Dodging" end,
 	on_lose = function(self, err) return "#Target# slows down.", "-Reflexive Dodging" end,
+	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.power)
 	end,
@@ -1552,7 +1566,7 @@ newEffect{
 		if eff.type == DamageType.FIRE then return ("Increases global speed by %d%%."):format(100 * self:callTalent(self.T_ELEMENTAL_HARMONY, "fireSpeed"))
 		elseif eff.type == DamageType.COLD then return ("Increases armour by %d."):format(3 + eff.power *2)
 		elseif eff.type == DamageType.LIGHTNING then return ("Increases all stats by %d."):format(math.floor(eff.power))
-		elseif eff.type == DamageType.ACID then return ("Increases life regen by %0.2f%%."):format(5 + eff.power * 2)
+		elseif eff.type == DamageType.ACID then return ("Increases life regen by %0.2f."):format(5 + eff.power * 2)
 		elseif eff.type == DamageType.NATURE then return ("Increases all resists by %d%%."):format(5 + eff.power * 1.4)
 		end
 	end,
@@ -2043,7 +2057,9 @@ newEffect{
 			game:delayedLogMessage(self, src, "block_heal", "#CRIMSON##Source# heals from blocking with %s shield!", string.his_her(self))
 		end
 		if eff.properties.ref and src.life then DamageType.defaultProjector(src, src.x, src.y, type, blocked, tmp, true) end
+		local full = false
 		if (self:knowTalent(self.T_RIPOSTE) or amt == 0) and src.life then
+			full = true
 			src:setEffect(src.EFF_COUNTERSTRIKE, (1 + dur_inc) * math.max(1, (src.global_speed or 1)), {power=eff.power, no_ct_effect=true, src=self, crit_inc=crit_inc, nb=nb})
 			if eff.properties.sb then
 				if src:canBe("disarm") then
@@ -2052,7 +2068,13 @@ newEffect{
 					game.logSeen(src, "%s resists the disarming attempt!", src.name:capitalize())
 				end
 			end
+			if eff.properties.on_cs then
+				eff.properties.on_cs(self, eff, dam, type, src)
+			end
 		end-- specify duration here to avoid stacking for high speed attackers
+
+		self:fireTalentCheck("callbackOnBlock", eff, dam, type, src)
+
 		return amt
 	end,
 	activate = function(self, eff)
@@ -2544,7 +2566,7 @@ newEffect{
 newEffect{
 	name = "JUGGERNAUT", image = "talents/juggernaut.png",
 	desc = "Juggernaut",
-	long_desc = function(self, eff) return ("Reduces physical damage received by %d%% and provides %d%% chances to ignore critial hits."):format(eff.power, eff.crits) end,
+	long_desc = function(self, eff) return ("Reduces physical damage received by %d%% and provides a %d%% chance to ignore critial hits."):format(eff.power, eff.crits) end,
 	type = "physical",
 	subtype = { superiority=true },
 	status = "beneficial",
@@ -2635,6 +2657,7 @@ newEffect {
 	},
 	status = "beneficial",
 	on_lose = function(self, eff) return "#Target# loses speed.", "-Directed Speed" end,
+	lists = 'break_with_step_up',
 	callbackOnMove = function(self, eff, moved, force, ox, oy)
 		local angle_start = normalize_direction(math.atan2(self.y - eff.start_y, self.x - eff.start_x))
 		local angle_last = normalize_direction(math.atan2(self.y - eff.last_y, self.x - eff.last_x))
@@ -2806,5 +2829,25 @@ newEffect {
 	long_desc = function(self, eff)
 		return ([[The target's reactions have quickened, giving +%d%% global speed.]])
 		:format(eff.global_speed_add * 100)
+	end,
+}
+
+newEffect{
+	name = "ANTI_GRAVITY", image = "talents/gravity_locus.png",
+	desc = "Anti-Gravity",
+	long_desc = function(self, eff) return ("Target is caught in an anti-gravity field, halving its knockback resistance."):format() end,
+	type = "physical",
+	subtype = { spacetime=true },
+	status = "detrimental",
+	on_gain = function(self, err) return nil, "+Anti-Gravity" end,
+	on_lose = function(self, err) return nil, "-Anti-Gravity" end,
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = new_eff.dur
+		return old_eff
+	end,
+	activate = function(self, eff)
+		if self:attr("knockback_immune") then
+			self:effectTemporaryValue(eff, "knockback_immune", -self:attr("knockback_immune") / 2)
+		end
 	end,
 }

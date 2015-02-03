@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,13 +33,8 @@ newTalent{
 	range = 10,
 	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 5, 22) end,
 	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.1, 0.8, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
+	on_pre_use = function(self, t) return self:hasShield() and true or false end,
 	activate = function(self, t)
-		local shield = self:hasShield()
-		if not shield then
-			game.logPlayer(self, "You cannot use Shield of Light without a shield!")
-			return nil
-		end
-
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 		}
@@ -49,9 +44,10 @@ newTalent{
 		return true
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if hitted and not target.dead and weapon and not self.turn_procs.shield_of_light then
-			self:attackTargetWith(target, weapon.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
+		local shield = self:hasShield()
+		if hitted and not target.dead and shield and not self.turn_procs.shield_of_light then
 			self.turn_procs.shield_of_light = true
+			self:attackTargetWith(target, weapon.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
 		end
 	end,
 	info = function(self, t)
@@ -75,6 +71,8 @@ newTalent{
 	positive = 25,
 	tactical = { ATTACK = {LIGHT = 2} },
 	requires_target = true,
+	range = 1,
+	is_melee = true,
 	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 3) end,
 	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 2, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
 	getLightDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200) end,
@@ -88,8 +86,8 @@ newTalent{
 
 		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target then return nil end
+		if not self:canProject(tg, x, y) then return nil end
 
 		-- First attack with weapon
 		self:attackTarget(target, nil, t.getWeaponDamage(self, t), true)
@@ -170,7 +168,7 @@ newTalent{
 }
 
 -- Moderate damage but very short CD
--- Spamming this on cooldown keeps positive energy up and gives a lot of cooldown management 
+-- Spamming this on cooldown keeps positive energy up and gives a lot of cooldown management
 newTalent{
 	name = "Crusade",
 	type = {"celestial/guardian", 4},
@@ -182,6 +180,8 @@ newTalent{
 	tactical = { ATTACK = {LIGHT = 2} },
 	range = 1,
 	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type = 'hit', range = self:getTalentRange(t)} end,
 	getWeaponDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.3, 1.2) end,
 	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.3, 1.2, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
 	getCooldownReduction = function(self, t) return math.ceil(self:combatTalentScale(t, 1, 3)) end,
@@ -192,11 +192,12 @@ newTalent{
 			game.logPlayer(self, "You cannot use Crusade without a shield!")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
-		
+		if not target then return nil end
+		if not self:canProject(tg, x, y) then return nil end
+
 		local hit = self:attackTarget(target, DamageType.LIGHT, t.getWeaponDamage(self, t), true)
 		if hit then self:talentCooldownFilter(nil, 1, t.getCooldownReduction(self, t), true) end
 
@@ -216,4 +217,3 @@ newTalent{
 		format(weapon, shield, cooldown, cleanse)
 	end,
 }
-

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -52,5 +52,28 @@ newEntity{
 			[Talents.T_VOLLEY_OF_ARROWS]=2,
 		},
 		inc_damage={ [DamageType.PHYSICAL] = resolvers.mbonus_material(14, 8), },
+	},
+}
+
+newEntity{
+	power_source = {arcane=true},
+	name = "keeper's ", prefix=true, instant_resolve=true,
+	keywords = {keepers=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 24,
+	cost = 40,
+	wielder = {
+		talent_cd_reduction={
+			[Talents.T_THREADED_ARROW]=1,
+		},
+		inc_damage={ 
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(14, 8),
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(14, 8),
+		},
+		resists_pen = {
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(10, 5),
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5),
+		},
 	},
 }

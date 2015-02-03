@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ newTalent{
 	range = 7,
 	hate = 0,
 	tactical = { BUFF = 2, DEFEND = 1 },
-	requires_target = function(self, t) return self:getTalentLevel(t) >= 5 end,
+	requires_target = true,
 	direct_hit = true,
 	getHateGain = function(self, t)
 		return math.sqrt(self:getTalentLevel(t)) * 2 + self:combatMindpower() * 0.02

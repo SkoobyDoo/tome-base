@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ defineTile(".", "GRASS")
 defineTile("t", "TREE")
 defineTile('*', "ROCK")
 defineTile('~', "FOUNTAIN")
+defineTile('F', "FOUNTAIN_MAIN")
 defineTile('-', "FIELDS")
 defineTile('_', "GRASS_ROAD_STONE")
 
@@ -38,6 +39,7 @@ defineTile('T', "GRASS", nil, "TARELION")
 startx = 24
 starty = 46
 
+-- ASCII map section
 return [[
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -66,7 +68,7 @@ return [[
 ^^^^...^^^_^^^_^^^^^...___...^^^^^^^^^^^^^^^^^^^^^
 ^^^.....^^_^^^_^^^^^..__~__..^^^^^^^^^^^^^^^^^^^^^
 ^^.*....____________.__~~~__.___________^^^^^^^^^^
-^^.@_____^^^^^^^^^^___~~~~~___^^^^^^^^^_^^^^^^^^^^
+^^.@_____^^^^^^^^^^___~~F~~___^^^^^^^^^_^^^^^^^^^^
 ^^.*....____________.__~~~__.___________^^^^^^^^^^
 ^^^.....^^_^^^_^^^^^..__~__..^^^^^^^^^^_^^^^^^^^^^
 ^^^^...^^^_^^^_^^^^^...___...^^^^^^^^^^_^^^^^^^^^^

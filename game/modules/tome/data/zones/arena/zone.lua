@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -208,6 +208,7 @@ return {
 				game.level.arena.rank = -1
 --				game.player:die(game.player)
 				master.version = game.__mod_info.version
+				master.addons = table.keys(game.__mod_info.addons)				
 				master.no_drops = true
 				master.energy.value = 0
 				master.player = nil
@@ -246,12 +247,12 @@ return {
 					local stri = "%s (%s %s %s)\n Score %d) - Wave: %d"
 					local i = 1
 					while(scores[i] and scores[i].name) do
-						p = scores[i]
+						local p = scores[i]
 						tmp = stri:format(p.name:capitalize(), p.sex or "???", p.race or "???", p.class or "???", p.score or 0, p.wave or 0)
 						text = text..line(tmp, "#LIGHT_BLUE#")
 						i = i + 1
 					end
-					p = world.arena.lastScore
+					local p = world.arena.lastScore
 					tmp = "\n#YELLOW#LAST SCORE:"..stri:format(p.name:capitalize(), p.sex or "unknown", p.race or "unknown", p.class or "unknown", p.score or 0, p.wave or 0)
 					return text..line(tmp, "#YELLOW#")
 				end

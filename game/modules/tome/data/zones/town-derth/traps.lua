@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -59,6 +59,12 @@ newEntity{ base = "BASE_STORE", define_as = "JEWELRY",
 	name="Jewelry",
 	display='9', color=colors.LIGHT_RED,
 	resolvers.store("GEMSTORE", "allied-kingdoms", "store/shop_door.png", "store/shop_sign_jewelry.png"),
+}
+
+newEntity{ base = "BASE_STORE", define_as = "TOOLSHOP",
+	name="Survival Supplies",
+	display='8', color=colors.UMBER,
+	resolvers.store("LITEDIGSTORE", "allied-kingdoms", "store/shop_door.png", "store/shop_sign_utility_store.png"),
 }
 
 newEntity{ base = "BASE_STORE", define_as = "ALCHEMIST",

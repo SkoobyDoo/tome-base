@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -79,4 +79,4 @@ newEntity{ base="BOGWATER",
 	define_as = "BOGWATER_MISC",
 	nice_tiler = { method="replace", base={"BOGWATER_MISC", 100, 1, 7}},
 }
-for i = 1, 7 do newEntity{ base="BOGWATER_MISC", define_as = "BOGWATER_MISC"..i, add_mos={{image="terrain/misc_bog"..i..".png"}}} end
+for i = 1, 7 do newEntity{ base="BOGWATER_MISC", define_as = "BOGWATER_MISC"..i, add_displays={class.new{image="terrain/misc_bog"..i..".png"}}} end

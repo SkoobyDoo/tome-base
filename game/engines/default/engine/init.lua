@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ fs.setWritePath(fs.getHomePath())
 -- Loads default config & user config
 fs.mount(engine.homepath, "/")
 config.loadString[[
-audio.music_volume = 60
+audio.music_volume = 40
 audio.effects_volume = 100
 audio.enable = true
 aa_text = true
@@ -124,6 +124,12 @@ if fs.exists("/keybinds2.cfg") then
 end
 
 fs.umount(engine.homepath)
+
+-- Staem cloud saves, disabled until the user chooses otherwise
+if core.steam and not config.settings.steam_cloud_choose then
+	print("[STEAM] Disabling cloud saves until the user elects to use them")
+	core.steam.cloudEnable(false)
+end
 
 -- Setup a default key handler
 local key = engine.KeyBind.new()

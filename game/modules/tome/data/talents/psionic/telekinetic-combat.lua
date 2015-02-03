@@ -21,7 +21,7 @@
 newTalent{
 	name = "Telekinetic Assault",
 	type = {"psionic/telekinetic-combat", 4},
-	require = psi_cun_high4, 
+	require = psi_cun_high4,
 	points = 5,
 	random_ego = "attack",
 	cooldown = 12,
@@ -29,6 +29,8 @@ newTalent{
 	range = 1,
 	requires_target = true,
 	tactical = { ATTACK = { PHYSICAL = 3 } },
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
 		local weapon = self:getInven("MAINHAND") and self:getInven("MAINHAND")[1]
 		if type(weapon) == "boolean" then weapon = nil end
@@ -36,10 +38,9 @@ newTalent{
 			game.logPlayer(self, "You cannot do that without a weapon in your hands.")
 			return nil
 		end
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 		self:attr("use_psi_combat", 1)
 		if self:getInven(self.INVEN_PSIONIC_FOCUS) then
 			for i, o in ipairs(self:getInven(self.INVEN_PSIONIC_FOCUS)) do
@@ -54,7 +55,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Assault your target with all weapons, dealing two strikes with your telekinetically-wielded weapon for %d%% damage followed by an attack with your physical weapon for %d%% damage. 
+		return ([[Assault your target with all weapons, dealing two strikes with your telekinetically-wielded weapon for %d%% damage followed by an attack with your physical weapon for %d%% damage.
 		This physical weapon attack uses your Willpower and Cunning instead of Strength and Dexterity to determine Accuracy and damage.
 		Any active Aura damage bonusses will extend to your main weapons for this attack.]]):
 		format(100 * self:combatTalentWeaponDamage(t, 1.2, 1.9), 100 * self:combatTalentWeaponDamage(t, 1.5, 2.5))

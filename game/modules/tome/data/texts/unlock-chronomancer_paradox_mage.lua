@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ return "New Class: #LIGHT_GREEN#Paradox Mage (Chronomancer)",
 Some seek to weave this fabric, to bend it and shape it to their own will.  Only the truly dedicated or the truly mad manage to unlock the secrets of time and space.
 
 You have learned such secrets and can now create new characters with the #LIGHT_GREEN#Paradox Mage class#WHITE#.
+Additionally you may now create new Temporal Warden characters that can learn the #LIGHT_GREEN#Timeline Threading talents#WHITE#.
 
 Paradox Mages are non-traditional spell casters who use chronomancy to reshape the universe.
 Class features:#YELLOW#

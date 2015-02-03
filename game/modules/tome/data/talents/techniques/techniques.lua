@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@ newTalentType{ allow_random=true, type="technique/2hweapon-assault", name = "two
 newTalentType{ allow_random=true, type="technique/strength-of-the-berserker", name = "berserker's strength", description = "Fear nothing!" }
 newTalentType{ allow_random=true, type="technique/2hweapon-offense", name = "two-handed weapons", description = "Specialized two-handed techniques." }
 newTalentType{ allow_random=true, type="technique/2hweapon-cripple", name = "two-handed maiming", description = "Specialized two-handed techniques." }
-newTalentType{ allow_random=true, type="technique/shield-offense", name = "shield offense", description = "Specialized weapon and shield techniques." }
-newTalentType{ allow_random=true, type="technique/shield-defense", name = "shield defense", description = "Specialized weapon and shield techniques." }
+newTalentType{ allow_random=true, type="technique/shield-offense", name = "shield offense", speed = "shield", description = "Specialized weapon and shield techniques." }
+newTalentType{ allow_random=true, type="technique/shield-defense", name = "shield defense", speed = "shield", description = "Specialized weapon and shield techniques." }
 newTalentType{ allow_random=true, type="technique/dualweapon-training", name = "dual weapons", description = "Specialized dual wielding techniques." }
 newTalentType{ allow_random=true, type="technique/dualweapon-attack", name = "dual techniques", description = "Specialized dual wielding techniques." }
 newTalentType{ allow_random=true, type="technique/archery-base", name = "archery - base", description = "Ability to shoot." }
@@ -283,7 +283,7 @@ getUnarmedTrainingBonus = function(self)
 	local damage = t.getPercentInc(self, t) or 0
 	return damage + 1
 end
-	
+
 cancelStances = function(self)
 	if self.cancelling_stances then return end
 	local stances = {self.T_STRIKING_STANCE, self.T_GRAPPLING_STANCE}
@@ -294,22 +294,6 @@ cancelStances = function(self)
 		end
 	end
 	self.cancelling_stances = nil
-end
-
-damDesc = function(self, type, dam)
-	-- Increases damage
-	if self.inc_damage then
-		local inc = (self.inc_damage.all or 0) + (self.inc_damage[type] or 0)
-		dam = dam + (dam * inc / 100)
-	end
-	return dam
-end
-
--- Archery range talents
-archery_range = function(self, t)
-	local weapon, ammo, offweapon = self:hasArcheryWeapon()
-	if not weapon or not weapon.combat then return 1 end
-	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
 end
 
 -- Use the appropriate amount of stamina. Return false if we don't have enough.

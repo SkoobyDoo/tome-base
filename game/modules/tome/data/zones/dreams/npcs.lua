@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ newEntity{
 			if e.define_as == "ILLUSION_YEEK" then nb = nb + 1 end
 		end
 		if self.is_wife or nb <= 1 then
-			m = game.zone.npc_list.WIFE
+			m = game.zone.npc_list.WIFE:clone()
 		else
 			local list = require("mod.class.NPC"):loadList("/data/general/npcs/ghoul.lua")
 			m = list.GHOUL:clone()

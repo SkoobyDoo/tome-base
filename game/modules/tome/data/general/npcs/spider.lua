@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -286,7 +286,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 		[Talents.T_SPIN_FATE]={base=5, every=6, max=8},
 		[Talents.T_SWAP]={base=5, every=6, max=8},
 		[Talents.T_RETHREAD]={base=5, every=6, max=8},
-		[Talents.T_STATIC_HISTORY]={base=5, every=6, max=8},
+		[Talents.T_INDUCE_ANOMALY]={base=5, every=6, max=8},
 	},
 }
 
@@ -320,7 +320,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 		[Talents.T_SWAP]={base=5, every=6, max=8},
 		[Talents.T_RETHREAD]={base=5, every=6, max=8},
 		[Talents.T_FADE_FROM_TIME]={base=5, every=6, max=8},
-		[Talents.T_STATIC_HISTORY]={base=5, every=6, max=8},
+		[Talents.T_INDUCE_ANOMALY]={base=5, every=6, max=8},
 	},
 }
 
@@ -375,7 +375,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 		[Talents.T_SWAP]={base=7, every=6},
 		[Talents.T_DIMENSIONAL_STEP]={base=7, every=6},
 		[Talents.T_RETHREAD]={base=7, every=6},
-		[Talents.T_STATIC_HISTORY]={base=7, every=6},
+		[Talents.T_INDUCE_ANOMALY]={base=7, every=6},
 
 		[Talents.T_SUMMON]=1,
 

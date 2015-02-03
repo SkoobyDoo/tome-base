@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -133,7 +133,7 @@ function _M:use(item)
 		local title = "Make gesture (using right mouse button) or type it (or escape) for: "..tostring(t.name)
 		local font = self.font
 		local w, h = font:size(title)
-		local d = GetText.new(title, "Gesture", 0, 5,
+		local d = GetText.new(title, "Gesture", 0, 10,
 			function(gesture)
 				if item.g and item.g ~= "--" then
 					self.gesture:removeGesture(item.g)
@@ -162,24 +162,22 @@ function _M:use(item)
 			end
 		end
 		d.mouse:registerZone(0, 0, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
-				if button == "right" then
-					if event == "motion" then
-						self.gesture:changeMouseButton(true)
-						self.gesture:mouseMove(mx, my)
-						local text = table.concat(d.c_box.tmp)
-						if #text < 5 and self.gesture.lastgesture~="" and self.gesture.lastgesture:byte(1)~=text:byte(d.c_box.cursor-1) and self.gesture.lastgesture:byte(1) ~= text:byte(d.c_box.cursor) then
-							table.insert(d.c_box.tmp, d.c_box.cursor, self.gesture.lastgesture)
-							d.c_box.cursor = d.c_box.cursor + 1
-							d.c_box:updateText()
-						end
-					elseif event == "button" then
-						self.gesture:changeMouseButton(false)
-						self.gesture:reset()
-					end
+			if button == "right" then
+				if event == "motion" then
+					self.gesture:changeMouseButton(true)
+					self.gesture:mouseMove(mx, my)
+					if self.gesture.gesture then d.c_box:setText(self.gesture.gesture) end
+				elseif event == "button" then
+					self.gesture:changeMouseButton(false)
+					self.gesture:reset()
 				end
+			end
 
-				d:mouseEvent(button, mx, my, xrel, yrel, bx - d.display_x, by - d.display_y, event)
-			end)
+			d:mouseEvent(button, mx, my, xrel, yrel, bx - d.display_x, by - d.display_y, event)
+		end)
+		d.innerDisplay = function(_, x, y, nb_keyframes, tx, ty)
+			self.gesture:display(-tx, -ty, nb_keyframes)
+		end
 
 		game:registerDialog(d)
 	end
