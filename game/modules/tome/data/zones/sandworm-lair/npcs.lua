@@ -144,7 +144,7 @@ newEntity{ define_as = "SANDWORM_QUEEN",
 				self:setTarget(game.player)
 				self.dont_pass_target = true
 				self.can_pass = {pass_wall=20}
-				self.move_project = {[DamageType.DIG]=1}
+				self.move_project = {[engine.DamageType.DIG]=1}
 				
 				local Dialog = require("engine.ui.Dialog")
 				Dialog:simplePopup("Rumbling...", "The ground shakes.  Something very large is stirring in the distance.")				
