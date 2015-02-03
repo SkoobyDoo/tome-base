@@ -274,7 +274,7 @@ newTalent{
 		local power = getParadoxSpellpower(self, t)
 		local dest_power = getParadoxSpellpower(self, t, 0.3)
 		local dam = self:spellCrit(t.getDamage(self, t))
-		local tg2 = {type="ball", range=10, radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
+		local tg2 = {type="ball", range=100, radius=self:getTalentRadius(t), talent=t, start_x=self.x, start_y=self.y, friendlyfire=false}
 		
 		-- Store the old terrain
 		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
@@ -316,10 +316,9 @@ newTalent{
 					local hit = target:hasEffect(target.EFF_BEN_TETHER) or self.summoner:checkHit(self.power, target:combatSpellResist() + (target:attr("continuum_destabilization") or 0), 0, 95) and target:canBe("teleport")
 					
 					if hit then
-						-- Since we're using a precise teleport, find a free grid first
-						local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[engine.Map.ACTOR]=true})
 						
-						if not self.target:teleportRandom(tx, ty, 1, 0) then
+						-- Can we teleport?
+						if not self.target:teleportRandom(self.x, self.y, 0, 0) then
 							game.logSeen(self, "The teleport fizzles!")
 						else
 							if target:hasEffect(target.EFF_DET_TETHER) then 

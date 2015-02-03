@@ -57,9 +57,8 @@ newTalent{
 				
 				-- Try to teleport to the target's old location
 				if self:teleportRandom(x, y, 0) then
-					-- Put the target back in the caster's old location
-					game.level.map(ox, oy, Map.ACTOR, target)
-					target.x, target.y = ox, oy
+					-- Move the target to our old location
+					target:move(ox, oy, true)
 					
 					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
 					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
@@ -73,14 +72,10 @@ newTalent{
 			end
 		else
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-			-- since we're using a precise teleport we'll look for a free grid first
-			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-			if tx and ty then
-				if not self:teleportRandom(tx, ty, 0) then
-					game.logSeen(self, "The spell fizzles!")
-				else
-					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				end
+			if not self:teleportRandom(x, y, 0) then
+				game.logSeen(self, "The spell fizzles!")
+			else
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			end
 		end
 		
