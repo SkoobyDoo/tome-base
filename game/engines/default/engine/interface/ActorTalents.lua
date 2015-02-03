@@ -52,7 +52,7 @@ function _M:newTalentType(t)
 	t.points = t.points or 1
 	t.talents = {}
 	table.insert(self.talents_types_def, t)
-	self.talents_types_def[t.type] = t
+	self.talents_types_def[t.type] = self.talents_types_def[t.type] or t
 end
 
 --- Defines one talent
