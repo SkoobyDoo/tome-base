@@ -172,15 +172,15 @@ function _M:generateList()
 		end), 50)
 	end,}
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Disallow boot images that could be found 'offensive'.#WHITE#"}
-	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Censor boot#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.censor_boot and "enabled" or "disabled")
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Enable/disable usage of tilesets.\nIn some rare cases on very slow machines with bad GPUs/drivers it can be detrimental."}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Use tilesets#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.disable_tilesets and "disabled" or "enabled")
 	end, fct=function(item)
-		config.settings.censor_boot = not config.settings.censor_boot
-		game:saveSettings("censor_boot", ("censor_boot = %s\n"):format(tostring(config.settings.censor_boot)))
+		config.settings.disable_tilesets = not config.settings.disable_tilesets
+		game:saveSettings("disable_tilesets", ("disable_tilesets = %s\n"):format(tostring(config.settings.disable_tilesets)))
 		self.c_list:drawItem(item)
 	end,}
-	
+
 	-- *Requested* Window Position
 	--  SDL tends to lie about where windows are positioned in fullscreen mode,
 	-- so always store the position requests, not the actual positions. 
