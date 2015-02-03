@@ -41,11 +41,14 @@ newTalent{
 	archery_onhit = function(self, t, target, x, y)
 		local accuracy = math.max(0, 10 - t.getTeleportRange(self, t))
 		game:onTickEnd(function()
-			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-			self:teleportRandom(tx, ty, accuracy)
 			game:playSoundNear(self, "talents/teleport")
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			
+			if self:teleportRandom(x, y, accuracy) then
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			else
+				game.logSeen(self, "The spell fizzles!")
+			end
 		end)
 	end,
 	action = function(self, t)

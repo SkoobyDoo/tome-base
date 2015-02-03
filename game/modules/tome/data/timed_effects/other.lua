@@ -2648,7 +2648,7 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		if core.shader.allow("adv") then
-			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", density=20, radius=1.4, growSpeed=0.004, img="continuum_01_3"})
+			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="transparent_cylinder", scrollingSpeed=0.0002, density=15, radius=1.6, growSpeed=0.004, img="continuum_01_5"})
 		else
 			eff.particle1 = self:addParticles(Particles.new("time_shield", 1))
 		end

@@ -98,12 +98,8 @@ summonTemporalHound = function(self, t)
 	end
 	-- Make sure hounds stay close
 	m.on_act = function(self)
-		if game.level:hasEntity(self.summoner) and core.fov.distance(self.x, self.y, self.summoner.x, self.summoner.y) > 10 then
-			local Map = require "engine.Map"
-			local x, y = util.findFreeGrid(self.summoner.x, self.summoner.y, 5, true, {[engine.Map.ACTOR]=true})
-			if not x then
-				return
-			end
+		local x, y = self.summoner.x, self.summoner.y
+		if game.level:hasEntity(self.summoner) and core.fov.distance(self.x, self.y, x, y) > 10 then
 			-- Clear it's targeting on teleport
 			if self:teleportRandom(x, y, 0) then
 				game.level.map:particleEmitter(x, y, 1, "temporal_teleport")
@@ -267,23 +263,26 @@ newTalent{
 			if #hnds <= 0 then return nil end
 			local a, id = rng.table(hnds)
 			table.remove(hnds, id)
-			-- Since it's a precise teleport find a free grid first
-			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-			if tx and ty then
+			
+			game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
+			
+			if a:teleportRandom(x, y, 0) then
+				if self:knowTalent(self.T_TEMPORAL_VIGOUR) then
+					self:callTalent(self.T_TEMPORAL_VIGOUR, "doBlink", a)
+				end
+				
 				game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
-				if a:teleportRandom(tx, ty, 0) then
-					game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
-					if self:knowTalent(self.T_TEMPORAL_VIGOUR) then
-						self:callTalent(self.T_TEMPORAL_VIGOUR, "doBlink", a)
-					end
-				end
-				-- Set the target so we feel like a wolf pack
-				if target and self:reactionToward(target) < 0 then
-					a:setTarget(target)
-				else
-					a:setTarget(nil)
-				end
+			else
+				game.logSeen(self, "The spell fizzles!")
 			end
+			
+			-- Set the target so we feel like a wolf pack
+			if target and self:reactionToward(target) < 0 then
+				a:setTarget(target)
+			else
+				a:setTarget(nil)
+			end
+			
 		end
 		game:playSoundNear(self, "talents/teleport")
 		
