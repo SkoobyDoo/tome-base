@@ -274,7 +274,8 @@ newTalent{
 		local power = getParadoxSpellpower(self, t)
 		local dest_power = getParadoxSpellpower(self, t, 0.3)
 		local dam = self:spellCrit(t.getDamage(self, t))
-		local tg2 = {type="ball", range=100, radius=self:getTalentRadius(t), talent=t, start_x=self.x, start_y=self.y, friendlyfire=false}
+		local chance = t.getChance(self, t)
+		local tg2 = {type="ball", range=0, radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
 		
 		-- Store the old terrain
 		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
@@ -286,7 +287,7 @@ newTalent{
 			name = "spatial tether", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t), 
-			power = power, dest_power = dest_power, chance = t.getChance(self, t),
+			power = power, dest_power = dest_power, chance = chance,
 			x = x, y = y, target = target, tg = tg2, dam = dam,
 			summoner = self, summoner_gain_exp = true,
 			canAct = false,
@@ -304,11 +305,14 @@ newTalent{
 				
 					-- Primary blast, even if the teleport is resisted or fails this triggers
 					game:onTickEnd(function()
+						local tg = self.tg
+						tg.start_x, tg.start_y = target.x, target.y
+					
 						self.summoner.__project_source = self
-						self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
+						self.summoner:project(tg, target.x, target.y, engine.DamageType.WARP, self.dam)
 						self.summoner.__project_source = nil
 						if core.shader.allow("distort") then
-							game.level.map:particleEmitter(self.target.x, self.target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=self.target.x, ty=self.target.y})
+							game.level.map:particleEmitter(target.x, target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=target.x, ty=target.y})
 						end
 					end)
 								
@@ -318,32 +322,35 @@ newTalent{
 					if hit then
 						
 						-- Can we teleport?
-						if not self.target:teleportRandom(self.x, self.y, 0, 0) then
+						if not target:teleportRandom(self.x, self.y, 0, 0) then
 							game.logSeen(self, "The teleport fizzles!")
 						else
 							if target:hasEffect(target.EFF_DET_TETHER) then 
-								self.target:setEffect(self.target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power})
+								target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power})
 							end
 							game:playSoundNear(self, "talents/teleport")
 						end
 						
 						-- Secondary blast, this occurs as long as the teleport is not resisted, even if it fails, say from Anchor
 						game:onTickEnd(function()
+							local tg = self.tg
+							tg.start_x, tg.start_y = target.x, target.y
+							
 							self.summoner.__project_source = self
-							self.summoner:project(self.tg, self.target.x, self.target.y, engine.DamageType.WARP, self.dam)
+							self.summoner:project(tg, target.x, target.y, engine.DamageType.WARP, self.dam)
 							self.summoner.__project_source = nil
 							if core.shader.allow("distort") then
-								game.level.map:particleEmitter(self.target.x, self.target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=self.target.x, ty=self.target.y})
+								game.level.map:particleEmitter(target.x, target.y, tg.radius, "ball_physical", {radius=tg.radius, tx=target.x, ty=target.y})
 							end
 						end)
 					else
-						game.logSeen(self.target, "%s resists the teleport!", self.target.name:capitalize())
+						game.logSeen(target, "%s resists the teleport!", target.name:capitalize())
 					end
 					
 				end
 				
 				-- End the effect?
-				if self.temporary <= 0 or self.target.dead or not tether then
+				if self.temporary <= 0 or target.dead or not tether then
 					game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
 					game.level:removeEntity(self)
@@ -360,11 +367,11 @@ newTalent{
 		
 		-- Dummy timed effect, so players can remove the tether
 		if self:reactionToward(target) >= 0 then
-			target:setEffect(target.EFF_BEN_TETHER, t.getDuration(self, t), {})
+			target:setEffect(target.EFF_BEN_TETHER, t.getDuration(self, t), {chance=chance, dam=dam, x=x, y=y})
 		else
-			target:setEffect(target.EFF_DET_TETHER, t.getDuration(self, t), {})
+			target:setEffect(target.EFF_DET_TETHER, t.getDuration(self, t), {chance=chance, dam=dam, x=x, y=y})
 		end
-				
+
 		return true
 	end,
 	info = function(self, t)
