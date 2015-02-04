@@ -54,33 +54,73 @@ function _M:computeFOV(radius, block, apply, force, no_store, cache)
 	-- Simple FOV compute no storage
 	if no_store and apply then
 		local map = game.level.map
-		core.fov.calc_circle(self.x, self.y, map.w, map.h, radius, function(_, x, y)
-			if map:checkAllEntities(x, y, block, self) then return true end
-		end, function(_, x, y, dx, dy, sqdist)
-			apply(x, y, dx, dy, sqdist)
-		end, cache and game.level.map._fovcache[block])
 
+		if core.fov.ffiFOV and cache and map._fovcache[block] then
+			local w = map.w
+			local bx, by = self.x, self.y
+			core.fov.ffiFOV(map._fovcache[block], bx, by, radius, map.w, map.h, function(x, y, radius, dist)
+				local sqdist = dist * dist
+				local dx, dy = x - bx, y - by
+				apply(x, y, dx, dy, sqdist)
+			end)
+		else
+			core.fov.calc_circle(self.x, self.y, map.w, map.h, radius, function(_, x, y)
+				if map:checkAllEntities(x, y, block, self) then return true end
+			end, function(_, x, y, dx, dy, sqdist)
+				apply(x, y, dx, dy, sqdist)
+			end, cache and game.level.map._fovcache[block])
+		end
 	-- FOV + storage + fast C code
 	elseif not no_store and cache and game.level.map._fovcache[block] then
 		local fov = {actors={}, actors_dist={}}
 		setmetatable(fov.actors, {__mode='k'})
 		setmetatable(fov.actors_dist, {__mode='v'})
 
-		-- Use the fast C code
 		local map = game.level.map
-		core.fov.calc_default_fov(
-			self.x, self.y,
-			radius,
-			block,
-			game.level.map._fovcache[block],
-			fov.actors, fov.actors_dist,
-			map.map, map.w, map.h,
-			Map.ACTOR,
-			self.distance_map,
-			game.turn,
-			self,
-			apply
-		)
+
+		if core.fov.ffiFOV then
+			local w = map.w
+			local mmap = map.map
+			local dmap = self.distance_map
+			local turn = game.turn
+			local strata = Map.ACTOR
+			local actors = fov.actors
+			local actors_dist = fov.actors_dist
+			local bx, by = self.x, self.y
+			core.fov.ffiFOV(map._fovcache[block], bx, by, radius, map.w, map.h, function(x, y, radius, dist)
+				local sqdist = dist * dist
+				local xy = x + y * w
+				local dx, dy = x - bx, y - by
+
+				dmap[xy] = turn + radius - dist
+				if apply then apply(x, y, dx, dy, sqdist) end
+
+				if not mmap[xy] or not mmap[xy][strata] then return end
+				local e = mmap[xy][strata]
+				if e.dead then return end
+				e.__sqdist = sqdist
+
+				actors[e] = {x=x, y=y, dx=dx, dy=dy, sqdist=sqdist}
+				actors_dist[#actors_dist+1] = e
+
+				e:updateFOV(self, sqdist)
+				if e.seen_by then e:seen_by(self, sqdist) end
+			end)
+		else
+			core.fov.calc_default_fov(
+				self.x, self.y,
+				radius,
+				block,
+				map._fovcache[block],
+				fov.actors, fov.actors_dist,
+				map.map, map.w, map.h,
+				Map.ACTOR,
+				self.distance_map,
+				game.turn,
+				self,
+				apply
+			)
+		end
 
 		table.sort(fov.actors_dist, "__sqdist")
 --		print("Computed FOV for", self.uid, self.name, ":: seen ", #fov.actors_dist, "actors closeby")

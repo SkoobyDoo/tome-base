@@ -110,7 +110,7 @@ static int lua_fov_set_algorithm(lua_State *L)
 }
 
 // this is kinda ugly, so I may come back to it and make it purty
-static int lua_fov_get_distance(lua_State *L, double x1, double y1, double x2, double y2, bool ret_float)
+static double lua_fov_get_distance(double x1, double y1, double x2, double y2, bool ret_float)
 {
 	fov_shape_type shape = fov_get_vision_shape();
 	if (shape == FOV_SHAPE_HEX) {
@@ -127,9 +127,7 @@ static int lua_fov_get_distance(lua_State *L, double x1, double y1, double x2, d
 		if (ady > 0) {
 			dist += ady;
 		}
-		lua_checkstack(L, 1);
-		lua_pushnumber(L, dist);
-		return 1;
+		return dist;
 	} else {
 		double dx = fabs(x2 - x1);
 		double dy = fabs(y2 - y1);
@@ -166,12 +164,10 @@ static int lua_fov_get_distance(lua_State *L, double x1, double y1, double x2, d
 			break;
 		}
 
-		lua_checkstack(L, 1);
 		if (ret_float)
-			lua_pushnumber(L, dist);
+			return dist;
 		else
-			lua_pushnumber(L, (int)dist);
-		return 1;
+			return (int)dist;
 	}
 }
 
@@ -179,9 +175,7 @@ static void map_seen(void *m, int x, int y, int dx, int dy, int radius, void *sr
 {
 	struct lua_fov *fov = (struct lua_fov *)m;
 	if (x < 0 || y < 0 || x >= fov->w || y >= fov->h) return;
-	lua_fov_get_distance(fov->L, (float)(x-dx), (float)(y-dy), (float)x, (float)y, false);
-	lua_checkstack(fov->L, 7);
-	int sqdist = luaL_checknumber(fov->L, -1);
+	int sqdist = lua_fov_get_distance((float)(x-dx), (float)(y-dy), (float)x, (float)y, false);
 	sqdist = sqdist*sqdist;
 
 	// circular view - can be changed if you like
@@ -367,8 +361,36 @@ static int lua_distance(lua_State *L)
 	double y2 = luaL_checknumber(L, 4);
 	bool ret_float = lua_toboolean(L, 5);
 
-	lua_fov_get_distance(L, x1, y1, x2, y2, ret_float);
+	lua_pushnumber(L, lua_fov_get_distance(x1, y1, x2, y2, ret_float));
 	return 1;
+}
+
+void ffi_fov_new_cache(struct lua_fovcache *cache, int x, int y)
+{
+	int i, j;
+	cache->w = x;
+	cache->h = y;
+	cache->cache = calloc(x * y, sizeof(bool));
+	for (i = 0; i < x; i++)
+		for (j = 0; j < y; j++)
+			cache->cache[i + j * x] = FALSE;
+}
+
+void ffi_fov_cache_free(struct lua_fovcache *cache)
+{
+	free(cache->cache);
+}
+
+void ffi_fov_cache_set(struct lua_fovcache *cache, int x, int y, bool opaque)
+{
+	if (x < 0 || y < 0 || x >= cache->w || y >= cache->h) return;
+	cache->cache[x + y * cache->w] = opaque;
+}
+
+bool ffi_fov_cache_get(struct lua_fovcache *cache, int x, int y)
+{
+	if (x < 0 || y < 0 || x >= cache->w || y >= cache->h) return FALSE;
+	return cache->cache[x + y * cache->w];
 }
 
 static int lua_new_fovcache(lua_State *L)
@@ -412,6 +434,14 @@ static int lua_fovcache_get(lua_State *L)
 	return 1;
 }
 
+static int lua_fovcache_free(lua_State *L)
+{
+	struct lua_fovcache *cache = (struct lua_fovcache*)auxiliar_checkclass(L, "fov{cache}", 1);
+	ffi_fov_cache_free(cache);
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
 
 /****************************************************************
  ** Default FOV
@@ -447,8 +477,7 @@ static void map_default_seen(void *m, int x, int y, int dx, int dy, int radius, 
 	struct lua_fov *fov = (struct lua_fov *)m;
 	if (x < 0 || y < 0 || x >= fov->w || y >= fov->h) return;
 
-	lua_fov_get_distance(fov->L, (float)(x-dx), (float)(y-dy), (float)x, (float)y, false);
-	int dist = luaL_checknumber(fov->L, -1);
+	int dist = lua_fov_get_distance((float)(x-dx), (float)(y-dy), (float)x, (float)y, false);
 	int sqdist = dist*dist;
 
 	// Distance Map
@@ -545,12 +574,82 @@ static void map_default_seen(void *m, int x, int y, int dx, int dy, int radius, 
 	lua_pop(fov->L, 3);
 }
 
+typedef struct
+{
+	int x, y;
+	int radius;
+	int dist;
+} seen_result_ffi;
+
+typedef struct
+{
+	seen_result_ffi *data;
+	int nb, size, walk;
+} seen_results_ffi;
+
+static seen_results_ffi ffi_results = {NULL, 0, 0};
+
+static seen_result_ffi* get_next_ffi_record() {
+	ffi_results.nb++;
+	if (ffi_results.nb > ffi_results.size) {
+		ffi_results.size = !ffi_results.size ? 1024 : ffi_results.size * 2;
+		ffi_results.data = realloc(ffi_results.data, ffi_results.size * sizeof(seen_result_ffi));
+		printf("==realloc ffi results: %d/%d\n", (int)ffi_results.nb, (int)ffi_results.size);
+	}
+	return &ffi_results.data[(int)ffi_results.nb-1];
+}
+
+static void map_default_seen_ffi(void *m, int x, int y, int dx, int dy, int radius, void *src)
+{
+	default_fov *def = (default_fov*)src;
+	struct lua_fov *fov = (struct lua_fov *)m;
+	if (x < 0 || y < 0 || x >= fov->w || y >= fov->h) return;
+
+	int dist = lua_fov_get_distance((float)(x-dx), (float)(y-dy), (float)x, (float)y, false);
+
+	seen_result_ffi *data = get_next_ffi_record();
+	data->x = x;
+	data->y = y;
+	data->radius = radius;
+	data->dist = dist;
+}
+
 static bool map_default_opaque(void *m, int x, int y)
 {
 	struct lua_fov *fov = (struct lua_fov *)m;
 
 	if (x < 0 || y < 0 || x >= fov->cache->w || y >= fov->cache->h) return TRUE;
 	return fov->cache->cache[x + y * fov->cache->w];
+}
+
+void ffi_fov_calc_default_fov(int x, int y, int radius, struct lua_fovcache *cache, int w, int h)
+{
+	struct lua_fov fov;
+	fov.cache = cache;
+	default_fov def;
+	def.w = w;
+	def.h = h;
+	fov.w = def.w;
+	fov.h = def.h;
+	ffi_results.nb = 0;
+	ffi_results.walk = 0;
+
+	fov_settings_init(&(fov.fov_settings));
+	fov_settings_set_opacity_test_function(&(fov.fov_settings), map_default_opaque);
+	fov_settings_set_apply_lighting_function(&(fov.fov_settings), map_default_seen_ffi);
+
+	fov_circle(&(fov.fov_settings), &fov, &def, x, y, radius);
+	map_default_seen_ffi(&fov, x, y, 0, 0, radius, &def);
+}
+
+bool ffi_fov_get_results(int *x, int *y, int *radius, int *dist) {
+	if (ffi_results.walk >= ffi_results.nb) return FALSE;
+	seen_result_ffi *d = &ffi_results.data[ffi_results.walk++];
+	*x = d->x;
+	*y = d->y;
+	*radius = d->radius;
+	*dist = d->dist;
+	return TRUE;
 }
 
 static int lua_fov_calc_default_fov(lua_State *L)
@@ -1479,6 +1578,7 @@ static const struct luaL_Reg fovlib[] =
 
 static const struct luaL_Reg fovcache_reg[] =
 {
+	{"__gc", lua_fovcache_free},
 	{"set", lua_fovcache_set},
 	{"get", lua_fovcache_get},
 	{NULL, NULL},

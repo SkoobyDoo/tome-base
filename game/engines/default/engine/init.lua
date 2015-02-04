@@ -17,6 +17,12 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local okffi, ffi = pcall(require, "ffi")
+if okffi and ffi then
+	dofile("/engine/core/init.lua")
+end
+
+
 -- load some utility functions
 dofile("/engine/utils.lua")
 dofile("/engine/colors.lua")
