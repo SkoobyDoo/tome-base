@@ -3547,11 +3547,14 @@ newEffect{
 newEffect{
 	name = "BEN_TETHER", image = "talents/spatial_tether.png",
 	desc = "Spatial Tether",
-	long_desc = function(self, eff) return ("The target has been tethered to the location and may be teleported back to it on any turn."):format() end,
+	long_desc = function(self, eff) 
+		local chance = eff.chance * core.fov.distance(self.x, self.y, eff.x, eff.y)
+		return ("The target has been tethered to the location and has a %d%% chance of being teleported back, creating an explosion for %0.2f physical and %0.2f temporal warp damage at both ends of the teleport."):format(chance, eff.dam/2, eff.dam/2)
+	end,
 	type = "magical",
 	subtype = { teleport=true, temporal=true },
 	status = "beneficial",
-	parameters = { power = 1 },
+	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
 	activate = function(self, eff)
 	end,
@@ -3562,11 +3565,14 @@ newEffect{
 newEffect{
 	name = "DET_TETHER", image = "talents/spatial_tether.png",
 	desc = "Spatial Tether",
-	long_desc = function(self, eff) return ("The target has been tethered to the location and may be teleported back to it on any turn."):format() end,
+	long_desc = function(self, eff) 
+		local chance = eff.chance * core.fov.distance(self.x, self.y, eff.x, eff.y)
+		return ("The target has been tethered to the location and has a %d%% chance of being teleported back, creating an explosion for %0.2f physical and %0.2f temporal warp damage at both ends of the teleport."):format(chance, eff.dam/2, eff.dam/2)
+	end,
 	type = "magical",
 	subtype = { teleport=true, temporal=true },
 	status = "detrimental",
-	parameters = { power = 1 },
+	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
 	activate = function(self, eff)
 	end,

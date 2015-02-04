@@ -178,7 +178,7 @@ newTalent{
 				energy = {value=0},
 				disarm = function(self, x, y, who) return false end,
 				power = power, dest_power = dest_power,
-				summoner = self, beneficial_trap = true,
+				summoner = self, beneficial_trap = true, faction=self.faction,
 				triggered = function(self, x, y, who)
 					local hit = who == self.summoner or who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
 					if hit then

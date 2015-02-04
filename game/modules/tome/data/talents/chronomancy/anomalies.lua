@@ -341,9 +341,9 @@ newTalent{
 			canAct = false,
 			energy = {value=0},
 			disarm = function(self, x, y, who) return false end,
-			summoned_by = self, -- "summoner" is immune to it's own traps
+			summoner = self, beneficial_trap = true, faction=self.faction,
 			triggered = function(self, x, y, who)
-				if who == self.summoned_by or who:canBe("teleport") then
+				if who == self.summoned or who:canBe("teleport") then
 					game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 					if not who:teleportRandom(self.dest.x, self.dest.y, 3, 1) then
 						game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())
