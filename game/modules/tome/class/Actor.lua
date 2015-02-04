@@ -2682,7 +2682,7 @@ function _M:takeHit(value, src, death_note)
 
 	local dead, val = mod.class.interface.ActorLife.takeHit(self, value, src, death_note)
 
-	if src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
+	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
 
 	if dead and src and src.attr and src:attr("overkill") and src.project and not src.turn_procs.overkill then
 		src.turn_procs.overkill = true
