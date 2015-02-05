@@ -19,6 +19,7 @@
 
 require "engine.class"
 local Map = require "engine.Map"
+local ffi = require 'ffi'
 
 --- Handles actors field of view
 -- When an actor moves it computes a field of view and stores it in self.fov<br/>
@@ -37,6 +38,8 @@ function _M:init(t)
 	self.fov_last_turn = -1
 	self.fov_last_change = -1
 end
+
+local rx, ry, rradius, rdist = ffi.new("int[1]"), ffi.new("int[1]"), ffi.new("int[1]"), ffi.new("int[1]")
 
 --- Computes actor's FOV
 -- @param radius the FOV radius, defaults to 20
@@ -87,7 +90,11 @@ function _M:computeFOV(radius, block, apply, force, no_store, cache)
 			local actors = fov.actors
 			local actors_dist = fov.actors_dist
 			local bx, by = self.x, self.y
-			core.fov.ffiFOV(map._fovcache[block], bx, by, radius, map.w, map.h, function(x, y, radius, dist)
+			local C = core.fov.C
+			-- for x, y, radius, dist in core.fov.ffiFOVIterator(map._fovcache[block], bx, by, radius, map.w, map.h) do
+			C.ffi_fov_calc_default_fov(bx, by, radius, map._fovcache[block], map.w, map.h)
+			for x, y, radius, dist in core.fov.get_results do
+				if not x then break end
 				local sqdist = dist * dist
 				local xy = x + y * w
 				local dx, dy = x - bx, y - by
@@ -95,17 +102,19 @@ function _M:computeFOV(radius, block, apply, force, no_store, cache)
 				dmap[xy] = turn + radius - dist
 				if apply then apply(x, y, dx, dy, sqdist) end
 
-				if not mmap[xy] or not mmap[xy][strata] then return end
-				local e = mmap[xy][strata]
-				if e.dead then return end
-				e.__sqdist = sqdist
+				if mmap[xy] and mmap[xy][strata] then
+					local e = mmap[xy][strata]
+					if not e.dead then
+						e.__sqdist = sqdist
 
-				actors[e] = {x=x, y=y, dx=dx, dy=dy, sqdist=sqdist}
-				actors_dist[#actors_dist+1] = e
+						actors[e] = {x=x, y=y, dx=dx, dy=dy, sqdist=sqdist}
+						actors_dist[#actors_dist+1] = e
 
-				e:updateFOV(self, sqdist)
-				if e.seen_by then e:seen_by(self, sqdist) end
-			end)
+						e:updateFOV(self, sqdist)
+						if e.seen_by then e:seen_by(self, sqdist) end
+					end
+				end
+			end
 		else
 			core.fov.calc_default_fov(
 				self.x, self.y,
@@ -122,7 +131,7 @@ function _M:computeFOV(radius, block, apply, force, no_store, cache)
 			)
 		end
 
-		table.sort(fov.actors_dist, "__sqdist")
+		-- table.sort(fov.actors_dist, "__sqdist")
 --		print("Computed FOV for", self.uid, self.name, ":: seen ", #fov.actors_dist, "actors closeby")
 
 		self.fov = fov

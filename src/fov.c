@@ -652,6 +652,16 @@ bool ffi_fov_get_results(int *x, int *y, int *radius, int *dist) {
 	return TRUE;
 }
 
+static int lua_fov_get_results(lua_State *L) {
+	if (ffi_results.walk >= ffi_results.nb) return 0;
+	seen_result_ffi *d = &ffi_results.data[ffi_results.walk++];
+	lua_pushnumber(L, d->x);
+	lua_pushnumber(L, d->y);	
+	lua_pushnumber(L, d->radius);	
+	lua_pushnumber(L, d->dist);
+	return 4;
+}
+
 static int lua_fov_calc_default_fov(lua_State *L)
 {
 	int x = luaL_checknumber(L, 1);
@@ -1561,6 +1571,7 @@ static const struct luaL_Reg fovlib[] =
 {
 	{"newCache", lua_new_fovcache},
 	{"distance", lua_distance},
+	{"get_results", lua_fov_get_results},
 	{"calc_default_fov", lua_fov_calc_default_fov},
 	{"calc_circle", lua_fov_calc_circle},
 	{"calc_beam", lua_fov_calc_beam},

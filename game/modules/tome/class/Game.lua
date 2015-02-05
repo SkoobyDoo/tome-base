@@ -1674,6 +1674,7 @@ function _M:setupCommands()
 			local s = core.game.getTime()
 			for i = 1, 50000 do p:computeFOV(10, "block_sight", nil, true, nil, true) end
 			print("==== computefov in", core.game.getTime() - s, "reference without ffi: 6350")
+			game.log("==== computefov in %d", core.game.getTime() - s)
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
 			print(f, err)

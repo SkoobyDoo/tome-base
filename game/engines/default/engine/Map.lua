@@ -255,13 +255,13 @@ function _M:makeCMap()
 	self._map:setDefaultShader(default_shader)
 	self._fovcache =
 	{
-		block_sight = core.fov.newCache2(self.w, self.h),
-		block_esp = core.fov.newCache2(self.w, self.h),
-		block_sense = core.fov.newCache2(self.w, self.h),
+		block_sight = core.fov.newCache(self.w, self.h),
+		block_esp = core.fov.newCache(self.w, self.h),
+		block_sense = core.fov.newCache(self.w, self.h),
 		path_caches = {},
 	}
 	for i, ps in ipairs(self.path_strings) do
-		self._fovcache.path_caches[ps] = core.fov.newCache2(self.w, self.h)
+		self._fovcache.path_caches[ps] = core.fov.newCache(self.w, self.h)
 	end
 
 	-- Cunning trick here!
@@ -303,7 +303,7 @@ function _M:addPathString(ps)
 	end
 	self.path_strings[#self.path_strings+1] = ps
 	self.path_strings_computed[ps] = loadstring(ps)()
-	if self._fovcache then self._fovcache.path_caches[ps] = core.fov.newCache2(self.w, self.h) end
+	if self._fovcache then self._fovcache.path_caches[ps] = core.fov.newCache(self.w, self.h) end
 end
 
 function _M:loaded()
