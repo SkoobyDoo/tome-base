@@ -160,8 +160,7 @@ newTalent{
 		return tostring(math.ceil(val)), fnt
 	end,
 	incStats = function(self, t,fake)
-		local mp = self:combatTalentSpellDamage(t, 0, 100) -- Just use base spellpower so we don't get Paradox or Crit cheese
-		return{ 
+		local mp = self:combatTalentStatDamage(t, "mag", 10, 100) -- Uses magic to avoid Paradox cheese
 			str=10 + (fake and mp or mp),
 			dex=10 + (fake and mp or mp),
 			con=10 + (fake and mp or mp),
@@ -197,7 +196,7 @@ newTalent{
 		local resists = t.getResists(self, t)
 		return ([[Upon activation summon a Temporal Hound.  Every %d turns another hound will be summoned, up to a maximum of three hounds. If a hound dies you'll summon a new hound in %d turns.  
 		Your hounds inherit your increased damage percent, have %d%% physical resistance and %d%% temporal resistance, and are immune to hostile teleportation effects.
-		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning ,based on your Spellpower.]])
+		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning, based on your Magic stat.]])
 		:format(cooldown, cooldown, resists/2, math.min(100, resists*2), incStats.str + 1, incStats.dex + 1, incStats.con + 1, incStats.mag + 1, incStats.wil +1, incStats.cun + 1)
 	end
 }

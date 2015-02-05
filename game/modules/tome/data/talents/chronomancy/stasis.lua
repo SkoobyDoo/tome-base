@@ -25,7 +25,10 @@ newTalent{
 	require = chrono_req1,
 	mode = "passive",
 	points = 5,
-	getTuningAdjustment= function(self, t) return math.floor(self:combatTalentScale(t, 2, 8)) end,
+	getTuningAdjustment= function(self, t) 
+		local duration = math.floor(self:combatTalentScale(t, 2, 8))
+		return math.min(duration, 10) 
+	end,
 	info = function(self, t)
 		local duration = t.getTuningAdjustment(self, t)
 		return ([[You've learned to keep the timeline more stable.  Reduces the time it takes you to adjust your Paradox with Spacetime Tuning by %d turns.]]):
