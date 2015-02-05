@@ -29,10 +29,16 @@ newTalent{
 		local duration = math.floor(self:combatTalentScale(t, 2, 8))
 		return math.min(duration, 10) 
 	end,
+	getWillBonus = function(self, t) return self:combatTalentScale(t, 2, 10) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "paradox_reduce_anomalies", t.getWillBonus(self, t))
+	end,
 	info = function(self, t)
+		local will = t.getWillBonus(self, t)
 		local duration = t.getTuningAdjustment(self, t)
-		return ([[You've learned to keep the timeline more stable.  Reduces the time it takes you to adjust your Paradox with Spacetime Tuning by %d turns.]]):
-		format(duration)
+		return ([[You've learned to focus your control over the spacetime continuum, and quell anomalous effects.  Increases your effective Willpower for determining modified Paradox by %d.
+		Additionally the time it takes you to adjust your Paradox with Spacetime Tuning is reduced by %d turns.]]):
+		format(will, duration)
 	end,
 }
 

@@ -62,7 +62,9 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local paradox = t.getParadoxReduction(self, t)
 		return ([[Fire an arrow for %d%% temporal weapon damage.  If the attack hits tune your Paradox up to %d towards your baseline.  This attack does not consume ammo.
-		You also learn how to phase your arrows through friendly targets without causing them harm.]])
+		Your arrows now also phase through friendly targets without causing them harm.
+		
+		Bow Threading talents will freely swap to your bow when activated if you have one in your secondary slot.  Additionally you may use the Shoot talent in a similar manner.]])
 		:format(damage, paradox)
 	end
 }
