@@ -264,7 +264,6 @@ function _M:resolve(t, last, on_entity, key_change)
 
 	-- Account for innate stats.
 	if last and not self.__stats_resolved then
-		game.logPlayer(self, 'STATS')
 		self.__stats_resolved = true
 		for id, stat in ipairs(self.stats_def) do
 			local diff = self:getStat(id) - stat.def
