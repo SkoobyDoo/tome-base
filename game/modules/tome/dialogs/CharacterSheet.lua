@@ -418,21 +418,22 @@ function _M:drawDialog(kind, actor_to_compare)
 		color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
 		text = compare_fields(player, actor_to_compare, "global_speed", color.."%.1f%%", "%+.1f%%",100)
 		self:mouseTooltip(self.TOOLTIP_SPEED_GLOBAL,   s:drawColorStringBlended(self.font, ("Global speed  : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-		color = 1/player:combatMovementSpeed()
+		color = 1/player:getSpeed("movement")
 		color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
-		text = compare_fields(player, actor_to_compare, function(actor) return (1/actor:combatMovementSpeed()) end, color.."%.1f%%", "%+.1f%%", 100)
+		text = compare_fields(player, actor_to_compare, function(actor) return (1/actor:getSpeed("movement")) end, color.."%.1f%%", "%+.1f%%", 100)
 		self:mouseTooltip(self.TOOLTIP_SPEED_MOVEMENT, s:drawColorStringBlended(self.font, ("Movement speed: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-		color = 1/player:combatSpellSpeed()
+		color = 1/player:getSpeed("spell")
 		color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
-		text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatSpellSpeed() end, color.."%.1f%%", "%+.1f%%", 100)
+		text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:getSpeed("spell") end, color.."%.1f%%", "%+.1f%%", 100)
 		self:mouseTooltip(self.TOOLTIP_SPEED_SPELL,    s:drawColorStringBlended(self.font, ("Spell speed   : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-		color = 1/player:combatSpeed()
+
+		color = 1/player:getSpeed("weapon")
 		color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
-		text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatSpeed() end, color.."%.1f%%", "%+.1f%%", 100)
+		text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:getSpeed("weapon") end, color.."%.1f%%", "%+.1f%%", 100)
 		self:mouseTooltip(self.TOOLTIP_SPEED_ATTACK,   s:drawColorStringBlended(self.font, ("Attack speed  : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-		color = 1/player:combatMindSpeed()
+		color = 1/player:getSpeed("mind")
 		color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
-		text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatMindSpeed() end, color.."%.1f%%", "%+.1f%%", 100)
+		text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:getSpeed("mind") end, color.."%.1f%%", "%+.1f%%", 100)
 		self:mouseTooltip(self.TOOLTIP_SPEED_MENTAL,   s:drawColorStringBlended(self.font, ("Mental speed  : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 		h = h + self.font_h
 		if player.died_times then
