@@ -269,7 +269,7 @@ newTalent{
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.3) end,
 	archery_onhit = function(self, t, target, x, y)
 		game:onTickEnd(function() blade_warden(self, target) end)
 	end,
