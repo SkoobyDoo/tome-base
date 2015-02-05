@@ -259,6 +259,20 @@ function _M:init(t, no_default)
 	self:recomputeRegenResources()
 end
 
+function _M:resolve(t, last, on_entity, key_change)
+	engine.Actor.resolve(self, t, last, on_entity, key_change)
+
+	-- Account for innate stats.
+	if last and not self.__stats_resolved then
+		game.logPlayer(self, 'STATS')
+		self.__stats_resolved = true
+		for id, stat in ipairs(self.stats_def) do
+			local diff = self:getStat(id) - stat.def
+			self:onStatChange(id, diff)
+		end
+	end
+end
+
 function _M:loaded()
 	engine.Actor.loaded(self)
 	self:recomputeRegenResources()

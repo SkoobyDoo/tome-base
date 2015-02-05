@@ -385,4 +385,5 @@ function _M:apply()
 	for stat, inc in pairs(inc_stats) do
 		self.actor:incIncStat(stat, inc)
 	end
+	self.actor.__stats_resolved = true
 end
