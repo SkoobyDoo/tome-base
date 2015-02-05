@@ -40,7 +40,7 @@ newTalent{
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
 	archery_onhit = function(self, t, target, x, y)
-		local dox = self:getParadox() - self.preferred_paradox
+		local dox = self:getParadox() - (self.preferred_paradox or 300)
 		local fix = math.min( math.abs(dox), t.getParadoxReduction(self, t) )
 		if dox > 0 then
 			self:incParadox( -fix )

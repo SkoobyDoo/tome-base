@@ -1719,15 +1719,17 @@ newEffect{
 			m.on_takehit = nil
 			m.exp_worth = 0
 			m.no_inventory_access = true
+			if m.inven then m.inven[m.INVEN_INVEN] = nil end
 			m.clone_on_hit = nil
 			m.remove_from_party_on_death = true
 			m.is_psychic_projection = true
+			m.lucid_dreamer = 1
+			
 			-- remove imprisonment
 			m.invulnerable = m.invulnerable - 1
 			m.time_prison = m.time_prison - 1
 			m.no_timeflow = m.no_timeflow - 1
 			m.status_effect_immune = m.status_effect_immune - 1
-			m:removeParticles(eff.particle)
 			m:removeTimedEffectsOnClone()
 
 			-- track number killed
@@ -1742,6 +1744,7 @@ newEffect{
 			game.zone:addEntity(game.level, m, "actor", x, y)
 			game.level.map:particleEmitter(x, y, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})
 			game.logSeen(eff.target, "#LIGHT_BLUE#%s has spawned a dream projection to protect its mind!", eff.target.name:capitalize())
+			m:removeParticles(eff.particle)
 
 			if game.party:hasMember(eff.target) then
 				game.party:addMember(m, {
@@ -1777,6 +1780,7 @@ newEffect{
 		eff.tid = eff.target:addTemporaryValue("no_timeflow", 1)
 		eff.imid = eff.target:addTemporaryValue("status_effect_immune", 1)
 		eff.target.energy.value = 0
+		
 		if core.shader.active(4) then
 			eff.particle = eff.target:addParticles(Particles.new("shader_shield", 1, {img="shield2", size_factor=1.25}, {type="shield", shieldIntensity=0.25, time_factor=6000, aadjust=5, color={0, 1, 1}}))
 		else
@@ -1790,15 +1794,18 @@ newEffect{
 	deactivate = function(self, eff)
 		-- Clone protection
 		if not self.on_die then return end
+		
 		-- Remove the target's invulnerability
 		eff.target:removeTemporaryValue("invulnerable", eff.iid)
 		eff.target:removeTemporaryValue("time_prison", eff.sid)
 		eff.target:removeTemporaryValue("no_timeflow", eff.tid)
 		eff.target:removeTemporaryValue("status_effect_immune", eff.imid)
 		eff.target:removeParticles(eff.particle)
+		
 		-- Remove the invaders damage bonus
 		self:removeTemporaryValue("inc_damage", eff.pid)
 		self:removeTemporaryValue("lucid_dreamer", eff.did)
+		
 		-- Return from the dreamscape
 		game:onTickEnd(function()
 			-- Collect objects

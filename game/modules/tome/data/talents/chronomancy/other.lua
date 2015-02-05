@@ -176,6 +176,10 @@ makeParadoxClone = function(self, target, duration)
 	m.unused_generics = 0
 	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
 	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
+	
+	-- We use this function...  a lot!!
+	-- So don't duplicate the inventory
+	if m.inven then m.inven[m.INVEN_INVEN] = nil end
 
 	-- Clones never flee because they're awesome
 	m.ai_tactic = m.ai_tactic or {}
@@ -225,9 +229,6 @@ newTalent{
 	no_unlearn_last = true,
 	on_learn = function(self, t)
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
-	end,
-	on_unlearn = function(self, t)
-		if self.preferred_paradox then self.preferred_paradox = nil end
 	end,
 	getDuration = function(self, t)
 		local duration = 20
