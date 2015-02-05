@@ -311,14 +311,18 @@ function _M:getSpeed(speed_type)
 			self:getInven(self.INVEN_MAINHAND)
 		then
 			local o = self:getInven(self.INVEN_MAINHAND)[1]
-			speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			if o then
+				speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			end
 		end
 
 		if (speed_type == "weapon" or speed_type == "offhand") and
 			self:getInven(self.INVEN_OFFHAND)
 		then
 			local o = self:getInven(self.INVEN_OFFHAND)[1]
-			speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			if o then
+				speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			end
 		end
 
 		if (speed_type == "combat" or speed_type == "weapon") and not speed then
@@ -1487,6 +1491,9 @@ function _M:teleportRandom(x, y, dist, min_dist)
 		local pos = poss[rng.range(1, #poss)]
 		self:move(pos[1], pos[2], true)
 		teleported = true
+		
+		if self.runStop then self:runStop("teleported") end
+		if self.restStop then self:restStop("teleported") end
 		
 		-- after moving
 		if self:attr("defense_on_teleport") or self:attr("resist_all_on_teleport") or self:attr("effect_reduction_on_teleport") then
