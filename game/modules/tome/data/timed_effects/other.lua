@@ -1676,14 +1676,18 @@ newEffect{
 		if not self.on_die then return end
 		-- Dreamscape doesn't cooldown in the dreamscape
 		self.talents_cd[self.T_DREAMSCAPE] = self.talents_cd[self.T_DREAMSCAPE] + 1
-		-- Spawn every three turns, or every two for lucid dreamers
+		
+		-- Spawn a copy every other turn
 		local spawn_time = 2
 		if eff.dur%spawn_time == 0 then
-			local x, y = util.findFreeGrid(eff.target.x, eff.target.y, 1, true, {[Map.ACTOR]=true})
+		
+			-- Fine space
+			local x, y = util.findFreeGrid(eff.target.x, eff.target.y, 5, true, {[Map.ACTOR]=true})
 			if not x then
 				game.logPlayer(self, "Not enough space to summon!")
 				return
 			end
+			
 			-- Create a clone for later spawning
 			local m = require("mod.class.NPC").new(eff.target:cloneFull{
 				shader = "shadow_simulacrum",
@@ -1696,22 +1700,14 @@ newEffect{
 				ai_state = eff.target.ai_state or { ai_move="move_complex", talent_in=1 },
 				name = eff.target.name.."'s dream projection",
 			})
+			
+			-- Change some values; most of this is typical clone protection stuff
 			m.ai_state.ally_compassion = 10
 			m:removeAllMOs()
 			m.make_escort = nil
 			m.on_added_to_level = nil
 			m._rst_full = true
-
-			m.energy.value = 0
-			m.player = nil
-			m.max_life = m.max_life
-			m.life = util.bound(m.life, 0, m.max_life)
-			if not eff.target:attr("lucid_dreamer") then
-				m.inc_damage.all = (m.inc_damage.all or 0) - 50
-			end
 			m.forceLevelup = function() end
-			m.die = nil
-			m.on_die = nil
 			m.on_acquire_target = nil
 			m.seen_by = nil
 			m.can_talk = nil
@@ -1719,17 +1715,37 @@ newEffect{
 			m.on_takehit = nil
 			m.exp_worth = 0
 			m.no_inventory_access = true
-			if m.inven then m.inven[m.INVEN_INVEN] = nil end
 			m.clone_on_hit = nil
+			m.player = nil
+			m.energy.value = 0
+			m.max_life = m.max_life
+			m.life = util.bound(m.life, 0, m.max_life)
 			m.remove_from_party_on_death = true
-			m.is_psychic_projection = true
-			m.lucid_dreamer = 1
+			if not eff.target:attr("lucid_dreamer") then
+				m.inc_damage.all = (m.inc_damage.all or 0) - 50
+			end
+			
+			-- special stuff
+ 			m.is_psychic_projection = true
+			m.lucid_dreamer = true
+			
+			-- Remove some talents
+			local tids = {}
+			for tid, _ in pairs(m.talents) do
+				local t = m:getTalentFromId(tid)
+				if (t.no_npc_use and not t.allow_temporal_clones) or t.remove_on_clone then tids[#tids+1] = t end
+			end
+			for i, t in ipairs(tids) do
+				if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
+				m:unlearnTalentFull(t.id)
+			end
 			
 			-- remove imprisonment
 			m.invulnerable = m.invulnerable - 1
 			m.time_prison = m.time_prison - 1
 			m.no_timeflow = m.no_timeflow - 1
 			m.status_effect_immune = m.status_effect_immune - 1
+			m:removeParticles(eff.particle)
 			m:removeTimedEffectsOnClone()
 
 			-- track number killed
@@ -1757,12 +1773,13 @@ newEffect{
 					m:resetCanSeeCache()
 				end
 			end
-
-			-- Try to insure the AI isn't attacking the invulnerable actor
-			if self.ai_target and self.ai_target.actor and self.ai_target.actor:attr("invulnerable") then
-				self:setTarget(nil)
-			end
 		end
+		
+		-- Try to insure the AI isn't attacking the invulnerable actor
+		if self.ai_target and self.ai_target.actor and self.ai_target.actor:attr("invulnerable") then
+			self:setTarget(nil)
+		end
+		
 		-- End the effect early if we've killed enough projections
 		if eff.projections_killed/10 >= eff.target.life/eff.target.max_life then
 			game:onTickEnd(function()
@@ -1779,7 +1796,7 @@ newEffect{
 		eff.tid = eff.target:addTemporaryValue("no_timeflow", 1)
 		eff.imid = eff.target:addTemporaryValue("status_effect_immune", 1)
 		eff.target.energy.value = 0
-		
+
 		-- Make the invader deadly
 		eff.pid = self:addTemporaryValue("inc_damage", {all=eff.power})
 		eff.did = self:addTemporaryValue("lucid_dreamer", 1)
@@ -1793,7 +1810,7 @@ newEffect{
 		eff.target:removeTemporaryValue("time_prison", eff.sid)
 		eff.target:removeTemporaryValue("no_timeflow", eff.tid)
 		eff.target:removeTemporaryValue("status_effect_immune", eff.imid)
-		
+
 		-- Remove the invaders damage bonus
 		self:removeTemporaryValue("inc_damage", eff.pid)
 		self:removeTemporaryValue("lucid_dreamer", eff.did)
