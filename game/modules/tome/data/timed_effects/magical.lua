@@ -3092,7 +3092,7 @@ newEffect{
 		if dam > 0 and src ~= self then
 			-- find available targets
 			local tgts = {}
-			local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
+			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
 			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 				local a = game.level.map(x, y, Map.ACTOR)
 				if a and self:reactionToward(a) < 0 then

@@ -119,7 +119,7 @@ newTalent{
 	info = function(self, t)
 		local power = t.getPower(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns you displace %d%% of any damage you receive onto a random enemy within range.
+		return ([[For the next %d turns you displace %d%% of any damage you receive onto a nearby random enemy.
 		While Webs of Fate is active you may gain one additional Spin per turn and your maximum Spin is doubled.]])
 		:format(duration, power)
 	end,

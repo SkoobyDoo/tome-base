@@ -1744,7 +1744,6 @@ newEffect{
 			game.zone:addEntity(game.level, m, "actor", x, y)
 			game.level.map:particleEmitter(x, y, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})
 			game.logSeen(eff.target, "#LIGHT_BLUE#%s has spawned a dream projection to protect its mind!", eff.target.name:capitalize())
-			m:removeParticles(eff.particle)
 
 			if game.party:hasMember(eff.target) then
 				game.party:addMember(m, {
@@ -1781,12 +1780,6 @@ newEffect{
 		eff.imid = eff.target:addTemporaryValue("status_effect_immune", 1)
 		eff.target.energy.value = 0
 		
-		if core.shader.active(4) then
-			eff.particle = eff.target:addParticles(Particles.new("shader_shield", 1, {img="shield2", size_factor=1.25}, {type="shield", shieldIntensity=0.25, time_factor=6000, aadjust=5, color={0, 1, 1}}))
-		else
-			eff.particle = eff.target:addParticles(Particles.new("generic_shield", 1, {r=0, g=1, b=1, a=1}))
-		end
-
 		-- Make the invader deadly
 		eff.pid = self:addTemporaryValue("inc_damage", {all=eff.power})
 		eff.did = self:addTemporaryValue("lucid_dreamer", 1)
@@ -1800,7 +1793,6 @@ newEffect{
 		eff.target:removeTemporaryValue("time_prison", eff.sid)
 		eff.target:removeTemporaryValue("no_timeflow", eff.tid)
 		eff.target:removeTemporaryValue("status_effect_immune", eff.imid)
-		eff.target:removeParticles(eff.particle)
 		
 		-- Remove the invaders damage bonus
 		self:removeTemporaryValue("inc_damage", eff.pid)
