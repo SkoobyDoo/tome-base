@@ -918,7 +918,7 @@ function _M:changeLevelReal(lev, zone, params)
 			if self.zone.tier1 then
 				if lev == 1 and game.state:tier1Killed(game.state.birth.start_tier1_skip or 3) then
 					self.zone.tier1 = nil
-					Dialog:yesnoPopup("Easy!", "This zone is so easy for you that you stroll to the last area with ease.", function(ret) if ret then
+					Dialog:yesnoPopup("Easy!", "This zone is so easy for you that you can stroll to the last area with ease.", function(ret) if ret then
 						game:changeLevel(self.zone.max_level)
 					end end, "Stroll", "Stay there")
 				end
@@ -1670,6 +1670,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			game:changeLevel(1, "town-angolwen")
+do return end
 			local o = game.zone:makeEntityByName(game.level, "object", "RIFT_SWORD", true)
 			if o then
 				o:identify(true)

@@ -311,14 +311,18 @@ function _M:getSpeed(speed_type)
 			self:getInven(self.INVEN_MAINHAND)
 		then
 			local o = self:getInven(self.INVEN_MAINHAND)[1]
-			speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			if o then
+				speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			end
 		end
 
 		if (speed_type == "weapon" or speed_type == "offhand") and
 			self:getInven(self.INVEN_OFFHAND)
 		then
 			local o = self:getInven(self.INVEN_OFFHAND)[1]
-			speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			if o then
+				speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			end
 		end
 
 		if (speed_type == "combat" or speed_type == "weapon") and not speed then
