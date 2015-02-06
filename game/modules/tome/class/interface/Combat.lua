@@ -1309,7 +1309,7 @@ end
 --- Gets the damage range
 function _M:combatDamageRange(weapon, add)
 	weapon = weapon or self.combat or {}
-	return (self.combat_damrange or 0) + (weapon.damrange or 1.1) + (add or 0)
+	return (self.combat_damrange or 0) + (weapon.damrange or (1.1 - (add or 0))) + (add or 0)
 end
 
 --- Scale damage values
