@@ -1670,6 +1670,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			game:changeLevel(1, "town-angolwen")
+do return end
 			local o = game.zone:makeEntityByName(game.level, "object", "RIFT_SWORD", true)
 			if o then
 				o:identify(true)
