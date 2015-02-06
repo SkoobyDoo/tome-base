@@ -647,7 +647,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 			if item.dh and by >= item.dh - self.mouse.delegate_offset_y then citem = self.dlist[i].src ci=i break end
 		end
 
-		if citem and citem.url and button == "left" and event == "button" and citem.fade > 0 then
+		if citem and citem.url and button == "left" and event == "button" and (citem.fade or 1) > 0 then
 			util.browserOpenUrl(citem.url, {is_external=true})
 		else
 			self.on_mouse(citem and citem.login and self.channels[self.cur_channel] and self.channels[self.cur_channel].users and self.channels[self.cur_channel].users[citem.login], citem and citem.login and citem, button, event, x, y, xrel, yrel, bx, by)
