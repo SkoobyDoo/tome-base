@@ -50,7 +50,7 @@ newTalent{
 		end
 	end,
 	action = function(self, t)
-		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, nil, "bow")
+		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, nil, "bow"))
 	
 		-- Most of the time use the normal shoot.
 		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
