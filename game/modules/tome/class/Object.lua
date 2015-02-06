@@ -532,11 +532,9 @@ function _M:getTextualDesc(compare_with, use_actor)
 		ret:add(text)
 		local outformatres
 		local resvalue = ((item1[field] or 0) + (add_table[field] or 0)) * mod
+		local item1value = resvalue
 		if type(outformat) == "function" then
-			local unworn_base =
-				(item1.wielded and resvalue) or
-				table.get(items, 1, infield, field)
-			outformatres = outformat(resvalue, unworn_base)
+			outformatres = outformat(resvalue, nil)
 		else outformatres = outformat:format(resvalue) end
 		if isinversed then
 			ret:add(((item1[field] or 0) + (add_table[field] or 0)) > 0 and {"color","RED"} or {"color","LIGHT_GREEN"}, outformatres, {"color", "LAST"})
@@ -557,10 +555,10 @@ function _M:getTextualDesc(compare_with, use_actor)
 				add = true
 				if items[i][infield][field] ~= (item1[field] or 0) then
 					local outformatres
-					local resvalue = ((item1[field] or 0) - items[i][infield][field]) * mod
+					local resvalue = (items[i][infield][field] + (add_table[field] or 0)) * mod
 					if type(outformat) == "function" then
-						outformatres = outformat(resvalue, resvalue)
-					else outformatres = outformat:format(resvalue) end
+						outformatres = outformat(item1value, resvalue)
+					else outformatres = outformat:format(item1value - resvalue) end
 					if isdiffinversed then
 						ret:add(items[i][infield][field] < (item1[field] or 0) and {"color","RED"} or {"color","LIGHT_GREEN"}, outformatres, {"color", "LAST"})
 					else
@@ -749,7 +747,12 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(combat, compare_with, field, "atk", "%+d", "Accuracy: ", 1, false, false, add_table)
 		compare_fields(combat, compare_with, field, "apr", "%+d", "Armour Penetration: ", 1, false, false, add_table)
 		compare_fields(combat, compare_with, field, "physcrit", "%+.1f%%", "Physical crit. chance: ", 1, false, false, add_table)
-		compare_fields(combat, compare_with, field, "physspeed", function() return ("%.0f%%"):format(100/((is_fake_add and 1 or 0) + (combat.physspeed or 1))) end, "Attack speed: ", 100, false, true, add_table)
+		local physspeed_compare = function(orig, compare_with)
+			orig = 100 / orig
+			if compare_with then return ("%+.0f%%"):format(orig - 100 / compare_with)
+			else return ("%2.0f%%"):format(orig) end
+		end
+		compare_fields(combat, compare_with, field, "physspeed", physspeed_compare, "Attack speed: ", 1, false, true, add_table)
 
 		compare_fields(combat, compare_with, field, "block", "%+d", "Block value: ", 1, false, false, add_table)
 
@@ -1535,7 +1538,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		if (w and w.combat or can_combat_unarmed) and (use_actor:knowTalent(use_actor.T_EMPTY_HAND) or use_actor:attr("show_gloves_combat")) then
 			desc:add({"color","YELLOW"}, "When used to modify unarmed attacks:", {"color", "LAST"}, true)
-			compare_tab = { dam=1, atk=1, apr=0, physcrit=0, physspeed =0.6, dammod={str=1}, damrange=1.1 }
+			compare_tab = { dam=1, atk=1, apr=0, physcrit=0, physspeed =(use_actor:knowTalent(use_actor.T_EMPTY_HAND) and 0.6 or 1), dammod={str=1}, damrange=1.1 }
 			desc_combat(w, compare_unarmed, "combat", compare_tab, true)
 		end
 	end
