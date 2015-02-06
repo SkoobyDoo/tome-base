@@ -209,6 +209,7 @@ newTalent{
 	require = chrono_req_high4,
 	mode = "passive",
 	points = 5,
+	remove_on_clone = true,
 	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 60) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check

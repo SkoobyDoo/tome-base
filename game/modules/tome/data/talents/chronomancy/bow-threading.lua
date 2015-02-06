@@ -249,7 +249,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local aoe = t.getDamageAoE(self, t)
 		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination or hits a target it will draw in all enemies in a radius of %d and inflict %0.2f physical damage.
-		Each target moved beyond the first deals an additional %0.2f physical damage (up to %0.2f bonus damage).
+		Each target moved beyond the first increases the damage %0.2f (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The additional damage scales with your Spellpower.]])
 		:format(damage, radius, damDesc(self, DamageType.PHYSICAL, aoe), damDesc(self, DamageType.PHYSICAL, aoe/4), damDesc(self, DamageType.PHYSICAL, aoe))
