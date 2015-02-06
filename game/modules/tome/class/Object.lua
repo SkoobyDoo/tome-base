@@ -679,31 +679,52 @@ function _M:getTextualDesc(compare_with, use_actor)
 			dm[#dm+1] = ("%d%% %s"):format((i + (add_table.dammod[stat] or 0)) * 100, name)
 		end
 		if #dm > 0 or combat.dam then
-			local power_diff = ""
 			local diff_count = 0
 			local any_diff = false
-			for i, v in ipairs(compare_with) do
-				if v[field] then
-					local base_power_diff = ((combat.dam or 0) + (add_table.dam or 0)) - ((v[field].dam or 0) + (add_table.dam or 0))
-					local multi_diff = (((combat.damrange or 1.1) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))) - (((v[field].damrange or (1.1)) + (add_table.damrange or 0)) * ((v[field].dam or 0) + (add_table.dam or 0)))
-					power_diff = power_diff..("%s%s%+.1f#LAST# - %s%+.1f#LAST#"):format(diff_count > 0 and " / " or "", base_power_diff > 0 and "#00ff00#" or "#ff0000#", base_power_diff, multi_diff > 0 and "#00ff00#" or "#ff0000#", multi_diff)
-					diff_count = diff_count + 1
-					if base_power_diff ~= 0 or multi_diff ~= 0 then
-						any_diff = true
+			if config.settings.tome.advanced_weapon_stats then
+				local base_power = use_actor:combatDamagePower(combat, add_table.dam)
+				local base_range = use_actor:combatDamageRange(combat, add_table.damrange)
+				local power_diff, range_diff = {}, {}
+				for _, v in ipairs(compare_with) do
+					if v[field] then
+						local base_power_diff = base_power - use_actor:combatDamagePower(v[field], add_table.dam)
+						local base_range_diff = base_range - use_actor:combatDamageRange(v[field], add_table.damrange)
+						power_diff[#power_diff + 1] = ("%s%+d%%#LAST#"):format(base_power_diff > 0 and "#00ff00#" or "#ff0000#", base_power_diff * 100)
+						range_diff[#range_diff + 1] = ("%s%+.1fx#LAST#"):format(base_range_diff > 0 and "#00ff00#" or "#ff0000#", base_range_diff)
+						diff_count = diff_count + 1
+						if base_power_diff ~= 0 or base_range_diff ~= 0 then
+							any_diff = true
+						end
 					end
 				end
-			end
-			if any_diff == false then
-				power_diff = ""
+				if any_diff then
+					local s = ("Power: %3d%% (%s)  Range: %.1fx (%s)"):format(base_power * 100, table.concat(power_diff, " / "), base_range, table.concat(range_diff, " / "))
+					desc:merge(s:toTString())
+				else
+					desc:add(("Power: %3d%%  Range: %.1fx"):format(base_power * 100, base_range))
+				end
 			else
-				power_diff = ("(%s)"):format(power_diff)
-			end
-			if config.settings.tome.advanced_weapon_stats then
-				desc:add(("Power: %3d%%  Range: %.1fx"):format(use_actor:combatDamagePower(combat, add_table.dam) * 100, use_actor:combatDamageRange(combat, add_table.damrange)))
-			else
+				local power_diff = {}
+				for i, v in ipairs(compare_with) do
+					if v[field] then
+						local base_power_diff = ((combat.dam or 0) + (add_table.dam or 0)) - ((v[field].dam or 0) + (add_table.dam or 0))
+						local dfl_range = (1.1 - (add_table.damrange or 0))
+						local multi_diff = (((combat.damrange or dfl_range) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))) - (((v[field].damrange or dfl_range) + (add_table.damrange or 0)) * ((v[field].dam or 0) + (add_table.dam or 0)))
+						power_diff [#power_diff + 1] = ("%s%+.1f#LAST# - %s%+.1f#LAST#"):format(base_power_diff > 0 and "#00ff00#" or "#ff0000#", base_power_diff, multi_diff > 0 and "#00ff00#" or "#ff0000#", multi_diff)
+						diff_count = diff_count + 1
+						if base_power_diff ~= 0 or multi_diff ~= 0 then
+							any_diff = true
+						end
+					end
+				end
+				if any_diff == false then
+					power_diff = ""
+				else
+					power_diff = ("(%s)"):format(table.concat(power_diff, " / "))
+				end
 				desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+				desc:merge(power_diff:toTString())
 			end
-			desc:merge(power_diff:toTString())
 			desc:add(true)
 			desc:add(("Uses stat%s: %s"):format(#dm > 1 and "s" or "",table.concat(dm, ', ')), true)
 			local col = (combat.damtype and DamageType:get(combat.damtype) and DamageType:get(combat.damtype).text_color or "#WHITE#"):toTString()
