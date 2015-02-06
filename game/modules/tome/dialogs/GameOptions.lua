@@ -378,6 +378,15 @@ function _M:generateListUi()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When you do a mouse gesture (right click + drag) a color coded trail is displayed.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Display mouse gesture trails#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.hide_gestures and "disabled" or "enabled")
+	end, fct=function(item)
+		config.settings.hide_gestures = not config.settings.hide_gestures
+		game:saveSettings("hide_gestures", ("hide_gestures = %s\n"):format(tostring(config.settings.hide_gestures)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
