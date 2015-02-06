@@ -91,8 +91,8 @@ function _M:generate()
 	}
 	self.key:addCommands{
 		_TAB = function() local sel = 1 for i=1, #tabs do if tabs[i].ui.selected then sel = i break end end self:switchTo(tabs[util.boundWrap(sel+1, 1, #tabs)]) end,
-		_HOME = function() self:setScroll(1) end,
-		_END = function() self:setScroll(self.max) end,
+		_HOME = function() self:setScroll(0) end,
+		_END = function() self:setScroll(self.scrollbar.max) end,
 		_PAGEUP = function() self:setScroll(self.scroll - self.max_display) end,
 		_PAGEDOWN = function() self:setScroll(self.scroll + self.max_display) end,
 	}
@@ -218,9 +218,9 @@ function _M:loadLog(log, oldscroll)
 	self.max = #log
 	self.max_display = math.floor(self.max_h / self.font_h)
 
-	self.scrollbar.max = self.max - self.max_display + 1
+	self.scrollbar.max = math.max(1, self.max - self.max_display + 1)
 	self.scroll = nil
-	self:setScroll(oldscroll or (self.max - self.max_display + 1))
+	self:setScroll(oldscroll or self.scrollbar.max)
 end
 
 function _M:switchTo(ui)
@@ -233,7 +233,7 @@ function _M:switchTo(ui)
 		self:loadLog(self.log:getLog(true))
 	else
 		local s = nil
-		if _M.last_tab == ui.tab_channel and self.max and self.max_display and self.scroll < self.max - self.max_display + 1 then
+		if _M.last_tab == ui.tab_channel and self.max and self.max_display and self.scroll < self.scrollbar.max then
 			s = self.scroll
 		end
 		self:loadLog(self.chat:getLog(ui.tab_channel, true), s)
@@ -244,7 +244,7 @@ end
 
 function _M:setScroll(i)
 	local old = self.scroll
-	self.scroll = util.bound(i, 1, math.max(1, self.max - self.max_display + 1))
+	self.scroll = util.bound(i, 0, self.scrollbar.max)
 	if self.scroll == old then return end
 
 	self.dlist = {}
@@ -279,6 +279,6 @@ function _M:innerDisplay(x, y, nb_keyframes, tx, ty)
 		h = h + self.font_h
 	end
 
-	self.scrollbar.pos = self.scrollbar.max - self.scroll + 1
+	self.scrollbar.pos = self.scrollbar.max - self.scroll
 	self.scrollbar:display(x + self.iw - self.scrollbar.w, y)
 end
