@@ -60,7 +60,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 12,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 2, DEBUFF = 2 },
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%end,
 	getProcs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
