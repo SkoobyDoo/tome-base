@@ -40,7 +40,7 @@ newTalent{
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
 	archery_onhit = function(self, t, target, x, y)
-		local dox = self:getParadox() - self.preferred_paradox
+		local dox = self:getParadox() - (self.preferred_paradox or 300)
 		local fix = math.min( math.abs(dox), t.getParadoxReduction(self, t) )
 		if dox > 0 then
 			self:incParadox( -fix )
@@ -62,7 +62,9 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local paradox = t.getParadoxReduction(self, t)
 		return ([[Fire an arrow for %d%% temporal weapon damage.  If the attack hits tune your Paradox up to %d towards your baseline.  This attack does not consume ammo.
-		You also learn how to phase your arrows through friendly targets without causing them harm.]])
+		Your arrows now also phase through friendly targets without causing them harm.
+		
+		Bow Threading talents will freely swap to your bow when activated if you have one in your secondary slot.  Additionally you may use the Shoot talent in a similar manner.]])
 		:format(damage, paradox)
 	end
 }
@@ -147,7 +149,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local penalty = t.getDamagePenalty(self, t)
-		return ([[Fire an arrow for %d%% weapon damage and call up to 2 wardens (depending on available space) that will each fire a single arrow before returning to their timelines.
+		return ([[Fire an arrow for %d%% weapon damage and call up to 2 wardens, depending on available space, that will each fire a single arrow before returning to their timelines.
 		The wardens are out of phase with normal reality and deal %d%% less damage but shoot through friendly targets.]])
 		:format(damage, penalty)
 	end
@@ -247,7 +249,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local aoe = t.getDamageAoE(self, t)
 		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination or hits a target it will draw in all enemies in a radius of %d and inflict %0.2f physical damage.
-		Each target moved beyond the first deals an additional %0.2f physical damage (up to %0.2f bonus damage).
+		Each target moved beyond the first increases the damage %0.2f (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The additional damage scales with your Spellpower.]])
 		:format(damage, radius, damDesc(self, DamageType.PHYSICAL, aoe), damDesc(self, DamageType.PHYSICAL, aoe/4), damDesc(self, DamageType.PHYSICAL, aoe))
@@ -269,7 +271,7 @@ newTalent{
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.3) end,
 	archery_onhit = function(self, t, target, x, y)
 		game:onTickEnd(function() blade_warden(self, target) end)
 	end,

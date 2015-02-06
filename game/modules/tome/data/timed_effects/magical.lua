@@ -1320,7 +1320,7 @@ newEffect{
 newEffect{
 	name = "INVIGORATE", image = "talents/invigorate.png",
 	desc = "Invigorate",
-	long_desc = function(self, eff) return ("The target is regaining %d life per turn, %d stamina per turn, and refreshing chronomancy spells at twice the normal rate."):format(eff.power, eff.power/2) end,
+	long_desc = function(self, eff) return ("The target is regaining %d life per turn and refreshing talents at twice the normal rate."):format(eff.power) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "beneficial",
@@ -1339,7 +1339,6 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		eff.regenid = self:addTemporaryValue("life_regen", eff.power)
-		eff.stamid = self:addTemporaryValue("stamina_regen", eff.power / 2)
 		if core.shader.active(4) then
 			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
 			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
@@ -1349,7 +1348,6 @@ newEffect{
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
 		self:removeTemporaryValue("life_regen", eff.regenid)
-		self:removeTemporaryValue("stamina_regen", eff.stamid)
 	end,
 }
 
@@ -3094,7 +3092,7 @@ newEffect{
 		if dam > 0 and src ~= self then
 			-- find available targets
 			local tgts = {}
-			local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
+			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
 			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 				local a = game.level.map(x, y, Map.ACTOR)
 				if a and self:reactionToward(a) < 0 then

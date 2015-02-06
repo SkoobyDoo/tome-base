@@ -37,7 +37,7 @@ newTalent{
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getWarp = function(self, t) return self:combatTalentSpellDamage(t, 15, 40, getParadoxSpellpower(self, t)) end,
+	getWarp = function(self, t) return 7 + getParadoxSpellpower(self, t, 0.092) * self:combatTalentScale(t, 1, 7) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
@@ -68,9 +68,10 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local duration = t.getDuration(self, t)
 		local warp = t.getWarp(self, t)
-		return ([[Attack with your melee weapons for %d%% damage.
-		If either attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical (warp) damage, and may stun, blind, pin, or confuse them for %d turns.
-		The bonus damage scales with your Spellpower.]])
+		return ([[Attack with your melee weapons for %d%% damage. If either attack hits you'll warp the target, dealing %0.2f temporal and %0.2f physical (warp) damage, and may stun, blind, pin, or confuse them for %d turns.
+		The bonus damage scales with your Spellpower.
+		
+		Blade Threading talents will freely swap to your dual-weapons when activated if you have them in your secondary slots.  Additionally you may use the Attack talent in a similar manner.]])
 		:format(damage, damDesc(self, DamageType.TEMPORAL, warp/2), damDesc(self, DamageType.PHYSICAL, warp/2), duration)
 	end
 }
@@ -92,7 +93,7 @@ newTalent{
 	end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.3) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 50, 150, getParadoxSpellpower(self, t)) end,
+	getPower = function(self, t) return self:combatTalentSpellDamage(t, 25, 40, getParadoxSpellpower(self, t)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
 		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")

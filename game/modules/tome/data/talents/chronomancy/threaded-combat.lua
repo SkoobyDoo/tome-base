@@ -209,6 +209,7 @@ newTalent{
 	require = chrono_req_high4,
 	mode = "passive",
 	points = 5,
+	remove_on_clone = true,
 	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 60) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check
@@ -339,7 +340,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage_penalty = t.getDamagePenalty(self, t)
-		return ([[When you hit with a blade-threading or a bow-threading talent a warden may appear (depending on available space) from another timeline and shoot or attack a random enemy.
+		return ([[When you hit with a blade-threading or a bow-threading talent a warden may appear, depending on available space, from another timeline and shoot or attack a random enemy.
 		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
 		Each of these effects can only occur once per turn and the wardens return to their own timeline after attacking.]])
 		:format(damage_penalty)

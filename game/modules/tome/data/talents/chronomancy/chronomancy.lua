@@ -167,7 +167,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 50,
 	no_npc_use = true,  -- so rares don't learn useless talents
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 10, 25))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 20))) end,
 	on_pre_use = function(self, t, silent)
 		if checkTimeline(self) then
 			if not silent then

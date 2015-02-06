@@ -239,6 +239,7 @@ newTalent{
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	range = 0,
 	radius = 1,
+	requires_target = true,
 	getDist = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	getDuration = function(self, t) return math.floor(self:combatStatScale("str", 3.8, 11)) end,
 	target = function(self, t)

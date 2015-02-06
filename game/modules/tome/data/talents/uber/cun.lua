@@ -291,7 +291,7 @@ uberTalent{
 		- Spell / Stone Alchemy
 		- Celestial / Chants
 		- Celestial / Light
-		- Chronomancy / Chronomancy]])
+		- Chronomancy / Spacetime Weaving]])
 		:format()
 	end,
 }
