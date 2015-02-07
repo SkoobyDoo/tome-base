@@ -30,7 +30,7 @@ newEntity{
 	combat = { talented = "sling", accuracy_effect = "mace", sound = "actions/sling", sound_miss = "actions/sling", },
 	archery_kind = "sling",
 	archery = "sling",
-	wielder = { learn_talent = { [Talents.T_SHOOT] = 1, }, },
+	require = { talent = { Talents.T_SHOOT }, },
 	proj_image = resolvers.image_material("shot_s", "metal"),
 	desc = [[Slings are used to hurl stones or metal shots at your foes.]],
 	randart_able = "/data/general/objects/random-artifacts/ranged.lua",
