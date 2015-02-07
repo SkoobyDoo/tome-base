@@ -5984,7 +5984,10 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		--local duration = p.maximum - math.max(0, math.floor((save - p.apply_power) / 5))
 		--local duration = p.maximum - math.max(0, (math.floor(save/5) - math.floor(p.apply_power/5)))
 		local percentage = 1 - ((save - p.apply_power)/20)
-		local duration = math.min(p.maximum, math.ceil(p.maximum * percentage))
+		local desired = p.maximum * percentage
+		local fraction = desired % 1
+		desired = math.floor(desired) + (rng.percent(100*fraction) and 1 or 0)
+		local duration = math.min(p.maximum, desired)
 		p.dur = util.bound(duration, p.minimum or 0, p.maximum)
 		p.amount_decreased = p.maximum - p.dur
 		local save_type = nil
