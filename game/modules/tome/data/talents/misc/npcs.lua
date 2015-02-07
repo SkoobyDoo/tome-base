@@ -2644,3 +2644,38 @@ newTalent{
 		return ""
 	end,
 }
+
+newTalent{
+	name = "Reload",
+	type = {"technique/other", 1},
+	cooldown = 2,
+	innate = true,
+	points = 1,
+	tactical = { AMMO = 2 },
+	no_energy = true,
+	no_reload_break = true,
+	no_break_stealth = true,
+	no_dumb_use = true,
+	on_pre_use = function(self, t, silent)
+		local q = self:hasAmmo()
+		if not q then if not silent then game.logPlayer(self, "You must have a quiver or pouch equipped.") end return false end
+		if q.combat.shots_left >= q.combat.capacity then return false end
+		return true
+	end,
+	no_unlearn_last = true,
+	action = function(self, t)
+		if self.resting then return end
+		local ret = self:reload()
+		if ret then
+			self:setEffect(self.EFF_RELOAD_DISARMED, 1, {})
+		end
+		return true
+	end,
+	info = function(self, t)
+		return ([[Quickly reload your ammo by %d (depends on masteries and object bonuses).
+		Doing so requires no turn but you are considered disarmed for 2 turns.
+
+		Reloading does not break stealth.]])
+		:format(self:reloadRate())
+	end,
+}

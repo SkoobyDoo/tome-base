@@ -4182,7 +4182,6 @@ function _M:learnPool(t)
 	-- If we learn an archery talent, also learn to shoot
 	if t.type[1]:find("^technique/archery") then
 		self:checkPool(t.id, self.T_SHOOT)
-		self:checkPool(t.id, self.T_RELOAD)
 	end
 	-- If we learn an unharmed talent, learn to use it too
 	if tt.is_unarmed then
