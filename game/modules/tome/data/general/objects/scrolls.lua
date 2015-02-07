@@ -313,7 +313,7 @@ newEntity{ base = "BASE_RUNE",
 	level_range = {5, 50},
 	rarity = 15,
 	cost = 20,
-	material_level = 3,
+	material_level = 2,
 
 	inscription_kind = "protect",
 	inscription_data = {
