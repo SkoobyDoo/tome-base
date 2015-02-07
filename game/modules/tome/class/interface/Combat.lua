@@ -1500,6 +1500,7 @@ function _M:getDammod(combat)
 	end
 
 	if combat.talented == 'knife' and self:knowTalent('T_LETHALITY') then sub('str', 'cun') end
+	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
 	if self:attr 'use_psi_combat' then
 		sub('str', 'wil')
 		sub('dex', 'cun')

@@ -671,6 +671,9 @@ function _M:getTextualDesc(compare_with, use_actor)
 		if next(combat.dammod or {}) then dammod = use_actor:getDammod(combat) end
 		for stat, i in pairs(dammod) do
 			local name = Stats.stats_def[stat].short_name:capitalize()
+			if use_actor:knowTalent(use_actor.T_STRENGTH_OF_PURPOSE) then
+				if name == "Str" then name = "Mag" end
+			end
 			if self.subtype == "dagger" and use_actor:knowTalent(use_actor.T_LETHALITY) then
 				if name == "Str" then name = "Cun" end
 			end
