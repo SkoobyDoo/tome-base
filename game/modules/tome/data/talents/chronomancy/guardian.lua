@@ -207,8 +207,9 @@ newTalent{
 	end,
 	callbackOnActBase = function(self, t)
 		if rng.percent(t.getPower(self, t)) then
-			self:removeEffectsFilter({status="detrimental", ignore_crosstier=true}, 1)
-			game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
+			if self:removeEffectsFilter({status="detrimental", ignore_crosstier=true}, 1) > 0 then
+				game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
+			end
 		end
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
