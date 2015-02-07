@@ -953,6 +953,14 @@ function fs.getRealPath(path)
 	return p:gsub(doublesep, sep)
 end
 
+function fs.readAll(file)
+	local f = fs:open(file, "r")
+	if not f then return nil, "file not found" end
+	local data = f:read(10485760)
+	f:close()
+	return data
+end
+
 tstring = {}
 tstring.is_tstring = true
 
