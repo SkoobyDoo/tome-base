@@ -147,12 +147,12 @@ function _M:setTarget(target, last_seen)
 	if last_seen then
 		self.ai_state.target_last_seen = last_seen
 	else
-		local target_pos = target and self.fov and self.fov.actors and self.fov.actors[self.ai_target.actor] or {x=self.x, y=self.y}
+		local target_pos = target and (self.fov and self.fov.actors and self.fov.actors[target] or {x=target.x, y=target.y}) or {x=self.x, y=self.y} --No FOV: aiSeeTargetPos will assume new target position is ~3 turns old by default (AI_LOCATION_GUESS_ERROR)
 		self.ai_state.target_last_seen=table.merge(self.ai_state.target_last_seen or {}, {x=target_pos.x, y=target_pos.y, turn=game.turn}) -- Merge to keep obfuscation data
 	end
 end
 
-_M.AI_SEEN_CACHE_DELAY = 10 * 100
+_M.AI_LOCATION_GUESS_ERROR = 3  -- Start position guess errors at ~3 grids
 
 --- Returns the seen coords of the target
 -- This will usually return the exact coords, but if the target is only partially visible (or not at all)
@@ -167,12 +167,12 @@ function _M:aiSeeTargetPos(target)
 	local spread = 0
 
 	-- Guess Cache turn to update position guess (so it's consistent during a turn)
-	-- Start at -1000 to make sure ti gets run the first time.
-	LSeen.GCache_turn = LSeen.GCache_turn or game.turn - self.AI_SEEN_CACHE_DELAY
+	-- Set last cache turn before game turn to make sure it gets run the first time.
+	LSeen.GCache_turn = LSeen.GCache_turn or game.turn - self.AI_LOCATION_GUESS_ERROR * game.energy_to_act/game.energy_per_tick
 
 	-- Guess Cache known turn for spread calculation (self.ai_state.target_last_seen.turn
 	-- can't be used because it's needed by FOV code)
-	LSeen.GCknown_turn = LSeen.GCknown_turn or game.turn - self.AI_SEEN_CACHE_DELAY
+	LSeen.GCknown_turn = LSeen.GCknown_turn or game.turn - self.AI_LOCATION_GUESS_ERROR * game.energy_to_act/game.energy_per_tick
 
 	-- Check if target is currently seen
 	local see, chance = self:canSee(target)
@@ -188,6 +188,10 @@ function _M:aiSeeTargetPos(target)
 			if LSeen.GCache_x then -- update guess with new random position. Could use util.findFreeGrid here at cost of speed
 				tx = math.floor(LSeen.GCache_x + (tx-LSeen.GCache_x)/2)
 				ty = math.floor(LSeen.GCache_y + (ty-LSeen.GCache_y)/2)
+				if not target:canMove(tx, ty, true) then -- find a reasonable spot if target can't be at that position
+					local nx, ny = util.findFreeGrid(tx, ty, spread, false)
+					if nx then tx, ty = nx, ny end
+				end
 			end
 			LSeen.GCache_x, LSeen.GCache_y = tx, ty
 			LSeen.GCache_turn = game.turn

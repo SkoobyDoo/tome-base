@@ -246,14 +246,20 @@ function _M:seen_by(who)
 		end
 		return
 	end
+	
+	-- Only trust the ally if they can actually see the target
+	if not who:canSee(who.ai_target.actor) then return end
+	
 	if who.ai_state and who.ai_state.target_last_seen and type(who.ai_state.target_last_seen) == "table" then
-		-- Don't believe allies if they saw the target far, far away
-		if who.ai_state.target_last_seen.x and who.ai_state.target_last_seen.y and core.fov.distance(self.x, self.y, who.ai_state.target_last_seen.x, who.ai_state.target_last_seen.y) > self.sight then return end
+		-- Don't believe allies if they think the target is too far (away based on distance to ally plus ally to hostile estimate (1.3 * sight range, usually))
+		local tx, ty = who:aiSeeTargetPos(who.ai_target.actor)
+		local distallyhostile = core.fov.distance(who.x, who.y, tx, ty) or 100
+		local range_factor = 1.2 + (tonumber(game.difficulty) or 1)/20 -- NPC's pass targets more freely at higher difficulties
+		if distallyhostile + core.fov.distance(self.x, self.y, who.x, who.y) > math.min(10, math.max(self.sight, self.infravision or 0, self.heightened_senses or 0, self.sense_radius or 0))*range_factor then return end
+
 		-- Don't believe allies if they saw the target over 10 turns ago
 		if (game.turn - (who.ai_state.target_last_seen.turn or game.turn)) / (game.energy_to_act / game.energy_per_tick) > 10 then return end 
 	end
-	-- And only trust the ally if they can actually see the target
-	if not who:canSee(who.ai_target.actor) then return end
 
 	self:setTarget(who.ai_target.actor, who.ai_state.target_last_seen)
 	print("[TARGET] Passing target", self.name, "from", who.name, "to", who.ai_target.actor.name)
