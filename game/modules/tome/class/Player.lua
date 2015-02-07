@@ -855,7 +855,7 @@ function _M:automaticTalents()
 		local spotted = spotHostiles(self, true)
 		local cd = self:getTalentCooldown(t) or 0
 		local turns_used = util.getval(t.no_energy, self, t)  == true and 0 or 1
-		if cd <= turns_used then
+		if cd <= turns_used and t.mode ~= "sustained" then
 			game.logPlayer(self, "Automatic use of talent %s #DARK_RED#skipped#LAST#: cooldown too low (%d).", t.name, cd)
 		elseif (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
 			if (c == 1) or (c == 2 and #spotted <= 0) or (c == 3 and #spotted > 0) then
