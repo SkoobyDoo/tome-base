@@ -2361,6 +2361,26 @@ newEffect{
 }
 
 newEffect{
+	name = "RELOAD_DISARMED", image = "talents/disarm.png",
+	desc = "Reloading",
+	long_desc = function(self, eff) return "The target has replenished some ammo." end,
+	type = "other",
+	subtype = { disarm=true },
+	status = "detrimental",
+	parameters = {},
+	on_gain = function(self, err) return "#Target# is disarmed!", "+Disarmed" end,
+	on_lose = function(self, err) return "#Target# rearms.", "-Disarmed" end,
+	activate = function(self, eff)
+		self:removeEffect(self.EFF_COUNTER_ATTACKING) -- Cannot parry or counterattack while disarmed
+		self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) 
+		eff.tmpid = self:addTemporaryValue("disarmed", 1)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("disarmed", eff.tmpid)
+	end,
+}
+
+newEffect{
 	name = "SPACETIME_TUNING", image = "talents/spacetime_tuning.png",
 	desc = "Spacetime Tuning",
 	long_desc = function(self, eff) return ("Tuning Paradox at a rate of %d per turn."):format(eff.power) end,
