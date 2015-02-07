@@ -3457,7 +3457,7 @@ function _M:updateModdableTile()
 
 	if self.shader_auras and next(self.shader_auras) then
 		for _, def in pairs(self.shader_auras) do
-			add[#add+1] = {image_alter="sdm", sdm_double=true, image=base..(self.moddable_tile_base or "base_01.png"), shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1}
+			add[#add+1] = {image_alter="sdm", sdm_double="dynamic", image=base..(self.moddable_tile_base or "base_01.png"), shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1}
 		end
 	end
 
