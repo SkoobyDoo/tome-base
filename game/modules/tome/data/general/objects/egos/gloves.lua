@@ -320,6 +320,7 @@ newEntity{
 	name = " of the iron hand", suffix=true, instant_resolve=true,
 	keywords = {iron=true},
 	level_range = {30, 50},
+	greater_ego = 1,
 	rarity = 30,
 	cost = 25,
 	wielder = {
