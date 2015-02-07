@@ -276,6 +276,9 @@ function _M:drawItem(item)
 end
 
 function _M:on_focus_change(status)
+	--remember scrollbar
+	local old_pos
+	if self.scrollbar then old_pos = self.scrollbar.pos end
 	self.last_input_was_keyboard = true
 	if status then
 		self.prev_item = nil
@@ -300,6 +303,7 @@ function _M:on_focus_change(status)
 			end
 		end
 	end
+	if self.scrollbar then self.scrollbar.pos = old_pos end
 end
 
 
