@@ -953,6 +953,14 @@ function fs.getRealPath(path)
 	return p:gsub(doublesep, sep)
 end
 
+function fs.readAll(file)
+	local f = fs:open(file, "r")
+	if not f then return nil, "file not found" end
+	local data = f:read(10485760)
+	f:close()
+	return data
+end
+
 tstring = {}
 tstring.is_tstring = true
 
@@ -1721,8 +1729,8 @@ function util.boundWrap(i, min, max)
 end
 
 function util.bound(i, min, max)
-	if min and i < min then i = min
-	elseif max and i > max then i = max end
+	if min then i = math.max(i, min) end
+	if max then i = math.min(i, max) end
 	return i
 end
 

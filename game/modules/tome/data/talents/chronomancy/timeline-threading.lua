@@ -193,7 +193,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage recieved is split between the three of you.
+		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage received is split between the three of you.
 		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones.]]):
 		format(duration)
 	end,
@@ -243,20 +243,16 @@ newTalent{
 	end,
 	do_instakill = function(self, t)
 		-- search for target because it's ID will change when the chrono restore takes place
-		local tg = false
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and a:hasEffect(a.EFF_CEASE_TO_EXIST) then
-				tg = a
-			end
-		end end
+		local target
+		for _, act in pairs(game.level.entities) do
+			if act.hasEffect and act:hasEffect(act.EFF_CEASE_TO_EXIST) then target = act end
+		end
 		
-		if tg then
+		if target then
 			game:onTickEnd(function()
-				tg:removeEffect(tg.EFF_CEASE_TO_EXIST)
-				game.logSeen(tg, "#LIGHT_BLUE#%s never existed, this never happened!", tg.name:capitalize())
-				tg:die(self)
+				target:removeEffect(target.EFF_CEASE_TO_EXIST)
+				game.logSeen(target, "#LIGHT_BLUE#%s never existed, this never happened!", target.name:capitalize())
+				target:die(self)
 			end)
 		end
 	end,

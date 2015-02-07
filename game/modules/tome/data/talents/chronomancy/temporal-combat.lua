@@ -240,8 +240,8 @@ newTalent{
 	info = function(self, t)
 		local power = t.getPower(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns, you recover %0.1f life and %0.1f stamina per turn, and most other talents on cooldown will refresh twice as fast as usual.
-		The life and stamina regeneration will increase with your Spellpower.]]):format(duration, power, power/2)
+		return ([[For the next %d turns, you recover %0.1f life and talents without fixed cooldowns will have their cooldowns refresh twice as fast as usual.
+		The life regeneration will scale with your Spellpower.]]):format(duration, power)
 	end,
 }
 

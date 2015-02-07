@@ -58,11 +58,11 @@ function _M:generate()
 
 	if not self.h then self.h = self.nb_items * fh end
 
-	self.max_display = math.floor(self.h / fh)
+	self.max_display = math.min(self.max, math.floor(self.h / fh))
 
 	-- Draw the scrollbar
 	if self.scrollbar then
-		self.scrollbar = Slider.new{size=self.h - fh, max=self.max}
+		self.scrollbar = Slider.new{size=self.h - fh, max=self.max - 1}
 	end
 
 	-- Draw the list items
@@ -181,7 +181,7 @@ function _M:display(x, y, nb_keyframes)
 	end
 
 	if self.focused and self.scrollbar then
-		self.scrollbar.pos = self.sel
+		self.scrollbar.pos = self.sel - 1
 		self.scrollbar:display(bx + self.w - self.scrollbar.w, by, by + self.fh)
 	end
 end

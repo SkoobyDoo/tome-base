@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 return {
-	frag = "textoutline",
+	frag = "objectsoutline",
 	vert = nil,
 	args = {
 		tex = { texture = 0 },

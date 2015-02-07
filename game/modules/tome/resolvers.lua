@@ -699,7 +699,7 @@ function resolvers.calc.talented_ai_tactic(t, e)
 	e.on_added_to_level = function(e, level, x, y)
 		local t = e.__ai_compute
 		if old_on_added_to_level then old_on_added_to_level(e, level, x, y) end
-		print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
+		-- print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
 		local tactic_total = t[2] or t.tactic_total or 10 --want tactic weights to total 10
 		local weight_power = t[3] or t.weight_power or 0.5 --smooth out tactical weights
 		local tacs_offense = {attack=1, attackarea=1}
@@ -738,12 +738,12 @@ function resolvers.calc.talented_ai_tactic(t, e)
 --			if range > 0 then range = range + radius*2/3 end
 			count_talent = false, false
 			if tal and tal.tactical then
-	print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
+	-- print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
 --	table.print(tal.tactical)
 				do_count = false
 				for tt, wt in pairs(tal.tactical) do
 					val = get_weight(wt, e)
-	print("   --- ", tt, "wt=", val)
+	-- print("   --- ", tt, "wt=", val)
 					tactical[tt] = (tactical[tt] or 0) + val -- sum up all the input weights
 					if tacs_offense[tt] then
 						do_count = true
@@ -811,8 +811,8 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		tactic.count = count
 		tactic.level = e.level
 		tactic.type = "computed"
-print("  ### ai_tactic table:")
-for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
+-- print("  ### ai_tactic table:")
+-- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
 		e.__ai_compute = nil
 		return tactic

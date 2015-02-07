@@ -70,7 +70,7 @@ newTalent{
 				function(self, src)
 					local talent = src:getTalentFromId 'T_TEMPORAL_BOLT'
 					local target = game.level.map(self.x, self.y, engine.Map.ACTOR)
-					if target and not target.dead and src:reactionToward(target) < 0 then
+					if target and not target.dead and src ~= target then
 						local DT = require("engine.DamageType")
 						local multi = (10 - self.homing.count)/20
 						local dam = self.def.dam * (1 + multi)

@@ -176,9 +176,9 @@ newChat{ id="welcome",
 				game:registerDialog(ds)
 			end,
 		},
-		{"[Mage]", cond = function() return not is_sentient() and not o.no_command end, jump="element_mage"},
-		{"[Star]", cond = function() return not is_sentient() and not o.no_command end, jump="element_star"},
-		{"[Vile]", cond = function() return not is_sentient() and not o.no_command end, jump="element_vile"},
+		{"[Mage]", cond = function() return not is_sentient() and not o.no_command and (not o.only_element or o.only_element == "element_mage") end, jump="element_mage"},
+		{"[Star]", cond = function() return not is_sentient() and not o.no_command and (not o.only_element or o.only_element == "element_star") end, jump="element_star"},
+		{"[Vile]", cond = function() return not is_sentient() and not o.no_command and (not o.only_element or o.only_element == "element_vile") end, jump="element_vile"},
 		{"Never mind"},
 	}
 }

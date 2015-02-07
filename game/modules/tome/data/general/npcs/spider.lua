@@ -254,8 +254,8 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 70), 1, 0.9), atk=16, apr=9, damtype=DamageType.WASTING, dammod={dex=1.2} },
 
 	combat_armor = 5, combat_def = 10,
-	resists = { [DamageType.NATURE] = 20, [DamageType.LIGHT] = -20, [DamageType.TEMPORAL] = 20, },
-
+	resists = { [DamageType.PHYSICAL] = 20, [DamageType.TEMPORAL] = 20, },
+	
 	resolvers.talents{
 		[Talents.T_SPIDER_WEB]={base=1, every=10, max=5},
 		[Talents.T_LAY_WEB]={base=1, every=10, max=5},
@@ -276,7 +276,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 70), 1, 0.9), atk=16, apr=9, damtype=DamageType.WASTING, dammod={dex=1.2} },
 
 	combat_armor = 7, combat_def = 17,
-	resists = { [DamageType.NATURE] = 20, [DamageType.LIGHT] = -20, [DamageType.TEMPORAL] = 20, },
+	resists = { [DamageType.PHYSICAL] = 20, [DamageType.TEMPORAL] = 20, },
 
 	talent_cd_reduction = {[Talents.T_RETHREAD]=-4},
 
@@ -286,7 +286,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 		[Talents.T_SPIN_FATE]={base=5, every=6, max=8},
 		[Talents.T_SWAP]={base=5, every=6, max=8},
 		[Talents.T_RETHREAD]={base=5, every=6, max=8},
-		[Talents.T_INDUCE_ANOMALY]={base=5, every=6, max=8},
+		[Talents.T_STATIC_HISTORY]={base=5, every=6, max=8},
 	},
 }
 
@@ -307,7 +307,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 70), 1, 0.9), atk=16, apr=9, damtype=DamageType.WASTING, dammod={dex=1.2} },
 
 	combat_armor = 7, combat_def = 17,
-	resists = { [DamageType.NATURE] = 20, [DamageType.LIGHT] = -20, [DamageType.TEMPORAL] = 20, },
+	resists = { [DamageType.PHYSICAL] = 20, [DamageType.TEMPORAL] = 20, },
 
 	make_escort = {
 		{type = "spiderkin", name="weaver young", number=2, no_subescort=true},
@@ -319,8 +319,8 @@ newEntity{ base = "BASE_NPC_SPIDER",
 		[Talents.T_SPIN_FATE]={base=5, every=6, max=8},
 		[Talents.T_SWAP]={base=5, every=6, max=8},
 		[Talents.T_RETHREAD]={base=5, every=6, max=8},
-		[Talents.T_FADE_FROM_TIME]={base=5, every=6, max=8},
-		[Talents.T_INDUCE_ANOMALY]={base=5, every=6, max=8},
+		[Talents.T_CHRONO_TIME_SHIELD]={base=5, every=6, max=8},
+		[Talents.T_STATIC_HISTORY]={base=5, every=6, max=8},
 	},
 }
 
@@ -345,7 +345,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	combat = { dam=resolvers.levelup(resolvers.mbonus(100, 15), 1, 0.9), atk=16, apr=9, damtype=DamageType.WASTING, dammod={dex=1.2} },
 
 	combat_armor = 7, combat_def = 17,
-	resists = { [DamageType.NATURE] = 20, [DamageType.LIGHT] = -20, [DamageType.TEMPORAL] = 20, },
+	resists = { [DamageType.PHYSICAL] = 20, [DamageType.TEMPORAL] = 20, },
 	combat_physresist = 50,
 	combat_spellresist = 50,
 	combat_mentalresist = 50,
@@ -357,25 +357,29 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	},
 
 	summon = {
-		{type = "spiderkin", subtype = "spider", name="weaver young", number=2, hasxp=false},
-		{type = "spiderkin", subtype = "spider", name="weaver patriarch", number=1, hasxp=false},
+		{type = "spiderkin", subtype = "spider", name="weaver young", number=4, hasxp=false},
 	},
 
 	resolvers.talents{
 		[Talents.T_SPIDER_WEB]={base=7, every=6},
 		[Talents.T_LAY_WEB]={base=7, every=6},
 
-		-- Defensive Talents; should be hard to kill
-		[Talents.T_DISPLACE_DAMAGE]={base=10, every=6}, -- Mwhaha
-		[Talents.T_BODY_REVERSION]={base=7, every=6},
-		[Talents.T_ENTROPIC_FIELD]={base=7, every=6},
-		[Talents.T_FADE_FROM_TIME]={base=7, every=6},
+		-- She is the fateweaver, chronomancers learned these talents by emulating her
 		[Talents.T_SPIN_FATE]={base=7, every=6},
-
-		[Talents.T_SWAP]={base=7, every=6},
-		[Talents.T_DIMENSIONAL_STEP]={base=7, every=6},
+		[Talents.T_WEBS_OF_FATE]={base=7, every=6},
+		[Talents.T_FATEWEAVER]={base=7, every=6},
+		[Talents.T_SEAL_FATE]={base=7, every=6},
+		
+		[Talents.T_STOP]={base=7, every=6},
+		[Talents.T_STATIC_HISTORY]={base=7, every=6},
+		[Talents.T_CHRONO_TIME_SHIELD]={base=7, every=6},
+		[Talents.T_SPACETIME_STABILITY]={base=7, every=6},
+		
+		[Talents.T_DIMENSIONAL_STEP]=4,  -- At five this turns to swap, we want her to close with it
+		[Talents.T_PHASE_PULSE]={base=7, every=6},
+		[Talents.T_DIMENSIONAL_SHIFT]={base=7, every=6},
+		
 		[Talents.T_RETHREAD]={base=7, every=6},
-		[Talents.T_INDUCE_ANOMALY]={base=7, every=6},
 
 		[Talents.T_SUMMON]=1,
 

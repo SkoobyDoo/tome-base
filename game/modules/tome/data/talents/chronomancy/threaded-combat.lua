@@ -41,11 +41,14 @@ newTalent{
 	archery_onhit = function(self, t, target, x, y)
 		local accuracy = math.max(0, 10 - t.getTeleportRange(self, t))
 		game:onTickEnd(function()
-			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-			self:teleportRandom(tx, ty, accuracy)
 			game:playSoundNear(self, "talents/teleport")
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			
+			if self:teleportRandom(x, y, accuracy) then
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			else
+				game.logSeen(self, "The spell fizzles!")
+			end
 		end)
 	end,
 	action = function(self, t)
@@ -206,6 +209,7 @@ newTalent{
 	require = chrono_req_high4,
 	mode = "passive",
 	points = 5,
+	remove_on_clone = true,
 	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 60) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check
@@ -336,7 +340,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage_penalty = t.getDamagePenalty(self, t)
-		return ([[When you hit with a blade-threading or a bow-threading talent a warden may appear (depending on available space) from another timeline and shoot or attack a random enemy.
+		return ([[When you hit with a blade-threading or a bow-threading talent a warden may appear, depending on available space, from another timeline and shoot or attack a random enemy.
 		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
 		Each of these effects can only occur once per turn and the wardens return to their own timeline after attacking.]])
 		:format(damage_penalty)

@@ -715,9 +715,10 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		elseif self:hasDualWeapon() then chance = 50
 		end
 		if rng.percent(chance) then
+			local t = self:getTalentFromId(self.T_ARCANE_DESTRUCTION)
 			local typ = rng.table{{DamageType.FIRE,"ball_fire"}, {DamageType.LIGHTNING,"ball_lightning_beam"}, {DamageType.ARCANE,"ball_arcane"}}
-			self:project({type="ball", radius=2, friendlyfire=false}, target.x, target.y, typ[1], self:combatSpellpower() * 2)
-			game.level.map:particleEmitter(target.x, target.y, 2, typ[2], {radius=2, tx=target.x, ty=target.y})
+			self:project({type="ball", radius=self:getTalentRadius(t), friendlyfire=false}, target.x, target.y, typ[1], self:combatSpellpower() * 2 * t.getDamMult(self, t))
+			game.level.map:particleEmitter(target.x, target.y, self:getTalentRadius(t), typ[2], {radius=2, tx=target.x, ty=target.y})
 		end
 	end
 
@@ -1308,7 +1309,7 @@ end
 --- Gets the damage range
 function _M:combatDamageRange(weapon, add)
 	weapon = weapon or self.combat or {}
-	return (self.combat_damrange or 0) + (weapon.damrange or 1.1) + (add or 0)
+	return (self.combat_damrange or 0) + (weapon.damrange or (1.1 - (add or 0))) + (add or 0)
 end
 
 --- Scale damage values

@@ -604,10 +604,11 @@ function _M:generateRandart(data)
 	local function merger(d, e, k, dst, src, rules, state) --scale: factor to adjust power limits for levels higher than 50
 		if (not state.path or #state.path == 0) and not state.copy then
 			if k == "copy" then -- copy into root
+				state.copy = true
 				table.applyRules(dst, e, rules, state)
 			end
 		end
-		local scale = state.scale or 1
+		local scale = state.scaleup or 1
 		if type(e) == "table" and e.__resolver and e.__resolver == "randartmax" and d then
 			d.v = d.v + e.v
 			d.max = e.max
@@ -669,6 +670,7 @@ function _M:generateRandart(data)
 	end
 
 	for _, ego in pairs(selected_powers) do
+		ego.instant_resolve = true  -- resolve to be able to add
 		ego = engine.Entity.new(ego) -- get a real uid
 		game.zone:applyEgo(o, ego, "object", true)
 	end

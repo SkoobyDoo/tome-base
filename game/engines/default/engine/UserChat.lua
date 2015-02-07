@@ -647,7 +647,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 			if item.dh and by >= item.dh - self.mouse.delegate_offset_y then citem = self.dlist[i].src ci=i break end
 		end
 
-		if citem and citem.url and button == "left" and event == "button" and citem.fade > 0 then
+		if citem and citem.url and button == "left" and event == "button" and (citem.fade or 1) > 0 then
 			util.browserOpenUrl(citem.url, {is_external=true})
 		else
 			self.on_mouse(citem and citem.login and self.channels[self.cur_channel] and self.channels[self.cur_channel].users and self.channels[self.cur_channel].users[citem.login], citem and citem.login and citem, button, event, x, y, xrel, yrel, bx, by)
@@ -683,13 +683,10 @@ function _M:display()
 			local nb_users = 0
 			for _, _ in pairs(self.channels[name].users) do nb_users = nb_users + 1 end
 			name = "["..name:capitalize().." ("..nb_users..")]"
-			local len, lenh = self.font_mono:size(name)
 
-			local s = core.display.newSurface(len + self.frame.b4.w + self.frame.b6.w, self.frame.h)
-			s:drawColorStringBlended(self.font_mono, name, self.frame.b4.w, (self.frame.h - self.font_h) / 2, 0xFF, 0xFF, 0xFF, true, len)
-			local item = {name=oname, w=len + self.frame.b4.w + self.frame.b6.w, h=self.frame.h, sel=oname == self.cur_channel}
-			item._tex, item._tex_w, item._tex_h = s:glTexture()
-			self.display_chans[#self.display_chans+1] = item
+			local tex = self:drawFontLine(self.font_mono, name)
+			table.update(tex, {name = oname, sel = oname == self.cur_channel})
+			self.display_chans[#self.display_chans+1] = tex
 		end
 		self.channels_changed = false
 	end
@@ -715,7 +712,8 @@ function _M:display()
 			tstr = tstring{"[", self:getChannelCode(log[z].channel), "-", log[z].channel, "] <", {"color",unpack(colors.simple(log[z].color_name))}, log[z].name, {"color", "LAST"}, "> "}
 		end
 		tstr:merge(log[z].msg:toTString())
-		local gen = tstring.makeLineTextures(tstr, self.w, self.font_mono)
+		--local gen = tstring.makeLineTextures(tstr, self.w, self.font_mono)
+		local gen = self.font_mono:draw(tstr:toString(), self.w, 255, 255, 255)
 		for i = #gen, 1, -1 do
 			gen[i].login = log[z].login
 			gen[i].extra_data = log[z].extra_data
@@ -776,7 +774,7 @@ function _M:toScreen()
 				local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
 				Base:drawFrame(f, self.display_x + w, self.display_y, 139/255, 210/255, 77/255, glow / 255)
 			end
-			item._tex:toScreenFull(self.display_x + w, self.display_y, item.w, item.h, item._tex_w, item._tex_h)
+			self:textureToScreen(item, self.display_x + w + self.frame.b4.w, self.display_y + (self.frame.h - self.font_h)/2)
 			w = w + item.w + 4
 		end
 	end

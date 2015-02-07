@@ -532,11 +532,9 @@ function _M:getTextualDesc(compare_with, use_actor)
 		ret:add(text)
 		local outformatres
 		local resvalue = ((item1[field] or 0) + (add_table[field] or 0)) * mod
+		local item1value = resvalue
 		if type(outformat) == "function" then
-			local unworn_base =
-				(item1.wielded and resvalue) or
-				table.get(items, 1, infield, field)
-			outformatres = outformat(resvalue, unworn_base)
+			outformatres = outformat(resvalue, nil)
 		else outformatres = outformat:format(resvalue) end
 		if isinversed then
 			ret:add(((item1[field] or 0) + (add_table[field] or 0)) > 0 and {"color","RED"} or {"color","LIGHT_GREEN"}, outformatres, {"color", "LAST"})
@@ -557,10 +555,10 @@ function _M:getTextualDesc(compare_with, use_actor)
 				add = true
 				if items[i][infield][field] ~= (item1[field] or 0) then
 					local outformatres
-					local resvalue = ((item1[field] or 0) - items[i][infield][field]) * mod
+					local resvalue = (items[i][infield][field] + (add_table[field] or 0)) * mod
 					if type(outformat) == "function" then
-						outformatres = outformat(resvalue, resvalue)
-					else outformatres = outformat:format(resvalue) end
+						outformatres = outformat(item1value, resvalue)
+					else outformatres = outformat:format(item1value - resvalue) end
 					if isdiffinversed then
 						ret:add(items[i][infield][field] < (item1[field] or 0) and {"color","RED"} or {"color","LIGHT_GREEN"}, outformatres, {"color", "LAST"})
 					else
@@ -679,31 +677,52 @@ function _M:getTextualDesc(compare_with, use_actor)
 			dm[#dm+1] = ("%d%% %s"):format((i + (add_table.dammod[stat] or 0)) * 100, name)
 		end
 		if #dm > 0 or combat.dam then
-			local power_diff = ""
 			local diff_count = 0
 			local any_diff = false
-			for i, v in ipairs(compare_with) do
-				if v[field] then
-					local base_power_diff = ((combat.dam or 0) + (add_table.dam or 0)) - ((v[field].dam or 0) + (add_table.dam or 0))
-					local multi_diff = (((combat.damrange or 1.1) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))) - (((v[field].damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((v[field].dam or 0) + (add_table.dam or 0)))
-					power_diff = power_diff..("%s%s%+.1f#LAST# - %s%+.1f#LAST#"):format(diff_count > 0 and " / " or "", base_power_diff > 0 and "#00ff00#" or "#ff0000#", base_power_diff, multi_diff > 0 and "#00ff00#" or "#ff0000#", multi_diff)
-					diff_count = diff_count + 1
-					if base_power_diff ~= 0 or multi_diff ~= 0 then
-						any_diff = true
+			if config.settings.tome.advanced_weapon_stats then
+				local base_power = use_actor:combatDamagePower(combat, add_table.dam)
+				local base_range = use_actor:combatDamageRange(combat, add_table.damrange)
+				local power_diff, range_diff = {}, {}
+				for _, v in ipairs(compare_with) do
+					if v[field] then
+						local base_power_diff = base_power - use_actor:combatDamagePower(v[field], add_table.dam)
+						local base_range_diff = base_range - use_actor:combatDamageRange(v[field], add_table.damrange)
+						power_diff[#power_diff + 1] = ("%s%+d%%#LAST#"):format(base_power_diff > 0 and "#00ff00#" or "#ff0000#", base_power_diff * 100)
+						range_diff[#range_diff + 1] = ("%s%+.1fx#LAST#"):format(base_range_diff > 0 and "#00ff00#" or "#ff0000#", base_range_diff)
+						diff_count = diff_count + 1
+						if base_power_diff ~= 0 or base_range_diff ~= 0 then
+							any_diff = true
+						end
 					end
 				end
-			end
-			if any_diff == false then
-				power_diff = ""
+				if any_diff then
+					local s = ("Power: %3d%% (%s)  Range: %.1fx (%s)"):format(base_power * 100, table.concat(power_diff, " / "), base_range, table.concat(range_diff, " / "))
+					desc:merge(s:toTString())
+				else
+					desc:add(("Power: %3d%%  Range: %.1fx"):format(base_power * 100, base_range))
+				end
 			else
-				power_diff = ("(%s)"):format(power_diff)
-			end
-			if config.settings.tome.advanced_weapon_stats then
-				desc:add(("Power: %3d%%  Range: %.1fx"):format(use_actor:combatDamagePower(combat, add_table.dam) * 100, use_actor:combatDamageRange(combat, add_table.damrange)))
-			else
+				local power_diff = {}
+				for i, v in ipairs(compare_with) do
+					if v[field] then
+						local base_power_diff = ((combat.dam or 0) + (add_table.dam or 0)) - ((v[field].dam or 0) + (add_table.dam or 0))
+						local dfl_range = (1.1 - (add_table.damrange or 0))
+						local multi_diff = (((combat.damrange or dfl_range) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))) - (((v[field].damrange or dfl_range) + (add_table.damrange or 0)) * ((v[field].dam or 0) + (add_table.dam or 0)))
+						power_diff [#power_diff + 1] = ("%s%+.1f#LAST# - %s%+.1f#LAST#"):format(base_power_diff > 0 and "#00ff00#" or "#ff0000#", base_power_diff, multi_diff > 0 and "#00ff00#" or "#ff0000#", multi_diff)
+						diff_count = diff_count + 1
+						if base_power_diff ~= 0 or multi_diff ~= 0 then
+							any_diff = true
+						end
+					end
+				end
+				if any_diff == false then
+					power_diff = ""
+				else
+					power_diff = ("(%s)"):format(table.concat(power_diff, " / "))
+				end
 				desc:add(("Base power: %.1f - %.1f"):format((combat.dam or 0) + (add_table.dam or 0), ((combat.damrange or (1.1 - (add_table.damrange or 0))) + (add_table.damrange or 0)) * ((combat.dam or 0) + (add_table.dam or 0))))
+				desc:merge(power_diff:toTString())
 			end
-			desc:merge(power_diff:toTString())
 			desc:add(true)
 			desc:add(("Uses stat%s: %s"):format(#dm > 1 and "s" or "",table.concat(dm, ', ')), true)
 			local col = (combat.damtype and DamageType:get(combat.damtype) and DamageType:get(combat.damtype).text_color or "#WHITE#"):toTString()
@@ -728,7 +747,12 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(combat, compare_with, field, "atk", "%+d", "Accuracy: ", 1, false, false, add_table)
 		compare_fields(combat, compare_with, field, "apr", "%+d", "Armour Penetration: ", 1, false, false, add_table)
 		compare_fields(combat, compare_with, field, "physcrit", "%+.1f%%", "Physical crit. chance: ", 1, false, false, add_table)
-		compare_fields(combat, compare_with, field, "physspeed", function() return ("%.0f%%"):format(100/((is_fake_add and 1 or 0) + (combat.physspeed or 1))) end, "Attack speed: ", 100, false, true, add_table)
+		local physspeed_compare = function(orig, compare_with)
+			orig = 100 / orig
+			if compare_with then return ("%+.0f%%"):format(orig - 100 / compare_with)
+			else return ("%2.0f%%"):format(orig) end
+		end
+		compare_fields(combat, compare_with, field, "physspeed", physspeed_compare, "Attack speed: ", 1, false, true, add_table)
 
 		compare_fields(combat, compare_with, field, "block", "%+d", "Block value: ", 1, false, false, add_table)
 
@@ -992,15 +1016,15 @@ function _M:getTextualDesc(compare_with, use_actor)
 	local desc_wielder = function(w, compare_with, field)
 		w = w or {}
 		w = w[field] or {}
-		compare_scaled(w, compare_with, field, "combat_atk", {"combatAttack"}, "%+d (%+d effective)", "Accuracy: ")
+		compare_scaled(w, compare_with, field, "combat_atk", {"combatAttack"}, "%+d #LAST#(%+d eff.)", "Accuracy: ")
 		compare_fields(w, compare_with, field, "combat_apr", "%+d", "Armour penetration: ")
 		compare_fields(w, compare_with, field, "combat_physcrit", "%+.1f%%", "Physical crit. chance: ")
-		compare_scaled(w, compare_with, field, "combat_dam", {"combatPhysicalpower"}, "%+d (%+d effective)", "Physical power: ")
+		compare_scaled(w, compare_with, field, "combat_dam", {"combatPhysicalpower"}, "%+d #LAST#(%+d eff.)", "Physical power: ")
 
 		compare_fields(w, compare_with, field, "combat_armor", "%+d", "Armour: ")
 		compare_fields(w, compare_with, field, "combat_armor_hardiness", "%+d%%", "Armour Hardiness: ")
-		compare_scaled(w, compare_with, field, "combat_def", {"combatDefense", true}, "%+d (%+d effective)", "Defense: ")
-		compare_scaled(w, compare_with, field, "combat_def_ranged", {"combatDefenseRanged", true}, "%+d (%+d effective)", "Ranged Defense: ")
+		compare_scaled(w, compare_with, field, "combat_def", {"combatDefense", true}, "%+d #LAST#(%+d eff.)", "Defense: ")
+		compare_scaled(w, compare_with, field, "combat_def_ranged", {"combatDefenseRanged", true}, "%+d #LAST#(%+d eff.)", "Ranged Defense: ")
 
 		compare_fields(w, compare_with, field, "fatigue", "%+d%%", "Fatigue: ", 1, true, true)
 
@@ -1333,9 +1357,9 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "inc_stealth", "%+d", "Stealth bonus: ")
 		compare_fields(w, compare_with, field, "max_encumber", "%+d", "Maximum encumbrance: ")
 
-		compare_scaled(w, compare_with, field, "combat_physresist", {"combatPhysicalResist", true}, "%+d (%+d effective)", "Physical save: ")
-		compare_scaled(w, compare_with, field, "combat_spellresist", {"combatSpellResist", true}, "%+d (%+d effective)", "Spell save: ")
-		compare_scaled(w, compare_with, field, "combat_mentalresist", {"combatMentalResist", true}, "%+d (%+d effective)", "Mental save: ")
+		compare_scaled(w, compare_with, field, "combat_physresist", {"combatPhysicalResist", true}, "%+d #LAST#(%+d eff.)", "Physical save: ")
+		compare_scaled(w, compare_with, field, "combat_spellresist", {"combatSpellResist", true}, "%+d #LAST#(%+d eff.)", "Spell save: ")
+		compare_scaled(w, compare_with, field, "combat_mentalresist", {"combatMentalResist", true}, "%+d #LAST#(%+d eff.)", "Mental save: ")
 
 		compare_fields(w, compare_with, field, "blind_immune", "%+d%%", "Blindness immunity: ", 100)
 		compare_fields(w, compare_with, field, "poison_immune", "%+d%%", "Poison immunity: ", 100)
@@ -1396,11 +1420,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "max_negative", "%+.2f", "Maximum neg.energy: ")
 		compare_fields(w, compare_with, field, "max_air", "%+.2f", "Maximum air capacity: ")
 
-		compare_scaled(w, compare_with, field, "combat_spellpower", {"combatSpellpower"}, "%+d (%+d effective)", "Spellpower: ")
+		compare_scaled(w, compare_with, field, "combat_spellpower", {"combatSpellpower"}, "%+d #LAST#(%+d eff.)", "Spellpower: ")
 		compare_fields(w, compare_with, field, "combat_spellcrit", "%+d%%", "Spell crit. chance: ")
 		compare_fields(w, compare_with, field, "spell_cooldown_reduction", "%d%%", "Lowers spell cool-downs by: ", 100)
 
-		compare_scaled(w, compare_with, field, "combat_mindpower", {"combatMindpower"}, "%+d (%+d effective)", "Mindpower: ")
+		compare_scaled(w, compare_with, field, "combat_mindpower", {"combatMindpower"}, "%+d #LAST#(%+d eff.)", "Mindpower: ")
 		compare_fields(w, compare_with, field, "combat_mindcrit", "%+d%%", "Mental crit. chance: ")
 
 		compare_fields(w, compare_with, field, "lite", "%+d", "Light radius: ")
@@ -1514,7 +1538,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		if (w and w.combat or can_combat_unarmed) and (use_actor:knowTalent(use_actor.T_EMPTY_HAND) or use_actor:attr("show_gloves_combat")) then
 			desc:add({"color","YELLOW"}, "When used to modify unarmed attacks:", {"color", "LAST"}, true)
-			compare_tab = { dam=1, atk=1, apr=0, physcrit=0, physspeed =0.6, dammod={str=1}, damrange=1.1 }
+			compare_tab = { dam=1, atk=1, apr=0, physcrit=0, physspeed =(use_actor:knowTalent(use_actor.T_EMPTY_HAND) and 0.6 or 1), dammod={str=1}, damrange=1.1 }
 			desc_combat(w, compare_unarmed, "combat", compare_tab, true)
 		end
 	end

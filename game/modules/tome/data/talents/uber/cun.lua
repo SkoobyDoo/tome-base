@@ -61,7 +61,7 @@ uberTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[When moving over 800%% speed for at least 3 turns in the same direction, you become so fast you can blink through obstacles as if they were not there.
+		return ([[When moving over 800%% speed for at least 3 steps in the same direction, you become so fast you can blink through obstacles as if they were not there.
 		Changing direction will break the effect.]])
 		:format()
 	end,
@@ -291,7 +291,7 @@ uberTalent{
 		- Spell / Stone Alchemy
 		- Celestial / Chants
 		- Celestial / Light
-		- Chronomancy / Chronomancy]])
+		- Chronomancy / Spacetime Weaving]])
 		:format()
 	end,
 }

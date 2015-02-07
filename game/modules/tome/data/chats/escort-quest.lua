@@ -162,16 +162,15 @@ local reward_types = {
 	},
 	temporal = {
 		types = {
-			["chronomancy/chronomancy"] = 0.8,
+			["chronomancy/spacetime-weaving"] = 0.8,
 		},
 		talents = {
-			[Talents.T_CONTINGENCY] = 1,
-		--	[Talents.T_SEE_THE_THREADS] = 1,
-			[Talents.T_PRECOGNITION] = 1,
+			[Talents.T_DIMENSIONAL_STEP] = 1,
+			[Talents.T_WORMHOLE] = 1,
 		},										
 		stats = {
 			[Stats.STAT_MAG] = 2,
-			[Stats.STAT_CUN] = 1,
+			[Stats.STAT_WIL] = 1,
 		},
 		antimagic = {
 			types = {

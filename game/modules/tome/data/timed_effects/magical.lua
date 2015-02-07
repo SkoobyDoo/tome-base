@@ -1320,7 +1320,7 @@ newEffect{
 newEffect{
 	name = "INVIGORATE", image = "talents/invigorate.png",
 	desc = "Invigorate",
-	long_desc = function(self, eff) return ("The target is regaining %d life per turn, %d stamina per turn, and refreshing chronomancy spells at twice the normal rate."):format(eff.power, eff.power/2) end,
+	long_desc = function(self, eff) return ("The target is regaining %d life per turn and refreshing talents at twice the normal rate."):format(eff.power) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "beneficial",
@@ -1339,7 +1339,6 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		eff.regenid = self:addTemporaryValue("life_regen", eff.power)
-		eff.stamid = self:addTemporaryValue("stamina_regen", eff.power / 2)
 		if core.shader.active(4) then
 			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
 			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
@@ -1349,7 +1348,6 @@ newEffect{
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
 		self:removeTemporaryValue("life_regen", eff.regenid)
-		self:removeTemporaryValue("stamina_regen", eff.stamid)
 	end,
 }
 
@@ -3094,7 +3092,7 @@ newEffect{
 		if dam > 0 and src ~= self then
 			-- find available targets
 			local tgts = {}
-			local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
+			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
 			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 				local a = game.level.map(x, y, Map.ACTOR)
 				if a and self:reactionToward(a) < 0 then
@@ -3128,7 +3126,14 @@ newEffect{
 newEffect{
 	name = "SEAL_FATE", image = "talents/seal_fate.png",
 	desc = "Seal Fate",
-	long_desc = function(self, eff) return ("The target is sealing fate, increasing the duration of detrimental status effects on targets it damages by one."):format() end,
+	long_desc = function(self, eff)
+		local chance = eff.chance
+		local spin = self:hasEffect(self.EFF_SPIN_FATE)
+		if spin then
+			chance = chance * (1 + spin.spin/3)
+		end
+		return ("The target has a %d%% chance of increasing the duration of one detrimental status effects on targets it damages by one."):format(chance) 
+	end,
 	type = "magical",
 	subtype = { focus=true },
 	status = "beneficial",
@@ -3154,6 +3159,13 @@ newEffect{
 			end
 			
 			if rng.percent(chance) then
+				-- Grab a random effect
+				local eff_ids = target:effectsFilter({status="detrimental", ignore_crosstier=true}, 1)
+				for _, eff_id in ipairs(eff_ids) do
+					local eff = target:hasEffect(eff_id)
+					eff.dur = eff.dur +1
+				end
+				--[[
 				local effs = {}
 				-- Go through all spell effects
 				for eff_id, p in pairs(target.tmp) do
@@ -3166,7 +3178,7 @@ newEffect{
 				if #effs > 0 then
 					local p = rng.table(effs)
 					p.dur = p.dur + 1
-				end
+				end]]
 			
 				self.turn_procs.seal_fate = (self.turn_procs.seal_fate or 0) + 1
 			end
@@ -3228,20 +3240,7 @@ newEffect{
 	status = "detrimental",
 	parameters = {},
 	on_timeout = function(self, eff)
-		local effs = {}
-		
-		-- Go through all sustained talents
-		for tid, act in pairs(self.sustain_talents) do
-			if act then
-				effs[#effs+1] = {"talent", tid}
-			end
-		end
-		
-		-- deactivate one at random
-		if #effs > 0 then
-			local eff = rng.tableRemove(effs)
-			self:forceUseTalent(eff[2], {ignore_energy=true})
-		end
+		self:removeSustainsFilter(nil, 1)
 	end,
 	activate = function(self, eff)
 		if core.shader.allow("adv") then
@@ -3539,5 +3538,42 @@ newEffect{
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("resists", eff.phys)
 		self:removeTemporaryValue("resists", eff.temp)
+	end,
+}
+
+-- These are cosmetic so they can be cleared or clicked off
+newEffect{
+	name = "BEN_TETHER", image = "talents/spatial_tether.png",
+	desc = "Spatial Tether",
+	long_desc = function(self, eff) 
+		local chance = eff.chance * core.fov.distance(self.x, self.y, eff.x, eff.y)
+		return ("The target has been tethered to the location and has a %d%% chance of being teleported back, creating an explosion for %0.2f physical and %0.2f temporal warp damage at both ends of the teleport."):format(chance, eff.dam/2, eff.dam/2)
+	end,
+	type = "magical",
+	subtype = { teleport=true, temporal=true },
+	status = "beneficial",
+	parameters = { chance = 1 },
+	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "DET_TETHER", image = "talents/spatial_tether.png",
+	desc = "Spatial Tether",
+	long_desc = function(self, eff) 
+		local chance = eff.chance * core.fov.distance(self.x, self.y, eff.x, eff.y)
+		return ("The target has been tethered to the location and has a %d%% chance of being teleported back, creating an explosion for %0.2f physical and %0.2f temporal warp damage at both ends of the teleport."):format(chance, eff.dam/2, eff.dam/2)
+	end,
+	type = "magical",
+	subtype = { teleport=true, temporal=true },
+	status = "detrimental",
+	parameters = { chance = 1 },
+	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
 	end,
 }

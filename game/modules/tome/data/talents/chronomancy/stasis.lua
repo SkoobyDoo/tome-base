@@ -20,26 +20,25 @@
 -- EDGE TODO: Particles, Timed Effect Particles
 
 newTalent{
-	name = "Static History",
-	type = {"chronomancy/stasis",1},
+	name = "Spacetime Stability",
+	type = {"chronomancy/stasis", 1},
 	require = chrono_req1,
+	mode = "passive",
 	points = 5,
-	cooldown = 12,
-	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 1, 0.2, .60) end, -- limit 100%
-	no_energy = true,
-	action = function(self, t)
-		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {power=t.getParadoxMulti(self, t)})
-		
-		game:playSoundNear(self, "talents/spell_generic")
-		return true
+	getTuningAdjustment= function(self, t) 
+		local duration = math.floor(self:combatTalentScale(t, 2, 8))
+		return math.min(duration, 10) 
+	end,
+	getWillBonus = function(self, t) return self:combatTalentScale(t, 2, 10) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "paradox_reduce_anomalies", t.getWillBonus(self, t))
 	end,
 	info = function(self, t)
-		local multi = t.getParadoxMulti(self, t) * 100
-		local duration = t.getDuration(self, t)
-		return ([[Activate to reduce the Paradox cost of all your chronomancy spells by %d%% for the next %d turns.]]):
-		format(multi, duration)
+		local will = t.getWillBonus(self, t)
+		local duration = t.getTuningAdjustment(self, t)
+		return ([[You've learned to focus your control over the spacetime continuum, and quell anomalous effects.  Increases your effective Willpower for determining modified Paradox by %d.
+		Additionally the time it takes you to adjust your Paradox with Spacetime Tuning is reduced by %d turns.]]):
+		format(will, duration)
 	end,
 }
 
@@ -80,7 +79,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 8,
-	tactical = { ATTACKAREA = 1, DISABLE = 3 },
+	tactical = { ATTACKAREA = { TEMPORAL = 1 }, DISABLE = { stun = 3 } },
 	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
 	direct_hit = true,
@@ -124,21 +123,25 @@ newTalent{
 }
 
 newTalent{
-	name = "Spacetime Stability",
-	type = {"chronomancy/stasis", 4},
+	name = "Static History",
+	type = {"chronomancy/stasis",4},
 	require = chrono_req4,
-	mode = "passive",
 	points = 5,
-	getWilMult = function(self, t) return self:combatTalentScale(t, 0.15, 0.5) end,
-	getTuningAdjustment= function(self, t) return math.floor(self:combatTalentScale(t, 2, 8, "log")) end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "paradox_will_multi", t.getWilMult(self, t))
+	cooldown = 12,
+	tactical = { PARADOX = 2 },
+	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
+	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 1, 0.2, .60) end, -- limit 100%
+	no_energy = true,
+	action = function(self, t)
+		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {power=t.getParadoxMulti(self, t)})
+		
+		game:playSoundNear(self, "talents/spell_generic")
+		return true
 	end,
 	info = function(self, t)
-		local will = t.getWilMult(self, t)
-		local duration = t.getTuningAdjustment(self, t)
-		return ([[You've learned to focus your control over the spacetime continuum, and quell anomalous effects.  Increases your Willpower for determing modified Paradox by %d%%.
-		Additionally reduces the time it takes you to adjust your Paradox with Spacetime Tuning by %d turns.]]):
-		format(will * 100, duration)
+		local multi = t.getParadoxMulti(self, t) * 100
+		local duration = t.getDuration(self, t)
+		return ([[Activate to reduce the Paradox cost of all your chronomancy spells by %d%% for the next %d turns.]]):
+		format(multi, duration)
 	end,
 }

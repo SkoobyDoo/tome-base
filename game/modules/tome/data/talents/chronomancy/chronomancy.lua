@@ -27,8 +27,8 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 20,
 	no_npc_use = true,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 14))) end,
-	range = function(self, t) return 10 + math.min(self:combatTalentSpellDamage(t, 10, 20, getParadoxSpellpower(self, t))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 10))) end,
+	range = function(self, t) return 10 + math.floor(self:combatTalentScale(t, 2, 14)) end,
 	action = function(self, t)
 		-- Foresight bonuses
 		local defense = 0
@@ -46,8 +46,7 @@ newTalent{
 		local range = self:getTalentRange(t)
 		local duration = t.getDuration(self, t)
 		return ([[You peer into the future, sensing creatures and traps in a radius of %d for %d turns.
-		If you know Foresight you'll gain additional defense and chance to shrug off critical hits (equal to your Foresight bonuses) while Precognition is active.
-		The detection radius will scale with your Spellpower.]]):format(range, duration)
+		If you know Foresight you'll gain additional defense and chance to shrug off critical hits (equal to your Foresight bonuses) while Precognition is active.]]):format(range, duration)
 	end,
 }
 
@@ -168,7 +167,7 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 50,
 	no_npc_use = true,  -- so rares don't learn useless talents
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 10, 25))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 20))) end,
 	on_pre_use = function(self, t, silent)
 		if checkTimeline(self) then
 			if not silent then

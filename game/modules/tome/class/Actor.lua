@@ -311,14 +311,18 @@ function _M:getSpeed(speed_type)
 			self:getInven(self.INVEN_MAINHAND)
 		then
 			local o = self:getInven(self.INVEN_MAINHAND)[1]
-			speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			if o then
+				speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			end
 		end
 
 		if (speed_type == "weapon" or speed_type == "offhand") and
 			self:getInven(self.INVEN_OFFHAND)
 		then
 			local o = self:getInven(self.INVEN_OFFHAND)[1]
-			speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			if o then
+				speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			end
 		end
 
 		if (speed_type == "combat" or speed_type == "weapon") and not speed then
@@ -1430,52 +1434,76 @@ function _M:probabilityTravel(x, y, dist)
 end
 
 --- Teleports randomly to a passable grid
--- This simply calls the default actor teleportRandom but first checks for space-time stability
 -- @param x the coord of the teleportation
 -- @param y the coord of the teleportation
 -- @param dist the radius of the random effect, if set to 0 it is a precise teleport
 -- @param min_dist the minimum radius of of the effect, will never teleport closer. Defaults to 0 if not set
 -- @return true if the teleport worked
 function _M:teleportRandom(x, y, dist, min_dist)
+	-- can we teleport?
 	if self:attr("encased_in_ice") then return end
 	if self:attr("cant_teleport") then return end
+	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport") return end
+	
+	-- Special teleport handlers
 	if game.level.data.no_teleport_south and y + dist > self.y then
 		y = self.y - dist
 	end
+	
+	-- For precise teleports look for a free grid first
+	-- This helps the AI use precision teleporting more effectively and is a nice quality of life hack for the player
+	if dist == 0 then
+		x, y = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})	
+	end
+	
+	-- Store our old x, y to pass to our callback
+	local ox, oy = self.x, self.y
 
-	-- Dimensional Anchor, prevent teleports and deal damage
-	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
-		self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport")
-		return
+	-- Try to teleport
+	local poss = {}
+	local teleported
+	dist = math.floor(dist)
+	min_dist = math.floor(min_dist or 0)
+
+	-- Find possible locations
+	for i = x - dist, x + dist do
+		for j = y - dist, y + dist do
+			if game.level.map:isBound(i, j) and	core.fov.distance(x, y, i, j) <= dist and core.fov.distance(x, y, i, j) >= min_dist and	self:canMove(i, j) then
+				-- Check for no_teleport and vaults
+				if game.level.map.attrs(i, j, "no_teleport") then
+					local vault = game.level.map.attrs(self.x, self.y, "vault_id")
+					if vault and game.level.map.attrs(i, j, "vault_id") == vault then
+						poss[#poss+1] = {i,j}
+					end
+				else
+					poss[#poss+1] = {i,j}
+				end
+			end
+		end
 	end
 
-	local ox, oy = self.x, self.y
-	local ret = engine.Actor.teleportRandom(self, x, y, dist, min_dist)
-	if self.x ~= ox or self.y ~= oy then
-			-- Phase Pulse
-		if self:isTalentActive(self.T_PHASE_PULSE) then
-			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy)
-		end
-
-		self.x, self.y, ox, oy = ox, oy, self.x, self.y
+	-- If we find valid locations, pick one at random
+	if #poss > 0 then
+		-- prior to moving
 		self:dropNoTeleportObjects()
+	
+		-- Teleport
+		local pos = poss[rng.range(1, #poss)]
+		self:move(pos[1], pos[2], true)
+		teleported = true
+		
+		if self.runStop then self:runStop("teleported") end
+		if self.restStop then self:restStop("teleported") end
+		
+		-- after moving
 		if self:attr("defense_on_teleport") or self:attr("resist_all_on_teleport") or self:attr("effect_reduction_on_teleport") then
 			self:setEffect(self.EFF_OUT_OF_PHASE, 5, {defense=self:attr("defense_on_teleport") or 0, resists=self:attr("resist_all_on_teleport") or 0, effect_reduction=self:attr("effect_reduction_on_teleport") or 0})
 		end
-
-		-- Dimensional shift, chance to clear effects on teleport
-		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
-			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
-		end
-
-		self.x, self.y, ox, oy = ox, oy, self.x, self.y
-	else
-		-- Phase Blast failure
-		if self:isTalentActive(self.T_PHASE_PULSE) then
-			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy, true)
-		end
 	end
-	return ret
+	
+	self:fireTalentCheck("callbackOnTeleport", teleported, ox, oy, self.x, self.y)
+
+	return teleported
 end
 
 --- Quake a zone
@@ -2661,7 +2689,7 @@ function _M:takeHit(value, src, death_note)
 
 	local dead, val = mod.class.interface.ActorLife.takeHit(self, value, src, death_note)
 
-	if src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
+	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
 
 	if dead and src and src.attr and src:attr("overkill") and src.project and not src.turn_procs.overkill then
 		src.turn_procs.overkill = true
@@ -4246,7 +4274,7 @@ end
 
 --- Paradox checks
 function _M:getModifiedParadox()
-	local will_modifier = (1 + (self:attr("paradox_will_multi") or 0)) * 2
+	local will_modifier = 2
 	will_modifier = (self:getWil() + (self:attr("paradox_reduce_anomalies") or 0)) * will_modifier
 	local sustain_modifier = self:getMinParadox()
 	local modified_paradox = math.max(0, self:getParadox() - will_modifier + sustain_modifier)
@@ -4720,6 +4748,7 @@ function _M:preUseTalent(ab, silent, fake)
 end
 
 local sustainCallbackCheck = {
+	callbackOnTeleport = "talents_on_teleport",
 	callbackOnDealDamage = "talents_on_deal_damage",
 	callbackOnHit = "talents_on_hit",
 	callbackOnAct = "talents_on_act",
@@ -6241,11 +6270,12 @@ end
 --	@param item = inventory slot to take from
 --	@param o = object to wear
 --	@param dst = actor holding object to be worn <self>
-function _M:doWear(inven, item, o, dst)
+--  @param force_inven = force wear to this inventory
+function _M:doWear(inven, item, o, dst, force_inven)
 	if self.no_inventory_access then return end
 	dst = dst or self
 	dst:removeObject(inven, item, true)
-	local ro, rs = self:wearObject(o, true, true) -- removed object and remaining stack if any
+	local ro, rs = self:wearObject(o, true, true, force_inven) -- removed object and remaining stack if any
 	local added, slot
 	if ro then
 		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end

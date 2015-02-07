@@ -60,7 +60,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 12,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 2, DEBUFF = 2 },
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%end,
 	getProcs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
@@ -119,7 +119,7 @@ newTalent{
 	info = function(self, t)
 		local power = t.getPower(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns you displace %d%% of any damage you receive onto a random enemy within range.
+		return ([[For the next %d turns you displace %d%% of any damage you receive onto a nearby random enemy.
 		While Webs of Fate is active you may gain one additional Spin per turn and your maximum Spin is doubled.]])
 		:format(duration, power)
 	end,

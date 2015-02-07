@@ -176,6 +176,10 @@ makeParadoxClone = function(self, target, duration)
 	m.unused_generics = 0
 	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
 	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
+	
+	-- We use this function...  a lot!!
+	-- So don't duplicate the inventory
+	if m.inven then m.inven[m.INVEN_INVEN] = nil end
 
 	-- Clones never flee because they're awesome
 	m.ai_tactic = m.ai_tactic or {}
@@ -225,9 +229,6 @@ newTalent{
 	no_unlearn_last = true,
 	on_learn = function(self, t)
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
-	end,
-	on_unlearn = function(self, t)
-		if self.preferred_paradox then self.preferred_paradox = nil end
 	end,
 	getDuration = function(self, t)
 		local duration = 20
@@ -933,31 +934,27 @@ newTalent{
 			x, y = util.coordAddDir(x, y, dir)
 		end
 
-		-- since we're using a precise teleport we'll look for a free grid first
-		local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-		if tx and ty then
-			if not self:teleportRandom(tx, ty, 0) then
-				game.logSeen(self, "The teleport fizzles!")
-			else
-				local dam = self:spellCrit(t.getDamage(self, t))
-				local x, y = ox, oy
-				self:project(tg, x, y, function(px, py)
-					local target = game.level.map(px, py, Map.ACTOR)
-					if target then
-						-- Deal warp damage first so we don't overwrite a big stun with a little one
-						DamageType:get(DamageType.WARP).projector(self, px, py, DamageType.WARP, dam)
+		if not self:teleportRandom(x, y, 0) then
+			game.logSeen(self, "The spell fizzles!")
+		else
+			local dam = self:spellCrit(t.getDamage(self, t))
+			local x, y = ox, oy
+			self:project(tg, x, y, function(px, py)
+				local target = game.level.map(px, py, Map.ACTOR)
+				if target then
+					-- Deal warp damage first so we don't overwrite a big stun with a little one
+					DamageType:get(DamageType.WARP).projector(self, px, py, DamageType.WARP, dam)
 
-						-- Try to stun
-						if target:canBe("stun") then
-							target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
-						else
-							game.logSeen(target, "%s resists the stun!", target.name:capitalize())
-						end
+					-- Try to stun
+					if target:canBe("stun") then
+						target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
+					else
+						game.logSeen(target, "%s resists the stun!", target.name:capitalize())
 					end
-				end)
-				game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporal_lightning", {tx=x-self.x, ty=y-self.y})
-				game:playSoundNear(self, "talents/lightning")
-			end
+				end
+			end)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporal_lightning", {tx=x-self.x, ty=y-self.y})
+			game:playSoundNear(self, "talents/lightning")
 		end
 
 		return true

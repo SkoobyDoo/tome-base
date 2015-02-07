@@ -5,7 +5,7 @@ uniform float tick;
 
 void main(void)
 {
-	vec2 pos = gl_TexCoord[0];
+	vec2 pos = gl_TexCoord[0].xy;
 	vec4 c = texture2D(tex, pos);
 
 	float v = gl_TexCoord[0].x;
