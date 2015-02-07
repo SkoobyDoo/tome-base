@@ -1292,8 +1292,8 @@ function _M:move(x, y, force)
 		end end
 	end
 
-	-- chooseCursedAuraTree allows you to get the Cursed Aura tree
-	if moved and self.chooseCursedAuraTree then
+	-- knowing Unnatural Body allows you to get the Cursed Aura tree
+	if moved and self:knowTalent(self.T_UNNATURAL_BODY) then
 		if self.player then
 			-- function placed in defiling touch where cursing logic exists
 			local t = self:getTalentFromId(self.T_DEFILING_TOUCH)
