@@ -960,12 +960,12 @@ newInscription{
 		if target.dead or target.player then return true end
 		target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self:combatSpellpower(0.3)})
 		
-		-- Replace the target with a temporal instability for a few turns
-		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
-		if not oe or oe:attr("temporary") then return true end
+	-- Placeholder for the actor
+		local oe = game.level.map(x, y, Map.TERRAIN+1)
+		if (oe and oe:attr("temporary")) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then game.logPlayer(self, "You can't time skip the target there.") return nil end
 		local e = mod.class.Object.new{
-			old_feat = oe, type = oe.type, subtype = oe.subtype,
-			name = "temporal instability", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
+			old_feat = oe, type = "temporal", subtype = "instability",
+			name = "temporal instability",
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t),
 			canAct = false,
@@ -975,9 +975,14 @@ newInscription{
 				self.temporary = self.temporary - 1
 				-- return the rifted actor
 				if self.temporary <= 0 then
-					game.level.map(self.target.x, self.target.y, engine.Map.TERRAIN, self.old_feat)
-					game.level:removeEntity(self, true)
+					-- remove ourselves
+					if self.old_feat then game.level.map(self.target.x, self.target.y, engine.Map.TERRAIN+1, self.old_feat)
+					else game.level.map:remove(self.target.x, self.target.y, engine.Map.TERRAIN+1) end
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
+					game.level:removeEntity(self)
+					game.level.map:removeParticleEmitter(self.particles)
+					
+					-- return the actor and reset their values
 					local mx, my = util.findFreeGrid(self.target.x, self.target.y, 20, true, {[engine.Map.ACTOR]=true})
 					local old_levelup = self.target.forceLevelup
 					local old_check = self.target.check
@@ -991,11 +996,16 @@ newInscription{
 			summoner_gain_exp = true, summoner = self,
 		}
 		
+		-- Remove the target
 		game.logSeen(target, "%s has moved forward in time!", target.name:capitalize())
 		game.level:removeEntity(target, true)
+		
+		-- add the time skip object to the map
+		local particle = Particles.new("wormhole", 1, {image="shockbolt/terrain/temporal_instability_yellow", speed=1})
+		particle.zdepth = 6
+		e.particles = game.level.map:addParticleEmitter(particle, x, y)
 		game.level:addEntity(e)
-		game.level.map(x, y, Map.TERRAIN, e)
-		game.nicer_tiles:updateAround(game.level, x, y)
+		game.level.map(x, y, Map.TERRAIN+1, e)
 		game.level.map:updateMap(x, y)
 		return true
 	end,
