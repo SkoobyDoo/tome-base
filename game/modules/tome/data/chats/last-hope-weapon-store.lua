@@ -42,16 +42,6 @@ newChat{ id="training",
 			if player:knowTalentType("technique/combat-training") then return end
 			return true
 		end},
-		{"Please train me in the basic usage of bows and slings.", action=function(npc, player)
-			game.logPlayer(player, "The smith spends some time with you, teaching you the basics of bows and slings.")
-			player:incMoney(-8)
-			player:learnTalent(player.T_SHOOT, true, nil, {no_unlearn=true})
-			player.changed = true
-		end, cond=function(npc, player)
-			if player.money < 8 then return end
-			if player:knowTalent(player.T_SHOOT) then return end
-			return true
-		end},
 		{"No thanks."},
 	}
 }

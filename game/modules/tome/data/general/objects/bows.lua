@@ -29,7 +29,7 @@ newEntity{
 	encumber = 4,
 	rarity = 7,
 	combat = { talented = "bow", accuracy_effect = "axe", sound = "actions/arrow", sound_miss = "actions/arrow",},
-	require = { talent = { Talents.T_SHOOT }, },
+	wielder = { learn_talent = { [Talents.T_SHOOT] = 1, }, },
 	archery_kind = "bow",
 	archery = "bow",
 	proj_image = resolvers.image_material("arrow", "wood"),

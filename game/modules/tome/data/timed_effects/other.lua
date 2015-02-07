@@ -1388,30 +1388,6 @@ newEffect{
 }
 
 newEffect{
-	name = "RELOADING", image = "talents/reload.png",
-	desc = "Reloading",
-	long_desc = function(self, eff) return ("Reloading ammo.") end,
-	decrease = 0,
-	type = "other",
-	subtype = { miscellaneous=true },
-	status = "beneficial",
-	parameters = {},
-	activate = function(self, eff) game.logSeen(self, "#LIGHT_BLUE#%s begins reloading.", self.name:capitalize()) end,
-	deactivate = function(self, eff)
-	end,
-	on_timeout = function(self, eff)
-		for i = 1, eff.shots_per_turn do
-			eff.ammo.combat.shots_left = eff.ammo.combat.shots_left + 1
-			if eff.ammo.combat.shots_left >= eff.ammo.combat.capacity then
-				game.logPlayer(self, "Your %s is full.", eff.ammo.name)
-				self:breakReloading()
-				break
-			end
-		end
-	end,
-}
-
-newEffect{
 	name = "PROB_TRAVEL_UNSTABLE", image = "talents/probability_travel.png",
 	desc = "Unstable Probabilites",
 	long_desc = function(self, eff) return "The target has recently blinked through a wall using probability travel." end,
@@ -2381,26 +2357,6 @@ newEffect{
 		self:removeTemporaryValue("combat_physresist", eff.presid)
 		self:removeTemporaryValue("combat_spellresist", eff.sresid)
 		self:removeTemporaryValue("combat_mentalresist", eff.mresid)
-	end,
-}
-
-newEffect{
-	name = "RELOAD_DISARMED", image = "talents/disarm.png",
-	desc = "Reloading",
-	long_desc = function(self, eff) return "The target has replenished some ammo." end,
-	type = "other",
-	subtype = { disarm=true },
-	status = "detrimental",
-	parameters = {},
-	on_gain = function(self, err) return "#Target# is disarmed!", "+Disarmed" end,
-	on_lose = function(self, err) return "#Target# rearms.", "-Disarmed" end,
-	activate = function(self, eff)
-		self:removeEffect(self.EFF_COUNTER_ATTACKING) -- Cannot parry or counterattack while disarmed
-		self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) 
-		eff.tmpid = self:addTemporaryValue("disarmed", 1)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("disarmed", eff.tmpid)
 	end,
 }
 
