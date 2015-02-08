@@ -3073,46 +3073,45 @@ newEffect{
 newEffect{
 	name = "WEBS_OF_FATE", image = "talents/webs_of_fate.png",
 	desc = "Webs of Fate",
-	long_desc = function(self, eff) return ("Displacing %d%% of all damage on to a random enemy."):format(eff.power*100) end,
+	long_desc = function(self, eff)
+		local heal = eff.heal
+		local spin = self:hasEffect(self.EFF_SPIN_FATE)
+		if spin then
+			heal = heal * (1 + spin.spin/3)
+		end
+		return ("The target's maximum life has been increased by %d%% and it is healing %d life per turn."):format(eff.life*100, heal) 
+	end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "beneficial",
 	on_gain = function(self, err) return nil, "+Webs of Fate" end,
 	on_lose = function(self, err) return nil, "-Webs of Fate" end,
-	parameters = { power=0.1 },
-	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
-		-- Spin Fate?
-		if self.turn_procs and not self.turn_procs.spin_webs then
-			self.turn_procs.spin_webs = true
-			self:callTalent(self.T_SPIN_FATE, "doSpin")
-		end
-	
-		-- Displace Damage?
-		local t = eff.talent
-		if dam > 0 and src ~= self then
-			-- find available targets
-			local tgts = {}
-			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-				local a = game.level.map(x, y, Map.ACTOR)
-				if a and self:reactionToward(a) < 0 then
-					tgts[#tgts+1] = a
-				end
-			end end
-
-			-- Displace the damage
-			local a = rng.table(tgts)
-			if a then
-				local displace = dam * eff.power
-				DamageType.defaultProjector(self, a.x, a.y, type, displace, {no_reflect=true})
-				dam = dam - displace
-				game:delayedLogDamage(src, self, 0, ("%s(%d webs of fate)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", displace), false)
+	parameters = { life=0.1, heal=1 },
+	callbackOnHit = function(self, eff, cb, src)
+		if cb.value > 0 and src ~= self then
+			-- Spin Fate?
+			if self.turn_procs and not self.turn_procs.spin_webs and self:knowTalent(self.T_SPIN_FATE) then
+				self.turn_procs.spin_webs = true
+				self:callTalent(self.T_SPIN_FATE, "doSpin")
 			end
 		end
-		
-		return {dam=dam}
+		return cb.value
 	end,
+	on_timeout = function(self, eff)
+		-- We handle the healing dynamically so it can scale with current spin
+		local heal = eff.heal
+		local spin = self:hasEffect(self.EFF_SPIN_FATE)
+		if spin then
+			heal = heal * (1 + spin.spin/3)
+		end
+		
+		self:heal(heal, self)
+	end,	
 	activate = function(self, eff)
+		local life_bonus = eff.life * self.max_life
+		self:effectTemporaryValue(eff, "max_life", life_bonus)
+		self.life = util.bound(self.life + life_bonus, self.die_at, self.max_life)
+		
 		if core.shader.allow("adv") then
 			eff.particle1, eff.particle2 = self:addParticles3D("volumetric", {kind="fast_sphere", shininess=40, density=40, radius=1.4, scrollingSpeed=0.001, growSpeed=0.004, img="squares_x3_01"})
 		end
@@ -3144,7 +3143,7 @@ newEffect{
 		if dam <=0 then return end
 		
 		-- Spin Fate?
-		if self.turn_procs and not self.turn_procs.spin_seal then
+		if self.turn_procs and not self.turn_procs.spin_seal and self:knowTalent(self.T_SPIN_FATE) then
 			self.turn_procs.spin_seal = true
 			self:callTalent(self.T_SPIN_FATE, "doSpin")
 		end
@@ -3165,21 +3164,7 @@ newEffect{
 					local eff = target:hasEffect(eff_id)
 					eff.dur = eff.dur +1
 				end
-				--[[
-				local effs = {}
-				-- Go through all spell effects
-				for eff_id, p in pairs(target.tmp) do
-					local e = target.tempeffect_def[eff_id]
-					if e.status == "detrimental" and e.type ~= "other" and e.subtype ~= "cross tier" then
-						effs[#effs+1] = p
-					end
-				end
 				
-				if #effs > 0 then
-					local p = rng.table(effs)
-					p.dur = p.dur + 1
-				end]]
-			
 				self.turn_procs.seal_fate = (self.turn_procs.seal_fate or 0) + 1
 			end
 			
