@@ -142,7 +142,7 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			DamageType:get(DamageType.ACID).projector(self, px, py, DamageType.ACID, self:spellCrit(t.getDamage(self, t)))
+			DamageType:get(DamageType.ACID).projector(self, px, py, DamageType.ACID, (self:spellCrit(t.getDamage(self, t))))
 
 			local effs = {}
 
