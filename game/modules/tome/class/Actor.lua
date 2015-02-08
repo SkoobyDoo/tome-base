@@ -6270,11 +6270,12 @@ end
 --	@param o = object to wear
 --	@param dst = actor holding object to be worn <self>
 --  @param force_inven = force wear to this inventory
-function _M:doWear(inven, item, o, dst, force_inven)
+--  @param force_item = force wear to this inventory slot #
+function _M:doWear(inven, item, o, dst, force_inven, force_item)
 	if self.no_inventory_access then return end
 	dst = dst or self
 	dst:removeObject(inven, item, true)
-	local ro, rs = self:wearObject(o, true, true, force_inven) -- removed object and remaining stack if any
+	local ro, rs = self:wearObject(o, true, true, force_inven, force_item) -- removed object and remaining stack if any
 	local added, slot
 	if ro then
 		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end
