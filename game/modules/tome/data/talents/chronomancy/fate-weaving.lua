@@ -35,14 +35,15 @@ newTalent{
 			self:callTalent(self.T_FATEWEAVER, "doFateweaver")
 		end
 	end,
-	callbackOnHit = function(self, t, cb, src)
-		if cb.value > 0 and src ~= self then
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
+		if dam > 0 and src ~= self then
 			if self.turn_procs and not self.turn_procs.spin_fate then
 				t.doSpin(self, t)
 				self.turn_procs.spin_fate = true
 			end
 		end
-		return cb.value
+
+		return {dam=dam}
 	end,
 	info = function(self, t)
 		local save = t.getSaveBonus(self, t)
@@ -73,7 +74,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local chance = t.getChance(self, t)
 		return ([[Activate to Seal Fate for %d turns.  When you damage a target while Seal Fate is active you gain Spin and have a %d%% chance to increase the duration of one detrimental status effect on it by one turn.
-		If you have Spin Fate active the chance will be increased by 33%% per Spin (for example, %d%% at three Spin.)
+		If you have Spin Fate active the chance will be increased by 33%% per Spin (for %d%% at three Spin.)
 		The duration increase can occur up to %d times per turn and the bonus Spin once per turn.]]):format(duration, chance, chance * 2, procs)
 	end,
 }
@@ -107,22 +108,19 @@ newTalent{
 	cooldown = 12,
 	tactical = { BUFF = 2, DEFEND = 2 },
 	getPower = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
-	getHeal = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end, -- Limit 50
 	getDuration = function(self, t) return getExtensionModifier(self, t, 5) end,
 	no_energy = true,
 	action = function(self, t)
 	
-		self:setEffect(self.EFF_WEBS_OF_FATE, t.getDuration(self, t), {life=t.getPower(self, t), heal=t.getHeal(self, t)})
+		self:setEffect(self.EFF_WEBS_OF_FATE, t.getDuration(self, t), {power=t.getPower(self, t), talent=t})
 		
 		return true
 	end,
 	info = function(self, t)
 		local power = t.getPower(self, t) * 100
 		local duration = t.getDuration(self, t)
-		local heal = t.getHeal(self, t)
-		return ([[For the next %d turns your maximum life is increased by %d%% and you heal %d life per turn.
-		If you have Spin Fate active the amount of life you heal will be increased by 33%% per Spin (for example, %d at three Spin.)
+		return ([[For the next %d turns you displace %d%% of any damage you receive onto a nearby random enemy.
 		While Webs of Fate is active you may gain one additional Spin per turn and your maximum Spin is doubled.]])
-		:format(duration, power, heal, heal*2)
+		:format(duration, power)
 	end,
 }
