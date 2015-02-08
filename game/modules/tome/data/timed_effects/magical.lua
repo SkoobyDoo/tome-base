@@ -3117,6 +3117,7 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
+		if self.life > self.max_life then self.life = self.max_life end
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
 	end,
