@@ -169,7 +169,7 @@ newTalent{
 	requires_target = true,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 6))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
 	target = function(self, t)
 		local halflength = math.floor(t.getLength(self,t)/2)
