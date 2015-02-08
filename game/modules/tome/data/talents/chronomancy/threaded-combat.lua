@@ -210,7 +210,7 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	remove_on_clone = true,
-	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 40) end,
+	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check
 		if not self.turn_procs.blade_warden then 
