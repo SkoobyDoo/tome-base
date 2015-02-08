@@ -195,7 +195,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
-	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%end,
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
 		self:talentTemporaryValue(p, "see_invisible", t.getSense(self, t))
@@ -213,7 +213,7 @@ newTalent{
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if eff and dam > 0 and eff.target ~= src and src ~= self then
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
 			-- Reduce damage
 			local reduction = dam * self:callTalent(self.T_VIGILANCE, "getPower")/100
 			dam = dam -  reduction
@@ -224,8 +224,8 @@ newTalent{
 	info = function(self, t)
 		local sense = t.getSense(self, t)
 		local power = t.getPower(self, t)
-		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  You also have a %d%% chance to recover from a single negative status effect each turn.
-		While Warden's Focus is active you reduce incoming damage from all targets other than your focus target by %d%%.
+		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  Additionally you have a %d%% chance to recover from a single negative status effect each turn.
+		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.
 		Sense abilities will scale with your Magic stat.]]):
 		format(sense, sense, power, power)
 	end,
