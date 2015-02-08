@@ -210,7 +210,7 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	remove_on_clone = true,
-	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 60) end,
+	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 40) end,
 	doBladeWarden = function(self, t, target)
 		-- Sanity check
 		if not self.turn_procs.blade_warden then 
@@ -222,7 +222,7 @@ newTalent{
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
-		m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
+		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 		doWardenWeaponSwap(m, t, nil, "blade")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
@@ -271,7 +271,7 @@ newTalent{
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
-		m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
+		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 		m:attr("archery_pass_friendly", 1)
 		doWardenWeaponSwap(m, t, nil, "bow")
 		m.on_act = function(self)
