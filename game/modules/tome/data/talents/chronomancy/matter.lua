@@ -75,7 +75,7 @@ newTalent{
 				DamageType.WARP, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
-				engine.MapEffect.new{alpha=85, color_br=150, color_bg=150, color_bb=50, effect_shader="shader_images/paradox_effect.png"},
+				engine.MapEffect.new{alpha=155, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
 				function(e)
 					e.x = e.src.x
 					e.y = e.src.y
@@ -167,8 +167,8 @@ newTalent{
 	range = 10,
 	direct_hit = true,
 	requires_target = true,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
 	target = function(self, t)
