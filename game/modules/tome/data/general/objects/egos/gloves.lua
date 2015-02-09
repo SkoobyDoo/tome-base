@@ -286,6 +286,7 @@ newEntity{
 		combat_atk = resolvers.mbonus_material(5, 5),
 		combat_physresist = resolvers.mbonus_material(5, 5),
 		combat_mentalresist = resolvers.mbonus_material(5, 5),
+		disarm_immune = resolvers.mbonus_material(30, 20, function(e, v) v=v/100 return 0, v end),
 		combat = {
 			atk = resolvers.mbonus_material(5, 5),
 			talent_on_hit = { [Talents.T_PERFECT_CONTROL] = {level=resolvers.genericlast(function(e) return e.material_level end), chance=10} },
@@ -319,6 +320,7 @@ newEntity{
 	name = " of the iron hand", suffix=true, instant_resolve=true,
 	keywords = {iron=true},
 	level_range = {30, 50},
+	greater_ego = 1,
 	rarity = 30,
 	cost = 25,
 	wielder = {
@@ -328,7 +330,7 @@ newEntity{
 			[Stats.STAT_CON] = resolvers.mbonus_material(3, 2),
 			[Stats.STAT_STR] = resolvers.mbonus_material(3, 2),
 		},
-		disarm_bonus = resolvers.mbonus_material(25, 5),
+		disarm_immune = resolvers.mbonus_material(30, 20, function(e, v) v=v/100 return 0, v end),
 		combat = {
 			talent_on_hit = { [Talents.T_DISARM] = {level=resolvers.genericlast(function(e) return e.material_level end), chance=10} },
 		},
@@ -631,6 +633,7 @@ newEntity{
 		combat_mentalresist = resolvers.mbonus_material(7, 3),
 		combat_physresist = resolvers.mbonus_material(20, 10),
 		combat_spellresist = resolvers.mbonus_material(7, 3),
+		disarm_immune = resolvers.mbonus_material(30, 20, function(e, v) v=v/100 return 0, v end),
 		combat = {
 			melee_project={ [DamageType.PHYSICAL] = resolvers.mbonus_material(25, 4), },
 			talent_on_hit = { [Talents.T_JUGGERNAUT] = {level=1, chance=10} },

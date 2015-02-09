@@ -45,7 +45,7 @@ return { generator = function()
 		r = rng.range(125, 150)/255,  rv = 0, ra = 0,
 		g = rng.range(125, 150)/255,  gv = 0, ga = 0,
 		b = rng.range(25, 50)/255,  bv = 0, ba = 0,
-		a = rng.range(125, 255)/255,   av = 0, aa = 0,
+		a = rng.range(200, 255)/255,   av = 0, aa = 0,
 	}
 end, },
 function(self)

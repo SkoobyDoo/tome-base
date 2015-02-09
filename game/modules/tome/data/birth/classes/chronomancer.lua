@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local Particles = require "engine.Particles"
+
 newBirthDescriptor{
 	type = "class",
 	name = "Chronomancer",
@@ -62,7 +64,7 @@ newBirthDescriptor{
 		"A Paradox Mage studies the very fabric of spacetime, learning not just to bend it but shape it and remake it.",
 		"Most Paradox Mages lack basic skills that others take for granted (like general fighting sense), but they make up for it through control of cosmic forces.",
 		"Paradox Mages start off with knowledge of all but the most complex Chronomantic schools.",
-		"Their most important stats are: Magic, Constitution, and Willpower",
+		"Their most important stats are: Magic and Willpower",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +0 Strength, +0 Dexterity, +2 Constitution",
 		"#LIGHT_BLUE# * +5 Magic, +2 Willpower, +0 Cunning",
@@ -71,6 +73,29 @@ newBirthDescriptor{
 	power_source = {arcane=true},
 	random_rarity = 2,
 	stats = { mag=5, wil=2, con=2, },
+	birth_example_particles = {
+		function(actor)
+			if core.shader.active(4) then
+				actor:addParticles(Particles.new("shader_ring_rotating", 1, {rotation=-0.01, radius=1.2}, {type="stone", hide_center=1, zoom=0.6, color1={0.4, 0.4, 0, 1}, color2={0.5, 0.5, 0, 1}, xy={0, 0}}))
+			else
+				actor:addParticles(Particles.new("generic_shield", 1, {r=0.4, g=0.4, b=0, a=1}))
+			end
+		end,
+		function(actor)
+			if core.shader.allow("adv") then
+				actor:addParticles3D("volumetric", {kind="transparent_cylinder", twist=1, shineness=10, density=10, radius=1.4, growSpeed=0.004, img="coggy_00"})
+			else
+				actor:addParticles(Particles.new("generic_shield", 1, {r=1, g=1, b=0, a=1}))
+			end
+		end,
+		function(actor)
+			if core.shader.allow("adv") then
+				actor:addParticles3D("volumetric", {kind="fast_sphere", appear=10, radius=1.6, twist=30, density=30, growSpeed=0.004, scrollingSpeed=-0.004, img="continuum_01_3"})
+			else
+				actor:addParticles(Particles.new("generic_shield", 1, {r=1, g=0, b=0, a=0.5}))
+			end
+		end,
+	},
 	talents_types = {
 		-- class
 		["chronomancy/gravity"]={true, 0.3},
@@ -117,15 +142,30 @@ newBirthDescriptor{
 	desc = {
 		"Their lifelines braided, Temporal Wardens have learned to work with their other selves across multiple timelines.",
 		"Through their study of chronomancy, they learn to blend archery and duel-weapon fighting, seemlessly switching from one to the other.",
-		"Their most important stats are: Magic, Dexterity, Constitution, and Willpower",
+		"Their most important stats are: Magic, Dexterity, and Willpower",
 		"#GOLD#Stat modifiers:",
-		"#LIGHT_BLUE# * +0 Strength, +2 Dexterity, +2 Constitution",
-		"#LIGHT_BLUE# * +3 Magic, +2 Willpower, +0 Cunning",
+		"#LIGHT_BLUE# * +0 Strength, +3 Dexterity, +0 Constitution",
+		"#LIGHT_BLUE# * +4 Magic, +2 Willpower, +0 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +2",
 	},
 	power_source = {technique=true, arcane=true},
 	random_rarity = 2,
-	stats = { con=2, wil=2, dex=3, mag=2},
+	stats = { wil=2, dex=3, mag=4},
+	birth_example_particles = {
+		function(actor)
+			if core.shader.allow("adv") then
+				actor:addParticles3D("volumetric", {kind="fast_sphere", shininess=40, density=40, radius=1.4, scrollingSpeed=0.001, growSpeed=0.004, img="squares_x3_01"})
+			else
+				actor:addParticles(Particles.new("arcane_power", 1))
+			end
+		end,
+		function(actor)
+			if core.shader.active(4) then
+				actor:addParticles(Particles.new("shader_shield", 1, {toback=true ,size_factor=1.5, y=-0.3, img="healparadox", life=25}, {type="healing", time_factor=3000, beamsCount=15, noup=2.0, beamColor1={0xb6/255, 0xde/255, 0xf3/255, 1}, beamColor2={0x5c/255, 0xb2/255, 0xc2/255, 1}}))
+				actor:addParticles(Particles.new("shader_shield", 1, {toback=false,size_factor=1.5, y=-0.3, img="healparadox", life=25}, {type="healing", time_factor=3000, beamsCount=15, noup=1.0, beamColor1={0xb6/255, 0xde/255, 0xf3/255, 1}, beamColor2={0x5c/255, 0xb2/255, 0xc2/255, 1}}))
+			end
+		end,
+	},
 	talents_types = {
 		-- class
 		["chronomancy/blade-threading"]={true, 0.3},
@@ -149,7 +189,6 @@ newBirthDescriptor{
 		["chronomancy/chronomancy"]={false, 0.1},
 		["cunning/survival"]={false, 0},
 	},
-	birth_example_particles = "temporal_focus",
 	talents = {
 		[ActorTalents.T_SHOOT] = 1,
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
