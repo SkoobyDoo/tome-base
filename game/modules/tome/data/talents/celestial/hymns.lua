@@ -214,6 +214,7 @@ newTalent{
 		return ([[Chant the glory of the Moon, conjuring a shroud of dancing shadows that follows you as long as this spell is active.
 		Each turn, a shadowy beam will hit up to %d of your foes within radius 5 for 1 to %0.2f damage.
 		This powerful spell will drain %0.1f negative energy for each beam; no beam will fire if your negative energy is too low.
+		You may only have one Hymn active at once.
 		The damage will increase with your Spellpower.]]):
 		format(targetcount, damDesc(self, DamageType.DARKNESS, damage), drain)
 	end,
