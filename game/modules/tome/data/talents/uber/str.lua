@@ -176,6 +176,9 @@ uberTalent{
 	-- _M:levelup function in mod.class.Actor.lua updates the talent levels with character level
 	bonusLevel = function(self, t) return math.ceil(self.level/10) end,
 	callbackOnLevelup = function(self, t, new_level)
+		return t.updateTalent(self, t)
+	end,
+	updateTalent = function(self, t)
 		local p = self.talents_learn_vals[t.id] or {}
 		if p.__tmpvals then
 			for i = 1, #p.__tmpvals do
@@ -201,7 +204,8 @@ uberTalent{
 	info = function(self, t)
 		local level = t.bonusLevel(self,t)
 		return ([[You have sided with Slasul and helped him vanquish Ukllmswwik. You are now able to breathe underwater with ease.
-		You have also learned to use tridents and other exotic weapons easily (talent level %d of Exotic Weapon Mastery), and can Spit Poison (talent level %d) as nagas do. These are bonus talent levels that increase with your character level. In addition, should Slasul still live, he may have a further reward for you as thanks...]])
+		You have also learned to use tridents and other exotic weapons easily (talent level %d of Exotic Weapon Mastery), and can Spit Poison (talent level %d) as nagas do. These are bonus talent levels that increase with your character level.
+		In addition, should Slasul still live, he may have a further reward for you as thanks...]])
 		:format(level, level)
 	end,
 }
