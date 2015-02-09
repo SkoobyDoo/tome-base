@@ -37,7 +37,7 @@ project "TEngine"
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
@@ -533,6 +533,13 @@ project "te4-bzip"
 	targetname "te4-bzip"
 
 	files { "../src/bzip2/*.c", }
+
+project "te4-renderer"
+	kind "StaticLib"
+	language "C"
+	targetname "te4-renderer"
+
+	files { "../src/renderer-gl/*.c", }
 
 if _OPTIONS['web-awesomium'] and not _OPTIONS.wincross then
 project "te4-web"
