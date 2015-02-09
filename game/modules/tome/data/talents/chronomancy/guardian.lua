@@ -44,7 +44,7 @@ newTalent{
 	points = 5,
 	sustain_paradox = 24,
 	mode = "sustained",
-	cooldown = 10,
+	cooldown = 6,
 	getSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
