@@ -193,7 +193,7 @@ uberTalent{
 	passives = function(self, t, p)
 		-- talents_inc_cap field referenced by _M:getMaxTPoints in mod.dialogs.LevelupDialog.lua
 		self.talents_inc_cap = self.talents_inc_cap or {}
-		t.updateTalent(self, t)
+		t.callbackOnLevelup(self, t)
 	end,
 	on_learn = function(self, t)
 		require("engine.ui.Dialog"):simplePopup("Legacy of the Naloren", "Slasul will be happy to know your faith in his cause. You should return to speak to him.")
