@@ -233,17 +233,6 @@ newTalent{
 				{type="armor", subtype="feet", autoreq=true, forbid_power_source={arcane=true}, not_properties = {"unique"} },
 			},
 			resolvers.sustains_at_birth(),
-			
-			-- Hack to make sure we top off ammo after every battle
-			on_move = function(self)
-				if game.player ~= self then
-					local a = self:hasAmmo()
-					if not a then print("[Thought-Form Bowman Ammo] - ERROR, NO AMMO") end
-					if a and a.combat.shots_left < a.combat.capacity and not self.ai_target.actor and not self:hasEffect(self.EFF_RELOADING) then
-						self:forceUseTalent(self.T_RELOAD, {})
-					end
-				end
-			end,
 		}
 
 		setupThoughtForm(self, m, x, y, t)

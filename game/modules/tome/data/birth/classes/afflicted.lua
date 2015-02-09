@@ -93,7 +93,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="battleaxe", name="iron battleaxe", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="heavy", name="iron mail armour", autoreq=true, ego_chance=-1000, ego_chance=-1000}
 		},
-		chooseCursedAuraTree = true
 	},
 	copy_add = {
 		life_rating = 2,
@@ -146,7 +145,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 		},
-		chooseCursedAuraTree = true
 	},
 	copy_add = {
 	},

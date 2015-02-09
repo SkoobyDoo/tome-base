@@ -37,7 +37,7 @@ return {
 			nb_rooms = 10,
 			rooms = {"!room1", "!room2", {"!room3", 3}, "small_x", "!room4", "!room5", "!room6"},
 			lite_room_chance = 100,
-			['.'] = "FLOOR",
+			['.'] = function() if rng.percent(95) then return "FLOOR" else return rng.table{"RUNE_FLOOR1", "RUNE_FLOOR2", "RUNE_FLOOR3"} end end,
 			['#'] = "WALL",
 			['+'] = "DOOR",
 			up = "UP",
