@@ -47,7 +47,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local save = t.getSaveBonus(self, t)
-		return ([[Each time you take damage from someone else you gain one Spin, increasing your defense and saves by %d for three turns.
+		return ([[Each time you would take damage from someone else you gain one Spin, increasing your defense and saves by %d for three turns.
 		This effect may occur once per turn and stacks up to three Spin (for a maximum bonus of %d).]]):
 		format(save, save * 3)
 	end,

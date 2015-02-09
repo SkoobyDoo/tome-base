@@ -3081,15 +3081,16 @@ newEffect{
 	on_lose = function(self, err) return nil, "-Webs of Fate" end,
 	parameters = { power=0.1 },
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
-		-- Spin Fate?
-		if self.turn_procs and not self.turn_procs.spin_webs then
-			self.turn_procs.spin_webs = true
-			self:callTalent(self.T_SPIN_FATE, "doSpin")
-		end
-	
 		-- Displace Damage?
 		local t = eff.talent
 		if dam > 0 and src ~= self then
+		
+			-- Spin Fate?
+			if self.turn_procs and self:knowTalent(self.T_SPIN_FATE) and not self.turn_procs.spin_webs then
+				self.turn_procs.spin_webs = true
+				self:callTalent(self.T_SPIN_FATE, "doSpin")
+			end
+		
 			-- find available targets
 			local tgts = {}
 			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
@@ -3144,7 +3145,7 @@ newEffect{
 		if dam <=0 then return end
 		
 		-- Spin Fate?
-		if self.turn_procs and not self.turn_procs.spin_seal then
+		if self.turn_procs and self:knowTalent(self.T_SPIN_FATE) and not self.turn_procs.spin_seal then
 			self.turn_procs.spin_seal = true
 			self:callTalent(self.T_SPIN_FATE, "doSpin")
 		end
@@ -3165,20 +3166,6 @@ newEffect{
 					local eff = target:hasEffect(eff_id)
 					eff.dur = eff.dur +1
 				end
-				--[[
-				local effs = {}
-				-- Go through all spell effects
-				for eff_id, p in pairs(target.tmp) do
-					local e = target.tempeffect_def[eff_id]
-					if e.status == "detrimental" and e.type ~= "other" and e.subtype ~= "cross tier" then
-						effs[#effs+1] = p
-					end
-				end
-				
-				if #effs > 0 then
-					local p = rng.table(effs)
-					p.dur = p.dur + 1
-				end]]
 			
 				self.turn_procs.seal_fate = (self.turn_procs.seal_fate or 0) + 1
 			end
