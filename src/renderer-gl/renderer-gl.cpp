@@ -48,6 +48,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	glTranslatef(x, y, 0);
 
+#if 0
 	if (vx->changed) printf("UPDATING VO\n");
 
 	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo[0]);
@@ -65,6 +66,12 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+#else
+	glVertexPointer(2, GL_FLOAT, 0, vx->vertices);
+	glColorPointer(4, GL_FLOAT, 0, vx->colors);
+	glTexCoordPointer(2, GL_FLOAT, 0, vx->textures);
+	glDrawArrays(GL_QUADS, 0, vx->nb);
+#endif
 
 	glTranslatef(-x, -y, 0);
 

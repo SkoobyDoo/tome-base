@@ -48,12 +48,14 @@ function _M:generate()
 	-- Draw UI
 	self.font:setStyle("bold")
 	local w, h = self.font:size(self.text)
+	self.font:setStyle("normal")
+
 	self.iw, self.ih = w, h
 	if self.force_w then w = self.force_w end
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
 
-	self.tex = self:drawFontLine(self.font, self.text, w)
-	self.font:setStyle("normal")
+	self.votext = core.vo.new()
+	self.font:drawVO(self.votext, self.text)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
@@ -91,33 +93,30 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	ox = ox + 3
 	oy = oy + 3
 	local mx, my, button = core.mouse.get()
-	if self.focused then
-		if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
-			self:updateFrameColorVO(self.vo, self.vo_id, true, 0, 1, 0, 1)
-		elseif self.glow then
-			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:updateFrameColorVO(self.vo, self.vo_id, true, v * 0.8, v, 0, 1)
-		end
-		self.vo:toScreen(x, y)
+	-- if self.focused then
+	-- 	if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
+	-- 		self:updateFrameColorVO(self.vo, self.vo_id, true, 0, 1, 0, 1)
+	-- 	elseif self.glow then
+	-- 		local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
+	-- 		self:updateFrameColorVO(self.vo, self.vo_id, true, v * 0.8, v, 0, 1)
+	-- 	end
+	-- else
+	-- 	if self.glow then
+	-- 		local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
+	-- 		self:updateFrameColorVO(self.vo, self.vo_id, true, v*0.8, v, 0, self.alpha_unfocus)
+	-- 	else
+	-- 		if self.focus_decay then
+	-- 			self:updateFrameColorVO(self.vo, self.vo_id, true, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
+	-- 			self.focus_decay = self.focus_decay - nb_keyframes
+	-- 			if self.focus_decay <= 0 then self.focus_decay = nil end
+	-- 		else
+	-- 			self:updateFrameColorVO(self.vo, self.vo_id, true, 1, 1, 1, self.alpha_unfocus)
+	-- 		end
+	-- 	end
+	-- end
 
-		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
-	else
-		if self.glow then
-			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:updateFrameColorVO(self.vo, self.vo_id, true, v*0.8, v, 0, self.alpha_unfocus)
-		else
-			if self.focus_decay then
-				self:updateFrameColorVO(self.vo, self.vo_id, true, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
-				self.focus_decay = self.focus_decay - nb_keyframes
-				if self.focus_decay <= 0 then self.focus_decay = nil end
-			else
-				-- self:updateFrameColorVO(self.vo, self.vo_id, true, 1, 1, 1, self.alpha_unfocus)
-			end
-		end
-		self.vo:toScreen(x, y)
-
-		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
-		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
-	end
+	self.vo:toScreen(x, y)
+	self.votext:toScreen(x, y)
+	-- if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow * (self.focused and 1 or self.alpha_unfocus)) end
+	-- self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.focused and 1 or self.alpha_unfocus)
 end

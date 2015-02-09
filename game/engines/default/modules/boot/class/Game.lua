@@ -486,10 +486,7 @@ function _M:display(nb_keyframes)
 		engine.GameEnergyBased.display(self, nb_keyframes)
 		if self.full_fbo then self.full_fbo:use(false) self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad) end
 		
-		engine.ui.Base.font:debugAtlas(0, 0, 512, 512)
-		plop:toScreen(600, 600)
-
-		return
+ 		return
 	end
 
 	-- Display using Framebuffer, so that we can use shaders and all
