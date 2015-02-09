@@ -25,20 +25,29 @@ newTalent{
 	require = chrono_req1,
 	mode = "passive",
 	points = 5,
-	getTuningAdjustment= function(self, t) 
+	getTuningAdjustment = function(self, t) 
 		local duration = math.floor(self:combatTalentScale(t, 2, 8))
 		return math.min(duration, 10) 
 	end,
-	getWillBonus = function(self, t) return self:combatTalentScale(t, 2, 10) end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "paradox_reduce_anomalies", t.getWillBonus(self, t))
+	getAutoTuning = function(self, t) return math.floor(self:combatTalentLimit(t, 5, 1, 4)) end,
+	callbackOnActBase = function(self, t)
+		if self:hasEffect(self.EFF_SPACETIME_TUNING) then return end
+		local dox = self:getParadox() - self.preferred_paradox
+		if dox == 0 then return end
+
+		-- Insures accurate tuning
+		local tuning = -t.getAutoTuning(self, t)		
+		if dox < 0 then tuning = math.abs(tuning) end
+		local fix = math.min( math.abs(dox), tuning)
+		
+		self:incParadox(fix)
 	end,
 	info = function(self, t)
-		local will = t.getWillBonus(self, t)
+		local tune = t.getAutoTuning(self, t)
 		local duration = t.getTuningAdjustment(self, t)
-		return ([[You've learned to focus your control over the spacetime continuum, and quell anomalous effects.  Increases your effective Willpower for determining modified Paradox by %d.
-		Additionally the time it takes you to adjust your Paradox with Spacetime Tuning is reduced by %d turns.]]):
-		format(will, duration)
+		return ([[When Spacetime Tuning is inactive you automatically adjust your Paradox %d points towards your preferred Paradox each turn.
+		The time it takes you to adjust your Paradox with Spacetime Tuning is also reduced by %d turns.]]):
+		format(tune, duration)
 	end,
 }
 
