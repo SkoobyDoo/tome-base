@@ -24,7 +24,7 @@ newTalent{
 	type = {"chronomancy/threaded-combat", 1},
 	require = chrono_req_high1,
 	points = 5,
-	cooldown = 6,
+	cooldown = function(self, t) return 20 - math.floor(self:combatTalentLimit(t, 16, 2, 14)) end,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {weapon = 2}, CLOSEIN = 2, ESCAPE = 2 },
 	requires_target = true,
@@ -36,15 +36,14 @@ newTalent{
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getTeleportRange = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
+	getTeleportRange = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8, 0.5, 0, 1)) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
-		local accuracy = math.max(0, 10 - t.getTeleportRange(self, t))
 		game:onTickEnd(function()
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			game:playSoundNear(self, "talents/teleport")
 			
-			if self:teleportRandom(x, y, accuracy) then
+			if self:teleportRandom(x, y, 0) then
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			else
 				game.logSeen(self, "The spell fizzles!")
@@ -101,10 +100,9 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local range = t.getTeleportRange(self, t)
-		local accuracy = math.max(0, 10 - t.getTeleportRange(self, t))
 		return ([[Attack with your bow or dual-weapons for %d%% damage.
-		If you shoot an arrow you'll teleport near any target hit (radius %d accuracy).  If you hit with either of your dual-weapons you'll teleport up to %d tiles away from the target.]])
-		:format(damage, accuracy, range)
+		If you shoot an arrow you'll teleport near any target hit.  If you hit with either of your dual-weapons you'll teleport up to %d tiles away from the target.]])
+		:format(damage, range)
 	end
 }
 
