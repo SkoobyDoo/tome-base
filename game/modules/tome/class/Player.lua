@@ -855,7 +855,7 @@ function _M:automaticTalents()
 		local spotted = spotHostiles(self, true)
 		local cd = self:getTalentCooldown(t) or 0
 		local turns_used = util.getval(t.no_energy, self, t)  == true and 0 or 1
-		if cd <= turns_used then
+		if cd <= turns_used and t.mode ~= "sustained" then
 			game.logPlayer(self, "Automatic use of talent %s #DARK_RED#skipped#LAST#: cooldown too low (%d).", t.name, cd)
 		elseif (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
 			if (c == 1) or (c == 2 and #spotted <= 0) or (c == 3 and #spotted > 0) then
@@ -1054,6 +1054,7 @@ end
 -- 'ignore_memory' is only used when checking for paths around traps.  This ensures we don't remember items "obj_seen" that we aren't supposed to
 function _M:runCheck(ignore_memory)
 	if game:hasDialogUp(1) then return false, "dialog is displayed" end
+	local is_main_player = self == game:getPlayer(true)
 
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
@@ -1069,10 +1070,11 @@ function _M:runCheck(ignore_memory)
 	local noticed = false
 	self:runScan(function(x, y, what)
 		-- Objects are always interesting, only on curent spot
-		if what == "self" and not game.level.map.attrs(x, y, "obj_seen") then
+		local obj_seen = game.level.map.attrs(x, y, "obj_seen")
+		if what == "self" and obj_seen ~= self and obj_self ~= true then
 			local obj = game.level.map:getObject(x, y, 1)
 			if obj then
-				if not ignore_memory then game.level.map.attrs(x, y, "obj_seen", true) end
+				if not ignore_memory then game.level.map.attrs(x, y, "obj_seen", is_main_player and true or self) end
 				noticed = "object seen"
 				return false, noticed
 			end
@@ -1518,3 +1520,5 @@ function _M:attackOrMoveDir(dir)
 	self:moveDir(dir)
 	game_or_player.bump_attack_disabled = tmp
 end
+
+return _M
