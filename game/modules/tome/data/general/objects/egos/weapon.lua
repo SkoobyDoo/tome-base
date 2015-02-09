@@ -38,6 +38,7 @@ newEntity{
 	wielder={
 		combat_atk = resolvers.mbonus_material(10, 5),
 		combat_def = resolvers.mbonus_material(10, 5),
+		disarm_immune = resolvers.mbonus_material(30, 20, function(e, v) v=v/100 return 0, v end),
 	},
 }
 

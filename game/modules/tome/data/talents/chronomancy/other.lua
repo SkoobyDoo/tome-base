@@ -207,6 +207,9 @@ makeParadoxClone = function(self, target, duration)
 		end
 	end
 	
+	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
+	if m.preferred_paradox and m.preferred_paradox > 300 then m.preferred_paradox = 300 end
+	
 	return m
 end
 

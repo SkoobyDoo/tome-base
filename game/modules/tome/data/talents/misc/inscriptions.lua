@@ -250,21 +250,25 @@ newInscription{
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		local tg = self:getTalentTarget(t)
-		self:project(tg, self.x, self.y, engine.DamageType.BLINDCUSTOMMIND, {power=data.power + data.inc_stat, turns=data.turns})
-		self:project(tg, self.x, self.y, engine.DamageType.BREAK_STEALTH, {power=(data.power + data.inc_stat)/2, turns=data.turns})
+		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
+		
+		self:project(tg, self.x, self.y, engine.DamageType.BLINDCUSTOMMIND, {power=apply, turns=data.turns})
+		self:project(tg, self.x, self.y, engine.DamageType.BREAK_STEALTH, {power=apply/2, turns=data.turns})
 		tg.selffire = true
-		self:project(tg, self.x, self.y, engine.DamageType.LITE, data.power >= 19 and 100 or 1)
+		self:project(tg, self.x, self.y, engine.DamageType.LITE, apply >= 19 and 100 or 1)
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
+		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
 		return ([[Activate the infusion to brighten the area in a radius of %d and illuminate stealthy creatures, possibly revealing them (reduces stealth power by %d).%s
 		It will also blind any creatures caught inside (power %d) for %d turns.]]):
-		format(data.range, (data.power + data.inc_stat)/2, data.power >= 19 and "\nThe light is so powerful it will also banish magical darkness" or "", data.power + data.inc_stat, data.turns)
+		format(data.range, apply/2, apply >= 19 and "\nThe light is so powerful it will also banish magical darkness" or "", apply, data.turns)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[rad %d; power %d; turns %d%s]]):format(data.range, data.power + data.inc_stat, data.turns, data.power >= 19 and "; dispells darkness" or "")
+		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
+		return ([[rad %d; power %d; turns %d%s]]):format(data.range, apply, data.turns, apply >= 19 and "; dispells darkness" or "")
 	end,
 }
 
@@ -384,9 +388,9 @@ newInscription{
 		self:teleportRandom(self.x, self.y, data.range + data.inc_stat)
 		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
 		self:setEffect(self.EFF_OUT_OF_PHASE, data.dur or 3, {
-			defense=(data.power or data.range) + data.inc_stat * 3,
-			resists=(data.power or data.range) + data.inc_stat * 3,
-			effect_reduction=(data.power or data.range) + data.inc_stat * 3,
+			defense=(data.power or data.range) + data.inc_stat * 3 + self:attr("defense_on_teleport") or 0,
+			resists=(data.power or data.range) + data.inc_stat * 3 + self:attr("resist_all_on_teleport") or 0,
+			effect_reduction=(data.power or data.range) + data.inc_stat * 3 + self:attr("effect_reduction_on_teleport") or 0,
 		})
 		return true
 	end,
@@ -960,12 +964,12 @@ newInscription{
 		if target.dead or target.player then return true end
 		target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self:combatSpellpower(0.3)})
 		
-		-- Replace the target with a temporal instability for a few turns
-		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
-		if not oe or oe:attr("temporary") then return true end
+	-- Placeholder for the actor
+		local oe = game.level.map(x, y, Map.TERRAIN+1)
+		if (oe and oe:attr("temporary")) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then game.logPlayer(self, "You can't time skip the target there.") return nil end
 		local e = mod.class.Object.new{
-			old_feat = oe, type = oe.type, subtype = oe.subtype,
-			name = "temporal instability", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
+			old_feat = oe, type = "temporal", subtype = "instability",
+			name = "temporal instability",
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t),
 			canAct = false,
@@ -975,9 +979,14 @@ newInscription{
 				self.temporary = self.temporary - 1
 				-- return the rifted actor
 				if self.temporary <= 0 then
-					game.level.map(self.target.x, self.target.y, engine.Map.TERRAIN, self.old_feat)
-					game.level:removeEntity(self, true)
+					-- remove ourselves
+					if self.old_feat then game.level.map(self.target.x, self.target.y, engine.Map.TERRAIN+1, self.old_feat)
+					else game.level.map:remove(self.target.x, self.target.y, engine.Map.TERRAIN+1) end
 					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
+					game.level:removeEntity(self)
+					game.level.map:removeParticleEmitter(self.particles)
+					
+					-- return the actor and reset their values
 					local mx, my = util.findFreeGrid(self.target.x, self.target.y, 20, true, {[engine.Map.ACTOR]=true})
 					local old_levelup = self.target.forceLevelup
 					local old_check = self.target.check
@@ -991,11 +1000,16 @@ newInscription{
 			summoner_gain_exp = true, summoner = self,
 		}
 		
+		-- Remove the target
 		game.logSeen(target, "%s has moved forward in time!", target.name:capitalize())
 		game.level:removeEntity(target, true)
+		
+		-- add the time skip object to the map
+		local particle = Particles.new("wormhole", 1, {image="shockbolt/terrain/temporal_instability_yellow", speed=1})
+		particle.zdepth = 6
+		e.particles = game.level.map:addParticleEmitter(particle, x, y)
 		game.level:addEntity(e)
-		game.level.map(x, y, Map.TERRAIN, e)
-		game.nicer_tiles:updateAround(game.level, x, y)
+		game.level.map(x, y, Map.TERRAIN+1, e)
 		game.level.map:updateMap(x, y)
 		return true
 	end,
