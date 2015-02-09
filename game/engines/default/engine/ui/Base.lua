@@ -207,18 +207,14 @@ function _M:addQuadVO(vo, at, x, y, w, h, r, g, b, a)
 	)
 end
 
-function _M:updateQuadVO(vo, vo_id, at, x, y, w, h, r, g, b, a)
-	local x1, x2, y1, y2 = nil, nil, nil, nil
-	if x and y and w and h then x1, x2, y1, y2 = x, x + w, y, y + h end
+function _M:updateQuadTextureVO(vo, vo_id, at)
+	local tx1, tx2, ty1, ty2 = at.tx, at.tx + at.tw, at.ty, at.ty + at.th
 
-	local tx1, tx2, ty1, ty2 = nil, nil, nil, nil
-	if at then tx1, tx2, ty1, ty2 = at.tx, at.tx + at.tw, at.ty, at.ty + at.th end
-
-	vo:updateQuad(vo_id, r, g, b, a,
-		{x1, y1,		tx1, ty1},
-		{x2, y1, 		tx2, ty1},
-		{x2, y2, 		tx2, ty2},
-		{x1, y2, 		tx1, ty2}
+	vo:updateQuadTexture(vo_id,
+		{tx1, ty1},
+		{tx2, ty1},
+		{tx2, ty2},
+		{tx1, ty2}
 	)
 end
 
@@ -236,7 +232,7 @@ function _M:makeFrameVO(vo, base, x, y, w, h, r, g, b, a)
 	h = math.floor(h)
 
 	-- -- Sides
-	local vo_id = self:addQuadVO(vo, b8, x + b7.w, y, w - b7.w - b9.w, b8.h, r, g, b, a)
+	local start = self:addQuadVO(vo, b8, x + b7.w, y, w - b7.w - b9.w, b8.h, r, g, b, a)
 	self:addQuadVO(vo, b2, x + b7.w, y + h - b3.h, w - b7.w - b9.w, b2.h, r, g, b, a)
 	self:addQuadVO(vo, b4, x, y + b7.h, b4.w, h - b7.h - b1.h, r, g, b, a)
 	self:addQuadVO(vo, b6, x + w - b9.w, y + b7.h, b6.w, h - b7.h - b1.h, r, g, b, a)
@@ -248,12 +244,12 @@ function _M:makeFrameVO(vo, base, x, y, w, h, r, g, b, a)
 	self:addQuadVO(vo, b3, x + w - b3.w, y + h - b3.h, b3.w, b3.h, r, g, b, a)
 
 	-- Body
-	self:addQuadVO(vo, b5, x + b7.w, y + b7.h, w - b7.w - b3.w , h - b7.h - b3.h, r, g, b, a)
+	local stop = self:addQuadVO(vo, b5, x + b7.w, y + b7.h, w - b7.w - b3.w , h - b7.h - b3.h, r, g, b, a)
 
-	return vo_id
+	return {start=start, stop=stop}
 end
 
-function _M:updateFrameVO(vo, vo_id, base, x, y, w, h, r, g, b, a)
+function _M:updateFrameTextureVO(vo, vo_id, base)
 	local b7 = base and self:getAtlasTexture(base.."7.png")
 	local b9 = base and self:getAtlasTexture(base.."9.png")
 	local b1 = base and self:getAtlasTexture(base.."1.png")
@@ -263,25 +259,23 @@ function _M:updateFrameVO(vo, vo_id, base, x, y, w, h, r, g, b, a)
 	local b2 = base and self:getAtlasTexture(base.."2.png")
 	local b6 = base and self:getAtlasTexture(base.."6.png")
 	local b5 = base and self:getAtlasTexture(base.."5.png")
-
-	if x then
-		w = math.floor(w)
-		h = math.floor(h)
-	end
-
-	local id = vo:find(vo_id)
+	local id = vo:find(vo_id.start)
 	local s = vo:getQuadSize()
 
 	-- -- Sides
-	self:updateQuadVO(vo, id + 0*s, b8, x and x + b7.w,	x and y,		x and w - b7.w - b9.w,	x and b8.h,			r, g, b, a)
-	self:updateQuadVO(vo, id + 1*s, b2, x and x + b7.w,	x and y + h - b3.h,	x and w - b7.w - b9.w,	x and b2.h,			r, g, b, a)
-	self:updateQuadVO(vo, id + 2*s, b4, x and x,		x and y + b7.h,	x and b4.w,			x and h - b7.h - b1.h,	r, g, b, a)
-	self:updateQuadVO(vo, id + 3*s, b6, x and x + w - b9.w,	x and y + b7.h,	x and b6.w,			x and h - b7.h - b1.h,	r, g, b, a)
-	self:updateQuadVO(vo, id + 4*s, b1, x and x,		x and y + h - b1.h,	x and b1.w,			x and b1.h,			r, g, b, a)
-	self:updateQuadVO(vo, id + 5*s, b7, x and x,		x and y,		x and b7.w,			x and b7.h,			r, g, b, a)
-	self:updateQuadVO(vo, id + 6*s, b9, x and x + w - b9.w,	x and y,		x and b9.w,			x and b9.h,			r, g, b, a)
-	self:updateQuadVO(vo, id + 7*s, b3, x and x + w - b3.w,	x and y + h - b3.h,	x and b3.w,			x and b3.h, 			r, g, b, a)
-	self:updateQuadVO(vo, id + 8*s, b5, x and x + b7.w,	x and y + b7.h,	x and w - b7.w - b3.w ,	x and h - b7.h - b3.h, 	r, g, b, a)
+	self:updateQuadTextureVO(vo, id + 0*s, b8)
+	self:updateQuadTextureVO(vo, id + 1*s, b2)
+	self:updateQuadTextureVO(vo, id + 2*s, b4)
+	self:updateQuadTextureVO(vo, id + 3*s, b6)
+	self:updateQuadTextureVO(vo, id + 4*s, b1)
+	self:updateQuadTextureVO(vo, id + 5*s, b7)
+	self:updateQuadTextureVO(vo, id + 6*s, b9)
+	self:updateQuadTextureVO(vo, id + 7*s, b3)
+	self:updateQuadTextureVO(vo, id + 8*s, b5)
+end
+
+function _M:updateFrameColorVO(vo, vo_id, set, r, g, b, a)
+	vo:color(vo_id.start, vo_id.stop, set, r, g, b, a)
 end
 
 function _M:drawFrame(f, x, y, r, g, b, a, w, h, total_w, total_h, loffset_x, loffset_y, clip_area)

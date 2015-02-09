@@ -17,6 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+-- FFI bindings
+dofile("/engine/core/init.lua")
+
 -- load some utility functions
 dofile("/engine/utils.lua")
 dofile("/engine/colors.lua")

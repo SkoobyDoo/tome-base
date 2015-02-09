@@ -536,10 +536,10 @@ project "te4-bzip"
 
 project "te4-renderer"
 	kind "StaticLib"
-	language "C"
+	language "C++"
 	targetname "te4-renderer"
 
-	files { "../src/renderer-gl/*.c", }
+	files { "../src/renderer-gl/*.cpp", }
 
 if _OPTIONS['web-awesomium'] and not _OPTIONS.wincross then
 project "te4-web"

@@ -1644,6 +1644,13 @@ static int gl_color(lua_State *L)
 	return 0;
 }
 
+static int sdl_texture_id(lua_State *L)
+{
+	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	lua_pushnumber(L, *t);
+	return 1;
+}
+
 static int sdl_texture_bind(lua_State *L)
 {
 	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
@@ -2616,6 +2623,7 @@ static const struct luaL_Reg sdl_texture_reg[] =
 	{"toSurface", gl_texture_to_sdl},
 	{"generateSDM", gl_texture_alter_sdm},
 	{"bind", sdl_texture_bind},
+	{"id", sdl_texture_id},
 	{NULL, NULL},
 };
 

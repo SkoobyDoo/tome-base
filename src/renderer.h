@@ -22,6 +22,16 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-   
+#include "display.h"
+#include "vertex_objects.h"
+
+typedef struct {
+	GLuint vbo[3];
+	GLuint mode;
+} vertexes_renderer;
+
+extern vertexes_renderer* vertexes_renderer_new(render_mode mode);
+extern void vertexes_renderer_free(vertexes_renderer *vr);
+extern void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y);
 
 #endif

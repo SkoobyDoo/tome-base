@@ -19,9 +19,19 @@
     darkgod@te4.org
 */
 
-#include "display.h"
-#include "types.h"
-#include "physfs.h"
-#include "physfsrwops.h"
-#include "renderer.h"
+#ifndef RENDERER_GL_H
+#define RENDERER_GL_H
+/*
+#include "glm.hpp"
+#include "gtc/matrix_transform.hpp"
 
+class RendererState {
+	glm::mat4 view;
+	glm::mat4 world;
+
+public:
+	RendererState(int w, int h);
+	void translate(float x, float y, float z);
+};
+*/
+#endif

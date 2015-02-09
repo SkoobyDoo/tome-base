@@ -159,7 +159,6 @@ void font_make_atlas(lua_font *f, int w, int h) {
 	int32_t c;
 	while (off > 0) {
 		off = utf8proc_iterate(str, len, &c);
-		printf("%c\n", c);
 		str += off;
 		len -= off;
 
@@ -818,6 +817,7 @@ static int sdl_font_draw_vo(lua_State *L)
 	if (!f->atlas) font_make_atlas(f, 0, 0);
 	lua_vertexes *vx = NULL;
 	if (lua_isuserdata(L, 2)) vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 2);
+	else if (!lua_isnil(L, 2)) vx = (lua_vertexes*)lua_topointer(L, 2);
 	size_t len;
 	const char *str = luaL_checklstring(L, 3, &len);
 	float r = 1, g = 1, b = 1, a = 1;
@@ -834,8 +834,8 @@ static int sdl_font_draw_vo(lua_State *L)
 	bool no_linefeed = lua_toboolean(L, 11);
 
 	if (!vx) {
-		gl_new_vertex(L);
-		vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", -1);
+		lua_pushstring(L, "no VO given!");
+		lua_error(L);
 	} else lua_pushvalue(L, 2);
 
 	vx->tex = f->atlas_tex;

@@ -77,7 +77,7 @@ function _M:generate()
 end
 
 function _M:on_focus_change(status)
-	self:updateFrameVO(self.vo, self.vo_id, status and "ui/button_sel" or "ui/button")
+	self:updateFrameTextureVO(self.vo, self.vo_id, status and "ui/button_sel" or "ui/button")
 end
 
 function _M:display(x, y, nb_keyframes, ox, oy)
@@ -93,10 +93,10 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	local mx, my, button = core.mouse.get()
 	if self.focused then
 		if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
-			self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, 0, 1, 0, 1)
+			self:updateFrameColorVO(self.vo, self.vo_id, true, 0, 1, 0, 1)
 		elseif self.glow then
 			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, v * 0.8, v, 0, 1)
+			self:updateFrameColorVO(self.vo, self.vo_id, true, v * 0.8, v, 0, 1)
 		end
 		self.vo:toScreen(x, y)
 
@@ -105,14 +105,14 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	else
 		if self.glow then
 			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, v*0.8, v, 0, self.alpha_unfocus)
+			self:updateFrameColorVO(self.vo, self.vo_id, true, v*0.8, v, 0, self.alpha_unfocus)
 		else
 			if self.focus_decay then
-				self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
+				self:updateFrameColorVO(self.vo, self.vo_id, true, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
 				self.focus_decay = self.focus_decay - nb_keyframes
 				if self.focus_decay <= 0 then self.focus_decay = nil end
 			else
-				self:updateFrameVO(self.vo, self.vo_id, nil, nil, nil, nil, nil, 1, 1, 1, self.alpha_unfocus)
+				-- self:updateFrameColorVO(self.vo, self.vo_id, true, 1, 1, 1, self.alpha_unfocus)
 			end
 		end
 		self.vo:toScreen(x, y)

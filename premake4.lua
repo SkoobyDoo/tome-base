@@ -16,6 +16,7 @@ solution "TEngine"
 		"src/physfs",
 		"src/zlib",
 		"src/bzip2",
+		"src/glm/glm",
 	}
 	if _OPTIONS['web-awesomium'] then
 		includedirs { "src/web-awesomium" }
