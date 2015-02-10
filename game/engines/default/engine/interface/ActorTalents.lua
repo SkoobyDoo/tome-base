@@ -965,7 +965,14 @@ function _M:talentDialog(d)
 	dialog_returns_list[#dialog_returns_list+1] = d
 
 	local co = coroutine.running()
-	d.unload = function(self) coroutine.resume(co, dialog_returns[d]) end
+	d.unload = function(self)
+		local ok, err = coroutine.resume(co, dialog_returns[d])
+		if not ok and err then
+			print(debug.traceback(co))
+			self:onTalentLuaError(err)
+			error(err)
+		end
+	end
 	local ret = coroutine.yield()
 
 	dialog_returns[d] = nil
