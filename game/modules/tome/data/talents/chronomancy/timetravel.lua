@@ -215,7 +215,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
+	cooldown = 40,
 	no_npc_use = true,
 	fixed_cooldown = true,
 	on_pre_use = function(self, t) return self:canBe("planechange") end,
