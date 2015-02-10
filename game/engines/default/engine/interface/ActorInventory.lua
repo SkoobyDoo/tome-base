@@ -380,6 +380,11 @@ end
 function _M:canWearObject(o, try_slot)
 	local req = rawget(o, "require")
 
+	-- check if the slot matches dammit
+	if try_slot and try_slot ~= o.slot and try_slot ~= self:getObjectOffslot(o) then
+		return nil, "wrong equipment slot"
+	end
+
 	-- Check prerequisites
 	if req then
 		-- Obviously this requires the ActorStats interface
