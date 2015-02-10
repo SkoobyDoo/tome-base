@@ -505,7 +505,14 @@ newTalent{
 		end
 
 		o.__special_boss_drop = nil  -- lol @ artifact transmutation
+		o.old_auto_pickup = o.auto_pickup
 		o.auto_pickup = true  -- allow to reautopickup
+		o.old_on_pickup = o.on_pickup
+		o.on_pickup = function(self, who)
+			self.auto_pickup = self.old_auto_pickup
+			self.on_pickup = self.old_on_pickup
+			self.old_on_pickup(self, who)
+		end
 		result = sentry:wearObject(o, true, false)
 		if not result then
 			game.logPlayer(self, "Your animated sentry struggles for a moment and then drops to the ground inexplicably.")
