@@ -245,9 +245,9 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 					-- terminated
 					return
 				end
+				if err then error(err) end  --propagate
 				coroutine.yield()
 			end
-			if err then error(err) end  --propagate
 		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
 			local abname = game:getGenericTextTiles(ab)..ab.name
