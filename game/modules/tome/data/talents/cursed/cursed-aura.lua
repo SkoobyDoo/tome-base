@@ -352,6 +352,23 @@ newTalent{
 }
 
 newTalent{
+	name = "Choose Cursed Sentry",
+	type = {"cursed/curses", 1},
+	points = 1,
+	no_energy = true,
+	action = function(self, t)
+		local inven = self:getInven("INVEN")
+		local d = self:showInventory("Which weapon will be your sentry?", inven, function(o) return o.type == "weapon" end, nil)
+		d.action = function(o, item) self:talentDialogReturn(true, o, item) return false end
+		local ret, o, item = self:talentDialog(d)
+		if not ret then return nil end
+		self.cursed_sentry = o
+		return true
+	end,
+	info = function(self, t) return [[Choose a sentry to instill your affliction into.]] end,
+}
+
+newTalent{
 	name = "Cursed Sentry",
 	type = {"cursed/cursed-aura", 4},
 	require = cursed_lev_req4,
@@ -362,6 +379,18 @@ newTalent{
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16))	end,
 	getAttackSpeed = function(self, t) return self:combatTalentScale(t, 0.6, 1.4) end,
 	target = function(self, t) return {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t} end,
+	on_learn = function(self, t)
+		local lev = self:getTalentLevelRaw(t)
+		if lev == 1 then
+			self:learnTalent(self.T_CHOOSE_CURSED_SENTRY, true, nil, {no_unlearn=true})
+		end
+	end,
+	on_unlearn = function(self, t)
+		local lev = self:getTalentLevelRaw(t)
+		if lev == 0 then
+			self:unlearnTalent(self.T_CHOOSE_CURSED_SENTRY)
+		end
+	end,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
 		local found = false
@@ -384,10 +413,17 @@ newTalent{
 		if game.level.map(x, y, Map.ACTOR) or game.level.map:checkEntity(x, y, game.level.map.TERRAIN, "block_move") then return nil end
 
 		-- select the item
-		local d = self:showInventory("Which weapon will be your sentry?", inven, function(o) return o.type == "weapon" end, nil)
-		d.action = function(o, item) self:talentDialogReturn(true, o, item) return false end
-		local ret, o, item = self:talentDialog(d)
-		if not ret then return nil end
+		if not self.cursed_sentry or not self:findInInventoryByObject(inven, self.cursed_sentry) then
+			-- save compat
+			if not self:knowTalent(self.T_CHOOSE_CURSED_SENTRY) then
+				self:learnTalent(self.T_CHOOSE_CURSED_SENTRY, true, nil, {no_unlearn=true})
+			end
+			t = self:getTalentFromId(self.T_CHOOSE_CURSED_SENTRY)
+			-- xx HACK cannot forceUse a talent that shows a dialog
+			local ret = t.action(self, t)
+			if not ret then return end
+		end
+		local o, item = self:findInInventoryByObject(inven, self.cursed_sentry)
 
 		local result = self:removeObject(inven, item)
 
