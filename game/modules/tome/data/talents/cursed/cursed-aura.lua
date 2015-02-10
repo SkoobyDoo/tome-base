@@ -574,6 +574,8 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local attackSpeed = t.getAttackSpeed(self, t)*100
 
-		return ([[Instill a part of your living curse into a weapon in your inventory, and toss it nearby. This nearly impervious sentry will attack all nearby enemies for %d turns. When the curse ends, the weapon will drop to the ground. Attack Speed: %d%%]]):format(duration, attackSpeed)
+		return ([[Instill a part of your living curse into a weapon in your inventory, and toss it nearby. This nearly impervious sentry will attack all nearby enemies for %d turns. When the curse ends, the weapon will drop to the ground.
+			Cursed Sentry attack speed (currently %d%%) will improve with talent level.
+			When you first select a weapon, it will be remembered and used as long as it's in your inventory. Use Choose Cursed Sentry talent to alter your selection.]]):format(duration, attackSpeed)
 	end,
 }
