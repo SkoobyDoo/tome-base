@@ -361,6 +361,7 @@ newTalent{
 	no_npc_use = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16))	end,
 	getAttackSpeed = function(self, t) return self:combatTalentScale(t, 0.6, 1.4) end,
+	target = function(self, t) return {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t} end,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
 		local found = false
@@ -376,11 +377,10 @@ newTalent{
 		end
 
 		-- select the location
-		local range = self:getTalentRange(t)
-		local tg = {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t}
+		local tg = self:getTalentTarget(t)
 		local tx, ty = self:getTarget(tg)
 		if not tx or not ty then return nil end
-		local _ _, x, y = self:canProject(tg, tx, ty)
+		local _ _, _, _, x, y = self:canProject(tg, tx, ty)
 		if game.level.map(x, y, Map.ACTOR) or game.level.map:checkEntity(x, y, game.level.map.TERRAIN, "block_move") then return nil end
 
 		-- select the item
@@ -468,12 +468,22 @@ newTalent{
 			end
 		end
 
+		o.__special_boss_drop = nil  -- lol @ artifact transmutation
+		o.__transmo = nil  -- allow to reautopickup
 		result = sentry:wearObject(o, true, false)
+		if not result then
+			game.logPlayer(self, "Your animated sentry struggles for a moment and then drops to the ground inexplicably.")
+			game.level.map:addObject(x, y, o)
+			return nil
+		end
 		if o.archery then
 			local qo = nil
-			if o.archery == "bow" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="arrow"}, nil, true)
-			elseif o.archery == "sling" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="shot"}, nil, true)
+			local level = o.material_level or 1
+			local filter = {type="ammo", ignore_material_restriction=true, special = function(e) return not e.unique and e.material_level == level end}
+			if o.archery == "bow" then filter.subtype = "arrow"
+			elseif o.archery == "sling" then filter.subtype = "shot"
 			end
+			qo = game.zone:makeEntity(game.level, "object", filter, nil, true)
 			qo.no_drop = true
 			if qo then sentry:wearObject(qo, true, false) end
 		end
