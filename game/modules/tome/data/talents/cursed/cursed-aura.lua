@@ -469,25 +469,53 @@ newTalent{
 		end
 
 		o.__special_boss_drop = nil  -- lol @ artifact transmutation
-		o.__transmo = nil  -- allow to reautopickup
+		o.auto_pickup = true  -- allow to reautopickup
 		result = sentry:wearObject(o, true, false)
 		if not result then
 			game.logPlayer(self, "Your animated sentry struggles for a moment and then drops to the ground inexplicably.")
 			game.level.map:addObject(x, y, o)
 			return nil
 		end
+		local qo = nil
 		if o.archery then
-			local qo = nil
 			local level = o.material_level or 1
-			local filter = {type="ammo", ignore_material_restriction=true, special = function(e) return not e.unique and e.material_level == level end}
+			-- Trying to replicate the ego pattern on the weapon. Kinky.
+			local egos = o.egos_number or (o.ego_list and #o.ego_list) or (e.egoed and 1) or 0
+			local double_greater = (o.unique and egos == 0) or o.greater_ego > 1  -- artifact or purple
+			local greater_normal = (o.unique and egos > 2) or o.greater_ego == 1 and egos > 1 -- randart or blue
+			local greater = (o.unique and egos > 0) or o.greater_ego == 1 and egos == 1  -- rare or blue
+			local double_ego = not o.unique and not o.greater_ego and egos > 1
+			local ego = not o.unique and not o.greater_ego and egos == 1
+			game.log("filter %s %s %s %s %s", double_greater, greater_normal, greater, double_ego, ego)
+			local filter = {type="ammo", ignore_material_restriction=true, tome={double_greater=double_greater and 1, greater_normal=greater_normal and 1,
+			greater = greater and 1, double_ego = double_ego and 1, ego = ego and 1}, special = function(e) return not e.unique and e.material_level == level end}
 			if o.archery == "bow" then filter.subtype = "arrow"
 			elseif o.archery == "sling" then filter.subtype = "shot"
 			end
 			qo = game.zone:makeEntity(game.level, "object", filter, nil, true)
-			qo.no_drop = true
-			if qo then sentry:wearObject(qo, true, false) end
+			if qo then qo.no_drop = true sentry:wearObject(qo, true, false) end
 		end
 
+
+		-- level stats up for MAXIMUM DAMAGE
+		local stats = sentry.unused_stats
+		local use_stats = {}
+		local total = 0
+		local dammod = sentry:getDammod(o.combat.dammod or {})
+		if qo then
+			for stat, mod in pairs(sentry:getDammod(qo.combat.dammod or {})) do
+				dammod[stat] = (dammod[stat] or 0) + mod
+			end
+		end
+		dammod.str = (dammod.str or 0) + 1  -- physical power
+		for stat, mod in pairs(dammod) do total = total + mod end
+		for stat, mod in pairs(dammod) do
+			local inc = math.floor(mod * stats / total)
+			sentry:incStat(stat, inc)
+			sentry.unused_stats = sentry.unused_stats - inc
+		end
+		-- put the rest into Con
+		sentry:incStat("con", sentry.unused_stats)
 
 		game.zone:addEntity(game.level, sentry, "actor", x, y)
 
