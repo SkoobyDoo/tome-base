@@ -418,9 +418,9 @@ newTalent{
 			if not self:knowTalent(self.T_CHOOSE_CURSED_SENTRY) then
 				self:learnTalent(self.T_CHOOSE_CURSED_SENTRY, true, nil, {no_unlearn=true})
 			end
-			t = self:getTalentFromId(self.T_CHOOSE_CURSED_SENTRY)
+			local ct = self:getTalentFromId(self.T_CHOOSE_CURSED_SENTRY)
 			-- xx HACK cannot forceUse a talent that shows a dialog
-			local ret = t.action(self, t)
+			local ret = ct.action(self, ct)
 			if not ret then return end
 		end
 		local o, item = self:findInInventoryByObject(inven, self.cursed_sentry)
