@@ -581,13 +581,14 @@ function _M:getTextualDesc(compare_with, use_actor)
 	-- included - if we should include the value in the present total.
 	-- total_call - function to call on the actor to get the current total
 	local compare_scaled = function(item1, items, infield, change_field, results, outformat, text, included, mod, isinversed, isdiffinversed, add_table)
-		local out = function(base_change, unworn_base)
-			local from, to = 0, base_change
-			if unworn_base then
-				from = from - unworn_base
-				to = to - unworn_base
+		local out = function(base_change, base_change2)
+			local unworn_base = (item1.wielded and table.get(item1, infield, change_field)) or table.get(items, 1, infield, change_field)  -- ugly
+			unworn_base = unworn_base or 0
+			local scale_change = use_actor:getAttrChange(change_field, -unworn_base, base_change - unworn_base, unpack(results))
+			if base_change2 then
+				scale_change = scale_change - use_actor:getAttrChange(change_field, -unworn_base, base_change2 - unworn_base, unpack(results))
+				base_change = base_change - base_change2
 			end
-			local scale_change = use_actor:getAttrChange(change_field, from, to, unpack(results))
 			return outformat:format(base_change, scale_change)
 		end
 		return compare_fields(item1, items, infield, change_field, out, text, mod, isinversed, isdiffinversed, add_table)

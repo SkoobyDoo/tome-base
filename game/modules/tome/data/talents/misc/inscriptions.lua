@@ -388,9 +388,9 @@ newInscription{
 		self:teleportRandom(self.x, self.y, data.range + data.inc_stat)
 		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
 		self:setEffect(self.EFF_OUT_OF_PHASE, data.dur or 3, {
-			defense=(data.power or data.range) + data.inc_stat * 3 + self:attr("defense_on_teleport") or 0,
-			resists=(data.power or data.range) + data.inc_stat * 3 + self:attr("resist_all_on_teleport") or 0,
-			effect_reduction=(data.power or data.range) + data.inc_stat * 3 + self:attr("effect_reduction_on_teleport") or 0,
+			defense=(data.power or data.range) + data.inc_stat * 3 + (self:attr("defense_on_teleport") or 0),
+			resists=(data.power or data.range) + data.inc_stat * 3 + (self:attr("resist_all_on_teleport") or 0),
+			effect_reduction=(data.power or data.range) + data.inc_stat * 3 + (self:attr("effect_reduction_on_teleport") or 0),
 		})
 		return true
 	end,
