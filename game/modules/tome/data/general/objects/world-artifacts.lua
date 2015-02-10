@@ -3082,6 +3082,7 @@ newEntity{ base = "BASE_LONGSWORD", define_as="CORPUS",
 				},
 				resolvers.sustains_at_birth(),
 				faction = who.faction,
+				summoner = who, summoner_gain_exp=true,
 			}
 
 			m:resolve()
