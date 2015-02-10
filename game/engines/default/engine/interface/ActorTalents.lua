@@ -965,7 +965,7 @@ function _M:talentDialog(d)
 	dialog_returns_list[#dialog_returns_list+1] = d
 
 	local co = coroutine.running()
-	d.unload = function(self)
+	d.unload = function(dialog)
 		local ok, err = coroutine.resume(co, dialog_returns[d])
 		if not ok and err then
 			print(debug.traceback(co))
