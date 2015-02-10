@@ -66,6 +66,7 @@ newChat{ id="reward",
 				game.logPlayer(player, "Melinda's father gives you: %s", ro:getName{do_color=true})
 				game.zone:addEntity(game.level, ro, "object")
 				player:addObject(player:getInven("INVEN"), ro)
+				game._chronoworlds = nil
 			end
 			player:grantQuest("love-melinda")
 			ql = player:hasQuest("love-melinda")
@@ -191,6 +192,5 @@ Shhh you dummy, I thought we were past such silliness, I will come, both for my 
 	}
 }
 
-end
 
 return "welcome"
