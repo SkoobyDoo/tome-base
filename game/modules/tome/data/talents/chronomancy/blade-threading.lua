@@ -43,8 +43,9 @@ newTalent{
 		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		if not target then
 			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
@@ -167,8 +168,9 @@ newTalent{
 		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
 
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		if not target then
 			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
 			return nil
 		end
