@@ -976,7 +976,7 @@ function _M:restCheck()
 		-- Check for detrimental effects
 		for id, _ in pairs(self.tmp) do
 			local def = self.tempeffect_def[id]
-			if def.status == "detrimental" and (def.decrease or 1) > 0 then
+			if def.type ~= "other" and def.status == "detrimental" and (def.decrease or 1) > 0 then
 				return true
 			end
 		end
