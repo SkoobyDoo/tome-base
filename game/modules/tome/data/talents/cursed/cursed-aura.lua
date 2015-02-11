@@ -162,15 +162,14 @@ newTalent{
 			if choose then
 				Dialog:yesnoLongPopup(
 					"Cursed Fate",
-					("The %s lying nearby catches your attention. What draws you to it is not the thing itself, but something burning inside you. You feel contempt for it and all worldly things. This feeling is not new but the power of it overwhelms you. You reach out to touch the object, to curse it, to defile it. And you notice it begin to change. The colors of it begin to fade and are replaced with an insatiable hate. For a moment you hesistate. You know you must choose to resist this manifestation of your curse now and forever, or fall further into your madness."):format(item.name),
+					("The %s lying nearby catches your attention. What draws you to it is not the thing itself, but something burning inside you. You feel contempt for it and all worldly things. This feeling is not new but the power of it overwhelms you. You reach out to touch the object, to curse it, to defile it. And you notice it begin to change. The colors of it begin to fade and are replaced with an insatiable hate. For a moment you hesitate. You know you must choose to resist this manifestation of your curse now and forever, or fall further into your madness."):format(item.name),
 					300,
 					function(ret)
 						if ret then
-							Dialog:simpleLongPopup("Cursed Fate", (" The %s lies defiled at your feet. An aura of hatred surrounds you and you now feel truly cursed. You have gained the Cursed Aura talent tree and 1 point in Defiling Touch, but at the cost of 2 Willpower."):format(item.name), 300)
+							Dialog:simpleLongPopup("Cursed Fate", ("The %s lies defiled at your feet. An aura of hatred surrounds you and you now feel truly cursed. You have gained the Cursed Aura talent tree and 1 point in Defiling Touch, but at the cost of 2 Willpower."):format(item.name), 300)
 							self:learnTalentType("cursed/cursed-aura", true)
 							self:learnTalent(self.T_DEFILING_TOUCH, true, 1, {no_unlearn=true})
-							self.inc_stats[self.STAT_WIL] = self.inc_stats[self.STAT_WIL] - 2
-							self:onStatChange(self.STAT_WIL, -2)
+							self:incIncStat(Stats.STAT_WIL, -2)
 							t.curseItem(self, t, item)
 							t.curseInventory(self, t)
 							t.curseFloor(self, t, self.x, self.y)
