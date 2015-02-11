@@ -518,7 +518,6 @@ newTalent{
 			local greater = (o.unique and egos > 0) or o.greater_ego == 1 and egos == 1  -- rare or blue
 			local double_ego = not o.unique and not o.greater_ego and egos > 1
 			local ego = not o.unique and not o.greater_ego and egos == 1
-			game.log("filter %s %s %s %s %s", double_greater, greater_normal, greater, double_ego, ego)
 			local filter = {type="ammo", ignore_material_restriction=true, tome={double_greater=double_greater and 1, greater_normal=greater_normal and 1,
 			greater = greater and 1, double_ego = double_ego and 1, ego = ego and 1}, special = function(e) return not e.unique and e.material_level == level end}
 			if o.archery == "bow" then filter.subtype = "arrow"
