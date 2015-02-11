@@ -219,6 +219,7 @@ newTalent{
 			5, nil,
 			{type="icestorm", only_one=true},
 			function(e)
+				if e.src.dead then return end
 				e.x = e.src.x
 				e.y = e.src.y
 				return true

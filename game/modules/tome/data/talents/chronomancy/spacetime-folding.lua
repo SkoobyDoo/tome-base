@@ -254,7 +254,7 @@ newTalent{
 	tactical = { DISABLE = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	requires_target = true,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 30, 10, 20) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,

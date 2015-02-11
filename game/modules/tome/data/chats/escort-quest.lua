@@ -162,11 +162,11 @@ local reward_types = {
 	},
 	temporal = {
 		types = {
-			["chronomancy/spacetime-weaving"] = 0.8,
+			["chronomancy/chronomancy"] = 0.8,
 		},
 		talents = {
-			[Talents.T_DIMENSIONAL_STEP] = 1,
-			[Talents.T_WORMHOLE] = 1,
+			[Talents.T_PRECOGNITION] = 1,
+			[Talents.T_FORESIGHT] = 1,
 		},										
 		stats = {
 			[Stats.STAT_MAG] = 2,
