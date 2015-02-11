@@ -100,7 +100,7 @@ newTalent{
 	fat_red = function(self, t)
 		return math.floor(self:combatTalentMindDamage(t, 2, 10))
 	end,
-	reshape = function(self, t, o, in_dialog)
+	reshape = function(self, t, o, vocal)
 		local Entity = require("engine.Entity")
 		if o.combat then
 			local atk_boost = t.boost(self, t)
@@ -138,12 +138,12 @@ newTalent{
 					old_atk = atk_boost, old_dam = dam_boost, orig_atk = o.combat.atk, orig_dam = o.combat.dam,  -- Easier this way
 					fake_ego = true, unvault_ego = true,
 				}
-				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
+				if vocal then game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true}) end
 				game.zone:applyEgo(o, new_ego, "object")
-				if in_dialog then self:talentDialogReturn(true) end
+				return true
 			else
 				if old_ego then game.zone:applyEgo(o, old_ego, "object") end -- nothing happened
-				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
+				if vocal then game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true}) end
 			end
 		else
 			local armour = t.arm_boost(self, t)
@@ -185,7 +185,7 @@ newTalent{
 				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
 				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
 				game.zone:applyEgo(o, new_ego, "object")
-				if in_dialog then self:talentDialogReturn(true) end
+				return true
 			else
 				game.zone:applyEgo(o, old_ego, "object")
 				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
@@ -198,7 +198,7 @@ newTalent{
 				return not o.quest and (o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" )) and not o.fully_reshaped --Exclude fully reshaped?
 			end
 			, function(o, item)
-			t.reshape(self, t, o, true)
+			self:talentDialogReturn(t.reshape(self, t, o, true))
 		end))
 		if not ret then return nil end
 		return true
@@ -210,7 +210,7 @@ newTalent{
 		return ([[Manipulate forces on the molecular level to realign, rebalance, and hone a weapon, set of body armor, or a shield.  (Mindstars resist being adjusted because they are already in an ideal natural state.)
 		This permanently increases the Accuracy and damage of any weapon by %d or increases the armour rating of any piece of Armour by %d, while reducing its fatigue rating by %d.
 		The effects increase with your Mindpower and multiple uses on an item only increase the effect if your skill has improved.
-		These bonusses are automatically updated on equipped items when you level up.]]):
+		These bonuses are automatically updated on equipped items when you level up.]]):
 		format(weapon_boost, arm, fat)
 	end,
 }
