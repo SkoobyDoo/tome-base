@@ -210,7 +210,7 @@ newTalent{
 		return ([[Manipulate forces on the molecular level to realign, rebalance, and hone a weapon, set of body armor, or a shield.  (Mindstars resist being adjusted because they are already in an ideal natural state.)
 		This permanently increases the Accuracy and damage of any weapon by %d or increases the armour rating of any piece of Armour by %d, while reducing its fatigue rating by %d.
 		The effects increase with your Mindpower and multiple uses on an item only increase the effect if your skill has improved.
-		These bonuses are automatically updated on equipped items when you level up.]]):
+		These bonuses are automatically updated on equipped items when you assign stat or talent points.]]):
 		format(weapon_boost, arm, fat)
 	end,
 }
