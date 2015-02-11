@@ -357,8 +357,9 @@ newTalent{
 	points = 1,
 	no_energy = true,
 	action = function(self, t)
+		local ct = self:getTalentFromId(self.T_CURSED_SENTRY)
 		local inven = self:getInven("INVEN")
-		local d = self:showInventory("Which weapon will be your sentry?", inven, function(o) return o.type == "weapon" end, nil)
+		local d = self:showInventory("Which weapon will be your sentry?", inven, function(o) return ct.filterObject(self, ct, o) end, nil)
 		d.action = function(o, item) self:talentDialogReturn(true, o, item) return false end
 		local ret, o, item = self:talentDialog(d)
 		if not ret then return nil end
@@ -378,6 +379,11 @@ newTalent{
 	no_npc_use = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16))	end,
 	getAttackSpeed = function(self, t) return self:combatTalentScale(t, 0.6, 1.4) end,
+	filterObject = function(self, t, o)
+		local tl = self:getTalentLevel(t)
+		local power = (tl >= 5 and 3) or (tl >= 3 and 2) or 1
+		return o.type == "weapon" and o:getPowerRank() <= power
+	end,
 	target = function(self, t) return {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t} end,
 	autolearn_talent = Talents.T_CHOOSE_CURSED_SENTRY,
 	action = function(self, t)
@@ -402,7 +408,7 @@ newTalent{
 		if game.level.map(x, y, Map.ACTOR) or game.level.map:checkEntity(x, y, game.level.map.TERRAIN, "block_move") then return nil end
 
 		-- select the item
-		if not self.cursed_sentry or not self:findInInventoryByObject(inven, self.cursed_sentry) then
+		if not self.cursed_sentry or not self:findInInventoryByObject(inven, self.cursed_sentry) or not t.filterObject(self, t, self.cursed_sentry) then
 			-- save compat
 			if not self:knowTalent(self.T_CHOOSE_CURSED_SENTRY) then
 				self:checkPool(t.id, self.T_CHOOSE_CURSED_SENTRY)
@@ -570,6 +576,8 @@ newTalent{
 
 		return ([[Instill a part of your living curse into a weapon in your inventory, and toss it nearby. This nearly impervious sentry will attack all nearby enemies for %d turns. When the curse ends, the weapon will drop to the ground.
 			Cursed Sentry attack speed (currently %d%%) will improve with talent level.
-			When you first select a weapon, it will be remembered and used as long as it's in your inventory. Use Choose Cursed Sentry talent to alter your selection.]]):format(duration, attackSpeed)
+			When you first select a weapon, it will be remembered and used as long as it's in your inventory. Use Choose Cursed Sentry talent to alter your selection.
+			At talent level 3, you get the ability to afflict powerful mundane objects (greater egos).
+			At talent level 5, you can corrupt artifacts.]]):format(duration, attackSpeed)
 	end,
 }
