@@ -379,18 +379,7 @@ newTalent{
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16))	end,
 	getAttackSpeed = function(self, t) return self:combatTalentScale(t, 0.6, 1.4) end,
 	target = function(self, t) return {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t} end,
-	on_learn = function(self, t)
-		local lev = self:getTalentLevelRaw(t)
-		if lev == 1 then
-			self:learnTalent(self.T_CHOOSE_CURSED_SENTRY, true, nil, {no_unlearn=true})
-		end
-	end,
-	on_unlearn = function(self, t)
-		local lev = self:getTalentLevelRaw(t)
-		if lev == 0 then
-			self:unlearnTalent(self.T_CHOOSE_CURSED_SENTRY)
-		end
-	end,
+	autolearn_talent = Talents.T_CHOOSE_CURSED_SENTRY,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
 		local found = false
@@ -416,7 +405,7 @@ newTalent{
 		if not self.cursed_sentry or not self:findInInventoryByObject(inven, self.cursed_sentry) then
 			-- save compat
 			if not self:knowTalent(self.T_CHOOSE_CURSED_SENTRY) then
-				self:learnTalent(self.T_CHOOSE_CURSED_SENTRY, true, nil, {no_unlearn=true})
+				self:checkPool(t.id, self.T_CHOOSE_CURSED_SENTRY)
 			end
 			local ct = self:getTalentFromId(self.T_CHOOSE_CURSED_SENTRY)
 			-- xx HACK cannot forceUse a talent that shows a dialog
