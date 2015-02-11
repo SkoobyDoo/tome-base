@@ -242,13 +242,11 @@ newTalent{
 
 		bt.all = nil
 
-		local n = 0
-		for t, _ in pairs(bt) do n = n + 1 end
-
-		if n < 1 then return "(error 2)" end
+		local n = #bt
+		if n < 1 then return bt, "(error 2)" end
 		local e_string = ""
 		if n == 1 then
-			e_string = DamageType.dam_def[next(bt)].name
+			e_string = DamageType.dam_def[bt[1]].name
 		else
 			local list = table.keys(bt)
 			for i = 1, #list do if DamageType.dam_def[list[i]] then
