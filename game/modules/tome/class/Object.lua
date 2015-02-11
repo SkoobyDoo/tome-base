@@ -665,11 +665,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 	local desc_combat = function(combat, compare_with, field, add_table, is_fake_add)
 		add_table = add_table or {}
 		add_table.dammod = add_table.dammod or {}
-		combat = combat[field] or {}
+		combat = table.clone(combat[field] or {})
 		compare_with = compare_with or {}
 		local dm = {}
-		local dammod = {}
-		if next(combat.dammod or {}) then dammod = use_actor:getDammod(combat) end
+		combat.dammod = table.mergeAdd(table.clone(combat.dammod or {}), add_table.dammod)
+		local dammod = use_actor:getDammod(combat)
 		for stat, i in pairs(dammod) do
 			local name = Stats.stats_def[stat].short_name:capitalize()
 			if use_actor:knowTalent(use_actor.T_STRENGTH_OF_PURPOSE) then
@@ -678,7 +678,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			if self.subtype == "dagger" and use_actor:knowTalent(use_actor.T_LETHALITY) then
 				if name == "Str" then name = "Cun" end
 			end
-			dm[#dm+1] = ("%d%% %s"):format((i + (add_table.dammod[stat] or 0)) * 100, name)
+			dm[#dm+1] = ("%d%% %s"):format(i * 100, name)
 		end
 		if #dm > 0 or combat.dam then
 			local diff_count = 0
