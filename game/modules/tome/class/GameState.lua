@@ -1508,6 +1508,10 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 						if o then
 --							print("[entityFilterPost]: Generated random object for", tostring(b.name))
 							o.unique, o.randart, o.rare = nil, nil, true
+							if o.__original then
+								local e = o.__original
+								e.unique, e.randart, e.rare = nil, nil, true
+							end
 							b:addObject(b.INVEN_INVEN, o)
 							game.zone:addEntity(game.level, o, "object")
 						else
