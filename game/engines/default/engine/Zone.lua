@@ -498,6 +498,7 @@ function _M:applyEgo(e, ego, type, no_name_change)
 	e.name = newname
 	if not ego.fake_ego then
 		e.egoed = true
+		e.egos_number = (e.egos_number or 0) + 1
 	end
 	e.ego_list = e.ego_list or {}
 	e.ego_list[#e.ego_list + 1] = {orig_ego, type, no_name_change}
