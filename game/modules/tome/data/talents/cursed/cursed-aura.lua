@@ -473,9 +473,8 @@ newTalent{
 			summoner_gain_exp=true,
 			summon_time = t.getDuration(self, t),
 			summon_quiet = true,
-
 			on_die = function(self, who)
-				game.logSeen(self, "#F53CBE#%s crumbles to dust.", self.name:capitalize())
+				game.logSeen(self, "#F53CBE#%s drops to the ground.", self.name:capitalize())
 			end,
 		}
 
