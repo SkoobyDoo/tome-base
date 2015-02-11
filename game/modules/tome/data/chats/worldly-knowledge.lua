@@ -28,7 +28,7 @@ local reward = {
 		["spell/stone-alchemy"] = true,
 		["celestial/chants"] = true,
 		["celestial/light"] = true,
-		["chronomancy/spacetime-weaving"] = true,
+		["chronomancy/chronomancy"] = true,
 	},
 	antimagic = {
 		["wild-gift/call"] = true,

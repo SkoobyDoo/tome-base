@@ -180,8 +180,8 @@ newTalent{
 				power = power, dest_power = dest_power,
 				summoner = self, beneficial_trap = true, faction=self.faction,
 				triggered = function(self, x, y, who)
-					local hit = who == self.summoner or who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
-					if hit then
+					local hit = who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
+					if hit or (who.reactionToward and who:reactionToward(self) >= 0) then
 						game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 						if not who:teleportRandom(self.dest_x, self.dest_y, self.radius, 1) then
 							game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())

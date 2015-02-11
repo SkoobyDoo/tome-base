@@ -324,8 +324,10 @@ newTalent{
 		else
 			-- Melee attack
 			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-			local x, y, target = self:getTarget(tg)
-			if not target or not self:canProject(tg, x, y) then return nil end
+			local _, x, y = self:canProject(tg, self:getTarget(tg))
+			local target = game.level.map(x, y, game.level.map.ACTOR)
+			if not target then return nil end
+			
 			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 			if hitted then
