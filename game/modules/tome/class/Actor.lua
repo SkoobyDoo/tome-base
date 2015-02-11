@@ -1549,7 +1549,7 @@ function _M:reactionToward(target, no_reflection)
 
 	local v = engine.Actor.reactionToward(rsrc, rtarget)
 
-	if self.reaction_actor and self.reaction_actor[target.unique or target.name] then v = v + self.reaction_actor[target.unique or target.name] end
+	if rsrc.reaction_actor and rsrc.reaction_actor[rtarget.unique or rtarget.name] then v = v + rsrc.reaction_actor[rtarget.unique or rtarget.name] end
 
 	-- Take the lowest of the two just in case
 	if not no_reflection and target.reactionToward then v = math.min(v, target:reactionToward(self, true)) end
