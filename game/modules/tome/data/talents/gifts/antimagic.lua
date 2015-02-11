@@ -56,6 +56,7 @@ newTalent{
 	tactical = { DISABLE = { silence = 4 } },
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 5, 11.5)) end,
 	getduration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3.5, 5.6)) end, -- Limit <10
+	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
