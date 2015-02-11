@@ -189,7 +189,7 @@ newTalent{
 		m.on_die = function(self)
 			local tg = {type="ball", radius=10}
 			self:project(tg, self.x, self.y, function(tx, ty)
-				local target = game.level.map(tx, ty, Map.ACTOR)
+				local target = game.level.map(tx, ty, engine.Map.ACTOR)
 				if target and target.ai_target.actor == self then
 					target.ai_target.actor = self.summoner
 				end
