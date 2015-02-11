@@ -730,8 +730,10 @@ function _M:suffocate(value, src, death_msg)
 	local dead, affected = mod.class.Actor.suffocate(self, value, src, death_msg)
 	if affected and value > 0 and self.runStop then
 		-- only stop autoexplore when air is less than 75% of max.
-		if self.air < 0.75 * self.max_air then self:runStop("suffocating") end
-		self:restStop("suffocating")
+		if self.air < 0.75 * self.max_air and self.air < 100 then
+			self:runStop("suffocating")
+			self:restStop("suffocating")
+		end
 	end
 	return dead, affected
 end
