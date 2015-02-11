@@ -499,7 +499,7 @@ newTalent{
 		o.on_pickup = function(self, who)
 			self.auto_pickup = self.old_auto_pickup
 			self.on_pickup = self.old_on_pickup
-			self.old_on_pickup(self, who)
+			if self.old_on_pickup then self.old_on_pickup(self, who) end
 		end
 		result = sentry:wearObject(o, true, false)
 		if not result then
