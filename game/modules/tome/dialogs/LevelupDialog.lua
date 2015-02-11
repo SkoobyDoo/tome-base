@@ -199,10 +199,10 @@ function _M:finish()
 				local o = inven[item]
 				if o.been_reshaped then
 					if o.wielded then
-						o = self.actor:takeoffObject(inven, item)
+						self.actor:onTakeoff(o, inven_id, true)
 						local t = self.actor:getTalentFromId(self.actor["T_RESHAPE_WEAPON/ARMOUR"])
 						t.reshape(self.actor, t, o, false)
-						self.actor:addObject(inven, o)
+						self.actor:onWear(o, inven_id, true)
 						--self.actor:wearObject(o, true, true)
 					end
 				end

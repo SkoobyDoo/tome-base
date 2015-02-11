@@ -978,5 +978,5 @@ function _M:talentDialog(d)
 	dialog_returns[d] = nil
 	table.removeFromList(dialog_returns_list, d)
 
-	return unpack(ret)
+	return unpack(ret or {})
 end

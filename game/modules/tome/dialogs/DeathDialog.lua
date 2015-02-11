@@ -165,10 +165,13 @@ function _M:eidolonPlane()
 			game.log("#LIGHT_RED#You have %s left.", (self.actor:attr("easy_mode_lifes") and self.actor:attr("easy_mode_lifes").." life(s)") or "no more lives")
 		end
 
+		local is_exploration = game.permadeath == game.PERMADEATH_INFINITE
 		self:cleanActor(self.actor)
 		self:resurrectBasic(self.actor)
 		for uid, e in pairs(game.level.entities) do
-			self:restoreResources(e)
+			if not is_exploration or game.party:hasMember(e) then
+				self:restoreResources(e)
+			end
 		end
 
 		local oldzone = game.zone
