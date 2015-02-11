@@ -1456,6 +1456,7 @@ function _M:teleportRandom(x, y, dist, min_dist)
 	if dist == 0 then
 		x, y = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})	
 	end
+	if not x or not y then return end
 	
 	-- Store our old x, y to pass to our callback
 	local ox, oy = self.x, self.y
