@@ -227,6 +227,7 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 		clip_y_end = 0
 
 		local item_h = item.is_separator and (self.fh - self.sep.h) or item.h
+		local item_skip = item.is_separator and (self.fh - self.sep.h) or self.font_h
 		-- if item is within visible area bounds
 		if total_h + item_h > loffset_y and total_h < loffset_y + self.dest_area.h then
 			-- if it started before visible area then compute its top clip
@@ -250,8 +251,8 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 			-- add only visible part of item
 			current_y = current_y + item_h - clip_y_start
 		end
-		-- add full size of item
-		total_h = total_h + item_h
+		-- add line skip of item
+		total_h = total_h + item_skip
 		-- if we are too deep then end this
 		if total_h > loffset_y + self.dest_area.h then break end
 	end
