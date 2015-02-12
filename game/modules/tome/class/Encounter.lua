@@ -85,8 +85,11 @@ end
 function _M:findSpot(who, what)
 	if not who then return end
 	what = what or "block_move"
+	-- check the original spot first, dammit, the world map does a lot to ensure apprentice is in the right place
+	local check_spots = {{who.x, who.y}}
+	table.append(check_spots, table.values(util.adjacentCoords(who.x, who.y)))
 	local spots = {}
-	for _, coord in pairs(util.adjacentCoords(who.x, who.y)) do if game.level.map:isBound(coord[1], coord[2]) then
+	for _, coord in ipairs(check_spots) do if game.level.map:isBound(coord[1], coord[2]) then
 		if not game.level.map:checkAllEntities(coord[1], coord[2], what, who) and game.level.map:checkAllEntities(coord[1], coord[2], "can_encounter", who) and not game.level.map:checkAllEntities(coord[1], coord[2], "change_level") then
 			spots[#spots+1] = {coord[1], coord[2]}
 		end
