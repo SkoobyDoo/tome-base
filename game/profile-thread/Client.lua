@@ -25,6 +25,8 @@ module(..., package.seeall, class.make)
 
 local debug = false
 
+local metaport = 2240
+local profilehost = "profiles.te4.org"
 local mport = debug and 2259 or 2257
 local pport = debug and 2260 or 2258
 
@@ -35,6 +37,26 @@ end
 
 function _M:connected()
 	if self.sock then return true end
+
+	if not debug then
+		local metasock = socket.connect("profiles.te4.org", metaport)
+		if metasock then
+			metasock:settimeout(2)
+			local line = metasock:receive("*l")
+			if line then
+				local _, _, host, m, p = line:find("^([a-z0-9A-Z.]+):([0-9]+):([0-9]+)$")
+				if host and tonumber(m) and tonumber(p) then
+					profilehost = host
+					mport = m
+					pport = p
+					print("[PROFILE] Got metaserver infos")
+				end
+			end
+			metasock:close()
+		end
+	end
+
+	print("[PROFILE] Thread connecting to "..tostring(profilehost).." on ports ", mport, pport)
 	self.sock = socket.connect("profiles.te4.org", mport)
 	if not self.sock then self:disconnect() return false end
 --	self.sock:settimeout(10)
