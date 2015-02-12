@@ -30,7 +30,7 @@ uberTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[Your body hardens and recovers quickly. When pushed below 30%% life, you are healed for 40%% of your total life.]])
+		return ([[Your body hardens and recovers quickly. When pushed below 30%% life, you instantly restore 40%% of your total life.]])
 		:format()
 	end,
 }
