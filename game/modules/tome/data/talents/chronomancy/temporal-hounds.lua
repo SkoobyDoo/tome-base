@@ -106,6 +106,10 @@ summonTemporalHound = function(self, t)
 				self:setTarget(nil)
 			end
 		end
+		-- clean up
+		if self.summoner.dead then
+			self:die(self)
+		end
 	end
 	-- Unravel?
 	m.on_takehit = function(self, value, src)

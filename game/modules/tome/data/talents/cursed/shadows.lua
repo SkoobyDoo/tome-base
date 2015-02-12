@@ -315,6 +315,12 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 
 			return mod.class.Actor.onTakeHit(self, value, src)
 		end,
+		on_act = function(self)
+			-- clean up
+			if self.summoner.dead then
+				self:die(self)
+			end
+		end
 	}
 	self:attr("summoned_times", 1)
 	return npc
