@@ -213,7 +213,7 @@ newTalent{
 			-- 25% bonus damage per target beyond the first
 			local dam = self:spellCrit(t.getDamageAoE(self, t))
 			if #tgts > 0 then
-				dam = dam + math.min(dam, dam*(#tgts-1)/4)
+				dam = dam + math.min(dam/2, dam*(#tgts-1)/8)
 			end
 			
 			-- Project our damage last based on number of targets hit
@@ -252,7 +252,7 @@ newTalent{
 		Each target moved beyond the first increases the damage %0.2f (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The additional damage scales with your Spellpower.]])
-		:format(damage, radius, damDesc(self, DamageType.PHYSICAL, aoe), damDesc(self, DamageType.PHYSICAL, aoe/4), damDesc(self, DamageType.PHYSICAL, aoe))
+		:format(damage, radius, damDesc(self, DamageType.PHYSICAL, aoe), damDesc(self, DamageType.PHYSICAL, aoe/8), damDesc(self, DamageType.PHYSICAL, aoe/2))
 	end
 }
 
