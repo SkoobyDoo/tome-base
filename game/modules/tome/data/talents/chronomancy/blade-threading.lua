@@ -251,7 +251,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll teleport next to up to 2 random enemies, attacking for %d%% damage.
+		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll teleport next to up to two random enemies, attacking for %d%% damage.
 		Blink Blade can hit the same target multiple times.]])
 		:format(damage, damage)
 	end
