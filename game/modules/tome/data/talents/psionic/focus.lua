@@ -74,6 +74,7 @@ newTalent{
 	psi = 20,
 	tactical = { ATTACK = { FIRE = 2 } },
 	range = 0,
+	requires_target = true,
 	radius = function(self,t) return math.floor(self:combatTalentScale(t, 4, 6)) end,
 	getDamage = function (self, t)
 		return self:combatTalentMindDamage(t, 20, 450)

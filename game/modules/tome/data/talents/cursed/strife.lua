@@ -231,6 +231,7 @@ newTalent{
 	tactical = { CLOSEIN = 2, ATTACK = { PHYSICAL = 0.5 } },
 	requires_target = true,
 	is_melee = true,
+	is_teleport = true,
 	target = function(self, t) return {type="hit", pass_terrain = true, range=self:getTalentRange(t)} end,
 	getDefenseChange = function(self, t)
 		return self:combatTalentStatDamage(t, "str", 20, 50)
@@ -239,26 +240,20 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
+		
+		if not self:teleportRandom(x, y, 0) then game.logSeen(self, "The blindside fizzles!") return true end
 
-		local start = rng.range(0, 8)
-		for i = start, start + 8 do
-			local x = target.x + (i % 3) - 1
-			local y = target.y + math.floor((i % 9) / 3) - 1
-			if game.level.map:isBound(x, y)
-					and self:canMove(x, y)
-					and not game.level.map.attrs(x, y, "no_teleport") then
-				self:move(x, y, true)
-				game:playSoundNear(self, "talents/teleport")
-				local multiplier = self:combatTalentWeaponDamage(t, 0.7, 1.9) * getHateMultiplier(self, 0.3, 1.0, false)
-				self:attackTarget(target, nil, multiplier, true)
-
-				local defenseChange = t.getDefenseChange(self, t)
-				self:setEffect(target.EFF_BLINDSIDE_BONUS, 1, { defenseChange=defenseChange })
-
-				return true
-			end
+		game:playSoundNear(self, "talents/teleport")
+		
+		-- Attack ?
+		if target and target.x and core.fov.distance(self.x, self.y, target.x, target.y) == 1 then
+			local multiplier = self:combatTalentWeaponDamage(t, 0.7, 1.9) * getHateMultiplier(self, 0.3, 1.0, false)
+			
+			self:attackTarget(target, nil, multiplier, true)
+			local defenseChange = t.getDefenseChange(self, t)
+			self:setEffect(target.EFF_BLINDSIDE_BONUS, 1, { defenseChange=defenseChange })
 		end
-
+		
 		return true
 	end,
 	info = function(self, t)
