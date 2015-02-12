@@ -117,10 +117,10 @@ function _M:getUITexture(file)
 	return r
 end
 
-function _M:drawFontLine(font, text, width) -- always draw with white, outputting texture can have it changed
+function _M:drawFontLine(font, text, width, r, g, b, direct_draw)
 	width = width or font:size(text)
-	local tex = font:draw(text, width, 255, 255, 255, true)[1]
-	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h}
+	local tex = font:draw(text, width, r or 255, g or 255, b or 255, true, direct_draw)[1]
+	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h, dduids = tex._dduids}
 	return r
 end
 

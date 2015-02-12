@@ -96,6 +96,6 @@ function _M:display(x, y, nb_keyframes)
 	if item then
 		local cy = (self.c_list.fh - self.c_list.font_h) / 2
 		if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, item._tex_color[1], item._tex_color[2], item._tex_color[3], 1)
+		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, 1, 1, 1, 1)
 	end
 end
