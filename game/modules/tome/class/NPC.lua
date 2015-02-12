@@ -460,7 +460,7 @@ function _M:addedToLevel(level, x, y)
 				self:learnTalent(tid, true, math.floor(lev / 2))
 			end
 			-- Give unrand bosses extra classes
-			if not self.randboss and self.rank >= 3.5 then
+			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
 				local data = {}
 				if self.rank == 3.5 then data = {nb_classes=1}
 				elseif self.rank == 4 then data = {nb_classes=1}
@@ -483,7 +483,7 @@ function _M:addedToLevel(level, x, y)
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.ceil(lev * 1.7))
 			end
-			if not self.randboss and self.rank >= 3.5 then
+			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
 				local data = {}
 				if self.rank == 3.5 then data = {nb_classes=1}
 				elseif self.rank == 4 then data = {nb_classes=2}

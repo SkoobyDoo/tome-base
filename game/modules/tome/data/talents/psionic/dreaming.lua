@@ -168,12 +168,8 @@ newTalent{
 		
 		game.level.map:particleEmitter(x, y, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})
 
-		-- since we're using a precise teleport we'll look for a free grid first
-		local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-		if tx and ty then
-			if not self:teleportRandom(tx, ty, teleport) then
-				game.logSeen(self, "The dream walk fizzles!")
-			end
+		if not self:teleportRandom(x, y, teleport) then
+			game.logSeen(self, "The dream walk fizzles!")
 		end
 
 		game.level.map:particleEmitter(self.x, self.y, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})

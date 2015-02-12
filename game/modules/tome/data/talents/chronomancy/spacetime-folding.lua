@@ -254,7 +254,7 @@ newTalent{
 	tactical = { DISABLE = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	requires_target = true,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 30, 10, 20) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
@@ -278,13 +278,13 @@ newTalent{
 		local tg2 = {type="ball", range=0, radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
 		
 		-- Store the old terrain
-		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
-		if not oe or oe:attr("temporary") then game.logPlayer(self, "You can't place a tether here") return false end
+		local oe = game.level.map(x, y, Map.TERRAIN+1)
+		if (oe and oe:attr("temporary")) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then game.logPlayer(self, "You can't place a tether here") return nil end
 	
 		-- Make our tether
 		local tether = mod.class.Object.new{
-			old_feat = oe, type = oe.type, subtype = oe.subtype,
-			name = "spatial tether", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
+			old_feat = oe, type = "temporal", subtype = "tether",
+			name = "spatial tether", add_mos = {{image="object/temporal_instability.png"}},
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t), 
 			power = power, dest_power = dest_power, chance = chance,
@@ -351,17 +351,21 @@ newTalent{
 				
 				-- End the effect?
 				if self.temporary <= 0 or target.dead or not tether then
-					game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
-					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
+					if self.old_feat then game.level.map(self.x, self.y, engine.Map.TERRAIN+1, self.old_feat)
+					else game.level.map:remove(self.x, self.y, engine.Map.TERRAIN+1) end
+					game.level.map:removeParticleEmitter(self.particles)
+					game.nicer_tiles:updateAround(game.level, self.x, self.y)
 					game.level:removeEntity(self)
 				end
 			end,
 		}
 		
 		-- add our tether to the map
+		local particle = Particles.new("wormhole", 1, {image="shockbolt/terrain/temporal_instability_blue", speed=1})
+		particle.zdepth = 6
+		tether.particles = game.level.map:addParticleEmitter(particle, x, y)
 		game.level:addEntity(tether)
-		game.level.map(x, y, Map.TERRAIN, tether)
-		game.nicer_tiles:updateAround(game.level, x, y)
+		game.level.map(x, y, Map.TERRAIN+1, tether)
 		game.level.map:updateMap(x, y)
 		game:playSoundNear(self, "talents/warp")
 		

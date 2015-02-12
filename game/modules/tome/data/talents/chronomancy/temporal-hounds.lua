@@ -160,7 +160,7 @@ newTalent{
 		return tostring(math.ceil(val)), fnt
 	end,
 	incStats = function(self, t,fake)
-		local mp = self:combatTalentStatDamage(t, "mag", 10, 100) -- Uses magic to avoid Paradox cheese
+		local mp = self:combatTalentStatDamage(t, "mag", 10, 150) -- Uses magic to avoid Paradox cheese
 		return {
 			str=10 + (fake and mp or mp),
 			dex=10 + (fake and mp or mp),

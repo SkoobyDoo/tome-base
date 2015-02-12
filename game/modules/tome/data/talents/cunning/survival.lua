@@ -54,7 +54,7 @@ newTalent{
 --	on_unlearn = function(self, t)
 --	end,
 	info = function(self, t)
-		return ([[Your cunning manipulations allows you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns by %d%%.]]):
+		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns by %d%%.]]):
 		format(t.cdReduc(self:getTalentLevel(t))) --I5
 	end,
 }

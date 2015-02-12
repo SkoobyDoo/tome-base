@@ -730,8 +730,10 @@ function _M:suffocate(value, src, death_msg)
 	local dead, affected = mod.class.Actor.suffocate(self, value, src, death_msg)
 	if affected and value > 0 and self.runStop then
 		-- only stop autoexplore when air is less than 75% of max.
-		if self.air < 0.75 * self.max_air then self:runStop("suffocating") end
-		self:restStop("suffocating")
+		if self.air < 0.75 * self.max_air and self.air < 100 then
+			self:runStop("suffocating")
+			self:restStop("suffocating")
+		end
 	end
 	return dead, affected
 end
@@ -855,7 +857,7 @@ function _M:automaticTalents()
 		local spotted = spotHostiles(self, true)
 		local cd = self:getTalentCooldown(t) or 0
 		local turns_used = util.getval(t.no_energy, self, t)  == true and 0 or 1
-		if cd <= turns_used then
+		if cd <= turns_used and t.mode ~= "sustained" then
 			game.logPlayer(self, "Automatic use of talent %s #DARK_RED#skipped#LAST#: cooldown too low (%d).", t.name, cd)
 		elseif (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
 			if (c == 1) or (c == 2 and #spotted <= 0) or (c == 3 and #spotted > 0) then
@@ -974,7 +976,7 @@ function _M:restCheck()
 		-- Check for detrimental effects
 		for id, _ in pairs(self.tmp) do
 			local def = self.tempeffect_def[id]
-			if def.status == "detrimental" and (def.decrease or 1) > 0 then
+			if def.type ~= "other" and def.status == "detrimental" and (def.decrease or 1) > 0 then
 				return true
 			end
 		end
@@ -1054,6 +1056,7 @@ end
 -- 'ignore_memory' is only used when checking for paths around traps.  This ensures we don't remember items "obj_seen" that we aren't supposed to
 function _M:runCheck(ignore_memory)
 	if game:hasDialogUp(1) then return false, "dialog is displayed" end
+	local is_main_player = self == game:getPlayer(true)
 
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
@@ -1069,10 +1072,11 @@ function _M:runCheck(ignore_memory)
 	local noticed = false
 	self:runScan(function(x, y, what)
 		-- Objects are always interesting, only on curent spot
-		if what == "self" and not game.level.map.attrs(x, y, "obj_seen") then
+		local obj_seen = game.level.map.attrs(x, y, "obj_seen")
+		if what == "self" and obj_seen ~= self and obj_self ~= true then
 			local obj = game.level.map:getObject(x, y, 1)
 			if obj then
-				if not ignore_memory then game.level.map.attrs(x, y, "obj_seen", true) end
+				if not ignore_memory then game.level.map.attrs(x, y, "obj_seen", is_main_player and true or self) end
 				noticed = "object seen"
 				return false, noticed
 			end
@@ -1344,7 +1348,7 @@ function _M:onWear(o, slot, bypass_set)
 		end)
 	end
 
-	if self.hotkey and o:canUseObject() and config.settings.tome.auto_hotkey_object then
+	if self.hotkey and o:canUseObject() and config.settings.tome.auto_hotkey_object and not o.no_auto_hotkey then
 		local position
 		local name = o:getName{no_count=true, force_id=true, no_add_name=true}
 
@@ -1518,3 +1522,5 @@ function _M:attackOrMoveDir(dir)
 	self:moveDir(dir)
 	game_or_player.bump_attack_disabled = tmp
 end
+
+return _M

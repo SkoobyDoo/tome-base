@@ -1292,12 +1292,14 @@ function _M:move(x, y, force)
 		end end
 	end
 
-	-- chooseCursedAuraTree allows you to get the Cursed Aura tree
-	if moved and self.chooseCursedAuraTree then
+	-- knowing Unnatural Body allows you to get the Cursed Aura tree
+	if moved and self:knowTalent(self.T_UNNATURAL_BODY) and not self:knowTalentType("cursed/cursed-aura") and self.chooseCursedAuraTree then
 		if self.player then
 			-- function placed in defiling touch where cursing logic exists
 			local t = self:getTalentFromId(self.T_DEFILING_TOUCH)
-			t.chooseCursedAuraTree(self, t)
+			if t.chooseCursedAuraTree(self, t) then 
+				self.chooseCursedAuraTree = nil
+			end
 		end
 	end
 
@@ -1455,6 +1457,7 @@ function _M:teleportRandom(x, y, dist, min_dist)
 	if dist == 0 then
 		x, y = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})	
 	end
+	if not x or not y then return end
 	
 	-- Store our old x, y to pass to our callback
 	local ox, oy = self.x, self.y
@@ -1548,7 +1551,7 @@ function _M:reactionToward(target, no_reflection)
 
 	local v = engine.Actor.reactionToward(rsrc, rtarget)
 
-	if self.reaction_actor and self.reaction_actor[target.unique or target.name] then v = v + self.reaction_actor[target.unique or target.name] end
+	if rsrc.reaction_actor and rsrc.reaction_actor[rtarget.unique or rtarget.name] then v = v + rsrc.reaction_actor[rtarget.unique or rtarget.name] end
 
 	-- Take the lowest of the two just in case
 	if not no_reflection and target.reactionToward then v = math.min(v, target:reactionToward(self, true)) end
@@ -3457,7 +3460,7 @@ function _M:updateModdableTile()
 
 	if self.shader_auras and next(self.shader_auras) then
 		for _, def in pairs(self.shader_auras) do
-			add[#add+1] = {image_alter="sdm", sdm_double=true, image=base..(self.moddable_tile_base or "base_01.png"), shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1}
+			add[#add+1] = {image_alter="sdm", sdm_double="dynamic", image=base..(self.moddable_tile_base or "base_01.png"), shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1}
 		end
 	end
 
@@ -4182,7 +4185,6 @@ function _M:learnPool(t)
 	-- If we learn an archery talent, also learn to shoot
 	if t.type[1]:find("^technique/archery") then
 		self:checkPool(t.id, self.T_SHOOT)
-		self:checkPool(t.id, self.T_RELOAD)
 	end
 	-- If we learn an unharmed talent, learn to use it too
 	if tt.is_unarmed then
@@ -5359,7 +5361,7 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		if t.sustain_stamina then d:add({"color",0x6f,0xff,0x83}, "Sustain stamina cost: ", {"color",0xff,0xcc,0x80}, ""..(util.getval(t.sustain_stamina, self, t)), true) end
 		if t.sustain_equilibrium then d:add({"color",0x6f,0xff,0x83}, "Sustain equilibrium cost: ", {"color",0x00,0xff,0x74}, ""..(util.getval(t.sustain_equilibrium, self, t)), true) end
 		if t.sustain_vim then d:add({"color",0x6f,0xff,0x83}, "Sustain vim cost: ", {"color",0x88,0x88,0x88}, ""..(util.getval(t.sustain_vim, self, t)), true) end
-		if t.drain_vim then d:add({"color",0x6f,0xff,0x83}, "Drain vim: ", {"color",0x88,0x88,0x88}, "-"..(util.getval(t.drain_vim, self, t)), true) end
+		if t.drain_vim then d:add({"color",0x6f,0xff,0x83}, "Drain vim: ", {"color",0x88,0x88,0x88}, (util.getval(t.drain_vim, self, t)), true) end
 		if t.sustain_positive then d:add({"color",0x6f,0xff,0x83}, "Sustain positive energy cost: ", {"color",255, 215, 0}, ""..(util.getval(t.sustain_positive, self, t)), true) end
 		if t.sustain_negative then d:add({"color",0x6f,0xff,0x83}, "Sustain negative energy cost: ", {"color", 127, 127, 127}, ""..(util.getval(t.sustain_negative, self, t)), true) end
 		if t.sustain_hate then d:add({"color",0x6f,0xff,0x83}, "Sustain hate cost:  ", {"color", 127, 127, 127}, ""..(util.getval(t.sustain_hate, self, t)), true) end
@@ -6041,7 +6043,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 	if e.status == "detrimental" and e.type == "physical" and self:attr("physical_negative_status_effect_immune") and not e.subtype["cross tier"] then
 		p.dur = 0
 	end
-	if e.status == "detrimental" and e.type == "spell" and self:attr("spell_negative_status_effect_immune") and not e.subtype["cross tier"] then
+	if e.status == "detrimental" and e.type == "magical" and self:attr("spell_negative_status_effect_immune") and not e.subtype["cross tier"] then
 		p.dur = 0
 	end
 	if self:attr("status_effect_immune") then
@@ -6271,11 +6273,12 @@ end
 --	@param o = object to wear
 --	@param dst = actor holding object to be worn <self>
 --  @param force_inven = force wear to this inventory
-function _M:doWear(inven, item, o, dst, force_inven)
+--  @param force_item = force wear to this inventory slot #
+function _M:doWear(inven, item, o, dst, force_inven, force_item)
 	if self.no_inventory_access then return end
 	dst = dst or self
 	dst:removeObject(inven, item, true)
-	local ro, rs = self:wearObject(o, true, true, force_inven) -- removed object and remaining stack if any
+	local ro, rs = self:wearObject(o, true, true, force_inven, force_item) -- removed object and remaining stack if any
 	local added, slot
 	if ro then
 		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end

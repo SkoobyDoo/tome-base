@@ -245,9 +245,9 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 					-- terminated
 					return
 				end
+				if err then error(err) end  --propagate
 				coroutine.yield()
 			end
-			if err then error(err) end  --propagate
 		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
 			local abname = game:getGenericTextTiles(ab)..ab.name
@@ -965,11 +965,18 @@ function _M:talentDialog(d)
 	dialog_returns_list[#dialog_returns_list+1] = d
 
 	local co = coroutine.running()
-	d.unload = function(self) coroutine.resume(co, dialog_returns[d]) end
+	d.unload = function(dialog)
+		local ok, err = coroutine.resume(co, dialog_returns[d])
+		if not ok and err then
+			print(debug.traceback(co))
+			self:onTalentLuaError(err)
+			error(err)
+		end
+	end
 	local ret = coroutine.yield()
 
 	dialog_returns[d] = nil
 	table.removeFromList(dialog_returns_list, d)
 
-	return unpack(ret)
+	return unpack(ret or {})
 end

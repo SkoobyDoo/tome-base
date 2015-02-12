@@ -581,13 +581,14 @@ function _M:getTextualDesc(compare_with, use_actor)
 	-- included - if we should include the value in the present total.
 	-- total_call - function to call on the actor to get the current total
 	local compare_scaled = function(item1, items, infield, change_field, results, outformat, text, included, mod, isinversed, isdiffinversed, add_table)
-		local out = function(base_change, unworn_base)
-			local from, to = 0, base_change
-			if unworn_base then
-				from = from - unworn_base
-				to = to - unworn_base
+		local out = function(base_change, base_change2)
+			local unworn_base = (item1.wielded and table.get(item1, infield, change_field)) or table.get(items, 1, infield, change_field)  -- ugly
+			unworn_base = unworn_base or 0
+			local scale_change = use_actor:getAttrChange(change_field, -unworn_base, base_change - unworn_base, unpack(results))
+			if base_change2 then
+				scale_change = scale_change - use_actor:getAttrChange(change_field, -unworn_base, base_change2 - unworn_base, unpack(results))
+				base_change = base_change - base_change2
 			end
-			local scale_change = use_actor:getAttrChange(change_field, from, to, unpack(results))
 			return outformat:format(base_change, scale_change)
 		end
 		return compare_fields(item1, items, infield, change_field, out, text, mod, isinversed, isdiffinversed, add_table)
@@ -664,17 +665,20 @@ function _M:getTextualDesc(compare_with, use_actor)
 	local desc_combat = function(combat, compare_with, field, add_table, is_fake_add)
 		add_table = add_table or {}
 		add_table.dammod = add_table.dammod or {}
-		combat = combat[field] or {}
+		combat = table.clone(combat[field] or {})
 		compare_with = compare_with or {}
 		local dm = {}
-		local dammod = {}
-		if next(combat.dammod or {}) then dammod = use_actor:getDammod(combat) end
+		combat.dammod = table.mergeAdd(table.clone(combat.dammod or {}), add_table.dammod)
+		local dammod = use_actor:getDammod(combat)
 		for stat, i in pairs(dammod) do
 			local name = Stats.stats_def[stat].short_name:capitalize()
+			if use_actor:knowTalent(use_actor.T_STRENGTH_OF_PURPOSE) then
+				if name == "Str" then name = "Mag" end
+			end
 			if self.subtype == "dagger" and use_actor:knowTalent(use_actor.T_LETHALITY) then
 				if name == "Str" then name = "Cun" end
 			end
-			dm[#dm+1] = ("%d%% %s"):format((i + (add_table.dammod[stat] or 0)) * 100, name)
+			dm[#dm+1] = ("%d%% %s"):format(i * 100, name)
 		end
 		if #dm > 0 or combat.dam then
 			local diff_count = 0

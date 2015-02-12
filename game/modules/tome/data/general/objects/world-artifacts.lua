@@ -3082,6 +3082,7 @@ newEntity{ base = "BASE_LONGSWORD", define_as="CORPUS",
 				},
 				resolvers.sustains_at_birth(),
 				faction = who.faction,
+				summoner = who, summoner_gain_exp=true,
 			}
 
 			m:resolve()
@@ -3152,6 +3153,8 @@ newEntity{ base = "BASE_LONGSWORD",
 	act = function(self)
 		self:useEnergy()
 		if not self.worn_by then return end
+		local _, item, inven_id = self.worn_by:findInAllInventoriesByObject(self)
+		if not item or not self.worn_by:getInven(inven_id).worn then self.worn_by = nil return end
 		if game.level and not game.level:hasEntity(self.worn_by) and not self.worn_by.player then self.worn_by=nil return end
 		if self.worn_by:attr("dead") then return end
 		local who = self.worn_by

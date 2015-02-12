@@ -31,7 +31,7 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local inc = t.getPercentInc(self, t)
 		return ([[Increases Physical Power by %d, and increases weapon damage by %d%% when using swords, axes, maces, knives, or bows.
-		You now also use your Magic in place of Strength when equipping weapons and ammo.
+		You now also use your Magic in place of Strength when equipping weapons and ammo as well as when calculating weapon damage.
 		These bonuses override rather than stack with weapon mastery, knife mastery, and bow mastery.]]):
 		format(damage, 100*inc)
 	end,
@@ -44,7 +44,7 @@ newTalent{
 	points = 5,
 	sustain_paradox = 24,
 	mode = "sustained",
-	cooldown = 10,
+	cooldown = 6,
 	getSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
@@ -195,7 +195,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
-	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%end,
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
 		self:talentTemporaryValue(p, "see_invisible", t.getSense(self, t))
@@ -207,13 +207,14 @@ newTalent{
 	end,
 	callbackOnActBase = function(self, t)
 		if rng.percent(t.getPower(self, t)) then
-			self:removeEffectsFilter({status="detrimental", ignore_crosstier=true}, 1)
-			game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
+			if self:removeEffectsFilter({status="detrimental", ignore_crosstier=true}, 1) > 0 then
+				game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
+			end
 		end
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if eff and dam > 0 and eff.target ~= src and src ~= self then
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
 			-- Reduce damage
 			local reduction = dam * self:callTalent(self.T_VIGILANCE, "getPower")/100
 			dam = dam -  reduction
@@ -224,8 +225,8 @@ newTalent{
 	info = function(self, t)
 		local sense = t.getSense(self, t)
 		local power = t.getPower(self, t)
-		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  You also have a %d%% chance to recover from a single negative status effect each turn.
-		While Warden's Focus is active you reduce incoming damage from all targets other than your focus target by %d%%.
+		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  Additionally you have a %d%% chance to recover from a single negative status effect each turn.
+		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.
 		Sense abilities will scale with your Magic stat.]]):
 		format(sense, sense, power, power)
 	end,

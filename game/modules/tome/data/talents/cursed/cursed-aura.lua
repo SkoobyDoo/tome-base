@@ -160,18 +160,16 @@ newTalent{
 			end
 
 			if choose then
-				self.chooseCursedAuraTree = nil
 				Dialog:yesnoLongPopup(
 					"Cursed Fate",
-					("The %s lying nearby catches your attention. What draws you to it is not the thing itself, but something burning inside you. You feel contempt for it and all worldly things. This feeling is not new but the power of it overwhelms you. You reach out to touch the object, to curse it, to defile it. And you notice it begin to change. The colors of it begin to fade and are replaced with an insatiable hate. For a moment you hesistate. You know you must choose to resist this manifestation of your curse now and forever, or fall further into your madness."):format(item.name),
+					("The %s lying nearby catches your attention. What draws you to it is not the thing itself, but something burning inside you. You feel contempt for it and all worldly things. This feeling is not new but the power of it overwhelms you. You reach out to touch the object, to curse it, to defile it. And you notice it begin to change. The colors of it begin to fade and are replaced with an insatiable hate. For a moment you hesitate. You know you must choose to resist this manifestation of your curse now and forever, or fall further into your madness."):format(item.name),
 					300,
 					function(ret)
 						if ret then
-							Dialog:simpleLongPopup("Cursed Fate", (" The %s lies defiled at your feet. An aura of hatred surrounds you and you now feel truly cursed. You have gained the Cursed Aura talent tree and 1 point in Defiling Touch, but at the cost of 2 Willpower."):format(item.name), 300)
+							Dialog:simpleLongPopup("Cursed Fate", ("The %s lies defiled at your feet. An aura of hatred surrounds you and you now feel truly cursed. You have gained the Cursed Aura talent tree and 1 point in Defiling Touch, but at the cost of 2 Willpower."):format(item.name), 300)
 							self:learnTalentType("cursed/cursed-aura", true)
 							self:learnTalent(self.T_DEFILING_TOUCH, true, 1, {no_unlearn=true})
-							self.inc_stats[self.STAT_WIL] = self.inc_stats[self.STAT_WIL] - 2
-							self:onStatChange(self.STAT_WIL, -2)
+							self:incIncStat(Stats.STAT_WIL, -2)
 							t.curseItem(self, t, item)
 							t.curseInventory(self, t)
 							t.curseFloor(self, t, self.x, self.y)
@@ -183,6 +181,7 @@ newTalent{
 					"Release your hate upon the object",
 					"Suppress your affliction")
 			end
+			return choose
 		end
 	end,
 	-- updates the state of all curse effects
@@ -353,6 +352,24 @@ newTalent{
 }
 
 newTalent{
+	name = "Choose Cursed Sentry",
+	type = {"cursed/curses", 1},
+	points = 1,
+	no_energy = true,
+	action = function(self, t)
+		local ct = self:getTalentFromId(self.T_CURSED_SENTRY)
+		local inven = self:getInven("INVEN")
+		local d = self:showInventory("Which weapon will be your sentry?", inven, function(o) return ct.filterObject(self, ct, o) end, nil)
+		d.action = function(o, item) self:talentDialogReturn(true, o, item) return false end
+		local ret, o, item = self:talentDialog(d)
+		if not ret then return nil end
+		self.cursed_sentry = o
+		return true
+	end,
+	info = function(self, t) return [[Choose a sentry to instill your affliction into.]] end,
+}
+
+newTalent{
 	name = "Cursed Sentry",
 	type = {"cursed/cursed-aura", 4},
 	require = cursed_lev_req4,
@@ -362,6 +379,13 @@ newTalent{
 	no_npc_use = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16))	end,
 	getAttackSpeed = function(self, t) return self:combatTalentScale(t, 0.6, 1.4) end,
+	filterObject = function(self, t, o)
+		local tl = self:getTalentLevel(t)
+		local power = (tl >= 5 and 3) or (tl >= 3 and 2) or 1
+		return o.type == "weapon" and o:getPowerRank() <= power
+	end,
+	target = function(self, t) return {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t} end,
+	autolearn_talent = Talents.T_CHOOSE_CURSED_SENTRY,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
 		local found = false
@@ -377,18 +401,24 @@ newTalent{
 		end
 
 		-- select the location
-		local range = self:getTalentRange(t)
-		local tg = {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t}
+		local tg = self:getTalentTarget(t)
 		local tx, ty = self:getTarget(tg)
 		if not tx or not ty then return nil end
-		local _ _, x, y = self:canProject(tg, tx, ty)
+		local _ _, _, _, x, y = self:canProject(tg, tx, ty)
 		if game.level.map(x, y, Map.ACTOR) or game.level.map:checkEntity(x, y, game.level.map.TERRAIN, "block_move") then return nil end
 
 		-- select the item
-		local d = self:showInventory("Which weapon will be your sentry?", inven, function(o) return o.type == "weapon" end, nil)
-		d.action = function(o, item) self:talentDialogReturn(true, o, item) return false end
-		local ret, o, item = self:talentDialog(d)
-		if not ret then return nil end
+		if not self.cursed_sentry or not self:findInInventoryByObject(inven, self.cursed_sentry) or not t.filterObject(self, t, self.cursed_sentry) then
+			-- save compat
+			if not self:knowTalent(self.T_CHOOSE_CURSED_SENTRY) then
+				self:checkPool(t.id, self.T_CHOOSE_CURSED_SENTRY)
+			end
+			local ct = self:getTalentFromId(self.T_CHOOSE_CURSED_SENTRY)
+			-- xx HACK cannot forceUse a talent that shows a dialog
+			local ret = ct.action(self, ct)
+			if not ret then return end
+		end
+		local o, item = self:findInInventoryByObject(inven, self.cursed_sentry)
 
 		local result = self:removeObject(inven, item)
 
@@ -449,9 +479,8 @@ newTalent{
 			summoner_gain_exp=true,
 			summon_time = t.getDuration(self, t),
 			summon_quiet = true,
-
 			on_die = function(self, who)
-				game.logSeen(self, "#F53CBE#%s crumbles to dust.", self.name:capitalize())
+				game.logSeen(self, "#F53CBE#%s drops to the ground.", self.name:capitalize())
 			end,
 		}
 
@@ -469,16 +498,60 @@ newTalent{
 			end
 		end
 
+		o.__special_boss_drop = nil  -- lol @ artifact transmutation
+		o.old_auto_pickup = o.auto_pickup
+		o.auto_pickup = true  -- allow to reautopickup
+		o.old_on_pickup = o.on_pickup
+		o.on_pickup = function(self, who)
+			self.auto_pickup = self.old_auto_pickup
+			self.on_pickup = self.old_on_pickup
+			if self.old_on_pickup then self.old_on_pickup(self, who) end
+		end
 		result = sentry:wearObject(o, true, false)
+		if not result then
+			game.logPlayer(self, "Your animated sentry struggles for a moment and then drops to the ground inexplicably.")
+			game.level.map:addObject(x, y, o)
+			return nil
+		end
+		local qo = nil
 		if o.archery then
-			local qo = nil
-			if o.archery == "bow" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="arrow"}, nil, true)
-			elseif o.archery == "sling" then qo = game.zone:makeEntity(game.level, "object", {type="ammo", subtype="shot"}, nil, true)
+			local level = o.material_level or 1
+			-- Trying to replicate the ego pattern on the weapon. Kinky.
+			local egos = o.egos_number or (o.ego_list and #o.ego_list) or (e.egoed and 1) or 0
+			local double_greater = (o.unique and egos == 0) or o.greater_ego > 1  -- artifact or purple
+			local greater_normal = (o.unique and egos > 2) or o.greater_ego == 1 and egos > 1 -- randart or blue
+			local greater = (o.unique and egos > 0) or o.greater_ego == 1 and egos == 1  -- rare or blue
+			local double_ego = not o.unique and not o.greater_ego and egos > 1
+			local ego = not o.unique and not o.greater_ego and egos == 1
+			local filter = {type="ammo", ignore_material_restriction=true, tome={double_greater=double_greater and 1, greater_normal=greater_normal and 1,
+			greater = greater and 1, double_ego = double_ego and 1, ego = ego and 1}, special = function(e) return not e.unique and e.material_level == level end}
+			if o.archery == "bow" then filter.subtype = "arrow"
+			elseif o.archery == "sling" then filter.subtype = "shot"
 			end
-			qo.no_drop = true
-			if qo then sentry:wearObject(qo, true, false) end
+			qo = game.zone:makeEntity(game.level, "object", filter, nil, true)
+			if qo then qo.no_drop = true sentry:wearObject(qo, true, false) end
 		end
 
+
+		-- level stats up for MAXIMUM DAMAGE
+		local stats = sentry.unused_stats
+		local use_stats = {}
+		local total = 0
+		local dammod = sentry:getDammod(o.combat.dammod or {})
+		if qo then
+			for stat, mod in pairs(sentry:getDammod(qo.combat.dammod or {})) do
+				dammod[stat] = (dammod[stat] or 0) + mod
+			end
+		end
+		dammod.str = (dammod.str or 0) + 1  -- physical power
+		for stat, mod in pairs(dammod) do total = total + mod end
+		for stat, mod in pairs(dammod) do
+			local inc = math.floor(mod * stats / total)
+			sentry:incStat(stat, inc)
+			sentry.unused_stats = sentry.unused_stats - inc
+		end
+		-- put the rest into Con
+		sentry:incStat("con", sentry.unused_stats)
 
 		game.zone:addEntity(game.level, sentry, "actor", x, y)
 
@@ -501,6 +574,10 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local attackSpeed = t.getAttackSpeed(self, t)*100
 
-		return ([[Instill a part of your living curse into a weapon in your inventory, and toss it nearby. This nearly impervious sentry will attack all nearby enemies for %d turns. When the curse ends, the weapon will drop to the ground. Attack Speed: %d%%]]):format(duration, attackSpeed)
+		return ([[Instill a part of your living curse into a weapon in your inventory, and toss it nearby. This nearly impervious sentry will attack all nearby enemies for %d turns. When the curse ends, the weapon will drop to the ground.
+			Cursed Sentry attack speed (currently %d%%) will improve with talent level.
+			When you first select a weapon, it will be remembered and used as long as it's in your inventory. Use Choose Cursed Sentry talent to alter your selection.
+			At talent level 3, you get the ability to afflict powerful mundane objects (greater egos).
+			At talent level 5, you can corrupt artifacts.]]):format(duration, attackSpeed)
 	end,
 }

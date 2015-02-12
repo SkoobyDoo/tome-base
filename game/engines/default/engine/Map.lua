@@ -1181,7 +1181,7 @@ function _M:processEffects(update_shape_only)
 	local todel = {}
 	for i, e in ipairs(self.effects) do
 		-- Run damage and decrease duration only on certain ticks
-		if not update_shape_only then
+		if not update_shape_only and e.duration > 0 then
 			for lx, ys in pairs(e.grids) do
 				for ly, _ in pairs(ys) do
 					local act = game.level.map(lx, ly, engine.Map.ACTOR)

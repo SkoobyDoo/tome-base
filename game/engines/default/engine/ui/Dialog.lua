@@ -87,11 +87,14 @@ end
 
 --- Requests a simple, press any key, dialog
 function _M:simpleLongPopup(title, text, w, fct, no_leave, force_height)
-	local list = text:splitLines(w - 10, self.font)
 	local _, th = self.font:size(title)
 	local d = new(title, 1, 1)
-	local h = math.min(force_height and (force_height * game.h) or 999999999, self.font_h * #list + th )
-	d:loadUI{{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+10, height=h + 10, scrollbar=(h < self.font_h * #list) and true or false, text=text}}}
+	local max_h = force_height and force_height * game.h or 9999
+	local textzone = require("engine.ui.Textzone").new{width=w+10, auto_height=true, scrollbar=true, text=text}
+	if textzone.h > max_h then textzone.h = max_h
+	else textzone.scrollbar = nil
+	end
+	d:loadUI{{left = 3, top = 3, ui=textzone}}
 	if not no_leave then
 		d.key:addBind("EXIT", function() game:unregisterDialog(d) if fct then fct() end end)
 		local close = require("engine.ui.Button").new{text="Close", fct=function() d.key:triggerVirtual("EXIT") end}
@@ -132,13 +135,12 @@ function _M:yesnoLongPopup(title, text, w, fct, yes_text, no_text, no_leave, esc
 
 	w = math.max(w + 20, ok.w + cancel.w + 10)
 
-	local list = text:splitLines(w - 10, self.font)
 	d = new(title, w + 6, 1)
 
 --	d.key:addBind("EXIT", function() game:unregisterDialog(d) fct(false) end)
 	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) fct(escape) end) end
 	d:loadUI{
-		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w, height=self.font_h * #list, text=text}},
+		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w, auto_height = true, text=text}},
 		{left = 3, bottom = 3, ui=ok},
 		{right = 3, bottom = 3, ui=cancel},
 	}
@@ -174,7 +176,6 @@ end
 
 --- Requests a simple yes-no dialog
 function _M:yesnocancelLongPopup(title, text, w, fct, yes_text, no_text, cancel_text, no_leave, escape)
-	local list = text:splitLines(w - 10, font)
 	local d = new(title, 1, 1)
 
 --	d.key:addBind("EXIT", function() game:unregisterDialog(d) fct(false) end)
@@ -183,7 +184,7 @@ function _M:yesnocancelLongPopup(title, text, w, fct, yes_text, no_text, cancel_
 	local cancel = require("engine.ui.Button").new{text=cancel_text or "Cancel", fct=function() game:unregisterDialog(d) fct(false, true) end}
 	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) fct(false, not escape) end) end
 	d:loadUI{
-		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+20, height=self.font_h * #list, text=text}},
+		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+20, auto_height=true, text=text}},
 		{left = 3, bottom = 3, ui=ok},
 		{left = 3 + ok.w, bottom = 3, ui=no},
 		{right = 3, bottom = 3, ui=cancel},

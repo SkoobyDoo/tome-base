@@ -472,7 +472,6 @@ end
 function _M:applyEgo(e, ego, type, no_name_change)
 	if not e.__original then e.__original = e:clone() end
 	print("ego", ego.__CLASSNAME, ego.name, getmetatable(ego))
-	local orig_ego = ego
 	ego = ego:clone()
 	local newname = e.name
 	if not no_name_change then
@@ -481,13 +480,14 @@ function _M:applyEgo(e, ego, type, no_name_change)
 		else newname = e.name .. display end
 	end
 	print("applying ego", ego.name, "to ", e.name, "::", newname, "///", e.unided_name, ego.unided_name)
-	ego.unided_name = nil
-	ego.__CLASSNAME = nil
-	ego.__ATOMIC = nil
 	-- The ego requested instant resolving before merge ?
 	if ego.instant_resolve then ego:resolve(nil, nil, e) end
 	if ego.instant_resolve == "last" then ego:resolve(nil, true, e) end
 	ego.instant_resolve = nil
+	local save_ego = ego:clone()  -- AFTER resolve, no rerolls
+	ego.unided_name = nil
+	ego.__CLASSNAME = nil
+	ego.__ATOMIC = nil
 	-- Void the uid, we dont want to erase the base entity's one
 	ego.uid = nil
 	ego.rarity = nil
@@ -498,14 +498,16 @@ function _M:applyEgo(e, ego, type, no_name_change)
 	e.name = newname
 	if not ego.fake_ego then
 		e.egoed = true
+		e.egos_number = (e.egos_number or 0) + 1
 	end
 	e.ego_list = e.ego_list or {}
-	e.ego_list[#e.ego_list + 1] = {orig_ego, type, no_name_change}
+	e.ego_list[#e.ego_list + 1] = {save_ego, type, no_name_change}
 end
 
 -- WARNING the thing may be in need of re-identifying after this
 local function reapplyEgos(self, e)
 	if not e.__original then return e end
+	local id = e.isIdentified and e:isIdentified()
 	local brandNew = e.__original -- it will be cloned upon first ego application
 	if e.ego_list and #e.ego_list > 0 then
 		for _, ego_args in ipairs(e.ego_list) do
@@ -513,6 +515,7 @@ local function reapplyEgos(self, e)
 		end
 	end
 	e:replaceWith(brandNew)
+	if e.identify then e:identify(id) end
 end
 
 -- Remove an ego

@@ -174,7 +174,7 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, 
 			current_y = current_y + item.h - clip_y_start
 		end
 		-- add full size of item
-		total_h = total_h + item.h
+		total_h = total_h + self.font_h
 		-- if we are too deep then end this
 		if total_h > loffset_y + self.dest_area.h then break end
 	end

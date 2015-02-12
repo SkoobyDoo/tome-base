@@ -443,7 +443,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		evaded = true
 		self:logCombat(target, "#Target# evades #Source#.")
 	elseif not self.turn_procs.auto_melee_hit and self:attr("hit_penalty_2h") and rng.percent(20 - (self.size_category - 4) * 5) then
-		self:logCombat(target, "#Source# misses #Target# TOTO.")
+		self:logCombat(target, "#Source# misses #Target#.")
 		target:fireTalentCheck("callbackOnMeleeMiss", self, dam)
 	elseif self.turn_procs.auto_melee_hit or (self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or target:attr("blind_fighted") or rng.chance(3))) then
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
@@ -1500,6 +1500,7 @@ function _M:getDammod(combat)
 	end
 
 	if combat.talented == 'knife' and self:knowTalent('T_LETHALITY') then sub('str', 'cun') end
+	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
 	if self:attr 'use_psi_combat' then
 		sub('str', 'wil')
 		sub('dex', 'cun')
