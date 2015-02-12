@@ -181,6 +181,7 @@ newTalent{
 					"Release your hate upon the object",
 					"Suppress your affliction")
 			end
+			return choose
 		end
 	end,
 	-- updates the state of all curse effects
