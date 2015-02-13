@@ -29,6 +29,7 @@ newEntity{
 	moddable_tile = resolvers.moddable_tile("gloves"),
 	encumber = 1,
 	rarity = 9,
+	combat = {accuracy_effect = "axe"},
 	desc = [[Light gloves which do not seriously hinder finger movements, while still protecting the hands somewhat.]],
 	randart_able = "/data/general/objects/random-artifacts/gloves.lua",
 	egos = "/data/general/objects/egos/gloves.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
@@ -42,7 +43,6 @@ newEntity{ base = "BASE_GLOVES",
 	wielder = {
 		combat_armor = 1,
 		combat = {
-			accuracy_effect = "axe",
 			dam = resolvers.rngavg(5, 8),
 			apr = 1,
 			physcrit = 1,
@@ -60,7 +60,6 @@ newEntity{ base = "BASE_GLOVES",
 	wielder = {
 		combat_armor = 2,
 		combat = {
-			accuracy_effect = "axe",
 			dam = resolvers.rngavg(14, 18),
 			apr = 3,
 			physcrit = 3,
@@ -78,7 +77,6 @@ newEntity{ base = "BASE_GLOVES",
 	wielder = {
 		combat_armor = 3,
 		combat = {
-			accuracy_effect = "axe",
 			dam = resolvers.rngavg(23, 28),
 			apr = 5,
 			physcrit = 5,
