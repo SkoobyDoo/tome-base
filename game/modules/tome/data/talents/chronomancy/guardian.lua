@@ -42,106 +42,79 @@ newTalent{
 	type = {"chronomancy/guardian", 2},
 	require = chrono_req2,
 	points = 5,
-	sustain_paradox = 24,
-	mode = "sustained",
+	mode = "passive",
 	cooldown = 6,
-	getSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
+	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
-		local split = cb.value * t.getSplit(self, t)
+		local split = cb.value * t.getDamageSplit(self, t)
 
-		-- If we already split this turn pass damage to our clone
-		if self.turn_procs.unity_warden and self.turn_procs.unity_warden ~= self and game.level:hasEntity(self.turn_procs.unity_warden) then
-			split = split/2
-			-- split the damage
-			game:delayedLogDamage(src, self.turn_procs.unity_warden, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
-			cb.value = cb.value - split
-			self.turn_procs.unity_warden:takeHit(split, src)
-		end
-
-		-- Split?
-		local p = self:isTalentActive(t.id)
-		if p and p.rest_count <= 0 then
+		-- If we already have a guardian, split the damage
+		if self.unity_warden and game.level:hasEntity(self.unity_warden) then
 		
-			-- Do our split
-			if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.unity_warden then
-				-- Look for space first
-				local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
-				if tx and ty then
-					-- Put the talent on cooldown
-					p.rest_count = self:getTalentCooldown(t)
-					
-					-- clone our caster
-					local m = makeParadoxClone(self, self, t.getDuration(self, t))
-
-					-- add our clone
-					game.zone:addEntity(game.level, m, "actor", tx, ty)
-					m.ai_state = { talent_in=2, ally_compassion=10 }
-					m.remove_from_party_on_death = true
-					m:attr("archery_pass_friendly", 1)
-					m.generic_damage_penalty = 50
-					game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
-
-					if game.party:hasMember(self) then
-						game.party:addMember(m, {
-							control="no",
-							type="temporal-clone",
-							title="Guardian",
-							orders = {target=true},
-						})
-					end
-
-					-- split the damage
-					cb.value = cb.value - split
-					self.turn_procs.unity_warden = m
-					m:takeHit(split, src)
-					m:setTarget(src or nil)
-					game:delayedLogMessage(self, nil, "guardian_damage", "#STEEL_BLUE##Source# shares damage with %s guardian!", string.his_her(self))
-					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
-
-				else
-					game.logPlayer(self, "Not enough space to summon warden!")
+			game:delayedLogDamage(src, self.unity_warden, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
+			cb.value = cb.value - split
+			self.unity_warden:takeHit(split, src)
+		
+		-- Otherwise, summon a new Guardian
+		elseif not self:isTalentCoolingDown(t) and self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) then
+		
+			-- Look for space first
+			local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
+			if tx and ty then
+				-- Put the talent on cooldown
+				self:startTalentCooldown(t)
+				
+				-- clone our caster
+				local m = makeParadoxClone(self, self, t.getDuration(self, t))
+				-- alter some values
+				m.ai_state = { talent_in=2, ally_compassion=10 }
+				m.remove_from_party_on_death = true
+				m:attr("archery_pass_friendly", 1)
+				m.generic_damage_penalty = 50
+				m.on_die = function(self)
+					local summoner = self.summoner
+					if summoner.unity_warden then summoner.unity_warden = nil end
 				end
+
+				-- add our clone
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
+				game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
+
+				if game.party:hasMember(self) then
+					game.party:addMember(m, {
+						control="no",
+						type="temporal-clone",
+						title="Guardian",
+						orders = {target=true},
+					})
+				end
+				
+				-- split the damage
+				cb.value = cb.value - split
+				self.unity_warden = m
+				m:takeHit(split, src)
+				m:setTarget(src or nil)
+				game:delayedLogMessage(self, nil, "guardian_damage", "#STEEL_BLUE##Source# shares damage with %s guardian!", string.his_her(self))
+				game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
+
+			else
+				game.logPlayer(self, "Not enough space to summon warden!")
 			end
 		end
-
+		
 		return cb.value
-	end,
-	callbackOnActBase = function(self, t)
-		local p = self:isTalentActive(t.id)
-		if p.rest_count > 0 then p.rest_count = p.rest_count - 1 end
-	end,
-	iconOverlay = function(self, t, p)
-		local val = p.rest_count or 0
-		if val <= 0 then return "" end
-		local fnt = "buff_font"
-		return tostring(math.ceil(val)), fnt
-	end,
-	activate = function(self, t)
-		local ret = {
-			rest_count = 0
-		}
-	--	if core.shader.active(4) then
-	--		ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", radius=1.4, shininess=40, growSpeed=0.004, img="circles2_01"})
-	--	end
-
-		return ret
-	end,
-	deactivate = function(self, t, p)
-	--	self:removeParticles(p.particle1)
-	--	self:removeParticles(p.particle2)
-		return true
 	end,
 	info = function(self, t)
 		local trigger = t.getLifeTrigger(self, t)
-		local split = t.getSplit(self, t) * 100
+		local split = t.getDamageSplit(self, t) * 100
 		local duration = t.getDuration(self, t)
 		local cooldown = self:getTalentCooldown(t)
-		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all other damage you take for the rest of the turn.
-		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.  After %d turns it returns to its own timeline.
-		This effect can only occur once every %d turns.]]):format(trigger, split, split/2, duration, cooldown)
+		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all damage you take for the next %d turns.
+		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.
+		This talent has a cooldown.]]):format(trigger, split, split, duration)
 	end,
 }
 
