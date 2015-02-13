@@ -81,6 +81,7 @@ function _M:init(title, equip_actor, filter, action, on_select, inven_actor)
 				end
 			end
 			self.c_inven:generateList()
+			ui:forceUpdate()
 		end
 	}
 
