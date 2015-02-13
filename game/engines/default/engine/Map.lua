@@ -1115,7 +1115,7 @@ end
 function _M:displayEffects(z, prevfbo, nb_keyframes)
 	local sx, sy = self._map:getScroll()
 	for e, _ in pairs(self.z_effects[z]) do
-		-- Dont bother with obviously out of screen stuff
+		-- Dont bother with obviously out of screen stuff or invisible stuff
 		if e.overlay and e.overlay.zdepth == z and e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
 			local s = self.tilesEffects:get(e.overlay.display, e.overlay.color_r, e.overlay.color_g, e.overlay.color_b, e.overlay.color_br, e.overlay.color_bg, e.overlay.color_bb, e.overlay.image, e.overlay.alpha)
 
@@ -1136,10 +1136,10 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 					if type(e.overlay.effect_shader) == "table" then
 						for i = 1, #e.overlay.effect_shader do
 							e.overlay.effect_shader_tex[i] = Tiles:loadImage(e.overlay.effect_shader[i]):glTexture()
-							e.overlay.effect_shader_tex.cur = 1
-							e.overlay.effect_shader_tex.cnt = 0
-							e.overlay.effect_shader_tex.max = e.overlay.effect_shader.max
 						end
+						e.overlay.effect_shader_tex.cur = 1
+						e.overlay.effect_shader_tex.cnt = 0
+						e.overlay.effect_shader_tex.max = e.overlay.effect_shader.max
 					else
 						e.overlay.effect_shader_tex[1] = Tiles:loadImage(e.overlay.effect_shader):glTexture()
 						e.overlay.effect_shader_tex.cur = 1
@@ -1148,22 +1148,25 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 					end
 				end
 
+				-- ElectronicRU: I have no idea why rendering an empty FBO when map seens is empty causes so much distress to CPU. But for now let's maybe just no do it.
+				local drawn = false
 				self.fbo:use(true, 0, 0, 0, 0)
 				-- Now display each grids
 				for lx, ys in pairs(e.grids) do
 					for ly, _ in pairs(ys) do
 						if self.seens(lx, ly) then
 							s:toScreen((lx - self.mx) * self.tile_w * self.zoom, (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
+							drawn = true
 						end
 					end
 				end
 				self.fbo:use(false, prevfbo)
-				e.overlay.effect_shader_tex[e.overlay.effect_shader_tex.cur]:bind(1, false)
-				self.fbo_shader.shad:use(true)
-				self.fbo_shader.shad:uniTileSize(self.tile_w, self.tile_h)
-				self.fbo_shader.shad:uniScrollOffset(0, 0)
-				self.fbo:toScreen(self.display_x + sx, self.display_y + sy, self.viewport.width, self.viewport.height, self.fbo_shader.shad, 1, 1, 1, 1, true)
-				self.fbo_shader.shad:use(false)
+				if drawn then
+					e.overlay.effect_shader_tex[e.overlay.effect_shader_tex.cur]:bind(1, false)
+					self.fbo_shader.shad:uniTileSize(self.tile_w, self.tile_h)
+					self.fbo_shader.shad:uniScrollOffset(0, 0)
+					self.fbo:toScreen(self.display_x + sx, self.display_y + sy, self.viewport.width, self.viewport.height, self.fbo_shader.shad, 1, 1, 1, 1, true)
+				end
 
 				e.overlay.effect_shader_tex.cnt = e.overlay.effect_shader_tex.cnt + nb_keyframes
 				if e.overlay.effect_shader_tex.cnt >= e.overlay.effect_shader_tex.max then
