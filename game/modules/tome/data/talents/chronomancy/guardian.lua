@@ -70,7 +70,7 @@ newTalent{
 				-- clone our caster
 				local m = makeParadoxClone(self, self, t.getDuration(self, t))
 				-- alter some values
-				m.ai_state = { talent_in=2, ally_compassion=10 }
+				m.ai_state = { talent_in=1, ally_compassion=10 }
 				m.remove_from_party_on_death = true
 				m:attr("archery_pass_friendly", 1)
 				m.generic_damage_penalty = 50
