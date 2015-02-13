@@ -64,3 +64,6 @@ newEntity { base = "FLOOR", define_as = "DECO_FLOOR5", add_displays = {class.new
 newEntity { base = "FLOOR", define_as = "DECO_FLOOR6", add_displays = {class.new{z=3, image="terrain/ruins/floor_operating_table.png", display_y=-1, display_h=2}}, name = "operating table"}
 newEntity { base = "FLOOR", define_as = "DECO_FLOOR7", add_displays = {class.new{z=3, image="terrain/ruins/floor_vat_broken_deco_01.png", display_y=-1, display_h=2}}, name = "broken vat"}
 newEntity { base = "FLOOR", define_as = "DECO_FLOOR8", add_displays = {class.new{z=3, image="terrain/ruins/floor_vat_broken_deco_02.png"}}, name = "broken vat"}
+
+newEntity { base = "FLOOR", define_as = "VAT1", add_displays = {class.new{z=3, image="terrain/ruins/vat_broken_01.png", display_y=-1, display_h=2}}, name = "broken vat"}
+newEntity { base = "FLOOR", define_as = "VAT2", add_displays = {class.new{z=3, image="terrain/ruins/vat_broken_02.png", display_y=-1, display_h=2}}, name = "broken vat"}

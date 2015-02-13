@@ -2664,14 +2664,27 @@ newEffect{
 		self:effectTemporaryValue(eff, "status_effect_immune", 1)
 		self:effectTemporaryValue(eff, "invulnerable", 1)
 		self:effectTemporaryValue(eff, "cant_be_moved", 1)
-		self:effectParticles(eff, self:addParticles3D("volumetric", {kind="dense_cylinder", radius=1.4, shininess=35, growSpeed=0.004, img="coggy_outline_01"}))
 		self.never_act = true
 		eff.old_faction = self.faction
 		self.faction = "neutral"
 	end,
 	deactivate = function(self, eff)
 		self.faction = eff.old_faction
-		self.never_act = nil		
+		self.never_act = nil
+		self:disappear(self)
+		local e = game.zone:makeEntity(game.level, "actor", {type="giant", subtype="ogre", special_rarity="special_rarity"}, nil, true)
+		local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
+		if e and x then
+			game.zone:addEntity(game.level, e, "actor", x, y)
+			local g = game.zone.grid_list[self.to_vat]
+			if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+		end
 	end,
 	on_timeout = function(self, eff)
 		if eff.timeout then
