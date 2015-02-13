@@ -132,7 +132,7 @@ void main(void)
 		resultColor.a = borderColor.a;
 	}else
 	{
-		borderColor *= borderColor.a
+		borderColor *= borderColor.a;
 		resultColor += borderColor;
 	}
 
