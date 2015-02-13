@@ -5117,6 +5117,7 @@ newEntity{ base = "BASE_STAFF",
 		dammod = {mag=1.1},
 		damtype = DamageType.DARKNESS,
 	},
+	staff_power = 15,
 	wielder = {
 		combat_spellpower = 12,
 		combat_spellcrit = 8,
