@@ -20,6 +20,7 @@
 local Object = require "engine.Object"
 local Entity = require "engine.Entity"
 local Dialog = require "engine.ui.Dialog"
+local Stats = require "engine.interface.ActorStats"
 
 local curses_detrimental
 local curses_beneficial
