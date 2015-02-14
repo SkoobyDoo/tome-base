@@ -34,7 +34,7 @@ newTalent{
 	range = archery_range,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 2.2) end,
-	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 10, 20)) end,
+	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
@@ -81,7 +81,7 @@ newTalent{
 	range = archery_range,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
-	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 40) end,
+	getDamagePenalty = function(self, t) return 50 end,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
