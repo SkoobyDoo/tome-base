@@ -27,24 +27,37 @@ newTalent{
 	cooldown = 12,
 	tactical = { PARADOX = 2 },
 	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 2, 0.10, .75) end,
 	anomaly_type = "no-major",
 	no_energy = true,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "anomaly_paradox_recovery", t.getParadoxMulti(self, t))
-	end,
 	action = function(self, t)
 		local reduction = self:spellCrit(t.getReduction(self, t))
-		self:paradoxDoAnomaly(reduction, t.anomaly_type, "forced")
+		
+		local ts = {}
+		for id, t in pairs(self.talents_def) do
+			if t.type[1] == "chronomancy/anomalies" and t.anomaly_type and t.anomaly_type ~= "major" and not self:isTalentCoolingDown(t) then ts[#ts+1] = id end
+		end
+		
+		if ts[1] then
+			local anom = rng.table(ts)
+			if self:knowTalent(self.T_TWIST_FATE) then
+				-- We call the action table directly so we can both pick a target and ignore energy
+				anom = self:getTalentFromId(anom)
+				game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
+				anom.action(self, anom)
+			else
+				self:forceUseTalent(anom, {force_target=self, ignore_energy=true})
+			end
+			self:incParadox(-reduction)
+		end
+							
 		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
 		local reduction = t.getReduction(self, t)
-		local paradox = 100 * t.getParadoxMulti(self, t)
 		return ([[Create an anomaly, reducing your Paradox by %d.  This spell will never produce a major anomaly.
-		Additionally you recover %d%% more Paradox from random anomalies when they occur (%d%% total).
-		The Paradox reduction will increase with your Spellpower.]]):format(reduction, paradox, paradox + 200)
+		If you know Twist Fate you may target the anomaly you produce with this spell.
+		The Paradox reduction will increase with your Spellpower.]]):format(reduction)
 	end,
 }
 
