@@ -49,14 +49,15 @@ newTalent{
 			end
 			self:incParadox(-reduction)
 		end
-							
+		
+		self:removeEffect(self.EFF_REALITY_SMEARING)		
 		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
 		local reduction = t.getReduction(self, t)
 		return ([[Create an anomaly, reducing your Paradox by %d.  This spell will never produce a major anomaly.
-		If you know Twist Fate you may target the anomaly you produce with this spell.
+		Induced Anomalies may not be held by Twist Fate, nor do they cause held anomalies to trigger.  However upon learning Twist Fate you may target Induced Anomalies.
 		The Paradox reduction will increase with your Spellpower.]]):format(reduction)
 	end,
 }
