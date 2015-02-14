@@ -4373,6 +4373,9 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 				end
 				-- Reduce Paradox
 				if reduction and reduction > 0 then
+					-- Double the reduction from major anomalies, mostly so NPCs don't become more dangerous when they run out of Paradox
+					if anomaly_type == "major" then reduction = reduction * 2 end
+					
 					self:incParadox(-reduction)
 				end
 			end
