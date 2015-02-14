@@ -59,7 +59,6 @@ newTalent{
 	tactical = { DEFEND = 2 },
 	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 6))) end,
-	getConversionRatio = function(self, t) return 200 / self:combatTalentSpellDamage(t, 60, 600) end,
 	damage_feedback = function(self, t, p, src)
 		if p.particle and p.particle._shader and p.particle._shader.shad and src and src.x and src.y then
 			local r = -rng.float(0.2, 0.4)
@@ -76,7 +75,7 @@ newTalent{
 	end,
 	callbackOnHit = function(self, t, cb, src)
 		local absorb = cb.value * t.getPercent(self, t)
-		local paradox = absorb*t.getConversionRatio(self, t)
+		local paradox = absorb*0.3
 		
 		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
 		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
@@ -96,12 +95,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local ratio = t.getPercent(self, t) * 100
-		local absorb = t.getConversionRatio(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[While active, %d%% of the damage you take instead increases your Paradox.
-		Damage is converted into Paradox at a rate of %d%% over %d turns.
-		The amount of Paradox damage you receive will be reduced by your Spellpower.]]):
-		format(ratio, absorb, duration)
+		return ([[While active, %d%% of the damage you take instead increases your Paradox by 30%%, over %d turns.]]):
+		format(ratio, duration)
 	end,
 }
 
