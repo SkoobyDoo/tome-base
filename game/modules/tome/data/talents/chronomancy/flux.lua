@@ -155,10 +155,10 @@ newTalent{
 	type = {"chronomancy/flux", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 6,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 2, 14, 6)) end, -- Limit >10
 	tactical = { ATTACKAREA = 2 },
 	on_pre_use = function(self, t, silent) if not self:hasEffect(self.EFF_TWIST_FATE) then if not silent then game.logPlayer(self, "You must have a twisted anomaly to cast this spell.") end return false end return true end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 5))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	doTwistFate = function(self, t, twist)
 		local eff = self:hasEffect(self.EFF_TWIST_FATE)
 		
