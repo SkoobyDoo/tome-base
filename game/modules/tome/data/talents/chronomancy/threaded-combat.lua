@@ -211,11 +211,10 @@ newTalent{
 	remove_on_clone = true,
 	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
 	doBladeWarden = function(self, t, target)
-		-- Sanity check
-		if not self.turn_procs.blade_warden then 
-			self.turn_procs.blade_warden = true
-		else
+		if self.turn_procs.wardens_call then
 			return
+		else
+			self.turn_procs.wardens_call = true
 		end
 		
 		-- Make our clone
@@ -259,14 +258,12 @@ newTalent{
 		end
 	end,
 	doBowWarden = function(self, t, target)
-		-- Sanity check
-		game.logPlayer(self, "You are unable to move!")
-		if not self.turn_procs.blade_warden then
-			self.turn_procs.blade_warden = true
-		else
+		if self.turn_procs.wardens_call then
 			return
+		else
+			self.turn_procs.wardens_call = true
 		end
-	
+
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
@@ -341,7 +338,7 @@ newTalent{
 		local damage_penalty = t.getDamagePenalty(self, t)
 		return ([[When you hit with a blade-threading or a bow-threading talent a warden may appear, depending on available space, from another timeline and shoot or attack a random enemy.
 		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
-		Each of these effects can only occur once per turn and the wardens return to their own timeline after attacking.]])
+		This effect can only occur once per turn and the wardens return to their own timeline after attacking.]])
 		:format(damage_penalty)
 	end
 }
