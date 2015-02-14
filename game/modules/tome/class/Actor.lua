@@ -4354,10 +4354,9 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
 					else
 						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
-						anomaly_triggered = false
 					end
+					anomaly_triggered = false
 				else
-					--self:forceUseTalent(anomaly, {ignore_energy=true})
 					self:forceUseTalent(anomaly, {force_target=target or self})
 				end
 			end
@@ -4378,6 +4377,9 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 					
 					self:incParadox(-reduction)
 				end
+				
+				-- Remove Reality Smearing
+				self:removeEffect(self.EFF_REALITY_SMEARING)
 			end
 
 			return anomaly_triggered

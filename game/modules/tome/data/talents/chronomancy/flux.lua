@@ -96,7 +96,8 @@ newTalent{
 	info = function(self, t)
 		local ratio = t.getPercent(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[While active, %d%% of the damage you take instead increases your Paradox by 30%% over %d turns.]]):
+		return ([[While active, %d%% of the damage you take instead increases your Paradox by 30%% over %d turns.
+		If you create an anomaly while taking Paradox damage in this manner the remaining damage will be removed.]]):
 		format(ratio, duration)
 	end,
 }
@@ -162,14 +163,18 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 5))) end,
 	doTwistFate = function(self, t, twist)
 		local eff = self:hasEffect(self.EFF_TWIST_FATE)
-		eff.twisted = twist or false
 		
-		-- Call the anomoly action function directly
-		local anom = self:getTalentFromId(eff.talent)
-		anom.action(self, anom)
-
-		self:incParadox(-eff.paradox)
+		if twist then
+			eff.twisted = twist
+			local anom = self:getTalentFromId(eff.talent)
+			
+			-- Call the anomoly action function directly
+			anom.action(self, anom)
+			self:incParadox(-eff.paradox)
+		end
+		
 		self:removeEffect(self.EFF_TWIST_FATE)
+		self:removeEffect(self.EFF_REALITY_SMEARING)
 	end,
 	setEffect = function(self, t, talent, paradox)
 		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)
