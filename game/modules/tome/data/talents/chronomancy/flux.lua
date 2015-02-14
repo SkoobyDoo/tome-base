@@ -96,7 +96,7 @@ newTalent{
 	info = function(self, t)
 		local ratio = t.getPercent(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[While active, %d%% of the damage you take instead increases your Paradox by 30%%, over %d turns.]]):
+		return ([[While active, %d%% of the damage you take instead increases your Paradox by 30%% over %d turns.]]):
 		format(ratio, duration)
 	end,
 }
