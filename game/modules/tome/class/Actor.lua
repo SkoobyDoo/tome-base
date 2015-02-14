@@ -3000,11 +3000,6 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if self:hasEffect(self.EFF_ATTENUATE) then
-		local p = self:hasEffect(self.EFF_ATTENUATE)
-		p.src:incParadox(-p.reduction)
-	end
-
 	if self:hasEffect(self.EFF_GHOUL_ROT) then
 		local p = self:hasEffect(self.EFF_GHOUL_ROT)
 		if p.make_ghoul > 0 then

@@ -110,10 +110,10 @@ newTalent{
 	cooldown = 4,
 	tactical = { ATTACKAREA = { TEMPORAL = 2 } },
 	range = 10,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
-	getReduction = function(self, t) return self:getTalentLevel(t) * 2 end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), nowarning=true, talent=t}
 	end,
@@ -133,7 +133,7 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, reduction=t.getReduction(self, t), apply_power=getParadoxSpellpower(self, t)})
+			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
 		end)
 
 		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=200, rM=230, gm=20, gM=30, bm=50, bM=80, am=35, aM=90, radius=tg.radius, basenb=120})
@@ -145,10 +145,8 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
-		local reduction = t.getReduction(self, t)
-		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  If the target is slain before the effect expires you'll recover %d Paradox.
-		If the target is hit by an Anomaly the remaining damage will be done instantly.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, reduction)
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  If the target is hit by an Anomaly the remaining damage will be done instantly.
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius)
 	end,
 }
 
