@@ -602,7 +602,6 @@ newEntity{
 	rarity = 30,
 	cost = 80,
 	resolvers.charmt(Talents.T_RUINED_EARTH, 3, 20),
-	use_no_energy = true,
 	wielder = {
 		combat_mentalresist = resolvers.mbonus_material(10, -15),
 		combat_mindpower = resolvers.mbonus_material(7, 3),
