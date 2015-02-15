@@ -4290,18 +4290,15 @@ function _M:paradoxFailChance()
 end
 
 -- This handles anomalies
--- Reduction is the Paradox recovered
--- Anomaly Type is used to force an anomaly type for the talent, generally set to ab.anomaly_type
--- Chance use this for the anomaly chance, generally set to paradoxFailChance() or "forced"
--- Target, if we're forcing an anomaly target
-function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
-	local anomaly_type = anomaly_type or "random"
-	local chance = chance or self:paradoxFailChance()
-	if chance == "forced" then chance = 100	end
+-- chance, generally paradoxFailChance, set to 100 to force an anomly
+-- paradox recovered
+-- def.anomaly_type to set a type, def.allow_target to allow targeting, def.target to set a target
+function _M:paradoxDoAnomaly(chance, paradox, def)
+	local def = def or {}
+	local anomaly_type = def.anomaly_type or "random"
 	
 	-- Anomaly biases can be set manually for monsters or classes
-	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
-	-- Additionally anomaly biases could be set by a talent; see the data/chats/chromonacy-bias-weave for an example
+	-- Use the following format anomaly_bias = { type = "warp", chance=50}
 	local function check_bias(major)
 		if self.anomaly_bias then
 			local bias_chance = self.anomaly_bias.chance
@@ -4311,7 +4308,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 			end
 		end
 	end
-
+	
 	-- See if we create an anomaly
 	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") then
 		-- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
@@ -4341,18 +4338,32 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 
 			-- Be sure we found an anomly first
 			if ts[1] then
-				local anomaly = rng.table(ts)
+				local anom = rng.table(ts)
 				
-				if self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) and anomaly_type ~= "major" then
-					if self:hasEffect(self.EFF_TWIST_FATE) then
-						self:callTalent(self.T_TWIST_FATE, "doTwistFate")
-						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
+				if anomaly_type ~= "major" then
+					if self:attr("no_minor_anomalies") then
+						anomaly_triggered = false
+					elseif def.allow_target then
+						-- targeted talents don't work well with no_energy, so we call the action directly
+						anom = self:getTalentFromId(anom)
+						game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
+						anom.action(self, anom)
+					elseif def.ignore_energy then
+						self:forceUseTalent(anom, {force_target=def.target or self, ignore_energy=true})
+					elseif self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) then
+						if self:hasEffect(self.EFF_TWIST_FATE) then
+							self:callTalent(self.T_TWIST_FATE, "doTwistFate")
+							self:callTalent(self.T_TWIST_FATE, "setEffect", anom, paradox)
+						else
+							self:callTalent(self.T_TWIST_FATE, "setEffect", anom, paradox)
+						end
+						anomaly_triggered = false
 					else
-						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
+						self:forceUseTalent(anom, {force_target=def.target or self})
 					end
-					anomaly_triggered = false
 				else
-					self:forceUseTalent(anomaly, {force_target=target or self})
+					-- Major anomalies pick targets at random
+					self:forceUseTalent(anom, {force_target=self})
 				end
 			end
 
@@ -4366,11 +4377,11 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 					end
 				end
 				-- Reduce Paradox
-				if reduction and reduction > 0 then
-					-- Double the reduction from major anomalies, mostly so NPCs don't become more dangerous when they run out of Paradox
-					if anomaly_type == "major" then reduction = reduction * 2 end
+				if paradox and paradox > 0 then
+					-- Double the paradox from major anomalies, mostly so NPCs don't become more dangerous when they run out of Paradox
+					if anomaly_type == "major" then paradox = paradox * 2 end
 					
-					self:incParadox(-reduction)
+					self:incParadox(-paradox)
 				end
 				
 				-- Remove Reality Smearing
@@ -4671,8 +4682,7 @@ function _M:preUseTalent(ab, silent, fake)
 		-- Random anomalies reduce paradox by twice the talent's paradox cost
 		local cost = util.getval(ab.paradox or ab.sustain_paradox, self, ab)
 		if cost > 0 then
-			local multi = 2 + (self:attr("anomaly_paradox_recovery") or 0)
-			if self:paradoxDoAnomaly(cost * multi, ab.anomaly_type or nil, self:paradoxFailChance(), nil, silent) then
+			if self:paradoxDoAnomaly(self:paradoxFailChance(), cost * 2, {anomaly_type=ab.anomaly_type or nil, silent=silent}) then
 				game:playSoundNear(self, "talents/dispel")
 				return false
 			end

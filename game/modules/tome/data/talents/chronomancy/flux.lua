@@ -31,26 +31,9 @@ newTalent{
 	no_energy = true,
 	action = function(self, t)
 		local reduction = self:spellCrit(t.getReduction(self, t))
-		
-		local ts = {}
-		for id, t in pairs(self.talents_def) do
-			if t.type[1] == "chronomancy/anomalies" and t.anomaly_type and t.anomaly_type ~= "major" and not self:isTalentCoolingDown(t) then ts[#ts+1] = id end
-		end
-		
-		if ts[1] then
-			local anom = rng.table(ts)
-			if self:knowTalent(self.T_TWIST_FATE) then
-				-- We call the action table directly so we can both pick a target and ignore energy
-				anom = self:getTalentFromId(anom)
-				game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
-				anom.action(self, anom)
-			else
-				self:forceUseTalent(anom, {force_target=self, ignore_energy=true})
-			end
-			self:incParadox(-reduction)
-		end
-		
-		self:removeEffect(self.EFF_REALITY_SMEARING)		
+
+		self:paradoxDoAnomaly(100, reduction, {anomaly_type=t.anomaly_type, ignore_energy=true, allow_target=self:knowTalent(self.T_TWIST_FATE)})
+	
 		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
