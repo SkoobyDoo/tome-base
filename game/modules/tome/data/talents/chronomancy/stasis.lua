@@ -29,7 +29,7 @@ newTalent{
 		local duration = math.floor(self:combatTalentScale(t, 2, 8))
 		return math.min(duration, 10) 
 	end,
-	getAutoTuning = function(self, t) return self:combatTalentLimit(t, 8, 0, 4) end,
+	getAutoTuning = function(self, t) return 1 + self:combatTalentLimit(t, 6, 0, 3) end,
 	callbackOnActBase = function(self, t)
 		if self:hasEffect(self.EFF_SPACETIME_TUNING) then return end
 		local dox = self:getParadox() - self.preferred_paradox
