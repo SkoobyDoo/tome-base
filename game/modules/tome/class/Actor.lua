@@ -6340,7 +6340,6 @@ function _M:transmoPricemod(o) if o.type == "gem" then return 0.40 else return 0
 function _M:transmoFilter(o) if o:getPrice() <= 0 or o.quest then return false end return true end
 function _M:transmoInven(inven, idx, o)
 	local price = math.min(o:getPrice() * self:transmoPricemod(o), 25) * o:getNumber()
-	local price = math.min(o:getPrice() * self:transmoPricemod(o), 25) * o:getNumber()
 	price = math.floor(price * 100) / 100 -- Make sure we get at most 2 digit precision
 	if price ~= price or not tostring(price):find("^[0-9]") then price = 1 end -- NaN is the only value that does not equals itself, this is the way to check it since we do not have a math.isnan method
 	if inven and idx then self:removeObject(inven, idx, true) end

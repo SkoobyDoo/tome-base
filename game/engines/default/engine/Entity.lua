@@ -673,6 +673,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	-- Then we handle it, this is because resolvers can modify the list with their returns, or handlers, so we must make sure to not modify the list we are iterating over
 	for k, e in pairs(list) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
+			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(".", key_chain))
 			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
 		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			local key_chain = table.clone(key_chain)

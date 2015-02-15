@@ -2260,7 +2260,6 @@ newEntity{ base = "BASE_MINDSTAR",
 			game.logPlayer(who, "#LIGHT_BLUE#You feel the power of the Way within you!")
 		end
 		if who.descriptor and who.descriptor.race == "Halfling" then
-			local Talents = require "engine.interface.ActorStats"
 			self:specialWearAdd({"wielder","resists"}, {[engine.DamageType.MIND] = -25,})
 			self:specialWearAdd({"wielder","combat_mentalresist"}, -20)
 			game.logPlayer(who, "#RED#The Way rejects its former captors!")
@@ -5117,6 +5116,7 @@ newEntity{ base = "BASE_STAFF",
 		dammod = {mag=1.1},
 		damtype = DamageType.DARKNESS,
 	},
+	staff_power = 15,
 	wielder = {
 		combat_spellpower = 12,
 		combat_spellcrit = 8,
