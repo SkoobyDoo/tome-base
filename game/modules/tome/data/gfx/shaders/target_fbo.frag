@@ -85,7 +85,7 @@ void main(void)
 		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 0.0, 1.0 / 4.0 * 1.0));
 			
 	if(loc7 && !loc3 && loc9 && !loc1) //2
-		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 1.0));
+		borderColor += texture2D( targetSkin, texCoord / vec2(4.0, 4.0) + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 1.0));
 
 	if(loc3 && loc1 && loc9 && !loc7) //3 internal
 		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 1.0, 1.0 / 4.0 * 3.0));
@@ -93,17 +93,17 @@ void main(void)
 	if(loc7 && !loc1 && !loc9 && !loc3) //3 external
 		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 1.0, 1.0 / 4.0 * 1.0));
 		
-	if(loc1 && !loc9 && loc7 && !loc3) //6
-		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 3.0, 1.0 / 4.0 * 0.0));
+	if(loc1 && !loc9 && loc7 && !loc3) //8
+		borderColor += texture2D( targetSkin, texCoord / vec2(4.0, 4.0) + vec2(1.0 / 4.0 * 3.0, 1.0 / 4.0 * 0.0));
 			
-	if(loc9 && loc7 && loc3 && !loc1) //9 internal
+	if(loc9 && loc7 && loc3 && !loc1)
 		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 1.0, 1.0 / 4.0 * 2.0));
 
 	if(loc1 && !loc7 && !loc3 && !loc9) //9 external
 		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 1.0, 1.0 / 4.0 * 0.0));
 
-	if(loc1 && !loc9  && loc3 && !loc7) //8
-		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 0.0));
+	if(loc1 && !loc9  && loc3 && !loc7)
+		borderColor += texture2D( targetSkin, texCoord / vec2(4.0, 4.0) + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 0.0));
 
 	if(loc7 && loc1 && loc9 && !loc3) //7 internal
 		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 0.0, 1.0 / 4.0 * 2.0));
@@ -112,27 +112,28 @@ void main(void)
 		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 0.0, 1.0 / 4.0 * 0.0));
 
 	if(loc3 && !loc7 && loc9 && !loc1) //4
-		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 3.0, 1.0 / 4.0 * 1.0));
+		borderColor += texture2D( targetSkin, texCoord / vec2(4.0, 4.0) + vec2(1.0 / 4.0 * 3.0, 1.0 / 4.0 * 1.0));
 
 	if(loc3 && loc7 && !loc9 && !loc1) //3-7 diag
-		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 2.0));
+		borderColor += texture2D( targetSkin, texCoord / vec2(4.0, 4.0) + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 2.0));
 
 	if(!loc3 && !loc7 && loc9 && loc1) //1-9 diag
-		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 3.0, 1.0 / 4.0 * 2.0));
+		borderColor += texture2D( targetSkin, texCoord / vec2(4.0, 4.0) + vec2(1.0 / 4.0 * 3.0, 1.0 / 4.0 * 2.0));
 
 	if(loc3 && loc7 && loc9 && loc1) //internal quad
-		borderColor += texture2D( targetSkin, texCoord / 4.0 + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 3.0));
+		borderColor += texture2D( targetSkin, texCoord / vec2(4.0, 4.0) + vec2(1.0 / 4.0 * 2.0, 1.0 / 4.0 * 3.0));
 		
 	if(!loc5 && borderColor.a > 0.0)
 	{
-		// Pull a color from surroundings to blend underneath the border, but don't override border alpha.
-		resultColor = (colormm * colormm.a + colormp * colormp.a + colorpm * colorpm.a + colorpp * colorpp.a)
-			/ (colormm.a + colormp.a + colorpm.a + colorpp.a); // always non-zero cause at leas tone of the corners is not
+		vec4 avgColor = 
+			(colormm * colormm.a + colormp * colormp.a + colorpm * colorpm.a + colorpp * colorpp.a)
+			/ (colormm.a + colormp.a + colorpm.a + colorpp.a + 1e-5);
+		resultColor += avgColor;
 		resultColor.rgb += borderColor.rgb * borderColor.a;
 		resultColor.a = borderColor.a;
 	}else
 	{
-		borderColor *= borderColor.a;
+		borderColor.rgb *= borderColor.a;
 		resultColor += borderColor;
 	}
 
