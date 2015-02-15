@@ -136,21 +136,20 @@ newTalent{
 	type = {"chronomancy/stasis",4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 12,
+	cooldown = 24,
 	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 1, 0.2, .60) end, -- limit 100%
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 7))) end,
 	no_energy = true,
 	action = function(self, t)
-		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {power=t.getParadoxMulti(self, t)})
+		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {})
 		
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)
-		local multi = t.getParadoxMulti(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[Activate to reduce the Paradox cost of all your chronomancy spells by %d%% for the next %d turns.]]):
-		format(multi, duration)
+		return ([[For the next %d turns you may not create minor anomalies.  You do not regain Paradox or lose the spell you're casting if a random anomaly would normally occur.
+		This spell has no effect on major anomalies.]]):
+		format(duration)
 	end,
 }
