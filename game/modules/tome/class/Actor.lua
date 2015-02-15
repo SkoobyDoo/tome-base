@@ -4344,9 +4344,14 @@ function _M:paradoxDoAnomaly(chance, paradox, def)
 					if self:attr("no_minor_anomalies") then
 						anomaly_triggered = false
 					elseif def.allow_target then
-						-- targeted talents don't work well with no_energy, so we call the action directly
 						anom = self:getTalentFromId(anom)
+						-- make it real obvious for the player
 						game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
+						if self == game.player then
+							game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", anom.name)
+						end
+					
+						-- targeted talents don't work well with no_energy, so we call the action directly
 						anom.action(self, anom)
 					elseif def.ignore_energy then
 						self:forceUseTalent(anom, {force_target=def.target or self, ignore_energy=true})
