@@ -144,7 +144,7 @@ local function set_element(element, new_flavor, player)
 	if not o.unique then o.name = o.name:gsub(o.flavor_name, new_flavor) end
 	o.flavor_name = new_flavor
 	o:resolve()
-	o:resolve(nil, true)	
+	o:resolve(nil, true)
 
 	local next_name = o:getName{no_count=true, force_id=true, no_add_name=true}
 

@@ -2472,3 +2472,61 @@ function _M:logCombat(target, style, ...)
 	local visible, srcSeen, tgtSeen = game:logVisible(self, target)  -- should a message be displayed?
 	if visible then game.uiset.logdisplay(game:logMessage(self, srcSeen, target, tgtSeen, style, ...)) end
 end
+
+-- Staff stuff
+local standard_flavors = {
+	magestaff = {engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE},
+	starstaff = {engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL, engine.DamageType.PHYSICAL},
+	vilestaff = {engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE}, -- yes it overlaps, it's okay
+}
+
+-- from command-staff.lua
+local function update_staff_table(d_table_old, d_table_new, old_element, new_element, tab, v, is_greater)
+	if is_greater then
+		for i = 1, #d_table_old do
+			o.wielder[tab][d_table_old[i]] = math.max(0, o.wielder[tab][d_table_old[i]] - v)
+			if o.wielder[tab][d_table_old[i]] == 0 then o.wielder[tab][d_table_old[i]] = nil end
+		end
+		for i = 1, #d_table_new do
+			o.wielder[tab][d_table_new[i]] = (o.wielder[tab][d_table_new[i]] or 0) + v
+		end
+	else
+		o.wielder[tab][old_element] = math.max(0, o.wielder[tab][old_element] - v)
+		o.wielder[tab][new_element] = (o.wielder[tab][new_element] or 0) + v
+		if o.wielder[tab][old_element] == 0 then o.wielder[tab][old_element] = nil end
+	end
+end
+
+function _M:getStaffFlavor(o, flavor)
+	local flavors = o.flavors or standard_flavors
+	if not flavors[flavor] then return nil end
+	if flavors[flavor] == true then return standard_flavors[flavor]
+	else return flavors[flavor] end
+end
+
+-- Command a staff to another element
+function _M:commandStaff(o, element, flavor)
+	if o.type ~= "staff" then return end
+	local old_element = o.combat_element
+	-- Art staves may define new flavors or redefine meaning of existing ones; "true" means standard, otherwise it should be a list of damage types.
+	local old_flavor = self:getStaffFlavor(o, o.flavor_name)
+	local new_flavor = self:getStaffFlavor(o, flavor)
+	if not old_flavor or not new_flavor then return end
+
+	local staff_power = o.staff_power or o.combat.dam
+	local is_greater = o.is_greater
+	for k, v in pairs(staff.commands) do
+		if type(v) == "table" then
+			local power = staff_power * (v.mult or 1) + v.add
+			update_staff_table(old_flavor, new_flavor, old_element, element, v[1] or k, power, is_greater)
+		elseif type(v) == "number" then  -- shortcut for previous case
+			update_staff_table(old_flavor, new_flavor, old_element, element, k, staff_power * v, is_greater)
+		else
+			v(o, element, flavor, update_staff_table)
+		end
+	end
+	o.combat.element = element
+	if o.melee_element then o.combat.damtype = element
+	if not o.unique then o.name = o.name:gsub(o.flavor_name, flavor) end
+	o.flavor_name = flavor
+end
