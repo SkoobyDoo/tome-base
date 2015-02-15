@@ -49,12 +49,21 @@ newEntity{ base = "WALL", define_as = "WALL_PILLAR_4", image = "terrain/marble_f
 newEntity{ base = "WALL", define_as = "WALL_PILLAR_2", image = "terrain/marble_floor.png", z=1, add_displays = {class.new{image="terrain/granite_wall_pillar_2.png",z=3}}}
 
 
-newEntity { base = "FLOOR", define_as = "RUNE_FLOOR1",
-	add_displays = {class.new{z=3, image="terrain/ruins/floor_128_01.png", display_y = -0.5, display_x = -0.5, display_w=2, display_h=2}},
-}
-newEntity { base = "FLOOR", define_as = "RUNE_FLOOR2",
-	add_displays = {class.new{z=3, image="terrain/ruins/floor_128_02.png", display_y = -0.5, display_x = -0.5, display_w=2, display_h=2}},
-}
-newEntity { base = "FLOOR", define_as = "RUNE_FLOOR3",
-	add_displays = {class.new{z=3, image="terrain/ruins/floor_128_03.png", display_y = -0.5, display_x = -0.5, display_w=2, display_h=2}},
-}
+newEntity { base = "FLOOR", define_as = "RUNE_FLOOR", nice_tiler = { method="replace", base={"RUNE_FLOOR", 100, 1, 5}}}
+for i = 1, 5 do newEntity { base = "FLOOR", define_as = "RUNE_FLOOR"..i, add_displays = {class.new{z=3, image="terrain/ruins/floor_128_0"..i..".png", display_y = -0.5, display_x = -0.5, display_w=2, display_h=2}}} end
+
+newEntity { base = "FLOOR", define_as = "BLOOD_FLOOR", nice_tiler = { method="replace", base={"BLOOD_FLOOR", 100, 1, 3}}}
+for i = 1, 3 do newEntity { base = "FLOOR", define_as = "BLOOD_FLOOR"..i, add_displays = {class.new{z=3, image="terrain/ruins/floor_64_0"..i..".png"}}} end
+
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR", nice_tiler = { method="replace", base={"DECO_FLOOR", 100, 1, 8}}}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR1", add_displays = {class.new{z=3, image="terrain/ruins/floor_bodyparts_bin.png"}}, name = "body remains"}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR2", add_displays = {class.new{z=3, image="terrain/ruins/floor_bonepile_01.png"}}, name = "bone pile"}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR3", add_displays = {class.new{z=3, image="terrain/ruins/floor_bonepile_02.png"}}, name = "bone pile"}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR4", add_displays = {class.new{z=3, image="terrain/ruins/floor_infusion_rack_01.png", display_y=-1, display_h=2}}, name = "infusion rack"}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR5", add_displays = {class.new{z=3, image="terrain/ruins/floor_infusion_rack_02.png"}}, name = "infusion rack"}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR6", add_displays = {class.new{z=3, image="terrain/ruins/floor_operating_table.png", display_y=-1, display_h=2}}, name = "operating table"}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR7", add_displays = {class.new{z=3, image="terrain/ruins/floor_vat_broken_deco_01.png", display_y=-1, display_h=2}}, name = "broken vat"}
+newEntity { base = "FLOOR", define_as = "DECO_FLOOR8", add_displays = {class.new{z=3, image="terrain/ruins/floor_vat_broken_deco_02.png"}}, name = "broken vat"}
+
+newEntity { base = "FLOOR", define_as = "VAT1", add_displays = {class.new{z=3, image="terrain/ruins/vat_broken_01.png", display_y=-1, display_h=2}}, name = "broken vat"}
+newEntity { base = "FLOOR", define_as = "VAT2", add_displays = {class.new{z=3, image="terrain/ruins/vat_broken_02.png", display_y=-1, display_h=2}}, name = "broken vat"}

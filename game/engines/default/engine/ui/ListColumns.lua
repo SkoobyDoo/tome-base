@@ -212,7 +212,7 @@ function _M:generateRow(row, force)
 			else
 				text = tostring(row[col.display_prop or col.sort])
 			end
-			gen = self.font:draw(text, text:toTString():maxWidth(self.font), 255, 255, 255)
+			gen = self.font:draw(text, self.font:size(text), 255, 255, 255, true)
 			row.cells[j]._tex, row.cells[j]._tex_w, row.cells[j]._tex_h, row.cells[j].w, row.cells[j].h = gen[1]._tex, gen[1]._tex_w, gen[1]._tex_h, gen[1].w, gen[1].h
 
 			if row.cells[j].w > col.width - 2 * col.frame_sel.b4.w then

@@ -1296,9 +1296,10 @@ function _M:move(x, y, force)
 	if moved and self:knowTalent(self.T_UNNATURAL_BODY) and not self:knowTalentType("cursed/cursed-aura") and self.chooseCursedAuraTree then
 		if self.player then
 			-- function placed in defiling touch where cursing logic exists
-			self.chooseCursedAuraTree = nil
 			local t = self:getTalentFromId(self.T_DEFILING_TOUCH)
-			t.chooseCursedAuraTree(self, t)
+			if t.chooseCursedAuraTree(self, t) then 
+				self.chooseCursedAuraTree = nil
+			end
 		end
 	end
 

@@ -510,17 +510,23 @@ newInscription{
 	end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_DAMAGE_SHIELD, 5, {power=100+5*self:getMag(), reflect=100})
+		local power = 100+5*self:getMag()
+		if data.power and data.inc_stat then power = data.power + data.inc_stat end
+		self:setEffect(self.EFF_DAMAGE_SHIELD, data.dur or 5, {power=power, reflect=100})
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
+		local power = 100+5*self:getMag()
+		if data.power and data.inc_stat then power = data.power + data.inc_stat end
 		return ([[Activate the rune to create a protective shield absorbing and reflecting at most %d damage for %d turns.
-The effect will scale with your magic stat.]]):format(100+5*self:getMag(), 5)
+The effect will scale with your magic stat.]]):format(power, data.dur or 5)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[absorb and reflect %d for %d turns]]):format(100+5*self:getMag(), 5)
+		local power = 100+5*self:getMag()
+		if data.power and data.inc_stat then power = data.power + data.inc_stat end
+		return ([[absorb and reflect %d for %d turns]]):format(power, data.dur or 5)
 	end,
 }
 
