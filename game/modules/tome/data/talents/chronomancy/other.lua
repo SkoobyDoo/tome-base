@@ -286,17 +286,19 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local preference = self.preferred_paradox
+		local sp_modifier = getParadoxModifier(self, t) * 100
 		local spellpower = getParadoxSpellpower(self, t)
 		local after_will, will_modifier, sustain_modifier = self:getModifiedParadox()
 		local anomaly = self:paradoxFailChance()
 		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number over %d turns.
 
 		Preferred Paradox          :  %d
+		Spellpower Modifier        :  %d%%
 		Spellpower for Chronomancy :  %d
 		Willpower Paradox Modifier : -%d
 		Paradox Sustain Modifier   : +%d
 		Total Modifed Paradox      :  %d
-		Current Anomaly Chance     :  %d%%]]):format(duration, preference, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
+		Current Anomaly Chance     :  %d%%]]):format(duration, preference, sp_modifier, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
 	end,
 }
 
