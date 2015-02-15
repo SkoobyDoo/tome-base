@@ -162,7 +162,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	cooldown = 10,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 30, 15)) end,
 	tactical = { DISABLE = 2 },
 	range = 10,
 	direct_hit = true,
