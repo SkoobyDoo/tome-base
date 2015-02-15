@@ -4319,7 +4319,7 @@ function _M:paradoxDoAnomaly(chance, paradox, def)
 			local anomaly_triggered = true
 			
 			-- If our Paradox is over 600 do a major anomaly
-			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() > 600) then
+			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() >= 600) then
 				anomaly_type = "major"
 			else
 				-- Check for Bias?
