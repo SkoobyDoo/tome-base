@@ -2557,7 +2557,7 @@ newEffect{
 		end
 		
 		-- Split the damage
-		if #clones > 0 and not src.turn_procs.temporal_fugue_damage then
+		if #clones > 0 and not self.turn_procs.temporal_fugue_damage then
 			self.turn_procs.temporal_fugue_damage = true
 			cb.value = cb.value/#clones
 			game:delayedLogMessage(self, nil, "fugue_damage", "#STEEL_BLUE##Source# shares damage with %s fugue clones!", string.his_her(self))

@@ -3404,7 +3404,7 @@ newEffect{
 newEffect{
 	name = "STATIC_HISTORY", image = "talents/static_history.png",
 	desc = "Static History",
-	long_desc = function(self, eff) return ("Chronomancy spells cast by the target cost %d%% less Paradox"):format(eff.power *100) end,
+	long_desc = function(self, eff) return ("Chronomancy spells cast by the target will not produce minor anomalies."):format() end,
 	type = "magical",
 	subtype = { time=true },
 	status = "beneficial",
@@ -3412,7 +3412,7 @@ newEffect{
 	on_gain = function(self, err) return "Spacetime has stabilized around #Target#.", "+Static History" end,
 	on_lose = function(self, err) return "The fabric of spacetime around #Target# has returned to normal.", "-Static History" end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "paradox_cost_multiplier", eff.power)
+		self:effectTemporaryValue(eff, "no_minor_anomalies", 1)
 	end,
 	deactivate = function(self, eff)
 	end,
