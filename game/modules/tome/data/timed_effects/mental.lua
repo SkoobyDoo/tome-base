@@ -3235,7 +3235,7 @@ newEffect{
 }
 
 newEffect{
-	name = "PSIONIC_MAELSTROM", image = "talents/static_net.png",
+	name = "PSIONIC_MAELSTROM", image = "talents/psionic_maelstrom.png",
 	desc = "Psionic Maelstrom",
 	long_desc = function(self, eff) return ("This creature is standing in the eye of a powerful storm of psionic forces."):format() end,
 	type = "mental",

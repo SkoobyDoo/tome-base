@@ -56,7 +56,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		dammod = {wil=0.3, cun=0.1},
 	},
 	wielder = {
-		combat_mindpower = 1,
+		combat_mindpower = 2,
 		combat_mindcrit = 1,
 	},
 }
@@ -74,7 +74,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		dammod = {wil=0.35, cun=0.15},
 	},
 	wielder = {
-		combat_mindpower = 2,
+		combat_mindpower = 4,
 		combat_mindcrit = 2,
 	},
 }
@@ -92,7 +92,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		dammod = {wil=0.4, cun=0.2},
 	},
 	wielder = {
-		combat_mindpower = 3,
+		combat_mindpower = 6,
 		combat_mindcrit = 3,
 	},
 }
@@ -110,7 +110,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		dammod = {wil=0.45, cun=0.25},
 	},
 	wielder = {
-		combat_mindpower = 4,
+		combat_mindpower = 8,
 		combat_mindcrit = 4,
 	},
 }
@@ -128,7 +128,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		dammod = {wil=0.5, cun=0.3},
 	},
 	wielder = {
-		combat_mindpower = 5,
+		combat_mindpower = 10,
 		combat_mindcrit = 5,
 	},
 }

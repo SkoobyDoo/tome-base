@@ -59,7 +59,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Gather your will, and brutally smash the target with your mainhand weapon and then your telekinetically wielded weapon, doing %d%% weapon damage.
 		If your mainhand weapon hits, you will also stun the target for %d turns.
-		This attack uses your Willpower and Cunning instead of Strength and Dexterity to determine Accuracy and damage.
+		This attack uses 60%% of your Willpower and Cunning instead of Strength and Dexterity to determine weapon damage and accuracy, for both attacks.
 		Any active Aura damage bonusses will extend to the weapons used for this attack.]]):
 		format(100 * self:combatTalentWeaponDamage(t, 0.9, 1.5), t.duration(self,t))
 	end,
@@ -77,8 +77,8 @@ newTalent{
 	tactical = { BUFF = 2 },
 	getMult = function(self, t) return self:combatTalentScale(t, 0.1, 0.3) end,
 	activate = function(self, t)
-		local str_power = t.getMult(self, t)*self:getWil()
-		local dex_power = t.getMult(self, t)*self:getCun()
+		local str_power = math.ceil(t.getMult(self, t)*self:getWil())
+		local dex_power = math.ceil(t.getMult(self, t)*self:getCun())
 		return {
 			stats = self:addTemporaryValue("inc_stats", {
 				[self.STAT_STR] = str_power,
@@ -92,8 +92,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		local inc = t.getMult(self, t)
-		local str_power = inc*self:getWil()
-		local dex_power = inc*self:getCun()
+		local str_power = math.ceil(inc*self:getWil())
+		local dex_power = math.ceil(inc*self:getCun())
 		return ([[While active, you give your flesh and blood body a boost in the form of precisely applied mental forces. Increases Strength and Dexterity by %d%% of your Willpower and Cunning, respectively.
 		Strength increased by %d
 		Dexterity increased by %d]]):
