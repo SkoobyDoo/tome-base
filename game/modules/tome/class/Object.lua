@@ -2120,14 +2120,14 @@ local standard_flavors = {
 local function update_staff_table(o, d_table_old, d_table_new, old_element, new_element, tab, v, is_greater)
 	if is_greater then
 		for i = 1, #d_table_old do
-			o.wielder[tab][d_table_old[i]] = math.max(0, o.wielder[tab][d_table_old[i]] - v)
+			o.wielder[tab][d_table_old[i]] = math.max(0, (o.wielder[tab][d_table_old[i]] or 0) - v)
 			if o.wielder[tab][d_table_old[i]] == 0 then o.wielder[tab][d_table_old[i]] = nil end
 		end
 		for i = 1, #d_table_new do
 			o.wielder[tab][d_table_new[i]] = (o.wielder[tab][d_table_new[i]] or 0) + v
 		end
 	else
-		o.wielder[tab][old_element] = math.max(0, o.wielder[tab][old_element] - v)
+		o.wielder[tab][old_element] = math.max(0, (o.wielder[tab][old_element] or 0) - v)
 		o.wielder[tab][new_element] = (o.wielder[tab][new_element] or 0) + v
 		if o.wielder[tab][old_element] == 0 then o.wielder[tab][old_element] = nil end
 	end

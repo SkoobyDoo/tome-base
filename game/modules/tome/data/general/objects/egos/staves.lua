@@ -66,12 +66,8 @@ newEntity{
 		combat_spellpower = resolvers.mbonus_material(3, 2),
 	},
 	resolvers.genericlast(function(e)
-		e.wielder.inc_damage[e.combat.element or e.combat.damtype] = e.combat.dam
-		if e.combat.of_breaching then
-			for d, v in pairs(e.wielder.inc_damage) do
-				e.wielder.resists_pen[d] = math.ceil(e.combat.dam/2)
-			end
-		end
+		e.combat.staff_power = e.combat.dam
+		e:commandStaff(e.element, e.flavor_name)
 	end),
 }
 
@@ -148,15 +144,7 @@ newEntity{
 		combat_spellpower = resolvers.mbonus_material(4, 3),
 	},
 	resolvers.generic(function(e)
-		local dam_tables = {
-			magestaff = { engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE },
-			starstaff = { engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL, engine.DamageType.PHYSICAL },
-			vilestaff = { engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE },
-		}
-		local d_table = dam_tables[e.flavor_name]
-		for i = 1, #d_table do
-			e.wielder.inc_damage[d_table[i]] = e.combat.dam
-		end
+		e:commandStaff(e.combat.element, e.flavor_name)
 	end),
 }
 
@@ -307,6 +295,7 @@ newEntity{
 		wards = {},
 	},
 	combat = {of_warding = true},
+	command_staff = {of_warding = {add=2, mult=0, "wards"}},
 	resolvers.genericlast(function(e)
 		for d, v in pairs(e.wielder.inc_damage) do
 			e.wielder.wards[d] = 2
@@ -326,6 +315,7 @@ newEntity{
 		resists_pen = {},
 	},
 	combat = {of_breaching = true},
+	command_staff = {resists_pen=0.5,},
 	resolvers.genericlast(function(e)
 		for d, v in pairs(e.wielder.inc_damage) do
 			e.wielder.resists_pen[d] = v/2
@@ -433,6 +423,7 @@ newEntity{
 		wards = {},
 	},
 	combat = {of_greater_warding = true},
+	command_staff = {of_greater_warding = {add=3, mult=0, "wards"}},
 	resolvers.genericlast(function(e)
 		for d, v in pairs(e.wielder.inc_damage) do
 			e.wielder.wards[d] = 3
@@ -506,6 +497,7 @@ newEntity{
 		resists = {},
 	},
 	combat = {of_protection = true},
+	command_staff = {resists = 0.5,},
 	resolvers.genericlast(function(e)
 		for d, v in pairs(e.wielder.inc_damage) do
 			e.wielder.resists[d] = v/2
@@ -602,6 +594,7 @@ newEntity{
 			[DamageType.ARCANE] = resolvers.mbonus_material(30, 15),
 		},
 	},
+	-- XXX what is the purpose of this
 	resolvers.genericlast(function(e)
 		e.wielder.inc_damage[e.combat.element or e.combat.damtype] = e.combat.dam
 		if e.combat.of_breaching then
