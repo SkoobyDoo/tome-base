@@ -394,14 +394,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			atk = atk + eff.atk
-		end
-	end
-
-
 	-- track weakness for hate bonus before the target removes it
 	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
 
@@ -433,6 +425,14 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	if target:hasEffect(target.EFF_WEAPON_WARDING) then
 		local e = target.tempeffect_def[target.EFF_WEAPON_WARDING]
 		if e.do_block(target, target.tmp[target.EFF_WEAPON_WARDING], self) then
+			repelled = true
+		end
+	end
+	
+	if target:hasEffect(target.EFF_WARDEN_S_FOCUS) and target:hasDualWeapon() then
+		local eff = target:hasEffect(target.EFF_WARDEN_S_FOCUS)
+		if eff.target == self and rng.percent(eff.parry) then
+			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
 			repelled = true
 		end
 	end
@@ -1751,13 +1751,6 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		end
 	end
 	
-	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			chance = chance + eff.crit
-		end
-	end
-
 	if target then
 		chance = chance - target:combatCritReduction()
 	end
