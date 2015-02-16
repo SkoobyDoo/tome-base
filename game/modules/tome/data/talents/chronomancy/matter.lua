@@ -296,6 +296,12 @@ newTalent{
 					game.logSeen(self, "#CRIMSON#%s's beneficial effect was stripped!#LAST#", target.name:capitalize())
 					if what == "physical" then p.physical[target] = true end
 					if what == "magical" then p.magical[target] = true end
+					
+					-- The Cure achievement
+					local acheive = self.player and not target.training_dummy and target ~= self
+					if acheive then
+						world:gainAchievement("THE_CURE", self)
+					end
 				end
 			end
 		end

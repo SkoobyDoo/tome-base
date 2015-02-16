@@ -404,6 +404,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, nowarning=true, talent=t}
 	end,
+	no_energy = true,
 	requires_target = true,
 	direct_hit = true,
 	action = function(self, t)
@@ -411,7 +412,6 @@ newTalent{
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		local hit = false
 
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
@@ -423,20 +423,11 @@ newTalent{
 				else
 					target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
 					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
-					hit = true
 				end
 			else
 				game.logSeen(target, "%s resists the banishment!", target.name:capitalize())
 			end
 		end)
-		
-		if not hit then
-			game:onTickEnd(function()
-				if not self:attr("no_talents_cooldown") then
-					self.talents_cd[self.T_BANISH] = math.floor(self.talents_cd[self.T_BANISH] /2)
-				end
-			end)
-		end
 
 		game:playSoundNear(self, "talents/teleport")
 
@@ -446,7 +437,6 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local range = t.getTeleport(self, t)
 		return ([[Randomly teleports all other targets within a radius of %d.  Targets will be teleported between %d and %d tiles from their current location.
-		If no targets are teleported the cooldown will be halved.
 		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
 	end,
 }
