@@ -4793,7 +4793,6 @@ local sustainCallbackCheck = {
 	callbackOnTemporaryEffect = "talents_on_tmp",
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
-	callbackOnChronoWeaponFoldingHit = "talents_on_chrono_weapon_folding_hit",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 

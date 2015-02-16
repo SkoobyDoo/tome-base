@@ -2768,11 +2768,11 @@ newEffect{
 newEffect{
 	name = "WARDEN_S_TARGET", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus Target",
-	long_desc = function(self, eff) return ("%s is focusing on this target, gaining +%d accuracy and +%d%% critical hit chance when attacking it."):format(eff.src.name, eff.atk, eff.crit) end,
+	long_desc = function(self, eff) return ("%s is focusing on this target."):format(eff.src.name) end,
 	type = "other",
 	subtype = { tactic=true },
 	status = "detrimental",
-	parameters = {atk = 1, crit= 1},
+	parameters = {},
 	remove_on_clone = true, decrease = 0,
 	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,

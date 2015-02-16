@@ -396,13 +396,14 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
-	cooldown = 8,
-	tactical = { ESCAPE = 2 },
+	cooldown = 4,
+	tactical = { ESCAPE = 2, DEBUFF = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
+	radius = 3,
 	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, nowarning=true, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, nowarning=true, talent=t}
 	end,
 	no_energy = true,
 	requires_target = true,
@@ -415,10 +416,10 @@ newTalent{
 
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
-			if not target or target == self then return end
+			if not target then return end
 			game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
 			if self:checkHit(getParadoxSpellpower(self, t), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0)) and target:canBe("teleport") then
-				if not target:teleportRandom(target.x, target.y, self:getTalentRadius(t) * 4, self:getTalentRadius(t) * 2) then
+				if not target:teleportRandom(self.x, self.y, t.getTeleport(self, t), t.getTeleport(self, t)/2) then
 					game.logSeen(target, "The spell fizzles on %s!", target.name:capitalize())
 				else
 					target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
@@ -427,6 +428,8 @@ newTalent{
 			else
 				game.logSeen(target, "%s resists the banishment!", target.name:capitalize())
 			end
+			-- random warp
+			DamageType:get(DamageType.RANDOM_WARP).projector(self, target.x, target.y, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end)
 
 		game:playSoundNear(self, "talents/teleport")
@@ -434,10 +437,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local radius = self:getTalentRadius(t)
 		local range = t.getTeleport(self, t)
-		return ([[Randomly teleports all other targets within a radius of %d.  Targets will be teleported between %d and %d tiles from their current location.
-		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
+		local duration = t.getDuration(self, t)
+		return ([[Randomly teleports all enemies within a radius of three.  Enemies will be teleported between %d and %d tiles from you and may be stunned, blinded, confused, or pinned for %d turns.
+		The chance of teleportion will scale with your Spellpower.]]):format(range / 2, range, duration)
 	end,
 }
 
@@ -447,13 +450,12 @@ newTalent{
 	require = chrono_req4,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 12,
+	cooldown = 10,
 	tactical = { DISABLE = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
+	radius = 3,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
-	getEffectDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t}
 	end,
@@ -465,20 +467,22 @@ newTalent{
 		if not x or not y then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 
-		-- Project our daze..  no save as this is our main means of creating combos
+		local dam = self:spellCrit(t.getDamage(self, t))
+		-- Project our daze and initial anchor, no save on the daze
 		self:project(tg, x, y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
-			if target and target:canBe("stun") then
+			if not target then return end
+			if target:canBe("stun") then
 				target:setEffect(target.EFF_DAZED, 2, {})
 			end
+			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam, src=self, dur=1, apply_power=getParadoxSpellpower(self, t), no_ct_effect=true})
 		end)
 
 		-- Add a lasting map effect
-		local dam = self:spellCrit(t.getDamage(self, t))
 		local particle = MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, oversize=0, img="moon_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/magic_effect.png"}
 		game.level.map:addEffect(self,
 			x, y, t.getDuration(self,t),
-			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, status_dur=t.getEffectDuration(self, t), src=self, apply=getParadoxSpellpower(self, t)},
+			DamageType.DIMENSIONAL_ANCHOR, {dam=dam, src=self, apply=getParadoxSpellpower(self, t)},
 			self:getTalentRadius(t),
 			5, nil,
 			particle,
@@ -491,11 +495,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)/2
-		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self, t)
-		local effect = t.getEffectDuration(self, t)
-		return ([[Create a radius %d anti-teleport field for %d turns and daze all enemies in the area of effect for two turns.
-		Enemies attempting to teleport while anchored take %0.2f physical and %0.2f temporal (warp) damage and may be stunned, blinded, confused, or pinned for %d turns.
-		The damage will scale with your Spellpower.]]):format(radius, duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), effect)
+		return ([[Create a radius three anti-teleport field for %d turns and daze all enemies in the area of effect for two turns.
+		Enemies attempting to teleport while anchored take %0.2f physical and %0.2f temporal (warp) damage.
+		The damage will scale with your Spellpower.]]):format(duration, damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage))
 	end,
 }

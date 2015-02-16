@@ -2235,7 +2235,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		damtype = DamageType.MIND,
 	},
 	wielder = {
-		combat_mindpower = 20,
+		combat_mindpower = 18,
 		combat_mindcrit = 9,
 		confusion_immune=0.3,
 		inc_damage={
@@ -2276,7 +2276,7 @@ newEntity{ base = "BASE_MINDSTAR",
 	color=colors.AQUAMARINE, image = "object/artifact/amethyst_of_sanctuary.png",
 	rarity = 250,
 	desc = [[This bright violet gem exudes a calming, focusing force. Holding it, you feel protected against outside forces.]],
-	cost = 85,
+	cost = 185,
 	require = { stat = { wil=28 }, },
 	material_level = 4,
 	combat = {
@@ -2287,8 +2287,8 @@ newEntity{ base = "BASE_MINDSTAR",
 		damtype = DamageType.MIND,
 	},
 	wielder = {
-		combat_mindpower = 15,
-		combat_mindcrit = 8,
+		combat_mindpower = 14,
+		combat_mindcrit = 7,
 		combat_mentalresist = 25,
 		max_psi = 20,
 		talents_types_mastery = {
@@ -2367,7 +2367,7 @@ newEntity{ base = "BASE_MINDSTAR",
 	color=colors.GREEN, image = "object/artifact/oozing_heart.png",
 	rarity = 250,
 	desc = [[This mindstar oozes a thick, caustic liquid. Magic seems to die around it.]],
-	cost = 85,
+	cost = 185,
 	require = { stat = { wil=36 }, },
 	material_level = 4,
 	combat = {
@@ -2389,7 +2389,7 @@ newEntity{ base = "BASE_MINDSTAR",
 			[DamageType.ARCANE] = 12,
 			[DamageType.BLIGHT] = 12,
 		},
-		inc_stats = { [Stats.STAT_WIL] = 7, [Stats.STAT_CUN] = 2, },
+		inc_stats = { [Stats.STAT_WIL] = 6, [Stats.STAT_CUN] = 2, },
 		talents_types_mastery = { ["wild-gift/ooze"] = 0.1, ["wild-gift/slime"] = 0.1,},
 	},
 	max_power = 20, power_regen = 1,
@@ -2425,10 +2425,10 @@ newEntity{ base = "BASE_MINDSTAR",
 		damtype = DamageType.NATURE,
 	},
 	wielder = {
-		combat_mindpower = 12,
-		combat_mindcrit = 8,
-		life_regen = 0.5,
-		healing_factor = 0.1,
+		combat_mindpower = 8,
+		combat_mindcrit = 4,
+		life_regen = 2,
+		healing_factor = 0.2,
 		talents_types_mastery = { ["wild-gift/fungus"] = 0.2,},
 	},
 	max_power = 60, power_regen = 1,
@@ -2483,7 +2483,7 @@ newEntity{ base = "BASE_MINDSTAR",
 	level_range = {30, 40},
 	require = { stat = { wil=45, }, },
 	rarity = 280,
-	cost = 300,
+	cost = 230,
 	material_level = 4,
 	sentient=true,
 	combat = {
@@ -2500,8 +2500,10 @@ newEntity{ base = "BASE_MINDSTAR",
 		},
 	},
 	wielder = {
-		combat_mindpower = 9,
-		combat_mindcrit = 7,
+		combat_mindpower = 8,
+		combat_dam = 8,
+		combat_mindcrit = 4,
+		combat_physcrit = 4,
 		inc_damage={
 			[DamageType.PHYSICAL] 	= 8,
 			[DamageType.FIRE] 	= 8,
@@ -2523,6 +2525,44 @@ newEntity{ base = "BASE_MINDSTAR",
 			["wild-gift/storm-drake"] = 0.1,
 			["wild-gift/venom-drake"] = 0.1,
 		}
+	},
+	ms_set_wyrm = true,
+	set_list = {
+		multiple = true,
+		harmonious = {{"ms_set_harmonious", true, inven_id = other_hand,},},
+		wyrm = {{"ms_set_drake", true, inven_id = other_hand,},},},
+	set_desc = {
+		wyrm = "The natural wyrm seeks an element.",
+	},
+	on_set_complete = {
+		multiple = true,
+		harmonious = function(self, who, inven_id)
+			if inven_id == "MAINHAND" then
+				game.logPlayer(who, "#PURPLE#You feel the spirit of the wyrm stirring inside you!")
+			end
+			self:specialSetAdd({"wielder","blind_immune"}, self.material_level / 10)
+			self:specialSetAdd({"wielder","stun_immune"}, self.material_level / 10)
+		end,
+		wyrm = function(self, who, inven_id)
+			if inven_id == "MAINHAND" then
+				game.logPlayer(who, "#PURPLE#You feel the spirit of the wyrm stirring inside you!")
+			end
+			self:specialSetAdd({"wielder","blind_immune"}, self.material_level / 10)
+			self:specialSetAdd({"wielder","stun_immune"}, self.material_level / 10)
+		end,
+	},
+	on_set_broken = {
+		multiple = true,
+		harmonious = function(self, who, inven_id, set_objects)
+			if inven_id == "MAINHAND" then
+				game.logPlayer(who, "#SLATE#The link between the mindstars is broken.")
+			end
+		end,
+		wyrm = function(self, who, inven_id, set_objects)
+			if inven_id == "MAINHAND" then
+				game.logPlayer(who, "#SLATE#The link between the mindstars is broken.")
+			end
+		end,
 	},
 	on_wear = function(self, who)
 		self.worn_by = who
@@ -2567,7 +2607,7 @@ newEntity{ base = "BASE_MINDSTAR",
 	level_range = {20, 32},
 	require = { stat = { wil=34, }, },
 	rarity = 250,
-	cost = 220,
+	cost = 120,
 	material_level = 3,
 	combat = {
 		dam = 10,
@@ -2577,7 +2617,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		damtype=DamageType.NATURE,
 	},
 	wielder = {
-		combat_mindpower = 9,
+		combat_mindpower = 12,
 		combat_mindcrit = 6,
 		inc_damage={
 			[DamageType.PHYSICAL] 	= 8,
@@ -2593,7 +2633,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		},
 		heal_on_nature_summon = 30,
 		nature_summon_max = 2,
-		inc_stats = { [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 4 },
+		inc_stats = { [Stats.STAT_WIL] = 3, [Stats.STAT_CUN] = 3 },
 	},
 	max_power = 16, power_regen = 1,
 	use_talent = { id = Talents.T_RAGE, level = 4, power = 16 },
@@ -2938,7 +2978,7 @@ newEntity{ base = "BASE_MINDSTAR",
 	color=colors.GREEN,
 	rarity = 180,
 	desc = [[A thick venom drips from this mindstar.]],
-	cost = 40,
+	cost = 20,
 	require = { stat = { wil=12 }, },
 	material_level = 1,
 	combat = {
@@ -2950,8 +2990,8 @@ newEntity{ base = "BASE_MINDSTAR",
 		convert_damage={[DamageType.POISON] = 30,}
 	},
 	wielder = {
-		combat_mindpower = 5,
-		combat_mindcrit = 5,
+		combat_mindpower = 4,
+		combat_mindcrit = 2,
 		poison_immune = 0.5,
 		resists = {
 			[DamageType.NATURE] = 10,
@@ -3680,7 +3720,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		damtype = DamageType.DREAMFORGE,
 	},
 	wielder = {
-		combat_mindpower = 15,
+		combat_mindpower = 16,
 		combat_mindcrit = 8,
 		combat_atk=10,
 		combat_dam=10,
@@ -3698,7 +3738,7 @@ newEntity{ base = "BASE_MINDSTAR",
 			[DamageType.MIND] 		= 10,
 			[DamageType.PHYSICAL] 	= 10,
 		},
-		inc_stats = { [Stats.STAT_WIL] = 6, [Stats.STAT_CUN] = 3, },
+		inc_stats = { [Stats.STAT_WIL] = 6, [Stats.STAT_CUN] = 4, },
 		talents_types_mastery = {
 			["psionic/dream-forge"] = 0.2,
 			["psionic/dream-smith"] = 0.2,
@@ -4936,7 +4976,7 @@ newEntity{ base = "BASE_MINDSTAR",
 		damtype = DamageType.NATURE,
 	},
 	wielder = {
-		combat_mindpower = 20,
+		combat_mindpower = 18,
 		combat_mindcrit = 9,
 		resists={[DamageType.BLIGHT] = 25, [DamageType.NATURE] = 15},
 		inc_damage={
@@ -4947,7 +4987,7 @@ newEntity{ base = "BASE_MINDSTAR",
 			[DamageType.NATURE] = 20,
 			[DamageType.ACID] = 10,
 		},
-		inc_stats = { [Stats.STAT_WIL] = 10, [Stats.STAT_CUN] = 5, },
+		inc_stats = { [Stats.STAT_WIL] = 10, },
 		learn_talent = {[Talents.T_OOZE_SPIT] = 3},
 		talents_types_mastery = { ["wild-gift/mindstar-mastery"] = 0.1,},
 	},
@@ -7080,7 +7120,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "EYE_OF_SUMMER",
 		damtype = DamageType.FIRE,
 	},
 	wielder = {
-		combat_mindpower = 6,
+		combat_mindpower = 8,
 		combat_mindcrit = 4,
 		inc_damage = { [DamageType.FIRE]=10 },
 		resists_pen = { [DamageType.FIRE] = 10 },
@@ -7136,7 +7176,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "EYE_OF_WINTER",
 		damtype = DamageType.COLD,
 	},
 	wielder = {
-		combat_mindpower = 6,
+		combat_mindpower = 8,
 		combat_mindcrit = 4,
 		inc_damage = { [DamageType.COLD]=10 },
 		resists_pen = { [DamageType.COLD] = 10 },
@@ -7322,8 +7362,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 		damtype = DamageType.PHYSICAL,
 	},
 	wielder = {
-		combat_mindpower = 6,
-		combat_mindcrit = 2,
+		combat_mindpower = 8,
+		combat_mindcrit = 4,
 		inc_damage = { [DamageType.PHYSICAL]=10 },
 		resists_pen = { [DamageType.PHYSICAL] = 6 },
 		resists = { [DamageType.PHYSICAL]=10 },
@@ -7346,7 +7386,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 		multiple = true,
 		kinchar = function(self, who)
 			self:specialSetAdd({"wielder","combat_mindpower"}, 6)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 6)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.PHYSICAL]=10 })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.PHYSICAL]=6 })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.PHYSICAL]=10 })
@@ -7357,7 +7397,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 		end,
 		kinther = function(self, who)
 			self:specialSetAdd({"wielder","combat_mindpower"}, 6)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 6)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.PHYSICAL]=10 })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.PHYSICAL]=6 })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.PHYSICAL]=10 })
@@ -7367,8 +7407,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "KINETIC_FOCUS",
 			game.logSeen(who, "#YELLOW#You feel psionic energy linking the mindstars.")
 		end,
 		resonating = function(self, who)
-			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 2)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 1)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.PHYSICAL]=5 })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.PHYSICAL]=3 })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.PHYSICAL]=5 })
@@ -7403,8 +7443,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
 		damtype = DamageType.LIGHTNING,
 	},
 	wielder = {
-		combat_mindpower = 9,
-		combat_mindcrit = 5,
+		combat_mindpower = 12,
+		combat_mindcrit = 6,
 		inc_damage = { [DamageType.LIGHTNING]=15 },
 		resists_pen = { [DamageType.LIGHTNING] = 9 },
 		resists = { [DamageType.LIGHTNING]=15 },
@@ -7426,8 +7466,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
 	on_set_complete = { 
 		multiple = true,
 		kinchar = function(self, who)
-			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 2)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 1)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.LIGHTNING]=5 })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.LIGHTNING]=3 })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.LIGHTNING]=5 })
@@ -7437,7 +7477,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
 		end,
 		charther = function(self, who)
 			self:specialSetAdd({"wielder","combat_mindpower"}, 6)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 6)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.LIGHTNING]=10 })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.LIGHTNING]=6 })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.LIGHTNING]=10 })
@@ -7446,8 +7486,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "CHARGED_FOCUS",
 			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/charged-mastery"] = 0.1 })
 		end,
 		resonating = function(self, who)
-			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 2)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 1)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.LIGHTNING]=5 })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.LIGHTNING]=3 })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.LIGHTNING]=5 })
@@ -7470,7 +7510,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 	moddable_tile = "special/%s_thermal_focus",
 	rarity = 300,
 	desc = [[Thermal energies are focussed in the core of this mindstar.]],
-	cost = 400,
+	cost = 200,
 	require = { stat = { wil=35 }, },
 	material_level = 4,
 	combat = {
@@ -7484,7 +7524,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 		},
 	},
 	wielder = {
-		combat_mindpower = 12,
+		combat_mindpower = 16,
 		combat_mindcrit = 8,
 		inc_damage = { [DamageType.FIRE]=20, [DamageType.COLD]=20,  },
 		resists_pen = { [DamageType.FIRE] = 12, [DamageType.COLD]=12,  },
@@ -7507,8 +7547,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 	on_set_complete = { 
 		multiple = true,
 		kinther = function(self, who)
-			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 2)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 1)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.FIRE]=3, [engine.DamageType.COLD]=3, })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
@@ -7517,8 +7557,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/thermal-mastery"] = 0.05 })
 		end,
 		charther = function(self, who)
-			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 2)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 1)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.FIRE]=3, [engine.DamageType.COLD]=3, })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
@@ -7527,8 +7567,8 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "THERMAL_FOCUS",
 			self:specialSetAdd({"wielder","talents_types_mastery"},{ ["psionic/thermal-mastery"] = 0.05 })
 		end,
 		resonating = function(self, who)
-			self:specialSetAdd({"wielder","combat_mindpower"}, 3)
-			self:specialSetAdd({"wielder","combat_mindcrit"}, 3)
+			self:specialSetAdd({"wielder","combat_mindpower"}, 2)
+			self:specialSetAdd({"wielder","combat_mindcrit"}, 1)
 			self:specialSetAdd({"wielder","inc_damage"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
 			self:specialSetAdd({"wielder","resists_pen"}, { [engine.DamageType.FIRE]=3, [engine.DamageType.COLD]=3, })
 			self:specialSetAdd({"wielder","resists"}, { [engine.DamageType.FIRE]=5, [engine.DamageType.COLD]=5, })
