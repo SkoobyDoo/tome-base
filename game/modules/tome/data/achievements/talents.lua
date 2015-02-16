@@ -67,7 +67,7 @@ newAchievement{
 newAchievement{
 	name = "Best album ever!", id = "THE_CURE",
 	desc = [[Removed 89 beneficial effects from enemies via Disintegration.]],
-	show = "full", 	mode = "world",
+	show = "full", 	mode = "player",
 	can_gain = function(self, who)
 		self.nb = (self.nb or 0) + 1
 		if self.nb >= 89 then return true end
