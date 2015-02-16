@@ -110,7 +110,7 @@ local function set_element(element, new_flavor, player)
 	local _, item, inven_id = player:findInAllInventoriesByObject(o)
 	if inven_id then player:onTakeoff(o, inven_id, true) end
 
-	player:commandStaff(o, element, new_flavor)
+	o:commandStaff(element, new_flavor)
 	local next_name = o:getName{no_count=true, force_id=true, no_add_name=true}
 
 	if player.hotkey then
@@ -137,7 +137,7 @@ table.sort(flavor_list)
 local aspect_answers = {}
 local aspect_chat_id = not is_sentient() and "welcome" or "which-aspect"
 for _, flavor in ipairs(flavor_list) do
-	local damtypes = game.player:getStaffFlavor(o, flavor)
+	local damtypes = o:getStaffFlavor(flavor)
 	local answers = {}
 	for i, dtype in ipairs(damtypes) do
 		local name = ("[%s]"):format(DamageType:get(dtype).name:capitalize())

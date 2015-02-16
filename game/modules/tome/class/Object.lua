@@ -2108,3 +2108,75 @@ function _M:canAttachTinker(tinker, override)
 	if self.tinker and not override then return end
 	return true
 end
+
+-- Staff stuff
+local standard_flavors = {
+	magestaff = {engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE},
+	starstaff = {engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL, engine.DamageType.PHYSICAL},
+	vilestaff = {engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE}, -- yes it overlaps, it's okay
+}
+
+-- from command-staff.lua
+local function update_staff_table(o, d_table_old, d_table_new, old_element, new_element, tab, v, is_greater)
+	if is_greater then
+		for i = 1, #d_table_old do
+			o.wielder[tab][d_table_old[i]] = math.max(0, o.wielder[tab][d_table_old[i]] - v)
+			if o.wielder[tab][d_table_old[i]] == 0 then o.wielder[tab][d_table_old[i]] = nil end
+		end
+		for i = 1, #d_table_new do
+			o.wielder[tab][d_table_new[i]] = (o.wielder[tab][d_table_new[i]] or 0) + v
+		end
+	else
+		o.wielder[tab][old_element] = math.max(0, o.wielder[tab][old_element] - v)
+		o.wielder[tab][new_element] = (o.wielder[tab][new_element] or 0) + v
+		if o.wielder[tab][old_element] == 0 then o.wielder[tab][old_element] = nil end
+	end
+end
+
+
+function _M:getStaffFlavor(flavor)
+	local flavors = self.flavors or standard_flavors
+	if not flavors[flavor] then return nil end
+	if flavors[flavor] == true then return standard_flavors[flavor]
+	else return flavors[flavor] end
+end
+
+local function staff_command(o) -- compat
+	if o.command_staff then return o.command_staff end
+	if o.no_command then return {} end
+	o.command_staff = {
+		inc_damage = 1,
+		resists = o.combat.of_protection and 0.5 or nil,
+		resists_pen = o.combat.of_breaching and 0.5 or nil,
+		of_warding = o.combat.of_warding and {add=2, mult=0, "wards"} or nil,
+		of_greater_warding = o.combat.of_greater_warding and {add=3, mult=0, "wards"} or nil,
+	}
+	return o.command_staff
+end
+
+
+-- Command a staff to another element
+function _M:commandStaff(element, flavor)
+	if self.subtype ~= "staff" then return end
+	local old_element = self.combat.element
+	-- Art staves may define new flavors or redefine meaning of existing ones; "true" means standard, otherwise it should be a list of damage types.
+	local old_flavor = self:getStaffFlavor(self.flavor_name)
+	local new_flavor = self:getStaffFlavor(flavor)
+	if not old_flavor or not new_flavor then return end
+	local staff_power = self.combat.staff_power or self.combat.dam
+	local is_greater = self.combat.is_greater
+	for k, v in pairs(staff_command(self)) do
+		if type(v) == "table" then
+			local power = staff_power * (v.mult or 1) + v.add
+			update_staff_table(self, old_flavor, new_flavor, old_element, element, v[1] or k, power, is_greater)
+		elseif type(v) == "number" then  -- shortcut for previous case
+			update_staff_table(self, old_flavor, new_flavor, old_element, element, k, staff_power * v, is_greater)
+		else
+			v(self, element, flavor, update_staff_table)
+		end
+	end
+	self.combat.element = element
+	if self.combat.melee_element then self.combat.damtype = element end
+	if not self.unique then self.name = self.name:gsub(self.flavor_name, flavor) end
+	self.flavor_name = flavor
+end
