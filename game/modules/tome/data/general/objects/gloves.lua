@@ -29,7 +29,7 @@ newEntity{
 	moddable_tile = resolvers.moddable_tile("gloves"),
 	encumber = 1,
 	rarity = 9,
-	combat = {accuracy_effect = "axe"},
+	wielder={combat = {accuracy_effect = "axe"},},
 	desc = [[Light gloves which do not seriously hinder finger movements, while still protecting the hands somewhat.]],
 	randart_able = "/data/general/objects/random-artifacts/gloves.lua",
 	egos = "/data/general/objects/egos/gloves.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
