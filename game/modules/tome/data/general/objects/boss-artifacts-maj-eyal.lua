@@ -1361,7 +1361,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "PSIONIC_FURY",
 		resists={
 			[DamageType.MIND] 		= 10,
 		},
-		inc_stats = { [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 4, },
+		inc_stats = { [Stats.STAT_WIL] = 3, [Stats.STAT_CUN] = 3, },
 	},
 	max_power = 40, power_regen = 1,
 	use_power = { name = "release a wave of psionic power", power = 40,

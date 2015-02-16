@@ -1234,7 +1234,7 @@ function _M:combatAttackBase(weapon, ammo)
 end
 function _M:combatAttack(weapon, ammo)
 	local stats
-	if self:attr("use_psi_combat") then stats = self:getCun(100, true) - 10
+	if self:attr("use_psi_combat") then stats = (self:getCun(100, true) - 10) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	elseif weapon and weapon.wil_attack then stats = self:getWil(100, true) - 10
 	else stats = self:getDex(100, true) - 10
 	end
@@ -1246,7 +1246,7 @@ end
 
 function _M:combatAttackRanged(weapon, ammo)
 	local stats
-	if self:attr("use_psi_combat") then stats = self:getCun(100, true) - 10
+	if self:attr("use_psi_combat") then stats = (self:getCun(100, true) - 10) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	elseif weapon and weapon.wil_attack then stats = self:getWil(100, true) - 10
 	else stats = self:getDex(100, true) - 10
 	end
@@ -1503,8 +1503,14 @@ function _M:getDammod(combat)
 	if combat.talented == 'knife' and self:knowTalent('T_LETHALITY') then sub('str', 'cun') end
 	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
 	if self:attr 'use_psi_combat' then
-		sub('str', 'wil')
-		sub('dex', 'cun')
+		if dammod['str'] then 
+			dammod['str'] = (dammod['str'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
+			sub('str', 'wil')
+		end
+		if dammod['dex'] then 
+			dammod['dex'] = (dammod['dex'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
+			sub('dex', 'cun') 
+		end
 	end
 
 	-- Add stuff like lethality here.
@@ -1535,10 +1541,6 @@ function _M:combatDamage(weapon, adddammod)
 		for stat, mod in pairs(adddammod) do
 			totstat = totstat + self:getStat(stat) * mod
 		end
-	end
-
-	if self:attr("use_psi_combat") then
-		totstat = totstat * (0.8 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	end
 
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
