@@ -30,9 +30,8 @@ newTalent{
 	anomaly_type = "no-major",
 	no_energy = true,
 	action = function(self, t)
-		local reduction = self:spellCrit(t.getReduction(self, t))
 
-		self:paradoxDoAnomaly(100, reduction, {anomaly_type=t.anomaly_type, ignore_energy=true, allow_target=self:knowTalent(self.T_TWIST_FATE)})
+		self:paradoxDoAnomaly(100, t.getReduction(self, t), {anomaly_type=t.anomaly_type, ignore_energy=true, allow_target=self:knowTalent(self.T_TWIST_FATE)})
 	
 		game:playSoundNear(self, "talents/echo")
 		return true

@@ -189,8 +189,8 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
 		if target == eff.target then
-			tg.archery.atk = (tg.archery.atk or 0) + eff.atk
-			tg.archery.crit = (tg.archery.crit or 0) + eff.crit
+			tg.archery.crit_chance = (tg.archery.crit_chance or 0) + eff.crit
+			tg.archery.crit_power = (tg.archery.crit_power or 0) + eff.crit_power
 		end
 	end
 

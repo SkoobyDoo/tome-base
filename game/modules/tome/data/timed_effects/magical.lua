@@ -2079,7 +2079,7 @@ newEffect{
 newEffect{
 	name = "OUT_OF_PHASE", image = "talents/phase_door.png",
 	desc = "Out of Phase",
-	long_desc = function(self, eff) return ("The target is out of phase with reality, increasing defense by %d, resist all by %d%%, and the duration of all timed effects by %d%%."):
+	long_desc = function(self, eff) return ("The target is out of phase with reality, increasing defense by %d, resist all by %d%%, and reducing the duration of detrimental timed effects by %d%%."):
 	format(eff.defense or 0, eff.resists or 0, eff.effect_reduction or 0) end,
 	type = "magical",
 	subtype = { teleport=true },
@@ -3446,13 +3446,15 @@ newEffect{
 newEffect{
 	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus",
-	long_desc = function(self, eff) return ("Focused on %s, +%d accuracy and +%d%% critical hit chance with ranged attacks against this target."):format(eff.target.name, eff.atk, eff.crit) end,
+	long_desc = function(self, eff) 
+		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.crit_power *100, eff.crit, eff.parry)
+	end,
 	type = "magical",
 	subtype = { tactic=true },
 	status = "beneficial",
 	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,
-	parameters = { crit=0, atk=0 },
+	parameters = { crit=0, crit_power=0, parry=0},
 	on_timeout = function(self, eff)
 		if eff.target.dead or not game.level:hasEntity(self) or not game.level:hasEntity(eff.target) or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
 			self:removeEffect(self.EFF_WARDEN_S_FOCUS)
@@ -3562,6 +3564,48 @@ newEffect{
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
 	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "BLENDED_THREADS_BOW", image = "talents/blended_threads.png",
+	desc = "Blended Threads",
+	long_desc = function(self, eff) return ("The target is reducing damage from nearby targets by %d%%."):format(eff.bow) end,
+	type = "magical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	on_gain = function(self, err) return nil, "+Blended Threads" end,
+	on_lose = function(self, err) return nil, "-Blended Threads" end,
+	parameters = {bow=0},
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+		if src and src.x and src.y and dam > 0 then
+			-- assume instantaneous projection and check range to source
+			if core.fov.distance(self.x, self.y, src.x, src.y) <= 2 then
+				dam = dam * (100 - eff.bow) / 100
+				print("[PROJECTOR] Blended Threads (source) dam", dam)
+			end
+		end
+		return {dam=dam}
+	end,
+	activate = function(self, eff)	
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "BLENDED_THREADS_BLADE", image = "talents/blended_threads.png",
+	desc = "Blended Threads",
+	long_desc = function(self, eff) return ("The target is dealing %d%% more damage to distant targets."):format(eff.blade) end,
+	type = "magical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	on_gain = function(self, err) return nil, "+Blended Threads" end,
+	on_lose = function(self, err) return nil, "-Blended Threads" end,
+	parameters = {blade=0},
+	activate = function(self, eff)	
 	end,
 	deactivate = function(self, eff)
 	end,
