@@ -1354,7 +1354,7 @@ newEffect{
 newEffect{
 	name = "PSIFRENZY", image = "talents/frenzied_focus.png",
 	desc = "Frenzied Focus",
-	long_desc = function(self, eff) return ("Causes telekinetically-wielded weapons to hit up to %d targets each turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("This creatures psionic focus item is supercharged!") end,
 	type = "mental",
 	subtype = { telekinesis=true, frenzy=true },
 	status = "beneficial",

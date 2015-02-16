@@ -1503,12 +1503,12 @@ function _M:getDammod(combat)
 	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
 	if self:attr 'use_psi_combat' then
 		if dammod['str'] then 
+			dammod['str'] = (dammod['str'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 			sub('str', 'wil')
-			dammod['wil'] = (dammod['wil'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 		end
-		if dammod['str'] then 
+		if dammod['dex'] then 
+			dammod['dex'] = (dammod['dex'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 			sub('dex', 'cun') 
-			dammod['cun'] = (dammod['cun'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 		end
 	end
 
