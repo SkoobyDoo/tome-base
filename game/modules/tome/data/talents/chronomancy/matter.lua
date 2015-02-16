@@ -75,7 +75,7 @@ newTalent{
 				DamageType.WARP, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
-				engine.MapEffect.new{alpha=155, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
+				engine.MapEffect.new{alpha=100, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
 				function(e)
 					e.x = e.src.x
 					e.y = e.src.y
