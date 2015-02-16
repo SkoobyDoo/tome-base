@@ -129,11 +129,23 @@ newTalent{
 	require = chrono_req_high2,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return self:combatTalentScale(t, 10, 50)/100 end,
+	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end, -- Limit < 50% damage reduction
+	callbackOnArcheryAttack = function(self, t, target, hitted)
+		if hitted then
+			self:setEffect(self.EFF_BLENDED_THREADS_BOW, 2, {bow=t.getPercent(self, t)})
+		end
+	end,
+	callbackOnMeleeAttack = function(self, t, target, hitted)
+		if hitted then
+			self:setEffect(self.EFF_BLENDED_THREADS_BLADE, 2, {blade=t.getPercent(self, t)})
+		end
+	end,
 	info = function(self, t)
-		local percent = t.getPercent(self, t) * 100
-		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initiated the attack.]])
-		:format(percent)
+		local percent = t.getPercent(self, t)
+		return ([[When you hit with an arrow you reduce the damage you recieve from targets within two tiles of you by %d%%.
+		When you hit with your melee weapons you increase the damage you deal to targets more than two tiles away from you by %d%%.
+		Both of these effects may be active at once and last for two turns.]])
+		:format(percent, percent)
 	end
 }
 
