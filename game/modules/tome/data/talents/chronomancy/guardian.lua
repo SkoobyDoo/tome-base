@@ -138,7 +138,6 @@ newTalent{
 	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
 	speed = function(self, t) return self:hasArcheryWeapon() and "archery" or "weapon" end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
-	getAttack = function(self, t) return self:combatTalentLimit(t, 80, 20, 60) end, -- Limit < 80
 	getCrit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	getParry = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	getDamage = function(self, t) return 1.2 end,
@@ -148,15 +147,12 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then game.logPlayer(self, "You must pick a focus target.")return nil end
 		local __, x, y = self:canProject(tg, x, y)
-		
-		self:setEffect(self.EFF_WARDEN_S_FOCUS, 6, {target=target, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
-		target:setEffect(target.EFF_WARDEN_S_TARGET, 6, {src=self, atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
-		
+
 		game:playSoundNear(self, "talents/dispel")
 		
 		if self:hasArcheryWeapon() then
 			-- Ranged attack
-			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
+			local targets = self:archeryAcquireTargets({type="bolt"}, {x=x, y=y, one_shot=true, no_energy = true})
 			if not targets then return end
 			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
 		else
@@ -169,19 +165,18 @@ newTalent{
 			self:attackTarget(target, nil, t.getDamage(self, t), true)
 		end
 		
-		self:setEffect(self.EFF_WARDEN_S_FOCUS, 6, {target=target, parry=t.getParry(self, t), atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
-		target:setEffect(target.EFF_WARDEN_S_TARGET, 6, {src=self, parry=t.getParry(self, t), atk=t.getAttack(self, t), crit=t.getCrit(self, t)})
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, 6, {target=target, parry=t.getParry(self, t), crit=t.getCrit(self, t), crit_power=t.getCrit(self, t)/100})
+		target:setEffect(target.EFF_WARDEN_S_TARGET, 6, {src=self})
 		
 		return true
 	end,
 	info = function(self, t)
-		local atk = t.getAttack(self, t)
 		local crit = t.getCrit(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local parry = t.getParry(self, t)
 		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next six turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
-		Additionally you gain +%d accuracy and +%d%% critical hit rate with bow attacks against this target and have a %d%% chance to parry melee attacks from this target while you have your blades equipped.]])
-		:format(damage, atk, crit, parry)
+		Additionally your bow attacks gain %d%% critical chance and critical strike power against the target and you have a %d%% chance to parry melee attacks from the target while you have your blades equipped.]])
+		:format(damage, crit, parry)
 	end
 }
 

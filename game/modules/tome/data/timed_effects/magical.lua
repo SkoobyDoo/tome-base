@@ -3444,13 +3444,15 @@ newEffect{
 newEffect{
 	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus",
-	long_desc = function(self, eff) return ("Focused on %s, +%d accuracy and +%d%% critical hit chance with ranged attacks against this target."):format(eff.target.name, eff.atk, eff.crit) end,
+	long_desc = function(self, eff) 
+		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.crit_power *100, eff.crit, eff.parry)
+	end,
 	type = "magical",
 	subtype = { tactic=true },
 	status = "beneficial",
 	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,
-	parameters = { crit=0, atk=0 },
+	parameters = { crit=0, crit_power=0, parry=0},
 	on_timeout = function(self, eff)
 		if eff.target.dead or not game.level:hasEntity(self) or not game.level:hasEntity(eff.target) or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
 			self:removeEffect(self.EFF_WARDEN_S_FOCUS)
