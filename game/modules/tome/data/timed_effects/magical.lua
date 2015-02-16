@@ -2972,12 +2972,18 @@ newEffect{
 	type = "magical",
 	subtype = { temporal=true, slow=true },
 	status = "detrimental",
-	parameters = { damage=0, status_dur=4},
+	parameters = { damage=0 },
 	on_gain = function(self, err) return "#Target# is anchored.", "+Anchor" end,
 	on_lose = function(self, err) return "#Target# is no longer anchored.", "-Anchor" end,
 	onTeleport = function(self, eff)
 		DamageType:get(DamageType.WARP).projector(eff.src or self, self.x, self.y, DamageType.WARP, eff.damage)
-		DamageType:get(DamageType.RANDOM_WARP).projector(eff.src or self, self.x, self.y, DamageType.RANDOM_WARP, {dur=eff.status_dur, apply_power=eff.apply_power})
+	end,
+	activate = function(self, eff)
+		-- Reduce teleport saves to zero so our damage will trigger
+		eff.effid = self:addTemporaryValue("continuum_destabilization", -1000)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("continuum_destabilization", eff.effid)
 	end,
 }
 
