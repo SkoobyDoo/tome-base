@@ -3080,10 +3080,10 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Webs of Fate" end,
 	on_lose = function(self, err) return nil, "-Webs of Fate" end,
 	parameters = { power=0.1 },
-	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
 		-- Displace Damage?
 		local t = eff.talent
-		if dam > 0 and src ~= self then
+		if dam > 0 and src ~= self and not state.no_reflect then
 		
 			-- Spin Fate?
 			if self.turn_procs and self:knowTalent(self.T_SPIN_FATE) and not self.turn_procs.spin_webs then
@@ -3105,7 +3105,9 @@ newEffect{
 			local a = rng.table(tgts)
 			if a then
 				local displace = dam * eff.power
-				DamageType.defaultProjector(self, a.x, a.y, type, displace, {no_reflect=true})
+				state.no_reflect = true
+				DamageType.defaultProjector(self, a.x, a.y, type, displace, state)
+				state.no_reflect = nil
 				dam = dam - displace
 				game:delayedLogDamage(src, self, 0, ("%s(%d webs of fate)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", displace), false)
 			end
