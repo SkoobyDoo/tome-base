@@ -1074,6 +1074,7 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 	end
 
 	local e = {
+		__ATOMIC = true,
 		src=src, x=x, y=y, duration=duration, damtype=damtype, dam=dam, radius=radius, dir=dir, angle=angle,
 		overlay=overlay and (overlay.__ATOMIC or overlay.__CLASSNAME) and overlay,
 		grids = grids,
