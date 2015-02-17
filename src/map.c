@@ -487,12 +487,12 @@ static int map_objects_toscreen(lua_State *L)
 
 			if (m != dm) {
 		 		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
-		 		else tglUseProgramObject(0);
+		 		else useNoShader();
 		 	}
 
 			if (allow_cb && (dm->cb_ref != LUA_NOREF))
 			{
-				if (allow_shader && m->shader) tglUseProgramObject(0);
+				if (allow_shader && m->shader) useNoShader();
 				int dx = x + dm->dx * w, dy = y + dm->dy * h;
 				float dw = w * dm->dw;
 				float dh = h * dm->dh;
@@ -522,7 +522,7 @@ static int map_objects_toscreen(lua_State *L)
 			nb++;
 		}
 
-		if (allow_shader && m->shader) tglUseProgramObject(0);
+		if (allow_shader && m->shader) useNoShader();
 
 		moid++;
 	}
@@ -635,7 +635,7 @@ static int map_objects_display(lua_State *L)
 			dz++;
 		}
 
-		if (m->shader) tglUseProgramObject(0);
+		if (m->shader) useNoShader();
 
 		moid++;
 	}
@@ -1421,11 +1421,7 @@ static int map_get_scroll(lua_State *L)
 
 #define useDefaultShader(map) { \
 	if (map->default_shader) tglUseProgramObject(map->default_shader->shader) \
-	else tglUseProgramObject(0) \
-}
-
-#define useNoShader() { \
-	tglUseProgramObject(0); \
+	else useNoShader(); \
 }
 
 #define unbatchQuads(vert, col) { \

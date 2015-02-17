@@ -457,7 +457,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 	}
 	if (remaining) glDrawArrays(GL_QUADS, 0, remaining);
 
-	if (ps->shader) tglUseProgramObject(0);
+	if (ps->shader) useNoShader();
 
 	glPopMatrix();
 	glTranslatef(-x, -y, 0);

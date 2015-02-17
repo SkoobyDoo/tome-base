@@ -114,6 +114,12 @@ else
 	config.settings.window.pos = {x=px, y=py}
 end
 
+-- Default shader
+if core.shader.active() then
+	local Shader = require "engine.Shader"
+	local default = Shader.new("default/gl")
+	if default.shad then default.shad:setDefault() end
+end
 
 -- Audio
 core.sound.enable(config.settings.audio.enable)

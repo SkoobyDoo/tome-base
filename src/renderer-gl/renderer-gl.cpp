@@ -33,7 +33,7 @@ extern "C" {
 
 vertexes_renderer* vertexes_renderer_new(render_mode mode) {
 	vertexes_renderer *vr = (vertexes_renderer*)malloc(sizeof(vertexes_renderer));
-	glGenBuffers(3, vr->vbo);
+	glGenBuffers(1, &vr->vbo);
 	if (mode == VERTEX_STATIC) vr->mode = GL_STATIC_DRAW;
 	if (mode == VERTEX_DYNAMIC) vr->mode = GL_DYNAMIC_DRAW;
 	if (mode == VERTEX_STREAM) vr->mode = GL_STREAM_DRAW;
@@ -41,6 +41,7 @@ vertexes_renderer* vertexes_renderer_new(render_mode mode) {
 }
 
 void vertexes_renderer_free(vertexes_renderer *vr) {
+	glDeleteBuffers(1, &vr->vbo);
 	free(vr);
 }
 
@@ -48,28 +49,47 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	glTranslatef(x, y, 0);
 
-#if 0
+#if 1
 	if (vx->changed) printf("UPDATING VO\n");
 
-	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo[0]);
-	if (vx->changed) glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 2 * vx->nb, vx->vertices, vr->mode);
-	glVertexPointer(2, GL_FLOAT, 0, 0);
+	shader_type *shader = vx->shader ? vx->shader : default_shader;
+	useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
+	GLint i = 0;
+	glUniform1iv(shader->p_tex, 1, &i);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo[1]);
-	if (vx->changed) glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * vx->nb, vx->colors, vr->mode);
-	glColorPointer(4, GL_FLOAT, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
+	if (vx->changed) {
+		// glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, vx->vertices, vr->mode);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, NULL, vr->mode);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_data) * vx->nb, vx->vertices);
+	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo[2]);
-	if (vx->changed) glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 2 * vx->nb, vx->textures, vr->mode);
-	glTexCoordPointer(2, GL_FLOAT, 0, 0);
+	GLint vi = glGetAttribLocation(shader->shader, "te4_position");
+	GLint ti = glGetAttribLocation(shader->shader, "te4_texcoord");
+	GLint ci = glGetAttribLocation(shader->shader, "te4_color");
+
+	glEnableVertexAttribArray(vi);
+	glEnableVertexAttribArray(ti);
+	glEnableVertexAttribArray(ci);
+	glVertexAttribPointer(vi, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), 0);
+	glVertexAttribPointer(ti, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
+	glVertexAttribPointer(ci, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
+
+	// glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), 0);
+	// glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
+	// glColorPointer(4, GL_FLOAT, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
 
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	useNoShader();
 #else
-	glVertexPointer(2, GL_FLOAT, 0, vx->vertices);
-	glColorPointer(4, GL_FLOAT, 0, vx->colors);
-	glTexCoordPointer(2, GL_FLOAT, 0, vx->textures);
+	glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);
+	glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].u);
+	glColorPointer(4, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].r);
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 #endif
 

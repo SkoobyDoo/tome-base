@@ -22,6 +22,7 @@
 #define _VO_H_
 
 #include "tgl.h"
+#include "useshader.h"
 
 #define VERTEX_QUAD_SIZE 4
 
@@ -31,6 +32,12 @@ typedef enum {
 	VERTEX_STREAM = 3,
 } render_mode;
 
+typedef struct {
+	GLfloat x, y;
+	GLfloat u, v;
+	GLfloat r, g, b, a;
+} vertex_data;
+
 typedef struct
 {
 	render_mode mode;
@@ -38,12 +45,11 @@ typedef struct
 	int nb, size;
 	int next_id;
 	int *ids;
-	GLfloat *vertices;
-	GLfloat *colors;
-	GLfloat *textures;
+	vertex_data *vertices;
 
 	bool changed;
 
+	shader_type *shader;
 	GLuint tex;
 	void *render;
 } lua_vertexes;
