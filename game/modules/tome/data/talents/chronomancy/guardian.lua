@@ -144,12 +144,10 @@ newTalent{
 	action = function(self, t)
 		-- Grab our target so we can set our effect
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not x or not y or not target then game.logPlayer(self, "You must pick a focus target.")return nil end
-		local __, x, y = self:canProject(tg, x, y)
 
-		game:playSoundNear(self, "talents/dispel")
-		
 		if self:hasArcheryWeapon() then
 			-- Ranged attack
 			local targets = self:archeryAcquireTargets({type="bolt"}, {x=x, y=y, one_shot=true, no_energy = true})
@@ -157,11 +155,6 @@ newTalent{
 			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
 		else
 			-- Melee attack
-			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-			local _, x, y = self:canProject(tg, self:getTarget(tg))
-			local target = game.level.map(x, y, game.level.map.ACTOR)
-			if not target then return nil end
-			
 			self:attackTarget(target, nil, t.getDamage(self, t), true)
 		end
 		
