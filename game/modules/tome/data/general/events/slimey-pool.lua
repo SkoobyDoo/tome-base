@@ -23,19 +23,32 @@ if not x then return false end
 
 local list = mod.class.Grid:loadList("/data/general/grids/slime.lua")
 
+local on_stand = function(self, x, y, who) who:setEffect(who.EFF_SLIMEY_POOL, 1, {}) end
 local g = list.SLIME_FLOOR:clone()
-g.name = "slimey pool"
-g.on_stand = nil
+
 level.map(x, y, engine.Map.TERRAIN, g)
 game.nicer_tiles:updateAround(level, x, y)
+g = level.map(x, y, engine.Map.TERRAIN)
+g.name = "slimey pool"
+g.on_stand = on_stand
+g.always_remember = true g.special_minimap = colors.OLIVE_DRAB
+g:altered()
 
-local on_stand = function(self, x, y, who) who:setEffect(who.EFF_SLIMEY_POOL, 1, {}) end
+if core.shader.active(4) then
+	level.map:particleEmitter(x, y, 2, "shader_ring_rotating", {rotation=0, system_rotationv=0.1, radius=2}, {type="flames", aam=0.5, zoom=3, npow=4, time_factor=10000, color1={0.2,0.7,0,1}, color2={0,1,0.3,1}, hide_center=0})
+else
+	level.map:particleEmitter(x, y, 2, "ultrashield", {rm=0, rM=0, gm=180, gM=220, bm=10, bM=80, am=220, aM=250, radius=2, density=1, life=14, instop=17})
+end
 
-local grids = core.fov.circle_grids(x, y, 1, "do not block")
+local grids = core.fov.circle_grids(x, y, 1, function(_, lx, ly) return not game.state:canEventGrid(level, lx, ly) end)
 for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 	g.on_stand = g.on_stand or on_stand
+	if g.on_stand == on_stand and g.type == "floor" and not g.special_minimap then
+		g.name = g.name .. " (slimey)" g.special_minimap = colors.DARK_SEA_GREEN
+	end
+	g.always_remember = true
 	game.zone:addEntity(game.level, g, "terrain", x, y)
 end end
-
+print("[EVENT] slimey-pool centered at ", x, y)
 return true
