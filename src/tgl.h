@@ -1,3 +1,6 @@
+#ifndef __TGL__
+#define __TGL__
+
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -12,6 +15,11 @@
 #include <GL/glext.h>
 #endif
 #endif
+
+typedef struct {
+	GLuint tex;
+	int w, h;
+} texture_type;
 
 extern float gl_c_r;
 extern float gl_c_g;
@@ -85,3 +93,5 @@ extern GLfloat *gl_c_colors_ptr;
 { \
 	if ((p) != gl_c_texcoords_ptr || (nb) != gl_c_colors_nb) { glTexCoordPointer((nb), (t), (v), (p)); gl_c_texcoords_ptr=(p); gl_c_texcoords_nb = (nb); } \
 }
+
+#endif

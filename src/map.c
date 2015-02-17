@@ -189,7 +189,7 @@ static int map_object_texture(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
 	int i = luaL_checknumber(L, 2);
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 3);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 3);
 	bool is3d = lua_toboolean(L, 4);
 	if (i < 0 || i >= obj->nb_textures) return 0;
 
@@ -197,8 +197,8 @@ static int map_object_texture(lua_State *L)
 
 	lua_pushvalue(L, 3); // Get the texture
 	obj->textures_ref[i] = luaL_ref(L, LUA_REGISTRYINDEX); // Ref the texture
-//	printf("C Map Object setting texture %d = %d (ref %x)\n", i, *t, obj->textures_ref[i]);
-	obj->textures[i] = *t;
+//	printf("C Map Object setting texture %d = %d (ref %x)\n", i, t->tex, obj->textures_ref[i]);
+	obj->textures[i] = t->tex;
 	obj->textures_is3d[i] = is3d;
 	obj->tex_factorx[i] = lua_tonumber(L, 5);
 	obj->tex_factory[i] = lua_tonumber(L, 6);
@@ -661,9 +661,11 @@ static int map_objects_display(lua_State *L)
 
 
 	// Now register the texture to lua
-	GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
-	*t = img;
+	t->tex = img;
+	t->w = w;
+	t->h = h;
 
 	return 1;
 }
@@ -1923,8 +1925,8 @@ static int map_line_grids(lua_State *L) {
 
 	if (lua_isuserdata(L, 4))
 	{
-		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 4);
-		tglBindTexture(GL_TEXTURE_2D, *t);
+		texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 4);
+		tglBindTexture(GL_TEXTURE_2D, t->tex);
 	}
 	else if (lua_toboolean(L, 4))
 	{

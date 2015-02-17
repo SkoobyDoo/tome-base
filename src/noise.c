@@ -200,11 +200,13 @@ static int noise_texture2d(lua_State *L)
 		}
 	}
 
-	GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
+	t->w = w;
+	t->h = h;
 
-	glGenTextures(1, t);
-	glBindTexture(GL_TEXTURE_2D, *t);
+	glGenTextures(1, &t->tex);
+	glBindTexture(GL_TEXTURE_2D, t->tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -275,11 +277,13 @@ static int noise_texture3d(lua_State *L)
 		}
 	}
 
-	GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
+	t->w = w;
+	t->h = h;
 
-	glGenTextures(1, t);
-	tglBindTexture(GL_TEXTURE_3D, *t);
+	glGenTextures(1, &t->tex);
+	tglBindTexture(GL_TEXTURE_3D, t->tex);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
@@ -312,11 +316,13 @@ static int noise_texture2d(lua_State *L)
 		}
 	}
 
-	GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
+	t->w = w;
+	t->h = h;
 
-	glGenTextures(1, t);
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	glGenTextures(1, &t->tex);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -354,12 +360,14 @@ static int noise_texture2dstack(lua_State *L)
 		}
 
 		lua_pushnumber(L, k+1);
-		GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+		texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 		auxiliar_setclass(L, "gl{texture}", -1);
 		lua_settable(L, -3);
+		t->w = w;
+		t->h = h;
 
-		glGenTextures(1, t);
-		tglBindTexture(GL_TEXTURE_2D, *t);
+		glGenTextures(1, &t->tex);
+		tglBindTexture(GL_TEXTURE_2D, t->tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

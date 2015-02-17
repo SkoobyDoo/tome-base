@@ -447,15 +447,17 @@ static void font_make_texture_line(lua_State *L, SDL_Surface *s, int id, bool is
 	}
 
 	lua_pushliteral(L, "_tex");
-	GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
 	lua_rawset(L, -3);
 
-	glGenTextures(1, t);
-	tfglBindTexture(GL_TEXTURE_2D, *t);
+	glGenTextures(1, &t->tex);
+	tfglBindTexture(GL_TEXTURE_2D, t->tex);
 	int fw, fh;
 	make_texture_for_surface(s, &fw, &fh, true);
 	copy_surface_to_texture(s);
+	t->w = fw;
+	t->h = fh;
 
 	lua_pushliteral(L, "_tex_w");
 	lua_pushnumber(L, fw);

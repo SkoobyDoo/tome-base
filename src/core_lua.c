@@ -440,7 +440,7 @@ static int lua_key_unicode(lua_State *L)
 
 static int lua_key_set_clipboard(lua_State *L)
 {
-	char *str = luaL_checkstring(L, 1);
+	char *str = (char*)luaL_checkstring(L, 1);
 	SDL_SetClipboardText(str);
 	return 0;
 }
@@ -669,18 +669,16 @@ static int sdl_new_surface(lua_State *L)
 
 static int gl_texture_to_sdl(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 
 	SDL_Surface **s = (SDL_Surface**)lua_newuserdata(L, sizeof(SDL_Surface*));
 	auxiliar_setclass(L, "sdl{surface}", -1);
 
 	// Bind the texture to read
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	// Get texture size
-	GLint w, h;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+	GLint w = t->w, h = t->h;
 //	printf("Making surface from texture %dx%d\n", w, h);
 	// Get texture data
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
@@ -860,11 +858,11 @@ static void build_sdm_ex(const unsigned char *texData, int srcWidth, int srcHeig
 }
 
 static int gl_texture_alter_sdm(lua_State *L) {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	bool doubleheight = lua_toboolean(L, 2);
 
 	// Bind the texture to read
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	// Get texture size
 	GLint w, h, dh;
@@ -876,12 +874,14 @@ static int gl_texture_alter_sdm(lua_State *L) {
 
 	GLubyte *sdm = calloc(w*dh*4, sizeof(GLubyte));
 	build_sdm_ex(tmp, w, h, sdm, w, dh, 0, doubleheight ? h : 0);
-printf("==SDM %dx%d :: %dx%d\n", w,h,w,dh);
-	GLuint *st = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
-	auxiliar_setclass(L, "gl{texture}", -1);
 
-	glGenTextures(1, st);
-	tfglBindTexture(GL_TEXTURE_2D, *st);
+	texture_type *st = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
+	auxiliar_setclass(L, "gl{texture}", -1);
+	st->w = w;
+	st->h = dh;
+
+	glGenTextures(1, &st->tex);
+	tfglBindTexture(GL_TEXTURE_2D, st->tex);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, 4, w, dh, 0, GL_RGBA, GL_UNSIGNED_BYTE, sdm);
@@ -940,8 +940,8 @@ static int gl_draw_quad(lua_State *L)
 
 	if (lua_isuserdata(L, 9))
 	{
-		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 9);
-		tglBindTexture(GL_TEXTURE_2D, *t);
+		texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 9);
+		tglBindTexture(GL_TEXTURE_2D, t->tex);
 	}
 	else if (lua_toboolean(L, 9))
 	{
@@ -997,8 +997,8 @@ static int gl_draw_quad_part(lua_State *L)
 
 	if (lua_isuserdata(L, 10))
 	{
-		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 10);
-		tglBindTexture(GL_TEXTURE_2D, *t);
+		texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 10);
+		tglBindTexture(GL_TEXTURE_2D, t->tex);
 	}
 	else if (lua_toboolean(L, 10))
 	{
@@ -1241,7 +1241,7 @@ static int sdl_surface_toscreen(lua_State *L)
 static int sdl_surface_toscreen_with_texture(lua_State *L)
 {
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 2);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
 	int x = luaL_checknumber(L, 3);
 	int y = luaL_checknumber(L, 4);
 	GLfloat colors[4*4] = {
@@ -1266,7 +1266,7 @@ static int sdl_surface_toscreen_with_texture(lua_State *L)
 	}
 	glColorPointer(4, GL_FLOAT, 0, colors);
 
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	copy_surface_to_texture(*s);
 	draw_textured_quad(x,y,(*s)->w,(*s)->h);
@@ -1277,9 +1277,9 @@ static int sdl_surface_toscreen_with_texture(lua_State *L)
 static int sdl_surface_update_texture(lua_State *L)
 {
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 2);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
 
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 	copy_surface_to_texture(*s);
 
 	return 0;
@@ -1291,16 +1291,18 @@ static int sdl_surface_to_texture(lua_State *L)
 	bool nearest = lua_toboolean(L, 2);
 	bool norepeat = lua_toboolean(L, 3);
 
-	GLuint *t = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
 
-	glGenTextures(1, t);
-	tfglBindTexture(GL_TEXTURE_2D, *t);
+	glGenTextures(1, &t->tex);
+	tfglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	int fw, fh;
 	make_texture_for_surface(*s, &fw, &fh, norepeat);
 	if (nearest) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	copy_surface_to_texture(*s);
+	t->w = fw;
+	t->h = fh;
 
 	lua_pushnumber(L, fw);
 	lua_pushnumber(L, fh);
@@ -1342,16 +1344,16 @@ static int sdl_surface_alpha(lua_State *L)
 
 static int sdl_free_texture(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
-	glDeleteTextures(1, t);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+	glDeleteTextures(1, &t->tex);
 	lua_pushnumber(L, 1);
-//	printf("freeing texture %d\n", *t);
+//	printf("freeing texture %d\n", t->tex);
 	return 1;
 }
 
 static int sdl_texture_toscreen(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
 	int w = luaL_checknumber(L, 4);
@@ -1378,7 +1380,7 @@ static int sdl_texture_toscreen(lua_State *L)
 	}
 	glColorPointer(4, GL_FLOAT, 0, colors);
 
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	GLfloat texcoords[2*4] = {
 		0, 0,
@@ -1401,7 +1403,7 @@ static int sdl_texture_toscreen(lua_State *L)
 
 static int sdl_texture_toscreen_highlight_hex(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
 	int w = luaL_checknumber(L, 4);
@@ -1434,7 +1436,7 @@ static int sdl_texture_toscreen_highlight_hex(lua_State *L)
 	}
 	glColorPointer(4, GL_FLOAT, 0, colors);
 
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	GLfloat texcoords[2*8] = {
 		0, 0,
@@ -1467,7 +1469,7 @@ static int sdl_texture_toscreen_highlight_hex(lua_State *L)
 
 static int sdl_texture_toscreen_full(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
 	int w = luaL_checknumber(L, 4);
@@ -1496,7 +1498,7 @@ static int sdl_texture_toscreen_full(lua_State *L)
 	}
 	glColorPointer(4, GL_FLOAT, 0, colors);
 
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 	GLfloat texw = (GLfloat)w/rw;
 	GLfloat texh = (GLfloat)h/rh;
 
@@ -1521,7 +1523,7 @@ static int sdl_texture_toscreen_full(lua_State *L)
 
 static int sdl_texture_toscreen_precise(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
 	int w = luaL_checknumber(L, 4);
@@ -1552,7 +1554,7 @@ static int sdl_texture_toscreen_precise(lua_State *L)
 	}
 	glColorPointer(4, GL_FLOAT, 0, colors);
 
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	GLfloat texcoords[2*4] = {
 		x1, y1,
@@ -1646,14 +1648,14 @@ static int gl_color(lua_State *L)
 
 static int sdl_texture_id(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
-	lua_pushnumber(L, *t);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+	lua_pushnumber(L, t->tex);
 	return 1;
 }
 
 static int sdl_texture_bind(lua_State *L)
 {
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int i = luaL_checknumber(L, 2);
 	bool is3d = lua_toboolean(L, 3);
 
@@ -1662,13 +1664,13 @@ static int sdl_texture_bind(lua_State *L)
 		if (multitexture_active && shaders_active)
 		{
 			tglActiveTexture(GL_TEXTURE0+i);
-			tglBindTexture(is3d ? GL_TEXTURE_3D : GL_TEXTURE_2D, *t);
+			tglBindTexture(is3d ? GL_TEXTURE_3D : GL_TEXTURE_2D, t->tex);
 			tglActiveTexture(GL_TEXTURE0);
 		}
 	}
 	else
 	{
-		tglBindTexture(is3d ? GL_TEXTURE_3D : GL_TEXTURE_2D, *t);
+		tglBindTexture(is3d ? GL_TEXTURE_3D : GL_TEXTURE_2D, t->tex);
 	}
 
 	return 0;
@@ -1701,7 +1703,7 @@ static int sdl_texture_outline(lua_State *L)
 {
 	if (!fbo_active) return 0;
 
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	float x = luaL_checknumber(L, 2);
 	float y = luaL_checknumber(L, 3);
 	int w = luaL_checknumber(L, 4);
@@ -1720,15 +1722,17 @@ static int sdl_texture_outline(lua_State *L)
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
 
 	// Now setup a texture to render to
-	GLuint *img = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
+	texture_type *img = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
+	img->w = w;
+	img->h = h;
 	auxiliar_setclass(L, "gl{texture}", -1);
-	glGenTextures(1, img);
-	tfglBindTexture(GL_TEXTURE_2D, *img);
+	glGenTextures(1, &img->tex);
+	tfglBindTexture(GL_TEXTURE_2D, img->tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, *img, 0);
+	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, img->tex, 0);
 
 	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) return 0;
@@ -1751,7 +1755,7 @@ static int sdl_texture_outline(lua_State *L)
 	glLoadIdentity();
 
 	/* Render to buffer: shadow */
-	tglBindTexture(GL_TEXTURE_2D, *t);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	GLfloat texcoords[2*4] = {
 		0, 0,
@@ -1924,8 +1928,8 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 	}
 	else
 	{
-		GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 1);
-		mouse_drag_tex = *t;
+		texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+		mouse_drag_tex = t->tex;
 		mouse_drag_tex_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	}
 	return 0;
