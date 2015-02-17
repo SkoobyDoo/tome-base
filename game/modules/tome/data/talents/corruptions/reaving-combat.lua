@@ -22,7 +22,6 @@ newTalent{
 	type = {"corruption/reaving-combat", 1},
 	mode = "passive",
 	points = 5,
-	vim = 8,
 	require = str_corrs_req1,
 	-- called by _M:getOffHandMult function in mod\class\interface\Combat.lua
 	getoffmult = function(self,t) return self:combatTalentLimit(t, 1, 0.53, 0.69) end, -- limit <100%
