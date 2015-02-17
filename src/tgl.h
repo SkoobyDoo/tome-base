@@ -69,19 +69,19 @@ extern int nb_draws;
 	glDrawArrays((a), (b), (c)); nb_draws++; \
 	}
 
-extern int gl_c_vertices_nb, gl_c_texcoords_nb, gl_c_colors_nb;
-extern GLfloat *gl_c_vertices_ptr;
-extern GLfloat *gl_c_texcoords_ptr;
-extern GLfloat *gl_c_colors_ptr;
-#define glVertexPointer(nb, t, v, p) \
-{ \
-	if ((p) != gl_c_vertices_ptr || (nb) != gl_c_vertices_nb) { glVertexPointer((nb), (t), (v), (p)); gl_c_vertices_ptr=(p); gl_c_vertices_nb = (nb); } \
-}
-#define glColorPointer(nb, t, v, p) \
-{ \
-	if ((p) != gl_c_colors_ptr || (nb) != gl_c_texcoords_nb) { glColorPointer((nb), (t), (v), (p)); gl_c_colors_ptr=(p); gl_c_colors_nb = (nb); } \
-}
-#define glTexCoordPointer(nb, t, v, p) \
-{ \
-	if ((p) != gl_c_texcoords_ptr || (nb) != gl_c_colors_nb) { glTexCoordPointer((nb), (t), (v), (p)); gl_c_texcoords_ptr=(p); gl_c_texcoords_nb = (nb); } \
-}
+// extern int gl_c_vertices_nb, gl_c_texcoords_nb, gl_c_colors_nb;
+// extern GLfloat *gl_c_vertices_ptr;
+// extern GLfloat *gl_c_texcoords_ptr;
+// extern GLfloat *gl_c_colors_ptr;
+// #define glVertexPointer(nb, t, v, p) \
+// { \
+// 	if ((p) != gl_c_vertices_ptr || (nb) != gl_c_vertices_nb) { glVertexPointer((nb), (t), (v), (p)); gl_c_vertices_ptr=(p); gl_c_vertices_nb = (nb); } \
+// }
+// #define glColorPointer(nb, t, v, p) \
+// { \
+// 	if ((p) != gl_c_colors_ptr || (nb) != gl_c_texcoords_nb) { glColorPointer((nb), (t), (v), (p)); gl_c_colors_ptr=(p); gl_c_colors_nb = (nb); } \
+// }
+// #define glTexCoordPointer(nb, t, v, p) \
+// { \
+// 	if ((p) != gl_c_texcoords_ptr || (nb) != gl_c_colors_nb) { glTexCoordPointer((nb), (t), (v), (p)); gl_c_texcoords_ptr=(p); gl_c_texcoords_nb = (nb); } \
+// }

@@ -31,6 +31,8 @@
 #include "libtcod.h"
 
 bool shaders_active = TRUE;
+int default_shader_ref = LUA_NOREF;
+shader_type *default_shader = NULL;
 
 void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, float tw, float th, float r, float g, float b, float a)
 {
@@ -77,6 +79,14 @@ void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, f
 		}
 		ru = ru->next;
 	}
+}
+
+void useNoShader() {
+	// if (default_shader) {
+	// 	tglUseProgramObject(default_shader->shader);
+	// } else {
+		tglUseProgramObject(0);
+	// }
 }
 
 static GLuint loadShader(const char* code, GLuint type)
@@ -229,7 +239,7 @@ static int program_set_uniform_number(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform1fvARB(glGetUniformLocationARB(p->shader, var), 1, &i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -245,7 +255,7 @@ static int program_set_uniform_number2(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform2fvARB(glGetUniformLocationARB(p->shader, var), 1, i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -262,7 +272,7 @@ static int program_set_uniform_number3(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform3fvARB(glGetUniformLocationARB(p->shader, var), 1, i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -280,7 +290,7 @@ static int program_set_uniform_number4(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform4fvARB(glGetUniformLocationARB(p->shader, var), 1, i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -356,7 +366,7 @@ static int program_set_uniform_texture(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform1ivARB(glGetUniformLocationARB(p->shader, var), 1, &i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -370,7 +380,7 @@ static int program_set_uniform_number_fast(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform1fvARB(pos, 1, &i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -387,7 +397,7 @@ static int program_set_uniform_number2_fast(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform2fvARB(pos, 1, i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -405,7 +415,7 @@ static int program_set_uniform_number3_fast(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform2fvARB(pos, 1, i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -424,7 +434,7 @@ static int program_set_uniform_number4_fast(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform2fvARB(pos, 1, i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -439,7 +449,7 @@ static int program_set_uniform_texture_fast(lua_State *L)
 
 	if (change) tglUseProgramObject(p->shader);
 	glUniform1ivARB(pos, 1, &i);
-	if (change) tglUseProgramObject(0);
+	if (change) useNoShader();
 	return 0;
 }
 
@@ -569,6 +579,7 @@ static int program_compile(lua_State *L)
 	p->p_mapcoord = glGetUniformLocationARB(p->shader, "mapCoord");
 	p->p_texsize = glGetUniformLocationARB(p->shader, "texSize");
 	p->p_texcoord = glGetUniformLocationARB(p->shader, "texCoord");
+	p->p_tex = glGetUniformLocationARB(p->shader, "tex");
 
 	lua_pushboolean(L, TRUE);
 	return 1;
@@ -588,9 +599,19 @@ static int program_use(lua_State *L)
 	}
 	else
 	{
-		tglUseProgramObject(0);
+		useNoShader();
 	}
 
+	return 0;
+}
+
+
+static int program_set_default(lua_State *L)
+{
+	shader_type *p = (shader_type*)lua_touserdata(L, 1);
+	if (default_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, default_shader_ref);
+	default_shader = p;
+	default_shader_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	return 0;
 }
 
@@ -638,6 +659,7 @@ static const struct luaL_Reg program_reg[] =
 	{"resetParamNumber3", program_reset_uniform_number3},
 	{"resetParamNumber4", program_reset_uniform_number4},
 	{"use", program_use},
+	{"setDefault", program_set_default},
 	{NULL, NULL},
 };
 

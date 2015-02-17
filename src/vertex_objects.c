@@ -42,9 +42,7 @@
 void update_vertex_size(lua_vertexes *vx, int size) {
 	if (size <= vx->size) return;
 	vx->size = size;
-	vx->vertices = realloc(vx->vertices, 2 * sizeof(GLfloat) * size);
-	vx->colors = realloc(vx->colors, 4 * sizeof(GLfloat) * size);
-	vx->textures = realloc(vx->textures, 2 * sizeof(GLfloat) * size);
+	vx->vertices = realloc(vx->vertices, sizeof(vertex_data) * size);
 	vx->ids = realloc(vx->ids, sizeof(int) * size);
 }
 
@@ -56,7 +54,8 @@ lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, render_mo
 	vx->changed = TRUE;
 	vx->size = vx->nb = 0;
 	vx->next_id = 1;
-	vx->vertices = NULL; vx->colors = NULL; vx->textures = NULL; vx->ids = NULL;
+	vx->shader = NULL;
+	vx->vertices = NULL; vx->ids = NULL;
 	update_vertex_size(vx, size);
 
 	vx->render = vertexes_renderer_new(mode);
@@ -67,8 +66,6 @@ lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, render_mo
 void vertex_free(lua_vertexes *vx, bool self_delete) {
 	if (vx->size > 0) {
 		free(vx->vertices);
-		free(vx->colors);
-		free(vx->textures);
 		free(vx->ids);
 	}
 	vertexes_renderer_free((vertexes_renderer*)vx->render);
@@ -95,13 +92,12 @@ int vertex_add_quad(lua_vertexes *vx,
 	if (vx->nb + 4 > vx->size) update_vertex_size(vx, vx->nb + 4);
 
 	int i = vx->nb;
-	vx->vertices[i * 2 + 0] = x1; vx->vertices[i * 2 + 1] = y1; vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
-	vx->vertices[i * 2 + 0] = x2; vx->vertices[i * 2 + 1] = y2; vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2; i++;
-	vx->vertices[i * 2 + 0] = x3; vx->vertices[i * 2 + 1] = y3; vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
-	vx->vertices[i * 2 + 0] = x4; vx->vertices[i * 2 + 1] = y4; vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4; i++;
+	vx->vertices[i].x = x1; vx->vertices[i].y = y1; vx->vertices[i].u = u1; vx->vertices[i].v = v1; vx->vertices[i].r = r; vx->vertices[i].g = g; vx->vertices[i].b = b; vx->vertices[i].a = a; i++;
+	vx->vertices[i].x = x2; vx->vertices[i].y = y2; vx->vertices[i].u = u2; vx->vertices[i].v = v2; vx->vertices[i].r = r; vx->vertices[i].g = g; vx->vertices[i].b = b; vx->vertices[i].a = a; i++;
+	vx->vertices[i].x = x3; vx->vertices[i].y = y3; vx->vertices[i].u = u3; vx->vertices[i].v = v3; vx->vertices[i].r = r; vx->vertices[i].g = g; vx->vertices[i].b = b; vx->vertices[i].a = a; i++;
+	vx->vertices[i].x = x4; vx->vertices[i].y = y4; vx->vertices[i].u = u4; vx->vertices[i].v = v4; vx->vertices[i].r = r; vx->vertices[i].g = g; vx->vertices[i].b = b; vx->vertices[i].a = a; i++;
 	
 	for (i = vx->nb; i < vx->nb + 4; i++) {
-		vx->colors[i * 4 + 0] = r; vx->colors[i * 4 + 1] = g; vx->colors[i * 4 + 2] = b; vx->colors[i * 4 + 3] = a;
 		vx->ids[i] = vx->next_id;
 	}
 
@@ -112,10 +108,10 @@ int vertex_add_quad(lua_vertexes *vx,
 
 
 void vertex_update_quad_texture(lua_vertexes *vx, int i, float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4) {
-	vx->textures[i * 2 + 0] = u1; vx->textures[i * 2 + 1] = v1; i++;
-	vx->textures[i * 2 + 0] = u2; vx->textures[i * 2 + 1] = v2; i++;
-	vx->textures[i * 2 + 0] = u3; vx->textures[i * 2 + 1] = v3; i++;
-	vx->textures[i * 2 + 0] = u4; vx->textures[i * 2 + 1] = v4; i++;
+	vx->vertices[i].u = u1; vx->vertices[i].v = v1; i++;
+	vx->vertices[i].u = u2; vx->vertices[i].v = v2; i++;
+	vx->vertices[i].u = u3; vx->vertices[i].v = v3; i++;
+	vx->vertices[i].u = u4; vx->vertices[i].v = v4; i++;
 
 	vx->changed = TRUE;
 }
@@ -134,13 +130,8 @@ void vertex_remove(lua_vertexes *vx, int start, int nb) {
 
 	int stop = start + nb;
 	int untilend = vx->nb - stop;
-	int wordlen = 2 * sizeof(GLfloat);
-	memmove(&vx->vertices[start*2], &vx->vertices[stop*2], untilend * wordlen);
-	memmove(&vx->textures[start*2], &vx->textures[stop*2], untilend * wordlen);
-	wordlen = 4 * sizeof(GLfloat);
-	memmove(&vx->colors[start*4], &vx->colors[stop*4], untilend * wordlen);
-	wordlen = 1 * sizeof(int);
-	memmove(&vx->ids[start], &vx->ids[stop], untilend * wordlen);
+	int wordlen = sizeof(vertex_data);
+	memmove(&vx->vertices[start], &vx->vertices[stop], untilend * wordlen);
 
 	vx->nb -= nb;
 }
@@ -156,8 +147,8 @@ void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, float my) {
 
 	int i;
 	for (i = start; i <= stop; i++) {
-		vx->vertices[i*2+0] += mx;
-		vx->vertices[i*2+1] += my;
+		vx->vertices[i].x += mx;
+		vx->vertices[i].y += my;
 	}
 }
 
@@ -173,17 +164,17 @@ void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float 
 	int i;
 	if (set) {
 		for (i = start; i <= stop; i++) {
-			vx->colors[i*4+0] = r;
-			vx->colors[i*4+1] = g;
-			vx->colors[i*4+2] = b;
-			vx->colors[i*4+3] = a;
+			vx->vertices[i].r = r;
+			vx->vertices[i].g = g;
+			vx->vertices[i].b = b;
+			vx->vertices[i].a = a;
 		}
 	} else {
 		for (i = start; i <= stop; i++) {
-			vx->colors[i*4+0] *= r;
-			vx->colors[i*4+1] *= g;
-			vx->colors[i*4+2] *= b;
-			vx->colors[i*4+3] *= a;
+			vx->vertices[i].r *= r;
+			vx->vertices[i].g *= g;
+			vx->vertices[i].b *= b;
+			vx->vertices[i].a *= a;
 		}
 	}
 }

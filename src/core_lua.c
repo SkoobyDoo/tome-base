@@ -2129,7 +2129,7 @@ static int gl_fbo_toscreen(lua_State *L)
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glDrawArrays(GL_QUADS, 0, 4);
 
-	if (lua_isuserdata(L, 6)) tglUseProgramObject(0);
+	if (lua_isuserdata(L, 6)) useNoShader();
 	if (!allowblend) glEnable(GL_BLEND);
 	return 0;
 }
@@ -2217,7 +2217,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	vertices[6] = x + w; vertices[7] = y;
 	glDrawArrays(GL_QUADS, 0, 4);
 
-	tglUseProgramObject(0);
+	useNoShader();
 
 	glEnable(GL_BLEND);
 	return 0;

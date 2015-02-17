@@ -24,10 +24,12 @@
 
 #include "display.h"
 #include "vertex_objects.h"
+#include "useshader.h"
 
 typedef struct {
-	GLuint vbo[3];
+	GLuint vbo;
 	GLuint mode;
+    shader_type *shader;
 } vertexes_renderer;
 
 extern vertexes_renderer* vertexes_renderer_new(render_mode mode);
