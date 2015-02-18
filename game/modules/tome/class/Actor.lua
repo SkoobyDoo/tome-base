@@ -519,6 +519,16 @@ function _M:actBase()
 		end
 	end
 
+	-- Suffocate ?
+	self.is_suffocating = nil  -- turn_procs gets reset in act()
+	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
+	if air_level then
+		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
+			self.is_suffocating = true
+			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
+		end
+	end
+
 	if self:knowTalent(self.T_GESTURE_OF_GUARDING) then self:setEffect(self.EFF_GESTURE_OF_GUARDING,1,{}) end
 	if self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then self:setEffect(self.EFF_DUAL_WEAPON_DEFENSE,1,{}) end
 	if self:knowTalent(self.T_COUNTER_ATTACK) then self:setEffect(self.EFF_COUNTER_ATTACKING,1,{}) end
@@ -534,14 +544,6 @@ function _M:actBase()
 
 	-- Cooldown talents after effects, because some of them involve breaking sustains.
 	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
-
-	-- Suffocate ?
-	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
-	if air_level then
-		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
-			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
-		end
-	end
 end
 
 function _M:act()

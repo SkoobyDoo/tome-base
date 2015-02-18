@@ -2297,7 +2297,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is suffocating.", "+SUFFOCATING" end,
 	on_lose = function(self, err) return "#Target# can breathe again.", "-Suffocating" end,
 	on_timeout = function(self, eff)
-		if self.air > self.air_regen then -- We must be over our natural regen
+		if not self.is_suffocating then
 			self:removeEffect(self.EFF_SUFFOCATING, false, true)
 			return
 		end

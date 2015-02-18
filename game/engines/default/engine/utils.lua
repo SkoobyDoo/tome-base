@@ -1148,6 +1148,10 @@ function tstring:splitLines(max_width, font, max_lines)
 			max_w = math.max(max_w, cur_size)
 			cur_size = 0
 			ret[#ret+1] = v
+			if max_lines then
+				max_lines = max_lines - 1
+				if max_lines <= 0 then break end
+			end
 		else
 			ret[#ret+1] = v
 		end

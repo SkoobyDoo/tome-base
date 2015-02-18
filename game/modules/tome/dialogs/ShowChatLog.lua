@@ -129,7 +129,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 
 			if gitem then
 				local sub_es = {}
-				for di = 1, #gitem._dduids do sub_es[#sub_es+1] = gitem._dduids[di].e end
+				for di = 1, #gitem.dduids do sub_es[#sub_es+1] = gitem.dduids[di].e end
 				if sub_es and #sub_es > 0 then
 					if not tooltip then tooltip = tstring{} end
 					for i, e in ipairs(sub_es) do
@@ -155,7 +155,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 
 			if gitem and button == "right" then
 				local sub_es = {}
-				for di = 1, #gitem._dduids do sub_es[#sub_es+1] = gitem._dduids[di].e end
+				for di = 1, #gitem.dduids do sub_es[#sub_es+1] = gitem.dduids[di].e end
 				if sub_es and #sub_es > 0 then
 					if not tooltip then tooltip = tstring{} end
 					for i, e in ipairs(sub_es) do
@@ -206,19 +206,26 @@ end
 
 function _M:loadLog(log, oldscroll)
 	self.lines = {}
+	self.display_list = {}
+	local old_style = self.font:getStyle()
 	for i = #log, 1, -1 do
 		if type(log[i]) == "string" then
 			self.lines[#self.lines+1] = {str=log[i]}
 		else
 			self.lines[#self.lines+1] = log[i]
 		end
+		local gen = self.lines[#self.lines].str:toString():splitLine(self.iw - 10, self.font)  --self.font:draw(self.lines[#self.lines].str, self.iw - 10, 255, 255, 255, false, true)
+		for i = 1, #gen do
+			self.display_list[#self.display_list + 1] = {str = gen[i], src = self.lines[#self.lines].src}
+		end
 	end
+	self.font:setStyle(old_style)
 
 	self.max_h = self.ih - self.iy
-	self.max = #log
+	self.max = #self.display_list
 	self.max_display = math.floor(self.max_h / self.font_h)
 
-	self.scrollbar.max = math.max(1, self.max - self.max_display + 1)
+	self.scrollbar.max = math.max(1, self.max - self.max_display)
 	self.scroll = nil
 	self:setScroll(oldscroll or self.scrollbar.max)
 end
@@ -245,34 +252,22 @@ end
 function _M:setScroll(i)
 	local old = self.scroll
 	self.scroll = util.bound(i, 0, self.scrollbar.max)
-	if self.scroll == old then return end
 
+	if self.scroll == old then return end
 	self.dlist = {}
-	local nb = 0
-	local old_style = self.font:getStyle()
-	for z = 1 + self.scroll, #self.lines do
-		local stop = false
-		local tstr = self.lines[z]
-		if not tstr then break end
-		local gen = self.font:draw(tstr.str, self.iw - 10, 255, 255, 255, false, true)
-		for i = 1, #gen do
-			self.dlist[#self.dlist+1] = {d=gen[i], src=self.lines[z].src}
-			nb = nb + 1
-			if nb >= self.max_display then stop = true break end
-		end
-		if stop then break end
+	for i = 1 + self.scroll, #self.display_list do
+		local tex = self:drawFontLine(self.font, self.display_list[i].str, self.iw - 10, 255, 255, 255, true)
+		self.dlist[#self.dlist + 1] = {d = tex, src = self.display_list[i].src}
+		if #self.dlist >= self.max_display then break end
 	end
-	self.font:setStyle(old_style)
 end
 
 function _M:innerDisplay(x, y, nb_keyframes, tx, ty)
 	local h = y + self.iy + self.start_y
 	for i = 1, #self.dlist do
 		local item = self.dlist[i].d
-		if self.shadow then item._tex:toScreenFull(x+2, h+2, item.w, item.h, item._tex_w, item._tex_h, 0,0,0, self.shadow) end
-		item._tex:toScreenFull(x, h, item.w, item.h, item._tex_w, item._tex_h)
-
-		for di = 1, #item._dduids do item._dduids[di].e:toScreen(nil, x + item._dduids[di].x, h, item._dduids[di].w, item._dduids[di].w, 1, false, false) end
+		if self.shadow then self:textureToScreen(item, x+2, h+2, 0, 0, 0, self.shadow, false) end
+		self:textureToScreen(item, x, h, 1, 1, 1, 1, true)
 
 		self.dlist[i].dh = h - y
 --		print("<<",i,"::",h + ty)
