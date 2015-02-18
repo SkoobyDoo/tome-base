@@ -249,7 +249,7 @@ newTalent{
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
 		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
-		doWardenWeaponSwap(m, t, nil, "blade")
+		doWardenWeaponSwap(m, t, "blade")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
 				self:forceUseTalent(self.T_ATTACK, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
@@ -297,7 +297,7 @@ newTalent{
 		m.energy.value = 1000
 		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 		m:attr("archery_pass_friendly", 1)
-		doWardenWeaponSwap(m, t, nil, "bow")
+		doWardenWeaponSwap(m, t, "bow")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
 				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
