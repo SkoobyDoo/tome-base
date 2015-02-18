@@ -1284,40 +1284,29 @@ static int sdl_texture_outline(lua_State *L)
 	glClear(GL_COLOR_BUFFER_BIT);
 	glLoadIdentity();
 
-	/* Render to buffer: shadow */
 	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
-	GLfloat texcoords[2*4] = {
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
-	};
-	GLfloat vertices[2*4] = {
-		x,   y,
-		w+x, y,
-		w+x, h+y,
-		x,   h+y,
-	};
-	GLfloat colors[4*4] = {
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-	};
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-
-	glDrawArrays(GL_QUADS, 0, 4);
+	/* Render to buffer: shadow */
+	vertex_clear(generic_vx);
+	vertex_add_quad(generic_vx,
+		0, 0, 0, 0,
+		w, 0, 1, 0,
+		w, h, 1, 1,
+		0, h, 0, 1,
+		r, g, b, a
+	);
+	vertex_toscreen(generic_vx, x, y, 0, FALSE);
 
 	/* Render to buffer: original */
-	for (i = 0; i < 4*4; i++) colors[i] = 1;
-	vertices[0] = 0; vertices[1] = 0;
-	vertices[2] = w; vertices[3] = 0;
-	vertices[4] = w; vertices[5] = h;
-	vertices[6] = 0; vertices[7] = h;
-	glDrawArrays(GL_QUADS, 0, 4);
+	vertex_clear(generic_vx);
+	vertex_add_quad(generic_vx,
+		0, 0, 0, 0,
+		w, 0, 1, 0,
+		w, h, 1, 1,
+		0, h, 0, 1,
+		1, 1, 1, 1
+	);
+	vertex_toscreen(generic_vx, 0, 0, 0, FALSE);
 
 	// Unbind texture from FBO and then unbind FBO
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);

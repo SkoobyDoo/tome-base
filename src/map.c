@@ -418,24 +418,6 @@ static int map_objects_toscreen(lua_State *L)
 	if (lua_isboolean(L, 6)) allow_cb = lua_toboolean(L, 6);
 	if (lua_isboolean(L, 7)) allow_shader = lua_toboolean(L, 7);
 
-	GLfloat vertices[3*4];
-	GLfloat texcoords[2*4] = {
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
-	};
-	GLfloat colors[4*4] = {
-		1, 1, 1, a,
-		1, 1, 1, a,
-		1, 1, 1, a,
-		1, 1, 1, a,
-	};
-
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glVertexPointer(3, GL_FLOAT, 0, vertices);
-
 	/***************************************************
 	 * Render
 	 ***************************************************/
@@ -475,16 +457,15 @@ static int map_objects_toscreen(lua_State *L)
 
 			tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
 
-			texcoords[0] = dm->tex_x[0]; texcoords[1] = dm->tex_y[0];
-			texcoords[2] = dm->tex_x[0] + dm->tex_factorx[0]; texcoords[3] = dm->tex_y[0];
-			texcoords[4] = dm->tex_x[0] + dm->tex_factorx[0]; texcoords[5] = dm->tex_y[0] + dm->tex_factory[0];
-			texcoords[6] = dm->tex_x[0]; texcoords[7] = dm->tex_y[0] + dm->tex_factory[0];
-
-			vertices[0] = dx; vertices[1] = dy; vertices[2] = dz;
-			vertices[3] = dw + dx; vertices[4] = dy; vertices[5] = dz;
-			vertices[6] = dw + dx; vertices[7] = dh + dy; vertices[8] = dz;
-			vertices[9] = dx; vertices[10] = dh + dy; vertices[11] = dz;
-			glDrawArrays(GL_QUADS, 0, 4);
+			vertex_clear(generic_vx);
+			vertex_add_quad(generic_vx,
+				dx, dy, dm->tex_x[0], dm->tex_y[0],
+				dx + dw, dy, dm->tex_x[0] + dm->tex_factorx[0], dm->tex_y[0],
+				dx + dw, dy + dh, dm->tex_x[0] + dm->tex_factorx[0], dm->tex_y[0] + dm->tex_factory[0],
+				dx, dy + dh, dm->tex_x[0], dm->tex_y[0] + dm->tex_factory[0],
+				1, 1, 1, a
+			);
+			vertex_toscreen(generic_vx, 0, 0, 0, FALSE);
 
 			if (m != dm) {
 		 		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
@@ -508,11 +489,6 @@ static int map_objects_toscreen(lua_State *L)
 				{
 					printf("Display callback error: UID %ld: %s\n", dm->uid, lua_tostring(L, -1));
 					lua_pop(L, 1);
-				}
-				if (lua_isboolean(L, -1)) {
-					glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-					glColorPointer(4, GL_FLOAT, 0, colors);
-					glVertexPointer(3, GL_FLOAT, 0, vertices);
 				}
 				lua_pop(L, 1);
 
@@ -573,28 +549,9 @@ static int map_objects_display(lua_State *L)
 	/* Reset The View */
 	glLoadIdentity();
 
-
 	tglClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	CHECKGL(glClear(GL_COLOR_BUFFER_BIT));
 	//CHECKGL(glLoadIdentity());
-
-	GLfloat vertices[3*4];
-	GLfloat texcoords[2*4] = {
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
-	};
-	GLfloat colors[4*4] = {
-		1, 1, 1, 1,
-		1, 1, 1, 1,
-		1, 1, 1, 1,
-		1, 1, 1, 1,
-	};
-
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glVertexPointer(3, GL_FLOAT, 0, vertices);
 
 	/***************************************************
 	 * Render to buffer
@@ -621,16 +578,15 @@ static int map_objects_display(lua_State *L)
 
 			int dx = 0, dy = 0;
 
-			texcoords[0] = m->tex_x[0]; texcoords[1] = m->tex_y[0];
-			texcoords[2] = m->tex_x[0] + m->tex_factorx[0]; texcoords[3] = m->tex_y[0];
-			texcoords[4] = m->tex_x[0] + m->tex_factorx[0]; texcoords[5] = m->tex_y[0] + m->tex_factory[0];
-			texcoords[6] = m->tex_x[0]; texcoords[7] = m->tex_y[0] + m->tex_factory[0];
-
-			vertices[0] = dx; vertices[1] = dy; vertices[2] = dz;
-			vertices[3] = w + dx; vertices[4] = dy; vertices[5] = dz;
-			vertices[6] = w + dx; vertices[7] = h + dy; vertices[8] = dz;
-			vertices[9] = dx; vertices[10] = h + dy; vertices[11] = dz;
-			glDrawArrays(GL_QUADS, 0, 4);
+			vertex_clear(generic_vx);
+			vertex_add_quad(generic_vx,
+				dx, dy, m->tex_x[0], m->tex_y[0],
+				dx + w, dy, m->tex_x[0] + m->tex_factorx[0], m->tex_y[0],
+				dx + w, dy + h, m->tex_x[0] + m->tex_factorx[0], m->tex_y[0] + m->tex_factory[0],
+				dx, dy + h, m->tex_x[0], m->tex_y[0] + m->tex_factory[0],
+				1, 1, 1, 1
+			);
+			vertex_toscreen(generic_vx, 0, 0, 0, FALSE);
 
 			dm = dm->next;
 			dz++;
