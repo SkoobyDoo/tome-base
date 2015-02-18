@@ -33,9 +33,11 @@
 bool shaders_active = TRUE;
 int default_shader_ref = LUA_NOREF;
 shader_type *default_shader = NULL;
+shader_type *current_shader = NULL;
 
 void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, float tw, float th, float r, float g, float b, float a)
 {
+	current_shader = p;
 	tglUseProgramObject(p->shader);
 	GLfloat t = cur_frame_tick;
 	glUniform1fvARB(p->p_tick, 1, &t);
@@ -82,11 +84,13 @@ void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, f
 }
 
 void useNoShader() {
-	// if (default_shader) {
-	// 	tglUseProgramObject(default_shader->shader);
-	// } else {
+	if (default_shader) {
+		tglUseProgramObject(default_shader->shader);
+		current_shader = default_shader;
+	} else {
 		tglUseProgramObject(0);
-	// }
+		current_shader = NULL;
+	}
 }
 
 static GLuint loadShader(const char* code, GLuint type)
@@ -584,6 +588,7 @@ static int program_compile(lua_State *L)
 	p->vertex_attrib = glGetAttribLocation(p->shader, "te4_position");
 	p->texcoord_attrib = glGetAttribLocation(p->shader, "te4_texcoord");
 	p->color_attrib = glGetAttribLocation(p->shader, "te4_color");
+	printf("Attri locations %d %d %d\n", p->vertex_attrib, p->texcoord_attrib, p->color_attrib);
 
 	lua_pushboolean(L, TRUE);
 	return 1;

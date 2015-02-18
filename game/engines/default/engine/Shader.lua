@@ -122,14 +122,16 @@ function _M:getFragment(name)
 		code[#code+1] = l
 	end
 	f:close()
-	self.frags[name] = core.shader.newShader(table.concat(code))
+	code = table.concat(code)
+	code = self:rewriteShaderCode(code, "frag")
+	self.frags[name] = core.shader.newShader(code)
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
 end
 
 function _M:getVertex(name)
-	if not name then return nil end
-	if self.verts[name] then return self.verts[name] end
+	if not name then name = "default/gl" end
+	if self.verts[name] then print("[SHADER] reusing vertex shader from /data/gfx/shaders/"..name..".vert") return self.verts[name] end
 	local f = fs.open("/data/gfx/shaders/"..name..".vert", "r")
 	local code = {}
 	while true do
@@ -138,7 +140,9 @@ function _M:getVertex(name)
 		code[#code+1] = l
 	end
 	f:close()
-	self.verts[name] = core.shader.newShader(table.concat(code), true)
+	code = table.concat(code)
+	code = self:rewriteShaderCode(code, "vert")
+	self.verts[name] = core.shader.newShader(code, true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]
 end
@@ -146,6 +150,7 @@ end
 function _M:createProgram(def)
 	local shad = core.shader.newProgram()
 	if not shad then return nil end
+	def.vert = def.vert or "default/gl"
 	if def.vert then shad:attach(self:getVertex(def.vert)) end
 	if def.frag then shad:attach(self:getFragment(def.frag)) end
 	if not shad:compile() then return nil end
@@ -256,4 +261,22 @@ default = {}
 
 function _M:setDefault(kind, name, args)
 	default[kind] = _M.new(name, args)
+end
+
+
+
+----------------------------------------------------------------------------
+-- Shaders rewriting
+-- Later on this can be extended to support various GLSL versions
+----------------------------------------------------------------------------
+
+function _M:rewriteShaderCode(code, kind)
+	if kind == "frag" then
+		code = "varying vec2 te4_uv; varying vec4 te4_fragcolor;\n"..code
+		code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
+	end
+	print("==================================")
+	print(code)
+	print("==================================")
+	return code
 end

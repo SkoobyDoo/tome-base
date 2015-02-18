@@ -21,8 +21,7 @@ return {
 	frag = "full_fbo",
 	vert = nil,
 	args = {
-		tex = { texture = 0 },
-		noisevol = { texture = 1 },
+		sceneBuffer = { texture = 0 },
 	},
 	clone = false,
 	permanent = true,

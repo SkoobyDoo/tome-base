@@ -207,7 +207,7 @@ static int sdl_font_atlas_debug(lua_State *L)
 		w, 0, 1, 0,
 		1, 1, 1, 1
 	);
-	vertex_toscreen(generic_vx, x, y, f->atlas_tex);
+	vertex_toscreen(generic_vx, x, y, f->atlas_tex, FALSE);
 
 	return 0;
 }

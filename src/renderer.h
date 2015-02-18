@@ -34,6 +34,6 @@ typedef struct {
 
 extern vertexes_renderer* vertexes_renderer_new(render_mode mode);
 extern void vertexes_renderer_free(vertexes_renderer *vr);
-extern void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y);
+extern void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, bool ignore_shader);
 
 #endif

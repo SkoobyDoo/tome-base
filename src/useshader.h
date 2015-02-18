@@ -23,6 +23,7 @@ typedef struct {
 } shader_type;
 
 extern shader_type *default_shader;
+extern shader_type *current_shader;
 
 extern bool shaders_active;
 extern void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, float tw, float th, float r, float g, float b, float a);

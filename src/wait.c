@@ -22,12 +22,12 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-#include "core_lua.h"
-#include "tSDL.h"
+#include "display_sdl.h"
 #include "tgl.h"
 #include "types.h"
 #include "main.h"
 #include "lua_externs.h"
+#include "core_display.h"
 
 extern SDL_Window *window;
 extern SDL_Surface *screen;
@@ -49,24 +49,16 @@ static int draw_last_frame(lua_State *L)
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
 
-	GLfloat btexcoords[2*4] = {
-		0, (float)h/(float)bkg_realh,
-		(float)w/(float)bkg_realw, (float)h/(float)bkg_realh,
-		(float)w/(float)bkg_realw, 0,
-		0, 0
-	};
-	GLfloat bcolors[4*4] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-	GLfloat bvertices[2*4] = {
-		0, 0,
-		w, 0,
-		w, h,
-		0, h,
-	};
-	glTexCoordPointer(2, GL_FLOAT, 0, btexcoords);
-	glColorPointer(4, GL_FLOAT, 0, bcolors);
-	tglBindTexture(GL_TEXTURE_2D, bkg_t);
-	glVertexPointer(2, GL_FLOAT, 0, bvertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	float rw = (float)w/(float)bkg_realw, rh = (float)h/(float)bkg_realh;
+	vertex_clear(generic_vx);
+	vertex_add_quad(generic_vx,
+		0, 0, 0, rh,
+		w, 0, rw, rh,
+		w, h, rw, 0,
+		0, h, 0, 0,
+		1, 1, 1, 1
+	);
+	vertex_toscreen(generic_vx, 0, 0, bkg_t, FALSE);
 	return 0;
 }
 

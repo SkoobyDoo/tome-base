@@ -675,7 +675,7 @@ static int gl_draw_quad(lua_State *L)
 		w, 0, 1, 0,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, -1);
+	vertex_toscreen(generic_vx, x, y, -1, FALSE);
 	return 0;
 }
 
@@ -968,7 +968,7 @@ static int sdl_texture_toscreen(lua_State *L)
 		w, 0, 1, 0,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex);
+	vertex_toscreen(generic_vx, x, y, t->tex, FALSE);
 
 	return 0;
 }
@@ -1067,7 +1067,7 @@ static int sdl_texture_toscreen_full(lua_State *L)
 		w, 0, texw, 0,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex);
+	vertex_toscreen(generic_vx, x, y, t->tex, FALSE);
 
 	return 0;
 }
@@ -1100,7 +1100,7 @@ static int sdl_texture_toscreen_precise(lua_State *L)
 		w, 0, x2, y1,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex);
+	vertex_toscreen(generic_vx, x, y, t->tex, FALSE);
 
 	return 0;
 }
@@ -1629,10 +1629,12 @@ static int gl_fbo_toscreen(lua_State *L)
 		b = luaL_checknumber(L, 9);
 		a = luaL_checknumber(L, 10);
 	}
+	bool has_shader = FALSE;
 	if (lua_isuserdata(L, 6))
 	{
 		shader_type *s = (shader_type*)lua_touserdata(L, 6);
 		useShader(s, fbo->w, fbo->h, w, h, 0, 0, 1, 1, r, g, b, a);
+		has_shader = TRUE;
 	}
 
 	if (!allowblend) glDisable(GL_BLEND);
@@ -1645,9 +1647,9 @@ static int gl_fbo_toscreen(lua_State *L)
 		w, 0, 1, 1,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, fbo->texture);
+	vertex_toscreen(generic_vx, x, y, fbo->texture, has_shader);
 
-	if (lua_isuserdata(L, 6)) useNoShader();
+	if (has_shader) useNoShader();
 	if (!allowblend) glEnable(GL_BLEND);
 	return 0;
 }
@@ -1695,7 +1697,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
-		vertex_toscreen(generic_vx, 0, 0, srcfbo->texture);
+		vertex_toscreen(generic_vx, 0, 0, srcfbo->texture, TRUE);
 
 		shad_idx++;
 		tmpfbo = srcfbo;
@@ -1712,7 +1714,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	glPopAttrib();
 	tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_final->fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
-	vertex_toscreen(generic_vx, x, y, srcfbo->texture);
+	vertex_toscreen(generic_vx, x, y, srcfbo->texture, TRUE);
 
 	useNoShader();
 

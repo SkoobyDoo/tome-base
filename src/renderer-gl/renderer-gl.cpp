@@ -45,12 +45,20 @@ void vertexes_renderer_free(vertexes_renderer *vr) {
 	free(vr);
 }
 
-void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y) {
+void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, bool ignore_shader) {
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	glTranslatef(x, y, 0);
 
-	shader_type *shader = vx->shader ? vx->shader : default_shader;
-	useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
+	shader_type *shader;
+force_shader_loop:
+	if (!ignore_shader) {
+		shader = vx->shader ? vx->shader : default_shader;
+		useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
+	} else {
+		shader = current_shader;
+		if (shader->vertex_attrib == -1) { return; }
+		// if (shader->vertex_attrib == -1) { ignore_shader = FALSE; goto force_shader_loop; }
+	}
 #if 1
 
 	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
@@ -61,11 +69,16 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	}
 
 	glEnableVertexAttribArray(shader->vertex_attrib);
-	glEnableVertexAttribArray(shader->texcoord_attrib);
-	glEnableVertexAttribArray(shader->color_attrib);
 	glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), 0);
-	glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
-	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
+
+	if (shader->texcoord_attrib != -1) {
+		glEnableVertexAttribArray(shader->texcoord_attrib);
+		glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
+	}
+	if (shader->color_attrib != -1) {
+		glEnableVertexAttribArray(shader->color_attrib);
+		glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
+	}
 
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 
@@ -80,7 +93,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 #endif
 
-	useNoShader();
+	if (!ignore_shader) useNoShader();
 	glTranslatef(-x, -y, 0);
 
 	vx->changed = FALSE;

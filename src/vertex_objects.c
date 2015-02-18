@@ -107,7 +107,6 @@ int vertex_add_quad(lua_vertexes *vx,
 	return vx->next_id++;
 }
 
-
 void vertex_update_quad_texture(lua_vertexes *vx, int i, float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4) {
 	vx->vertices[i].u = u1; vx->vertices[i].v = v1; i++;
 	vx->vertices[i].u = u2; vx->vertices[i].v = v2; i++;
@@ -180,14 +179,14 @@ void vertex_color(lua_vertexes *vx, int start, int stop, bool set, float r, floa
 	}
 }
 
-void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex) {
+void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, bool ignore_shader) {
 	if (tex == -1) {
 		if (vx->tex) { tex = vx->tex; }
 		else { tex = gl_tex_white; }
 		vx->tex = tex;
 	} else if (tex) vx->tex = tex;
 
-	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y);
+	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y, ignore_shader);
 }
 
 int vertex_quad_size() {

@@ -34,28 +34,35 @@ ffi.cdef[[
 typedef float GLfloat;
 typedef int GLuint;
 typedef void vertexes_renderer;
+typedef void shader_type;
 typedef enum {
 	VERTEX_STATIC = 1,
 	VERTEX_DYNAMIC = 2,
 	VERTEX_STREAM = 3,
 } render_mode;
 
+typedef struct {
+	GLfloat x, y;
+	GLfloat u, v;
+	GLfloat r, g, b, a;
+} vertex_data;
+
 typedef struct
 {
 	render_mode mode;
-	enum{ VO_POINTS, VO_QUADS } kind;
+	enum{ VO_POINTS, VO_QUADS, VO_TRIANGLE_FAN } kind;
 	int nb, size;
 	int next_id;
 	int *ids;
-	GLfloat *vertices;
-	GLfloat *colors;
-	GLfloat *textures;
+	vertex_data *vertices;
 
 	bool changed;
 
+	shader_type *shader;
 	GLuint tex;
 	void *render;
 } lua_vertexes;
+
 
 extern lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, render_mode mode);
 extern void vertex_free(lua_vertexes *vx, bool self_delete);
@@ -74,59 +81,55 @@ extern void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, floa
 extern void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a);
 extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
-extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex);
+extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, bool ignore_shader);
 ]]
 
 local VERTEX_QUAD_SIZE = C.vertex_quad_size()
-local vertexes
-local vertexes_mt = {
-	__gc = function(vo) C.vertex_free(vo, false) end,
-	__index = {
-		prepareSize = C.update_vertex_size,
-		find = function(vo, id) local i = C.vertex_find(vo, id) return i > -1 and i or nil end,
-		getQuadSize = function() return VERTEX_QUAD_SIZE end,
-		addQuadRaw = C.vertex_add_quad,
-		addQuad = function(vo, r, g, b, a, p1, p2, p3, p4)
-			return C.vertex_add_quad(vo,
-				p1[1], p1[2], p1[3], p1[4], 
-				p2[1], p2[2], p2[3], p2[4], 
-				p3[1], p3[2], p3[3], p3[4], 
-				p4[1], p4[2], p4[3], p4[4],
-				r, g, b, a
-			)
-		end,
-		updateQuadTexture = function(vo, id, p1, p2, p3, p4)
-			return C.vertex_update_quad_texture(vo, id,
-				p1[1], p1[2], 
-				p2[1], p2[2], 
-				p3[1], p3[2], 
-				p4[1], p4[2]
-			)
-		end,
-		remove = function(vo, start, stop) 
-			local startid = C.vertex_find(vo, start)
-			local stopid = C.vertex_find(vo, stop)
-			C.vertex_remove(vo, startid, stopid)
-		end,
-		translate = function(vo, start, stop, mx, my)
-			local startid = C.vertex_find(vo, start)
-			local stopid = C.vertex_find(vo, stop)
-			C.vertex_translate(vo, startid, stopid, mx, my)
-		end,
-		color = function(vo, start, stop, set, r, g, b, a)
-			local startid = C.vertex_find(vo, start)
-			local stopid = C.vertex_find(vo, stop)
-			C.vertex_color(vo, startid, stopid, set, r, g, b, a)
-		end,
-		clear = C.vertex_clear,
-		toScreen = function(vo, x, y, tex)
-			if tex == true then tex = 0 end
-			if tex == nil then tex = -1 end
-			C.vertex_toscreen(vo, x, y, tex)
-		end,
-	},
-}
-vertexes = ffi.metatype("lua_vertexes", vertexes_mt)
+local vertexes_mt = { __gc = function(vo) C.vertex_free(vo, false) end,	__index = {
+	prepareSize = C.update_vertex_size,
+	find = function(vo, id) local i = C.vertex_find(vo, id) return i > -1 and i or nil end,
+	getQuadSize = function() return VERTEX_QUAD_SIZE end,
+	addQuadRaw = C.vertex_add_quad,
+	addQuad = function(vo, r, g, b, a, p1, p2, p3, p4)
+		return C.vertex_add_quad(vo,
+			p1[1], p1[2], p1[3], p1[4], 
+			p2[1], p2[2], p2[3], p2[4], 
+			p3[1], p3[2], p3[3], p3[4], 
+			p4[1], p4[2], p4[3], p4[4],
+			r, g, b, a
+		)
+	end,
+	updateQuadTexture = function(vo, id, p1, p2, p3, p4)
+		return C.vertex_update_quad_texture(vo, id,
+			p1[1], p1[2], 
+			p2[1], p2[2], 
+			p3[1], p3[2], 
+			p4[1], p4[2]
+		)
+	end,
+	remove = function(vo, start, stop) 
+		local startid = C.vertex_find(vo, start)
+		local stopid = C.vertex_find(vo, stop)
+		C.vertex_remove(vo, startid, stopid)
+	end,
+	translate = function(vo, start, stop, mx, my)
+		local startid = C.vertex_find(vo, start)
+		local stopid = C.vertex_find(vo, stop)
+		C.vertex_translate(vo, startid, stopid, mx, my)
+	end,
+	color = function(vo, start, stop, set, r, g, b, a)
+		local startid = C.vertex_find(vo, start)
+		local stopid = C.vertex_find(vo, stop)
+		C.vertex_color(vo, startid, stopid, set, r, g, b, a)
+	end,
+	clear = C.vertex_clear,
+	toScreen = function(vo, x, y, tex, ignore_shader)
+		if tex == true then tex = 0 end
+		if tex == nil then tex = -1 end
+		C.vertex_toscreen(vo, x, y, tex, ignore_shader and true or false)
+	end,
+}}
+local vertexes = ffi.metatype("lua_vertexes", vertexes_mt)
 
 local vo = {}
 core.vo = vo

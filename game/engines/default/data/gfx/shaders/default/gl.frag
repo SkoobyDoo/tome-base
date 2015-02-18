@@ -1,5 +1,3 @@
-varying vec2 te4_uv;
-varying vec4 te4_fragcolor;
 uniform sampler2D tex;
 
 void main()

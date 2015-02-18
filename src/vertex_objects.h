@@ -41,7 +41,7 @@ typedef struct {
 typedef struct
 {
 	render_mode mode;
-	enum{ VO_POINTS, VO_QUADS } kind;
+	enum{ VO_POINTS, VO_QUADS, VO_TRIANGLE_FAN } kind;
 	int nb, size;
 	int next_id;
 	int *ids;
@@ -73,7 +73,7 @@ extern void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, floa
 extern void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a);
 extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
-extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex);
+extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, bool ignore_shader);
 
 #include "renderer.h"
 
