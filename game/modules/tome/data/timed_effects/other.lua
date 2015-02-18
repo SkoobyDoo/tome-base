@@ -2546,6 +2546,16 @@ newEffect{
 	status = "beneficial",
 	parameters = { power=10 },
 	decrease = 0,
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
+		if src ~= self and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
+			-- Find our clones
+			for i = 1, #eff.targets do
+				local target = eff.targets[i]
+				if target == self then dam = 0 end
+			end
+		end
+		return {dam=dam}
+	end,
 	callbackOnHit = function(self, eff, cb, src)
 		local clones = {}
 		-- Find our clones
