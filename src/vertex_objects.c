@@ -34,6 +34,7 @@
 #include "main.h"
 #include "vertex_objects.h"
 #include "core_lua.h"
+#include "core_display.h"
 
 /**************************************************************
  * Vertex Objects
@@ -184,7 +185,7 @@ void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex) {
 		if (vx->tex) { tex = vx->tex; }
 		else { tex = gl_tex_white; }
 		vx->tex = tex;
-	}
+	} else if (tex) vx->tex = tex;
 
 	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y);
 }

@@ -49,9 +49,9 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	glTranslatef(x, y, 0);
 
-#if 1
 	shader_type *shader = vx->shader ? vx->shader : default_shader;
 	useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
+#if 1
 
 	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
 	if (vx->changed) {
@@ -73,7 +73,6 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	glDisableVertexAttribArray(shader->texcoord_attrib);
 	glDisableVertexAttribArray(shader->color_attrib);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	useNoShader();
 #else
 	glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);
 	glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].u);
@@ -81,6 +80,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 #endif
 
+	useNoShader();
 	glTranslatef(-x, -y, 0);
 
 	vx->changed = FALSE;

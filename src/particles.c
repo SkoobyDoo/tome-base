@@ -36,6 +36,7 @@
 #include "useshader.h"
 #include "physfs.h"
 #include "physfsrwops.h"
+#include "core_display.h"
 
 #define rng(x, y) (x + rand_div(1 + y - x))
 

@@ -25,8 +25,9 @@
 #include "lualib.h"
 #include "auxiliar.h"
 #include "physfs.h"
-#include "core_lua.h"
 #include "types.h"
+#include "core_lua.h"
+#include "core_display.h"
 #include "main.h"
 #include "getself.h"
 #include "te4web.h"
@@ -110,34 +111,15 @@ static int lua_web_toscreen(lua_State *L) {
 	GLuint *tex = (GLuint*)te4_web_toscreen(view, &w, &h);
 
 	if (tex) {
-		float r = 1, g = 1, b = 1, a = 1;
-
-		tglBindTexture(GL_TEXTURE_2D, *tex);
-
-		GLfloat texcoords[2*4] = {
-			0, 0,
-			0, 1,
-			1, 1,
-			1, 0,
-		};
-		GLfloat colors[4*4] = {
-			r, g, b, a,
-			r, g, b, a,
-			r, g, b, a,
-			r, g, b, a,
-		};
-		glColorPointer(4, GL_FLOAT, 0, colors);
-		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-
-		GLfloat vertices[2*4] = {
-			x, y,
-			x, y + h,
-			x + w, y + h,
-			x + w, y,
-		};
-		glVertexPointer(2, GL_FLOAT, 0, vertices);
-
-		glDrawArrays(GL_QUADS, 0, 4);
+		vertex_clear(generic_vx);
+		vertex_add_quad(generic_vx,
+			0, 0, 0, 0,
+			0, h, 0, 1,
+			w, h, 1, 1,
+			w, 0, 1, 0,
+			1, 1, 1, 1
+		);
+		vertex_toscreen(generic_vx, x, y, *tex);
 	}
 	return 0;
 }

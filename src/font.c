@@ -34,6 +34,7 @@
 #include "main.h"
 #include "vertex_objects.h"
 #include "core_lua.h"
+#include "core_display.h"
 #include "font.h"
 #include "utf8proc/utf8proc.h"
 
@@ -198,29 +199,15 @@ static int sdl_font_atlas_debug(lua_State *L)
 	int w = luaL_checknumber(L, 4);
 	int h = luaL_checknumber(L, 5);
 
-	GLfloat texcoords[2*4] = {
-		0, 0,
-		0, 1,
-		1, 1,
-		1, 0,
-	};
-	GLfloat colors[4*4] = {
-		1, 1, 1, 1,
-		1, 1, 1, 1,
-		1, 1, 1, 1,
-		1, 1, 1, 1,
-	};
-	GLfloat vertices[2*4] = {
-		x, y,
-		x, y + h,
-		x + w, y + h,
-		x + w, y,
-	};
-	tglBindTexture(GL_TEXTURE_2D, f->atlas_tex);
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	vertex_clear(generic_vx);
+	vertex_add_quad(generic_vx,
+		0, 0, 0, 0,
+		0, h, 0, 1,
+		w, h, 1, 1,
+		w, 0, 1, 0,
+		1, 1, 1, 1
+	);
+	vertex_toscreen(generic_vx, x, y, f->atlas_tex);
 
 	return 0;
 }

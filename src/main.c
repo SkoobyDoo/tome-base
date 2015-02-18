@@ -36,6 +36,7 @@
 #include "physfs.h"
 #include "physfsrwops.h"
 #include "core_lua.h"
+#include "core_display.h"
 #include "font.h"
 #include "getself.h"
 #include "music.h"
@@ -658,36 +659,19 @@ void call_draw(int nb_keyframes)
 	/* Mouse pointer */
 	if (mouse_drag_tex)
 	{
-		GLfloat texcoords[2*4] = {
-			0, 0,
-			0, 1,
-			1, 1,
-			1, 0,
-		};
-		GLfloat colors[4*4] = {
-			1, 1, 1, 0.6,
-			1, 1, 1, 0.6,
-			1, 1, 1, 0.6,
-			1, 1, 1, 0.6,
-		};
-
-		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-		glColorPointer(4, GL_FLOAT, 0, colors);
-
 		int x = mousex;
 		int y = mousey;
 		int w = mouse_drag_w / 2;
 		int h = mouse_drag_h / 2;
-		tglBindTexture(GL_TEXTURE_2D, mouse_drag_tex);
-
-		GLfloat vertices[2*4] = {
-			x - w, y - h,
-			x - w, y + h,
-			x + w, y + h,
-			x + w, y - h,
-		};
-		glVertexPointer(2, GL_FLOAT, 0, vertices);
-		glDrawArrays(GL_QUADS, 0, 4);
+		vertex_clear(generic_vx);
+		vertex_add_quad(generic_vx,
+			-w, -h, 0, 0,
+			-w, h, 0, 1,
+			w, h, 1, 1,
+			w, -h, 1, 0,
+			1, 1, 1, 0.6
+		);
+		vertex_toscreen(generic_vx, x, y, mouse_drag_tex);
 	}
 }
 
@@ -1146,6 +1130,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaL_openlibs(L);  /* open libraries */
 		luaopen_physfs(L);
 		luaopen_core(L);
+		luaopen_core_display(L);
 		luaopen_font(L);
 		luaopen_vo(L);
 		luaopen_fov(L);
@@ -1454,6 +1439,7 @@ int main(int argc, char *argv[])
 
 	/* Sets up OpenGL double buffering */
 	resizeWindow(WIDTH, HEIGHT);
+	core_display_init();
 
 	// Allow screensaver to work
 	SDL_EnableScreenSaver();

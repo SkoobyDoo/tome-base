@@ -18,13 +18,29 @@
 	Nicolas Casalini "DarkGod"
 	darkgod@te4.org
 */
-#ifndef _CORELUA_H_
-#define _CORELUA_H_
+#ifndef _CORE_DISPLAY_H_
+#define _CORE_DISPLAY_H_
 
-#include "display.h"
 #include "tgl.h"
+#include "useshader.h"
+#include "vertex_objects.h"
 
-extern int luaopen_core(lua_State *L);
-extern int init_blank_surface();
+typedef struct
+{
+	GLuint fbo;
+	GLuint texture;
+	int w, h;
+} lua_fbo;
+
+extern int gl_tex_white;
+extern GLint max_texture_size;
+extern lua_vertexes *generic_vx;
+
+extern int luaopen_core_display(lua_State *L);
+extern void core_display_init();
+extern int sdl_surface_drawstring(lua_State *L);
+extern int sdl_surface_drawstring_aa(lua_State *L);
+extern SDL_Surface *SDL_DisplayFormatAlpha(SDL_Surface *surface);
+
 
 #endif
