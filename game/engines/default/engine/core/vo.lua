@@ -41,6 +41,12 @@ typedef enum {
 	VERTEX_STREAM = 3,
 } render_mode;
 
+typedef enum{
+	VO_POINTS = 1,
+	VO_QUADS = 2,
+	VO_TRIANGLE_FAN = 3,
+} vertex_mode;
+
 typedef struct {
 	GLfloat x, y;
 	GLfloat u, v;
@@ -50,7 +56,7 @@ typedef struct {
 typedef struct
 {
 	render_mode mode;
-	enum{ VO_POINTS, VO_QUADS, VO_TRIANGLE_FAN } kind;
+	vertex_mode kind;
 	int nb, size;
 	int next_id;
 	int *ids;
@@ -64,11 +70,15 @@ typedef struct
 } lua_vertexes;
 
 
-extern lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, render_mode mode);
+extern lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mode kind, render_mode mode);
 extern void vertex_free(lua_vertexes *vx, bool self_delete);
 extern void update_vertex_size(lua_vertexes *vx, int size);
 extern int vertex_find(lua_vertexes *vx, int id);
 extern int vertex_quad_size();
+extern int vertex_add_point(lua_vertexes *vx,
+	float x1, float y1, float u1, float v1, 
+	float r, float g, float b, float a
+);
 extern int vertex_add_quad(lua_vertexes *vx,
 	float x1, float y1, float u1, float v1, 
 	float x2, float y2, float u2, float v2, 
@@ -134,10 +144,10 @@ local vertexes = ffi.metatype("lua_vertexes", vertexes_mt)
 local vo = {}
 core.vo = vo
 
-vo.new = function(size, texture, mode)
+vo.new = function(size, texture, kind, mode)
 	local vo = ffi.new("lua_vertexes")
 	if type(texture) == "userdata" then texture = texture:id() end
-	C.vertex_new(vo, size or 24, texture or 0, mode or "VERTEX_DYNAMIC")
+	C.vertex_new(vo, size or 24, texture or 0, kind or "VO_QUADS", mode or "VERTEX_DYNAMIC")
 	return vo
 end
 

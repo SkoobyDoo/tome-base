@@ -31,12 +31,15 @@ extern "C" {
 
 // static RendererState *state;
 
-vertexes_renderer* vertexes_renderer_new(render_mode mode) {
+vertexes_renderer* vertexes_renderer_new(vertex_mode kind, render_mode mode) {
 	vertexes_renderer *vr = (vertexes_renderer*)malloc(sizeof(vertexes_renderer));
 	glGenBuffers(1, &vr->vbo);
 	if (mode == VERTEX_STATIC) vr->mode = GL_STATIC_DRAW;
 	if (mode == VERTEX_DYNAMIC) vr->mode = GL_DYNAMIC_DRAW;
 	if (mode == VERTEX_STREAM) vr->mode = GL_STREAM_DRAW;
+	if (kind == VO_POINTS) vr->kind = GL_POINTS;
+	if (kind == VO_QUADS) vr->kind = GL_QUADS;
+	if (kind == VO_TRIANGLE_FAN) vr->kind = GL_TRIANGLE_FAN;
 	return vr;
 }
 
@@ -80,7 +83,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 			glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
 		}
 
-		glDrawArrays(GL_QUADS, 0, vx->nb);
+		glDrawArrays(vr->kind, 0, vx->nb);
 
 		glDisableVertexAttribArray(shader->vertex_attrib);
 		glDisableVertexAttribArray(shader->texcoord_attrib);
@@ -93,7 +96,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);
 		glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].u);
 		glColorPointer(4, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].r);
-		glDrawArrays(GL_QUADS, 0, vx->nb);
+		glDrawArrays(vr->kind, 0, vx->nb);
 	}
 
 	glTranslatef(-x, -y, 0);

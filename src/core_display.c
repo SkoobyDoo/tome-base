@@ -50,6 +50,7 @@
 extern SDL_Window *window;
 
 lua_vertexes *generic_vx = NULL;
+lua_vertexes *generic_vx_fan = NULL;
 
 #define SDL_SRCALPHA        0x00010000
 int SDL_SetAlpha(SDL_Surface * surface, Uint32 flag, Uint8 value)
@@ -718,61 +719,33 @@ static int gl_draw_quad_part(lua_State *L)
 		return 0;
 	}
 
-	GLfloat texcoords[2*10] = {
-		0, 0,
-		0, 1,
-		1, 1,
-		1, 0,
-		1, 0,
-		1, 0,
-		1, 0,
-		1, 0,
-		1, 0,
-		1, 0,
-	};
-	GLfloat colors[4*10] = {
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-		r, g, b, a,
-	};
-	GLfloat vertices[2*10] = {
-		midx, midy,
-		midx, y,
-	};
 
 	int i = 4;
 	float quadrant = angle / 45;
 	float rad = (angle - (45 * (int)quadrant)) * M_PI / 180;
 	float s = sin(rad) / 2;
 
-	if (quadrant >= 7)                 { vertices[i++] = x + w * s; vertices[i++] = y; }
-	else if (quadrant < 7)             { vertices[i++] = x; vertices[i++] = y; }
-	if (quadrant >= 6 && quadrant < 7) { vertices[i++] = x; vertices[i++] = midy - h * s; }
-	else if (quadrant < 6)             { vertices[i++] = x; vertices[i++] = midy; }
-	if (quadrant >= 5 && quadrant < 6) { vertices[i++] = x; vertices[i++] = yh - h * s; }
-	else if (quadrant < 5)             { vertices[i++] = x; vertices[i++] = yh; }
-	if (quadrant >= 4 && quadrant < 5) { vertices[i++] = midx - w * s; vertices[i++] = yh; }
-	else if (quadrant < 4)             { vertices[i++] = midx; vertices[i++] = yh; }
-	if (quadrant >= 3 && quadrant < 4) { vertices[i++] = xw - w * s; vertices[i++] = yh; }
-	else if (quadrant < 3)             { vertices[i++] = xw; vertices[i++] = yh; }
-	if (quadrant >= 2 && quadrant < 3) { vertices[i++] = xw; vertices[i++] = midy + h * s; }
-	else if (quadrant < 2)             { vertices[i++] = xw; vertices[i++] = midy; }
-	if (quadrant >= 1 && quadrant < 2) { vertices[i++] = xw; vertices[i++] = y + h * s; }
-	else if (quadrant < 1)             { vertices[i++] = xw; vertices[i++] = y; }
-	if (quadrant >= 0 && quadrant < 1) { vertices[i++] = midx + w * s; vertices[i++] = y; }
+	vertex_clear(generic_vx_fan);
 
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
+	vertex_add_point(generic_vx_fan, midx, midy,	0, 0, r, g, b, a);
+	vertex_add_point(generic_vx_fan, midx, y,	0, 1, r, g, b, a);
+	if (quadrant >= 7)                 { vertex_add_point(generic_vx_fan, x + w * s, y,	1, 0, r, g, b, a); }
+	else if (quadrant < 7)             { vertex_add_point(generic_vx_fan, x, y,		1, 0, r, g, b, a); }
+	if (quadrant >= 6 && quadrant < 7) { vertex_add_point(generic_vx_fan, x, midy - h * s,	1, 0, r, g, b, a); }
+	else if (quadrant < 6)             { vertex_add_point(generic_vx_fan, x, midy,		1, 0, r, g, b, a); }
+	if (quadrant >= 5 && quadrant < 6) { vertex_add_point(generic_vx_fan, x, yh - h * s,	1, 0, r, g, b, a); }
+	else if (quadrant < 5)             { vertex_add_point(generic_vx_fan, x, yh,		1, 0, r, g, b, a); }
+	if (quadrant >= 4 && quadrant < 5) { vertex_add_point(generic_vx_fan, midx - w * s, yh,	1, 0, r, g, b, a); }
+	else if (quadrant < 4)             { vertex_add_point(generic_vx_fan, midx, yh,		1, 0, r, g, b, a); }
+	if (quadrant >= 3 && quadrant < 4) { vertex_add_point(generic_vx_fan, xw - w * s, yh,	1, 0, r, g, b, a); }
+	else if (quadrant < 3)             { vertex_add_point(generic_vx_fan, xw, yh,		1, 0, r, g, b, a); }
+	if (quadrant >= 2 && quadrant < 3) { vertex_add_point(generic_vx_fan, xw, midy + h * s,	1, 0, r, g, b, a); }
+	else if (quadrant < 2)             { vertex_add_point(generic_vx_fan, xw, midy,		1, 0, r, g, b, a); }
+	if (quadrant >= 1 && quadrant < 2) { vertex_add_point(generic_vx_fan, xw, y + h * s,	1, 0, r, g, b, a); }
+	else if (quadrant < 1)             { vertex_add_point(generic_vx_fan, xw, y,		1, 0, r, g, b, a); }
+	if (quadrant >= 0 && quadrant < 1) { vertex_add_point(generic_vx_fan, midx + w * s, y,	1, 0, r, g, b, a); }
 
-	glDrawArrays(GL_TRIANGLE_FAN, 0, i / 2);
+	vertex_toscreen(generic_vx_fan, 0, 0, 0, FALSE);
 	return 0;
 }
 
@@ -981,61 +954,35 @@ static int sdl_texture_toscreen_highlight_hex(lua_State *L)
 	int w = luaL_checknumber(L, 4);
 	int h = luaL_checknumber(L, 5);
 
-	// A very slight gradient to give some definition to the texture
-	GLfloat colors[4*8] = {
-		0.9, 0.9, 0.9, 1,
-		0.9, 0.9, 0.9, 1,
-		1, 1, 1, 1,
-		1, 1, 1, 1,
-		0.9, 0.9, 0.9, 1,
-		0.8, 0.8, 0.8, 1,
-		0.8, 0.8, 0.8, 1,
-		0.9, 0.9, 0.9, 1,
-	};
+	float f = x - w/6.0;
+	float v = 4.0*w/3.0;
+
 	if (lua_isnumber(L, 6))
 	{
 		float r = luaL_checknumber(L, 6);
 		float g = luaL_checknumber(L, 7);
 		float b = luaL_checknumber(L, 8);
 		float a = luaL_checknumber(L, 9);
-		int i;
-		for (i = 0; i < 8; i++) {
-			colors[(4*i)+0] = r;
-			colors[(4*i)+1] = g;
-			colors[(4*i)+2] = b;
-			colors[(4*i)+3] = a;
-		}
+		vertex_add_point(generic_vx_fan, x + 0.5*v,  y + 0.5*h,	0, 0, r, g, b, a);
+		vertex_add_point(generic_vx_fan, f + 0.25*v, y,		0, 1, r, g, b, a);
+		vertex_add_point(generic_vx_fan, f,          y + 0.5*h,	1, 1, r, g, b, a);
+		vertex_add_point(generic_vx_fan, f + 0.25*v, y + h,	1, 0, r, g, b, a);
+		vertex_add_point(generic_vx_fan, f + 0.75*v, y + h,	1, 0, r, g, b, a);
+		vertex_add_point(generic_vx_fan, f + v,      y + 0.5*h,	1, 0, r, g, b, a);
+		vertex_add_point(generic_vx_fan, f + 0.75*v, y,		1, 0, r, g, b, a);
+		vertex_add_point(generic_vx_fan, f + 0.25*v, y,		1, 0, r, g, b, a);
+	} else {
+		vertex_add_point(generic_vx_fan, x + 0.5*v,  y + 0.5*h,	0, 0, 0.9, 0.9, 0.9, 1);
+		vertex_add_point(generic_vx_fan, f + 0.25*v, y,		0, 1, 0.9, 0.9, 0.9, 1);
+		vertex_add_point(generic_vx_fan, f,          y + 0.5*h,	1, 1, 1, 1, 1, 1);
+		vertex_add_point(generic_vx_fan, f + 0.25*v, y + h,	1, 0, 1, 1, 1, 1);
+		vertex_add_point(generic_vx_fan, f + 0.75*v, y + h,	1, 0, 0.9, 0.9, 0.9, 1);
+		vertex_add_point(generic_vx_fan, f + v,      y + 0.5*h,	1, 0, 0.8, 0.8, 0.8, 1);
+		vertex_add_point(generic_vx_fan, f + 0.75*v, y,		1, 0, 0.8, 0.8, 0.8, 1);
+		vertex_add_point(generic_vx_fan, f + 0.25*v, y,		1, 0, 0.9, 0.9, 0.9, 1);
 	}
-	glColorPointer(4, GL_FLOAT, 0, colors);
 
-	tglBindTexture(GL_TEXTURE_2D, t->tex);
-
-	GLfloat texcoords[2*8] = {
-		0, 0,
-		0, 1,
-		1, 1,
-		1, 0,
-		1, 0,
-		1, 0,
-		1, 0,
-		1, 0,
-	};
-
-	float f = x - w/6.0;
-	float v = 4.0*w/3.0;
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-	GLfloat vertices[2*8] = {
-		x + 0.5*v,  y + 0.5*h,
-		f + 0.25*v, y,
-		f,          y + 0.5*h,
-		f + 0.25*v, y + h,
-		f + 0.75*v, y + h,
-		f + v,      y + 0.5*h,
-		f + 0.75*v, y,
-		f + 0.25*v, y,
-	};
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 8);
+	vertex_toscreen(generic_vx_fan, 0, 0, 0, FALSE);
 	return 0;
 }
 
@@ -2143,5 +2090,6 @@ int luaopen_core_display(lua_State *L)
 }
 
 void core_display_init() {
-	generic_vx = vertex_new(NULL, 4, 0, VERTEX_STREAM);
+	generic_vx = vertex_new(NULL, 4, 0, VO_QUADS, VERTEX_STREAM);
+	generic_vx_fan = vertex_new(NULL, 4, 0, VO_TRIANGLE_FAN, VERTEX_STREAM);
 }

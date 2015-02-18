@@ -153,7 +153,7 @@ static int particles_new(lua_State *L)
 	ps->alive = TRUE;
 	ps->i_want_to_die = FALSE;
 	ps->l = NULL;
-	ps->vx = vertex_new(NULL, 0, 0, VERTEX_STREAM);
+	ps->vx = vertex_new(NULL, 0, 0, VO_QUADS, VERTEX_STREAM);
 	ps->particles = NULL;
 	ps->init = FALSE;
 	ps->texture = texture->tex;

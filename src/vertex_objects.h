@@ -25,12 +25,19 @@
 #include "useshader.h"
 
 #define VERTEX_QUAD_SIZE 4
+#define VERTEX_TRIANGLE_SIZE 3
 
 typedef enum {
 	VERTEX_STATIC = 1,
 	VERTEX_DYNAMIC = 2,
 	VERTEX_STREAM = 3,
 } render_mode;
+
+typedef enum{
+	VO_POINTS = 1,
+	VO_QUADS = 2,
+	VO_TRIANGLE_FAN = 3,
+} vertex_mode;
 
 typedef struct {
 	GLfloat x, y;
@@ -41,7 +48,7 @@ typedef struct {
 typedef struct
 {
 	render_mode mode;
-	enum{ VO_POINTS, VO_QUADS, VO_TRIANGLE_FAN } kind;
+	vertex_mode kind;
 	int nb, size;
 	int next_id;
 	int *ids;
@@ -56,11 +63,15 @@ typedef struct
 
 extern int luaopen_vo(lua_State *L);
 
-extern lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, render_mode mode);
+extern lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mode kind, render_mode mode);
 extern void vertex_free(lua_vertexes *vx, bool self_delete);
 extern void update_vertex_size(lua_vertexes *vx, int size);
 extern int vertex_find(lua_vertexes *vx, int id);
 extern int vertex_quad_size();
+extern int vertex_add_point(lua_vertexes *vx,
+	float x1, float y1, float u1, float v1, 
+	float r, float g, float b, float a
+);
 extern int vertex_add_quad(lua_vertexes *vx,
 	float x1, float y1, float u1, float v1, 
 	float x2, float y2, float u2, float v2, 

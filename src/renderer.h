@@ -28,10 +28,11 @@
 
 typedef struct {
 	GLuint vbo;
-	GLuint mode;
+    GLuint mode;
+	GLenum kind;
 } vertexes_renderer;
 
-extern vertexes_renderer* vertexes_renderer_new(render_mode mode);
+extern vertexes_renderer* vertexes_renderer_new(vertex_mode kind, render_mode mode);
 extern void vertexes_renderer_free(vertexes_renderer *vr);
 extern void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, bool ignore_shader);
 

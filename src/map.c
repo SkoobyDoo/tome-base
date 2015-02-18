@@ -698,7 +698,7 @@ static int map_new(lua_State *L)
 	lua_pushnumber(L, map->is_hex);
 	lua_settable(L, LUA_REGISTRYINDEX);
 
-	map->vx = vertex_new(NULL, w * h * VERTEX_QUAD_SIZE, 0, VERTEX_DYNAMIC);
+	map->vx = vertex_new(NULL, w * h * VERTEX_QUAD_SIZE, 0, VO_QUADS, VERTEX_DYNAMIC);
 
 	map->displayed_x = map->displayed_y = 0;
 	map->w = w;
@@ -835,7 +835,7 @@ static int map_define_grid_lines(lua_State *L) {
 	int tile_h = map->tile_h;
 	int grid_w = 1 + mwidth;
 	int grid_h = 1 + mheight;
-	if (!map->vx_grid_lines) map->vx_grid_lines = vertex_new(NULL, (grid_w + grid_h) * VERTEX_QUAD_SIZE, 0, VERTEX_STATIC);
+	if (!map->vx_grid_lines) map->vx_grid_lines = vertex_new(NULL, (grid_w + grid_h) * VERTEX_QUAD_SIZE, 0, VO_QUADS, VERTEX_STATIC);
 	else vertex_clear(map->vx_grid_lines);
 
 	// Verticals

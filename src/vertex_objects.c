@@ -47,11 +47,11 @@ void update_vertex_size(lua_vertexes *vx, int size) {
 	vx->ids = realloc(vx->ids, sizeof(int) * size);
 }
 
-lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, render_mode mode) {
+lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mode kind, render_mode mode) {
 	if (!vx) vx = malloc(sizeof(lua_vertexes));
 
 	vx->mode = mode;
-	vx->kind = VO_QUADS;
+	vx->kind = kind;
 	vx->changed = TRUE;
 	vx->size = vx->nb = 0;
 	vx->next_id = 1;
@@ -59,7 +59,7 @@ lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, render_mo
 	vx->vertices = NULL; vx->ids = NULL;
 	update_vertex_size(vx, size);
 
-	vx->render = vertexes_renderer_new(mode);
+	vx->render = vertexes_renderer_new(kind, mode);
 	vx->tex = tex;
 	return vx;
 }
@@ -81,6 +81,21 @@ int vertex_find(lua_vertexes *vx, int id) {
 		}
 	}
 	return -1;	
+}
+
+int vertex_add_point(lua_vertexes *vx,
+	float x1, float y1, float u1, float v1, 
+	float r, float g, float b, float a
+) {
+	if (vx->nb + 1 > vx->size) update_vertex_size(vx, vx->nb + 1);
+
+	int i = vx->nb;
+	vx->vertices[i].x = x1; vx->vertices[i].y = y1; vx->vertices[i].u = u1; vx->vertices[i].v = v1; vx->vertices[i].r = r; vx->vertices[i].g = g; vx->vertices[i].b = b; vx->vertices[i].a = a;
+	vx->ids[i] = vx->next_id;
+
+	vx->nb++;
+	vx->changed = TRUE;
+	return vx->next_id++;
 }
 
 int vertex_add_quad(lua_vertexes *vx,
