@@ -967,7 +967,7 @@ function _M:restCheck()
 		if self:getVim() < self:getMaxVim() and self.vim_regen > 0 then return true end
 		if self:getEquilibrium() > self:getMinEquilibrium() and self.equilibrium_regen < 0 then return true end
 		if self.life < self.max_life and self.life_regen> 0 then return true end
-		if self.air < self.max_air and self.air_regen > 0 then return true end
+		if self.air < self.max_air and self.air_regen > 0 and not self.is_suffocating then return true end
 		for act, def in pairs(game.party.members) do if game.level:hasEntity(act) and not act.dead then
 			if act.life < act.max_life and act.life_regen > 0 and not act:attr("no_life_regen") then return true end
 		end end
