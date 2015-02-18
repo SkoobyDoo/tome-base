@@ -77,11 +77,7 @@ typedef struct {
 	int mm_w, mm_h;
 	int mm_rw, mm_rh;
 
-	int nb_grid_lines_vertices;
-	GLfloat *grid_lines_vertices;
-	GLfloat *grid_lines_colors;
-	GLfloat *grid_lines_textures;
-
+	lua_vertexes *vx_grid_lines;
 	lua_vertexes *vx;
 	GLubyte *seens_map;
 	int seens_map_w, seens_map_h;
