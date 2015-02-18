@@ -106,17 +106,17 @@ local vertexes_mt = {
 		remove = function(vo, start, stop) 
 			local startid = C.vertex_find(vo, start)
 			local stopid = C.vertex_find(vo, stop)
-			C.vertex_remove(vo, startid, stopid + VERTEX_QUAD_SIZE)
+			C.vertex_remove(vo, startid, stopid)
 		end,
 		translate = function(vo, start, stop, mx, my)
 			local startid = C.vertex_find(vo, start)
 			local stopid = C.vertex_find(vo, stop)
-			C.vertex_translate(vo, startid, stopid + VERTEX_QUAD_SIZE - 1, mx, my)
+			C.vertex_translate(vo, startid, stopid, mx, my)
 		end,
 		color = function(vo, start, stop, set, r, g, b, a)
 			local startid = C.vertex_find(vo, start)
 			local stopid = C.vertex_find(vo, stop)
-			C.vertex_color(vo, startid, stopid + VERTEX_QUAD_SIZE - 1, set, r, g, b, a)
+			C.vertex_color(vo, startid, stopid, set, r, g, b, a)
 		end,
 		clear = C.vertex_clear,
 		toScreen = function(vo, x, y, tex)

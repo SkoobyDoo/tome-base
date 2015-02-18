@@ -116,33 +116,33 @@ void vertex_update_quad_texture(lua_vertexes *vx, int i, float u1, float v1, flo
 	vx->changed = TRUE;
 }
 
-void vertex_remove(lua_vertexes *vx, int start, int nb) {
-	if (!nb) return;
-	if (start >= vx->nb) return;
+void vertex_remove(lua_vertexes *vx, int start, int stop) {
+	if (start == -1 || stop == -1) return;
+	if (start >= vx->nb - 1) return;
 
 	vx->changed = TRUE;
 
+	int nextquad = stop + VERTEX_QUAD_SIZE;
+
 	// Removing from the end is very easy
-	if (start + nb >= vx->nb) {
+	if (nextquad >= vx->nb - 1) {
 		vx->nb = start;
 		return;
 	}
 
-	int stop = start + nb;
-	int untilend = vx->nb - stop;
-	int wordlen = sizeof(vertex_data);
-	memmove(&vx->vertices[start], &vx->vertices[stop], untilend * wordlen);
-
-	vx->nb -= nb;
+	int untilend = vx->nb - nextquad;
+	memmove(&vx->vertices[start], &vx->vertices[nextquad], untilend * sizeof(vertex_data));
+	memmove(&vx->ids[start], &vx->ids[nextquad], untilend * sizeof(int));
+	vx->nb -= nextquad - start;
 }
 
-void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, float my) {
-	if (!nb) return;
+void vertex_translate(lua_vertexes *vx, int start, int stop, float mx, float my) {
+	if (start == -1 || stop == -1) return;
 	if (start >= vx->nb) return;
 
 	vx->changed = TRUE;
 
-	int stop = start + nb;
+	stop += VERTEX_QUAD_SIZE - 1;
 	if (stop >= vx->nb) stop = vx->nb - 1;
 
 	int i;
@@ -152,13 +152,13 @@ void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, float my) {
 	}
 }
 
-void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a) {
-	if (!nb) return;
+void vertex_color(lua_vertexes *vx, int start, int stop, bool set, float r, float g, float b, float a) {
+	if (start == -1 || stop == -1) return;
 	if (start >= vx->nb) return;
 
 	vx->changed = TRUE;
 
-	int stop = start + nb;
+	stop += VERTEX_QUAD_SIZE - 1;
 	if (stop >= vx->nb) stop = vx->nb - 1;
 
 	int i;
@@ -183,6 +183,7 @@ void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex) {
 	if (tex == -1) {
 		if (vx->tex) { tex = vx->tex; }
 		else { tex = gl_tex_white; }
+		vx->tex = tex;
 	}
 
 	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y);

@@ -581,6 +581,10 @@ static int program_compile(lua_State *L)
 	p->p_texcoord = glGetUniformLocationARB(p->shader, "texCoord");
 	p->p_tex = glGetUniformLocationARB(p->shader, "tex");
 
+	p->vertex_attrib = glGetAttribLocation(p->shader, "te4_position");
+	p->texcoord_attrib = glGetAttribLocation(p->shader, "te4_texcoord");
+	p->color_attrib = glGetAttribLocation(p->shader, "te4_color");
+
 	lua_pushboolean(L, TRUE);
 	return 1;
 }

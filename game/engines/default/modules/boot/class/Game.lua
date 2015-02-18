@@ -486,6 +486,8 @@ function _M:display(nb_keyframes)
 		engine.GameEnergyBased.display(self, nb_keyframes)
 		if self.full_fbo then self.full_fbo:use(false) self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad) end
 		
+		p:toScreen(500, 500)
+
  		return
 	end
 

@@ -50,12 +50,8 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	glTranslatef(x, y, 0);
 
 #if 1
-	if (vx->changed) printf("UPDATING VO\n");
-
 	shader_type *shader = vx->shader ? vx->shader : default_shader;
 	useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
-	GLint i = 0;
-	glUniform1iv(shader->p_tex, 1, &i);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
 	if (vx->changed) {
@@ -64,26 +60,18 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_data) * vx->nb, vx->vertices);
 	}
 
-	GLint vi = glGetAttribLocation(shader->shader, "te4_position");
-	GLint ti = glGetAttribLocation(shader->shader, "te4_texcoord");
-	GLint ci = glGetAttribLocation(shader->shader, "te4_color");
-
-	glEnableVertexAttribArray(vi);
-	glEnableVertexAttribArray(ti);
-	glEnableVertexAttribArray(ci);
-	glVertexAttribPointer(vi, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), 0);
-	glVertexAttribPointer(ti, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
-	glVertexAttribPointer(ci, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
-
-	// glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), 0);
-	// glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
-	// glColorPointer(4, GL_FLOAT, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
+	glEnableVertexAttribArray(shader->vertex_attrib);
+	glEnableVertexAttribArray(shader->texcoord_attrib);
+	glEnableVertexAttribArray(shader->color_attrib);
+	glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), 0);
+	glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
+	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
 
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
+	glDisableVertexAttribArray(shader->vertex_attrib);
+	glDisableVertexAttribArray(shader->texcoord_attrib);
+	glDisableVertexAttribArray(shader->color_attrib);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	useNoShader();
 #else

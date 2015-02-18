@@ -21,6 +21,7 @@ return {
 	frag = "default/gl",
 	vert = "default/gl",
 	args = {
+		tex = { texture = 0 },
 	},
 	clone = true,
 	permanent = true,
