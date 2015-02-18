@@ -23,6 +23,7 @@
 
 #include "tgl.h"
 #include "useshader.h"
+#include "vertex_objects.h"
 
 struct s_map_object {
 	int nb_textures;
@@ -81,9 +82,7 @@ typedef struct {
 	GLfloat *grid_lines_colors;
 	GLfloat *grid_lines_textures;
 
-	GLfloat *vertices;
-	GLfloat *colors;
-	GLfloat *texcoords;
+	lua_vertexes *vx;
 	GLubyte *seens_map;
 	int seens_map_w, seens_map_h;
 

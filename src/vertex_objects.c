@@ -186,6 +186,7 @@ void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, bool ignore_shader
 		else { tex = gl_tex_white; }
 		vx->tex = tex;
 	} else if (tex) vx->tex = tex;
+	else vx->tex = gl_c_texture;
 
 	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y, ignore_shader);
 }

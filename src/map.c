@@ -29,6 +29,7 @@
 #include "main.h"
 #include "script.h"
 #include "useshader.h"
+#include "core_display.h"
 
 #include "assert.h"
 
@@ -741,9 +742,7 @@ static int map_new(lua_State *L)
 	lua_pushnumber(L, map->is_hex);
 	lua_settable(L, LUA_REGISTRYINDEX);
 
-	map->vertices = calloc(2*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 2 coords, 4 vertices per particles
-	map->colors = calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
-	map->texcoords = calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat));
+	map->vx = vertex_new(NULL, w * h * VERTEX_QUAD_SIZE, 0, VERTEX_DYNAMIC);
 
 	map->displayed_x = map->displayed_y = 0;
 	map->w = w;
@@ -846,9 +845,7 @@ static int map_free(lua_State *L)
 	}
 	free(map->z_callbacks);
 
-	free(map->colors);
-	free(map->texcoords);
-	free(map->vertices);
+	vertex_free(map->vx, TRUE);
 
 	if (map->grid_lines_vertices) free(map->grid_lines_vertices);
 	if (map->grid_lines_colors) free(map->grid_lines_colors);
@@ -1335,30 +1332,16 @@ static int map_draw_seen_texture(lua_State *L)
 	tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
 
 	int f = 1 + (map->is_hex & 1);
-	GLfloat texcoords[2*4] = {
-		0, 0,
-		0, f,
-		f, f,
-		f, 0,
-	};
-	GLfloat colors[4*4] = {
-		1,1,1,1,
-		1,1,1,1,
-		1,1,1,1,
-		1,1,1,1,
-	};
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	vertex_clear(generic_vx);
+	vertex_add_quad(generic_vx,
+		0, 0, 0, 0,
+		0, h, 0, f,
+		w, h, f, f,
+		w, 0, f, 0,
+		1, 1, 1, 1
+	);
+	vertex_toscreen(generic_vx, x, y, map->seens_texture, FALSE);
 
-	GLfloat vertices[2*4] = {
-		x, y,
-		x, y + h,
-		x + w, y + h,
-		x + w, y,
-	};
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-
-	glDrawArrays(GL_QUADS, 0, 4);
 	return 0;
 }
 
@@ -1424,27 +1407,15 @@ static int map_get_scroll(lua_State *L)
 	else useNoShader(); \
 }
 
-#define unbatchQuads(vert, col) { \
-	if ((vert)) glDrawArrays(GL_TRIANGLES, 0, (vert) / 2); \
-	(vert) = 0; \
-	(col) = 0; \
-}
-
-#define setMapGLArrays(vertices, texcoords, colors) { \
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords); \
-	glVertexPointer(2, GL_FLOAT, 0, vertices); \
-	glColorPointer(4, GL_FLOAT, 0, colors);	 \
+#define unbatchQuads(vx) { \
+	vertex_toscreen(vx, 0, 0, 0, FALSE); \
+	vertex_clear(vx); \
 }
 
 void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_type *map,
-		float *vertices, float *texcoords, float *colors, int *vert_idx, int
-		*col_idx, float anim, float dx, float dy, float tldx, float tldy, float
+		float anim, float dx, float dy, float tldx, float tldy, float
 		dw, float dh, float r, float g, float b, float a, int force, int i, int j)
 {
-	int idx = 0, row;
-
-	idx = *vert_idx;
-
 	float x1, x2, y1, y2;
 
 	if (m->flip_x) { // Check m and not dm so the whole thing flips
@@ -1458,36 +1429,19 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 		y1 = dy; y2 = map->tile_h * dh * dm->scale + dy;
 	}
 
-
-	vertices[idx + 0] = x1;   vertices[idx + 1] = y1;
-	vertices[idx + 2] = x2;   vertices[idx + 3] = y1;
-	vertices[idx + 4] = x2;   vertices[idx + 5] = y2;
-	vertices[idx + 6] = x1;   vertices[idx + 7] = y1;
-	vertices[idx + 8] = x2;   vertices[idx + 9] = y2;
-	vertices[idx +10] = x1;   vertices[idx +11] = y2;
-
 	float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
 	float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
-	texcoords[idx + 0] = tx1; texcoords[idx + 1] = ty1;
-	texcoords[idx + 2] = tx2; texcoords[idx + 3] = ty1;
-	texcoords[idx + 4] = tx2; texcoords[idx + 5] = ty2;
-	texcoords[idx + 6] = tx1; texcoords[idx + 7] = ty1;
-	texcoords[idx + 8] = tx2; texcoords[idx + 9] = ty2;
-	texcoords[idx +10] = tx1; texcoords[idx +11] = ty2;
 
-	idx = *col_idx;
+	vertex_add_quad(map->vx,
+		x1, y1, tx1, ty1,
+		x2, y1, tx2, ty1,
+		x2, y2, tx2, ty2,
+		x1, y2, tx1, ty2,
+		r, g, b, a
+	);	
 
-	for (row = 0; row < 6; row++) {
-		colors[idx + (4 * row + 0)] = r;
-		colors[idx + (4 * row + 1)] = g;
-		colors[idx + (4 * row + 2)] = b;
-		colors[idx + (4 * row + 3)] = a;
-	}
-
-	(*vert_idx) += 2 * 6;
-	(*col_idx) += 4 * 6;
-	if ((*vert_idx) >= 2 * 6 * QUADS_PER_BATCH || force || dm->cb_ref != LUA_NOREF) {\
-		unbatchQuads((*vert_idx), (*col_idx));
+	if (force || dm->cb_ref != LUA_NOREF) {\
+		unbatchQuads(map->vx);
 		// printf(" -- unbatch1 %d %d\n", force, dm->cb_ref != LUA_NOREF);
 	}
 	if (dm->cb_ref != LUA_NOREF)
@@ -1508,23 +1462,17 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 			printf("Display callback error: UID %ld: %s\n", dm->uid, lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
-		if (lua_isboolean(L, -1)) {
-			setMapGLArrays(vertices, texcoords, colors);
-		}
 		lua_pop(L, 1);
 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 		else useDefaultShader(map);
 	}
 }
 
-inline void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
-void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
+inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
+void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
 {
 	map_object *dm;
 	float r, g, b;
-	GLfloat *vertices = map->vertices;
-	GLfloat *colors = map->colors;
-	GLfloat *texcoords = map->texcoords;
 	bool up_important = FALSE;
 	float anim;
 	int anim_step;
@@ -1578,7 +1526,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	if ((gl_c_texture != m->textures[0]) || m->shader || (m->nb_textures > 1))
 	{
 		/* Draw remaining ones */
-		unbatchQuads((*vert_idx), (*col_idx));
+		unbatchQuads(map->vx);
 		// printf(" -- unbatch2 %d %d %d :: %d!=%d\n", (gl_c_texture != m->textures[0]), m->shader != 0, (m->nb_textures > 1), gl_c_texture, m->textures[0]);
 	}
 	if (gl_c_texture != m->textures[0])
@@ -1633,9 +1581,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 						while (dm)
 						{
 							tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-							do_quad(L, m, dm, map, vertices, texcoords, colors,
-								vert_idx,
-								col_idx,
+							do_quad(L, m, dm, map,
 								0,
 								dx + dm->dx * map->tile_w + animdx,
 								dy + dm->dy * map->tile_h + animdy,
@@ -1682,7 +1628,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	while (dm)
 	{
 	 	if (m != dm && dm->shader) {
-			unbatchQuads((*vert_idx), (*col_idx));
+			unbatchQuads(map->vx);
 			// printf(" -- unbatch3\n");
 
 			for (z = dm->nb_textures - 1; z > 0; z--)
@@ -1696,7 +1642,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	 	}
 
 	 	if (gl_c_texture != dm->textures[0]) {
-			unbatchQuads((*vert_idx), (*col_idx));
+			unbatchQuads(map->vx);
 			// printf(" -- unbatch6\n");
 			tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
 	 	}
@@ -1714,9 +1660,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 		}
 		dm->world_x = bdx + (dm->dx + animdx) * map->tile_w;
 		dm->world_y = bdy + (dm->dy + animdy) * map->tile_h;
-		do_quad(L, m, dm, map, vertices, texcoords, colors,
-			vert_idx,
-			col_idx,
+		do_quad(L, m, dm, map,
 			anim,
 			dx + (dm->dx + animdx) * map->tile_w,
 			dy + (dm->dy + animdy) * map->tile_h,
@@ -1742,7 +1686,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	if (m->shader || m->nb_textures > 1)
 	{
 		/* Draw remaining ones */
-		unbatchQuads((*vert_idx), (*col_idx));
+		unbatchQuads(map->vx);
 			// printf(" -- unbatch4 %d %d %d\n", m->shader != 0, m->nb_textures > 1, m->next !=0);
 	}
 	if (m->shader) useDefaultShader(map);
@@ -1761,18 +1705,12 @@ static int map_to_screen(lua_State *L)
 	bool changed = lua_toboolean(L, 6);
 	// id 7 is fbo to be passed back to z-callbacks
 	int i = 0, j = 0, z = 0;
-	int vert_idx = 0;
-	int col_idx = 0;
 	int mx = map->mx;
 	int my = map->my;
 
 	/* Enables Depth Testing */
 	//glEnable(GL_DEPTH_TEST);
 
-	GLfloat *vertices = map->vertices;
-	GLfloat *colors = map->colors;
-	GLfloat *texcoords = map->texcoords;
-	setMapGLArrays(vertices, texcoords, colors);
 	useDefaultShader(map);
 
 	// nb_draws = 0;
@@ -1838,11 +1776,11 @@ static int map_to_screen(lua_State *L)
 				{
 					if (map->grids_seens[j*map->w+i])
 					{
-						display_map_quad(L, &vert_idx, &col_idx, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
+						display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
 					}
 					else
 					{
-						display_map_quad(L, &vert_idx, &col_idx, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+						display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
 					}
 				}
 			}
@@ -1850,7 +1788,7 @@ static int map_to_screen(lua_State *L)
 
 		if (map->z_callbacks[z] != LUA_NOREF) {
 			/* Draw remaining ones */
-			unbatchQuads(vert_idx, col_idx);
+			unbatchQuads(map->vx);
 				// printf(" -- unbatch5\n");
 
 			lua_rawgeti(L, LUA_REGISTRYINDEX, map->z_callbacks[z]);
@@ -1863,17 +1801,12 @@ static int map_to_screen(lua_State *L)
 				printf("Map z-callback error: Z %d: %s\n", z, lua_tostring(L, -1));
 				lua_pop(L, 1);
 			}
-			if (lua_isboolean(L, -1)) {
-				glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-				glVertexPointer(2, GL_FLOAT, 0, vertices);
-				glColorPointer(4, GL_FLOAT, 0, colors);
-			}
 			lua_pop(L, 1);
 		}
 	}
 
 	/* Display any leftovers */
-	unbatchQuads(vert_idx, col_idx);
+	unbatchQuads(map->vx);
 	useNoShader();
 
 	// printf("draws %d\n", nb_draws);
