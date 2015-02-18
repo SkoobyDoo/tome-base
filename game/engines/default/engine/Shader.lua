@@ -123,7 +123,7 @@ function _M:getFragment(name)
 	end
 	f:close()
 	code = table.concat(code)
-	code = self:rewriteShaderCode(code, "frag")
+	code = self:rewriteShaderFrag(code)
 	self.frags[name] = core.shader.newShader(code)
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
@@ -141,7 +141,7 @@ function _M:getVertex(name)
 	end
 	f:close()
 	code = table.concat(code)
-	code = self:rewriteShaderCode(code, "vert")
+	code = self:rewriteShaderVert(code)
 	self.verts[name] = core.shader.newShader(code, true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]
@@ -270,13 +270,20 @@ end
 -- Later on this can be extended to support various GLSL versions
 ----------------------------------------------------------------------------
 
-function _M:rewriteShaderCode(code, kind)
-	if kind == "frag" then
-		code = "varying vec2 te4_uv; varying vec4 te4_fragcolor;\n"..code
-		code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
-	end
-	print("==================================")
-	print(code)
-	print("==================================")
+function _M:rewriteShaderFrag(code)
+	code = [[varying vec2 te4_uv;
+	varying vec4 te4_fragcolor;		
+	]]..code
+	code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
+	return code
+end
+
+function _M:rewriteShaderVert(code)
+	code = [[attribute vec2 te4_position;
+	attribute vec2 te4_texcoord;
+	attribute vec4 te4_color;
+	varying vec2 te4_uv;
+	varying vec4 te4_fragcolor;
+	]]..code
 	return code
 end

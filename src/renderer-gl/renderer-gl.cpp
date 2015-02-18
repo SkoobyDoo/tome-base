@@ -49,53 +49,54 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	glTranslatef(x, y, 0);
 
-	shader_type *shader;
-force_shader_loop:
-	if (!ignore_shader) {
-		shader = vx->shader ? vx->shader : default_shader;
-		useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
+	// Modern(ish) OpenGL way
+	if (shaders_active) {
+		shader_type *shader;
+		force_shader_loop:
+		if (!ignore_shader) {
+			shader = vx->shader ? vx->shader : default_shader;
+			useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
+		} else {
+			shader = current_shader;
+			if (shader->vertex_attrib == -1) { return; }
+			// if (shader->vertex_attrib == -1) { ignore_shader = FALSE; goto force_shader_loop; }
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
+		if (vx->changed) {
+			// glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, vx->vertices, vr->mode);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, NULL, vr->mode);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_data) * vx->nb, vx->vertices);
+		}
+
+		glEnableVertexAttribArray(shader->vertex_attrib);
+		glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), 0);
+		if (shader->texcoord_attrib != -1) {
+			glEnableVertexAttribArray(shader->texcoord_attrib);
+			glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
+		}
+		if (shader->color_attrib != -1) {
+			glEnableVertexAttribArray(shader->color_attrib);
+			glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
+		}
+
+		glDrawArrays(GL_QUADS, 0, vx->nb);
+
+		glDisableVertexAttribArray(shader->vertex_attrib);
+		glDisableVertexAttribArray(shader->texcoord_attrib);
+		glDisableVertexAttribArray(shader->color_attrib);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		if (!ignore_shader) useNoShader();
+	// Fallback OpenGl 1.1 way, no shaders, fixed pipeline
 	} else {
-		shader = current_shader;
-		if (shader->vertex_attrib == -1) { return; }
-		// if (shader->vertex_attrib == -1) { ignore_shader = FALSE; goto force_shader_loop; }
-	}
-#if 1
-
-	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
-	if (vx->changed) {
-		// glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, vx->vertices, vr->mode);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, NULL, vr->mode);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_data) * vx->nb, vx->vertices);
+		glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);
+		glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].u);
+		glColorPointer(4, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].r);
+		glDrawArrays(GL_QUADS, 0, vx->nb);
 	}
 
-	glEnableVertexAttribArray(shader->vertex_attrib);
-	glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), 0);
-
-	if (shader->texcoord_attrib != -1) {
-		glEnableVertexAttribArray(shader->texcoord_attrib);
-		glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
-	}
-	if (shader->color_attrib != -1) {
-		glEnableVertexAttribArray(shader->color_attrib);
-		glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
-	}
-
-	glDrawArrays(GL_QUADS, 0, vx->nb);
-
-	glDisableVertexAttribArray(shader->vertex_attrib);
-	glDisableVertexAttribArray(shader->texcoord_attrib);
-	glDisableVertexAttribArray(shader->color_attrib);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-#else
-	glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);
-	glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].u);
-	glColorPointer(4, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].r);
-	glDrawArrays(GL_QUADS, 0, vx->nb);
-#endif
-
-	if (!ignore_shader) useNoShader();
 	glTranslatef(-x, -y, 0);
-
 	vx->changed = FALSE;
 }
 /*

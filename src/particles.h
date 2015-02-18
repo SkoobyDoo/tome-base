@@ -23,6 +23,7 @@
 
 #include "tgl.h"
 #include "useshader.h"
+#include "vertex_objects.h"
 
 typedef struct {
 	float size, sizev, sizea;
@@ -55,10 +56,7 @@ struct s_particles_type {
 	bool no_stop;
 
 	// W only by thread, R only by main
-	int batch_nb;
-	GLfloat *vertices;
-	GLfloat *colors;
-	GLshort *texcoords;
+	lua_vertexes *vx;
 	bool alive;
 	bool i_want_to_die;
 	bool init;

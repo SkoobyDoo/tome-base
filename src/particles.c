@@ -153,9 +153,7 @@ static int particles_new(lua_State *L)
 	ps->alive = TRUE;
 	ps->i_want_to_die = FALSE;
 	ps->l = NULL;
-	ps->texcoords = NULL;
-	ps->vertices = NULL;
-	ps->colors = NULL;
+	ps->vx = vertex_new(NULL, 0, 0, VERTEX_STREAM);
 	ps->particles = NULL;
 	ps->init = FALSE;
 	ps->texture = texture->tex;
@@ -234,9 +232,7 @@ static int particles_free(lua_State *L)
 	ps->l = NULL;
 	SDL_DestroyMutex(ps->lock);
 
-	if (ps->texcoords) { free(ps->texcoords); ps->texcoords = NULL; }
-	if (ps->vertices) { free(ps->vertices); ps->vertices = NULL; }
-	if (ps->colors) { free(ps->colors); ps->colors = NULL; }
+	if (ps->vx) { vertex_free(ps->vx, TRUE); ps->vx = NULL; }
 	if (ps->particles) { free(ps->particles); ps->particles = NULL; }
 
 	if (l && l->pt) SDL_mutexV(l->pt->lock);
@@ -269,7 +265,6 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 	int w = 0;
 	bool alive = FALSE;
 	float zoom = 1;
-	int vert_idx = 0, col_idx = 0;
 	float i, j;
 	float a;
 	float lx, ly, lsize;
@@ -280,9 +275,8 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 
 	ps->recompile = FALSE;
 
-	GLfloat *vertices = ps->vertices;
-	GLfloat *colors = ps->colors;
-	GLshort *texcoords = ps->texcoords;
+	lua_vertexes *vx = ps->vx;
+	vertex_clear(vx);
 
 	if (!no_update) ps->rotate += ps->rotate_v;
 
@@ -338,10 +332,13 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						a = atan2(p->y - ly, p->x - lx) + M_PI_2;
 //						printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,a*180/M_PI,p->x,p->y,p->size);
 
-						vertices[vert_idx] = lx + cos(a) * lsize / 2; vertices[vert_idx+1] = ly + sin(a) * lsize / 2;
-						vertices[vert_idx+2] = lx - cos(a) * lsize / 2; vertices[vert_idx+3] = ly - sin(a) * lsize / 2;
-						vertices[vert_idx+4] = p->x - cos(a) * p->size / 2; vertices[vert_idx+5] = p->y - sin(a) * p->size / 2;
-						vertices[vert_idx+6] = p->x + cos(a) * p->size / 2; vertices[vert_idx+7] = p->y + sin(a) * p->size / 2;
+						vertex_add_quad(vx,
+							lx + cos(a) * lsize / 2, ly + sin(a) * lsize / 2, 0, 0,
+							lx - cos(a) * lsize / 2, ly - sin(a) * lsize / 2, 1, 0,
+							p->x - cos(a) * p->size / 2, p->y - sin(a) * p->size / 2, 1, 1,
+							p->x + cos(a) * p->size / 2, p->y + sin(a) * p->size / 2, 0, 1,
+							p->r, p->g, p->b, p->a
+						);
 					}
 				} else {
 					if (!p->trail)
@@ -349,65 +346,64 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						i = p->x * zoom - p->size / 2;
 						j = p->y * zoom - p->size / 2;
 
-						vertices[vert_idx] = i; vertices[vert_idx+1] = j;
-						vertices[vert_idx+2] = p->size + i; vertices[vert_idx+3] = j;
-						vertices[vert_idx+4] = p->size + i; vertices[vert_idx+5] = p->size + j;
-						vertices[vert_idx+6] = i; vertices[vert_idx+7] = p->size + j;
+						vertex_add_quad(vx,
+							i, j, 0, 0,
+							p->size + i, j, 1, 0,
+							p->size + i, p->size + j, 1, 1,
+							i, p->size + j, 0, 1,
+							p->r, p->g, p->b, p->a
+						);
 					}
 					else
 					{
 						if ((p->ox <= p->x) && (p->oy <= p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->ox * zoom; vertices[vert_idx+1] = 0 +  p->oy * zoom;
-							vertices[vert_idx+2] = p->size +  p->x * zoom; vertices[vert_idx+3] = 0 +  p->y * zoom;
-							vertices[vert_idx+4] = p->size +  p->x * zoom; vertices[vert_idx+5] = p->size +  p->y * zoom;
-							vertices[vert_idx+6] = 0 +  p->x * zoom; vertices[vert_idx+7] = p->size +  p->y * zoom;
+							vertex_add_quad(vx,
+								0 +  p->ox * zoom, 0 +  p->oy * zoom, 0, 0,
+								p->size +  p->x * zoom, 0 +  p->y * zoom, 1, 0,
+								p->size +  p->x * zoom, p->size +  p->y * zoom, 1, 1,
+								0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1,
+								p->r, p->g, p->b, p->a
+							);
 						}
 						else if ((p->ox <= p->x) && (p->oy > p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->x * zoom; vertices[vert_idx+1] = 0 +  p->y * zoom;
-							vertices[vert_idx+2] = p->size +  p->x * zoom; vertices[vert_idx+3] = 0 +  p->y * zoom;
-							vertices[vert_idx+4] = p->size +  p->x * zoom; vertices[vert_idx+5] = p->size +  p->y * zoom;
-							vertices[vert_idx+6] = 0 +  p->ox * zoom; vertices[vert_idx+7] = p->size +  p->oy * zoom;
+							vertex_add_quad(vx,
+								0 +  p->x * zoom, 0 +  p->y * zoom, 0, 0,
+								p->size +  p->x * zoom, 0 +  p->y * zoom, 1, 0,
+								p->size +  p->x * zoom, p->size +  p->y * zoom, 1, 1,
+								0 +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1,
+								p->r, p->g, p->b, p->a							
+							);
 						}
 						else if ((p->ox > p->x) && (p->oy <= p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->x * zoom; vertices[vert_idx+1] = 0 +  p->y * zoom;
-							vertices[vert_idx+2] = p->size +  p->ox * zoom; vertices[vert_idx+3] = 0 +  p->oy * zoom;
-							vertices[vert_idx+4] = p->size +  p->x * zoom; vertices[vert_idx+5] = p->size +  p->y * zoom;
-							vertices[vert_idx+6] = 0 +  p->x * zoom; vertices[vert_idx+7] = p->size +  p->y * zoom;
+							vertex_add_quad(vx,
+								0 +  p->x * zoom, 0 +  p->y * zoom, 0, 0,
+								p->size +  p->ox * zoom, 0 +  p->oy * zoom, 1, 0,
+								p->size +  p->x * zoom, p->size +  p->y * zoom, 1, 1,
+								0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1,
+								p->r, p->g, p->b, p->a
+							);
 						}
 						else if ((p->ox > p->x) && (p->oy > p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->x * zoom; vertices[vert_idx+1] = 0 +  p->y * zoom;
-							vertices[vert_idx+2] = p->size +  p->x * zoom; vertices[vert_idx+3] = 0 +  p->y * zoom;
-							vertices[vert_idx+4] = p->size +  p->ox * zoom; vertices[vert_idx+5] = p->size +  p->oy * zoom;
-							vertices[vert_idx+6] = 0 +  p->x * zoom; vertices[vert_idx+7] = p->size +  p->y * zoom;
+							vertex_add_quad(vx,
+								0 +  p->x * zoom, 0 +  p->y * zoom, 0, 0,
+								p->size +  p->x * zoom, 0 +  p->y * zoom, 1, 0,
+								p->size +  p->ox * zoom, p->size +  p->oy * zoom, 1, 1,
+								0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1,
+								p->r, p->g, p->b, p->a
+							);
 						}
 					}
 				}
-
-				/* Setup texture coords */
-				texcoords[vert_idx] = 0; texcoords[vert_idx+1] = 0;
-				texcoords[vert_idx+2] = 1; texcoords[vert_idx+3] = 0;
-				texcoords[vert_idx+4] = 1; texcoords[vert_idx+5] = 1;
-				texcoords[vert_idx+6] = 0; texcoords[vert_idx+7] = 1;
-
-				/* Setup color */
-				colors[col_idx] = p->r; colors[col_idx+1] = p->g; colors[col_idx+2] = p->b; colors[col_idx+3] = p->a;
-				colors[col_idx+4] = p->r; colors[col_idx+5] = p->g; colors[col_idx+6] = p->b; colors[col_idx+7] = p->a;
-				colors[col_idx+8] = p->r; colors[col_idx+9] = p->g; colors[col_idx+10] = p->b; colors[col_idx+11] = p->a;
-				colors[col_idx+12] = p->r; colors[col_idx+13] = p->g; colors[col_idx+14] = p->b; colors[col_idx+15] = p->a;
-
-				vert_idx += 8;
-				col_idx += 16;
 			}
 		}
 	}
 
 	if (last)
 	{
-		ps->batch_nb = vert_idx / 2;
 		if (!no_update) ps->alive = alive || ps->no_stop;
 
 		SDL_mutexV(ps->lock);
@@ -417,10 +413,7 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 // Runs into main thread
 static void particles_draw(particles_type *ps, float x, float y, float zoom) 
 {
-	if (!ps->alive || !ps->vertices || !ps->colors || !ps->texcoords) return;
-	GLfloat *vertices = ps->vertices;
-	GLfloat *colors = ps->colors;
-	GLshort *texcoords = ps->texcoords;
+	if (!ps->alive || !ps->vx) return;
 
 	if (x < -10000) x = -10000;
 	if (x > 10000) x = 10000;
@@ -433,15 +426,11 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 	else if (ps->blend_mode == BLEND_ADDITIVE) glBlendFunc(GL_ONE, GL_ONE);
 	else if (ps->blend_mode == BLEND_MIXED) glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-	if (multitexture_active) tglActiveTexture(GL_TEXTURE0);
-	tglBindTexture(GL_TEXTURE_2D, ps->texture);
 	if (multitexture_active && main_fbo) {
 		tglActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, main_fbo->texture);
+		tglActiveTexture(GL_TEXTURE0);
 	}
-	glTexCoordPointer(2, GL_SHORT, 0, texcoords);
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
 
 	glTranslatef(x, y, 0);
 	glPushMatrix();
@@ -450,13 +439,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 
 	if (ps->shader) useShader(ps->shader, 1, 1, main_fbo ? main_fbo->w : 1, main_fbo ? main_fbo->h : 1, 0, 0, 1, 1, 1, 1, 1, 1);
 
-	int remaining = ps->batch_nb;
-	while (remaining >= PARTICLES_PER_ARRAY)
-	{
-		glDrawArrays(GL_QUADS, remaining - PARTICLES_PER_ARRAY, PARTICLES_PER_ARRAY);
-		remaining -= PARTICLES_PER_ARRAY;
-	}
-	if (remaining) glDrawArrays(GL_QUADS, 0, remaining);
+	vertex_toscreen(ps->vx, 0, 0, ps->texture, TRUE);
 
 	if (ps->shader) useNoShader();
 
@@ -464,10 +447,6 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 	glTranslatef(-x, -y, 0);
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-
-	if (multitexture_active && main_fbo) {
-		tglActiveTexture(GL_TEXTURE0);
-	}
 
 	SDL_mutexV(ps->lock);
 }
@@ -861,17 +840,14 @@ void thread_particle_init(particle_thread *pt, plist *l)
 	ps->nb = nb;
 	ps->no_stop = lua_toboolean(L, 5);
 
+	update_vertex_size(ps->vx, nb * VERTEX_QUAD_SIZE);
+
 	ps->zoom = 1;
 	if (base_size)
 	{
 		ps->zoom = (((float)tile_w + (float)tile_h) / 2) / (float)base_size;
 	}
 
-	int batch = nb;
-	ps->batch_nb = 0;
-	ps->vertices = calloc(2*4*batch, sizeof(GLfloat)); // 2 coords, 4 vertices per particles
-	ps->colors = calloc(4*4*batch, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
-	ps->texcoords = calloc(2*4*batch, sizeof(GLshort));
 	ps->particles = calloc(nb, sizeof(particle_type));
 
 	// Locate the updator
@@ -1019,9 +995,6 @@ void thread_particle_die(particle_thread *pt, plist *l)
 
 	if (ps)
 	{
-		if (ps->texcoords) { free(ps->texcoords); ps->texcoords = NULL; }
-		if (ps->vertices) { free(ps->vertices); ps->vertices = NULL; }
-		if (ps->colors) { free(ps->colors); ps->colors = NULL; }
 		if (ps->particles) { free(ps->particles); ps->particles = NULL; }
 		ps->init = FALSE;
 		ps->alive = FALSE;

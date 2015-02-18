@@ -120,8 +120,6 @@ void vertex_remove(lua_vertexes *vx, int start, int stop) {
 	if (start == -1 || stop == -1) return;
 	if (start >= vx->nb - 1) return;
 
-	vx->changed = TRUE;
-
 	int nextquad = stop + VERTEX_QUAD_SIZE;
 
 	// Removing from the end is very easy
@@ -129,6 +127,9 @@ void vertex_remove(lua_vertexes *vx, int start, int stop) {
 		vx->nb = start;
 		return;
 	}
+
+	// When removing from the end there is no need to update the VBO, since we tell the draw code how many to draw anyway
+	vx->changed = TRUE;
 
 	int untilend = vx->nb - nextquad;
 	memmove(&vx->vertices[start], &vx->vertices[nextquad], untilend * sizeof(vertex_data));

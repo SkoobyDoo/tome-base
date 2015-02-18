@@ -1,8 +1,3 @@
-attribute vec2 te4_position;
-attribute vec2 te4_texcoord;
-attribute vec4 te4_color;
-varying vec2 te4_uv;
-varying vec4 te4_fragcolor;
 uniform float tick;
 
 void main()

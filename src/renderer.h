@@ -29,7 +29,6 @@
 typedef struct {
 	GLuint vbo;
 	GLuint mode;
-    shader_type *shader;
 } vertexes_renderer;
 
 extern vertexes_renderer* vertexes_renderer_new(render_mode mode);

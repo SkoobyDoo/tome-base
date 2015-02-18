@@ -443,13 +443,6 @@ function _M:onTurn()
 	self.level.map:processEffects()
 end
 
-local plop = core.vo.new()
-_G.p=plop
-_G.p1={engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", nil, nil, nil, nil, nil, 0, 0)}
-_G.p2={engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", nil, nil, nil, nil, nil, 30, 30)}
-_G.p3={engine.ui.Base.font:drawVO(plop, "toto #GOLD#l'#{bold}#asticot#CRIMSON# é#{normal}# Û#WHITE# #{italic}#!!!!", nil, nil, nil, nil, nil, 60, 60)}
--- engine.ui.Base.font:drawVO(plop, "toto", 350)
-
 function _M:display(nb_keyframes)
 	-- If switching resolution, blank everything but the dialog
 	if self.change_res_dialog then engine.GameEnergyBased.display(self, nb_keyframes) return end
@@ -485,8 +478,6 @@ function _M:display(nb_keyframes)
 		self.logdisplay:toScreen()
 		engine.GameEnergyBased.display(self, nb_keyframes)
 		if self.full_fbo then self.full_fbo:use(false) self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad) end
-		
-		p:toScreen(500, 500)
 
  		return
 	end
