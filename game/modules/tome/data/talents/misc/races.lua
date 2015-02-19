@@ -972,7 +972,7 @@ newTalent{
 		return ([[An ogre's body is acclimated to spells and inscriptions.
 		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.
 		At level 5 your body is so strong you can use a two handed weapon in your main hand while still using an offhand item.
-		When using a two handed weapon this way you suffer a 20%% hit chance penalty (unaffected by accuracy), decreasing by 5%% per size category above #{italic}#big#{normal}#.]]):
+		When using a two handed weapon this way you suffer a 20%% hit chance(unaffected by accuracy), spellpower and mindpower penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#.]]):
 		format(t.getSave(self, t), t.getMult(self, t) * 100)
 	end,
 }
