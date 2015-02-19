@@ -37,9 +37,7 @@ function _M:init(t, no_default)
 	t.store.nb_fill = t.store.nb_fill or 10
 	t.store.purse = t.store.purse or 20
 	Store.init(self, t, no_default)
-
-	self.name = self.name .. (" (Max buy %0.2f gold)"):format(self.store.purse)
-
+--	self.name = self.name .. (" (Max buy %0.2f gold)"):format(self.store.purse)
 	if not self.store.actor_filter then
 		self.store.actor_filter = function(o)
 			return not o.quest and not o.lore and o.cost and o.cost > 0
@@ -47,7 +45,7 @@ function _M:init(t, no_default)
 	end
 end
 
---- Caleld when a new object is stocked
+--- Called when a new object is stocked
 function _M:stocked_object(o)
 	o.__store_level = game.zone.base_level + game.level.level - 1
 end
@@ -98,11 +96,11 @@ end
 -- @param nb number of items (if stacked) to buy
 -- @return true if allowed to buy
 function _M:tryBuy(who, o, item, nb)
-	local price = self:getObjectPrice(o, "buy")
-	if who.money >= price * nb then
-		return nb, price * nb
+	local price, nb = self:getObjectPrice(o, "buy", nb)
+	if who.money >= price then
+		return nb, price
 	else
-		Dialog:simplePopup("Not enough gold", "You do not have enough gold!")
+		Dialog:simplePopup("Not enough gold", ("You do not have the %0.2f gold needed!"):format(price))
 	end
 end
 
@@ -111,12 +109,13 @@ end
 -- @param o the object trying to be sold
 -- @param item the index in the inventory
 -- @param nb number of items (if stacked) to sell
--- @return true if allowed to sell
+-- @return number to sell, price if allowed to sell
 function _M:trySell(who, o, item, nb)
 	if o.__tagged then return end
-	local price = self:getObjectPrice(o, "sell")
-	if price <= 0 or nb <= 0 then return end
-	price = math.min(price * nb, self.store.purse * nb)
+	if nb <= 0 then return end
+	local price = 0
+	price, nb = self:getObjectPrice(o, "sell", nb)
+	if price <= 0 then return end
 	return nb, price
 end
 
@@ -129,11 +128,9 @@ end
 -- @return true if allowed to buy
 function _M:onBuy(who, o, item, nb, before)
 	if before then return end
-	local price = self:getObjectPrice(o, "buy")
-	if who.money >= price * nb then
-		who:incMoney(- price * nb)
-		game.log("Bought: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price * nb)
-	end
+	o:forAllStack(function(so) -- clear sales flags
+		so.__force_store_forget = nil
+		end)
 end
 
 --- Called on object sale
@@ -145,13 +142,11 @@ end
 -- @return true if allowed to sell
 function _M:onSell(who, o, item, nb, before)
 	if before then o:identify(true) return end
-
-	local price = self:getObjectPrice(o, "sell")
-	if price <= 0 or nb <= 0 then return end
-	price = math.min(price * nb, self.store.purse * nb)
-	who:incMoney(price)
-	o:forAllStack(function(so) so.__force_store_forget = true end) -- Make sure the store does forget about it when it restocks
-	game.log("Sold: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price)
+	if nb <= 0 then return end
+	o:forAllStack(function(so)
+		so.__price_level_mod = nil -- Greedy Merchants!
+		so.__force_store_forget = true  -- Make sure this gets replaced on restock
+		end)
 end
 
 --- Override the default
@@ -160,7 +155,8 @@ function _M:doBuy(who, o, item, nb, store_dialog)
 	local price
 	nb, price = self:tryBuy(who, o, item, nb)
 	if nb then
-		Dialog:yesnoPopup("Buy", ("Buy %d %s for %0.2f gold"):format(nb, o:getName{do_color=true, no_count=true}, price), function(ok) if ok then
+		local avg = nb > 1 and (" (%0.2f each)"):format(price/nb) or ""
+		Dialog:yesnoPopup("Buy", ("Buy %d %s for %0.2f gold%s?"):format(nb, o:getName{do_color=true, no_count=true}, price, avg), function(ok) if ok then
 			self:onBuy(who, o, item, nb, true)
 			-- Learn lore ?
 			if who.player and o.lore then
@@ -168,8 +164,15 @@ function _M:doBuy(who, o, item, nb, store_dialog)
 				game.party:learnLore(o.lore)
 			else
 				self:transfer(self, who, item, nb)
+				o, item = who:findInInventory(who:getInven("INVEN"), o:getName())
 			end
-			self:onBuy(who, o, item, nb, false)
+			if o then
+				if who.money >= price then
+					who:incMoney(- price)
+					game.log("Bought: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price)
+				end
+				self:onBuy(who, o, item, nb, false)
+			end
 			if store_dialog then store_dialog:updateStore() end
 		end end, "Buy", "Cancel")
 	end
@@ -181,10 +184,16 @@ function _M:doSell(who, o, item, nb, store_dialog)
 	local price
 	nb, price = self:trySell(who, o, item, nb)
 	if nb then
-		Dialog:yesnoPopup("Sell", ("Sell %d %s for %0.2f gold"):format(nb, o:getName{do_color=true, no_count=true}, price), function(ok) if ok then
+		local avg = nb > 1 and (" (%0.2f each)"):format(price/nb) or ""
+		Dialog:yesnoPopup("Sell", ("Sell %d %s for %0.2f gold%s?"):format(nb, o:getName{do_color=true, no_count=true}, price, avg), function(ok) if ok then
 			self:onSell(who, o, item, nb, true)
 			self:transfer(who, self, item, nb)
-			self:onSell(who, o, item, nb, false)
+			local o, item = self:findInInventory(self:getInven("INVEN"), o:getName()) or o
+			if o then
+				self:onSell(who, o, item, nb, false)
+				who:incMoney(price)
+				game.log("Sold: %s %s for %0.2f gold.", nb>1 and nb or "", o:getName{do_color=true, no_count = true}, price)
+			end
 			if store_dialog then store_dialog:updateStore() end
 		end end, "Sell", "Cancel")
 	end
@@ -207,18 +216,37 @@ function _M:descObject(who, what, o)
 	end
 end
 
-function _M:getObjectPrice(o, what)
-	local v = o:getPrice() * util.getval(what == "buy" and self.store.sell_percent or self.store.buy_percent, self, o) / 100
-	return math.ceil(v * 10) / 10
+--- Called to calculate the object's price for either selling or buying
+-- @param o the object
+-- @param what either "sell" or "buy"
+-- @param nb the number from a stack (all)
+-- @return the price, number to sell
+function _M:getObjectPrice(o, what, nb)
+	local price_limit = what == "sell" and self.store.purse or math.huge
+	local price_mult = util.getval(what == "buy" and self.store.sell_percent or self.store.buy_percent, self, o) / 100 
+	local price = 0
+	if o.stacked then -- note transfer moves stacked objects from the top first
+		nb = math.min(nb or 1, #o.stacked + 1)
+		o:forAllStack(function(so, i)
+			if (i or 0) > #o.stacked - nb then
+				price = price + math.min(so:getPrice()*price_mult, price_limit)
+			end
+		end)
+	else
+		nb = 1
+		price = math.min(o:getPrice()*price_mult, price_limit)
+	end
+	return math.ceil(price * 10) / 10, nb -- round up to nearest 0.1 gold
 end
 
 --- Called to describe an object's price, being to sell or to buy
 -- @param who the actor
 -- @param what either "sell" or "buy"
 -- @param o the object
--- @return a string describing the price
-function _M:descObjectPrice(who, what, o)
-	return self:getObjectPrice(o, what), who.money
+-- @param nb the number from a stack (all)
+-- @return the price, actor.money
+function _M:descObjectPrice(who, what, o, nb)
+	return self:getObjectPrice(o, what, nb), who.money
 end
 
 --- Actor interacts with the store
