@@ -465,7 +465,7 @@ static int map_objects_toscreen(lua_State *L)
 				dx, dy + dh, dm->tex_x[0], dm->tex_y[0] + dm->tex_factory[0],
 				1, 1, 1, a
 			);
-			vertex_toscreen(generic_vx, 0, 0, 0);
+			vertex_toscreen(generic_vx, 0, 0, 0, 1, 1, 1, 1);
 
 			if (m != dm) {
 		 		if (allow_shader && m->shader) useShader(m->shader, 0, 0, w, h, 0, 0, 1, 1, 1, 1, 1, a);
@@ -586,7 +586,7 @@ static int map_objects_display(lua_State *L)
 				dx, dy + h, m->tex_x[0], m->tex_y[0] + m->tex_factory[0],
 				1, 1, 1, 1
 			);
-			vertex_toscreen(generic_vx, 0, 0, 0);
+			vertex_toscreen(generic_vx, 0, 0, 0, 1, 1, 1, 1);
 
 			dm = dm->next;
 			dz++;
@@ -1267,7 +1267,7 @@ static int map_draw_seen_texture(lua_State *L)
 		w, 0, f, 0,
 		1, 1, 1, 1
 	);
-	vertex_toscreen(generic_vx, x, y, map->seens_texture);
+	vertex_toscreen(generic_vx, x, y, map->seens_texture, 1, 1, 1, 1);
 
 	return 0;
 }
@@ -1335,7 +1335,7 @@ static int map_get_scroll(lua_State *L)
 }
 
 #define unbatchQuads(vx) { \
-	vertex_toscreen(vx, 0, 0, 0); \
+	vertex_toscreen(vx, 0, 0, 0, 1, 1, 1, 1); \
 	vertex_clear(vx); \
 }
 
@@ -1793,7 +1793,7 @@ static int map_line_grids(lua_State *L) {
 		tfglBindTexture(GL_TEXTURE_2D, gl_tex_white);
 	}
 
-	vertex_toscreen(map->vx_grid_lines, x - map->used_animdx * map->tile_w, y - map->used_animdy * map->tile_h, 0);
+	vertex_toscreen(map->vx_grid_lines, x - map->used_animdx * map->tile_w, y - map->used_animdy * map->tile_h, 0, 1, 1, 1, 1);
 	return 0;	
 }
 
@@ -1904,7 +1904,7 @@ static int minimap_to_screen(lua_State *L)
 		mdw * map->minimap_gridsize, 0, rw, 0,
 		1, 1, 1, 1
 	);
-	vertex_toscreen(generic_vx, x, y, 0);
+	vertex_toscreen(generic_vx, x, y, 0, 1, 1, 1, 1);
 
 	return 0;
 }

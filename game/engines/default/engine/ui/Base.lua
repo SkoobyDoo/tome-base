@@ -28,7 +28,7 @@ local gfx_prefix = "/data/gfx/"
 local cache = {}
 local tcache = {}
 
-_no_save_fields = { vo = true }
+_no_save_fields = { vo = true, votext = true, votextmono = true, votextbold = true }
 
 -- Default font
 _M.font = core.display.newFont("/data/font/DroidSans.ttf", 12)

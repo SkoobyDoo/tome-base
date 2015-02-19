@@ -48,7 +48,7 @@ void vertexes_renderer_free(vertexes_renderer *vr) {
 	free(vr);
 }
 
-void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y) {
+void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, float r, float g, float b, float a) {
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	glTranslatef(x, y, 0);
 
@@ -63,6 +63,15 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 
 		shader = current_shader;
 		if (shader->vertex_attrib == -1) return;
+
+		if (shader->p_color != -1) {
+			GLfloat d[4];
+			d[0] = r;
+			d[1] = g;
+			d[2] = b;
+			d[3] = a;
+			glUniform4fvARB(shader->p_color, 1, d);
+		}
 
 		glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
 		if (vx->changed) {

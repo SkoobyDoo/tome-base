@@ -194,7 +194,7 @@ void vertex_color(lua_vertexes *vx, int start, int stop, bool set, float r, floa
 	}
 }
 
-void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex) {
+void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a) {
 	if (tex == -1) {
 		if (vx->tex) { tex = vx->tex; }
 		else { tex = gl_tex_white; }
@@ -202,7 +202,7 @@ void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex) {
 	} else if (tex) vx->tex = tex;
 	else vx->tex = gl_c_texture;
 
-	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y);
+	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y, r, g, b, a);
 }
 
 int vertex_quad_size() {

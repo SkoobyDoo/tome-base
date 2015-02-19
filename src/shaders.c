@@ -39,29 +39,43 @@ void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, f
 {
 	current_shader = p;
 	tglUseProgramObject(p->shader);
-	GLfloat t = cur_frame_tick;
-	glUniform1fvARB(p->p_tick, 1, &t);
-	GLfloat d[4];
-	d[0] = r;
-	d[1] = g;
-	d[2] = b;
-	d[3] = a;
-	glUniform4fvARB(p->p_color, 1, d);
 
-	GLfloat c[2];
-	c[0] = x;
-	c[1] = y;
-	glUniform2fvARB(p->p_mapcoord, 1, c);
+	if (p->p_tick != -1) {
+		GLfloat t = cur_frame_tick;
+		glUniform1fvARB(p->p_tick, 1, &t);
+	}
 
-	c[0] = w;
-	c[1] = h;
-	glUniform2fvARB(p->p_texsize, 1, c);
+	if (p->p_color != -1) {
+		GLfloat d[4];
+		d[0] = r;
+		d[1] = g;
+		d[2] = b;
+		d[3] = a;
+		glUniform4fvARB(p->p_color, 1, d);
+	}
 
-	d[0] = tx;
-	d[1] = ty;
-	d[2] = tw;
-	d[3] = th;
-	glUniform4fvARB(p->p_texcoord, 1, d);
+	if (p->p_mapcoord != -1) {
+		GLfloat c[2];
+		c[0] = x;
+		c[1] = y;
+		glUniform2fvARB(p->p_mapcoord, 1, c);
+	}
+
+	if (p->p_texsize != -1) {
+		GLfloat c[2];
+		c[0] = w;
+		c[1] = h;
+		glUniform2fvARB(p->p_texsize, 1, c);
+	}
+
+	if (p->p_texcoord != -1) {
+		GLfloat d[4];
+		d[0] = tx;
+		d[1] = ty;
+		d[2] = tw;
+		d[3] = th;
+		glUniform4fvARB(p->p_texcoord, 1, d);
+	}
 
 	shader_reset_uniform *ru = p->reset_uniforms;
 	while (ru) {
@@ -610,7 +624,7 @@ static int program_use(lua_State *L)
 		tglUseProgramObject(p->shader);
 		// GLfloat t = SDL_GetTicks();
 		GLfloat t = cur_frame_tick;
-		glUniform1fvARB(p->p_tick, 1, &t);
+		if (p->p_tick != -1) glUniform1fvARB(p->p_tick, 1, &t);
 	}
 	else
 	{

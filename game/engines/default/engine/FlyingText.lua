@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 require "engine.class"
+local Shader = require "engine.Shader"
 
 module(..., package.seeall, class.make)
 
@@ -28,6 +29,7 @@ function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.flyers = {}
 	self.vo = core.vo.new()
 	self.bigvo = core.vo.new()
+	self.atlas_w, self.atlas_h = self.font:getAtlasSize()
 end
 
 function _M:enableShadow(v)
@@ -98,6 +100,19 @@ function _M:display(nb_keyframes)
 		self.flyers[fl] = nil
 	end
 
+	local shader = Shader.default.flyersoutline and Shader.default.flyersoutline.shad
+
+	if self.shadow then
+		if shader then
+			shader:use(true)
+			shader:uniOutlineSize(0.5, 0.5)
+			shader:uniTextSize(self.atlas_w, self.atlas_h)
+		else
+			self.vo:toScreen(1, 1, nil, 0, 0, 0, self.shadow)
+			self.bigvo:toScreen(1, 1, nil, 0, 0, 0, self.shadow)
+		end
+	end
 	self.vo:toScreen(0, 0)
 	self.bigvo:toScreen(0, 0)
+	if self.shadow and shader then shader:use(false) end
 end

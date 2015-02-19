@@ -119,7 +119,7 @@ static int lua_web_toscreen(lua_State *L) {
 			w, 0, 1, 0,
 			1, 1, 1, 1
 		);
-		vertex_toscreen(generic_vx, x, y, *tex);
+		vertex_toscreen(generic_vx, x, y, *tex, 1, 1, 1, 1);
 	}
 	return 0;
 }

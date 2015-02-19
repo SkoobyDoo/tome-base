@@ -91,7 +91,7 @@ extern void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, floa
 extern void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a);
 extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
-extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex);
+extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a);
 ]]
 
 local VERTEX_QUAD_SIZE = C.vertex_quad_size()
@@ -133,10 +133,10 @@ local vertexes_mt = { __gc = function(vo) C.vertex_free(vo, false) end,	__index 
 		C.vertex_color(vo, startid, stopid, set, r, g, b, a)
 	end,
 	clear = C.vertex_clear,
-	toScreen = function(vo, x, y, tex, ignore_shader)
+	toScreen = function(vo, x, y, tex, r, g, b, a)
 		if tex == true then tex = 0 end
 		if tex == nil then tex = -1 end
-		C.vertex_toscreen(vo, x, y, tex)
+		C.vertex_toscreen(vo, x, y, tex, r or 1, g or 1, b or 1, a or 1)
 	end,
 }}
 local vertexes = ffi.metatype("lua_vertexes", vertexes_mt)

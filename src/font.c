@@ -190,6 +190,15 @@ static int sdl_font_make_atlas(lua_State *L)
 	return 0;
 }
 
+static int sdl_font_get_atlas_size(lua_State *L)
+{
+	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	if (!f->atlas) font_make_atlas(f, 0, 0);
+	lua_pushnumber(L, f->atlas_w);
+	lua_pushnumber(L, f->atlas_h);
+	return 2;
+}
+
 static int sdl_font_atlas_debug(lua_State *L)
 {
 	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
@@ -207,7 +216,7 @@ static int sdl_font_atlas_debug(lua_State *L)
 		w, 0, 1, 0,
 		1, 1, 1, 1
 	);
-	vertex_toscreen(generic_vx, x, y, f->atlas_tex);
+	vertex_toscreen(generic_vx, x, y, f->atlas_tex, 1, 1, 1, 1);
 
 	return 0;
 }
@@ -1079,6 +1088,7 @@ static const struct luaL_Reg sdl_font_reg[] =
 	{"drawVO", sdl_font_draw_vo},
 	{"makeAtlas", sdl_font_make_atlas},
 	{"debugAtlas", sdl_font_atlas_debug},
+	{"getAtlasSize", sdl_font_get_atlas_size},
 	{NULL, NULL},
 };
 

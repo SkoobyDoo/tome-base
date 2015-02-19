@@ -439,7 +439,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 
 	if (ps->shader) useShader(ps->shader, 1, 1, main_fbo ? main_fbo->w : 1, main_fbo ? main_fbo->h : 1, 0, 0, 1, 1, 1, 1, 1, 1);
 
-	vertex_toscreen(ps->vx, 0, 0, ps->texture);
+	vertex_toscreen(ps->vx, 0, 0, ps->texture, 1, 1, 1, 1);
 
 	if (ps->shader) useNoShader();
 

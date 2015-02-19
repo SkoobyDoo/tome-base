@@ -58,7 +58,7 @@ static int draw_last_frame(lua_State *L)
 		0, h, 0, 0,
 		1, 1, 1, 1
 	);
-	vertex_toscreen(generic_vx, 0, 0, bkg_t);
+	vertex_toscreen(generic_vx, 0, 0, bkg_t, 1, 1, 1, 1);
 	return 0;
 }
 
