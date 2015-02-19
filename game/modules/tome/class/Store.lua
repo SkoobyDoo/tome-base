@@ -236,7 +236,7 @@ function _M:getObjectPrice(o, what, nb)
 		nb = 1
 		price = math.min(o:getPrice()*price_mult, price_limit)
 	end
-	return math.ceil(price * 10) / 10, nb -- round up to nearest 0.1 gold
+	return math.round(price, .01), nb -- round to the nearest 0.1 gold
 end
 
 --- Called to describe an object's price, being to sell or to buy
