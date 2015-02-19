@@ -123,7 +123,7 @@ local function set_element(element, new_flavor, player)
 
 	local prev_name = o:getName{no_count=true, force_id=true, no_add_name=true}
 	
-	local dam = o.combat.dam
+	local dam = o.staff_power or o.combat.dam
 	local inven = player:getInven("MAINHAND")
 	local o = player:takeoffObject(inven, 1)
 

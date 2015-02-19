@@ -51,5 +51,14 @@ return function(gen, id)
 				e.on_added_to_level = nil
 			end
 		end
+
+		if rng.percent(7) then
+			for _, spot in ipairs(room.spots[4]) do
+				local e = gen.zone:makeEntityByName(gen.level, "object", "LORE_SONG")
+				if e then
+					gen:roomMapAddEntity(x + spot.x, y + spot.y, "object", e)
+				end
+			end
+		end
 	end}
 end

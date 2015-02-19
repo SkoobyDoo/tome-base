@@ -72,10 +72,11 @@ function _M:init(title, equip_actor, filter, action, on_select, inven_actor)
 					self.equip_actor:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, base_o, true)
 				end
 			else
-				local inven = self.equip_actor:getInven(wear_inven)
-				if self.equip_actor:canWearObject(wear_o, inven.name) then
+				local inven = ui.inven and self.equip_actor:getInven(ui.inven)
+				if inven and self.equip_actor:canWearObject(wear_o, inven.name) then
 					-- Force inventory and item
 					self.equip_actor:doWear(wear_inven, wear_item, wear_o, self.inven_actor, ui.inven, ui.item)
+					ui:forceUpdate()
 				else
 					self.equip_actor:doWear(wear_inven, wear_item, wear_o, self.inven_actor)
 				end

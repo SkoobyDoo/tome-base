@@ -246,7 +246,7 @@ newTalent{
 		if n < 1 then return bt, "(error 2)" end
 		local e_string = ""
 		if n == 1 then
-			e_string = DamageType.dam_def[bt[1]].name
+			e_string = DamageType.dam_def[next(bt)].name
 		else
 			local list = table.keys(bt)
 			for i = 1, #list do if DamageType.dam_def[list[i]] then

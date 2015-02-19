@@ -81,7 +81,6 @@ newEntity{
 	greater_ego = 1,
 	rarity = 18,
 	cost = 40,
-	use_no_energy = true,
 	wielder = {
 		inc_stats = {
 			[Stats.STAT_MAG] = resolvers.mbonus_material(2, 2),
@@ -173,7 +172,6 @@ newEntity{
 	greater_ego = 1,
 	rarity = 18,
 	cost = 40,
-	use_no_energy = true,
 	resolvers.charmt(Talents.T_DISENGAGE, {1,2,3}, 15),
 	wielder = {
 		inc_stats = {
@@ -329,7 +327,6 @@ newEntity{
 	greater_ego = 1,
 	rarity = 30,
 	cost = 60,
-	use_no_energy = true,
 	resolvers.charmt(Talents.T_HEAVE, {2,3,4}, 10),
 	wielder = {
 		inc_stats = {

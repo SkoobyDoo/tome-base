@@ -394,14 +394,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			atk = atk + eff.atk
-		end
-	end
-
-
 	-- track weakness for hate bonus before the target removes it
 	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
 
@@ -433,6 +425,15 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	if target:hasEffect(target.EFF_WEAPON_WARDING) then
 		local e = target.tempeffect_def[target.EFF_WEAPON_WARDING]
 		if e.do_block(target, target.tmp[target.EFF_WEAPON_WARDING], self) then
+			repelled = true
+		end
+	end
+	
+	if target:hasEffect(target.EFF_WARDEN_S_FOCUS) and target:hasDualWeapon() then
+		game.logPlayer(self, "test!")
+		local eff = target:hasEffect(target.EFF_WARDEN_S_FOCUS)
+		if eff.target == self and rng.percent(eff.parry) then
+			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
 			repelled = true
 		end
 	end
@@ -1233,7 +1234,7 @@ function _M:combatAttackBase(weapon, ammo)
 end
 function _M:combatAttack(weapon, ammo)
 	local stats
-	if self:attr("use_psi_combat") then stats = self:getCun(100, true) - 10
+	if self:attr("use_psi_combat") then stats = (self:getCun(100, true) - 10) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	elseif weapon and weapon.wil_attack then stats = self:getWil(100, true) - 10
 	else stats = self:getDex(100, true) - 10
 	end
@@ -1245,7 +1246,7 @@ end
 
 function _M:combatAttackRanged(weapon, ammo)
 	local stats
-	if self:attr("use_psi_combat") then stats = self:getCun(100, true) - 10
+	if self:attr("use_psi_combat") then stats = (self:getCun(100, true) - 10) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	elseif weapon and weapon.wil_attack then stats = self:getWil(100, true) - 10
 	else stats = self:getDex(100, true) - 10
 	end
@@ -1502,8 +1503,14 @@ function _M:getDammod(combat)
 	if combat.talented == 'knife' and self:knowTalent('T_LETHALITY') then sub('str', 'cun') end
 	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
 	if self:attr 'use_psi_combat' then
-		sub('str', 'wil')
-		sub('dex', 'cun')
+		if dammod['str'] then 
+			dammod['str'] = (dammod['str'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
+			sub('str', 'wil')
+		end
+		if dammod['dex'] then 
+			dammod['dex'] = (dammod['dex'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
+			sub('dex', 'cun') 
+		end
 	end
 
 	-- Add stuff like lethality here.
@@ -1534,10 +1541,6 @@ function _M:combatDamage(weapon, adddammod)
 		for stat, mod in pairs(adddammod) do
 			totstat = totstat + self:getStat(stat) * mod
 		end
-	end
-
-	if self:attr("use_psi_combat") then
-		totstat = totstat * (0.8 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	end
 
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
@@ -1618,6 +1621,8 @@ function _M:combatSpellpower(mod, add)
 	local d = math.max(0, (self.combat_spellpower or 0) + add + self:getMag())
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
+
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return self:rescaleCombatStats(d) * mod * am
 end
@@ -1751,13 +1756,6 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		end
 	end
 	
-	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			chance = chance + eff.crit
-		end
-	end
-
 	if target then
 		chance = chance - target:combatCritReduction()
 	end
@@ -1922,6 +1920,8 @@ function _M:combatMindpower(mod, add)
 
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
+
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return self:rescaleCombatStats(d) * mod
 end

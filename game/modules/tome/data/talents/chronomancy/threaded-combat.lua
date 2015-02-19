@@ -24,7 +24,7 @@ newTalent{
 	type = {"chronomancy/threaded-combat", 1},
 	require = chrono_req_high1,
 	points = 5,
-	cooldown = function(self, t) return 20 - math.floor(self:combatTalentLimit(t, 16, 2, 14)) end,
+	cooldown = 10,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	tactical = { ATTACK = {weapon = 2}, CLOSEIN = 2, ESCAPE = 2 },
 	requires_target = true,
@@ -36,8 +36,21 @@ newTalent{
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getTeleportRange = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8, 0.5, 0, 1)) end,
+	getDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
+	getResist = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 25) end,
+	getReduction = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 25) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "defense_on_teleport", t.getDefense(self, t))
+		self:talentTemporaryValue(p, "resist_all_on_teleport", t.getResist(self, t))
+		self:talentTemporaryValue(p, "effect_reduction_on_teleport", t.getReduction(self, t))
+	end,
+	callbackOnStatChange = function(self, t, stat, v)
+		if stat == self.STAT_MAG then
+			self:updateTalentPassives(t)
+		end
+	end,
+	
 	archery_onhit = function(self, t, target, x, y)
 		game:onTickEnd(function()
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
@@ -69,7 +82,7 @@ newTalent{
 				
 			if hitted then
 				-- Find our teleport location
-				local dist = t.getTeleportRange(self, t) / core.fov.distance(x, y, self.x, self.y)
+				local dist = 10 / core.fov.distance(x, y, self.x, self.y)
 				local destx, desty = math.floor((self.x - x) * dist + x), math.floor((self.y - y) * dist + y)
 				local l = core.fov.line(x, y, destx, desty, false)
 				local lx, ly, is_corner_blocked = l:step()
@@ -100,10 +113,13 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local range = t.getTeleportRange(self, t)
-		return ([[Attack with your bow or dual-weapons for %d%% damage.
-		If you shoot an arrow you'll teleport near any target hit.  If you hit with either of your dual-weapons you'll teleport up to %d tiles away from the target.]])
-		:format(damage, range)
+		local defense = t.getDefense(self, t)
+		local resist = t.getResist(self, t)
+		local reduction = t.getReduction(self, t)
+		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near any target hit.  If you hit with either of your dual-weapons you'll teleport up to ten tiles away from the target.
+		Additionally you now go Out of Phase for five turns after any teleport, gaining %d defense, %d%% resist all, and reducing the duration of new detrimental effects by %d%%.
+		The Out of Phase bonuses will scale with your Magic stat.]])
+		:format(damage, defense, resist, reduction)
 	end
 }
 
@@ -113,11 +129,23 @@ newTalent{
 	require = chrono_req_high2,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return self:combatTalentScale(t, 10, 50)/100 end,
+	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end, -- Limit < 50% damage reduction
+	callbackOnArcheryAttack = function(self, t, target, hitted)
+		if hitted then
+			self:setEffect(self.EFF_BLENDED_THREADS_BOW, 2, {bow=t.getPercent(self, t)})
+		end
+	end,
+	callbackOnMeleeAttack = function(self, t, target, hitted)
+		if hitted then
+			self:setEffect(self.EFF_BLENDED_THREADS_BLADE, 2, {blade=t.getPercent(self, t)})
+		end
+	end,
 	info = function(self, t)
-		local percent = t.getPercent(self, t) * 100
-		return ([[Your Bow Threading and Blade Threading attacks now deal %d%% more weapon damage if you did not have the appropriate weapon equipped when you initiated the attack.]])
-		:format(percent)
+		local percent = t.getPercent(self, t)
+		return ([[When you hit with an arrow you reduce the damage you recieve from targets within two tiles of you by %d%%.
+		When you hit with your melee weapons you increase the damage you deal to targets more than two tiles away from you by %d%%.
+		Both of these effects may be active at once and last for two turns.]])
+		:format(percent, percent)
 	end
 }
 
@@ -211,11 +239,10 @@ newTalent{
 	remove_on_clone = true,
 	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
 	doBladeWarden = function(self, t, target)
-		-- Sanity check
-		if not self.turn_procs.blade_warden then 
-			self.turn_procs.blade_warden = true
-		else
+		if self.turn_procs.wardens_call then
 			return
+		else
+			self.turn_procs.wardens_call = true
 		end
 		
 		-- Make our clone
@@ -259,14 +286,12 @@ newTalent{
 		end
 	end,
 	doBowWarden = function(self, t, target)
-		-- Sanity check
-		game.logPlayer(self, "You are unable to move!")
-		if not self.turn_procs.blade_warden then
-			self.turn_procs.blade_warden = true
-		else
+		if self.turn_procs.wardens_call then
 			return
+		else
+			self.turn_procs.wardens_call = true
 		end
-	
+
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
@@ -341,7 +366,7 @@ newTalent{
 		local damage_penalty = t.getDamagePenalty(self, t)
 		return ([[When you hit with a blade-threading or a bow-threading talent a warden may appear, depending on available space, from another timeline and shoot or attack a random enemy.
 		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
-		Each of these effects can only occur once per turn and the wardens return to their own timeline after attacking.]])
+		This effect can only occur once per turn and the wardens return to their own timeline after attacking.]])
 		:format(damage_penalty)
 	end
 }

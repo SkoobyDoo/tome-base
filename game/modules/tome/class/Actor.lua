@@ -519,6 +519,16 @@ function _M:actBase()
 		end
 	end
 
+	-- Suffocate ?
+	self.is_suffocating = nil  -- turn_procs gets reset in act()
+	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
+	if air_level then
+		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
+			self.is_suffocating = true
+			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
+		end
+	end
+
 	if self:knowTalent(self.T_GESTURE_OF_GUARDING) then self:setEffect(self.EFF_GESTURE_OF_GUARDING,1,{}) end
 	if self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then self:setEffect(self.EFF_DUAL_WEAPON_DEFENSE,1,{}) end
 	if self:knowTalent(self.T_COUNTER_ATTACK) then self:setEffect(self.EFF_COUNTER_ATTACKING,1,{}) end
@@ -534,14 +544,6 @@ function _M:actBase()
 
 	-- Cooldown talents after effects, because some of them involve breaking sustains.
 	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
-
-	-- Suffocate ?
-	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
-	if air_level then
-		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
-			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
-		end
-	end
 end
 
 function _M:act()
@@ -3001,11 +3003,6 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if self:hasEffect(self.EFF_ATTENUATE) then
-		local p = self:hasEffect(self.EFF_ATTENUATE)
-		p.src:incParadox(-p.reduction)
-	end
-
 	if self:hasEffect(self.EFF_GHOUL_ROT) then
 		local p = self:hasEffect(self.EFF_GHOUL_ROT)
 		if p.make_ghoul > 0 then
@@ -4296,18 +4293,15 @@ function _M:paradoxFailChance()
 end
 
 -- This handles anomalies
--- Reduction is the Paradox recovered
--- Anomaly Type is used to force an anomaly type for the talent, generally set to ab.anomaly_type
--- Chance use this for the anomaly chance, generally set to paradoxFailChance() or "forced"
--- Target, if we're forcing an anomaly target
-function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
-	local anomaly_type = anomaly_type or "random"
-	local chance = chance or self:paradoxFailChance()
-	if chance == "forced" then chance = 100	end
+-- chance, generally paradoxFailChance, set to 100 to force an anomly
+-- paradox recovered
+-- def.anomaly_type to set a type, def.allow_target to allow targeting, def.target to set a target
+function _M:paradoxDoAnomaly(chance, paradox, def)
+	local def = def or {}
+	local anomaly_type = def.anomaly_type or "random"
 	
 	-- Anomaly biases can be set manually for monsters or classes
-	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
-	-- Additionally anomaly biases could be set by a talent; see the data/chats/chromonacy-bias-weave for an example
+	-- Use the following format anomaly_bias = { type = "warp", chance=50}
 	local function check_bias(major)
 		if self.anomaly_bias then
 			local bias_chance = self.anomaly_bias.chance
@@ -4317,7 +4311,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 			end
 		end
 	end
-
+	
 	-- See if we create an anomaly
 	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") then
 		-- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
@@ -4328,7 +4322,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 			local anomaly_triggered = true
 			
 			-- If our Paradox is over 600 do a major anomaly
-			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() > 600) then
+			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() >= 600) then
 				anomaly_type = "major"
 			else
 				-- Check for Bias?
@@ -4347,19 +4341,37 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 
 			-- Be sure we found an anomly first
 			if ts[1] then
-				local anomaly = rng.table(ts)
+				local anom = rng.table(ts)
 				
-				if self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) and anomaly_type ~= "major" then
-					if self:hasEffect(self.EFF_TWIST_FATE) then
-						self:callTalent(self.T_TWIST_FATE, "doTwistFate")
-						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
-					else
-						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
+				if anomaly_type ~= "major" then
+					if self:attr("no_minor_anomalies") then
 						anomaly_triggered = false
+					elseif def.allow_target then
+						anom = self:getTalentFromId(anom)
+						-- make it real obvious for the player
+						game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
+						if self == game.player then
+							game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", anom.name)
+						end
+					
+						-- targeted talents don't work well with no_energy, so we call the action directly
+						anom.action(self, anom)
+					elseif def.ignore_energy then
+						self:forceUseTalent(anom, {force_target=def.target or self, ignore_energy=true})
+					elseif self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) then
+						if self:hasEffect(self.EFF_TWIST_FATE) then
+							self:callTalent(self.T_TWIST_FATE, "doTwistFate")
+							self:callTalent(self.T_TWIST_FATE, "setEffect", anom, paradox)
+						else
+							self:callTalent(self.T_TWIST_FATE, "setEffect", anom, paradox)
+						end
+						anomaly_triggered = false
+					else
+						self:forceUseTalent(anom, {force_target=def.target or self})
 					end
 				else
-					--self:forceUseTalent(anomaly, {ignore_energy=true})
-					self:forceUseTalent(anomaly, {force_target=target or self})
+					-- Major anomalies pick targets at random
+					self:forceUseTalent(anom, {force_target=self})
 				end
 			end
 
@@ -4373,9 +4385,15 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 					end
 				end
 				-- Reduce Paradox
-				if reduction and reduction > 0 then
-					self:incParadox(-reduction)
+				if paradox and paradox > 0 then
+					-- Double the paradox from major anomalies, mostly so NPCs don't become more dangerous when they run out of Paradox
+					if anomaly_type == "major" then paradox = paradox * 2 end
+					
+					self:incParadox(-paradox)
 				end
+				
+				-- Remove Reality Smearing
+				self:removeEffect(self.EFF_REALITY_SMEARING)
 			end
 
 			return anomaly_triggered
@@ -4672,8 +4690,7 @@ function _M:preUseTalent(ab, silent, fake)
 		-- Random anomalies reduce paradox by twice the talent's paradox cost
 		local cost = util.getval(ab.paradox or ab.sustain_paradox, self, ab)
 		if cost > 0 then
-			local multi = 2 + (self:attr("anomaly_paradox_recovery") or 0)
-			if self:paradoxDoAnomaly(cost * multi, ab.anomaly_type or nil, self:paradoxFailChance(), nil, silent) then
+			if self:paradoxDoAnomaly(self:paradoxFailChance(), cost * 2, {anomaly_type=ab.anomaly_type or nil, silent=silent}) then
 				game:playSoundNear(self, "talents/dispel")
 				return false
 			end
@@ -4778,7 +4795,6 @@ local sustainCallbackCheck = {
 	callbackOnTemporaryEffect = "talents_on_tmp",
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
-	callbackOnChronoWeaponFoldingHit = "talents_on_chrono_weapon_folding_hit",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -6339,7 +6355,6 @@ end
 function _M:transmoPricemod(o) if o.type == "gem" then return 0.40 else return 0.05 end end
 function _M:transmoFilter(o) if o:getPrice() <= 0 or o.quest then return false end return true end
 function _M:transmoInven(inven, idx, o)
-	local price = math.min(o:getPrice() * self:transmoPricemod(o), 25) * o:getNumber()
 	local price = math.min(o:getPrice() * self:transmoPricemod(o), 25) * o:getNumber()
 	price = math.floor(price * 100) / 100 -- Make sure we get at most 2 digit precision
 	if price ~= price or not tostring(price):find("^[0-9]") then price = 1 end -- NaN is the only value that does not equals itself, this is the way to check it since we do not have a math.isnan method

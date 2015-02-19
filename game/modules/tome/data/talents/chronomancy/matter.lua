@@ -75,7 +75,7 @@ newTalent{
 				DamageType.WARP, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
-				engine.MapEffect.new{alpha=155, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
+				engine.MapEffect.new{alpha=100, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
 				function(e)
 					e.x = e.src.x
 					e.y = e.src.y
@@ -162,7 +162,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	cooldown = 10,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 30, 15)) end,
 	tactical = { DISABLE = 2 },
 	range = 10,
 	direct_hit = true,
@@ -296,6 +296,12 @@ newTalent{
 					game.logSeen(self, "#CRIMSON#%s's beneficial effect was stripped!#LAST#", target.name:capitalize())
 					if what == "physical" then p.physical[target] = true end
 					if what == "magical" then p.magical[target] = true end
+					
+					-- The Cure achievement
+					local acheive = self.player and not target.training_dummy and target ~= self
+					if acheive then
+						world:gainAchievement("THE_CURE", self)
+					end
 				end
 			end
 		end

@@ -20,6 +20,7 @@
 local Object = require "engine.Object"
 local Entity = require "engine.Entity"
 local Dialog = require "engine.ui.Dialog"
+local Stats = require "engine.interface.ActorStats"
 
 local curses_detrimental
 local curses_beneficial
@@ -518,11 +519,12 @@ newTalent{
 			local level = o.material_level or 1
 			-- Trying to replicate the ego pattern on the weapon. Kinky.
 			local egos = o.egos_number or (o.ego_list and #o.ego_list) or (e.egoed and 1) or 0
-			local double_greater = (o.unique and egos == 0) or o.greater_ego > 1  -- artifact or purple
-			local greater_normal = (o.unique and egos > 2) or o.greater_ego == 1 and egos > 1 -- randart or blue
-			local greater = (o.unique and egos > 0) or o.greater_ego == 1 and egos == 1  -- rare or blue
-			local double_ego = not o.unique and not o.greater_ego and egos > 1
-			local ego = not o.unique and not o.greater_ego and egos == 1
+			local greater = o.greater_ego or 0
+			local double_greater = (o.unique and egos == 0) or greater > 1  -- artifact or purple
+			local greater_normal = (o.unique and egos > 2) or greater == 1 and egos > 1 -- randart or blue
+			local greater = (o.unique and egos > 0) or greater == 1 and egos == 1  -- rare or blue
+			local double_ego = not o.unique and greater == 0 and egos > 1
+			local ego = not o.unique and greater == 0 and egos == 1
 			local filter = {type="ammo", ignore_material_restriction=true, tome={double_greater=double_greater and 1, greater_normal=greater_normal and 1,
 			greater = greater and 1, double_ego = double_ego and 1, ego = ego and 1}, special = function(e) return not e.unique and e.material_level == level end}
 			if o.archery == "bow" then filter.subtype = "arrow"
