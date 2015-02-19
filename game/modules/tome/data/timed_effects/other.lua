@@ -2557,6 +2557,8 @@ newEffect{
 		return {dam=dam}
 	end,
 	callbackOnHit = function(self, eff, cb, src)
+		if cb.value <= 0 then return cb.value end
+		
 		local clones = {}
 		-- Find our clones
 		for i = 1, #eff.targets do
@@ -2574,7 +2576,7 @@ newEffect{
 			for i = 1, #clones do
 				local target = clones[i]
 				if target ~= self then
-					target:takeHit(cb.value, self)
+					target:takeHit(cb.value, src)
 					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(cb.value), nil)
 				end
 			end
