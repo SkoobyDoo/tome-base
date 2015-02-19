@@ -6857,7 +6857,7 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 	blood_dur=0,
 	wielder = {
 		inc_stats = { [Stats.STAT_STR] = 10,  [Stats.STAT_CON] = 10, },
-		combat_armor = 40,
+		combat_armor = 30,
 		combat_dam=10,
 		combat_physresist = 15,
 		fatigue = 25,
@@ -6866,7 +6866,7 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		resists={[DamageType.PHYSICAL] = 20},
 	},
 	max_power = 25, power_regen = 1,
-	use_power = { name = "drain blood from all units within 5 spaces, causing them to bleed for 120 physical damage over 4 turns. For every unit (up to 10) drained, the armor's stats increase, but decrease over 10 turns until back to normal", power = 25,
+	use_power = { name = "drain blood from all creatures within 5 spaces, causing them to bleed for 120 physical damage over 4 turns. For each creature drained (up to 10), the armor's stats increase, but decrease back to normal over 10 turns", power = 25,
 		use = function(self, who)
 			self.blood_charge = 0
 			who:project({type="ball", range=0, radius=5, selffire=false}, who.x, who.y, function(px, py)
@@ -6897,26 +6897,31 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		local who=self.worn_by --Make sure you can actually act!
 		if not self.worn_by then return end
 		if game.level and not game.level:hasEntity(self.worn_by) and not self.worn_by.player then self.worn_by = nil return end
-		local boost = self.blood_charge
-		local dur = self.blood_dur
-		local storepower=self.power
-		local _, _, inven_id = who:findInAllInventoriesByObject(self)
-		who:onTakeoff(self, inven_id, true)
+		if self.blood_charge ~= self.last_blood_charge or self.blood_dur ~= self.last_blood_dur then --update stats?
+			self.last_blood_charge = self.blood_charge
+			self.last_blood_dur = self.blood_dur
+			local boost = self.blood_charge
+			local dur = self.blood_dur
+			local storepower=self.power
+			local _, _, inven_id = who:findInAllInventoriesByObject(self)
+			local DamageType = require "engine.DamageType"
 
-		local DamageType = require "engine.DamageType"
-		
-		self.wielder = {
-			inc_stats = { [who.STAT_STR] = math.ceil(10 + boost * dur/5),  [who.STAT_CON] = math.ceil(10 + boost * dur/5), },
-			combat_armor = math.ceil(30 + boost * dur * 0.4),
-			combat_dam = math.ceil(10 + boost/5 * dur),
-			combat_physresist = math.ceil(15 + boost/5 * dur),
-			fatigue = math.ceil(25 - boost/5 * dur),
-			life_regen= math.ceil(boost/2 * dur),
-			on_melee_hit={[DamageType.PHYSICAL] = math.ceil(30 + boost * dur * 0.8)},
-			resists={[DamageType.PHYSICAL] = math.ceil(20 + boost/5 * dur)},
-		}
-		who:onWear(self, inven_id, true)
-		self.power = storepower
+			who:onTakeoff(self, inven_id, true)
+			if self.compute_vals then self:removeTemporaryValue("wielder", self.bonuses) end--remove old wielder bonuses
+			-- add new wielder bonuses
+			self.bonuses = self:addTemporaryValue("wielder", {
+				inc_stats = { [who.STAT_STR] = math.ceil(boost * dur/5),  [who.STAT_CON] = math.ceil(boost * dur/5), },
+				combat_armor = math.ceil(boost * dur * 0.4),
+				combat_dam = math.ceil(boost/5 * dur),
+				combat_physresist = math.ceil(boost/5 * dur),
+				fatigue = math.ceil(- boost/5 * dur),
+				life_regen= math.ceil(boost/2 * dur),
+				on_melee_hit={[DamageType.PHYSICAL] = math.ceil(boost * dur * 0.8)},
+				resists={[DamageType.PHYSICAL] = math.ceil(boost/5 * dur)},
+			})
+			who:onWear(self, inven_id, true)
+			self.power = storepower
+		end
 		if self.blood_dur > 0 then
 			self.blood_dur = self.blood_dur - 1
 			if self.blood_dur <= 0 then self.blood_charge = 0 end
