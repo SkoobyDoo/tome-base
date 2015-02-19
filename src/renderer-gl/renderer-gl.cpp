@@ -48,22 +48,21 @@ void vertexes_renderer_free(vertexes_renderer *vr) {
 	free(vr);
 }
 
-void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, bool ignore_shader) {
+void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y) {
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	glTranslatef(x, y, 0);
 
 	// Modern(ish) OpenGL way
 	if (shaders_active) {
 		shader_type *shader;
-		force_shader_loop:
-		if (!ignore_shader) {
-			shader = vx->shader ? vx->shader : default_shader;
-			useShader(shader, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1);
-		} else {
-			shader = current_shader;
-			if (shader->vertex_attrib == -1) { return; }
-			// if (shader->vertex_attrib == -1) { ignore_shader = FALSE; goto force_shader_loop; }
+
+		if (!current_shader) {
+			useNoShader();
+			if (!current_shader) return;
 		}
+
+		shader = current_shader;
+		if (shader->vertex_attrib == -1) return;
 
 		glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
 		if (vx->changed) {
@@ -90,7 +89,6 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		glDisableVertexAttribArray(shader->color_attrib);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		if (!ignore_shader) useNoShader();
 	// Fallback OpenGl 1.1 way, no shaders, fixed pipeline
 	} else {
 		glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);

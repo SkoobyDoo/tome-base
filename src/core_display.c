@@ -676,7 +676,7 @@ static int gl_draw_quad(lua_State *L)
 		w, 0, 1, 0,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, -1, FALSE);
+	vertex_toscreen(generic_vx, x, y, -1);
 	return 0;
 }
 
@@ -745,7 +745,7 @@ static int gl_draw_quad_part(lua_State *L)
 	else if (quadrant < 1)             { vertex_add_point(generic_vx_fan, xw, y,		1, 0, r, g, b, a); }
 	if (quadrant >= 0 && quadrant < 1) { vertex_add_point(generic_vx_fan, midx + w * s, y,	1, 0, r, g, b, a); }
 
-	vertex_toscreen(generic_vx_fan, 0, 0, 0, FALSE);
+	vertex_toscreen(generic_vx_fan, 0, 0, 0);
 	return 0;
 }
 
@@ -941,7 +941,7 @@ static int sdl_texture_toscreen(lua_State *L)
 		w, 0, 1, 0,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex, FALSE);
+	vertex_toscreen(generic_vx, x, y, t->tex);
 
 	return 0;
 }
@@ -982,7 +982,7 @@ static int sdl_texture_toscreen_highlight_hex(lua_State *L)
 		vertex_add_point(generic_vx_fan, f + 0.25*v, y,		1, 0, 0.9, 0.9, 0.9, 1);
 	}
 
-	vertex_toscreen(generic_vx_fan, 0, 0, 0, FALSE);
+	vertex_toscreen(generic_vx_fan, 0, 0, 0);
 	return 0;
 }
 
@@ -1014,7 +1014,7 @@ static int sdl_texture_toscreen_full(lua_State *L)
 		w, 0, texw, 0,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex, FALSE);
+	vertex_toscreen(generic_vx, x, y, t->tex);
 
 	return 0;
 }
@@ -1047,7 +1047,7 @@ static int sdl_texture_toscreen_precise(lua_State *L)
 		w, 0, x2, y1,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex, FALSE);
+	vertex_toscreen(generic_vx, x, y, t->tex);
 
 	return 0;
 }
@@ -1242,7 +1242,7 @@ static int sdl_texture_outline(lua_State *L)
 		0, h, 0, 1,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, 0, FALSE);
+	vertex_toscreen(generic_vx, x, y, 0);
 
 	/* Render to buffer: original */
 	vertex_clear(generic_vx);
@@ -1253,7 +1253,7 @@ static int sdl_texture_outline(lua_State *L)
 		0, h, 0, 1,
 		1, 1, 1, 1
 	);
-	vertex_toscreen(generic_vx, 0, 0, 0, FALSE);
+	vertex_toscreen(generic_vx, 0, 0, 0);
 
 	// Unbind texture from FBO and then unbind FBO
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
@@ -1583,7 +1583,7 @@ static int gl_fbo_toscreen(lua_State *L)
 		w, 0, 1, 1,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, fbo->texture, has_shader);
+	vertex_toscreen(generic_vx, x, y, fbo->texture);
 
 	if (has_shader) useNoShader();
 	if (!allowblend) glEnable(GL_BLEND);
@@ -1633,7 +1633,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
-		vertex_toscreen(generic_vx, 0, 0, srcfbo->texture, TRUE);
+		vertex_toscreen(generic_vx, 0, 0, srcfbo->texture);
 
 		shad_idx++;
 		tmpfbo = srcfbo;
@@ -1650,7 +1650,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	glPopAttrib();
 	tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_final->fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
-	vertex_toscreen(generic_vx, x, y, srcfbo->texture, TRUE);
+	vertex_toscreen(generic_vx, x, y, srcfbo->texture);
 
 	useNoShader();
 

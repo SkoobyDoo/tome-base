@@ -55,7 +55,6 @@ lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mo
 	vx->changed = TRUE;
 	vx->size = vx->nb = 0;
 	vx->next_id = 1;
-	vx->shader = NULL;
 	vx->vertices = NULL; vx->ids = NULL;
 	update_vertex_size(vx, size);
 
@@ -195,7 +194,7 @@ void vertex_color(lua_vertexes *vx, int start, int stop, bool set, float r, floa
 	}
 }
 
-void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, bool ignore_shader) {
+void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex) {
 	if (tex == -1) {
 		if (vx->tex) { tex = vx->tex; }
 		else { tex = gl_tex_white; }
@@ -203,7 +202,7 @@ void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, bool ignore_shader
 	} else if (tex) vx->tex = tex;
 	else vx->tex = gl_c_texture;
 
-	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y, ignore_shader);
+	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y);
 }
 
 int vertex_quad_size() {

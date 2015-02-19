@@ -671,7 +671,7 @@ void call_draw(int nb_keyframes)
 			w, -h, 1, 0,
 			1, 1, 1, 0.6
 		);
-		vertex_toscreen(generic_vx, x, y, mouse_drag_tex, FALSE);
+		vertex_toscreen(generic_vx, x, y, mouse_drag_tex);
 	}
 }
 
