@@ -275,6 +275,7 @@ function _M:rewriteShaderFrag(code)
 	varying vec4 te4_fragcolor;		
 	]]..code
 	code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
+	code = code:gsub("gl_Color", "te4_fragcolor")
 	return code
 end
 
