@@ -51,7 +51,7 @@ newTalent{
 		end
 	end,
 	
-	archery_onhit = function(self, t, target, x, y)
+	archery_onreach = function(self, t, target, x, y)
 		game:onTickEnd(function()
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			game:playSoundNear(self, "talents/teleport")
@@ -78,30 +78,27 @@ newTalent{
 			local target = game.level.map(x, y, game.level.map.ACTOR)
 			if not target then return nil end
 			
-			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+			self:attackTarget(target, nil, t.getDamage(self, t), true)
 				
-			if hitted then
-				-- Find our teleport location
-				local dist = 10 / core.fov.distance(x, y, self.x, self.y)
-				local destx, desty = math.floor((self.x - x) * dist + x), math.floor((self.y - y) * dist + y)
-				local l = core.fov.line(x, y, destx, desty, false)
-				local lx, ly, is_corner_blocked = l:step()
-				local ox, oy
-				
-				while game.level.map:isBound(lx, ly) and not game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move") and not is_corner_blocked do
-					if not game.level.map(lx, ly, Map.ACTOR) then ox, oy = lx, ly end
-					lx, ly, is_corner_blocked = l:step()
-				end
-				
+			-- Find our teleport location
+			local dist = 10 / core.fov.distance(x, y, self.x, self.y)
+			local destx, desty = math.floor((self.x - x) * dist + x), math.floor((self.y - y) * dist + y)
+			local l = core.fov.line(x, y, destx, desty, false)
+			local lx, ly, is_corner_blocked = l:step()
+			local ox, oy
+			
+			while game.level.map:isBound(lx, ly) and not game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move") and not is_corner_blocked do
+				if not game.level.map(lx, ly, Map.ACTOR) then ox, oy = lx, ly end
+				lx, ly, is_corner_blocked = l:step()
+			end
+			
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			game:playSoundNear(self, "talents/teleport")
+			
+			-- ox, oy now contain the last square in line not blocked by actors.
+			if ox and oy then 
+				self:teleportRandom(ox, oy, 0)
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				game:playSoundNear(self, "talents/teleport")
-				
-				-- ox, oy now contain the last square in line not blocked by actors.
-				if ox and oy then 
-					self:teleportRandom(ox, oy, 0)
-					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				end
-
 			end
 
 		else
@@ -116,7 +113,7 @@ newTalent{
 		local defense = t.getDefense(self, t)
 		local resist = t.getResist(self, t)
 		local reduction = t.getReduction(self, t)
-		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near any target hit.  If you hit with either of your dual-weapons you'll teleport up to ten tiles away from the target.
+		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near the target location.  If you use your dual-weapons you'll teleport up to ten tiles away from the target.
 		Additionally you now go Out of Phase for five turns after any teleport, gaining %d defense, %d%% resist all, and reducing the duration of new detrimental effects by %d%%.
 		The Out of Phase bonuses will scale with your Magic stat.]])
 		:format(damage, defense, resist, reduction)
