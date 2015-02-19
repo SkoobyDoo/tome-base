@@ -28,6 +28,8 @@ local gfx_prefix = "/data/gfx/"
 local cache = {}
 local tcache = {}
 
+_no_save_fields = { vo = true }
+
 -- Default font
 _M.font = core.display.newFont("/data/font/DroidSans.ttf", 12)
 _M.font_h = _M.font:lineSkip()

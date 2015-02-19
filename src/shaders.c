@@ -209,6 +209,10 @@ static int program_clone(lua_State *L)
 	np->p_mapcoord = p->p_mapcoord;
 	np->p_texsize = p->p_texsize;
 	np->p_texcoord = p->p_texcoord;
+	np->p_tex = p->p_tex;
+	np->vertex_attrib = p->vertex_attrib;
+	np->texcoord_attrib = p->texcoord_attrib;
+	np->color_attrib = p->color_attrib;
 	np->reset_uniforms = NULL;
 
 	lua_getmetatable(L, 1); // 3
