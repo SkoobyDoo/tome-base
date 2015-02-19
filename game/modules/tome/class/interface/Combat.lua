@@ -430,9 +430,8 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	end
 	
 	if target:hasEffect(target.EFF_WARDEN_S_FOCUS) and target:hasDualWeapon() then
-		game.logPlayer(self, "test!")
 		local eff = target:hasEffect(target.EFF_WARDEN_S_FOCUS)
-		if eff.target == self and rng.percent(eff.parry) then
+		if eff.target == self and rng.percent(eff.power) then
 			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
 			repelled = true
 		end

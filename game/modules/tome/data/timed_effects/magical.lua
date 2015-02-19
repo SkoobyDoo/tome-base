@@ -3453,14 +3453,24 @@ newEffect{
 	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus",
 	long_desc = function(self, eff) 
-		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.crit_power *100, eff.crit, eff.parry)
+		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.power, eff.power, eff.power)
 	end,
 	type = "magical",
 	subtype = { tactic=true },
 	status = "beneficial",
 	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,
-	parameters = { crit=0, crit_power=0, parry=0},
+	parameters = { power=0},
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
+			-- Reduce damage
+			local reduction = dam * eff.power/100
+			dam = dam -  reduction
+			game:delayedLogDamage(src, self, 0, ("%s(%d focus)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
+		end
+		return {dam=dam}
+	end,
 	on_timeout = function(self, eff)
 		if eff.target.dead or not game.level:hasEntity(self) or not game.level:hasEntity(eff.target) or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
 			self:removeEffect(self.EFF_WARDEN_S_FOCUS)

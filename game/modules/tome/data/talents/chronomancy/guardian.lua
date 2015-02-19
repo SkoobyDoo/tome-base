@@ -142,23 +142,12 @@ newTalent{
 			end
 		end
 	end,
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
-			-- Reduce damage
-			local reduction = dam * self:callTalent(self.T_VIGILANCE, "getPower")/100
-			dam = dam -  reduction
-			game:delayedLogDamage(src, self, 0, ("%s(%d vigilance)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
-		end
-		return {dam=dam}
-	end,
 	info = function(self, t)
 		local sense = t.getSense(self, t)
 		local power = t.getPower(self, t)
 		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  Additionally you have a %d%% chance to recover from a single negative status effect each turn.
-		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.
 		Sense abilities will scale with your Magic stat.]]):
-		format(sense, sense, power, power)
+		format(sense, sense, power)
 	end,
 }
 
@@ -182,8 +171,7 @@ newTalent{
 	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
 	speed = function(self, t) return self:hasArcheryWeapon() and "archery" or "weapon" end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
-	getCrit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
-	getParry = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	getDamage = function(self, t) return 1.2 end,
 	action = function(self, t)
 		-- Grab our target so we can set our effect
@@ -202,17 +190,17 @@ newTalent{
 			self:attackTarget(target, nil, t.getDamage(self, t), true)
 		end
 		
-		self:setEffect(self.EFF_WARDEN_S_FOCUS, 10, {target=target, parry=t.getParry(self, t), crit=t.getCrit(self, t), crit_power=t.getCrit(self, t)/100})
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, 10, {target=target, power=t.getPower(self, t)})
 		target:setEffect(target.EFF_WARDEN_S_TARGET, 10, {src=self})
 		
 		return true
 	end,
 	info = function(self, t)
-		local crit = t.getCrit(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local parry = t.getParry(self, t)
-		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next six turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
-		Additionally your bow attacks gain %d%% critical chance and critical strike power against the target and you have a %d%% chance to parry melee attacks from the target while you have your blades equipped.]])
-		:format(damage, crit, parry)
+		local power = t.getPower(self, t)
+		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next ten turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
+		Additionally your bow attacks gain %d%% critical chance and critical strike power against the target and you have a %d%% chance to parry melee attacks from the target while you have your blades equipped.
+		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.]])
+		:format(damage, power, power, power)
 	end
 }
