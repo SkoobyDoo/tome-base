@@ -1622,6 +1622,8 @@ function _M:combatSpellpower(mod, add)
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
 
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
+
 	return self:rescaleCombatStats(d) * mod * am
 end
 
@@ -1918,6 +1920,8 @@ function _M:combatMindpower(mod, add)
 
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
+
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return self:rescaleCombatStats(d) * mod
 end
