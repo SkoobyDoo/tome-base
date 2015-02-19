@@ -1703,7 +1703,7 @@ newEffect{
 			
 			-- special stuff
  			m.is_psychic_projection = true
-			m.lucid_dreamer = true
+			m.lucid_dreamer = 1
 			
 			-- Remove some talents
 			local tids = {}
