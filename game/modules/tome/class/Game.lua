@@ -1210,8 +1210,8 @@ function _M:chronoRestore(name, remove)
 
 	local d = Dialog:simpleWaiter("Chronomancy", "Unfolding the space time structure...")
 
-	ngame:cloneReloaded()
 	_G.game = ngame
+	ngame:cloneReloaded()
 
 	game.inited = nil
 	game:runReal()
