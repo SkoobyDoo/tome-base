@@ -147,6 +147,8 @@ static int program_free(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 
+	if (default_shader == p) default_shader = NULL;
+
 	printf("Deleting shader %d (is clone %d)\n", p->shader, p->clone);
 	if (!p->clone) glDeleteObjectARB(p->shader);
 
