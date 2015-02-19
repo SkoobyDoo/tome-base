@@ -3019,7 +3019,7 @@ newEffect{
 }
 
 newEffect{
-	name = "BRAIDED", image = "talents/braided_blade.png",
+	name = "BRAIDED", image = "talents/braid_lifelines.png",
 	desc = "Braided",
 	long_desc = function(self, eff) return ("The target is taking %d%% of all damage dealt to other braided targets."):format(eff.power) end,
 	type = "magical",
