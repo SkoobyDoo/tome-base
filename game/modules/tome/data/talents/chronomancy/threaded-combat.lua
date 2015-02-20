@@ -50,8 +50,7 @@ newTalent{
 			self:updateTalentPassives(t)
 		end
 	end,
-	
-	archery_onreach = function(self, t, target, x, y)
+	archery_onreach = function(self, t, x, y)
 		game:onTickEnd(function()
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			game:playSoundNear(self, "talents/teleport")
