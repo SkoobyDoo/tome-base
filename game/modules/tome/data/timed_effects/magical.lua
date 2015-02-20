@@ -3286,8 +3286,23 @@ newEffect{
 		old_eff.power = (olddam + newdam) / dur
 		return old_eff
 	end,
+	callbackOnHit = function(self, eff, cb, src)
+		if cb.value <= 0 then return cb.value end
+		
+		-- Kill it!!
+		if not self.dead and not self:isTalentActive(self.T_REALITY_SMEARING) and self:canBe("instakill") and self.life > 0 and self.life < self.max_life * 0.2 then
+			game.logSeen(self, "%s has been removed from the timeline!", self.name:capitalize())
+			self:die(src)
+		end
+		
+		return cb.value
+	end,
 	on_timeout = function(self, eff)
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
+		if self:isTalentActive(self.T_REALITY_SMEARING) then
+			self:heal(eff.power * 0.4, eff)
+		else
+			DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
+		end
 	end,
 }
 

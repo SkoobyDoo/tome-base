@@ -73,7 +73,7 @@ newTalent{
 		local absorb = cb.value * 0.3
 		local paradox = absorb * t.getPercent(self, t)
 		
-		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
+		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t)})
 		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
 		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
 		cb.value = cb.value - absorb
@@ -111,7 +111,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), nowarning=true, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true, talent=t}
 	end,
 	requires_target = true,
 	direct_hit = true,
@@ -129,7 +129,11 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
+			if target:isTalentActive(target.T_REALITY_SMEARING) then
+				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self})
+			else
+				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
+			end
 		end)
 
 		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=200, rM=230, gm=20, gM=30, bm=50, bM=80, am=35, aM=90, radius=tg.radius, basenb=120})
@@ -141,7 +145,8 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  If the target is hit by an Anomaly the remaining damage will be done instantly.
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead be healed for 40%% of the damage dealt.
+		If a target is reduced below 20%% life while Attenuate is active it may be instantly slain.
 		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius)
 	end,
 }
