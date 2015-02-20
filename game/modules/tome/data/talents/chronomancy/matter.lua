@@ -160,7 +160,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 30, 15)) end,
+	cooldown = 14,
 	tactical = { DISABLE = 2 },
 	range = 10,
 	direct_hit = true,
@@ -168,7 +168,7 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
-	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
+	getLength = function(self, t) return 3 end,
 	target = function(self, t)
 		local halflength = math.floor(t.getLength(self,t)/2)
 		local block = function(_, lx, ly)
