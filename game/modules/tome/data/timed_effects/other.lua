@@ -472,7 +472,7 @@ newEffect{
 				game._chronoworlds["see_threads_"..(eff.thread-1)] = clone
 				game.level.map:particleEmitter(game.player.x, game.player.y, 1, "rewrite_universe")
 				return
-			else
+		else
 				game._chronoworlds.see_threads_base = nil
 				local chat = Chat.new("chronomancy-see-threads", {name="See the Threads"}, self, {turns=eff.max_dur})
 				chat:invoke()
