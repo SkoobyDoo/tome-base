@@ -227,6 +227,7 @@ function _M:updateQuadTextureVO(vo, vo_id, at)
 end
 
 function _M:makeFrameVO(vo, base, x, y, w, h, r, g, b, a)
+	r, g, b, a = r or 1, g or 1, b or 1, a or 1
 	local b7 = self:getAtlasTexture(base.."7.png")
 	local b9 = self:getAtlasTexture(base.."9.png")
 	local b1 = self:getAtlasTexture(base.."1.png")
@@ -254,7 +255,7 @@ function _M:makeFrameVO(vo, base, x, y, w, h, r, g, b, a)
 	-- Body
 	local stop = self:addQuadVO(vo, b5, x + b7.w, y + b7.h, w - b7.w - b3.w , h - b7.h - b3.h, r, g, b, a)
 
-	return {start=start, stop=stop}
+	return {start=start, stop=stop, r=r, g=g, b=b, a=a}
 end
 
 function _M:updateFrameTextureVO(vo, vo_id, base)
@@ -283,6 +284,7 @@ function _M:updateFrameTextureVO(vo, vo_id, base)
 end
 
 function _M:updateFrameColorVO(vo, vo_id, set, r, g, b, a)
+	vo_id.r, vo_id.g, vo_id.b, vo_id.a = r, g, b, a
 	vo:color(vo_id.start, vo_id.stop, set, r, g, b, a)
 end
 

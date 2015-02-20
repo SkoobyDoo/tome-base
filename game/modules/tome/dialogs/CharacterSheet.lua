@@ -136,13 +136,13 @@ function _M:innerDisplay(x, y, nb_keyframes)
 end
 
 function _M:switchTo(kind)
-	self.b_talents_sorting.hide = true
+	self.b_talents_sorting:hide(true)
 	self:drawDialog(kind, _M.cs_player_dup)
 	if kind == "general" then self.c_attack.selected = false self.c_defence.selected = false self.c_talents.selected = false
 	elseif kind == "attack" then self.c_general.selected = false self.c_defence.selected = false self.c_talents.selected = false
 	elseif kind == "defence" then self.c_attack.selected = false self.c_general.selected = false self.c_talents.selected = false
 	elseif kind == "talents" then
-		self.b_talents_sorting.hide = false
+		self.b_talents_sorting:hide(false)
 		self.c_attack.selected = false self.c_general.selected = false self.c_defence.selected = false
 	end
 	self:updateKeys()

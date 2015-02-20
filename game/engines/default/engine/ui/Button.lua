@@ -55,10 +55,12 @@ function _M:generate()
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
 
 	-- Add UI controls
+	self.mouse:allowDownEvent(true)
 	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
-		if self.hide then return end
+		if self.hidden then return end
 		if self.on_select then self.on_select() end
-		if button == "left" and event == "button" then self:sound("button") self.fct() end
+		if button == "left" and event == "button-down" then self:pressed(true) end
+		if button == "left" and event == "button" then self:pressed(false) self:sound("button") self.fct() end
 	end)
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 
@@ -75,21 +77,37 @@ function _M:generate()
 	self.h = self.h + 6
 end
 
+function _M:hide(v)
+	self.hidden = v
+	if not v then self:updateFrameColorVO(self.vo, self.vo_id, true, self.vo_id.r, self.vo_id.g, self.vo_id.b, self.vo_id.a)
+	else self:updateFrameColorVO(self.vo, self.vo_id, true, 0, 0, 0, 0) end
+end
+
+function _M:pressed(v)
+	if self.hidden then return end
+	if v then self:updateFrameColorVO(self.vo, self.vo_id, true, 0, 1, 0, 1)
+	else self:updateFrameColorVO(self.vo, self.vo_id, true, 1, 1, 1, 1) end
+end
+
 function _M:on_focus_change(status)
+	if self.hidden then return end
 	self:updateFrameTextureVO(self.vo, self.vo_id, status and "ui/button_sel" or "ui/button")
+	if status then self:updateFrameColorVO(self.vo, self.vo_id, true, self.vo_id.r, self.vo_id.g, self.vo_id.b, 1)
+	else self:updateFrameColorVO(self.vo, self.vo_id, true, self.vo_id.r, self.vo_id.g, self.vo_id.b, self.alpha_unfocus) end
+	if not status then self:pressed(false) end
 end
 
 function _M:display(x, y, nb_keyframes, ox, oy)
 	self.last_display_x = ox
 	self.last_display_y = oy
 
-	if self.hide then return end
+	if self.hidden then return end
 
-	x = x + 3
-	y = y + 3
-	ox = ox + 3
-	oy = oy + 3
-	local mx, my, button = core.mouse.get()
+	-- x = x + 3
+	-- y = y + 3
+	-- ox = ox + 3
+	-- oy = oy + 3
+	-- local mx, my, button = core.mouse.get()
 	-- if self.focused then
 	-- 	if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
 	-- 		self:updateFrameColorVO(self.vo, self.vo_id, true, 0, 1, 0, 1)
@@ -111,9 +129,4 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	-- 		end
 	-- 	end
 	-- end
-
-	-- self.vo:toScreen(x, y)
-	-- self.votext:toScreen(x, y)
-	-- if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow * (self.focused and 1 or self.alpha_unfocus)) end
-	-- self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.focused and 1 or self.alpha_unfocus)
 end
