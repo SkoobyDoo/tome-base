@@ -54,8 +54,9 @@ function _M:generate()
 	if self.force_w then w = self.force_w end
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
 
-	self.votext = core.vo.new()
-	self.font:drawVO(self.votext, self.text)
+	self:setupVOs(true, true)
+
+	self.font:drawVO(self.votext, self.text, {center=true, x=self.w/2, y=self.h/2})
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
@@ -66,7 +67,6 @@ function _M:generate()
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 
 	self.bw, self.bh = self.w, self.h
-	self.vo = self:makeVO()
 	self.vo_id = self:makeFrameVO(self.vo, "ui/button", 0, 0, self.bw, self.bh)
 
 	self.rw, self.rh = w, h
@@ -115,8 +115,8 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	-- 	end
 	-- end
 
-	self.vo:toScreen(x, y)
-	self.votext:toScreen(x, y)
+	-- self.vo:toScreen(x, y)
+	-- self.votext:toScreen(x, y)
 	-- if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow * (self.focused and 1 or self.alpha_unfocus)) end
 	-- self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.focused and 1 or self.alpha_unfocus)
 end

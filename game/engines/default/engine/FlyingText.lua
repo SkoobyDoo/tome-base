@@ -40,13 +40,13 @@ function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	if not x or not y or not str then return end
 	color = color or {255,255,255}
 	local vo = bigfont and self.bigvo or self.vo
-	local vstart, vstop, _, _, w, h = (bigfont and self.bigfont or self.font):drawVO(vo, str, nil, color[1], color[2], color[3], nil, x, y)
+	local tdraw = (bigfont and self.bigfont or self.font):drawVO(vo, str, {r=color[1], g=color[2], b=color[3], x=x, y=y})
 	local f = {
 		vo = vo,
 		x=x,
 		y=y,
-		w=w, h=h,
-		vstart=vstart, vstop=vstop,
+		w=tdraw.w, h=tdraw.h,
+		vstart=tdraw.vstart, vstop=tdraw.vstop,
 		duration=duration or 10,
 		xvel = xvel or 0,
 		yvel = yvel or 0,

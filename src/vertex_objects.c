@@ -47,18 +47,19 @@ void update_vertex_size(lua_vertexes *vx, int size) {
 	vx->ids = realloc(vx->ids, sizeof(int) * size);
 }
 
+static int next_id = 1;
+
 lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mode kind, render_mode mode) {
 	if (!vx) vx = malloc(sizeof(lua_vertexes));
 
 	vx->mode = mode;
 	vx->kind = kind;
 	vx->changed = TRUE;
-	vx->size = vx->nb = 0;
-	vx->next_id = 1;
+	vx->size = vx->nb = 0;	
 	vx->vertices = NULL; vx->ids = NULL;
 	update_vertex_size(vx, size);
 
-	vx->render = vertexes_renderer_new(kind, mode);
+	vx->render = NULL;
 	vx->tex = tex;
 	return vx;
 }
@@ -68,7 +69,7 @@ void vertex_free(lua_vertexes *vx, bool self_delete) {
 		free(vx->vertices);
 		free(vx->ids);
 	}
-	vertexes_renderer_free((vertexes_renderer*)vx->render);
+	if (vx->render) vertexes_renderer_free((vertexes_renderer*)vx->render);
 	if (self_delete) free(vx);	
 }
 
@@ -90,11 +91,11 @@ int vertex_add_point(lua_vertexes *vx,
 
 	int i = vx->nb;
 	vx->vertices[i].x = x1; vx->vertices[i].y = y1; vx->vertices[i].u = u1; vx->vertices[i].v = v1; vx->vertices[i].r = r; vx->vertices[i].g = g; vx->vertices[i].b = b; vx->vertices[i].a = a;
-	vx->ids[i] = vx->next_id;
+	vx->ids[i] = next_id;
 
 	vx->nb++;
 	vx->changed = TRUE;
-	return vx->next_id++;
+	return next_id++;
 }
 
 int vertex_add_quad(lua_vertexes *vx,
@@ -113,12 +114,12 @@ int vertex_add_quad(lua_vertexes *vx,
 	vx->vertices[i].x = x4; vx->vertices[i].y = y4; vx->vertices[i].u = u4; vx->vertices[i].v = v4; vx->vertices[i].r = r; vx->vertices[i].g = g; vx->vertices[i].b = b; vx->vertices[i].a = a; i++;
 	
 	for (i = vx->nb; i < vx->nb + 4; i++) {
-		vx->ids[i] = vx->next_id;
+		vx->ids[i] = next_id;
 	}
 
 	vx->nb += VERTEX_QUAD_SIZE;
 	vx->changed = TRUE;
-	return vx->next_id++;
+	return next_id++;
 }
 
 void vertex_update_quad_texture(lua_vertexes *vx, int i, float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4) {
@@ -128,6 +129,22 @@ void vertex_update_quad_texture(lua_vertexes *vx, int i, float u1, float v1, flo
 	vx->vertices[i].u = u4; vx->vertices[i].v = v4; i++;
 
 	vx->changed = TRUE;
+}
+
+void vertex_append(lua_vertexes *vx, lua_vertexes *srcvx) {
+	if (vx->kind != srcvx->kind) return;
+
+	update_vertex_size(vx, vx->nb + srcvx->nb);
+
+	if (!vx->tex && srcvx->tex) vx->tex = srcvx->tex;
+
+	int i, j;
+	for (i = 0, j = vx->nb; i < srcvx->nb; i++, j++) {
+		vx->vertices[j] = srcvx->vertices[i];
+		vx->ids[j] = srcvx->ids[i];
+	}
+	vx->nb += srcvx->nb;
+	vx->changed = true;
 }
 
 void vertex_remove(lua_vertexes *vx, int start, int stop) {
@@ -201,6 +218,8 @@ void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, 
 		vx->tex = tex;
 	} else if (tex) vx->tex = tex;
 	else vx->tex = gl_c_texture;
+
+	if (!vx->render) vx->render = vertexes_renderer_new(vx->kind, vx->mode);
 
 	vertexes_renderer_toscreen((vertexes_renderer*)vx->render, vx, x, y, r, g, b, a);
 }

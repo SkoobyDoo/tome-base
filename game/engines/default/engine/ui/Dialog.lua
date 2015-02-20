@@ -282,6 +282,8 @@ function _M:init(title, w, h, x, y, alpha, font, showup, skin)
 	Base.init(self, {}, true)
 
 	self:resize(w, h, true)
+
+	self:setupVOs(true, true, true, true)
 end
 
 function _M:resize(w, h, nogen)
@@ -517,6 +519,12 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		ui.ui.mouse.delegate_offset_x = ux
 		ui.ui.mouse.delegate_offset_y = uy
 		ui.ui:positioned(ux, uy, self.display_x + ux, self.display_y + uy)
+
+		for _, voname in ipairs{"vo", "votext", "votextmono", "votextbold"} do if ui.ui[voname] then
+			ui.ui[voname]:translateAll(ux, uy)
+			self[voname]:append(ui.ui[voname])
+			ui.ui[voname] = self[voname]
+		end end
 	end
 
 	self.setuped = true
@@ -754,6 +762,10 @@ function _M:toScreen(x, y, nb_keyframes)
 		local ui = self.uis[i]
 		if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
 	end
+	self.vo:toScreen(x, y)
+	self.votext:toScreen(x, y)
+	self.votextmono:toScreen(x, y)
+	self.votextbold:toScreen(x, y)
 
 	self:innerDisplay(x, y, nb_keyframes, tx, ty)
 

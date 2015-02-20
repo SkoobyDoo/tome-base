@@ -91,6 +91,7 @@ extern void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, floa
 extern void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a);
 extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
+extern void vertex_append(lua_vertexes *vx, lua_vertexes *srcvx);
 extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a);
 ]]
 
@@ -132,6 +133,13 @@ local vertexes_mt = { __gc = function(vo) C.vertex_free(vo, false) end,	__index 
 		local stopid = C.vertex_find(vo, stop)
 		C.vertex_color(vo, startid, stopid, set, r, g, b, a)
 	end,
+	translateAll = function(vo, mx, my)
+		C.vertex_translate(vo, 0, vo.nb, mx, my)
+	end,
+	colorAll = function(vo, set, r, g, b, a)
+		C.vertex_color(vo, 0, vo.nb, set, r, g, b, a)
+	end,
+	append = C.vertex_append,
 	clear = C.vertex_clear,
 	toScreen = function(vo, x, y, tex, r, g, b, a)
 		if tex == true then tex = 0 end

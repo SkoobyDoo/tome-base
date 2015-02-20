@@ -911,6 +911,32 @@ getmetatable(tmps).__index.size = function(font, str)
 	return mw, mh
 end
 
+local drawVO = getmetatable(tmps).__index.drawVO
+getmetatable(tmps).__index.drawVO = function(font, vo, str, params)
+	params = params or {}
+	local r, g, b, a = params.r or 255, params.g or 255, params.b or 255, params.a or 255
+	local x, y = params.x or 0, params.y or 0
+	local no_linefeed = false
+	local max_width = params.max_width or 0
+	if params.no_linefeed then no_linefeed = true end
+
+	local vstart, vstop, nb_lines, w, h, add_draw = drawVO(font, vo, str, max_width, r, g, b, a, x, y, no_linefeed)
+
+	if params.center then
+		vo:translate(vstart, vstop, -math.floor(w/2), -math.floor(h/2))
+	end
+
+	return {
+		vstart = vstart,
+		vstop = vstop,
+		nb_lines = nb_lines,
+		w = w,
+		h = h,
+		add_draw = add_draw,
+	}
+end
+
+
 local virtualimages = {}
 function core.display.virtualImage(path, data)
 	virtualimages[path] = data

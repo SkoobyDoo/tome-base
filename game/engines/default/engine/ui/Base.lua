@@ -379,3 +379,10 @@ function _M:makeKeyChar(i)
 		return "  "
 	end
 end
+
+function _M:setupVOs(vo, font, fontmono, fontbold)
+	if vo then self.vo = self:makeVO() end
+	if font then self.votext = core.vo.new() end
+	if fontmono then self.votextmono = core.vo.new() end
+	if fontbold then self.votextbold = core.vo.new() end
+end

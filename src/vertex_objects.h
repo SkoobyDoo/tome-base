@@ -83,6 +83,7 @@ extern void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, floa
 extern void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a);
 extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
+extern void vertex_append(lua_vertexes *vx, lua_vertexes *srcvx);
 extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a);
 
 #include "renderer.h"
