@@ -120,16 +120,15 @@ newTalent{
 	mode = "sustained",
 	cooldown = 10,
 	tactical = { BUFF = 2 },
-	getStunResist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
-	getCutResist = function(self, t) return math.min(1, self:combatTalentScale(t, 0.2, 1)) end, -- Limit <100%
-	getCap = function(self, t) return 100 - self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%
+	getImmunity = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
+	getArmor = function(self, t) return self:combatTalentSpellDamage(t, 10, 23) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 		
 		local ret = {
-			stun = self:addTemporaryValue("stun_immune", t.getStunResist(self, t)),
-			cut = self:addTemporaryValue("cut_immune", t.getCutResist(self, t)),
-			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
+			stun = self:addTemporaryValue("stun_immune", t.getImmunity(self, t)),
+			cut = self:addTemporaryValue("cut_immune", t.getImmunity(self, t)),
+			armor = self:addTemporaryValue("combat_armor", t.getArmor(self, t)),
 		}
 		
 		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1000, spikeOffset=0.123123, spikeLength=0.6, spikeWidth=4, growthSpeed=2, color={150/255, 150/255, 50/255}}, "particles_images/spikes.png") then
@@ -141,18 +140,17 @@ newTalent{
 		self:removeShaderAura("stone_skin")
 		self:removeTemporaryValue("stun_immune", p.stun)
 		self:removeTemporaryValue("cut_immune", p.cut)
-		self:removeTemporaryValue("flat_damage_cap", p.cap)
+		self:removeTemporaryValue("combat_armor", p.armor)
 		
 		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
-		local cap = t.getCap(self, t)
-		local stun = t.getStunResist(self, t) * 100
-		local cut = t.getCutResist(self, t) * 100
-		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you can never take a blow that deals more than %d%% of your maximum life.
-		Additionally you gain %d%% resistance to stunning and %d%% resistance to cuts.]]):
-		format(cap, stun, cut)
+		local armor = t.getArmor(self, t)
+		local immune = t.getImmunity(self, t) * 100
+		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you gain %d armour, %d%% resistance to stunning, and %d%% resistance to cuts.
+		The bonus to armour will scale with your Spellpower.]]):
+		format(armor, immune, immune)
 	end,
 }
 
