@@ -53,8 +53,8 @@ newTalent{
 	points = 5,
 	cooldown = 10,
 	tactical = { DEFEND = 2 },
-	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 6))) end,
+	getPercent = function(self, t) return (100 - self:combatTalentLimit(t, 80, 10, 60))/100 end, -- Limit < 20%
+	getDuration = function(self, t) return getExtensionModifier(self, t, 3) end,
 	damage_feedback = function(self, t, p, src)
 		if p.particle and p.particle._shader and p.particle._shader.shad and src and src.x and src.y then
 			local r = -rng.float(0.2, 0.4)
@@ -70,8 +70,8 @@ newTalent{
 		return tostring(math.ceil(val)), fnt
 	end,
 	callbackOnHit = function(self, t, cb, src)
-		local absorb = cb.value * t.getPercent(self, t)
-		local paradox = absorb*0.3
+		local absorb = cb.value * 0.3
+		local paradox = absorb * t.getPercent(self, t)
 		
 		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
 		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
@@ -90,10 +90,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local ratio = t.getPercent(self, t) * 100
+		local ratio = t.getPercent(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[While active, %d%% of the damage you take instead increases your Paradox by 30%% over %d turns.
-		If you create an anomaly while taking Paradox damage in this manner the remaining damage will be removed.]]):
+		return ([[While active 30%% of all damage you take is converted into %0.2f Paradox damage.
+		The Paradox damage is taken over three turns.]]):
 		format(ratio, duration)
 	end,
 }
@@ -168,7 +168,6 @@ newTalent{
 		end
 		
 		self:removeEffect(self.EFF_TWIST_FATE)
-		self:removeEffect(self.EFF_REALITY_SMEARING)
 	end,
 	setEffect = function(self, t, talent, paradox)
 		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)

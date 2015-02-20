@@ -4391,9 +4391,6 @@ function _M:paradoxDoAnomaly(chance, paradox, def)
 					
 					self:incParadox(-paradox)
 				end
-				
-				-- Remove Reality Smearing
-				self:removeEffect(self.EFF_REALITY_SMEARING)
 			end
 
 			return anomaly_triggered
