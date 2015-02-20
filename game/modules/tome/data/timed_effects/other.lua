@@ -2297,7 +2297,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is suffocating.", "+SUFFOCATING" end,
 	on_lose = function(self, err) return "#Target# can breathe again.", "-Suffocating" end,
 	on_timeout = function(self, eff)
-		if self.air > self.air_regen then -- We must be over our natural regen
+		if not self.is_suffocating then
 			self:removeEffect(self.EFF_SUFFOCATING, false, true)
 			return
 		end
@@ -2731,7 +2731,7 @@ newEffect{
 newEffect{
 	name = "2H_PENALTY", image = "talents/unstoppable.png",
 	desc = "Hit Penalty",
-	long_desc = function(self, eff) return ("The target is using a two handed weapon in a single hand, reducing chances to hit by %d%% (based on size)."):format(20 - math.min(self.size_category - 4, 4) * 5) end,
+	long_desc = function(self, eff) return ("The target is using a two handed weapon in a single hand, reducing chances to hit, spellpower and mindpower by %d%% (based on size)."):format(20 - math.min(self.size_category - 4, 4) * 5) end,
 	type = "other", decrease = 0, no_remove = true,
 	subtype = { combat=true, penalty=true },
 	status = "detrimental",
