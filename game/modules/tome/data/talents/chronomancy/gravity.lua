@@ -194,7 +194,7 @@ newTalent{
 	points = 5,
 	getSlow = function(self, t) return self:combatTalentLimit(t, 80, 10, 50) end,
 	getAnti = function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
-	getConversion= function(self, t) return self:combatTalentLimit(t, 100, 10, 75) end,
+	getConversion= function(self, t) return self:combatTalentLimit(t, 80, 10, 40) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
 		local particle = Particles.new("ultrashield", 1, {rm=204, rM=220, gm=102, gM=120, bm=0, bM=0, am=35, aM=90, radius=0.5, density=10, life=28, instop=100})
