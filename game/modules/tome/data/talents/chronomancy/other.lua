@@ -103,7 +103,9 @@ doWardenWeaponSwap = function(self, t, type, silent)
 	if swap == true then
 		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
 		self.no_inventory_access = nil
+		self:attr("no_sound", 1)
 		self:quickSwitchWeapons(true, "warden", silent)
+		self:attr("no_sound", -1)
 		self.no_inventory_access = old_inv_access
 	end
 	

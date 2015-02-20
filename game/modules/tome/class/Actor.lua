@@ -3612,7 +3612,7 @@ end
 
 --- Call when an object is worn
 -- This doesnt call the base interface onWear, it copies the code because we need some tricky stuff
-function _M:onWear(o, inven_id, bypass_set)
+function _M:onWear(o, inven_id, bypass_set, silent)
 	o.wielded = {}
 
 	if self.player then o:forAllStack(function(so) so.__transmo = false end) end
@@ -3749,11 +3749,11 @@ function _M:onWear(o, inven_id, bypass_set)
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
-	if self == game.player and not bypass_set then game:playSound("actions/wear") end
+	if self == game.player and not bypass_set and not self:attr("no_sound") then game:playSound("actions/wear") end
 end
 
 --- Call when an object is taken off
-function _M:onTakeoff(o, inven_id, bypass_set)
+function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	engine.interface.ActorInventory.onTakeoff(self, o, inven_id)
 
 	if o.talent_on_spell then
@@ -3849,7 +3849,7 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
-	if self == game.player and not bypass_set then game:playSound("actions/takeoff") end
+	if self == game.player and not bypass_set and not self:attr("no_sound") then game:playSound("actions/takeoff") end
 end
 
 function _M:checkTwoHandedPenalty()
