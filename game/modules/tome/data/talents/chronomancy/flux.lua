@@ -33,7 +33,6 @@ newTalent{
 
 		self:paradoxDoAnomaly(100, t.getReduction(self, t), {anomaly_type=t.anomaly_type, ignore_energy=true, allow_target=self:knowTalent(self.T_TWIST_FATE)})
 	
-		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
@@ -115,10 +114,6 @@ newTalent{
 	end,
 	requires_target = true,
 	direct_hit = true,
-	doAnomaly = function(self, t, target, eff)
-		self:project({type=hit}, target.x, target.y, DamageType.TEMPORAL, eff.power * eff.dur)
-		target:removeEffect(target.EFF_ATTENUATE)
-	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
@@ -136,7 +131,7 @@ newTalent{
 			end
 		end)
 
-		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=200, rM=230, gm=20, gM=30, bm=50, bM=80, am=35, aM=90, radius=tg.radius, basenb=120})
+		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=100, rM=100, gm=200, gM=220, bm=200, bM=220, am=35, aM=90, radius=tg.radius, basenb=60})
 		game:playSoundNear(self, "talents/tidalwave")
 
 		return true
@@ -145,9 +140,9 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead be healed for 40%% of the damage dealt.
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead recover %d life per turn.
 		If a target is reduced below 20%% life while Attenuate is active it may be instantly slain.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius)
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), damage *0.4, duration, radius)
 	end,
 }
 
