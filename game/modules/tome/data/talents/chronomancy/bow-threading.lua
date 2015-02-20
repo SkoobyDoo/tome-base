@@ -294,9 +294,9 @@ newTalent{
 		
 		-- Grab our target so we can set our echo
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, "blade") end return nil end
-		local __, x, y = self:canProject(tg, x, y)
 		
 		-- Sanity check
 		if not self:hasLOS(x, y) then
