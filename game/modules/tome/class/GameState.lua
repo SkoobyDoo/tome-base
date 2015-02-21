@@ -2302,6 +2302,7 @@ function _M:startEvents()
 
 		-- Randomize the order they are checked as
 		table.shuffle(evts)
+		print("[STARTEVENTS] Zone events list:")
 		table.print(evts)
 		table.shuffle(mevts)
 		table.print(mevts)
@@ -2369,7 +2370,7 @@ function _M:startEvents()
 	end
 
 	return function()
-		print("Assigned events list")
+		print("[STARTEVENTS] Assigned events list:")
 		table.print(game.zone.assigned_events)
 
 		for i, e in ipairs(game.zone.assigned_events[game.level.level] or {}) do

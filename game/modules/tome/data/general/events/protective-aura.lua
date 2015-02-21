@@ -29,11 +29,13 @@ end
 
 local on_stand = function(self, x, y, who) who:setEffect(who.EFF_PROTECTIVE_AURA, 1, {}) end
 
-local grids = core.fov.circle_grids(x, y, 1, "do not block")
+local grids = core.fov.circle_grids(x, y, 1, function(_, lx, ly) return not game.state:canEventGrid(level, lx, ly) end)
 for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 	g.on_stand = g.on_stand or on_stand
+	if g.on_stand == on_stand and g.type == "floor" and not g.special_minimap then g.name = g.name .. " (protective aura)" g.special_minimap = colors.DARK_TAN end
+	g.always_remember = true
 	game.zone:addEntity(game.level, g, "terrain", x, y)
 end end
-
+print("[EVENT] protective-aura centered at ", x, y)
 return true

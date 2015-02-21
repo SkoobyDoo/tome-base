@@ -23,8 +23,10 @@ if not spots then return false end
 local list = mod.class.Grid:loadList("/data/general/grids/ice.lua")
 
 for _, spot in ipairs(spots) do
-	level.map(spot.x, spot.y, engine.Map.TERRAIN, list.ICY_FLOOR)
+	if game.state:canEventGrid(level, spot.x, spot.y) and not level.map(spot.x, spot.y, engine.Map.TERRAIN).on_stand then
+		level.map(spot.x, spot.y, engine.Map.TERRAIN, list.ICY_FLOOR) 
+	end
 end
 for _, spot in ipairs(spots) do game.nicer_tiles:updateAround(level, spot.x, spot.y) end
-
+print("[EVENT] icy-ground placed")
 return true
