@@ -295,23 +295,29 @@ newEntity{
 
 	charm_power = resolvers.mbonus_material(80, 20),
 	charm_power_def = {add=5, max=10, floor=true},
-	resolvers.charm("inflict mind damage; gain psi and hate", 20,
-									function(self, who)
-										local tg = {type="hit", range=10,}
-										local x, y, target = who:getTarget(tg)
-										if not x or not y then return nil end
-										if target then
-											if target:checkHit(who:combatMindpower(), target:combatMentalResist(), 0, 95, 5) then
-												local damage = self:getCharmPower(who) + (who:combatMindpower() * (1 + self.material_level/5))
-												who:project(tg, x, y, engine.DamageType.MIND, {dam=damage, alwaysHit=true}, {type="mind"})
-												who:incPsi(damage/10)
-												who:incHate(damage/10)
-											else
-												game.logSeen(target, "%s resists the mind attack!", target.name:capitalize())
-											end
-										end
-										return {id=true, used=true}
-									end
+	resolvers.charm(function(self, who) 
+		return ("inflict %0.2f mind damage (range 10), gaining psi and hate equal to 1/10 of the damage done"):format(who:damDesc(engine.DamageType.MIND, self.use_power.damage(self, who)))
+		end,
+		20,
+		function(self, who)
+			local tg = {type="hit", range=10,}
+			local x, y, target = who:getTarget(tg)
+			if not x or not y then return nil end
+			if target then
+				if target:checkHit(who:combatMindpower(), target:combatMentalResist(), 0, 95, 5) then
+					local damage = self.use_power.damage(self, who)
+					who:project(tg, x, y, engine.DamageType.MIND, {dam=damage, alwaysHit=true}, {type="mind"})
+					who:incPsi(damage/10)
+					who:incHate(damage/10)
+				else
+					game.logSeen(target, "%s resists the mind attack!", target.name:capitalize())
+				end
+			end
+			game.logSeen(who, "%s evokes a mental assault from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
+			return {id=true, used=true}
+		end,
+		"T_GLOBAL_CD",
+		{damage = function(self, who) return self:getCharmPower(who) + (who:combatMindpower() * (1 + self.material_level/5)) end}
 	),
 }
 

@@ -422,7 +422,7 @@ newEntity{
 		},
 	},
 	charm_power_def = {add=5, max=10, floor=true},
-	resolvers.charm("blink to a random location within 2 spaces of target hostile creature", 10, function(self, who)
+	resolvers.charm("blink randomly (up to range 8) within 2 spaces of a target hostile creature", 10, function(self, who)
 		local tg = {type="hit", range=8, friendlyfire = false}
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
