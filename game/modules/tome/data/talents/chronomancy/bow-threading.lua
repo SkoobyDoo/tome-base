@@ -280,13 +280,11 @@ newTalent{
 			local swap = doWardenWeaponSwap(self, t, "bow", true)
 			local target = eff.target
 			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, x=target.x, y=target.y, infinite=true, no_energy = true})
-			if not targets then
-			if swap == true then doWardenWeaponSwap(self, t, "blade", true) end
-				return 
-			end
+			if not targets then if swap == true then doWardenWeaponSwap(self, t, "blade", true) end return 	end
 			
 			self:archeryShoot(targets, t, {type="bolt", start_x=eff.x, start_y=eff.y}, {mult=t.getDamage(self, t)})
 			eff.shots = eff.shots - 1
+			if swap == true then doWardenWeaponSwap(self, t, "blade", true) end
 		end)
 	end,
 	action = function(self, t)
