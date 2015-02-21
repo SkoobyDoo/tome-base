@@ -67,7 +67,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self.c_cancel = Button.new{text="Cancel", fct=function() self:atEnd("quit") end}
 	self.c_tut = Button.new{text="Tutorial", fct=function() self:tutorial() end}
 	self.c_options = Button.new{text="Customize", fct=function() self:customizeOptions() end}
-	self.c_options.hide = true
+	self.c_options:hide(true)
 
 	self.c_name = Textbox.new{title="Name: ", text=(not config.settings.cheat and game.player_name == "player") and "" or game.player_name, chars=30, max_len=50, fct=function()
 		if config.settings.cheat then self:makeDefault() end
@@ -577,7 +577,7 @@ function _M:updateDescriptors()
 		end
 	end
 	table.sort(self.cosmetic_unlocks, function(a, b) return a.name < b.name end)
-	self.c_options.hide = #self.cosmetic_unlocks == 0
+	self.c_options:hide(#self.cosmetic_unlocks == 0)
 end
 
 function _M:setDescriptor(key, val)

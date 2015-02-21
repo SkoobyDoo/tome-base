@@ -69,7 +69,7 @@ function _M:generate()
 
 	-- Draw stuff
 	self:setupVOs(true, true)
-	self.font:drawVO(self.votext, self.text, {center=true, x=self.w/2, y=self.h/2})
+	self.text_id = self.font:drawVO(self.votext, self.text, {center=true, x=self.w/2, y=self.h/2})
 	self.vo_id = self:makeFrameVO(self.vo, "ui/button", 0, 0, self.bw, self.bh)
 
 	-- Add a bit of padding
@@ -79,8 +79,13 @@ end
 
 function _M:hide(v)
 	self.hidden = v
-	if not v then self:updateFrameColorVO(self.vo, self.vo_id, true, self.vo_id.r, self.vo_id.g, self.vo_id.b, self.vo_id.a)
-	else self:updateFrameColorVO(self.vo, self.vo_id, true, 0, 0, 0, 0) end
+	if not v then
+		self:updateFrameColorVO(self.vo, self.vo_id, true, self.vo_id.r, self.vo_id.g, self.vo_id.b, 1)
+		self.votext:color(self.text_id.vstart, self.text_id.vstop, true, 1, 1, 1, 1)
+	else
+		self:updateFrameColorVO(self.vo, self.vo_id, true, self.vo_id.r, self.vo_id.g, self.vo_id.b, 0)
+		self.votext:color(self.text_id.vstart, self.text_id.vstop, true, 0, 0, 0, 0)
+	end
 end
 
 function _M:pressed(v)
