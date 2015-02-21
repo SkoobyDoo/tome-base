@@ -232,16 +232,6 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 		end
 		
-		-- blended threads, increase damage to distant targets
-		if src and src.hasEffect then
-			local eff = src:hasEffect(src.EFF_BLENDED_THREADS_BLADE)
-			if eff and target.x and core.fov.distance(src.x, src.y, target.x, target.y) > 2 then
-				inc = inc + eff.blade
-				print("[PROJECTOR] after blended threads increase dam", dam + (dam * inc) / 100)
-			end
-		end
-		
-
 		dam = dam + (dam * inc / 100)
 
 		-- Blast the iceblock

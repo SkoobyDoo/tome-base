@@ -125,23 +125,37 @@ newTalent{
 	require = chrono_req_high2,
 	mode = "passive",
 	points = 5,
-	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end, -- Limit < 50% damage reduction
+	getCount = function(self, t) return math.ceil(self:getTalentLevel(t))end,
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
-			self:setEffect(self.EFF_BLENDED_THREADS_BOW, 4, {bow=t.getPercent(self, t)})
+			if self.turn_procs.blended_threads and self.turn_procs.blended_threads >= t.getCount(self, t) then return end
+			for tid, cd in pairs(self.talents_cd) do
+				local tt = self:getTalentFromId(tid)
+				if tt.type[1]:find("^chronomancy/blade") then
+					self:alterTalentCoolingdown(tt, - 1)
+					self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+				end
+			end
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted)
 		if hitted then
-			self:setEffect(self.EFF_BLENDED_THREADS_BLADE, 4, {blade=t.getPercent(self, t)})
+			if self.turn_procs.blended_threads and self.turn_procs.blended_threads >= t.getCount(self, t) then return end
+			for tid, cd in pairs(self.talents_cd) do
+				local tt = self:getTalentFromId(tid)
+				if tt.type[1]:find("^chronomancy/bow") then
+					self:alterTalentCoolingdown(tt, - 1)
+					self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+				end
+			end
 		end
 	end,
 	info = function(self, t)
-		local percent = t.getPercent(self, t)
-		return ([[When you hit with an arrow you reduce the damage you recieve from targets within two tiles of you by %d%%.
-		When you hit with your melee weapons you increase the damage you deal to targets more than two tiles away from you by %d%%.
-		Both of these effects may be active at once and last for four turns.]])
-		:format(percent, percent)
+		local count = t.getCount(self, t)
+		return ([[Each time you hit with an arrow you reduce the cooldown of one Blade Threading talent on cooldown by one turn.
+		Each time you hit with a melee weapon you reduce the cooldown of one Bow Threading talent on cooldown by one turn.
+		This effect can only occur %d times per turn.]])
+		:format(count)
 	end
 }
 
