@@ -44,9 +44,9 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	cooldown = 6,
-	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
+	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end, -- Limit < 40%
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
 		local split = cb.value * t.getDamageSplit(self, t)
@@ -93,7 +93,7 @@ newTalent{
 				end
 				
 				-- split the damage
-				cb.value = cb.value - split
+				cb.value = cb.value - (split * 2)
 				self.unity_warden = m
 				m:takeHit(split, src)
 				m:setTarget(src or nil)
@@ -114,7 +114,7 @@ newTalent{
 		local cooldown = self:getTalentCooldown(t)
 		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all damage you take for the next %d turns.
 		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.
-		This talent has a cooldown.]]):format(trigger, split, split, duration)
+		This talent has a cooldown.]]):format(trigger, split * 2, split, duration)
 	end,
 }
 
