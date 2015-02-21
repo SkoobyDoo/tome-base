@@ -472,7 +472,7 @@ newEffect{
 				game._chronoworlds["see_threads_"..(eff.thread-1)] = clone
 				game.level.map:particleEmitter(game.player.x, game.player.y, 1, "rewrite_universe")
 				return
-			else
+		else
 				game._chronoworlds.see_threads_base = nil
 				local chat = Chat.new("chronomancy-see-threads", {name="See the Threads"}, self, {turns=eff.max_dur})
 				chat:invoke()
@@ -1703,7 +1703,7 @@ newEffect{
 			
 			-- special stuff
  			m.is_psychic_projection = true
-			m.lucid_dreamer = true
+			m.lucid_dreamer = 1
 			
 			-- Remove some talents
 			local tids = {}
@@ -2546,7 +2546,19 @@ newEffect{
 	status = "beneficial",
 	parameters = { power=10 },
 	decrease = 0,
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
+		if src ~= self and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
+			-- Find our clones
+			for i = 1, #eff.targets do
+				local target = eff.targets[i]
+				if target == self then dam = 0 end
+			end
+		end
+		return {dam=dam}
+	end,
 	callbackOnHit = function(self, eff, cb, src)
+		if cb.value <= 0 then return cb.value end
+		
 		local clones = {}
 		-- Find our clones
 		for i = 1, #eff.targets do
@@ -2564,7 +2576,7 @@ newEffect{
 			for i = 1, #clones do
 				local target = clones[i]
 				if target ~= self then
-					target:takeHit(cb.value, self)
+					target:takeHit(cb.value, src)
 					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(cb.value), nil)
 				end
 			end

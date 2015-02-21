@@ -119,71 +119,9 @@ newTalent{
 }
 
 newTalent{
-	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
+	name = "Vigilance",
 	type = {"chronomancy/guardian", 3},
 	require = chrono_req3,
-	points = 5,
-	cooldown = 6,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { BUFF = 2, DEFEND = 2 },
-	direct_hit = true,
-	requires_target = true,
-	range = function(self, t)
-		if self:hasArcheryWeapon() then return util.getval(archery_range, self, t) end
-		return 1
-	end,
-	target = function(self, t)
-		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
-	end,
-	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
-	speed = function(self, t) return self:hasArcheryWeapon() and "archery" or "weapon" end,
-	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
-	getCrit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
-	getParry = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
-	getDamage = function(self, t) return 1.2 end,
-	action = function(self, t)
-		-- Grab our target so we can set our effect
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then game.logPlayer(self, "You must pick a focus target.")return nil end
-		local __, x, y = self:canProject(tg, x, y)
-
-		game:playSoundNear(self, "talents/dispel")
-		
-		if self:hasArcheryWeapon() then
-			-- Ranged attack
-			local targets = self:archeryAcquireTargets({type="bolt"}, {x=x, y=y, one_shot=true, no_energy = true})
-			if not targets then return end
-			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
-		else
-			-- Melee attack
-			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-			local _, x, y = self:canProject(tg, self:getTarget(tg))
-			local target = game.level.map(x, y, game.level.map.ACTOR)
-			if not target then return nil end
-			
-			self:attackTarget(target, nil, t.getDamage(self, t), true)
-		end
-		
-		self:setEffect(self.EFF_WARDEN_S_FOCUS, 6, {target=target, parry=t.getParry(self, t), crit=t.getCrit(self, t), crit_power=t.getCrit(self, t)/100})
-		target:setEffect(target.EFF_WARDEN_S_TARGET, 6, {src=self})
-		
-		return true
-	end,
-	info = function(self, t)
-		local crit = t.getCrit(self, t)
-		local damage = t.getDamage(self, t) * 100
-		local parry = t.getParry(self, t)
-		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next six turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
-		Additionally your bow attacks gain %d%% critical chance and critical strike power against the target and you have a %d%% chance to parry melee attacks from the target while you have your blades equipped.]])
-		:format(damage, crit, parry)
-	end
-}
-
-newTalent{
-	name = "Vigilance",
-	type = {"chronomancy/guardian", 4},
-	require = chrono_req4,
 	points = 5,
 	mode = "passive",
 	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
@@ -204,22 +142,65 @@ newTalent{
 			end
 		end
 	end,
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
-			-- Reduce damage
-			local reduction = dam * self:callTalent(self.T_VIGILANCE, "getPower")/100
-			dam = dam -  reduction
-			game:delayedLogDamage(src, self, 0, ("%s(%d vigilance)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
-		end
-		return {dam=dam}
-	end,
 	info = function(self, t)
 		local sense = t.getSense(self, t)
 		local power = t.getPower(self, t)
 		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  Additionally you have a %d%% chance to recover from a single negative status effect each turn.
-		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.
 		Sense abilities will scale with your Magic stat.]]):
-		format(sense, sense, power, power)
+		format(sense, sense, power)
 	end,
+}
+
+newTalent{
+	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
+	type = {"chronomancy/guardian", 4},
+	require = chrono_req4,
+	points = 5,
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { BUFF = 2, DEFEND = 2 },
+	direct_hit = true,
+	requires_target = true,
+	range = function(self, t)
+		if self:hasArcheryWeapon() then return util.getval(archery_range, self, t) end
+		return 1
+	end,
+	target = function(self, t)
+		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
+	end,
+	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
+	speed = function(self, t) return self:hasArcheryWeapon() and "archery" or "weapon" end,
+	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
+	getDamage = function(self, t) return 1.2 end,
+	action = function(self, t)
+		-- Grab our target so we can set our effect
+		local tg = self:getTalentTarget(t)
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		if not x or not y or not target then game.logPlayer(self, "You must pick a focus target.")return nil end
+
+		if self:hasArcheryWeapon() then
+			-- Ranged attack
+			local targets = self:archeryAcquireTargets({type="bolt"}, {x=x, y=y, one_shot=true, no_energy = true})
+			if not targets then return end
+			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
+		else
+			-- Melee attack
+			self:attackTarget(target, nil, t.getDamage(self, t), true)
+		end
+		
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, 10, {target=target, power=t.getPower(self, t)})
+		target:setEffect(target.EFF_WARDEN_S_TARGET, 10, {src=self})
+		
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t) * 100
+		local power = t.getPower(self, t)
+		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next ten turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
+		Additionally your bow attacks gain %d%% critical chance and critical strike power against the target and you have a %d%% chance to parry melee attacks from the target while you have your blades equipped.
+		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.]])
+		:format(damage, power, power, power)
+	end
 }

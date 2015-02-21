@@ -3019,7 +3019,7 @@ newEffect{
 }
 
 newEffect{
-	name = "BRAIDED", image = "talents/braided_blade.png",
+	name = "BRAIDED", image = "talents/braid_lifelines.png",
 	desc = "Braided",
 	long_desc = function(self, eff) return ("The target is taking %d%% of all damage dealt to other braided targets."):format(eff.power) end,
 	type = "magical",
@@ -3286,8 +3286,23 @@ newEffect{
 		old_eff.power = (olddam + newdam) / dur
 		return old_eff
 	end,
+	callbackOnHit = function(self, eff, cb, src)
+		if cb.value <= 0 then return cb.value end
+		
+		-- Kill it!!
+		if not self.dead and not self:isTalentActive(self.T_REALITY_SMEARING) and self:canBe("instakill") and self.life > 0 and self.life < self.max_life * 0.2 then
+			game.logSeen(self, "%s has been removed from the timeline!", self.name:capitalize())
+			self:die(src)
+		end
+		
+		return cb.value
+	end,
 	on_timeout = function(self, eff)
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
+		if self:isTalentActive(self.T_REALITY_SMEARING) then
+			self:heal(eff.power * 0.4, eff)
+		else
+			DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
+		end
 	end,
 }
 
@@ -3453,14 +3468,24 @@ newEffect{
 	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus",
 	long_desc = function(self, eff) 
-		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.crit_power *100, eff.crit, eff.parry)
+		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.power, eff.power, eff.power)
 	end,
 	type = "magical",
 	subtype = { tactic=true },
 	status = "beneficial",
 	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,
-	parameters = { crit=0, crit_power=0, parry=0},
+	parameters = { power=0},
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
+			-- Reduce damage
+			local reduction = dam * eff.power/100
+			dam = dam -  reduction
+			game:delayedLogDamage(src, self, 0, ("%s(%d focus)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
+		end
+		return {dam=dam}
+	end,
 	on_timeout = function(self, eff)
 		if eff.target.dead or not game.level:hasEntity(self) or not game.level:hasEntity(eff.target) or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
 			self:removeEffect(self.EFF_WARDEN_S_FOCUS)

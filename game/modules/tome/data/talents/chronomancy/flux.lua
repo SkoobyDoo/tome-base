@@ -33,7 +33,6 @@ newTalent{
 
 		self:paradoxDoAnomaly(100, t.getReduction(self, t), {anomaly_type=t.anomaly_type, ignore_energy=true, allow_target=self:knowTalent(self.T_TWIST_FATE)})
 	
-		game:playSoundNear(self, "talents/echo")
 		return true
 	end,
 	info = function(self, t)
@@ -53,8 +52,8 @@ newTalent{
 	points = 5,
 	cooldown = 10,
 	tactical = { DEFEND = 2 },
-	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 6))) end,
+	getPercent = function(self, t) return (100 - self:combatTalentLimit(t, 80, 10, 60))/100 end, -- Limit < 20%
+	getDuration = function(self, t) return getExtensionModifier(self, t, 3) end,
 	damage_feedback = function(self, t, p, src)
 		if p.particle and p.particle._shader and p.particle._shader.shad and src and src.x and src.y then
 			local r = -rng.float(0.2, 0.4)
@@ -70,10 +69,10 @@ newTalent{
 		return tostring(math.ceil(val)), fnt
 	end,
 	callbackOnHit = function(self, t, cb, src)
-		local absorb = cb.value * t.getPercent(self, t)
-		local paradox = absorb*0.3
+		local absorb = cb.value * 0.3
+		local paradox = absorb * t.getPercent(self, t)
 		
-		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t), no_ct_effect=true})
+		self:setEffect(self.EFF_REALITY_SMEARING, t.getDuration(self, t), {paradox=paradox/t.getDuration(self, t)})
 		game:delayedLogMessage(self, nil,  "reality smearing", "#LIGHT_BLUE##Source# converts damage to paradox!")
 		game:delayedLogDamage(src, self, 0, ("#LIGHT_BLUE#(%d converted)#LAST#"):format(absorb), false)
 		cb.value = cb.value - absorb
@@ -90,10 +89,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local ratio = t.getPercent(self, t) * 100
+		local ratio = t.getPercent(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[While active, %d%% of the damage you take instead increases your Paradox by 30%% over %d turns.
-		If you create an anomaly while taking Paradox damage in this manner the remaining damage will be removed.]]):
+		return ([[While active 30%% of all damage you take is converted into %0.2f Paradox damage.
+		The Paradox damage is taken over three turns.]]):
 		format(ratio, duration)
 	end,
 }
@@ -111,14 +110,10 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), nowarning=true, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), nowarning=true, talent=t}
 	end,
 	requires_target = true,
 	direct_hit = true,
-	doAnomaly = function(self, t, target, eff)
-		self:project({type=hit}, target.x, target.y, DamageType.TEMPORAL, eff.power * eff.dur)
-		target:removeEffect(target.EFF_ATTENUATE)
-	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
@@ -129,10 +124,14 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
+			if target:isTalentActive(target.T_REALITY_SMEARING) then
+				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self})
+			else
+				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
+			end
 		end)
 
-		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=200, rM=230, gm=20, gM=30, bm=50, bM=80, am=35, aM=90, radius=tg.radius, basenb=120})
+		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=100, rM=100, gm=200, gM=220, bm=200, bM=220, am=35, aM=90, radius=tg.radius, basenb=60})
 		game:playSoundNear(self, "talents/tidalwave")
 
 		return true
@@ -141,8 +140,9 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  If the target is hit by an Anomaly the remaining damage will be done instantly.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius)
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead recover %d life per turn.
+		If a target is reduced below 20%% life while Attenuate is active it may be instantly slain.
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), damage *0.4, duration, radius)
 	end,
 }
 
@@ -168,7 +168,6 @@ newTalent{
 		end
 		
 		self:removeEffect(self.EFF_TWIST_FATE)
-		self:removeEffect(self.EFF_REALITY_SMEARING)
 	end,
 	setEffect = function(self, t, talent, paradox)
 		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)

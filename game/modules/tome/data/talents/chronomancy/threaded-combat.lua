@@ -50,8 +50,7 @@ newTalent{
 			self:updateTalentPassives(t)
 		end
 	end,
-	
-	archery_onhit = function(self, t, target, x, y)
+	archery_onreach = function(self, t, x, y)
 		game:onTickEnd(function()
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			game:playSoundNear(self, "talents/teleport")
@@ -78,30 +77,27 @@ newTalent{
 			local target = game.level.map(x, y, game.level.map.ACTOR)
 			if not target then return nil end
 			
-			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+			self:attackTarget(target, nil, t.getDamage(self, t), true)
 				
-			if hitted then
-				-- Find our teleport location
-				local dist = 10 / core.fov.distance(x, y, self.x, self.y)
-				local destx, desty = math.floor((self.x - x) * dist + x), math.floor((self.y - y) * dist + y)
-				local l = core.fov.line(x, y, destx, desty, false)
-				local lx, ly, is_corner_blocked = l:step()
-				local ox, oy
-				
-				while game.level.map:isBound(lx, ly) and not game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move") and not is_corner_blocked do
-					if not game.level.map(lx, ly, Map.ACTOR) then ox, oy = lx, ly end
-					lx, ly, is_corner_blocked = l:step()
-				end
-				
+			-- Find our teleport location
+			local dist = 10 / core.fov.distance(x, y, self.x, self.y)
+			local destx, desty = math.floor((self.x - x) * dist + x), math.floor((self.y - y) * dist + y)
+			local l = core.fov.line(x, y, destx, desty, false)
+			local lx, ly, is_corner_blocked = l:step()
+			local ox, oy
+			
+			while game.level.map:isBound(lx, ly) and not game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move") and not is_corner_blocked do
+				if not game.level.map(lx, ly, Map.ACTOR) then ox, oy = lx, ly end
+				lx, ly, is_corner_blocked = l:step()
+			end
+			
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			game:playSoundNear(self, "talents/teleport")
+			
+			-- ox, oy now contain the last square in line not blocked by actors.
+			if ox and oy then 
+				self:teleportRandom(ox, oy, 0)
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				game:playSoundNear(self, "talents/teleport")
-				
-				-- ox, oy now contain the last square in line not blocked by actors.
-				if ox and oy then 
-					self:teleportRandom(ox, oy, 0)
-					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				end
-
 			end
 
 		else
@@ -116,7 +112,7 @@ newTalent{
 		local defense = t.getDefense(self, t)
 		local resist = t.getResist(self, t)
 		local reduction = t.getReduction(self, t)
-		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near any target hit.  If you hit with either of your dual-weapons you'll teleport up to ten tiles away from the target.
+		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near the target location.  If you use your dual-weapons you'll teleport up to ten tiles away from the target.
 		Additionally you now go Out of Phase for five turns after any teleport, gaining %d defense, %d%% resist all, and reducing the duration of new detrimental effects by %d%%.
 		The Out of Phase bonuses will scale with your Magic stat.]])
 		:format(damage, defense, resist, reduction)
@@ -132,19 +128,19 @@ newTalent{
 	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end, -- Limit < 50% damage reduction
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
-			self:setEffect(self.EFF_BLENDED_THREADS_BOW, 2, {bow=t.getPercent(self, t)})
+			self:setEffect(self.EFF_BLENDED_THREADS_BOW, 4, {bow=t.getPercent(self, t)})
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted)
 		if hitted then
-			self:setEffect(self.EFF_BLENDED_THREADS_BLADE, 2, {blade=t.getPercent(self, t)})
+			self:setEffect(self.EFF_BLENDED_THREADS_BLADE, 4, {blade=t.getPercent(self, t)})
 		end
 	end,
 	info = function(self, t)
 		local percent = t.getPercent(self, t)
 		return ([[When you hit with an arrow you reduce the damage you recieve from targets within two tiles of you by %d%%.
 		When you hit with your melee weapons you increase the damage you deal to targets more than two tiles away from you by %d%%.
-		Both of these effects may be active at once and last for two turns.]])
+		Both of these effects may be active at once and last for four turns.]])
 		:format(percent, percent)
 	end
 }
@@ -249,7 +245,7 @@ newTalent{
 		local m = makeParadoxClone(self, self, 2)
 		m.energy.value = 1000
 		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
-		doWardenWeaponSwap(m, t, nil, "blade")
+		doWardenWeaponSwap(m, t, "blade")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
 				self:forceUseTalent(self.T_ATTACK, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
@@ -297,7 +293,7 @@ newTalent{
 		m.energy.value = 1000
 		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 		m:attr("archery_pass_friendly", 1)
-		doWardenWeaponSwap(m, t, nil, "bow")
+		doWardenWeaponSwap(m, t, "bow")
 		m.on_act = function(self)
 			if not self.blended_target.dead then
 				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})

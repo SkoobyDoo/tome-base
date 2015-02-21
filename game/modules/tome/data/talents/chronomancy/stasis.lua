@@ -138,7 +138,7 @@ newTalent{
 	points = 5,
 	cooldown = 24,
 	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 7))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(1 + self:combatTalentScale(t, 1, 7))) end,
 	no_energy = true,
 	action = function(self, t)
 		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {})
