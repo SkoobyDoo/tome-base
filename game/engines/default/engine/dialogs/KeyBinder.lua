@@ -21,6 +21,8 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local TreeList = require "engine.ui.TreeList"
 local Textzone = require "engine.ui.Textzone"
+local Textbox = require "engine.ui.Textbox"
+local Button = require "engine.ui.Button"
 local Separator = require "engine.ui.Separator"
 local KeyBind = require "engine.KeyBind"
 local Gestures = require "engine.ui.Gestures"
@@ -37,18 +39,20 @@ function _M:init(key_source, force_all, gesture_source)
 
 	if self.gesture then
 		self.c_tree = TreeList.new{width=self.iw, height=self.ih, sel_by_col=true, scrollbar=true, columns={
-			{width=40, display_prop="name"},
-			{width=20, display_prop="b1"},
-			{width=20, display_prop="b2"},
-			{width=20, display_prop="g"},
+			{width=30, display_prop="name"},
+			{width=17, display_prop="b1"},
+			{width=17, display_prop="b2"},
+			{width=17, display_prop="b3"},
+			{width=18, display_prop="g"},
 		}, tree=self.tree,
 			fct=function(item, sel, v) self:use(item, sel, v) end,
 		}
 	else
 		self.c_tree = TreeList.new{width=self.iw, height=self.ih, sel_by_col=true, scrollbar=true, columns={
 			{width=40, display_prop="name"},
-			{width=30, display_prop="b1"},
-			{width=30, display_prop="b2"},
+			{width=20, display_prop="b1"},
+			{width=20, display_prop="b2"},
+			{width=20, display_prop="b3"},
 		}, tree=self.tree,
 			fct=function(item, sel, v) self:use(item, sel, v) end,
 		}
@@ -68,68 +72,72 @@ function _M:init(key_source, force_all, gesture_source)
 	}
 end
 
-function _M:use(item)
-	local t = item
-	local curcol = self.c_tree.cur_col - 1
-	if not item or item.nodes or curcol < 1 or curcol > 3 then return end
+function _M:askBind(item, t, curcol)
+	local title = "Press a key (escape to cancel, backspace to remove) for: "..tostring(t.name)
+	local w, h = font:size(title:removeColorCodes())
+	local d = Dialog.new(title, w + 20, h + 25)
 
-	--
-	-- Make a dialog to ask for the key
-	--
-	if curcol == 1 or curcol == 2 then
-		local title = "      Press a key (escape to cancel, backspace to remove) for: "..tostring(t.name)
-		local font = self.font
-		local w, h = font:size(title:removeColorCodes())
-		local d = engine.Dialog.new(title, w + 20, h + 25, nil, nil, nil, font)
-		d:keyCommands{__DEFAULT=function(sym, ctrl, shift, alt, meta, unicode)
-			-- Modifier keys are not treated
-			if not t.single_key and (sym == KeyBind._LCTRL or sym == KeyBind._RCTRL or
-			   sym == KeyBind._LSHIFT or sym == KeyBind._RSHIFT or
-			   sym == KeyBind._LALT or sym == KeyBind._RALT or
-			   sym == KeyBind._LMETA or sym == KeyBind._RMETA) then
-				return
-			end
+	local c_box = Textbox.new{title="Binding: ", text="", chars=30, max_len=30, fct=function(text) end}
+	c_box.mouse:reset()
+	c_box.key:reset()
 
-			if sym == KeyBind._BACKSPACE then
-				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
-				KeyBind.binds_remap[t.type][curcol] = nil
-			elseif sym ~= KeyBind._ESCAPE then
-				local ks = KeyBind:makeKeyString(sym, ctrl, shift, alt, meta, unicode)
-				print("Binding", t.name, "to", ks, "::", curcol)
+	d:loadUI{
+		{left=0, top=0, padding_h=10, ui=c_box},
+	}
+	d:setFocus(c_box)
+	d:setupUI(true, true)
 
-				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
-				KeyBind.binds_remap[t.type][curcol] = ks
-			end
+	d.key.receiveKey = engine.KeyCommand.receiveKey
+	d.key:addCommands{__DEFAULT=function(sym, ctrl, shift, alt, meta, unicode)
+		-- Modifier keys are not treated
+		if not t.single_key and (sym == KeyBind._LCTRL or sym == KeyBind._RCTRL or
+		   sym == KeyBind._LSHIFT or sym == KeyBind._RSHIFT or
+		   sym == KeyBind._LALT or sym == KeyBind._RALT or
+		   sym == KeyBind._LMETA or sym == KeyBind._RMETA) then
+			return
+		end
+
+		if sym == KeyBind._BACKSPACE then
+			KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
+			KeyBind.binds_remap[t.type][curcol] = nil
+		elseif sym ~= KeyBind._ESCAPE then
+			local ks = KeyBind:makeKeyString(sym, ctrl, shift, alt, meta, unicode)
+			print("Binding", t.name, "to", ks, "::", curcol)
+
+			KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
+			KeyBind.binds_remap[t.type][curcol] = ks
+		end
+		self.c_tree:drawItem(item)
+		game:unregisterDialog(d)
+	end}
+
+	d.mouse:registerZones{ norestrict=true,
+		{ x=0, y=0, w=game.w, h=game.h, fct=function(button, x, y, xrel, yrel, tx, ty)
+			if xrel or yrel then return end
+			if button == "right" then return end
+
+			local ks = KeyBind:makeMouseString(
+				button,
+				core.key.modState("ctrl") and true or false,
+				core.key.modState("shift") and true or false,
+				core.key.modState("alt") and true or false,
+				core.key.modState("meta") and true or false
+			)
+			print("Binding", t.name, "to", ks)
+
+			KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
+			KeyBind.binds_remap[t.type][curcol] = ks
 			self.c_tree:drawItem(item)
 			game:unregisterDialog(d)
-		end}
+		end },
+	}
 
-		d:mouseZones{ norestrict=true,
-			{ x=0, y=0, w=game.w, h=game.h, fct=function(button, x, y, xrel, yrel, tx, ty)
-				if xrel or yrel then return end
-				if button == "right" then return end
+	d.drawDialog = function(self, s)
+		s:drawColorStringBlendedCentered(self.font, curcol == 1 and "Bind key" or "Bind alternate key", 2, 2, self.iw - 2, self.ih - 2)
+	end
+	game:registerDialog(d)
 
-				local ks = KeyBind:makeMouseString(
-					button,
-					core.key.modState("ctrl") and true or false,
-					core.key.modState("shift") and true or false,
-					core.key.modState("alt") and true or false,
-					core.key.modState("meta") and true or false
-				)
-				print("Binding", t.name, "to", ks)
-
-				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
-				KeyBind.binds_remap[t.type][curcol] = ks
-				self.c_tree:drawItem(item)
-				game:unregisterDialog(d)
-			end },
-		}
-
-		d.drawDialog = function(self, s)
-			s:drawColorStringBlendedCentered(self.font, curcol == 1 and "Bind key" or "Bind alternate key", 2, 2, self.iw - 2, self.ih - 2)
-		end
-		game:registerDialog(d)
-	elseif curcol == 3 then
+	if curcol == 5 then
 		local title = "Make gesture (using right mouse button) or type it (or escape) for: "..tostring(t.name)
 		local font = self.font
 		local w, h = font:size(title)
@@ -181,6 +189,15 @@ function _M:use(item)
 
 		game:registerDialog(d)
 	end
+
+end
+
+function _M:use(item)
+	local t = item
+	local curcol = self.c_tree.cur_col - 1
+	if not item or item.nodes or curcol < 1 or curcol > 4 then return end
+
+	self:askBind(item, t, curcol)
 end
 
 function _M:generateList(key_source, force_all)
@@ -213,9 +230,11 @@ function _M:generateList(key_source, force_all)
 				bind1 = function(item) return KeyBind:getBindTable(k)[1] end,
 				bind2 = function(item) return KeyBind:getBindTable(k)[2] end,
 				bind3 = function(item) return KeyBind:getBindTable(k)[3] end,
+				bind4 = function(item) return KeyBind:getBindTable(k)[4] end,
 				b1 = function(item) return KeyBind:formatKeyString(util.getval(item.bind1, item)) end,
 				b2 = function(item) return KeyBind:formatKeyString(util.getval(item.bind2, item)) end,
-				g = function(item) return KeyBind:formatKeyString(util.getval(item.bind3, item)) end,
+				b3 = function(item) return KeyBind:formatKeyString(util.getval(item.bind3, item)) end,
+				g = function(item) return KeyBind:formatKeyString(util.getval(item.bind4, item)) end,
 			}
 			groups[k.group] = groups[k.group] or {}
 			table.insert(groups[k.group], item)
@@ -226,7 +245,7 @@ function _M:generateList(key_source, force_all)
 		tree[#tree+1] = {
 			name = tstring{{"font","bold"}, {"color","GOLD"}, group:capitalize(), {"font","normal"}},
 			sortname = group:capitalize(),
-			b1 = "", b2 = "", g = "",
+			b1 = "", b2 = "", b3 = "", g = "",
 			shown = true,
 			nodes = data,
 		}

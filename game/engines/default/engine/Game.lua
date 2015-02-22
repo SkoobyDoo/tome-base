@@ -178,7 +178,7 @@ function _M:display(nb_keyframes)
 		end
 		if next(new) then self._timers_cb = new
 		else self._timers_cb = nil end
-		for _, cb in ipairs(exec) do cb() end
+		for _, cb in ipairs(exec) do cb[1]() end
 	end
 
 	-- Update tweening engine
@@ -186,10 +186,19 @@ function _M:display(nb_keyframes)
 end
 
 --- Register a timer
--- The callback function will be called in the given number of seconds
+-- The callback function/table will be called in the given number of seconds
 function _M:registerTimer(seconds, cb)
+	if type(cb) == "function" then cb = {cb} end
 	self._timers_cb = self._timers_cb or {}
 	self._timers_cb[cb] = seconds * 30
+	return cb
+end
+
+--- Remove a timer
+-- The callback function/table is the id
+function _M:removeTimer(cb)	
+	self._timers_cb = self._timers_cb or {}
+	self._timers_cb[cb] = nil
 end
 
 --- Called when the game is focused/unfocused

@@ -38,6 +38,11 @@ function _M:init()
 
 	local l = {}
 	self.list = l
+	l[#l+1] = {name="binds", fct=function() 
+			package.loaded["engine.dialogs.KeyBinder"] = nil
+			local menu = require("engine.dialogs.KeyBinder").new(game.normal_key, true, game.gestures)
+			game:registerDialog(menu)
+	end}
 	l[#l+1] = {name="New Game", fct=function() game:registerDialog(require("mod.dialogs.NewGame").new()) end}
 	l[#l+1] = {name="Load Game", fct=function() game:registerDialog(require("mod.dialogs.LoadGame").new()) end}
 --	l[#l+1] = {name="Online Profile", fct=function() game:registerDialog(require("mod.dialogs.Profile").new()) end}

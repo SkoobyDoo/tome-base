@@ -26,6 +26,7 @@ require "engine.KeyBind"
 
 local Module = require "engine.Module"
 local Dialog = require "engine.ui.Dialog"
+local Gestures = require "engine.ui.Gestures"
 local Tooltip = require "engine.Tooltip"
 local MainMenu = require "mod.dialogs.MainMenu"
 local Downloader = require "engine.dialogs.Downloader"
@@ -88,6 +89,9 @@ function _M:init()
 	else
 		core.game.setRealtime(8)
 	end
+
+	-- Activate mouse gestures
+	self.gestures = Gestures.new("Gesture: ", self.key, true)
 
 	self:loaded()
 	profile:currentCharacter("Main Menu", "Main Menu")
@@ -446,6 +450,9 @@ end
 function _M:display(nb_keyframes)
 	-- If switching resolution, blank everything but the dialog
 	if self.change_res_dialog then engine.GameEnergyBased.display(self, nb_keyframes) return end
+
+	-- Mouse gestures
+	self.gestures:update()
 
 	if self.full_fbo then self.full_fbo:use(true) end
 

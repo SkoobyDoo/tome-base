@@ -229,25 +229,3 @@ end
 function _M:receiveTouchGesture(nb_fingers, x, y, d_rot, d_pinch)
 	-- print("=touch gesture", nb_fingers, x, y, d_rot, d_pinch)
 end
-
---- Called when a gamepad axis event is received
--- @param axis id of axis changed
--- @param value current value of the axis, from -1 to 1
-function _M:receiveJoyAxis(axis, value)
-	-- print("=joy axis", axis, value)
-end
-
---- Called when a gamepad ball event is received
--- @param ball id of ball changed
--- @param xrel the relative movement of the ball
--- @param yrel the relative movement of the ball
-function _M:receiveJoyBall(ball, xrel, yrel)
-	-- print("=joy ball", axis, value)
-end
-
---- Called when a gamepad hat event is received
--- @param hat id of the hat changed
--- @param dir current direction of the hat, one of 1,2,3,4,6,7,8,9 (representing direction)
-function _M:receiveJoyHat(hat, dir)
-	-- print("=joy hat", hat, dir)
-end

@@ -19,13 +19,13 @@
 
 -- Hotkeys
 defineAction{
-	default = { "sym:_1:false:false:false:false" },
+	default = { "sym:_1:false:false:false:false", "sym:PAD_A:false:false:false:false" },
 	type = "HOTKEY_1",
 	group = "hotkeys",
 	name = "Hotkey 1",
 }
 defineAction{
-	default = { "sym:_2:false:false:false:false" },
+	default = { "sym:_2:false:false:false:false", "sym:PAD_B:false:false:false:false" },
 	type = "HOTKEY_2",
 	group = "hotkeys",
 	name = "Hotkey 2",

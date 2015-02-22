@@ -115,7 +115,7 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:_ESCAPE:false:false:false:false" },
+	default = { "sym:_ESCAPE:false:false:false:false", "sym:PAD_BACK:false:false:false:false" },
 	type = "EXIT",
 	group = "actions",
 	name = "Exit menu",

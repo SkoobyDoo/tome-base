@@ -59,8 +59,14 @@ end
 --- Setups as the current game keyhandler
 function _M:setCurrent()
 	core.key.set_current_handler(self)
---	if game then game.key = self end
+--	if game then game.key = self end*
+	if _M.current then _M.current:onCurrentChange(false) end
 	_M.current = self
+	self:onCurrentChange(true)
+end
+
+--- Received when current status change
+function _M:onCurrentChange(v)
 end
 
 _UNKNOWN = 0

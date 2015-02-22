@@ -20,9 +20,10 @@
 require "config"
 require "engine.class"
 require "engine.KeyCommand"
+require "engine.GamePad"
 
 --- Handles key binds to "virtual" actions
-module(..., package.seeall, class.inherit(engine.KeyCommand))
+module(..., package.seeall, class.inherit(engine.KeyCommand, engine.GamePad))
 
 _M.binds_def = {}
 _M.binds_remap = {}
@@ -84,7 +85,7 @@ function _M:saveRemap(file)
 
 	local f = fs.open(file, "w")
 
-	local k1, k2, k3
+	local k1, k2, k3, k4
 
 	for virtual, keys in pairs(_M.binds_remap) do
 		k1 = "nil"
@@ -99,7 +100,10 @@ function _M:saveRemap(file)
 		if keys[3] then
 			k3 = ("%q"):format(keys[3])
 		end
-		f:write(("%s = {%s,%s,%s}\n"):format(virtual, k1, k2, k3))
+		if keys[4] then
+			k4 = ("%q"):format(keys[4])
+		end
+		f:write(("%s = {%s,%s,%s,%s}\n"):format(virtual, k1, k2, k3, k4))
 	end
 
 	f:close()
@@ -115,6 +119,7 @@ function _M:getBindTable(type)
 end
 
 function _M:init()
+	engine.GamePad.init(self)
 	engine.KeyCommand.init(self)
 	self.virtuals = {}
 	self.use_unicode = false
@@ -127,7 +132,7 @@ function _M:bindKeys()
 	self.binds = {}
 	-- Bind defaults
 	for type, t in pairs(_M.binds_def) do
-		for i, ks in ipairs(_M.binds_remap[type] or t.default) do
+		for i, ks in pairs(_M.binds_remap[type] or t.default) do
 			self.binds[ks] = self.binds[ks] or {}
 			self.binds[ks][type] = true
 		end
@@ -170,10 +175,13 @@ function _M:formatKeyString(ks)
 		if sym:sub(1, 1) == "=" then
 			sym = sym:sub(2)
 		else
-			if tonumber(sym) then sym = tonumber(sym)
-			else sym = _M[sym]
+			if tonumber(sym) then
+				sym = tonumber(sym)
+				sym = core.key.symName(sym)
+			elseif _M[sym] then
+				sym = _M[sym]
+				sym = core.key.symName(sym)
 			end
-			sym = core.key.symName(sym)
 		end
 		sym = sym:gsub("Keypad ", "k")
 
@@ -222,7 +230,8 @@ function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key, ismouse)
 	local ks, kks, us
 	if not ismouse then ks, kks, us = self:makeKeyString(sym, ctrl, shift, alt, meta, unicode, key)
 	else ks = self:makeMouseString(sym, ctrl, shift, alt, meta) end
---	print(self, "[BIND]", sym, ctrl, shift, alt, meta, unicode, " :=: ", ks, kks, us, " ?=? ", self.binds[ks], kks and self.binds[kks], us and self.binds[us])
+	-- print(self, "[BIND]", sym, isup, ctrl, shift, alt, meta, unicode, " :=: ", ks, kks, us, " ?=? ", self.binds[ks], kks and self.binds[kks], us and self.binds[us])
+	-- print(self, "[BIND]", sym, ctrl, shift, alt, meta, unicode, isup, key, ismouse)
 	if self.binds[ks] then
 		for virt, _ in pairs(self.binds[ks]) do if self.virtuals[virt] then
 			if isup and not _M.binds_def[virt].updown then return end
@@ -254,6 +263,7 @@ end
 --- Reset all binds
 function _M:reset()
 	self.virtuals = {}
+	engine.GamePad.reset(self)
 	engine.KeyCommand.reset(self)
 end
 
@@ -293,4 +303,8 @@ end
 --- Removes a key/command combination
 function _M:removeBind(virtual)
 	self.virtuals[virtual] = nil
+end
+
+function _M:onCurrentChange(v)
+	engine.GamePad.onCurrentChange(self, v)
 end
