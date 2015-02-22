@@ -315,4 +315,12 @@ function _M:bindAllHotkeys(key, fct)
 		local k = "HOTKEY_"..page_to_hotkey[page]..x
 		key:addBind(k, function() fct(i) end)
 	end end
+	for x = 1, 12 do
+		local i = x
+		local k = "CUR_HOTKEY_"..x
+		key:addBind(k, function()
+			if not game or not game:getPlayer() or not game:getPlayer().hotkey_page then return end
+			fct(i + (game:getPlayer().hotkey_page - 1) * 12)
+		end)
+	end
 end

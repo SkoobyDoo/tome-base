@@ -590,6 +590,25 @@ static int lua_reset_locale(lua_State *L)
 	return 0;
 }
 
+extern SDL_TimerID realtime_timer_id;
+static int lua_force_tick(lua_State *L)
+{
+	if (realtime_timer_id) return 0;
+	SDL_Event event;
+	SDL_UserEvent userevent;
+
+	userevent.type = SDL_USEREVENT;
+	userevent.code = 2;
+	userevent.data1 = NULL;
+	userevent.data2 = NULL;
+
+	event.type = SDL_USEREVENT;
+	event.user = userevent;
+
+	SDL_PushEvent(&event);
+	return 0;
+}
+
 static const struct luaL_Reg gamelib[] =
 {
 	{"setRebootMessage", lua_set_reboot_message},
@@ -604,6 +623,7 @@ static const struct luaL_Reg gamelib[] =
 	{"setFPS", lua_set_fps},
 	{"checkError", lua_check_error},
 	{"resetLocale", lua_reset_locale},
+	{"forceTick", lua_force_tick},
 	{NULL, NULL},
 };
 

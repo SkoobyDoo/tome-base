@@ -19,13 +19,13 @@
 
 -- Hotkeys
 defineAction{
-	default = { "sym:_1:false:false:false:false", "sym:PAD_A:false:false:false:false" },
+	default = { "sym:_1:false:false:false:false" },
 	type = "HOTKEY_1",
 	group = "hotkeys",
 	name = "Hotkey 1",
 }
 defineAction{
-	default = { "sym:_2:false:false:false:false", "sym:PAD_B:false:false:false:false" },
+	default = { "sym:_2:false:false:false:false" },
 	type = "HOTKEY_2",
 	group = "hotkeys",
 	name = "Hotkey 2",
@@ -401,18 +401,106 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:_LCTRL:false:false:false:false" },
+	default = { nil, nil, "sym:PAD_A:true:true:false:false" },
+	type = "HOTKEY_HOTPAGE1",
+	group = "hotkeys",
+	name = "Quick switch to Hotkey Page 1",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_B:true:true:false:false" },
 	type = "HOTKEY_HOTPAGE2",
-	updown = true,
-	single_key = true,
 	group = "hotkeys",
 	name = "Quick switch to Hotkey Page 2",
 }
 defineAction{
-	default = { "sym:_LSHIFT:false:false:false:false" },
+	default = { nil, nil, "sym:PAD_X:true:true:false:false" },
 	type = "HOTKEY_HOTPAGE3",
-	updown = true,
-	single_key = true,
 	group = "hotkeys",
 	name = "Quick switch to Hotkey Page 3",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_Y:true:true:false:false" },
+	type = "HOTKEY_HOTPAGE4",
+	group = "hotkeys",
+	name = "Quick switch to Hotkey Page 4",
+}
+defineAction{
+	default = { },
+	type = "HOTKEY_HOTPAGE5",
+	group = "hotkeys",
+	name = "Quick switch to Hotkey Page 5",
+}
+
+-- Currently displayed hotkey page
+defineAction{
+	default = { nil, nil, "sym:PAD_A:false:false:false:false" },
+	type = "CUR_HOTKEY_1",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 1",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_B:false:false:false:false" },
+	type = "CUR_HOTKEY_2",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 2",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_X:false:false:false:false" },
+	type = "CUR_HOTKEY_3",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 3",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_Y:false:false:false:false" },
+	type = "CUR_HOTKEY_4",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 4",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_A:true:false:false:false" },
+	type = "CUR_HOTKEY_5",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 5",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_B:true:false:false:false" },
+	type = "CUR_HOTKEY_6",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 6",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_X:true:false:false:false" },
+	type = "CUR_HOTKEY_7",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 7",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_Y:true:false:false:false" },
+	type = "CUR_HOTKEY_8",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 8",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_A:false:true:false:false" },
+	type = "CUR_HOTKEY_9",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 9",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_B:false:true:false:false" },
+	type = "CUR_HOTKEY_10",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 10",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_X:false:true:false:false" },
+	type = "CUR_HOTKEY_11",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 11",
+}
+defineAction{
+	default = { nil, nil, "sym:PAD_Y:false:true:false:false" },
+	type = "CUR_HOTKEY_12",
+	group = "hotkeys",
+	name = "Current Page - Hotkey 12",
 }

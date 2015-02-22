@@ -108,15 +108,29 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:_RETURN:false:false:false:false", "sym:_KP_ENTER:false:false:false:false" },
+	default = { "sym:_RETURN:false:false:false:false", "sym:_KP_ENTER:false:false:false:false", "sym:PAD_A:false:false:false:false" },
 	type = "ACCEPT",
 	group = "actions",
 	name = "Accept action",
 }
 
 defineAction{
-	default = { "sym:_ESCAPE:false:false:false:false", "sym:PAD_BACK:false:false:false:false" },
+	default = { "sym:_ESCAPE:false:false:false:false", nil, "sym:PAD_BACK:false:false:false:false" },
 	type = "EXIT",
 	group = "actions",
 	name = "Exit menu",
+}
+
+defineAction{
+	default = { nil, nil, "sym:PAD_B:false:false:false:false" },
+	type = "EXIT_DIALOG",
+	group = "actions",
+	name = "Exit dialog",
+}
+
+defineAction{
+	default = { "sym:_LGUI:false:false:false:true", "sym:_RGUI:false:false:false:true", "sym:PAD_RIGHTSHOULDER:false:false:false:false" },
+	type = "MAPMENU",
+	group = "actions",
+	name = "Map contextual menu",
 }

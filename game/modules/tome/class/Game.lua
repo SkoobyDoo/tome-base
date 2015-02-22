@@ -1795,6 +1795,11 @@ do return end
 		-- bindings done after
 		HOTKEY_PREV_PAGE = not_wild(function() self.player:prevHotkeyPage() self.log("Hotkey page %d is now displayed.", self.player.hotkey_page) end),
 		HOTKEY_NEXT_PAGE = not_wild(function() self.player:nextHotkeyPage() self.log("Hotkey page %d is now displayed.", self.player.hotkey_page) end),
+		HOTKEY_HOTPAGE1 = not_wild(function() self.player:setHotkeyPage(1) self.log("Hotkey page %d is now displayed.", self.player.hotkey_page) end),
+		HOTKEY_HOTPAGE2 = not_wild(function() self.player:setHotkeyPage(2) self.log("Hotkey page %d is now displayed.", self.player.hotkey_page) end),
+		HOTKEY_HOTPAGE3 = not_wild(function() self.player:setHotkeyPage(3) self.log("Hotkey page %d is now displayed.", self.player.hotkey_page) end),
+		HOTKEY_HOTPAGE4 = not_wild(function() self.player:setHotkeyPage(4) self.log("Hotkey page %d is now displayed.", self.player.hotkey_page) end),
+		HOTKEY_HOTPAGE5 = not_wild(function() self.player:setHotkeyPage(5) self.log("Hotkey page %d is now displayed.", self.player.hotkey_page) end),
 
 		-- Party commands
 		SWITCH_PARTY_1 = not_wild(function() self.party:select(1) end),
@@ -2036,6 +2041,13 @@ do return end
 			else
 				game:registerDialog(require("mod.dialogs.ShowMap").new())
 			end
+		end,
+
+		MAPMENU = function()
+			if not self.level or not self.level.map then return end
+			local tmx, tmy = self.player.x, self.player.y
+			local mx, my = self.level.map:getTileToScreen(tmx, tmy)
+			self:registerDialog(MapMenu.new(mx, my, tmx, tmy, nil))
 		end,
 
 		USERCHAT_SHOW_TALK = function()

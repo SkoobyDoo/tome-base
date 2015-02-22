@@ -132,9 +132,6 @@ function _M:askBind(item, t, curcol)
 		end },
 	}
 
-	d.drawDialog = function(self, s)
-		s:drawColorStringBlendedCentered(self.font, curcol == 1 and "Bind key" or "Bind alternate key", 2, 2, self.iw - 2, self.ih - 2)
-	end
 	game:registerDialog(d)
 
 	if curcol == 5 then

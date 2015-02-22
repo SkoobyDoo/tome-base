@@ -59,8 +59,9 @@ function _M:receivePadButton(button, is_up)
 		self.pad_button_state[button] = nil
 	end
 
-	print("<===button", button, is_up)
+	-- print("<===button", button, is_up)
 	if not modifiers[button] then
+		core.game.forceTick()
 		self:receiveKey("PAD_"..button, self.pad_button_state.LEFTTRIGGER and true or false, self.pad_button_state.RIGHTTRIGGER and true or false, false, false, nil, is_up == true, nil, false)
 	end
 end

@@ -350,6 +350,7 @@ function _M:generate()
 		_RIGHT = function() self:moveFocus(1) end,
 	}
 	self.key:addBind("SCREENSHOT", function() if type(game) == "table" and game.key then game.key:triggerVirtual("SCREENSHOT") end end)
+	self.key:addBind("EXIT_DIALOG", function() self.key:triggerVirtual("EXIT") end)
 end
 
 function _M:updateTitle(title)
