@@ -43,32 +43,32 @@ defineAction{
 	name = "Move down",
 }
 defineAction{
-	default = { "sym:_KP_7:false:false:false:false" },
+	default = { "sym:_KP_7:false:false:false:false", nil, "sym:PAD_LEFTX_NEG:false:true:false:false" },
 	type = "MOVE_LEFT_UP",
 	group = "movement",
 	name = "Move diagonally left and up",
 }
 defineAction{
-	default = { "sym:_KP_9:false:false:false:false" },
+	default = { "sym:_KP_9:false:false:false:false", nil, "sym:PAD_LEFTX:false:true:false:false" },
 	type = "MOVE_RIGHT_UP",
 	group = "movement",
 	name = "Move diagonally right and up",
 }
 defineAction{
-	default = { "sym:_KP_1:false:false:false:false" },
+	default = { "sym:_KP_1:false:false:false:false", nil, "sym:PAD_LEFTY_NEG:false:true:false:false" },
 	type = "MOVE_LEFT_DOWN",
 	group = "movement",
 	name = "Move diagonally left and down",
 }
 defineAction{
-	default = { "sym:_KP_3:false:false:false:false" },
+	default = { "sym:_KP_3:false:false:false:false", nil, "sym:PAD_LEFTY:false:true:false:false" },
 	type = "MOVE_RIGHT_DOWN",
 	group = "movement",
 	name = "Move diagonally right and down",
 }
 
 defineAction{
-	default = { "sym:_KP_5:false:false:false:false" },
+	default = { "sym:_KP_5:false:false:false:false", nil, "sym:PAD_LEFTSTICK:false:false:false:false" },
 	type = "MOVE_STAY",
 	group = "movement",
 	name = "Stay for a turn",
@@ -76,61 +76,61 @@ defineAction{
 
 -- Running
 defineAction{
-	default = { "sym:=.:false:false:false:false" },
+	default = { "sym:=.:false:false:false:false", nil, "sym:PAD_LEFTSTICK:false:true:false:false" },
 	type = "RUN",
 	group = "movement",
 	name = "Run",
 }
 defineAction{
-	default = { "sym:_LEFT:false:true:false:false", "sym:_KP_4:false:true:false:false" },
+	default = { "sym:_LEFT:false:true:false:false", "sym:_KP_4:false:true:false:false", "sym:PAD_RIGHTX_NEG:false:false:false:false" },
 	type = "RUN_LEFT",
 	group = "movement",
 	name = "Run left",
 }
 defineAction{
-	default = { "sym:_RIGHT:false:true:false:false", "sym:_KP_6:false:true:false:false" },
+	default = { "sym:_RIGHT:false:true:false:false", "sym:_KP_6:false:true:false:false", "sym:PAD_RIGHTX:false:false:false:false" },
 	type = "RUN_RIGHT",
 	group = "movement",
 	name = "Run right",
 }
 defineAction{
-	default = { "sym:_UP:false:true:false:false", "sym:_KP_8:false:true:false:false" },
+	default = { "sym:_UP:false:true:false:false", "sym:_KP_8:false:true:false:false", "sym:PAD_RIGHTY_NEG:false:false:false:false" },
 	type = "RUN_UP",
 	group = "movement",
 	name = "Run up",
 }
 defineAction{
-	default = { "sym:_DOWN:false:true:false:false", "sym:_KP_2:false:true:false:false" },
+	default = { "sym:_DOWN:false:true:false:false", "sym:_KP_2:false:true:false:false", "sym:PAD_RIGHTY:false:false:false:false" },
 	type = "RUN_DOWN",
 	group = "movement",
 	name = "Run down",
 }
 defineAction{
-	default = { "sym:_KP_7:false:true:false:false" },
+	default = { "sym:_KP_7:false:true:false:false", nil, "sym:PAD_RIGHTX_NEG:false:true:false:false" },
 	type = "RUN_LEFT_UP",
 	group = "movement",
 	name = "Run diagonally left and up",
 }
 defineAction{
-	default = { "sym:_KP_9:false:true:false:false" },
+	default = { "sym:_KP_9:false:true:false:false", nil, "sym:PAD_RIGHTX:false:true:false:false" },
 	type = "RUN_RIGHT_UP",
 	group = "movement",
 	name = "Run diagonally right and up",
 }
 defineAction{
-	default = { "sym:_KP_1:false:true:false:false" },
+	default = { "sym:_KP_1:false:true:false:false", nil, "sym:PAD_RIGHTY_NEG:false:true:false:false" },
 	type = "RUN_LEFT_DOWN",
 	group = "movement",
 	name = "Run diagonally left and down",
 }
 defineAction{
-	default = { "sym:_KP_3:false:true:false:false" },
+	default = { "sym:_KP_3:false:true:false:false", nil, "sym:PAD_RIGHTY:false:true:false:false" },
 	type = "RUN_RIGHT_DOWN",
 	group = "movement",
 	name = "Run diagonally right and down",
 }
 defineAction{
-	default = { "sym:_z:false:false:false:false" },
+	default = { "sym:_z:false:false:false:false", nil, "sym:PAD_LEFTSHOULDER:false:true:false:false" },
 	type = "RUN_AUTO",
 	group = "movement",
 	name = "Auto-explore",

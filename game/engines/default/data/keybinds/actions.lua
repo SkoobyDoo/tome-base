@@ -25,27 +25,27 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:=p:false:false:false:false", "sym:=g:false:true:false:false" },
+	default = { "sym:=p:false:false:false:false", "sym:=g:false:true:false:false", "sym:PAD_DPDOWN:false:false:false:false" },
 	type = "LEVELUP",
 	group = "actions",
 	name = "Levelup window",
 }
 defineAction{
-	default = { "sym:=m:false:false:false:false" },
+	default = { "sym:=m:false:false:false:false", nil, "sym:PAD_DPUP:false:false:false:false" },
 	type = "USE_TALENTS",
 	group = "actions",
 	name = "Use talents",
 }
 
 defineAction{
-	default = { "sym:=j:false:false:false:false", "sym:_q:true:false:false:false" },
+	default = { "sym:=j:false:false:false:false", "sym:_q:true:false:false:false", "sym:PAD_DPRIGHT:false:true:false:false" },
 	type = "SHOW_QUESTS",
 	group = "actions",
 	name = "Show quests",
 }
 
 defineAction{
-	default = { "sym:=r:false:false:false:false", "sym:=r:false:true:false:false" },
+	default = { "sym:=r:false:false:false:false", "sym:=r:false:true:false:false", "sym:PAD_LEFTSHOULDER:false:false:false:false" },
 	type = "REST",
 	group = "actions",
 	name = "Rest for a while",
@@ -73,7 +73,7 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:=l:false:false:false:false" },
+	default = { "sym:=l:false:false:false:false", nil, "sym:PAD_RIGHTSTICK:false:false:false:false" },
 	type = "LOOK_AROUND",
 	group = "actions",
 	name = "Look around",
@@ -94,7 +94,7 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:=c:false:false:false:false", "sym:=c:false:true:false:false" },
+	default = { "sym:=c:false:false:false:false", "sym:=c:false:true:false:false", "sym:PAD_DPRIGHT:false:false:false:false" },
 	type = "SHOW_CHARACTER_SHEET",
 	group = "actions",
 	name = "Show character sheet",

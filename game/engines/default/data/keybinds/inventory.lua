@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 defineAction{
-	default = { "sym:=i:false:false:false:false", },
+	default = { "sym:=i:false:false:false:false", nil, "sym:PAD_DPLEFT:false:false:false:false" },
 	type = "SHOW_INVENTORY",
 	group = "inventory",
 	name = "Show inventory",
@@ -64,7 +64,7 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:=q:false:false:false:false", },
+	default = { "sym:=q:false:false:false:false", nil, "sym:PAD_DPLEFT:false:true:false:false" },
 	type = "QUICK_SWITCH_WEAPON",
 	group = "inventory",
 	name = "Quick switch weapons set",
