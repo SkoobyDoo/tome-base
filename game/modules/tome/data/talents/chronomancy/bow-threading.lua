@@ -265,7 +265,7 @@ newTalent{
 	require = chrono_req4,
 	mode = "passive",
 	points = 5,
-	getTuning = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
+	getTuning = function(self, t) return 1 + self:combatTalentLimit(t, 12, 0, 6) end,
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
 			tuneParadox(self, t, t.getTuning(self, t))
