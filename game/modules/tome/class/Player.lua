@@ -820,7 +820,7 @@ local function spotHostiles(self, actors_only)
 		-- Check for projectiles in line of sight
 		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, self.sight or 10, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
 			local proj = game.level.map(x, y, game.level.map.PROJECTILE)
-			if not proj then return end
+			if not proj or not game.level.map.seens(x, y) then return end
 
 			-- trust ourselves but not our friends
 			if proj.src and self == proj.src then return end
@@ -836,7 +836,7 @@ local function spotHostiles(self, actors_only)
 			if tx and ty then
 				local dist_to_line = math.abs((self.x - sx) * (ty - sy) - (self.y - sy) * (tx - sx)) / core.fov.distance(sx, sy, tx, ty)
 				local our_way = ((self.x - x) * (tx - x) + (self.y - y) * (ty - y)) > 0
-				if our_way and dist_to_line < 1.5 then
+				if our_way and dist_to_line < 1.0 then
 					seen[#seen+1] = {x=x, y=y, projectile=proj, entity=proj, name=(proj.getName and proj:getName()) or proj.name}
 				end
 			end
