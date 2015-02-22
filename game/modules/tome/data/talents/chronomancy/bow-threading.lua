@@ -23,56 +23,11 @@ local function blade_warden(self, target)
 	if self:knowTalent(self.T_WARDEN_S_CALL) then self:callTalent(self.T_WARDEN_S_CALL, "doBladeWarden", target) end
 end
 
-newTalent{
-	name = "Threaded Arrow",
-	type = {"chronomancy/bow-threading", 1},
-	require = chrono_req1,
-	points = 5,
-	cooldown = 4,
-	tactical = { ATTACK = {weapon = 2} },
-	requires_target = true,
-	range = archery_range,
-	speed = 'archery',
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 2.2) end,
-	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
-	end,
-	archery_onhit = function(self, t, target, x, y)
-		local dox = self:getParadox() - (self.preferred_paradox or 300)
-		local fix = math.min( math.abs(dox), t.getParadoxReduction(self, t) )
-		if dox > 0 then
-			self:incParadox( -fix )
-		elseif dox < 0 then
-			self:incParadox( fix )
-		end
-		game:onTickEnd(function()blade_warden(self, target)end)
-	end,
-	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, t, "bow")
-
-		local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, infinite=true, no_energy = true})
-		if not targets then if swap then doWardenWeaponSwap(self, t, "blade") end return end
-		self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t), damtype=DamageType.TEMPORAL})
-
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t) * 100
-		local paradox = t.getParadoxReduction(self, t)
-		return ([[Fire an arrow for %d%% temporal weapon damage.  If the attack hits tune your Paradox up to %d towards your baseline.  This attack does not consume ammo.
-		Your arrows now also phase through friendly targets without causing them harm.
-		
-		Bow Threading talents will freely swap to your bow when activated if you have one in your secondary slot.  Additionally you may use the Shoot talent in a similar manner.]])
-		:format(damage, paradox)
-	end
-}
 
 newTalent{
 	name = "Arrow Stitching",
-	type = {"chronomancy/bow-threading", 2},
-	require = chrono_req2,
+	type = {"chronomancy/bow-threading", 1},
+	require = chrono_req1,
 	points = 5,
 	cooldown = 6,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
@@ -150,15 +105,17 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local penalty = t.getDamagePenalty(self, t)
 		return ([[Fire an arrow for %d%% weapon damage and call up to 2 wardens, depending on available space, that will each fire a single arrow before returning to their timelines.
-		The wardens are out of phase with normal reality and deal %d%% less damage but shoot through friendly targets.]])
+		The wardens are out of phase with normal reality and deal %d%% less damage but shoot through friendly targets.  All your arrows, including arrows from Shoot and other talents, now phase through friendly targets without causing them harm.
+		
+		Bow Threading talents will freely swap to your bow when activated if you have one in your secondary slot.  You may use the Shoot talent in a similar manner.]])
 		:format(damage, penalty)
 	end
 }
 
 newTalent{
 	name = "Singularity Arrow",
-	type = {"chronomancy/bow-threading", 3},
-	require = chrono_req3,
+	type = {"chronomancy/bow-threading", 2},
+	require = chrono_req2,
 	points = 5,
 	cooldown = 10,
 	paradox = function (self, t) return getParadoxCost(self, t, 18) end,
@@ -258,8 +215,8 @@ newTalent{
 
 newTalent{
 	name = "Arrow Echoes",
-	type = {"chronomancy/bow-threading", 4},
-	require = chrono_req4,
+	type = {"chronomancy/bow-threading", 3},
+	require = chrono_req3,
 	points = 5,
 	cooldown = 12,
 	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
@@ -317,4 +274,24 @@ newTalent{
 		These echoed shots do not consume ammo.]])
 		:format(damage, duration, duration)
 	end
+}
+
+newTalent{
+	name = "Arrow Threading",
+	type = {"chronomancy/bow-threading", 1},
+	require = chrono_req4,
+	mode = "passive",
+	points = 5,
+	getTuning = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
+	callbackOnArcheryAttack = function(self, t, target, hitted)
+		if hitted then
+			tuneParadox(self, t, t.getTuning(self, t))
+		end
+	end,
+	info = function(self, t)
+		local tune = t.getTuning(self, t)
+		return ([[Your arrows now tune your Paradox %0.2f points towards your preferred Paradox on hit.]])
+		:format(tune)
+	end
+
 }

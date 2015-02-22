@@ -174,16 +174,7 @@ newTalent{
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 1.9) end,
-	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
-	doParadoxReduction = function(self, t)
-		local dox = self:getParadox() - (self.preferred_paradox or 300)
-		local fix = math.min( math.abs(dox), t.getParadoxReduction(self, t) )
-		if dox > 0 then
-			self:incParadox( -fix )
-		elseif dox < 0 then
-			self:incParadox( fix )
-		end
-	end,
+	getTuning = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	target = function(self, t)
 		local tg = {type="beam", range=self:getTalentRange(t)}
@@ -193,7 +184,7 @@ newTalent{
 		return tg
 	end,
 	archery_onhit = function(self, t, target, x, y)
-		t.doParadoxReduction(self, t)
+		tuneParadox(self, t, t.getTuning(self, t))
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -213,7 +204,7 @@ newTalent{
 					local hit = self:attackTarget(target, nil, dam, true)
 					-- Reduce Paradox
 					if hit then
-						t.doParadoxReduction(self, t)
+						tuneParadox(self, t, t.getTuning(self, t))
 					end
 				end
 			end)
@@ -227,10 +218,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local paradox = t.getParadoxReduction(self, t)
+		local tuneing = t.getTuning(self, t)
 		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you use your bow you'll shoot all targets in a beam.  If you use your dual-weapons you'll attack all targets within a radius of one around you.
 		For each target hit you tune your Paradox up to %d towards your baseline.]])
-		:format(damage, paradox)
+		:format(damage, tuning)
 	end
 }
 
