@@ -382,7 +382,7 @@ newTalent{
 		local mental_reduction = math.floor(self:combatMentalResist(true)/5)
 		return ([[Not the Master himself, nor all the orcs in fallen Reknor, nor even the terrifying unknown beyond Reknor's portal could slow your pursuit of the Staff of Absorption.
 		Children will hear of your relentlessness in song for years to come.
-		When activated, this ability reduces the duration of all active detrimental effects by 20%% of your appropriate save value..
+		When activated, this ability reduces the duration of all active detrimental effects by 20%% of your appropriate save value.
 		Physical effect durations reduced by %d turns
 		Magical effect durations reduced by %d turns
 		Mental effect durations reduced by %d turns]]):
