@@ -78,9 +78,40 @@ newTalent{
 			if not target then return nil end
 			
 			self:attackTarget(target, nil, t.getDamage(self, t), true)
-				
+			
+			-- Find a good spot to shoot from
+			local range = 5
+			local weapon = self:hasArcheryWeaponQS()
+			if weapon then range = weapon.combat.range end
+			local poss = {}
+			game.logPlayer(self, "range %d", range)
+			for i = x - range, x + range do
+				for j = y - range, y + range do
+					if game.level.map:isBound(i, j) and
+						core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
+						core.fov.distance(i, j, self.x, self.y) >= range/2 and
+						self:canMove(i, j) and target:hasLOS(i, j) then
+						poss[#poss+1] = {i,j}
+					end
+				end
+			end
+			if #poss == 0 then return game.logSeen(self, "The spell fizzles!") end
+			local pos = poss[rng.range(1, #poss)]
+			x, y = pos[1], pos[2]
+			
+			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			game:playSoundNear(self, "talents/teleport")
+			
+			if self:teleportRandom(x, y, 0) then
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			else
+				game.logSeen(self, "The spell fizzles!")
+			end
+			
+			
+			-- This teleports the target straight back.  Should probably copy this function someplace fun so we can use it for other stuff
 			-- Find our teleport location
-			local dist = 10 / core.fov.distance(x, y, self.x, self.y)
+			--[[local dist = 10 / core.fov.distance(x, y, self.x, self.y)
 			local destx, desty = math.floor((self.x - x) * dist + x), math.floor((self.y - y) * dist + y)
 			local l = core.fov.line(x, y, destx, desty, false)
 			local lx, ly, is_corner_blocked = l:step()
@@ -98,7 +129,7 @@ newTalent{
 			if ox and oy then 
 				self:teleportRandom(ox, oy, 0)
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-			end
+			end]]
 
 		else
 			game.logPlayer(self, "You cannot use Thread Walk without an appropriate weapon!")
@@ -112,7 +143,7 @@ newTalent{
 		local defense = t.getDefense(self, t)
 		local resist = t.getResist(self, t)
 		local reduction = t.getReduction(self, t)
-		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near the target location.  If you use your dual-weapons you'll teleport up to ten tiles away from the target.
+		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near the target location.  If you use your dual-weapons you'll teleport up to your bow's range away.
 		Additionally you now go Out of Phase for five turns after any teleport, gaining %d defense, %d%% resist all, and reducing the duration of new detrimental effects by %d%%.
 		The Out of Phase bonuses will scale with your Magic stat.]])
 		:format(damage, defense, resist, reduction)
