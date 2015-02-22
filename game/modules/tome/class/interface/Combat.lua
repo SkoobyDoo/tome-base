@@ -429,9 +429,9 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	if target:hasEffect(target.EFF_WARDEN_S_FOCUS) and target:hasDualWeapon() then
-		local eff = target:hasEffect(target.EFF_WARDEN_S_FOCUS)
-		if eff.target == self and rng.percent(eff.power) then
+	if target:knowTalent(target.T_BLADE_WARD) and target:hasDualWeapon() then
+		local chance = targeT:callTalent(target.T_BLADE_WARD, "getChance")
+		if rng.percent(chance) then
 			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
 			repelled = true
 		end
