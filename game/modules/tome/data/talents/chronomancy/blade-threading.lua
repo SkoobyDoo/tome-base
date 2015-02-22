@@ -75,83 +75,9 @@ newTalent{
 }
 
 newTalent{
-	name = "Braided Blade",
+	name = "Blink Blade",
 	type = {"chronomancy/blade-threading", 2},
 	require = chrono_req2,
-	points = 5,
-	cooldown = 8,
-	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
-	tactical = { ATTACKAREA = {weapon = 2}, DISABLE = 3 },
-	requires_target = true,
-	speed = "weapon",
-	range = function(self, t) return 3 + math.floor(self:combatTalentLimit(t, 7, 0, 3)) end,
-	is_melee = true,
-	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t, selffire=false }
-	end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.3) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 25, 40, getParadoxSpellpower(self, t)) end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
-	action = function(self, t)
-		local swap = doWardenWeaponSwap(self, t, "blade")
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-	
-		if not x or not y then
-			if swap then doWardenWeaponSwap(self, t, "bow") end
-			return nil
-		end
-		
-		local braid_targets = {}
-		local bow_done = false
-		
-		self:project(tg, x, y, function(px, py, tg, self)
-			local target = game.level.map(px, py, Map.ACTOR)
-			if target then
-				local hit = self:attackTarget(target, DamageType.TEMPORAL, t.getDamage(self, t), true)
-				if hit then
-					if not bow_done then
-						bow_done = true
-						bow_warden(self, target)
-					end
-					if not target.dead and self:reactionToward(target) < 0 then
-						braid_targets[#braid_targets+1] = target
-					end
-				end
-			end
-		end)
-
-		-- if we hit more than one, braid them
-		if #braid_targets > 1 then
-			for i = 1, #braid_targets do
-				local target = braid_targets[i]
-				target:setEffect(target.EFF_BRAIDED, t.getDuration(self, t), {power=t.getPower(self, t), src=self, targets=braid_targets})
-			end
-		end
-		
-		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporalbeam", {tx=x-self.x, ty=y-self.y})
-		game:playSoundNear(self, "talents/heal")
-		
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t) * 100
-		local duration = t.getDuration(self, t)
-		local power = t.getPower(self, t)
-		return ([[Attack all targets in a beam with your melee weapons for %d%% temporal weapon damage.
-		If two or more targets are hit by the beam you'll braid their lifelines for %d turns.
-		Braided targets take %d%% of all damage dealt to other braided targets.
-		The damage transferred by the braid effect and beam damage scales with your Spellpower.]])
-		:format(damage, duration, power)
-	end
-}
-
-newTalent{
-	name = "Blink Blade",
-	type = {"chronomancy/blade-threading", 3},
-	require = chrono_req3,
 	points = 5,
 	cooldown = 8,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
@@ -254,6 +180,80 @@ newTalent{
 		return ([[Attack with your melee weapons for %d%% damage and teleport next to up to two random enemies, attacking each for %d%% damage.
 		Blink Blade can hit the same target multiple times.]])
 		:format(damage, damage)
+	end
+}
+
+newTalent{
+	name = "Braided Blade",
+	type = {"chronomancy/blade-threading", 3},
+	require = chrono_req3,
+	points = 5,
+	cooldown = 8,
+	paradox = function (self, t) return getParadoxCost(self, t, 18) end,
+	tactical = { ATTACKAREA = {weapon = 2}, DISABLE = 3 },
+	requires_target = true,
+	speed = "weapon",
+	range = function(self, t) return 3 + math.floor(self:combatTalentLimit(t, 7, 0, 3)) end,
+	is_melee = true,
+	target = function(self, t)
+		return {type="beam", range=self:getTalentRange(t), talent=t, selffire=false }
+	end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.3) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
+	getPower = function(self, t) return self:combatTalentSpellDamage(t, 25, 40, getParadoxSpellpower(self, t)) end,
+	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	action = function(self, t)
+		local swap = doWardenWeaponSwap(self, t, "blade")
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+	
+		if not x or not y then
+			if swap then doWardenWeaponSwap(self, t, "bow") end
+			return nil
+		end
+		
+		local braid_targets = {}
+		local bow_done = false
+		
+		self:project(tg, x, y, function(px, py, tg, self)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target then
+				local hit = self:attackTarget(target, DamageType.TEMPORAL, t.getDamage(self, t), true)
+				if hit then
+					if not bow_done then
+						bow_done = true
+						bow_warden(self, target)
+					end
+					if not target.dead and self:reactionToward(target) < 0 then
+						braid_targets[#braid_targets+1] = target
+					end
+				end
+			end
+		end)
+
+		-- if we hit more than one, braid them
+		if #braid_targets > 1 then
+			for i = 1, #braid_targets do
+				local target = braid_targets[i]
+				target:setEffect(target.EFF_BRAIDED, t.getDuration(self, t), {power=t.getPower(self, t), src=self, targets=braid_targets})
+			end
+		end
+		
+		local _ _, _, _, x, y = self:canProject(tg, x, y)
+		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporalbeam", {tx=x-self.x, ty=y-self.y})
+		game:playSoundNear(self, "talents/heal")
+		
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t) * 100
+		local duration = t.getDuration(self, t)
+		local power = t.getPower(self, t)
+		return ([[Attack all targets in a beam with your melee weapons for %d%% temporal weapon damage.
+		If two or more targets are hit by the beam you'll braid their lifelines for %d turns.
+		Braided targets take %d%% of all damage dealt to other braided targets.
+		The damage transferred by the braid effect and beam damage scales with your Spellpower.]])
+		:format(damage, duration, power)
 	end
 }
 

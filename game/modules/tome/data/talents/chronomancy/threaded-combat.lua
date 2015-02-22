@@ -165,7 +165,8 @@ newTalent{
 	require = chrono_req_high3,
 	points = 5,
 	cooldown = 8,
-	tactical = { ATTACKAREA = { weapon = 3 } , DISABLE = 3 },
+	paradox = function (self, t) return getParadoxCost(self, t, 18) end,
+	tactical = { ATTACKAREA = { weapon = 3 } },
 	requires_target = true,
 	range = function(self, t)
 		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
@@ -173,8 +174,7 @@ newTalent{
 	end,
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 1.9) end,
-	getTuning = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 2.2) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	target = function(self, t)
 		local tg = {type="beam", range=self:getTalentRange(t)}
@@ -182,9 +182,6 @@ newTalent{
 			tg = {type="ball", radius=1, range=self:getTalentRange(t)}
 		end
 		return tg
-	end,
-	archery_onhit = function(self, t, target, x, y)
-		tuneParadox(self, t, t.getTuning(self, t))
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -201,11 +198,7 @@ newTalent{
 			self:project(tg, self.x, self.y, function(px, py, tg, self)
 				local target = game.level.map(px, py, Map.ACTOR)
 				if target and target ~= self then
-					local hit = self:attackTarget(target, nil, dam, true)
-					-- Reduce Paradox
-					if hit then
-						tuneParadox(self, t, t.getTuning(self, t))
-					end
+					self:attackTarget(target, nil, dam, true)
 				end
 			end)
 			self:addParticles(Particles.new("meleestorm2", 1, {}))
@@ -219,9 +212,8 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local tuneing = t.getTuning(self, t)
-		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you use your bow you'll shoot all targets in a beam.  If you use your dual-weapons you'll attack all targets within a radius of one around you.
-		For each target hit you tune your Paradox up to %d towards your baseline.]])
-		:format(damage, tuning)
+		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you use your bow you'll shoot all targets in a beam.  If you use your dual-weapons you'll attack all targets within a radius of one around you.]])
+		:format(damage)
 	end
 }
 

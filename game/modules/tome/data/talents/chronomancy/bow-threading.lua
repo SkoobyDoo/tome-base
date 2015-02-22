@@ -30,7 +30,7 @@ newTalent{
 	require = chrono_req1,
 	points = 5,
 	cooldown = 6,
-	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 8) end,
 	tactical = { ATTACK = {weapon = 4} },
 	requires_target = true,
 	range = archery_range,
@@ -219,7 +219,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	cooldown = 12,
-	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	tactical = { ATTACK = {weapon = 4} },
 	requires_target = true,
 	range = archery_range,
@@ -278,7 +278,7 @@ newTalent{
 
 newTalent{
 	name = "Arrow Threading",
-	type = {"chronomancy/bow-threading", 1},
+	type = {"chronomancy/bow-threading", 4},
 	require = chrono_req4,
 	mode = "passive",
 	points = 5,
