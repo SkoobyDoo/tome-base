@@ -242,7 +242,6 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		local tuneing = t.getTuning(self, t)
 		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you use your bow you'll shoot all targets in a beam.  If you use your dual-weapons you'll attack all targets within a radius of one around you.]])
 		:format(damage)
 	end
@@ -265,15 +264,13 @@ newTalent{
 		
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
-		m.energy.value = 1000
 		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 		doWardenWeaponSwap(m, t, "blade")
-		m.on_act = function(self)
+		m.on_added_to_level = function(self)
 			if not self.blended_target.dead then
 				self:forceUseTalent(self.T_ATTACK, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
 			end
-			self:useEnergy()
-			game:onTickEnd(function()self:die()end)
+			self:die()
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end
 		
@@ -282,8 +279,8 @@ newTalent{
 		if wf and not wf.dead then
 			local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
 			if tx and ty then
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
 				m.blended_target = wf
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
 			end
 		end
 		if not m.blended_target then
@@ -293,9 +290,9 @@ newTalent{
 				local a, id = rng.tableRemove(tgts)
 				-- look for space
 				local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-				if tx and ty and not a.dead then			
+				if tx and ty and not a.dead then	
+					m.blended_target = a				
 					game.zone:addEntity(game.level, m, "actor", tx, ty)
-					m.blended_target = a
 					break
 				else
 					attempts = attempts - 1
@@ -312,19 +309,17 @@ newTalent{
 
 		-- Make our clone
 		local m = makeParadoxClone(self, self, 2)
-		m.energy.value = 1000
 		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 		m:attr("archery_pass_friendly", 1)
 		doWardenWeaponSwap(m, t, "bow")
-		m.on_act = function(self)
+		m.on_added_to_level = function(self)
 			if not self.blended_target.dead then
 				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
 				if targets then
 					self:forceUseTalent(self.T_SHOOT, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
 				end
 			end
-			self:useEnergy()
-			game:onTickEnd(function()self:die()end)
+			self:die()
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 		end
 		
@@ -354,16 +349,16 @@ newTalent{
 		if wf and not wf.dead then
 			local tx, ty = find_space(self, target, m)
 			if tx and ty then
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
 				m.blended_target = wf
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
 			end
 		else
 			local tgts = t.findTarget(self, t)
 			if #tgts > 0 then
 				local a, id = rng.tableRemove(tgts)
 				local tx, ty = find_space(self, target, m)
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
 				m.blended_target = a
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
 			end
 		end
 	end,

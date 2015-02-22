@@ -67,6 +67,18 @@ newTalent{
 		if not self.arrow_stitching_done then
 			for i = 1, 2 do
 				local m = makeParadoxClone(self, self, 2)
+				m.arrow_stitched_target = target
+				m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
+				m:attr("archery_pass_friendly", 1)
+				m.on_added_to_level = function(self)
+					if not self.arrow_stitched_target.dead then
+						self.arrow_stitching_done = true
+						self:forceUseTalent(self.T_ARROW_STITCHING, {force_level=t.level, ignore_cd=true, ignore_energy=true, force_target=self.arrow_stitched_target, ignore_ressources=true, silent=true})
+					end
+					self:die()
+					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+				end
+				
 				local poss = {}
 				local range = self:getTalentRange(t)
 				for i = x - range, x + range do
@@ -83,19 +95,6 @@ newTalent{
 				local pos = poss[rng.range(1, #poss)]
 				x, y = pos[1], pos[2]
 				game.zone:addEntity(game.level, m, "actor", x, y)
-				m.arrow_stitched_target = target
-				m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
-				m.energy.value = 1000
-				m:attr("archery_pass_friendly", 1)
-				m.on_act = function(self)
-					if not self.arrow_stitched_target.dead then
-						self.arrow_stitching_done = true
-						self:forceUseTalent(self.T_ARROW_STITCHING, {force_level=t.level, ignore_cd=true, ignore_energy=true, force_target=self.arrow_stitched_target, ignore_ressources=true, silent=true})
-						self:useEnergy()
-					end
-					game:onTickEnd(function()self:die()end)
-					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				end
 			end
 		end
 
