@@ -255,113 +255,6 @@ newTalent{
 	points = 5,
 	remove_on_clone = true,
 	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
-	doBladeWarden = function(self, t, target)
-		if self.turn_procs.wardens_call then
-			return
-		else
-			self.turn_procs.wardens_call = true
-		end
-		
-		-- Make our clone
-		local m = makeParadoxClone(self, self, 2)
-		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
-		doWardenWeaponSwap(m, t, "blade")
-		m.on_added_to_level = function(self)
-			if not self.blended_target.dead then
-				self:forceUseTalent(self.T_ATTACK, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
-			end
-			self:die()
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-		end
-		
-		-- Check Focus first
-		local wf = checkWardenFocus(self)
-		if wf and not wf.dead then
-			local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
-			if tx and ty then
-				m.blended_target = wf
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
-			end
-		end
-		if not m.blended_target then
-			local tgts= t.findTarget(self, t)
-			local attempts = 10
-			while #tgts > 0 and attempts > 0 do
-				local a, id = rng.tableRemove(tgts)
-				-- look for space
-				local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-				if tx and ty and not a.dead then	
-					m.blended_target = a				
-					game.zone:addEntity(game.level, m, "actor", tx, ty)
-					break
-				else
-					attempts = attempts - 1
-				end
-			end
-		end
-	end,
-	doBowWarden = function(self, t, target)
-		if self.turn_procs.wardens_call then
-			return
-		else
-			self.turn_procs.wardens_call = true
-		end
-
-		-- Make our clone
-		local m = makeParadoxClone(self, self, 2)
-		m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
-		m:attr("archery_pass_friendly", 1)
-		doWardenWeaponSwap(m, t, "bow")
-		m.on_added_to_level = function(self)
-			if not self.blended_target.dead then
-				local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
-				if targets then
-					self:forceUseTalent(self.T_SHOOT, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
-				end
-			end
-			self:die()
-			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-		end
-		
-		-- Find a good location for our shot
-		local function find_space(self, target, clone)
-			local poss = {}
-			local range = util.getval(archery_range, clone, t)
-			local x, y = target.x, target.y
-			for i = x - range, x + range do
-				for j = y - range, y + range do
-					if game.level.map:isBound(i, j) and
-						core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
-						core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
-						self:canMove(i, j) and target:hasLOS(i, j) then
-						poss[#poss+1] = {i,j}
-					end
-				end
-			end
-			if #poss == 0 then return end
-			local pos = poss[rng.range(1, #poss)]
-			x, y = pos[1], pos[2]
-			return x, y
-		end
-		
-		-- Check Focus first
-		local wf = checkWardenFocus(self)
-		if wf and not wf.dead then
-			local tx, ty = find_space(self, target, m)
-			if tx and ty then
-				m.blended_target = wf
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
-			end
-		else
-			local tgts = t.findTarget(self, t)
-			if #tgts > 0 then
-				local a, id = rng.tableRemove(tgts)
-				local tx, ty = find_space(self, target, m)
-				m.blended_target = a
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
-			end
-		end
-	end,
 	findTarget = function(self, t)
 		local tgts = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
@@ -375,9 +268,120 @@ newTalent{
 		
 		return tgts
 	end,
+	callbackOnArcheryAttack = function(self, t, target, hitted)
+		if hitted then
+			if self.turn_procs.wardens_call then
+				return
+			else
+				self.turn_procs.wardens_call = true
+			end
+			
+			-- Make our clone
+			local m = makeParadoxClone(self, self, 2)
+			m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
+			doWardenWeaponSwap(m, t, "blade")
+			m.on_added_to_level = function(self)
+				if not self.blended_target.dead then
+					self:forceUseTalent(self.T_ATTACK, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
+				end
+				self:die()
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			end
+			
+			-- Check Focus first
+			local wf = checkWardenFocus(self)
+			if wf and not wf.dead then
+				local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
+				if tx and ty then
+					m.blended_target = wf
+					game.zone:addEntity(game.level, m, "actor", tx, ty)
+				end
+			end
+			if not m.blended_target then
+				local tgts= t.findTarget(self, t)
+				local attempts = 10
+				while #tgts > 0 and attempts > 0 do
+					local a, id = rng.tableRemove(tgts)
+					-- look for space
+					local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
+					if tx and ty and not a.dead then	
+						m.blended_target = a				
+						game.zone:addEntity(game.level, m, "actor", tx, ty)
+						break
+					else
+						attempts = attempts - 1
+					end
+				end
+			end
+		end
+	end,
+	callbackOnMeleeAttack = function(self, t, target, hitted)
+		if hitted then
+			if self.turn_procs.wardens_call then
+				return
+			else
+				self.turn_procs.wardens_call = true
+			end
+
+			-- Make our clone
+			local m = makeParadoxClone(self, self, 2)
+			m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
+			m:attr("archery_pass_friendly", 1)
+			doWardenWeaponSwap(m, t, "bow")
+			m.on_added_to_level = function(self)
+				if not self.blended_target.dead then
+					local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=self.blended_target.x, y=self.blended_target.y, no_energy = true})
+					if targets then
+						self:forceUseTalent(self.T_SHOOT, {ignore_cd=true, ignore_energy=true, force_target=self.blended_target, ignore_ressources=true, silent=true})
+					end
+				end
+				self:die()
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+			end
+			
+			-- Find a good location for our shot
+			local function find_space(self, target, clone)
+				local poss = {}
+				local range = util.getval(archery_range, clone, t)
+				local x, y = target.x, target.y
+				for i = x - range, x + range do
+					for j = y - range, y + range do
+						if game.level.map:isBound(i, j) and
+							core.fov.distance(x, y, i, j) <= range and -- make sure they're within arrow range
+							core.fov.distance(i, j, self.x, self.y) <= range/2 and -- try to place them close to the caster so enemies dodge less
+							self:canMove(i, j) and target:hasLOS(i, j) then
+							poss[#poss+1] = {i,j}
+						end
+					end
+				end
+				if #poss == 0 then return end
+				local pos = poss[rng.range(1, #poss)]
+				x, y = pos[1], pos[2]
+				return x, y
+			end
+			
+			-- Check Focus first
+			local wf = checkWardenFocus(self)
+			if wf and not wf.dead then
+				local tx, ty = find_space(self, target, m)
+				if tx and ty then
+					m.blended_target = wf
+					game.zone:addEntity(game.level, m, "actor", tx, ty)
+				end
+			else
+				local tgts = t.findTarget(self, t)
+				if #tgts > 0 then
+					local a, id = rng.tableRemove(tgts)
+					local tx, ty = find_space(self, target, m)
+					m.blended_target = a
+					game.zone:addEntity(game.level, m, "actor", tx, ty)
+				end
+			end
+		end
+	end,
 	info = function(self, t)
 		local damage_penalty = t.getDamagePenalty(self, t)
-		return ([[When you hit with a blade-threading or a bow-threading talent a warden may appear, depending on available space, from another timeline and shoot or attack a random enemy.
+		return ([[When you hit with a melee or arrow attack a warden may appear from another timeline, depending on available space, and shoot or attack a random enemy.
 		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
 		This effect can only occur once per turn and the wardens return to their own timeline after attacking.]])
 		:format(damage_penalty)

@@ -19,11 +19,6 @@
 
 -- EDGE TODO: Particles, Timed Effect Particles
 
-local function blade_warden(self, target)
-	if self:knowTalent(self.T_WARDEN_S_CALL) then self:callTalent(self.T_WARDEN_S_CALL, "doBladeWarden", target) end
-end
-
-
 newTalent{
 	name = "Arrow Stitching",
 	type = {"chronomancy/bow-threading", 1},
@@ -41,9 +36,6 @@ newTalent{
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
-	archery_onhit = function(self, t, target, x, y)
-		blade_warden(self, target)
-	end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, t, "bow")
 		
@@ -129,9 +121,6 @@ newTalent{
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, stop_block=true, friendlyblock=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
-	archery_onhit = function(self, t, target, x, y)
-		blade_warden(self, target)
-	end,
 	archery_onreach = function(self, t, x, y)
 		game:onTickEnd(function() -- Let the arrow hit first
 			local tg = self:getTalentTarget(t)
@@ -229,9 +218,6 @@ newTalent{
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.3) end,
-	archery_onhit = function(self, t, target, x, y)
-		blade_warden(self, target)
-	end,
 	doEcho = function(self, t, eff)
 		if self:attr("disarmed") then self:removeEffect(self.EFF_ARROW_ECHOES) return end
 		game:onTickEnd(function()

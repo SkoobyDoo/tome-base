@@ -19,10 +19,6 @@
 
 -- EDGE TODO: Particles, Timed Effect Particles
 
-local function bow_warden(self, target)
-	if self:knowTalent(self.T_WARDEN_S_CALL) then self:callTalent(self.T_WARDEN_S_CALL, "doBowWarden", target) end
-end
-
 newTalent{
 	name = "Warp Blade",
 	type = {"chronomancy/blade-threading", 1},
@@ -55,8 +51,6 @@ newTalent{
 
 		-- Project our warp
 		if hitted then
-			bow_warden(self, target)
-		
 			game.level.map:particleEmitter(target.x, target.y, 1, "generic_discharge", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90})
 			DamageType:get(DamageType.RANDOM_WARP).projector(self, target.x, target.y, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
 		end
@@ -103,9 +97,6 @@ newTalent{
 		
 		-- Hit the target
 		local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
-		if hit then 
-			bow_warden(self, target)
-		end
 
 		local teleports = 2
 		local attempts = 10
@@ -117,7 +108,6 @@ newTalent{
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 				if core.fov.distance(self.x, self.y, x, y) <= 1 then
 					local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
-					if hit then bow_warden(self, target) end
 				end
 			end
 			return teleported
@@ -213,17 +203,12 @@ newTalent{
 		end
 		
 		local braid_targets = {}
-		local bow_done = false
 		
 		self:project(tg, x, y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
 				local hit = self:attackTarget(target, DamageType.TEMPORAL, t.getDamage(self, t), true)
 				if hit then
-					if not bow_done then
-						bow_done = true
-						bow_warden(self, target)
-					end
 					if not target.dead and self:reactionToward(target) < 0 then
 						braid_targets[#braid_targets+1] = target
 					end
@@ -292,17 +277,12 @@ newTalent{
 		
 		-- Project our melee hits
 		local total_hits = 0
-		local bow_done = false
 		self:project(tg, x, y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
 				local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
 				if hit then
 					total_hits = total_hits + 1
-				end
-				if not bow_done then
-					bow_done = true
-					bow_warden(self, target)
 				end
 			end
 		end)
