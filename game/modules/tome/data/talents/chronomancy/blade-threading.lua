@@ -243,7 +243,7 @@ newTalent{
 }
 
 newTalent{
-	name "Blade Ward",
+	name = "Blade Ward",
 	type = {"chronomancy/blade-threading", 4},
 	require = chrono_req4,
 	mode = "passive",
