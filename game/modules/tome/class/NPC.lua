@@ -228,6 +228,8 @@ function _M:seen_by(who)
 	if self:reactionToward(who) <= 0 then return end
 	-- Check if we can actually see the ally (range and obstacles)
 	if not who.x or not self:hasLOS(who.x, who.y) then return end
+	-- Check if it's actually a being of cold machinery and not of blood and flesh
+	if not who.aiSeeTargetPos then return end
 	if self.ai_target.actor then
 		-- Pass last seen coordinates
 		if self.ai_target.actor == who.ai_target.actor then
