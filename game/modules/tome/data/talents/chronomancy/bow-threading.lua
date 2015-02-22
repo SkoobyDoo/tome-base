@@ -42,7 +42,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
-		game:onTickEnd(function()blade_warden(self, target)end)
+		blade_warden(self, target)
 	end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, t, "bow")
@@ -130,7 +130,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
-		game:onTickEnd(function()blade_warden(self, target)end)
+		blade_warden(self, target)
 	end,
 	archery_onreach = function(self, t, x, y)
 		game:onTickEnd(function() -- Let the arrow hit first
@@ -226,12 +226,14 @@ newTalent{
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
+	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.3) end,
 	archery_onhit = function(self, t, target, x, y)
-		game:onTickEnd(function() blade_warden(self, target) end)
+		blade_warden(self, target)
 	end,
 	doEcho = function(self, t, eff)
+		if self:attr("disarmed") then self:removeEffect(self.EFF_ARROW_ECHOES) return end
 		game:onTickEnd(function()
 			local swap = doWardenWeaponSwap(self, t, "bow", true)
 			local target = eff.target
@@ -260,18 +262,14 @@ newTalent{
 		
 		self:setEffect(self.EFF_ARROW_ECHOES, t.getDuration(self, t), {shots=t.getDuration(self, t), x=self.x, y=self.y, target=target})
 		
-		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy=true})
-		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
-		
 		return true
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Fire an arrow for %d%% weapon damage at the target.  Over the next %d turns you'll fire up to %d additional arrows at this target from your original location.
-		These echoed shots do not consume ammo.]])
-		:format(damage, duration, duration)
+		return ([[Over the next %d turns you'll fire up to %d arrows at this target from this location, each dealing %d%% weapon damage to the target. 
+		These shots do not consume ammo.]])
+		:format(duration, duration, damage)
 	end
 }
 

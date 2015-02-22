@@ -3448,6 +3448,7 @@ newEffect{
 	type = "magical",
 	subtype = { time=true },
 	status = "beneficial",
+	remove_on_clone = true,
 	on_gain = function(self, err) return nil, "+Arrow Echoes" end,
 	on_lose = function(self, err) return nil, "-Arrow Echoes" end,
 	parameters = { shots = 1 },
