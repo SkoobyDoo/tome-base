@@ -5510,7 +5510,7 @@ function _M:startTalentCooldown(t, v)
 
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
-			if t.type[1]:find("^chronomancy/") and self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
+			if self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
 				self.talents_cd[t.id] = 1
 			end
 		end

@@ -111,7 +111,7 @@ newTalent{
 			local tids = {}
 			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
-				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
+				if not tt.fixed_cooldown then
 					tids[#tids+1] = tt
 				end
 			end
@@ -133,7 +133,7 @@ newTalent{
 		local talentcount = t.getTalentCount(self, t)
 		local cooldown = t.getCooldown(self, t)
 		return ([[You sap the target's energy and add it to your own, placing up to %d random talents on cooldown for %d turns.
-		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns.]]):
+		For each talent put on cooldown, you reduce the cooldown of one of your talents currently on cooldown by %d turns.]]):
 		format(talentcount, cooldown, cooldown)
 	end,
 }
@@ -158,7 +158,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local cooldown = t.getMaxCooldown(self, t)
-		return ([[For the next %d turns chronomancy spells with a cooldown of %d or less have a cooldown of one.]]):
+		return ([[For the next %d turns talents with a cooldown of %d or less have a cooldown of one.]]):
 		format(duration, cooldown)
 	end,
 }
