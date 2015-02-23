@@ -429,9 +429,9 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	if target:hasEffect(target.EFF_WARDEN_S_FOCUS) and target:hasDualWeapon() then
-		local eff = target:hasEffect(target.EFF_WARDEN_S_FOCUS)
-		if eff.target == self and rng.percent(eff.power) then
+	if target:knowTalent(target.T_BLADE_WARD) and target:hasDualWeapon() then
+		local chance = target:callTalent(target.T_BLADE_WARD, "getChance")
+		if rng.percent(chance) then
 			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
 			repelled = true
 		end
@@ -1752,6 +1752,13 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		local p = target:hasEffect(target.EFF_SET_UP)
 		if p and p.src == self then
 			chance = chance + p.power
+		end
+	end
+	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and eff.target == target then
+			chance = chance + eff.power
+			crit_power_add = crit_power_add + (eff.power/100)
 		end
 	end
 	

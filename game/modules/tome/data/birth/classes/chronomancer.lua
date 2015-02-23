@@ -194,7 +194,7 @@ newBirthDescriptor{
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
 		
 		[ActorTalents.T_WARP_BLADE] = 1,
-		[ActorTalents.T_THREADED_ARROW] = 1,
+		[ActorTalents.T_ARROW_STITCHING] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
 		[ActorTalents.T_STRENGTH_OF_PURPOSE] = 1,
 	},
