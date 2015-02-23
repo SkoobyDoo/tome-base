@@ -79,7 +79,7 @@ newTalent{
 	requires_target = true,
 	is_teleport = true,
 	speed = "weapon",
-	range = 1,
+	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1) end,
@@ -95,12 +95,6 @@ newTalent{
 			return nil
 		end
 		
-		-- Hit the target
-		local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
-
-		local teleports = 2
-		local attempts = 10
-		
 		-- Our teleport hit
 		local function teleport_hit(self, t, target, x, y)
 			local teleported = self:teleportRandom(x, y, 0)
@@ -112,6 +106,12 @@ newTalent{
 			end
 			return teleported
 		end
+		
+		local first_teleport = teleport_hit(self, t, target, x, y)
+		if not first_teleport then game.logSeen(self, "The spell fizzles!") return true end
+		
+		local teleports = 2
+		local attempts = 10
 		
 		-- Check for Warden's focus
 		local wf = checkWardenFocus(self)
@@ -134,7 +134,7 @@ newTalent{
 		if teleports > 0 and attempts > 0 then
 			-- Get available targets
 			local tgts = {}
-			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+			local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
 			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 				local target_type = Map.ACTOR
 				local a = game.level.map(x, y, Map.ACTOR)
@@ -167,7 +167,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Attack with your melee weapons for %d%% damage and teleport next to up to two random enemies, attacking each for %d%% damage.
+		return ([[Teleport to the target and attack with your melee weapons for %d%% damage.  Then teleport next to up to two random enemies, attacking each for %d%% damage.
 		Blink Blade can hit the same target multiple times.]])
 		:format(damage, damage)
 	end
