@@ -174,6 +174,102 @@ newTalent{
 }
 
 newTalent{
+	name = "Blade Shear",
+	type = {"chronomancy/blade-threading", 3},
+	require = chrono_req3,
+	points = 5,
+	cooldown = 12,
+	paradox = function (self, t) return getParadoxCost(self, t, 18) end,
+	tactical = { ATTACK = {weapon = 2}, ATTACKAREA = { TEMPORAL = 2 }},
+	requires_target = true,
+	speed = "weapon",
+	range = 1,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
+	is_melee = true,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getShear = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
+	target = function(self, t)
+		return {type="cone", range=0, radius=self:getTalentRadius(t), talent=t, selffire=false }
+	end,
+	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	action = function(self, t)
+		local swap = doWardenWeaponSwap(self, t, "blade")
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+	
+		if not x or not y then
+			if swap then doWardenWeaponSwap(self, t, "bow") end
+			return nil
+		end
+	
+		-- Change our radius for the melee attacks
+		local old_radius = tg.radius
+		tg.radius = 1
+		
+		-- Project our melee hits
+		local total_hits = 0
+		self:project(tg, x, y, function(px, py, tg, self)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target then
+				local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
+				if hit then
+					total_hits = total_hits + 1
+				end
+			end
+		end)
+
+		if total_hits > 0 then
+			-- Project our shear
+			local multi = (total_hits - 1)/4
+			local damage = self:spellCrit(t.getShear(self, t)) * (1 + multi)
+			tg.radius = self:getTalentRadius(t)
+		
+			self:project(tg, x, y, function(px, py, tg, self)
+				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
+				local target = game.level.map(px, py, Map.ACTOR)
+				-- Try to insta-kill
+				if target then
+					if target:checkHit(getParadoxSpellpower(self, t), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("instakill") and target.life > 0 and target.life < target.max_life * 0.2 then
+						-- KILL IT !
+						game.logSeen(target, "%s has been cut from the timeline!", target.name:capitalize())
+						target:die(self)
+					elseif target.life > 0 and target.life < target.max_life * 0.2 then
+						game.logSeen(target, "%s resists the temporal shear!", target.name:capitalize())
+					end
+				end
+			end)
+			game.level.map:particleEmitter(self.x, self.y, tg.radius, "temporal_breath", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
+			game:playSoundNear(self, "talents/tidalwave")
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t) * 100
+		local shear = t.getShear(self, t)
+		local radius = self:getTalentRadius(t)
+		return ([[Attack up to three adjacent targets for %d%% weapon damage.  If any attack hits you'll create a temporal shear dealing %0.2f temporal damage in a radius %d cone.
+		Each target you hit with your weapons beyond the first increases the damage of the shear by 25%%.  Targets reduced below 20%% of maximum life by the shear may be instantly slain.
+		The cone damage improves with your Spellpower.]])
+		:format(damage, damDesc(self, DamageType.TEMPORAL, shear), radius)
+	end
+}
+
+newTalent{
+	name = "Blade Ward",
+	type = {"chronomancy/blade-threading", 4},
+	require = chrono_req4,
+	mode = "passive",
+	points = 5,
+	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
+	info = function(self, t)
+		local chance = t.getChance(self, t)
+		return ([[While dual-wielding you have a %d%% chance of parrying melee attacks made against you.]])
+		:format(chance)
+	end
+}
+
+--[=[newTalent{
 	name = "Braided Blade",
 	type = {"chronomancy/blade-threading", 3},
 	require = chrono_req3,
@@ -240,18 +336,4 @@ newTalent{
 		The damage transferred by the braid effect and beam damage scales with your Spellpower.]])
 		:format(damage, duration, power)
 	end
-}
-
-newTalent{
-	name = "Blade Ward",
-	type = {"chronomancy/blade-threading", 4},
-	require = chrono_req4,
-	mode = "passive",
-	points = 5,
-	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
-	info = function(self, t)
-		local chance = t.getChance(self, t)
-		return ([[While dual-wielding you have a %d%% chance of parrying melee attacks made against you.]])
-		:format(chance)
-	end
-}
+}]=]
