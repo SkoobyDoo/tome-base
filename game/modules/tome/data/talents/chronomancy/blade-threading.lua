@@ -208,15 +208,23 @@ newTalent{
 		
 		-- Project our melee hits
 		local total_hits = 0
+		local target_found = false
 		self:project(tg, x, y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
+				target_found = true
 				local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
 				if hit then
 					total_hits = total_hits + 1
 				end
 			end
 		end)
+		
+		-- Assume the player canceled
+		if not target_found then 
+			if swap then doWardenWeaponSwap(self, t, "bow") end
+			return nil
+		end
 
 		if total_hits > 0 then
 			-- Project our shear

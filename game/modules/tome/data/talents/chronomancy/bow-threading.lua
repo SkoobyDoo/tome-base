@@ -36,6 +36,9 @@ newTalent{
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
+	end,
 	action = function(self, t)
 		local swap = doWardenWeaponSwap(self, t, "bow")
 		
