@@ -1754,6 +1754,13 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 			chance = chance + p.power
 		end
 	end
+	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and eff.target == target then
+			chance = chance + eff.power
+			crit_power_add = crit_power_add + (eff.power/100)
+		end
+	end
 	
 	if target then
 		chance = chance - target:combatCritReduction()

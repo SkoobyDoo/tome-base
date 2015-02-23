@@ -184,15 +184,6 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	local mult = tg.archery.mult or 1
 
 	self.turn_procs.weapon_type = {kind=weapon and weapon.talented or "unknown", mode="archery"}
-	
-	-- Warden's Focus
-	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			tg.archery.crit_chance = (tg.archery.crit_chance or 0) + eff.power
-			tg.archery.crit_power = (tg.archery.crit_power or 0) + (eff.power/100)
-		end
-	end
 
 	-- Does the blow connect? yes .. complex :/
 	if tg.archery.use_psi_archery then self:attr("use_psi_combat", 1) end

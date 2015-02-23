@@ -124,7 +124,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	mode = "passive",
-	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
+	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 50) end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
@@ -199,8 +199,7 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local power = t.getPower(self, t)
 		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next ten turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
-		Additionally your bow attacks gain %d%% critical chance and critical strike power against the target and you have a %d%% chance to parry melee attacks from the target while you have your blades equipped.
-		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.]])
+		Attacks against this target gain %d%% critical chance and critical strike power while you take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.]])
 		:format(damage, power, power, power)
 	end
 }

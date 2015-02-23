@@ -3469,7 +3469,7 @@ newEffect{
 	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus",
 	long_desc = function(self, eff) 
-		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.power, eff.power, eff.power)
+		return ("Focused on %s, +%d%% critical damage and +%d%% critical hit chance against this target."):format(eff.target.name, eff.power, eff.power)
 	end,
 	type = "magical",
 	subtype = { tactic=true },
