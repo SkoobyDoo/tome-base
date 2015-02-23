@@ -175,7 +175,6 @@ newEntity{
    greater_ego = 1,
    rarity = 30,
    cost = 65,
-   use_no_energy = true,
    wielder = {
 	  resist_all_on_teleport = resolvers.mbonus_material(10, 10),
 	  defense_on_teleport = resolvers.mbonus_material(20, 10),
