@@ -3479,7 +3479,7 @@ newEffect{
 	parameters = { power=0},
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and eff.target.rank and src.rank < eff.target.rank) then
 			-- Reduce damage
 			local reduction = dam * eff.power/100
 			dam = dam -  reduction
