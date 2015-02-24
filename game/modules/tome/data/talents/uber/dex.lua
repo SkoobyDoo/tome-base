@@ -107,7 +107,7 @@ uberTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[You spin madly, generating a sharp gust of wind with your weapons that deals 320%% weapon damage to all foes within radius 4 and disarms them for 4 turns.]])
+		return ([[You spin madly, generating a sharp gust of wind with your weapons that deals 320%% weapon damage to all targets within radius 4 and disarms them for 4 turns.]])
 		:format()
 	end,
 }
