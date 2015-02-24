@@ -65,7 +65,7 @@ newEntity{
 	cost = 40,
 	wielder = {
 		talent_cd_reduction={
-			[Talents.T_THREADED_ARROW]=1,
+			[Talents.T_ARROW_STITCHING]=1,
 		},
 		inc_damage={ 
 			[DamageType.PHYSICAL] = resolvers.mbonus_material(14, 8),

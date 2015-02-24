@@ -29,21 +29,12 @@ newTalent{
 		local duration = math.floor(self:combatTalentScale(t, 2, 8))
 		return math.min(duration, 10) 
 	end,
-	getAutoTuning = function(self, t) return 1 + self:combatTalentLimit(t, 6, 0, 3) end,
+	getTuning = function(self, t) return 1 + self:combatTalentLimit(t, 6, 0, 3) end,
 	callbackOnActBase = function(self, t)
-		if self:hasEffect(self.EFF_SPACETIME_TUNING) then return end
-		local dox = self:getParadox() - self.preferred_paradox
-		if dox == 0 then return end
-
-		-- Insures accurate tuning
-		local tuning = -t.getAutoTuning(self, t)		
-		if dox < 0 then tuning = math.abs(tuning) end
-		local fix = math.min( math.abs(dox), tuning)
-		
-		self:incParadox(fix)
+		tuneParadox(self, t, t.getTuning(self, t))
 	end,
 	info = function(self, t)
-		local tune = t.getAutoTuning(self, t)
+		local tune = t.getTuning(self, t)
 		local duration = t.getTuningAdjustment(self, t)
 		return ([[When Spacetime Tuning is inactive you automatically adjust your Paradox %0.2f points towards your preferred Paradox each turn.
 		The time it takes you to adjust your Paradox with Spacetime Tuning is also reduced by %d turns.]]):
@@ -138,7 +129,7 @@ newTalent{
 	points = 5,
 	cooldown = 24,
 	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 7))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(1 + self:combatTalentScale(t, 1, 7))) end,
 	no_energy = true,
 	action = function(self, t)
 		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {})

@@ -1287,7 +1287,7 @@ function _M:move(x, y, force)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 			local trap = game.level.map(x, y, Map.TRAP)
 			if trap and not trap:knownBy(self) and self:canSee(trap) and self:checkHit(power, trap.detect_power) then
-				trap:setKnown(self, true)
+				trap:setKnown(self, true, x, y)
 				game.level.map:updateMap(x, y)
 				game.logPlayer(self, "You have found a trap (%s)!", trap:getName())
 			end
@@ -3612,7 +3612,7 @@ end
 
 --- Call when an object is worn
 -- This doesnt call the base interface onWear, it copies the code because we need some tricky stuff
-function _M:onWear(o, inven_id, bypass_set)
+function _M:onWear(o, inven_id, bypass_set, silent)
 	o.wielded = {}
 
 	if self.player then o:forAllStack(function(so) so.__transmo = false end) end
@@ -3749,11 +3749,11 @@ function _M:onWear(o, inven_id, bypass_set)
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
-	if self == game.player and not bypass_set then game:playSound("actions/wear") end
+	if self == game.player and not bypass_set and not self:attr("no_sound") then game:playSound("actions/wear") end
 end
 
 --- Call when an object is taken off
-function _M:onTakeoff(o, inven_id, bypass_set)
+function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	engine.interface.ActorInventory.onTakeoff(self, o, inven_id)
 
 	if o.talent_on_spell then
@@ -3849,7 +3849,7 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
-	if self == game.player and not bypass_set then game:playSound("actions/takeoff") end
+	if self == game.player and not bypass_set and not self:attr("no_sound") then game:playSound("actions/takeoff") end
 end
 
 function _M:checkTwoHandedPenalty()
@@ -4391,9 +4391,6 @@ function _M:paradoxDoAnomaly(chance, paradox, def)
 					
 					self:incParadox(-paradox)
 				end
-				
-				-- Remove Reality Smearing
-				self:removeEffect(self.EFF_REALITY_SMEARING)
 			end
 
 			return anomaly_triggered
@@ -6003,7 +6000,10 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		--local duration = p.maximum - math.max(0, math.floor((save - p.apply_power) / 5))
 		--local duration = p.maximum - math.max(0, (math.floor(save/5) - math.floor(p.apply_power/5)))
 		local percentage = 1 - ((save - p.apply_power)/20)
-		local duration = math.min(p.maximum, math.ceil(p.maximum * percentage))
+		local desired = p.maximum * percentage
+		local fraction = desired % 1
+		desired = math.floor(desired) + (rng.percent(100*fraction) and 1 or 0)
+		local duration = math.min(p.maximum, desired)
 		p.dur = util.bound(duration, p.minimum or 0, p.maximum)
 		p.amount_decreased = p.maximum - p.dur
 		local save_type = nil
@@ -6355,7 +6355,8 @@ end
 function _M:transmoPricemod(o) if o.type == "gem" then return 0.40 else return 0.05 end end
 function _M:transmoFilter(o) if o:getPrice() <= 0 or o.quest then return false end return true end
 function _M:transmoInven(inven, idx, o)
-	local price = math.min(o:getPrice() * self:transmoPricemod(o), 25) * o:getNumber()
+	local price = 0 
+	o:forAllStack(function(so) price = price + math.min(so:getPrice() * self:transmoPricemod(so), 25) end)  -- handle stacked objects individually
 	price = math.floor(price * 100) / 100 -- Make sure we get at most 2 digit precision
 	if price ~= price or not tostring(price):find("^[0-9]") then price = 1 end -- NaN is the only value that does not equals itself, this is the way to check it since we do not have a math.isnan method
 	if inven and idx then self:removeObject(inven, idx, true) end
@@ -6364,7 +6365,6 @@ function _M:transmoInven(inven, idx, o)
 		local gem = self:callTalent(self.T_EXTRACT_GEMS, "getGem", o)
 
 		if gem then
-			local gprice = math.min(gem:getPrice() * self:transmoPricemod(gem), 25) * gem:getNumber()
 			local gprice = math.min(gem:getPrice() * self:transmoPricemod(gem), 25) * gem:getNumber()
 			gprice = math.floor(gprice * 100) / 100 -- Make sure we get at most 2 digit precision
 			if gprice ~= gprice or not tostring(gprice):find("^[0-9]") then gprice = 1 end -- NaN is the only value that does not equals itself, this is the way to check it since we do not have a math.isnan method

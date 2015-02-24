@@ -182,11 +182,11 @@ newBirthDescriptor{
 		
 		-- generic
 		["technique/combat-training"]={true, 0.3},
-		["chronomancy/fate-weaving"]={true, 0.3},
+		["chronomancy/chronomancy"]={true, 0.3},
 		["chronomancy/spacetime-weaving"]={true, 0.3},
 		
 		-- generic locked
-		["chronomancy/chronomancy"]={false, 0.1},
+		["chronomancy/fate-weaving"]={false, 0.1},
 		["cunning/survival"]={false, 0},
 	},
 	talents = {
@@ -194,7 +194,7 @@ newBirthDescriptor{
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
 		
 		[ActorTalents.T_WARP_BLADE] = 1,
-		[ActorTalents.T_THREADED_ARROW] = 1,
+		[ActorTalents.T_ARROW_STITCHING] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
 		[ActorTalents.T_STRENGTH_OF_PURPOSE] = 1,
 	},

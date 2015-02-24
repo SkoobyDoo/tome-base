@@ -90,7 +90,7 @@ newTalent{
 	tactical = { DEFEND = 2 },
 	no_npc_use = true,  -- so rares don't learn useless talents
 	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
+	on_pre_use = function(self, t, silent) if self ~= game.player and not self:isTalentActive(t) then return false end return true end,  -- but don't let them cast it
 	callbackOnHit = function(self, t, cb)
 		local p = self:isTalentActive(t.id)
 		local life_after = self.life - cb.value
@@ -164,10 +164,10 @@ newTalent{
 	type = {"chronomancy/chronomancy", 4},
 	require = chrono_req4,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	cooldown = 50,
 	no_npc_use = true,  -- so rares don't learn useless talents
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 20))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 16))) end,
 	on_pre_use = function(self, t, silent)
 		if checkTimeline(self) then
 			if not silent then

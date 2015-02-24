@@ -532,6 +532,20 @@ function _M:removeEgo(e, ego)
 	return ego
 end
 
+function _M:replaceEgo(e, ego1, ego2, type, no_name_change)
+	if not e.ego_list or not ego1 then self:applyEgo(e, ego2, type, no_name_change) return e end
+	local idx = nil
+	for i, v in ipairs(e.ego_list) do
+		if v[1] == ego1 then
+			idx = i
+		end
+	end
+	idx = idx or #e.ego_list + 1
+	e.ego_list[idx] = {ego2, type, no_name_change}
+	reapplyEgos(self, e)
+	return e
+end
+
 function _M:getEgoByName(e, ego_name)
 	for i, v in ipairs(e.ego_list or {}) do
 		if v[1].name == ego_name then return v[1] end

@@ -65,8 +65,10 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-
+		
+		self:attr("no_sound", 1)
 		ammo = self:removeObject(self:getInven("QUIVER"), 1)
+		self:attr("no_sound", -1)
 		if not ammo then return end
 
 		local dam, damtype, particle = t.computeDamage(self, t, ammo)

@@ -101,10 +101,7 @@ end
 -- Check for effects when hit by an anomaly
 -- This is called before immunity is checked
 checkAnomalyTriggers = function(self, target)
-	if target:hasEffect(target.EFF_ATTENUATE) then
-		local eff = target:hasEffect(target.EFF_ATTENUATE)
-		eff.src:callTalent(eff.src.T_ATTENUATE, "doAnomaly", target, eff)
-	end
+
 end
 
 -- Teleportation 

@@ -1402,6 +1402,7 @@ void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int
 	float r, g, b;
 	bool up_important = FALSE;
 	float anim;
+	int zc;
 	int anim_step;
 	int dx = scrollx + bdx;
 	int dy = scrolly + bdy;
@@ -1507,8 +1508,26 @@ void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int
 						dm = m;
 						while (dm)
 						{
-							tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-							do_quad(L, m, dm, map,
+						 	if (m != dm && dm->shader) {
+								unbatchQuads(map->vx);
+								// printf(" -- unbatch3\n");
+
+								for (zc = dm->nb_textures - 1; zc > 0; zc--)
+								{
+									if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
+									tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
+								}
+								if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
+
+						 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+						 	}
+
+						 	if (gl_c_texture != dm->textures[0]) {
+								unbatchQuads(map->vx);
+								// printf(" -- unbatch6\n");
+								tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
+						 	}
+							do_quad(L, m, dm, map, 
 								0,
 								dx + dm->dx * map->tile_w + animdx,
 								dy + dm->dy * map->tile_h + animdy,
@@ -1519,6 +1538,10 @@ void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int
 								r, g, b, a,
 								(dm->shader && dm->shader != m->shader) ? 1 : 0,
 								i, j);
+							if (m != dm) {
+						 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+						 		else useDefaultShader(map);
+						 	}
 							dm = dm->next;
 						}
 					}
@@ -1554,26 +1577,6 @@ void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int
 	tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
 	while (dm)
 	{
-	 	if (m != dm && dm->shader) {
-			unbatchQuads(map->vx);
-			// printf(" -- unbatch3\n");
-
-			for (z = dm->nb_textures - 1; z > 0; z--)
-			{
-				if (multitexture_active) tglActiveTexture(GL_TEXTURE0+z);
-				tglBindTexture(dm->textures_is3d[z] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[z]);
-			}
-			if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
-
-	 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-	 	}
-
-	 	if (gl_c_texture != dm->textures[0]) {
-			unbatchQuads(map->vx);
-			// printf(" -- unbatch6\n");
-			tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-	 	}
-
 		if (!dm->anim_max) anim = 0;
 		else {
 			dm->anim_step += (dm->anim_speed * nb_keyframes);
@@ -1587,7 +1590,28 @@ void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int
 		}
 		dm->world_x = bdx + (dm->dx + animdx) * map->tile_w;
 		dm->world_y = bdy + (dm->dy + animdy) * map->tile_h;
-		do_quad(L, m, dm, map,
+
+	 	if (m != dm && dm->shader) {
+			unbatchQuads(map->vx);
+			// printf(" -- unbatch3\n");
+
+			for (zc = dm->nb_textures - 1; zc > 0; zc--)
+			{
+				if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
+				tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
+			}
+			if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
+
+	 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+	 	}
+
+	 	if (gl_c_texture != dm->textures[0]) {
+			unbatchQuads(map->vx);
+			// printf(" -- unbatch6\n");
+			tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
+	 	}
+
+		do_quad(L, m, dm, map, 
 			anim,
 			dx + (dm->dx + animdx) * map->tile_w,
 			dy + (dm->dy + animdy) * map->tile_h,

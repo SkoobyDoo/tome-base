@@ -483,8 +483,13 @@ function resolvers.calc.random_use_talent(tt, e)
 end
 
 --- Charms resolver
-function resolvers.charm(desc, cd, fct, tcd)
-	return {__resolver="charm", desc, cd, fct, tcd}
+-- @param desc = power description (function or string) %d will be filled with self:getCharmPower(who)
+-- @param cd = cooldown
+-- @param fct = function(self, who) called when activated
+-- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
+-- @param use_params = parameters to merge into self.use_power table
+function resolvers.charm(desc, cd, fct, tcd, use_params)
+	return {__resolver="charm", desc, cd, fct, tcd, use_params}
 end
 function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
@@ -492,6 +497,7 @@ function resolvers.calc.charm(tt, e)
 	e.power = e.max_power
 	e.use_power = {name=tt[1], power=cd, use=tt[3], __no_merge_add=true}
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
+	if tt[5] then table.merge(e.use_power, tt[5], true) end
 	return
 end
 

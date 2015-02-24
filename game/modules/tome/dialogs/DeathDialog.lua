@@ -268,7 +268,10 @@ function _M:use(item)
 		game:saveGame()
 	elseif act == "threads" then
 		game:chronoRestore("see_threads_base", true)
-		game:onTickEnd(function()game.player:removeEffect(game.player.EFF_SEE_THREADS)end)
+		game:onTickEnd(function()
+			game._chronoworlds = nil
+			game.player:removeEffect(game.player.EFF_SEE_THREADS)end
+		)
 		game:saveGame()
 	elseif act == "easy_mode" then
 		self:eidolonPlane()

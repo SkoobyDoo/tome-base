@@ -619,6 +619,7 @@ end
 
 --- Called by the engine map draw code for each z-layer
 function _M:zDisplay(z, nb_keyframe, prevfbo)
+	self:calcEffectVisibility(z)
 	self:displayParticles(z, nb_keyframe)
 	self:displayEffects(z, prevfbo, nb_keyframe)
 end
@@ -1073,6 +1074,7 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 	end
 
 	local e = {
+		__ATOMIC = true,
 		src=src, x=x, y=y, duration=duration, damtype=damtype, dam=dam, radius=radius, dir=dir, angle=angle,
 		overlay=overlay and (overlay.__ATOMIC or overlay.__CLASSNAME) and overlay,
 		grids = grids,
@@ -1090,12 +1092,14 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 		e.particles = e.particles or {}
 		if overlay_particle.only_one then
 			e.particles[#e.particles+1] = self:particleEmitter(x, y, 1, overlay_particle.type, overlay_particle.args, nil, overlay_particle.zdepth)
+			e.particles[#e.particles].__map_effect = e
 			e.particles_only_one = true
 		else
 			e.fake_overlay = overlay_particle
 			for lx, ys in pairs(grids) do
 				for ly, _ in pairs(ys) do
 					e.particles[#e.particles+1] = self:particleEmitter(lx, ly, 1, overlay_particle.type, overlay_particle.args, nil, overlay_particle.zdepth)
+					e.particles[#e.particles].__map_effect = e
 				end
 			end
 		end
@@ -1111,22 +1115,37 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 	return e
 end
 
+-- ElectronicRU: I have no idea why rendering an empty FBO when map seens is empty causes so much distress to CPU. But for now let's maybe just no do it.
+-- This serves two important purposes, the first is to show particles that are only_one, the second is to fix the pesky bug described above.
+function _M:calcEffectVisibility(z)
+	for e, _ in pairs(self.z_effects[z]) do
+		local seen_grids = {}
+		for lx, ys in pairs(e.grids) do
+			seen_grids[lx] = {}
+			for ly, _ in pairs(ys) do
+				seen_grids[lx][ly] = self.seens(lx, ly)
+			end
+			if not next(seen_grids[lx]) then seen_grids[lx] = nil end
+		end
+		e.seen_grids = seen_grids
+		e.seen = next(seen_grids) and true or false
+	end
+end
+
 --- Display the overlay effects, called by self:display()
 function _M:displayEffects(z, prevfbo, nb_keyframes)
 	local sx, sy = self._map:getScroll()
 	for e, _ in pairs(self.z_effects[z]) do
-		-- Dont bother with obviously out of screen stuff
-		if e.overlay and e.overlay.zdepth == z and e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
+		-- Dont bother with obviously out of screen stuff or invisible stuff
+		if e.seen and e.overlay and e.overlay.zdepth == z and e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
 			local s = self.tilesEffects:get(e.overlay.display, e.overlay.color_r, e.overlay.color_g, e.overlay.color_b, e.overlay.color_br, e.overlay.color_bg, e.overlay.color_bb, e.overlay.image, e.overlay.alpha)
 
 			-- If we dont have a special fbo/shader or no shader image to use, just display with simple quads
 			if not self.fbo or not e.overlay.effect_shader then
 				-- Now display each grids
-				for lx, ys in pairs(e.grids) do
+				for lx, ys in pairs(e.seen_grids) do
 					for ly, _ in pairs(ys) do
-						if self.seens(lx, ly) then
-							s:toScreen(self.display_x + sx + (lx - self.mx) * self.tile_w * self.zoom, self.display_y + sy + (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
-						end
+						s:toScreen(self.display_x + sx + (lx - self.mx) * self.tile_w * self.zoom, self.display_y + sy + (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
 					end
 				end
 			-- We have a fbo/shader pair, so we display everything inside it and apply the shader to get nice borders and such
@@ -1136,10 +1155,10 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 					if type(e.overlay.effect_shader) == "table" then
 						for i = 1, #e.overlay.effect_shader do
 							e.overlay.effect_shader_tex[i] = Tiles:loadImage(e.overlay.effect_shader[i]):glTexture()
-							e.overlay.effect_shader_tex.cur = 1
-							e.overlay.effect_shader_tex.cnt = 0
-							e.overlay.effect_shader_tex.max = e.overlay.effect_shader.max
 						end
+						e.overlay.effect_shader_tex.cur = 1
+						e.overlay.effect_shader_tex.cnt = 0
+						e.overlay.effect_shader_tex.max = e.overlay.effect_shader.max
 					else
 						e.overlay.effect_shader_tex[1] = Tiles:loadImage(e.overlay.effect_shader):glTexture()
 						e.overlay.effect_shader_tex.cur = 1
@@ -1150,11 +1169,9 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 
 				self.fbo:use(true, 0, 0, 0, 0)
 				-- Now display each grids
-				for lx, ys in pairs(e.grids) do
+				for lx, ys in pairs(e.seen_grids) do
 					for ly, _ in pairs(ys) do
-						if self.seens(lx, ly) then
-							s:toScreen((lx - self.mx) * self.tile_w * self.zoom, (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
-						end
+						s:toScreen((lx - self.mx) * self.tile_w * self.zoom, (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
 					end
 				end
 				self.fbo:use(false, prevfbo)
@@ -1217,6 +1234,7 @@ function _M:processEffects(update_shape_only)
 						for lx, ys in pairs(e.grids) do
 							for ly, _ in pairs(ys) do
 								e.particles[#e.particles+1] = self:particleEmitter(lx, ly, 1, e.fake_overlay.type, e.fake_overlay.args, nil, e.zdepth)
+								e.particles[#e.particles].__map_effect = e
 							end
 						end
 					end
@@ -1302,7 +1320,7 @@ end
 
 --- Adds an existing particle emitter to the map
 function _M:addParticleEmitter(e, x, y)
-	if self.particles[e] then return false end
+	for _, ea in ipairs(self.particles) do if ea==e then return false end end
 	if x and y then e.x, e.y = x, y end
 	self.particles[#self.particles+1] = e
 	if not e.zdepth then e.zdepth = self.zdepth - 1 end
@@ -1359,17 +1377,25 @@ function _M:displayParticles(z, nb_keyframes)
 				end
 			end
 
+			local show_particle = (self.seens(e.x, e.y) or e.always_visible)
+			if e.__map_effect then
+				local me = e.__map_effect
+				if me.particles_only_one and me.seen then
+					show_particle = true
+				end
+			end
+
 			if nb_keyframes == 0 and e.x and e.y then
 				-- Just display it, not updating, no emitting
 				if e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
-					e.ps:toScreen(dx + (adx + e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + (ady + e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, self.seens(e.x, e.y) or e.always_seen, e.zoom * self.zoom)
+					e.ps:toScreen(dx + (adx + e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + (ady + e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle, e.zoom * self.zoom)
 				end
 			elseif e.x and e.y then
 				alive = e.ps:isAlive()
 
 				-- Update more, if needed
 				if alive and e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
-					e.ps:toScreen(dx + (adx + e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + (ady + e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, self.seens(e.x, e.y) or e.always_seen)
+					e.ps:toScreen(dx + (adx + e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + (ady + e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle)
 				end
 
 				if not alive then
