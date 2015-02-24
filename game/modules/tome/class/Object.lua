@@ -2118,21 +2118,27 @@ local standard_flavors = {
 
 -- from command-staff.lua
 local function update_staff_table(o, d_table_old, d_table_new, old_element, new_element, tab, v, is_greater)
+	o.wielder[tab] = o.wielder[tab] or {}
 	if is_greater then
-		for i = 1, #d_table_old do
+		if d_table_old then for i = 1, #d_table_old do
 			o.wielder[tab][d_table_old[i]] = math.max(0, (o.wielder[tab][d_table_old[i]] or 0) - v)
 			if o.wielder[tab][d_table_old[i]] == 0 then o.wielder[tab][d_table_old[i]] = nil end
-		end
+		end end
 		for i = 1, #d_table_new do
 			o.wielder[tab][d_table_new[i]] = (o.wielder[tab][d_table_new[i]] or 0) + v
 		end
 	else
-		o.wielder[tab][old_element] = math.max(0, (o.wielder[tab][old_element] or 0) - v)
+		if old_element then
+			o.wielder[tab][old_element] = math.max(0, (o.wielder[tab][old_element] or 0) - v)
+			if o.wielder[tab][old_element] == 0 then o.wielder[tab][old_element] = nil end
+		end
 		o.wielder[tab][new_element] = (o.wielder[tab][new_element] or 0) + v
-		if o.wielder[tab][old_element] == 0 then o.wielder[tab][old_element] = nil end
 	end
 end
 
+function _M:getStaffFlavorList()
+	return table.keys(self.flavors or standard_flavors)
+end
 
 function _M:getStaffFlavor(flavor)
 	local flavors = self.flavors or standard_flavors
@@ -2159,10 +2165,12 @@ end
 function _M:commandStaff(element, flavor)
 	if self.subtype ~= "staff" then return end
 	local old_element = self.combat.element
+	element  = element or old_element
+	flavor = flavor or self.flavor_name
 	-- Art staves may define new flavors or redefine meaning of existing ones; "true" means standard, otherwise it should be a list of damage types.
 	local old_flavor = self:getStaffFlavor(self.flavor_name)
 	local new_flavor = self:getStaffFlavor(flavor)
-	if not old_flavor or not new_flavor then return end
+	if not new_flavor then return end
 	local staff_power = self.combat.staff_power or self.combat.dam
 	local is_greater = self.combat.is_greater
 	for k, v in pairs(staff_command(self)) do
@@ -2177,6 +2185,6 @@ function _M:commandStaff(element, flavor)
 	end
 	self.combat.element = element
 	if self.combat.melee_element then self.combat.damtype = element end
-	if not self.unique then self.name = self.name:gsub(self.flavor_name, flavor) end
+	if not self.unique then self.name = self.name:gsub(self.flavor_name or "staff", flavor) end
 	self.flavor_name = flavor
 end

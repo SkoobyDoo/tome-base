@@ -65,10 +65,7 @@ newEntity{
 	wielder = {
 		combat_spellpower = resolvers.mbonus_material(3, 2),
 	},
-	resolvers.genericlast(function(e)
-		e.combat.staff_power = e.combat.dam
-		e:commandStaff(e.element, e.flavor_name)
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -143,9 +140,7 @@ newEntity{
 	wielder = {
 		combat_spellpower = resolvers.mbonus_material(4, 3),
 	},
-	resolvers.generic(function(e)
-		e:commandStaff(e.combat.element, e.flavor_name)
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -296,11 +291,7 @@ newEntity{
 	},
 	combat = {of_warding = true},
 	command_staff = {of_warding = {add=2, mult=0, "wards"}},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.wards[d] = 2
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -316,11 +307,7 @@ newEntity{
 	},
 	combat = {of_breaching = true},
 	command_staff = {resists_pen=0.5,},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.resists_pen[d] = v/2
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -424,11 +411,7 @@ newEntity{
 	},
 	combat = {of_greater_warding = true},
 	command_staff = {of_greater_warding = {add=3, mult=0, "wards"}},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.wards[d] = 3
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -498,11 +481,7 @@ newEntity{
 	},
 	combat = {of_protection = true},
 	command_staff = {resists = 0.5,},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.resists[d] = v/2
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -594,15 +573,6 @@ newEntity{
 			[DamageType.ARCANE] = resolvers.mbonus_material(30, 15),
 		},
 	},
-	-- XXX what is the purpose of this
-	resolvers.genericlast(function(e)
-		e.wielder.inc_damage[e.combat.element or e.combat.damtype] = e.combat.dam
-		if e.combat.of_breaching then
-			for d, v in pairs(e.wielder.inc_damage) do
-				e.wielder.resists_pen[d] = math.ceil(e.combat.dam/2)
-			end
-		end
-	end),
 }
 
 newEntity{

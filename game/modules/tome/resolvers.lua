@@ -935,26 +935,37 @@ function resolvers.calc.shooter_capacity(t, e)
 	return nil
 end
 
---- Give staves a flavor, appropriate damage type, spellpower, spellcrit, and the ability to teach the command staff talent
-function resolvers.staff_wielder(name)
-	return {__resolver="staff_wielder", name}
+--- Give staves a flavor, appropriate damage type, and the ability to teach the command staff talent
+function resolvers.staff_element(name)
+	return {__resolver="staff_element", name}
 end
-function resolvers.calc.staff_wielder(t, e)
-	local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
-	e.flavor_name = e["flavor_names"][staff_type]
-	if staff_type == 2 then
-		e.combat.element = rng.table{engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE }
-		e.modes = {"fire", "cold", "lightning", "arcane"}
-		e.name = e.name:gsub(" staff", " magestaff")
-	elseif staff_type == 3 then
-		e.combat.element = rng.table{engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL,  engine.DamageType.PHYSICAL }
-		e.modes = {"light", "darkness", "temporal", "physical"}
-		e.name = e.name:gsub(" staff", " starstaff")
-	elseif staff_type == 4 then
-		e.combat.element = rng.table{engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE,}
-		e.modes = {"darkness", "blight", "acid", "fire"}
-		e.name = e.name:gsub(" staff", " vilestaff")
+function resolvers.calc.staff_element(t, e)
+	local command_flavor, command_lement = nil, nil
+	if not e.flavor_name then
+		if not e.flavors then -- standard
+			local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
+			command_flavor = e["flavor_names"][staff_type]
+		else
+			command_flavor = rng.tableIndex(e.flavors)
+		end
 	end
-	e.combat.damtype = engine.DamageType.PHYSICAL
-	return 	{ inc_damage = {[e.combat.element] = e.combat.dam}, combat_spellpower = e.material_level * 3, combat_spellcrit = e.material_level, learn_talent = {[Talents.T_COMMAND_STAFF] = 1}, }
+	if not e.combat.element then
+		command_element = rng.table(e:getStaffFlavor(e.flavor_name or command_flavor))
+	end
+
+	e.combat.damtype = e.combat.damtype or engine.DamageType.PHYSICAL
+	if not e.no_command then 
+		e.wielder = e.wielder or {}
+		e.wielder.learn_talent = e.wielder.learn_talent or {}
+		e.wielder.learn_talent[Talents.T_COMMAND_STAFF] = 1
+	end
+
+	if command_flavor or command_element then e:commandStaff(command_element, command_flavor) end
+end
+
+function resolvers.command_staff()
+	return {__resolver = "command_staff", __resolve_last = true}
+end
+function resolvers.calc.command_staff(t, e)
+	e:commandStaff()
 end

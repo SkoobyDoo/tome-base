@@ -55,7 +55,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 2.5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 3,
+		combat_spellcrit = 1,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -70,7 +74,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 3,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 6,
+		combat_spellcrit = 2,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -85,7 +93,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 3.5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 9,
+		combat_spellcrit = 3,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -100,7 +112,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 4.5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 12,
+		combat_spellcrit = 4,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -115,5 +131,9 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 15,
+		combat_spellcrit = 5,
+	},
+	resolvers.staff_element(),
 }
