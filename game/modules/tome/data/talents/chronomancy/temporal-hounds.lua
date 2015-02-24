@@ -218,9 +218,9 @@ newTalent{
 	requires_target = true,
 	on_pre_use = function(self, t, silent)
 		local p = self:isTalentActive(self.T_TEMPORAL_HOUNDS)
-		if not p or p.hounds < 1 then
+		if not p then
 			if not silent then
-				game.logPlayer(self, "You must have temporal hounds to use this talent.")
+				game.logPlayer(self, "Temporal Hounds must be sustained to cast this spell.")
 			end
 			return false
 		end
