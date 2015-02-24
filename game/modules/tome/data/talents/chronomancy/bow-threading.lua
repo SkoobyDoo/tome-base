@@ -34,7 +34,7 @@ newTalent{
 	range = archery_range,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 2.2) end,
-	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 10, 20)) end,
+	getParadoxReduction = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
@@ -50,11 +50,11 @@ newTalent{
 		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
+		local swap = doWardenWeaponSwap(self, t, "bow")
 
 		local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, infinite=true, no_energy = true})
-		if not targets then if swap then doWardenWeaponSwap(self, t, nil, "blade") end return end
-		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam, damtype=DamageType.TEMPORAL})
+		if not targets then if swap then doWardenWeaponSwap(self, t, "blade") end return end
+		self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t), damtype=DamageType.TEMPORAL})
 
 		return true
 	end,
@@ -81,7 +81,7 @@ newTalent{
 	range = archery_range,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
-	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 80, 0, 40) end,
+	getDamagePenalty = function(self, t) return 50 end,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
@@ -90,12 +90,12 @@ newTalent{
 		game:onTickEnd(function()blade_warden(self, target)end)
 	end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
+		local swap = doWardenWeaponSwap(self, t, "bow")
 		
 		-- Grab our target so we can spawn clones
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
+		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, "blade") end return nil end
 		local __, x, y = self:canProject(tg, x, y)
 		
 		-- Don't cheese arrow stitching through walls
@@ -106,7 +106,7 @@ newTalent{
 				
 		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy = true})
 		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=dam})
+		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=t.getDamage(self, t)})
 		
 		-- Summon our clones
 		if not self.arrow_stitching_done then
@@ -165,12 +165,12 @@ newTalent{
 	tactical = { ATTACKAREA = {PHYSICAL = 2}, DISABLE = 2 },
 	requires_target = true,
 	range = archery_range,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.7)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.3)) end,
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDamageAoE = function(self, t) return self:combatTalentSpellDamage(t, 25, 230, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, stop_block=true, friendlyfire=false, friendlyblock=false}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, stop_block=true, friendlyblock=false}
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
@@ -213,7 +213,7 @@ newTalent{
 			-- 25% bonus damage per target beyond the first
 			local dam = self:spellCrit(t.getDamageAoE(self, t))
 			if #tgts > 0 then
-				dam = dam + math.min(dam, dam*(#tgts-1)/4)
+				dam = dam + math.min(dam/2, dam*(#tgts-1)/8)
 			end
 			
 			-- Project our damage last based on number of targets hit
@@ -229,18 +229,18 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
+		local swap = doWardenWeaponSwap(self, t, "bow")
 		
 		-- Pull x, y from getTarget and pass it so we can show the player the area of effect
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
-		if not x or not y then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
+		if not x or not y then if swap == true then doWardenWeaponSwap(self, t, "blade") end return nil end
 		
 		tg.type = "bolt" -- switch our targeting back to a bolt
 
 		local targets = self:archeryAcquireTargets(tg, {one_shot=true, x=x, y=y, no_energy = true})
 		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam})
+		self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
 
 		return true
 	end,
@@ -248,11 +248,11 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local radius = self:getTalentRadius(t)
 		local aoe = t.getDamageAoE(self, t)
-		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination or hits a target it will draw in all enemies in a radius of %d and inflict %0.2f physical damage.
+		return ([[Fire an arrow for %d%% weapon damage.  When the arrow reaches its destination or hits a target it will draw in all targets in a radius of %d and inflict %0.2f physical damage.
 		Each target moved beyond the first increases the damage %0.2f (up to %0.2f bonus damage).
 		Targets take reduced damage the further they are from the epicenter (20%% less per tile).
 		The additional damage scales with your Spellpower.]])
-		:format(damage, radius, damDesc(self, DamageType.PHYSICAL, aoe), damDesc(self, DamageType.PHYSICAL, aoe/4), damDesc(self, DamageType.PHYSICAL, aoe))
+		:format(damage, radius, damDesc(self, DamageType.PHYSICAL, aoe), damDesc(self, DamageType.PHYSICAL, aoe/8), damDesc(self, DamageType.PHYSICAL, aoe/2))
 	end
 }
 
@@ -270,18 +270,18 @@ newTalent{
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.3) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.3) end,
 	archery_onhit = function(self, t, target, x, y)
 		game:onTickEnd(function() blade_warden(self, target) end)
 	end,
 	doEcho = function(self, t, eff)
 		game:onTickEnd(function()
-			local swap = doWardenWeaponSwap(self, t, nil, "bow", true)
+			local swap = doWardenWeaponSwap(self, t, "bow", true)
 			local target = eff.target
 			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, x=target.x, y=target.y, infinite=true, no_energy = true})
 			if not targets then
-			if swap == true then doWardenWeaponSwap(self, t, nil, "blade", true) end
+			if swap == true then doWardenWeaponSwap(self, t, "blade", true) end
 				return 
 			end
 			
@@ -290,13 +290,13 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "bow")
+		local swap = doWardenWeaponSwap(self, t, "bow")
 		
 		-- Grab our target so we can set our echo
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, nil, "blade") end return nil end
-		local __, x, y = self:canProject(tg, x, y)
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, "blade") end return nil end
 		
 		-- Sanity check
 		if not self:hasLOS(x, y) then
@@ -308,7 +308,7 @@ newTalent{
 		
 		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy=true})
 		if not targets then return end
-		self:archeryShoot(targets, t, {type="bolt"}, {mult=dam})
+		self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
 		
 		return true
 	end,

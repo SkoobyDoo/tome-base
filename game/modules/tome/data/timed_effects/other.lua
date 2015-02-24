@@ -472,7 +472,7 @@ newEffect{
 				game._chronoworlds["see_threads_"..(eff.thread-1)] = clone
 				game.level.map:particleEmitter(game.player.x, game.player.y, 1, "rewrite_universe")
 				return
-			else
+		else
 				game._chronoworlds.see_threads_base = nil
 				local chat = Chat.new("chronomancy-see-threads", {name="See the Threads"}, self, {turns=eff.max_dur})
 				chat:invoke()
@@ -1703,7 +1703,7 @@ newEffect{
 			
 			-- special stuff
  			m.is_psychic_projection = true
-			m.lucid_dreamer = true
+			m.lucid_dreamer = 1
 			
 			-- Remove some talents
 			local tids = {}
@@ -2297,7 +2297,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is suffocating.", "+SUFFOCATING" end,
 	on_lose = function(self, err) return "#Target# can breathe again.", "-Suffocating" end,
 	on_timeout = function(self, eff)
-		if self.air > self.air_regen then -- We must be over our natural regen
+		if not self.is_suffocating then
 			self:removeEffect(self.EFF_SUFFOCATING, false, true)
 			return
 		end
@@ -2546,7 +2546,19 @@ newEffect{
 	status = "beneficial",
 	parameters = { power=10 },
 	decrease = 0,
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
+		if src ~= self and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
+			-- Find our clones
+			for i = 1, #eff.targets do
+				local target = eff.targets[i]
+				if target == self then dam = 0 end
+			end
+		end
+		return {dam=dam}
+	end,
 	callbackOnHit = function(self, eff, cb, src)
+		if cb.value <= 0 then return cb.value end
+		
 		local clones = {}
 		-- Find our clones
 		for i = 1, #eff.targets do
@@ -2557,14 +2569,14 @@ newEffect{
 		end
 		
 		-- Split the damage
-		if #clones > 0 and not src.turn_procs.temporal_fugue_damage then
+		if #clones > 0 and not self.turn_procs.temporal_fugue_damage then
 			self.turn_procs.temporal_fugue_damage = true
 			cb.value = cb.value/#clones
 			game:delayedLogMessage(self, nil, "fugue_damage", "#STEEL_BLUE##Source# shares damage with %s fugue clones!", string.his_her(self))
 			for i = 1, #clones do
 				local target = clones[i]
 				if target ~= self then
-					target:takeHit(cb.value, self)
+					target:takeHit(cb.value, src)
 					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(cb.value), nil)
 				end
 			end
@@ -2664,14 +2676,27 @@ newEffect{
 		self:effectTemporaryValue(eff, "status_effect_immune", 1)
 		self:effectTemporaryValue(eff, "invulnerable", 1)
 		self:effectTemporaryValue(eff, "cant_be_moved", 1)
-		self:effectParticles(eff, self:addParticles3D("volumetric", {kind="dense_cylinder", radius=1.4, shininess=35, growSpeed=0.004, img="coggy_outline_01"}))
 		self.never_act = true
 		eff.old_faction = self.faction
 		self.faction = "neutral"
 	end,
 	deactivate = function(self, eff)
 		self.faction = eff.old_faction
-		self.never_act = nil		
+		self.never_act = nil
+		self:disappear(self)
+		local e = game.zone:makeEntity(game.level, "actor", {type="giant", subtype="ogre", special_rarity="special_rarity"}, nil, true)
+		local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
+		if e and x then
+			game.zone:addEntity(game.level, e, "actor", x, y)
+			local g = game.zone.grid_list[self.to_vat]
+			if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+			game.level.map:particleEmitter(x, y, 1, "goosplosion")
+		end
 	end,
 	on_timeout = function(self, eff)
 		if eff.timeout then
@@ -2706,7 +2731,7 @@ newEffect{
 newEffect{
 	name = "2H_PENALTY", image = "talents/unstoppable.png",
 	desc = "Hit Penalty",
-	long_desc = function(self, eff) return ("The target is using a two handed weapon in a single hand, reducing chances to hit by %d%% (based on size)."):format(20 - math.min(self.size_category - 4, 4) * 5) end,
+	long_desc = function(self, eff) return ("The target is using a two handed weapon in a single hand, reducing chances to hit, spellpower and mindpower by %d%% (based on size)."):format(20 - math.min(self.size_category - 4, 4) * 5) end,
 	type = "other", decrease = 0, no_remove = true,
 	subtype = { combat=true, penalty=true },
 	status = "detrimental",
@@ -2755,11 +2780,11 @@ newEffect{
 newEffect{
 	name = "WARDEN_S_TARGET", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus Target",
-	long_desc = function(self, eff) return ("%s is focusing on this target, gaining +%d accuracy and +%d%% critical hit chance when attacking it."):format(eff.src.name, eff.atk, eff.crit) end,
+	long_desc = function(self, eff) return ("%s is focusing on this target."):format(eff.src.name) end,
 	type = "other",
 	subtype = { tactic=true },
 	status = "detrimental",
-	parameters = {atk = 1, crit= 1},
+	parameters = {},
 	remove_on_clone = true, decrease = 0,
 	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,

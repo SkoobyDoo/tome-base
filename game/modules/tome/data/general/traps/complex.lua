@@ -136,7 +136,7 @@ newEntity{ base = "TRAP_COMPLEX",
 
 newEntity{ base = "TRAP_COMPLEX",
 	subtype = "nature",
-	name = "poison cloud", image = "trap/trap_acid_blast_01.png",
+	name = "poison spore", image = "trap/trap_acid_blast_01.png",
 	detect_power = resolvers.clscale(40, 50, 8),
 	disarm_power = resolvers.clscale(50, 50, 8),
 	rarity = 3, level_range = {1, nil},
@@ -176,7 +176,7 @@ newEntity{ base = "TRAP_COMPLEX",
 	end,
 	act = function(self)
 		if game.level.map(self.x, self.y, engine.Map.TRAP) ~= self then game.level:removeEntity(self, true) return end
-		if self.nb <= 0 then game.level:removeEntity(self, true) print("The poison spore looks somewhat drained.") return end
+		if self.nb <= 0 then game.level:removeEntity(self, true) game.logSeen(self, "The poison spore looks somewhat drained.") return end
 
 		local ok = false
 		local tg = {type="ball", radius=self.rad, friendlyfire=false}
@@ -255,6 +255,7 @@ newEntity{ base = "TRAP_COMPLEX",
 			type = "trap", subtype = "arcane",
 			combatSpellpower = function(self) return self.dam end,
 			getTarget = function(self) return self.x, self.y end,
+			targetable = false,
 			dam = self.dam,
 			x = x, y = y,
 			faction = self.faction,

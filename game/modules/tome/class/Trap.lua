@@ -76,6 +76,14 @@ function _M:getName()
 	end
 end
 
+--- Set the known status for the given actor and make its tile remembered on the map for the player
+function _M:setKnown(actor, v, x, y)
+	self.known_by[actor] = v
+	if actor.player and x and y and game.level.map(x, y, engine.Map.TRAP) == self then
+		game.level.map(x, y, engine.Map.TERRAIN).always_remember = true
+	end
+end
+
 -- Returns a tooltip for the trap
 function _M:tooltip()
 	if self:knownBy(game.player) then

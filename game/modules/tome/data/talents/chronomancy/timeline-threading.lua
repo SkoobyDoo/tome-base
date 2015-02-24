@@ -194,7 +194,8 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage received is split between the three of you.
-		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones.]]):
+		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones.
+		Damage you deal to Fugue Clones or that they deal to you or each other is reduced to zero.]]):
 		format(duration)
 	end,
 }

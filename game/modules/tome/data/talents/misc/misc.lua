@@ -52,13 +52,13 @@ newTalent{
 	speed = 'weapon',
 	is_melee = true,
 	action = function(self, t)
-		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, nil, "blade"))
+		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "blade"))
 	
 		local tg = self:getTalentTarget(t)
 		local _, x, y = self:canProject(tg, self:getTarget(tg))
 		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not target then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, t, "bow") end
 			return nil
 		end
 
@@ -382,7 +382,7 @@ newTalent{
 		local mental_reduction = math.floor(self:combatMentalResist(true)/5)
 		return ([[Not the Master himself, nor all the orcs in fallen Reknor, nor even the terrifying unknown beyond Reknor's portal could slow your pursuit of the Staff of Absorption.
 		Children will hear of your relentlessness in song for years to come.
-		When activated, this ability reduces the duration of all active detrimental effects by the appropriate saving throw duration reduction.
+		When activated, this ability reduces the duration of all active detrimental effects by 20% of your appropriate save value..
 		Physical effect durations reduced by %d turns
 		Magical effect durations reduced by %d turns
 		Mental effect durations reduced by %d turns]]):

@@ -25,6 +25,37 @@ load("/data/general/npcs/slime.lua")
 local Talents = require("engine.interface.ActorTalents")
 
 newEntity{
+	define_as = "BASE_NPC_VAT",
+	type = "structure", subtype = "vat",
+	display = "*", color=colors.GREEN,
+	rank = 2,
+	size_category = 4,
+
+	defineDisplayCallback = function() end,
+	on_added_to_level = function(self)
+		self:setEffect(self.EFF_AEONS_STASIS, 1, {})
+	end,
+}
+
+newEntity{
+	base = "BASE_NPC_VAT", define_as = "VAT1",
+	image = "terrain/ruins/vat_01.png",
+	resolvers.nice_tile{tall=1},
+	level_range = {1, nil}, exp_worth = 0,
+	vat_rarity = 1,
+	to_vat = "VAT1",
+}
+
+newEntity{
+	base = "BASE_NPC_VAT", define_as = "VAT2",
+	image = "terrain/ruins/vat_02.png",
+	resolvers.nice_tile{tall=1},
+	level_range = {1, nil}, exp_worth = 0,
+	vat_rarity = 1,
+	to_vat = "VAT2",
+}
+
+newEntity{
 	define_as = "BASE_NPC_OGRE",
 	type = "giant", subtype = "ogre",
 	display = "O", color=colors.WHITE,
@@ -45,10 +76,6 @@ newEntity{
 	combat = { dammod={str=1, mag=0.5}},
 	combat_armor = 8, combat_def = 6,
 	not_power_source = {antimagic=true},
-
-	on_added_to_level = function(self)
-		self:setEffect(self.EFF_AEONS_STASIS, 1, {})
-	end,
 }
 
 newEntity{ base = "BASE_NPC_OGRE",

@@ -117,15 +117,21 @@ function _M:getUITexture(file)
 	return r
 end
 
-function _M:drawFontLine(font, text, width) -- always draw with white, outputting texture can have it changed
+function _M:drawFontLine(font, text, width, r, g, b, direct_draw)
 	width = width or font:size(text)
-	local tex = font:draw(text, width, 255, 255, 255, true)[1]
-	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h}
+	local tex = font:draw(text, width, r or 255, g or 255, b or 255, true, direct_draw)[1]
+	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h, dduids = tex._dduids}
 	return r
 end
 
-function _M:textureToScreen(tex, x, y, r, g, b, a)
-	return tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
+function _M:textureToScreen(tex, x, y, r, g, b, a, allow_uid)
+	local res = tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
+	if tex.dduids and allow_uid then
+		for di, dduid in ipairs(tex.dduids) do
+			dduid.e:toScreen(nil, x + dduid.x, y, dduid.w, dduid.w, 1, false, false)
+		end
+	end
+	return res
 end
 
 function _M:makeFrame(base, w, h)

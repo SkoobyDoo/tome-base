@@ -390,14 +390,18 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "SWORD_DAWN",
 		lite=2,
 	},
 	max_power = 35, power_regen = 1,
-	use_power = { name = "invoke dawn", power = 35,
+	use_power = {
+--		name = "invoke dawn",
+		name = function(self, who) return ("invoke dawn, inflicting %0.2f light damage in radius %d (based on Magic) and lighting the area within radius %d"):format(engine.interface.ActorTalents.damDesc(who, engine.DamageType.LIGHT, self.use_power.damage(who)), self.use_power.radius, self.use_power.radius*2) end,
+		power = 35,
+		radius = 5,
+		damage = function(who) return 75 + who:getMag()*2 end,
 		use = function(self, who)
-			local radius = 4
-			local dam = (75 + who:getMag()*2)
-			local blast = {type="ball", range=0, radius=5, selffire=false}
+			local dam = self.use_power.damage(who)
+			local blast = {type="ball", range=0, radius=self.use_power.radius, selffire=false}
 			who:project(blast, who.x, who.y, engine.DamageType.LIGHT, dam)
 			game.level.map:particleEmitter(who.x, who.y, blast.radius, "sunburst", {radius=blast.radius})
-			who:project({type="ball", range=0, radius=10}, who.x, who.y, engine.DamageType.LITE, 100)
+			who:project({type="ball", range=0, radius=self.use_power.radius*2}, who.x, who.y, engine.DamageType.LITE, dam/2)
 			game:playSoundNear(self, "talents/fireflash")
 			game.logSeen(who, "%s raises %s and sends out a burst of light!", who.name:capitalize(), self:getName())
 			return {id=true, used=true}

@@ -105,8 +105,7 @@ local function set_element(element, new_flavor, player)
 	local old_reset = player.no_power_reset_on_wear
 	player.no_power_reset_on_wear = true
 	local prev_name = o:getName{no_count=true, force_id=true, no_add_name=true}
-	
-	local dam = o.combat.dam
+
 	local _, item, inven_id = player:findInAllInventoriesByObject(o)
 	if inven_id then player:onTakeoff(o, inven_id, true) end
 

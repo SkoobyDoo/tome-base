@@ -1210,8 +1210,8 @@ function _M:chronoRestore(name, remove)
 
 	local d = Dialog:simpleWaiter("Chronomancy", "Unfolding the space time structure...")
 
-	ngame:cloneReloaded()
 	_G.game = ngame
+	ngame:cloneReloaded()
 
 	game.inited = nil
 	game:runReal()
@@ -1670,7 +1670,11 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			game:changeLevel(1, "town-angolwen")
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
 do return end
 			local o = game.zone:makeEntityByName(game.level, "object", "RIFT_SWORD", true)
 			if o then

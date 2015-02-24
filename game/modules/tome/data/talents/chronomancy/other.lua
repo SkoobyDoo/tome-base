@@ -82,9 +82,8 @@ doWardenPreUse = function(self, weapon, silent)
 end
 
 -- Swaps weapons if needed
-doWardenWeaponSwap = function(self, t, dam, type, silent)
+doWardenWeaponSwap = function(self, t, type, silent)
 	local swap = false
-	local dam = dam or 0
 	local warden_weapon
 
 	if type == "blade" then
@@ -104,19 +103,10 @@ doWardenWeaponSwap = function(self, t, dam, type, silent)
 	if swap == true then
 		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
 		self.no_inventory_access = nil
+		self:attr("no_sound", 1)
 		self:quickSwitchWeapons(true, "warden", silent)
+		self:attr("no_sound", -1)
 		self.no_inventory_access = old_inv_access
-		
-		if t and dam > 0 and (t.type[1]:find("^chronomancy/blade") or t.type[1]:find("^chronomancy/bow")) then
-			if self:knowTalent(self.T_BLENDED_THREADS) then
-				if not self.turn_procs.blended_threads then
-					self.turn_procs.blended_threads = warden_weapon
-				end
-				if self.turn_procs.blended_threads == warden_weapon then
-					dam = dam * (1 + self:callTalent(self.T_BLENDED_THREADS, "getPercent"))
-				end
-			end
-		end
 	end
 	
 	return swap, dam
@@ -286,17 +276,19 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local preference = self.preferred_paradox
+		local sp_modifier = getParadoxModifier(self, t) * 100
 		local spellpower = getParadoxSpellpower(self, t)
 		local after_will, will_modifier, sustain_modifier = self:getModifiedParadox()
 		local anomaly = self:paradoxFailChance()
 		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number over %d turns.
 
 		Preferred Paradox          :  %d
+		Spellpower Modifier        :  %d%%
 		Spellpower for Chronomancy :  %d
 		Willpower Paradox Modifier : -%d
 		Paradox Sustain Modifier   : +%d
 		Total Modifed Paradox      :  %d
-		Current Anomaly Chance     :  %d%%]]):format(duration, preference, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
+		Current Anomaly Chance     :  %d%%]]):format(duration, preference, sp_modifier, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
 	end,
 }
 

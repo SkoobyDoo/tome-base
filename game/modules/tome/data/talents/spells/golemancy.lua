@@ -281,7 +281,9 @@ newTalent{
 				game.logPlayer(self, "You need to ready 2 alchemist gems in your quiver to heal your golem.")
 				return
 			end
+			self:attr("no_sound", 1)
 			for i = 1, 2 do self:removeObject(self:getInven("QUIVER"), 1) end
+			self:attr("no_sound", -1)
 			self.alchemy_golem:attr("allow_on_heal", 1)
 			self.alchemy_golem:heal(t.getHeal(self, t), self)
 			self.alchemy_golem:attr("allow_on_heal", -1)
@@ -297,7 +299,9 @@ newTalent{
 				return
 			end
 			if not wait() then return end
+			self:attr("no_sound", 1)
 			for i = 1, 15 do self:removeObject(self:getInven("QUIVER"), 1) end
+			self:attr("no_sound", -1)
 
 			self.alchemy_golem.dead = nil
 			if self.alchemy_golem.life < 0 then self.alchemy_golem.life = self.alchemy_golem.max_life / 3 end

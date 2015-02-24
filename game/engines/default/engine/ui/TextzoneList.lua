@@ -249,7 +249,7 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 				item._tex:toScreenPrecise(x + current_x, y + current_y, item.w, item_h - (clip_y_start + clip_y_end), 0, item.w / item._tex_w, clip_y_start * one_by_tex_h, (item_h - clip_y_end) * one_by_tex_h )
 			end
 			-- add only visible part of item
-			current_y = current_y + item_h - clip_y_start
+			current_y = current_y + item_skip - clip_y_start
 		end
 		-- add line skip of item
 		total_h = total_h + item_skip

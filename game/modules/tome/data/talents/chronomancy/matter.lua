@@ -75,7 +75,7 @@ newTalent{
 				DamageType.WARP, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
-				engine.MapEffect.new{alpha=155, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
+				engine.MapEffect.new{alpha=100, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
 				function(e)
 					e.x = e.src.x
 					e.y = e.src.y
@@ -120,16 +120,15 @@ newTalent{
 	mode = "sustained",
 	cooldown = 10,
 	tactical = { BUFF = 2 },
-	getStunResist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
-	getCutResist = function(self, t) return math.min(1, self:combatTalentScale(t, 0.2, 1)) end, -- Limit <100%
-	getCap = function(self, t) return 100 - self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%
+	getImmunity = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
+	getArmor = function(self, t) return self:combatTalentSpellDamage(t, 10, 23) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 		
 		local ret = {
-			stun = self:addTemporaryValue("stun_immune", t.getStunResist(self, t)),
-			cut = self:addTemporaryValue("cut_immune", t.getCutResist(self, t)),
-			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
+			stun = self:addTemporaryValue("stun_immune", t.getImmunity(self, t)),
+			cut = self:addTemporaryValue("cut_immune", t.getImmunity(self, t)),
+			armor = self:addTemporaryValue("combat_armor", t.getArmor(self, t)),
 		}
 		
 		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1000, spikeOffset=0.123123, spikeLength=0.6, spikeWidth=4, growthSpeed=2, color={150/255, 150/255, 50/255}}, "particles_images/spikes.png") then
@@ -141,18 +140,17 @@ newTalent{
 		self:removeShaderAura("stone_skin")
 		self:removeTemporaryValue("stun_immune", p.stun)
 		self:removeTemporaryValue("cut_immune", p.cut)
-		self:removeTemporaryValue("flat_damage_cap", p.cap)
+		self:removeTemporaryValue("combat_armor", p.armor)
 		
 		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
-		local cap = t.getCap(self, t)
-		local stun = t.getStunResist(self, t) * 100
-		local cut = t.getCutResist(self, t) * 100
-		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you can never take a blow that deals more than %d%% of your maximum life.
-		Additionally you gain %d%% resistance to stunning and %d%% resistance to cuts.]]):
-		format(cap, stun, cut)
+		local armor = t.getArmor(self, t)
+		local immune = t.getImmunity(self, t) * 100
+		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you gain %d armour, %d%% resistance to stunning, and %d%% resistance to cuts.
+		The bonus to armour will scale with your Spellpower.]]):
+		format(armor, immune, immune)
 	end,
 }
 
@@ -162,7 +160,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	cooldown = 10,
+	cooldown = 14,
 	tactical = { DISABLE = 2 },
 	range = 10,
 	direct_hit = true,
@@ -170,7 +168,7 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
-	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
+	getLength = function(self, t) return 3 end,
 	target = function(self, t)
 		local halflength = math.floor(t.getLength(self,t)/2)
 		local block = function(_, lx, ly)
@@ -296,6 +294,12 @@ newTalent{
 					game.logSeen(self, "#CRIMSON#%s's beneficial effect was stripped!#LAST#", target.name:capitalize())
 					if what == "physical" then p.physical[target] = true end
 					if what == "magical" then p.magical[target] = true end
+					
+					-- The Cure achievement
+					local acheive = self.player and not target.training_dummy and target ~= self
+					if acheive then
+						world:gainAchievement("THE_CURE", self)
+					end
 				end
 			end
 		end

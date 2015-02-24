@@ -2079,7 +2079,7 @@ newEffect{
 newEffect{
 	name = "OUT_OF_PHASE", image = "talents/phase_door.png",
 	desc = "Out of Phase",
-	long_desc = function(self, eff) return ("The target is out of phase with reality, increasing defense by %d, resist all by %d%%, and the duration of all timed effects by %d%%."):
+	long_desc = function(self, eff) return ("The target is out of phase with reality, increasing defense by %d, resist all by %d%%, and reducing the duration of detrimental timed effects by %d%%."):
 	format(eff.defense or 0, eff.resists or 0, eff.effect_reduction or 0) end,
 	type = "magical",
 	subtype = { teleport=true },
@@ -2972,12 +2972,18 @@ newEffect{
 	type = "magical",
 	subtype = { temporal=true, slow=true },
 	status = "detrimental",
-	parameters = { damage=0, status_dur=4},
+	parameters = { damage=0 },
 	on_gain = function(self, err) return "#Target# is anchored.", "+Anchor" end,
 	on_lose = function(self, err) return "#Target# is no longer anchored.", "-Anchor" end,
 	onTeleport = function(self, eff)
 		DamageType:get(DamageType.WARP).projector(eff.src or self, self.x, self.y, DamageType.WARP, eff.damage)
-		DamageType:get(DamageType.RANDOM_WARP).projector(eff.src or self, self.x, self.y, DamageType.RANDOM_WARP, {dur=eff.status_dur, apply_power=eff.apply_power})
+	end,
+	activate = function(self, eff)
+		-- Reduce teleport saves to zero so our damage will trigger
+		eff.effid = self:addTemporaryValue("continuum_destabilization", -1000)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("continuum_destabilization", eff.effid)
 	end,
 }
 
@@ -3013,7 +3019,7 @@ newEffect{
 }
 
 newEffect{
-	name = "BRAIDED", image = "talents/braided_blade.png",
+	name = "BRAIDED", image = "talents/braid_lifelines.png",
 	desc = "Braided",
 	long_desc = function(self, eff) return ("The target is taking %d%% of all damage dealt to other braided targets."):format(eff.power) end,
 	type = "magical",
@@ -3080,10 +3086,10 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Webs of Fate" end,
 	on_lose = function(self, err) return nil, "-Webs of Fate" end,
 	parameters = { power=0.1 },
-	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
 		-- Displace Damage?
 		local t = eff.talent
-		if dam > 0 and src ~= self then
+		if dam > 0 and src ~= self and not state.no_reflect then
 		
 			-- Spin Fate?
 			if self.turn_procs and self:knowTalent(self.T_SPIN_FATE) and not self.turn_procs.spin_webs then
@@ -3105,7 +3111,9 @@ newEffect{
 			local a = rng.table(tgts)
 			if a then
 				local displace = dam * eff.power
-				DamageType.defaultProjector(self, a.x, a.y, type, displace, {no_reflect=true})
+				state.no_reflect = true
+				DamageType.defaultProjector(self, a.x, a.y, type, displace, state)
+				state.no_reflect = nil
 				dam = dam - displace
 				game:delayedLogDamage(src, self, 0, ("%s(%d webs of fate)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", displace), false)
 			end
@@ -3278,8 +3286,23 @@ newEffect{
 		old_eff.power = (olddam + newdam) / dur
 		return old_eff
 	end,
+	callbackOnHit = function(self, eff, cb, src)
+		if cb.value <= 0 then return cb.value end
+		
+		-- Kill it!!
+		if not self.dead and not self:isTalentActive(self.T_REALITY_SMEARING) and self:canBe("instakill") and self.life > 0 and self.life < self.max_life * 0.2 then
+			game.logSeen(self, "%s has been removed from the timeline!", self.name:capitalize())
+			self:die(src)
+		end
+		
+		return cb.value
+	end,
 	on_timeout = function(self, eff)
-		DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
+		if self:isTalentActive(self.T_REALITY_SMEARING) then
+			self:heal(eff.power * 0.4, eff)
+		else
+			DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
+		end
 	end,
 }
 
@@ -3404,7 +3427,7 @@ newEffect{
 newEffect{
 	name = "STATIC_HISTORY", image = "talents/static_history.png",
 	desc = "Static History",
-	long_desc = function(self, eff) return ("Chronomancy spells cast by the target cost %d%% less Paradox"):format(eff.power *100) end,
+	long_desc = function(self, eff) return ("Chronomancy spells cast by the target will not produce minor anomalies."):format() end,
 	type = "magical",
 	subtype = { time=true },
 	status = "beneficial",
@@ -3412,7 +3435,7 @@ newEffect{
 	on_gain = function(self, err) return "Spacetime has stabilized around #Target#.", "+Static History" end,
 	on_lose = function(self, err) return "The fabric of spacetime around #Target# has returned to normal.", "-Static History" end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "paradox_cost_multiplier", eff.power)
+		self:effectTemporaryValue(eff, "no_minor_anomalies", 1)
 	end,
 	deactivate = function(self, eff)
 	end,
@@ -3444,13 +3467,25 @@ newEffect{
 newEffect{
 	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus",
-	long_desc = function(self, eff) return ("Focused on %s, +%d accuracy and +%d%% critical hit chance with ranged attacks against this target."):format(eff.target.name, eff.atk, eff.crit) end,
+	long_desc = function(self, eff) 
+		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.power, eff.power, eff.power)
+	end,
 	type = "magical",
 	subtype = { tactic=true },
 	status = "beneficial",
 	on_gain = function(self, err) return nil, "+Warden's Focus" end,
 	on_lose = function(self, err) return nil, "-Warden's Focus" end,
-	parameters = { crit=0, atk=0 },
+	parameters = { power=0},
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
+			-- Reduce damage
+			local reduction = dam * eff.power/100
+			dam = dam -  reduction
+			game:delayedLogDamage(src, self, 0, ("%s(%d focus)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
+		end
+		return {dam=dam}
+	end,
 	on_timeout = function(self, eff)
 		if eff.target.dead or not game.level:hasEntity(self) or not game.level:hasEntity(eff.target) or core.fov.distance(self.x, self.y, eff.target.x, eff.target.y) > 10 then
 			self:removeEffect(self.EFF_WARDEN_S_FOCUS)
@@ -3560,6 +3595,48 @@ newEffect{
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
 	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "BLENDED_THREADS_BOW", image = "talents/blended_threads.png",
+	desc = "Blended Threads",
+	long_desc = function(self, eff) return ("The target is reducing damage from nearby targets by %d%%."):format(eff.bow) end,
+	type = "magical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	on_gain = function(self, err) return nil, "+Blended Threads" end,
+	on_lose = function(self, err) return nil, "-Blended Threads" end,
+	parameters = {bow=0},
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
+		if src and src.x and src.y and dam > 0 then
+			-- assume instantaneous projection and check range to source
+			if core.fov.distance(self.x, self.y, src.x, src.y) <= 2 then
+				dam = dam * (100 - eff.bow) / 100
+				print("[PROJECTOR] Blended Threads (source) dam", dam)
+			end
+		end
+		return {dam=dam}
+	end,
+	activate = function(self, eff)	
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "BLENDED_THREADS_BLADE", image = "talents/blended_threads.png",
+	desc = "Blended Threads",
+	long_desc = function(self, eff) return ("The target is dealing %d%% more damage to distant targets."):format(eff.blade) end,
+	type = "magical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	on_gain = function(self, err) return nil, "+Blended Threads" end,
+	on_lose = function(self, err) return nil, "-Blended Threads" end,
+	parameters = {blade=0},
+	activate = function(self, eff)	
 	end,
 	deactivate = function(self, eff)
 	end,

@@ -40,18 +40,18 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
+		local swap = doWardenWeaponSwap(self, t, "blade")
 
 		local tg = self:getTalentTarget(t)
 		local _, x, y = self:canProject(tg, self:getTarget(tg))
 		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not target then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, t, "bow") end
 			return nil
 		end
 
 		-- Hit?
-		local hitted = self:attackTarget(target, DamageType.WARP, dam, true)
+		local hitted = self:attackTarget(target, DamageType.WARP, t.getDamage(self, t), true)
 
 		-- Project our warp
 		if hitted then
@@ -94,12 +94,12 @@ newTalent{
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 25, 40, getParadoxSpellpower(self, t)) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
+		local swap = doWardenWeaponSwap(self, t, "blade")
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 	
 		if not x or not y then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, t, "bow") end
 			return nil
 		end
 		
@@ -165,84 +165,84 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1) end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
+		local swap = doWardenWeaponSwap(self, t, "blade")
 
 		local tg = self:getTalentTarget(t)
 		local _, x, y = self:canProject(tg, self:getTarget(tg))
 		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not target then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, t, "bow") end
 			return nil
 		end
-
+		
 		-- Hit the target
-		local hitted = self:attackTarget(target, nil, dam, true)
-
-		if hitted then
+		local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
+		if hit then 
 			bow_warden(self, target)
-			
-			local teleports = 2
-			local attempts = 10
-			
-			-- Our teleport hit
-			local function teleport_hit(self, t, target, x, y)
-				local teleported = self:teleportRandom(x, y, 0)
-				if teleported then
-					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-					if core.fov.distance(self.x, self.y, x, y) <= 1 then
-						self:attackTarget(target, nil, t.getDamage(self, t), true)
-					end
-				end
-				return teleported
-			end
-			
-			-- Check for Warden's focus
-			local wf = checkWardenFocus(self)
-			if wf and not wf.dead then
-				while teleports > 0 and attempts > 0 do
-					local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
-					if tx and ty and not wf.dead then
-						if teleport_hit(self, t, wf, tx, ty) then
-							teleports = teleports - 1
-						else
-							attempts = attempts - 1
-						end
-					else
-						break
-					end
-				end				
-			end
-			
-			-- Be sure we still have teleports left
-			if teleports > 0 and attempts > 0 then
-				-- Get available targets
-				local tgts = {}
-				local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-				for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-					local target_type = Map.ACTOR
-					local a = game.level.map(x, y, Map.ACTOR)
-					if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-						tgts[#tgts+1] = a
-					end
-				end end
+		end
 
-				-- Randomly take targets
-				while teleports > 0 and #tgts > 0 and attempts > 0 do
-					local a, id = rng.table(tgts)
-					local tx2, ty2 = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-					if tx2 and ty2 and not a.dead then
-						if teleport_hit(self, t, a, tx2, ty2) then
-							teleports = teleports - 1
-						else
-							attempts = attempts - 1
-						end
+		local teleports = 2
+		local attempts = 10
+		
+		-- Our teleport hit
+		local function teleport_hit(self, t, target, x, y)
+			local teleported = self:teleportRandom(x, y, 0)
+			if teleported then
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
+				if core.fov.distance(self.x, self.y, x, y) <= 1 then
+					local hit = self:attackTarget(target, nil, t.getDamage(self, t), true)
+					if hit then bow_warden(self, target) end
+				end
+			end
+			return teleported
+		end
+		
+		-- Check for Warden's focus
+		local wf = checkWardenFocus(self)
+		if wf and not wf.dead then
+			while teleports > 0 and attempts > 0 do
+				local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
+				if tx and ty and not wf.dead then
+					if teleport_hit(self, t, wf, tx, ty) then
+						teleports = teleports - 1
 					else
-						-- find a different target?
 						attempts = attempts - 1
 					end
+				else
+					break
 				end
-			
+			end				
+		end
+		
+		-- Be sure we still have teleports left
+		if teleports > 0 and attempts > 0 then
+			-- Get available targets
+			local tgts = {}
+			local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
+				local target_type = Map.ACTOR
+				local a = game.level.map(x, y, Map.ACTOR)
+				if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+					tgts[#tgts+1] = a
+				end
+			end end
+
+			-- Randomly take targets
+			while teleports > 0 and #tgts > 0 and attempts > 0 do
+				local a, id = rng.table(tgts)
+				local tx2, ty2 = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
+				if tx2 and ty2 and not a.dead then
+					if teleport_hit(self, t, a, tx2, ty2) then
+						teleports = teleports - 1
+					else
+						attempts = attempts - 1
+					end
+				else
+					-- find a different target?
+					attempts = attempts - 1
+				end
 			end
+		
 		end
 
 		game:playSoundNear(self, "talents/teleport")
@@ -251,7 +251,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Attack with your melee weapons for %d%% damage.  If either weapon hits you'll teleport next to up to 2 random enemies, attacking for %d%% damage.
+		return ([[Attack with your melee weapons for %d%% damage and teleport next to up to two random enemies, attacking each for %d%% damage.
 		Blink Blade can hit the same target multiple times.]])
 		:format(damage, damage)
 	end
@@ -277,12 +277,12 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "dual") then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local swap, dam = doWardenWeaponSwap(self, t, t.getDamage(self, t), "blade")
+		local swap = doWardenWeaponSwap(self, t, "blade")
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 	
 		if not x or not y then
-			if swap then doWardenWeaponSwap(self, t, nil, "bow") end
+			if swap then doWardenWeaponSwap(self, t, "bow") end
 			return nil
 		end
 	

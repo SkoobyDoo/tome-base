@@ -139,7 +139,7 @@ function _M:trigger(x, y, who)
 	if self.triggered then known, del = self:triggered(x, y, who) end
 	if self.summoner then self.summoner.__project_source = nil end
 	if known then
-		self:setKnown(who, true)
+		self:setKnown(who, true, x, y)
 		game.level.map:updateMap(x, y)
 	end
 	if del then

@@ -189,8 +189,8 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
 		if target == eff.target then
-			tg.archery.atk = (tg.archery.atk or 0) + eff.atk
-			tg.archery.crit = (tg.archery.crit or 0) + eff.crit
+			tg.archery.crit_chance = (tg.archery.crit_chance or 0) + eff.power
+			tg.archery.crit_power = (tg.archery.crit_power or 0) + (eff.power/100)
 		end
 	end
 
@@ -206,7 +206,14 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
 	local hitted = false
 	local crit = false
-	if self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or rng.chance(3)) then
+	if self:attr("hit_penalty_2h") and rng.percent(20 - (self.size_category - 4) * 5) then
+		local srcname = game.level.map.seens(self.x, self.y) and self.name:capitalize() or "Something"
+		game.logSeen(target, "%s misses %s.", srcname, target.name)
+
+		if talent.archery_onmiss then talent.archery_onmiss(self, talent, target, target.x, target.y) end
+
+		target:fireTalentCheck("callbackOnArcheryMiss", self)
+	elseif self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or rng.chance(3)) then
 		print("[ATTACK ARCHERY] raw dam", dam, "versus", armor, "with APR", apr)
 
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)

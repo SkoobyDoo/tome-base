@@ -66,7 +66,7 @@ newTalent{
 				end)
 				
 				self:startTalentCooldown(t.id)
-				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=230, rM=255, gm=230, gM=255, bm=30, bM=51, am=35, aM=90, radius=tg.radius, basenb=120})
+				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=230, rM=255, gm=230, gM=255, bm=30, bM=51, am=35, aM=90, radius=tg.radius, basenb=60})
 			else
 				cooldown_folds(self, t)
 			end
@@ -113,7 +113,7 @@ newTalent{
 				end)
 				
 				self:startTalentCooldown(t.id)
-				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90, radius=tg.radius, basenb=120})
+				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=64, rM=64, gm=134, gM=134, bm=170, bM=170, am=35, aM=90, radius=tg.radius, basenb=60})
 			else
 				cooldown_folds(self, t)
 			end
@@ -160,7 +160,7 @@ newTalent{
 				end)
 				
 				self:startTalentCooldown(t.id)
-				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=205, rM=205, gm=133, gM=133, bm=63, bM=63, am=35, aM=90, radius=tg.radius, basenb=120})
+				game.level.map:particleEmitter(target.x, target.y, tg.radius, "generic_sploom", {rm=205, rM=205, gm=133, gM=133, bm=63, bM=63, am=35, aM=90, radius=tg.radius, basenb=60})
 			else
 				cooldown_folds(self, t)
 			end

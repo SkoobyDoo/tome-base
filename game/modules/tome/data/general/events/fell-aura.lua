@@ -29,11 +29,13 @@ end
 
 local on_stand = function(self, x, y, who) who:setEffect(who.EFF_FELL_AURA, 1, {}) end
 
-local grids = core.fov.circle_grids(x, y, 2, "do not block")
+local grids = core.fov.circle_grids(x, y, 2, function(_, lx, ly) return not game.state:canEventGrid(level, lx, ly) end)
 for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 	g.on_stand = g.on_stand or on_stand
+	if g.on_stand == on_stand and g.type == "floor" and not g.special_minimap then g.name = g.name .. " (fell aura)" g.special_minimap = {b=99, g=99, r=60} end
+	g.always_remember = true
 	game.zone:addEntity(game.level, g, "terrain", x, y)
 end end
-
+print("[EVENT] fell-aura centered at ", x, y)
 return true

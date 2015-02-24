@@ -21,9 +21,12 @@
 local x, y = game.state:findEventGrid(level)
 if not x then return false end
 
+local on_stand = function(self, x, y, who) who:setEffect(who.EFF_BLIGHTED_SOIL, 1, {}) end
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "blighted soil"
 g.display='~' g.color_r=0 g.color_g=255 g.color_b=0 g.notice = true
+g.special_minimap = colors.OLIVE_DRAB
+g.on_stand = on_stand
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
 	g.add_displays = g.add_displays or {}
@@ -38,13 +41,13 @@ else
 	level.map:particleEmitter(x, y, 3, "ultrashield", {rm=50, rM=80, gm=80, gM=100, bm=30, bM=60, am=220, aM=250, radius=3, density=1, life=14, instop=17})
 end
 
-local on_stand = function(self, x, y, who) who:setEffect(who.EFF_BLIGHTED_SOIL, 1, {}) end
-
-local grids = core.fov.circle_grids(x, y, 3, "do not block")
+local grids = core.fov.circle_grids(x, y, 3, function(_, lx, ly) return not game.state:canEventGrid(level, lx, ly) end)
 for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 	g.on_stand = g.on_stand or on_stand
+	if g.on_stand == on_stand and g.type == "floor" and not g.special_minimap then g.name = g.name .. " (blighted aura)" g.special_minimap = colors.DARK_SLATE_GRAY end
+	g.always_remember = true
 	game.zone:addEntity(game.level, g, "terrain", x, y)
 end end
-
+print("[EVENT] blighted-soil centered at ", x, y)
 return true

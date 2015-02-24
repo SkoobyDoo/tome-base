@@ -29,7 +29,7 @@ newTalent{
 		local duration = math.floor(self:combatTalentScale(t, 2, 8))
 		return math.min(duration, 10) 
 	end,
-	getAutoTuning = function(self, t) return math.floor(self:combatTalentLimit(t, 5, 1, 4)) end,
+	getAutoTuning = function(self, t) return 1 + self:combatTalentLimit(t, 6, 0, 3) end,
 	callbackOnActBase = function(self, t)
 		if self:hasEffect(self.EFF_SPACETIME_TUNING) then return end
 		local dox = self:getParadox() - self.preferred_paradox
@@ -45,7 +45,7 @@ newTalent{
 	info = function(self, t)
 		local tune = t.getAutoTuning(self, t)
 		local duration = t.getTuningAdjustment(self, t)
-		return ([[When Spacetime Tuning is inactive you automatically adjust your Paradox %d points towards your preferred Paradox each turn.
+		return ([[When Spacetime Tuning is inactive you automatically adjust your Paradox %0.2f points towards your preferred Paradox each turn.
 		The time it takes you to adjust your Paradox with Spacetime Tuning is also reduced by %d turns.]]):
 		format(tune, duration)
 	end,
@@ -136,21 +136,20 @@ newTalent{
 	type = {"chronomancy/stasis",4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 12,
+	cooldown = 24,
 	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 1, 0.2, .60) end, -- limit 100%
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(1 + self:combatTalentScale(t, 1, 7))) end,
 	no_energy = true,
 	action = function(self, t)
-		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {power=t.getParadoxMulti(self, t)})
+		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {})
 		
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)
-		local multi = t.getParadoxMulti(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[Activate to reduce the Paradox cost of all your chronomancy spells by %d%% for the next %d turns.]]):
-		format(multi, duration)
+		return ([[For the next %d turns you may not create minor anomalies.  You do not regain Paradox or lose the spell you're casting if a random anomaly would normally occur.
+		This spell has no effect on major anomalies.]]):
+		format(duration)
 	end,
 }
