@@ -89,7 +89,7 @@ newTalent{
 
 				if game.party:hasMember(self) then
 					game.party:addMember(m, {
-						control="no",
+						control="order",
 						type="temporal-clone",
 						title="Guardian",
 						orders = {target=true, leash=true, anchor=true, talents=true},
