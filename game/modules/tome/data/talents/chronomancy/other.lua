@@ -1089,7 +1089,7 @@ newTalent{
 		end
 		
 		
-		self:project(tg, x, y, DamageType.MATTER, self:spellCrit(damage))
+		self:project(tg, x, y, DamageType.WARP, self:spellCrit(damage))
 		game:playSoundNear(self, "talents/arcane")
 		
 		-- Try to insta-kill
