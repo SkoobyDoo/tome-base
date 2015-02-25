@@ -567,7 +567,7 @@ newEntity{ base = "BASE_STAFF",
 		dam = 30,
 		apr = 4,
 		dammod = {mag=1.5},
-		damtype = DamageType.TEMPORAL,
+		element = DamageType.TEMPORAL,
 	},
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = 7, [Stats.STAT_MAG] = 8 },

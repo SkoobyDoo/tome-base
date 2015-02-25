@@ -21,25 +21,40 @@ local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
 newEntity{ base = "BASE_STAFF",
-	power_source = {arcane=true},
+	power_source = {arcane=true, nature=true},
 	unique = true,
 	name = "Penitence",
-	flavor_name = "starstaff",
+	flavor_name = "harmonystaff",
 	unided_name = "glowing staff", image = "object/artifact/staff_penitence.png",
 	level_range = {10, 18},
 	color=colors.VIOLET,
 	rarity = 200,
-	desc = [[A powerful staff sent in secret to Angolwen by the Shaloren, to aid their fighting of the plagues following the Spellblaze.]],
+	desc = [[A powerful staff sent in secret to Angolwen by the Shaloren, to aid their fighting of the plagues following the Spellblaze. Its power is not to harm, but to heal and protect.]],
 	cost = 200,
 	material_level = 2,
 
+	flavors = {
+		magestaff = true,
+		starstaff = true,
+		harmonystaff = {DamageType.PHYSICAL, DamageType.MIND, DamageType.NATURE, DamageType.ARCANE},
+	},
+
+	command_staff = {
+		inc_damage = false,  -- its power is not to harm...
+		damage_affinity = {add=20, mult=0},  -- ...but to heal...
+		resists = 1,  -- ... and protect.
+	},
+
 	require = { stat = { mag=24 }, },
 	combat = {
-		--sentient = "penitent", -- commented out for now...  how many sentient staves do we need?
+		sentient = "penitent", -- how many sentient staves do we need? more than one!
 		dam = 15,
+		staff_power = 30,  -- it roocks
 		apr = 4,
 		dammod = {mag=1.2},
-		damtype = DamageType.NATURE, -- Note this is odd for a staff; it's intentional and it's also why the damage type can't be changed.  Blight on this staff would be sad :(
+		damtype = DamageType.NATURE, -- Note this is odd for a staff; it's intentional.
+		element = DamageType.NATURE,
+		-- melee_element = true, -- always melee nature :>
 	},
 	wielder = {
 		combat_spellpower = 15,
@@ -50,6 +65,8 @@ newEntity{ base = "BASE_STAFF",
 		damage_affinity={
 			[DamageType.NATURE] = 20,
 		},
+		combat_spellresist = 15,
+		learn_talent = {[Talents.T_COMMAND_STAFF] = 1,},
 	},
 	max_power = 60, power_regen = 1,
 	use_power = { name = "cure diseases and poisons", power = 10,
@@ -89,6 +106,8 @@ newEntity{ base = "BASE_STAFF",
 			game.logPlayer(who, "#DARK_GREEN#You feel the cleansing power of Penitence attune to you.")
 		end
 	end,
+
+	resolvers.command_staff(), -- I'm too lazy to write out resists and affinities
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -111,7 +130,6 @@ newEntity{ base = "BASE_STAFF",
 		dam = 30,
 		apr = 4,
 		dammod = {mag=1.5},
-		damtype = DamageType.ARCANE,
 	},
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = 7, [Stats.STAT_MAG] = 8 },
@@ -129,6 +147,8 @@ newEntity{ base = "BASE_STAFF",
 		},
 		learn_talent = {[Talents.T_COMMAND_STAFF] = 1,},
 	},
+	-- choose element randomly
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_AMULET",
@@ -697,7 +717,9 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 				voice.combat = o.combat
 				voice.combat.dam = math.floor(voice.combat.dam * 1.4)
 				voice.combat.sentient = "telos"
-				voice.wielder.inc_damage[voice.combat.damtype] = voice.combat.dam
+				voice.flavors = o.flavors
+				voice.command_staff = o.command_staff
+				voice:commandStaff()
 				voice:identify(true)
 				o:replaceWith(voice)
 				who:sortInven()
@@ -726,7 +748,7 @@ newEntity{ base = "BASE_STAFF", define_as = "VOICE_TELOS",
 
 	require = { stat = { mag=45 }, },
 	-- This is replaced by the creation process
-	combat = { dam = 1, damtype = DamageType.ARCANE, },
+	combat = { dam = 1, damtype = DamageType.ARCANE,},
 	wielder = {
 		combat_spellpower = 30,
 		combat_spellcrit = 15,

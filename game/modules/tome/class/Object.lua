@@ -2167,7 +2167,7 @@ end
 -- Command a staff to another element
 function _M:commandStaff(element, flavor)
 	if self.subtype ~= "staff" then return end
-	local old_element = self.combat.element
+	local old_element = self.combat.element or self.combat.damtype  -- safeguard!
 	element  = element or old_element
 	flavor = flavor or self.flavor_name
 	-- Art staves may define new flavors or redefine meaning of existing ones; "true" means standard, otherwise it should be a list of damage types.
@@ -2177,13 +2177,15 @@ function _M:commandStaff(element, flavor)
 	local staff_power = self.combat.staff_power or self.combat.dam
 	local is_greater = self.combat.is_greater
 	for k, v in pairs(staff_command(self)) do
-		if type(v) == "table" then
-			local power = staff_power * (v.mult or 1) + v.add
-			update_staff_table(self, old_flavor, new_flavor, old_element, element, v[1] or k, power, is_greater)
-		elseif type(v) == "number" then  -- shortcut for previous case
-			update_staff_table(self, old_flavor, new_flavor, old_element, element, k, staff_power * v, is_greater)
-		else
-			v(self, element, flavor, update_staff_table)
+		if v then
+			if type(v) == "table" then
+				local power = staff_power * (v.mult or 1) + v.add
+				update_staff_table(self, old_flavor, new_flavor, old_element, element, v[1] or k, power, is_greater)
+			elseif type(v) == "number" then  -- shortcut for previous case
+				update_staff_table(self, old_flavor, new_flavor, old_element, element, k, staff_power * v, is_greater)
+			else
+				v(self, element, flavor, update_staff_table)
+			end
 		end
 	end
 	self.combat.element = element

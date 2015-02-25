@@ -967,6 +967,11 @@ function resolvers.calc.staff_element(t, e)
 	end
 
 	if command_flavor or command_element then e:commandStaff(command_element, command_flavor) end
+
+	-- hee hee
+	if not e.unique and rng.percent(0.1 * (e.material_level or 1) - 0.3) then
+		e.combat.sentient = rng.table{"default", "agressive", "fawning"}
+	end
 end
 
 function resolvers.command_staff()
