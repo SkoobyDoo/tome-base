@@ -107,7 +107,7 @@ summonTemporalHound = function(self, t)
 			end
 		end
 		-- clean up
-		if self.summoner.dead then
+		if self.summoner.dead or not game.level:hasEntity(self.summoner) then
 			self:die(self)
 		end
 	end
