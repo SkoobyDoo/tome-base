@@ -69,8 +69,12 @@ newTalent{
 				
 				-- clone our caster
 				local m = makeParadoxClone(self, self, t.getDuration(self, t))
-				-- alter some values
+				-- Handle some AI stuff
 				m.ai_state = { talent_in=1, ally_compassion=10 }
+				m.ai_state.tactic_leash = 10
+				-- Try to use stored AI talents to preserve tweaking over multiple summons
+				m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+				-- alter some values
 				m.remove_from_party_on_death = true
 				m:attr("archery_pass_friendly", 1)
 				m.generic_damage_penalty = 50

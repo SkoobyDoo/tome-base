@@ -235,8 +235,8 @@ newTalent{
 			self:project(tg, x, y, function(px, py, tg, self)
 				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
 				local target = game.level.map(px, py, Map.ACTOR)
-				-- Try to insta-kill
-				if target then
+				-- Try to insta-kill...  but not our puppies
+				if target and self:reactionToward(target) < 0 then
 					if target:checkHit(getParadoxSpellpower(self, t), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("instakill") and target.life > 0 and target.life < target.max_life * 0.2 then
 						-- KILL IT !
 						game.logSeen(target, "%s has been cut from the timeline!", target.name:capitalize())
