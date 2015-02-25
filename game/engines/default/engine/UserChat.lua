@@ -717,7 +717,7 @@ function _M:display()
 		for i = #gen, 1, -1 do
 			gen[i].login = log[z].login
 			gen[i].extra_data = log[z].extra_data
-			self.dlist[#self.dlist+1] = {item=gen[i], date=log[z].timestamp, src=log[z]}
+			self.dlist[#self.dlist+1] = {item=gen[i], date=math.max(log.reset_fade or log[z].timestamp, log[z].timestamp), src=log[z]}
 			h = h + self.fh
 			if h > self.h - self.fh - (self.do_display_chans and self.fh or 0) then stop=true break end
 		end
@@ -804,8 +804,5 @@ function _M:resetFade()
 	if self.channels[self.cur_channel] then log = self.channels[self.cur_channel].log end
 
 	-- Reset fade
-	local time = core.game.getTime()
-	for _, item in ipairs(log) do
-		item.timestamp = time
-	end
+	log.reset_fade = core.game.getTime()
 end
