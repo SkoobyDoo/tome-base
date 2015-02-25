@@ -110,7 +110,7 @@ newTalent{
 		local first_teleport = teleport_hit(self, t, target, x, y)
 		if not first_teleport then game.logSeen(self, "The spell fizzles!") return true end
 		
-		local teleports = 2
+		local teleports = 1
 		local attempts = 10
 		
 		-- Check for Warden's focus
@@ -167,7 +167,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Teleport to the target and attack with your melee weapons for %d%% damage.  Then teleport next to up to two random enemies, attacking each for %d%% damage.
+		return ([[Teleport to the target and attack with your melee weapons for %d%% damage.  Then teleport next to a second random enemy, attacking for %d%% damage.
 		Blink Blade can hit the same target multiple times.]])
 		:format(damage, damage)
 	end
