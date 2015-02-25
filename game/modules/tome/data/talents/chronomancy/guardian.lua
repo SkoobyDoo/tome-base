@@ -92,7 +92,7 @@ newTalent{
 						control="no",
 						type="temporal-clone",
 						title="Guardian",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
 				
