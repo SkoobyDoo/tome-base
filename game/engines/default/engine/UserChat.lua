@@ -536,12 +536,13 @@ end
 ----------------------------------------------------------------
 
 --- Returns the full log
-function _M:getLog(channel, extra)
+function _M:getLog(channel, extra, timestamp)
 	channel = channel or self.cur_channel
 	local log = {}
 	if self.channels[channel] then
 		for _, i in ipairs(self.channels[channel].log) do
-			local tstr 
+			if timestamp and i.timestamp <= timestamp then break end
+			local tstr
 			if i.kind == "whisper" then
 				tstr = tstring{{"color", 0xcb,0x87,0xd2}, "<", i.name, "> "}
 			elseif i.kind == "join" then

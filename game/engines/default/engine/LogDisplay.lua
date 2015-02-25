@@ -86,9 +86,10 @@ function _M:resize(x, y, w, h)
 end
 
 --- Returns the full log
-function _M:getLog(extra)
+function _M:getLog(extra, timestamp)
 	local log = {}
-	for i = 1, #self.log do 
+	for i = 1, #self.log do
+		if timestamp and self.log[i].timestamp <= timestamp then break end
 		if not extra then
 			log[#log+1] = self.log[i].str
 		else
