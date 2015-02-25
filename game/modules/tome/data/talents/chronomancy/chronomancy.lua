@@ -57,7 +57,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	getDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 25) end,
-	getCritDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 15) end,
+	getCritDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 2, 10) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_def", t.getDefense(self, t))
 		self:talentTemporaryValue(p, "ignore_direct_crits", t.getCritDefense(self, t))
