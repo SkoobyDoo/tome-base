@@ -42,9 +42,8 @@ function _M:init(title, shadow, log, chat)
 	local list = {}
 	for name, data in pairs(chat.channels) do list[#list+1] = name end
 	table.sort(list, function(a,b) if a == "global" then return 1 elseif b == "global" then return nil else return a < b end end)
-	order[#order+1] = {timestamp=log:getLogLast(), tab="__log"}
 
-	tabs[#tabs+1] = {top=0, left=0, ui = Tab.new{title="Game Log", fct=function() end, on_change=function() local i = #tabs self:switchTo(tabs[1]) end, default=true}, tab_channel="__log" }
+	tabs[#tabs+1] = {top=0, left=0, ui = Tab.new{title="Game Log", fct=function() end, on_change=function() local i = #tabs self:switchTo(tabs[1]) end, default=true}, tab_channel="__log", timestamp=log:getLogLast()}
 	for i, name in ipairs(list) do
 		local oname = name
 		local nb_users = 0
@@ -52,8 +51,7 @@ function _M:init(title, shadow, log, chat)
 		name = name:capitalize().." ("..nb_users..")"
 
 		local ii = i
-		tabs[#tabs+1] = {top=0, left=(#tabs==0) and 0 or tabs[#tabs].ui, ui = Tab.new{title=name, fct=function() end, on_change=function() local i = ii+1 self:switchTo(tabs[i]) end, default=false}, tab_channel=oname }
-		order[#order+1] = {timestamp=chat:getLogLast(oname), tab=oname}
+		tabs[#tabs+1] = {top=0, left=(#tabs==0) and 0 or tabs[#tabs].ui, ui = Tab.new{title=name, fct=function() end, on_change=function() local i = ii+1 self:switchTo(tabs[i]) end, default=false}, tab_channel=oname, timestamp=chat:getLogLast(oname)}
 	end
 
 	self.start_y = tabs[1].ui.h + 5
@@ -62,9 +60,9 @@ function _M:init(title, shadow, log, chat)
 	self.tabs = tabs
 	self:setupUI()
 
-	self.scrollbar = Slider.new{size=self.h - 20, max=1, inverse=true}
+	self.scrollbar = Slider.new{size=self.h - 20, max=0}
+	self.line_size = setmetatable({}, {__mode='k'})
 
-	table.sort(order, function(a,b) return a.timestamp > b.timestamp end)
 	self:switchTo(self.last_tab or "__log")
 end
 
@@ -204,30 +202,27 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	end
 end
 
+-- This might seem a little wierd all in all...
+-- What's happening is, we assume all incoming lines are the one (line), until otherwise proven.
+-- When otherwise proven in setScroll, we readjust.
 function _M:loadLog(log, oldscroll)
 	self.lines = {}
-	self.display_list = {}
-	local old_style = self.font:getStyle()
+	self.max = 0
 	for i = #log, 1, -1 do
 		if type(log[i]) == "string" then
 			self.lines[#self.lines+1] = {str=log[i]}
 		else
 			self.lines[#self.lines+1] = log[i]
 		end
-		local gen = self.lines[#self.lines].str:toString():splitLine(self.iw - 10, self.font)  --self.font:draw(self.lines[#self.lines].str, self.iw - 10, 255, 255, 255, false, true)
-		for i = 1, #gen do
-			self.display_list[#self.display_list + 1] = {str = gen[i], src = self.lines[#self.lines].src}
-		end
+		self.max = self.max + (self.line_size[self.lines[#self.lines].str] or 1)
 	end
-	self.font:setStyle(old_style)
 
 	self.max_h = self.ih - self.iy
-	self.max = #self.display_list
 	self.max_display = math.floor(self.max_h / self.font_h)
 
-	self.scrollbar.max = math.max(1, self.max - self.max_display)
+	self.scrollbar.max = math.max(0, self.max - self.max_display)
 	self.scroll = nil
-	self:setScroll(oldscroll or self.scrollbar.max)
+	self:setScroll(oldscroll or self.scrollbar.max, not oldscroll)
 end
 
 function _M:switchTo(ui)
@@ -249,17 +244,48 @@ function _M:switchTo(ui)
 	_M.last_tab = ui.tab_channel
 end
 
-function _M:setScroll(i)
+function _M:setScroll(i, do_shifty_thing)
 	local old = self.scroll
 	self.scroll = util.bound(i, 0, self.scrollbar.max)
 
 	if self.scroll == old then return end
 	self.dlist = {}
-	for i = 1 + self.scroll, #self.display_list do
-		local tex = self:drawFontLine(self.font, self.display_list[i].str, self.iw - 10, 255, 255, 255, true)
-		self.dlist[#self.dlist + 1] = {d = tex, src = self.display_list[i].src}
-		if #self.dlist >= self.max_display then break end
+	local cur = 0
+	local shift = 0
+	for i = 1, #self.lines do
+		local str = self.lines[i].str
+		local size = self.line_size[str] or 1
+		if cur + size > self.scroll then
+			local gen = self.font:draw(str, self.iw - 10, 255, 255, 255, false, true)
+			if size ~= #gen then
+				self.line_size[str] = #gen
+				shift = shift + #gen - size
+				if do_shifty_thing then
+					-- drop lines!
+					local delta = #gen - size
+					if delta > 0 then
+						for i = 1, #self.dlist do self.dlist[i] = self.dlist[i + delta] end -- this fills the end with nils, too
+					end
+				end
+				size = #gen
+			end
+			local stop
+			for _, tex in pairs(gen) do
+				if cur >= self.scroll then
+					local dtex = {t=tex._tex, w=tex.w, h=tex.h, tw = tex._tex_w, th = tex._tex_h, dduids = tex._dduids}
+					self.dlist[#self.dlist+1] = {d=dtex, src=self.lines[i].src}
+					if #self.dlist > self.max_display then stop=true break end
+				end
+				cur = cur + 1
+			end
+			if stop then break end
+		else
+			cur = cur + size
+		end
 	end
+	self.max = self.max + shift
+	if do_shifty_thing then self.scroll = self.scroll + shift end
+	self.scrollbar.max = math.max(0, self.max - self.max_display)
 end
 
 function _M:innerDisplay(x, y, nb_keyframes, tx, ty)
@@ -274,6 +300,6 @@ function _M:innerDisplay(x, y, nb_keyframes, tx, ty)
 		h = h + self.font_h
 	end
 
-	self.scrollbar.pos = self.scrollbar.max - self.scroll
+	self.scrollbar.pos = self.scroll
 	self.scrollbar:display(x + self.iw - self.scrollbar.w, y)
 end

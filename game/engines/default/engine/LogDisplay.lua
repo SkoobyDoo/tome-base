@@ -86,9 +86,10 @@ function _M:resize(x, y, w, h)
 end
 
 --- Returns the full log
-function _M:getLog(extra)
+function _M:getLog(extra, timestamp)
 	local log = {}
-	for i = 1, #self.log do 
+	for i = 1, #self.log do
+		if timestamp and self.log[i].timestamp <= timestamp then break end
 		if not extra then
 			log[#log+1] = self.log[i].str
 		else
@@ -98,7 +99,7 @@ function _M:getLog(extra)
 	return log
 end
 
-function _M:getLogLast(channel)
+function _M:getLogLast()
 	if not self.log[1] then return 0 end
 	return self.log[1].timestamp
 end
@@ -213,7 +214,7 @@ function _M:display()
 			self.cache[tstr] = gen
 		end
 		for i = #gen, 1, -1 do
-			self.dlist[#self.dlist+1] = {item=gen[i], date=self.log[z].timestamp, url=self.log[z].url}
+			self.dlist[#self.dlist+1] = {item=gen[i], date=math.max(self.log.reset_fade or self.log[z].timestamp, self.log[z].timestamp), url=self.log[z].url}
 			h = h + self.fh
 			if h > self.h - self.fh then stop=true break end
 		end
@@ -281,8 +282,5 @@ function _M:resetFade()
 	local log = self.log
 
 	-- Reset fade
-	local time = core.game.getTime()
-	for i = 1, #self.log do
-		self.log[i].timestamp = time
-	end
+	log.reset_fade = core.game.getTime()
 end

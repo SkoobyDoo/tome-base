@@ -2312,9 +2312,13 @@ function _M:saveGame()
 			local party = game.party:cloneFull()
 			party.__te4_uuid = game:getPlayer(true).__te4_uuid
 			for m, _ in pairs(party.members) do
+				m:attr("save_cleanup", 1)
 				m:stripForExport()
+				m:attr("save_cleanup", -1)
 			end
+			party:attr("save_cleanup", 1)
 			party:stripForExport()
+			party:attr("save_cleanup", -1)
 			game.player:saveUUID(party)
 		end end))
 		_G.game = self
