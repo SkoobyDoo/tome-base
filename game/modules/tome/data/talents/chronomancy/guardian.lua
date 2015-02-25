@@ -128,7 +128,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	mode = "passive",
-	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 50) end,
+	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
