@@ -285,7 +285,7 @@ function _M:setScroll(i, do_shifty_thing)
 	end
 	self.max = self.max + shift
 	if do_shifty_thing then self.scroll = self.scroll + shift end
-	self.scrollbar.max = self.scrollbar.max - math.max(0, self.max - self.max_display)
+	self.scrollbar.max = math.max(0, self.max - self.max_display)
 end
 
 function _M:innerDisplay(x, y, nb_keyframes, tx, ty)
