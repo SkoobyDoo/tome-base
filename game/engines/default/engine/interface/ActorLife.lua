@@ -56,6 +56,7 @@ function _M:heal(value, src)
 	if self.onHeal then value = self:onHeal(value, src) end
 	self.life = util.bound(self.life + value, self.die_at, self.max_life)
 	self.changed = true
+	return value
 end
 
 --- Remove some HP from an actor

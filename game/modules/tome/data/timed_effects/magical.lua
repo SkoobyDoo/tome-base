@@ -2875,7 +2875,10 @@ newEffect{
 	on_lose = function(self, err) return nil, "-Healing Inversion" end,
 	callbackOnHeal = function(self, eff, value, src)
 		local dam = value * eff.power / 100
-		DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+		if not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
+			eff.projecting = true
+			DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+		end
 		return {value=0}
 	end,
 	activate = function(self, eff)
