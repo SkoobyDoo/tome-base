@@ -2546,10 +2546,11 @@ function _M:onTakeHit(value, src, death_note)
 			value = 0
 			self.life = 1
 			self:forceUseTalent(self.T_SECOND_LIFE, {ignore_energy=true})
-			self:heal(sl, self)
-			game.logSeen(self, "#YELLOW#%s has been saved by a blast of positive energy!#LAST#", self.name:capitalize())
-			game:delayedLogDamage(tal, self, -sl, ("#LIGHT_GREEN#%d healing#LAST#"):format(sl), false)
-			if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			local value = self:heal(sl, self)
+			game.logSeen(self, "#YELLOW#%s has been healed by a blast of positive energy!#LAST#", self.name:capitalize())
+			if value > 0 then
+				if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			end
 		end
 
 		local tal = self:isTalentActive(self.T_HEARTSTART)
