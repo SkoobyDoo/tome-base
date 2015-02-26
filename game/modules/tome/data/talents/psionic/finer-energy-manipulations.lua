@@ -142,6 +142,11 @@ newTalent{
 				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
 				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
 				game.zone:replaceEgo(o, old_ego, new_ego, "object") -- if old_ego is nil, still works
+
+				-- Fix the staff bug, kind of bandaid
+				if o.subtype == "staff" then
+					o.staff_power = o.combat.dam - new_ego.combat.dam
+				end
 				return true
 			else
 				if vocal then game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true}) end
