@@ -909,13 +909,12 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = state or {}
 		useImplicitCrit(src, state)
-		-- Dont lit magically unlit grids
+		-- Counter magical unlite level before lighting grids
 		local g = game.level.map(x, y, Map.TERRAIN+1)
 		if g and g.unlit then
 			if g.unlit <= dam then game.level.map:remove(x, y, Map.TERRAIN+1)
-			else return end
+			else g.unlit = g.unlit - dam return end -- Lite wears down darkness
 		end
-
 		game.level.map.lites(x, y, true)
 	end,
 }
