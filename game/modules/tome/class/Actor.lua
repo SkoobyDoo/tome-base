@@ -521,12 +521,13 @@ function _M:actBase()
 
 	-- Suffocate ?
 	-- The idea here is that we suffocate (EFF_SUFFOCATING checks this flag) if a) something (including own effects) tries to suffocate us between our actBase calls, or
-	-- b) we cannot breathe on the current terrain. The first is force_suffocate flag.
+	-- b) we cannot breathe on the current terrain. The first is force_suffocate flag. It only works for one base turn, of course.
 	-- These are all flags because there is no turn_base_procs. :(
 	if not self.force_suffocate then                                                
-		 self.is_suffocating = nil
+		self.is_suffocating = nil
 	else
-		self.iforce_suffocate = nil
+		self.force_suffocate = nil
+		self.is_suffocating = true
 	end
 	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
 	if air_level then
