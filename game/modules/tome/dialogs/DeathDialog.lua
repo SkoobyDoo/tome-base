@@ -131,15 +131,19 @@ end
 function _M:resurrectBasic(actor)
 	actor.dead = false
 	actor.died = (actor.died or 0) + 1
-
+	
 	-- Find the position of the last dead
 	local last = game.party:findLastDeath()
 
 	local x, y = util.findFreeGrid(last.x, last.y, 20, true, {[Map.ACTOR]=true})
 	if not x then x, y = last.x, last.y end
-
+	
+	-- invulnerable while moving so we don't get killed twice
+	local old_invuln = actor.invulnerable
+	actor.invulnerable = 1
 	actor.x, actor.y = nil, nil
 	actor:move(x, y, true)
+	actor.invulnerable = old_invuln
 
 	game.level:addEntity(actor)
 	game:unregisterDialog(self)

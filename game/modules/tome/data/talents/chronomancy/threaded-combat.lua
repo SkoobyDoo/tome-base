@@ -36,14 +36,12 @@ newTalent{
 	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
 	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
-	getResist = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 25) end,
-	getReduction = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 25) end,
+	getDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 25) end,
+	getResist = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 15) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "defense_on_teleport", t.getDefense(self, t))
 		self:talentTemporaryValue(p, "resist_all_on_teleport", t.getResist(self, t))
-		self:talentTemporaryValue(p, "effect_reduction_on_teleport", t.getReduction(self, t))
 	end,
 	callbackOnStatChange = function(self, t, stat, v)
 		if stat == self.STAT_MAG then
@@ -142,11 +140,10 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local defense = t.getDefense(self, t)
 		local resist = t.getResist(self, t)
-		local reduction = t.getReduction(self, t)
 		return ([[Attack with your bow or dual-weapons for %d%% damage.  If you shoot an arrow you'll teleport near the target location.  If you use your dual-weapons you'll teleport up to your bow's range away.
-		Additionally you now go Out of Phase for five turns after any teleport, gaining %d defense, %d%% resist all, and reducing the duration of new detrimental effects by %d%%.
+		Additionally you now go Out of Phase for five turns after any teleport, gaining %d defense and %d%% resist all.
 		The Out of Phase bonuses will scale with your Magic stat.]])
-		:format(damage, defense, resist, reduction)
+		:format(damage, defense, resist)
 	end
 }
 
