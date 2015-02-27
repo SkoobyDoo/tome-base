@@ -34,6 +34,14 @@
 #include "web-external.h"
 #include "lua_externs.h"
 
+#if defined(USE_GLES1)
+void te4_web_load() {}
+void te4_web_init(lua_State *L) {}
+void te4_web_update(lua_State *L) {}
+void te4_web_terminate() {}
+int browsers_count = 0;
+#else
+
 /*
  * Grab web browser methods -- availabe only here
  */
@@ -599,3 +607,5 @@ void te4_web_terminate() {
 	if (!webcore) return;
 	te4_web_shutdown();
 }
+
+#endif

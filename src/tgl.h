@@ -1,19 +1,27 @@
 #ifndef __TGL__
 #define __TGL__
 
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <OpenGL/glext.h>
+#if defined(USE_GLES2)
+	#include <GLES2/gl2.h>
+	#include <GLES2/gl2ext.h>
+
+	// Hack
+	#define GL_TEXTURE_3D GL_TEXTURE_2D
 #else
-#ifdef _WIN32
-#include <windows.h>
-#endif
-#include <GL/gl.h>
-#include <GL/glu.h>
-#ifndef _WIN32
-#include <GL/glext.h>
-#endif
+	#ifdef __APPLE__
+	#include <OpenGL/gl.h>
+	#include <OpenGL/glu.h>
+	#include <OpenGL/glext.h>
+	#else
+	#ifdef _WIN32
+	#include <windows.h>
+	#endif
+	#include <GL/gl.h>
+	#include <GL/glu.h>
+	#ifndef _WIN32
+	#include <GL/glext.h>
+	#endif
+	#endif
 #endif
 
 typedef struct {

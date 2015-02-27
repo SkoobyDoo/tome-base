@@ -1022,9 +1022,18 @@ void do_resize(int w, int h, bool fullscreen, bool borderless)
 		is_fullscreen = fullscreen;
 		is_borderless = borderless;
 		screen = SDL_GetWindowSurface(window);
+
+		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+#if defined(USE_GLES2)
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
+
 		maincontext = SDL_GL_CreateContext(window);
 		SDL_GL_MakeCurrent(window, maincontext);
+#if !defined(USE_GLES2)
 		glewInit();
+#endif
 
 		/* Set the window icon. */
 		windowIconSurface = IMG_Load_RW(PHYSFSRWOPS_openRead(WINDOW_ICON_PATH)
@@ -1447,6 +1456,11 @@ int main(int argc, char *argv[])
 	SDL_StartTextInput();
 
 	// Get OpenGL capabilities
+#ifdef USE_GLES2
+	multitexture_active = TRUE;
+	shaders_active = TRUE;
+	fbo_active = TRUE;
+#else
 	multitexture_active = GLEW_ARB_multitexture;
 	shaders_active = GLEW_ARB_shader_objects;
 	fbo_active = GLEW_EXT_framebuffer_object || GLEW_ARB_framebuffer_object;
@@ -1458,6 +1472,7 @@ int main(int argc, char *argv[])
 		fbo_active = FALSE;
 	}
 	if (safe_mode) printf("Safe mode activated\n");
+#endif
 
 //	setupDisplayTimer(30);
 	init_blank_surface();
