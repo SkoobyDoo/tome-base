@@ -582,8 +582,8 @@ static int gl_texture_alter_sdm(lua_State *L) {
 
 	// Get texture size
 	GLint w, h, dh;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+	w = t->w;
+	h = t->h;
 	dh = doubleheight ? h * 2 : h;
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
