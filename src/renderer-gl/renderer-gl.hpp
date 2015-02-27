@@ -21,17 +21,11 @@
 
 #ifndef RENDERER_GL_H
 #define RENDERER_GL_H
-/*
+
 #include "glm.hpp"
 #include "gtc/matrix_transform.hpp"
+#include "gtc/type_ptr.hpp"
 
-class RendererState {
-	glm::mat4 view;
-	glm::mat4 world;
+#include "RendererState.hpp"
 
-public:
-	RendererState(int w, int h);
-	void translate(float x, float y, float z);
-};
-*/
 #endif

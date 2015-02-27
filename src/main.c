@@ -713,7 +713,7 @@ void on_redraw()
 	}
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
+	renderer_identity(TRUE);
 
 	float step = 30 / reference_fps;
 	nb_keyframes += step;
@@ -871,27 +871,26 @@ void setupDisplayTimer(int fps)
 
 }
 
-
-/* general OpenGL initialization function */
-int initGL()
-{
-	/* Set the background black */
-	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-
-	/* Depth buffer setup */
-	glClearDepth( 1.0f );
-
-	/* The Type Of Depth Test To Do */
-	glDepthFunc(GL_LEQUAL);
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-
-	return( TRUE );
+void detect_gl_capabilities() {
+#ifdef USE_GLES2
+	multitexture_active = TRUE;
+	shaders_active = TRUE;
+	fbo_active = TRUE;
+#else
+	// Get OpenGL capabilities
+	multitexture_active = GLEW_ARB_multitexture;
+	shaders_active = GLEW_ARB_shader_objects;
+	fbo_active = GLEW_EXT_framebuffer_object || GLEW_ARB_framebuffer_object;
+	if (!multitexture_active) shaders_active = FALSE;
+	if (!GLEW_VERSION_2_1 || safe_mode)
+	{
+		multitexture_active = FALSE;
+		shaders_active = FALSE;
+		fbo_active = FALSE;
+	}
+#endif
+	use_modern_gl = shaders_active;
+	if (safe_mode) printf("Safe mode activated\n");
 }
 
 int resizeWindow(int width, int height)
@@ -900,7 +899,7 @@ int resizeWindow(int width, int height)
 	GLfloat ratio;
 
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	initGL();
+	renderer_init(width, height);
 
 	/* Protect against a divide by zero */
 	if ( height == 0 )
@@ -1040,6 +1039,7 @@ void do_resize(int w, int h, bool fullscreen, bool borderless)
 				, TRUE);
 		SDL_SetWindowIcon(window, windowIconSurface);
 
+		detect_gl_capabilities();
 	} else {
 
 		/* SDL won't allow a fullscreen resolution change in one go.  Check. */
@@ -1448,31 +1448,11 @@ int main(int argc, char *argv[])
 
 	/* Sets up OpenGL double buffering */
 	resizeWindow(WIDTH, HEIGHT);
-	renderer_init();
 	core_display_init();
 
 	// Allow screensaver to work
 	SDL_EnableScreenSaver();
 	SDL_StartTextInput();
-
-	// Get OpenGL capabilities
-#ifdef USE_GLES2
-	multitexture_active = TRUE;
-	shaders_active = TRUE;
-	fbo_active = TRUE;
-#else
-	multitexture_active = GLEW_ARB_multitexture;
-	shaders_active = GLEW_ARB_shader_objects;
-	fbo_active = GLEW_EXT_framebuffer_object || GLEW_ARB_framebuffer_object;
-	if (!multitexture_active) shaders_active = FALSE;
-	if (!GLEW_VERSION_2_1 || safe_mode)
-	{
-		multitexture_active = FALSE;
-		shaders_active = FALSE;
-		fbo_active = FALSE;
-	}
-	if (safe_mode) printf("Safe mode activated\n");
-#endif
 
 //	setupDisplayTimer(30);
 	init_blank_surface();

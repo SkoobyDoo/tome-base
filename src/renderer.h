@@ -32,9 +32,18 @@ typedef struct {
 	GLenum kind;
 } vertexes_renderer;
 
+extern bool use_modern_gl;
+
 extern vertexes_renderer* vertexes_renderer_new(vertex_mode kind, render_mode mode);
 extern void vertexes_renderer_free(vertexes_renderer *vr);
 extern void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, float r, float g, float b, float a);
-extern void renderer_init();
+extern void renderer_init(int w, int h);
+extern void renderer_translate(float x, float y, float z);
+extern void renderer_scale(float x, float y, float z);
+extern void renderer_rotate(float a, float x, float y, float z);
+extern void renderer_pushstate(bool isworld);
+extern void renderer_popstate(bool isworld);
+extern void renderer_identity(bool isworld);
+
 
 #endif

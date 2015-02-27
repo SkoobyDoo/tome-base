@@ -1056,35 +1056,35 @@ static int gl_scale(lua_State *L)
 {
 	if (lua_isnumber(L, 1))
 	{
-		glPushMatrix();
-		glScalef(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
+		renderer_pushstate(TRUE);
+		renderer_scale(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
 	}
 	else
-		glPopMatrix();
+		renderer_popstate(TRUE);
 	return 0;
 }
 
 static int gl_translate(lua_State *L)
 {
-	glTranslatef(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
+	renderer_translate(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
 	return 0;
 }
 
 static int gl_rotate(lua_State *L)
 {
-	glRotatef(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	renderer_rotate(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
 	return 0;
 }
 
 static int gl_push(lua_State *L)
 {
-	glPushMatrix();
+	renderer_pushstate(TRUE);
 	return 0;
 }
 
 static int gl_pop(lua_State *L)
 {
-	glPopMatrix();
+	renderer_popstate(TRUE);
 	return 0;
 }
 
@@ -1096,8 +1096,8 @@ static int gl_identity(lua_State *L)
 
 static int gl_matrix(lua_State *L)
 {
-	if (lua_toboolean(L, 1)) glPushMatrix();
-	else glPopMatrix();
+	if (lua_toboolean(L, 1)) renderer_pushstate(TRUE);
+	else renderer_popstate(TRUE);
 	return 0;
 }
 

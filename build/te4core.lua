@@ -31,7 +31,7 @@ end
 
 project "TEngine"
 	kind "WindowedApp"
-	language "C"
+	language "C++"
 	targetname("t-engine")
 	files { "../src/*.c", }
 	if _OPTIONS.steam then

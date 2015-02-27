@@ -432,10 +432,10 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 		tglActiveTexture(GL_TEXTURE0);
 	}
 
-	glTranslatef(x, y, 0);
-	glPushMatrix();
-	glScalef(ps->zoom * zoom, ps->zoom * zoom, ps->zoom * zoom);
-	glRotatef(ps->rotate, 0, 0, 1);
+	renderer_pushstate(TRUE);
+	renderer_translate(x, y, 0);
+	renderer_scale(ps->zoom * zoom, ps->zoom * zoom, ps->zoom * zoom);
+	renderer_rotate(ps->rotate, 0, 0, 1);
 
 	if (ps->shader) useShader(ps->shader, 1, 1, main_fbo ? main_fbo->w : 1, main_fbo ? main_fbo->h : 1, 0, 0, 1, 1, 1, 1, 1, 1);
 
@@ -443,8 +443,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 
 	if (ps->shader) useNoShader();
 
-	glPopMatrix();
-	glTranslatef(-x, -y, 0);
+	renderer_popstate(TRUE);
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 

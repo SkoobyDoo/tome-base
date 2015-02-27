@@ -17,7 +17,7 @@ typedef struct s_shader_reset_uniform shader_reset_uniform;
 typedef struct {
 	bool clone;
 	GLuint shader;
-	GLint p_tick, p_color, p_mapcoord, p_texsize, p_texcoord, p_tex;
+	GLint p_tick, p_color, p_mapcoord, p_texsize, p_texcoord, p_tex, p_mvp;
 	GLint vertex_attrib, texcoord_attrib, color_attrib;
 	struct s_shader_reset_uniform *reset_uniforms;
 } shader_type;
