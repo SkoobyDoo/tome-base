@@ -209,7 +209,7 @@ makeParadoxClone = function(self, target, duration)
 	end
 	
 	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
-	if m.preferred_paradox and m.preferred_paradox > 300 then m.preferred_paradox = 300 end
+	if m.preferred_paradox and m.preferred_paradox > 600 then m.preferred_paradox = 600 end
 	
 	return m
 end
@@ -1089,7 +1089,7 @@ newTalent{
 		end
 		
 		
-		self:project(tg, x, y, DamageType.MATTER, self:spellCrit(damage))
+		self:project(tg, x, y, DamageType.WARP, self:spellCrit(damage))
 		game:playSoundNear(self, "talents/arcane")
 		
 		-- Try to insta-kill

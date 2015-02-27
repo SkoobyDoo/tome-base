@@ -264,7 +264,7 @@ newEffect{
 newEffect{
 	name = "INVISIBILITY", image = "effects/invisibility.png",
 	desc = "Invisibility",
-	long_desc = function(self, eff) return ("Improves/gives invisibility (power %d)."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Improves/gives invisibility (power %d), reducing damage dealt by %d%%%s."):format(eff.power, eff.penalty*100, eff.regen and " and preventing healing and life regeneration" or "") end,
 	type = "magical",
 	subtype = { phantasm=true },
 	status = "beneficial",
@@ -2875,7 +2875,10 @@ newEffect{
 	on_lose = function(self, err) return nil, "-Healing Inversion" end,
 	callbackOnHeal = function(self, eff, value, src)
 		local dam = value * eff.power / 100
-		DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+		if not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
+			eff.projecting = true
+			DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+		end
 		return {value=0}
 	end,
 	activate = function(self, eff)
@@ -3479,7 +3482,7 @@ newEffect{
 	parameters = { power=0},
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and eff.target.rank and src.rank < eff.target.rank) then
 			-- Reduce damage
 			local reduction = dam * eff.power/100
 			dam = dam -  reduction

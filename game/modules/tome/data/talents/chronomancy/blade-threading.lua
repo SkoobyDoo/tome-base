@@ -110,7 +110,7 @@ newTalent{
 		local first_teleport = teleport_hit(self, t, target, x, y)
 		if not first_teleport then game.logSeen(self, "The spell fizzles!") return true end
 		
-		local teleports = 2
+		local teleports = 1
 		local attempts = 10
 		
 		-- Check for Warden's focus
@@ -167,7 +167,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Teleport to the target and attack with your melee weapons for %d%% damage.  Then teleport next to up to two random enemies, attacking each for %d%% damage.
+		return ([[Teleport to the target and attack with your melee weapons for %d%% damage.  Then teleport next to a second random enemy, attacking for %d%% damage.
 		Blink Blade can hit the same target multiple times.]])
 		:format(damage, damage)
 	end
@@ -235,8 +235,8 @@ newTalent{
 			self:project(tg, x, y, function(px, py, tg, self)
 				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
 				local target = game.level.map(px, py, Map.ACTOR)
-				-- Try to insta-kill
-				if target then
+				-- Try to insta-kill...  but not our puppies
+				if target and self:reactionToward(target) < 0 then
 					if target:checkHit(getParadoxSpellpower(self, t), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("instakill") and target.life > 0 and target.life < target.max_life * 0.2 then
 						-- KILL IT !
 						game.logSeen(target, "%s has been cut from the timeline!", target.name:capitalize())

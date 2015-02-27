@@ -32,7 +32,7 @@ newTalent{
 		local inc = t.getPercentInc(self, t)
 		return ([[Increases Physical Power by %d, and increases weapon damage by %d%% when using swords, axes, maces, knives, or bows.
 		You now also use your Magic in place of Strength when equipping weapons and ammo as well as when calculating weapon damage.
-		These bonuses override rather than stack with weapon mastery, knife mastery, and bow mastery.]]):
+		These bonuses override rather than stack with weapon mastery, dagger mastery, and bow mastery.]]):
 		format(damage, 100*inc)
 	end,
 }
@@ -69,8 +69,12 @@ newTalent{
 				
 				-- clone our caster
 				local m = makeParadoxClone(self, self, t.getDuration(self, t))
-				-- alter some values
+				-- Handle some AI stuff
 				m.ai_state = { talent_in=1, ally_compassion=10 }
+				m.ai_state.tactic_leash = 10
+				-- Try to use stored AI talents to preserve tweaking over multiple summons
+				m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+				-- alter some values
 				m.remove_from_party_on_death = true
 				m:attr("archery_pass_friendly", 1)
 				m.generic_damage_penalty = 50
@@ -85,10 +89,10 @@ newTalent{
 
 				if game.party:hasMember(self) then
 					game.party:addMember(m, {
-						control="no",
+						control="order",
 						type="temporal-clone",
 						title="Guardian",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
 				
@@ -124,7 +128,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	mode = "passive",
-	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 50) end,
+	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
@@ -199,7 +203,7 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local power = t.getPower(self, t)
 		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next ten turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
-		Attacks against this target gain %d%% critical chance and critical strike power while you take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.]])
+		Attacks against this target gain %d%% critical chance and critical strike power while you take %d%% less damage from all enemies whose rank is lower then that of your focus target.]])
 		:format(damage, power, power, power)
 	end
 }

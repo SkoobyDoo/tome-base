@@ -520,12 +520,21 @@ function _M:actBase()
 	end
 
 	-- Suffocate ?
-	self.is_suffocating = nil  -- turn_procs gets reset in act()
+	-- The idea here is that we suffocate (EFF_SUFFOCATING checks this flag) if a) something (including own effects) tries to suffocate us between our actBase calls, or
+	-- b) we cannot breathe on the current terrain. The first is force_suffocate flag. It only works for one base turn, of course.
+	-- These are all flags because there is no turn_base_procs. :(
+	if not self.force_suffocate then                                                
+		self.is_suffocating = nil
+	else
+		self.force_suffocate = nil
+		self.is_suffocating = true
+	end
 	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
 	if air_level then
 		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
 			self.is_suffocating = true
 			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
+			self.force_suffocate = nil
 		end
 	end
 
@@ -2513,8 +2522,8 @@ function _M:onTakeHit(value, src, death_note)
 			-- Only calculate crit once per turn to avoid log spam
 			if not self.turn_procs.shield_of_light_heal then
 				local t = self:getTalentFromId(self.T_SHIELD_OF_LIGHT)
-				self.shield_of_light_heal = self:spellCrit(t.getHeal(self, t))
 				self.turn_procs.shield_of_light_heal = true
+				self.shield_of_light_heal = self:spellCrit(t.getHeal(self, t))
 			end
 
 			self:heal(self.shield_of_light_heal, tal)
@@ -2536,11 +2545,12 @@ function _M:onTakeHit(value, src, death_note)
 			local sl = self:callTalent(self.T_SECOND_LIFE,"getLife")
 			value = 0
 			self.life = 1
-			self:heal(sl, self)
-			game.logSeen(self, "#YELLOW#%s has been saved by a blast of positive energy!#LAST#", self.name:capitalize())
-			game:delayedLogDamage(tal, self, -sl, ("#LIGHT_GREEN#%d healing#LAST#"):format(sl), false)
 			self:forceUseTalent(self.T_SECOND_LIFE, {ignore_energy=true})
-			if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			local value = self:heal(sl, self)
+			game.logSeen(self, "#YELLOW#%s has been healed by a blast of positive energy!#LAST#", self.name:capitalize())
+			if value > 0 then
+				if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			end
 		end
 
 		local tal = self:isTalentActive(self.T_HEARTSTART)
@@ -5510,7 +5520,7 @@ function _M:startTalentCooldown(t, v)
 
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
-			if t.type[1]:find("^chronomancy/") and self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
+			if self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
 				self.talents_cd[t.id] = 1
 			end
 		end
@@ -5793,6 +5803,7 @@ function _M:suffocate(value, src, death_message)
 	if self:attr("invulnerable") then return false, false end
 	self.air = self.air - value
 	local ae = game.level.map(self.x, self.y, Map.ACTOR)
+	self.force_suffocate = true
 	if self.air <= 0 then
 		self.air = 0
 		if not self:hasEffect(self.EFF_SUFFOCATING) then
