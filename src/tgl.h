@@ -67,9 +67,9 @@ extern GLuint gl_c_texture;
 	}
 
 extern GLuint gl_c_fbo;
-#define tglBindFramebufferEXT(w, t) \
+#define tglBindFramebuffer(w, t) \
 	{ \
-	glBindFramebufferEXT((w), (t)); gl_c_fbo=(t); \
+	glBindFramebuffer((w), (t)); gl_c_fbo=(t); \
 	}
 
 extern GLuint gl_c_shader;
