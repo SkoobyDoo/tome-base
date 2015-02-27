@@ -1439,6 +1439,7 @@ int main(int argc, char *argv[])
 
 	/* Sets up OpenGL double buffering */
 	resizeWindow(WIDTH, HEIGHT);
+	renderer_init();
 	core_display_init();
 
 	// Allow screensaver to work

@@ -52,8 +52,8 @@ typedef struct
 	int nb, size;
 	int next_id;
 	int *ids;
-	vertex_data *vertices;
 
+	vertex_data *vertices;
 	bool changed;
 
 	GLuint tex;
