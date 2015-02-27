@@ -29,7 +29,9 @@ extern "C" {
 
 #include "renderer-gl.hpp"
 
-// static RendererState *state;
+bool use_modern_gl = TRUE;
+
+static RendererState *state = NULL;
 
 // A static cache of element positions; quad VO only ahve quads so we can cache those
 static GLuint *vbo_elements_data = NULL;
@@ -64,7 +66,7 @@ static void vertexes_renderer_update(vertexes_renderer *vr, lua_vertexes *vx) {
 		if (nb_quads > vbo_elements_nb) {
 			vbo_elements_data = (GLuint*)realloc((void*)vbo_elements_data, nb_quads * 6 * sizeof(GLuint));
 			for (; vbo_elements_nb < nb_quads; vbo_elements_nb++) {
-				printf("Initing a quad elements %d\n", vbo_elements_nb);
+				// printf("Initing a quad elements %d\n", vbo_elements_nb);
 				vbo_elements_data[vbo_elements_nb * 6 + 0] = vbo_elements_nb * 4 + 0;
 				vbo_elements_data[vbo_elements_nb * 6 + 1] = vbo_elements_nb * 4 + 1;
 				vbo_elements_data[vbo_elements_nb * 6 + 2] = vbo_elements_nb * 4 + 2;
@@ -84,10 +86,10 @@ static void vertexes_renderer_update(vertexes_renderer *vr, lua_vertexes *vx) {
 
 void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, float r, float g, float b, float a) {
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
-	glTranslatef(x, y, 0);
+	state->translate(x, y, 0);
 
 	// Modern(ish) OpenGL way
-	if (shaders_active) {
+	if (use_modern_gl) {
 		shader_type *shader;
 
 		if (!current_shader) {
@@ -105,6 +107,11 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 			d[2] = b;
 			d[3] = a;
 			glUniform4fvARB(shader->p_color, 1, d);
+		}
+
+		if (shader->p_mvp != -1) {
+			state->updateMVP();
+			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
 		}
 
 		glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
@@ -147,24 +154,32 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		}
 	}
 
-	glTranslatef(-x, -y, 0);
+	state->translate(-x, -y, 0);
 	vx->changed = FALSE;
 }
-/*
-RendererState::RendererState(int w, int h) {
-	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
-	world = glm::mat4();
+
+void renderer_translate(float x, float y, float z) {
+	state->translate(x, y, z);
+}
+void renderer_scale(float x, float y, float z) {
+	state->scale(x, y, z);
+}
+void renderer_rotate(float a, float x, float y, float z) {
+	state->rotate(a, x, y, z);
+}
+void renderer_pushstate(bool isworld) {
+	state->pushState(isworld);
+}
+void renderer_popstate(bool isworld) {
+	state->popState(isworld);
+}
+void renderer_identity(bool isworld) {
+	state->identity(isworld);
 }
 
-void RendererState::translate(float x, float y, float z) {
-	glm::mat4 t = glm::translate(glm::mat4(), glm::vec3(x, y, z));
-	world *= t;
-}
-
-*/
-
-void renderer_init() {
+void renderer_init(int w, int h) {
 	if (!vbo_elements) glGenBuffers(1, &vbo_elements);
 
-	// state = new RendererState(w, h);
+	if (state) delete state;
+	state = new RendererState(w, h);
 }

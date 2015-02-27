@@ -604,6 +604,7 @@ static int program_compile(lua_State *L)
 	p->p_texsize = glGetUniformLocationARB(p->shader, "texSize");
 	p->p_texcoord = glGetUniformLocationARB(p->shader, "texCoord");
 	p->p_tex = glGetUniformLocationARB(p->shader, "tex");
+	p->p_mvp = glGetUniformLocationARB(p->shader, "mvp");
 
 	p->vertex_attrib = glGetAttribLocation(p->shader, "te4_position");
 	p->texcoord_attrib = glGetAttribLocation(p->shader, "te4_texcoord");
