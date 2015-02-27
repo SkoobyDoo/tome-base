@@ -106,7 +106,7 @@ newTalent{
 					self:callTalent(self.T_DYNAMIC_RECHARGE, "applyEffect", golem)
 				end
 			else -- reduced damage to friendly npcs (could make random chance like friendlyfire instead)
-				if target and self:reactionToward(target) > 0 then d = dam * (1 - prot) end
+				if target and self:reactionToward(target) >= 0 then d = dam * (1 - prot) end
 			end
 			if d <= 0 then return end
 

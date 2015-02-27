@@ -35,6 +35,8 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyEmpower").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 
 		return {
 			talent = talent, rest_count = 0
@@ -47,6 +49,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Empowers the selected chronomancy spell, increasing spellpower when casting it by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Empowered Spell: %s]]):
 		format(power, talent)
@@ -69,6 +72,8 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyExtension").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 				
 		return {
 			talent = talent, rest_count = 0
@@ -81,6 +86,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Extends the duration of the selected chronomancy spell by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Extended Spell: %s]]):
 		format(power, talent)
@@ -103,7 +109,9 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyMatrix").new(self))
 		if not talent then return nil end
-				
+		
+		game:playSoundNear(self, "talents/spell_generic")
+		
 		return {
 			talent = talent, rest_count = 0
 		}
@@ -115,6 +123,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Reduces the cooldown of the selected chronomancy spell by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Matrix Spell: %s]]):
 		format(power, talent)
@@ -137,6 +146,8 @@ newTalent{
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyQuicken").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 				
 		return {
 			talent = talent, rest_count = 0
@@ -149,6 +160,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Reduces the casting speed of the selected chronomancy spell by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Quickened Spell: %s]]):
 		format(power, talent)

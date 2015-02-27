@@ -825,7 +825,7 @@ local function spotHostiles(self, actors_only)
 			local tx, ty
 
 			-- Bresenham is too so check if we're anywhere near the mathematical line of flight
-			if proj.project then
+			if type(proj.project) == "table" then
 				tx, ty = proj.project.def.x, proj.project.def.y
 			elseif proj.homing then
 				tx, ty = proj.homing.target.x, proj.homing.target.y
@@ -974,6 +974,14 @@ function _M:restCheck()
 			if act.life < act.max_life and act.life_regen > 0 and not act:attr("no_life_regen") then return true end
 		end end
 		if ammo and ammo.combat.shots_left < ammo.combat.capacity then return true end
+
+		-- Check for detrimental effects
+		for id, _ in pairs(self.tmp) do
+			local def = self.tempeffect_def[id]
+			if def.status == "detrimental" and (def.decrease or 1) > 0 then
+				return true
+			end
+		end
 
 		if self:fireTalentCheck("callbackOnRest", "check") then return true end
 	else

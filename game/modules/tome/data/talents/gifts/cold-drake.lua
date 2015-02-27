@@ -117,7 +117,13 @@ newTalent{
 	range = 10,
 	tactical = { DISABLE = 2 },
 	requires_target = true,
-	target = function(self, t) return {type="wall", range=self:getTalentRange(t), halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block} end,
+	target = function(self, t)
+		local halflength = math.floor(t.getLength(self,t)/2)
+		local block = function(_, lx, ly)
+			return game.level.map:checkAllEntities(lx, ly, "block_move")
+		end
+		return {type="wall", range=self:getTalentRange(t), halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block} 
+	end,
 	on_learn = function(self, t) self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 1 end,
 	on_unlearn = function(self, t) self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) - 1 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
@@ -125,10 +131,6 @@ newTalent{
 	getIceDamage = function(self, t) return self:combatTalentMindDamage(t, 3, 15) end,
 	getIceRadius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	action = function(self, t)
-		local halflength = math.floor(t.getLength(self,t)/2)
-		local block = function(_, lx, ly)
-			return game.level.map:checkAllEntities(lx, ly, "block_move")
-		end
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
@@ -159,7 +161,8 @@ newTalent{
 				dam = ice_damage,
 				radius = ice_radius,
 				act = function(self)
-					local tg = {type="ball", range=0, radius=ice_radius, friendlyfire=false, talent=t, x=self.x, y=self.y}
+					local t = self.summoner:getTalentFromId(self.T_ICE_WALL)
+					local tg = {type="ball", range=0, radius=self.radius, friendlyfire=false, talent=t, x=self.x, y=self.y}
 					self.summoner.__project_source = self
 					self.summoner:project(tg, self.x, self.y, engine.DamageType.ICE, self.dam)
 					self.summoner.__project_source = nil

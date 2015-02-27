@@ -106,6 +106,8 @@ newEntity{
 newEntity{ base = "BASE_NPC_ELVALA_OGRE_TOWN",
 	name = "ogre rune-spinner", color=colors.LIGHT_UMBER,
 	desc = [[A towering ogre guard, his skin covered in runes.]],
+	female = 1,
+	resolvers.nice_tile{tall=1},
 	level_range = {1, nil}, exp_worth = 1,
 	rarity = 3,
 

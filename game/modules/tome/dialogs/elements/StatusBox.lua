@@ -43,9 +43,7 @@ function _M:generate()
 	self.key:reset()
 	self.h = self.font_h
 
-	self.text_surf = core.display.newSurface(self.w, self.h)
-	self.text_surf:erase(0, 0, 0, 0)
-	self.text_tex = {self.text_surf:glTexture()}
+	self:setTextColor(self.text, self.color)
 	self.iw, self.ih = self.w, self.h
 
 	self.w = self.w + 6
@@ -56,9 +54,7 @@ function _M:setTextColor(text, color)
 	self.text = text or self.text
 	self.color = color or self.color
 
-	self.text_surf:erase(0, 0, 0, 0)
-	self.text_surf:drawColorStringCentered(self.font_bold, self.text, 0, 0, self.iw, self.ih, self.color.r, self.color.g, self.color.b)
-	self.text_surf:updateTexture(self.text_tex[1])
+	self.text_tex = self:drawFontLine(self.font_bold, self.text)
 	self.frame_decay = 0
 end
 
@@ -72,6 +68,6 @@ function _M:display(x, y, nb_keyframes)
 			alpha = 1 - (self.frame_decay - self.frame_delay) / easetime
 		end
 	end
-	self.text_tex[1]:toScreenFull(x + 3, y + 3, self.iw, self.ih, self.text_tex[2], self.text_tex[3], 1, 1, 1, alpha)
+	self:textureToScreen(self.text_tex, x + 3 + (self.iw - self.text_tex.w) / 2, y + 3, self.color.r/255, self.color.g/255, self.color.b/255, alpha)
 end
 

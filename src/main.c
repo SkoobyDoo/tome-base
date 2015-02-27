@@ -64,7 +64,7 @@ SDL_GLContext maincontext; /* Our opengl context handle */
 SDL_Joystick* gamepad = NULL;
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
-float zoom_factor = 1.5;
+float zoom_factor = 2;
 static lua_State *L = NULL;
 int nb_cpus;
 bool no_debug = FALSE;
@@ -674,10 +674,10 @@ void call_draw(int nb_keyframes)
 			1, 0,
 		};
 		GLfloat colors[4*4] = {
-			1, 1, 1, 1,
-			1, 1, 1, 1,
-			1, 1, 1, 1,
-			1, 1, 1, 1,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
+			1, 1, 1, 0.6,
 		};
 
 		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
@@ -879,6 +879,7 @@ void setupRealtime(float freq)
 	else
 	{
 		float interval = 1000 / freq;
+		if (realtime_timer_id) SDL_RemoveTimer(realtime_timer_id);
 		realtime_timer_id = SDL_AddTimer((int)interval, realtime_timer, NULL);
 		printf("[ENGINE] Switching to realtime, interval %d ms\n", (int)interval);
 	}

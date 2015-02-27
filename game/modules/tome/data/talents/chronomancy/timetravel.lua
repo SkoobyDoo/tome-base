@@ -34,6 +34,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 150, getParadoxSpellpower(self, t)) end,
+	getCooldown = function(self, t) return self:getTalentLevel(t) >= 5 and 2 or 1 end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), friendlyfire=false, talent=t}
 	end,
@@ -43,6 +44,7 @@ newTalent{
 		if not x or not y then return nil end
 		
 		local dam = self:spellCrit(t.getDamage(self, t))
+		local cdr = t.getCooldown(self, t)
 		
 		-- Hit our initial target; quality of life hack
 		self:project(tg, x, y, function(px, py)
@@ -52,7 +54,7 @@ newTalent{
 			for tid, cd in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
 				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-					self:alterTalentCoolingdown(tt, - 1)
+					self:alterTalentCoolingdown(tt, - cdr)
 				end
 			end
 			DamageType:get(DamageType.TEMPORAL).projector(self, x, y, DamageType.TEMPORAL, dam)
@@ -62,8 +64,8 @@ newTalent{
 		self:project(tg, x, y, function(x, y)
 			local proj = require("mod.class.Projectile"):makeHoming(
 				self,
-				{particle="arrow", particle_args={tile="particles_images/temporal_bolt", proj_x=self.x, proj_y=self.y, src_x=x, src_y=y},  trail="trail_paradox"},
-				{speed=3, name="Temporal Bolt", dam=dam, apply=getParadoxSpellpower(self, t), start_x=x, start_y=y},
+				{particle="arrow", particle_args={tile="particles_images/temporal_bolt", proj_x=self.x, proj_y=self.y, src_x=x, src_y=y}, trail="trail_paradox"},
+				{speed=3, name="Temporal Bolt", dam=dam, cdr=cdr, start_x=x, start_y=y},
 				self, self:getTalentRange(t),
 				function(self, src)
 					local talent = src:getTalentFromId 'T_TEMPORAL_BOLT'
@@ -78,7 +80,8 @@ newTalent{
 						for tid, cd in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-								src:alterTalentCoolingdown(tt, - 1)
+								src:alterTalentCoolingdown(tt, - self.def.cdr)
+								break
 							end
 						end
 					end
@@ -89,61 +92,112 @@ newTalent{
 			game.zone:addEntity(game.level, proj, "projectile", x, y)
 		end)
 			
-		game:playSoundNear({x=x, y=y}, "talents/distortion")
+		game:playSoundNear({x=x, y=y}, "talents/spell_generic2")
 
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		return ([[Pull a bolt of temporal energy back through time.  The bolt will home in on your location, dealing %0.2f temporal damage to enemies, and reducing the cooldown of one chronomancy talent on cooldown by one turn per enemy hit.
-		The bolt gains 5%% damage each time it moves and the damage will scale with your Spellpower.]]):
+		The bolt gains 5%% damage each time it moves and the damage will scale with your Spellpower.
+		At talent level five cooldowns are reduced by two.]]):
 		format(damDesc(self, DamageType.TEMPORAL, damage))
 	end,
 }
 
 newTalent{
-	name = "Echoes From The Past",
-	type = {"chronomancy/timetravel", 2},
+	name = "Time Skip",
+	type = {"chronomancy/timetravel",2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 10,
-	tactical = { ATTACKAREA = {TEMPORAL = 2} },
-	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
-	end,
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { ATTACK = {TEMPORAL = 1}, DISABLE = 2 },
+	range = 10,
 	direct_hit = true,
 	requires_target = true,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 18, 160, getParadoxSpellpower(self, t)) end,
-	getPercent = function(self, t) return paradoxTalentScale(self, t, 20, 40, 60)/100 end,
+	target = function(self, t)
+		return {type="hit", range=self:getTalentRange(t), talent=t}
+	end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 250, getParadoxSpellpower(self, t)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 2 + math.ceil(self:combatTalentScale(t, 0.3, 2.3))) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, x, y = self:canProject(tg, x, y)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if not target then return end
+
+		if target:attr("timetravel_immune") then
+			game.logSeen(target, "%s is immune!", target.name:capitalize())
+			return true
+		end
+
+		-- Project our damage
+		self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getDamage(self, t)))
 		
-		local damage = self:spellCrit(t.getDamage(self, t))
-		self:project(tg, self.x, self.y, function(px, py)
-			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
-			
-			-- Echo
-			local target = game.level.map(px, py, Map.ACTOR)
-			if not target then return end
-			local percent = t.getPercent(self, t)/target.rank
-			local dam = (target.max_life - target.life) * percent
-			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, dam)
-		end)
+		game.level.map:particleEmitter(x, y, 1, "temporal_thrust")
+		game:playSoundNear(self, "talents/arcane")
 		
-		game.level.map:particleEmitter(self.x, self.y, tg.radius, "ball_temporal", {radius=tg.radius})
-		game:playSoundNear(self, "talents/teleport")
+		-- If they're dead don't remove them from time
+		if target.dead or target.player then return true end
+		
+		-- Check hit
+		local power = getParadoxSpellpower(self, t)
+		local hit = self:checkHit(power, target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
+		if not hit then game.logSeen(target, "%s resists!", target.name:capitalize()) return true end
+		
+		-- Apply spellshock and destabilization
+		target:crossTierEffect(target.EFF_SPELLSHOCKED, getParadoxSpellpower(self, t))
+		target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
+		
+		-- Placeholder for the actor
+		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
+		if not oe or oe:attr("temporary") then return true end
+		local e = mod.class.Object.new{
+			old_feat = oe, type = oe.type, subtype = oe.subtype,
+			name = "temporal instability", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
+			display = '&', color=colors.LIGHT_BLUE,
+			temporary = t.getDuration(self, t),
+			canAct = false,
+			target = target,
+			act = function(self)
+				self:useEnergy()
+				self.temporary = self.temporary - 1
+				-- return the rifted actor
+				if self.temporary <= 0 then
+					game.level.map(self.target.x, self.target.y, engine.Map.TERRAIN, self.old_feat)
+					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
+					game.level:removeEntity(self)
+					local mx, my = util.findFreeGrid(self.target.x, self.target.y, 20, true, {[engine.Map.ACTOR]=true})
+					local old_levelup = self.target.forceLevelup
+					local old_check = self.target.check
+					self.target.forceLevelup = function() end
+					self.target.check = function() end
+					game.zone:addEntity(game.level, self.target, "actor", mx, my)
+					self.target.forceLevelup = old_levelup
+					self.target.check = old_check
+				end
+			end,
+			summoner_gain_exp = true, summoner = self,
+		}
+		
+		-- Replace the target with the instability and update the map
+		game.logSeen(target, "%s has moved forward in time!", target.name:capitalize())
+		game.level:removeEntity(target, true)
+		e.tooltip = mod.class.Grid.tooltip
+		game.level:addEntity(e)
+		game.level.map(x, y, Map.TERRAIN, e)
+		game.nicer_tiles:updateAround(game.level, x, y)
+		game.level.map:updateMap(x, y)
 		return true
 	end,
 	info = function(self, t)
-		local percent = t.getPercent(self, t) * 100
-		local radius = self:getTalentRadius(t)
 		local damage = t.getDamage(self, t)
-		return ([[Creates a temporal echo in a radius of %d around you.  Affected targets will take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
-		The additional damage will be divided by the target's rank and the damage scales with your Spellpower.]]):
-		format(radius, damDesc(self, DamageType.TEMPORAL, damage), percent)
+		local duration = t.getDuration(self, t)
+		return ([[Inflicts %0.2f temporal damage.  If your target survives, it may be removed from time for %d turns.
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration)
 	end,
 }
 
@@ -228,96 +282,47 @@ newTalent{
 }
 
 newTalent{
-	name = "Time Skip",
-	type = {"chronomancy/timetravel",4},
+	name = "Echoes From The Past",
+	type = {"chronomancy/timetravel", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 4,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { ATTACK = {TEMPORAL = 1}, DISABLE = 2 },
-	range = 10,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 12,
+	tactical = { ATTACKAREA = {TEMPORAL = 2} },
+	range = 0,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
 	direct_hit = true,
 	requires_target = true,
-	target = function(self, t)
-		return {type="hit", range=self:getTalentRange(t), talent=t}
-	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 250, getParadoxSpellpower(self, t)) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, 2 + math.ceil(self:combatTalentScale(self:getTalentLevel(t), 0.3, 2.3))) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
+	getPercent = function(self, t) return self:combatTalentLimit(t, 60, 20, 40)/100 end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		local _ _, x, y = self:canProject(tg, x, y)
-		local target = game.level.map(x, y, Map.ACTOR)
-		if not target then return end
-
-		if target:attr("timetravel_immune") then
-			game.logSeen(target, "%s is immune!", target.name:capitalize())
-			return true
-		end
-
-		-- Project our damage
-		self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getDamage(self, t)))
 		
-		game.level.map:particleEmitter(x, y, 1, "temporal_thrust")
-		game:playSoundNear(self, "talents/arcane")
+		local damage = self:spellCrit(t.getDamage(self, t))
+		self:project(tg, self.x, self.y, function(px, py)
+			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
+			
+			-- Echo
+			local target = game.level.map(px, py, Map.ACTOR)
+			if not target then return end
+			local percent = t.getPercent(self, t)/target.rank
+			local dam = (target.max_life - target.life) * percent
+			DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, dam)
+		end)
 		
-		-- If they're dead don't remove them from time
-		if target.dead or target.player then return true end
-		
-		-- Check hit
-		local power = getParadoxSpellpower(self, t)
-		local hit = self:checkHit(power, target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
-		if not hit then game.logSeen(target, "%s resists!", target.name:capitalize()) return true end
-		
-		-- Apply spellshock and destabilization
-		target:crossTierEffect(target.EFF_SPELLSHOCKED, getParadoxSpellpower(self, t))
-		target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
-		
-		-- Placeholder for the actor
-		local oe = game.level.map(target.x, target.y, engine.Map.TERRAIN)
-		if not oe or oe:attr("temporary") then return true end
-		local e = mod.class.Object.new{
-			old_feat = oe, type = oe.type, subtype = oe.subtype,
-			name = "temporal instability", image = oe.image, add_mos = {{image="object/temporal_instability.png"}},
-			display = '&', color=colors.LIGHT_BLUE,
-			temporary = t.getDuration(self, t),
-			canAct = false,
-			target = target,
-			act = function(self)
-				self:useEnergy()
-				self.temporary = self.temporary - 1
-				-- return the rifted actor
-				if self.temporary <= 0 then
-					game.level.map(self.target.x, self.target.y, engine.Map.TERRAIN, self.old_feat)
-					game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
-					game.level:removeEntity(self)
-					local mx, my = util.findFreeGrid(self.target.x, self.target.y, 20, true, {[engine.Map.ACTOR]=true})
-					local old_levelup = self.target.forceLevelup
-					local old_check = self.target.check
-					self.target.forceLevelup = function() end
-					self.target.check = function() end
-					game.zone:addEntity(game.level, self.target, "actor", mx, my)
-					self.target.forceLevelup = old_levelup
-					self.target.check = old_check
-				end
-			end,
-			summoner_gain_exp = true, summoner = self,
-		}
-		
-		-- Replace the target with the instability and update the map
-		game.logSeen(target, "%s has moved forward in time!", target.name:capitalize())
-		game.level:removeEntity(target, true)
-		game.level:addEntity(e)
-		game.level.map(x, y, Map.TERRAIN, e)
-		game.nicer_tiles:updateAround(game.level, x, y)
-		game.level.map:updateMap(x, y)
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "ball_temporal", {radius=tg.radius})
+		game:playSoundNear(self, "talents/warp")
 		return true
 	end,
 	info = function(self, t)
+		local percent = t.getPercent(self, t) * 100
+		local radius = self:getTalentRadius(t)
 		local damage = t.getDamage(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[Inflicts %0.2f temporal damage.  If your target survives, it may be removed from time for %d turns.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration)
+		return ([[Creates a temporal echo in a radius of %d around you.  Affected targets will take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
+		The additional damage will be divided by the target's rank and the damage scales with your Spellpower.]]):
+		format(radius, damDesc(self, DamageType.TEMPORAL, damage), percent)
 	end,
 }

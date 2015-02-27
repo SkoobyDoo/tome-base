@@ -459,7 +459,7 @@ _M.defaults.block_path = function(typ, lx, ly, for_highlights)
 			-- Reduce the nb blocking for friendlies
 			if not typ.friendlyblock and typ.source_actor and typ.source_actor.reactionToward then
 				local a = game.level.map(lx, ly, engine.Map.ACTOR)
-				if a and typ.source_actor:reactionToward(a) > 0 then
+				if a and typ.source_actor:reactionToward(a) >= 0 then
 					nb = nb - 1
 				end
 			end

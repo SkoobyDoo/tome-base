@@ -36,6 +36,15 @@ allow_userchat = {"mainmenu"} -- We can talk to the online community but not joi
 if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
 else background_name = {"tome3"}
 end
+if config.settings.unlock_background_linaniil then background_name[#background_name+1] = "cards/linaniil" end
+if config.settings.unlock_background_master then background_name[#background_name+1] = "cards/master" end
+if config.settings.unlock_background_garkul then background_name[#background_name+1] = "cards/garkul" end
+if config.settings.unlock_background_aeryn then background_name[#background_name+1] = "cards/aeryn" end
+if config.settings.unlock_background_myssil then background_name[#background_name+1] = "cards/myssil" end
+if config.settings.unlock_background_derth then background_name[#background_name+1] = "cards/derth" end
+if config.settings.unlock_background_fortress then background_name[#background_name+1] = "cards/fortress" end
+if config.settings.unlock_background_urkis then background_name[#background_name+1] = "cards/urkis" end
+keep_background_texture = true
 
 font_package_id = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.type end
 font_package_size = function() config.settings.tome = config.settings.tome or {} if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end return config.settings.tome.fonts.size end

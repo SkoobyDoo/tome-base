@@ -85,6 +85,7 @@ function _M:init()
 
 	self.visited_zones = {}
 	self.tiles_attachements = {}
+	self.tiles_facing = {}
 end
 
 function _M:run()
@@ -443,6 +444,50 @@ function _M:computeAttachementSpots()
 	self:computeAttachementSpotsFromTable(t)
 end
 
+function _M:computeFacingsFromTable(ta)
+	local base = ta.default_base or 64
+	local res = { }
+
+	for tile, data in pairs(ta.tiles or {}) do
+		res[tile] = data
+	end
+
+	for race, data in pairs(ta.dolls or {}) do
+		local base = data.base or base
+		for sex, d in pairs(data) do if sex ~= "base" then
+			local t = {}
+			res["dolls_"..race.."_"..sex] = d
+		end end
+	end
+
+	self.tiles_facing = res
+end
+
+function _M:computeFacings()
+	local t = {}
+	if fs.exists(Tiles.prefix.."facings.lua") then
+		print("Loading tileset facings from ", Tiles.prefix.."facings.lua")
+		local f, err = loadfile(Tiles.prefix.."facings.lua")
+		if not f then print("Loading tileset facings error", err)
+		else
+			setfenv(f, t)
+			local ok, err = pcall(f)
+			if not ok then print("Loading tileset facings error", err) end
+		end		
+	end
+	for _, file in ipairs(fs.list(Tiles.prefix)) do if file:find("^facings%-.+.lua$") then
+		print("Loading tileset facings from ", Tiles.prefix..file)
+		local f, err = loadfile(Tiles.prefix..file)
+		if not f then print("Loading tileset facings error", err)
+		else
+			setfenv(f, t)
+			local ok, err = pcall(f)
+			if not ok then print("Loading tileset facings error", err) end
+		end		
+	end end
+	self:computeFacingsFromTable(t)
+end
+
 function _M:setupDisplayMode(reboot, mode)
 	if not mode or mode == "init" then
 		local gfx = config.settings.tome.gfx
@@ -470,6 +515,7 @@ function _M:setupDisplayMode(reboot, mode)
 
 		-- Load attachement spots for this tileset
 		self:computeAttachementSpots()
+		self:computeFacings()
 
 		local do_bg = gfx.tiles == "ascii_full"
 		local _, _, tw, th = gfx.size:find("^([0-9]+)x([0-9]+)$")
@@ -572,10 +618,18 @@ function _M:createFBOs()
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
 end
 
-function _M:resizeMapViewport(w, h)
+function _M:resizeMapViewport(w, h, x, y)
+	x = x and math.floor(x) or Map.display_x
+	y = y and math.floor(y) or Map.display_y
 	w = math.floor(w)
 	h = math.floor(h)
 
+	-- convert from older faulty versionsPg
+	if game.level.map and rawget(game.level.map, "display_x") == Map.display_x and rawget(game.level.map, "display_y") == Map.display_y then
+		game.level.map.display_x, game.level.map.display_y = nil, nil
+	end
+	Map.display_x = x
+	Map.display_y = y
 	Map.viewport.width = w
 	Map.viewport.height = h
 	Map.viewport.mwidth = math.floor(w / Map.tile_w)
@@ -1885,6 +1939,7 @@ do return end
 			else
 				self.log("Displaying talents.")
 			end
+			if self.uiset.resizeIconsHotkeysToolbar then self.uiset:resizeIconsHotkeysToolbar() end
 		end,
 
 		SCREENSHOT = function() self:saveScreenshot() end,
@@ -2303,6 +2358,18 @@ function _M:setAllowedBuild(what, notify)
 	end
 
 	return true
+end
+
+function _M:unlockBackground(kind, name)
+	if not config.settings['unlock_background_'..kind] then
+		game.log("#ANTIQUE_WHITE#Splash screen unlocked: #GOLD#"..name)
+	end
+	config.settings['unlock_background_'..kind] = true
+	local save = {}
+	for k, v in pairs(config.settings) do if k:find("^unlock_background_") then
+		save[#save+1] = k.."=true"
+	end end
+	game:saveSettings("unlock_background", table.concat(save, "\n"))
 end
 
 function _M:playSoundNear(who, name)

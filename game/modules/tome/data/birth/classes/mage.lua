@@ -200,7 +200,7 @@ newBirthDescriptor{
 	copy = {
 		-- Mages start in angolwen
 		class_start_check = function(self)
-			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race == "Human" or self.descriptor.race == "Elf" or self.descriptor.race == "Halfling") and not self._forbid_start_override then
+			if self.descriptor.world == "Maj'Eyal" and (self.descriptor.race == "Human" or self.descriptor.race == "Elf" or self.descriptor.race == "Halfling" or (self.descriptor.race == "Giant" and self.descriptor.subrace == "Ogre")) and not self._forbid_start_override then
 				self.archmage_race_start_quest = self.starting_quest
 				self.default_wilderness = {"zone-pop", "angolwen-portal"}
 				self.starting_zone = "town-angolwen"
@@ -209,6 +209,7 @@ newBirthDescriptor{
 				self.faction = "angolwen"
 				self:learnTalent(self.T_TELEPORT_ANGOLWEN, true, nil, {no_unlearn=true})
 			end
+			self:triggerHook{"BirthStartZone:archmage"}
 		end,
 
 		max_life = 90,

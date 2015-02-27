@@ -112,6 +112,8 @@ newEntity{ define_as = "THE_MASTER",
 		game.player:resolveSource():grantQuest("dreadfell")
 		game.player:resolveSource():setQuestStatus("dreadfell", engine.Quest.COMPLETED)
 
+		game:unlockBackground("master", "The Master")
+
 		local ud = {}
 		if not profile.mod.allow_build.undead_skeleton then ud[#ud+1] = "undead_skeleton" end
 		if not profile.mod.allow_build.undead_ghoul then ud[#ud+1] = "undead_ghoul" end

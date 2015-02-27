@@ -75,7 +75,7 @@ function _M:archeryAcquireTargets(tg, params)
 	print("[PROJECTILE SPEED] ::", tg.speed)
 
 	self:triggerHook{"Combat:archeryTargetKind", tg=tg, params=params, mode="target"}
-
+	
 	local x, y = params.x, params.y
 	if not x or not y then x, y = self:getTarget(tg) end
 	if not x or not y then return nil end
@@ -184,6 +184,15 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	local mult = tg.archery.mult or 1
 
 	self.turn_procs.weapon_type = {kind=weapon and weapon.talented or "unknown", mode="archery"}
+	
+	-- Warden's Focus
+	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if target == eff.target then
+			tg.archery.atk = (tg.archery.atk or 0) + eff.atk
+			tg.archery.crit = (tg.archery.crit or 0) + eff.crit
+		end
+	end
 
 	-- Does the blow connect? yes .. complex :/
 	if tg.archery.use_psi_archery then self:attr("use_psi_combat", 1) end
@@ -384,6 +393,11 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			t.proc(self, t, target, weapon)
 		end
 	end
+	
+	-- Temporal Cast
+	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
+		self:callTalent(self.T_WEAPON_FOLDING, "doWeaponFolding", target)
+	end
 
 	-- Special effect
 	if hitted and weapon and weapon.special_on_hit and weapon.special_on_hit.fct and (not target.dead or weapon.special_on_hit.on_kill) then
@@ -424,31 +438,6 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		self:project({type="ball", radius=1, friendlyfire=false}, target.x, target.y, DamageType.PHYSICAL, dam)
 		target.invulnerable = invuln
 		self.shattering_impact_last_turn = game.turn
-	end
-
-	-- Temporal cast
-	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
-		local dam = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
-		end
-		if dam > 0 and not target.dead then
-			DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, dam, tmp)
-		end
-	end
-	if hitted and self:knowTalent(self.T_IMPACT) and self:isTalentActive(self.T_IMPACT) then
-		local dam = self:callTalent(self.T_IMPACT, "getDamage")
-		local power = self:callTalent(self.T_IMPACT, "getApplyPower")
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=burst_damage/2, power_check=power})
-		end
-		if dam > 0 and not target.dead then
-			DamageType:get(DamageType.IMPACT).projector(self, target.x, target.y, DamageType.IMPACT, {dam=dam, daze=dam/2, power_check=power}, tmp)
-		end
 	end
 
 	if self ~= target then

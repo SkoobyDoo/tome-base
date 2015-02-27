@@ -121,6 +121,14 @@ newTalent{
 				self:removeEffect(eff.effect_id)
 			end
 		end
+		
+		-- Make sure we update the display for blind and such
+		game:onTickEnd(function()
+			if game.level then
+				self:resetCanSeeCache()
+				if self.player then for uid, e in pairs(game.level.entities) do if e.x then game.level.map:updateMap(e.x, e.y) end end game.level.map.changed = true end
+			end
+		end)
 
 	end,
 	info = function(self, t)
@@ -132,23 +140,119 @@ newTalent{
 }
 
 newTalent{
-	name = "Phase Shift",
+	name = "Wormhole",
 	type = {"chronomancy/spacetime-weaving", 3},
 	require = chrono_req3,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
-	tactical = { DEFEND = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 25, 3, 7, true))) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	cooldown = 10,
+	tactical = { ESCAPE = 2 },
+	range = 10,
+	radius = function(self, t) return math.floor(self:combatTalentLimit(t, 1, 5, 2)) end, -- Limit to radius 1
+	requires_target = true,
+	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
+	no_npc_use = true,
 	action = function(self, t)
-		self:setEffect(self.EFF_PHASE_SHIFT, t.getDuration(self, t), {})
-		game:playSoundNear(self, "talents/teleport")
+		-- Target the entrance location
+		local tg = {type="bolt", nowarning=true, range=1, nolock=true, simple_dir_request=true, talent=t}
+		local entrance_x, entrance_y = self:getTarget(tg)
+		if not entrance_x or not entrance_y then return nil end
+		local _ _, entrance_x, entrance_y = self:canProject(tg, entrance_x, entrance_y)
+		local trap = game.level.map(entrance_x, entrance_y, engine.Map.TRAP)
+		if trap or game.level.map:checkEntity(entrance_x, entrance_y, Map.TERRAIN, "block_move") then game.logPlayer(self, "You can't place a wormhole entrance here.") return end
+
+		-- Target the exit location
+		local tg = {type="hit", nolock=true, pass_terrain=true, nowarning=true, range=self:getTalentRange(t)}
+		local exit_x, exit_y = self:getTarget(tg)
+		if not exit_x or not exit_y then return nil end
+		local _ _, exit_x, exit_y = self:canProject(tg, exit_x, exit_y)
+		local trap = game.level.map(exit_x, exit_y, engine.Map.TRAP)
+		if trap or game.level.map:checkEntity(exit_x, exit_y, Map.TERRAIN, "block_move") or core.fov.distance(entrance_x, entrance_y, exit_x, exit_y) < 2 then game.logPlayer(self, "You can't place a wormhole exit here.") return end
+
+		-- Wormhole values
+		local power = getParadoxSpellpower(self, t)
+		local dest_power = getParadoxSpellpower(self, t, 0.3)
+		
+		-- Our base wormhole
+		local function makeWormhole(x, y, dest_x, dest_y)
+			local wormhole = mod.class.Trap.new{
+				name = "wormhole",
+				type = "annoy", subtype="teleport", id_by_type=true, unided_name = "trap",
+				image = "terrain/wormhole.png",
+				display = '&', color_r=255, color_g=255, color_b=255, back_color=colors.STEEL_BLUE,
+				message = "@Target@ moves onto the wormhole.",
+				temporary = t.getDuration(self, t),
+				x = x, y = y, dest_x = dest_x, dest_y = dest_y,
+				radius = self:getTalentRadius(t),
+				canAct = false,
+				energy = {value=0},
+				disarm = function(self, x, y, who) return false end,
+				power = power, dest_power = dest_power,
+				summoned_by = self, -- "summoner" is immune to it's own traps
+				triggered = function(self, x, y, who)
+					local hit = who == self.summoned_by or who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
+					if hit then
+						game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
+						if not who:teleportRandom(self.dest_x, self.dest_y, self.radius, 1) then
+							game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())
+						else
+							if who ~= self.summoned_by then who:setEffect(who.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power}) end
+							game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
+							game:playSoundNear(self, "talents/teleport")
+						end
+					else
+						game.logSeen(who, "%s ignores the wormhole.", who.name:capitalize())
+					end
+					return true
+				end,
+				act = function(self)
+					self:useEnergy()
+					self.temporary = self.temporary - 1
+					if self.temporary <= 0 then
+						game.logSeen(self, "Reality asserts itself and forces the wormhole shut.")
+						if game.level.map(self.x, self.y, engine.Map.TRAP) == self then game.level.map:remove(self.x, self.y, engine.Map.TRAP) end
+						game.level:removeEntity(self)
+					end
+				end,
+			}
+			
+			return wormhole
+		end
+		
+		-- Adding the entrance wormhole
+		local entrance = makeWormhole(entrance_x, entrance_y, exit_x, exit_y)
+		game.level:addEntity(entrance)
+		entrance:identify(true)
+		entrance:setKnown(self, true)
+		game.zone:addEntity(game.level, entrance, "trap", entrance_x, entrance_y)
+		entrance.faction = nil
+		game:playSoundNear(self, "talents/heal")
+
+		-- Adding the exit wormhole
+		local exit = makeWormhole(exit_x, exit_y, entrance_x, entrance_y)
+		exit.x = exit_x
+		exit.y = exit_y
+		game.level:addEntity(exit)
+		exit:identify(true)
+		exit:setKnown(self, true)
+		game.zone:addEntity(game.level, exit, "trap", exit_x, exit_y)
+		exit.faction = nil
+
+		-- Linking the wormholes
+		entrance.dest = exit
+		exit.dest = entrance
+
+		game.logSeen(self, "%s folds the space between two points.", self.name)
 		return true
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Phase shift yourself for %d turns; any damage greater than 10%% of your maximum life will teleport you to an adjacent tile and be reduced by 50%% (can only happen once per turn).]]):
-		format(duration)
+		local radius = self:getTalentRadius(t)
+		local range = self:getTalentRange(t)
+		return ([[You fold the space between yourself and a second point within a range of %d, creating a pair of wormholes.  Any creature stepping on either wormhole will be teleported near the other (radius %d accuracy).  
+		The wormholes will last %d turns and must be placed at least two tiles apart.
+		The chance of teleporting enemies will scale with your Spellpower.]])
+		:format(range, radius, duration)
 	end,
 }
 
@@ -156,37 +260,36 @@ newTalent{
 	name = "Phase Pulse",
 	type = {"chronomancy/spacetime-weaving", 4},
 	require = chrono_req4,
-	tactical = { ATTACKAREA = {TEMPORAL = 1, PHYSICAL = 1} },
+	tactical = { DISABLE = 2 },
 	mode = "sustained",
 	sustain_paradox = 36,
 	cooldown = 10,
 	points = 5,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 70, getParadoxSpellpower(self, t)) end,
 	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.5, 3.5)) end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	target = function(self, t)
 		return {type="ball", range=100, radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 3))) end,
+	getChance = function(self, t) return 2 + math.floor(self:combatTalentScale(t, 2, 10)) end,
 	doPulse = function(self, t, ox, oy, fail)
 		local tg = self:getTalentTarget(t)
-		local dam = self:spellCrit(t.getDamage(self, t))
 		local distance = core.fov.distance(self.x, self.y, ox, oy)
-		local chance = distance * 10
+		local chance = distance * t.getChance(self, t)
 		
-		if not fail then
-			dam = dam * (1 + math.min(1, distance/10))
-			game:onTickEnd(function()
-				self:project(tg, ox, oy, DamageType.WARP, dam)
-				self:project(tg, self.x, self.y, DamageType.WARP, dam)
+		-- Project our status effects at the end of the turn
+		game:onTickEnd(function()
+			-- Project at both the entrance and exit
+			self:project(tg, self.x, self.y, function(px, py)
+				local target = game.level.map(px, py, Map.ACTOR)
+				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
 			end)
-		else
-			dam = dam *2
-			chance = 100
-			tg.radius = tg.radius * 2
-			game:onTickEnd(function()
-				self:project(tg, self.x, self.y, DamageType.WARP, dam)
+			self:project(tg, ox, oy, function(px, py)
+				local target = game.level.map(px, py, Map.ACTOR)
+				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
 			end)
-		end
+		end)
+			
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")
@@ -196,11 +299,11 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)/2
+		local chance = t.getChance(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[When you teleport with Phase Pulse active you deal %0.2f physical and %0.2f temporal (warp) damage to all targets in a radius of %d around you.
-		For each space you move from your original location the damage is increased by 10%% (to a maximum bonus of 100%%).  If the teleport fails, the blast radius and damage will be doubled.
-		This effect occurs both at the entrance and exist locations and the damage will scale with your Spellpower.]]):
-		format(damDesc(self, DamageType.PHYSICAL, damage), damDesc(self, DamageType.TEMPORAL, damage), radius)
+		local duration = t.getDuration(self, t)
+		return ([[When you teleport you fire a pulse that jolts enemies out of phase in a radius of %d around both the start and the destination point. 
+		Each target has a %d%% chance per tile you travelled to be stunned, blinded, confused, or pinned for %d turns.]]):
+		format(radius, chance, duration)
 	end,
 }

@@ -162,13 +162,13 @@ end
 
 --- Make walls have a pseudo 3D effect
 function _M:niceTileWall3d(level, i, j, g, nt)
-	local s = level.map:checkEntity(i, j, Map.TERRAIN, "type") or "wall"
-	local gn = level.map:checkEntity(i, j-1, Map.TERRAIN, "type") or "wall"
-	local dn = level.map:checkEntity(i, j-1, Map.TERRAIN, "door_opened")
-	local gs = level.map:checkEntity(i, j+1, Map.TERRAIN, "type") or "wall"
-	local ds = level.map:checkEntity(i, j+1, Map.TERRAIN, "door_opened")
-	local gw = level.map:checkEntity(i-1, j, Map.TERRAIN, "type") or "wall"
-	local ge = level.map:checkEntity(i+1, j, Map.TERRAIN, "type") or "wall"
+	local s = (level.map:checkEntity(i, j, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i, j, Map.TERRAIN, "subtype") or "floor")
+	local gn = (level.map:checkEntity(i, j-1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i, j-1, Map.TERRAIN, "subtype") or "floor")
+	local gs = (level.map:checkEntity(i, j+1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i, j+1, Map.TERRAIN, "subtype") or "floor")
+	local gw = (level.map:checkEntity(i-1, j, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i-1, j, Map.TERRAIN, "subtype") or "floor")
+	local ge = (level.map:checkEntity(i+1, j, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i+1, j, Map.TERRAIN, "subtype") or "floor")
+	local dn = level.map:checkEntity(i, j-1, Map.TERRAIN, "is_door")
+	local ds = level.map:checkEntity(i, j+1, Map.TERRAIN, "is_door")
 
 	if gs ~= s and gn ~= s and gw ~= s and ge ~= s then self:replace(i, j, self:getTile(nt.small_pillar))
 	elseif gs ~= s and gn ~= s and gw ~= s and ge == s then self:replace(i, j, self:getTile(nt.pillar_4))
@@ -248,20 +248,35 @@ end
 
 local defs = {
 grass = { method="borders", type="grass", forbid={lava=true, rock=true},
-	default8={add_mos={{image="terrain/grass/grass_2_%02d.png", display_y=-1}}, min=1, max=5},
-	default2={add_mos={{image="terrain/grass/grass_8_%02d.png", display_y=1}}, min=1, max=5},
-	default4={add_mos={{image="terrain/grass/grass_6_%02d.png", display_x=-1}}, min=1, max=5},
-	default6={add_mos={{image="terrain/grass/grass_4_%02d.png", display_x=1}}, min=1, max=4},
+	default8={add_mos={{image="terrain/grass/grass_2_%02d.png", display_y=-1}}, min=1, max=2},
+	default2={add_mos={{image="terrain/grass/grass_8_%02d.png", display_y=1}}, min=1, max=2},
+	default4={add_mos={{image="terrain/grass/grass_6_%02d.png", display_x=-1}}, min=1, max=2},
+	default6={add_mos={{image="terrain/grass/grass_4_%02d.png", display_x=1}}, min=1, max=2},
 
-	default1={add_mos={{image="terrain/grass/grass_9_%02d.png", display_x=-1, display_y=1}}, min=1, max=3},
-	default3={add_mos={{image="terrain/grass/grass_7_%02d.png", display_x=1, display_y=1}}, min=1, max=3},
-	default7={add_mos={{image="terrain/grass/grass_3_%02d.png", display_x=-1, display_y=-1}}, min=1, max=3},
-	default9={add_mos={{image="terrain/grass/grass_1_%02d.png", display_x=1, display_y=-1}}, min=1, max=3},
+	default1={add_mos={{image="terrain/grass/grass_9_%02d.png", display_x=-1, display_y=1}}, min=1, max=1},
+	default3={add_mos={{image="terrain/grass/grass_7_%02d.png", display_x=1, display_y=1}}, min=1, max=1},
+	default7={add_mos={{image="terrain/grass/grass_3_%02d.png", display_x=-1, display_y=-1}}, min=1, max=1},
+	default9={add_mos={{image="terrain/grass/grass_1_%02d.png", display_x=1, display_y=-1}}, min=1, max=1},
 
-	default1i={add_mos={{image="terrain/grass/grass_inner_1_%02d.png", display_x=-1, display_y=1}}, min=1, max=3},
-	default3i={add_mos={{image="terrain/grass/grass_inner_3_%02d.png", display_x=1, display_y=1}}, min=1, max=3},
-	default7i={add_mos={{image="terrain/grass/grass_inner_7_%02d.png", display_x=-1, display_y=-1}}, min=1, max=3},
-	default9i={add_mos={{image="terrain/grass/grass_inner_9_%02d.png", display_x=1, display_y=-1}}, min=1, max=3},
+	default1i={add_mos={{image="terrain/grass/grass_inner_1_%02d.png", display_x=-1, display_y=1}}, min=1, max=2},
+	default3i={add_mos={{image="terrain/grass/grass_inner_3_%02d.png", display_x=1, display_y=1}}, min=1, max=2},
+	default7i={add_mos={{image="terrain/grass/grass_inner_7_%02d.png", display_x=-1, display_y=-1}}, min=1, max=2},
+	default9i={add_mos={{image="terrain/grass/grass_inner_9_%02d.png", display_x=1, display_y=-1}}, min=1, max=2},
+
+	water8={add_mos={{image="terrain/grass/grass_2_%02d.png", display_y=-1}}, min=1, max=1},
+	water2={add_mos={{image="terrain/grass/grass_8_%02d.png", display_y=1}}, min=1, max=1},
+	water4={add_mos={{image="terrain/grass/grass_6_%02d.png", display_x=-1}}, min=1, max=1},
+	water6={add_mos={{image="terrain/grass/grass_4_%02d.png", display_x=1}}, min=1, max=1},
+
+	water1={add_mos={{image="terrain/grass/grass_9_%02d.png", display_x=-1, display_y=1}}, min=1, max=1},
+	water3={add_mos={{image="terrain/grass/grass_7_%02d.png", display_x=1, display_y=1}}, min=1, max=1},
+	water7={add_mos={{image="terrain/grass/grass_3_%02d.png", display_x=-1, display_y=-1}}, min=1, max=1},
+	water9={add_mos={{image="terrain/grass/grass_1_%02d.png", display_x=1, display_y=-1}}, min=1, max=1},
+
+	water1i={add_mos={{image="terrain/grass/grass_inner_1_%02d.png", display_x=-1, display_y=1}}, min=1, max=1},
+	water3i={add_mos={{image="terrain/grass/grass_inner_3_%02d.png", display_x=1, display_y=1}}, min=1, max=1},
+	water7i={add_mos={{image="terrain/grass/grass_inner_7_%02d.png", display_x=-1, display_y=-1}}, min=1, max=1},
+	water9i={add_mos={{image="terrain/grass/grass_inner_9_%02d.png", display_x=1, display_y=-1}}, min=1, max=1},
 },
 }
 

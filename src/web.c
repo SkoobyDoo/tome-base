@@ -120,7 +120,7 @@ static int lua_web_toscreen(lua_State *L) {
 	if (tex) {
 		float r = 1, g = 1, b = 1, a = 1;
 
-		glBindTexture(GL_TEXTURE_2D, *tex);
+		tglBindTexture(GL_TEXTURE_2D, *tex);
 
 		GLfloat texcoords[2*4] = {
 			0, 0,

@@ -29,6 +29,7 @@ local Dialog = require "engine.ui.Dialog"
 local Tooltip = require "engine.Tooltip"
 local MainMenu = require "mod.dialogs.MainMenu"
 local Downloader = require "engine.dialogs.Downloader"
+local FontPackage = require "engine.FontPackage"
 
 local Shader = require "engine.Shader"
 local Zone = require "engine.Zone"
@@ -55,16 +56,19 @@ function _M:init()
 	engine.GameEnergyBased.init(self, engine.KeyBind.new(), 100, 100)
 	self.profile_font = FontPackage:get("default")
 
-	local background_name
-	if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
-	else background_name = {"tome3"}
+	self.background = self.__mod_info.keep_background_texture
+
+	if type(self.background) ~= "userdata" then
+		local background_name
+		if not config.settings.censor_boot then background_name = {"tome","tome2","tome3"}
+		else background_name = {"tome3"}
+		end
+		local value = {name=background_name}
+		local hd = {"Boot:loadBackground", value=value}
+		if self:triggerHook(hd) then background_name = hd.value.name end
+		self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
 	end
 
-	local value = {name=background_name}
-	local hd = {"Boot:loadBackground", value=value}
-	if self:triggerHook(hd) then background_name = hd.value.name end
-
-	self.background = core.display.loadImage("/data/gfx/background/"..util.getval(background_name)..".png")
 	if self.background then
 		self.background_w, self.background_h = self.background:getSize()
 		self.background, self.background_tw, self.background_th = self.background:glTexture()
@@ -76,8 +80,8 @@ function _M:init()
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
-	-- self.stopped = config.settings.boot_menu_background
-	self.stopped = true
+	self.stopped = config.settings.boot_menu_background
+	-- self.stopped = true
 	if core.display.safeMode() then self.stopped = true end
 	if self.stopped then
 		core.game.setRealtime(0)
@@ -113,7 +117,9 @@ function _M:run()
 		self:makeWebtooltip()
 	end
 
-	self.flyers = FlyingText.new()
+	local flyfont, flysize = FontPackage:getFont("flyer")
+	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
+	self.flyers:enableShadow(0.6)
 	self:setFlyingText(self.flyers)
 	self.log = function(style, ...) end
 	self.logSeen = function(e, style, ...) end
@@ -171,7 +177,7 @@ Now go and have some fun!]]
 	if self.s_log then
 		local w, h = self.s_log:getSize()
 		self.mouse:registerZone(self.w - w, self.h - h, w, h, function(button)
-			if button == "left" then util.browserOpenUrl(self.logged_url) end
+			if button == "left" then util.browserOpenUrl(self.logged_url, {is_external=true}) end
 		end, {button=true})
 	end
 
@@ -409,7 +415,7 @@ function _M:updateNews()
 
 	if self.news.link then
 		self.mouse:registerZone(5, self.tooltip.h - 30, self.tooltip.w, 30, function(button)
-			if button == "left" then util.browserOpenUrl(self.news.link) end
+			if button == "left" then util.browserOpenUrl(self.news.link, {is_external=true}) end
 		end, {button=true})
 	end
 end

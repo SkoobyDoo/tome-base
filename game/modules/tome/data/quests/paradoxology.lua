@@ -66,24 +66,23 @@ generate = function(self, player, x, y)
 	end
 
 	-- Add talents
-	a:learnTalent(a.T_TURN_BACK_THE_CLOCK, true, 3)
-	a:learnTalent(a.T_BODY_REVERSION, true, 3)
-	a:learnTalent(a.T_TEMPORAL_FUGUE, true, 4)
-	a:learnTalent(a.T_DISENTANGLE, true, 4)
-	a:learnTalent(a.T_RETHREAD, true, 3)
-	a:learnTalent(a.T_GATHER_THE_THREADS, true, 3)
-	a:learnTalent(a.T_FADE_FROM_TIME, true, 3)
+	a:learnTalent(a.T_TEMPORAL_BOLT, true, 3)
+	a:learnTalent(a.T_TIME_SKIP, true, 3)
+	a:learnTalent(a.T_INDUCE_ANOMALY, true, 3)
+	a:learnTalent(a.T_REALITY_SMEARING, true, 3)
 	a:learnTalent(a.T_ASHES_TO_ASHES, true, 4)
-	a:learnTalent(a.T_QUANTUM_SPIKE, true, 3)
+	a:learnTalent(a.T_DUST_TO_DUST, true, 4)
 	a:learnTalent(a.T_SEVER_LIFELINE, true, 5)
 
 	a.talent_cd_reduction = a.talent_cd_reduction or {}
-	a.talent_cd_reduction[a.T_DISENTANGLE] = 15
 	a.talents_cd[a.T_SEVER_LIFELINE] = 20
+	
+	a:forceUseTalent(a.T_REALITY_SMEARING, {ignore_energy=true})
 
 	a:forceLevelup(a.level + 7)
 
 	a:incIncStat("wil", 200)
+	a.anomaly_bias = {type = "temporal", chance=100}
 	a.self_resurrect = nil -- In case this is a skeleton player
 	a.on_die = function(self)
 		local o = game.zone:makeEntityByName(game.level, "object", "RUNE_RIFT")

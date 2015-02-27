@@ -2640,7 +2640,7 @@ newEntity{ base = "BASE_LONGBOW",
 	rarity = 200,
 	require = { stat = { dex=18 }, },
 	cost = 20,
-	use_no_energy = true,
+	use_no_energy = "fake",
 	material_level = 1,
 	combat = {
 		range = 9,

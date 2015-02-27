@@ -47,8 +47,12 @@ end
 --- Makes the death happen!
 function _M:attackTarget(target, mult)
 	if self.combat then
+		self:setMoveAnim(self.x, self.y, 3, blur, util.getDir(target.x, target.y, self.x, self.y), 0.2)
+		
 		local dam = self.combat.dam + self:getStr() - target.combat_armor
 		DamageType:get(DamageType.PHYSICAL).projector(self, target.x, target.y, DamageType.PHYSICAL, math.max(0, dam))
+
+		game.level.map:particleEmitter(target.x, target.y, 1, "melee_attack", {color=target.blood_color})
 	end
 
 	-- We use up our own energy

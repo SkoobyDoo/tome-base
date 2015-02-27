@@ -33,13 +33,8 @@ newTalent{
 	range = 10,
 	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 5, 22) end,
 	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.1, 0.8, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
+	on_pre_use = function(self, t) return self:hasShield() and true or false end,
 	activate = function(self, t)
-		local shield = self:hasShield()
-		if not shield then
-			game.logPlayer(self, "You cannot use Shield of Light without a shield!")
-			return nil
-		end
-
 		game:playSoundNear(self, "talents/spell_generic2")
 		local ret = {
 		}
@@ -49,9 +44,10 @@ newTalent{
 		return true
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if hitted and not target.dead and weapon and not self.turn_procs.shield_of_light then
-			self:attackTargetWith(target, weapon.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
+		local shield = self:hasShield()
+		if hitted and not target.dead and shield and not self.turn_procs.shield_of_light then
 			self.turn_procs.shield_of_light = true
+			self:attackTargetWith(target, weapon.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
 		end
 	end,
 	info = function(self, t)

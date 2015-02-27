@@ -17,9 +17,10 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+can_shift = true
 base_size = 32
 
-return { blend_mode=core.particles.BLEND_ADDITIVE, generator = function()
+return { blend_mode=core.particles.BLEND_SHINY, generator = function()
 	local ad = rng.range(0, 360)
 	local a = math.rad(ad)
 	local dir = math.rad(ad + 90)

@@ -1574,7 +1574,7 @@ newTalent{
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
-		local tg = self:getTalentTarget()
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		self:project(tg, x, y, DamageType.WASTING, self:spellCrit(t.getDamage(self, t)))

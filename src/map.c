@@ -85,6 +85,7 @@ static int map_object_new(lua_State *L)
 
 	obj->move_max = 0;
 	obj->anim_max = 0;
+	obj->flip_x = obj->flip_y = FALSE;
 
 	obj->cb_ref = LUA_NOREF;
 
@@ -251,6 +252,20 @@ static int map_object_minimap(lua_State *L)
 	obj->mm_r = r / 255;
 	obj->mm_g = g / 255;
 	obj->mm_b = b / 255;
+	return 0;
+}
+
+static int map_object_flip_x(lua_State *L)
+{
+	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
+	obj->flip_x = lua_toboolean(L, 2);
+	return 0;
+}
+
+static int map_object_flip_y(lua_State *L)
+{
+	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
+	obj->flip_y = lua_toboolean(L, 2);
 	return 0;
 }
 
@@ -1162,7 +1177,7 @@ static int map_get_seensinfo(lua_State *L)
 
 static void map_update_seen_texture(map_type *map)
 {
-	glBindTexture(GL_TEXTURE_2D, map->seens_texture);
+	tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
 	gl_c_texture = -1;
 
 	int mx = map->used_mx;
@@ -1355,7 +1370,7 @@ static int map_bind_seen_texture(lua_State *L)
 	if (unit > 0 && !multitexture_active) return 0;
 
 	if (unit > 0) tglActiveTexture(GL_TEXTURE0+unit);
-	glBindTexture(GL_TEXTURE_2D, map->seens_texture);
+	tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
 	if (unit > 0) tglActiveTexture(GL_TEXTURE0);
 
 	return 0;
@@ -1435,8 +1450,20 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 
 	idx = *vert_idx;
 
-	float x1 = dx, x2 = map->tile_w * dw * dm->scale + dx;
-	float y1 = dy, y2 = map->tile_h * dh * dm->scale + dy;
+	float x1, x2, y1, y2;
+
+	if (m->flip_x) { // Check m and not dm so the whole thing flips
+		x2 = dx; x1 = map->tile_w * dw * dm->scale + dx;
+	} else {
+		x1 = dx; x2 = map->tile_w * dw * dm->scale + dx;
+	}
+	if (m->flip_y) { // Check m and not dm so the whole thing flips
+		y2 = dy; y1 = map->tile_h * dh * dm->scale + dy;
+	} else {
+		y1 = dy; y2 = map->tile_h * dh * dm->scale + dy;
+	}
+
+
 	vertices[idx + 0] = x1;   vertices[idx + 1] = y1;
 	vertices[idx + 2] = x2;   vertices[idx + 3] = y1;
 	vertices[idx + 4] = x2;   vertices[idx + 5] = y2;
@@ -2104,6 +2131,8 @@ static const struct luaL_Reg map_object_reg[] =
 	{"getMoveAnim", map_object_get_move_anim},
 	{"getWorldPos", map_object_get_world_pos},
 	{"setAnim", map_object_set_anim},
+	{"flipX", map_object_flip_x},
+	{"flipY", map_object_flip_y},
 	{NULL, NULL},
 };
 

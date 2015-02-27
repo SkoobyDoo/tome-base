@@ -36,6 +36,7 @@ newEntity{ define_as = "EPOCH",
 	rank = 4,
 
 	can_multiply = 2,
+	anomaly_bias = {type="teleport", chance=100},
 
 	no_breath = 1,
 	poison_immune = 1,
@@ -63,12 +64,15 @@ newEntity{ define_as = "EPOCH",
 
 	resolvers.talents{
 		[Talents.T_MULTIPLY]=1,
-		[Talents.T_TURN_BACK_THE_CLOCK]=3, -- TBTC gets an extra bolt at tl 4, very dangerous
+		[Talents.T_TEMPORAL_BOLT]=3,
+		[Talents.T_DIMENSIONAL_STEP]=5,
 		[Talents.T_CONGEAL_TIME]={base=3, every=7},
-		[Talents.T_DISENTANGLE]=5,
+		[Talents.T_INDUCE_ANOMALY]=5,
 		[Talents.T_BANISH]={base=3, every=7},
+		[Talents.T_TIME_DILATION]={base=3, every=7},
+		[Talents.T_CELERITY]={base=3, every=7},
 		[Talents.T_HASTE]={base=1, every=7},
-		[Talents.T_SWAP]={base=1, every=7},
+		[Talents.T_DIMENSIONAL_STEP]=5,
 	},
 
 	resolvers.sustains_at_birth(),
@@ -82,7 +86,7 @@ newEntity{ define_as = "EPOCH",
 
 	on_multiply = function(self, src)
 		self.on_die = nil
-		self.talents.T_SWAP = nil
+		self.talents.T_DIMENSIONAL_STEP = nil
 		self.talents.T_MULTIPLY = nil
 	end,
 	on_die = function(self, who)

@@ -21,7 +21,6 @@ require "engine.class"
 local UI = require "engine.ui.Base"
 local UISet = require "mod.class.uiset.UISet"
 local DebugConsole = require "engine.DebugConsole"
-local PlayerDisplay = require "mod.class.PlayerDisplay"
 local HotkeysDisplay = require "engine.HotkeysDisplay"
 local HotkeysIconsDisplay = require "engine.HotkeysIconsDisplay"
 local ActorsSeenDisplay = require "engine.ActorsSeenDisplay"
@@ -267,7 +266,7 @@ function _M:resetPlaces()
 	local w, h = core.display.size()
 
 	local th = 52
-	if config.settings.tome.hotkey_icons then th = (4 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
 	local hup = h - th
 
 	self.places = {
@@ -400,30 +399,34 @@ end
 
 function _M:resizeIconsHotkeysToolbar()
 	local h = 52
-	if config.settings.tome.hotkey_icons then h = (4 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+	if config.settings.tome.hotkey_icons then h = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
 
 	local oldstop = self.map_h_stop_up or (game.h - h)
 	self.map_h_stop = game.h
 	self.map_h_stop_up = game.h - h
 	self.map_h_stop_tooltip = self.map_h_stop_up
 
-	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, self.places.hotkeys.x, self.places.hotkeys.y, self.places.hotkeys.w, self.places.hotkeys.h, nil, self.init_font_mono, self.init_size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
-	self.hotkeys_display_icons:enableShadow(0.6)
+	if not self.hotkeys_display_icons then
+		self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, self.places.hotkeys.x, self.places.hotkeys.y, self.places.hotkeys.w, self.places.hotkeys.h, nil, self.init_font_mono, self.init_size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
+		self.hotkeys_display_icons:enableShadow(0.6)
+	else
+		self.hotkeys_display_icons:resize(self.places.hotkeys.x, self.places.hotkeys.y, self.places.hotkeys.w, self.places.hotkeys.h, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
+	end
 
 	if self.no_ui then
 		self.map_h_stop = game.h
-		game:resizeMapViewport(game.w, self.map_h_stop)
+		game:resizeMapViewport(game.w, self.map_h_stop, 0, 0)
 		self.logdisplay.display_y = self.logdisplay.display_y + self.map_h_stop_up - oldstop
 		profile.chat.display_y = profile.chat.display_y + self.map_h_stop_up - oldstop
-		game:setupMouse()
+		game:setupMouse(true)
 		return
 	end
 
 	if game.inited then
-		game:resizeMapViewport(game.w, self.map_h_stop)
+		game:resizeMapViewport(game.w, self.map_h_stop, 0, 0)
 		self.logdisplay.display_y = self.logdisplay.display_y + self.map_h_stop_up - oldstop
 		profile.chat.display_y = profile.chat.display_y + self.map_h_stop_up - oldstop
-		game:setupMouse()
+		game:setupMouse(true)
 	end
 
 	self.hotkeys_display = config.settings.tome.hotkey_icons and self.hotkeys_display_icons or self.hotkeys_display_text
@@ -929,15 +932,17 @@ function _M:displayResources(scale, bx, by, a)
 				paradox_sha:setUniform("speed", 10000 - s * 7000)
 				paradox_sha.shad:use(true)
 			end
-			local p = 1 - chance / 100
+			local p = util.bound(600-player:getModifiedParadox(), 0, 300) / 300
+			--local p = 1 - chance / 100
 			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], paradox_c[1], paradox_c[2], paradox_c[3], a)
 			if paradox_sha.shad then paradox_sha.shad:use(false) end
 
-			if not self.res.paradox or self.res.paradox.vc ~= player.paradox or self.res.paradox.vr ~= chance then
+			local vm = player:getModifiedParadox()
+			if not self.res.paradox or self.res.paradox.vm ~= vm or self.res.paradox.vc ~= player.paradox or self.res.paradox.vr ~= chance then
 				self.res.paradox = {
 					hidable = "Paradox",
-					vc = player.paradox, vr = chance,
-					cur = {core.display.drawStringBlendedNewSurface(font_sha, ("%d"):format(player.paradox), 255, 255, 255):glTexture()},
+					vc = player.paradox, vr = chance, vm = vm,
+					cur = {core.display.drawStringBlendedNewSurface(font_sha, ("%d (%d)"):format(vm, player.paradox), 255, 255, 255):glTexture()},
 					regen={core.display.drawStringBlendedNewSurface(sfont_sha, ("%d%%"):format(chance), 255, 255, 255):glTexture()},
 				}
 			end

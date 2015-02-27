@@ -128,7 +128,7 @@ newTalent{
 			game.logPlayer(self, "You cannot do that without a weapon in your hands.")
 			return nil
 		end
-		local tg = self:getTarget(t)
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 		local dam = self:mindCrit(t.getDam(self, t))

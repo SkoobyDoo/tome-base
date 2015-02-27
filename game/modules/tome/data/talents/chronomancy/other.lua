@@ -31,33 +31,26 @@ end
 -- Paradox cost (regulates the cost of paradox talents)
 getParadoxCost = function (self, t, value)
 	local pm = getParadoxModifier(self)
-	return value * pm
+	local multi = 1
+	if self:attr("paradox_cost_multiplier") then
+		multi = 1 - self:attr("paradox_cost_multiplier")
+	end
+	return (value * pm) * multi
 end
 
 -- Paradox Spellpower (regulates spellpower for chronomancy)
 getParadoxSpellpower = function(self, t, mod, add)
 	local pm = getParadoxModifier(self)
 	local mod = mod or 1
-	
+
 	-- Empower?
 	local p = self:isTalentActive(self.T_EMPOWER)
 	if p and p.talent == t.id then
 		pm = pm + self:callTalent(self.T_EMPOWER, "getPower")
 	end
-	
+
 	local spellpower = self:combatSpellpower(mod * pm, add)
 	return spellpower
-end
-
--- Paradox Talent scaling based on Spellpower (thanks grayswandir)
-paradoxTalentScale = function(self, t, low, high, limit)
-        local low_power = 50
-        local high_power = 150
-        return self:combatLimit(
-                self:combatTalentSpellDamage(t, low_power, high_power, getParadoxSpellpower(self, t)),
-                limit,
-                low, low_power,
-                high, high_power)
 end
 
 -- Extension Spellbinding
@@ -88,43 +81,88 @@ doWardenPreUse = function(self, weapon, silent)
 end
 
 -- Swaps weapons if needed
-doWardenWeaponSwap = function(self, t, dam, type)
+doWardenWeaponSwap = function(self, t, dam, type, silent)
 	local swap = false
 	local dam = dam or 0
 	local warden_weapon
-	
-	if t.type[1]:find("^chronomancy/blade") or type == "blade" then
+
+	if type == "blade" then
 		local mainhand, offhand = self:hasDualWeapon()
 		if not mainhand then
 			swap = true
 			warden_weapon = "blade"
 		end
 	end
-	if t.type[1]:find("^chronomancy/bow") or type == "bow" then
+	if type == "bow" then
 		if not self:hasArcheryWeapon("bow") then
 			swap = true
 			warden_weapon = "bow"
 		end
 	end
+	
 	if swap == true then
 		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
 		self.no_inventory_access = nil
-		self:quickSwitchWeapons(true, "warden")
+		self:quickSwitchWeapons(true, "warden", silent)
 		self.no_inventory_access = old_inv_access
 		
-		if self:knowTalent(self.T_BLENDED_THREADS) then
-			if not self.turn_procs.blended_threads then
-				self.turn_procs.blended_threads = warden_weapon
-			end
-			if self.turn_procs.blended_threads == warden_weapon then
-				dam = dam * (1 + self:callTalent(self.T_BLENDED_THREADS, "getPercent"))
+		if t and (t.type[1]:find("^chronomancy/blade") or t.type[1]:find("^chronomancy/bow")) then
+			if self:knowTalent(self.T_BLENDED_THREADS) then
+				if not self.turn_procs.blended_threads then
+					self.turn_procs.blended_threads = warden_weapon
+				end
+				if self.turn_procs.blended_threads == warden_weapon then
+					dam = dam * (1 + self:callTalent(self.T_BLENDED_THREADS, "getPercent"))
+				end
 			end
 		end
 	end
-	return dam, swap
+	
+	return swap, dam
+end
+
+-- Target helper function for focus fire
+checkWardenFocus = function(self)
+	local target
+	local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+	if eff then
+		target = eff.target
+	end
+	return target
 end
 
 -- Spell functions
+randomWarpEffect = function(self, t, target)
+	local eff = rng.range(1, 4)
+	local power = getParadoxSpellpower(self, t)
+	-- Pull random effect
+	if eff == 1 then
+		if target:canBe("stun") then
+			target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=power})
+		else
+			game.logSeen(target, "%s resists the stun!", target.name:capitalize())
+		end
+	elseif eff == 2 then
+		if target:canBe("blind") then
+			target:setEffect(target.EFF_BLINDED, t.getDuration(self, t), {apply_power=power})
+		else
+			game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
+		end
+	elseif eff == 3 then
+		if target:canBe("pin") then
+			target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=power})
+		else
+			game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+		end
+	elseif eff == 4 then
+		if target:canBe("confusion") then
+			target:setEffect(target.EFF_CONFUSED, t.getDuration(self, t), {power=50, apply_power=power})
+		else
+			game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
+		end
+	end
+end
+
 makeParadoxClone = function(self, target, duration)
 	local m = target:cloneFull{
 		shader = "shadow_simulacrum",
@@ -168,11 +206,11 @@ makeParadoxClone = function(self, target, duration)
 	m.unused_generics = 0
 	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
 	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
-	
+
 	-- Clones never flee because they're awesome
 	m.ai_tactic = m.ai_tactic or {}
 	m.ai_tactic.escape = 0
-	
+
 	-- Remove some talents
 	local tids = {}
 	for tid, _ in pairs(m.talents) do
@@ -183,20 +221,18 @@ makeParadoxClone = function(self, target, duration)
 		if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
 		m:unlearnTalentFull(t.id)
 	end
-	
-	-- remove timed effects
-	local effs = {}
-	for eff_id, p in pairs(m.tmp) do
-		local e = m.tempeffect_def[eff_id]
-		effs[#effs+1] = {"effect", eff_id}
-	end
 
-	while #effs > 0 do
-		local eff = rng.tableRemove(effs)
-		if eff[1] == "effect" then
-			m:removeEffect(eff[2])
+	-- remove timed effects
+	m:removeTimedEffectsOnClone()
+	
+	-- reset folds for our Warden clones
+	for tid, cd in pairs(m.talents_cd) do
+		local t = m:getTalentFromId(tid)
+		if t.type[1]:find("^chronomancy/manifold") and m:knowTalent(tid) then
+			m:alterTalentCoolingdown(t, -cd)
 		end
 	end
+	
 	return m
 end
 
@@ -223,9 +259,12 @@ newTalent{
 	on_unlearn = function(self, t)
 		if self.preferred_paradox then self.preferred_paradox = nil end
 	end,
-	getDuration = function(self, t) 
-		local power = math.floor(self:combatSpellpower()/10)
-		return math.max(20 - power, 10)
+	getDuration = function(self, t)
+		local duration = 20
+		if self:knowTalent(self.T_SPACETIME_STABILITY) then
+			duration = duration - self:callTalent(self.T_SPACETIME_STABILITY, "getTuningAdjustment")
+		end
+		return math.max(duration, 10)
 	end,
 	action = function(self, t)
 		local function getQuantity(title, prompt, default, min, max)
@@ -267,8 +306,7 @@ newTalent{
 		local after_will, will_modifier, sustain_modifier = self:getModifiedParadox()
 		local anomaly = self:paradoxFailChance()
 		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number over %d turns.
-		The time it takes you to adjust your Paradox scales down with your Spellpower to a minimum of 10 turns.
-		
+
 		Preferred Paradox          :  %d
 		Spellpower for Chronomancy :  %d
 		Willpower Paradox Modifier : -%d
@@ -279,45 +317,6 @@ newTalent{
 }
 
 -- Talents from older versions to keep save files compatable
-newTalent{
-	name = "Stop",
-	type = {"chronomancy/other",1},
-	require = chrono_req1,
-	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 12,
-	tactical = { ATTACKAREA = 1, DISABLE = 3 },
-	range = 6,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
-	direct_hit = true,
-	requires_target = true,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), talent=t}
-	end,
-	getDuration = function(self, t) return math.ceil(self:combatTalentScale(self:getTalentLevel(t), 2.3, 4.3)) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 170, getParadoxSpellpower(self, t)) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		local _ _, _, _, x, y = self:canProject(tg, x, y)
-		local grids = self:project(tg, x, y, DamageType.STOP, t.getDuration(self, t))
-		self:project(tg, x, y, DamageType.TEMPORAL, self:spellCrit(t.getDamage(self, t)))
-
-		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius, tx=x, ty=y})
-		game:playSoundNear(self, "talents/tidalwave")
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local radius = self:getTalentRadius(t)
-		local duration = t.getDuration(self, t)
-		return ([[Inflicts %0.2f temporal damage, and attempts to stun all creatures in a radius %d ball for %d turns.
-		The damage will scale with your Spellpower.]]):
-		format(damage, radius, duration)
-	end,
-}
-
 newTalent{
 	name = "Slow",
 	type = {"chronomancy/other", 1},
@@ -384,38 +383,7 @@ newTalent{
 		local wormhole = t.cdred(self, t, 20)
 		return ([[Your mastery of spacetime reduces the cooldown of Banish, Dimensional Step, Swap, and Temporal Wake by %d, and the cooldown of Wormhole by %d.  Also improves your Spellpower for purposes of hitting targets with chronomancy effects that may cause continuum destabilization (Banish, Time Skip, etc.), as well as your chance of overcoming continuum destabilization, by %d%%.]]):
 		format(cooldown, wormhole, t.getPower(self, t)*100)
-		
-	end,
-}
 
-newTalent{
-	name = "Static History",
-	type = {"chronomancy/other", 1},
-	require = chrono_req1,
-	points = 5,
-	message = "@Source@ rearranges history.",
-	cooldown = 24,
-	tactical = { PARADOX = 2 },
-	getDuration = function(self, t)
-		local duration = math.floor(self:combatTalentScale(t, 1.5, 3.5))
-		if self:knowTalent(self.T_PARADOX_MASTERY) then
-			duration = duration + self:callTalent(self.T_PARADOX_MASTERY, "stabilityDuration")
-		end
-		return duration
-	end,
-	getReduction = function(self, t) return self:combatTalentSpellDamage(t, 20, 200) end,
-	action = function(self, t)
-		self:incParadox (- t.getReduction(self, t))
-		game:playSoundNear(self, "talents/spell_generic")
-		self:setEffect(self.EFF_SPACETIME_STABILITY, t.getDuration(self, t), {})
-		return true
-	end,
-	info = function(self, t)
-		local reduction = t.getReduction(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[By slightly reorganizing history, you reduce your Paradox by %d and temporarily stabilize the timeline; this allows chronomancy to be used without chance of failure for %d turns (backfires and anomalies may still occur).
-		The paradox reduction will increase with your Spellpower.]]):
-		format(reduction, duration)
 	end,
 }
 
@@ -574,7 +542,7 @@ newTalent{
 	range = 2,
 	requires_target = true,
 	no_npc_use = true,
-	getDuration = function(self, t)	return math.floor(self:combatTalentLimit(self:getTalentLevel(t), 50, 4, 8)) end, -- Limit <50
+	getDuration = function(self, t)	return math.floor(self:combatTalentLimit(t, 50, 4, 8)) end, -- Limit <50
 	getModifier = function(self, t) return rng.range(t.getDuration(self,t)*2, t.getDuration(self, t)*4) end,
 	action = function (self, t)
 		if checkTimeline(self) == true then
@@ -586,7 +554,7 @@ newTalent{
 		if not tx or not ty then return nil end
 		local _ _, tx, ty = self:canProject(tg, tx, ty)
 		if not tx or not ty then return nil end
-		
+
 		local x, y = util.findFreeGrid(tx, ty, 2, true, {[Map.ACTOR]=true})
 		if not x then
 			game.logPlayer(self, "Not enough space to summon!")
@@ -608,7 +576,7 @@ newTalent{
 		m:removeAllMOs()
 		m.make_escort = nil
 		m.on_added_to_level = nil
-		
+
 		m.energy.value = 0
 		m.player = nil
 		m.puuid = nil
@@ -624,7 +592,7 @@ newTalent{
 		m.no_inventory_access = true
 		m.clone_on_hit = nil
 		m.remove_from_party_on_death = true
-		
+
 		-- Remove some talents
 		local tids = {}
 		for tid, _ in pairs(m.talents) do
@@ -634,7 +602,7 @@ newTalent{
 		for i, t in ipairs(tids) do
 			m.talents[t.id] = nil
 		end
-		
+
 		game.zone:addEntity(game.level, m, "actor", x, y)
 		game.level.map:particleEmitter(x, y, 1, "temporal_teleport")
 		game:playSoundNear(self, "talents/teleport")
@@ -670,7 +638,7 @@ newTalent{
 	-- called by _M:onTakeHit function in mod\class\Actor.lua to perform the damage displacment
 	getDisplaceDamage = function(self, t) return self:combatTalentLimit(t, 25, 5, 15)/100 end, -- Limit < 25%
 	range = 10,
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp, no_martyr)
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		if dam > 0 and src ~= self then
 			-- find available targets
 			local tgts = {}
@@ -691,7 +659,7 @@ newTalent{
 				dam = dam - displace
 			end
 		end
-		
+
 		return {dam=dam}
 	end,
 	activate = function(self, t)
@@ -785,7 +753,7 @@ newTalent{
 		-- Rank Penalty
 		local duration = t.getDuration(self, t)
 		if target.rank > 1 then duration = math.ceil(t.getDuration(self, t)/(target.rank/2)) end
-		
+
 		 -- Clone the target
 		local m = makeParadoxClone(self, target, duration)
 		-- Add and change some values
@@ -795,17 +763,17 @@ newTalent{
 		m.max_life = m.max_life * (100 - t.getDamagePenalty(self, t))/100
 		m.life = m.max_life
 		m.remove_from_party_on_death = true
-		
+
 		-- Handle some AI stuff
 		m.ai_state = { talent_in=2, ally_compassion=10 }
 
 		game.zone:addEntity(game.level, m, "actor", tx, ty)
-		
+
 		-- Set our target
 		if self:reactionToward(target) < 0 then
 			m:setTarget(target)
 		end
-		
+
 		if game.party:hasMember(self) then
 			game.party:addMember(m, {
 				control="no",
@@ -814,10 +782,10 @@ newTalent{
 				orders = {target=true},
 			})
 		end
-			
+
 		game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
 		game:playSoundNear(self, "talents/spell_generic")
-		
+
 		return true
 	end,
 	info = function(self, t)
@@ -831,23 +799,6 @@ newTalent{
 }
 
 newTalent{
-	name = "Paradox Mastery",
-	type = {"chronomancy/other", 1},
-	mode = "passive",
-	points = 5,
-	-- Static history bonus handled in timetravel.lua, backfire calcs performed by _M:getModifiedParadox function in mod\class\Actor.lua	
-	WilMult = function(self, t) return self:combatTalentScale(t, 0.15, 0.5) end,
-	stabilityDuration = function(self, t) return math.floor(self:combatTalentScale(t, 0.4, 2.7, "log")) end,  --This is still used by an older talent, leave it here for backwards compatability
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "paradox_will_mutli", t.WilMult(self, t))
-	end,
-	info = function(self, t)
-		return ([[You've learned to focus your control over the spacetime continuum, and quell anomalous effects.  Increases your effective Willpower for anomaly calculations by %d%%.]]):
-		format(t.WilMult(self, t) * 100)
-	end,
-}
-
-newTalent{
 	name = "Damage Smearing",
 	type = {"chronomancy/other", 1},
 	mode = "sustained",
@@ -857,14 +808,14 @@ newTalent{
 	points = 5,
 	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 6))) end,
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp, no_martyr)
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		if dam > 0 and type ~= DamageType.TEMPORAL then
 			local smear = dam * t.getPercent(self, t)
 			self:setEffect(self.EFF_DAMAGE_SMEARING, t.getDuration(self, t), {dam=smear/t.getDuration(self, t), no_ct_effect=true})
 			game:delayedLogDamage(src, self, 0, ("%s(%d smeared)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", smear), false)
 			dam = dam - smear
 		end
-			
+
 		return {dam=dam}
 	end,
 	activate = function(self, t)
@@ -883,59 +834,23 @@ newTalent{
 }
 
 newTalent{
-	name = "Banish",
+	name = "Phase Shift",
 	type = {"chronomancy/other", 1},
+	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	cooldown = 10,
-	tactical = { ESCAPE = 2 },
-	range = 0,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5.5)) end,
-	getTeleport = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(t), 8, 16)) end,
-	target = function(self, t)
-		return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
-	end,
-	requires_target = true,
-	direct_hit = true,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	cooldown = 24,
+	tactical = { DEFEND = 2 },
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 25, 3, 7, true))) end,
 	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local hit = false
-
-		self:project(tg, self.x, self.y, function(px, py)
-			local target = game.level.map(px, py, Map.ACTOR)
-			if not target or target == self then return end
-			game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
-			if self:checkHit(getParadoxSpellpower(self, t), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0)) and target:canBe("teleport") then
-				if not target:teleportRandom(target.x, target.y, self:getTalentRadius(t) * 4, self:getTalentRadius(t) * 2) then
-					game.logSeen(target, "The spell fizzles on %s!", target.name:capitalize())
-				else
-					target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
-					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
-					hit = true
-				end
-			else
-				game.logSeen(target, "%s resists the banishment!", target.name:capitalize())
-			end
-		end)
-		
-		if not hit then
-			game:onTickEnd(function()
-				if not self:attr("no_talents_cooldown") then
-					self.talents_cd[self.T_BANISH] = self.talents_cd[self.T_BANISH] /2
-				end
-			end)
-		end
-
+		self:setEffect(self.EFF_PHASE_SHIFT, t.getDuration(self, t), {})
 		game:playSoundNear(self, "talents/teleport")
-
 		return true
 	end,
 	info = function(self, t)
-		local radius = self:getTalentRadius(t)
-		local range = t.getTeleport(self, t)
-		return ([[Randomly teleports all targets within a radius of %d around you.  Targets will be teleported between %d and %d tiles from their current location.
-		If no targets are teleported the cooldown will be halved.
-		The chance of teleportion will scale with your Spellpower.]]):format(radius, range / 2, range)
+		local duration = t.getDuration(self, t)
+		return ([[Phase shift yourself for %d turns; any damage greater than 10%% of your maximum life will teleport you to an adjacent tile and be reduced by 50%% (can only happen once per turn).]]):
+		format(duration)
 	end,
 }
 
@@ -949,7 +864,7 @@ newTalent{
 	requires_target = true,
 	direct_hit = true,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9, 0.5, 0, 1)) end,
-	getConfuseDuration = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(t), 3, 7)) end,
+	getConfuseDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	getConfuseEfficency = function(self, t) return math.min(50, self:getTalentLevelRaw(t) * 10) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t)}
@@ -962,25 +877,25 @@ newTalent{
 				if not target then return nil end
 			end
 		end
-		
+
 		-- Check hit
 		if target:canBe("teleport") and self:checkHit(getParadoxSpellpower(self, t), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0)) then
 			-- Grab the caster's location
 			local px, py = self.x, self.y
-		
+
 			-- Remove the target so the destination tile is empty
 			game.level.map:remove(target.x, target.y, Map.ACTOR)
-			
+
 			-- Try to teleport to the target's old location
 			if self:teleportRandom(tx, ty, 0) then
 				-- Put the target back in the caster's old location
 				game.level.map(px, py, Map.ACTOR, target)
 				target.x, target.y = px, py
-				
+
 				-- confuse them
 				self:project(tg, target.x, target.y, DamageType.CONFUSION, { dur = t.getConfuseDuration(self, t), dam = t.getConfuseEfficency(self, t), apply_power=getParadoxSpellpower(self, t)})
 				target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
-				
+
 				game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			else
@@ -1031,13 +946,13 @@ newTalent{
 		end
 		local _ _, x, y = self:canProject(tg, x, y)
 		local ox, oy = self.x, self.y
-		
+
 		-- If we target an actor directly project onto the other side of it (quality of life)
 		if target then
 			local dir = util.getDir(x, y, self.x, self.y)
 			x, y = util.coordAddDir(x, y, dir)
 		end
-		
+
 		-- since we're using a precise teleport we'll look for a free grid first
 		local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
 		if tx and ty then
@@ -1051,7 +966,7 @@ newTalent{
 					if target then
 						-- Deal warp damage first so we don't overwrite a big stun with a little one
 						DamageType:get(DamageType.WARP).projector(self, px, py, DamageType.WARP, dam)
-						
+
 						-- Try to stun
 						if target:canBe("stun") then
 							target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
@@ -1064,7 +979,7 @@ newTalent{
 				game:playSoundNear(self, "talents/lightning")
 			end
 		end
-		
+
 		return true
 	end,
 	info = function(self, t)
@@ -1074,5 +989,150 @@ newTalent{
 		You teleport to the target location, and leave a temporal wake behind that stuns for %d turns and deals %0.2f temporal and %0.2f physical warp damage to targets in the path.
 		The damage will scale with your Spellpower.]]):
 		format(stun, damDesc(self, DamageType.TEMPORAL, damage/2), damDesc(self, DamageType.PHYSICAL, damage/2))
+	end,
+}
+
+newTalent{
+	name = "Carbon Spikes",
+	type = {"chronomancy/other", 1},
+	no_sustain_autoreset = true,
+	points = 5,
+	mode = "sustained",
+	sustain_paradox = 20,
+	cooldown = 12,
+	tactical = { BUFF =2, DEFEND = 2 },
+	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 1, 150, getParadoxSpellpower(self, t)) end,
+	getArmor = function(self, t) return math.ceil(self:combatTalentSpellDamage(t, 20, 50, getParadoxSpellpower(self, t))) end,
+	callbackOnActBase = function(self, t)
+		local maxspikes = t.getArmor(self, t)
+		if self.carbon_armor < maxspikes then
+			self.carbon_armor = self.carbon_armor + 1
+		end
+	end,
+	do_carbonLoss = function(self, t)
+		if self.carbon_armor >= 1 then
+			self.carbon_armor = self.carbon_armor - 1
+		else
+			-- Deactivate without loosing energy
+			self:forceUseTalent(self.T_CARBON_SPIKES, {ignore_energy=true})
+		end
+	end,
+	activate = function(self, t)
+		local power = t.getArmor(self, t)
+		self.carbon_armor = power
+		game:playSoundNear(self, "talents/spell_generic")
+		return {
+			armor = self:addTemporaryValue("carbon_spikes", power),
+			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.BLEED]=t.getDamageOnMeleeHit(self, t)}),			
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeTemporaryValue("carbon_spikes", p.armor)
+		self:removeTemporaryValue("on_melee_hit", p.onhit)
+		self.carbon_armor = nil
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamageOnMeleeHit(self, t)
+		local armor = t.getArmor(self, t)
+		return ([[Fragile spikes of carbon protrude from your flesh, clothing, and armor, increasing your armor rating by %d and inflicting %0.2f bleed damage over six turns on attackers.   Each time you're struck, the armor increase will be reduced by 1.  Each turn the spell will regenerate 1 armor up to its starting value.
+		If the armor increase from the spell ever falls below 1, the sustain will deactivate and the effect will end.
+		The armor and bleed damage will increase with your Spellpower.]]):
+		format(armor, damDesc(self, DamageType.PHYSICAL, damage))
+	end,
+}
+
+newTalent{
+	name = "Destabilize",
+	type = {"chronomancy/other", 1},
+	points = 5,
+	cooldown = 10,
+	paradox = function (self, t) return getParadoxCost(self, t, 30) end,
+	range = 10,
+	tactical = { ATTACK = 2 },
+	requires_target = true,
+	direct_hit = true,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 60, getParadoxSpellpower(self, t)) end,
+	getExplosion = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
+	action = function(self, t)
+		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		self:project(tg, x, y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if not target then return end
+			target:setEffect(target.EFF_TEMPORAL_DESTABILIZATION, 10, {src=self, dam=t.getDamage(self, t), explosion=self:spellCrit(t.getExplosion(self, t))})
+			game.level.map:particleEmitter(target.x, target.y, 1, "entropythrust")
+		end)
+		game:playSoundNear(self, "talents/cloud")
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local explosion = t.getExplosion(self, t)
+		return ([[Destabilizes the target, inflicting %0.2f temporal damage per turn for 10 turns.  If the target dies while destabilized, it will explode, doing %0.2f temporal damage and %0.2f physical damage in a radius of 4.
+		If the target dies while also under the effects of continuum destabilization, all explosion damage will be done as temporal damage.
+		The damage will scale with your Spellpower.]]):
+		format(damDesc(self, DamageType.TEMPORAL, damage), damDesc(self, DamageType.TEMPORAL, explosion/2), damDesc(self, DamageType.PHYSICAL, explosion/2))
+	end,
+}
+
+newTalent{
+	name = "Quantum Spike",
+	type = {"chronomancy/other", 1},
+	points = 5,
+	paradox = function (self, t) return getParadoxCost(self, t, 40) end,
+	cooldown = 4,
+	tactical = { ATTACK = {TEMPORAL = 1, PHYSICAL = 1} },
+	range = 10,
+	direct_hit = true,
+	reflectable = true,
+	requires_target = true,
+	target = function(self, t)
+		return {type="hit", range=self:getTalentRange(t), talent=t}
+	end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300, getParadoxSpellpower(self, t)) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
+		
+		-- bonus damage on targets with temporal destabilization
+		local damage = t.getDamage(self, t)
+		if target then 
+			if target:hasEffect(target.EFF_TEMPORAL_DESTABILIZATION) or target:hasEffect(target.EFF_CONTINUUM_DESTABILIZATION) then
+				damage = damage * 1.5
+			end
+		end
+		
+		
+		self:project(tg, x, y, DamageType.MATTER, self:spellCrit(damage))
+		game:playSoundNear(self, "talents/arcane")
+		
+		-- Try to insta-kill
+		if target then
+			if target:checkHit(self:combatSpellpower(), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("instakill") and target.life > 0 and target.life < target.max_life * 0.2 then
+				-- KILL IT !
+				game.logSeen(target, "%s has been pulled apart at a molecular level!", target.name:capitalize())
+				target:die(self)
+			elseif target.life > 0 and target.life < target.max_life * 0.2 then
+				game.logSeen(target, "%s resists the quantum spike!", target.name:capitalize())
+			end
+		end
+		
+		-- if we kill it use teleport particles for larger effect radius
+		if target and target.dead then
+			game.level.map:particleEmitter(x, y, 1, "teleport")
+		else
+			game.level.map:particleEmitter(x, y, 1, "entropythrust")
+		end
+		
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		return ([[Attempts to pull the target apart at a molecular level, inflicting %0.2f temporal damage and %0.2f physical damage.  If the target ends up with low enough life (<20%%), it might be instantly killed.
+		Quantum Spike deals 50%% additional damage to targets affected by temporal destabilization and/or continuum destabilization.
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage/2), damDesc(self, DamageType.PHYSICAL, damage/2))
 	end,
 }

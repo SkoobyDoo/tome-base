@@ -39,65 +39,85 @@ newEntity{
 }
 
 newEntity{ base = "BASE_NPC_SPIDER",
+	name = "weaver hatchling", color=colors.LIGHT_STEEL_BLUE, image="npc/spiderkin_spider_weaver_young.png",
+	desc = [[A nearly translucent spider hatchling.]],
+	level_range = {1, nil}, exp_worth = 1,
+	rarity = 1,	size_category = 1,
+	max_life = resolvers.rngavg(10,20),
+	combat_armor = 1, combat_def = 3,
+	combat = { dam=resolvers.levelup(5, 1, 0.7), atk=5, apr=3, damtype=DamageType.WASTING, },
+	make_escort = {
+		{type = "spiderkin", subtype = "spider", name="weaver hatchling", number=2, no_subescort=true},
+	},
+	resolvers.talents{
+		[Talents.T_DIMENSIONAL_STEP]=1,
+	},
+}
+
+newEntity{ base = "BASE_NPC_SPIDER",
 	name = "orb spinner", color=colors.UMBER,
 	desc = [[A large brownish arachnid, its fangs drip with a strange fluid.]],
 	level_range = {1, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(20,40),
 	combat_armor = 1, combat_def = 3,
-	combat = { dam=resolvers.levelup(5, 1, 0.7), atk=15, apr=3, damtype=DamageType.CLOCK, },
+	combat = { dam=resolvers.levelup(5, 1, 0.7), atk=5, apr=3, damtype=DamageType.TEMPORAL, },
+	resolvers.talents{
+		[Talents.T_TEMPORAL_BOLT]=1,
+	},
+	make_escort = {
+		{type = "spiderkin", subtype = "spider", name="orb weaver", number=1, no_subescort=true},
+	},
 }
 
 newEntity{ base = "BASE_NPC_SPIDER",
 	name = "orb weaver", color=colors.DARK_UMBER,
 	desc = [[A large brownish arachnid spinning its web.  It doesn't look pleased that you've disturbed its work.]],
 	level_range = {3, nil}, exp_worth = 1,
-	rarity = 3,
+	rarity = 10, -- rarely appears alone
 	max_life = resolvers.rngavg(40,60),
 	combat_armor =2, combat_def = 4,
-	combat = { dam=resolvers.levelup(6, 1, 0.8), atk=15, apr=3, damtype=DamageType.TEMPORAL, },
+	combat = { dam=resolvers.levelup(6, 1, 0.8), atk=10, apr=3, damtype=DamageType.TEMPORAL, },
 	resolvers.talents{
 		[Talents.T_LAY_WEB]=1,
-		[Talents.T_DIMENSIONAL_STEP]=1,
+		[Talents.T_SPIDER_WEB]=1,
 	},
 }
 
 newEntity{ base = "BASE_NPC_SPIDER",
 	name = "fate spinner", color=colors.SLATE,
 	desc = [[Easily as big as a horse, this giant spider menaces at you with claws and fangs.]],
-	level_range = {4, nil}, exp_worth = 1,
-	rarity = 3,
+	level_range = {3, nil}, exp_worth = 1,
+	rarity = 2, rank = 2,
 	size_category = 4,
-	max_life = resolvers.rngavg(60,70),
+	max_life = resolvers.rngavg(70,100),
 	combat_armor = 3, combat_def = 5,
-	combat = { dam=resolvers.levelup(9, 1, 0.9), atk=15, apr=4, damtype=DamageType.CLOCK, },
+	combat = { dam=resolvers.levelup(9, 1, 0.9), atk=15, apr=4, damtype=DamageType.WASTING, },
 	resolvers.talents{
-		[Talents.T_LAY_WEB]=1,
-		[Talents.T_SPIDER_WEB]=1,
 		[Talents.T_DIMENSIONAL_STEP]=1,
-		[Talents.T_TURN_BACK_THE_CLOCK]=1,
+		[Talents.T_WARP_MINE_TOWARD]=1,
 	},
 }
 
 newEntity{ base = "BASE_NPC_SPIDER",
 	name = "fate weaver", color=colors.WHITE,
 	desc = [[A large white spider.]],
-	level_range = {4, nil}, exp_worth = 1,
-	rarity = 3,
+	level_range = {3, nil}, exp_worth = 1,
+	rarity = 3, rank = 2,
 	max_life = resolvers.rngavg(70,100),
 	combat_armor = 3, combat_def = 4,
-	combat = { dam=resolvers.levelup(8, 1, 0.9), atk=15, apr=3, damtype=DamageType.WASTING, },
+	combat = { dam=resolvers.levelup(8, 1, 0.9), atk=15, apr=3, damtype=DamageType.TEMPORAL, },
 	
-	talent_cd_reduction = {[Talents.T_RETHREAD]=-10},
-
 	resolvers.talents{
 		[Talents.T_SPIN_FATE]=1,
-		[Talents.T_RETHREAD]=2,
+		[Talents.T_WEBS_OF_FATE]=1,
+		[Talents.T_FATEWEAVER]=1,
+		[Talents.T_RETHREAD]=1,
 	},
 }
 
 newEntity{ base = "BASE_NPC_SPIDER", define_as = "WEAVER_QUEEN",
-	name = "Weaver Queen", color=colors.WHITE,
+	name = "Weaver Queen", color=colors.WHITE, female=1,
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/spiderkin_spider_weaver_queen.png", display_h=2, display_y=-1}}},
 	desc = [[A large white spider.]],
 	level_range = {7, nil}, exp_worth = 1,
@@ -119,14 +139,22 @@ newEntity{ base = "BASE_NPC_SPIDER", define_as = "WEAVER_QUEEN",
 	inc_damage = {all=-20},
 	healing_factor = 0.5,
 	
-	talent_cd_reduction = {[Talents.T_RETHREAD]=-10},
-
+	summon = {{type = "spiderkin", subtype = "spider", name="weaver hatchling", number=1, hasxp=false}},
+	
 	resolvers.talents{
-		[Talents.T_SPIN_FATE]=1,
-		[Talents.T_BANISH]=2,
-		[Talents.T_RETHREAD]=2,
-		[Talents.T_FADE_FROM_TIME]=3,
+		[Talents.T_SPIN_FATE]=2,
+		[Talents.T_WEBS_OF_FATE]=2,
+		[Talents.T_FATEWEAVER]=2,
+		[Talents.T_PHASE_PULSE]=2,
+		[Talents.T_SUMMON]=1,
+		[Talents.T_TEMPORAL_BOLT]=1,	
 	},
+	
+	on_move = function(self)
+		if rng.percent(50) then
+			self:forceUseTalent(self.T_ANOMALY_WORMHOLE, {silent=true, ignore_energy=true})
+		end
+	end,
 
 	autolevel = "caster",
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },

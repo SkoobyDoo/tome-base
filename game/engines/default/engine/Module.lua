@@ -126,6 +126,8 @@ function _M:loadDefinition(dir, team, incompatible)
 		setfenv(mod_def, mod)
 		mod_def()
 		mod.rng = nil
+		mod.team = team
+		mod.dir = dir
 
 		if not mod.long_name or not mod.name or not mod.short_name or not mod.version or not mod.starter then
 			print("Bad module definition", mod.long_name, mod.name, mod.short_name, mod.version, mod.starter)
@@ -192,7 +194,7 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 	fs.mount(engine.homepath..fs.getPathSeparator(), "/tmp/listsaves")
 
 	local steamsaves = {}
-	if core.steam then
+	if util.steamCanCloud() then
 		local list = core.steam.listFilesEndingWith("game.teag")
 		for _, file in ipairs(list) do
 			local _, _, modname, char = file:find("^([^/]+)/save/([^/]+)/game%.teag$")
@@ -212,9 +214,9 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 		for i, short_name in ipairs(fs.list("/tmp/listsaves/"..mod.short_name.."/save/")) do
 			local sdir = "/save/"..short_name
 			local dir = "/tmp/listsaves/"..mod.short_name..sdir
-			if fs.exists(dir.."/game.teag") or (core.steam and core.steam.checkFile(sdir.."/game.teag")) then
+			if fs.exists(dir.."/game.teag") or (util.steamCanCloud() and core.steam.checkFile(sdir.."/game.teag")) then
 				if steamsaves[mod.short_name] then steamsaves[mod.short_name][short_name:lower()] = nil end
-				if core.steam then core.steam.readFile(sdir.."/desc.lua") end
+				if util.steamCanCloud() then core.steam.readFile(sdir.."/desc.lua") end
 				local def = self:loadSavefileDescription(dir)
 				if def then
 					if def.loadable and fs.exists(dir.."/cur.png") then
@@ -361,8 +363,11 @@ function _M:listBackgrounds(mod)
 	end
 
 	-- Add the default one
-	local backname = util.getval(mod.background_name) or "tome"
-	defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	-- local backname = util.getval(mod.background_name) or "tome"
+	-- defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	for i, backname in ipairs(mod.background_name) do
+		defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	end
 
 	-- Look for more
 	parse("/addons/")
@@ -380,6 +385,8 @@ function _M:listBackgrounds(mod)
 	local logo = nil
 	if def.logo then logo = {(core.display.loadImage(def.logo) or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()} end
 	if def.umount then def.umount() end
+
+	if mod.keep_background_texture then mod.keep_background_texture = bkgs end
 
 	return bkgs, logo
 end
@@ -1056,7 +1063,7 @@ function _M:setupWrite(mod, nomount)
 	fs.setWritePath(engine.homepath)
 	fs.mkdir(mod.short_name)
 	fs.mkdir(mod.short_name.."/save")
-	if core.steam then core.steam.setFileNamespace(mod.short_name) end
+	if util.steamCanCloud() then core.steam.setFileNamespace(mod.short_name) end
 
 	-- Enter module directory
 	local base = engine.homepath .. fs.getPathSeparator() .. mod.short_name

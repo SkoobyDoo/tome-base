@@ -27,6 +27,7 @@ local Textbox = require "engine.ui.Textbox"
 local Separator = require "engine.ui.Separator"
 local KeyBind = require "engine.KeyBind"
 local FontPackage = require "engine.FontPackage"
+local Module = require "engine.Module"
 
 module(..., package.seeall, class.inherit(Dialog))
 
@@ -48,6 +49,22 @@ function _M:init()
 		local list = {
 			"resume",
 			"keybinds_all",
+			{"Game Options", function()
+				-- OMFG this is such a nasty hack, I'm nearly pround of it !
+				local mod = Module:listModules().tome
+				if not mod then return end
+
+				local allmounts = fs.getSearchPath(true)
+				if not mod.team then fs.mount(fs.getRealPath(mod.dir), "/mod", false)
+				else fs.mount(fs.getRealPath(mod.team), "/", false) end
+
+				local d = require("mod.dialogs.GameOptions").new()
+				function d:unload()
+					fs.reset()
+					fs.mountAll(allmounts)
+				end
+				game:registerDialog(d)
+			end},
 			"video",
 			"sound",
 			"steam",
@@ -67,13 +84,13 @@ function _M:init()
 
 	self.c_list = List.new{width=self.iw, nb_items=#self.list, list=self.list, fct=function(item) end, font={FontPackage:getFont("default")}}
 
-	self.c_facebook = ButtonImage.new{no_decoration=true, alpha_unfocus=0.5, file="facebook.png", fct=function() util.browserOpenUrl("https://www.facebook.com/tales.of.maj.eyal") end}
-	self.c_twitter = ButtonImage.new{no_decoration=true, alpha_unfocus=0.5, file="twitter.png", fct=function() util.browserOpenUrl("https://twitter.com/darkgodone") end}
-	self.c_forums = ButtonImage.new{no_decoration=true, alpha_unfocus=0.5, file="forums.png", fct=function() util.browserOpenUrl("http://forums.te4.org/") end}
+	self.c_facebook = ButtonImage.new{no_decoration=true, alpha_unfocus=0.5, file="facebook.png", fct=function() util.browserOpenUrl("https://www.facebook.com/tales.of.maj.eyal", {is_external=true}) end}
+	self.c_twitter = ButtonImage.new{no_decoration=true, alpha_unfocus=0.5, file="twitter.png", fct=function() util.browserOpenUrl("https://twitter.com/darkgodone", {is_external=true}) end}
+	self.c_forums = ButtonImage.new{no_decoration=true, alpha_unfocus=0.5, file="forums.png", fct=function() util.browserOpenUrl("http://forums.te4.org/", {is_external=true}) end}
 
 	self.base_uis = {
 		{left=0, top=0, ui=self.c_list},
-		-- {left=0, bottom=0, absolute=true, ui=self.c_background},
+		{left=0, bottom=0, absolute=true, ui=self.c_background},
 		{right=self.c_facebook.w, bottom=0, absolute=true, ui=self.c_version},
 		{right=0, bottom=self.c_facebook.h+self.c_twitter.h, absolute=true, ui=self.c_forums},
 		{right=0, bottom=self.c_twitter.h, absolute=true, ui=self.c_facebook},
@@ -84,7 +101,7 @@ function _M:init()
 
 	if game.__mod_info.publisher_logo then
 		local c_pub = ButtonImage.new{no_decoration=true, alpha_unfocus=1, file="background/"..game.__mod_info.publisher_logo..".png", fct=function()
-			if game.__mod_info.publisher_url then util.browserOpenUrl(game.__mod_info.publisher_url) end
+			if game.__mod_info.publisher_url then util.browserOpenUrl(game.__mod_info.publisher_url, {is_external=true}) end
 		end}
 		if game.w - 450 - 250 - c_pub.w - 20 > 0 then
 			table.insert(self.base_uis, 1, {right=0, top=0, absolute=true, ui=c_pub})
@@ -154,7 +171,7 @@ end
 function _M:uiStats(uis)
 	self.logged_url = "http://te4.org/users/"..profile.auth.page
 	local str1 = Textzone.new{auto_width=true, auto_height=true, text="#GOLD#Online Profile#WHITE#"}
-	local str2 = Textzone.new{auto_width=true, auto_height=true, text="#LIGHT_BLUE##{underline}#"..self.logged_url.."#LAST##{normal}#", fct=function() util.browserOpenUrl(self.logged_url) end}
+	local str2 = Textzone.new{auto_width=true, auto_height=true, text="#LIGHT_BLUE##{underline}#"..self.logged_url.."#LAST##{normal}#", fct=function() util.browserOpenUrl(self.logged_url, {is_external=true}) end}
 
 	local logoff = Textzone.new{text="#LIGHT_BLUE##{underline}#Logout", auto_height=true, width=50, fct=function() self:logout() end}
 

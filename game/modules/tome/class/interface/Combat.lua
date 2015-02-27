@@ -393,6 +393,14 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			atk = atk + effPredator.typeAttackChange
 		end
 	end
+	
+	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if target == eff.target then
+			atk = atk + eff.atk
+		end
+	end
+
 
 	-- track weakness for hate bonus before the target removes it
 	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
@@ -628,38 +636,16 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 
-	-- Temporal cast
-	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
-		local dam = self:callTalent(self.T_WEAPON_FOLDING, "getDamage")
-		local burst_damage = 0
-		local burst_radius = 0
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.TEMPORAL, burst_damage)
-		end
-		if dam > 0 and not target.dead then
-			DamageType:get(DamageType.TEMPORAL).projector(self, target.x, target.y, DamageType.TEMPORAL, dam, tmp)
-		end
-	end
-	if hitted and self:knowTalent(self.T_IMPACT) and self:isTalentActive(self.T_IMPACT) then
-		local dam = self:callTalent(self.T_IMPACT, "getDamage")
-		local power = self:callTalent(self.T_IMPACT, "getApplyPower")
-		if self:knowTalent(self.T_FRAYED_THREADS) then
-			local burst_damage = dam * self:callTalent(self.T_FRAYED_THREADS, "getPercent")
-			local burst_radius = self:callTalent(self.T_FRAYED_THREADS, "getRadius")
-			self:project({type="ball", radius=burst_radius, friendlyfire=false}, target.x, target.y, DamageType.IMPACT, {dam=burst_damage, daze=burst_damage/2, power_check=power})
-		end
-		if dam > 0 and not target.dead then
-			DamageType:get(DamageType.IMPACT).projector(self, target.x, target.y, DamageType.IMPACT, {dam=dam, daze=dam/2, power_check=power}, tmp)
-		end
-	end
-
 	-- Ruin
 	if hitted and not target.dead and self:knowTalent(self.T_RUIN) and self:isTalentActive(self.T_RUIN) then
 		local t = self:getTalentFromId(self.T_RUIN)
 		local dam = t.getDamage(self, t)
 		DamageType:get(DamageType.DRAINLIFE).projector(self, target.x, target.y, DamageType.DRAINLIFE, dam)
+	end
+	
+	-- Temporal Cast
+	if hitted and self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
+		self:callTalent(self.T_WEAPON_FOLDING, "doWeaponFolding", target)
 	end
 
 	-- Autospell cast
@@ -1043,6 +1029,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 
 	-- Visual feedback
 	if hitted then game.level.map:particleEmitter(target.x, target.y, 1, "melee_attack", {color=target.blood_color}) end
+	if Map.tiles and Map.tiles.use_images then if self.x and target.x then if target.x < self.x then self:MOflipX(self:isTileFlipped()) elseif target.x > self.x then self:MOflipX(not self:isTileFlipped()) end end end
 
 	self.turn_procs.weapon_type = nil
 	self.__global_accuracy_damage_bonus = nil
@@ -1766,6 +1753,13 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		local p = target:hasEffect(target.EFF_SET_UP)
 		if p and p.src == self then
 			chance = chance + p.power
+		end
+	end
+	
+	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if target == eff.target then
+			chance = chance + eff.crit
 		end
 	end
 

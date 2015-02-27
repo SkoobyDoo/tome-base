@@ -79,7 +79,7 @@ function _M:makeStairsSides(lev, old_lev, sides, rooms, spots)
 
 			if not self.map.room_map[dx][dy].special then
 				local i = rng.range(1, #rooms)
-				self:tunnel(dx, dy, rooms[i].cx, rooms[i].cy, rooms[i].id)
+				if not self.data.no_tunnels then self:tunnel(dx, dy, rooms[i].cx, rooms[i].cy, rooms[i].id) end
 				self.map(dx, dy, Map.TERRAIN, self:resolve("down"))
 				self.map.room_map[dx][dy].special = "exit"
 				break
@@ -98,7 +98,7 @@ function _M:makeStairsSides(lev, old_lev, sides, rooms, spots)
 
 		if not self.map.room_map[ux][uy].special then
 			local i = rng.range(1, #rooms)
-			self:tunnel(ux, uy, rooms[i].cx, rooms[i].cy, rooms[i].id)
+			if not self.data.no_tunnels then self:tunnel(ux, uy, rooms[i].cx, rooms[i].cy, rooms[i].id) end
 			self.map(ux, uy, Map.TERRAIN, self:resolve("up"))
 			self.map.room_map[ux][uy].special = "exit"
 			break
