@@ -42,7 +42,7 @@ void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, f
 
 	if (p->p_tick != -1) {
 		GLfloat t = cur_frame_tick;
-		glUniform1fvARB(p->p_tick, 1, &t);
+		glUniform1fv(p->p_tick, 1, &t);
 	}
 
 	if (p->p_color != -1) {
@@ -51,21 +51,21 @@ void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, f
 		d[1] = g;
 		d[2] = b;
 		d[3] = a;
-		glUniform4fvARB(p->p_color, 1, d);
+		glUniform4fv(p->p_color, 1, d);
 	}
 
 	if (p->p_mapcoord != -1) {
 		GLfloat c[2];
 		c[0] = x;
 		c[1] = y;
-		glUniform2fvARB(p->p_mapcoord, 1, c);
+		glUniform2fv(p->p_mapcoord, 1, c);
 	}
 
 	if (p->p_texsize != -1) {
 		GLfloat c[2];
 		c[0] = w;
 		c[1] = h;
-		glUniform2fvARB(p->p_texsize, 1, c);
+		glUniform2fv(p->p_texsize, 1, c);
 	}
 
 	if (p->p_texcoord != -1) {
@@ -74,23 +74,23 @@ void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, f
 		d[1] = ty;
 		d[2] = tw;
 		d[3] = th;
-		glUniform4fvARB(p->p_texcoord, 1, d);
+		glUniform4fv(p->p_texcoord, 1, d);
 	}
 
 	shader_reset_uniform *ru = p->reset_uniforms;
 	while (ru) {
 		switch (ru->kind) {
 			case UNIFORM_NUMBER:
-				glUniform1fvARB(ru->p, 1, &ru->data.number);
+				glUniform1fv(ru->p, 1, &ru->data.number);
 				break;
 			case UNIFORM_VEC2:
-				glUniform2fvARB(ru->p, 1, ru->data.vec2);
+				glUniform2fv(ru->p, 1, ru->data.vec2);
 				break;
 			case UNIFORM_VEC3:
-				glUniform3fvARB(ru->p, 1, ru->data.vec3);
+				glUniform3fv(ru->p, 1, ru->data.vec3);
 				break;
 			case UNIFORM_VEC4:
-				glUniform4fvARB(ru->p, 1, ru->data.vec4);
+				glUniform4fv(ru->p, 1, ru->data.vec4);
 				break;
 		}
 		ru = ru->next;
@@ -109,9 +109,9 @@ void useNoShader() {
 
 static GLuint loadShader(const char* code, GLuint type)
 {
-	GLuint v = glCreateShaderObjectARB(type);
-	glShaderSourceARB(v, 1, &code, 0);
-	glCompileShaderARB(v);
+	GLuint v = glCreateShader(type);
+	glShaderSource(v, 1, &code, 0);
+	glCompileShader(v);
 	CHECKGLSLCOMPILE(v, "inline");
 	printf("New GL Shader %d of type %d\n", v, type);
 	return v;
@@ -135,7 +135,7 @@ static int shader_free(lua_State *L)
 {
 	GLuint *s = (GLuint*)auxiliar_checkclass(L, "gl{shader}", 1);
 
-	glDeleteObjectARB(*s);
+	glDeleteShader(*s);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -148,7 +148,7 @@ static int program_new(lua_State *L)
 	shader_type *p = (shader_type*)lua_newuserdata(L, sizeof(shader_type));
 	auxiliar_setclass(L, "gl{program}", -1);
 
-	p->shader = glCreateProgramObjectARB();
+	p->shader = glCreateProgram();
 	p->reset_uniforms = NULL;
 	p->clone = FALSE;
 
@@ -164,7 +164,7 @@ static int program_free(lua_State *L)
 	if (default_shader == p) default_shader = NULL;
 
 	printf("Deleting shader %d (is clone %d)\n", p->shader, p->clone);
-	if (!p->clone) glDeleteObjectARB(p->shader);
+	if (!p->clone) glDeleteProgram(p->shader);
 
 	while (p->reset_uniforms) {
 		shader_reset_uniform *ru = p->reset_uniforms;
@@ -194,7 +194,7 @@ static int program_attach(lua_State *L)
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 	GLuint *s = (GLuint*)auxiliar_checkclass(L, "gl{shader}", 2);
 
-	glAttachObjectARB(p->shader, *s);
+	glAttachShader(p->shader, *s);
 
 	return 0;
 }
@@ -204,7 +204,7 @@ static int program_detach(lua_State *L)
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 	GLuint *s = (GLuint*)auxiliar_checkclass(L, "gl{shader}", 2);
 
-	glDetachObjectARB(p->shader, *s);
+	glDetachShader(p->shader, *s);
 
 	return 0;
 }
@@ -262,7 +262,7 @@ static int program_set_uniform_number(lua_State *L)
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform1fvARB(glGetUniformLocationARB(p->shader, var), 1, &i);
+	glUniform1fv(glGetUniformLocation(p->shader, var), 1, &i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -278,7 +278,7 @@ static int program_set_uniform_number2(lua_State *L)
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform2fvARB(glGetUniformLocationARB(p->shader, var), 1, i);
+	glUniform2fv(glGetUniformLocation(p->shader, var), 1, i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -295,7 +295,7 @@ static int program_set_uniform_number3(lua_State *L)
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform3fvARB(glGetUniformLocationARB(p->shader, var), 1, i);
+	glUniform3fv(glGetUniformLocation(p->shader, var), 1, i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -313,7 +313,7 @@ static int program_set_uniform_number4(lua_State *L)
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform4fvARB(glGetUniformLocationARB(p->shader, var), 1, i);
+	glUniform4fv(glGetUniformLocation(p->shader, var), 1, i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -326,7 +326,7 @@ static int program_reset_uniform_number(lua_State *L)
 	shader_reset_uniform *ru = malloc(sizeof(shader_reset_uniform));
 	ru->next = p->reset_uniforms;
 	p->reset_uniforms = ru;
-	ru->p = glGetUniformLocationARB(p->shader, var);
+	ru->p = glGetUniformLocation(p->shader, var);
 	ru->kind = UNIFORM_NUMBER;
 	ru->data.number = luaL_checknumber(L, 3);
 	return 0;
@@ -340,7 +340,7 @@ static int program_reset_uniform_number2(lua_State *L)
 	shader_reset_uniform *ru = malloc(sizeof(shader_reset_uniform));
 	ru->next = p->reset_uniforms;
 	p->reset_uniforms = ru;
-	ru->p = glGetUniformLocationARB(p->shader, var);
+	ru->p = glGetUniformLocation(p->shader, var);
 	ru->kind = UNIFORM_VEC2;
 	ru->data.vec2[0] = luaL_checknumber(L, 3);
 	ru->data.vec2[1] = luaL_checknumber(L, 4);
@@ -355,7 +355,7 @@ static int program_reset_uniform_number3(lua_State *L)
 	shader_reset_uniform *ru = malloc(sizeof(shader_reset_uniform));
 	ru->next = p->reset_uniforms;
 	p->reset_uniforms = ru;
-	ru->p = glGetUniformLocationARB(p->shader, var);
+	ru->p = glGetUniformLocation(p->shader, var);
 	ru->kind = UNIFORM_VEC3;
 	ru->data.vec3[0] = luaL_checknumber(L, 3);
 	ru->data.vec3[1] = luaL_checknumber(L, 4);
@@ -371,7 +371,7 @@ static int program_reset_uniform_number4(lua_State *L)
 	shader_reset_uniform *ru = malloc(sizeof(shader_reset_uniform));
 	ru->next = p->reset_uniforms;
 	p->reset_uniforms = ru;
-	ru->p = glGetUniformLocationARB(p->shader, var);
+	ru->p = glGetUniformLocation(p->shader, var);
 	ru->kind = UNIFORM_VEC4;
 	ru->data.vec4[0] = luaL_checknumber(L, 3);
 	ru->data.vec4[1] = luaL_checknumber(L, 4);
@@ -389,7 +389,7 @@ static int program_set_uniform_texture(lua_State *L)
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform1ivARB(glGetUniformLocationARB(p->shader, var), 1, &i);
+	glUniform1iv(glGetUniformLocation(p->shader, var), 1, &i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -403,7 +403,7 @@ static int program_set_uniform_number_fast(lua_State *L)
 	GLint pos = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform1fvARB(pos, 1, &i);
+	glUniform1fv(pos, 1, &i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -420,7 +420,7 @@ static int program_set_uniform_number2_fast(lua_State *L)
 	GLint pos = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform2fvARB(pos, 1, i);
+	glUniform2fv(pos, 1, i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -438,7 +438,7 @@ static int program_set_uniform_number3_fast(lua_State *L)
 	GLint pos = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform2fvARB(pos, 1, i);
+	glUniform2fv(pos, 1, i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -457,7 +457,7 @@ static int program_set_uniform_number4_fast(lua_State *L)
 	GLint pos = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform2fvARB(pos, 1, i);
+	glUniform2fv(pos, 1, i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -472,7 +472,7 @@ static int program_set_uniform_texture_fast(lua_State *L)
 	GLint pos = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform1ivARB(pos, 1, &i);
+	glUniform1iv(pos, 1, &i);
 	if (change) useNoShader();
 	return 0;
 }
@@ -481,7 +481,7 @@ static int program_compile(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 
-	glLinkProgramARB(p->shader);
+	glLinkProgram(p->shader);
 	CHECKGLSLLINK(p->shader);
 
 	CHECKGLSLVALID(p->shader);
@@ -522,13 +522,13 @@ static int program_compile(lua_State *L)
 	// Pop the old index
 	lua_pop(L, 1);
 
-	glGetObjectParameterivARB(p->shader, GL_ACTIVE_UNIFORMS, &count);
+	glGetProgramiv(p->shader, GL_ACTIVE_UNIFORMS, &count);
 	int i;
 	for(i = 0; i<count;++i)
 	{
 		GLint uniLoc;
-		glGetActiveUniformARB(p->shader, i, 256, &length, &dummysize, &dummytype, buffer);
-		uniLoc = glGetUniformLocationARB(p->shader, buffer);
+		glGetActiveUniform(p->shader, i, 256, &length, &dummysize, &dummytype, buffer);
+		uniLoc = glGetUniformLocation(p->shader, buffer);
 		if(uniLoc>=0)	// Test for valid uniform location
 		{
 			printf("*p %i: Uniform: %i: %X %s\n", p->shader,uniLoc, dummytype, buffer);
@@ -598,13 +598,13 @@ static int program_compile(lua_State *L)
 	// Set it up (the metatable)
 	lua_setmetatable(L, 1);
 
-	p->p_tick = glGetUniformLocationARB(p->shader, "tick");
-	p->p_color = glGetUniformLocationARB(p->shader, "displayColor");
-	p->p_mapcoord = glGetUniformLocationARB(p->shader, "mapCoord");
-	p->p_texsize = glGetUniformLocationARB(p->shader, "texSize");
-	p->p_texcoord = glGetUniformLocationARB(p->shader, "texCoord");
-	p->p_tex = glGetUniformLocationARB(p->shader, "tex");
-	p->p_mvp = glGetUniformLocationARB(p->shader, "mvp");
+	p->p_tick = glGetUniformLocation(p->shader, "tick");
+	p->p_color = glGetUniformLocation(p->shader, "displayColor");
+	p->p_mapcoord = glGetUniformLocation(p->shader, "mapCoord");
+	p->p_texsize = glGetUniformLocation(p->shader, "texSize");
+	p->p_texcoord = glGetUniformLocation(p->shader, "texCoord");
+	p->p_tex = glGetUniformLocation(p->shader, "tex");
+	p->p_mvp = glGetUniformLocation(p->shader, "mvp");
 
 	p->vertex_attrib = glGetAttribLocation(p->shader, "te4_position");
 	p->texcoord_attrib = glGetAttribLocation(p->shader, "te4_texcoord");
@@ -625,7 +625,7 @@ static int program_use(lua_State *L)
 		tglUseProgramObject(p->shader);
 		// GLfloat t = SDL_GetTicks();
 		GLfloat t = cur_frame_tick;
-		if (p->p_tick != -1) glUniform1fvARB(p->p_tick, 1, &t);
+		if (p->p_tick != -1) glUniform1fv(p->p_tick, 1, &t);
 	}
 	else
 	{
