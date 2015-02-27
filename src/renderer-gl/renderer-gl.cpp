@@ -54,8 +54,7 @@ void vertexes_renderer_free(vertexes_renderer *vr) {
 }
 
 static void vertexes_renderer_update(vertexes_renderer *vr, lua_vertexes *vx) {
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, vx->vertices, vr->mode);
-	// Release old buffer, undeeded
+	// Release old un-needed buffer, this way the GL driver does not have to lock the memory
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data) * vx->nb, NULL, vr->mode);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_data) * vx->nb, vx->vertices);
 
@@ -76,6 +75,7 @@ static void vertexes_renderer_update(vertexes_renderer *vr, lua_vertexes *vx) {
 			}
 
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+			// Release old un-needed buffer, this way the GL driver does not have to lock the memory
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * vbo_elements_nb * 6, NULL, GL_DYNAMIC_DRAW);
 			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * vbo_elements_nb * 6, vbo_elements_data);
 		}
