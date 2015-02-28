@@ -29,11 +29,21 @@ class RendererState {
 	glm::mat4 world;
 	std::stack<glm::mat4> saved_worlds;
 	std::stack<glm::mat4> saved_views;
+	std::stack<glm::vec4> saved_viewports;
 	
 public:
+	glm::vec4 viewport;
 	glm::mat4 mvp;
 
 	RendererState(int w, int h);
+	
+	void pushOrthoState(int w, int h);
+	void popOrthoState();
+
+	void setViewport(int x, int y, int w, int h);
+	void pushViewport();
+	void popViewport();
+
 	void updateMVP();
 	void translate(float x, float y, float z);
 	void rotate(float a, float x, float y, float z);

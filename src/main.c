@@ -889,9 +889,6 @@ void detect_gl_capabilities() {
 
 int resizeWindow(int width, int height)
 {
-	/* Height / width ration */
-	GLfloat ratio;
-
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	renderer_init(width, height);
 
@@ -899,35 +896,13 @@ int resizeWindow(int width, int height)
 	if ( height == 0 )
 		height = 1;
 
-	ratio = ( GLfloat )width / ( GLfloat )height;
-
 //	tglActiveTexture(GL_TEXTURE0);
 	glEnable(GL_TEXTURE_2D);
-
-	/* Setup our viewport. */
-	glViewport( 0, 0, ( GLsizei )width, ( GLsizei )height );
-
-	/* change to the projection matrix and set our viewing volume. */
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	/* Set our perspective */
-	//gluPerspective( 45.0f, ratio, 0.1f, 100.0f );
-	glOrtho(0, width, height, 0, -1001, 1001);
-
-	/* Make sure we're chaning the model view and not the projection */
-	glMatrixMode( GL_MODELVIEW );
-
-	/* Reset The View */
-	glLoadIdentity( );
-
-//TSDL2	SDL_SetGamma(gamma_correction, gamma_correction, gamma_correction);
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 	printf("OpenGL max texture size: %d\n", max_texture_size);
 
-
-	return( TRUE );
+	return TRUE;
 }
 
 /* @see main.h#resizeNeedsNewWindow */

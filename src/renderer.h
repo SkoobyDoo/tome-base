@@ -44,6 +44,8 @@ extern void renderer_rotate(float a, float x, float y, float z);
 extern void renderer_pushstate(bool isworld);
 extern void renderer_popstate(bool isworld);
 extern void renderer_identity(bool isworld);
+extern void renderer_push_ortho_state(int w, int h);
+extern void renderer_pop_ortho_state();
 
 
 #endif

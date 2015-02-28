@@ -536,22 +536,10 @@ static int map_objects_display(lua_State *L)
 	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) return 0;
 
-	// Set the viewport and save the old one
-	CHECKGL(glPushAttrib(GL_VIEWPORT_BIT));
-
-	CHECKGL(glViewport(0, 0, w, h));
-	glMatrixMode(GL_PROJECTION);
-	CHECKGL(glPushMatrix());
-	glLoadIdentity();
-	glOrtho(0, w, 0, h, -101, 101);
-	glMatrixMode( GL_MODELVIEW );
-	CHECKGL(glPushMatrix());
-	/* Reset The View */
-	glLoadIdentity();
+	renderer_push_ortho_state(w, h);
 
 	tglClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-	CHECKGL(glClear(GL_COLOR_BUFFER_BIT));
-	//CHECKGL(glLoadIdentity());
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	/***************************************************
 	 * Render to buffer
@@ -600,22 +588,16 @@ static int map_objects_display(lua_State *L)
 	 ***************************************************/
 
 	// Unbind texture from FBO and then unbind FBO
-	CHECKGL(glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0));
-	CHECKGL(glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, gl_c_fbo));
-	// Restore viewport
-	CHECKGL(glPopAttrib());
+	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, gl_c_fbo);
 
 	// Cleanup
 	// No, dot not it's a static, see upwards
 //	CHECKGL(glDeleteFramebuffersEXT(1, &fbo));
 
-	CHECKGL(glPopMatrix());
-	glMatrixMode(GL_PROJECTION);
-	CHECKGL(glPopMatrix());
-	glMatrixMode( GL_MODELVIEW );
+	renderer_pop_ortho_state();
 
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-
 
 	// Now register the texture to lua
 	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));

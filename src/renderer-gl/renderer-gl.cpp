@@ -177,6 +177,13 @@ void renderer_identity(bool isworld) {
 	state->identity(isworld);
 }
 
+void renderer_push_ortho_state(int w, int h) {
+	state->pushOrthoState(w, h);
+}
+void renderer_pop_ortho_state() {
+	state->popOrthoState();
+}
+
 void renderer_init(int w, int h) {
 	if (!vbo_elements) glGenBuffers(1, &vbo_elements);
 

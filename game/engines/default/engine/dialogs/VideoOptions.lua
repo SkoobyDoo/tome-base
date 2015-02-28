@@ -104,23 +104,25 @@ function _M:generateList()
 		self.c_list:drawItem(item)
 	end,}
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates framebuffers.\nThis option allows for some special graphical effects.\nIf you encounter weird graphical glitches try to disable it.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}
-	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Framebuffers#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.fbo_active and "enabled" or "disabled")
-	end, fct=function(item)
-		config.settings.fbo_active = not config.settings.fbo_active
-		game:saveSettings("fbo_active", ("fbo_active = %s\n"):format(tostring(config.settings.fbo_active)))
-		self.c_list:drawItem(item)
-	end,}
+	if not core.display.isModernGL() then
+		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates framebuffers.\nThis option allows for some special graphical effects.\nIf you encounter weird graphical glitches try to disable it.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}
+		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Framebuffers#WHITE##{normal}#", status=function(item)
+			return tostring(config.settings.fbo_active and "enabled" or "disabled")
+		end, fct=function(item)
+			config.settings.fbo_active = not config.settings.fbo_active
+			game:saveSettings("fbo_active", ("fbo_active = %s\n"):format(tostring(config.settings.fbo_active)))
+			self.c_list:drawItem(item)
+		end,}
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates OpenGL Shaders.\nThis option allows for some special graphical effects.\nIf you encounter weird graphical glitches try to disable it.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}
-	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#OpenGL Shaders#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.shaders_active and "enabled" or "disabled")
-	end, fct=function(item)
-		config.settings.shaders_active = not config.settings.shaders_active
-		game:saveSettings("shaders_active", ("shaders_active = %s\n"):format(tostring(config.settings.shaders_active)))
-		self.c_list:drawItem(item)
-	end,}
+		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates OpenGL Shaders.\nThis option allows for some special graphical effects.\nIf you encounter weird graphical glitches try to disable it.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}
+		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#OpenGL Shaders#WHITE##{normal}#", status=function(item)
+			return tostring(config.settings.shaders_active and "enabled" or "disabled")
+		end, fct=function(item)
+			config.settings.shaders_active = not config.settings.shaders_active
+			game:saveSettings("shaders_active", ("shaders_active = %s\n"):format(tostring(config.settings.shaders_active)))
+			self.c_list:drawItem(item)
+		end,}
+	end
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates advanced shaders.\nThis option allows for advanced effects (like water surfaces, ...). Disabling it can improve performance.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#OpenGL Shaders: Advanced#WHITE##{normal}#", status=function(item)
