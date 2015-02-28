@@ -398,8 +398,9 @@ static int gl_texture_to_sdl(lua_State *L)
 //	printf("Making surface from texture %dx%d\n", w, h);
 	// Get texture data
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
+#ifndef NO_OLD_GL
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp);
-
+#endif
 	// Make sdl surface from it
 	*s = SDL_CreateRGBSurfaceFrom(tmp, w, h, 32, w*4, 0,0,0,0);
 
@@ -586,8 +587,9 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	h = t->h;
 	dh = doubleheight ? h * 2 : h;
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
+#ifndef NO_OLD_GL
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
-
+#endif
 	GLubyte *sdm = calloc(w*dh*4, sizeof(GLubyte));
 	build_sdm_ex(tmp, w, h, sdm, w, dh, 0, doubleheight ? h : 0);
 
@@ -1119,7 +1121,9 @@ static int gl_scissor(lua_State *L)
 
 static int gl_color(lua_State *L)
 {
+#ifndef NO_OLD_GL
 	tglColor4f(luaL_checknumber(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
+#endif
 	return 0;
 }
 
@@ -1873,9 +1877,10 @@ static int gl_fbo_to_png(lua_State *L)
 	}
 
 	tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+#ifndef NO_OLD_GL
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)image);
-
+#endif
 	for (i = 0; i < height; i++)
 	{
 		row_pointers[i] = (png_bytep)image + (height - 1 - i) * width * 3;
