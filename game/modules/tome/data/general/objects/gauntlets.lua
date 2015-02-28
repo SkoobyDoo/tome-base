@@ -31,6 +31,7 @@ newEntity{
 	encumber = 1.5,
 	rarity = 9,
 	metallic = true,
+	wielder={combat = {accuracy_effect = "mace"},},
 	desc = [[Metal gloves protecting the hands up to the middle of the lower arm.]],
 	randart_able = "/data/general/objects/random-artifacts/gloves.lua",
 	egos = "/data/general/objects/egos/gloves.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
@@ -44,7 +45,6 @@ newEntity{ base = "BASE_GAUNTLETS",
 	wielder = {
 		combat_armor = 1,
 		combat = {
-			accuracy_effect = "mace",
 			dam = resolvers.rngavg(7, 12),
 			apr = 3,
 			physcrit = 2,
@@ -63,7 +63,6 @@ newEntity{ base = "BASE_GAUNTLETS",
 	wielder = {
 		combat_armor = 2,
 		combat = {
-			accuracy_effect = "mace",
 			dam = resolvers.rngavg(16, 22),
 			apr = 9,
 			physcrit = 8,
@@ -82,7 +81,6 @@ newEntity{ base = "BASE_GAUNTLETS",
 	wielder = {
 		combat_armor = 3,
 		combat = {
-			accuracy_effect = "mace",
 			dam = resolvers.rngavg(25, 32),
 			apr = 15,
 			physcrit = 10,

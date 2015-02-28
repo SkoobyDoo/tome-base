@@ -369,6 +369,9 @@ newEntity{ base = "BASE_HELM",
 	},
 
 	set_list = { {"define_as","SET_GARKUL_TEETH"} },
+	set_desc = {
+		garkul = "Another of Garkul's heirlooms would bring out his spirit.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd("skullcracker_mult", 1)
 		self:specialSetAdd({"wielder","melee_project"}, {[engine.DamageType.GARKUL_INVOKE]=5})
@@ -1358,7 +1361,7 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "PSIONIC_FURY",
 		resists={
 			[DamageType.MIND] 		= 10,
 		},
-		inc_stats = { [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 4, },
+		inc_stats = { [Stats.STAT_WIL] = 3, [Stats.STAT_CUN] = 3, },
 	},
 	max_power = 40, power_regen = 1,
 	use_power = { name = "release a wave of psionic power", power = 40,
@@ -1512,7 +1515,8 @@ newEntity{ base = "BASE_TOOL_MISC", define_as = "EYE_OF_THE_DREAMING_ONE",
 	material_level = 1,
 	wielder = {
 		combat_mindpower=5,
-		sleep_immune=1,
+		sleep=1,
+		lucid_dreamer=1,
 		combat_mentalresist = 10,
 		inc_stats = {[Stats.STAT_WIL] = 5,},
 	},

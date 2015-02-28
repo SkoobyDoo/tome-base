@@ -311,14 +311,18 @@ function _M:getSpeed(speed_type)
 			self:getInven(self.INVEN_MAINHAND)
 		then
 			local o = self:getInven(self.INVEN_MAINHAND)[1]
-			speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			if o then
+				speed = self:combatSpeed(self:getObjectCombat(o, "mainhand"))
+			end
 		end
 
 		if (speed_type == "weapon" or speed_type == "offhand") and
 			self:getInven(self.INVEN_OFFHAND)
 		then
 			local o = self:getInven(self.INVEN_OFFHAND)[1]
-			speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			if o then
+				speed = math.max(speed or 0, self:combatSpeed(self:getObjectCombat(o, "offhand")))
+			end
 		end
 
 		if (speed_type == "combat" or speed_type == "weapon") and not speed then
@@ -515,6 +519,25 @@ function _M:actBase()
 		end
 	end
 
+	-- Suffocate ?
+	-- The idea here is that we suffocate (EFF_SUFFOCATING checks this flag) if a) something (including own effects) tries to suffocate us between our actBase calls, or
+	-- b) we cannot breathe on the current terrain. The first is force_suffocate flag. It only works for one base turn, of course.
+	-- These are all flags because there is no turn_base_procs. :(
+	if not self.force_suffocate then                                                
+		self.is_suffocating = nil
+	else
+		self.force_suffocate = nil
+		self.is_suffocating = true
+	end
+	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
+	if air_level then
+		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
+			self.is_suffocating = true
+			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
+			self.force_suffocate = nil
+		end
+	end
+
 	if self:knowTalent(self.T_GESTURE_OF_GUARDING) then self:setEffect(self.EFF_GESTURE_OF_GUARDING,1,{}) end
 	if self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then self:setEffect(self.EFF_DUAL_WEAPON_DEFENSE,1,{}) end
 	if self:knowTalent(self.T_COUNTER_ATTACK) then self:setEffect(self.EFF_COUNTER_ATTACKING,1,{}) end
@@ -530,14 +553,6 @@ function _M:actBase()
 
 	-- Cooldown talents after effects, because some of them involve breaking sustains.
 	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
-
-	-- Suffocate ?
-	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
-	if air_level then
-		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
-			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
-		end
-	end
 end
 
 function _M:act()
@@ -588,7 +603,6 @@ function _M:act()
 	end
 	if self:attr("stoned") then self.energy.value = 0 end
 	if self:attr("dont_act") then self.energy.value = 0 end
-	if self:attr("sleep") and not self:attr("lucid_dreamer") then self.energy.value = 0 end
 	if self:attr("time_stun") then self.energy.value = 0 end
 	if self:attr("time_prison") then self.energy.value = 0 end
 
@@ -1218,9 +1232,12 @@ function _M:move(x, y, force)
 				x, y = self.x + rng.range(-1, 1), self.y + rng.range(-1, 1)
 			end
 		end
-
+		
+		-- Sleeping?  Do nothing..
+		if not force and self:attr("sleep") and not self:attr("lucid_dreamer") then
+			game.logPlayer(self, "You are asleep and unable to move!")	
 		-- Encased in ice, attack the ice
-		if not force and self:attr("encased_in_ice") then
+		elseif not force and self:attr("encased_in_ice") then
 			self:attackTarget(self)
 			moved = true
 		-- Should we prob travel through walls ?
@@ -1279,19 +1296,21 @@ function _M:move(x, y, force)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 			local trap = game.level.map(x, y, Map.TRAP)
 			if trap and not trap:knownBy(self) and self:canSee(trap) and self:checkHit(power, trap.detect_power) then
-				trap:setKnown(self, true)
+				trap:setKnown(self, true, x, y)
 				game.level.map:updateMap(x, y)
 				game.logPlayer(self, "You have found a trap (%s)!", trap:getName())
 			end
 		end end
 	end
 
-	-- chooseCursedAuraTree allows you to get the Cursed Aura tree
-	if moved and self.chooseCursedAuraTree then
+	-- knowing Unnatural Body allows you to get the Cursed Aura tree
+	if moved and self:knowTalent(self.T_UNNATURAL_BODY) and not self:knowTalentType("cursed/cursed-aura") and self.chooseCursedAuraTree then
 		if self.player then
 			-- function placed in defiling touch where cursing logic exists
 			local t = self:getTalentFromId(self.T_DEFILING_TOUCH)
-			t.chooseCursedAuraTree(self, t)
+			if t.chooseCursedAuraTree(self, t) then 
+				self.chooseCursedAuraTree = nil
+			end
 		end
 	end
 
@@ -1317,7 +1336,7 @@ function _M:move(x, y, force)
 	if moved and not force and ox and oy and (ox ~= self.x or oy ~= self.y) and config.settings.tome.smooth_move > 0 then
 		local blur = 0
 		if game.level.data.zero_gravity then blur = 2 end
-		if self:attr("lightning_speed") or self:attr("step_up") or self:attr("wild_speed") then blur = 3 end
+		if self:attr("lightning_speed") or self:attr("step_up") or self:attr("wild_speed") or self:hasEffect(self.EFF_HASTE) then blur = 3 end
 		if self:hasEffect(self.EFF_CELERITY) then local eff = self:hasEffect(self.EFF_CELERITY) blur = eff.charges end
 		self:setMoveAnim(ox, oy, config.settings.tome.smooth_move, blur, 8, config.settings.tome.twitch_move and 0.15 or 0)
 		if Map.tiles and Map.tiles.use_images then if self.x < ox then self:MOflipX(self:isTileFlipped()) elseif self.x > ox then self:MOflipX(not self:isTileFlipped()) end end
@@ -1350,13 +1369,8 @@ function _M:waitTurn()
 	end
 
 	-- Tune paradox up or down
-	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox()) then
-		local power = 0
-		if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
-			local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
-			power = (self.preferred_paradox - self:getParadox())/duration
-			self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
-		end
+	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
+		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
 	end
 
 	self:useEnergy()
@@ -1433,52 +1447,77 @@ function _M:probabilityTravel(x, y, dist)
 end
 
 --- Teleports randomly to a passable grid
--- This simply calls the default actor teleportRandom but first checks for space-time stability
 -- @param x the coord of the teleportation
 -- @param y the coord of the teleportation
 -- @param dist the radius of the random effect, if set to 0 it is a precise teleport
 -- @param min_dist the minimum radius of of the effect, will never teleport closer. Defaults to 0 if not set
 -- @return true if the teleport worked
 function _M:teleportRandom(x, y, dist, min_dist)
+	-- can we teleport?
 	if self:attr("encased_in_ice") then return end
 	if self:attr("cant_teleport") then return end
+	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport") return end
+	
+	-- Special teleport handlers
 	if game.level.data.no_teleport_south and y + dist > self.y then
 		y = self.y - dist
 	end
+	
+	-- For precise teleports look for a free grid first
+	-- This helps the AI use precision teleporting more effectively and is a nice quality of life hack for the player
+	if dist == 0 then
+		x, y = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})	
+	end
+	if not x or not y then return end
+	
+	-- Store our old x, y to pass to our callback
+	local ox, oy = self.x, self.y
 
-	-- Dimensional Anchor, prevent teleports and deal damage
-	if self:hasEffect(self.EFF_DIMENSIONAL_ANCHOR) then
-		self:callEffect(self.EFF_DIMENSIONAL_ANCHOR, "onTeleport")
-		return
+	-- Try to teleport
+	local poss = {}
+	local teleported
+	dist = math.floor(dist)
+	min_dist = math.floor(min_dist or 0)
+
+	-- Find possible locations
+	for i = x - dist, x + dist do
+		for j = y - dist, y + dist do
+			if game.level.map:isBound(i, j) and	core.fov.distance(x, y, i, j) <= dist and core.fov.distance(x, y, i, j) >= min_dist and	self:canMove(i, j) then
+				-- Check for no_teleport and vaults
+				if game.level.map.attrs(i, j, "no_teleport") then
+					local vault = game.level.map.attrs(self.x, self.y, "vault_id")
+					if vault and game.level.map.attrs(i, j, "vault_id") == vault then
+						poss[#poss+1] = {i,j}
+					end
+				else
+					poss[#poss+1] = {i,j}
+				end
+			end
+		end
 	end
 
-	local ox, oy = self.x, self.y
-	local ret = engine.Actor.teleportRandom(self, x, y, dist, min_dist)
-	if self.x ~= ox or self.y ~= oy then
-			-- Phase Pulse
-		if self:isTalentActive(self.T_PHASE_PULSE) then
-			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy)
-		end
-
-		self.x, self.y, ox, oy = ox, oy, self.x, self.y
+	-- If we find valid locations, pick one at random
+	if #poss > 0 then
+		-- prior to moving
 		self:dropNoTeleportObjects()
+	
+		-- Teleport
+		local pos = poss[rng.range(1, #poss)]
+		self:move(pos[1], pos[2], true)
+		teleported = true
+		
+		if self.runStop then self:runStop("teleported") end
+		if self.restStop then self:restStop("teleported") end
+		
+		-- after moving
 		if self:attr("defense_on_teleport") or self:attr("resist_all_on_teleport") or self:attr("effect_reduction_on_teleport") then
 			self:setEffect(self.EFF_OUT_OF_PHASE, 5, {defense=self:attr("defense_on_teleport") or 0, resists=self:attr("resist_all_on_teleport") or 0, effect_reduction=self:attr("effect_reduction_on_teleport") or 0})
 		end
-
-		-- Dimensional shift, chance to clear effects on teleport
-		if self:knowTalent(self.T_DIMENSIONAL_SHIFT) then
-			self:callTalent(self.T_DIMENSIONAL_SHIFT, "doShift")
-		end
-
-		self.x, self.y, ox, oy = ox, oy, self.x, self.y
-	else
-		-- Phase Blast failure
-		if self:isTalentActive(self.T_PHASE_PULSE) then
-			self:callTalent(self.T_PHASE_PULSE, "doPulse", ox, oy, true)
-		end
 	end
-	return ret
+	
+	self:fireTalentCheck("callbackOnTeleport", teleported, ox, oy, self.x, self.y)
+
+	return teleported
 end
 
 --- Quake a zone
@@ -1511,20 +1550,19 @@ end
 --- What is our reaction toward the target
 -- This can modify faction reaction using specific actor to actor reactions
 function _M:reactionToward(target, no_reflection)
-	if target == self and self:attr("encased_in_ice") then return -100 end
+	local rsrc, rtarget = self, target
+	while rsrc.summoner do rsrc = rsrc.summoner end
+	while rtarget.summoner do rtarget = rtarget.summoner end
+	if rsrc == target and self ~= target and target:attr("encased_in_ice") then return -50 end  -- summons shouldn't hate each other and shouldn't hate summoner more than enemies
 
 	-- Neverending hatred
-	if self:attr("hates_everybody") and target ~= self then return -100 end
-	if self:attr("hates_arcane") and target:attr("has_arcane_knowledge") and not target:attr("forbid_arcane") then return -100 end
-	if self:attr("hates_antimagic") and target:attr("forbid_arcane") then return -100 end
+	if rsrc:attr("hates_everybody") and rtarget ~= rsrc then return -100 end
+	if rsrc:attr("hates_arcane") and rtarget:attr("has_arcane_knowledge") and not rtarget:attr("forbid_arcane") then return -100 end
+	if rsrc:attr("hates_antimagic") and rtarget:attr("forbid_arcane") then return -100 end
 
-	-- If self or target is a summon bound to a master's will, use the master instead
-	if self.summoner then return self.summoner:reactionToward(target, no_reflection) end
-	if target.summoner then target = target.summoner end
+	local v = engine.Actor.reactionToward(rsrc, rtarget)
 
-	local v = engine.Actor.reactionToward(self, target)
-
-	if self.reaction_actor and self.reaction_actor[target.unique or target.name] then v = v + self.reaction_actor[target.unique or target.name] end
+	if rsrc.reaction_actor and rsrc.reaction_actor[rtarget.unique or rtarget.name] then v = v + rsrc.reaction_actor[rtarget.unique or rtarget.name] end
 
 	-- Take the lowest of the two just in case
 	if not no_reflection and target.reactionToward then v = math.min(v, target:reactionToward(self, true)) end
@@ -2484,8 +2522,8 @@ function _M:onTakeHit(value, src, death_note)
 			-- Only calculate crit once per turn to avoid log spam
 			if not self.turn_procs.shield_of_light_heal then
 				local t = self:getTalentFromId(self.T_SHIELD_OF_LIGHT)
-				self.shield_of_light_heal = self:spellCrit(t.getHeal(self, t))
 				self.turn_procs.shield_of_light_heal = true
+				self.shield_of_light_heal = self:spellCrit(t.getHeal(self, t))
 			end
 
 			self:heal(self.shield_of_light_heal, tal)
@@ -2507,11 +2545,12 @@ function _M:onTakeHit(value, src, death_note)
 			local sl = self:callTalent(self.T_SECOND_LIFE,"getLife")
 			value = 0
 			self.life = 1
-			self:heal(sl, self)
-			game.logSeen(self, "#YELLOW#%s has been saved by a blast of positive energy!#LAST#", self.name:capitalize())
-			game:delayedLogDamage(tal, self, -sl, ("#LIGHT_GREEN#%d healing#LAST#"):format(sl), false)
 			self:forceUseTalent(self.T_SECOND_LIFE, {ignore_energy=true})
-			if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			local value = self:heal(sl, self)
+			game.logSeen(self, "#YELLOW#%s has been healed by a blast of positive energy!#LAST#", self.name:capitalize())
+			if value > 0 then
+				if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			end
 		end
 
 		local tal = self:isTalentActive(self.T_HEARTSTART)
@@ -2665,7 +2704,7 @@ function _M:takeHit(value, src, death_note)
 
 	local dead, val = mod.class.interface.ActorLife.takeHit(self, value, src, death_note)
 
-	if src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
+	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
 
 	if dead and src and src.attr and src:attr("overkill") and src.project and not src.turn_procs.overkill then
 		src.turn_procs.overkill = true
@@ -2972,11 +3011,6 @@ function _M:die(src, death_note)
 				t.do_instakill(game.player, t)
 			end
 		end)
-	end
-
-	if self:hasEffect(self.EFF_ATTENUATE) then
-		local p = self:hasEffect(self.EFF_ATTENUATE)
-		p.src:incParadox(-p.reduction)
 	end
 
 	if self:hasEffect(self.EFF_GHOUL_ROT) then
@@ -3433,7 +3467,7 @@ function _M:updateModdableTile()
 
 	if self.shader_auras and next(self.shader_auras) then
 		for _, def in pairs(self.shader_auras) do
-			add[#add+1] = {image_alter="sdm", sdm_double=true, image=base..(self.moddable_tile_base or "base_01.png"), shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1}
+			add[#add+1] = {image_alter="sdm", sdm_double="dynamic", image=base..(self.moddable_tile_base or "base_01.png"), shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1}
 		end
 	end
 
@@ -3588,7 +3622,7 @@ end
 
 --- Call when an object is worn
 -- This doesnt call the base interface onWear, it copies the code because we need some tricky stuff
-function _M:onWear(o, inven_id, bypass_set)
+function _M:onWear(o, inven_id, bypass_set, silent)
 	o.wielded = {}
 
 	if self.player then o:forAllStack(function(so) so.__transmo = false end) end
@@ -3725,11 +3759,11 @@ function _M:onWear(o, inven_id, bypass_set)
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
-	if self == game.player and not bypass_set then game:playSound("actions/wear") end
+	if self == game.player and not bypass_set and not self:attr("no_sound") then game:playSound("actions/wear") end
 end
 
 --- Call when an object is taken off
-function _M:onTakeoff(o, inven_id, bypass_set)
+function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	engine.interface.ActorInventory.onTakeoff(self, o, inven_id)
 
 	if o.talent_on_spell then
@@ -3825,7 +3859,7 @@ function _M:onTakeoff(o, inven_id, bypass_set)
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
-	if self == game.player and not bypass_set then game:playSound("actions/takeoff") end
+	if self == game.player and not bypass_set and not self:attr("no_sound") then game:playSound("actions/takeoff") end
 end
 
 function _M:checkTwoHandedPenalty()
@@ -4158,7 +4192,6 @@ function _M:learnPool(t)
 	-- If we learn an archery talent, also learn to shoot
 	if t.type[1]:find("^technique/archery") then
 		self:checkPool(t.id, self.T_SHOOT)
-		self:checkPool(t.id, self.T_RELOAD)
 	end
 	-- If we learn an unharmed talent, learn to use it too
 	if tt.is_unarmed then
@@ -4250,7 +4283,7 @@ end
 
 --- Paradox checks
 function _M:getModifiedParadox()
-	local will_modifier = (1 + (self:attr("paradox_will_multi") or 0)) * 2
+	local will_modifier = 2
 	will_modifier = (self:getWil() + (self:attr("paradox_reduce_anomalies") or 0)) * will_modifier
 	local sustain_modifier = self:getMinParadox()
 	local modified_paradox = math.max(0, self:getParadox() - will_modifier + sustain_modifier)
@@ -4270,18 +4303,15 @@ function _M:paradoxFailChance()
 end
 
 -- This handles anomalies
--- Reduction is the Paradox recovered
--- Anomaly Type is used to force an anomaly type for the talent, generally set to ab.anomaly_type
--- Chance use this for the anomaly chance, generally set to paradoxFailChance() or "forced"
--- Target, if we're forcing an anomaly target
-function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
-	local anomaly_type = anomaly_type or "random"
-	local chance = chance or self:paradoxFailChance()
-	if chance == "forced" then chance = 100	end
+-- chance, generally paradoxFailChance, set to 100 to force an anomly
+-- paradox recovered
+-- def.anomaly_type to set a type, def.allow_target to allow targeting, def.target to set a target
+function _M:paradoxDoAnomaly(chance, paradox, def)
+	local def = def or {}
+	local anomaly_type = def.anomaly_type or "random"
 	
 	-- Anomaly biases can be set manually for monsters or classes
-	-- Use the following format anomaly_bias = { type = "teleport", chance=50}
-	-- Additionally anomaly biases could be set by a talent; see the data/chats/chromonacy-bias-weave for an example
+	-- Use the following format anomaly_bias = { type = "warp", chance=50}
 	local function check_bias(major)
 		if self.anomaly_bias then
 			local bias_chance = self.anomaly_bias.chance
@@ -4291,7 +4321,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 			end
 		end
 	end
-
+	
 	-- See if we create an anomaly
 	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") then
 		-- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
@@ -4302,7 +4332,7 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 			local anomaly_triggered = true
 			
 			-- If our Paradox is over 600 do a major anomaly
-			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() > 600) then
+			if anomaly_type ~= "no-major" and (anomaly_type == "major" or self:getModifiedParadox() >= 600) then
 				anomaly_type = "major"
 			else
 				-- Check for Bias?
@@ -4321,19 +4351,37 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 
 			-- Be sure we found an anomly first
 			if ts[1] then
-				local anomaly = rng.table(ts)
+				local anom = rng.table(ts)
 				
-				if self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) and anomaly_type ~= "major" then
-					if self:hasEffect(self.EFF_TWIST_FATE) then
-						self:callTalent(self.T_TWIST_FATE, "doTwistFate")
-						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
-					else
-						self:callTalent(self.T_TWIST_FATE, "setEffect", anomaly, reduction)
+				if anomaly_type ~= "major" then
+					if self:attr("no_minor_anomalies") then
 						anomaly_triggered = false
+					elseif def.allow_target then
+						anom = self:getTalentFromId(anom)
+						-- make it real obvious for the player
+						game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
+						if self == game.player then
+							game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", anom.name)
+						end
+					
+						-- targeted talents don't work well with no_energy, so we call the action directly
+						anom.action(self, anom)
+					elseif def.ignore_energy then
+						self:forceUseTalent(anom, {force_target=def.target or self, ignore_energy=true})
+					elseif self:knowTalent(self.T_TWIST_FATE) and not self:isTalentCoolingDown(self.T_TWIST_FATE) then
+						if self:hasEffect(self.EFF_TWIST_FATE) then
+							self:callTalent(self.T_TWIST_FATE, "doTwistFate")
+							self:callTalent(self.T_TWIST_FATE, "setEffect", anom, paradox)
+						else
+							self:callTalent(self.T_TWIST_FATE, "setEffect", anom, paradox)
+						end
+						anomaly_triggered = false
+					else
+						self:forceUseTalent(anom, {force_target=def.target or self})
 					end
 				else
-					--self:forceUseTalent(anomaly, {ignore_energy=true})
-					self:forceUseTalent(anomaly, {force_target=target or self})
+					-- Major anomalies pick targets at random
+					self:forceUseTalent(anom, {force_target=self})
 				end
 			end
 
@@ -4347,8 +4395,11 @@ function _M:paradoxDoAnomaly(reduction, anomaly_type, chance, target, silent)
 					end
 				end
 				-- Reduce Paradox
-				if reduction and reduction > 0 then
-					self:incParadox(-reduction)
+				if paradox and paradox > 0 then
+					-- Double the paradox from major anomalies, mostly so NPCs don't become more dangerous when they run out of Paradox
+					if anomaly_type == "major" then paradox = paradox * 2 end
+					
+					self:incParadox(-paradox)
 				end
 			end
 
@@ -4528,7 +4579,13 @@ function _M:preUseTalent(ab, silent, fake)
 			return false
 		end
 	end
-
+	
+	-- Sleeping prevents the use of all non-instant talents
+	if self:attr("sleep") and not self:attr("lucid_dreamer") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= (true or "fake") then
+		if not silent then game.logSeen(self, "%s is sleeping and unable to do this.", self.name:capitalize(), ab.name) end
+		return false
+	end
+	
 	if not self:enoughEnergy() and not fake then return false end
 
 	if ab.mode == "sustained" then
@@ -4640,8 +4697,7 @@ function _M:preUseTalent(ab, silent, fake)
 		-- Random anomalies reduce paradox by twice the talent's paradox cost
 		local cost = util.getval(ab.paradox or ab.sustain_paradox, self, ab)
 		if cost > 0 then
-			local multi = 2 + (self:attr("anomaly_paradox_recovery") or 0)
-			if self:paradoxDoAnomaly(cost * multi, ab.anomaly_type or nil, self:paradoxFailChance(), nil, silent) then
+			if self:paradoxDoAnomaly(self:paradoxFailChance(), cost * 2, {anomaly_type=ab.anomaly_type or nil, silent=silent}) then
 				game:playSoundNear(self, "talents/dispel")
 				return false
 			end
@@ -4660,7 +4716,7 @@ function _M:preUseTalent(ab, silent, fake)
 			return false
 		end
 	end
-
+	
 	-- Failure chance?
 	if self:attr("talent_fail_chance") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") and not ab.innate then
 		if rng.percent(self:attr("talent_fail_chance")) then
@@ -4718,6 +4774,7 @@ function _M:preUseTalent(ab, silent, fake)
 end
 
 local sustainCallbackCheck = {
+	callbackOnTeleport = "talents_on_teleport",
 	callbackOnDealDamage = "talents_on_deal_damage",
 	callbackOnHit = "talents_on_hit",
 	callbackOnAct = "talents_on_act",
@@ -4745,7 +4802,6 @@ local sustainCallbackCheck = {
 	callbackOnTemporaryEffect = "talents_on_tmp",
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
-	callbackOnChronoWeaponFoldingHit = "talents_on_chrono_weapon_folding_hit",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -5328,7 +5384,7 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		if t.sustain_stamina then d:add({"color",0x6f,0xff,0x83}, "Sustain stamina cost: ", {"color",0xff,0xcc,0x80}, ""..(util.getval(t.sustain_stamina, self, t)), true) end
 		if t.sustain_equilibrium then d:add({"color",0x6f,0xff,0x83}, "Sustain equilibrium cost: ", {"color",0x00,0xff,0x74}, ""..(util.getval(t.sustain_equilibrium, self, t)), true) end
 		if t.sustain_vim then d:add({"color",0x6f,0xff,0x83}, "Sustain vim cost: ", {"color",0x88,0x88,0x88}, ""..(util.getval(t.sustain_vim, self, t)), true) end
-		if t.drain_vim then d:add({"color",0x6f,0xff,0x83}, "Drain vim: ", {"color",0x88,0x88,0x88}, "-"..(util.getval(t.drain_vim, self, t)), true) end
+		if t.drain_vim then d:add({"color",0x6f,0xff,0x83}, "Drain vim: ", {"color",0x88,0x88,0x88}, (util.getval(t.drain_vim, self, t)), true) end
 		if t.sustain_positive then d:add({"color",0x6f,0xff,0x83}, "Sustain positive energy cost: ", {"color",255, 215, 0}, ""..(util.getval(t.sustain_positive, self, t)), true) end
 		if t.sustain_negative then d:add({"color",0x6f,0xff,0x83}, "Sustain negative energy cost: ", {"color", 127, 127, 127}, ""..(util.getval(t.sustain_negative, self, t)), true) end
 		if t.sustain_hate then d:add({"color",0x6f,0xff,0x83}, "Sustain hate cost:  ", {"color", 127, 127, 127}, ""..(util.getval(t.sustain_hate, self, t)), true) end
@@ -5464,7 +5520,7 @@ function _M:startTalentCooldown(t, v)
 
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
-			if t.type[1]:find("^chronomancy/") and self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
+			if self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
 				self.talents_cd[t.id] = 1
 			end
 		end
@@ -5747,6 +5803,7 @@ function _M:suffocate(value, src, death_message)
 	if self:attr("invulnerable") then return false, false end
 	self.air = self.air - value
 	local ae = game.level.map(self.x, self.y, Map.ACTOR)
+	self.force_suffocate = true
 	if self.air <= 0 then
 		self.air = 0
 		if not self:hasEffect(self.EFF_SUFFOCATING) then
@@ -5922,7 +5979,7 @@ function _M:canBe(what)
 	if what == "disarm" and rng.percent(100 * (self:attr("disarm_immune") or 0)) then return false end
 	if what == "pin" and (rng.percent(100 * (self:attr("pin_immune") or 0)) or self:attr("levitation") or self:attr("fly")) then return false end
 	if what == "stun" and rng.percent(100 * (self:attr("stun_immune") or 0)) then return false end
-	if what == "sleep" and rng.percent(100 * math.max((self:attr("sleep_immune") or 0), (self:attr("confusion_immune") or 0))) then return false end
+	if what == "sleep" and rng.percent(100 * (self:attr("sleep_immune") or 0)) then return false end
 	if what == "fear" and rng.percent(100 * (self:attr("fear_immune") or 0)) then return false end
 	if what == "knockback" and (rng.percent(100 * (self:attr("knockback_immune") or 0)) or self:attr("never_move")) then return false end
 	if what == "stone" and rng.percent(100 * (self:attr("stone_immune") or 0)) then return false end
@@ -5954,7 +6011,10 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		--local duration = p.maximum - math.max(0, math.floor((save - p.apply_power) / 5))
 		--local duration = p.maximum - math.max(0, (math.floor(save/5) - math.floor(p.apply_power/5)))
 		local percentage = 1 - ((save - p.apply_power)/20)
-		local duration = math.min(p.maximum, math.ceil(p.maximum * percentage))
+		local desired = p.maximum * percentage
+		local fraction = desired % 1
+		desired = math.floor(desired) + (rng.percent(100*fraction) and 1 or 0)
+		local duration = math.min(p.maximum, desired)
 		p.dur = util.bound(duration, p.minimum or 0, p.maximum)
 		p.amount_decreased = p.maximum - p.dur
 		local save_type = nil
@@ -6010,7 +6070,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 	if e.status == "detrimental" and e.type == "physical" and self:attr("physical_negative_status_effect_immune") and not e.subtype["cross tier"] then
 		p.dur = 0
 	end
-	if e.status == "detrimental" and e.type == "spell" and self:attr("spell_negative_status_effect_immune") and not e.subtype["cross tier"] then
+	if e.status == "detrimental" and e.type == "magical" and self:attr("spell_negative_status_effect_immune") and not e.subtype["cross tier"] then
 		p.dur = 0
 	end
 	if self:attr("status_effect_immune") then
@@ -6239,11 +6299,13 @@ end
 --	@param item = inventory slot to take from
 --	@param o = object to wear
 --	@param dst = actor holding object to be worn <self>
-function _M:doWear(inven, item, o, dst)
+--  @param force_inven = force wear to this inventory
+--  @param force_item = force wear to this inventory slot #
+function _M:doWear(inven, item, o, dst, force_inven, force_item)
 	if self.no_inventory_access then return end
 	dst = dst or self
 	dst:removeObject(inven, item, true)
-	local ro, rs = self:wearObject(o, true, true) -- removed object and remaining stack if any
+	local ro, rs = self:wearObject(o, true, true, force_inven, force_item) -- removed object and remaining stack if any
 	local added, slot
 	if ro then
 		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end
@@ -6304,8 +6366,8 @@ end
 function _M:transmoPricemod(o) if o.type == "gem" then return 0.40 else return 0.05 end end
 function _M:transmoFilter(o) if o:getPrice() <= 0 or o.quest then return false end return true end
 function _M:transmoInven(inven, idx, o)
-	local price = math.min(o:getPrice() * self:transmoPricemod(o), 25) * o:getNumber()
-	local price = math.min(o:getPrice() * self:transmoPricemod(o), 25) * o:getNumber()
+	local price = 0 
+	o:forAllStack(function(so) price = price + math.min(so:getPrice() * self:transmoPricemod(so), 25) end)  -- handle stacked objects individually
 	price = math.floor(price * 100) / 100 -- Make sure we get at most 2 digit precision
 	if price ~= price or not tostring(price):find("^[0-9]") then price = 1 end -- NaN is the only value that does not equals itself, this is the way to check it since we do not have a math.isnan method
 	if inven and idx then self:removeObject(inven, idx, true) end
@@ -6314,7 +6376,6 @@ function _M:transmoInven(inven, idx, o)
 		local gem = self:callTalent(self.T_EXTRACT_GEMS, "getGem", o)
 
 		if gem then
-			local gprice = math.min(gem:getPrice() * self:transmoPricemod(gem), 25) * gem:getNumber()
 			local gprice = math.min(gem:getPrice() * self:transmoPricemod(gem), 25) * gem:getNumber()
 			gprice = math.floor(gprice * 100) / 100 -- Make sure we get at most 2 digit precision
 			if gprice ~= gprice or not tostring(gprice):find("^[0-9]") then gprice = 1 end -- NaN is the only value that does not equals itself, this is the way to check it since we do not have a math.isnan method

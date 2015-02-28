@@ -371,11 +371,16 @@ function _M:makeMapObject(tiles, idx)
 			local dy, dh = amo.display_y or 0, amo.display_h or 1
 			-- Create a simple additional chained MO
 			if amo.image_alter == "sdm" then
+				local _, bw, bh
 				local oldrepo = tiles.repo
 				tiles.repo = {}
-				tex = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, false)
+				tex, _, _, bw, bh = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, false)
 				tiles.repo = oldrepo
-				tex = tex:generateSDM(amo.sdm_double)
+				local sdm_double = amo.sdm_double
+				if sdm_double == "dynamic" then
+					if bh > bw then sdm_double = false else sdm_double = true end
+				end
+				tex = tex:generateSDM(sdm_double)
 				texx, texy = 1,1,nil,nil
 			elseif amo.image then
 				local w, h
@@ -668,6 +673,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 	-- Then we handle it, this is because resolvers can modify the list with their returns, or handlers, so we must make sure to not modify the list we are iterating over
 	for k, e in pairs(list) do
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
+			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(".", key_chain)) end
 			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
 		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			local key_chain = table.clone(key_chain)
@@ -835,7 +841,7 @@ function _M:addTemporaryValue(prop, v, noupdate)
 			end
 --			print("addTmpVal", base, prop, v, " :=: ", #t, id, method)
 		else
-			error("unsupported temporary value type: "..type(v).." :=: "..tostring(v))
+			error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." (on key "..tostring(prop)..")")
 		end
 	end
 
@@ -1060,6 +1066,7 @@ function _M:loadList(file, no_default, res, mod, loaded)
 		loading_list = res,
 		ignoreLoaded = function(v) res.ignore_loaded = v end,
 		rarity = function(add, mult) add = add or 0; mult = mult or 1; return function(e) if e.rarity then e.rarity = math.ceil(e.rarity * mult + add) end end end,
+		switchRarity = function(name) return function(e) if e.rarity then e[name], e.rarity = e.rarity, nil end end end,
 		newEntity = function(t)
 			-- Do we inherit things ?
 			if t.base then

@@ -40,7 +40,7 @@ newEntity{
 			range = rad,
 			actor = 1,
 		})
-		who:project({type="ball", range=0, selffire=true, radius=self:getCharmPower(who)}, who.x, who.y, engine.DamageType.LITE, 1)
+		who:project({type="ball", range=0, selffire=true, radius=self:getCharmPower(who)}, who.x, who.y, engine.DamageType.LITE, 100)
 		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
 		return {id=true, used=true}
 	end),
@@ -52,9 +52,13 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 14,
 
-	charm_power_def = {add=resolvers.genericlast(function(e) return e.material_level * 8 end), max=100, floor=true},
-	resolvers.charm("try to disarm traps in a line (disarm power %d)", 15, function(self, who)
-		local tg = {type="beam", range=2 + who:getMag(2)}
+	charm_power_def = {add=resolvers.genericlast(function(e) return e.material_level * 8 end), max=100, floor=true,
+		range = function(self, who) return who:combatStatScale("mag", 2, 4) end},
+	resolvers.charm(
+		function(self, who) return ("disarm traps (%d disarm power, Magic) along a range %d line"):format( self:getCharmPower(who), self.charm_power_def:range(who)) end,
+		15,
+		function(self, who)
+		local tg = {type="beam", range = self.charm_power_def:range(who)}
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
 		who:project(tg, x, y, function(px, py)

@@ -33,7 +33,7 @@ newTalent{
 	requires_target = true,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
 	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t, nowarning=true, selffire=false}
+		return {type="beam", range=self:getTalentRange(t), talent=t, nowarning=true}
 	end,
 	getAshes = function(self, t) return {type="ball", range=0, radius=self:getTalentRadius(t), selffire=false} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
@@ -44,14 +44,14 @@ newTalent{
 		
 		-- Just for targeting change to pass terrain
 		if digs then tg.pass_terrain = true end
-		local x, y, target = self:getTarget(tg)
+		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		
 		-- Change back pass terrain
 		tg.pass_terrain = nil
-		
-		
+			
 		-- Ashes to Ashes
+		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target == self then
 			tg = t.getAshes(self, t)
 			-- We do our digs seperatly and first so we can damage stuff on the other side
@@ -75,7 +75,7 @@ newTalent{
 				DamageType.WARP, self:spellCrit(t.getDamage(self, t)/3),
 				tg.radius,
 				5, nil,
-				engine.MapEffect.new{color_br=180, color_bg=100, color_bb=255, effect_shader="shader_images/magic_effect.png"},
+				engine.MapEffect.new{alpha=100, color_br=75, color_bg=75, color_bb=25, effect_shader="shader_images/paradox_effect.png"},
 				function(e)
 					e.x = e.src.x
 					e.y = e.src.y
@@ -91,7 +91,11 @@ newTalent{
 		
 			self:project(tg, x, y, DamageType.WARP, self:spellCrit(t.getDamage(self, t)))
 			local _ _, _, _, x, y = self:canProject(tg, x, y)
-			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
+			if core.shader.active() then
+				game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y}, {type="lightning"})
+			else
+				game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "matter_beam", {tx=x-self.x, ty=y-self.y})
+			end
 			game:playSoundNear(self, "talents/arcane")
 		end
 		
@@ -116,37 +120,37 @@ newTalent{
 	mode = "sustained",
 	cooldown = 10,
 	tactical = { BUFF = 2 },
-	getStunResist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
-	getCutResist = function(self, t) return math.min(1, self:combatTalentScale(t, 0.2, 1)) end, -- Limit <100%
-	getCap = function(self, t) return 100 - self:combatTalentLimit(t, 50, 10, 40) end, -- Limit < 50%
+	getImmunity = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
+	getArmor = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 		
 		local ret = {
-			stun = self:addTemporaryValue("stun_immune", t.getStunResist(self, t)),
-			cut = self:addTemporaryValue("cut_immune", t.getCutResist(self, t)),
-			cap = self:addTemporaryValue("flat_damage_cap", {all=t.getCap(self, t)}),
+			stun = self:addTemporaryValue("stun_immune", t.getImmunity(self, t)),
+			cut = self:addTemporaryValue("cut_immune", t.getImmunity(self, t)),
+			armor = self:addTemporaryValue("combat_armor", t.getArmor(self, t)),
 		}
-				if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={100/255, 100/255, 100/255}}, "particles_images/spikes.png") then
+		
+		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1000, spikeOffset=0.123123, spikeLength=0.6, spikeWidth=4, growthSpeed=2, color={150/255, 150/255, 50/255}}, "particles_images/spikes.png") then
 			ret.particle = self:addParticles(Particles.new("stone_skin", 1))
 		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeShaderAura("stone_skin")
-		self:removeParticles(p.particle)
 		self:removeTemporaryValue("stun_immune", p.stun)
 		self:removeTemporaryValue("cut_immune", p.cut)
-		self:removeTemporaryValue("flat_damage_cap", p.cap)
+		self:removeTemporaryValue("combat_armor", p.armor)
+		
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
-		local cap = t.getCap(self, t)
-		local stun = t.getStunResist(self, t) * 100
-		local cut = t.getCutResist(self, t) * 100
-		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you can never take a blow that deals more than %d%% of your maximum life.
-		Additionally you gain %d%% resistance to stunning and %d%% resistance to cuts.]]):
-		format(cap, stun, cut)
+		local armor = t.getArmor(self, t)
+		local immune = t.getImmunity(self, t) * 100
+		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you gain %d armour, %d%% resistance to stunning, and %d%% resistance to cuts.
+		The bonus to armour will scale with your Magic.]]):
+		format(armor, immune, immune)
 	end,
 }
 
@@ -156,21 +160,21 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	cooldown = 10,
+	cooldown = 14,
 	tactical = { DISABLE = 2 },
 	range = 10,
 	direct_hit = true,
 	requires_target = true,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.25, 3.25)) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 6))) end,
-	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
+	getLength = function(self, t) return 3 end,
 	target = function(self, t)
 		local halflength = math.floor(t.getLength(self,t)/2)
 		local block = function(_, lx, ly)
 			return game.level.map:checkAllEntities(lx, ly, "block_move")
 		end
-		return {type="wall", range=self:getTalentRange(t), halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block}
+		return {type="wall", range=self:getTalentRange(t), nolock=true, halflength=halflength, talent=t, halfmax_spots=halflength+1, block_radius=block}
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -185,7 +189,7 @@ newTalent{
 			if not oe or oe:attr("temporary") or game.level.map:checkAllEntities(px, py, "block_move") then return end
 				local e = Object.new{
 					old_feat = oe,
-					name = "stone wall", image = "terrain/rocky_mountain.png",
+					name = "materialize barrier", image = "terrain/rocky_mountain.png",
 					display = '#', color_r=255, color_g=255, color_b=255, back_color=colors.GREY,
 					shader = "shadow_simulacrum",
 					shader_args = { color = {0.6, 0.6, 0.2}, base = 0.9, time_factor = 1500 },
@@ -233,6 +237,14 @@ newTalent{
 		end)
 		
 		game:playSoundNear(self, "talents/earth")
+		
+		-- Update so we don't see things move on the otherside of the wall...  at least not without precog >:)
+		game:onTickEnd(function()
+			if game.level then
+				self:resetCanSeeCache()
+				if self.player then for uid, e in pairs(game.level.entities) do if e.x then game.level.map:updateMap(e.x, e.y) end end game.level.map.changed = true end
+			end
+		end)
 		
 		return true
 	end,
@@ -282,6 +294,12 @@ newTalent{
 					game.logSeen(self, "#CRIMSON#%s's beneficial effect was stripped!#LAST#", target.name:capitalize())
 					if what == "physical" then p.physical[target] = true end
 					if what == "magical" then p.magical[target] = true end
+					
+					-- The Cure achievement
+					local acheive = self.player and not target.training_dummy and target ~= self
+					if acheive then
+						world:gainAchievement("THE_CURE", self)
+					end
 				end
 			end
 		end
@@ -295,16 +313,24 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		return { physical = {}, magical ={}
+		game:playSoundNear(self, "talents/earth")
+
+		local ret = { 
+			physical = {}, magical ={}
 		}
+		if core.shader.active(4) then
+			ret.particle = self:addParticles(Particles.new("shader_ring_rotating", 1, {rotation=-0.01, radius=1.2}, {type="stone", hide_center=1, zoom=0.6, color1={0.4, 0.4, 0, 1}, color2={0.5, 0.5, 0, 1}, xy={self.x, self.y}}))
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
+		if p.particle then self:removeParticles(p.particle) end
 		return true
 	end,
 	info = function(self, t)
 		local digs = t.getDigs(self, t)
 		local chance = t.getChance(self, t)
-		return ([[While active your physical and temporal damage has a %d%% chance to remove one beneficial physical or magical effect (respectively) from targets you hit.
+		return ([[While active your physical and temporal damage has a %d%% chance to remove one beneficial physical or magical temporary effect (respectively) from targets you hit.
 		Only one physical and one magical effect may be removed per turn from each target.
 		Additionally your Dust to Dust spell now digs up to %d tiles into walls.]]):
 		format(chance, digs)

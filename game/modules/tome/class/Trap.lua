@@ -76,6 +76,14 @@ function _M:getName()
 	end
 end
 
+--- Set the known status for the given actor and make its tile remembered on the map for the player
+function _M:setKnown(actor, v, x, y)
+	self.known_by[actor] = v
+	if actor.player and x and y and game.level.map(x, y, engine.Map.TRAP) == self then
+		game.level.map(x, y, engine.Map.TERRAIN).always_remember = true
+	end
+end
+
 -- Returns a tooltip for the trap
 function _M:tooltip()
 	if self:knownBy(game.player) then
@@ -128,13 +136,18 @@ end
 
 --- Called when triggered
 function _M:canTrigger(x, y, who, no_random)
+	-- used for wormholes and any other self-buff style of trap
+	if self.beneficial_trap and self.faction and who.reactionToward and who:reactionToward(self) >= 0 then return true end
+	
+	if rng.percent(5) then
+		if self:knownBy(who) then game.logPlayer(who, "You somehow avoid the trap (%s).", self:getName()) end
+		return false
+	end
 	if who:attr("avoid_traps") then return false end
 	if self.pressure_trap and who:attr("avoid_pressure_traps") then return false end
 	if self.faction and who.reactionToward and who:reactionToward(self) >= 0 then return false end
 	if not no_random and who.trap_avoidance and rng.percent(who.trap_avoidance) then
-		if self:knownBy(who) then
-			game.logPlayer(who, "You carefully avoid the trap (%s).", self:getName())
-		end
+		if self:knownBy(who) then game.logPlayer(who, "You carefully avoid the trap (%s).", self:getName()) end
 		return false
 	end
 	if who:attr("walk_sun_path") and game.level then

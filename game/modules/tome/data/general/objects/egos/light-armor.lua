@@ -175,28 +175,27 @@ newEntity{
    greater_ego = 1,
    rarity = 30,
    cost = 65,
-   use_no_energy = true,
    wielder = {
 	  resist_all_on_teleport = resolvers.mbonus_material(10, 10),
 	  defense_on_teleport = resolvers.mbonus_material(20, 10),
 	  effect_reduction_on_teleport = resolvers.mbonus_material(20, 10),
 
 	  resists={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(20, 10),
-	 [DamageType.DARKNESS] = resolvers.mbonus_material(20, 10),
+		 [DamageType.TEMPORAL] = resolvers.mbonus_material(20, 10),
+		 [DamageType.DARKNESS] = resolvers.mbonus_material(20, 10),
 	  },
 
 	  melee_project={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(5, 5),
+		[DamageType.DARKNESS] = resolvers.mbonus_material(5, 5),
 	  },
 	  ranged_project={
-	 [DamageType.TEMPORAL] = resolvers.mbonus_material(5, 5),
+		[DamageType.DARKNESS] = resolvers.mbonus_material(5, 5),
 	  },
    },
 
    charm_power = resolvers.mbonus_material(80, 20),
    charm_power_def = {add=5, max=10, floor=true},
-   resolvers.charm("blink to a nearby random location", 25, function(self, who)
+   resolvers.charm("blink to a nearby random location (rad %d)", 25, function(self, who)
 			  game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 			  who:teleportRandom(who.x, who.y, self:getCharmPower(who))
 			  game.level.map:particleEmitter(who.x, who.y, 1, "teleport")

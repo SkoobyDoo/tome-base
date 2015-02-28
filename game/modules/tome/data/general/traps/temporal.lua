@@ -33,7 +33,7 @@ newEntity{ base = "TRAP_TEMPORAL",
 	color=colors.VIOLET,
 	message = "@Target@ is caught in a distorted pocket of time!",
 	triggered = function(self, x, y, who)
-		who:paradoxDoAnomaly(0, "no-major", "forced", who)
+		who:paradoxDoAnomaly(100, 0, {anomaly_type="no-major"})
 		return true
 	end,
 }
@@ -46,7 +46,7 @@ newEntity{ base = "TRAP_TEMPORAL",
 	color=colors.PURPLE,
 	message = "@Target@ is caught in an extremely distorted pocket of time!",
 	triggered = function(self, x, y, who)
-		who:paradoxDoAnomaly(0, "major", "forced", who)
+		who:paradoxDoAnomaly(100, 0, {anomaly_type="major"})
 		return true
 	end,
 }

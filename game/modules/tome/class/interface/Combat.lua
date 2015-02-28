@@ -394,14 +394,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			atk = atk + eff.atk
-		end
-	end
-
-
 	-- track weakness for hate bonus before the target removes it
 	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
 
@@ -436,6 +428,14 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			repelled = true
 		end
 	end
+	
+	if target:knowTalent(target.T_BLADE_WARD) and target:hasDualWeapon() then
+		local chance = target:callTalent(target.T_BLADE_WARD, "getChance")
+		if rng.percent(chance) then
+			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
+			repelled = true
+		end
+	end
 
 	if repelled then
 		self:logCombat(target, "#Target# repels an attack from #Source#.")
@@ -443,7 +443,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		evaded = true
 		self:logCombat(target, "#Target# evades #Source#.")
 	elseif not self.turn_procs.auto_melee_hit and self:attr("hit_penalty_2h") and rng.percent(20 - (self.size_category - 4) * 5) then
-		self:logCombat(target, "#Source# misses #Target# TOTO.")
+		self:logCombat(target, "#Source# misses #Target#.")
 		target:fireTalentCheck("callbackOnMeleeMiss", self, dam)
 	elseif self.turn_procs.auto_melee_hit or (self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or target:attr("blind_fighted") or rng.chance(3))) then
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
@@ -715,9 +715,10 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		elseif self:hasDualWeapon() then chance = 50
 		end
 		if rng.percent(chance) then
+			local t = self:getTalentFromId(self.T_ARCANE_DESTRUCTION)
 			local typ = rng.table{{DamageType.FIRE,"ball_fire"}, {DamageType.LIGHTNING,"ball_lightning_beam"}, {DamageType.ARCANE,"ball_arcane"}}
-			self:project({type="ball", radius=2, friendlyfire=false}, target.x, target.y, typ[1], self:combatSpellpower() * 2)
-			game.level.map:particleEmitter(target.x, target.y, 2, typ[2], {radius=2, tx=target.x, ty=target.y})
+			self:project({type="ball", radius=self:getTalentRadius(t), friendlyfire=false}, target.x, target.y, typ[1], self:combatSpellpower() * 2 * t.getDamMult(self, t))
+			game.level.map:particleEmitter(target.x, target.y, self:getTalentRadius(t), typ[2], {radius=2, tx=target.x, ty=target.y})
 		end
 	end
 
@@ -1232,7 +1233,7 @@ function _M:combatAttackBase(weapon, ammo)
 end
 function _M:combatAttack(weapon, ammo)
 	local stats
-	if self:attr("use_psi_combat") then stats = self:getCun(100, true) - 10
+	if self:attr("use_psi_combat") then stats = (self:getCun(100, true) - 10) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	elseif weapon and weapon.wil_attack then stats = self:getWil(100, true) - 10
 	else stats = self:getDex(100, true) - 10
 	end
@@ -1244,7 +1245,7 @@ end
 
 function _M:combatAttackRanged(weapon, ammo)
 	local stats
-	if self:attr("use_psi_combat") then stats = self:getCun(100, true) - 10
+	if self:attr("use_psi_combat") then stats = (self:getCun(100, true) - 10) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	elseif weapon and weapon.wil_attack then stats = self:getWil(100, true) - 10
 	else stats = self:getDex(100, true) - 10
 	end
@@ -1284,9 +1285,6 @@ end
 function _M:combatAPR(weapon)
 	weapon = weapon or self.combat or {}
 	local addapr = 0
-	if self:knowTalent(self.T_WEAPON_FOLDING) and self:isTalentActive(self.T_WEAPON_FOLDING) then
-		addapr = addapr + (self:callTalent(self.T_WEAPON_FOLDING, "getDamage")/2)
-	end
 	return self.combat_apr + (weapon.apr or 0) + addapr
 end
 
@@ -1311,7 +1309,7 @@ end
 --- Gets the damage range
 function _M:combatDamageRange(weapon, add)
 	weapon = weapon or self.combat or {}
-	return (self.combat_damrange or 0) + (weapon.damrange or 1.1) + (add or 0)
+	return (self.combat_damrange or 0) + (weapon.damrange or (1.1 - (add or 0))) + (add or 0)
 end
 
 --- Scale damage values
@@ -1504,8 +1502,14 @@ function _M:getDammod(combat)
 	if combat.talented == 'knife' and self:knowTalent('T_LETHALITY') then sub('str', 'cun') end
 	if combat.talented and self:knowTalent('T_STRENGTH_OF_PURPOSE') then sub('str', 'mag') end
 	if self:attr 'use_psi_combat' then
-		sub('str', 'wil')
-		sub('dex', 'cun')
+		if dammod['str'] then 
+			dammod['str'] = (dammod['str'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
+			sub('str', 'wil')
+		end
+		if dammod['dex'] then 
+			dammod['dex'] = (dammod['dex'] or 0) * (0.6 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
+			sub('dex', 'cun') 
+		end
 	end
 
 	-- Add stuff like lethality here.
@@ -1536,10 +1540,6 @@ function _M:combatDamage(weapon, adddammod)
 		for stat, mod in pairs(adddammod) do
 			totstat = totstat + self:getStat(stat) * mod
 		end
-	end
-
-	if self:attr("use_psi_combat") then
-		totstat = totstat * (0.8 + self:callTalent(self.T_RESONANT_FOCUS, "bonus")/100)
 	end
 
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
@@ -1584,9 +1584,6 @@ function _M:combatPhysicalpower(mod, weapon, add)
 	add = add + self:combatTrainingDamage(weapon)
 
 	local str = self:getStr()
-	if self:knowTalent(Talents.T_STRENGTH_OF_PURPOSE) then
-		str = self:getMag()
-	end
 
 	local d = math.max(0, (self.combat_dam or 0) + add + str) -- allows strong debuffs to offset strength
 	if self:attr("dazed") then d = d / 2 end
@@ -1623,6 +1620,8 @@ function _M:combatSpellpower(mod, add)
 	local d = math.max(0, (self.combat_spellpower or 0) + add + self:getMag())
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
+
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return self:rescaleCombatStats(d) * mod * am
 end
@@ -1755,14 +1754,14 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 			chance = chance + p.power
 		end
 	end
-	
 	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			chance = chance + eff.crit
+		if eff and eff.target == target then
+			chance = chance + eff.power
+			crit_power_add = crit_power_add + (eff.power/100)
 		end
 	end
-
+	
 	if target then
 		chance = chance - target:combatCritReduction()
 	end
@@ -1927,6 +1926,8 @@ function _M:combatMindpower(mod, add)
 
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
+
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return self:rescaleCombatStats(d) * mod
 end

@@ -31,6 +31,13 @@ newEntity{ base = "BASE_LORE",
 	encumberance = 0,
 }
 end
+newEntity{ base = "BASE_LORE",
+	define_as = "LORE_SONG",
+	name = "investigator Churrack note", lore="conclave-vault-song",
+	desc = [[A very faded note, nearly unreadable.]],
+	rarity = false,
+	encumberance = 0,
+}
 
 newEntity{ base = "BASE_GREATMAUL", define_as = "ASTELRID_CLUBSTAFF",
 	power_source = {arcane=true},
@@ -41,6 +48,7 @@ newEntity{ base = "BASE_GREATMAUL", define_as = "ASTELRID_CLUBSTAFF",
 	level_range = {20, 30},
 	require = { stat = { str=23 }, },
 	cost = 650,
+	rarity = false,
 	material_level = 3,
 	combat = {
 		dam = 45,

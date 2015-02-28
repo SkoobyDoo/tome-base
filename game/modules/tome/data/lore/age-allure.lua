@@ -218,11 +218,12 @@ newLore{
 
 With access to better components, we can make the same basic improvements to their strength as we could before, but the changes do not stop there!  With so many subjects to work with, and the Overseers' encouragement to take risks, we've made them much larger (with associated multiplying effects on their effectiveness in combat), and reinforced their constitution to be capable of bearing more inscriptions without collapsing under the stress.  A fellow researcher had the brilliant idea to use this runic affinity to both enhance their connection to magic's weave, and make them biologically and structurally dependent on it; now, our front-line soldiers can conjure devastating fireballs with little training, and should those hairy-footed vermin attempt to raise one of these soldiers from the dead, they will collapse, having lost the magic that kept them intact when they still lived.  
 
-The Overseers have been working with us personally to make psychological changes as well; with the blank slate provided by the amnesia spell, we've managed to give them a mindset that will serve them well both during the war and for our glorious reign that shall follow.  Extraordinarily dutiful, helpful and striving for excellence in their daily lives without lusting for power or personal glory, wise about their place in the world, and slow to anger...  but utterly ferocious when needed.  Just as the Higher were created to be leaders and scholars, and have proven successful in this role beyond the Conclave's wildest dreams, these new "Ogres" (as the staff has taken to nicknaming them) shall be our laborers and soldiers, a solid foundation of hard work and dutiful enforcement on which our society shall be built.  There will still be a place for the unaltered races, of course; their natural adaptability will make them perfect to fill in the gaps, as the glue that holds everything else together, and the perspective granted by elves' long lives will make them invaluable as advisers, researchers, and policy-makers.
+The Overseers have been working with us personally to make psychological changes as well; with the blank slate provided by the amnesia spell, we've managed to give them a mindset that will serve them well both during the war and for our glorious reign that shall follow.  Extraordinarily dutiful, helpful and striving for excellence in their daily lives without lusting for power or personal glory, wise about their place in the world, and slow to anger...  but utterly ferocious when needed.  Just as the Higher were created to be scholars and policy-makers, and have proven successful in this role beyond the Conclave's wildest dreams, these new "Ogres" (as the staff has taken to nicknaming them) shall be our laborers and soldiers, a solid foundation of hard work and dutiful enforcement on which our society shall be built.  There will still be a place for the unaltered races, of course; their natural adaptability will make them perfect to fill in the gaps, as the glue that holds everything else together.
 
 These Ogres are integrating into our military very well!  The rank-and-file soldiers know better than to attract attention from the Overseers by asking too many questions about where their new, giant allies came from, and thus acceptance came rather swiftly once they saw these creations in action.  We received one report that an Ogre sergeant was seen eating a particularly insolent halfling alive, after he feigned surrender and attempted to cast a lightning spell; this spectacle was both highly motivating to our troops and demoralized the remnants of that halfling's squad into surrendering, so I shall be enhancing their digestive capabilities as well.  
 
-For the most part, though, our research work is done.  All that's left to do is get a response from the Overseers as to whether to increase their birth rate or not (currently set very low as a precaution against future overpopulation), and improve the training we give freshly-created Ogres for runic magic, given that regular maintenance of their runes is necessary to keep them alive.  This is not to say we have idle staff, however!  Some of us have made a project for after the war ends - a potion compatible with Ogric biology, capable of putting them in a "sleeping" state where they do not age or starve.  We can keep these "sleeping" Ogres stationed near bridges that may need regular maintenance, stashed in reserve armories, or any other place where you'd need a batch of dependable workers or guards, without having to incur all the other costs associated with keeping extra citizens around.]]
+For the most part, though, our research work is done.  All that's left to do is get a response from the Overseers as to whether to increase their birth rate or not (currently set very low as a precaution against future overpopulation), and improve the training we give freshly-created Ogres for runic magic, given that regular maintenance of their runes is necessary to keep them alive.  This is not to say we have idle staff, however!  Some of us have made a project for after the war ends - a modification to our experimental growth-tanks, rendering them capable of holding a person of Ogric biology indefinitely in a "sleeping" state where they do not age or starve.  We can install tanks filled with these "sleeping" Ogres stationed near bridges that may need regular maintenance, stashed in reserve armories, or any other place where you'd need a batch of dependable workers or guards, without having to incur all the other costs associated with keeping extra citizens around.
+]]
 }
 
 newLore{
@@ -237,7 +238,7 @@ We are doomed, no matter what happens.  My orders from the Overseers in such a s
 
 We have a small supply of emergency rations, but it would last us a couple of months at the longest, and we cannot assume the Conclave will reclaim this territory in that time.  We could try to repurpose the infusion herb-garden for making edible crops, but that would only buy us a month after that before the grow-lights lost their magic.  Without drastic steps, we will surely die of starvation; fortunately, we have drastic steps available to us.
 
-This is my last order: I have prepared a golem to apply the Ogric inscriptions to us, and updated all of our records to reflect our best current knowledge of their effects and effectiveness.  I have also brewed several doses of the "stasis" potion for each of us.  By the time you find this note, I will have already undergone this process myself, and will be hibernating in one of the storage rooms.  If you do not wish to die, you should acquire a weapon from the armory, then follow my lead, after scattering yourselves evenly throughout the facility.  When we are sleeping, we will be immune to the ravages of time, and prepared to greet whoever finally digs their way down and finds us.  Hopefully, it will be Conclave reinforcements, in which case we will stand down, give them our notes, and await further orders.  And if it isn't the Conclave...  make them regret it.  Send a message stronger than any NO TRESPASSING sign ever could, then resume your slumber.
+This is my last order: I have prepared our surgical golems to apply the Ogric inscriptions to us, and updated all of our records to reflect our best current knowledge of their effects and effectiveness.  I have also had the golems upgrade all of our growth vats (ones in use included) to our newest "stasis tank" design, and furthermore freed up enough space for each of us to use one by...  disposing of some of the test subjects who had low chances of survival (an action I am already beginning to regret).  By the time you find this note, I will have already undergone this process myself, and will be hibernating in a tank I've had moved to my office.  If you do not wish to die, you should acquire a weapon from the armory, then follow my lead.  When we are dormant, we will be immune to the ravages of time, and prepared to greet whoever finally digs their way down and finds us.  Hopefully, it will be Conclave reinforcements, in which case we will stand down, give them our notes, and await further orders.  And if it isn't the Conclave...  make them regret it.  Send a message stronger than any NO TRESPASSING sign ever could, then resume your slumber.
 
 It has been an honor working with such talented individuals, and an honor doing everything I can for a noble cause.  Perhaps we still had some progress to make, but overall I'm proud of what we've accomplished, and the contributions the Ogre race will make to all of Maj'Eyal.  
 
@@ -247,4 +248,80 @@ Healer Astelrid]],
 		game:setAllowedBuild("race_giant")
 		game:setAllowedBuild("race_ogre", true)
    	end,
+}
+
+newLore{
+	id = "conclave-vault-song",
+	category = "age of allure",
+	name = "investigator Churrack note",
+	lore = [[FROM: Investigator Churrack
+TO: Whoever holds the position of High Overseer of Loyalty when we're let out
+ 
+Though I'm trapped in here with these healers,  I haven't stopped prying to determine if their loyalties lie with us or with themselves.  This case has more layers than a damn onion; while Astelrid did disobey a direct order (and several more by revealing the existence of that order), her alternative seems to fit our goals nonetheless.  The others seem to follow her lead enthusiastically, and a few have been singing this song as they wait in line for their treatment:
+ 
+#{italic}#Some Nargol once told me their Empire's gonna roll me
+We ain't as strong as all their undead
+She looked kind of silly with giant feet so furry
+And an ogre's club smashing her forehead
+ 
+Well, the Empire's coming and they won't stop coming
+So you'd better be ready to hit the ground running
+Didn't make sense to kill everyone
+Praise the Overseers, but that plan was dumb
+ 
+So much to do, so much to see
+So what's wrong with waiting in stasis?
+We'll never know if we don't try
+We'll never shine if we just die
+ 
+Hey, now, you're a healer, get ogrified, go wait
+Hey, now, you're a guard now, stand vigil in the tanks
+They won't work on normal humans
+But we won't age sleeping in these ruins
+ 
+It's a safe place, even as it gets older
+'cause this war's not over until we say it's ogre
+But the golems outside beg to differ
+Judging by the sights in the scrying-orb's picture
+ 
+The ground we're under was getting pretty thin
+Their scouts are onto us, and they've got us all pinned
+We blew the tunnels - no way out,
+until the Conclave finds us, give trespassers a rout!
+ 
+Hey, now, you're a healer, get ogrified, go wait
+Hey, now, you're a guard now, stand vigil in the tanks
+They won't work on normal humans
+But we won't age sleeping in these ruins
+ 
+Hey, now, you're a healer, get ogrified, go wait
+Hey, now, you're a guard now, stand vigil in the tanks
+They won't work on normal humans
+But we won't age sleeping in these ruins
+ 
+Somebody once asked if we'd finished, but alas
+While I'm proud of what we've done in this place
+We weren't done yet with this project,
+but we're close enough where this isn't neglect
+Eyal will appreciate our new race!
+ 
+Well, the years'll start coming and they won't stop coming
+So you'd better be ready to hit the ground running
+Didn't make sense to kill everyone
+Praise the Overseers, but that plan was dumb
+ 
+So much to do, so much to see
+So what's wrong with waiting in stasis?
+We'll never know if we don't try
+We'll never shine if we just die
+ 
+Hey, now, you're a healer, get ogrified, go wait
+Hey, now, you're a guard now, stand vigil in the tanks
+They won't work on normal humans
+But we won't age sleeping in these ruins
+ 
+They won't work on normal humans
+But we won't age sleeping in these ruins#{normal}#
+ 
+...Everyone reacts to grief differently, I guess.  #{bold}#-Churrack#{normal}#]],
 }

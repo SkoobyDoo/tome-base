@@ -53,6 +53,7 @@ end
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "glowing chest"
 g.display='~' g.color_r=255 g.color_g=215 g.color_b=0 g.notice = true
+g.always_remember = true g.special_minimap = {b=150, g=50, r=90}
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
 	g.add_displays = g.add_displays or {}
@@ -87,6 +88,7 @@ g.block_move = function(self, x, y, who, act, couldpass)
 		self.block_move = nil
 		self.special = nil
 		self.autoexplore_ignore = true
+		self.name = "glowing chest (opened)"
 
 		if self.add_displays and self.add_displays[1] then 
 			self.add_displays[1].image = "object/chestopen3.png"
@@ -98,5 +100,5 @@ g.block_move = function(self, x, y, who, act, couldpass)
 	return false
 end
 game.zone:addEntity(game.level, g, "terrain", x, y)
-
+print("[EVENT] glowing-chest placed at ", x, y)
 return true

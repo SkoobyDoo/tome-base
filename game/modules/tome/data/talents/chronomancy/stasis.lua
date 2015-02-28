@@ -25,17 +25,20 @@ newTalent{
 	require = chrono_req1,
 	mode = "passive",
 	points = 5,
-	getWilMult = function(self, t) return self:combatTalentScale(t, 0.15, 0.5) end,
-	getTuningAdjustment= function(self, t) return math.floor(self:combatTalentScale(t, 2, 8, "log")) end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "paradox_will_multi", t.getWilMult(self, t))
+	getTuningAdjustment = function(self, t) 
+		local duration = math.floor(self:combatTalentScale(t, 2, 8))
+		return math.min(duration, 10) 
+	end,
+	getTuning = function(self, t) return 1 + self:combatTalentLimit(t, 6, 0, 3) end,
+	callbackOnActBase = function(self, t)
+		tuneParadox(self, t, t.getTuning(self, t))
 	end,
 	info = function(self, t)
-		local will = t.getWilMult(self, t)
+		local tune = t.getTuning(self, t)
 		local duration = t.getTuningAdjustment(self, t)
-		return ([[You've learned to focus your control over the spacetime continuum, and quell anomalous effects.  Increases your Willpower for determing modified Paradox by %d%%.
-		Additionally reduces the time it takes you to adjust your Paradox with Spacetime Tuning by %d turns.]]):
-		format(will * 100, duration)
+		return ([[When Spacetime Tuning is inactive you automatically adjust your Paradox %0.2f points towards your preferred Paradox each turn.
+		The time it takes you to adjust your Paradox with Spacetime Tuning is also reduced by %d turns.]]):
+		format(tune, duration)
 	end,
 }
 
@@ -47,7 +50,6 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 18,
 	tactical = { DEFEND = 2 },
-	range = 10,
 	no_energy = true,
 	getMaxAbsorb = function(self, t) return 50 + self:combatTalentSpellDamage(t, 50, 450, getParadoxSpellpower(self, t)) end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, util.bound(5 + math.floor(self:getTalentLevel(t)), 5, 15)) end,
@@ -77,13 +79,13 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 8,
-	tactical = { ATTACKAREA = 1, DISABLE = 3 },
+	tactical = { ATTACKAREA = { TEMPORAL = 1 }, DISABLE = { stun = 3 } },
 	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=self:spellFriendlyFire(), talent=t}
 	end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.ceil(self:combatTalentScale(t, 2.3, 4.3))) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
@@ -100,25 +102,13 @@ newTalent{
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
 				self:project({type="hit"}, px, py, DamageType.TEMPORAL, dam)
-				
-				-- Apply Stun or Time Prison
-				if self:hasEffect(self.EFF_STATIC_HISTORY) then
-					-- Freeze it, if we pass the test
-					local sx, sy = game.level.map:getTileToScreen(px, py)
-					local hit = self:checkHit(getParadoxSpellpower(self, t) - (target:attr("continuum_destabilization") or 0), target:combatSpellResist(), 0, 95, 15)
-					if hit then
-						if target ~= self then target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3), no_ct_effect=true}) end
-						target:setEffect(target.EFF_TIME_PRISON, dur, {})
-					else
-						game.logSeen(target, "%s resists the time prison.", target.name:capitalize())
-					end
-				elseif target:canBe("stun") then
+				if target:canBe("stun") then
 					target:setEffect(target.EFF_STUNNED, dur, {apply_power=getParadoxSpellpower(self, t)})
 				end
 			end
 		end)
 		
-		game.level.map:particleEmitter(x, y, tg.radius, "temporal_flash", {radius=tg.radius, tx=x, ty=y})
+		game.level.map:particleEmitter(x, y, tg.radius, "generic_sploom", {rm=230, rM=255, gm=230, gM=255, bm=30, bM=51, am=35, aM=90, radius=tg.radius, basenb=120})
 		game:playSoundNear(self, "talents/tidalwave")
 		return true
 	end,
@@ -126,7 +116,7 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self, t)
-		return ([[Inflicts %0.2f temporal damage, and attempts to stun all other creatures in a radius %d ball for %d turns.
+		return ([[Inflicts %0.2f temporal damage, and attempts to stun all targets in a radius %d ball for %d turns.
 		The damage will scale with your Spellpower.]]):
 		format(damDesc(self, DamageType.TEMPORAL, damage), radius, duration)
 	end,
@@ -139,21 +129,18 @@ newTalent{
 	points = 5,
 	cooldown = 24,
 	tactical = { PARADOX = 2 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3.5, 8.5))) end,
-	getParadoxMulti = function(self, t) return self:combatTalentLimit(t, 1, 0.2, .60) end, -- limit 100%
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(1 + self:combatTalentScale(t, 1, 7))) end,
 	no_energy = true,
 	action = function(self, t)
-		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {power=t.getParadoxMulti(self, t)})
+		self:setEffect(self.EFF_STATIC_HISTORY, t.getDuration(self, t), {})
 		
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)
-		local multi = t.getParadoxMulti(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns Stop will remove affected targets from the flow of time rather than stunning them.  In this state, the target can neither act nor be harmed.
-		Time does not pass at all for the target, no talents will cooldown, no resources will regen, and so forth.
-		Additionally all your chronomancy spells cost %d%% less Paradox while this effect is active.]]):
-		format(duration, multi)
+		return ([[For the next %d turns you may not create minor anomalies.  You do not regain Paradox or lose the spell you're casting if a random anomaly would normally occur.
+		This spell has no effect on major anomalies.]]):
+		format(duration)
 	end,
 }

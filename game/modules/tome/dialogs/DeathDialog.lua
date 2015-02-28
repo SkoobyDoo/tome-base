@@ -131,15 +131,19 @@ end
 function _M:resurrectBasic(actor)
 	actor.dead = false
 	actor.died = (actor.died or 0) + 1
-
+	
 	-- Find the position of the last dead
 	local last = game.party:findLastDeath()
 
 	local x, y = util.findFreeGrid(last.x, last.y, 20, true, {[Map.ACTOR]=true})
 	if not x then x, y = last.x, last.y end
-
+	
+	-- invulnerable while moving so we don't get killed twice
+	local old_invuln = actor.invulnerable
+	actor.invulnerable = 1
 	actor.x, actor.y = nil, nil
 	actor:move(x, y, true)
+	actor.invulnerable = old_invuln
 
 	game.level:addEntity(actor)
 	game:unregisterDialog(self)
@@ -165,10 +169,13 @@ function _M:eidolonPlane()
 			game.log("#LIGHT_RED#You have %s left.", (self.actor:attr("easy_mode_lifes") and self.actor:attr("easy_mode_lifes").." life(s)") or "no more lives")
 		end
 
+		local is_exploration = game.permadeath == game.PERMADEATH_INFINITE
 		self:cleanActor(self.actor)
 		self:resurrectBasic(self.actor)
 		for uid, e in pairs(game.level.entities) do
-			self:restoreResources(e)
+			if not is_exploration or game.party:hasMember(e) then
+				self:restoreResources(e)
+			end
 		end
 
 		local oldzone = game.zone
@@ -265,7 +272,10 @@ function _M:use(item)
 		game:saveGame()
 	elseif act == "threads" then
 		game:chronoRestore("see_threads_base", true)
-		game:onTickEnd(function()game.player:removeEffect(game.player.EFF_SEE_THREADS)end)
+		game:onTickEnd(function()
+			game._chronoworlds = nil
+			game.player:removeEffect(game.player.EFF_SEE_THREADS)end
+		)
 		game:saveGame()
 	elseif act == "easy_mode" then
 		self:eidolonPlane()

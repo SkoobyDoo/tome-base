@@ -118,9 +118,10 @@ end
 -- @param inven_id = inventory id to add to
 -- @param o = object to add
 -- @param no_unstack = boolean to prevent unstacking the object to be added
+-- @param force_item to add to the set position instead of to the end
 -- @return false if the object could not be added or true, inventory index it was moved to, remaining stack if any or false
 -- checks o:on_preaddobject(self, inven) (must return true to add to inventory)
-function _M:addObject(inven_id, o, no_unstack)
+function _M:addObject(inven_id, o, no_unstack, force_item)
 	local inven = self:getInven(inven_id)
 	local slot
 	local stack, rs, ok
@@ -130,7 +131,7 @@ function _M:addObject(inven_id, o, no_unstack)
 	if #inven >= inven.max then
 		if stackable and not no_unstack then -- try to find a stack to add to
 			for i, obj in ipairs(inven) do
-				if o:canStack(obj) and obj:getNumber() < stack_limit then
+				if o:canStack(obj) and obj:getNumber() < stack_limit and (not force_item or force_item == i) then
 					slot = i
 					stack = obj break -- only room left
 				end
@@ -152,13 +153,13 @@ function _M:addObject(inven_id, o, no_unstack)
 		elseif o:getNumber() > stack_limit then -- stack too big - unstack some before adding
 			stack, last = o:unstack(o:getNumber() - stack_limit)
 			table.insert(inven, o)
-			o = stack
 		else
 			table.insert(inven, o)
 		end
 		if last then rs = false	end
-	else 
-		table.insert(inven, o)
+	else
+		force_item = math.min(#inven + 1, force_item or #inven + 1)
+		table.insert(inven, force_item, o)
 	end
 
 	-- Do whatever is needed when wearing this object
@@ -170,7 +171,7 @@ function _M:addObject(inven_id, o, no_unstack)
 
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
-	return true, slot or #inven, rs and o
+	return true, slot or #inven, rs and stack
 end
 
 --- Returns the position of an item in the given inventory, or nil
@@ -250,11 +251,11 @@ end
 function _M:removeObject(inven_id, item, no_unstack)
 	local inven = self:getInven(inven_id)
 
-	if not inven[item] then return false, true end
+	if not inven[item] then return nil, true end
 
 	local o, finish = inven[item], true
 
-	if o:check("on_preremoveobject", self, inven) then return false, true end
+	if o:check("on_preremoveobject", self, inven) then return nil, true end
 	if no_unstack then
 		if type(no_unstack) == "number" then
 			o, finish = o:unstack(no_unstack)
@@ -379,6 +380,11 @@ end
 function _M:canWearObject(o, try_slot)
 	local req = rawget(o, "require")
 
+	-- check if the slot matches dammit
+	if try_slot and try_slot ~= o.slot and try_slot ~= self:getObjectOffslot(o) then
+		return nil, "wrong equipment slot"
+	end
+
 	-- Check prerequisites
 	if req then
 		-- Obviously this requires the ActorStats interface
@@ -446,41 +452,54 @@ end
 --	@param o = object to be worn
 --	@param replace = boolean allow first object in wearable inventory to be removed to make space if needed
 --	@vocal = boolean to post messages to game.logSeen(self, ....)
+--  @force_inven = try to equip into this inventory only
+--  @force_item = attempt to equip/replace into that slot
 --	returns true or replaced object if succeeded or false if not, remaining stack of o if any
 --  checks o:on_canwear(self, inven) (return true to prevent wearing)
-function _M:wearObject(o, replace, vocal)
-	local inven = o:wornInven()
-	if not inven then
-		if vocal then game.logSeen(self, "%s is not wearable.", o:getName{do_color=true}) end
+function _M:wearObject(o, replace, vocal, force_inven, force_item)
+	-- keep it cause stack might change later
+	local o_name = o:getName{do_color=true}
+
+	local inven_id = force_inven or o:wornInven()
+	local inven = self:getInven(inven_id)
+	if not inven_id then
+		if vocal then game.logSeen(self, "%s is not wearable.", o_name) end
 		return false
 	end
-	if not self.inven[inven] then
-		if vocal then game.logSeen(self, "%s can not wear %s.", self.name, o:getName{do_color=true}) end
+	if not inven then
+		if vocal then game.logSeen(self, "%s can not wear %s.", self.name, o_name) end
 		return false
 	end
 
-	local ok, err = self:canWearObject(o)
+
+	local ok, err = self:canWearObject(o, inven.name)
 	if not ok then
-		if vocal then game.logSeen(self, "%s can not wear: %s (%s).", self.name:capitalize(), o:getName{do_color=true}, err) end
+		if vocal then game.logSeen(self, "%s can not wear (%s): %s (%s).", self.name:capitalize(), self.inven_def[inven.name].name:lower(), o_name, err) end
 		return false
 	end
 	if o:check("on_canwear", self, inven) then return false end
 	local offslot, stackable = self:getObjectOffslot(o), o:stackable()
-	local added, slot, stack = self:addObject(inven, o)
+	local added, slot, stack = self:addObject(inven_id, o, nil, force_item)
 
 	if added then
-		if vocal then game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true}) end
+		if vocal then game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o_name) end
 		return true, stack
-	elseif offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
-		if vocal then game.logSeen(self, "%s wears(offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
+	elseif not force_inven and offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
+		if vocal then game.logSeen(self, "%s wears (offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
 		added, slot, stack = self:addObject(self:getInven(offslot), o)
 		return added, stack
 	elseif replace then -- no room but replacement is allowed
-		if stackable then 
+		local ro = self:takeoffObject(inven_id, force_item or 1)
+		if not ro then return false end
+		-- Check if we still can wear it, to prevent the replace-abuse
+		local ok, err = self:canWearObject(o, inven.name)
+		if not ok then
+			if vocal then game.logSeen(self, "%s can not wear (%s): %s (%s).", self.name:capitalize(), self.inven_def[inven.name].name:lower(), o_name, err) end
+			if ro then self:addObject(inven_id, ro, true, force_item) end
+			return false
 		end
-		local ro = self:removeObject(inven, 1, true)
-		added, slot, stack = self:addObject(inven, o)
-		if vocal then game.logSeen(self, "%s wears(replacing %s): %s.", self.name:capitalize(), ro:getName{do_color=true}, o:getName{do_color=true}) end
+		added, slot, stack = self:addObject(inven_id, o, nil, force_item)
+		if vocal then game.logSeen(self, "%s wears (replacing %s): %s.", self.name:capitalize(), ro:getName{do_color=true}, o_name) end
 		if stack and ro:stack(stack) then -- stack remaining stack with old if possible (ignores stack limits)
 			stack = nil
 		end

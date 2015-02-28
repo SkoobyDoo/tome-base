@@ -42,7 +42,12 @@ newTalent{
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.LIGHT, self:spellCrit(t.getDamage(self, t)), {type="light"})
+
+		local particule = {type="light"}
+		if core.shader.allow("adv") then
+			particule = {type="volumetric", args={kind="conic_cylinder", life=14, base_rotation=rng.range(160, 200), radius=4, y=1.8, density=40, shininess=20, growSpeed=0.006, img="sunray"}}
+		end
+		self:project(tg, x, y, DamageType.LIGHT, self:spellCrit(t.getDamage(self, t)), particule)
 
 		if self:getTalentLevel(t) >= 3 then
 			local _ _, x, y = self:canProject(tg, x, y)
@@ -59,8 +64,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[Calls forth a beam of light from the Sun, doing %0.1f Light damage to the target.
-		At level 3 the beam will be so intense it will also blind the target and everyone in a radius 2 around it for %d turns.
+		return ([[Calls forth a ray of light from the Sun, doing %0.1f Light damage to the target.
+		At level 3 the ray will be so intense it will also blind the target and everyone in a radius 2 around it for %d turns.
 		The damage dealt will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.LIGHT, damage), t.getDuration(self, t))
 	end,

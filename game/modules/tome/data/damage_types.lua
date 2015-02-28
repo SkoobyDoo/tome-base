@@ -231,7 +231,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 				game:delayedLogMessage(source, target, "dark_strike"..(source.uid or ""), "#Source# strikes #Target# in the darkness (%+d%%%%%%%% damage).", dark.damageIncrease) -- resolve %% 3 levels deep
 			end
 		end
-
+		
 		dam = dam + (dam * inc / 100)
 
 		-- Blast the iceblock
@@ -445,11 +445,10 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		if not DamageType:get(type).hideMessage then
 			local visible, srcSeen, tgtSeen = game:logVisible(src, target)
 			if visible then -- don't log damage that the player doesn't know about
-				local source = src.__project_source or src
 				if crit_power > 1 then
-					game:delayedLogDamage(source, target, dam, ("#{bold}#%s%d %s#{normal}##LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), true)
+					game:delayedLogDamage(src, target, dam, ("#{bold}#%s%d %s#{normal}##LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), true)
 				else
-					game:delayedLogDamage(source, target, dam, ("%s%d %s#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), false)
+					game:delayedLogDamage(src, target, dam, ("%s%d %s#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam, DamageType:get(type).name), false)
 				end
 			end
 		end
@@ -725,6 +724,12 @@ newDamageType{
 		state = state or {}
 		useImplicitCrit(src, state)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
+		if realdam > 0 and src:attr("lightning_brainlocks") then
+			local target = game.level.map(x, y, Map.ACTOR)
+			if target and realdam > target.max_life / 10 then
+				target:crossTierEffect(target.EFF_BRAINLOCKED, src:combatMindpower())
+			end
+		end	
 		return realdam
 	end,
 	death_message = {"electrocuted", "shocked", "bolted", "volted", "amped", "zapped"},
@@ -904,13 +909,12 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = state or {}
 		useImplicitCrit(src, state)
-		-- Dont lit magically unlit grids
+		-- Counter magical unlite level before lighting grids
 		local g = game.level.map(x, y, Map.TERRAIN+1)
 		if g and g.unlit then
 			if g.unlit <= dam then game.level.map:remove(x, y, Map.TERRAIN+1)
-			else return end
+			else g.unlit = g.unlit - dam return end -- Lite wears down darkness
 		end
-
 		game.level.map.lites(x, y, true)
 	end,
 }
@@ -2957,13 +2961,13 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = state or {}
 		useImplicitCrit(src, state)
+		if _G.type(dam) == "number" then dam = {dam=dam, stat=2 + math.ceil(dam/15), apply=src:combatSpellpower()} end
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			local dam = 2 + math.ceil(dam / 15)
-			target:setEffect(target.EFF_TURN_BACK_THE_CLOCK, 3, {power=dam, apply_power=src:combatSpellpower(), min_dur=1})
+			target:setEffect(target.EFF_REGRESSION, 3, {power=dam.stat, apply_power=dam.apply,  min_dur=1, no_ct_effect=true})	
 		end
 		-- Reduce Con then deal the damage
-		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam, state)
+		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam.dam, state)
 	end,
 }
 
@@ -3375,7 +3379,7 @@ newDamageType{
 			state[target] = true
 			local old_pen = 0
 
-			game.level.map:particleEmitter(x, y, 1, "distortion")
+			if core.shader.allow("distort") then game.level.map:particleEmitter(x, y, 1, "distortion") end
 
 			-- Spike resists pen
 			if dam.penetrate then
@@ -3631,10 +3635,52 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = state or {}
 		useImplicitCrit(src, state)
-		if _G.type(dam) == "number" then dam = {dam=dam, apply_power=apply_power or src:combatSpellpower()} end
+		if _G.type(dam) == "number" then dam = {dam=dam, dur=dur or 4, apply_power=apply_power or src:combatSpellpower()} end
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam.dam, daze=dam.daze, src=src, apply_power=dam.apply_power, no_ct_effect=true})
+			target:setEffect(target.EFF_DIMENSIONAL_ANCHOR, 1, {damage=dam.dam, src=src, dur=dam.dur, apply_power=dam.apply_power, no_ct_effect=true})
+		end
+	end,
+}
+
+-- Causes a random warp status effect; these do cause cross tier effects
+newDamageType{
+	name = "phase pulse", type = "RANDOM_WARP",
+	projector = function(src, x, y, type, dam, state)
+		state = state or {}
+		useImplicitCrit(src, state)
+		
+		local target = game.level.map(x, y, Map.ACTOR)
+		if not target or target.dead then return end
+		
+		local eff = rng.range(1, 4)
+		local power = dam.apply_power or src:combatSpellpower()
+		local dur = dam.dur or 4
+		-- Pull random effect
+		if eff == 1 then
+			if target:canBe("stun") then
+				target:setEffect(target.EFF_STUNNED, dur, {apply_power=power})
+			else
+				game.logSeen(target, "%s resists the stun!", target.name:capitalize())
+			end
+		elseif eff == 2 then
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_BLINDED, dur, {apply_power=power})
+			else
+				game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
+			end
+		elseif eff == 3 then
+			if target:canBe("pin") then
+				target:setEffect(target.EFF_PINNED, dur, {apply_power=power})
+			else
+				game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+			end
+		elseif eff == 4 then
+			if target:canBe("confusion") then
+				target:setEffect(target.EFF_CONFUSED, dur, {power=50, apply_power=power})
+			else
+				game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
+			end
 		end
 	end,
 }

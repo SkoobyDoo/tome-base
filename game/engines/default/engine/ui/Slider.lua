@@ -46,11 +46,12 @@ function _M:display(x, y)
 	self.top.t:toScreenFull(x, y, self.top.w, self.top.h, self.top.tw, self.top.th)
 	self.bottom.t:toScreenFull(x, y + self.h - self.bottom.h, self.bottom.w, self.bottom.h, self.bottom.tw, self.bottom.th)
 	self.middle.t:toScreenFull(x, y + self.top.h, self.middle.w, self.h - self.top.h - self.bottom.h, self.middle.tw, self.middle.th)
-	self.pos = util.minBound(self.pos, 1, self.max)
+	local max = math.max(self.max, 1)
+	local pos = util.minBound(self.pos, 0, max)
 	if self.inverse then
-		y = y + self.h - ((self.pos - 1) / (self.max - 1)) * (self.h - self.bottom.h - self.top.h - self.sel.h) - self.bottom.h - self.sel.h
+		y = y + self.h - (pos / max) * (self.h - self.bottom.h - self.top.h - self.sel.h) - self.bottom.h - self.sel.h
 	else
-		y = y + ((self.pos - 1) / (self.max - 1)) * (self.h - self.bottom.h - self.top.h - self.sel.h) + self.top.h
+		y = y + (pos / max) * (self.h - self.bottom.h - self.top.h - self.sel.h) + self.top.h
 	end
 	self.sel.t:toScreenFull(x - (self.sel.w - self.top.w) * 0.5, y, self.sel.w, self.sel.h, self.sel.tw, self.sel.th)
 end

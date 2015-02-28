@@ -87,7 +87,11 @@ newTalent{
 				end
 			end)
 
-			game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy})
+			if core.shader.active() then 
+				game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy}, {type="lightning"})
+			else
+				game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy}) 
+			end
 			sx, sy = actor.x, actor.y
 		end
 		
@@ -142,8 +146,10 @@ newTalent{
 			
 			-- Handle some AI stuff
 			m.ai_state = { talent_in=1, ally_compassion=10 }
-			m.ai_tactic = { closein=0, defend=4, disable=4, escape=4, heal=2, safe_range=3}
-			
+			m.ai_state.tactic_leash = 10
+			-- Try to use stored AI talents to preserve tweaking over multiple summons
+			m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+					
 			return m
 		end
 		
@@ -158,7 +164,7 @@ newTalent{
 						control="full",
 						type="fugue clone",
 						title="Fugue Clone",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
 				
@@ -187,8 +193,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage recieved is split between the three of you.
-		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones.]]):
+		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage received is split between the three of you.
+		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones.
+		Damage you deal to Fugue Clones or that they deal to you or each other is reduced to zero.]]):
 		format(duration)
 	end,
 }
@@ -222,7 +229,7 @@ newTalent{
 	requires_target = true,
 	direct_hit = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	getPower = function(self, t) return self:combatTalentScale(t, 20, 50, 100) end,
+	getPower = function(self, t) return self:combatTalentScale(t, 20, 50) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -237,20 +244,16 @@ newTalent{
 	end,
 	do_instakill = function(self, t)
 		-- search for target because it's ID will change when the chrono restore takes place
-		local tg = false
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and a:hasEffect(a.EFF_CEASE_TO_EXIST) then
-				tg = a
-			end
-		end end
+		local target
+		for _, act in pairs(game.level.entities) do
+			if act.hasEffect and act:hasEffect(act.EFF_CEASE_TO_EXIST) then target = act end
+		end
 		
-		if tg then
+		if target then
 			game:onTickEnd(function()
-				tg:removeEffect(tg.EFF_CEASE_TO_EXIST)
-				game.logSeen(tg, "#LIGHT_BLUE#%s never existed, this never happened!", tg.name:capitalize())
-				tg:die(self)
+				target:removeEffect(target.EFF_CEASE_TO_EXIST)
+				game.logSeen(target, "#LIGHT_BLUE#%s never existed, this never happened!", target.name:capitalize())
+				target:die(self)
 			end)
 		end
 	end,
@@ -294,7 +297,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local power = t.getPower(self, t)
-		return ([[Over the next %d turns, you attempt to remove the target from the timeline, lowering all its resistance by %d%%.
+		return ([[Over the next %d turns, you attempt to remove the target from the timeline, lowering its resistance to physical and temporal damage by %d%%.
 		If you manage to kill the target while the spell is in effect, you'll be returned to the point in time you cast this spell and the target will be slain.
 		This spell splits the timeline.  Attempting to use another spell that also splits the timeline while this effect is active will be unsuccessful.
 		The resistance penalty will scale with your Spellpower.]])

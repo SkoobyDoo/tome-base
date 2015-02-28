@@ -17,8 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- EDGE TODO: Particles, Timed Effect Particles
-
 newTalent{
 	name = "Celerity",
 	type = {"chronomancy/speed-control", 1},
@@ -28,7 +26,7 @@ newTalent{
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 2))) end,
 	callbackOnMove = function(self, t, moved, force, ox, oy)
-		if moved and ox and oy and (ox ~= self.x or oy ~= self.y) then
+		if moved and not force and ox and oy and (ox ~= self.x or oy ~= self.y) then
 			if self.turn_procs.celerity then return end
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_CELERITY, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
@@ -51,7 +49,7 @@ newTalent{
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/200 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 2))) end,
 	callbackOnTalentPost = function(self, t,  ab)
-		if ab.type[1]:find("^chronomancy/") then
+		if ab.type[1]:find("^chronomancy/") and not ab.no_energy then
 			if self.turn_procs.time_dilation then return end
 			local speed = t.getSpeed(self, t)
 			self:setEffect(self.EFF_TIME_DILATION, t.getDuration(self, t), {speed=speed, charges=1, max_charges=3})
@@ -61,7 +59,7 @@ newTalent{
 	info = function(self, t)
 		local speed = t.getSpeed(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[When you use a chronomancy spell you gain %d%% attack, spell, and mind speed for %d turns.  This effect stacks up to three times but can only occur once per turn.
+		return ([[When you use a non-instant chronomancy spell you gain %d%% attack, spell, and mind speed for %d turns.  This effect stacks up to three times but can only occur once per turn.
 		]]):format(speed, duration)
 	end,
 }
@@ -75,7 +73,7 @@ newTalent{
 	cooldown = 24,
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
 	getSpeed = function(self, t) return self:combatTalentScale(t, 10, 30)/100 end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 6) end,
 	no_energy = true,
 	action = function(self, t)
 		self:setEffect(self.EFF_HASTE, t.getDuration(self, t), {power=t.getSpeed(self, t)})

@@ -84,6 +84,9 @@ summonTemporalHound = function(self, t)
 	m.no_breath = 1
 	m.move_others = true
 	
+	-- Hounds are immune to hostile teleports, mostly so they don't get in the way of banish
+	m.teleport_immune = 1
+	
 	-- Make sure to update sustain counter when we die
 	m.on_die = function(self)
 		local p = self.summoner:isTalentActive(self.summoner.T_TEMPORAL_HOUNDS)
@@ -95,17 +98,17 @@ summonTemporalHound = function(self, t)
 	end
 	-- Make sure hounds stay close
 	m.on_act = function(self)
-		if game.level:hasEntity(self.summoner) and core.fov.distance(self.x, self.y, self.summoner.x, self.summoner.y) > 10 then
-			local Map = require "engine.Map"
-			local x, y = util.findFreeGrid(self.summoner.x, self.summoner.y, 5, true, {[engine.Map.ACTOR]=true})
-			if not x then
-				return
-			end
+		local x, y = self.summoner.x, self.summoner.y
+		if game.level:hasEntity(self.summoner) and core.fov.distance(self.x, self.y, x, y) > 10 then
 			-- Clear it's targeting on teleport
 			if self:teleportRandom(x, y, 0) then
 				game.level.map:particleEmitter(x, y, 1, "temporal_teleport")
 				self:setTarget(nil)
 			end
+		end
+		-- clean up
+		if self.summoner.dead or not game.level:hasEntity(self.summoner) then
+			self:die(self)
 		end
 	end
 	-- Unravel?
@@ -161,8 +164,8 @@ newTalent{
 		return tostring(math.ceil(val)), fnt
 	end,
 	incStats = function(self, t,fake)
-		local mp = self:combatTalentSpellDamage(t, 0, 100) -- Just use base spellpower so we don't get Paradox or Crit cheese
-		return{ 
+		local mp = self:combatTalentStatDamage(t, "mag", 10, 150) -- Uses magic to avoid Paradox cheese
+		return {
 			str=10 + (fake and mp or mp),
 			dex=10 + (fake and mp or mp),
 			con=10 + (fake and mp or mp),
@@ -197,8 +200,8 @@ newTalent{
 		local cooldown = self:getTalentCooldown(t)
 		local resists = t.getResists(self, t)
 		return ([[Upon activation summon a Temporal Hound.  Every %d turns another hound will be summoned, up to a maximum of three hounds. If a hound dies you'll summon a new hound in %d turns.  
-		Your hounds inherit your increased damage percent and have %d%% physical resistance and %d%% temporal resistance.
-		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning ,based on your Spellpower.]])
+		Your hounds inherit your increased damage percent, have %d%% physical resistance and %d%% temporal resistance, and are immune to hostile teleportation effects.
+		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning, based on your Magic stat.]])
 		:format(cooldown, cooldown, resists/2, math.min(100, resists*2), incStats.str + 1, incStats.dex + 1, incStats.con + 1, incStats.mag + 1, incStats.wil +1, incStats.cun + 1)
 	end
 }
@@ -215,9 +218,9 @@ newTalent{
 	requires_target = true,
 	on_pre_use = function(self, t, silent)
 		local p = self:isTalentActive(self.T_TEMPORAL_HOUNDS)
-		if not p or p.hounds < 1 then
+		if not p then
 			if not silent then
-				game.logPlayer(self, "You must have temporal hounds to use this talent.")
+				game.logPlayer(self, "Temporal Hounds must be sustained to cast this spell.")
 			end
 			return false
 		end
@@ -264,23 +267,26 @@ newTalent{
 			if #hnds <= 0 then return nil end
 			local a, id = rng.table(hnds)
 			table.remove(hnds, id)
-			-- Since it's a precise teleport find a free grid first
-			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-			if tx and ty then
+			
+			game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
+			
+			if a:teleportRandom(x, y, 0) then
+				if self:knowTalent(self.T_TEMPORAL_VIGOUR) then
+					self:callTalent(self.T_TEMPORAL_VIGOUR, "doBlink", a)
+				end
+				
 				game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
-				if a:teleportRandom(tx, ty, 0) then
-					game.level.map:particleEmitter(a.x, a.y, 1, "temporal_teleport")
-					if self:knowTalent(self.T_TEMPORAL_VIGOUR) then
-						self:callTalent(self.T_TEMPORAL_VIGOUR, "doBlink", a)
-					end
-				end
-				-- Set the target so we feel like a wolf pack
-				if target and self:reactionToward(target) < 0 then
-					a:setTarget(target)
-				else
-					a:setTarget(nil)
-				end
+			else
+				game.logSeen(self, "The spell fizzles!")
 			end
+			
+			-- Set the target so we feel like a wolf pack
+			if target and self:reactionToward(target) < 0 then
+				a:setTarget(target)
+			else
+				a:setTarget(nil)
+			end
+			
 		end
 		game:playSoundNear(self, "talents/teleport")
 		
@@ -341,7 +347,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 10,
-	tactical = { ATTACKAREA = {TEMPORAL = 2}, DEBUFF = 2 },
+	tactical = { ATTACKAREA = {TEMPORAL = 2}, DISABLE = 2 },
 	range = 10,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4.5, 6.5)) end,
 	requires_target = true,
@@ -359,7 +365,7 @@ newTalent{
 	getResists = function(self, t)
 		return self:combatTalentLimit(t, 100, 15, 50) -- Limit <100%
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 150, getParadoxSpellpower(self, t)) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDamageStat = function(self, t) return 2 + math.ceil(t.getDamage(self, t) / 15) end,
 	target = function(self, t)
 		return {type="cone", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
@@ -399,7 +405,7 @@ newTalent{
 					DamageType:get(DamageType.TEMPORAL).projector(a, px, py, DamageType.TEMPORAL, dam)
 					-- Don't turn back the clock other hounds
 					if target.name ~= "temporal hound" then
-						target:setEffect(target.EFF_TURN_BACK_THE_CLOCK, 3, {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(), min_dur=1})
+						target:setEffect(target.EFF_REGRESSION, 3, {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(),  min_dur=1, no_ct_effect=true})	
 					end
 				end
 			end)
@@ -416,7 +422,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local stat_damage = t.getDamageStat(self, t)
 		local affinity = t.getResists(self, t)
-		return ([[Command your Temporal Hounds to breathe time, dealing %0.2f temporal damage and reducing the stats of all targets in a radius %d cone.
+		return ([[Command your Temporal Hounds to breathe time, dealing %0.2f temporal damage and reducing the three highest stats of all targets in a radius %d cone.
 		Affected targets will have their stats reduced by %d for 3 turns.  You are immune to the breath of your own hounds and your hounds are immune to stat damage from other hounds.
 		When you learn this talent, your hounds gain %d%% temporal damage affinity.]]):format(damDesc(self, DamageType.TEMPORAL, damage), radius, stat_damage, affinity)
 	end,

@@ -269,6 +269,7 @@ function _M:outputList()
 
 	self.max = #self.list
 	self.sel = util.bound(self.sel or 1, 1, self.max)
+	self.max_display = math.min(math.floor(self.h/self.fh), self.max)
 	self.scroll = self.scroll or 1
 	self.cur_col = self.cur_col or 1
 end
@@ -357,8 +358,8 @@ function _M:display(x, y, nb_keyframes)
 	end
 
 	if self.focused and self.scrollbar then
-		self.scrollbar.pos = self.sel
-		self.scrollbar.max = self.max
+		self.scrollbar.pos = self.sel - 1
+		self.scrollbar.max = self.max - 1
 		self.scrollbar:display(bx + self.w - self.scrollbar.w, by, by + self.fh)
 	end
 end

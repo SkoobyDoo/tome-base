@@ -81,7 +81,6 @@ newEntity{
 	greater_ego = 1,
 	rarity = 18,
 	cost = 40,
-	use_no_energy = true,
 	wielder = {
 		inc_stats = {
 			[Stats.STAT_MAG] = resolvers.mbonus_material(2, 2),
@@ -90,7 +89,7 @@ newEntity{
 	},
 	charm_power = resolvers.mbonus_material(80, 20),
 	charm_power_def = {add=5, max=10, floor=true},
-	resolvers.charm("blink to a nearby random location", 25, function(self, who)
+	resolvers.charm("blink to a nearby random location (rad %d)", 25, function(self, who)
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 		who:teleportRandom(who.x, who.y, self:getCharmPower(who))
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
@@ -173,7 +172,6 @@ newEntity{
 	greater_ego = 1,
 	rarity = 18,
 	cost = 40,
-	use_no_energy = true,
 	resolvers.charmt(Talents.T_DISENGAGE, {1,2,3}, 15),
 	wielder = {
 		inc_stats = {
@@ -329,7 +327,6 @@ newEntity{
 	greater_ego = 1,
 	rarity = 30,
 	cost = 60,
-	use_no_energy = true,
 	resolvers.charmt(Talents.T_HEAVE, {2,3,4}, 10),
 	wielder = {
 		inc_stats = {

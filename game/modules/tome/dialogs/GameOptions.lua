@@ -378,6 +378,15 @@ function _M:generateListUi()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When you do a mouse gesture (right click + drag) a color coded trail is displayed.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Display mouse gesture trails#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.hide_gestures and "disabled" or "enabled")
+	end, fct=function(item)
+		config.settings.hide_gestures = not config.settings.hide_gestures
+		game:saveSettings("hide_gestures", ("hide_gestures = %s\n"):format(tostring(config.settings.hide_gestures)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
@@ -539,6 +548,15 @@ function _M:generateListMisc()
 	end, fct=function(item)
 		config.settings.tome.save_zone_levels = not config.settings.tome.save_zone_levels
 		game:saveSettings("tome.save_zone_levels", ("tome.save_zone_levels = %s\n"):format(tostring(config.settings.tome.save_zone_levels)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Disallow boot images that could be found 'offensive'.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Censor boot#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.censor_boot and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.censor_boot = not config.settings.censor_boot
+		game:saveSettings("censor_boot", ("censor_boot = %s\n"):format(tostring(config.settings.censor_boot)))
 		self.c_list:drawItem(item)
 	end,}
 

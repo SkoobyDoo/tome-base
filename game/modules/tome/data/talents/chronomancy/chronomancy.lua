@@ -27,8 +27,8 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 20,
 	no_npc_use = true,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 14))) end,
-	range = function(self, t) return 10 + math.min(self:combatTalentSpellDamage(t, 10, 20, getParadoxSpellpower(self, t))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 10))) end,
+	range = function(self, t) return 10 + math.floor(self:combatTalentScale(t, 2, 14)) end,
 	action = function(self, t)
 		-- Foresight bonuses
 		local defense = 0
@@ -46,8 +46,7 @@ newTalent{
 		local range = self:getTalentRange(t)
 		local duration = t.getDuration(self, t)
 		return ([[You peer into the future, sensing creatures and traps in a radius of %d for %d turns.
-		If you know Foresight you'll gain additional defense and chance to shrug off critical hits (equal to your Foresight bonuses) while Precognition is active.
-		The detection radius will scale with your Spellpower.]]):format(range, duration)
+		If you know Foresight you'll gain additional defense and chance to shrug off critical hits (equal to your Foresight bonuses) while Precognition is active.]]):format(range, duration)
 	end,
 }
 
@@ -58,7 +57,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	getDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
-	getCritDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
+	getCritDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 2, 10) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_def", t.getDefense(self, t))
 		self:talentTemporaryValue(p, "ignore_direct_crits", t.getCritDefense(self, t))
@@ -91,7 +90,7 @@ newTalent{
 	tactical = { DEFEND = 2 },
 	no_npc_use = true,  -- so rares don't learn useless talents
 	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
+	on_pre_use = function(self, t, silent) if self ~= game.player and not self:isTalentActive(t) then return false end return true end,  -- but don't let them cast it
 	callbackOnHit = function(self, t, cb)
 		local p = self:isTalentActive(t.id)
 		local life_after = self.life - cb.value
@@ -136,22 +135,22 @@ newTalent{
 		local ret = {
 			talent = talent, rest_count = 0
 		}
+		
 		if core.shader.active(4) then
-			ret.particle1, ret.particle2 = self:addParticles3D("volumetric", {kind="bright_cylinder", radius=1.4, shininess=40, growSpeed=0.004, img="circles2_01"})
+			ret.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.2, img="runicshield_teal"}, {type="runicshield", shieldIntensity=0.10, ellipsoidalFactor=1, scrollingSpeed=1, time_factor=12000, bubbleColor={0.5, 1, 0.8, 0.2}, auraColor={0.5, 1, 0.8, 0.5}}))
 		end
 
 		return ret
 	end,
 	deactivate = function(self, t, p)
-		self:removeParticles(p.particle1)
-		self:removeParticles(p.particle2)
+		self:removeParticles(p.particle)
 		return true
 	end,
 	info = function(self, t)
 		local trigger = t.getTrigger(self, t) * 100
 		local cooldown = self:getTalentCooldown(t)
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
-		return ([[Choose an activatable spell that's not targeted and does not have a fixed cooldown.  When you take damage that reduces your life below %d%% the spell will automatically cast.
+		return ([[Choose an activatable spell that affects only you and does not require a target.  When you take damage that reduces your life below %d%% the spell will automatically cast.
 		This spell will cast even if it is currently on cooldown, will not consume a turn or resources, and uses the talent level of Contingency or its own, whichever is lower.
 		This effect can only occur once every %d turns and takes place after the damage is resolved.
 
@@ -165,10 +164,10 @@ newTalent{
 	type = {"chronomancy/chronomancy", 4},
 	require = chrono_req4,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	cooldown = 50,
 	no_npc_use = true,  -- so rares don't learn useless talents
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 10, 25))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 16))) end,
 	on_pre_use = function(self, t, silent)
 		if checkTimeline(self) then
 			if not silent then

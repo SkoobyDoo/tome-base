@@ -58,11 +58,11 @@ function _M:generate()
 
 	if not self.h then self.h = self.nb_items * fh end
 
-	self.max_display = math.floor(self.h / fh)
+	self.max_display = math.min(self.max, math.floor(self.h / fh))
 
 	-- Draw the scrollbar
 	if self.scrollbar then
-		self.scrollbar = Slider.new{size=self.h - fh, max=self.max}
+		self.scrollbar = Slider.new{size=self.h - fh, max=self.max - 1}
 	end
 
 	-- Draw the list items
@@ -129,8 +129,7 @@ function _M:drawItem(item)
 	local color = item.color or {255,255,255}
 	local text = item[self.display_prop]
 
-	item._tex = self:drawFontLine(self.font, text, self.fw)
-	item._tex_color = {color[1]/255, color[2]/255, color[3]/255}
+	item._tex = self:drawFontLine(self.font, text, self.fw, color[1], color[2], color[3])
 end
 
 function _M:select(i)
@@ -176,12 +175,12 @@ function _M:display(x, y, nb_keyframes)
 			end
 		end
 		if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, item._tex_color[1], item._tex_color[2], item._tex_color[3], 1)
+		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, 1, 1, 1, 1)
 		y = y + self.fh
 	end
 
 	if self.focused and self.scrollbar then
-		self.scrollbar.pos = self.sel
+		self.scrollbar.pos = self.sel - 1
 		self.scrollbar:display(bx + self.w - self.scrollbar.w, by, by + self.fh)
 	end
 end

@@ -624,8 +624,8 @@ function _M:resizeMapViewport(w, h, x, y)
 	w = math.floor(w)
 	h = math.floor(h)
 
-	-- convert from older faulty versionsPg
-	if game.level.map and rawget(game.level.map, "display_x") == Map.display_x and rawget(game.level.map, "display_y") == Map.display_y then
+	-- convert from older faulty versions
+	if game.level and game.level.map and (rawget(game.level.map, "display_x") or rawget(game.level.map, "display_y")) then
 		game.level.map.display_x, game.level.map.display_y = nil, nil
 	end
 	Map.display_x = x
@@ -918,7 +918,7 @@ function _M:changeLevelReal(lev, zone, params)
 			if self.zone.tier1 then
 				if lev == 1 and game.state:tier1Killed(game.state.birth.start_tier1_skip or 3) then
 					self.zone.tier1 = nil
-					Dialog:yesnoPopup("Easy!", "This zone is so easy for you that you stroll to the last area with ease.", function(ret) if ret then
+					Dialog:yesnoPopup("Easy!", "This zone is so easy for you that you can stroll to the last area with ease.", function(ret) if ret then
 						game:changeLevel(self.zone.max_level)
 					end end, "Stroll", "Stay there")
 				end
@@ -1210,8 +1210,8 @@ function _M:chronoRestore(name, remove)
 
 	local d = Dialog:simpleWaiter("Chronomancy", "Unfolding the space time structure...")
 
-	ngame:cloneReloaded()
 	_G.game = ngame
+	ngame:cloneReloaded()
 
 	game.inited = nil
 	game:runReal()
@@ -1372,33 +1372,35 @@ end
 -- Note: There can be up to a 1 tick delay in displaying log information
 function _M:displayDelayedLogDamage()
 	if not self.uiset or not self.uiset.logdisplay then return end
-	for src, tgts in pairs(self.delayed_log_damage) do
-		for target, dams in pairs(tgts) do
-			if #dams.descs > 1 then
-				game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s (%0.0f total damage)%s.", table.concat(dams.descs, ", "), dams.total, dams.healing<0 and (" #LIGHT_GREEN#[%0.0f healing]#LAST#"):format(-dams.healing) or ""))
-			else
-				if dams.healing >= 0 then
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s damage.", table.concat(dams.descs, ", ")))
-				elseif src == target then
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# receives %s.", table.concat(dams.descs, ", ")))
+	for real_src, psrcs in pairs(self.delayed_log_damage) do
+		for src, tgts in pairs(psrcs) do
+			for target, dams in pairs(tgts) do
+				if #dams.descs > 1 then
+					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s (%0.0f total damage)%s.", table.concat(dams.descs, ", "), dams.total, dams.healing<0 and (" #LIGHT_GREEN#[%0.0f healing]#LAST#"):format(-dams.healing) or ""))
 				else
-					game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Target# receives %s from #Source#.", table.concat(dams.descs, ", ")))
+					if dams.healing >= 0 then
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# hits #Target# for %s damage.", table.concat(dams.descs, ", ")))
+					elseif src == target then
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Source# receives %s.", table.concat(dams.descs, ", ")))
+					else
+						game.uiset.logdisplay(self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#Target# receives %s from #Source#.", table.concat(dams.descs, ", ")))
+					end
 				end
-			end
-			local rsrc = src.resolveSource and src:resolveSource() or src
-			local rtarget = target.resolveSource and target:resolveSource() or target
-			local x, y = target.x or -1, target.y or -1
-			local sx, sy = self.level.map:getTileToScreen(x, y)
-			if target.dead then
-				if dams.tgtSeen and (rsrc == self.player or rtarget == self.player or self.party:hasMember(rsrc) or self.party:hasMember(rtarget)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), ("Kill (%d)!"):format(dams.total), {255,0,255}, true)
-					self:delayedLogMessage(target, nil,  "death", self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#{bold}##Source# killed #Target#!#{normal}#"))
-				end
-			elseif dams.total > 0 or dams.healing == 0 then
-				if dams.tgtSeen and (rsrc == self.player or self.party:hasMember(rsrc)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-3, -2), tostring(-math.ceil(dams.total)), {0,255,dams.is_crit and 200 or 0}, dams.is_crit)
-				elseif dams.tgtSeen and (rtarget == self.player or self.party:hasMember(rtarget)) then
-					self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -rng.float(-3, -2), tostring(-math.ceil(dams.total)), {255,dams.is_crit and 200 or 0,0}, dams.is_crit)
+				local rsrc = real_src.resolveSource and real_src:resolveSource() or real_src
+				local rtarget = target.resolveSource and target:resolveSource() or target
+				local x, y = target.x or -1, target.y or -1
+				local sx, sy = self.level.map:getTileToScreen(x, y)
+				if target.dead then
+					if dams.tgtSeen and (rsrc == self.player or rtarget == self.player or self.party:hasMember(rsrc) or self.party:hasMember(rtarget)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), ("Kill (%d)!"):format(dams.total), {255,0,255}, true)
+						self:delayedLogMessage(target, nil,  "death", self:logMessage(src, dams.srcSeen, target, dams.tgtSeen, "#{bold}##Source# killed #Target#!#{normal}#"))
+					end
+				elseif dams.total > 0 or dams.healing == 0 then
+					if dams.tgtSeen and (rsrc == self.player or self.party:hasMember(rsrc)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-3, -2), tostring(-math.ceil(dams.total)), {0,255,dams.is_crit and 200 or 0}, dams.is_crit)
+					elseif dams.tgtSeen and (rtarget == self.player or self.party:hasMember(rtarget)) then
+						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -rng.float(-3, -2), tostring(-math.ceil(dams.total)), {255,dams.is_crit and 200 or 0,0}, dams.is_crit)
+					end
 				end
 			end
 		end
@@ -1411,12 +1413,11 @@ end
 -- log and collate combat damage for later display with displayDelayedLogDamage
 function _M:delayedLogDamage(src, target, dam, desc, crit)
 	if not target or not src then return end
-	src = src.__project_source or src -- assign message to indirect damage source if available
+	local psrc = src.__project_source or src -- assign message to indirect damage source if available
 	local visible, srcSeen, tgtSeen = self:logVisible(src, target)
 	if visible then -- only log damage the player is aware of
-		self.delayed_log_damage[src] = self.delayed_log_damage[src] or {}
-		self.delayed_log_damage[src][target] = self.delayed_log_damage[src][target] or {total=0, healing=0, descs={}}
-		local t = self.delayed_log_damage[src][target]
+		local t = table.getTable(self.delayed_log_damage, src, psrc, target)
+		table.update(t, {total=0, healing=0, descs={}})
 		t.descs[#t.descs+1] = desc
 		if dam>=0 then
 			t.total = t.total + dam
@@ -1669,6 +1670,12 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
+do return end
 			local o = game.zone:makeEntityByName(game.level, "object", "RIFT_SWORD", true)
 			if o then
 				o:identify(true)
@@ -2305,9 +2312,13 @@ function _M:saveGame()
 			local party = game.party:cloneFull()
 			party.__te4_uuid = game:getPlayer(true).__te4_uuid
 			for m, _ in pairs(party.members) do
+				m:attr("save_cleanup", 1)
 				m:stripForExport()
+				m:attr("save_cleanup", -1)
 			end
+			party:attr("save_cleanup", 1)
 			party:stripForExport()
+			party:attr("save_cleanup", -1)
 			game.player:saveUUID(party)
 		end end))
 		_G.game = self

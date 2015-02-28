@@ -483,8 +483,13 @@ function resolvers.calc.random_use_talent(tt, e)
 end
 
 --- Charms resolver
-function resolvers.charm(desc, cd, fct, tcd)
-	return {__resolver="charm", desc, cd, fct, tcd}
+-- @param desc = power description (function or string) %d will be filled with self:getCharmPower(who)
+-- @param cd = cooldown
+-- @param fct = function(self, who) called when activated
+-- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
+-- @param use_params = parameters to merge into self.use_power table
+function resolvers.charm(desc, cd, fct, tcd, use_params)
+	return {__resolver="charm", desc, cd, fct, tcd, use_params}
 end
 function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
@@ -492,6 +497,7 @@ function resolvers.calc.charm(tt, e)
 	e.power = e.max_power
 	e.use_power = {name=tt[1], power=cd, use=tt[3], __no_merge_add=true}
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
+	if tt[5] then table.merge(e.use_power, tt[5], true) end
 	return
 end
 
@@ -699,7 +705,7 @@ function resolvers.calc.talented_ai_tactic(t, e)
 	e.on_added_to_level = function(e, level, x, y)
 		local t = e.__ai_compute
 		if old_on_added_to_level then old_on_added_to_level(e, level, x, y) end
-		print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
+		-- print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
 		local tactic_total = t[2] or t.tactic_total or 10 --want tactic weights to total 10
 		local weight_power = t[3] or t.weight_power or 0.5 --smooth out tactical weights
 		local tacs_offense = {attack=1, attackarea=1}
@@ -738,12 +744,12 @@ function resolvers.calc.talented_ai_tactic(t, e)
 --			if range > 0 then range = range + radius*2/3 end
 			count_talent = false, false
 			if tal and tal.tactical then
-	print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
+	-- print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
 --	table.print(tal.tactical)
 				do_count = false
 				for tt, wt in pairs(tal.tactical) do
 					val = get_weight(wt, e)
-	print("   --- ", tt, "wt=", val)
+	-- print("   --- ", tt, "wt=", val)
 					tactical[tt] = (tactical[tt] or 0) + val -- sum up all the input weights
 					if tacs_offense[tt] then
 						do_count = true
@@ -811,8 +817,8 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		tactic.count = count
 		tactic.level = e.level
 		tactic.type = "computed"
-print("  ### ai_tactic table:")
-for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
+-- print("  ### ai_tactic table:")
+-- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
 		e.__ai_compute = nil
 		return tactic

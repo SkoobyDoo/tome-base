@@ -26,7 +26,7 @@ newBirthDescriptor{
 	locked = function() return profile.mod.allow_build.race_giant end,
 	locked_desc = "Powerful beings that tower over all, but the bigger they are, the harder they fall...",
 	desc = {
-		[[#{italic}#"Giant"#{normal}# is a catch-all term for humanoids which are typically over nine feet in height.  Their origins, cultures, and relationships to other races differ wildly, but they tend to live as refugees and outcasts, shunned by smaller sentient races who usually see them as a threat.]],
+		[[#{italic}#"Giant"#{normal}# is a catch-all term for humanoids which are typically over eight feet in height.  Their origins, cultures, and relationships to other races differ wildly, but they tend to live as refugees and outcasts, shunned by smaller sentient races who usually see them as a threat.]],
 	},
 	descriptor_choices =
 	{
@@ -67,7 +67,7 @@ to start, look where halflings once tinkered with portals...]],
 		"#GOLD#Experience penalty:#LIGHT_BLUE# 30%",
 	},
 	moddable_attachement_spots = "race_ogre",
-	inc_stats = { str=3, mag=2, wil=-2, cun=2, dex=1, con=0 },
+	inc_stats = { str=3, mag=2, wil=-2, cun=2, dex=-1, con=0 },
 	experience = 1.3,
 	talents_types = { ["race/ogre"]={true, 0} },
 	talents = { [ActorTalents.T_OGRE_WRATH]=1 },

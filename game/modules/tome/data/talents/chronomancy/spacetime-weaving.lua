@@ -57,9 +57,8 @@ newTalent{
 				
 				-- Try to teleport to the target's old location
 				if self:teleportRandom(x, y, 0) then
-					-- Put the target back in the caster's old location
-					game.level.map(ox, oy, Map.ACTOR, target)
-					target.x, target.y = ox, oy
+					-- Move the target to our old location
+					target:move(ox, oy, true)
 					
 					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
 					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
@@ -73,14 +72,10 @@ newTalent{
 			end
 		else
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-			-- since we're using a precise teleport we'll look for a free grid first
-			local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-			if tx and ty then
-				if not self:teleportRandom(tx, ty, 0) then
-					game.logSeen(self, "The spell fizzles!")
-				else
-					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
-				end
+			if not self:teleportRandom(x, y, 0) then
+				game.logSeen(self, "The spell fizzles!")
+			else
+				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			end
 		end
 		
@@ -104,24 +99,19 @@ newTalent{
 	getCount = function(self, t)
 		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
 	end,
-	doShift = function(self, t)
-		local effs = {}
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if e.type ~= "other" and e.status == "detrimental" and e.subtype ~= "cross tier" then
-				effs[#effs+1] = p
-			end
-		end
+	callbackOnTeleport = function(self, t, teleported)
+		if not teleported then return end
 		
-		for i=1, t.getCount(self, t) do
-			local eff = rng.tableRemove(effs)
-			if not eff then break end
+		-- Grab a random sample of timed effects
+		local eff_ids = self:effectsFilter({status="detrimental", ignore_crosstier=true}, t.getCount(self, t))
+		for _, eff_id in ipairs(eff_ids) do
+			local eff = self:hasEffect(eff_id)
 			eff.dur = eff.dur - t.getReduction(self, t)
 			if eff.dur <= 0 then
-				self:removeEffect(eff.effect_id)
+				self:removeEffect(eff_id)
 			end
 		end
-		
+
 		-- Make sure we update the display for blind and such
 		game:onTickEnd(function()
 			if game.level then
@@ -188,15 +178,15 @@ newTalent{
 				energy = {value=0},
 				disarm = function(self, x, y, who) return false end,
 				power = power, dest_power = dest_power,
-				summoned_by = self, -- "summoner" is immune to it's own traps
+				summoner = self, beneficial_trap = true, faction=self.faction,
 				triggered = function(self, x, y, who)
-					local hit = who == self.summoned_by or who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
-					if hit then
+					local hit = who:checkHit(self.power, who:combatSpellResist()+(who:attr("continuum_destabilization") or 0), 0, 95) and who:canBe("teleport") -- Bug fix, Deprecrated checkhit call
+					if hit or (who.reactionToward and who:reactionToward(self) >= 0) then
 						game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 						if not who:teleportRandom(self.dest_x, self.dest_y, self.radius, 1) then
 							game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())
 						else
-							if who ~= self.summoned_by then who:setEffect(who.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power}) end
+							if who ~= self.summoner then who:setEffect(who.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power}) end
 							game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 							game:playSoundNear(self, "talents/teleport")
 						end
@@ -225,7 +215,6 @@ newTalent{
 		entrance:identify(true)
 		entrance:setKnown(self, true)
 		game.zone:addEntity(game.level, entrance, "trap", entrance_x, entrance_y)
-		entrance.faction = nil
 		game:playSoundNear(self, "talents/heal")
 
 		-- Adding the exit wormhole
@@ -236,7 +225,6 @@ newTalent{
 		exit:identify(true)
 		exit:setKnown(self, true)
 		game.zone:addEntity(game.level, exit, "trap", exit_x, exit_y)
-		exit.faction = nil
 
 		-- Linking the wormholes
 		entrance.dest = exit
@@ -268,28 +256,33 @@ newTalent{
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
 	target = function(self, t)
-		return {type="ball", range=100, radius=self:getTalentRadius(t), selffire=false, talent=t}
+		return {type="ball", range=100, radius=self:getTalentRadius(t), friendlyfire=false, talent=t}  -- range 100, this triggers when you teleport at both ends
 	end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 3))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
 	getChance = function(self, t) return 2 + math.floor(self:combatTalentScale(t, 2, 10)) end,
-	doPulse = function(self, t, ox, oy, fail)
+	callbackOnTeleport = function(self, t, teleported, ox, oy, x, y)
+		if not teleported then return end
 		local tg = self:getTalentTarget(t)
 		local distance = core.fov.distance(self.x, self.y, ox, oy)
 		local chance = distance * t.getChance(self, t)
+		
 		
 		-- Project our status effects at the end of the turn
 		game:onTickEnd(function()
 			-- Project at both the entrance and exit
 			self:project(tg, self.x, self.y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
+				if target and rng.percent(chance) then
+					DamageType:get(DamageType.RANDOM_WARP).projector(self, px, py, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
+				end
 			end)
 			self:project(tg, ox, oy, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
-				if target and rng.percent(chance) then randomWarpEffect(self, t, target) end
+				if target and rng.percent(chance) then
+					DamageType:get(DamageType.RANDOM_WARP).projector(self, px, py, DamageType.RANDOM_WARP, {dur=t.getDuration(self, t), apply_power=getParadoxSpellpower(self, t)})
+				end
 			end)
 		end)
-			
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")

@@ -50,6 +50,14 @@ function table.concatNice(t, sep, endsep)
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
 end
 
+function table.count(t)
+	local i = 0
+	for k, v in pairs(t) do
+		i = i + 1
+	end
+	return i
+end
+
 function table.min(t)
 	local m = nil
 	for _, v in pairs(t) do
@@ -945,6 +953,14 @@ function fs.getRealPath(path)
 	return p:gsub(doublesep, sep)
 end
 
+function fs.readAll(file)
+	local f = fs:open(file, "r")
+	if not f then return nil, "file not found" end
+	local data = f:read(10485760)
+	f:close()
+	return data
+end
+
 tstring = {}
 tstring.is_tstring = true
 
@@ -1132,6 +1148,10 @@ function tstring:splitLines(max_width, font, max_lines)
 			max_w = math.max(max_w, cur_size)
 			cur_size = 0
 			ret[#ret+1] = v
+			if max_lines then
+				max_lines = max_lines - 1
+				if max_lines <= 0 then break end
+			end
 		else
 			ret[#ret+1] = v
 		end
@@ -1713,8 +1733,8 @@ function util.boundWrap(i, min, max)
 end
 
 function util.bound(i, min, max)
-	if min and i < min then i = min
-	elseif max and i > max then i = max end
+	if min then i = math.max(i, min) end
+	if max then i = math.min(i, max) end
 	return i
 end
 

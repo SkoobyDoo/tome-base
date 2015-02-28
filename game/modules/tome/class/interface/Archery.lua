@@ -68,7 +68,7 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 
 	if not tg.range then tg.range=math.max(math.min(weapon.range or 6, offweapon and offweapon.range or 40), self:attr("archery_range_override") or 1) end
-	tg.display = tg.display or {display='/'}
+	tg.display = tg.display or self:archeryDefaultProjectileVisual(weapon, ammo)
 	local wtravel_speed = weapon.travel_speed
 	if offweapon then wtravel_speed = math.ceil(((weapon.travel_speed or 0) + (offweapon.travel_speed or 0)) / 2) end
 	tg.speed = (tg.speed or 10) + (ammo.combat.travel_speed or 0) + (wtravel_speed or 0) + (self.travel_speed or 0)
@@ -184,15 +184,6 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	local mult = tg.archery.mult or 1
 
 	self.turn_procs.weapon_type = {kind=weapon and weapon.talented or "unknown", mode="archery"}
-	
-	-- Warden's Focus
-	if self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
-		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if target == eff.target then
-			tg.archery.atk = (tg.archery.atk or 0) + eff.atk
-			tg.archery.crit = (tg.archery.crit or 0) + eff.crit
-		end
-	end
 
 	-- Does the blow connect? yes .. complex :/
 	if tg.archery.use_psi_archery then self:attr("use_psi_combat", 1) end
@@ -206,7 +197,14 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
 	local hitted = false
 	local crit = false
-	if self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or rng.chance(3)) then
+	if self:attr("hit_penalty_2h") and rng.percent(20 - (self.size_category - 4) * 5) then
+		local srcname = game.level.map.seens(self.x, self.y) and self.name:capitalize() or "Something"
+		game.logSeen(target, "%s misses %s.", srcname, target.name)
+
+		if talent.archery_onmiss then talent.archery_onmiss(self, talent, target, target.x, target.y) end
+
+		target:fireTalentCheck("callbackOnArcheryMiss", self)
+	elseif self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or rng.chance(3)) then
 		print("[ATTACK ARCHERY] raw dam", dam, "versus", armor, "with APR", apr)
 
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)

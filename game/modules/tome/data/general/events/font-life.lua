@@ -21,9 +21,12 @@
 local x, y = game.state:findEventGrid(level)
 if not x then return false end
 
+local on_stand = function(self, x, y, who) who:setEffect(who.EFF_FONT_OF_LIFE, 1, {}) end
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "font of life"
 g.display='&' g.color_r=0 g.color_g=255 g.color_b=0 g.notice = true
+g.special_minimap = colors.OLIVE_DRAB
+g.on_stand = on_stand
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
 	g.add_displays = g.add_displays or {}
@@ -38,13 +41,14 @@ else
 	level.map:particleEmitter(x, y, 2, "ultrashield", {rm=0, rM=0, gm=180, gM=220, bm=10, bM=80, am=220, aM=250, radius=2, density=1, life=14, instop=17})
 end
 
-local on_stand = function(self, x, y, who) who:setEffect(who.EFF_FONT_OF_LIFE, 1, {}) end
-
-local grids = core.fov.circle_grids(x, y, 2, "do not block")
+local grids = core.fov.circle_grids(x, y, 2, function(_, lx, ly) return not game.state:canEventGrid(level, lx, ly) end)
 for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 	g.on_stand = g.on_stand or on_stand
+	if g.on_stand == on_stand and g.type == "floor" and not g.special_minimap then g.name = g.name .. " (life aura)" g.special_minimap = colors.AQUAMARINE end
+	g.always_remember = true
 	g.on_stand_safe = true
 	game.zone:addEntity(game.level, g, "terrain", x, y)
 end end
+print("[EVENT] font-life centered at ", x, y)
 return true

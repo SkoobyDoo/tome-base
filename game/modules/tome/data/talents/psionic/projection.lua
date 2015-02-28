@@ -186,7 +186,7 @@ newTalent{
 		local mast = aura_mastery(self, t)
 		local spikecost = t.getSpikeCost(self, t)
 		return ([[Fills the air around you with reactive currents of force.
-		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Physical damage to all who approach, costing %0.1f energy per creature. 
+		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Physical damage to all adjacent enemies, costing %0.1f energy per creature. 
 		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Physical damage to all your weapon hits, costing %0.1f energy per hit.
 		When deactivated, if you have at least %d energy, a massive spike of kinetic energy is released as a range %d beam, smashing targets for up to %d physical damage and sending them flying.
 		#{bold}#Activating the aura takes no time but de-activating it does.#{normal}#
@@ -312,7 +312,7 @@ newTalent{
 		local mast = aura_mastery(self, t)
 		local spikecost = t.getSpikeCost(self, t)
 		return ([[Fills the air around you with reactive currents of furnace-like heat.
-		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Fire damage to all who approach, costing %0.1f energy per creature. 
+		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Fire damage to all adjacent enemies, costing %0.1f energy per creature. 
 		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Fire damage to all your weapon hits, costing %0.1f energy per hit.
 		When deactivated, if you have at least %d energy, a massive spike of thermal energy is released as a conical blast (radius %d) of superheated air. Anybody caught in it will suffer up to %d fire damage over several turns.
 		#{bold}#Activating the aura takes no time but de-activating it does.#{normal}#
@@ -481,7 +481,7 @@ newTalent{
 		local spikecost = t.getSpikeCost(self, t)
 		local nb = t.getNumSpikeTargets(self, t)
 		return ([[Fills the air around you with crackling energy.
-		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Lightning damage to all who approach, costing %0.1f energy per creature. 
+		If you have a gem or mindstar in your psionically wielded slot, this will do %0.1f Lightning damage to all adjacent enemies, costing %0.1f energy per creature. 
 		If you have a conventional weapon in your psionically wielded slot, this will add %0.1f Lightning damage to all your weapon hits, costing %0.1f energy per hit.
 		When deactivated, if you have at least %d energy, a massive spike of electrical energy jumps between up to %d nearby targets, doing up to %0.1f Lightning damage to each with a 50%% chance of dazing them.
 		#{bold}#Activating the aura takes no time but de-activating it does.#{normal}#
@@ -514,7 +514,7 @@ newTalent{
 		local targets = t.getTargNum(self,t)
 		local dur = t.duration(self,t)
 		return ([[Overcharge your psionic focus with energy for %d turns, producing a different effect depending on what it is.
-		A telekinetically wielded weapon enters a frenzy, striking up to %d times every turn, also increases the radius by %d.
+		A telekinetically wielded weapon enters a frenzy, striking up to %d enemies per turn, also increases the radius by %d.
 		A mindstar will attempt to pull in all enemies within its normal range.
 		A gem will fire an energy bolt at a random enemy in range 6, each turn for %0.1f damage. The type is determined by the colour of the gem. Damage scales with Mindpower.]]):
 		format(dur, targets, targets, t.getDamage(self,t))

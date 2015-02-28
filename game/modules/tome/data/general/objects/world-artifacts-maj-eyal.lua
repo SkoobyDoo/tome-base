@@ -150,13 +150,18 @@ newEntity{ base = "BASE_AMULET",
 		spellsurge_on_crit = 15,
 	},
 	max_power = 60, power_regen = 1,
-	use_power = { name = "unleash a destructive wail", power = 60,
+	use_power = { name = function(self, who)
+			return ("unleash a destructive wail dealing %0.2f physical damage (based on Magic) in a radius of %d"):format(engine.interface.ActorTalents.damDesc(who, engine.DamageType.PHYSICAL, self.use_power.damage(who)), self.use_power.radius)
+		end,
+		power = 60,
+		radius = 3,
+		damage = function(who) return 250 + who:getMag() * 3 end,
 		use = function(self, who)
 			who:project({type="ball", range=0, selffire=false, radius=3}, who.x, who.y, engine.DamageType.DIG, 1)
 			who:project({type="ball", range=0, selffire=false, radius=3}, who.x, who.y, engine.DamageType.DIG, 1)
 			who:project({type="ball", range=0, selffire=false, radius=3}, who.x, who.y, engine.DamageType.DIG, 1)
 			who:project({type="ball", range=0, selffire=false, radius=3}, who.x, who.y, engine.DamageType.DIG, 1)
-			who:project({type="ball", range=0, selffire=false, radius=3}, who.x, who.y, engine.DamageType.PHYSICAL, 250 + who:getMag() * 3)
+			who:project({type="ball", range=0, selffire=false, radius=3}, who.x, who.y, engine.DamageType.PHYSICAL, self.use_power.damage(who))
 			game.logSeen(who, "%s uses the %s!", who.name:capitalize(), self:getName())
 			return {id=true, used=true}
 		end
@@ -565,16 +570,19 @@ newEntity{ base = "BASE_ROD",
 	level_range = {25, 35},
 	elec_proof = true,
 	add_name = false,
-
 	material_level = 3,
-
 	max_power = 75, power_regen = 1,
-	use_power = { name = "shoot a cone of fire", power = 50,
+	use_power = { power = 50,
+		damage = function(who) return 300 + who:getMag() * 2 end,
+		radius = 5,
+		name = function(self, who)
+			return ("shoot a cone of flames (radius %d) for %0.2f fire damage(based on Magic)"):format(self.use_power.radius, engine.interface.ActorTalents.damDesc(who, engine.DamageType.FIRE, self.use_power.damage(who)))
+		end,
 		use = function(self, who)
 			local tg = {type="cone", range=0, radius=5}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
-			who:project(tg, x, y, engine.DamageType.FIRE, 300 + who:getMag() * 2, {type="flame"})
+			who:project(tg, x, y, engine.DamageType.FIRE, self.use_power.damage(who), {type="flame"})
 			return {id=true, used=true}
 		end
 	},
@@ -945,6 +953,9 @@ It hums faintly, as if great power is locked within, yet alone it seems incomple
 	max_power = 20, power_regen = 1,
 	use_talent = { id = Talents.T_ARCANE_SUPREMACY, level = 3, power = 20 },
 	set_list = { {"define_as", "SET_HAT_CHANNELERS"} },
+	set_desc = {
+		channelers = "A true understanding of the arcane is needed to release its full power.",
+	},
 	on_set_complete = function(self, who)
 		self:specialSetAdd({"wielder","max_mana"}, 100)
 		game.logSeen(who, "#STEEL_BLUE#You feel a swell of arcane energy.")
@@ -978,6 +989,9 @@ Touching the cloth you feel a sense of knowledge and power from bygone ages, yet
 	},
 	max_power = 40, power_regen = 1,
 	set_list = { {"define_as", "SET_STAFF_CHANNELERS"} },
+	set_desc = {
+		channelers = "Only supremacy of the arcane can release its full power.",
+	},
 	on_set_complete = function(self, who)
 		local Talents = require "engine.interface.ActorTalents"
 		self.use_talent = { id = Talents.T_METAFLOW, level = 3, power = 40 }

@@ -101,10 +101,7 @@ end
 -- Check for effects when hit by an anomaly
 -- This is called before immunity is checked
 checkAnomalyTriggers = function(self, target)
-	if target:hasEffect(target.EFF_ATTENUATE) then
-		local eff = target:hasEffect(target.EFF_ATTENUATE)
-		eff.src:callTalent(eff.src.T_ATTENUATE, "doAnomaly", target, eff)
-	end
+
 end
 
 -- Teleportation 
@@ -341,9 +338,9 @@ newTalent{
 			canAct = false,
 			energy = {value=0},
 			disarm = function(self, x, y, who) return false end,
-			summoned_by = self, -- "summoner" is immune to it's own traps
+			summoner = self, beneficial_trap = true, faction=self.faction,
 			triggered = function(self, x, y, who)
-				if who == self.summoned_by or who:canBe("teleport") then
+				if who == self.summoned or who:canBe("teleport") then
 					game.level.map:particleEmitter(who.x, who.y, 1, "temporal_teleport")
 					if not who:teleportRandom(self.dest.x, self.dest.y, 3, 1) then
 						game.logSeen(who, "%s tries to enter the wormhole but a violent force pushes it back.", who.name:capitalize())
@@ -934,7 +931,7 @@ newTalent{
 			DamageType.TEMPORAL, getAnomalyDamageAoE(self, t),
 			tg.radius,
 			5, nil,
-			engine.MapEffect.new{alpha=85, color_br=200, color_bg=200, color_bb=0, effect_shader="shader_images/paradox_effect.png"},
+			engine.MapEffect.new{color_br=180, color_bg=100, color_bb=255, effect_shader="shader_images/magic_effect.png"},
 			nil, false
 		)
 		return true

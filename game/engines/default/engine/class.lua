@@ -40,6 +40,11 @@ function make(c)
 		if obj.init then obj:init(...) end
 		return obj
 	end
+	c.castAs = function(o)
+		o.__CLASSNAME = c._NAME
+		setmetatable(o, {__index=c})
+		return o
+	end
 	return c
 end
 
@@ -102,6 +107,7 @@ function inherit(...)
 		c.castAs = function(o)
 			o.__CLASSNAME = c._NAME
 			setmetatable(o, {__index=c})
+			return o
 		end
 		if c.inherited then
 			run_inherited[#run_inherited+1] = function()

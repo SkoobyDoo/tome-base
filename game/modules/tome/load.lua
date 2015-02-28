@@ -221,11 +221,11 @@ os.exit()
 --]]
 
 -- Load tilesets, to speed up image loads
-Tiles:loadTileset("/data/gfx/ts-npc.lua")
-Tiles:loadTileset("/data/gfx/ts-object.lua")
-Tiles:loadTileset("/data/gfx/ts-trap.lua")
-Tiles:loadTileset("/data/gfx/ts-terrain.lua")
-Tiles:loadTileset("/data/gfx/ts-talents-effects.lua")
+Tiles:loadTileset("/data/gfx/ts-gfx-npc.lua")
+Tiles:loadTileset("/data/gfx/ts-gfx-object.lua")
+Tiles:loadTileset("/data/gfx/ts-gfx-trap.lua")
+Tiles:loadTileset("/data/gfx/ts-gfx-terrain.lua")
+Tiles:loadTileset("/data/gfx/ts-gfx-talents-effects.lua")
 
 -- Factions
 dofile("/data/factions.lua")

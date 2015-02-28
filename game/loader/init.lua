@@ -143,7 +143,12 @@ local te4_loader = function(name)
 	local bname = name
 
 	-- Base loader
-	local prev = loadfile("/"..bname:gsub("%.", "/")..".lua")
+	local bfile = "/"..bname:gsub("%.", "/")..".lua"
+	local prev, err = loadfile(bfile)
+	if not prev and err then
+		error("Error while loading base '"..bfile.."':\n"..tostring(err))
+		return nil
+	end
 
 	name = name:gsub("%.", "/")
 	for i = 1, #__addons_superload_order do

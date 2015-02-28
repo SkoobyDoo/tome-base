@@ -68,7 +68,7 @@ newTalent{
 			-- Force "wield"
 			self:addObject(pf, o)
 			game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true})
-
+			
 			self:sortInven()
 			self:talentDialogReturn(true)
 		end))
@@ -266,7 +266,7 @@ newTalent{
 		local base = [[Allows you to wield a physical melee weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
 		A gem will provide +3 bonus to all primary stats per tier of the gem.
 		A mindstar will randomly try to telekinetically grab a far away foe (10% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
-		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
+		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with 60% of your Willpower and Cunning, for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
 
 		]]
 

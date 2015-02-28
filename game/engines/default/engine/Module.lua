@@ -365,6 +365,8 @@ function _M:listBackgrounds(mod)
 	-- Add the default one
 	-- local backname = util.getval(mod.background_name) or "tome"
 	-- defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	if not mod.background_name then mod.background_name = {"tome"} end
+	if type (mod.background_name) == "string" then mod.background_name = {mod.background_name} end
 	for i, backname in ipairs(mod.background_name) do
 		defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
 	end

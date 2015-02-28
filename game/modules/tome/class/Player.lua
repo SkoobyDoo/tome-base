@@ -276,7 +276,7 @@ function _M:openVault(vault_id)
 	print("Vault id", vault_id, "opens:", v.x, v.y, v.w, v.h)
 	for i = v.x, v.x + v.w - 1 do for j = v.y, v.y + v.h - 1 do
 		if  game.level.map.attrs(i, j, "vault_id") == vault_id then
-			 game.level.map.attrs(i, j, "vault_id", false)
+			-- game.level.map.attrs(i, j, "vault_id", false)
 			 local act = game.level.map(i, j, Map.ACTOR)
 			 if act and not act.player then
 			 	act:removeEffect(act.EFF_VAULTED, true, true)
@@ -440,6 +440,7 @@ function _M:updateMainShader()
 		-- Blur shader
 		if config.settings.tome.fullscreen_confusion and pf.blur and pf.blur.shad then
 			if self:attr("confused") and self.confused >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
+			elseif self:attr("sleep") and not self:attr("lucid_dreamer") and self.sleep >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
 			end
 		end
 
@@ -729,8 +730,10 @@ function _M:suffocate(value, src, death_msg)
 	local dead, affected = mod.class.Actor.suffocate(self, value, src, death_msg)
 	if affected and value > 0 and self.runStop then
 		-- only stop autoexplore when air is less than 75% of max.
-		if self.air < 0.75 * self.max_air then self:runStop("suffocating") end
-		self:restStop("suffocating")
+		if self.air < 0.75 * self.max_air and self.air < 100 then
+			self:runStop("suffocating")
+			self:restStop("suffocating")
+		end
 	end
 	return dead, affected
 end
@@ -817,7 +820,7 @@ local function spotHostiles(self, actors_only)
 		-- Check for projectiles in line of sight
 		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, self.sight or 10, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
 			local proj = game.level.map(x, y, game.level.map.PROJECTILE)
-			if not proj then return end
+			if not proj or not game.level.map.seens(x, y) then return end
 
 			-- trust ourselves but not our friends
 			if proj.src and self == proj.src then return end
@@ -833,7 +836,7 @@ local function spotHostiles(self, actors_only)
 			if tx and ty then
 				local dist_to_line = math.abs((self.x - sx) * (ty - sy) - (self.y - sy) * (tx - sx)) / core.fov.distance(sx, sy, tx, ty)
 				local our_way = ((self.x - x) * (tx - x) + (self.y - y) * (ty - y)) > 0
-				if our_way and dist_to_line < 1.5 then
+				if our_way and dist_to_line < 1.0 then
 					seen[#seen+1] = {x=x, y=y, projectile=proj, entity=proj, name=(proj.getName and proj:getName()) or proj.name}
 				end
 			end
@@ -854,7 +857,7 @@ function _M:automaticTalents()
 		local spotted = spotHostiles(self, true)
 		local cd = self:getTalentCooldown(t) or 0
 		local turns_used = util.getval(t.no_energy, self, t)  == true and 0 or 1
-		if cd <= turns_used then
+		if cd <= turns_used and t.mode ~= "sustained" then
 			game.logPlayer(self, "Automatic use of talent %s #DARK_RED#skipped#LAST#: cooldown too low (%d).", t.name, cd)
 		elseif (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
 			if (c == 1) or (c == 2 and #spotted <= 0) or (c == 3 and #spotted > 0) then
@@ -903,13 +906,8 @@ function _M:onRestStart()
 		self:attr("mana_regen", self:attr("mana_regen_on_rest"))
 		self.resting.mana_regen = self:attr("mana_regen_on_rest")
 	end
-	if self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox())then
-		local power = 0
-		if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
-			local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
-			power = (self.preferred_paradox - self:getParadox())/duration
-			self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
-		end
+	if self:knowTalent(self.T_SPACETIME_TUNING) then
+		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
 	end
 	self:fireTalentCheck("callbackOnRest", "start")
 end
@@ -969,7 +967,7 @@ function _M:restCheck()
 		if self:getVim() < self:getMaxVim() and self.vim_regen > 0 then return true end
 		if self:getEquilibrium() > self:getMinEquilibrium() and self.equilibrium_regen < 0 then return true end
 		if self.life < self.max_life and self.life_regen> 0 then return true end
-		if self.air < self.max_air and self.air_regen > 0 then return true end
+		if self.air < self.max_air and self.air_regen > 0 and not self.is_suffocating then return true end
 		for act, def in pairs(game.party.members) do if game.level:hasEntity(act) and not act.dead then
 			if act.life < act.max_life and act.life_regen > 0 and not act:attr("no_life_regen") then return true end
 		end end
@@ -978,7 +976,7 @@ function _M:restCheck()
 		-- Check for detrimental effects
 		for id, _ in pairs(self.tmp) do
 			local def = self.tempeffect_def[id]
-			if def.status == "detrimental" and (def.decrease or 1) > 0 then
+			if def.type ~= "other" and def.status == "detrimental" and (def.decrease or 1) > 0 then
 				return true
 			end
 		end
@@ -1008,9 +1006,32 @@ function _M:restCheck()
 			local p = self:isTalentActive(tid)
 			if p and p.rest_count and p.rest_count > 0 then return true end
 		end
+		for inven_id, inven in pairs(self.inven) do
+			for _, o in ipairs(inven) do
+				local cd = o:getObjectCooldown(self)
+				if cd and cd > 0 then return true end
+			end
+		end
 	end
 
 	self.resting.wait_cooldowns = nil
+
+	-- Enter full recharge rest if we waited for cooldowns already
+	if self.resting.cnt == 0 then
+		self.resting.wait_powers = true
+	end
+
+	if self.resting.wait_powers then
+		for inven_id, inven in pairs(self.inven) do
+			for _, o in ipairs(inven) do
+				if o.power and o.power_regen and o.power_regen > 0 and o.power < o.max_power then
+					return true
+				end
+			end
+		end
+	end
+
+	self.resting.wait_powers = nil
 
 	-- Enter recall waiting rest if we are at max already
 	if self.resting.cnt == 0 and self:hasEffect(self.EFF_RECALL) then
@@ -1035,6 +1056,7 @@ end
 -- 'ignore_memory' is only used when checking for paths around traps.  This ensures we don't remember items "obj_seen" that we aren't supposed to
 function _M:runCheck(ignore_memory)
 	if game:hasDialogUp(1) then return false, "dialog is displayed" end
+	local is_main_player = self == game:getPlayer(true)
 
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
@@ -1050,10 +1072,11 @@ function _M:runCheck(ignore_memory)
 	local noticed = false
 	self:runScan(function(x, y, what)
 		-- Objects are always interesting, only on curent spot
-		if what == "self" and not game.level.map.attrs(x, y, "obj_seen") then
+		local obj_seen = game.level.map.attrs(x, y, "obj_seen")
+		if what == "self" and obj_seen ~= self and obj_self ~= true then
 			local obj = game.level.map:getObject(x, y, 1)
 			if obj then
-				if not ignore_memory then game.level.map.attrs(x, y, "obj_seen", true) end
+				if not ignore_memory then game.level.map.attrs(x, y, "obj_seen", is_main_player and true or self) end
 				noticed = "object seen"
 				return false, noticed
 			end
@@ -1325,7 +1348,7 @@ function _M:onWear(o, slot, bypass_set)
 		end)
 	end
 
-	if self.hotkey and o:canUseObject() and config.settings.tome.auto_hotkey_object then
+	if self.hotkey and o:canUseObject() and config.settings.tome.auto_hotkey_object and not o.no_auto_hotkey then
 		local position
 		local name = o:getName{no_count=true, force_id=true, no_add_name=true}
 
@@ -1499,3 +1522,5 @@ function _M:attackOrMoveDir(dir)
 	self:moveDir(dir)
 	game_or_player.bump_attack_disabled = tmp
 end
+
+return _M

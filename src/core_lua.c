@@ -3355,6 +3355,12 @@ static int gl_vertex_toscreen(lua_State *L) {
 	return 0;
 }
 
+static int gl_counts_draws(lua_State *L) {
+	lua_pushnumber(L, nb_draws);
+	nb_draws = 0;
+	return 1;
+}
+
 static const struct luaL_Reg displaylib[] =
 {
 	{"setTextBlended", set_text_aa},
@@ -3400,6 +3406,7 @@ static const struct luaL_Reg displaylib[] =
 	{"glScissor", gl_scissor},
 	{"getScreenshot", sdl_get_png_screenshot},
 	{"glMaxTextureSize", gl_get_max_texture_size},
+	{"countDraws", gl_counts_draws},
 	{NULL, NULL},
 };
 

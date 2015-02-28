@@ -35,7 +35,8 @@ function _M:init(t)
 	self.scrollbar = t.scrollbar
 	self.focus_check = t.focus_check
 	self.variable_height = t.variable_height
-
+	self.pingpong = t.pingpong and 0
+	self.scroll_delay = t.pingpong
 	self.dest_area = t.dest_area and t.dest_area or { h = self.h }
 	self.max_h = 0
 	self.scroll_inertia = 0
@@ -154,6 +155,10 @@ function _M:switchItem(item, create_if_needed, force)
 	self.list = d.list
 	self.max_display = d.max_display
 	self.cur_item = item
+	if self.pingpong then
+		self.pingpong = 0
+		self.pingpong_last = nil
+	end
 	return true
 end
 
@@ -180,6 +185,34 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
+
+		if self.pingpong and not self.focused then
+			local time = core.game.getTime()
+			if not self.pingpong_last then self.pingpong_last = time + self.scroll_delay * self.h / 3 end
+			local delta = math.max(time - self.pingpong_last, 0) / self.scroll_delay
+
+			local scrollbar = self.scrollbar
+			if delta > 0 and scrollbar.max > 0 then
+				local slowdown = 0.5 * scrollbar.pos / scrollbar.max
+				self.pingpong_last = time
+				if self.pingpong == 0 then
+					scrollbar.pos = scrollbar.pos + delta * (0.5 + slowdown)
+					if scrollbar.pos >= scrollbar.max then 
+						scrollbar.pos = scrollbar.max 
+						self.pingpong = 1
+						self.pingpong_last = time + self.scroll_delay * self.h / 3
+					end
+				else
+					-- scroll back twice as fast, since it's awkward to read during that time
+					scrollbar.pos = scrollbar.pos - delta * 2
+					if scrollbar.pos <= 0 then 
+						scrollbar.pos = 0
+						self.pingpong = 0
+						self.pingpong_last = time + self.scroll_delay * self.h / 3
+					end
+				end
+			end
+		end
 	end
 
 	local loffset_y = offset_y - local_y
@@ -194,6 +227,7 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 		clip_y_end = 0
 
 		local item_h = item.is_separator and (self.fh - self.sep.h) or item.h
+		local item_skip = item.is_separator and (self.fh - self.sep.h) or self.font_h
 		-- if item is within visible area bounds
 		if total_h + item_h > loffset_y and total_h < loffset_y + self.dest_area.h then
 			-- if it started before visible area then compute its top clip
@@ -215,10 +249,10 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 				item._tex:toScreenPrecise(x + current_x, y + current_y, item.w, item_h - (clip_y_start + clip_y_end), 0, item.w / item._tex_w, clip_y_start * one_by_tex_h, (item_h - clip_y_end) * one_by_tex_h )
 			end
 			-- add only visible part of item
-			current_y = current_y + item_h - clip_y_start
+			current_y = current_y + item_skip - clip_y_start
 		end
-		-- add full size of item
-		total_h = total_h + item_h
+		-- add line skip of item
+		total_h = total_h + item_skip
 		-- if we are too deep then end this
 		if total_h > loffset_y + self.dest_area.h then break end
 	end

@@ -1,4 +1,5 @@
 -- ToME - Tales of Maj'Eyal
+-- ToME - Tales of Maj'Eyal
 -- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
@@ -64,6 +65,17 @@ getExtensionModifier = function(self, t, value)
 	return value
 end
 
+-- Tunes paradox
+tuneParadox = function(self, t, value)
+	local dox = self:getParadox() - (self.preferred_paradox or 300)
+	local fix = math.min( math.abs(dox), value )
+	if dox > 0 then
+		self:incParadox( -fix )
+	elseif dox < 0 then
+		self:incParadox( fix )
+	end
+end
+
 --- Warden weapon functions
 -- Checks for weapons in main and quickslot
 doWardenPreUse = function(self, weapon, silent)
@@ -81,9 +93,8 @@ doWardenPreUse = function(self, weapon, silent)
 end
 
 -- Swaps weapons if needed
-doWardenWeaponSwap = function(self, t, dam, type, silent)
+doWardenWeaponSwap = function(self, t, type, silent)
 	local swap = false
-	local dam = dam or 0
 	local warden_weapon
 
 	if type == "blade" then
@@ -103,19 +114,10 @@ doWardenWeaponSwap = function(self, t, dam, type, silent)
 	if swap == true then
 		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
 		self.no_inventory_access = nil
+		self:attr("no_sound", 1)
 		self:quickSwitchWeapons(true, "warden", silent)
+		self:attr("no_sound", -1)
 		self.no_inventory_access = old_inv_access
-		
-		if t and (t.type[1]:find("^chronomancy/blade") or t.type[1]:find("^chronomancy/bow")) then
-			if self:knowTalent(self.T_BLENDED_THREADS) then
-				if not self.turn_procs.blended_threads then
-					self.turn_procs.blended_threads = warden_weapon
-				end
-				if self.turn_procs.blended_threads == warden_weapon then
-					dam = dam * (1 + self:callTalent(self.T_BLENDED_THREADS, "getPercent"))
-				end
-			end
-		end
 	end
 	
 	return swap, dam
@@ -132,37 +134,6 @@ checkWardenFocus = function(self)
 end
 
 -- Spell functions
-randomWarpEffect = function(self, t, target)
-	local eff = rng.range(1, 4)
-	local power = getParadoxSpellpower(self, t)
-	-- Pull random effect
-	if eff == 1 then
-		if target:canBe("stun") then
-			target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=power})
-		else
-			game.logSeen(target, "%s resists the stun!", target.name:capitalize())
-		end
-	elseif eff == 2 then
-		if target:canBe("blind") then
-			target:setEffect(target.EFF_BLINDED, t.getDuration(self, t), {apply_power=power})
-		else
-			game.logSeen(target, "%s resists the blindness!", target.name:capitalize())
-		end
-	elseif eff == 3 then
-		if target:canBe("pin") then
-			target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=power})
-		else
-			game.logSeen(target, "%s resists the pin!", target.name:capitalize())
-		end
-	elseif eff == 4 then
-		if target:canBe("confusion") then
-			target:setEffect(target.EFF_CONFUSED, t.getDuration(self, t), {power=50, apply_power=power})
-		else
-			game.logSeen(target, "%s resists the confusion!", target.name:capitalize())
-		end
-	end
-end
-
 makeParadoxClone = function(self, target, duration)
 	local m = target:cloneFull{
 		shader = "shadow_simulacrum",
@@ -206,6 +177,10 @@ makeParadoxClone = function(self, target, duration)
 	m.unused_generics = 0
 	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
 	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
+	
+	-- We use this function...  a lot!!
+	-- So don't duplicate the inventory
+	if m.inven then m.inven[m.INVEN_INVEN] = nil end
 
 	-- Clones never flee because they're awesome
 	m.ai_tactic = m.ai_tactic or {}
@@ -233,6 +208,9 @@ makeParadoxClone = function(self, target, duration)
 		end
 	end
 	
+	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
+	if m.preferred_paradox and m.preferred_paradox > 600 then m.preferred_paradox = 600 end
+	
 	return m
 end
 
@@ -256,15 +234,22 @@ newTalent{
 	on_learn = function(self, t)
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
 	end,
-	on_unlearn = function(self, t)
-		if self.preferred_paradox then self.preferred_paradox = nil end
-	end,
 	getDuration = function(self, t)
 		local duration = 20
 		if self:knowTalent(self.T_SPACETIME_STABILITY) then
 			duration = duration - self:callTalent(self.T_SPACETIME_STABILITY, "getTuningAdjustment")
 		end
 		return math.max(duration, 10)
+	end,
+	doTuning = function(self, t)
+		if self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox())then
+			local power = 0
+			if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
+				local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
+				power = (self.preferred_paradox - self:getParadox())/duration
+				self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
+			end
+		end
 	end,
 	action = function(self, t)
 		local function getQuantity(title, prompt, default, min, max)
@@ -294,25 +279,27 @@ newTalent{
 			"Spacetime Tuning",
 			"What's your preferred paradox level?",
 			math.floor(self.paradox))
-		if not paradox then return end
-		if paradox > 1000 then paradox = 1000 end
-		self.preferred_paradox = paradox
+			if not paradox then return end
+			if paradox > 1000 then paradox = 1000 end
+			self.preferred_paradox = paradox
 		return true
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local preference = self.preferred_paradox
+		local sp_modifier = getParadoxModifier(self, t) * 100
 		local spellpower = getParadoxSpellpower(self, t)
 		local after_will, will_modifier, sustain_modifier = self:getModifiedParadox()
 		local anomaly = self:paradoxFailChance()
 		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number over %d turns.
 
 		Preferred Paradox          :  %d
+		Spellpower Modifier        :  %d%%
 		Spellpower for Chronomancy :  %d
 		Willpower Paradox Modifier : -%d
 		Paradox Sustain Modifier   : +%d
 		Total Modifed Paradox      :  %d
-		Current Anomaly Chance     :  %d%%]]):format(duration, preference, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
+		Current Anomaly Chance     :  %d%%]]):format(duration, preference, sp_modifier, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
 	end,
 }
 
@@ -953,31 +940,27 @@ newTalent{
 			x, y = util.coordAddDir(x, y, dir)
 		end
 
-		-- since we're using a precise teleport we'll look for a free grid first
-		local tx, ty = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-		if tx and ty then
-			if not self:teleportRandom(tx, ty, 0) then
-				game.logSeen(self, "The teleport fizzles!")
-			else
-				local dam = self:spellCrit(t.getDamage(self, t))
-				local x, y = ox, oy
-				self:project(tg, x, y, function(px, py)
-					local target = game.level.map(px, py, Map.ACTOR)
-					if target then
-						-- Deal warp damage first so we don't overwrite a big stun with a little one
-						DamageType:get(DamageType.WARP).projector(self, px, py, DamageType.WARP, dam)
+		if not self:teleportRandom(x, y, 0) then
+			game.logSeen(self, "The spell fizzles!")
+		else
+			local dam = self:spellCrit(t.getDamage(self, t))
+			local x, y = ox, oy
+			self:project(tg, x, y, function(px, py)
+				local target = game.level.map(px, py, Map.ACTOR)
+				if target then
+					-- Deal warp damage first so we don't overwrite a big stun with a little one
+					DamageType:get(DamageType.WARP).projector(self, px, py, DamageType.WARP, dam)
 
-						-- Try to stun
-						if target:canBe("stun") then
-							target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
-						else
-							game.logSeen(target, "%s resists the stun!", target.name:capitalize())
-						end
+					-- Try to stun
+					if target:canBe("stun") then
+						target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
+					else
+						game.logSeen(target, "%s resists the stun!", target.name:capitalize())
 					end
-				end)
-				game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporal_lightning", {tx=x-self.x, ty=y-self.y})
-				game:playSoundNear(self, "talents/lightning")
-			end
+				end
+			end)
+			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "temporal_lightning", {tx=x-self.x, ty=y-self.y})
+			game:playSoundNear(self, "talents/lightning")
 		end
 
 		return true
@@ -1106,7 +1089,7 @@ newTalent{
 		end
 		
 		
-		self:project(tg, x, y, DamageType.MATTER, self:spellCrit(damage))
+		self:project(tg, x, y, DamageType.WARP, self:spellCrit(damage))
 		game:playSoundNear(self, "talents/arcane")
 		
 		-- Try to insta-kill

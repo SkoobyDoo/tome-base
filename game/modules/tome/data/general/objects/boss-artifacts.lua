@@ -157,6 +157,10 @@ newEntity{ base = "BASE_RUNE", define_as = "RUNE_REFLECT",
 	inscription_kind = "protect",
 	inscription_data = {
 		cooldown = 15,
+		dur = 5,
+		power = 100,
+		use_stat_mod = 5,
+		use_stat = "mag",
 	},
 	inscription_talent = "RUNE:_REFLECTION_SHIELD",
 }

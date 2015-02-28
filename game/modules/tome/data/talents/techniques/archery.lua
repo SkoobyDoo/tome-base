@@ -37,7 +37,7 @@ newTalent{
 	message = "@Source@ shoots!",
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 } },
-	on_pre_use = function(self, t, silent) if not (self:attr("warden_swap") and doWardenPreUse(self, "bow")) and not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) if not (self:attr("warden_swap") and doWardenPreUse(self, "bow")) and not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling and ammo for this talent.") end return false end return true end,
 	no_unlearn_last = true,
 	use_psi_archery = function(self, t)
 		local inven = self:getInven("PSIONIC_FOCUS")
@@ -50,12 +50,12 @@ newTalent{
 		end
 	end,
 	action = function(self, t)
-		local swap = self:attr("warden_swap") and doWardenWeaponSwap(self, t, nil, "bow")
+		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "bow"))
 	
 		-- Most of the time use the normal shoot.
 		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
-			if not targets then if swap then doWardenWeaponSwap(self, t, nil, "blade") end return end
+			if not targets then if swap then doWardenWeaponSwap(self, t, "blade") end return end
 			self:archeryShoot(targets, t, nil, {use_psi_archery = t.use_psi_archery(self, t)})
 			return true
 		end
@@ -98,41 +98,6 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Shoot your bow, sling or other missile launcher!]])
-	end,
-}
-
-newTalent{
-	name = "Reload",
-	type = {"technique/archery-base", 1},
-	cooldown = 2,
-	innate = true,
-	points = 1,
-	tactical = { AMMO = 2 },
-	no_energy = true,
-	no_reload_break = true,
-	no_break_stealth = true,
-	no_dumb_use = true,
-	on_pre_use = function(self, t, silent)
-		local q = self:hasAmmo()
-		if not q then if not silent then game.logPlayer(self, "You must have a quiver or pouch equipped.") end return false end
-		if q.combat.shots_left >= q.combat.capacity then return false end
-		return true
-	end,
-	no_unlearn_last = true,
-	action = function(self, t)
-		if self.resting then return end
-		local ret = self:reload()
-		if ret then
-			self:setEffect(self.EFF_RELOAD_DISARMED, 1, {})
-		end
-		return true
-	end,
-	info = function(self, t)
-		return ([[Quickly reload your ammo by %d (depends on masteries and object bonuses).
-		Doing so requires no turn but you are considered disarmed for 2 turns.
-
-		Reloading does not break stealth.]])
-		:format(self:reloadRate())
 	end,
 }
 
