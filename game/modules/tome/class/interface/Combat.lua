@@ -815,13 +815,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		t.do_scoundrel(self, t, target)
 	end
 
-	-- Special effect
+	-- Special weapon effects  (passing the special definition to facilitate encapsulating multiple special effects)
 	if hitted and weapon and weapon.special_on_hit then
 		local specials = weapon.special_on_hit
 		if specials.fct then specials = {specials} end
 		for _, special in ipairs(specials) do
 			if special.fct and (not target.dead or special.on_kill) then
-				special.fct(weapon, self, target, dam)
+				special.fct(weapon, self, target, dam, special)
 			end
 		end
 	end
@@ -831,7 +831,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		if specials.fct then specials = {specials} end
 		for _, special in ipairs(specials) do
 			if special.fct and (not target.dead or special.on_kill) then
-				special.fct(weapon, self, target, dam)
+				special.fct(weapon, self, target, dam, special)
 			end
 		end
 	end
@@ -841,13 +841,9 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		if specials.fct then specials = {specials} end
 		for _, special in ipairs(specials) do
 			if special.fct then
-				special.fct(weapon, self, target, dam)
+				special.fct(weapon, self, target, dam, special)
 			end
 		end
-	end
-
-	if hitted and weapon and weapon.special_on_kill and weapon.special_on_kill.fct and target.dead then
-		weapon.special_on_kill.fct(weapon, self, target, dam)
 	end
 
 	if hitted and crit and not target.dead and self:knowTalent(self.T_BACKSTAB) and not target:attr("stunned") and rng.percent(self:callTalent(self.T_BACKSTAB, "getStunChance")) then
