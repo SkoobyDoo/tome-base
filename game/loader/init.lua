@@ -76,7 +76,11 @@ local load load = function(...)
 			end
 		end
 	end
-
+	if __ANDROID__ then
+		local ff, err = loadfile("/engine/version.lua")
+		if ff and not err then tryLoadEngine(ff, "/engine/", nil) end
+	end
+	
 	__available_engines = engines
 
 	print("[ENGINE LOADER] found engines", table.serialize(engines, nil, true))
