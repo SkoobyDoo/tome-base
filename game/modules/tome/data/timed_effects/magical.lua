@@ -2878,6 +2878,7 @@ newEffect{
 		if not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
 			eff.projecting = true
 			DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+			eff.projecting = false
 		end
 		return {value=0}
 	end,
