@@ -112,6 +112,18 @@ int get_number_cpus()
 	return count;
 }
 
+#elif defined(SELFEXE_ANDROID)
+const char *get_self_executable(int argc, char **argv)
+{
+	return argv[1];
+}
+
+#include <unistd.h>
+int get_number_cpus()
+{
+	return sysconf(_SC_NPROCESSORS_CONF);;
+}
+
 #else
 const char *get_self_executable(int argc, char **argv)
 {

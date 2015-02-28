@@ -241,6 +241,9 @@ static GLenum sdl_gl_texture_format(SDL_Surface *s) {
 	GLenum texture_format;
 	if (nOfColors == 4)	 // contains an alpha channel
 	{
+#ifdef USE_GLES2
+		texture_format = GL_RGBA;
+#else
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		if (s->format->Rmask == 0xff000000)
 #else
@@ -249,8 +252,12 @@ static GLenum sdl_gl_texture_format(SDL_Surface *s) {
 			texture_format = GL_RGBA;
 		else
 			texture_format = GL_BGRA;
+#endif
 	} else if (nOfColors == 3)	 // no alpha channel
 	{
+#ifdef USE_GLES2
+		texture_format = GL_RGBA;
+#else
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		if (s->format->Rmask == 0x00ff0000)
 #else
@@ -259,6 +266,7 @@ static GLenum sdl_gl_texture_format(SDL_Surface *s) {
 			texture_format = GL_RGB;
 		else
 			texture_format = GL_BGR;
+#endif
 	} else {
 		printf("warning: the image is not truecolor..  this will probably break %d\n", nOfColors);
 		// this error should not go unhandled
@@ -398,7 +406,11 @@ static int gl_texture_to_sdl(lua_State *L)
 //	printf("Making surface from texture %dx%d\n", w, h);
 	// Get texture data
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
+#ifdef USE_GLES2
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
+#else
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp);
+#endif
 
 	// Make sdl surface from it
 	*s = SDL_CreateRGBSurfaceFrom(tmp, w, h, 32, w*4, 0,0,0,0);
@@ -1205,7 +1217,7 @@ static int sdl_texture_outline(lua_State *L)
 	auxiliar_setclass(L, "gl{texture}", -1);
 	glGenTextures(1, &img->tex);
 	tfglBindTexture(GL_TEXTURE_2D, img->tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1390,6 +1402,7 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 /**************************************************************
  * Quadratic Objects
  **************************************************************/
+#if !defined(USE_GLES2)
 static int gl_new_quadratic(lua_State *L)
 {
 	GLUquadricObj **quadratic = (GLUquadricObj**)lua_newuserdata(L, sizeof(GLUquadricObj*));
@@ -1421,6 +1434,11 @@ static int gl_quadratic_sphere(lua_State *L)
 
 	return 0;
 }
+#else
+static int gl_new_quadratic(lua_State *L) { int **quadratic = (int**)lua_newuserdata(L, sizeof(int*)); auxiliar_setclass(L, "gl{quadratic}", -1); return 1; }
+static int gl_free_quadratic(lua_State *L) { lua_pushnumber(L, 1); return 1; }
+static int gl_quadratic_sphere(lua_State *L) { return 0; }
+#endif
 
 /**************************************************************
  * Framebuffer Objects
@@ -1449,7 +1467,7 @@ static int gl_new_fbo(lua_State *L)
 	// Now setup a texture to render to
 	glGenTextures(1, &(fbo->texture));
 	tfglBindTexture(GL_TEXTURE_2D, fbo->texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1719,6 +1737,7 @@ static int sdl_set_gamma(lua_State *L)
 	return 1;
 }
 
+#if !defined(USE_GLES2)
 static void png_write_data_fn(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	luaL_Buffer *B = (luaL_Buffer*)png_get_io_ptr(png_ptr);
@@ -1896,6 +1915,10 @@ static int gl_fbo_to_png(lua_State *L)
 
 	return 1;
 }
+#else
+static int sdl_get_png_screenshot(lua_State *L) { return 0; }
+static int gl_fbo_to_png(lua_State *L) { return 0; }
+#endif
 
 
 static int fbo_texture_bind(lua_State *L)
