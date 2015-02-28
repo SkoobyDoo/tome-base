@@ -115,8 +115,10 @@ else
 end
 
 -- Default shader
-if not config.settings.fbo_active then core.display.disableFBO() print("Disabling FBO") end
-if not config.settings.shaders_active then core.shader.disable() print("Disabling Shaders") end
+if not core.display.isModernGL() then
+	if not config.settings.fbo_active then core.display.disableFBO() print("Disabling FBO") end
+	if not config.settings.shaders_active then core.shader.disable() print("Disabling Shaders") end
+end
 if core.shader.active() then
 	local Shader = require "engine.Shader"
 	local default = Shader.new("default/gl")

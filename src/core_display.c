@@ -287,7 +287,6 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	// get the number of channels in the SDL surface
-	GLint nOfColors = s->format->BytesPerPixel;
 	GLenum texture_format = sdl_gl_texture_format(s);
 
 	// In case we can't support NPOT textures round up to nearest POT
@@ -299,7 +298,6 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 
 	if (fw) *fw = realw;
 	if (fh) *fh = realh;
-	//printf("request size (%d,%d), producing size (%d,%d)\n",s->w,s->h,realw,realh);
 
 	if (!largest_black || largest_size < realw * realh * 4) {
 		if (largest_black) free(largest_black);
@@ -307,7 +305,7 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 		largest_size = realh*realw*4;
 		printf("Upgrading black texture to size %d\n", largest_size);
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, realw, realh, 0, texture_format, GL_UNSIGNED_BYTE, largest_black);
+	glTexImage2D(GL_TEXTURE_2D, 0, texture_format, realw, realh, 0, texture_format, GL_UNSIGNED_BYTE, largest_black);
 
 #ifdef _DEBUG
 	GLenum err = glGetError();
@@ -321,7 +319,31 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 void copy_surface_to_texture(SDL_Surface *s) {
 	GLenum texture_format = sdl_gl_texture_format(s);
 
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, s->w, s->h, texture_format, GL_UNSIGNED_BYTE, s->pixels);
+#ifdef USE_GLES2
+	bool tofree = FALSE;
+	unsigned char *pixels = s->pixels;
+
+	// GLES2 seems to not like RGB texture, so we convert to RGBA
+	if (s->format->BytesPerPixel == 3) {
+		int i, j;
+		pixels = malloc(s->w * s->h * 4);
+		for (i = 0; i < s->w; i++) { for (j = 0; j < s->h; j++) {
+			pixels[(i + j * s->w) * 4 + 0] = ((unsigned char*)s->pixels)[(i + j * s->w) * 3 + 0];
+			pixels[(i + j * s->w) * 4 + 1] = ((unsigned char*)s->pixels)[(i + j * s->w) * 3 + 1];
+			pixels[(i + j * s->w) * 4 + 2] = ((unsigned char*)s->pixels)[(i + j * s->w) * 3 + 2];
+			pixels[(i + j * s->w) * 4 + 3] = 255;
+		} }
+		texture_format = GL_RGBA;
+		tofree = TRUE;
+	}
+#endif
+
+	printf("Uploading texture (%d,%d), with format %d / %d\n",s->w,s->h, texture_format, s->format->BytesPerPixel);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, s->w, s->h, texture_format, GL_UNSIGNED_BYTE, pixels);
+
+#ifdef USE_GLES2
+	if (tofree) free(pixels);
+#endif
 
 #ifdef _DEBUG
 	GLenum err = glGetError();
@@ -610,7 +632,7 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	tfglBindTexture(GL_TEXTURE_2D, st->tex);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, w, dh, 0, GL_RGBA, GL_UNSIGNED_BYTE, sdm);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, dh, 0, GL_RGBA, GL_UNSIGNED_BYTE, sdm);
 
 	free(tmp);
 	free(sdm);

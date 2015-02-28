@@ -628,7 +628,7 @@ static void setup_seens_texture(map_type *map)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, map->seens_map_w, map->seens_map_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	map->seens_map = calloc((map->seens_map_w)*(map->seens_map_h)*4, sizeof(GLubyte));
 	map->seen_changed = TRUE;
 
@@ -1842,7 +1842,7 @@ static int minimap_to_screen(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, realw, realh, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		map->minimap = calloc(realw*realh*4, sizeof(GLubyte));
 	}
 
