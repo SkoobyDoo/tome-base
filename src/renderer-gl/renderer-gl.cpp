@@ -144,6 +144,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 
 	// Fallback OpenGl 1.1 way, no shaders, fixed pipeline
 	} else {
+#ifndef NO_OLD_GL
 		glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);
 		glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].u);
 		glColorPointer(4, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].r);
@@ -152,6 +153,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		} else {
 			glDrawArrays(vr->kind, 0, vx->nb);
 		}
+#endif
 	}
 
 	state->translate(-x, -y, 0);
