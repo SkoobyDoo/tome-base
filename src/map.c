@@ -520,8 +520,8 @@ static int map_objects_display(lua_State *L)
 	// WARNING: this is a static, only one FBO is ever made, and never deleted, for some reasons
 	// deleting it makes the game crash when doing a chain lightning spell under luajit1 ... (yeah I know .. weird)
 	static GLuint fbo = 0;
-	if (!fbo) CHECKGL(glGenFramebuffersEXT(1, &fbo));
-	CHECKGL(glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo));
+	if (!fbo) CHECKGL(glGenFramebuffers(1, &fbo));
+	CHECKGL(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
 
 	// Now setup a texture to render to
 	GLuint img;
@@ -531,10 +531,10 @@ static int map_objects_display(lua_State *L)
 	CHECKGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
 	CHECKGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 	CHECKGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	CHECKGL(glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, img, 0));
+	CHECKGL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img, 0));
 
-	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) return 0;
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(status != GL_FRAMEBUFFER_COMPLETE) return 0;
 
 	renderer_push_ortho_state(w, h);
 
@@ -588,12 +588,12 @@ static int map_objects_display(lua_State *L)
 	 ***************************************************/
 
 	// Unbind texture from FBO and then unbind FBO
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, gl_c_fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, gl_c_fbo);
 
 	// Cleanup
 	// No, dot not it's a static, see upwards
-//	CHECKGL(glDeleteFramebuffersEXT(1, &fbo));
+//	CHECKGL(glDeleteFramebuffers(1, &fbo));
 
 	renderer_pop_ortho_state();
 
