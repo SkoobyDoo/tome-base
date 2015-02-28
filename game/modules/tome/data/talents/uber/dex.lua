@@ -86,7 +86,7 @@ uberTalent{
 	cooldown = 12,
 	radius = 4,
 	range = 1,
-	tactical = { ATTACK = { PHYSICAL=2 }, DISABLE = { disarm = 2 } },
+	tactical = { ATTACKAREA = {  weapon = 2  }, DISABLE = { disarm = 2 } },
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
@@ -148,7 +148,7 @@ uberTalent{
 	radius = 1,
 	range = 10,
 	is_melee = true,
-	tactical = { CLOSEIN = 2, ATTACK = { PHYSICAL = 2 }, DISABLE = { daze = 1 } },
+	tactical = { CLOSEIN = 2, ATTACKAREA = { weapon = 2 }, DISABLE = { daze = 1 } },
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
