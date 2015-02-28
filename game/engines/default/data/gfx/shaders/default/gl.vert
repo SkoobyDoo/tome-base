@@ -1,6 +1,6 @@
 uniform float tick;
 uniform vec4 displayColor;
-uniform mat4x4 mvp;
+uniform mat4 mvp;
 
 void main()
 {
