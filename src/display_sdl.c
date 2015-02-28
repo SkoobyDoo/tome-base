@@ -81,7 +81,7 @@ GLfloat *gl_c_vertices_ptr = NULL;
 GLfloat *gl_c_texcoords_ptr = NULL;
 GLfloat *gl_c_colors_ptr = NULL;
 
-#if defined(USE_GLES1)
+#if defined(USE_GLES2)
 /*
  * SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
  * Copyright (C) 1991-2000 Silicon Graphics, Inc. All Rights Reserved.

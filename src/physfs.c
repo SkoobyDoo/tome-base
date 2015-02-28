@@ -354,11 +354,16 @@ static int lua_fs_get_home_path(lua_State *L)
 
 static int lua_fs_get_user_path(lua_State *L)
 {
+#ifdef USE_ANDROID
+	lua_pushstring(L, SDL_AndroidGetInternalStoragePath());
+	return 1;
+#else
 	if (override_home)
 		lua_pushstring(L, override_home);
 	else
 		lua_pushstring(L, PHYSFS_getUserDir());
 	return 1;
+#endif
 }
 
 static int lua_fs_get_path_separator(lua_State *L)

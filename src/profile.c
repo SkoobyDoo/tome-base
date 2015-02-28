@@ -137,6 +137,10 @@ int thread_profile(void *data)
 	profile_type *profile = (profile_type*)data;
 	lua_State *L = lua_open();  /* create state */
 	luaL_openlibs(L);  /* open libraries */
+#ifdef USE_ANDROID
+	lua_pushcfunction(L, androprint);
+	lua_setglobal(L, "_androprint");
+#endif
 	luaopen_core(L);
 	luaopen_socket_core(L);
 	luaopen_mime_core(L);

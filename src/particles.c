@@ -1010,6 +1010,10 @@ int thread_particles(void *data)
 	lua_setglobal(L, "__threaddata");
 	lua_atpanic(L, particles_lua_panic_handler);
 	luaL_openlibs(L);  /* open libraries */
+#ifdef USE_ANDROID
+	lua_pushcfunction(L, androprint);
+	lua_setglobal(L, "_androprint");
+#endif
 	luaopen_core(L);
 	luaopen_particles(L);
 	luaopen_shaders(L);

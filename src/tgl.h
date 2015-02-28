@@ -1,6 +1,11 @@
 #ifndef __TGL__
 #define __TGL__
 
+#ifdef USE_ANDROID
+#include <android/log.h>
+#define printf(...) __android_log_print(ANDROID_LOG_DEBUG, "ToME", __VA_ARGS__);
+#endif
+
 #if defined(USE_GLES2)
 	#include <GLES2/gl2.h>
 	#include <GLES2/gl2ext.h>

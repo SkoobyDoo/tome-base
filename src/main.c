@@ -273,6 +273,15 @@ int noprint(lua_State *L)
 	return 0;
 }
 
+#ifdef USE_ANDROID
+/* Print to android log */
+int androprint(lua_State *L)
+{
+	printf("%s\n", lua_tostring(L, 1));
+	return 0;
+}
+#endif
+
 // define our data that is passed to our redraw function
 typedef struct {
 	Uint32 color;
@@ -1112,6 +1121,14 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		/***************** Lua Init *****************/
 		L = lua_open();  /* create state */
 		luaL_openlibs(L);  /* open libraries */
+#ifdef USE_ANDROID
+		lua_pushcfunction(L, androprint);
+		lua_setglobal(L, "_androprint");
+		lua_pushstring(L, argv[2]);
+		lua_setglobal(L, "_androbootmod");
+		lua_pushstring(L, argv[3]);
+		lua_setglobal(L, "_androgamemod");
+#endif
 		luaopen_physfs(L);
 		luaopen_core(L);
 		luaopen_core_display(L);
@@ -1124,7 +1141,9 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_profiler(L);
 		luaopen_bit(L);
 		luaopen_lpeg(L);
+#ifndef USE_ANDROID
 		luaopen_lxp(L);
+#endif
 		luaopen_md5_core(L);
 		luaopen_map(L);
 		luaopen_particles(L);
@@ -1166,7 +1185,10 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		lua_pushboolean(L, TRUE);
 		lua_setglobal(L, "__APPLE__");
 #endif
-
+#ifdef USE_ANDROID
+		lua_pushboolean(L, TRUE);
+		lua_setglobal(L, "__ANDROID__");
+#endif
 		// Run bootstrapping
 		if (!luaL_loadfile(L, "/bootstrap/boot.lua"))
 		{
@@ -1378,8 +1400,10 @@ int main(int argc, char *argv[])
 	if (!no_steam) te4_steam_init();
 #endif
 
+#ifndef USE_ANDROID
 	init_openal();
-
+#endif
+	
 	// RNG init
 	init_gen_rand(time(NULL));
 
