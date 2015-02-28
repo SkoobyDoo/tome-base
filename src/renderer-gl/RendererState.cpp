@@ -34,7 +34,7 @@ RendererState::RendererState(int w, int h) {
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	/* Depth buffer setup */
-	glClearDepth( 1.0f );
+	// glClearDepth( 1.0f );
 
 	/* The Type Of Depth Test To Do */
 	glDepthFunc(GL_LEQUAL);
