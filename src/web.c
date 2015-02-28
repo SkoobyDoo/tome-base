@@ -34,7 +34,7 @@
 #include "web-external.h"
 #include "lua_externs.h"
 
-#if defined(USE_GLES1)
+#if defined(USE_GLES2)
 void te4_web_load() {}
 void te4_web_init(lua_State *L) {}
 void te4_web_update(lua_State *L) {}

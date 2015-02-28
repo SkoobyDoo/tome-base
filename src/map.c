@@ -527,7 +527,7 @@ static int map_objects_display(lua_State *L)
 	GLuint img;
 	CHECKGL(glGenTextures(1, &img));
 	tfglBindTexture(GL_TEXTURE_2D, img);
-	CHECKGL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL));
+	CHECKGL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL));
 	CHECKGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
 	CHECKGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 	CHECKGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -628,7 +628,7 @@ static void setup_seens_texture(map_type *map)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	map->seens_map = calloc((map->seens_map_w)*(map->seens_map_h)*4, sizeof(GLubyte));
 	map->seen_changed = TRUE;
 
@@ -1209,7 +1209,7 @@ static void map_update_seen_texture(map_type *map)
 		// Skip the rest of the texture, silly GPUs not supporting NPOT textures!
 		//ptr += (map->seens_map_w - map->w) * 4;
 	}
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, GL_BGRA, GL_UNSIGNED_BYTE, seens);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, GL_RGBA, GL_UNSIGNED_BYTE, seens);
 }
 
 static int map_update_seen_texture_lua(lua_State *L)
@@ -1842,7 +1842,7 @@ static int minimap_to_screen(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		map->minimap = calloc(realw*realh*4, sizeof(GLubyte));
 	}
 
@@ -1898,7 +1898,7 @@ static int minimap_to_screen(lua_State *L)
 			}
 		}
 	}
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_BGRA, GL_UNSIGNED_BYTE, mm);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_RGBA, GL_UNSIGNED_BYTE, mm);
 
 	// Display it
 	float rw = (float)mdw/(float)map->mm_rw, rh = (float)((1+f)*mdh)/(float)map->mm_rh;

@@ -649,7 +649,11 @@ static int shader_is_active(lua_State *L)
 {
 	if (lua_isnumber(L, 1)) {
 		if (lua_tonumber(L, 1) == 4) {
+#ifdef USE_GLES2
+			lua_pushboolean(L, shaders_active);
+#else
 			lua_pushboolean(L, shaders_active && GLEW_EXT_gpu_shader4);
+#endif
 			return 1;
 		}
 	}
