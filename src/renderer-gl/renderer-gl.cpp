@@ -106,7 +106,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 			d[1] = g;
 			d[2] = b;
 			d[3] = a;
-			glUniform4fvARB(shader->p_color, 1, d);
+			glUniform4fv(shader->p_color, 1, d);
 		}
 
 		if (shader->p_mvp != -1) {
