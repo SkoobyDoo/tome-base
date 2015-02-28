@@ -47,6 +47,7 @@ RendererState::RendererState(int w, int h) {
 		view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
 		world = glm::mat4();
 	} else {
+#ifndef NO_OLD_GL
 		setViewport(0, 0, w, h);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -57,6 +58,7 @@ RendererState::RendererState(int w, int h) {
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glEnableClientState(GL_COLOR_ARRAY);
+#endif
 	}
 }
 
@@ -71,6 +73,7 @@ void RendererState::pushOrthoState(int w, int h) {
 		view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
 		world = glm::mat4();
 	} else {
+#ifndef NO_OLD_GL
 		setViewport(0, 0, w, h);
 
 		glMatrixMode(GL_PROJECTION);
@@ -80,6 +83,7 @@ void RendererState::pushOrthoState(int w, int h) {
 
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
+#endif
 	}
 }
 
@@ -88,9 +92,11 @@ void RendererState::popOrthoState() {
 		popState(false);
 		popState(true);
 	} else {
+#ifndef NO_OLD_GL
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
+#endif
 	}
 
 	popViewport();
@@ -105,7 +111,9 @@ void RendererState::identity(bool isworld) {
 		if (isworld) world = glm::mat4();
 		else view = glm::mat4();
 	} else {
+#ifndef NO_OLD_GL
 		glLoadIdentity();
+#endif
 	}
 }
 
@@ -127,7 +135,9 @@ void RendererState::pushState(bool isworld) {
 		if (isworld) saved_worlds.push(world);
 		else saved_views.push(view);
 	} else {
+#ifndef NO_OLD_GL
 		glPushMatrix();
+#endif
 	}
 }
 void RendererState::popState(bool isworld) {
@@ -135,7 +145,9 @@ void RendererState::popState(bool isworld) {
 		if (isworld) { world = saved_worlds.top(); saved_worlds.pop(); }
 		else { view = saved_views.top(); saved_views.pop(); }
 	} else {
+#ifndef NO_OLD_GL
 		glPopMatrix();
+#endif
 	}
 }
 
@@ -143,7 +155,9 @@ void RendererState::translate(float x, float y, float z) {
 	if (use_modern_gl) {
 		world = glm::translate(world, glm::vec3(x, y, z));
 	} else {
+#ifndef NO_OLD_GL
 		glTranslatef(x, y, z);
+#endif
 	}
 }
 
@@ -151,7 +165,9 @@ void RendererState::rotate(float a, float x, float y, float z) {
 	if (use_modern_gl) {
 		world = glm::rotate(world, a, glm::vec3(x, y, z));
 	} else {
+#ifndef NO_OLD_GL
 		glRotatef(a, x, y, z);
+#endif
 	}
 }
 
@@ -159,6 +175,8 @@ void RendererState::scale(float x, float y, float z) {
 	if (use_modern_gl) {
 		world = glm::scale(world, glm::vec3(x, y, z));
 	} else {
+#ifndef NO_OLD_GL
 		glScalef(x, y, z);
+#endif
 	}
 }
