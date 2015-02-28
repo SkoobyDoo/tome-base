@@ -43,13 +43,57 @@ RendererState::RendererState(int w, int h) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	if (use_modern_gl) {
+		setViewport(0, 0, w, h);
 		view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
 		world = glm::mat4();
 	} else {
+		setViewport(0, 0, w, h);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0, w, h, 0, -1001, 1001);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glEnableClientState(GL_COLOR_ARRAY);
 	}
+}
+
+void RendererState::pushOrthoState(int w, int h) {
+	pushViewport();
+	setViewport(0, 0, w, h);
+
+	if (use_modern_gl) {
+		pushState(false);
+		pushState(true);
+
+		view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+		world = glm::mat4();
+	} else {
+		setViewport(0, 0, w, h);
+
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(0, w, h, 0, -1001, 1001);
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+	}
+}
+
+void RendererState::popOrthoState() {
+	if (use_modern_gl) {
+		popState(false);
+		popState(true);
+	} else {
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+	}
+
+	popViewport();
 }
 
 void RendererState::updateMVP() {
@@ -63,6 +107,19 @@ void RendererState::identity(bool isworld) {
 	} else {
 		glLoadIdentity();
 	}
+}
+
+void RendererState::setViewport(int x, int y, int w, int h) {
+	viewport = glm::vec4(x, y, w, h);
+	glViewport(x, y, w, h);
+}
+void RendererState::pushViewport() {
+	saved_viewports.push(viewport);
+}
+void RendererState::popViewport() {
+	viewport = saved_viewports.top();
+	saved_viewports.pop();
+	setViewport(viewport.x, viewport.y, viewport.z, viewport.w);
 }
 
 void RendererState::pushState(bool isworld) {

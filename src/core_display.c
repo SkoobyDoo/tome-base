@@ -1215,21 +1215,10 @@ static int sdl_texture_outline(lua_State *L)
 	if(status != GL_FRAMEBUFFER_COMPLETE) return 0;
 
 	// Set the viewport and save the old one
-	glPushAttrib(GL_VIEWPORT_BIT);
-
-	glViewport(0, 0, w, h);
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, w, 0, h, -101, 101);
-	glMatrixMode( GL_MODELVIEW );
-
-	/* Reset The View */
-	glLoadIdentity( );
+	renderer_push_ortho_state(w, h);
 
 	tglClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glClear(GL_COLOR_BUFFER_BIT);
-	glLoadIdentity();
 
 	tglBindTexture(GL_TEXTURE_2D, t->tex);
 
@@ -1258,16 +1247,12 @@ static int sdl_texture_outline(lua_State *L)
 	// Unbind texture from FBO and then unbind FBO
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, gl_c_fbo);
-	// Restore viewport
-	glPopAttrib();
 
 	// Cleanup
 	// No, dot not it's a static, see upwards
 //	CHECKGL(glDeleteFramebuffers(1, &fbo));
 
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode( GL_MODELVIEW );
+	renderer_pop_ortho_state();
 
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
@@ -1497,44 +1482,28 @@ static int gl_fbo_use(lua_State *L)
 {
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	bool active = lua_toboolean(L, 2);
-	float r = 0, g = 0, b = 0, a = 1;
-
-	if (lua_isnumber(L, 3))
-	{
-		r = luaL_checknumber(L, 3);
-		g = luaL_checknumber(L, 4);
-		b = luaL_checknumber(L, 5);
-		a = luaL_checknumber(L, 6);
-	}
 
 	if (active)
 	{
+		float r = 0, g = 0, b = 0, a = 1;
+		if (lua_isnumber(L, 3))
+		{
+			r = luaL_checknumber(L, 3);
+			g = luaL_checknumber(L, 4);
+			b = luaL_checknumber(L, 5);
+			a = luaL_checknumber(L, 6);
+		}
+
 		tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
 
-		// Set the viewport and save the old one
-		glPushAttrib(GL_VIEWPORT_BIT);
-
-		glViewport(0, 0, fbo->w, fbo->h);
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(0, fbo->w, fbo->h, 0, -1001, 1001);
-		glMatrixMode(GL_MODELVIEW);
-
-		// Reset The View
-		glLoadIdentity();
+		renderer_push_ortho_state(fbo->w, fbo->h);
 
 		tglClearColor(r, g, b, a);
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 	else
 	{
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);
-
-		// Restore viewport
-		glPopAttrib();
+		renderer_pop_ortho_state();
 
 		// Unbind texture from FBO and then unbind FBO
 		if (!lua_isuserdata(L, 3)) { tglBindFramebuffer(GL_FRAMEBUFFER, 0); }
@@ -1615,14 +1584,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	);
 
 	// Set the viewport and save the old one
-	glPushAttrib(GL_VIEWPORT_BIT);
-	glViewport(0, 0, fbo->w, fbo->h);
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, fbo->w, fbo->h, 0, -1001, 1001);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	renderer_push_ortho_state(fbo->w, fbo->h);
 
 	tglClearColor(0, 0, 0, 1);
 
@@ -1644,10 +1606,9 @@ static int gl_fbo_posteffects(lua_State *L)
 	// Bind final fbo (must have bee previously activated)
 	shader_type *s = (shader_type*)lua_touserdata(L, shad_idx);
 	useShader(s, fbo_final->w, fbo_final->h, w, h, 0, 0, 1, 1, 1, 1, 1, 1);
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopAttrib();
+
+	renderer_pop_ortho_state();
+
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo_final->fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
 	vertex_toscreen(generic_vx, x, y, srcfbo->texture, 1, 1, 1, 1);
@@ -1986,6 +1947,11 @@ static int gl_counts_draws(lua_State *L) {
 	return 1;
 }
 
+static int is_modern_gl(lua_State *L) {
+	lua_pushnumber(L, use_modern_gl);
+	return 1;
+}
+
 static const struct luaL_Reg displaylib[] =
 {
 	{"forceRedraw", sdl_redraw_screen},
@@ -1998,6 +1964,7 @@ static const struct luaL_Reg displaylib[] =
 	{"drawQuad", gl_draw_quad},
 	{"drawQuadPart", gl_draw_quad_part},
 	{"FBOActive", gl_fbo_is_active},
+	{"isModernGL", is_modern_gl},
 	{"safeMode", is_safe_mode},
 	{"forceSafeMode", set_safe_mode},
 	{"disableFBO", gl_fbo_disable},
