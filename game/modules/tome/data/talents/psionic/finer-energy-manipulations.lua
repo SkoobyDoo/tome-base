@@ -225,12 +225,6 @@ newTalent{
 	callbackOnStatChange = function(self, t, stat, v)
 		self:updateTalentPassives(t)
 	end,
-	callbackOnWear = function(self, t, o, bypass)
-		self:updateTalentPassives(t)
-	end,
-	callbackOnTakeoff = function(self, t, o, bypass)
-		self:updateTalentPassives(t)
-	end,	
 	action = function(self, t)
 		local ret = self:talentDialog(self:showInventory("Reshape which weapon or armor?", self:getInven("INVEN"),
 			function(o)
