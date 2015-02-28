@@ -94,8 +94,6 @@ PlayerHotkeys.quickhotkeys_specifics = {
 
 
 -- Create some noise textures
-local n = core.noise.new(3)
-_3DNoise = n:makeTexture3D(64, 64, 64)
 local n = core.noise.new(2)
 _2DNoise = n:makeTexture2D(64, 64)
 --local n = core.noise.new(3)

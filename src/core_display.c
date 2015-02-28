@@ -1102,7 +1102,7 @@ static int gl_pop(lua_State *L)
 
 static int gl_identity(lua_State *L)
 {
-	glLoadIdentity();
+	renderer_identity(TRUE);
 	return 0;
 }
 

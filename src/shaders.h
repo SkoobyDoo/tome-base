@@ -22,12 +22,12 @@ bool _CheckGLSLShaderCompile(GLuint shader, const char* file)
 	int charsWritten = 0;
     char *infoLog;
 
-	glGetObjectParameterivARB(shader, GL_COMPILE_STATUS, &success);
-	glGetObjectParameterivARB(shader, GL_INFO_LOG_LENGTH,&infologLength);
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+	glGetShaderiv(shader, GL_INFO_LOG_LENGTH,&infologLength);
 	if(infologLength>0)
 	{
 	    infoLog = (char *)malloc(infologLength);
-	    glGetInfoLogARB(shader, infologLength, &charsWritten, infoLog);
+	    glGetShaderInfoLog(shader, infologLength, &charsWritten, infoLog);
 	}
 	if(success!=GL_TRUE)
 	{
@@ -56,18 +56,18 @@ inline bool _CheckGLSLProgramLink(GLuint program) ALWAYS_INLINE;
 bool _CheckGLSLProgramLink(GLuint program)
 {
 	int success;
-	glGetObjectParameterivARB(program, GL_LINK_STATUS, &success);
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
 	if(success!=GL_TRUE)
 	{
 		// Something went Wrong
 		int infologLength = 0;
 		int charsWritten = 0;
 		char *infoLog;
-		glGetObjectParameterivARB(program, GL_INFO_LOG_LENGTH,&infologLength);
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH,&infologLength);
 		if (infologLength > 0)
 	    {
 	        infoLog = (char *)malloc(infologLength);
-	        glGetInfoLogARB(program, infologLength, &charsWritten, infoLog);
+	        glGetProgramInfoLog(program, infologLength, &charsWritten, infoLog);
 			printf("OPENGL ERROR: Program link Error");
 			printf("%s\n",infoLog);
 	        free(infoLog);
@@ -81,18 +81,18 @@ inline bool _CheckGLSLProgramValid(GLuint program) ALWAYS_INLINE;
 bool _CheckGLSLProgramValid(GLuint program)
 {
 	int success;
-	glGetObjectParameterivARB(program, GL_VALIDATE_STATUS, &success);
+	glGetProgramiv(program, GL_VALIDATE_STATUS, &success);
 	if(success!=GL_TRUE)
 	{
 		// Something went Wrong
 		int infologLength = 0;
 		int charsWritten = 0;
 		char *infoLog;
-		glGetObjectParameterivARB(program, GL_INFO_LOG_LENGTH,&infologLength);
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH,&infologLength);
 		if (infologLength > 0)
 	    {
 	        infoLog = (char *)malloc(infologLength);
-	        glGetInfoLogARB(program, infologLength, &charsWritten, infoLog);
+	        glGetProgramInfoLog(program, infologLength, &charsWritten, infoLog);
 			printf("OPENGL ERROR: Program Validation Failure");
 			printf("%s\n",infoLog);
 	        free(infoLog);
@@ -125,7 +125,7 @@ bool _CheckGLSLProgramValid(GLuint program)
 	return(0);
 
 #define CHECKGLSLVALID( Program )								\
-	glValidateProgramARB( Program );								\
+	glValidateProgram( Program );								\
 	if(!_CheckGLSLProgramValid( Program ))						\
 	return(0);
 

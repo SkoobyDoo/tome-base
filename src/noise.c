@@ -218,6 +218,7 @@ static int noise_texture2d(lua_State *L)
 	return 1;
 }
 */
+
 inline static float noise3d(noise_t *n, float x, float y, float z) ALWAYS_INLINE;
 static float noise3d(noise_t *n, float x, float y, float z)
 {
@@ -251,7 +252,7 @@ static float tilablenoise3d(noise_t *n, double ix, double iy, double iz, double 
 			noise3d(n, x-w, y-h, z-d) * (x) * (y) * (z) +
 			noise3d(n, x, y-h, z-d) * (w-x) * (y) * (z))/(w*h*d));
 }
-
+/*
 static int noise_texture3d(lua_State *L)
 {
 	if (!shaders_active) return 0;
@@ -294,7 +295,7 @@ static int noise_texture3d(lua_State *L)
 	free(map);
 	return 1;
 }
-
+*/
 static int noise_texture2d(lua_State *L)
 {
 	if (!shaders_active) return 0;
@@ -399,7 +400,7 @@ static const struct luaL_Reg noise_reg[] =
 	{"turbulence_wavelet", noise_turbulence_wavelet},
 	{"makeTexture2DStack", noise_texture2dstack},
 	{"makeTexture2D", noise_texture2d},
-	{"makeTexture3D", noise_texture3d},
+	// {"makeTexture3D", noise_texture3d},
 	{NULL, NULL},
 };
 
