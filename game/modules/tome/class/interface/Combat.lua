@@ -442,9 +442,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	elseif self:checkEvasion(target) then
 		evaded = true
 		self:logCombat(target, "#Target# evades #Source#.")
-	elseif not self.turn_procs.auto_melee_hit and self:attr("hit_penalty_2h") and rng.percent(20 - (self.size_category - 4) * 5) then
-		self:logCombat(target, "#Source# misses #Target#.")
-		target:fireTalentCheck("callbackOnMeleeMiss", self, dam)
 	elseif self.turn_procs.auto_melee_hit or (self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or target:attr("blind_fighted") or rng.chance(3))) then
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
 		if target.knowTalent and target:hasEffect(target.EFF_DUAL_WEAPON_DEFENSE) then
@@ -1588,6 +1585,8 @@ function _M:combatPhysicalpower(mod, weapon, add)
 	local d = math.max(0, (self.combat_dam or 0) + add + str) -- allows strong debuffs to offset strength
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
+
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return self:rescaleCombatStats(d) * mod
 end
