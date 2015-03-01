@@ -53,6 +53,7 @@ newEntity{
 	name = "orb pedestal (dragon)", special = true, image = "terrain/slime/slime_floor_01.png", add_displays={class.new{image = "terrain/pedestal_01.png", display_h=2, display_y=-1}},
 	display = '_', color_r=255, color_g=255, color_b=255, back_color=colors.LIGHT_RED,
 	always_remember = true,
+	special_minimap = colors.SALMON,
 	notice = true,
 	once_used_image = "terrain/pedestal_orb_03.png",
 	orb_command = {
@@ -72,6 +73,7 @@ newEntity{
 	name = "orb pedestal (undeath)", special = true, image = "terrain/slime/slime_floor_01.png", add_displays={class.new{image = "terrain/pedestal_01.png", display_h=2, display_y=-1}},
 	display = '_', color_r=255, color_g=255, color_b=255, back_color=colors.LIGHT_RED,
 	always_remember = true,
+	special_minimap = colors.SALMON,
 	notice = true,
 	once_used_image = "terrain/pedestal_orb_05.png",
 	orb_command = {
@@ -91,6 +93,7 @@ newEntity{
 	name = "orb pedestal (elements)", special = true, image = "terrain/slime/slime_floor_01.png", add_displays={class.new{image = "terrain/pedestal_01.png", display_h=2, display_y=-1}},
 	display = '_', color_r=255, color_g=255, color_b=255, back_color=colors.LIGHT_RED,
 	always_remember = true,
+	special_minimap = colors.SALMON,
 	notice = true,
 	once_used_image = "terrain/pedestal_orb_04.png",
 	orb_command = {
@@ -110,6 +113,7 @@ newEntity{
 	name = "orb pedestal (destruction)", special = true, image = "terrain/slime/slime_floor_01.png", add_displays={class.new{image = "terrain/pedestal_01.png", display_h=2, display_y=-1}},
 	display = '_', color_r=255, color_g=255, color_b=255, back_color=colors.LIGHT_RED,
 	always_remember = true,
+	special_minimap = colors.SALMON,
 	notice = true,
 	once_used_image = "terrain/pedestal_orb_02.png",
 	orb_command = {
