@@ -228,7 +228,7 @@ newTalent{
 	action = function(self, t)
 		local ret = self:talentDialog(self:showInventory("Reshape which weapon or armor?", self:getInven("INVEN"),
 			function(o)
-				return not o.quest and (o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" )) and not o.fully_reshaped --Exclude fully reshaped?
+				return o:getPowerRank() > 0 and not o.quest and ((o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" ))) and not o.fully_reshaped --Exclude fully reshaped?
 			end
 			, function(o, item)
 			self:talentDialogReturn(t.reshape(self, t, o, true))
