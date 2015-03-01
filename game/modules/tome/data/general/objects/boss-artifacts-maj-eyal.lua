@@ -52,67 +52,77 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 		dammod = {str=1},
 		damrange = 1.4,
 		melee_project={[DamageType.ICE] = 25}, -- Iceblock HP is based on damage, since were adding iceblock pierce we want this to be less generous
-		special_on_hit = {desc="Create a Winter Storm that gradually expands, dealing cold damage to your enemies each turn and reducing their turn energy by 20%.  Melee attacks will relocate the storm on top of your target and increase its duration.", on_kill=1, fct=function(combat, who, target)
-			local Object = require "mod.class.Object"
-			local Map = require "engine.Map"
+		special_on_hit = {
+			desc=function(self, who, special) 
+				local dam = who:damDesc(engine.DamageType.COLD, special:damage(self, who))
+				return ("Create a Winter Storm that gradually expands (from radius %d to radius %d), dealing %0.2f cold damage (based on Strength) to your enemies each turn and slowing their ability to act by 20%%.  Subsequent melee strikes will relocate the storm on top of your target and increase its duration."):format(special.radius, special.max_radius, dam)
+			end,
+			on_kill=1,
+			damage = function(special, self, who) return who:combatStatScale("str", 20, 80, 0.75) end,
+			duration = 5,
+			radius = 1,
+			max_radius = 4,
+			fct=function(combat, who, target, dam, special)
+				local Object = require "mod.class.Object"
+				local Map = require "engine.Map"
 
-			-- special_on_hit doesn't know what item triggered it, so find it
-			local self, item, inven_id = who:findInAllInventoriesBy("define_as", "LONGSWORD_WINTERTIDE")
-			if not self or not who:getInven(inven_id).worn then return end
-			
-			if who.turn_procs.wintertide_sword then return end
+				-- special_on_hit doesn't know what item triggered it, so find it
+				local self, item, inven_id = who:findInAllInventoriesBy("define_as", "LONGSWORD_WINTERTIDE")
+				if not self or not who:getInven(inven_id).worn then return end
+				
+				if who.turn_procs.wintertide_sword then return end
 
-			-- The reference to winterStorm is lost sometimes on reload but since we know only one can ever exist we can just check the map effects and set the reference every proc
-			self.winterStorm = nil
-			for k, eff in pairs(game.level.map.effects) do
-				if eff and eff.is_wintertide then
-					self.winterStorm = eff
-				end
-			end
-
-			-- Who knows if this is necessary
-			if self.winterStorm and self.winterStorm.duration <= 0 then
+				-- The reference to winterStorm is lost sometimes on reload but since we know only one can ever exist we can just check the map effects and set the reference every proc
 				self.winterStorm = nil
-			end
-
-			who.turn_procs.wintertide_sword = true
-			 
-			-- If the map has no Winter Storm then create one
-			if not self.winterStorm then
-				local stormDam = who:combatStatScale("str", 20, 80, 0.75)
-				self.winterStorm = game.level.map:addEffect(who,
-					target.x, target.y, 5,
-					engine.DamageType.WINTER, {dam=stormDam, x=target.x, y=target.y}, -- Winter is cold damage+energy reduction, enemy only
-					1,
-					5, nil,
-					{type="icestorm", only_one=true},
-					function(e, update_shape_only)
-						if not update_shape_only then 
-							 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
-							if e.radius < 4 then
-							e.radius = e.radius + 0.2
-							end
-						end
-						return true
-					end,
-			 		false,
-			 		false
-			 	)
-
-				self.winterStorm.is_wintertide = true
-			else
-				-- The storm already exists so move it on top of the target and increase its duration
-				self.winterStorm.x = target.x
-				self.winterStorm.y = target.y
-				if self.winterStorm.duration < 7 then -- duration can be extended forever while meleeing
-					self.winterStorm.duration = self.winterStorm.duration + 2
+				for k, eff in pairs(game.level.map.effects) do
+					if eff and eff.is_wintertide then
+						self.winterStorm = eff
+					end
 				end
-				game.level.map.changed = true
+
+				-- Who knows if this is necessary
+				if self.winterStorm and self.winterStorm.duration <= 0 then
+					self.winterStorm = nil
+				end
+				who.turn_procs.wintertide_sword = true
+				 
+				-- If the map has no Winter Storm then create one
+				if not self.winterStorm then
+					local stormDam = special:damage(self, who)
+					self.winterStorm = game.level.map:addEffect(who,
+						target.x, target.y, special.duration,
+						engine.DamageType.WINTER, {dam=stormDam, x=target.x, y=target.y}, -- Winter is cold damage+energy reduction, enemy only
+						special.radius, -- starting radius
+						5, nil,
+						{type="icestorm", only_one=true, args = {radius = 1}},
+						function(e, update_shape_only)
+							if not update_shape_only then 
+								 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
+								if e.radius < special.max_radius then
+									e.radius = e.radius + 0.2
+									if e.particles and math.floor(e.particles[1].args.radius) ~= math.floor(e.radius) then -- expand the graphical effect
+										e.particles[1].args.radius = e.radius
+										e.particles[1]:dieDisplay()
+										e.particles[1]:checkDisplay()
+									end
+								end
+							end
+							return true
+						end,
+						false,
+						false
+					)
+					self.winterStorm.is_wintertide = true
+				else
+					-- The storm already exists so move it on top of the target and increase its duration
+					self.winterStorm.x = target.x
+					self.winterStorm.y = target.y
+					if self.winterStorm.duration < 7 then -- duration can be extended forever while meleeing
+						self.winterStorm.duration = self.winterStorm.duration + 2
+					end
+					game.level.map.changed = true
+				end
 			end
-			
-			end
-			 
-			
 		},	
 	},
 	wielder = {
@@ -122,7 +132,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 		inc_damage = { [DamageType.COLD] = 20 },
 	},
 	max_power = 40, power_regen = 1,
-	use_power = { name ="intensify your winter storm creating unbreakable ice walls in each space", power = 30,
+	use_power = { name ="precipitate ice from your winter storm to create walls (lasting 10 turns) in each space it occupies", 	power = 30,
 		use = function(self, who)
 			
 			local Object = require "mod.class.Object"
@@ -164,12 +174,10 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 							if self.temporary <= 0 then
 								game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
 								game.level:removeEntity(self)
-	--							game.level.map:redisplay()
 							end
 						end,
 						dig = function(src, x, y, old)
 							game.level:removeEntity(old)
-	--						game.level.map:redisplay()
 							return nil, old.old_feat
 						end,
 						summoner_gain_exp = true,
@@ -190,7 +198,6 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 	on_pickup = function(self, who)
 		self.winterStorm = nil
 	end,
-	
 }
 
 newEntity{ base = "BASE_LITE", define_as = "WINTERTIDE_PHIAL",
@@ -210,13 +217,17 @@ newEntity{ base = "BASE_LITE", define_as = "WINTERTIDE_PHIAL",
 	},
 
 	max_power = 60, power_regen = 1,
-	use_power = { name = "cleanse your mind (remove a few detrimental mental effects)", power = 40,
+	use_power = {
+		name = function(self, who) return ("cleanse your mind of up to %d (based on Magic) detrimental mental effects"):format(self.use_power.nbcure(self, who)) end,
+		power = 40,
+		nbcure = function(self, who) return math.floor(who:combatStatScale("mag", 2.5, 6, "log")) end,
 		use = function(self, who)
 			local target = who
 			local effs = {}
 			local known = false
 
-			-- Go through all spell effects
+			game.logSeen(who, "%s uses the %s to cleanse %s mind!", who.name:capitalize(), self:getName({no_add_name = true}), who:his_her())
+			-- Go through all mental effects
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
 				if e.type == "mental" and e.status == "detrimental" then
@@ -224,7 +235,7 @@ newEntity{ base = "BASE_LITE", define_as = "WINTERTIDE_PHIAL",
 				end
 			end
 
-			for i = 1, 3 + math.floor(who:getMag() / 10) do
+			for i = 1, self.use_power.nbcure(self, who) do
 				if #effs == 0 then break end
 				local eff = rng.tableRemove(effs)
 
@@ -233,7 +244,6 @@ newEntity{ base = "BASE_LITE", define_as = "WINTERTIDE_PHIAL",
 					known = true
 				end
 			end
-			game.logSeen(who, "%s's mind is clear!", who.name:capitalize())
 			return {id=true, used=true}
 		end
 	},
@@ -515,7 +525,7 @@ newEntity{ base = "BASE_STAFF",
 		},
 	},
 	max_power = 45, power_regen = 1,
-	use_power = { name = "create living shards of crystal", power = 45, use = function(self, who)
+	use_power = { name = "create 2 living shards of crystal to serve you for 10 turns", power = 45, use = function(self, who)
 		if not who:canBe("summon") then game.logPlayer(who, "You cannot summon; you are suppressed!") return end
 
 		local NPC = require "mod.class.NPC"
@@ -689,7 +699,7 @@ newEntity{ base = "BASE_AMULET",
 		combat_dam = 5,
 	},
 	max_power = 60, power_regen = 1,
-	use_power = { name = "summon an elder vampire to your side", power = 60, use = function(self, who)
+	use_power = { name = "summon an elder vampire to your side for 15 turns", power = 60, use = function(self, who)
 		if not who:canBe("summon") then game.logPlayer(who, "You cannot summon; you are suppressed!") return end
 
 		-- Find space
@@ -873,7 +883,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "combine with a weapon", power = 1, use = function(self, who, gem_inven, gem_item)
-		who:showInventory("Fuse with which weapon?", who:getInven("INVEN"), function(o) return (o.type == "weapon" or o.subtype == "hands") and o.subtype ~= "mindstar" and not o.egoed and not o.unique and not o.rare and not o.archery end, function(o, item)
+		who:showInventory("Fuse with which weapon?", who:getInven("INVEN"), function(o) return (o.type == "weapon" or o.subtype == "hands" or o.subtype == "shield") and o.subtype ~= "mindstar" and not o.egoed and not o.unique and not o.rare and not o.archery end, function(o, item)
 			local oldname = o:getName{do_color=true}
 
 			-- Remove the gem
@@ -899,22 +909,24 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 				set_list = { {"is_crystalline_armor", true} },
 				on_set_complete = function(self, wearer)
 					self.talent_on_spell = { {chance=10, talent="T_MANATHRUST", level=3} }
-					if(self.combat) then self.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
-					else self.wielder.combat.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} }
-					end
+					local weapon = self.combat or self.wielder.combat or self.special_combat
+					if weapon then weapon.talent_on_hit = { T_MANATHRUST = {level=3, chance=10} } end
 					self:specialSetAdd({"wielder","combat_spellcrit"}, 10)
 					self:specialSetAdd({"wielder","combat_physcrit"}, 10)
 					self:specialSetAdd({"wielder","resists_pen"}, {[engine.DamageType.ARCANE]=20, [engine.DamageType.PHYSICAL]=15})
 					game.logPlayer(wearer, "#GOLD#As the crystalline weapon and armour are brought together, they begin to emit a constant humming.")
 				end,
 				on_set_broken = function(self, wearer)
+					local weapon = self.combat or self.wielder.combat or self.special_combat
 					self.talent_on_spell = nil
-					if (self.combat) then self.combat.talent_on_hit = nil
-					else self.wielder.combat.talent_on_hit = nil
-					end
+					if weapon then weapon.talent_on_hit = nil end
 					game.logPlayer(wearer, "#GOLD#The humming from the crystalline artifacts fades as they are separated.")
 				end,
-				resolvers.generic(function(o) o.name = "Crystalline "..o.name:capitalize() o.unique = o.name end),
+				resolvers.generic(function(o) 
+					o.name = "Crystalline "..o.name:capitalize()
+					o.unique = o.name
+					o.desc = (o.desc or "") .." Transformed with the power of the Spellblaze."
+					end),
 				resolvers.generic(function(o)
 					if o.combat and o.combat.dam then
 						o.combat.dam = o.combat.dam * 1.25
@@ -923,6 +935,14 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 						o.wielder.combat.dam = o.wielder.combat.dam * 1.25
 						o.wielder.combat.convert_damage = o.wielder.combat.convert_damage or {}
 						o.wielder.combat.convert_damage[engine.DamageType.ARCANE] = 100
+					elseif o.special_combat then
+						if o.special_combat.dam then
+							o.special_combat.dam = o.special_combat.dam * 1.25
+							o.special_combat.damtype = engine.DamageType.ARCANE
+						end
+						if o.special_combat.block then
+							o.special_combat.block = o.special_combat.block * 1.25
+						end
 					end
 				end),
 				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
@@ -986,7 +1006,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 					self:specialSetAdd({"wielder","stun_immune"}, 0.5)
 					self:specialSetAdd({"wielder","blind_immune"}, 0.5)
 				end,
-				resolvers.generic(function(o) o.name = "Crystalline "..o.name:capitalize() o.unique = o.name end),
+				resolvers.generic(function(o)
+					o.name = "Crystalline "..o.name:capitalize()
+					o.unique = o.name
+					o.desc = (o.desc or "") .." Transformed with the power of the Spellblaze."
+				end),
 				resolvers.generic(function(o)
 					-- This is supposed to add 1 def for crap cloth robes if for some reason you choose it instead of better robes, and then multiply by 1.25.
 					o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
@@ -1014,16 +1038,18 @@ newEntity{ base = "BASE_ROD", define_as = "ROD_OF_ANNULMENT",
 	rarity = 380,
 	level_range = {5, 12},
 	elec_proof = true,
-	add_name = false,
-
+	add_name = "#CHARGES#",
 	material_level = 2,
-
 	max_power = 30, power_regen = 1,
-	use_power = { name = "force some of your foe's infusions, runes or talents on cooldown", power = 30,
+	use_power = {
+		name = function(self, who) return ("put up to 3 of the target's runes, infusions or talents on cooldown for 3-5 turns (range %d)"):format(self.use_power.range) end,
+		power = 30,
+		range = 5,
 		use = function(self, who)
-			local tg = {type="bolt", range=5}
+			local tg = {type="bolt", range=self.use_power.range}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
+			game.logSeen(who, "%s aims %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			who:project(tg, x, y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
@@ -1248,12 +1274,18 @@ It has been kept somewhat intact with layers of salt and clay, but in spite of t
 	metallic = false,
 	sentient = true,
 	cooldown=0,
-	special_desc = function(self) return "Detects traps.\nGives a 25% chance to shrug off up to three stuns, pins, and dazes each turn, with a 10 turn cooldown." end,
+	special_desc = function(self)
+		local ready = self:min_power_to_trigger() - self.power
+		return ("Detects traps.\nRemoves (25%% chance) up to three stuns, pins, or dazes each turn%s"):format((ready > 0) and (" (cooling down: %d turns)"):format(ready) or "")
+	end,
+	max_power = 10, power_regen = 1,
+	min_power_to_trigger = function(self) return self.max_power * (self.worn_by and (100 - (self.worn_by:attr("use_object_cooldown_reduce") or 0))/100 or 1) end, -- special handling of the Charm Mastery attribute
 	wielder = {
 		inc_stats = { [Stats.STAT_LCK] = 5, },
 		combat_def = 5,
 		disarm_bonus = 5,
 	},
+	use_power = { name = "", power = 10, hidden = true, use = function(self, who) return end},
 	act = function(self)
 		self:useEnergy()
 		if self.worn_by then
@@ -1272,7 +1304,7 @@ It has been kept somewhat intact with layers of salt and clay, but in spite of t
 			end end
 			-- only one twitch per action
 			if is_trap then
-				game.logSeen(actor, "#CRIMSON#%s twitches, alerting %s that a trap is nearby.", self:getName(), actor.name:capitalize())
+				game.logSeen(actor, "#CRIMSON#%s twitches, alerting %s that a hidden trap is nearby.", self:getName(), actor.name:capitalize())
 				if actor == game.player then
 					game.player:runStop()
 				end
@@ -1284,7 +1316,7 @@ It has been kept somewhat intact with layers of salt and clay, but in spite of t
 		if not self.worn_by then return end
 		if game.level and not game.level:hasEntity(self.worn_by) and not self.worn_by.player then self.worn_by = nil return end
 		if self.worn_by:attr("dead") then return end
-		if not rng.percent(25) or self.power < self.max_power then return end
+		if not rng.percent(25) or self.power < self:min_power_to_trigger() then return end
 		local who = self.worn_by
 		local target = self.worn_by
 			local effs = {}
@@ -1299,7 +1331,10 @@ It has been kept somewhat intact with layers of salt and clay, but in spite of t
 					num = 1
 				end
 			end
-
+			if num == 1 then
+				game.logSeen(who, "%s shrugs off some effects!", who.name:capitalize())
+				self.power = 0
+			end
 			for i = 1, 3 do
 				if #effs == 0 then break end
 				local eff = rng.tableRemove(effs)
@@ -1308,10 +1343,6 @@ It has been kept somewhat intact with layers of salt and clay, but in spite of t
 					target:removeEffect(eff[2])
 					known = true
 				end
-			end
-			if num == 1 then
-				game.logSeen(who, "%s shrugs off some effects!", who.name:capitalize())
-				self.power = 0
 			end
 	end,
 	on_wear = function(self, who)
@@ -1328,8 +1359,6 @@ It has been kept somewhat intact with layers of salt and clay, but in spite of t
 	on_takeoff = function(self)
 		self.worn_by = nil
 	end,
-	max_power = 10, power_regen = 1,
-	use_power = { name = "", power = 10, hidden = true, use = function(self, who) return end},
 }
 
 newEntity{ base = "BASE_MINDSTAR", define_as = "PSIONIC_FURY",
@@ -1364,15 +1393,20 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "PSIONIC_FURY",
 		inc_stats = { [Stats.STAT_WIL] = 3, [Stats.STAT_CUN] = 3, },
 	},
 	max_power = 40, power_regen = 1,
-	use_power = { name = "release a wave of psionic power", power = 40,
-	use = function(self, who)
-		local radius = 4
-		local dam = (50 + who:getWil()*1.8)
-		local blast = {type="ball", range=0, radius=5, selffire=false}
-		who:project(blast, who.x, who.y, engine.DamageType.MIND, dam)
-		game.level.map:particleEmitter(who.x, who.y, blast.radius, "force_blast", {radius=blast.radius})
-		game.logSeen(who, "%s sends out a blast of psionic energy!", who.name:capitalize(), self:getName())
-		return {id=true, used=true}
+	use_power = {
+		name = function(self, who) return ("release a wave of psionic power, dealing %0.2f mind damage (based on Willpower) to all within radius %d"):
+		format(who:damDesc(engine.DamageType.MIND, self.use_power.damage(self, who)), self.use_power.radius) end,
+		power = 40,
+		radius = 5,
+		damage = function(self, who) return 50 + who:getWil()*1.8 end,
+		use = function(self, who)
+			local radius = self.use_power.radius
+			local dam = self.use_power.damage(self, who)
+			local blast = {type="ball", range=0, radius=self.use_power.radius, selffire=false}
+			game.logSeen(who, "%s's %s sends out a blast of psionic energy!", who.name:capitalize(), self:getName({no_add_name = true}))
+			who:project(blast, who.x, who.y, engine.DamageType.MIND, dam)
+			game.level.map:particleEmitter(who.x, who.y, blast.radius, "force_blast", {radius=blast.radius})
+			return {id=true, used=true}
 		end
 	},
 }
