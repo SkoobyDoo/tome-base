@@ -208,9 +208,10 @@ newTalent{
 				local o = inven[item]
 				if o.been_reshaped then
 					if o.wielded then
-						self:onTakeoff(o, inven_id, true)
-						t.reshape(self, t, o, false)
-						self:onWear(o, inven_id, true)
+						if t.reshape(self, t, o, false) then
+							self:onTakeoff(o, inven_id, true)
+							self:onWear(o, inven_id, true)
+						end
 					end
 				end
 			end
