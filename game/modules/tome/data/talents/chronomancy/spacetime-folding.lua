@@ -255,8 +255,8 @@ newTalent{
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	requires_target = true,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
-	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 10))) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 30, 10, 20) end,
+	getDuration = function (self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 6, 8))) end,
+	getChance = function(self, t) return 15 end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t, nowarning=true}
@@ -304,17 +304,17 @@ newTalent{
 				if game.level and game.level:hasEntity(target) and tether and trigger and not target.dead then
 				
 					-- Primary blast, even if the teleport is resisted or fails this triggers
-					game:onTickEnd(function()
-						local tg = self.tg
-						tg.start_x, tg.start_y = target.x, target.y
-					
-						self.summoner.__project_source = self
-						self.summoner:project(tg, target.x, target.y, engine.DamageType.WARP, self.dam)
-						self.summoner.__project_source = nil
-						if core.shader.allow("distort") then
-							game.level.map:particleEmitter(target.x, target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=target.x, ty=target.y})
-						end
-					end)
+
+					local tg = self.tg
+					tg.start_x, tg.start_y = target.x, target.y
+				
+					self.summoner.__project_source = self
+					self.summoner:project(tg, target.x, target.y, engine.DamageType.WARP, self.dam)
+					self.summoner.__project_source = nil
+					if core.shader.allow("distort") then
+						game.level.map:particleEmitter(target.x, target.y, self.tg.radius, "ball_physical", {radius=self.tg.radius, tx=target.x, ty=target.y})
+					end
+
 								
 					-- Do we hit?
 					local hit = target:hasEffect(target.EFF_BEN_TETHER) or self.summoner:checkHit(self.power, target:combatSpellResist() + (target:attr("continuum_destabilization") or 0), 0, 95) and target:canBe("teleport")
@@ -329,20 +329,20 @@ newTalent{
 								target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self.dest_power})
 							end
 							game:playSoundNear(self, "talents/teleport")
+							game.logSeen(target, "#CRIMSON#%s has been yanked back to the tether!", target.name:capitalize())
 						end
 						
 						-- Secondary blast, this occurs as long as the teleport is not resisted, even if it fails, say from Anchor
-						game:onTickEnd(function()
-							local tg = self.tg
-							tg.start_x, tg.start_y = target.x, target.y
-							
-							self.summoner.__project_source = self
-							self.summoner:project(tg, target.x, target.y, engine.DamageType.WARP, self.dam)
-							self.summoner.__project_source = nil
-							if core.shader.allow("distort") then
-								game.level.map:particleEmitter(target.x, target.y, tg.radius, "ball_physical", {radius=tg.radius, tx=target.x, ty=target.y})
-							end
-						end)
+						local tg = self.tg
+						tg.start_x, tg.start_y = target.x, target.y
+						
+						self.summoner.__project_source = self
+						self.summoner:project(tg, target.x, target.y, engine.DamageType.WARP, self.dam)
+						self.summoner.__project_source = nil
+						if core.shader.allow("distort") then
+							game.level.map:particleEmitter(target.x, target.y, tg.radius, "ball_physical", {radius=tg.radius, tx=target.x, ty=target.y})
+						end
+
 					else
 						game.logSeen(target, "%s resists the teleport!", target.name:capitalize())
 					end
@@ -424,6 +424,7 @@ newTalent{
 				else
 					target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=getParadoxSpellpower(self, t, 0.3)})
 					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
+					game.logSeen(target, "#CRIMSON#%s has been banished!", target.name:capitalize())
 				end
 			else
 				game.logSeen(target, "%s resists the banishment!", target.name:capitalize())
