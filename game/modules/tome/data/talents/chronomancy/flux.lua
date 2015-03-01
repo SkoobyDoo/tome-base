@@ -140,7 +140,7 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead recover %d life per turn.
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead recover %d life over four turns.
 		If a target is reduced below 20%% life while Attenuate is active it may be instantly slain.
 		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, damage *0.4)
 	end,
