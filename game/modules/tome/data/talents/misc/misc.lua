@@ -52,6 +52,7 @@ newTalent{
 	speed = 'weapon',
 	is_melee = true,
 	action = function(self, t)
+		if self:attr("never_attack") then return end
 		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "blade"))
 	
 		local tg = self:getTalentTarget(t)
