@@ -140,10 +140,15 @@ local te4_loader = function(name)
 
 	-- Base loader
 	local bfile = "/"..bname:gsub("%.", "/")..".lua"
-	local prev, err = loadfile(bfile)
-	if not prev and err then
-		error("Error while loading base '"..bfile.."':\n"..tostring(err))
-		return nil
+	local prev, err
+	if fs.exists(bfile) then
+		prev, err = loadfile(bfile)
+		if not prev and err then
+			error("Error while loading base '"..bfile.."':\n"..tostring(err))
+			return nil
+		end
+	else
+		prev = function() error("Error while superloading: nonexistent base file "..bfile)
 	end
 
 	name = name:gsub("%.", "/")
