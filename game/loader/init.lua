@@ -147,8 +147,6 @@ local te4_loader = function(name)
 			error("Error while loading base '"..bfile.."':\n"..tostring(err))
 			return nil
 		end
-	else
-		prev = function() error("Error while superloading: nonexistent base file "..bfile)
 	end
 
 	name = name:gsub("%.", "/")
