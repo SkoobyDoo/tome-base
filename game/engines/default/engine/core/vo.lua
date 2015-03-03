@@ -93,6 +93,9 @@ extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
 extern void vertex_append(lua_vertexes *vx, lua_vertexes *srcvx);
 extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a);
+
+extern void renderer_pipe_start();
+extern void renderer_pipe_stop();
 ]]
 
 local VERTEX_QUAD_SIZE = C.vertex_quad_size()
@@ -158,5 +161,8 @@ vo.new = function(size, texture, kind, mode)
 	C.vertex_new(vo, size or 24, texture or 0, kind or "VO_QUADS", mode or "VERTEX_DYNAMIC")
 	return vo
 end
+
+vo.enablePipe = C.renderer_pipe_start
+vo.flushPipe = C.renderer_pipe_stop
 
 -- C.exit(0)

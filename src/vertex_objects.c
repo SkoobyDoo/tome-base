@@ -212,6 +212,8 @@ void vertex_color(lua_vertexes *vx, int start, int stop, bool set, float r, floa
 }
 
 void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a) {
+	if (!vx->nb) return;
+
 	if (tex == -1) {
 		if (vx->tex) { tex = vx->tex; }
 		else { tex = gl_tex_white; }

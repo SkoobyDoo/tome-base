@@ -39,8 +39,8 @@ function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
 
-	self.check = self:getUITexture("ui/checkbox.png")
-	self.tick = self:getUITexture("ui/checkbox-ok.png")
+	self.check = self:getAtlasTexture("ui/checkbox.png")
+	self.tick = self:getAtlasTexture("ui/checkbox-ok.png")
 
 	-- Draw UI
 	self.tex = self:drawFontLine(self.font, self.title)
@@ -71,23 +71,23 @@ function _M:display(x, y, nb_keyframes)
 		if self.text_shadow then self:textureToScreen(self.tex, x+1 + self.check.w, y+1 + (self.h - self.tex.h) / 2, 0, 0, 0, self.text_shadow) end
 		self:textureToScreen(self.tex, x + self.check.w, y + (self.h - self.tex.h) / 2)
 		if self.focused then
-			self.check.t:toScreenFull(x, y, self.check.w, self.check.h, self.check.tw, self.check.th)
+			self:uiTexture(self.check, x, y, self.check.w, self.check.h)
 		else
-			self.check.t:toScreenFull(x, y, self.check.w, self.check.h, self.check.tw, self.check.th)
+			self:uiTexture(self.check, x, y, self.check.w, self.check.h)
 		end
 		if self.checked then
-			self.tick.t:toScreenFull(x, y, self.tick.w, self.tick.h, self.tick.tw, self.tick.th)
+			self:uiTexture(self.tick, x, y, self.tick.w, self.tick.h)
 		end
 	else
 		if self.text_shadow then self:textureToScreen(self.tex, x+1, y+1 + (self.h - self.tex.h) / 2, 0, 0, 0, self.text_shadow) end
 		self:textureToScreen(self.tex, x, y + (self.h - self.tex.h) / 2)
 		if self.focused then
-			self.check.t:toScreenFull(x + self.tex.w, y, self.check.w, self.check.h, self.check.tw, self.check.th)
+			self:uiTexture(self.check, x + self.tex.w, y, self.check.w, self.check.h)
 		else
-			self.check.t:toScreenFull(x + self.tex.w, y, self.check.w, self.check.h, self.check.tw, self.check.th)
+			self:uiTexture(self.check, x + self.tex.w, y, self.check.w, self.check.h)
 		end
 		if self.checked then
-			self.tick.t:toScreenFull(x + self.tex.w, y, self.tick.w, self.tick.h, self.tick.tw, self.tick.th)
+			self:uiTexture(self.tick, x + self.tex.w, y, self.tick.w, self.tick.h)
 		end
 	end
 end

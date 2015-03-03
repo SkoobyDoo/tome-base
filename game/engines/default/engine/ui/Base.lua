@@ -118,7 +118,7 @@ function _M:getUITexture(file)
 	if not i then i, w, h = self:getImage(self.defaultui.."-"..file) end
 	if not i then error("bad UI texture: "..uifile) return end
 	local t, tw, th = i:glTexture()
-	local r = {t=t, w=w, h=h, tw=tw, th=th}
+	local r = {t=t, w=w, h=h, tw=tw, th=th, tx=0, ty=0}
 	tcache[uifile] = r
 	return r
 end
@@ -162,6 +162,8 @@ function _M:getAtlasTexture(file)
 		local t = {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
 		self.atlas_cache[file] = t
 		return t
+	else
+		return self:getUITexture(file)
 	end
 end
 
@@ -170,6 +172,10 @@ function _M:drawFontLine(font, text, width, r, g, b, direct_draw)
 	local tex = font:draw(text, width, r or 255, g or 255, b or 255, true, direct_draw)[1]
 	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h, dduids = tex._dduids}
 	return r
+end
+
+function _M:uiTexture(tex, x, y, w, h, r, g, b, a)
+	tex.t:toScreenPrecise(x, y, w, h, tex.tx, tex.tx+tex.tw, tex.ty, tex.ty+tex.th, r, g, b, a)
 end
 
 function _M:textureToScreen(tex, x, y, r, g, b, a, allow_uid)

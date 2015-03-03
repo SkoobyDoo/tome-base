@@ -33,6 +33,10 @@ bool use_modern_gl = TRUE;
 
 static RendererState *state = NULL;
 
+// A pipe of quad optimization
+lua_vertexes *renderer_quad_pipe = NULL;
+bool renderer_quad_pipe_enabled = false;
+
 // A static cache of element positions; quad VO only ahve quads so we can cache those
 static GLuint *vbo_elements_data = NULL;
 static GLuint vbo_elements = 0;
@@ -85,6 +89,8 @@ static void vertexes_renderer_update(vertexes_renderer *vr, lua_vertexes *vx) {
 }
 
 void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, float r, float g, float b, float a) {
+	if (vx != renderer_quad_pipe && renderer_quad_pipe->nb) renderer_pipe_flush();
+
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	state->translate(x, y, 0);
 
@@ -186,9 +192,63 @@ void renderer_pop_ortho_state() {
 	state->popOrthoState();
 }
 
+void renderer_pipe_draw_quad(
+	GLuint tex,
+	float x1, float y1, float u1, float v1, 
+	float x2, float y2, float u2, float v2, 
+	float x3, float y3, float u3, float v3, 
+	float x4, float y4, float u4, float v4, 
+	float r, float g, float b, float a
+) {
+	if (renderer_quad_pipe_enabled) {
+		if (renderer_quad_pipe->tex != tex) {
+			renderer_pipe_flush();
+			renderer_quad_pipe->tex = tex;
+		}
+
+		vertex_add_quad(renderer_quad_pipe,
+			x1, y1, u1, v1,
+			x2, y2, u2, v2,
+			x3, y3, u3, v3,
+			x4, y4, u4, v4,
+			r, g, b, a
+		);
+	} else {
+		vertex_clear(renderer_quad_pipe);
+		vertex_add_quad(renderer_quad_pipe,
+			x1, y1, u1, v1,
+			x2, y2, u2, v2,
+			x3, y3, u3, v3,
+			x4, y4, u4, v4,
+			r, g, b, a
+		);
+		vertex_toscreen(renderer_quad_pipe, 0, 0, tex, 1, 1, 1, 1);
+		vertex_clear(renderer_quad_pipe);
+	}
+}
+
+void renderer_pipe_start() {
+	renderer_quad_pipe_enabled = true;
+}
+
+void renderer_pipe_flush() {
+	if (renderer_quad_pipe->nb > 0) {
+		vertex_toscreen(renderer_quad_pipe, 0, 0, -1, 1, 1, 1, 1);
+		vertex_clear(renderer_quad_pipe);
+		renderer_quad_pipe->tex = 0;
+	}
+}
+
+void renderer_pipe_stop() {
+	renderer_pipe_flush();
+	renderer_quad_pipe_enabled = false;
+}
+
 void renderer_init(int w, int h) {
 	if (!vbo_elements) glGenBuffers(1, &vbo_elements);
 
 	if (state) delete state;
 	state = new RendererState(w, h);
+
+	renderer_quad_pipe = vertex_new(NULL, 14, 0, VO_QUADS, VERTEX_STREAM);
 }

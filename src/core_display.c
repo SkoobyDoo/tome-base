@@ -944,7 +944,6 @@ static int sdl_texture_toscreen(lua_State *L)
 		r, g, b, a
 	);
 	vertex_toscreen(generic_vx, x, y, t->tex, 1, 1, 1, 1);
-
 	return 0;
 }
 
@@ -1008,15 +1007,14 @@ static int sdl_texture_toscreen_full(lua_State *L)
 	GLfloat texw = (GLfloat)w/rw;
 	GLfloat texh = (GLfloat)h/rh;
 
-	vertex_clear(generic_vx);
-	vertex_add_quad(generic_vx,
-		0, 0, 0, 0,
-		0, h, 0, texh,
-		w, h, texw, texh,
-		w, 0, texw, 0,
+	renderer_pipe_draw_quad(
+		t->tex,
+		x, y, 0, 0,
+		x, y+h, 0, texh,
+		x+w, y+h, texw, texh,
+		x+w, y, texw, 0,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex, 1, 1, 1, 1);
 
 	return 0;
 }
@@ -1041,15 +1039,14 @@ static int sdl_texture_toscreen_precise(lua_State *L)
 		a = luaL_checknumber(L, 13);
 	}
 
-	vertex_clear(generic_vx);
-	vertex_add_quad(generic_vx,
-		0, 0, x1, y1,
-		0, h, x1, y2,
-		w, h, x2, y2,
-		w, 0, x2, y1,
+	renderer_pipe_draw_quad(
+		t->tex,
+		x, y, x1, y1,
+		x, y+h, x1, y2,
+		x+w, y+h, x2, y2,
+		x+w, y, x2, y1,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, t->tex, 1, 1, 1, 1);
 
 	return 0;
 }
