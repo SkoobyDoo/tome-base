@@ -96,6 +96,7 @@ extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, fl
 
 extern void renderer_pipe_start();
 extern void renderer_pipe_stop();
+extern void renderer_pipe_flush();
 ]]
 
 local VERTEX_QUAD_SIZE = C.vertex_quad_size()
@@ -163,6 +164,7 @@ vo.new = function(size, texture, kind, mode)
 end
 
 vo.enablePipe = C.renderer_pipe_start
-vo.flushPipe = C.renderer_pipe_stop
+vo.disablePipe = C.renderer_pipe_stop
+vo.flushPipe = C.renderer_pipe_flush
 
 -- C.exit(0)

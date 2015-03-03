@@ -772,6 +772,7 @@ core.display.countDraws()
 	self:innerDisplay(x, y, nb_keyframes, tx, ty)
 
 	if self.first_display then self:firstDisplay() self.first_display = false end
+	core.vo.disablePipe()
 print("====", core.display.countDraws())
 
 	-- Restore normal opengl matrix

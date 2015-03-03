@@ -1625,6 +1625,12 @@ end
 
 function util.clipTexture(texture, x, y, w, h, total_w, total_h, loffset_x, loffset_y, dest_area, r, g, b, a)
 	if not texture then return 0, 0, 0, 0 end
+
+	-- temporary hack
+	texture._tex:toScreenPrecise(x, y, w, h, texture._tex_x, texture._tex_x+texture._tex_w, texture._tex_y, texture._tex_y+texture._tex_h, r, g, b, a)
+	do return 0, w, 0, h end
+	
+
 	x, y, w, h = math.floor(x), math.floor(y), math.floor(w), math.floor(h)
 	total_w, total_h, loffset_x, loffset_y = math.floor(total_w), math.floor(total_h), math.floor(loffset_x), math.floor(loffset_y)
 	dest_area.w , dest_area.h = math.floor(dest_area.w), math.floor(dest_area.h)
