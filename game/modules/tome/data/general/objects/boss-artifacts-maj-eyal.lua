@@ -98,10 +98,11 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 						function(e, update_shape_only)
 							if not update_shape_only then 
 								 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
-								if e.radius < special.max_radius then
+								if e.radius < e.max_radius then
 									e.radius = e.radius + 0.2
 									if e.particles and math.floor(e.particles[1].args.radius) ~= math.floor(e.radius) then -- expand the graphical effect
 										e.particles[1].args.radius = e.radius
+										e.particles[1].radius = e.radius -- is this needed?
 										e.particles[1]:dieDisplay()
 										e.particles[1]:checkDisplay()
 									end
@@ -113,6 +114,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 						false
 					)
 					self.winterStorm.is_wintertide = true
+					self.winterStorm.max_radius = special.max_radius
 				else
 					-- The storm already exists so move it on top of the target and increase its duration
 					self.winterStorm.x = target.x
