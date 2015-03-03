@@ -1,4 +1,5 @@
 -- ToME - Tales of Maj'Eyal
+-- ToME - Tales of Maj'Eyal
 -- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
@@ -263,9 +264,20 @@ end
 
 -- Spell functions
 makeParadoxClone = function(self, target, duration)
+
+	-- Don't clone particles or inventory on short lived clones
+	local restore = false
+	local old_particles, old_inven
+	if duration == 0 then
+		old_particles = target.__particles 
+		old_inventory = target.inven[target.INVEN_INVEN]
+		target.__particles = {}
+		target.inven[target.INVEN_INVEN] = nil
+		restore = true	
+	end
+
+	-- Clone them
 	local m = target:cloneFull{
-		shader = "shadow_simulacrum",
-		shader_args = { color = {0.6, 0.6, 0.2}, base = 0.8, time_factor = 1500 },
 		no_drops = true,
 		faction = target.faction,
 		summoner = target, summoner_gain_exp=true,
@@ -275,6 +287,14 @@ makeParadoxClone = function(self, target, duration)
 		name = ""..target.name.."'s temporal clone",
 		desc = [[A creature from another timeline.]],
 	}
+	
+	-- restore values if needed
+	if restore then
+		target.__particles = old_particles
+		target.inven[target.INVEN_INVEN] = old_inventory
+	end
+	
+	-- remove some values
 	m:removeAllMOs()
 	m.make_escort = nil
 	m.on_added_to_level = nil
@@ -283,6 +303,7 @@ makeParadoxClone = function(self, target, duration)
 	mod.class.NPC.castAs(m)
 	engine.interface.ActorAI.init(m, m)
 
+	-- change some values
 	m.exp_worth = 0
 	m.energy.value = 0
 	m.player = nil
@@ -306,10 +327,6 @@ makeParadoxClone = function(self, target, duration)
 	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
 	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
 	
-	-- We use this function...  a lot!!
-	-- So don't duplicate the inventory
-	if m.inven then m.inven[m.INVEN_INVEN] = nil end
-
 	-- Clones never flee because they're awesome
 	m.ai_tactic = m.ai_tactic or {}
 	m.ai_tactic.escape = 0

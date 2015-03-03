@@ -61,7 +61,6 @@ newTalent{
 		local damage = t.getDamage(self, t) * 100
 		local duration = t.getDuration(self, t)
 		return ([[Attack with your melee weapons for %d%% weapon damage as physical and temporal (warp) damage. If either attack hits you may stun, blind, pin, or confuse the target for %d turns.
-		The bonus damage scales with your Spellpower.
 		
 		Blade Threading talents will freely swap to your dual-weapons when activated if you have them in your secondary slots.  Additionally you may use the Attack talent in a similar manner.]])
 		:format(damage, duration)

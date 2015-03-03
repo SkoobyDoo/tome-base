@@ -258,7 +258,7 @@ newTalent{
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 			local target_type = Map.ACTOR
 			local a = game.level.map(x, y, Map.ACTOR)
-			if a and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+			if a and not a.dead and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
 				tgts[#tgts+1] = a
 			end
 		end end
@@ -274,7 +274,7 @@ newTalent{
 			end
 			
 			-- Make our clone
-			local m = makeParadoxClone(self, self, 2)
+			local m = makeParadoxClone(self, self, 0)
 			m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 			doWardenWeaponSwap(m, t, "blade")
 			m.on_added_to_level = function(self)
@@ -296,12 +296,12 @@ newTalent{
 			end
 			if not m.blended_target then
 				local tgts= t.findTarget(self, t)
-				local attempts = 10
+				local attempts = 5
 				while #tgts > 0 and attempts > 0 do
 					local a, id = rng.tableRemove(tgts)
 					-- look for space
 					local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-					if tx and ty and not a.dead then	
+					if tx and ty then	
 						m.blended_target = a				
 						game.zone:addEntity(game.level, m, "actor", tx, ty)
 						break
@@ -321,7 +321,7 @@ newTalent{
 			end
 
 			-- Make our clone
-			local m = makeParadoxClone(self, self, 2)
+			local m = makeParadoxClone(self, self, 0)
 			m.generic_damage_penalty = (m.generic_damage_penalty or 0) + t.getDamagePenalty(self, t)
 			m:attr("archery_pass_friendly", 1)
 			doWardenWeaponSwap(m, t, "bow")
@@ -370,8 +370,10 @@ newTalent{
 				if #tgts > 0 then
 					local a, id = rng.tableRemove(tgts)
 					local tx, ty = find_space(self, target, m)
-					m.blended_target = a
-					game.zone:addEntity(game.level, m, "actor", tx, ty)
+					if tx and ty then
+						m.blended_target = a
+						game.zone:addEntity(game.level, m, "actor", tx, ty)
+					end
 				end
 			end
 		end
