@@ -415,17 +415,26 @@ newEntity{ base = "BASE_CLOAK", define_as="GLACIAL_CLOAK",
 		on_melee_hit = {[DamageType.ICE]=60},
 	},
 	max_power = 30, power_regen = 1,
-	use_power = { name = "release a blast of ice", power = 30,
+	use_power = {
+		name = function(self, who)
+			local dam = who:damDesc(engine.DamageType.COLD, self.use_power.damage(self, who))
+			return ("release a radius %d blast of frozen vapors that deal %0.2f cold damage (based on Magic) each turn for %d turns"):format(self.use_power.radius, dam, self.use_power.duration)
+		end,
+		power = 30,
+		damage = function(self, who) return 25 + who:getMag() end,
+		radius = 4,
+		duration = 10,
 		use = function(self, who)
-			local duration = 10
-			local radius = 4
-			local dam = (25 + who:getMag())
+			local duration = self.use_power.duration
+			local radius = self.use_power.radius
+			local dam = self.use_power.damage(self, who)
 			local blast = {type="ball", range=0, radius=radius, selffire=false, display={particle="bolt_ice", trail="icetrail"}}
+			game.logSeen(who, "%s releases a blast of freezing vapors from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			who:project(blast, who.x, who.y, engine.DamageType.COLD, dam*3)
 			who:project(blast, who.x, who.y, engine.DamageType.FREEZE, {dur=6, hp=80+dam})
 			game.level.map:particleEmitter(who.x, who.y, blast.radius, "iceflash", {radius=blast.radius})
 			-- Add a lasting map effect
-			game.level.map:addEffect(who,
+			local eff = game.level.map:addEffect(who,
 				who.x, who.y, duration,
 				engine.DamageType.ICE, dam,
 				radius,
@@ -437,11 +446,12 @@ newEntity{ base = "BASE_CLOAK", define_as="GLACIAL_CLOAK",
 				end,
 				false
 			)
-			game.logSeen(who, "%s releases a burst of freezing cold from within their cloak!", who.name:capitalize(), self:getName())
+			eff.name = "icy vapors"
 			return {id=true, used=true}
 		end
 	},
 }
+
 --Blight+Phys Greatmaul that inflicts disease, dropped by Rotting Titan.
 newEntity{ base = "BASE_GREATMAUL", define_as="ROTTING_MAUL",
 	power_source = {arcane=true},
@@ -464,13 +474,22 @@ newEntity{ base = "BASE_GREATMAUL", define_as="ROTTING_MAUL",
 		dammod = {str=1.4},
 		convert_damage = {[DamageType.BLIGHT] = 20},
 		melee_project={[DamageType.ITEM_BLIGHT_DISEASE] = 50},
-		special_on_hit = {desc="Damages enemies in radius 1 around your target (based on Strength).", on_kill=1, fct=function(combat, who, target)
-			local o, item, inven_id = who:findInAllInventoriesBy("define_as", "ROTTING_MAUL")
-			local dam = rng.avg(1,3) * (70+ who:getStr())
-			game.logSeen(who, "The ground shakes as the %s hits!", o:getName())
-			local tg = {type="ball", range=10, selffire=false, force_target=target, radius=1, no_restrict=true}
-			who:project(tg, target.x, target.y, engine.DamageType.PHYSICAL, dam)
-		end},
+		special_on_hit = {
+			desc=function(self, who, special)
+				local dam = who:damDesc(engine.DamageType.PHYSICAL, special.shockwavedam(self, who, special))
+				return ("Blasts creatures in a radius 1 shockwave around your target for %0.2f to %0.2f physical damage (based on Strength)."):format(dam, dam *3)
+			end,
+			on_kill=1,
+			shockwavedam = function(self, who, special) return 70+ who:getStr() end,
+			fct=function(combat, who, target, dam, special)
+				local o, item, inven_id = who:findInAllInventoriesBy("define_as", "ROTTING_MAUL")
+				if not o or not who:getInven(inven_id).worn then return end
+				local dam = rng.avg(1,3) * special.shockwavedam(self, who, special)
+				game.logSeen(who, "%s's %s shakes the ground with its impact!", who.name:capitalize(), o:getName({no_add_name = true}))
+				local tg = {type="ball", range=10, selffire=false, force_target=target, radius=1, no_restrict=true, act_exclude = {[target.uid]=true}}
+				who:project(tg, target.x, target.y, engine.DamageType.PHYSICAL, dam)
+			end
+		},
 	},
 	wielder = {
 		inc_damage={[DamageType.PHYSICAL] = 12,},
@@ -478,16 +497,24 @@ newEntity{ base = "BASE_GREATMAUL", define_as="ROTTING_MAUL",
 		combat_critical_power = 40,
 	},
 	max_power = 50, power_regen = 1,
-	use_power = { name = "knock away nearby foes", power = 50,
+	use_power = {
+		name = function(self, who)
+			local dam = who:damDesc(engine.DamageType.PHYSICAL, self.use_power.damage(self, who))
+			return ("knock away other craatures within radius %d), dealing %0.2f to %0.2f physical damage (based on Strength) to each"):format(self.use_power.radius, dam, dam*2)
+		end,
+		power = 50,
+		damage = function(self, who) return 125+ 3*who:getStr() end,
+		radius = 4,
 		use = function(self, who)
-			local dam = rng.avg(1,2) * (125+ who:getStr() * 3)
-			local tg = {type="ball", range=0, selffire=false, radius=4, no_restrict=true}
-			who:project(tg, who.x, who.y, engine.DamageType.PHYSKNOCKBACK, {dam=dam, dist=4})
-			game.logSeen(who, "%s slams their %s into the ground, sending out a shockwave!", who.name:capitalize(), self:getName())
+			local dam = rng.float(1,2) * self.use_power.damage(self, who)
+			local tg = {type="ball", range=0, selffire=false, radius=self.use_power.radius, no_restrict=true}
+			who:project(tg, who.x, who.y, engine.DamageType.PHYSKNOCKBACK, {dam=dam, dist=self.use_power.radius})
+			game.logSeen(who, "%s slams %s %s into the ground, sending out a shockwave!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			return {id=true, used=true}
 		end
 	},
 }
+
 --Molten Skin, dropped by Heavy Sentinel.
 newEntity{ base = "BASE_LIGHT_ARMOR",
 	power_source = {arcane=true},

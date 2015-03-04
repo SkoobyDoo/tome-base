@@ -208,9 +208,10 @@ newTalent{
 				local o = inven[item]
 				if o.been_reshaped then
 					if o.wielded then
-						self:onTakeoff(o, inven_id, true)
-						t.reshape(self, t, o, false)
-						self:onWear(o, inven_id, true)
+						if t.reshape(self, t, o, false) then
+							self:onTakeoff(o, inven_id, true)
+							self:onWear(o, inven_id, true)
+						end
 					end
 				end
 			end
@@ -225,16 +226,10 @@ newTalent{
 	callbackOnStatChange = function(self, t, stat, v)
 		self:updateTalentPassives(t)
 	end,
-	callbackOnWear = function(self, t, o, bypass)
-		self:updateTalentPassives(t)
-	end,
-	callbackOnTakeoff = function(self, t, o, bypass)
-		self:updateTalentPassives(t)
-	end,	
 	action = function(self, t)
 		local ret = self:talentDialog(self:showInventory("Reshape which weapon or armor?", self:getInven("INVEN"),
 			function(o)
-				return not o.quest and (o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" )) and not o.fully_reshaped --Exclude fully reshaped?
+				return o:getPowerRank() > 0 and not o.quest and ((o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" ))) and not o.fully_reshaped --Exclude fully reshaped?
 			end
 			, function(o, item)
 			self:talentDialogReturn(t.reshape(self, t, o, true))

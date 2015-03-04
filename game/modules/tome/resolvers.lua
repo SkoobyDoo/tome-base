@@ -76,8 +76,12 @@ function resolvers.calc.equip(t, e)
 				end
 			end
 
-			if e:wearObject(o, true, false) == false then
-				e:addObject(e.INVEN_INVEN, o)
+			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
+				if filter.force_inven then  -- we just really want it
+					e:addObject(filter.force_inven, o, true, filter.force_item)
+				else
+					e:addObject(e.INVEN_INVEN, o)
+				end
 			end
 
 			-- Do not drop it unless it is an ego or better

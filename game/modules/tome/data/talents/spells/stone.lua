@@ -52,7 +52,6 @@ newTalent{
 			local x, y = self:getTarget(tg3)
 			if x and y then
 				self:projectile(tg3, x, y, DamageType.SPLIT_BLEED, self:spellCrit(damage), nil)
-				game:playSoundNear(self, "talents/earth")
 			end
 		else end
 		return true

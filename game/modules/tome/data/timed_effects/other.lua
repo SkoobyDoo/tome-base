@@ -1668,7 +1668,7 @@ newEffect{
 			local m = require("mod.class.NPC").new(eff.target:cloneFull{
 				shader = "shadow_simulacrum",
 				shader_args = { color = {0.0, 1, 1}, base = 0.6 },
-				no_drops = true,
+				no_drops = true, keep_inven_on_death = false,
 				faction = eff.target.faction,
 				summoner = eff.target, summoner_gain_exp=true,
 				ai_target = {actor=nil},
@@ -2563,7 +2563,7 @@ newEffect{
 		-- Find our clones
 		for i = 1, #eff.targets do
 			local target = eff.targets[i]
-			if target ~= self and not target.dead and game.level:hasEntity(target) then
+			if not target.dead and game.level:hasEntity(target) then
 				clones[#clones+1] = target
 			end
 		end
@@ -2576,8 +2576,10 @@ newEffect{
 			for i = 1, #clones do
 				local target = clones[i]
 				if target ~= self then
+					target.turn_procs.temporal_fugue_damage = true
 					target:takeHit(cb.value, src)
 					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(cb.value), nil)
+					target.turn_procs.temporal_fugue_damage = nil
 				end
 			end
 			
@@ -2731,7 +2733,7 @@ newEffect{
 newEffect{
 	name = "2H_PENALTY", image = "talents/unstoppable.png",
 	desc = "Hit Penalty",
-	long_desc = function(self, eff) return ("The target is using a two handed weapon in a single hand, reducing chances to hit, spellpower and mindpower by %d%% (based on size)."):format(20 - math.min(self.size_category - 4, 4) * 5) end,
+	long_desc = function(self, eff) return ("The target is using a two handed weapon in a single hand, reducing physical power, spellpower and mindpower by %d%% (based on size)."):format(20 - math.min(self.size_category - 4, 4) * 5) end,
 	type = "other", decrease = 0, no_remove = true,
 	subtype = { combat=true, penalty=true },
 	status = "detrimental",

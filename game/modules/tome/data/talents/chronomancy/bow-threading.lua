@@ -45,15 +45,9 @@ newTalent{
 		-- Grab our target so we can spawn clones
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then if swap == true then doWardenWeaponSwap(self, t, "blade") end return nil end
+		if not x or not y or not target or not self:hasLOS(x, y) then if swap == true then doWardenWeaponSwap(self, t, "blade") end return nil end
 		local __, x, y = self:canProject(tg, x, y)
-		
-		-- Don't cheese arrow stitching through walls
-		if not self:hasLOS(x, y) then
-			game.logSeen(self, "You do not have line of sight.")
-			return nil
-		end
-				
+						
 		local targets = self:archeryAcquireTargets(self:getTalentTarget(t), {one_shot=true, x=x, y=y, no_energy = true})
 		if not targets then return end
 		self:archeryShoot(targets, t, {type="bolt", friendlyfire=false, friendlyblock=false}, {mult=t.getDamage(self, t)})
@@ -61,7 +55,7 @@ newTalent{
 		-- Summon our clones
 		if not self.arrow_stitching_done then
 			for i = 1, 2 do
-				local m = makeParadoxClone(self, self, 2)
+				local m = makeParadoxClone(self, self, 0)
 				m.arrow_stitched_target = target
 				m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
 				m:attr("archery_pass_friendly", 1)
