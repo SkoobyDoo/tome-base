@@ -64,6 +64,24 @@ lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mo
 	return vx;
 }
 
+lua_vertexes* vertex_clone(lua_vertexes *vx, lua_vertexes *srcvx) {
+	if (!vx) vx = malloc(sizeof(lua_vertexes));
+
+	vx->mode = srcvx->mode;
+	vx->kind = srcvx->kind;
+	vx->changed = srcvx->changed;
+	vx->vertices = NULL; vx->ids = NULL;
+	vx->size = 0; update_vertex_size(vx, srcvx->size);
+	vx->nb = srcvx->nb;
+
+	memcpy(vx->ids, srcvx->ids, sizeof(int) * vx->size);
+	memcpy(vx->vertices, srcvx->vertices, sizeof(vertex_data) * vx->size);
+
+	vx->render = NULL;
+	vx->tex = srcvx->tex;
+	return vx;
+}
+
 void vertex_free(lua_vertexes *vx, bool self_delete) {
 	if (vx->size > 0) {
 		free(vx->vertices);
@@ -131,20 +149,29 @@ void vertex_update_quad_texture(lua_vertexes *vx, int i, float u1, float v1, flo
 	vx->changed = TRUE;
 }
 
-void vertex_append(lua_vertexes *vx, lua_vertexes *srcvx) {
-	if (vx->kind != srcvx->kind) return;
+int vertex_append(lua_vertexes *vx, lua_vertexes *srcvx, bool newids) {
+	if (vx->kind != srcvx->kind) return 0;
+	if (!srcvx->nb) return 0;
 
 	update_vertex_size(vx, vx->nb + srcvx->nb);
 
 	if (!vx->tex && srcvx->tex) vx->tex = srcvx->tex;
 
+	int ids_offset = 0;
+	if (newids) {
+		ids_offset = next_id - srcvx->ids[0];		
+		next_id += srcvx->nb / VERTEX_QUAD_SIZE;
+	}
+
 	int i, j;
 	for (i = 0, j = vx->nb; i < srcvx->nb; i++, j++) {
 		vx->vertices[j] = srcvx->vertices[i];
-		vx->ids[j] = srcvx->ids[i];
+		vx->ids[j] = srcvx->ids[i] + ids_offset;
 	}
 	vx->nb += srcvx->nb;
 	vx->changed = true;
+
+	return ids_offset;
 }
 
 void vertex_remove(lua_vertexes *vx, int start, int stop) {
@@ -208,6 +235,21 @@ void vertex_color(lua_vertexes *vx, int start, int stop, bool set, float r, floa
 			vx->vertices[i].b *= b;
 			vx->vertices[i].a *= a;
 		}
+	}
+}
+
+void vertex_alpha(lua_vertexes *vx, int start, int stop, float a) {
+	if (start == -1 || stop == -1) return;
+	if (start >= vx->nb) return;
+
+	vx->changed = TRUE;
+
+	stop += VERTEX_QUAD_SIZE - 1;
+	if (stop >= vx->nb) stop = vx->nb - 1;
+
+	int i;
+	for (i = start; i <= stop; i++) {
+		vx->vertices[i].a = a;
 	}
 }
 

@@ -1312,7 +1312,7 @@ static int map_get_scroll(lua_State *L)
 }
 
 #define useDefaultShader(map) { \
-	if (map->default_shader) tglUseProgramObject(map->default_shader->shader) \
+	if (map->default_shader) { tglUseProgramObject(map->default_shader->shader); current_shader = map->default_shader; } \
 	else useNoShader(); \
 }
 

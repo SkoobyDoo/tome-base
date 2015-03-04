@@ -209,7 +209,6 @@ void renderer_pipe_draw_quad(
 	if (state->quad_pipe_enabled) {
 		if (renderer_quad_pipe->tex != tex) {
 			renderer_pipe_flush();
-			renderer_quad_pipe->tex = tex;
 		}
 
 		// Transform based on the current world mat
@@ -218,6 +217,7 @@ void renderer_pipe_draw_quad(
 		vec4 p3 = state->pipe_world * vec4(x3, y3, 0, 1);
 		vec4 p4 = state->pipe_world * vec4(x4, y4, 0, 1);
 
+		renderer_quad_pipe->tex = tex;
 		vertex_add_quad(renderer_quad_pipe,
 			p1.x, p1.y, u1, v1,
 			p2.x, p2.y, u2, v2,

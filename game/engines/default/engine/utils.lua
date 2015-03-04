@@ -920,19 +920,22 @@ getmetatable(tmps).__index.drawVO = function(font, vo, str, params)
 	local max_width = params.max_width or 0
 	if params.no_linefeed then no_linefeed = true end
 
+	if not vo then vo = core.vo.new() end
 	local vstart, vstop, nb_lines, w, h, add_draw = drawVO(font, vo, str, max_width, r, g, b, a, x, y, no_linefeed)
 
 	if params.center then
 		vo:translate(vstart, vstop, -math.floor(w/2), -math.floor(h/2))
+		x, y = x-math.floor(w/2), y-math.floor(h/2)
 	end
 
 	return {
 		vstart = vstart,
 		vstop = vstop,
 		nb_lines = nb_lines,
-		w = w,
-		h = h,
 		add_draw = add_draw,
+		vo = vo,
+		x = x, y = y,
+		w = w, h = h,
 	}
 end
 

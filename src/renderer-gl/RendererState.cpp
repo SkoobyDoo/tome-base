@@ -193,12 +193,13 @@ void RendererState::scale(float x, float y, float z) {
 }
 
 void RendererState::enableQuadPipe(bool v) {
-	if (v) {
+	quad_pipe_enabled += v ? 1 : -1;
+
+	if (quad_pipe_enabled == 1) {
 		pipe_world = mat4();
-	} else {
+	} else if (quad_pipe_enabled == 0) {
 		while (!saved_pipe_worlds.empty()) saved_pipe_worlds.pop();
 	}
-	quad_pipe_enabled = v;
 }
 
 void RendererState::pushCutoff(float x, float y, float w, float h) {

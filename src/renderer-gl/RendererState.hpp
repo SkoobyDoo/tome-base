@@ -41,7 +41,7 @@ public:
 	vec4 viewport;
 	mat4 mvp;
 
-	bool quad_pipe_enabled;
+	int quad_pipe_enabled;
 	mat4 pipe_world;
 
 	RendererState(int w, int h);

@@ -47,6 +47,8 @@ function _M:init(x, y, w, h, max, fontname, fontsize, color, bgcolor)
 
 	self:resize(x, y, w, h)
 
+	self.vo = core.vo.new()
+
 --	if config.settings.log_to_disk then self.out_f = fs.open("/game-log-"..(game and type(game) == "table" and game.__mod_info and game.__mod_info.short_name or "default").."-"..os.time()..".txt", "w") end
 end
 
@@ -199,28 +201,41 @@ function _M:display()
 	if not self.changed then return end
 	self.changed = false
 
+	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
+	local do_shadow = self.shadow and not shader
+
 	-- Erase and the display
+	self.vo:clear()
 	self.dlist = {}
-	local h = 0
 	local old_style = self.font:getStyle()
+	local h = self.h -  self.fh
 	for z = 1 + self.scroll, #self.log do
 		local stop = false
-		local tstr = self.log[z].str
-		local gen
-		if self.cache[tstr] then
-			gen = self.cache[tstr]
-		else
-			gen = self.font:draw(tstr, self.w, 255, 255, 255, false, true)
-			self.cache[tstr] = gen
-		end
-		for i = #gen, 1, -1 do
-			self.dlist[#self.dlist+1] = {item=gen[i], date=math.max(self.log.reset_fade or self.log[z].timestamp, self.log[z].timestamp), url=self.log[z].url}
-			h = h + self.fh
-			if h > self.h - self.fh then stop=true break end
+		local tstrs = self.log[z].str:splitLines(self.w, self.font)
+		for i = #tstrs, 1, -1 do
+			local tstr = tstrs[i]
+			local gen
+			if self.cache[tstr] then
+				gen = self.cache[tstr]
+				gen.vo:translateAll(0, h - gen.y)
+				if gen.shadowvo then gen.shadowvo:translateAll(0, h - gen.y) end
+				gen.y = h
+			else
+				gen = self.font:drawVO(nil, tstr, {max_width=self.w, y=h})
+				if do_shadow then gen.shadowvo, gen.shadowvo_vstart, gen.shadowvo_vstop = gen.vo:cloneByAppend(gen.vstart, gen.vstop) gen.shadowvo:translateAll(2, 2) gen.shadowvo:colorAll(true, 0, 0, 0, self.shadow) end
+				self.cache[tstr] = gen
+			end
+			gen = table.clone(gen, false)
+			if gen.shadowvo then gen.shadowvo_vstart, gen.shadowvo_vstop = self.vo:append(gen.shadowvo, gen.shadowvo_vstart, gen.shadowvo_vstop) end
+			gen.vstart, gen.vstop = self.vo:append(gen.vo, gen.vstart, gen.vstop)
+			self.dlist[#self.dlist+1] = {item=gen, date=math.max(self.log.reset_fade or self.log[z].timestamp, self.log[z].timestamp), url=self.log[z].url}
+			h = h - self.fh
+			if h < 0 then stop=true break end
 		end
 		if stop then break end
 	end
 	self.font:setStyle(old_style)
+
 	return
 end
 
@@ -230,10 +245,6 @@ function _M:toScreen()
 	if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
 
 	local now = core.game.getTime()
-	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
-	shader=nil
-
-	local h = self.display_y + self.h -  self.fh
 	for i = 1, #self.dlist do
 		local item = self.dlist[i].item
 
@@ -243,24 +254,24 @@ function _M:toScreen()
 			if fade < self.fading * 1000 then fade = 1
 			elseif fade < self.fading * 2000 then fade = (self.fading * 2000 - fade) / (self.fading * 1000)
 			else fade = 0 end
+
+			if self.dlist[i].faded ~= fade then
+				if item.shadowvo then self.vo:alpha(item.shadowvo_vstart, item.shadowvo_vstop, fade * self.shadow) end
+				self.vo:alpha(item.vstart, item.vstop, fade)
+			end
 			self.dlist[i].faded = fade
 		end
-
-		self.dlist[i].dh = h
-		if self.shadow then
-			if shader then
-				shader:use(true)
-				shader:uniOutlineSize(0.7, 0.7)
-				shader:uniTextSize(item._tex_w, item._tex_h)
-			else
-				item._tex:toScreenFull(self.display_x+2, h+2, item.w, item.h, item._tex_w, item._tex_h, 0,0,0, self.shadow * fade)
-			end
-		end
-		item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
-		if self.shadow and shader then shader:use(false) end
-		for di = 1, #item._dduids do item._dduids[di].e:toScreen(nil, self.display_x + item._dduids[di].x, h, item._dduids[di].w, item._dduids[di].w, fade, false, false) end
-		h = h - self.fh
+		-- for di = 1, #item._dduids do item._dduids[di].e:toScreen(nil, self.display_x + item._dduids[di].x, h, item._dduids[di].w, item._dduids[di].w, fade, false, false) end
 	end
+
+	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
+	if self.shadow and shader then
+		shader:use(true)
+		shader:uniOutlineSize(0.7, 0.7)
+		shader:uniTextSize(self.font:getAtlasSize())
+	end
+	self.vo:toScreen(self.display_x, self.display_y)
+	if self.shadow and shader then shader:use(false) end
 
 	if not self.fading then
 		self.scrollbar.pos = self.scroll

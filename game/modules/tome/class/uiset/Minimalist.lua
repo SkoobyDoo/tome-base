@@ -1666,75 +1666,75 @@ function _M:displayPlayer(scale, bx, by)
 	local player = game.player
 	if not game.player then return end
 
-	pf_shadow[1]:toScreenFull(0, 0, pf_shadow.w, pf_shadow.h, pf_shadow[2], pf_shadow[3])
-	pf_bg[1]:toScreenFull(pf_bg_x, pf_bg_y, pf_bg.w, pf_bg.h, pf_bg[2], pf_bg[3])
+	uiTexture(pf_shadow, 0, 0)
+	uiTexture(pf_bg, pf_bg_x, pf_bg_y)
 	core.display.glScissor(true, bx+15*scale, by+15*scale, 54*scale, 54*scale)
 	player:toScreen(nil, 22, 22, 40, 40)
 	core.display.glScissor(false)
 
 	if (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled then
-		pf_defend[1]:toScreenFull(22 + pf_attackdefend_x, 67 + pf_attackdefend_y, pf_defend.w, pf_defend.h, pf_defend[2], pf_defend[3])
+		uiTexture(pf_defend, 22 + pf_attackdefend_x, 67 + pf_attackdefend_y)
 	else
-		pf_attack[1]:toScreenFull(22 + pf_attackdefend_x, 67 + pf_attackdefend_y, pf_attack.w, pf_attack.h, pf_attack[2], pf_attack[3])
+		uiTexture(pf_attack, 22 + pf_attackdefend_x, 67 + pf_attackdefend_y)
 	end
 
 	if player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0 then
 		local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
-		pf_levelup[1]:toScreenFull(269, 78, pf_levelup.w, pf_levelup.h, pf_levelup[2], pf_levelup[3], 1, 1, 1, glow / 255)
-		pf_exp_levelup[1]:toScreenFull(108, 74, pf_exp_levelup.w, pf_exp_levelup.h, pf_exp_levelup[2], pf_exp_levelup[3], 1, 1, 1, glow / 255)
+		uiTexture(pf_levelup, 269, 78, pf_levelup.w, pf_levelup.h, 1, 1, 1, glow / 255)
+		uiTexture(pf_exp_levelup, 108, 74, pf_exp_levelup.w, pf_exp_levelup.h, 1, 1, 1, glow / 255)
 	end
 
 	local cur_exp, max_exp = player.exp, player:getExpChart(player.level+1)
 	local p = math.min(1, math.max(0, cur_exp / max_exp))
-	pf_exp[1]:toScreenPrecise(117, 85, pf_exp.w * p, pf_exp.h, 0, p * 1/pf_exp[4], 0, 1/pf_exp[5])
+	uiTexture(pf_exp, 117, 85, pf_exp.w * p, pf_exp.h)
 
 	if not self.res.exp or self.res.exp.vc ~= p then
 		self.res.exp = {
 			vc = p,
-			cur = {core.display.drawStringBlendedNewSurface(sfont_sha, ("%d%%"):format(p * 100), 255, 255, 255):glTexture()},
+			cur = sfont_sha:drawVO(nil, ("%d%%"):format(p * 100), {r=255, g=255, b=255}),
 		}
 	end
 	local dt = self.res.exp.cur
-	dt[1]:toScreenFull(2+87 - dt.w / 2, 2+89 - dt.h / 2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(87 - dt.w / 2, 89 - dt.h / 2, dt.w, dt.h, dt[2], dt[3])
+	dt.vo:toScreen(2+87 - dt.w / 2, 2+89 - dt.h / 2, nil, 0, 0, 0, 0.7)
+	dt.vo:toScreen(87 - dt.w / 2, 89 - dt.h / 2)
 
 	if not self.res.money or self.res.money.vc ~= player.money then
 		self.res.money = {
 			vc = player.money,
-			cur = {core.display.drawStringBlendedNewSurface(font_sha, ("%d"):format(player.money), 255, 215, 0):glTexture()},
+			cur = font_sha:drawVO(nil, ("%d"):format(player.money), {r=255, g=215, b=0}),
 		}
 	end
 	local dt = self.res.money.cur
-	dt[1]:toScreenFull(2+112 - dt.w / 2, 2+43, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(112 - dt.w / 2, 43, dt.w, dt.h, dt[2], dt[3])
+	dt.vo:toScreen(2+112 - dt.w / 2, 2+43, nil, 0, 0, 0, 0.7)
+	dt.vo:toScreen(112 - dt.w / 2, 43)
 
 	if not self.res.pname or self.res.pname.vc ~= player.name then
 		self.res.pname = {
 			vc = player.name,
-			cur = {core.display.drawStringBlendedNewSurface(font_sha, player.name, 255, 255, 255):glTexture()},
+			cur = font_sha:drawVO(nil, player.name, {r=255, g=255, b=255}),
 		}
 	end
 	local dt = self.res.pname.cur
-	dt[1]:toScreenFull(2+166, 2+13, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(166, 13, dt.w, dt.h, dt[2], dt[3])
+	dt.vo:toScreen(2+166, 2+13, nil, 0, 0, 0, 0.7)
+	dt.vo:toScreen(166, 13)
 
 	if not self.res.plevel or self.res.plevel.vc ~= player.level then
 		self.res.plevel = {
 			vc = player.level,
-			cur = {core.display.drawStringBlendedNewSurface(font_sha, "Lvl "..player.level, 255, 255, 255):glTexture()},
+			cur = font_sha:drawVO(nil, "Lvl "..player.level, {r=255, g=255, b=255}),
 		}
 	end
 	local dt = self.res.plevel.cur
-	dt[1]:toScreenFull(2+253, 2+46, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(253, 46, dt.w, dt.h, dt[2], dt[3])
+	dt.vo:toScreen(2+253, 2+46, nil, 0, 0, 0, 0.7)
+	dt.vo:toScreen(253, 46)
 
 	if player:attr("encumbered") then
 		local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
-		pf_encumber[1]:toScreenFull(162, 38, pf_encumber.w, pf_encumber.h, pf_encumber[2], pf_encumber[3], 1, 1, 1, glow / 255)
+		uiTexture(pf_encumber, 162, 38, pf_encumber.w, pf_encumber.h, 1, 1, 1, glow / 255)
 	end
 
 	if not self.locked then
-		move_handle[1]:toScreenFull(self.mhandle_pos.player.x, self.mhandle_pos.player.y, move_handle.w, move_handle.h, move_handle[2], move_handle[3])
+		uiTexture(move_handle, self.mhandle_pos.player.x, self.mhandle_pos.player.y)
 	end
 
 	if not game.mouse:updateZone("pframe", bx, by, pf_bg.w, pf_bg.h, nil, scale) then
@@ -1775,18 +1775,24 @@ function _M:displayMinimap(scale, bx, by)
 
 	local map = game.level.map
 
-	mm_shadow[1]:toScreenFull(0, 2, mm_shadow.w, mm_shadow.h, mm_shadow[2], mm_shadow[3])
-	mm_bg[1]:toScreenFull(mm_bg_x, mm_bg_y, mm_bg.w, mm_bg.h, mm_bg[2], mm_bg[3])
+	uiTexture(mm_shadow, 0, 2)
+	uiTexture(mm_bg, mm_bg_x, mm_bg_y)
 	if game.player.x then game.minimap_scroll_x, game.minimap_scroll_y = util.bound(game.player.x - 25, 0, map.w - 50), util.bound(game.player.y - 25, 0, map.h - 50)
 	else game.minimap_scroll_x, game.minimap_scroll_y = 0, 0 end
 
 	map:minimapDisplay(50 - mm_bg_x, 30 - mm_bg_y, game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 0.85)
-	mm_transp[1]:toScreenFull(50 - mm_bg_x, 30 - mm_bg_y, mm_transp.w, mm_transp.h, mm_transp[2], mm_transp[3])
+	game.zone_name_s:toScreenFull(
+		(mm_bg.w - game.zone_name_w) / 2,
+		0,
+		game.zone_name_w, game.zone_name_h,
+		game.zone_name_tw, game.zone_name_th
+	)
 
-	mm_comp[1]:toScreenFull(169, 178, mm_comp.w, mm_comp.h, mm_comp[2], mm_comp[3])
+	uiTexture(mm_transp, 50 - mm_bg_x, 30 - mm_bg_y)
+	uiTexture(mm_comp, 169, 178)
 
 	if not self.locked then
-		move_handle[1]:toScreenFull(self.mhandle_pos.minimap.x, self.mhandle_pos.minimap.y, move_handle.w, move_handle.h, move_handle[2], move_handle[3])
+		uiTexture(move_handle, self.mhandle_pos.minimap.x, self.mhandle_pos.minimap.y)
 	end
 
 	if not game.mouse:updateZone("minimap", bx, by, mm_bg.w, mm_bg.h, nil, scale) then
@@ -1819,13 +1825,6 @@ function _M:displayMinimap(scale, bx, by)
 		end
 		game.mouse:registerZone(bx, by, mm_bg.w, mm_bg.h, desc_fct, nil, "minimap", true, scale)
 	end
-
-	game.zone_name_s:toScreenFull(
-		(mm_bg.w - game.zone_name_w) / 2,
-		0,
-		game.zone_name_w, game.zone_name_h,
-		game.zone_name_tw, game.zone_name_th
-	)
 
 	-- Compute how much space to reserve on the side
 	self:computePadding("minimap", bx, by, bx + mm_bg.w * scale, by + (mm_bg.h + game.zone_name_h) * scale)
@@ -2120,7 +2119,6 @@ core.vo.enablePipe()
 	d.glTranslate(self.places.gamelog.x, self.places.gamelog.y, 0)
 	self:displayGameLog(1, self.places.gamelog.x, self.places.gamelog.y)
 	d.glTranslate(-self.places.gamelog.x, -self.places.gamelog.y, -0)
---[[
 
 	-- Chat log
 	d.glTranslate(self.places.chatlog.x, self.places.chatlog.y, 0)
@@ -2143,6 +2141,7 @@ core.vo.enablePipe()
 	d.glScale()
 	d.glTranslate(-self.places.player.x, -self.places.player.y, -0)
 
+--[[
 	-- Resources
 	d.glTranslate(self.places.resources.x, self.places.resources.y, 0)
 	d.glScale(self.places.resources.scale, self.places.resources.scale, self.places.resources.scale)

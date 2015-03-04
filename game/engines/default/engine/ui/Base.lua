@@ -294,71 +294,29 @@ function _M:updateFrameColorVO(vo, vo_id, set, r, g, b, a)
 	vo:color(vo_id.start, vo_id.stop, set, r, g, b, a)
 end
 
-function _M:drawFrame(f, x, y, r, g, b, a, w, h, total_w, total_h, loffset_x, loffset_y, clip_area)
+function _M:drawFrame(f, x, y, r, g, b, a, w, h)
 	if not f.b7 then return 0, 0, 0, 0 end
-	
-	loffset_x = loffset_x or 0
-	loffset_y = loffset_y or 0
-	total_w = total_w or 0
-	total_h = total_h or 0
 	
 	x = math.floor(x)
 	y = math.floor(y)
 	
 	f.w = math.floor(w or f.w)
 	f.h = math.floor(h or f.h)
-	
-	clip_area = clip_area or { h = f.h, w = f.w }
 
-	-- first of all check if anything is visible
-	if total_h + f.h > loffset_y and total_h < loffset_y + clip_area.h then 
-		local clip_y_start = 0
-		local clip_y_end = 0
-		local total_clip_y_start = 0
-		local total_clip_y_end = 0
+	-- Sides
+	self:uiTexture(f.b8, x + f.b7.w, y, f.w - f.b7.w - f.b9.w + 1, f.b8.h, r, g, b, a)
+	self:uiTexture(f.b2, x + f.b7.w, y + f.h - f.b3.h + 1, f.w - f.b7.w - f.b9.w + 1, f.b2.h, r, g, b, a)
+	self:uiTexture(f.b4, x, y + f.b7.h, f.b4.w, f.h - f.b7.h - f.b1.h + 1, r, g, b, a)
+	self:uiTexture(f.b6, x + f.w - f.b9.w + 1, y + f.b7.h, f.b6.w, f.h - f.b7.h - f.b1.h + 1, r, g, b, a)
 
-		-- check if top (top right, top and top left) is visible
-		if total_h + f.b8.h > loffset_y and total_h < loffset_y + clip_area.h then
-			util.clipTexture({_tex = f.b7.t, _tex_x = f.b7.tx, _tex_y = f.b7.ty, _tex_w = f.b7.tw, _tex_h = f.b7.th}, x, y, f.b7.w, f.b7.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) --left top
-			_, _, clip_y_start, clip_y_end = util.clipTexture({_tex = f.b8.t, _tex_x = f.b8.tx, _tex_y = f.b8.ty, _tex_w = f.b8.tw, _tex_h = f.b8.th}, x + f.b7.w, y, f.w - f.b7.w - f.b9.w, f.b8.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- top
-			util.clipTexture({_tex = f.b9.t, _tex_x = f.b9.tx, _tex_y = f.b9.ty, _tex_w = f.b9.tw, _tex_h = f.b9.th}, x + f.w - f.b9.w, y, f.b9.w, f.b9.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- right top
+	-- Body
+	self:uiTexture(f.b5, x + f.b7.w, y + f.b7.h, f.w - f.b7.w - f.b3.w + 1, f.h - f.b7.h - f.b3.h + 1, r, g, b, a)
 
-			total_clip_y_start = clip_y_start
-			total_clip_y_end = clip_y_end
-		else
-			total_clip_y_start = f.b8.h
-		end
-		total_h = total_h + f.b8.h
-		local mid_h = math.floor(f.h - f.b2.h - f.b8.h)
-
-		-- check if mid (right, center and left) is visible
-		if total_h + mid_h > loffset_y and total_h < loffset_y + clip_area.h then
-			util.clipTexture({_tex = f.b4.t, _tex_x = f.b4.tx, _tex_y = f.b4.ty, _tex_w = f.b4.tw, _tex_h = f.b4.th}, x, y + f.b7.h - total_clip_y_start, f.b4.w, mid_h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- left
-			_, _, clip_y_start, clip_y_end = util.clipTexture({_tex = f.b6.t, _tex_x = f.b6.tx, _tex_y = f.b6.ty, _tex_w = f.b6.tw, _tex_h = f.b6.th}, x + f.w - f.b9.w, y + f.b7.h - total_clip_y_start, f.b6.w, mid_h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- center
-			util.clipTexture({_tex = f.b5.t, _tex_x = f.b5.tx, _tex_y = f.b5.ty, _tex_w = f.b5.tw, _tex_h = f.b5.th}, x + f.b7.w, y + f.b7.h - total_clip_y_start, f.w - f.b7.w - f.b3.w, mid_h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- right
-
-			total_clip_y_start = total_clip_y_start + clip_y_start
-			total_clip_y_end = total_clip_y_end + clip_y_end
-		else
-			total_clip_y_start = total_clip_y_start + mid_h
-		end
-		total_h = total_h + mid_h
-		
-		-- check if bottom (bottom right, bottom and bottom left) is visible
-		if total_h + f.b2.h > loffset_y and total_h < loffset_y + clip_area.h then
-			util.clipTexture({_tex = f.b1.t, _tex_x = f.b1.tx, _tex_y = f.b1.ty, _tex_w = f.b1.tw, _tex_h = f.b1.th}, x, y + f.h - f.b1.h - total_clip_y_start, f.b1.w, f.b1.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- left bottom
-			_, _, clip_y_start, clip_y_end = util.clipTexture({_tex = f.b2.t, _tex_x = f.b2.tx, _tex_y = f.b2.ty, _tex_w = f.b2.tw, _tex_h = f.b2.th}, x + f.b7.w, y + f.h - f.b2.h - total_clip_y_start, f.w - f.b7.w - f.b9.w, f.b2.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- bottom
-			util.clipTexture({_tex = f.b3.t, _tex_x = f.b3.tx, _tex_y = f.b3.ty, _tex_w = f.b3.tw, _tex_h = f.b3.th}, x + f.w - f.b3.w, y + f.h - f.b3.h - total_clip_y_start, f.b3.w, f.b3.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- right bottom
-
-			total_clip_y_start = total_clip_y_start + clip_y_start
-			total_clip_y_end = total_clip_y_end + clip_y_end
-		else
-			total_clip_y_start = total_clip_y_start + f.b2.h
-		end
-		
-		return 0, 0, total_clip_y_start, total_clip_y_end
-	end
-	return 0, 0, 0, 0
+	-- Corners
+	self:uiTexture(f.b7, x, y, f.b7.w, f.b7.h, r, g, b, a)
+	self:uiTexture(f.b1, x, y + f.h - f.b1.h + 1, f.b1.w, f.b1.h, r, g, b, a)
+	self:uiTexture(f.b9, x + f.w - f.b9.w + 1, y, f.b9.w, f.b9.h, r, g, b, a)
+	self:uiTexture(f.b3, x + f.w - f.b3.w + 1, y + f.h - f.b3.h + 1, f.b3.w, f.b3.h, r, g, b, a)
 end
 
 function _M:setTextShadow(v)
