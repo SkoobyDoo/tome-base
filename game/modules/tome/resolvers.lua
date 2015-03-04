@@ -76,7 +76,7 @@ function resolvers.calc.equip(t, e)
 				end
 			end
 
-			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
+			if e:wearObject(o, true, false) == false then
 				e:addObject(e.INVEN_INVEN, o)
 			end
 
