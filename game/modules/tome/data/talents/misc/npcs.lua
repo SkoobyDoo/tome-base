@@ -1502,7 +1502,7 @@ newTalent{
 
 		local e = Object.new{
 			old_feat = oe,
-			type = oe.type, subtype = oe.subtype,
+			type = rawget(oe, "type"), subtype = oe.subtype,
 			name = "raging volcano", image = oe.image, add_mos = {{image = "terrain/lava/volcano_01.png"}},
 			display = '&', color=colors.LIGHT_RED, back_color=colors.RED,
 			always_remember = true,
