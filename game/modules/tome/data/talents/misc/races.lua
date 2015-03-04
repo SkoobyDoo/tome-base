@@ -1002,7 +1002,7 @@ newTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[When you crit you have a %d%% chance to reduce the remaining cooldown of one of your inscriptions and of any saturations effects.
+		return ([[When you crit you have a %d%% chance to reduce by 1 the remaining cooldown of one of your inscriptions and of any saturations effects.
 		This effect can only happen once per turn.]]):
 		format(t.getChance(self, t))
 	end,
