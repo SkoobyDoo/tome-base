@@ -323,7 +323,7 @@ void copy_surface_to_texture(SDL_Surface *s) {
 	bool tofree = FALSE;
 	unsigned char *pixels = s->pixels;
 
-	// GLES2 seems to not like RGB texture, so we convert to RGBA
+	// GLES2 seems to not like RGB texture, so we convert to GL_RGBA
 	if (s->format->BytesPerPixel == 3) {
 		int i, j;
 		pixels = malloc(s->w * s->h * 4);
@@ -338,7 +338,7 @@ void copy_surface_to_texture(SDL_Surface *s) {
 	}
 #endif
 
-	printf("Uploading texture (%d,%d), with format %d / %d\n",s->w,s->h, texture_format, s->format->BytesPerPixel);
+	// printf("Uploading texture (%d,%d), with format %d / %d\n",s->w,s->h, texture_format, s->format->BytesPerPixel);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, s->w, s->h, texture_format, GL_UNSIGNED_BYTE, pixels);
 
 #ifdef USE_GLES2
