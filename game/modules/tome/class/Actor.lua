@@ -2885,6 +2885,16 @@ function _M:die(src, death_note)
 					end
 				end
 			end
+		else
+			local invens = {}
+			for inven_id, inven in pairs(self.inven) do invens[#invens+1] = inven end
+			table.sort(invens, function(a,b) if a.id == 1 then return false elseif b.id == 1 then return true else return a.id < b.id end end)
+			for _, inven in ipairs(invens) do
+				for i = #inven, 1, -1 do
+					local o = inven[i]
+					if game:hasEntity(o) then game:removeEntity(o) end
+				end
+			end
 		end
 		self.inven = {}
 	end

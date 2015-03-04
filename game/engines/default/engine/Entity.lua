@@ -728,6 +728,8 @@ function _M:removed()
 		end
 	end
 
+	if game and game.hasEntity and game:hasEntity(self) then game:removeEntity(self) end
+
 	if self.unique then
 		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) - 1
 		if game.uniques[self.__CLASSNAME.."/"..self.unique] <= 0 then game.uniques[self.__CLASSNAME.."/"..self.unique] = nil end

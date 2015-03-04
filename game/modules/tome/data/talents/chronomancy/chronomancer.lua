@@ -278,6 +278,7 @@ makeParadoxClone = function(self, target, duration)
 	-- Clone them
 	local m = target:cloneFull{
 		no_drops = true,
+		keep_inven_on_death = false,
 		faction = target.faction,
 		summoner = target, summoner_gain_exp=true,
 		summon_time = duration,

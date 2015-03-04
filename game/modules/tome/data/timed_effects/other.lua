@@ -1668,7 +1668,7 @@ newEffect{
 			local m = require("mod.class.NPC").new(eff.target:cloneFull{
 				shader = "shadow_simulacrum",
 				shader_args = { color = {0.0, 1, 1}, base = 0.6 },
-				no_drops = true,
+				no_drops = true, keep_inven_on_death = false,
 				faction = eff.target.faction,
 				summoner = eff.target, summoner_gain_exp=true,
 				ai_target = {actor=nil},
