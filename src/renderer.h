@@ -47,6 +47,8 @@ extern void renderer_popstate(bool isworld);
 extern void renderer_identity(bool isworld);
 extern void renderer_push_ortho_state(int w, int h);
 extern void renderer_pop_ortho_state();
+extern void renderer_push_cutoff(float x, float y, float w, float h);
+extern void renderer_pop_cutoff();
 extern void renderer_pipe_draw_quad(
 	GLuint tex,
 	float x1, float y1, float u1, float v1, 

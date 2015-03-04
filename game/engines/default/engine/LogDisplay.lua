@@ -231,6 +231,7 @@ function _M:toScreen()
 
 	local now = core.game.getTime()
 	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
+	shader=nil
 
 	local h = self.display_y + self.h -  self.fh
 	for i = 1, #self.dlist do

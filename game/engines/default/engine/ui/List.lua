@@ -157,11 +157,11 @@ end
 function _M:display(x, y, nb_keyframes)
 	local bx, by = x, y
 
+	core.vo.flushPipe()
+
 	local max = math.min(self.scroll + self.max_display - 1, self.max)
 	local cy = (self.fh - self.font_h) / 2
-	for i = self.scroll, max do
-		local item = self.list[i]
-		if not item then break end
+	for i = self.scroll, max do local item = self.list[i] if not item then break end
 		if self.sel == i then
 			if self.focused then self:drawFrame(self.frame_sel, x, y)
 			else self:drawFrame(self.frame_usel, x, y) end
@@ -174,10 +174,16 @@ function _M:display(x, y, nb_keyframes)
 				if item.focus_decay <= 0 then item.focus_decay = nil end
 			end
 		end
+		y = y + self.fh
+	end
+	y = by
+	for i = self.scroll, max do local item = self.list[i] if not item then break end
 		if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
 		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, 1, 1, 1, 1)
 		y = y + self.fh
 	end
+
+	core.vo.flushPipe()
 
 	if self.focused and self.scrollbar then
 		self.scrollbar.pos = self.sel - 1

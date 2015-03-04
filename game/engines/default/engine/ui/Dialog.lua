@@ -736,11 +736,11 @@ function _M:toScreen(x, y, nb_keyframes)
 	if zoom < 1 then core.display.glScale(zoom, zoom, zoom) end
 
 	-- Draw the frame and shadow
-core.display.countDraws()
-	core.vo.enablePipe()
+-- core.display.countDraws()
+-- 	core.vo.enablePipe()
 	if self.frame.shadow then self:drawFrame(x + self.frame.shadow.x, y + self.frame.shadow.y, 0, 0, 0, self.frame.shadow.a) end
 	self:drawFrame(x, y, self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a)
-	core.vo.flushPipe()
+	-- core.vo.flushPipe()
 
 	-- Title
 	if self.title then
@@ -772,8 +772,8 @@ core.display.countDraws()
 	self:innerDisplay(x, y, nb_keyframes, tx, ty)
 
 	if self.first_display then self:firstDisplay() self.first_display = false end
-	core.vo.disablePipe()
-print("====", core.display.countDraws())
+-- 	core.vo.disablePipe()
+-- print("====", core.display.countDraws())
 
 	-- Restore normal opengl matrix
 	if zoom < 1 then core.display.glScale() end

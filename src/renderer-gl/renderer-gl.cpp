@@ -35,7 +35,6 @@ static RendererState *state = NULL;
 
 // A pipe of quad optimization
 lua_vertexes *renderer_quad_pipe = NULL;
-bool renderer_quad_pipe_enabled = false;
 
 // A static cache of element positions; quad VO only ahve quads so we can cache those
 static GLuint *vbo_elements_data = NULL;
@@ -116,7 +115,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		}
 
 		if (shader->p_mvp != -1) {
-			state->updateMVP();
+			state->updateMVP(vx != renderer_quad_pipe);
 			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
 		}
 
@@ -192,6 +191,13 @@ void renderer_pop_ortho_state() {
 	state->popOrthoState();
 }
 
+void renderer_push_cutoff(float x, float y, float w, float h) {
+	state->pushCutoff(x, y, w, h);
+}
+void renderer_pop_cutoff() {
+	state->popCutoff();
+}
+
 void renderer_pipe_draw_quad(
 	GLuint tex,
 	float x1, float y1, float u1, float v1, 
@@ -200,17 +206,23 @@ void renderer_pipe_draw_quad(
 	float x4, float y4, float u4, float v4, 
 	float r, float g, float b, float a
 ) {
-	if (renderer_quad_pipe_enabled) {
+	if (state->quad_pipe_enabled) {
 		if (renderer_quad_pipe->tex != tex) {
 			renderer_pipe_flush();
 			renderer_quad_pipe->tex = tex;
 		}
 
+		// Transform based on the current world mat
+		vec4 p1 = state->pipe_world * vec4(x1, y1, 0, 1);
+		vec4 p2 = state->pipe_world * vec4(x2, y2, 0, 1);
+		vec4 p3 = state->pipe_world * vec4(x3, y3, 0, 1);
+		vec4 p4 = state->pipe_world * vec4(x4, y4, 0, 1);
+
 		vertex_add_quad(renderer_quad_pipe,
-			x1, y1, u1, v1,
-			x2, y2, u2, v2,
-			x3, y3, u3, v3,
-			x4, y4, u4, v4,
+			p1.x, p1.y, u1, v1,
+			p2.x, p2.y, u2, v2,
+			p3.x, p3.y, u3, v3,
+			p4.x, p4.y, u4, v4,
 			r, g, b, a
 		);
 	} else {
@@ -228,10 +240,12 @@ void renderer_pipe_draw_quad(
 }
 
 void renderer_pipe_start() {
-	renderer_quad_pipe_enabled = true;
+	if (!use_modern_gl) return;
+	state->enableQuadPipe(true);
 }
 
 void renderer_pipe_flush() {
+	if (!use_modern_gl) return;
 	if (renderer_quad_pipe->nb > 0) {
 		vertex_toscreen(renderer_quad_pipe, 0, 0, -1, 1, 1, 1, 1);
 		vertex_clear(renderer_quad_pipe);
@@ -240,8 +254,9 @@ void renderer_pipe_flush() {
 }
 
 void renderer_pipe_stop() {
+	if (!use_modern_gl) return;
 	renderer_pipe_flush();
-	renderer_quad_pipe_enabled = false;
+	state->enableQuadPipe(false);
 }
 
 void renderer_init(int w, int h) {

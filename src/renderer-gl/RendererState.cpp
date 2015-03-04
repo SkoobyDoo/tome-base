@@ -25,11 +25,14 @@ extern "C" {
 #include "physfs.h"
 #include "physfsrwops.h"
 #include "renderer.h"
+#include "main.h"
 }
 
 #include "renderer-gl.hpp"
 
 RendererState::RendererState(int w, int h) {
+	quad_pipe_enabled = false;
+
 	/* Set the background black */
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
@@ -42,13 +45,12 @@ RendererState::RendererState(int w, int h) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	if (use_modern_gl) {
-		setViewport(0, 0, w, h);
-		view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
-		world = glm::mat4();
-	} else {
+	setViewport(0, 0, w, h);
+	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+	world = mat4();
+	pipe_world = mat4();
 #ifndef NO_OLD_GL
-		setViewport(0, 0, w, h);
+	if (!use_modern_gl) {
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 		glOrtho(0, w, h, 0, -1001, 1001);
@@ -58,24 +60,21 @@ RendererState::RendererState(int w, int h) {
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glEnableClientState(GL_COLOR_ARRAY);
-#endif
 	}
+#endif
 }
 
 void RendererState::pushOrthoState(int w, int h) {
 	pushViewport();
 	setViewport(0, 0, w, h);
 
-	if (use_modern_gl) {
-		pushState(false);
-		pushState(true);
+	pushState(false);
+	pushState(true);
 
-		view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
-		world = glm::mat4();
-	} else {
+	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+	world = mat4();
 #ifndef NO_OLD_GL
-		setViewport(0, 0, w, h);
-
+	if (!use_modern_gl) {
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
@@ -83,42 +82,41 @@ void RendererState::pushOrthoState(int w, int h) {
 
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-#endif
 	}
+#endif
 }
 
 void RendererState::popOrthoState() {
-	if (use_modern_gl) {
-		popState(false);
-		popState(true);
-	} else {
+	popState(false);
+	popState(true);
 #ifndef NO_OLD_GL
+	if (!use_modern_gl) {
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
-#endif
 	}
+#endif
 
 	popViewport();
 }
 
-void RendererState::updateMVP() {
-	mvp = view * world;
+void RendererState::updateMVP(bool include_pipe_world) {
+	if (include_pipe_world && quad_pipe_enabled) mvp = view * world * pipe_world;
+	else mvp = view * world;
 }
 
 void RendererState::identity(bool isworld) {
-	if (use_modern_gl) {
-		if (isworld) world = glm::mat4();
-		else view = glm::mat4();
-	} else {
+	if (isworld) world = mat4();
+	else view = mat4();
 #ifndef NO_OLD_GL
+	if (!use_modern_gl) {
 		glLoadIdentity();
-#endif
 	}
+#endif
 }
 
 void RendererState::setViewport(int x, int y, int w, int h) {
-	viewport = glm::vec4(x, y, w, h);
+	viewport = vec4(x, y, w, h);
 	glViewport(x, y, w, h);
 }
 void RendererState::pushViewport() {
@@ -131,52 +129,99 @@ void RendererState::popViewport() {
 }
 
 void RendererState::pushState(bool isworld) {
-	if (use_modern_gl) {
-		if (isworld) saved_worlds.push(world);
-		else saved_views.push(view);
-	} else {
-#ifndef NO_OLD_GL
-		glPushMatrix();
-#endif
+	if (quad_pipe_enabled && isworld) {
+		saved_pipe_worlds.push(pipe_world);
 	}
+	if (isworld) saved_worlds.push(world);
+	else saved_views.push(view);
+#ifndef NO_OLD_GL
+	if (!use_modern_gl) {
+		glPushMatrix();
+	}
+#endif
 }
 void RendererState::popState(bool isworld) {
-	if (use_modern_gl) {
-		if (isworld) { world = saved_worlds.top(); saved_worlds.pop(); }
-		else { view = saved_views.top(); saved_views.pop(); }
-	} else {
-#ifndef NO_OLD_GL
-		glPopMatrix();
-#endif
+	if (quad_pipe_enabled && isworld) {
+		pipe_world = saved_pipe_worlds.top(); saved_pipe_worlds.pop();
 	}
+	if (isworld) { world = saved_worlds.top(); saved_worlds.pop(); }
+	else { view = saved_views.top(); saved_views.pop(); }
+#ifndef NO_OLD_GL
+	if (!use_modern_gl) {
+		glPopMatrix();
+	}
+#endif
 }
 
 void RendererState::translate(float x, float y, float z) {
-	if (use_modern_gl) {
-		world = glm::translate(world, glm::vec3(x, y, z));
-	} else {
-#ifndef NO_OLD_GL
-		glTranslatef(x, y, z);
-#endif
+	if (quad_pipe_enabled) {
+		pipe_world = glm::translate(pipe_world, glm::vec3(x, y, z));
+		return;
 	}
+	world = glm::translate(world, glm::vec3(x, y, z));
+#ifndef NO_OLD_GL
+	if (!use_modern_gl) {
+		glTranslatef(x, y, z);
+	}
+#endif
 }
 
 void RendererState::rotate(float a, float x, float y, float z) {
-	if (use_modern_gl) {
-		world = glm::rotate(world, a, glm::vec3(x, y, z));
-	} else {
-#ifndef NO_OLD_GL
-		glRotatef(a, x, y, z);
-#endif
+	if (quad_pipe_enabled) {
+		pipe_world = glm::rotate(pipe_world, a, glm::vec3(x, y, z));
+		return;
 	}
+	world = glm::rotate(world, a, glm::vec3(x, y, z));
+#ifndef NO_OLD_GL
+	if (!use_modern_gl) {
+		glRotatef(a, x, y, z);
+	}
+#endif
 }
 
 void RendererState::scale(float x, float y, float z) {
-	if (use_modern_gl) {
-		world = glm::scale(world, glm::vec3(x, y, z));
-	} else {
+	if (quad_pipe_enabled) {
+		pipe_world = glm::scale(pipe_world, glm::vec3(x, y, z));
+		return;
+	}
+	world = glm::scale(world, glm::vec3(x, y, z));
 #ifndef NO_OLD_GL
+	if (!use_modern_gl) {
 		glScalef(x, y, z);
+	}
 #endif
+}
+
+void RendererState::enableQuadPipe(bool v) {
+	if (v) {
+		pipe_world = mat4();
+	} else {
+		while (!saved_pipe_worlds.empty()) saved_pipe_worlds.pop();
+	}
+	quad_pipe_enabled = v;
+}
+
+void RendererState::pushCutoff(float x, float y, float w, float h) {
+	if (cutoffs.empty()) glEnable(GL_SCISSOR_TEST);
+	
+	updateMVP(false);
+
+	vec4 p1(x, y, 0, 1), p2(x+w, y+h, 0, 1);
+	p1 = world * p1;
+	p2 = world * p2;
+
+	vec4 c(p1.x, p1.y, p2.x, p2.y);
+	cutoffs.push(c);
+
+	glScissor(c.x, viewport.w - c.w, c.z - c.x, c.w - c.y);
+}
+
+void RendererState::popCutoff() {
+	cutoffs.pop();
+	if (cutoffs.empty()) {
+		glDisable(GL_SCISSOR_TEST);
+	} else {
+		vec4 c = cutoffs.top();
+		glScissor(c.x, viewport.w - c.y - c.w, c.z, c.w);
 	}
 }

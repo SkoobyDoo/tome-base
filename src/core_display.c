@@ -1007,19 +1007,53 @@ static int sdl_texture_toscreen_full(lua_State *L)
 	GLfloat texw = (GLfloat)w/rw;
 	GLfloat texh = (GLfloat)h/rh;
 
-	renderer_pipe_draw_quad(
-		t->tex,
-		x, y, 0, 0,
-		x, y+h, 0, texh,
-		x+w, y+h, texw, texh,
-		x+w, y, texw, 0,
+	vertex_clear(generic_vx);
+	vertex_add_quad(generic_vx,
+		0, 0, 0, 0,
+		0, h, 0, texh,
+		w, h, texw, texh,
+		w, 0, texw, 0,
 		r, g, b, a
 	);
+	vertex_toscreen(generic_vx, x, y, t->tex, 1, 1, 1, 1);
 
 	return 0;
 }
 
 static int sdl_texture_toscreen_precise(lua_State *L)
+{
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+	int x = luaL_checknumber(L, 2);
+	int y = luaL_checknumber(L, 3);
+	int w = luaL_checknumber(L, 4);
+	int h = luaL_checknumber(L, 5);
+	GLfloat x1 = luaL_checknumber(L, 6);
+	GLfloat x2 = luaL_checknumber(L, 7);
+	GLfloat y1 = luaL_checknumber(L, 8);
+	GLfloat y2 = luaL_checknumber(L, 9);
+	float r = 1, g = 1, b = 1, a = 1;
+	if (lua_isnumber(L, 10))
+	{
+		r = luaL_checknumber(L, 10);
+		g = luaL_checknumber(L, 11);
+		b = luaL_checknumber(L, 12);
+		a = luaL_checknumber(L, 13);
+	}
+
+	vertex_clear(generic_vx);
+	vertex_add_quad(generic_vx,
+		0, 0, x1, y1,
+		0, h, x1, y2,
+		w, h, x2, y2,
+		w, 0, x2, y1,
+		r, g, b, a
+	);
+	vertex_toscreen(generic_vx, x, y, t->tex, 1, 1, 1, 1);
+
+	return 0;
+}
+
+static int sdl_texture_toscreen_pipe(lua_State *L)
 {
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
@@ -1113,6 +1147,14 @@ static int gl_scissor(lua_State *L)
 		glEnable(GL_SCISSOR_TEST);
 		glScissor(luaL_checknumber(L, 2), screen->h - luaL_checknumber(L, 3) - luaL_checknumber(L, 5), luaL_checknumber(L, 4), luaL_checknumber(L, 5));
 	} else glDisable(GL_SCISSOR_TEST);
+	return 0;
+}
+
+static int gl_cutoff(lua_State *L)
+{
+	if (lua_isnumber(L, 1)) {
+		renderer_push_cutoff(luaL_checknumber(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
+	} else renderer_pop_cutoff();
 	return 0;
 }
 
@@ -1991,6 +2033,7 @@ static const struct luaL_Reg displaylib[] =
 	{"glMatrix", gl_matrix},
 	{"glDepthTest", gl_depth_test},
 	{"glScissor", gl_scissor},
+	{"glCutoff", gl_cutoff},
 	{"getScreenshot", sdl_get_png_screenshot},
 	{"glMaxTextureSize", gl_get_max_texture_size},
 	{"countDraws", gl_counts_draws},
@@ -2020,6 +2063,7 @@ static const struct luaL_Reg sdl_texture_reg[] =
 	{"toScreen", sdl_texture_toscreen},
 	{"toScreenFull", sdl_texture_toscreen_full},
 	{"toScreenPrecise", sdl_texture_toscreen_precise},
+	{"toScreenPipe", sdl_texture_toscreen_pipe},
 	{"toScreenHighlightHex", sdl_texture_toscreen_highlight_hex},
 	{"makeOutline", sdl_texture_outline},
 	{"toSurface", gl_texture_to_sdl},

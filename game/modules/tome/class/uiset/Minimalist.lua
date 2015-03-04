@@ -36,7 +36,19 @@ local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(UISet, TooltipsData))
 
-local move_handle = {core.display.loadImage("/data/gfx/ui/move_handle.png"):glTexture()}
+local function getAtlasTexture(file)
+	local oldui = UI.ui
+	UI.ui = ""
+	local t = UI:getAtlasTexture(file)
+	UI.ui = oldui
+	return t
+end
+
+local function uiTexture(tex, x, y, w, h, r, g, b, a)
+	tex.t:toScreenPipe(x, y, w or tex.w, h or tex.h, tex.tx, tex.tx+tex.tw, tex.ty, tex.ty+tex.th, r, g, b, a)
+end
+
+local move_handle = getAtlasTexture("ui/move_handle.png")
 
 local frames_colors = {
 	ok = {0.3, 0.6, 0.3},
@@ -81,102 +93,102 @@ fortress_sha = Shader.new("resources", {require_shader=4, delay_load=true, color
 save_c = pos_c
 save_sha = pos_sha
 
-sshat = {core.display.loadImage("/data/gfx/ui/resources/shadow.png"):glTexture()}
-bshat = {core.display.loadImage("/data/gfx/ui/resources/back.png"):glTexture()}
-shat = {core.display.loadImage("/data/gfx/ui/resources/fill.png"):glTexture()}
-fshat = {core.display.loadImage("/data/gfx/ui/resources/front.png"):glTexture()}
-fshat_life = {core.display.loadImage("/data/gfx/ui/resources/front_life.png"):glTexture()}
-fshat_life_dark = {core.display.loadImage("/data/gfx/ui/resources/front_life_dark.png"):glTexture()}
-fshat_shield = {core.display.loadImage("/data/gfx/ui/resources/front_life_armored.png"):glTexture()}
-fshat_shield_dark = {core.display.loadImage("/data/gfx/ui/resources/front_life_armored_dark.png"):glTexture()}
-fshat_stamina = {core.display.loadImage("/data/gfx/ui/resources/front_stamina.png"):glTexture()}
-fshat_stamina_dark = {core.display.loadImage("/data/gfx/ui/resources/front_stamina_dark.png"):glTexture()}
-fshat_mana = {core.display.loadImage("/data/gfx/ui/resources/front_mana.png"):glTexture()}
-fshat_mana_dark = {core.display.loadImage("/data/gfx/ui/resources/front_mana_dark.png"):glTexture()}
-fshat_soul = {core.display.loadImage("/data/gfx/ui/resources/front_souls.png"):glTexture()}
-fshat_soul_dark = {core.display.loadImage("/data/gfx/ui/resources/front_souls_dark.png"):glTexture()}
-fshat_equi = {core.display.loadImage("/data/gfx/ui/resources/front_nature.png"):glTexture()}
-fshat_equi_dark = {core.display.loadImage("/data/gfx/ui/resources/front_nature_dark.png"):glTexture()}
-fshat_paradox = {core.display.loadImage("/data/gfx/ui/resources/front_paradox.png"):glTexture()}
-fshat_paradox_dark = {core.display.loadImage("/data/gfx/ui/resources/front_paradox_dark.png"):glTexture()}
-fshat_hate = {core.display.loadImage("/data/gfx/ui/resources/front_hate.png"):glTexture()}
-fshat_hate_dark = {core.display.loadImage("/data/gfx/ui/resources/front_hate_dark.png"):glTexture()}
-fshat_positive = {core.display.loadImage("/data/gfx/ui/resources/front_positive.png"):glTexture()}
-fshat_positive_dark = {core.display.loadImage("/data/gfx/ui/resources/front_positive_dark.png"):glTexture()}
-fshat_negative = {core.display.loadImage("/data/gfx/ui/resources/front_negative.png"):glTexture()}
-fshat_negative_dark = {core.display.loadImage("/data/gfx/ui/resources/front_negative_dark.png"):glTexture()}
-fshat_vim = {core.display.loadImage("/data/gfx/ui/resources/front_vim.png"):glTexture()}
-fshat_vim_dark = {core.display.loadImage("/data/gfx/ui/resources/front_vim_dark.png"):glTexture()}
-fshat_psi = {core.display.loadImage("/data/gfx/ui/resources/front_psi.png"):glTexture()}
-fshat_psi_dark = {core.display.loadImage("/data/gfx/ui/resources/front_psi_dark.png"):glTexture()}
-fshat_feedback = {core.display.loadImage("/data/gfx/ui/resources/front_psi.png"):glTexture()}
-fshat_feedback_dark = {core.display.loadImage("/data/gfx/ui/resources/front_psi_dark.png"):glTexture()}
-fshat_air = {core.display.loadImage("/data/gfx/ui/resources/front_air.png"):glTexture()}
-fshat_air_dark = {core.display.loadImage("/data/gfx/ui/resources/front_air_dark.png"):glTexture()}
-fshat_fortress = {core.display.loadImage("/data/gfx/ui/resources/front_fortress.png"):glTexture()}
-fshat_fortress_dark = {core.display.loadImage("/data/gfx/ui/resources/front_fortress_dark.png"):glTexture()}
+sshat = getAtlasTexture("ui/resources/shadow.png")
+bshat = getAtlasTexture("ui/resources/back.png")
+shat = getAtlasTexture("ui/resources/fill.png")
+fshat = getAtlasTexture("ui/resources/front.png")
+fshat_life = getAtlasTexture("ui/resources/front_life.png")
+fshat_life_dark = getAtlasTexture("ui/resources/front_life_dark.png")
+fshat_shield = getAtlasTexture("ui/resources/front_life_armored.png")
+fshat_shield_dark = getAtlasTexture("ui/resources/front_life_armored_dark.png")
+fshat_stamina = getAtlasTexture("ui/resources/front_stamina.png")
+fshat_stamina_dark = getAtlasTexture("ui/resources/front_stamina_dark.png")
+fshat_mana = getAtlasTexture("ui/resources/front_mana.png")
+fshat_mana_dark = getAtlasTexture("ui/resources/front_mana_dark.png")
+fshat_soul = getAtlasTexture("ui/resources/front_souls.png")
+fshat_soul_dark = getAtlasTexture("ui/resources/front_souls_dark.png")
+fshat_equi = getAtlasTexture("ui/resources/front_nature.png")
+fshat_equi_dark = getAtlasTexture("ui/resources/front_nature_dark.png")
+fshat_paradox = getAtlasTexture("ui/resources/front_paradox.png")
+fshat_paradox_dark = getAtlasTexture("ui/resources/front_paradox_dark.png")
+fshat_hate = getAtlasTexture("ui/resources/front_hate.png")
+fshat_hate_dark = getAtlasTexture("ui/resources/front_hate_dark.png")
+fshat_positive = getAtlasTexture("ui/resources/front_positive.png")
+fshat_positive_dark = getAtlasTexture("ui/resources/front_positive_dark.png")
+fshat_negative = getAtlasTexture("ui/resources/front_negative.png")
+fshat_negative_dark = getAtlasTexture("ui/resources/front_negative_dark.png")
+fshat_vim = getAtlasTexture("ui/resources/front_vim.png")
+fshat_vim_dark = getAtlasTexture("ui/resources/front_vim_dark.png")
+fshat_psi = getAtlasTexture("ui/resources/front_psi.png")
+fshat_psi_dark = getAtlasTexture("ui/resources/front_psi_dark.png")
+fshat_feedback = getAtlasTexture("ui/resources/front_psi.png")
+fshat_feedback_dark = getAtlasTexture("ui/resources/front_psi_dark.png")
+fshat_air = getAtlasTexture("ui/resources/front_air.png")
+fshat_air_dark = getAtlasTexture("ui/resources/front_air_dark.png")
+fshat_fortress = getAtlasTexture("ui/resources/front_fortress.png")
+fshat_fortress_dark = getAtlasTexture("ui/resources/front_fortress_dark.png")
 
-fshat_hourglass = {core.display.loadImage("/data/gfx/ui/resources/hourglass_front.png"):glTexture()}
-sshat_hourglass = {core.display.loadImage("/data/gfx/ui/resources/hourglass_shadow.png"):glTexture()}
-shat_hourglass_top = {core.display.loadImage("/data/gfx/ui/resources/hourglass_top.png"):glTexture()}
-shat_hourglass_bottom = {core.display.loadImage("/data/gfx/ui/resources/hourglass_bottom.png"):glTexture()}
+fshat_hourglass = getAtlasTexture("ui/resources/hourglass_front.png")
+sshat_hourglass = getAtlasTexture("ui/resources/hourglass_shadow.png")
+shat_hourglass_top = getAtlasTexture("ui/resources/hourglass_top.png")
+shat_hourglass_bottom = getAtlasTexture("ui/resources/hourglass_bottom.png")
 
-ammo_shadow_default = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_default.png"):glTexture()}
-ammo_default = {core.display.loadImage("/data/gfx/ui/resources/ammo_default.png"):glTexture()}
-ammo_shadow_arrow = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_arrow.png"):glTexture()}
-ammo_arrow = {core.display.loadImage("/data/gfx/ui/resources/ammo_arrow.png"):glTexture()}
-ammo_shadow_shot = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_shot.png"):glTexture()}
-ammo_shot = {core.display.loadImage("/data/gfx/ui/resources/ammo_shot.png"):glTexture()}
-_M['ammo_shadow_alchemist-gem'] = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_alchemist-gem.png"):glTexture()}
-_M['ammo_alchemist-gem'] = {core.display.loadImage("/data/gfx/ui/resources/ammo_alchemist-gem.png"):glTexture()}
+ammo_shadow_default = getAtlasTexture("ui/resources/ammo_shadow_default.png")
+ammo_default = getAtlasTexture("ui/resources/ammo_default.png")
+ammo_shadow_arrow = getAtlasTexture("ui/resources/ammo_shadow_arrow.png")
+ammo_arrow = getAtlasTexture("ui/resources/ammo_arrow.png")
+ammo_shadow_shot = getAtlasTexture("ui/resources/ammo_shadow_shot.png")
+ammo_shot = getAtlasTexture("ui/resources/ammo_shot.png")
+_M['ammo_shadow_alchemist-gem'] = getAtlasTexture("ui/resources/ammo_shadow_alchemist-gem.png")
+_M['ammo_alchemist-gem'] = getAtlasTexture("ui/resources/ammo_alchemist-gem.png")
 
 font_sha = FontPackage:get("resources_normal", true)
 sfont_sha = FontPackage:get("resources_small", true)
 
-icon_green = { core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):glTexture() }
-icon_yellow = { core.display.loadImage("/data/gfx/ui/talent_frame_sustain.png"):glTexture() }
-icon_red = { core.display.loadImage("/data/gfx/ui/talent_frame_cooldown.png"):glTexture() }
+icon_green = getAtlasTexture("ui/talent_frame_ok.png")
+icon_yellow = getAtlasTexture("ui/talent_frame_sustain.png")
+icon_red = getAtlasTexture("ui/talent_frame_cooldown.png")
 
-local portrait = {core.display.loadImage("/data/gfx/ui/party-portrait.png"):glTexture()}
-local portrait_unsel = {core.display.loadImage("/data/gfx/ui/party-portrait-unselect.png"):glTexture()}
-local portrait_lev = {core.display.loadImage("/data/gfx/ui/party-portrait-lev.png"):glTexture()}
-local portrait_unsel_lev = {core.display.loadImage("/data/gfx/ui/party-portrait-unselect-lev.png"):glTexture()}
+local portrait = getAtlasTexture("ui/party-portrait.png")
+local portrait_unsel = getAtlasTexture("ui/party-portrait-unselect.png")
+local portrait_lev = getAtlasTexture("ui/party-portrait-lev.png")
+local portrait_unsel_lev = getAtlasTexture("ui/party-portrait-unselect-lev.png")
 
 local pf_bg_x, pf_bg_y = 0, 0
-local pf_bg = {core.display.loadImage("/data/gfx/ui/playerframe/back.png"):glTexture()}
-local pf_shadow = {core.display.loadImage("/data/gfx/ui/playerframe/shadow.png"):glTexture()}
-local pf_defend = {core.display.loadImage("/data/gfx/ui/playerframe/defend.png"):glTexture()}
+local pf_bg = getAtlasTexture("ui/playerframe/back.png")
+local pf_shadow = getAtlasTexture("ui/playerframe/shadow.png")
+local pf_defend = getAtlasTexture("ui/playerframe/defend.png")
 local pf_attackdefend_x, pf_attackdefend_y = 0, 0
-local pf_attack = {core.display.loadImage("/data/gfx/ui/playerframe/attack.png"):glTexture()}
-local pf_levelup = {core.display.loadImage("/data/gfx/ui/playerframe/levelup.png"):glTexture()}
-local pf_encumber = {core.display.loadImage("/data/gfx/ui/playerframe/encumber.png"):glTexture()}
-local pf_exp = {core.display.loadImage("/data/gfx/ui/playerframe/exp.png"):glTexture()}
-local pf_exp_levelup = {core.display.loadImage("/data/gfx/ui/playerframe/exp_levelup.png"):glTexture()}
+local pf_attack = getAtlasTexture("ui/playerframe/attack.png")
+local pf_levelup = getAtlasTexture("ui/playerframe/levelup.png")
+local pf_encumber = getAtlasTexture("ui/playerframe/encumber.png")
+local pf_exp = getAtlasTexture("ui/playerframe/exp.png")
+local pf_exp_levelup = getAtlasTexture("ui/playerframe/exp_levelup.png")
 
 local mm_bg_x, mm_bg_y = 0, 0
-local mm_bg = {core.display.loadImage("/data/gfx/ui/minimap/back.png"):glTexture()}
-local mm_comp = {core.display.loadImage("/data/gfx/ui/minimap/compass.png"):glTexture()}
-local mm_shadow = {core.display.loadImage("/data/gfx/ui/minimap/shadow.png"):glTexture()}
-local mm_transp = {core.display.loadImage("/data/gfx/ui/minimap/transp.png"):glTexture()}
+local mm_bg = getAtlasTexture("ui/minimap/back.png")
+local mm_comp = getAtlasTexture("ui/minimap/compass.png")
+local mm_shadow = getAtlasTexture("ui/minimap/shadow.png")
+local mm_transp = getAtlasTexture("ui/minimap/transp.png")
 
-local tb_bg = {core.display.loadImage("/data/gfx/ui/hotkeys/icons_bg.png"):glTexture()}
-local tb_talents = {core.display.loadImage("/data/gfx/ui/hotkeys/talents.png"):glTexture()}
-local tb_inven = {core.display.loadImage("/data/gfx/ui/hotkeys/inventory.png"):glTexture()}
-local tb_lore = {core.display.loadImage("/data/gfx/ui/hotkeys/lore.png"):glTexture()}
-local tb_quest = {core.display.loadImage("/data/gfx/ui/hotkeys/quest.png"):glTexture()}
-local tb_mainmenu = {core.display.loadImage("/data/gfx/ui/hotkeys/mainmenu.png"):glTexture()}
-local tb_padlock_open = {core.display.loadImage("/data/gfx/ui/padlock_open.png"):glTexture()}
-local tb_padlock_closed = {core.display.loadImage("/data/gfx/ui/padlock_closed.png"):glTexture()}
+local tb_bg = getAtlasTexture("ui/hotkeys/icons_bg.png")
+local tb_talents = getAtlasTexture("ui/hotkeys/talents.png")
+local tb_inven = getAtlasTexture("ui/hotkeys/inventory.png")
+local tb_lore = getAtlasTexture("ui/hotkeys/lore.png")
+local tb_quest = getAtlasTexture("ui/hotkeys/quest.png")
+local tb_mainmenu = getAtlasTexture("ui/hotkeys/mainmenu.png")
+local tb_padlock_open = getAtlasTexture("ui/padlock_open.png")
+local tb_padlock_closed = getAtlasTexture("ui/padlock_closed.png")
 
-local hk1 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_1.png"):glTexture()}
-local hk2 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_2.png"):glTexture()}
-local hk3 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_3.png"):glTexture()}
-local hk4 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_4.png"):glTexture()}
-local hk5 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_5.png"):glTexture()}
-local hk6 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_6.png"):glTexture()}
-local hk7 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_7.png"):glTexture()}
-local hk8 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_8.png"):glTexture()}
-local hk9 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_9.png"):glTexture()}
+local hk1 = getAtlasTexture("ui/hotkeys/hotkey_1.png")
+local hk2 = getAtlasTexture("ui/hotkeys/hotkey_2.png")
+local hk3 = getAtlasTexture("ui/hotkeys/hotkey_3.png")
+local hk4 = getAtlasTexture("ui/hotkeys/hotkey_4.png")
+local hk5 = getAtlasTexture("ui/hotkeys/hotkey_5.png")
+local hk6 = getAtlasTexture("ui/hotkeys/hotkey_6.png")
+local hk7 = getAtlasTexture("ui/hotkeys/hotkey_7.png")
+local hk8 = getAtlasTexture("ui/hotkeys/hotkey_8.png")
+local hk9 = getAtlasTexture("ui/hotkeys/hotkey_9.png")
 
 _M:triggerHook{"UISet:Minimalist:Load", alterlocal=function(k, v)
 	local i = 1
@@ -201,13 +213,13 @@ function _M:init()
 
 	self.mhandle_pos = {
 		player = {x=296, y=73, name="Player Infos"},
-		resources = {x=fshat[6] / 2 - move_handle[6], y=0, name="Resources"},
+		resources = {x=fshat.w / 2 - move_handle.w, y=0, name="Resources"},
 		minimap = {x=208, y=176, name="Minimap"},
-		buffs = {x=40 - move_handle[6], y=0, name="Current Effects"},
-		party = {x=portrait[6] - move_handle[6], y=0, name="Party Members"},
-		gamelog = {x=function(self) return self.logdisplay.w - move_handle[6] end, y=function(self) return self.logdisplay.h - move_handle[6] end, name="Game Log"},
-		chatlog = {x=function(self) return profile.chat.w - move_handle[6] end, y=function(self) return profile.chat.h - move_handle[6] end, name="Online Chat Log"},
-		hotkeys = {x=function(self) return self.places.hotkeys.w - move_handle[6] end, y=function(self) return self.places.hotkeys.h - move_handle[6] end, name="Hotkeys"},
+		buffs = {x=40 - move_handle.w, y=0, name="Current Effects"},
+		party = {x=portrait.w - move_handle.w, y=0, name="Party Members"},
+		gamelog = {x=function(self) return self.logdisplay.w - move_handle.w end, y=function(self) return self.logdisplay.h - move_handle.w end, name="Game Log"},
+		chatlog = {x=function(self) return profile.chat.w - move_handle.w end, y=function(self) return profile.chat.h - move_handle.w end, name="Online Chat Log"},
+		hotkeys = {x=function(self) return self.places.hotkeys.w - move_handle.w end, y=function(self) return self.places.hotkeys.h - move_handle.w end, name="Hotkeys"},
 		mainicons = {x=0, y=0, name="Game Actions"},
 	}
 
@@ -274,10 +286,10 @@ function _M:resetPlaces()
 		resources = {x=0, y=111, scale=1, a=1},
 		minimap = {x=w - 239, y=0, scale=1, a=1},
 		buffs = {x=w - 40, y=200, scale=1, a=1},
-		party = {x=pf_bg[6], y=0, scale=1, a=1},
+		party = {x=pf_bg.w, y=0, scale=1, a=1},
 		gamelog = {x=0, y=hup - 210, w=math.floor(w/2), h=200, scale=1, a=1},
 		chatlog = {x=math.floor(w/2), y=hup - 210, w=math.floor(w/2), h=200, scale=1, a=1},
-		mainicons = {x=w - tb_bg[6] * 0.5, y=h - tb_bg[7] * 6 * 0.5 - 5, scale=1, a=1},
+		mainicons = {x=w - tb_bg.w * 0.5, y=h - tb_bg.h * 6 * 0.5 - 5, scale=1, a=1},
 		hotkeys = {x=10, y=h - th, w=w-60, h=th, scale=1, a=1},
 	}
 end
@@ -300,8 +312,8 @@ function _M:boundPlaces(w, h)
 
 				local mx, my = util.getval(self.mhandle_pos[what].x, self), util.getval(self.mhandle_pos[what].y, self)
 
-				d.x = util.bound(d.x, -mx * d.scale, w - mx * d.scale - move_handle[6] * d.scale)
-				d.y = util.bound(d.y, -my * d.scale, self.map_h_stop - my * d.scale - move_handle[7] * d.scale)
+				d.x = util.bound(d.x, -mx * d.scale, w - mx * d.scale - move_handle.w * d.scale)
+				d.y = util.bound(d.y, -my * d.scale, self.map_h_stop - my * d.scale - move_handle.h * d.scale)
 			end
 		end
 	end
@@ -376,7 +388,7 @@ function _M:activate()
 	profile.chat:enableFading(config.settings.tome.log_fade or 3)
 	profile.chat:enableDisplayChans(false)
 
-	self.npcs_display = ActorsSeenDisplay.new(nil, 0, game.h - font_mono_h * 4.2, game.w, font_mono_h * 4.2, "/data/gfx/ui/talents-list.png", font_mono, size_mono)
+	self.npcs_display = ActorsSeenDisplay.new(nil, 0, game.h - font_mono_h * 4.2, game.w, font_mono_h * 4, "/data/gfx/ui/talents-list.png", font_mono, size_mono)
 	self.npcs_display:setColumns(3)
 
 	game.log = function(style, ...) if type(style) == "number" then game.uiset.logdisplay(...) else game.uiset.logdisplay(style, ...) end end
@@ -574,7 +586,7 @@ function _M:showResourceTooltip(x, y, w, h, id, desc, is_first)
 				else self.mhandle.resources = true end
 
 				-- Move handle
-				if not self.locked and bx >= self.mhandle_pos.resources.x and bx <= self.mhandle_pos.resources.x + move_handle[6] and by >= self.mhandle_pos.resources.y and by <= self.mhandle_pos.resources.y + move_handle[7] then
+				if not self.locked and bx >= self.mhandle_pos.resources.x and bx <= self.mhandle_pos.resources.x + move_handle.w and by >= self.mhandle_pos.resources.y and by <= self.mhandle_pos.resources.y + move_handle.h then
 					if event == "button" and button == "right" then
 						local player = game.player
 						local list = {}
@@ -626,11 +638,11 @@ function _M:displayResources(scale, bx, by, a)
 		-----------------------------------------------------------------------------------
 		-- Air
 		if player.air < player.max_air then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if air_sha.shad then air_sha:setUniform("a", a) air_sha.shad:use(true) end
 			local p = player:getAir() / player.max_air
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], air_c[1], air_c[2], air_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], air_c[1], air_c[2], air_c[3], a)
 			if air_sha.shad then air_sha.shad:use(false) end
 
 			if not self.res.air or self.res.air.vc ~= player.air or self.res.air.vm ~= player.max_air or self.res.air.vr ~= player.air_regen then
@@ -641,26 +653,26 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.air.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.air.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_air_dark
 			if player.air >= player.max_air * 0.5 then front = fshat_air end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:air", self.TOOLTIP_AIR)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:air", self.TOOLTIP_AIR)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:air") then game.mouse:unregisterZone("res:air") end
 
 		-----------------------------------------------------------------------------------
 		-- Life & shield
-		sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-		bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+		sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+		bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 		if life_sha.shad then life_sha:setUniform("a", a) life_sha.shad:use(true) end
 		local p = math.min(1, math.max(0, player.life / player.max_life))
-		shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], life_c[1], life_c[2], life_c[3], a)
+		shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], life_c[1], life_c[2], life_c[3], a)
 		if life_sha.shad then life_sha.shad:use(false) end
 
 		local life_regen = player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5)
@@ -673,11 +685,11 @@ function _M:displayResources(scale, bx, by, a)
 			}
 		end
 		local dt = self.res.life.cur
-		dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-		dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+		dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+		dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 		dt = self.res.life.regen
-		dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-		dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+		dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+		dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 		local shield, max_shield = 0, 0
 		if player:attr("time_shield") then shield = shield + player.time_shield_absorb max_shield = max_shield + player.time_shield_absorb_max end
@@ -686,7 +698,7 @@ function _M:displayResources(scale, bx, by, a)
 		if max_shield > 0 then
 			if shield_sha.shad then shield_sha:setUniform("a", a * 0.5) shield_sha.shad:use(true) end
 			local p = math.min(1, math.max(0, shield / max_shield))
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], shield_c[1], shield_c[2], shield_c[3], 0.5 * a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], shield_c[1], shield_c[2], shield_c[3], 0.5 * a)
 			if shield_sha.shad then shield_sha.shad:use(false) end
 
 			if not self.res.shield or self.res.shield.vc ~= shield or self.res.shield.vm ~= max_shield then
@@ -696,13 +708,13 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.shield.cur
-			dt[1]:toScreenFull(2+x+170-dt[6], 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+170-dt[6], y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+170-dt.w, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+170-dt.w, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:shield", self.TOOLTIP_DAMAGE_SHIELD.."\n---\n"..self.TOOLTIP_LIFE, true)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:shield", self.TOOLTIP_DAMAGE_SHIELD.."\n---\n"..self.TOOLTIP_LIFE, true)
 			if game.mouse:getZone("res:life") then game.mouse:unregisterZone("res:life") end
 		else
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:life", self.TOOLTIP_LIFE, true)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:life", self.TOOLTIP_LIFE, true)
 			if game.mouse:getZone("res:shield") then game.mouse:unregisterZone("res:shield") end
 		end
 
@@ -711,21 +723,21 @@ function _M:displayResources(scale, bx, by, a)
 			front = fshat_shield_dark
 			if shield >= max_shield * 0.8 then front = fshat_shield end
 		elseif player.life >= player.max_life then front = fshat_life end
-		front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-		x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+		front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+		x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 
 		if not self.locked then
-			move_handle[1]:toScreenFull(fshat[6] / 2 - move_handle[6], 0, move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+			move_handle[1]:toScreenFull(fshat.w / 2 - move_handle.w, 0, move_handle.w, move_handle.h, move_handle[2], move_handle[3])
 		end
 
 		-----------------------------------------------------------------------------------
 		-- Stamina
 		if player:knowTalent(player.T_STAMINA_POOL) and not player._hide_resource_stamina then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if stam_sha.shad then stam_sha:setUniform("a", a) stam_sha.shad:use(true) end
 			local p = player:getStamina() / player.max_stamina
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], stam_c[1], stam_c[2], stam_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], stam_c[1], stam_c[2], stam_c[3], a)
 			if stam_sha.shad then stam_sha.shad:use(false) end
 
 			if not self.res.stamina or self.res.stamina.vc ~= player.stamina or self.res.stamina.vm ~= player.max_stamina or self.res.stamina.vr ~= player.stamina_regen then
@@ -737,28 +749,28 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.stamina.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.stamina.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_stamina_dark
 			if player.stamina >= player.max_stamina then front = fshat_stamina end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
 
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:stamina", self.TOOLTIP_STAMINA)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:stamina", self.TOOLTIP_STAMINA)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:stamina") then game.mouse:unregisterZone("res:stamina") end
 
 		-----------------------------------------------------------------------------------
 		-- Mana
 		if player:knowTalent(player.T_MANA_POOL) and not player._hide_resource_mana then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if mana_sha.shad then mana_sha:setUniform("a", a) mana_sha.shad:use(true) end
 			local p = player:getMana() / player.max_mana
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], mana_c[1], mana_c[2], mana_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], mana_c[1], mana_c[2], mana_c[3], a)
 			if mana_sha.shad then mana_sha.shad:use(false) end
 
 			if not self.res.mana or self.res.mana.vc ~= player.mana or self.res.mana.vm ~= player.max_mana or self.res.mana.vr ~= player.mana_regen then
@@ -770,27 +782,27 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.mana.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.mana.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_mana_dark
 			if player.mana >= player.max_mana then front = fshat_mana end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:mana", self.TOOLTIP_MANA)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:mana", self.TOOLTIP_MANA)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:mana") then game.mouse:unregisterZone("res:mana") end
 
 		-----------------------------------------------------------------------------------
 		-- Souls
 		if player:knowTalent(player.T_SOUL_POOL) and not player._hide_resource_soul then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if soul_sha.shad then soul_sha:setUniform("a", a) soul_sha.shad:use(true) end
 			local p = player:getSoul() / player.max_soul
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], soul_c[1], soul_c[2], soul_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], soul_c[1], soul_c[2], soul_c[3], a)
 			if soul_sha.shad then soul_sha.shad:use(false) end
 
 			if not self.res.soul or self.res.soul.vc ~= player.soul or self.res.soul.vm ~= player.max_soul then
@@ -801,21 +813,21 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.soul.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_soul_dark
 			if player.soul >= player.max_soul then front = fshat_soul end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:necrotic", self.TOOLTIP_NECROTIC_AURA)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:necrotic", self.TOOLTIP_NECROTIC_AURA)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:necrotic") then game.mouse:unregisterZone("res:necrotic") end
 
 		-----------------------------------------------------------------------------------
 		-- Equilibirum
 		if player:knowTalent(player.T_EQUILIBRIUM_POOL) and not player._hide_resource_equilibrium then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			local _, chance = player:equilibriumChance()
 			local s = 100 - chance
 			if s > 15 then s = 15 end
@@ -828,7 +840,7 @@ function _M:displayResources(scale, bx, by, a)
 			end
 
 			local p = chance / 100
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], equi_c[1], equi_c[2], equi_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], equi_c[1], equi_c[2], equi_c[3], a)
 			if equi_sha.shad then equi_sha.shad:use(false) end
 
 			if not self.res.equilibrium or self.res.equilibrium.vc ~= player.equilibrium or self.res.equilibrium.vr ~= chance then
@@ -840,27 +852,27 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.equilibrium.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.equilibrium.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_equi
 			if chance <= 85 then front = fshat_equi_dark end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:equi", self.TOOLTIP_EQUILIBRIUM)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:equi", self.TOOLTIP_EQUILIBRIUM)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:equi") then game.mouse:unregisterZone("res:equi") end
 
 		-----------------------------------------------------------------------------------
 		-- Positive
 		if player:knowTalent(player.T_POSITIVE_POOL) and not player._hide_resource_positive then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if pos_sha.shad then pos_sha:setUniform("a", a) pos_sha.shad:use(true) end
 			local p = player:getPositive() / player.max_positive
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], pos_c[1], pos_c[2], pos_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], pos_c[1], pos_c[2], pos_c[3], a)
 			if pos_sha.shad then pos_sha.shad:use(false) end
 
 			if not self.res.positive or self.res.positive.vc ~= player.positive or self.res.positive.vm ~= player.max_positive or self.res.positive.vr ~= player.positive_regen then
@@ -872,27 +884,27 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.positive.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.positive.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_positive_dark
 			if player.positive >= player.max_positive * 0.7 then front = fshat_positive end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:positive", self.TOOLTIP_POSITIVE)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:positive", self.TOOLTIP_POSITIVE)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:positive") then game.mouse:unregisterZone("res:positive") end
 
 		-----------------------------------------------------------------------------------
 		-- Negative
 		if player:knowTalent(player.T_NEGATIVE_POOL) and not player._hide_resource_negative then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if neg_sha.shad then neg_sha:setUniform("a", a) neg_sha.shad:use(true) end
 			local p = player:getNegative() / player.max_negative
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], neg_c[1], neg_c[2], neg_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], neg_c[1], neg_c[2], neg_c[3], a)
 			if neg_sha.shad then neg_sha.shad:use(false) end
 
 			if not self.res.negative or self.res.negative.vc ~= player.negative or self.res.negative.vm ~= player.max_negative or self.res.negative.vr ~= player.negative_regen then
@@ -904,24 +916,24 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.negative.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.negative.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_negative_dark
 			if player.negative >= player.max_negative * 0.7  then front = fshat_negative end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:negative", self.TOOLTIP_NEGATIVE)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:negative", self.TOOLTIP_NEGATIVE)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:negative") then game.mouse:unregisterZone("res:negative") end
 
 		-----------------------------------------------------------------------------------
 		-- Paradox
 		if player:knowTalent(player.T_PARADOX_POOL) and not player._hide_resource_paradox then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			local chance = player:paradoxFailChance()
 			local s = chance
 			if s > 15 then s = 15 end
@@ -934,7 +946,7 @@ function _M:displayResources(scale, bx, by, a)
 			end
 			local p = util.bound(600-player:getModifiedParadox(), 0, 300) / 300
 			--local p = 1 - chance / 100
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], paradox_c[1], paradox_c[2], paradox_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], paradox_c[1], paradox_c[2], paradox_c[3], a)
 			if paradox_sha.shad then paradox_sha.shad:use(false) end
 
 			local vm = player:getModifiedParadox()
@@ -947,27 +959,27 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.paradox.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.paradox.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_paradox
 			if chance <= 10 then front = fshat_paradox_dark end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:paradox", self.TOOLTIP_PARADOX)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:paradox", self.TOOLTIP_PARADOX)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:paradox") then game.mouse:unregisterZone("res:paradox") end
 
 		-----------------------------------------------------------------------------------
 		-- Vim
 		if player:knowTalent(player.T_VIM_POOL) and not player._hide_resource_vim then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if vim_sha.shad then vim_sha:setUniform("a", a) vim_sha.shad:use(true) end
 			local p = player:getVim() / player.max_vim
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], vim_c[1], vim_c[2], vim_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], vim_c[1], vim_c[2], vim_c[3], a)
 			if vim_sha.shad then vim_sha.shad:use(false) end
 
 			if not self.res.vim or self.res.vim.vc ~= player.vim or self.res.vim.vm ~= player.max_vim or self.res.vim.vr ~= player.vim_regen then
@@ -979,27 +991,27 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.vim.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.vim.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_vim_dark
 			if player.vim >= player.max_vim then front = fshat_vim end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:vim", self.TOOLTIP_VIM)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:vim", self.TOOLTIP_VIM)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:vim") then game.mouse:unregisterZone("res:vim") end
 
 		-----------------------------------------------------------------------------------
 		-- Hate
 		if player:knowTalent(player.T_HATE_POOL) and not player._hide_resource_hate then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if hate_sha.shad then hate_sha:setUniform("a", a) hate_sha.shad:use(true) end
 			local p = player:getHate() / player.max_hate
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], hate_c[1], hate_c[2], hate_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], hate_c[1], hate_c[2], hate_c[3], a)
 			if hate_sha.shad then hate_sha.shad:use(false) end
 
 			if not self.res.hate or self.res.hate.vc ~= player.hate or self.res.hate.vm ~= player.max_hate or self.res.hate.vr ~= player.hate_regen then
@@ -1011,27 +1023,27 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.hate.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.hate.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_hate_dark
 			if player.hate >= 100 then front = fshat_hate end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:hate", self.TOOLTIP_HATE)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:hate", self.TOOLTIP_HATE)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:hate") then game.mouse:unregisterZone("res:hate") end
 
 		-----------------------------------------------------------------------------------
 		-- Psi
 		if player:knowTalent(player.T_PSI_POOL) and not player._hide_resource_psi then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if psi_sha.shad then psi_sha:setUniform("a", a) psi_sha.shad:use(true) end
 			local p = player:getPsi() / player.max_psi
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], psi_c[1], psi_c[2], psi_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], psi_c[1], psi_c[2], psi_c[3], a)
 			if psi_sha.shad then psi_sha.shad:use(false) end
 
 			if not self.res.psi or self.res.psi.vc ~= player.psi or self.res.psi.vm ~= player.max_psi or self.res.psi.vr ~= player.psi_regen then
@@ -1043,27 +1055,27 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.psi.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.psi.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_psi_dark
 			if player.psi >= player.max_psi then front = fshat_psi end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:psi", self.TOOLTIP_PSI)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:psi", self.TOOLTIP_PSI)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:psi") then game.mouse:unregisterZone("res:psi") end
 
 		-----------------------------------------------------------------------------------
 		-- Feedback
 		if player.psionic_feedback_max and not player._hide_resource_feedback then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if feedback_sha.shad then feedback_sha:setUniform("a", a) feedback_sha.shad:use(true) end
 			local p = player:getFeedback() / player:getMaxFeedback()
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], feedback_c[1], feedback_c[2], feedback_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], feedback_c[1], feedback_c[2], feedback_c[3], a)
 			if feedback_sha.shad then feedback_sha.shad:use(false) end
 
 			if not self.res.feedback or self.res.feedback.vc ~= player:getFeedback() or self.res.feedback.vm ~= player:getMaxFeedback() or self.res.feedback.vr ~= player:getFeedbackDecay() then
@@ -1075,28 +1087,28 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.feedback.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 			dt = self.res.feedback.regen
-			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+144, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+144, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+144, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_feedback_dark
 			if player.psionic_feedback >= player.psionic_feedback_max then front = fshat_feedback end
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:feedback", self.TOOLTIP_FEEDBACK)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:feedback", self.TOOLTIP_FEEDBACK)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:feedback") then game.mouse:unregisterZone("res:feedback") end
 
 		-----------------------------------------------------------------------------------
 		-- Fortress Energy
 		if player.is_fortress and not player._hide_resource_fortress then
 			local q = game:getPlayer(true):hasQuest("shertul-fortress")
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			local p = 100 / 100
 			if fortress_sha.shad then fortress_sha:setUniform("a", a) fortress_sha.shad:use(true) end
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], fortress_c[1], fortress_c[2], fortress_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], fortress_c[1], fortress_c[2], fortress_c[3], a)
 			if fortress_sha.shad then fortress_sha.shad:use(false) end
 
 			if not self.res.fortress or self.res.fortress.vc ~= q.shertul_energy then
@@ -1107,13 +1119,13 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.fortress.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat_fortress
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat[6], fshat[7], "res:fortress", self.TOOLTIP_FORTRESS_ENERGY)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, fshat.w, fshat.h, "res:fortress", self.TOOLTIP_FORTRESS_ENERGY)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		elseif game.mouse:getZone("res:fortress") then game.mouse:unregisterZone("res:fortress") end
 
 		-- Any hooks
@@ -1137,8 +1149,8 @@ function _M:displayResources(scale, bx, by, a)
 				amt, max = ammo.combat.shots_left, ammo.combat.capacity
 			end
 
-			shad[1]:toScreenFull(x, y, shad[6], shad[7], shad[2], shad[3], 1, 1, 1, a)
-			bg[1]:toScreenFull(x, y, bg[6], bg[7], bg[2], bg[3], 1, 1, 1, a)
+			shad[1]:toScreenFull(x, y, shad.w, shad.h, shad[2], shad[3], 1, 1, 1, a)
+			bg[1]:toScreenFull(x, y, bg.w, bg.h, bg[2], bg[3], 1, 1, 1, a)
 
 			if not self.res.ammo or self.res.ammo.vc ~= amt or self.res.ammo.vm ~= max then
 				self.res.ammo = {
@@ -1147,21 +1159,21 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.ammo.cur
-			dt[1]:toScreenFull(2+x+44, 2+y+3 + (bg[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+44, y+3 + (bg[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+44, 2+y+3 + (bg.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+44, y+3 + (bg.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		end
 
 		-----------------------------------------------------------------------------------
 		-- Hourglass
 		if game.level and game.level.turn_counter then
-			sshat_hourglass[1]:toScreenFull(x-6, y+8, sshat_hourglass[6], sshat_hourglass[7], sshat_hourglass[2], sshat_hourglass[3], 1, 1, 1, a)
+			sshat_hourglass[1]:toScreenFull(x-6, y+8, sshat_hourglass.w, sshat_hourglass.h, sshat_hourglass[2], sshat_hourglass[3], 1, 1, 1, a)
 			local c = game.level.turn_counter
 			local m = math.max(game.level.max_turn_counter, c)
 			local p = 1 - c / m
-			shat_hourglass_top[1]:toScreenPrecise(x+11, y+32 + shat_hourglass_top[7] * p, shat_hourglass_top[6], shat_hourglass_top[7] * (1-p), 0, 1/shat_hourglass_top[4], p/shat_hourglass_top[5], 1/shat_hourglass_top[5], save_c[1], save_c[2], save_c[3], a)
-			shat_hourglass_bottom[1]:toScreenPrecise(x+12, y+72 + shat_hourglass_bottom[7] * (1-p), shat_hourglass_bottom[6], shat_hourglass_bottom[7] * p, 0, 1/shat_hourglass_bottom[4], (1-p)/shat_hourglass_bottom[5], 1/shat_hourglass_bottom[5], save_c[1], save_c[2], save_c[3], a)
+			shat_hourglass_top[1]:toScreenPrecise(x+11, y+32 + shat_hourglass_top.h * p, shat_hourglass_top.w, shat_hourglass_top.h * (1-p), 0, 1/shat_hourglass_top[4], p/shat_hourglass_top[5], 1/shat_hourglass_top[5], save_c[1], save_c[2], save_c[3], a)
+			shat_hourglass_bottom[1]:toScreenPrecise(x+12, y+72 + shat_hourglass_bottom.h * (1-p), shat_hourglass_bottom.w, shat_hourglass_bottom.h * p, 0, 1/shat_hourglass_bottom[4], (1-p)/shat_hourglass_bottom[5], 1/shat_hourglass_bottom[5], save_c[1], save_c[2], save_c[3], a)
 
 			if not self.res.hourglass or self.res.hourglass.vc ~= c or self.res.hourglass.vm ~= m then
 				self.res.hourglass = {
@@ -1171,12 +1183,12 @@ function _M:displayResources(scale, bx, by, a)
 			end
 			local front = fshat_hourglass
 			local dt = self.res.hourglass.cur
-			dt[1]:toScreenFull(2+x+(front[6]-dt[6])/2, 2+y+90, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+(front[6]-dt[6])/2, y+90, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+(front.w-dt.w)/2, 2+y+90, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+(front.w-dt.w)/2, y+90, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			self:showResourceTooltip(bx+x*scale, by+y*scale, front[6], front[7], "res:hourglass", game.level.turn_counter_desc or "")
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], front[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			self:showResourceTooltip(bx+x*scale, by+y*scale, front.w, front.h, "res:hourglass", game.level.turn_counter_desc or "")
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, front.h)
 		elseif game.mouse:getZone("res:hourglass") then game.mouse:unregisterZone("res:hourglass") end
 
 		-----------------------------------------------------------------------------------
@@ -1194,8 +1206,8 @@ function _M:displayResources(scale, bx, by, a)
 			local arena = game.level.arena
 			local aprint = function (_x, _y, _text, r, g, b)
 				local surf = { core.display.drawStringBlendedNewSurface(font_sha, _text, r, g, b):glTexture() }
-				surf[1]:toScreenFull(_x, _y, surf[6], surf[7], surf[2], surf[3], 0, 0, 0, 0.7 * a)
-				surf[1]:toScreenFull(_x, _y, surf[6], surf[7], surf[2], surf[3], 1, 1, 1, a)
+				surf[1]:toScreenFull(_x, _y, surf.w, surf.h, surf[2], surf[3], 0, 0, 0, 0.7 * a)
+				surf[1]:toScreenFull(_x, _y, surf.w, surf.h, surf[2], surf[3], 1, 1, 1, a)
 			end
 			if arena.score > world.arena.scores[1].score then
 				aprint(px, py, ("Score[1st]: %d"):format(arena.score), 255, 255, 100)
@@ -1249,11 +1261,11 @@ function _M:displayResources(scale, bx, by, a)
 		-----------------------------------------------------------------------------------
 		-- Saving
 		if savefile_pipe.saving then
-			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
-			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
+			sshat[1]:toScreenFull(x-6, y+8, sshat.w, sshat.h, sshat[2], sshat[3], 1, 1, 1, a)
+			bshat[1]:toScreenFull(x, y, bshat.w, bshat.h, bshat[2], bshat[3], 1, 1, 1, a)
 			if save_sha.shad then save_sha:setUniform("a", a) save_sha.shad:use(true) end
 			local p = savefile_pipe.current_nb / savefile_pipe.total_nb
-			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], save_c[1], save_c[2], save_c[3], a)
+			shat[1]:toScreenPrecise(x+49, y+10, shat.w * p, shat.h, 0, p * 1/shat[4], 0, 1/shat[5], save_c[1], save_c[2], save_c[3], a)
 			if save_sha.shad then save_sha.shad:use(false) end
 
 			if not self.res.save or self.res.save.vc ~= p then
@@ -1263,16 +1275,16 @@ function _M:displayResources(scale, bx, by, a)
 				}
 			end
 			local dt = self.res.save.cur
-			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7 * a)
-			dt[1]:toScreenFull(x+64, y+10 + (shat[7]-dt[7])/2, dt[6], dt[7], dt[2], dt[3], 1, 1, 1, a)
+			dt[1]:toScreenFull(2+x+64, 2+y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7 * a)
+			dt[1]:toScreenFull(x+64, y+10 + (shat.h-dt.h)/2, dt.w, dt.h, dt[2], dt[3], 1, 1, 1, a)
 
 			local front = fshat
-			front[1]:toScreenFull(x, y, front[6], front[7], front[2], front[3], 1, 1, 1, a)
-			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat[6], fshat[7])
+			front[1]:toScreenFull(x, y, front.w, front.h, front[2], front[3], 1, 1, 1, a)
+			x, y = self:resourceOrientStep(orient, bx, by, scale, x, y, fshat.w, fshat.h)
 		end
 
 		-- Compute how much space to reserve on the side
-		self:computePadding("resources", bx, by, bx + (x + fshat[6]) * scale, by + y * scale)
+		self:computePadding("resources", bx, by, bx + (x + fshat.w) * scale, by + y * scale)
 	end
 end
 
@@ -1327,7 +1339,7 @@ function _M:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale
 				else self.mhandle.buffs = true end
 
 				-- Move handle
-				if not self.locked and bx >= self.mhandle_pos.buffs.x and bx <= self.mhandle_pos.buffs.x + move_handle[6] and by >= self.mhandle_pos.buffs.y and by <= self.mhandle_pos.buffs.y + move_handle[7] then self:uiMoveResize("buffs", button, mx, my, xrel, yrel, bx, by, event) end
+				if not self.locked and bx >= self.mhandle_pos.buffs.x and bx <= self.mhandle_pos.buffs.x + move_handle.w and by >= self.mhandle_pos.buffs.y and by <= self.mhandle_pos.buffs.y + move_handle.h then self:uiMoveResize("buffs", button, mx, my, xrel, yrel, bx, by, event) end
 			end
 			if config.settings.cheat and event == "button" and core.key.modState("shift") then
 				if button == "left" then
@@ -1473,7 +1485,7 @@ function _M:displayBuffs(scale, bx, by)
 							if event == "out" then self.mhandle.buffs = nil return
 							else self.mhandle.buffs = true end
 							-- Move handle
-							if not self.locked and bx >= self.mhandle_pos.buffs.x and bx <= self.mhandle_pos.buffs.x + move_handle[6] and by >= self.mhandle_pos.buffs.y and by <= self.mhandle_pos.buffs.y + move_handle[7] then self:uiMoveResize("buffs", button, mx, my, xrel, yrel, bx, by, event) end
+							if not self.locked and bx >= self.mhandle_pos.buffs.x and bx <= self.mhandle_pos.buffs.x + move_handle.w and by >= self.mhandle_pos.buffs.y and by <= self.mhandle_pos.buffs.y + move_handle.h then self:uiMoveResize("buffs", button, mx, my, xrel, yrel, bx, by, event) end
 						end
 						local desc = "#GOLD##{bold}#"..displayName.."#{normal}##WHITE#\n"..tostring(player:getTalentFullDescription(t))
 						game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, desc)
@@ -1521,7 +1533,7 @@ function _M:displayBuffs(scale, bx, by)
 		end
 
 		if not self.locked then
-			move_handle[1]:toScreenFull(40 - move_handle[6], 0, move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+			move_handle[1]:toScreenFull(40 - move_handle.w, 0, move_handle.w, move_handle.h, move_handle[2], move_handle[3])
 		end
 
 		if orient == "down" or orient == "up" then
@@ -1552,7 +1564,7 @@ function _M:displayParty(scale, bx, by)
 	-- Party members
 	if #game.party.m_list >= 2 and game.level then
 		local orient = self.sizes.party and self.sizes.party.orient or "down"
-		local hs = portrait[7] + 3
+		local hs = portrait.h + 3
 		local x, y = 0, 0
 		local is_first = true
 
@@ -1572,7 +1584,7 @@ function _M:displayParty(scale, bx, by)
 						if event == "out" then self.mhandle.party = nil return
 						else self.mhandle.party = true end
 						-- Move handle
-						if not self.locked and bx >= self.mhandle_pos.party.x and bx <= self.mhandle_pos.party.x + move_handle[6] and by >= self.mhandle_pos.party.y and by <= self.mhandle_pos.party.y + move_handle[7] then
+						if not self.locked and bx >= self.mhandle_pos.party.x and bx <= self.mhandle_pos.party.x + move_handle.w and by >= self.mhandle_pos.party.y and by <= self.mhandle_pos.party.y + move_handle.h then
 							self:uiMoveResize("party", button, mx, my, xrel, yrel, bx, by, event)
 							return
 						end
@@ -1605,7 +1617,7 @@ function _M:displayParty(scale, bx, by)
 					if a.unused_stats > 0 or a.unused_talents > 0 or a.unused_generics > 0 or a.unused_talents_types > 0 and def.control == "full" then
 						p = (game.player == a) and portrait_lev or portrait_unsel_lev
 					end
-					p[1]:toScreenFull(x, y, p[6], p[7], p[2], p[3])
+					p[1]:toScreenFull(x, y, p.w, p.h, p[2], p[3])
 					-- Display turns remaining on summon's portrait — Marson
 					if a.summon_time and a.name ~= "shadow" then
 						local gtxt = self.party[a].txt_summon_time
@@ -1643,7 +1655,7 @@ function _M:displayParty(scale, bx, by)
 
 
 		if not self.locked then
-			move_handle[1]:toScreenFull(portrait[6] - move_handle[6], 0, move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+			move_handle[1]:toScreenFull(portrait.w - move_handle.w, 0, move_handle.w, move_handle.h, move_handle[2], move_handle[3])
 		end
 
 		self:computePadding("party", bx, by, bx + x * scale, by + y * scale)
@@ -1654,27 +1666,27 @@ function _M:displayPlayer(scale, bx, by)
 	local player = game.player
 	if not game.player then return end
 
-	pf_shadow[1]:toScreenFull(0, 0, pf_shadow[6], pf_shadow[7], pf_shadow[2], pf_shadow[3])
-	pf_bg[1]:toScreenFull(pf_bg_x, pf_bg_y, pf_bg[6], pf_bg[7], pf_bg[2], pf_bg[3])
+	pf_shadow[1]:toScreenFull(0, 0, pf_shadow.w, pf_shadow.h, pf_shadow[2], pf_shadow[3])
+	pf_bg[1]:toScreenFull(pf_bg_x, pf_bg_y, pf_bg.w, pf_bg.h, pf_bg[2], pf_bg[3])
 	core.display.glScissor(true, bx+15*scale, by+15*scale, 54*scale, 54*scale)
 	player:toScreen(nil, 22, 22, 40, 40)
 	core.display.glScissor(false)
 
 	if (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled then
-		pf_defend[1]:toScreenFull(22 + pf_attackdefend_x, 67 + pf_attackdefend_y, pf_defend[6], pf_defend[7], pf_defend[2], pf_defend[3])
+		pf_defend[1]:toScreenFull(22 + pf_attackdefend_x, 67 + pf_attackdefend_y, pf_defend.w, pf_defend.h, pf_defend[2], pf_defend[3])
 	else
-		pf_attack[1]:toScreenFull(22 + pf_attackdefend_x, 67 + pf_attackdefend_y, pf_attack[6], pf_attack[7], pf_attack[2], pf_attack[3])
+		pf_attack[1]:toScreenFull(22 + pf_attackdefend_x, 67 + pf_attackdefend_y, pf_attack.w, pf_attack.h, pf_attack[2], pf_attack[3])
 	end
 
 	if player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0 then
 		local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
-		pf_levelup[1]:toScreenFull(269, 78, pf_levelup[6], pf_levelup[7], pf_levelup[2], pf_levelup[3], 1, 1, 1, glow / 255)
-		pf_exp_levelup[1]:toScreenFull(108, 74, pf_exp_levelup[6], pf_exp_levelup[7], pf_exp_levelup[2], pf_exp_levelup[3], 1, 1, 1, glow / 255)
+		pf_levelup[1]:toScreenFull(269, 78, pf_levelup.w, pf_levelup.h, pf_levelup[2], pf_levelup[3], 1, 1, 1, glow / 255)
+		pf_exp_levelup[1]:toScreenFull(108, 74, pf_exp_levelup.w, pf_exp_levelup.h, pf_exp_levelup[2], pf_exp_levelup[3], 1, 1, 1, glow / 255)
 	end
 
 	local cur_exp, max_exp = player.exp, player:getExpChart(player.level+1)
 	local p = math.min(1, math.max(0, cur_exp / max_exp))
-	pf_exp[1]:toScreenPrecise(117, 85, pf_exp[6] * p, pf_exp[7], 0, p * 1/pf_exp[4], 0, 1/pf_exp[5])
+	pf_exp[1]:toScreenPrecise(117, 85, pf_exp.w * p, pf_exp.h, 0, p * 1/pf_exp[4], 0, 1/pf_exp[5])
 
 	if not self.res.exp or self.res.exp.vc ~= p then
 		self.res.exp = {
@@ -1683,8 +1695,8 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.exp.cur
-	dt[1]:toScreenFull(2+87 - dt[6] / 2, 2+89 - dt[7] / 2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(87 - dt[6] / 2, 89 - dt[7] / 2, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(2+87 - dt.w / 2, 2+89 - dt.h / 2, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(87 - dt.w / 2, 89 - dt.h / 2, dt.w, dt.h, dt[2], dt[3])
 
 	if not self.res.money or self.res.money.vc ~= player.money then
 		self.res.money = {
@@ -1693,8 +1705,8 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.money.cur
-	dt[1]:toScreenFull(2+112 - dt[6] / 2, 2+43, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(112 - dt[6] / 2, 43, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(2+112 - dt.w / 2, 2+43, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(112 - dt.w / 2, 43, dt.w, dt.h, dt[2], dt[3])
 
 	if not self.res.pname or self.res.pname.vc ~= player.name then
 		self.res.pname = {
@@ -1703,8 +1715,8 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.pname.cur
-	dt[1]:toScreenFull(2+166, 2+13, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(166, 13, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(2+166, 2+13, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(166, 13, dt.w, dt.h, dt[2], dt[3])
 
 	if not self.res.plevel or self.res.plevel.vc ~= player.level then
 		self.res.plevel = {
@@ -1713,19 +1725,19 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.plevel.cur
-	dt[1]:toScreenFull(2+253, 2+46, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(253, 46, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(2+253, 2+46, dt.w, dt.h, dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(253, 46, dt.w, dt.h, dt[2], dt[3])
 
 	if player:attr("encumbered") then
 		local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
-		pf_encumber[1]:toScreenFull(162, 38, pf_encumber[6], pf_encumber[7], pf_encumber[2], pf_encumber[3], 1, 1, 1, glow / 255)
+		pf_encumber[1]:toScreenFull(162, 38, pf_encumber.w, pf_encumber.h, pf_encumber[2], pf_encumber[3], 1, 1, 1, glow / 255)
 	end
 
 	if not self.locked then
-		move_handle[1]:toScreenFull(self.mhandle_pos.player.x, self.mhandle_pos.player.y, move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+		move_handle[1]:toScreenFull(self.mhandle_pos.player.x, self.mhandle_pos.player.y, move_handle.w, move_handle.h, move_handle[2], move_handle[3])
 	end
 
-	if not game.mouse:updateZone("pframe", bx, by, pf_bg[6], pf_bg[7], nil, scale) then
+	if not game.mouse:updateZone("pframe", bx, by, pf_bg.w, pf_bg.h, nil, scale) then
 		game.mouse:unregisterZone("pframe")
 
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
@@ -1733,7 +1745,7 @@ function _M:displayPlayer(scale, bx, by)
 			else self.mhandle.player = true end
 
 			-- Attack/defend
-			if bx >= 22 and bx <= 22 + pf_defend[6] and by >= 67 and by <= 67 + pf_defend[7] then
+			if bx >= 22 and bx <= 22 + pf_defend.w and by >= 67 and by <= 67 + pf_defend.h then
 				game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Toggle for movement mode.\nDefault: when trying to move onto a creature it will attack if hostile.\nPassive: when trying to move onto a creature it will not attack (use ctrl+direction, or right click to attack manually)")
 				if event == "button" and button == "left" then game.key:triggerVirtual("TOGGLE_BUMP_ATTACK") end
 			-- Character sheet
@@ -1741,21 +1753,21 @@ function _M:displayPlayer(scale, bx, by)
 				game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Show character infos")
 				if event == "button" and button == "left" then game.key:triggerVirtual("SHOW_CHARACTER_SHEET") end
 			-- Levelup
-			elseif bx >= 269 and bx <= 269 + pf_levelup[6] and by >= 78 and by <= 78 + pf_levelup[7] and (player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0) then
+			elseif bx >= 269 and bx <= 269 + pf_levelup.w and by >= 78 and by <= 78 + pf_levelup.h and (player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0) then
 				game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Click to assign stats and talents!")
 				if event == "button" and button == "left" then game.key:triggerVirtual("LEVELUP") end
 			-- Move handle
-			elseif not self.locked and bx >= self.mhandle_pos.player.x and bx <= self.mhandle_pos.player.x + move_handle[6] and by >= self.mhandle_pos.player.y and by <= self.mhandle_pos.player.y + move_handle[7] then
+			elseif not self.locked and bx >= self.mhandle_pos.player.x and bx <= self.mhandle_pos.player.x + move_handle.w and by >= self.mhandle_pos.player.y and by <= self.mhandle_pos.player.y + move_handle.h then
 				self:uiMoveResize("player", button, mx, my, xrel, yrel, bx, by, event)
 			else
 				game.mouse:delegate(button, mx, my, xrel, yrel, nil, nil, event, "playmap", nil)
 			end
 		end
-		game.mouse:registerZone(bx, by, pf_bg[6], pf_bg[7], desc_fct, nil, "pframe", true, scale)
+		game.mouse:registerZone(bx, by, pf_bg.w, pf_bg.h, desc_fct, nil, "pframe", true, scale)
 	end
 
 	-- Compute how much space to reserve on the side
-	self:computePadding("player", bx, by, bx + pf_bg[6] * scale, by + pf_bg[7] * scale)
+	self:computePadding("player", bx, by, bx + pf_bg.w * scale, by + pf_bg.h * scale)
 end
 
 function _M:displayMinimap(scale, bx, by)
@@ -1763,21 +1775,21 @@ function _M:displayMinimap(scale, bx, by)
 
 	local map = game.level.map
 
-	mm_shadow[1]:toScreenFull(0, 2, mm_shadow[6], mm_shadow[7], mm_shadow[2], mm_shadow[3])
-	mm_bg[1]:toScreenFull(mm_bg_x, mm_bg_y, mm_bg[6], mm_bg[7], mm_bg[2], mm_bg[3])
+	mm_shadow[1]:toScreenFull(0, 2, mm_shadow.w, mm_shadow.h, mm_shadow[2], mm_shadow[3])
+	mm_bg[1]:toScreenFull(mm_bg_x, mm_bg_y, mm_bg.w, mm_bg.h, mm_bg[2], mm_bg[3])
 	if game.player.x then game.minimap_scroll_x, game.minimap_scroll_y = util.bound(game.player.x - 25, 0, map.w - 50), util.bound(game.player.y - 25, 0, map.h - 50)
 	else game.minimap_scroll_x, game.minimap_scroll_y = 0, 0 end
 
 	map:minimapDisplay(50 - mm_bg_x, 30 - mm_bg_y, game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 0.85)
-	mm_transp[1]:toScreenFull(50 - mm_bg_x, 30 - mm_bg_y, mm_transp[6], mm_transp[7], mm_transp[2], mm_transp[3])
+	mm_transp[1]:toScreenFull(50 - mm_bg_x, 30 - mm_bg_y, mm_transp.w, mm_transp.h, mm_transp[2], mm_transp[3])
 
-	mm_comp[1]:toScreenFull(169, 178, mm_comp[6], mm_comp[7], mm_comp[2], mm_comp[3])
+	mm_comp[1]:toScreenFull(169, 178, mm_comp.w, mm_comp.h, mm_comp[2], mm_comp[3])
 
 	if not self.locked then
-		move_handle[1]:toScreenFull(self.mhandle_pos.minimap.x, self.mhandle_pos.minimap.y, move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+		move_handle[1]:toScreenFull(self.mhandle_pos.minimap.x, self.mhandle_pos.minimap.y, move_handle.w, move_handle.h, move_handle[2], move_handle[3])
 	end
 
-	if not game.mouse:updateZone("minimap", bx, by, mm_bg[6], mm_bg[7], nil, scale) then
+	if not game.mouse:updateZone("minimap", bx, by, mm_bg.w, mm_bg.h, nil, scale) then
 		game.mouse:unregisterZone("minimap")
 
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
@@ -1788,7 +1800,7 @@ function _M:displayMinimap(scale, bx, by)
 			game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Left mouse to move\nRight mouse to scroll\nMiddle mouse to show full map")
 
 			-- Move handle
-			if not self.locked and bx >= self.mhandle_pos.minimap.x and bx <= self.mhandle_pos.minimap.x + move_handle[6] and by >= self.mhandle_pos.minimap.y and by <= self.mhandle_pos.minimap.y + move_handle[7] then
+			if not self.locked and bx >= self.mhandle_pos.minimap.x and bx <= self.mhandle_pos.minimap.x + move_handle.w and by >= self.mhandle_pos.minimap.y and by <= self.mhandle_pos.minimap.y + move_handle.h then
 				self:uiMoveResize("minimap", button, mx, my, xrel, yrel, bx, by, event)
 				return
 			end
@@ -1805,18 +1817,18 @@ function _M:displayMinimap(scale, bx, by)
 				end
 			end
 		end
-		game.mouse:registerZone(bx, by, mm_bg[6], mm_bg[7], desc_fct, nil, "minimap", true, scale)
+		game.mouse:registerZone(bx, by, mm_bg.w, mm_bg.h, desc_fct, nil, "minimap", true, scale)
 	end
 
 	game.zone_name_s:toScreenFull(
-		(mm_bg[6] - game.zone_name_w) / 2,
+		(mm_bg.w - game.zone_name_w) / 2,
 		0,
 		game.zone_name_w, game.zone_name_h,
 		game.zone_name_tw, game.zone_name_th
 	)
 
 	-- Compute how much space to reserve on the side
-	self:computePadding("minimap", bx, by, bx + mm_bg[6] * scale, by + (mm_bg[7] + game.zone_name_h) * scale)
+	self:computePadding("minimap", bx, by, bx + mm_bg.w * scale, by + (mm_bg.h + game.zone_name_h) * scale)
 end
 
 function _M:displayGameLog(scale, bx, by)
@@ -1832,7 +1844,7 @@ function _M:displayGameLog(scale, bx, by)
 	log.display_x, log.display_y = ox, oy
 
 	if not self.locked then
-		move_handle[1]:toScreenFull(util.getval(self.mhandle_pos.gamelog.x, self), util.getval(self.mhandle_pos.gamelog.y, self), move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+		uiTexture(move_handle, util.getval(self.mhandle_pos.gamelog.x, self), util.getval(self.mhandle_pos.gamelog.y, self))
 	end
 
 	if not game.mouse:updateZone("gamelog", bx, by, log.w, log.h, nil, scale) then
@@ -1844,7 +1856,7 @@ function _M:displayGameLog(scale, bx, by)
 
 			-- Move handle
 			local mhx, mhy = util.getval(self.mhandle_pos.gamelog.x, self), util.getval(self.mhandle_pos.gamelog.y, self)
-			if not self.locked and bx >= mhx and bx <= mhx + move_handle[6] and by >= mhy and by <= mhy + move_handle[7] then
+			if not self.locked and bx >= mhx and bx <= mhx + move_handle.w and by >= mhy and by <= mhy + move_handle.h then
 				self:uiMoveResize("gamelog", button, mx, my, xrel, yrel, bx, by, event, "resize", function(mode)
 					log:resize(self.places.gamelog.x, self.places.gamelog.x, self.places.gamelog.w, self.places.gamelog.h)
 					log:display()
@@ -1872,7 +1884,7 @@ function _M:displayChatLog(scale, bx, by)
 	log.display_x, log.display_y = ox, oy
 
 	if not self.locked then
-		move_handle[1]:toScreenFull(util.getval(self.mhandle_pos.chatlog.x, self), util.getval(self.mhandle_pos.chatlog.y, self), move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+		uiTexture(move_handle, util.getval(self.mhandle_pos.chatlog.x, self), util.getval(self.mhandle_pos.chatlog.y, self))
 	end
 
 	if not game.mouse:updateZone("chatlog", bx, by, log.w, log.h, nil, scale) then
@@ -1884,7 +1896,7 @@ function _M:displayChatLog(scale, bx, by)
 
 			-- Move handle
 			local mhx, mhy = util.getval(self.mhandle_pos.chatlog.x, self), util.getval(self.mhandle_pos.chatlog.y, self)
-			if not self.locked and bx >= mhx and bx <= mhx + move_handle[6] and by >= mhy and by <= mhy + move_handle[7] then
+			if not self.locked and bx >= mhx and bx <= mhx + move_handle.w and by >= mhy and by <= mhy + move_handle.h then
 				self:uiMoveResize("chatlog", button, mx, my, xrel, yrel, bx, by, event, "resize", function(mode)
 					log:resize(self.places.chatlog.x, self.places.chatlog.y, self.places.chatlog.w, self.places.chatlog.h)
 					log:resetFade()
@@ -1905,15 +1917,15 @@ function _M:displayHotkeys(scale, bx, by)
 
 	hk5[1]:toScreenFull(0, 0, self.places.hotkeys.w, self.places.hotkeys.h, hk5[2], hk5[3])
 
-	hk8[1]:toScreenFull(0, -hk8[7], self.places.hotkeys.w, hk8[7], hk8[2], hk8[3])
-	hk2[1]:toScreenFull(0, self.places.hotkeys.h, self.places.hotkeys.w, hk2[7], hk2[2], hk2[3])
-	hk4[1]:toScreenFull(-hk4[6], 0, hk4[6], self.places.hotkeys.h, hk4[2], hk4[3])
-	hk6[1]:toScreenFull(self.places.hotkeys.w, 0, hk6[6], self.places.hotkeys.h, hk6[2], hk6[3])
+	hk8[1]:toScreenFull(0, -hk8.h, self.places.hotkeys.w, hk8.h, hk8[2], hk8[3])
+	hk2[1]:toScreenFull(0, self.places.hotkeys.h, self.places.hotkeys.w, hk2.h, hk2[2], hk2[3])
+	hk4[1]:toScreenFull(-hk4.w, 0, hk4.w, self.places.hotkeys.h, hk4[2], hk4[3])
+	hk6[1]:toScreenFull(self.places.hotkeys.w, 0, hk6.w, self.places.hotkeys.h, hk6[2], hk6[3])
 
-	hk7[1]:toScreenFull(-hk7[6], -hk7[6], hk7[6], hk7[7], hk7[2], hk7[3])
-	hk9[1]:toScreenFull(self.places.hotkeys.w, -hk9[6], hk9[6], hk9[7], hk9[2], hk9[3])
-	hk1[1]:toScreenFull(-hk7[6], self.places.hotkeys.h, hk1[6], hk1[7], hk1[2], hk1[3])
-	hk3[1]:toScreenFull(self.places.hotkeys.w, self.places.hotkeys.h, hk3[6], hk3[7], hk3[2], hk3[3])
+	hk7[1]:toScreenFull(-hk7.w, -hk7.w, hk7.w, hk7.h, hk7[2], hk7[3])
+	hk9[1]:toScreenFull(self.places.hotkeys.w, -hk9.w, hk9.w, hk9.h, hk9[2], hk9[3])
+	hk1[1]:toScreenFull(-hk7.w, self.places.hotkeys.h, hk1.w, hk1.h, hk1[2], hk1[3])
+	hk3[1]:toScreenFull(self.places.hotkeys.w, self.places.hotkeys.h, hk3.w, hk3.h, hk3[2], hk3[3])
 
 	hkeys.orient = self.sizes.hotkeys and self.sizes.hotkeys.orient or "down"
 	hkeys.display_x, hkeys.display_y = 0, 0
@@ -1921,7 +1933,7 @@ function _M:displayHotkeys(scale, bx, by)
 	hkeys.display_x, hkeys.display_y = ox, oy
 
 	if not self.locked then
-		move_handle[1]:toScreenFull(util.getval(self.mhandle_pos.hotkeys.x, self), util.getval(self.mhandle_pos.hotkeys.y, self), move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+		move_handle[1]:toScreenFull(util.getval(self.mhandle_pos.hotkeys.x, self), util.getval(self.mhandle_pos.hotkeys.y, self), move_handle.w, move_handle.h, move_handle[2], move_handle[3])
 	end
 
 	if not game.mouse:updateZone("hotkeys", bx, by, self.places.hotkeys.w, self.places.hotkeys.h, nil, scale) then
@@ -1933,7 +1945,7 @@ function _M:displayHotkeys(scale, bx, by)
 
 			-- Move handle
 			local mhx, mhy = util.getval(self.mhandle_pos.hotkeys.x, self), util.getval(self.mhandle_pos.hotkeys.y, self)
-			if not self.locked and bx >= mhx and bx <= mhx + move_handle[6] and by >= mhy and by <= mhy + move_handle[7] then
+			if not self.locked and bx >= mhx and bx <= mhx + move_handle.w and by >= mhy and by <= mhy + move_handle.h then
 				self:uiMoveResize("hotkeys", button, mx, my, xrel, yrel, bx, by, event, "resize", function(mode)
 					hkeys:resize(self.places.hotkeys.x, self.places.hotkeys.y, self.places.hotkeys.w, self.places.hotkeys.h)
 				end)
@@ -1979,48 +1991,48 @@ function _M:displayToolbar(scale, bx, by)
 	local x, y = 0, 0
 	local orient = self.sizes.mainicons and self.sizes.mainicons.orient or "down"
 
-	tb_bg[1]:toScreenFull		(x, y, tb_bg[6], tb_bg[7], tb_bg[2], tb_bg[3], 1, 1, 1, 1)
-	tb_inven[1]:toScreenFull	(x, y, tb_inven[6], tb_inven[7], tb_inven[2], tb_inven[3], self.tbbuttons.inven, self.tbbuttons.inven, self.tbbuttons.inven, 1)
-	if not game.mouse:updateZone("tb_inven", bx + x * scale, by +y*scale, tb_inven[6], tb_inven[7], nil, scale) then
+	uiTexture(tb_bg, x, y)
+	uiTexture(tb_inven, x, y)
+	if not game.mouse:updateZone("tb_inven", bx + x * scale, by +y*scale, tb_inven.w, tb_inven.h, nil, scale) then
 		game.mouse:unregisterZone("tb_inven")
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "out" then self.tbbuttons.inven = 0.6 return else self.tbbuttons.inven = 1 end
 			game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Left mouse to show inventory")
 			if button == "left" and not xrel and not yrel and event == "button" then game.key:triggerVirtual("SHOW_INVENTORY") end
 		end
-		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_inven[6], tb_inven[7], desc_fct, nil, "tb_inven", true, scale)
+		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_inven.w, tb_inven.h, desc_fct, nil, "tb_inven", true, scale)
 	end
-	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg[6], tb_bg[7])
+	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg.w, tb_bg.h)
 
-	tb_bg[1]:toScreenFull		(x, y, tb_bg[6], tb_bg[7], tb_bg[2], tb_bg[3], 1, 1, 1, 1)
-	tb_talents[1]:toScreenFull	(x, y, tb_talents[6], tb_talents[7], tb_talents[2], tb_talents[3], self.tbbuttons.talents, self.tbbuttons.talents, self.tbbuttons.talents, 1)
-	if not game.mouse:updateZone("tb_talents", bx + x * scale, by +y*scale, tb_talents[6], tb_talents[7], nil, scale) then
+	uiTexture(tb_bg, x, y)
+	uiTexture(tb_talents, x, y)
+	if not game.mouse:updateZone("tb_talents", bx + x * scale, by +y*scale, tb_talents.w, tb_talents.h, nil, scale) then
 		game.mouse:unregisterZone("tb_talents")
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "out" then self.tbbuttons.talents = 0.6 return else self.tbbuttons.talents = 1 end
 			game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Left mouse to show known talents")
 			if button == "left" and not xrel and not yrel and event == "button" then game.key:triggerVirtual("USE_TALENTS") end
 		end
-		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_talents[6], tb_talents[7], desc_fct, nil, "tb_talents", true, scale)
+		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_talents.w, tb_talents.h, desc_fct, nil, "tb_talents", true, scale)
 	end
-	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg[6], tb_bg[7])
+	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg.w, tb_bg.h)
 
-	tb_bg[1]:toScreenFull		(x, y, tb_bg[6], tb_bg[7], tb_bg[2], tb_bg[3], 1, 1, 1, 1)
-	tb_quest[1]:toScreenFull	(x, y, tb_quest[6], tb_quest[7], tb_quest[2], tb_quest[3], self.tbbuttons.quest, self.tbbuttons.quest, self.tbbuttons.quest, 1)
-	if not game.mouse:updateZone("tb_quest", bx + x * scale, by +y*scale, tb_quest[6], tb_quest[7], nil, scale) then
+	uiTexture(tb_bg, x, y)
+	uiTexture(tb_quest, x, y)
+	if not game.mouse:updateZone("tb_quest", bx + x * scale, by +y*scale, tb_quest.w, tb_quest.h, nil, scale) then
 		game.mouse:unregisterZone("tb_quest")
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "out" then self.tbbuttons.quest = 0.6 return else self.tbbuttons.quest = 1 end
 			game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Left mouse to show message/chat log.")
 			if button == "left" and not xrel and not yrel and event == "button" then game.key:triggerVirtual("SHOW_MESSAGE_LOG") end
 		end
-		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_quest[6], tb_quest[7], desc_fct, nil, "tb_quest", true, scale)
+		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_quest.w, tb_quest.h, desc_fct, nil, "tb_quest", true, scale)
 	end
-	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg[6], tb_bg[7])
+	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg.w, tb_bg.h)
 
-	tb_bg[1]:toScreenFull		(x, y, tb_bg[6], tb_bg[7], tb_bg[2], tb_bg[3], 1, 1, 1, 1)
-	tb_lore[1]:toScreenFull		(x, y, tb_lore[6], tb_lore[7], tb_lore[2], tb_lore[3], self.tbbuttons.lore, self.tbbuttons.lore, self.tbbuttons.lore, 1)
-	if not game.mouse:updateZone("tb_lore", bx + x * scale, by +y*scale, tb_lore[6], tb_lore[7], nil, scale) then
+	uiTexture(tb_bg, x, y)
+	uiTexture(tb_lore, x, y)
+	if not game.mouse:updateZone("tb_lore", bx + x * scale, by +y*scale, tb_lore.w, tb_lore.h, nil, scale) then
 		game.mouse:unregisterZone("tb_lore")
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "out" then self.tbbuttons.lore = 0.6 return else self.tbbuttons.lore = 1 end
@@ -2028,36 +2040,36 @@ function _M:displayToolbar(scale, bx, by)
 			if button == "left" and not xrel and not yrel and event == "button" then game.key:triggerVirtual("SHOW_QUESTS")
 			elseif button == "right" and not xrel and not yrel and event == "button" then game:registerDialog(require("mod.dialogs.ShowLore").new("Tales of Maj'Eyal Lore", game.party)) end
 		end
-		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_lore[6], tb_lore[7], desc_fct, nil, "tb_lore", true, scale)
+		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_lore.w, tb_lore.h, desc_fct, nil, "tb_lore", true, scale)
 	end
-	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg[6], tb_bg[7])
+	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg.w, tb_bg.h)
 
-	tb_bg[1]:toScreenFull		(x, y, tb_bg[6], tb_bg[7], tb_bg[2], tb_bg[3], 1, 1, 1, 1)
-	tb_mainmenu[1]:toScreenFull	(x, y, tb_mainmenu[6], tb_mainmenu[7], tb_mainmenu[2], tb_mainmenu[3], self.tbbuttons.mainmenu, self.tbbuttons.mainmenu, self.tbbuttons.mainmenu, 1)
-	if not game.mouse:updateZone("tb_mainmenu", bx + x * scale, by + y*scale, tb_mainmenu[6], tb_mainmenu[7], nil, scale) then
+	uiTexture(tb_bg, x, y)
+	uiTexture(tb_mainmenu, x, y)
+	if not game.mouse:updateZone("tb_mainmenu", bx + x * scale, by + y*scale, tb_mainmenu.w, tb_mainmenu.h, nil, scale) then
 		game.mouse:unregisterZone("tb_mainmenu")
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "out" then self.tbbuttons.mainmenu = 0.6 return else self.tbbuttons.mainmenu = 1 end
 			game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, "Left mouse to show main menu")
 			if button == "left" and not xrel and not yrel and event == "button" then game.key:triggerVirtual("EXIT") end
 		end
-		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_mainmenu[6], tb_mainmenu[7], desc_fct, nil, "tb_mainmenu", true, scale)
+		game.mouse:registerZone(bx + x * scale, by +y*scale, tb_mainmenu.w, tb_mainmenu.h, desc_fct, nil, "tb_mainmenu", true, scale)
 	end
-	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg[6], tb_bg[7])
+	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg.w, tb_bg.h)
 
 	local padlock = self.locked and tb_padlock_closed or tb_padlock_open
-	tb_bg[1]:toScreenFull		(x, y, tb_bg[6], tb_bg[7], tb_bg[2], tb_bg[3], 1, 1, 1, 1)
-	padlock[1]:toScreenFull		(x, y, padlock[6], padlock[7], padlock[2], padlock[3], self.tbbuttons.padlock, self.tbbuttons.padlock, self.tbbuttons.padlock, 1)
-	if not game.mouse:updateZone("padlock", bx + x * scale, by +y*scale, padlock[6], padlock[7], nil, scale) then
+	uiTexture(tb_bg, x, y)
+	uiTexture(padlock, x, y)
+	if not game.mouse:updateZone("padlock", bx + x * scale, by +y*scale, padlock.w, padlock.h, nil, scale) then
 		game.mouse:unregisterZone("padlock")
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "out" then self.tbbuttons.padlock = 0.6 return else self.tbbuttons.padlock = 1 end
 			game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, self.locked and "Unlock all interface elements so they can be moved and resized." or "Lock all interface elements so they can not be moved nor resized.")
 			if button == "left" and not xrel and not yrel and event == "button" then self:switchLocked() end
 		end
-		game.mouse:registerZone(bx + x * scale, by +y*scale, padlock[6], padlock[7], desc_fct, nil, "padlock", true, scale)
+		game.mouse:registerZone(bx + x * scale, by +y*scale, padlock.w, padlock.h, desc_fct, nil, "padlock", true, scale)
 	end
-	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg[6], tb_bg[7])
+	x, y = self:toolbarOrientStep(orient, bx, by, scale, x, y, tb_bg.w, tb_bg.h)
 
 	-- Any hooks
 	local hd = {"UISet:Minimalist:Toolbar", x=x, y=y, bx=bx, by=by, orient=orient, scale=scale, tb_bg=tb_bg}
@@ -2067,10 +2079,10 @@ function _M:displayToolbar(scale, bx, by)
 
 	local mhx, mhy = util.getval(self.mhandle_pos.mainicons.x, self), util.getval(self.mhandle_pos.mainicons.y, self)
 	if not self.locked then
-		move_handle[1]:toScreenFull(mhx, mhy, move_handle[6], move_handle[7], move_handle[2], move_handle[3])
+		uiTexture(move_handle, mhx, mhy)
 	end
 
-	if not game.mouse:updateZone("tb_handle", bx + mhx * scale, by + mhy * scale, move_handle[6], move_handle[7], nil, scale) then
+	if not game.mouse:updateZone("tb_handle", bx + mhx * scale, by + mhy * scale, move_handle.w, move_handle.h, nil, scale) then
 		game.mouse:unregisterZone("tb_handle")
 
 		local desc_fct = function(button, mx, my, xrel, yrel, bx, by, event)
@@ -2080,7 +2092,7 @@ function _M:displayToolbar(scale, bx, by)
 				return
 			end
 		end
-		game.mouse:registerZone(bx + mhx * scale, by + mhy * scale, move_handle[6], move_handle[7], desc_fct, nil, "tb_handle", true, scale)
+		game.mouse:registerZone(bx + mhx * scale, by + mhy * scale, move_handle.w, move_handle.h, desc_fct, nil, "tb_handle", true, scale)
 	end
 
 	-- Compute how much space to reserve on the side
@@ -2096,6 +2108,9 @@ function _M:display(nb_keyframes)
 
 	if self.no_ui then return end
 
+core.display.countDraws()
+core.vo.enablePipe()
+
 	Map.viewport_padding_4 = 0
 	Map.viewport_padding_6 = 0
 	Map.viewport_padding_8 = 0
@@ -2105,6 +2120,7 @@ function _M:display(nb_keyframes)
 	d.glTranslate(self.places.gamelog.x, self.places.gamelog.y, 0)
 	self:displayGameLog(1, self.places.gamelog.x, self.places.gamelog.y)
 	d.glTranslate(-self.places.gamelog.x, -self.places.gamelog.y, -0)
+--[[
 
 	-- Chat log
 	d.glTranslate(self.places.chatlog.x, self.places.chatlog.y, 0)
@@ -2152,7 +2168,7 @@ function _M:display(nb_keyframes)
 	d.glTranslate(self.places.hotkeys.x, self.places.hotkeys.y, 0)
 	self:displayHotkeys(1, self.places.hotkeys.x, self.places.hotkeys.y)
 	d.glTranslate(-self.places.hotkeys.x, -self.places.hotkeys.y, -0)
-
+]]
 	-- Main icons
 	d.glTranslate(self.places.mainicons.x, self.places.mainicons.y, 0)
 	d.glScale(self.places.mainicons.scale * 0.5, self.places.mainicons.scale * 0.5, self.places.mainicons.scale * 0.5)
@@ -2170,6 +2186,9 @@ function _M:display(nb_keyframes)
 		if size.bottom then d.drawQuad(0, Map.viewport.height - 10, Map.viewport.width, 10, 0, 200, 0, 50) end
 		d.glTranslate(-Map.display_x, -Map.display_y, -0)
 	end
+
+	core.vo.disablePipe()
+print("==minimalist ui draws", core.display.countDraws())
 end
 
 function _M:setupMouse(mouse)

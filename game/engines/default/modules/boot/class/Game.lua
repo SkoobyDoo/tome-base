@@ -142,6 +142,7 @@ function _M:run()
 	end
 
 	-- Setup display
+	-- self:registerDialog(require("mod.dialogs.Addons").new())
 	self:registerDialog(MainMenu.new())
 
 	-- Run the current music if any

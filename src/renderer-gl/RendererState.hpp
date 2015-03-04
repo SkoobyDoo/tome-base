@@ -24,16 +24,25 @@
 
 #include <stack>
 
+using namespace std;
+
+class RendererState;
+
 class RendererState {
-	glm::mat4 view;
-	glm::mat4 world;
-	std::stack<glm::mat4> saved_worlds;
-	std::stack<glm::mat4> saved_views;
-	std::stack<glm::vec4> saved_viewports;
+	stack<mat4> saved_worlds;
+	stack<mat4> saved_pipe_worlds;
+	stack<mat4> saved_views;
+	stack<vec4> saved_viewports;
+	stack<vec4> cutoffs;
 	
 public:
-	glm::vec4 viewport;
-	glm::mat4 mvp;
+	mat4 view;
+	mat4 world;
+	vec4 viewport;
+	mat4 mvp;
+
+	bool quad_pipe_enabled;
+	mat4 pipe_world;
 
 	RendererState(int w, int h);
 	
@@ -44,13 +53,18 @@ public:
 	void pushViewport();
 	void popViewport();
 
-	void updateMVP();
+	void pushCutoff(float x, float y, float w, float h);
+	void popCutoff();
+
+	void updateMVP(bool include_pipe_world);
 	void translate(float x, float y, float z);
 	void rotate(float a, float x, float y, float z);
 	void scale(float x, float y, float z);
 	void pushState(bool isworld);
 	void popState(bool isworld);
 	void identity(bool isworld);
+
+	void enableQuadPipe(bool v);
 };
 
 #endif
