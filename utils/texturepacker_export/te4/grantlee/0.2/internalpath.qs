@@ -1,7 +1,7 @@
 var InternalPath = function(input)
 {
 	var input = input.rawString();
-	return input.replace(/.*\/data\/gfx/,"/data/gfx").replace(/=/,"/");
+	return input.replace(/.*\/data\/gfx/,"/data/gfx");
 };
 InternalPath.filterName = "InternalPath";
 Library.addFilter("InternalPath");

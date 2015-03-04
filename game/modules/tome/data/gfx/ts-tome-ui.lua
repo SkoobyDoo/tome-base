@@ -1,13 +1,18 @@
 --
 -- created with TexturePacker (http://www.codeandweb.com/texturepacker)
 --
--- $TexturePacker:SmartUpdate:c41459eb5fe8f5ada42de782d9460ab5:168f57549575dbd529f37f9ac3ebb015:952aa040e93439a66ad60c1d7c49b2d7$
+-- $TexturePacker:SmartUpdate:ef3b8b02ac90e9ec0b99e78141e844ca:a38256d4b7b3241ca69b20d393472a9b:952aa040e93439a66ad60c1d7c49b2d7$
 
 
 
 __width = 1024
 __height = 2048
 
+_G["/data/gfx/ui/actors-icon.png"] = { x=0.96484375, y=0.3720703125, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/ui/aggressive-icon.png"] = { x=0.96484375, y=0.388671875, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/ui/charsheet-icon.png"] = { x=0.080078125, y=0.58642578125, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/ui/chat-icon.png"] = { x=0.14453125, y=0.595703125, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/ui/empty-ui.png"] = { x=0.978515625, y=0.06103515625, factorx=0.001953125, factory=0.0009765625, w=2, h=2, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/metal-ui/equipdoll/ammo_inv.png"] = { x=0.25390625, y=0.36962890625, factorx=0.041015625, factory=0.0205078125, w=42, h=42, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/metal-ui/equipdoll/amulet_inv.png"] = { x=0.25390625, y=0.39111328125, factorx=0.041015625, factory=0.0205078125, w=42, h=42, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/metal-ui/equipdoll/belt_inv.png"] = { x=0.80859375, y=0.3759765625, factorx=0.041015625, factory=0.0205078125, w=42, h=42, set="/data/gfx/ts-tome-ui.png" }
@@ -23,28 +28,13 @@ _G["/data/gfx/metal-ui/equipdoll/offhand_inv.png"] = { x=0.244140625, y=0.541503
 _G["/data/gfx/metal-ui/equipdoll/psionic_inv.png"] = { x=0.244140625, y=0.56298828125, factorx=0.041015625, factory=0.0205078125, w=42, h=42, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/metal-ui/equipdoll/ring_inv.png"] = { x=0.4892578125, y=0.4833984375, factorx=0.041015625, factory=0.0205078125, w=42, h=42, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/metal-ui/equipdoll/tool_inv.png"] = { x=0.435546875, y=0.49755859375, factorx=0.041015625, factory=0.0205078125, w=42, h=42, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/all.png"] = { x=0.5859375, y=0.05615234375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/armors.png"] = { x=0.5859375, y=0.08837890625, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/chest.png"] = { x=0.5859375, y=0.12060546875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/gems.png"] = { x=0.5859375, y=0.15283203125, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/inscriptions.png"] = { x=0.25390625, y=0.0576171875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/jewelry.png"] = { x=0.25390625, y=0.08984375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/misc.png"] = { x=0.25390625, y=0.1220703125, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/misc_armors.png"] = { x=0.25390625, y=0.154296875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/quests.png"] = { x=0.25390625, y=0.1865234375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/transmo.png"] = { x=0.5859375, y=0.12060546875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/metal-ui/inven_tabs/weapons.png"] = { x=0.5703125, y=0.18505859375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/ui/actors-icon.png"] = { x=0.96484375, y=0.3720703125, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/ui/aggressive-icon.png"] = { x=0.96484375, y=0.388671875, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/ui/charsheet-icon.png"] = { x=0.080078125, y=0.58642578125, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/ui/chat-icon.png"] = { x=0.14453125, y=0.595703125, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/group_bg.png"] = { x=0.80078125, y=0.4052734375, factorx=0.1953125, factory=0.0732421875, w=200, h=150, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/back.png"] = { x=0.287109375, y=0.56591796875, factorx=0.14453125, factory=0.06201171875, w=148, h=127, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/hotkey_1.png"] = { x=0.978515625, y=0.07568359375, factorx=0.0078125, factory=0.00390625, w=8, h=8, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/hotkey_2.png"] = { x=0.5703125, y=0.3232421875, factorx=0.0625, factory=0.00390625, w=64, h=8, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/hotkey_3.png"] = { x=0.98828125, y=0.07568359375, factorx=0.0078125, factory=0.00390625, w=8, h=8, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/hotkey_4.png"] = { x=0.982421875, y=0.033203125, factorx=0.0078125, factory=0.03125, w=8, h=64, set="/data/gfx/ts-tome-ui.png" }
-_G["/data/gfx/ui/hotkeys/hotkey_5.png"] = { x=0.25390625, y=0.21875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/ui/hotkeys/hotkey_5.png"] = { x=0.5859375, y=0.05615234375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/hotkey_6.png"] = { x=0.982421875, y=0.033203125, factorx=0.0078125, factory=0.03125, w=8, h=64, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/hotkey_7.png"] = { x=0.978515625, y=0.08056640625, factorx=0.0078125, factory=0.00390625, w=8, h=8, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/hotkey_8.png"] = { x=0.5703125, y=0.3232421875, factorx=0.0625, factory=0.00390625, w=64, h=8, set="/data/gfx/ts-tome-ui.png" }
@@ -58,6 +48,17 @@ _G["/data/gfx/ui/hotkeys/separator.png"] = { x=0.296875, y=0.44873046875, factor
 _G["/data/gfx/ui/hotkeys/separator_vines.png"] = { x=0.001953125, y=0.453125, factorx=0.25, factory=0.01708984375, w=256, h=35, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/hotkeys/talents.png"] = { x=0.25390625, y=0.2998046875, factorx=0.0625, factory=0.0234375, w=64, h=48, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/icon-select.png"] = { x=0.080078125, y=0.60302734375, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/all.png"] = { x=0.5859375, y=0.08837890625, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/armors.png"] = { x=0.5859375, y=0.12060546875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/chest.png"] = { x=0.5859375, y=0.15283203125, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/gems.png"] = { x=0.25390625, y=0.0576171875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/inscriptions.png"] = { x=0.25390625, y=0.08984375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/jewelry.png"] = { x=0.25390625, y=0.1220703125, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/misc.png"] = { x=0.25390625, y=0.154296875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/misc_armors.png"] = { x=0.25390625, y=0.1865234375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/quests.png"] = { x=0.5703125, y=0.18505859375, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/transmo.png"] = { x=0.5859375, y=0.15283203125, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
+_G["/data/gfx/metal-ui/inven_tabs/weapons.png"] = { x=0.25390625, y=0.21875, factorx=0.0625, factory=0.03125, w=64, h=64, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/inventory-icon.png"] = { x=0.04296875, y=0.60498046875, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/log-icon.png"] = { x=0.001953125, y=0.60693359375, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
 _G["/data/gfx/ui/main-menu-icon.png"] = { x=0.177734375, y=0.595703125, factorx=0.03125, factory=0.015625, w=32, h=32, set="/data/gfx/ts-tome-ui.png" }
