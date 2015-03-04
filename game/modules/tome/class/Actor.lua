@@ -2224,8 +2224,8 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
-	if value > 0 and self:attr("disruption_shield") then
-		local mana = self:getMaxMana() - self:getMana()
+	if value > 0 and self:isTalentActive(self.T_DISRUPTION_SHIELD) then
+		local mana = math.max(0, self:getMaxMana() - self:getMana())
 		local mana_val = value * self:attr("disruption_shield")
 		local converted = math.min(value, mana / self:attr("disruption_shield"))
 		game:delayedLogMessage(self, nil,  "disruption_shield", "#LIGHT_BLUE##Source# converts damage to mana!")
