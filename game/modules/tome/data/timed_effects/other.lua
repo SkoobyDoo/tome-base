@@ -2563,7 +2563,7 @@ newEffect{
 		-- Find our clones
 		for i = 1, #eff.targets do
 			local target = eff.targets[i]
-			if target ~= self and not target.dead and game.level:hasEntity(target) then
+			if not target.dead and game.level:hasEntity(target) then
 				clones[#clones+1] = target
 			end
 		end
@@ -2576,8 +2576,10 @@ newEffect{
 			for i = 1, #clones do
 				local target = clones[i]
 				if target ~= self then
+					target.turn_procs.temporal_fugue_damage = true
 					target:takeHit(cb.value, src)
 					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(cb.value), nil)
+					target.turn_procs.temporal_fugue_damage = nil
 				end
 			end
 			
