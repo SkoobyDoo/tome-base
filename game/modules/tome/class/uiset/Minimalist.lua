@@ -1333,7 +1333,6 @@ function _M:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale
 		end
 		if e.charges then
 			local font = e.decrease > 0 and self.buff_font_small or self.buff_font
-			txt2 = font:draw(charges, 40, colors.WHITE.r, colors.WHITE.g, colors.WHITE.b, true)[1]
 			txt2 = font:drawVO(nil, charges, {max_width=40, center=true, no_linefeed=true})
 			font2 = font
 			dur = dur..":"..charges
