@@ -311,19 +311,19 @@ function _M:generate()
 	self.frame.w = self.w - self.frame.ox1 + self.frame.ox2
 	self.frame.h = self.h - self.frame.oy1 + self.frame.oy2
 
-	self.b7 = self:getUITexture(self.frame.b7)
-	self.b9 = self:getUITexture(self.frame.b9)
-	self.b1 = self:getUITexture(self.frame.b1)
-	self.b3 = self:getUITexture(self.frame.b3)
-	self.b8 = self:getUITexture(self.frame.b8)
-	self.b4 = self:getUITexture(self.frame.b4)
-	self.b2 = self:getUITexture(self.frame.b2)
-	self.b6 = self:getUITexture(self.frame.b6)
-	self.b5 = self:getUITexture(self.frame.b5)
+	self.b7 = self:getAtlasTexture(self.frame.b7)
+	self.b9 = self:getAtlasTexture(self.frame.b9)
+	self.b1 = self:getAtlasTexture(self.frame.b1)
+	self.b3 = self:getAtlasTexture(self.frame.b3)
+	self.b8 = self:getAtlasTexture(self.frame.b8)
+	self.b4 = self:getAtlasTexture(self.frame.b4)
+	self.b2 = self:getAtlasTexture(self.frame.b2)
+	self.b6 = self:getAtlasTexture(self.frame.b6)
+	self.b5 = self:getAtlasTexture(self.frame.b5)
 
 	self.overs = {}
 	for i, o in ipairs(self.frame.overlays or {}) do
-		local ov = self:getUITexture(o.image)
+		local ov = self:getAtlasTexture(o.image)
 		if o.gen then
 			o.gen(ov, self)
 		else
@@ -341,6 +341,7 @@ function _M:generate()
 		self.mouse:registerZone(0, 0, gamew, gameh, function(button, x, y, xrel, yrel, bx, by, event) self:mouseEvent(button, x, y, xrel, yrel, bx - self.display_x, by - self.display_y, event) end)
 	else
 		self.mouse:registerZone(0, 0, gamew, gameh, function(button, x, y, xrel, yrel, bx, by, event) if button == "left" and event == "button" then  self.key:triggerVirtual("EXIT") end end)
+		self.mouse:registerZone(self.display_x + self.frame.ox1, self.display_y + self.frame.ox2, self.frame.w, self.frame.h, function(...) self:no_focus() end)
 		self.mouse:registerZone(self.display_x, self.display_y, self.w, self.h, function(...) self:mouseEvent(...) end)
 	end
 	self.key.receiveKey = function(_, ...) self:keyEvent(...) end
@@ -638,24 +639,24 @@ function _M:drawFrame(x, y, r, g, b, a)
 	y = y + self.frame.oy1
 
 	-- Sides
-	self.b8.t:toScreenFull(x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
-	self.b2.t:toScreenFull(x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
-	self.b4.t:toScreenFull(x, y + self.b7.h, self.b4.w, self.frame.h - self.b7.h - self.b1.h, self.b4.tw, self.b4.th, r, g, b, a)
-	self.b6.t:toScreenFull(x + self.frame.w - self.b9.w, y + self.b7.h, self.b6.w, self.frame.h - self.b7.h - self.b1.h, self.b6.tw, self.b6.th, r, g, b, a)
+	self:uiTexture(self.b8, x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, r, g, b, a)
+	self:uiTexture(self.b2, x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, r, g, b, a)
+	self:uiTexture(self.b4, x, y + self.b7.h, self.b4.w, self.frame.h - self.b7.h - self.b1.h, r, g, b, a)
+	self:uiTexture(self.b6, x + self.frame.w - self.b9.w, y + self.b7.h, self.b6.w, self.frame.h - self.b7.h - self.b1.h, r, g, b, a)
 
 	-- Corners
-	self.b1.t:toScreenFull(x, y + self.frame.h - self.b1.h, self.b1.w, self.b1.h, self.b1.tw, self.b1.th, r, g, b, a)
-	self.b7.t:toScreenFull(x, y, self.b7.w, self.b7.h, self.b7.tw, self.b7.th, r, g, b, a)
-	self.b9.t:toScreenFull(x + self.frame.w - self.b9.w, y, self.b9.w, self.b9.h, self.b9.tw, self.b9.th, r, g, b, a)
-	self.b3.t:toScreenFull(x + self.frame.w - self.b3.w, y + self.frame.h - self.b3.h, self.b3.w, self.b3.h, self.b3.tw, self.b3.th, r, g, b, a)
+	self:uiTexture(self.b1, x, y + self.frame.h - self.b1.h, self.b1.w, self.b1.h, r, g, b, a)
+	self:uiTexture(self.b7, x, y, self.b7.w, self.b7.h, r, g, b, a)
+	self:uiTexture(self.b9, x + self.frame.w - self.b9.w, y, self.b9.w, self.b9.h, r, g, b, a)
+	self:uiTexture(self.b3, x + self.frame.w - self.b3.w, y + self.frame.h - self.b3.h, self.b3.w, self.b3.h, r, g, b, a)
 
 	-- Body
-	self.b5.t:toScreenFull(x + self.b7.w, y + self.b7.h, self.frame.w - self.b7.w - self.b3.w , self.frame.h - self.b7.h - self.b3.h, self.b5.tw, self.b5.th, r, g, b, a)
+	self:uiTexture(self.b5, x + self.b7.w, y + self.b7.h, self.frame.w - self.b7.w - self.b3.w , self.frame.h - self.b7.h - self.b3.h, r, g, b, a)
 
 	-- Overlays
 	for i = 1, #self.overs do
 		local ov = self.overs[i]
-		ov.t:toScreenFull(x + ov.x, y + ov.y, ov.w , ov.h, ov.tw, ov.th, r, g, b, a * ov.a)
+		self:uiTexture(ov.t, ox + ov.x, y + ov.y, ov.w , ov.h, r, g, b, a * ov.a)
 	end
 
 	if self.frame.particles then
@@ -707,7 +708,6 @@ end
 
 function _M:toScreen(x, y, nb_keyframes)
 	if self.__hidden then return end
-
 	local shader = self.shadow_shader
 
 	local zoom = 1
@@ -737,8 +737,11 @@ function _M:toScreen(x, y, nb_keyframes)
 	if zoom < 1 then core.display.glScale(zoom, zoom, zoom) end
 
 	-- Draw the frame and shadow
+-- core.display.countDraws()
+-- 	core.vo.enablePipe()
 	if self.frame.shadow then self:drawFrame(x + self.frame.shadow.x, y + self.frame.shadow.y, 0, 0, 0, self.frame.shadow.a) end
 	self:drawFrame(x, y, self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a)
+	-- core.vo.flushPipe()
 
 	-- Title
 	if self.title then
@@ -770,6 +773,8 @@ function _M:toScreen(x, y, nb_keyframes)
 	self:innerDisplay(x, y, nb_keyframes, tx, ty)
 
 	if self.first_display then self:firstDisplay() self.first_display = false end
+-- 	core.vo.disablePipe()
+-- print("====", core.display.countDraws())
 
 	-- Restore normal opengl matrix
 	if zoom < 1 then core.display.glScale() end

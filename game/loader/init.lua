@@ -144,10 +144,13 @@ local te4_loader = function(name)
 
 	-- Base loader
 	local bfile = "/"..bname:gsub("%.", "/")..".lua"
-	local prev, err = loadfile(bfile)
-	if not prev and err then
-		error("Error while loading base '"..bfile.."':\n"..tostring(err))
-		return nil
+	local prev, err
+	if fs.exists(bfile) then
+		prev, err = loadfile(bfile)
+		if not prev and err then
+			error("Error while loading base '"..bfile.."':\n"..tostring(err))
+			return nil
+		end
 	end
 
 	name = name:gsub("%.", "/")

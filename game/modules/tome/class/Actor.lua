@@ -79,6 +79,9 @@ _M.temporary_values_conf.combat_physspeed = "add" -- Prevent excessive attack sp
 _M.temporary_values_conf.combat_spellspeed = "add" -- Prevent excessive spell speed compounding
 _M.temporary_values_conf.combat_mindspeed = "add" -- Prevent excessive mind speed compounding
 
+-- Effect reductions are multiplicative, not additive
+_M.temporary_values_conf.reduce_detrimental_status_effects_time = "perc_inv"  -- Prevent effect reduction from hitting 100%
+
 -- Damage cap takes the lowest
 _M.temporary_values_conf.flat_damage_cap = "lowest"
 
@@ -2880,6 +2883,16 @@ function _M:die(src, death_note)
 					else
 						o:removed()
 					end
+				end
+			end
+		else
+			local invens = {}
+			for inven_id, inven in pairs(self.inven) do invens[#invens+1] = inven end
+			table.sort(invens, function(a,b) if a.id == 1 then return false elseif b.id == 1 then return true else return a.id < b.id end end)
+			for _, inven in ipairs(invens) do
+				for i = #inven, 1, -1 do
+					local o = inven[i]
+					if game:hasEntity(o) then game:removeEntity(o) end
 				end
 			end
 		end

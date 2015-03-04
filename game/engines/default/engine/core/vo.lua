@@ -58,7 +58,6 @@ typedef struct
 	render_mode mode;
 	vertex_mode kind;
 	int nb, size;
-	int next_id;
 	int *ids;
 	vertex_data *vertices;
 
@@ -71,6 +70,7 @@ typedef struct
 
 
 extern lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mode kind, render_mode mode);
+extern lua_vertexes* vertex_clone(lua_vertexes *vx, lua_vertexes *srcvx);
 extern void vertex_free(lua_vertexes *vx, bool self_delete);
 extern void update_vertex_size(lua_vertexes *vx, int size);
 extern int vertex_find(lua_vertexes *vx, int id);
@@ -89,10 +89,15 @@ extern int vertex_add_quad(lua_vertexes *vx,
 extern void vertex_update_quad_texture(lua_vertexes *L, int i, float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4);
 extern void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, float my);
 extern void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a);
+extern void vertex_alpha(lua_vertexes *vx, int start, int stop, float a);
 extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
-extern void vertex_append(lua_vertexes *vx, lua_vertexes *srcvx);
+extern int vertex_append(lua_vertexes *vx, lua_vertexes *srcvx, bool newids);
 extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a);
+
+extern void renderer_pipe_start();
+extern void renderer_pipe_stop();
+extern void renderer_pipe_flush();
 ]]
 
 local VERTEX_QUAD_SIZE = C.vertex_quad_size()
@@ -133,14 +138,37 @@ local vertexes_mt = { __gc = function(vo) C.vertex_free(vo, false) end,	__index 
 		local stopid = C.vertex_find(vo, stop)
 		C.vertex_color(vo, startid, stopid, set, r, g, b, a)
 	end,
+	alpha = function(vo, start, stop, a)
+		local startid = C.vertex_find(vo, start)
+		local stopid = C.vertex_find(vo, stop)
+		C.vertex_alpha(vo, startid, stopid, a)
+	end,
 	translateAll = function(vo, mx, my)
-		C.vertex_translate(vo, 0, vo.nb, mx, my)
+		C.vertex_translate(vo, 0, vo.nb - 1, mx, my)
 	end,
 	colorAll = function(vo, set, r, g, b, a)
-		C.vertex_color(vo, 0, vo.nb, set, r, g, b, a)
+		C.vertex_color(vo, 0, vo.nb - 1, set, r, g, b, a)
 	end,
-	append = C.vertex_append,
+	alphaAll = function(vo, a)
+		C.vertex_alpha(vo, 0, vo.nb - 1, a)
+	end,
+	append = function(vo, srcvo, start, stop)
+		local shift = C.vertex_append(vo, srcvo, start and stop and true or false)
+		if start and stop then
+			return start + shift, stop + shift
+		end
+	end,
 	clear = C.vertex_clear,
+	clone = function(vo)
+		local nvo = ffi.new("lua_vertexes")
+		C.vertex_clone(nvo, vo)
+		return nvo
+	end,
+	cloneByAppend = function(vo, start, stop)
+		local nvo = core.vo.new()
+		start, stop = nvo:append(vo, start, stop)
+		return nvo, start, stop
+	end,
 	toScreen = function(vo, x, y, tex, r, g, b, a)
 		if tex == true then tex = 0 end
 		if tex == nil then tex = -1 end
@@ -158,5 +186,9 @@ vo.new = function(size, texture, kind, mode)
 	C.vertex_new(vo, size or 24, texture or 0, kind or "VO_QUADS", mode or "VERTEX_DYNAMIC")
 	return vo
 end
+
+vo.enablePipe = C.renderer_pipe_start
+vo.disablePipe = C.renderer_pipe_stop
+vo.flushPipe = C.renderer_pipe_flush
 
 -- C.exit(0)

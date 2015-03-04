@@ -34,24 +34,22 @@ function _M:init(t)
 end
 
 function _M:generate()
-	self.top = self:getUITexture("ui/scrollbar_top.png")
-	self.middle = self:getUITexture("ui/scrollbar.png")
-	self.bottom = self:getUITexture("ui/scrollbar_bottom.png")
-	self.sel = self:getUITexture("ui/scrollbar-sel.png")
+	self.top = self:getAtlasTexture("ui/scrollbar_top.png")
+	self.middle = self:getAtlasTexture("ui/scrollbar.png")
+	self.bottom = self:getAtlasTexture("ui/scrollbar_bottom.png")
+	self.sel = self:getAtlasTexture("ui/scrollbar-sel.png")
 	self.w = self.middle.w
 	self.pos = util.minBound(self.pos, 0, self.max)
 end
 
 function _M:display(x, y)
-	self.top.t:toScreenFull(x, y, self.top.w, self.top.h, self.top.tw, self.top.th)
-	self.bottom.t:toScreenFull(x, y + self.h - self.bottom.h, self.bottom.w, self.bottom.h, self.bottom.tw, self.bottom.th)
-	self.middle.t:toScreenFull(x, y + self.top.h, self.middle.w, self.h - self.top.h - self.bottom.h, self.middle.tw, self.middle.th)
+	self:uiTexture(self.top, x, y, self.top.w, self.top.h)
+	self:uiTexture(self.bottom, x, y + self.h - self.bottom.h, self.bottom.w, self.bottom.h)
+	self:uiTexture(self.middle, x, y + self.top.h, self.middle.w, self.h - self.top.h - self.bottom.h)
 	local max = math.max(self.max, 1)
 	local pos = util.minBound(self.pos, 0, max)
-	if self.inverse then
-		y = y + self.h - (pos / max) * (self.h - self.bottom.h - self.top.h - self.sel.h) - self.bottom.h - self.sel.h
-	else
-		y = y + (pos / max) * (self.h - self.bottom.h - self.top.h - self.sel.h) + self.top.h
+	if self.inverse then y = y + self.h - (pos / max) * (self.h - self.bottom.h - self.top.h - self.sel.h) - self.bottom.h - self.sel.h
+	else y = y + (pos / max) * (self.h - self.bottom.h - self.top.h - self.sel.h) + self.top.h
 	end
-	self.sel.t:toScreenFull(x - (self.sel.w - self.top.w) * 0.5, y, self.sel.w, self.sel.h, self.sel.tw, self.sel.th)
+	self:uiTexture(self.sel, x - (self.sel.w - self.top.w) * 0.5, y, self.sel.w, self.sel.h)
 end

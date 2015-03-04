@@ -33,6 +33,9 @@ bool use_modern_gl = TRUE;
 
 static RendererState *state = NULL;
 
+// A pipe of quad optimization
+lua_vertexes *renderer_quad_pipe = NULL;
+
 // A static cache of element positions; quad VO only ahve quads so we can cache those
 static GLuint *vbo_elements_data = NULL;
 static GLuint vbo_elements = 0;
@@ -85,6 +88,8 @@ static void vertexes_renderer_update(vertexes_renderer *vr, lua_vertexes *vx) {
 }
 
 void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x, float y, float r, float g, float b, float a) {
+	if (vx != renderer_quad_pipe && renderer_quad_pipe->nb) renderer_pipe_flush();
+
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	state->translate(x, y, 0);
 
@@ -110,7 +115,7 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		}
 
 		if (shader->p_mvp != -1) {
-			state->updateMVP();
+			state->updateMVP(vx != renderer_quad_pipe);
 			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
 		}
 
@@ -186,9 +191,79 @@ void renderer_pop_ortho_state() {
 	state->popOrthoState();
 }
 
+void renderer_push_cutoff(float x, float y, float w, float h) {
+	state->pushCutoff(x, y, w, h);
+}
+void renderer_pop_cutoff() {
+	state->popCutoff();
+}
+
+void renderer_pipe_draw_quad(
+	GLuint tex,
+	float x1, float y1, float u1, float v1, 
+	float x2, float y2, float u2, float v2, 
+	float x3, float y3, float u3, float v3, 
+	float x4, float y4, float u4, float v4, 
+	float r, float g, float b, float a
+) {
+	if (state->quad_pipe_enabled) {
+		if (renderer_quad_pipe->tex != tex) {
+			renderer_pipe_flush();
+		}
+
+		// Transform based on the current world mat
+		vec4 p1 = state->pipe_world * vec4(x1, y1, 0, 1);
+		vec4 p2 = state->pipe_world * vec4(x2, y2, 0, 1);
+		vec4 p3 = state->pipe_world * vec4(x3, y3, 0, 1);
+		vec4 p4 = state->pipe_world * vec4(x4, y4, 0, 1);
+
+		renderer_quad_pipe->tex = tex;
+		vertex_add_quad(renderer_quad_pipe,
+			p1.x, p1.y, u1, v1,
+			p2.x, p2.y, u2, v2,
+			p3.x, p3.y, u3, v3,
+			p4.x, p4.y, u4, v4,
+			r, g, b, a
+		);
+	} else {
+		vertex_clear(renderer_quad_pipe);
+		vertex_add_quad(renderer_quad_pipe,
+			x1, y1, u1, v1,
+			x2, y2, u2, v2,
+			x3, y3, u3, v3,
+			x4, y4, u4, v4,
+			r, g, b, a
+		);
+		vertex_toscreen(renderer_quad_pipe, 0, 0, tex, 1, 1, 1, 1);
+		vertex_clear(renderer_quad_pipe);
+	}
+}
+
+void renderer_pipe_start() {
+	if (!use_modern_gl) return;
+	state->enableQuadPipe(true);
+}
+
+void renderer_pipe_flush() {
+	if (!use_modern_gl) return;
+	if (renderer_quad_pipe->nb > 0) {
+		vertex_toscreen(renderer_quad_pipe, 0, 0, -1, 1, 1, 1, 1);
+		vertex_clear(renderer_quad_pipe);
+		renderer_quad_pipe->tex = 0;
+	}
+}
+
+void renderer_pipe_stop() {
+	if (!use_modern_gl) return;
+	renderer_pipe_flush();
+	state->enableQuadPipe(false);
+}
+
 void renderer_init(int w, int h) {
 	if (!vbo_elements) glGenBuffers(1, &vbo_elements);
 
 	if (state) delete state;
 	state = new RendererState(w, h);
+
+	renderer_quad_pipe = vertex_new(NULL, 14, 0, VO_QUADS, VERTEX_STREAM);
 }

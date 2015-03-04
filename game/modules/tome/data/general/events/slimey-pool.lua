@@ -44,8 +44,9 @@ local grids = core.fov.circle_grids(x, y, 1, function(_, lx, ly) return not game
 for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 	g.on_stand = g.on_stand or on_stand
-	if g.on_stand == on_stand and g.type == "floor" and not g.special_minimap then
-		g.name = g.name .. " (slimey)" g.special_minimap = colors.DARK_SEA_GREEN
+	if g.on_stand == on_stand and g.type == "floor" then
+		g.name = g.name .. " (slimey)"
+		if not g.special_minimap then g.special_minimap = colors.DARK_SEA_GREEN end
 	end
 	g.always_remember = true
 	game.zone:addEntity(game.level, g, "terrain", x, y)

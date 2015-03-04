@@ -286,7 +286,7 @@ You feel good!]],
 		f.y = game.player.y
 		for pmem, def in pairs(game.party.members) do
 			game.level.map:remove(pmem.x, pmem.y, engine.Map.ACTOR)
-			game.level:removeEntity(pmem)
+			if game.level:hasEntity(pmem) then game.level:removeEntity(pmem) end
 		end
 		game.party:addMember(f, {temporary_level=1, control="full"})
 		game.party:setPlayer(f, true)
@@ -301,11 +301,6 @@ You feel good!]],
 		local danger = game.level.data.danger
 		game.level:addEntity(self.summoner)
 		game:onTickEnd(function()
-			for pmem, def in pairs(game.party.members) do
-				if pmem ~= self then
-					game.level:addEntity(pmem, nil, true)
-				end
-			end
 			game:changeLevel(game.level.data.caldera_lev, "noxious-caldera", {direct_switch=true})
 			for pmem, def in pairs(game.party.members) do
 				if pmem.caldera_x and pmem.caldera_y then

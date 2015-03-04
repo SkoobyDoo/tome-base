@@ -623,6 +623,7 @@ static int program_use(lua_State *L)
 	if (active)
 	{
 		tglUseProgramObject(p->shader);
+		current_shader = p;
 		// GLfloat t = SDL_GetTicks();
 		GLfloat t = cur_frame_tick;
 		if (p->p_tick != -1) glUniform1fv(p->p_tick, 1, &t);

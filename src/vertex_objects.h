@@ -50,7 +50,6 @@ typedef struct
 	render_mode mode;
 	vertex_mode kind;
 	int nb, size;
-	int next_id;
 	int *ids;
 
 	vertex_data *vertices;
@@ -63,6 +62,7 @@ typedef struct
 extern int luaopen_vo(lua_State *L);
 
 extern lua_vertexes* vertex_new(lua_vertexes *vx, int size, unsigned int tex, vertex_mode kind, render_mode mode);
+extern lua_vertexes* vertex_clone(lua_vertexes *vx, lua_vertexes *srcvx);
 extern void vertex_free(lua_vertexes *vx, bool self_delete);
 extern void update_vertex_size(lua_vertexes *vx, int size);
 extern int vertex_find(lua_vertexes *vx, int id);
@@ -81,9 +81,10 @@ extern int vertex_add_quad(lua_vertexes *vx,
 extern void vertex_update_quad_texture(lua_vertexes *L, int i, float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4);
 extern void vertex_translate(lua_vertexes *vx, int start, int nb, float mx, float my);
 extern void vertex_color(lua_vertexes *vx, int start, int nb, bool set, float r, float g, float b, float a);
+extern void vertex_alpha(lua_vertexes *vx, int start, int stop, float a);
 extern void vertex_remove(lua_vertexes *vx, int start, int nb);
 extern void vertex_clear(lua_vertexes *vx);
-extern void vertex_append(lua_vertexes *vx, lua_vertexes *srcvx);
+extern int vertex_append(lua_vertexes *vx, lua_vertexes *srcvx, bool newids);
 extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, float g, float b, float a);
 
 #include "renderer.h"
