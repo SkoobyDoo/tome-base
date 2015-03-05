@@ -1990,31 +1990,33 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			if rng.percent(dam) then
-			local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
-			if not src:checkHit(check, target:combatMentalResist()) then return end
-			local effect = rng.range(1, 3)
-			local name
-			if effect == 1 then
-				-- confusion
-				if target:canBe("confusion") and not target:hasEffect(target.EFF_GLOOM_CONFUSED) then
-					target:setEffect(target.EFF_GLOOM_CONFUSED, 2, {power=25, no_ct_effect=true} )
+				local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
+				if not src:checkHit(check, target:combatMentalResist()) then return end
+				local effect = rng.range(1, 3)
+				local name
+				if effect == 1 then
+					-- confusion
+					if target:canBe("confusion") and not target:hasEffect(target.EFF_GLOOM_CONFUSED) then
+						target:setEffect(target.EFF_GLOOM_CONFUSED, 2, {power=25, no_ct_effect=true} )
+					end
+					name = "confusion"
+				elseif effect == 2 then
+					-- stun
+					if target:canBe("stun") and not target:hasEffect(target.EFF_GLOOM_STUNNED) then
+						target:setEffect(target.EFF_GLOOM_STUNNED, 2, {no_ct_effect=true})
+					end
+					name = "stun"
+				elseif effect == 3 then
+					-- slow
+					if target:canBe("slow") and not target:hasEffect(target.EFF_GLOOM_SLOW) then
+						target:setEffect(target.EFF_GLOOM_SLOW, 2, {power=0.3, no_ct_effect=true})
+					end
+					name = "slow'"
 				end
-				name = "confusion"
-			elseif effect == 2 then
-				-- stun
-				if target:canBe("stun") and not target:hasEffect(target.EFF_GLOOM_STUNNED) then
-					target:setEffect(target.EFF_GLOOM_STUNNED, 2, {no_ct_effect=true})
-				end
-				name = "stun"
-			elseif effect == 3 then
-				-- slow
-				if target:canBe("slow") and not target:hasEffect(target.EFF_GLOOM_SLOW) then
-					target:setEffect(target.EFF_GLOOM_SLOW, 2, {power=0.3, no_ct_effect=true})
-				end
-				name = "slow'"
+				game:delayedLogDamage(src, target, 0, ("%s<gloom %s>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", name), false)
+			else
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% gloom chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
 			end
-			game:delayedLogDamage(src, target, 0, ("%s<gloom %s>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", name), false)
-		end
 		end
 	end,
 }
@@ -2046,7 +2048,9 @@ newDamageType{
 				local reduction = 15
 				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% damage reduction>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", reduction), false)
 				target:setEffect(target.EFF_ITEM_NUMBING_DARKNESS, 4, {reduce = reduction, apply_power=check, no_ct_effect=true})
-		end
+			else
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% dark numbing chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+			end
 		end
 	end,
 }
@@ -2085,6 +2089,8 @@ newDamageType{
 				--game.logSeen(target, "Time seems to bend and quicken energizing %s!", src.name:capitalize())
 
 				src.turn_procs.item_temporal_energize = 1 + (src.turn_procs.item_temporal_energize or 0)
+		else
+			game:delayedLogDamage(src, target, 0, ("%s<%d%%%% chance to energize>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
 		end
 	end,
 }
@@ -2111,11 +2117,13 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			if rng.percent(dam) then
-			game:delayedLogDamage(src, target, 0, ("%s<30%% armour corrode>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
-			local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
-			--local param = { atk=dam/3, armor=dam/3, defense=dam/3, src=src, apply_power = check, no_ct_effect=true }
-			target:setEffect(target.EFF_ITEM_ACID_CORRODE, 5, {pct = 0.3, no_ct_effect = true, apply_power = check})
-		end
+				game:delayedLogDamage(src, target, 0, ("%s<30%% armour corrode>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+				local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
+				--local param = { atk=dam/3, armor=dam/3, defense=dam/3, src=src, apply_power = check, no_ct_effect=true }
+				target:setEffect(target.EFF_ITEM_ACID_CORRODE, 5, {pct = 0.3, no_ct_effect = true, apply_power = check})
+			else
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% corrode armour chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+			end
 		end
 	end,
 }
@@ -2143,14 +2151,16 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			if rng.percent(dam) then
-			if target:canBe("blind") then
-				game:delayedLogDamage(src, target, 0, ("%s<blinding light>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
-				local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
-				target:setEffect(target.EFF_BLINDED, 4, {apply_power=(check), no_ct_effect=true})
+				if target:canBe("blind") then
+					game:delayedLogDamage(src, target, 0, ("%s<blinding light>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
+					local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
+					target:setEffect(target.EFF_BLINDED, 4, {apply_power=(check), no_ct_effect=true})
+				else
+					--game.logSeen(target, "%s resists the blinding light!", target.name:capitalize())
+				end
 			else
-				--game.logSeen(target, "%s resists the blinding light!", target.name:capitalize())
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% blind chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
 			end
-		end
 		end
 	end,
 }
@@ -2177,13 +2187,15 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			if rng.percent(dam) then	
-			if target:canBe("stun") then
-				game:delayedLogDamage(src, target, 0, ("%s<lightning daze>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
-				local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
-				game:onTickEnd(function() target:setEffect(target.EFF_DAZED, 4, {apply_power=check, no_ct_effect=true}) end) --onTickEnd to avoid breaking the daze
+			if rng.percent(dam) then
+				game:delayedLogDamage(src, target, 0, ("%s<lightning daze>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)	
+				if target:canBe("stun") then
+					local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
+					game:onTickEnd(function() target:setEffect(target.EFF_DAZED, 4, {apply_power=check, no_ct_effect=true}) end) --onTickEnd to avoid breaking the daze
+				end
+			else
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% daze chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
 			end
-		end
 		end
 	end,
 }
@@ -2209,12 +2221,16 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			if rng.percent(dam) and target:canBe("disease") then
-			game:delayedLogDamage(src, target, 0, ("%s<blight disease>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
-			local check = math.max(src:combatSpellpower(), src:combatMindpower(), src:combatAttack())
-			local disease_power = math.min(30, dam / 2)
-			target:setEffect(target.EFF_ITEM_BLIGHT_ILLNESS, 5, {reduce = disease_power})
-		end
+			if rng.percent(dam) then
+				if target:canBe("disease") then
+					game:delayedLogDamage(src, target, 0, ("%s<blight disease>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
+					local check = math.max(src:combatSpellpower(), src:combatMindpower(), src:combatAttack())
+					local disease_power = math.min(30, dam / 2)
+					target:setEffect(target.EFF_ITEM_BLIGHT_ILLNESS, 5, {reduce = disease_power})
+				end
+			else
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% disease chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+			end
 		end
 	end,
 }
@@ -2269,8 +2285,8 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			game:delayedLogDamage(src, target, 0, ("%s<%d%%%% slow>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
-			target:setEffect(target.EFF_SLOW, 3, {power= math.min(60, dam / 100), no_ct_effect=true})
---			target:setEffect(target.EFF_SLOW, 3, {power= math.min(0.6, dam / 100), no_ct_effect=true})
+--			target:setEffect(target.EFF_SLOW, 3, {power= math.min(60, dam / 100), no_ct_effect=true})
+			target:setEffect(target.EFF_SLOW, 3, {power= math.min(0.6, dam / 100), no_ct_effect=true})
 		end
 	end,
 }
@@ -2298,9 +2314,11 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			if rng.percent(dam) then
-			game:delayedLogDamage(src, target, 0, ("%s<%d%%%% scouring>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", 20), false)
-			target:setEffect(target.EFF_ITEM_ANTIMAGIC_SCOURED, 3, {pct = 0.2, no_ct_effect=true})
-		end
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% scouring>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", 20), false)
+				target:setEffect(target.EFF_ITEM_ANTIMAGIC_SCOURED, 3, {pct = 0.2, no_ct_effect=true})
+			else
+				game:delayedLogDamage(src, target, 0, ("%s<%d%%%% scour chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+			end
 		end
 	end,
 }
@@ -3230,7 +3248,10 @@ newDamageType{
 		local target = game.level.map(x, y, engine.Map.ACTOR)
 		if not target then return end
 		if game.party:hasMember(src) and game.party:findMember{type="garkul spirit"} then return end
-		if not rng.percent(dam) then return end
+		if not rng.percent(dam) then
+			game:delayedLogDamage(src, target, 0, ("%s<%d%%%% orc summon chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+			return
+		end
 
 		game:delayedLogDamage(src, target, 0, ("%s<orc summon>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
 
