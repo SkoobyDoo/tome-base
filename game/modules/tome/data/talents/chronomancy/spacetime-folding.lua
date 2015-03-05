@@ -397,7 +397,7 @@ newTalent{
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 4,
-	tactical = { ESCAPE = 2, DEBUFF = 2 },
+	tactical = { ESCAPE = 2, DISABLE = 2 },
 	range = function(self, t) return self:callTalent(self.T_WARP_MINES, "getRange") or 5 end,
 	radius = 3,
 	getTeleport = function(self, t) return math.floor(self:combatTalentScale(t, 8, 16)) end,
