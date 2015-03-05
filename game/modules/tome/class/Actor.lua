@@ -5757,6 +5757,7 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	for _, tid in ipairs(self:sustainsFilter(t)) do
 		objects[#objects + 1] = {"talent", tid}
 	end
+	local nbr = 0
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
@@ -5764,8 +5765,10 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 			else
 				self:forceUseTalent(obj[2], {ignore_energy=true})
 			end
+			nbr = nbr + 1
 		end
 	end
+	return nbr
 end
 
 function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
@@ -5777,6 +5780,7 @@ function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
 	for _, tid in ipairs(susts) do
 		objects[#objects + 1] = {"talent", tid}
 	end
+	local nbr = 0
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
@@ -5784,8 +5788,10 @@ function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
 			else
 				self:forceUseTalent(obj[2], {ignore_energy=true})
 			end
+			nbr = nbr + 1
 		end
 	end
+	return nbr
 end
 
 --- Randomly reduce talent cooldowns based on a filter
