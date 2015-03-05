@@ -3230,8 +3230,9 @@ newDamageType{
 		local target = game.level.map(x, y, engine.Map.ACTOR)
 		if not target then return end
 		if game.party:hasMember(src) and game.party:findMember{type="garkul spirit"} then return end
-		game:delayedLogDamage(src, target, 0, ("%s<%d%%%% orc summon chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
 		if not rng.percent(dam) then return end
+
+		game:delayedLogDamage(src, target, 0, ("%s<orc summon>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
 
 		-- Find space
 		local x, y = util.findFreeGrid(src.x, src.y, 5, true, {[engine.Map.ACTOR]=true})
