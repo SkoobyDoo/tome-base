@@ -1085,6 +1085,40 @@ static int sdl_texture_toscreen_pipe(lua_State *L)
 	return 0;
 }
 
+static int sdl_texture_toscreen_pipe_triangle(lua_State *L)
+{
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+	int x1 = luaL_checknumber(L, 2);
+	int y1 = luaL_checknumber(L, 3);
+	int x2 = luaL_checknumber(L, 4);
+	int y2 = luaL_checknumber(L, 5);
+	int x3 = luaL_checknumber(L, 6);
+	int y3 = luaL_checknumber(L, 7);
+	GLfloat u1 = luaL_checknumber(L, 8);
+	GLfloat u2 = luaL_checknumber(L, 9);
+	GLfloat v1 = luaL_checknumber(L, 10);
+	GLfloat v2 = luaL_checknumber(L, 11);
+	float r = 1, g = 1, b = 1, a = 1;
+	if (lua_isnumber(L, 12))
+	{
+		r = luaL_checknumber(L, 12);
+		g = luaL_checknumber(L, 13);
+		b = luaL_checknumber(L, 14);
+		a = luaL_checknumber(L, 15);
+	}
+
+	renderer_pipe_draw_quad(
+		t->tex,
+		x1, y1, u1, v1,
+		x1, y1, u1, v1,
+		x2, y2, u2, v2,
+		x3, y3, u1, v2,
+		r, g, b, a
+	);
+
+	return 0;
+}
+
 static int gl_scale(lua_State *L)
 {
 	if (lua_isnumber(L, 1))
@@ -2064,6 +2098,7 @@ static const struct luaL_Reg sdl_texture_reg[] =
 	{"toScreenFull", sdl_texture_toscreen_full},
 	{"toScreenPrecise", sdl_texture_toscreen_precise},
 	{"toScreenPipe", sdl_texture_toscreen_pipe},
+	{"toScreenPipeTriangle", sdl_texture_toscreen_pipe_triangle},
 	{"toScreenHighlightHex", sdl_texture_toscreen_highlight_hex},
 	{"makeOutline", sdl_texture_outline},
 	{"toSurface", gl_texture_to_sdl},

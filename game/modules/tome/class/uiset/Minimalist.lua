@@ -1371,57 +1371,59 @@ function _M:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale
 
 		self.tbuff[eff_id..":"..dur..":"..charges] = {eff_id, "tbuff"..eff_id, function(x, y)
 			uiQuad(x+4, y+4, 32, 32, 0, 0, 0, 255)
-			e.display_entity:toScreen(self.hotkeys_display_icons.tiles, x+4, y+4, 32, 32)
-			if e.get_fractional_percent then
-				core.display.drawQuadPart(x +4 , y + 4, 32, 32, e.get_fractional_percent(self, p), 128, 128, 128, 200)
-			end
-			UI:drawFrame(self.buffs_base, x, y, icon[1], icon[2], icon[3], 1)
+			core.vo.atPipeEnd(function()
+				e.display_entity:toScreen(self.hotkeys_display_icons.tiles, x+4, y+4, 32, 32)
+				if e.get_fractional_percent then
+					core.display.drawQuadPart(x +4 , y + 4, 32, 32, e.get_fractional_percent(self, p), 128, 128, 128, 200)
+				end
+				UI:drawFrame(self.buffs_base, x, y, icon[1], icon[2], icon[3], 1)
 
-			if txt1 and not txt2 then
-				if shader then
-					shader:use(true)
-					shader:uniOutlineSize(1, 1)
-					shader:uniTextSize(font1:getAtlasSize())
-				else
-					txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16, nil, 0, 0, 0, 0.7)
+				if txt1 and not txt2 then
+					if shader then
+						shader:use(true)
+						shader:uniOutlineSize(1, 1)
+						shader:uniTextSize(font1:getAtlasSize())
+					else
+						txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16, nil, 0, 0, 0, 0.7)
+					end
+					txt1.vo:toScreen(x+4 + 16, y+4 + 16)				
+				elseif not txt1 and txt2 then
+					if shader then
+						shader:use(true)
+						shader:uniOutlineSize(1, 1)
+						shader:uniTextSize(font2:getAtlasSize())
+					else
+						txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
+					end
+					txt2.vo:toScreen(x+4, y+4 + 16+5)
+				elseif txt1 and txt2 then
+					if shader then
+						shader:use(true)
+						shader:uniOutlineSize(1, 1)
+						shader:uniTextSize(font1:getAtlasSize())
+					else
+						txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16-5, nil, 0, 0, 0, 0.7)
+					end
+					txt1.vo:toScreen(x+4 + 16, y+4 + 16-5)
+					
+					if shader then
+						shader:uniOutlineSize(1, 1)
+						shader:uniTextSize(font2:getAtlasSize())
+					else
+						txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
+					end
+					txt2.vo:toScreen(x+4+2, y+4+2 + 16+5)				
 				end
-				txt1.vo:toScreen(x+4 + 16, y+4 + 16)				
-			elseif not txt1 and txt2 then
-				if shader then
-					shader:use(true)
-					shader:uniOutlineSize(1, 1)
-					shader:uniTextSize(font2:getAtlasSize())
-				else
-					txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
-				end
-				txt2.vo:toScreen(x+4, y+4 + 16+5)
-			elseif txt1 and txt2 then
-				if shader then
-					shader:use(true)
-					shader:uniOutlineSize(1, 1)
-					shader:uniTextSize(font1:getAtlasSize())
-				else
-					txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16-5, nil, 0, 0, 0, 0.7)
-				end
-				txt1.vo:toScreen(x+4 + 16, y+4 + 16-5)
-				
-				if shader then
-					shader:uniOutlineSize(1, 1)
-					shader:uniTextSize(font2:getAtlasSize())
-				else
-					txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
-				end
-				txt2.vo:toScreen(x+4+2, y+4+2 + 16+5)				
-			end
 
-			if shader and (txt1 or txt2) then shader:use(false) end
+				if shader and (txt1 or txt2) then shader:use(false) end
 
-			if flash > 0 then
-				if e.status ~= "detrimental" then uiQuad(x+4, y+4, 32, 32, 0, 255, 0, 170 - flash * 30)
-				else uiQuad(x+4, y+4, 32, 32, 255, 0, 0, 170 - flash * 30)
+				if flash > 0 then
+					if e.status ~= "detrimental" then uiQuad(x+4, y+4, 32, 32, 0, 255, 0, 170 - flash * 30)
+					else uiQuad(x+4, y+4, 32, 32, 255, 0, 0, 170 - flash * 30)
+					end
+					flash = flash - 1
 				end
-				flash = flash - 1
-			end
+			end)
 		end, desc_fct}
 	end
 
@@ -1498,9 +1500,11 @@ function _M:displayBuffs(scale, bx, by)
 					end
 					self.pbuff[tid] = {tid, "pbuff"..tid, function(x, y)
 						uiQuad(x+4, y+4, 32, 32, 0, 0, 0, 255)
-						t.display_entity:toScreen(self.hotkeys_display_icons.tiles, x+4, y+4, 32, 32)
-						if overlay then overlay.fct(x, y, overlay) end
-						UI:drawFrame(self.buffs_base, x, y, frames_colors.sustain[1], frames_colors.sustain[2], frames_colors.sustain[3], 1)
+						core.vo.atPipeEnd(function()
+							t.display_entity:toScreen(self.hotkeys_display_icons.tiles, x+4, y+4, 32, 32)
+							if overlay then overlay.fct(x, y, overlay) end
+							UI:drawFrame(self.buffs_base, x, y, frames_colors.sustain[1], frames_colors.sustain[2], frames_colors.sustain[3], 1)
+						end)
 					end, desc_fct}
 				end
 
@@ -1692,53 +1696,55 @@ function _M:displayPlayer(scale, bx, by)
 		uiTexture(pf_encumber, 162, 38, pf_encumber.w, pf_encumber.h, 1, 1, 1, glow / 255)
 	end
 
-	-- core.display.glCutoff(15, 15, 54, 54)
-	player:toScreen(nil, 22, 22, 40, 40)
-	-- core.display.glCutoff()
-
 	local cur_exp, max_exp = player.exp, player:getExpChart(player.level+1)
 	local p = math.min(1, math.max(0, cur_exp / max_exp))
 	uiTexture(pf_exp, 117, 85, pf_exp.w * p, pf_exp.h)
 
-	if not self.res.exp or self.res.exp.vc ~= p then
-		self.res.exp = {
-			vc = p,
-			cur = sfont_sha:drawVO(nil, ("%d%%"):format(p * 100), {r=255, g=255, b=255}),
-		}
-	end
-	local dt = self.res.exp.cur
-	dt.vo:toScreen(2+87 - dt.w / 2, 2+89 - dt.h / 2, nil, 0, 0, 0, 0.7)
-	dt.vo:toScreen(87 - dt.w / 2, 89 - dt.h / 2)
+	core.vo.atPipeEnd(function()
+		-- core.display.glCutoff(15, 15, 54, 54)
+		player:toScreen(nil, 22, 22, 40, 40)
+		-- core.display.glCutoff()
 
-	if not self.res.money or self.res.money.vc ~= player.money then
-		self.res.money = {
-			vc = player.money,
-			cur = font_sha:drawVO(nil, ("%d"):format(player.money), {r=255, g=215, b=0}),
-		}
-	end
-	local dt = self.res.money.cur
-	dt.vo:toScreen(2+112 - dt.w / 2, 2+43, nil, 0, 0, 0, 0.7)
-	dt.vo:toScreen(112 - dt.w / 2, 43)
+		if not self.res.exp or self.res.exp.vc ~= p then
+			self.res.exp = {
+				vc = p,
+				cur = sfont_sha:drawVO(nil, ("%d%%"):format(p * 100), {r=255, g=255, b=255}),
+			}
+		end
+		local dt = self.res.exp.cur
+		dt.vo:toScreen(2+87 - dt.w / 2, 2+89 - dt.h / 2, nil, 0, 0, 0, 0.7)
+		dt.vo:toScreen(87 - dt.w / 2, 89 - dt.h / 2)
 
-	if not self.res.pname or self.res.pname.vc ~= player.name then
-		self.res.pname = {
-			vc = player.name,
-			cur = font_sha:drawVO(nil, player.name, {r=255, g=255, b=255}),
-		}
-	end
-	local dt = self.res.pname.cur
-	dt.vo:toScreen(2+166, 2+13, nil, 0, 0, 0, 0.7)
-	dt.vo:toScreen(166, 13)
+		if not self.res.money or self.res.money.vc ~= player.money then
+			self.res.money = {
+				vc = player.money,
+				cur = font_sha:drawVO(nil, ("%d"):format(player.money), {r=255, g=215, b=0}),
+			}
+		end
+		local dt = self.res.money.cur
+		dt.vo:toScreen(2+112 - dt.w / 2, 2+43, nil, 0, 0, 0, 0.7)
+		dt.vo:toScreen(112 - dt.w / 2, 43)
 
-	if not self.res.plevel or self.res.plevel.vc ~= player.level then
-		self.res.plevel = {
-			vc = player.level,
-			cur = font_sha:drawVO(nil, "Lvl "..player.level, {r=255, g=255, b=255}),
-		}
-	end
-	local dt = self.res.plevel.cur
-	dt.vo:toScreen(2+253, 2+46, nil, 0, 0, 0, 0.7)
-	dt.vo:toScreen(253, 46)
+		if not self.res.pname or self.res.pname.vc ~= player.name then
+			self.res.pname = {
+				vc = player.name,
+				cur = font_sha:drawVO(nil, player.name, {r=255, g=255, b=255}),
+			}
+		end
+		local dt = self.res.pname.cur
+		dt.vo:toScreen(2+166, 2+13, nil, 0, 0, 0, 0.7)
+		dt.vo:toScreen(166, 13)
+
+		if not self.res.plevel or self.res.plevel.vc ~= player.level then
+			self.res.plevel = {
+				vc = player.level,
+				cur = font_sha:drawVO(nil, "Lvl "..player.level, {r=255, g=255, b=255}),
+			}
+		end
+		local dt = self.res.plevel.cur
+		dt.vo:toScreen(2+253, 2+46, nil, 0, 0, 0, 0.7)
+		dt.vo:toScreen(253, 46)
+	end)
 
 	if not self.locked then
 		uiTexture(move_handle, self.mhandle_pos.player.x, self.mhandle_pos.player.y)
@@ -1787,13 +1793,15 @@ function _M:displayMinimap(scale, bx, by)
 	if game.player.x then game.minimap_scroll_x, game.minimap_scroll_y = util.bound(game.player.x - 25, 0, map.w - 50), util.bound(game.player.y - 25, 0, map.h - 50)
 	else game.minimap_scroll_x, game.minimap_scroll_y = 0, 0 end
 
-	map:minimapDisplay(50 - mm_bg_x, 30 - mm_bg_y, game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 0.85)
-	game.zone_name_s:toScreenFull(
-		(mm_bg.w - game.zone_name_w) / 2,
-		0,
-		game.zone_name_w, game.zone_name_h,
-		game.zone_name_tw, game.zone_name_th
-	)
+	core.vo.atPipeEnd(function()
+		map:minimapDisplay(50 - mm_bg_x, 30 - mm_bg_y, game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 0.85)
+		game.zone_name_s:toScreenFull(
+			(mm_bg.w - game.zone_name_w) / 2,
+			0,
+			game.zone_name_w, game.zone_name_h,
+			game.zone_name_tw, game.zone_name_th
+		)
+	end)
 
 	uiTexture(mm_transp, 50 - mm_bg_x, 30 - mm_bg_y)
 	uiTexture(mm_comp, 169, 178)
@@ -1845,9 +1853,11 @@ function _M:displayGameLog(scale, bx, by)
 	end
 
 	local ox, oy = log.display_x, log.display_y
-	log.display_x, log.display_y = 0, 0
-	log:toScreen()
-	log.display_x, log.display_y = ox, oy
+	core.vo.atPipeEnd(function()
+		log.display_x, log.display_y = 0, 0
+		log:toScreen()
+		log.display_x, log.display_y = ox, oy
+	end)
 
 	if not self.locked then
 		uiTexture(move_handle, util.getval(self.mhandle_pos.gamelog.x, self), util.getval(self.mhandle_pos.gamelog.y, self))
@@ -1885,9 +1895,11 @@ function _M:displayChatLog(scale, bx, by)
 	end
 
 	local ox, oy = log.display_x, log.display_y
-	log.display_x, log.display_y = 0, 0
-	log:toScreen()
-	log.display_x, log.display_y = ox, oy
+	core.vo.atPipeEnd(function()
+		log.display_x, log.display_y = 0, 0
+		log:toScreen()
+		log.display_x, log.display_y = ox, oy
+	end)
 
 	if not self.locked then
 		uiTexture(move_handle, util.getval(self.mhandle_pos.chatlog.x, self), util.getval(self.mhandle_pos.chatlog.y, self))
@@ -1933,10 +1945,12 @@ function _M:displayHotkeys(scale, bx, by)
 	uiTexture(hk1, -hk7.w, self.places.hotkeys.h, hk1.w, hk1.h)
 	uiTexture(hk3, self.places.hotkeys.w, self.places.hotkeys.h, hk3.w, hk3.h)
 
-	hkeys.orient = self.sizes.hotkeys and self.sizes.hotkeys.orient or "down"
-	hkeys.display_x, hkeys.display_y = 0, 0
-	hkeys:toScreen()
-	hkeys.display_x, hkeys.display_y = ox, oy
+	core.vo.atPipeEnd(function()
+		hkeys.orient = self.sizes.hotkeys and self.sizes.hotkeys.orient or "down"
+		hkeys.display_x, hkeys.display_y = 0, 0
+		hkeys:toScreen()
+		hkeys.display_x, hkeys.display_y = ox, oy
+	end)
 
 	if not self.locked then
 		uiTexture(move_handle, util.getval(self.mhandle_pos.hotkeys.x, self), util.getval(self.mhandle_pos.hotkeys.y, self))
@@ -2115,7 +2129,7 @@ function _M:display(nb_keyframes)
 	if self.no_ui then return end
 
 core.display.countDraws()
-core.vo.enablePipe()
+	core.vo.enablePipe()
 
 	Map.viewport_padding_4 = 0
 	Map.viewport_padding_6 = 0

@@ -29,6 +29,7 @@
 require "engine.class"
 local ffi = require "ffi"
 local C = ffi.C
+local glMatrix = core.display.glMatrix
 
 ffi.cdef[[
 typedef float GLfloat;
@@ -98,6 +99,9 @@ extern void vertex_toscreen(lua_vertexes *vx, int x, int y, int tex, float r, fl
 extern void renderer_pipe_start();
 extern void renderer_pipe_stop();
 extern void renderer_pipe_flush();
+extern bool renderer_pipe_is_active();
+extern void renderer_pipe_push_at_end();
+extern void renderer_pipe_pop_at_end();
 ]]
 
 local VERTEX_QUAD_SIZE = C.vertex_quad_size()
@@ -187,8 +191,34 @@ vo.new = function(size, texture, kind, mode)
 	return vo
 end
 
-vo.enablePipe = C.renderer_pipe_start
-vo.disablePipe = C.renderer_pipe_stop
+local on_pipe_end = {}
+
+vo.enablePipe = function()
+	on_pipe_end = {}
+	C.renderer_pipe_start()
+end
+vo.disablePipe = function()
+	C.renderer_pipe_stop()
+
+	local ope = on_pipe_end
+	on_pipe_end = {}
+
+	if #ope > 0 then
+		vo.enablePipe()
+		glMatrix(true)
+		for i = 1, #ope do
+			C.renderer_pipe_pop_at_end()
+			ope[i]()
+		end
+		glMatrix(false)
+		vo.disablePipe()
+	end
+end
+vo.atPipeEnd = function(f)
+	if not C.renderer_pipe_is_active() then return f() end
+	C.renderer_pipe_push_at_end()
+	on_pipe_end[#on_pipe_end+1] = f
+end
 vo.flushPipe = C.renderer_pipe_flush
 
 -- C.exit(0)

@@ -155,12 +155,12 @@ function _M:checkTileset(image)
 end
 
 function _M:getAtlasTexture(file)
-	if self.atlas_cache[file] then return self.atlas_cache[file] end
 	local uifile = (self.ui ~= "" and self.ui.."-" or "")..file
+	if self.atlas_cache[uifile] then return self.atlas_cache[uifile] end
 	local ts, fx, fy, tsx, tsy, tw, th = self:checkTileset(uifile)
 	if ts then
 		local t = {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
-		self.atlas_cache[file] = t
+		self.atlas_cache[uifile] = t
 		return t
 	else
 		return self:getUITexture(file)
@@ -176,6 +176,42 @@ end
 
 function _M:uiTexture(tex, x, y, w, h, r, g, b, a)
 	tex.t:toScreenPipe(x, y, w, h, tex.tx, tex.tx+tex.tw, tex.ty, tex.ty+tex.th, r, g, b, a)
+end
+
+function _M:uiTexturePart(tex, x1, y1, w, h, angle, r, g, b, a)
+	local x2 = w + x1
+	local y2 = h + y1
+	local midx, midy = x1 + w / 2, y1 + h / 2
+	local midx1, midy1 = math.floor(midx), math.floor(midy)
+	local midx2, midy2 = math.ceil(midx), math.ceil(midy)
+	local hw, hh = w / 2, h / 2
+	angle = util.bound(angle, 0, 360)
+	if angle == 360 then return end
+
+	local i = 4
+	local quadrant = math.floor(angle / 45)
+	local rad = (angle - (45 * quadrant)) * math.pi / 180
+	local s = math.sin(rad)
+
+	local function tri(x1, y1, x2, y2)
+		tex.t:toScreenPipeTriangle(midx, midy, x1, y1, x2, y2, tex.tx, tex.tx+tex.tw, tex.ty, tex.ty+tex.th, r, g, b, a)
+	end
+
+	if quadrant >= 7 then			tri(midx1, y1, x1 + s*hw, y1)
+	elseif (quadrant < 7) then         	tri(midx1, y1, x1, y1) end
+	if quadrant >= 6 and quadrant < 7 then  tri(x1, y1, x1, midy1 - s*hh)
+	elseif (quadrant < 6) then         	tri(x1, y1, x1, midy1) end
+	if quadrant >= 5 and quadrant < 6 then  tri(x1, midy2, x1, y2 - s*hh)
+	elseif (quadrant < 5) then         	tri(x1, midy2, x1, y2) end
+	if quadrant >= 4 and quadrant < 5 then  tri(x1, y2, midx1 - s*hw, y2)
+	elseif (quadrant < 4) then         	tri(x1, y2, midx1, y2) end
+	if quadrant >= 3 and quadrant < 4 then  tri(midx2, y2, x2 - s*hw, y2)
+	elseif (quadrant < 3) then         	tri(midx2, y2, x2, y2) end
+	if quadrant >= 2 and quadrant < 3 then  tri(x2, y2, x2, midy1 + s*hh)
+	elseif (quadrant < 2) then         	tri(x2, y2, x2, midy1) end
+	if quadrant >= 1 and quadrant < 2 then  tri(x2, midy2, x2, y1 + s*hh)
+	elseif (quadrant < 1) then         	tri(x2, midy2, x2, y1) end
+	if quadrant >= 0 and quadrant < 1 then 	tri(x2, y1, midx2 + s*hw, y1) end
 end
 
 function _M:textureToScreen(tex, x, y, r, g, b, a, allow_uid)

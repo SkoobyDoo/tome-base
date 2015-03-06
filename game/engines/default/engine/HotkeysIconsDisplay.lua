@@ -25,6 +25,18 @@ local UI = require "engine.ui.Base"
 
 module(..., package.seeall, class.make)
 
+local function getAtlasTexture(file)
+	local oldui = UI.ui
+	UI.ui = ""
+	local t = UI:getAtlasTexture(file)
+	UI.ui = oldui
+	return t
+end
+local empty_quad = getAtlasTexture("ui/empty-ui.png")
+local function uiQuad(x, y, w, h, r, g, b, a)
+	empty_quad.t:toScreenPipe(x, y, w, h, empty_quad.tx, empty_quad.tx+empty_quad.tw, empty_quad.ty, empty_quad.ty+empty_quad.th, r/255, g/255, b/255, a/255)
+end
+
 function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize, icon_w, icon_h)
 	self.actor = actor
 	if type(bgcolor) ~= "string" then
@@ -41,6 +53,8 @@ function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize, icon_w, icon_h)
 	self.items = {}
 	self.fontname = fontname
 	self.fontsize = fontsize
+	self.textvo = core.vo.new()
+	self.textbigvo = core.vo.new()
 
 	--local fw, fh = core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):getSize()
 	--self.frames = {w=math.floor(fw * icon_w / 64), h=math.floor(fh * icon_h / 64), rw=icon_w / 64, rh=icon_h / 64}
@@ -50,7 +64,6 @@ function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize, icon_w, icon_h)
 --	self.frames.cooldown = { core.display.loadImage("/data/gfx/ui/talent_frame_cooldown.png"):glTexture() }
 --	self.frames.sustain = { core.display.loadImage("/data/gfx/ui/talent_frame_sustain.png"):glTexture() }
 	self.frames.base = UI:makeFrame("ui/icon-frame/frame", icon_w + 8, icon_h + 8)  --doesn't really matter since we pass a different size
-
 
 	self.default_entity = Entity.new{display='?', color=colors.WHITE}
 
@@ -214,18 +227,21 @@ function _M:display()
 				end
 			end
 
-			self.font:setStyle("bold")
-			local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
-			local key = self.font:draw(ks, self.font:size(ks), colors.ANTIQUE_WHITE.r, colors.ANTIQUE_WHITE.g, colors.ANTIQUE_WHITE.b, true)[1]
-			self.font:setStyle("normal")
+			local ks = "#{bold}#"..game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
+			local key = self.font:drawVO(nil, ks, {r=colors.ANTIQUE_WHITE.r, g=colors.ANTIQUE_WHITE.g, b=colors.ANTIQUE_WHITE.b, align_right=true, align_bottom=true, x=x + self.frames.fx + self.icon_w, y=y + self.frames.fy + self.icon_h})
 
 			local gtxt = nil
 			if txt then
-				gtxt = self.fontbig:draw(txt, w, colors.WHITE.r, colors.WHITE.g, colors.WHITE.b, true)[1]
-				gtxt.fw, gtxt.fh = self.fontbig:size(txt)
+				gtxt = self.fontbig:drawVO(nil, txt, {center=true, x=x + self.frames.fx + self.icon_w / 2, y=y + self.frames.fy + self.icon_h / 2})
 			end
 
-			self.items[#self.items+1] = {i=i, x=x, y=y, e=display_entity or self.default_entity, color=color, angle=angle, key=key, gtxt=gtxt, frame=frame, pagesel=lpage==spage}
+			local image = nil
+			if display_entity and display_entity.image then
+				local ts, fx, fy, tw, th, tsx, tsy = self.tiles:get("", 0, 0, 0, 0, 0, 0, display_entity.image, false, false, true)
+				image = {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
+			end
+
+			self.items[#self.items+1] = {i=i, x=x, y=y, image=image, e=display_entity or self.default_entity, color=color, angle=angle, key=key, gtxt=gtxt, frame=frame, pagesel=lpage==spage}
 			self.clics[i] = {x,y,w,h}
 		else
 			local i = i + (12 * (page - 1))
@@ -233,10 +249,8 @@ function _M:display()
 			local color = {190,190,190}
 			local frame = "disabled"
 
-			self.font:setStyle("bold")
-			local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
-			local key = self.font:draw(ks, self.font:size(ks), colors.ANTIQUE_WHITE.r, colors.ANTIQUE_WHITE.g, colors.ANTIQUE_WHITE.b, true)[1]
-			self.font:setStyle("normal")
+			local ks = "#{bold}#"..game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
+			local key = self.font:drawVO(nil, ks, {r=colors.ANTIQUE_WHITE.r, g=colors.ANTIQUE_WHITE.g, b=colors.ANTIQUE_WHITE.b, align_right=true, align_bottom=true, x=x + self.frames.fx + self.icon_w, y=y + self.frames.fy + self.icon_h})
 
 			self.items[#self.items+1] = {show_on_drag=true, i=i, x=x, y=y, e=nil, color=color, angle=angle, key=key, gtxt=nil, frame=frame}
 			self.clics[i] = {x,y,w,h, fake=true}
@@ -264,43 +278,47 @@ function _M:toScreen()
 	self:display()
 	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
 	if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
+	
+	for i = 1, #self.items do
+		local item = self.items[i]
+		if not item.show_on_drag or (game.mouse and game.mouse.drag) and self.cur_sel then
+			if item.image then
+				UI:uiTexture(item.image, self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h)
+			elseif item.e then
+				item.e:toScreen(self.tiles, self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h)
+			end
+		end
+	end
+	for i = 1, #self.items do
+		local item = self.items[i]
+		if not item.show_on_drag or (game.mouse and game.mouse.drag) and self.cur_sel then
+			local frame = frames_colors[item.frame]
+			if self.cur_sel == item.i then uiQuad(self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h, 128 / 255, 128 / 255, 255 / 255, 80 / 255) end
+			if item.color then UI:uiTexturePart(empty_quad, self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h, item.angle, item.color[1]/255, item.color[2]/255, item.color[3]/255, 100/255) end
+			UI:drawFrame(self.frames.base, self.display_x + item.x, self.display_y + item.y, frame[1], frame[2], frame[3], 1, self.frames.w, self.frames.h)
+		end
+	end
+
+	self.textvo:clear()
+	self.textbigvo:clear()
 	for i = 1, #self.items do
 		local item = self.items[i]
 		if not item.show_on_drag or (game.mouse and game.mouse.drag) and self.cur_sel then
 			local key = item.key
 			local gtxt = item.gtxt
 			local frame = frames_colors[item.frame]
-			local pagesel = item.pagesel and 1 or 0.5
 
-			if item.e then item.e:toScreen(self.tiles, self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h) end
-
-			if item.color then core.display.drawQuadPart(self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h, item.angle, item.color[1], item.color[2], item.color[3], 100) end
-
-			if self.cur_sel == item.i then core.display.drawQuad(self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h, 128, 128, 255, 80) end
-
-	--		frame[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, self.frames.w, self.frames.h, frame[2] * self.frames.rw, frame[3] * self.frames.rh, pagesel, pagesel, pagesel, 255)
-	--		frame[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, self.frames.w, self.frames.h, frame[2] * self.frames.rw, frame[3] * self.frames.rh, pagesel, pagesel, pagesel, 255)
-			UI:drawFrame(self.frames.base, self.display_x + item.x, self.display_y + item.y, frame[1], frame[2], frame[3], 1, self.frames.w, self.frames.h)
-
-			if self.shadow then
-				if shader then
-					shader:use(true)
-					shader:uniOutlineSize(0.7, 0.7)
-					shader:uniTextSize(key._tex_w, key._tex_h)
-				else
-					key._tex:toScreenFull(self.display_x + item.x + 1 + self.frames.fx + self.icon_w - key.w, self.display_y + item.y + 1 + self.icon_h - key.h, key.w, key.h, key._tex_w, key._tex_h, 0, 0, 0, self.shadow)
-					if gtxt then gtxt._tex:toScreenFull(self.display_x + item.x + self.frames.fy + 2 + (self.icon_w - gtxt.fw) / 2, self.display_y + item.y + self.frames.fy + 2 + (self.icon_h - gtxt.fh) / 2, gtxt.w, gtxt.h, gtxt._tex_w, gtxt._tex_h, 0, 0, 0, self.shadow) end
-				end
-			end
-
-			key._tex:toScreenFull(self.display_x + item.x + self.frames.fx + self.icon_w - key.w, self.display_y + item.y + self.icon_h - key.h, key.w, key.h, key._tex_w, key._tex_h)
+			self.textvo:append(key.vo)
 			if gtxt then
-				gtxt._tex:toScreenFull(self.display_x + item.x + self.frames.fx + (self.icon_w - gtxt.fw) / 2, self.display_y + item.y + self.frames.fy + (self.icon_h - gtxt.fh) / 2, gtxt.w, gtxt.h, gtxt._tex_w, gtxt._tex_h)
+				self.textbigvo:append(gtxt.vo)
 			end
-
-			if self.shadow and shader then shader:use(false) end
 		end
 	end
+
+	if self.shadow and shader then shader:use(true) shader:uniOutlineSize(0.7, 0.7) shader:uniTextSize(self.font:getAtlasSize()) end
+	self.textvo:toScreen(self.display_x, self.display_y)
+	self.textbigvo:toScreen(self.display_x, self.display_y)
+	if self.shadow and shader then shader:use(false) end
 end
 
 --- Call when a mouse event arrives in this zone

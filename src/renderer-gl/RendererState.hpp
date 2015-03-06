@@ -23,6 +23,7 @@
 #define RENDERER_STATE_H
 
 #include <stack>
+#include <queue>
 
 using namespace std;
 
@@ -33,6 +34,7 @@ class RendererState {
 	stack<mat4> saved_pipe_worlds;
 	stack<mat4> saved_views;
 	stack<vec4> saved_viewports;
+	queue<mat4> saved_pipe_at_ends;
 	stack<vec4> cutoffs;
 	
 public:
@@ -52,6 +54,9 @@ public:
 	void setViewport(int x, int y, int w, int h);
 	void pushViewport();
 	void popViewport();
+
+	void pushPipeAtEnd();
+	void popPipeAtEnd();
 
 	void pushCutoff(float x, float y, float w, float h);
 	void popCutoff();

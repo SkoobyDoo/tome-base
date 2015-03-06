@@ -128,6 +128,15 @@ void RendererState::popViewport() {
 	setViewport(viewport.x, viewport.y, viewport.z, viewport.w);
 }
 
+void RendererState::pushPipeAtEnd() {
+	mat4 w = world * pipe_world;
+	saved_pipe_at_ends.push(w);
+}
+void RendererState::popPipeAtEnd() {
+	world = saved_pipe_at_ends.front();
+	saved_pipe_at_ends.pop();
+}
+
 void RendererState::pushState(bool isworld) {
 	if (quad_pipe_enabled && isworld) {
 		saved_pipe_worlds.push(pipe_world);

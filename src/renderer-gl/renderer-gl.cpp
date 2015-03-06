@@ -115,8 +115,12 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		}
 
 		if (shader->p_mvp != -1) {
-			state->updateMVP(vx != renderer_quad_pipe);
-			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
+			if (vx == renderer_quad_pipe && state->quad_pipe_enabled) {
+				glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->view));
+			} else {
+				state->updateMVP(vx != renderer_quad_pipe);
+				glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
+			}
 		}
 
 		glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
@@ -125,14 +129,14 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 		}
 
 		glEnableVertexAttribArray(shader->vertex_attrib);
-		glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), 0);
+		glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)0);
 		if (shader->texcoord_attrib != -1) {
 			glEnableVertexAttribArray(shader->texcoord_attrib);
-			glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 2));
+			glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)offsetof(vertex_data, u));
 		}
 		if (shader->color_attrib != -1) {
 			glEnableVertexAttribArray(shader->color_attrib);
-			glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)(sizeof(GLfloat) * 4));
+			glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)offsetof(vertex_data, r));
 		}
 
 		if (vx->kind == VO_QUADS) {
@@ -212,10 +216,10 @@ void renderer_pipe_draw_quad(
 		}
 
 		// Transform based on the current world mat
-		vec4 p1 = state->pipe_world * vec4(x1, y1, 0, 1);
-		vec4 p2 = state->pipe_world * vec4(x2, y2, 0, 1);
-		vec4 p3 = state->pipe_world * vec4(x3, y3, 0, 1);
-		vec4 p4 = state->pipe_world * vec4(x4, y4, 0, 1);
+		vec4 p1 = state->world * state->pipe_world * vec4(x1, y1, 0, 1);
+		vec4 p2 = state->world * state->pipe_world * vec4(x2, y2, 0, 1);
+		vec4 p3 = state->world * state->pipe_world * vec4(x3, y3, 0, 1);
+		vec4 p4 = state->world * state->pipe_world * vec4(x4, y4, 0, 1);
 
 		renderer_quad_pipe->tex = tex;
 		vertex_add_quad(renderer_quad_pipe,
@@ -257,6 +261,20 @@ void renderer_pipe_stop() {
 	if (!use_modern_gl) return;
 	renderer_pipe_flush();
 	state->enableQuadPipe(false);
+}
+
+void renderer_pipe_push_at_end() {
+	if (!state->quad_pipe_enabled) return;
+	state->pushPipeAtEnd();
+}
+
+void renderer_pipe_pop_at_end() {
+	state->popPipeAtEnd();	
+}
+
+bool renderer_pipe_is_active() {
+	if (!use_modern_gl) return false;
+	return state->quad_pipe_enabled ? true : false;
 }
 
 void renderer_init(int w, int h) {

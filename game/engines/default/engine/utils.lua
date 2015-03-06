@@ -927,6 +927,11 @@ getmetatable(tmps).__index.drawVO = function(font, vo, str, params)
 		vo:translate(vstart, vstop, -math.floor(w/2), -math.floor(h/2))
 		x, y = x-math.floor(w/2), y-math.floor(h/2)
 	end
+	if params.align_right or params.align_bottom then
+		local mx, my = params.align_right and w or 0, params.align_bottom and h or 0
+		vo:translate(vstart, vstop, -w, -h)
+		x, y = x-w, y-h
+	end
 
 	return {
 		vstart = vstart,

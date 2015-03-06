@@ -60,5 +60,8 @@ extern void renderer_pipe_draw_quad(
 extern void renderer_pipe_start();
 extern void renderer_pipe_stop();
 extern void renderer_pipe_flush();
+extern bool renderer_pipe_is_active();
+extern void renderer_pipe_push_at_end();
+extern void renderer_pipe_pop_at_end();
 
 #endif
