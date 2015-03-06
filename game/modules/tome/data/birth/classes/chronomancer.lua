@@ -141,7 +141,7 @@ newBirthDescriptor{
 	locked_desc = "We preserve the past to protect the future. The hands of time are guarded by the arms of war.",
 	desc = {
 		"Their lifelines braided, Temporal Wardens have learned to work with their other selves across multiple timelines.",
-		"Through their study of chronomancy, they learn to blend archery and duel-weapon fighting, seemlessly switching from one to the other.",
+		"Through their study of chronomancy, they learn to blend archery and dual-weapon fighting, seamlessly switching from one to the other.",
 		"Their most important stats are: Magic, Dexterity, and Willpower",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +0 Strength, +3 Dexterity, +0 Constitution",

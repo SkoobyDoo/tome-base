@@ -585,6 +585,10 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		print("[ATTACK] staff accuracy bonus", atk, def, "=", bonus)
 		self.__global_accuracy_damage_bonus = bonus
 	end
+	if self:attr("hit_penalty_2h") then
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus or 1
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus * 0.5
+	end
 
 	-- handle stalk targeting for hits (also handled in Actor for turn end effects)
 	if hitted and target ~= self then

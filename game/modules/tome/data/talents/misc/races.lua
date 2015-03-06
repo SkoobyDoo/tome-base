@@ -972,7 +972,7 @@ newTalent{
 		return ([[An ogre's body is acclimated to spells and inscriptions.
 		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.
 		At level 5 your body is so strong you can use a two handed weapon in your main hand while still using an offhand item.
-		When using a two handed weapon this way you suffer a 20%% physical power, spellpower and mindpower penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#.]]):
+		When using a two handed weapon this way you suffer a 20%% physical power, spellpower and mindpower penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#; also all damage procs from your offhand are reduced by 50%%.]]):
 		format(t.getSave(self, t), t.getMult(self, t) * 100)
 	end,
 }
@@ -1002,7 +1002,7 @@ newTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[When you crit you have a %d%% chance to reduce the remaining cooldown of one of your inscriptions and of any saturations effects.
+		return ([[When you crit you have a %d%% chance to reduce by 1 the remaining cooldown of one of your inscriptions and of any saturations effects.
 		This effect can only happen once per turn.]]):
 		format(t.getChance(self, t))
 	end,

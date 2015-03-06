@@ -2224,8 +2224,8 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
-	if value > 0 and self:attr("disruption_shield") then
-		local mana = self:getMaxMana() - self:getMana()
+	if value > 0 and self:isTalentActive(self.T_DISRUPTION_SHIELD) then
+		local mana = math.max(0, self:getMaxMana() - self:getMana())
 		local mana_val = value * self:attr("disruption_shield")
 		local converted = math.min(value, mana / self:attr("disruption_shield"))
 		game:delayedLogMessage(self, nil,  "disruption_shield", "#LIGHT_BLUE##Source# converts damage to mana!")
@@ -2762,7 +2762,7 @@ function _M:die(src, death_note)
 	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) return true end
 
 	-- Self resurrect, mouhaha!
-	if self:attr("self_resurrect") then
+	if self:attr("self_resurrect") and not self.no_resurrect then
 		self:attr("self_resurrect", -1)
 		game.logSeen(self, self.self_resurrect_msg or "#LIGHT_RED#%s rises from the dead!", self.name:capitalize()) -- src, not self as the source, to make sure the player knows his doom ;>
 		local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
@@ -5757,6 +5757,7 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	for _, tid in ipairs(self:sustainsFilter(t)) do
 		objects[#objects + 1] = {"talent", tid}
 	end
+	local nbr = 0
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
@@ -5764,8 +5765,33 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 			else
 				self:forceUseTalent(obj[2], {ignore_energy=true})
 			end
+			nbr = nbr + 1
 		end
 	end
+	return nbr
+end
+
+function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
+	t = t or {}
+	local objects = {}
+	for _, eff_id in ipairs(effs) do
+		objects[#objects + 1] = {"effect", eff_id}
+	end
+	for _, tid in ipairs(susts) do
+		objects[#objects + 1] = {"talent", tid}
+	end
+	local nbr = 0
+	for obj in rng.tableSampleIterator(objects, nb) do
+		if not check_remove or check_remove(self, obj) then
+			if obj[1] == "effect" then
+				self:removeEffect(obj[2])
+			else
+				self:forceUseTalent(obj[2], {ignore_energy=true})
+			end
+			nbr = nbr + 1
+		end
+	end
+	return nbr
 end
 
 --- Randomly reduce talent cooldowns based on a filter
