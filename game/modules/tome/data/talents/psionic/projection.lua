@@ -260,7 +260,7 @@ newTalent{
 		self:project(tg, self.x, self.y, function(tx, ty)
 			local act = game.level.map(tx, ty, engine.Map.ACTOR)
 			if act then
-				self:incPsi(-dam/mast)
+				self:incPsi(-mast)
 				self:breakStepUp()
 			end
 			DamageType:get(DamageType.FIRE).projector(self, tx, ty, DamageType.FIRE, dam)
@@ -389,7 +389,7 @@ newTalent{
 		self:project(tg, self.x, self.y, function(tx, ty)
 			local act = game.level.map(tx, ty, engine.Map.ACTOR)
 			if act then
-				self:incPsi(-dam/mast)
+				self:incPsi(-mast)
 				self:breakStepUp()
 			end
 			DamageType:get(DamageType.LIGHTNING).projector(self, tx, ty, DamageType.LIGHTNING, dam)
