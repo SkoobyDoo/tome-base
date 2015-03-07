@@ -1309,6 +1309,11 @@ function _M:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale
 
 	local dur = p.dur + 1
 	local charges = e.charges and tostring(e.charges(player, p)) or "0"
+	local image = nil
+	if e.display_entity and e.display_entity.image then
+		local ts, fx, fy, tw, th, tsx, tsy = self.hotkeys_display_icons.tiles:get("", 0, 0, 0, 0, 0, 0, e.display_entity.image, false, false, true)
+		image = {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
+	end
 
 	if not self.tbuff[eff_id..":"..dur..":"..charges] then
 		local name = e.desc
@@ -1372,58 +1377,62 @@ function _M:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale
 		self.tbuff[eff_id..":"..dur..":"..charges] = {eff_id, "tbuff"..eff_id, function(x, y)
 			uiQuad(x+4, y+4, 32, 32, 0, 0, 0, 255)
 			core.vo.atPipeEnd(function()
-				e.display_entity:toScreen(self.hotkeys_display_icons.tiles, x+4, y+4, 32, 32)
-				if e.get_fractional_percent then
-					core.display.drawQuadPart(x +4 , y + 4, 32, 32, e.get_fractional_percent(self, p), 128, 128, 128, 200)
-				end
-				UI:drawFrame(self.buffs_base, x, y, icon[1], icon[2], icon[3], 1)
-
-				if txt1 and not txt2 then
-					if shader then
-						shader:use(true)
-						shader:uniOutlineSize(1, 1)
-						shader:uniTextSize(font1:getAtlasSize())
-					else
-						txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16, nil, 0, 0, 0, 0.7)
-					end
-					txt1.vo:toScreen(x+4 + 16, y+4 + 16)				
-				elseif not txt1 and txt2 then
-					if shader then
-						shader:use(true)
-						shader:uniOutlineSize(1, 1)
-						shader:uniTextSize(font2:getAtlasSize())
-					else
-						txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
-					end
-					txt2.vo:toScreen(x+4, y+4 + 16+5)
-				elseif txt1 and txt2 then
-					if shader then
-						shader:use(true)
-						shader:uniOutlineSize(1, 1)
-						shader:uniTextSize(font1:getAtlasSize())
-					else
-						txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16-5, nil, 0, 0, 0, 0.7)
-					end
-					txt1.vo:toScreen(x+4 + 16, y+4 + 16-5)
-					
-					if shader then
-						shader:uniOutlineSize(1, 1)
-						shader:uniTextSize(font2:getAtlasSize())
-					else
-						txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
-					end
-					txt2.vo:toScreen(x+4+2, y+4+2 + 16+5)				
-				end
-
-				if shader and (txt1 or txt2) then shader:use(false) end
-
-				if flash > 0 then
-					if e.status ~= "detrimental" then uiQuad(x+4, y+4, 32, 32, 0, 255, 0, 170 - flash * 30)
-					else uiQuad(x+4, y+4, 32, 32, 255, 0, 0, 170 - flash * 30)
-					end
-					flash = flash - 1
+				if image then
+					UI:uiTexture(image, x+4, y+4, 32, 32)
+				elseif item.e then
+					e.display_entity:toScreen(self.hotkeys_display_icons.tiles, x+4, y+4, 32, 32)
 				end
 			end)
+			if e.get_fractional_percent then
+				UI:uiTexturePart(empty_quad, x +4 , y + 4, 32, 32, e.get_fractional_percent(self, p), 128, 128, 128, 200)
+			end
+			UI:drawFrame(self.buffs_base, x, y, icon[1], icon[2], icon[3], 1)
+
+			-- if txt1 and not txt2 then
+			-- 	if shader then
+			-- 		shader:use(true)
+			-- 		shader:uniOutlineSize(1, 1)
+			-- 		shader:uniTextSize(font1:getAtlasSize())
+			-- 	else
+			-- 		txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16, nil, 0, 0, 0, 0.7)
+			-- 	end
+			-- 	txt1.vo:toScreen(x+4 + 16, y+4 + 16)				
+			-- elseif not txt1 and txt2 then
+			-- 	if shader then
+			-- 		shader:use(true)
+			-- 		shader:uniOutlineSize(1, 1)
+			-- 		shader:uniTextSize(font2:getAtlasSize())
+			-- 	else
+			-- 		txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
+			-- 	end
+			-- 	txt2.vo:toScreen(x+4, y+4 + 16+5)
+			-- elseif txt1 and txt2 then
+			-- 	if shader then
+			-- 		shader:use(true)
+			-- 		shader:uniOutlineSize(1, 1)
+			-- 		shader:uniTextSize(font1:getAtlasSize())
+			-- 	else
+			-- 		txt1.vo:toScreen(x+4+2 + 16, y+4+2 + 16-5, nil, 0, 0, 0, 0.7)
+			-- 	end
+			-- 	txt1.vo:toScreen(x+4 + 16, y+4 + 16-5)
+				
+			-- 	if shader then
+			-- 		shader:uniOutlineSize(1, 1)
+			-- 		shader:uniTextSize(font2:getAtlasSize())
+			-- 	else
+			-- 		txt2.vo:toScreen(x+4+2, y+4+2 + 16+5, nil, 0, 0, 0, 0.7)
+			-- 	end
+			-- 	txt2.vo:toScreen(x+4+2, y+4+2 + 16+5)				
+			-- end
+
+			-- if shader and (txt1 or txt2) then shader:use(false) end
+
+			if flash > 0 then
+				if e.status ~= "detrimental" then uiQuad(x+4, y+4, 32, 32, 0, 255, 0, 170 - flash * 30)
+				else uiQuad(x+4, y+4, 32, 32, 255, 0, 0, 170 - flash * 30)
+				end
+				flash = flash - 1
+			end
 		end, desc_fct}
 	end
 
