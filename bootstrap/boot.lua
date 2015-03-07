@@ -2,6 +2,11 @@
 -- It will be called before anything else is setup, including paths
 -- Usualy it will be put inside a zip that is concatenated to the executable itself
 
+--[[ Example to move the saves somewhere else
+local old = fs.getHomePath()
+function fs.getHomePath() return old:gsub("T%-Engine", "BoneToBeWild"):gsub("t%-engine", "bone-to-be-wild") end
+]]
+
 print("Booting T-Engine from: "..tostring(__SELFEXE))
 
 -- Mount the engine, either from a path guessed from SELFEXE, or directly from current dir
