@@ -1670,6 +1670,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			error("lolzor plopadz kajzdhkhvkervkert 1")
+do return end
 			local o = game.zone:makeEntity(game.level, "object", {random_object=true}, nil, true)
 			if o then
 				o:identify(true)

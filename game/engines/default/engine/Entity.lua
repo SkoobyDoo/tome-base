@@ -944,10 +944,12 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 			end
 --			print("delTmpVal", prop, v, method)
 		else
-			if type(v) == "nil" then
-				util.send_error_backtrace("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v))
-			else
-				util.send_error_backtrace("unsupported temporary value type: "..type(v).." :=: "..tostring(v))
+			if config.settings.cheat then
+				if type(v) == "nil" then
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v))
+				else
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v))
+				end
 			end
 		end
 	end
