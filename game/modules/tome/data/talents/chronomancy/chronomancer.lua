@@ -227,7 +227,7 @@ doWardenWeaponSwap = function(self, t, type, silent)
 
 	if type == "blade" then
 		local mainhand, offhand = self:hasDualWeapon()
-		if not mainhand then
+		if not mainhand or self:hasArcheryWeapon("bow") then  -- weird but this is lets ogers offhanding daggers still swap
 			swap = true
 			warden_weapon = "blade"
 		end
