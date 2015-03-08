@@ -263,7 +263,13 @@ techs_wil_req5 = {
 -- Archery range talents
 archery_range = function(self, t)
 	local weapon, ammo, offweapon = self:hasArcheryWeapon()
-	if not weapon or not weapon.combat then return 1 end
+	if not weapon or not weapon.combat then 
+		if self:attr("warden_swap") and self:hasArcheryWeaponQS() then
+			weapon, ammo, offweapon = self:hasArcheryWeaponQS()
+		else
+			return 1
+		end
+	end
 	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
 end
 
