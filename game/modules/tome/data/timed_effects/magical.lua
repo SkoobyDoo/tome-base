@@ -3364,8 +3364,8 @@ newEffect{
 	parameters = { stacks=1, max_stacks=5 },
 	charges = function(self, eff) return eff.stacks end,
 	do_effect = function(self, eff, add)
-		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) end
-		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) end
+		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) eff.cdam = nil end
+		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) eff.crit = nil end
 		if add then
 			eff.cdam = self:addTemporaryValue("combat_critical_power", eff.stacks * 20)
 			eff.crit = self:addTemporaryValue("combat_generic_crit", eff.stacks * 5)
@@ -3396,7 +3396,7 @@ newEffect{
 		if eff.stacks > 1 and eff.dur <= 1 then
 			eff.stacks = eff.stacks - 1
 			eff.dur = 7
-			e.do_effect(self, eff, false)
+			e.do_effect(self, eff, true)
 		end
 	end
 }
