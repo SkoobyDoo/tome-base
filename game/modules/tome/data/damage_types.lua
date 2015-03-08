@@ -789,6 +789,9 @@ newDamageType{
 		if realdam > 0 and target and target:attr("diseases_spread_on_blight") and (not state or not state.from_disease) then
 			src:callTalent(src.T_EPIDEMIC, "do_spread", target, realdam)
 		end
+		if src and src.knowTalent and realdam > 0 and target and src:knowTalent(src.T_PESTILENT_BLIGHT) then
+			src:callTalent(src.T_PESTILENT_BLIGHT, "do_rot", target, realdam)
+		end
 		return realdam
 	end,
 	death_message = {"diseased", "poxed", "infected", "plagued", "debilitated by noxious blight before falling", "fouled", "tainted"},
@@ -3727,5 +3730,96 @@ newDamageType{
 		elseif target == src then
 			target:setEffect(target.EFF_STATIC_CHARGE, 4, {power=dam.weapon}, true)
 		end
+	end,
+}
+
+newDamageType{
+	name = "wormblight", type = "WORMBLIGHT",
+	projector = function(src, x, y, type, dam)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and target:attr("worm") then
+			target:heal(dam, src)
+			return -dam
+		elseif target then
+			DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam)
+			return dam
+		end
+	end,
+}
+
+newDamageType{
+	name = "pestilent blight", type = "PESTILENT_BLIGHT",
+	text_color = "#GREEN#",
+	tdesc = function(dam, oldDam)
+		parens = ""
+		dam = dam or 0
+		if oldDam then
+			diff = dam - oldDam
+			if diff > 0 then
+				parens = (" (#LIGHT_GREEN#+%d%%#LAST#)"):format(diff)
+			elseif diff < 0 then
+				parens = (" (#RED#%d%%#LAST#)"):format(diff)
+			end
+		end
+		return ("* #LIGHT_GREEN#%d%%#LAST# chance to cause #GREEN#random blight#LAST#%s")
+			:format(dam, parens)
+	end,
+	projector = function(src, x, y, type, dam)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			game:delayedLogDamage(src, target, 0, ("%s<%d%%%% blight chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+			if rng.percent(dam) then
+			local check = src:combatSpellpower()
+			if not src:checkHit(check, target:combatSpellResist()) then return end
+			local effect = rng.range(1, 4)
+			if effect == 1 then
+				if target:canBe("blind") and not target:hasEffect(target.EFF_BLINDED) then
+					target:setEffect(target.EFF_BLINDED, 2, {no_ct_effect=true} )
+				end
+			elseif effect == 2 then
+				if target:canBe("silence") and not target:hasEffect(target.EFF_SILENCED) then
+					target:setEffect(target.EFF_SILENCED, 2, {no_ct_effect=true})
+				end
+			elseif effect == 3 then
+				if target:canBe("disarm") and not target:hasEffect(target.EFF_DISARMED) then
+					target:setEffect(target.EFF_DISARMED, 2, {no_ct_effect=true})
+				end
+			elseif effect == 4 then
+				if target:canBe("pin") and not target:hasEffect(target.EFF_PINNED) then
+					target:setEffect(target.EFF_PINNED, 2, {no_ct_effect=true})
+				end
+			end
+		end
+		end
+	end,
+}
+
+newDamageType{
+	name = "blight poison", type = "BLIGHT_POISON", text_color = "#DARK_GREEN#",
+	projector = function(src, x, y, t, dam, poison)
+		local power
+		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam / 4)
+		local target = game.level.map(x, y, Map.ACTOR)
+		local chance = 0
+		if dam.poison == 4 then
+			chance = rng.range(1, 4)
+		elseif dam.poison == 3 then
+			chance = rng.range(1, 3)
+		elseif dam.poison == 2 then
+			chance = rng.range(1, 2)
+		else chance = 1
+		end
+		if target and target:canBe("poison") then
+			if chance == 1 then
+				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+			elseif chance == 2 then
+				target:setEffect(target.EFF_INSIDIOUS_BLIGHT, 4, {src=src, power=dam.dam / 4, heal_factor=dam.power*2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+			elseif chance == 3 then
+				target:setEffect(target.EFF_NUMBING_BLIGHT, 4, {src=src, power=dam.dam / 4, reduce=dam.power*1.2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+			elseif chance == 4 then
+				target:setEffect(target.EFF_CRIPPLING_BLIGHT, 4, {src=src, power=dam.dam / 4, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+			end
+		end
+		return realdam
 	end,
 }
