@@ -7,6 +7,7 @@ fi
 
 rm $name.ogv $name.avi
 recordmydesktop --windowid $1 --fps 50 --full-shots --device pulse -o $name.ogv
-mencoder $name.ogv -ovc xvid -oac mp3lame -xvidencopts pass=1 -o $name.avi
+avconv -i $name.ogv -qscale 1 $name.avi
 
+# mencoder $name.ogv -ovc xvid -oac mp3lame -xvidencopts pass=1 -o $name.avi
 #ffmpeg -i input.ogv -c copy output.mkv

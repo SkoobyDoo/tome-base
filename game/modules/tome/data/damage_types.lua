@@ -20,6 +20,12 @@
 local print = print
 if not config.settings.cheat then print = function() end end
 
+function initState(state)
+	if state == nil then return {}
+	elseif state == true or state == false then return {}
+	else return state end
+end
+
 -- Loads the implicit crit if one has not been passed.
 function DamageType.useImplicitCrit(src, state)
 	if state.crit_set then return end
@@ -42,7 +48,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 	if not game.level.map:isBound(x, y) then return 0 end
 
 	-- Manage crits.
-	state = state or {}
+	state = initState(state)
 	useImplicitCrit(src, state)
 	local crit_type = state.crit_type
 	local crit_power = state.crit_power
@@ -649,7 +655,7 @@ newDamageType{
 newDamageType{
 	name = "physical", type = "PHYSICAL",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
 		
@@ -674,7 +680,7 @@ newDamageType{
 	name = "fire", type = "FIRE", text_color = "#LIGHT_RED#",
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if src.fire_convert_to then
 			if src.fire_convert_to[2] >= 100 then
@@ -702,7 +708,7 @@ newDamageType{
 	name = "cold", type = "COLD", text_color = "#1133F3#",
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local a = game.level.map(x, y, Map.ACTOR)
 		local acheive = a and src.player and not a.training_dummy and a ~= src
@@ -721,7 +727,7 @@ newDamageType{
 	name = "lightning", type = "LIGHTNING", text_color = "#ROYAL_BLUE#",
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
 		if realdam > 0 and src:attr("lightning_brainlocks") then
@@ -740,7 +746,7 @@ newDamageType{
 	name = "acid", type = "ACID", text_color = "#GREEN#",
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
@@ -758,7 +764,7 @@ newDamageType{
 	name = "nature", type = "NATURE", text_color = "#LIGHT_GREEN#",
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
@@ -775,7 +781,7 @@ newDamageType{
 	name = "blight", type = "BLIGHT", text_color = "#DARK_GREEN#",
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -801,7 +807,7 @@ newDamageType{
 	antimagic_resolve = true,
 	death_message = {"shadowed", "darkened", "swallowed by the void"},
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -819,7 +825,7 @@ newDamageType{
 newDamageType{
 	name = "mind", type = "MIND", text_color = "#YELLOW#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		local thought_form
@@ -848,7 +854,7 @@ newDamageType{
 newDamageType{
 	name = "winter", type = "WINTER",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local srcx, srcy = dam.x, dam.y
 		local base = dam
@@ -871,7 +877,7 @@ newDamageType{
 	name = "temporal", type = "TEMPORAL", text_color = "#LIGHT_STEEL_BLUE#",
 	antimagic_resolve = true,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
 		
@@ -889,7 +895,7 @@ newDamageType{
 newDamageType{
 	name = "temporal stun", type = "TEMPORALSTUN",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -907,7 +913,7 @@ newDamageType{
 newDamageType{
 	name = "lite", type = "LITE", text_color = "#YELLOW#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		-- Counter magical unlite level before lighting grids
 		local g = game.level.map(x, y, Map.TERRAIN+1)
@@ -923,7 +929,7 @@ newDamageType{
 newDamageType{
 	name = "illumination", type = "BREAK_STEALTH",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		-- Dont lit magically unlit grids
 		local a = game.level.map(x, y, Map.ACTOR)
@@ -937,7 +943,7 @@ newDamageType{
 newDamageType{
 	name = "silence", type = "SILENCE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -954,7 +960,7 @@ newDamageType{
 newDamageType{
 	name = "arcane silence", type = "ARCANE_SILENCE", text_color = "#PURPLE#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local chance = 100
 		if _G.type(dam) == "table" then dam, chance = dam.dam, dam.chance end
@@ -976,7 +982,7 @@ newDamageType{
 newDamageType{
 	name = "silence", type = "RANDOM_SILENCE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and rng.percent(dam) then
@@ -993,7 +999,7 @@ newDamageType{
 newDamageType{
 	name = "blindness", type = "BLIND",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1008,7 +1014,7 @@ newDamageType{
 newDamageType{
 	name = "blindness", type = "BLINDPHYSICAL",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1023,7 +1029,7 @@ newDamageType{
 newDamageType{
 	name = "blinding ink", type = "BLINDING_INK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1038,7 +1044,7 @@ newDamageType{
 newDamageType{
 	name = "blindness", type = "BLINDCUSTOMMIND",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1055,7 +1061,7 @@ newDamageType{
 newDamageType{
 	name = "bright light", type = "LITE_LIGHT",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.LITE).projector(src, x, y, DamageType.LITE, 1, state)
 		return DamageType:get(DamageType.LIGHT).projector(src, x, y, DamageType.LIGHT, dam, state)
@@ -1066,7 +1072,7 @@ newDamageType{
 newDamageType{
 	name = "fire burn", type = "FIREBURN", text_color = "#LIGHT_RED#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local dur = 3
 		local perc = 50
@@ -1087,7 +1093,7 @@ newDamageType{
 newDamageType{
 	name = "stunning fire", type = "FIRE_STUN", text_color = "#LIGHT_RED#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local chance = 25
 		local dur = 3
@@ -1110,7 +1116,7 @@ newDamageType{
 newDamageType{
 	name = "fire burn", type = "GOLEM_FIREBURN",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = 0
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1125,7 +1131,7 @@ newDamageType{
 newDamageType{
 	name = "devouring flames", type = "FIRE_DRAIN", text_color = "#LIGHT_RED#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, healfactor=0.1} end
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
@@ -1142,7 +1148,7 @@ newDamageType{
 newDamageType{
 	name = "shadowflame", type = "SHADOWFLAME", text_color = "#BF7F73#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam / 2, state)
 		DamageType:get(DamageType.DARKNESS).projector(src, x, y, DamageType.DARKNESS, dam / 2, state)
@@ -1153,7 +1159,7 @@ newDamageType{
 newDamageType{
 	name = "darkness", type = "DARKSTUN",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.DARKNESS).projector(src, x, y, DamageType.DARKNESS, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1172,7 +1178,7 @@ newDamageType{
 newDamageType{
 	name = "darkness", type = "MINION_DARKNESS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and (not target.necrotic_minion or target.summoner ~= src) then
@@ -1185,7 +1191,7 @@ newDamageType{
 newDamageType{
 	name = "fire", type = "FIRE_FRIENDS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target.summoner ~= src then
@@ -1198,7 +1204,7 @@ newDamageType{
 newDamageType{
 	name = "cold", type = "COLDSTUN",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.COLD).projector(src, x, y, DamageType.COLD, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1216,7 +1222,7 @@ newDamageType{
 newDamageType{
 	name = "flameshock", type = "FLAMESHOCK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, dur=4} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1235,7 +1241,7 @@ newDamageType{
 newDamageType{
 	name = "ice", type = "ICE", text_color = "#1133F3#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local chance = 25
 		if _G.type(dam) == "table" then chance, dam = dam.chance, dam.dam end
@@ -1251,7 +1257,7 @@ newDamageType{
 newDamageType{
 	name = "slowing ice", type = "ICE_SLOW", text_color = "#1133F3#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local chance = 25
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1271,7 +1277,7 @@ newDamageType{
 newDamageType{
 	name = "ice storm", type = "ICE_STORM", text_color = "#1133F3#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local chance = 25
 
@@ -1290,7 +1296,7 @@ newDamageType{
 newDamageType{
 	name = "glacial vapour", type = "GLACIAL_VAPOUR", text_color = "#1133F3#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local chance = 0
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1307,7 +1313,7 @@ newDamageType{
 newDamageType{
 	name = "cold ground", type = "COLDNEVERMOVE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, dur=4} end
 		DamageType:get(DamageType.COLD).projector(src, x, y, DamageType.COLD, dam.dam, state)
@@ -1328,7 +1334,7 @@ newDamageType{
 newDamageType{
 	name = "freeze", type = "FREEZE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1349,7 +1355,7 @@ newDamageType{
 newDamageType{
 	name = "sticky smoke", type = "STICKY_SMOKE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1366,7 +1372,7 @@ newDamageType{
 newDamageType{
 	name = "acid blind", type = "ACID_BLIND", text_color = "#GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType:get(DamageType.ACID).projector(src, x, y, DamageType.ACID, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1385,7 +1391,7 @@ newDamageType{
 newDamageType{
 	name = "blinding darkness", type = "DARKNESS_BLIND",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType:get(DamageType.DARKNESS).projector(src, x, y, DamageType.DARKNESS, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1404,7 +1410,7 @@ newDamageType{
 newDamageType{
 	name = "blinding light", type = "LIGHT_BLIND", text_color = "#YELLOW#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType:get(DamageType.LIGHT).projector(src, x, y, DamageType.LIGHT, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1423,7 +1429,7 @@ newDamageType{
 newDamageType{
 	name = "dazing lightning", type = "LIGHTNING_DAZE", text_color = "#ROYAL_BLUE#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, daze=25} end
 		dam.daze = dam.daze or 25
@@ -1451,7 +1457,7 @@ newDamageType{
 newDamageType{
 	name = "cold repulsion", type = "WAVE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local srcx, srcy = dam.x, dam.y
 		local base = dam
@@ -1483,7 +1489,7 @@ newDamageType{
 newDamageType{
 	name = "bloodspring", type = "BLOODSPRING",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local srcx, srcy = dam.x, dam.y
 		local base = dam
@@ -1506,11 +1512,11 @@ newDamageType{
 newDamageType{
 	name = "fire repulsion", type = "FIREKNOCKBACK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if _G.type(dam) ~= "table" then dam = {dam=dam, dist=3} end
-		state = state or {}
+		state = initState(state)
 		if target and not state[target] then
 			state[target] = true
 			DamageType:get(DamageType.FIREBURN).projector(src, x, y, DamageType.FIREBURN, dam.dam, state)
@@ -1529,11 +1535,11 @@ newDamageType{
 newDamageType{
 	name = "burning repulsion", type = "FIREKNOCKBACK_MIND",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if _G.type(dam) ~= "table" then dam = {dam=dam, dist=3} end
-		state = state or {}
+		state = initState(state)
 		if target and not state[target] then
 			state[target] = true
 			DamageType:get(DamageType.FIREBURN).projector(src, x, y, DamageType.FIREBURN, dam.dam, state)
@@ -1552,11 +1558,11 @@ newDamageType{
 newDamageType{
 	name = "darkness repulsion", type = "DARKKNOCKBACK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if _G.type(dam) ~= "table" then dam = {dam=dam, dist=3} end
-		state = state or {}
+		state = initState(state)
 		if target and not state[target] then
 			state[target] = true
 			DamageType:get(DamageType.DARKNESS).projector(src, x, y, DamageType.DARKNESS, dam.dam, state)
@@ -1575,12 +1581,12 @@ newDamageType{
 newDamageType{
 	name = "physical repulsion", type = "SPELLKNOCKBACK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		local realdam = 0
 		if _G.type(dam) ~= "table" then dam = {dam=dam, dist=3} end
-		state = state or {}
+		state = initState(state)
 		if target and not state[target] then
 			state[target] = true
 			realdam = DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam, state)
@@ -1600,10 +1606,10 @@ newDamageType{
 newDamageType{
 	name = "physical repulsion", type = "MINDKNOCKBACK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
-		state = state or {}
+		state = initState(state)
 		if target and not state[target] then
 			state[target] = true
 			DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam, state)
@@ -1622,10 +1628,10 @@ newDamageType{
 newDamageType{
 	name = "physical repulsion", type = "PHYSKNOCKBACK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
-		state = state or {}
+		state = initState(state)
 		if _G.type(dam) ~= "table" then dam = {dam=dam, dist=3} end
 		if target and not state[target] then
 			state[target] = true
@@ -1645,10 +1651,10 @@ newDamageType{
 newDamageType{
 	name = "fear repulsion", type = "FEARKNOCKBACK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
-		state = state or {}
+		state = initState(state)
 		if target and not state[target] then
 			state[target] = true
 			if target:checkHit(src:combatMindpower(), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("fear") then
@@ -1666,7 +1672,7 @@ newDamageType{
 newDamageType{
 	name = "poison", type = "POISON", text_color = "#LIGHT_GREEN#",
 	projector = function(src, x, y, t, dam)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local power
 		if type(dam) == "table" then
@@ -1686,7 +1692,7 @@ newDamageType{
 newDamageType{
 	name = "cleansing fire", type = "INFERNO",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1713,7 +1719,7 @@ newDamageType{
 newDamageType{
 	name = "spydric poison", type = "SPYDRIC_POISON",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, dur=3} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / dam.dur, state)
@@ -1728,7 +1734,7 @@ newDamageType{
 newDamageType{
 	name = "crippling poison", type = "CRIPPLING_POISON", text_color = "#LIGHT_GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, dur=3} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / dam.dur, state)
@@ -1743,7 +1749,7 @@ newDamageType{
 newDamageType{
 	name = "insidious poison", type = "INSIDIOUS_POISON", text_color = "#LIGHT_GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, dur=7, heal_factor=dam} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / dam.dur, state)
@@ -1758,7 +1764,7 @@ newDamageType{
 newDamageType{
 	name = "bleed", type = "BLEED",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam / 6, state)
 		dam = dam - dam / 6
@@ -1774,7 +1780,7 @@ newDamageType{
 newDamageType{
 	name = "physical bleed", type = "PHYSICALBLEED",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1788,7 +1794,7 @@ newDamageType{
 newDamageType{
 	name = "nature slow", type = "SLIME", text_color = "#LIGHT_GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, power=0.15} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam, state)
@@ -1803,7 +1809,7 @@ newDamageType{
 newDamageType{
 	name = "dig", type = "DIG",
 	projector = function(src, x, y, typ, dam)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local feat = game.level.map(x, y, Map.TERRAIN)
 		if feat then
@@ -1828,7 +1834,7 @@ newDamageType{
 newDamageType{
 	name = "slow", type = "SLOW",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1842,7 +1848,7 @@ newDamageType{
 newDamageType{
 	name = "congeal time", type = "CONGEAL_TIME",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1857,7 +1863,7 @@ newDamageType{
 newDamageType{
 	name = "time prison", type = "TIME_PRISON",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1880,7 +1886,7 @@ newDamageType{
 newDamageType{
 	name = "confusion", type = "CONFUSION",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -1897,7 +1903,7 @@ newDamageType{
 newDamageType{
 	name = "% chance of confusion", type = "RANDOM_CONFUSION",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1915,7 +1921,7 @@ newDamageType{
 newDamageType{
 	name = "% chance of confusion", type = "RANDOM_CONFUSION_PHYS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -1932,7 +1938,7 @@ newDamageType{
 newDamageType{
 	name = "% chance of gloom effects", type = "RANDOM_GLOOM",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and rng.percent(dam) then
@@ -1985,7 +1991,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2033,7 +2039,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2065,7 +2071,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src and src.name and rng.percent(dam) then
@@ -2100,7 +2106,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2132,7 +2138,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2167,7 +2173,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2199,7 +2205,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2230,7 +2236,7 @@ newDamageType{
 			:format(dam or 0, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2258,7 +2264,7 @@ newDamageType{
 			:format(dam, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2287,7 +2293,7 @@ newDamageType{
 			:format(dam, 20, parens)
 	end,
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2306,7 +2312,7 @@ newDamageType{
 newDamageType{
 	name = "blinding", type = "RANDOM_BLIND",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2324,7 +2330,7 @@ newDamageType{
 newDamageType{
 	name = "blinding physical", type = "SAND",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2342,7 +2348,7 @@ newDamageType{
 newDamageType{
 	name = "physical pinning", type = "PINNING",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2360,7 +2366,7 @@ newDamageType{
 newDamageType{
 	name = "regressive blight", type = "DRAINEXP",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam} end
 		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam, state)
@@ -2381,7 +2387,7 @@ newDamageType{
 newDamageType{
 	name = "draining blight", type = "DRAINLIFE", text_color = "#DARK_GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, healfactor=0.4} end
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
@@ -2398,7 +2404,7 @@ newDamageType{
 newDamageType{
 	name = "vim draining blight", type = "DRAIN_VIM", text_color = "#DARK_GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, vim=0.2} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2414,7 +2420,7 @@ newDamageType{
 newDamageType{
 	name = "demonfire", type = "DEMONFIRE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:attr("demon") then
@@ -2431,7 +2437,7 @@ newDamageType{
 newDamageType{
 	name = "purging blight", type = "RETCH",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and (target:attr("undead") or target:attr(retch_heal)) then
@@ -2480,7 +2486,7 @@ newDamageType{
 newDamageType{
 	name = "holy light", type = "HOLY_LIGHT",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and not target:attr("undead") and not target:attr("demon") then
@@ -2495,7 +2501,7 @@ newDamageType{
 newDamageType{
 	name = "healing", type = "HEAL",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2511,7 +2517,7 @@ newDamageType{
 newDamageType{
 	name = "healing light", type = "HEALING_POWER",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2549,7 +2555,7 @@ newDamageType{
 newDamageType{
 	name = "judgement", type = "JUDGEMENT",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target ~= src then
@@ -2567,7 +2573,7 @@ newDamageType{
 newDamageType{
 	name = "healing nature", type = "HEALING_NATURE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and not target:attr("undead") then
@@ -2585,7 +2591,7 @@ newDamageType{
 newDamageType{
 	name = "infective blight", type = "CORRUPTED_BLOOD", text_color = "#DARK_GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam} end
 		DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam, state)
@@ -2601,7 +2607,7 @@ newDamageType{
 newDamageType{
 	name = "hindering blight", type = "BLOOD_BOIL", text_color = "#DARK_GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2624,7 +2630,7 @@ newDamageType{
 newDamageType{
 	name = "physical stun", type = "PHYSICAL_STUN",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2642,7 +2648,7 @@ newDamageType{
 newDamageType{
 	name = "physical bleed", type = "SPLIT_BLEED",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam / 2, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam / 12, state)
@@ -2658,7 +2664,7 @@ newDamageType{
 newDamageType{
 	name = "warp", type = "WARP",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam / 2, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam / 2, state)
@@ -2669,7 +2675,7 @@ newDamageType{
 newDamageType{
 	name = "temporal darkness", type = "VOID", text_color = "#GREY#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam / 2, state)
 		DamageType:get(DamageType.DARKNESS).projector(src, x, y, DamageType.DARKNESS, dam / 2, state)
@@ -2680,7 +2686,7 @@ newDamageType{
 newDamageType{
 	name = "gravity", type = "GRAVITY",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2698,7 +2704,7 @@ newDamageType{
 newDamageType{
 	name = "gravity pin", type = "GRAVITYPIN",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		local reapplied = false
@@ -2723,10 +2729,10 @@ newDamageType{
 newDamageType{
 	name = "physical repulsion", type = "REPULSION",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
-		state = state or {}
+		state = initState(state)
 		-- extra damage on pinned targets
 		if target and target:attr("never_move") then
 			dam = dam * 1.5
@@ -2749,7 +2755,7 @@ newDamageType{
 newDamageType{
 	name = "grow", type = "GROW",
 	projector = function(src, x, y, typ, dam)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local feat = game.level.map(x, y, Map.TERRAIN)
 		if feat then
@@ -2772,7 +2778,7 @@ newDamageType{
 newDamageType{
 	name = "pinning nature", type = "GRASPING_MOSS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
@@ -2790,7 +2796,7 @@ newDamageType{
 newDamageType{
 	name = "healing nature", type = "NOURISHING_MOSS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
@@ -2803,7 +2809,7 @@ newDamageType{
 newDamageType{
 	name = "impeding nature", type = "SLIPPERY_MOSS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
@@ -2816,7 +2822,7 @@ newDamageType{
 newDamageType{
 	name = "confounding nature", type = "HALLUCINOGENIC_MOSS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
@@ -2834,7 +2840,7 @@ newDamageType{
 newDamageType{
 	name = "sanctity", type = "SANCTITY",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2852,7 +2858,7 @@ newDamageType{
 newDamageType{
 	name = "defensive darkness", type = "SHIFTINGSHADOWS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2868,7 +2874,7 @@ newDamageType{
 newDamageType{
 	name = "blazing light", type = "BLAZINGLIGHT",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2885,7 +2891,7 @@ newDamageType{
 newDamageType{
 	name = "prismatic repulsion", type = "WARDING",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2909,7 +2915,7 @@ newDamageType{
 newDamageType{
 	name = "mind slow", type = "MINDSLOW",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2923,7 +2929,7 @@ newDamageType{
 newDamageType{
 	name = "mind freeze", type = "MINDFREEZE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -2941,7 +2947,7 @@ newDamageType{
 newDamageType{
 	name = "implosion", type = "IMPLOSION",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local dur = 3
 		local perc = 50
@@ -2959,7 +2965,7 @@ newDamageType{
 newDamageType{
 	name = "regressive temporal", type = "CLOCK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, stat=2 + math.ceil(dam/15), apply=src:combatSpellpower()} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -2975,7 +2981,7 @@ newDamageType{
 newDamageType{
 	name = "wasting temporal", type = "WASTING", text_color = "#LIGHT_STEEL_BLUE#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		local dur = 3
@@ -2995,7 +3001,7 @@ newDamageType{
 newDamageType{
 	name = "stop", type = "STOP",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3011,7 +3017,7 @@ newDamageType{
 newDamageType{
 	name = "debilitating temporal", type = "RETHREAD",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam.dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3050,7 +3056,7 @@ newDamageType{
 newDamageType{
 	name = "draining physical", type = "DEVOUR_LIFE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam} end
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
@@ -3072,7 +3078,7 @@ newDamageType{
 newDamageType{
 	name = "temporal slow", type = "CHRONOSLOW",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.TEMPORAL).projector(src, x, y, DamageType.TEMPORAL, dam.dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3093,7 +3099,7 @@ newDamageType{
 newDamageType{
 	name = "molten rock", type = "MOLTENROCK",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		return DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam / 2, state) +
 		       DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam / 2, state)
@@ -3103,7 +3109,7 @@ newDamageType{
 newDamageType{
 	name = "entangle", type = "ENTANGLE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam/3, state)
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, 2*dam/3, state)
@@ -3121,7 +3127,7 @@ newDamageType{
 newDamageType{
 	name = "manaworm arcane", type = "MANAWORM",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType:get(DamageType.ARCANE).projector(src, x, y, DamageType.ARCANE, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3142,7 +3148,7 @@ newDamageType{
 newDamageType{
 	name = "arcane blast", type = "VOID_BLAST",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local realdam = DamageType:get(DamageType.ARCANE).projector(src, x, y, DamageType.ARCANE, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3156,7 +3162,7 @@ newDamageType{
 newDamageType{
 	name = "circle of death", type = "CIRCLE_DEATH",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and (src:reactionToward(target) < 0 or dam.ff) then
@@ -3179,7 +3185,7 @@ newDamageType{
 newDamageType{
 	name = "decaying darkness", type = "RIGOR_MORTIS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3193,7 +3199,7 @@ newDamageType{
 newDamageType{
 	name = "abyssal darkness", type = "ABYSSAL_SHROUD",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		--make it dark
 		game.level.map.remembers(x, y, false)
@@ -3219,7 +3225,7 @@ newDamageType{
 	name = "% chance to summon an orc spirit", type = "GARKUL_INVOKE",
 	text_color = "#SALMON#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, engine.Map.ACTOR)
 		if not target then return end
@@ -3286,7 +3292,7 @@ newDamageType{
 newDamageType{
 	name = "nightmare", type = "NIGHTMARE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
@@ -3304,7 +3310,7 @@ newDamageType{
 newDamageType{
 	name = "weakness", type = "WEAKNESS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3318,7 +3324,7 @@ newDamageType{
 newDamageType{
 	name = "special effect", type = "TEMP_EFFECT",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3335,7 +3341,7 @@ newDamageType{
 newDamageType{
 	name = "manaburn arcane", type = "MANABURN", text_color = "#PURPLE#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3349,7 +3355,7 @@ newDamageType{
 newDamageType{
 	name = "leaves", type = "LEAVES",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3370,11 +3376,11 @@ newDamageType{
 newDamageType{
 	name = "distorting physical", type = "DISTORTION",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if not target then return end
-		state = state or {}
+		state = initState(state)
 		if target and not state[target] then
 			state[target] = true
 			local old_pen = 0
@@ -3434,12 +3440,12 @@ newDamageType{
 newDamageType{
 	name = "dreamforge", type = "DREAMFORGE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if not target then return end
 		local power, dur, chance, dist, fail, do_particles
-		state = state or {}
+		state = initState(state)
 		if _G.type(dam) == "table" then dam, power, dur, chance, fail, dist, do_particles = dam.dam, dam.power, dam.dur, dam.chance, dam.fail, dam.dist, dam.do_particles end
 		if target and not state[target] then
 			if src:checkHit(src:combatMindpower(), target:combatMentalResist(), 0, 95) then
@@ -3481,7 +3487,7 @@ newDamageType{
 newDamageType{
 	name = "natural mucus", type = "MUCUS",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and not target.turn_procs.mucus then
@@ -3509,7 +3515,7 @@ newDamageType{
 newDamageType{
 	name = "disarming acid", type = "ACID_DISARM", text_color = "#GREEN#",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {chance=25, dam=dam} end
 		local realdam = DamageType:get(DamageType.ACID).projector(src, x, y, DamageType.ACID, dam.dam, state)
@@ -3529,7 +3535,7 @@ newDamageType{
 newDamageType{
 	name = "corrosive acid", type = "ACID_CORRODE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dur = 4, armor = dam/2, defense = dam/2, dam = dam, atk=dam/2} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3544,7 +3550,7 @@ newDamageType{
 newDamageType{
 	name = "bouncing slime", type = "BOUNCE_SLIME",
 	projector = function(src, x, y, type, dam, state, _, tg)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3577,7 +3583,7 @@ newDamageType{
 newDamageType{
 	name = "caustic mire", type = "CAUSTIC_MIRE",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dur = 2, slow=20} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3592,7 +3598,7 @@ newDamageType{
 newDamageType{
 	name = "sun path", type = "SUN_PATH",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
@@ -3604,7 +3610,7 @@ newDamageType{
 newDamageType{
 	name = "telekinetic shove", type = "TK_PUSHPIN",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3633,7 +3639,7 @@ newDamageType{
 newDamageType{
 	name = "dimensional anchor", type = "DIMENSIONAL_ANCHOR",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		if _G.type(dam) == "number" then dam = {dam=dam, dur=dur or 4, apply_power=apply_power or src:combatSpellpower()} end
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3647,7 +3653,7 @@ newDamageType{
 newDamageType{
 	name = "phase pulse", type = "RANDOM_WARP",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		
 		local target = game.level.map(x, y, Map.ACTOR)
@@ -3688,7 +3694,7 @@ newDamageType{
 newDamageType{
 	name = "brain storm", type = "BRAINSTORM",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
@@ -3712,7 +3718,7 @@ newDamageType{
 newDamageType{
 	name = "static net", type = "STATIC_NET",
 	projector = function(src, x, y, type, dam, state)
-		state = state or {}
+		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
