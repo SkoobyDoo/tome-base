@@ -715,7 +715,7 @@ function _M:heal(value, src)
 		value = value * 1.3
 	end
 
-	mod.class.Actor.heal(self, value, src)
+	return mod.class.Actor.heal(self, value, src)
 end
 
 function _M:die(src, death_note)
