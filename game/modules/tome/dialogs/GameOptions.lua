@@ -309,13 +309,13 @@ function _M:generateListUi()
 		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Tactical overlay#WHITE##{normal}#", status=function(item)
 			local vs = "Combined Small"
 			if game.always_target == "old" then
-				local vs = "Combined Big"
+				vs = "Combined Big"
 			elseif game.always_target == "health" then
-				local vs = "Only Healthbars"
+				vs = "Only Healthbars"
 			elseif game.always_target == nil then
-				local vs = "Nothing"
+				vs = "Nothing"
 			elseif game.always_target == true then
-				local vs = "Combined Small"
+				vs = "Combined Small"
 			end
 			return vs
 		end, fct=function(item)
@@ -327,6 +327,7 @@ function _M:generateListUi()
 			}, 300, 200, function(sel)
 				if not sel then return end
 				game:setTacticalMode(sel.mode)
+				self.c_list:drawItem(item)
 			end)
 		end,}
 	end
