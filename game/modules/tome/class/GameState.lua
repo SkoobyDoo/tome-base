@@ -411,6 +411,8 @@ function _M:generateRandart(data)
 	if not base or not base.randart_able then game.level.level = oldlev resolvers.current_level = oldclev return end
 	local o = base:cloneFull()
 
+	local display = o.display
+
 --o.baseobj = base:cloneFull() -- debugging code
 --o.gendata = table.clone(data, true) -- debugging code
 
@@ -725,6 +727,8 @@ function _M:generateRandart(data)
 		end
 		o.combat.damtype = pickDamtype(themes)
 	end
+
+	o.display = display
 
 	if data.post then
 		data.post(o)

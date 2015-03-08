@@ -1670,13 +1670,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
-			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
-			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
-			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
-			game.level.map:particleEmitter(game.player.x, game.player.y, 1, "goosplosion", {})
-do return end
-			local o = game.zone:makeEntityByName(game.level, "object", "RIFT_SWORD", true)
+			local o = game.zone:makeEntity(game.level, "object", {random_object=true}, nil, true)
 			if o then
 				o:identify(true)
 				game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)
