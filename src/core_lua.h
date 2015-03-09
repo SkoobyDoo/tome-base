@@ -26,7 +26,9 @@
 typedef struct
 {
 	GLuint fbo;
-	GLuint texture;
+	GLuint *textures;
+	GLenum *buffers;
+	int nbt;
 	int w, h;
 } lua_fbo;
 

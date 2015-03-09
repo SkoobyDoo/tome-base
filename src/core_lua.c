@@ -2545,23 +2545,33 @@ static int gl_new_fbo(lua_State *L)
 
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
+	int nbt = 1;
+	if (lua_isnumber(L, 3)) nbt = luaL_checknumber(L, 3);
 
 	lua_fbo *fbo = (lua_fbo*)lua_newuserdata(L, sizeof(lua_fbo));
 	auxiliar_setclass(L, "gl{fbo}", -1);
 	fbo->w = w;
 	fbo->h = h;
+	fbo->nbt = nbt;
+
+	fbo->textures = calloc(nbt, sizeof(GLuint));
+	fbo->buffers = calloc(nbt, sizeof(GLenum));
 
 	glGenFramebuffersEXT(1, &(fbo->fbo));
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
 
 	// Now setup a texture to render to
-	glGenTextures(1, &(fbo->texture));
-	tfglBindTexture(GL_TEXTURE_2D, fbo->texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, fbo->texture, 0);
+	int i;
+	glGenTextures(nbt, fbo->textures);
+	for (i = 0; i < nbt; i++) {
+		tfglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
+	}
 
 	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) return 0;
@@ -2576,11 +2586,15 @@ static int gl_free_fbo(lua_State *L)
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	int i;
+	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	glDeleteTextures(1, &(fbo->texture));
-	glDeleteFramebuffersEXT(1, &(fbo->fbo));
+	glDeleteTextures(fbo->nbt, fbo->textures);
+	glDeleteFramebuffers(1, &(fbo->fbo));
+
+	free(fbo->textures);
+	free(fbo->buffers);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -2603,6 +2617,7 @@ static int gl_fbo_use(lua_State *L)
 	if (active)
 	{
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+		if (fbo->nbt > 1) glDrawBuffers(fbo->nbt, fbo->buffers);
 
 		// Set the viewport and save the old one
 		glPushAttrib(GL_VIEWPORT_BIT);
@@ -2642,6 +2657,7 @@ static int gl_fbo_use(lua_State *L)
 	return 0;
 }
 
+extern GLuint mapseentex;
 static int gl_fbo_toscreen(lua_State *L)
 {
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
@@ -2665,7 +2681,16 @@ static int gl_fbo_toscreen(lua_State *L)
 	}
 
 	if (!allowblend) glDisable(GL_BLEND);
-	tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+
+	if (fbo->nbt > 1) {
+		int i;
+		for (i = fbo->nbt - 1; i >= 1; i--) {
+			tglActiveTexture(GL_TEXTURE0 + i);
+			tglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+		}
+		tglActiveTexture(GL_TEXTURE0);
+	}
+	tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 
 	GLfloat colors[4*4] = {
 		r, g, b, a,
@@ -2755,7 +2780,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
-		tglBindTexture(GL_TEXTURE_2D, srcfbo->texture);
+		tglBindTexture(GL_TEXTURE_2D, srcfbo->textures[0]);
 		glDrawArrays(GL_QUADS, 0, 4);
 
 		shad_idx++;
@@ -2773,7 +2798,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	glPopAttrib();
 	tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_final->fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
-	tglBindTexture(GL_TEXTURE_2D, srcfbo->texture);
+	tglBindTexture(GL_TEXTURE_2D, srcfbo->textures[0]);
 	vertices[0] = x; vertices[1] = y;
 	vertices[2] = x; vertices[3] = y + h;
 	vertices[4] = x + w; vertices[5] = y + h;
@@ -3052,7 +3077,7 @@ static int gl_fbo_to_png(lua_State *L)
 		return 0;
 	}
 
-	tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+	tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)image);
 
@@ -3088,13 +3113,13 @@ static int fbo_texture_bind(lua_State *L)
 		if (multitexture_active && shaders_active)
 		{
 			tglActiveTexture(GL_TEXTURE0+i);
-			tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+			tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 			tglActiveTexture(GL_TEXTURE0);
 		}
 	}
 	else
 	{
-		tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+		tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 	}
 
 	return 0;
