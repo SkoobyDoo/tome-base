@@ -1586,6 +1586,7 @@ static int gl_fbo_use(lua_State *L)
 		}
 
 		tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
+		if (fbo->nbt > 1) glDrawBuffers(fbo->nbt, fbo->buffers);
 
 		renderer_push_ortho_state(fbo->w, fbo->h);
 
@@ -1634,6 +1635,15 @@ static int gl_fbo_toscreen(lua_State *L)
 	}
 
 	if (!allowblend) glDisable(GL_BLEND);
+
+	if (fbo->nbt > 1) {
+		int i;
+		for (i = fbo->nbt - 1; i >= 1; i--) {
+			tglActiveTexture(GL_TEXTURE0 + i);
+			tglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+		}
+		tglActiveTexture(GL_TEXTURE0);
+	}
 
 	vertex_clear(generic_vx);
 	vertex_add_quad(generic_vx,
@@ -2006,13 +2016,6 @@ static int fbo_texture_bind(lua_State *L)
 	}
 	else
 	{
-		if (fbo->nbt > 1) {
-			for (i = fbo->nbt - 1; i >= 1; i--) {
-				tglActiveTexture(GL_TEXTURE0 + i);
-				tglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
-			}
-			tglActiveTexture(GL_TEXTURE0);
-		}
 		tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 	}
 
