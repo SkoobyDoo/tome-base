@@ -1514,23 +1514,33 @@ static int gl_new_fbo(lua_State *L)
 
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
+	int nbt = 1;
+	if (lua_isnumber(L, 3)) nbt = luaL_checknumber(L, 3);
 
 	lua_fbo *fbo = (lua_fbo*)lua_newuserdata(L, sizeof(lua_fbo));
 	auxiliar_setclass(L, "gl{fbo}", -1);
 	fbo->w = w;
 	fbo->h = h;
+	fbo->nbt = nbt;
+
+	fbo->textures = calloc(nbt, sizeof(GLuint));
+	fbo->buffers = calloc(nbt, sizeof(GLenum));
 
 	glGenFramebuffers(1, &(fbo->fbo));
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
 
 	// Now setup a texture to render to
-	glGenTextures(1, &(fbo->texture));
-	tfglBindTexture(GL_TEXTURE_2D, fbo->texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo->texture, 0);
+	int i;
+	glGenTextures(nbt, fbo->textures);
+	for (i = 0; i < nbt; i++) {
+		tfglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
+	}
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if(status != GL_FRAMEBUFFER_COMPLETE) return 0;
@@ -1545,11 +1555,15 @@ static int gl_free_fbo(lua_State *L)
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+	int i;
+	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	glDeleteTextures(1, &(fbo->texture));
+	glDeleteTextures(fbo->nbt, fbo->textures);
 	glDeleteFramebuffers(1, &(fbo->fbo));
+
+	free(fbo->textures);
+	free(fbo->buffers);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -1629,7 +1643,7 @@ static int gl_fbo_toscreen(lua_State *L)
 		w, 0, 1, 1,
 		r, g, b, a
 	);
-	vertex_toscreen(generic_vx, x, y, fbo->texture, 1, 1, 1, 1);
+	vertex_toscreen(generic_vx, x, y, fbo->textures[0], 1, 1, 1, 1);
 
 	if (has_shader) useNoShader();
 	if (!allowblend) glEnable(GL_BLEND);
@@ -1672,7 +1686,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 		tglBindFramebuffer(GL_FRAMEBUFFER, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
-		vertex_toscreen(generic_vx, 0, 0, srcfbo->texture, 1, 1, 1, 1);
+		vertex_toscreen(generic_vx, 0, 0, srcfbo->textures[0], 1, 1, 1, 1);
 
 		shad_idx++;
 		tmpfbo = srcfbo;
@@ -1688,7 +1702,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo_final->fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
-	vertex_toscreen(generic_vx, x, y, srcfbo->texture, 1, 1, 1, 1);
+	vertex_toscreen(generic_vx, x, y, srcfbo->textures[0], 1, 1, 1, 1);
 
 	useNoShader();
 
@@ -1949,7 +1963,7 @@ static int gl_fbo_to_png(lua_State *L)
 		return 0;
 	}
 
-	tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+	tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 #ifndef NO_OLD_GL
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)image);
@@ -1986,13 +2000,20 @@ static int fbo_texture_bind(lua_State *L)
 		if (multitexture_active && shaders_active)
 		{
 			tglActiveTexture(GL_TEXTURE0+i);
-			tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+			tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 			tglActiveTexture(GL_TEXTURE0);
 		}
 	}
 	else
 	{
-		tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+		if (fbo->nbt > 1) {
+			for (i = fbo->nbt - 1; i >= 1; i--) {
+				tglActiveTexture(GL_TEXTURE0 + i);
+				tglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+			}
+			tglActiveTexture(GL_TEXTURE0);
+		}
+		tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 	}
 
 	return 0;

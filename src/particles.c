@@ -428,7 +428,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 
 	if (multitexture_active && main_fbo) {
 		tglActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, main_fbo->texture);
+		glBindTexture(GL_TEXTURE_2D, main_fbo->textures[0]);
 		tglActiveTexture(GL_TEXTURE0);
 	}
 
