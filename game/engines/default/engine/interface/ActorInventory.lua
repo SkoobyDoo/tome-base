@@ -199,7 +199,7 @@ end
 -- @param no_sort = boolen to suppress automatic sorting of inventory
 --	puts picked up objects in self.INVEN_INVEN
 -- @return the object picked up (or stack added to), num picked up or true if o:on_prepickup(i) returns true (not "skip") or nil
---  checks obj:on_prepickup(self, i) (must return true to pickup)
+--  checks obj:on_prepickup(self, i) (return true to prevent pickup)
 --	checks obj:on_pickup(self, num) and self:on_pickup_object(obj, num) functions after pickup (includes stacks)
 function _M:pickupFloor(i, vocal, no_sort)
 	local inven = self:getInven(self.INVEN_INVEN)

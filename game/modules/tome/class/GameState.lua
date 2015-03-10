@@ -1886,10 +1886,11 @@ end
 --- Add character classes to an actor updating stats, talents, and equipment
 --	@param b = actor(boss) to update
 --	@param data = optional parameters:
---	@param data.force_classes = specific classes to add {Corruptor = true, Bulwark = true, ...} ignores restrictions
+--	@param data.force_classes = specific classes to apply first {Corruptor = true, Bulwark = true, ...} ignores restrictions
+--		forced classes are applied first, ignoring restrictions
 --	@param data.nb_classes = random classes to add (in addition to any forced classes) <2>
--- 	@param data.class_filter = function(cdata) that must return true for any class picked.
---		(cdata = subclass definition in engine.Birther.birth_descriptor_def.subclass)
+-- 	@param data.class_filter = function(cdata, b) that must return true for any class picked.
+--		(cdata, b = subclass definition in engine.Birther.birth_descriptor_def.subclass, boss (before classes are applied))
 --	@param data.no_class_restrictions set true to skip class compatibility checks <nil>
 --	@param data.add_trees = {["talent tree name 1"]=true, ["talent tree name 2"]=true, ..} additional talent trees to learn
 --	@param data.check_talents_level set true to enforce talent level restrictions <nil>
@@ -2028,7 +2029,7 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 	local force_classes = data.force_classes and table.clone(data.force_classes)
 	for name, cdata in ipairs(classes) do
 		if force_classes and force_classes[cdata.name] then apply_class(table.clone(cdata, true)) force_classes[cdata.name] = nil
-		elseif not cdata.not_on_random_boss and (not cdata.random_rarity or rng.chance(cdata.random_rarity)) and (not data.class_filter or data.class_filter(cdata))then list[#list+1] = cdata
+		elseif not cdata.not_on_random_boss and (not cdata.random_rarity or rng.chance(cdata.random_rarity)) and (not data.class_filter or data.class_filter(cdata, b)) then list[#list+1] = cdata
 		end
 	end
 	local to_apply = data.nb_classes or 2
@@ -2048,6 +2049,7 @@ end
 --	calls _M:applyRandomClass(b, data, instant) to add classes, talents, and equipment based on class descriptors
 --		handles data.nb_classes, data.force_classes, data.class_filter, ...
 --	optional parameters:
+--	@param data.init = function(data, b) to run before generation
 --	@param data.level = minimum level range for actor generation <1>
 --	@param data.rank = rank <3.5-4>
 --	@param data.life_rating = function(b.life_rating) <1.7 * base.life_rating + 4-9>
@@ -2062,6 +2064,7 @@ end
 function _M:createRandomBoss(base, data)
 	local b = base:clone()
 	data = data or {level=1}
+	if data.init then data.init(data, b) end
 	data.nb_classes = data.nb_classes or 2
 
 	------------------------------------------------------------
