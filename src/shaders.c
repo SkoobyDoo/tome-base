@@ -261,8 +261,8 @@ static int program_set_uniform_number2(lua_State *L)
 		GLfloat is[2*nb];
 		for (i = 0; i < nb; i++) {
 			lua_rawgeti(L, 3, i + 1);
-			lua_rawgeti(L, -1, 1); is[i*4+0] = lua_tonumber(L, -1); lua_pop(L, 1);
-			lua_rawgeti(L, -1, 2); is[i*4+1] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 1); is[i*2+0] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 2); is[i*2+1] = lua_tonumber(L, -1); lua_pop(L, 1);
 			lua_pop(L, 1);
 		}
 		glUniform2fvARB(glGetUniformLocationARB(p->shader, var), nb, is);
