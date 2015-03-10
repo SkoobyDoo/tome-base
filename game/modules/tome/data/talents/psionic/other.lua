@@ -235,7 +235,7 @@ newTalent{
 		return true
 	end,
 	activate = function (self, t)
-		local tk = self:getInven("PSIONIC_FOCUS")[1]
+		local tk = self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1]
 		if not tk then return false end
 
 		local ret = {}
