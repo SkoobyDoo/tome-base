@@ -103,7 +103,7 @@ newTalent{
 			local t = rng.tableRemove(tids)
 			if not t then break end
 			target.talents_cd[t.id] = cdr
-			game.logSeen(target, "%s's %s is disrupted by the Energy Drain!", target.name:capitalize(), t.name)
+			game.logSeen(target, "%s's %s is disrupted by the Energy Absorption!", target.name:capitalize(), t.name)
 			count = count + 1
 		end
 
