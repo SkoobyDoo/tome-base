@@ -1192,6 +1192,8 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then add = add + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getArmorBoost") end
+
 	return self.combat_armor + add
 end
 
@@ -1226,7 +1228,11 @@ end
 --- Gets the attack
 function _M:combatAttackBase(weapon, ammo)
 	weapon = weapon or self.combat or {}
-	return 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
+
+	return atk
 end
 function _M:combatAttack(weapon, ammo)
 	local stats
@@ -1550,6 +1556,9 @@ end
 function _M:combatDamagePower(weapon_combat, add)
 	if not weapon_combat then return 1 end
 	local power = math.max((weapon_combat.dam or 1) + (add or 0), 1)
+
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then power = power + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon_combat) end
+
 	return (math.sqrt(power / 10) - 1) * 0.5 + 1
 end
 
@@ -1671,9 +1680,13 @@ end
 --- Gets fatigue
 function _M:combatFatigue()
 	local min = self.min_fatigue or 0
-	if self.fatigue < min then return min end
+	local fatigue = self.fatigue
+
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then fatigue = fatigue - self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getFatigueBoost") end
+
+	if fatigue < min then return min end
 	if self:knowTalent(self.T_NO_FATIGUE) then return min end
-	return self.fatigue
+	return fatigue
 end
 
 --- Gets spellcrit
