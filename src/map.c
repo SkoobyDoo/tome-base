@@ -331,8 +331,8 @@ static int map_object_set_move_anim(lua_State *L)
 	obj->move_blur = lua_tonumber(L, 7); // defaults to 0
 	obj->move_twitch_dir = lua_tonumber(L, 8); // defaults to 0 (which is equivalent to up or 8)
 	obj->move_twitch = lua_tonumber(L, 9); // defaults to 0
-	obj->animdx = obj->animdx - ((float)obj->cur_x - obj->oldx);
-	obj->animdy = obj->animdy - ((float)obj->cur_y - obj->oldy);
+	// obj->animdx = obj->animdx - ((float)obj->cur_x - obj->oldx);
+	// obj->animdy = obj->animdy - ((float)obj->cur_y - obj->oldy);
 
 	return 0;
 }

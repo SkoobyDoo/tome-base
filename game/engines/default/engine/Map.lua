@@ -622,6 +622,7 @@ function _M:zDisplay(z, nb_keyframe, prevfbo)
 	self:calcEffectVisibility(z)
 	self:displayParticles(z, nb_keyframe)
 	self:displayEffects(z, prevfbo, nb_keyframe)
+	return true
 end
 
 --- Sets checks if a grid lets sight pass through
