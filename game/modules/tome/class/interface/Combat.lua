@@ -1680,12 +1680,12 @@ end
 --- Gets fatigue
 function _M:combatFatigue()
 	local min = self.min_fatigue or 0
-	if self.fatigue < min then return min end
-	if self:knowTalent(self.T_NO_FATIGUE) then return min end
-
 	local fatigue = self.fatigue
+
 	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then fatigue = fatigue - self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getFatigueBoost") end
 
+	if fatigue < min then return min end
+	if self:knowTalent(self.T_NO_FATIGUE) then return min end
 	return fatigue
 end
 
