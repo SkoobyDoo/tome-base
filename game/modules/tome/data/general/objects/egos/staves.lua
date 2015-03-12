@@ -253,7 +253,7 @@ newEntity{
 			local range = self.use_power.range(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("project a bolt from the staff (to range %d) dealing %0.2f - %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
+			return ("project a bolt from the staff (to range %d) dealing %0.2f to %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
 		end,
 		5,
 		function(self, who)
@@ -363,7 +363,7 @@ newEntity{
 			local radius = self.use_power.radius(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("unleash an elemental blastwave, dealing %0.2f - %0.2f %s damage in a radius %d around the user"):format(dam, dam*damrange, damtype.name, radius)
+			return ("unleash an elemental blastwave, dealing %0.2f to %0.2f %s damage in a radius %d around the user"):format(dam, dam*damrange, damtype.name, radius)
 		end,
 		10,
 		function(self, who)
@@ -482,7 +482,7 @@ newEntity{
 			local radius = self.use_power.radius(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("conjure elemental energy in a radius %d cone, dealing %0.2f - %0.2f %s damage"):format( radius, dam, dam*damrange, damtype.name)
+			return ("conjure elemental energy in a radius %d cone, dealing %0.2f to %0.2f %s damage"):format( radius, dam, dam*damrange, damtype.name)
 		end,
 		8,
 		function(self, who)

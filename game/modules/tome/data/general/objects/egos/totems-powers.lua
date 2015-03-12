@@ -32,16 +32,15 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 8,
 
-	charm_power_def = {add=1, max=5, floor=true,
-		range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end},
+	charm_power_def = {add=1, max=5, floor=true},
 	resolvers.charm(
-		function(self, who) return ("remove up to %d poisons or diseases from a target within range %d (Willpower)"):format(self:getCharmPower(who), self.charm_power_def:range(who)) end,
+		function(self, who) return ("remove up to %d poisons or diseases from a target within range %d (based on Willpower)"):format(self.use_power.cures(self, who), self.use_power.range(self, who)) end,
 		10,
 		function(self, who)
-		local tg = {default_target=who, type="hit", nowarning=true, range=self.charm_power_def:range(who), first_target="friend"}
+		local tg = {default_target=who, type="hit", nowarning=true, range=self.use_power.range(self, who), first_target="friend"}
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
-		local nb = self:getCharmPower(who)
+		local nb = self.use_power.cures(self, who)
 		who:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return end
@@ -65,9 +64,13 @@ newEntity{
 			end
 		end)
 		game:playSoundNear(who, "talents/heal")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
+		game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
 		return {id=true, used=true}
-	end),
+	end,
+	"T_GLOBAL_CD",
+	{range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end,
+	cures = function(self, who) return self:getCharmPower(who) end}
+	),
 }
 
 newEntity{
@@ -80,7 +83,7 @@ newEntity{
 	resolvers.charm(function(self) return ("harden the skin for 7 turns increasing armour by %d and armour hardiness by %d%%%%"):format(self:getCharmPower(who), 20 + self.material_level * 10) end, 20, function(self, who)
 		who:setEffect(who.EFF_THORNY_SKIN, 7, {ac=self:getCharmPower(who), hard=20 + self.material_level * 10})
 		game:playSoundNear(who, "talents/heal")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
+		game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
 		return {id=true, used=true}
 	end),
 }
@@ -91,19 +94,22 @@ newEntity{
 	level_range = {25, 50},
 	rarity = 20,
 
-	charm_power_def = {add=50, max=250, floor=true,
-		range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end},
+	charm_power_def = {add=50, max=250, floor=true},
 	resolvers.charm(
-		function(self, who) return ("heal a target within range %d (Willpower) for %d"):format(self.charm_power_def:range(who), self:getCharmPower(who)) end,
+		function(self, who) return ("heal a target within range %d (based on Willpower) for %d"):format(self.use_power.range(self, who), self.use_power.damage(self, who)) end,
 		20,
 		function(self, who)
-		local tg = {default_target=who, type="hit", nowarning=true, range=self.charm_power_def:range(who), first_target="friend"}
-		local x, y = who:getTarget(tg)
-		if not x or not y then return nil end
-		local dam = self:getCharmPower(who)
-		who:project(tg, x, y, engine.DamageType.HEAL, dam)
-		game:playSoundNear(who, "talents/heal")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
-		return {id=true, used=true}
-	end),
+			local tg = {default_target=who, type="hit", nowarning=true, range=self.use_power.range(self, who), first_target="friend"}
+			local x, y = who:getTarget(tg)
+			if not x or not y then return nil end
+			local dam = self.use_power.damage(self, who)
+			who:project(tg, x, y, engine.DamageType.HEAL, dam)
+			game:playSoundNear(who, "talents/heal")
+			game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
+			return {id=true, used=true}
+		end,
+		"T_GLOBAL_CD",
+		{range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end,
+		damage = function(self, who) return self:getCharmPower(who) end}
+	)
 }
