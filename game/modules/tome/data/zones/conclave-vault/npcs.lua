@@ -26,7 +26,7 @@ load("/data/general/npcs/ogre.lua", switchRarity("special_rarity"))
 local Talents = require("engine.interface.ActorTalents")
 
 newEntity{
-	define_as = "BASE_NPC_VAT",
+	define_as = "BASE_NPC_VAT", name = "old vats",
 	type = "structure", subtype = "vat",
 	display = "*", color=colors.GREEN,
 	rank = 2,
@@ -36,6 +36,7 @@ newEntity{
 	on_added_to_level = function(self)
 		self:setEffect(self.EFF_AEONS_STASIS, 1, {})
 	end,
+	tooltip = function(self, x, y) return mod.class.Grid.tooltip(self, x, y) end,
 }
 
 newEntity{
