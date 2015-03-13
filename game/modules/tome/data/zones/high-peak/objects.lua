@@ -82,9 +82,13 @@ The Sorcerers seem to have awakened its power.
 	moddable_tile_particle = {"godslayer_swirl", {size=64, x=-16}},
 
 	max_power = 200, power_regen = 1,
-	use_power = { name = "absorb energies", power = 200,
+	use_power = {
+		name = function(self, who) return ("absorb the essence of a target in range %d, draining 30%% of its life and increasing your own damage by 30%% for %d turns"):format(self.use_power.range, self.use_power.duration) end,
+		power = 200,
+		range = 8,
+		duration =7,
 		use = function(self, who)
-			local tg = {type="hit", range=8}
+			local tg = {type="hit", range=self.use_power.range}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)
@@ -93,10 +97,10 @@ The Sorcerers seem to have awakened its power.
 			if target.staff_drained then
 				game.logPlayer(who, "This foe has already been drained.")
 			end
-
-			game.logPlayer(who, "You brandish the staff, draining your foe.")
-			who:setEffect(who.EFF_POWER_OVERLOAD, 7, {power=30})
-			target:takeHit(target.life * 0.3, who)
+			_, x = target:takeHit(target.max_life * 0.3, who, {special_death_msg = "was absorbed by the ".. self.name.." held by "..who.name:capitalize()})
+			game.logPlayer(who, "%s brandishes %s %s, absorbing the essence of %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name=true}), target.name:capitalize())
+			game:delayedLogDamage(who, target, x, ("#ORCHID# %d essence drain#LAST#"):format(x), false)
+			who:setEffect(who.EFF_POWER_OVERLOAD, self.use_power.duration, {power=30})
 			return {id=true, used=true}
 		end
 	},

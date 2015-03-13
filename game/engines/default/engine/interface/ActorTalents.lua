@@ -52,7 +52,7 @@ function _M:newTalentType(t)
 	t.points = t.points or 1
 	t.talents = {}
 	table.insert(self.talents_types_def, t)
-	self.talents_types_def[t.type] = t
+	self.talents_types_def[t.type] = self.talents_types_def[t.type] or t
 end
 
 --- Defines one talent
@@ -245,9 +245,9 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 					-- terminated
 					return
 				end
+				if err then error(err) end  --propagate
 				coroutine.yield()
 			end
-			if err then error(err) end  --propagate
 		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
 			local abname = game:getGenericTextTiles(ab)..ab.name
@@ -635,14 +635,14 @@ function _M:getTalentReqDesc(t_id, levmod)
 			if type(tid) == "table" then
 				if type(tid[2]) == "boolean" and tid[2] == false then
 					local c = (not self:knowTalent(tid[1])) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
-					str:add(c, ("- Talent %s (not known)\n"):format(self:getTalentFromId(tid[1]).name), true)
+					str:add(c, ("- Talent %s (not known)"):format(self:getTalentFromId(tid[1]).name), true)
 				else
 					local c = (self:getTalentLevelRaw(tid[1]) >= tid[2]) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
-					str:add(c, ("- Talent %s (%d)\n"):format(self:getTalentFromId(tid[1]).name, tid[2]), true)
+					str:add(c, ("- Talent %s (%d)"):format(self:getTalentFromId(tid[1]).name, tid[2]), true)
 				end
 			else
 				local c = self:knowTalent(tid) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
-				str:add(c, ("- Talent %s\n"):format(self:getTalentFromId(tid).name), true)
+				str:add(c, ("- Talent %s"):format(self:getTalentFromId(tid).name), true)
 			end
 		end
 	end
@@ -965,11 +965,18 @@ function _M:talentDialog(d)
 	dialog_returns_list[#dialog_returns_list+1] = d
 
 	local co = coroutine.running()
-	d.unload = function(self) coroutine.resume(co, dialog_returns[d]) end
+	d.unload = function(dialog)
+		local ok, err = coroutine.resume(co, dialog_returns[d])
+		if not ok and err then
+			print(debug.traceback(co))
+			self:onTalentLuaError(err)
+			error(err)
+		end
+	end
 	local ret = coroutine.yield()
 
 	dialog_returns[d] = nil
 	table.removeFromList(dialog_returns_list, d)
 
-	return unpack(ret)
+	return unpack(ret or {})
 end

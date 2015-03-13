@@ -1502,7 +1502,7 @@ newTalent{
 
 		local e = Object.new{
 			old_feat = oe,
-			type = oe.type, subtype = oe.subtype,
+			type = rawget(oe, "type"), subtype = oe.subtype,
 			name = "raging volcano", image = oe.image, add_mos = {{image = "terrain/lava/volcano_01.png"}},
 			display = '&', color=colors.LIGHT_RED, back_color=colors.RED,
 			always_remember = true,
@@ -1574,7 +1574,7 @@ newTalent{
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 220, getParadoxSpellpower(self, t)) end,
 	action = function(self, t)
-		local tg = self:getTalentTarget()
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		self:project(tg, x, y, DamageType.WASTING, self:spellCrit(t.getDamage(self, t)))
@@ -2642,5 +2642,40 @@ newTalent{
 	rangebonus = function(self,t) return math.max(0, self:combatTalentScale(t, 3, 10)) end,
 	info = function(self, t)
 		return ""
+	end,
+}
+
+newTalent{
+	name = "Reload",
+	type = {"technique/other", 1},
+	cooldown = 2,
+	innate = true,
+	points = 1,
+	tactical = { AMMO = 2 },
+	no_energy = true,
+	no_reload_break = true,
+	no_break_stealth = true,
+	no_dumb_use = true,
+	on_pre_use = function(self, t, silent)
+		local q = self:hasAmmo()
+		if not q then if not silent then game.logPlayer(self, "You must have a quiver or pouch equipped.") end return false end
+		if q.combat.shots_left >= q.combat.capacity then return false end
+		return true
+	end,
+	no_unlearn_last = true,
+	action = function(self, t)
+		if self.resting then return end
+		local ret = self:reload()
+		if ret then
+			self:setEffect(self.EFF_RELOAD_DISARMED, 1, {})
+		end
+		return true
+	end,
+	info = function(self, t)
+		return ([[Quickly reload your ammo by %d (depends on masteries and object bonuses).
+		Doing so requires no turn but you are considered disarmed for 2 turns.
+
+		Reloading does not break stealth.]])
+		:format(self:reloadRate())
 	end,
 }

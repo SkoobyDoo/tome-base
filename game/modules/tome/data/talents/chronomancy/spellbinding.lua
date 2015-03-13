@@ -31,10 +31,12 @@ newTalent{
 	no_npc_use = true,
 	allow_temporal_clones = true,
 	getPower = function(self, t) return self:combatTalentLimit(t, 1, 0.1, 0.5) end,
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- temporal clones *CAN* learn spellbinding talents but can't change the value
+	on_pre_use = function(self, t, silent) if self ~= game.player and not self:isTalentActive(t) then return false end return true end,  -- but don't let them cast it
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyEmpower").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 
 		return {
 			talent = talent, rest_count = 0
@@ -47,6 +49,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Empowers the selected chronomancy spell, increasing spellpower when casting it by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Empowered Spell: %s]]):
 		format(power, talent)
@@ -65,10 +68,12 @@ newTalent{
 	no_npc_use = true,
 	allow_temporal_clones = true,
 	getPower = function(self, t) return self:combatTalentLimit(t, 0.5, 0.05, 0.25) end,
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- temporal clones *CAN* learn spellbinding talents but can't change the value
+	on_pre_use = function(self, t, silent) if self ~= game.player and not self:isTalentActive(t) then return false end return true end,  -- but don't let them cast it
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyExtension").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 				
 		return {
 			talent = talent, rest_count = 0
@@ -81,6 +86,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Extends the duration of the selected chronomancy spell by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Extended Spell: %s]]):
 		format(power, talent)
@@ -99,11 +105,13 @@ newTalent{
 	no_npc_use = true,
 	allow_temporal_clones = true,
 	getPower = function(self, t) return self:combatTalentLimit(t, 0.5, 0.05, 0.25) end,
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- temporal clones *CAN* learn spellbinding talents but can't change the value
+	on_pre_use = function(self, t, silent) if self ~= game.player and not self:isTalentActive(t) then return false end return true end,  -- but don't let them cast it
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyMatrix").new(self))
 		if not talent then return nil end
-				
+		
+		game:playSoundNear(self, "talents/spell_generic")
+		
 		return {
 			talent = talent, rest_count = 0
 		}
@@ -115,6 +123,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Reduces the cooldown of the selected chronomancy spell by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Matrix Spell: %s]]):
 		format(power, talent)
@@ -132,11 +141,13 @@ newTalent{
 	cooldown = 10,
 	no_npc_use = true,  -- so rares don't learn useless talents
 	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
+	on_pre_use = function(self, t, silent) if self ~= game.player and not self:isTalentActive(t) then return false end return true end,  -- but don't let them cast it
 	getPower = function(self, t) return self:combatTalentLimit(t, 1, 0.1, 0.5) end,
 	activate = function(self, t)
 		local talent = self:talentDialog(require("mod.dialogs.talents.ChronomancyQuicken").new(self))
 		if not talent then return nil end
+		
+		game:playSoundNear(self, "talents/spell_generic")
 				
 		return {
 			talent = talent, rest_count = 0
@@ -149,6 +160,7 @@ newTalent{
 		local power = t.getPower(self, t) * 100
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
 		return ([[Reduces the casting speed of the selected chronomancy spell by %d%%.
+		Each spell can only be spellbound in one way at a time.
 		
 		Current Quickened Spell: %s]]):
 		format(power, talent)

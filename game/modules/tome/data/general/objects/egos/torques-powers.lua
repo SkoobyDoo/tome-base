@@ -105,9 +105,13 @@ newEntity{
 	level_range = {15, 50},
 	rarity = 8,
 
-	charm_power_def = {add=45, max=400, floor=true},
-	resolvers.charm(function(self) return ("fire a blast of psionic energies in a beam (dam %d-%d)"):format(self:getCharmPower(who)/2, self:getCharmPower(who)) end, 6, function(self, who)
-		local tg = {type="beam", range=6 + who:getWil(4)}
+	charm_power_def = {add=45, max=400, floor=true,
+		range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end},
+	resolvers.charm(
+		function(self, who) return ("fire a blast of psionic energies in a range %d beam (dam %d-%d)"):format(self.charm_power_def:range(who), self:getCharmPower(who)/2, self:getCharmPower(who)) end,
+		6,
+		function(self, who)
+		local tg = {type="beam", range=self.charm_power_def:range(who)}
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
 		local dam = self:getCharmPower(who)

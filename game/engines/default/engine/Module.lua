@@ -109,6 +109,8 @@ function _M:loadDefinition(dir, team, incompatible)
 		setfenv(mod_def, mod)
 		mod_def()
 		mod.rng = nil
+		mod.team = team
+		mod.dir = dir
 
 		if not mod.long_name or not mod.name or not mod.short_name or not mod.version or not mod.starter then
 			print("Bad module definition", mod.long_name, mod.name, mod.short_name, mod.version, mod.starter)
@@ -344,8 +346,13 @@ function _M:listBackgrounds(mod)
 	end
 
 	-- Add the default one
-	local backname = util.getval(mod.background_name) or "tome"
-	defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	-- local backname = util.getval(mod.background_name) or "tome"
+	-- defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	if not mod.background_name then mod.background_name = {"tome"} end
+	if type (mod.background_name) == "string" then mod.background_name = {mod.background_name} end
+	for i, backname in ipairs(mod.background_name) do
+		defs[#defs+1] = {name="/data/gfx/background/"..backname..".png", logo="/data/gfx/background/"..backname.."-logo.png", chance=100}
+	end
 
 	-- Look for more
 	parse("/addons/")
@@ -363,6 +370,8 @@ function _M:listBackgrounds(mod)
 	local logo = nil
 	if def.logo then logo = {(core.display.loadImage(def.logo) or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()} end
 	if def.umount then def.umount() end
+
+	if mod.keep_background_texture then mod.keep_background_texture = bkgs end
 
 	return bkgs, logo
 end

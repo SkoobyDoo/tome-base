@@ -54,7 +54,7 @@ collect_staff_unique = function(self, npc, who, dialog)
 				game.level.map:particleEmitter(npc.x, npc.y, 3, "fireflash", {radius=3, tx=npc.x, ty=npc.y})
 				world:gainAchievement("APPRENTICE_STAFF", player)
 				npc:die()
-				return true
+				return false
 			end
 
 			self.nb_collect = self.nb_collect + 1
@@ -63,7 +63,7 @@ collect_staff_unique = function(self, npc, who, dialog)
 			game.log("You have no more %s", o:getName{no_count=true, do_color=true})
 			who:sortInven(who:getInven(inven))
 			dialog:regen()
-			return true
+			return false
 		end
 	)
 end

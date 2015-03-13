@@ -116,6 +116,7 @@ if tries < 100 then
 		local g = game.level.map(p.x, p.y, engine.Map.TERRAIN):cloneFull()
 		g.name = "grave"
 		g.display='&' g.color_r=255 g.color_g=255 g.color_b=255 g.notice = true
+		g.always_remember = true g.special_minimap = colors.OLIVE_DRAB
 		g:removeAllMOs()
 		if engine.Map.tiles.nicer_tiles then
 			g.add_displays = g.add_displays or {}
@@ -135,6 +136,7 @@ if tries < 100 then
 					local ov = g.add_displays[#g.add_displays]
 					ov.image = "terrain/grave_opened_0"..rng.range(1, 3).."_64.png"
 				end
+				g.name = "grave (opened)"
 				game.level.map:updateMap(x, y)
 
 				self.block_move = nil
@@ -154,6 +156,7 @@ if tries < 100 then
 		end
 
 		game.zone:addEntity(game.level, g, "terrain", p.x, p.y)
+		print("[EVENT] grave placed at ", p.x, p.y)
 	end
 end
 

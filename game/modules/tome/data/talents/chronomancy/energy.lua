@@ -23,7 +23,7 @@ newTalent{
 	name = "Energy Decomposition",
 	type = {"chronomancy/energy",1},
 	mode = "sustained",
-	require = chrono_req_high1,
+	require = chrono_req1,
 	points = 5,
 	sustain_paradox = 24,
 	cooldown = 10,
@@ -41,9 +41,11 @@ newTalent{
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
-		return {
-			particle = self:addParticles(Particles.new("temporal_focus", 1)),
-		}
+		local ret = {}
+		if core.shader.active(4) then
+			ret.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.2, img="forcefield"}, {type="shield", shieldIntensity=0.05, color={1,1,1}}))
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
@@ -59,7 +61,7 @@ newTalent{
 newTalent{
 	name = "Energy Absorption",
 	type = {"chronomancy/energy", 2},
-	require = chrono_req_high2,
+	require = chrono_req2,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 6,
@@ -71,7 +73,6 @@ newTalent{
 	getTalentCount = function(self, t)
 		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 80, getParadoxSpellpower(self, t)) end,
 	getCooldown = function(self, t) return math.ceil(self:combatTalentScale(t, 1, 2.6)) end,
 	target = function (self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -102,7 +103,7 @@ newTalent{
 			local t = rng.tableRemove(tids)
 			if not t then break end
 			target.talents_cd[t.id] = cdr
-			game.logSeen(target, "%s's %s is disrupted by the Energy Drain!", target.name:capitalize(), t.name)
+			game.logSeen(target, "%s's %s is disrupted by the Energy Absorption!", target.name:capitalize(), t.name)
 			count = count + 1
 		end
 
@@ -110,7 +111,7 @@ newTalent{
 			local tids = {}
 			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
-				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
+				if not tt.fixed_cooldown then
 					tids[#tids+1] = tt
 				end
 			end
@@ -120,39 +121,34 @@ newTalent{
 				local tid = rng.tableRemove(tids)
 				self:alterTalentCoolingdown(tid, - cdr)
 			end
-
-			-- Deal our damage in one lump sum
-			self:project(tg, target.x, target.y, DamageType.TEMPORAL, self:spellCrit(count * t.getDamage(self, t)))
 		end
 
 		target:crossTierEffect(target.EFF_SPELLSHOCKED, getParadoxSpellpower(self, t))
-		game.level.map:particleEmitter(tx, ty, 1, "generic_charge", {rm=10, rM=110, gm=10, gM=50, bm=20, bM=125, am=25, aM=255})
-		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=200, rM=255, gm=200, gM=255, bm=200, bM=255, am=125, aM=125})
+		game.level.map:particleEmitter(tx, ty, 1, "generic_charge", {rm=10, rM=110, gm=10, gM=50, bm=20, bM=125, am=25, aM=125})
+		game.level.map:particleEmitter(self.x, self.y, 1, "generic_charge", {rm=200, rM=255, gm=200, gM=255, bm=0, bM=0, am=25, aM=125})
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)
 		local talentcount = t.getTalentCount(self, t)
 		local cooldown = t.getCooldown(self, t)
-		local damage = t.getDamage(self, t)
 		return ([[You sap the target's energy and add it to your own, placing up to %d random talents on cooldown for %d turns.
-		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns and deal %0.2f temporal damage to the target.
-		The damage done will scale with your Spellpower.]]):
-		format(talentcount, cooldown, cooldown, damDesc(self, DamageType.TEMPORAL, damage))
+		For each talent put on cooldown, you reduce the cooldown of one of your talents currently on cooldown by %d turns.]]):
+		format(talentcount, cooldown, cooldown)
 	end,
 }
 
 newTalent{
 	name = "Redux",
 	type = {"chronomancy/energy",3},
-	require = chrono_req_high3,
+	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 24,
 	tactical = { BUFF = 2 },
 	fixed_cooldown = true,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
-	getMaxCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 3, 8)) end,
+	getMaxCooldown = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 8)) end,
 	action = function(self, t)
 		-- effect is handled in actor postUse
 		self:setEffect(self.EFF_REDUX, t.getDuration(self, t), {max_cd=t.getMaxCooldown(self, t)})
@@ -162,7 +158,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local cooldown = t.getMaxCooldown(self, t)
-		return ([[For the next %d turns chronomancy spells with a cooldown of %d or less have a cooldown of one.]]):
+		return ([[For the next %d turns talents with a cooldown of %d or less have a cooldown of one.]]):
 		format(duration, cooldown)
 	end,
 }
@@ -170,14 +166,13 @@ newTalent{
 newTalent{
 	name = "Entropy",
 	type = {"chronomancy/energy",4},
-	require = chrono_req_high4,
+	require = chrono_req4,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	cooldown = 12,
-	tactical = { ATTACK = { TEMPORAL = 2 }, DEBUFF=3 },
+	tactical = { DISABLE = 2 },
 	range = 10,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 100, getParadoxSpellpower(self, t)) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 7))) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -189,18 +184,14 @@ newTalent{
 		if not x or not y or not target then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
 
-		local damage = self:spellCrit(t.getDamage(self, t))
-		target:setEffect(target.EFF_ENTROPY, t.getDuration(self, t), {power=damage, src=self, apply_power=getParadoxSpellpower(self, t)})
+		target:setEffect(target.EFF_ENTROPY, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 
 		game:playSoundNear(self, "talents/dispel")
 
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Over the next %d turns all beneficial timed effects on the target tick twice as fast.
-		Each timed effect affected by this talent deals %0.2f temporal damage to the target.
-		The damage will scale with your Spellpower.]]):format(duration, damDesc(self, DamageType.TEMPORAL, damage))
+		return ([[Each turn, for the next %d turns, one of the target's sustained talents will be deactivated.]]):format(duration)
 	end,
 }

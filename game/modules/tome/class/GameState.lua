@@ -411,6 +411,8 @@ function _M:generateRandart(data)
 	if not base or not base.randart_able then game.level.level = oldlev resolvers.current_level = oldclev return end
 	local o = base:cloneFull()
 
+	local display = o.display
+
 --o.baseobj = base:cloneFull() -- debugging code
 --o.gendata = table.clone(data, true) -- debugging code
 
@@ -525,11 +527,12 @@ function _M:generateRandart(data)
 		local picked_egos = {}
 		local legos = {}
 		local been_greater = 0
+		game.zone:getEntities(game.level, "object") -- make sure ego definitions are loaded
 		-- merge all egos into one list to correctly calculate rarities
 		table.append(legos, game.level:getEntitiesList("object/"..o.egos..":prefix") or {})
 		table.append(legos, game.level:getEntitiesList("object/"..o.egos..":suffix") or {})
 		table.append(legos, game.level:getEntitiesList("object/"..o.egos..":") or {})
---print(" * loaded ", #legos, "ego definitions")
+--		print(" * loaded ", #legos, "ego definitions from ", o.egos)
 		for i = 1, nb_egos or 3 do
 			local list = {}
 			local gr_ego, ignore_filter = false, false
@@ -593,7 +596,7 @@ function _M:generateRandart(data)
 				points = points + xpoints
 			end
 		end
-		o.egos = nil o.egos_chance = nil o.force_ego = nil
+--		o.egos = nil o.egos_chance = nil o.force_ego = nil
 	end
 	-- Re-resolve with the (possibly) new resolvers
 	o:resolve()
@@ -604,10 +607,11 @@ function _M:generateRandart(data)
 	local function merger(d, e, k, dst, src, rules, state) --scale: factor to adjust power limits for levels higher than 50
 		if (not state.path or #state.path == 0) and not state.copy then
 			if k == "copy" then -- copy into root
+				state.copy = true
 				table.applyRules(dst, e, rules, state)
 			end
 		end
-		local scale = state.scale or 1
+		local scale = state.scaleup or 1
 		if type(e) == "table" and e.__resolver and e.__resolver == "randartmax" and d then
 			d.v = d.v + e.v
 			d.max = e.max
@@ -634,7 +638,7 @@ function _M:generateRandart(data)
 		local p = powers[i]
 		if p and p.points <= hpoints*2 then -- Intentionally allow the budget to be exceeded slightly to guarantee powers at low levels
 			local state = {scaleup = math.max(1,(lev/(p.level_range[2] or 50))^0.5)} --Adjust scaleup factor for each power based on lev and level_range max
---			print(" * adding power: "..p.name.."("..p.points.." points)")
+		print(" * adding power: "..p.name.."("..p.points.." points)")
 			selected_powers[p.name] = selected_powers[p.name] or {}
 			table.ruleMergeAppendAdd(selected_powers[p.name], p, {merger}, state)
 			hpoints = hpoints - p.points 
@@ -669,6 +673,7 @@ function _M:generateRandart(data)
 	end
 
 	for _, ego in pairs(selected_powers) do
+		ego.instant_resolve = true  -- resolve to be able to add
 		ego = engine.Entity.new(ego) -- get a real uid
 		game.zone:applyEgo(o, ego, "object", true)
 	end
@@ -722,6 +727,8 @@ function _M:generateRandart(data)
 		end
 		o.combat.damtype = pickDamtype(themes)
 	end
+
+	o.display = display
 
 	if data.post then
 		data.post(o)
@@ -1506,6 +1513,10 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 						if o then
 --							print("[entityFilterPost]: Generated random object for", tostring(b.name))
 							o.unique, o.randart, o.rare = nil, nil, true
+							if o.__original then
+								local e = o.__original
+								e.unique, e.randart, e.rare = nil, nil, true
+							end
 							b:addObject(b.INVEN_INVEN, o)
 							game.zone:addEntity(game.level, o, "object")
 						else
@@ -2295,6 +2306,7 @@ function _M:startEvents()
 
 		-- Randomize the order they are checked as
 		table.shuffle(evts)
+		print("[STARTEVENTS] Zone events list:")
 		table.print(evts)
 		table.shuffle(mevts)
 		table.print(mevts)
@@ -2362,7 +2374,7 @@ function _M:startEvents()
 	end
 
 	return function()
-		print("Assigned events list")
+		print("[STARTEVENTS] Assigned events list:")
 		table.print(game.zone.assigned_events)
 
 		for i, e in ipairs(game.zone.assigned_events[game.level.level] or {}) do

@@ -145,14 +145,8 @@ function _M:updateTitle(title)
 	local title = title
 	if type(title)=="function" then title = title() end
 	self.font_bold:setStyle("bold")
-	local tw, th = self.font_bold:size(title)
-	local s = core.display.newSurface(tw, th)
-	s:erase(0, 0, 0, 0)
-	s:drawColorStringBlended(self.font_bold, title, 0, 0, self.color.r, self.color.g, self.color.b, true)
+	self.title_tex = self:drawFontLine(self.font_bold, title)
 	self.font_bold:setStyle("normal")
-	self.title_tex = {s:glTexture()}
-	self.title_tex.w = tw
-	self.title_tex.h = th
 end
 
 function _M:loadUI(t)
@@ -414,8 +408,8 @@ function _M:display(x, y, nb_keyframes)
 
 	-- Title
 	if self.title then
-		if self.title_shadow then self.title_tex[1]:toScreenFull(x + (self.w - self.title_tex.w) / 2 + 3 + self.frame.title_x, y + 3 + self.frame.title_y, self.title_tex.w, self.title_tex.h, self.title_tex[2], self.title_tex[3], 0, 0, 0, 0.5) end
-		self.title_tex[1]:toScreenFull(x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y, self.title_tex.w, self.title_tex.h, self.title_tex[2], self.title_tex[3])
+		if self.title_shadow then self:textureToScreen(self.title_tex, x + 3 + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + 3 + self.frame.title_y, 0, 0, 0, 0.5) end
+		self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y)
 	end
 
 	self:innerDisplayBack(x, y, nb_keyframes, tx, ty)

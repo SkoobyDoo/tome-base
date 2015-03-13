@@ -140,16 +140,18 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = techs_req4,
-	-- called by _M:combatPhysicalpower in mod.class.interface.Combat.lua
+	radius = function(self, t) return self:getTalentLevel(t) < 5 and 1 or 2 end,
+	getDamMult = function(self, t) return self:combatTalentScale(t, 0.5, 1.1, 1) end,
 	getSPMult = function(self, t) return self:combatTalentScale(t, 1/7, 5/7) end,
 	info = function(self, t)
 		return ([[Raw magical damage channels through the caster's weapon, increasing Physical Power by %d.
-		Each time you crit with a melee blow, you will unleash a radius 2 ball of either fire, lightning or arcane damage, doing %0.2f.
-		The bonus scales with your Spellpower.
+		Each time you crit with a melee blow, you will unleash a radius %d ball of either fire, lightning or arcane damage, doing %0.2f.
+		The bonus scales with your Spellpower and talent level.
 		If you are using a shield this will only occur 75%% of the time.
 		If you are dual wielding this will only occur 50%% of the time.
+		At level 5 the ball becomes radius 2.
 		]]):
-		format(self:combatSpellpower() * t.getSPMult(self, t), self:combatSpellpower() * 2)
+		format(self:combatSpellpower() * t.getSPMult(self, t), self:getTalentRadius(t), self:combatSpellpower() * 2 * t.getDamMult(self, t))
 	end,
 }
 

@@ -52,6 +52,10 @@ function _M:onLoadZoneFile(basedir)
 		self.events = f()
 
 		self:triggerHook{"Zone:loadEvents", zone=self.short_name, events=self.events}
+	else
+		local evts = {}
+		self:triggerHook{"Zone:loadEvents", zone=self.short_name, events=evts}
+		if next(evts) then self.events = evts end
 	end
 end
 

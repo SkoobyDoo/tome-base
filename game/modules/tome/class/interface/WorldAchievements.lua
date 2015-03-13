@@ -50,6 +50,9 @@ function _M:newAchievement(t)
 	WA.newAchievement(self, t)
 
 	if not t.no_difficulty_duplicate then
+		t.difficulty = DIFFICULTY_NORMAL
+		t.permadeath = PERMADEATH_MANY
+
 		-- Normal
 		local t2 = table.clone(t)
 		t2.id = "NORMAL_ROGUELIKE_"..t2.id

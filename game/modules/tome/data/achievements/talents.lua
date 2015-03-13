@@ -64,3 +64,13 @@ newAchievement{
 	desc = [[Achieved your wild dreams of power and eternal life: you turned into a Lich!]],
 	show = "name",
 }
+newAchievement{
+	name = "Best album ever!", id = "THE_CURE",
+	desc = [[Removed 89 beneficial effects from enemies via Disintegration.]],
+	show = "full", 	mode = "player",
+	can_gain = function(self, who)
+		self.nb = (self.nb or 0) + 1
+		if self.nb >= 89 then return true end
+	end,
+	track = function(self) return tstring{tostring(self.nb or 0)," / 89"} end,
+}

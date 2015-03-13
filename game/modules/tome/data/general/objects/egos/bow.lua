@@ -54,3 +54,26 @@ newEntity{
 		inc_damage={ [DamageType.PHYSICAL] = resolvers.mbonus_material(14, 8), },
 	},
 }
+
+newEntity{
+	power_source = {arcane=true},
+	name = "keeper's ", prefix=true, instant_resolve=true,
+	keywords = {keepers=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 24,
+	cost = 40,
+	wielder = {
+		talent_cd_reduction={
+			[Talents.T_ARROW_STITCHING]=1,
+		},
+		inc_damage={ 
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(14, 8),
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(14, 8),
+		},
+		resists_pen = {
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(10, 5),
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5),
+		},
+	},
+}

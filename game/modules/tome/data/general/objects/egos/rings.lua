@@ -607,7 +607,6 @@ newEntity{
 	greater_ego = 1,
 	rarity = 15,
 	cost = 30,
-	use_no_energy = true,
 	resolvers.charmt(Talents.T_DISENGAGE, 2, 10),
 	wielder = {
 		combat_atk = resolvers.mbonus_material(10, 7),
@@ -616,7 +615,6 @@ newEntity{
 	},
 }
 
--- Instant so it isn't strictly worse than Psychoport/etc
 newEntity{
 	power_source = {technique=true},
 	name = " of speed", suffix=true, instant_resolve=true,

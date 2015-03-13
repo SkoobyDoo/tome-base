@@ -315,6 +315,12 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 
 			return mod.class.Actor.onTakeHit(self, value, src)
 		end,
+		on_act = function(self)
+			-- clean up
+			if self.summoner.dead then
+				self:die(self)
+			end
+		end
 	}
 	self:attr("summoned_times", 1)
 	return npc
@@ -365,10 +371,6 @@ newTalent{
 
 		if game.zone.wilderness then return false end
 
-		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
-		if self.shadows.remainingCooldown > 0 then return false end
-		self.shadows.remainingCooldown = 10
-
 		local shadowCount = 0
 		for _, e in pairs(game.level.entities) do
 			if e.summoner and e.summoner == self and e.subtype == "shadow" then shadowCount = shadowCount + 1 end
@@ -377,6 +379,10 @@ newTalent{
 		if shadowCount >= t.getMaxShadows(self, t) then
 			return false
 		end
+		
+		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
+		if self.shadows.remainingCooldown > 0 then return false end
+		self.shadows.remainingCooldown = 10
 
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 8, true, {[Map.ACTOR]=true})

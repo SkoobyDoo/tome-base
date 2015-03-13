@@ -40,7 +40,7 @@ function _M:init(text, key_source, force_all)
 	self.distance = 0
 	self.lastgesture = ""
 	self.lastgesturename = ""
-	self.min_distance = core.display.size() * .0208333333
+	self.min_distance = core.display.size() * .030
 
 	self:loadGestures(key_source, force_all)
 end
@@ -85,6 +85,14 @@ end
 
 function _M:addGesturing(d, mx, my)
 	if self.lastgesture == d then return end
+
+	if not config.settings.has_gestured then
+		game:saveSettings("has_gestured", ("has_gestured = true\n"))
+		config.settings.has_gestured = true
+		self:gestureTutorial()
+		return
+	end
+
 	self.gesture = self.gesture..d
 	self.lastgesture = d
 	self.lastupdate = os.time()
@@ -232,6 +240,8 @@ function _M:update()
 end
 
 function _M:display(display_x, display_y, nb_keyframes)
+	if config.settings.hide_gestures then return end
+
 	local intensity = 0.6
 	if self.gestures[self.gesture] then intensity = 1 end
 
@@ -257,4 +267,21 @@ function _M:display(display_x, display_y, nb_keyframes)
 		end
 	end
 	if self.shader then self.shader:use(false) end
+end
+
+function _M:gestureTutorial()
+	local Dialog = require "engine.ui.Dialog"
+	Dialog:simpleLongPopup("Mouse Gestures", [[
+You have started to draw a mouse gesture for the first time!
+Gestures allow you to use talents or keyboard action by a simple movement of the mouse. To draw one you simply #{bold}#hold right click + move#{normal}#.
+By default no bindings are done for gesture so if you want to use them go to the Keybinds and add some, it's easy and fun!
+
+Gestures movements are color coded to better display which movement to do:
+#15ed2f##{italic}#green#{normal}##LAST#: moving up
+#1576ed##{italic}#blue#{normal}##LAST#: moving down
+#ed1515##{italic}#red#{normal}##LAST#: moving left
+#d6ed15##{italic}#yellow#{normal}##LAST#: moving right
+
+If you do not wish to see gestures anymore, you can hide them in the UI section of the Game Options.
+]], 600)
 end

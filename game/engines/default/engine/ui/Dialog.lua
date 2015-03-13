@@ -87,11 +87,14 @@ end
 
 --- Requests a simple, press any key, dialog
 function _M:simpleLongPopup(title, text, w, fct, no_leave, force_height)
-	local list = text:splitLines(w - 10, self.font)
 	local _, th = self.font:size(title)
 	local d = new(title, 1, 1)
-	local h = math.min(force_height and (force_height * game.h) or 999999999, self.font_h * #list + th )
-	d:loadUI{{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+10, height=h + 10, scrollbar=(h < self.font_h * #list) and true or false, text=text}}}
+	local max_h = force_height and force_height * game.h or 9999
+	local textzone = require("engine.ui.Textzone").new{width=w+10, auto_height=true, scrollbar=true, text=text}
+	if textzone.h > max_h then textzone.h = max_h
+	else textzone.scrollbar = nil
+	end
+	d:loadUI{{left = 3, top = 3, ui=textzone}}
 	if not no_leave then
 		d.key:addBind("EXIT", function() game:unregisterDialog(d) if fct then fct() end end)
 		local close = require("engine.ui.Button").new{text="Close", fct=function() d.key:triggerVirtual("EXIT") end}
@@ -132,13 +135,12 @@ function _M:yesnoLongPopup(title, text, w, fct, yes_text, no_text, no_leave, esc
 
 	w = math.max(w + 20, ok.w + cancel.w + 10)
 
-	local list = text:splitLines(w - 10, self.font)
 	d = new(title, w + 6, 1)
 
 --	d.key:addBind("EXIT", function() game:unregisterDialog(d) fct(false) end)
 	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) fct(escape) end) end
 	d:loadUI{
-		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w, height=self.font_h * #list, text=text}},
+		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w, auto_height = true, text=text}},
 		{left = 3, bottom = 3, ui=ok},
 		{right = 3, bottom = 3, ui=cancel},
 	}
@@ -174,7 +176,6 @@ end
 
 --- Requests a simple yes-no dialog
 function _M:yesnocancelLongPopup(title, text, w, fct, yes_text, no_text, cancel_text, no_leave, escape)
-	local list = text:splitLines(w - 10, font)
 	local d = new(title, 1, 1)
 
 --	d.key:addBind("EXIT", function() game:unregisterDialog(d) fct(false) end)
@@ -183,7 +184,7 @@ function _M:yesnocancelLongPopup(title, text, w, fct, yes_text, no_text, cancel_
 	local cancel = require("engine.ui.Button").new{text=cancel_text or "Cancel", fct=function() game:unregisterDialog(d) fct(false, true) end}
 	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) fct(false, not escape) end) end
 	d:loadUI{
-		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+20, height=self.font_h * #list, text=text}},
+		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+20, auto_height=true, text=text}},
 		{left = 3, bottom = 3, ui=ok},
 		{left = 3 + ok.w, bottom = 3, ui=no},
 		{right = 3, bottom = 3, ui=cancel},
@@ -338,6 +339,7 @@ function _M:generate()
 		self.mouse:registerZone(0, 0, gamew, gameh, function(button, x, y, xrel, yrel, bx, by, event) self:mouseEvent(button, x, y, xrel, yrel, bx - self.display_x, by - self.display_y, event) end)
 	else
 		self.mouse:registerZone(0, 0, gamew, gameh, function(button, x, y, xrel, yrel, bx, by, event) if button == "left" and event == "button" then  self.key:triggerVirtual("EXIT") end end)
+		self.mouse:registerZone(self.display_x + self.frame.ox1, self.display_y + self.frame.ox2, self.frame.w, self.frame.h, function(...) self:no_focus() end)
 		self.mouse:registerZone(self.display_x, self.display_y, self.w, self.h, function(...) self:mouseEvent(...) end)
 	end
 	self.key.receiveKey = function(_, ...) self:keyEvent(...) end
@@ -356,14 +358,8 @@ function _M:updateTitle(title)
 	local title = title
 	if type(title)=="function" then title = title() end
 	self.font_bold:setStyle("bold")
-	local tw, th = self.font_bold:size(title)
-	local s = core.display.newSurface(tw, th)
-	s:erase(0, 0, 0, 0)
-	s:drawColorStringBlended(self.font_bold, title, 0, 0, self.color.r, self.color.g, self.color.b, true)
+	self.title_tex = self:drawFontLine(self.font_bold, title)
 	self.font_bold:setStyle("normal")
-	self.title_tex = {s:glTexture()}
-	self.title_tex.w = tw
-	self.title_tex.h = th
 end
 
 function _M:loadUI(t)
@@ -743,12 +739,12 @@ function _M:toScreen(x, y, nb_keyframes)
 			if shader then
 				shader:use(true)
 				shader:uniOutlineSize(self.shadow_power, self.shadow_power)
-				shader:uniTextSize(self.title_tex[2], self.title_tex[3])
+				shader:uniTextSize(self.title_tex.tw, self.title_tex.th)
 			else
-				self.title_tex[1]:toScreenFull(x + (self.w - self.title_tex.w) / 2 + 3 + self.frame.title_x, y + 3 + self.frame.title_y, self.title_tex.w, self.title_tex.h, self.title_tex[2], self.title_tex[3], 0, 0, 0, 0.5)
+				self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + 3 + self.frame.title_x, y + 3 + self.frame.title_y, 0, 0, 0, 0.5)
 			end
 		end
-		self.title_tex[1]:toScreenFull(x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y, self.title_tex.w, self.title_tex.h, self.title_tex[2], self.title_tex[3])
+		self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y)
 		if self.title_shadow and shader then shader:use(false) end
 	end
 

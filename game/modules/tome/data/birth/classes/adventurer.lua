@@ -105,5 +105,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="sling", name="rough leather sling", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="shot", name="pouch of iron shots", autoreq=true, ego_chance=-1000},
 		},
+		chooseCursedAuraTree = true,
 	},
 }

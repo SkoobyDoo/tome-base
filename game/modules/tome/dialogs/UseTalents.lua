@@ -28,7 +28,7 @@ local Separator = require "engine.ui.Separator"
 module(..., package.seeall, class.inherit(Dialog))
 -- Could use better icons when available
 local confirmMark = require("engine.Entity").new({image="ui/chat-icon.png"})
-local autoMark = require("engine.Entity").new({image = "/ui/hotkeys/mainmenu.png"})
+local autoMark = require("engine.Entity").new({image = "ui/hotkeys/mainmenu.png"})
 
 -- generate talent status separately to enable quicker refresh of Dialog
 local function TalentStatus(who,t) 

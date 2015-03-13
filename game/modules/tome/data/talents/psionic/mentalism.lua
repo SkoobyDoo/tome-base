@@ -133,7 +133,7 @@ newTalent{
 		end
 		
 		local m = self:cloneFull{
-			no_drops = true,
+			no_drops = true, keep_inven_on_death = false,
 			faction = self.faction,
 			summoner = self, summoner_gain_exp=true,
 			summon_time = t.getDuration(self, t),
@@ -189,7 +189,7 @@ newTalent{
 		m.on_die = function(self)
 			local tg = {type="ball", radius=10}
 			self:project(tg, self.x, self.y, function(tx, ty)
-				local target = game.level.map(tx, ty, Map.ACTOR)
+				local target = game.level.map(tx, ty, game.level.map.ACTOR)
 				if target and target.ai_target.actor == self then
 					target.ai_target.actor = self.summoner
 				end

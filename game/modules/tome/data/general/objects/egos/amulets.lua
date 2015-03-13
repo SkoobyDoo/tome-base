@@ -412,6 +412,29 @@ newEntity{
 }
 
 newEntity{
+	power_source = {arcane=true},
+	name = "starseer's ", prefix=true, instant_resolve=true,
+	keywords = {starseer=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 16,
+	cost = 40,
+	wielder = {
+		combat_spellpower = resolvers.mbonus_material(3, 3),
+		combat_spellcrit = resolvers.mbonus_material(3, 3),
+		inc_stats = {
+			[Stats.STAT_MAG] = resolvers.mbonus_material(5, 1),
+		},
+		inc_damage = {
+			[DamageType.LIGHT] = resolvers.mbonus_material(4, 4),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(4, 4),
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(4, 4),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(4, 4),
+		},
+	},
+}
+
+newEntity{
 	power_source = {technique=true},
 	name = "warmaker's ", prefix=true, instant_resolve=true,
 	keywords = {warmaker=true},

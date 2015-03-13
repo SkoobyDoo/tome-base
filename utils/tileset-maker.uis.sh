@@ -1,5 +1,10 @@
 #!/bin/bash
 
 cd game/engines/default/data/gfx
-rm -f ts-*
-lua ../../../../../utils/tileset-maker-precise.lua ts-metal-ui /data/gfx/ `find metal-ui/ -name '*png'`
+rm -f ts-ui-*
+lua ../../../../../utils/tileset-maker-precise.lua ts-ui-metal /data/gfx/ `find metal-ui/ -name '*png'`
+
+cd -
+cd game/modules/tome/data/gfx
+rm -f ts-ui-*
+lua ../../../../../utils/tileset-maker-precise.lua ts-ui-tome /data/gfx/ `find ui/ -name '*png'`

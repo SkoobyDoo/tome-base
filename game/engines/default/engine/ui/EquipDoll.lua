@@ -46,14 +46,8 @@ function _M:generate()
 	self:generateEquipDollFrames()
 
 	self.font_bold:setStyle("bold")
-	local tw, th = self.font_bold:size(self.actor.name)
-	local s = core.display.newSurface(tw, th)
-	s:erase(0, 0, 0, 0)
-	s:drawColorStringBlended(self.font_bold, self.actor.name, 0, 0, colors.GOLD.r, colors.GOLD.g, colors.GOLD.b, true)
+	self.charname_tex = self:drawFontLine(self.font_bold, self.actor.name)
 	self.font_bold:setStyle("normal")
-	self.charname_tex = {s:glTexture()}
-	self.charname_tex.w = tw
-	self.charname_tex.h = th
 
 	self.inner_scroll = self:makeFrame("ui/tooltip/", self.w, self.h)
 
@@ -183,8 +177,8 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 
 	Base.drawFrame(self, self.inner_scroll, x, y + self.base_doll_y, 1, 1, 1, self.focused and 1 or 0.5)
 
-	if self.title_shadow then self.charname_tex[1]:toScreenFull(x + (self.w - self.charname_tex.w) / 2 + 2, y + self.base_doll_y + 5 + 2, self.charname_tex.w, self.charname_tex.h, self.charname_tex[2], self.charname_tex[3], 0, 0, 0, 0.5) end
-	self.charname_tex[1]:toScreenFull(x + (self.w - self.charname_tex.w) / 2, y + self.base_doll_y + 5, self.charname_tex.w, self.charname_tex.h, self.charname_tex[2], self.charname_tex[3])
+	if self.title_shadow then self:textureToScreen(self.charname_tex, x + (self.w - self.charname_tex.w) / 2 + 2, y + self.base_doll_y + 5 + 2, 0, 0, 0, 0.5) end
+	self:textureToScreen(self.charname_tex, x + (self.w - self.charname_tex.w) / 2, y + self.base_doll_y + 5)
 
 	local doll = self.actor.equipdolls[self.actor.equipdoll or "default"]
 	if not doll then return end

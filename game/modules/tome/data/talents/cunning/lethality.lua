@@ -56,8 +56,11 @@ newTalent{
 	getArmorPierce = function(self, t) return self:combatTalentStatDamage(t, "cun", 5, 45) end,  -- Adjust to scale like armor progression elsewhere
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 12, 6, 10)) end, --Limit to <12
 	action = function(self, t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then return nil end
+		local tg = self:getTalentTarget(t)
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		if not target then return nil end
+
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hitted then

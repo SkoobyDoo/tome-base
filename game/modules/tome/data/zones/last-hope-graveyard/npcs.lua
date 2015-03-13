@@ -40,8 +40,8 @@ newEntity{ define_as = "CELIA",
 	move_others = true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
-	rank = 3.5,
-	exp_worth = 2,
+	rank = 4,
+	exp_worth = 1.5,
 	level_range = {20, nil},
 
 	equipment = resolvers.equip{

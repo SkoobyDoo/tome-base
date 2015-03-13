@@ -32,7 +32,7 @@ local tcache = {}
 _M.font = core.display.newFont("/data/font/DroidSans.ttf", 12)
 _M.font_h = _M.font:lineSkip()
 _M.font_mono = core.display.newFont("/data/font/DroidSansMono.ttf", 12)
-_M.font_mono_w = _M.font_mono:size(" ")
+_M.font_mono_w = _M.font_mono:size("  ") - _M.font_mono:size(" ")  -- account for inter-letter interval
 _M.font_mono_h = _M.font_mono:lineSkip()
 _M.font_bold = core.display.newFont("/data/font/DroidSans-Bold.ttf", 12)
 _M.font_bold_h = _M.font_bold:lineSkip()
@@ -115,6 +115,23 @@ function _M:getUITexture(file)
 	local r = {t=t, w=w, h=h, tw=tw, th=th}
 	tcache[uifile] = r
 	return r
+end
+
+function _M:drawFontLine(font, text, width, r, g, b, direct_draw)
+	width = width or font:size(text)
+	local tex = font:draw(text, width, r or 255, g or 255, b or 255, true, direct_draw)[1]
+	local r = {t = tex._tex, w=tex.w, h=tex.h, tw=tex._tex_w, th=tex._tex_h, dduids = tex._dduids}
+	return r
+end
+
+function _M:textureToScreen(tex, x, y, r, g, b, a, allow_uid)
+	local res = tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
+	if tex.dduids and allow_uid then
+		for di, dduid in ipairs(tex.dduids) do
+			dduid.e:toScreen(nil, x + dduid.x, y, dduid.w, dduid.w, 1, false, false)
+		end
+	end
+	return res
 end
 
 function _M:makeFrame(base, w, h)

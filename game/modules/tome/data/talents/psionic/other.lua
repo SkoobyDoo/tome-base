@@ -68,7 +68,7 @@ newTalent{
 			-- Force "wield"
 			self:addObject(pf, o)
 			game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true})
-
+			
 			self:sortInven()
 			self:talentDialogReturn(true)
 		end))
@@ -92,12 +92,10 @@ newTalent{
 	no_energy = true,
 	no_unlearn_last = true,
 	tactical = { BUFF = 3 },
-	callbackOnActBase = function(self, t)
-		if game.zone.wilderness then return end
+	do_tk_strike = function(self, t)
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
 		if type(tkweapon) == "boolean" then tkweapon = nil end
 		if not tkweapon or tkweapon.type ~= "weapon" or tkweapon.subtype == "mindstar" then return end
-
 
 		local targnum = 1
 		if self:hasEffect(self.EFF_PSIFRENZY) then targnum = self:hasEffect(self.EFF_PSIFRENZY).power end
@@ -142,27 +140,7 @@ newTalent{
 		end
 		return hit
 	end,
-	callbackOnWear = function(self, t, p)
-		if self.__to_recompute_beyond_the_flesh then return end
-		self.__to_recompute_beyond_the_flesh = true
-		game:onTickEnd(function()
-			self.__to_recompute_beyond_the_flesh = nil
-			local p = self.sustain_talents[t.id]
-			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
-			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
-		end)
-	end,
-	callbackOnTakeoff = function(self, t, p)
-		if self.__to_recompute_beyond_the_flesh then return end
-		self.__to_recompute_beyond_the_flesh = true
-		game:onTickEnd(function()
-			self.__to_recompute_beyond_the_flesh = nil
-			local p = self.sustain_talents[t.id]
-			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
-			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
-		end)
-	end,
-	callbackOnActBase = function(self, t, p)
+	do_mindstar_grab = function(self, t, p)
 		local p = self.sustain_talents[t.id]
 
 		if self:hasEffect(self.EFF_PSIFRENZY) then
@@ -179,7 +157,7 @@ newTalent{
 						end
 					end
 				end)
-			elseif self:getInven("PSIONIC_FOCUS")[1] and self:getInven("PSIONIC_FOCUS")[1].type == "gem" then
+			elseif self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1] and self:getInven("PSIONIC_FOCUS")[1].type == "gem" then
 				local list = {}
 				local gem = self:getInven("PSIONIC_FOCUS")[1]
 				self:project({type="ball", radius=6}, self.x, self.y, function(px, py)
@@ -223,6 +201,30 @@ newTalent{
 			game.logSeen(a, "%s telekinetically grabs %s!", self.name:capitalize(), a.name)
 		end
 	end,
+	callbackOnActBase = function(self, t)
+		t.do_tk_strike(self, t)
+		t.do_mindstar_grab(self, t)
+	end,
+	callbackOnWear = function(self, t, p)
+		if self.__to_recompute_beyond_the_flesh then return end
+		self.__to_recompute_beyond_the_flesh = true
+		game:onTickEnd(function()
+			self.__to_recompute_beyond_the_flesh = nil
+			local p = self.sustain_talents[t.id]
+			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
+			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
+		end)
+	end,
+	callbackOnTakeoff = function(self, t, p)
+		if self.__to_recompute_beyond_the_flesh then return end
+		self.__to_recompute_beyond_the_flesh = true
+		game:onTickEnd(function()
+			self.__to_recompute_beyond_the_flesh = nil
+			local p = self.sustain_talents[t.id]
+			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
+			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
+		end)
+	end,
 	on_pre_use = function (self, t)
 		if not self:getInven("PSIONIC_FOCUS") then return false end
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
@@ -233,7 +235,7 @@ newTalent{
 		return true
 	end,
 	activate = function (self, t)
-		local tk = self:getInven("PSIONIC_FOCUS")[1]
+		local tk = self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1]
 		if not tk then return false end
 
 		local ret = {}
@@ -264,7 +266,7 @@ newTalent{
 		local base = [[Allows you to wield a physical melee weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
 		A gem will provide +3 bonus to all primary stats per tier of the gem.
 		A mindstar will randomly try to telekinetically grab a far away foe (10% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
-		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with Willpower and Cunning for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
+		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with 60% of your Willpower and Cunning, for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
 
 		]]
 

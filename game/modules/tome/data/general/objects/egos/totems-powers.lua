@@ -32,9 +32,13 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 8,
 
-	charm_power_def = {add=1, max=5, floor=true},
-	resolvers.charm("remove up to %d poisons or diseases from the target", 10, function(self, who)
-		local tg = {default_target=who, type="hit", nowarning=true, range=6 + who:getWil(4), first_target="friend"}
+	charm_power_def = {add=1, max=5, floor=true,
+		range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end},
+	resolvers.charm(
+		function(self, who) return ("remove up to %d poisons or diseases from a target within range %d (Willpower)"):format(self:getCharmPower(who), self.charm_power_def:range(who)) end,
+		10,
+		function(self, who)
+		local tg = {default_target=who, type="hit", nowarning=true, range=self.charm_power_def:range(who), first_target="friend"}
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
 		local nb = self:getCharmPower(who)
@@ -87,9 +91,13 @@ newEntity{
 	level_range = {25, 50},
 	rarity = 20,
 
-	charm_power_def = {add=50, max=250, floor=true},
-	resolvers.charm("heal the target for %d", 20, function(self, who)
-		local tg = {default_target=who, type="hit", nowarning=true, range=6 + who:getWil(4), first_target="friend"}
+	charm_power_def = {add=50, max=250, floor=true,
+		range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end},
+	resolvers.charm(
+		function(self, who) return ("heal a target within range %d (Willpower) for %d"):format(self.charm_power_def:range(who), self:getCharmPower(who)) end,
+		20,
+		function(self, who)
+		local tg = {default_target=who, type="hit", nowarning=true, range=self.charm_power_def:range(who), first_target="friend"}
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
 		local dam = self:getCharmPower(who)

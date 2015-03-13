@@ -58,7 +58,7 @@ newTalent{
 	require = corrs_req2,
 	points = 5,
 	cooldown = 20,
-	vim = 30,
+	sustain_vim = 30,
 	mode = "sustained",
 	tactical = { BUFF = 2 },
 	getFire = function(self, t) return self:combatTalentSpellDamage(t, 10, 400) end,

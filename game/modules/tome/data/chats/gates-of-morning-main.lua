@@ -133,7 +133,10 @@ newChat{ id="charred-scar-success",
 	text = [[Sorcerers? I have never heard of them. There were rumours about a new master of the Pride, but it seems they have two.
 Thank you for everything. You must continue your hunt now that you know what to look for.]],
 	answers = {
-		{"I will avenge your men.", action=function(npc, player) player:setQuestStatus("charred-scar", engine.Quest.DONE) end}
+		{"I will avenge your men.", action=function(npc, player)
+			player:setQuestStatus("charred-scar", engine.Quest.DONE)
+			game:unlockBackground("aeryn", "High Sun Paladin Aeryn")
+		end}
 	},
 }
 

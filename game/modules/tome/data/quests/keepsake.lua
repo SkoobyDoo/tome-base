@@ -93,7 +93,7 @@ on_start_dream = function(self, who)
 	game:playSound("ambient/forest/wind1")
 	
 	-- make yourself immortal
-	who.old_die = who.die
+	who.old_die = rawget(who, "die")
 	who.die = function(self)
 		local old_heal_factor = healing_factor
 		self.healing_factor = 1

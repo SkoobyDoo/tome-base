@@ -893,7 +893,7 @@ static int sdl_font_draw(lua_State *L)
 	int b = luaL_checknumber(L, 6);
 	bool no_linefeed = lua_toboolean(L, 7);
 	bool direct_uid_draw = lua_toboolean(L, 8);
-	int h = TTF_FontLineSkip(*f);
+	int h = TTF_FontHeight(*f);
 	SDL_Color color = {r,g,b};
 
 	int fullmax = max_texture_size / 2;
@@ -3270,6 +3270,12 @@ static int gl_vertex_toscreen(lua_State *L) {
 	return 0;
 }
 
+static int gl_counts_draws(lua_State *L) {
+	lua_pushnumber(L, nb_draws);
+	nb_draws = 0;
+	return 1;
+}
+
 static const struct luaL_Reg displaylib[] =
 {
 	{"setTextBlended", set_text_aa},
@@ -3315,6 +3321,7 @@ static const struct luaL_Reg displaylib[] =
 	{"glScissor", gl_scissor},
 	{"getScreenshot", sdl_get_png_screenshot},
 	{"glMaxTextureSize", gl_get_max_texture_size},
+	{"countDraws", gl_counts_draws},
 	{NULL, NULL},
 };
 

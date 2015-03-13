@@ -32,6 +32,7 @@ sharp_scaling = nil
 tilesets = {}
 tilesets_texs = {}
 function _M:loadTileset(file)
+	if config.settings.disable_tilesets then return end
 	if not fs.exists(file) then print("Tileset file "..file.." does not exists.") return end
 	local f, err = loadfile(file)
 	if err then error(err) end

@@ -86,131 +86,39 @@ newTalent{
 	name = "Reshape Weapon/Armour", image = "talents/reshape_weapon.png",
 	type = {"psionic/finer-energy-manipulations", 2},
 	require = psi_cun_req2,
-	cooldown = 1,
-	psi = 0,
+	mode = "passive",
 	points = 5,
 	no_npc_use = true,
 	no_unlearn_last = true,
-	boost = function(self, t)
-		return math.floor(self:combatTalentMindDamage(t, 5, 20))
-	end,
-	arm_boost = function(self, t)
-		return math.floor(self:combatTalentMindDamage(t, 5, 20))
-	end,
-	fat_red = function(self, t)
-		return math.floor(self:combatTalentMindDamage(t, 2, 10))
-	end,
-	reshape = function(self, t, o, in_dialog)
-		local Entity = require("engine.Entity")
-		if o.combat then
-			local atk_boost = t.boost(self, t)
-			local dam_boost = atk_boost
-			local old_atk = (o.old_atk or 0)
-			local old_dam = (o.old_dam or 0)
-			local old_ego = game.zone:removeEgoByName(o, "reshape weapon")
-			local force_reshape = false
-			if not old_ego and o.been_reshaped then --Update items affected by older versions of this talent
-				if o.been_reshaped == true then
-					o.name = o.name:gsub("reshaped ", "", 1)
-					o.combat.atk = o.combat.atk - (o.old_atk or 0)
-					o.combat.dam = o.combat.dam - (o.old_dam or 0)
-				else
-					o.combat.atk = o.orig_atk
-					o.combat.dam = o.orig_dam
-				end
-				o.been_reshaped = nil
-				-- if an older version, just reshape anyway
-				-- if reshapen by better TL, keep it
-				atk_boost = math.max(old_atk, atk_boost)
-				dam_boost = math.max(old_dam, dam_boost)
-				force_reshape = true
-			elseif old_ego and old_atk == 0 then  -- in case of future backward compatibility removal
-				old_atk = old_ego.combat.atk
-				old_dam = old_ego.combat.dam
-			end
-			o.old_atk, o.old_dam, o.orig_atk, o.orig_dam = nil, nil, nil, nil
-			if force_reshape or old_atk < atk_boost or old_dam < dam_boost then
-				local new_ego = Entity.new{
-					name = "reshape weapon",
-					display_string = "reshaped("..tostring(atk_boost)..","..tostring(dam_boost)..") ", display_prefix = true,
-					been_reshaped = true,
-					combat = {atk=atk_boost, dam=dam_boost},
-					old_atk = atk_boost, old_dam = dam_boost, orig_atk = o.combat.atk, orig_dam = o.combat.dam,  -- Easier this way
-					fake_ego = true, unvault_ego = true,
-				}
-				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-				game.zone:applyEgo(o, new_ego, "object")
-				if in_dialog then self:talentDialogReturn(true) end
-			else
-				if old_ego then game.zone:applyEgo(o, old_ego, "object") end -- nothing happened
-				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
-			end
-		else
-			local armour = t.arm_boost(self, t)
-			local fat = t.fat_red(self, t)
-			local old_fat = (o.old_fat or 0)
-			local old_arm = o.wielder and o.wielder.combat_armor or 0
-			local old_ego = game.zone:removeEgoByName(o, "reshape armour")
-			-- Not a huge deal
-			o.wielder = o.wielder or {}
-			o.wielder.combat_armor = o.wielder.combat_armor or 0
-			o.wielder.fatigue = o.wielder.fatigue or 0
-			local force_reshape = false
-			if not old_ego and o.been_reshaped then
-				o.wielder.combat_armor = o.orig_arm
-				o.wielder.fatigue = o.orig_fat
-				o.been_reshaped = nil
-				-- if an older version, just reshape anyway
-				-- if reshapen by better TL, keep it
-				fat = math.max(fat, old_fat)
-				armour = math.max(armour, o.wielder.combat_armor - old_arm)
-				force_reshape = true
-			elseif old_ego and old_fat == 0 then  -- in case of future backward compatibility removal
-				old_fat = old_ego.fatigue_reduction
-			end
-			o.old_fat, o.orig_fat, o.orig_arm = nil, nil, nil
-			if force_reshape or old_fat < fat or old_arm < o.wielder.combat_armor + armour then
-				local real_fat
-				if o.wielder.fatigue < 0 then real_fat = 0
-				else real_fat = math.min(fat, o.wielder.fatigue) end
-				local new_ego = Entity.new{
-					name = "reshape armour",
-					display_string = "reshaped["..tostring(armour)..","..tostring(real_fat).."%] ", display_prefix = true,
-					been_reshaped = true,
-					wielder = {combat_armor=armour, fatigue=-real_fat},
-					fatigue_reduction = fat,
-					old_fat = fat, orig_fat = o.wielder.fatigue, orig_arm = o.wielder.armour,  -- Easier this way
-					fake_ego = true, unvault_ego = true,
-				}
-				game.logPlayer(self, "You reshape your %s.", o:getName{do_colour=true, no_count=true})
-				if o.orig_name then o.name = o.orig_name end --Fix name for items affected by older versions of this talent
-				game.zone:applyEgo(o, new_ego, "object")
-				if in_dialog then self:talentDialogReturn(true) end
-			else
-				game.zone:applyEgo(o, old_ego, "object")
-				game.logPlayer(self, "You cannot reshape your %s any further.", o:getName{do_colour=true, no_count=true})
-			end
+	damBoost = function(self, t) return math.floor(self:combatTalentMindDamage(t, 5, 20)) end,
+	armorBoost = function(self, t) return math.floor(self:combatTalentMindDamage(t, 5, 20)) end,
+	fatigueBoost = function(self, t) return math.floor(self:combatTalentMindDamage(t, 2, 10)) end,
+	getDamBoost = function(self, t, weapon)
+		if weapon and weapon.talented ~= "mindstar" and weapon.talented ~= "unarmed" then
+			return t.damBoost(self, t)
 		end
+		return 0
 	end,
-	action = function(self, t)
-		local ret = self:talentDialog(self:showInventory("Reshape which weapon or armor?", self:getInven("INVEN"),
-			function(o)
-				return not o.quest and (o.type == "weapon" and o.subtype ~= "mindstar") or (o.type == "armor" and (o.slot == "BODY" or o.slot == "OFFHAND" )) and not o.fully_reshaped --Exclude fully reshaped?
-			end
-			, function(o, item)
-			t.reshape(self, t, o, true)
-		end))
-		if not ret then return nil end
-		return true
+	getArmorBoost = function(self, t)
+		local nb = 0
+		if self:getInven("BODY") and self:getInven("BODY")[1] then nb = nb + 1 end
+		if self:getInven("OFFHAND") and self:getInven("OFFHAND")[1] and self:getInven("OFFHAND")[1].subtype == "shield" then nb = nb + 1 end
+		return nb * t.armorBoost(self, t)
+	end,
+	getFatigueBoost = function(self, t)
+		local nb = 0
+		if self:getInven("BODY") and self:getInven("BODY")[1] then nb = nb + 1 end
+		if self:getInven("OFFHAND") and self:getInven("OFFHAND")[1] and self:getInven("OFFHAND")[1].subtype == "shield" then nb = nb + 1 end
+		return nb * t.fatigueBoost(self, t)
 	end,
 	info = function(self, t)
-		local weapon_boost = t.boost(self, t)
-		local arm = t.arm_boost(self, t)
-		local fat = t.fat_red(self, t)
+		local weapon_boost = t.damBoost(self, t)
+		local arm = t.armorBoost(self, t)
+		local fat = t.fatigueBoost(self, t)
 		return ([[Manipulate forces on the molecular level to realign, rebalance, and hone a weapon, set of body armor, or a shield.  (Mindstars resist being adjusted because they are already in an ideal natural state.)
-		This permanently increases the Accuracy and damage of any weapon by %d or increases the armour rating of any piece of Armour by %d, while reducing its fatigue rating by %d.
-		The effects increase with your Mindpower and multiple uses on an item only increase the effect if your skill has improved.
-		These bonusses are automatically updated on equipped items when you level up.]]):
+		The accuracy and damage of any weapon will act as if %d higher.
+		Your total armour will increase by %d and your fatigue rating by %d for each body armour and shield worn.
+		The effects increase with your Mindpower.]]):
 		format(weapon_boost, arm, fat)
 	end,
 }
@@ -269,7 +177,7 @@ newTalent{
 	info = function(self, t)
 		local inc = t.bonus(self,t)
 		return ([[By carefully synchronizing your mind to the resonant frequencies of your psionic focus, you strengthen its effects.
-		For conventional weapons, this increases the percentage of your willpower and cunning that is used in place of strength and dexterity, from 60%% to %d%%.
+		For conventional weapons, this increases the percentage of your willpower and cunning that is used in place of strength and dexterity for all weapon attacks, from 60%% to %d%%.
 		For mindstars, this increases the chance to pull enemies to you by +%d%%.
 		For gems, this increases the bonus stats by %d.]]):
 		format(60+inc, inc, math.ceil(inc/5))

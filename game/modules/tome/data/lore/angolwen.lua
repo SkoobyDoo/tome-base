@@ -77,3 +77,23 @@ This is not to say that life has been without conflict at all. An agent of the Z
 
 In a way, the incident lit a fire under me to pursue my studies and develop my powers, but I must admit that my interest in staff practice has waned as of late. My fencing, on the other hand, improves by the day. Hmm... I wonder if I can get some of the enchanters to help me "augment" my old sword. After all, what is a blade but a sharpened metal staff?]],
 }
+
+newLore{
+	id = "angolwen-fountain",
+	category = "angolwen",
+	name = "Angolwen Fountain",
+	always_pop = true,
+	lore = [[#{italic}#(You see here a large, elaborate fountain.  A statue of Linaniil stands in the center, her arms outstretched to welcome all; around the outside of the fountain stand statues of a dwarf manipulating earthen runes, a human with a simple healer's crosier, an elf with a tall, elaborate staff, and a halfling with a scepter in one hand and a fireball hovering over the other.  The runes and the fireball are not connected to anything, and float in a fixed position in the air.  You see a carving repeating along the border of the fountain, in small print.)#{normal}#
+
+ALL ARE WELCOME WHO LEARN FROM THE MISTAKES OF THE PAST
+
+LET THE ARCANE ONCE MORE BE A BOON AND NOT A BANE TO MAJ'EYAL
+
+ALL ARE WELCOME WHO EASE THE SUFFERING OF THE PRESENT
+
+MAY WE HAVE THE WISDOM TO ONE DAY REUNITE THE WORLD IN SAFETY AND ENLIGHTENMENT
+
+ALL ARE WELCOME WHO PREVENT THE THREATS OF THE FUTURE
+
+GATHER HERE IN PEACE TO DISCOVER AND PERFECT THE KNOWLEDGE OF HOW, AND WHEN, TO WEAVE THE WORLD'S FABRIC]],
+}

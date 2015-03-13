@@ -136,6 +136,11 @@ function _M:drawItemShortName(o, x, y)
 	self.last_o = o
 end
 
+function _M:forceUpdate()
+	self.last_o = nil
+	self.last_t = nil
+end
+
 function _M:display(x, y, nb_keyframes, ox, oy)
 	if self.focused then
 		self.bg_sel.t:toScreenPrecise(x, y, self.w, self.h, 0, self.bg_sel.w/self.bg_sel.tw, 0, self.bg_sel.h/self.bg_sel.th)

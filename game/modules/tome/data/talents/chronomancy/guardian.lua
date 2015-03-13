@@ -31,86 +31,74 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local inc = t.getPercentInc(self, t)
 		return ([[Increases Physical Power by %d, and increases weapon damage by %d%% when using swords, axes, maces, knives, or bows.
-		You now also use your Magic in place of Strength when equipping weapons, calculating weapon damage, and physical power.
-		These bonuses override rather than stack with weapon mastery, knife mastery, and bow mastery.]]):
+		You now also use your Magic in place of Strength when equipping weapons and ammo as well as when calculating weapon damage.
+		These bonuses override rather than stack with weapon mastery, dagger mastery, and bow mastery.]]):
 		format(damage, 100*inc)
 	end,
 }
 
 newTalent{
-	name = "Invigorate",
+	name = "Guardian Unity",
 	type = {"chronomancy/guardian", 2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
-	fixed_cooldown = true,
-	tactical = { HEAL = 1 },
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(self:getTalentLevel(t), 14, 4, 8))) end, -- Limit < 14
-	getPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
-	action = function(self, t)
-		self:setEffect(self.EFF_INVIGORATE, t.getDuration(self,t), {power=t.getPower(self, t)})
-		return true
-	end,
-	info = function(self, t)
-		local power = t.getPower(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns, you recover %0.1f life per turn and most other talents on cooldown will refresh twice as fast as usual.
-		The amount healed will increase with your Spellpower.]]):format(duration, power)
-	end,
-}
-
-newTalent{
-	name = "Guardian Unity",
-	type = {"chronomancy/guardian", 3},
-	require = chrono_req3,
-	points = 5,
 	mode = "passive",
-	getSplit = function(self, t) return paradoxTalentScale(self, t, 20, 50, 80)/100 end,
+	cooldown = 6,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
-	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 40, 24)	end,
+	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
+	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end, -- Limit < 40%
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
-		local split = cb.value * t.getSplit(self, t)
+		local split = cb.value * t.getDamageSplit(self, t)
 
-		-- If we already split this turn pass damage to our clone
-		if self.turn_procs.double_edge and self.turn_procs.double_edge ~= self and game.level:hasEntity(self.turn_procs.double_edge) then
-			split = split/2
-			-- split the damage
-			game:delayedLogDamage(src, self.turn_procs.double_edge, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
+		-- If we already have a guardian, split the damage
+		if self.unity_warden and game.level:hasEntity(self.unity_warden) then
+		
+			game:delayedLogDamage(src, self.unity_warden, split, ("#STEEL_BLUE#(%d shared)#LAST#"):format(split), nil)
 			cb.value = cb.value - split
-			self.turn_procs.double_edge:takeHit(split, src)
-		end
-
-		-- Do our split
-		if self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) and not self.turn_procs.double_edge then
+			self.unity_warden:takeHit(split, src)
+		
+		-- Otherwise, summon a new Guardian
+		elseif not self:isTalentCoolingDown(t) and self.max_life and cb.value >= self.max_life * (t.getLifeTrigger(self, t)/100) then
+		
 			-- Look for space first
 			local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
 			if tx and ty then
-				game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
-
+				-- Put the talent on cooldown
+				self:startTalentCooldown(t)
+				
 				-- clone our caster
 				local m = makeParadoxClone(self, self, t.getDuration(self, t))
-
-				-- add our clone
-				game.zone:addEntity(game.level, m, "actor", tx, ty)
-				m.ai_state = { talent_in=2, ally_compassion=10 }
+				-- Handle some AI stuff
+				m.ai_state = { talent_in=1, ally_compassion=10 }
+				m.ai_state.tactic_leash = 10
+				-- Try to use stored AI talents to preserve tweaking over multiple summons
+				m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+				-- alter some values
 				m.remove_from_party_on_death = true
 				m:attr("archery_pass_friendly", 1)
 				m.generic_damage_penalty = 50
+				m.on_die = function(self)
+					local summoner = self.summoner
+					if summoner.unity_warden then summoner.unity_warden = nil end
+				end
+
+				-- add our clone
+				game.zone:addEntity(game.level, m, "actor", tx, ty)
+				game.level.map:particleEmitter(tx, ty, 1, "temporal_teleport")
 
 				if game.party:hasMember(self) then
 					game.party:addMember(m, {
-						control="no",
+						control="order",
 						type="temporal-clone",
 						title="Guardian",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
-
+				
 				-- split the damage
-				cb.value = cb.value - split
-				self.turn_procs.double_edge = m
+				cb.value = cb.value - (split * 2)
+				self.unity_warden = m
 				m:takeHit(split, src)
 				m:setTarget(src or nil)
 				game:delayedLogMessage(self, nil, "guardian_damage", "#STEEL_BLUE##Source# shares damage with %s guardian!", string.his_her(self))
@@ -120,71 +108,102 @@ newTalent{
 				game.logPlayer(self, "Not enough space to summon warden!")
 			end
 		end
-
+		
 		return cb.value
 	end,
 	info = function(self, t)
 		local trigger = t.getLifeTrigger(self, t)
-		local split = t.getSplit(self, t) * 100
+		local split = t.getDamageSplit(self, t) * 100
 		local duration = t.getDuration(self, t)
-		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all other damage you take for the rest of the turn.
-		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.  After %d turns it returns to its own timeline.
-		This effect can only occur once per turn and the amount of damage split scales with your Spellpower.]]):format(trigger, split, split/2, duration)
+		local cooldown = self:getTalentCooldown(t)
+		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all damage you take for the next %d turns.
+		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.
+		This talent has a cooldown.]]):format(trigger, split * 2, split, duration)
 	end,
 }
 
 newTalent{
-	name = "Breach",
+	name = "Vigilance",
+	type = {"chronomancy/guardian", 3},
+	require = chrono_req3,
+	points = 5,
+	mode = "passive",
+	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
+		self:talentTemporaryValue(p, "see_invisible", t.getSense(self, t))
+	end,
+	callbackOnStatChange = function(self, t, stat, v)
+		if stat == self.STAT_MAG then
+			self:updateTalentPassives(t)
+		end
+	end,
+	callbackOnActBase = function(self, t)
+		if rng.percent(t.getPower(self, t)) then
+			if self:removeEffectsFilter({status="detrimental", ignore_crosstier=true}, 1) > 0 then
+				game.logSeen(self, "#ORCHID#%s has recovered!#LAST#", self.name:capitalize())
+			end
+		end
+	end,
+	info = function(self, t)
+		local sense = t.getSense(self, t)
+		local power = t.getPower(self, t)
+		return ([[Improves your capacity to see invisible foes by +%d and to see through stealth by +%d.  Additionally you have a %d%% chance to recover from a single negative status effect each turn.
+		Sense abilities will scale with your Magic stat.]]):
+		format(sense, sense, power)
+	end,
+}
+
+newTalent{
+	name = "Warden's Focus", short_name=WARDEN_S_FOCUS,
 	type = {"chronomancy/guardian", 4},
 	require = chrono_req4,
 	points = 5,
-	cooldown = 8,
-	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
-	tactical = { ATTACK = {weapon = 2}, DISABLE = 3 },
+	cooldown = 6,
+	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	tactical = { BUFF = 2, DEFEND = 2 },
+	direct_hit = true,
 	requires_target = true,
 	range = function(self, t)
-		if self:hasArcheryWeapon("bow") then return util.getval(archery_range, self, t) end
+		if self:hasArcheryWeapon() then return util.getval(archery_range, self, t) end
 		return 1
 	end,
-	is_melee = function(self, t) return not self:hasArcheryWeapon("bow") end,
-	speed = function(self, t) return self:hasArcheryWeapon("bow") and "archery" or "weapon" end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
-	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
-	archery_onhit = function(self, t, target, x, y)
-		target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {})
+	target = function(self, t)
+		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
+	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
+	speed = function(self, t) return self:hasArcheryWeapon() and "archery" or "weapon" end,
+	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
+	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
+	getDamage = function(self, t) return 1.2 end,
 	action = function(self, t)
-		local mainhand, offhand = self:hasDualWeapon()
+		-- Grab our target so we can set our effect
+		local tg = self:getTalentTarget(t)
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		if not x or not y or not target then game.logPlayer(self, "You must pick a focus target.")return nil end
 
-		if self:hasArcheryWeapon("bow") then
+		if self:hasArcheryWeapon() then
 			-- Ranged attack
-			local targets = self:archeryAcquireTargets({type="bolt"}, {one_shot=true, no_energy = true})
+			local targets = self:archeryAcquireTargets({type="bolt"}, {x=x, y=y, one_shot=true, no_energy = true})
 			if not targets then return end
 			self:archeryShoot(targets, t, {type="bolt"}, {mult=t.getDamage(self, t)})
-		elseif mainhand then
-			-- Melee attack
-			local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-			local x, y, target = self:getTarget(tg)
-			if not target or not self:canProject(tg, x, y) then return nil end
-			local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
-
-			if hitted then
-				target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
-			end
 		else
-			game.logPlayer(self, "You cannot use Breach without an appropriate weapon!")
-			return nil
+			-- Melee attack
+			self:attackTarget(target, nil, t.getDamage(self, t), true)
 		end
-
+		
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, 10, {target=target, power=t.getPower(self, t)})
+		target:setEffect(target.EFF_WARDEN_S_TARGET, 10, {src=self})
+		
 		return true
 	end,
 	info = function(self, t)
-		local duration = t.getDuration(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[Attack the target with either your bow or melee weapons for %d%% damage.
-		If the attack hits you'll breach the target's immunities, reducing armor hardiness, stun, pin, blindness, and confusion immunity by 50%% for %d turns.
-		Breach chance scales with your Spellpower.]])
-		:format(damage, duration)
+		local power = t.getPower(self, t)
+		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next ten turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
+		Attacks against this target gain %d%% critical chance and critical strike power while you take %d%% less damage from all enemies whose rank is lower then that of your focus target.]])
+		:format(damage, power, power, power)
 	end
 }

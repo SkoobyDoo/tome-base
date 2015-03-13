@@ -221,7 +221,7 @@ newTalent{
 	sustain_psi = 50,
 	mode = "sustained",
 	no_sustain_autoreset = true,
-	tactical = { ATTACKAREA = { FIRE = 2, MIND = 2}, DEBUFF = 2, },
+	tactical = { ATTACKAREA = { FIRE = 2, MIND = 2}, DISABLE = 2, },
 	range = 0,
 	radius = function(self, t) return math.min(5, 1 + math.ceil(self:getTalentLevel(t)/3)) end,
 	target = function(self, t)

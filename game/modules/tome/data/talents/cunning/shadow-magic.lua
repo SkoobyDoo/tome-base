@@ -106,23 +106,23 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	is_melee = true,
+	is_teleport = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.min(5, 2 + math.ceil(self:getTalentLevel(t) / 2)) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.5) end,
 	action = function(self, t)
 		if self:attr("never_move") then game.logPlayer(self, "You cannot do that currently.") return end
-
+		
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
 		if not target or not self:canProject(tg, x, y) then return nil end
-		if game.level.map.attrs(x, y, "no_teleport") then
-			if not game.level.map.seens(x, y) or not self:hasLOS(x, y) then return nil end
-		else
-			if not game.level.map.seens(x, y) then return nil end
+		if not game.level.map.seens(x, y) or not self:hasLOS(x, y) then
+			game.logSeen(self, "You do not have line of sight.")
+			return nil
 		end
 
-		local tx, ty = util.findFreeGrid(x, y, 20, true, {[engine.Map.ACTOR]=true})
-		self:move(tx, ty, true)
+		if not self:teleportRandom(x, y, 0) then game.logSeen(self, "The spell fizzles!") return true end
 
 		-- Attack ?
 		if target and target.x and core.fov.distance(self.x, self.y, target.x, target.y) == 1 then

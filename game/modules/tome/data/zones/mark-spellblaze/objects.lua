@@ -28,7 +28,7 @@ newEntity{ base = "BASE_LORE",
 }
 
 newEntity{
-	power_source = {nature=true},
+	power_source = {arcane=true},
 	define_as = "CORRUPTED_SANDQUEEN_HEART",
 	type = "corpse", subtype = "heart", image = "object/artifact/corrupted_queen_heart.png",
 	name = "Corrupted heart of the Sandworm Queen", unique=true, unided_name="pulsing organ",

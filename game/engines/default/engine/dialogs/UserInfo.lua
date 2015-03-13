@@ -40,8 +40,8 @@ function _M:init(data)
 	str:add({"color","ANTIQUE_WHITE"}, "Validation: ", {"color", "LAST"}, data.current_char.valid and "Game has been validated by the server" or "Game is not validated by the server", true)
 
 	self.c_desc = Textzone.new{width=400, height=1, auto_height=true, text=str}
-	local b_profile = require("engine.ui.Button").new{text="Go to online profile", fct=function() util.browserOpenUrl(data.profile) end}
-	local b_char = require("engine.ui.Button").new{text="Go to online charsheet", fct=function() util.browserOpenUrl(data.char_link) end}
+	local b_profile = require("engine.ui.Button").new{text="Go to online profile", fct=function() util.browserOpenUrl(data.profile, {is_external=true}) end}
+	local b_char = require("engine.ui.Button").new{text="Go to online charsheet", fct=function() util.browserOpenUrl(data.char_link, {is_external=true}) end}
 
 	local ui = {
 		{left=0, top=0, ui=self.c_desc},

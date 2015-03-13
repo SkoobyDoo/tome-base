@@ -112,6 +112,8 @@ newEntity{ define_as = "THE_MASTER",
 		game.player:resolveSource():grantQuest("dreadfell")
 		game.player:resolveSource():setQuestStatus("dreadfell", engine.Quest.COMPLETED)
 
+		game:unlockBackground("master", "The Master")
+
 		local ud = {}
 		if not profile.mod.allow_build.undead_skeleton then ud[#ud+1] = "undead_skeleton" end
 		if not profile.mod.allow_build.undead_ghoul then ud[#ud+1] = "undead_ghoul" end
@@ -242,10 +244,10 @@ What proud hero of renown was this before he was condemned to such a terrible fa
 		[Talents.T_WEAPONS_MASTERY]={base=2, every=10, max=5},
 		[Talents.T_WEAPON_COMBAT]={base=2, every=10, max=5},
 
-		[Talents.T_VITALITY]={base=4, every=5, max=6},
 		[Talents.T_UNFLINCHING_RESOLVE]=6,
 		[Talents.T_DAUNTING_PRESENCE]={base=3, every=5, max=5},
 
+		[Talents.T_GHOUL]=5,
 		[Talents.T_GHOULISH_LEAP]={base=1, every=5, max=5},
 		[Talents.T_RETCH]=5,
 		[Talents.T_GNAW]=1,

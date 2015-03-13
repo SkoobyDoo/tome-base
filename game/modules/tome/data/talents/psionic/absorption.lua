@@ -114,8 +114,6 @@ local function shieldOnDamage(self, t, elementTest, transcendId, dam)
 	shield.psi_gain = shield.psi_gain + psigain
 	self:incPsi(psigain)
 
-	game.log("Kinetic %d %d %d", dam, absorbable_dam, guaranteed_dam)
-
 	return dam + guaranteed_dam
 end
 

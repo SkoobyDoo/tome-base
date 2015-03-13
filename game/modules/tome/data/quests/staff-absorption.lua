@@ -22,14 +22,14 @@ name = "A mysterious staff"
 desc = function(self, who)
 	local desc = {}
 	desc[#desc+1] = "Deep in the Dreadfell you fought and destroyed the Master, a powerful vampire."
-	if self:isCompleted("ambush") and not self:isCompleted("ambush-finished") then
+	if self:isCompleted("ambush") and not self:isCompleted("ambush-died") then
 		desc[#desc+1] = "On your way out of the Dreadfell you were ambushed by a band of orcs."
 		desc[#desc+1] = "They asked about the staff."
-	elseif self:isCompleted("ambush-finished") and not self:isCompleted("survived-ukruk") then
+	elseif self:isCompleted("ambush-died") and not self:isCompleted("survived-ukruk") then
 		desc[#desc+1] = "On your way out of the Dreadfell you were ambushed by a band of orcs and left for dead."
 		desc[#desc+1] = "They asked about the staff and stole it from you."
 		desc[#desc+1] = "#LIGHT_GREEN#Go at once to Last Hope to report those events!"
-	elseif self:isCompleted("ambush-finished") and self:isCompleted("survived-ukruk") then
+	elseif not self:isCompleted("ambush-died") and self:isCompleted("survived-ukruk") then
 		desc[#desc+1] = "On your way out of the Dreadfell you were ambushed by a band of orcs."
 		desc[#desc+1] = "They asked about the staff and stole it from you."
 		desc[#desc+1] = "You told them nothing and vanquished them."
@@ -94,7 +94,7 @@ start_ambush = function(self, who)
 			game.level.map(self.x, self.y, game.level.map.TERRAIN, game.zone.grid_list.GRASS_UP_WILDERNESS)
 		end
 
-		self:setQuestStatus("staff-absorption", engine.Quest.COMPLETED, "ambush-finish")
+		self:setQuestStatus("staff-absorption", engine.Quest.COMPLETED, "ambush-died")
 	end
 
 	local Chat = require("engine.Chat")

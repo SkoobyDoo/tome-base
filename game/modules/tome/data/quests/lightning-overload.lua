@@ -59,6 +59,7 @@ on_status_change = function(self, who, status, sub)
 		who:setQuestStatus(self.id, engine.Quest.DONE)
 		game:setAllowedBuild("mage_tempest", true)
 		world:gainAchievement("EYE_OF_THE_STORM", game.player:resolveSource())
+		game:unlockBackground("derth", "Derth")
 		local p = game.party:findMember{main=true}
 		if p.descriptor.subclass == "Archmage"  then
 			if p:knowTalentType("spell/storm") == nil then

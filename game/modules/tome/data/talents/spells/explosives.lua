@@ -65,8 +65,10 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-
+		
+		self:attr("no_sound", 1)
 		ammo = self:removeObject(self:getInven("QUIVER"), 1)
+		self:attr("no_sound", -1)
 		if not ammo then return end
 
 		local dam, damtype, particle = t.computeDamage(self, t, ammo)
@@ -106,7 +108,7 @@ newTalent{
 					self:callTalent(self.T_DYNAMIC_RECHARGE, "applyEffect", golem)
 				end
 			else -- reduced damage to friendly npcs (could make random chance like friendlyfire instead)
-				if target and self:reactionToward(target) > 0 then d = dam * (1 - prot) end
+				if target and self:reactionToward(target) >= 0 then d = dam * (1 - prot) end
 			end
 			if d <= 0 then return end
 

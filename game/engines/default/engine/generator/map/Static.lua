@@ -19,6 +19,8 @@
 
 require "engine.class"
 local Map = require "engine.Map"
+local lom = require "lxp.lom"
+local mime = require "mime"
 require "engine.Generator"
 module(..., package.seeall, class.inherit(engine.Generator))
 
@@ -53,18 +55,16 @@ function _M:getMapFile(file)
 	return "/data/maps/"..file..".lua"
 end
 
-function _M:loadMap(file)
-	local t = {}
-
-	file = self:getMapFile(file)
-	print("Static generator using file", file)
-	local f, err = loadfile(file)
-	if not f and err then error(err) end
-	local g = {
+function _M:getLoader(t)
+	return {
 		level = self.level,
 		zone = self.zone,
 		data = self.data,
 		Map = require("engine.Map"),
+		grid_class = self.zone.grid_class,
+		trap_class = self.zone.trap_class,
+		npc_class = self.zone.npc_class,
+		object_class = self.zone.object_class,
 		specialList = function(kind, files)
 			if kind == "terrain" then
 				self.grid_list = self.zone.grid_class:loadList(files)
@@ -126,8 +126,194 @@ function _M:loadMap(file)
 			for i, z in ipairs(self.level.custom_zones or {}) do update(z) end
 		end,
 	}
+end
+
+function _M:loadLuaInEnv(g, file, code)
+	local f, err
+	if file then f, err = loadfile(file)
+	else f, err = loadstring(code) end
+	if not f and err then error(err) end
 	setfenv(f, setmetatable(g, {__index=_G}))
-	local ret, err = f()
+	return f()
+end
+
+function _M:tmxLoad(file)
+	file = file:gsub("%.lua$", ".tmx")
+	if not fs.exists(file) then return end
+	print("Static generator using file", file)
+	local f = fs.open(file, "r")
+	local data = f:read(10485760)
+	f:close()
+
+	local t = {}
+	local g = self:getLoader(t)
+	local map = lom.parse(data)
+	local mapprops = {}
+	if map:findOne("properties") then mapprops = map:findOne("properties"):findAllAttrs("property", "name", "value") end
+	local w, h = tonumber(map.attr.width), tonumber(map.attr.height)
+	local tw, th = tonumber(map.attr.tilewidth), tonumber(map.attr.tileheight)
+	local chars = {}
+	local start_tid, end_tid = nil, nil
+	for _, tileset in ipairs(map:findAll("tileset")) do
+		local firstgid = tonumber(tileset.attr.firstgid)
+		for _, tile in ipairs(tileset:findAll("tile")) do
+			local tid = tonumber(tile.attr.id + firstgid)
+			local display = tile:findOne("property", "name", "display")
+			local id = tile:findOne("property", "name", "id")
+			local custom = tile:findOne("property", "name", "custom")
+			local is_start = tile:findOne("property", "name", "start")
+			local is_end = tile:findOne("property", "name", "end") or tile:findOne("property", "name", "stop")
+			if display then
+				chars[tid] = display.attr.value
+			elseif id then
+				t[tid] = id.attr.value
+			elseif custom then
+				local ret = self:loadLuaInEnv(g, nil, "return "..custom.attr.value)
+				t[tid] = ret
+			end
+			if is_start then start_tid = tid end
+			if is_end then end_tid = tid end
+		end
+	end
+
+	local rotate = "default"
+	if mapprops.rotate then
+		rotate = self:loadLuaInEnv(g, nil, "return "..mapprops.rotate) or mapprops.rotate
+	end
+
+	local m = { w=w, h=h }
+	local function populate(i, j, c, tid)
+		local ii, jj = i, j
+
+		if rotate == "flipx" then ii, jj = m.w - i + 1, j
+		elseif rotate == "flipy" then ii, jj = i, m.h - j + 1
+		elseif rotate == "90" then ii, jj = j, m.w - i + 1
+		elseif rotate == "180" then ii, jj = m.w - i + 1, m.h - j + 1
+		elseif rotate == "270" then ii, jj = m.h - j + 1, i
+		end
+
+		m[ii] = m[ii] or {}
+		if type(c) == "string" then
+			m[ii][jj] = c
+		else
+			m[ii][jj] = m[ii][jj] or {}
+			table.update(m[ii][jj], c)
+		end
+		if tid == start_tid then m.startx = ii - 1 m.starty = jj - 1 m.start_rotated = true end
+		if tid == end_tid then m.endx = ii - 1 m.endy = jj - 1 m.end_rotated = true end
+	end
+
+	self.gen_map = m
+	self.tiles = t
+
+	self.map.w = m.w
+	self.map.h = m.h
+
+	for _, layer in ipairs(map:findAll("layer")) do
+		local mapdata = layer:findOne("data")
+		local layername = layer.attr.name:lower()
+		if layername == "terrain" then layername = "grid" end
+
+		if mapdata.attr.encoding == "base64" then
+			local b64 = mime.unb64(mapdata[1]:trim())
+			local data
+			if mapdata.attr.compression == "zlib" then data = zlib.decompress(b64)
+			elseif not mapdata.attr.compression then data = b64
+			else error("tmx map compression unsupported: "..mapdata.attr.compression)
+			end
+			local gid, i = nil, 1
+			local x, y = 1, 1
+			while i <= #data do
+				gid, i = struct.unpack("<I4", data, i)
+				if chars[gid] then populate(x, y, chars[id])
+				else populate(x, y, {[layername] = gid}, gid)
+				end
+				x = x + 1
+				if x > w then x = 1 y = y + 1 end
+			end
+		elseif mapdata.attr.encoding == "csv" then
+			local data = mapdata[1]:gsub("[^,0-9]", ""):split(",")
+			local x, y = 1, 1
+			for i, gid in ipairs(data) do
+				gid = tonumber(gid)
+				if chars[gid] then populate(x, y, chars[id])
+				else populate(x, y, {[layername] = gid}, gid)
+				end
+				x = x + 1
+				if x > w then x = 1 y = y + 1 end
+			end
+		elseif not mapdata.attr.encoding then
+			local data = mapdata:findAll("tile")
+			local x, y = 1, 1
+			for i, tile in ipairs(data) do
+				local gid = tonumber(tile.attr.gid)
+				if chars[gid] then populate(x, y, chars[id])
+				else populate(x, y, {[layername] = gid}, gid)
+				end
+				x = x + 1
+				if x > w then x = 1 y = y + 1 end
+			end
+		end
+	end
+
+	for _, og in ipairs(map:findAll("objectgroup")) do
+		for _, o in ipairs(map:findAll("object")) do
+			local props = o:findOne("properties"):findAllAttrs("property", "name", "value")
+
+			if og.attr.name:find("^addSpot") then
+				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+				if props.start then m.startx = x m.starty = y end
+				if props['end'] then m.endx = x m.endy = y end
+				if props.type and props.subtype then
+					for i = x, x + w do for j = y, y + h do
+						g.addSpot({i, j}, props.type, props.subtype)
+					end end
+				end
+			elseif og.attr.name:find("^addZone") then
+				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+				if props.type and props.subtype then
+					g.addZone({x, y, x + w, y + h}, props.type, props.subtype)
+				end
+			end
+		end
+	end
+
+	m.startx = m.startx or math.floor(m.w / 2)
+	m.starty = m.starty or math.floor(m.h / 2)
+	m.endx = m.endx or math.floor(m.w / 2)
+	m.endy = m.endy or math.floor(m.h / 2)
+	if rotate == "flipx" then
+		if not m.start_rotated then m.startx = m.w - m.startx - 1 end
+		if not m.end_rotated then m.endx   = m.w - m.endx - 1 end
+	elseif rotate == "flipy" then
+		if not m.start_rotated then m.starty = m.h - m.starty - 1 end
+		if not m.end_rotated then m.endy   = m.h - m.endy - 1 end
+	elseif rotate == "90" then
+		if not m.start_rotated then m.startx, m.starty = m.starty, m.w - m.startx - 1 end
+		if not m.end_rotated then m.endx,   m.endy   = m.endy,   m.w - m.endx   - 1 end
+		m.w, m.h = m.h, m.w
+	elseif rotate == "180" then
+		if not m.start_rotated then m.startx, m.starty = m.w - m.startx - 1, m.h - m.starty - 1 end
+		if not m.end_rotated then m.endx,   m.endy   = m.w - m.endx   - 1, m.h - m.endy   - 1 end
+	elseif rotate == "270" then
+		if not m.start_rotated then m.startx, m.starty = m.h - m.starty - 1, m.startx end
+		if not m.end_rotated then m.endx,   m.endy   = m.h - m.endy   - 1, m.endx end
+		m.w, m.h = m.h, m.w
+	end
+
+	print("[STATIC TMX MAP] size", m.w, m.h)
+	return true
+end
+
+function _M:loadMap(file)
+	local t = {}
+
+	file = self:getMapFile(file)
+	if self:tmxLoad(file) then return end
+
+	print("Static generator using file", file)
+	local g = self:getLoader(t)
+	local ret, err = self:loadLuaInEnv(g, file)
 	if not ret and err then error(err) end
 	if type(ret) == "string" then ret = ret:split("\n") end
 
@@ -198,8 +384,14 @@ function _M:loadMap(file)
 end
 
 function _M:resolve(typ, c)
-	if not self.tiles[c] or not self.tiles[c][typ] then return end
-	local res = self.tiles[c][typ]
+	local res
+	if typ then
+		if not self.tiles[c] or not self.tiles[c][typ] then return end
+		res = self.tiles[c][typ]
+	else
+		if not self.tiles[c] then return end
+		res = self.tiles[c]
+	end
 	if type(res) == "function" then
 		return self.grid_list[res()]
 	elseif type(res) == "table" and (res.__ATOMIC or res.__CLASSNAME) then
@@ -216,7 +408,9 @@ function _M:generate(lev, old_lev)
 
 	for i = 1, self.gen_map.w do for j = 1, self.gen_map.h do
 		local c = self.gen_map[i][j]
-		local g = self:resolve("grid", c)
+		local g
+		if type(c) == "string" then g = self:resolve("grid", c)
+		else g = self:resolve(nil, c.grid) end
 		if g then
 			if g.force_clone then g = g:clone() end
 			g:resolve()
@@ -239,11 +433,20 @@ function _M:generate(lev, old_lev)
 	-- generate the rest after because they might need full map data to be correctly made
 	for i = 1, self.gen_map.w do for j = 1, self.gen_map.h do
 		local c = self.gen_map[i][j]
-		local actor = self.tiles[c] and self.tiles[c].actor
-		local trap = self.tiles[c] and self.tiles[c].trap
-		local object = self.tiles[c] and self.tiles[c].object
-		local status = self.tiles[c] and self.tiles[c].status
-		local define_spot = self.tiles[c] and self.tiles[c].define_spot
+		local actor, trap, object, status, define_spot
+		if type(c) == "string" then
+			actor = self.tiles[c] and self.tiles[c].actor
+			trap = self.tiles[c] and self.tiles[c].trap
+			object = self.tiles[c] and self.tiles[c].object
+			status = self.tiles[c] and self.tiles[c].status
+			define_spot = self.tiles[c] and self.tiles[c].define_spot
+		else
+			actor = c.actor and self.tiles[c.actor]
+			trap = c.trap and self.tiles[c.trap]
+			object = c.object and self.tiles[c.object]
+			status = c.status and self.tiles[c.status]
+			define_spot = c.define_spot and self.tiles[c.define_spot]
+		end
 
 		if object then
 			local o, mod

@@ -123,7 +123,7 @@ newTalent{
 
 		local tg = {type="hit", range=self:getTalentRange(t), t=t}
 		local x, y, target = self:getTarget(tg)
-		if not self:canProject(tg, x, y) then return nil end
+		if not self:canProject(tg, x, y) or not target then return nil end
 
 		--local distance = math.max(1, core.fov.distance(self.x, self.y, x, y))
 		local power = 1 --(1 - ((distance - 1) / range))

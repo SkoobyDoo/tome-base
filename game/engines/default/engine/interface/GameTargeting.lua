@@ -281,6 +281,11 @@ function _M:targetGetForPlayer(typ)
 			msg = typ.msg
 		end
 		self:targetMode("exclusive", msg, coroutine.running(), typ)
+		if self.target.target.x and config.settings.auto_accept_target and not typ.immediate_keys and not typ.nolock and not typ.nowarning and not typ.no_restrict then
+			self.target_co = nil
+			self:targetMode(false, false) self.tooltip_x, self.tooltip_y = nil, nil
+			return self.target.target.x, self.target.target.y, self.target.target.entity
+		end
 		if typ.immediate_keys then self.target_style = "immediate" end
 		if typ.nolock then self.target_style = "free" end
 		if typ.nowarning then self.target_warning = false end

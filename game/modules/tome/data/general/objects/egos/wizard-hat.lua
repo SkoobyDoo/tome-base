@@ -60,6 +60,24 @@ newEntity{
 
 newEntity{
 	power_source = {arcane=true},
+	name = "starseer's ", prefix=true, instant_resolve=true,
+	keywords = {starseers=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 35,
+	cost = 60,
+	wielder = {
+		inc_damage = {
+			[DamageType.LIGHT] = resolvers.mbonus_material(12, 3),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(12, 3),
+			[DamageType.TEMPORAL] = resolvers.mbonus_material(12, 3),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(12, 3),
+		},
+	},
+}
+
+newEntity{
+	power_source = {arcane=true},
 	name = "eldritch ", prefix=true, instant_resolve=true,
 	keywords = {eldritch=true},
 	level_range = {30, 50},

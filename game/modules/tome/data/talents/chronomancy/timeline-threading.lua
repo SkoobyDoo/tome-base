@@ -22,7 +22,7 @@
 newTalent{
 	name = "Rethread",
 	type = {"chronomancy/timeline-threading", 1},
-	require = chrono_req1,
+	require = chrono_req_high1,
 	points = 5,
 	cooldown = 4,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
@@ -35,7 +35,7 @@ newTalent{
 		return {type="bolt", range=self:getTalentRange(t), talent=t}
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
-	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
+	getTargetCount = function(self, t) return 3 end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local fx, fy = self:getTarget(tg)
@@ -79,7 +79,6 @@ newTalent{
 			local tgr = {type="beam", range=self:getTalentRange(t), selffire=false, talent=t, x=sx, y=sy}
 			self:project(tgr, actor.x, actor.y, function(px, py)
 				DamageType:get(DamageType.TEMPORAL).projector(self, px, py, DamageType.TEMPORAL, damage)
-				damage = damage * 0.67
 
 				-- Get our braid targets
 				local target = game.level.map(px, py, Map.ACTOR)
@@ -88,7 +87,11 @@ newTalent{
 				end
 			end)
 
-			game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy})
+			if core.shader.active() then 
+				game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy}, {type="lightning"})
+			else
+				game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "temporalbeam", {tx=actor.x-sx, ty=actor.y-sy}) 
+			end
 			sx, sy = actor.x, actor.y
 		end
 		
@@ -109,7 +112,6 @@ newTalent{
 		local targets = t.getTargetCount(self, t)
 		return ([[Rethread the timeline, dealing %0.2f temporal damage to the target before moving on to a second target.
 		Rethread can hit up to %d targets up to 10 grids apart, and will never hit the same one twice; nor will it hit the caster.
-		Each time it jumps target the damage is reduced by 33%%.
 		The damage will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.TEMPORAL, damage), targets)
 	end,
@@ -118,7 +120,7 @@ newTalent{
 newTalent{
 	name = "Temporal Fugue",
 	type = {"chronomancy/timeline-threading", 2},
-	require = chrono_req2,
+	require = chrono_req_high2,
 	points = 5,
 	cooldown = 24,
 	paradox = function(self, t) return getParadoxCost(self, t, 20) end,
@@ -144,8 +146,10 @@ newTalent{
 			
 			-- Handle some AI stuff
 			m.ai_state = { talent_in=1, ally_compassion=10 }
-			m.ai_tactic = { closein=0, defend=4, disable=4, escape=4, heal=2, safe_range=3}
-			
+			m.ai_state.tactic_leash = 10
+			-- Try to use stored AI talents to preserve tweaking over multiple summons
+			m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+					
 			return m
 		end
 		
@@ -160,7 +164,7 @@ newTalent{
 						control="full",
 						type="fugue clone",
 						title="Fugue Clone",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
 				
@@ -189,8 +193,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage recieved is split between the three of you.
-		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones.]]):
+		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage received is split between the three of you.
+		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones, give them orders, and set their talent usage.
+		Damage you deal to Fugue Clones or that they deal to you or each other is reduced to zero.]]):
 		format(duration)
 	end,
 }
@@ -198,7 +203,7 @@ newTalent{
 newTalent{
 	name = "Braid Lifelines",
 	type = {"chronomancy/timeline-threading", 3},
-	require = chrono_req3,
+	require = chrono_req_high3,
 	mode = "passive",
 	points = 5,
 	getBraid = function(self, t) return self:combatTalentSpellDamage(t, 25, 40, getParadoxSpellpower(self, t)) end,
@@ -215,7 +220,7 @@ newTalent{
 newTalent{
 	name = "Cease to Exist",
 	type = {"chronomancy/timeline-threading", 4},
-	require = chrono_req4,
+	require = chrono_req_high4,
 	points = 5,
 	cooldown = 24,
 	paradox = function (self, t) return getParadoxCost(self, t, 25) end,
@@ -223,11 +228,8 @@ newTalent{
 	tactical = { ATTACK = 2 },
 	requires_target = true,
 	direct_hit = true,
-	no_npc_use = true,  -- so rares don't learn useless talents
-	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(t), 5, 9)) end,
-	getPower = function(self, t) return paradoxTalentScale(self, t, 20, 50, 100) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
+	getPower = function(self, t) return self:combatTalentScale(t, 20, 50) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -242,20 +244,16 @@ newTalent{
 	end,
 	do_instakill = function(self, t)
 		-- search for target because it's ID will change when the chrono restore takes place
-		local tg = false
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and a:hasEffect(a.EFF_CEASE_TO_EXIST) then
-				tg = a
-			end
-		end end
+		local target
+		for _, act in pairs(game.level.entities) do
+			if act.hasEffect and act:hasEffect(act.EFF_CEASE_TO_EXIST) then target = act end
+		end
 		
-		if tg then
+		if target then
 			game:onTickEnd(function()
-				tg:removeEffect(tg.EFF_CEASE_TO_EXIST)
-				game.logSeen(tg, "#LIGHT_BLUE#%s never existed, this never happened!", tg.name:capitalize())
-				tg:die(self)
+				target:removeEffect(target.EFF_CEASE_TO_EXIST)
+				game.logSeen(target, "#LIGHT_BLUE#%s never existed, this never happened!", target.name:capitalize())
+				target:die(self)
 			end)
 		end
 	end,
@@ -292,13 +290,14 @@ newTalent{
 		
 		-- Set our effect
 		target:setEffect(target.EFF_CEASE_TO_EXIST, t.getDuration(self,t), {src=self, power=t.getPower(self,t)})
-				
+		game:playSoundNear(self, "talents/arcane")
+		
 		return true
 	end,
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local power = t.getPower(self, t)
-		return ([[Over the next %d turns, you attempt to remove the target from the timeline, lowering all its resistance by %d%%.
+		return ([[Over the next %d turns, you attempt to remove the target from the timeline, lowering its resistance to physical and temporal damage by %d%%.
 		If you manage to kill the target while the spell is in effect, you'll be returned to the point in time you cast this spell and the target will be slain.
 		This spell splits the timeline.  Attempting to use another spell that also splits the timeline while this effect is active will be unsuccessful.
 		The resistance penalty will scale with your Spellpower.]])
@@ -311,13 +310,13 @@ newTalent{
 --[=[newTalent{
 	name = "Temporal Fugue",
 	type = {"chronomancy/timeline-threading", 2},
-	require = chrono_req2,
+	require = chrono_req_high2,
 	points = 5,
 	cooldown = 12,
 	paradox = function (self, t) return getParadoxCost(self, t, 15) end,
 	tactical = { DISABLE = 3 },
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 4, 8))) end,
-	getDamagePenalty = function(self, t) return 80 - paradoxTalentScale(self, t, 0, 20, 40) end,
+	getDamagePenalty = function(self, t) return 80 - self:combatTalentLimit(t, 0, 20, 40)end,
 	getClones = function(self, t) return 3 end,
 	on_pre_use = function(self, t, silent) if self ~= game.player and self.fugue_clones then return false end return true end,
 	action = function(self, t)

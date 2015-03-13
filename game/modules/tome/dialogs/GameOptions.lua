@@ -30,6 +30,9 @@ local FontPackage = require "engine.FontPackage"
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init()
+	-- we can be called from the boot menu, so make sure to load initial settings in this case
+	dofile("/mod/settings.lua")
+
 	Dialog.init(self, "Game Options", game.w * 0.8, game.h * 0.8)
 
 	self.vsep = Separator.new{dir="horizontal", size=self.ih - 10}
@@ -69,6 +72,10 @@ function _M:select(item)
 	end
 end
 
+function _M:isTome()
+	return game.__mod_info.short_name == "tome"
+end
+
 function _M:switchTo(kind)
 	self['generateList'..kind:capitalize()](self)
 	self:triggerHook{"GameOptions:generateList", list=self.list, kind=kind}
@@ -105,7 +112,7 @@ function _M:generateListUi()
 		game:registerDialog(GetQuantity.new("Enter movement speed(lower is faster)", "From 0 to 60", config.settings.tome.smooth_move, 60, function(qty)
 			game:saveSettings("tome.smooth_move", ("tome.smooth_move = %d\n"):format(qty))
 			config.settings.tome.smooth_move = qty
-			engine.Map.smooth_scroll = qty
+			if self:isTome() then engine.Map.smooth_scroll = qty end
 			self.c_list:drawItem(item)
 		end))
 	end,}
@@ -163,7 +170,7 @@ function _M:generateListUi()
 		config.settings.tome.show_grid_lines = not config.settings.tome.show_grid_lines
 		game:saveSettings("tome.show_grid_lines", ("tome.show_grid_lines = %s\n"):format(tostring(config.settings.tome.show_grid_lines)))
 		self.c_list:drawItem(item)
-		game:createMapGridLines()
+		if self:isTome() then game:createMapGridLines() end
 	end,}
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Select the fonts look. Fantasy is the default one. Basic is simplified and smaller.\nYou must restart the game for the change to take effect."}
@@ -199,8 +206,10 @@ function _M:generateListUi()
 			qty = util.bound(qty, 0, 20)
 			game:saveSettings("tome.log_fade", ("tome.log_fade = %d\n"):format(qty))
 			config.settings.tome.log_fade = qty
-			game.uiset.logdisplay:enableFading(config.settings.tome.log_fade)
-			profile.chat:enableFading(config.settings.tome.log_fade)
+			if self:isTome() then
+				game.uiset.logdisplay:enableFading(config.settings.tome.log_fade)
+				profile.chat:enableFading(config.settings.tome.log_fade)
+			end
 			self.c_list:drawItem(item)
 		end, 0))
 	end,}
@@ -217,44 +226,45 @@ function _M:generateListUi()
 		end, 1))
 	end,}
 
-	if game.uiset:checkGameOption("icons_temp_effects") then
-		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Uses the icons for status effects instead of text.#WHITE#"}
-		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons status effects#WHITE##{normal}#", status=function(item)
-			return tostring(config.settings.tome.effects_icons and "enabled" or "disabled")
-		end, fct=function(item)
-			config.settings.tome.effects_icons = not config.settings.tome.effects_icons
-			game:saveSettings("tome.effects_icons", ("tome.effects_icons = %s\n"):format(tostring(config.settings.tome.effects_icons)))
-			game.player.changed = true
-			self.c_list:drawItem(item)
-		end,}
-	end
-
-	if game.uiset:checkGameOption("icons_hotkeys") then
-		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Uses the icons hotkeys toolbar or the textual one.#WHITE#"}
-		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons hotkey toolbar#WHITE##{normal}#", status=function(item)
-			return tostring(config.settings.tome.hotkey_icons and "enabled" or "disabled")
-		end, fct=function(item)
-			config.settings.tome.hotkey_icons = not config.settings.tome.hotkey_icons
-			game:saveSettings("tome.hotkey_icons", ("tome.hotkey_icons = %s\n"):format(tostring(config.settings.tome.hotkey_icons)))
-			game.player.changed = true
-			game:resizeIconsHotkeysToolbar()
-			self.c_list:drawItem(item)
-		end,}
-	end
-
-	if game.uiset:checkGameOption("hotkeys_rows") then
-		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Number of rows to show in the icons hotkeys toolbar.#WHITE#"}
-		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons hotkey toolbar rows#WHITE##{normal}#", status=function(item)
-			return tostring(config.settings.tome.hotkey_icons_rows)
-		end, fct=function(item)
-			game:registerDialog(GetQuantity.new("Number of icons rows", "From 1 to 4", config.settings.tome.hotkey_icons_rows, 4, function(qty)
-				qty = util.bound(qty, 1, 4)
-				game:saveSettings("tome.hotkey_icons_rows", ("tome.hotkey_icons_rows = %d\n"):format(qty))
-				config.settings.tome.hotkey_icons_rows = qty
-				game:resizeIconsHotkeysToolbar()
+	if self:isTome() then
+		if game.uiset:checkGameOption("icons_temp_effects") then
+			local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Uses the icons for status effects instead of text.#WHITE#"}
+			list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons status effects#WHITE##{normal}#", status=function(item)
+				return tostring(config.settings.tome.effects_icons and "enabled" or "disabled")
+			end, fct=function(item)
+				config.settings.tome.effects_icons = not config.settings.tome.effects_icons
+				game:saveSettings("tome.effects_icons", ("tome.effects_icons = %s\n"):format(tostring(config.settings.tome.effects_icons)))
+				if self:isTome() then game.player.changed = true end
 				self.c_list:drawItem(item)
-			end, 1))
-		end,}
+			end,}
+		end
+
+		if game.uiset:checkGameOption("icons_hotkeys") then
+			local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Uses the icons hotkeys toolbar or the textual one.#WHITE#"}
+			list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons hotkey toolbar#WHITE##{normal}#", status=function(item)
+				return tostring(config.settings.tome.hotkey_icons and "enabled" or "disabled")
+			end, fct=function(item)
+				config.settings.tome.hotkey_icons = not config.settings.tome.hotkey_icons
+				game:saveSettings("tome.hotkey_icons", ("tome.hotkey_icons = %s\n"):format(tostring(config.settings.tome.hotkey_icons)))
+				if self:isTome() then game.player.changed = true game:resizeIconsHotkeysToolbar() end
+				self.c_list:drawItem(item)
+			end,}
+		end
+
+		if game.uiset:checkGameOption("hotkeys_rows") then
+			local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Number of rows to show in the icons hotkeys toolbar.#WHITE#"}
+			list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons hotkey toolbar rows#WHITE##{normal}#", status=function(item)
+				return tostring(config.settings.tome.hotkey_icons_rows)
+			end, fct=function(item)
+				game:registerDialog(GetQuantity.new("Number of icons rows", "From 1 to 4", config.settings.tome.hotkey_icons_rows, 4, function(qty)
+					qty = util.bound(qty, 1, 4)
+					game:saveSettings("tome.hotkey_icons_rows", ("tome.hotkey_icons_rows = %d\n"):format(qty))
+					config.settings.tome.hotkey_icons_rows = qty
+					if self:isTome() then game:resizeIconsHotkeysToolbar() end
+					self.c_list:drawItem(item)
+				end, 1))
+			end,}
+		end
 	end
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Size of the icons in the hotkeys toolbar.#WHITE#"}
@@ -265,7 +275,7 @@ function _M:generateListUi()
 			qty = util.bound(qty, 32, 64)
 			game:saveSettings("tome.hotkey_icons_size", ("tome.hotkey_icons_size = %d\n"):format(qty))
 			config.settings.tome.hotkey_icons_size = qty
-			game:resizeIconsHotkeysToolbar()
+			if self:isTome() then game:resizeIconsHotkeysToolbar() end
 			self.c_list:drawItem(item)
 		end, 32))
 	end,}
@@ -288,36 +298,39 @@ function _M:generateListUi()
 		self.c_list:drawItem(item)
 	end,}
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString[[Toggles between various tactical information display:
+	if self:isTome() then
+		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString[[Toggles between various tactical information display:
 - Combined healthbar and small tactical frame
 - Combined healthbar and big tactical frame
 - Only healthbar
 - No tactical information at all
 
 #{italic}#You can also change this directly ingame by pressing shift+T.#{normal}##WHITE#]]}
-	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Tactical overlay#WHITE##{normal}#", status=function(item)
-		local vs = "Combined Small"
-		if game.always_target == "old" then
-			local vs = "Combined Big"
-		elseif game.always_target == "health" then
-			local vs = "Only Healthbars"
-		elseif game.always_target == nil then
-			local vs = "Nothing"
-		elseif game.always_target == true then
+		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Tactical overlay#WHITE##{normal}#", status=function(item)
 			local vs = "Combined Small"
-		end
-		return vs
-	end, fct=function(item)
-		Dialog:listPopup("Tactical overlay", "Select overlay mode", {
-			{name="Combined Small", mode=true},
-			{name="Combined Big", mode="old"},
-			{name="Only Healthbars", mode="health"},
-			{name="Nothing", mode=nil},
-		}, 300, 200, function(sel)
-			if not sel then return end
-			game:setTacticalMode(sel.mode)
-		end)
-	end,}
+			if game.always_target == "old" then
+				vs = "Combined Big"
+			elseif game.always_target == "health" then
+				vs = "Only Healthbars"
+			elseif game.always_target == nil then
+				vs = "Nothing"
+			elseif game.always_target == true then
+				vs = "Combined Small"
+			end
+			return vs
+		end, fct=function(item)
+			Dialog:listPopup("Tactical overlay", "Select overlay mode", {
+				{name="Combined Small", mode=true},
+				{name="Combined Big", mode="old"},
+				{name="Only Healthbars", mode="health"},
+				{name="Nothing", mode=nil},
+			}, 300, 200, function(sel)
+				if not sel then return end
+				game:setTacticalMode(sel.mode)
+				self.c_list:drawItem(item)
+			end)
+		end,}
+	end
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Toggles between a normal or flagpost tactical bars.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Flagpost tactical bars#WHITE##{normal}#", status=function(item)
@@ -344,7 +357,7 @@ function _M:generateListUi()
 		config.settings.tome.fullscreen_stun = not config.settings.tome.fullscreen_stun
 		game:saveSettings("tome.fullscreen_stun", ("tome.fullscreen_stun = %s\n"):format(tostring(config.settings.tome.fullscreen_stun)))
 		self.c_list:drawItem(item)
-		if game.player.updateMainShader then game.player:updateMainShader() end
+		if self:isTome() then if game.player.updateMainShader then game.player:updateMainShader() end end
 	end,}
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"If disabled you will not get a fullscreen notification of confusion effects. Beware.#WHITE#"}
@@ -354,7 +367,7 @@ function _M:generateListUi()
 		config.settings.tome.fullscreen_confusion = not config.settings.tome.fullscreen_confusion
 		game:saveSettings("tome.fullscreen_confusion", ("tome.fullscreen_confusion = %s\n"):format(tostring(config.settings.tome.fullscreen_confusion)))
 		self.c_list:drawItem(item)
-		if game.player.updateMainShader then game.player:updateMainShader() end
+		if self:isTome() then if game.player.updateMainShader then game.player:updateMainShader() end end
 	end,}
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Toggles advanced weapon statistics display.#WHITE#"}
@@ -363,6 +376,15 @@ function _M:generateListUi()
 	end, fct=function(item)
 		config.settings.tome.advanced_weapon_stats = not config.settings.tome.advanced_weapon_stats
 		game:saveSettings("tome.advanced_weapon_stats", ("tome.advanced_weapon_stats = %s\n"):format(tostring(config.settings.tome.advanced_weapon_stats)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When you do a mouse gesture (right click + drag) a color coded trail is displayed.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Display mouse gesture trails#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.hide_gestures and "disabled" or "enabled")
+	end, fct=function(item)
+		config.settings.hide_gestures = not config.settings.hide_gestures
+		game:saveSettings("hide_gestures", ("hide_gestures = %s\n"):format(tostring(config.settings.hide_gestures)))
 		self.c_list:drawItem(item)
 	end,}
 
@@ -440,6 +462,15 @@ function _M:generateListGameplay()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Auto-validate targets. If you fire an arrow/talent/... it will automatically use the default target without asking\n#LIGHT_RED#This is dangerous. Do not enable unless you know exactly what you are doing.#WHITE#\n\nDefault target is always either one of:\n - The last creature hovered by the mouse\n - The last attacked creature\n - The closest creature"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Auto-accept target#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.auto_accept_target and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.auto_accept_target = not config.settings.auto_accept_target
+		game:saveSettings("auto_accept_target", ("auto_accept_target = %s\n"):format(tostring(config.settings.auto_accept_target)))
+		self.c_list:drawItem(item)
+	end,}
+
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"New games begin with some talent points auto-assigned.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Auto-assign talent points at birth#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.autoassign_talents_on_birth and "enabled" or "disabled")
@@ -495,6 +526,15 @@ function _M:generateListOnline()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Open links in external browser instead of the embedded one.\nThis does not affect addons browse and installation which always stays ingame."}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Open links in external browser#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.open_links_external and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.open_links_external = not config.settings.open_links_external
+		game:saveSettings("open_links_external", ("open_links_external = %s\n"):format(tostring(config.settings.open_links_external)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
@@ -518,6 +558,15 @@ function _M:generateListMisc()
 	end, fct=function(item)
 		config.settings.tome.save_zone_levels = not config.settings.tome.save_zone_levels
 		game:saveSettings("tome.save_zone_levels", ("tome.save_zone_levels = %s\n"):format(tostring(config.settings.tome.save_zone_levels)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Disallow boot images that could be found 'offensive'.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Censor boot#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.censor_boot and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.censor_boot = not config.settings.censor_boot
+		game:saveSettings("censor_boot", ("censor_boot = %s\n"):format(tostring(config.settings.censor_boot)))
 		self.c_list:drawItem(item)
 	end,}
 

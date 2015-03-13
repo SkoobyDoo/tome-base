@@ -104,7 +104,7 @@ newEntity{
 	power_source = {arcane=true},
 	name = "blighted ", prefix=true, instant_resolve=true,
 	keywords = {blight=true},
-	level_range = {15, 50},
+	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 30,
 	cost = 40,
@@ -170,7 +170,7 @@ newEntity{
 	cost = 30,
 	wielder = {
 		resists = {
-			[DamageType.COLD] = resolvers.mbonus_material(10, 5),
+			[DamageType.DARKNESS] = resolvers.mbonus_material(10, 5),
 			[DamageType.TEMPORAL] = resolvers.mbonus_material(10, 5),
 	},
 		resist_all_on_teleport = resolvers.mbonus_material(20, 5),
@@ -247,9 +247,17 @@ newEntity{
 		combat_spellpower = resolvers.mbonus_material(3, 2),
 		combat_spellcrit = resolvers.mbonus_material(2, 2),
 	},
-	resolvers.charm("project a bolt from the staff", 5,
+	resolvers.charm(
 		function(self, who)
-			local tg = {type="bolt", range= 5 + self.material_level, speed=20, display = {particle=particle, trail=trail},}
+			local damtype = engine.DamageType:get(self.combat.element or "ARCANE")
+			local range = self.use_power.range(self)
+			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
+			local damrange = self.use_power.damrange(self, who)
+			return ("project a bolt from the staff (to range %d) dealing %0.2f - %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
+		end,
+		5,
+		function(self, who)
+			local tg = {type="bolt", range=self.use_power.range(self), speed=20, display = {particle=particle, trail=trail},}
 			local weapon = who:hasStaffWeapon()
 			if not weapon then
 				game.logPlayer(who, "You have no appropriate weapon.")
@@ -277,17 +285,21 @@ newEntity{
 			if not x or not y then return nil end
 
 			-- Compute damage
-			local dam = who:combatDamage(combat)
-			local damrange = who:combatDamageRange(combat)
+			local dam = self.use_power.damage(self, who)
+			local damrange = self.use_power.damrange(self, who)
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
 
 			who:projectile(tg, x, y, damtype, dam, {type=explosion, particle=particle, trail=trail})
 
-			game.logSeen(who, "%s fires a bolt from %s!", who.name:capitalize(), self.name)
+			game.logSeen(who, "%s fires a bolt from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game:playSoundNear(who, "talents/arcane")
 			return {id=true, used=true}
-		end
+		end,
+		"T_GLOBAL_CD",
+		{range = function(self, who) return 5 + self.material_level end,
+		damage = function(self, who) return who:combatDamage(self.combat) end,
+		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
 	),
 }
 
@@ -345,9 +357,17 @@ newEntity{
 		combat_spellpower = resolvers.mbonus_material(5, 5),
 		combat_spellcrit = resolvers.mbonus_material(5, 5),
 	},
-	resolvers.charm("project damage in a circle from the staff", 10,
+	resolvers.charm(
 		function(self, who)
-			local tg = {type="ball", range=0, radius=self.material_level + 1, selffire=false}
+			local damtype = engine.DamageType:get(self.combat.element or "ARCANE")
+			local radius = self.use_power.radius(self)
+			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
+			local damrange = self.use_power.damrange(self, who)
+			return ("unleash an elemental blastwave, dealing %0.2f - %0.2f %s damage in a radius %d around the user"):format(dam, dam*damrange, damtype.name, radius)
+		end,
+		10,
+		function(self, who)
+			local tg = {type="ball", range=0, radius=self.use_power.radius(self, who), selffire=false}
 			local weapon = who:hasStaffWeapon()
 			if not weapon then return end
 			local combat = weapon.combat
@@ -371,17 +391,21 @@ newEntity{
 			end
 
 			-- Compute damage
-			local dam = who:combatDamage(combat)
-			local damrange = who:combatDamageRange(combat)
+			local dam = self.use_power.damage(self, who)
+			local damrange = self.use_power.damrange(self, who)
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
 
 			who:project(tg, who.x, who.y, damtype, dam, {type=explosion})
 
-			game.logSeen(who, "%s unleashes an elemental blastwave from %s!", who.name:capitalize(), self.name)
+			game.logSeen(who, "%s unleashes an elemental blastwave from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game:playSoundNear(who, "talents/arcane")
 			return {id=true, used=true}
-		end
+		end,
+		"T_GLOBAL_CD",
+		{radius = function(self, who) return 1 + self.material_level end,
+		damage = function(self, who) return who:combatDamage(self.combat) end,
+		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
 	),
 }
 
@@ -397,7 +421,7 @@ newEntity{
 		combat_spellpower = resolvers.mbonus_material(10, 8),
 		mana_regen = resolvers.mbonus_material(30, 10, function(e, v) v=v/100 return 0, v end),
 	},
-	resolvers.charm("channel mana (increasing mana regen by 500%% for ten turns)", 30,
+	resolvers.charm("channel mana (increasing mana regeneration by 500%% for ten turns)", 30,
 		function(self, who)
 			if who.mana_regen > 0 and not who:hasEffect(who.EFF_MANASURGE) then
 				who:setEffect(who.EFF_MANASURGE, 10, {power=who.mana_regen * 5})
@@ -452,9 +476,17 @@ newEntity{
 		combat_spellpower = resolvers.mbonus_material(5, 5),
 		spellsurge_on_crit = resolvers.mbonus_material(5, 5),
 	},
-	resolvers.charm("project damage in a cone from the staff", 8,
+	resolvers.charm(
 		function(self, who)
-			local tg = {type="cone", range=0, radius=self.material_level * 2, selffire=false}
+			local damtype = engine.DamageType:get(self.combat.element or "ARCANE")
+			local radius = self.use_power.radius(self)
+			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
+			local damrange = self.use_power.damrange(self, who)
+			return ("conjure elemental energy in a radius %d cone, dealing %0.2f - %0.2f %s damage"):format( radius, dam, dam*damrange, damtype.name)
+		end,
+		8,
+		function(self, who)
+			local tg = {type="cone", range=0, radius=self.use_power.radius(self, who), selffire=false}
 			local weapon = who:hasStaffWeapon()
 			if not weapon then return end
 			local combat = weapon.combat
@@ -480,17 +512,21 @@ newEntity{
 			if not x or not y then return nil end
 
 			-- Compute damage
-			local dam = who:combatDamage(combat)
-			local damrange = who:combatDamageRange(combat)
+			local dam = self.use_power.damage(self, who)
+			local damrange = self.use_power.damrange(self, who)
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
 
 			who:project(tg, x, y, damtype, dam, {type=explosion})
 
-			game.logSeen(who, "%s conjures a cone of elemental energy from %s!", who.name:capitalize(), self.name)
+			game.logSeen(who, "%s conjures a cone of elemental energy from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game:playSoundNear(who, "talents/arcane")
 			return {id=true, used=true}
-		end
+		end,
+		"T_GLOBAL_CD",
+		{radius = function(self, who) return 2*self.material_level end,
+		damage = function(self, who) return who:combatDamage(self.combat) end,
+		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
 	),
 }
 
@@ -631,7 +667,7 @@ newEntity{
 	slot_forbid = false,
 	twohanded = false,
 	keywords = {magewarrior=true},
-	level_range = {20, 50},
+	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 35,
 	cost = 60,

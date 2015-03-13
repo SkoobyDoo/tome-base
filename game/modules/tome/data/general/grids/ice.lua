@@ -25,6 +25,7 @@ newEntity{
 	name = "icy floor", image = "terrain/frozen_ground.png",
 	display = '.', color=colors.LIGHT_BLUE, back_color=colors.WHITE,
 	nice_editer = ice_editer,
+	always_remember = true, special_minimap = {b=220, g=220, r=120},
 	on_stand = function(self, x, y, who)
 		who:setEffect(who.EFF_ICY_FLOOR, 1, {})
 	end,
@@ -36,6 +37,6 @@ newEntity{
 	display = ';', color=colors.LIGHT_BLUE, back_color=colors.WHITE,
 	nice_editer = ice_editer,
 	nice_tiler = { method="replace", base={"FROZEN_WATER", 100, 1, 4}},
-	special_minimap = colors.BLUE,
+	always_remember = true, special_minimap = {b=220, g=220, r=120},
 }
 for i = 1, 4 do newEntity{ base="FROZEN_WATER", define_as = "FROZEN_WATER"..i, add_mos = {{image = "terrain/ice/frozen_ground_5_0"..i..".png"}}} end

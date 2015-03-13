@@ -145,7 +145,7 @@ newTalent{
 		local proj = require("mod.class.Projectile"):makeHoming(
 			self,
 			{particle="bolt_lightning", trail="lightningtrail"},
-			{speed=4, name="Tornado", dam=dam, movedam=movedam, rad=rad},
+			{speed=4, name="Tornado", dam=dam, movedam=movedam, rad=rad, dur=dur},
 			target,
 			self:getTalentRange(t),
 			function(self, src)
@@ -157,7 +157,7 @@ newTalent{
 				src:project({type="ball", radius=self.def.rad, selffire=false, x=self.x, y=self.y}, self.x, self.y, DT.LIGHTNING, self.def.dam)
 				src:project({type="ball", radius=self.def.rad, selffire=false, x=self.x, y=self.y}, self.x, self.y, DT.MINDKNOCKBACK, self.def.dam)
 				if target:canBe("stun") then
-					target:setEffect(target.EFF_STUNNED, dur, {apply_power=src:combatMindpower()})
+					target:setEffect(target.EFF_STUNNED, self.def.dur, {apply_power=src:combatMindpower()})
 				else
 					game.logSeen(target, "%s resists the tornado!", target.name:capitalize())
 				end

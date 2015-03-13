@@ -96,3 +96,4 @@ engine.Faction:add{ name="Point Zero Onslaught", reaction={}, }
 engine.Faction:add{ name="Point Zero Guardians", reaction={}, }
 engine.Faction:setInitialReaction("point-zero-onslaught", "point-zero-guardians", -100, true)
 engine.Faction:setInitialReaction("enemies", "point-zero-guardians", -100, true)
+engine.Faction:setInitialReaction("keepers-of-reality", "point-zero-guardians", 100, true)

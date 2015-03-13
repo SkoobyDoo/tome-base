@@ -27,6 +27,7 @@ g.identified = true
 g.name = "glimmerstone"
 g.desc = "It shimmers and changes the light all around. This is dazling!"
 g.display='&' g.color_r=255 g.color_g=255 g.color_b=255 g.notice = true
+g.always_remember = true
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
 	g.add_displays = g.add_displays or {}

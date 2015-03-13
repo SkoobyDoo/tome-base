@@ -94,7 +94,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self.c_permadeath_text = Textzone.new{auto_width=true, auto_height=true, text="Permadeath: "}
 	self.c_permadeath = Dropdown.new{width=150, fct=function(item) self:permadeathUse(item) end, on_select=function(item) self:updateDesc(item) end, list=self.all_permadeaths, nb_items=#self.all_permadeaths}
 
-	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, no_color_bleed=true}
+	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, pingpong=20, no_color_bleed=true}
 
 	self:setDescriptor("base", "base")
 	self:setDescriptor("world", self.default_campaign)
@@ -328,12 +328,10 @@ function _M:makeDefault()
 	self:setDescriptor("world", "Maj'Eyal")
 	self:setDescriptor("difficulty", "Normal")
 	self:setDescriptor("permadeath", "Adventure")
-	self:setDescriptor("race", "Giant")
-	self:setDescriptor("subrace", "Ogre")
+	self:setDescriptor("race", "Human")
+	self:setDescriptor("subrace", "Cornac")
 	self:setDescriptor("class", "Warrior")
 	self:setDescriptor("subclass", "Berserker")
-	-- self:setDescriptor("class", "Chronomancer")
-	-- self:setDescriptor("subclass", "Paradox Mage")
 	__module_extra_info.no_birth_popup = true
 	self:atEnd("created")
 end

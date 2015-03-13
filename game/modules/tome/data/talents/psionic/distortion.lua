@@ -186,14 +186,14 @@ newTalent{
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
-		local oe = game.level.map(x, y, Map.TERRAIN)
-		if not oe or oe:attr("temporary") or oe.is_maelstrom or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then return nil end
+		local oe = game.level.map(x, y, Map.TERRAIN+1)
+		if (oe and oe.is_maelstrom) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then return nil end
 		
 		local e = Object.new{
 			old_feat = oe,
-			type = oe.type, subtype = oe.subtype,
-			name = self.name:capitalize().. "'s maelstrom", image = oe.image,
-			display = oe.display, color=oe.color, back_color=oe.back_color,
+			type = "psionic", subtype = "maelstrom",
+			name = self.name:capitalize().. "'s maelstrom",
+			display = ' ',
 			tooltip = mod.class.Grid.tooltip,
 			always_remember = true,
 			temporary = t.getDuration(self, t),
@@ -235,7 +235,8 @@ newTalent{
 				self.temporary = self.temporary - 1
 				if self.temporary <= 0 then
 					game.level.map:removeParticleEmitter(self.particles)	
-					game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
+					if self.old_feat then game.level.map(self.x, self.y, engine.Map.TERRAIN+1, self.old_feat)
+					else game.level.map:remove(self.x, self.y, engine.Map.TERRAIN+1) end
 					game.level:removeEntity(self)
 					game.level.map:updateMap(self.x, self.y)
 					game.nicer_tiles:updateAround(game.level, self.x, self.y)
@@ -249,8 +250,7 @@ newTalent{
 		if core.shader.allow("distort") then particle:setSub("vortex_distort", e.radius, {radius=e.radius}) end
 		e.particles = game.level.map:addParticleEmitter(particle, x, y)
 		game.level:addEntity(e)
-		game.level.map(x, y, Map.TERRAIN, e)
-		--game.nicer_tiles:updateAround(game.level, x, y)
+		game.level.map(x, y, Map.TERRAIN+1, e)
 		game.level.map:updateMap(x, y)
 		game:playSoundNear(self, "talents/lightning_loud")
 		return true

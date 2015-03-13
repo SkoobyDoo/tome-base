@@ -47,6 +47,7 @@ for i, p in ipairs(list) do
 	local g = game.level.map(p.x, p.y, engine.Map.TERRAIN):cloneFull()
 	g.name = "monolith"
 	g.display='&' g.color_r=0 g.color_g=255 g.color_b=255 g.notice = true
+	g.always_remember = true g.special_minimap = colors.OLIVE_DRAB
 	g.add_displays = g.add_displays or {}
 	g.add_displays[#g.add_displays+1] = mod.class.Grid.new{image="terrain/moonstone_0"..rng.range(1,8)..".png", display_y=-1, display_h=2, z=18}
 	g:altered()
@@ -55,6 +56,7 @@ for i, p in ipairs(list) do
 	g.autoexplore_ignore = true
 	g.is_monolith = true
 	game.zone:addEntity(game.level, g, "terrain", p.x, p.y)
+	print("[EVENT] monolith placed at ", p.x, p.y)
 
 	local m = mod.class.NPC.new{
 		type = "humanoid", subtype = "shalore", image = "npc/humanoid_shalore_elven_corruptor.png",
