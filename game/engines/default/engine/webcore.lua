@@ -24,7 +24,7 @@ local class = require "class"
 core.webview.paths = {}
 
 function core.webview.responder(id, path)
-	path = "/"..path
+	path = path:gsub("te4://data/", "/")
 	print("[WEBCORE] path request: ", path)
 
 	-- Let hook do their stuff

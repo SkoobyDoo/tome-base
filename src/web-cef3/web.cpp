@@ -238,7 +238,7 @@ public:
 		const char *mime = cstring_to_c(download_item->GetMimeType());
 		const char *url = cstring_to_c(download_item->GetURL());
 		const char *name = cstring_to_c(suggested_name);
-		fprintf(logfile, "[WEBCORE] Download request id %ld [name: %s] [mime: %s] [url: %s]\n", id, name, mime, url);
+		fprintf(logfile, "[WEBCORE] Download request id %ld [name: %s] [mime: %s] [url: %s]\n", (long int)id, name, mime, url);
 
 		WebEvent *event = new WebEvent();
 		event->kind = TE4_WEB_EVENT_DOWNLOAD_REQUEST;
@@ -257,7 +257,7 @@ public:
 		cd->cancel_cb = callback;
 
 		fprintf(logfile, "[WEBCORE] Download update id %ld [size: %ld / %ld] [completed: %d, canceled: %d, inprogress: %d, valid: %d]\n",
-				id,
+				(long int)id,
 				download_item->GetReceivedBytes(), download_item->GetTotalBytes(),
 				download_item->IsComplete(), download_item->IsCanceled(),
 				download_item->IsInProgress(), download_item->IsValid()
@@ -339,6 +339,91 @@ public:
 	IMPLEMENT_REFCOUNTING(BrowserClient);
 };
 
+class TE4ResourceHandler;
+static std::map<int, TE4ResourceHandler*> requests;
+static int requests_next = 1;
+
+// Implementation of the resource handler for client requests.
+class TE4ResourceHandler : public CefResourceHandler {
+private:
+	int id;
+
+	size_t len, where;
+	void *result;
+	CefString *mime;
+
+	CefRefPtr<CefCallback> cb;
+public:
+	TE4ResourceHandler() {
+		id = requests_next++;
+		requests[id] = this;
+		// printf("NEW HANDLER================\n");
+	}
+	~TE4ResourceHandler() {
+		delete mime;
+		free(result);
+	}
+
+	void setData(const char *mime, const char *result, size_t len) {
+		if (!len) { this->cb->Cancel(); return; }
+
+		this->mime = new CefString(mime);
+		this->len = len;
+		this->where = 0;
+		this->result = malloc(len);
+		memcpy(this->result, result, len);
+
+		this->cb->Continue();
+		this->cb = NULL;
+	}
+
+	virtual bool ProcessRequest(CefRefPtr<CefRequest> request, CefRefPtr<CefCallback> callback) OVERRIDE {
+		const char *path = cstring_to_c(request->GetURL());
+		WebEvent *event = new WebEvent();
+		event->kind = TE4_WEB_EVENT_LOCAL_REQUEST;
+		event->handlers = 0;
+		event->data.local_request.id = id;
+		event->data.local_request.path = path;
+		push_event(event);
+		this->cb = callback;
+		return true;
+	}
+
+	virtual void GetResponseHeaders(CefRefPtr<CefResponse> response, int64& response_length, CefString& redirectUrl) OVERRIDE {
+		// Populate the response headers.
+		response->SetMimeType(*mime);
+		response->SetStatus(200);
+
+		// Specify the resulting response length.
+		response_length = (int64)len;
+	}
+
+	virtual void Cancel() OVERRIDE {
+		// Cancel the response...
+	}
+
+	virtual bool ReadResponse(void* data_out, int bytes_to_read, int& bytes_read, CefRefPtr<CefCallback> callback) OVERRIDE {
+		// printf("Returning response %d\n", bytes_to_read);
+		if (len > bytes_to_read) bytes_read = bytes_to_read;
+		else bytes_read = len;
+		memcpy(data_out, result + where, bytes_read);
+		where += bytes_read;
+		len -= bytes_read;
+		return true;
+	}
+
+private:
+	IMPLEMENT_REFCOUNTING(TE4ResourceHandler);
+};
+
+class TE4SchemeHandlerFactory : public CefSchemeHandlerFactory {
+public:
+	virtual CefRefPtr<CefResourceHandler> Create(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, const CefString& scheme_name, CefRefPtr<CefRequest> request) OVERRIDE {
+		return new TE4ResourceHandler();
+	}
+	IMPLEMENT_REFCOUNTING(TE4SchemeHandlerFactory);
+};
+
 class ClientApp :
 	public CefApp,
 	public CefRenderProcessHandler
@@ -352,10 +437,17 @@ public:
 		return false;
 	}
 
+	virtual void OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar) {
+		registrar->AddCustomScheme("te4", true, true, false);
+	}
+
 	IMPLEMENT_REFCOUNTING(ClientApp);
 };
 
 void te4_web_new(web_view_type *view, int w, int h) {
+	static bool inited = false;
+	if (!inited) { CefRegisterSchemeHandlerFactory("te4", "data", new TE4SchemeHandlerFactory()); inited = true; }
+
 	WebViewOpaque *opaque = new WebViewOpaque();
 	view->opaque = (void*)opaque;
 
@@ -768,6 +860,10 @@ void te4_web_download_action(web_view_type *view, long id, const char *path) {
 }
 
 void te4_web_reply_local(int id, const char *mime, const char *result, size_t len) {
+	TE4ResourceHandler *handler = requests[id];
+	requests.erase(id);
+
+	handler->setData(mime, result, len);
 }
 
 void te4_web_do_update(void (*cb)(WebEvent*)) {
@@ -806,6 +902,9 @@ void te4_web_do_update(void (*cb)(WebEvent*)) {
 				break;
 			case TE4_WEB_EVENT_DELETE_TEXTURE:
 				web_del_texture(event->data.texture);
+				break;
+			case TE4_WEB_EVENT_END_BROWSER:
+			case TE4_WEB_EVENT_BROWSER_COUNT:
 				break;
 		}
 
@@ -898,7 +997,7 @@ void te4_web_shutdown() {
 
 	while (!all_browsers.empty()) {
 		CefDoMessageLoopWork();
-		fprintf(logfile, "Waiting browsers to close: %d left\n", all_browsers.size());
+		fprintf(logfile, "Waiting browsers to close: %d left\n", (int)all_browsers.size());
 	}
 	
 	fprintf(logfile, "[WEBCORE] all browsers dead, shutting down\n");
