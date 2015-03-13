@@ -157,7 +157,7 @@ newTalent{
 						end
 					end
 				end)
-			elseif self:getInven("PSIONIC_FOCUS")[1] and self:getInven("PSIONIC_FOCUS")[1].type == "gem" then
+			elseif self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1] and self:getInven("PSIONIC_FOCUS")[1].type == "gem" then
 				local list = {}
 				local gem = self:getInven("PSIONIC_FOCUS")[1]
 				self:project({type="ball", radius=6}, self.x, self.y, function(px, py)
