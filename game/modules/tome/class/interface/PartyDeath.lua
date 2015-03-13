@@ -24,7 +24,7 @@ local DamageType = require "engine.DamageType"
 module(..., package.seeall, class.make)
 
 function _M:onPartyDeath(src, death_note)
-	if self.dead then return true end
+	if self.dead then if game.level:hasEntity(self) then game.level:removeEntity(self, true) end return true end
 
 	-- Remove from the party if needed
 	if self.remove_from_party_on_death then

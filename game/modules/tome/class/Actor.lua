@@ -2759,7 +2759,7 @@ function _M:emptyDrops()
 end
 
 function _M:die(src, death_note)
-	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) return true end
+	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) if game.level:hasEntity(self) then game.level:removeEntity(self, true) end return true end
 
 	-- Self resurrect, mouhaha!
 	if self:attr("self_resurrect") and not self.no_resurrect then
