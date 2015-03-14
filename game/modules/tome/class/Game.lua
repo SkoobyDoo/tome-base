@@ -1414,7 +1414,7 @@ end
 function _M:delayedLogDamage(src, target, dam, desc, crit)
 	if not target or not src then return end
 	local psrc = src.__project_source or src -- assign message to indirect damage source if available
-	local visible, srcSeen, tgtSeen = self:logVisible(src, target)
+	local visible, srcSeen, tgtSeen = self:logVisible(psrc, target)
 	if visible then -- only log damage the player is aware of
 		local t = table.getTable(self.delayed_log_damage, src, psrc, target)
 		table.update(t, {total=0, healing=0, descs={}})
