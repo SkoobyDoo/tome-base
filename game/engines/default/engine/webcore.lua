@@ -39,8 +39,9 @@ function core.webview.responder(id, path)
 		local r = {path:find("^"..mpath)}
 		if r[1] then
 			table.remove(r, 1) table.remove(r, 1)
-			local mime, data = fct(path, unpack(r))
-			if mime and data then
+			local data, mime = fct(path, unpack(r))
+			if data then
+				mime = mime or "text/html"
 				core.webview.localReplyData(id, mime, data)
 				return
 			end
@@ -58,5 +59,5 @@ function core.webview.responder(id, path)
 end
 
 core.webview.paths["/example/(.*)"] = function(path, sub)
-	return "text/html", "example sub url was: "..sub
+	return "example sub url was: "..sub, "text/html"
 end
