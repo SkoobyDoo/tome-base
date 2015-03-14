@@ -58,6 +58,13 @@ summonTemporalHound = function(self, t)
 		resolvers.sustains_at_birth(),
 	}
 	
+	m.unused_stats = 0
+	m.unused_talents = 0
+	m.unused_generics = 0
+	m.unused_talents_types = 0
+	m.no_inventory_access = true
+	m.no_points_on_levelup = true
+	
 	m:resolve()
 	m:resolve(nil, true)
 	
