@@ -203,7 +203,9 @@ newLore{
 	name = "healer Astelrid log 2",
 	lore = [[The Nargol were not bluffing, and what they did was worse than anything we could've imagined.  The details coming from the survivors - of which there are both far too many and far too few - are conflicting at times, but from what I can tell...
 
-As our forces began their final push, the ground began to rumble and give way behind them, and the bones of the war's fallen (halflings and Conclave alike) began to rise up, then draw their once-discarded weapons and rush at our soldiers in a frenzy.  There were so many...  those who were on higher ground when it happened said it was like a sea of bones and rotting flesh.  Outnumbered, our forces broke ranks and tried to retreat, but with the halflings in front of them and the abominations behind them, we took tremendous losses...  and our humble medical center is overflowing with the gravely wounded.  Many come to us with a terrible sickness passed on by the Nargol's ghouls; there is no cure for this, and I have already had to "mercifully" end the lives of over a dozen men and women to save them from a long, drawn-out death, ending in their transfiguration into one of those horrid creatures.
+As our forces began their final push, the ground began to rumble and give way behind them, and the bones of the war's fallen (halflings and Conclave alike) began to rise up, then draw their once-discarded weapons and rush at our soldiers in a frenzy.  There were so many...  those who were on higher ground when it happened said it was like a sea of bones and rotting flesh.  Outnumbered, our forces broke ranks and tried to retreat, but with the halflings in front of them and the abominations behind them, we took tremendous losses...  and our humble medical center is overflowing with the gravely wounded.  Many come to us with a terrible sickness passed on by the Nargol's ghouls; there is no cure for this, and I have already had to "mercifully" end the lives of over a dozen men and women to save them from a long, drawn-out death, ending in their transfiguration into one of those horrid creatures...  including--
+
+[The end of the preceding paragraph, several lines' worth of text, has been furiously scribbled out.]
 
 No...  the real horrid creatures here are the halflings.  We've seen necromancy before, but mostly as a parlor trick by deranged cults; we never dreamed that any large organization would tolerate it, let alone hide necromantic charms on every one of its ranking officers.  They've been planning to do this since the start of the war, and only sprung the trap now...  Any misgivings I had about the aggression associated with our new treatment are gone forever; we cannot be ferocious enough in purging these fiends from Maj'Eyal.  I have requested an audience with the Overseers to broaden the scope of our experiments, setting our sights higher so we may crush this evil empire as swiftly as possible.  
 
@@ -256,72 +258,72 @@ newLore{
 	name = "investigator Churrack note",
 	lore = [[FROM: Investigator Churrack
 TO: Whoever holds the position of High Overseer of Loyalty when we're let out
- 
-Though I'm trapped in here with these healers,  I haven't stopped prying to determine if their loyalties lie with us or with themselves.  This case has more layers than a damn onion; while Astelrid did disobey a direct order (and several more by revealing the existence of that order), her alternative seems to fit our goals nonetheless.  The others seem to follow her lead enthusiastically, and a few have been singing this song as they wait in line for their treatment:
- 
+
+Though I'm trapped in here with these healers, I haven't stopped prying to determine if their loyalties lie with us or with themselves. This case has more layers than a damn onion; while Astelrid did disobey a direct order (and several more by revealing the existence of that order), her alternative seems to fit our goals nonetheless. Response from staff has been mixed.  While most are reluctantly going along with her plan for lack of other options, some seem to follow her lead enthusiastically, and have been singing this song as they wait in line for their treatment:
+
 #{italic}#Some Nargol once told me their Empire's gonna roll me
 We ain't as strong as all their undead
-She looked kind of silly with giant feet so furry
-And an ogre's club smashing her forehead
- 
+They looked kind of silly with giant feet so furry
+And an ogre's club smashing their foreheads
+
 Well, the Empire's coming and they won't stop coming
 So you'd better be ready to hit the ground running
 Didn't make sense to kill everyone
 Praise the Overseers, but that plan was dumb
- 
+
 So much to do, so much to see
 So what's wrong with waiting in stasis?
 We'll never know if we don't try
 We'll never shine if we just die
- 
+
 Hey, now, you're a healer, get ogrified, go wait
 Hey, now, you're a guard now, stand vigil in the tanks
 They won't work on normal humans
 But we won't age sleeping in these ruins
- 
+
 It's a safe place, even as it gets older
 'cause this war's not over until we say it's ogre
 But the golems outside beg to differ
 Judging by the sights in the scrying-orb's picture
- 
+
 The ground we're under was getting pretty thin
 Their scouts are onto us, and they've got us all pinned
 We blew the tunnels - no way out,
 until the Conclave finds us, give trespassers a rout!
- 
+
 Hey, now, you're a healer, get ogrified, go wait
 Hey, now, you're a guard now, stand vigil in the tanks
 They won't work on normal humans
 But we won't age sleeping in these ruins
- 
+
 Hey, now, you're a healer, get ogrified, go wait
 Hey, now, you're a guard now, stand vigil in the tanks
 They won't work on normal humans
 But we won't age sleeping in these ruins
- 
+
 Somebody once asked if we'd finished, but alas
 While I'm proud of what we've done in this place
 We weren't done yet with this project,
 but we're close enough where this isn't neglect
 Eyal will appreciate our new race!
- 
+
 Well, the years'll start coming and they won't stop coming
 So you'd better be ready to hit the ground running
 Didn't make sense to kill everyone
 Praise the Overseers, but that plan was dumb
- 
+
 So much to do, so much to see
 So what's wrong with waiting in stasis?
 We'll never know if we don't try
 We'll never shine if we just die
- 
+
 Hey, now, you're a healer, get ogrified, go wait
 Hey, now, you're a guard now, stand vigil in the tanks
 They won't work on normal humans
 But we won't age sleeping in these ruins
- 
+
 They won't work on normal humans
 But we won't age sleeping in these ruins#{normal}#
- 
-...Everyone reacts to grief differently, I guess.  #{bold}#-Churrack#{normal}#]],
+
+...Everyone reacts to grief differently, I guess. #{bold}#-Churrack#{normal}#]],
 }
