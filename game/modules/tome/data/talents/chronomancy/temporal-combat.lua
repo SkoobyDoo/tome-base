@@ -47,7 +47,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
-	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	radius = function(self, t) return self:getTalentLevel(self.T_WEAPON_MANIFOLD) >= 4 and 2 or 1 end,
 	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
 	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
 	getResists = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getResists") end,
@@ -95,7 +95,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
-	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	radius = function(self, t) return self:getTalentLevel(self.T_WEAPON_MANIFOLD) >= 4 and 2 or 1 end,
 	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
 	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
 	getDuration = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration") end,
@@ -138,7 +138,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	range = 10,
-	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	radius = function(self, t) return self:getTalentLevel(self.T_WEAPON_MANIFOLD) >= 4 and 2 or 1 end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,

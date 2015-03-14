@@ -125,9 +125,9 @@ newTalent{
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
 			if target:isTalentActive(target.T_REALITY_SMEARING) then
-				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self})
+				target:setEffect(target.EFF_ATTENUATE_BEN, t.getDuration(self, t), {power=(damage/4)*0.4, src=self})
 			else
-				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
+				target:setEffect(target.EFF_ATTENUATE_DET, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
 			end
 		end)
 
