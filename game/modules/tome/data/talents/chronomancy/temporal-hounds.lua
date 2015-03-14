@@ -32,6 +32,7 @@ summonTemporalHound = function(self, t)
 	local m = require("mod.class.NPC").new{
 		type = "animal", subtype = "canine",
 		display = "C", color=colors.LIGHT_DARK, image = ("npc/temp_hound_0%d.png"):format(rng.range(1, 12)),
+		shader = "shadow_simulacrum", shader_args = { color = {0.4, 0.4, 0.1}, base = 0.8, time_factor = 1500 },
 		name = "temporal hound", faction = self.faction,
 		desc = [[A trained hound that appears to be all at once a little puppy and a toothless old dog.]],
 		sound_moam = {"creatures/wolves/wolf_hurt_%d", 1, 2}, sound_die = {"creatures/wolves/wolf_hurt_%d", 1, 1},
