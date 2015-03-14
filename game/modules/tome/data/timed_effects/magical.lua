@@ -3273,9 +3273,9 @@ newEffect{
 }
 
 newEffect{
-	name = "ATTENUATE", image = "talents/attenuate.png",
+	name = "ATTENUATE_DET", image = "talents/attenuate.png",
 	desc = "Attenuate",
-	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power, eff.dt_name) end,
+	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
@@ -3308,6 +3308,30 @@ newEffect{
 		else
 			DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
 		end
+	end,
+}
+
+newEffect{
+	name = "ATTENUATE_BEN", image = "talents/attenuate.png",
+	desc = "Attenuate",
+	long_desc = function(self, eff) return ("The target is being grounded in the timeline and is healing %0.2f life per turn."):format(eff.power) end,
+	type = "magical",
+	subtype = { temporal=true },
+	status = "beneficial",
+	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target# is being being grounded in the timeline!", "+Attenuate" end,
+	on_lose = function(self, err) return "#Target# is no longer being grounded.", "-Attenuate" end,
+	on_merge = function(self, old_eff, new_eff)
+		-- Merge the flames!
+		local olddam = old_eff.power * old_eff.dur
+		local newdam = new_eff.power * new_eff.dur
+		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
+		old_eff.dur = dur
+		old_eff.power = (olddam + newdam) / dur
+		return old_eff
+	end,
+	on_timeout = function(self, eff)
+		self:heal(eff.power, eff)
 	end,
 }
 
