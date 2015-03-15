@@ -1,0 +1,50 @@
+<title>FOO</title>
+<style type="text/css">
+@font-face {
+	font-family: salsa;
+	src: url('/font/FSEX300.ttf');
+}
+
+body {
+	font-family: salsa;
+	background-image: url("/gfx/background/tome.png");
+	width: 600px;
+	height: 600px;
+	font-size: 40px;
+}
+</style>
+
+<script type="text/javascript">
+function test() {
+	console.log("====");
+	lua("print('foo')", function(){console.log("CB CALLED!!")});
+	lua("require('engine.ui.Dialog'):simplePopup('test', 'test')");
+}
+</script>
+
+<body>
+toto!!!<br/>
+
+<a href="/html/toto.html"><img src="/gfx/facebook.png"></a>
+
+<br/>
+
+<a href="#" onclick='test(); return false;'>CLICKY JS LUA</a>
+
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+toto!!!<br/>
+</body>
