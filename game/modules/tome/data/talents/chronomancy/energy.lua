@@ -103,7 +103,7 @@ newTalent{
 			local t = rng.tableRemove(tids)
 			if not t then break end
 			target.talents_cd[t.id] = cdr
-			game.logSeen(target, "%s's %s is disrupted by the Energy Drain!", target.name:capitalize(), t.name)
+			game.logSeen(target, "%s's %s is disrupted by the Energy Absorption!", target.name:capitalize(), t.name)
 			count = count + 1
 		end
 
@@ -181,8 +181,9 @@ newTalent{
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if not x or not y or not target then return nil end
 
 		target:setEffect(target.EFF_ENTROPY, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 

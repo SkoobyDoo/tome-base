@@ -7091,7 +7091,7 @@ newEntity{ base = "BASE_GREATMAUL", define_as = "DREAM_MALLEUS",
 	combat = {
 		dam = 56,
 		apr = 5,
-		dammod = {str=1.1, wil=1.2},
+		dammod = {str=0.7, wil=0.7},
 		melee_project={[DamageType.MIND] = 10}
 	},
 	wielder = {

@@ -358,10 +358,11 @@ Chapter 3 - Dwarves
 Chapter 4 - Shaloren
 Chapter 5 - Thaloren
 Chapter 6 - Naloren (extinct)
-Chapter 7 - Orcs (extinct)
-Chapter 8 - Sher'Tul (extinct)
-Chapter 9 - Monstrous Races
-Chapter 10 - Dragons
+Chapter 7 - Ogres
+Chapter 8 - Orcs (extinct)
+Chapter 9 - Sher'Tul (extinct)
+Chapter 10 - Monstrous Races
+Chapter 11 - Dragons
 ]]}
 
 newLore{
@@ -448,9 +449,23 @@ They traded little with the other races, and were very protective of their coast
 Alas their love of the sea was to be their undoing. When the Cataclysm came the whole of the coastal kingdom was shorn away and fell into the sea, annihilating almost the entire race. What small numbers survived committed suicide soon after by leaping from the eastern cliffs into the ocean, following their fallen brothers and sisters. Almost no evidence of their civilisation remains.]]}
 
 newLore{
+	id = "races-ogre",
+	category = "races",
+	name = "Loremaster Greynot's Analysis of the Races - Chapter 7 - Ogres",
+	lore = [[Ogres have never been a thriving race, starting from their abrupt appearance as soldiers and laborers for the Conclave during the Allure Wars (unexplained aside from a highly implausible story from the Conclave's Overseers about a lost mountain tribe).  Left without homes or proper runic training after the war's end, they were forced to found their own tribes and rediscover the fields of rune and infusion creation for themselves, and though their numbers dropped rapidly, they enjoyed a brief period of relative success as nomadic rune-traders, virtually unaffected by the Spellblaze.  The Spellhunt nearly proved to be their undoing, as their monstrous size and rune-covered skin made them popular targets; they were thought to be extinct, and only in recent years has the city of Elvala revealed that some Ogres took refuge there during this time.  Their descendants still live today, fearful of persecution but gradually beginning to explore outside Elvala for the first time in ages.
+
+Ogres' most striking feature is their size, by far the largest of any intelligent race; they average at roughly 8'4" tall, and most are nearly half as wide with muscle.  They have a similar range of skin tones to humans, although slightly grayer on the whole; their hair tends to be dark brown or black, and their eyes run the gamut from black to bright blue to purple, presumably a side-effect of runic mis-transcription.  Their angular facial features invite some impolite comparisons to Orcs, with strong jawlines, disproportionately large mouths and teeth, and squarish heads, but otherwise resemble those of humans.  It would be remiss of me to describe Ogres' appearance without mentioning the intricate, glowing pattern of runes covering their skin from head to toe, although the exact patterns and colors vary.  
+
+Although they excel at physical tasks for obvious reasons, and the necessity of careful inscription has made their finger dexterity (and penmanship) rather impressive, their limb movements tend to be slow and clumsy due to their size, and they tire quickly if they over-exert themselves during strenuous labor.  Their slow speech, incredible appetites, and lack of interest in arts or most scholarly concerns has led to a misconception that they are dim-witted; however, Ogres forced into studious tasks have performed admirably, and one needs only look at their runic patterns to know the patient study and artistic vision they are capable of, if properly motivated.  This may tie into the humble, duty-bound mindset that seems to be an inherent property of the species - most Ogres show absolutely no interest in leadership or impressing others, only completing tasks in the most reliable manner possible, and such strategies tend to be rather simple.
+
+While Shalore use of magic is (arguably) a choice, Ogres have no such luxury.  Their inscriptions are as crucial to their well-being and structural integrity as any internal organ, and attempts by Ziguranth to "cleanse" captured Ogres of their runes invariably lead to them first collapsing under their own weight, then their organs shutting down one by one; one can assume that their natural infusions are just as vital.  As such, Ogre reproduction is a careful task; a newborn can live for a few months unaltered, but after this the parents must give their child a thorough regimen of runic inscription and herbal infusions.  The parents typically perform this task together, using each others' runes as a reference, and any mistakes made in the transcription will affect the child's health and development (usually adversely, though it is believed that transcription errors are responsible for mitigating Ogres' once-uncontrollable tempers).  As such, the inscribed patterns are as much of an influence on the child's development as the physical and mental traits of his or her parents.	
+
+Due to the safety and comfort of Elvala, and their mistrust of much of the outside world, most Ogres who leave their home do so for trade purposes; no longer using Shaloren as couriers, some have begun to enter the growing market of runes and infusions, and have proven very successful thanks to their natural talent in this area.  Those few who could be considered "adventurers" tend to pack up their things and leave abruptly, not for glory or riches, but because they see a recurring source of misery in the world and wish to dispose of it themselves as a public service.  It is not uncommon for an Ogre to sigh in frustration after hearing about a hijacked shipment of grain, head out, return a few days later with the blood of a once-persistent bandit clan stuck to his club, and go right back to tending his crops.]]}
+
+newLore{
 	id = "races-7",
 	category = "races",
-	name = "Loremaster Greynot's Analysis of the Races - Chapter 7 - Orcs (extinct)",
+	name = "Loremaster Greynot's Analysis of the Races - Chapter 8 - Orcs (extinct)",
 	lore = [[The orcs are, joyfully, extinct from Maj'Eyal, following the purge instigated by King Toknor the Brave at the start of the Age of Ascendancy. But an academic study of their previous culture and civilisation is still of interest, primitive though it may have been.
 
 Orcs were generally around 6'1", with green or black skin. They varied greatly in physical appearance and build, most likely due to their exceptionally fast breeding rates. The majority of orcs were thick-built and heavily muscled, well remembered as the stock grunts of their terrible armies. However in the Age of Pyre a greater number of thinner, stringier orcs appeared, oft versed in destructive magics.
@@ -464,7 +479,7 @@ There have been no substantiated reports of orcs for over 100 years. What report
 newLore{
 	id = "races-8",
 	category = "races",
-	name = "Loremaster Greynot's Analysis of the Races - Chapter 8 - Sher'Tul (extinct)",
+	name = "Loremaster Greynot's Analysis of the Races - Chapter 9 - Sher'Tul (extinct)",
 	lore = [[Ah, the legendary Sher'Tul! How any scholar does love to write about them. Indeed, the texts are many, but the facts are few, as so little is known about this crucible race. The most learned and factual academic on the subject is the renowned explorer and archaeologist Darwood Oakton, but he has alas been missing for several months at the time of writing. I will attempt to summarise here some of his key discoveries.
 
 The Sher'Tul lived over ten thousand years ago, during what is referred to as the Age of Haze. The name of the race we know from the elves, who speak of the ancient beings with awe and reverence, yet know little else about them. Ruins of fantastical Sher'Tul structures have been found all across Maj'Eyal, and some have been observed in sunken lands off the coasts, implying that in their time the Sher'Tul must have ruled unopposed all across the world.
@@ -478,7 +493,7 @@ What caused them to become extinct is unknown, though many theories abound. The 
 newLore{
 	id = "races-9",
 	category = "races",
-	name = "Loremaster Greynot's Analysis of the Races - Chapter 9 - Monstrous Races",
+	name = "Loremaster Greynot's Analysis of the Races - Chapter 10 - Monstrous Races",
 	lore = [[No text would be complete without at least a brief note of some of the more brutish races which infest our world. These do not hold any civilised society of note, nor in general do they seem capable of any form of higher thought or culture, but they are still of interest to study for any who take delight in analysing beings of more primitive intellect.
 
 Trolls come in two main types - Kezrak and Moltep, or stone and forest trolls as they are colloquially known. Stone trolls infest many mountain chains to the north-east, and some have been known to wander further afield in search of food or to spread violence. They are generally over 8' high, with extremely pronounced muscular strength and a thick, solid hide which bears the appearance of coal or granite. Forest trolls are generally found in dense woods or swamps, with the Trollmire east of Derth being especially infamous. They have a more advanced form of speech than their mountain-dwelling cousins, and are known to move faster and wield more elaborate weapons, though their greenish hide is not as thick and their musculature less developed. All trolls have intensely fast metabolisms, capable of healing from grievous wounds within a matter of hours. At birth they measure just eight inches long, but within two years grow to full maturity, and rarely live beyond ten years old. They used to be considered little more than beasts, but towards the end of the Age of Pyre many were trained as fighters by the orcs, and were even taught the basics of language and certain battle tactics, making them much more dangerous. Though the orcs are gone their servants remain, and their remote breeding areas and intense birth rates have so far scampered attempts to eradicate them completely.
@@ -492,7 +507,7 @@ The origin of Demons is not wholly known, but it is clear that they are capable 
 newLore{
 	id = "races-10",
 	category = "races",
-	name = "Loremaster Greynot's Analysis of the Races - Chapter 10 - Dragons",
+	name = "Loremaster Greynot's Analysis of the Races - Chapter 11 - Dragons",
 	lore = [[The common man may scoff at the idea of classifying dragons as an intelligent race, but experienced wyrmics know otherwise. Dragons are incredibly long-lived creatures, with some known to survive for thousands of years. Though in their early life they are of a bestial nature, as they advance through the centuries they gain an ever keener and more developed intellect. The eldest of wyrms are sometimes considered the most subtle and intelligent of creatures in Maj'Eyal, capable of telepathic communication and advanced mental abilities, and wyrmics speak of them with the highest reverence.
 
 Dragons come in many shapes and sizes, normally growing from 5' long hatchlings to 20' long mature drakes, with some of the greatest wyrms growing to over 40' in length. They are generally winged, with large lizard-like maws and sharp talons on both their fore and hind legs. They are often noted for the lustrous colour of their scales, normally representing an attunement to one of the key Elements of Eyal. This attunement is unseen in any other race, and some philosophers believe that dragons predate all other races, being formed as raw representations of the elements of nature at the beginning of the world. However this theory may be borne purely from the fanatical delusions of certain wyrmics who have studied the creatures for too long.

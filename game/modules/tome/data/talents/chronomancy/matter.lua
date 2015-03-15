@@ -224,7 +224,7 @@ newTalent{
 						self.summoner.__project_source = nil
 						game.level.map:particleEmitter(x, y, tg.radius, "ball_earth", {radius=tg.radius})
 						
-						game.level:removeEntity(old)
+						game.level:removeEntity(old, true)
 						game.level.map:scheduleRedisplay()
 						return nil, old.old_feat
 					end,
