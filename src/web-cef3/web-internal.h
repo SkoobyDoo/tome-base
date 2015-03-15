@@ -34,7 +34,24 @@
 #include <cef_render_process_handler.h>
 #include <cef_v8.h>
 
+#include "web-render.hpp"
+
+class BrowserClient;
+
+class WebViewOpaque {
+public:
+    bool crashed;
+    CefRefPtr<RenderHandler> render;
+    CefRefPtr<CefBrowser> browser;
+    CefRefPtr<BrowserClient> view;
+};
+
+#include "web-fs.hpp"
+#include "web-browser.hpp"
+
 extern FILE *logfile;
+
+extern char *cstring_to_c(const CefString &cstr);
 
 extern void te4_web_init_utils();
 
@@ -47,5 +64,10 @@ extern void *(*web_mutex_create)();
 extern void (*web_mutex_destroy)(void *mutex);
 extern void (*web_mutex_lock)(void *mutex);
 extern void (*web_mutex_unlock)(void *mutex);
+extern void *(*web_make_texture)(int w, int h);
+extern void (*web_del_texture)(void *tex);
+extern void (*web_texture_update)(void *tex, int w, int h, const void* buffer);
+extern void (*web_key_mods)(bool *shift, bool *ctrl, bool *alt, bool *meta);
+extern void (*web_instant_js)(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret);
 
 #endif
