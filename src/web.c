@@ -60,6 +60,7 @@ static void (*te4_web_download_action)(web_view_type *view, long id, const char 
 static void (*te4_web_reply_local)(int id, const char *mime, const char *result, size_t len);
 static void (*te4_web_load_url)(web_view_type *view, const char *url);
 static void (*te4_web_set_js_call)(web_view_type *view, const char *name);
+static void (*te4_web_js_callback)(web_view_type *view, int cb_id, WebJsValue *args);
 
 static int lua_web_new(lua_State *L) {
 	int w = luaL_checknumber(L, 1);
@@ -377,6 +378,7 @@ static void handle_event(WebEvent *event) {
 			break;
 
 		case TE4_WEB_EVENT_RUN_LUA:
+			printf("RUN LUA: %s\n", event->data.run_lua.code);
 			if (!luaL_loadstring(he_L, event->data.run_lua.code)) {
 				docall(he_L, 0, 0);
 			} else {
@@ -602,6 +604,7 @@ void te4_web_load() {
 		te4_web_reply_local = (void (*)(int id, const char *mime, const char *result, size_t len)) SDL_LoadFunction(web, "te4_web_reply_local");
 		te4_web_load_url = (void (*)(web_view_type *view, const char *url)) SDL_LoadFunction(web, "te4_web_load_url");
 		te4_web_set_js_call = (void (*)(web_view_type *view, const char *name)) SDL_LoadFunction(web, "te4_web_set_js_call");
+		te4_web_js_callback = (void (*)(web_view_type *view, int cb_id, WebJsValue *args)) SDL_LoadFunction(web, "te4_web_js_callback");
 
 		te4_web_setup(
 			g_argc, g_argv, spawnname,

@@ -53,70 +53,6 @@ char *cstring_to_c(const CefString &cstr) {
 	return ret;
 }
 
-typedef std::map<std::pair<std::string, int>, std::pair<CefRefPtr<CefV8Context>, CefRefPtr<CefV8Value> > > CallbackMap;
-
-class TE4V8Handler : public CefV8Handler {
-private:
-	CallbackMap callback_map_;
-
-public:
-	TE4V8Handler() {}
-
-	virtual bool Execute(const CefString& name, CefRefPtr<CefV8Value> object, const CefV8ValueList& arguments, CefRefPtr<CefV8Value>& retval, CefString& exception) OVERRIDE {
-		if (name == "lua" && arguments.size() == 2 && arguments[0]->IsString() && arguments[1]->IsFunction()) {
-			CefRefPtr<CefV8Context> context = CefV8Context::GetCurrentContext();
-
-			int browser_id = context->GetBrowser()->GetIdentifier();
-			// callback_map_.insert(std::make_pair(std::make_pair(message_name, browser_id), std::make_pair(context, arguments[1])));
-			return true;
-		}
-		return false;
-	}
-
-	IMPLEMENT_REFCOUNTING(TE4V8Handler);
-};
-
-
-class TE4RenderProcessHandler : public CefRenderProcessHandler
-{
-public:
-	TE4RenderProcessHandler() {
-		printf("NEW Render Process\n");
-	}
-
-	virtual bool OnBeforeNavigation(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request, NavigationType navigation_type, bool is_redirect) OVERRIDE {
-		return false;
-	}
-
-	virtual void OnWebKitInitialized() OVERRIDE {
-		
-	}
-
-	virtual void OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) OVERRIDE {
-		// Retrieve the context's window object.
-		CefRefPtr<CefV8Value> object = context->GetGlobal();
-
-		CefRefPtr<CefV8Handler> handler = new TE4V8Handler();
-		object->SetValue("lua", CefV8Value::CreateFunction("lua", handler), V8_PROPERTY_ATTRIBUTE_NONE);
-	}
-
-	IMPLEMENT_REFCOUNTING(TE4RenderProcessHandler);
-};
-
-class ClientApp : public CefApp
-{
-public:
-	virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() OVERRIDE {
-		return new TE4RenderProcessHandler();
-	}
-
-	virtual void OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar) {
-		registrar->AddCustomScheme("te4", true, true, false);
-	}
-
-	IMPLEMENT_REFCOUNTING(ClientApp);
-};
-
 void te4_web_new(web_view_type *view, int w, int h) {
 	static bool inited = false;
 	if (!inited) { CefRegisterSchemeHandlerFactory("te4", "data", new TE4SchemeHandlerFactory()); inited = true; }
@@ -250,7 +186,7 @@ void te4_web_do_update(void (*cb)(WebEvent*)) {
 static int g_argc;
 static char **g_argv;
 static char *spawnname;
-CefRefPtr<ClientApp> app(new ClientApp);
+CefRefPtr<TE4ClientApp> app(new TE4ClientApp);
 
 void te4_web_setup(
 	int argc, char **gargv, char *spawnc,

@@ -59,5 +59,6 @@ WEB_TE4_API void te4_web_download_action(web_view_type *view, long id, const cha
 WEB_TE4_API void te4_web_reply_local(int id, const char *mime, const char *result, size_t len);
 WEB_TE4_API void te4_web_load_url(web_view_type *view, const char *url);
 WEB_TE4_API void te4_web_set_js_call(web_view_type *view, const char *name);
+WEB_TE4_API void te4_web_js_callback(web_view_type *view, int cb_id, WebJsValue *args);
 
 #endif

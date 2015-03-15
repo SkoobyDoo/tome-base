@@ -48,6 +48,7 @@ public:
 
 #include "web-fs.hpp"
 #include "web-browser.hpp"
+#include "web-js.hpp"
 
 extern FILE *logfile;
 

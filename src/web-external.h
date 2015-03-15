@@ -71,6 +71,7 @@ typedef struct {
 			const char *path;
 		} local_request;
 		struct {
+			int cb_id;
 			const char *code;
 		} run_lua;
 		void *texture;
