@@ -34,7 +34,7 @@ class TE4RenderProcessHandler : public CefRenderProcessHandler
 {
 public:
 	TE4RenderProcessHandler() {
-		printf("NEW Render Process\n");
+		// printf("NEW Render Process\n");
 	}
 
 	virtual bool OnBeforeNavigation(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request, NavigationType navigation_type, bool is_redirect) OVERRIDE {
@@ -44,6 +44,8 @@ public:
 	virtual void OnWebKitInitialized() OVERRIDE {
 		
 	}
+
+	virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message);
 
 	virtual void OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) OVERRIDE {
 		// Retrieve the context's window object.
@@ -69,10 +71,8 @@ public:
 		registrar->AddCustomScheme("te4", true, true, false);
 	}
 
-	virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message);
-
 	bool processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message);
-	void sendCallback(int cb_id);
+	void sendCallback(CefRefPtr<CefBrowser> browser, int cb_id);
 
 	IMPLEMENT_REFCOUNTING(TE4ClientApp);
 };

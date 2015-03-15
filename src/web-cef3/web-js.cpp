@@ -30,47 +30,58 @@ extern "C" {
 static int next_cb_id = 1;
 
 bool TE4V8Handler::Execute(const CefString& name, CefRefPtr<CefV8Value> object, const CefV8ValueList& arguments, CefRefPtr<CefV8Value>& retval, CefString& exception) OVERRIDE {
+	// Execute arbitraty lua code with a callback on exec end
 	if (name == "lua" && arguments.size() == 2 && arguments[0]->IsString() && arguments[1]->IsFunction()) {
 		CefRefPtr<CefV8Context> context = CefV8Context::GetCurrentContext();
 
 		int cb_id = next_cb_id++;
 		app->callback_map[cb_id] = std::make_pair(context, arguments[1]);
-		// retval = CefV8Value::CreateString("My Value!");
 
-		printf("New callback registered for method 'lua': %d\n", cb_id);
+		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create("runlua");
+		CefRefPtr<CefListValue> list = message->GetArgumentList();
+		list->SetSize(2);
+		list->SetInt(0, cb_id);
+		list->SetString(1, arguments[0]->GetStringValue());
+		context->GetBrowser()->SendProcessMessage(PID_BROWSER, message);
 
-		WebEvent *event = new WebEvent();
-		event->kind = TE4_WEB_EVENT_RUN_LUA;
-		event->data.run_lua.cb_id = cb_id;
-		event->data.run_lua.code = cstring_to_c(arguments[0]->GetStringValue());
-		push_event(event);
+		return true;
+	}
+	// Execute arbitraty lua code without any callbacks
+	else if (name == "lua" && arguments.size() == 1 && arguments[0]->IsString()) {
+		CefRefPtr<CefV8Context> context = CefV8Context::GetCurrentContext();
+
+		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create("runlua");
+		CefRefPtr<CefListValue> list = message->GetArgumentList();
+		list->SetSize(2);
+		list->SetInt(0, 0);
+		list->SetString(1, arguments[0]->GetStringValue());
+		context->GetBrowser()->SendProcessMessage(PID_BROWSER, message);
 
 		return true;
 	}
 	return false;
 }
 
-bool TE4ClientApp::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message) {
+bool TE4RenderProcessHandler::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message) {
 	bool handled = false;
 
-	printf("Receiving IPC message '%s'\n", (char*)message->GetName().c_str());
+	// printf("Renderer Receiving IPC message '%s' from %d\n", (char*)message->GetName().c_str(), source_process);
 
-	if (message->GetName() == "js_callback") handled = processCallback(browser, message);
+	if (message->GetName() == "js_callback") handled = app->processCallback(browser, message);
 
 	return handled;
 }
 
 bool TE4ClientApp::processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message) {
 	// Execute the registered JavaScript callback if any.
-	if (callback_map.empty()) return false;
+	if (callback_map.empty()) {printf("exit for 1\n"); return false; }
 	CefRefPtr<CefListValue> list = message->GetArgumentList();
-	if (list->GetSize() == 0) return false;
+	if (list->GetSize() == 0) {printf("exit for 2\n"); return false; }
 
 	// First argument is the callback id
 	int cb_id = list->GetInt(0);
 	CallbackMap::iterator it = callback_map.find(cb_id);
-
-	if (it == callback_map.end()) return false;
+	if (it == callback_map.end()) {printf("exit for 3\n"); return false; }
 
 	// Keep a local reference to the objects. The callback may remove itself
 	// from the callback map.
@@ -92,7 +103,7 @@ bool TE4ClientApp::processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefP
 	// arguments.push_back(args);
 
 	// Execute the callback.
-	CefRefPtr<CefV8Value> retval = callback->ExecuteFunction(NULL, arguments);
+	callback->ExecuteFunction(NULL, arguments);
 
 	// Exit the context.
 	context->Exit();
@@ -102,9 +113,11 @@ bool TE4ClientApp::processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefP
 	return true;
 }
 
-void TE4ClientApp::sendCallback(int cb_id) {
-}
-
-void te4_web_js_callback(web_view_type *view, int cb_id, WebJsValue *args) {
-
+void TE4ClientApp::sendCallback(CefRefPtr<CefBrowser> browser, int cb_id) {
+	CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create("js_callback");
+	CefRefPtr<CefListValue> list = message->GetArgumentList();
+	list->SetSize(1);
+	list->SetInt(0, cb_id);
+	// list->SetString(1, arguments[0]->GetStringValue());
+	browser->SendProcessMessage(PID_RENDERER, message);
 }

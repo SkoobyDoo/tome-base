@@ -378,12 +378,14 @@ static void handle_event(WebEvent *event) {
 			break;
 
 		case TE4_WEB_EVENT_RUN_LUA:
-			printf("RUN LUA: %s\n", event->data.run_lua.code);
 			if (!luaL_loadstring(he_L, event->data.run_lua.code)) {
 				docall(he_L, 0, 0);
 			} else {
 				printf("[WEBCORE] Failed to run lua code:\n%s\n ==>> Error: %s\n", event->data.run_lua.code, lua_tostring(he_L, -1));
 				lua_pop(he_L, 1);
+			}
+			if (event->data.run_lua.cb_id) {
+				te4_web_js_callback(NULL, event->data.run_lua.cb_id, NULL);
 			}
 			break;
 		case TE4_WEB_EVENT_DELETE_TEXTURE:

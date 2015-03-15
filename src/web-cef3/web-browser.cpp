@@ -29,6 +29,7 @@ extern "C" {
 #include "web-internal.h"
 
 std::map<BrowserClient*, bool> all_browsers;
+std::map<int, CefRefPtr<CefBrowser> > browsers_by_cb;
 int all_browsers_nb = 0;
 
 BrowserClient::BrowserClient(WebViewOpaque *opaque, RenderHandler *renderHandler, int handlers) : m_renderHandler(renderHandler) {
@@ -218,4 +219,45 @@ void BrowserClient::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
 	delete this->opaque;
 
 	fprintf(logfile, "[WEBCORE] Destroyed webview for browser\n");
+}
+
+bool BrowserClient::processRunLua(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message) {
+	// Execute the registered JavaScript callback if any.
+	CefRefPtr<CefListValue> list = message->GetArgumentList();
+	if (list->GetSize() == 0) return false;
+
+	// First argument is the callback id
+	int cb_id = list->GetInt(0);
+
+	WebEvent *event = new WebEvent();
+	event->kind = TE4_WEB_EVENT_RUN_LUA;
+	event->data.run_lua.cb_id = cb_id;
+	event->data.run_lua.code = cstring_to_c(list->GetString(1));
+	push_event(event);
+
+	// Register which browser is for which cb
+	if (cb_id) {
+		browsers_by_cb[cb_id] = browser;
+	}
+
+	return true;
+}
+
+bool BrowserClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message) {
+	bool handled = false;
+
+	// printf("Main Receiving IPC message '%s' from %d\n", (char*)message->GetName().c_str(), source_process);
+
+	if (message->GetName() == "runlua") handled = processRunLua(browser, message);
+
+	return handled;
+}
+
+void te4_web_js_callback(web_view_type *view, int cb_id, WebJsValue *args) {
+	if (!browsers_by_cb.count(cb_id)) return;
+
+	CefRefPtr<CefBrowser> browser = browsers_by_cb[cb_id];
+	app->sendCallback(browser, cb_id);
+
+	browsers_by_cb.erase(cb_id);
 }
