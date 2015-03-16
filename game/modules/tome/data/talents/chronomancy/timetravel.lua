@@ -50,13 +50,20 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
+			
 			-- Refresh talent
-			for tid, cd in pairs(self.talents_cd) do
+			local tids = {}
+			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
 				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-					self:alterTalentCoolingdown(tt, - cdr)
+					tids[#tids+1] = tt
 				end
 			end
+			if #tids > 0 then
+				local tid = rng.tableRemove(tids)
+				self:alterTalentCoolingdown(tid, - cdr)
+			end
+			
 			DamageType:get(DamageType.TEMPORAL).projector(self, x, y, DamageType.TEMPORAL, dam)
 		end)
 		
@@ -77,12 +84,16 @@ newTalent{
 						src:project({type="hit", selffire=false, talent=talent}, self.x, self.y, DT.TEMPORAL, dam)
 
 						-- Refresh talent
-						for tid, cd in pairs(src.talents_cd) do
+						local tids = {}
+						for tid, _ in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-								src:alterTalentCoolingdown(tt, - self.def.cdr)
-								break
+								tids[#tids+1] = tt
 							end
+						end
+						if #tids > 0 then
+							local tid = rng.tableRemove(tids)
+							src:alterTalentCoolingdown(tid, - self.def.cdr)
 						end
 					end
 				end,
