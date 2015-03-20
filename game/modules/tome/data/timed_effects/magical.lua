@@ -3606,6 +3606,7 @@ newEffect{
 	status = "beneficial",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
@@ -3624,6 +3625,7 @@ newEffect{
 	status = "detrimental",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
