@@ -195,7 +195,7 @@ getExtensionModifier = function(self, t, value)
 	end
 	
 	-- paradox modifier rounds down
-	value = math.floor(valeu * pm)
+	value = math.floor(value * pm)
 	-- extension modifier rounds up
 	value = math.ceil(value * mod)
 	
