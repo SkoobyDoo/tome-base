@@ -328,7 +328,7 @@ newTalent{
 	end,
 	getRegen = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
 	getHaste = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 6))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 2))) end,
 	doBlink = function(self, t, hound)  -- Triggered when the hounds is hit
 		local regen, haste = t.getRegen(self, t), t.getHaste(self, t)
 		if hound:hasEffect(hound.EFF_UNRAVEL) then
