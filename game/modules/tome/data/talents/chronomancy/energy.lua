@@ -28,7 +28,7 @@ newTalent{
 	sustain_paradox = 24,
 	cooldown = 10,
 	tactical = { BUFF = 2 },
-	getDecomposition = function(self, t) return  self:combatTalentSpellDamage(t, 5, 150, getParadoxSpellpower(self, t)) end, -- Increase shield strength
+	getDecomposition = function(self, t) return  self:combatTalentSpellDamage(t, 5, 50, getParadoxSpellpower(self, t)) end, -- Increase shield strength
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local decomp = t.getDecomposition(self, t)
 		local lastdam = dam
