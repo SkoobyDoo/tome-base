@@ -43,7 +43,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	mode = "passive",
-	cooldown = 6,
+	cooldown = 10,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
 	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end, -- Limit < 40%
