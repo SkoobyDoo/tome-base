@@ -225,7 +225,7 @@ newTalent{
 	type = {"chronomancy/temporal-combat", 2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 24,
 	fixed_cooldown = true,
 	tactical = { HEAL = 1 },
