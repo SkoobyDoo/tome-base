@@ -188,15 +188,25 @@ newTalent{
 		summonTemporalHound(self, t)
 		
 		return {
-				rest_count = self:getTalentCooldown(t), 
-				hounds = 1, max_hounds = 3
+			rest_count = self:getTalentCooldown(t), 
+			hounds = 1, max_hounds = 3
 		}
 	end,
 	deactivate = function(self, t, p)
 		-- unsummon the hounds :(
-		for _, e in pairs(game.level.entities) do
-			if e.summoner and e.summoner == self and e.name == "temporal hound" then
-				e.summon_time = 0
+		if game.party:hasMember(self) then
+			for i=1, p.hounds do
+				local e = game.party:findMember({type="hound"})
+				if e.summoner and e.summoner == self and e.name == "temporal hound" then
+					e.summon_time = 0
+					game.party:removeMember(e, true)
+				end
+			end
+		else
+			for _, e in pairs(game.level.entities) do
+				if e.summoner and e.summoner == self and e.name == "temporal hound" then
+					e.summon_time = 0
+				end
 			end
 		end
 		return true
