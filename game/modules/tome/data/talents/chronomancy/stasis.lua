@@ -33,7 +33,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		local tune = t.getTuning(self, t)
-		return ([[You automatically adjust your Paradox %0.2f points towards your preferred Paradox each turn.]]):
+		return ([[You automatically adjust your Paradox %0.2f points towards your preferred Paradox each turn.
+		While using Spacetime Tuning twice this value will instead be added to the amount you would normally tune.]]):
 		format(tune)
 	end,
 }

@@ -30,10 +30,10 @@ newTalent{
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
 	end,
 	getTuning = function(self, t)
-		local value = 5
+		local value = 10
 		-- factor spacetime stability in directly so our duration is set correctly
 		if self:knowTalent(self.T_SPACETIME_STABILITY) then
-			value = value + self:callTalent(self.T_SPACETIME_STABILITY, "getTuning")
+			value = value + (self:callTalent(self.T_SPACETIME_STABILITY, "getTuning") * 2)
 		end
 		return value
 	end,
@@ -43,6 +43,7 @@ newTalent{
 			if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
 				local duration = (self.preferred_paradox - self:getParadox())/power
 				if duration < 0 then duration = math.abs(duration); power = power - (power*2) end
+				duration = math.max(1, duration)
 				self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
 			end
 		end
