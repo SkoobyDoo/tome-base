@@ -47,7 +47,7 @@ newTalent{
 	type = {"chronomancy/stasis",2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 48) end,
 	cooldown = 18,
 	tactical = { DEFEND = 2 },
 	no_energy = true,
