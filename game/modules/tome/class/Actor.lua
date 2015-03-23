@@ -1377,7 +1377,7 @@ function _M:waitTurn()
 
 	-- Tune paradox up or down
 	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
-		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
+		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
 	end
 
 	self:useEnergy()
