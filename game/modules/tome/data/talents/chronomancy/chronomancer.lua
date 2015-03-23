@@ -186,12 +186,19 @@ end
 
 -- Extension Spellbinding
 getExtensionModifier = function(self, t, value)
+	local pm = getParadoxModifier(self)
 	local mod = 1
+	
 	local p = self:isTalentActive(self.T_EXTENSION)
 	if p and p.talent == t.id then
 		mod = mod + self:callTalent(self.T_EXTENSION, "getPower")
 	end
+	
+	-- paradox modifier rounds down
+	value = math.floor(valeu * pm)
+	-- extension modifier rounds up
 	value = math.ceil(value * mod)
+	
 	return value
 end
 
