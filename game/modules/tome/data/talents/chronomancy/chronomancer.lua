@@ -153,7 +153,9 @@ load("/data/talents/chronomancy/anomalies.lua")
 -- Caps at -50% and +50%
 getParadoxModifier = function (self)
 	local paradox = self:getParadox()
-	local pm = util.bound(math.sqrt(paradox / 300), 0.5, 1.5)
+	local pm = math.sqrt(paradox / 300)
+	if paradox < 300 then pm = paradox/300 end
+	pm = util.bound(pm, 0.5, 1.5)
 	return pm
 end
 
