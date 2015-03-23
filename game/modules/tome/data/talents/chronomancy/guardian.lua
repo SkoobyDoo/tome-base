@@ -177,6 +177,7 @@ newTalent{
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	getDamage = function(self, t) return 1.2 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 10) end,
 	action = function(self, t)
 		-- Grab our target so we can set our effect
 		local tg = self:getTalentTarget(t)
@@ -194,16 +195,17 @@ newTalent{
 			self:attackTarget(target, nil, t.getDamage(self, t), true)
 		end
 		
-		self:setEffect(self.EFF_WARDEN_S_FOCUS, 10, {target=target, power=t.getPower(self, t)})
-		target:setEffect(target.EFF_WARDEN_S_TARGET, 10, {src=self})
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, power=t.getPower(self, t)})
+		target:setEffect(target.EFF_WARDEN_S_TARGET, t.getDuration(self, t), {src=self})
 		
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local power = t.getPower(self, t)
-		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next ten turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
+		local duration = t.getDuration(self, t)
+		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next %d turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
 		Attacks against this target gain %d%% critical chance and critical strike power while you take %d%% less damage from all enemies whose rank is lower then that of your focus target.]])
-		:format(damage, power, power, power)
+		:format(damage, duration, power, power, power)
 	end
 }
