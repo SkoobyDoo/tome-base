@@ -51,7 +51,7 @@ summonTemporalHound = function(self, t)
 		infravision = 10,
 
 		combat_armor = 2, combat_def = 4,
-		combat = { dam=self:getTalentLevel(t) * 10 + rng.avg(12,25), atk=10, apr=10, dammod={str=0.8, mag=0.8}, damtype=DamageType.WARP, sound="creatures/wolves/wolf_attack_1" },
+		combat = { dam=self:getTalentLevel(t) * 10, atk=10, apr=10, dammod={str=0.8, mag=0.8}, damtype=DamageType.WARP, sound="creatures/wolves/wolf_attack_1" },
 		
 		summoner = self, summoner_gain_exp=true,
 		resolvers.sustains_at_birth(),
@@ -216,7 +216,7 @@ newTalent{
 		local cooldown = self:getTalentCooldown(t)
 		local resists = t.getResists(self, t)
 		return ([[Upon activation summon a Temporal Hound.  Every %d turns another hound will be summoned, up to a maximum of three hounds. If a hound dies you'll summon a new hound in %d turns.  
-		Your hounds inherit your increased damage percent, have %d%% physical resistance and %d%% temporal resistance, and are immune to hostile teleportation effects.
+		Your hounds inherit your increased damage percent, have %d%% physical resistance and %d%% temporal resistance, and are immune to teleportation effects.
 		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning, based on your Magic stat.]])
 		:format(cooldown, cooldown, resists/2, math.min(100, resists*2), incStats.str + 1, incStats.dex + 1, incStats.con + 1, incStats.mag + 1, incStats.wil +1, incStats.cun + 1)
 	end
