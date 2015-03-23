@@ -144,10 +144,10 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
+	cooldown = 12,
 	tactical = { BUFF = 2 },
 	fixed_cooldown = true,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getMaxCooldown = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 8)) end,
 	action = function(self, t)
 		-- effect is handled in actor postUse
@@ -158,8 +158,9 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local cooldown = t.getMaxCooldown(self, t)
-		return ([[For the next %d turns talents with a cooldown of %d or less have a cooldown of one.]]):
-		format(duration, cooldown)
+		return ([[The next talent you cast with a cooldown of %d or less will not go on cooldown.
+		Once a talent is effected by this spell or %d turns pass the effect is lost.]]):
+		format(cooldown, duration)
 	end,
 }
 

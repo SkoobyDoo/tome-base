@@ -5538,7 +5538,8 @@ function _M:startTalentCooldown(t, v)
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
 			if self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
-				self.talents_cd[t.id] = 1
+				self.talents_cd[t.id] = 0
+				self:removeEffect(self.EFF_REDUX)
 			end
 		end
 	end
