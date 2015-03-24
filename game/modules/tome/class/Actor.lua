@@ -1373,7 +1373,7 @@ function _M:waitTurn()
 
 	-- Tune paradox up or down
 	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
-		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
+		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
 	end
 
 	self:useEnergy()
@@ -5534,7 +5534,8 @@ function _M:startTalentCooldown(t, v)
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
 			if self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
-				self.talents_cd[t.id] = 1
+				self.talents_cd[t.id] = 0
+				self:removeEffect(self.EFF_REDUX)
 			end
 		end
 	end
