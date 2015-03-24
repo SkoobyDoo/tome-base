@@ -227,6 +227,7 @@ newTalent{
 	range = 10,
 	tactical = { ATTACK = 2 },
 	requires_target = true,
+	no_npc_use = true,
 	direct_hit = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	getPower = function(self, t) return self:combatTalentScale(t, 20, 50) end,
