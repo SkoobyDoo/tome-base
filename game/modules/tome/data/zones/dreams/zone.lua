@@ -305,6 +305,7 @@ You feel good!]],
 			for pmem, def in pairs(game.party.members) do
 				if pmem.caldera_x and pmem.caldera_y then
 					pmem:move(pmem.caldera_x, pmem.caldera_y, true)
+					if not game.level:hasEntity(pmem) then game.level:addEntity(pmem) end
 				end
 			end
 			game.party:setPlayer(game:getPlayer(true))

@@ -329,7 +329,6 @@ makeParadoxClone = function(self, target, duration)
 	m.seen_by = nil
 	m.can_talk = nil
 	m.clone_on_hit = nil
-	m.self_resurrect = nil
 	m.escort_quest = nil
 	m.unused_talents = 0
 	m.unused_generics = 0
@@ -364,6 +363,8 @@ makeParadoxClone = function(self, target, duration)
 	
 	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
 	if m.preferred_paradox and m.preferred_paradox > 600 then m.preferred_paradox = 600 end
+
+	m.self_resurrect = nil
 	
 	return m
 end

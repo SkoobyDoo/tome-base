@@ -155,6 +155,7 @@ I know you think yourself "above" such "petty politics" like how vital this faci
 
 #{italic}#(Some coordinates are enclosed, along with a large, magic-infused key.  You think you can figure out, roughly, where this sealed Conclave facility is.)#{normal}#
 ]],
+	always_pop = true,
 	on_learn = function(who)
 		if not game.state.can_conclave_vault then return end
 		game:onLevelLoad("wilderness-1", function(zone, level)
