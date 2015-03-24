@@ -29,22 +29,27 @@ newTalent{
 	on_learn = function(self, t)
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
 	end,
-	getDuration = function(self, t)
-		local duration = 20
+	getTuning = function(self, t)
+		local value = 10
+		-- factor spacetime stability in directly so our duration is set correctly
 		if self:knowTalent(self.T_SPACETIME_STABILITY) then
-			duration = duration - self:callTalent(self.T_SPACETIME_STABILITY, "getTuningAdjustment")
+			value = value + (self:callTalent(self.T_SPACETIME_STABILITY, "getTuning") * 2)
 		end
-		return math.max(duration, 10)
+		return value
 	end,
-	doTuning = function(self, t)
+	startTuning = function(self, t)
 		if self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox())then
-			local power = 0
+			local power = t.getTuning(self, t)
 			if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
-				local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
-				power = (self.preferred_paradox - self:getParadox())/duration
+				local duration = (self.preferred_paradox - self:getParadox())/power
+				if duration < 0 then duration = math.abs(duration); power = power - (power*2) end
+				duration = math.max(1, duration)
 				self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
 			end
 		end
+	end,
+	tuneParadox = function(self, t)
+		tuneParadox(self, t, t.getTuning(self, t))
 	end,
 	action = function(self, t)
 		local function getQuantity(title, prompt, default, min, max)
@@ -80,21 +85,22 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local duration = t.getDuration(self, t)
+		local tune = t.getTuning(self, t)
 		local preference = self.preferred_paradox
 		local sp_modifier = getParadoxModifier(self, t) * 100
 		local spellpower = getParadoxSpellpower(self, t)
 		local after_will, will_modifier, sustain_modifier = self:getModifiedParadox()
 		local anomaly = self:paradoxFailChance()
-		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number over %d turns.
+		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number at the rate of %d per turn.
+		Your Paradox modifier is factored into the duration and spellpower of all chronomancy spells.
 
-		Preferred Paradox          :  %d
-		Spellpower Modifier        :  %d%%
+		Preferred Paradox :  %d
+		Paradox Modifier :  %d%%
 		Spellpower for Chronomancy :  %d
 		Willpower Paradox Modifier : -%d
-		Paradox Sustain Modifier   : +%d
-		Total Modifed Paradox      :  %d
-		Current Anomaly Chance     :  %d%%]]):format(duration, preference, sp_modifier, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
+		Paradox Sustain Modifier : +%d
+		Total Modifed Paradox :  %d
+		Current Anomaly Chance :  %d%%]]):format(tune, preference, sp_modifier, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
 	end,
 }
 

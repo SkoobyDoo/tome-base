@@ -153,7 +153,9 @@ load("/data/talents/chronomancy/anomalies.lua")
 -- Caps at -50% and +50%
 getParadoxModifier = function (self)
 	local paradox = self:getParadox()
-	local pm = util.bound(math.sqrt(paradox / 300), 0.5, 1.5)
+	local pm = math.sqrt(paradox / 300)
+	if paradox < 300 then pm = paradox/300 end
+	pm = util.bound(pm, 0.5, 1.5)
 	return pm
 end
 
@@ -184,12 +186,19 @@ end
 
 -- Extension Spellbinding
 getExtensionModifier = function(self, t, value)
+	local pm = getParadoxModifier(self)
 	local mod = 1
+	
 	local p = self:isTalentActive(self.T_EXTENSION)
 	if p and p.talent == t.id then
 		mod = mod + self:callTalent(self.T_EXTENSION, "getPower")
 	end
+	
+	-- paradox modifier rounds down
+	value = math.floor(value * pm)
+	-- extension modifier rounds up
 	value = math.ceil(value * mod)
+	
 	return value
 end
 

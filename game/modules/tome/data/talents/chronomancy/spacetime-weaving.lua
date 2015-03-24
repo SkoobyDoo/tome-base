@@ -96,16 +96,13 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	getReduction = function(self, t) return math.ceil(self:getTalentLevel(t)) end,
-	getCount = function(self, t)
-		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
-	end,
 	callbackOnTeleport = function(self, t, teleported)
 		if not teleported then return end
 		
 		-- Grab a random sample of timed effects
-		local eff_ids = self:effectsFilter({status="detrimental", ignore_crosstier=true}, t.getCount(self, t))
-		for _, eff_id in ipairs(eff_ids) do
-			local eff = self:hasEffect(eff_id)
+		local eff_ids = self:effectsFilter({status="detrimental", ignore_crosstier=true}, 1)
+		local eff = self:hasEffect(eff_id)
+		if eff then
 			eff.dur = eff.dur - t.getReduction(self, t)
 			if eff.dur <= 0 then
 				self:removeEffect(eff_id)
@@ -122,10 +119,9 @@ newTalent{
 
 	end,
 	info = function(self, t)
-		local count = t.getCount(self, t)
 		local reduction = t.getReduction(self, t)
-		return ([[When you teleport you reduce the duration of up to %d detrimental effects by %d turns.]]):
-		format(count, reduction)
+		return ([[When you teleport you reduce the duration of a single detrimental effect by %d turns.]]):
+		format(reduction)
 	end,
 }
 

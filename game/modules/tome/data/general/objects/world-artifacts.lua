@@ -6342,7 +6342,7 @@ newEntity{ base = "BASE_KNIFE", --Shibari's #1
 				local p = game.level.map(x, y, engine.Map.PROJECTILE+i)
 				while p do
 					local DamageType = require "engine.DamageType" -- I don't entirely follow why this is necessary
-					if p.src and (p.src == who) then return end -- Keep Arcane Blade procs from hitting them since the projectile is still on top of them.
+					if p.src and p.src:reactionToward(who) >= 0 then return end -- Let's not destroy friendly projectiles
 					if p.name then 
 						game.logPlayer(who, "#GREEN#Lightning strikes the " .. p.name .. "!")
 					else
@@ -6354,7 +6354,7 @@ newEntity{ base = "BASE_KNIFE", --Shibari's #1
 					p.dead = true
 					game.level.map:particleEmitter(x, y, 5, "ball_lightning_beam", {radius=5, tx=x, ty=y})
 				   
-					local tg = {type="ball", radius=5, selffire=false}
+					local tg = {type="ball", radius=5, friendlyfire=false} -- Let's not kill pets or escorts with uncontrolled AoE
 					local dam = 4*who:getDex() -- no more crit or base damage.  no real reason, just like it better.
 
 					who:project(tg, x, y, DamageType.LIGHTNING, dam)

@@ -51,7 +51,7 @@ summonTemporalHound = function(self, t)
 		infravision = 10,
 
 		combat_armor = 2, combat_def = 4,
-		combat = { dam=self:getTalentLevel(t) * 10 + rng.avg(12,25), atk=10, apr=10, dammod={str=0.8, mag=0.8}, damtype=DamageType.WARP, sound="creatures/wolves/wolf_attack_1" },
+		combat = { dam=self:getTalentLevel(t) * 10, atk=10, apr=10, dammod={str=0.8, mag=0.8}, damtype=DamageType.WARP, sound="creatures/wolves/wolf_attack_1" },
 		
 		summoner = self, summoner_gain_exp=true,
 		resolvers.sustains_at_birth(),
@@ -188,15 +188,25 @@ newTalent{
 		summonTemporalHound(self, t)
 		
 		return {
-				rest_count = self:getTalentCooldown(t), 
-				hounds = 1, max_hounds = 3
+			rest_count = self:getTalentCooldown(t), 
+			hounds = 1, max_hounds = 3
 		}
 	end,
 	deactivate = function(self, t, p)
 		-- unsummon the hounds :(
-		for _, e in pairs(game.level.entities) do
-			if e.summoner and e.summoner == self and e.name == "temporal hound" then
-				e.summon_time = 0
+		if game.party:hasMember(self) then
+			for i=1, p.hounds do
+				local e = game.party:findMember({type="hound"})
+				if e.summoner and e.summoner == self and e.name == "temporal hound" then
+					e.summon_time = 0
+					game.party:removeMember(e, true)
+				end
+			end
+		else
+			for _, e in pairs(game.level.entities) do
+				if e.summoner and e.summoner == self and e.name == "temporal hound" then
+					e.summon_time = 0
+				end
 			end
 		end
 		return true
@@ -206,7 +216,7 @@ newTalent{
 		local cooldown = self:getTalentCooldown(t)
 		local resists = t.getResists(self, t)
 		return ([[Upon activation summon a Temporal Hound.  Every %d turns another hound will be summoned, up to a maximum of three hounds. If a hound dies you'll summon a new hound in %d turns.  
-		Your hounds inherit your increased damage percent, have %d%% physical resistance and %d%% temporal resistance, and are immune to hostile teleportation effects.
+		Your hounds inherit your increased damage percent, have %d%% physical resistance and %d%% temporal resistance, and are immune to teleportation effects.
 		Hounds will get, %d Strength, %d Dexterity, %d Constitution, %d Magic, %d Willpower, and %d Cunning, based on your Magic stat.]])
 		:format(cooldown, cooldown, resists/2, math.min(100, resists*2), incStats.str + 1, incStats.dex + 1, incStats.con + 1, incStats.mag + 1, incStats.wil +1, incStats.cun + 1)
 	end
@@ -318,7 +328,7 @@ newTalent{
 	end,
 	getRegen = function(self, t) return self:combatTalentSpellDamage(t, 10, 50, getParadoxSpellpower(self, t)) end,
 	getHaste = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 6))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 1, 3))) end,
 	doBlink = function(self, t, hound)  -- Triggered when the hounds is hit
 		local regen, haste = t.getRegen(self, t), t.getHaste(self, t)
 		if hound:hasEffect(hound.EFF_UNRAVEL) then
@@ -373,6 +383,7 @@ newTalent{
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200, getParadoxSpellpower(self, t)) end,
 	getDamageStat = function(self, t) return 2 + math.ceil(t.getDamage(self, t) / 15) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 3) end,
 	target = function(self, t)
 		return {type="cone", range=0, radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
@@ -411,7 +422,7 @@ newTalent{
 					DamageType:get(DamageType.TEMPORAL).projector(a, px, py, DamageType.TEMPORAL, dam)
 					-- Don't turn back the clock other hounds
 					if target.name ~= "temporal hound" then
-						target:setEffect(target.EFF_REGRESSION, 3, {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(),  min_dur=1, no_ct_effect=true})	
+						target:setEffect(target.EFF_REGRESSION, t.getDuration(self, t), {power=t.getDamageStat(self, t), apply_power=a:combatSpellpower(),  min_dur=1, no_ct_effect=true})	
 					end
 				end
 			end)
@@ -427,9 +438,10 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
 		local stat_damage = t.getDamageStat(self, t)
+		local duration =t.getDuration(self, t)
 		local affinity = t.getResists(self, t)
 		return ([[Command your Temporal Hounds to breathe time, dealing %0.2f temporal damage and reducing the three highest stats of all targets in a radius %d cone.
-		Affected targets will have their stats reduced by %d for 3 turns.  You are immune to the breath of your own hounds and your hounds are immune to stat damage from other hounds.
-		When you learn this talent, your hounds gain %d%% temporal damage affinity.]]):format(damDesc(self, DamageType.TEMPORAL, damage), radius, stat_damage, affinity)
+		Affected targets will have their stats reduced by %d for %d turns.  You are immune to the breath of your own hounds and your hounds are immune to stat damage from other hounds.
+		When you learn this talent, your hounds gain %d%% temporal damage affinity.]]):format(damDesc(self, DamageType.TEMPORAL, damage), radius, stat_damage, duration, affinity)
 	end,
 }
