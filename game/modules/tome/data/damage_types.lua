@@ -20,7 +20,7 @@
 local print = print
 if not config.settings.cheat then print = function() end end
 
-function initState(state)
+function DamageType.initState(state)
 	if state == nil then return {}
 	elseif state == true or state == false then return {}
 	else return state end
@@ -42,6 +42,7 @@ function DamageType.useImplicitCrit(src, state)
 end
 
 local useImplicitCrit = DamageType.useImplicitCrit
+local initState = DamageType.initState
 
 -- The basic stuff used to damage a grid
 setDefaultProjector(function(src, x, y, type, dam, state)
