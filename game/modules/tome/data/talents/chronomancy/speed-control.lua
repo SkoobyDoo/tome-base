@@ -101,11 +101,13 @@ newTalent{
 	getReduction = function(self, t) return 100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 4, 1, 3))) end,
 	action = function(self, t)
-		self.energy.value = self.energy.value + (t.getDuration(self, t) * 1000)
-		self:setEffect(self.EFF_TIME_STOP, 1, {power=100})
-		
-		game.logSeen(self, "#STEEL_BLUE#%s has stopped time!#LAST#", self.name:capitalize())
-		game:playSoundNear(self, "talents/heal")
+		game:onTickEnd(function()
+			self.energy.value = self.energy.value + (t.getDuration(self, t) * 1000)
+			self:setEffect(self.EFF_TIME_STOP, 1, {power=100})
+			
+			game.logSeen(self, "#STEEL_BLUE#%s has stopped time!#LAST#", self.name:capitalize())
+			game:playSoundNear(self, "talents/heal")
+		end)
 		return true
 	end,
 	info = function(self, t)
