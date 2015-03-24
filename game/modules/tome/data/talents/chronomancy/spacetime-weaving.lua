@@ -100,12 +100,12 @@ newTalent{
 		if not teleported then return end
 		
 		-- Grab a random sample of timed effects
-		local eff_ids = self:effectsFilter({status="detrimental", ignore_crosstier=true}, 1)
-		local eff = self:hasEffect(eff_id)
+		local eff_id = self:effectsFilter({status="detrimental", ignore_crosstier=true}, 1)
+		local eff = self:hasEffect(eff_id[1])
 		if eff then
 			eff.dur = eff.dur - t.getReduction(self, t)
 			if eff.dur <= 0 then
-				self:removeEffect(eff_id)
+				self:removeEffect(eff_id[1])
 			end
 		end
 
