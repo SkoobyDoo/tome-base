@@ -82,10 +82,6 @@ _M.temporary_values_conf.combat_mindspeed = "add" -- Prevent excessive mind spee
 -- Effect reductions are multiplicative, not additive
 _M.temporary_values_conf.reduce_detrimental_status_effects_time = "perc_inv"  -- Prevent effect reduction from hitting 100%
 
--- Out of Phase bonuses are multiplicative, not additive
-_M.temporary_values_conf.resist_all_on_teleport = "perc_inv"  -- Prevent resist all from hitting 100%
-_M.temporary_values_conf.effect_reduction_on_teleport = "perc_inv"  -- Prevent effect reduction from hitting 100%
-
 -- Damage cap takes the lowest
 _M.temporary_values_conf.flat_damage_cap = "lowest"
 
