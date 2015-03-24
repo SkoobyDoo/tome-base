@@ -192,6 +192,7 @@ function resolvers.calc.inventory(t, e)
 
 			if t[1].id then o:identify(t[1].id) end
 			if t[1].transmo then o.__transmo = true end
+			if t[1].alter then t[1].alter(o) end
 		end
 	end
 	e:sortInven()
