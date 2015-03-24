@@ -2545,7 +2545,7 @@ newEffect{
 	parameters = { power=10 },
 	decrease = 0,
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
-		if src ~= self and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
+		if src ~= self and src.hasEffect and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
 			-- Find our clones
 			for i = 1, #eff.targets do
 				local target = eff.targets[i]
