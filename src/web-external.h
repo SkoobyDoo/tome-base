@@ -79,22 +79,6 @@ typedef struct {
 	} data;
 } WebEvent;
 
-enum web_js_kind {
-	TE4_WEB_JS_NULL,
-	TE4_WEB_JS_BOOLEAN,
-	TE4_WEB_JS_NUMBER,
-	TE4_WEB_JS_STRING,
-};
-
-typedef struct {
-	enum web_js_kind kind;
-	union {
-		bool b;
-		double n;
-		const char *s;
-	} data;
-} WebJsValue;
-
 typedef struct {
 	void *opaque;
 	int w, h;

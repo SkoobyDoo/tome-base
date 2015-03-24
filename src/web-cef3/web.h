@@ -40,8 +40,7 @@ WEB_TE4_API void te4_web_setup(
 	int argc, char **argv, char *spawn,
 	void*(*mutex_create)(), void(*mutex_destroy)(void*), void(*mutex_lock)(void*), void(*mutex_unlock)(void*),
 	void*(*make_texture)(int, int), void (*del_texture)(void*), void (*texture_update)(void*, int, int, const void*),
-	void (*key_mods)(bool*, bool*, bool*, bool*),
-	void (*web_instant_js)(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret)
+	void (*key_mods)(bool*, bool*, bool*, bool*)
 );
 WEB_TE4_API void te4_web_initialize(const char *locales, const char *pak);
 WEB_TE4_API void te4_web_shutdown();
@@ -59,6 +58,6 @@ WEB_TE4_API void te4_web_download_action(web_view_type *view, long id, const cha
 WEB_TE4_API void te4_web_reply_local(int id, const char *mime, const char *result, size_t len);
 WEB_TE4_API void te4_web_load_url(web_view_type *view, const char *url);
 WEB_TE4_API void te4_web_set_js_call(web_view_type *view, const char *name);
-WEB_TE4_API void te4_web_js_callback(web_view_type *view, int cb_id, WebJsValue *args);
+WEB_TE4_API void te4_web_js_callback(web_view_type *view, int cb_id, char *ret, size_t len);
 
 #endif

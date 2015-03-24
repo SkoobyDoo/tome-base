@@ -17,8 +17,12 @@ body {
 <script type="text/javascript">
 function test() {
 	console.log("====");
-	lua("print('foo')", function(){console.log("CB CALLED!!")});
-	lua("require('engine.ui.Dialog'):simplePopup('test', 'test')");
+	te4.run("table.keys{1,2,'toto',foo=5}", function(data) {
+		console.log("result");
+		for (var k in data) console.log(k+":=:"+data[k]);
+	});
+	// lua("print('foo') return 'ploprient'", function(str){console.log("CB CALLED!! "+str)});
+	// lua("require('engine.ui.Dialog'):simplePopup('test', 'test')");
 }
 </script>
 

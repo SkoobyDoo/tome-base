@@ -69,6 +69,5 @@ extern void *(*web_make_texture)(int w, int h);
 extern void (*web_del_texture)(void *tex);
 extern void (*web_texture_update)(void *tex, int w, int h, const void* buffer);
 extern void (*web_key_mods)(bool *shift, bool *ctrl, bool *alt, bool *meta);
-extern void (*web_instant_js)(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret);
 
 #endif

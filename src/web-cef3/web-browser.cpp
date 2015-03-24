@@ -253,11 +253,11 @@ bool BrowserClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefP
 	return handled;
 }
 
-void te4_web_js_callback(web_view_type *view, int cb_id, WebJsValue *args) {
+void te4_web_js_callback(web_view_type *view, int cb_id, char *json_ret, size_t len) {
 	if (!browsers_by_cb.count(cb_id)) return;
 
 	CefRefPtr<CefBrowser> browser = browsers_by_cb[cb_id];
-	app->sendCallback(browser, cb_id);
+	app->sendCallback(browser, cb_id, json_ret, len);
 
 	browsers_by_cb.erase(cb_id);
 }

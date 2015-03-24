@@ -72,40 +72,59 @@ bool TE4RenderProcessHandler::OnProcessMessageReceived(CefRefPtr<CefBrowser> bro
 	return handled;
 }
 
+void TE4RenderProcessHandler::OnWebKitInitialized() {
+	// Define the extension contents.
+	std::string extensionCode = 
+"var te4; "
+"if (!te4) te4 = {}; "
+"(function() { "
+"	te4.run = function(code, cb) { "
+"		if (!cb) { lua(code); return; } "
+" "
+"		code = \"require'Json2' return json.encode(\"+code+\")\"; "
+"		lua(code, function(ret) { "
+"			var data = JSON.parse(ret); "
+"			cb(data); "
+"		}); "
+"	}; "
+"})(); "
+	;
+
+	// Register the extension.
+	CefRegisterExtension("v8/test", extensionCode, NULL);
+}
+
+void TE4RenderProcessHandler::OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) {
+	// Retrieve the context's window object.
+	CefRefPtr<CefV8Value> object = context->GetGlobal();
+
+	CefRefPtr<CefV8Handler> handler = new TE4V8Handler();
+	object->SetValue("lua", CefV8Value::CreateFunction("lua", handler), V8_PROPERTY_ATTRIBUTE_NONE);
+}
+
 bool TE4ClientApp::processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message) {
 	// Execute the registered JavaScript callback if any.
-	if (callback_map.empty()) {printf("exit for 1\n"); return false; }
+	if (callback_map.empty()) { return false; }
 	CefRefPtr<CefListValue> list = message->GetArgumentList();
-	if (list->GetSize() == 0) {printf("exit for 2\n"); return false; }
+	if (list->GetSize() == 0) { return false; }
 
 	// First argument is the callback id
 	int cb_id = list->GetInt(0);
 	CallbackMap::iterator it = callback_map.find(cb_id);
-	if (it == callback_map.end()) {printf("exit for 3\n"); return false; }
+	if (it == callback_map.end()) { return false; }
 
 	// Keep a local reference to the objects. The callback may remove itself
 	// from the callback map.
 	CefRefPtr<CefV8Context> context = it->second.first;
 	CefRefPtr<CefV8Value> callback = it->second.second;
 
-	// Enter the context.
 	context->Enter();
-
 	CefV8ValueList arguments;
-
-	// // First argument is the message name.
-	// arguments.push_back(CefV8Value::CreateString(message_name));
-
-	// // Second argument is the list of message arguments.
-	// CefRefPtr<CefListValue> list = message->GetArgumentList();
-	// CefRefPtr<CefV8Value> args = CefV8Value::CreateArray(static_cast<int>(list->GetSize()));
-	// SetList(list, args);
-	// arguments.push_back(args);
-
-	// Execute the callback.
+	if (list->GetSize() == 2 && list->GetType(1) == VTYPE_STRING) {
+		// printf("===1 %s\n", cstring_to_c(list->GetString(1)));
+		arguments.push_back(CefV8Value::CreateString(list->GetString(1)));
+	}
 	callback->ExecuteFunction(NULL, arguments);
-
-	// Exit the context.
 	context->Exit();
 
 	callback_map.erase(it);
@@ -113,11 +132,16 @@ bool TE4ClientApp::processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefP
 	return true;
 }
 
-void TE4ClientApp::sendCallback(CefRefPtr<CefBrowser> browser, int cb_id) {
+void TE4ClientApp::sendCallback(CefRefPtr<CefBrowser> browser, int cb_id, char *ret, size_t len) {
 	CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create("js_callback");
 	CefRefPtr<CefListValue> list = message->GetArgumentList();
-	list->SetSize(1);
+	list->SetSize(2);
 	list->SetInt(0, cb_id);
-	// list->SetString(1, arguments[0]->GetStringValue());
+	if (len) {
+		CefString str(ret);
+		list->SetString(1, str);
+	} else {
+		list->SetNull(1);
+	}
 	browser->SendProcessMessage(PID_RENDERER, message);
 }

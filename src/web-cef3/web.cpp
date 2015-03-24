@@ -40,7 +40,6 @@ void *(*web_make_texture)(int w, int h);
 void (*web_del_texture)(void *tex);
 void (*web_texture_update)(void *tex, int w, int h, const void* buffer);
 void (*web_key_mods)(bool *shift, bool *ctrl, bool *alt, bool *meta);
-void (*web_instant_js)(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret);
 
 static bool web_core = false;
 
@@ -192,8 +191,7 @@ void te4_web_setup(
 	int argc, char **gargv, char *spawnc,
 	void*(*mutex_create)(), void(*mutex_destroy)(void*), void(*mutex_lock)(void*), void(*mutex_unlock)(void*),
 	void *(*make_texture)(int, int), void (*del_texture)(void*), void (*texture_update)(void*, int, int, const void*),
-	void (*key_mods)(bool*, bool*, bool*, bool*),
-	void (*instant_js)(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret)
+	void (*key_mods)(bool*, bool*, bool*, bool*)
 	) {
 
 #ifdef SELFEXE_MACOSX
@@ -216,7 +214,6 @@ void te4_web_setup(
 	web_del_texture = del_texture;
 	web_texture_update = texture_update;
 	web_key_mods = key_mods;
-	web_instant_js = instant_js;
 
 	spawnname = spawnc;
 	g_argc = argc;

@@ -41,19 +41,11 @@ public:
 		return false;
 	}
 
-	virtual void OnWebKitInitialized() OVERRIDE {
-		
-	}
+	virtual void OnWebKitInitialized() OVERRIDE;
 
 	virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message);
 
-	virtual void OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) OVERRIDE {
-		// Retrieve the context's window object.
-		CefRefPtr<CefV8Value> object = context->GetGlobal();
-
-		CefRefPtr<CefV8Handler> handler = new TE4V8Handler();
-		object->SetValue("lua", CefV8Value::CreateFunction("lua", handler), V8_PROPERTY_ATTRIBUTE_NONE);
-	}
+	virtual void OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) OVERRIDE;
 
 	IMPLEMENT_REFCOUNTING(TE4RenderProcessHandler);
 };
@@ -72,7 +64,7 @@ public:
 	}
 
 	bool processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message);
-	void sendCallback(CefRefPtr<CefBrowser> browser, int cb_id);
+	void sendCallback(CefRefPtr<CefBrowser> browser, int cb_id, char *ret, size_t len);
 
 	IMPLEMENT_REFCOUNTING(TE4ClientApp);
 };

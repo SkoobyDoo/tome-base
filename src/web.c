@@ -41,8 +41,7 @@ static void (*te4_web_setup)(
 	int, char**, char*,
 	void*(*)(), void(*)(void*), void(*)(void*), void(*)(void*),
 	void* (*)(int, int), void (*)(void*), void (*)(void*, int, int, const void*),
-	void (*)(bool*, bool*, bool*, bool*),
-	void (*)(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret)
+	void (*)(bool*, bool*, bool*, bool*)
 );
 static void (*te4_web_initialize)(const char *locales, const char *pak);
 static void (*te4_web_shutdown)();
@@ -60,7 +59,7 @@ static void (*te4_web_download_action)(web_view_type *view, long id, const char 
 static void (*te4_web_reply_local)(int id, const char *mime, const char *result, size_t len);
 static void (*te4_web_load_url)(web_view_type *view, const char *url);
 static void (*te4_web_set_js_call)(web_view_type *view, const char *name);
-static void (*te4_web_js_callback)(web_view_type *view, int cb_id, WebJsValue *args);
+static void (*te4_web_js_callback)(web_view_type *view, int cb_id, char *ret, size_t len);
 
 static int lua_web_new(lua_State *L) {
 	int w = luaL_checknumber(L, 1);
@@ -377,17 +376,26 @@ static void handle_event(WebEvent *event) {
 			} else lua_pop(he_L, 1);
 			break;
 
-		case TE4_WEB_EVENT_RUN_LUA:
+		case TE4_WEB_EVENT_RUN_LUA: {
+			size_t len = 0;
+			char *ret = NULL;
 			if (!luaL_loadstring(he_L, event->data.run_lua.code)) {
-				docall(he_L, 0, 0);
+				if (!docall(he_L, 0, 1)) {
+					if (event->data.run_lua.cb_id) {
+						const char *r = lua_tolstring(he_L, -1, &len);
+						if (len) ret = strdup(r);
+					}
+					lua_pop(he_L, 1);
+				}
 			} else {
 				printf("[WEBCORE] Failed to run lua code:\n%s\n ==>> Error: %s\n", event->data.run_lua.code, lua_tostring(he_L, -1));
 				lua_pop(he_L, 1);
 			}
 			if (event->data.run_lua.cb_id) {
-				te4_web_js_callback(NULL, event->data.run_lua.cb_id, NULL);
+				te4_web_js_callback(NULL, event->data.run_lua.cb_id, ret, len);
 			}
 			break;
+		}
 		case TE4_WEB_EVENT_DELETE_TEXTURE:
 			break;
 		case TE4_WEB_EVENT_BROWSER_COUNT:
@@ -481,42 +489,6 @@ static void web_key_mods(bool *shift, bool *ctrl, bool *alt, bool *meta) {
 	if (smod & KMOD_GUI) *meta = TRUE;
 }
 
-static void web_instant_js(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret) {
-	lua_rawgeti(he_L, LUA_REGISTRYINDEX, handlers);
-	lua_pushstring(he_L, fct);
-	lua_gettable(he_L, -2);
-	lua_remove(he_L, -2);
-	if (!lua_isnil(he_L, -1)) {
-		int i;
-		for (i = 0; i < nb_args; i++) {
-			if (args[i].kind == TE4_WEB_JS_NULL) lua_pushnil(he_L);
-			else if (args[i].kind == TE4_WEB_JS_BOOLEAN) lua_pushboolean(he_L, args[i].data.b);
-			else if (args[i].kind == TE4_WEB_JS_NUMBER) lua_pushnumber(he_L, args[i].data.n);
-			else if (args[i].kind == TE4_WEB_JS_STRING) lua_pushstring(he_L, args[i].data.s);
-		}
-		if (!docall(he_L, nb_args, 1)) {
-			if (lua_isnumber(he_L, -1)) {
-				ret->kind = TE4_WEB_JS_NUMBER;
-				ret->data.n = lua_tonumber(he_L, -1);
-			} else if (lua_isstring(he_L, -1)) {
-				ret->kind = TE4_WEB_JS_STRING;
-				ret->data.s = lua_tostring(he_L, -1);
-			} else if (lua_isboolean(he_L, -1)) {
-				ret->kind = TE4_WEB_JS_BOOLEAN;
-				ret->data.b = lua_toboolean(he_L, -1);
-			} else {
-				ret->kind = TE4_WEB_JS_NULL;
-			}
-			lua_pop(he_L, 1);
-		} else {
-			ret->kind = TE4_WEB_JS_NULL;
-		}
-	} else {
-		ret->kind = TE4_WEB_JS_NULL;
-		lua_pop(he_L, 1);
-	}
-}
-
 void te4_web_load() {
 	char *spawnname = NULL;
 	char *libname = NULL;
@@ -587,8 +559,7 @@ void te4_web_load() {
 			int, char**, char*,
 			void*(*)(), void(*)(void*), void(*)(void*), void(*)(void*),
 			void* (*)(int, int), void (*)(void*), void (*)(void*, int, int, const void*),
-			void (*)(bool*, bool*, bool*, bool*),
-			void (*)(int handlers, const char *fct, int nb_args, WebJsValue *args, WebJsValue *ret)
+			void (*)(bool*, bool*, bool*, bool*)			
 		)) SDL_LoadFunction(web, "te4_web_setup");
 		te4_web_initialize = (void (*)(const char *locales, const char *pak)) SDL_LoadFunction(web, "te4_web_initialize");
 		te4_web_shutdown = (void (*)()) SDL_LoadFunction(web, "te4_web_shutdown");
@@ -606,14 +577,13 @@ void te4_web_load() {
 		te4_web_reply_local = (void (*)(int id, const char *mime, const char *result, size_t len)) SDL_LoadFunction(web, "te4_web_reply_local");
 		te4_web_load_url = (void (*)(web_view_type *view, const char *url)) SDL_LoadFunction(web, "te4_web_load_url");
 		te4_web_set_js_call = (void (*)(web_view_type *view, const char *name)) SDL_LoadFunction(web, "te4_web_set_js_call");
-		te4_web_js_callback = (void (*)(web_view_type *view, int cb_id, WebJsValue *args)) SDL_LoadFunction(web, "te4_web_js_callback");
+		te4_web_js_callback = (void (*)(web_view_type *view, int cb_id, char *ret, size_t len)) SDL_LoadFunction(web, "te4_web_js_callback");
 
 		te4_web_setup(
 			g_argc, g_argv, spawnname,
 			web_mutex_create, web_mutex_destroy, web_mutex_lock, web_mutex_unlock,
 			web_make_texture, web_del_texture, web_texture_update,
-			web_key_mods,
-			web_instant_js
+			web_key_mods
 			);
 	}
 }
