@@ -214,7 +214,7 @@ function _M:display()
 			self.cache[tstr] = gen
 		end
 		for i = #gen, 1, -1 do
-			self.dlist[#self.dlist+1] = {item=gen[i], date=math.max(self.log.reset_fade or self.log[z].timestamp, self.log[z].timestamp), url=self.log[z].url}
+			self.dlist[#self.dlist+1] = {item=gen[i], date=self.log[z].reset_fade or self.log[z].timestamp, url=self.log[z].url}
 			h = h + self.fh
 			if h > self.h - self.fh then stop=true break end
 		end
@@ -282,5 +282,7 @@ function _M:resetFade()
 	local log = self.log
 
 	-- Reset fade
-	log.reset_fade = core.game.getTime()
+	for i = 1,#log do
+		log[i].reset_fade = core.game.getTime()
+	end
 end
