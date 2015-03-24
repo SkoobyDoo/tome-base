@@ -181,7 +181,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 		end
 		if citem then
 			local sub_es = {}
-			for di = 1, #citem.item._dduids do sub_es[#sub_es+1] = citem.item._dduids[di].e end
+			for e, _ in pairs(citem.item._dduids) do sub_es[#sub_es+1] = e end
 
 			if citem.url and button == "left" and event == "button" then
 				util.browserOpenUrl(citem.url, {is_external=true})
@@ -257,7 +257,7 @@ function _M:toScreen()
 		end
 		item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
 		if self.shadow and shader then shader:use(false) end
-		for di = 1, #item._dduids do item._dduids[di].e:toScreen(nil, self.display_x + item._dduids[di].x, h, item._dduids[di].w, item._dduids[di].w, fade, false, false) end
+		for e, d in pairs(item._dduids) do e:toScreen(nil, self.display_x + d.x, h, d.w, d.w, fade, false, false) end
 		h = h - self.fh
 	end
 
