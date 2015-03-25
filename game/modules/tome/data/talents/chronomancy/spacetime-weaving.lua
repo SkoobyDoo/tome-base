@@ -101,7 +101,7 @@ newTalent{
 		
 		-- Grab a random sample of timed effects
 		local eff_id = self:effectsFilter({status="detrimental", ignore_crosstier=true}, 1)
-		if next(eff_id) then
+		if eff_id[1] then
 			local eff = self:hasEffect(eff_id[1])
 			eff.dur = eff.dur - t.getReduction(self, t)
 			if eff.dur <= 0 then
