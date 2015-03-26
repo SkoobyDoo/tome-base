@@ -176,7 +176,7 @@ newTalent{
 					end
 				end,
 				dig = function(src, x, y, old)
-					game.level:removeEntity(old)
+					game.level:removeEntity(old, true)
 					return nil, old.old_feat
 				end,
 				summoner_gain_exp = true,
