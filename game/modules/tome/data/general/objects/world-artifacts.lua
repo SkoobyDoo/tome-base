@@ -6460,7 +6460,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	moddable_tile = "special/tirakais_maul", moddable_tile_big = true,
 	gemDesc = "None", -- Defined by the elemental properties and used by special_desc
 	special_desc = function(self)
-	-- You'll want to color this and such
+		-- You'll want to color this and such
 		if not self.Gem then return ("No gem") end
 		return ("%s: %s"):format(self.Gem.name:capitalize(), self.gemDesc or ("Write a description for this gem's properties!"))
 	end,	
@@ -6532,6 +6532,8 @@ newEntity{ base = "BASE_GREATMAUL",
 					self.combat.physcrit = 4 + (2 * combatFactor)
 					self.combat.dammod = {str=1.2, mag=0.1}
 					self.combat.damrange = 1.3
+					self.combat.burst_on_crit = nil
+					self.combat.convert_damage = nil
 
 					self.wielder = {
 						inc_stats = {[Stats.STAT_MAG] = (2 * scalingFactor), [Stats.STAT_CUN] = (2 * scalingFactor), [Stats.STAT_DEX] = (2 * scalingFactor),},
