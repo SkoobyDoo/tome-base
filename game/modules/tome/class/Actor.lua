@@ -4923,6 +4923,7 @@ function _M:iterCallbacks(event)
 	if self[store] and next(self[store].__priorities) then
 		local iter = 1
 		return function()
+			if not self[store] or not self[store].__sorted then return end
 			local info = self[store].__sorted[iter]
 			if not info then return end
 			iter = iter + 1
