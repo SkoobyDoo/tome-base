@@ -1670,7 +1670,10 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			error("lolzor plopadz kajzdhkhvkervkert 1")
+			for i = 1, 10000 do
+				game.log("PLOP")
+				profile.chat:addMessage("talk", "tome", "test", "test", "test", {"test", colors.GOLD})
+			end
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {random_object=true}, nil, true)
 			if o then

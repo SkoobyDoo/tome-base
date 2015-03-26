@@ -55,7 +55,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 	local crit_power = state.crit_power
 
 	local add_dam = 0
-	if src:attr("all_damage_convert") and src.all_damage_convert ~= type then
+	if src:attr("all_damage_convert") and src:attr("all_damage_convert_percent") and src.all_damage_convert ~= type then
 		local ndam = dam * src.all_damage_convert_percent / 100
 		dam = dam - ndam
 		local nt = src.all_damage_convert
