@@ -147,15 +147,15 @@ function _M:zoneCheckBackupGuardian()
 		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
 			game.zone.base_level_range = table.clone(game.zone.level_range, true)
 			game.zone.specific_base_level.object = -10 -game.zone.base_level
-			game.zone.base_level = game.zone.base_level * 1.5 + 3
+			game.zone.base_level = game.zone.base_level * 1.5 + 2
 		elseif game.difficulty == game.DIFFICULTY_INSANE then
 			game.zone.base_level_range = table.clone(game.zone.level_range, true)
 			game.zone.specific_base_level.object = -10 -game.zone.base_level
-			game.zone.base_level = game.zone.base_level * 2.2 + 5
+			game.zone.base_level = game.zone.base_level * 1.5 + 3
 		elseif game.difficulty == game.DIFFICULTY_MADNESS then
 			game.zone.base_level_range = table.clone(game.zone.level_range, true)
 			game.zone.specific_base_level.object = -10 -game.zone.base_level
-			game.zone.base_level = game.zone.base_level * 2.5 + 10
+			game.zone.base_level = game.zone.base_level * 2.5 + 6
 		end
 		if data.action then data.action(false) end
 	end
@@ -410,6 +410,8 @@ function _M:generateRandart(data)
 	end}, nil, true)
 	if not base or not base.randart_able then game.level.level = oldlev resolvers.current_level = oldclev return end
 	local o = base:cloneFull()
+
+	local display = o.display
 
 --o.baseobj = base:cloneFull() -- debugging code
 --o.gendata = table.clone(data, true) -- debugging code
@@ -725,6 +727,8 @@ function _M:generateRandart(data)
 		end
 		o.combat.damtype = pickDamtype(themes)
 	end
+
+	o.display = display
 
 	if data.post then
 		data.post(o)

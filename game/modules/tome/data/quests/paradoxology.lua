@@ -41,6 +41,7 @@ generate = function(self, player, x, y)
 	mod.class.NPC.castAs(a)
 	engine.interface.ActorAI.init(a, a)
 	a.no_drops = true
+	a.keep_inven_on_death = false
 	a.energy.value = 0
 	a.player = nil
 	a.rank = 4

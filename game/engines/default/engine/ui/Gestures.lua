@@ -240,7 +240,7 @@ function _M:update()
 end
 
 function _M:display(display_x, display_y, nb_keyframes)
-	if config.settings.hide_gestures then return end
+	if config.settings.hide_gestures or not nb_keyframes then return end
 	if self.hide then return end
 
 	local intensity = 0.6

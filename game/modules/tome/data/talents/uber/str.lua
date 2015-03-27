@@ -129,7 +129,7 @@ uberTalent{
 	cooldown = 25,
 	requires_target = true,
 	range = 5,
-	tactical = { ATTACK = 50, CLOSEIN = 30 },
+	tactical = { ATTACKAREA = 50, CLOSEIN = 30 },  -- someone loves this talent :P
 	require = { special={desc="Have dealt over 50000 light or fire damage", fct=function(self) return
 		self.damage_log and (
 			(self.damage_log[DamageType.FIRE] and self.damage_log[DamageType.FIRE] >= 50000) or

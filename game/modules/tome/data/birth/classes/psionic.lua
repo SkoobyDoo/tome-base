@@ -103,23 +103,13 @@ newBirthDescriptor{
 		resolvers.equipbirth{ id=true,
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000},
+			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000, force_inven = "PSIONIC_FOCUS"}
 		},
 		resolvers.inventorybirth{ id=true,
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="gem",},
 		},
-		resolvers.generic(function(self)
-			-- Make and wield some alchemist gems
-			local gs = game.zone:makeEntity(game.level, "object", {type="weapon", subtype="greatsword", name="iron greatsword", ego_chance=-1000}, nil, true)
-			if gs then
-				local pf = self:getInven("PSIONIC_FOCUS")
-				if pf then
-					self:addObject(pf, gs)
-					gs:identify(true)
-				end
-			end
-		end),
 	},
 	copy_add = {
 		life_rating = -2,

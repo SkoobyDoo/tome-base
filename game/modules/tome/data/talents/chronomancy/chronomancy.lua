@@ -57,7 +57,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	getDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
-	getCritDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
+	getCritDefense = function(self, t) return self:combatTalentStatDamage(t, "mag", 2, 10) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_def", t.getDefense(self, t))
 		self:talentTemporaryValue(p, "ignore_direct_crits", t.getCritDefense(self, t))
@@ -90,8 +90,10 @@ newTalent{
 	tactical = { DEFEND = 2 },
 	no_npc_use = true,  -- so rares don't learn useless talents
 	allow_temporal_clones = true,  -- let clones copy it anyway so they can benefit from the effects
-	on_pre_use = function(self, t, silent) if self ~= game.player then return false end return true end,  -- but don't let them cast it
-	callbackOnHit = function(self, t, cb)
+	on_pre_use = function(self, t, silent) if self ~= game.player and not self:isTalentActive(t) then return false end return true end,  -- but don't let them cast it
+	callbackOnHit = function(self, t, cb, src)
+		if src == self then return cb.value end
+	
 		local p = self:isTalentActive(t.id)
 		local life_after = self.life - cb.value
 		local cont_trigger = self.max_life * t.getTrigger(self, t)

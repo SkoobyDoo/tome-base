@@ -247,6 +247,7 @@ newInscription{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t}
 	end,
+	requires_target = true,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		local tg = self:getTalentTarget(t)
@@ -972,7 +973,7 @@ newInscription{
 		
 	-- Placeholder for the actor
 		local oe = game.level.map(x, y, Map.TERRAIN+1)
-		if (oe and oe:attr("temporary")) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then game.logPlayer(self, "You can't time skip the target there.") return nil end
+		if (oe and oe:attr("temporary")) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then game.logPlayer(self, "Something has prevented the timetravel.") return true end
 		local e = mod.class.Object.new{
 			old_feat = oe, type = "temporal", subtype = "instability",
 			name = "temporal instability",

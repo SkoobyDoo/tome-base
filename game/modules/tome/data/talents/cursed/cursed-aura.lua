@@ -226,7 +226,7 @@ newTalent{
 				-- preserve the old eff values when re-starting the effect
 				if level > 0 then
 					if not eff then
-						eff = { def = self.tempeffect_def[curse] }
+						eff = { }
 					end
 					eff.level = level
 					eff.Penalty = penalty

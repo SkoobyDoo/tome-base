@@ -429,9 +429,9 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	if target:hasEffect(target.EFF_WARDEN_S_FOCUS) and target:hasDualWeapon() then
-		local eff = target:hasEffect(target.EFF_WARDEN_S_FOCUS)
-		if eff.target == self and rng.percent(eff.power) then
+	if target:knowTalent(target.T_BLADE_WARD) and target:hasDualWeapon() then
+		local chance = target:callTalent(target.T_BLADE_WARD, "getChance")
+		if rng.percent(chance) then
 			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
 			repelled = true
 		end
@@ -442,9 +442,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	elseif self:checkEvasion(target) then
 		evaded = true
 		self:logCombat(target, "#Target# evades #Source#.")
-	elseif not self.turn_procs.auto_melee_hit and self:attr("hit_penalty_2h") and rng.percent(20 - (self.size_category - 4) * 5) then
-		self:logCombat(target, "#Source# misses #Target#.")
-		target:fireTalentCheck("callbackOnMeleeMiss", self, dam)
 	elseif self.turn_procs.auto_melee_hit or (self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or target:attr("blind_fighted") or rng.chance(3))) then
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
 		if target.knowTalent and target:hasEffect(target.EFF_DUAL_WEAPON_DEFENSE) then
@@ -587,6 +584,10 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 0.025, 2)
 		print("[ATTACK] staff accuracy bonus", atk, def, "=", bonus)
 		self.__global_accuracy_damage_bonus = bonus
+	end
+	if self:attr("hit_penalty_2h") then
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus or 1
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus * 0.5
 	end
 
 	-- handle stalk targeting for hits (also handled in Actor for turn end effects)
@@ -815,13 +816,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		t.do_scoundrel(self, t, target)
 	end
 
-	-- Special effect
+	-- Special weapon effects  (passing the special definition to facilitate encapsulating multiple special effects)
 	if hitted and weapon and weapon.special_on_hit then
 		local specials = weapon.special_on_hit
 		if specials.fct then specials = {specials} end
 		for _, special in ipairs(specials) do
 			if special.fct and (not target.dead or special.on_kill) then
-				special.fct(weapon, self, target, dam)
+				special.fct(weapon, self, target, dam, special)
 			end
 		end
 	end
@@ -831,7 +832,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		if specials.fct then specials = {specials} end
 		for _, special in ipairs(specials) do
 			if special.fct and (not target.dead or special.on_kill) then
-				special.fct(weapon, self, target, dam)
+				special.fct(weapon, self, target, dam, special)
 			end
 		end
 	end
@@ -841,13 +842,9 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		if specials.fct then specials = {specials} end
 		for _, special in ipairs(specials) do
 			if special.fct then
-				special.fct(weapon, self, target, dam)
+				special.fct(weapon, self, target, dam, special)
 			end
 		end
-	end
-
-	if hitted and weapon and weapon.special_on_kill and weapon.special_on_kill.fct and target.dead then
-		weapon.special_on_kill.fct(weapon, self, target, dam)
 	end
 
 	if hitted and crit and not target.dead and self:knowTalent(self.T_BACKSTAB) and not target:attr("stunned") and rng.percent(self:callTalent(self.T_BACKSTAB, "getStunChance")) then
@@ -1195,6 +1192,8 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then add = add + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getArmorBoost") end
+
 	return self.combat_armor + add
 end
 
@@ -1229,7 +1228,11 @@ end
 --- Gets the attack
 function _M:combatAttackBase(weapon, ammo)
 	weapon = weapon or self.combat or {}
-	return 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
+
+	return atk
 end
 function _M:combatAttack(weapon, ammo)
 	local stats
@@ -1553,6 +1556,9 @@ end
 function _M:combatDamagePower(weapon_combat, add)
 	if not weapon_combat then return 1 end
 	local power = math.max((weapon_combat.dam or 1) + (add or 0), 1)
+
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then power = power + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon_combat) end
+
 	return (math.sqrt(power / 10) - 1) * 0.5 + 1
 end
 
@@ -1588,6 +1594,8 @@ function _M:combatPhysicalpower(mod, weapon, add)
 	local d = math.max(0, (self.combat_dam or 0) + add + str) -- allows strong debuffs to offset strength
 	if self:attr("dazed") then d = d / 2 end
 	if self:attr("scoured") then d = d / 1.2 end
+
+	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return self:rescaleCombatStats(d) * mod
 end
@@ -1672,9 +1680,13 @@ end
 --- Gets fatigue
 function _M:combatFatigue()
 	local min = self.min_fatigue or 0
-	if self.fatigue < min then return min end
+	local fatigue = self.fatigue
+
+	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then fatigue = fatigue - self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getFatigueBoost") end
+
+	if fatigue < min then return min end
 	if self:knowTalent(self.T_NO_FATIGUE) then return min end
-	return self.fatigue
+	return fatigue
 end
 
 --- Gets spellcrit
@@ -1752,6 +1764,13 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		local p = target:hasEffect(target.EFF_SET_UP)
 		if p and p.src == self then
 			chance = chance + p.power
+		end
+	end
+	if target and self:hasEffect(self.EFF_WARDEN_S_FOCUS) then
+		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
+		if eff and eff.target == target then
+			chance = chance + eff.power
+			crit_power_add = crit_power_add + (eff.power/100)
 		end
 	end
 	

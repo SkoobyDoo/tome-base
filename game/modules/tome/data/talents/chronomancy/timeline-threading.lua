@@ -123,7 +123,7 @@ newTalent{
 	require = chrono_req_high2,
 	points = 5,
 	cooldown = 24,
-	paradox = function(self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function(self, t) return getParadoxCost(self, t, 48) end,
 	tactical = { ATTACK = 2, DISABLE = 2 },
 	remove_on_clone = true,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 8))) end,
@@ -194,7 +194,7 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		return ([[For the next %d turns two alternate versions of you enter your timeline.  While the effect is active all damage done by you or your copies is reduced by two thirds and all damage received is split between the three of you.
-		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones.
+		Temporal Fugue does not normally cooldown while active.  You may take direct control of your clones, give them orders, and set their talent usage.
 		Damage you deal to Fugue Clones or that they deal to you or each other is reduced to zero.]]):
 		format(duration)
 	end,
@@ -223,10 +223,11 @@ newTalent{
 	require = chrono_req_high4,
 	points = 5,
 	cooldown = 24,
-	paradox = function (self, t) return getParadoxCost(self, t, 25) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	range = 10,
 	tactical = { ATTACK = 2 },
 	requires_target = true,
+	no_npc_use = true,
 	direct_hit = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	getPower = function(self, t) return self:combatTalentScale(t, 20, 50) end,

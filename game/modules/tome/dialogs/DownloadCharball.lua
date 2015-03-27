@@ -87,6 +87,7 @@ function _M:importCharball(item)
 			a.ai = "tactical"
 			a.ai_state = {talent_in=1}
 			a.no_drops = true
+			a.keep_inven_on_death = false
 			a.energy.value = 0
 			a.player = nil
 			a.faction = "enemies"

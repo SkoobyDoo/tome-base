@@ -309,13 +309,13 @@ function _M:generateListUi()
 		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Tactical overlay#WHITE##{normal}#", status=function(item)
 			local vs = "Combined Small"
 			if game.always_target == "old" then
-				local vs = "Combined Big"
+				vs = "Combined Big"
 			elseif game.always_target == "health" then
-				local vs = "Only Healthbars"
+				vs = "Only Healthbars"
 			elseif game.always_target == nil then
-				local vs = "Nothing"
+				vs = "Nothing"
 			elseif game.always_target == true then
-				local vs = "Combined Small"
+				vs = "Combined Small"
 			end
 			return vs
 		end, fct=function(item)
@@ -327,6 +327,7 @@ function _M:generateListUi()
 			}, 300, 200, function(sel)
 				if not sel then return end
 				game:setTacticalMode(sel.mode)
+				self.c_list:drawItem(item)
 			end)
 		end,}
 	end
@@ -458,6 +459,15 @@ function _M:generateListGameplay()
 	end, fct=function(item)
 		config.settings.tome.disable_mouse_targeting = not config.settings.tome.disable_mouse_targeting
 		game:saveSettings("tome.disable_mouse_targeting", ("tome.disable_mouse_targeting = %s\n"):format(tostring(config.settings.tome.disable_mouse_targeting)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Auto-validate targets. If you fire an arrow/talent/... it will automatically use the default target without asking\n#LIGHT_RED#This is dangerous. Do not enable unless you know exactly what you are doing.#WHITE#\n\nDefault target is always either one of:\n - The last creature hovered by the mouse\n - The last attacked creature\n - The closest creature"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Auto-accept target#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.auto_accept_target and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.auto_accept_target = not config.settings.auto_accept_target
+		game:saveSettings("auto_accept_target", ("auto_accept_target = %s\n"):format(tostring(config.settings.auto_accept_target)))
 		self.c_list:drawItem(item)
 	end,}
 

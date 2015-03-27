@@ -58,7 +58,7 @@ start_ambush = function(self, who)
 		self.life = self.max_life
 		for _, e in pairs(game.level.entities) do
 			if not game.party:hasMember(e) then
-				game.level:removeEntity(e)
+				game.level:removeEntity(e, true)
 				e.dead = true
 			end
 		end

@@ -141,7 +141,7 @@ newBirthDescriptor{
 	locked_desc = "We preserve the past to protect the future. The hands of time are guarded by the arms of war.",
 	desc = {
 		"Their lifelines braided, Temporal Wardens have learned to work with their other selves across multiple timelines.",
-		"Through their study of chronomancy, they learn to blend archery and duel-weapon fighting, seemlessly switching from one to the other.",
+		"Through their study of chronomancy, they learn to blend archery and dual-weapon fighting, seamlessly switching from one to the other.",
 		"Their most important stats are: Magic, Dexterity, and Willpower",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +0 Strength, +3 Dexterity, +0 Constitution",
@@ -194,7 +194,7 @@ newBirthDescriptor{
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
 		
 		[ActorTalents.T_WARP_BLADE] = 1,
-		[ActorTalents.T_THREADED_ARROW] = 1,
+		[ActorTalents.T_ARROW_STITCHING] = 1,
 		[ActorTalents.T_DIMENSIONAL_STEP] = 1,
 		[ActorTalents.T_STRENGTH_OF_PURPOSE] = 1,
 	},
@@ -211,6 +211,9 @@ newBirthDescriptor{
 		resolvers.inventorybirth{ id=true, inven="QS_OFFHAND",
 			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},	
 		},
+		resolvers.generic(function(e)
+			e.auto_shoot_talent = e.T_SHOOT
+		end),
 	},
 	copy_add = {
 		life_rating = 2,

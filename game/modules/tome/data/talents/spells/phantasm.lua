@@ -42,6 +42,7 @@ newTalent{
 	},
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 28, 180) end,
 	getBlindPower = function(self, t) if self:getTalentLevel(t) >= 5 then return 4 else return 3 end end,
+	requires_target = true,
 	action = function(self, t)
 		local tg = {type="ball", range=self:getTalentRange(t), selffire=true, radius=self:getTalentRadius(t), talent=t}
 		self:project(tg, self.x, self.y, DamageType.LITE, 1)

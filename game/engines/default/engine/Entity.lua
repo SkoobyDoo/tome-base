@@ -728,6 +728,8 @@ function _M:removed()
 		end
 	end
 
+	if game and game.hasEntity and game:hasEntity(self) then game:removeEntity(self) end
+
 	if self.unique then
 		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) - 1
 		if game.uniques[self.__CLASSNAME.."/"..self.unique] <= 0 then game.uniques[self.__CLASSNAME.."/"..self.unique] = nil end
@@ -942,10 +944,12 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 			end
 --			print("delTmpVal", prop, v, method)
 		else
-			if type(v) == "nil" then
-				util.send_error_backtrace("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v))
-			else
-				util.send_error_backtrace("unsupported temporary value type: "..type(v).." :=: "..tostring(v))
+			if config.settings.cheat then
+				if type(v) == "nil" then
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+				else
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+				end
 			end
 		end
 	end

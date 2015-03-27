@@ -32,7 +32,7 @@ newTalent{
 		local inc = t.getPercentInc(self, t)
 		return ([[Increases Physical Power by %d, and increases weapon damage by %d%% when using swords, axes, maces, knives, or bows.
 		You now also use your Magic in place of Strength when equipping weapons and ammo as well as when calculating weapon damage.
-		These bonuses override rather than stack with weapon mastery, knife mastery, and bow mastery.]]):
+		These bonuses override rather than stack with weapon mastery, dagger mastery, and bow mastery.]]):
 		format(damage, 100*inc)
 	end,
 }
@@ -43,10 +43,10 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	mode = "passive",
-	cooldown = 6,
-	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 80, 20, 50)/100 end,
+	cooldown = 10,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
+	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end, -- Limit < 40%
 	remove_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
 		local split = cb.value * t.getDamageSplit(self, t)
@@ -69,8 +69,12 @@ newTalent{
 				
 				-- clone our caster
 				local m = makeParadoxClone(self, self, t.getDuration(self, t))
-				-- alter some values
+				-- Handle some AI stuff
 				m.ai_state = { talent_in=1, ally_compassion=10 }
+				m.ai_state.tactic_leash = 10
+				-- Try to use stored AI talents to preserve tweaking over multiple summons
+				m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+				-- alter some values
 				m.remove_from_party_on_death = true
 				m:attr("archery_pass_friendly", 1)
 				m.generic_damage_penalty = 50
@@ -85,15 +89,15 @@ newTalent{
 
 				if game.party:hasMember(self) then
 					game.party:addMember(m, {
-						control="no",
+						control="order",
 						type="temporal-clone",
 						title="Guardian",
-						orders = {target=true},
+						orders = {target=true, leash=true, anchor=true, talents=true},
 					})
 				end
 				
 				-- split the damage
-				cb.value = cb.value - split
+				cb.value = cb.value - (split * 2)
 				self.unity_warden = m
 				m:takeHit(split, src)
 				m:setTarget(src or nil)
@@ -114,7 +118,7 @@ newTalent{
 		local cooldown = self:getTalentCooldown(t)
 		return ([[When a single hit deals more than %d%% of your maximum life another you appears and takes %d%% of the damage as well as %d%% of all damage you take for the next %d turns.
 		The clone is out of phase with this reality and deals 50%% less damage but its arrows will pass through friendly targets.
-		This talent has a cooldown.]]):format(trigger, split, split, duration)
+		This talent has a cooldown.]]):format(trigger, split * 2, split, duration)
 	end,
 }
 
@@ -124,7 +128,7 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	mode = "passive",
-	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 5, 25) end,
+	getSense = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "see_stealth", t.getSense(self, t))
@@ -173,6 +177,7 @@ newTalent{
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	getDamage = function(self, t) return 1.2 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 10) end,
 	action = function(self, t)
 		-- Grab our target so we can set our effect
 		local tg = self:getTalentTarget(t)
@@ -190,17 +195,17 @@ newTalent{
 			self:attackTarget(target, nil, t.getDamage(self, t), true)
 		end
 		
-		self:setEffect(self.EFF_WARDEN_S_FOCUS, 10, {target=target, power=t.getPower(self, t)})
-		target:setEffect(target.EFF_WARDEN_S_TARGET, 10, {src=self})
+		self:setEffect(self.EFF_WARDEN_S_FOCUS, t.getDuration(self, t), {target=target, power=t.getPower(self, t)})
+		target:setEffect(target.EFF_WARDEN_S_TARGET, t.getDuration(self, t), {src=self})
 		
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
 		local power = t.getPower(self, t)
-		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next ten turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
-		Additionally your bow attacks gain %d%% critical chance and critical strike power against the target and you have a %d%% chance to parry melee attacks from the target while you have your blades equipped.
-		While Warden's Focus is active you also take %d%% less damage from vermin and normal rank enemies, if they're not also your focus target.]])
-		:format(damage, power, power, power)
+		local duration = t.getDuration(self, t)
+		return ([[Attack the target with either your ranged or melee weapons for %d%% weapon damage.  For the next %d turns random targeting, such as from Blink Blade and Warden's Call, will focus on this target.
+		Attacks against this target gain %d%% critical chance and critical strike power while you take %d%% less damage from all enemies whose rank is lower then that of your focus target.]])
+		:format(damage, duration, power, power, power)
 	end
 }

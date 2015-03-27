@@ -121,7 +121,7 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	getImmunity = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
-	getArmor = function(self, t) return self:combatTalentSpellDamage(t, 10, 23) end,
+	getArmor = function(self, t) return self:combatTalentStatDamage(t, "mag", 10, 50) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 		
@@ -149,7 +149,7 @@ newTalent{
 		local armor = t.getArmor(self, t)
 		local immune = t.getImmunity(self, t) * 100
 		return ([[Weave matter into your flesh, becoming incredibly resilient to damage.  While active you gain %d armour, %d%% resistance to stunning, and %d%% resistance to cuts.
-		The bonus to armour will scale with your Spellpower.]]):
+		The bonus to armour will scale with your Magic.]]):
 		format(armor, immune, immune)
 	end,
 }
@@ -224,7 +224,7 @@ newTalent{
 						self.summoner.__project_source = nil
 						game.level.map:particleEmitter(x, y, tg.radius, "ball_earth", {radius=tg.radius})
 						
-						game.level:removeEntity(old)
+						game.level:removeEntity(old, true)
 						game.level.map:scheduleRedisplay()
 						return nil, old.old_feat
 					end,

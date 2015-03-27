@@ -350,6 +350,8 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 			if on_click and click and not zone.fake then
 				if on_click(i, a.hotkey[i]) then click = false end
 			end
+			local oldsel = self.cur_sel
+			self.cur_sel = i
 			if button == "left" and not zone.fake then
 				if click then
 					a:activateHotkey(i)
@@ -385,8 +387,6 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 					on_over(text)
 				end
 			end
-			local oldsel = self.cur_sel
-			self.cur_sel = i
 			return
 		end
 	end

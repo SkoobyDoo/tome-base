@@ -244,7 +244,7 @@ newTalent{
 
 		local m = target:cloneFull{
 			shader = "shadow_simulacrum",
-			no_drops = true,
+			no_drops = true, keep_inven_on_death = false,
 			faction = self.faction,
 			summoner = self, summoner_gain_exp=true,
 			summon_time = t.getDuration(self, t),

@@ -86,9 +86,10 @@ function _M:resize(x, y, w, h)
 end
 
 --- Returns the full log
-function _M:getLog(extra)
+function _M:getLog(extra, timestamp)
 	local log = {}
-	for i = 1, #self.log do 
+	for i = 1, #self.log do
+		if timestamp and self.log[i].timestamp <= timestamp then break end
 		if not extra then
 			log[#log+1] = self.log[i].str
 		else
@@ -98,7 +99,7 @@ function _M:getLog(extra)
 	return log
 end
 
-function _M:getLogLast(channel)
+function _M:getLogLast()
 	if not self.log[1] then return 0 end
 	return self.log[1].timestamp
 end
@@ -180,7 +181,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 		end
 		if citem then
 			local sub_es = {}
-			for di = 1, #citem.item._dduids do sub_es[#sub_es+1] = citem.item._dduids[di].e end
+			for e, _ in pairs(citem.item._dduids) do sub_es[#sub_es+1] = e end
 
 			if citem.url and button == "left" and event == "button" then
 				util.browserOpenUrl(citem.url, {is_external=true})
@@ -213,7 +214,7 @@ function _M:display()
 			self.cache[tstr] = gen
 		end
 		for i = #gen, 1, -1 do
-			self.dlist[#self.dlist+1] = {item=gen[i], date=self.log[z].timestamp, url=self.log[z].url}
+			self.dlist[#self.dlist+1] = {item=gen[i], date=self.log[z].reset_fade or self.log[z].timestamp, url=self.log[z].url}
 			h = h + self.fh
 			if h > self.h - self.fh then stop=true break end
 		end
@@ -256,7 +257,7 @@ function _M:toScreen()
 		end
 		item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
 		if self.shadow and shader then shader:use(false) end
-		for di = 1, #item._dduids do item._dduids[di].e:toScreen(nil, self.display_x + item._dduids[di].x, h, item._dduids[di].w, item._dduids[di].w, fade, false, false) end
+		for e, d in pairs(item._dduids) do e:toScreen(nil, self.display_x + d.x, h, d.w, d.w, fade, false, false) end
 		h = h - self.fh
 	end
 
@@ -281,8 +282,7 @@ function _M:resetFade()
 	local log = self.log
 
 	-- Reset fade
-	local time = core.game.getTime()
-	for i = 1, #self.log do
-		self.log[i].timestamp = time
+	for i = 1,#log do
+		log[i].reset_fade = core.game.getTime()
 	end
 end

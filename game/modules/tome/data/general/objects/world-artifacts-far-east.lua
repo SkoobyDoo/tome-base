@@ -391,7 +391,6 @@ newEntity{ base = "BASE_LONGSWORD", define_as = "SWORD_DAWN",
 	},
 	max_power = 35, power_regen = 1,
 	use_power = {
---		name = "invoke dawn",
 		name = function(self, who) return ("invoke dawn, inflicting %0.2f light damage in radius %d (based on Magic) and lighting the area within radius %d"):format(engine.interface.ActorTalents.damDesc(who, engine.DamageType.LIGHT, self.use_power.damage(who)), self.use_power.radius, self.use_power.radius*2) end,
 		power = 35,
 		radius = 5,
@@ -530,9 +529,12 @@ newEntity{ base = "BASE_KNIFE", define_as = "KINETIC_SPIKE",
 		},
 	},
 	max_power = 10, power_regen = 1,
-	use_power = { name = "fires a bolt of kinetic force, doing 150% weapon damage", power = 10,
+	use_power = {
+		name = function(self, who) return ("fires a bolt of kinetic force (range %d), dealing 150%% (physical) weapon damage"):format(self.use_power.range) end,
+		power = 10,
+		range = 8,
 		use = function(self, who)
-			local tg = {type="bolt", range=8}
+			local tg = {type="bolt", range=self.use_power.range}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)

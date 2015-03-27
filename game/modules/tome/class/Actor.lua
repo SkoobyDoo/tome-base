@@ -79,6 +79,9 @@ _M.temporary_values_conf.combat_physspeed = "add" -- Prevent excessive attack sp
 _M.temporary_values_conf.combat_spellspeed = "add" -- Prevent excessive spell speed compounding
 _M.temporary_values_conf.combat_mindspeed = "add" -- Prevent excessive mind speed compounding
 
+-- Effect reductions are multiplicative, not additive
+_M.temporary_values_conf.reduce_detrimental_status_effects_time = "perc_inv"  -- Prevent effect reduction from hitting 100%
+
 -- Damage cap takes the lowest
 _M.temporary_values_conf.flat_damage_cap = "lowest"
 
@@ -520,12 +523,21 @@ function _M:actBase()
 	end
 
 	-- Suffocate ?
-	self.is_suffocating = nil  -- turn_procs gets reset in act()
+	-- The idea here is that we suffocate (EFF_SUFFOCATING checks this flag) if a) something (including own effects) tries to suffocate us between our actBase calls, or
+	-- b) we cannot breathe on the current terrain. The first is force_suffocate flag. It only works for one base turn, of course.
+	-- These are all flags because there is no turn_base_procs. :(
+	if not self.force_suffocate then                                                
+		self.is_suffocating = nil
+	else
+		self.force_suffocate = nil
+		self.is_suffocating = true
+	end
 	local air_level, air_condition = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_level"), game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "air_condition")
 	if air_level then
 		if not air_condition or not self.can_breath[air_condition] or self.can_breath[air_condition] <= 0 then
 			self.is_suffocating = true
 			self:suffocate(-air_level, self, air_condition == "water" and "drowned to death" or nil)
+			self.force_suffocate = nil
 		end
 	end
 
@@ -1361,7 +1373,7 @@ function _M:waitTurn()
 
 	-- Tune paradox up or down
 	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
-		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
+		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
 	end
 
 	self:useEnergy()
@@ -2212,8 +2224,8 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
-	if value > 0 and self:attr("disruption_shield") then
-		local mana = self:getMaxMana() - self:getMana()
+	if value > 0 and self:isTalentActive(self.T_DISRUPTION_SHIELD) then
+		local mana = math.max(0, self:getMaxMana() - self:getMana())
 		local mana_val = value * self:attr("disruption_shield")
 		local converted = math.min(value, mana / self:attr("disruption_shield"))
 		game:delayedLogMessage(self, nil,  "disruption_shield", "#LIGHT_BLUE##Source# converts damage to mana!")
@@ -2513,8 +2525,8 @@ function _M:onTakeHit(value, src, death_note)
 			-- Only calculate crit once per turn to avoid log spam
 			if not self.turn_procs.shield_of_light_heal then
 				local t = self:getTalentFromId(self.T_SHIELD_OF_LIGHT)
-				self.shield_of_light_heal = self:spellCrit(t.getHeal(self, t))
 				self.turn_procs.shield_of_light_heal = true
+				self.shield_of_light_heal = self:spellCrit(t.getHeal(self, t))
 			end
 
 			self:heal(self.shield_of_light_heal, tal)
@@ -2536,11 +2548,12 @@ function _M:onTakeHit(value, src, death_note)
 			local sl = self:callTalent(self.T_SECOND_LIFE,"getLife")
 			value = 0
 			self.life = 1
-			self:heal(sl, self)
-			game.logSeen(self, "#YELLOW#%s has been saved by a blast of positive energy!#LAST#", self.name:capitalize())
-			game:delayedLogDamage(tal, self, -sl, ("#LIGHT_GREEN#%d healing#LAST#"):format(sl), false)
 			self:forceUseTalent(self.T_SECOND_LIFE, {ignore_energy=true})
-			if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			local value = self:heal(sl, self)
+			game.logSeen(self, "#YELLOW#%s has been healed by a blast of positive energy!#LAST#", self.name:capitalize())
+			if value > 0 then
+				if self.player then world:gainAchievement("AVOID_DEATH", self) end
+			end
 		end
 
 		local tal = self:isTalentActive(self.T_HEARTSTART)
@@ -2746,10 +2759,10 @@ function _M:emptyDrops()
 end
 
 function _M:die(src, death_note)
-	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) return true end
+	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) if game.level:hasEntity(self) then game.level:removeEntity(self, true) end return true end
 
 	-- Self resurrect, mouhaha!
-	if self:attr("self_resurrect") then
+	if self:attr("self_resurrect") and not self.no_resurrect then
 		self:attr("self_resurrect", -1)
 		game.logSeen(self, self.self_resurrect_msg or "#LIGHT_RED#%s rises from the dead!", self.name:capitalize()) -- src, not self as the source, to make sure the player knows his doom ;>
 		local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
@@ -2870,6 +2883,16 @@ function _M:die(src, death_note)
 					else
 						o:removed()
 					end
+				end
+			end
+		else
+			local invens = {}
+			for inven_id, inven in pairs(self.inven) do invens[#invens+1] = inven end
+			table.sort(invens, function(a,b) if a.id == 1 then return false elseif b.id == 1 then return true else return a.id < b.id end end)
+			for _, inven in ipairs(invens) do
+				for i = #inven, 1, -1 do
+					local o = inven[i]
+					if game:hasEntity(o) then game:removeEntity(o) end
 				end
 			end
 		end
@@ -4900,6 +4923,7 @@ function _M:iterCallbacks(event)
 	if self[store] and next(self[store].__priorities) then
 		local iter = 1
 		return function()
+			if not self[store] or not self[store].__sorted then return end
 			local info = self[store].__sorted[iter]
 			if not info then return end
 			iter = iter + 1
@@ -5510,8 +5534,9 @@ function _M:startTalentCooldown(t, v)
 
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
-			if t.type[1]:find("^chronomancy/") and self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
-				self.talents_cd[t.id] = 1
+			if self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
+				self.talents_cd[t.id] = 0
+				self:removeEffect(self.EFF_REDUX)
 			end
 		end
 	end
@@ -5734,6 +5759,7 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	for _, tid in ipairs(self:sustainsFilter(t)) do
 		objects[#objects + 1] = {"talent", tid}
 	end
+	local nbr = 0
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
@@ -5741,8 +5767,33 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 			else
 				self:forceUseTalent(obj[2], {ignore_energy=true})
 			end
+			nbr = nbr + 1
 		end
 	end
+	return nbr
+end
+
+function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
+	t = t or {}
+	local objects = {}
+	for _, eff_id in ipairs(effs) do
+		objects[#objects + 1] = {"effect", eff_id}
+	end
+	for _, tid in ipairs(susts) do
+		objects[#objects + 1] = {"talent", tid}
+	end
+	local nbr = 0
+	for obj in rng.tableSampleIterator(objects, nb) do
+		if not check_remove or check_remove(self, obj) then
+			if obj[1] == "effect" then
+				self:removeEffect(obj[2])
+			else
+				self:forceUseTalent(obj[2], {ignore_energy=true})
+			end
+			nbr = nbr + 1
+		end
+	end
+	return nbr
 end
 
 --- Randomly reduce talent cooldowns based on a filter
@@ -5793,6 +5844,7 @@ function _M:suffocate(value, src, death_message)
 	if self:attr("invulnerable") then return false, false end
 	self.air = self.air - value
 	local ae = game.level.map(self.x, self.y, Map.ACTOR)
+	self.force_suffocate = true
 	if self.air <= 0 then
 		self.air = 0
 		if not self:hasEffect(self.EFF_SUFFOCATING) then

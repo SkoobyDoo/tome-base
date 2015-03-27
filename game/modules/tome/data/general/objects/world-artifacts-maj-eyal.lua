@@ -52,13 +52,17 @@ newEntity{ base = "BASE_STAFF",
 		},
 	},
 	max_power = 60, power_regen = 1,
-	use_power = { name = "cure diseases and poisons", power = 10,
+	use_power = {
+		name = function(self, who) return ("cure up to %d diseases or poisons (based on Magic)"):format(self.use_power.cures(self, who)) end,
+		power = 10,
+		cures = function(self, who) return math.floor(who:combatStatScale("mag", 2.5, 6, "log")) end, --Not that many kinds of poisons/disease can be contracted at one time
 		use = function(self, who)
 			local target = who
 			local effs = {}
 			local known = false
 
-			-- Go through all spell effects
+			game.logSeen(who, "%s uses %s, curing %s afflictions!", who.name:capitalize(), self:getName({no_add_name = true}), who:his_her())
+			-- Create list of poison/disease effects
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
 				if e.subtype.disease or e.subtype.poison then
@@ -66,7 +70,7 @@ newEntity{ base = "BASE_STAFF",
 				end
 			end
 
-			for i = 1, 3 + math.floor(who:getMag() / 10) do
+			for i = 1, self.use_power.cures(self, who) do
 				if #effs == 0 then break end
 				local eff = rng.tableRemove(effs)
 
@@ -75,7 +79,6 @@ newEntity{ base = "BASE_STAFF",
 					known = true
 				end
 			end
-			game.logSeen(who, "%s is cured of diseases and poisons!", who.name:capitalize())
 			return {id=true, used=true}
 		end
 	},
@@ -151,7 +154,7 @@ newEntity{ base = "BASE_AMULET",
 	},
 	max_power = 60, power_regen = 1,
 	use_power = { name = function(self, who)
-			return ("unleash a destructive wail dealing %0.2f physical damage (based on Magic) in a radius of %d"):format(engine.interface.ActorTalents.damDesc(who, engine.DamageType.PHYSICAL, self.use_power.damage(who)), self.use_power.radius)
+			return ("unleash a destructive wail, destroying terrain and dealing %0.2f physical damage (based on Magic) in a radius of %d"):format(engine.interface.ActorTalents.damDesc(who, engine.DamageType.PHYSICAL, self.use_power.damage(who)), self.use_power.radius)
 		end,
 		power = 60,
 		radius = 3,
@@ -573,16 +576,16 @@ newEntity{ base = "BASE_ROD",
 	material_level = 3,
 	max_power = 75, power_regen = 1,
 	use_power = { power = 50,
-		damage = function(who) return 300 + who:getMag() * 2 end,
+		damage = function(self, who) return 300 + who:getMag() * 2 end,
 		radius = 5,
 		name = function(self, who)
-			return ("shoot a cone of flames (radius %d) for %0.2f fire damage(based on Magic)"):format(self.use_power.radius, engine.interface.ActorTalents.damDesc(who, engine.DamageType.FIRE, self.use_power.damage(who)))
+			return ("shoot a cone of flames (radius %d) for %0.2f fire damage (based on Magic)"):format(self.use_power.radius, engine.interface.ActorTalents.damDesc(who, engine.DamageType.FIRE, self.use_power.damage(self, who)))
 		end,
 		use = function(self, who)
 			local tg = {type="cone", range=0, radius=5}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
-			who:project(tg, x, y, engine.DamageType.FIRE, self.use_power.damage(who), {type="flame"})
+			who:project(tg, x, y, engine.DamageType.FIRE, self.use_power.damage(self, who), {type="flame"})
 			return {id=true, used=true}
 		end
 	},
@@ -785,11 +788,14 @@ newEntity{ base = "BASE_LEATHER_BELT",
 		mana_on_crit = 3,
 	},
 	max_power = 20, power_regen = 1,
-	use_power = { name = "generate a personal shield", power = 20,
+	use_power = {
+		name = function(self, who) return ("surround yourself with a magical shield (strength %d, based on Magic) for 10 turns"):format(self.use_power.shield(self, who)) end,
+		power = 20,
+		shield = function(self, who) return 100 + who:getMag(250) end,
 		use = function(self, who)
-			who:setEffect(who.EFF_DAMAGE_SHIELD, 10, {power=100 + who:getMag(250)})
-			game:playSoundNear(who, "talents/arcane")
 			game.logSeen(who, "%s invokes the memory of Neira!", who.name:capitalize())
+			who:setEffect(who.EFF_DAMAGE_SHIELD, 10, {power=self.use_power.shield(self, who)})
+			game:playSoundNear(who, "talents/arcane")
 			return {id=true, used=true}
 		end
 	},
@@ -1025,11 +1031,14 @@ newEntity{ base = "BASE_AMULET", --Thanks Grayswandir!
 		on_melee_hit = {[DamageType.ITEM_LIGHT_BLIND]=30},
 	},
 	max_power = 24, power_regen = 1,
-	use_power = { name = "create a reflective shield (50% reflection rate)", power = 24,
+	use_power = {
+		name = function(self, who) return ("create a reflective shield (50%% reflection rate, %d strength, based on Magic) for 5 turns"):format(self.use_power.shield(self, who)) end,
+		power = 24,
+		shield = function(self, who) return 150 + 2*who:getMag(100) end,
 		use = function(self, who)
-			who:setEffect(who.EFF_DAMAGE_SHIELD, 5, {power=150 + who:getMag(100)*2, reflect=50})
+			game.logSeen(who, "%s activates %s, forging a reflective barrier!", who.name:capitalize(), self:getName({no_add_name = true}))
+			who:setEffect(who.EFF_DAMAGE_SHIELD, 5, {power=self.use_power.shield(self, who), reflect = 50})
 			game:playSoundNear(who, "talents/arcane")
-			game.logSeen(who, "%s forges a reflective barrier!", who.name:capitalize())
 			return {id=true, used=true}
 		end
 	},

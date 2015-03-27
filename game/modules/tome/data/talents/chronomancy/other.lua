@@ -18,200 +18,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Paradox Functions
-
--- Paradox modifier.  This dictates paradox cost and spellpower scaling
--- Note that 300 is the optimal balance
--- Caps at -50% and +50%
-getParadoxModifier = function (self)
-	local paradox = self:getParadox()
-	local pm = util.bound(math.sqrt(paradox / 300), 0.5, 1.5)
-	return pm
-end
-
--- Paradox cost (regulates the cost of paradox talents)
-getParadoxCost = function (self, t, value)
-	local pm = getParadoxModifier(self)
-	local multi = 1
-	if self:attr("paradox_cost_multiplier") then
-		multi = 1 - self:attr("paradox_cost_multiplier")
-	end
-	return (value * pm) * multi
-end
-
--- Paradox Spellpower (regulates spellpower for chronomancy)
-getParadoxSpellpower = function(self, t, mod, add)
-	local pm = getParadoxModifier(self)
-	local mod = mod or 1
-
-	-- Empower?
-	local p = self:isTalentActive(self.T_EMPOWER)
-	if p and p.talent == t.id then
-		pm = pm + self:callTalent(self.T_EMPOWER, "getPower")
-	end
-
-	local spellpower = self:combatSpellpower(mod * pm, add)
-	return spellpower
-end
-
--- Extension Spellbinding
-getExtensionModifier = function(self, t, value)
-	local mod = 1
-	local p = self:isTalentActive(self.T_EXTENSION)
-	if p and p.talent == t.id then
-		mod = mod + self:callTalent(self.T_EXTENSION, "getPower")
-	end
-	value = math.ceil(value * mod)
-	return value
-end
-
---- Warden weapon functions
--- Checks for weapons in main and quickslot
-doWardenPreUse = function(self, weapon, silent)
-	if weapon == "bow" then
-		if not self:hasArcheryWeapon("bow") and not self:hasArcheryWeaponQS("bow") then
-			return false
-		end
-	end
-	if weapon == "dual" then
-		if not self:hasDualWeapon() and not self:hasDualWeaponQS() then
-			return false
-		end
-	end
-	return true
-end
-
--- Swaps weapons if needed
-doWardenWeaponSwap = function(self, t, type, silent)
-	local swap = false
-	local warden_weapon
-
-	if type == "blade" then
-		local mainhand, offhand = self:hasDualWeapon()
-		if not mainhand then
-			swap = true
-			warden_weapon = "blade"
-		end
-	end
-	if type == "bow" then
-		if not self:hasArcheryWeapon("bow") then
-			swap = true
-			warden_weapon = "bow"
-		end
-	end
-	
-	if swap == true then
-		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
-		self.no_inventory_access = nil
-		self:attr("no_sound", 1)
-		self:quickSwitchWeapons(true, "warden", silent)
-		self:attr("no_sound", -1)
-		self.no_inventory_access = old_inv_access
-	end
-	
-	return swap, dam
-end
-
--- Target helper function for focus fire
-checkWardenFocus = function(self)
-	local target
-	local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-	if eff then
-		target = eff.target
-	end
-	return target
-end
-
--- Spell functions
-makeParadoxClone = function(self, target, duration)
-	local m = target:cloneFull{
-		shader = "shadow_simulacrum",
-		shader_args = { color = {0.6, 0.6, 0.2}, base = 0.8, time_factor = 1500 },
-		no_drops = true,
-		faction = target.faction,
-		summoner = target, summoner_gain_exp=true,
-		summon_time = duration,
-		ai_target = {actor=nil},
-		ai = "summoned", ai_real = "tactical",
-		name = ""..target.name.."'s temporal clone",
-		desc = [[A creature from another timeline.]],
-	}
-	m:removeAllMOs()
-	m.make_escort = nil
-	m.on_added_to_level = nil
-	m.on_added = nil
-
-	mod.class.NPC.castAs(m)
-	engine.interface.ActorAI.init(m, m)
-
-	m.exp_worth = 0
-	m.energy.value = 0
-	m.player = nil
-	m.max_life = m.max_life
-	m.life = util.bound(m.life, 0, m.max_life)
-	m.forceLevelup = function() end
-	m.on_die = nil
-	m.die = nil
-	m.puuid = nil
-	m.on_acquire_target = nil
-	m.no_inventory_access = true
-	m.no_levelup_access = true
-	m.on_takehit = nil
-	m.seen_by = nil
-	m.can_talk = nil
-	m.clone_on_hit = nil
-	m.self_resurrect = nil
-	m.escort_quest = nil
-	m.unused_talents = 0
-	m.unused_generics = 0
-	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
-	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
-	
-	-- We use this function...  a lot!!
-	-- So don't duplicate the inventory
-	if m.inven then m.inven[m.INVEN_INVEN] = nil end
-
-	-- Clones never flee because they're awesome
-	m.ai_tactic = m.ai_tactic or {}
-	m.ai_tactic.escape = 0
-
-	-- Remove some talents
-	local tids = {}
-	for tid, _ in pairs(m.talents) do
-		local t = m:getTalentFromId(tid)
-		if (t.no_npc_use and not t.allow_temporal_clones) or t.remove_on_clone then tids[#tids+1] = t end
-	end
-	for i, t in ipairs(tids) do
-		if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
-		m:unlearnTalentFull(t.id)
-	end
-
-	-- remove timed effects
-	m:removeTimedEffectsOnClone()
-	
-	-- reset folds for our Warden clones
-	for tid, cd in pairs(m.talents_cd) do
-		local t = m:getTalentFromId(tid)
-		if t.type[1]:find("^chronomancy/manifold") and m:knowTalent(tid) then
-			m:alterTalentCoolingdown(t, -cd)
-		end
-	end
-	
-	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
-	if m.preferred_paradox and m.preferred_paradox > 300 then m.preferred_paradox = 300 end
-	
-	return m
-end
-
--- Make sure we don't run concurrent chronoworlds; to prevent lag and possible game breaking bugs or exploits
-checkTimeline = function(self)
-	if game._chronoworlds  == nil then
-		return false
-	else
-		return true
-	end
-end
-
 -- Misc. Paradox Talents
 newTalent{
 	name = "Spacetime Tuning",
@@ -223,22 +29,27 @@ newTalent{
 	on_learn = function(self, t)
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
 	end,
-	getDuration = function(self, t)
-		local duration = 20
+	getTuning = function(self, t)
+		local value = 10
+		-- factor spacetime stability in directly so our duration is set correctly
 		if self:knowTalent(self.T_SPACETIME_STABILITY) then
-			duration = duration - self:callTalent(self.T_SPACETIME_STABILITY, "getTuningAdjustment")
+			value = value + (self:callTalent(self.T_SPACETIME_STABILITY, "getTuning") * 2)
 		end
-		return math.max(duration, 10)
+		return value
 	end,
-	doTuning = function(self, t)
+	startTuning = function(self, t)
 		if self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox())then
-			local power = 0
+			local power = t.getTuning(self, t)
 			if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
-				local duration = self:callTalent(self.T_SPACETIME_TUNING, "getDuration")
-				power = (self.preferred_paradox - self:getParadox())/duration
+				local duration = (self.preferred_paradox - self:getParadox())/power
+				if duration < 0 then duration = math.abs(duration); power = power - (power*2) end
+				duration = math.max(1, duration)
 				self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
 			end
 		end
+	end,
+	tuneParadox = function(self, t)
+		tuneParadox(self, t, t.getTuning(self, t))
 	end,
 	action = function(self, t)
 		local function getQuantity(title, prompt, default, min, max)
@@ -274,21 +85,22 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local duration = t.getDuration(self, t)
+		local tune = t.getTuning(self, t)
 		local preference = self.preferred_paradox
 		local sp_modifier = getParadoxModifier(self, t) * 100
 		local spellpower = getParadoxSpellpower(self, t)
 		local after_will, will_modifier, sustain_modifier = self:getModifiedParadox()
 		local anomaly = self:paradoxFailChance()
-		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number over %d turns.
+		return ([[Use to set your preferred Paradox.  While resting or waiting you'll adjust your Paradox towards this number at the rate of %d per turn.
+		Your Paradox modifier is factored into the duration and spellpower of all chronomancy spells.
 
-		Preferred Paradox          :  %d
-		Spellpower Modifier        :  %d%%
+		Preferred Paradox :  %d
+		Paradox Modifier :  %d%%
 		Spellpower for Chronomancy :  %d
 		Willpower Paradox Modifier : -%d
-		Paradox Sustain Modifier   : +%d
-		Total Modifed Paradox      :  %d
-		Current Anomaly Chance     :  %d%%]]):format(duration, preference, sp_modifier, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
+		Paradox Sustain Modifier : +%d
+		Total Modifed Paradox :  %d
+		Current Anomaly Chance :  %d%%]]):format(tune, preference, sp_modifier, spellpower, will_modifier, sustain_modifier, after_will, anomaly)
 	end,
 }
 
@@ -539,7 +351,7 @@ newTalent{
 
 		local sex = game.player.female and "she" or "he"
 		local m = require("mod.class.NPC").new(self:cloneFull{
-			no_drops = true,
+			no_drops = true, keep_inven_on_death = false,
 			faction = self.faction,
 			summoner = self, summoner_gain_exp=true,
 			exp_worth = 0,
@@ -1078,7 +890,7 @@ newTalent{
 		end
 		
 		
-		self:project(tg, x, y, DamageType.MATTER, self:spellCrit(damage))
+		self:project(tg, x, y, DamageType.WARP, self:spellCrit(damage))
 		game:playSoundNear(self, "talents/arcane")
 		
 		-- Try to insta-kill

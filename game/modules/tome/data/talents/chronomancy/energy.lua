@@ -28,7 +28,7 @@ newTalent{
 	sustain_paradox = 24,
 	cooldown = 10,
 	tactical = { BUFF = 2 },
-	getDecomposition = function(self, t) return  self:combatTalentSpellDamage(t, 5, 150, getParadoxSpellpower(self, t)) end, -- Increase shield strength
+	getDecomposition = function(self, t) return  self:combatTalentSpellDamage(t, 5, 50, getParadoxSpellpower(self, t)) end, -- Increase shield strength
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local decomp = t.getDecomposition(self, t)
 		local lastdam = dam
@@ -103,7 +103,7 @@ newTalent{
 			local t = rng.tableRemove(tids)
 			if not t then break end
 			target.talents_cd[t.id] = cdr
-			game.logSeen(target, "%s's %s is disrupted by the Energy Drain!", target.name:capitalize(), t.name)
+			game.logSeen(target, "%s's %s is disrupted by the Energy Absorption!", target.name:capitalize(), t.name)
 			count = count + 1
 		end
 
@@ -111,7 +111,7 @@ newTalent{
 			local tids = {}
 			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
-				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
+				if not tt.fixed_cooldown then
 					tids[#tids+1] = tt
 				end
 			end
@@ -133,7 +133,7 @@ newTalent{
 		local talentcount = t.getTalentCount(self, t)
 		local cooldown = t.getCooldown(self, t)
 		return ([[You sap the target's energy and add it to your own, placing up to %d random talents on cooldown for %d turns.
-		For each talent put on cooldown, you reduce the cooldown of one of your chronomancy talents currently on cooldown by %d turns.]]):
+		For each talent put on cooldown, you reduce the cooldown of one of your talents currently on cooldown by %d turns.]]):
 		format(talentcount, cooldown, cooldown)
 	end,
 }
@@ -144,10 +144,10 @@ newTalent{
 	require = chrono_req3,
 	points = 5,
 	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
-	cooldown = 24,
+	cooldown = 12,
 	tactical = { BUFF = 2 },
 	fixed_cooldown = true,
-	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 2, 4))) end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getMaxCooldown = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 8)) end,
 	action = function(self, t)
 		-- effect is handled in actor postUse
@@ -158,8 +158,9 @@ newTalent{
 	info = function(self, t)
 		local duration = t.getDuration(self, t)
 		local cooldown = t.getMaxCooldown(self, t)
-		return ([[For the next %d turns chronomancy spells with a cooldown of %d or less have a cooldown of one.]]):
-		format(duration, cooldown)
+		return ([[The next talent you cast with a cooldown of %d or less will not go on cooldown.
+		Once a talent is effected by this spell or %d turns pass the effect is lost.]]):
+		format(cooldown, duration)
 	end,
 }
 
@@ -181,8 +182,9 @@ newTalent{
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if not x or not y or not target then return nil end
 
 		target:setEffect(target.EFF_ENTROPY, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 

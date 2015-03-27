@@ -48,6 +48,7 @@ newEntity{ base = "BASE_GREATMAUL", define_as = "ASTELRID_CLUBSTAFF",
 	level_range = {20, 30},
 	require = { stat = { str=23 }, },
 	cost = 650,
+	rarity = false,
 	material_level = 3,
 	combat = {
 		dam = 45,

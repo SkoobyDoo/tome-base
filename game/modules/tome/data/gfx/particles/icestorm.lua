@@ -17,14 +17,17 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local radius, density = radius or 3, density or 200
 base_size = 32
 can_shift = true
 
 return { generator = function()
+	local radius = radius
+	local sradius = (radius + 0.5) * (engine.Map.tile_w + engine.Map.tile_h) / 2
 	local ad = rng.range(0, 360)
 	local a = math.rad(ad)
 	local dir = math.rad(ad + 90)
-	local r = rng.avg(1, 40 * 3)
+	local r = rng.avg(1, sradius)
 	local dirv = math.rad(5)
 
 	return {
@@ -46,5 +49,5 @@ end, },
 function(self)
 	self.ps:emit(10)
 end,
-500,
+density * (math.min(4, radius)^2+0.5),
 "weather/snowflake"

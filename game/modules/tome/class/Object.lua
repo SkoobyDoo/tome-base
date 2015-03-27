@@ -260,7 +260,7 @@ end
 function _M:descAttribute(attr)
 	local power = function(c)
 		if config.settings.tome.advanced_weapon_stats then
-			return math.floor(Combat.combatDamagePower({}, self.combat)*100).."% power"
+			return math.floor(game.player:combatDamagePower(self.combat)*100).."% power"
 		else
 			return c.dam.."-"..(c.dam*(c.damrange or 1.1)).." power"
 		end
@@ -897,16 +897,15 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 			-- No special
 			if not special then return {} end
-
 			-- Single special
 			if special.desc then
-				return {[special.desc] = {10, special.desc}}
+				return {[special.desc] = {10, util.getval(special.desc, self, use_actor, special)}}
 			end
 
 			-- Multiple specials
 			local list = {}
 			for _, special in pairs(special) do
-				list[special.desc] = {10, special.desc}
+				list[special.desc] = {10, util.getval(special.desc, self, use_actor, special)}
 			end
 			return list
 		end

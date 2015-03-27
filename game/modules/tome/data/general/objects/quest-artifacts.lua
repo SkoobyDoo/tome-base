@@ -316,7 +316,7 @@ You have heard of such items before. They are very useful to adventurers, allowi
 	auto_hotkey = 1,
 
 	max_power = 400, power_regen = 1,
-	use_power = { name = "recall the user to the worldmap", power = 202,
+	use_power = { name = "recall the user to the worldmap after 40 turns", power = 202,
 		use = function(self, who)
 			if who:hasEffect(who.EFF_RECALL) then
 				who:removeEffect(who.EFF_RECALL)

@@ -264,7 +264,7 @@ newEffect{
 newEffect{
 	name = "INVISIBILITY", image = "effects/invisibility.png",
 	desc = "Invisibility",
-	long_desc = function(self, eff) return ("Improves/gives invisibility (power %d)."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Improves/gives invisibility (power %d), reducing damage dealt by %d%%%s."):format(eff.power, eff.penalty*100, eff.regen and " and preventing healing and life regeneration" or "") end,
 	type = "magical",
 	subtype = { phantasm=true },
 	status = "beneficial",
@@ -571,11 +571,12 @@ newEffect{
 newEffect{
 	name = "DAMAGE_SHIELD", image = "talents/barrier.png",
 	desc = "Damage Shield",
-	long_desc = function(self, eff) return ("The target is surrounded by a magical shield, absorbing %d/%d damage before it crumbles."):format(self.damage_shield_absorb, eff.power) end,
+	long_desc = function(self, eff) return ("The target is surrounded by a magical shield, absorbing %d/%d damage %s before it crumbles."):format(self.damage_shield_absorb, eff.power, ((self.damage_shield_reflect and self.damage_shield_reflect > 0) and ("(reflecting %d%% back to the attacker)"):format(self.damage_shield_reflect))) end,
 	type = "magical",
 	subtype = { arcane=true, shield=true },
 	status = "beneficial",
 	parameters = { power=100 },
+	charges = function(self, eff) return math.ceil(self.damage_shield_absorb) end,
 	on_gain = function(self, err) return "A shield forms around #target#.", "+Shield" end,
 	on_lose = function(self, err) return "The shield around #target# crumbles.", "-Shield" end,
 	on_aegis = function(self, eff, aegis)
@@ -2545,7 +2546,7 @@ newEffect{
 		game.level.map:updateMap(self.x, self.y)
 	end,
 	deactivate = function(self, eff)
-		if self.hotkey and self.isHotkeyBound then
+		if self.hotkey and self.isHotkeyBound and self:knowTalent(self.T_SHIV_LORD) then
 			local pos = self:isHotkeyBound("talent", self.T_ICE_STORM)
 			if pos then
 				self.hotkey[pos] = {"talent", self.T_SHIV_LORD}
@@ -2875,7 +2876,11 @@ newEffect{
 	on_lose = function(self, err) return nil, "-Healing Inversion" end,
 	callbackOnHeal = function(self, eff, value, src)
 		local dam = value * eff.power / 100
-		DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+		if not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
+			eff.projecting = true
+			DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+			eff.projecting = false
+		end
 		return {value=0}
 	end,
 	activate = function(self, eff)
@@ -3268,9 +3273,9 @@ newEffect{
 }
 
 newEffect{
-	name = "ATTENUATE", image = "talents/attenuate.png",
+	name = "ATTENUATE_DET", image = "talents/attenuate.png",
 	desc = "Attenuate",
-	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power, eff.dt_name) end,
+	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
@@ -3303,6 +3308,30 @@ newEffect{
 		else
 			DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
 		end
+	end,
+}
+
+newEffect{
+	name = "ATTENUATE_BEN", image = "talents/attenuate.png",
+	desc = "Attenuate",
+	long_desc = function(self, eff) return ("The target is being grounded in the timeline and is healing %0.2f life per turn."):format(eff.power) end,
+	type = "magical",
+	subtype = { temporal=true },
+	status = "beneficial",
+	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target# is being being grounded in the timeline!", "+Attenuate" end,
+	on_lose = function(self, err) return "#Target# is no longer being grounded.", "-Attenuate" end,
+	on_merge = function(self, old_eff, new_eff)
+		-- Merge the flames!
+		local olddam = old_eff.power * old_eff.dur
+		local newdam = new_eff.power * new_eff.dur
+		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
+		old_eff.dur = dur
+		old_eff.power = (olddam + newdam) / dur
+		return old_eff
+	end,
+	on_timeout = function(self, eff)
+		self:heal(eff.power, eff)
 	end,
 }
 
@@ -3352,15 +3381,15 @@ newEffect{
 newEffect{
 	name = "OGRE_FURY", image = "effects/ogre_fury.png",
 	desc = "Ogre Fury",
-	long_desc = function(self, eff) return ("Increases crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 10, eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
+	long_desc = function(self, eff) return ("Increases crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
 	type = "magical",
 	subtype = { runic=true },
 	status = "beneficial",
 	parameters = { stacks=1, max_stacks=5 },
 	charges = function(self, eff) return eff.stacks end,
 	do_effect = function(self, eff, add)
-		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) end
-		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) end
+		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) eff.cdam = nil end
+		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) eff.crit = nil end
 		if add then
 			eff.cdam = self:addTemporaryValue("combat_critical_power", eff.stacks * 20)
 			eff.crit = self:addTemporaryValue("combat_generic_crit", eff.stacks * 5)
@@ -3391,7 +3420,7 @@ newEffect{
 		if eff.stacks > 1 and eff.dur <= 1 then
 			eff.stacks = eff.stacks - 1
 			eff.dur = 7
-			e.do_effect(self, eff, false)
+			e.do_effect(self, eff, true)
 		end
 	end
 }
@@ -3448,6 +3477,7 @@ newEffect{
 	type = "magical",
 	subtype = { time=true },
 	status = "beneficial",
+	remove_on_clone = true,
 	on_gain = function(self, err) return nil, "+Arrow Echoes" end,
 	on_lose = function(self, err) return nil, "-Arrow Echoes" end,
 	parameters = { shots = 1 },
@@ -3468,7 +3498,7 @@ newEffect{
 	name = "WARDEN_S_FOCUS", image = "talents/warden_s_focus.png",
 	desc = "Warden's Focus",
 	long_desc = function(self, eff) 
-		return ("Focused on %s, +%d%% critical strike damage and +%d%% critical hit chance with ranged attacks against this target and %d%% chance to parry melee attacks from this target."):format(eff.target.name, eff.power, eff.power, eff.power)
+		return ("Focused on %s, +%d%% critical damage and +%d%% critical hit chance against this target."):format(eff.target.name, eff.power, eff.power)
 	end,
 	type = "magical",
 	subtype = { tactic=true },
@@ -3478,7 +3508,7 @@ newEffect{
 	parameters = { power=0},
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
 		local eff = self:hasEffect(self.EFF_WARDEN_S_FOCUS)
-		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and src.rank < 3) then
+		if eff and dam > 0 and eff.target ~= src and src ~= self and (src.rank and eff.target.rank and src.rank < eff.target.rank) then
 			-- Reduce damage
 			local reduction = dam * eff.power/100
 			dam = dam -  reduction
@@ -3576,6 +3606,7 @@ newEffect{
 	status = "beneficial",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
@@ -3594,49 +3625,8 @@ newEffect{
 	status = "detrimental",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
-	end,
-	deactivate = function(self, eff)
-	end,
-}
-
-newEffect{
-	name = "BLENDED_THREADS_BOW", image = "talents/blended_threads.png",
-	desc = "Blended Threads",
-	long_desc = function(self, eff) return ("The target is reducing damage from nearby targets by %d%%."):format(eff.bow) end,
-	type = "magical",
-	subtype = { tactic=true },
-	status = "beneficial",
-	on_gain = function(self, err) return nil, "+Blended Threads" end,
-	on_lose = function(self, err) return nil, "-Blended Threads" end,
-	parameters = {bow=0},
-	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, tmp)
-		if src and src.x and src.y and dam > 0 then
-			-- assume instantaneous projection and check range to source
-			if core.fov.distance(self.x, self.y, src.x, src.y) <= 2 then
-				dam = dam * (100 - eff.bow) / 100
-				print("[PROJECTOR] Blended Threads (source) dam", dam)
-			end
-		end
-		return {dam=dam}
-	end,
-	activate = function(self, eff)	
-	end,
-	deactivate = function(self, eff)
-	end,
-}
-
-newEffect{
-	name = "BLENDED_THREADS_BLADE", image = "talents/blended_threads.png",
-	desc = "Blended Threads",
-	long_desc = function(self, eff) return ("The target is dealing %d%% more damage to distant targets."):format(eff.blade) end,
-	type = "magical",
-	subtype = { tactic=true },
-	status = "beneficial",
-	on_gain = function(self, err) return nil, "+Blended Threads" end,
-	on_lose = function(self, err) return nil, "-Blended Threads" end,
-	parameters = {blade=0},
-	activate = function(self, eff)	
 	end,
 	deactivate = function(self, eff)
 	end,

@@ -40,18 +40,19 @@ newEntity{ base = "BASE_ROD",
 	elec_proof = true,
 
 	max_power = 75, power_regen = 1,
-	use_power = { power = 25,
-		name = function(self, who) return ("shoot a bolt of spydric poison out to range %d, dealing %0.2f nature damage over %d turns while rendering the target unable to move"):
-			format(self.use_power.range, engine.interface.ActorTalents.damDesc(who, engine.DamageType.NATURE, self.use_power.damage(who)), self.use_power.duration) end,
-
-		damage = function(who) return 200 + who:getMag() * 4 end,
+	use_power = {
+		name = function(self, who) return ("shoot a bolt of spydric poison out to range %d, dealing %0.2f nature damage (based on Magic) over %d turns while rendering the target unable to move"):
+			format(self.use_power.range, engine.interface.ActorTalents.damDesc(who, engine.DamageType.NATURE, self.use_power.damage(self, who)), self.use_power.duration)
+		end,
+		power = 25,
+		damage = function(self, who) return 200 + who:getMag() * 4 end,
 		duration = 6,
 		range = 12,
 		use = function(self, who)
 			local tg = {type="bolt", range=self.use_power.range}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
-			who:project(tg, x, y, engine.DamageType.SPYDRIC_POISON, {dam=self.use_power.damage(who), dur=self.use_power.duration}, {type="slime"})
+			who:project(tg, x, y, engine.DamageType.SPYDRIC_POISON, {dam=self.use_power.damage(self, who), dur=self.use_power.duration}, {type="slime"})
 			return {id=true, used=true}
 		end
 	},

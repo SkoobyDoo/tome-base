@@ -125,9 +125,9 @@ newTalent{
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
 			if target:isTalentActive(target.T_REALITY_SMEARING) then
-				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self})
+				target:setEffect(target.EFF_ATTENUATE_BEN, t.getDuration(self, t), {power=(damage/4)*0.4, src=self})
 			else
-				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
+				target:setEffect(target.EFF_ATTENUATE_DET, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
 			end
 		end)
 
@@ -140,9 +140,9 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead recover %d life per turn.
+		return ([[Deals %0.2f temporal damage over %d turns to all targets in a radius of %d.  Targets with Reality Smearing active will instead recover %d life over four turns.
 		If a target is reduced below 20%% life while Attenuate is active it may be instantly slain.
-		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), damage *0.4, duration, radius)
+		The damage will scale with your Spellpower.]]):format(damDesc(self, DamageType.TEMPORAL, damage), duration, radius, damage *0.4)
 	end,
 }
 

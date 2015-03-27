@@ -149,7 +149,7 @@ newTalent{
 		--return self:combatTalentIntervalDamage(t, "str", 0.8, 1.7, 0.4) * getHateMultiplier(self, 0.5, 1, false, hate)
 	end,
 	getMaxAttackCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
-	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), nolock=true} end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), nolock=true} end,
 	action = function(self, t)
 		local targeting = self:getTalentTarget(t)
 		local targetX, targetY, actualTarget = self:getTarget(targeting)
