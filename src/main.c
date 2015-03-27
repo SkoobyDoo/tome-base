@@ -61,7 +61,7 @@ char **g_argv;
 SDL_Window *window = NULL;
 SDL_Surface *windowIconSurface = NULL;
 SDL_GLContext maincontext; /* Our opengl context handle */
-SDL_Joystick* gamepad = NULL;
+// SDL_Joystick* gamepad = NULL;
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
 static lua_State *L = NULL;
@@ -533,71 +533,71 @@ bool on_event(SDL_Event *event)
 			docall(L, 6, 0);
 		}
 		return TRUE;
-	case SDL_JOYAXISMOTION:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			float v = (float)event->jaxis.value / 32770;
-			if (v > -JOY_DEADZONE && v < JOY_DEADZONE) return FALSE;
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyAxis");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jaxis.axis);
-			lua_pushnumber(L, MIN(1, MAX(-1, v)));
-			docall(L, 3, 0);
-		}
-		return TRUE;
-	case SDL_JOYBALLMOTION:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyBall");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jball.ball);
-			lua_pushnumber(L, event->jball.xrel);
-			lua_pushnumber(L, event->jball.yrel);
-			docall(L, 4, 0);
-		}
-		return TRUE;
-	case SDL_JOYHATMOTION:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyHat");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jhat.hat);
-			switch (event->jhat.value) {
-				case SDL_HAT_UP: lua_pushnumber(L, 8); break;
-				case SDL_HAT_DOWN: lua_pushnumber(L, 2); break;
-				case SDL_HAT_LEFT: lua_pushnumber(L, 4); break;
-				case SDL_HAT_RIGHT: lua_pushnumber(L, 6); break;
-				case SDL_HAT_LEFTUP: lua_pushnumber(L, 7); break;
-				case SDL_HAT_LEFTDOWN: lua_pushnumber(L, 1); break;
-				case SDL_HAT_RIGHTUP: lua_pushnumber(L, 9); break;
-				case SDL_HAT_RIGHTDOWN: lua_pushnumber(L, 3); break;
-			}
-			docall(L, 3, 0);
-		}
-		return TRUE;
-	case SDL_JOYBUTTONDOWN:
-	case SDL_JOYBUTTONUP:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushstring(L, "receiveJoyButton");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushnumber(L, event->jbutton.button);
-			lua_pushboolean(L, event->jbutton.state == SDL_RELEASED ? TRUE : FALSE);
-			docall(L, 3, 0);
-		}
-		return TRUE;
+	// case SDL_JOYAXISMOTION:
+	// 	if (current_mousehandler != LUA_NOREF)
+	// 	{
+	// 		float v = (float)event->jaxis.value / 32770;
+	// 		if (v > -JOY_DEADZONE && v < JOY_DEADZONE) return FALSE;
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+	// 		lua_pushstring(L, "receiveJoyAxis");
+	// 		lua_gettable(L, -2);
+	// 		lua_remove(L, -2);
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+	// 		lua_pushnumber(L, event->jaxis.axis);
+	// 		lua_pushnumber(L, MIN(1, MAX(-1, v)));
+	// 		docall(L, 3, 0);
+	// 	}
+	// 	return TRUE;
+	// case SDL_JOYBALLMOTION:
+	// 	if (current_mousehandler != LUA_NOREF)
+	// 	{
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+	// 		lua_pushstring(L, "receiveJoyBall");
+	// 		lua_gettable(L, -2);
+	// 		lua_remove(L, -2);
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+	// 		lua_pushnumber(L, event->jball.ball);
+	// 		lua_pushnumber(L, event->jball.xrel);
+	// 		lua_pushnumber(L, event->jball.yrel);
+	// 		docall(L, 4, 0);
+	// 	}
+	// 	return TRUE;
+	// case SDL_JOYHATMOTION:
+	// 	if (current_mousehandler != LUA_NOREF)
+	// 	{
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+	// 		lua_pushstring(L, "receiveJoyHat");
+	// 		lua_gettable(L, -2);
+	// 		lua_remove(L, -2);
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
+	// 		lua_pushnumber(L, event->jhat.hat);
+	// 		switch (event->jhat.value) {
+	// 			case SDL_HAT_UP: lua_pushnumber(L, 8); break;
+	// 			case SDL_HAT_DOWN: lua_pushnumber(L, 2); break;
+	// 			case SDL_HAT_LEFT: lua_pushnumber(L, 4); break;
+	// 			case SDL_HAT_RIGHT: lua_pushnumber(L, 6); break;
+	// 			case SDL_HAT_LEFTUP: lua_pushnumber(L, 7); break;
+	// 			case SDL_HAT_LEFTDOWN: lua_pushnumber(L, 1); break;
+	// 			case SDL_HAT_RIGHTUP: lua_pushnumber(L, 9); break;
+	// 			case SDL_HAT_RIGHTDOWN: lua_pushnumber(L, 3); break;
+	// 		}
+	// 		docall(L, 3, 0);
+	// 	}
+	// 	return TRUE;
+	// case SDL_JOYBUTTONDOWN:
+	// case SDL_JOYBUTTONUP:
+	// 	if (current_mousehandler != LUA_NOREF)
+	// 	{
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
+	// 		lua_pushstring(L, "receiveJoyButton");
+	// 		lua_gettable(L, -2);
+	// 		lua_remove(L, -2);
+	// 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
+	// 		lua_pushnumber(L, event->jbutton.button);
+	// 		lua_pushboolean(L, event->jbutton.state == SDL_RELEASED ? TRUE : FALSE);
+	// 		docall(L, 3, 0);
+	// 	}
+	// 	return TRUE;
 	}
 	return FALSE;
 }
@@ -1429,11 +1429,11 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 
-	if (SDL_NumJoysticks() >= 1) {
-		if (gamepad = SDL_JoystickOpen(0)) {
-			printf("Found gamepad, enabling support\n");
-		}
-	}
+	// if (SDL_NumJoysticks() >= 1) {
+	// 	if (gamepad = SDL_JoystickOpen(0)) {
+	// 		printf("Found gamepad, enabling support\n");
+	// 	}
+	// }
 
 	// Filter events, to catch the quit event
 	SDL_SetEventFilter(event_filter, NULL);
