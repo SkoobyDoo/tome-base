@@ -157,25 +157,43 @@ newTalent{
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.blended_threads and self.turn_procs.blended_threads >= t.getCount(self, t) then return end
-			for tid, cd in pairs(self.talents_cd) do
+			
+			-- Refresh talent
+			local tids = {}
+			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
-				if tt.type[1]:find("^chronomancy/blade") then
-					self:alterTalentCoolingdown(tt, - 1)
-					self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+				if tt.type[1]:find("^chronomancy/blade") and not tt.fixed_cooldown then
+					tids[#tids+1] = tt
 				end
 			end
+
+			if #tids > 0 then
+				local tid = rng.tableRemove(tids)
+				self:alterTalentCoolingdown(tid, - 1)
+				self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+			end
+			
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.blended_threads and self.turn_procs.blended_threads >= t.getCount(self, t) then return end
-			for tid, cd in pairs(self.talents_cd) do
+			
+			-- Refresh talent
+			local tids = {}
+			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
-				if tt.type[1]:find("^chronomancy/bow") then
-					self:alterTalentCoolingdown(tt, - 1)
-					self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+				if tt.type[1]:find("^chronomancy/bow") and not tt.fixed_cooldown then
+					tids[#tids+1] = tt
 				end
 			end
+
+			if #tids > 0 then
+				local tid = rng.tableRemove(tids)
+				self:alterTalentCoolingdown(tid, - 1)
+				self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+			end
+			
 		end
 	end,
 	info = function(self, t)

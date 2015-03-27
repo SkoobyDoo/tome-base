@@ -284,7 +284,7 @@ newTalent{
 		-- Make our tether
 		local tether = mod.class.Object.new{
 			old_feat = oe, type = "temporal", subtype = "tether",
-			name = "spatial tether", add_mos = {{image="object/temporal_instability.png"}},
+			name = self.name:capitalize() .. "'s spatial tether", add_mos = {{image="object/temporal_instability.png"}},
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t), 
 			power = power, dest_power = dest_power, chance = chance,

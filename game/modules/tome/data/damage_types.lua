@@ -20,7 +20,7 @@
 local print = print
 if not config.settings.cheat then print = function() end end
 
-function initState(state)
+function DamageType.initState(state)
 	if state == nil then return {}
 	elseif state == true or state == false then return {}
 	else return state end
@@ -42,6 +42,7 @@ function DamageType.useImplicitCrit(src, state)
 end
 
 local useImplicitCrit = DamageType.useImplicitCrit
+local initState = DamageType.initState
 
 -- The basic stuff used to damage a grid
 setDefaultProjector(function(src, x, y, type, dam, state)
@@ -54,7 +55,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 	local crit_power = state.crit_power
 
 	local add_dam = 0
-	if src:attr("all_damage_convert") and src.all_damage_convert ~= type then
+	if src:attr("all_damage_convert") and src:attr("all_damage_convert_percent") and src.all_damage_convert ~= type then
 		local ndam = dam * src.all_damage_convert_percent / 100
 		dam = dam - ndam
 		local nt = src.all_damage_convert

@@ -27,7 +27,7 @@ local function oktodie(self, value, src, death_note)
 	if self:knowTalent(self.T_CAUTERIZE) and self:triggerTalent(self.T_CAUTERIZE, nil, value) then
 		return false, 0
 	else
-		if src.on_kill and src:on_kill(self) then return false, value end
+		if src and src.on_kill and src:on_kill(self) then return false, value end
 		return self:die(src, death_note), value
 	end
 end

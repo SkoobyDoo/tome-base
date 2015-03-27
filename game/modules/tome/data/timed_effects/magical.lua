@@ -2546,7 +2546,7 @@ newEffect{
 		game.level.map:updateMap(self.x, self.y)
 	end,
 	deactivate = function(self, eff)
-		if self.hotkey and self.isHotkeyBound then
+		if self.hotkey and self.isHotkeyBound and self:knowTalent(self.T_SHIV_LORD) then
 			local pos = self:isHotkeyBound("talent", self.T_ICE_STORM)
 			if pos then
 				self.hotkey[pos] = {"talent", self.T_SHIV_LORD}
@@ -3381,7 +3381,7 @@ newEffect{
 newEffect{
 	name = "OGRE_FURY", image = "effects/ogre_fury.png",
 	desc = "Ogre Fury",
-	long_desc = function(self, eff) return ("Increases crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 10, eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
+	long_desc = function(self, eff) return ("Increases crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
 	type = "magical",
 	subtype = { runic=true },
 	status = "beneficial",
@@ -3606,6 +3606,7 @@ newEffect{
 	status = "beneficial",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
@@ -3624,6 +3625,7 @@ newEffect{
 	status = "detrimental",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
