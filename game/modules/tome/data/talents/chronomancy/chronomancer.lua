@@ -153,7 +153,9 @@ load("/data/talents/chronomancy/anomalies.lua")
 -- Caps at -50% and +50%
 getParadoxModifier = function (self)
 	local paradox = self:getParadox()
-	local pm = util.bound(math.sqrt(paradox / 300), 0.5, 1.5)
+	local pm = math.sqrt(paradox / 300)
+	if paradox < 300 then pm = paradox/300 end
+	pm = util.bound(pm, 0.5, 1.5)
 	return pm
 end
 
@@ -184,12 +186,19 @@ end
 
 -- Extension Spellbinding
 getExtensionModifier = function(self, t, value)
+	local pm = getParadoxModifier(self)
 	local mod = 1
+	
 	local p = self:isTalentActive(self.T_EXTENSION)
 	if p and p.talent == t.id then
 		mod = mod + self:callTalent(self.T_EXTENSION, "getPower")
 	end
+	
+	-- paradox modifier rounds down
+	value = math.floor(value * pm)
+	-- extension modifier rounds up
 	value = math.ceil(value * mod)
+	
 	return value
 end
 
@@ -227,7 +236,7 @@ doWardenWeaponSwap = function(self, t, type, silent)
 
 	if type == "blade" then
 		local mainhand, offhand = self:hasDualWeapon()
-		if not mainhand then
+		if not mainhand or self:hasArcheryWeapon("bow") then  -- weird but this is lets ogers offhanding daggers still swap
 			swap = true
 			warden_weapon = "blade"
 		end
@@ -320,7 +329,6 @@ makeParadoxClone = function(self, target, duration)
 	m.seen_by = nil
 	m.can_talk = nil
 	m.clone_on_hit = nil
-	m.self_resurrect = nil
 	m.escort_quest = nil
 	m.unused_talents = 0
 	m.unused_generics = 0
@@ -355,6 +363,8 @@ makeParadoxClone = function(self, target, duration)
 	
 	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
 	if m.preferred_paradox and m.preferred_paradox > 600 then m.preferred_paradox = 600 end
+
+	m.self_resurrect = nil
 	
 	return m
 end

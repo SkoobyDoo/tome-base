@@ -77,7 +77,7 @@ function resolvers.calc.equip(t, e)
 			end
 
 			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
-				if filter.force_inven then  -- we just really want it
+				if filter.force_inven and e:getInven(filter.force_inven) then  -- we just really want it
 					e:addObject(filter.force_inven, o, true, filter.force_item)
 				else
 					e:addObject(e.INVEN_INVEN, o)
@@ -192,6 +192,7 @@ function resolvers.calc.inventory(t, e)
 
 			if t[1].id then o:identify(t[1].id) end
 			if t[1].transmo then o.__transmo = true end
+			if t[1].alter then t[1].alter(o) end
 		end
 	end
 	e:sortInven()

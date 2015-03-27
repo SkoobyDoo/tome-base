@@ -1097,6 +1097,7 @@ function _M:drawDialog(kind, actor_to_compare)
 			-- Sort the talent type stuff
 			local sorted = {}
 			if self.talent_sorting == 2 then
+				if not talents["All"] or not talents["All"]["talents"] then talents["All"] = {type_name = "All", talent_type=nil, talents={} } end
 				table.sort(talents["All"]["talents"], sort_tt)
 				return talents
 			end

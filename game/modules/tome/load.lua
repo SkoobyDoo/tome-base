@@ -26,12 +26,15 @@ Entity.ascii_outline = {x=2, y=2, r=0, g=0, b=0, a=0.8}
 
 -- This file loads the game module, and loads data
 local UIBase = require "engine.ui.Base"
-local Map = require "engine.Map"
 local Level = require "engine.Level"
 local FontPackage = require "engine.FontPackage"
 
 -- Init settings
 dofile("/mod/settings.lua")
+if config.settings.tome.gfx and config.settings.tome.gfx.tiles == "ascii" then
+	dofile("/mod/class/AsciiMap.lua")
+end
+local Map = require "engine.Map"
 
 -- Apply some settings
 Map.smooth_scroll = config.settings.tome.smooth_move

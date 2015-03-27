@@ -50,13 +50,20 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
+			
 			-- Refresh talent
-			for tid, cd in pairs(self.talents_cd) do
+			local tids = {}
+			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
 				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-					self:alterTalentCoolingdown(tt, - cdr)
+					tids[#tids+1] = tt
 				end
 			end
+			if #tids > 0 then
+				local tid = rng.tableRemove(tids)
+				self:alterTalentCoolingdown(tid, - cdr)
+			end
+			
 			DamageType:get(DamageType.TEMPORAL).projector(self, x, y, DamageType.TEMPORAL, dam)
 		end)
 		
@@ -77,12 +84,16 @@ newTalent{
 						src:project({type="hit", selffire=false, talent=talent}, self.x, self.y, DT.TEMPORAL, dam)
 
 						-- Refresh talent
-						for tid, cd in pairs(src.talents_cd) do
+						local tids = {}
+						for tid, _ in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-								src:alterTalentCoolingdown(tt, - self.def.cdr)
-								break
+								tids[#tids+1] = tt
 							end
+						end
+						if #tids > 0 then
+							local tid = rng.tableRemove(tids)
+							src:alterTalentCoolingdown(tid, - self.def.cdr)
 						end
 					end
 				end,
@@ -111,7 +122,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	cooldown = 6,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	tactical = { ATTACK = {TEMPORAL = 1}, DISABLE = 1 },
 	range = 10,
 	direct_hit = true,
@@ -154,7 +165,7 @@ newTalent{
 		
 		-- Placeholder for the actor
 		local oe = game.level.map(x, y, Map.TERRAIN+1)
-		if (oe and oe:attr("temporary")) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then game.logPlayer(self, "You can't time skip the target there.") return nil end
+		if (oe and oe:attr("temporary")) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then game.logPlayer(self, "Something has prevented the timetravel.") return true end
 		local e = mod.class.Object.new{
 			old_feat = oe, type = "temporal", subtype = "instability",
 			name = "temporal instability",
@@ -214,7 +225,7 @@ newTalent{
 	type = {"chronomancy/timetravel", 3},
 	require = chrono_req3,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 40) end,
 	cooldown = 40,
 	no_npc_use = true,
 	fixed_cooldown = true,
@@ -294,7 +305,7 @@ newTalent{
 	type = {"chronomancy/timetravel", 4},
 	require = chrono_req4,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	cooldown = 12,
 	tactical = { ATTACKAREA = {TEMPORAL = 2} },
 	range = 0,

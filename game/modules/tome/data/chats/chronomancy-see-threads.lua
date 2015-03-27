@@ -18,6 +18,11 @@
 -- darkgod@te4.org
 
 local function select(id)
+	if not game._chronoworlds then
+		game.logPlayer(game.player, "#PURPLE#A paradox has already destroyed other timelines!")
+		return
+	end
+
 	if id == 1 or id == 2 then
 		game:chronoRestore("see_threads_"..id, true)
 	end

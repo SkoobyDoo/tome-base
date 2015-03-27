@@ -352,7 +352,7 @@ function _M:onTakeHit(value, src, death_note)
 end
 
 function _M:die(src, death_note)
-	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) return true end
+	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) if game.level:hasEntity(self) then game.level:removeEntity(self, true) end return true end
 
 	if src and Faction:get(self.faction) and Faction:get(self.faction).hostile_on_attack then
 		Faction:setFactionReaction(self.faction, src.faction, Faction:factionReaction(self.faction, src.faction) - self.rank, true)

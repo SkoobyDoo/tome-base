@@ -183,7 +183,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 		end
 		if citem then
 			local sub_es = {}
-			for di = 1, #citem.item._dduids do sub_es[#sub_es+1] = citem.item._dduids[di].e end
+			for e, _ in pairs(citem.item._dduids) do sub_es[#sub_es+1] = e end
 
 			if citem.url and button == "left" and event == "button" then
 				util.browserOpenUrl(citem.url, {is_external=true})
@@ -294,5 +294,7 @@ function _M:resetFade()
 	local log = self.log
 
 	-- Reset fade
-	log.reset_fade = core.game.getTime()
+	for i = 1,#log do
+		log[i].reset_fade = core.game.getTime()
+	end
 end

@@ -1373,7 +1373,7 @@ function _M:waitTurn()
 
 	-- Tune paradox up or down
 	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
-		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
+		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
 	end
 
 	self:useEnergy()
@@ -2759,7 +2759,7 @@ function _M:emptyDrops()
 end
 
 function _M:die(src, death_note)
-	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) return true end
+	if self.dead then self:disappear(src) self:deleteFromMap(game.level.map) if game.level:hasEntity(self) then game.level:removeEntity(self, true) end return true end
 
 	-- Self resurrect, mouhaha!
 	if self:attr("self_resurrect") and not self.no_resurrect then
@@ -4923,6 +4923,7 @@ function _M:iterCallbacks(event)
 	if self[store] and next(self[store].__priorities) then
 		local iter = 1
 		return function()
+			if not self[store] or not self[store].__sorted then return end
 			local info = self[store].__sorted[iter]
 			if not info then return end
 			iter = iter + 1
@@ -5534,7 +5535,8 @@ function _M:startTalentCooldown(t, v)
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
 			if self:getTalentCooldown(t) <= eff.max_cd and t.mode == "activated" and not t.fixed_cooldown then
-				self.talents_cd[t.id] = 1
+				self.talents_cd[t.id] = 0
+				self:removeEffect(self.EFF_REDUX)
 			end
 		end
 	end

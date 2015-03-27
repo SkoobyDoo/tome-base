@@ -47,7 +47,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
-	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	radius = function(self, t) return self:getTalentLevel(self.T_WEAPON_MANIFOLD) >= 4 and 2 or 1 end,
 	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
 	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
 	getResists = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getResists") end,
@@ -95,7 +95,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
-	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	radius = function(self, t) return self:getTalentLevel(self.T_WEAPON_MANIFOLD) >= 4 and 2 or 1 end,
 	getChance = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getChance") end, 
 	getDamage = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDamage") end,
 	getDuration = function(self, t) return self:callTalent(self.T_WEAPON_MANIFOLD, "getDuration") end,
@@ -138,7 +138,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	range = 10,
-	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
+	radius = function(self, t) return self:getTalentLevel(self.T_WEAPON_MANIFOLD) >= 4 and 2 or 1 end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
@@ -225,7 +225,7 @@ newTalent{
 	type = {"chronomancy/temporal-combat", 2},
 	require = chrono_req2,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 12) end,
 	cooldown = 24,
 	fixed_cooldown = true,
 	tactical = { HEAL = 1 },
@@ -269,7 +269,7 @@ newTalent{
 		end
 	end,
 	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 2 or 1 end,
-	getDuration = function(self, t) return 2 end,
+	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getDamage = function(self, t) return 7 + getParadoxSpellpower(self, t, 0.092) * self:combatTalentScale(t, 1, 7) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end,
 	getSlow = function(self, t) return 30 end,
@@ -312,7 +312,7 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 7))) end,
 	on_pre_use = function(self, t, silent) if self:attr("disarmed") then if not silent then game.logPlayer(self, "You require a weapon to use this talent.") end return false end return true end,
 	archery_onhit = function(self, t, target, x, y)
-		target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {})
+		target:setEffect(target.EFF_BREACH, t.getDuration(self, t), {apply_power=getParadoxSpellpower(self, t)})
 	end,
 	action = function(self, t)
 

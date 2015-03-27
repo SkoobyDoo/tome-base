@@ -606,9 +606,9 @@ end
 
 function _M:orderEntityPoke(o)
 	self:command("EVLT", "POKE", o.desc:len(), o.data:len(), o.module, o.kind, o.name)
-	if not self:read("200") then return cprofile.pushEvent("e='EntityPoke' ok=false") end
+	if not self:read("200") then return cprofile.pushEvent(("e='EntityPoke' ok=false err=%q"):format(self.last_error)) end
 	self.sock:send(o.desc)
-	if not self:read("200") then return cprofile.pushEvent("e='EntityPoke' ok=false") end
+	if not self:read("200") then return cprofile.pushEvent("e='EntityPoke' ok=false err='unknown reason'") end
 	self.sock:send(o.data)
 	cprofile.pushEvent("e='EntityPoke' ok=true")
 end

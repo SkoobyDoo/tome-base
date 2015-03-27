@@ -127,7 +127,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 
 			if gitem then
 				local sub_es = {}
-				for di = 1, #gitem.dduids do sub_es[#sub_es+1] = gitem.dduids[di].e end
+				for e, _ in pairs(gitem.dduids) do sub_es[#sub_es+1] = e end
 				if sub_es and #sub_es > 0 then
 					if not tooltip then tooltip = tstring{} end
 					for i, e in ipairs(sub_es) do
@@ -153,7 +153,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 
 			if gitem and button == "right" then
 				local sub_es = {}
-				for di = 1, #gitem.dduids do sub_es[#sub_es+1] = gitem.dduids[di].e end
+				for e, _ in pairs(gitem.dduids) do sub_es[#sub_es+1] = e end
 				if sub_es and #sub_es > 0 then
 					if not tooltip then tooltip = tstring{} end
 					for i, e in ipairs(sub_es) do

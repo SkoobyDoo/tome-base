@@ -715,7 +715,7 @@ function _M:heal(value, src)
 		value = value * 1.3
 	end
 
-	mod.class.Actor.heal(self, value, src)
+	return mod.class.Actor.heal(self, value, src)
 end
 
 function _M:die(src, death_note)
@@ -907,7 +907,7 @@ function _M:onRestStart()
 		self.resting.mana_regen = self:attr("mana_regen_on_rest")
 	end
 	if self:knowTalent(self.T_SPACETIME_TUNING) then
-		self:callTalent(self.T_SPACETIME_TUNING, "doTuning")
+		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
 	end
 	self:fireTalentCheck("callbackOnRest", "start")
 end

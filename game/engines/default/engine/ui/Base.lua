@@ -217,8 +217,8 @@ end
 function _M:textureToScreen(tex, x, y, r, g, b, a, allow_uid)
 	local res = tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
 	if tex.dduids and allow_uid then
-		for di, dduid in ipairs(tex.dduids) do
-			dduid.e:toScreen(nil, x + dduid.x, y, dduid.w, dduid.w, 1, false, false)
+		for e, dduid in pairs(tex.dduids) do
+			e:toScreen(nil, x + dduid.x, y, dduid.w, dduid.w, 1, false, false)
 		end
 	end
 	return res

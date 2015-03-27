@@ -2546,7 +2546,7 @@ newEffect{
 		game.level.map:updateMap(self.x, self.y)
 	end,
 	deactivate = function(self, eff)
-		if self.hotkey and self.isHotkeyBound then
+		if self.hotkey and self.isHotkeyBound and self:knowTalent(self.T_SHIV_LORD) then
 			local pos = self:isHotkeyBound("talent", self.T_ICE_STORM)
 			if pos then
 				self.hotkey[pos] = {"talent", self.T_SHIV_LORD}
@@ -3273,9 +3273,9 @@ newEffect{
 }
 
 newEffect{
-	name = "ATTENUATE", image = "talents/attenuate.png",
+	name = "ATTENUATE_DET", image = "talents/attenuate.png",
 	desc = "Attenuate",
-	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power, eff.dt_name) end,
+	long_desc = function(self, eff) return ("The target is being removed from the timeline and is taking %0.2f temporal damage per turn."):format(eff.power) end,
 	type = "magical",
 	subtype = { temporal=true },
 	status = "detrimental",
@@ -3308,6 +3308,30 @@ newEffect{
 		else
 			DamageType:get(DamageType.TEMPORAL).projector(eff.src, self.x, self.y, DamageType.TEMPORAL, eff.power)
 		end
+	end,
+}
+
+newEffect{
+	name = "ATTENUATE_BEN", image = "talents/attenuate.png",
+	desc = "Attenuate",
+	long_desc = function(self, eff) return ("The target is being grounded in the timeline and is healing %0.2f life per turn."):format(eff.power) end,
+	type = "magical",
+	subtype = { temporal=true },
+	status = "beneficial",
+	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target# is being being grounded in the timeline!", "+Attenuate" end,
+	on_lose = function(self, err) return "#Target# is no longer being grounded.", "-Attenuate" end,
+	on_merge = function(self, old_eff, new_eff)
+		-- Merge the flames!
+		local olddam = old_eff.power * old_eff.dur
+		local newdam = new_eff.power * new_eff.dur
+		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
+		old_eff.dur = dur
+		old_eff.power = (olddam + newdam) / dur
+		return old_eff
+	end,
+	on_timeout = function(self, eff)
+		self:heal(eff.power, eff)
 	end,
 }
 
@@ -3357,15 +3381,15 @@ newEffect{
 newEffect{
 	name = "OGRE_FURY", image = "effects/ogre_fury.png",
 	desc = "Ogre Fury",
-	long_desc = function(self, eff) return ("Increases crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 10, eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
+	long_desc = function(self, eff) return ("Increases crit chance by %d%% and critical power by %d%%. %d charge(s)."):format(eff.stacks * 5, eff.stacks * 20, eff.stacks) end,
 	type = "magical",
 	subtype = { runic=true },
 	status = "beneficial",
 	parameters = { stacks=1, max_stacks=5 },
 	charges = function(self, eff) return eff.stacks end,
 	do_effect = function(self, eff, add)
-		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) end
-		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) end
+		if eff.cdam then self:removeTemporaryValue("combat_critical_power", eff.cdam) eff.cdam = nil end
+		if eff.crit then self:removeTemporaryValue("combat_generic_crit", eff.crit) eff.crit = nil end
 		if add then
 			eff.cdam = self:addTemporaryValue("combat_critical_power", eff.stacks * 20)
 			eff.crit = self:addTemporaryValue("combat_generic_crit", eff.stacks * 5)
@@ -3396,7 +3420,7 @@ newEffect{
 		if eff.stacks > 1 and eff.dur <= 1 then
 			eff.stacks = eff.stacks - 1
 			eff.dur = 7
-			e.do_effect(self, eff, false)
+			e.do_effect(self, eff, true)
 		end
 	end
 }
@@ -3582,6 +3606,7 @@ newEffect{
 	status = "beneficial",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
@@ -3600,6 +3625,7 @@ newEffect{
 	status = "detrimental",
 	parameters = { chance = 1 },
 	on_gain = function(self, err) return "#Target# has been tethered!", "+Tether" end,
+	on_lose = function(self, err) return "#Target# is no longer tethered.", "-Tether" end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)

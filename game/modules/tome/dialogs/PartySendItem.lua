@@ -65,7 +65,7 @@ function _M:generateList()
 	local list = {}
 
 	for i, act in ipairs(game.party.m_list) do
-		if not act.no_inventory_access and act ~= game.player then
+		if not act.no_inventory_access and act ~= game.player and act:getInven(act.INVEN_INVEN) then
 			list[#list+1] = {name=act.name..(act:canAddToInven(act.INVEN_INVEN) and "" or " #YELLOW#[NO ROOM]#LAST#"), actor=act}
 		end
 	end

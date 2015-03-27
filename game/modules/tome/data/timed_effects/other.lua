@@ -2406,9 +2406,7 @@ newEffect{
 	parameters = { power=10},
 	on_gain = function(self, err) return "#Target# retunes the fabric of spacetime.", "+Spacetime Tuning" end,
 	on_timeout = function(self, eff)
-		local dox = self:getParadox() - self.preferred_paradox
-		local fix = math.min( math.abs(dox), eff.power )
-		self:incParadox(fix)
+		self:callTalent(self.T_SPACETIME_TUNING, "tuneParadox")
 	end,
 	activate = function(self, eff)
 		if core.shader.active(4) then
@@ -2547,7 +2545,7 @@ newEffect{
 	parameters = { power=10 },
 	decrease = 0,
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
-		if src ~= self and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
+		if src ~= self and src.hasEffect and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
 			-- Find our clones
 			for i = 1, #eff.targets do
 				local target = eff.targets[i]
