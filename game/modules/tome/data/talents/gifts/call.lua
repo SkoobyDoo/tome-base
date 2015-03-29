@@ -68,7 +68,7 @@ newTalent{
 		local rest = 0.5 * self:getTalentLevelRaw(t)
 		return ([[Meditate on your link with Nature.
 		While meditating, you regenerate %d equilibrium per turn, your Mental Save is increased by %d, and your healing factor increases by %d%%.
-		Your deep meditation does not, however, let you deal damage correctly, reducing your damage done by 50%%.
+		Your deep meditation does not, however, let you deal damage correctly, reducing the damage you and your summons deal by 50%%.
 		Also, any time you are resting (even with Meditation not sustained) you enter a simple meditative state that lets you regenerate %0.2f equilibrium per turn.
 		The effects will increase with your Mindpower.]]):
 		format(pt, save, heal, rest)
