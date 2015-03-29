@@ -199,7 +199,7 @@ getExtensionModifier = function(self, t, value)
 	-- extension modifier rounds up
 	value = math.ceil(value * mod)
 	
-	return value
+	return math.max(1, value)
 end
 
 -- Tunes paradox
