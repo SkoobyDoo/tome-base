@@ -95,6 +95,7 @@ function _M:generateList()
 			local mod_string = ("%s-%d.%d.%d"):format(m.short_name, save.module_version and save.module_version[1] or -1, save.module_version and save.module_version[2] or -1, save.module_version and save.module_version[3] or -1)
 			save.module_string = mod_string
 			local mod = list[mod_string]
+			if not mod and save.module_version and m.versions and m.versions[1] and m.versions[1].version and engine.version_patch_same(m.versions[1].version, save.module_version) then mod = m.versions[1] end
 			if not mod and self.c_compat.checked and m.versions and m.versions[1] then mod = m.versions[1] end
 			if mod and save.loadable then
 				local laddons = mod_addons[mod]
