@@ -191,8 +191,10 @@ We apologize for the annoyance, most of the time we try to keep compatibility bu
 		return
 	end
 
-	if not ignore_mod_compat and self.save_sel.module_string ~= self.save_sel.mod.version_string then
-		Dialog:yesnocancelLongPopup("Original game version not found", "This savefile was created with game version %s. You can try loading it with the current version if you wish or download the data files of the old version to ensure compatibility (this is a big download but only required once).", 500, function(ret, cancel)
+	local save_v = engine.version_from_string(self.save_sel.module_string)
+	local save_m = engine.version_from_string(self.save_sel.mod.version_string)
+	if not ignore_mod_compat and not engine.version_patch_same(save_m, save_v) and save_m.name == save_v.name then
+		Dialog:yesnocancelLongPopup("Original game version not found", ("This savefile was created with game version %s. You can try loading it with the current version if you wish or download the data files of the old version to ensure compatibility (this is a big download but only required once).\nIf the data files are not available you can retry and use the newer version."):format(self.save_sel.module_string), 500, function(ret, cancel)
 			if cancel then return end
 			if ret then
 				self:installOldGame(self.save_sel.module_string)
