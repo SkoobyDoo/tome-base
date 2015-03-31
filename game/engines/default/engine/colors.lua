@@ -26,6 +26,7 @@ function defineColor(name, r, g, b, br, bg, bb)
 end
 
 function colors.simple(c) return {c.r, c.g, c.b} end
+function colors.simple1(c, a) return {c.r/255, c.g/255, c.b/255, a or 1} end
 
 function colors.unpack(c) return c.r, c.g, c.b end
 
