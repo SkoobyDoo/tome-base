@@ -16,5 +16,6 @@ convert_opt=true
 custom_tags={"inherit","Inherits"}
 style='style'
 template='style'
+dir='tengine_doc'
 full_description=[[<a href="manual/index.md.html">View the Manual</a> | <a href="http://git.net-core.org/tome/t-engine4/">T-Engine Git Repository</a>
 ]]
