@@ -4338,8 +4338,8 @@ function _M:paradoxDoAnomaly(chance, paradox, def)
 	-- See if we create an anomaly
 	if not game.zone.no_anomalies and not self:attr("no_paradox_fail") then
 		-- This is so players can't chain cancel out of targeting to trigger anomalies on purpose, we clear it out in postUse
-		if not chance == 100 and self.turn_procs.anomalies_checked then return false end  
-		if not chance == 100 then self.turn_procs.anomalies_checked = true end
+		if chance ~= 100 and self.turn_procs.anomalies_checked then return false end  
+		if chance ~= 100 then self.turn_procs.anomalies_checked = true end
 
 		if rng.percent(chance) then
 			local anomaly_triggered = true
