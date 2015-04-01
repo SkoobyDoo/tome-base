@@ -54,7 +54,11 @@ char *cstring_to_c(const CefString &cstr) {
 
 void te4_web_new(web_view_type *view, int w, int h) {
 	static bool inited = false;
-	if (!inited) { CefRegisterSchemeHandlerFactory("te4", "data", new TE4SchemeHandlerFactory()); inited = true; }
+	if (!inited) {
+		CefRegisterSchemeHandlerFactory("te4", "data", new TE4SchemeHandlerFactory());
+		CefAddCrossOriginWhitelistEntry("te4://data", "te4", "data", true);
+		inited = true;
+	}
 
 	WebViewOpaque *opaque = new WebViewOpaque();
 	view->opaque = (void*)opaque;

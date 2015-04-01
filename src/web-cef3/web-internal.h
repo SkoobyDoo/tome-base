@@ -32,6 +32,7 @@
 #include <cef_request_handler.h>
 #include <cef_download_handler.h>
 #include <cef_render_process_handler.h>
+#include <cef_origin_whitelist.h>
 #include <cef_v8.h>
 
 #include "web-render.hpp"
