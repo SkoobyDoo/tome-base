@@ -319,6 +319,13 @@ static int lua_reset_locale(lua_State *L)
 	return 0;
 }
 
+extern bool tickPaused;
+static int lua_force_next_tick(lua_State *L)
+{
+	tickPaused = FALSE;
+	return 0;
+}
+
 static const struct luaL_Reg gamelib[] =
 {
 	{"setRebootMessage", lua_set_reboot_message},
@@ -331,6 +338,7 @@ static const struct luaL_Reg gamelib[] =
 	{"sleep", lua_sleep},
 	{"setRealtime", lua_set_realtime},
 	{"setFPS", lua_set_fps},
+	{"requestNextTick", lua_force_next_tick},
 	{"checkError", lua_check_error},
 	{"resetLocale", lua_reset_locale},
 	{NULL, NULL},

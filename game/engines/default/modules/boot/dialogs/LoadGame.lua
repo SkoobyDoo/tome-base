@@ -95,6 +95,7 @@ function _M:generateList()
 			local mod_string = ("%s-%d.%d.%d"):format(m.short_name, save.module_version and save.module_version[1] or -1, save.module_version and save.module_version[2] or -1, save.module_version and save.module_version[3] or -1)
 			save.module_string = mod_string
 			local mod = list[mod_string]
+			if not mod and save.module_version and m.versions and m.versions[1] and m.versions[1].version and engine.version_patch_same(m.versions[1].version, save.module_version) then mod = m.versions[1] end
 			if not mod and self.c_compat.checked and m.versions and m.versions[1] then mod = m.versions[1] end
 			if mod and save.loadable then
 				local laddons = mod_addons[mod]
@@ -191,8 +192,10 @@ We apologize for the annoyance, most of the time we try to keep compatibility bu
 		return
 	end
 
-	if not ignore_mod_compat and self.save_sel.module_string ~= self.save_sel.mod.version_string then
-		Dialog:yesnocancelLongPopup("Original game version not found", "This savefile was created with game version %s. You can try loading it with the current version if you wish or download the data files of the old version to ensure compatibility (this is a big download but only required once).", 500, function(ret, cancel)
+	local save_v = engine.version_from_string(self.save_sel.module_string)
+	local save_m = engine.version_from_string(self.save_sel.mod.version_string)
+	if not ignore_mod_compat and not engine.version_patch_same(save_m, save_v) and save_m.name == save_v.name then
+		Dialog:yesnocancelLongPopup("Original game version not found", ("This savefile was created with game version %s. You can try loading it with the current version if you wish or download the data files of the old version to ensure compatibility (this is a big download but only required once).\nIf the data files are not available you can retry and use the newer version."):format(self.save_sel.module_string), 500, function(ret, cancel)
 			if cancel then return end
 			if ret then
 				self:installOldGame(self.save_sel.module_string)

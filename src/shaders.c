@@ -258,11 +258,24 @@ static int program_set_uniform_number(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 	const char *var = luaL_checkstring(L, 2);
-	GLfloat i = luaL_checknumber(L, 3);
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform1fv(glGetUniformLocation(p->shader, var), 1, &i);
+
+	// Uniform array
+	if (lua_istable(L, 3)) {
+		int nb = lua_objlen(L, 3);
+		int i;
+		GLfloat is[nb];
+		for (i = 0; i < nb; i++) {
+			lua_rawgeti(L, 3, i + 1); is[i*4+0] = lua_tonumber(L, -1); lua_pop(L, 1);
+		}
+		glUniform1fv(glGetUniformLocation(p->shader, var), nb, is);
+	} else {
+		GLfloat i = luaL_checknumber(L, 3);
+		glUniform1fv(glGetUniformLocation(p->shader, var), 1, &i);
+	}
+
 	if (change) useNoShader();
 	return 0;
 }
@@ -271,14 +284,29 @@ static int program_set_uniform_number2(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 	const char *var = luaL_checkstring(L, 2);
-	GLfloat i[2];
-	i[0] = luaL_checknumber(L, 3);
-	i[1] = luaL_checknumber(L, 4);
-
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform2fv(glGetUniformLocation(p->shader, var), 1, i);
+
+	// Uniform array
+	if (lua_istable(L, 3)) {
+		int nb = lua_objlen(L, 3);
+		int i;
+		GLfloat is[2*nb];
+		for (i = 0; i < nb; i++) {
+			lua_rawgeti(L, 3, i + 1);
+			lua_rawgeti(L, -1, 1); is[i*2+0] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 2); is[i*2+1] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pop(L, 1);
+		}
+		glUniform2fv(glGetUniformLocation(p->shader, var), nb, is);
+	} else {
+		GLfloat i[2];
+		i[0] = luaL_checknumber(L, 3);
+		i[1] = luaL_checknumber(L, 4);
+
+		glUniform2fv(glGetUniformLocation(p->shader, var), 1, i);
+	}
 	if (change) useNoShader();
 	return 0;
 }
@@ -287,15 +315,31 @@ static int program_set_uniform_number3(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 	const char *var = luaL_checkstring(L, 2);
-	GLfloat i[3];
-	i[0] = luaL_checknumber(L, 3);
-	i[1] = luaL_checknumber(L, 4);
-	i[2] = luaL_checknumber(L, 5);
-
 	bool change = gl_c_shader != p->shader;
-
 	if (change) tglUseProgramObject(p->shader);
-	glUniform3fv(glGetUniformLocation(p->shader, var), 1, i);
+
+	// Uniform array
+	if (lua_istable(L, 3)) {
+		int nb = lua_objlen(L, 3);
+		int i;
+		GLfloat is[3*nb];
+		for (i = 0; i < nb; i++) {
+			lua_rawgeti(L, 3, i + 1);
+			lua_rawgeti(L, -1, 1); is[i*3+0] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 2); is[i*3+1] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 3); is[i*3+2] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pop(L, 1);
+		}
+		glUniform3fv(glGetUniformLocation(p->shader, var), nb, is);
+	} else {
+		GLfloat i[3];
+		i[0] = luaL_checknumber(L, 3);
+		i[1] = luaL_checknumber(L, 4);
+		i[2] = luaL_checknumber(L, 5);
+
+		glUniform3fv(glGetUniformLocation(p->shader, var), 1, i);
+	}
+
 	if (change) useNoShader();
 	return 0;
 }
@@ -304,16 +348,34 @@ static int program_set_uniform_number4(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
 	const char *var = luaL_checkstring(L, 2);
-	GLfloat i[4];
-	i[0] = luaL_checknumber(L, 3);
-	i[1] = luaL_checknumber(L, 4);
-	i[2] = luaL_checknumber(L, 5);
-	i[3] = luaL_checknumber(L, 6);
-
 	bool change = gl_c_shader != p->shader;
 
 	if (change) tglUseProgramObject(p->shader);
-	glUniform4fv(glGetUniformLocation(p->shader, var), 1, i);
+
+	// Uniform array
+	if (lua_istable(L, 3)) {
+		int nb = lua_objlen(L, 3);
+		int i;
+		GLfloat is[4*nb];
+		for (i = 0; i < nb; i++) {
+			lua_rawgeti(L, 3, i + 1);
+			lua_rawgeti(L, -1, 1); is[i*4+0] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 2); is[i*4+1] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 3); is[i*4+2] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, -1, 4); is[i*4+3] = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pop(L, 1);
+		}
+		glUniform4fv(glGetUniformLocation(p->shader, var), nb, is);
+	} else {
+		GLfloat i[4];
+		i[0] = luaL_checknumber(L, 3);
+		i[1] = luaL_checknumber(L, 4);
+		i[2] = luaL_checknumber(L, 5);
+		i[3] = luaL_checknumber(L, 6);
+
+		glUniform4fv(glGetUniformLocation(p->shader, var), 1, i);
+	}
+
 	if (change) useNoShader();
 	return 0;
 }
