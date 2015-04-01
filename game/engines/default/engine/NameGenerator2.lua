@@ -20,6 +20,8 @@
 require "engine.class"
 local lpeg = require "lpeg"
 
+--- Alternate Name Generator
+-- @classmod engine.NameGenerator2
 module(..., package.seeall, class.make)
 
 --- Creates a random name generator using a pregenerated grammar

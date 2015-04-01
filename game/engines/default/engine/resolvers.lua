@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--- @script engine.resolvers
+
 resolvers = {}
 resolvers.calc = {}
 

@@ -22,6 +22,8 @@ local Dialog = require "engine.ui.Dialog"
 local Checkbox = require "engine.ui.Checkbox"
 local Textzone = require "engine.ui.Textzone"
 
+--- Player to player chat
+-- @classmod engine.dialogs.ChatChannels
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(chat)

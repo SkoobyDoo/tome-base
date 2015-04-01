@@ -21,9 +21,12 @@ require "engine.class"
 local Map = require "engine.Map"
 
 --- Computes a direct line path from start to end
+-- @classmod engine.DirectPath
 module(..., package.seeall, class.make)
 
 --- Initializes DirectPath for a map and an actor
+-- @param[type=Map] map
+-- @param[type=Actor] actor
 function _M:init(map, actor)
 	self.map = map
 	self.actor = actor
@@ -34,8 +37,9 @@ end
 -- @param sy the start coord
 -- @param tx the end coord
 -- @param ty the end coord
--- @param use_has_seen if true the astar wont consider non-has_seen grids
--- @return either nil if no path or a list of nodes in the form { {x=...,y=...}, {x=...,y=...}, ..., {x=tx,y=ty}}
+-- @param[opt] use_has_seen if true the astar wont consider non-has_seen grids
+-- @return[1] nil if no path
+-- @return[2] a list of nodes in the form { {x=...,y=...}, {x=...,y=...}, ..., {x=tx,y=ty}}
 function _M:calc(sx, sy, tx, ty, use_has_seen)
 	local path = {}
 	local l = line.new(sx, sy, tx, ty)

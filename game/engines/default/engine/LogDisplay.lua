@@ -24,6 +24,7 @@ local Mouse = require "engine.Mouse"
 local Slider = require "engine.ui.Slider"
 
 --- Module that handles message history in a mouse wheel scrollable zone
+-- @classmod engine.LogDisplay
 module(..., package.seeall, class.inherit(engine.ui.Base))
 
 --- Creates the log zone

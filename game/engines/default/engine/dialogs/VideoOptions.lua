@@ -24,6 +24,8 @@ local Textzone = require "engine.ui.Textzone"
 local Separator = require "engine.ui.Separator"
 local GetQuantity = require "engine.dialogs.GetQuantity"
 
+--- Video Options
+-- @classmod engine.dialogs.VideoOptions
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init()

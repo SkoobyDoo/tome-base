@@ -22,6 +22,7 @@ require "Json2"
 
 --- Handles player json "char dump"
 -- This is used for auto uploads to te4.org, could be for other stuff too
+-- @classmod engine.generator.interface.PlayerDumpJSON
 module(..., package.seeall, class.make)
 
 allow_late_uuid = false

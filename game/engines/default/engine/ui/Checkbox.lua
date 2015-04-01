@@ -21,7 +21,8 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
---- A generic UI textbox
+--- A generic UI checkbox
+-- @classmod engine.ui.Checkbox
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

@@ -23,6 +23,7 @@ local Target = require "engine.Target"
 local DamageType = require "engine.DamageType"
 
 --- Handles actors projecting damage to zones/targets
+-- @classmod engine.generator.interface.ActorProject
 module(..., package.seeall, class.make)
 
 _M.projectile_class = "engine.Projectile"
@@ -228,16 +229,20 @@ function _M:project(t, x, y, damtype, dam, particles)
 	return grids, stop_x, stop_y
 end
 
---- Can we project to this grid ?
--- This function can be used for either just the boolean, or to tell you where the projection stops.
+--- Can we project to this grid?  
+-- This function can be used for either just the boolean, or to tell you where the projection stops.  
 -- Two sets of coordinates will be returned, one for where the projection stops (stop_x, stop_y) and
 -- one for where any radius effect should start from (radius_x, radius_y).  The distinction is made
 -- because a projection should hit the wall, but explosions should start one tile back to avoid
 -- "leaking" through a one tile thick wall.
--- @param t a type table describing the attack, passed to engine.Target:getType() for interpretation
--- @param x target coords
--- @param y target coords
--- @return can_project, stop_x, stop_y, radius_x, radius_y.
+-- @param[type=table] t a type table describing the attack, passed to engine.Target:getType() for interpretation
+-- @number x target coords
+-- @number y target coords
+-- @return can_project
+-- @return stop_x
+-- @return stop_y
+-- @return radius_x
+-- @return radius_y
 function _M:canProject(t, x, y)
 	if not x or not y then return end
 	local typ = Target:getType(t)
@@ -335,16 +340,17 @@ function _M:projectile(t, x, y, damtype, dam, particles)
 	return proj
 end
 
+--- Do move
 -- @param typ a target type table
 -- @param tgtx the target's x-coordinate
 -- @param tgty the target's y-coordinate
 -- @param x the projectile's x-coordinate
--- @param y the projectile's x-coordinate
--- @param srcx the sources's x-coordinate
--- @param srcx the source's x-coordinate
+-- @param y the projectile's y-coordinate
+-- @param srcx the sourcs's x-coordinate
+-- @param srcy the source's y-coordinate
 -- @return lx x-coordinate the projectile travels to next
 -- @return ly y-coordinate the projectile travels to next
--- @return act should we call projectDoAct (usually only for beam)
+-- @return act should we call `projectDoAct`() (usually only for beam)
 -- @return stop is this the last (blocking) tile?
 function _M:projectDoMove(typ, tgtx, tgty, x, y, srcx, srcy)
 	local lx, ly, blocked_corner_x, blocked_corner_y = typ.line_function:step()
@@ -381,7 +387,7 @@ function _M:projectDoMove(typ, tgtx, tgty, x, y, srcx, srcy)
 	return lx, ly, false, false
 end
 
-
+--- projectDoAct
 function _M:projectDoAct(typ, tg, damtype, dam, particles, px, py, tmp)
 	-- Now project on each grid, one type
 	-- Call the projected method of the target grid if possible
@@ -403,6 +409,7 @@ function _M:projectDoAct(typ, tg, damtype, dam, particles, px, py, tmp)
 	end
 end
 
+--- projectDoStop
 function _M:projectDoStop(typ, tg, damtype, dam, particles, lx, ly, tmp, rx, ry, projectile)
 	local grids = {}
 	local function addGrid(x, y)

@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Make a UI element clickable
+-- @classmod engine.ui.Focusable
 module(..., package.seeall, class.make)
 
 can_focus = true

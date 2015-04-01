@@ -26,6 +26,10 @@ local Separator = require "engine.ui.Separator"
 local Image = require "engine.ui.Image"
 local Checkbox = require "engine.ui.Checkbox"
 
+--- Dialog for showing achievements
+--
+-- See also: @{Achievement}
+-- @classmod engine.dialogs.ShowAchievements
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, player)

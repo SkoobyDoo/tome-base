@@ -25,6 +25,8 @@ local Textbox = require "engine.ui.Textbox"
 local Dropdown = require "engine.ui.Dropdown"
 local Textzone = require "engine.ui.Textzone"
 
+--- player to player chatbox
+-- @classmod engine.dialogs.Talkbox
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(chat, on_end, only_friends)

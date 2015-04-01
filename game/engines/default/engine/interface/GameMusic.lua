@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handles music in the game
+-- @classmod engine.generator.interface.GameMusic
 module(..., package.seeall, class.make)
 
 --- Initializes musics

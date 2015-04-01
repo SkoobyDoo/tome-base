@@ -20,7 +20,8 @@
 require "engine.class"
 local Textbox = require "engine.ui.Textbox"
 
---- A generic UI textbox
+--- A generic UI number textbox
+--- @classmod engine.ui.Numberbox
 module(..., package.seeall, class.inherit(Textbox))
 
 function _M:init(t)

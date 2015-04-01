@@ -22,6 +22,7 @@ local Map = require "engine.Map"
 local Shader = require "engine.Shader"
 
 --- handles targetting
+-- @classmod engine.Target
 module(..., package.seeall, class.make)
 
 _M.defaults = {}
@@ -510,7 +511,6 @@ _M.types_def = {
 	bolt = function(dest, src) dest.stop_block = true end,
 	beam = function(dest, scr) dest.line = true end,}
 
--- @return t The target table used by ActorProject, Projectile, GameTargeting, etc.
 -- @param t Target table used to generate the
 -- @param t.type The engine-defined type, populates other more complex variables (see below)
 -- Hit: simple project in LOS<br/>
@@ -530,6 +530,10 @@ _M.types_def = {
 -- @param t.pass_terrain Boolean that allows the target to pass through terrain to remembered tiles on the other side.
 -- @param t.block_path(typ, lx, ly) Function called on each tile to determine if the targeting is blocked.  Automatically set when using t.typ, but the user can provide their own if they know what they are doing.  It should return three arguments: block, hit, hit_radius
 -- @param t.block_radius(typ, lx, ly) Function called on each tile when projecting the radius to determine if the radius projection is blocked.  Automatically set when using t.typ, but the user can provide their own if they know what they are doing.
+-- @return[1] t The target table used by ActorProject
+-- @return[2] `Projectile`
+-- @return[3] `GameTargeting`
+-- @return[4] etc
 function _M:getType(t)
 	if not t then return {} end
 

@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Represents a game world, that is persistent across characters
+-- @classmod engine.World
 module(..., package.seeall, class.make)
 
 --- Initializes the world

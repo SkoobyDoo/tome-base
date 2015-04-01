@@ -20,14 +20,17 @@
 require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 
---- Savefile code
--- T-Engine4 savefiles are direct serialization of in game objects<br/>
--- Basically the engine is told to save your Game instance and then it will
--- recursively save all that it contains: level, map, entities, your own objects, ...<br/>
--- The savefile structure is a zip file that contains one file per object to be saved. Unzip one, it is quite obvious<br/>
--- A simple object (that does not do anything too fancy in its constructor) will save/load without anything
--- to code, it's magic!<br/>
--- For more complex objects, look at the methods save() and loaded() in objects that have them
+--[[-- Savefile code
+T-Engine4 savefiles are direct serialization of in game objects
+
+Basically the engine is told to save your Game instance and then it will recursively save all that it contains: level, map, entities, your own objects, ...
+
+The savefile structure is a zip file that contains one file per object to be saved. Unzip one, it is quite obvious
+
+A simple object (that does not do anything too fancy in its constructor) will save/load without anything to code, it's magic!
+For more complex objects, look at the methods save() and loaded() in objects that have them
+]]
+--- @classmod engine.Savefile
 module(..., package.seeall, class.make)
 
 _M.current_save = false
@@ -52,13 +55,24 @@ function _M:init(savefile, coroutine)
 	_M.current_save = self
 end
 
+--- The save file that is currently open
+-- @static
+-- @return current save
 function _M:getCurrent()
 	return _M.current_save
 end
+
+--- Set this save file as the current one
+-- @static
+-- @param[type=table] save
+-- @return current save
 function _M:setCurrent(save)
 	_M.current_save = save
 end
 
+--- Do we md5 the specified type when saving?
+-- @static
+-- @string type
 function _M:setSaveMD5Type(type)
 	self.md5_types[type] = true
 end
@@ -74,6 +88,7 @@ function _M:close()
 end
 
 --- Delete the savefile, if needed
+-- Also deletes from steam cloud if it's available
 function _M:delete()
 	for i, f in ipairs(fs.list(self.save_dir)) do
 		fs.delete(self.save_dir..f)
@@ -91,6 +106,7 @@ function _M:delete()
 	end
 end
 
+--- add to process
 function _M:addToProcess(o)
 	if not self.tables[o] then
 		table.insert(self.process, o)
@@ -98,11 +114,17 @@ function _M:addToProcess(o)
 	end
 end
 
+--- Add a delayed load for object
+-- @param o
 function _M:addDelayLoad(o)
 --	print("add delayed", _M, "::", self, #self.delayLoad, o)
 	table.insert(self.delayLoad, 1, o)
 end
 
+--- Get the filename of the object
+-- @param o
+-- @return[1] "main"
+-- @return[2] o.__CLASSNAME.."-"..tostring(o):sub(8)
 function _M:getFileName(o)
 	if o == self.current_save_main then
 		return "main"
@@ -111,6 +133,10 @@ function _M:getFileName(o)
 	end
 end
 
+--- Save the object to specified zip
+-- @param obj current_save_main
+-- @param zip
+-- @return int of how many processed
 function _M:saveObject(obj, zip)
 	local processed = 0
 	self.current_save_zip = zip
@@ -131,15 +157,20 @@ function _M:saveObject(obj, zip)
 end
 
 --- Get a savename for a world
+-- @param[type=World] world unused
+-- @return "world.teaw"
 function _M:nameSaveWorld(world)
 	return "world.teaw"
 end
 --- Get a savename for a world
+-- @return "world.teaw"
 function _M:nameLoadWorld()
 	return "world.teaw"
 end
 
 --- Save the given world
+-- @param[type=World] world the world to save
+-- @param[type=boolean] no_dialog show a popup when saving?
 function _M:saveWorld(world, no_dialog)
 	collectgarbage("collect")
 
@@ -163,6 +194,7 @@ function _M:saveWorld(world, no_dialog)
 end
 
 --- Save the given birth descriptors, used for quick start
+-- @param[type=table] descriptor {key, value}
 function _M:saveQuickBirth(descriptor)
 	collectgarbage("collect")
 
@@ -174,6 +206,8 @@ function _M:saveQuickBirth(descriptor)
 end
 
 --- Load the given birth descriptors, used for quick start
+-- @return[1] nil
+-- @return[2] table
 function _M:loadQuickBirth()
 	collectgarbage("collect")
 
@@ -191,6 +225,7 @@ function _M:loadQuickBirth()
 end
 
 --- Saves the screenshot of a game
+-- @param screenshot the screenshot to write to
 function _M:saveScreenshot(screenshot)
 	if not screenshot then return end
 	fs.mkdir(self.save_dir)
@@ -201,15 +236,20 @@ function _M:saveScreenshot(screenshot)
 end
 
 --- Get a savename for a game
+-- @param[type=Game] game
+-- @return "game.teag"
 function _M:nameSaveGame(game)
 	return "game.teag"
 end
 --- Get a savename for a game
+-- @return "game.teag"
 function _M:nameLoadGame()
 	return "game.teag"
 end
 
 --- Save the given game
+-- @param[type=Game] game
+-- @param[type=boolean] no_dialog Show a popup when saving?
 function _M:saveGame(game, no_dialog)
 	collectgarbage("collect")
 
@@ -277,15 +317,22 @@ function _M:saveGame(game, no_dialog)
 end
 
 --- Get a savename for a zone
+-- @param[type=Zone] zone
+-- @return "zone-%s.teaz"
 function _M:nameSaveZone(zone)
 	return ("zone-%s.teaz"):format(zone.short_name)
 end
 --- Get a savename for a zone
+-- @param[type=Zone] zone
+-- @return "zone-%s.teaz"
 function _M:nameLoadZone(zone)
+
 	return ("zone-%s.teaz"):format(zone)
 end
 
 --- Save a zone
+-- @param[type=Zone] zone
+-- @param[type=?boolean] no_dialog Show a popup when saving?
 function _M:saveZone(zone, no_dialog)
 	fs.mkdir(self.save_dir)
 
@@ -307,15 +354,22 @@ function _M:saveZone(zone, no_dialog)
 end
 
 --- Get a savename for a level
+-- @param[type=Level] level
+-- @return "level-%s-%d.teal"
 function _M:nameSaveLevel(level)
 	return ("level-%s-%d.teal"):format(level.data.short_name, level.level)
 end
 --- Get a savename for a level
+-- @param[type=Zone] zone
+-- @param[type=Level] level
+-- @return "level-%s-%d.teal"
 function _M:nameLoadLevel(zone, level)
 	return ("level-%s-%d.teal"):format(zone, level)
 end
 
 --- Save a level
+-- @param[type=Level] level
+-- @param[type=?boolean] no_dialog Show a popup when saving?
 function _M:saveLevel(level, no_dialog)
 	fs.mkdir(self.save_dir)
 
@@ -337,15 +391,19 @@ function _M:saveLevel(level, no_dialog)
 end
 
 --- Get a savename for an entity
+-- @return "entity-%s.teae"
 function _M:nameSaveEntity(e)
 	return ("entity-%s.teae"):format(e.name:gsub("[^a-zA-Z0-9_-.]", "_"):lower())
 end
 --- Get a savename for an entity
+-- @return "entity-%s.teae"
 function _M:nameLoadEntity(name)
 	return ("entity-%s.teae"):format(name:gsub("[^a-zA-Z0-9_-.]", "_"):lower())
 end
 
 --- Save an entity
+-- @param[type=Entity] e
+-- @param[type=?boolean] no_dialog Show a popup when saving?
 function _M:saveEntity(e, no_dialog)
 	fs.mkdir(self.save_dir)
 
@@ -366,6 +424,10 @@ function _M:saveEntity(e, no_dialog)
 	if not no_dialog then popup:done() end
 end
 
+--- Ensure compatability between saves
+-- @param o object
+-- @param base base object
+-- @param allow_object allow the object to save (called recursively)
 local function resolveSelf(o, base, allow_object)
 	-- we check both to ensure compatibility with old saves; including world.teaw which is vital to not make everything explode
 	if (o.__ATOMIC or o.__CLASSNAME) and not allow_object then return end
@@ -381,6 +443,10 @@ local function resolveSelf(o, base, allow_object)
 	for i, k in ipairs(change) do o[k] = base end
 end
 
+--- Actually load an object
+-- @param load
+-- @return[1] nil
+-- @return[2] o
 function _M:loadReal(load)
 	if self.loaded[load] then return self.loaded[load] end
 	local f = fs.open(self.load_dir..load, "r")
@@ -403,7 +469,10 @@ function _M:loadReal(load)
 	return o
 end
 
---- Loads a world
+--- Loads a `World`
+-- @return[1] nil
+-- @return[1] "no savefile"
+-- @return[2] `World`
 function _M:loadWorld()
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadWorld())
@@ -434,7 +503,10 @@ function _M:loadWorld()
 	return loadedWorld
 end
 
---- Loads a world
+--- Gets the filesize of a `World` savefile
+-- @return[1] nil
+-- @return[1] "no savefile"
+-- @return[2] size
 function _M:loadWorldSize()
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadWorld())
@@ -453,7 +525,12 @@ function _M:loadWorldSize()
 	return nb
 end
 
---- Loads a game
+--- Loads a `Game`
+-- delay_fct is all of the delayLoad functionality for the save file
+-- @return[1] nil
+-- @return[1] "no savefile"
+-- @return[2] `Game`
+-- @return[2] delay_fct
 function _M:loadGame()
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadGame())
@@ -487,7 +564,10 @@ function _M:loadGame()
 end
 
 
---- Loads a game
+--- Gets the filesize of the `Game` savefile
+-- @return[1] nil
+-- @return[1] "no savefile"
+-- @return[2] size
 function _M:loadGameSize()
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadGame())
@@ -506,7 +586,11 @@ function _M:loadGameSize()
 	return nb
 end
 
---- Loads a zone
+--- Loads a `Zone`
+-- executes all delayLoad automatically
+-- @param[type=table] zone
+-- @return[1] false
+-- @return[2] `Zone`
 function _M:loadZone(zone)
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadZone(zone)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadZone(zone))
@@ -545,7 +629,12 @@ function _M:loadZone(zone)
 	return loadedZone
 end
 
---- Loads a level
+--- Loads a `Level`
+-- all delayLoad executes automatically
+-- @param[type=table] zone
+-- @param[type=table] level
+-- @return[1] false
+-- @return[2] `Level`
 function _M:loadLevel(zone, level)
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadLevel(zone, level)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadLevel(zone, level))
@@ -583,6 +672,10 @@ function _M:loadLevel(zone, level)
 end
 
 --- Loads an entity
+-- automatically executes delayLoad
+-- @string name
+-- @return[1] false
+-- @return[2] `Entity`
 function _M:loadEntity(name)
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadEntity(name)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadEntity(name))
@@ -620,6 +713,9 @@ function _M:loadEntity(name)
 end
 
 --- Checks validity of a kind
+-- @string type "Entity" | "World" | "Level" | "Zone"
+-- @param object the object to check
+-- @return true if valid
 function _M:checkValidity(type, object)
 	local path = fs.getRealPath(self.save_dir..self['nameSave'..type:lower():capitalize()](self, object))
 	if not path or path == "" then
@@ -637,11 +733,16 @@ function _M:checkValidity(type, object)
 end
 
 --- Checks for existence
+-- @return true if exists
 function _M:check()
 	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	return fs.exists(self.save_dir..self:nameLoadGame())
 end
 
+--- Upload type as md5
+-- @see setSaveMD5Type
+-- @string type savefile type
+-- @string f filename
 function _M:md5Upload(type, f)
 	if not self.md5_types[type] then return end
 	local p = game:getPlayer(true)
@@ -663,6 +764,14 @@ function _M:md5Upload(type, f)
 	profile:setSaveID(game.__mod_info.short_name, uuid, f, m)
 end
 
+--- Check if md5 is correct
+-- @see setSaveMD5Type
+-- @see PlayerProfile:checkSaveID
+-- @string type savefile type
+-- @string f filename
+-- @param[opt=`Game`] loadgame game we're loading, defaults to static Game
+-- @return[1] fct() return false end 
+-- @return[2] fct() return true end
 function _M:md5Check(type, f, loadgame)
 	if not self.md5_types[type] then return function() return true end end
 
@@ -686,6 +795,7 @@ function _M:md5Check(type, f, loadgame)
 	return profile:checkSaveID(game.__mod_info.short_name, uuid, f, m)
 end
 
+--- Called when our md5 is bad
 function _M:badMD5Load()
 	if game.onBadMD5Load then game:onBadMD5Load() end
 	game.bad_md5_loaded = true

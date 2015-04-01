@@ -22,6 +22,7 @@ local Dialog = require "engine.ui.Dialog"
 local Achievement = require "engine.dialogs.Achievement"
 
 --- Handles achievements in a world
+-- @classmod engine.generator.interface.WorldAchievements
 module(..., package.seeall, class.make)
 
 _M.achiev_defs = {}

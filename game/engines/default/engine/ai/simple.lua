@@ -17,8 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Defines a simple AI building blocks
+--- Defines a simple AI building blocks
 -- Target nearest and move/attack it
+-- @classmod engine.ai.simple
 local Astar = require "engine.Astar"
 
 newAI("move_simple", function(self)

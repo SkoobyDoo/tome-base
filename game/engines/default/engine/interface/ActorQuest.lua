@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handles actors quests
+-- @classmod engine.generator.interface.ActorQuest
 module(..., package.seeall, class.make)
 
 _M.quest_class = "engine.Quest"

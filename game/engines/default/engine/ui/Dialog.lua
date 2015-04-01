@@ -22,7 +22,8 @@ local KeyBind = require "engine.KeyBind"
 local Base = require "engine.ui.Base"
 local Particles = require "engine.Particles"
 
---- A generic UI button
+--- A generic UI Dialog
+-- @classmod engine.ui.Dialog
 module(..., package.seeall, class.inherit(Base))
 
 --- Requests a simple waiter dialog

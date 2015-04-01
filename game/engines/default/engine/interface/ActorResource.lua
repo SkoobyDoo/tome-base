@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handles actors life and death
+-- @classmod engine.generator.interface.ActorResource
 module(..., package.seeall, class.make)
 
 _M.resources_def = {}

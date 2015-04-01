@@ -26,6 +26,7 @@ local forceprint = print
 local print = function() end
 
 --- Defines a zone: a set of levels, with depth, npcs, objects, level generator, ...
+-- @classmod engine.Zone
 module(..., package.seeall, class.make)
 
 _no_save_fields = {temp_memory_levels=true, _tmp_data=true}
@@ -96,6 +97,7 @@ end
 
 --- Loads a zone definition
 -- @param short_name the short name of the zone to load, if should correspond to a directory in your module data/zones/short_name/ with a zone.lua, npcs.lua, grids.lua and objects.lua files inside
+-- @param dynamic
 function _M:init(short_name, dynamic)
 	__zone_store[self] = true
 
@@ -355,7 +357,8 @@ end
 -- @param filter a filter table
 -- @param force_level if not nil forces the current level for resolvers to this one
 -- @param prob_filter if true a new probability list based on this filter will be generated, ensuring to find objects better but at a slightly slower cost (maybe)
--- @return the fully resolved entity, ready to be used on a level. Or nil if a filter was given an nothing found
+-- @return[1] nil if a filter was given an nothing found
+-- @return[2] the fully resolved entity, ready to be used on a level
 function _M:makeEntity(level, type, filter, force_level, prob_filter)
 	resolvers.current_level = self.base_level + level.level - 1
 	if force_level then resolvers.current_level = force_level end
@@ -418,7 +421,8 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 end
 
 --- Find a given entity and resolve it
--- @return the fully resolved entity, ready to be used on a level. Or nil if a filter was given an nothing found
+-- @return[1] nil if a filter was given an nothing found
+-- @return[2] the fully resolved entity, ready to be used on a level
 function _M:makeEntityByName(level, type, name, force_unique)
 	resolvers.current_level = self.base_level + level.level - 1
 
@@ -682,6 +686,7 @@ end
 -- @param typ the type of entity, one of "actor", "object", "trap" or "terrain"
 -- @param x the coordinates where to add it. This CAN be null in which case it wont be added to the map
 -- @param y the coordinates where to add it. This CAN be null in which case it wont be added to the map
+-- @param no_added have we added it
 function _M:addEntity(level, e, typ, x, y, no_added)
 	if typ == "actor" then
 		-- We are additing it, this means there is no old position
@@ -815,8 +820,11 @@ function _M:leaveLevel(no_close, lev, old_lev)
 end
 
 --- Asks the zone to generate a level of level "lev"
+-- @param game which `Game`?
 -- @param lev the level (from 1 to zone.max_level)
--- @return a Level object
+-- @param old_lev where are we leaving
+-- @param no_close pass to `leaveLevel`
+-- @return a `Level` object
 function _M:getLevel(game, lev, old_lev, no_close)
 	self:leaveLevel(no_close, lev, old_lev)
 

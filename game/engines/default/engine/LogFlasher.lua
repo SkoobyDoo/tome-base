@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Module that handles a single message line, with pausing and flashing
+-- @classmod engine.LogFlasher
 module(..., package.seeall, class.make)
 
 GOOD = 1

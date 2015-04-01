@@ -21,6 +21,8 @@ require "engine.class"
 local Map = require "engine.Map"
 local Heightmap = require "engine.Heightmap"
 require "engine.Generator"
+
+--- @classmod engine.generator.map.Heightmap
 module(..., package.seeall, class.inherit(engine.Generator))
 
 function _M:init(zone, map, level, data)
