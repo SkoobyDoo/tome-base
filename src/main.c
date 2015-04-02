@@ -884,6 +884,8 @@ void detect_gl_capabilities() {
 		fbo_active = FALSE;
 	}
 	use_modern_gl = shaders_active;
+	// use_modern_gl = FALSE;
+	// shaders_active=FALSE;
 	if (safe_mode) printf("Safe mode activated\n");
 }
 

@@ -1379,7 +1379,7 @@ function _M:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale
 			core.vo.atPipeEnd(function()
 				if image then
 					UI:uiTexture(image, x+4, y+4, 32, 32)
-				elseif item.e then
+				elseif e.display_entity then
 					e.display_entity:toScreen(self.hotkeys_display_icons.tiles, x+4, y+4, 32, 32)
 				end
 			end)
@@ -2217,7 +2217,7 @@ core.display.countDraws()
 	end
 
 	core.vo.disablePipe()
-print("==minimalist ui draws", core.display.countDraws())
+-- print("==minimalist ui draws", core.display.countDraws())
 end
 
 function _M:setupMouse(mouse)

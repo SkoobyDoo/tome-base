@@ -175,6 +175,8 @@ function _M:drawFontLine(font, text, width, r, g, b, direct_draw)
 end
 
 function _M:uiTexture(tex, x, y, w, h, r, g, b, a)
+	tex.tx = tex.tx or 0
+	tex.ty = tex.ty or 0
 	tex.t:toScreenPipe(x, y, w, h, tex.tx, tex.tx+tex.tw, tex.ty, tex.ty+tex.th, r, g, b, a)
 end
 
