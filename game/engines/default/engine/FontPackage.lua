@@ -80,11 +80,10 @@ function _M:getFont(name, orname)
 end
 
 --- Get by name. 
--- @bug orname is used but not defined
 -- @string name
 -- @param[type=?boolean] force make a font bold no matter what
 function _M:get(name, force)
-	local font, size = self:resolveFont(name, orname)
+	local font, size = self:resolveFont(name)
 	local f = core.display.newFont(font.font, font[size], font.bold or force)
 	if font.bold then f:setStyle("bold") end
 	return f
