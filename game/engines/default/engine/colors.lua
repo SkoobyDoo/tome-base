@@ -17,33 +17,77 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+---  Implements string->Color functionality, and allows the definition of colors  
+-- Defines numerous colors by default
+-- @script engine.colors
+
 colors = {}
 colors_simple = {}
 
+--- Define Color
+-- @string name
+-- @int r foreground red
+-- @int g foreground green
+-- @int b foreground blue
+-- @int br background red
+-- @int bg background green
+-- @int bb background blue
 function defineColor(name, r, g, b, br, bg, bb)
 	colors[name] = {r=r, g=g, b=b, br=br, bg=bg, bb=bb}
 	colors_simple[name] = {r, g, b}
 end
 
+--- color -> foreground table
+-- @param[type=table] c color
+-- @return {r, g, b}
 function colors.simple(c) return {c.r, c.g, c.b} end
+--- Does: color{r,g,b} / 255
+-- @param[type=table] c color
+-- @number[opt=1] a transparency
 function colors.simple1(c, a) return {c.r/255, c.g/255, c.b/255, a or 1} end
 
+--- color -> foreground arguments
+-- @param[type=table] c
+-- @return r
+-- @return g
+-- @return b
 function colors.unpack(c) return c.r, c.g, c.b end
 
+--- hex -> color
+-- @usage colors.hex1("FFBBCC")
+-- @string hex RRGGBB format hex string, 00->FF
+-- @return {r, g, b}
 function colors.hex1(hex)
 	local r, g, b = tonumber("0x"..hex:sub(1, 2)), tonumber("0x"..hex:sub(3, 4)), tonumber("0x"..hex:sub(5, 6))
 	return {r / 255, g / 255, b / 255}
 end
 
+--- hex -> color
+-- @usage colors.hex1unpack("FFBBCC")
+-- @string hex RRGGBB format hex string, 00->FF
+-- @return r
+-- @return g
+-- @return b
 function colors.hex1unpack(hex)
 	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255
 end
 
+--- hex -> color with alpha
+-- @usage colors.hex1alpha("FFBBCC88")
+-- @string hex RRGGBB format hex string, 00->FF
+-- @return {r, g, b, a}
 function colors.hex1alpha(hex)
 	local r, g, b, a = tonumber("0x"..hex:sub(1, 2)), tonumber("0x"..hex:sub(3, 4)), tonumber("0x"..hex:sub(5, 6)), tonumber("0x"..hex:sub(7, 8))
 	return {r / 255, g / 255, b / 255, a / 255}
 end
 
+--- hex -> color with alpha
+-- @usage colors.hex1alpha("FFBBCC88")
+-- @string hex RRGGBB format hex string, 00->FF
+-- @return r
+-- @return g
+-- @return b
+-- @return a
 function colors.hex1alphaunpack(hex)
 	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255, tonumber("0x"..hex:sub(7, 8)) / 255
 end

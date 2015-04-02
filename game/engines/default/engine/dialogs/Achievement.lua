@@ -23,6 +23,10 @@ local Dialog = require "engine.ui.Dialog"
 local Image = require "engine.ui.Image"
 local Textzone = require "engine.ui.Textzone"
 
+--- A sub dialog for defining an achievement
+--
+-- See also: @{ShowAchievements}
+-- @classmod engine.dialogs.Achievement
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, a)

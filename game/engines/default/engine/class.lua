@@ -17,11 +17,15 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--- Base class used by pretty much everything
+-- @classmod engine.class
 module("class", package.seeall)
 
 local base = _G
 local run_inherited = {}
 
+--- Search
+-- @local
 local function search(k, plist)
 	for i=1, #plist do
 		local v = plist[i][k]     -- try `i'-th superclass
@@ -29,7 +33,9 @@ local function search(k, plist)
 	end
 end
 
-
+--- Calls init() for module and sets up some variables
+-- @param[type=table] c class
+-- @return class
 function make(c)
 	setmetatable(c, {__index=_M})
 	c.new = function(...)
@@ -49,6 +55,8 @@ function make(c)
 end
 
 local skip_key = {init=true, _NAME=true, _M=true, _PACKAGE=true, new=true, _BASES=true, castAs=true}
+--- Inherit
+-- @return function(c)
 function inherit(...)
 	local bases = {...}
 	return function(c)

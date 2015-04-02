@@ -22,6 +22,7 @@ require "engine.class"
 require "engine.Key"
 
 --- Receives keypresses and acts upon them
+-- @classmod engine.KeyCommand
 module(..., package.seeall, class.inherit(engine.Key))
 
 function _M:init()
@@ -101,6 +102,7 @@ end
 -- @param sym the key to handle
 -- @param mods a table with the mod keys needed, i.e: {"ctrl", "alt"}
 -- @param fct the function to call when the key is pressed
+-- @param anymod allow any modifier
 function _M:addCommand(sym, mods, fct, anymod)
 	if type(sym) == "string" then sym = self[sym] end
 	if not sym then return end

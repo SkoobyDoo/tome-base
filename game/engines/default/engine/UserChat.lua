@@ -26,6 +26,7 @@ local Slider = require "engine.ui.Slider"
 local Base = require "engine.ui.Base"
 
 --- Module that handles multiplayer chats
+-- @classmod engine.UserChat
 module(..., package.seeall, class.inherit(Base))
 
 local channel_colors = {

@@ -19,10 +19,17 @@
 
 require "engine.class"
 
---- Abstract binary space partitioning
+--- Abstract binary space partitioning  
 -- Can be used to generator levels and so on
+-- @classmod engine.BSP
 module(..., package.seeall, class.make)
 
+--- Init
+-- @int w
+-- @int h
+-- @int min_w
+-- @int min_h
+-- @int[opt=8] max_depth
 function _M:init(w, h, min_w, min_h, max_depth)
 	self.max_depth = max_depth or 8
 	self.min_w, self.min_h = min_w, min_h
@@ -33,6 +40,8 @@ function _M:init(w, h, min_w, min_h, max_depth)
 	print("[BSP] ", w, h)
 end
 
+--- Partition
+-- @param[type=?table] store BSP table, Default: {x=0, y=0, rx=0, ry=0, w=w, h=h, nodes={}, id=0, depth=0}
 function _M:partition(store)
 	store = store or self.bsp
 

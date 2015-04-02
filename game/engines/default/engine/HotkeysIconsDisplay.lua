@@ -23,8 +23,21 @@ local Entity = require "engine.Entity"
 local Tiles = require "engine.Tiles"
 local UI = require "engine.ui.Base"
 
+--- Display of hotkeys with icons
+-- @classmod engine.HotkeysIconsDisplay
 module(..., package.seeall, class.make)
 
+--- Init
+-- @param[type=Actor] actor
+-- @number x x coordinate
+-- @number y y coordinate
+-- @number w width
+-- @number h height
+-- @param[type=table] bgcolor background color
+-- @string[opt="DroidSansMono"] fontname
+-- @number[opt=10] fontsize
+-- @number icon_w icon width
+-- @number icon_h icon height
 function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize, icon_w, icon_h)
 	self.actor = actor
 	if type(bgcolor) ~= "string" then
@@ -61,11 +74,18 @@ end
 function _M:setColumns(nb)
 end
 
+--- Enable our shadows
 function _M:enableShadow(v)
 	self.shadow = v
 end
 
 --- Resize the display area
+-- @number x x coordinate
+-- @number y y coordinate
+-- @number w width
+-- @number h height
+-- @number iw icon width
+-- @number ih icon height
 function _M:resize(x, y, w, h, iw, ih)
 	self.display_x, self.display_y = math.floor(x), math.floor(y)
 	self.w, self.h = math.floor(w), math.floor(h)
@@ -260,6 +280,7 @@ function _M:display()
 	end end
 end
 
+--- Our toScreen override
 function _M:toScreen()
 	self:display()
 	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
@@ -303,8 +324,14 @@ function _M:toScreen()
 	end
 end
 
---- Call when a mouse event arrives in this zone
+--- Call when a mouse event arrives in this zone  
 -- This is optional, only if you need mouse support
+-- @string button
+-- @number mx mouse x
+-- @number my mouse y
+-- @param[type=boolean] click did they click
+-- @param[type=function] on_over callback for hover
+-- @param[type=function] on_click callback for click
 function _M:onMouse(button, mx, my, click, on_over, on_click)
 	local orient = self.orient or "down"
 	mx, my = mx - self.display_x, my - self.display_y

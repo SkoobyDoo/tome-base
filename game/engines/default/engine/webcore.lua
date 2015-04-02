@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--- @classmod engine.webcore
+
 if not core.webview then return end
 
 local class = require "class"

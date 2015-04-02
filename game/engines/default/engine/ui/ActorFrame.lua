@@ -21,6 +21,8 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Tiles = require "engine.Tiles"
 
+
+--- @classmod engine.ui.ActorFrame
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)

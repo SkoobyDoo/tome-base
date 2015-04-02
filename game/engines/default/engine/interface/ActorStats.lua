@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handles actors stats
+-- @classmod engine.generator.interface.ActorStats
 module(..., package.seeall, class.make)
 
 _M.stats_def = {}

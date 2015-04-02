@@ -24,6 +24,7 @@ local Slider = require "engine.ui.Slider"
 local Focusable = require "engine.ui.Focusable"
 
 --- A generic UI image list
+-- @classmod engine.ui.ImageList
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

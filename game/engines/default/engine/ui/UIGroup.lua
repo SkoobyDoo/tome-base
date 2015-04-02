@@ -19,7 +19,8 @@
 
 require "engine.class"
 
---- Make a UI element clickable
+--- A generic UI group
+-- @classmod engine.ui.UIGroup
 module(..., package.seeall, class.make)
 
 function _M:setInnerFocus(id)

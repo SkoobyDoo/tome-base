@@ -25,6 +25,10 @@ local Dialog = require "engine.ui.Dialog"
 local UserChat = require "engine.UserChat"
 require "Json2"
 
+--- Handles the player profile, possibly online
+-- @classmod engine.PlayerProfile
+module(..., package.seeall, class.make)
+
 ------------------------------------------------------------
 -- some simple serialization stuff
 ------------------------------------------------------------
@@ -67,9 +71,6 @@ local function serialize(data)
 end
 ------------------------------------------------------------
 
-
---- Handles the player profile, possibly online
-module(..., package.seeall, class.make)
 
 function _M:init()
 	self.chat = UserChat.new()
@@ -822,6 +823,7 @@ function _M:setSaveID(module, uuid, savename, md5)
 	print("[ONLINE PROFILE] saved character md5", uuid, savename, md5)
 end
 
+--- check if our save is valid
 function _M:checkSaveID(module, uuid, savename, md5)
 	if not self.auth or not self.hash_valid or not md5 then return function() return false end end
 	core.profile.pushOrder(table.serialize{o="CheckSaveMD5",

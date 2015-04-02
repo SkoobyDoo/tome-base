@@ -22,6 +22,7 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
 --- A web browser
+-- @classmod engine.dialogs.Downloader
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

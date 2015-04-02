@@ -22,6 +22,8 @@ local Dialog = require "engine.ui.Dialog"
 local List = require "engine.ui.List"
 local Textzone = require "engine.ui.Textzone"
 
+--- Chat Ignores
+-- @classmod engine.dialogs.ChatIgnores
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init()

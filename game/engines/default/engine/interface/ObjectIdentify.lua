@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handles unidentified objects, and their identification
+-- @classmod engine.generator.interface.ObjectIdentify
 module(..., package.seeall, class.make)
 
 function _M:init(t)

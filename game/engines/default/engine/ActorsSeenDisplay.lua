@@ -19,8 +19,19 @@
 
 require "engine.class"
 
+--- A display of the actors currently seen by the specified actor
+-- @classmod engine.ActorsSeenDisplay
 module(..., package.seeall, class.make)
 
+--- Init
+-- @param[type=Actor] actor
+-- @int x x coordinate on screen
+-- @int y y coordinate on screen
+-- @int w width of window
+-- @int h height of window
+-- @param[opt=black] bgcolor background color of window
+-- @string[opt="/data/font/DroidSansMono.ttf"] fontname
+-- @int[opt=10] fontsize
 function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize)
 	self.actor = actor
 	if type(bgcolor) ~= "string" then
@@ -36,6 +47,10 @@ function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize)
 end
 
 --- Resize the display area
+-- @int x new x position
+-- @int y new y position
+-- @int w new width
+-- @int h new height
 function _M:resize(x, y, w, h)
 	self.display_x, self.display_y = math.floor(x), math.floor(y)
 	self.w, self.h = math.floor(w), math.floor(h)
@@ -58,6 +73,7 @@ function _M:resize(x, y, w, h)
 end
 
 --- Sets the display into nb columns
+-- @int nb number of columns
 function _M:setColumns(nb)
 	self.nb_cols = nb
 end
@@ -101,6 +117,7 @@ function _M:display()
 	return self.surface
 end
 
+--- Draws the actor to the display
 function _M:toScreen()
 	self:display()
 	self.texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.texture_w, self.texture_h)

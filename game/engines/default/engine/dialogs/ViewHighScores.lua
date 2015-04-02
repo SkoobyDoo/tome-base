@@ -22,6 +22,8 @@ local Dialog = require "engine.ui.Dialog"
 local Textzone = require "engine.ui.Textzone"
 local HighScores = require "engine.HighScores"
 
+--- View Highscores
+-- @classmod engine.dialogs.ViewHighScores
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init()

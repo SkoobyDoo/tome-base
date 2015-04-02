@@ -23,6 +23,8 @@ local Dialog = require "engine.ui.Dialog"
 local Button = require "engine.ui.Button"
 local Textbox = require "engine.ui.Textbox"
 
+--- Generic popup for getting text
+-- @classmod engine.dialogs.GetText
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, text, min, max, action, cancel, absolute)

@@ -21,6 +21,7 @@ require "engine.class"
 local Map = require "engine.Map"
 
 --- Define a level
+-- @classmod engine.Level
 module(..., package.seeall, class.make)
 
 -- Keep a list of currently existing maps
@@ -198,7 +199,8 @@ end
 -- Decaying means we look on the map for the given type of entities and if we are allowed to we delete them
 -- @param what what Map feature to decay (ACTOR, OBJECT, ...)
 -- @param check either a boolean or a function, if true the given entity will be decayed
--- @return the number of decayed entities and the total number of such entities remaining
+-- @return the number of decayed entities
+-- @return the total number of such entities remaining
 function _M:decay(what, check)
 	local total, nb = 0, 0
 	for i = 0, self.map.w - 1 do for j = 0, self.map.h - 1 do

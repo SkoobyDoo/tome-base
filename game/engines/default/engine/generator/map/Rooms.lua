@@ -22,6 +22,7 @@ local Map = require "engine.Map"
 require "engine.Generator"
 
 --- Generator that makes a map
+-- @classmod engine.generator.map.Rooms
 module(..., package.seeall, class.inherit(engine.Generator))
 
 function _M:init(zone, map, level, data)

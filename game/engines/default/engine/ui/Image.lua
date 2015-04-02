@@ -22,6 +22,7 @@ local Tiles = require "engine.Tiles"
 local Base = require "engine.ui.Base"
 
 --- A generic UI image
+-- @classmod engine.ui.Image
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)

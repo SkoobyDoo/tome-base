@@ -22,6 +22,7 @@ local Entity = require "engine.Entity"
 local Map = require "engine.Map"
 
 --- Describes a trap
+-- @classmod engine.Trap
 module(..., package.seeall, class.inherit(Entity))
 
 _M.display_on_seen = true

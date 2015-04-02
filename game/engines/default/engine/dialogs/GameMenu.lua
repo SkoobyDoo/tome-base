@@ -21,6 +21,8 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local List = require "engine.ui.List"
 
+--- Main game menu
+-- @classmod engine.dialogs.GameMenu
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(actions)

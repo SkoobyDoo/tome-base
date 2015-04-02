@@ -25,6 +25,7 @@ local Separator = require "engine.ui.Separator"
 local UIGroup = require "engine.ui.UIGroup"
 
 --- A tab container
+-- @classmod engine.ui.Tabs
 module(..., package.seeall, class.inherit(Base, Focusable, UIGroup))
 
 function _M:init(t)

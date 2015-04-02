@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Handles a 3D "quadratic" object
 -- It's mostly undeed, it simply allows quadratic to be serialized
+-- @classmod engine.Quadratic
 module(..., package.seeall, class.make)
 
 --- Make a particle emitter

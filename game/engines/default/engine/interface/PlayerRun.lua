@@ -22,6 +22,7 @@ local Dialog = require "engine.ui.Dialog"
 
 --- Handles player running
 -- This should work for running inside tunnel, alongside walls, in open spaces.<br/>
+-- @classmod engine.generator.interface.PlayerRun
 module(..., package.seeall, class.make)
 
 local function checkDir(a, dir, dist)
@@ -106,13 +107,11 @@ function _M:runFollow(path)
 end
 
 --- Run a turn
--- For a turn based game you want in you player's act() something like that:<br/>
--- <pre>
--- if not self:runStep() then game.paused = true end
--- </pre><br/>
--- This will move the actor using the :move() method, this SHOULD have been redefined by the module
--- to use energy, otherwise running will be free.
--- @return true if we can continue to run, false otherwise
+-- This will move the actor using the :move() method, this SHOULD have been redefined by the module to use energy, otherwise running will be free.
+-- For a turn based game you want in you player's act() something like the usage example
+-- @usage if not self:runStep() then game.paused = true end
+-- @return[1] true if we can continue to run
+-- @return[2] false if we can't continue
 function _M:runStep()
 	if not self.running then return false end
 
@@ -238,11 +237,12 @@ function _M:runStep()
 	end
 end
 
---- Can we continue running ?
--- Rewrite this method to hostiles, interesting terrain, whatever.
--- This method should be called by its submethod, it tries to detect changes in the terrain.<br/>
+--- Can we continue running?  
+-- Rewrite this method to hostiles, interesting terrain, whatever.  
+-- This method should be called by its submethod, it tries to detect changes in the terrain.  
 -- It will also try to follow tunnels when they simply change direction.
--- @return true if we can continue to run, false otherwise
+-- @return[1] true if we can continue to run
+-- @return[2] false if we can't continue
 function _M:runCheck()
 	if not self.running.path then
 		local dir_is_cardinal = self.running.dir == 2 or self.running.dir == 4 or self.running.dir == 6 or self.running.dir == 8

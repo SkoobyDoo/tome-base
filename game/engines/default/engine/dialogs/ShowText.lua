@@ -21,6 +21,8 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local Textzone = require "engine.ui.Textzone"
 
+--- Show Text
+-- @classmod engine.dialogs.ShowText
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, file, replace, w, h, on_exit, accept_key)

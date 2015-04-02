@@ -20,6 +20,7 @@
 require "engine.class"
 local KeyBind = require "engine.KeyBind"
 
+--- @classmod engine.ui.Gestures
 module(..., package.seeall, class.make)
 
 function _M:init(text, key_source, force_all)

@@ -21,6 +21,8 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
+--- Equipment Doll preview frame
+-- @classmod engine.ui.EquipDollFrame
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 _M.font = core.display.newFont("/data/font/DroidSans.ttf", 10)

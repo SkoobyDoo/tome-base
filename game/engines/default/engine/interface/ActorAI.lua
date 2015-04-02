@@ -22,6 +22,7 @@ require "engine.Actor"
 local Map = require "engine.Map"
 
 --- Handles actors artificial intelligence (or dumbness ... ;)
+-- @classmod engine.generator.interface.ActorAI
 module(..., package.seeall, class.make)
 
 _M.ai_def = {}
@@ -158,7 +159,8 @@ _M.AI_LOCATION_GUESS_ERROR = 3  -- Start position guess errors at ~3 grids
 -- This will usually return the exact coords, but if the target is only partially visible (or not at all)
 -- it will return estimates, to throw the AI a bit off (up to 10 tiles error)
 -- @param target the target we are tracking
--- @return x, y coords to move/cast to
+-- @return x coord to move/cast to
+-- @return y coord to move/cast to
 function _M:aiSeeTargetPos(target)
 	if not target then return self.x, self.y end
 	local tx, ty = target.x, target.y

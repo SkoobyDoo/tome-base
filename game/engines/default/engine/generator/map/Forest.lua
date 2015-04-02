@@ -23,6 +23,8 @@ require "engine.Generator"
 local RoomsLoader = require "engine.generator.map.RoomsLoader"
 local Astar = require"engine.Astar"
 local DirectPath = require"engine.DirectPath"
+
+--- @classmod engine.generator.map.Forest
 module(..., package.seeall, class.inherit(engine.Generator, RoomsLoader))
 
 function _M:init(zone, map, level, data)

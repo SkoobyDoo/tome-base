@@ -21,6 +21,7 @@ require "engine.class"
 local Map = require "engine.Map"
 
 --- Generator interface that can use rooms
+-- @classmod engine.generator.map.RoomsLoader
 module(..., package.seeall, class.make)
 
 function _M:init(data)

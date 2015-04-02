@@ -20,6 +20,8 @@
 require "engine.class"
 local Map = require "engine.Map"
 require "engine.Generator"
+
+--- @classmod engine.generator.map.TileSet
 module(..., package.seeall, class.inherit(engine.Generator))
 
 -- Deactivate too many prints

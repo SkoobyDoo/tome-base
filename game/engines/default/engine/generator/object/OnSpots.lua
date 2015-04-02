@@ -20,6 +20,8 @@
 require "engine.class"
 local Map = require "engine.Map"
 local Random = require "engine.generator.object.Random"
+
+--- @classmod engine.generator.object.OnSpots
 module(..., package.seeall, class.inherit(Random))
 
 function _M:init(zone, map, level, spots)

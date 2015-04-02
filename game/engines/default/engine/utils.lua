@@ -17,6 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--- Utility functionality used by a lot of the base classes
+-- @script engine.utils
+
 local lpeg = require "lpeg"
 
 function math.decimals(v, nb)
@@ -2075,7 +2078,7 @@ function core.fov.set_permissiveness(val)
 end
 
 --- Sets the FoV vision size of the source actor (if applicable to the chosen FoV algorithm).
--- @param should be any number between 0.0 and 1.0 (smallest to largest).  Default is 1.
+-- @param val should be any number between 0.0 and 1.0 (smallest to largest).  Default is 1.
 -- val = 1.0 will result in symmetric vision and targeting (i.e., I can see you if and only if you can see me)
 --           for applicable fov algorithms ("large_ass").
 function core.fov.set_actor_vision_size(val)
@@ -2105,7 +2108,7 @@ function core.fov.set_algorithm(val)
 end
 
 --- Sets the vision shape or distance metric for field of vision, talent ranges, AoEs, etc.
--- @param should be a string: circle, circle_round (same as circle), circle_floor, circle_ceil, circle_plus1, octagon, diamond, square.
+-- @param val should be a string: circle, circle_round (same as circle), circle_floor, circle_ceil, circle_plus1, octagon, diamond, square.
 -- See "src/fov/fov.h" to see how each shape calculates distance and height.
 -- "circle_round" is aesthetically pleasing, "octagon" is a traditional roguelike FoV shape, and "circle_plus1" is similar to both "circle_round" and "octagon"
 -- Default is "circle_round"
@@ -2307,16 +2310,16 @@ function util.removeForceSafeBoot()
 	if restore then fs.setWritePath(restore) end
 end
 
--- Alias os.exit to our own exit method for cleanliness
+--- Alias os.exit to our own exit method for cleanliness
 os.crash = os.exit
 os.exit = core.game.exit_engine
 
--- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
+--- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
 function __dump_fct(f)
 	return string.format("%q", string.dump(f))
 end
 
--- Tries to load a lua module from a list, returns the first available
+--- Tries to load a lua module from a list, returns the first available
 function require_first(...)
 	local list = {...}
 	for i = 1, #list do
@@ -2329,6 +2332,7 @@ function require_first(...)
 	return nil
 end
 
+--- Is steamcloud available?
 function util.steamCanCloud()
 	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then return true end
 end
