@@ -113,7 +113,6 @@ defineColor('DARK_UMBER', 0x57, 0x5E, 0x25)
 defineColor('DARK_GREY', 67, 67, 67)
 defineColor('GREY', 127, 127, 127)
 
-defineColor('ROYAL_BLUE', 65, 105, 225)
 defineColor('AQUAMARINE', 127, 255, 212)
 defineColor('CADET_BLUE', 95, 158, 160)
 defineColor('STEEL_BLUE', 70, 130, 180)
