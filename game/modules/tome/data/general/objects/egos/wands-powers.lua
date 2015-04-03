@@ -85,18 +85,28 @@ newEntity{
 	rarity = 10,
 
 	charm_power_def = {add=25, max=400, floor=true},
-	resolvers.charm("creates a wall of flames lasting for 4 turns (dam %d overall)", 6, function(self, who)
-		local tg = {type="wall", range=5, halflength=3, halfmax_spots=3+1}
-		local x, y = who:getTarget(tg)
-		if not x or not y then return nil end
-		local dam = self:getCharmPower(who)
-		who:project(tg, x, y, function(px, py)
-			game.level.map:addEffect(who, px, py, 4, engine.DamageType.FIRE, dam / 4, 0, 5, nil, {type="inferno"}, nil, true)
-		end)
-		game:playSoundNear(who, "talents/fire")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
-		return {id=true, used=true}
-	end),
+	resolvers.charm(
+		function(self, who)
+			return ("create a wall of flames at up to %d distance that deals %0.2f fire damage each turn for 4 turns"):format(self.use_power.range, who:damDesc(engine.DamageType.FIRE, self.use_power.damage(self, who)/4))
+		end,
+		6,
+		function(self, who)
+			local tg = {type="wall", range=self.use_power.range, halflength=3, halfmax_spots=3+1}
+			local x, y = who:getTarget(tg)
+			if not x or not y then return nil end
+			local dam = self.use_power.damage(self, who)
+			who:project(tg, x, y, function(px, py)
+				game.level.map:addEffect(who, px, py, 4, engine.DamageType.FIRE, dam / 4, 0, 5, nil, {type="inferno"}, nil, true)
+			end)
+			game:playSoundNear(who, "talents/fire")
+			game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
+			return {id=true, used=true}
+		end,
+		"T_GLOBAL_CD",
+		{range = 5,
+		damage = function(self, who) return self:getCharmPower(who) end
+		}
+	)
 }
 
 newEntity{
@@ -106,22 +116,30 @@ newEntity{
 	rarity = 6,
 
 	charm_power_def = {add=25, max=600, floor=true},
-	resolvers.charm(function(self) return ("fire a bolt of a random element (dam %d-%d)"):format(self:getCharmPower(who)/2, self:getCharmPower(who)) end, 10, function(self, who)
-		local tg = {type="bolt", range=8}
-		local x, y = who:getTarget(tg)
-		if not x or not y then return nil end
-		local dam = self:getCharmPower(who)
-		local elem = rng.table{
-			{engine.DamageType.FIRE, "flame"},
-			{engine.DamageType.COLD, "freeze"},
-			{engine.DamageType.LIGHTNING, "lightning_explosion"},
-			{engine.DamageType.ACID, "acid"},
-			{engine.DamageType.NATURE, "slime"},
-			{engine.DamageType.BLIGHT, "slime"},
-		}
-		who:project(tg, x, y, elem[1], rng.avg(dam / 2, dam, 3), {type=elem[2]})
-		game:playSoundNear(who, "talents/fire")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
-		return {id=true, used=true}
-	end),
+	resolvers.charm(function(self, who)
+		local dam = self.use_power.damage(self, who)
+		return ("fire a bolt of a random element out to range %d, dealing %0.2f to %0.2f base damage"):format(self.use_power.range, dam/2, dam) end,
+		10,
+		function(self, who)
+			local tg = {type="bolt", range=self.use_power.range}
+			local x, y = who:getTarget(tg)
+			if not x or not y then return nil end
+			local dam = self.use_power.damage(self, who)
+			local elem = rng.table{
+				{engine.DamageType.FIRE, "flame"},
+				{engine.DamageType.COLD, "freeze"},
+				{engine.DamageType.LIGHTNING, "lightning_explosion"},
+				{engine.DamageType.ACID, "acid"},
+				{engine.DamageType.NATURE, "slime"},
+				{engine.DamageType.BLIGHT, "slime"},
+			}
+			who:project(tg, x, y, elem[1], rng.avg(dam / 2, dam, 3), {type=elem[2]})
+			game:playSoundNear(who, "talents/fire")
+			game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
+			return {id=true, used=true}
+		end,
+	"T_GLOBAL_CD",
+	{range = 8,
+	damage = function(self, who) return self:getCharmPower(who) end}
+	)
 }
