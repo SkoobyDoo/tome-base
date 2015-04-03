@@ -390,34 +390,70 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		self:callTalent(self.T_WEAPON_FOLDING, "doWeaponFolding", target)
 	end
 
-	-- Special effect
-	if hitted and weapon and weapon.special_on_hit and weapon.special_on_hit.fct and (not target.dead or weapon.special_on_hit.on_kill) then
-		weapon.special_on_hit.fct(weapon, self, target)
+	-- Special weapon effects  (passing the special definition to facilitate encapsulating multiple special effects)
+	if hitted and weapon and weapon.special_on_hit then
+		local specials = weapon.special_on_hit
+		if specials.fct then specials = {specials} end
+		for _, special in ipairs(specials) do
+			if special.fct and (not target.dead or special.on_kill) then
+				special.fct(weapon, self, target, dam, special)
+			end
+		end
+	end
+	
+	-- Special ammo effects  (passing the special definition to facilitate encapsulating multiple special effects)
+	if hitted and ammo and ammo.special_on_hit then
+		local specials = ammo.special_on_hit
+		if specials.fct then specials = {specials} end
+		for _, special in ipairs(specials) do
+			if special.fct and (not target.dead or special.on_kill) then
+				special.fct(ammo, self, target, dam, special)
+			end
+		end
 	end
 
-	-- Special effect... AMMO!
-	if hitted and ammo and ammo.special_on_hit and ammo.special_on_hit.fct and (not target.dead or ammo.special_on_hit.on_kill) then
-		ammo.special_on_hit.fct(ammo, self, target)
+	--Special effect on crit
+	if hitted and crit and weapon and weapon.special_on_crit then
+		local specials = weapon.special_on_crit
+		if specials.fct then specials = {specials} end
+		for _, special in ipairs(specials) do
+			if special.fct and (not target.dead or special.on_kill) then
+				special.fct(weapon, self, target, dam, special)
+			end
+		end
 	end
-
-	-- Special effect on crit
-	if crit and weapon and weapon.special_on_crit and weapon.special_on_crit.fct and (not target.dead or weapon.special_on_crit.on_kill) then
-		weapon.special_on_crit.fct(weapon, self, target)
-	end
-
-	-- Special effect on crit AMMO!
-	if crit and ammo and ammo.special_on_crit and ammo.special_on_crit.fct and (not target.dead or ammo.special_on_crit.on_kill) then
-		ammo.special_on_crit.fct(ammo, self, target)
+	
+	--Special effect on crit AMMO!
+	if hitted and crit and ammo and ammo.special_on_crit then
+		local specials = ammo.special_on_crit
+		if specials.fct then specials = {specials} end
+		for _, special in ipairs(specials) do
+			if special.fct and (not target.dead or special.on_kill) then
+				special.fct(ammo, self, target, dam, special)
+			end
+		end
 	end
 
 	-- Special effect on kill
-	if hitted and weapon and weapon.special_on_kill and weapon.special_on_kill.fct and target.dead then
-		weapon.special_on_kill.fct(weapon, self, target)
+	if hitted and weapon and weapon.special_on_kill and target.dead then
+		local specials = weapon.special_on_kill
+		if specials.fct then specials = {specials} end
+		for _, special in ipairs(specials) do
+			if special.fct then
+				special.fct(weapon, self, target, dam, special)
+			end
+		end
 	end
 
 	-- Special effect on kill A-A-A-AMMMO!
-	if hitted and ammo and ammo.special_on_kill and ammo.special_on_kill.fct and target.dead then
-		ammo.special_on_kill.fct(ammo, self, target)
+	if hitted and ammo and ammo.special_on_kill and target.dead then
+		local specials = ammo.special_on_kill
+		if specials.fct then specials = {specials} end
+		for _, special in ipairs(specials) do
+			if special.fct then
+				special.fct(ammo, self, target, dam, special)
+			end
+		end
 	end
 	
 	-- Siege Arrows
