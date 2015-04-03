@@ -506,7 +506,8 @@ function _M:playerFOV()
 			if self:attr("detect_actor") and game.level.map(x, y, game.level.map.ACTOR) then ok = true end
 			if self:attr("detect_object") and game.level.map(x, y, game.level.map.OBJECT) then ok = true end
 			if self:attr("detect_trap") and game.level.map(x, y, game.level.map.TRAP) then
-				game.level.map(x, y, game.level.map.TRAP):setKnown(self, true)
+				game.level.map(x, y, game.level.map.TRAP):setKnown(self, true, x, y)
+				game.level.map.remembers(x, y, true)
 				game.level.map:updateMap(x, y)
 				ok = true
 			end
