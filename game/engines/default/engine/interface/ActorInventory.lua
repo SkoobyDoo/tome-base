@@ -283,7 +283,6 @@ function _M:removeObject(inven_id, item, no_unstack)
 	end
 
 	self:onRemoveObject(o, inven.id, item)
---o = self:removeObject(inven, item, true)
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
 

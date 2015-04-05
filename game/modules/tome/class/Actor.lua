@@ -3971,10 +3971,8 @@ function _M:onAddObject(o, inven_id, slot)
 		end
 	end
 
---	if o:canUseObject() and not o.quest and not o.lore then -- set up object use talents (for NPC's)
+-- need extra checks?
 	if o:canUseObject() then -- set up object use talents (for NPC's)
--- need extra checks
---inven.is_worn?
 		self:useObjectEnable(o, inven_id, slot)
 	end
 
@@ -4002,7 +4000,6 @@ function _M:onRemoveObject(o, inven_id, slot)
 		end
 	end
 
-	--inven.is_worn?
 	if o:canUseObject() then -- set up object use talents (for NPC's)
 		self:useObjectDisable(o, inven_id, slot)
 	end

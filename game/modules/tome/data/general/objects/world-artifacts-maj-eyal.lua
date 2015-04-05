@@ -606,7 +606,6 @@ newEntity{ base = "BASE_ROD",
 			return ("shoot a cone of flames (radius %d) for %0.2f fire damage (based on Magic)"):format(self.use_power.radius, engine.interface.ActorTalents.damDesc(who, engine.DamageType.FIRE, self.use_power.damage(self, who)))
 		end,
 		use = function(self, who)
---			local tg = {type="cone", range=0, radius=5}
 			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end

@@ -51,7 +51,6 @@ newEntity{ base = "BASE_ROD",
 		target = function(self, who) return {type="bolt", range=self.use_power.range} end,
 		tactical = { ATTACK = { NATURE = 1}, DISABLE = { pin = 2 }, CLOSEIN = 1, ESCAPE = 1 },
 		use = function(self, who)
---			local tg = {type="bolt", range=self.use_power.range}
 			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end

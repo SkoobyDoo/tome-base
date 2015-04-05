@@ -61,7 +61,6 @@ newEntity{
 	end,
 	"T_GLOBAL_CD",
 	{on_pre_use = function(self, who)
---game.log("#YELLOW# on_pre_use for %s (by %s) tested", self.name, who.name, silent, fake)
 		local shield = who:hasEffect(who.EFF_PSIONIC_SHIELD)
 		return not (shield and shield.kind == "kinetic")
 	end,
@@ -156,7 +155,6 @@ newEntity{
 	level_range = {15, 50},
 	rarity = 8,
 	charm_power_def = {add=45, max=400, floor=true},
---		range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end},
 	resolvers.charm(
 		function(self, who)
 			local dam = who:damDesc(engine.DamageType.Mind, self.use_power.damage(self, who))
@@ -164,7 +162,6 @@ newEntity{
 		end,
 		6,
 		function(self, who)
---			local tg = {type="beam", range=self.charm_power_def:range(who)}
 			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end

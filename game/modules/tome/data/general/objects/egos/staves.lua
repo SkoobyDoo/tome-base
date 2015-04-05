@@ -240,7 +240,6 @@ newEntity{
 		end,
 		5,
 		function(self, who)
---			local tg = {type="bolt", range=self.use_power.range(self), speed=20, display = {particle=particle, trail=trail},}
 			local tg = self.use_power.target(self, who)
 			local weapon = who:hasStaffWeapon()
 			if not weapon then
@@ -287,7 +286,6 @@ newEntity{
 		tactical = { ATTACK = function(who, t, aitarget)
 			local weapon = who:hasStaffWeapon()
 			if not weapon or not weapon.combat then return 1 end
---			local combat = weapon.combat
 			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/5} -- tactical AI adds staff skill to effective talent level of this ability
 		end },
 		damage = function(self, who) return who:combatDamage(self.combat) end,
@@ -353,7 +351,6 @@ newEntity{
 		end,
 		10,
 		function(self, who)
---			local tg = {type="ball", range=0, radius=self.use_power.radius(self, who), selffire=false}
 			local tg = self.use_power.target(self, who)
 			local weapon = who:hasStaffWeapon()
 			if not weapon then return end
@@ -430,7 +427,6 @@ newEntity{
 					game.logPlayer(who, "Your nonexistant mana regeneration rate is unaffected by the staff.")
 				end
 			end
---			game.logSeen(who, "%s is channeling mana!", who.name:capitalize())
 			return {id=true, used=true}
 		end,
 		"T_GLOBAL_CD",
@@ -481,7 +477,6 @@ newEntity{
 		end,
 		8,
 		function(self, who)
---			local tg = {type="cone", range=0, radius=self.use_power.radius(self, who), selffire=false}
 			local tg = self.use_power.target(self, who)
 			local weapon = who:hasStaffWeapon()
 			if not weapon then return end

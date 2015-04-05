@@ -39,7 +39,6 @@ newEntity{
 	end,
 	6,
 	function(self, who)
---		local rad = self:getCharmPower(who)
 		local rad = self.use_power.radius(self, who)
 		who:setEffect(who.EFF_SENSE, 3, {
 			range = rad,
@@ -103,18 +102,15 @@ newEntity{
 	end,
 	6,
 	function(self, who)
---		local tg = {type="wall", range=5, halflength=3, halfmax_spots=3+1}
 		local tg = self.use_power.target(self, who)
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
---		local dam = self:getCharmPower(who)
 		local dam = self.use_power.damage(self, who)
 		game.logSeen(who, "%s conjures a wall of fire from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 		who:project(tg, x, y, function(px, py)
 			game.level.map:addEffect(who, px, py, 4, engine.DamageType.FIRE, dam / 4, 0, 5, nil, {type="inferno"}, nil, true)
 		end)
 		game:playSoundNear(who, "talents/fire")
---		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
 		return {id=true, used=true}
 	end,
 	"T_GLOBAL_CD",
@@ -139,11 +135,9 @@ newEntity{
 		end,
 		10,
 		function(self, who)
-	--		local tg = {type="bolt", range=8}
 			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
---			local dam = self:getCharmPower(who)
 			local dam = self.use_power.damage(self, who)
 			local elem = rng.table{
 				{engine.DamageType.FIRE, "flame"},
@@ -156,7 +150,6 @@ newEntity{
 			game.logSeen(who, "%s activates %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, x, y, elem[1], rng.avg(dam / 2, dam, 3), {type=elem[2]})
 			game:playSoundNear(who, "talents/fire")
---			game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
 			return {id=true, used=true}
 		end,
 		"T_GLOBAL_CD",

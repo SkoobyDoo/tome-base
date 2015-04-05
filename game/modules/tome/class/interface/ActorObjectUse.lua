@@ -166,8 +166,16 @@ game.log("#YELLOW#[pre use] object %s is not useable (%s)", o.name, msg)
 	-- tactical: note parsing in data.talents.lua
 	action = function(self, t)
 		local data = self.useable_objects_data[t.id]
-
 game.log("#YELLOW#Use Object (%s [uid %d]) Activation by %s [uid %d]", data.obj.name, data.obj.uid, self.name, self.uid)
+--[[
+		if self.player then
+game.log("#YELLOW#Player Use Object Interface")
+			local obj, slot, inven = self:findInAllInventoriesByObject(data.obj)
+			local ret = self:playerUseItem(object, item, inven)
+game.log("#YELLOW#Player Use Object Interface returns %s",tostring(ret))
+			return ret
+		end
+--]]
 		self:attr("no_talent_fail", 1) -- using an object is not affected by normal talent restrictions
 		if data.tid then
 			game.logSeen(self, "%s activates %s %s!", self.name:capitalize(), self:his_her(), data.obj:getName({no_add_name=true, do_color = true}))
@@ -191,7 +199,6 @@ table.print(ret)
 	end,
 	info = function(self, t) -- should these talents be visible to the player?
 		local data = self.useable_objects_data[t.id]
---		local data = self:useObjectGetData(t.id)
 		if not (data and data.obj and data.obj:isIdentified()) then return "Activate an object." end
 		local objname = (data and data.obj and data.obj:getName({do_color = true})) or "(no object)"
 		local usedesc = (data and data.obj and data.obj:isIdentified() and data.obj:getUseDesc(self)) or ""
@@ -250,29 +257,26 @@ game.log("#YELLOW# Object %s is ineligible for talent interface", o.name)
 		place, inven_id, slot = self:findInAllInventoriesByObject(o)
 	end
 	if o:wornInven() and not o.wielded and not o.use_no_wear then
---game.log("#YELLOW# Object %s not enabled, must be worn for use", o.name)
-		return
+		return false
 	end
 
 	local i = #data + 1
 
 	if i <= self.max_object_use_talents then --find an unused talentid
 		-- find the next open object use talent
---		tid = "T_"..base_talent_name:upper():gsub("[ ]", "_").."_"..i
 		for j = 1, self.max_object_use_talents do
 			tid = useObjectTalentId(base_name, j)
 			if not self:knowTalent(tid) then break end
 		end
---		tid = useObjectTalentId(base_name, i)
 		if not self:useObjectSetData(tid, o) then return false end --includes checks for npc useability
 		data[i] = tid
 		data[tid].inven_id = inven_id
-	--		data[tid].inven = self:getInven(inven_id)
 		data[tid].slot = slot
 		self:learnTalent(tid, true, o.material_level or 1)
 	else
 		return false
 	end
+-- temporary hotkeys for testing
 	t=self:getTalentFromId(tid)
 	-- Hotkey
 	if oldpos then
@@ -317,7 +321,6 @@ local lowerTacticals = function(tacticals) --convert tactical tables to lower ca
 	for tact, val in pairs(tacticals) do
 		tact = tact:lower()
 		tacts[tact] = val
---		tacticals[tact] = true
 	end
 	return tacts
 end

@@ -81,12 +81,8 @@ newAI("use_tactical", function(self)
 		print(self.name, self.uid, "tactical ai talents testing", t.name, tid, "on target", aitarget and aitarget.name)
 		local tactical = t.tactical
 		if type(tactical) == "function" then tactical = tactical(self, t) end
---		if t.tactical and aitarget then
 		if tactical and aitarget then
 			local tg = self:getTalentTarget(t)
---			local tactical = (type(t.tactical) == "function" and t.tactical(self, t)) or t.tactical
---			local tactical = t.tactical
-			
 			local default_tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}
 			-- Only assume range... some talents may no require LOS, etc
 			local within_range = target_dist and target_dist <= ((self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0))
@@ -127,7 +123,6 @@ newAI("use_tactical", function(self)
 					end)
 				end
 				-- Evaluate the tactical weights and weight functions
---				for tact, val in pairs(t.tactical) do
 				for tact, val in pairs(tactical) do
 					if type(val) == "function" then val = val(self, t, aitarget) or 0 end
 					-- Handle damage_types and resistances

@@ -1325,9 +1325,8 @@ function _M:playerUseItem(object, item, inven)
 	)
 end
 
---- Force put objects with usable powers on cooldown when worn
+--- Put objects with usable powers on cooldown when worn
 function _M:cooldownWornObject(o)
---game.log("#YELLOW# Player %s cooling down object %s", self.name, o.name)
 	if not self.no_power_reset_on_wear then
 		o:forAllStack(function(so)
 			if so.power and so:attr("power_regen") then
@@ -1346,7 +1345,6 @@ function _M:cooldownWornObject(o)
 			end
 		end)
 	end
-
 end
 
 --- Call when an object is worn
@@ -1354,26 +1352,6 @@ end
 function _M:onWear(o, slot, bypass_set)
 	mod.class.Actor.onWear(self, o, slot, bypass_set)
 	self:cooldownWornObject(o)
---[[
-	if not self.no_power_reset_on_wear then
-		o:forAllStack(function(so)
-			if so.power and so:attr("power_regen") then
-				if self:attr("quick_equip_cooldown") then
-					so.power = math.min(so.power, (so.max_power or 2) / self:attr("quick_equip_cooldown"))
-				else
-					so.power = 0
-				end
-			end
-			if so.talent_cooldown and (not self:attr("quick_equip_cooldown") or self:attr("quick_equip_cooldown") > 1) then
-				self.talents_cd[so.talent_cooldown] = math.max(self.talents_cd[so.talent_cooldown] or 0, math.min(4, math.floor((so.use_power or so.use_talent or {power=10}).power / 5)))
-				if self:attr("quick_equip_cooldown") then
-					self.talents_cd[so.talent_cooldown] = math.floor(self.talents_cd[so.talent_cooldown] / self:attr("quick_equip_cooldown"))
-					if self.talents_cd[so.talent_cooldown] <= 0 then self.talents_cd[so.talent_cooldown] = nil end
-				end
-			end
-		end)
-	end
---]]
 	if self.hotkey and o:canUseObject() and config.settings.tome.auto_hotkey_object and not o.no_auto_hotkey then
 		local position
 		local name = o:getName{no_count=true, force_id=true, no_add_name=true}

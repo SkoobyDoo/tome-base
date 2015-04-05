@@ -109,12 +109,6 @@ function _M:act()
 	self:useEnergy()
 end
 
---[[
-function _M:canUseObject()
-	if self.__transmo then return false end
-	return engine.interface.ObjectActivable.canUseObject(self)
-end
---]]
 --- can the object be used?
 --	@param who = the object user (optional)
 --	returns boolean, msg
@@ -126,19 +120,15 @@ function _M:canUseObject(who)
 	
 	if who then
 		if self.use_no_blind and who:attr("blind") then
---			game.logPlayer(who, "You cannot see!")
 			return false, "You cannot see!"
 		end
 		if self.use_no_silence and who:attr("silence") then
---			game.logPlayer(who, "You are silenced!")
 			return false, "You are silenced!"
 		end
 		if self:wornInven() and not self.wielded and not self.use_no_wear then
---			game.logPlayer(who, "You must wear this object to use it!")
 			return false, "You must wear this object to use it!"
 		end
 		if who:hasEffect(self.EFF_UNSTOPPABLE) then
---			game.logPlayer(who, "You can not use items during a battle frenzy!")
 			return false, "You can not use items during a battle frenzy!"
 		end
 		if who:attr("sleep") and not who:attr("lucid_dreamer") then
@@ -234,32 +224,8 @@ end
 --- Use the object (quaff, read, ...)
 function _M:use(who, typ, inven, item)
 	inven = who:getInven(inven)
---[[
-	if self.use_no_blind and who:attr("blind") then
-		game.logPlayer(who, "You cannot see!")
-		return
-	end
-	if self.use_no_silence and who:attr("silence") then
-		game.logPlayer(who, "You are silenced!")
-		return
-	end
-	if self:wornInven() and not self.wielded and not self.use_no_wear then
-		game.logPlayer(who, "You must wear this object to use it!")
-		return
-	end
-	if who:hasEffect(self.EFF_UNSTOPPABLE) then
-		game.logPlayer(who, "You can not use items during a battle frenzy!")
-		return
-	end
-	
-	if who:attr("sleep") and not who:attr("lucid_dreamer") then
-		game.logPlayer(who, "You can not use items while sleeping!")
-		return
-	end
---]]
 	local types = {}
 	local useable, msg = self:canUseObject(who)
---	if self:canUseObject() then types[#types+1] = "use" end
 	
 	if useable then
 		types[#types+1] = "use" 
@@ -277,12 +243,13 @@ function _M:use(who, typ, inven, item)
 					if rng.percent(d[1]) then d[3](self, who) end
 				end
 			end
---game.log("#YELLOW#[Object:use(...) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
+game.log("#YELLOW#[Object:use(...) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not self.use_no_energy then
+game.log("#YELLOW# %s using %d energy", who.name, game.energy_to_act * (inven.use_speed or 1))
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
 			end
---game.log("#YELLOW#[Object:use(...) (post) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
+game.log("#YELLOW#[Object:use(...) (post) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
 		end
 		return ret
 	end

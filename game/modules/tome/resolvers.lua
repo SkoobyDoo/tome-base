@@ -83,8 +83,6 @@ function resolvers.calc.equip(t, e)
 					e:addObject(e.INVEN_INVEN, o)
 				end
 			end
---local o2, aiid, aisl = e:findInAllInventoriesByObject(o)
---print("[Equipment Resolver] for ", e.name, "added", o.name, o.uid, "to inventory", aiid, aisl)
 			-- Do not drop it unless it is an ego or better
 			if not o.unique then o.no_drop = true --[[print(" * "..o.name.." => no drop")]] end
 			if filter.force_drop then o.no_drop = nil end
@@ -751,12 +749,10 @@ function resolvers.calc.talented_ai_tactic(t, e)
 			count_talent = false, false
 			local tactics = tal.tactical
 			if type(tactics) == "function" then tactics = tactics(e, tal) end
---			if tal and tal.tactical then
 			if tactics then
 	-- print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
 --	table.print(tal.tactical)
 				do_count = false
---				for tt, wt in pairs(tal.tactical) do
 				for tt, wt in pairs(tactics) do
 					val = get_weight(wt, e)
 	-- print("   --- ", tt, "wt=", val)
