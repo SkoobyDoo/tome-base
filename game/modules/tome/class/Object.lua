@@ -109,9 +109,44 @@ function _M:act()
 	self:useEnergy()
 end
 
+--[[
 function _M:canUseObject()
 	if self.__transmo then return false end
 	return engine.interface.ObjectActivable.canUseObject(self)
+end
+--]]
+--- can the object be used?
+--	@param who = the object user (optional)
+--	returns boolean, msg
+function _M:canUseObject(who)
+	if self.__transmo then return false end
+	if not engine.interface.ObjectActivable.canUseObject(self) then
+		return false, "This object has no usable power."
+	end
+	
+	if who then
+		if self.use_no_blind and who:attr("blind") then
+--			game.logPlayer(who, "You cannot see!")
+			return false, "You cannot see!"
+		end
+		if self.use_no_silence and who:attr("silence") then
+--			game.logPlayer(who, "You are silenced!")
+			return false, "You are silenced!"
+		end
+		if self:wornInven() and not self.wielded and not self.use_no_wear then
+--			game.logPlayer(who, "You must wear this object to use it!")
+			return false, "You must wear this object to use it!"
+		end
+		if who:hasEffect(self.EFF_UNSTOPPABLE) then
+--			game.logPlayer(who, "You can not use items during a battle frenzy!")
+			return false, "You can not use items during a battle frenzy!"
+		end
+		if who:attr("sleep") and not who:attr("lucid_dreamer") then
+			game.logPlayer(who, "You can not use items while sleeping!")
+			return false, "You can not use objects while sleeping!"
+		end
+	end
+	return true, "Object can be used."
 end
 
 function _M:useObject(who, ...)
@@ -199,7 +234,7 @@ end
 --- Use the object (quaff, read, ...)
 function _M:use(who, typ, inven, item)
 	inven = who:getInven(inven)
-
+--[[
 	if self.use_no_blind and who:attr("blind") then
 		game.logPlayer(who, "You cannot see!")
 		return
@@ -221,10 +256,17 @@ function _M:use(who, typ, inven, item)
 		game.logPlayer(who, "You can not use items while sleeping!")
 		return
 	end
-
+--]]
 	local types = {}
-	if self:canUseObject() then types[#types+1] = "use" end
-
+	local useable, msg = self:canUseObject(who)
+--	if self:canUseObject() then types[#types+1] = "use" end
+	
+	if useable then
+		types[#types+1] = "use" 
+	else
+		game.logPlayer(who, msg)
+		return
+	end
 	if not typ and #types == 1 then typ = types[1] end
 
 	if typ == "use" then
@@ -235,11 +277,12 @@ function _M:use(who, typ, inven, item)
 					if rng.percent(d[1]) then d[3](self, who) end
 				end
 			end
-
+--game.log("#YELLOW#[Object:use(...) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not self.use_no_energy then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
 			end
+--game.log("#YELLOW#[Object:use(...) (post) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
 		end
 		return ret
 	end
@@ -1767,7 +1810,7 @@ function _M:getUseDesc(use_actor)
 	if self.use_power and not self.use_power.hidden then
 		local desc = util.getval(self.use_power.name, self, use_actor)
 		if self.show_charges then
-			ret = tstring{{"color","YELLOW"}, ("It can be used to %s, with %d charges out of %d."):format(desc, math.floor(self.power / usepower(self.use_power.power)), math.floor(self.max_power / usepower(self.use_power.power))), {"color","LAST"}} --I5
+			ret = tstring{{"color","YELLOW"}, ("It can be used to %s, with %d charges out of %d."):format(desc, math.floor(self.power / usepower(self.use_power.power)), math.floor(self.max_power / usepower(self.use_power.power))), {"color","LAST"}}
 		elseif self.talent_cooldown then
 			local t_name = self.talent_cooldown == "T_GLOBAL_CD" and "all charms" or "Talent "..use_actor:getTalentDisplayName(use_actor:getTalentFromId(self.talent_cooldown))
 			ret = tstring{{"color","YELLOW"}, ("It can be used to %s, putting %s on cooldown for %d turns."):format(desc:format(self:getCharmPower(use_actor)), t_name, usepower(self.use_power.power)), {"color","LAST"}}

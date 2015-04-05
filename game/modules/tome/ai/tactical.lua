@@ -19,7 +19,7 @@
 
 local DamageType = require "engine.DamageType"
 
-local print = function() end
+--local print = function() end
 
 local canFleeDmapKeepLos = function(self)
 	if self.never_move then return false end -- Dont move, dont flee
@@ -79,11 +79,18 @@ newAI("use_tactical", function(self)
 
 		local t_avail = false
 		print(self.name, self.uid, "tactical ai talents testing", t.name, tid, "on target", aitarget and aitarget.name)
-		if t.tactical and aitarget then
+		local tactical = t.tactical
+		if type(tactical) == "function" then tactical = tactical(self, t) end
+--		if t.tactical and aitarget then
+		if tactical and aitarget then
 			local tg = self:getTalentTarget(t)
+--			local tactical = (type(t.tactical) == "function" and t.tactical(self, t)) or t.tactical
+--			local tactical = t.tactical
+			
 			local default_tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}
 			-- Only assume range... some talents may no require LOS, etc
 			local within_range = target_dist and target_dist <= ((self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0))
+--print("Range/Radius = ", self:getTalentRange(t), "/", self:getTalentRadius(t)," vs range ", target_dist)
 			if t.mode == "activated" and not t.no_npc_use and
 			   not self:isTalentCoolingDown(t) and self:preUseTalent(t, true, true) and
 			   (not self:getTalentRequiresTarget(t) or within_range)
@@ -120,7 +127,8 @@ newAI("use_tactical", function(self)
 					end)
 				end
 				-- Evaluate the tactical weights and weight functions
-				for tact, val in pairs(t.tactical) do
+--				for tact, val in pairs(t.tactical) do
+				for tact, val in pairs(tactical) do
 					if type(val) == "function" then val = val(self, t, aitarget) or 0 end
 					-- Handle damage_types and resistances
 					local nb_foes_hit, nb_allies_hit, nb_self_hit = 0, 0, 0
@@ -178,6 +186,7 @@ newAI("use_tactical", function(self)
 						print(self.name, self.uid, "tactical ai talents can use", t.name, tid, tact, "weight", val)
 						ok = true
 					end
+--					print(self.name, self.uid, t.name, tid, "tactical ai final weight: ", val)
 				end
 			end
 		end
@@ -185,6 +194,8 @@ newAI("use_tactical", function(self)
 	if ok then
 		local want = {}
 
+print("###Available tactics:")
+table.print(avail)
 		local need_heal = 0
 		local life = 100 * self.life / self.max_life
 		-- Subtract solipsism straight from the life value to give us higher than normal weights; helps keep clarity up and avoid solipsism
@@ -373,6 +384,9 @@ newAI("use_tactical", function(self)
 
 		if avail.special then want.special = avail.special[1].val end
 
+print("### nb_foes_seen", nb_foes_seen, "### nb_allies_seen", nb_allies_seen, "### need_heal", need_heal)
+print("### Wants:")
+table.print(want)
 		print("Tactical ai report for", self.name)
 		local res = {}
 		for k, v in pairs(want) do

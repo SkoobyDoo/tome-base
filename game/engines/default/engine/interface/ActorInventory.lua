@@ -171,7 +171,7 @@ function _M:addObject(inven_id, o, no_unstack, force_item)
 		self:onWear(o, self.inven_def[inven.id].short_name)
 	end
 
-	self:onAddObject(o)
+	self:onAddObject(o, inven_id, slot)
 
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
@@ -282,8 +282,8 @@ function _M:removeObject(inven_id, item, no_unstack)
 		self:onTakeoff(o, self.inven_def[inven.id].short_name)
 	end
 
-	self:onRemoveObject(o)
-
+	self:onRemoveObject(o, inven.id, item)
+--o = self:removeObject(inven, item, true)
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
 
@@ -291,7 +291,7 @@ function _M:removeObject(inven_id, item, no_unstack)
 end
 
 --- Called upon adding an object
-function _M:onAddObject(o)
+function _M:onAddObject(o, inven_id, item)
 	if self.__allow_carrier then
 		-- Apply carrier properties
 		o.carried = {}
@@ -304,7 +304,7 @@ function _M:onAddObject(o)
 end
 
 --- Called upon removing an object
-function _M:onRemoveObject(o)
+function _M:onRemoveObject(o, inven_id, item)
 	if o.carried then
 		for k, id in pairs(o.carried) do
 			self:removeTemporaryValue(k, id)

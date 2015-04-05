@@ -27,7 +27,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(5,12), atk=2, apr=6, physspeed=2 },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1, TOOL=1 },
 	resolvers.drops{chance=20, nb=1, {} },
 	resolvers.drops{chance=10, nb=1, {type="money"} },
 	infravision = 10,
@@ -83,6 +83,7 @@ newEntity{ base = "BASE_NPC_YAECH",
 	max_life = resolvers.rngavg(90,110),
 	resolvers.equip{
 		{type="weapon", subtype="trident", autoreq=true, special_rarity="trident_rarity"},
+		{type="charm", subtype="torque"}
 	},
 	resolvers.talents{
 		[Talents.T_KINETIC_AURA]={base=1, every=7, max=5},
@@ -100,6 +101,7 @@ newEntity{ base = "BASE_NPC_YAECH",
 	max_life = resolvers.rngavg(80,90),
 	resolvers.equip{
 		{type="weapon", subtype="trident", autoreq=true, special_rarity="trident_rarity"},
+		{type="charm", subtype="torque"}
 	},
 	resolvers.talents{
 		[Talents.T_PYROKINESIS]={base=2, every=7, max=5},

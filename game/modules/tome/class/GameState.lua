@@ -2116,7 +2116,6 @@ function _M:createRandomBoss(base, data)
 	b:initBody()
 
 	b:resolve()
-
 	-- Start with sustains sustained
 	b[#b+1] = resolvers.sustains_at_birth()
 
@@ -2147,6 +2146,12 @@ function _M:createRandomBoss(base, data)
 	-- Apply talents from classes
 	------------------------------------------------------------
 	self:applyRandomClass(b, data)
+
+	-- add a charm
+	if not data.forbid_equip then
+print("[Random Boss]: adding charm resolver")
+		b[#b+1] = resolvers.equip({{type="charm", autoreq=true}})
+	end
 
 	b.rnd_boss_on_added_to_level = b.on_added_to_level
 	b._rndboss_resources_boost = data.resources_boost

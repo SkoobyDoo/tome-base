@@ -233,9 +233,11 @@ newEntity{
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 		who:teleportRandom(who.x, who.y, self:getCharmPower(who))
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
+		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_add_name = true, do_color = true, no_count=true})
 		return {id=true, used=true}
-	end),
+	end,
+	"T_GLOBAL_CD",
+	{no_npc_use = true}),  --would be very irritating to have npc's teleporting away
 }
 
 --[[ Disabled pending revamp of concept which will probably never come

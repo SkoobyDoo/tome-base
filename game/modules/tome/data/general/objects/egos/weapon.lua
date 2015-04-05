@@ -802,20 +802,30 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 5,
 	cost = 15,
-	resolvers.charm("project an attack as mind damage doing 150%% weapon damage at range 10", 6,
+	resolvers.charm(function(self, who) 
+			return ("project a melee attack out to range %d, dealing 150%%%% (mind) weapon damage"):format(self.use_power.range)
+		end,
+		6,
 		function(self, who)
-			local tg = {type="hit", range=10}
+--			local tg = {type="hit", range=10}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)
 			local target = game.level.map(x, y, engine.Map.ACTOR)
 			if target then
+				who:logCombat(target, "#Source# psionically projects a melee attack against #target#!")
 				who:attackTarget(target, engine.DamageType.MIND, 1.5, true)
 			else
 				return
 			end
 			return {id=true, used=true}
-		end
+		end,
+		"T_GLOBAL_CD",
+		{range = 10,
+		requires_target = true,
+		tactical = { ATTACK = { MIND = 2 } },
+		target = function(self, who) return {type="hit", range=self.use_power.range} end}
 	),
 	combat = {
 		melee_project={
@@ -823,7 +833,6 @@ newEntity{
 		},
 	},
 }
-
 
 -- Merged with Psychic/redesigned a bit
 newEntity{

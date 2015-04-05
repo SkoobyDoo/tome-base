@@ -296,14 +296,16 @@ newEntity{
 	charm_power = resolvers.mbonus_material(80, 20),
 	charm_power_def = {add=5, max=10, floor=true},
 	resolvers.charm(function(self, who) 
-		return ("inflict %0.2f mind damage (range 10), gaining psi and hate equal to 1/10 of the damage done"):format(who:damDesc(engine.DamageType.MIND, self.use_power.damage(self, who)))
+		return ("inflict %0.2f mind damage (range 10), gaining psi and hate equal to 10%%%% of the damage done"):format(who:damDesc(engine.DamageType.MIND, self.use_power.damage(self, who)))
 		end,
 		20,
 		function(self, who)
-			local tg = {type="hit", range=self.use_power.range,}
+--			local tg = {type="hit", range=10,}
+			local tg = self.use_power.target(self, who)
 			local x, y, target = who:getTarget(tg)
 			if not x or not y then return nil end
 			if target then
+				game.logSeen(who, "%s feeds %s %s with psychic energy from %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}), target.name:capitalize())
 				if target:checkHit(who:combatMindpower(), target:combatMentalResist(), 0, 95, 5) then
 					local damage = self.use_power.damage(self, who)
 					who:project(tg, x, y, engine.DamageType.MIND, {dam=damage, alwaysHit=true}, {type="mind"})
@@ -313,12 +315,14 @@ newEntity{
 					game.logSeen(target, "%s resists the mind attack!", target.name:capitalize())
 				end
 			end
-			game.logSeen(who, "%s evokes a mental assault from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			return {id=true, used=true}
 		end,
 		"T_GLOBAL_CD",
-		{damage = function(self, who) return self:getCharmPower(who) + (who:combatMindpower() * (1 + self.material_level/5)) end,
-		range = 10,}
+		{range = 10,
+		target = function(self, who) return {type="hit", range=self.use_power.range} end,
+		tactical = {ATTACK = {MIND = 2}, HATE = 1, PSI = 1},
+		requires_target = true,
+		damage = function(self, who) return self:getCharmPower(who) + (who:combatMindpower() * (1 + self.material_level/5)) end}
 	),
 }
 
@@ -1161,6 +1165,7 @@ newEntity{
 		channeler = set_broken,},
 }
 
+---### FIX splitting Mitotic Mindstars
 -- Mitotic Set: Single Mindstar that splits in two
 newEntity{
 	power_source = {nature=true},
@@ -1176,51 +1181,56 @@ newEntity{
 	},
 	no_auto_hotkey = true,
 	resolvers.charm("divide the mindstar in two", 1,
-									function(self, who)
-										-- Check for free slot first
-										if who:getFreeHands() == 0 then
-											game.logPlayer(who, "You must have a free hand to divide %s", self.name)
-											return
-										end
+		function(self, who)
+			-- Check for free slot first
+			if who:getFreeHands() == 0 then
+				game.logPlayer(who, "You must have a free hand to divide %s", self.name)
+				return
+			end
 
-										if who:getInven("PSIONIC_FOCUS") and who:getInven("PSIONIC_FOCUS")[1] == self then
-											game.logPlayer(who, "You cannot split %s while using it as a psionic focus.", self.name)
-											return
-										end
+			if who:getInven("PSIONIC_FOCUS") and who:getInven("PSIONIC_FOCUS")[1] == self then
+				game.logPlayer(who, "You cannot split %s while using it as a psionic focus.", self.name)
+				return
+			end
 
-										local o = self
+			local o = self
 
-										-- Remove some properties before cloning
-										o.cost = self.cost / 2 -- more don't split for extra gold discouragement
-										o.max_power = nil
-										o.power_regen = nil
-										o.use_power = nil
-										local o2 = o:clone()
+			-- Remove some properties before cloning
+			o.cost = self.cost / 2 -- more don't split for extra gold discouragement
+			o.max_power = nil
+			o.power_regen = nil
+			o.use_power = nil
+			o.use_talent = nil
+			local o2 = o:clone()
 
-										-- Build the item set
-										o.define_as = "MS_EGO_SET_MITOTIC_ACID"
-										o2.define_as = "MS_EGO_SET_MITOTIC_SLIME"
-										o.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_SLIME"} }
-										o2.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_ACID"} }
+			-- Build the item set
+			o.define_as = "MS_EGO_SET_MITOTIC_ACID"
+			o2.define_as = "MS_EGO_SET_MITOTIC_SLIME"
+			o.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_SLIME"} }
+			o2.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_ACID"} }
 
-										o.on_set_complete = function(self, who)
-											self:specialWearAdd({"combat","burst_on_crit"}, { [engine.DamageType.ACID_BLIND] = 10 * self.material_level } )
-											game.logPlayer(who, "#GREEN#The mindstars pulse with life.")
-										end
-										o.on_set_broken = function(self, who)
-											game.logPlayer(who, "#SLATE#The link between the mindstars is broken.")
-										end
+			o.on_set_complete = function(self, who)
+				self:specialWearAdd({"combat","burst_on_crit"}, { [engine.DamageType.ACID_BLIND] = 10 * self.material_level } )
+				game.logPlayer(who, "#GREEN#The mindstars pulse with life.")
+			end
+			o.on_set_broken = function(self, who)
+				game.logPlayer(who, "#SLATE#The link between the mindstars is broken.")
+			end
 
-										o2.on_set_complete = function(self, who)
-											self:specialWearAdd({"combat","burst_on_crit"}, { [engine.DamageType.SLIME] = 10 * self.material_level } )
-										end
+			o2.on_set_complete = function(self, who)
+				self:specialWearAdd({"combat","burst_on_crit"}, { [engine.DamageType.SLIME] = 10 * self.material_level } )
+			end
 
-										-- Wearing the second mindstar will complete the set and thus update the first mindstar
-										who:wearObject(o2, true, true)
+			-- Wearing the second mindstar will complete the set and thus update the first mindstar
+			o2.wielded = nil
+			who:wearObject(o2, true, true)
 
-										-- Because we're removing the use_power we're not returning that it was used; instead we'll have the actor use energy manually
-										who:useEnergy()
-									end
+			-- Because we're removing the use_power we're not returning that it was used; instead we'll have the actor use energy manually
+			who:useEnergy()
+--			return {used = true}
+		end,
+		"T_GLOBAL_CD",
+		{no_npc_use = true}
 	),
 }
 

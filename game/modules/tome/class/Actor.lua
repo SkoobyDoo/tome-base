@@ -34,6 +34,7 @@ require "mod.class.interface.ActorPartyQuest"
 require "mod.class.interface.Combat"
 require "mod.class.interface.Archery"
 require "mod.class.interface.ActorInscriptions"
+require "mod.class.interface.ActorObjectUse"
 local Faction = require "engine.Faction"
 local Dialog = require "engine.ui.Dialog"
 local Map = require "engine.Map"
@@ -55,6 +56,7 @@ module(..., package.seeall, class.inherit(
 	engine.interface.ActorFOV,
 	mod.class.interface.ActorPartyQuest,
 	mod.class.interface.ActorInscriptions,
+	mod.class.interface.ActorObjectUse,
 	mod.class.interface.Combat,
 	mod.class.interface.Archery
 ))
@@ -239,6 +241,7 @@ function _M:init(t, no_default)
 	engine.interface.ActorLevel.init(self, t)
 	engine.interface.ActorFOV.init(self, t)
 	mod.class.interface.ActorInscriptions.init(self, t)
+	mod.class.interface.ActorObjectUse.init(self, t)
 
 	-- Default melee barehanded damage
 	self.combat = self.combat or {
@@ -3952,20 +3955,27 @@ function _M:checkMindstar(o)
 end
 
 --- Call when an object is added
-function _M:onAddObject(o)
+function _M:onAddObject(o, inven_id, slot)
 	-- curse the item
 	if self:knowTalent(self.T_DEFILING_TOUCH) then
 		local t = self:getTalentFromId(self.T_DEFILING_TOUCH)
 		t.curseItem(self, t, o)
 	end
 
-	engine.interface.ActorInventory.onAddObject(self, o)
+	engine.interface.ActorInventory.onAddObject(self, o, inven_id, slot)
 
 	-- Learn Talent
 	if o.carrier and o.carrier.learn_talent then
 		for tid, level in pairs(o.carrier.learn_talent) do
 			self:learnItemTalent(o, tid, level)
 		end
+	end
+
+--	if o:canUseObject() and not o.quest and not o.lore then -- set up object use talents (for NPC's)
+	if o:canUseObject() then -- set up object use talents (for NPC's)
+-- need extra checks
+--inven.is_worn?
+		self:useObjectEnable(o, inven_id, slot)
 	end
 
 	-- Callbacks!
@@ -3983,8 +3993,8 @@ function _M:onAddObject(o)
 end
 
 --- Call when an object is removed
-function _M:onRemoveObject(o)
-	engine.interface.ActorInventory.onRemoveObject(self, o)
+function _M:onRemoveObject(o, inven_id, slot)
+	engine.interface.ActorInventory.onRemoveObject(self, o, inven_id, slot)
 
 	if o.carrier and o.carrier.learn_talent then
 		for tid, level in pairs(o.carrier.learn_talent) do
@@ -3992,6 +4002,10 @@ function _M:onRemoveObject(o)
 		end
 	end
 
+	--inven.is_worn?
+	if o:canUseObject() then -- set up object use talents (for NPC's)
+		self:useObjectDisable(o, inven_id, slot)
+	end
 	-- Callbacks
 	if o.carrier_callbacks then self:unregisterCallback(o, o) end
 

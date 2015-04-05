@@ -654,3 +654,11 @@ newTalent{
 		return ([[For the next 8 turns, powerful blasts of psionic energies will erupt from you, doing %d damage.]]):format(t.getDamage(self, t))
 	end,
 }
+
+-- Talents to allow NPC's to use activatable objects
+print("Talents", Talents)
+local ActorObjectUse = require "mod.class.interface.ActorObjectUse"
+for i = 1, (ActorObjectUse.max_object_use_talents or 0) do
+	ActorObjectUse:useObjectTalent(base_name, i)
+end
+

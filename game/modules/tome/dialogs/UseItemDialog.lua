@@ -84,6 +84,11 @@ function _M:use(item)
 		end
 	elseif act == "wear" then
 		self.actor:doWear(self.inven, self.item, self.object, self.dst_actor)
+--game.log("#YELLOW# UseItemDialog %s wearing %s",self.actor.name, self.object.name)
+		if self.object.wielded and not self.actor.player and game.party:hasMember(self.actor) then -- make sure usable equipment worn by party members begins cooling down
+			mod.class.Player.cooldownWornObject(self.actor, self.object)
+-- need to make items cooldown when equipping party members
+		end
 		self.onuse(self.inven, self.item, self.object, false)
 	elseif act == "takeoff" then
 		self.actor:doTakeoff(self.inven, self.item, self.object, nil, self.dst_actor)

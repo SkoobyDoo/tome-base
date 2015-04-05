@@ -598,13 +598,19 @@ newEntity{ base = "BASE_ROD",
 	use_power = { power = 50,
 		damage = function(self, who) return 300 + who:getMag() * 2 end,
 		radius = 5,
+		range = 0,
+		reqires_target = true,
+		target = function(self, who) return {type="cone", range=self.use_power.range, radius=self.use_power.radius} end,
+		tactical = {ATTACKAREA = {FIRE = 2}},
 		name = function(self, who)
 			return ("shoot a cone of flames (radius %d) for %0.2f fire damage (based on Magic)"):format(self.use_power.radius, engine.interface.ActorTalents.damDesc(who, engine.DamageType.FIRE, self.use_power.damage(self, who)))
 		end,
 		use = function(self, who)
-			local tg = {type="cone", range=0, radius=5}
+--			local tg = {type="cone", range=0, radius=5}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
+			game.logSeen(who, "%s activates %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, x, y, engine.DamageType.FIRE, self.use_power.damage(self, who), {type="flame"})
 			return {id=true, used=true}
 		end

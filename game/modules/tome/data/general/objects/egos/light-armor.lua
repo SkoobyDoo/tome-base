@@ -196,12 +196,14 @@ newEntity{
    charm_power = resolvers.mbonus_material(80, 20),
    charm_power_def = {add=5, max=10, floor=true},
    resolvers.charm("blink to a nearby random location (rad %d)", 25, function(self, who)
-			  game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
-			  who:teleportRandom(who.x, who.y, self:getCharmPower(who))
-			  game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
-			  game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
-			  return {id=true, used=true}
-   end),
+		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_add_name=true, do_color=true})
+		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
+		who:teleportRandom(who.x, who.y, self:getCharmPower(who))
+		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
+		return {id=true, used=true}
+   end,
+   "T_GLOBAL_CD",
+   {tactical = {ESCAPE = 2}}),
 }
 
 newEntity{

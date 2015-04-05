@@ -445,7 +445,7 @@ function _M:learnTalent(t_id, force, nb)
 	return true
 end
 
---- Actor forgets a talent completly
+--- Actor forgets a talent completely
 -- @param t_id the id of the talent to learn
 -- @return[1] nil if failed
 -- @return[1] an error message
