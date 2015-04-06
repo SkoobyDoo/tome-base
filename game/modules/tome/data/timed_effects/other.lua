@@ -2768,7 +2768,11 @@ newEffect{
 		self:removeParticles(eff.particle2)
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
-				self:forceUseTalent(eff.talent, {force_target=self})
+				self:forceUseTalent(eff.talent, {force_target=self, ignore_energy=true})
+				-- manually use energy
+				local anom = self:getTalentFromId(eff.talent)
+				self:useEnergy(self:getTalentSpeed(anom) * game.energy_to_act)
+				
 				game:playSoundNear(self, "talents/dispel")
 				self:incParadox(-eff.paradox)
 			end
