@@ -2124,7 +2124,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			if rng.percent(dam) then
-				game:delayedLogDamage(src, target, 0, ("%s<30%% armour corrode>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
+				game:delayedLogDamage(src, target, 0, ("%s<30%%%% armour corrode>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
 				local check = math.max(src:combatAttack(), src:combatSpellpower(), src:combatMindpower())
 				--local param = { atk=dam/3, armor=dam/3, defense=dam/3, src=src, apply_power = check, no_ct_effect=true }
 				target:setEffect(target.EFF_ITEM_ACID_CORRODE, 5, {pct = 0.3, no_ct_effect = true, apply_power = check})
