@@ -39,10 +39,11 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 	material_level = 5,
 	winterStorm = nil,
 	special_desc = function(self)
-		if not self.winterStorm then 
-			return ("Storm Duration:  None") 
+		local storm = self.winterStorm
+		if not storm or storm.duration <=0 then 
+			return ("No Winter Storm Active") 
 		else
-			return ("Storm Duration: " .. (self.winterStorm.duration or "None"))
+			return ("Winter Storm: " .. ((storm.duration and storm.radius) and ("radius %d (%d turns remaining)"):format(math.floor(storm.radius), storm.duration) or "None"))
 		end
 	end,
 	combat = {
@@ -88,6 +89,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 				 
 				-- If the map has no Winter Storm then create one
 				if not self.winterStorm then
+					game.logSeen(target, "#LIGHT_BLUE#A Winter Storm forms around %s.", target.name:capitalize())
 					local stormDam = special:damage(self, who)
 					self.winterStorm = game.level.map:addEffect(who,
 						target.x, target.y, special.duration,
@@ -97,7 +99,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 						{type="icestorm", only_one=true, args = {radius = 1}},
 						function(e, update_shape_only)
 							if not update_shape_only then 
-								 -- Increase the radius by 0.2 each time the effect ticks (1000 energy?)	
+								 -- Increase the radius by 0.2 each time the effect ticks (1000 energy)	
 								if e.radius < e.max_radius then
 									e.radius = e.radius + 0.2
 									if e.particles and math.floor(e.particles[1].args.radius) ~= math.floor(e.radius) then -- expand the graphical effect
@@ -134,7 +136,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 		inc_damage = { [DamageType.COLD] = 20 },
 	},
 	max_power = 40, power_regen = 1,
-	use_power = { name ="precipitate ice from your winter storm to create walls (lasting 10 turns) in each space it occupies", 	power = 30,
+	use_power = { name ="concentrate the precipitation of your Winter Storm into ice walls (lasting 10 turns) within its area", power = 30,
 		use = function(self, who)
 			
 			local Object = require "mod.class.Object"
@@ -147,52 +149,138 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 				return
 			end
 			
-			local grids = core.fov.circle_grids(self.winterStorm.x, self.winterStorm.y, self.winterStorm.radius, true)		
+			local grids = core.fov.circle_grids(self.winterStorm.x, self.winterStorm.y, self.winterStorm.radius, true)
+			game.logSeen(who, "#LIGHT_BLUE#%s activates %s %s, precipitating walls of ice from the Winter Storm!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
+			self.use_power.last_use = {turn = game.turn, x = self.winterStorm.x, y = self.winterStorm.y, radius = self.winterStorm.radius} -- for ai purposes
+			
 			local self = who
-
 
 			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 				local oe = game.level.map(x, y, engine.Map.TERRAIN)
 
 				if oe then
-					local e = Object.new{
-						old_feat = oe,
-						name = "winter wall", image = "npc/iceblock.png",
-						display = '#', color_r=255, color_g=255, color_b=255, back_color=colors.GREY,
-						desc = "a summoned wall of ice",
-						type = "wall", --subtype = "floor",
-						always_remember = true,
-						can_pass = {pass_wall=1},
-						does_block_move = true,
-						show_tooltip = true,
-						block_move = true,
-						block_sight = true,
-						temporary = 10,
-						x = x, y = y,
-						canAct = false,
-						act = function(self)
-							self:useEnergy()
-							self.temporary = self.temporary - 1
-							if self.temporary <= 0 then
-								game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
-								game.level:removeEntity(self)
-							end
-						end,
-						dig = function(src, x, y, old)
-							game.level:removeEntity(old)
-							return nil, old.old_feat
-						end,
-						summoner_gain_exp = true,
-						summoner = self,
-					}
-					e.tooltip = mod.class.Grid.tooltip
-					game.level:addEntity(e)
-					game.level.map(x, y, engine.Map.TERRAIN, e)				
+					if oe._wintertide_ice_wall then
+						oe.temporary = 10
+					else
+						local e = Object.new{
+							old_feat = oe,
+							name = "winter wall", image = "npc/iceblock.png",
+							_wintertide_ice_wall = true,
+							display = '#', color_r=255, color_g=255, color_b=255, back_color=colors.GREY,
+							desc = "a summoned wall of ice",
+							type = "wall", --subtype = "floor",
+							always_remember = true,
+							can_pass = {pass_wall=1},
+							does_block_move = true,
+							show_tooltip = true,
+							block_move = true,
+							block_sight = true,
+							temporary = 10,
+							x = x, y = y,
+							canAct = false,
+							act = function(self)
+								self:useEnergy()
+								self.temporary = self.temporary - 1
+								if self.temporary <= 0 then
+									game.level.map(self.x, self.y, engine.Map.TERRAIN, self.old_feat)
+									game.level:removeEntity(self)
+								end
+							end,
+							dig = function(src, x, y, old)
+								game.level:removeEntity(old)
+								return nil, old.old_feat
+							end,
+							summoner_gain_exp = true,
+							summoner = self,
+						}
+						e.tooltip = mod.class.Grid.tooltip
+						game.level:addEntity(e)
+						game.level.map(x, y, engine.Map.TERRAIN, e)
+					end
 				end
 			end end
 			
 			return {id=true, used=true}
-		end
+		end,
+		on_pre_use = function(self, who, silent, fake)
+			if not self.winterStorm then return false end
+			local last_use = self.use_power.last_use
+			if last_use then
+				if game.turn - last_use.turn >= 11*game.energy_to_act/game.energy_per_tick then -- no current icewalls
+					return true
+				else -- current icewall, don't overlap
+					if core.fov.distance(self.winterStorm.x, self.winterStorm.y, last_use.x, last_use.y) < math.floor(last_use.radius) then	return false end
+				end
+			end
+			return true
+		end,
+		tactStatus = function(o, who, aitarget) -- get Tactical info for tactical table functions
+			local TDist = core.fov.distance(who.x, who.y, aitarget.x, aitarget.y)
+			local TEnv = core.fov.distance(aitarget.x, aitarget.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
+			local SEnv = core.fov.distance(who.x, who.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
+--game.log("#LIGHT_BLUE# Wintertide TACT DATA: targetdistance %0.1f, targetenveloped: %s, selfenveloped: %s", TDist, TEnv, SEnv)
+			return TDist, TEnv, SEnv
+		end,
+		tactical = {
+			ESCAPE = function(who, t, aitarget)
+				local o = t.is_object_use and t.getObject(who, t)
+				if not (o and o.wielded and aitarget and o.winterStorm and o.winterStorm.duration > 0) then
+					return 0
+				else
+					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
+--game.log("#LIGHT_BLUE# Wintertide ESCAPE distance %0.1f, Tenveloped: %s, Senveloped: %s", Tdist, Tenv, Senv)
+					local val = 0
+					if Tenv then
+						if not Senv then val = val + 3
+						elseif Tdist > 1 then val = val + 1
+						end
+					elseif Senv then
+						if Tdist > 1 then val = val + 0.5 end
+					end
+					return val
+				end
+			end,
+			DEFEND = function(who, t, aitarget) -- defense against multiple foes
+				local o = t.is_object_use and t.getObject(who, t)
+				if not (o and o.wielded and aitarget and o.winterStorm and o.winterStorm.duration > 0) then
+					return 0
+				else
+					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
+--game.log("#LIGHT_BLUE# Wintertide DEFEND distance %0.1f, Tenveloped: %s, Senveloped: %s", Tdist, Tenv, Senv)		
+					local val = 0
+					if Tdist <= 1 then
+						if Senv then val = val + 1.5 end
+						if Tenv then val = val + 0.5 end
+					end
+					return val
+				end
+			end,
+			PROTECT = function(who, t, aitarget) --summons protect summoner
+				if not (who.summoner and aitarget) then return end
+				local o = t.is_object_use and t.getObject(who, t)
+				if not (o and o.wielded and o.winterStorm and o.winterStorm.duration > 0) then
+					return 0
+				else
+					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who.summoner, aitarget)
+--game.log("#LIGHT_BLUE# Wintertide PROTECT distance %0.1f, Tenveloped: %s, Summonerenveloped: %s", Tdist, Tenv, Senv)
+					local val = 0
+					if Tdist > 1 then
+						if Tenv then val = val + 1 end
+						if Senv then val = val + 0.5 end
+					end
+					return val
+				end
+			end,
+		},
+		radius = function(self, who)
+			local winterStorm = self.winterStorm
+			if winterStorm and winterStorm.duration > 0 then
+				return winterStorm.radius
+			else
+				return 0
+			end
+		end,
+--		target = {},
 	},
 	on_wear = function(self, who)
 		self.winterStorm = nil

@@ -67,7 +67,8 @@ newEntity{
 	combat_spellcrit = resolvers.mbonus(5, 5),
 
 	resolvers.sustains_at_birth(),
-	not_power_source = {nature=true},
+	power_source = {arcane=true},
+	not_power_source = {nature=true, antimagic=true},
 }
 
 newEntity{ base = "BASE_NPC_LICH",

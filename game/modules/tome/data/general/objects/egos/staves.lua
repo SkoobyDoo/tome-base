@@ -236,7 +236,7 @@ newEntity{
 			local range = self.use_power.range(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("project a bolt from the staff (to range %d) dealing %0.2f to %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
+			return ("project a bolt elemental energy from the staff (to range %d) dealing %0.2f to %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
 		end,
 		5,
 		function(self, who)
@@ -270,10 +270,12 @@ newEntity{
 			-- Compute damage
 			local dam = self.use_power.damage(self, who)
 			local damrange = self.use_power.damrange(self, who)
+			local damTyp = DamageType:get(damtype or "ARCANE")
+			tg.name = damTyp.name .. " bolt"
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
 
-			game.logSeen(who, "%s fires a bolt of %s energy from %s %s!", who.name:capitalize(), DamageType:get(damtype or "ARCANE").name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
+			game.logSeen(who, "%s fires a bolt of %s%s#LAST# energy from %s %s!", who.name:capitalize(), damTyp.text_color, damTyp.name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:projectile(tg, x, y, damtype, dam, {type=explosion, particle=particle, trail=trail})
 
 			game:playSoundNear(who, "talents/arcane")
@@ -286,7 +288,7 @@ newEntity{
 		tactical = { ATTACK = function(who, t, aitarget)
 			local weapon = who:hasStaffWeapon()
 			if not weapon or not weapon.combat then return 1 end
-			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/5} -- tactical AI adds staff skill to effective talent level of this ability
+			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/2.5} -- tactical AI adds staff skill to effective talent level of this ability
 		end },
 		damage = function(self, who) return who:combatDamage(self.combat) end,
 		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
@@ -377,10 +379,11 @@ newEntity{
 			-- Compute damage
 			local dam = self.use_power.damage(self, who)
 			local damrange = self.use_power.damrange(self, who)
+			local damTyp = DamageType:get(damtype or "ARCANE")
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
 
-			game.logSeen(who, "%s unleashes a blastwave of %s energy from %s %s!", who.name:capitalize(), DamageType:get(damtype or "ARCANE").name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
+			game.logSeen(who, "%s unleashes a blastwave of %s%s#LAST# energy from %s %s!", who.name:capitalize(), damTyp.text_color, damTyp.name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, who.x, who.y, damtype, dam, {type=explosion})
 
 			game:playSoundNear(who, "talents/arcane")
@@ -394,7 +397,7 @@ newEntity{
 		tactical = { ATTACKAREA = function(who, t, aitarget)
 			local weapon = who:hasStaffWeapon()
 			if not weapon or not weapon.combat then return 1 end
-			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/5} -- tactical AI adds staff skill to effective talent level of this ability
+			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/2.5} -- tactical AI adds staff skill to effective talent level of this ability
 		end },
 		damage = function(self, who) return who:combatDamage(self.combat) end,
 		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
@@ -505,9 +508,10 @@ newEntity{
 			-- Compute damage
 			local dam = self.use_power.damage(self, who)
 			local damrange = self.use_power.damrange(self, who)
+			local damTyp = DamageType:get(damtype or "ARCANE")
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
-			game.logSeen(who, "%s channels a cone of %s energy through %s %s!", who.name:capitalize(), DamageType:get(damtype or "ARCANE").name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
+			game.logSeen(who, "%s channels a cone of %s%s#LAST# energy through %s %s!", who.name:capitalize(), damTyp.text_color, damTyp.name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, x, y, damtype, dam, {type=explosion})
 
 			game:playSoundNear(who, "talents/arcane")
@@ -521,7 +525,7 @@ newEntity{
 		tactical = { ATTACKAREA = function(who, t, aitarget)
 			local weapon = who:hasStaffWeapon()
 			if not weapon or not weapon.combat then return 1 end
-			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/5} -- tactical AI adds staff skill to effective talent level of this ability
+			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/2.5} -- tactical AI adds staff skill to effective talent level of this ability
 		end},
 		damage = function(self, who) return who:combatDamage(self.combat) end,
 		damrange = function(self, who) return who:combatDamageRange(self.combat) end}

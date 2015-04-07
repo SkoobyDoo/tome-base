@@ -1165,7 +1165,6 @@ newEntity{
 		channeler = set_broken,},
 }
 
----### FIX splitting Mitotic Mindstars
 -- Mitotic Set: Single Mindstar that splits in two
 newEntity{
 	power_source = {nature=true},
@@ -1184,17 +1183,25 @@ newEntity{
 		function(self, who)
 			-- Check for free slot first
 			if who:getFreeHands() == 0 then
-				game.logPlayer(who, "You must have a free hand to divide %s", self.name)
+				game.logPlayer(who, "You must have a free hand to divide the %s.", self:getName({no_add_name = true, do_color = true}))
 				return
 			end
 
 			if who:getInven("PSIONIC_FOCUS") and who:getInven("PSIONIC_FOCUS")[1] == self then
-				game.logPlayer(who, "You cannot split %s while using it as a psionic focus.", self.name)
+				game.logPlayer(who, "You cannot split your %s while using it as a psionic focus.", self:getName({no_add_name = true, do_color = true}))
 				return
 			end
 
 			local o = self
-
+			local o, pos, inven_id = who:findInAllInventoriesByObject(self)
+			
+			if o ~= self then
+				game.logPlayer(who, "Your %s is too flawed to divide.", self:getName({no_add_name = true, do_color = true}))
+				return
+			end
+			game.logPlayer(who, "You divide your %s in two, forming a linked set.", self:getName({no_add_name = true, do_color = true}))
+			
+			who:takeoffObject(inven_id, pos)
 			-- Remove some properties before cloning
 			o.cost = self.cost / 2 -- more don't split for extra gold discouragement
 			o.max_power = nil
@@ -1223,6 +1230,7 @@ newEntity{
 
 			-- Wearing the second mindstar will complete the set and thus update the first mindstar
 			o2.wielded = nil
+			who:wearObject(o, true, false, inven_id)
 			who:wearObject(o2, true, true)
 
 			-- Because we're removing the use_power we're not returning that it was used; instead we'll have the actor use energy manually

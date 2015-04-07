@@ -243,13 +243,13 @@ function _M:use(who, typ, inven, item)
 					if rng.percent(d[1]) then d[3](self, who) end
 				end
 			end
-game.log("#YELLOW#[Object:use(...) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
+--game.log("#YELLOW#[Object]:use(...) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not self.use_no_energy then
-game.log("#YELLOW# %s using %d energy", who.name, game.energy_to_act * (inven.use_speed or 1))
+--game.log("#YELLOW# %s using %d energy", who.name, game.energy_to_act * (inven.use_speed or 1))
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
 			end
-game.log("#YELLOW#[Object:use(...) (post) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
+--game.log("#YELLOW#[Object]:use(...) (post) for %s by %s (energy = %d)", self.name, who.name, who.energy.value)
 		end
 		return ret
 	end

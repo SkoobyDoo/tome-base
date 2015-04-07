@@ -96,22 +96,23 @@ _M.useObjectBaseTalent ={
 	no_energy = function(self, t) -- energy use based on object
 		return self:callObjectTalent(t.id, "no_energy")
 	end,
+	getObject = function(self, t)
+		return self.useable_objects_data and self.useable_objects_data[t.id] and self.useable_objects_data[t.id].obj
+	end,
 --	no_energy = true,
 --	on_pre_use_ai = function(self, ab, silent, fake)
 	on_pre_use = function(self, t, silent, fake) -- test for item useability, not on cooldown, etc.
+		if self.no_inventory_access then return end
 		local data = self.useable_objects_data[t.id]
 		if not data then
-game.log("#YELLOW#[pre use] ERROR No object use data found for talent %s", t.name)
+			print("[ActorObjectUse] ERROR: Talent ", t.name, " has no object data")
+--game.log("#YELLOW#[pre use] ERROR No object use data found for talent %s", t.name)
 			return false
 		end
 		local o = data.obj
 		if not o then
+			print("[ActorObjectUse] ERROR: Talent ", t.name, " has no object")
 --game.log("#YELLOW#[pre use] no object for talent %s", t.name)
-			return false
-		end
-		local useable, msg = o:canUseObject(who)
-		if not useable then
-game.log("#YELLOW#[pre use] object %s is not useable (%s)", o.name, msg)
 			return false
 		end
 		local cooldown = o:getObjectCooldown(self)
@@ -119,19 +120,21 @@ game.log("#YELLOW#[pre use] object %s is not useable (%s)", o.name, msg)
 --game.log("#YELLOW#[pre use] object %s is cooling down", o.name)
 			return false
 		end
---[[
-		if data.on_pre_use and not data.on_pre_use(o, self, silent, fake) then
---game.log("#YELLOW#[pre use] %s: Object %s not usable due to on_pre_use check", self.name, o.name)
+		local useable, msg = o:canUseObject(who)
+		if not useable and not (silent or fake) then
+			game.logPlayer(self, msg)
+			print("[ActorObjectUse] Talent ", t.name, "(", o.name, ") is not usable ", msg)
+--game.log("#YELLOW#[pre use] object %s is not useable (%s)", o.name, msg)
 			return false
 		end
---]]
-		if self.no_inventory_access or (data.on_pre_use and not data.on_pre_use(o, self, silent, fake)) then
+
+		if (data.on_pre_use and not data.on_pre_use(o, self, silent, fake)) then
 	--game.log("#YELLOW#[pre use] %s: Object %s not usable due to on_pre_use check", self.name, o.name)
 				return false
 		elseif data.tid then -- test talent on_pre_use check function
 			local tal = self:getTalentFromId(data.tid)
 			if tal.on_pre_use then
-				if data.talent_override then self.talents[data.tid] = data.old_talent_level end -- safety check if talent crashed
+				if data.talent_override then self.talents[data.tid] = data.old_talent_level end -- safety check if talent crashed previously
 				data.talent_override = true
 				data.old_talent_level = self.talents[data.tid]
 				self.talents[data.tid] = data.talent_level
@@ -141,7 +144,6 @@ game.log("#YELLOW#[pre use] object %s is not useable (%s)", o.name, msg)
 				if ret then return false end
 			end
 		end
---o:getObjectCoolDown()
 		return true 
 	end,
 	mode = "activated",  -- Assumes all abilities are activated
@@ -163,39 +165,30 @@ game.log("#YELLOW#[pre use] object %s is not useable (%s)", o.name, msg)
 	target = function(self, t)
 		return self:callObjectTalent(t.id, "target")
 	end,
-	-- tactical: note parsing in data.talents.lua
 	action = function(self, t)
 		local data = self.useable_objects_data[t.id]
-game.log("#YELLOW#Use Object (%s [uid %d]) Activation by %s [uid %d]", data.obj.name, data.obj.uid, self.name, self.uid)
---[[
-		if self.player then
-game.log("#YELLOW#Player Use Object Interface")
-			local obj, slot, inven = self:findInAllInventoriesByObject(data.obj)
-			local ret = self:playerUseItem(object, item, inven)
-game.log("#YELLOW#Player Use Object Interface returns %s",tostring(ret))
-			return ret
-		end
---]]
-		self:attr("no_talent_fail", 1) -- using an object is not affected by normal talent restrictions
-		if data.tid then
-			game.logSeen(self, "%s activates %s %s!", self.name:capitalize(), self:his_her(), data.obj:getName({no_add_name=true, do_color = true}))
-			local msg = self:useTalentMessage(self:getTalentFromId(data.tid))
-			if msg then game.logSeen(self, "%s", msg) end
-		end
---		local old_use_no_energy = data.obj.use_no_energy -- handle useage speed
-		data.obj.use_no_energy = true -- this is to prevent the tactical AI from putting too much weight on the talent
-		local ret = data.obj:use(self, "use", data.inven_id, item)
-		data.obj.use_no_energy = data.no_energy
-		self:attr("no_talent_fail", -1)
---		print(self.name, self.uid, "finished using object talent", t.id, "energy:")
---table.print(self.energy)
-print("[ActorObjectUse] ", t.name, data.obj.name, "return table:")
+game.log("#YELLOW#Pre Use Object (%s [uid %d]) Activation by %s [uid %d, energy %d]", data.obj.name, data.obj.uid, self.name, self.uid, self.energy.value)
+		local obj, inven = data.obj, data.inven_id
+		local ret
+--game.log("#YELLOW#Actor %s Pre Use Object %s, ", self.name, obj.name)
+		local co = coroutine.create(function()
+			ret = obj:use(self, nil, data.inven_id, slot)
+			if ret and ret.used then
+print(self.name, self.uid, " return table:")
 table.print(ret)
-		if ret.destroy then -- destroy the item after use
-			local _, item = self:findInInventoryByObject(self:getInven(data.inven_id), data.obj)
-			if item then self:removeObject(data.inven_id, item) end
-		end
-		return ret
+				if data.tid then -- replaces normal talent use message
+					game.logSeen(self, "%s activates %s %s!", self.name:capitalize(), self:his_her(), data.obj:getName({no_add_name=true, do_color = true}))
+					local msg = self:useTalentMessage(self:getTalentFromId(data.tid))
+					if msg then game.logSeen(self, "%s", msg) end
+				end
+game.log("#YELLOW#Post Use Object: Actor %s (%d energy) Object %s, ", self.name, self.energy.value, obj.name)
+				if ret.destroy then -- destroy the item after use
+					local _, item = self:findInInventoryByObject(self:getInven(data.inven_id), data.obj)
+					if item then self:removeObject(data.inven_id, item) end
+				end
+			end
+		end)
+		coroutine.resume(co)
 	end,
 	info = function(self, t) -- should these talents be visible to the player?
 		local data = self.useable_objects_data[t.id]
@@ -216,8 +209,7 @@ table.print(ret)
 function _M:useObjectTalent(base_name, num)
 	base_name = base_name or base_talent_name
 	local tid, short_name = useObjectTalentId(base_name, num)
---	if true then return tid end
-print("[ActorObjectUse] Checking Talent ", short_name)
+--print("[ActorObjectUse] Checking Talent ", short_name)
 	local t = Talents:getTalentFromId(tid)
 	if not t then -- define a new talent
 		t = table.clone(self.useObjectBaseTalent)
@@ -241,11 +233,11 @@ end
 -- @param slot = inventory position of object
 -- @param returns o, talent id, talent definition if the item is usable
 function _M:useObjectEnable(o, inven_id, slot, base_name)
-print(("[ActorObjectUse] useObjectEnable: o: %s, inven/slot = %s/%s"):format(o and o.name or "none", inven_id, slot))
 	if not o:canUseObject() or o.quest or o.lore then -- don't enable certain objects (lore, quest)
-game.log("#YELLOW# Object %s is ineligible for talent interface", o.name)
+game.log("#YELLOW#[ActorObjectUse] Object %s is ineligible for talent interface", o.name)
 		return
 	end	
+	print(("[ActorObjectUse] useObjectEnable: o: %s, inven/slot = %s/%s"):format(o and o.name or "none", inven_id, slot))
 	self.useable_objects_data = self.useable_objects_data or {} -- for older actors
 	-- Check allowance
 	local data = self.useable_objects_data
@@ -351,7 +343,7 @@ function _M:useObjectSetData(tid, o)
 	elseif o.use_talent then -- power is a talent
 --game.log("#YELLOW# setting up use_talent for %s", o.name)
 		local t = self:getTalentFromId(o.use_talent.id)
-		if t and not t.no_npc_use then
+		if t and t.mode == "activated" and not t.no_npc_use then
 			data.tid = o.use_talent.id
 			data.talent_level = o.use_talent.level
 			
@@ -366,10 +358,6 @@ function _M:useObjectSetData(tid, o)
 			data.tactical = t.tactical
 			data.target = t.target
 			data.talent_cooldown = o.talent_cooldown
---			if t.on_pre_use then
---				data.on_pre_use = function(self, who)
---				end
---			end
 			ok = true
 		end
 	else

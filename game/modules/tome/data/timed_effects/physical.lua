@@ -677,6 +677,8 @@ newEffect{
 	subtype = { nature=true },
 	status = "beneficial",
 	parameters = { ac=10, hard=10 },
+	on_gain = function(self, err) return "#Target#'s skin looks a bit thorny.", "+Thorny Skin" end,
+	on_lose = function(self, err) return "#Target# is less thorny now.", "-Thorny Skin" end,
 	activate = function(self, eff)
 		eff.aid = self:addTemporaryValue("combat_armor", eff.ac)
 		eff.hid = self:addTemporaryValue("combat_armor_hardiness", eff.hard)
