@@ -104,7 +104,7 @@ newTalent{
 	require = psi_wil_req3,
 	mode = "passive",
 	getSleepPowerBonus = function(self, t) return self:combatTalentLimit(t, 2, 1.1, 1.5) end, -- Limit < 2
-	getInsomniaPower = function(self, t) return self:combatTalentLimit(t, 20, 3, 10) end, -- Limit to <20%
+	getInsomniaPower = function(self, t) return self:combatTalentLimit(t, 12, 3, 10) end, -- Limit to <20%
 	info = function(self, t)
 		local power_bonus = t.getSleepPowerBonus(self, t) - 1
 		local insomnia = t.getInsomniaPower(self, t)
