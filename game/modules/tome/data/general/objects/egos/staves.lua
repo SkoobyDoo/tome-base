@@ -250,7 +250,7 @@ newEntity{
 			local explosion, particle, trail
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			if     damtype == DamageType.FIRE then      explosion = "flame"               particle = "bolt_fire"      trail = "firetrail"
 			elseif damtype == DamageType.COLD then      explosion = "freeze"              particle = "ice_shards"     trail = "icetrail"
 			elseif damtype == DamageType.ACID then      explosion = "acid"                particle = "bolt_acid"      trail = "acidtrail"
@@ -261,7 +261,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"               particle = "bolt_slime"     trail = "slimetrail"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"                particle = "stone_shards"   trail = "earthtrail"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"				  particle = "temporal_bolt"  trail = "lighttrail"
-			else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" --damtype = DamageType.ARCANE
 			end
 
 			local x, y = who:getTarget(tg)
@@ -351,7 +351,7 @@ newEntity{
 			if not combat then return end
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			local explosion
 
 			if     damtype == DamageType.FIRE then      explosion = "flame"
@@ -364,7 +364,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"
-			else                                        explosion = "manathrust"         damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"         -- damtype = DamageType.ARCANE
 			end
 
 			-- Compute damage
@@ -466,7 +466,7 @@ newEntity{
 			local combat = weapon.combat
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			local explosion
 			
 			if     damtype == DamageType.FIRE then      explosion = "flame"
@@ -479,7 +479,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"
-			else                                        explosion = "manathrust"          damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"          -- damtype = DamageType.ARCANE
 			end
 
 			local x, y = who:getTarget(tg)

@@ -58,7 +58,7 @@ newTalent{
 		elseif damtype == DamageType.BLIGHT then    explosion = "slime"               particle = "bolt_slime"     trail = "slimetrail"
 		elseif damtype == DamageType.PHYSICAL then  explosion = "dark"                particle = "stone_shards"   trail = "earthtrail"
 		elseif damtype == DamageType.TEMPORAL then  explosion = "light"				  particle = "temporal_bolt"  trail = "lighttrail"
-		else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" damtype = DamageType.ARCANE
+		else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" --damtype = DamageType.ARCANE
 		end
 
 		local tg = self:getTalentTarget(t)
