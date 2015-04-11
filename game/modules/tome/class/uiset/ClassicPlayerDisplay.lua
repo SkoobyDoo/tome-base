@@ -95,6 +95,7 @@ local function samecolor(c1, c2)
 end
 
 function _M:makeTextureBar(text, nfmt, val, max, reg, x, y, r, g, b, bar_col, bar_bgcol)
+	val = util.bound(val, 0, max)
 	local cached = self.tex_cache.texture_bars[text]
 	-- it's a bunch of number comparisons so it's sufficiently fast for jit
 	local cached_ok = cached and (nfmt == cached.nfmt) and (val == cached.val) and (max == cached.max) and (reg == cached.reg) and
