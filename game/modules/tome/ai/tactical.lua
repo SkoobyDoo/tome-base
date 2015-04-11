@@ -83,6 +83,8 @@ newAI("use_tactical", function(self)
 		if type(tactical) == "function" then tactical = tactical(self, t) end
 		if tactical and aitarget then
 			local tg = self:getTalentTarget(t)
+	print("** target parameters:")
+	table.print(tg, "---")
 			local default_tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}
 			-- Only assume range... some talents may no require LOS, etc
 			local within_range = target_dist and target_dist <= ((self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0))
@@ -124,7 +126,7 @@ newAI("use_tactical", function(self)
 				end
 				-- Evaluate the tactical weights and weight functions
 				for tact, val in pairs(tactical) do
-					if type(val) == "function" then val = val(self, t, aitarget) or 0 end
+					if type(val) == "function" then val = val(self, t, aitarget, tact) or 0 end
 					-- Handle damage_types and resistances
 					local nb_foes_hit, nb_allies_hit, nb_self_hit = 0, 0, 0
 					if type(val) == "table" then
@@ -178,7 +180,9 @@ newAI("use_tactical", function(self)
 						-- Note the addition of a less than one random value, this means the sorting will randomly shift equal values
 						val = ((util.getval(t.no_energy, self, t)==true) and val * 10 or val) + rng.float(0, 0.9)
 						avail[tact][#avail[tact]+1] = {val=val, tid=tid, nb_foes_hit=nb_foes_hit, nb_allies_hit=nb_allies_hit, nb_self_hit=nb_self_hit}
-						print(self.name, self.uid, "tactical ai talents can use", t.name, tid, tact, "weight", val)
+--						print(self.name, self.uid, "tactical ai talents can use", t.name, tid, tact, "weight", val)
+						print(self.name, self.uid, "tactical ai talents can use", tid, t.is_object_use and t.getObject(self, t).name or "", tact, "weight", val)
+--						if t.is_object_use then print("  object:", t.getObject(self, t)) end
 						ok = true
 					end
 --					print(self.name, self.uid, t.name, tid, "tactical ai final weight: ", val)
@@ -257,6 +261,8 @@ table.print(avail)
 			elseif psi < 100 then want.psi = want.psi + 0.5
 			end
 		end
+
+-- hate, positive, negative?
 
 		-- Need to reduce equilibrium
 		if avail.equilibrium then
@@ -401,7 +407,11 @@ table.print(want)
 			table.sort(selected_talents, function(a,b) return a.val > b.val end)
 			local tid = selected_talents[1].tid
 			print("Tactical choice:", res[1][1], tid)
-			self:useTalent(tid)
+table.print(selected_talents[1], "---")
+--			self:useTalent(tid)
+			self:useTalent(tid, nil, nil, nil, (res[1][1] == "cure" or res[1][1] == "heal") and self or nil) --cures and heals go to the talent user
+print("[tactical]", self.name, "post useTalent", tid, "energy:")
+table.print(self.energy, "---")
 			return true
 		else
 			return nil, res[1][1]

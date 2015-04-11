@@ -27,6 +27,7 @@ local Talents = require "engine.interface.ActorTalents"
 --- Interface to add ToME archery combat system
 module(..., package.seeall, class.make)
 
+--Need to update for NPC AI use move ammo checks into hasArcheryWeapon)
 --- Look for possible archery targets
 -- Take care of removing enough ammo
 function _M:archeryAcquireTargets(tg, params)
@@ -577,6 +578,7 @@ function _M:archeryDefaultProjectileVisual(weapon, ammo)
 	end
 end
 
+-- need to update for NPC AI use
 --- Check if the actor has a bow or sling and corresponding ammo
 function _M:hasArcheryWeapon(type)
 	if self:attr("disarmed") then

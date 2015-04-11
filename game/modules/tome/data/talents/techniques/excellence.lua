@@ -54,7 +54,7 @@ newTalent{
 				proj:terminate(x, y)
 				game.level:removeEntity(proj, true)
 				proj.dead = true
-				self:logCombat(proj, "#Source# shoots down '#Target#'.")
+				self:logCombat(proj, "#Source# shoots down '#Target#'!")
 			end
 		end
 		

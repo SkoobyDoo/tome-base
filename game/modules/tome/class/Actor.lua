@@ -3971,7 +3971,6 @@ function _M:onAddObject(o, inven_id, slot)
 		end
 	end
 
--- need extra checks?
 	if o:canUseObject() then -- set up object use talents (for NPC's)
 		self:useObjectEnable(o, inven_id, slot)
 	end
@@ -4580,7 +4579,7 @@ end
 -- @return true to continue, false to stop
 function _M:preUseTalent(ab, silent, fake)
 	if not self:attr("no_talent_fail") then
-	if self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
+	if not ab.never_fail and self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
 		if not silent then game.logSeen(self, "%s is too afraid to use %s.", self.name:capitalize(), ab.name) end
 		return false
 	end
@@ -4697,82 +4696,84 @@ function _M:preUseTalent(ab, silent, fake)
 		end
 	end
 
-	-- Equilibrium is special, it has no max, but the higher it is the higher the chance of failure (and loss of the turn)
-	-- But it is not affected by fatigue
-	if (ab.equilibrium or (ab.sustain_equilibrium and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
-		-- Fail ? lose energy and 1/10 more equilibrium
-		if (not self:attr("no_equilibrium_fail") and (not self:attr("no_equilibrium_summon_fail") or not ab.is_summon)) and not self:equilibriumChance(ab.equilibrium or ab.sustain_equilibrium) then
-			if not silent then game.logPlayer(self, "You fail to use %s due to your equilibrium!", ab.name) end
-			self:incEquilibrium((ab.equilibrium or ab.sustain_equilibrium) / 10)
-			self:useEnergy()
-			return false
-		end
-	end
-
-	-- Spells can fail
-	if (ab.is_spell and not self:isTalentActive(ab.id)) and not fake and self:attr("spell_failure") then
-		if rng.percent(self:attr("spell_failure")) then
-			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
-			return false
-		end
-	end
-
-	-- Nature can fail
-	if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
-		if rng.percent(self:attr("nature_failure")) then
-			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
-			return false
-		end
-	end
-
-	-- Chronomancy can fail, causing an anomaly but returning Paradox
-	if (ab.paradox or (ab.sustain_paradox and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
-		-- Random anomalies reduce paradox by twice the talent's paradox cost
-		local cost = util.getval(ab.paradox or ab.sustain_paradox, self, ab)
-		if cost > 0 then
-			if self:paradoxDoAnomaly(self:paradoxFailChance(), cost * 2, {anomaly_type=ab.anomaly_type or nil, silent=silent}) then
-				game:playSoundNear(self, "talents/dispel")
+	if not ab.never_fail then
+		-- Equilibrium is special, it has no max, but the higher it is the higher the chance of failure (and loss of the turn)
+		-- But it is not affected by fatigue
+		if (ab.equilibrium or (ab.sustain_equilibrium and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
+			-- Fail ? lose energy and 1/10 more equilibrium
+			if (not self:attr("no_equilibrium_fail") and (not self:attr("no_equilibrium_summon_fail") or not ab.is_summon)) and not self:equilibriumChance(ab.equilibrium or ab.sustain_equilibrium) then
+				if not silent then game.logPlayer(self, "You fail to use %s due to your equilibrium!", ab.name) end
+				self:incEquilibrium((ab.equilibrium or ab.sustain_equilibrium) / 10)
+				self:useEnergy()
 				return false
 			end
 		end
-	end
 
+		-- Spells can fail
+		if (ab.is_spell and not self:isTalentActive(ab.id)) and not fake and self:attr("spell_failure") then
+			if rng.percent(self:attr("spell_failure")) then
+				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+				return false
+			end
+		end
+
+		-- Nature can fail
+		if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
+			if rng.percent(self:attr("nature_failure")) then
+				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+				return false
+			end
+		end
+
+		-- Chronomancy can fail, causing an anomaly but returning Paradox
+		if (ab.paradox or (ab.sustain_paradox and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
+			-- Random anomalies reduce paradox by twice the talent's paradox cost
+			local cost = util.getval(ab.paradox or ab.sustain_paradox, self, ab)
+			if cost > 0 then
+				if self:paradoxDoAnomaly(self:paradoxFailChance(), cost * 2, {anomaly_type=ab.anomaly_type or nil, silent=silent}) then
+					game:playSoundNear(self, "talents/dispel")
+					return false
+				end
+			end
+		end
+	end
 	if self:triggerHook{"Actor:preUseTalent", t=ab, silent=silent, fake=fake} then
 		return false
 	end
 
-	-- Confused ? lose a turn!
-	if self:attr("confused") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
-		if rng.percent(self:attr("confused")) then
-			if not silent then game.logSeen(self, "%s is confused and fails to use %s.", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			return false
+	if not ab.never_fail then
+		-- Confused ? lose a turn!
+		if self:attr("confused") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
+			if rng.percent(self:attr("confused")) then
+				if not silent then game.logSeen(self, "%s is confused and fails to use %s.", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				return false
+			end
 		end
-	end
-	
-	-- Failure chance?
-	if self:attr("talent_fail_chance") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") and not ab.innate then
-		if rng.percent(self:attr("talent_fail_chance")) then
-			if not silent then game.logSeen(self, "%s fails to use %s.", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			return false
+		
+		-- Failure chance?
+		if self:attr("talent_fail_chance") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") and not ab.innate then
+			if rng.percent(self:attr("talent_fail_chance")) then
+				if not silent then game.logSeen(self, "%s fails to use %s.", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				return false
+			end
 		end
-	end
 
-	-- terrified effect
-	if self:attr("terrified") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
-		local eff = self:hasEffect(self.EFF_TERRIFIED)
-		if rng.percent(self:attr("terrified")) then
-			if not silent then game.logSeen(self, "%s is too terrified to use %s.", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			return false
+		-- terrified effect
+		if self:attr("terrified") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
+			local eff = self:hasEffect(self.EFF_TERRIFIED)
+			if rng.percent(self:attr("terrified")) then
+				if not silent then game.logSeen(self, "%s is too terrified to use %s.", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				return false
+			end
 		end
 	end
-
 	-- Special checks
 	if ab.on_pre_use and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) and not ab.on_pre_use(self, ab, silent, fake) then return false end
 

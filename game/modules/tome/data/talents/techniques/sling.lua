@@ -86,7 +86,21 @@ newTalent{
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { knockback = 2 }, ESCAPE = { knockback = 1 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("sling") then if not silent then game.logPlayer(self, "You require a sling for this talent.") end return false end return true end,
+--	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("sling") then if not silent then game.logPlayer(self, "You require a sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) -- normally handled with archeryAcquireTargets
+		local weap, ammo = self:hasArcheryWeapon("sling")
+		if weap and ammo then
+			local infinite = ammo.infinite or self:attr("infinite_ammo")
+			if not infinite and ammo.combat.shots_left <= 0 then
+				if not silent then game.logPlayer(self, "You do not have enough ammo left!") end
+				return nil
+			end
+			return true
+		else
+			if not silent then game.logPlayer(self, "You require a sling and ammo for this talent!") end
+			return false
+		end
+	end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:checkHit(self:combatAttack(), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("knockback") then
 			target:knockback(self.x, self.y, 4)

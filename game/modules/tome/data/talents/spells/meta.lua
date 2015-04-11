@@ -25,9 +25,32 @@ newTalent{
 	random_ego = "utility",
 	mana = 40,
 	cooldown = 7,
-	tactical = { DISABLE = 2 },
+--	tactical = { DISABLE = 2 },
+	tactical = { CURE = function(self, t, aitarget)
+			local nb = 0
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "magical" and e.status == "detrimental" then nb = nb + 1 end
+			end
+			return nb
+		end,
+		DISABLE = function(self, t, aitarget)
+			local nb = 0
+			for eff_id, p in pairs(aitarget.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "magical" and e.status == "beneficial" then nb = nb + 1 end
+			end
+			for tid, act in pairs(aitarget.sustain_talents) do
+				if act then
+					local talent = aitarget:getTalentFromId(tid)
+					if talent.is_spell then nb = nb + 1 end
+				end
+			end
+			return nb^0.5
+		end},
 	direct_hit = true,
-	requires_target = function(self, t) return self:getTalentLevel(t) >= 3 end,
+--	requires_target = function(self, t) return self:getTalentLevel(t) >= 3 end,
+	requires_target = function(self, t) return self:getTalentLevel(t) >= 3 and (self.player or t.tactical.cure(self, t) <= 0) end,
 	range = 10,
 	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	action = function(self, t)

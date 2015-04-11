@@ -918,6 +918,8 @@ newEffect{
 	subtype = { sunder=true },
 	status = "detrimental",
 	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target#'s armour is damaged!", "+Sunder Armor" end,
+	on_lose = function(self, err) return "#Target#'s armour is more intact.", "-Sunder Armor" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "combat_armor", -eff.power)
 		self:effectTemporaryValue(eff, "combat_physresist", -eff.power)
@@ -934,6 +936,8 @@ newEffect{
 	subtype = { sunder=true },
 	status = "detrimental",
 	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target#'s fighting ability is impaired!", "+Sunder Arms" end,
+	on_lose = function(self, err) return "#Target#'s ability to fight has recovered.", "-Sunder Arms" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("combat_atk", -eff.power)
 	end,

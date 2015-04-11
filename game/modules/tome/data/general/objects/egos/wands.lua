@@ -33,7 +33,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d mana"):format(self:getCharmPower(who, true) / 5) end, function(self, who)
 			who:incMana(self:getCharmPower(who, true) / 5)
 		end},
-	}
+	},
+	use_power = {tactical = {MANA = 0.5}}
 }
 
 newEntity{
@@ -59,7 +60,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d positive energy"):format(self:getCharmPower(who, true) / 8) end, function(self, who)
 			who:incPositive(self:getCharmPower(who, true) / 8)
 		end},
-	}
+	},
+	use_power = {tactical = {POSITIVE = 0.5}}
 }
 
 newEntity{
@@ -73,7 +75,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d negative energy"):format(self:getCharmPower(who, true) / 8) end, function(self, who)
 			who:incNegative(self:getCharmPower(who, true) / 8)
 		end},
-	}
+	},
+	use_power = {tactical = {NEGATIVE = 0.5}}
 }
 
 newEntity{

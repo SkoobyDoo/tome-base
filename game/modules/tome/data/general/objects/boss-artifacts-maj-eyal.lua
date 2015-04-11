@@ -136,7 +136,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 		inc_damage = { [DamageType.COLD] = 20 },
 	},
 	max_power = 40, power_regen = 1,
-	use_power = { name ="concentrate the precipitation of your Winter Storm into ice walls (lasting 10 turns) within its area", power = 30,
+	use_power = { name ="precipitate ice walls (lasting 10 turns) within your Winter Storm's area", power = 30,
 		use = function(self, who)
 			
 			local Object = require "mod.class.Object"
@@ -150,18 +150,17 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 			end
 			
 			local grids = core.fov.circle_grids(self.winterStorm.x, self.winterStorm.y, self.winterStorm.radius, true)
-			game.logSeen(who, "#LIGHT_BLUE#%s activates %s %s, precipitating walls of ice from the Winter Storm!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
+			game.logSeen(who, "#LIGHT_BLUE#%s brandishes %s %s, releasing a wave of Winter cold!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			self.use_power.last_use = {turn = game.turn, x = self.winterStorm.x, y = self.winterStorm.y, radius = self.winterStorm.radius} -- for ai purposes
 			
-			local self = who
-
+			local msg = false
 			for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 				local oe = game.level.map(x, y, engine.Map.TERRAIN)
 
 				if oe then
 					if oe._wintertide_ice_wall then
 						oe.temporary = 10
-					else
+					elseif not oe:check("block_move", x, y) then
 						local e = Object.new{
 							old_feat = oe,
 							name = "winter wall", image = "npc/iceblock.png",
@@ -191,15 +190,16 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 								return nil, old.old_feat
 							end,
 							summoner_gain_exp = true,
-							summoner = self,
+							summoner = who,
 						}
 						e.tooltip = mod.class.Grid.tooltip
 						game.level:addEntity(e)
 						game.level.map(x, y, engine.Map.TERRAIN, e)
+						if game.level.map.seens(x, y) and game.player:canSee(e) then msg = true end
 					end
 				end
 			end end
-			
+			if msg then game.log("#LIGHT_BLUE#Ice and snow form a barrier!") end
 			return {id=true, used=true}
 		end,
 		on_pre_use = function(self, who, silent, fake)
@@ -222,7 +222,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 			return TDist, TEnv, SEnv
 		end,
 		tactical = {
-			ESCAPE = function(who, t, aitarget)
+			ESCAPE = function(who, t, aitarget) -- try to trap target
 				local o = t.is_object_use and t.getObject(who, t)
 				if not (o and o.wielded and aitarget and o.winterStorm and o.winterStorm.duration > 0) then
 					return 0
@@ -316,7 +316,7 @@ newEntity{ base = "BASE_LITE", define_as = "WINTERTIDE_PHIAL",
 			local effs = {}
 			local known = false
 
-			game.logSeen(who, "%s uses the %s to cleanse %s mind!", who.name:capitalize(), self:getName({no_add_name = true}), who:his_her())
+			game.logSeen(who, "%s uses %s %s to cleanse %s mind!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color=true}), who:his_her())
 			-- Go through all mental effects
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
@@ -335,7 +335,18 @@ newEntity{ base = "BASE_LITE", define_as = "WINTERTIDE_PHIAL",
 				end
 			end
 			return {id=true, used=true}
+		end,
+		tactical = {CURE = function(who, t, aitarget) -- count number of mental effects
+			local nb = 0
+			for eff_id, p in pairs(who.tmp) do
+				local e = who.tempeffect_def[eff_id]
+				if e.status == "detrimental" and e.type == "mental" then
+					nb = nb + 1
+				end
+			end
+			return nb
 		end
+		},
 	},
 }
 
@@ -620,6 +631,7 @@ newEntity{ base = "BASE_STAFF",
 
 		local NPC = require "mod.class.NPC"
 		local list = NPC:loadList("/data/general/npcs/crystal.lua")
+		game.logSeen(who, "Crystals splinter off of %s's %s and animate!", who.name:capitalize(), self:getName({no_add_name = true, do_color=true}))
 		for i = 1, 2 do
 			-- Find space
 			local x, y = util.findFreeGrid(who.x, who.y, 5, true, {[engine.Map.ACTOR]=true})
@@ -650,7 +662,8 @@ newEntity{ base = "BASE_STAFF",
 			game:playSoundNear(who, "talents/ice")
 		end
 		return {id=true, used=true}
-	end },
+	end,
+	tactical = {ATTACK = 2}},
 }
 
 newEntity{ base = "BASE_WARAXE",
@@ -799,7 +812,7 @@ newEntity{ base = "BASE_AMULET",
 			return
 		end
 		print("Invoking guardian on", x, y)
-
+		game.logSeen(who, "%s taps %s %s, summoning a vampire thrall!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color=true}))
 		local NPC = require "mod.class.NPC"
 		local vampire = NPC.new{
 			type = "undead", subtype = "vampire",
@@ -827,11 +840,17 @@ newEntity{ base = "BASE_AMULET",
 			see_invisible = 5,
 			undead = 1,
 
-			level_range = {who.level, who.level}, exp_worth = 0,
+			level_range = {25, who.max_level}, exp_worth = 0,
 			max_life = resolvers.rngavg(90,100),
 			combat_armor = 12, combat_def = 10,
-			resolvers.talents{ [who.T_STUN]=2, [who.T_BLUR_SIGHT]=3, [who.T_PHANTASMAL_SHIELD]=2, [who.T_ROTTING_DISEASE]=3, },
-
+			resolvers.talents{
+				[who.T_STUN]={base=2, every=6, max=5},
+				[who.T_BLUR_SIGHT]={start = 10, base=2, every=6, max=5},
+				[who.T_PHANTASMAL_SHIELD]={start = 5, base=1, every=6, max=5},
+				[who.T_ROTTING_DISEASE]={start = 10, base=1, every=6, max=5},
+				[who.T_TAUNT] = 3,
+				},
+			resolvers.sustains_at_birth(),
 			faction = who.faction,
 			summoner = who,
 			summon_time = 15,
@@ -839,10 +858,11 @@ newEntity{ base = "BASE_AMULET",
 
 		vampire:resolve()
 		game.zone:addEntity(game.level, vampire, "actor", x, y)
-		vampire:forceUseTalent(vampire.T_TAUNT, {})
+		vampire:forceUseTalent(vampire.T_TAUNT, {ignore_energy=true})
 		game:playSoundNear(who, "talents/spell_generic")
 		return {id=true, used=true}
-	end },
+	end,
+	tactical = {ATTACK = 2, SURROUNDED = 2}},
 }
 
 newEntity{ define_as = "RUNED_SKULL",
@@ -1046,7 +1066,8 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 
 			game.logPlayer(who, "You fix the crystal on the %s and create the %s.", oldname, o:getName{do_color=true})
 		end)
-	end },
+	end,
+	no_npc_use = true},
 }
 
 newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
@@ -1116,7 +1137,8 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 
 			game.logPlayer(who, "You fix the crystal on the %s and create the %s.", oldname, o:getName{do_color=true})
 		end)
-	end },
+	end,
+	no_npc_use = true},
 }
 
 newEntity{ base = "BASE_ROD", define_as = "ROD_OF_ANNULMENT",
@@ -1136,10 +1158,16 @@ newEntity{ base = "BASE_ROD", define_as = "ROD_OF_ANNULMENT",
 		power = 30,
 		range = 5,
 		use = function(self, who)
-			local tg = {type="bolt", range=self.use_power.range}
+--			local tg = {type="bolt", range=self.use_power.range}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
-			game.logSeen(who, "%s aims %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
+			local target = game.level.map(x, y, engine.Map.ACTOR)
+--			if not target then return {used = true} end
+			who:logCombat(target or {x=x, y=y}, "#Source# aims %s %s at #target#!", who:his_her(), self:getName({no_add_name = true, do_color = true}))
+			if not target then
+				return {used = true}
+			end
 			who:project(tg, x, y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
@@ -1158,7 +1186,17 @@ newEntity{ base = "BASE_ROD", define_as = "ROD_OF_ANNULMENT",
 				target.changed = true
 			end, nil, {type="flame"})
 			return {id=true, used=true}
-		end
+		end,
+		requires_target = true,
+		target = function(self, who) return {type="bolt", range=self.use_power.range} end,
+		tactical = {DISABLE = function(who, t, aitarget)
+			local nb = 0
+			for tid, lev in pairs(aitarget.talents) do
+				local t = aitarget:getTalentFromId(tid)
+				if not aitarget.talents_cd[tid] and t.mode == "activated" and not t.innate then nb = nb + 1 end
+			end
+			return nb^0.5
+		end}
 	},
 }
 
@@ -1375,7 +1413,7 @@ It has been kept somewhat intact with layers of salt and clay, but in spite of t
 		combat_def = 5,
 		disarm_bonus = 5,
 	},
-	use_power = { name = "", power = 10, hidden = true, use = function(self, who) return end},
+	use_power = { name = "", power = 10, hidden = true, use = function(self, who) return end, no_npc_use = true},
 	act = function(self)
 		self:useEnergy()
 		if self.worn_by then
@@ -1488,12 +1526,16 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "PSIONIC_FURY",
 		format(who:damDesc(engine.DamageType.MIND, self.use_power.damage(self, who)), self.use_power.radius) end,
 		power = 40,
 		radius = 5,
+		range = 0,
+		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius, selffire=false} end,
+		tactical = {ATTACKAREA = {MIND = 2}},
 		damage = function(self, who) return 50 + who:getWil()*1.8 end,
 		use = function(self, who)
 			local radius = self.use_power.radius
 			local dam = self.use_power.damage(self, who)
-			local blast = {type="ball", range=0, radius=self.use_power.radius, selffire=false}
-			game.logSeen(who, "%s's %s sends out a blast of psionic energy!", who.name:capitalize(), self:getName({no_add_name = true}))
+--			local blast = {type="ball", range=0, radius=self.use_power.radius, selffire=false}
+			local blast = self.use_power.target(self, who)
+			game.logSeen(who, "%s's %s sends out a blast of psionic energy!", who.name:capitalize(), self:getName({no_add_name = true, do_color = true}))
 			who:project(blast, who.x, who.y, engine.DamageType.MIND, dam)
 			game.level.map:particleEmitter(who.x, who.y, blast.radius, "force_blast", {radius=blast.radius})
 			return {id=true, used=true}
@@ -1539,7 +1581,7 @@ newEntity{ base = "BASE_TRIDENT",
 	power_source = {arcane=true},
 	define_as = "TRIDENT_STREAM",
 	unided_name = "ornate trident",
-	name = "The River's Fury", unique=true, image = "object/artifact/the_rivers_fury.png",
+	name = "River's Fury", unique=true, image = "object/artifact/the_rivers_fury.png",
 	moddable_tile = "special/%s_the_rivers_fury",
 	moddable_tile_big = true,
 	desc = [[This gorgeous and ornate trident was wielded by Lady Nashva, and when you hold it, you can faintly hear the roar of a rushing river.]],
