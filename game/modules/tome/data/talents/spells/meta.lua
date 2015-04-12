@@ -25,7 +25,6 @@ newTalent{
 	random_ego = "utility",
 	mana = 40,
 	cooldown = 7,
---	tactical = { DISABLE = 2 },
 	tactical = { CURE = function(self, t, aitarget)
 			local nb = 0
 			for eff_id, p in pairs(self.tmp) do
@@ -49,7 +48,6 @@ newTalent{
 			return nb^0.5
 		end},
 	direct_hit = true,
---	requires_target = function(self, t) return self:getTalentLevel(t) >= 3 end,
 	requires_target = function(self, t) return self:getTalentLevel(t) >= 3 and (self.player or t.tactical.cure(self, t) <= 0) end,
 	range = 10,
 	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,

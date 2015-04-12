@@ -45,16 +45,12 @@ newTalent{
 	requires_target = true,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t} end,
 	action = function(self, t)
---		local tg = {type="ball", range=self:getTalentRange(t), selffire=true, radius=self:getTalentRadius(t), talent=t}
 		local tg = self:getTalentTarget(t)
---		self:project(tg, self.x, self.y, DamageType.LITE, 1)
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "sunburst", {radius=tg.radius, grids=grids, tx=self.x, ty=self.y, max_alpha=80})
 		if self:getTalentLevel(t) >= 3 then
---			tg.selffire= false
 			self:project(tg, self.x, self.y, DamageType.BLIND, t.getBlindPower(self, t))
 		end
 		if self:getTalentLevel(t) >= 4 then
---			tg.selffire= false
 			self:project(tg, self.x, self.y, DamageType.LIGHT, self:spellCrit(t.getDamage(self, t)))
 		end
 		tg.selffire = true

@@ -25,11 +25,11 @@ local ActorInventory = require "engine.interface.ActorInventory"
 
 module(..., package.seeall, class.make)
 --[[
---- Interface for NPC (non-player controlled actors) to use objects with activatable powers
---  When a usable object is added to an Actor inventory, the Actor may get a talent that can be activated to use the power.
---  This talent is similar to normal talents, but translates the object definition as needed for NPC use.
---	The activatable object may have either .use_power (most uniquely defined powers), .use_simple (uniquely defined, mostly for consumables), or .use_talent (many charms and other objects that activate a talent as their power)
---	Energy use matches the object (based on standard action speed)
+Interface for NPC (non-player controlled actors) to use objects with activatable powers
+When a usable object is added to an Actor inventory, the Actor may get a talent that can be activated to use the power.
+This talent is similar to normal talents, but translates the object definition as needed for NPC use.
+The activatable object may have either .use_power (most uniquely defined powers), .use_simple (uniquely defined, mostly for consumables), or .use_talent (many charms and other objects that activate a talent as their power) If more than one of the fields is defined only one will be used: use_power before use_simple before use_talent.
+	Energy use matches the object (based on standard action speed)
 
 Objects with a .use_power field are usable unless the .no_npc_use flag is set.
 For these items:
@@ -65,8 +65,6 @@ For these items:
 	}
 	The raw talent level of the activation talent equals the talent level specified in use_talent.
 	
-If more than one of the fields is defined only one will be used: use_power before use_simple before use_talent
-	
 --]]
 
 local base_talent_name = "Activate Object"
@@ -94,16 +92,12 @@ function _M:callObjectTalent(tid, what, ...)
 	local item = data[what]
 	
 	if data.tid then -- defined by a talent, functions(self, t, ...) format (may be overridden)
---	if type(data[what]) == "function" then
 		local t = self:getTalentFromId(data.tid)
 		item = item or t[what]
 		if type(item) == "function" then
---			local t = self:getTalentFromId(data.tid)
-
 			if data.old_talent_level then self.talents[data.tid] = data.old_talent_level end
 			data.old_talent_level = self.talents[data.tid]; self.talents[data.tid] = data.talent_level
---game.log("#YELLOW#[callObjectTalent] %s calculating use_talent (%s) %s for talent level %0.1f", self.name, t.name, what, self:getTalentLevel(t))
-print(("#YELLOW#[callObjectTalent] %s calculating use_talent (%s) %s for talent level %0.1f"):format(self.name, t.name, what, self:getTalentLevel(t)))
+print(("[callObjectTalent] %s calculating use_talent (%s) %s for talent level %0.1f"):format(self.name, t.name, what, self:getTalentLevel(t)))
 			local ret = item(self, t, ...)
 			self.talents[data.tid] = data.old_talent_level; data.old_talent_level = nil
 			return ret
@@ -119,7 +113,7 @@ print(("#YELLOW#[callObjectTalent] %s calculating use_talent (%s) %s for talent 
 	end
 end
 
--- base talent template
+-- base Object Actiation talent template
 _M.useObjectBaseTalent ={
 	name = base_talent_name,
 	type = {"misc/objects", 1},
@@ -134,68 +128,39 @@ _M.useObjectBaseTalent ={
 		return "Activate: "..objname
 	end,
 	no_message = true, --messages handled by object code or action function
-	is_object_use = true, -- Flag for npc control and masking from player
+	is_object_use = true, -- flag for npc control and masking from player
 	no_energy = function(self, t) -- energy use based on object
 		return self:callObjectTalent(t.id, "no_energy")
 	end,
 	getObject = function(self, t)
 		return self.useable_objects_data and self.useable_objects_data[t.id] and self.useable_objects_data[t.id].obj
 	end,
---	no_energy = true,
-	on_pre_use = function(self, t, silent, fake) -- test for item useability, not on COOLDOWN, etc.
+	on_pre_use = function(self, t, silent, fake) -- test for item usability, not on COOLDOWN, etc.
 		if self.no_inventory_access then return end
 		local data = self.useable_objects_data[t.id]
 		if not data then
 			print("[ActorObjectUse] ERROR: Talent ", t.name, " has no object data")
---game.log("#YELLOW#[pre use] ERROR No object use data found for talent %s", t.name)
 			return false
 		end
 		local o = data.obj
 		if not o then
 			print("[ActorObjectUse] ERROR: Talent ", t.name, " has no object")
---game.log("#YELLOW#[pre use] no object for talent %s", t.name)
 			return false
 		end
 		local cooldown = o:getObjectCooldown(self) -- disable while object is cooling down
 		if cooldown and cooldown > 0 then
---game.log("#YELLOW#[pre use] object %s is cooling down", o.name)
 			return false
 		end
 		local useable, msg = o:canUseObject(who)
 		if not useable and not (silent or fake) then
 			game.logPlayer(self, msg)
 			print("[ActorObjectUse] Talent ", t.name, "(", o.name, ") is not usable ", msg)
---game.log("#YELLOW#[pre use] object %s is not useable (%s)", o.name, msg)
 			return false
 		end
 		if data.on_pre_use or (data.tid and self.talents_def[data.tid].on_pre_use) then
 			return self:callObjectTalent(t.id, "on_pre_use", silent, fake)
 		end
 		return true 
---[[
---		if (data.on_pre_use and not data.on_pre_use(o, self, silent, fake)) then
-		if data.on_pre_use then
-	--game.log("#YELLOW#[pre use] %s: Object %s not usable due to on_pre_use check", self.name, o.name)
---				return false
-			if data.tid then -- test talent on_pre_use check function overriding talent level)
-				local tal = self:getTalentFromId(data.tid)
-				if tal.on_pre_use then
-	--				if data.talent_override then self.talents[data.tid] = data.old_talent_level end -- safety check if talent crashed previously
-	--				data.talent_override = true
-					if data.old_talent_level then self.talents[data.tid] = data.old_talent_level end -- safety check if talent crashed previously
-					data.old_talent_level = self.talents[data.tid]
-					self.talents[data.tid] = data.talent_level
-					local ret = not tal.on_pre_use(self, tal, silent, fake)
-					self.talents[data.tid] = data.old_talent_level
-	--				data.talent_override = nil
-					data.old_talent_level = nil
-					if ret then return false end
-				end
-			else
-				return data.on_pre_use(o, self, silent, fake)
-			end
-		end
---]]
 	end,
 	on_pre_use_ai = function(self, t, silent, fake)
 		local data = self.useable_objects_data[t.id]
@@ -205,16 +170,13 @@ _M.useObjectBaseTalent ={
 		return true
 	end,
 	mode = "activated",  -- Assumes all abilities are activated
---	cooldown = function(self, t)
---		return self:callObjectTalent(t.id, "cooldown")
---	end,
 	range = function(self, t)
 		return self:callObjectTalent(t.id, "range") or 1
 	end,
 	radius = function(self, t)
 		return self:callObjectTalent(t.id, "radius") or 0
 	end,
-	proj_speed = function(self, t) -- remove?
+	proj_speed = function(self, t)
 		return self:callObjectTalent(t.id, "proj_speed")
 	end,
 	requires_target = function(self, t)
@@ -225,13 +187,11 @@ _M.useObjectBaseTalent ={
 	end,
 	action = function(self, t)
 		local data = self.useable_objects_data[t.id]
-game.log("#YELLOW#Pre Action Object (%s [uid %d]) Activation by %s [uid %d, energy %d]", data.obj.name, data.obj.uid, self.name, self.uid, self.energy.value)
+print(("##[ActorObjectUse]Pre Action Object (%s [uid %d]) Activation by %s [uid %d, energy %d]"):format(data.obj.name, data.obj.uid, self.name, self.uid, self.energy.value))
 		local obj, inven = data.obj, data.inven_id
 		local ret
---game.log("#YELLOW#Actor %s Pre Use Object %s, ", self.name, obj.name)
 		local co = coroutine.create(function()
---game.log("#YELLOW#Coroutine Pre Use Object (%s [uid %d]) Activation by %s [uid %d, energy %d]", data.obj.name, data.obj.uid, self.name, self.uid, self.energy.value)
-			if data.tid then -- replaces normal talent use message
+			if data.tid then -- replace normal talent use message
 				game.logSeen(self, "%s activates %s %s!", self.name:capitalize(), self:his_her(), data.obj:getName({no_add_name=true, do_color = true}))
 				local msg = self:useTalentMessage(self:getTalentFromId(data.tid))
 				if msg then game.logSeen(self, "%s", msg) end
@@ -240,18 +200,19 @@ game.log("#YELLOW#Pre Action Object (%s [uid %d]) Activation by %s [uid %d, ener
 print(self.name, self.uid, " return table:")
 table.print(ret)
 			if ret and ret.used then
-game.log("#YELLOW#Post Use Object: Actor %s (%d energy) Object %s, ", self.name, self.energy.value, obj.name)
+print(("##[ActorObjectUse]Post Use Object: Actor %s (%d energy) Object %s, "):format(self.name, self.energy.value, obj.name))
 				if ret.destroy then -- destroy the item after use
 					local _, item = self:findInInventoryByObject(self:getInven(data.inven_id), data.obj)
 					if item then self:removeObject(data.inven_id, item) end
 				end
 			else
-game.log("#YELLOW#Post No Use Object: Actor %s (%d energy) Object %s, ", self.name, self.energy.value, obj.name)				return
+print(("##[ActorObjectUse]Post No Use Object: Actor %s (%d energy) Object %s, "):format(self.name, self.energy.value, obj.name))
+				return
 			end
 		end)
 		coroutine.resume(co)
 	end,
-	info = function(self, t) -- should these talents be visible to the player?
+	info = function(self, t)
 		local data = self.useable_objects_data[t.id]
 		if not (data and data.obj and data.obj:isIdentified()) then return "Activate an object." end
 		local objname = (data and data.obj and data.obj:getName({do_color = true})) or "(no object)"
@@ -293,10 +254,10 @@ end
 -- @param returns false or o, talent id, talent definition, talent level if the item is usable
 function _M:useObjectEnable(o, inven_id, slot, base_name)
 	if not o:canUseObject() or o.quest or o.lore then -- don't enable certain objects (lore, quest)
-game.log("#YELLOW#[ActorObjectUse] Object %s is ineligible for talent interface", o.name)
+print(("##[ActorObjectUse] Object %s is ineligible for talent interface"):format(o.name))
 		return
 	end	
-	print(("[ActorObjectUse] useObjectEnable: o: %s, inven/slot = %s/%s"):format(o and o.name or "none", inven_id, slot))
+print(("[ActorObjectUse] useObjectEnable: o: %s, inven/slot = %s/%s"):format(o and o.name or "none", inven_id, slot))
 	self.useable_objects_data = self.useable_objects_data or {} -- for older actors
 	-- Check allowance
 	local data = self.useable_objects_data
@@ -429,22 +390,14 @@ function _M:useObjectSetData(tid, o)
 			data.on_pre_use_ai = use_talent.on_pre_use_ai
 			-- tactical table override not currently supported
 			data.tactical = use_talent.tactical or table.clone(t.tactical)
---			if use_talent.tactical then
---				data.tactical = use_talent.tactical
---			else
---				data.tactical = table.clone(t.tactical)
 				-- convert tactical table functions to use the talent reference
 			if type(data.tactical) == "table" then
---				data.tactical_functions = {}
 				for tact, val in pairs(data.tactical) do
 					if type(val) == "function" then
----						data.tactical_functions[tact] = val
 						data.tactical[tact] = AOUtactical_translate
 					end
 				end
 			end
-
---			data.target = t.target
 			ok = data.talent_level
 		end
 	else

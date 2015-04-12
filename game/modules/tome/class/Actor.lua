@@ -3999,7 +3999,7 @@ function _M:onRemoveObject(o, inven_id, slot)
 		end
 	end
 
-	if o:canUseObject() then -- set up object use talents (for NPC's)
+	if o:canUseObject() then -- remove object use talents (for NPC's)
 		self:useObjectDisable(o, inven_id, slot)
 	end
 	-- Callbacks

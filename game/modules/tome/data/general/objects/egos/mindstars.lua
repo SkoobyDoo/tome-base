@@ -300,7 +300,6 @@ newEntity{
 		end,
 		20,
 		function(self, who)
---			local tg = {type="hit", range=10,}
 			local tg = self.use_power.target(self, who)
 			local x, y, target = who:getTarget(tg)
 			if not x or not y then return nil end

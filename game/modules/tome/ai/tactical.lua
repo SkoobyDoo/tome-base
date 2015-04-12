@@ -88,7 +88,6 @@ newAI("use_tactical", function(self)
 			local default_tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}
 			-- Only assume range... some talents may no require LOS, etc
 			local within_range = target_dist and target_dist <= ((self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0))
---print("Range/Radius = ", self:getTalentRange(t), "/", self:getTalentRadius(t)," vs range ", target_dist)
 			if t.mode == "activated" and not t.no_npc_use and
 			   not self:isTalentCoolingDown(t) and self:preUseTalent(t, true, true) and
 			   (not self:getTalentRequiresTarget(t) or within_range)
@@ -180,12 +179,9 @@ newAI("use_tactical", function(self)
 						-- Note the addition of a less than one random value, this means the sorting will randomly shift equal values
 						val = ((util.getval(t.no_energy, self, t)==true) and val * 10 or val) + rng.float(0, 0.9)
 						avail[tact][#avail[tact]+1] = {val=val, tid=tid, nb_foes_hit=nb_foes_hit, nb_allies_hit=nb_allies_hit, nb_self_hit=nb_self_hit}
---						print(self.name, self.uid, "tactical ai talents can use", t.name, tid, tact, "weight", val)
 						print(self.name, self.uid, "tactical ai talents can use", tid, t.is_object_use and t.getObject(self, t).name or "", tact, "weight", val)
---						if t.is_object_use then print("  object:", t.getObject(self, t)) end
 						ok = true
 					end
---					print(self.name, self.uid, t.name, tid, "tactical ai final weight: ", val)
 				end
 			end
 		end

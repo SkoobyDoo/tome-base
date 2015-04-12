@@ -305,8 +305,7 @@ function _M:generateList()
 
 			nodes[#nodes+1] = {
 --				name=((t.display_entity and t.display_entity:getDisplayString() or "")..t.name):toTString(),
---				name=((t.display_entity and t.display_entity:getDisplayString() or "")..t.name .. " ["..tostring(self.actor:getTalentDisplayName(t)).."]"):toTString(),
-				name=((t.display_entity and t.display_entity:getDisplayString() or "").. " ["..tostring(self.actor:getTalentDisplayName(t)).."]"):toTString(),
+				name=((t.display_entity and t.display_entity:getDisplayString() or "").. tostring(self.actor:getTalentDisplayName(t))):toTString(),
 				cname=t.name,
 				status=status,
 				entity=t.display_entity,

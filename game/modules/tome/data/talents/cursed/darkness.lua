@@ -449,7 +449,6 @@ newTalent{
 		if self.dark_tendrils then return false end
 
 		local range = self:getTalentRange(t)
---		local tg = {type="hit", range=range, talent=t}
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target or core.fov.distance(self.x, self.y, x, y) > range then return nil end

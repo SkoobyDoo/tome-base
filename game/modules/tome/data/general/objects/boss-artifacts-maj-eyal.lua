@@ -280,7 +280,6 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 				return 0
 			end
 		end,
---		target = {},
 	},
 	on_wear = function(self, who)
 		self.winterStorm = nil
@@ -914,7 +913,6 @@ newEntity{ base = "BASE_GREATMAUL",
 	use_talent = { id = Talents.T_SHATTERING_BLOW, level = 2, power = 20 },
 }
 
-
 newEntity{ base = "BASE_SHIELD",
 	power_source = {technique=true},
 	define_as = "SANGUINE_SHIELD",
@@ -1157,13 +1155,13 @@ newEntity{ base = "BASE_ROD", define_as = "ROD_OF_ANNULMENT",
 		name = function(self, who) return ("put up to 3 of the target's runes, infusions or talents on cooldown for 3-5 turns (range %d)"):format(self.use_power.range) end,
 		power = 30,
 		range = 5,
+		requires_target = true,
+		target = function(self, who) return {type="bolt", range=self.use_power.range} end,
 		use = function(self, who)
---			local tg = {type="bolt", range=self.use_power.range}
 			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local target = game.level.map(x, y, engine.Map.ACTOR)
---			if not target then return {used = true} end
 			who:logCombat(target or {x=x, y=y}, "#Source# aims %s %s at #target#!", who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			if not target then
 				return {used = true}
@@ -1187,8 +1185,6 @@ newEntity{ base = "BASE_ROD", define_as = "ROD_OF_ANNULMENT",
 			end, nil, {type="flame"})
 			return {id=true, used=true}
 		end,
-		requires_target = true,
-		target = function(self, who) return {type="bolt", range=self.use_power.range} end,
 		tactical = {DISABLE = function(who, t, aitarget)
 			local nb = 0
 			for tid, lev in pairs(aitarget.talents) do
@@ -1533,7 +1529,6 @@ newEntity{ base = "BASE_MINDSTAR", define_as = "PSIONIC_FURY",
 		use = function(self, who)
 			local radius = self.use_power.radius
 			local dam = self.use_power.damage(self, who)
---			local blast = {type="ball", range=0, radius=self.use_power.radius, selffire=false}
 			local blast = self.use_power.target(self, who)
 			game.logSeen(who, "%s's %s sends out a blast of psionic energy!", who.name:capitalize(), self:getName({no_add_name = true, do_color = true}))
 			who:project(blast, who.x, who.y, engine.DamageType.MIND, dam)

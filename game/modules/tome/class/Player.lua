@@ -1325,7 +1325,7 @@ function _M:playerUseItem(object, item, inven)
 	)
 end
 
---- Put objects with usable powers on cooldown when worn
+--- Put objects with usable powers on cooldown when worn (apply only to party members)
 function _M:cooldownWornObject(o)
 	if not self.no_power_reset_on_wear then
 		o:forAllStack(function(so)
