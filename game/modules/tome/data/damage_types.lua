@@ -3735,7 +3735,9 @@ newDamageType{
 
 newDamageType{
 	name = "wormblight", type = "WORMBLIGHT",
-	projector = function(src, x, y, type, dam)
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:attr("worm") then
 			target:heal(dam, src)
@@ -3764,7 +3766,9 @@ newDamageType{
 		return ("* #LIGHT_GREEN#%d%%#LAST# chance to cause #GREEN#random blight#LAST#%s")
 			:format(dam, parens)
 	end,
-	projector = function(src, x, y, type, dam)
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			game:delayedLogDamage(src, target, 0, ("%s<%d%%%% blight chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
@@ -3796,7 +3800,9 @@ newDamageType{
 
 newDamageType{
 	name = "blight poison", type = "BLIGHT_POISON", text_color = "#DARK_GREEN#",
-	projector = function(src, x, y, t, dam, poison)
+	projector = function(src, x, y, t, dam, poison, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
 		local power
 		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam / 4)
 		local target = game.level.map(x, y, Map.ACTOR)
