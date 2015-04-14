@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local DamageType = require "engine.DamageType"
+
 newTalent{
 	name = "Channel Staff",
 	type = {"spell/staff-combat", 1},
@@ -46,7 +48,7 @@ newTalent{
 		local particle = "bolt_fire"
 		local explosion = "flame"
 
-		local damtype = combat.element or combat.damtype or engine.DamageType.PHYSICAL
+		local damtype = combat.element or combat.damtype or DamageType.ARCANE
 
 		if     damtype == DamageType.FIRE then      explosion = "flame"               particle = "bolt_fire"      trail = "firetrail"
 		elseif damtype == DamageType.COLD then      explosion = "freeze"              particle = "ice_shards"     trail = "icetrail"
@@ -58,7 +60,7 @@ newTalent{
 		elseif damtype == DamageType.BLIGHT then    explosion = "slime"               particle = "bolt_slime"     trail = "slimetrail"
 		elseif damtype == DamageType.PHYSICAL then  explosion = "dark"                particle = "stone_shards"   trail = "earthtrail"
 		elseif damtype == DamageType.TEMPORAL then  explosion = "light"				  particle = "temporal_bolt"  trail = "lighttrail"
-		else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" damtype = DamageType.ARCANE
+		else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" --damtype = DamageType.ARCANE
 		end
 
 		local tg = self:getTalentTarget(t)
