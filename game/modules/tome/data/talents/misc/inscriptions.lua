@@ -684,8 +684,9 @@ newInscription{
 		end },
 	requires_target = true,
 	range = 0,
+	radius = 6,
 	target = function(self, t)
-		return {type="cone", cone_angle=25, radius = 6, range=self:getTalentRange(t), talent=t, display={particle="bolt_ice", trail="icetrail"}}
+		return {type="cone", cone_angle=25, radius = self:getTalentRadius(t), range=self:getTalentRange(t), talent=t, display={particle="bolt_ice", trail="icetrail"}}
 	end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
