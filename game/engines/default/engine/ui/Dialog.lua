@@ -29,11 +29,17 @@ module(..., package.seeall, class.inherit(Base))
 --- Requests a simple waiter dialog
 function _M:simpleWaiter(title, text, width, count, max)
 	width = width or 400
-	local w, h = self.font:size(text)
+
+	local _, th = self.font:size(title)
 	local d = new(title, 1, 1)
+	local max_h = 9999
+	local textzone = require("engine.ui.Textzone").new{width=width+10, auto_height=true, scrollbar=true, text=text}
+	if textzone.h > max_h then textzone.h = max_h
+	else textzone.scrollbar = nil
+	end
 	local wait = require("engine.ui.Waiter").new{size=width, known_max=max}
 	d:loadUI{
-		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=w+10, height=h+5, text=text}},
+		{left = 3, top = 3, ui=textzone},
 		{left = 3, bottom = 3, ui=wait},
 	}
 	d:setupUI(true, true)
@@ -50,6 +56,37 @@ function _M:simpleWaiter(title, text, width, count, max)
 	return d
 end
 
+--- Requests a simple waiter dialog
+function _M:simpleWaiterTip(title, text, tip, width, count, max)
+	if not tip then return self:simpleWaiter(title, text, width, count, max) end
+
+	width = width or 400
+
+	local _, th = self.font:size(title)
+	local d = new(title, 1, 1)
+	local wait = require("engine.ui.Waiter").new{size=width, known_max=max}
+	local textzone = require("engine.ui.Textzone").new{width=wait.w, auto_height=true, scrollbar=false, text=text}
+	local tipzone = require("engine.ui.Textzone").new{width=wait.w, auto_height=true, scrollbar=false, text=tip}
+	local split = require("engine.ui.Separator").new{dir="vertical", size=wait.w - 12}
+	d:loadUI{
+		{left = 3, top = 3, ui=textzone},
+		{left = 3+6, top = 3+textzone.h, ui=split},
+		{left = 3, top = 3+textzone.h+split.h, ui=tipzone},
+		{left = 3, bottom = 3, ui=wait},
+	}
+	d:setupUI(true, true)
+
+	d.done = function(self) game:unregisterDialog(self) end
+	d.timeout = function(self, secs, cb) wait:setTimeout(secs, function() cb() local done = self.done self.done = function()end done(self) end) end
+	d.manual = function(self, ...) wait:manual(...) end
+	d.manualStep = function(self, ...) wait:manualStep(...) end
+
+	game:registerDialog(d)
+
+	core.wait.enable(count, wait:getWaitDisplay(d))
+
+	return d
+end
 
 --- Requests a simple, press any key, dialog
 function _M:listPopup(title, text, list, w, h, fct)

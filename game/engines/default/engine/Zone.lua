@@ -822,9 +822,9 @@ end
 function _M:getLoadTips()
 	if self.load_tips then
 		local l = rng.table(self.load_tips)
-		return l.text
+		return "#{italic}##ANTIQUE_WHITE#"..l.text.."#WHITE##{normal}#"
 	else
-		return ""
+		return nil
 	end
 end
 
@@ -845,7 +845,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	-- Load persistent level?
 	if type(level_data.persistent) == "string" and level_data.persistent == "zone_temporary" then
 		forceprint("Loading zone temporary level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level... "..self:getLoadTips(), nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		self.temp_memory_levels = self.temp_memory_levels or {}
@@ -861,7 +861,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "zone" and not self.save_per_level then
 		forceprint("Loading zone persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level... "..self:getLoadTips(), nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		self.memory_levels = self.memory_levels or {}
@@ -877,7 +877,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "memory" then
 		forceprint("Loading memory persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level... "..self:getLoadTips(), nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		game.memory_levels = game.memory_levels or {}
@@ -893,7 +893,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	elseif level_data.persistent then
 		forceprint("Loading level persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level... "..self:getLoadTips(), nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		-- Try to load from a savefile
@@ -909,7 +909,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	-- In any cases, make one if none was found
 	if not level then
 		forceprint("Creating level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Generating level", "Please wait while generating the level... "..self:getLoadTips(), nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Generating level", "Please wait while generating the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		level = self:newLevel(level_data, lev, old_lev, game)
