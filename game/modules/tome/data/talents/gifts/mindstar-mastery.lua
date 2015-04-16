@@ -170,7 +170,7 @@ newTalent{
 		while hit do -- breakable if
 			local tg = util.getval(t.second_target, self, t)
 			local x, y, target = self:getTarget(tg)
-			if not target or not self:canProject(tg, x, y) then return nil end
+			if not target then target = self end
 
 			target:attr("allow_on_heal", 1)
 			target:heal(dam, t)
