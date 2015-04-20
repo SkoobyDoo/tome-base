@@ -25,7 +25,6 @@ Totems
 *thorny skin
 ]]
 
-
 newEntity{
 	name = " of cure ailments", addon=true, instant_resolve=true,
 	keywords = {ailments=true},

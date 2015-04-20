@@ -116,6 +116,7 @@ newEntity{
 	"T_GLOBAL_CD",
 	{range = 5,
 	requires_target = true,
+	no_npc_use = function(self, who) return not self:restrictAIUseObject(who) end, -- don't let dumb ai hurt friends
 	target = function(self, who) return {type="wall", range=self.use_power.range, halflength=3, halfmax_spots=3+1} end,
 	tactical = {ATTACKAREA = {FIRE = 2}},
 	damage = function(self, who) return self:getCharmPower(who) end
