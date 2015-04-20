@@ -5391,7 +5391,6 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 	end
 
 	local d = tstring{}
-
 	d:add({"color",0x6f,0xff,0x83}, "Effective talent level: ", {"color",0x00,0xFF,0x00}, ("%.1f"):format(self:getTalentLevel(t)), true)
 
 	if not config.ignore_mode then

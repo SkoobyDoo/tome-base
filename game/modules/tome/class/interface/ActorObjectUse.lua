@@ -120,6 +120,7 @@ _M.useObjectBaseTalent ={
 	name = base_talent_name,
 	type = {"misc/objects", 1},
 	points = 1,
+	image = "talents/charm_mastery.png", --temporary?
 --	hide = "always",
 	never_fail = true, -- most actor status effects will not prevent use
 	innate = true, -- make sure this talent can't be put on cooldown by other talents or effects
@@ -270,7 +271,7 @@ function _M:useObjectTalent(base_name, num)
 		t = table.clone(self.useObjectBaseTalent)
 		t.id = tid
 		t.short_name = short_name
-		t.name = t.name .. "("..num..")"
+--		t.name = t.name .. "("..num..")"
 		print("ActorObjectUse] Defining new Talent ", short_name)
 		Talents:newTalent(t)
 		-- define this after parsing in data.talents.lua
@@ -324,7 +325,7 @@ game.log(("#YELLOW#[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %
 	if not tid then return false end
 		
 	talent_level = self:useObjectSetData(tid, o)
-	if not talent_level then return false end --includes checks for npc useability
+	if not talent_level then return false end --includes checks for npc usability
 	data[tid].inven_id = inven_id
 	data[tid].slot = slot
 	self:learnTalent(tid, true, talent_level)
