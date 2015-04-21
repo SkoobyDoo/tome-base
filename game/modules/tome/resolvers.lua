@@ -506,8 +506,13 @@ function resolvers.calc.charm(tt, e)
 end
 
 --- Charms talent resolver
-function resolvers.charmt(tid, tlvl, cd, tcd)
-	return {__resolver="charmt", tid, tlvl, cd, tcd}
+-- @param tid = talent id
+-- @param tlvl = (raw) talent level (mastery is based on user)
+-- @param cd = cooldown
+-- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
+-- @param use_params = parameters to merge into self.use_talent table
+function resolvers.charmt(tid, tlvl, cd, tcd, use_params)
+	return {__resolver="charmt", tid, tlvl, cd, tcd, use_params}
 end
 function resolvers.calc.charmt(tt, e)
 	local cd = tt[3]
@@ -516,6 +521,7 @@ function resolvers.calc.charmt(tt, e)
 	local lvl = util.getval(tt[2], e)
 	e.use_talent = {id=tt[1], power=cd, level=lvl, __no_merge_add=true}
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
+	if tt[5] then table.merge(e.use_talent, tt[5], true) end
 	return
 end
 

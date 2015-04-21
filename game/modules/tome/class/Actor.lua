@@ -5600,7 +5600,7 @@ function _M:checkSetTalentAuto(tid, v, opt)
 
 		local list = {}
 		if util.getval(t.no_energy, self, t) ~= true then list[#list+1] = "- requires a turn to use" end
-		if t.requires_target then list[#list+1] = "- requires a target, your last hostile one will be automatically used" end
+		if self:getTalentRequiresTarget(t) then list[#list+1] = "- requires a target, your last hostile one will be automatically used" end
 		if t.auto_use_warning then list[#list+1] = t.auto_use_warning end
 		if opt == 2 then
 			list[#list+1] = "- will only trigger if no enemies are visible"

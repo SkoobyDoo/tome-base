@@ -599,7 +599,7 @@ newEntity{ base = "BASE_ROD",
 		damage = function(self, who) return 300 + who:getMag() * 2 end,
 		radius = 5,
 		range = 0,
-		reqires_target = true,
+		requires_target = true,
 		target = function(self, who) return {type="cone", range=self.use_power.range, radius=self.use_power.radius} end,
 		tactical = {ATTACKAREA = {FIRE = 2}},
 		name = function(self, who)

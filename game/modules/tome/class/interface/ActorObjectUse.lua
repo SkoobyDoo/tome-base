@@ -51,7 +51,7 @@ For these items:
 Objects with a .use_simple field (uniquely defined, mostly for consumables), are not usable unless .allow_npc_use (which can be a function(obj, who) is true or the .tactical field is defined.
 They otherwise use the same format as .use_power.
 
-Objects with a .use_talent field use a defined talent as their power.  They are usable if .allow_npc_use (which can be a function(obj, who)) is true or talent.no_npc_use (may be a function(obj, who) )is not true
+Objects with a .use_talent field use a defined talent as their power.  They are usable if .allow_npc_use (which can be a function(obj, who)) is true or talent.no_npc_use is not true and use_talent.no_npc_use (may be a function(obj, who)) is not true
 For these items:
 	use_talent = {
 		id = string, talent_id to use (i.e. Talents.T_ILLUMINATE)
@@ -120,7 +120,7 @@ _M.useObjectBaseTalent ={
 	name = base_talent_name,
 	type = {"misc/objects", 1},
 	points = 1,
-	image = "talents/charm_mastery.png", --temporary?
+	image = "talents/charm_mastery.png", --temporary? Note:displayentity is not a function
 --	hide = "always",
 	never_fail = true, -- most actor status effects will not prevent use
 	innate = true, -- make sure this talent can't be put on cooldown by other talents or effects
@@ -131,16 +131,22 @@ _M.useObjectBaseTalent ={
 		return "Activate: "..objname
 	end,
 	no_message = true, --messages handled by object code or action function
-	is_object_use = true, -- flag for npc control and masking from player
+	is_object_use = true, -- flag for npc control and removing from prompts
 	no_energy = function(self, t) -- energy use based on object
 		return self:callObjectTalent(t.id, "no_energy")
 	end,
---	cooldown = function(self, t) return 1 end ,
+--	cooldown = function(self, t) return 1 end, --for auto use cooldown checks
 --	fixed_cooldown = true,
 	getObject = function(self, t)
 		return self.object_talent_data and self.object_talent_data[t.id] and self.object_talent_data[t.id].obj
 	end,
-	on_pre_use = function(self, t, silent, fake) -- test for item usability, not on COOLDOWN, etc.
+	cycle_time = function(self, t) -- how long until the talent(object) can be used, starting from 0 power
+		local reduce = 100 - util.bound(self:attr("use_object_cooldown_reduce") or 0, 0, 100)
+		local o = t.getObject(self, t)
+		local need = ((o.use_power and o.use_power.power) or (o.use_talent and o.use_talent.power) or 0)*reduce/100
+		return math.ceil(need/((o.power_regen and o.power_regen > 0 and o.power_regen) or 1))
+	end,
+	on_pre_use = function(self, t, silent, fake) -- test for item usability, not on cooldown, etc.
 		if self.no_inventory_access then return end
 		local data = self.object_talent_data[t.id]
 		if not data then
@@ -458,7 +464,8 @@ function _M:useObjectSetData(tid, o)
 		local t = self:getTalentFromId(o.use_talent.id)
 		local use_talent = o.use_talent
 --		if t and t.mode == "activated" and (use_talent.allow_npc_use or not t.no_npc_use) then
-		if t and t.mode == "activated" and (not t.no_npc_use or util.getval(use_talent.allow_npc_use, o, self)) then
+--		if t and t.mode == "activated" and (not t.no_npc_use or util.getval(use_talent.allow_npc_use, o, self)) then
+		if t and t.mode == "activated" and (not t.no_npc_use and not util.getval(use_talent.no_npc_use, o, self) or util.getval(use_talent.allow_npc_use, o, self)) then
 			data.tid = o.use_talent.id
 			data.talent_level = use_talent.level
 			

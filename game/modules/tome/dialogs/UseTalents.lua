@@ -340,7 +340,7 @@ function _M:generateList()
 
 	list = {
 		{ char='', name=('#{bold}#Activable talents#{normal}#'):toTString(), status='', hotkey='', desc="All activable talents you can currently use.", color=function() return colors.simple(colors.LIGHT_GREEN) end, nodes=actives, shown=true },
-		{ char='', name=('#{bold}#Object powers#{normal}#'):toTString(), status='', hotkey='', desc="Object powers that can be activated automatically.  Most usable objects will appear here unless they are on cooldown or they have ai restrictions.", color=function() return colors.simple(colors.SALMON) end, nodes=objects, shown=true },
+		{ char='', name=('#{bold}#Object powers#{normal}#'):toTString(), status='', hotkey='', desc="Object powers that can be activated automatically.  Most usable objects will appear here unless they are on cooldown or have ai restrictions.", color=function() return colors.simple(colors.SALMON) end, nodes=objects, shown=true },
 		{ char='', name=('#{bold}#Sustainable talents#{normal}#'):toTString(), status='', hotkey='', desc="All sustainable talents you can currently use.", color=function() return colors.simple(colors.LIGHT_GREEN) end, nodes=sustains, shown=true },
 		{ char='', name=('#{bold}#Sustained talents#{normal}#'):toTString(), status='', hotkey='', desc="All sustainable talents you currently sustain, using them will de-activate them.", color=function() return colors.simple(colors.YELLOW) end, nodes=sustained, shown=true },
 		{ char='', name=('#{bold}#Cooling down talents#{normal}#'):toTString(), status='', hotkey='', desc="All talents you have used that are still cooling down.", color=function() return colors.simple(colors.LIGHT_RED) end, nodes=cooldowns, shown=true },

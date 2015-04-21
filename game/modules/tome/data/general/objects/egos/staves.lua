@@ -192,7 +192,9 @@ newEntity{
 			[DamageType.ITEM_LIGHT_BLIND] = resolvers.mbonus_material(15, 5),
 	},
 	},
-	resolvers.charmt(Talents.T_ILLUMINATE, {1,2}, 6),
+	resolvers.charmt(Talents.T_ILLUMINATE, {1,2}, 6, "T_GLOBAL_CD",
+		{no_npc_use = function(self, who) return self:restrictAIUseObject(who) end} -- don't let dumb ai do stupid things with this
+	),
 }
 
 newEntity{

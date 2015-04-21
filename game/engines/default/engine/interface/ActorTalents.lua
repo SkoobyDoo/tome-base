@@ -251,7 +251,7 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			end
 		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
-			local abname = game:getGenericTextTiles(ab)..ab.name
+			local abname = game:getGenericTextTiles(ab)..tostring(self:getTalentDisplayName(ab))
 			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
 			function(quit)
 				if quit ~= false then
