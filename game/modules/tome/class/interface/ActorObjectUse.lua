@@ -125,7 +125,7 @@ _M.useObjectBaseTalent ={
 	never_fail = true, -- most actor status effects will not prevent use
 	innate = true, -- make sure this talent can't be put on cooldown by other talents or effects
 	display_name = function(self, t)
-		local data = self.object_talent_data[t.id]
+		local data = self.object_talent_data and self.object_talent_data[t.id]
 		if not (data and data.obj and data.obj:isIdentified()) then return "Activate an object" end
 		local objname = data.obj:getName({no_add_name = true, do_color = true})
 		return "Activate: "..objname
@@ -137,6 +137,7 @@ _M.useObjectBaseTalent ={
 	end,
 --	cooldown = function(self, t) return 1 end, --for auto use cooldown checks
 --	fixed_cooldown = true,
+--	no_dumb_use = true,--?
 	getObject = function(self, t)
 		return self.object_talent_data and self.object_talent_data[t.id] and self.object_talent_data[t.id].obj
 	end,
@@ -148,7 +149,7 @@ _M.useObjectBaseTalent ={
 	end,
 	on_pre_use = function(self, t, silent, fake) -- test for item usability, not on cooldown, etc.
 		if self.no_inventory_access then return end
-		local data = self.object_talent_data[t.id]
+		local data = self.object_talent_data and self.object_talent_data[t.id]
 		if not data then
 			print("[ActorObjectUse] ERROR: Talent ", t.name, " has no object data")
 			return false
@@ -174,7 +175,7 @@ _M.useObjectBaseTalent ={
 		return true 
 	end,
 	on_pre_use_ai = function(self, t, silent, fake)
-		local data = self.object_talent_data[t.id]
+		local data = self.object_talent_data and self.object_talent_data[t.id]
 		if data.on_pre_use_ai or (data.tid and self.talents_def[data.tid].on_pre_use_ai) then
 			return self:callObjectTalent(t.id, "on_pre_use_ai", silent, fake)
 		end
@@ -197,7 +198,8 @@ _M.useObjectBaseTalent ={
 		return self:callObjectTalent(t.id, "target")
 	end,
 	action = function(self, t)
-		local data = self.object_talent_data[t.id]
+		local data = self.object_talent_data and self.object_talent_data[t.id]
+		if not data then return end
 --print(("##[ActorObjectUse]Pre Action Object (%s [uid %d]) Activation by %s [uid %d, energy %d]"):format(data.obj.name, data.obj.uid, self.name, self.uid, self.energy.value))
 		local obj, inven = data.obj, data.inven_id
 		local ret
@@ -225,6 +227,7 @@ _M.useObjectBaseTalent ={
 	end,
 	info = function(self, t)
 		local data = self.object_talent_data
+		if not data then return "" end
 		local o = t.getObject(self, t)
 		-- forget settings for objects no longer in the party
 		if data.cleanup then
@@ -300,7 +303,7 @@ print(("##[ActorObjectUse] Object %s is ineligible for talent interface"):format
 	end
 
 --print(("[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
-game.log(("#YELLOW#[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
+--game.log(("#YELLOW#[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
 	self.object_talent_data = self.object_talent_data or {} -- for older actors
 	local data = self.object_talent_data
 	local tid, t, place
@@ -352,7 +355,7 @@ end
 
 -- disable object use (when object is removed from inventory)
 function _M:useObjectDisable(o, inven_id, slot, tid, base_name)
-	self.object_talent_data = self.object_talent_data or {} -- for older versions
+	self.object_talent_data = self.object_talent_data or {} -- for older actors
 	base_name = base_name or base_talent_name
 	if not (o or tid) then --clear all object use data and unlearn all object use talents
 		for i = 1, self.max_object_use_talents do
