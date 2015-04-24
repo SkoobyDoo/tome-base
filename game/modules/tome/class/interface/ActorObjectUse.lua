@@ -122,7 +122,8 @@ _M.useObjectBaseTalent ={
 	type = {"misc/objects", 1},
 	points = 1,
 	image = "talents/charm_mastery.png", --temporary? Note:displayentity is not a function
---	hide = "always",
+	hide = "always",
+	no_auto_hotkey = true,
 	never_fail = true, -- most actor status effects will not prevent use
 	innate = true, -- make sure this talent can't be put on cooldown by other talents or effects
 	display_name = function(self, t)
@@ -341,6 +342,7 @@ function _M:useObjectEnable(o, inven_id, slot, base_name)
 	self:learnTalent(tid, true, talent_level)
 	
 --****** temporary hotkeys for testing
+--[[
 	t=self:getTalentFromId(tid)
 	-- Hotkey
 	if oldpos then
@@ -350,7 +352,7 @@ function _M:useObjectEnable(o, inven_id, slot, base_name)
 		end
 		self.hotkey[oldpos] = {"talent", "T_"..name}
 	end
-
+--]]
 	return o, tid, t, talent_level
 end
 
