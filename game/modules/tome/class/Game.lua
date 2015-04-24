@@ -1298,7 +1298,6 @@ function _M:logVisible(source, target)
 	local tgt = target and (target.player or ((target.__is_actor or target.__is_projectile) and game.level.map.seens(target.x, target.y)) or (not target.__is_actor and not target.x))
 	local tgtSeen = tgt and (target.player or game.player:canSee(target)) or false
 	local src, srcSeen = false, false
---	local srcSeen = src and (not source.x or (game.player:canSee(source) and game.player:canSee(target)))
 	-- Special cases
 	if not source.x then -- special case: unpositioned source uses target parameters (for timed effects on target)
 		if tgtSeen then

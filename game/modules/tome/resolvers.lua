@@ -829,8 +829,8 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		tactic.count = count
 		tactic.level = e.level
 		tactic.type = "computed"
-print("### talented_ai_tactic resolver ai_tactic table:")
-for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
+--- print("### talented_ai_tactic resolver ai_tactic table:")
+--- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
 		e.__ai_compute = nil
 		return tactic

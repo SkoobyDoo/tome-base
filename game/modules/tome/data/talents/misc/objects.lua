@@ -656,7 +656,7 @@ newTalent{
 }
 
 -- Talents to allow NPC's to use activatable objects
-print("Talents", Talents)
+--print("Talents", Talents)
 local ActorObjectUse = require "mod.class.interface.ActorObjectUse"
 for i = 1, (ActorObjectUse.max_object_use_talents or 0) do
 	ActorObjectUse:useObjectTalent(base_name, i)

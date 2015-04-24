@@ -2149,7 +2149,6 @@ function _M:createRandomBoss(base, data)
 
 	-- add a charm
 	if not data.forbid_equip then
-print("[Random Boss]: adding charm resolver")
 		b[#b+1] = resolvers.equip({{type="charm", autoreq=true}})
 	end
 

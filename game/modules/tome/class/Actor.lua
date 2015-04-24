@@ -3971,7 +3971,7 @@ function _M:onAddObject(o, inven_id, slot)
 		end
 	end
 
-	if o:canUseObject() then -- set up object use talents (for NPC's)
+	if o:canUseObject() then -- set up object use talents
 		self:useObjectEnable(o, inven_id, slot)
 	end
 

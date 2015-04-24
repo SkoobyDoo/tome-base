@@ -255,7 +255,7 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 					return val
 				end
 			end,
-			PROTECT = function(who, t, aitarget) --summons protect summoner
+			PROTECT = function(who, t, aitarget) -- protect summoner
 				if not (who.summoner and aitarget) then return end
 				local o = t.is_object_use and t.getObject(who, t)
 				if not (o and o.wielded and o.winterStorm and o.winterStorm.duration > 0) then

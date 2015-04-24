@@ -83,8 +83,8 @@ newAI("use_tactical", function(self)
 		if type(tactical) == "function" then tactical = tactical(self, t) end
 		if tactical and aitarget then
 			local tg = self:getTalentTarget(t)
-	print("** target parameters:")
-	table.print(tg, "---")
+--	print("** target parameters:")
+--	table.print(tg, "---")
 			local default_tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}
 			-- Only assume range... some talents may no require LOS, etc
 			local within_range = target_dist and target_dist <= ((self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0))
@@ -189,8 +189,8 @@ newAI("use_tactical", function(self)
 	if ok then
 		local want = {}
 
-print("###Available tactics:")
-table.print(avail)
+--print("###Available tactics:")
+--table.print(avail)
 		local need_heal = 0
 		local life = 100 * self.life / self.max_life
 		-- Subtract solipsism straight from the life value to give us higher than normal weights; helps keep clarity up and avoid solipsism
@@ -406,8 +406,8 @@ table.print(want)
 table.print(selected_talents[1], "---")
 --			self:useTalent(tid)
 			self:useTalent(tid, nil, nil, nil, (res[1][1] == "cure" or res[1][1] == "heal") and self or nil) --cures and heals go to the talent user
-print("[tactical]", self.name, "post useTalent", tid, "energy:")
-table.print(self.energy, "---")
+--print("[tactical]", self.name, "post useTalent", tid, "energy:")
+--table.print(self.energy, "---")
 			return true
 		else
 			return nil, res[1][1]
