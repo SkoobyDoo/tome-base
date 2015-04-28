@@ -19,6 +19,9 @@
 
 -- EDGE TODO: Particles, Timed Effect Particles
 
+
+local wardenPreUse = Talents.wardenPreUse
+
 newTalent{
 	name = "Arrow Stitching",
 	type = {"chronomancy/bow-threading", 1},
@@ -35,7 +38,7 @@ newTalent{
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent, "bow") end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
@@ -117,7 +120,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, stop_block=true, friendlyfire=false, friendlyblock=false}
 	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent, "bow") end,
 	archery_onreach = function(self, t, x, y)
 		game:onTickEnd(function() -- Let the arrow hit first
 			local tg = self:getTalentTarget(t)
@@ -212,7 +215,7 @@ newTalent{
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent, "bow") end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.3) end,
 	doEcho = function(self, t, eff)

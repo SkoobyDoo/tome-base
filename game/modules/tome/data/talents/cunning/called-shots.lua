@@ -13,15 +13,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local sling_equipped = function(self, silent)
-	if not self:hasArcheryWeapon("sling") then
-		if not silent then
-			game.logPlayer(self, "You must wield a sling!")
-		end
-		return false
-	end
-	return true
-end
+local archerPreUse = Talents.archerPreUse
 
 -- calc_all is so the info can show all the effects.
 local sniper_bonuses = function(self, calc_all)
@@ -89,7 +81,7 @@ newTalent {
 	cooldown = shot_cooldown,
 	requires_target = true,
 	range = archery_range,
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	pin_duration = function(self, t)
 		return math.floor(self:combatTalentScale(t, 1, 2))
 	end,
@@ -144,7 +136,7 @@ newTalent {
 	no_npc_use = true, -- Numbers overtuned to make sure the class has a satisfying high damage shot
 	requires_target = true,
 	range = archery_range,
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	getDistanceBonus = function(self, t, range)
 		return self:combatScale(range, -.5, 1, 2.5, 10, 0.25) --Slow scaling to allow for greater range variability
 	end,
@@ -207,7 +199,7 @@ newTalent {
 	cooldown = shot_cooldown,
 	requires_target = true,
 	range = archery_range,
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	damage_multiplier = function(self, t)
 		return self:combatTalentWeaponDamage(t, 0.3, 0.75)
 	end,
