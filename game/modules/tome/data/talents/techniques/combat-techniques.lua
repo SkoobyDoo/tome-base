@@ -128,7 +128,7 @@ newTalent{
 	stamina = 10,
 	require = techs_strdex_req3,
 	no_energy = true,
-	tactical = { ATTACK = 4 },
+	tactical = { BUFF = 2 },
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 2, 6)) end, -- Limit < 25
 	getAtk = function(self, t) return self:combatTalentScale(t, 40, 100, 0.75) end,
 	action = function(self, t)

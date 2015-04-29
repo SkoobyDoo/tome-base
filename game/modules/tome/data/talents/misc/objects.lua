@@ -306,9 +306,14 @@ newTalent{
 	type = {"wild-gift/objects", 1},
 	points = 5,
 	no_energy = true,
-	tactical = { ATTACK = { ARCANE = 3 } },
+	tactical = { DISABLE = function(self, t, aitarget)
+			return (aitarget:attr("has_arcane_knowledge") and 1 or 0) + (self:getTalentLevel(t)>=5 and (aitarget.undead or aitarget.construct) and 1 or 0)
+		end,
+		ATTACK = function(self, t, aitarget)
+			return self:getTalentLevel(t)>=5 and (aitarget.undead or aitarget.construct) and {arcane = 2} or 0
+		end,
+	},
 	cooldown = function(self, t) return 50 end,
-	tactical = { HEAL = 2 },
 	target = function(self, t)
 		return {type="hit", range=1, talent=t}
 	end,

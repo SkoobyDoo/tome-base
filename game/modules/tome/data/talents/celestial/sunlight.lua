@@ -69,13 +69,17 @@ newTalent{
 	random_ego = "attack",
 	cooldown = 22,
 	positive = -15,
-	tactical = { ATTACKAREA = {LIGHT = 1}, DISABLE = 2 },
+	tactical = { DISABLE = 2,
+		ATTACKAREA = function(self, t, aitarget)
+			if self:getTalentLevel(t) >= 3 then return {light = 1} end
+		end, },
 	direct_hit = true,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t}
 	end,
+	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 4, 80) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	action = function(self, t)

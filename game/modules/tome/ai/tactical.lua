@@ -83,8 +83,8 @@ newAI("use_tactical", function(self)
 		if type(tactical) == "function" then tactical = tactical(self, t) end
 		if tactical and aitarget then
 			local tg = self:getTalentTarget(t)
---	print("** target parameters:")
---	table.print(tg, "---")
+--print("** target parameters:")
+--table.print(tg, "---")
 			local default_tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}
 			-- Only assume range... some talents may no require LOS, etc
 			local within_range = target_dist and target_dist <= ((self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0))
@@ -100,6 +100,7 @@ newAI("use_tactical", function(self)
 			   	t_avail = true
 			end
 			if t_avail then
+--print("** ", t.name, "available")
 				-- Project the talent if possible, counting foes and allies hit
 				local foes_hit = {}
 				local allies_hit = {}
