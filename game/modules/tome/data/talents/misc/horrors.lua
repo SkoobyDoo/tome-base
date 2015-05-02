@@ -235,12 +235,13 @@ newTalent{
 	cooldown = 10,
 	range = 10,
 	requires_target = true,
-	tactical = { ATTACK = { MIND = 4 } },
+	tactical = { ATTACK = { MIND = 3 }, DISABLE = 1.5 },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	direct_hit = true,
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 100) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -411,7 +412,6 @@ newTalent{
 -------------------------------------------
 -- THE PUREQUESTION HORRORS AND ALL THAT --
 -------------------------------------------
-
 --Bladed Horror Talents
 newTalent{
 	name = "Knife Storm",
@@ -463,7 +463,8 @@ newTalent{
 	points = 5,
 	cooldown = 6,
 	psi = 35,
-	tactical = { DISABLE = 2 },
+	tactical = { ATTACKAREA = {PHYSICAL = 2}, CLOSEIN = 2},
+	requires_target = true,
 	range = 0,
 	radius = function(self, t)
 		return 5
@@ -529,7 +530,7 @@ newTalent{
 	random_ego = "attack",
 	equilibrium = 25,
 	cooldown = 10,
-	tactical = {ATTACKAREA = { NATURE=2 } },
+	tactical = {ATTACKAREA = { NATURE=1 }, DISABLE = 2 },
 	direct_hit = true,
 	range = 0,
 	requires_target = true,
@@ -537,7 +538,7 @@ newTalent{
 		return 1 + 0.5 * t.getDuration(self, t)
 	end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false}
 	end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 5, 90) end,
 	getDuration = function(self, t) return 9 + self:combatTalentMindDamage(t, 6, 7) end,
@@ -625,7 +626,7 @@ newTalent{
 	random_ego = "attack",
 	equilibrium = 4,
 	cooldown = 30,
-	tactical = { ATTACK = { NATURE = 2} },
+	tactical = { ATTACK = { NATURE = 2}, DISABLE = 1 },
 	range = 10,
 	direct_hit = true,
 	proj_speed = 8,
@@ -680,7 +681,6 @@ newTalent{
 		return ([[You extend slimy roots into the ground, follow them, and re-appear somewhere else in a range of %d with error margin of %d.]]):format(range, radius)
 	end,
 }
-
 
 --Ak'Gishil
 newTalent{

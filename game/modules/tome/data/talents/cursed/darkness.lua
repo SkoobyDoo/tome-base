@@ -160,7 +160,7 @@ newTalent{
 	hate = 8,
 	range = 5,
 	radius = 3,
-	tactical = { ATTACK = { DARKNESS = 1 }, DISABLE = 2 },
+	tactical = { ATTACK = { DARKNESS = 1 }, DISABLE = 2, ESCAPE = 1 },
 	requires_target = true,
 
 	-- implementation of creeping darkness..used in various locations, but stored here
@@ -288,7 +288,6 @@ newTalent{
 			end
 		end
 	end,
-
 	getDarkCount = function(self, t)
 		return math.floor(self:combatTalentScale(t, 2, 6, "log"))
 	end,
@@ -338,10 +337,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
-		local damage = t.getDamage(self, t)
+		local damage = self:damDesc(DamageType.DARKNESS, t.getDamage(self, t))
 		local darkCount = t.getDarkCount(self, t)
 		local damageIncrease = getDamageIncrease(self)
-		return ([[Creeping dark slowly spreads from %d spots in a radius of %d around the targeted location. The dark deals %d damage, and blocks the sight of any who do not possess Dark Vision or some other magical means of seeing.
+		return ([[Creeping dark slowly spreads from %d spots in a radius of %d around the targeted location. The dark deals %0.2f darkness damage each turn to anything in its area, and blocks the sight of any who do not possess Dark Vision or some other magical means of seeing.
 		The damage will increase with your Mindpower. You do +%d%% damage to anything that has entered your creeping dark.]]):format(darkCount, radius, damage, damageIncrease)
 	end,
 }

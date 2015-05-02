@@ -45,7 +45,7 @@ For these items:
 		range<optional> = number or function(object, who), should be defined here to allow the AI to determine the range of the power for targeting other Actors with the power, defaults to 1
 		radius<optional> = number or function(object, who), as range, defaults to 0
 		on_pre_use<optional> = function(object, who), optional function (similar to talent.on_pre_use, to test if the power is usable via the talents defined here (return true to allow use)
-		on_pre_use_ai<optional> = function(object, who), like on_pre_use, but only called by the AI
+		on_pre_use_ai<optional> = function(object, who), like on_pre_use, but only called by the AI, generally used to make the ai smarter by telling it when not to use the power
 	}
 	The raw talent level of the activation talent(defined here) equals the material level of the object.
 
@@ -58,21 +58,21 @@ For these items:
 		id = string, talent_id to use (i.e. Talents.T_ILLUMINATE)
 		level = number, raw talent level for the power (uses the user's mastery levels)
 		power = number, power points used when activated
-		on_pre_use<optional> = function(who, t), override talent.on_pre_use function
-		on_pre_use_ai<optional> = function(who, t), override talent.on_pre_use_ai function
-		message<optional> = function(who, t), override talent use message if any
+		on_pre_use<optional> = function(who, t), override talent.on_pre_use function, t matches talent_id
+		on_pre_use_ai<optional> = function(who, t), override talent.on_pre_use_ai function, t matches talent_id
+		message<optional> = function(who, t), override talent use message if any, t matches talent_id
 	}
 	The raw talent level of the activation talent equals the talent level specified in use_talent.
 --]]
 
-local base_talent_name = "Activate Object"
+_M.base_object_talent_name = "Activate Object"
 _M.max_object_use_talents = 50 --(allows for approximately 15 items worn and 35 items carried.)
 
 --- Generate an object use talent name
 -- returns tid, short_name
 local useObjectTalentId = function(base_name, num)
 	num = num or 1
-	base_name = base_name or base_talent_name
+	base_name = base_name or _M.base_object_talent_name
 	local short_name = base_name:upper():gsub("[ ]", "_").."_"..num
 	return "T_"..short_name, short_name
 end
@@ -118,7 +118,7 @@ end
 
 -- base Object Activation talent template
 _M.useObjectBaseTalent ={
-	name = base_talent_name,
+	name = _M.base_object_talent_name,
 	type = {"misc/objects", 1},
 	points = 1,
 	image = "talents/charm_mastery.png", --temporary? Note:displayentity is not a function
@@ -178,7 +178,7 @@ _M.useObjectBaseTalent ={
 	end,
 	on_pre_use_ai = function(self, t, silent, fake) -- called by tactical ai
 		local data = self.object_talent_data and self.object_talent_data[t.id]
-		if data.on_pre_use_ai or (data.tid and self.talents_def[data.tid].on_pre_use_ai) then
+		if data and (data.on_pre_use_ai or (data.tid and self.talents_def[data.tid].on_pre_use_ai)) then
 			return self:callObjectTalent(t.id, "on_pre_use_ai", silent, fake)
 		end
 		return true
@@ -214,7 +214,7 @@ _M.useObjectBaseTalent ={
 					end
 				end
 				if not found then
---game.log("#YELLOW# -- Cleaning up: %s", tostring(o.name))
+					print("[ActorObjectUse] Cleaning up: ", o.name, o.uid)
 					for j, mem in ipairs(game.party.m_list) do
 						-- clean up local stored object data
 						if mem.object_talent_data then mem.object_talent_data[o] = nil end
@@ -259,18 +259,18 @@ _M.useObjectBaseTalent ={
 		coroutine.resume(co)
 	end,
 	info = function(self, t)
-		local data = self.object_talent_data
-		if not data then return "" end
+--		local data = self.object_talent_data
+--		if not data then return "" end
 		local o = t.getObject(self, t)
 		if not (o and o:isIdentified()) then return "Activate an object." end
-		local objname = o:getName({do_color = true}) or "(no object)"
+		local objname = o:getName({do_color = true}) or "(unknown object)"
 		local usedesc = o and o:getUseDesc(self) or ""
 		return ([[Use %s:
 
 %s]]):format(objname, usedesc)
 	end,
 	short_info = function(self, t)
-		local data = self.object_talent_data and self.object_talent_data[t.id]
+--		local data = self.object_talent_data and self.object_talent_data[t.id]
 		local obj = t.getObject(self, t)
 		return ([[Activate %s]]):format(obj and obj:getName({do_color = true}) or "nothing")
 	end,
@@ -279,14 +279,14 @@ _M.useObjectBaseTalent ={
 -- define object use talent based on number
 -- defines a new talent if it doesn't already exist
 function _M:useObjectTalent(base_name, num)
-	base_name = base_name or base_talent_name
+	base_name = base_name or _M.base_object_talent_name
 	local tid, short_name = useObjectTalentId(base_name, num)
 	local t = Talents:getTalentFromId(tid)
 	if not t then -- define a new talent
 		t = table.clone(self.useObjectBaseTalent)
 		t.id = tid
 		t.short_name = short_name
-		print("ActorObjectUse] Defining new Talent ", short_name)
+--		print("ActorObjectUse] Defining new Talent ", short_name)
 		Talents:newTalent(t)
 		-- define this after parsing in data.talents.lua
 		t.tactical = function(self, t)
@@ -298,28 +298,34 @@ end
 
 --- Set up an object for actor use via talent interface
 -- @param o = object to set up to use
--- @param inven_id = id of inventory holding object
--- @param slot = inventory position of object
--- @param returns false or o, talent id, talent definition, talent level if the item is usable
+-- @param inven_id = <optional>id of inventory holding object
+-- @param slot = <optional>inventory position of object
+-- @param base_name = base object use talent name <"Activate Object">
+-- @param returns false or o, talent id, talent level if the item is usable
 function _M:useObjectEnable(o, inven_id, slot, base_name)
+print(("[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
+--game.log(("#YELLOW#[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
 	if not o:canUseObject() or o.quest or o.lore or (o:wornInven() and not o.wielded and not o.use_no_wear) then -- don't enable certain objects (lore, quest)
-		print(("##[ActorObjectUse] Object %s is ineligible for talent interface"):format(o.name))
-		return
+		print("[ActorObjectUse] Object", o.name, o.uid, "is ineligible for talent interface")
+		return false
 	end
---print(("[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
-	self.object_talent_data = self.object_talent_data or {} -- for older actors
-	local data = self.object_talent_data
 	local tid, t, place
-	local oldobjdata = data[o]
-	if oldobjdata then
-		if oldobjdata.tid and data[oldobjdata.tid] and data[oldobjdata.tid].obj == o then --object already enabled
-			return o, data[o], self:getTalentFromId(data[o])
-		elseif not self:knowTalent(oldobjdata.tid) then -- use old talent level
-			tid = oldobjdata.tid
+	if not inven_id or not slot then -- find the object if needed
+		place, slot, inven_id = self:findInAllInventoriesByObject(o)
+		if place ~= o then
+			print("[ActorObjectUse] Object", o.name, o.uid, " not in inventory")
+			return false
 		end
 	end
-	if not inven_id then -- find the object if needed
-		place, inven_id, slot = self:findInAllInventoriesByObject(o)
+	self.object_talent_data = self.object_talent_data or {} -- for older actors
+	local data = self.object_talent_data
+	
+	local oldobjdata = data[o]
+
+	if oldobjdata then
+		if not self:knowTalent(oldobjdata.tid) or (data[oldobjdata.tid] and data[oldobjdata.tid].obj == o) then
+			tid = oldobjdata.tid
+		end
 	end
 
 	local talent_level = false
@@ -333,33 +339,28 @@ function _M:useObjectEnable(o, inven_id, slot, base_name)
 			if not self:knowTalent(tid) then break else tid = nil end
 		until tries <= 0
 	end
+--game.log("#YELLOW# %s: Selected talent for data: %s", o.name, tid)
 	if not tid then return false end
 		
+	self:unlearnTalentFull(tid) -- Note clears talent settings
 	talent_level = self:useObjectSetData(tid, o) --includes checks for npc usability
 	if not talent_level then return false end
 	data[tid].inven_id = inven_id
 	data[tid].slot = slot
 	self:learnTalent(tid, true, talent_level)
-	
---****** temporary hotkeys for testing
---[[
-	t=self:getTalentFromId(tid)
-	-- Hotkey
-	if oldpos then
-		local name = t.short_name
-		for i = 1, 12 * self.nb_hotkey_pages do
-			if self.hotkey[i] and self.hotkey[i][1] == "talent" and self.hotkey[i][2] == "T_"..name then self.hotkey[i] = nil end
-		end
-		self.hotkey[oldpos] = {"talent", "T_"..name}
-	end
---]]
-	return o, tid, t, talent_level
+	return o, tid, talent_level
 end
 
--- disable object use (when object is removed from inventory)
+--- disable object use via talent interface(when object is removed from inventory)
+-- @param o = object to disable <optional if tid is specified>
+-- @param inven_id = id of inventory holding object <optional>
+-- @param slot = inventory position of object <optional>
+-- @param tid = talent id to disable <optional, defaults to talent associated with object>
+-- if neither o or tid is specified, disables all object use talents
+-- @param base_name = base object use talent name <"Activate Object">
 function _M:useObjectDisable(o, inven_id, slot, tid, base_name)
 	self.object_talent_data = self.object_talent_data or {} -- for older actors
-	base_name = base_name or base_talent_name
+	base_name = base_name or _M.base_object_talent_name
 	if not (o or tid) then --clear all object use data and unlearn all object use talents
 		for i = 1, self.max_object_use_talents do
 			tid = useObjectTalentId(base_name, i)
@@ -377,7 +378,8 @@ function _M:useObjectDisable(o, inven_id, slot, tid, base_name)
 	else
 		o = data[tid] and data[tid].obj
 	end
---game.log("#YELLOW# useObjectDisable: o: %s, by %s inven/slot = %s/%s (tid = %s)", o and o.name or "none", self.name, inven_id, slot, tid)
+print(("[ActorObjectUse] useObjectDisable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
+--game.log(("#YELLOW#[ActorObjectUse] useObjectDisable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
 
 	if tid then
 		if data[tid] and data[tid].old_talent_level then self.talents[tid] = data[tid].old_talent_level end
@@ -430,10 +432,10 @@ end
 --- sets up the object data for the talent
 --	@param tid = the talent id
 --	@param o = the usable object
---	o.use_talent is usable unless the talent.no_npc_use flag is set
---	o.use_power is usable unless use_power.no_npc_use is set
---  o.use_simple is usable if use_simple.allow_npc_use is set or use_simple.tactical is defined
---	returns raw talent level if successful
+--	o.use_talent is usable unless the talent.no_npc_use (boolean or function(self, t)) is true
+--	o.use_power is usable unless use_power.no_npc_use (boolean or function(obj, who)) is true
+--  o.use_simple is usable if use_simple.allow_npc_use (boolean or function(obj, who)) is true or use_simple.tactical is defined
+--	returns raw talent level (for tid) if successful
 function _M:useObjectSetData(tid, o)
 	self.object_talent_data[tid] = {obj = o}
 	if self.object_talent_data[o] then --get object use settings saved previously
@@ -477,7 +479,7 @@ function _M:useObjectSetData(tid, o)
 			data.message = use_talent.message
 			data.on_pre_use = use_talent.on_pre_use
 			data.on_pre_use_ai = use_talent.on_pre_use_ai
-			data.tactical = use_talent.tactical or table.clone(t.tactical)
+			data.tactical = use_talent.tactical and lowerTacticals(use_talent.tactical) or table.clone(t.tactical)
 			if type(data.tactical) == "table" then
 				for tact, val in pairs(data.tactical) do
 					if type(val) == "function" then
@@ -505,5 +507,7 @@ function _M:useObjectSetData(tid, o)
 			data.tactical = lowerTacticals(power.tactical)
 		end
 	end
+--print("[ActorObjectUse]", o.name, "assigned to", tid, talent_level)
+--table.print(data, "---") 
 	return talent_level -- the raw talent level (used as weighting factor in tactical ai)
 end

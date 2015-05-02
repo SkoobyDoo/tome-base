@@ -417,10 +417,11 @@ newTalent{
 	hard_cap = 1,
 	no_npc_use = true,
 	action = function(self, t)
-		local o = self:findInAllInventoriesBy("define_as", "MORRIGOR")
+		local o, slot, inven_id = self:findInAllInventoriesBy("define_as", "MORRIGOR")
 		o.use_talent=nil
         o.power_regen=nil
         o.max_power=nil
+		self:check("useObjectDisable", o, inven_id, slot)
 		return true
 	end,
 	info = function(self, t)
@@ -661,9 +662,9 @@ newTalent{
 }
 
 -- Talents to allow NPC's to use activatable objects
---print("Talents", Talents)
 local ActorObjectUse = require "mod.class.interface.ActorObjectUse"
 for i = 1, (ActorObjectUse.max_object_use_talents or 0) do
 	ActorObjectUse:useObjectTalent(base_name, i)
 end
+print("[Talents] Defined", ActorObjectUse.max_object_use_talents or 0, "ActorObjectUse Talents base_name:", ActorObjectUse.base_object_talent_name )
 

@@ -180,7 +180,18 @@ newTalent{
 	mana = 70,
 	cooldown = 50,
 	fixed_cooldown = true,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = function(self, t, aitarget)
+		local maxcount, maxlevel = t.getTalentCount(self, t), t.getMaxLevel(self, t)
+		local count, tt = 0, nil
+		for tid, _ in pairs(self.talents_cd) do
+			tt = self:getTalentFromId(tid)
+			if tt.is_spell and not tt.fixed_cooldown and tt.type[2] <= maxlevel then
+				count = count + 1
+			end
+			if count >= maxcount then break end
+		end
+		return count ^.5
+	end },
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,
 	getMaxLevel = function(self, t) return self:getTalentLevel(t) end,
 	action = function(self, t)
@@ -205,7 +216,7 @@ newTalent{
 	info = function(self, t)
 		local talentcount = t.getTalentCount(self, t)
 		local maxlevel = t.getMaxLevel(self, t)
-		return ([[Your mastery of the arcane flows allow you to reset the cooldown of %d of most of your spells of tier %d or less.]]):
+		return ([[Your mastery of arcane flows allow you to reset the cooldown of up to %d of your spells (that don't have a fixed cooldown) of tier %d or less.]]):
 		format(talentcount, maxlevel)
 	end,
 }
