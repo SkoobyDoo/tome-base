@@ -3701,11 +3701,10 @@ function _M:onWear(o, inven_id, bypass_set, silent)
 				-- Apply set bonuses.
 				for _, d in pairs(set_objects) do
 					if d.object ~= o then self:onTakeoff(d.object, d.inven_id, true) end
-					local complete =  d.object.on_set_complete
+					local complete = d.object.on_set_complete
 					if type(complete) == "table" then complete = complete[set_id] end
 					if complete then complete(d.object, self, d.inven_id, set_objects) end
 					if d.object ~= o then self:onWear(d.object, d.inven_id, true) end
---game.log("#YELLOW# completing set with %s", d.object.name)
 						self:useObjectDisable(d.object)
 						self:useObjectEnable(d.object)
 
@@ -3830,7 +3829,7 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 				if d.object ~= o then self:onTakeoff(d.object, d.inven_id, true) end
 				local broken = d.object.on_set_broken
 				if type(broken) == "table" then broken = broken[set_id] end
---				if broken then broken(d.object, self, d.inven_id, set_objects) end
+				if broken then broken(d.object, self, d.inven_id, set_objects) end
 				if d.object._special_set then
 					for k, id in pairs(d.object._special_set) do
 						d.object:removeTemporaryValue(k, id)
@@ -3838,10 +3837,8 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 					d.object._special_set = nil
 				end
 				if d.object ~= o then self:onWear(d.object, d.inven_id, true) end
---game.log("#YELLOW# breaking set with %s", d.object.name)
-					self:useObjectDisable(d.object)
-					self:useObjectEnable(d.object)
-
+				self:useObjectDisable(d.object)
+				self:useObjectEnable(d.object)
 				d.object.set_complete[set_id] = nil
 				-- Remove if empty.
 				local empty = true

@@ -259,8 +259,6 @@ _M.useObjectBaseTalent ={
 		coroutine.resume(co)
 	end,
 	info = function(self, t)
---		local data = self.object_talent_data
---		if not data then return "" end
 		local o = t.getObject(self, t)
 		if not (o and o:isIdentified()) then return "Activate an object." end
 		local objname = o:getName({do_color = true}) or "(unknown object)"
@@ -270,7 +268,6 @@ _M.useObjectBaseTalent ={
 %s]]):format(objname, usedesc)
 	end,
 	short_info = function(self, t)
---		local data = self.object_talent_data and self.object_talent_data[t.id]
 		local obj = t.getObject(self, t)
 		return ([[Activate %s]]):format(obj and obj:getName({do_color = true}) or "nothing")
 	end,
@@ -286,7 +283,6 @@ function _M:useObjectTalent(base_name, num)
 		t = table.clone(self.useObjectBaseTalent)
 		t.id = tid
 		t.short_name = short_name
---		print("ActorObjectUse] Defining new Talent ", short_name)
 		Talents:newTalent(t)
 		-- define this after parsing in data.talents.lua
 		t.tactical = function(self, t)
@@ -379,7 +375,6 @@ function _M:useObjectDisable(o, inven_id, slot, tid, base_name)
 		o = data[tid] and data[tid].obj
 	end
 print(("[ActorObjectUse] useObjectDisable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
---game.log(("#YELLOW#[ActorObjectUse] useObjectDisable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
 
 	if tid then
 		if data[tid] and data[tid].old_talent_level then self.talents[tid] = data[tid].old_talent_level end
