@@ -13,15 +13,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local sling_equipped = function(self, silent)
-	if not self:hasArcheryWeapon("sling") then
-		if not silent then
-			game.logPlayer(self, "You must wield a sling!")
-		end
-		return false
-	end
-	return true
-end
+local archerPreUse = Talents.archerPreUse
 
 -- Currently just a copy of Sling Mastery.
 newTalent {
@@ -62,7 +54,7 @@ newTalent {
 	cooldown = 5,
 	stamina = 15,
 	requires_target = true,
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	getDamage = function(self, t)
 		return self:combatTalentWeaponDamage(t, 0.4, 1.6)
 	end,
@@ -129,7 +121,7 @@ newTalent {
 			--cone_angle = 50, -- degrees
 		}
 	end,
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	damage_multiplier = function(self, t)
 		return self:combatTalentWeaponDamage(t, 0.2, 0.8)
 	end,
@@ -198,7 +190,7 @@ newTalent {
 	mode = "sustained",
 	no_energy = true,
 	tactical = { BUFF = 2 },
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	cooldown = function(self, t)
 		return 10
 	end,

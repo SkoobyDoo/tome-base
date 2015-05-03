@@ -18,6 +18,46 @@
 -- darkgod@te4.org
 
 -- Default archery attack
+
+local weaponCheck = function(self, weapon, ammo, silent, weapon_type)
+	if not weapon then
+		if not silent then
+			-- ammo contains error message
+			game.logPlayer(self, ({
+				["disarmed"] = "You are currently disarmed and cannot use this talent.",
+				["no shooter"] = "You require a missile weapon to use this talent.",
+				["no ammo"] = "You require ammo to use this talent.",
+				["bad ammo"] = "Your ammo type does not match your weapon type.",
+				["bad type"] = ("You require a %s to use this talent."):format(weapon_type or "bow"), --  warden hack
+			})[ammo] or "You require a bow or sling and ammo for this talent.")
+		end
+		return false
+	else
+		local infinite = ammo and ammo.infinite or self:attr("infinite_ammo")
+		if not ammo or (ammo.combat.shots_left <= 0 and not infinite) then
+			if not silent then game.logPlayer(self, "You do not have enough ammo left!") end
+			return false
+		end
+	end
+	return true
+end
+
+local archerPreUse = function(self, t, silent, weapon_type)
+	local weapon, ammo = self:hasArcheryWeapon(weapon_type)
+	return weaponCheck(self, weapon, ammo, silent, weapon_type)
+end
+
+local wardenPreUse = function(self, t, silent, weapon_type)
+	local weapon, ammo = self:hasArcheryWeapon(weapon_type)
+	if self:attr("warden_swap") and not weapon and weapon_type == nil or weapon_type == "bow" then
+		weapon, ammo = doWardenPreUse(self, "bow")
+	end
+	return weaponCheck(self, weapon, ammo, silent, weapon_type)
+end
+
+Talents.archerPreUse = archerPreUse
+Talents.wardenPreUse = wardenPreUse
+
 newTalent{
 	name = "Shoot",
 	type = {"technique/archery-base", 1},
@@ -37,7 +77,7 @@ newTalent{
 	message = "@Source@ shoots!",
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 } },
-	on_pre_use = function(self, t, silent) if not (self:attr("warden_swap") and doWardenPreUse(self, "bow")) and not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling and ammo for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent) end,
 	no_unlearn_last = true,
 	use_psi_archery = function(self, t)
 		local inven = self:getInven("PSIONIC_FOCUS")
@@ -62,11 +102,6 @@ newTalent{
 		
 		local weapon, ammo, offweapon = self:hasArcheryWeapon()
 		if not weapon then return nil end
-		local infinite = ammo.infinite or self:attr("infinite_ammo")
-		if not ammo or (ammo.combat.shots_left <= 0 and not infinite) then
-			game.logPlayer(self, "You do not have enough ammo left!")
-			return nil
-		end
 
 		-- Bombardment.
 		local weapon = self:hasArcheryWeapon("sling")
@@ -113,7 +148,7 @@ newTalent{
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	action = function(self, t)
 		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 		if not targets then return end
@@ -136,7 +171,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_npc_use = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getCombatVals = function(self, t)
 		local vals = {speed = -self:combatTalentLimit(t, 0.5, 0.05, 0.25), -- Limit < 50% speed loss
 			crit =  self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 7, 0, 57, 50),
@@ -188,7 +223,7 @@ newTalent{
 	sustain_stamina = 20,
 	no_energy = true,
 	tactical = { BUFF = 2 },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getCombatVals = function(self, t)
 		local vals = {speed = self:combatTalentScale(t, 0.1, 0.5, 0.75),
 			crit = -self:combatTalentScale(t, 10.4, 20),
@@ -238,7 +273,7 @@ newTalent{
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 }, STAMINA = 1 },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	action = function(self, t)
 		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 		if not targets then return end
@@ -270,7 +305,7 @@ newTalent{
 	end,
 	require = techs_dex_req1,
 	tactical = { ATTACKAREA = { FIRE = 2 }, DISABLE = { blind = 2 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", x=x, y=y, radius=self:getTalentRadius(t), range=self:getTalentRange(t)}
@@ -312,7 +347,7 @@ newTalent{
 	range = archery_range,
 	tactical = { ATTACK = { weapon = 1 }, DISABLE = 1 },
 	requires_target = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)
 		target:setEffect(target.EFF_SLOW, 7, {power=util.bound((self:combatAttack() * 0.15 * self:getTalentLevel(t)) / 100, 0.1, 0.4), apply_power=self:combatAttack()})
 	end,
@@ -341,7 +376,7 @@ newTalent{
 	tactical = { ATTACK = { weapon = 1 }, DISABLE = { pin = 2 } },
 	requires_target = true,
 	getDur = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 5.5)) end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:canBe("pin") then
 			target:setEffect(target.EFF_PINNED, t.getDur(self, t), {apply_power=self:combatAttack()})
@@ -380,7 +415,7 @@ newTalent{
 		local weapon, ammo = self:hasArcheryWeapon()
 		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), display=self:archeryDefaultProjectileVisual(weapon, ammo)}
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getStunDur = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:canBe("stun") then
