@@ -22,6 +22,7 @@ load("/data/general/npcs/vermin.lua", rarity(2))
 load("/data/general/npcs/ghoul.lua", rarity(3))
 load("/data/general/npcs/skeleton.lua", rarity(0))
 load("/data/general/npcs/bone-giant.lua", function(e) e.rarity = nil end)
+load("/data/general/npcs/horror-undead.lua", function(e) e.rarity = nil end)
 
 local Talents = require("engine.interface.ActorTalents")
 
@@ -93,4 +94,96 @@ This specimen looks like it was hastily assembled and is not really complete yet
 	on_die = function(self, who)
 		game.player:resolveSource():setQuestStatus("start-undead", engine.Quest.COMPLETED)
 	end,
+}
+
+newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
+	name = "fleshy experiment", color=colors.DARK_GREEN,
+	desc ="This pile of rotting flesh twiches and makes horrid noises.",
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_necrotic_abomination.png", display_h=2, display_y=-1}}},
+	level_range = {1, 5}, exp_worth = 1,
+	rarity = 2,
+	rank = 2,
+	size_category = 2,
+	combat_armor = 0, combat_def = 0,
+	max_life=10, life_rating=10,
+	disease_immune = 1,
+	never_move = 1,
+	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
+	
+	combat = {
+		dam=resolvers.levelup(5, 1, 1.2),
+		atk=15, apr=0,
+		dammod={mag=1.3}, physcrit = 5,
+		damtype=engine.DamageType.BLIGHT,
+	},
+	
+	autolevel = "caster",
+	
+	resolvers.talents{
+		[Talents.T_VIRULENT_DISEASE]={base=1, every=5, max=5},
+	},
+	
+	resolvers.sustains_at_birth(),
+}
+
+newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
+	name = "boney experiment", color=colors.WHITE,
+	desc ="This pile of bones appears to move on its own, but it can't seem to organise itself into something that can move around.",
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_bone_horror.png", display_h=2, display_y=-1}}},
+	level_range = {1, 5}, exp_worth = 1,
+	rarity = 2,
+	rank = 2,
+	size_category = 2,
+	combat_armor = 0, combat_def = 0,
+	max_life=10, life_rating = 10,
+	disease_immune = 1,
+	cut_immune = 1,
+	never_move = 1,
+	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
+	
+	combat = {
+		dam=resolvers.levelup(5, 1, 1.2),
+		atk=10, apr=0,
+		dammod={mag=1, str=0.5}, physcrit = 5,
+		damtype=engine.DamageType.PHYSICALBLEED,
+	},
+	
+	autolevel = "warriormage",
+		
+	resolvers.talents{
+		[Talents.T_BONE_GRAB]={base=1, every=5, max=5},
+	},
+	
+	resolvers.sustains_at_birth(),
+}
+
+newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
+	name = "sanguine experiment", color=colors.RED,
+	desc ="It looks like a giant blood clot. Is that what its creator intended?",
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_sanguine_horror.png", display_h=2, display_y=-1}}},
+	level_range = {1, 5}, exp_worth = 1,
+	rarity = 2,
+	rank = 2, life_rating = 10,
+	size_category = 2,
+	combat_armor = 0, combat_def = 0,
+	max_life=10,
+	never_move = 1,
+	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
+	
+	lifesteal=15,
+	
+	combat = {
+		dam=resolvers.levelup(5, 1, 1.2),
+		atk=10, apr=0,
+		dammod={mag=1.1}, physcrit = 5,
+		damtype=engine.DamageType.CORRUPTED_BLOOD,
+	},
+	
+	autolevel = "caster",
+	
+	resolvers.talents{
+		[Talents.T_BLOOD_GRASP]={base=1, every=5, max = 5},
+	},
+	
+	resolvers.sustains_at_birth(),
 }
