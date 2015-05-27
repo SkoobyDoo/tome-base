@@ -838,7 +838,6 @@ newEntity{
 			[DamageType.MIND] = resolvers.mbonus_material(20, 5),
 			[DamageType.ITEM_MIND_GLOOM] = resolvers.mbonus_material(25, 10)
 		},
-		is_psionic_focus = true,
 	},
 	wielder = {
 		inc_stats = {
