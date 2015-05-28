@@ -17,10 +17,10 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-load("/data/general/npcs/rodent.lua", rarity(0))
+load("/data/general/npcs/rodent.lua", rarity(1))
 load("/data/general/npcs/vermin.lua", rarity(2))
 load("/data/general/npcs/ghoul.lua", rarity(3))
-load("/data/general/npcs/skeleton.lua", rarity(0))
+load("/data/general/npcs/skeleton.lua", rarity(1))
 load("/data/general/npcs/bone-giant.lua", function(e) e.rarity = nil end)
 load("/data/general/npcs/horror-undead.lua", function(e) e.rarity = nil end)
 
@@ -82,6 +82,7 @@ This specimen looks like it was hastily assembled and is not really complete yet
 	melee_project = {[DamageType.BLIGHT]=resolvers.mbonus(5, 2)},
 	resolvers.talents{ [Talents.T_BONE_ARMOUR]=3, [Talents.T_THROW_BONES]=1, },
 	resolvers.sustains_at_birth(),
+	movement_speed = 1.0,
 	tier1 = true,
 
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
@@ -99,9 +100,9 @@ This specimen looks like it was hastily assembled and is not really complete yet
 newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	name = "fleshy experiment", color=colors.DARK_GREEN,
 	desc ="This pile of rotting flesh twiches and makes horrid noises.",
-	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_necrotic_abomination.png", display_h=2, display_y=-1}}},
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_necrotic_abomination.png", display_h=1.5, display_y=-0.5}}},
 	level_range = {1, 5}, exp_worth = 1,
-	rarity = 2,
+	rarity = 1,
 	rank = 2,
 	size_category = 2,
 	combat_armor = 0, combat_def = 0,
@@ -109,6 +110,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	disease_immune = 1,
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
+	ai = nil, ai_tactic = nil, ai_state = nil,
 	
 	combat = {
 		dam=resolvers.levelup(5, 1, 1.2),
@@ -128,10 +130,10 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 
 newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	name = "boney experiment", color=colors.WHITE,
-	desc ="This pile of bones appears to move on its own, but it can't seem to organise itself into something that can move around.",
-	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_bone_horror.png", display_h=2, display_y=-1}}},
+	desc ="This pile of bones appears to move on its own, but it can't seem to organise itself into something dangerous.",
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_bone_horror.png", display_h=1.5, display_y=-0.5}}},
 	level_range = {1, 5}, exp_worth = 1,
-	rarity = 2,
+	rarity = 1,
 	rank = 2,
 	size_category = 2,
 	combat_armor = 0, combat_def = 0,
@@ -140,6 +142,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	cut_immune = 1,
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
+	ai = nil, ai_tactic = nil, ai_state = nil,
 	
 	combat = {
 		dam=resolvers.levelup(5, 1, 1.2),
@@ -160,15 +163,16 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	name = "sanguine experiment", color=colors.RED,
 	desc ="It looks like a giant blood clot. Is that what its creator intended?",
-	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_sanguine_horror.png", display_h=2, display_y=-1}}},
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_sanguine_horror.png", display_h=1.5, display_y=-0.5}}},
 	level_range = {1, 5}, exp_worth = 1,
-	rarity = 2,
+	rarity = 1,
 	rank = 2, life_rating = 10,
 	size_category = 2,
 	combat_armor = 0, combat_def = 0,
 	max_life=10,
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
+	ai = nil, ai_tactic = nil, ai_state = nil,
 	
 	lifesteal=15,
 	
