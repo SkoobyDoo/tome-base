@@ -7370,6 +7370,7 @@ Their killing spree ended when one of the victims got lucky and managed to stab 
 	require = { stat = { dex=42 }, },
 	cost = 400,
 	material_level = 4,
+	metallic = false,
 	combat = {
 		dam = 35,
 		apr = 10,

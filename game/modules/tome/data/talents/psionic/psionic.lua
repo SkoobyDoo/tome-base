@@ -152,17 +152,6 @@ psi_cun_high4 = {
 
 
 -- Useful definitions for psionic talents
-function getGemLevel(self)
-	local gem_level = 0
-	if self:getInven("PSIONIC_FOCUS") then
-		local tk_item = self:getInven("PSIONIC_FOCUS")[1]
-		if tk_item and ((tk_item.type == "gem") or (tk_item.subtype == "mindstar") or tk_item.combat.is_psionic_focus == true) then
-			gem_level = tk_item.material_level or 5
-		end
-	end
-	return gem_level
-end
-
 -- Cancel Thought Forms, we do this here because we use it for dreamscape and projection as well as thought-forms
 function cancelThoughtForms(self, id)
 	local forms = {self.T_TF_DEFENDER, self.T_TF_WARRIOR, self.T_TF_BOWMAN}
