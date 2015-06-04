@@ -86,7 +86,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local nb = t.getDigs(self, t)
-		return ([[Fire a powerful beam of stone shaterring forces, digging out any walls in its path up to %d.
+		return ([[Fire a powerful beam of stone-shaterring force, digging out any walls in its path up to %d.
 		The beam also affect any creatures in its path, dealing %0.2f physical damage to all.
 		The damage will increase with your Spellpower.]]):
 		format(nb, damDesc(self, DamageType.PHYSICAL, damage))

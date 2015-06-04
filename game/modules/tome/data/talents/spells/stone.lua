@@ -62,7 +62,7 @@ newTalent{
 			count = count + 1
 		end
 		local damage = t.getDamage(self, t)
-		return ([[Conjures %d missile shaped rocks that you target individually at any target or targets in range.  Each missile deals %0.2f physical damage, and an additional %0.2f bleeding damage every turn for 5 turns.
+		return ([[Conjures %d missile-shaped rocks that you target individually at any target or targets in range.  Each missile deals %0.2f physical damage, and an additional %0.2f bleeding damage every turn for 5 turns.
 		At talent level 5, you can conjure one additional missile.
 		The damage will increase with your Spellpower.]]):format(count,damDesc(self, DamageType.PHYSICAL, damage/2), damDesc(self, DamageType.PHYSICAL, damage/12))
 	end,

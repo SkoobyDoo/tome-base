@@ -3497,7 +3497,7 @@ newEntity{ base = "BASE_GAUNTLETS",
 		self.use_power = {
 			name = function(self, who)
 				dam = who:damDesc(engine.DamageType.ARCANE, self.use_power.unnaturaldam(self, who))
-				return ("attempt to destroy all magic effects and sustains on creatures in a radius %d cone (unnatural creaters are additionally dealt %0.2f arcane damage and stunned)"):format(self.use_power.radius, dam)
+				return ("attempt to destroy all magic effects and sustains on creatures in a radius %d cone (unnatural creatures are additionally dealt %0.2f arcane damage and stunned)"):format(self.use_power.radius, dam)
 			end,
 			power = 100,
 			unnaturaldam = function(self, who) return 100+who:combatMindpower() end,

@@ -68,7 +68,7 @@ newEntity{
 				end
 			end)
 		else
-			require("engine.ui.Dialog"):simplePopup("Infinite Dungeon", "You should not go there, there is no way back. Ever. Maybe later when you did all you must do.")
+			require("engine.ui.Dialog"):simplePopup("Infinite Dungeon", "You should not go there. There is no way back. Ever. Maybe later when you have done all you must do.")
 		end
 	end,
 }
