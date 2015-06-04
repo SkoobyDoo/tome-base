@@ -61,7 +61,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 
 newEntity{ base = "BASE_NPC_OGRE",
 	name = "ogre warmaster", color=colors.CRIMSON,
-	desc = [[A master of combat, she is impatient to test his newfound skills.]],
+	desc = [[A master of combat, she is impatient to test her newfound skills.]],
 	resolvers.nice_tile{tall=1}, female = 1,
 	level_range = {21, nil}, exp_worth = 1,
 	rarity = 4,

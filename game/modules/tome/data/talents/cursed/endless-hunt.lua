@@ -252,6 +252,6 @@ newTalent{
 		return ([[Let hate fuel your movements. While active, you gain %d%% movement speed. The recklessness of your movement brings you bad luck (Luck -3).
 		Cleave, Repel and Surge cannot be active simultaneously, and activating one will place the others in cooldown.
 		The speed of your movements, combined with the balance and utility of two weapons, gives you %d extra Defense while dual-wielding.
-		Movement speed and dual-wielding Defense both increase with with the Willpower stat.]]):format(movementSpeedChange * 100, defenseChange)
+		Movement speed and dual-wielding Defense both increase with the Willpower stat.]]):format(movementSpeedChange * 100, defenseChange)
 	end,
 }
