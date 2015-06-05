@@ -67,7 +67,7 @@ public:
 	}
 
 	~RenderHandler() {
-		fprintf(logfile, "[WEBCORE] Destroyed renreder\n");
+		fprintf(logfile, "[WEBCORE] Destroyed renderer\n");
 
 		WebEvent *event = new WebEvent();
 		event->kind = TE4_WEB_EVENT_DELETE_TEXTURE;

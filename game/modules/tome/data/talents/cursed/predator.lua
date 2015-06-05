@@ -170,7 +170,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local maxIncrease = t.getMaxIncrease(self, t)
-		return ([[You learn to mimic the strengths of your prey. Killing a marked sub-type raises your stats to match the strengths of the victim (up to a maximum of %d total points, subject to your current effectiveness). The effect lasts indefinitely, but only the effects of the lastest kill will be applied.
+		return ([[You learn to mimic the strengths of your prey. Killing a marked sub-type raises your stats to match the strengths of the victim (up to a maximum of %d total points, subject to your current effectiveness). The effect lasts indefinitely, but only the effects of the latest kill will be applied.
 		Each point in Mimic reduces the kill experience required to reach 100%% effectivess as a Predator.]]):format(maxIncrease)
 	end,
 }
