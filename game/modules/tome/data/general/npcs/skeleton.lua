@@ -186,7 +186,7 @@ newEntity{ base = "BASE_NPC_SKELETON",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
-	name = "skeleton ninja", color=colors.DARK_BLUE, image="npc/skeleton_warrior.png",
+	name = "skeleton assassin", color=colors.DARK_BLUE, image="npc/skeleton_warrior.png",
 	desc=[[Most skeletons announce their presence with a chorus of rattling bones; this one's been charred black and has enough cartilage between its joints to muffle its approach.  The first you'll see of it will be the flash of its blade.]],
 	level_range = {20, nil}, exp_worth = 1,
 	rarity = 15,
@@ -209,7 +209,7 @@ newEntity{ base = "BASE_NPC_SKELETON",
 		[Talents.T_KNIFE_MASTERY]={base=1, every=10, max=7},
 		[Talents.T_SHADOW_COMBAT]={base=1, every=10, max=7},
 		[Talents.T_SHADOWSTEP]={base=1, every=10, max=7},
-		[Talents.T_STEALTH]={base=1, every=10, max=7},
+		[Talents.T_STEALTH]={base=2, every=10, max=7},
 	},
 	
 	resolvers.equip{
