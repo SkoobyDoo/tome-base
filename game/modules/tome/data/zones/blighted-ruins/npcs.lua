@@ -99,7 +99,7 @@ This specimen looks like it was hastily assembled and is not really complete yet
 
 newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	name = "fleshy experiment", color=colors.DARK_GREEN,
-	desc ="This pile of rotting flesh twiches and makes horrid noises.",
+	desc ="This pile of rotting flesh twitches and makes horrid noises.",
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_horror_necrotic_abomination.png", display_h=1.5, display_y=-0.5}}},
 	level_range = {1, 5}, exp_worth = 1,
 	rarity = 1,
