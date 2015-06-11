@@ -193,7 +193,7 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Nightmare mode#WHITE##{normal}#",
 		"Unfair game setting",
-		"All zone levels increased by 50% + 2",
+		"All zone levels increased by 50%",
 		"All creature talent levels increased by 30%",
 		"Player can earn Nightmare version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
@@ -216,7 +216,7 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Insane mode#WHITE##{normal}#",
 		"Similar rules to Nightmare, but with more random bosses!",
-		"All zone levels increased by 50% + 3",
+		"All zone levels increased by 50% + 1",
 		"All creature talent levels increased by 50%",
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Nonrandom bosses will have randomly selected talents",
@@ -246,7 +246,7 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Madness mode#WHITE##{normal}#",
 		"Absolutely unfair game setting.  You are really mentally ill and wish to get worse to play this mode!",
-		"All zone levels increased by 150% + 6",
+		"All zone levels increased by 150% + 1",
 		"All creature talent levels increased by 170%",
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Bosses will have randomly selected talents",

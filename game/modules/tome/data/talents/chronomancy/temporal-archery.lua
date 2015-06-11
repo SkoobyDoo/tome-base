@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local archerPreUse = Talents.archerPreUse
+
 newTalent{
 	name = "Phase Shot",
 	type = {"chronomancy/temporal-archery", 1},
@@ -27,7 +29,7 @@ newTalent{
 	no_energy = "fake",
 	range = 10,
 	tactical = { ATTACK = {TEMPORAL = 2} },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	requires_target = true,
 	action = function(self, t)
 		local tg = {type="bolt"}
@@ -53,7 +55,7 @@ newTalent{
 	no_energy = "fake",
 	range = 10,
 	tactical = { ATTACK = {PHYSICAL = 2} },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	requires_target = true,
 	action = function(self, t)
 		local tg = {type="bolt"}
@@ -112,7 +114,7 @@ newTalent{
 	no_energy = true,
 	range = 10,
 	tactical = { ATTACK = {PHYSICAL = 2} },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	requires_target = true,
 	action = function(self, t)
 		local old = self.energy.value

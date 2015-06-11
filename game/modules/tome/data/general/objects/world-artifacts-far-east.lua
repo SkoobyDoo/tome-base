@@ -530,7 +530,7 @@ newEntity{ base = "BASE_KNIFE", define_as = "KINETIC_SPIKE",
 	},
 	max_power = 10, power_regen = 1,
 	use_power = {
-		name = function(self, who) return ("fires a bolt of kinetic force (range %d), dealing 150%% (physical) weapon damage"):format(self.use_power.range) end,
+		name = function(self, who) return ("fire a bolt of kinetic force (range %d), dealing 150%% (physical) weapon damage"):format(self.use_power.range) end,
 		power = 10,
 		range = 8,
 		use = function(self, who)

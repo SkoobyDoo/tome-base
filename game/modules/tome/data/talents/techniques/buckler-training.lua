@@ -13,6 +13,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+local archerPreUse = Talents.archerPreUse
+
+local preUse = function(self, t, silent)
+	if not self:hasShield() or not archerPreUse(self, t, true) then
+		if not silent then game.logPlayer("You require a ranged weapon and a shield to use this talent.") end
+		return false
+	end
+	return true
+end
 
 newTalent {
 	short_name = "SKIRMISHER_BUCKLER_EXPERTISE",
@@ -70,11 +79,7 @@ newTalent {
 	range = 1,
 	is_special_melee = true,
 	on_pre_use = function(self, t, silent)
-		if not self:hasShield() or not self:hasArcheryWeapon() then
-			if not silent then game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.") end
-			return false
-		end
-		return true
+		return preUse(self, t, silent)
 	end,
 	getDist = function(self, t)
 		if self:getTalentLevelRaw(t) >= 3 then
@@ -203,11 +208,7 @@ newTalent {
 	require = techs_dex_req4,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent)
-		if not self:hasShield() or not self:hasArcheryWeapon() then
-			if not silent then game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.") end
-			return false
-		end
-		return true
+		return preUse(self, t, silent)
 	end,
 	activate = function(self, t)
 		return {}

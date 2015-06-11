@@ -68,7 +68,7 @@ function _M:init(actor)
 	self.vs = Separator.new{dir="vertical", size=self.iw}
 
 	self.c_tut = Textzone.new{width=self.iw * 0.6, auto_height=true, no_color_bleed=true, font = self.font, text=[[
-Values #00FF00#in brackets ( )#LAST# shows changes made from last character sheet checking.
+Values #00FF00#in brackets ( )#LAST# show changes made from last character sheet checking.
 Keyboard: #00FF00#'d'#LAST# to save character dump. #00FF00#TAB key#LAST# to switch between tabs.
 Mouse: Hover over stat for info
 ]]}
