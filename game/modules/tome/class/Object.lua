@@ -114,7 +114,7 @@ end
 --	returns boolean, msg
 function _M:canUseObject(who)
 	if self.__transmo then return false end
-	if not engine.interface.ObjectActivable.canUseObject(self) then
+	if not engine.interface.ObjectActivable.canUseObject(self, who) then
 		return false, "This object has no usable power."
 	end
 	

@@ -151,7 +151,9 @@ _M.useObjectBaseTalent ={
 	end,
 	on_pre_use = function(self, t, silent, fake) -- test for item usability, not on cooldown, etc.
 		if self.no_inventory_access then return end
-		local data = self.object_talent_data and self.object_talent_data[t.id]
+		local data = self.object_talent_data
+		if data.cleanup then self:objectTalentCleanup() end
+		data = data[t.id]
 		if not data then
 			print("[ActorObjectUse] ERROR: Talent ", t.name, " has no object data")
 			return false
@@ -200,37 +202,7 @@ _M.useObjectBaseTalent ={
 		return self:callObjectTalent(t.id, "target")
 	end,
 	action = function(self, t)
-		local data = self.object_talent_data
-		if not data then return end
-		if data.cleanup then -- forget settings for objects no longer in the party
-			for o, r in pairs(data.cleanup) do
---game.log("---%s: %s tagged for cleanup", self.name, o.name)
-				local found = false
-				for j, mem in ipairs(game.party.m_list) do
-					if mem:findInAllInventoriesByObject(o) then
---game.log("---Found %s with %s", o.name, mem.name)
-						found = true
-						break
-					end
-				end
-				if not found then
-					print("[ActorObjectUse] Cleaning up: ", o.name, o.uid)
-					for j, mem in ipairs(game.party.m_list) do
-						-- clean up local stored object data
-						if mem.object_talent_data then mem.object_talent_data[o] = nil end
-						if mem.ai_talents then mem.ai_talents[o] = nil end
-						-- clean up summoner stored_ai_talents object data
-						if mem.stored_ai_talents then
-							for memname, tt in pairs(mem.stored_ai_talents) do
-								tt[o] = nil
-							end
-						end
-					end
-				end
-			end
-			data.cleanup = nil
-		end
-		data = data[t.id]
+		local data = self.object_talent_data and self.object_talent_data[t.id]
 		if not data then return end
 --print(("##[ActorObjectUse]Pre Action Object (%s [uid %d]) Activation by %s [uid %d, energy %d]"):format(data.obj.name, data.obj.uid, self.name, self.uid, self.energy.value))
 		local obj, inven = data.obj, data.inven_id
@@ -405,6 +377,46 @@ local lowerTacticals = function(tacticals) --convert tactical tables to lower ca
 		tacts[tact] = val
 	end
 	return tacts
+end
+
+--- forget settings for objects no longer in the party
+function _M:objectTalentCleanup()
+	local data = self.object_talent_data
+	if not (data and data.cleanup) then return end
+	for tid, lev in pairs(self.talents) do
+		if self.talents_def[tid] and self.talents_def[tid].is_object_use then
+			local o = data[tid] and data[tid].obj
+			if not o or not engine.interface.ObjectActivable.canUseObject(o) then
+				self:useObjectDisable(o, nil, nil, tid)
+			end
+		end
+	end
+	for o, r in pairs(data.cleanup) do
+--game.log("---%s: %s tagged for cleanup", self.name, o.name)
+		local found = false
+		for j, mem in ipairs(game.party.m_list) do
+			if mem:findInAllInventoriesByObject(o) then
+--game.log("---Found %s with %s", o.name, mem.name)
+				found = true
+				break
+			end
+		end
+		if not found then
+			print("[ActorObjectUse] Cleaning up: ", o.name, o.uid)
+			for j, mem in ipairs(game.party.m_list) do
+				-- clean up local stored object data
+				if mem.object_talent_data then mem.object_talent_data[o] = nil end
+				if mem.ai_talents then mem.ai_talents[o] = nil end
+				-- clean up summoner stored_ai_talents object data
+				if mem.stored_ai_talents then
+					for memname, tt in pairs(mem.stored_ai_talents) do
+						tt[o] = nil
+					end
+				end
+			end
+		end
+	end
+	data.cleanup = nil
 end
 
 -- function to call base talent-defined tactical functions from the object talent (with overridden talent level)
