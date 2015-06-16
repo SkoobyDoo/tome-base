@@ -66,7 +66,7 @@ newEntity{ base = "BASE_NPC_SKELETON",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
-	name = "degenerated skeleton archer", color=colors.UMBER, image="npc/skeleton_archer.png",
+	name = "degenerated skeleton archer", color=colors.UMBER,
 	desc=[[A frail skeleton; just about the only bones that aren't cracked are its arms.  It's missing a hand, but a notch has been carved into its wrist to let it pull back a bowstring regardless.]],
 	level_range = {3, 20}, exp_worth = 1,
 	rarity = 3,
@@ -124,7 +124,7 @@ newEntity{ base = "BASE_NPC_SKELETON",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
-	name = "skeleton magus", color=colors.LIGHT_RED, image="npc/skeleton_mage.png",
+	name = "skeleton magus", color=colors.LIGHT_RED,
 	desc=[[This skeleton has been imbued with far more magical energy than normal, and serves as a conduit of its master's spellcasting prowess.]],
 	level_range = {11, nil}, exp_worth = 1,
 	rarity = 3,
@@ -186,13 +186,13 @@ newEntity{ base = "BASE_NPC_SKELETON",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
-	name = "skeleton assassin", color=colors.DARK_BLUE, image="npc/skeleton_warrior.png",
+	name = "skeleton assassin", color=colors.DARK_BLUE,
 	desc=[[Most skeletons announce their presence with a chorus of rattling bones; this one's been charred black and has enough cartilage between its joints to muffle its approach.  The first you'll see of it will be the flash of its blade.]],
 	level_range = {20, nil}, exp_worth = 1,
 	rarity = 15,
 	max_life = resolvers.rngavg(90,100),
 	combat_armor = 5, combat_def = 1,
-	rank = 4,
+	rank = 3,
 
 	ai = "tactical",
 	ai_tactic = resolvers.tactic"melee",
