@@ -300,7 +300,7 @@ newEntity{
 		end,
 		20,
 		function(self, who)
-			local tg = {type="hit", range=10,}
+			local tg = {type="hit", range=self.use_power.range,}
 			local x, y, target = who:getTarget(tg)
 			if not x or not y then return nil end
 			if target then
@@ -317,7 +317,8 @@ newEntity{
 			return {id=true, used=true}
 		end,
 		"T_GLOBAL_CD",
-		{damage = function(self, who) return self:getCharmPower(who) + (who:combatMindpower() * (1 + self.material_level/5)) end}
+		{damage = function(self, who) return self:getCharmPower(who) + (who:combatMindpower() * (1 + self.material_level/5)) end,
+		range = 10,}
 	),
 }
 

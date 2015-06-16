@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Interface to add a bloodyDeath() method to actors
 -- When this method is called, the floor or walls around the late actor is covered in blood
+-- @classmod engine.generator.interface.BloodyDeath
 module(..., package.seeall, class.make)
 
 --- Makes the bloody death happen

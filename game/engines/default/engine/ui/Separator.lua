@@ -20,7 +20,8 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 
---- A generic UI button
+--- A generic UI separator
+-- @classmod engine.ui.Separator
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)

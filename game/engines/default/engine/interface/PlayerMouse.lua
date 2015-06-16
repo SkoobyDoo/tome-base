@@ -24,6 +24,7 @@ local Map = require "engine.Map"
 
 --- Handles player default mouse actions
 -- Defines some methods to help use the mouse in an uniform way in all modules
+-- @classmod engine.generator.interface.PlayerMouse
 module(..., package.seeall, class.make)
 
 --- Runs to the clicked mouse spot
@@ -34,6 +35,7 @@ module(..., package.seeall, class.make)
 -- @param tmy the coords clicked
 -- @param spotHostiles a function taking only the player as a parameter that must return true if hostiles are in sight
 -- @param astar_check nil or a function to check each tile on the astar path for passability
+-- @param force_move force movement even if mouse_move is disabled
 function _M:mouseMove(tmx, tmy, spotHostiles, astar_check, force_move)
 	if not self.x or not self.y or not tmx or not tmy then return end
 	tmx = util.bound(tmx, 0, game.level.map.w - 1)
@@ -124,6 +126,12 @@ end
 --
 -- @param key the Key object to which to pass the event if not treated, this should be your game default key handler probably
 -- @param allow_move true if this will allow player movement (you should use it to check that you are not in targetting mode)
+-- @param button the mouse button that was pressed
+-- @param mx absolute x
+-- @param my absolute y
+-- @param xrel relative x
+-- @param yrel relative y
+-- @param event click event
 function _M:mouseHandleDefault(key, allow_move, button, mx, my, xrel, yrel, event)
 	if not game.level then return end
 	local tmx, tmy = game.level.map:getMouseTile(mx, my)

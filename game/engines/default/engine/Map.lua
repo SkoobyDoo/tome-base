@@ -25,6 +25,7 @@ local Faction = require "engine.Faction"
 local DamageType = require "engine.DamageType"
 
 --- Represents a level map, handles display and various low level map work
+-- @classmod engine.Map
 module(..., package.seeall, class.make)
 
 -- Keep a list of currently existing maps
@@ -94,6 +95,7 @@ viewport_padding_8 = 0
 -- @param tile_h height of a single tile
 -- @param fontname font parameters, can be nil
 -- @param fontsize font parameters, can be nil
+-- @param allow_backcolor allow backcolor
 function _M:setViewPort(x, y, w, h, tile_w, tile_h, fontname, fontsize, allow_backcolor)
 	local otw, oth = self.tile_w, self.tile_h
 	local ovw, ovh = self.viewport and self.viewport.width, self.viewport and self.viewport.height
@@ -598,8 +600,9 @@ end
 --- Displays the map on screen
 -- @param x the coord where to start drawing, if null it uses self.display_x
 -- @param y the coord where to start drawing, if null it uses self.display_y
--- @param nb_keyframes the number of keyframes elapsed since last draw
+-- @param nb_keyframe the number of keyframes elapsed since last draw
 -- @param always_show tell the map code to force display unseed entities as remembered (used for smooth FOV shading)
+-- @param prevfbo previous vertiex buffer object used in last display
 function _M:display(x, y, nb_keyframe, always_show, prevfbo)
 	nb_keyframes = nb_keyframes or 1
 	local ox, oy = rawget(self, "display_x"), rawget(self, "display_y")
@@ -1047,8 +1050,10 @@ end
 -- @param y the epicenter coords
 -- @param duration the number of turns to persist
 -- @param damtype the DamageType to apply
+-- @param dam the amount of damage
 -- @param radius the radius of the effect
 -- @param dir the numpad direction of the effect, 5 for a ball effect
+-- @param angle the angle of the effect
 -- @param overlay either a simple display entity to draw upon the map or a Particle class
 -- @param update_fct optional function that will be called each time the effect is updated with the effect itself as parameter. Use it to change radius, move around ....
 -- @param selffire percent chance to damage the source actor (default 100)

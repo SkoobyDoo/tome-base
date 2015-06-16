@@ -65,14 +65,7 @@ newEntity{
 	wielder = {
 		combat_spellpower = resolvers.mbonus_material(3, 2),
 	},
-	resolvers.genericlast(function(e)
-		e.wielder.inc_damage[e.combat.element or e.combat.damtype] = e.combat.dam
-		if e.combat.of_breaching then
-			for d, v in pairs(e.wielder.inc_damage) do
-				e.wielder.resists_pen[d] = math.ceil(e.combat.dam/2)
-			end
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -147,17 +140,7 @@ newEntity{
 	wielder = {
 		combat_spellpower = resolvers.mbonus_material(4, 3),
 	},
-	resolvers.generic(function(e)
-		local dam_tables = {
-			magestaff = { engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE },
-			starstaff = { engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL, engine.DamageType.PHYSICAL },
-			vilestaff = { engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE },
-		}
-		local d_table = dam_tables[e.flavor_name]
-		for i = 1, #d_table do
-			e.wielder.inc_damage[d_table[i]] = e.combat.dam
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -253,7 +236,7 @@ newEntity{
 			local range = self.use_power.range(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("project a bolt from the staff (to range %d) dealing %0.2f - %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
+			return ("project a bolt from the staff (to range %d) dealing %0.2f to %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
 		end,
 		5,
 		function(self, who)
@@ -267,7 +250,7 @@ newEntity{
 			local explosion, particle, trail
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			if     damtype == DamageType.FIRE then      explosion = "flame"               particle = "bolt_fire"      trail = "firetrail"
 			elseif damtype == DamageType.COLD then      explosion = "freeze"              particle = "ice_shards"     trail = "icetrail"
 			elseif damtype == DamageType.ACID then      explosion = "acid"                particle = "bolt_acid"      trail = "acidtrail"
@@ -278,7 +261,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"               particle = "bolt_slime"     trail = "slimetrail"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"                particle = "stone_shards"   trail = "earthtrail"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"				  particle = "temporal_bolt"  trail = "lighttrail"
-			else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" --damtype = DamageType.ARCANE
 			end
 
 			local x, y = who:getTarget(tg)
@@ -319,11 +302,8 @@ newEntity{
 		wards = {},
 	},
 	combat = {of_warding = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.wards[d] = 2
-		end
-	end),
+	command_staff = {of_warding = {add=2, mult=0, "wards"}},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -338,11 +318,8 @@ newEntity{
 		resists_pen = {},
 	},
 	combat = {of_breaching = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.resists_pen[d] = v/2
-		end
-	end),
+	command_staff = {resists_pen=0.5,},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -363,7 +340,7 @@ newEntity{
 			local radius = self.use_power.radius(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("unleash an elemental blastwave, dealing %0.2f - %0.2f %s damage in a radius %d around the user"):format(dam, dam*damrange, damtype.name, radius)
+			return ("unleash an elemental blastwave, dealing %0.2f to %0.2f %s damage in a radius %d around the user"):format(dam, dam*damrange, damtype.name, radius)
 		end,
 		10,
 		function(self, who)
@@ -374,7 +351,7 @@ newEntity{
 			if not combat then return end
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			local explosion
 
 			if     damtype == DamageType.FIRE then      explosion = "flame"
@@ -387,7 +364,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"
-			else                                        explosion = "manathrust"         damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"         -- damtype = DamageType.ARCANE
 			end
 
 			-- Compute damage
@@ -457,11 +434,8 @@ newEntity{
 		wards = {},
 	},
 	combat = {of_greater_warding = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.wards[d] = 3
-		end
-	end),
+	command_staff = {of_greater_warding = {add=3, mult=0, "wards"}},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -482,7 +456,7 @@ newEntity{
 			local radius = self.use_power.radius(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("conjure elemental energy in a radius %d cone, dealing %0.2f - %0.2f %s damage"):format( radius, dam, dam*damrange, damtype.name)
+			return ("conjure elemental energy in a radius %d cone, dealing %0.2f to %0.2f %s damage"):format( radius, dam, dam*damrange, damtype.name)
 		end,
 		8,
 		function(self, who)
@@ -492,7 +466,7 @@ newEntity{
 			local combat = weapon.combat
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			local explosion
 			
 			if     damtype == DamageType.FIRE then      explosion = "flame"
@@ -505,7 +479,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"
-			else                                        explosion = "manathrust"          damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"          -- damtype = DamageType.ARCANE
 			end
 
 			local x, y = who:getTarget(tg)
@@ -542,11 +516,8 @@ newEntity{
 		resists = {},
 	},
 	combat = {of_protection = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.resists[d] = v/2
-		end
-	end),
+	command_staff = {resists = 0.5,},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -638,14 +609,6 @@ newEntity{
 			[DamageType.ARCANE] = resolvers.mbonus_material(30, 15),
 		},
 	},
-	resolvers.genericlast(function(e)
-		e.wielder.inc_damage[e.combat.element or e.combat.damtype] = e.combat.dam
-		if e.combat.of_breaching then
-			for d, v in pairs(e.wielder.inc_damage) do
-				e.wielder.resists_pen[d] = math.ceil(e.combat.dam/2)
-			end
-		end
-	end),
 }
 
 newEntity{

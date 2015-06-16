@@ -22,8 +22,14 @@ require "engine.dialogs.Chat"
 local slt2 = require "slt2"
 
 --- Handle chats between the player and NPCs
+-- @classmod engine.Chat
 module(..., package.seeall, class.make)
 
+--- Init
+-- @string name used to load a chat file
+-- @param[type=Actor] npc the NPC that the player is talking to
+-- @param[type=Actor] player the player
+-- @param[type=table] data
 function _M:init(name, npc, player, data)
 	self.quick_replies = 0
 	self.chats = {}
@@ -45,6 +51,9 @@ function _M:init(name, npc, player, data)
 	self:triggerHook{"Chat:load", data=data}
 end
 
+--- Get chat file
+-- Also has support for chat files in addons
+-- @string file /data*/chats/{file}.lua
 function _M:getChatFile(file)
 	local _, _, addon, rfile = file:find("^([^+]+)%+(.+)$")
 	if addon and rfile then
@@ -54,6 +63,8 @@ function _M:getChatFile(file)
 end
 
 --- Switch the NPC talking
+-- @param[type=Actor] npc
+-- @return NPC we switched from
 function _M:switchNPC(npc)
 	local old = self.npc
 	self.npc = npc
@@ -61,6 +72,7 @@ function _M:switchNPC(npc)
 end
 
 --- Adds a chat to the list of possible chats
+-- @param[type=table] c
 function _M:addChat(c)
 	self:triggerHook{"Chat:add", c=c}
 
@@ -81,7 +93,8 @@ function _M:addChat(c)
 end
 
 --- Invokes a chat
--- @param id the id of the first chat to run, if nil it will use the default one
+-- @string[opt=self.default_id] id the id of the first chat to run
+-- @return `engine.dialog.Chat`
 function _M:invoke(id)
 	if self.npc.onChat then self.npc:onChat() end
 	if self.player.onChat then self.player:onChat() end
@@ -92,6 +105,8 @@ function _M:invoke(id)
 end
 
 --- Gets the chat with the given id
+-- @string id the id of the chat
+-- @return `Chat`
 function _M:get(id)
 	local c = self.chats[id]
 	if c and c.template then
@@ -102,6 +117,7 @@ function _M:get(id)
 end
 
 --- Replace some keywords in the given text
+-- @string text @playername@, @npcname@, @playerdescriptor.(.-)@
 function _M:replace(text)
 	text = text:gsub("@playername@", self.player.name):gsub("@npcname@", self.npc.name)
 	text = text:gsub("@playerdescriptor.(.-)@", function(what) return self.player.descriptor["fake_"..what] or self.player.descriptor[what] end)

@@ -20,6 +20,8 @@
 require "engine.class"
 local Map = require "engine.Map"
 require "engine.generator.map.Roomer"
+
+--- @classmod engine.generator.map.Octopus
 module(..., package.seeall, class.inherit(engine.generator.map.Roomer))
 
 function _M:init(zone, map, level, data)

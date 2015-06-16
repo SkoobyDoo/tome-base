@@ -24,6 +24,8 @@ local Textzone = require "engine.ui.Textzone"
 local TextzoneList = require "engine.ui.TextzoneList"
 local Separator = require "engine.ui.Separator"
 
+--- Show Equipment
+-- @classmod engine.dialogs.ShowEquipment
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, actor, filter, action)

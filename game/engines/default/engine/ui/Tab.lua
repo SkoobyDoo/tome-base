@@ -21,7 +21,8 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
---- A generic UI textbox
+--- A generic UI tab
+-- @classmod engine.ui.Tab
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 frame_ox1 = -5

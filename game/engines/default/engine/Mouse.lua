@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Basic mousepress handler
 -- The engine calls receiveMouse when a mouse is clicked
+-- @classmod engine.Mouse
 module(..., package.seeall, class.make)
 
 function _M:init()
@@ -40,6 +41,7 @@ end
 -- @param y coordinate of the click
 -- @param isup true if the key was released, false if pressed
 -- @param force_name if not nil only the zone with this name may trigger
+-- @param extra
 function _M:receiveMouse(button, x, y, isup, force_name, extra)
 	self.last_pos = { x = x, y = y }
 	self.status[button] = not isup
@@ -203,29 +205,29 @@ end
 -- @param y coordinate of the click (normalized to 0->1)
 -- @param dx delta coordinate of the click (normalized to 0->1)
 -- @param dy delta coordinate of the click (normalized to 0->1)
+-- @param pressure
 -- @param isup true if the key was released, false if pressed
 function _M:receiveTouch(fingerId, x, y, dx, dy, pressure, isup)
 	-- print("=touch", fingerId, x, y, dx, dy, pressure, isup)
 end
 
---- Called when a touch event is received
+--- Called when a touch motion event is received
 -- @param fingerId id of the finger info
 -- @param x coordinate of the click (normalized to 0->1)
 -- @param y coordinate of the click (normalized to 0->1)
 -- @param dx delta coordinate of the click (normalized to 0->1)
 -- @param dy delta coordinate of the click (normalized to 0->1)
--- @param isup true if the key was released, false if pressed
+-- @param pressure
 function _M:receiveTouchMotion(fingerId, x, y, dx, dy, pressure)
 	-- print("=touch motion", fingerId, x, y, dx, dy, pressure)
 end
 
---- Called when a touch event is received
--- @param fingerId id of the finger info
+--- Called when a touch gesture event is received
+-- @param nb_fingers number of fingers
 -- @param x coordinate of the click (normalized to 0->1)
 -- @param y coordinate of the click (normalized to 0->1)
--- @param dx delta coordinate of the click (normalized to 0->1)
--- @param dy delta coordinate of the click (normalized to 0->1)
--- @param isup true if the key was released, false if pressed
+-- @param d_rot delta rotation
+-- @param d_pinch delta pinch
 function _M:receiveTouchGesture(nb_fingers, x, y, d_rot, d_pinch)
 	-- print("=touch gesture", nb_fingers, x, y, d_rot, d_pinch)
 end

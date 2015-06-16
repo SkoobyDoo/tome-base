@@ -22,7 +22,8 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local Slider = require "engine.ui.Slider"
 
---- A generic UI list
+--- A generic UI variable list
+-- @classmod engine.ui.VariableList
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

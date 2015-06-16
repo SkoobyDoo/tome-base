@@ -23,6 +23,8 @@ local Button = require "engine.ui.Button"
 local Textzone = require "engine.ui.Textzone"
 local Textbox = require "engine.ui.Textbox"
 
+--- Show Error Stack
+-- @classmod engine.dialogs.ShowErrorStack
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(errs)

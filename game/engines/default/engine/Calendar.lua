@@ -19,20 +19,30 @@
 
 require "engine.class"
 
---- Defines factions
+--- Defines calendars for factions
+-- @classmod engine.Calendar
 module(..., package.seeall, class.make)
 
+--- Default: 10
 seconds_per_turn = 10
 
+--- Default: 6 turns = 60 / `seconds_per_turn`
 MINUTE = 60 / seconds_per_turn
+--- Default: 360 turns = `MINUTE` * 60
 HOUR = MINUTE * 60
+--- Default: 8640 turns = `HOUR` * 24
 DAY = HOUR * 24
+--- Default: 3153600 turns = `DAY` * 365
 YEAR = DAY * 365
+--- Default: 2160 turns = `HOUR` * 6
 DAY_START = HOUR * 6
 
 --- Create a calendar
 -- @param definition the file to load that returns a table containing calendar months
 -- @param datestring a string to format the date when requested, in the format "%s %s %s %d %d", standing for, day, month, year, hour, minute
+-- @param start_year the year the calendar starts at
+-- @param start_day defaults to 1
+-- @param start_hour defaults to 8
 function _M:init(definition, datestring, start_year, start_day, start_hour)
 	local data = dofile(definition)
 	self.calendar = {}
@@ -50,12 +60,20 @@ function _M:init(definition, datestring, start_year, start_day, start_hour)
 	self.start_hour = start_hour or 8
 end
 
+--- Gets a formatted timedate string
+-- @int turn 
+-- @string dstr a datestring
+-- @return a formatted date string
 function _M:getTimeDate(turn, dstr)
 	local doy, year = self:getDayOfYear(turn)
 	local hour, min = self:getTimeOfDay(turn)
 	return (dstr or self.datestring):format(tostring(self:getDayOfMonth(doy)):ordinal(), self:getMonthName(doy), tostring(year):ordinal(), hour, min)
 end
 
+--- Get what day of the year it is based on turn
+-- @int turn
+-- @return day_of_year
+-- @return year
 function _M:getDayOfYear(turn)
 	local d, y
 	turn = turn + self.start_hour * self.HOUR
@@ -65,6 +83,10 @@ function _M:getDayOfYear(turn)
 	return d, self.start_year + y
 end
 
+--- Current time based on turn
+-- @int turn
+-- @return hour
+-- @return min
 function _M:getTimeOfDay(turn)
 	local hour, min
 	turn = turn + self.start_hour * self.HOUR
@@ -74,6 +96,9 @@ function _M:getTimeOfDay(turn)
 	return hour, min
 end
 
+--- Gets month number based on day of year
+-- @int dayofyear use `getDayOfYear`
+-- @return integer between {1, numMonths}
 function _M:getMonthNum(dayofyear)
 	local i = #self.calendar
 
@@ -85,16 +110,25 @@ function _M:getMonthNum(dayofyear)
 	return i
 end
 
+--- Returns the name of the month using the day
+-- @int dayofyear use `getDayOfYear`
+-- @return month.name
 function _M:getMonthName(dayofyear)
 	local month = self:getMonthNum(dayofyear)
 	return self.calendar[month].name
 end
 
+--- Day of the month using day of year
+-- @int dayofyear getDayOfYear
+-- @return integer between {1, numDaysInMonth}
 function _M:getDayOfMonth(dayofyear)
 	local month = self:getMonthNum(dayofyear)
 	return dayofyear - self.calendar[month].days + 1 + self.calendar[month].offset
 end
 
+--- How long the month is using day of year
+-- @int dayofyear getDayOfYear
+-- @return month.length
 function _M:getMonthLength(dayofyear)
 	local month = self:getMonthNum(dayofyear)
 	return self.calendar[month].length

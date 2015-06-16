@@ -26,6 +26,7 @@ local forceprint = print
 local print = function() end
 
 --- Defines a zone: a set of levels, with depth, npcs, objects, level generator, ...
+-- @classmod engine.Zone
 module(..., package.seeall, class.make)
 
 _no_save_fields = {temp_memory_levels=true, _tmp_data=true}
@@ -96,6 +97,7 @@ end
 
 --- Loads a zone definition
 -- @param short_name the short name of the zone to load, if should correspond to a directory in your module data/zones/short_name/ with a zone.lua, npcs.lua, grids.lua and objects.lua files inside
+-- @param dynamic
 function _M:init(short_name, dynamic)
 	__zone_store[self] = true
 
@@ -355,7 +357,8 @@ end
 -- @param filter a filter table
 -- @param force_level if not nil forces the current level for resolvers to this one
 -- @param prob_filter if true a new probability list based on this filter will be generated, ensuring to find objects better but at a slightly slower cost (maybe)
--- @return the fully resolved entity, ready to be used on a level. Or nil if a filter was given an nothing found
+-- @return[1] nil if a filter was given an nothing found
+-- @return[2] the fully resolved entity, ready to be used on a level
 function _M:makeEntity(level, type, filter, force_level, prob_filter)
 	resolvers.current_level = self.base_level + level.level - 1
 	if force_level then resolvers.current_level = force_level end
@@ -418,7 +421,8 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 end
 
 --- Find a given entity and resolve it
--- @return the fully resolved entity, ready to be used on a level. Or nil if a filter was given an nothing found
+-- @return[1] nil if a filter was given an nothing found
+-- @return[2] the fully resolved entity, ready to be used on a level
 function _M:makeEntityByName(level, type, name, force_unique)
 	resolvers.current_level = self.base_level + level.level - 1
 
@@ -494,7 +498,7 @@ function _M:applyEgo(e, ego, type, no_name_change)
 	ego.level_range = nil
 	-- Merge according to Object's ego rules.
 	table.ruleMergeAppendAdd(e, ego, self.ego_rules[type] or {})
-	
+
 	e.name = newname
 	if not ego.fake_ego then
 		e.egoed = true
@@ -682,6 +686,7 @@ end
 -- @param typ the type of entity, one of "actor", "object", "trap" or "terrain"
 -- @param x the coordinates where to add it. This CAN be null in which case it wont be added to the map
 -- @param y the coordinates where to add it. This CAN be null in which case it wont be added to the map
+-- @param no_added have we added it
 function _M:addEntity(level, e, typ, x, y, no_added)
 	if typ == "actor" then
 		-- We are additing it, this means there is no old position
@@ -814,9 +819,21 @@ function _M:leaveLevel(no_close, lev, old_lev)
 	end
 end
 
+function _M:getLoadTips()
+	if self.load_tips then
+		local l = rng.table(self.load_tips)
+		return "#{italic}##ANTIQUE_WHITE#"..l.text.."#WHITE##{normal}#"
+	else
+		return nil
+	end
+end
+
 --- Asks the zone to generate a level of level "lev"
+-- @param game which `Game`?
 -- @param lev the level (from 1 to zone.max_level)
--- @return a Level object
+-- @param old_lev where are we leaving
+-- @param no_close pass to `leaveLevel`
+-- @return a `Level` object
 function _M:getLevel(game, lev, old_lev, no_close)
 	self:leaveLevel(no_close, lev, old_lev)
 
@@ -828,7 +845,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	-- Load persistent level?
 	if type(level_data.persistent) == "string" and level_data.persistent == "zone_temporary" then
 		forceprint("Loading zone temporary level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		self.temp_memory_levels = self.temp_memory_levels or {}
@@ -844,7 +861,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "zone" and not self.save_per_level then
 		forceprint("Loading zone persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		self.memory_levels = self.memory_levels or {}
@@ -860,7 +877,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "memory" then
 		forceprint("Loading memory persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		game.memory_levels = game.memory_levels or {}
@@ -876,7 +893,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	elseif level_data.persistent then
 		forceprint("Loading level persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		-- Try to load from a savefile
@@ -892,7 +909,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	-- In any cases, make one if none was found
 	if not level then
 		forceprint("Creating level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Generating level", "Please wait while generating the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Generating level", "Please wait while generating the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		level = self:newLevel(level_data, lev, old_lev, game)

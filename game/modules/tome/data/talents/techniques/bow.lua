@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local archerPreUse = Talents.archerPreUse
+
 newTalent{
 	name = "Bow Mastery",
 	type = {"technique/archery-bow", 1},
@@ -51,7 +53,7 @@ newTalent{
 	range = archery_range,
 	tactical = { ATTACK = { weapon = 2 } },
 	requires_target = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("bow") then if not silent then game.logPlayer(self, "You require a bow for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	action = function(self, t)
 		if not self:hasArcheryWeapon("bow") then game.logPlayer(self, "You must wield a bow!") return nil end
 
@@ -79,7 +81,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t)}
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("bow") then if not silent then game.logPlayer(self, "You require a bow for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	action = function(self, t)
 		if not self:hasArcheryWeapon("bow") then game.logPlayer(self, "You must wield a bow!") return nil end
 
@@ -111,7 +113,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), selffire=false}
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("bow") then if not silent then game.logPlayer(self, "You require a bow for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	action = function(self, t)
 		if not self:hasArcheryWeapon("bow") then game.logPlayer(self, "You must wield a bow!") return nil end
 

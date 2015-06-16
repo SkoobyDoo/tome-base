@@ -217,16 +217,19 @@ end
 -- Checks for weapons in main and quickslot
 doWardenPreUse = function(self, weapon, silent)
 	if weapon == "bow" then
-		if not self:hasArcheryWeapon("bow") and not self:hasArcheryWeaponQS("bow") then
-			return false
+		local bow, ammo = self:hasArcheryWeapon("bow")
+		if not bow then
+			bow, ammo = self:hasArcheryWeaponQS("bow")
 		end
+		return bow, ammo
 	end
 	if weapon == "dual" then
-		if not self:hasDualWeapon() and not self:hasDualWeaponQS() then
-			return false
+		local mh, oh = self:hasDualWeapon()
+		if not mh then
+			mh, oh = self:hasDualWeaponQS()
 		end
+		return mh, oh
 	end
-	return true
 end
 
 -- Swaps weapons if needed

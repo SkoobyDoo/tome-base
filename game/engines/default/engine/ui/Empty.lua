@@ -22,6 +22,7 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
 --- An empty space
+-- @classmod engine.ui.Empty
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)

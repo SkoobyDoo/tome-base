@@ -24,6 +24,7 @@ local Map = require "engine.Map"
 local Target = require "engine.Target"
 
 --- Handles default targeting interface & display
+-- @classmod engine.generator.interface.GameTargeting
 module(..., package.seeall, class.make)
 
 --- Initializes targeting

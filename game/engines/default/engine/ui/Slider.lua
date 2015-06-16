@@ -21,6 +21,7 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 
 --- A generic UI slider, usualy used by other UI elements
+-- @classmod engine.ui.Slider
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)

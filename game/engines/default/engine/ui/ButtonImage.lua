@@ -22,7 +22,8 @@ local Tiles = require "engine.Tiles"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
---- A generic UI button
+--- A generic UI button image
+-- @classmod engine.ui.ButtonImage
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 frame_ox1 = -5

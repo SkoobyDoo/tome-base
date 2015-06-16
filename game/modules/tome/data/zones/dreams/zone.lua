@@ -309,14 +309,16 @@ You feel good!]],
 				end
 			end
 			game.party:setPlayer(game:getPlayer(true))
+			if self.success then
+				world:gainAchievement("ALL_DREAMS", self.summoner, dream)
+			end
 			if self.success and danger then
 				require("engine.ui.Dialog"):simpleLongPopup("Deep slumber...", msg, 600)
 				game.logPlayer(game.player, msg:gsub("\n", " "))
 				game.player:setEffect(game.player.EFF_VICTORY_RUSH_ZIGUR, 4, {})
-				world:gainAchievement("ALL_DREAMS", self.summoner, dream)
 			elseif danger then
 				local msg = [[As you die in a dream you suddenly wake up.
-Posionous fumes take their toll on your body!]]
+Poisonous fumes take their toll on your body!]]
 				game.logPlayer(game.player)
 				require("engine.ui.Dialog"):simpleLongPopup("Deep slumber...", msg, 600)
 				local hit = math.max(0, game.player.life * 2 / 3)

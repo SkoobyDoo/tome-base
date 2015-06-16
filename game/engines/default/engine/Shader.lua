@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Handles a particles system
 -- Used by engine.Map
+-- @classmod engine.Shader
 module(..., package.seeall, class.make)
 
 _M.verts = {}

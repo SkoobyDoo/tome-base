@@ -21,9 +21,12 @@ require "engine.class"
 local Map = require "engine.Map"
 
 --- Pathfinding using A*
+-- @classmod engine.Astar
 module(..., package.seeall, class.make)
 
 --- Initializes Astar for a map and an actor
+-- @param[type=Map] map
+-- @param[type=Actor] actor
 function _M:init(map, actor)
 	self.map = map
 	self.actor = actor
@@ -31,6 +34,12 @@ function _M:init(map, actor)
 end
 
 --- The default heuristic for A*, tries to come close to the straight path
+-- @int sx
+-- @int sy
+-- @int cx
+-- @int cy
+-- @int tx
+-- @int ty
 function _M:heuristicCloserPath(sx, sy, cx, cy, tx, ty)
 	local h
 	if util.isHex() then
@@ -48,19 +57,36 @@ function _M:heuristicCloserPath(sx, sy, cx, cy, tx, ty)
 	return h + 0.01*math.abs(dx1*dy2 - dx2*dy1)
 end
 
---- The a simple heuristic for A*, using distance
+--- A simple heuristic for A*, using distance
+-- @int sx
+-- @int sy
+-- @int cx
+-- @int cy
+-- @int tx
+-- @int ty
 function _M:heuristicDistance(sx, sy, cx, cy, tx, ty)
 	return core.fov.distance(cx, cy, tx, ty)
 end
 
+--- Converts x & y into a single value
+-- @see toDouble
+-- @int x
+-- @int y
 function _M:toSingle(x, y)
 	return x + y * self.map.w
 end
+
+--- Converts a single value back into x & y
+-- @see toSingle
+-- @int c
 function _M:toDouble(c)
 	local y = math.floor(c / self.map.w)
 	return c - y * self.map.w, y
 end
 
+--- Create Path
+-- @param came_from
+-- @param cur
 function _M:createPath(came_from, cur)
 	if not came_from[cur] then return end
 	local rpath, path = {}, {}
@@ -74,13 +100,16 @@ function _M:createPath(came_from, cur)
 end
 
 --- Compute path from sx/sy to tx/ty
--- @param sx the start coord
--- @param sy the start coord
--- @param tx the end coord
--- @param ty the end coord
--- @param use_has_seen if true the astar wont consider non-has_seen grids
--- @param add_check a function that checks each x/y coordinate and returns true if the coord is valid
--- @return either nil if no path or a list of nodes in the form { {x=...,y=...}, {x=...,y=...}, ..., {x=tx,y=ty}}
+-- @int sx x of the start coord
+-- @int sy y of the start coord
+-- @int tx x of the end coord
+-- @int ty y of the end coord
+-- @param[type=boolean] use_has_seen if true the astar wont consider non-has_seen grids
+-- @func[opt=`heuristicCloserPath`] heuristic The heuristic to use
+-- @func[opt=true] add_check a function that checks each x/y coordinate and returns true if the coord is valid
+-- @param[type=?boolean] forbid_diagonals if they can't move diagonally
+-- @return[1] nil if no path is found
+-- @return[2] list of nodes in the form { {x=...,y=...}, {x=...,y=...}, ..., {x=tx,y=ty}}
 function _M:calc(sx, sy, tx, ty, use_has_seen, heuristic, add_check, forbid_diagonals)
 	local heur = heuristic or self.heuristicCloserPath
 	local w, h = self.map.w, self.map.h

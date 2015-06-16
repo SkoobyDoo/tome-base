@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handles sounds in the game
+-- @classmod engine.generator.interface.GameSound
 module(..., package.seeall, class.make)
 
 --- Initializes

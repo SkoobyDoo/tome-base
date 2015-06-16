@@ -21,6 +21,7 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 
 --- Handles player resting
+-- @classmod engine.generator.interface.PlayerRest
 module(..., package.seeall, class.make)
 
 --- Initializes resting
@@ -64,11 +65,10 @@ function _M:onRestStop()
 end
 
 --- Rest a turn
--- For a turn based game you want in you player's act() something like that:<br/>
--- <pre>
--- if not self:restStep() then game.paused = true end
--- </pre>
--- @return true if we can continue to rest, false otherwise
+-- For a turn based game you want in you player's act() something like the usage example
+-- @usage if not self:restStep() then game.paused = true end
+-- @return[1] true if we can continue to rest
+-- @return[2] false if we can't continue
 function _M:restStep()
 	if not self.resting then return false end
 
@@ -84,9 +84,10 @@ function _M:restStep()
 	end
 end
 
---- Can we continue resting ?
+--- Can we continue resting?  
 -- Rewrite this method to check for mana, life, whatever. By default we always return false so resting will never work
--- @return true if we can continue to rest, false otherwise
+-- @return[1] true if we can continue to rest
+-- @return[2] false if we can't continue
 function _M:restCheck()
 	return false, "player:restCheck() method not defined"
 end

@@ -21,7 +21,8 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
---- An empty space
+--- An empty space that contains other elements
+-- @classmod engine.ui.GenericContainer
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

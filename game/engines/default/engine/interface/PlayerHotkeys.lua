@@ -23,6 +23,7 @@ local Dialog = require "engine.ui.Dialog"
 --- Handles player hotkey interface
 -- This provides methods to bind and manage hotkeys as well as using them<br/>
 -- This interface is designed to work with the engine.HotkeysDisplay class to display current hotkeys to the player
+-- @classmod engine.generator.interface.PlayerHotkeys
 module(..., package.seeall, class.make)
 
 _M.quickhotkeys = {}

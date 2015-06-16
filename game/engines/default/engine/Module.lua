@@ -25,6 +25,7 @@ local FontPackage = require "engine.FontPackage"
 require "engine.PlayerProfile"
 
 --- Handles dialog windows
+-- @classmod engine.Module
 module(..., package.seeall, class.make)
 
 --- Create a version string for the module version
@@ -819,6 +820,8 @@ end
 -- @param mod the module definition as given by Module:loadDefinition()
 -- @param name the savefile name
 -- @param new_game true if the game must be created (aka new character)
+-- @param no_reboot
+-- @param extra_module_info
 function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	if not no_reboot then
 		local eng_v = nil

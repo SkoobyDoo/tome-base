@@ -22,6 +22,7 @@ local Map = require "engine.Map"
 
 --- Makes the player "slide" along walls when possible
 -- Simply call x, y = self:tryPlayerSlide(x, y, force) in your player's move() method
+-- @classmod engine.generator.interface.PlayerSlide
 module(..., package.seeall, class.make)
 
 function _M:tryPlayerSlide(x, y, force)

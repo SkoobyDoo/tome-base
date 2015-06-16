@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local archerPreUse = Talents.archerPreUse
+
 newTalent{
 	name = "Shoot Down",
 	type = {"technique/archery-excellence", 1},
@@ -36,7 +38,7 @@ newTalent{
 		if #tgts > 0 then return tgts[1].x, tgts[1].y, tgts[1].tgt end
 	end,
 	on_pre_use_ai = function(self, t, silent) return t.onAIGetTarget(self, t) and true or false end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	requires_target = true,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	target = function(self, t)
@@ -80,7 +82,7 @@ newTalent{
 	tactical = { ATTACK = { weapon = 1 } },
 	requires_target = true,
 	on_pre_use = function(self, t, silent)
-		if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end
+		if not archerPreUse(self, t, silent) then return false end
 		if self:attr("never_move") then return false end
 		return true
 	end,
@@ -166,7 +168,7 @@ newTalent{
 		self:archeryShoot(targets, t, nil, {atk = xatk, mult=self:combatTalentWeaponDamage(t, 0.4, 0.9)})
 		return ret
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	activate = function(self, t)
 		return {}
 	end,
@@ -196,7 +198,7 @@ newTalent{
 		local weapon, ammo = self:hasArcheryWeapon()
 		return {type="bolt", range=self:getTalentRange(t), display=self:archeryDefaultProjectileVisual(weapon, ammo)}
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getDur = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:canBe("silence") then

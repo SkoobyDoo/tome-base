@@ -20,6 +20,8 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 
+--- Emotes for actors
+-- @classmod engine.Emote
 module(..., package.seeall, class.inherit(Base))
 
 frame_ox1 = -15
@@ -27,6 +29,9 @@ frame_ox2 = 15
 frame_oy1 = -15
 frame_oy2 = 15
 
+--- @string text
+-- @int[opt=60] dur
+-- @param[opt=colors.Black] color
 function _M:init(text, dur, color)
 	self.text = text
 	self.dur = dur or 60
@@ -35,20 +40,24 @@ function _M:init(text, dur, color)
 	Base.init(self, {font = {"/data/font/DroidSans-Bold.ttf", 16}})
 end
 
+--- on loaded
 function _M:loaded()
 	Base.init(self, {font = {"/data/font/DroidSans-Bold.ttf", 16}})
 end
 
 --- Serialization
+-- @return if we successfully saved or not
 function _M:save()
 	return class.save(self, {x=true, y=true, text=true, dur=true, color=true}, true)
 end
 
+--- Update emote
 function _M:update()
 	self.dur = self.dur - 1
 	if self.dur < 0 then return true end
 end
 
+--- Generate emote
 function _M:generate()
 	-- Draw UI
 	local w, h = self.font:size(self.text)
@@ -62,6 +71,7 @@ function _M:generate()
 	self.frame = self:makeFrame("ui/emote/", self.w, self.h)
 end
 
+--- Display emote
 function _M:display(x, y)
 	local a = 1
 	if self.dur < 10 then

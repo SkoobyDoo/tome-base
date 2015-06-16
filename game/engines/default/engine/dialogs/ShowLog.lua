@@ -21,6 +21,8 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local Slider = require "engine.ui.Slider"
 
+--- Show Log
+-- @classmod engine.dialogs.ShowLog
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, shadow, log)

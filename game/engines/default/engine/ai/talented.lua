@@ -17,7 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Defines AIs that can use talents, either smartly or "dumbly"
+--- Defines AIs that can use talents, either smartly or "dumbly"
+-- @classmod engine.ai.talented
 
 -- Randomly use talents
 newAI("dumb_talented", function(self)

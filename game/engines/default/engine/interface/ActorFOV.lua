@@ -23,6 +23,7 @@ local Map = require "engine.Map"
 --- Handles actors field of view
 -- When an actor moves it computes a field of view and stores it in self.fov<br/>
 -- When an other actor moves it can update the fov of seen actors
+-- @classmod engine.generator.interface.ActorFOV
 module(..., package.seeall, class.make)
 
 _M.__do_distance_map = false

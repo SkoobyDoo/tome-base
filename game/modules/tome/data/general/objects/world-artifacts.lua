@@ -102,7 +102,10 @@ newEntity{ base = "BASE_STAFF",
 		apr = 4,
 		dammod = {mag=1.5},
 		damtype = DamageType.FIRE,
+		element = DamageType.FIRE,
 		is_greater = true,
+		melee_element = true,
+		sentient = "agressive",
 	},
 	wielder = {
 		combat_spellpower = 10,
@@ -2345,7 +2348,7 @@ newEntity{ base = "BASE_STAFF", define_as = "SET_SCEPTRE_LICH",
 		dam = 40,
 		apr = 12,
 		dammod = {mag=1.3},
-		damtype = DamageType.DARKNESS,
+		element = DamageType.DARKNESS,
 	},
 	wielder = {
 		combat_spellpower = 28,
@@ -2476,6 +2479,7 @@ newEntity{ base = "BASE_STAFF",
 		apr = 8,
 		dammod = {mag=1.3},
 		damtype = DamageType.GRAVITYPIN,
+		element = DamageType.PHYSICAL,
 	},
 	wielder = {
 		combat_spellpower = 25,
@@ -3497,7 +3501,7 @@ newEntity{ base = "BASE_GAUNTLETS",
 		self.use_power = {
 			name = function(self, who)
 				dam = who:damDesc(engine.DamageType.ARCANE, self.use_power.unnaturaldam(self, who))
-				return ("attempt to destroy all magic effects and sustains on creatures in a radius %d cone (unnatural creaters are additionally dealt %0.2f arcane damage and stunned)"):format(self.use_power.radius, dam)
+				return ("attempt to destroy all magic effects and sustains on creatures in a radius %d cone (unnatural creatures are additionally dealt %0.2f arcane damage and stunned)"):format(self.use_power.radius, dam)
 			end,
 			power = 100,
 			unnaturaldam = function(self, who) return 100+who:combatMindpower() end,
@@ -5233,12 +5237,12 @@ newEntity{ base = "BASE_STAFF",
 	combat = {
 		is_greater = true,
 		dam = 18,
+		staff_power = 15,
 		apr = 4,
 		physcrit = 3.5,
 		dammod = {mag=1.1},
-		damtype = DamageType.DARKNESS,
+		element = DamageType.DARKNESS,
 	},
-	staff_power = 15,
 	wielder = {
 		combat_spellpower = 12,
 		combat_spellcrit = 8,
@@ -7366,6 +7370,7 @@ Their killing spree ended when one of the victims got lucky and managed to stab 
 	require = { stat = { dex=42 }, },
 	cost = 400,
 	material_level = 4,
+	metallic = false,
 	combat = {
 		dam = 35,
 		apr = 10,
@@ -7698,7 +7703,7 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	unided_name = "coiled metal belt",
 	desc = [[A fine mesh of metal threads held together by a sturdy chain. Sparks dance across it.]],
 	special_desc = function(self) return [[Taking lightning damage or making critical hits builds 2 energy charges, which give you +5% lightning damage and +1 to all stats.
-The charges decay at a rate of 1 per turn.]] end,
+The charges decay at a rate of 1 per turn. Max 10 charges.]] end,
 	color = colors.WHITE,
 	level_range = {40, 50},
 	rarity = 400,

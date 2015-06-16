@@ -21,7 +21,8 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
---- A generic UI list
+--- A generic UI surface zone
+-- @classmod engine.ui.SurfaceZone
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

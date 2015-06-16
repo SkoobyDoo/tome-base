@@ -23,6 +23,8 @@ local Focusable = require "engine.ui.Focusable"
 local EquipDollFrame = require "engine.ui.EquipDollFrame"
 local UIGroup = require "engine.ui.UIGroup"
 
+--- Equipment doll preview
+-- @classmod engine.ui.EquipDoll
 module(..., package.seeall, class.inherit(Base, Focusable, UIGroup))
 
 function _M:init(t)

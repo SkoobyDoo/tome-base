@@ -22,6 +22,8 @@ local Map = require "engine.Map"
 local lom = require "lxp.lom"
 local mime = require "mime"
 require "engine.Generator"
+
+--- @classmod engine.generator.map.Static
 module(..., package.seeall, class.inherit(engine.Generator))
 
 auto_handle_spot_offsets = true
