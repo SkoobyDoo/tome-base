@@ -82,11 +82,11 @@ function _M:init(t)
 	self.object_talent_data = self.object_talent_data or {}
 end
 
--- call a function within an object talent
+--- call a function within an object talent
 -- returning values from the object data table, (possibly defaulting to those specified in a talent definition if appropriate)
 -- @param tid = talent id (object use talents)
 -- @param what = property to compute/retrieve
--- calls what(self, t, ...) or what(obj, who, ...) for powers defined as talents or in the object code respectively
+-- @return what(self, t, ...) or what(obj, who, ...) for powers defined as talents or in the object code respectively
 function _M:callObjectTalent(tid, what, ...)
 	local data = self.object_talent_data and self.object_talent_data[tid]
 	if not data then return end
@@ -121,7 +121,7 @@ _M.useObjectBaseTalent ={
 	name = _M.base_object_talent_name,
 	type = {"misc/objects", 1},
 	points = 1,
-	image = "talents/charm_mastery.png", --temporary? Note:displayentity is not a function
+	image = "talents/charm_mastery.png", --Note:displayentity is not a function
 	hide = "always",
 	no_auto_hotkey = true,
 	never_fail = true, -- most actor status effects will not prevent use
@@ -137,9 +137,6 @@ _M.useObjectBaseTalent ={
 	no_energy = function(self, t) -- energy use based on object
 		return self:callObjectTalent(t.id, "no_energy")
 	end,
---	cooldown = function(self, t) return 1 end, --for auto use cooldown checks
---	fixed_cooldown = true,
---	no_dumb_use = true,--?
 	getObject = function(self, t)
 		return self.object_talent_data and self.object_talent_data[t.id] and self.object_talent_data[t.id].obj
 	end,
@@ -170,7 +167,6 @@ _M.useObjectBaseTalent ={
 		local useable, msg = o:canUseObject(who)
 		if not useable and not (silent or fake) then
 			game.logPlayer(self, msg)
---			print("[ActorObjectUse] Talent ", t.name, "(", o.name, ") is not usable ", msg)
 			return false
 		end
 		if data.on_pre_use or (data.tid and self.talents_def[data.tid].on_pre_use) then
@@ -204,21 +200,17 @@ _M.useObjectBaseTalent ={
 	action = function(self, t)
 		local data = self.object_talent_data and self.object_talent_data[t.id]
 		if not data then return end
---print(("##[ActorObjectUse]Pre Action Object (%s [uid %d]) Activation by %s [uid %d, energy %d]"):format(data.obj.name, data.obj.uid, self.name, self.uid, self.energy.value))
 		local obj, inven = data.obj, data.inven_id
 		local ret
 		local co = coroutine.create(function()
 			if data.tid then -- replace normal talent use message
 				game.logSeen(self, "%s activates %s %s!", self.name:capitalize(), self:his_her(), data.obj:getName({no_add_name=true, do_color = true}))
 				t.message = self:callObjectTalent(t.id, "message")
---				local msg = self:useTalentMessage(self:getTalentFromId(data.tid))
 				local msg = self:useTalentMessage(t)
 				t.message = nil
 				if msg then game.logSeen(self, "%s", msg) end
 			end
 			ret = obj:use(self, nil, data.inven_id, slot)
---print(self.name, self.uid, " return table:")
---table.print(ret)
 			if ret and ret.used then
 				if ret.destroy then -- destroy the item after use
 					local _, item = self:findInInventoryByObject(self:getInven(data.inven_id), data.obj)
@@ -271,8 +263,7 @@ end
 -- @param base_name = base object use talent name <"Activate Object">
 -- @param returns false or o, talent id, talent level if the item is usable
 function _M:useObjectEnable(o, inven_id, slot, base_name)
-print(("[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
---game.log(("#YELLOW#[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
+	print("[ActorObjectUse] useObjectEnable: ", o and o.name or "no name", "by", self.name, "inven/slot", inven_id, slot)
 	if not o:canUseObject() or o.quest or o.lore or (o:wornInven() and not o.wielded and not o.use_no_wear) then -- don't enable certain objects (lore, quest)
 		print("[ActorObjectUse] Object", o.name, o.uid, "is ineligible for talent interface")
 		return false
@@ -307,7 +298,6 @@ print(("[ActorObjectUse] useObjectEnable: o: %s, by %s inven/slot = %s/%s"):form
 			if not self:knowTalent(tid) then break else tid = nil end
 		until tries <= 0
 	end
---game.log("#YELLOW# %s: Selected talent for data: %s", o.name, tid)
 	if not tid then return false end
 		
 	self:unlearnTalentFull(tid) -- Note clears talent settings
@@ -346,8 +336,7 @@ function _M:useObjectDisable(o, inven_id, slot, tid, base_name)
 	else
 		o = data[tid] and data[tid].obj
 	end
-print(("[ActorObjectUse] useObjectDisable: o: %s, by %s inven/slot = %s/%s"):format(o and o.name or "none", self.name, inven_id, slot))
-
+	print("[ActorObjectUse] useObjectDisable: ", o and o.name or "no name", "inven/slot", inven_id, slot)
 	if tid then
 		if data[tid] and data[tid].old_talent_level then self.talents[tid] = data[tid].old_talent_level end
 		data[tid]=nil
@@ -361,7 +350,6 @@ print(("[ActorObjectUse] useObjectDisable: o: %s, by %s inven/slot = %s/%s"):for
 				if self.summoner and self.summoner.stored_ai_talents and self.summoner.stored_ai_talents[self.name] then
 					self.summoner.stored_ai_talents[self.name][o] = self.ai_talents and self.ai_talents[tid]
 				end
---game.log("    #YELLOW# %s Saving talent settings for %s", self.name, tid)
 		end
 		if self.ai_talents then self.ai_talents[tid] = nil end
 		self:setTalentConfirmable(tid, false)
@@ -379,7 +367,7 @@ local lowerTacticals = function(tacticals) --convert tactical tables to lower ca
 	return tacts
 end
 
---- forget settings for objects no longer in the party
+--- forget settings and object references for objects no longer in the party
 function _M:objectTalentCleanup()
 	local data = self.object_talent_data
 	if not (data and data.cleanup) then return end
@@ -392,11 +380,9 @@ function _M:objectTalentCleanup()
 		end
 	end
 	for o, r in pairs(data.cleanup) do
---game.log("---%s: %s tagged for cleanup", self.name, o.name)
 		local found = false
 		for j, mem in ipairs(game.party.m_list) do
 			if mem:findInAllInventoriesByObject(o) then
---game.log("---Found %s with %s", o.name, mem.name)
 				found = true
 				break
 			end
@@ -446,7 +432,6 @@ end
 function _M:useObjectSetData(tid, o)
 	self.object_talent_data[tid] = {obj = o}
 	if self.object_talent_data[o] then --get object use settings saved previously
---game.log("    #YELLOW# Recalling talent settings for %s %s", tid, o.name)
 		self:setTalentAuto(tid, true, self.object_talent_data[o].talents_auto)
 		self:setTalentConfirmable(tid, self.object_talent_data[o].talents_confirm_use)
 		-- handle ai_talents weights
@@ -514,7 +499,5 @@ function _M:useObjectSetData(tid, o)
 			data.tactical = lowerTacticals(power.tactical)
 		end
 	end
---print("[ActorObjectUse]", o.name, "assigned to", tid, talent_level)
---table.print(data, "---") 
 	return talent_level -- the raw talent level (used as weighting factor in tactical ai)
 end

@@ -218,7 +218,6 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 			local TDist = core.fov.distance(who.x, who.y, aitarget.x, aitarget.y)
 			local TEnv = core.fov.distance(aitarget.x, aitarget.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
 			local SEnv = core.fov.distance(who.x, who.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
---game.log("#LIGHT_BLUE# Wintertide TACT DATA: targetdistance %0.1f, targetenveloped: %s, selfenveloped: %s", TDist, TEnv, SEnv)
 			return TDist, TEnv, SEnv
 		end,
 		tactical = {
@@ -228,7 +227,6 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 					return 0
 				else
 					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
---game.log("#LIGHT_BLUE# Wintertide ESCAPE distance %0.1f, Tenveloped: %s, Senveloped: %s", Tdist, Tenv, Senv)
 					local val = 0
 					if Tenv then
 						if not Senv then val = val + 3
@@ -246,7 +244,6 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 					return 0
 				else
 					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
---game.log("#LIGHT_BLUE# Wintertide DEFEND distance %0.1f, Tenveloped: %s, Senveloped: %s", Tdist, Tenv, Senv)		
 					local val = 0
 					if Tdist <= 1 then
 						if Senv then val = val + 1.5 end
@@ -262,7 +259,6 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 					return 0
 				else
 					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who.summoner, aitarget)
---game.log("#LIGHT_BLUE# Wintertide PROTECT distance %0.1f, Tenveloped: %s, Summonerenveloped: %s", Tdist, Tenv, Senv)
 					local val = 0
 					if Tdist > 1 then
 						if Tenv then val = val + 1 end

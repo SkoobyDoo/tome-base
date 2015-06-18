@@ -19,7 +19,7 @@
 
 local DamageType = require "engine.DamageType"
 
---local print = function() end
+local print = function() end
 
 local canFleeDmapKeepLos = function(self)
 	if self.never_move then return false end -- Dont move, dont flee
@@ -100,7 +100,6 @@ newAI("use_tactical", function(self)
 			   	t_avail = true
 			end
 			if t_avail then
---print("** ", t.name, "available")
 				-- Project the talent if possible, counting foes and allies hit
 				local foes_hit = {}
 				local allies_hit = {}
@@ -189,9 +188,6 @@ newAI("use_tactical", function(self)
 	end
 	if ok then
 		local want = {}
-
---print("###Available tactics:")
---table.print(avail)
 		local need_heal = 0
 		local life = 100 * self.life / self.max_life
 		-- Subtract solipsism straight from the life value to give us higher than normal weights; helps keep clarity up and avoid solipsism
@@ -259,7 +255,7 @@ newAI("use_tactical", function(self)
 			end
 		end
 
--- hate, positive, negative?
+		-- hate, positive, negative, breath can be added here
 
 		-- Need to reduce equilibrium
 		if avail.equilibrium then
@@ -382,9 +378,9 @@ newAI("use_tactical", function(self)
 
 		if avail.special then want.special = avail.special[1].val end
 
-print("### nb_foes_seen", nb_foes_seen, "### nb_allies_seen", nb_allies_seen, "### need_heal", need_heal)
-print("### Wants:")
-table.print(want)
+--print("### nb_foes_seen", nb_foes_seen, "### nb_allies_seen", nb_allies_seen, "### need_heal", need_heal)
+--print("### Wants:")
+--table.print(want)
 		print("Tactical ai report for", self.name)
 		local res = {}
 		for k, v in pairs(want) do
@@ -404,11 +400,7 @@ table.print(want)
 			table.sort(selected_talents, function(a,b) return a.val > b.val end)
 			local tid = selected_talents[1].tid
 			print("Tactical choice:", res[1][1], tid)
-table.print(selected_talents[1], "---")
---			self:useTalent(tid)
 			self:useTalent(tid, nil, nil, nil, (res[1][1] == "cure" or res[1][1] == "heal") and self or nil) --cures and heals go to the talent user
---print("[tactical]", self.name, "post useTalent", tid, "energy:")
---table.print(self.energy, "---")
 			return true
 		else
 			return nil, res[1][1]

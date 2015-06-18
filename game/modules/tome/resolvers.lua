@@ -52,7 +52,6 @@ function resolvers.calc.equip(t, e)
 				end
 			end
 			if o and o.power_source and (o.power_source.antimagic and e:attr("has_arcane_knowledge") or o.power_source.arcane and e:attr("forbid_arcane")) then -- check antimagic restrictions
---			if o and not filter.no_power_restrictions and o.power_source and (o.power_source.antimagic and e:attr("has_arcane_knowledge") or o.power_source.arcane and e:attr("forbid_arcane") or not game.state:checkPowers(e, o)) then -- check antimagic restrictions
 				ok = false
 				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
 			end

@@ -1234,7 +1234,6 @@ newEntity{
 
 			-- Because we're removing the use_power we're not returning that it was used; instead we'll have the actor use energy manually
 			who:useEnergy()
---			return {used = true}
 		end,
 		"T_GLOBAL_CD",
 		{no_npc_use = true}

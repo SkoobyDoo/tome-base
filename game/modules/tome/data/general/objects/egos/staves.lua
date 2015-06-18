@@ -525,7 +525,6 @@ newEntity{
 		radius = function(self, who) return 2*self.material_level end,
 		requires_target = true,
 		target = function(self, who) return {type="cone", range=self.use_power.range, radius=self.use_power.radius(self, who), selffire=false} end,
---		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end, -- don't let dumb ai blow up friends
 		tactical = { ATTACKAREA = function(who, t, aitarget)
 			local weapon = who:hasStaffWeapon()
 			if not weapon or not weapon.combat then return 1 end

@@ -146,8 +146,7 @@ local function getDamageIncrease(self)
 	t = self:getTalentFromId(self.T_DARK_TENDRILS)
 	if t then total = total + self:getTalentLevelRaw(t) end
 	
-	return self:combatScale(total, 5, 1, 40, 20) --I5
---I5	return total * 2
+	return self:combatScale(total, 5, 1, 40, 20)
 end
 
 newTalent{
