@@ -2147,11 +2147,6 @@ function _M:createRandomBoss(base, data)
 	------------------------------------------------------------
 	self:applyRandomClass(b, data)
 
-	-- add a charm
-	if not data.forbid_equip then
-		b[#b+1] = resolvers.equip({{type="charm", autoreq=true}})
-	end
-
 	b.rnd_boss_on_added_to_level = b.on_added_to_level
 	b._rndboss_resources_boost = data.resources_boost
 	b._rndboss_talent_cds = data.talent_cds_factor
