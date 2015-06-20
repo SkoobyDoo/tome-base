@@ -125,6 +125,15 @@ It should automatically create a portal back, but it might not be near your arri
 			game.state:seenSpecialFarportal("caldizar-space-fortress")
 			return true
 		end
+		-- Eidolon plane, for RL characters only
+		if rng.percent(10) and not game.state:hasSeenSpecialFarportal("eidolon") and not who.easy_mode_lifes and not who.infinite_lifes then
+			local zone = game.party:goToEidolon()
+			zone.from_farportal = true
+			q:exploratory_energy()
+			game.log("#VIOLET#You enter the swirling portal and in the blink of an eye you set foot in strange empty space...")
+			game.state:seenSpecialFarportal("eidolon")
+			return true
+		end
 	end,
 
 	on_move = function(self, x, y, who)
