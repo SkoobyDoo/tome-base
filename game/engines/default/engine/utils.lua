@@ -706,6 +706,16 @@ function string.lpegSub(s, patt, repl)
 	return lpeg.match(patt, s)
 end
 
+function string.prefix(s, p)
+	if s:sub(1, #p) == p then return true end
+	return false
+end
+
+function string.suffix(s, p)
+	if s:sub(#s - #p + 1) == p then return true end
+	return false
+end
+
 -- Those matching patterns are used both by splitLine and drawColorString*
 local Puid = "UID:" * lpeg.R"09"^1 * ":" * lpeg.R"09"
 local Puid_cap = "UID:" * lpeg.C(lpeg.R"09"^1) * ":" * lpeg.C(lpeg.R"09")
