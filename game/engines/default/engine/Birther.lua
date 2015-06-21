@@ -48,7 +48,8 @@ function _M:loadDefinition(file)
 		getBirthDescriptor = function(type, name) return self:getBirthDescriptor(type, name) end,
 		setAuto = function(type, v) self.birth_auto[type] = v end,
 		setStepNames = function(names) self.step_names = names end,
-		load = function(f) self:loadDefinition(f) end
+		load = function(f) self:loadDefinition(f) end,
+		Birther = self,
 	}, {__index=_G}))
 	if not f and err then error(err) os.exit() end
 	local ok, err = pcall(f)
