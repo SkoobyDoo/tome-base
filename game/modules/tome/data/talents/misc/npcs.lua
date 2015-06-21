@@ -1858,22 +1858,29 @@ newTalent{
 	type = {"spell/other",1},
 	random_ego = "attack",
 	cooldown = 20,
-	tactical = { ATTACK = { FIRE = 1 }, HEAL = 1, },
+	tactical = { ATTACKAREA = function(self, t, aitarget)
+			return not aitarget:attr("demon") and { FIRE = 2 } or nil
+		end,
+		HEAL = function(self, t, aitarget)
+			return self:attr("demon") and 1 or nil
+		end },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	requires_target = true,
 	target = function(self, t)
 		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
+	getDamage = function(self, t) return self:combatTalentStatDamage(t, "str", 30, 350) end,
+	getBurnDamage = function(self, t) return self:combatTalentStatDamage(t, "str", 30, 70) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.DEMONFIRE, self:spellCrit(self:combatTalentStatDamage(t, "str", 30, 350)))
+		self:project(tg, x, y, DamageType.DEMONFIRE, self:spellCrit(t.getDamage(self, t)))
 
 		game.level.map:addEffect(self,
 				self.x, self.y, 4,
-				DamageType.DEMONFIRE, self:spellCrit(self:combatTalentStatDamage(t, "str", 30, 70)),
+				DamageType.DEMONFIRE, self:spellCrit(t.getBurnDamage(self, t)),
 				tg.radius,
 				{delta_x=x-self.x, delta_y=y-self.y}, 55,
 				{type="dark_inferno"},
@@ -1887,7 +1894,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		return ([[Exhale a wave of dark fire with radius %d. Any non demon caught in the area will take %0.2f fire damage, and flames will be left dealing a further %0.2f each turn. Demons will be healed for the same amount.
 		The damage will increase with your Strength Stat.]]):
-		format(radius, damDesc(self, DamageType.FIRE, self:combatTalentStatDamage(t, "str", 30, 350)), damDesc(self, DamageType.FIRE, self:combatTalentStatDamage(t, "str", 30, 70)))
+		format(radius, damDesc(self, DamageType.FIRE, t.getDamage(self, t)), damDesc(self, DamageType.FIRE, t.getBurnDamage(self, t)))
 	end,
 }
 

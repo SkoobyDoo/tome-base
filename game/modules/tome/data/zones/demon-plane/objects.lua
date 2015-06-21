@@ -44,9 +44,10 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	use_power = {
 		name = function(self, who) return ("blink to a nearby random location within range %d (based on Magic)"):format(self.use_power.range(self, who)) end,
 		power = 22,
+		tactical = { ESCAPE = 2},
 		range = function(self, who) return 10 + who:getMag(5) end,
 		use = function(self, who)
-			game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true, no_add_name = true})
+			game.logSeen(who, "%s taps %s %s together!", who.name:capitalize(), who:his_her(), self:getName{no_count=true, do_color = true, no_add_name = true})
 			game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 			who:teleportRandom(who.x, who.y, self.use_power.range(self, who))
 			game.level.map:particleEmitter(who.x, who.y, 1, "teleport")

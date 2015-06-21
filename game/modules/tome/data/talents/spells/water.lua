@@ -124,7 +124,7 @@ newTalent{
 		return 1 + 0.5 * t.getDuration(self, t)
 	end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire = false}
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 5, 90) end,
 	getDuration = function(self, t) return 3 + self:combatTalentSpellDamage(t, 5, 5) end,
@@ -141,7 +141,7 @@ newTalent{
 				if not update_shape_only then e.radius = e.radius + 0.5 end
 				return true
 			end,
-			false
+			false -- no selffire
 		)
 		game:playSoundNear(self, "talents/tidalwave")
 		return true

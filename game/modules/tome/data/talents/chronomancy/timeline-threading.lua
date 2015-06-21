@@ -26,7 +26,7 @@ newTalent{
 	points = 5,
 	cooldown = 4,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { ATTACKAREA = {TEMPORAL = 2}, PARADOX = 2 },
+	tactical = { ATTACKAREA = {TEMPORAL = 2}},
 	range = 10,
 	direct_hit = true,
 	reflectable = true,

@@ -29,7 +29,10 @@ newTalent{
 		return 8
 	end,
 	hate = 4,
-	tactical = { ATTACK = 2 },
+	tactical = { ATTACK = function(self, t, aitarget)
+			return self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist <= 1 and 2 or nil
+		end,
+		DISABLE = {pin = 2}},
 	requires_target = true,
 	range = 2.5,
 	getDuration = function(self, t)

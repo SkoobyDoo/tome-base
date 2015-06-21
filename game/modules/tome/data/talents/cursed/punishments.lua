@@ -78,7 +78,7 @@ newTalent{
 	cooldown = 10,
 	hate =  12,
 	range = 5,
-	tactical = { ATTACK = { MIND = 2 } },
+	tactical = { ATTACK = { MIND = 2 }, HATE = 1 },
 	direct_hit = true,
 	requires_target = true,
 	getDuration = function(self, t)

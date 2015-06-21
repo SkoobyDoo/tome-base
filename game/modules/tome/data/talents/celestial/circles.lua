@@ -108,12 +108,27 @@ newTalent{
 	positive = 10,
 	negative = 10,
 	no_energy = true,
-	tactical = { DEFEND = 2, ATTACKAREA = 1 },
+	on_pre_use_ai = function(self, t) return not self:hasEffect(self.EFF_SANCTITY) end,
+	tactical = {
+		DEFEND = function(self, t, aitarget) -- can the target silence us?
+			local num, t = 0
+			for tid, lev in pairs(aitarget.talents) do
+				t = aitarget.talents_def[tid]
+				if t.tactical and type(t.tactical) == "table" and t.tactical.disable and type(t.tactical.disable) == "table" and t.tactical.disable.silence then
+					num = num + 1
+				end
+			end
+			return math.min(num*2, 2)
+		end,
+		DISABLE = function(self, t, aitarget)
+			if aitarget:attr("has_arcane_knowledge") and self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist < t.radius(self, t)^2 then return {silence = 2} end
+		end
+	},
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire = false}
 	end,
 	action = function(self, t)
 		-- Add a lasting map effect
@@ -145,7 +160,7 @@ newTalent{
 	positive = 10,
 	negative = 10,
 	no_energy = true,
-	tactical = { DEFEND = 2, ATTACKAREA = {LIGHT = 0.5, DARKNESS = 0.5} },
+	tactical = { DEFEND = 2, ESCAPE = 1, ATTACKAREA = {LIGHT = 0.5, DARKNESS = 0.5} },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,

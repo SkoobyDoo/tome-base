@@ -378,9 +378,11 @@ newEntity{
 	resolvers.charm("create a temporary shield that absorbs %d damage", 30, function(self, who)
 		local power = self:getCharmPower(who)
 		who:setEffect(who.EFF_DAMAGE_SHIELD, 10, {power=power})
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
+		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_add_name=true, do_color=true})
 		return {id=true, used=true}
-	end),
+	end,
+	"T_GLOBAL_CD",
+	{tactical = {DEFEND = 2}}),
 }
 
 newEntity{

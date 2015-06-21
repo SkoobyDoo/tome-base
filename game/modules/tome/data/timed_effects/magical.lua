@@ -2219,6 +2219,8 @@ newEffect{
 	subtype = { arcane=true },
 	status = "beneficial",
 	parameters = { dam=10 },
+	on_gain = function(self, err) return "#Target# begins channeling arcane through a breach in reality!", "+Aether Breach" end,
+	on_lose = function(self, err) return "The aetheric breach around #Target# seals itself.", "-Aether Breach" end,
 	on_timeout = function(self, eff)
 		if game.zone.short_name.."-"..game.level.level ~= eff.level then return end
 
