@@ -393,6 +393,7 @@ newTalent{
 				end
 				if not m.hard_faction then m.faction = self.faction end
 
+				if filter.no_subescort then m.make_escort = nil end
 				if not filter.hasloot then m:forgetInven(m.INVEN_INVEN) end
 
 				game.zone:addEntity(game.level, m, "actor", x, y)
