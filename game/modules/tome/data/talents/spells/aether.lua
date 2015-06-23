@@ -137,7 +137,7 @@ newTalent{
 	mana = 50,
 	cooldown = 8,
 	use_only_arcane = 1,
-	tactical = { ATTACK = { ARCANE = 2 } },
+	tactical = { ATTACKAREA = { ARCANE = 2 } },
 	range = 7,
 	radius = 2,
 	direct_hit = function(self, t) if self:getTalentLevel(t) >= 3 then return true else return false end end,

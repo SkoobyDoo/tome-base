@@ -25,7 +25,6 @@ Totems
 *thorny skin
 ]]
 
-
 newEntity{
 	name = " of cure ailments", addon=true, instant_resolve=true,
 	keywords = {ailments=true},
@@ -37,10 +36,11 @@ newEntity{
 		function(self, who) return ("remove up to %d poisons or diseases from a target within range %d (based on Willpower)"):format(self.use_power.cures(self, who), self.use_power.range(self, who)) end,
 		10,
 		function(self, who)
-		local tg = {default_target=who, type="hit", nowarning=true, range=self.use_power.range(self, who), first_target="friend"}
+		local tg = self.use_power.target(self, who)
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
 		local nb = self.use_power.cures(self, who)
+		game.logSeen(who, "%s activates %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name = true, do_color = true})
 		who:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return end
@@ -64,13 +64,23 @@ newEntity{
 			end
 		end)
 		game:playSoundNear(who, "talents/heal")
-		game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
 		return {id=true, used=true}
 	end,
 	"T_GLOBAL_CD",
 	{range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end,
-	cures = function(self, who) return self:getCharmPower(who) end}
-	),
+	cures = function(self, who) return self:getCharmPower(who) end,
+	target = function(self, who) return {default_target=who, type="hit", nowarning=true, range=self.use_power.range(self, who), first_target="friend"} end,
+	tactical = {CURE = function(who, t, aitarget) -- count number of effects that can be removed
+			local nb = 0
+			for eff_id, p in pairs(who.tmp) do
+				local e = who.tempeffect_def[eff_id]
+				if e.status == "detrimental" and (e.subtype.poison or e.subtype.disease) then
+					nb = nb + 1
+				end
+			end
+			return nb
+			end},
+	}),
 }
 
 newEntity{
@@ -81,11 +91,16 @@ newEntity{
 
 	charm_power_def = {add=5, max=100, floor=true},
 	resolvers.charm(function(self) return ("harden the skin for 7 turns increasing armour by %d and armour hardiness by %d%%%%"):format(self:getCharmPower(who), 20 + self.material_level * 10) end, 20, function(self, who)
+		game.logSeen(who, "%s activates %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name = true, do_color = true})
 		who:setEffect(who.EFF_THORNY_SKIN, 7, {ac=self:getCharmPower(who), hard=20 + self.material_level * 10})
 		game:playSoundNear(who, "talents/heal")
-		game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
 		return {id=true, used=true}
-	end),
+	end,
+	"T_GLOBAL_CD",
+	{on_pre_use = function(self, who)
+		return not who:hasEffect(who.EFF_THORNY_SKIN)
+	end,
+	tactical = {DEFEND = 1.5}}),
 }
 
 newEntity{
@@ -99,17 +114,19 @@ newEntity{
 		function(self, who) return ("heal a target within range %d (based on Willpower) for %d"):format(self.use_power.range(self, who), self.use_power.damage(self, who)) end,
 		20,
 		function(self, who)
-			local tg = {default_target=who, type="hit", nowarning=true, range=self.use_power.range(self, who), first_target="friend"}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local dam = self.use_power.damage(self, who)
+			game.logSeen(who, "%s activates %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name = true, do_color = true})
 			who:project(tg, x, y, engine.DamageType.HEAL, dam)
 			game:playSoundNear(who, "talents/heal")
-			game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true})
 			return {id=true, used=true}
-		end,
+			end,
 		"T_GLOBAL_CD",
 		{range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end,
-		damage = function(self, who) return self:getCharmPower(who) end}
-	)
+		damage = function(self, who) return self:getCharmPower(who) end,
+		target = function(self, who) return {default_target=who, type="hit", nowarning=true, range=self.use_power.range(self, who), first_target="friend"} end,
+		tactical = {HEAL = 2}}
+	),
 }

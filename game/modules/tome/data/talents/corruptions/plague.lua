@@ -79,7 +79,7 @@ newTalent{
 	cooldown = 9,
 	range = 8,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.5, 3.5)) end,
-	tactical = { ATTACK = function(self, t, target)
+	tactical = { ATTACKAREA = function(self, t, target)
 		-- Count the number of diseases on the target
 		local val = 0
 		for eff_id, p in pairs(target.tmp) do

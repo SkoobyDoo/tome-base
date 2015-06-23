@@ -2506,6 +2506,7 @@ newEntity{ base = "BASE_MINDSTAR",
 	name = "Eye of the Wyrm", define_as = "EYE_WYRM",
 	unided_name = "multi-colored mindstar", unique = true,
 	desc = [[A black iris cuts through the core of this mindstar, which shifts with myriad colours. It darts around, as if searching for something.]],
+	special_desc = function(self) return "The breath attack has a chance to shift randomly between Fire, Ice, Lightning, Acid, and Sand each turn." end,
 	color = colors.BLUE, image = "object/artifact/eye_of_the_wyrm.png",
 	level_range = {30, 40},
 	require = { stat = { wil=45, }, },
@@ -2603,25 +2604,12 @@ newEntity{ base = "BASE_MINDSTAR",
 		if not self.worn_by then return end
 		if game.level and not game.level:hasEntity(self.worn_by) and not self.worn_by.player then self.worn_by = nil return end
 		if self.worn_by:attr("dead") then return end
-		if not rng.percent(25)  then return end
+		if not rng.percent(25) then return end
 		self.use_talent.id=rng.table{ "T_FIRE_BREATH", "T_ICE_BREATH", "T_LIGHTNING_BREATH", "T_SAND_BREATH", "T_CORROSIVE_BREATH" }
+		self.worn_by:check("useObjectEnable", self)
 --		game.logSeen(self.worn_by, "#GOLD#The %s shifts colour!", self.name:capitalize())
 	end,
 	max_power = 30, power_regen = 1,
-	--[[use_power = { name = "release a random breath", power = 40,
-	use = function(self, who)
-			local Talents = require "engine.interface.ActorTalents"
-			local breathe = rng.table{
-				{Talents.T_FIRE_BREATH},
-				{Talents.T_ICE_BREATH},
-				{Talents.T_LIGHTNING_BREATH},
-				{Talents.T_SAND_BREATH},
-			}
-
-			who:forceUseTalent(breathe[1], {ignore_cd=true, ignore_energy=true, force_level=4, ignore_ressources=true})
-			return {id=true, used=true}
-		end
-	},]]
 	use_talent = { id = rng.table{ Talents.T_FIRE_BREATH, Talents.T_ICE_BREATH, Talents.T_LIGHTNING_BREATH, Talents.T_SAND_BREATH, Talents.T_CORROSIVE_BREATH }, level = 4, power = 30 }
 }
 
@@ -3291,11 +3279,17 @@ newEntity{ base = "BASE_LONGSWORD", define_as="MORRIGOR",
 		apr = 12,
 		physcrit = 7,
 		dammod = {str=0.6, mag=0.6},
-		special_on_hit = {desc="deal bonus arcane and darkness damage", fct=function(combat, who, target)
-			local tg = {type="ball", range=1, radius=0, selffire=false}
-			who:project(tg, target.x, target.y, engine.DamageType.ARCANE, who:getMag()*0.5)
-			who:project(tg, target.x, target.y, engine.DamageType.DARKNESS, who:getMag()*0.5)
-		end},
+		special_on_hit = {desc=function(self, who, special)
+				local dam = special.damage(self, who)
+				return ("deal %0.2f arcane and %0.2f darkness damage (based on Magic) in a radius 1 around the target"):format(who:damDesc(engine.DamageType.ARCANE, dam), who:damDesc(engine.DamageType.DARKNESS, dam))
+			end,
+			damage = function(self, who) return who:getMag()*0.5 end,
+			fct=function(combat, who, target, dam, special)
+				local tg = {type="ball", range=1, radius=0, selffire=false}
+				local damage = special.damage(self, who)
+				who:project(tg, target.x, target.y, engine.DamageType.ARCANE, damage)
+				who:project(tg, target.x, target.y, engine.DamageType.DARKNESS, damage)
+			end},
 		special_on_kill = {desc="swallows the victim's soul, gaining a new power", fct=function(combat, who, target)
 			local o, item, inven_id = who:findInAllInventoriesBy("define_as", "MORRIGOR")
 			if o.use_talent then return end
@@ -3318,6 +3312,8 @@ newEntity{ base = "BASE_LONGSWORD", define_as="MORRIGOR",
 				o.power = 1
 				o.max_power = (who:getTalentCooldown(t) or 5)
 				o.power_regen = 1
+				game.logSeen(who, "%s's %s #SALMON#CONSUMES THE SOUL#LAST# of %s, gaining the power of %s!", who.name:capitalize(), o:getName({no_add_name = true, do_color = true}), target.name, ((t.display_entity and t.display_entity:getDisplayString() or "")..t.name):toTString())
+				who:check("useObjectEnable", o, inven_id, item)
 			end
 	end},
 	},

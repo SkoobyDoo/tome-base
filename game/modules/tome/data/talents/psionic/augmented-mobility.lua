@@ -121,9 +121,9 @@ newTalent{
 	cooldown = 15,
 	psi = 10,
 	points = 5,
-	tactical = { CLOSEIN = 2 },
+	tactical = { CLOSEIN = 2, ESCAPE = 1 },
 	range = function(self, t)
-		return math.floor(self:combatTalentLimit(t, 10, 2, 7.5)) -- Limit < 10
+		return math.floor(math.max(1, self:combatTalentLimit(t, 10, 2, 7.5))) -- Limit < 10
 	end,
 	target = function(self, t)
 		return {default_target=self, type="ball", nolock=true, pass_terrain=false, nowarning=true, range=self:getTalentRange(t), radius=0, requires_knowledge=false}

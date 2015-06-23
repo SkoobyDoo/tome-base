@@ -251,7 +251,7 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			end
 		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
-			local abname = game:getGenericTextTiles(ab)..ab.name
+			local abname = game:getGenericTextTiles(ab)..tostring(self:getTalentDisplayName(ab))
 			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
 			function(quit)
 				if quit ~= false then
@@ -445,7 +445,7 @@ function _M:learnTalent(t_id, force, nb)
 	return true
 end
 
---- Actor forgets a talent completly
+--- Actor forgets a talent completely
 -- @param t_id the id of the talent to learn
 -- @return[1] nil if failed
 -- @return[1] an error message

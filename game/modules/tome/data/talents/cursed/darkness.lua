@@ -146,8 +146,7 @@ local function getDamageIncrease(self)
 	t = self:getTalentFromId(self.T_DARK_TENDRILS)
 	if t then total = total + self:getTalentLevelRaw(t) end
 	
-	return self:combatScale(total, 5, 1, 40, 20) --I5
---I5	return total * 2
+	return self:combatScale(total, 5, 1, 40, 20)
 end
 
 newTalent{
@@ -160,7 +159,7 @@ newTalent{
 	hate = 8,
 	range = 5,
 	radius = 3,
-	tactical = { ATTACK = { DARKNESS = 1 }, DISABLE = 2 },
+	tactical = { ATTACK = { DARKNESS = 1 }, DISABLE = 2, ESCAPE = 1 },
 	requires_target = true,
 
 	-- implementation of creeping darkness..used in various locations, but stored here
@@ -288,10 +287,8 @@ newTalent{
 			end
 		end
 	end,
-
 	getDarkCount = function(self, t)
---I5		return 1 + math.floor(self:getTalentLevel(t))
-		return math.floor(self:combatTalentScale(t, 2, 6, "log")) --I5
+		return math.floor(self:combatTalentScale(t, 2, 6, "log"))
 	end,
 	getDamage = function(self, t)
 		return self:combatTalentMindDamage(t, 0, 60)
@@ -339,10 +336,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
-		local damage = t.getDamage(self, t)
+		local damage = self:damDesc(DamageType.DARKNESS, t.getDamage(self, t))
 		local darkCount = t.getDarkCount(self, t)
 		local damageIncrease = getDamageIncrease(self)
-		return ([[Creeping dark slowly spreads from %d spots in a radius of %d around the targeted location. The dark deals %d damage, and blocks the sight of any who do not possess Dark Vision or some other magical means of seeing.
+		return ([[Creeping dark slowly spreads from %d spots in a radius of %d around the targeted location. The dark deals %0.2f darkness damage each turn to anything in its area, and blocks the sight of any who do not possess Dark Vision or some other magical means of seeing.
 		The damage will increase with your Mindpower. You do +%d%% damage to anything that has entered your creeping dark.]]):format(darkCount, radius, damage, damageIncrease)
 	end,
 }
@@ -355,12 +352,10 @@ newTalent{
 	mode = "passive",
 	random_ego = "attack",
 	range = function(self, t)
---I5		return 1 + self:getTalentLevelRaw(t)
-		return math.floor(self:combatTalentScale(t, 2, 6)) --I5
+		return math.floor(self:combatTalentScale(t, 2, 6))
 	end,
 	getMovementSpeedChange = function(self, t)
---I5		return self:getTalentLevel(t) * 0.5
-		return self:combatTalentScale(t, 0.75, 2.5, 0.75) --I5
+		return self:combatTalentScale(t, 0.75, 2.5, 0.75)
 	end,
 	info = function(self, t)
 		local range = self:getTalentRange(t)
@@ -441,9 +436,9 @@ newTalent{
 	tactical = { ATTACK = { DARKNESS = 2 }, DISABLE = { pin = 2 } },
 	direct_hit = true,
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	getPinDuration = function(self, t)
---I5		return 2 + math.floor(self:getTalentLevel(t) / 2)
-		return math.floor(self:combatTalentScale(t, 2.5, 4.5)) --I5
+		return math.floor(self:combatTalentScale(t, 2.5, 4.5))
 	end,
 	getDamage = function(self, t)
 		return self:combatTalentMindDamage(t, 0, 80)
@@ -452,7 +447,7 @@ newTalent{
 		if self.dark_tendrils then return false end
 
 		local range = self:getTalentRange(t)
-		local tg = {type="hit", range=range, talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target or core.fov.distance(self.x, self.y, x, y) > range then return nil end
 

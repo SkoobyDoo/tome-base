@@ -856,10 +856,10 @@ function _M:automaticTalents()
 	for tid, c in pairs(self.talents_auto) do
 		local t = self.talents_def[tid]
 		local spotted = spotHostiles(self, true)
-		local cd = self:getTalentCooldown(t) or 0
-		local turns_used = util.getval(t.no_energy, self, t)  == true and 0 or 1
+		local cd = self:getTalentCooldown(t) or (t.is_object_use and t.cycle_time(self, t)) or 0
+		local turns_used = util.getval(t.no_energy, self, t) == true and 0 or 1
 		if cd <= turns_used and t.mode ~= "sustained" then
-			game.logPlayer(self, "Automatic use of talent %s #DARK_RED#skipped#LAST#: cooldown too low (%d).", t.name, cd)
+			game.logPlayer(self, "Automatic use of talent %s #DARK_RED#skipped#LAST#: cooldown too low (%d).", self:getTalentDisplayName(t), cd)
 		elseif (t.mode ~= "sustained" or not self.sustain_talents[tid]) and not self.talents_cd[tid] and self:preUseTalent(t, true, true) and (not t.auto_use_check or t.auto_use_check(self, t)) then
 			if (c == 1) or (c == 2 and #spotted <= 0) or (c == 3 and #spotted > 0) then
 				if c ~= 2 then
@@ -1325,11 +1325,8 @@ function _M:playerUseItem(object, item, inven)
 	)
 end
 
---- Call when an object is worn
--- This doesnt call the base interface onWear, it copies the code because we need some tricky stuff
-function _M:onWear(o, slot, bypass_set)
-	mod.class.Actor.onWear(self, o, slot, bypass_set)
-
+--- Put objects with usable powers on cooldown when worn (apply only to party members)
+function _M:cooldownWornObject(o)
 	if not self.no_power_reset_on_wear then
 		o:forAllStack(function(so)
 			if so.power and so:attr("power_regen") then
@@ -1348,7 +1345,13 @@ function _M:onWear(o, slot, bypass_set)
 			end
 		end)
 	end
+end
 
+--- Call when an object is worn
+-- This doesnt call the base interface onWear, it copies the code because we need some tricky stuff
+function _M:onWear(o, slot, bypass_set)
+	mod.class.Actor.onWear(self, o, slot, bypass_set)
+	self:cooldownWornObject(o)
 	if self.hotkey and o:canUseObject() and config.settings.tome.auto_hotkey_object and not o.no_auto_hotkey then
 		local position
 		local name = o:getName{no_count=true, force_id=true, no_add_name=true}
@@ -1364,8 +1367,8 @@ function _M:onWear(o, slot, bypass_set)
 end
 
 --- Call when an object is added
-function _M:onAddObject(o)
-	mod.class.Actor.onAddObject(self, o)
+function _M:onAddObject(o, inven_id, slot)
+	mod.class.Actor.onAddObject(self, o, inven_id, slot)
 	if self.hotkey and o:attr("auto_hotkey") and config.settings.tome.auto_hotkey_object then
 		local position
 		local name = o:getName{no_count=true, force_id=true, no_add_name=true}

@@ -34,6 +34,7 @@ require "mod.class.interface.ActorPartyQuest"
 require "mod.class.interface.Combat"
 require "mod.class.interface.Archery"
 require "mod.class.interface.ActorInscriptions"
+require "mod.class.interface.ActorObjectUse"
 local Faction = require "engine.Faction"
 local Dialog = require "engine.ui.Dialog"
 local Map = require "engine.Map"
@@ -55,6 +56,7 @@ module(..., package.seeall, class.inherit(
 	engine.interface.ActorFOV,
 	mod.class.interface.ActorPartyQuest,
 	mod.class.interface.ActorInscriptions,
+	mod.class.interface.ActorObjectUse,
 	mod.class.interface.Combat,
 	mod.class.interface.Archery
 ))
@@ -239,6 +241,7 @@ function _M:init(t, no_default)
 	engine.interface.ActorLevel.init(self, t)
 	engine.interface.ActorFOV.init(self, t)
 	mod.class.interface.ActorInscriptions.init(self, t)
+	mod.class.interface.ActorObjectUse.init(self, t)
 
 	-- Default melee barehanded damage
 	self.combat = self.combat or {
@@ -3698,10 +3701,13 @@ function _M:onWear(o, inven_id, bypass_set, silent)
 				-- Apply set bonuses.
 				for _, d in pairs(set_objects) do
 					if d.object ~= o then self:onTakeoff(d.object, d.inven_id, true) end
-					local complete =  d.object.on_set_complete
+					local complete = d.object.on_set_complete
 					if type(complete) == "table" then complete = complete[set_id] end
 					if complete then complete(d.object, self, d.inven_id, set_objects) end
 					if d.object ~= o then self:onWear(d.object, d.inven_id, true) end
+						self:useObjectDisable(d.object)
+						self:useObjectEnable(d.object)
+
 					d.object.set_complete = d.object.set_complete or {}
 					d.object.set_complete[set_id] = set_objects
 				end
@@ -3831,6 +3837,8 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 					d.object._special_set = nil
 				end
 				if d.object ~= o then self:onWear(d.object, d.inven_id, true) end
+				self:useObjectDisable(d.object)
+				self:useObjectEnable(d.object)
 				d.object.set_complete[set_id] = nil
 				-- Remove if empty.
 				local empty = true
@@ -3952,20 +3960,24 @@ function _M:checkMindstar(o)
 end
 
 --- Call when an object is added
-function _M:onAddObject(o)
+function _M:onAddObject(o, inven_id, slot)
 	-- curse the item
 	if self:knowTalent(self.T_DEFILING_TOUCH) then
 		local t = self:getTalentFromId(self.T_DEFILING_TOUCH)
 		t.curseItem(self, t, o)
 	end
 
-	engine.interface.ActorInventory.onAddObject(self, o)
+	engine.interface.ActorInventory.onAddObject(self, o, inven_id, slot)
 
 	-- Learn Talent
 	if o.carrier and o.carrier.learn_talent then
 		for tid, level in pairs(o.carrier.learn_talent) do
 			self:learnItemTalent(o, tid, level)
 		end
+	end
+
+	if o:canUseObject() then -- set up object use talents
+		self:useObjectEnable(o, inven_id, slot)
 	end
 
 	-- Callbacks!
@@ -3983,8 +3995,8 @@ function _M:onAddObject(o)
 end
 
 --- Call when an object is removed
-function _M:onRemoveObject(o)
-	engine.interface.ActorInventory.onRemoveObject(self, o)
+function _M:onRemoveObject(o, inven_id, slot)
+	engine.interface.ActorInventory.onRemoveObject(self, o, inven_id, slot)
 
 	if o.carrier and o.carrier.learn_talent then
 		for tid, level in pairs(o.carrier.learn_talent) do
@@ -3992,6 +4004,9 @@ function _M:onRemoveObject(o)
 		end
 	end
 
+	if o:canUseObject() then -- remove object use talents (for NPC's)
+		self:useObjectDisable(o, inven_id, slot)
+	end
 	-- Callbacks
 	if o.carrier_callbacks then self:unregisterCallback(o, o) end
 
@@ -4569,7 +4584,7 @@ end
 -- @return true to continue, false to stop
 function _M:preUseTalent(ab, silent, fake)
 	if not self:attr("no_talent_fail") then
-	if self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
+	if not ab.never_fail and self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
 		if not silent then game.logSeen(self, "%s is too afraid to use %s.", self.name:capitalize(), ab.name) end
 		return false
 	end
@@ -4686,82 +4701,84 @@ function _M:preUseTalent(ab, silent, fake)
 		end
 	end
 
-	-- Equilibrium is special, it has no max, but the higher it is the higher the chance of failure (and loss of the turn)
-	-- But it is not affected by fatigue
-	if (ab.equilibrium or (ab.sustain_equilibrium and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
-		-- Fail ? lose energy and 1/10 more equilibrium
-		if (not self:attr("no_equilibrium_fail") and (not self:attr("no_equilibrium_summon_fail") or not ab.is_summon)) and not self:equilibriumChance(ab.equilibrium or ab.sustain_equilibrium) then
-			if not silent then game.logPlayer(self, "You fail to use %s due to your equilibrium!", ab.name) end
-			self:incEquilibrium((ab.equilibrium or ab.sustain_equilibrium) / 10)
-			self:useEnergy()
-			return false
-		end
-	end
-
-	-- Spells can fail
-	if (ab.is_spell and not self:isTalentActive(ab.id)) and not fake and self:attr("spell_failure") then
-		if rng.percent(self:attr("spell_failure")) then
-			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
-			return false
-		end
-	end
-
-	-- Nature can fail
-	if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
-		if rng.percent(self:attr("nature_failure")) then
-			if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			self:fireTalentCheck("callbackOnTalentDisturbed", ab)
-			return false
-		end
-	end
-
-	-- Chronomancy can fail, causing an anomaly but returning Paradox
-	if (ab.paradox or (ab.sustain_paradox and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
-		-- Random anomalies reduce paradox by twice the talent's paradox cost
-		local cost = util.getval(ab.paradox or ab.sustain_paradox, self, ab)
-		if cost > 0 then
-			if self:paradoxDoAnomaly(self:paradoxFailChance(), cost * 2, {anomaly_type=ab.anomaly_type or nil, silent=silent}) then
-				game:playSoundNear(self, "talents/dispel")
+	if not ab.never_fail then
+		-- Equilibrium is special, it has no max, but the higher it is the higher the chance of failure (and loss of the turn)
+		-- But it is not affected by fatigue
+		if (ab.equilibrium or (ab.sustain_equilibrium and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
+			-- Fail ? lose energy and 1/10 more equilibrium
+			if (not self:attr("no_equilibrium_fail") and (not self:attr("no_equilibrium_summon_fail") or not ab.is_summon)) and not self:equilibriumChance(ab.equilibrium or ab.sustain_equilibrium) then
+				if not silent then game.logPlayer(self, "You fail to use %s due to your equilibrium!", ab.name) end
+				self:incEquilibrium((ab.equilibrium or ab.sustain_equilibrium) / 10)
+				self:useEnergy()
 				return false
 			end
 		end
-	end
 
+		-- Spells can fail
+		if (ab.is_spell and not self:isTalentActive(ab.id)) and not fake and self:attr("spell_failure") then
+			if rng.percent(self:attr("spell_failure")) then
+				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+				return false
+			end
+		end
+
+		-- Nature can fail
+		if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
+			if rng.percent(self:attr("nature_failure")) then
+				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+				return false
+			end
+		end
+
+		-- Chronomancy can fail, causing an anomaly but returning Paradox
+		if (ab.paradox or (ab.sustain_paradox and not self:isTalentActive(ab.id))) and not fake and not self:attr("force_talent_ignore_ressources") then
+			-- Random anomalies reduce paradox by twice the talent's paradox cost
+			local cost = util.getval(ab.paradox or ab.sustain_paradox, self, ab)
+			if cost > 0 then
+				if self:paradoxDoAnomaly(self:paradoxFailChance(), cost * 2, {anomaly_type=ab.anomaly_type or nil, silent=silent}) then
+					game:playSoundNear(self, "talents/dispel")
+					return false
+				end
+			end
+		end
+	end
 	if self:triggerHook{"Actor:preUseTalent", t=ab, silent=silent, fake=fake} then
 		return false
 	end
 
-	-- Confused ? lose a turn!
-	if self:attr("confused") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
-		if rng.percent(self:attr("confused")) then
-			if not silent then game.logSeen(self, "%s is confused and fails to use %s.", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			return false
+	if not ab.never_fail then
+		-- Confused ? lose a turn!
+		if self:attr("confused") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
+			if rng.percent(self:attr("confused")) then
+				if not silent then game.logSeen(self, "%s is confused and fails to use %s.", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				return false
+			end
 		end
-	end
-	
-	-- Failure chance?
-	if self:attr("talent_fail_chance") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") and not ab.innate then
-		if rng.percent(self:attr("talent_fail_chance")) then
-			if not silent then game.logSeen(self, "%s fails to use %s.", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			return false
+		
+		-- Failure chance?
+		if self:attr("talent_fail_chance") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") and not ab.innate then
+			if rng.percent(self:attr("talent_fail_chance")) then
+				if not silent then game.logSeen(self, "%s fails to use %s.", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				return false
+			end
 		end
-	end
 
-	-- terrified effect
-	if self:attr("terrified") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
-		local eff = self:hasEffect(self.EFF_TERRIFIED)
-		if rng.percent(self:attr("terrified")) then
-			if not silent then game.logSeen(self, "%s is too terrified to use %s.", self.name:capitalize(), ab.name) end
-			self:useEnergy()
-			return false
+		-- terrified effect
+		if self:attr("terrified") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
+			local eff = self:hasEffect(self.EFF_TERRIFIED)
+			if rng.percent(self:attr("terrified")) then
+				if not silent then game.logSeen(self, "%s is too terrified to use %s.", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				return false
+			end
 		end
 	end
-
 	-- Special checks
 	if ab.on_pre_use and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) and not ab.on_pre_use(self, ab, silent, fake) then return false end
 
@@ -5379,7 +5396,6 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 	end
 
 	local d = tstring{}
-
 	d:add({"color",0x6f,0xff,0x83}, "Effective talent level: ", {"color",0x00,0xFF,0x00}, ("%.1f"):format(self:getTalentLevel(t)), true)
 
 	if not config.ignore_mode then
@@ -5589,7 +5605,7 @@ function _M:checkSetTalentAuto(tid, v, opt)
 
 		local list = {}
 		if util.getval(t.no_energy, self, t) ~= true then list[#list+1] = "- requires a turn to use" end
-		if t.requires_target then list[#list+1] = "- requires a target, your last hostile one will be automatically used" end
+		if self:getTalentRequiresTarget(t) then list[#list+1] = "- requires a target, your last hostile one will be automatically used" end
 		if t.auto_use_warning then list[#list+1] = t.auto_use_warning end
 		if opt == 2 then
 			list[#list+1] = "- will only trigger if no enemies are visible"
@@ -6269,7 +6285,9 @@ function _M:addedToLevel(level, x, y)
 					if not x then break end
 
 					-- Find an actor with that filter
-					local m = game.zone:makeEntity(game.level, "actor", filter, nil, true)
+					local m
+					if filter.define_as then m = game.zone:makeEntityByName(game.level, "actor", filter.define_as, true)
+					else m = game.zone:makeEntity(game.level, "actor", filter, nil, true) end
 					if m and m:canMove(x, y) then
 						if filter.no_subescort then m.make_escort = nil end
 						if self._empty_drops_escort then m:emptyDrops() end

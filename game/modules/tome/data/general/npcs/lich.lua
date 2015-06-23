@@ -28,7 +28,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(16,27), atk=16, apr=9, damtype=DamageType.DARKSTUN, dammod={mag=0.9} },
 
-	body = { INVEN = 10, MAINHAND = 1, OFFHAND = 1, FINGER = 2, NECK = 1, LITE = 1, BODY = 1, HEAD = 1, CLOAK = 1, HANDS = 1, BELT = 1, FEET = 1},
+	body = { INVEN = 10, MAINHAND = 1, OFFHAND = 1, FINGER = 2, NECK = 1, LITE = 1, BODY = 1, HEAD = 1, CLOAK = 1, HANDS = 1, BELT = 1, FEET = 1, TOOL=1},
 	equipment = resolvers.equip{
 		{type="armor", subtype="cloth", ego_chance=75, forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="head", ego_chance=75, forbid_power_source={antimagic=true}, autoreq=true},
@@ -37,6 +37,7 @@ newEntity{
 		{type="jewelry", subtype="amulet", ego_chance=100, forbid_power_source={antimagic=true}, autoreq=true},
 		{type="jewelry", subtype="ring", ego_chance=100, forbid_power_source={antimagic=true}, autoreq=true},
 		{type="jewelry", subtype="ring", ego_chance=100, forbid_power_source={antimagic=true}, autoreq=true},
+		{type="charm", subtype="wand", ego_chance=75, forbid_power_source={antimagic=true}, autoreq=true}
 	},
 
 	autolevel = "caster",
@@ -66,7 +67,8 @@ newEntity{
 	combat_spellcrit = resolvers.mbonus(5, 5),
 
 	resolvers.sustains_at_birth(),
-	not_power_source = {nature=true},
+	power_source = {arcane=true},
+	not_power_source = {nature=true, antimagic=true},
 }
 
 newEntity{ base = "BASE_NPC_LICH",

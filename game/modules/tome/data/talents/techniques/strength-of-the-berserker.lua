@@ -151,7 +151,7 @@ newTalent{
 	cooldown = function(self, t) return self:combatTalentLimit(t, 5, 15, 8) end,
 	stamina = 12,
 	requires_target = true,
-	tactical = { ATTACK = { weapon = 2 }, DISABLE = { stun = 2 } },
+	tactical = { ATTACK = { weapon = 2 }, DISABLE = 2 },
 	range = 1,
 	is_melee = true,
 	target = function(self ,t) return {type="hit", range=self:getTalentRange(t)} end,

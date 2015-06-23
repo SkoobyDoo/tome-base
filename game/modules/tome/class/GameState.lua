@@ -2116,7 +2116,6 @@ function _M:createRandomBoss(base, data)
 	b:initBody()
 
 	b:resolve()
-
 	-- Start with sustains sustained
 	b[#b+1] = resolvers.sustains_at_birth()
 

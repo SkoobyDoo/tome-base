@@ -29,6 +29,8 @@ function _M:init(t, no_default)
 	engine.Projectile.init(self, t, no_default)
 end
 
+_M.__is_projectile = true
+
 --- Moves a projectile on the map
 -- We override it to allow for movement animations
 function _M:move(x, y, force)

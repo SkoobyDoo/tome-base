@@ -38,7 +38,6 @@ local default_eyal_descriptors = function(add)
 		__ALL__ = "disallow",
 		Psionic = "allow",
 		Warrior = "allow",
-		Archer = "allow",
 		Rogue = "allow",
 		Mage = "allow",
 		Celestial = "allow",
@@ -61,6 +60,7 @@ local default_eyal_descriptors = function(add)
 	if add then table.merge(base, add) end
 	return base
 end
+Birther.default_eyal_descriptors = default_eyal_descriptors
 
 -- Player worlds/campaigns
 newBirthDescriptor{

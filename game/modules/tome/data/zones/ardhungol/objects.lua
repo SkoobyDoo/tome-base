@@ -38,7 +38,6 @@ newEntity{ base = "BASE_ROD",
 	desc = [[This rod carved out of a giant spider fang continuously drips venom.]],
 	cost = 50,
 	elec_proof = true,
-
 	max_power = 75, power_regen = 1,
 	use_power = {
 		name = function(self, who) return ("shoot a bolt of spydric poison out to range %d, dealing %0.2f nature damage (based on Magic) over %d turns while rendering the target unable to move"):
@@ -48,10 +47,14 @@ newEntity{ base = "BASE_ROD",
 		damage = function(self, who) return 200 + who:getMag() * 4 end,
 		duration = 6,
 		range = 12,
+		requires_target = true,
+		target = function(self, who) return {type="bolt", range=self.use_power.range} end,
+		tactical = { ATTACK = { NATURE = 1}, DISABLE = { pin = 2 }, CLOSEIN = 1, ESCAPE = 1 },
 		use = function(self, who)
-			local tg = {type="bolt", range=self.use_power.range}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
+			game.logSeen(who, "%s activates %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, x, y, engine.DamageType.SPYDRIC_POISON, {dam=self.use_power.damage(self, who), dur=self.use_power.duration}, {type="slime"})
 			return {id=true, used=true}
 		end
