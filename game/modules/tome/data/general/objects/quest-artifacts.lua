@@ -38,7 +38,7 @@ newEntity{ define_as = "STAFF_ABSORPTION",
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.
 Light around it seems to dim and you can feel its tremendous power simply by touching it.]],
 
-	require = { stat = { mag=60 }, },
+	require = { stat = { mag=40 }, },
 	combat = {
 		dam = 30,
 		apr = 4,
@@ -54,6 +54,7 @@ Light around it seems to dim and you can feel its tremendous power simply by tou
 
 	max_power = 1000, power_regen = 1,
 	use_power = { name = "absorb energies", power = 1000,
+		no_npc_use = true,
 		use = function(self, who)
 			game.logPlayer(who, "This power seems too much to wield; you fear it might absorb YOU.")
 			return {used=true}
@@ -91,6 +92,7 @@ If used near a portal it could probably activate it.]],
 
 	max_power = 30, power_regen = 1,
 	use_power = { name = "activate a portal", power = 10,
+		no_npc_use = true,
 		use = function(self, who)
 			self:identify(true)
 			local g = game.level.map(who.x, who.y, game.level.map.TERRAIN)
@@ -128,6 +130,7 @@ If used near a portal it could probably activate it.]],
 
 	max_power = 30, power_regen = 1,
 	use_power = { name = "activate a portal", power = 10,
+		no_npc_use = true,
 		use = function(self, who)
 			local g = game.level.map(who.x, who.y, game.level.map.TERRAIN)
 			if g and g.orb_portal and game.zone.short_name ~= "high-peak" then
@@ -182,6 +185,7 @@ newEntity{ define_as = "ORB_UNDEATH",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -212,6 +216,7 @@ newEntity{ define_as = "ORB_DRAGON",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -242,6 +247,7 @@ newEntity{ define_as = "ORB_ELEMENTS",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -272,6 +278,7 @@ newEntity{ define_as = "ORB_DESTRUCTION",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -317,6 +324,7 @@ You have heard of such items before. They are very useful to adventurers, allowi
 
 	max_power = 400, power_regen = 1,
 	use_power = { name = "recall the user to the worldmap after 40 turns", power = 202,
+		no_npc_use = true,
 		use = function(self, who)
 			if who:hasEffect(who.EFF_RECALL) then
 				who:removeEffect(who.EFF_RECALL)
@@ -380,6 +388,7 @@ Items in the chest will not encumber you.]],
 
 	max_power = 1000, power_regen = 1,
 	use_power = { name = "transmogrify all the items in your chest at once (also done automatically when you change level)", power = 0,
+		no_npc_use = true,
 		use = function(self, who)
 			local inven = who:getInven("INVEN")
 			local nb = 0

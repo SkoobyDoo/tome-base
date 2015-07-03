@@ -654,7 +654,7 @@ end
 
 function string.his_her(actor)
 	if actor.female then return "her"
-	elseif actor.neuter then return "it"
+	elseif actor.neuter then return "its"
 	else return "his"
 	end
 end

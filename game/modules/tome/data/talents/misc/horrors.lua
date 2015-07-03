@@ -672,11 +672,12 @@ newTalent{
 				m.summon_time=20
 			end
 			game.zone:addEntity(game.level, m, "actor", x, y)
+			if not self.player and self.ai_target.actor then m:setTarget(self.ai_target.actor) end
 		end
 
 		return true
 	end,
 	info = function(self, t)
-		return ([[Open a hole in space, summoning an animate blade for 10 turns.]])
+		return ([[Open a hole in space, summoning an animated blade for 10 turns.]])
 	end,
 }

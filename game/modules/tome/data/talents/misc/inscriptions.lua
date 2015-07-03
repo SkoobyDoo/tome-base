@@ -416,6 +416,7 @@ newInscription{
 	is_spell = true,
 	is_teleport = true,
 	tactical = { CLOSEIN = 2 },
+-- may want to update this for ai settings
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=data.range + data.inc_stat, radius=3, requires_knowledge=false}

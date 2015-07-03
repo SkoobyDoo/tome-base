@@ -180,6 +180,7 @@ newEntity{ base = "BASE_NPC_SLAVER",
 	},
 	combat_armor = 0, combat_def = 6,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=1, every=8, max=5},
 		[Talents.T_MANATHRUST]={base=3, every=5, max=6},
 		[Talents.T_FLAME]={base=3, every=5, max=6},
 		[Talents.T_LIGHTNING]={base=3, every=5, max=6},

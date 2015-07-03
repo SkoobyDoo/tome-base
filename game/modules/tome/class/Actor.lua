@@ -1784,8 +1784,9 @@ function _M:tooltip(x, y, seen_by)
 	local resists = tstring{}
 	ts:add({"color", "ANTIQUE_WHITE"}, "Resists: ")
 	for t, v in pairs(self.resists) do
-		if t == "all" then
-			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, "all, ")
+		if t == "all" or t == "absolute" then
+--			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, "all, ")
+			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, t..", ")
 		elseif type(t) == "string" and math.abs(v) >= 20 then
 			local res = tostring ( math.floor(self:combatGetResist(t)) ) .. "%"
 			if v > 0 then
@@ -1795,7 +1796,12 @@ function _M:tooltip(x, y, seen_by)
 			end
 		end
 	end
-
+	if self:attr("speed_resist") then
+		local res = 100 - (util.bound(self.global_speed * self.movement_speed, 0.3, 1)) * 100
+		if res > 0 then
+			ts:add({"color", "LIGHT_GREEN"}, tostring(math.floor(res)).."%", " ", {"color", "SALMON"}, "from speed", {"color", "LAST"})
+		end
+	end
 	if ts[#ts] == ", " then table.remove(ts) end
 	ts:add(true)
 
@@ -2103,7 +2109,7 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
-	--Special Flag (currently for Terrasca)
+	--Special Flag (for older versions of Terrasca)
 	if value > 0 and self:attr("speed_resist") then
 		value = value * (util.bound(self.global_speed * self.movement_speed, 0.3, 1))
 	end
@@ -2887,7 +2893,9 @@ function _M:die(src, death_note)
 						o.no_drop = true
 
 						-- Drop a random artifact instead
-						local ro = game.zone:makeEntity(game.level, "object", {no_tome_drops=true, unique=true, not_properties={"lore"}}, nil, true)
+--						local ro = game.zone:makeEntity(game.level, "object", {no_tome_drops=true, unique=true, not_properties={"lore"}}, nil, true)
+						-- Drop a replacement by filter or random artifact instead
+						local ro = game.zone:makeEntity(game.level, "object", o.__special_boss_drop.filter or {no_tome_drops=true, unique=true, not_properties={"lore"}}, nil, true)
 						if ro then game.zone:addEntity(game.level, ro, "object", dropx, dropy) end
 					end
 
@@ -3961,6 +3969,7 @@ end
 
 --- Call when an object is added
 function _M:onAddObject(o, inven_id, slot)
+--print("[onAddObject]", self.name, self.uid, o.name, inven_id, slot)
 	-- curse the item
 	if self:knowTalent(self.T_DEFILING_TOUCH) then
 		local t = self:getTalentFromId(self.T_DEFILING_TOUCH)
@@ -4843,6 +4852,8 @@ local sustainCallbackCheck = {
 	callbackOnTakeoff = "talents_on_takeoff",
 	callbackOnTalentPost = "talents_on_talent_post",
 	callbackOnTemporaryEffect = "talents_on_tmp",
+	callbackOnTemporaryEffectRemove = "talents_on_tmp_remove",
+	callbackOnTemporaryEffectAdd = "talents_on_tmp_add",
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
 }
@@ -5505,14 +5516,17 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 	return d
 end
 
-function _M:getTalentCooldown(t)
+--- Get the talent cooldown
+-- @param t the talent definition table
+-- @param[opt=boolean] base, if true, return the talent defined cooldown, unmodified by other effects
+function _M:getTalentCooldown(t, base)
 	if not t.cooldown then return end
 	local cd = t.cooldown
 	if type(cd) == "function" then cd = cd(self, t) end
 	if not cd then return end
 
 	-- Can not touch this cooldown
-	if t.fixed_cooldown then return cd end
+	if t.fixed_cooldown or base then return cd end
 
 	if t.type[1] == "inscriptions/infusions" then
 		local eff = self:hasEffect(self.EFF_INFUSION_COOLDOWN)
@@ -6164,10 +6178,12 @@ end
 
 function _M:on_temporary_effect_added(eff_id, e, p)
 	self:registerCallbacks(e, eff_id, "effect")
+	self:fireTalentCheck("callbackOnTemporaryEffectAdd", eff_id, e, p)
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
 	self:unregisterCallbacks(e, eff_id)
+	self:fireTalentCheck("callbackOnTemporaryEffectRemove", eff_id, e, p)
 end
 
 --- Called when we are initiating a projection

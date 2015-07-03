@@ -1120,13 +1120,26 @@ newEffect{
 newEffect{
 	name = "HUNTER_SPEED", image = "talents/infusion__movement.png",
 	desc = "Hunter",
-	long_desc = function(self, eff) return ("You are searching for a new target. Any other action other than movement will cancel it. Movement is %d%% faster."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Movement is %d%% faster.  Any action other than movement will end this effect."):format(eff.power) end,
 	type = "physical",
 	subtype = { nature=true, speed=true },
 	status = "beneficial",
 	parameters = {power=1000},
-	on_gain = function(self, err) return "#Target# prepares for the next kill!.", "+Hunter" end,
+	on_gain = function(self, err) return ("#Target# prepares %s!"):format(not self.player and self.ai_state.tactic == "escape" and "to escape" or "for the next kill"), "+Hunter" end,
 	on_lose = function(self, err) return "#Target# slows down.", "-Hunter" end,
+	
+	on_timeout = function(self, eff)--make sure that NPC's that catch their target (or can't get away) can fight
+		if eff.aiid then
+			local turns = (game.turn - eff.start_turn)*game.energy_per_tick/game.energy_to_act
+			if turns >= 1 then
+				local target = self.ai_target and self.ai_target.actor
+				if (target and core.fov.distance(self.x, self.y, target.x, target.y) <= 1) or not rng.chance(turns) then
+					self:removeTemporaryValue("ai_state", eff.aiid); eff.aiid = nil
+					print("---HUNTER_SPEED", self.name, "ai free to act after", turns, "turns")
+				end
+			end
+		end
+	end,
 	get_fractional_percent = function(self, eff)
 		local d = game.turn - eff.start_turn
 		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
@@ -1134,7 +1147,7 @@ newEffect{
 	lists = 'break_with_step_up',
 	activate = function(self, eff)
 		eff.start_turn = game.turn
-		eff.possible_end_turns = 10 * (eff.dur+1)
+		eff.possible_end_turns = (eff.dur+1)*game.energy_to_act/game.energy_per_tick
 		eff.tmpid = self:addTemporaryValue("wild_speed", 1)
 		eff.moveid = self:addTemporaryValue("movement_speed", eff.power/100)
 		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it

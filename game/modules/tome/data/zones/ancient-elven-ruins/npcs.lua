@@ -52,10 +52,12 @@ newEntity{ define_as = "GREATER_MUMMY_LORD",
 		{type="weapon", subtype="longsword", defined="LONGSWORD_WINTERTIDE", random_art_replace={chance=75}, autoreq=true},
 		{type="armor", subtype="shield", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="mummy", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="head", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
-
+	
 	resolvers.talents{
+		[Talents.T_ARMOUR_TRAINING]={base=2, every=10, max=5},
 		[Talents.T_SHIELD_PUMMEL]={base=5, every=5, max=8},
 		[Talents.T_ASSAULT]={base=4, every=5, max=7},
 		[Talents.T_OVERPOWER]={base=5, every=5, max=8},

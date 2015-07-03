@@ -58,6 +58,7 @@ newEntity{ define_as = "CELIA",
 
 	soul = 6,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=2, every=8, max = 5},
 		[Talents.T_INVOKE_DARKNESS]={base=5, every=5, max=10},
 		[Talents.T_NECROTIC_AURA]=1,
 		[Talents.T_CREATE_MINIONS]=2,

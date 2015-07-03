@@ -143,9 +143,10 @@ newEntity{ base = "BASE_RING",
 		radius = function(self, who) return 1 end,
 		duration = function(self, who) return 7 end,
 		damage = function(self, who) return who:combatStatScale("wil", 15, 40) end,
+		tactical = {ESCAPE = 1.5, ATTACKAREA = {COLD = 1.5, PHYSICAL = 1.5}},
 		use = function(self, who)
 			local duration = 7
-			local radius = 1
+			local radius = self.use_power.radius(self, who)
 			local dam = self.use_power.damage(self, who)
 			-- Add a lasting map effect
 			local wave = game.level.map:addEffect(who,
@@ -161,7 +162,7 @@ newEntity{ base = "BASE_RING",
 				false
 			)
 			wave.name = "tidal wave"
-			game.logSeen(who, "%s brandishes %s, calling forth the might of the oceans!", who.name:capitalize(), self:getName({no_add_name = true}))
+			game.logSeen(who, "%s brandishes %s, calling forth the might of the oceans!", who.name:capitalize(), self:getName({no_add_name = true, do_color = true}))
 			return {id=true, used=true}
 		end
 	},
@@ -301,9 +302,10 @@ newEntity{ base = "BASE_LITE",
 		litepower = function(self, who) return who:combatStatScale("wil", 50, 150) end,
 		use = function(self, who)
 			who:project({type="ball", range=0, radius=20}, who.x, who.y, engine.DamageType.LITE, self.use_power.litepower(self, who))
-			game.logSeen(who, "%s brandishes %s %s and banishes all shadows!", who.name:capitalize(), who:his_her(), self:getName())
+			game.logSeen(who, "%s brandishes %s %s and banishes all shadows!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			return {id=true, used=true}
-		end
+		end,
+		no_npc_use = function(self, who) return not game.party:hasMember(who) end,
 	},
 	wielder = {
 		lite = 4,
@@ -330,9 +332,10 @@ This star is the culmination of their craft. Light radiates from its ever-shifti
 
 	max_power = 30, power_regen = 1,
 	use_power = { name = "map surroundings within range 20", power = 30,
+		no_npc_use = function(self, who) return not game.party:hasMember(who) end,
 		use = function(self, who)
 			who:magicMap(20)
-			game.logSeen(who, "%s brandishes the %s which radiates in all directions!", who.name:capitalize(), self:getName())
+			game.logSeen(who, "%s brandishes the %s which radiates in all directions!", who.name:capitalize(), self:getName({no_add_name = true, do_color = true}))
 			return {id=true, used=true}
 		end
 	},
@@ -382,7 +385,7 @@ newEntity{
 	special = true,
 
 	use_simple = { name = "quaff the Blood of Life to grant an extra life", use = function(self, who)
-		game.logSeen(who, "%s quaffs the %s!", who.name:capitalize(), self:getName())
+		game.logSeen(who, "%s quaffs the %s!", who.name:capitalize(), self:getName({no_add_name = true, do_color = true}))
 		if not who:attr("undead") then
 			who.blood_life = true
 			game.logPlayer(who, "#LIGHT_RED#You feel the Blood of Life rushing through your veins.")
@@ -978,7 +981,7 @@ newEntity{ base = "BASE_HELM",
 		if who.descriptor and who.descriptor.race == "Halfling" then
 			local Stats = require "engine.interface.ActorStats"
 			self:specialWearAdd({"wielder","inc_stats"}, { [Stats.STAT_CUN] = 7, [Stats.STAT_STR] = 7, }) 
-			game.logPlayer(who, "#LIGHT_BLUE#You gain understanding of the might of your race.", self:getName())
+			game.logPlayer(who, "#LIGHT_BLUE#As you don the %s, you gain understanding of the might of your race.", self:getName({no_add_name = true, do_color = true}))
 		end
 	end,
 	on_takeoff = function(self)
@@ -2085,6 +2088,34 @@ newEntity{ base = "BASE_SHIELD",
 			local effpower = self.use_power.effpower(self, who)
 			return ("purge up to %d diseases (based on Willpower) and gain disease immunity, %d%% blight resistance, and %d spell save for 5 turns"):format(self.use_power.nbdisease(self, who), effpower, effpower)
 		end,
+		tactical = {CURE = function(who, t, aitarget) -- cure diseases
+				local nb, e = 0
+				for eff_id, p in pairs(who.tmp) do
+					e = who.tempeffect_def[eff_id]
+					if e.status == "detrimental" and e.subtype.disease then
+						nb = nb + 1
+					end
+				return nb
+				end
+			end,
+			DEFEND = function(who, t, aitarget) -- if the target can hit us with spells or blight damage, prepare
+				if not aitarget or who:hasEffect(who.EFF_PURGE_BLIGHT) then return 0 end
+				local count, nb, tal = 0, 0
+				for t_id, p in pairs(aitarget.talents) do
+					tal = aitarget.talents_def[t_id]
+					if tal.mode == "activated" then
+						count = count + 1
+						if tal.is_spell and tal.mode == "activated" then
+							nb = nb + 0.1
+							if type(tal.tactical) == "table" then
+								nb = nb + ((type(tal.tactical.attack) == "table" and tal.tactical.attack.BLIGHT or type(tal.tactical.attackarea) == "table" and tal.tactical.attackarea.BLIGHT) and 0.75 or 0)
+							end
+						end
+					end
+				end
+				return math.min(5*(nb/count)^.5, 5)
+			end
+		},
 		power = 24,
 		nbdisease = function(self, who) return math.floor(who:combatStatScale("wil", 3, 5, "log")) end, -- There really aren't that many different disease you can have at one time.
 		effpower = function(self, who) return 20 end,
@@ -2093,6 +2124,7 @@ newEntity{ base = "BASE_SHIELD",
 			local effs = {}
 			local known = false
 
+			game.logSeen(who, "%s holds %s %s close, cleansing %s of corruption!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}), who:his_her_self())
 			who:setEffect(who.EFF_PURGE_BLIGHT, 5, {power=self.use_power.effpower(self, who)})
 
 				-- Go through all spell effects
@@ -2112,7 +2144,7 @@ newEntity{ base = "BASE_SHIELD",
 					known = true
 				end
 			end
-			game.logSeen(who, "%s is purged of diseases!", who.name:capitalize())
+			if known then game.logSeen(who, "%s is purged of diseases!", who.name:capitalize()) end
 			return {id=true, used=true}
 		end,
 	},
@@ -2716,7 +2748,6 @@ newEntity{ base = "BASE_KNIFE",
 	use_talent = { id = Talents.T_INVOKE_DARKNESS, level = 2, power = 8 },
 }
 
-
 newEntity{ base = "BASE_LEATHER_BELT",
 	power_source = {technique=true},
 	unique = true,
@@ -2830,6 +2861,8 @@ newEntity{ base = "BASE_WHIP",
 		power = 10,
 		range = 3,
 		radius = 1,
+		requires_target = true,
+		tactical = {ATTACKAREA = {LIGHTNING = 1.5}, ATTACK = {weapon = 2}},
 		damage = function(self, who) return 20 + who:getMag()/2 + who:getDex()/3 end,
 		use = function(self, who)
 			local dam = self.use_power.damage(self, who)
@@ -2840,13 +2873,13 @@ newEntity{ base = "BASE_WHIP",
 			local target = game.level.map(x, y, engine.Map.ACTOR)
 			if not target then return end
 			local blast = {type="ball", start_x = target.x, start_y = target.y, range=0, radius=self.use_power.radius, selffire=false}
+			who:logCombat(target, "#Source# strikes #Target# with %s %s, sending out an arc of lightning!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:attackTarget(target, engine.DamageType.LIGHTNING, 1, true)
 			local _ _, x, y = who:canProject(tg, x, y)
+			game:playSoundNear(self, "talents/lightning")
 			game.level.map:particleEmitter(who.x, who.y, math.max(math.abs(x-who.x), math.abs(y-who.y)), "lightning", {tx=x-who.x, ty=y-who.y})
 			who:project(blast, x, y, engine.DamageType.LIGHTNING, rng.avg(dam / 3, dam, 3))
 			game.level.map:particleEmitter(x, y, radius, "ball_lightning", {radius=blast.radius})
-			game:playSoundNear(self, "talents/lightning")
-			who:logCombat(target, "#Source# strikes #Target# with %s %s, sending out an arc of lightning!", who:his_her(), self:getName({no_add_name = true}))
 			return {id=true, used=true}
 		end
 	},
@@ -2877,11 +2910,15 @@ newEntity{ base = "BASE_WHIP",
 		talent_on_hit = { [Talents.T_MINDLASH] = {level=1, chance=18} },
 	},
 	max_power = 10, power_regen = 1,
-	use_power = { name = "strike all targets in a line (for 100%% weapon damage as mind)", power = 10,
+	use_power = { name = "strike all targets in a line (for 100%% weapon damage as mind) out to range 4", power = 10,
+		range = 4,
+		requires_target = true,
+		tactical = {ATTACK = {weapon = 1, mind = 1}},
 		use = function(self, who)
-			local tg = {type="beam", range=4}
+			local tg = {type="beam", range=self.use_power.range}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
+			who:logCombat(target, "#Source# manifests a psychic assult with %s %s!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:project(tg, x, y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
@@ -2929,14 +2966,35 @@ newEntity{ base = "BASE_GREATSWORD",
 	use_power = { --slightly less obviously Pure's copy of Catalepsy
 		name = function(self, who) return ("accelerate burning effects on all creatures in a radius %d ball within range %d, consuming them to instantly inflict 125%% of all remaining burn damage"):format(self.use_power.radius(self, who), self.use_power.range(self, who)) end,
 		power = 10,
+		requires_target = true,
 		range = function(self, who) return 5 end,
 		radius = function(self, who) return 1 end,
+		target = function(self, who) return {type="ball", range=self.use_power.range(self, who), radius=self.use_power.radius(self, who), selffire=false} end,
+		tactical = {ATTACK = function(who, t, aitarget)
+			local nb = 0
+			if aitarget then
+				local tg = who:getTalentTarget(t)
+				local x, y = who:getTarget(tg)
+				who:project(tg, x, y, function(px, py)
+					local target = game.level.map(px, py, engine.Map.ACTOR)
+					if not target then return end
+
+					local burns = {}
+					for eff_id, p in pairs(target.tmp) do
+						local e = target.tempeffect_def[eff_id]
+						if e.subtype.fire and (p.dur or 0) > 0 and p.power and e.status == "detrimental" then
+							nb = nb + 1
+						end
+					end
+				end)
+			end
+			return nb > 0 and {fire = math.min(5, nb)}
+		end},
 		use=function(self, who, target)
-			local tg = {type="ball", range=self.use_power.range(self, who), radius=self.use_power.radius(self, who), selffire=false}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
-
-			local source = nil
+			game.logSeen(who, "%s's %s lashes out in a flaming arc, intensifying the burning of %s enemies!", who.name:capitalize(), self:getName({do_color = true, no_add_name = true}), who:his_her())
 			who:project(tg, x, y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
@@ -2951,8 +3009,8 @@ newEntity{ base = "BASE_GREATSWORD",
 				end
 				-- Make them EXPLODE !!!
 				for i, d in ipairs(burns) do
-					target:removeEffect(d.id)
 					engine.DamageType:get(engine.DamageType.FIRE).projector(who, px, py, engine.DamageType.FIRE, d.params.power * d.params.dur * 1.25)
+					target:removeEffect(d.id)
 				end
 				game.level.map:particleEmitter(target.x, target.y, 1, "ball_fire", {radius=1})
 			end)
@@ -2990,13 +3048,16 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 		power = 10,
 		damage = function(self, who) return 15 + who:getWil()/3 + who:getCun()/3 end,
 		range =5,
+		target = function(self, who) return {type="beam", range=self.use_power.range} end,
+		requires_target = true,
+		tactical = {ATTACK = {PHYSICAL = 2}, ESCAPE = 1.5},
 		use = function(self, who)
 			local dam = self.use_power.damage(self, who)
-			local tg = {type="beam", range=self.use_power.range}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
+			game.logSeen(who, "%s focuses a beam of force from %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:project(tg, x, y, engine.DamageType.MINDKNOCKBACK, who:mindCrit(rng.avg(0.8*dam, dam)))
-			game.logSeen(who, "%s focuses a beam of kinetic energy from of %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game.level.map:particleEmitter(who.x, who.y, tg.radius, "matter_beam", {tx=x-who.x, ty=y-who.y})
 			return {id=true, used=true}
 		end
@@ -3297,7 +3358,7 @@ newEntity{ base = "BASE_LONGSWORD", define_as="MORRIGOR",
 			local tids = {}
 			for tid, _ in pairs(target.talents) do
 				local t = target:getTalentFromId(tid)
-				if t.mode == "activated" and not t.uber and not t.on_pre_use and not t.no_npc_use and not t.hide and not t.is_nature and not t.type[1]:find("/other") and not t.type[1]:find("horror") and not t.type[1]:find("race/") and not t.type[1]:find("inscriptions/") and t.id ~= who.T_HIDE_IN_PLAIN_SIGHT then
+				if t.mode == "activated" and not t.uber and not t.on_pre_use and not t.no_npc_use and not t.is_object_use and not t.hide and not t.is_nature and not t.type[1]:find("/other") and not t.type[1]:find("horror") and not t.type[1]:find("race/") and not t.type[1]:find("inscriptions/") and t.id ~= who.T_HIDE_IN_PLAIN_SIGHT then
 					tids[#tids+1] = tid
 					got_talent = true
 				end
@@ -3307,12 +3368,17 @@ newEntity{ base = "BASE_LONGSWORD", define_as="MORRIGOR",
 				local t = target:getTalentFromId(get_talent)
 				o.use_talent = {}
 				o.use_talent.id = t.id
-				o.use_talent.power = (who:getTalentCooldown(t) or 5)
 				o.use_talent.level = 3
+				get_talent = target.talents[t.id]
+				target.talents[t.id] = o.use_talent.level
+				o.use_talent.power = (target:getTalentCooldown(t, true) or 5)
+				target.talents[t.id] = get_talent
+				o.use_talent.name = ((t.display_entity and t.display_entity:getDisplayString() or "")..t.name):toString()
+				o.use_talent.message = "@Source@ taps the #SALMON#trapped soul#LAST# of "..target.name..", xmanifesting "..o.use_talent.name.."!"
 				o.power = 1
-				o.max_power = (who:getTalentCooldown(t) or 5)
+				o.max_power = o.use_talent.power
 				o.power_regen = 1
-				game.logSeen(who, "%s's %s #SALMON#CONSUMES THE SOUL#LAST# of %s, gaining the power of %s!", who.name:capitalize(), o:getName({no_add_name = true, do_color = true}), target.name, ((t.display_entity and t.display_entity:getDisplayString() or "")..t.name):toTString())
+				game.logSeen(who, "%s's %s #SALMON#CONSUMES THE SOUL#LAST# of %s, gaining the power of %s!", who.name:capitalize(), o:getName({no_add_name = true, do_color = true}), target.name, o.use_talent.name)
 				who:check("useObjectEnable", o, inven_id, item)
 			end
 	end},
@@ -3387,12 +3453,19 @@ newEntity{ base = "BASE_GAUNTLETS",
 	define_as = "GAUNTLETS_SPELLHUNT",
 	unique = true,
 	name = "Spellhunt Remnants", color = colors.GREY, image = "object/artifact/spellhunt_remnants.png",
-	unided_name = "rusted voratun gauntlets",
+	unided_name = "heavily corroded voratun gauntlets",
 	desc = [[These once brilliant voratun gauntlets have fallen into a deep decay. Originally used in the spellhunt, they were often used to destroy arcane artifacts, curing the world of their influence.]],
-	level_range = {1, 25}, --Relevant at all levels, though of course mat level 1 limits it to early game.
-	rarity = 450, -- But rare to make it not ALWAYS appear.
+--	material_level = 1, --Special: this artifact can appear anywhere and adjusts its material level to the zone
+	level_range = {1, nil}, 
+	rarity = 550, -- Extra rare to make it not ALWAYS appear.
+	addedToLevel = function(self, level, x, y) -- generated on a level
+		local mat_level = util.getval(game.zone.min_material_level) or 1
+		self.power_up(self, nil, mat_level)
+	end,
+	on_preaddobject = function(self, who, inven) -- generated in an actor's inventory
+		if not self.material_level then self.addedToLevel(self, game.level) end
+	end,
 	cost = 1000,
-	material_level = 1,
 	wielder = {
 		combat_mindpower=4,
 		combat_mindcrit=1,
@@ -3414,10 +3487,13 @@ newEntity{ base = "BASE_GAUNTLETS",
 		local Stats = require "engine.interface.ActorStats"
 		local Talents = require "engine.interface.ActorTalents"
 		local DamageType = require "engine.DamageType"
-		local _, _, inven_id = who:findInAllInventoriesByObject(self)
-		who:onTakeoff(self, inven_id, true)
+		local _, _, inven_id = who and who:findInAllInventoriesByObject(self)
+		if who then who:onTakeoff(self, inven_id, true) end
 		self.wielder=nil
-		if level==2 then -- LEVEL 2
+		self.wielded=nil
+		self.material_level = level
+		if level == 2 then -- LEVEL 2
+		self.unided_name = "corroded voratun gauntlets"
 		self.desc = [[These once brilliant voratun gauntlets appear heavily decayed. Originally used in the spellhunt, they were often used to destroy arcane artifacts, ridding the world of their influence.]]
 		self.wielder={
 			combat_mindpower=6,
@@ -3436,7 +3512,8 @@ newEntity{ base = "BASE_GAUNTLETS",
 				talent_on_hit = { [Talents.T_DESTROY_MAGIC] = {level=2, chance=100} },
 			},
 		}
-		elseif  level==3 then -- LEVEL 3
+		elseif level == 3 then -- LEVEL 3
+		self.unided_name = "tarnished voratun gauntlets"
 		self.desc = [[These voratun gauntlets appear to have suffered considerable damage. Originally used in the spellhunt, they were often used to destroy arcane artifacts, ridding the world of their influence.]]
 		self.wielder={
 			combat_mindpower=8,
@@ -3455,7 +3532,8 @@ newEntity{ base = "BASE_GAUNTLETS",
 				talent_on_hit = { [Talents.T_DESTROY_MAGIC] = {level=3, chance=100}, [Talents.T_MANA_CLASH] = {level=1, chance=5} },
 			},
 		}
-		elseif  level==4 then -- LEVEL 4
+		elseif level == 4 then -- LEVEL 4
+		self.unided_name = "slightly tarnished voratun gauntlets"
 		self.desc = [[These voratun gauntlets shine brightly beneath a thin layer of wear. Originally used in the spellhunt, they were often used to destroy arcane artifacts, ridding the world of their influence.]]
 		self.wielder={
 			combat_mindpower=10,
@@ -3474,8 +3552,9 @@ newEntity{ base = "BASE_GAUNTLETS",
 				talent_on_hit = { [Talents.T_DESTROY_MAGIC] = {level=4, chance=100}, [Talents.T_MANA_CLASH] = {level=2, chance=10} },
 			},
 		}
-		elseif  level==5 then -- LEVEL 5
-		self.desc = [[These brilliant voratun gauntlets shine with an almost otherworldly glow. Originally used in the spellhunt, they were often used to destroy arcane artifacts, ridding the world of their influence. You feel proud of having fulfilled this ancient duty.]]
+		elseif level >= 5 then -- LEVEL 5
+		self.unided_name = "gleaming voratun gauntlets"
+		self.desc = [[These brilliant voratun gauntlets shine with an almost otherworldly glow. Originally used in the spellhunt, they were often used to destroy arcane artifacts, ridding the world of their influence. Pride in the fulfillment of this ancient duty practically radiates from them.]]
 		self.wielder={
 			combat_mindpower=12,
 			combat_mindcrit=5,
@@ -3502,11 +3581,39 @@ newEntity{ base = "BASE_GAUNTLETS",
 			power = 100,
 			unnaturaldam = function(self, who) return 100+who:combatMindpower() end,
 			radius = 5,
+			range = 0,
+			requires_target = true,
+			target = function(self, who) return {type="cone", range=self.use_power.range, radius=self.use_power.radius} end,
+			tactical = { ATTACK = function(self, t, aitarget)
+					if aitarget.undead or aitarget.construct then return {arcane = 2} end
+				end,
+				DISABLE = function(self, t, aitarget)
+					local base = (aitarget.undead or aitarget.construct) and 2 or 0
+					local nb = 0
+					for eff_id, p in pairs(aitarget.tmp) do
+						local e = self.tempeffect_def[eff_id]
+						if e.type == "magical" and e.status == "beneficial" then nb = nb + 1 end
+					end
+					for tid, act in pairs(aitarget.sustain_talents) do
+						if act then
+							local talent = aitarget:getTalentFromId(tid)
+							if talent.is_spell then nb = nb + 1 end
+						end
+					end
+					local ef = aitarget:hasEffect(aitarget.EFF_SPELL_DISRUPTION)
+					if not ef or rng.percent(100-(ef.power or 0)) then
+						for tid, lev in pairs(aitarget.talents) do
+							local t = aitarget.talents_def[tid]
+							if t.is_spell then nb = nb + 0.5 end
+						end
+					end
+					return base + nb^0.5
+				end},
 			use= function(self,who)
-				local tg = {type="cone", range=0, radius=self.use_power.radius}
+				local tg = self.use_power.target(self, who)
 				local x, y = who:getTarget(tg)
 				if not x or not y then return nil end
-				game.logSeen(who, "%s FIRST unleashes antimagic forces from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
+				game.logSeen(who, "%s unleashes antimagic forces from %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 				who:project(tg, x, y, function(px, py)
 					local target = game.level.map(px, py, engine.Map.ACTOR)
 					if not target then return end
@@ -3537,23 +3644,28 @@ newEntity{ base = "BASE_GAUNTLETS",
 						end
 					end
 					if target.undead or target.construct then
+						game.logSeen(target, "%s's animating magic is disrupted by the burst of power!", target.name:capitalize())
 						who:project({type="hit"}, target.x, target.y, engine.DamageType.ARCANE, self.use_power.unnaturaldam(self, who))
 						if target:canBe("stun") then target:setEffect(target.EFF_STUNNED, 10, {apply_power=who:combatMindpower()}) end
-						game.logSeen(target, "%s's animating magic is disrupted by the burst of power!", target.name:capitalize())
 					end
 				end, nil, {type="slime"})
 				game:playSoundNear(who, "talents/breath")
 				return {id=true, used=true}
 			end}
 		end
-
-		who:onWear(self, inven_id, true)
+		if who then
+			who:onWear(self, inven_id, true)
+			who:useObjectEnable(self, inven_id)
+		end
 	end,
 	max_power = 150, power_regen = 1,
-	use_power = { name = "destroy an arcane item (of a higher tier than the gauntlets)", power = 1, use = function(self, who, obj_inven, obj_item)
+	use_power = {
+	name = "destroy an arcane item (of a higher tier than the gauntlets)", power = 1,
+	no_npc_use = true,
+	use = function(self, who, obj_inven, obj_item)
 		local d = who:showInventory("Destroy which item?", who:getInven("INVEN"), function(o) return o.unique and o.power_source and o.power_source.arcane and o.power_source.arcane and o.power_source.arcane == true and o.material_level and o.material_level > self.material_level end, function(o, item, inven)
 			if o.material_level <= self.material_level then return end
-			self.material_level=o.material_level
+			self.material_level=self.material_level + 1
 			game.logPlayer(who, "You crush the %s, and the gloves take on an illustrious shine!", o:getName{do_color=true})
 
 			if not o then return end
@@ -3653,15 +3765,17 @@ newEntity{ base = "BASE_SHIELD",
 		power = 12,
 		damage = function(self, who) return 20 + who:getWil()/3 + who:getCun()/3 end,
 		range = 7,
+		target = function(self, who) return {type="beam", range=self.use_power.range} end,
+		tactical = {ATTACK = {LIGHT = 2}},
+		requires_target = true,
 		use = function(self, who)
 			local dam = self.use_power.damage(self, who)
-			local tg = {type="beam", range=self.use_power.range}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
-			
-			who:project(tg, x, y, engine.DamageType.LITE_LIGHT, who:mindCrit(rng.avg(0.8*dam, dam)))
-			game.logSeen(who, "%s's %s flashes!", who.name:capitalize(), self:getName({no_add_name = true}))
+			game.logSeen(who, "%s's %s flashes!", who.name:capitalize(), self:getName({do_color = true, no_add_name = true}))
 			game.level.map:particleEmitter(who.x, who.y, tg.radius, "light_beam", {tx=x-who.x, ty=y-who.y})
+			who:project(tg, x, y, engine.DamageType.LITE_LIGHT, who:mindCrit(rng.avg(0.8*dam, dam)))
 			return {id=true, used=true}
 		end
 	},
@@ -3830,17 +3944,34 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 		},
 	},
 	max_power = 24, power_regen = 1,
-	use_power = { name = "phase door in range 6, radius 2", power = 24,
+	use_power = { name = "phase door up to range 6, within radius 2 of the target location", power = 24,
+		tactical = {ESCAPE = 2, CLOSEIN = 2},
 		use = function(self, who)
 			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=6, radius=2, requires_knowledge=false}
-			local x, y = who:getTarget(tg)
-			if not x then return nil end
-			-- Target code does not restrict the target coordinates to the range, it lets the project function do it
-			-- but we cant ...
-			local _ _, x, y = who:canProject(tg, x, y)
-
-			-- Check LOS
+			local tx, ty = who:getTarget(tg)
+			if not tx or not ty then return nil end
+			local x, y
+			
+			if who.ai_state.tactic == "closein" then  -- teleport to target location
+				local _ _, x, y = who:canProject(tg, tx, ty)
+--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
+				if not x or not y then return {id=true} end
+			else  -- try to teleport away
+--			if who.ai_state.tactic == "escape" then -- try to teleport away
+--game.log("--%s trying to jump away from (%s, %s)", who.name, tx, ty)
+				x = who.x + (who.x - tx)*100
+				y = who.y + (who.y - ty)*100
+				local _ _, x, y = who:canProject(tg, x, y)
+				if not x or not y then return nil end
+--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
+				if not x or not y or core.fov.distance(x, y, tx, ty) <=1 then return nil end
+--			else -- teleport to target location
+--				local _ _, x, y = who:canProject(tg, tx, ty)
+--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
+--				if not x or not y then return {id=true} end
+			end
 			local rad = 2
+			game.logSeen(who, "%s is #PURPLE#ENVELOPED#LAST# in a deep purple aura from %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 			who:teleportRandom(x, y, rad)
 			game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
@@ -3965,7 +4096,7 @@ newEntity{ base = "BASE_LITE", --Thanks Frumple!
 	material_level=3,
 	sentient=true,
 	charge = 0,
-	special_desc = function(self) return ("Absorbs all darkness (power %d, based on Willpower and Cunning) within its light radius, increasing in brightness. (current charge %d)."):format(self.worn_by and self.use_power.litepower(self, self.worn_by) or 100, self.charge) end,
+	special_desc = function(self) return ("Absorbs all darkness (power %d, based on Willpower and Cunning) within its light radius, increasing its own brightness. (current charge %d)."):format(self.worn_by and self.use_power.litepower(self, self.worn_by) or 100, self.charge) end,
 	on_wear = function(self, who)
 		self.worn_by = who
 	end,
@@ -4029,14 +4160,17 @@ newEntity{ base = "BASE_LITE", --Thanks Frumple!
 		-- radius of cone and chance to blind depend on lite radius of the artifact
 		radius = function(self, who) return self.wielder.lite end,
 		blindchance = function(self, who) return self.wielder.lite*10 end,
-
+		range = 0,
+		target = function(self, who) return {type="cone", range=0, radius=self.use_power.radius(self, who)} end,
+		tactical = {ATTACKAREA = {DARKNESS = 2}, DISABLE = {blind = 2}},
+		requires_target = true,
 		litepower = function(self, who) return who:combatStatScale(who:getWil(70)+who:getCun(30), 50, 150) end,
 		use = function(self, who)
 			local dam = self.use_power.damage(self, who)
-			local tg = {type="cone", range=0, radius=self.use_power.radius(self, who)}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
-			game.logSeen(who, "%s triggers %s %s, unleashing a torrent of shadows!", who.name:capitalize(), who:his_her(), self:getName())
+			game.logSeen(who, "%s unshutters %s %s, unleashing a torrent of shadows!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, x, y, engine.DamageType.DARKNESS, who:mindCrit(dam)) -- FIRE!
 			who:project(tg, x, y, engine.DamageType.RANDOM_BLIND, self.use_power.blindchance(self, who)) -- blind
 			game.level.map:particleEmitter(who.x, who.y, tg.radius, "breath_dark", {radius=tg.radius, tx=x-who.x, ty=y-who.y})
@@ -4061,7 +4195,7 @@ newEntity{ base = "BASE_LITE", --Thanks Grayswandir!
 	level_range = {20, 30},
 	color=colors.BLUE,
 	rarity = 240,
-	desc = [[This ancient, weathered lantern glows with a pale blue light. The metal is icy cold to the touch.]],
+	desc = [[This ancient, weathered lantern glows with a pale blue light emanating from several ghostly forms trapped within.  The metal is icy cold to the touch.]],
 	cost = 320,
 	material_level=3,
 	wielder = {
@@ -4077,13 +4211,26 @@ newEntity{ base = "BASE_LITE", --Thanks Grayswandir!
 		},
 	},
 	max_power = 20, power_regen = 1,
-	use_power = { name = "release a will o' the wisp", power = 20,
+	use_power = {
+		name = function(self, who)
+			local dam = who:damDesc(engine.DamageType.COLD, self.use_power.damage(self, who))
+			return ("release a will o' the wisp that will explode against your foes for %d cold damage (based on your Magic)"):format(dam)
+		end,
+		power = 20,
+		damage = function(self, who) return 110 + who:getMag() * 2.5 end,
+		tactical = {ATTACK = {COLD = 2}},
 		use = function(self, who)
+			if not who:canBe("summon") then game.logPlayer(who, "You cannot summon; you are suppressed!") return end
 			local x, y = util.findFreeGrid(who.x, who.y, 5, true, {[engine.Map.ACTOR]=true})
+			if not x then
+				game.logPlayer(self, "Not enough space to summon!")
+				return
+			end
 			local NPC = require "mod.class.NPC"
 			local Talents = require "engine.interface.ActorTalents"
 			local m = NPC.new{
 				name = "will o' the wisp",
+				desc = "A chilling, ghostly form that floats in the air.",
 				type = "undead", subtype = "ghost",
 				blood_color = colors.GREY,
 				display = "G", color=colors.WHITE,
@@ -4110,7 +4257,9 @@ newEntity{ base = "BASE_LITE", --Thanks Grayswandir!
 				cut_immune = 1,
 				see_invisible = 80,
 				undead = 1,
-				will_o_wisp_dam = 110 + who:getMag() * 2.5,
+				will_o_wisp_dam = self.use_power.damage(self, who),
+				inc_damage = table.clone(who.inc_damage),
+				resists_pen = table.clone(who.resists_pen),
 				resolvers.talents{[Talents.T_WILL_O__THE_WISP_EXPLODE] = 1,},
 				
 				faction = who.faction,
@@ -4119,6 +4268,7 @@ newEntity{ base = "BASE_LITE", --Thanks Grayswandir!
 			}
 
 			m:resolve()
+			who:logCombat(who.ai_target.actor, "#Source# releases an icy whisp from %s %s!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.zone:addEntity(game.level, m, "actor", x, y)
 			m.remove_from_party_on_death = true,
 			game.party:addMember(m, {
@@ -4137,7 +4287,7 @@ newEntity{ base = "BASE_TOOL_MISC",
 	unique=true, rarity=240,
 	type = "charm", subtype="totem",
 	name = "The Guardian's Totem", image = "object/artifact/the_guardians_totem.png",
-	unided_name = "cracked stone totem",
+	unided_name = "a cracked stone totem",
 	color = colors.GREEN,
 	level_range = {40, 50},
 	desc = [[This totem of ancient stone oozes a thick slime from myriad cracks. Nonetheless, you sense great power within it.]],
@@ -4151,9 +4301,20 @@ newEntity{ base = "BASE_TOOL_MISC",
 		inc_stats = {[Stats.STAT_WIL] = 10,},
 		combat_mindpower=8,
 	},
-		max_power = 35, power_regen = 1,
-	use_power = { name = "call an antimagic pillar for 15 turns, but silence yourself for 5 turns", power = 35,
+	max_power = 35, power_regen = 1,
+	use_power = {
+		name = "call forth an immobile antimagic pillar for 15 turns.  (It spits slime, pulls in, stuns, and burns the arcane resources of your foes, while emitting an aura of silence against them within range 5, and will silence you for 5 turns when first summoned.)",
+		power = 35,
+		tactical = {ATTACK = {NATURE = 2},
+			CLOSEIN = 1.5,
+			DISABLE = function(self, t, aitarget)
+				local val = 1.5 + (aitarget:attr("has_arcane_knowledge") and 2 or 0) + (aitarget:knowTalent(aitarget.T_MANA_POOL) and 1 or 0) + (aitarget:knowTalent(aitarget.T_VIM_POOL) and 1 or 0)
+			end
+		},
+		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end,
+		on_pre_use_ai = function(self, who) return not who:attr("has_arcane_knowledge") end,
 		use = function(self, who)
+			if not who:canBe("summon") then game.logPlayer(who, "You cannot summon; you are suppressed!") return end
 			local x, y = util.findFreeGrid(who.x, who.y, 5, true, {[engine.Map.ACTOR]=true})
 			if not x then
 				game.logPlayer(self, "Not enough space to invoke!")
@@ -4177,7 +4338,7 @@ newEntity{ base = "BASE_TOOL_MISC",
 					dammod={wil=1.2}, physcrit = 10,
 					damtype=engine.DamageType.SLIME,
 				},
-				level_range = {1, nil}, exp_worth = 0,
+				level_range = {25, nil}, exp_worth = 0,
 				silent_levelup = true,
 				combat_armor=50,
 				combat_armor_hardiness=70,
@@ -4204,11 +4365,12 @@ newEntity{ base = "BASE_TOOL_MISC",
 				combat_mentalresist=50,
 				combat_spellresist=100,
 				on_act = function(self) self:project({type="ball", range=0, radius=5, friendlyfire=false}, self.x, self.y, engine.DamageType.SILENCE, {dur=2, power_check=self:combatMindpower()}) end,
+				power_source = {nature=true, antimagic=true},
 				resolvers.talents{
-					[Talents.T_RESOLVE]={base=3, every=6},
-					[Talents.T_MANA_CLASH]={base=3, every=5},
-					[Talents.T_STUN]={base=3, every=4},
-					[Talents.T_OOZE_SPIT]={base=5, every=4},
+					[Talents.T_RESOLVE]={base=3, every=8},
+					[Talents.T_MANA_CLASH]={base=3, every=10},
+					[Talents.T_STUN]={base=3, every=8},
+					[Talents.T_OOZE_SPIT]={base=5, every=10},
 					[Talents.T_TENTACLE_GRAB]={base=1, every=6,},
 				},
 				
@@ -4218,6 +4380,7 @@ newEntity{ base = "BASE_TOOL_MISC",
 			}
 
 			m:resolve()
+			who:logCombat(m, "#Source# uses %s to summon a natural guardian!", self:getName({do_color=true, no_add_name=true}))
 			game.zone:addEntity(game.level, m, "actor", x, y)
 			m.remove_from_party_on_death = true,
 			game.party:addMember(m, {
@@ -4286,12 +4449,15 @@ newEntity{ base = "BASE_TOOL_MISC",
 		damage = function(self, who) return 200 + who:getMag() * 2 end,
 		range = 5,
 		radius = 2,
+		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius} end,
+		requires_target = true,
+		tactical = {ATTACKAREA = {TEMPORAL = 2, DARKNESS = 2}},
 		use = function(self, who)
-			local tg = {type="ball", range=self.use_power.range, radius=self.use_power.radius}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
+			game.logSeen(who, "%s siphons space and time into %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:project(tg, x, y, engine.DamageType.VOID, self.use_power.damage(self, who))
-			game.logSeen(who, "%s siphons space and time into %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game.level.map:particleEmitter(x, y, tg.radius, "shadow_flash", {radius=tg.radius, tx=x, ty=y})
 			return {id=true, used=true}
 		end
@@ -4342,7 +4508,6 @@ newEntity{ base = "BASE_SHIELD", --Thanks SageAcrin!
 		end
 	end,},
 }
-
 
 newEntity{ base = "BASE_AMULET", --Thanks Grayswandir!
 	power_source = {psionic=true},
@@ -4708,7 +4873,7 @@ newEntity{ base = "BASE_TOOL_MISC", --Sorta Thanks Donkatsu!
 		else
 			self.particle = who:addParticles(engine.Particles.new("ultrashield", 1, {rm=0, rM=0, gm=180, gM=220, bm=10, bM=80, am=80, aM=150, radius=2, density=30, life=14, instop=17}))
 		end
-		game.logPlayer(who, "#CRIMSON# A powerful healing aura appears around you as you equip the %s.", self:getName())
+		game.logPlayer(who, "#CRIMSON# A powerful healing aura appears around you as you equip the %s.", self:getName({no_add_name = true, do_color = true}))
 	end,
 	act = function(self)
 		self:useEnergy()
@@ -4721,8 +4886,20 @@ newEntity{ base = "BASE_TOOL_MISC", --Sorta Thanks Donkatsu!
 		who:project(blast, who.x, who.y, engine.DamageType.HEALING_NATURE, 5)
 	end,
 	max_power = 15, power_regen = 1,
-	use_power = { name = "take root increasing health, armor, and armor hardiness but rooting you in place", power = 10,
+	use_power = {
+		name = "take root increasing health by 300, armor by 20, and armor hardiness by 20%% but rooting you in place for 4 turns",
+		power = 10,
+		tactical = {DEFEND = 2},
+		on_pre_use_ai = function(self, who, silent, fake)
+			if who:hasEffect(who.EFF_TREE_OF_LIFE) then return end
+			if who.ai_tactic then
+				if math.max(who.ai_tactic.closein or 1, who.ai_tactic.escape or 1) > (who.ai_tactic.defend or 1) then return end
+			end
+			return true 
+		end,
+		no_npc_use = function(self, who) return who:attr("undead") or self:restrictAIUseObject(who) end,
 		use = function(self, who)
+			game.logSeen(who, "%s merges with %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name = true}))
 			who:setEffect(who.EFF_TREE_OF_LIFE, 4, {})
 			return {id=true, used=true}
 		end
@@ -4817,8 +4994,13 @@ newEntity{ base = "BASE_LIGHT_ARMOR", --Thanks SageAcrin!
 		use_power = {
 		name = function(self, who) return ("turn yourself invisible (power %d, based on Cunning and Magic) for 10 turns"):format(self.use_power.invispower(self, who)) end,
 		power = 50,
+		tactical = {DEFEND = 2, ESCAPE = 2},
+		on_pre_use_ai = function(self, who, silent, fake)
+			return not who:hasEffect(who.EFF_INVISIBILITY) 
+		end,
 		invispower = function(self, who) return 10+who:getCun()/6+who:getMag()/6 end,
 		use = function(self, who)
+			game.logSeen(who, "%s pulls %s %s around %s like a dark shroud!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}), who:his_her_self())
 			who:setEffect(who.EFF_INVISIBILITY, 10, {power=self.use_power.invispower(self, who), penalty=0.5, regen=true})
 			return {id=true, used=true}
 		end
@@ -4875,10 +5057,11 @@ newEntity{ base = "BASE_TOOL_MISC", --Thanks Alex!
 	cost = 200,
 	material_level = 4,
 	direction=1,
+	position = 0,
 	finished=false,
 	sentient=true,
 	metallic = false,
-	special_desc = function(self) return "Offers either offensive or defensive benefits, depending on the position of the sands." end,
+	special_desc = function(self) return "Offers either offensive or defensive benefits, depending on the position of the sands.  Switching the direction of flow takes no time." end,
 	wielder = {
 		inc_damage = { [DamageType.TEMPORAL]= 15},
 		resists = { [DamageType.TEMPORAL] = 15, all = 0, },
@@ -4892,16 +5075,36 @@ newEntity{ base = "BASE_TOOL_MISC", --Thanks Alex!
 	use_power = {
 		name = function(self, who) return ("flip the hourglass (sands currently flowing towards %s)"):format(self.direction > 0 and "stability" or "entropy") end,
 		power = 20,
+		tactical = function(self, who, aitarget)
+			if not aitarget then return end
+			
+			local tac = {}
+				if self.direction > 0 then tac.buff = self.position/10 end
+				if self.direction < 0 then tac.escape = -self.position/20 end
+				if self.direction < 0 then tac.closein = -self.position/20 end
+				if self.direction < 0 then tac.defend = -self.position/10 end
+				
+			if true then return tac end
+		end,
+		on_pre_use_ai = function(self, who, silent, fake)
+			self.use_power.last_used = self.use_power.last_used or game.turn
+			return game.turn - self.use_power.last_used > 100 -- don't want the ai to switch too much
+		end,
+		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end,
 		use = function(self, who)
+--game.log("%s: ai_tactic: %s", who.name, who.ai_state.tactic)
 			local power = self.power
+			self.use_power.last_used = game.turn
 			self.direction = self.direction * -1
 			self.finished = false
 			who:onTakeoff(self, who.INVEN_TOOL, true)
 			self.wielder.inc_damage.all = 0
 			self.wielder.flat_damage_armor.all = 0
 			who:onWear(self, who.INVEN_TOOL, true)
+			game.logSeen(who, "%s flips %s %s over...", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.logPlayer(who, "#GOLD#The sands slowly begin falling towards %s.", self.direction > 0 and "stability" or "entropy")
 			self.power = power
+			return {id=true, used=true, no_energy = true} -- effectively instant use without the AI priority boost
 		end
 	},
 	on_wear = function(self, who)
@@ -4922,23 +5125,27 @@ newEntity{ base = "BASE_TOOL_MISC", --Thanks Alex!
 		local power = self.power
 		who:onTakeoff(self, who.INVEN_TOOL, true)
 		
-		self.wielder.resists.all = self.wielder.resists.all + direction * 3
-		self.wielder.movement_speed = self.wielder.movement_speed + direction * 0.04
-		self.wielder.combat_physspeed = self.wielder.combat_physspeed - direction * 0.03
-		self.wielder.combat_spellspeed = self.wielder.combat_spellspeed - direction * 0.03
-		self.wielder.combat_mindspeed = self.wielder.combat_mindspeed - direction * 0.03
-		
-		if self.wielder.resists.all <= -10 then 
+		self.position = self.position + direction
+
+		if self.position <= -4 then
+			self.position = -4
 			self.wielder.inc_damage.all = 10
 			game.logPlayer(who, "#GOLD#As the final sands drop into place, you feel a surge of power.")
 			self.finished=true
 		end
-		if self.wielder.resists.all >= 10 then 
+		if self.position >= 4 then
+			self.position = 4
 			self.wielder.flat_damage_armor.all = 10
 			game.logPlayer(who, "#GOLD#As the final sands drop into place, you suddenly feel safer.")
 			self.finished=true
 		end
-		
+
+		self.wielder.resists.all = self.position * 3
+		self.wielder.movement_speed = self.position * 0.04
+		self.wielder.combat_physspeed = -self.position * 0.03
+		self.wielder.combat_spellspeed = -self.position * 0.03
+		self.wielder.combat_mindspeed = -self.position * 0.03
+
 		who:onWear(self, who.INVEN_TOOL, true)
 		self.power = power
 	end,
@@ -5471,9 +5678,10 @@ newEntity{ base = "BASE_LEATHER_CAP",
 	},
 	max_power = 30, power_regen = 1,
 	use_power = { name = "reveal the surrounding area (range 20)", power = 30,
+		no_npc_use = function(self, who) return not game.party:hasMember(who) end,
 		use = function(self, who)
+			game.logSeen(who, "%s grasps %s %s and has a sudden vision!", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name=true}))
 			who:magicMap(20)
-			game.logSeen(who, "%s has a sudden vision!", who.name:capitalize())
 			return {id=true, used=true}
 		end
 	},
@@ -5792,7 +6000,7 @@ newEntity{ base = "BASE_LONGSWORD",
 	unided_name = "blood drenched shortsword", color=colors.CRIMSON,
 	moddable_tile = "special/%s_butcher",
 	moddable_tile_big = true,
-	desc = [[Be it corruption, madness or eccentric boredom, the halfling butcher by the name of Caleb once took to eating his kin instead of cattle. His spree was never ended and nobody knows where he disappeared to. Only the blade remained, stuck fast in bloodied block. Beneath, a carving said "This was fun, let's do it again some time."]],
+	desc = [[Be it corruption, madness or eccentric boredom, the halfling butcher by the name of Caleb once took to eating his kin instead of cattle. His spree was never ended and nobody knows where he disappeared to. Only the blade remained, stuck fast in a bloodied block. Beneath, a carving said "This was fun, let's do it again some time."]],
 	require = { stat = { str=40 }, },
 	level_range = {36, 48},
 	rarity = 250,
@@ -5921,11 +6129,47 @@ newEntity{ base = "BASE_HEAVY_BOOTS",
 		},
 	},
 	max_power = 32, power_regen = 1,
-	use_power = { name = "boost movement speed by 300% for 4 turns (does not use a turn)", power = 32,
-	use = function(self, who)
-		game:onTickEnd(function() who:setEffect(who.EFF_HUNTER_SPEED, 5, {power=300}) end)
-		return {id=true, used=true}
-	end
+	on_wear = function(self, who)
+		self.worn_by = who
+		self.use_power.t_bias = 0
+	end,
+	on_takeoff = function(self, who) self.worn_by = nil end,
+	act = function(self) -- update tactical bias
+		self:useEnergy()
+		self:regenPower()
+		if not self.worn_by then return end
+		local who = self.worn_by
+		local UP = self.use_power
+		if math.abs(UP.t_bias) ~= 0 then
+			UP.t_bias = util.bound(UP.t_bias + (UP.t_bias > 1 and -1 or 1), -10, 10)
+		end
+--game.log("%s acting: worn by %s with tactic %s, bias: %s", self.name, who.name, who.ai_state.tactic, UP.t_bias)
+print(("%s acting: worn by %s with tactic %s, bias: %s"):format(self.name, who.name, who.ai_state.tactic, UP.t_bias))
+
+	end,
+	use_power = { name = "boost movement speed by 300% for up to 5 turns (or until you perform a non-movement action)", power = 32,
+		t_bias = 0, -- keeps track of tactical use
+		on_pre_use_ai = function(self, who) return not who:attr("never_move") and not who:attr("cant_be_moved") and not who:hasEffect(who.EFF_HUNTER_SPEED) end,
+		tactical = function(self, who, aitarget)
+			local TB = self.use_power.t_bias
+			local tac = {}
+			tac.closein = 0.5 + TB/10
+			tac.escape = 0.5 - TB/10
+			return tac
+		end,
+		use = function(self, who)
+			game.logSeen(who, "%s digs in %s %s.", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name = true}))
+			if not who.player then -- NPCs keep track of tactics to prevent overuse
+				local UP = self.use_power
+				if who.ai_state.tactic == "closein" then
+					UP.t_bias = UP.t_bias + 10
+				elseif who.ai_state.tactic == "escape" then
+					UP.t_bias = UP.t_bias - 10
+				end
+			end
+			who:setEffect(who.EFF_HUNTER_SPEED, 5, {power=300})
+			return {id=true, used=true, nobreakStepUp = true}
+		end
 	},
 }
 
@@ -6017,9 +6261,21 @@ newEntity{ base = "BASE_TOOL_MISC",
 		lite=2,
 	},
 		max_power = 35, power_regen = 1,
-	use_power = { name = "summon a shining orb", power = 35,
+	use_power = { name = function(self, who)
+			local dam = who:damDesc(engine.DamageType.LIGHT, self.use_power.damage(self, who))
+			return ("summon a stationary shining orb within range %d for 15 turns that will illuminate its area and deal %d light damage (based on your Magic and Strength) to your foes within radius %d each turn"):format(self.use_power.range, dam, self.use_power.radius)
+		end,
+		power = 35,
+		range = 5,
+		radius = 5,
+		damage = function(self, who) return (who:getMag()*2 + who:getStr())/3 + 20 end,
+		target = function(self, who) return {type="ball", nowarning=true, range=self.use_power.range, radius=self.use_power.radius, friendlyfire=false, nolock=true} end,
+		requires_target = true,
+		tactical = {ATTACKAREA = {LIGHT = 2}},
+		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end,
 		use = function(self, who)
-			local tg = {type="bolt", nowarning=true, range=5, nolock=true}
+			if not who:canBe("summon") then game.logPlayer(who, "You cannot summon; you are suppressed!") return end
+			local tg = self.use_power.target(self, who)
 			local tx, ty, target = who:getTarget(tg)
 			if not tx or not ty then return nil end
 			local _ _, _, _, tx, ty = who:canProject(tg, tx, ty)
@@ -6027,7 +6283,7 @@ newEntity{ base = "BASE_TOOL_MISC",
 			if target == who then target = nil end
 			local x, y = util.findFreeGrid(tx, ty, 5, true, {[engine.Map.ACTOR]=true})
 			if not x then
-				game.logPlayer(self, "Not enough space to invoke!")
+				game.logPlayer(self, "Not enough space to summon!")
 				return
 			end
 			local Talents = require "engine.interface.ActorTalents"
@@ -6060,6 +6316,8 @@ newEntity{ base = "BASE_TOOL_MISC",
 				blind=1,
 				esp_all=1,
 				resists={[engine.DamageType.LIGHT] = 100, [engine.DamageType.DARKNESS] = 100},
+				inc_damage = table.clone(who.inc_damage),
+				resists_pen = table.clone(who.resists_pen),
 				no_breath = 1,
 				cant_be_moved = 1,
 				stone_immune = 1,
@@ -6074,14 +6332,19 @@ newEntity{ base = "BASE_TOOL_MISC",
 				knockback_resist=1,
 				combat_physresist=50,
 				combat_spellresist=100,
-				on_act = function(self) self:project({type="ball", range=0, radius=5, friendlyfire=false}, self.x, self.y, engine.DamageType.LITE_LIGHT, self:getMag()) end,
-				
+				light_damage = self.use_power.damage(self, who),
+				light_radius = self.use_power.radius,
+				on_act = function(self)
+					game.level.map:particleEmitter(self.x, self.y, self.light_radius, "ball_light", {radius=self.light_radius, tx=self.x, ty=self.y, max_alpha=25})
+					self:project({type="ball", range=0, radius=self.light_radius, friendlyfire=false}, self.x, self.y, engine.DamageType.LITE_LIGHT, self.light_damage)
+				end,
 				faction = who.faction,
 				summoner = who, summoner_gain_exp=true,
 				summon_time=15,
 			}
 
 			m:resolve()
+			who:logCombat(who.ai_target.actor or {name = "a spot nearby"}, "#Source# points %s %s at #target#, releasing a brilliant orb of light!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.zone:addEntity(game.level, m, "actor", x, y)
 			m.remove_from_party_on_death = true,
 			game.party:addMember(m, {
@@ -6249,22 +6512,47 @@ In the case of opponents who weren't alone, he had to improvise.]],
 			local oldlevel = who.talents[Talents.T_TIME_SKIP]
 			who.talents[Talents.T_TIME_SKIP] = 2 --Set up to calculate damage accurately
 			local dam = who:damDesc(engine.DamageType.TEMPORAL, who:callTalent(Talents.T_TIME_SKIP, "getDamage", who, tal))
+			local dur = who:callTalent(Talents.T_TIME_SKIP, "getDuration", who, tal)
 			who.talents[Talents.T_TIME_SKIP] = oldlevel
-			return ("inflict %0.2f temporal damage (based on Spellpower and Paradox, if any) on summons, removing any that survive from time, in a radius %d ball out to range %d"):format(dam, self.use_power.radius, self.use_power.range)
+			return ("attempt to inflict %0.2f temporal damage (based on Spellpower and Paradox, if any) on foes in a radius %d ball out to range %d (chance depends on rank, summons are always affected), removing any that survive from time for up to %d turn(s)"):format(dam, self.use_power.radius, self.use_power.range, dur)
 		end,
 		power = 32,
 		range =5,
 		radius = 2,
-		use = function(self, who)
-			local Talents = require "engine.interface.ActorTalents"
-			local tg = {type="ball", range=5, radius=2}
-			local x, y = who:getTarget(tg)
-			if not x or not y then return nil end
-			who:project(tg, x, y, function(px, py) 
+		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius, friendlyfire = false} end,
+		requires_target = true,
+		tactical = {ATTACKAREA = function(who, t, aitarget) -- count # of summons in area
+			if not who.aiSeeTargetPos or not aitarget then return end
+			local o = t.is_object_use and t.getObject(who, t)
+			if not o then return end
+			local ok, nb
+			local tg = o.use_power.target(o, who)
+			local x, y = who:aiSeeTargetPos(aitarget)
+			ok, nb, nb, x, y = who:canProject(tg, x, y)
+			nb = 0
+			if ok then who:project(o.use_power.target(o, who), x, y, function(px, py) 
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
-				if target.summoner then -- consider making this work on low rank critters also
-					who:forceUseTalent(Talents.T_TIME_SKIP, {ignore_cd=true, ignore_energy=true, force_target=target, force_level=2, ignore_ressources=true})
+				if target.summoner then
+					nb = nb + 1
+				else
+					nb = nb + 1/(target.rank or 5)
+				end
+			end) end
+			return {temporal = nb}
+		end},
+		use = function(self, who)
+			local Talents = require "engine.interface.ActorTalents"
+			local tg = self.use_power.target(self, who)
+			local x, y = who:getTarget(tg)
+			if not x or not y then return nil end
+			game.logSeen(who, "%s focuses time flows through %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name=true}))
+			who:project(tg, x, y, function(px, py)
+				local target = game.level.map(px, py, engine.Map.ACTOR)
+				if not target then return end
+				if target.summoner or rng.chance(target.rank or 5) then -- works on summons or low rank enemies
+--				if target.summoner then -- consider making this work on low rank critters also
+					who:forceUseTalent(Talents.T_TIME_SKIP, {ignore_cd=true, ignore_energy=true, force_target=target, force_level=2, ignore_ressources=true, silent = true})
 				end
 			end)
 			return {id=true, used=true}
@@ -6488,6 +6776,7 @@ newEntity{ base = "BASE_GREATMAUL",
 		end,},
 	max_power = 10, power_regen = 1,
 	use_power = { name = "imbue the hammer with a gem of your choice", power = 10,
+		no_npc_use = true,
 		use = function(self, who)
 			local DamageType = require "engine.DamageType"
 			local Stats = require "engine.interface.ActorStats"
@@ -6768,7 +7057,11 @@ newEntity{ base = "BASE_GREATSWORD",
 		apr = 22,
 		physcrit = 12,
 		dammod = {str=1.15, con = 0.2},
-		special_on_hit = {desc="releases a burst of light, dealing damage equal to your spellpower in a 3 radius cone.", on_kill=1, fct=function(combat, who, target)
+		special_on_hit = {
+		desc=function(self, who, special)
+			return ("releases a burst of light, dealing %d light damage (based on Spellpower) in a radius 3 cone."):format(who:damDesc(engine.DamageType.LIGHT, who:combatSpellpower()))
+		end,
+		on_kill=1, fct=function(combat, who, target)
 			who.turn_procs.champion_will = (who.turn_procs.champion_will or 0) + 1
 			local tg = {type="cone", range=10, radius=3, force_target=target, selffire=false}
 			local grids = who:project(tg, target.x, target.y, engine.DamageType.LIGHT, who:combatSpellpower() / (who.turn_procs.champion_will))
@@ -6795,21 +7088,29 @@ newEntity{ base = "BASE_GREATSWORD",
 		name = function(self, who) return ("attack everything in a line out to range %d, dealing 100%% weapon damage (as light), and healing for 50%% of the damage dealt"):format(self.use_power.range) end,
 		power = 30,
 		range = 4,
+		target = function(self, who) return {type="beam", range=self.use_power.range} end,
+		requires_target = true,
+		tactical = {ATTACK = {weapon = 2}, ATTACKAREA = {LIGHT = 1.5}, HEAL = 1},
 		use = function(self, who)
-			local tg = {type="beam", range=self.use_power.range}
-			local x, y = who:getTarget(tg)
+			local tg = self.use_power.target(self, who)
+			local x, y, target = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)
-			who:attr("lifesteal", 50)
-			who:project(tg, x, y, function(px, py)
-				local target = game.level.map(px, py, engine.Map.ACTOR)
-				if not target then return end
-				who:attackTarget(target, engine.DamageType.LIGHT, 1, true)
-			end)
-			who:attr("lifesteal", -50)
+			who:logCombat(target or who.ai_target.actor or {name = "something"}, "#Source# strikes out at #target# with %s %s!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.level.map:particleEmitter(who.x, who.y, tg.radius, "light_beam", {tx=x-who.x, ty=y-who.y})
 			game:playSoundNear(self, "talents/lightning")
-			return {id=true, used=true}
+			who:attr("lifesteal", 50)
+			-- a bug in combat with this ability could be game breaking
+			local ok, ret = pcall(who.project, who, tg, x, y,
+				function(px, py)
+					local target = game.level.map(px, py, engine.Map.ACTOR)
+					if not target then return end
+					who:attackTarget(target, engine.DamageType.LIGHT, 1, true)
+				end
+			)
+			who:attr("lifesteal", -50)
+			if ok then return {id=true, used=true}
+			else error(ret)	return end
 		end
 	},
 }
@@ -6826,7 +7127,9 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 	require = { stat = { str=52 }, },
 	cost = 500,
 	material_level = 4,
-	special_desc = function(self) return ("When your effective movement speed (global speed times movement speed) is less than 100%%, reduces all incoming damage equal to the speed detriment, but never to less than 30%% of the original damage.\nCurrent Resistance: %d%%"):format(100*(1-(util.bound(game.player.global_speed * game.player.movement_speed, 0.3, 1)))) end,
+	special_desc = function(self, who) 
+		local resist = who and self.worn_by == who and self:set_resist(who) or 0
+		return ("When your effective movement speed (global speed times movement speed) is less than 100%%, reduces all incoming damage by a percent equal to the speed detriment (up to 70%%).\nCurrent reduction bonus: %d%%"):format(resist) end,
 	wielder = {
 		inc_stats = { [Stats.STAT_CON] = 15, },
 		combat_armor = 50,
@@ -6834,17 +7137,66 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		knockback_immune = 1,
 		combat_physresist = 45,
 		fatigue = 35,
-		speed_resist=1,
+--		speed_resist=1,
 	},
+	on_wear = function(self, who)
+		self.worn_by = who
+		self:set_resist(who)
+	end,
+	on_takeoff = function(self, who)
+		if self.resist_id then who:removeTemporaryValue("resists", self.resist_id) end
+		self.resist_id = nil
+		self.worn_by = nil
+	end,
+	set_resist = function(self, who) -- update the resistance bonus based on speed
+		local resist = 100*(1-(util.bound(who.global_speed * who.movement_speed, 0.3, 1)))
+		if who == self.worn_by and resist ~= self.last_resist then -- update resistance
+			if self.resist_id then who:removeTemporaryValue("resists", self.resist_id) end
+			if resist > 0 then
+				self.resist_id = who:addTemporaryValue("resists", {absolute = resist})
+			else self.resist_id = nil
+			end
+			self.last_resist = resist
+		end
+		return resist
+	end,
+	callbackOnAct = function(self, who)
+		self:set_resist(who)
+	end,
+	callbackOnTemporaryEffectAdd = function(self, who, eff_id, e_def, p)
+		self:set_resist(who)
+	end,
+	callbackOnTemporaryEffectRemove = function(self, who, eff_id, e_def, p)
+		self:set_resist(who)
+	end,
+	callbackOnTakeDamage = function(self, who, src, x, y, type, dam, state) -- make sure damage reduction is updated on hit
+		self:set_resist(who)
+	end,
 	max_power = 25, power_regen = 1,
-	use_power = { name = "slow the movement speed of all creatures within 5 spaces (including yourself) by 40%", power = 25,
+	use_power = { name = "slow the movement speed of all creatures (including yourself) within range 5 by 40% for 3 turns",
+		power = 25,
+		range = 0,
+		radius = 5,
+		target = function(self, who) return {type="ball", range=0, radius=self.use_power.radius, selffire = false} end,
+		tactical = {DISABLE = function(who, t, aitarget)
+				if not (aitarget and who.aiSeeTargetPos) or aitarget:hasEffect(aitarget.EFF_SLOW_MOVE) then return end
+				local tx, ty = who:aiSeeTargetPos(aitarget)
+				if core.fov.distance(who.x, who.y, tx, ty) <= 1 then return {pin = 1.5} end
+			end,
+			DEFEND = function(who, t, aitarget)
+				local resist = (util.bound(who.global_speed * (who.movement_speed), 0.3, 1) - (util.bound(who.global_speed * (who.movement_speed - .4), 0.3, 1)))*5
+				if resist > 0 then return resist end
+			end},
+		on_pre_use_ai = function(self, who) return not who:hasEffect(who.EFF_SLOW_MOVE) end,
 		use = function(self, who)
-			who:project({type="ball", range=0, radius=5}, who.x, who.y, function(px, py)
+			local tg = self.use_power.target(self, who)
+			tg.selffire = true -- set here so that the ai will use it
+			game.logSeen(who, "%s rebalances the bulky plates of %s %s, and thngs slow down a bit.", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			who:project(tg, who.x, who.y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
 				target:setEffect(target.EFF_SLOW_MOVE, 3, {power=0.4, no_ct_effect=true, })
 			end)
-			game.logSeen(who, "%s thinks things really need to slow down for a bit.", who.name:capitalize())
 			return {id=true, used=true}
 		end
 	},
@@ -6901,7 +7253,10 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 		},
 		inc_stats = { [Stats.STAT_MAG] = 4, [Stats.STAT_CUN] = 4, },
 	},
-	special_desc = function(self) return "Trails fire behind you, dealing damage based on spellpower." end,
+	special_desc = function(self, who)
+		local dam = who and who:damDesc(engine.DamageType.FIRE, self:trail_damage(who)) or 0
+		return ("Each step you take leaves a burning trail behind you lasting 5 turns that deals %d fire damage (based on Spellpower) to others who enter it."):format(dam)
+	end,
 	on_wear = function(self, who)
 		self.worn_by = who
 		self.oldx=who.x
@@ -6910,6 +7265,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	on_takeoff = function(self, who)
 		self.worn_by = nil
 	end,
+	trail_damage = function(self, who) return who and who:combatSpellpower() or 0 end,
 	act = function(self)
 		self:useEnergy()
 		self:regenPower()
@@ -6922,9 +7278,9 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 			local DamageType = require "engine.DamageType"
 			local duration = 6
 			local radius = 0
-			local dam = who:combatSpellpower()
+			local dam = self:trail_damage(self.worn_by)
 			-- Add a lasting map effect
-			game.level.map:addEffect(who,
+			local ef = game.level.map:addEffect(who,
 				who.x, who.y, duration,
 				DamageType.FIRE, dam,
 				radius,
@@ -6933,6 +7289,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 				nil,
 				false
 			)
+			ef.name = "fire trail"
 		end
 		self.oldx=who.x
 		self.oldy=who.y
@@ -6947,7 +7304,7 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 	unided_name = "black, spiked armor",
 	moddable_tile = "special/dgs_clothes",
 	moddable_tile_big = true,
-	desc = [[Worn by a villain long forgotten, this armor was powered by the blood of thousands of innocents. Decrepit and old, the dark lord died in solitude, his dominion crumbled, his subjects gone. Only the plate remained, dying to finally taste fresh blood again.]],
+	desc = [[Worn by a villain long forgotten, this armor was powered by the blood of thousands of innocents. Decrepit and old, the dark lord died in solitude, his dominion crumbled, his subjects gone. Only this cuirass remained, dying to finally taste fresh blood again.]],
 	color = colors.RED,
 	level_range = {40, 50},
 	rarity = 320,
@@ -6968,18 +7325,59 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		resists={[DamageType.PHYSICAL] = 20},
 	},
 	max_power = 25, power_regen = 1,
-	use_power = { name = "drain blood from all creatures within 5 spaces, causing them to bleed for 120 physical damage over 4 turns. For each creature drained (up to 10), the armor's stats increase, but decrease back to normal over 10 turns", power = 25,
-		use = function(self, who)
-			self.blood_charge = 0
-			who:project({type="ball", range=0, radius=5, selffire=false}, who.x, who.y, function(px, py)
+	use_power = {
+		name = function(self, who)
+			local dam = who:damDesc(engine.DamageType.PHYSICAL, self.use_power.bleed(self, who))
+			return ("drain blood from all creatures within range 5, causing them to bleed for %0.2f physical damage over 4 turns (based on your Physicalpower). For each creature drained (up to 10), the armor gains strength, which fades over 10 turns if it is not fed"):format(dam)
+		end,
+		power = 25,
+		bleed = function(self, who) return who:combatPhysicalpower()*3 end,
+		nb_targets = function(self, who)
+			local nb = 0
+			who:project(self.use_power.target(self, who), who.x, who.y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
+				nb = nb + 1
+			end)
+			return nb
+		end,
+		tactical = function(self, who, aitarget)
+--game.log("Calling tactical function for %s by %s, target %s", self.name, who.name, aitarget and aitarget.name)
+			local nb = 0
+			who:project(self.use_power.target(self, who), who.x, who.y, function(px, py)
+				local act = game.level.map(px, py, engine.Map.ACTOR)
+--					if not act then return end
+				if not act or not act:canBe("cut") then return end
+				nb = nb + 1
+			end)
+--game.log("tactical found %d targets (%d blood charges, %d blood duration)", nb, self.blood_charge, self.blood_dur)
+--			nb = math.min(10 - self.blood_charge, nb)
+--			if nb > 0 then return {buff=1, defend=1, attackarea = {cut=2}} end
+			if nb > 0 then
+				local tac = {attackarea = {cut = 1}}
+				local boost = (self.blood_charge + math.min(10 - self.blood_charge, nb))*(10) - self.blood_charge*self.blood_dur --additional bonus (for all hits)
+				boost = (boost-40)/nb/50 -- target refresh at half blood_dur, factoring out # of targets hit in tactical ai
+				tac.buff = boost
+				tac.defend = boost
+				return tac
+			end
+		end,
+		range = 0,
+		radius  = 5,
+		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius, selffire=false} end,
+		requires_target = true,
+		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end,
+--		on_pre_use_ai = function(self, who) return self.blood_charge < 10 end,
+		use = function(self, who)
+			game.logSeen(who, "%s revels in the bloodlust of %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			who:project(self.use_power.target(self, who), who.x, who.y, function(px, py)
+				local target = game.level.map(px, py, engine.Map.ACTOR)
+				if not target or not target:canBe("cut") then return end
 				self.blood_charge = self.blood_charge + 1
 				target:setEffect(target.EFF_CUT, 4, {power=30, no_ct_effect=true, src = who})
 			end)
 			if self.blood_charge > 10 then self.blood_charge = 10 end
 			self.blood_dur = 10
-			game.logSeen(who, "%s revels in blood!", self.name:capitalize())
 			return {id=true, used=true}
 		end
 	},
@@ -7424,15 +7822,28 @@ newEntity{ base = "BASE_MACE",
 	},
 	max_power = 60, power_regen = 1,
 	use_power = {
-		name = function(self, who) return ("strike a target at up to range %d for an automatic critical hit as lightning damage"):format(self.use_power.range) end,
+		name = function(self, who) return ("perform a melee strike against a target at up to range %d for an automatic critical hit as lightning damage"):format(self.use_power.range) end,
 		power = 60,
 		range = 10,
+		target = function(self, who) return {type="ball", range=self.use_power.range, radius = 2, friendlyfire = false} end, -- treated as an AOE for AI purposes
+		tactical = {ATTACK = {LIGHTNING = 2},
+			ATTACKAREA = {PHYSICAL = 1.5, LIGHTNING = 1.5}
+		},
+		requires_target = true,
+		on_pre_use_ai = function(self, who, silent, fake)
+			local target, tx, ty = who.ai_target.actor
+			if target then
+				tx, ty = who:aiSeeTargetPos(target)
+				return core.fov.distance(who.x, who.y, tx, ty) >1
+			end
+		end,
 		use = function(self, who)
 			local tg = {type="hit", range=self.use_power.range}
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)
 			local target = game.level.map(x, y, engine.Map.ACTOR)
+			who:logCombat(target or {name = "something"}, "#Source# hurls %s %s at #target#!", who:his_her(), self:getName({do_color=true, no_add_name=true}))
 			if target then
 				local x2, y2 = x + rng.range(-4, 4), y - rng.range(5, 10)
 				game.level.map:particleEmitter(x, y, math.max(math.abs(x2-x), math.abs(y2-y)), "lightning", {tx=x2-x, ty=y2-y})
@@ -7444,9 +7855,8 @@ newEntity{ base = "BASE_MACE",
 				
 				if core.shader.active() then game.level.map:particleEmitter(x, y, 2, "ball_lightning_beam", {radius=2, tx=x, ty=y}, {type="lightning"})
 				else game.level.map:particleEmitter(x, y, 2, "ball_lightning_beam", {radius=2, tx=x, ty=y}) end
-			else
-				return
 			end
+			game.logSeen(who, "%s's weapon returns to %s!", who.name:capitalize(), who:him_her())
 			return {id=true, used=true}
 		end
 	},

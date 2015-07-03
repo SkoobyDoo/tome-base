@@ -440,9 +440,13 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 				end
 			end
 		end
+		
+		if target.resists and target.resists.absolute then -- absolute resistance (from Terrasca)
+			dam = dam * ((100 - math.min(target.resists_cap.absolute or 70, target.resists.absolute)) / 100)
+			print("[PROJECTOR] after absolute resistance dam", dam)
+		end
 
 		print("[PROJECTOR] final dam after hooks and callbacks", dam)
-
 
 		local source_talent = src.__projecting_for and src.__projecting_for.project_type and (src.__projecting_for.project_type.talent_id or src.__projecting_for.project_type.talent) and src.getTalentFromId and src:getTalentFromId(src.__projecting_for.project_type.talent or src.__projecting_for.project_type.talent_id)
 		local dead

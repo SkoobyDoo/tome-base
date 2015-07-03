@@ -928,7 +928,11 @@ newEntity{ base = "BASE_NPC_HORROR",
 	can_spawn = 1,
 	psionic_shield_override = 1,
 	
-	resolvers.drops{chance=100, nb=1, {defined="BLADE_RIFT"} },
+	body = { TOOL=1 },
+	resolvers.equip{
+		{type="tool", ego_chance = 100, defined="BLADE_RIFT", random_art_replace={chance=25, filter = {type = "charm", subtype = "torque", no_tome_drops=true, unique=true, not_properties={"lore"}, special = function(o) return not table.get(o, "power_source", "antimagic") end}}, autoreq=true},
+	},
+--	resolvers.drops{chance=100, nb=1, {defined="BLADE_RIFT"} },
 	
 	ai = "tactical", ai_state = { ai_move="move_complex", talent_in=2, ally_compassion=0 },
 		
@@ -945,7 +949,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 
 	on_act = function(self)
 		if not self:attr("can_spawn") then return end
-		if self.blades > 4 or not rng.percent(28/(self.blades+1)) then return end
+		if self.blades > 3 or not rng.percent(28/(self.blades+1)) then return end
 		self.can_spawn = nil
 		self.blades = self.blades + 1
 		self:forceUseTalent(self.T_ANIMATE_BLADE, {ignore_cd=true, ignore_energy=true, force_level=1})
@@ -1007,8 +1011,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "ANIMATED_BLADE",
 	},
 	
 	on_added_to_level = function(self)
-		self:teleportRandom(self.x, self.y, 7)
-		game.logSeen(self, "A rift opens, spawning a free floating blade!")
+		self:teleportRandom(self.x, self.y, 3)
+		game.logSeen(self, "#AQUAMARINE#A rift opens and a free floating blade emerges!")
 		game.level.map:addEffect(self,
 			self.x, self.y, 3,
 			engine.DamageType.TEMPORAL, 25,
@@ -1029,8 +1033,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "ANIMATED_BLADE",
 
 	on_act = function(self)
 		if self.summoner and self.summoner:attr("dead") then
+			game.logSeen(self, "#AQUAMARINE#The %s no longer seems to be controlled and clatters to the ground before vanishing into a rift.", self.name:capitalize())
 			self:die()
-			game.logSeen(self, "#AQUAMARINE#With the horror's death the blade clatters to the ground!")
 		end
 	end,
 }
@@ -1051,10 +1055,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "DISTORTED_BLADE",
 	body = { INVEN = 10, MAINHAND=1 },
 	
 	resolvers.equip{
-		{type="weapon", subtype="longsword", define_as="RIFT_SWORD", autoreq=true},
+		{type="weapon", subtype="longsword", defined="RIFT_SWORD", random_art_replace={chance=100, filter = {subtype = "longsword", no_tome_drops=true, unique=true, not_properties={"lore"}, special = function(o) return not table.get(o, "power_source", "antimagic") end}}, autoreq=true},
 	},
-	
-	resolvers.drops{chance=100, nb=1, {defined="RIFT_SWORD"} },
 	
 	resists = {[DamageType.MIND] = 75, [DamageType.TEMPORAL] = 40, all=15,},
 
@@ -1071,8 +1073,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "DISTORTED_BLADE",
 	},
 	
 	on_added_to_level = function(self)
-		self:teleportRandom(self.x, self.y, 10)
-		game.logSeen(self, "A rift opens, a blade emerging. It does not look like the others.")
+		self:teleportRandom(self.x, self.y, 5)
+		game.logSeen(self, "#AQUAMARINE#A rift opens and a free floating blade emerges! It looks unstable...")
 		game.level.map:addEffect(self,
 			self.x, self.y, 5,
 			DamageType.TEMPORAL, 50,
@@ -1094,8 +1096,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "DISTORTED_BLADE",
 	on_act = function(self)
 		self.paradox = self.paradox + 20
 		if self.summoner and self.summoner:attr("dead") then
+			game.logSeen(self, "#AQUAMARINE#The %s no longer seems to be controlled and clatters to the ground before vanishing into a rift.", self.name:capitalize())
 			self:die()
-			game.logSeen(self, "#AQUAMARINE#With the horror's death the chaotic blade clatters to the ground!")
 		end
 	end,
 }

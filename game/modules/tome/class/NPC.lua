@@ -67,10 +67,13 @@ function _M:act()
 
 		-- Compute FOV, if needed
 		self:doFOV()
-
+--game.log("#GREEN#---%s acting at (%d, %d) with energy %d(%s)", self.name, self.x, self.y, self.energy.value, self.energy.used)
+print(("[NPC:act]---%s acting at (%d, %d) with energy %d(%s)"):format(self.name, self.x, self.y, self.energy.value, self.energy.used))
 		-- Let the AI think .... beware of Shub !
 		self:doAI()
-
+--table.print(self.energy)
+--game.log("#GREEN#---%s finished acting at (%d, %d) with energy %d(%s)", self.name, self.x, self.y, self.energy.value, self.energy.used)
+print(("[NPC:act]---%s finished acting at (%d, %d) with energy %d(%s)"):format(self.name, self.x, self.y, self.energy.value, self.energy.used))
 		if self.emote_random and self.x and self.y and game.level.map.seens(self.x, self.y) and rng.range(0, 999) < self.emote_random.chance * 10 then
 			local e = util.getval(rng.table(self.emote_random))
 			if e then
@@ -455,14 +458,18 @@ end
 --- Call when added to a level
 -- Used to make escorts and such
 function _M:addedToLevel(level, x, y)
-	if not self:attr("difficulty_boosted") then
-		if game.difficulty == game.DIFFICULTY_NIGHTMARE and not game.party:hasMember(self) then
+--	if not self:attr("difficulty_boosted") then
+	if not self:attr("difficulty_boosted") and not game.party:hasMember(self) then
+		-- make adjustments for game difficulty
+--		if game.difficulty == game.DIFFICULTY_NIGHTMARE and not game.party:hasMember(self) then
+		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.floor(lev / 3))
 			end
 			self:attr("difficulty_boosted", 1)
-		elseif game.difficulty == game.DIFFICULTY_INSANE and not game.party:hasMember(self) then
+--		elseif game.difficulty == game.DIFFICULTY_INSANE and not game.party:hasMember(self) then
+		elseif game.difficulty == game.DIFFICULTY_INSANE then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.floor(lev / 2))
@@ -486,7 +493,8 @@ function _M:addedToLevel(level, x, y)
 			-- print("Insane increasing " .. self.name .. " life by " .. lifeadd)
 
 			self:attr("difficulty_boosted", 1)
-		elseif game.difficulty == game.DIFFICULTY_MADNESS and not game.party:hasMember(self) then
+--		elseif game.difficulty == game.DIFFICULTY_MADNESS and not game.party:hasMember(self) then
+		elseif game.difficulty == game.DIFFICULTY_MADNESS then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.ceil(lev * 1.7))
@@ -508,6 +516,44 @@ function _M:addedToLevel(level, x, y)
 			self.life = self.life + lifeadd
 			
 			self:attr("difficulty_boosted", 1)
+		end
+		
+		-- try to equip inventory items
+		local MainInven = self:getInven(self.INVEN_INVEN)
+
+		self:inventoryApplyAll(function(inv, item, o) o:identify(true)
+		end) -- temp
+		
+		if MainInven then
+			for i = #MainInven, 1, -1 do
+				local o = MainInven[i]
+				local inven, worn = self:getInven(o:wornInven())
+if not game.state:checkPowers(self, o, nil, "antimagic_only") then
+	game.log(" ---%s #YELLOW#incompatible (antimagic)#LAST# with %s", o:getName({do_color = true}), self.name)
+end
+				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
+					local ro, replace = inven and inven[1], false
+					o = self:removeObject(self.INVEN_INVEN, i)
+					if o then
+
+					-- could put more sophisticated criteria to pick the best gear for the npc here
+						if ro and o.type == ro.type and o.subtype == ro.subtype and (o.rare or o.randart or o.unique) and not (ro.rare or ro.randart or ro.unique) then replace = true end
+
+--						worn = self:wearObject(o, replace, true) -- temp
+
+						worn = self:wearObject(o, replace, false)
+						if worn then
+							print("[NPC:addedToLevel]", self.name, self.uid, "wearing", o.name)
+							if type(worn) == "table" then
+								print("--- replacing", worn.name)
+								self:addObject(self.INVEN_INVEN, worn)
+							end
+						else
+							self:addObject(self.INVEN_INVEN, o) -- put object back in main inventory
+						end
+					end
+				end
+			end
 		end
 	end
 

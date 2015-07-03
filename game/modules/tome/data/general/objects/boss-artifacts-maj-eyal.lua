@@ -214,60 +214,46 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 			end
 			return true
 		end,
-		tactStatus = function(o, who, aitarget) -- get Tactical info for tactical table functions
-			local TDist = core.fov.distance(who.x, who.y, aitarget.x, aitarget.y)
-			local TEnv = core.fov.distance(aitarget.x, aitarget.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
-			local SEnv = core.fov.distance(who.x, who.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
-			return TDist, TEnv, SEnv
+		tactical = function(self, who, aitarget)
+			if not (self.winterStorm and aitarget) then return end
+			local tx, ty
+			if who.aiSeeTargetPos then tx, ty = who:aiSeeTargetPos(aitarget)
+			else tx, ty = aitarget.x, aitarget.y end
+			local TDist, TEnv, SEnv=
+				core.fov.distance(who.x, who.y, tx, ty), -- dist to target
+				core.fov.distance(tx, ty, self.winterStorm.x, self.winterStorm.y) < math.floor(self.winterStorm.radius), -- walls would surround target
+				core.fov.distance(who.x, who.y, self.winterStorm.x, self.winterStorm.y) < math.floor(self.winterStorm.radius) -- walls would surround us
+			
+			local tac = {}
+			-- escape: want walls around target but not around us if possible (so we can flee)
+			local val = 0
+			if TEnv then -- walls around target
+				if not SEnv then val = val + 3 -- but not us
+				elseif TDist > 1 then val = val + 1
+				end
+			elseif SEnv then -- walls around us
+				if TDist > 1 then val = val + 0.5 end -- and target is not adjacent
+			end
+			if val > 0 then tac.escape = val end
+			-- defense against multiple foes: want target adjacent with walls around us and target if possible
+			val = 0
+			if (TDist or 0) <= 1 then
+				if SEnv then val = val + 1.5 end
+				if TEnv then val = val + 0.5 end
+			end
+			if val > 0 then tac.defend = val end
+			if who.summoner then -- protect summoner if we have one
+				TDist =	core.fov.distance(who.summoner.x, who.summoner.y, tx, ty)
+				SEnv = core.fov.distance(who.summoner.x, who.summoner.y, self.winterStorm.x, self.winterStorm.y) < math.floor(self.winterStorm.radius)
+				val = 0
+				if (TDist or 0) > 1 then -- summoner not adjacent to target
+					if TEnv then val = val + 1 end -- walls around target
+					if SEnv then val = val + 0.5 end -- walls around summoner
+				end
+				if val > 0 then tac.protect = val end
+			end
+			if true then return tac end
 		end,
-		tactical = {
-			ESCAPE = function(who, t, aitarget) -- try to trap target
-				local o = t.is_object_use and t.getObject(who, t)
-				if not (o and o.wielded and aitarget and o.winterStorm and o.winterStorm.duration > 0) then
-					return 0
-				else
-					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
-					local val = 0
-					if Tenv then
-						if not Senv then val = val + 3
-						elseif Tdist > 1 then val = val + 1
-						end
-					elseif Senv then
-						if Tdist > 1 then val = val + 0.5 end
-					end
-					return val
-				end
-			end,
-			DEFEND = function(who, t, aitarget) -- defense against multiple foes
-				local o = t.is_object_use and t.getObject(who, t)
-				if not (o and o.wielded and aitarget and o.winterStorm and o.winterStorm.duration > 0) then
-					return 0
-				else
-					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
-					local val = 0
-					if Tdist <= 1 then
-						if Senv then val = val + 1.5 end
-						if Tenv then val = val + 0.5 end
-					end
-					return val
-				end
-			end,
-			PROTECT = function(who, t, aitarget) -- protect summoner
-				if not (who.summoner and aitarget) then return end
-				local o = t.is_object_use and t.getObject(who, t)
-				if not (o and o.wielded and o.winterStorm and o.winterStorm.duration > 0) then
-					return 0
-				else
-					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who.summoner, aitarget)
-					local val = 0
-					if Tdist > 1 then
-						if Tenv then val = val + 1 end
-						if Senv then val = val + 0.5 end
-					end
-					return val
-				end
-			end,
-		},
 		radius = function(self, who)
 			local winterStorm = self.winterStorm
 			if winterStorm and winterStorm.duration > 0 then

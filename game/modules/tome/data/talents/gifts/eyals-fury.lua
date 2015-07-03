@@ -175,7 +175,7 @@ newTalent{
 	equilibrium = 20,
 	cooldown = 20,
 	radius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 6)) end, --Limit < 10
-	tactical = { ATTACKAREA = { Nature = 2 },  EQUILIBRIUM = 1 },
+	tactical = { ATTACKAREA = { NATURE = 2 },  EQUILIBRIUM = 1 },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 100) end,
 	getDrain = function(self, t) return self:combatTalentMindDamage(t, 10, 30) end,

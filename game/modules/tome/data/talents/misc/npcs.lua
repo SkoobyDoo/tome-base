@@ -77,7 +77,7 @@ newTalent{
 	name = "Poisonous Crawl",
 	type = {"technique/other", 1},
 	points = 5,
-	message = "@Source@ crawls poison onto @target@.",
+	message = "@Source@ envelops @target@ with poison.",
 	cooldown = 5,
 	range = 1,
 	requires_target = true,
@@ -105,7 +105,7 @@ newTalent{
 	name = "Acidic Crawl",
 	points = 5,
 	type = {"technique/other", 1},
-	message = "@Source@ crawls acid onto @target@.",
+	message = "@Source@ envelops @target@ with acid.",
 	cooldown = 2,
 	range = 1,
 	tactical = { ATTACK = { ACID = 2 } },
@@ -1114,7 +1114,7 @@ newTalent{
 	range = 10,
 	radius = 1,
 	direct_hit = true,
-	tactical = { DISABLE = { knockback = 3 }, ATTACK = {PHYSICAL = 2 }, ESCAPE = { knockback = 2 } },
+	tactical = { DISABLE = { knockback = 3 }, ATTACKAREA = {PHYSICAL = 2 }, ESCAPE = { knockback = 2 } },
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
@@ -1125,6 +1125,8 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
+		local target = game.level.map(x, y, engine.Map.ACTOR) or self.ai_target.actor or {name="something"}
+		self:logCombat(target, "#Source# hurls a huge boulder at #target#!")
 		self:project(tg, x, y, DamageType.PHYSKNOCKBACK, {dist=t.getDist(self, t), dam=self:mindCrit(t.getDam(self, t))}, {type="archery"})
 		game:playSoundNear(self, "talents/ice")
 		return true
@@ -1433,7 +1435,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Explodes.]])
+		return ([[Explode against one target for %0.2f cold damage.]]):format(damDesc(self, DamageType.COLD, self.will_o_wisp_dam or 1))
 	end,
 }
 
@@ -2052,7 +2054,8 @@ newTalent{
 	points = 5,
 	equi = 4,
 	cooldown = 3,
-	tactical = { ATTACK = 2 },
+	tactical = { ATTACK = {LIGHTNING = 2} },
+	message = "@Source@ hurls lightning at @target@!",
 	range = 10,
 	direct_hit = true,
 	reflectable = true,
@@ -2074,7 +2077,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[Calls forth a powerful beam of lightning doing %0.2f to %0.2f damage.
+		return ([[Calls forth a powerful beam of lightning doing %0.2f to %0.2f lightning damage.
 		The damage will increase with your Mindpower.]]):
 		format(damDesc(self, DamageType.LIGHTNING, damage / 3),
 		damDesc(self, DamageType.LIGHTNING, damage))

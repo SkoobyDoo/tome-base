@@ -891,11 +891,30 @@ function _M:drawDialog(kind, actor_to_compare)
 			end
 			self:mouseTooltip(self.TOOLTIP_RESIST_ALL, s:drawColorStringBlended(self.font, ("%-10s: #00ff00#%3d%% / %d%%%s"):format("All", player.resists.all, player.resists_cap.all or 0, res_text), w, h, 255, 255, 255, true)) h = h + self.font_h
 		end
+		if player.resists.absolute and player.resists.absolute ~= 0 then
+			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor.resists.absolute end, "", "%+.0f%%", 1, false, true)
+			local res_cap = compare_fields(player, actor_to_compare, function(actor, ...) return actor.resists_cap.absolute or 70 end, "", "%+.0f%%",  1, false, true)
+			local res_text = ("(%s / %s)"):format(text ~= "" and text or "0", res_cap ~= "" and res_cap or "0")
+			if res_text == "(0 / 0)" then
+				res_text = ""
+			end
+			self:mouseTooltip(self.TOOLTIP_RESIST_ABSOLUTE, s:drawColorStringBlended(self.font, ("#SALMON#%-10s: #00ff00#%3d%% / %d%%%s"):format("Absolute", player.resists.absolute, player.resists_cap.absolute or 70, res_text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		end
 		for i, t in pairs(DamageType.dam_def) do
 			if player.resists[DamageType[t.type]] and player.resists[DamageType[t.type]] ~= 0 then
 				self:mouseTooltip(self.TOOLTIP_RESIST, s:drawColorStringBlended(self.font, ("%s%-10s#LAST#: #00ff00#%3d%% / %d%%"):format((t.text_color or "#WHITE#"), t.name:capitalize(), player:combatGetResist(DamageType[t.type]), (player.resists_cap[DamageType[t.type]] or 0) + (player.resists_cap.all or 0)), w, h, 255, 255, 255, true)) h = h + self.font_h
 			end
 		end
+		if player:attr("speed_resist") then
+			local resist = 100 - (util.bound(player.global_speed * player.movement_speed, 0.3, 1)) * 100
+			text = compare_fields(player, actor_to_compare, function(actor, ...) return 100 - (util.bound(actor.global_speed * actor.movement_speed, 0.3, 1)) * 100 end, "", "(%+.0f%%)", 1, false, true)
+			local res_text = text
+			if res_text == "0" then
+				res_text = ""
+			end
+			self:mouseTooltip(self.TOOLTIP_RESIST_SPEED, s:drawColorStringBlended(self.font, ("#SALMON#%-10s#LAST#: #00ff00#%3d%%%s"):format("Speed Res", resist, res_text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		end
+
 		if player.resists_actor_type then
 			for i, t in pairs(player.resists_actor_type) do
 				if t and t ~= 0 then

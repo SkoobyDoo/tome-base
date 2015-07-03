@@ -125,7 +125,7 @@ newTalent{
 	getResist = function(self, t) return math.ceil(self:combatTalentScale(t, 8, 35)) end,
 	getPercent = function(self, t) return self:combatTalentSpellDamage(t, 12, 45) end,	
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 60) end,
-	tactical = { ATTACK = {ACID = 2} },
+	tactical = { ATTACK = {ACID = 2}, DISABLE = 1 },
 	requires_target = true,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t}

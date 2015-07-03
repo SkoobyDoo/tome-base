@@ -27,7 +27,10 @@ local Talents = require "engine.interface.ActorTalents"
 newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	power_source = {unknown=true},
 	unique = true, godslayer=true, flavor_name = "magestaff",
-	name = "Awakened Staff of Absorption", identified=true, force_lore_artifact=true,
+	name = "Awakened Staff of Absorption",
+--	identified=true,
+	unided_name = "ominous, dark runed staff",
+	force_lore_artifact=true,
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
 	encumber = 7,
 	plot=true,
@@ -83,22 +86,36 @@ The Sorcerers seem to have awakened its power.
 
 	max_power = 200, power_regen = 1,
 	use_power = {
-		name = function(self, who) return ("absorb the essence of a target in range %d, draining 30%% of its life and increasing your own damage by 30%% for %d turns"):format(self.use_power.range, self.use_power.duration) end,
+		name = function(self, who) return ("absorb the essence (ignoring resistance and bypassing most defenses) of a target in range %d, draining 30%% of its life and increasing your own damage by 30%% for %d turns"):format(self.use_power.range, self.use_power.duration) end,
 		power = 200,
 		range = 8,
 		duration =7,
+		target = function(self, who) return {type="hit", range=self.use_power.range} end,
+		tactical = {ATTACK = 3,
+			BUFF = function(who, t, aitarget)
+				return not who:hasEffect(who.EFF_POWER_OVERLOAD) and 3
+			end},
+		requires_target = true,
+		talent_level = 7,
 		use = function(self, who)
-			local tg = {type="hit", range=self.use_power.range}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)
 			local target = game.level.map(x, y, engine.Map.ACTOR)
 			if not target then return nil end
-			if target.staff_drained then
-				game.logPlayer(who, "This foe has already been drained.")
-			end
+
+			-- bypass normal defenses
+			local bone_shield = target:isTalentActive(target.T_BONE_SHIELD)
+			local nb = bone_shield and bone_shield.nb
+			if bone_shield then bone_shield.nb = 0 end
+			who:attr("iceblock_pierce", 100)
+			who:attr("damage_shield_penetrate", 100)
 			_, x = target:takeHit(target.max_life * 0.3, who, {special_death_msg = "was absorbed by the ".. self.name.." held by "..who.name:capitalize()})
-			game.logPlayer(who, "%s brandishes %s %s, absorbing the essence of %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name=true}), target.name:capitalize())
+			who:attr("damage_shield_penetrate", -100)
+			who:attr("iceblock_pierce", -100)
+			if bone_shield then bone_shield.nb = nb end
+			who:logCombat(target, "#Source# brandishes %s %s, absorbing the essence of #target#!", who:his_her(), self:getName({do_color=true, no_add_name=true}), target.name:capitalize())
 			game:delayedLogDamage(who, target, x, ("#ORCHID# %d essence drain#LAST#"):format(x), false)
 			who:setEffect(who.EFF_POWER_OVERLOAD, self.use_power.duration, {power=30})
 			return {id=true, used=true}

@@ -275,9 +275,46 @@ end
 --- Checks power_source compatibility between two entities
 --	returns true if e2 is compatible with e1, false otherwise
 --	by default, only checks .power_source vs. .forbid_power_source between entities
+--  @param e1, e2 entities to check
+--	@param require_power if true, will also check that e2.power_source (if present) has a match in e1.power_source
+--  @param [opt = string] theme type of checks to perform, default to all
+--	use updatePowers to resolve conflicts.
+function _M:checkPowers(e1, e2, require_power, theme)
+	if not e1 or not e2 then return true end
+print("Comparing power sources",e1.name, e2.name)
+	-- check for excluded power sources first
+	if theme == "antimagic_only" then -- check antimagic restrictions only
+		local not_ps = self:attrPowers(e1)
+		if e2.power_source and (e2.power_source.antimagic and not_ps.antimagic or e2.power_source.arcane and not_ps.arcane) then return false end
+		local not_ps = self:attrPowers(e2)
+		if e1.power_source and (e1.power_source.antimagic and not_ps.antimagic or e1.power_source.arcane and not_ps.arcane) then return false end
+		return true
+	else -- check for all conflicts
+		local not_ps = self:attrPowers(e2)
+		for ps, _ in pairs(e1.power_source or {}) do
+			if not_ps[ps] then return false end
+		end
+		not_ps = self:attrPowers(e1)
+		for ps, _ in pairs(e2.power_source or {}) do
+			if not_ps[ps] then return false end
+		end
+		-- check for required power_sources
+		if require_power and e1.power_source and e2.power_source then
+			for yes_ps, _ in pairs(e1.power_source)	do
+				if (e2.power_source and e2.power_source[yes_ps]) then return true end
+			end
+			return false
+		end
+	end
+	return true
+end
+
+--- Checks power_source compatibility between two entities
+--	returns true if e2 is compatible with e1, false otherwise
+--	by default, only checks .power_source vs. .forbid_power_source between entities
 --	@param require_power if true, will also check that e2.power_source (if present) has a match in e1.power_source
 --	use updatePowers to resolve conflicts.
-function _M:checkPowers(e1, e2, require_power)
+function _M:checkPowersOld(e1, e2, require_power)
 	if not e1 or not e2 then return true end
 	local ok = true
 --print("Comparing power sources",e1.name, e2.name)

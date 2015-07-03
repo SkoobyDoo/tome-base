@@ -147,6 +147,7 @@ newEntity{ base = "BASE_NPC_MAJOR_DEMON",
 	blind_immune = 1,
 
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=3, every=7, max=5},
 		[Talents.T_MANATHRUST]={base=5, every=8, max=8},
 		[Talents.T_ICE_STORM]={base=5, every=8, max=8},
 		[Talents.T_BLOOD_GRASP]={base=5, every=8, max=8},

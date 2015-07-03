@@ -199,7 +199,7 @@ function _M:useObject(who, ...)
 				end
 			end
 
-			return {used=ret}
+			return {used=ret, no_energy = util.getval(ab.no_energy, who, ab)}
 		else
 			if self.talent_cooldown or (self.power_regen and self.power_regen ~= 0) then
 				game.logPlayer(who, "%s is still recharging.", self:getName{no_count=true})
@@ -253,7 +253,12 @@ function _M:use(who, typ, inven, item)
 				end
 			end
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
-			if not self.use_no_energy then
+			if not ret.nobreakStepUp then who:breakStepUp() end
+			if not ret.nobreakStealth then who:breakStealth() end
+			if not ret.nobreakLightningSpeed then who:breakLightningSpeed() end
+			if not ret.nobreakReloading then who:breakReloading() end
+			if not ret.nobreakSpacetimeTuning then who:breakSpacetimeTuning() end
+			if not (self.use_no_energy or ret.no_energy) then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
 			end
 		end
@@ -1627,7 +1632,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 	end
 
 	if self.special_desc then
-		local d = self:special_desc()
+		local d = self:special_desc(use_actor)
 		desc:add({"color", "ROYAL_BLUE"})
 		desc:merge(d:toTString())
 		desc:add({"color", "LAST"}, true)
@@ -1752,8 +1757,12 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 	if self.use_no_energy and self.use_no_energy ~= "fake" then
 		desc:add("Activating this item is instant.", true)
+	elseif self.use_talent then
+		local t = use_actor:getTalentFromId(self.use_talent.id)
+		if util.getval(t.no_energy, use_actor, t) == true then
+			desc:add("Activating this item is instant.", true)
+		end
 	end
-
 
 	if self.curse then
 		local t = use_actor:getTalentFromId(use_actor.T_DEFILING_TOUCH)
@@ -1763,7 +1772,6 @@ function _M:getTextualDesc(compare_with, use_actor)
 	end
 
 	self:triggerHook{"Object:descMisc", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, object=self}
-
 
 	local use_desc = self:getUseDesc(use_actor)
 	if use_desc then desc:merge(use_desc:toTString()) end
