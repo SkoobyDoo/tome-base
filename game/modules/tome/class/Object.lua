@@ -268,6 +268,8 @@ end
 
 --- Returns a tooltip for the object
 function _M:tooltip(x, y)
+print(debug.traceback())
+-- use_actor?
 	local str = self:getDesc({do_color=true}, game.player:getInven(self:wornInven()))
 	if config.settings.cheat then str:add(true, "UID: "..self.uid, true, self.image) end
 	local nb = game.level.map:getObjectTotal(x, y)

@@ -214,9 +214,7 @@ _M.useObjectBaseTalent ={
 				t.message = nil
 				if msg then game.logSeen(self, "%s", msg) end
 			end
---game.log("#RED#---%s acting with energy %d(%s)", self.name, self.energy.value, self.energy.used)
 			ret = obj:use(self, nil, data.inven_id, slot)
---game.log("#RED#---%s finished acting with energy %d(%s)", self.name, self.energy.value, self.energy.used)
 			if ret and ret.used then
 				if ret.destroy then -- destroy the item after use
 					local _, item = self:findInInventoryByObject(self:getInven(data.inven_id), data.obj)
@@ -269,7 +267,6 @@ end
 -- @param base_name = base object use talent name <"Activate Object">
 -- @param returns false or o, talent id, talent level if the item is usable
 function _M:useObjectEnable(o, inven_id, slot, base_name)
---	if type(inven_id) == "string" then inven_id = self["INVEN_"..inven_id] end
 	print("[ActorObjectUse] useObjectEnable: ", o and o.name or "no name", "by", self.name, "inven/slot", inven_id, slot)
 	if not o:canUseObject() or o.quest or o.lore or (o:wornInven() and not o.wielded and not o.use_no_wear) then -- don't enable certain objects (lore, quest)
 		print("[ActorObjectUse] Object", o.name, o.uid, "is ineligible for talent interface")

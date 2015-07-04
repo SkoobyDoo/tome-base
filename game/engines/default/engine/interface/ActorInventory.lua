@@ -549,6 +549,7 @@ end
 --  checks o:on_wear(self, inven_id)
 function _M:onWear(o, inven_id)
 	-- Apply wielder properties
+--tag with wielder id?
 	o.wielded = {}
 	o:check("on_wear", self, inven_id)
 	if o.wielder then

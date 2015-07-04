@@ -1785,7 +1785,6 @@ function _M:tooltip(x, y, seen_by)
 	ts:add({"color", "ANTIQUE_WHITE"}, "Resists: ")
 	for t, v in pairs(self.resists) do
 		if t == "all" or t == "absolute" then
---			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, "all, ")
 			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, t..", ")
 		elseif type(t) == "string" and math.abs(v) >= 20 then
 			local res = tostring ( math.floor(self:combatGetResist(t)) ) .. "%"
@@ -2892,8 +2891,6 @@ function _M:die(src, death_note)
 						-- Do not drop
 						o.no_drop = true
 
-						-- Drop a random artifact instead
---						local ro = game.zone:makeEntity(game.level, "object", {no_tome_drops=true, unique=true, not_properties={"lore"}}, nil, true)
 						-- Drop a replacement by filter or random artifact instead
 						local ro = game.zone:makeEntity(game.level, "object", o.__special_boss_drop.filter or {no_tome_drops=true, unique=true, not_properties={"lore"}}, nil, true)
 						if ro then game.zone:addEntity(game.level, ro, "object", dropx, dropy) end
@@ -3969,7 +3966,6 @@ end
 
 --- Call when an object is added
 function _M:onAddObject(o, inven_id, slot)
---print("[onAddObject]", self.name, self.uid, o.name, inven_id, slot)
 	-- curse the item
 	if self:knowTalent(self.T_DEFILING_TOUCH) then
 		local t = self:getTalentFromId(self.T_DEFILING_TOUCH)

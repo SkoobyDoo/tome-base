@@ -932,7 +932,6 @@ newEntity{ base = "BASE_NPC_HORROR",
 	resolvers.equip{
 		{type="tool", ego_chance = 100, defined="BLADE_RIFT", random_art_replace={chance=25, filter = {type = "charm", subtype = "torque", no_tome_drops=true, unique=true, not_properties={"lore"}, special = function(o) return not table.get(o, "power_source", "antimagic") end}}, autoreq=true},
 	},
---	resolvers.drops{chance=100, nb=1, {defined="BLADE_RIFT"} },
 	
 	ai = "tactical", ai_state = { ai_move="move_complex", talent_in=2, ally_compassion=0 },
 		

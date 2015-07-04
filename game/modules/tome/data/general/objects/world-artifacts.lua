@@ -6344,7 +6344,7 @@ newEntity{ base = "BASE_TOOL_MISC",
 			}
 
 			m:resolve()
-			who:logCombat(who.ai_target.actor or {name = "a spot nearby"}, "#Source# points %s %s at #target#, releasing a brilliant orb of light!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			who:logCombat(target or {name = "a spot nearby"}, "#Source# points %s %s at #target#, releasing a brilliant orb of light!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.zone:addEntity(game.level, m, "actor", x, y)
 			m.remove_from_party_on_death = true,
 			game.party:addMember(m, {
@@ -7332,49 +7332,47 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		end,
 		power = 25,
 		bleed = function(self, who) return who:combatPhysicalpower()*3 end,
-		nb_targets = function(self, who)
-			local nb = 0
-			who:project(self.use_power.target(self, who), who.x, who.y, function(px, py)
-				local target = game.level.map(px, py, engine.Map.ACTOR)
-				if not target then return end
-				nb = nb + 1
-			end)
-			return nb
-		end,
+		requires_target = true,
+		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius, selffire=false} end,
 		tactical = function(self, who, aitarget)
---game.log("Calling tactical function for %s by %s, target %s", self.name, who.name, aitarget and aitarget.name)
-			local nb = 0
+--game.log("tactical start (%d blood charges, %d blood duration)", self.blood_charge, self.blood_dur)
+			local nb, allies = 0, 0
+			local charge, dur = self.blood_charge, self.blood_dur
+			local oldboost = charge*dur
 			who:project(self.use_power.target(self, who), who.x, who.y, function(px, py)
 				local act = game.level.map(px, py, engine.Map.ACTOR)
---					if not act then return end
-				if not act or not act:canBe("cut") then return end
-				nb = nb + 1
+				if act and act:canBe("cut") then
+					nb = nb + 1
+					if who:reactionToward(act) > 0 then allies = allies + 1 end
+					dur = 10
+					charge = math.min(charge + 1, 10)
+				end
+--	game.log("counting actor %s at (%d, %d)", act.name, px, py)
 			end)
---game.log("tactical found %d targets (%d blood charges, %d blood duration)", nb, self.blood_charge, self.blood_dur)
---			nb = math.min(10 - self.blood_charge, nb)
---			if nb > 0 then return {buff=1, defend=1, attackarea = {cut=2}} end
 			if nb > 0 then
-				local tac = {attackarea = {cut = 1}}
-				local boost = (self.blood_charge + math.min(10 - self.blood_charge, nb))*(10) - self.blood_charge*self.blood_dur --additional bonus (for all hits)
-				boost = (boost-40)/nb/50 -- target refresh at half blood_dur, factoring out # of targets hit in tactical ai
-				tac.buff = boost
-				tac.defend = boost
+				local tac = {attackarea = {cut = 2}}
+				local boost = charge*dur-oldboost --increase in bonus power
+				tac.special = boost/20 + math.max(5-self.blood_dur,0)/5  -- ~ 10 effective tac weight at 50 boost (half of full blood charges), extra boost at low blood duration to preserve bonuses and kickoff
+				if allies > 0 then
+					tac.special = tac.special - 1.5*((who.ai_state.ally_compassion == false and 0) or who.ai_state.ally_compassion or 1)*allies
+				end
+				tac.defend = boost/25
+--game.log("---tactical found %d (%d) targets -- boost by %d, special = %0.1f, defend = %0.1f", nb, allies, boost, tac.special, tac.defend)
 				return tac
 			end
 		end,
 		range = 0,
 		radius  = 5,
-		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius, selffire=false} end,
-		requires_target = true,
 		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end,
 --		on_pre_use_ai = function(self, who) return self.blood_charge < 10 end,
 		use = function(self, who)
 			game.logSeen(who, "%s revels in the bloodlust of %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			local damage = self.use_power.bleed(self, who)/4
 			who:project(self.use_power.target(self, who), who.x, who.y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target or not target:canBe("cut") then return end
 				self.blood_charge = self.blood_charge + 1
-				target:setEffect(target.EFF_CUT, 4, {power=30, no_ct_effect=true, src = who})
+				target:setEffect(target.EFF_CUT, 4, {power=damage, no_ct_effect=true, src = who})
 			end)
 			if self.blood_charge > 10 then self.blood_charge = 10 end
 			self.blood_dur = 10

@@ -1295,18 +1295,8 @@ function _M:playerUseItem(object, item, inven)
 					end
 					self:sortInven(self:getInven(inven))
 				end
---				self:breakStepUp()
---				self:breakStealth()
---				self:breakLightningSpeed()
---				self:breakSpacetimeTuning()
 				return true
 			end
-
---			self:breakStepUp()
---			self:breakStealth()
---			self:breakLightningSpeed()
---			self:breakReloading()
---			self:breakSpacetimeTuning()
 			self.changed = true
 		end)
 		local ok, ret = coroutine.resume(co)

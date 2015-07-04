@@ -30,7 +30,6 @@ local canFleeDmapKeepLos = function(self)
 		if self:hasLOS(ax, ay) then
 			dir = 5
 			c = act:distanceMap(self.x, self.y)
---game.log("#DARK_GRAY# %s canFleeDmapKeepLOS dmap test (%d, %d): %s", self.name, self.x, self.y, c)
 			if not c then return end
 		end
 		for _, i in ipairs(util.adjacentDirs()) do
@@ -42,10 +41,8 @@ local canFleeDmapKeepLos = function(self)
 				if not cd or ((not c or cd < c) and self:canMove(sx, sy)) then c = cd; dir = i end
 			end
 		end
---game.log("#DARK_GRAY# %s canFleeDmapKeepLOS direction chosen: %s", self.name, dir)
 		if dir and dir ~= 5 then
 			local dx, dy = util.dirToCoord(dir, self.x, self.y)
---game.log("#DARK_GRAY# %s canFleeDmapKeepLOS result: (%d, %d)", self.name, self.x + dx, self.y + dy)
 			return true, self.x + dx, self.y + dy
 		else
 			return false
@@ -60,7 +57,7 @@ newAI("use_tactical", function(self)
 	local ok = false
 	local aitarget = self.ai_target.actor
 	local ax, ay = self:aiSeeTargetPos(aitarget)
-	print("============================== TACTICAL AI", self.name, "on target", aitarget and aitarget.name, ax, ay)
+	print("================= TACTICAL AI", self.name, self.uid, self.x, self.y, "on target", aitarget and aitarget.name, aitarget and aitarget.uid, ax, ay, "====")
 	local target_dist = aitarget and core.fov.distance(self.x, self.y, ax, ay)
 	local hate = aitarget and (self:reactionToward(aitarget) < 0)
 	local has_los = aitarget and self:hasLOS(ax, ay)
@@ -83,7 +80,6 @@ newAI("use_tactical", function(self)
 		local t_avail = false
 		print(self.name, self.uid, "tactical ai talents testing", t.name, tid, t.is_object_use and t.getObject(self, t).name or "", "on target", aitarget and aitarget.name, ax, ay)
 		local tactical = t.tactical
---		if type(tactical) == "function" then tactical = tactical(self, t) end
 		if type(tactical) == "function" then tactical = tactical(self, t, aitarget) end
 print("** tactical table:")
 table.print(tactical, "---")
@@ -114,7 +110,7 @@ print("---talent", t.name, "availability:", t_avail)
 				local self_hit = {}
 				local typ = engine.Target:getType(tg or default_tg)
 				if tg or self:getTalentRequiresTarget(t) then
-					local target_actor = aitarget or self
+--					local target_actor = aitarget or self
 					self:project(typ, ax, ay, function(px, py)
 						local act = game.level.map(px, py, engine.Map.ACTOR)
 						if act and not act.dead then
@@ -154,8 +150,10 @@ print("---evaluating tactic:", tact, val)
 									res = res * (100 - pen) / 100
 									local damweight = damweight
 									if type(damweight) == "function" then damweight = damweight(self, t, act) or 0 end
+print("raw damweight for ", damtype, "against", act.name, " = ", damweight)
 									-- Handles status effect immunity
 									damweight = damweight * (act:canBe(damtype) and 1 or 0)
+print("adjusted damweight for ", damtype, "against", act.name, " = ", damweight)
 									weighted_sum = weighted_sum + damweight * (100 - res) / 100
 								end
 								return weighted_sum
@@ -174,7 +172,7 @@ print("---evaluating tactic:", tact, val)
 					-- Apply the selffire and friendlyfire options
 					nb_self_hit = nb_self_hit * (type(typ.selffire) == "number" and typ.selffire / 100 or 1)
 					nb_allies_hit = nb_allies_hit * (type(typ.friendlyfire) == "number" and typ.friendlyfire / 100 or 1)
-					-- Use the player set ai_talents weights
+					-- Use the player set ai_talents weights with raw talent level
 					val = val * (self.ai_talents and self.ai_talents[t.id] or 1) * (1 + lvl / 5)
 					-- Update the weight by the dummy projection data
 					-- Also force scaling if the talent requires a target (stand-in for canProject)
@@ -382,11 +380,8 @@ print("---evaluating tactic (after adjustments):", tact, val)
 		end
 
 		-- Need buffs
---		if avail.buff and want.attack and want.attack > 0 then
---			want.buff = math.max(0.01, want.attack + 0.5)
---		end
 		if avail.buff and (want.attack and want.attack > 0 or want.attackarea and want.attackarea > 0) then
-			want.buff = math.max(0.01, (want.attack or 0) + 0.5, (want.attackarea or 0) + 1)
+			want.buff = math.max(0.01, (want.attack or 0) + 0.5, (want.attackarea or 0) + 0.5)
 		end
 		
 		if avail.special then want.special = avail.special[1].val end
@@ -415,7 +410,6 @@ table.print(want)
 			print("Tactical choice:", res[1][1], tid)
 			self.ai_state.tactic = res[1][1]
 			self:useTalent(tid, nil, nil, nil, (res[1][1] == "cure" or res[1][1] == "heal") and self or nil) --cures and heals go to the talent user
---			return true
 			return tid, res[1][1]
 		else
 			return nil, res[1][1]
@@ -425,7 +419,7 @@ end)
 
 newAI("tactical", function(self)
 	local targeted = self:runAI(self.ai_state.ai_target or "target_simple")
-table.print(self.ai_state, "--")
+--table.print(self.ai_state, "--")
 	self.ai_state.tactic = nil
 	-- Keep your distance
 	local special_move = false
@@ -446,7 +440,6 @@ table.print(self.ai_state, "--")
 	-- One in "talent_in" chance of using a talent
 	if (not self.ai_state.no_talents or self.ai_state.no_talents == 0) and rng.chance(self.ai_state.talent_in or 2) then
 		used_talent, want = self:runAI("use_tactical")
---game.log("#GREEN#---%s finished use_tactical (tid:%s, want:%s) with energy %d(%s)", used_talent, want, self.name, self.energy.value, self.energy.used)
 print(("[Tactical]---%s finished use_tactical (tid:%s, want:%s) with energy %d(%s)"):format(self.name, used_talent, want, self.energy.value, self.energy.used))
 		if used_talent then self.energy.used = true end -- make sure NPC can use another talent after instant talents
 		if want == "escape" then
@@ -467,7 +460,6 @@ print(("[Tactical]---%s finished use_tactical (tid:%s, want:%s) with energy %d(%
 			moved = self:runAI("flee_dmap_keep_los")
 		end
 		if not moved and not self.ai_state.escape then -- normal move
---game.log("#DARK_GRAY# %s default move", self.name)
 print(self.name, " performing default move")
 			return self:runAI(self.ai_state.ai_move or "move_simple")
 		end
@@ -479,12 +471,10 @@ newAI("flee_dmap_keep_los", function(self)
 	local can_flee, fx, fy = canFleeDmapKeepLos(self)
 	if can_flee then
 		self.ai_state.escape = true
---game.log("#GRAY# %s canFleeDmapKeepLOS to (%d, %d)", self.name, fx, fy)
 print(self.name, " canFleeDmapKeepLOS to", fx, fy)
 		return self:move(fx, fy)
 	end
 	self.ai_state.escape = nil
---game.log("#GRAY# %s canFleeDmapKeepLOS no move (%d, %d)", self.name, self.x, self.y)
 print(self.name, " canFleeDmapKeepLOS has no move at", self.x, self.y)
 end)
 

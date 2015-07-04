@@ -91,7 +91,6 @@ newEntity{ base = "BASE_TOOL_MISC", image="object/temporal_instability.png",
 	material_level = 5,
 	metallic = false,
 	use_no_energy = true,
---	special_desc = function(self) return "This item does not take a turn to use." end,
 	wielder = {
 		combat_spellpower=10,
 		combat_mindpower=10,

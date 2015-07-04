@@ -123,6 +123,8 @@ newTalent{
 			staff.combat.element = staff.combat.damtype or engine.DamageType.PHYSICAL
 		end
 
+-- extra code here for NPC's to switch to an appropriate element?
+
 		local state = {}
 		local Chat = require("engine.Chat")
 		local chat = Chat.new("command-staff", {name="Command Staff"}, self, {version=staff, state=state, co=coroutine.running()})
