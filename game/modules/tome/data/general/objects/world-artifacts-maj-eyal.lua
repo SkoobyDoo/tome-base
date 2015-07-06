@@ -72,13 +72,25 @@ newEntity{ base = "BASE_STAFF",
 	use_power = {
 		name = function(self, who) return ("cure up to %d diseases or poisons (based on Magic)"):format(self.use_power.cures(self, who)) end,
 		power = 10,
+		tactical = {CURE = function(who, t, aitarget) -- count number of disease and poisons
+			local nb = 0
+			for eff_id, p in pairs(who.tmp) do
+				local e = who.tempeffect_def[eff_id]
+				if e.status == "detrimental" then
+					nb = nb + (e.subtype.poison and 1 or 0)
+					nb = nb + (e.subtype.disease and 1.5 or 0)
+				end
+			end
+			if nb > 0 then return nb end
+		end
+		},
 		cures = function(self, who) return math.floor(who:combatStatScale("mag", 2.5, 6, "log")) end, --Not that many kinds of poisons/disease can be contracted at one time
 		use = function(self, who)
 			local target = who
 			local effs = {}
 			local known = false
 
-			game.logSeen(who, "%s uses %s, curing %s afflictions!", who.name:capitalize(), self:getName({no_add_name = true}), who:his_her())
+			game.logSeen(who, "%s uses %s %s, curing %s afflictions!", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name = true}), who:his_her())
 			-- Create list of poison/disease effects
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
@@ -113,12 +125,13 @@ newEntity{ base = "BASE_STAFF",
 	resolvers.command_staff(), -- I'm too lazy to write out resists and affinities
 }
 
-newEntity{ base = "BASE_STAFF",
+newEntity{ base = "BASE_STAFF", define_as = "STAFF_TARELION",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Lost Staff of Archmage Tarelion", image = "object/artifact/staff_lost_staff_archmage_tarelion.png",
 	unided_name = "shining staff",
 	flavor_name = "magestaff",
+	flavors = {magestaff=true},
 	level_range = {37, 50},
 	color=colors.VIOLET,
 	rarity = 250,
@@ -127,7 +140,6 @@ newEntity{ base = "BASE_STAFF",
 	material_level = 5,
 
 	require = { stat = { mag=48 }, },
-	modes = {"fire", "cold", "lightning", "arcane"},
 	combat = {
 		is_greater = true,
 		dam = 30,

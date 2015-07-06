@@ -460,7 +460,7 @@ function _M:useObjectSetData(tid, o)
 	if o.use_power then -- power is a general power
 		power = o.use_power
 		if not util.getval(power.no_npc_use, o, self) then
-			talent_level = o.material_level or power.talent_level or 1
+			talent_level = power.talent_level or o.material_level or 1
 		end
 	elseif o.use_simple then -- Generally for consumables
 		power = o.use_simple

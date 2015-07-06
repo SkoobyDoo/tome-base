@@ -599,8 +599,7 @@ function resolvers.calc.sustains_at_birth(_, e)
 			local t = self:getTalentFromId(tid)
 			if t and t.mode == "sustained" then
 				self.energy.value = game.energy_to_act
---				print("===== activating sustain", self.name, tid)
-				self:useTalent(tid)
+				self:useTalent(tid, nil, nil, nil, nil, true)
 			end
 		end
 	end

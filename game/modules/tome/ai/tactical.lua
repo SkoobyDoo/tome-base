@@ -81,8 +81,8 @@ newAI("use_tactical", function(self)
 		print(self.name, self.uid, "tactical ai talents testing", t.name, tid, t.is_object_use and t.getObject(self, t).name or "", "on target", aitarget and aitarget.name, ax, ay)
 		local tactical = t.tactical
 		if type(tactical) == "function" then tactical = tactical(self, t, aitarget) end
-print("** tactical table:")
-table.print(tactical, "---")
+--print("** tactical table:")
+--table.print(tactical, "---")
 		if tactical and aitarget then
 			local tg = self:getTalentTarget(t)
 --print("** target parameters:")
@@ -150,10 +150,10 @@ print("---evaluating tactic:", tact, val)
 									res = res * (100 - pen) / 100
 									local damweight = damweight
 									if type(damweight) == "function" then damweight = damweight(self, t, act) or 0 end
-print("raw damweight for ", damtype, "against", act.name, " = ", damweight)
+--print("raw damweight for ", damtype, "against", act.name, " = ", damweight)
 									-- Handles status effect immunity
 									damweight = damweight * (act:canBe(damtype) and 1 or 0)
-print("adjusted damweight for ", damtype, "against", act.name, " = ", damweight)
+--print("adjusted damweight for ", damtype, "against", act.name, " = ", damweight)
 									weighted_sum = weighted_sum + damweight * (100 - res) / 100
 								end
 								return weighted_sum
@@ -350,18 +350,22 @@ print("---evaluating tactic (after adjustments):", tact, val)
 		end
 
 		-- Need cure (remove detrimental effects)
-		local nb_detrimental_effs = 0
-		for eff_id, p in pairs(self.tmp) do
-			local e = self.tempeffect_def[eff_id]
-			if e.status == "detrimental" then
-				nb_detrimental_effs = nb_detrimental_effs + 1
+		if avail.cure then
+			local nb_detrimental_effs = 0
+			for eff_id, p in pairs(self.tmp) do
+				if (p.dur or 0) > 1 then
+					local e = self.tempeffect_def[eff_id]
+					if e.status == "detrimental" then
+						--print("[tactical]: found debuff:", p:getName(), "dur", p.dur)				
+						nb_detrimental_effs = nb_detrimental_effs + (p.dur-1)/5 --weight depends on remaining duration
+					end
+				end
+			end
+			if nb_detrimental_effs > 0 then
+				table.sort(avail.cure, function(a,b) return a.val > b.val end)
+				want.cure = nb_detrimental_effs + avail.cure[1].val
 			end
 		end
-		if avail.cure and nb_detrimental_effs > 0 then
-			table.sort(avail.cure, function(a,b) return a.val > b.val end)
-			want.cure = nb_detrimental_effs
-		end
-
 		-- Attacks
 		if avail.attack and aitarget then
 			-- Use the foe/ally ratio from the best attack talent
@@ -419,12 +423,10 @@ end)
 
 newAI("tactical", function(self)
 	local targeted = self:runAI(self.ai_state.ai_target or "target_simple")
---table.print(self.ai_state, "--")
 	self.ai_state.tactic = nil
 	-- Keep your distance
 	local special_move = false
 	local ax, ay = self:aiSeeTargetPos(self.ai_target.actor)
---	if self.ai_tactic.safe_range and self.ai_target.actor and self:hasLOS(ax, ay) then
 	if self.ai_state.escape then
 		special_move = "flee_dmap_keep_los"
 	elseif self.ai_tactic.safe_range and self.ai_target.actor and self:hasLOS(ax, ay) then
@@ -447,9 +449,6 @@ print(("[Tactical]---%s finished use_tactical (tid:%s, want:%s) with energy %d(%
 		else self.ai_state.escape = nil
 		end
 	end
---	if want == "escape" then
---		special_move = "flee_dmap_keep_los"
---	end
 
 	if targeted and not self.energy.used then
 		local moved

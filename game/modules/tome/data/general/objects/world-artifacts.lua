@@ -87,6 +87,7 @@ newEntity{ base = "BASE_STAFF",
 	unique = true,
 	name = "Staff of Destruction",
 	flavor_name = "magestaff",
+	flavors = {magestaff=true},
 	unided_name = "darkness infused staff", image = "object/artifact/staff_of_destruction.png",
 	level_range = {20, 25},
 	color=colors.VIOLET,
@@ -96,7 +97,6 @@ newEntity{ base = "BASE_STAFF",
 	material_level = 3,
 
 	require = { stat = { mag=24 }, },
-	modes = {"fire", "cold", "lightning", "arcane"},
 	combat = {
 		dam = 20,
 		apr = 4,
@@ -5429,6 +5429,7 @@ newEntity{ base = "BASE_STAFF",
 	image = "object/artifact/eclipse.png",
 	unided_name = "dark, radiant staff",
 	flavor_name = "starstaff",
+	flavors = {starstaff=true},
 	name = "Eclipse", unique=true,
 	desc = [[This tall staff is tipped with a pitch black sphere that yet seems to give off a strong light.]],
 	require = { stat = { mag=32 }, },
@@ -5436,7 +5437,6 @@ newEntity{ base = "BASE_STAFF",
 	rarity = 200,
 	cost = 60,
 	material_level = 2,
-	modes = {"darkness", "light", "physical", "temporal"},
 	combat = {
 		is_greater = true,
 		dam = 18,
@@ -7335,7 +7335,6 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		requires_target = true,
 		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius, selffire=false} end,
 		tactical = function(self, who, aitarget)
---game.log("tactical start (%d blood charges, %d blood duration)", self.blood_charge, self.blood_dur)
 			local nb, allies = 0, 0
 			local charge, dur = self.blood_charge, self.blood_dur
 			local oldboost = charge*dur
@@ -7347,7 +7346,6 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 					dur = 10
 					charge = math.min(charge + 1, 10)
 				end
---	game.log("counting actor %s at (%d, %d)", act.name, px, py)
 			end)
 			if nb > 0 then
 				local tac = {attackarea = {cut = 2}}
@@ -7357,14 +7355,12 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 					tac.special = tac.special - 1.5*((who.ai_state.ally_compassion == false and 0) or who.ai_state.ally_compassion or 1)*allies
 				end
 				tac.defend = boost/25
---game.log("---tactical found %d (%d) targets -- boost by %d, special = %0.1f, defend = %0.1f", nb, allies, boost, tac.special, tac.defend)
 				return tac
 			end
 		end,
 		range = 0,
 		radius  = 5,
 		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end,
---		on_pre_use_ai = function(self, who) return self.blood_charge < 10 end,
 		use = function(self, who)
 			game.logSeen(who, "%s revels in the bloodlust of %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			local damage = self.use_power.bleed(self, who)/4

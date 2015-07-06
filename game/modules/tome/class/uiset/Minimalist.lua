@@ -2183,9 +2183,6 @@ function _M:setupMouse(mouse)
 		if sub_es then for i, e in ipairs(sub_es) do
 			if e.tooltip then
 				local t = e:tooltip()
--- e = entity for tooltip (object, actor)
-print(("minimalist:setupMouse: tooltip, e= %s, tt = %s"):format(tostring(e), tostring(t)))
--- pass data?
 				if t then table.append(tooltips, t) end
 				if i < #sub_es then table.append(tooltips, { tstring{ true, "---" } } )
 				else table.append(tooltips, { tstring{ true } } ) end

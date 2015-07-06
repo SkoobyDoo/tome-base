@@ -1283,18 +1283,19 @@ newTalent{
 	target = function(self, t)
 		return {type="beam", range=self:getTalentRange(t), talent=t}
 	end,
-	tactical = { ATTACK = { MIND = 2 }, ESCAPE = { knockback = 2 } },
+	tactical = { ATTACK = { PHYSICAL = 2 }, ESCAPE = { knockback = 2 } },
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 170) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.MINDKNOCKBACK, self:mindCrit(self:combatTalentMindDamage(t, 10, 170)), {type="mind"})
+		self:project(tg, x, y, DamageType.MINDKNOCKBACK, self:mindCrit(t.getDamage(self, t)), {type="mind"})
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)
 		return ([[Sends a telekinetic attack, knocking back the target and doing %0.2f physical damage.
-		The damage will increase with Mindpower.]]):format(self:combatTalentMindDamage(t, 10, 170))
+		The damage will increase with Mindpower.]]):format(self:damDesc(engine.DamageType.PHYSICAL, t.getDamage(self, t)))
 	end,
 }
 

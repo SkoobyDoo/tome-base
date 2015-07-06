@@ -512,24 +512,20 @@ function _M:addedToLevel(level, x, y)
 		end
 		
 		-- try to equip inventory items
-		local MainInven = self:getInven(self.INVEN_INVEN)
+		local MainInven, o = self:getInven(self.INVEN_INVEN)
 
-self:inventoryApplyAll(function(inv, item, o) o:identify(true)
-		end) -- temp
+if config.settings.cheat then self:inventoryApplyAll(function(inv, item, o) o:identify(true) end) end-- temp
 		
 		if MainInven then --try to equip items from inventory
 			for i = #MainInven, 1, -1 do
-				local o = MainInven[i]
+				o = MainInven[i]
 				local inven, worn = self:getInven(o:wornInven())
---if not game.state:checkPowers(self, o, nil, "antimagic_only") then
---	game.log(" ---%s #YELLOW#incompatible (antimagic)#LAST# with %s", o:getName({do_color = true}), self.name)
---end
 				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
 					local ro, replace = inven and inven[1], false
 					o = self:removeObject(self.INVEN_INVEN, i)
 					if o then
 
-					-- could put more sophisticated criteria to pick the best gear for the npc here
+					-- could put more sophisticated criteria here to pick the best gear
 						if ro and o.type == ro.type and o.subtype == ro.subtype and (o.rare or o.randart or o.unique) and not (ro.rare or ro.randart or ro.unique) then replace = true end
 						worn = self:wearObject(o, replace, false)
 						if worn then
@@ -544,6 +540,9 @@ self:inventoryApplyAll(function(inv, item, o) o:identify(true)
 					end
 				end
 			end
+		end
+		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
+			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})
 		end
 	end
 
