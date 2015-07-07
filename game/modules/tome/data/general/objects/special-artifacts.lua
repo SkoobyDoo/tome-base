@@ -70,31 +70,30 @@ newEntity{ base = "BASE_STAFF", define_as = "TELOS_SPIRE",
 	use_power = { name = "turn into a corrupted losgoroth (poison, disease, cut and confusion immune; converts half damage into life drain; does not require breath) for 10 turns",
 		power = 15,
 		tactical = {BUFF = 2, HEAL = 2,
-
-		DEFEND = function(who, t, aitarget) -- if the target can debuff us with things this item can prevent,  prepare
-			if not aitarget then return end
-			local count, nb = 0, 0
-			for t_id, p in pairs(aitarget.talents) do
-				count = count + 1
-				local tal = aitarget.talents_def[t_id]
-				local val
-				if type(tal.tactical) == "table" then
-					val = tal.tactical.disable
-					if type(val) == "table" and (val.confusion or val.cut) then
-						nb = nb + 1
-					end
-					val = tal.tactical.attack
-					if type(val) == "table" and (val.poison or val.disease or val.cut) then
-						nb = nb + 1
-					end
-					val = tal.tactical.attackarea
-					if type(val) == "table" and (val.poison or val.disease or val.cut) then
-						nb = nb + 1
+			DEFEND = function(who, t, aitarget) -- if the target can debuff us with things this item can prevent,  prepare
+				if not aitarget then return end
+				local count, nb = 0, 0
+				for t_id, p in pairs(aitarget.talents) do
+					count = count + 1
+					local tal = aitarget.talents_def[t_id]
+					local val
+					if type(tal.tactical) == "table" then
+						val = tal.tactical.disable
+						if type(val) == "table" and (val.confusion or val.cut) then
+							nb = nb + 1
+						end
+						val = tal.tactical.attack
+						if type(val) == "table" and (val.poison or val.disease or val.cut) then
+							nb = nb + 1
+						end
+						val = tal.tactical.attackarea
+						if type(val) == "table" and (val.poison or val.disease or val.cut) then
+							nb = nb + 1
+						end
 					end
 				end
-			end
-			return math.min(5*(nb/count)^.5, 5)
-		end},
+				return math.min(5*(nb/count)^.5, 5)
+			end},
 		on_pre_use_ai = function(self, who) return not who:hasEffect(who.EFF_CORRUPT_LOSGOROTH_FORM) end,
 		use = function(self, who)
 			game.logSeen(who, "%s brandishes %s %s, turning into a corrupted losgoroth!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name =true}))

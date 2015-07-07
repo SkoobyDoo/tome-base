@@ -122,11 +122,11 @@ newTalent{
 		end},
 	on_pre_use_ai = function(self, t)
 		if self.ai_state._pref_staff_element == false then return end
+		local staff = self:hasStaffWeapon()
 		if not self.ai_state._pref_staff_element then
-			local staff = self:hasStaffWeapon()
 			self.ai_state._pref_staff_element = staff:getStaffPreferredElement(self)
 		end
-		return self.ai_state._pref_staff_element
+		return self.ai_state._pref_staff_element ~= (staff.combat.element or staff.combat.damtype)
 	end,
 	action = function(self, t)
 		local staff = self:hasStaffWeapon()

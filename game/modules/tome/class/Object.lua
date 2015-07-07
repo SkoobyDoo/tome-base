@@ -135,7 +135,6 @@ function _M:canUseObject(who)
 			return false, "You can not use items during a battle frenzy!"
 		end
 		if who:attr("sleep") and not who:attr("lucid_dreamer") then
-			game.logPlayer(who, "You can not use items while sleeping!")
 			return false, "You can not use objects while sleeping!"
 		end
 	end

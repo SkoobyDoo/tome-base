@@ -95,7 +95,7 @@ newTalent{
 	points = 5,
 	require = psi_wil_req2,
 	cooldown = 12,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 2, HEAL = 2 },
 	mode = "sustained",
 	sustain_psi = 20,
 	getHeal = function(self, t) return self:combatTalentMindDamage(t, 20, 340) end,

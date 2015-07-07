@@ -67,10 +67,10 @@ function _M:act()
 
 		-- Compute FOV, if needed
 		self:doFOV()
-print(("[NPC:act]---%s acting at (%d, %d) with energy %d(%s)"):format(self.name, self.x, self.y, self.energy.value, self.energy.used))
+print(("[NPC:act]---%s[%d] acting at (%d, %d) with energy %d(%s) on turn %d"):format(self.name, self.uid, self.x, self.y, self.energy.value, self.energy.used, game.turn))
 		-- Let the AI think .... beware of Shub !
 		self:doAI()
-print(("[NPC:act]---%s finished acting at (%d, %d) with energy %d(%s)"):format(self.name, self.x, self.y, self.energy.value, self.energy.used))
+print(("[NPC:act]---%s[%d] finished acting at (%d, %d) with energy %d(%s) on turn %d"):format(self.name, self.uid, self.x, self.y, self.energy.value, self.energy.used, game.turn))
 		if self.emote_random and self.x and self.y and game.level.map.seens(self.x, self.y) and rng.range(0, 999) < self.emote_random.chance * 10 then
 			local e = util.getval(rng.table(self.emote_random))
 			if e then

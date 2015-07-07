@@ -7090,7 +7090,7 @@ newEntity{ base = "BASE_GREATSWORD",
 		range = 4,
 		target = function(self, who) return {type="beam", range=self.use_power.range} end,
 		requires_target = true,
-		tactical = {ATTACK = {weapon = 2}, ATTACKAREA = {LIGHT = 1.5}, HEAL = 1},
+		tactical = {ATTACK = {weapon = 2}, ATTACKAREA = {LIGHT = 1.5}, HEAL = 1.5},
 		use = function(self, who)
 			local tg = self.use_power.target(self, who)
 			local x, y, target = who:getTarget(tg)

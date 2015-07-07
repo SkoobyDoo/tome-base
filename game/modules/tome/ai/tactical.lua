@@ -78,22 +78,20 @@ newAI("use_tactical", function(self)
 		end
 
 		local t_avail = false
-		print(self.name, self.uid, "tactical ai talents testing", t.name, tid, t.is_object_use and t.getObject(self, t).name or "", "on target", aitarget and aitarget.name, ax, ay)
+		print(self.name, "tactical ai talents testing", t.name, tid, t.is_object_use and t.getObject(self, t).name or "", "on target", aitarget and aitarget.name, ax, ay)
 		local tactical = t.tactical
 		if type(tactical) == "function" then tactical = tactical(self, t, aitarget) end
 --print("** tactical table:")
 --table.print(tactical, "---")
 		if tactical and aitarget then
 			local tg = self:getTalentTarget(t)
+			local requires_target = self:getTalentRequiresTarget(t)
 --print("** target parameters:")
 --table.print(tg, "---")
-			local default_tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}
 			-- Only assume range... some talents may not require LOS, etc
 			local within_range = target_dist and target_dist <= ((self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0))
 --print("---testing talent restrictions:", t.name, within_range, "preuse:", self:preUseTalent(t, false, true))
-			if t.mode == "activated" and not t.no_npc_use and
-			   not self:isTalentCoolingDown(t) and self:preUseTalent(t, true, true) and
-			   (not self:getTalentRequiresTarget(t) or within_range)
+			if t.mode == "activated" and not t.no_npc_use and not self:isTalentCoolingDown(t) and self:preUseTalent(t, true, true) and (not requires_target or within_range)
 			   then
 			   	t_avail = true
 			elseif t.mode == "sustained" and not t.no_npc_use and not self:isTalentCoolingDown(t) and
@@ -102,14 +100,15 @@ newAI("use_tactical", function(self)
 			   then
 			   	t_avail = true
 			end
-print("---talent", t.name, "availability:", t_avail)
+--print("---talent", t.name, "availability:", t_avail)
 			if t_avail then
 				-- Project the talent if possible, counting foes and allies hit
 				local foes_hit = {}
 				local allies_hit = {}
 				local self_hit = {}
-				local typ = engine.Target:getType(tg or default_tg)
-				if tg or self:getTalentRequiresTarget(t) then
+				-- default to direct hit
+				local typ = engine.Target:getType(tg or {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"})
+				if tg or requires_target then
 --					local target_actor = aitarget or self
 					self:project(typ, ax, ay, function(px, py)
 						local act = game.level.map(px, py, engine.Map.ACTOR)
@@ -132,7 +131,7 @@ print("---talent", t.name, "availability:", t_avail)
 					if type(val) == "function" then val = val(self, t, aitarget, tact) or 0 end
 					-- Handle damage_types and resistances
 					local nb_foes_hit, nb_allies_hit, nb_self_hit = 0, 0, 0
-print("---evaluating tactic:", tact, val)
+--print("---evaluating tactic:", tact, val)
 					if type(val) == "table" then
 						for damtype, damweight in pairs(val) do
 							-- Allows a shortcut to just say FIRE instead of DamageType.FIRE in talent's tactical table
@@ -176,17 +175,19 @@ print("---evaluating tactic:", tact, val)
 					val = val * (self.ai_talents and self.ai_talents[t.id] or 1) * (1 + lvl / 5)
 					-- Update the weight by the dummy projection data
 					-- Also force scaling if the talent requires a target (stand-in for canProject)
-					if tact ~= "special" and (self:getTalentRequiresTarget(t) or nb_foes_hit > 0 or nb_allies_hit > 0 or nb_self_hit > 0) then
+					if tact ~= "special" and (requires_target or nb_foes_hit > 0 or nb_allies_hit > 0 or nb_self_hit > 0) then
 						val = val * (nb_foes_hit - ally_compassion * nb_allies_hit - self_compassion * nb_self_hit)
 					end
-print("---evaluating tactic (after adjustments):", tact, val)
+--print("---evaluating tactic (after adjustments):", tact, val)
 					-- Only take values greater than 0... allows the ai_talents to turn talents off
 					if val > 0 and not self:hasEffect(self.EFF_RELOADING) then
 						if not avail[tact] then avail[tact] = {} end
 						-- Save the tactic, if the talent is instant it gets a huge bonus
 						-- Note the addition of a less than one random value, this means the sorting will randomly shift equal values
+						--untargeted cures and heals go to the talent user
 						val = ((util.getval(t.no_energy, self, t)==true) and val * 10 or val) + rng.float(0, 0.9)
-						avail[tact][#avail[tact]+1] = {val=val, tid=tid, nb_foes_hit=nb_foes_hit, nb_allies_hit=nb_allies_hit, nb_self_hit=nb_self_hit}
+						avail[tact][#avail[tact]+1] = {val=val, tid=tid, nb_foes_hit=nb_foes_hit, nb_allies_hit=nb_allies_hit, nb_self_hit=nb_self_hit,
+						force_target=(not requires_target) and (tact == "cure" or tact == "heal") and self}
 						print(self.name, self.uid, "tactical ai talents can use", tid, tact, "weight", val)
 						ok = true
 					end
@@ -408,12 +409,14 @@ table.print(want)
 		if #res == 0 then return end
 		table.sort(res, function(a,b) return a[2] > b[2] end)
 		local selected_talents = avail[res[1][1]]
+--print("selected talent parameters:")
+--table.print(selected_talents, "--")
 		if selected_talents then
 			table.sort(selected_talents, function(a,b) return a.val > b.val end)
 			local tid = selected_talents[1].tid
 			print("Tactical choice:", res[1][1], tid)
 			self.ai_state.tactic = res[1][1]
-			self:useTalent(tid, nil, nil, nil, (res[1][1] == "cure" or res[1][1] == "heal") and self or nil) --cures and heals go to the talent user
+			self:useTalent(tid, nil, nil, nil, selected_talents.force_target)
 			return tid, res[1][1]
 		else
 			return nil, res[1][1]
@@ -443,7 +446,6 @@ newAI("tactical", function(self)
 	if (not self.ai_state.no_talents or self.ai_state.no_talents == 0) and rng.chance(self.ai_state.talent_in or 2) then
 		used_talent, want = self:runAI("use_tactical")
 print(("[Tactical]---%s finished use_tactical (tid:%s, want:%s) with energy %d(%s)"):format(self.name, used_talent, want, self.energy.value, self.energy.used))
-		if used_talent then self.energy.used = true end -- make sure NPC can use another talent after instant talents
 		if want == "escape" then
 			special_move = "flee_dmap_keep_los"
 		else self.ai_state.escape = nil
@@ -459,8 +461,14 @@ print(("[Tactical]---%s finished use_tactical (tid:%s, want:%s) with energy %d(%
 			moved = self:runAI("flee_dmap_keep_los")
 		end
 		if not moved and not self.ai_state.escape then -- normal move
-print(self.name, " performing default move")
+--print(self.name, " performing default move")
 			return self:runAI(self.ai_state.ai_move or "move_simple")
+		end
+	end
+	if used_talent then -- make sure NPC can use another talent after instant talents
+		if self.ai_state.last_tid ~= used_talent then --but protect against repeated talent failures
+			self.energy.used = true
+			self.ai_state.last_tid = used_talent
 		end
 	end
 	return false
@@ -470,10 +478,10 @@ newAI("flee_dmap_keep_los", function(self)
 	local can_flee, fx, fy = canFleeDmapKeepLos(self)
 	if can_flee then
 		self.ai_state.escape = true
-print(self.name, " canFleeDmapKeepLOS to", fx, fy)
+--print(self.name, " canFleeDmapKeepLOS to", fx, fy)
 		return self:move(fx, fy)
 	end
 	self.ai_state.escape = nil
-print(self.name, " canFleeDmapKeepLOS has no move at", self.x, self.y)
+--print(self.name, " canFleeDmapKeepLOS has no move at", self.x, self.y)
 end)
 

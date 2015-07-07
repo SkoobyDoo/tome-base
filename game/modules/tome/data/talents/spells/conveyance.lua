@@ -69,7 +69,6 @@ newTalent{
 			game.logPlayer(self, "Select a target to teleport...")
 			local tg = {default_target=self, type="hit", friendlyblock = false, nowarning=true, range=self:getTalentRange(t)}
 			if rng.percent(50 + (aitarget and aitarget:attr("teleport_immune") or 0) + (aitarget and aitarget:attr("continuum_destabilization") or 0)/2) then tg.first_target = "friend" end -- npc's select self or aitarget based on target's resistance to teleportation
---game.log("..first_target %s", tg.first_target)
 			tx, ty = self:getTarget(tg)
 			if tx then
 				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
@@ -92,15 +91,12 @@ newTalent{
 		local range = t.getRange(self, t)
 		local radius = t.getRadius(self, t)
 		if self:getTalentLevel(t) >= 5 or game.zone.force_controlled_teleport then
-game.log("ai Tactic %s with target %s", self.ai_tactic and self.ai_state.tactic, target.name)
+--game.log("ai Tactic %s on target %s", self.ai_tactic and self.ai_state.tactic, target.name)
 			game.logPlayer(self, "Select a teleport location...")
 			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=range, radius=radius, requires_knowledge=false}
---			x, y = self:getTarget(tg)
---game.log("%s: %s cooldown = %d", self.name, t.name, self:getTalentCooldown(t))
 			if self.aiSeeTargetPos then -- ai code for NPCs
 				tx, ty = self:aiSeeTargetPos(aitarget)
 				if self.ai_state.tactic == "closein" then -- NPC trying to close in
---game.log("Trying to teleport %s towards", target.name)
 					local dx, dy = self.x - tx, self.y - ty
 					if target == self then -- teleport ourselves to target
 						x, y = tx, ty
@@ -108,7 +104,6 @@ game.log("ai Tactic %s with target %s", self.ai_tactic and self.ai_state.tactic,
 						x, y = self.x, self.y
 					end
 				else --NPC trying to open up distance
---game.log("Trying to teleport %s away", target.name)
 					-- range 18 based on cooldown + 10 tiles
 					if target == self then -- teleport ourselves
 						x, y = escapeGrid(self, self.x, self.y, t.getRange(self, t), tx, ty, self:getTalentCooldown(t)+10)
@@ -120,18 +115,12 @@ game.log("ai Tactic %s with target %s", self.ai_tactic and self.ai_state.tactic,
 				x, y = self:getTarget(tg)
 			end
 			if not x then return nil end
-game.log(" %s trying to teleport %s(%d, %d) to (%d, %d)", self.name, target.name, target.x, target.y, x, y)
---[[
-			local ok, sx, sy --temp
-			ok, sx, sy, x, y = self:canProject(tg, x, y)
-game.log("%s project test results: %s, (%s, %s) and (%s, %s)", self.name, ok, sx, sy, x, y) --end temp
---]]
+--game.log(" %s trying to teleport %s(%d, %d) to (%d, %d)", self.name, target.name, target.x, target.y, x, y)
 			_, _, _, x, y = self:canProject(tg, x, y)
 			range = radius
-game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name, target.name, x, y)
+--game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name, target.name, x, y)
 			-- Check LOS
 			if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
---game.log(" Random Teleport")
 				game.logPlayer(self, "The targetted phase door fizzles and works randomly!")
 				x, y = self.x, self.y
 				range = t.getRange(self, t)
@@ -141,7 +130,7 @@ game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name
 		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 		target:teleportRandom(x, y, range)
 		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
-game.log(" %s final location (%d, %d)", target.name, target.x, target.y)
+		print("[phase door] final location of ", target.name, target.x, target.y)
 		
 		if target ~= self then
 			if target:reactionToward(self) < 0 then target:setTarget(self) end -- Annoy them!
@@ -191,7 +180,6 @@ newTalent{
 			game.logPlayer(self, "Select a target to teleport...")
 			local tg = {default_target=self, type="hit", friendlyblock = false, nowarning=true, range=self:getTalentRange(t)}
 			if rng.percent(50 + (aitarget and aitarget:attr("teleport_immune") or 0) + (aitarget and aitarget:attr("continuum_destabilization") or 0)/2) then tg.first_target = "friend" end -- npc's select self or aitarget based on target's resistance to teleportation
---game.log("..first_target %s", tg.first_target)
 			tx, ty = self:getTarget(tg)
 			if tx then
 				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
@@ -215,14 +203,12 @@ newTalent{
 		local radius = t.getRadius(self, t)
 		local newpos
 		if self:getTalentLevel(t) >= 5 or game.zone.force_controlled_teleport then
-game.log("ai Tactic %s with target %s", self.ai_tactic and self.ai_state.tactic, target.name)
+--game.log("ai Tactic %s on target %s", self.ai_tactic and self.ai_state.tactic, target.name)
 			game.logPlayer(self, "Select a teleport location...")
 			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=range, radius=radius, requires_knowledge=false}
---game.log("%s: %s cooldown = %d", self.name, t.name, self:getTalentCooldown(t))
 			if self.aiSeeTargetPos then -- ai code for NPCs
 				tx, ty = self:aiSeeTargetPos(aitarget)
 				if self.ai_state.tactic == "closein" then -- NPC trying to close in
---game.log("Trying to teleport %s towards", target.name)
 					local dx, dy = self.x - tx, self.y - ty
 					if target == self then -- teleport ourselves to target
 						x, y = tx, ty
@@ -230,9 +216,6 @@ game.log("ai Tactic %s with target %s", self.ai_tactic and self.ai_state.tactic,
 						x, y = self.x, self.y
 					end
 				else --NPC trying to open up distance
-	--			if self.ai_state.tactic == "escape" then -- NPC trying to open up distance
---game.log("Trying to teleport %s away", target.name)
-					-- range 40 based on cooldown + 10 tiles
 					if target == self then -- teleport ourselves
 						x, y = escapeGrid(self, self.x, self.y, t.getRange(self, t), tx, ty,  self:getTalentCooldown(t)+10)
 					else -- teleport target
@@ -243,15 +226,10 @@ game.log("ai Tactic %s with target %s", self.ai_tactic and self.ai_state.tactic,
 				x, y = self:getTarget(tg)
 			end
 			if not x then return nil end
-game.log(" %s trying to teleport %s(%d, %d) to (%d, %d)", self.name, target.name, target.x, target.y, x, y)
---[[
-			local ok, sx, sy --temp
-			ok, sx, sy, x, y = self:canProject(tg, x, y)
-game.log("%s project test results: %s, (%s, %s) and (%s, %s)", self.name, ok, sx, sy, x, y)  -- end temp
---]]
+--game.log(" %s trying to teleport %s(%d, %d) to (%d, %d)", self.name, target.name, target.x, target.y, x, y)
 			_, _, _, x, y = self:canProject(tg, x, y)
 			range = radius
-game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name, target.name, x, y)
+--game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name, target.name, x, y)
 			-- Check LOS
 			if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
 --game.log(" Random Teleport")
@@ -260,12 +238,11 @@ game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name
 				range = t.getRange(self, t)
 			end
 			local _ _, x, y = self:canProject(tg, x, y)
-game.log(" %s trying to teleport %s to (%d, %d) radius %d", self.name, target.name, x, y, range)
+--game.log(" %s trying to teleport %s to (%d, %d) radius %d", self.name, target.name, x, y, range)
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 			newpos = target:teleportRandom(x, y, range)
 			-- teleport randomly if there was no suitable destination in the target area
 			if not newpos then
---game.log(" Failed Teleport")
 				newpos = target:teleportRandom(x, y, t.getRange(self, t), t.minRange)
 			end
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
@@ -274,8 +251,7 @@ game.log(" %s trying to teleport %s to (%d, %d) radius %d", self.name, target.na
 			newpos = target:teleportRandom(x, y, t.getRange(self, t), t.minRange)
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 		end
-game.log(" %s final location (%d, %d)", target.name, target.x, target.y)
-		
+		print("[teleport] final location of ", target.name, target.x, target.y)
 		if target ~= self then
 			if target:reactionToward(self) < 0 then target:setTarget(self) end -- Annoy them!
 			target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self:combatSpellpower(0.3)})

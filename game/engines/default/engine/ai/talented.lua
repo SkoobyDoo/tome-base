@@ -58,14 +58,16 @@ end)
 newAI("dumb_talented_simple", function(self)
 	if self:runAI(self.ai_state.ai_target or "target_simple") then
 		-- One in "talent_in" chance of using a talent
+		local used_talent
 		if (not self.ai_state.no_talents or self.ai_state.no_talents == 0) and rng.chance(self.ai_state.talent_in or 6) and self:reactionToward(self.ai_target.actor) < 0 then
-			local used_talent = self:runAI("dumb_talented")
+			used_talent = self:runAI("dumb_talented")
 			print("dumb ai used talent", used_talent)
-			if used_talent then self.energy.used = true end -- make sure NPC can use another talent after instant talents
+--			if used_talent then self.energy.used = true end -- make sure NPC can use another talent after instant talents
 		end
 		if not self.energy.used then
 			self:runAI(self.ai_state.ai_move or "move_simple")
 		end
+		if used_talent then self.energy.used = true end -- make sure NPC can use another talent after instant talents
 		return true
 	end
 end)

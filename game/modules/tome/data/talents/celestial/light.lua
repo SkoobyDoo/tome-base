@@ -55,7 +55,7 @@ newTalent{
 	points = 5,
 	cooldown = 15,
 	positive = -20,
-	tactical = { HEAL = 3 },
+	tactical = { HEAL = 2.5 },
 	range = 0,
 	radius = 2,
 	target = function(self, t)

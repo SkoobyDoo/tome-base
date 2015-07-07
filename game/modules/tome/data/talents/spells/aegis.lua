@@ -128,7 +128,7 @@ newTalent{
 	cooldown = 25,
 	use_only_arcane = 2,
 	no_energy = true,
-	tactical = { HEAL = 2 },
+	tactical = { DEFEND = 2 },
 	getShield = function(self, t) return 40 + self:combatTalentSpellDamage(t, 5, 500) / 10 end,
 	getNumEffects = function(self, t) return math.max(1,math.floor(self:combatTalentScale(t, 3, 7, "log"))) end,
 	on_pre_use = function(self, t)
