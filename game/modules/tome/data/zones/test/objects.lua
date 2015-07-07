@@ -17,7 +17,4 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-load("/data/general/objects/objects-maj-eyal.lua")
---loadIfNot("/data/general/objects/world-artifacts-maj-eyal.lua")
-
---loadIfNot("/data/general/objects/world-artifacts.lua")
+---load("/data/general/objects/objects-maj-eyal.lua")

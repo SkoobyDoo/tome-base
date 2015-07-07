@@ -91,7 +91,6 @@ newTalent{
 		local range = t.getRange(self, t)
 		local radius = t.getRadius(self, t)
 		if self:getTalentLevel(t) >= 5 or game.zone.force_controlled_teleport then
---game.log("ai Tactic %s on target %s", self.ai_tactic and self.ai_state.tactic, target.name)
 			game.logPlayer(self, "Select a teleport location...")
 			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=range, radius=radius, requires_knowledge=false}
 			if self.aiSeeTargetPos then -- ai code for NPCs
@@ -115,10 +114,8 @@ newTalent{
 				x, y = self:getTarget(tg)
 			end
 			if not x then return nil end
---game.log(" %s trying to teleport %s(%d, %d) to (%d, %d)", self.name, target.name, target.x, target.y, x, y)
 			_, _, _, x, y = self:canProject(tg, x, y)
 			range = radius
---game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name, target.name, x, y)
 			-- Check LOS
 			if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
 				game.logPlayer(self, "The targetted phase door fizzles and works randomly!")
@@ -203,7 +200,6 @@ newTalent{
 		local radius = t.getRadius(self, t)
 		local newpos
 		if self:getTalentLevel(t) >= 5 or game.zone.force_controlled_teleport then
---game.log("ai Tactic %s on target %s", self.ai_tactic and self.ai_state.tactic, target.name)
 			game.logPlayer(self, "Select a teleport location...")
 			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=range, radius=radius, requires_knowledge=false}
 			if self.aiSeeTargetPos then -- ai code for NPCs
@@ -226,19 +222,15 @@ newTalent{
 				x, y = self:getTarget(tg)
 			end
 			if not x then return nil end
---game.log(" %s trying to teleport %s(%d, %d) to (%d, %d)", self.name, target.name, target.x, target.y, x, y)
 			_, _, _, x, y = self:canProject(tg, x, y)
 			range = radius
---game.log(" %s trying to teleport (after project test) %s to (%d, %d)", self.name, target.name, x, y)
 			-- Check LOS
 			if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
---game.log(" Random Teleport")
 				game.logPlayer(self, "The targetted teleport fizzles and works randomly!")
 				x, y = self.x, self.y
 				range = t.getRange(self, t)
 			end
 			local _ _, x, y = self:canProject(tg, x, y)
---game.log(" %s trying to teleport %s to (%d, %d) radius %d", self.name, target.name, x, y, range)
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 			newpos = target:teleportRandom(x, y, range)
 			-- teleport randomly if there was no suitable destination in the target area

@@ -6143,8 +6143,7 @@ newEntity{ base = "BASE_HEAVY_BOOTS",
 		if math.abs(UP.t_bias) ~= 0 then
 			UP.t_bias = util.bound(UP.t_bias + (UP.t_bias > 1 and -1 or 1), -10, 10)
 		end
---game.log("%s acting: worn by %s with tactic %s, bias: %s", self.name, who.name, who.ai_state.tactic, UP.t_bias)
-print(("%s acting: worn by %s with tactic %s, bias: %s"):format(self.name, who.name, who.ai_state.tactic, UP.t_bias))
+--print(("%s acting: worn by %s with tactic %s, bias: %s"):format(self.name, who.name, who.ai_state.tactic, UP.t_bias))
 
 	end,
 	use_power = { name = "boost movement speed by 300% for up to 5 turns (or until you perform a non-movement action)", power = 32,
@@ -6551,7 +6550,6 @@ In the case of opponents who weren't alone, he had to improvise.]],
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
 				if target.summoner or rng.chance(target.rank or 5) then -- works on summons or low rank enemies
---				if target.summoner then -- consider making this work on low rank critters also
 					who:forceUseTalent(Talents.T_TIME_SKIP, {ignore_cd=true, ignore_energy=true, force_target=target, force_level=2, ignore_ressources=true, silent = true})
 				end
 			end)

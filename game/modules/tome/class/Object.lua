@@ -2158,7 +2158,6 @@ local function update_staff_table(o, d_table_old, d_table_new, old_element, new_
 	end
 end
 
--- randart staves getting old modes table?
 function _M:getStaffFlavorList()
 	if self.modes and not self.flavors then -- build flavor list for older staves
 		self.flavors = {exoticstaff={}}
@@ -2264,8 +2263,5 @@ function _M:getStaffPreferredElement(who, force)
 		if weight > wt then best, wt = typ, weight end
 	end
 	if wt > 0 then aspect = aspects[best] end
-local output = ("#AQUAMARINE#   ---Staff Element for %s: %s(%s): #GREEN#"):format(who.name, wt > 0 and best, aspect)
-table.foreach(damweights, function(k, v) output = output ..tostring(k).."=".. tostring(v)..", " end)
-game.log(output)
 	return wt > 0 and best, aspect, damweights
 end

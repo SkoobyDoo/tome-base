@@ -268,7 +268,7 @@ end
 -- @param returns false or o, talent id, talent level if the item is usable
 function _M:useObjectEnable(o, inven_id, slot, base_name)
 	print("[ActorObjectUse] useObjectEnable: ", o and o.name or "no name", "by", self.name, "inven/slot", inven_id, slot)
-	if not o:canUseObject() or o.quest or o.lore or (o:wornInven() and not o.wielded and not o.use_no_wear) then -- don't enable certain objects (lore, quest)
+	if not o:canUseObject() or o.lore or (o:wornInven() and not o.wielded and not o.use_no_wear) then -- don't enable certain objects (lore, etc.)
 		print("[ActorObjectUse] Object", o.name, o.uid, "is ineligible for talent interface")
 		return false
 	end
@@ -333,7 +333,6 @@ function _M:useObjectDisable(o, inven_id, slot, tid, base_name)
 		return
 	end
 	local data = self.object_talent_data
-
 	if o then
 		tid = tid or data[o] and data[o].tid
 		if (tid and data[tid] and data[tid].obj) ~= o then tid = nil end

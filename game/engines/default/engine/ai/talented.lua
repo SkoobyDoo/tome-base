@@ -62,7 +62,6 @@ newAI("dumb_talented_simple", function(self)
 		if (not self.ai_state.no_talents or self.ai_state.no_talents == 0) and rng.chance(self.ai_state.talent_in or 6) and self:reactionToward(self.ai_target.actor) < 0 then
 			used_talent = self:runAI("dumb_talented")
 			print("dumb ai used talent", used_talent)
---			if used_talent then self.energy.used = true end -- make sure NPC can use another talent after instant talents
 		end
 		if not self.energy.used then
 			self:runAI(self.ai_state.ai_move or "move_simple")

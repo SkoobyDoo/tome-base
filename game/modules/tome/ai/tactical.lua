@@ -19,7 +19,7 @@
 
 local DamageType = require "engine.DamageType"
 
---local print = function() end
+local print = function() end
 
 local canFleeDmapKeepLos = function(self)
 	if self.never_move then return false end -- Dont move, dont flee
@@ -357,7 +357,6 @@ newAI("use_tactical", function(self)
 				if (p.dur or 0) > 1 then
 					local e = self.tempeffect_def[eff_id]
 					if e.status == "detrimental" then
-						--print("[tactical]: found debuff:", p:getName(), "dur", p.dur)				
 						nb_detrimental_effs = nb_detrimental_effs + (p.dur-1)/5 --weight depends on remaining duration
 					end
 				end
@@ -392,8 +391,8 @@ newAI("use_tactical", function(self)
 		if avail.special then want.special = avail.special[1].val end
 
 --print("### nb_foes_seen", nb_foes_seen, "### nb_allies_seen", nb_allies_seen, "### need_heal", need_heal)
-print("### Wants:")
-table.print(want)
+--print("### Wants:")
+--table.print(want)
 		print("Tactical ai report for", self.name)
 		local res = {}
 		for k, v in pairs(want) do
@@ -445,7 +444,7 @@ newAI("tactical", function(self)
 	-- One in "talent_in" chance of using a talent
 	if (not self.ai_state.no_talents or self.ai_state.no_talents == 0) and rng.chance(self.ai_state.talent_in or 2) then
 		used_talent, want = self:runAI("use_tactical")
-print(("[Tactical]---%s finished use_tactical (tid:%s, want:%s) with energy %d(%s)"):format(self.name, used_talent, want, self.energy.value, self.energy.used))
+--print(("[Tactical]---%s finished use_tactical (tid:%s, want:%s) with energy %d(%s)"):format(self.name, used_talent, want, self.energy.value, self.energy.used))
 		if want == "escape" then
 			special_move = "flee_dmap_keep_los"
 		else self.ai_state.escape = nil
