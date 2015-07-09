@@ -236,8 +236,8 @@ end
 function _M:describeFloor(x, y, force)
 	if self.old_x == x and self.old_y == y and not force then return end
 
-	-- Autopickup money
-	if self:getInven(self.INVEN_INVEN) and not self.no_inventory_access then
+	-- Autopickup things on the floor
+	if self:getInven(self.INVEN_INVEN) and not self.no_inventory_access and not (self:attr("sleep") and not self:attr("lucid_dreamer")) then
 		local i, nb = game.level.map:getObjectTotal(x, y), 0
 		local obj = game.level.map:getObject(x, y, i)
 		while obj do
@@ -1213,6 +1213,10 @@ function _M:playerPickup()
 	if game.level.map:getObject(self.x, self.y, 2) then
 		local titleupdator = self:getEncumberTitleUpdator("Pickup")
 		local d d = self:showPickupFloor(titleupdator(), nil, function(o, item)
+			if self:attr("sleep") and not self:attr("lucid_dreamer") then
+				game:delayedLogMessage(self, nil, "sleep pickup", "You cannot pick up items from the floor while asleep!")
+				return
+			end
 			local o = self:pickupFloor(item, true)
 			if o and type(o) == "table" then o.__new_pickup = true end
 			self.changed = true
@@ -1220,6 +1224,9 @@ function _M:playerPickup()
 			d:used()
 		end)
 	else
+		if self:attr("sleep") and not self:attr("lucid_dreamer") then
+			return
+		end
 		local o = self:pickupFloor(1, true)
 		if o and type(o) == "table" then
 			self:useEnergy()

@@ -2552,7 +2552,7 @@ newEffect{
 newEffect{
 	name = "SLEEP", image = "talents/sleep.png",
 	desc = "Sleep",
-	long_desc = function(self, eff) return ("The target is asleep and unable to act.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is asleep and unable to perform most actions.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
 	type = "mental",
 	subtype = { sleep=true },
 	status = "detrimental",
@@ -2606,7 +2606,7 @@ newEffect{
 newEffect{
 	name = "SLUMBER", image = "talents/slumber.png",
 	desc = "Slumber",
-	long_desc = function(self, eff) return ("The target is in a deep sleep and unable to act.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is in a deep sleep and unable to perform most actions.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
 	type = "mental",
 	subtype = { sleep=true },
 	status = "detrimental",
@@ -2656,7 +2656,7 @@ newEffect{
 newEffect{
 	name = "NIGHTMARE", image = "talents/nightmare.png",
 	desc = "Nightmare",
-	long_desc = function(self, eff) return ("The target is in a nightmarish sleep, suffering %0.2f mind damage each turn and unable to act.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.dam, eff.power) end,
+	long_desc = function(self, eff) return ("The target is in a nightmarish sleep, suffering %0.2f mind damage each turn and unable to to perform most actions.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.dam, eff.power) end,
 	type = "mental",
 	subtype = { nightmare=true, sleep=true },
 	status = "detrimental",
