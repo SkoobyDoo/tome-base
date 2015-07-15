@@ -6430,7 +6430,7 @@ function _M:doTakeoff(inven, item, o, simple, dst)
 	dst = dst or self
 	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
 	if self:attr("sleep") and not self:attr("lucid_dreamer") then
-		game.logPlayer(self, "You can change your equipment while sleeping!")
+		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
 	if self:takeoffObject(inven, item) then
