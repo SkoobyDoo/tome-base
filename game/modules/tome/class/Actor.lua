@@ -3566,6 +3566,11 @@ end
 -- Quick Switch Weapons
 function _M:quickSwitchWeapons(free_swap, message, silent)
 	if self.no_inventory_access then return end
+	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+		game.logPlayer(self, "You cannot switch equipment while sleeping!")
+		return
+	end
+
 	local mh1, mh2 = self.inven[self.INVEN_MAINHAND], self.inven[self.INVEN_QS_MAINHAND]
 	local oh1, oh2 = self.inven[self.INVEN_OFFHAND], self.inven[self.INVEN_QS_OFFHAND]
 	local pf1, pf2 = self.inven[self.INVEN_PSIONIC_FOCUS], self.inven[self.INVEN_QS_PSIONIC_FOCUS]
@@ -3633,9 +3638,6 @@ function _M:quickSwitchWeapons(free_swap, message, silent)
 
 	self.no_power_reset_on_wear = nil
 
-	-- Make sure sustains are still active
-	self:actorCheckSustains()
-
 	-- Special Messages
 	if not silent then
 		if message == "warden" then
@@ -3644,6 +3646,12 @@ function _M:quickSwitchWeapons(free_swap, message, silent)
 			game.logPlayer(self, "You switch your weapons to: %s.", names)
 		end
 	end
+
+	-- Make sure sustains are still active
+	self:actorCheckSustains()
+	self:breakLightningSpeed()
+	self:breakReloading()
+	self:breakStepUp()
 
 	self.off_weapon_slots = not self.off_weapon_slots
 	self.changed = true
@@ -5325,7 +5333,7 @@ function _M:breakStealth()
 	if breaks and #breaks > 0 then
 		local chance = 0
 		if self:knowTalent(self.T_UNSEEN_ACTIONS) then
-			chance = self:callTalent(self.T_UNSEEN_ACTIONS,"getChance") + (self:getLck() - 50) * 0.2
+			chance = self:callTalent(self.T_UNSEEN_ACTIONS,"getChance")
 		end
 		-- Do not break stealth
 		if rng.percent(chance) then return end
@@ -6321,7 +6329,10 @@ end
 
 function _M:doDrop(inven, item, on_done, nb)
 	if self.no_inventory_access then return end
-
+	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+		game.logPlayer(self, "You can not drop items while sleeping.")
+		return
+	end
 	local o = self:getInven(inven) and self:getInven(inven)[item]
 	if o and o.plot then
 		game.logPlayer(self, "You can not drop %s (plot item).", o:getName{do_colour=true})
@@ -6334,7 +6345,7 @@ function _M:doDrop(inven, item, on_done, nb)
 	end
 
 	if game.zone.wilderness then
-		Dialog:yesnoLongPopup("Warning", "You cannot drop items on the world map.\nIf you drop it, it will be lost forever.", 300, function(ret)
+		Dialog:yesnoLongPopup("Warning", "Any item dropped on the world map will be lost forever.", 300, function(ret)
 			-- The test is reversed because the buttons are reversed, to prevent mistakes
 			if not ret then
 				local o = self:getInven(inven) and self:getInven(inven)[item]
@@ -6376,6 +6387,10 @@ end
 function _M:doWear(inven, item, o, dst, force_inven, force_item)
 	if self.no_inventory_access then return end
 	dst = dst or self
+	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+		game.logPlayer(self, "You can change your equipment while sleeping!")
+		return
+	end
 	dst:removeObject(inven, item, true)
 	local ro, rs = self:wearObject(o, true, true, force_inven, force_item) -- removed object and remaining stack if any
 	local added, slot
@@ -6399,6 +6414,9 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 	end
 	dst:sortInven()
 	self:actorCheckSustains()
+	self:breakLightningSpeed()
+	self:breakReloading()
+	self:breakStepUp()
 	self.changed = true
 end
 
@@ -6411,6 +6429,10 @@ end
 function _M:doTakeoff(inven, item, o, simple, dst)
 	dst = dst or self
 	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
+	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+		game.logPlayer(self, "You can change your equipment while sleeping!")
+		return
+	end
 	if self:takeoffObject(inven, item) then
 		dst:addObject(dst.INVEN_INVEN, o, true) --note: moves a whole stack
 	end
@@ -6420,6 +6442,9 @@ function _M:doTakeoff(inven, item, o, simple, dst)
 		if self:attr("quick_wear_takeoff") then self:setEffect(self.EFF_SWIFT_HANDS_CD, 1, {}) self.tmp[self.EFF_SWIFT_HANDS_CD].dur = 0 end
 	end
 	self:actorCheckSustains()
+	self:breakLightningSpeed()
+	self:breakReloading()
+	self:breakStepUp()
 	self.changed = true
 end
 
