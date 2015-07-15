@@ -6388,7 +6388,7 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 	if self.no_inventory_access then return end
 	dst = dst or self
 	if self:attr("sleep") and not self:attr("lucid_dreamer") then
-		game.logPlayer(self, "You can change your equipment while sleeping!")
+		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
 	dst:removeObject(inven, item, true)
