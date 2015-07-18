@@ -34,7 +34,7 @@ return {
 	color_shown = {0.5, 1, 0.8, 1},
 	color_obscure = {0.5*0.6, 1*0.6, 0.8*0.6, 0.6},
 	min_material_level = 3,
-	max_material_level = 5,
+	max_material_level = 4,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Cavern",

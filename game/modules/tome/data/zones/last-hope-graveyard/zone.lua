@@ -25,7 +25,7 @@ return {
 		end
 		return "Last Hope Graveyard"
 	end,
-	level_range = {15, 35},
+	level_range = {15, 25},
 	level_scheme = "player",
 	max_level = 2,
 	decay = {300, 800},

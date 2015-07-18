@@ -31,8 +31,8 @@ return {
 	persistent = "zone",
 	no_level_connectivity = true,
 	ambient_music = {"Remembrance.ogg","weather/dungeon_base.ogg"},
-	min_material_level = 3,
-	max_material_level = 4,
+	min_material_level = 4,
+	max_material_level = 5,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",
