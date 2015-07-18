@@ -1287,6 +1287,7 @@ local loot_mod = {
 		basic = 0,
 		money = 0,
 		lore = 0,
+		material_mod = 1,
 	},
 	gvault = { -- Greater vault
 		uniques = 10,
@@ -1298,6 +1299,7 @@ local loot_mod = {
 		basic = 0,
 		money = 0,
 		lore = 0,
+		material_mod = 1,
 	},
 	vault = { -- Default vault
 		uniques = 5,
@@ -1309,6 +1311,7 @@ local loot_mod = {
 		basic = 0,
 		money = 0,
 		lore = 0,
+		material_mod = 1,
 	},
 }
 
@@ -1447,6 +1450,7 @@ function _M:entityFilter(zone, e, filter, type)
 		if not filter.ignore_material_restriction then
 			local min_mlvl = util.getval(zone.min_material_level)
 			local max_mlvl = util.getval(zone.max_material_level)
+			if filter.tome_mod and filter.tome_mod.material_mod then max_mlvl = max_mlvl + filter.tome_mod.material_mod end
 			if min_mlvl and not e.material_level_min_only then
 				if not e.material_level then return true end
 				if e.material_level < min_mlvl then return false end
