@@ -1669,7 +1669,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(1, "orcs+steam-quarry")
+			self:changeLevel(1, "test")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {random_object=true}, nil, true)
 			if o then
