@@ -20,12 +20,13 @@
 require "engine.class"
 
 --- Handles actors temporary effects (temporary boost of a stat, ...)
+-- @classmod engine.generator.interface.ActorTemporaryEffects
 module(..., package.seeall, class.make)
 
 _M.tempeffect_def = {}
 
 --- Defines actor temporary effects
--- Static!
+-- @static
 function _M:loadDefinition(file, env)
 	local f, err = util.loadfilemods(file, setmetatable(env or {
 		DamageType = require "engine.DamageType",
@@ -38,7 +39,7 @@ function _M:loadDefinition(file, env)
 end
 
 --- Defines one effect
--- Static!
+-- @static
 function _M:newEffect(t)
 	assert(t.name, "no effect name")
 	assert(t.desc, "no effect desc")
@@ -56,7 +57,7 @@ function _M:newEffect(t)
 	self["EFF_"..t.name] = "EFF_"..t.name
 end
 
-
+--- init
 function _M:init(t)
 	self.tmp = self.tmp or {}
 end
@@ -161,7 +162,8 @@ end
 
 --- Check timed effect
 -- @param eff_id the effect to check for
--- @return either nil or the parameters table for the effect
+-- @return[1] nil
+-- @return[2] the parameters table for the effect
 function _M:hasEffect(eff_id)
 	return self.tmp[eff_id]
 end
@@ -215,7 +217,8 @@ end
 
 --- Copy an effect ensuring temporary values are managed properly
 -- @param eff_id the effect to copy
--- @return either nil or the parameters table for the effect
+-- @return[1] nil
+-- @return[2] the parameters table for the effect
 function _M:copyEffect(eff_id)
 	if not self then return nil end
 	local param = table.clone( self:hasEffect(eff_id) )

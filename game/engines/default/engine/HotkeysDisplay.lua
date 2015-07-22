@@ -19,8 +19,19 @@
 
 require "engine.class"
 
+--- Hotkeys Display
+-- @classmod engine.HotkeysDisplay
 module(..., package.seeall, class.make)
 
+--- Init
+-- @param[type=Actor] actor
+-- @number x x coordinate
+-- @number y y coordinate
+-- @number w width
+-- @number h height
+-- @param[type=table] bgcolor background color
+-- @string[opt="DroidSansMono"] fontname
+-- @number[opt=10] fontsize
 function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize)
 	self.actor = actor
 	if type(bgcolor) ~= "string" then
@@ -44,11 +55,16 @@ function _M:setColumns(nb)
 	self.nb_cols = nb
 end
 
+--- Enable our shadows??
 function _M:enableShadow(v)
 	self.shadow = v
 end
 
 --- Resize the display area
+-- @number x x coordinate
+-- @number y y coordinate
+-- @number w width
+-- @number h height
 function _M:resize(x, y, w, h)
 	self.display_x, self.display_y = math.floor(x), math.floor(y)
 	self.w, self.h = math.floor(w), math.floor(h)
@@ -70,7 +86,7 @@ end
 
 local page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
 
--- Displays the hotkeys, keybinds & cooldowns
+--- Displays the hotkeys, keybinds & cooldowns
 function _M:display()
 	local a = self.actor
 	if not a or not a.changed then return self.surface end
@@ -151,6 +167,7 @@ function _M:display()
 	end
 end
 
+--- To screen function override
 function _M:toScreen()
 	self:display()
 	if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
@@ -162,8 +179,14 @@ function _M:toScreen()
 	end
 end
 
---- Call when a mouse event arrives in this zone
+--- Call when a mouse event arrives in this zone  
 -- This is optional, only if you need mouse support
+-- @string button
+-- @number mx mouse x
+-- @number my mouse y
+-- @param[type=boolean] click did they click
+-- @param[type=function] on_over callback for hover
+-- @param[type=function] on_click callback for click
 function _M:onMouse(button, mx, my, click, on_over, on_click)
 	local a = self.actor
 

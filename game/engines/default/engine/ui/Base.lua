@@ -22,6 +22,7 @@ local KeyBind = require "engine.KeyBind"
 local Mouse = require "engine.Mouse"
 
 --- A generic UI element
+-- @classmod engine.ui.base
 module(..., package.seeall, class.make)
 
 local gfx_prefix = "/data/gfx/"

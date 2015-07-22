@@ -351,18 +351,18 @@ function _M:loaded()
 				if self.difficulty == self.DIFFICULTY_NIGHTMARE then
 					zone.base_level_range = table.clone(zone.level_range, true)
 					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 1.5 + 2
-					zone.level_range[2] = zone.level_range[2] * 1.5 + 2
+					zone.level_range[1] = zone.level_range[1] * 1.5 + 0
+					zone.level_range[2] = zone.level_range[2] * 1.5 + 0
 				elseif self.difficulty == self.DIFFICULTY_INSANE then
 					zone.base_level_range = table.clone(zone.level_range, true)
 					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 1.5 + 3
-					zone.level_range[2] = zone.level_range[2] * 1.5 + 3
+					zone.level_range[1] = zone.level_range[1] * 1.5 + 1
+					zone.level_range[2] = zone.level_range[2] * 1.5 + 1
 				elseif self.difficulty == self.DIFFICULTY_MADNESS then
 					zone.base_level_range = table.clone(zone.level_range, true)
 					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 2.5 + 6
-					zone.level_range[2] = zone.level_range[2] * 2.5 + 6
+					zone.level_range[1] = zone.level_range[1] * 2.5 + 1
+					zone.level_range[2] = zone.level_range[2] * 2.5 + 1
 				end
 			end
 		end,
@@ -1294,11 +1294,10 @@ end
 -- tgt, tgtSeen: target display?, identify?
 -- output: Visible? and srcSeen (source is identified by the player), tgtSeen(target is identified by the player)
 function _M:logVisible(source, target)
-	-- target should display if it's the player, an actor in a seen tile, or a non-actor without coordinates
-	local tgt = target and (target.player or (target.__is_actor and game.level.map.seens(target.x, target.y)) or (not target.__is_actor and not target.x))
+	-- target should display if it's the player, an actor (or projectile) in a seen tile, or a non-actor without coordinates
+	local tgt = target and (target.player or ((target.__is_actor or target.__is_projectile) and game.level.map.seens(target.x, target.y)) or (not target.__is_actor and not target.x))
 	local tgtSeen = tgt and (target.player or game.player:canSee(target)) or false
 	local src, srcSeen = false, false
---	local srcSeen = src and (not source.x or (game.player:canSee(source) and game.player:canSee(target)))
 	-- Special cases
 	if not source.x then -- special case: unpositioned source uses target parameters (for timed effects on target)
 		if tgtSeen then
@@ -1306,8 +1305,8 @@ function _M:logVisible(source, target)
 		else
 			src, tgt = nil, nil
 		end
-	else -- source should display if it's the player or an actor in a seen tile, or same as target for non-actors
-		src = source.player or (source.__is_actor and game.level.map.seens(source.x, source.y)) or (not source.__is_actor and tgt)
+	else -- source should display if it's the player or an actor (or projectile) in a seen tile, or same as target for non-actors
+		src = source.player or ((source.__is_actor or source.__is_projectile) and game.level.map.seens(source.x, source.y)) or (not source.__is_actor and tgt)
 		srcSeen = src and game.player:canSee(source) or false
 	end	
 	
@@ -1670,10 +1669,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			for i = 1, 10000 do
-				game.log("PLOP")
-				profile.chat:addMessage("talk", "tome", "test", "test", "test", {"test", colors.GOLD})
-			end
+			self:changeLevel(1, "orcs+slumbering-caves")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {random_object=true}, nil, true)
 			if o then

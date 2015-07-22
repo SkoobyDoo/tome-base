@@ -120,7 +120,10 @@ end
 -- You may overload this method to customize your minimap
 function _M:setupMinimapInfo(mo, map)
 	if self.special_minimap then mo:minimap(self.special_minimap.r, self.special_minimap.g, self.special_minimap.b) return end
-	if self.change_level then mo:minimap(240, 0, 240) return end
+	if self.change_level then mo:minimap(240, 0, 240) return
+	elseif self.is_door then
+		if self.does_block_move then mo:minimap(140, 80, 25) else mo:minimap(80, 30, 20) end return
+	end
 	return engine.Grid.setupMinimapInfo(self, mo, map)
 end
 

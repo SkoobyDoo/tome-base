@@ -77,7 +77,7 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 		self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE)
 	end,
 	info = function(self, t)
-		local xs = ([[  At talent levels higher than 5, you may parry melee attacks with your offhand weapon (except mindstars).
+		local xs = ([[At talent levels higher than 5, you may parry melee attacks with your offhand weapon (except mindstars).
 		(You currently have a %d%% chance to deflect up to %d damage (%d%% of your offhand weapon damage) from approximately %0.1f melee attacks (based on your Cunning) each turn.)]]):
 		format(t.getDeflectChance(self,t),t.getDamageChange(self, t, true), t.getDeflectPercent(self,t), t.getDeflects(self, t, true))
 		return ([[You have learned to block incoming blows with your weapons.  When dual wielding, your defense is increased by %d.

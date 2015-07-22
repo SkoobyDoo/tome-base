@@ -235,12 +235,13 @@ newTalent{
 	cooldown = 10,
 	range = 10,
 	requires_target = true,
-	tactical = { ATTACK = { MIND = 4 } },
+	tactical = { ATTACK = { MIND = 3 }, DISABLE = 1.5 },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	direct_hit = true,
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 100) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -351,67 +352,9 @@ newTalent{
 		format(number, damDesc(self, DamageType.TEMPORAL, (damage)), damDesc(self, DamageType.TEMPORAL, (explosion/2)), damDesc(self, DamageType.PHYSICAL, (explosion/2)))
 	end,
 }
-
--- Worm that Walks Powers
-newTalent{
-	name = "Worm Rot",
-	type = {"corruption/horror", 1},
-	points = 5,
-	cooldown = 8,
-	vim = 10,
-	range = 6,
-	requires_target = true,
-	tactical = { ATTACK = { ACID = 1, BLIGHT = 1 }, DISABLE = 4 },
-	getBurstDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 5, 50) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	proj_speed = 6,
-	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}} end,
-	spawn_carrion_worm = function (self, target, t)
-		local x, y = util.findFreeGrid(target.x, target.y, 10, true, {[Map.ACTOR]=true})
-		if not x then return nil end
-
-		local worm = {type="vermin", subtype="worms", name="carrion worm mass"}
-		local list = mod.class.NPC:loadList("/data/general/npcs/vermin.lua")
-		local m = list.CARRION_WORM_MASS:clone()
-		if not m then return nil end
-
-		m:resolve() m:resolve(nil, true)
-		m.faction = self.faction
-		game.zone:addEntity(game.level, m, "actor", x, y)
-	end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-
-		self:project(tg, x, y, function(px, py)
-			local target = game.level.map(px, py, engine.Map.ACTOR)
-			if not target then return end
-			if target:canBe("disease") then
-				target:setEffect(target.EFF_WORM_ROT, t.getDuration(self, t), {src=self, dam=t.getDamage(self, t), burst=t.getBurstDamage(self, t), rot_timer = 5, apply_power=self:combatSpellpower()})
-			else
-				game.logSeen(target, "%s resists the worm rot!", target.name:capitalize())
-			end
-			game.level.map:particleEmitter(px, py, 1, "slime")
-		end)
-		game:playSoundNear(self, "talents/slime")
-
-		return true
-	end,
-	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local damage = t.getDamage(self, t)
-		local burst = t.getBurstDamage(self, t)
-		return ([[Infects the target with parasitic carrion worm larvae for %d turns.  Each turn the disease will remove a beneficial physical effect and deal %0.2f acid and %0.2f blight damage.
-		If not cleared after five turns it will inflict %0.2f acid damage as the larvae hatch, removing the effect but spawning a full grown carrion worm mass near the target's location.]]):
-		format(duration, damDesc(self, DamageType.ACID, (damage/2)), damDesc(self, DamageType.BLIGHT, (damage/2)), damDesc(self, DamageType.ACID, (burst)))
-	end,
-}
 -------------------------------------------
 -- THE PUREQUESTION HORRORS AND ALL THAT --
 -------------------------------------------
-
 --Bladed Horror Talents
 newTalent{
 	name = "Knife Storm",
@@ -463,7 +406,8 @@ newTalent{
 	points = 5,
 	cooldown = 6,
 	psi = 35,
-	tactical = { DISABLE = 2 },
+	tactical = { ATTACKAREA = {PHYSICAL = 2}, CLOSEIN = 2},
+	requires_target = true,
 	range = 0,
 	radius = function(self, t)
 		return 5
@@ -529,7 +473,7 @@ newTalent{
 	random_ego = "attack",
 	equilibrium = 25,
 	cooldown = 10,
-	tactical = {ATTACKAREA = { NATURE=2 } },
+	tactical = {ATTACKAREA = { NATURE=1 }, DISABLE = 2 },
 	direct_hit = true,
 	range = 0,
 	requires_target = true,
@@ -537,7 +481,7 @@ newTalent{
 		return 1 + 0.5 * t.getDuration(self, t)
 	end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false}
 	end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 5, 90) end,
 	getDuration = function(self, t) return 9 + self:combatTalentMindDamage(t, 6, 7) end,
@@ -625,7 +569,7 @@ newTalent{
 	random_ego = "attack",
 	equilibrium = 4,
 	cooldown = 30,
-	tactical = { ATTACK = { NATURE = 2} },
+	tactical = { ATTACK = { NATURE = 2}, DISABLE = 1 },
 	range = 10,
 	direct_hit = true,
 	proj_speed = 8,
@@ -680,7 +624,6 @@ newTalent{
 		return ([[You extend slimy roots into the ground, follow them, and re-appear somewhere else in a range of %d with error margin of %d.]]):format(range, radius)
 	end,
 }
-
 
 --Ak'Gishil
 newTalent{

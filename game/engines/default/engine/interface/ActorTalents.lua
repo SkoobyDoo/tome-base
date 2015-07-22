@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handles actors stats
+-- @classmod engine.generator.interface.ActorTalents
 module(..., package.seeall, class.make)
 
 _M.talents_def = {}
@@ -250,7 +251,7 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			end
 		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
-			local abname = game:getGenericTextTiles(ab)..ab.name
+			local abname = game:getGenericTextTiles(ab)..tostring(self:getTalentDisplayName(ab))
 			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
 			function(quit)
 				if quit ~= false then
@@ -291,21 +292,24 @@ function _M:useTalentMessage(ab)
 	return str
 end
 
---- Called before an talent is used
+--- Called before a talent is used  
 -- Redefine as needed
--- @param ab the talent (not the id, the table)
--- @param silent no messages will be outputted
--- @param fake no actions are taken, only checks
--- @return true to continue, false to stop
+-- @param[type=table] talent the talent (not the id, the table)
+-- @param[type=boolean] silent no messages will be outputted
+-- @param[type=boolean] fake no actions are taken, only checks
+-- @return[1] true to continue
+-- @return[2] false to stop
 function _M:preUseTalent(talent, silent, fake)
 	return true
 end
 
---- Called before an talent is used
+--- Called before a talent is used  
 -- Redefine as needed
--- @param ab the talent (not the id, the table)
+-- @param[type=table] talent the talent (not the id, the table)
 -- @param ret the return of the talent action
--- @return true to continue, false to stop
+-- @param[type=boolean] silent no messages will be outputted
+-- @return[1] true to continue
+-- @return[2] false to stop
 function _M:postUseTalent(talent, ret, silent)
 	return true
 end
@@ -317,8 +321,8 @@ function _M:onTalentLuaError(ab, err)
 	return
 end
 
---- Force a talent to activate without using energy or such
--- "def" can have a field "ignore_energy" to not consume energy; other parameters can be passed and handled by an overload of this method.
+--- Force a talent to activate without using energy or such  
+-- "def" can have a field "ignore_energy" to not consume energy; other parameters can be passed and handled by an overload of this method.  
 -- Object activation interface calls this method with an "ignore_ressources" parameter
 function _M:forceUseTalent(t, def)
 	local oldpause = game.paused
@@ -358,7 +362,9 @@ end
 -- @param t_id the id of the talent to learn
 -- @param force if true do not check canLearnTalent
 -- @param nb the amount to increase the raw talent level by, default 1
--- @return true if the talent was learnt, nil and an error message otherwise
+-- @return[1] nil if failed
+-- @return[1] an error message
+-- @return[2] true if the talent was learned
 function _M:learnTalent(t_id, force, nb)
 --	print("[TALENT]", self.name, self.uid, "learning", t_id, force, nb)
 	local t = _M.talents_def[t_id]
@@ -439,9 +445,11 @@ function _M:learnTalent(t_id, force, nb)
 	return true
 end
 
---- Actor forgets a talent completly
+--- Actor forgets a talent completely
 -- @param t_id the id of the talent to learn
--- @return true if the talent was unlearnt, nil and an error message otherwise
+-- @return[1] nil if failed
+-- @return[1] an error message
+-- @return[2] true if the talent was unlearned
 function _M:unlearnTalentFull(t_id)
 	local lvl = self:getTalentLevelRaw(t_id)
 	if lvl > 0 then self:unlearnTalent(t_id, lvl) end
@@ -449,6 +457,7 @@ end
 
 --- Actor forgets a talent
 -- @param t_id the id of the talent to learn
+-- @param nb
 -- @return true if the talent was unlearnt, nil and an error message otherwise
 function _M:unlearnTalent(t_id, nb)
 	if not self:knowTalent(t_id) then return false, "talent not known" end
@@ -539,6 +548,7 @@ end
 --- Checks the talent if learnable
 -- @param t the talent to check
 -- @param offset the level offset to check, defaults to 1
+-- @param ignore_special ignore requirement of special
 function _M:canLearnTalent(t, offset, ignore_special)
 	-- Check prerequisites
 	if rawget(t, "require") then
@@ -740,8 +750,11 @@ function _M:getTalentTypeFrom(id)
 end
 
 --- Actor learns a talent type
--- @param t_id the id of the talent to learn
--- @return true if the talent was learnt, nil and an error message otherwise
+-- @param tt the id of the talent to learn
+-- @param v value
+-- @return[1] nil if failed
+-- @return[1] an error message
+-- @return[2] true if the talent was learned
 function _M:learnTalentType(tt, v)
 	if v == nil then v = true end
 	if self.talents_types[tt] then return end
@@ -752,8 +765,10 @@ function _M:learnTalentType(tt, v)
 end
 
 --- Actor forgets a talent type
--- @param t_id the id of the talent to learn
--- @return true if the talent was unlearnt, nil and an error message otherwise
+-- @param tt the id of the talent to unlearn
+-- @return[1] nil if failed
+-- @return[1] an error message
+-- @return[2] true if the talent was unlearned
 function _M:unlearnTalentType(tt)
 	self.talents_types[tt] = false
 	self.changed = true

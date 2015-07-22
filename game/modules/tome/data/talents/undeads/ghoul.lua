@@ -84,26 +84,37 @@ newTalent{
 	require = undeads_req3,
 	points = 5,
 	cooldown = 25,
-	tactical = { ATTACK = { BLIGHT = 1 }, HEAL = 1 },
+	tactical = { ATTACKAREA = function(self, t, aitarget)
+			return not aitarget:attr("undead") and { BLIGHT = 1 } or nil
+		end,
+		HEAL = function(self, t, aitarget)
+			return self:attr("undead") and 1 or nil
+		end},
 	range=1,
+	radius = 3,
+	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire = not self:attr("undead")} end,  --selffire is set only for the ai, the map effect doesn't use it
 	requires_target = true,
 	getduration = function(self, t) return self:combatTalentScale(t, 7, 15, 0.5) end,
 	getPurgeChance = function(self, t) return self:combatTalentLimit(t, 100, 5, 25) end, -- Limit < 100%
 	-- status effect removal handled in mod.data.damage_types (type = "RETCH")
 	action = function(self, t)
 		local duration = t.getduration(self, t)
-		local radius = 3
 		local dam = 10 + self:combatTalentStatDamage(t, "con", 10, 60)
-		local tg = {type="ball", range=self:getTalentRange(t), radius=radius}
+		local tg = self:getTalentTarget(t)
+		local tx, ty = self:getTarget(tg)
+		if not tx or not ty then return nil end
+		local _, tx, ty = self:canProject(tg, tx, ty)
+
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
-			self.x, self.y, duration,
+			tx, ty, duration,
 			DamageType.RETCH, dam,
-			radius,
+			tg.radius,
 			5, nil,
 			MapEffect.new{color_br=30, color_bg=180, color_bb=60, effect_shader="shader_images/retch_effect.png"},
 			nil, self:spellFriendlyFire()
 		)
+		game.logSeen(self, "%s #YELLOW_GREEN#VOMITS#LAST# on the ground!", self.name:capitalize())
 		game:playSoundNear(self, "talents/cloud")
 		return true
 	end,

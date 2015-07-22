@@ -109,9 +109,43 @@ function _M:act()
 	self:useEnergy()
 end
 
-function _M:canUseObject()
+--- can the object be used?
+--	@param who = the object user (optional)
+--	returns boolean, msg
+function _M:canUseObject(who)
 	if self.__transmo then return false end
-	return engine.interface.ObjectActivable.canUseObject(self)
+	if not engine.interface.ObjectActivable.canUseObject(self, who) then
+		return false, "This object has no usable power."
+	end
+	
+	if who then
+		if who.no_inventory_access then
+			return false, "You cannot use items now!"
+		end
+		if self.use_no_blind and who:attr("blind") then
+			return false, "You cannot see!"
+		end
+		if self.use_no_silence and who:attr("silence") then
+			return false, "You are silenced!"
+		end
+		if self:wornInven() and not self.wielded and not self.use_no_wear then
+			return false, "You must wear this object to use it!"
+		end
+		if who:hasEffect(self.EFF_UNSTOPPABLE) then
+			return false, "You can not use items during a battle frenzy!"
+		end
+		if who:attr("sleep") and not who:attr("lucid_dreamer") then
+			game.logPlayer(who, "You can not use items while sleeping!")
+			return false, "You can not use objects while sleeping!"
+		end
+	end
+	return true, "Object can be used."
+end
+
+---	Does the actor have inadequate AI to use this object intelligently?
+--	@param who = the potential object user
+function _M:restrictAIUseObject(who)
+	return not (who.ai == "tactical" or who.ai_real == "tactical" or (who.ai_state and who.ai_state.ai_party) == "tactical")
 end
 
 function _M:useObject(who, ...)
@@ -199,32 +233,15 @@ end
 --- Use the object (quaff, read, ...)
 function _M:use(who, typ, inven, item)
 	inven = who:getInven(inven)
-
-	if self.use_no_blind and who:attr("blind") then
-		game.logPlayer(who, "You cannot see!")
-		return
-	end
-	if self.use_no_silence and who:attr("silence") then
-		game.logPlayer(who, "You are silenced!")
-		return
-	end
-	if self:wornInven() and not self.wielded and not self.use_no_wear then
-		game.logPlayer(who, "You must wear this object to use it!")
-		return
-	end
-	if who:hasEffect(self.EFF_UNSTOPPABLE) then
-		game.logPlayer(who, "You can not use items during a battle frenzy!")
-		return
-	end
-	
-	if who:attr("sleep") and not who:attr("lucid_dreamer") then
-		game.logPlayer(who, "You can not use items while sleeping!")
-		return
-	end
-
 	local types = {}
-	if self:canUseObject() then types[#types+1] = "use" end
-
+	local useable, msg = self:canUseObject(who)
+	
+	if useable then
+		types[#types+1] = "use" 
+	else
+		game.logPlayer(who, msg)
+		return
+	end
 	if not typ and #types == 1 then typ = types[1] end
 
 	if typ == "use" then
@@ -235,7 +252,6 @@ function _M:use(who, typ, inven, item)
 					if rng.percent(d[1]) then d[3](self, who) end
 				end
 			end
-
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not self.use_no_energy then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
@@ -742,10 +758,6 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		if combat.wil_attack then
 			desc:add("Accuracy is based on willpower for this weapon.", true)
-		end
-
-		if combat.is_psionic_focus then
-			desc:add("This weapon will act as a psionic focus.", true)
 		end
 
 		compare_fields(combat, compare_with, field, "atk", "%+d", "Accuracy: ", 1, false, false, add_table)
@@ -1767,7 +1779,7 @@ function _M:getUseDesc(use_actor)
 	if self.use_power and not self.use_power.hidden then
 		local desc = util.getval(self.use_power.name, self, use_actor)
 		if self.show_charges then
-			ret = tstring{{"color","YELLOW"}, ("It can be used to %s, with %d charges out of %d."):format(desc, math.floor(self.power / usepower(self.use_power.power)), math.floor(self.max_power / usepower(self.use_power.power))), {"color","LAST"}} --I5
+			ret = tstring{{"color","YELLOW"}, ("It can be used to %s, with %d charges out of %d."):format(desc, math.floor(self.power / usepower(self.use_power.power)), math.floor(self.max_power / usepower(self.use_power.power))), {"color","LAST"}}
 		elseif self.talent_cooldown then
 			local t_name = self.talent_cooldown == "T_GLOBAL_CD" and "all charms" or "Talent "..use_actor:getTalentDisplayName(use_actor:getTalentFromId(self.talent_cooldown))
 			ret = tstring{{"color","YELLOW"}, ("It can be used to %s, putting %s on cooldown for %d turns."):format(desc:format(self:getCharmPower(use_actor)), t_name, usepower(self.use_power.power)), {"color","LAST"}}
@@ -2109,4 +2121,86 @@ function _M:canAttachTinker(tinker, override)
 	if tinker.on_slot and tinker.on_slot ~= self.slot then return end
 	if self.tinker and not override then return end
 	return true
+end
+
+-- Staff stuff
+local standard_flavors = {
+	magestaff = {engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE},
+	starstaff = {engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL, engine.DamageType.PHYSICAL},
+	vilestaff = {engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE}, -- yes it overlaps, it's okay
+}
+
+-- from command-staff.lua
+local function update_staff_table(o, d_table_old, d_table_new, old_element, new_element, tab, v, is_greater)
+	o.wielder[tab] = o.wielder[tab] or {}
+	if is_greater then
+		if d_table_old then for i = 1, #d_table_old do
+			o.wielder[tab][d_table_old[i]] = math.max(0, (o.wielder[tab][d_table_old[i]] or 0) - v)
+			if o.wielder[tab][d_table_old[i]] == 0 then o.wielder[tab][d_table_old[i]] = nil end
+		end end
+		for i = 1, #d_table_new do
+			o.wielder[tab][d_table_new[i]] = (o.wielder[tab][d_table_new[i]] or 0) + v
+		end
+	else
+		if old_element then
+			o.wielder[tab][old_element] = math.max(0, (o.wielder[tab][old_element] or 0) - v)
+			if o.wielder[tab][old_element] == 0 then o.wielder[tab][old_element] = nil end
+		end
+		o.wielder[tab][new_element] = (o.wielder[tab][new_element] or 0) + v
+	end
+end
+
+function _M:getStaffFlavorList()
+	return table.keys(self.flavors or standard_flavors)
+end
+
+function _M:getStaffFlavor(flavor)
+	local flavors = self.flavors or standard_flavors
+	if not flavors[flavor] then return nil end
+	if flavors[flavor] == true then return standard_flavors[flavor]
+	else return flavors[flavor] end
+end
+
+local function staff_command(o) -- compat
+	if o.command_staff then return o.command_staff end
+	if o.no_command then return {} end
+	o.command_staff = {
+		inc_damage = 1,
+		resists = o.combat.of_protection and 0.5 or nil,
+		resists_pen = o.combat.of_breaching and 0.5 or nil,
+		of_warding = o.combat.of_warding and {add=2, mult=0, "wards"} or nil,
+		of_greater_warding = o.combat.of_greater_warding and {add=3, mult=0, "wards"} or nil,
+	}
+	return o.command_staff
+end
+
+
+-- Command a staff to another element
+function _M:commandStaff(element, flavor)
+	if self.subtype ~= "staff" then return end
+	local old_element = self.combat.element or self.combat.damtype  -- safeguard!
+	element  = element or old_element
+	flavor = flavor or self.flavor_name
+	-- Art staves may define new flavors or redefine meaning of existing ones; "true" means standard, otherwise it should be a list of damage types.
+	local old_flavor = self:getStaffFlavor(self.flavor_name)
+	local new_flavor = self:getStaffFlavor(flavor)
+	if not new_flavor then return end
+	local staff_power = self.combat.staff_power or self.combat.dam
+	local is_greater = self.combat.is_greater
+	for k, v in pairs(staff_command(self)) do
+		if v then
+			if type(v) == "table" then
+				local power = staff_power * (v.mult or 1) + v.add
+				update_staff_table(self, old_flavor, new_flavor, old_element, element, v[1] or k, power, is_greater)
+			elseif type(v) == "number" then  -- shortcut for previous case
+				update_staff_table(self, old_flavor, new_flavor, old_element, element, k, staff_power * v, is_greater)
+			else
+				v(self, element, flavor, update_staff_table)
+			end
+		end
+	end
+	self.combat.element = element
+	if self.combat.melee_element then self.combat.damtype = element end
+	if not self.unique then self.name = self.name:gsub(self.flavor_name or "staff", flavor) end
+	self.flavor_name = flavor
 end

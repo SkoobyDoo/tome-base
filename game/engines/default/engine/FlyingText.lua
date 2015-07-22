@@ -19,8 +19,15 @@
 
 require "engine.class"
 
+--- Flying Text
+-- @classmod engine.FlyingText
 module(..., package.seeall, class.make)
 
+--- Init
+-- @string[opt="DroidSans"] fontname
+-- @int[opt=12] fontsize
+-- @string[opt="DroidSans-Bold"] bigfontname
+-- @int[opt=14] bigfontsize
 function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.font = core.display.newFont(fontname or "/data/font/DroidSans.ttf", fontsize or 12)
 	self.bigfont = core.display.newFont(bigfontname or "/data/font/DroidSans-Bold.ttf", bigfontsize or 14)
@@ -28,10 +35,21 @@ function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.flyers = {}
 end
 
+--- @param[type=boolean] v enable the shadowssss
 function _M:enableShadow(v)
 	self.shadow = v
 end
 
+--- Add a new flying text
+-- @int x x position
+-- @int y y position
+-- @int[opt=10] duration
+-- @param[type=?number] xvel horizontal velocity
+-- @param[type=?number] yvel vertical velocity
+-- @string str what the text says
+-- @param[type=?table] color color of the text, defaults to colors.White
+-- @param[type=?boolean] bigfont use the big font?
+-- @return `FlyingText`
 function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	if not x or not y or not str then return end
 	color = color or {255,255,255}
@@ -54,10 +72,13 @@ function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	return f
 end
 
+--- Removes all FlyingText
 function _M:empty()
 	self.flyers = {}
 end
 
+--- Display loop function
+-- @int nb_keyframes
 function _M:display(nb_keyframes)
 	if not next(self.flyers) then return end
 

@@ -677,6 +677,8 @@ newEffect{
 	subtype = { nature=true },
 	status = "beneficial",
 	parameters = { ac=10, hard=10 },
+	on_gain = function(self, err) return "#Target#'s skin looks a bit thorny.", "+Thorny Skin" end,
+	on_lose = function(self, err) return "#Target# is less thorny now.", "-Thorny Skin" end,
 	activate = function(self, eff)
 		eff.aid = self:addTemporaryValue("combat_armor", eff.ac)
 		eff.hid = self:addTemporaryValue("combat_armor_hardiness", eff.hard)
@@ -916,6 +918,8 @@ newEffect{
 	subtype = { sunder=true },
 	status = "detrimental",
 	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target#'s armour is damaged!", "+Sunder Armor" end,
+	on_lose = function(self, err) return "#Target#'s armour is more intact.", "-Sunder Armor" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "combat_armor", -eff.power)
 		self:effectTemporaryValue(eff, "combat_physresist", -eff.power)
@@ -932,6 +936,8 @@ newEffect{
 	subtype = { sunder=true },
 	status = "detrimental",
 	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target#'s fighting ability is impaired!", "+Sunder Arms" end,
+	on_lose = function(self, err) return "#Target#'s ability to fight has recovered.", "-Sunder Arms" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("combat_atk", -eff.power)
 	end,
@@ -2566,7 +2572,7 @@ newEffect{
 newEffect{
 	name = "JUGGERNAUT", image = "talents/juggernaut.png",
 	desc = "Juggernaut",
-	long_desc = function(self, eff) return ("Reduces physical damage received by %d%% and provides a %d%% chance to ignore critial hits."):format(eff.power, eff.crits) end,
+	long_desc = function(self, eff) return ("Reduces physical damage received by %d%% and provides a %d%% chance to ignore critical hits."):format(eff.power, eff.crits) end,
 	type = "physical",
 	subtype = { superiority=true },
 	status = "beneficial",

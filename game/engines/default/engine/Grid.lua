@@ -20,6 +20,8 @@
 require "engine.class"
 local Entity = require "engine.Entity"
 
+--- Grid
+-- @classmod engine.Grid
 module(..., package.seeall, class.inherit(Entity))
 
 -- When used on the map, do not draw alpha channel

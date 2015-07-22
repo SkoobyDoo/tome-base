@@ -22,6 +22,7 @@ require "engine.class"
 --- Interface to add leveling capabilities to actors
 -- Defines the exp property, which is the current experience, level which is the current level and exp_worth which is a multiplier
 -- to the monster level default exp
+-- @classmod engine.generator.interface.ActorLevel
 module(..., package.seeall, class.make)
 
 _M.actors_max_level = false
@@ -79,7 +80,8 @@ end
 
 --- Get the exp needed for the given level
 -- @param level the level to check exp for
--- @return the exp needed, or nil if this level is not achievable
+-- @return[1] nil if this level is not achievable
+-- @return[2] the exp needed
 function _M:getExpChart(level)
 	if type(self.exp_chart) == "table" then
 		return self.exp_chart[level] * self.exp_mod

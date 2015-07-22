@@ -20,7 +20,8 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 
---- A generic waiter bar
+--- A generic waiter
+-- @classmod engine.ui.Waiter
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)

@@ -31,7 +31,7 @@ Though armies would fall before the Spellblaze's might, though forests were raze
 
 How wrong they were. The Nalorën people, long secluded, were prepared to fend off any attacks on their land, but how could they hope to stop the land itself crumbling? Seeing their home literally tearing itself apart, plains and forests tumbling into the seas... For one brief, terrible moment, they beheld the true extent of the Spellblaze's power. Not only was it destroying the people of the world, but the world itself.
 
-The lands of the Narlorën had sunk beneath the waves.]],
+The lands of the Nalorën had sunk beneath the waves.]],
 }
 
 newLore{

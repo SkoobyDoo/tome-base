@@ -23,6 +23,8 @@ local Dialog = require "engine.ui.Dialog"
 local Button = require "engine.ui.Button"
 local Numberbox = require "engine.ui.Numberbox"
 
+--- Generic popup for getting quantity
+-- @classmod engine.dialogs.GetQuantity
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, prompt, default, max, action, min)

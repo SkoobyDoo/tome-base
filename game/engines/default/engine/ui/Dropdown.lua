@@ -24,6 +24,7 @@ local List = require "engine.ui.List"
 local Dialog = require "engine.ui.Dialog"
 
 --- A generic UI list dropdown box
+-- @classmod engine.ui.Dropdown
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

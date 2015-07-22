@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Handles activable objects, much more simple than actor's resource
 -- It can define simple activations, complex ones that use power and it can also activate talent (ActorTalents interface must also be used on the Object class in this case)
+-- @classmod engine.generator.interface.ObjectActivatable
 module(..., package.seeall, class.make)
 
 function _M:init(t)

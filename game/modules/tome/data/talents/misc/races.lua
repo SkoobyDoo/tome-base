@@ -587,7 +587,27 @@ newTalent{
 	points = 5,
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 45, 25)) end, -- limit >10
-	tactical = { DEFEND = 1,  CURE = 1 },
+	tactical = { DEFEND = function(self, t, aitarget)
+			local count, t = 0
+			for tid, _ in pairs(aitarget.talents) do
+				t = aitarget.talents_def[tid]
+				if type(t.tactical) == "table" and type(t.tactical.disable) == "table" and (t.tactical.disable.stun or t.tactical.disable.pin) then
+					count = count + 1
+					if count > 1 then break end
+				end
+			end
+			return count
+		end,
+		CURE = function(self, t, aitarget)
+			local count, e = 0
+			for eff_id, p in pairs(self.tmp) do
+				e = self.tempeffect_def[eff_id]
+				if e.subtype.stun or e.subtype.pin then
+					count = count + 1
+				end
+			end
+			return count
+		end},
 	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
 	action = function(self, t)
@@ -828,7 +848,7 @@ newTalent{
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 6, 47, 35)) end, -- Limit >6
 	range = 4,
-	no_npc_use = true,
+	no_npc_use = true, -- make available to NPCs?
 	action = function(self, t)
 		local tg = {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t}
 		local tx, ty, target = self:getTarget(tg)

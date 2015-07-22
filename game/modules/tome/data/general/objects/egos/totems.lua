@@ -33,7 +33,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d equilibrium"):format(self:getCharmPower(who, true) / 5) end, function(self, who)
 			who:incEquilibrium(-self:getCharmPower(who, true) / 5)
 		end},
-	}
+	},
+	use_power = {tactical = {EQUILIBRIUM = 1}}
 }
 
 newEntity{
@@ -47,7 +48,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d stamina"):format(self:getCharmPower(who, true) / 6) end, function(self, who)
 			who:incStamina(self:getCharmPower(who, true) / 6)
 		end},
-	}
+	},
+	use_power = {tactical = {STAMINA = 1}}
 }
 
 newEntity{

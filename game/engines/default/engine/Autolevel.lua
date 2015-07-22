@@ -19,19 +19,25 @@
 
 require "engine.class"
 
---- Handles autoleveling schemes
--- Probably used mainly for NPCS, although it could also be used for player allies
+--- Handles autoleveling schemes  
+-- Used mainly for NPCS, although it could also be used for player allies
 -- or players themselves for lazy players/modules
+-- @classmod engine.Autolevel
 module(..., package.seeall, class.make)
 
 _M.schemes = {}
 
+--- Register Scheme for use with actors
+-- @param[type=table] t your scheme definition
+-- @usage registerScheme({ name = "warrior", levelup = function(self) self:learnStats{ self.STAT_STR, self.STAT_STR, self.STAT_DEX } end})
 function _M:registerScheme(t)
 	assert(t.name, "no autolevel name")
 	assert(t.levelup, "no autolevel levelup function")
 	_M.schemes[t.name] = t
 end
 
+--- Triggers the autolevel function defined with registerScheme for the specified actor
+-- @param[type=Actor] actor
 function _M:autoLevel(actor)
 	if not actor.autolevel then return end
 	assert(_M.schemes[actor.autolevel], "no autoleveling scheme "..actor.autolevel)

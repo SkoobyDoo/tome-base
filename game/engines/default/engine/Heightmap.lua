@@ -19,14 +19,19 @@
 
 require "engine.class"
 
---- Heightmap fractal generator
+--- Heightmap fractal generator  
 -- This can be used to create rooms, levels, world maps, whatever
+-- @classmod engine.Heightmap
 module(..., package.seeall, class.make)
 
 _M.max = 100000
 _M.min = 0
 
 --- Creates the fractal generator for the specified heightmap size
+-- @number w width
+-- @number h height
+-- @number[opt=1.2] roughness how rough
+-- @param[type=?table] start
 function _M:init(w, h, roughness, start)
 	self.w = w
 	self.h = h
@@ -46,6 +51,7 @@ function _M:init(w, h, roughness, start)
 end
 
 --- Actually creates the heightmap
+-- @return table
 function _M:generate()
 	local rects = {}
 
@@ -94,6 +100,8 @@ function _M:generate()
 	return self.hmap
 end
 
+--- heightmap as symbols
+-- @string[opt="abcdefghijklmnopqrstwxyzABCDEFGHIJKLMNOPQRSTWXYZ"] symbs
 function _M:displayDebug(symbs)
 	symbs = symbs or "abcdefghijklmnopqrstwxyzABCDEFGHIJKLMNOPQRSTWXYZ"
 	print("Displaying heightmap", self.w, self.h)

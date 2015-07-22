@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handle quests
+-- @classmod engine.Quest
 module(..., package.seeall, class.make)
 
 PENDING = 0
@@ -45,7 +46,8 @@ end
 
 --- Checks if the quest (or sub-objective) is complete
 -- @param sub a subobjective id or nil for the whole quest
--- @return true or false
+-- @return[1] false if objective still incomplete
+-- @return[2] true if objective completed
 function _M:isCompleted(sub)
 	if sub then
 		if self.objectives[sub] and self.objectives[sub] == COMPLETED then return true else return false end
@@ -54,7 +56,8 @@ function _M:isCompleted(sub)
 end
 
 --- Checks if the quest is ended (DONE or FAILED)
--- @return true or false
+-- @return[1] false if quest didn't end
+-- @return[2] true if quest ended
 function _M:isEnded()
 	if self.status == DONE or self.status == FAILED then return true else return false end
 end
@@ -71,6 +74,8 @@ end
 
 --- Sets the quests status or sub-objective status
 -- @param status one of the possible quest status (PENDING, COMPLETED, DONE, FAILED)
+-- @param[opt] sub sub-objective
+-- @param who who did this??
 function _M:setStatus(status, sub, who)
 	if sub then
 		if self.objectives[sub] and self.objectives[sub] == status then return false end
@@ -87,6 +92,7 @@ end
 
 --- Checks the quests status or sub-objective status
 -- @param status one of the possible quest status (PENDING, COMPLETED, DONE, FAILED)
+-- @param[opt] sub sub-objective
 function _M:isStatus(status, sub)
 	if sub then
 		if self.objectives[sub] and self.objectives[sub] == status then return true end

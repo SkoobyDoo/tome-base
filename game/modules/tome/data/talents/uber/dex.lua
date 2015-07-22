@@ -91,6 +91,7 @@ uberTalent{
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
 	is_melee = true,
+	requires_target = true,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		self:project(tg, self.x, self.y, function(px, py, tg, self)
@@ -236,7 +237,7 @@ uberTalent{
 	require = { special={desc="Have dealt over 50000 damage with ranged weapons", fct=function(self) return self.damage_log and self.damage_log.weapon.archery and self.damage_log.weapon.archery >= 50000 end} },
 	tactical = { ATTACK = { weapon = 3 }, DISABLE = 3 },
 	requires_target = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return Talents.archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:canBe("stun") then
 			target:setEffect(target.EFF_STUNNED, 5, {apply_power=self:combatAttack()})

@@ -22,11 +22,16 @@ require "engine.Tiles"
 require "engine.KeyBind"
 
 --- Handles dialog windows
+-- @classmod engine.Dialog
 module(..., package.seeall, class.make)
 
 tiles = engine.Tiles.new(16, 16)
 
 --- Requests a simple, press any key, dialog
+-- @string title Display title
+-- @string text the text
+-- @func[opt] fct the function to call on dialog close
+-- @param[type=?boolean] no_leave set this to true to disable closing of the dialog
 function _M:simplePopup(title, text, fct, no_leave)
 	local font = core.display.newFont("/data/font/DroidSans.ttf", 14)
 	local w, h = font:size(text)
@@ -47,6 +52,11 @@ function _M:simplePopup(title, text, fct, no_leave)
 end
 
 --- Requests a simple, press any key, dialog
+-- @string title Display title
+-- @string text the text
+-- @int w width
+-- @func[opt] fct the function to call on dialog close
+-- @param[type=?boolean] no_leave set this to true to disable closing of the dialog
 function _M:simpleLongPopup(title, text, w, fct, no_leave)
 	local font = core.display.newFont("/data/font/DroidSans.ttf", 14)
 	local list = text:splitLines(w - 10, font)
@@ -73,6 +83,11 @@ function _M:simpleLongPopup(title, text, w, fct, no_leave)
 end
 
 --- Requests a simple yes-no dialog
+-- @string title Display title
+-- @string text the text
+-- @func[opt] fct the function to call on dialog close
+-- @string[opt="Yes"] yes_text Text for "yes" button
+-- @string[opt="No"] no_text Text for "no" button
 function _M:yesnoPopup(title, text, fct, yes_text, no_text)
 	local font = core.display.newFont("/data/font/DroidSans.ttf", 14)
 	local w, h = font:size(text)
@@ -108,6 +123,12 @@ function _M:yesnoPopup(title, text, fct, yes_text, no_text)
 end
 
 --- Requests a long yes-no dialog
+-- @string title Display title
+-- @string text the text
+-- @int w width
+-- @func[opt] fct the function to call on dialog close
+-- @string[opt="Yes"] yes_text Text for "yes" button
+-- @string[opt="No"] no_text Text for "no" button
 function _M:yesnoLongPopup(title, text, w, fct, yes_text, no_text)
 	local font = core.display.newFont("/data/font/DroidSans.ttf", 14)
 	local list = text:splitLines(w - 10, font)
@@ -149,6 +170,14 @@ function _M:yesnoLongPopup(title, text, w, fct, yes_text, no_text)
 end
 
 --- Create a Dialog
+-- @string title Display title
+-- @int w width
+-- @int h height
+-- @int x absolute x coordinate
+-- @int y absolute y coordinate
+-- @int[opt] alpha transparency
+-- @param[opt] font defaults to Droid Sans 14pt
+-- @param[opt] showup how long it takes to show up?
 function _M:init(title, w, h, x, y, alpha, font, showup)
 	self.title = title
 	self.controls = { }
@@ -167,6 +196,12 @@ function _M:init(title, w, h, x, y, alpha, font, showup)
 	end
 end
 
+--- Resize
+-- @int w width
+-- @int h height
+-- @int x absolute x coordinate
+-- @int y absolute y coordinate
+-- @int[opt] alpha defaults to 220
 function _M:resize(w, h, x, y, alpha)
 	self.w, self.h = math.floor(w), math.floor(h)
 	self.display_x = math.floor(x or (game.w - self.w) / 2)
@@ -179,6 +214,7 @@ function _M:resize(w, h, x, y, alpha)
 	self.changed = true
 end
 
+--- Renders the dialog
 function _M:display()
 	if not self.changed then return self.surface end
 
@@ -215,6 +251,10 @@ function _M:display()
 	return self.surface
 end
 
+--- texture to screen
+-- @int x absolute x coordinate
+-- @int y absolute y coordinate
+-- @int nb_keyframes number of keyframes
 function _M:toScreen(x, y, nb_keyframes)
 	-- Draw with only the texture
 	if self.__showup then
@@ -239,16 +279,23 @@ function _M:toScreen(x, y, nb_keyframes)
 	end
 end
 
-
+--- Draw the dialog
+-- @param s screen
 function _M:drawDialog(s)
 end
 
+--- register keybind and command
+-- @param[type=KeyCommand] t
+-- @param[type=KeyBind] b
 function _M:keyCommands(t, b)
 	self.key = engine.KeyBind.new()
 	if t then self.key:addCommands(t) end
 	if b then self.key:addBinds(b) end
 end
 
+--- create a mouse zone
+-- @param[type=boolean] t t.norestrict = true, then allow mouse to move out of zone
+-- @param[type=boolean] no_new true = don't create a new mouse
 function _M:mouseZones(t, no_new)
 	-- Offset the x and y with the window position and window title
 	if not t.norestrict then
@@ -264,22 +311,49 @@ function _M:mouseZones(t, no_new)
 	self.mouse:registerZones(t)
 end
 
+--- Called when dialog is unloading
 function _M:unload()
 end
+--- Called when dialog is cleaning up
 function _M:cleanup()
 end
 
+--- Draw a horizontal border
+-- @param s screen
+-- @int x absolute x coordinate
+-- @int y absolute y coordinate
+-- @int w width
 function _M:drawWBorder(s, x, y, w)
 	for i = x, x + w do
 		s:merge(tiles:get(nil, 0,0,0, 0,0,0, "border_8.png"), i, y)
 	end
 end
+--- Draw a vertical border
+-- @param s screen
+-- @int x absolute x coordinate
+-- @int y absolute y coordinate
+-- @int h height
 function _M:drawHBorder(s, x, y, h)
 	for i = y, y + h do
 		s:merge(tiles:get(nil, 0,0,0, 0,0,0, "border_4.png"), x, i)
 	end
 end
 
+--- draw a selection list
+-- @param s screen
+-- @int x absolute x coordinate
+-- @int y absolute y coordinate
+-- @int hskip height padding
+-- @param[type=table] list the list to draw
+-- @int[opt=nil] sel the selected item
+-- @param[type=?opt|tab|string|func] prop property to display for items (can be table/function/string), Default: toString(item)
+-- @int[opt=1] scroll how far down the list are we
+-- @int[opt=99999] max max number of entries
+-- @param[type=?table] color color of items, defaults to colors.WHITE
+-- @param[type=?table] selcolor color of selected item, defaults to colors.CYAN
+-- @int[opt] max_size max length of displayed strings
+-- @int[opt] cutoff_size max width
+-- @param[type=?boolean] scrollbar display a scrollbar?
 function _M:drawSelectionList(s, x, y, hskip, list, sel, prop, scroll, max, color, selcolor, max_size, cutoff_size, scrollbar)
 	selcolor = selcolor or {0,255,255}
 	color = color or {255,255,255}

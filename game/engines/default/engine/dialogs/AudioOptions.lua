@@ -24,6 +24,8 @@ local Checkbox = require "engine.ui.Checkbox"
 local Numberbox = require "engine.ui.Numberbox"
 local Separator = require "engine.ui.Separator"
 
+--- Shows audio options
+-- @classmod engine.dialogs.AudioOptions
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init()

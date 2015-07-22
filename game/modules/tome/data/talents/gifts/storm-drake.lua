@@ -207,7 +207,7 @@ newTalent{
 	equilibrium = 12,
 	cooldown = 12,
 	message = "@Source@ breathes lightning!",
-	tactical = { ATTACKAREA = {LIGHTNING = 2}, DISABLE = { stun = 1 } },
+	tactical = { ATTACKAREA = {LIGHTNING = 2}, DISABLE = { daze = 1 } },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	direct_hit = true,

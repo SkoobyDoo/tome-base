@@ -59,7 +59,7 @@ newTalent{
 	points = 5,
 	mana = 25,
 	cooldown = 18,
-	tactical = { DEFEND = 2 },
+	tactical = { DEFEND = 2, HEAL = 1 },
 	range = 10,
 	no_energy = true,
 	getMaxAbsorb = function(self, t) return 50 + self:combatTalentSpellDamage(t, 50, 450) end,

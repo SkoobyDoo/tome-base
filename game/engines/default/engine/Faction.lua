@@ -19,18 +19,20 @@
 
 require "engine.class"
 
---- Defines factions
+--- Factions for actors  
+-- Defines 2 factions by default: "Players", "Enemies"
+-- @classmod engine.Faction
 module(..., package.seeall, class.make)
 
 _M.factions = {}
 
---- Adds a new faction.
--- Static method, and can be called during load.lua.
--- @param t the table describing the faction.
--- @param t.name the name of the added faction, REQUIRED.
--- @param t.short_name the internally referenced name, defaults to lowercase t.name with "-" for spaces.
--- @param t.reaction table of initial reactions to other factions, where keys are short_names.
--- @return t.short_name see above.
+--- Adds a new faction
+-- @static
+-- @param[type=table] t the table describing the faction.
+-- @string t.name the name of the added faction
+-- @string[opt] t.short_name the internally referenced name, defaults to lowercase t.name with "-" for spaces.
+-- @param[type=?table] t.reaction table of initial reactions to other factions, where keys are short_names.
+-- @return t.short_name see above
 function _M:add(t)
 	assert(t.name, "no faction name")
 	t.short_name = t.short_name or t.name:lower():gsub(" ", "-")
@@ -48,11 +50,11 @@ function _M:add(t)
 end
 
 --- Sets the initial reaction.
--- Static method, and can be called during load.lua.
--- @param f1 the source faction short_name.
--- @param f2 the target faction short_name.
--- @param reaction a numerical value representing the reaction, 0 is neutral, <0 is aggressive, >0 is friendly.
--- @param mutual if true the same status will be set for f2 toward f1.
+-- @static
+-- @string f1 the source faction short_name.
+-- @string f2 the target faction short_name.
+-- @number reaction a numerical value representing the reaction, 0 is neutral, <0 is aggressive, >0 is friendly.
+-- @param[type=boolean] mutual if true the same status will be set for f2 toward f1.
 function _M:setInitialReaction(f1, f2, reaction, mutual)
 --	print("[FACTION] initial", f1, f2, reaction, mutual)
 	-- Faction always like itself
@@ -65,17 +67,20 @@ function _M:setInitialReaction(f1, f2, reaction, mutual)
 	end
 end
 
---- Returns the faction definition
+--- Gets the faction definition
+-- @static
+-- @param id
+-- @return `Faction`
 function _M:get(id)
 	return self.factions[id]
 end
 
---- Returns the status of faction f1 toward f2
--- @param f1 the source faction short_name.
--- @param f2 the target faction short_name.
+--- Gets the status of faction f1 toward f2
+-- @string f1 the source faction short_name
+-- @string f2 the target faction short_name
 -- @return reaction a numerical value representing the reaction, 0 is neutral, <0 is aggressive, >0 is friendly.
 function _M:factionReaction(f1, f2)
-	-- Faction always like itself
+	-- Factions always like itself
 	if f1 == f2 then return 100 end
 	if game.factions and game.factions[f1] and game.factions[f1][f2] then return game.factions[f1][f2] end
 	if not self.factions[f1] then return 0 end
@@ -85,10 +90,10 @@ end
 --- Sets the status of faction f1 toward f2.
 -- This should only be used after the game has loaded (not in load.lua).
 -- These changes will be saved to the savefile.
--- @param f1 the source faction short_name.
--- @param f2 the target faction short_name.
--- @param reaction a numerical value representing the reaction, 0 is neutral, <0 is aggressive, >0 is friendly.
--- @param mutual if true the same status will be set for f2 toward f1.
+-- @string f1 the source faction short_name.
+-- @string f2 the target faction short_name.
+-- @number reaction a value representing the reaction, 0 is neutral, <0 is aggressive, >0 is friendly.
+-- @param[type=boolean] mutual if true the same status will be set for f2 toward f1.
 function _M:setFactionReaction(f1, f2, reaction, mutual)
 	reaction = util.bound(reaction, -100, 100)
 	print("[FACTION]", f1, f2, reaction, mutual)

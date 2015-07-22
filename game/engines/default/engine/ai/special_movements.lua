@@ -17,7 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Defines some special movement AIs
+--- Defines some special movement AIs
+-- @classmod engine.ai.special_movements
 
 -- Ghoul AI: move, pause, move pause, ...
 newAI("move_ghoul", function(self)

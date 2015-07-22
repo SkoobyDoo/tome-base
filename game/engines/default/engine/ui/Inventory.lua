@@ -26,6 +26,7 @@ local KeyBind = require "engine.KeyBind"
 local UIGroup = require "engine.ui.UIGroup"
 
 --- A generic inventory, with possible tabs
+-- @classmod engine.ui.Inventory
 module(..., package.seeall, class.inherit(Base, Focusable, UIGroup))
 
 function _M:init(t)

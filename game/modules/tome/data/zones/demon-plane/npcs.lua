@@ -49,15 +49,17 @@ newEntity{ define_as = "DRAEBOR",
 	on_melee_hit = { [DamageType.FIRE] = 15, },
 	resists = { [DamageType.FIRE] = 50, [DamageType.DARKNESS] = 50, },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, FEET = 1 },
 	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
-	resolvers.drops{chance=100, nb=1, {defined="BOOTS_OF_PHASING"} },
+	equipment = resolvers.equip{
+		{type="armor", subtype="feet", defined="BOOTS_OF_PHASING", autoreq=true},
+	},
 
 	summon = {
 		{type="demon", number=1, hasxp=false},
 	},
 
-	talent_cd_reduction={[Talents.T_FLAME]=2, [Talents.T_BLOOD_GRASP]=4, [Talents.T_PHASE_DOOR]=3, [Talents.T_SUMMON]=-10, },
+	talent_cd_reduction={[Talents.T_FLAME]=2, [Talents.T_BLOOD_GRASP]=4, [Talents.T_SUMMON]=-10, },
 
 	resolvers.talents{
 		[Talents.T_SUMMON]=1,

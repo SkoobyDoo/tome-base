@@ -21,6 +21,8 @@ require "engine.class"
 local Map = require "engine.Map"
 local Entity = require "engine.Entity"
 
+--- Object
+-- @classmod engine.Object
 module(..., package.seeall, class.inherit(Entity))
 
 _M.display_on_seen = true
@@ -133,7 +135,9 @@ end
 -- @param o = object to stack onto self
 -- @param force boolean to stack unstackable objects
 -- @param num = maximum number of stacked objects to move
--- @return true if stacking worked or false if not, and boolean if all of the stack was moved
+-- @return[1] false if stacking failed
+-- @return[2] true if stacking worked
+-- @return[2] boolean if all of the stack was moved
 function _M:stack(o, force, num)
 	local last = true
 	num = num or math.huge
@@ -172,8 +176,8 @@ function _M:unstack(num)
 	return o, last
 end
 
---- Applies a function to all items of the stack
---  stops after fct(so, i) returns true
+--- Applies a function to all items of the stack  
+-- stops after fct(so, i) returns true
 function _M:forAllStack(fct)
 	if fct(self) then return end
 	if not self.stacked then return end

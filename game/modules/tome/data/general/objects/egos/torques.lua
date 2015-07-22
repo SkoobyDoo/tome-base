@@ -33,7 +33,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d psi"):format(self:getCharmPower(who, true) / 7) end, function(self, who)
 			who:incPsi(self:getCharmPower(who, true) / 7)
 		end},
-	}
+	},
+	use_power = {tactical = {PSI = 1}}
 }
 
 newEntity{
@@ -47,7 +48,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d hate"):format(self:getCharmPower(who, true) / 7) end, function(self, who)
 			who:incHate(self:getCharmPower(who, true) / 7)
 		end},
-	}
+	},
+	use_power = {tactical = {HATE = 1}}
 }
 
 newEntity{

@@ -127,7 +127,7 @@ newTalent{
 	require = corrs_req4,
 	mode = "sustained",
 	points = 5,
-	sustain_vim = 90,
+	sustain_vim = 5,
 	drain_vim = 5,
 	remove_on_zero = true,
 	cooldown = 60,
@@ -136,6 +136,14 @@ newTalent{
 	tactical = { DISABLE = function(self, t, target) if target and target.game_ender then return 3 else return 0 end end},
 	range = 5,
 	on_pre_use = function(self, t) return self:canBe("planechange") and self:getVim() >= 10 end,
+	callbackOnActBase = function(self, t)
+		local p = self:isTalentActive(t.id)
+		if not p then return end
+		p.drain_add = p.drain_add or 0
+		self:incVim(-p.drain_add)
+
+		p.drain_add = p.drain_add + 1
+	end,
 	activate = function(self, t)
 		if game.zone.is_demon_plane then
 			game.logPlayer(self, "This spell cannot be used from within the Fearscape.")
@@ -238,6 +246,7 @@ newTalent{
 			target = target,
 			x = self.x, y = self.y,
 			particle = particle,
+			drain_add = 0,
 		}
 		return ret
 	end,
@@ -326,7 +335,7 @@ newTalent{
 		When the spell ends, only you and the target (if still alive) are taken back to your home plane; all summons are left in the Fearscape.
 		Objects will be moved as well.
 		This spell has no effect if cast when already inside the Fearscape.
-		This powerful spell drains 5 vim per turn, ending when it reaches 0.
+		This powerful spell drains 5 vim per turn, ending when it reaches 0, the amount drained increases by one each turn.
 		The damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.FIRE, self:combatTalentSpellDamage(t, 12, 140)))
 	end,
 }

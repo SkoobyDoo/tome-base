@@ -26,6 +26,7 @@ tiles = engine.Tiles.new(16, 16)
 
 --- Handles control Cursor
 -- This should work for anything that has a surface and x,y,w,h,font properties.
+-- @classmod engine.generator.interface.ControlCursorSupport
 module(..., package.seeall, class.make)
 
 function _M:startCursor()

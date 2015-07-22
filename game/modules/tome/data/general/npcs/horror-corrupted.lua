@@ -27,6 +27,7 @@ newEntity{
 	body = { INVEN = 10 },
 	autolevel = "warrior",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=3, },
+	faction = "horrors",
 
 	combat_armor = 0, combat_def = 0,
 	combat = { atk=2, dammod={str=0.6} },

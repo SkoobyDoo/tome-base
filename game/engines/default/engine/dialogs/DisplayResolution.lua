@@ -22,6 +22,8 @@ local Dialog = require "engine.ui.Dialog"
 local List = require "engine.ui.List"
 local Checkbox = require "engine.ui.Checkbox"
 
+--- Controls what resoultion the window is set to
+-- @classmod engine.dialogs.DisplayResolution
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(on_change)

@@ -21,6 +21,7 @@ require "engine.class"
 local Map = require "engine.Map"
 
 --- Generator interface that can use rooms
+-- @classmod engine.generator.map.RoomsLoader
 module(..., package.seeall, class.make)
 
 function _M:init(data)
@@ -152,7 +153,7 @@ end
 
 --- Generates parse data for from an ascii def, for function room generators
 function _M:roomParse(def)
-	local room = { w=def[1]:len(), h=#def, spots={}, special=def.special }
+	local room = { w=def[1]:len(), h=#def, spots={}, exits={}, special=def.special }
 
 	-- Read the room map
 	for j, line in ipairs(def) do
@@ -165,6 +166,9 @@ function _M:roomParse(def)
 				room.spots[c] = room.spots[c] or {}
 				room.spots[c][#room.spots[c]+1] = {x=i-1, y=j-1}
 				c = def.numbers or '.'
+			end
+			if c == '!' then
+				room.exits[#room.exits+1] = {x=i-1, y=j-1}
 			end
 
 			room[i][j] = c
@@ -413,6 +417,7 @@ function _M:tunnel(x1, y1, x2, y2, id, virtual)
 		local nx, ny = t[1], t[2]
 		if t[3] and self.data.door then self.possible_doors[#self.possible_doors+1] = t end
 		if not t[4] and not virtual then
+			print("=======TUNN", nx, ny)
 			self.map(nx, ny, Map.TERRAIN, self:resolve('=') or self:resolve('.'))
 		end
 	end

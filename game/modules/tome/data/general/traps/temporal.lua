@@ -26,7 +26,7 @@ newEntity{ define_as = "TRAP_TEMPORAL",
 }
 
 newEntity{ base = "TRAP_TEMPORAL",
-	name = "disturbed pocket of time", auto_id = true, image = "trap/.png",
+	name = "disturbed pocket of time", auto_id = true, image = "trap/disturbed_pocket_of_time.png",
 	detect_power = resolvers.clscale(8,50,8),
 	disarm_power = resolvers.clscale(2,50,8),
 	rarity = 3, level_range = {1, 50},
@@ -39,7 +39,7 @@ newEntity{ base = "TRAP_TEMPORAL",
 }
 
 newEntity{ base = "TRAP_TEMPORAL",
-	name = "extremely disturbed pocket of time", auto_id = true, image = "trap/.png",
+	name = "extremely disturbed pocket of time", auto_id = true, image = "trap/extremely_disturbed_pocket_of_time.png",
 	detect_power = resolvers.clscale(8,50,8),
 	disarm_power = resolvers.clscale(2,50,8),
 	rarity = 6, level_range = {1, 50},

@@ -21,6 +21,7 @@ require "engine.class"
 local Entity = require "engine.Entity"
 
 --- Describes a trap
+-- @classmod engine.MapEffect
 module(..., package.seeall, class.inherit(Entity))
 
 _M.display_on_seen = true

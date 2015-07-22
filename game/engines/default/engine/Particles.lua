@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Handles a particles system
 -- Used by engine.Map
+-- @classmod engine.Particles
 module(..., package.seeall, class.make)
 
 local __particles_gl = {}

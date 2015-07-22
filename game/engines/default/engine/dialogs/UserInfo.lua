@@ -22,6 +22,8 @@ local Dialog = require "engine.ui.Dialog"
 local Button = require "engine.ui.Button"
 local Textzone = require "engine.ui.Textzone"
 
+--- User Info for player to player chatbox
+-- @classmod engine.dialogs.UserInfo
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(data)

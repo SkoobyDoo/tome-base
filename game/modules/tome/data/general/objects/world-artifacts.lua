@@ -102,7 +102,10 @@ newEntity{ base = "BASE_STAFF",
 		apr = 4,
 		dammod = {mag=1.5},
 		damtype = DamageType.FIRE,
+		element = DamageType.FIRE,
 		is_greater = true,
+		melee_element = true,
+		sentient = "agressive",
 	},
 	wielder = {
 		combat_spellpower = 10,
@@ -2345,7 +2348,7 @@ newEntity{ base = "BASE_STAFF", define_as = "SET_SCEPTRE_LICH",
 		dam = 40,
 		apr = 12,
 		dammod = {mag=1.3},
-		damtype = DamageType.DARKNESS,
+		element = DamageType.DARKNESS,
 	},
 	wielder = {
 		combat_spellpower = 28,
@@ -2476,6 +2479,7 @@ newEntity{ base = "BASE_STAFF",
 		apr = 8,
 		dammod = {mag=1.3},
 		damtype = DamageType.GRAVITYPIN,
+		element = DamageType.PHYSICAL,
 	},
 	wielder = {
 		combat_spellpower = 25,
@@ -2502,6 +2506,7 @@ newEntity{ base = "BASE_MINDSTAR",
 	name = "Eye of the Wyrm", define_as = "EYE_WYRM",
 	unided_name = "multi-colored mindstar", unique = true,
 	desc = [[A black iris cuts through the core of this mindstar, which shifts with myriad colours. It darts around, as if searching for something.]],
+	special_desc = function(self) return "The breath attack has a chance to shift randomly between Fire, Ice, Lightning, Acid, and Sand each turn." end,
 	color = colors.BLUE, image = "object/artifact/eye_of_the_wyrm.png",
 	level_range = {30, 40},
 	require = { stat = { wil=45, }, },
@@ -2599,25 +2604,12 @@ newEntity{ base = "BASE_MINDSTAR",
 		if not self.worn_by then return end
 		if game.level and not game.level:hasEntity(self.worn_by) and not self.worn_by.player then self.worn_by = nil return end
 		if self.worn_by:attr("dead") then return end
-		if not rng.percent(25)  then return end
+		if not rng.percent(25) then return end
 		self.use_talent.id=rng.table{ "T_FIRE_BREATH", "T_ICE_BREATH", "T_LIGHTNING_BREATH", "T_SAND_BREATH", "T_CORROSIVE_BREATH" }
+		self.worn_by:check("useObjectEnable", self)
 --		game.logSeen(self.worn_by, "#GOLD#The %s shifts colour!", self.name:capitalize())
 	end,
 	max_power = 30, power_regen = 1,
-	--[[use_power = { name = "release a random breath", power = 40,
-	use = function(self, who)
-			local Talents = require "engine.interface.ActorTalents"
-			local breathe = rng.table{
-				{Talents.T_FIRE_BREATH},
-				{Talents.T_ICE_BREATH},
-				{Talents.T_LIGHTNING_BREATH},
-				{Talents.T_SAND_BREATH},
-			}
-
-			who:forceUseTalent(breathe[1], {ignore_cd=true, ignore_energy=true, force_level=4, ignore_ressources=true})
-			return {id=true, used=true}
-		end
-	},]]
 	use_talent = { id = rng.table{ Talents.T_FIRE_BREATH, Talents.T_ICE_BREATH, Talents.T_LIGHTNING_BREATH, Talents.T_SAND_BREATH, Talents.T_CORROSIVE_BREATH }, level = 4, power = 30 }
 }
 
@@ -3287,11 +3279,17 @@ newEntity{ base = "BASE_LONGSWORD", define_as="MORRIGOR",
 		apr = 12,
 		physcrit = 7,
 		dammod = {str=0.6, mag=0.6},
-		special_on_hit = {desc="deal bonus arcane and darkness damage", fct=function(combat, who, target)
-			local tg = {type="ball", range=1, radius=0, selffire=false}
-			who:project(tg, target.x, target.y, engine.DamageType.ARCANE, who:getMag()*0.5)
-			who:project(tg, target.x, target.y, engine.DamageType.DARKNESS, who:getMag()*0.5)
-		end},
+		special_on_hit = {desc=function(self, who, special)
+				local dam = special.damage(self, who)
+				return ("deal %0.2f arcane and %0.2f darkness damage (based on Magic) in a radius 1 around the target"):format(who:damDesc(engine.DamageType.ARCANE, dam), who:damDesc(engine.DamageType.DARKNESS, dam))
+			end,
+			damage = function(self, who) return who:getMag()*0.5 end,
+			fct=function(combat, who, target, dam, special)
+				local tg = {type="ball", range=1, radius=0, selffire=false}
+				local damage = special.damage(self, who)
+				who:project(tg, target.x, target.y, engine.DamageType.ARCANE, damage)
+				who:project(tg, target.x, target.y, engine.DamageType.DARKNESS, damage)
+			end},
 		special_on_kill = {desc="swallows the victim's soul, gaining a new power", fct=function(combat, who, target)
 			local o, item, inven_id = who:findInAllInventoriesBy("define_as", "MORRIGOR")
 			if o.use_talent then return end
@@ -3314,6 +3312,8 @@ newEntity{ base = "BASE_LONGSWORD", define_as="MORRIGOR",
 				o.power = 1
 				o.max_power = (who:getTalentCooldown(t) or 5)
 				o.power_regen = 1
+				game.logSeen(who, "%s's %s #SALMON#CONSUMES THE SOUL#LAST# of %s, gaining the power of %s!", who.name:capitalize(), o:getName({no_add_name = true, do_color = true}), target.name, ((t.display_entity and t.display_entity:getDisplayString() or "")..t.name):toTString())
+				who:check("useObjectEnable", o, inven_id, item)
 			end
 	end},
 	},
@@ -3497,7 +3497,7 @@ newEntity{ base = "BASE_GAUNTLETS",
 		self.use_power = {
 			name = function(self, who)
 				dam = who:damDesc(engine.DamageType.ARCANE, self.use_power.unnaturaldam(self, who))
-				return ("attempt to destroy all magic effects and sustains on creatures in a radius %d cone (unnatural creaters are additionally dealt %0.2f arcane damage and stunned)"):format(self.use_power.radius, dam)
+				return ("attempt to destroy all magic effects and sustains on creatures in a radius %d cone (unnatural creatures are additionally dealt %0.2f arcane damage and stunned)"):format(self.use_power.radius, dam)
 			end,
 			power = 100,
 			unnaturaldam = function(self, who) return 100+who:combatMindpower() end,
@@ -5233,12 +5233,12 @@ newEntity{ base = "BASE_STAFF",
 	combat = {
 		is_greater = true,
 		dam = 18,
+		staff_power = 15,
 		apr = 4,
 		physcrit = 3.5,
 		dammod = {mag=1.1},
-		damtype = DamageType.DARKNESS,
+		element = DamageType.DARKNESS,
 	},
-	staff_power = 15,
 	wielder = {
 		combat_spellpower = 12,
 		combat_spellcrit = 8,
@@ -7366,6 +7366,7 @@ Their killing spree ended when one of the victims got lucky and managed to stab 
 	require = { stat = { dex=42 }, },
 	cost = 400,
 	material_level = 4,
+	metallic = false,
 	combat = {
 		dam = 35,
 		apr = 10,
@@ -7698,7 +7699,7 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	unided_name = "coiled metal belt",
 	desc = [[A fine mesh of metal threads held together by a sturdy chain. Sparks dance across it.]],
 	special_desc = function(self) return [[Taking lightning damage or making critical hits builds 2 energy charges, which give you +5% lightning damage and +1 to all stats.
-The charges decay at a rate of 1 per turn.]] end,
+The charges decay at a rate of 1 per turn. Max 10 charges.]] end,
 	color = colors.WHITE,
 	level_range = {40, 50},
 	rarity = 400,

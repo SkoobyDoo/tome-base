@@ -52,9 +52,8 @@ function resolvers.calc.equip(t, e)
 				end
 			end
 			if o and o.power_source and (o.power_source.antimagic and e:attr("has_arcane_knowledge") or o.power_source.arcane and e:attr("forbid_arcane")) then -- check antimagic restrictions
---			if o and not filter.no_power_restrictions and not game.state:checkPowers(e, o) then -- Check power restrictions
 				ok = false
-				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source, ",")), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
+				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
 			end
 		until ok or tries > 4
 		if o then
@@ -83,7 +82,6 @@ function resolvers.calc.equip(t, e)
 					e:addObject(e.INVEN_INVEN, o)
 				end
 			end
-
 			-- Do not drop it unless it is an ego or better
 			if not o.unique then o.no_drop = true --[[print(" * "..o.name.." => no drop")]] end
 			if filter.force_drop then o.no_drop = nil end
@@ -507,8 +505,13 @@ function resolvers.calc.charm(tt, e)
 end
 
 --- Charms talent resolver
-function resolvers.charmt(tid, tlvl, cd, tcd)
-	return {__resolver="charmt", tid, tlvl, cd, tcd}
+-- @param tid = talent id
+-- @param tlvl = (raw) talent level (mastery is based on user)
+-- @param cd = cooldown
+-- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
+-- @param use_params = parameters to merge into self.use_talent table
+function resolvers.charmt(tid, tlvl, cd, tcd, use_params)
+	return {__resolver="charmt", tid, tlvl, cd, tcd, use_params}
 end
 function resolvers.calc.charmt(tt, e)
 	local cd = tt[3]
@@ -517,6 +520,7 @@ function resolvers.calc.charmt(tt, e)
 	local lvl = util.getval(tt[2], e)
 	e.use_talent = {id=tt[1], power=cd, level=lvl, __no_merge_add=true}
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
+	if tt[5] then table.merge(e.use_talent, tt[5], true) end
 	return
 end
 
@@ -748,11 +752,13 @@ function resolvers.calc.talented_ai_tactic(t, e)
 			local range, radius = e:getTalentRange(tal), e:getTalentRadius(tal)
 --			if range > 0 then range = range + radius*2/3 end
 			count_talent = false, false
-			if tal and tal.tactical then
+			local tactics = tal.tactical
+			if type(tactics) == "function" then tactics = tactics(e, tal) end
+			if tactics then
 	-- print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
 --	table.print(tal.tactical)
 				do_count = false
-				for tt, wt in pairs(tal.tactical) do
+				for tt, wt in pairs(tactics) do
 					val = get_weight(wt, e)
 	-- print("   --- ", tt, "wt=", val)
 					tactical[tt] = (tactical[tt] or 0) + val -- sum up all the input weights
@@ -822,8 +828,8 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		tactic.count = count
 		tactic.level = e.level
 		tactic.type = "computed"
--- print("  ### ai_tactic table:")
--- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
+--- print("### talented_ai_tactic resolver ai_tactic table:")
+--- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
 		e.__ai_compute = nil
 		return tactic
@@ -946,26 +952,42 @@ function resolvers.calc.shooter_capacity(t, e)
 	return nil
 end
 
---- Give staves a flavor, appropriate damage type, spellpower, spellcrit, and the ability to teach the command staff talent
-function resolvers.staff_wielder(name)
-	return {__resolver="staff_wielder", name}
+--- Give staves a flavor, appropriate damage type, and the ability to teach the command staff talent
+function resolvers.staff_element(name)
+	return {__resolver="staff_element", name}
 end
-function resolvers.calc.staff_wielder(t, e)
-	local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
-	e.flavor_name = e["flavor_names"][staff_type]
-	if staff_type == 2 then
-		e.combat.element = rng.table{engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE }
-		e.modes = {"fire", "cold", "lightning", "arcane"}
-		e.name = e.name:gsub(" staff", " magestaff")
-	elseif staff_type == 3 then
-		e.combat.element = rng.table{engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL,  engine.DamageType.PHYSICAL }
-		e.modes = {"light", "darkness", "temporal", "physical"}
-		e.name = e.name:gsub(" staff", " starstaff")
-	elseif staff_type == 4 then
-		e.combat.element = rng.table{engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE,}
-		e.modes = {"darkness", "blight", "acid", "fire"}
-		e.name = e.name:gsub(" staff", " vilestaff")
+function resolvers.calc.staff_element(t, e)
+	local command_flavor, command_lement = nil, nil
+	if not e.flavor_name then
+		if not e.flavors then -- standard
+			local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
+			command_flavor = e["flavor_names"][staff_type]
+		else
+			command_flavor = rng.tableIndex(e.flavors)
+		end
 	end
-	e.combat.damtype = engine.DamageType.PHYSICAL
-	return 	{ inc_damage = {[e.combat.element] = e.combat.dam}, combat_spellpower = e.material_level * 3, combat_spellcrit = e.material_level, learn_talent = {[Talents.T_COMMAND_STAFF] = 1}, }
+	if not e.combat.element then
+		command_element = rng.table(e:getStaffFlavor(e.flavor_name or command_flavor))
+	end
+
+	e.combat.damtype = e.combat.damtype or engine.DamageType.PHYSICAL
+	if not e.no_command then 
+		e.wielder = e.wielder or {}
+		e.wielder.learn_talent = e.wielder.learn_talent or {}
+		e.wielder.learn_talent[Talents.T_COMMAND_STAFF] = 1
+	end
+
+	if command_flavor or command_element then e:commandStaff(command_element, command_flavor) end
+
+	-- hee hee
+	if not e.unique and rng.percent(0.1 * (e.material_level or 1) - 0.3) then
+		e.combat.sentient = rng.table{"default", "agressive", "fawning"}
+	end
+end
+
+function resolvers.command_staff()
+	return {__resolver = "command_staff", __resolve_last = true}
+end
+function resolvers.calc.command_staff(t, e)
+	e:commandStaff()
 end

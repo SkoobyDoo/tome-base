@@ -86,7 +86,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local nb = t.getDigs(self, t)
-		return ([[Fire a powerful beam of stone shaterring forces, digging out any walls in its path up to %d.
+		return ([[Fire a powerful beam of stone-shaterring force, digging out any walls in its path up to %d.
 		The beam also affect any creatures in its path, dealing %0.2f physical damage to all.
 		The damage will increase with your Spellpower.]]):
 		format(nb, damDesc(self, DamageType.PHYSICAL, damage))
@@ -133,11 +133,25 @@ newTalent{
 	points = 5,
 	cooldown = 40,
 	mana = 50,
-	range = 7,
-	tactical = { ATTACKAREA = {PHYSICAL = 2}, DISABLE = 4, DEFEND = 3, PROTECT = 3, ESCAPE = 1 },
-	target = function(self, t) return {type="ball", nowarning=true, selffire=false, friendlyfire=false, range=self:getTalentRange(t), radius=1, talent=t} end,
+	range = function(self, t) return self:getTalentLevel(t) >= 4 and 7 or 0 end,
+	radius = 1,
+	target = function(self, t) return {type="ball", nowarning=true, selffire=false, friendlyfire=false, range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t} end,
+	tactical = { ATTACKAREA = {PHYSICAL = 2},
+		DISABLE = function(self, t, aitarget)
+			return self:getTalentLevel(t) >=4 and self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist > 1 and 1 or nil
+		end,
+		DEFEND = function(self, t, aitarget) -- surrounded by foes
+			return self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist <= 1 and 3 or nil
+		end,
+		PROTECT = function(self, t, aitarget) -- summoner needs protection
+			return self.summoner and self:getTalentLevel(t) >=4 and core.fov.distance(self.summoner.x, self.summoner.y, aitarget.x, aitarget.y) > 1 and 3 or nil
+		end,
+		ESCAPE = function(self, t, aitarget) -- protect self or trap target
+			return self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist > 1 and 1 or nil
+		end
+	},
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 250) end,
-	requires_target = function(self, t) return self:getTalentLevel(t) >= 4 end,
+	requires_target = true,
 	getDuration = function(self, t) return util.bound(2 + self:combatTalentSpellDamage(t, 5, 12), 2, 25) end,
 	action = function(self, t)
 		local x, y = self.x, self.y

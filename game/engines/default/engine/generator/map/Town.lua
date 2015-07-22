@@ -22,6 +22,8 @@ local Map = require "engine.Map"
 local BSP = require "engine.BSP"
 require "engine.Generator"
 local RoomsLoader = require "engine.generator.map.RoomsLoader"
+
+--- @classmod engine.generator.map.Town
 module(..., package.seeall, class.inherit(engine.Generator, RoomsLoader))
 
 function _M:init(zone, map, level, data)

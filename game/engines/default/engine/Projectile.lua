@@ -22,6 +22,8 @@ local Entity = require "engine.Entity"
 local Particles = require "engine.Particles"
 local Map = require "engine.Map"
 
+--- Projectile
+-- @classmod engine.Projectile
 module(..., package.seeall, class.inherit(Entity))
 
 _M.display_on_seen = true
@@ -72,7 +74,6 @@ end
 
 --- Moves a projectile on the map
 -- *WARNING*: changing x and y properties manually is *WRONG* and will blow up in your face. Use this method. Always.
--- @param map the map to move onto
 -- @param x coord of the destination
 -- @param y coord of the destination
 -- @param force if true do not check for the presence of an other entity. *Use wisely*

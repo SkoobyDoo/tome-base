@@ -26,6 +26,8 @@ local KeyBind = require "engine.KeyBind"
 local Gestures = require "engine.ui.Gestures"
 local GetText = require "engine.dialogs.GetText"
 
+--- Bind your keys!
+-- @classmod engine.dialogs.KeyBinder
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(key_source, force_all, gesture_source)

@@ -23,7 +23,8 @@ local Focusable = require "engine.ui.Focusable"
 local Slider = require "engine.ui.Slider"
 local Separator = require "engine.ui.Separator"
 
---- A generic UI list
+--- A generic UI textzone list
+-- @classmod engine.ui.TextzoneList
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

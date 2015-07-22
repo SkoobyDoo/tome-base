@@ -23,6 +23,8 @@ local ListColumns = require "engine.ui.ListColumns"
 local TextzoneList = require "engine.ui.TextzoneList"
 local Separator = require "engine.ui.Separator"
 
+--- Show Quests
+-- @classmod engine.dialogs.ShowQuests
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(actor)

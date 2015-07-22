@@ -24,6 +24,8 @@ local Textzone = require "engine.ui.Textzone"
 local Separator = require "engine.ui.Separator"
 local ActorFrame = require "engine.ui.ActorFrame"
 
+--- Controls chat between players and npcs
+-- @classmod engine.dialogs.Chat
 module(..., package.seeall, class.inherit(Dialog))
 
 show_portraits = false

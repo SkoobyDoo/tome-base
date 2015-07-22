@@ -19,12 +19,16 @@
 
 require "engine.class"
 
---- Configure sets of fonts
+--- Define and load fonts
+-- @classmod engine.FontPackage
 module(..., package.seeall, class.make)
 
+--- All of the packages
 local packages = {}
 
 --- Loads lore
+-- @string file
+-- @param env
 function _M:loadDefinition(file, env)
 	local f, err = loadfile(file)
 	if not f and err then error(err) end
@@ -35,17 +39,27 @@ function _M:loadDefinition(file, env)
 	f()
 end
 
+--- Default font style, "normal"
 local cur_size = "normal"
+--- @string size "normal", "bold", etc
 function _M:setDefaultSize(size)
 	cur_size = size
 end
 
+--- Default font id, "default"
 local cur_id = "default"
+--- Set default font to use
+-- @string id if it can't find it, then the font will be "basic"
 function _M:setDefaultId(id)
 	if not packages[id] then id = "basic" end
 	cur_id = id
 end
 
+--- Resolves a font
+-- @string name
+-- @string orname
+-- @return font object
+-- @return size
 function _M:resolveFont(name, orname)
 	local font = packages[cur_id]
 	local size = cur_size
@@ -55,18 +69,27 @@ function _M:resolveFont(name, orname)
 	return font[name], size
 end
 
+--- Fetches the actual font by calling `resolveFont`() internally
+-- @string name
+-- @string orname
+-- @return font
+-- @return size
 function _M:getFont(name, orname)
 	local font, size = self:resolveFont(name, orname)
 	return font.font, font[size]
 end
 
+--- Get by name. 
+-- @string name
+-- @param[type=?boolean] force make a font bold no matter what
 function _M:get(name, force)
-	local font, size = self:resolveFont(name, orname)
+	local font, size = self:resolveFont(name)
 	local f = core.display.newFont(font.font, font[size], font.bold or force)
 	if font.bold then f:setStyle("bold") end
 	return f
 end
 
+--- List all fonts
 function _M:list()
 	local list = {}
 	for _, f in pairs(packages) do list[#list+1] = f end
@@ -74,6 +97,10 @@ function _M:list()
 	return list
 end
 
+--- Initialize font package
+-- @param[type=table] t
+-- @string t.id package id
+-- @string t.default default font
 function _M:init(t)
 	assert(t.id, "no font package id")
 	assert(t.default, "no font package default")

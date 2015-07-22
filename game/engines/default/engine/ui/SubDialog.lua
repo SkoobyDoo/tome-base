@@ -23,6 +23,7 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
 --- A generic UI button
+-- @classmod engine.ui.SubDialog
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 title_shadow = true

@@ -64,15 +64,16 @@ newTalent{
 	random_ego = "attack",
 	mana = 40,
 	cooldown = 8,
-	tactical = { ATTACKAREA = 2 },
+	tactical = { ATTACKAREA = 2 }, --note: only considers the primary target
 	range = 10,
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 250) end,
 	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8, "log")) end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local fx, fy = self:getTarget(tg)
 		if not fx or not fy then return nil end
 
