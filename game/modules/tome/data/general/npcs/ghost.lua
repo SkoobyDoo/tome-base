@@ -31,7 +31,7 @@ newEntity{
 	sound_die = {"creatures/ghost/death%d", 1, 1},
 	sound_random = {"creatures/ghost/random%d", 1, 1},
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, CLOAK=1 },
 	autolevel = "warriormage",
 	ai = "dumb_talented_simple", ai_state = { ai_target="target_player_radius", ai_move="move_complex", sense_radius=40, talent_in=2, },
 	dont_pass_target = true,

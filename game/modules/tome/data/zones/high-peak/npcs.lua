@@ -90,6 +90,7 @@ newEntity{
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=5, every=8},
 		[Talents.T_STONE_SKIN]={base=7, every=6},
 		[Talents.T_QUICKEN_SPELLS]={base=7, every=6},
 		[Talents.T_SPELLCRAFT]={base=7, every=6},

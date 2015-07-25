@@ -333,8 +333,16 @@ TOOLTIP_RESIST_ALL = [[#GOLD#Damage resistance: all#LAST#
 All damage you receive, through any means, is decreased by this percentage.
 This stacks with individual damage type resistances.
 ]]
+TOOLTIP_RESIST_ABSOLUTE = [[#GOLD#Damage resistance: absolute#LAST#
+All damage you receive, through any means, is decreased by this percentage.
+This is applied after normal damage resistance and is not affected by resistance penetration.
+]]
 TOOLTIP_RESIST = [[#GOLD#Damage resistance: specific#LAST#
 All damage of this type that you receive, through any means, is reduced by this percentage.
+]]
+TOOLTIP_RESIST_SPEED = [[#GOLD#Damage resistance: by speed#LAST#
+All damage you receive, through any means, is decreased by this percentage, which increases as your total movement speed (global times movement) decreases.
+This is applied after normal damage type resistances.
 ]]
 TOOLTIP_AFFINITY_ALL = [[#GOLD#Damage affinity: all#LAST#
 All damage you receive, through any means, also heals you for this percentage of the damage.

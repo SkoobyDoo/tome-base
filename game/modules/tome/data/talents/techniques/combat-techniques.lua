@@ -32,7 +32,7 @@ newTalent{
 	tactical = { ATTACK = { weapon = 1, stun = 1 }, CLOSEIN = 3 },
 	requires_target = true,
 	is_melee = true,
-	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), nolock=true, nowarning=true, requires_knowledge=false, stop__block=true} end,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
 	on_pre_use = function(self, t)
 		if self:attr("never_move") then return false end
@@ -41,8 +41,7 @@ newTalent{
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then return nil end
-
+		if not self:canProject(tg, x, y) then return nil end
 		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
 		local linestep = self:lineFOV(x, y, block_actor)
 
@@ -64,7 +63,7 @@ newTalent{
 			self:setMoveAnim(ox, oy, 8, 5)
 		end
 		-- Attack ?
-		if core.fov.distance(self.x, self.y, x, y) == 1 then
+		if target and core.fov.distance(self.x, self.y, target.x, target.y) <= 1 then
 			if self:knowTalent(self.T_STEAMROLLER) then
 				target:setEffect(target.EFF_STEAMROLLER, 2, {src=self})
 				self:setEffect(self.EFF_STEAMROLLER_USER, 2, {buff=20})
@@ -79,8 +78,9 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Rushes toward your target with incredible speed. If the target is reached, you get a free attack doing 120% weapon damage.
-		If the attack hits, the target is dazed for 3 turns.
+		return ([[Rush toward a target spot with incredible speed.
+		If the spot is reached and occupied, you will perform a free melee attack against the target there.
+		This attack does 120% weapon damage and can daze the target for 3 turns if it hits.
 		You must rush from at least 2 tiles away.]])
 	end,
 }

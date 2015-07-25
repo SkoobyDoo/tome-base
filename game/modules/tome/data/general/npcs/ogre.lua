@@ -133,6 +133,7 @@ newEntity{ base = "BASE_NPC_OGRE",
 
 	resolvers.equip{{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true} },
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=2, every=7, max=5},
 		[Talents.T_LIGHTNING]={base=3, every=4, max=8},
 		[Talents.T_FLAME]={base=3, every=4, max=7},
 		[Talents.T_EARTHEN_MISSILES]={base=4, every=5, max=7},

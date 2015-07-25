@@ -127,9 +127,8 @@ local function set_element(element, new_flavor, player)
 
 end
 
-
 local DamageType = require "engine.DamageType"
-local flavors = o.flavors or {magestaff=true, starstaff=true, vilestaff=true}
+local flavors = o:getStaffFlavorList()
 local flavor_list = table.keys(flavors)
 table.sort(flavor_list)
 

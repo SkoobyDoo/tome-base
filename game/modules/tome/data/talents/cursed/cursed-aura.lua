@@ -427,7 +427,8 @@ newTalent{
 		local sentry = NPC.new {
 			type = "construct", subtype = "weapon",
 			display = o.display, color=o.color, image = o.image, blood_color = colors.GREY,
-			name = "animated "..o:getName(), -- bug fix
+			name = "animated "..o:getName(),
+			neuter = true,
 			faction = self.faction,
 			desc = "A weapon imbued with a living curse. It seems to be searching for its next victim.",
 			faction = self.faction,
@@ -481,7 +482,7 @@ newTalent{
 			summon_time = t.getDuration(self, t),
 			summon_quiet = true,
 			on_die = function(self, who)
-				game.logSeen(self, "#F53CBE#%s drops to the ground.", self.name:capitalize())
+				game.logSeen({x=self.x, y=self.y}, "#F53CBE#%s drops to the ground.", self.name:capitalize())
 			end,
 		}
 
@@ -508,7 +509,9 @@ newTalent{
 			self.on_pickup = self.old_on_pickup
 			if self.old_on_pickup then self.old_on_pickup(self, who) end
 		end
+		local charges = o.power --don't cool down any activatable abilities :)
 		result = sentry:wearObject(o, true, false)
+		o.power = charges
 		if not result then
 			game.logPlayer(self, "Your animated sentry struggles for a moment and then drops to the ground inexplicably.")
 			game.level.map:addObject(x, y, o)
@@ -531,9 +534,8 @@ newTalent{
 			elseif o.archery == "sling" then filter.subtype = "shot"
 			end
 			qo = game.zone:makeEntity(game.level, "object", filter, nil, true)
-			if qo then qo.no_drop = true sentry:wearObject(qo, true, false) end
+			if qo then qo.no_drop = true qo.infinite = true sentry:wearObject(qo, true, false) end
 		end
-
 
 		-- level stats up for MAXIMUM DAMAGE
 		local stats = sentry.unused_stats

@@ -453,16 +453,17 @@ function _M:doEmote(text, dur, color)
 end
 
 --- Call when added to a level
--- Used to make escorts and such
+-- Used to make escorts, adjust to game difficulty settings, and such
 function _M:addedToLevel(level, x, y)
-	if not self:attr("difficulty_boosted") then
-		if game.difficulty == game.DIFFICULTY_NIGHTMARE and not game.party:hasMember(self) then
+	if not self:attr("difficulty_boosted") and not game.party:hasMember(self) then
+		-- make adjustments for game difficulty and equip some items
+		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.floor(lev / 3))
 			end
 			self:attr("difficulty_boosted", 1)
-		elseif game.difficulty == game.DIFFICULTY_INSANE and not game.party:hasMember(self) then
+		elseif game.difficulty == game.DIFFICULTY_INSANE then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.floor(lev / 2))
@@ -486,7 +487,7 @@ function _M:addedToLevel(level, x, y)
 			-- print("Insane increasing " .. self.name .. " life by " .. lifeadd)
 
 			self:attr("difficulty_boosted", 1)
-		elseif game.difficulty == game.DIFFICULTY_MADNESS and not game.party:hasMember(self) then
+		elseif game.difficulty == game.DIFFICULTY_MADNESS then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.ceil(lev * 1.7))
@@ -508,6 +509,40 @@ function _M:addedToLevel(level, x, y)
 			self.life = self.life + lifeadd
 			
 			self:attr("difficulty_boosted", 1)
+		end
+		
+		-- try to equip inventory items
+		local MainInven, o = self:getInven(self.INVEN_INVEN)
+
+--if config.settings.cheat then self:inventoryApplyAll(function(inv, item, o) o:identify(true) end) end-- temp
+		
+		if MainInven then --try to equip items from inventory
+			for i = #MainInven, 1, -1 do
+				o = MainInven[i]
+				local inven, worn = self:getInven(o:wornInven())
+				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
+					local ro, replace = inven and inven[1], false
+					o = self:removeObject(self.INVEN_INVEN, i)
+					if o then
+
+					-- could put more sophisticated criteria here to pick the best gear
+						if ro and o.type == ro.type and o.subtype == ro.subtype and (o.rare or o.randart or o.unique) and not (ro.rare or ro.randart or ro.unique) then replace = true end
+						worn = self:wearObject(o, replace, false)
+						if worn then
+							print("[NPC:addedToLevel]", self.name, self.uid, "wearing", o.name)
+							if type(worn) == "table" then
+								print("--- replacing", worn.name)
+								self:addObject(self.INVEN_INVEN, worn)
+							end
+						else
+							self:addObject(self.INVEN_INVEN, o) -- put object back in main inventory
+						end
+					end
+				end
+			end
+		end
+		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
+			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})
 		end
 	end
 

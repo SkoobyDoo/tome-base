@@ -220,8 +220,8 @@ newEntity{ define_as = "TEMPORAL_DEFILER",
 	combat_armor = 10, combat_def = 10,
 	combat = { dam=resolvers.levelup(resolvers.rngavg(25,100), 1, 1.2), atk=resolvers.rngavg(25,100), apr=25, dammod={dex=1.1} },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
-	resolvers.drops{chance=100, nb=1, {defined="TIME_SHARD"} },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, TOOL=1 },
+	resolvers.equip{{defined="TIME_SHARD"}, autoreq=true},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	inc_damage = {all = -30},

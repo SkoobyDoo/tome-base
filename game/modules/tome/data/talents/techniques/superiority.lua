@@ -84,6 +84,7 @@ newTalent{
 	radius = function(self, t)
 		return math.floor(self:combatTalentScale(t, 3, 7))
 	end,
+	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t}
 	end,

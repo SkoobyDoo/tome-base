@@ -135,7 +135,6 @@ function _M:canUseObject(who)
 			return false, "You can not use items during a battle frenzy!"
 		end
 		if who:attr("sleep") and not who:attr("lucid_dreamer") then
-			game.logPlayer(who, "You can not use items while sleeping!")
 			return false, "You can not use objects while sleeping!"
 		end
 	end
@@ -199,7 +198,7 @@ function _M:useObject(who, ...)
 				end
 			end
 
-			return {used=ret}
+			return {used=ret, no_energy = util.getval(ab.no_energy, who, ab)}
 		else
 			if self.talent_cooldown or (self.power_regen and self.power_regen ~= 0) then
 				game.logPlayer(who, "%s is still recharging.", self:getName{no_count=true})
@@ -253,7 +252,12 @@ function _M:use(who, typ, inven, item)
 				end
 			end
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
-			if not self.use_no_energy then
+			if not ret.nobreakStepUp then who:breakStepUp() end
+			if not ret.nobreakStealth then who:breakStealth() end
+			if not ret.nobreakLightningSpeed then who:breakLightningSpeed() end
+			if not ret.nobreakReloading then who:breakReloading() end
+			if not ret.nobreakSpacetimeTuning then who:breakSpacetimeTuning() end
+			if not (self.use_no_energy or ret.no_energy) then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
 			end
 		end
@@ -262,8 +266,9 @@ function _M:use(who, typ, inven, item)
 end
 
 --- Returns a tooltip for the object
-function _M:tooltip(x, y)
+function _M:tooltip(x, y, use_actor)
 	local str = self:getDesc({do_color=true}, game.player:getInven(self:wornInven()))
+--	local str = self:getDesc({do_color=true}, game.player:getInven(self:wornInven()), nil, use_actor)
 	if config.settings.cheat then str:add(true, "UID: "..self.uid, true, self.image) end
 	local nb = game.level.map:getObjectTotal(x, y)
 	if nb == 2 then str:add(true, "---", true, "You see one more object.")
@@ -1627,7 +1632,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 	end
 
 	if self.special_desc then
-		local d = self:special_desc()
+		local d = self:special_desc(use_actor)
 		desc:add({"color", "ROYAL_BLUE"})
 		desc:merge(d:toTString())
 		desc:add({"color", "LAST"}, true)
@@ -1752,8 +1757,12 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 	if self.use_no_energy and self.use_no_energy ~= "fake" then
 		desc:add("Activating this item is instant.", true)
+	elseif self.use_talent then
+		local t = use_actor:getTalentFromId(self.use_talent.id)
+		if util.getval(t.no_energy, use_actor, t) == true then
+			desc:add("Activating this item is instant.", true)
+		end
 	end
-
 
 	if self.curse then
 		local t = use_actor:getTalentFromId(use_actor.T_DEFILING_TOUCH)
@@ -1763,7 +1772,6 @@ function _M:getTextualDesc(compare_with, use_actor)
 	end
 
 	self:triggerHook{"Object:descMisc", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, object=self}
-
 
 	local use_desc = self:getUseDesc(use_actor)
 	if use_desc then desc:merge(use_desc:toTString()) end
@@ -2151,11 +2159,17 @@ local function update_staff_table(o, d_table_old, d_table_new, old_element, new_
 end
 
 function _M:getStaffFlavorList()
-	return table.keys(self.flavors or standard_flavors)
+	if self.modes and not self.flavors then -- build flavor list for older staves
+		self.flavors = {exoticstaff={}}
+		for i = 1, #self.modes do
+			self.flavors.exoticstaff[i] = self.modes[i]:upper()
+		end
+	end
+	return self.flavors or standard_flavors
 end
 
 function _M:getStaffFlavor(flavor)
-	local flavors = self.flavors or standard_flavors
+	local flavors = self:getStaffFlavorList()
 	if not flavors[flavor] then return nil end
 	if flavors[flavor] == true then return standard_flavors[flavor]
 	else return flavors[flavor] end
@@ -2173,7 +2187,6 @@ local function staff_command(o) -- compat
 	}
 	return o.command_staff
 end
-
 
 -- Command a staff to another element
 function _M:commandStaff(element, flavor)
@@ -2203,4 +2216,52 @@ function _M:commandStaff(element, flavor)
 	if self.combat.melee_element then self.combat.damtype = element end
 	if not self.unique then self.name = self.name:gsub(self.flavor_name or "staff", flavor) end
 	self.flavor_name = flavor
+end
+
+-- find the preferred element for a staff user based on talents
+-- @param who the staff user
+-- @param force force recalculation
+-- @return string or nil, best element type
+-- @return string, best aspect
+-- @return damage weights (based on tactical info), sets self.ai_state._pref_staff_element
+function _M:getStaffPreferredElement(who, force)
+	if not who then return end
+	-- get a list of elements the staff can use
+	local damweights, aspects = {}, {}
+	local aspect = self.flavor_name or "none"
+	local flavors = self:getStaffFlavorList()
+	for flav, dams in pairs(flavors) do
+		for j, typ in ipairs(self:getStaffFlavor(flav)) do
+			damweights[typ] = 0
+			aspects[typ] = flav
+		end
+	end
+	if not force and who.ai_state._pref_staff_element and damweights[who.ai_state._pref_staff_element] then
+		return who.ai_state._pref_staff_element, aspects[who.ai_state._pref_staff_element], damweights
+	end
+	for tid, lev in pairs(who.talents) do
+		if tid ~= "T_ATTACK" then
+			local t = who.talents_def[tid]
+			local tacs = t.tactical
+			local damType
+			if type(tacs) == "table" then
+				for tac, val in pairs(tacs) do
+					if (tac == "attack" or tac == "attackarea") and type(val) == "table" then
+						for typ, weight in pairs(val) do
+							if damweights[typ] then --matches a staff element
+								local wt = type(weight) == "number" and weight or type(weight) == "function" and weight(who, t, who) or 0
+								damweights[typ] = damweights[typ] + wt*lev
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	local best, wt = self.combat.element or self.combat.damtype, 0
+	for typ, weight in pairs(damweights) do
+		if weight > wt then best, wt = typ, weight end
+	end
+	if wt > 0 then aspect = aspects[best] end
+	return wt > 0 and best, aspect, damweights
 end

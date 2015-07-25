@@ -160,10 +160,11 @@ newEntity{ base="BASE_NPC_HORROR_TEMPORAL", define_as = "CHRONOLITH_TWIN",
 	resists = { [DamageType.PHYSICAL] = 50, },
 
 	resolvers.talents{
-		[Talents.T_REPULSION_BLAST]=3,
-		[Talents.T_GRAVITY_SPIKE]=3,
-		[Talents.T_GRAVITY_WELL]=3,
-		[Talents.T_GRAVITY_LOCUS]=3,
+		[Talents.T_STAFF_MASTERY]= {base=2, every=8, max=5},
+		[Talents.T_REPULSION_BLAST]={base=3, every=10, max=6},
+		[Talents.T_GRAVITY_SPIKE]={base=3, every=10, max=6},
+		[Talents.T_GRAVITY_WELL]={base=3, every=10, max=6},
+		[Talents.T_GRAVITY_LOCUS]={base=3, every=10, max=6},
 	},
 
 	autolevel = "warriormage",
@@ -205,10 +206,11 @@ newEntity{ base="BASE_NPC_HORROR_TEMPORAL", define_as = "CHRONOLITH_CLONE",
 	resists = { [DamageType.TEMPORAL] = 50, },
 
 	resolvers.talents{
-		[Talents.T_TEMPORAL_BOLT]=3,
-		[Talents.T_ECHOES_FROM_THE_PAST]=3,
-		[Talents.T_ENTROPY]=3,
-		[Talents.T_ENERGY_ABSORPTION]=3,
+		[Talents.T_STAFF_MASTERY]= {base=2, every=8, max=5},
+		[Talents.T_TEMPORAL_BOLT]={base=3, every=10, max=6},
+		[Talents.T_ECHOES_FROM_THE_PAST]={base=3, every=10, max=6},
+		[Talents.T_ENTROPY]={base=3, every=10, max=6},
+		[Talents.T_ENERGY_ABSORPTION]={base=3, every=10, max=6},
 	},
 
 	autolevel = "warriormage",

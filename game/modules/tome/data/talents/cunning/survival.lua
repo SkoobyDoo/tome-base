@@ -46,16 +46,16 @@ newTalent{
 	points = 5,
 	cdReduc = function(tl)
 		if tl <=0 then return 0 end
-		return math.floor(100*tl/(tl+7.5)) --I5 Limit < 100%
+		return math.floor(100*tl/(tl+7.5)) -- Limit < 100%
 	end,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t))) --I5
+		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t)))
 	end,
 --	on_unlearn = function(self, t)
 --	end,
 	info = function(self, t)
 		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns by %d%%.]]):
-		format(t.cdReduc(self:getTalentLevel(t))) --I5
+		format(t.cdReduc(self:getTalentLevel(t)))
 	end,
 }
 

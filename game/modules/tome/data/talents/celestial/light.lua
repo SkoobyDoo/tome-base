@@ -55,7 +55,7 @@ newTalent{
 	points = 5,
 	cooldown = 15,
 	positive = -20,
-	tactical = { HEAL = 3 },
+	tactical = { HEAL = 2.5 },
 	range = 0,
 	radius = 2,
 	target = function(self, t)
@@ -122,7 +122,7 @@ newTalent{
 	random_ego = "defensive",
 	positive = -20,
 	cooldown = 30,
-	tactical = { HEAL = 1, CURE = 2 },
+	tactical = { HEAL = 1, CURE = 3 },
 	getRegeneration = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
