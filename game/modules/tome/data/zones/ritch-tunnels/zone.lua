@@ -30,7 +30,7 @@ return {
 	tier1 = true,
 	ambient_music = "Bazaar of Tal-Mashad.ogg",
 	persistent = "zone",
-	max_material_level = 2,
+	max_material_level = 1,
 	no_random_lore = true,
 	generator =  {
 		map = {

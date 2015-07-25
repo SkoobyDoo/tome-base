@@ -19,7 +19,7 @@
 
 return {
 	name = "Blighted Ruins",
-	level_range = {1, 8},
+	level_range = {1, 5},
 	level_scheme = "player",
 	max_level = 3,
 	decay = {300, 800},
@@ -32,7 +32,7 @@ return {
 	persistent = "zone",
 	ambient_music = {"Forgotten Memories.ogg","weather/dungeon_base.ogg"},
 	no_worldport = true,
-	max_material_level = 2,
+	max_material_level = 1,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",

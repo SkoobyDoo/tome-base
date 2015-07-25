@@ -30,7 +30,7 @@ return {
 	persistent = "zone",
 	ambient_music = "Driving the Top Down.ogg",
 	min_material_level = 2,
-	max_material_level = 3,
+	max_material_level = 2,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",

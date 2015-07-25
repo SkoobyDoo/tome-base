@@ -31,7 +31,7 @@ return {
 --	persistent = true,
 	ambient_music = "Hold the Line.ogg",
 	min_material_level = 3,
-	max_material_level = 5,
+	max_material_level = 4,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",

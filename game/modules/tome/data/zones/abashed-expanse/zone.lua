@@ -30,7 +30,7 @@ return {
 	tier1 = true,
 	persistent = "zone",
 	ambient_music = "Suspicion.ogg",
-	max_material_level = 2,
+	max_material_level = 1,
 	no_level_connectivity = true,
 	force_controlled_teleport = true,
 	projectile_speed_mod = 0.3,
