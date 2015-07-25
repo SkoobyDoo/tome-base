@@ -38,7 +38,7 @@ return {
 	color_obscure = {0.7*0.6, 0.7*0.6, 0.7*0.6, 0.6},
 	ambient_music = "Woods of Eremae.ogg",
 	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
-	max_material_level = function() return game.state:isAdvanced() and 4 or 2 end,
+	max_material_level = function() return game.state:isAdvanced() and 4 or 1 end,
 	is_invaded = is_invaded,
 	generator =  {
 		map = {

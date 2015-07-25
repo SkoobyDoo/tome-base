@@ -19,7 +19,7 @@
 
 return {
 	name = "Fearscape",
-	level_range = {35, 45},
+	level_range = {30, 40},
 	level_scheme = "player",
 	max_level = 1,
 	decay = {300, 800},
@@ -31,8 +31,8 @@ return {
 	no_worldport = true,
 	is_demon_plane = true,
 	ambient_music = "Straight Into Ambush.ogg",
-	min_material_level = 3,
-	max_material_level = 5,
+	min_material_level = 4,
+	max_material_level = 4,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Forest",

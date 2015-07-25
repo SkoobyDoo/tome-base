@@ -34,7 +34,7 @@ return {
 	ambient_music = {"Mystery.ogg", "weather/jungle_base.ogg"},
 	no_level_connectivity = true,
 	min_material_level = 3,
-	max_material_level = 3,
+	max_material_level = 4,
 	levels = {
 		[1] = {
 			width = 150, height = 12,

@@ -30,7 +30,7 @@ return {
 	tier1 = true,
 	persistent = "zone",
 	ambient_music = "Suspicion.ogg",
-	max_material_level = 2,
+	max_material_level = 1,
 	color_shown = {0.7, 0.6, 0.8, 1},
 	color_obscure = {0.7*0.6, 0.6*0.6, 0.8*0.6, 0.6},
 
@@ -52,7 +52,7 @@ return {
 		},
 		object = {
 			class = "engine.generator.object.Random",
-			nb_object = {0, 0},
+			nb_object = {3, 6},
 		},
 		trap = {
 			class = "engine.generator.trap.Random",

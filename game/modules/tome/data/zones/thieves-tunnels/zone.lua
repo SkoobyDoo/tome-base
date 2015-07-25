@@ -25,6 +25,8 @@ return {
 	actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
 	width = 30, height = 30,
 	ambient_music = "Zangarang.ogg",
+	min_material_level = 1,
+	max_material_level = 2,
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",

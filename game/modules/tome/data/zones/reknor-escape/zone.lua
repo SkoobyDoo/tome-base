@@ -31,7 +31,7 @@ return {
 	no_worldport = true,
 	persistent = "zone",
 	ambient_music = "Enemy at the gates.ogg",
-	max_material_level = 2,
+	max_material_level = 1,
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",

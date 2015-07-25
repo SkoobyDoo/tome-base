@@ -19,7 +19,7 @@
 
 return {
 	name = "Mark of the Spellblaze",
-	level_range = {25, 35},
+	level_range = {15, 25},
 	level_scheme = "player",
 	max_level = 2,
 	decay = {300, 800},

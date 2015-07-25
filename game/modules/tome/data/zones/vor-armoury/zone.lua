@@ -19,7 +19,7 @@
 
 return {
 	name = "Vor Armoury",
-	level_range = {35, 50},
+	level_range = {30, 40},
 	level_scheme = "player",
 	max_level = 2,
 --	decay = {300, 800},
@@ -29,8 +29,8 @@ return {
 --	all_remembered = true,
 --	all_lited = true,
 	ambient_music = "New Dawn.ogg",
-	min_material_level = 4,
-	max_material_level = 5,
+	min_material_level = 3,
+	max_material_level = 4,
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",

@@ -34,7 +34,7 @@ return {
 	all_lited = true,
 	persistent = "zone",
 	ambient_music = "Taking flight.ogg",
-	max_material_level = 2,
+	max_material_level = 1,
 	is_purified = is_purified,
 	generator =  {
 		map = {
