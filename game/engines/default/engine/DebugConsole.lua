@@ -251,6 +251,7 @@ function _M:init()
 			self:autoComplete()
 		end,
 		[{"_SPACE", "ctrl"}] = function(c)
+			core.key.flush() -- flush input buffer
 			local base, remaining = find_base(_M.line:sub(1,_M.line_pos))
 			local func = base[remaining]
 			if not func or type(func) ~= "function" then
@@ -267,23 +268,24 @@ function _M:init()
 				table.insert(_M.history, "    " .. line:gsub("\t", "    "))
 			end
 		end,
-                [{"_SPACE", "ctrl", "shift"}] = function(c)
-                        local base, remaining = find_base(_M.line:sub(1,_M.line_pos))
-                        local func = base[remaining]
-                        if not func or type(func) ~= "function" then
-                                table.insert(_M.history, "<<<<< No function found >>>>>")
-                                return
-                        end
-                        local lines, fname, lnum = self:functionHelp(func, true)
-                        if not lines then
-                                table.insert(_M.history, ([[<<<<< %s >>>>>]]):format(fname))
-                                return
-                        end
-                        table.insert(_M.history, ([[<<<<< Definition found in %s at line %d. >>>>>]]):format(fname, lnum))
-                        for _, line in ipairs(lines) do
-                                table.insert(_M.history, "    " .. line:gsub("\t", "    "))
-                        end
-                end,
+		[{"_SPACE", "ctrl", "shift"}] = function(c)
+			core.key.flush() -- flush input buffer
+			local base, remaining = find_base(_M.line:sub(1,_M.line_pos))
+			local func = base[remaining]
+			if not func or type(func) ~= "function" then
+					table.insert(_M.history, "<<<<< No function found >>>>>")
+					return
+			end
+			local lines, fname, lnum = self:functionHelp(func, true)
+			if not lines then
+					table.insert(_M.history, ([[<<<<< %s >>>>>]]):format(fname))
+					return
+			end
+			table.insert(_M.history, ([[<<<<< Definition found in %s at line %d. >>>>>]]):format(fname, lnum))
+			for _, line in ipairs(lines) do
+					table.insert(_M.history, "    " .. line:gsub("\t", "    "))
+			end
+		end,
 		_PAGEUP = function()
 			local num_lines = math.floor(self.h / self.font_h * 0.75)
 			self:scrollUp(num_lines)
@@ -492,12 +494,6 @@ function _M:historyColumns(strings, offset)
 	local width = 0  --
 	local max_width = 80 -- Maximum field width to print
 	
---	for i, k in ipairs(strings) do
---		if #k > #longest_key then
---			longest_key = k
---		end
---	end
-
 	for i, k in ipairs(strings) do
 		if #k > width then
 			longest_key = k
@@ -509,12 +505,10 @@ function _M:historyColumns(strings, offset)
 		end
 	end
 	
---	local tx, ty = self.font:size(longest_key .. "  ")
-	local tx, ty = self.font:size(string.sub(longest_key,1,width) .. "...  ") --
+	local tx, ty = self.font:size(string.sub(longest_key,1,width) .. "...  ")
 	local num_columns = math.floor((self.w - ox) / tx)
 	local num_rows = math.ceil(#strings / num_columns)
 
---	local line_format = offset_str..string.rep("%-"..tostring(#longest_key).."s ", num_columns)
 	local line_format = offset_str..string.rep("%-"..tostring(math.min(max_width+5,width+5)).."s ", num_columns) --
 	
 	for i=1,num_rows do
@@ -522,9 +516,9 @@ function _M:historyColumns(strings, offset)
 		for j=1,num_columns do
 			vals[j] = strings[i + (j - 1) * num_rows] or ""
 			--Truncate and annotate if too long
-			if #vals[j] > width then --
-				vals[j] = string.sub(vals[j],1,width) .. "..." --
-			end --
+			if #vals[j] > width then
+				vals[j] = string.sub(vals[j],1,width) .. "..."
+			end
 		end
 		table.insert(_M.history, line_format:format(unpack(vals)))
 	end
