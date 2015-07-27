@@ -215,8 +215,10 @@ function _M:init()
 			game:unregisterDialog(self)
 		end,
 		_BACKSPACE = function()
-			_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
-			_M.line_pos = util.bound(_M.line_pos - 1, 0, #_M.line)
+			if _M.line_pos > 0 then
+				_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
+				_M.line_pos = _M.line_pos - 1
+			end
 			self.changed = true
 		end,
 		_DELETE = function()
