@@ -182,6 +182,9 @@ Higher is faster, so 200% means that you can use mind powers twice as fast as no
 -------------------------------------------------------------
 -- Stats
 -------------------------------------------------------------
+TOOLTIP_STATS = [[#GOLD#Stats#LAST#
+Your character's primary attributes.  Base: the value inherent to your character, which may be increased by applying stat points (limited by character level). Current: the base value plus any bonuses from equipment, effects, certain talents, etc. that is used to determine the overall effectiveness of the stat.
+]]
 TOOLTIP_STR = [[#GOLD#Strength#LAST#
 Strength defines your character's ability to apply physical force. It increases Physical Power, damage done with heavy weapons, Physical Save, and carrying capacity.
 ]]
@@ -270,6 +273,9 @@ Defense represents your chance to avoid physical melee attacks and reduces the c
 TOOLTIP_RDEFENSE = [[#GOLD#Ranged Defense#LAST#
 Defense represents your chance to avoid physical ranged attacks and reduces the chance you'll be knocked off-balance by an enemy's attack. It is measured against the attacker's Accuracy.
 ]]
+TOOLTIP_SAVES = [[#GOLD#Saves#LAST#
+Saving throws represent your ability to shrug off, partially or fully, detrimental effects applied to you.  Most detrimental effects will check their power (physical, spell, mental) vs your corresponding save type to determine if they take effect or not.  The chance is usually ~50% when power and save are equal.
+]]
 TOOLTIP_PHYS_SAVE = [[#GOLD#Physical saving throw#LAST#
 Increases chance to shrug off physically-induced effects.  Also reduces duration of detrimental physical effects by up to 5% per point, depending on the power of the opponent's effect.
 ]]
@@ -326,12 +332,20 @@ This stacks with individual damage type increases.
 TOOLTIP_INC_DAMAGE = [[#GOLD#Damage increase: specific#LAST#
 All damage of this type that you deal, through any means, is increased by this percentage.
 ]]
+TOOLTIP_INC_DAMAGE_ACTOR = [[#GOLD#Damage increase: creature type#LAST#
+All damage you deal to creatures of this type, through any means, is increased by this percentage.  This is applied in addition to (stacks with) other damage modifiers.
+]]
 TOOLTIP_INC_CRIT_POWER = [[#GOLD#Critical multiplier#LAST#
-All critical hits (melee, spells, ...) do this much damage.
+All critical hits (melee, spells, ...) do this much damage compared to normal.
+]]
+TOOLTIP_RESIST_DAMAGE = [[#GOLD#Damage resistance#LAST#
+Whenever you take damage, the percent resistance you have to its type, if any, is checked.  The damage is reduced by this percentage (which may be partially negated by the attacker's Damage Penetration) before being applied.
+Your effective resistance can never be higher than your resistance cap and negative resistances increase the damage you recieve (up to +100%).
 ]]
 TOOLTIP_RESIST_ALL = [[#GOLD#Damage resistance: all#LAST#
 All damage you receive, through any means, is decreased by this percentage.
-This stacks with individual damage type resistances.
+This stacks (multiplicatively) with individual damage type resistances up to their respective caps.
+(So 20% resistance: All + 50% resistance: Fire = 60% total resistance to Fire.)
 ]]
 TOOLTIP_RESIST_ABSOLUTE = [[#GOLD#Damage resistance: absolute#LAST#
 All damage you receive, through any means, is decreased by this percentage.
@@ -344,20 +358,35 @@ TOOLTIP_RESIST_SPEED = [[#GOLD#Damage resistance: by speed#LAST#
 All damage you receive, through any means, is decreased by this percentage, which increases as your total movement speed (global times movement) decreases.
 This is applied after normal damage type resistances.
 ]]
+TOOLTIP_RESIST_DAMAGE_ACTOR = [[#GOLD#Damage resistance: creature type#LAST#
+All damage you receive from creatures of this type, through any means, is decreased by this percentage.  This is applied separately to (stacks with) normal resistances.
+]]
 TOOLTIP_AFFINITY_ALL = [[#GOLD#Damage affinity: all#LAST#
 All damage you receive, through any means, also heals you for this percentage of the damage.
 This stacks with individual damage type affinities.
 Important: Affinity healing happens after damage has been taken, it can not prevent death.
 ]]
 TOOLTIP_AFFINITY = [[#GOLD#Damage affinity: specific#LAST#
-All damage of this type that you receive, through any means, also heals you for this percentage of the damage..
+All damage of this type that you receive, through any means, also heals you for this percentage of the damage.
 Important: Affinity healing happens after damage has been taken, it can not prevent death.
 ]]
+TOOLTIP_STATUS_IMMUNE = [[#GOLD#Status resistance#LAST#
+Most bad status effects can be avoided by having an appropriate immunity, represented by a percent chance to completely avoid the effect in question.  This chance is applied in addition to any saving throws or other checks that may apply.
+]]
 TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
-This represents your chance to completely avoid the effect in question.
+This represents your chance to completely avoid this specific effect.
+]]
+TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
+This represents your chance to completely being stunned, dazed, or frozen.
+]]
+TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
+This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
+]]
+TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative effect immunity chance#LAST#
+This represents your chance to completely avoid ANY bad effects applied to you from others.
 ]]
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
-Each time a creature hits you in melee it will suffer damage.
+Each time a creature hits you with a melee attack, it will suffer damage or other effects.
 ]]
 TOOLTIP_RESISTS_PEN_ALL = [[#GOLD#Damage penetration: all#LAST#
 Reduces the amount of effective resistance of your foes to any damage you deal by this percent.
@@ -365,7 +394,7 @@ If you have 50% penetration against a creature with 50% resistance it will have 
 This stacks with individual damage type penetrations.
 ]]
 TOOLTIP_RESISTS_PEN = [[#GOLD#Damage penetration: specific#LAST#
-Reduces the amount of effective resistance of your foes to all damage you deal of this type by this percent.
+Reduces the effective resistance of your foes to all damage of this type you deal by this percent.
 If you have 50% penetration against a creature with 50% resistance it will have an effective resistance of 25%.
 ]]
 

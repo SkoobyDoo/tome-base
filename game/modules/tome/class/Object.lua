@@ -378,8 +378,8 @@ function _M:getPowerRank()
 end
 
 --- Gets the color in which to display the object in lists
-function _M:getDisplayColor()
-	if not self:isIdentified() then return {180, 180, 180}, "#B4B4B4#" end
+function _M:getDisplayColor(fake)
+	if not fake and not self:isIdentified() then return {180, 180, 180}, "#B4B4B4#" end
 	if self.lore then return {0, 128, 255}, "#0080FF#"
 	elseif self.unique then
 		if self.randart then
@@ -458,16 +458,25 @@ function _M:getName(t)
 end
 
 --- Gets the short name of the object
+-- currently, this is only used by EquipDollFrame
 function _M:getShortName(t)
 	if not self.short_name then return self:getName(t) end
 
 	t = t or {}
+	t.no_add_name = true
+	
 	local qty = self:getNumber()
-	local name = self.short_name
+	local identified = t.force_id or self:isIdentified()
+	local name = self.short_name or "object"
 
-	if not self:isIdentified() and not t.force_id and self:getUnidentifiedName() then name = self:getUnidentifiedName() end
-
-	if self.keywords and next(self.keywords) then
+	if not identified then
+		local _, c = self:getDisplayColor(true)
+		if self.unique then
+			name = self:getUnidentifiedName()..", "..c.."special#LAST#"
+		elseif self.egoed then
+			name = name..", "..c.."ego#LAST#"
+		end
+	elseif self.keywords and next(self.keywords) then
 		local k = table.keys(self.keywords)
 		table.sort(k)
 		name = name..","..table.concat(k, ',')
@@ -529,6 +538,64 @@ function _M:getTextualDesc(compare_with, use_actor)
 	if self.slot_forbid == "OFFHAND" then desc:add("It must be held with both hands.", true) end
 	desc:add(true)
 
+	if not self:isIdentified() then -- give limited information if the item is unidentified
+--desc:add("----START UNIDED DESC----", true)
+		local combat = self.combat
+		if not combat and self.wielded then
+			-- shield combat
+			if self.subtype == "shield" and self.special_combat and ((use_actor:knowTalentType("technique/shield-offense") or use_actor:knowTalentType("technique/shield-defense") or use_actor:attr("show_shield_combat"))) then
+				combat = self.special_combat
+			end
+			-- gloves combat
+			if self.subtype == "hands" and self.wielder and self.wielder.combat and (use_actor:knowTalent(use_actor.T_EMPTY_HAND) or use_actor:attr("show_gloves_combat")) then
+				combat = self.wielder.combat
+			end
+		end
+		if combat then -- always list combat damage types (but not amounts)
+			local special = 0
+			if combat.talented then
+				local t = use_actor:combatGetTraining(combat)
+				if t and t.name then desc:add("Mastery: ", {"color","GOLD"}, t.name, {"color","LAST"}, true) end
+			end
+			self:descAccuracyBonus(desc, combat or {}, use_actor)
+			if combat.wil_attack then
+				desc:add("Accuracy is based on willpower for this weapon.", true)
+			end
+			local dt = DamageType:get(combat.damtype or DamageType.PHYSICAL)
+			desc:add("Weapon Damage: ", dt.text_color or "#WHITE#", dt.name:upper(),{"color","LAST"})
+			for dtyp, val in pairs(combat.melee_project or combat.ranged_project or {}) do
+				dt = DamageType:get(dtyp)
+				if dt then
+					if dt.tdesc then
+						special = special + 1
+					else
+						desc:add(", ", dt.text_color or "#WHITE#", dt.name, {"color", "LAST"})
+					end
+				end
+			end
+			desc:add(true)
+			--special_on_hit count # for both melee and ranged
+			if special>0 or combat.special_on_hit or combat.special_on_crit or combat.special_on_kill or combat.burst_on_crit or combat.burst_on_hit or combat.talent_on_hit or combat.talent_on_crit then
+				desc:add("#YELLOW#It can cause special effects when it strikes in combat.#LAST#", true)
+			end
+			if self.on_block then
+				desc:add("#ORCHID#It can cause special effects when a melee attack is blocked.#LAST#", true)
+			end
+		end
+		if self.wielder then
+			if self.wielder.lite then
+				desc:add(("It %s ambient light (%+d radius)."):format(self.wielder.lite >= 0 and "provides" or "dims", self.wielder.lite), true)
+			end
+		end
+		if self.wielded then
+			if self.use_power or self.use_simple or self.use_talent then
+				desc:add("#ORANGE#It has an activatable power.#LAST#", true)
+			end
+		end
+--desc:add("----END UNIDED DESC----", true)
+		return desc
+	end
+
 	if self.set_list then
 		desc:add({"color","GREEN"}, "It is part of a set of items.", {"color","LAST"}, true)
 		if self.set_desc then
@@ -538,9 +605,6 @@ function _M:getTextualDesc(compare_with, use_actor)
 		end
 		if self.set_complete then desc:add({"color","LIGHT_GREEN"}, "The set is complete.", {"color","LAST"}, true) end
 	end
-
-	-- Stop here if unided
-	if not self:isIdentified() then return desc end
 
 	local compare_fields = function(item1, items, infield, field, outformat, text, mod, isinversed, isdiffinversed, add_table)
 		add_table = add_table or {}

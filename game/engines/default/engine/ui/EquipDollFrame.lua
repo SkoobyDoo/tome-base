@@ -46,7 +46,10 @@ function _M:init(t)
 	self.filter = t.filter
 	self.name_pos = t.name_pos
 	self.subobject = t.subobject
-
+	if t.font then
+		self.font = t.font
+		self.font_h = t.font:lineSkip()
+	end
 	Base.init(self, t)
 end
 
@@ -105,16 +108,18 @@ function _M:onDrag(inven, item, o)
 	end
 end
 
+-- Display a description of the object at x, y
 function _M:drawItemShortName(o, x, y)
 	if not o then return end
 	if self.no_name then return end
 
-	local t = nil
+	local t
 	if self.last_o == o then
 		t = self.last_t
 	else
+		-- long "short names" could benefit from word wrap
 		local name = (o.getShortName or o.getName)(o, {do_color=true, no_image=true, no_add_name=true}):toString()
-		t = self.font:draw(name, self.font:size(name), 255, 255, 255)[1]
+		t = self.font:draw(name, self.font:size(name)+1, 255, 255, 255, false, true)[1]
 	end
 
 	if not self.name_pos then
@@ -123,6 +128,9 @@ function _M:drawItemShortName(o, x, y)
 	elseif self.name_pos == "bottom" then
 		x = x - (t.w - self.w) / 2
 		y = y + self.h
+	elseif self.name_pos == "abovetop" then
+		x = x - (t.w - self.w) / 2
+		y = y - t.h*2
 	elseif self.name_pos == "topleft" then
 		x = x - t.w + self.w
 		y = y - t.h

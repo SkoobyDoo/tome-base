@@ -1796,7 +1796,7 @@ function _M:tooltip(x, y, seen_by)
 		end
 	end
 	if self:attr("speed_resist") then
-		local res = 100 - (util.bound(self.global_speed * self.movement_speed, 0.3, 1)) * 100
+		local res = 100 - (util.bound(self.global_speed * self.movement_speed, (100-(self.speed_resist_cap or 70))/100, 1)) * 100
 		if res > 0 then
 			ts:add({"color", "LIGHT_GREEN"}, tostring(math.floor(res)).."%", " ", {"color", "SALMON"}, "from speed", {"color", "LAST"})
 		end

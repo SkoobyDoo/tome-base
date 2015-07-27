@@ -137,7 +137,8 @@ ActorInventory:defineInventory("QS_OFFHAND", "Second weapon set: In off hand", f
 ActorInventory:defineInventory("QS_PSIONIC_FOCUS", "Second weapon set: psionic focus", false, "Weapon Set 2: Object held in your telekinetic grasp. It can be a weapon or some other item to provide a benefit to your psionic powers. Press 'x' to switch weapon sets.", true)
 ActorInventory:defineInventory("QS_QUIVER", "Second weapon set: Quiver", false, "Weapon Set 2: Your readied ammo.", true)
 ActorInventory.equipdolls = {
-	default = { w=48, h=48, itemframe="ui/equipdoll/itemframe48.png", itemframe_sel="ui/equipdoll/itemframe-sel48.png", ix=3, iy=3, iw=42, ih=42, doll_x=116, doll_y=168+64, list={
+	default = { w=48, h=48, itemframe="ui/equipdoll/itemframe48.png", itemframe_sel="ui/equipdoll/itemframe-sel48.png", ix=3, iy=3, iw=42, ih=42, doll_x=116, doll_y=168+64, doll_w=128, doll_h=128,
+	list={
 		PSIONIC_FOCUS = {{weight=1, x=48, y=48, subshift="left"}},
 		MAINHAND = {{weight=2, x=48, y=120, subshift="left"}},
 		OFFHAND = {{weight=3, x=48, y=192, subshift="left"}},
@@ -151,9 +152,10 @@ ActorInventory.equipdolls = {
 		HANDS = {{weight=12, x=264, y=192}},
 		CLOAK = {{weight=13, x=264, y=120}},
 		NECK = {{weight=14, x=192, y=48, subshift="bottom", text="topright"}},
-		HEAD = {{weight=15, x=120, y=48, subshift="bottom", text="topleft"}},
+		HEAD = {{weight=15, x=120, y=48, subshift="bottom", text="abovetop"}},
 	}},
-	alchemist_golem = { w=48, h=48, itemframe="ui/equipdoll/itemframe48.png", itemframe_sel="ui/equipdoll/itemframe-sel48.png", ix=3, iy=3, iw=42, ih=42, doll_x=116, doll_y=168+64, list={
+	alchemist_golem = { w=48, h=48, itemframe="ui/equipdoll/itemframe48.png", itemframe_sel="ui/equipdoll/itemframe-sel48.png", ix=3, iy=3, iw=42, ih=42, doll_x=116, doll_y=168+64, doll_w=128, doll_h=128,
+	list={
 		MAINHAND = {{weight=1, x=48, y=120}},
 		OFFHAND = {{weight=2, x=48, y=192}},
 		BODY = {{weight=3, x=48, y=264}},
