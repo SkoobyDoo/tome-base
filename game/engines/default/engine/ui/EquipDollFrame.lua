@@ -110,38 +110,39 @@ end
 
 -- Display a description of the object at x, y
 function _M:drawItemShortName(o, x, y)
-	if not o then return end
-	if self.no_name then return end
+	if self.no_name or not o then return end
 
-	local t
+	local t, nlines, width = {}
 	if self.last_o == o then
 		t = self.last_t
 	else
-		-- long "short names" could benefit from word wrap
 		local name = (o.getShortName or o.getName)(o, {do_color=true, no_image=true, no_add_name=true}):toString()
-		t = self.font:draw(name, self.font:size(name)+1, 255, 255, 255, false, true)[1]
+		t, nlines, width = self.font:draw(name, self.w*3, 255, 255, 255, false, true)
+		t.nlines, t.width = nlines, width
 	end
-
-	if not self.name_pos then
-		x = x - (t.w - self.w) / 2
-		y = y - t.h
-	elseif self.name_pos == "bottom" then
-		x = x - (t.w - self.w) / 2
+	-- center justify text from the requested position, with extra lines below (possibly overlapping the frame)
+	local y_shift = util.bound(t.nlines-1, 0, 0.85)*self.font_h --shift the position of multi-line text up slightly
+	if self.name_pos == "bottom" then
+		x = x + self.w/2
 		y = y + self.h
 	elseif self.name_pos == "abovetop" then
-		x = x - (t.w - self.w) / 2
-		y = y - t.h*2
+		x = x + self.w/2
+		y = y - 2*self.font_h - y_shift
 	elseif self.name_pos == "topleft" then
-		x = x - t.w + self.w
-		y = y - t.h
+		x = x - t.width + self.w
+		y = y - self.font_h - y_shift
 	elseif self.name_pos == "topright" then
-		x = x
-		y = y - t.h
+		x = x + self.w
+		y = y - self.font_h - y_shift
+	else -- top center
+		x = x + self.w/2
+		y = y - self.font_h - y_shift
 	end
-
-	t._tex:toScreenFull(x, y, t.w, t.h, t._tex_w, t._tex_h)
---	if self.text_shadow then t._tex:toScreenFull(x - (t.w - self.w) / 2 + 1, y - t.h + 1, t.w, t.h, t._tex_w, t._tex_h, 0, 0, 0, self.text_shadow) end
-
+	for i, tex in ipairs(t) do
+		local xpos = x - tex.realw/2
+		local ypos = y + (i-1)*self.font_h
+		tex._tex:toScreenFull(xpos, ypos, tex.realw+1, tex.h, tex._tex_w, tex._tex_h)
+	end
 	self.last_t = t
 	self.last_o = o
 end

@@ -151,8 +151,8 @@ ActorInventory.equipdolls = {
 		BELT = {{weight=11, x=264, y=264}},
 		HANDS = {{weight=12, x=264, y=192}},
 		CLOAK = {{weight=13, x=264, y=120}},
-		NECK = {{weight=14, x=192, y=48, subshift="bottom", text="topright"}},
-		HEAD = {{weight=15, x=120, y=48, subshift="bottom", text="abovetop"}},
+		NECK = {{weight=14, x=235, y=48, subshift="bottom", text="topright"}},
+		HEAD = {{weight=15, x=150, y=35, subshift="bottom", text="bottom"}},
 	}},
 	alchemist_golem = { w=48, h=48, itemframe="ui/equipdoll/itemframe48.png", itemframe_sel="ui/equipdoll/itemframe-sel48.png", ix=3, iy=3, iw=42, ih=42, doll_x=116, doll_y=168+64, doll_w=128, doll_h=128,
 	list={

@@ -479,7 +479,7 @@ function _M:getShortName(t)
 	elseif self.keywords and next(self.keywords) then
 		local k = table.keys(self.keywords)
 		table.sort(k)
-		name = name..","..table.concat(k, ',')
+		name = name..", "..table.concat(k, ', ')
 	end
 
 	if not t.do_color then
