@@ -1565,6 +1565,10 @@ end
 function _M:combatPhysicalpower(mod, weapon, add)
 	mod = mod or 1
 	add = add or 0
+
+	if self.combat_generic_power then
+		add = add + self.combat_generic_power
+	end
 	if self:knowTalent(Talents.T_ARCANE_DESTRUCTION) then
 		add = add + self:combatSpellpower() * self:callTalent(Talents.T_ARCANE_DESTRUCTION, "getSPMult")
 	end
@@ -1612,6 +1616,10 @@ end
 function _M:combatSpellpower(mod, add)
 	mod = mod or 1
 	add = add or 0
+
+	if self.combat_generic_power then
+		add = add + self.combat_generic_power
+	end
 	if self:knowTalent(self.T_ARCANE_CUNNING) then
 		add = add + self:callTalent(self.T_ARCANE_CUNNING,"getSpellpower") * self:getCun() / 100
 	end
@@ -1921,6 +1929,10 @@ end
 function _M:combatMindpower(mod, add)
 	mod = mod or 1
 	add = add or 0
+
+	if self.combat_generic_power then
+		add = add + self.combat_generic_power
+	end
 
 	if self:knowTalent(self.T_SUPERPOWER) then
 		add = add + 50 * self:getStr() / 100

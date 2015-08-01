@@ -3175,7 +3175,7 @@ newEffect{
 		self.damage_shield_absorb = eff.power
 		self.damage_shield_absorb_max = eff.power
 		if core.shader.active(4) then
-			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="shield3"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor=colors.hex1alpha"9fe836a0", auraColor=colors.hex1alpha"36bce8da"}))
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {a=eff.shield_transparency or 1, size_factor=1.4, img="shield3"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor=colors.hex1alpha"9fe836a0", auraColor=colors.hex1alpha"36bce8da"}))
 		else
 			eff.particle = self:addParticles(Particles.new("damage_shield", 1))
 		end

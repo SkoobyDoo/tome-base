@@ -88,7 +88,7 @@ function resolvers.calc.talents(t, e)
 			level = level.base
 			lvls = true
 		end
---		print("Talent resolver for", e.name, ":", tid, "=>", level)
+		-- print("Talent resolver for", e.name, ":", tid, "=>", level)
 		e:learnTalent(tid, true, level)
 	end
 	if lvls then e._levelup_talents = levelup_talents end
