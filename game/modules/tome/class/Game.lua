@@ -2388,13 +2388,17 @@ end
 
 --- Create a random lore object and place it
 function _M:placeRandomLoreObjectScale(base, nb, level)
-	local dist = ({
-		[5] = { {1}, {2,3}, {4,5} }, -- 5 => 3
-		korpul = { {1,2}, {3,4} }, -- 5 => 3
-		maze = { {1,2,3,4},{5,6,7} }, -- 5 => 3
-		daikara = { {1}, {2}, {3}, {4,5} },
-		[7] = { {1,2}, {3,4}, {5,6}, {7} }, -- 7 => 4
-	})[nb][level]
+	local dist
+	if type(nb) == "table" then dist = nb[level]
+	else
+		dist = ({
+			[5] = { {1}, {2,3}, {4,5} }, -- 5 => 3
+			korpul = { {1,2}, {3,4} }, -- 5 => 3
+			maze = { {1,2,3,4},{5,6,7} }, -- 5 => 3
+			daikara = { {1}, {2}, {3}, {4,5} },
+			[7] = { {1,2}, {3,4}, {5,6}, {7} }, -- 7 => 4
+		})[nb][level]
+	end
 	if not dist then return end
 	for _, i in ipairs(dist) do self:placeRandomLoreObject(base..i) end
 end
