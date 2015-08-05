@@ -44,7 +44,9 @@ function _M:init(t)
 	self.drag_enable = t.drag_enable
 	self.fct = t.fct
 	self.filter = t.filter
-	self.name_pos = t.name_pos
+	self.name_pos = t.name_pos --"bottom", "abovetop", "topleft","topright", centered above by default
+	self.name_justify = t.name_justify --Justification, left, right, center by default
+	self.name_y_line_shift_max = t.name_y_line_shift_max or 0.85 -- allow the text to me moved up this many lines for multi-line names that may overlap the frame
 	self.subobject = t.subobject
 	if t.font then
 		self.font = t.font
@@ -120,8 +122,9 @@ function _M:drawItemShortName(o, x, y)
 		t, nlines, width = self.font:draw(name, self.w*3, 255, 255, 255, false, true)
 		t.nlines, t.width = nlines, width
 	end
-	-- center justify text from the requested position, with extra lines below (possibly overlapping the frame)
-	local y_shift = util.bound(t.nlines-1, 0, 0.85)*self.font_h --shift the position of multi-line text up slightly
+	-- text is center justified by default with extra lines word-wrapped below (possibly overlapping the frame)
+	--multi-line text will be shifted up slightly to keep it centered at the specified y-position up to self.name_y_line_shift_max lines
+	local y_shift = util.bound(t.nlines-1, 0, self.name_y_line_shift_max)*self.font_h
 	if self.name_pos == "bottom" then
 		x = x + self.w/2
 		y = y + self.h
@@ -134,13 +137,20 @@ function _M:drawItemShortName(o, x, y)
 	elseif self.name_pos == "topright" then
 		x = x + self.w
 		y = y - self.font_h - y_shift
-	else -- top center
+	else -- top center by default
 		x = x + self.w/2
 		y = y - self.font_h - y_shift
 	end
+	local xpos, ypos
 	for i, tex in ipairs(t) do
-		local xpos = x - tex.realw/2
-		local ypos = y + (i-1)*self.font_h
+		if self.name_justify == "left" then
+			xpos = x - t.width/2
+		elseif self.name_justify == "right" then
+			xpos = x + t.width/2 - tex.realw
+		else -- default center justification
+			xpos = x - tex.realw/2
+		end
+		ypos = y + (i-1)*self.font_h
 		tex._tex:toScreenFull(xpos, ypos, tex.realw+1, tex.h, tex._tex_w, tex._tex_h)
 	end
 	self.last_t = t

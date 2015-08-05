@@ -67,10 +67,10 @@ function _M:init(actor, start_tab)
 				if self.last_tab == "equipment" then
 					local last_set = self.equip_set
 					self.equip_set = last_set == "off" and "main" or "off"
-					if not self:switchEquipRefs(self.equip_set) then
+					if not self:updateEquipDollRefs() then
 						self.equip_set = last_set
 					else
-						game.log("#RED#Displaying %s set for %s (equipment NOT switched)", self.equip_set, self.actor.name:capitalize())
+						game.logPlayer(self.actor, "#RED#Displaying %s set for %s (equipment NOT switched)", self.equip_set, self.actor.name:capitalize())
 					end
 				end
 				self.c_equipment.title = "[E]quipment: "..self.equip_set.." set"
@@ -145,7 +145,9 @@ Mouse: Hover over stat for info
 
 	self.equip_frame = { -- display equipment
 		dialog = self,
-		c_doll = EquipDoll.new{equipdoll = "default", actor=self.actor, title=false,
+		c_doll = EquipDoll.new{equipdoll = self.actor.equipdoll or "default", actor=self.actor, title=false,
+			subobject=self.actor:attr("can_tinker") and "getTinker" or nil,
+			subobject_restrict_slots=self.actor.tinker_restrict_slots,
 			drag_enable=false, filter=nil,
 			scale = math.min(self.ih/630, self.iw/1700), --scale doll to fit dialog
 			fct=function(item) end,
@@ -159,7 +161,6 @@ Mouse: Hover over stat for info
 		},
 		vsep = Separator.new{dir="horizontal", size=self.ih - self.c_tut.h - self.c_general.h - 20}
 	}
-
 	self.equip_frame.c_doll.dialog = self
 	self.equip_frame.c_obj_desc = TextzoneList.new{focus_check=true, scrollbar=true, pingpong = 20, width=self.iw - self.equip_frame.c_doll.w - self.equip_frame.vsep.w - 50, height = self.ih - self.c_tut.h, no_color_bleed=true,
 		dest_area = { h = self.ih - self.c_tut.h - self.vs.h},
@@ -304,44 +305,41 @@ end
 -- Switch between equipment sets (by reference only) for the equip doll
 -- This makes sure the equipment shown in the equipdoll matches the tab setting
 -- Done this way to make sure the actor's equipment is never actually touched
-function _M:switchEquipRefs(set)
+function _M:updateEquipDollRefs()
 	local actor, c_doll = self.actor, self.equip_frame.c_doll
+	local showset = "main"
 	
+	if (actor.off_weapon_slots and self.equip_set ~= "off") or (actor.off_weapon_slots == false and self.equip_set ~= "main") then
+		showset = "off"
+	else showset = "main"
+	end
+--game.log("Showing actual %s set", showset)
 	local mh1, mh2 = actor.inven[actor.INVEN_MAINHAND], actor.inven[actor.INVEN_QS_MAINHAND]
 	local oh1, oh2 = actor.inven[actor.INVEN_OFFHAND], actor.inven[actor.INVEN_QS_OFFHAND]
 	local pf1, pf2 = actor.inven[actor.INVEN_PSIONIC_FOCUS], actor.inven[actor.INVEN_QS_PSIONIC_FOCUS]
 	local qv1, qv2 = actor.inven[actor.INVEN_QUIVER], actor.inven[actor.INVEN_QS_QUIVER]
 	if not mh1 or not mh2 or not oh1 or not oh2 then return end
 	
-	--find ui's corresponding to displayed inventory slots
+	--find ui's corresponding to displayed inventory slots and update refs to the displayed slots
 	local mhui, ohui, qvui, pfui
 	for i, ui in ipairs(c_doll.uis) do
 		if ui.ui and ui.ui.inven then
 			if not ui.ui.inven_name then -- assign inventory names the first time
 				ui.ui.inven_name = ui.ui.inven.name
 			end
-			if ui.ui.inven_name == "MAINHAND" then mhui = i
-			elseif ui.ui.inven_name == "OFFHAND" then ohui = i
-			elseif ui.ui.inven_name == "PSIONIC_FOCUS" then pfui = i
-			elseif ui.ui.inven_name == "QUIVER" then qvui = i
+			if ui.ui.inven_name == "MAINHAND" then
+				ui.ui.inven = showset == "main" and mh1 or mh2
+			elseif ui.ui.inven_name == "OFFHAND" then
+				ui.ui.inven = showset == "main" and oh1 or oh2
+			elseif ui.ui.inven_name == "PSIONIC_FOCUS" then
+				ui.ui.inven = showset == "main" and pf1 or pf2
+			elseif ui.ui.inven_name == "QUIVER" then
+				ui.ui.inven = showset == "main" and qv1 or qv2
 			end
+--game.log("#GREY#--UI %d: %s (showing: %s)", i, ui.ui.inven_name, ui.ui.inven.id)
 		end
 	end
-	if not mhui and ohui then return end
---game.log("Found UI's: %s[%s], %s[%s], %s[%s], %s[%s],", mhui, actor.INVEN_MAINHAND, ohui, actor.INVEN_OFFHAND, pfui, actor.INVEN_PSIONIC_FOCUS, qvui, actor.INVEN_QUIVER)
-
-	--reassign equip doll inventory references to match the set selected
-	if (actor.off_weapon_slots and self.equip_set ~= "off") or (not actor.off_weapon_slots and self.equip_set ~= "main") then --requested set DOES NOT MATCH the used set, assign inventories to use the off set
-		self.equip_frame.c_doll.uis[mhui].ui.inven = mh2
-		self.equip_frame.c_doll.uis[ohui].ui.inven = oh2
-		if pfui and pf1 and pf2 then self.equip_frame.c_doll.uis[pfui].ui.inven = pf2 end
-		if qvui and qv1 and qv2 then self.equip_frame.c_doll.uis[qvui].ui.inven = qv2 end
-	else --requested set MATCHES the used set, assign inventories to use the main set
-		self.equip_frame.c_doll.uis[mhui].ui.inven = mh1
-		self.equip_frame.c_doll.uis[ohui].ui.inven = oh1
-		if pfui and pf1 and pf2 then self.equip_frame.c_doll.uis[pfui].ui.inven = pf1 end
-		if qvui and qv1 and qv2 then self.equip_frame.c_doll.uis[qvui].ui.inven = qv1 end
-	end
+--	return showset == self.equip_set
 	return true
 end
 
@@ -390,6 +388,7 @@ function _M:hideEquipmentFrame()
 	self:toggleDisplay(EF.vsep, false)
 end
 
+--Failing to update Csheet on equipment drag?
 -- show the inventory screen
 function _M:showInventory()
 	if self.actor.no_inventory_access or not self.actor.player then return end
@@ -845,6 +844,8 @@ function _M:drawDialog(kind, actor_to_compare)
 					text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatSpeed(...) end, color.."%.1f%%", "%+.1f%%", 100, true, false, mean)
 					self:mouseTooltip(self.TOOLTIP_COMBAT_SPEED,  s:drawColorStringBlended(self.font, ("Speed       : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 				end
+				
+ -- compare fields
 				if range then
 					self:mouseTooltip(self.TOOLTIP_COMBAT_RANGE, s:drawColorStringBlended(self.font, ("Range (Main Hand): #00ff00#%3d"):format(range), w, h, 255, 255, 255, true)) h = h + self.font_h
 				end
@@ -875,6 +876,7 @@ function _M:drawDialog(kind, actor_to_compare)
 		h = h + self.font_h
 		-- All weapons in off hands
 		-- Offhand attacks are with a damage penalty, that can be reduced by talents
+		
 		if player:getInven(player.INVEN_OFFHAND) then
 			for i, o in ipairs(player:getInven(player.INVEN_OFFHAND)) do
 				local offmult = player:getOffHandMult(o.combat)
@@ -897,6 +899,7 @@ function _M:drawDialog(kind, actor_to_compare)
 					text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatSpeed(...) end, color.."%.1f%%", "%+.1f%%", 100, false, false, mean)
 					self:mouseTooltip(self.TOOLTIP_COMBAT_SPEED,  s:drawColorStringBlended(self.font, ("Speed       : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 				end
+ -- compare fields
 				if mean and mean.range then self:mouseTooltip(self.TOOLTIP_COMBAT_RANGE, s:drawColorStringBlended(self.font, ("Range (Off Hand): #00ff00#%3d"):format(mean.range), w, h, 255, 255, 255, true)) h = h + self.font_h end
 			end
 		end
@@ -1350,6 +1353,8 @@ function _M:drawDialog(kind, actor_to_compare)
 		end
 	end
 
+	--put a hook here to allow adding more info to the display?  (Steampower, etc.)
+	
 	self.c_desc:update()
 	self.changed = false
 end
