@@ -580,23 +580,25 @@ function _M:act()
 	self.changed = true
 	self.turn_procs = {}
 
-	-- Break sustains if resources are too low
+	-- Break sustains if certain resources (with depleted_unsustain = true) are too low
 	-- Note: force_talent_ignore_ressources has not effect here
 	-- consider replacing the minimum resource value of 1 with a number based on the talent and resource
 	for tid, p in pairs(self.sustain_talents) do
 		local deact, t = false, self.talents_def[tid]
 		-- check each possible resource the talent uses
 		for res, res_def in ipairs(_M.resources_def) do
-			if t[res_def.sustain_prop] then
-				if res == self.RS_STAMINA and self:hasEffect(self.EFF_ADRENALINE_SURGE) then
-				else
-					if res_def.invert_values then
-						if self[res_def.maxname] and (self[res_def.maxname] - self[res_def.short_name]) < 1 then
-							deact = true break
-						end
+			if res_def.depleted_unsustain and (t.remove_on_zero == nil or util.getval(t.remove_on_zero, self, t)) then
+				if t[res_def.sustain_prop] then
+					if (res == self.RS_STAMINA or res == self.RS_MANA) and self:hasEffect(self.EFF_ADRENALINE_SURGE) then
 					else
-						if self[res_def.minname] and (self[res_def.short_name] - self[res_def.minname]) < 1 then
-							deact = true break
+						if res_def.invert_values then
+							if self[res_def.maxname] and (self[res_def.maxname] - self[res_def.short_name]) < 1 then
+								deact = true break
+							end
+						else
+							if self[res_def.minname] and (self[res_def.short_name] - self[res_def.minname]) < 1 then
+								deact = true break
+							end
 						end
 					end
 				end
@@ -4229,7 +4231,6 @@ end
 -- @param talent a talent definition table
 function _M:learnPool(t)
 	local tt = self:getTalentTypeFrom(t.type[1])
-	if tt.mana_regen and self.mana_regen == 0 then self.mana_regen = 0.5 end
 
 	if t.type[1]:find("^psionic/feedback") or t.type[1]:find("^psionic/discharge") or t.feedback or t.sustain_feedback then
 		self:checkPool(t.id, self.T_FEEDBACK_POOL)

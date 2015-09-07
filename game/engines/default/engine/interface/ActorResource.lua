@@ -44,7 +44,7 @@ setmetatable(fast_cache, {__mode="v"})
 function _M:defineResource(name, short_name, talent, regen_prop, desc, min, max, params)
 	assert(name, "no resource name")
 	assert(short_name, "no resource short_name")
-	assert(self.resources_def[short_name] == nil, "Attempt to redefine an existing resource")
+	assert(self.resources_def[short_name] == nil, "Attempt to redefine existing resource: "..short_name)
 	local minname = "min_"..short_name
 	local maxname = "max_"..short_name
 	table.insert(self.resources_def, {
@@ -118,6 +118,7 @@ function _M:defineResource(name, short_name, talent, regen_prop, desc, min, max,
 	if params then
 		table.merge(def, params)
 	end
+	print("[ActorResource] Defined Resource:", short_name)
 end
 
 -- Initialize actor resources (at construction)
