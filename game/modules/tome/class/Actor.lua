@@ -580,25 +580,22 @@ function _M:act()
 	self.changed = true
 	self.turn_procs = {}
 
--- force_talent_ignore_ressources ?
+	-- Break sustains if resources are too low
+	-- Note: force_talent_ignore_ressources has not effect here
 	-- consider replacing the minimum resource value of 1 with a number based on the talent and resource
 	for tid, p in pairs(self.sustain_talents) do
---game.log("%s: Checking sustain %s", self.name:upper(), tid)
 		local deact, t = false, self.talents_def[tid]
 		-- check each possible resource the talent uses
 		for res, res_def in ipairs(_M.resources_def) do
 			if t[res_def.sustain_prop] then
---game.log("#AQUAMARINE# checking sustain %s %s level = %s", t.name, res_def.short_name, self[res_def.short_name])
 				if res == self.RS_STAMINA and self:hasEffect(self.EFF_ADRENALINE_SURGE) then
 				else
 					if res_def.invert_values then
 						if self[res_def.maxname] and (self[res_def.maxname] - self[res_def.short_name]) < 1 then
-	--game.log("#AQUAMARINE#--%s: deactivates sustain %s due to %s", self.name, t.name, res_def.short_name)
 							deact = true break
 						end
 					else
 						if self[res_def.minname] and (self[res_def.short_name] - self[res_def.minname]) < 1 then
-	--game.log("#AQUAMARINE#--%s: deactivates sustain %s due to %s", self.name, t.name, res_def.short_name)
 							deact = true break
 						end
 					end
@@ -4228,10 +4225,11 @@ function _M:checkPool(tid, pid)
 	return true
 end
 
---- Actor learns a resource pool
+--- Actor learns a resource pool or associated talent
 -- @param talent a talent definition table
 function _M:learnPool(t)
 	local tt = self:getTalentTypeFrom(t.type[1])
+	if tt.mana_regen and self.mana_regen == 0 then self.mana_regen = 0.5 end
 
 	if t.type[1]:find("^psionic/feedback") or t.type[1]:find("^psionic/discharge") or t.feedback or t.sustain_feedback then
 		self:checkPool(t.id, self.T_FEEDBACK_POOL)
@@ -4646,14 +4644,11 @@ function _M:preUseTalent(ab, silent, fake)
 		if not self:isTalentActive(ab.id) then
 			local cost
 			-- check sustained costs
---game.log("#GREY#--preUse %s checking sustain costs to activate", ab.id)
 			for res, res_def in ipairs(_M.resources_def) do
 				cost = ab[res_def.sustain_prop]
---game.log("#PINK# -- checking (preuse) for %s(%s), min:%s, max:%s (invert_values:%s)", res, res_def.sustain_prop, self[res_def.minname], self[res_def.maxname], res_def.invert_values)
 				if cost then
 					cost = util.getval(cost, self, ab) or 0
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
---game.log("#GREY# ---%s: %s = %s(%s) {%s to %s}", ab.name, res_def.sustain_prop, ab[res_def.sustain_prop], cost, rmin, rmax)
 					if cost ~= 0 and self[res_def.minname] and self[res_def.maxname] and self[res_def.minname] + cost > self[res_def.maxname] then
 						if not silent then game.logPlayer(self, "You %s %s to activate %s.", res_def.invert_values and "have too much committed" or "do not have enough uncommitted", res_def.name, ab.name) end
 						return false
@@ -4676,16 +4671,13 @@ function _M:preUseTalent(ab, silent, fake)
 	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
 		local rname, cost, rmin, rmax
 		-- check for sustained resources
---game.log("#GREY#--preUse %s checking costs to activate/use", ab.id)
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name
 			cost = ab[rname]
---game.log("#PINK# -- checking (preuse) for %s(%s), min:%s, max:%s (invert_values:%s)", res, rname, self[res_def.minname], self[res_def.maxname], res_def.invert_values)
 			if cost then
 				cost = (util.getval(cost, self, ab) or 0) * (util.getval(res_def.cost_factor, self, ab) or 1)
 				if cost ~= 0 then
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
---game.log("#DARK_GREY# ---%s: %s = %s(%s) {%s to %s}", ab.name, rname, ab[rname], cost, rmin, rmax)
 					if res_def.invert_values then
 						if rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
 							if not silent then game.logPlayer(self, "You have too much %s to use %s.", res_def.name, ab.name) end
@@ -5077,20 +5069,17 @@ function _M:postUseTalent(ab, ret, silent)
 			end
 			-- check resources
 			for res, res_def in ipairs(_M.resources_def) do
---game.log("#PINK# -- checking (info) for %s(%s), min:%s, max:%s (invert_values:%s)", res, res_def.short_name, self[res_def.minname], self[res_def.maxname], res_def.invert_values)
 				-- apply sustain costs
 				local cost = ab[res_def.sustain_prop]
 				if cost then
-					cost = (util.getval(cost, self, ab) or 0)--*(res_def.invert_values and 1 or -1)
+					cost = (util.getval(cost, self, ab) or 0)
 					if cost ~= 0 then
 						trigger = true
---game.log("#LIGHT_BLUE# --- (post sustain) %s = %s(%s) (%s)", res_def.sustain_prop, ab[res_def.sustain_prop], cost, res_def.invert_values and "inverted" or "normal")
 						if res_def.invert_values then
 							self[res_def.incMinFunction](self, cost)
 						else
 							self[res_def.incMaxFunction](self, -cost)
 						end
---game.log("Final sustain %s value = %s", res_def.short_name, self[res_def.getFunction](self))
 					end
 				end
 				-- apply drain costs
@@ -5099,7 +5088,6 @@ function _M:postUseTalent(ab, ret, silent)
 					cost = util.getval(cost, self, ab) or 0
 					if cost ~= 0 then
 						trigger = true
---game.log("#LIGHT_BLUE# --- (post sustain) %s = %s(%s) (%s)", res_def.drain_prop, ab[res_def.drain_prop], cost, res_def.invert_values and "inverted" or "normal")
 						if res_def.invert_values then
 							self:attr(res_def.regen_prop, cost)
 						else
@@ -5125,13 +5113,11 @@ function _M:postUseTalent(ab, ret, silent)
 				self:incMaxFeedback(util.getval(ab.sustain_feedback, self, ab))
 			end
 			for res, res_def in ipairs(_M.resources_def) do
---game.log("#PINK# -- checking (info) for %s(%s), min:%s, max:%s (invert_values:%s)", res, res_def.short_name, self[res_def.minname], self[res_def.maxname], res_def.invert_values)
 				-- release sustain costs
 				local cost = ab[res_def.sustain_prop]
 				if cost then
-					cost = (util.getval(cost, self, ab) or 0)--*(res_def.invert_values and 1 or -1)
+					cost = (util.getval(cost, self, ab) or 0)
 					if cost ~= 0 then
---game.log("#LIGHT_RED# --- (post unsustain) %s = %s(%s) (%s)", res_def.sustain_prop, ab[res_def.sustain_prop], cost, res_def.invert_values and "inverted" or "normal")
 						if res_def.invert_values then
 							self[res_def.incMinFunction](self, -cost)
 						else
@@ -5144,7 +5130,6 @@ function _M:postUseTalent(ab, ret, silent)
 				if cost then
 					cost = util.getval(cost, self, ab) or 0
 					if cost ~= 0 then
---game.log("#LIGHT_RED# --- (post unsustain) %s = %s(%s) (%s)", res_def.drain_prop, ab[res_def.drain_prop], cost, res_def.invert_values and "inverted" or "normal")
 						if res_def.invert_values then
 							self:attr(res_def.regen_prop, -cost)
 						else
@@ -5181,19 +5166,15 @@ function _M:postUseTalent(ab, ret, silent)
 		end
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name
---game.log("#PINK# -- checking (post use resource) for %s(%s), min:%s, max:%s (invert_values:%s)", res, res_def.short_name, self[res_def.minname], self[res_def.maxname], res_def.invert_values)
---game.log("isActive = %s, %s value = %s", self:isTalentActive(ab.id), rname, self[res_def.getFunction](self))
 			cost = ab[rname] and util.getval(ab[rname], self, ab) or 0
 			if cost ~= 0 then
-					trigger = true
-					cost = cost * (util.getval(res_def.cost_factor, self, ab) or 1)
---game.log("#LIGHT_BLUE# --- %s: (post use resource) %s = %s(%s) (%s)", ab.name, rname, ab[rname], cost, res_def.invert_values and "inverted" or "normal")
-					if res_def.invert_values then
-						self[res_def.incFunction](self, cost)
-					else
-						self[res_def.incFunction](self, -cost)
-					end
---game.log("Final %s value = %s", rname, self[res_def.getFunction](self))
+				trigger = true
+				cost = cost * (util.getval(res_def.cost_factor, self, ab) or 1)
+				if res_def.invert_values then
+					self[res_def.incFunction](self, cost)
+				else
+					self[res_def.incFunction](self, -cost)
+				end
 			end
 		end
 	end
@@ -5411,26 +5392,23 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		if t.fortress_energy then d:add({"color",0x6f,0xff,0x83}, "Fortress Energy cost: ", {"color",0x00,0xff,0xa0}, ""..math.round(t.fortress_energy, 0.1), true) end
 		if t.sustain_feedback then d:add({"color",0x6f,0xff,0x83}, "Sustain feedback cost: ", {"color",0xFF, 0xFF, 0x00}, ""..(util.getval(t.sustain_feedback, self, t)), true) end
 		
-		-- resource costs
+		-- resource costs?
 		for res, res_def in ipairs(_M.resources_def) do
 			if not res_def.hidden_resource then
 				-- list resource cost
 				local cost = t[res_def.short_name] and util.getval(t[res_def.short_name], self, t) or 0
 				if cost ~= 0 then
 					cost = cost * (util.getval(res_def.cost_factor, self, t) or 1)
-	--game.log("#LIGHT_RED# --- (info) found cost %s = %s(%s)", res_def.short_name, t[res_def.short_name], cost)
 					d:add({"color",0x6f,0xff,0x83}, ("%s cost: "):format(res_def.name:capitalize()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
 				end
 				-- list sustain cost
 				cost = t[res_def.sustain_prop] and util.getval(t[res_def.sustain_prop], self, t) or 0
 				if cost ~= 0 then
-	--game.log("#LIGHT_RED# --- (info) found %s = %s(%s)", res_def.sustain_prop, t[res_def.sustain_prop], cost)
 					d:add({"color",0x6f,0xff,0x83}, ("Sustain %s cost: "):format(res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
 				end
 				-- list drain cost
 				cost = t[res_def.drain_prop] and util.getval(t[res_def.drain_prop], self, t) or 0
 				if cost ~= 0 then
-	--game.log("#LIGHT_RED# --- (info) found %s = %s(%s)", res_def.drain_prop, t[res_def.drain_prop], cost)
 					if res_def.invert_values then
 						d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(cost > 0 and "Generates" or "Removes", res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
 					else

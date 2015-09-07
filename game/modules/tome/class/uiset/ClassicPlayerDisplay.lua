@@ -305,80 +305,8 @@ function _M:display()
 	if max_shield > 0 then
 		self:mouseTooltip(self.TOOLTIP_DAMAGE_SHIELD, self:makeTextureBar("#WHITE#Shield:", nil, shield, max_shield, nil, x, h, 255, 255, 255, {r=colors.GREY.r / 3, g=colors.GREY.g / 3, b=colors.GREY.b / 3}, {r=colors.GREY.r / 6, g=colors.GREY.g / 6, b=colors.GREY.b / 6})) h = h + self.font_h
 	end
---[[
-	if player:knowTalent(player.T_STAMINA_POOL) then
-		self:mouseTooltip(self.TOOLTIP_STAMINA, self:makeTextureBar("#ffcc80#Stamina:", nil, player:getStamina(), player.max_stamina, player.stamina_regen, x, h, 255, 255, 255, {r=0xff / 3, g=0xcc / 3, b=0x80 / 3}, {r=0xff / 6, g=0xcc / 6, b=0x80 / 6})) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_MANA_POOL) then
-		self:mouseTooltip(self.TOOLTIP_MANA, self:makeTextureBar("#7fffd4#Mana:", nil, player:getMana(), player.max_mana, player.mana_regen, x, h, 255, 255, 255,
-			{r=0x7f / 2, g=0xff / 2, b=0xd4 / 2},
-			{r=0x7f / 5, g=0xff / 5, b=0xd4 / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_SOUL_POOL) then
-		self:mouseTooltip(self.TOOLTIP_NECROTIC_AURA, self:makeTextureBar("#7fffd4#Necrotic", "%d", player:getSoul(), player.max_soul, nil, x, h, 255, 255, 255,
-			{r=colors.GREY.r / 2, g=colors.GREY.g / 2, b=colors.GREY.b / 2},
-			{r=colors.GREY.r / 5, g=colors.GREY.g / 5, b=colors.GREY.b / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_EQUILIBRIUM_POOL) then
-		local _, chance = player:equilibriumChance()
-		self:mouseTooltip(self.TOOLTIP_EQUILIBRIUM, self:makeTextureBar("#00ff74#Equi:", ("%d (%d%s)"):format(player:getEquilibrium(),100 - chance, "%%"), 100 - chance, 100, player.equilibrium_regen, x, h, 255, 255, 255,
-			{r=0x00 / 2, g=0xff / 2, b=0x74 / 2},
-			{r=0x00 / 5, g=0xff / 5, b=0x74 / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_POSITIVE_POOL) then
-		self:mouseTooltip(self.TOOLTIP_POSITIVE, self:makeTextureBar("#7fffd4#Positive:", nil, player:getPositive(), player.max_positive, player.positive_regen, x, h, 255, 255, 255,
-			{r=colors.GOLD.r / 2, g=colors.GOLD.g / 2, b=colors.GOLD.b / 2},
-			{r=colors.GOLD.r / 5, g=colors.GOLD.g / 5, b=colors.GOLD.b / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_NEGATIVE_POOL) then
-		self:mouseTooltip(self.TOOLTIP_NEGATIVE, self:makeTextureBar("#7fffd4#Negative:", nil, player:getNegative(), player.max_negative, player.negative_regen, x, h, 255, 255, 255,
-			{r=colors.GREY.r / 2, g=colors.GREY.g / 2, b=colors.GREY.b / 2},
-			{r=colors.GREY.r / 5, g=colors.GREY.g / 5, b=colors.GREY.b / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_VIM_POOL) then
-		self:mouseTooltip(self.TOOLTIP_VIM, self:makeTextureBar("#904010#Vim:", nil, player:getVim(), player.max_vim, player.vim_regen, x, h, 255, 255, 255,
-			{r=0x90 / 3, g=0x40 / 3, b=0x10 / 3},
-			{r=0x90 / 6, g=0x40 / 6, b=0x10 / 6}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_HATE_POOL) then
-		self:mouseTooltip(self.TOOLTIP_HATE, self:makeTextureBar("#F53CBE#Hate:", "%d/%d", player:getHate(), player.max_hate, player.hate_regen, x, h, 255, 255, 255,
-			{r=0xF5 / 2, g=0x3C / 2, b=0xBE / 2},
-			{r=0xF5 / 5, g=0x3C / 5, b=0xBE / 5}
-		)) h = h + self.font_h
-	end
-	if (player.unnatural_body_heal  or 0) > 0 and player:knowTalent(player.T_UNNATURAL_BODY) then
-		local t = player:getTalentFromId(player.T_UNNATURAL_BODY)
-		local regen = t.getRegenRate(player, t)
-		self:mouseTooltip(self.TOOLTIP_UNNATURAL_BODY, self:makeTextureBar("#c00000#Un.body:", ("%0.1f (%0.1f/turn)"):format(player.unnatural_body_heal, math.min(regen, player.unnatural_body_heal)), regen, player.unnatural_body_heal, nil, x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_PARADOX_POOL) then
-		local chance = player:paradoxFailChance()
-		self:mouseTooltip(self.TOOLTIP_PARADOX, self:makeTextureBar("#LIGHT_STEEL_BLUE#Paradox:", ("%d/%d (%d%s)"):format(player:getModifiedParadox(), player:getParadox(), chance, "%%"), chance, 100, chance, x, h, 255, 255, 255,
-			{r=176 / 2, g=196 / 2, b=222 / 2},
-			{r=176 / 5, g=196 / 5, b=222 / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_PSI_POOL) then
-		self:mouseTooltip(self.TOOLTIP_PSI, self:makeTextureBar("#7fffd4#Psi:", nil, player:getPsi(), player.max_psi, player.psi_regen, x, h, 255, 255, 255,
-			{r=colors.BLUE.r / 2, g=colors.BLUE.g / 2, b=colors.BLUE.b / 2},
-			{r=colors.BLUE.r / 5, g=colors.BLUE.g / 5, b=colors.BLUE.b / 5}
-		)) h = h + self.font_h
-	end
-	
-	if player:knowTalent(player.T_FEEDBACK_POOL) then
-		self:mouseTooltip(self.TOOLTIP_FEEDBACK, self:makeTextureBar("#7fffd4#Feedback:", nil, player:getFeedback(), player:getMaxFeedback(), player:getFeedbackDecay(), x, h, 255, 255, 255,
-			{r=colors.YELLOW.r / 2, g=colors.YELLOW.g / 2, b=colors.YELLOW.b / 2},
-			{r=colors.YELLOW.r / 5, g=colors.YELLOW.g / 5, b=colors.YELLOW.b / 5}
-		)) h = h + self.font_h
-	end
---]]
 
+	-- Resources
 	for res, res_def in ipairs(ActorResource.resources_def) do
 		if not res_def.hidden_resource and player:knowTalent(res_def.talent) then -- only show resources if the player knows the appropriate pool
 			local tooltip = self["TOOLTIP_"..res_def.short_name:upper()]
@@ -388,7 +316,7 @@ function _M:display()
 ]]):format(res_def.name, res_def.description or "no description")
 			end
 			-- get resource color
-			local res_color = res_def.color or "#WHITE#"--tonumber("x", 16) --> to decimal
+			local res_color = res_def.color or "#WHITE#"
 			local r, g, b
 			res_color = res_color:gsub("#", ""):upper()
 			if colors[res_color] then -- lookup
@@ -397,7 +325,6 @@ function _M:display()
 				r, g, b = colors.hex1unpack(res_color)
 				r, g, b = r*255, g*255, b*255
 			end
---game.log("Displaying resource %s %s:{r=%s, g=%s, b=%s}", res_def.short_name, res_color, r, g, b)
 				local status_text = res_def.status_text and res_def.status_text(player)
 				self:mouseTooltip(tooltip, self:makeTextureBar((res_def.color or "#WHITE#")..("%-8.8s:"):format(res_def.name), status_text, player[res_def.getFunction](player), player[res_def.getMaxFunction](player) or 100, not status_text and player[res_def.regen_prop] or 0, x, h, 
 				255, 255, 255,
@@ -420,7 +347,6 @@ function _M:display()
 		local regen = t.getRegenRate(player, t)
 		self:mouseTooltip(self.TOOLTIP_UNNATURAL_BODY, self:makeTextureBar("#c00000#Un.body :", ("%0.1f (%0.1f/turn)"):format(player.unnatural_body_heal, math.min(regen, player.unnatural_body_heal)), regen, player.unnatural_body_heal, nil, x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
 	end
-	
 	if player.is_fortress then
 		local q = game:getPlayer(true):hasQuest("shertul-fortress")
 		if q then

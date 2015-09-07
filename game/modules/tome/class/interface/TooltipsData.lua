@@ -413,6 +413,6 @@ Your power to see invisible creatures. The higher it is, the more likely you are
 If you do not have any see invisible score you will never be able to see invisible creatures.
 ]]
 TOOLTIP_ANTIMAGIC_USER = [[#GOLD#Antimagic User#LAST#
-Dedicated to opposing and destroying magical and arcane influence on the world.
+Dedicated to opposing and destroying magical and arcane influence in the world.
 The use of spells or arcane-powered equipment is impossible.
 ]]
