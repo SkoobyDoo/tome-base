@@ -28,61 +28,76 @@ _M.resources_def = {}
 local fast_cache = {}
 setmetatable(fast_cache, {__mode="v"})
 
-
---- Defines resource
+--- Defines an Actor resource
 -- Static!
--- All actors will now have :getResourcename() and :incResourcename() methods as well as a .max_resourcename and .resourcename
--- properties. It is advised to NOT access .resourcename directly and use the get/inc methods. They handle talent
--- dependencies
-function _M:defineResource(name, short_name, talent, regen_prop, desc, min, max)
+-- This defines for all actors the methods :getResource(), :incResource(), :getMinResource(), :incMinResource(), :getMaxResource(), and :incMaxResource()
+-- (where "Resource" = short_name:lower():capitalize())
+-- Actors can have self[short_name], self[min_short_name], self[max_short_name], and self[regen_prop (if defined)] initialized on creation by calling ActorResource:init()
+-- It is advised to NOT access .resourcename directly and use the get/inc methods to properly handle talent dependencies
+-- @param name -- name of the Resource
+-- @param short_name -- internal name for the resource, self[short_name] holds the (numeric) resource value
+-- @param talent -- talent associated with the resource (generally a resource pool)
+-- @param regen_prop -- self[short_name] is incremented by self[regen_prop] when self:regenResources is called
+-- @param desc -- textual description of the resource
+-- @param min, max -- minimum and maximum values for the resource <0, 100>, Assign false for no limit
+-- @param params -- table of additional parameters to merge (last) into the definition table
+function _M:defineResource(name, short_name, talent, regen_prop, desc, min, max, params)
 	assert(name, "no resource name")
 	assert(short_name, "no resource short_name")
+	assert(self.resources_def[short_name] == nil, "Attempt to redefine an existing resource")
+	local minname = "min_"..short_name
+	local maxname = "max_"..short_name
 	table.insert(self.resources_def, {
 		name = name,
 		short_name = short_name,
 		talent = talent,
 		regen_prop = regen_prop,
+		invert_values = false, -- resource value decreases as it is consumed by default
 		description = desc,
-		minname = "min_"..short_name,
-		maxname = "max_"..short_name,
+		minname = minname,
+		maxname = maxname,
 		min = (min == nil) and 0 or min,
 		max = (max == nil) and 100 or max,
 	})
 	self.resources_def[#self.resources_def].id = #self.resources_def
 	self.resources_def[short_name] = self.resources_def[#self.resources_def]
 	self["RS_"..short_name:upper()] = #self.resources_def
-	local minname = "min_"..short_name
-	local maxname = "max_"..short_name
-	self["inc"..short_name:lower():capitalize()] = function(self, v)
+	local def=self.resources_def[short_name]
+	def.incFunction = "inc"..short_name:lower():capitalize()
+	def.incMinFunction = "incMin"..short_name:lower():capitalize()
+	def.incMaxFunction = "incMax"..short_name:lower():capitalize()
+	def.getFunction = "get"..short_name:lower():capitalize()
+	def.getMinFunction = "getMin"..short_name:lower():capitalize()
+	def.getMaxFunction = "getMax"..short_name:lower():capitalize()
+	def.sustain_prop = "sustain_"..short_name
+	def.drain_prop = "drain_"..def.short_name
+	self[def.incFunction] = function(self, v)
 		self[short_name] = util.bound(self[short_name] + v, self[minname], self[maxname])
 	end
-	self["incMin"..short_name:lower():capitalize()] = function(self, v)
+	self[def.incMinFunction] = function(self, v)
 		self[minname] = self[minname] + v
-		self["inc"..short_name:lower():capitalize()](self, 0)
+		self[def.incFunction](self, 0)
 	end
-	self["incMax"..short_name:lower():capitalize()] = function(self, v)
+	self[def.incMaxFunction] = function(self, v)
 		self[maxname] = self[maxname] + v
-		self["inc"..short_name:lower():capitalize()](self, 0)
+		self[def.incFunction](self, 0)
 	end
-	if talent then
-		-- if there is an associated talent, check for it
-		self["get"..short_name:lower():capitalize()] = function(self)
+	if talent then -- if there is an associated talent, reference functions return default values
+		self[def.getFunction] = function(self)
 			if self:knowTalent(talent) then
 				return self[short_name]
 			else
 				return 0
 			end
 		end
-		-- if there is an associated talent, check for it
-		self["getMin"..short_name:lower():capitalize()] = function(self)
+		self[def.getMinFunction] = function(self)
 			if self:knowTalent(talent) then
 				return self[minname]
 			else
 				return 0
 			end
 		end
-		-- if there is an associated talent, check for it
-		self["getMax"..short_name:lower():capitalize()] = function(self)
+		self[def.getMaxFunction] = function(self)
 			if self:knowTalent(talent) then
 				return self[maxname]
 			else
@@ -90,23 +105,27 @@ function _M:defineResource(name, short_name, talent, regen_prop, desc, min, max)
 			end
 		end
 	else
-		self["get"..short_name:lower():capitalize()] = function(self)
+		self[def.getFunction] = function(self)
 			return self[short_name]
 		end
-		self["getMin"..short_name:lower():capitalize()] = function(self)
+		self[def.getMinFunction] = function(self)
 			return self[minname]
 		end
-		self["getMax"..short_name:lower():capitalize()] = function(self)
+		self[def.getMaxFunction] = function(self)
 			return self[maxname]
 		end
 	end
+	if params then
+		table.merge(def, params)
+	end
 end
 
+-- Initialize actor resources (at construction)
 function _M:init(t)
 	for i, r in ipairs(_M.resources_def) do
-		self["min_"..r.short_name] = t["min_"..r.short_name] or r.min
-		self["max_"..r.short_name] = t["max_"..r.short_name] or r.max
-		self[r.short_name] = t[r.short_name] or self["max_"..r.short_name]
+		self[r.minname] = t[r.minname] or r.min
+		self[r.maxname] = t[r.maxname] or r.max
+		self[r.short_name] = t[r.short_name] or self[r.maxname]
 		if r.regen_prop then
 			self[r.regen_prop] = t[r.regen_prop] or 0
 		end
@@ -130,7 +149,7 @@ function _M:recomputeRegenResources()
 	self.regenResourcesFast = fast_cache[fstr]
 end
 
---- Regen resources, shout be called in your actor's act() method
+--- Regen resources, should be called in your actor's act() method
 function _M:regenResources()
 	if self.regenResourcesFast then return self:regenResourcesFast() end
 

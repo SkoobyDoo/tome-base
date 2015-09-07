@@ -174,6 +174,118 @@ ActorTalents:loadDefinition("/data/talents.lua")
 ActorTemporaryEffects:loadDefinition("/data/timed_effects.lua")
 
 -- Actor resources
+-- Additional (ToME specific) fields:
+-- cost_factor increases/decreases resource cost (used mostly to account for the effect of armor-based fatigue)
+-- invert_values = true means the resource starts at 0 and increases as it is consumed (equilibrium/paradox)
+-- status_text = function(actor) returns a textual description of the resource status (defaults to "val/max")
+-- color = text color string ("#COLOR#") to use to display the resource (text or uiset graphics)
+-- hidden_resource = true prevents display of the resource in various interfaces
+-- CharacterSheet = table of parameters to be used with the CharacterSheet (mod.dialogsCharacterSheet.lua):
+--		status_text = function(act1, act2, compare_fields) generate text of resource status
+-- Minimalist = table of parameters to be used with the Minimalist uiset (see uiset.Minimalist.lua)
+ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breathe are not affected.", nil, nil, {color = "#LIGHT_STEEL_BLUE#"})
+ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue.  Most physical abilities consume it.", nil, nil, {color = "#ffcc80#", cost_factor = function(self, ab, fake) return fake and self:hasEffect(self.EFF_ADRENALINE_SURGE) and 0 or (100 + self:combatFatigue()) / 100 end})
+ActorResource:defineResource("Mana", "mana", ActorTalents.T_MANA_POOL, "mana_regen", "Mana represents your reserve of magical energies. Most spells cast consume mana and each sustained spell reduces your maximum mana.", nil, nil, {color = "#7fffd4#", cost_factor = function(self, t) return (100 + 2 * self:combatFatigue()) / 100 end})
+ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILIBRIUM_POOL, "equilibrium_regen", "Equilibrium represents your standing in the grand balance of nature. The closer it is to 0 the more balanced you are. Being out of equilibrium will adversely affect your ability to use Wild Gifts.", 0, false,
+	{color = "#00ff74#", invert_values = true,
+		status_text = function(act)
+			local _, chance = act:equilibriumChance()
+			return ("%d (%d%%%% fail)"):format(act:getEquilibrium(), 100 - chance)
+		end,
+		CharacterSheet = { -- special params for the character sheet
+			status_text = function(act1, act2, compare_fields)
+				local text = compare_fields(act1, act2, function(act) local _, chance = act:equilibriumChance() return 100-chance end, "%d%%", "%+d%%", 1, true)
+				return ("%d(fail: %s)"):format(act1:getEquilibrium(),text)
+			end,
+		},
+		Minimalist = { --parameters for the Minimalist uiset
+			images = {front = "/data/gfx/ui/resources/front_nature.png", front_dark = "/data/gfx/ui/resources/front_nature_dark.png"},
+			highlight = function(player, vc, vn, vm, vr) -- dim the resource display if fail chance <= 15%
+				if player then
+					local _, chance = player:equilibriumChance()
+					if chance > 85 then return true end
+				end
+			end,
+			shader_params = {display_resource_bar = function(player, shader, x, y, color, a) -- update the resource bar shader
+					if player ~= table.get(game, "player") or not shader or not a then return end
+					local _, chance = player:equilibriumChance()
+					local s = 100 - chance
+					if s > 15 then s = 15 end
+					s = s / 15
+					if shader.shad then
+						shader:setUniform("pivot", math.sqrt(s))
+						shader:setUniform("a", a)
+						shader:setUniform("speed", 10000 - s * 7000)
+						shader.shad:use(true)
+					end
+
+					local p = chance / 100
+					shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], color[1], color[2], color[3], a)
+					if shader.shad then shader.shad:use(false) end
+				end
+			}
+		}
+	}
+)
+
+ActorResource:defineResource("Vim", "vim", ActorTalents.T_VIM_POOL, "vim_regen", "Vim represents the amount of life energy/souls you have stolen. Each corruption talent requires some.", nil, nil,	{color = "#888888#"})
+ActorResource:defineResource("Positive energy", "positive", ActorTalents.T_POSITIVE_POOL, "positive_regen", "Positive energy represents your reserve of positive power. It slowly decreases.", nil, nil, {color = "#ffd700#",
+	cost_factor = function(self, t) return (100 + self:combatFatigue()) / 100 end,
+	Minimalist = {highlight = function(player, vc, vn, vm, vr) return vc >=0.7*vm end}})
+ActorResource:defineResource("Negative energy", "negative", ActorTalents.T_NEGATIVE_POOL, "negative_regen", "Negative energy represents your reserve of negative power. It slowly decreases.", nil, nil, {color = "#7f7f7f#",
+	cost_factor = function(self, t) return (100 + self:combatFatigue()) / 100 end,
+	Minimalist = {highlight = function(player, vc, vn, vm, vr) return vc >=0.7*vm end}})
+ActorResource:defineResource("Hate", "hate", ActorTalents.T_HATE_POOL, "hate_regen", "Hate represents your soul's primal antipathy towards others.  It generally decreases whenever you have no outlet for your rage, and increases when you are damaged or destroy others.", nil, nil, {color = "#ffa0ff#",
+	cost_factor = function(self, t) return (100 + self:combatFatigue()) / 100 end,
+	Minimalist = {highlight = function(player, vc, vn, vm, vr) return vc >=100 end}})
+ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, "paradox_regen", "Paradox represents how much damage you've done to the space-time continuum. A high Paradox score makes Chronomancy less reliable and more dangerous to use but also amplifies its effects.", 0, false,
+	{color = "#b0c4d3#", invert_values = true,
+		status_text = function(act)
+			local chance = act:paradoxFailChance()
+			return ("%d/%d (%d%%%%)"):format(act:getModifiedParadox(), act:getParadox(), chance), chance
+		end,
+		CharacterSheet = { -- special params for the character sheet
+			status_text = function(act1, act2, compare_fields)
+				local text = compare_fields(act1, act2, function(act) return act:paradoxFailChance() end, "%d%%", "%+d%%", 1, true)
+				return ("%d/%d(anom: %s)"):format(act1:getModifiedParadox(), act1:getParadox(), text)
+			end,
+		},
+		Minimalist = { --parameters for the Minimalist uiset
+			highlight = function(player, vc, vn, vm, vr) -- highlight the resource display if fail chance > 10%
+				if player then
+					local chance = player:paradoxFailChance()
+					if chance > 10 then return true end
+				end
+			end,
+			shader_params = {display_resource_bar = function(player, shader, x, y, color, a) -- update the resource bar shader
+				if player ~= table.get(game, "player") or not shader or not a then return end
+				local chance = player:paradoxFailChance()
+				local vm = player:getModifiedParadox()
+				local s = chance
+				if s > 15 then s = 15 end
+				s = s / 15
+				if shader.shad then
+					shader:setUniform("pivot", math.sqrt(s))
+					shader:setUniform("a", a)
+					shader:setUniform("speed", 10000 - s * 7000)
+					shader.shad:use(true)
+				end
+				local p = util.bound(600-vm, 0, 300) / 300
+				shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], color[1], color[2], color[3], a)
+				if shader.shad then shader.shad:use(false) end
+			end
+			}
+		}
+	}
+)
+ActorResource:defineResource("Psi", "psi", ActorTalents.T_PSI_POOL, "psi_regen", "Psi represents your reserve of psychic energy.", nil, nil, {color = "#4080ff#", cost_factor = function(self, t) return (100 + 2 * self:combatFatigue()) / 100 end})
+ActorResource:defineResource("Souls", "soul", ActorTalents.T_SOUL_POOL, "soul_regen", "This is the number of soul fragments you have extracted from your foes for your own use.", 0, 10,
+	{color = "#bebebe#",
+	Minimalist = {images = {front = "/data/gfx/ui/resources/front_souls.png", front_dark = "/data/gfx/ui/resources/front_souls_dark.png"}}
+	}
+)
+
+--[[ begin base
 ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breath are not affected.")
 ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue. Each physical ability used reduces it.")
 ActorResource:defineResource("Mana", "mana", ActorTalents.T_MANA_POOL, "mana_regen", "Mana represents your reserve of magical energies. Each spell cast consumes mana and each sustained spell reduces your maximum mana.")
@@ -185,6 +297,7 @@ ActorResource:defineResource("Hate", "hate", ActorTalents.T_HATE_POOL, "hate_reg
 ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, "paradox_regen", "Paradox represents how much damage you've done to the space-time continuum. A high Paradox score makes Chronomancy less reliable and more dangerous to use but also amplifies the effects.", 0, false)
 ActorResource:defineResource("Psi", "psi", ActorTalents.T_PSI_POOL, "psi_regen", "Psi represents the power available to your mind.")
 ActorResource:defineResource("Soul", "soul", ActorTalents.T_SOUL_POOL, "soul_regen", "Soul fragments you have extracted from your foes.", 0, 10)
+--]] -- end base
 
 -- Actor stats
 ActorStats:defineStat("Strength",	"str", 10, 1, 100, "Strength defines your character's ability to apply physical force. It increases your melee damage, damage done with heavy weapons, your chance to resist physical effects, and carrying capacity.")
@@ -195,6 +308,113 @@ ActorStats:defineStat("Cunning",	"cun", 10, 1, 100, "Cunning defines your charac
 ActorStats:defineStat("Constitution",	"con", 10, 1, 100, "Constitution defines your character's ability to withstand and resist damage. It increases your maximum life and physical resistance.")
 -- Luck is hidden and starts at half max value (50) which is considered the standard
 ActorStats:defineStat("Luck",		"lck", 50, 1, 100, "Luck defines your character's fortune when dealing with unknown events. It increases your critical strike chance, your chance of random encounters, ...")
+
+-- Temporary: sample resource/talent combination for testing
+if true then
+	ActorTalents:newTalent{
+		name = "Steam2 Pool",
+		type = {"base/class", 1},
+		info = "Allows you to have a HyperSteam pool. This is used to ruin your steamtech equipment permanently.",
+		mode = "passive",
+		hide = "always",
+		pool_name = "steam2",
+		on_learn = function(self, t)
+		-- make sure resource is initialized (older actors)
+			local r = self.resources_def[t.pool_name]
+			if r then
+				self[r.minname] = self[r.minname] or r.min or 0
+				self[r.maxname] = self[r.maxname] or r.max or 100
+				self[r.short_name] = self[r.short_name] or self[r.maxname]
+				if r.regen_prop then
+					self[r.regen_prop] = self[r.regen_prop] or 0
+				end
+			end
+		end,
+		on_unlearn = function(self, t)
+		end,
+		no_unlearn_last = true,
+	}
+
+	print("+++Defined Resources+++")
+	for res, val in pairs(ActorResource.resources_def) do
+		print("---Resource", res, "defined", val)
+	end
+
+	ActorTalents:newTalent{
+		name = "Steam Test",
+		type = {"cunning/survival", 1},
+		no_npc_use = true,
+		points = 5,
+		mode = "sustained",
+		air = 10,
+		equilibrium = 10,
+		hate = 10,
+		mana = 12,
+		negative = 10,
+		paradox = 10,
+		positive = 10,
+		psi = 10,
+		soul = 1,
+		stamina = 20,
+		steam2 = 10,
+		vim = 20,
+
+		fortress_energy = -8,
+		feedback = 5,
+		
+		sustain_air = 20,
+		sustain_equilibrium = function(self, t) return 15 end,
+		sustain_hate = 20,
+		sustain_mana = 100,
+		sustain_negative = 20,
+		sustain_paradox = 50,
+		sustain_positive = 20,
+		sustain_psi = 15,
+		sustain_soul = 2,
+		sustain_stamina = 30,
+		sustain_steam2 = 25,
+		sustain_vim = 10,
+
+		sustain_feedback = 10,
+		
+		drain_air = 5,
+		drain_equilibrium = -10,
+		drain_hate = -5,
+		drain_mana = 5,
+		drain_negative = 5,
+		drain_paradox = 15,
+		drain_positive = 5,
+		drain_psi = 5,
+		drain_soul = -1,
+		drain_stamina = 10,
+		drain_steam2 = 10,
+		drain_vim = 5,
+		
+		drain_feedback = -3, -- not supported
+		
+		cooldown = 0,
+		points = 5,
+		range = 0,
+		no_energy = true,
+		radius = 0,
+		activate = function(self, t)
+			game:playSoundNear(self, "talents/spell_generic")
+			return {}
+		end,
+		deactivate = function(self, t, p)
+			return true
+		end,
+		info = function(self, t)
+			return ([[Just a talent]]):format()
+		end,
+	}
+	ActorResource:defineResource("HyperSteam", "steam2", ActorTalents.T_STEAM2_POOL, "steam2_regen", "This stuff is HOT.", nil, nil,
+	{color = "#LIGHT_BLUE#",
+	Minimalist = {images = {front = "/data/gfx/ui/resources/front_steam.png", front_dark = "/data/gfx/ui/resources/front_steam_dark.png"}}}
+	)
+
+end
+-- end sample resource/testing
 
 -- Actor leveling, player is restricted to 50 but npcs can go higher
 ActorLevel:defineMaxLevel(nil)
