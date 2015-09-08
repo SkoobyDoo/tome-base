@@ -723,6 +723,12 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatMindSpeed() end, color.."%.1f%%", "%+.1f%%", 100)
 		self:mouseTooltip(self.TOOLTIP_MIND_SPEED, s:drawColorStringBlended(self.font, ("Mind speed : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 
+		-- Hook to display additional types of attack power
+		local hd = {"CharacterSheet:Attack:power", player=player, actor_to_compare=actor_to_compare, h=h, w=w, s=s, compare_fields = compare_fields}
+		if self:triggerHook(hd) then 
+			w, h = hd.w, hd.h
+		end
+		
 		h = 0
 		w = self.w * 0.5
 
@@ -868,6 +874,12 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		text = compare_fields(player, actor_to_compare, function(actor, ...) return math.floor(actor:combatMentalResist(true)) end, "%3d", "%+.0f")
 		self:mouseTooltip(self.TOOLTIP_MENTAL_SAVE, s:drawColorStringBlended(self.font, ("Mental  : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 
+		-- Hook to display additional types of saves
+		local hd = {"CharacterSheet:Defence:saves", player=player, actor_to_compare=actor_to_compare, h=h, w=w, s=s, compare_fields = compare_fields}
+		if self:triggerHook(hd) then 
+			w, h = hd.w, hd.h
+		end
+		
 		h = 0
 		w = self.w * 0.25
 

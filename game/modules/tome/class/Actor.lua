@@ -587,7 +587,7 @@ function _M:act()
 		local deact, t = false, self.talents_def[tid]
 		-- check each possible resource the talent uses
 		for res, res_def in ipairs(_M.resources_def) do
-			if res_def.depleted_unsustain and (t.remove_on_zero == nil or util.getval(t.remove_on_zero, self, t)) then
+			if (t.remove_on_zero == nil and res_def.depleted_unsustain) or (t.remove_on_zero ~= nil and util.getval(t.remove_on_zero, self, t)) then
 				if t[res_def.sustain_prop] then
 					if (res == self.RS_STAMINA or res == self.RS_MANA) and self:hasEffect(self.EFF_ADRENALINE_SURGE) then
 					else
