@@ -580,8 +580,8 @@ function _M:act()
 	self.changed = true
 	self.turn_procs = {}
 
-	-- Break sustains if certain resources (with depleted_unsustain = true) are too low
-	-- Note: force_talent_ignore_ressources has not effect here
+	-- Break some sustains if certain resources are too low
+	-- Note: force_talent_ignore_ressources has no effect here
 	-- consider replacing the minimum resource value of 1 with a number based on the talent and resource
 	for tid, p in pairs(self.sustain_talents) do
 		local deact, t = false, self.talents_def[tid]
@@ -589,7 +589,7 @@ function _M:act()
 		for res, res_def in ipairs(_M.resources_def) do
 			if (t.remove_on_zero == nil and res_def.depleted_unsustain) or (t.remove_on_zero ~= nil and util.getval(t.remove_on_zero, self, t)) then
 				if t[res_def.sustain_prop] then
-					if (res == self.RS_STAMINA or res == self.RS_MANA) and self:hasEffect(self.EFF_ADRENALINE_SURGE) then
+					if res == self.RS_STAMINA and self:hasEffect(self.EFF_ADRENALINE_SURGE) then
 					else
 						if res_def.invert_values then
 							if self[res_def.maxname] and (self[res_def.maxname] - self[res_def.short_name]) < 1 then
