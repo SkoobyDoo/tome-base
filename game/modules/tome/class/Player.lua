@@ -1017,6 +1017,20 @@ function _M:restCheck()
 
 	self.resting.wait_cooldowns = nil
 
+
+	-- Enter recall waiting rest if we are at max already
+	if self.resting.cnt == 0 and self:hasEffect(self.EFF_RECALL) then
+		self.resting.wait_recall = true
+	end
+
+	if self.resting.wait_recall then
+		if self:hasEffect(self.EFF_RECALL) then
+			return true
+		end
+	end
+
+	self.resting.wait_recall = nil
+
 	-- Enter full recharge rest if we waited for cooldowns already
 	if self.resting.cnt == 0 then
 		self.resting.wait_powers = true
@@ -1034,18 +1048,6 @@ function _M:restCheck()
 
 	self.resting.wait_powers = nil
 
-	-- Enter recall waiting rest if we are at max already
-	if self.resting.cnt == 0 and self:hasEffect(self.EFF_RECALL) then
-		self.resting.wait_recall = true
-	end
-
-	if self.resting.wait_recall then
-		if self:hasEffect(self.EFF_RECALL) then
-			return true
-		end
-	end
-
-	self.resting.wait_recall = nil
 	self.resting.rested_fully = true
 
 	return false, "all resources and life at maximum"
