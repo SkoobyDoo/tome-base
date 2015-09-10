@@ -374,9 +374,15 @@ function _M:act()
 	end
 
 	-- Resting ? Running ? Otherwise pause
-	if not self:restStep() and not self:runStep() and self.player and self:enoughEnergy() then
-		game.paused = true
-		if game.uiset.logdisplay:getNewestLine() ~= "" then game.log("") end
+	if self.player and self:enoughEnergy() then
+		if self:restStep() then
+			while self:enoughEnergy() do self:restStep() end
+		elseif self:runStep() then
+			while self:enoughEnergy() do self:runStep() end
+		else
+			game.paused = true
+			if game.uiset.logdisplay:getNewestLine() ~= "" then game.log("") end
+		end
 	elseif not self.player then
 		self:useEnergy()
 	end
