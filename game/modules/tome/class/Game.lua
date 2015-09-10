@@ -1331,16 +1331,16 @@ function _M:logMessage(source, srcSeen, target, tgtSeen, style, ...)
 		if srcname ~= "something" then Dstring = source.__is_actor and source.getDisplayString and source:getDisplayString() end
 	style = style:gsub("#source#", srcname)
 	style = style:gsub("#Source#", (Dstring or "")..srcname:capitalize())
+	local tgtname = "something"
 	if target then
-		local tgtname = "something"
-			if target.player then
-				tgtname = "#fbd578#"..target.name.."#LAST#"
-			elseif tgtSeen then
-				tgtname = engine.Entity.check(target, "getName") or target.name or "unknown"
-			end
-		style = style:gsub("#target#", tgtname)
-		style = style:gsub("#Target#", tgtname:capitalize())
+		if target.player then
+			tgtname = "#fbd578#"..target.name.."#LAST#"
+		elseif tgtSeen then
+			tgtname = engine.Entity.check(target, "getName") or target.name or "unknown"
+		end
 	end
+	style = style:gsub("#target#", tgtname)
+	style = style:gsub("#Target#", tgtname:capitalize())
 	return style
 end
 

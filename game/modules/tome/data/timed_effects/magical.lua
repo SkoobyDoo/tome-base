@@ -571,7 +571,7 @@ newEffect{
 newEffect{
 	name = "DAMAGE_SHIELD", image = "talents/barrier.png",
 	desc = "Damage Shield",
-	long_desc = function(self, eff) return ("The target is surrounded by a magical shield, absorbing %d/%d damage %s before it crumbles."):format(self.damage_shield_absorb, eff.power, ((self.damage_shield_reflect and self.damage_shield_reflect > 0) and ("(reflecting %d%% back to the attacker)"):format(self.damage_shield_reflect))) end,
+	long_desc = function(self, eff) return ("The target is surrounded by a magical shield, absorbing %d/%d damage %s before it crumbles."):format(self.damage_shield_absorb, eff.power, ((self.damage_shield_reflect and self.damage_shield_reflect > 0) and ("(reflecting %d%% back to the attacker)"):format(self.damage_shield_reflect) or "")) end,
 	type = "magical",
 	subtype = { arcane=true, shield=true },
 	status = "beneficial",
