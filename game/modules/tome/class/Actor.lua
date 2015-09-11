@@ -4635,7 +4635,7 @@ function _M:preUseTalent(ab, silent, fake)
 	
 	-- Sleeping prevents the use of all non-instant talents
 	if self:attr("sleep") and not self:attr("lucid_dreamer") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= (true or "fake") then
-		if not silent then game.logSeen(self, "%s is sleeping and unable to do this.", self.name:capitalize(), ab.name) end
+		if not silent then game.logPlayer(self, "%s is sleeping and unable to do this.", self.name:capitalize(), ab.name) end
 		return false
 	end
 	
