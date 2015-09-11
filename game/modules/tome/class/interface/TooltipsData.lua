@@ -37,6 +37,11 @@ Your total number of lives depends on the permadeath setting you choose.
 You may find other ways to save yourself but they are not considered extra lives.
 ]]
 
+TOOLTIP_BLOOD_LIFE = [[#GOLD#Blood of Life#LAST#
+The Blood of Life courses through your veins.
+This can save you from death and restore you to full health (once) if you would otherwise die.
+]]
+
 TOOLTIP_LIFE = [[#GOLD#Life#LAST#
 This is your life force, which is reduced each time you take damage.
 Normally, you will die if this drops below zero, though some effects will allow you survive with negative life.
@@ -46,7 +51,7 @@ It is increased by Constitution.
 
 TOOLTIP_DAMAGE_SHIELD = [[#GOLD#Damage shields#LAST#
 Various talents, items and powers can grant you a temporary damage shield.
-They all work in slightly different manners, but usually will absorb some damage before crumbling down.
+Each works in a distinct manner, but will usually intercept a certain amount of damage that would otherwise hit you before crumbling.
 ]]
 
 TOOLTIP_UNNATURAL_BODY = [[#GOLD#Unnatrual Body Regeneration#LAST#
@@ -81,13 +86,13 @@ Mana represents your reserve of magical energies. Each spell cast consumes mana 
 It is increased by Willpower.
 ]]
 
-TOOLTIP_POSITIVE = [[#GOLD#Positive#LAST#
-Positive energy represents your reserve of positive "celestial" power.
+TOOLTIP_POSITIVE = [[#GOLD#Positive Energy#LAST#
+Positive energy represents your reserve of positive "celestial" power, most closely associated with the Sun.
 It slowly decreases and is replenished by using some talents.
 ]]
 
-TOOLTIP_NEGATIVE = [[#GOLD#Negative#LAST#
-Negative energy represents your reserve of negative "celestial" power.
+TOOLTIP_NEGATIVE = [[#GOLD#Negative Energy#LAST#
+Negative energy represents your reserve of negative "celestial" power, most closely associated with the Moon.
 It slowly decreases and is replenished by using some talents.
 ]]
 
@@ -99,8 +104,9 @@ Also if you used a Corruption spell that cost Vim to kill a creature, that cost 
 ]]
 
 TOOLTIP_EQUILIBRIUM = [[#GOLD#Equilibrium#LAST#
-Equilibrium represents your standing in the grand balance of nature.
-The closer it is to 0 the more in-balance you are. Being out of equilibrium will negatively affect your ability to use Wild Gifts.
+Equilibrium reflects your standing in the grand balance of nature and how easily you can access Wild Gifts.
+The closer it is to 0 the more in-balance you are.
+Being too far out of balance may cause your Wild Gifts to fail when called upon.
 ]]
 
 TOOLTIP_HATE = [[#GOLD#Hate#LAST#
@@ -239,9 +245,9 @@ TOOLTIP_COMBAT_RANGE = [[#GOLD#Firing range#LAST#
 The maximum distance your weapon can reach.
 ]]
 TOOLTIP_COMBAT_AMMO = [[#GOLD#Ammo remaining#LAST#
-This is the amount of ammo you have left.
-Bows and slings must be reloaded when this reaches 0.
-Alchemists use gems as ammo to throw bombs.
+This is the amount of ammunition you have left.
+Bows and slings must be reloaded when this reaches 0, which you will do automatically each turn you rest or don't perform a non-movement action.
+Alchemists use specially prepared gems as ammunition to throw bombs, which must be reloaded manually.
 ]]
 
 -------------------------------------------------------------
@@ -434,4 +440,8 @@ Invisible creatures are magically removed from the sight of all others. They can
 TOOLTIP_VISION_SEE_INVISIBLE = [[#GOLD#See invisible#LAST#
 Your power to see invisible creatures. The higher it is, the more likely you are to see them (based on their own invisibility score).
 If you do not have any see invisible score you will never be able to see invisible creatures.
+]]
+TOOLTIP_ANTIMAGIC_USER = [[#GOLD#Antimagic User#LAST#
+Dedicated to opposing and destroying magical and arcane influence in the world.
+The use of spells or arcane-powered equipment is impossible.
 ]]

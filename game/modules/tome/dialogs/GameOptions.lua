@@ -163,6 +163,23 @@ function _M:generateListUi()
 		end)
 	end,}
 
+	if game.uiset:checkGameOption("log_lines") then	
+		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"The number of lines to display in the combat log (for the Classic HUD)."}
+		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Log lines#WHITE##{normal}#", status=function(item)
+			return tostring(config.settings.tome.log_lines)
+		end, fct=function(item)
+			game:registerDialog(GetQuantity.new("Log lines", "From 5 to 50", config.settings.tome.log_lines, 50, function(qty)
+				qty = util.bound(qty, 5, 50)
+				game:saveSettings("tome.log_lines", ("tome.log_lines = %d\n"):format(qty))
+				config.settings.tome.log_lines = qty
+				if self:isTome() then
+					game.uiset.logdisplay.resizeToLines()
+				end
+				self.c_list:drawItem(item)
+			end, 0))
+		end,}
+	end
+
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Draw faint lines to separate each grid, making visual positioning easier to see.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Display map grid lines#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.show_grid_lines and "enabled" or "disabled")

@@ -1331,16 +1331,16 @@ function _M:logMessage(source, srcSeen, target, tgtSeen, style, ...)
 		if srcname ~= "something" then Dstring = source.__is_actor and source.getDisplayString and source:getDisplayString() end
 	style = style:gsub("#source#", srcname)
 	style = style:gsub("#Source#", (Dstring or "")..srcname:capitalize())
+	local tgtname = "something"
 	if target then
-		local tgtname = "something"
-			if target.player then
-				tgtname = "#fbd578#"..target.name.."#LAST#"
-			elseif tgtSeen then
-				tgtname = engine.Entity.check(target, "getName") or target.name or "unknown"
-			end
-		style = style:gsub("#target#", tgtname)
-		style = style:gsub("#Target#", tgtname:capitalize())
+		if target.player then
+			tgtname = "#fbd578#"..target.name.."#LAST#"
+		elseif tgtSeen then
+			tgtname = engine.Entity.check(target, "getName") or target.name or "unknown"
+		end
 	end
+	style = style:gsub("#target#", tgtname)
+	style = style:gsub("#Target#", tgtname:capitalize())
 	return style
 end
 
@@ -2407,13 +2407,17 @@ end
 
 --- Create a random lore object and place it
 function _M:placeRandomLoreObjectScale(base, nb, level)
-	local dist = ({
-		[5] = { {1}, {2,3}, {4,5} }, -- 5 => 3
-		korpul = { {1,2}, {3,4} }, -- 5 => 3
-		maze = { {1,2,3,4},{5,6,7} }, -- 5 => 3
-		daikara = { {1}, {2}, {3}, {4,5} },
-		[7] = { {1,2}, {3,4}, {5,6}, {7} }, -- 7 => 4
-	})[nb][level]
+	local dist
+	if type(nb) == "table" then dist = nb[level]
+	else
+		dist = ({
+			[5] = { {1}, {2,3}, {4,5} }, -- 5 => 3
+			korpul = { {1,2}, {3,4} }, -- 5 => 3
+			maze = { {1,2,3,4},{5,6,7} }, -- 5 => 3
+			daikara = { {1}, {2}, {3}, {4,5} },
+			[7] = { {1,2}, {3,4}, {5,6}, {7} }, -- 7 => 4
+		})[nb][level]
+	end
 	if not dist then return end
 	for _, i in ipairs(dist) do self:placeRandomLoreObject(base..i) end
 end
