@@ -172,8 +172,6 @@ newTalent{
 							self:learnTalent(self.T_DEFILING_TOUCH, true, 1, {no_unlearn=true})
 							self:incIncStat(Stats.STAT_WIL, -2)
 							t.curseItem(self, t, item)
-							t.curseInventory(self, t)
-							t.curseFloor(self, t, self.x, self.y)
 							t.updateCurses(self, t, false)
 						else
 							Dialog:simplePopup("Cursed Fate", ("The %s returns to normal and your hate subsides."):format(item.name))
