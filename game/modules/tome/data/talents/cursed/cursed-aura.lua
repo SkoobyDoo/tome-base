@@ -171,8 +171,6 @@ newTalent{
 							self:learnTalentType("cursed/cursed-aura", true)
 							self:learnTalent(self.T_DEFILING_TOUCH, true, 1, {no_unlearn=true})
 							self:incIncStat(Stats.STAT_WIL, -2)
-							t.curseItem(self, t, item)
-							t.updateCurses(self, t, false)
 						else
 							Dialog:simplePopup("Cursed Fate", ("The %s returns to normal and your hate subsides."):format(item.name))
 						end
@@ -241,7 +239,7 @@ newTalent{
 	end,
 	on_learn = function(self, t)
 		t.curseInventory(self, t)
-		t.curseFloor(self, t, self.x, self.y)
+		if game.level and game.level.map then t.curseFloor(self, t, self.x, self.y) end
 		t.updateCurses(self, t)
 	end,
 	on_unlearn = function(self, t)
