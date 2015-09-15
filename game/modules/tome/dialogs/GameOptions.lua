@@ -139,7 +139,7 @@ function _M:generateListUi()
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Interface Style#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.ui_theme2):capitalize()
 	end, fct=function(item)
-		local uis = {{name="Metal", ui="metal"}, {name="Stone", ui="stone"}, {name="Simple", ui="simple"}}
+		local uis = {{name="Dark", ui="dark"}, {name="Metal", ui="metal"}, {name="Stone", ui="stone"}, {name="Simple", ui="simple"}}
 		self:triggerHook{"GameOptions:UIs", uis=uis}
 		Dialog:listPopup("Interface style", "Select style", uis, 300, 200, function(sel)
 			if not sel or not sel.ui then return end

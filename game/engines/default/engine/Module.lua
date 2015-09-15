@@ -671,10 +671,12 @@ function _M:loadScreen(mod)
 		end
 		if pubimg then publisher = {pubimg:glTexture()} end
 
-		local left = {core.display.loadImage("/data/gfx/metal-ui/waiter/left.png"):glTexture()}
-		local right = {core.display.loadImage("/data/gfx/metal-ui/waiter/right.png"):glTexture()}
-		local middle = {core.display.loadImage("/data/gfx/metal-ui/waiter/middle.png"):glTexture()}
-		local bar = {core.display.loadImage("/data/gfx/metal-ui/waiter/bar.png"):glTexture()}
+		mod.waiter_load_ui = mod.waiter_load_ui or "dark-ui"
+
+		local left = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/left.png"):glTexture()}
+		local right = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/right.png"):glTexture()}
+		local middle = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/middle.png"):glTexture()}
+		local bar = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/bar.png"):glTexture()}
 
 		local font = FontPackage:get("small")
 		local bfont = FontPackage:get("default")

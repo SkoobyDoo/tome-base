@@ -39,8 +39,8 @@ _M.font_bold = core.display.newFont("/data/font/DroidSans-Bold.ttf", 12)
 _M.font_bold_h = _M.font_bold:lineSkip()
 
 -- Default UI
-_M.ui = "metal"
-_M.defaultui = "metal"
+_M.ui = "dark"
+_M.defaultui = "dark"
 
 sounds = {
 	button = "ui/subtle_button_sound",
@@ -86,7 +86,7 @@ function _M:init(t, no_gen)
 	
 	if t.ui then self.ui = t.ui end
 
-	if not self.ui_conf[self.ui] then self.ui = "metal" end
+	if not self.ui_conf[self.ui] then self.ui = "dark" end
 
 	if not no_gen then self:generate() end
 end
