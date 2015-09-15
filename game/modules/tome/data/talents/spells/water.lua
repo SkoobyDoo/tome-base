@@ -130,6 +130,7 @@ newTalent{
 	getDuration = function(self, t) return 3 + self:combatTalentSpellDamage(t, 5, 5) end,
 	action = function(self, t)
 		-- Add a lasting map effect
+		game.logSeen(self, "A #LIGHT_BLUE#wave of icy water#LAST# erupts from the ground!")
 		game.level.map:addEffect(self,
 			self.x, self.y, t.getDuration(self, t),
 			DamageType.WAVE, {dam=t.getDamage(self, t), x=self.x, y=self.y, apply_wet=5},

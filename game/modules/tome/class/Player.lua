@@ -374,9 +374,15 @@ function _M:act()
 	end
 
 	-- Resting ? Running ? Otherwise pause
-	if not self:restStep() and not self:runStep() and self.player and self:enoughEnergy() then
-		game.paused = true
-		if game.uiset.logdisplay:getNewestLine() ~= "" then game.log("") end
+	if self.player and self:enoughEnergy() then
+		if self:restStep() then
+			while self:enoughEnergy() do self:restStep() end
+		elseif self:runStep() then
+			while self:enoughEnergy() do self:runStep() end
+		else
+			game.paused = true
+			if game.uiset.logdisplay:getNewestLine() ~= "" then game.log("") end
+		end
 	elseif not self.player then
 		self:useEnergy()
 	end
@@ -1017,6 +1023,20 @@ function _M:restCheck()
 
 	self.resting.wait_cooldowns = nil
 
+
+	-- Enter recall waiting rest if we are at max already
+	if self.resting.cnt == 0 and self:hasEffect(self.EFF_RECALL) then
+		self.resting.wait_recall = true
+	end
+
+	if self.resting.wait_recall then
+		if self:hasEffect(self.EFF_RECALL) then
+			return true
+		end
+	end
+
+	self.resting.wait_recall = nil
+
 	-- Enter full recharge rest if we waited for cooldowns already
 	if self.resting.cnt == 0 then
 		self.resting.wait_powers = true
@@ -1034,18 +1054,6 @@ function _M:restCheck()
 
 	self.resting.wait_powers = nil
 
-	-- Enter recall waiting rest if we are at max already
-	if self.resting.cnt == 0 and self:hasEffect(self.EFF_RECALL) then
-		self.resting.wait_recall = true
-	end
-
-	if self.resting.wait_recall then
-		if self:hasEffect(self.EFF_RECALL) then
-			return true
-		end
-	end
-
-	self.resting.wait_recall = nil
 	self.resting.rested_fully = true
 
 	return false, "all resources and life at maximum"

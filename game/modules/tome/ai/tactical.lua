@@ -96,6 +96,7 @@ newAI("use_tactical", function(self)
 			   	t_avail = true
 			elseif t.mode == "sustained" and not t.no_npc_use and not self:isTalentCoolingDown(t) and
 			   not self:isTalentActive(t.id) and
+--check resource drains here to allow sustains to be turned off
 			   self:preUseTalent(t, true, true)
 			   then
 			   	t_avail = true
