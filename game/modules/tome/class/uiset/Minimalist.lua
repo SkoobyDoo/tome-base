@@ -37,7 +37,16 @@ local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(UISet, TooltipsData))
 
-local move_handle = {core.display.loadImage("/data/gfx/ui/move_handle.png"):glTexture()}
+local function imageLoader(file)
+	local sfile = "/data/gfx/"..UI.ui.."-ui/minimalist/"..file
+	if fs.exists(sfile) then
+		return core.display.loadImage(sfile)
+	else
+		return core.display.loadImage( "/data/gfx/ui/"..file)
+	end
+end
+
+local move_handle = {imageLoader("move_handle.png"):glTexture()}
 
 local frames_colors = {
 	ok = {0.3, 0.6, 0.3},
@@ -61,82 +70,110 @@ fortress_sha = Shader.new("resources", {require_shader=4, delay_load=true, color
 save_c = {colors.GOLD.r/255, colors.GOLD.g/255, colors.GOLD.b/255}
 save_sha = Shader.new("resources", {require_shader=4, delay_load=true, color=save_c, speed=1000, distort={1.6,0.2}})
 
-sshat = {core.display.loadImage("/data/gfx/ui/resources/shadow.png"):glTexture()}
-bshat = {core.display.loadImage("/data/gfx/ui/resources/back.png"):glTexture()}
-shat = {core.display.loadImage("/data/gfx/ui/resources/fill.png"):glTexture()}
-fshat = {core.display.loadImage("/data/gfx/ui/resources/front.png"):glTexture()}
-fshat_life = {core.display.loadImage("/data/gfx/ui/resources/front_life.png"):glTexture()}
-fshat_life_dark = {core.display.loadImage("/data/gfx/ui/resources/front_life_dark.png"):glTexture()}
-fshat_shield = {core.display.loadImage("/data/gfx/ui/resources/front_life_armored.png"):glTexture()}
-fshat_shield_dark = {core.display.loadImage("/data/gfx/ui/resources/front_life_armored_dark.png"):glTexture()}
-fshat_feedback = {core.display.loadImage("/data/gfx/ui/resources/front_psi.png"):glTexture()}
-fshat_feedback_dark = {core.display.loadImage("/data/gfx/ui/resources/front_psi_dark.png"):glTexture()}
-fshat_air = {core.display.loadImage("/data/gfx/ui/resources/front_air.png"):glTexture()}
-fshat_air_dark = {core.display.loadImage("/data/gfx/ui/resources/front_air_dark.png"):glTexture()}
-fshat_fortress = {core.display.loadImage("/data/gfx/ui/resources/front_fortress.png"):glTexture()}
-fshat_fortress_dark = {core.display.loadImage("/data/gfx/ui/resources/front_fortress_dark.png"):glTexture()}
+sshat = {imageLoader("resources/shadow.png"):glTexture()}
+bshat = {imageLoader("resources/back.png"):glTexture()}
+shat = {imageLoader("resources/fill.png"):glTexture()}
+fshat = {imageLoader("resources/front.png"):glTexture()}
+fshat_life = {imageLoader("resources/front_life.png"):glTexture()}
+fshat_life_dark = {imageLoader("resources/front_life_dark.png"):glTexture()}
+fshat_shield = {imageLoader("resources/front_life_armored.png"):glTexture()}
+fshat_shield_dark = {imageLoader("resources/front_life_armored_dark.png"):glTexture()}
+fshat_feedback = {imageLoader("resources/front_psi.png"):glTexture()}
+fshat_feedback_dark = {imageLoader("resources/front_psi_dark.png"):glTexture()}
+fshat_air = {imageLoader("resources/front_air.png"):glTexture()}
+fshat_air_dark = {imageLoader("resources/front_air_dark.png"):glTexture()}
+fshat_fortress = {imageLoader("resources/front_fortress.png"):glTexture()}
+fshat_fortress_dark = {imageLoader("resources/front_fortress_dark.png"):glTexture()}
 
-fshat_hourglass = {core.display.loadImage("/data/gfx/ui/resources/hourglass_front.png"):glTexture()}
-sshat_hourglass = {core.display.loadImage("/data/gfx/ui/resources/hourglass_shadow.png"):glTexture()}
-shat_hourglass_top = {core.display.loadImage("/data/gfx/ui/resources/hourglass_top.png"):glTexture()}
-shat_hourglass_bottom = {core.display.loadImage("/data/gfx/ui/resources/hourglass_bottom.png"):glTexture()}
+fshat_hourglass = {imageLoader("resources/hourglass_front.png"):glTexture()}
+sshat_hourglass = {imageLoader("resources/hourglass_shadow.png"):glTexture()}
+shat_hourglass_top = {imageLoader("resources/hourglass_top.png"):glTexture()}
+shat_hourglass_bottom = {imageLoader("resources/hourglass_bottom.png"):glTexture()}
 
-ammo_shadow_default = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_default.png"):glTexture()}
-ammo_default = {core.display.loadImage("/data/gfx/ui/resources/ammo_default.png"):glTexture()}
-ammo_shadow_arrow = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_arrow.png"):glTexture()}
-ammo_arrow = {core.display.loadImage("/data/gfx/ui/resources/ammo_arrow.png"):glTexture()}
-ammo_shadow_shot = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_shot.png"):glTexture()}
-ammo_shot = {core.display.loadImage("/data/gfx/ui/resources/ammo_shot.png"):glTexture()}
-_M['ammo_shadow_alchemist-gem'] = {core.display.loadImage("/data/gfx/ui/resources/ammo_shadow_alchemist-gem.png"):glTexture()}
-_M['ammo_alchemist-gem'] = {core.display.loadImage("/data/gfx/ui/resources/ammo_alchemist-gem.png"):glTexture()}
+ammo_shadow_default = {imageLoader("resources/ammo_shadow_default.png"):glTexture()}
+ammo_default = {imageLoader("resources/ammo_default.png"):glTexture()}
+ammo_shadow_arrow = {imageLoader("resources/ammo_shadow_arrow.png"):glTexture()}
+ammo_arrow = {imageLoader("resources/ammo_arrow.png"):glTexture()}
+ammo_shadow_shot = {imageLoader("resources/ammo_shadow_shot.png"):glTexture()}
+ammo_shot = {imageLoader("resources/ammo_shot.png"):glTexture()}
+_M['ammo_shadow_alchemist-gem'] = {imageLoader("resources/ammo_shadow_alchemist-gem.png"):glTexture()}
+_M['ammo_alchemist-gem'] = {imageLoader("resources/ammo_alchemist-gem.png"):glTexture()}
 
 font_sha = FontPackage:get("resources_normal", true)
 sfont_sha = FontPackage:get("resources_small", true)
 
-icon_green = { core.display.loadImage("/data/gfx/ui/talent_frame_ok.png"):glTexture() }
-icon_yellow = { core.display.loadImage("/data/gfx/ui/talent_frame_sustain.png"):glTexture() }
-icon_red = { core.display.loadImage("/data/gfx/ui/talent_frame_cooldown.png"):glTexture() }
+icon_green = { imageLoader("talent_frame_ok.png"):glTexture() }
+icon_yellow = { imageLoader("talent_frame_sustain.png"):glTexture() }
+icon_red = { imageLoader("talent_frame_cooldown.png"):glTexture() }
 
-local portrait = {core.display.loadImage("/data/gfx/ui/party-portrait.png"):glTexture()}
-local portrait_unsel = {core.display.loadImage("/data/gfx/ui/party-portrait-unselect.png"):glTexture()}
-local portrait_lev = {core.display.loadImage("/data/gfx/ui/party-portrait-lev.png"):glTexture()}
-local portrait_unsel_lev = {core.display.loadImage("/data/gfx/ui/party-portrait-unselect-lev.png"):glTexture()}
+local portrait = {imageLoader("party-portrait.png"):glTexture()}
+local portrait_unsel = {imageLoader("party-portrait-unselect.png"):glTexture()}
+local portrait_lev = {imageLoader("party-portrait-lev.png"):glTexture()}
+local portrait_unsel_lev = {imageLoader("party-portrait-unselect-lev.png"):glTexture()}
 
 local pf_bg_x, pf_bg_y = 0, 0
-local pf_bg = {core.display.loadImage("/data/gfx/ui/playerframe/back.png"):glTexture()}
-local pf_shadow = {core.display.loadImage("/data/gfx/ui/playerframe/shadow.png"):glTexture()}
-local pf_defend = {core.display.loadImage("/data/gfx/ui/playerframe/defend.png"):glTexture()}
+local pf_bg = {imageLoader("playerframe/back.png"):glTexture()}
+local pf_shadow = {imageLoader("playerframe/shadow.png"):glTexture()}
+local pf_defend = {imageLoader("playerframe/defend.png"):glTexture()}
 local pf_attackdefend_x, pf_attackdefend_y = 0, 0
-local pf_attack = {core.display.loadImage("/data/gfx/ui/playerframe/attack.png"):glTexture()}
-local pf_levelup = {core.display.loadImage("/data/gfx/ui/playerframe/levelup.png"):glTexture()}
-local pf_encumber = {core.display.loadImage("/data/gfx/ui/playerframe/encumber.png"):glTexture()}
-local pf_exp = {core.display.loadImage("/data/gfx/ui/playerframe/exp.png"):glTexture()}
-local pf_exp_levelup = {core.display.loadImage("/data/gfx/ui/playerframe/exp_levelup.png"):glTexture()}
+local pf_attack = {imageLoader("playerframe/attack.png"):glTexture()}
+local pf_levelup_x, pf_levelup_y = 0, 0
+local pf_levelup = {imageLoader("playerframe/levelup.png"):glTexture()}
+local pf_encumber_x, pf_encumber_y = 0, 0
+local pf_encumber = {imageLoader("playerframe/encumber.png"):glTexture()}
+local pf_exp_x, pf_exp_y = 0, 0
+local pf_exp = {imageLoader("playerframe/exp.png"):glTexture()}
+local pf_exp_levelup = {imageLoader("playerframe/exp_levelup.png"):glTexture()}
+local pf_money_x, pf_money_y = 0, 0
+local pf_exp_cur_x, pf_exp_cur_y = 0, 0
+local pf_name_x, pf_name_y = 0, 0
+local pf_level_x, pf_level_y = 0, 0
 
 local mm_bg_x, mm_bg_y = 0, 0
-local mm_bg = {core.display.loadImage("/data/gfx/ui/minimap/back.png"):glTexture()}
-local mm_comp = {core.display.loadImage("/data/gfx/ui/minimap/compass.png"):glTexture()}
-local mm_shadow = {core.display.loadImage("/data/gfx/ui/minimap/shadow.png"):glTexture()}
-local mm_transp = {core.display.loadImage("/data/gfx/ui/minimap/transp.png"):glTexture()}
+local mm_bg = {imageLoader("minimap/back.png"):glTexture()}
+local mm_comp = {imageLoader("minimap/compass.png"):glTexture()}
+local mm_shadow = {imageLoader("minimap/shadow.png"):glTexture()}
+local mm_transp = {imageLoader("minimap/transp.png"):glTexture()}
 
-local tb_bg = {core.display.loadImage("/data/gfx/ui/hotkeys/icons_bg.png"):glTexture()}
-local tb_talents = {core.display.loadImage("/data/gfx/ui/hotkeys/talents.png"):glTexture()}
-local tb_inven = {core.display.loadImage("/data/gfx/ui/hotkeys/inventory.png"):glTexture()}
-local tb_lore = {core.display.loadImage("/data/gfx/ui/hotkeys/lore.png"):glTexture()}
-local tb_quest = {core.display.loadImage("/data/gfx/ui/hotkeys/quest.png"):glTexture()}
-local tb_mainmenu = {core.display.loadImage("/data/gfx/ui/hotkeys/mainmenu.png"):glTexture()}
-local tb_padlock_open = {core.display.loadImage("/data/gfx/ui/padlock_open.png"):glTexture()}
-local tb_padlock_closed = {core.display.loadImage("/data/gfx/ui/padlock_closed.png"):glTexture()}
+local tb_bg = {imageLoader("hotkeys/icons_bg.png"):glTexture()}
+local tb_talents = {imageLoader("hotkeys/talents.png"):glTexture()}
+local tb_inven = {imageLoader("hotkeys/inventory.png"):glTexture()}
+local tb_lore = {imageLoader("hotkeys/lore.png"):glTexture()}
+local tb_quest = {imageLoader("hotkeys/quest.png"):glTexture()}
+local tb_mainmenu = {imageLoader("hotkeys/mainmenu.png"):glTexture()}
+local tb_padlock_open = {imageLoader("padlock_open.png"):glTexture()}
+local tb_padlock_closed = {imageLoader("padlock_closed.png"):glTexture()}
 
-local hk1 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_1.png"):glTexture()}
-local hk2 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_2.png"):glTexture()}
-local hk3 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_3.png"):glTexture()}
-local hk4 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_4.png"):glTexture()}
-local hk5 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_5.png"):glTexture()}
-local hk6 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_6.png"):glTexture()}
-local hk7 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_7.png"):glTexture()}
-local hk8 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_8.png"):glTexture()}
-local hk9 = {core.display.loadImage("/data/gfx/ui/hotkeys/hotkey_9.png"):glTexture()}
+local hk1 = {imageLoader("hotkeys/hotkey_1.png"):glTexture()}
+local hk2 = {imageLoader("hotkeys/hotkey_2.png"):glTexture()}
+local hk3 = {imageLoader("hotkeys/hotkey_3.png"):glTexture()}
+local hk4 = {imageLoader("hotkeys/hotkey_4.png"):glTexture()}
+local hk5 = {imageLoader("hotkeys/hotkey_5.png"):glTexture()}
+local hk6 = {imageLoader("hotkeys/hotkey_6.png"):glTexture()}
+local hk7 = {imageLoader("hotkeys/hotkey_7.png"):glTexture()}
+local hk8 = {imageLoader("hotkeys/hotkey_8.png"):glTexture()}
+local hk9 = {imageLoader("hotkeys/hotkey_9.png"):glTexture()}
+
+_M:bindHook("UISet:Minimalist:Load", function(self, data)
+	if UI.ui ~= "dark" then return end
+	data.alterlocal("pf_bg_y", -5)
+	data.alterlocal("pf_attackdefend_x", 8)
+	data.alterlocal("pf_attackdefend_y", -8)
+	data.alterlocal("pf_levelup_x", -5)
+	data.alterlocal("pf_levelup_y", -9)
+	data.alterlocal("pf_exp_x", 10)
+	data.alterlocal("pf_exp_y", -1)
+	data.alterlocal("pf_level_x", 9)
+	data.alterlocal("pf_level_y", -2)
+	data.alterlocal("pf_name_x", 10)
+	data.alterlocal("pf_name_y", -2)
+	data.alterlocal("pf_money_x", 7)
+	data.alterlocal("pf_money_y", -2)
+	data.alterlocal("pf_exp_cur_x", 7)
+	data.alterlocal("pf_exp_cur_y", -1)
+	data.alterlocal("mm_bg_x", -5)
+	data.alterlocal("mm_bg_y", -3)
+end)
 
 _M:triggerHook{"UISet:Minimalist:Load", alterlocal=function(k, v)
 	local i = 1
@@ -220,17 +257,22 @@ function _M:initialize_resources()
 		-- optional custom highlight select function
 		res_gfx[rname].highlight = table.get(res_def, "Minimalist", "highlight")	
 		-- load graphic images
-		local res_imgs = table.merge({front = "/data/gfx/ui/resources/front_"..rname..".png", front_dark = "/data/gfx/ui/resources/front_"..rname.."_dark.png"},  table.get(res_def, "Minimalist", "images") or {})
+		local res_imgs = table.merge({front = "resources/front_"..rname..".png", front_dark = "resources/front_"..rname.."_dark.png"},  table.get(res_def, "Minimalist", "images") or {})
 		for typ, file in pairs(res_imgs) do
-			if fs.exists(file) then -- load the specific image
-				print("[Minimalist] resource:", rname, "gfx file", file, "found")
-				res_gfx[rname][typ] = {core.display.loadImage(file):glTexture()}
+			local sfile = "/data/gfx/"..UI.ui.."-ui/minimalist/"..file
+			local bfile = "/data/gfx/ui/"..file
+			if fs.exists(sfile) then -- load the specific image
+				print("[Minimalist] resource ui:", rname, "gfx file", file, "found")
+				res_gfx[rname][typ] = {core.display.loadImage(sfile):glTexture()}
+			elseif fs.exists(bfile) then -- load the specific image
+				print("[Minimalist] resource base:", rname, "gfx file", file, "found")
+				res_gfx[rname][typ] = {core.display.loadImage(bfile):glTexture()}
 			else -- load a default image (Psi graphics)
 				print("[Minimalist] Warning: resource", rname, "gfx file", file, "NOT FOUND, using default")
 				if typ == "front" then
-					res_gfx[rname][typ] = {core.display.loadImage("/data/gfx/ui/resources/front_psi.png"):glTexture()}
+					res_gfx[rname][typ] = {imageLoader("resources/front_psi.png"):glTexture()}
 				else
-					res_gfx[rname][typ] = {core.display.loadImage("/data/gfx/ui/resources/front_psi_dark.png"):glTexture()}
+					res_gfx[rname][typ] = {imageLoader("resources/front_psi_dark.png"):glTexture()}
 				end
 			end
 		end
@@ -1461,13 +1503,13 @@ function _M:displayPlayer(scale, bx, by)
 
 	if player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0 then
 		local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
-		pf_levelup[1]:toScreenFull(269, 78, pf_levelup[6], pf_levelup[7], pf_levelup[2], pf_levelup[3], 1, 1, 1, glow / 255)
-		pf_exp_levelup[1]:toScreenFull(108, 74, pf_exp_levelup[6], pf_exp_levelup[7], pf_exp_levelup[2], pf_exp_levelup[3], 1, 1, 1, glow / 255)
+		pf_levelup[1]:toScreenFull(269 + pf_levelup_x, 78 + pf_levelup_y, pf_levelup[6], pf_levelup[7], pf_levelup[2], pf_levelup[3], 1, 1, 1, glow / 255)
+		pf_exp_levelup[1]:toScreenFull(108 + pf_exp_x, 74 + pf_exp_y, pf_exp_levelup[6], pf_exp_levelup[7], pf_exp_levelup[2], pf_exp_levelup[3], 1, 1, 1, glow / 255)
 	end
 
 	local cur_exp, max_exp = player.exp, player:getExpChart(player.level+1)
 	local p = math.min(1, math.max(0, cur_exp / max_exp))
-	pf_exp[1]:toScreenPrecise(117, 85, pf_exp[6] * p, pf_exp[7], 0, p * 1/pf_exp[4], 0, 1/pf_exp[5])
+	pf_exp[1]:toScreenPrecise(117 + pf_exp_x, 85 + pf_exp_y, pf_exp[6] * p, pf_exp[7], 0, p * 1/pf_exp[4], 0, 1/pf_exp[5])
 
 	if not self.res.exp or self.res.exp.vc ~= p then
 		self.res.exp = {
@@ -1476,8 +1518,8 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.exp.cur
-	dt[1]:toScreenFull(2+87 - dt[6] / 2, 2+89 - dt[7] / 2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(87 - dt[6] / 2, 89 - dt[7] / 2, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(pf_exp_cur_x + 2+87 - dt[6] / 2, pf_exp_cur_y + 2+89 - dt[7] / 2, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(pf_exp_cur_x + 87 - dt[6] / 2, pf_exp_cur_y + 89 - dt[7] / 2, dt[6], dt[7], dt[2], dt[3])
 
 	if not self.res.money or self.res.money.vc ~= player.money then
 		self.res.money = {
@@ -1486,8 +1528,8 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.money.cur
-	dt[1]:toScreenFull(2+112 - dt[6] / 2, 2+43, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(112 - dt[6] / 2, 43, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(pf_money_x + 2+112 - dt[6] / 2, pf_money_y + 2+43, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(pf_money_x + 112 - dt[6] / 2, pf_money_y + 43, dt[6], dt[7], dt[2], dt[3])
 
 	if not self.res.pname or self.res.pname.vc ~= player.name then
 		self.res.pname = {
@@ -1496,8 +1538,8 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.pname.cur
-	dt[1]:toScreenFull(2+166, 2+13, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(166, 13, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(pf_name_x + 2+166, pf_name_y + 2+13, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(pf_name_x + 166, pf_name_y + 13, dt[6], dt[7], dt[2], dt[3])
 
 	if not self.res.plevel or self.res.plevel.vc ~= player.level then
 		self.res.plevel = {
@@ -1506,8 +1548,8 @@ function _M:displayPlayer(scale, bx, by)
 		}
 	end
 	local dt = self.res.plevel.cur
-	dt[1]:toScreenFull(2+253, 2+46, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
-	dt[1]:toScreenFull(253, 46, dt[6], dt[7], dt[2], dt[3])
+	dt[1]:toScreenFull(pf_level_x + 2+253, pf_level_y + 2+46, dt[6], dt[7], dt[2], dt[3], 0, 0, 0, 0.7)
+	dt[1]:toScreenFull(pf_level_x + 253, pf_level_y + 46, dt[6], dt[7], dt[2], dt[3])
 
 	if player:attr("encumbered") then
 		local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
