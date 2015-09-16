@@ -2000,8 +2000,37 @@ function _M:onHeal(value, src)
 		end
 	end
 
-	if self:attr("arcane_shield") and self:attr("allow_on_heal") and value > 0 and not self:hasEffect(self.EFF_DAMAGE_SHIELD) then
-		self:setEffect(self.EFF_DAMAGE_SHIELD, 3, {power=value * self.arcane_shield / 100})
+	if self:attr("arcane_shield") and self:attr("allow_on_heal") and value > 0 then
+		local shield_old = self:hasEffect(self.EFF_DAMAGE_SHIELD)
+		local shield_new = {power = (value * self.arcane_shield / 100), dur = 3}
+		-- Adjust values to account for Shielding sutain and other modifiers
+		local shield_new_adj = {}
+		if self:attr("shield_factor") then
+			shield_new_adj.power = shield_new.power * (100 + self:attr("shield_factor")) / 100
+		else
+			shield_new_adj.power = shield_new.power
+		end
+		if self:attr("shield_dur") then
+			shield_new_adj.dur = shield_new.dur + self:attr("shield_dur")
+		else
+			shield_new_adj.dur = shield_new.dur
+		end
+		-- If the new shield would be stronger than the existing one, just replace it
+		if not shield_old or ((math.max(self.damage_shield_absorb, self.damage_shield_absorb_max) <= shield_new_adj.power) and (shield_old.dur <= shield_new_adj.dur)) then
+			self:setEffect(self.EFF_DAMAGE_SHIELD, shield_new.dur, shield_new)
+		-- Otherwise, keep the existing shield for use with Aegis, but update absorb value and maybe duration
+		elseif (self.damage_shield_absorb <= shield_new_adj.power) and (shield_old.dur <= shield_new_adj.dur) then
+			-- Use adjusted values here since we bypass setEffect()
+			self.damage_shield_absorb = shield_new_adj.power
+			if not shield_old.dur_extended or shield_old.dur_extended <= 20 then
+				shield_old.dur = shield_new_adj.dur
+				if not shield_old.dur_extended then
+					shield_old.dur_extended = 1
+				else
+					shield_old.dur_extended = shield_old.dur_extended + 1
+				end
+			end
+		end
 	end
 
 	if self:attr("fungal_growth") and self:attr("allow_on_heal") and value > 0 and not self:hasEffect(self.EFF_REGENERATION) then
