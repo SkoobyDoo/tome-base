@@ -112,6 +112,7 @@ local portrait_lev = {imageLoader("party-portrait-lev.png"):glTexture()}
 local portrait_unsel_lev = {imageLoader("party-portrait-unselect-lev.png"):glTexture()}
 
 local pf_bg_x, pf_bg_y = 0, 0
+local pf_player_x, pf_player_y = 0, 0
 local pf_bg = {imageLoader("playerframe/back.png"):glTexture()}
 local pf_shadow = {imageLoader("playerframe/shadow.png"):glTexture()}
 local pf_defend = {imageLoader("playerframe/defend.png"):glTexture()}
@@ -159,6 +160,8 @@ _M:bindHook("UISet:Minimalist:Load", function(self, data)
 	data.alterlocal("pf_bg_y", -5)
 	data.alterlocal("pf_attackdefend_x", 8)
 	data.alterlocal("pf_attackdefend_y", -8)
+	data.alterlocal("pf_player_x", 5)
+	data.alterlocal("pf_player_y", -4)
 	data.alterlocal("pf_levelup_x", -5)
 	data.alterlocal("pf_levelup_y", -9)
 	data.alterlocal("pf_exp_x", 10)
@@ -1492,7 +1495,7 @@ function _M:displayPlayer(scale, bx, by)
 	pf_shadow[1]:toScreenFull(0, 0, pf_shadow[6], pf_shadow[7], pf_shadow[2], pf_shadow[3])
 	pf_bg[1]:toScreenFull(pf_bg_x, pf_bg_y, pf_bg[6], pf_bg[7], pf_bg[2], pf_bg[3])
 	core.display.glScissor(true, bx+15*scale, by+15*scale, 54*scale, 54*scale)
-	player:toScreen(nil, 22, 22, 40, 40)
+	player:toScreen(nil, 22 + pf_player_x, 22 + pf_player_y, 40, 40)
 	core.display.glScissor(false)
 
 	if (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled then
