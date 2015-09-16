@@ -163,7 +163,7 @@ function _M:generateListUi()
 		end)
 	end,}
 
-	if game.uiset:checkGameOption("log_lines") then	
+	if self:isTome() and game.uiset:checkGameOption("log_lines") then	
 		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"The number of lines to display in the combat log (for the Classic HUD)."}
 		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Log lines#WHITE##{normal}#", status=function(item)
 			return tostring(config.settings.tome.log_lines)

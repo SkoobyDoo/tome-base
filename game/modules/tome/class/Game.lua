@@ -1669,6 +1669,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			DamageType:get(DamageType.NATURE).projector(self.player, self.player.x, self.player.y, DamageType.NATURE, 100)
+do return end
 			self:changeLevel(6, "orcs+palace-fumes")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
