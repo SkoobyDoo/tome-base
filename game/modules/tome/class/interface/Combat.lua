@@ -2097,6 +2097,12 @@ function _M:combatGetResist(type)
 	return r * power / 100
 end
 
+--- Returns the resistance penetration
+function _M:combatGetResistPen(type)
+	local pen = (self.resists_pen.all or 0) + (self.resists_pen[type] or 0)
+	return pen
+end
+
 --- Returns the damage increase
 function _M:combatHasDamageIncrease(type)
 	if self.inc_damage[type] and self.inc_damage[type] ~= 0 then return true else return false end
