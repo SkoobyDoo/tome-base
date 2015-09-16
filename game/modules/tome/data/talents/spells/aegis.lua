@@ -114,7 +114,7 @@ newTalent{
 		local shield = t.getShield(self, t)
 		return ([[Surround yourself with protective arcane forces.
 		Each time you receive a direct heal (not a life regeneration effect), you automatically gain a damage shield equal to %d%% of the heal value for 3 turns.
-		This will replace an existing damage shield if the new shield value and duration would be greater.
+		This will replace an existing damage shield if the new shield value and duration would be greater than or equal to the old.
 		The shield value will increase with your Spellpower.]]):
 		format(shield)
 	end,
