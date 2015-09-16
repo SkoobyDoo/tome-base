@@ -1906,6 +1906,13 @@ do return end
 			self:registerDialog(require("mod.dialogs.CharacterSheet").new(self.player))
 		end,
 
+		SHOW_CHARACTER_SHEET_CURSOR = function()
+			local mx, my = self.mouse.last_pos.x, self.mouse.last_pos.y
+			local tmx, tmy = game.level.map:getMouseTile(mx, my)
+			local a = self.level.map(tmx, tmy, Map.ACTOR)
+			self:registerDialog(require("mod.dialogs.CharacterSheet").new((config.settings.cheat or self.player:canSee(a)) and a or self.player))
+		end,
+		
 		SHOW_MESSAGE_LOG = function()
 			self:registerDialog(require("mod.dialogs.ShowChatLog").new("Message Log", 0.6, self.uiset.logdisplay, profile.chat))
 		end,
@@ -2052,6 +2059,18 @@ do return end
 				game_or_player.bump_attack_disabled = true
 			end
 		end
+	}
+	-- add key bindings for targeting mode
+	self.targetmode_key:addBinds{
+		SHOW_CHARACTER_SHEET_CURSOR = function()
+			local target = table.get(self, "target", "target", "entity") -- gets the actor under the targeting reticle
+			target = target and (config.settings.cheat or self.player:canSee(target)) and target or self.player
+			self:registerDialog(require("mod.dialogs.CharacterSheet").new(target))
+		end,
+		SHOW_CHARACTER_SHEET = function()
+			self:registerDialog(require("mod.dialogs.CharacterSheet").new(self.player))
+		end,
+		LUA_CONSOLE = self.key.virtuals.LUA_CONSOLE,
 	}
 	engine.interface.PlayerHotkeys:bindAllHotkeys(self.key, not_wild(function(i)
 		self:targetTriggerHotkey(i)

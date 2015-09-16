@@ -1661,6 +1661,7 @@ end
 
 --- Gets the off hand multiplier
 function _M:getOffHandMult(combat, mult)
+	if combat and combat.range and not combat.dam then return mult or 1 end --no penalty for ranged shooters
 	local offmult = 1/2
 	-- Take the bigger multiplier from Dual weapon training and Corrupted Strength
 	if self:knowTalent(Talents.T_DUAL_WEAPON_TRAINING) then
@@ -2094,6 +2095,12 @@ function _M:combatGetResist(type)
 	local b = math.min((self.resists[type] or 0) / 100,1)
 	local r = math.min(100 * (1 - (1 - a) * (1 - b)), (self.resists_cap.all or 0) + (self.resists_cap[type] or 0))
 	return r * power / 100
+end
+
+--- Returns the resistance penetration
+function _M:combatGetResistPen(type)
+	local pen = (self.resists_pen.all or 0) + (self.resists_pen[type] or 0)
+	return pen
 end
 
 --- Returns the damage increase
