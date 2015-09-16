@@ -139,17 +139,22 @@ function _M:generateList()
 	if g and not self.on_player then list[#list+1] = {name="Move to", action="move_to", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if a and not self.on_player and game.party:canControl(a, false) then list[#list+1] = {name="Control", action="control", color=colors.simple(colors.TEAL), actor=a} end
 	if a and not self.on_player and game.party:canOrder(a, false) then list[#list+1] = {name="Give order", action="order", color=colors.simple(colors.TEAL), actor=a} end
+
 	if a and not self.on_player and config.settings.cheat then list[#list+1] = {name="Target player", action="target-player", color=colors.simple(colors.RED), actor=a} end
 	if a and config.settings.cheat then list[#list+1] = {name="Lua inspect [Actor]", action="debug-inspect", color=colors.simple(colors.LIGHT_BLUE), actor=a} end
 	if g and config.settings.cheat then list[#list+1] = {name="Lua inspect [Terrain]", action="debug-inspect", color=colors.simple(colors.LIGHT_BLUE), actor=g} end
 	if t and config.settings.cheat then list[#list+1] = {name="Lua inspect [Trap]", action="debug-inspect", color=colors.simple(colors.LIGHT_BLUE), actor=t} end
 	if p and config.settings.cheat then list[#list+1] = {name="Lua inspect [Projectile]", action="debug-inspect", color=colors.simple(colors.LIGHT_BLUE), actor=p} end
 	if a and config.settings.cheat then list[#list+1] = {name="Show inventory", action="debug-inventory", color=colors.simple(colors.YELLOW), actor=a} end
+
 	if self.on_player then list[#list+1] = {name="Rest a while", action="rest", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if self.on_player then list[#list+1] = {name="Auto-explore", action="autoexplore", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if self.on_player then list[#list+1] = {name="Inventory", action="inventory", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if self.on_player then list[#list+1] = {name="Quest Log", action="quests", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if a then list[#list+1] = {name="Inspect Creature", action="character_sheet", color=colors.simple(colors.ANTIQUE_WHITE), actor=a} end
+		-- can add extended inspection commands here by including the start tab with the dialog
+	-- space separating inspect from active actions
+	list[#list+1] = {name=" ", action=nil, color=colors.simple(colors.ANTIQUE_WHITE)}
 	if not self.on_player and a and profile.auth and profile.hash_valid then list[#list+1] = {name="Link creature in chat", action="chat-link"} end
 	if self.on_player and (player.unused_stats > 0 or player.unused_talents > 0 or player.unused_generics > 0 or player.unused_talents_types > 0) then list[#list+1] = {name="Levelup!", action="levelup", color=colors.simple(colors.YELLOW)} end
 

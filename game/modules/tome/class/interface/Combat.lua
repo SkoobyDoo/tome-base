@@ -1661,6 +1661,7 @@ end
 
 --- Gets the off hand multiplier
 function _M:getOffHandMult(combat, mult)
+	if combat and combat.range and not combat.dam then return mult or 1 end --no penalty for ranged shooters
 	local offmult = 1/2
 	-- Take the bigger multiplier from Dual weapon training and Corrupted Strength
 	if self:knowTalent(Talents.T_DUAL_WEAPON_TRAINING) then
