@@ -710,7 +710,7 @@ function _M:generateRandart(data)
 	end
 
 	-- Assign weapon damage
-	if o.combat and not (o.subtype == "staff" or o.subtype == "mindstar") then
+	if o.combat and not (o.subtype == "staff" or o.subtype == "mindstar" or o.fixed_randart_damage_type) then
 		local theme_map = {
 			physical = engine.DamageType.PHYSICAL,
 			--mental = engine.DamageType.MIND,

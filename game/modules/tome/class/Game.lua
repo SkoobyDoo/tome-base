@@ -1669,13 +1669,13 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(6, "orcs+palace-fumes")
-do return end
-			local o = game.zone:makeEntity(game.level, "object", {random_object=true}, nil, true)
+			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
 			if o then
 				o:identify(true)
 				game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)
 			end
+do return end
+			self:changeLevel(6, "orcs+palace-fumes")
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
 			print(f, err)
