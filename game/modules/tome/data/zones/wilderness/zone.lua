@@ -52,7 +52,9 @@ return {
 					game.level.map.attrs(x, y, "world-encounter")[z.subtype] = true
 				end end
 			elseif z.type == "block_fortress" then
-				game.level.map.attrs(x, y, "block_fortress", true)
+				for x = z.x1, z.x2 do for y = z.y1, z.y2 do
+					game.level.map.attrs(x, y, "block_fortress", true)
+				end
 			end
 		end
 
