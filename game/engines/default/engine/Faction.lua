@@ -108,6 +108,8 @@ function _M:setFactionReaction(f1, f2, reaction, mutual)
 		game.factions[f2] = game.factions[f2] or {}
 		game.factions[f2][f1] = reaction
 	end
+
+	self:triggerHook{"Faction:setReaction", f1=f1, f2=f2, reaction=reaction, mutual=mutual}
 end
 
 -- Add a few default factions
