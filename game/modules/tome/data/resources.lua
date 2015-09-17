@@ -32,11 +32,13 @@ print("[Resources] Defining Actor Resources")
 -- CharacterSheet = table of parameters to be used with the CharacterSheet (mod.dialogsCharacterSheet.lua):
 --		status_text = function(act1, act2, compare_fields) generate text of resource status
 -- Minimalist = table of parameters to be used with the Minimalist uiset (see uiset.Minimalist.lua)
-ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breathe are not affected.", nil, nil, {color = "#LIGHT_STEEL_BLUE#"})
+ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breathe are not affected.", nil, nil, {
+	color = "#LIGHT_STEEL_BLUE#"
+})
 ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue.  Most physical abilities consume it.", nil, nil, {
 	color = "#ffcc80#",
 	cost_factor = function(self, ab, fake) return fake and self:hasEffect(self.EFF_ADRENALINE_SURGE) and 0 or (100 + self:combatFatigue()) / 100 end,
-	depleted_unsustain = true
+	depleted_unsustain = true,
 })
 ActorResource:defineResource("Mana", "mana", ActorTalents.T_MANA_POOL, "mana_regen", "Mana represents your reserve of magical energies. Most spells cast consume mana and each sustained spell reduces your maximum mana.", nil, nil, {
 	color = "#7fffd4#",
@@ -83,8 +85,10 @@ ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILI
 		}
 	}
 })
+
 ActorResource:defineResource("Vim", "vim", ActorTalents.T_VIM_POOL, "vim_regen", "Vim represents the amount of life energy/souls you have stolen. Each corruption talent requires some.", nil, nil, {
 	color = "#888888#",
+	Minimalist = {shader_params = {color = {0x90/255, 0x40/255, 0x10/255}}} --parameters for the Minimalist uiset
 })
 ActorResource:defineResource("Positive energy", "positive", ActorTalents.T_POSITIVE_POOL, "positive_regen", "Positive energy represents your reserve of positive power. It slowly decreases.", nil, nil, {
 	color = "#ffd700#",
@@ -141,7 +145,7 @@ ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, 
 	},
 })
 ActorResource:defineResource("Psi", "psi", ActorTalents.T_PSI_POOL, "psi_regen", "Psi represents your reserve of psychic energy.", nil, nil, {
-	color = "#4080ff#",
+	color = "#PURPLE#", --color = "#4080ff#",
 	cost_factor = function(self, t) return (100 + 2 * self:combatFatigue()) / 100 end,
 })
 ActorResource:defineResource("Souls", "soul", ActorTalents.T_SOUL_POOL, "soul_regen", "This is the number of soul fragments you have extracted from your foes for your own use.", 0, 10, {
