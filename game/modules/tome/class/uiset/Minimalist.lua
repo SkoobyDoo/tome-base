@@ -178,16 +178,6 @@ _M:bindHook("UISet:Minimalist:Load", function(self, data)
 	data.alterlocal("mm_bg_y", -3)
 end)
 
-_M:triggerHook{"UISet:Minimalist:Load", alterlocal=function(k, v)
-	local i = 1
-	while true do
-		local kk, _ = debug.getlocal(4, i)
-		if not kk then break end
-		if kk == k then debug.setlocal(4, i, v) break end
-		i = i + 1
-	end
-end }
-
 -- Note: could use a bit more room for some of the resource texts
 
 -- Additional (optional) resource parameters for the Minimalist UI (defined in ActorResource:resources_def[resource_name].Minimalist):
@@ -204,21 +194,31 @@ end }
 
 -- Default shader parameters used to draw the resource bars
 -- Overridden by resource_def.Minimalist.shader_params
-shader_params = {default = {name = "resources", require_shader=4, delay_load=true, speed=1000, distort={1.5,1.5}},
+_M.shader_params = {default = {name = "resources", require_shader=4, delay_load=true, speed=1000, distort={1.5,1.5}},
 	air={name = "resources", require_shader=4, delay_load=true, color=air_c, speed=100, amp=0.8, distort={2,2.5}},
 	life={name = "resources", require_shader=4, delay_load=true, color=life_c, speed=1000, distort={1.5,1.5}},
-	stamina={name = "resources", require_shader=4, delay_load=true, speed=700, distort={1,1.4}},
-	mana={name = "resources", require_shader=4, delay_load=true, speed=1000, distort={0.4,0.4}},
-	soul={name = "resources", require_shader=4, delay_load=true, speed=1200, distort={0.4,-0.4}},
+	stamina={name = "resources", require_shader=4, delay_load=true, color={0xff/255, 0xcc/255, 0x80/255}, speed=700, distort={1,1.4}},
+	mana={name = "resources", require_shader=4, delay_load=true, color={106/255, 146/255, 222/255}, speed=1000, distort={0.4,0.4}},
+	soul={name = "resources", require_shader=4, delay_load=true, color={128/255, 128/255, 128/255}, speed=1200, distort={0.4,-0.4}},
 	equilibrium={name = "resources2", require_shader=4, delay_load=true, color1={0x00/255, 0xff/255, 0x74/255}, color2={0x80/255, 0x9f/255, 0x44/255}, amp=0.8, speed=20000, distort={0.3,0.25}},
 	paradox={name = "resources2", require_shader=4, delay_load=true, color1={0x2f/255, 0xa0/255, 0xb4/255}, color2={0x8f/255, 0x80/255, 0x44/255}, amp=0.8, speed=20000, distort={0.1,0.25}},
-	positive={name = "resources", require_shader=4, delay_load=true, speed=1000, distort={1.6,0.2}},
-	negative={name = "resources", require_shader=4, delay_load=true, speed=1000, distort={1.6,-0.2}},
-	vim={name = "resources", require_shader=4, delay_load=true, speed=1000, distort={0.4,0.4}},
-	hate={name = "resources", require_shader=4, delay_load=true, speed=1000, distort={0.4,0.4}},
-	psi={name = "resources", require_shader=4, delay_load=true, speed=2000, distort={0.4,0.4}},
+	positive={name = "resources", require_shader=4, delay_load=true, color={colors.GOLD.r/255, colors.GOLD.g/255, colors.GOLD.b/255}, speed=1000, distort={1.6,0.2}},
+	negative={name = "resources", require_shader=4, delay_load=true, color={colors.DARK_GREY.r/255, colors.DARK_GREY.g/255, colors.DARK_GREY.b/255}, speed=1000, distort={1.6,-0.2}},
+	vim={name = "resources", require_shader=4, delay_load=true, color={210/255, 180/255, 140/255}, speed=1000, distort={0.4,0.4}},
+	hate={name = "resources", require_shader=4, delay_load=true, color={0xF5/255, 0x3C/255, 0xBE/255}, speed=1000, distort={0.4,0.4}},
+	psi={name = "resources", require_shader=4, delay_load=true, color={colors.BLUE.r/255, colors.BLUE.g/255, colors.BLUE.b/255}, speed=2000, distort={0.4,0.4}},
 	feedback={require_shader=4, delay_load=true, speed=2000, distort={0.4,0.4}},
 }
+
+_M:triggerHook{"UISet:Minimalist:Load", alterlocal=function(k, v)
+	local i = 1
+	while true do
+		local kk, _ = debug.getlocal(4, i)
+		if not kk then break end
+		if kk == k then debug.setlocal(4, i, v) break end
+		i = i + 1
+	end
+end }
 
 -- load and set up resource graphics
 function _M:initialize_resources()
@@ -244,8 +244,7 @@ function _M:initialize_resources()
 			res_gfx[rname].color = res_color
 		end
 
-		local shad_params = table.clone(shader_params[rname] or shader_params.default)
-		shad_params.color = shad_params.color or res_gfx[rname].color
+		local shad_params = table.clone(_M.shader_params[rname] or _M.shader_params.default)
 		local extra_shader_params = table.get(res_def, "Minimalist", "shader_params")
 		-- note: Shader init calls all arg functions
 		if extra_shader_params then -- update fenv for custom functions
@@ -256,11 +255,13 @@ function _M:initialize_resources()
 			end
 			table.merge(shad_params, extra_shader_params)
 		end
+		-- get color from resource_definition.Minimalist.shader_params, then _M.shader_params (defined here), then resource_definition.color
+		shad_params.color = table.get(res_def, "Minimalist", "shader_color") or shad_params.color or res_gfx[rname].color
 		res_gfx[rname].shader = Shader.new(shad_params.name, shad_params)
 		-- optional custom highlight select function
 		res_gfx[rname].highlight = table.get(res_def, "Minimalist", "highlight")	
 		-- load graphic images
-		local res_imgs = table.merge({front = "resources/front_"..rname..".png", front_dark = "resources/front_"..rname.."_dark.png"},  table.get(res_def, "Minimalist", "images") or {})
+		local res_imgs = table.merge({front = "resources/front_"..rname..".png", front_dark = "resources/front_"..rname.."_dark.png"}, table.get(res_def, "Minimalist", "images") or {})
 		for typ, file in pairs(res_imgs) do
 			local sfile = "/data/gfx/"..UI.ui.."-ui/minimalist/"..file
 			local bfile = "/data/gfx/ui/"..file
