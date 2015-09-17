@@ -127,6 +127,11 @@ function _M:getLoader(t)
 		updateZones = function(type, subtype, update)
 			for i, z in ipairs(self.level.custom_zones or {}) do update(z) end
 		end,
+		-- This is the module's responsability to invoke zone:runPostGeneration(level)
+		onGenerated = function(fct)
+			self.level.post_gen_callbacks = self.level.post_gen_callbacks or {}
+			self.level.post_gen_callbacks[#self.level.post_gen_callbacks+1] = fct
+		end,
 	}
 end
 

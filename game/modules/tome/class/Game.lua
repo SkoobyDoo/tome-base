@@ -939,6 +939,7 @@ function _M:changeLevelReal(lev, zone, params)
 
 	-- Post process if needed once the nicer tiles are done
 	if self.level.data and self.level.data.post_nicer_tiles then self.level.data.post_nicer_tiles(self.level) end
+	self.zone:runPostGeneration(self.level)
 
 	-- After ? events ?
 	if afternicer then afternicer() end
@@ -1669,8 +1670,6 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			DamageType:get(DamageType.NATURE).projector(self.player, self.player.x, self.player.y, DamageType.NATURE, 100)
-do return end
 			self:changeLevel(6, "orcs+palace-fumes")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
