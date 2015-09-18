@@ -6371,6 +6371,7 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
+
 	dst:removeObject(inven, item, true)
 	local ro, rs = self:wearObject(o, true, true, force_inven, force_item) -- removed object and remaining stack if any
 	local added, slot
@@ -6392,6 +6393,25 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 			if rrs and not game.zone.wilderness then game.level.map:addObject(self.x, self.y, rrs) end -- extra stack discarded in wilderness
 		end
 	end
+
+	-- Tinkers switch
+	local removed_o = type(ro) == "table" and ro or nil
+	if removed_o and removed_o.tinker and config.settings.tome.tinker_auto_switch then
+		local had_tinker = removed_o.tinker
+		if not dst:doTakeoffTinker(removed_o, had_tinker, true) then had_tinker = nil end
+
+		if had_tinker then
+			local found, titem, tinven = dst:findInAllInventoriesByObject(o)
+			local ok = false
+			if found and dst:getInven(tinven) then
+				ok = dst:doWearTinker(nil, nil, had_tinker, dst:getInven(tinven), titem, found, false)
+			end
+			if not ok then
+				dst:addObject(dst.INVEN_INVEN, had_tinker)
+			end
+		end
+	end
+
 	dst:sortInven()
 	self:actorCheckSustains()
 	self:breakLightningSpeed()
@@ -6498,7 +6518,7 @@ function _M:canUseTinker(tinker)
 	return true
 end
 
-function _M:doTakeoffTinker(base_o, oldo)
+function _M:doTakeoffTinker(base_o, oldo, only_remove)
 	if base_o.tinker ~= oldo then return end
 
 	local _, base_inven
@@ -6521,7 +6541,7 @@ function _M:doTakeoffTinker(base_o, oldo)
 		self:onWear(base_o, base_inven, true)
 	end
 
-	self:addObject(self.INVEN_INVEN, oldo)
+	if not only_remove then self:addObject(self.INVEN_INVEN, oldo) end
 	game.logPlayer(self, "You detach %s from your %s.", oldo:getName{do_color=true}, base_o:getName{do_color=true})
 
 	return true

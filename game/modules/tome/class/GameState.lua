@@ -281,7 +281,7 @@ end
 --	use updatePowers to resolve conflicts.
 function _M:checkPowers(e1, e2, require_power, theme)
 	if not e1 or not e2 then return true end
-print("Comparing power sources",e1.name, e2.name)
+	-- print("Comparing power sources",e1.name, e2.name)
 	-- check for excluded power sources first
 	if theme == "antimagic_only" then -- check antimagic restrictions only
 		local not_ps = self:attrPowers(e1)

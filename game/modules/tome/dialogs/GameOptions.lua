@@ -506,6 +506,15 @@ function _M:generateListGameplay()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When swaping an item with a tinker attached, swap the tinker to the newly worn item automatically.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Swap tinkers#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.tinker_auto_switch and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.tinker_auto_switch = not config.settings.tome.tinker_auto_switch
+		game:saveSettings("tome.tinker_auto_switch", ("tome.tinker_auto_switch = %s\n"):format(tostring(config.settings.tome.rest_before_explore)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
