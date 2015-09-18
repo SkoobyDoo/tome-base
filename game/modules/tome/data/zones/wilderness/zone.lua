@@ -54,7 +54,7 @@ return {
 			elseif z.type == "block_fortress" then
 				for x = z.x1, z.x2 do for y = z.y1, z.y2 do
 					game.level.map.attrs(x, y, "block_fortress", true)
-				end
+				end end
 			end
 		end
 
