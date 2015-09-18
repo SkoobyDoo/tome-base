@@ -4238,7 +4238,7 @@ function _M:learnPool(t)
 	
 	--go through all resources looking for talent references in the definition
 	for res, res_def in ipairs(_M.resources_def) do
-		if t[res_def.short_name] or t[res_def.sustain_prop] or t[res_def.drain_prop] then
+		if util.getval(t[res_def.short_name], self, t) or util.getval(t[res_def.sustain_prop], self, t) or util.getval(t[res_def.drain_prop], self, t) then
 			self:checkPool(t.id, res_def.talent)
 			if res_def.short_name == "paradox" then self:checkPool(t.id, self.T_SPACETIME_TUNING) end -- extra for paradox
 		end
