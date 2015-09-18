@@ -1964,8 +1964,7 @@ function _M:autoExplore()
 					elseif terrain.air_level and terrain.air_level < 0 and not ((self.can_breath.water or 0) > 0) then
 						move_cost = move_cost + 15
 						is_slow = true
-					end
-          			-- Let's not run into Maze cracks and the like - Marson
+ 	         			-- Let's not run into Maze cracks and the like - Marson
 					elseif terrain.block_move ~= Grid.block_move then
 						move_cost = move_cost + 10
 						is_slow = true
