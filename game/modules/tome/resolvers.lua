@@ -614,11 +614,11 @@ function resolvers.calc.randartmax(t, e)
 end
 
 --- Inscription resolver
-function resolvers.inscription(name, data)
-	return {__resolver="inscription", name, data}
+function resolvers.inscription(name, data, force_id)
+	return {__resolver="inscription", name, data, force_id}
 end
 function resolvers.calc.inscription(t, e)
-	e:setInscription(nil, t[1], t[2], false, false, nil, true, true)
+	e:setInscription(t[3] or nil, t[1], t[2], false, false, nil, true, true)
 	return nil
 end
 
