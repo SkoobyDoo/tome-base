@@ -133,6 +133,18 @@ function _M:newAchievement(t)
 	end
 end
 
+function _M:getCurrentAchievementDifficultyId(game, id)
+	if game.difficulty == DIFFICULTY_NORMAL and game.permadeath == PERMADEATH_ONE then return "NORMAL_ROGUELIKE_"..id
+	elseif game.difficulty == DIFFICULTY_NIGHTMARE and game.permadeath == PERMADEATH_ONE then return "NIGHTMARE_"..id
+	elseif game.difficulty == DIFFICULTY_NIGHTMARE and game.permadeath == PERMADEATH_MANY then return "NIGHTMARE_ADVENTURE_"..id
+	elseif game.difficulty == DIFFICULTY_INSANE and game.permadeath == PERMADEATH_ONE then return "INSANE_"..id
+	elseif game.difficulty == DIFFICULTY_INSANE and game.permadeath == PERMADEATH_MANY then return "INSANE_ADVENTURE_"..id
+	elseif game.difficulty == DIFFICULTY_MADNESS and game.permadeath == PERMADEATH_ONE then return "MADNESS_"..id
+	elseif game.difficulty == DIFFICULTY_MADNESS and game.permadeath == PERMADEATH_MANY then return "MADNESS_ADVENTURE_"..id
+	elseif game.permadeath == PERMADEATH_INFINITE then return "EXPLORATION_"..id
+	else return id end
+end
+
 function _M:gainAchievement(id, src, ...)
 	local a = self.achiev_defs[id]
 
