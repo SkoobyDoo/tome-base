@@ -2000,7 +2000,7 @@ function _M:onHeal(value, src)
 		end
 	end
 
-	if self:attr("arcane_shield") and self:attr("allow_on_heal") and value > 0 and not self:hasEffect(self.EFF_DAMAGE_SHIELD) then
+	if self:attr("arcane_shield") and self:attr("allow_on_heal") and value > 0 then
 		self:setEffect(self.EFF_DAMAGE_SHIELD, 3, {power=value * self.arcane_shield / 100})
 	end
 
