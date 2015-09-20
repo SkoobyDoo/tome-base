@@ -2099,6 +2099,7 @@ end
 
 --- Returns the resistance penetration
 function _M:combatGetResistPen(type)
+	if not self.resists_pen then return 0 end
 	local pen = (self.resists_pen.all or 0) + (self.resists_pen[type] or 0)
 	return pen
 end
