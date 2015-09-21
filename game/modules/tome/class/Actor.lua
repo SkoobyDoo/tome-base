@@ -6142,7 +6142,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		self:triggerTalent(self.T_SPINE_OF_THE_WORLD)
 	end
 
-	self:fireTalentCheck("callbackOnTemporaryEffect", eff_id, e, p)
+	if self:fireTalentCheck("callbackOnTemporaryEffect", eff_id, e, p) then return true end
 
 	if self.player and not self.tmp[eff_id] then
 		p.__set_time = core.game.getTime()
