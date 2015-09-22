@@ -63,6 +63,14 @@ damDesc = function(self, type, dam)
 	return dam
 end
 
+Talents.is_a_type = {
+	is_spell = "a spell",
+	is_mind = "a mind power",
+	is_nature = "a nature gift",
+	is_antimagic = "an antimagic ability",
+	is_summon = " a summon power",
+}
+
 Talents.damDesc = damDesc
 Talents.main_env = getfenv(1)
 
