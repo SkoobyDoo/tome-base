@@ -24,6 +24,7 @@ newTalent{
 	points = 5,
 	require = techs_req1,
 	sustain_stamina = 20,
+	no_sustain_autoreset = true,
 	no_energy = true,
 	cooldown = 5,
 	tactical = { BUFF = 2 },
@@ -35,14 +36,27 @@ newTalent{
 		if self:hasShield() then chance = chance * 0.75
 		elseif self:hasDualWeapon() then chance = chance * 0.5
 		end
-
+		
 		if rng.percent(chance) then
-			local spells = {}
 			local fatigue = (100 + 2 * self:combatFatigue()) / 100
 			local mana = self:getMana() - 1
-			if self:knowTalent(self.T_FLAME) and not self:isTalentCoolingDown(self.T_FLAME)and mana > self:getTalentFromId(self.T_FLAME).mana * fatigue then spells[#spells+1] = self.T_FLAME end
-			if self:knowTalent(self.T_LIGHTNING) and not self:isTalentCoolingDown(self.T_LIGHTNING)and mana > self:getTalentFromId(self.T_LIGHTNING).mana * fatigue then spells[#spells+1] = self.T_LIGHTNING end
-			if self:knowTalent(self.T_EARTHEN_MISSILES) and not self:isTalentCoolingDown(self.T_EARTHEN_MISSILES)and mana > self:getTalentFromId(self.T_EARTHEN_MISSILES).mana * fatigue then spells[#spells+1] = self.T_EARTHEN_MISSILES end
+			local spells = {}
+			-- Load previously selected spell
+			local p = self:isTalentActive(t.id)
+			if p and p.talent then
+				local talent = self:getTalentFromId(p.talent)
+				if talent.allow_for_arcane_combat and self:knowTalent(talent) and not self:isTalentCoolingDown(talent) and mana > talent.mana * fatigue then
+					spells[1] = talent.id
+				end
+			end
+			-- If no appropriate spell is selected, pick a random spell
+			if #spells < 1 then
+				for _, talent in pairs(self.talents_def) do
+					if talent.allow_for_arcane_combat and self:knowTalent(talent) and not self:isTalentCoolingDown(talent) and mana > talent.mana * fatigue then
+						spells[#spells+1] = talent.id
+					end
+				end
+			end
 			local tid = rng.table(spells)
 			if tid then
 				local l = self:lineFOV(target.x, target.y)
@@ -73,18 +87,50 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		return {}
+		if self ~= game.player then return {} end
+		local talent, use_random = self:talentDialog(require("mod.dialogs.talents.MagicalCombatArcaneCombat").new(self))
+		if use_random then
+			return {}
+		elseif talent then
+			return {talent = talent}
+		else
+			return nil
+		end
 	end,
 	deactivate = function(self, t, p)
+		p.talent = nil
 		return true
 	end,
 	info = function(self, t)
-		return ([[Allows you to use a melee weapon to focus your spells, granting a %d%% chance per melee attack to deliver a Flame, Lightning or Earthen Missiles spell as a free action on the target.
-		When using a shield the chance is reduced by one fourth.
-		When dual wielding or using a shield the chance is halved for each weapon.
-		Delivering the spell this way will not trigger a spell cooldown, but only works if the spell is not cooling down.
-		The chance increases with your Cunning.]]):
-		format(t.getChance(self, t))
+		local talent_list = ""
+		for _, talent in pairs(self.talents_def) do
+			if talent.allow_for_arcane_combat and talent.name then
+				if #talent_list > 0 then talent_list = talent_list .. ", " end
+				talent_list = talent_list .. talent.name
+			end
+		end
+		local talent_selected = ""
+		if self:isTalentActive(t.id) then
+			local talent = self:getTalentFromId(self:isTalentActive(t.id).talent)
+			if talent and talent.name then
+				talent_selected = [[
+				
+				Currently selected spell: ]] .. talent.name
+			else
+				talent_selected = [[
+				
+				Currently selected spell: Random]]
+			end
+		end
+		return ([[Allows you to use melee weapons to focus your spells, granting a %d%% chance per melee attack to cast an offensive spell as a free action on the target.
+		Delivering the spell this way will not trigger a spell cooldown, but only works if the spell is not already cooling down.
+		You may select an allowed spell to trigger this way, or choose to have one randomly selected for each attack.
+		While wielding a shield, the chance is reduced by one quarter.
+		While dual wielding, the chance is reduced by half for both weapons.
+		The chance increases with your Cunning.
+
+		Allowed spells: %s %s]]):
+		format(t.getChance(self, t), talent_list, talent_selected)
 	end,
 }
 

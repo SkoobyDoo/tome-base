@@ -35,6 +35,7 @@ newTalent{
 		if self:getTalentLevel(t) >= 5 then tg.type = "beam" end
 		return tg
 	end,
+	allow_for_arcane_combat = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 290) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
