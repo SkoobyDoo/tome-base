@@ -292,7 +292,9 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		-- Reduce damage with resistance
 		if target.resists then
 			local pen = 0
-			if src.resists_pen then pen = (src.resists_pen.all or 0) + (src.resists_pen[type] or 0) end
+			if src.combatGetResistPen then pen = src:combatGetResistPen(type)
+			elseif src.resists_pen then pen = (src.resists_pen.all or 0) + (src.resists_pen[type] or 0)
+			end
 			local dominated = target:hasEffect(target.EFF_DOMINATED)
 			if dominated and dominated.src == src then pen = pen + (dominated.resistPenetration or 0) end
 			if target:attr("sleep") and src.attr and src:attr("night_terror") then pen = pen + src:attr("night_terror") end
@@ -440,9 +442,13 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 				end
 			end
 		end
+		
+		if target.resists and target.resists.absolute then -- absolute resistance (from Terrasca)
+			dam = dam * ((100 - math.min(target.resists_cap.absolute or 70, target.resists.absolute)) / 100)
+			print("[PROJECTOR] after absolute resistance dam", dam)
+		end
 
 		print("[PROJECTOR] final dam after hooks and callbacks", dam)
-
 
 		local source_talent = src.__projecting_for and src.__projecting_for.project_type and (src.__projecting_for.project_type.talent_id or src.__projecting_for.project_type.talent) and src.getTalentFromId and src:getTalentFromId(src.__projecting_for.project_type.talent or src.__projecting_for.project_type.talent_id)
 		local dead

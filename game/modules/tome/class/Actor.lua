@@ -580,20 +580,33 @@ function _M:act()
 	self.changed = true
 	self.turn_procs = {}
 
-	-- If resources are too low, disable sustains
-	if self.mana < 1 or self.stamina < 1 or self.psi < 1 or self.vim < 1 then
-		for tid, _ in pairs(self.sustain_talents) do
-			local t = self:getTalentFromId(tid)
-			if (t.sustain_mana and self.mana < 1) or (t.sustain_stamina and self.stamina < 1 and not self:hasEffect(self.EFF_ADRENALINE_SURGE)) then
-				self:forceUseTalent(tid, {ignore_energy=true})
-			elseif (t.sustain_psi and self.psi < 1) and t.remove_on_zero then
-				self:forceUseTalent(tid, {ignore_energy=true})
-			elseif (t.sustain_vim and self.vim < 1) and t.remove_on_zero then
-				self:forceUseTalent(tid, {ignore_energy=true})
+	-- Break some sustains if certain resources are too low
+	-- Note: force_talent_ignore_ressources has no effect here
+	-- consider replacing the minimum resource value of 1 with a number based on the talent and resource
+	for tid, p in pairs(self.sustain_talents) do
+		local deact, t = false, self.talents_def[tid]
+		-- check each possible resource the talent uses
+		for res, res_def in ipairs(_M.resources_def) do
+			if (t.remove_on_zero == nil and res_def.depleted_unsustain) or (t.remove_on_zero ~= nil and util.getval(t.remove_on_zero, self, t)) then
+				if t[res_def.sustain_prop] then
+					if res == self.RS_STAMINA and self:hasEffect(self.EFF_ADRENALINE_SURGE) then
+					else
+						if res_def.invert_values then
+							if self[res_def.maxname] and (self[res_def.maxname] - self[res_def.short_name]) < 1 then
+								deact = true break
+							end
+						else
+							if self[res_def.minname] and (self[res_def.short_name] - self[res_def.minname]) < 1 then
+								deact = true break
+							end
+						end
+					end
+				end
 			end
 		end
+		if deact then self:forceUseTalent(tid, {ignore_energy=true}) end
 	end
-
+	
 	-- clear grappling
 	if self:hasEffect(self.EFF_GRAPPLING) and self.stamina < 1 and not self:hasEffect(self.EFF_ADRENALINE_SURGE) then
 		self:removeEffect(self.EFF_GRAPPLING)
@@ -1784,8 +1797,8 @@ function _M:tooltip(x, y, seen_by)
 	local resists = tstring{}
 	ts:add({"color", "ANTIQUE_WHITE"}, "Resists: ")
 	for t, v in pairs(self.resists) do
-		if t == "all" then
-			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, "all, ")
+		if t == "all" or t == "absolute" then
+			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, t..", ")
 		elseif type(t) == "string" and math.abs(v) >= 20 then
 			local res = tostring ( math.floor(self:combatGetResist(t)) ) .. "%"
 			if v > 0 then
@@ -1795,7 +1808,12 @@ function _M:tooltip(x, y, seen_by)
 			end
 		end
 	end
-
+	if self:attr("speed_resist") then
+		local res = 100 - (util.bound(self.global_speed * self.movement_speed, (100-(self.speed_resist_cap or 70))/100, 1)) * 100
+		if res > 0 then
+			ts:add({"color", "LIGHT_GREEN"}, tostring(math.floor(res)).."%", " ", {"color", "SALMON"}, "from speed", {"color", "LAST"})
+		end
+	end
 	if ts[#ts] == ", " then table.remove(ts) end
 	ts:add(true)
 
@@ -1982,7 +2000,7 @@ function _M:onHeal(value, src)
 		end
 	end
 
-	if self:attr("arcane_shield") and self:attr("allow_on_heal") and value > 0 and not self:hasEffect(self.EFF_DAMAGE_SHIELD) then
+	if self:attr("arcane_shield") and self:attr("allow_on_heal") and value > 0 then
 		self:setEffect(self.EFF_DAMAGE_SHIELD, 3, {power=value * self.arcane_shield / 100})
 	end
 
@@ -2103,7 +2121,7 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
-	--Special Flag (currently for Terrasca)
+	--Special Flag (for older versions of Terrasca)
 	if value > 0 and self:attr("speed_resist") then
 		value = value * (util.bound(self.global_speed * self.movement_speed, 0.3, 1))
 	end
@@ -2886,8 +2904,8 @@ function _M:die(src, death_note)
 						-- Do not drop
 						o.no_drop = true
 
-						-- Drop a random artifact instead
-						local ro = game.zone:makeEntity(game.level, "object", {no_tome_drops=true, unique=true, not_properties={"lore"}}, nil, true)
+						-- Drop a replacement by filter or random artifact instead
+						local ro = game.zone:makeEntity(game.level, "object", o.__special_boss_drop.filter or {no_tome_drops=true, unique=true, not_properties={"lore"}}, nil, true)
 						if ro then game.zone:addEntity(game.level, ro, "object", dropx, dropy) end
 					end
 
@@ -3144,17 +3162,24 @@ end
 function _M:resetToFull()
 	if self.dead then return end
 	self.life = self.max_life
-	-- Make Disruption Shield not kill Archmages on levelup or we risk Archmages being mortal
-	if not (self.isTalentActive and self:isTalentActive(self.T_DISRUPTION_SHIELD)) then
-		self.mana = self.max_mana
+	
+	-- go through all resources
+	for res, res_def in ipairs(_M.resources_def) do
+		if res_def.short_name == "paradox" then
+			self.paradox = self.preferred_paradox or 300
+		elseif res_def.short_name == "mana" then
+			-- Special handling of Disruption Shield to avoid penalizing Archmages on levelup
+			if not (self.isTalentActive and self:isTalentActive(self.T_DISRUPTION_SHIELD)) then
+				self.mana = self:getMaxMana()
+			end
+		else
+			if res_def.invert_values then
+				self[res_def.short_name] = self:check(res_def.getMinFunction) or self[res_def.short_name] or res_def.min
+			else
+				self[res_def.short_name] = self:check(res_def.getMaxFunction) or self[res_def.short_name] or res_def.max
+			end
+		end
 	end
-	self.vim = self.max_vim
-	self.stamina = self.max_stamina
-	self.equilibrium = self.min_equilibrium
-	self.air = self.max_air
-	self.psi = self.max_psi
-	self.hate = self.max_hate
-	self.paradox = self.preferred_paradox or 300
 end
 
 -- Level up talents to match actor level
@@ -4186,8 +4211,9 @@ function _M:unlearnItemTalent(o, tid, level)
 	end
 end
 
+-- learn a talent associated with another talent, usually a resource pool
 function _M:checkPool(tid, pid)
-	if tid == pid then return end
+	if tid == pid or not self.talents_def[pid] then return end
 	if not self:knowTalent(pid) then
 		self:learnTalent(pid, true)
 	else
@@ -4197,47 +4223,27 @@ function _M:checkPool(tid, pid)
 		end
 	end
 	self.resource_pool_refs[pid] = self.resource_pool_refs[pid] or {}
-	self.resource_pool_refs[pid][tid] = (self.resource_pool_refs[pid][tid] or 0) + 1
+	self.resource_pool_refs[pid][tid] = self.talents[tid]
+	return true
 end
 
---- Actor learns a resource pool
+--- Actor learns a resource pool or associated talent
 -- @param talent a talent definition table
 function _M:learnPool(t)
 	local tt = self:getTalentTypeFrom(t.type[1])
 
---	if tt.mana_regen and self.mana_regen == 0 then self.mana_regen = 0.5 end
-
-	if t.mana or t.sustain_mana then
-		self:checkPool(t.id, self.T_MANA_POOL)
-	end
-	if t.equilibrium or t.sustain_equilibrium then
-		self:checkPool(t.id, self.T_EQUILIBRIUM_POOL)
-	end
-	if util.getval(t.stamina, self, t) or t.sustain_stamina then
-		self:checkPool(t.id, self.T_STAMINA_POOL)
-	end
-	if t.vim or t.sustain_vim or t.drain_vim then
-		self:checkPool(t.id, self.T_VIM_POOL)
-	end
-	if t.positive or t.sustain_positive then
-		self:checkPool(t.id, self.T_POSITIVE_POOL)
-	end
-	if t.negative or t.sustain_negative then
-		self:checkPool(t.id, self.T_NEGATIVE_POOL)
-	end
-	if t.hate then
-		self:checkPool(t.id, self.T_HATE_POOL)
-	end
-	if t.paradox or t.sustain_paradox then
-		self:checkPool(t.id, self.T_PARADOX_POOL)
-		self:checkPool(t.id, self.T_SPACETIME_TUNING)
-	end
-	if t.psi or t.sustain_psi then
-		self:checkPool(t.id, self.T_PSI_POOL)
-	end
 	if t.type[1]:find("^psionic/feedback") or t.type[1]:find("^psionic/discharge") or t.feedback or t.sustain_feedback then
 		self:checkPool(t.id, self.T_FEEDBACK_POOL)
 	end
+	
+	--go through all resources looking for talent references in the definition
+	for res, res_def in ipairs(_M.resources_def) do
+		if util.getval(t[res_def.short_name], self, t) or util.getval(t[res_def.sustain_prop], self, t) or util.getval(t[res_def.drain_prop], self, t) then
+			self:checkPool(t.id, res_def.talent)
+			if res_def.short_name == "paradox" then self:checkPool(t.id, self.T_SPACETIME_TUNING) end -- extra for paradox
+		end
+	end
+
 	-- If we learn an archery talent, also learn to shoot
 	if t.type[1]:find("^technique/archery") then
 		self:checkPool(t.id, self.T_SHOOT)
@@ -4249,7 +4255,7 @@ function _M:learnPool(t)
 
 	-- Generic
 	if t.autolearn_talent then self:checkPool(t.id, t.autolearn_talent) end
-
+	
 	self:recomputeRegenResources()
 
 	return true
@@ -4277,13 +4283,11 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 			if list[i] == t_id then table.remove(list, i) break end
 		end
 	end
-
 	-- Check the various pools
 	for pid, refs in pairs(self.resource_pool_refs) do
 		if refs[t_id] then
-			refs[t_id] = refs[t_id] - nb
-			if refs[t_id] <= 0 then refs[t_id] = nil end
-
+			refs[t_id] = self.talents[t_id]
+			if (refs[t_id] or 0) <= 0 then refs[t_id] = nil end
 			if not next(refs) then self:unlearnTalent(pid, 1) end
 		end
 	end
@@ -4524,7 +4528,7 @@ function _M:incVim(v)
 	end
 end
 
--- Feedback Psuedo-Resource Functions
+-- Feedback Pseudo-Resource Functions
 function _M:getFeedback()
 	if self.psionic_feedback then
 		return self.psionic_feedback
@@ -4631,74 +4635,29 @@ function _M:preUseTalent(ab, silent, fake)
 	
 	-- Sleeping prevents the use of all non-instant talents
 	if self:attr("sleep") and not self:attr("lucid_dreamer") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= (true or "fake") then
-		if not silent then game.logSeen(self, "%s is sleeping and unable to do this.", self.name:capitalize(), ab.name) end
+		if not silent then game.logPlayer(self, "%s is sleeping and unable to do this.", self.name:capitalize(), ab.name) end
 		return false
 	end
 	
 	if not self:enoughEnergy() and not fake then return false end
 
 	if ab.mode == "sustained" then
-		if ab.sustain_mana and self.max_mana < util.getval(ab.sustain_mana, self, ab) and not self:isTalentActive(ab.id) then
-			if not silent then game.logPlayer(self, "You do not have enough mana to activate %s.", ab.name) end
-			return false
-		end
-		if ab.sustain_stamina and self.max_stamina < util.getval(ab.sustain_stamina, self, ab) and not self:isTalentActive(ab.id) then
-			if not silent then game.logPlayer(self, "You do not have enough stamina to activate %s.", ab.name) end
-			return false
-		end
-		if ab.sustain_vim and self.max_vim < util.getval(ab.sustain_vim, self, ab) and not self:isTalentActive(ab.id) then
-			if not silent then game.logPlayer(self, "You do not have enough vim to activate %s.", ab.name) end
-			return false
-		end
-		if ab.sustain_positive and self.max_positive < util.getval(ab.sustain_positive, self, ab) and not self:isTalentActive(ab.id) then
-			if not silent then game.logPlayer(self, "You do not have enough positive energy to activate %s.", ab.name) end
-			return false
-		end
-		if ab.sustain_negative and self.max_negative < util.getval(ab.sustain_negative, self, ab) and not self:isTalentActive(ab.id) then
-			if not silent then game.logPlayer(self, "You do not have enough negative energy to activate %s.", ab.name) end
-			return false
-		end
-		if ab.sustain_hate and self.max_hate < util.getval(ab.sustain_hate, self, ab) and not self:isTalentActive(ab.id) then
-			if not silent then game.logPlayer(self, "You do not have enough hate to activate %s.", ab.name) end
-			return false
-		end
-		if ab.sustain_psi and self.max_psi < util.getval(ab.sustain_psi, self, ab) and not self:isTalentActive(ab.id) then
-			if not silent then game.logPlayer(self, "You do not have enough energy to activate %s.", ab.name) end
-			return false
+		if not self:isTalentActive(ab.id) then
+			local cost
+			-- check sustained costs
+			for res, res_def in ipairs(_M.resources_def) do
+				cost = ab[res_def.sustain_prop]
+				if cost then
+					cost = util.getval(cost, self, ab) or 0
+					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
+					if cost ~= 0 and self[res_def.minname] and self[res_def.maxname] and self[res_def.minname] + cost > self[res_def.maxname] then
+						if not silent then game.logPlayer(self, "You %s %s to activate %s.", res_def.invert_values and "have too much committed" or "do not have enough uncommitted", res_def.name, ab.name) end
+						return false
+					end
+				end
+			end
 		end
 	elseif not self:attr("force_talent_ignore_ressources") then
-		if ab.mana and self:getMana() < util.getval(ab.mana, self, ab) * (100 + 2 * self:combatFatigue()) / 100 then
-			if not silent then game.logPlayer(self, "You do not have enough mana to cast %s.", ab.name) end
-			return false
-		end
-		if ab.soul and self:getSoul() < util.getval(ab.soul, self, ab) then
-			if not silent then game.logPlayer(self, "You do not have enough souls to cast %s.", ab.name) end
-			return false
-		end
-		if util.getval(ab.stamina, self, ab) and self:getStamina() < util.getval(ab.stamina, self, ab) * (100 + self:combatFatigue()) / 100 and (not self:hasEffect(self.EFF_ADRENALINE_SURGE) or self.life < util.getval(ab.stamina, self, ab) * (100 + self:combatFatigue()) / 100) then
-			if not silent then game.logPlayer(self, "You do not have enough stamina to use %s.", ab.name) end
-			return false
-		end
-		if ab.vim and self:getVim() < util.getval(ab.vim, self, ab) and (not self:attr("bloodcasting") or self.life < util.getval(ab.vim, self, ab)) then
-			if not silent then game.logPlayer(self, "You do not have enough vim to use %s.", ab.name) end
-			return false
-		end
-		if ab.positive and self:getPositive() < util.getval(ab.positive, self, ab) * (100 + self:combatFatigue()) / 100 then
-			if not silent then game.logPlayer(self, "You do not have enough positive energy to use %s.", ab.name) end
-			return false
-		end
-		if ab.negative and self:getNegative() < util.getval(ab.negative, self, ab) * (100 + self:combatFatigue()) / 100 then
-			if not silent then game.logPlayer(self, "You do not have enough negative energy to use %s.", ab.name) end
-			return false
-		end
-		if ab.hate and self:getHate() < util.getval(ab.hate, self, ab) * (100 + self:combatFatigue()) / 100 then
-			if not silent then game.logPlayer(self, "You do not have enough hate to use %s.", ab.name) end
-			return false
-		end
-		if ab.psi and self:getPsi() < util.getval(ab.psi, self, ab) * (100 + 2 * self:combatFatigue()) / 100 then
-			if not silent then game.logPlayer(self, "You do not have enough energy to use %s.", ab.name) end
-			return false
-		end
 		if ab.feedback and self:getFeedback() < util.getval(ab.feedback, self, ab) * (100 + 2 * self:combatFatigue()) / 100 then
 			if not silent then game.logPlayer(self, "You do not have enough feedback to use %s.", ab.name) end
 			return false
@@ -4708,7 +4667,33 @@ function _M:preUseTalent(ab, silent, fake)
 			return false
 		end
 	end
-
+	
+	-- check resource costs (sustains can always be deactivated at no cost)
+	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
+		local rname, cost, rmin, rmax
+		-- check for sustained resources
+		for res, res_def in ipairs(_M.resources_def) do
+			rname = res_def.short_name
+			cost = ab[rname]
+			if cost then
+				cost = (util.getval(cost, self, ab) or 0) * (util.getval(res_def.cost_factor, self, ab) or 1)
+				if cost ~= 0 then
+					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
+					if res_def.invert_values then
+						if rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
+							if not silent then game.logPlayer(self, "You have too much %s to use %s.", res_def.name, ab.name) end
+							return false
+						end
+					else
+						if rmin and self[res_def.getFunction](self) - cost < rmin then -- not enough
+							if not silent then game.logPlayer(self, "You do not have enough %s to use %s.", res_def.name, ab.name) end
+							return false
+						end
+					end
+				end
+			end
+		end
+	end
 	if not ab.never_fail then
 		-- Equilibrium is special, it has no max, but the higher it is the higher the chance of failure (and loss of the turn)
 		-- But it is not affected by fatigue
@@ -4835,6 +4820,7 @@ local sustainCallbackCheck = {
 	callbackOnRun = "talents_on_run",
 	callbackOnLevelup = "talents_on_levelup",
 	callbackOnDeath = "talents_on_death",
+	callbackOnDeathbox = "talents_on_deathbox",
 	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnKill = "talents_on_kill",
 	callbackOnMeleeAttack = "talents_on_melee_attack",
@@ -4851,6 +4837,8 @@ local sustainCallbackCheck = {
 	callbackOnTakeoff = "talents_on_takeoff",
 	callbackOnTalentPost = "talents_on_talent_post",
 	callbackOnTemporaryEffect = "talents_on_tmp",
+	callbackOnTemporaryEffectRemove = "talents_on_tmp_remove",
+	callbackOnTemporaryEffectAdd = "talents_on_tmp_add",
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
 }
@@ -5078,38 +5066,38 @@ function _M:postUseTalent(ab, ret, silent)
 	local trigger = false
 	if ab.mode == "sustained" then
 		if not self:isTalentActive(ab.id) then
-			if ab.sustain_mana then
-				trigger = true; self:incMaxMana(-util.getval(ab.sustain_mana, self, ab))
-			end
-			if ab.sustain_stamina then
-				trigger = true; self:incMaxStamina(-util.getval(ab.sustain_stamina, self, ab))
-			end
-			if ab.sustain_vim then
-				trigger = true; self:incMaxVim(-util.getval(ab.sustain_vim, self, ab))
-			end
-			if ab.drain_vim then
-				trigger = true; self:attr("vim_regen", -ab.drain_vim)
-			end
-			if ab.sustain_equilibrium then
-				trigger = true; self:incMinEquilibrium(util.getval(ab.sustain_equilibrium, self, ab))
-			end
-			if ab.sustain_positive then
-				trigger = true; self:incMaxPositive(-util.getval(ab.sustain_positive, self, ab))
-			end
-			if ab.sustain_negative then
-				trigger = true; self:incMaxNegative(-util.getval(ab.sustain_negative, self, ab))
-			end
-			if ab.sustain_hate then
-				trigger = true; self:incMaxHate(-util.getval(ab.sustain_hate, self, ab))
-			end
-			if ab.sustain_paradox then
-				trigger = true; self:incMinParadox(util.getval(ab.sustain_paradox, self, ab));
-			end
-			if ab.sustain_psi then
-				trigger = true; self:incMaxPsi(-util.getval(ab.sustain_psi, self, ab))
-			end
-			if ab.sustain_feedback then
+			if ab.sustain_feedback then -- pseudo resource
 				trigger = true; self:incMaxFeedback(-util.getval(ab.sustain_feedback, self, ab))
+			end
+			-- check resources
+			for res, res_def in ipairs(_M.resources_def) do
+				-- apply sustain costs
+				local cost = ab[res_def.sustain_prop]
+				if cost then
+					cost = (util.getval(cost, self, ab) or 0)
+					if cost ~= 0 then
+						trigger = true
+						if res_def.invert_values then
+							self[res_def.incMinFunction](self, cost)
+						else
+							self[res_def.incMaxFunction](self, -cost)
+						end
+					end
+				end
+				-- apply drain costs
+				cost = ab[res_def.drain_prop]
+				if cost then
+					cost = util.getval(cost, self, ab) or 0
+					if cost ~= 0 then
+						trigger = true
+						if res_def.invert_values then
+							self:attr(res_def.regen_prop, cost)
+						else
+							self:attr(res_def.regen_prop, -cost)
+						end
+
+					end
+				end
 			end
 			if ab.sustain_slots then
 				if not self.sustain_slots then self.sustain_slots = {} end
@@ -5123,39 +5111,36 @@ function _M:postUseTalent(ab, ret, silent)
 			end
 			if not ab.passive_callbacks then self:registerCallbacks(ab, ab.id, "talent") end
 		else
-			if ab.sustain_mana then
-				self:incMaxMana(util.getval(ab.sustain_mana, self, ab))
-			end
-			if ab.sustain_stamina then
-				self:incMaxStamina(util.getval(ab.sustain_stamina, self, ab))
-			end
-			if ab.sustain_vim then
-				self:incMaxVim(util.getval(ab.sustain_vim, self, ab))
-			end
-			if ab.drain_vim then
-				self:attr("vim_regen", ab.drain_vim)
-			end
-			if ab.sustain_equilibrium then
-				self:incMinEquilibrium(-util.getval(ab.sustain_equilibrium, self, ab))
-			end
-			if ab.sustain_positive then
-				self:incMaxPositive(util.getval(ab.sustain_positive, self, ab))
-			end
-			if ab.sustain_negative then
-				self:incMaxNegative(util.getval(ab.sustain_negative, self, ab))
-			end
-			if ab.sustain_hate then
-				self:incMaxHate(util.getval(ab.sustain_hate, self, ab))
-			end
-			if ab.sustain_paradox then
-				self:incMinParadox(-util.getval(ab.sustain_paradox, self, ab));
-			end
-			if ab.sustain_psi then
-				 self:incMaxPsi(util.getval(ab.sustain_psi, self, ab))
-			end
-			if ab.sustain_feedback then
+			if ab.sustain_feedback then -- pseudo resource
 				self:incMaxFeedback(util.getval(ab.sustain_feedback, self, ab))
+			end
+			for res, res_def in ipairs(_M.resources_def) do
+				-- release sustain costs
+				local cost = ab[res_def.sustain_prop]
+				if cost then
+					cost = (util.getval(cost, self, ab) or 0)
+					if cost ~= 0 then
+						if res_def.invert_values then
+							self[res_def.incMinFunction](self, -cost)
+						else
+							self[res_def.incMaxFunction](self, cost)
+						end
+					end
 				end
+				-- reverse drain costs
+				cost = ab[res_def.drain_prop]
+				if cost then
+					cost = util.getval(cost, self, ab) or 0
+					if cost ~= 0 then
+						if res_def.invert_values then
+							self:attr(res_def.regen_prop, -cost)
+						else
+							self:attr(res_def.regen_prop, cost)
+						end
+
+					end
+				end
+			end
 			if ab.sustain_slots then
 				local slots = ab.sustain_slots
 				if 'string' == type(slots) then slots = {slots} end
@@ -5167,45 +5152,32 @@ function _M:postUseTalent(ab, ret, silent)
 			end
 			if not ab.passive_callbacks then self:unregisterCallbacks(ab, ab.id) end
 		end
-	elseif not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource then
-		if ab.mana and not self:attr("zero_resource_cost") then
-			trigger = true; self:incMana(-util.getval(ab.mana, self, ab) * (100 + 2 * self:combatFatigue()) / 100)
-		end
-		if ab.soul and not self:attr("zero_resource_cost") then
-			trigger = true; self:incSoul(-util.getval(ab.soul, self, ab))
-		end
-		if util.getval(ab.stamina, self, ab) and not self:attr("zero_resource_cost") then
-			trigger = true; self:incStamina(-util.getval(ab.stamina, self, ab) * (100 + self:combatFatigue()) / 100)
-		end
-		-- Vim is not affected by fatigue
-		if ab.vim and not self:attr("zero_resource_cost") then
-			trigger = true; self:incVim(-util.getval(ab.vim, self, ab)) self:incEquilibrium(util.getval(ab.vim, self, ab) * 5)
-		end
-		if ab.positive and not (self:attr("zero_resource_cost") and ab.positive > 0) then
-			trigger = true; self:incPositive(-util.getval(ab.positive, self, ab) * (100 + self:combatFatigue()) / 100)
-		end
-		if ab.negative and not (self:attr("zero_resource_cost") and ab.negative > 0) then
-			trigger = true; self:incNegative(-util.getval(ab.negative, self, ab) * (100 + self:combatFatigue()) / 100)
-		end
-		if ab.hate and not self:attr("zero_resource_cost") then
-			trigger = true; self:incHate(-util.getval(ab.hate, self, ab) * (100 + self:combatFatigue()) / 100)
-		end
-		-- Equilibrium is not affected by fatigue
-		if ab.equilibrium and not self:attr("zero_resource_cost") then
-			trigger = true; self:incEquilibrium(util.getval(ab.equilibrium, self, ab))
-		end
-		-- Paradox is not affected by fatigue but its cost does increase exponentially
-		if ab.paradox and not (self:attr("zero_resource_cost") or game.zone.no_anomalies) then
-			trigger = true; self:incParadox(util.getval(ab.paradox, self, ab))
-		end
-		if ab.psi and not self:attr("zero_resource_cost") then
-			trigger = true; self:incPsi(-util.getval(ab.psi, self, ab) * (100 + 2 * self:combatFatigue()) / 100)
-		end
-		if ab.feedback and not self:attr("zero_resource_cost") then
+	end
+	-- deduct resource costs
+	if not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource and not self:attr("zero_resource_cost") and not self:isTalentActive(ab.id) then
+		local rname, cost
+		
+		if ab.feedback then -- pseudo resource
 			trigger = true; self:incFeedback(-util.getval(ab.feedback, self, ab) * (100 + 2 * self:combatFatigue()) / 100)
 		end
-		if ab.fortress_energy and game:getPlayer(true):hasQuest("shertul-fortress") and not self:attr("zero_resource_cost") then
-			trigger = true; game:getPlayer(true):hasQuest("shertul-fortress").shertul_energy = game:getPlayer(true):hasQuest("shertul-fortress").shertul_energy - ab.fortress_energy
+		if ab.fortress_energy then -- special
+			local q = game:getPlayer(true):hasQuest("shertul-fortress")
+			if q then
+				trigger = true; q.shertul_energy = q.shertul_energy - util.getval(ab.fortress_energy, self, ab)
+			end
+		end
+		for res, res_def in ipairs(_M.resources_def) do
+			rname = res_def.short_name
+			cost = ab[rname] and util.getval(ab[rname], self, ab) or 0
+			if cost ~= 0 then
+				trigger = true
+				cost = cost * (util.getval(res_def.cost_factor, self, ab) or 1)
+				if res_def.invert_values then
+					self[res_def.incFunction](self, cost)
+				else
+					self[res_def.incFunction](self, -cost)
+				end
+			end
 		end
 	end
 
@@ -5418,31 +5390,35 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 		d:add(true)
 	end
 	if not config.ignore_ressources then
-		if t.mana then d:add({"color",0x6f,0xff,0x83}, "Mana cost: ", {"color",0x7f,0xff,0xd4}, ""..math.round(util.getval(t.mana, self, t) * (100 + 2 * self:combatFatigue()) / 100, 0.1), true) end
-		if t.soul then d:add({"color",0x6f,0xff,0x83}, "Soul cost: ", {"color",190,190,190}, ""..math.round(util.getval(t.soul, self, t), 0.1), true) end
-		if util.getval(t.stamina, self, t) then d:add({"color",0x6f,0xff,0x83}, "Stamina cost: ", {"color",0xff,0xcc,0x80}, ""..math.round(util.getval(t.stamina, self, t) * (100 + self:combatFatigue()) / 100, 0.1), true) end
-		if t.equilibrium then d:add({"color",0x6f,0xff,0x83}, "Equilibrium cost: ", {"color",0x00,0xff,0x74}, ""..math.round(util.getval(t.equilibrium, self, t), 0.1), true) end
-		if t.vim then d:add({"color",0x6f,0xff,0x83}, "Vim cost: ", {"color",0x88,0x88,0x88}, ""..math.round(util.getval(t.vim, self, t), 0.1), true) end
-		if t.positive then d:add({"color",0x6f,0xff,0x83}, "Positive energy cost: ", {"color",255, 215, 0}, ""..math.round(util.getval(t.positive, self, t) * (100 + self:combatFatigue()) / 100, 0.1), true) end
-		if t.negative then d:add({"color",0x6f,0xff,0x83}, "Negative energy cost: ", {"color", 127, 127, 127}, ""..math.round(util.getval(t.negative, self, t) * (100 + self:combatFatigue()) / 100, 0.1), true) end
-		if t.hate then d:add({"color",0x6f,0xff,0x83}, "Hate cost:  ", {"color", 127, 127, 127}, ""..math.round(util.getval(t.hate, self, t) * (100 + 2 * self:combatFatigue()) / 100, 0.1), true) end
-		if t.paradox then d:add({"color",0x6f,0xff,0x83}, "Paradox cost: ", {"color",  176, 196, 222}, ""..math.round(util.getval(t.paradox, self, t)), true) end
-		if t.psi then d:add({"color",0x6f,0xff,0x83}, "Psi cost: ", {"color",0x7f,0xff,0xd4}, ""..math.round(util.getval(t.psi, self, t) * (100 + 2 * self:combatFatigue()) / 100, 0.1), true) end
 		if t.feedback then d:add({"color",0x6f,0xff,0x83}, "Feedback cost: ", {"color",0xFF, 0xFF, 0x00}, ""..math.round(util.getval(t.feedback, self, t) * (100 + 2 * self:combatFatigue()) / 100, 0.1), true) end
 		if t.fortress_energy then d:add({"color",0x6f,0xff,0x83}, "Fortress Energy cost: ", {"color",0x00,0xff,0xa0}, ""..math.round(t.fortress_energy, 0.1), true) end
-
-		if t.sustain_mana then d:add({"color",0x6f,0xff,0x83}, "Sustain mana cost: ", {"color",0x7f,0xff,0xd4}, ""..(util.getval(t.sustain_mana, self, t)), true) end
-		if t.sustain_stamina then d:add({"color",0x6f,0xff,0x83}, "Sustain stamina cost: ", {"color",0xff,0xcc,0x80}, ""..(util.getval(t.sustain_stamina, self, t)), true) end
-		if t.sustain_equilibrium then d:add({"color",0x6f,0xff,0x83}, "Sustain equilibrium cost: ", {"color",0x00,0xff,0x74}, ""..(util.getval(t.sustain_equilibrium, self, t)), true) end
-		if t.sustain_vim then d:add({"color",0x6f,0xff,0x83}, "Sustain vim cost: ", {"color",0x88,0x88,0x88}, ""..(util.getval(t.sustain_vim, self, t)), true) end
-		if t.drain_vim then d:add({"color",0x6f,0xff,0x83}, "Drain vim: ", {"color",0x88,0x88,0x88}, (util.getval(t.drain_vim, self, t)), true) end
-		if t.sustain_positive then d:add({"color",0x6f,0xff,0x83}, "Sustain positive energy cost: ", {"color",255, 215, 0}, ""..(util.getval(t.sustain_positive, self, t)), true) end
-		if t.sustain_negative then d:add({"color",0x6f,0xff,0x83}, "Sustain negative energy cost: ", {"color", 127, 127, 127}, ""..(util.getval(t.sustain_negative, self, t)), true) end
-		if t.sustain_hate then d:add({"color",0x6f,0xff,0x83}, "Sustain hate cost:  ", {"color", 127, 127, 127}, ""..(util.getval(t.sustain_hate, self, t)), true) end
-		if t.sustain_paradox then d:add({"color",0x6f,0xff,0x83}, "Sustain paradox cost: ", {"color",  176, 196, 222}, ""..(util.getval(t.sustain_paradox, self, t)), true) end
-		if t.sustain_psi then d:add({"color",0x6f,0xff,0x83}, "Sustain psi cost: ", {"color",0x7f,0xff,0xd4}, ""..(util.getval(t.sustain_psi, self, t)), true) end
 		if t.sustain_feedback then d:add({"color",0x6f,0xff,0x83}, "Sustain feedback cost: ", {"color",0xFF, 0xFF, 0x00}, ""..(util.getval(t.sustain_feedback, self, t)), true) end
-
+		
+		-- resource costs?
+		for res, res_def in ipairs(_M.resources_def) do
+			if not res_def.hidden_resource then
+				-- list resource cost
+				local cost = t[res_def.short_name] and util.getval(t[res_def.short_name], self, t) or 0
+				if cost ~= 0 then
+					cost = cost * (util.getval(res_def.cost_factor, self, t) or 1)
+					d:add({"color",0x6f,0xff,0x83}, ("%s cost: "):format(res_def.name:capitalize()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
+				end
+				-- list sustain cost
+				cost = t[res_def.sustain_prop] and util.getval(t[res_def.sustain_prop], self, t) or 0
+				if cost ~= 0 then
+					d:add({"color",0x6f,0xff,0x83}, ("Sustain %s cost: "):format(res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
+				end
+				-- list drain cost
+				cost = t[res_def.drain_prop] and util.getval(t[res_def.drain_prop], self, t) or 0
+				if cost ~= 0 then
+					if res_def.invert_values then
+						d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(cost > 0 and "Generates" or "Removes", res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
+					else
+						d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(cost > 0 and "Drains" or "Replenishes", res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
+					end
+				end
+			end
+		end
 		self:triggerHook{"Actor:getTalentFullDescription:ressources", str=d, t=t, addlevel=addlevel, config=config, fake_mastery=fake_mastery}
 	end
 	if t.mode ~= "passive" then
@@ -5477,11 +5453,9 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 			d:add({"color",0x6f,0xff,0x83}, "Usage Speed: ", {"color",0xFF,0xFF,0xFF}, uspeed, true)
 		end
 		local is_a = {}
-		if t.is_spell then is_a[#is_a+1] = "a spell" end
-		if t.is_mind then is_a[#is_a+1] = "a mind power" end
-		if t.is_nature then is_a[#is_a+1] = "a nature gift" end
-		if t.is_antimagic then is_a[#is_a+1] = "an antimagic ability" end
-		if t.is_summon then is_a[#is_a+1] = " a summon power" end
+		for is, desc in pairs(engine.interface.ActorTalents.is_a_type) do
+			if t[is] then is_a[#is_a+1] = desc end
+		end
 		if #is_a > 0 then
 			d:add({"color",0x6f,0xff,0x83}, "Is: ", {"color",0xFF,0xFF,0xFF}, table.concatNice(is_a, ", ", " and "), true)
 		end
@@ -5513,14 +5487,17 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 	return d
 end
 
-function _M:getTalentCooldown(t)
+--- Get the talent cooldown
+-- @param t the talent definition table
+-- @param[opt=boolean] base, if true, return the talent defined cooldown, unmodified by other effects
+function _M:getTalentCooldown(t, base)
 	if not t.cooldown then return end
 	local cd = t.cooldown
 	if type(cd) == "function" then cd = cd(self, t) end
 	if not cd then return end
 
 	-- Can not touch this cooldown
-	if t.fixed_cooldown then return cd end
+	if t.fixed_cooldown or base then return cd end
 
 	if t.type[1] == "inscriptions/infusions" then
 		local eff = self:hasEffect(self.EFF_INFUSION_COOLDOWN)
@@ -6163,7 +6140,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		self:triggerTalent(self.T_SPINE_OF_THE_WORLD)
 	end
 
-	self:fireTalentCheck("callbackOnTemporaryEffect", eff_id, e, p)
+	if self:fireTalentCheck("callbackOnTemporaryEffect", eff_id, e, p) then return true end
 
 	if self.player and not self.tmp[eff_id] then
 		p.__set_time = core.game.getTime()
@@ -6172,10 +6149,12 @@ end
 
 function _M:on_temporary_effect_added(eff_id, e, p)
 	self:registerCallbacks(e, eff_id, "effect")
+	self:fireTalentCheck("callbackOnTemporaryEffectAdd", eff_id, e, p)
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
 	self:unregisterCallbacks(e, eff_id)
+	self:fireTalentCheck("callbackOnTemporaryEffectRemove", eff_id, e, p)
 end
 
 --- Called when we are initiating a projection
@@ -6391,6 +6370,7 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
+
 	dst:removeObject(inven, item, true)
 	local ro, rs = self:wearObject(o, true, true, force_inven, force_item) -- removed object and remaining stack if any
 	local added, slot
@@ -6412,6 +6392,25 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 			if rrs and not game.zone.wilderness then game.level.map:addObject(self.x, self.y, rrs) end -- extra stack discarded in wilderness
 		end
 	end
+
+	-- Tinkers switch
+	local removed_o = type(ro) == "table" and ro or nil
+	if removed_o and removed_o.tinker and config.settings.tome.tinker_auto_switch then
+		local had_tinker = removed_o.tinker
+		if not dst:doTakeoffTinker(removed_o, had_tinker, true) then had_tinker = nil end
+
+		if had_tinker then
+			local found, titem, tinven = dst:findInAllInventoriesByObject(o)
+			local ok = false
+			if found and dst:getInven(tinven) then
+				ok = dst:doWearTinker(nil, nil, had_tinker, dst:getInven(tinven), titem, found, false)
+			end
+			if not ok then
+				dst:addObject(dst.INVEN_INVEN, had_tinker)
+			end
+		end
+	end
+
 	dst:sortInven()
 	self:actorCheckSustains()
 	self:breakLightningSpeed()
@@ -6518,7 +6517,7 @@ function _M:canUseTinker(tinker)
 	return true
 end
 
-function _M:doTakeoffTinker(base_o, oldo)
+function _M:doTakeoffTinker(base_o, oldo, only_remove)
 	if base_o.tinker ~= oldo then return end
 
 	local _, base_inven
@@ -6541,7 +6540,7 @@ function _M:doTakeoffTinker(base_o, oldo)
 		self:onWear(base_o, base_inven, true)
 	end
 
-	self:addObject(self.INVEN_INVEN, oldo)
+	if not only_remove then self:addObject(self.INVEN_INVEN, oldo) end
 	game.logPlayer(self, "You detach %s from your %s.", oldo:getName{do_color=true}, base_o:getName{do_color=true})
 
 	return true

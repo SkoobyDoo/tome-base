@@ -1083,3 +1083,11 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	end
 	return level
 end
+
+--- Module call this method when they are done generating a level to run any possible generation callbacks regeistered by generators
+function _M:runPostGeneration(level)
+	if not level.post_gen_callbacks then return end
+	for _, fct in ipairs(level.post_gen_callbacks) do
+		fct(self, level, level.map)
+	end
+end

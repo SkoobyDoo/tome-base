@@ -18,6 +18,20 @@
 -- darkgod@te4.org
 
 defineAction{
+	default = { "sym:=c:false:false:false:false"},
+	type = "SHOW_CHARACTER_SHEET",
+	group = "actions",
+	name = "Show character sheet (player)",
+}
+
+defineAction{
+	default = { "sym:=c:false:true:false:false" },
+	type = "SHOW_CHARACTER_SHEET_CURSOR",
+	group = "actions",
+	name = "Show character sheet (actor @ cursor)",
+}
+
+defineAction{
 	default = { "sym:_TAB:true:false:false:false" },
 	type = "SWITCH_PARTY",
 	group = "party",

@@ -108,6 +108,7 @@ newEntity{
 	display = "{", color=colors.UMBER, image = resolvers.image_material("shot", "metal"),
 	encumber = 3,
 	rarity = 7,
+	metallic = true,
 	combat = { talented = "sling", accuracy_effect = "mace", damrange = 1.2},
 	proj_image = resolvers.image_material("shot_s", "metal"),
 	archery_ammo = "sling",

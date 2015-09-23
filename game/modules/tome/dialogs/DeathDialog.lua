@@ -191,7 +191,9 @@ function _M:use(item)
 	if not item then return end
 	local act = item.action
 
-	if act == "exit" then
+	if type(act) == "function" then
+		act()
+	elseif act == "exit" then
 		if item.subaction == "none" then
 			util.showMainMenu()
 		elseif item.subaction == "restart" then
@@ -311,6 +313,8 @@ function _M:generateList()
 				self.possible_items.consume = true
 			end
 		end)
+
+		self.actor:fireTalentCheck("callbackOnDeathbox", self, list)
 	end
 
 	list[#list+1] = {name=(not profile.auth and "Message Log" or "Message/Chat log (allows to talk)"), action="log"}

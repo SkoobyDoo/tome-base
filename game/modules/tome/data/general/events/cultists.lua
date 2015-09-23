@@ -85,6 +85,7 @@ for i, p in ipairs(list) do
 			{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, autoreq=true},
 		},
 		resolvers.talents{
+			[Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},
 			[Talents.T_BONE_SHIELD]={base=2, every=10, max=5},
 			[Talents.T_BLOOD_SPRAY]={base=2, every=10, max=7},
 			[Talents.T_DRAIN]={base=2, every=10, max=7},

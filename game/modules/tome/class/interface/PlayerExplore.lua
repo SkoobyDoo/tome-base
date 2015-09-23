@@ -25,6 +25,7 @@
 require "engine.class"
 local Map = require "engine.Map"
 local Dialog = require "engine.ui.Dialog"
+local Grid = require "mod.class.Grid"
 
 -- Man, if only I had known about the ffi library when I first wrote auto-explore, I probably would have structured things differently
 local is_ffi, ffi = pcall(require, "ffi") -- check if ffi is available (it should be)
@@ -1962,6 +1963,10 @@ function _M:autoExplore()
 						is_slow = true
 					elseif terrain.air_level and terrain.air_level < 0 and not ((self.can_breath.water or 0) > 0) then
 						move_cost = move_cost + 15
+						is_slow = true
+ 	         			-- Let's not run into Maze cracks and the like - Marson
+					elseif terrain.block_move ~= Grid.block_move then
+						move_cost = move_cost + 10
 						is_slow = true
 					end
 					-- propagate "current_tiles" for next iteration

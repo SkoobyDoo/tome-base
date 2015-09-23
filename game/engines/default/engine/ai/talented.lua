@@ -41,6 +41,7 @@ newAI("dumb_talented", function(self)
 			print(self.name, self.uid, "dumb ai talents can use", t.name, tid)
 		elseif t.mode == "sustained" and not t.no_npc_use and not t.no_dumb_use and not self:isTalentCoolingDown(t) and
 		   not self:isTalentActive(t.id) and
+-- check resource drains here to allow sustains to be turned off
 		   self:preUseTalent(t, true, true)
 		   then
 			avail[#avail+1] = tid
@@ -50,20 +51,23 @@ newAI("dumb_talented", function(self)
 	if #avail > 0 then
 		local tid = avail[rng.range(1, #avail)]
 		print("dumb ai uses", tid)
-		self:useTalent(tid)
-		return true
+		if self:useTalent(tid) then return tid end 
+		return false
 	end
 end)
 
 newAI("dumb_talented_simple", function(self)
 	if self:runAI(self.ai_state.ai_target or "target_simple") then
 		-- One in "talent_in" chance of using a talent
+		local used_talent
 		if (not self.ai_state.no_talents or self.ai_state.no_talents == 0) and rng.chance(self.ai_state.talent_in or 6) and self:reactionToward(self.ai_target.actor) < 0 then
-			self:runAI("dumb_talented")
+			used_talent = self:runAI("dumb_talented")
+			print("dumb ai used talent", used_talent)
 		end
 		if not self.energy.used then
 			self:runAI(self.ai_state.ai_move or "move_simple")
 		end
+		if used_talent then self.energy.used = true end -- make sure NPC can use another talent after instant talents
 		return true
 	end
 end)

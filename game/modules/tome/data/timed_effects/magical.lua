@@ -571,7 +571,7 @@ newEffect{
 newEffect{
 	name = "DAMAGE_SHIELD", image = "talents/barrier.png",
 	desc = "Damage Shield",
-	long_desc = function(self, eff) return ("The target is surrounded by a magical shield, absorbing %d/%d damage %s before it crumbles."):format(self.damage_shield_absorb, eff.power, ((self.damage_shield_reflect and self.damage_shield_reflect > 0) and ("(reflecting %d%% back to the attacker)"):format(self.damage_shield_reflect))) end,
+	long_desc = function(self, eff) return ("The target is surrounded by a magical shield, absorbing %d/%d damage %s before it crumbles."):format(self.damage_shield_absorb, eff.power, ((self.damage_shield_reflect and self.damage_shield_reflect > 0) and ("(reflecting %d%% back to the attacker)"):format(self.damage_shield_reflect) or "")) end,
 	type = "magical",
 	subtype = { arcane=true, shield=true },
 	status = "beneficial",
@@ -579,6 +579,50 @@ newEffect{
 	charges = function(self, eff) return math.ceil(self.damage_shield_absorb) end,
 	on_gain = function(self, err) return "A shield forms around #target#.", "+Shield" end,
 	on_lose = function(self, err) return "The shield around #target# crumbles.", "-Shield" end,
+	on_merge = function(self, old_eff, new_eff)
+		local new_eff_adj = {} -- Adjust for shield modifiers
+		if self:attr("shield_factor") then
+			new_eff_adj.power = new_eff.power * (100 + self:attr("shield_factor")) / 100
+		else
+			new_eff_adj.power = new_eff.power
+		end
+		if self:attr("shield_dur") then
+			new_eff_adj.dur = new_eff.dur + self:attr("shield_dur")
+		else
+			new_eff_adj.dur = new_eff.dur
+		end
+		-- If the new shield would be stronger than the existing one, just replace it
+		if old_eff.dur > new_eff_adj.dur then return old_eff end
+		if math.max(self.damage_shield_absorb, self.damage_shield_absorb_max) <= new_eff_adj.power then
+			self:removeEffect(self.EFF_DAMAGE_SHIELD)
+			self:setEffect(self.EFF_DAMAGE_SHIELD, new_eff.dur, new_eff)
+			return self:hasEffect(self.EFF_DAMAGE_SHIELD)
+		end
+		if self.damage_shield_absorb <= new_eff_adj.power then
+			-- Don't update a reflection shield with a normal shield
+			if old_eff.reflect and not new_eff.reflect then
+				return old_eff
+			elseif old_eff.reflect and new_eff.reflect and math.min(old_eff.reflect, new_eff.reflect) > 0 then
+				old_eff.reflect = math.min(old_eff.reflect, new_eff.reflect)
+				if self:attr("damage_shield_reflect") then
+					self:attr("damage_shield_reflect", old_eff.reflect, true)
+				else
+					old_eff.refid = self:addTemporaryValue("damage_shield_reflect", old_eff.reflect)
+				end
+			end
+			-- Otherwise, keep the existing shield for use with Aegis, but update absorb value and maybe duration
+			self.damage_shield_absorb = new_eff_adj.power -- Use adjusted values here since we bypass setEffect()
+			if not old_eff.dur_extended or old_eff.dur_extended <= 20 then
+				old_eff.dur = new_eff_adj.dur
+				if not old_eff.dur_extended then
+					old_eff.dur_extended = 1
+				else
+					old_eff.dur_extended = old_eff.dur_extended + 1
+				end
+			end
+		end
+		return old_eff
+	end,
 	on_aegis = function(self, eff, aegis)
 		self.damage_shield_absorb = self.damage_shield_absorb + eff.power * aegis / 100
 		if core.shader.active(4) then
@@ -2436,7 +2480,7 @@ newEffect{
 newEffect{
 	name = "CORRUPT_LOSGOROTH_FORM", image = "shockbolt/npc/elemental_void_losgoroth_corrupted.png",
 	desc = "Corrupted Losgoroth Form",
-	long_desc = function(self, eff) return ("The target assumes the form of a corrupted losgoroth."):format() end,
+	long_desc = function(self, eff) return ("The target has assumed the form of a corrupted losgoroth, gaining immunity to poison, disease, bleeding, and confusion.  It does not need to breathe, and converts half of all damage to life draining blight."):format() end,
 	type = "magical",
 	subtype = { blight=true, arcane=true },
 	status = "beneficial",

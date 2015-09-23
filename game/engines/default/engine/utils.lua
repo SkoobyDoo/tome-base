@@ -29,12 +29,24 @@ end
 
 -- Rounds to nearest multiple
 -- (round away from zero): math.round(4.65, 0.1)=4.7, math.round(-4.475, 0.01) = -4.48
--- num = rouding multiplier to compensate for numerical rounding (default 1000000 for 6 digits accuracy)
+-- num = rounding multiplier to compensate for numerical rounding (default 1000000 for 6 digits accuracy)
 function math.round(v, mult, num)
 	mult = mult or 1
 	num = num or 1000000
 	v, mult = v*num, mult*num
 	return v >= 0 and math.floor((v + mult/2)/mult) * mult/num or math.ceil((v - mult/2)/mult) * mult/num
+end
+
+-- convert a number to a string with a limited number of significant figures (after the decimal)
+-- @param[type=number] num -- number to format
+-- @param[type=number] sig_figs -- significant figures to display, default 3 (truncates only the fractional portion)
+-- @param[type=string] pre_format -- first component of the format field (use "+" to force display of the sign)
+-- @return[1][type=string] a string representation of the number with a limited fractional component
+-- @return[2][type=string] the format used to display the number
+function string.limit_decimals(num, sig_figs, pre_format)
+	sig_figs = (sig_figs or 3) - 1
+	local fmt = ("%%%s.%df"):format(pre_format or "", util.bound(sig_figs-math.floor(math.log10(math.abs(num))), 0, sig_figs))
+	return (fmt):format(num), fmt
 end
 
 function math.scale(i, imin, imax, dmin, dmax)
@@ -620,7 +632,6 @@ function table.ruleMergeAppendAdd(dst, src, rules, state)
 	table.applyRules(dst, src, rules, state)
 end
 
-
 function string.ordinal(number)
 	local suffix = "th"
 	number = tonumber(number)
@@ -654,7 +665,7 @@ end
 
 function string.his_her(actor)
 	if actor.female then return "her"
-	elseif actor.neuter then return "it"
+	elseif actor.neuter then return "its"
 	else return "his"
 	end
 end

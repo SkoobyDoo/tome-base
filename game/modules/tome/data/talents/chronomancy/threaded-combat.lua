@@ -238,13 +238,13 @@ newTalent{
 			-- Ranged attack
 			local targets = self:archeryAcquireTargets(tg, {one_shot=true, no_energy = true})
 			if not targets then return end
-			self:archeryShoot(targets, t, tg, {mult=dam})
+			self:archeryShoot(targets, t, tg, {mult=damage})
 		elseif mainhand then
 			-- Melee attack
 			self:project(tg, self.x, self.y, function(px, py, tg, self)
 				local target = game.level.map(px, py, Map.ACTOR)
 				if target and target ~= self then
-					self:attackTarget(target, nil, dam, true)
+					self:attackTarget(target, nil, damage, true)
 				end
 			end)
 			self:addParticles(Particles.new("meleestorm2", 1, {}))

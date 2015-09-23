@@ -110,8 +110,26 @@ newTalent{
 	type = {"spell/objects", 1},
 	cooldown = 5,
 	points = 5,
-	no_npc_use = true,
 	no_unlearn_last = true,
+	on_unlearn = function(self, t) self.ai_state._pref_staff_element = nil end,
+	message = function(self, t)
+		return ("@Source@ refocuses the energies of %s staff."):format(self:his_her())
+	end,
+	tactical = {BUFF = function(self, t, aitarget)
+			if self.ai_state._pref_staff_element == false then return end
+			local staff = self:hasStaffWeapon()
+			if staff and self.ai_state._pref_staff_element ~= (staff.combat.element or staff.combat.damtype) then return 3 end
+		end},
+	on_pre_use_ai = function(self, t)
+		if self.ai_state._pref_staff_element == false then return end
+		local staff = self:hasStaffWeapon()
+		if staff then
+			if not self.ai_state._pref_staff_element then
+				self.ai_state._pref_staff_element = staff:getStaffPreferredElement(self)
+			end
+			return self.ai_state._pref_staff_element ~= (staff.combat.element or staff.combat.damtype)
+		end
+	end,
 	action = function(self, t)
 		local staff = self:hasStaffWeapon()
 		if not staff or not staff.wielder or not staff.wielder.learn_talent or not staff.wielder.learn_talent[self.T_COMMAND_STAFF] then
@@ -123,12 +141,24 @@ newTalent{
 			staff.combat.element = staff.combat.damtype or engine.DamageType.PHYSICAL
 		end
 
-		local state = {}
-		local Chat = require("engine.Chat")
-		local chat = Chat.new("command-staff", {name="Command Staff"}, self, {version=staff, state=state, co=coroutine.running()})
-		local d = chat:invoke()
-		if not coroutine.yield() then return nil end
-		return true
+		if self.player then -- prompt the player to pick a new element
+			local state = {}
+			local Chat = require("engine.Chat")
+			local chat = Chat.new("command-staff", {name="Command Staff"}, self, {version=staff, state=state, co=coroutine.running()})
+			local d = chat:invoke()
+			if not coroutine.yield() then return nil end
+			return true
+		else -- NPC picks a new element
+			local element, aspect = staff:getStaffPreferredElement(self)
+			if not element or (staff.combat.element or staff.combat.damtype) == element then return end
+			local _, item, inven_id = self:findInAllInventoriesByObject(staff)
+			if inven_id then self:onTakeoff(staff, inven_id, true, true) end
+			staff:commandStaff(element, aspect) -- switch the element
+			if inven_id then self:onWear(staff, inven_id, true, true) end
+			self.ai_state._pref_staff_element = element
+			element = engine.DamageType:get(element)
+			return true
+		end
 	end,
 	info = function(self, t)
 		return ([[Alter the flow of energies through a staff.]])

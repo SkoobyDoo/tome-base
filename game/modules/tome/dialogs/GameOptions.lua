@@ -139,7 +139,7 @@ function _M:generateListUi()
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Interface Style#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.ui_theme2):capitalize()
 	end, fct=function(item)
-		local uis = {{name="Metal", ui="metal"}, {name="Stone", ui="stone"}, {name="Simple", ui="simple"}}
+		local uis = {{name="Dark", ui="dark"}, {name="Metal", ui="metal"}, {name="Stone", ui="stone"}, {name="Simple", ui="simple"}}
 		self:triggerHook{"GameOptions:UIs", uis=uis}
 		Dialog:listPopup("Interface style", "Select style", uis, 300, 200, function(sel)
 			if not sel or not sel.ui then return end
@@ -162,6 +162,23 @@ function _M:generateListUi()
 			self.c_list:drawItem(item)
 		end)
 	end,}
+
+	if self:isTome() and game.uiset:checkGameOption("log_lines") then	
+		local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"The number of lines to display in the combat log (for the Classic HUD)."}
+		list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Log lines#WHITE##{normal}#", status=function(item)
+			return tostring(config.settings.tome.log_lines)
+		end, fct=function(item)
+			game:registerDialog(GetQuantity.new("Log lines", "From 5 to 50", config.settings.tome.log_lines, 50, function(qty)
+				qty = util.bound(qty, 5, 50)
+				game:saveSettings("tome.log_lines", ("tome.log_lines = %d\n"):format(qty))
+				config.settings.tome.log_lines = qty
+				if self:isTome() then
+					game.uiset.logdisplay.resizeToLines()
+				end
+				self.c_list:drawItem(item)
+			end, 0))
+		end,}
+	end
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Draw faint lines to separate each grid, making visual positioning easier to see.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Display map grid lines#WHITE##{normal}#", status=function(item)
@@ -486,6 +503,15 @@ function _M:generateListGameplay()
 	end, fct=function(item)
 		config.settings.tome.rest_before_explore = not config.settings.tome.rest_before_explore
 		game:saveSettings("tome.rest_before_explore", ("tome.rest_before_explore = %s\n"):format(tostring(config.settings.tome.rest_before_explore)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When swaping an item with a tinker attached, swap the tinker to the newly worn item automatically.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Swap tinkers#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.tinker_auto_switch and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.tinker_auto_switch = not config.settings.tome.tinker_auto_switch
+		game:saveSettings("tome.tinker_auto_switch", ("tome.tinker_auto_switch = %s\n"):format(tostring(config.settings.tome.rest_before_explore)))
 		self.c_list:drawItem(item)
 	end,}
 

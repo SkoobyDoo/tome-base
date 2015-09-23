@@ -44,13 +44,13 @@ newEntity{ base="BASE_NPC_CORRUPTED_HORROR", define_as = "THE_MOUTH",
 	-- Bad idea to melee it
 	combat = {dam=100, atk=1000, apr=1000, physcrit=1000},
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
-	resolvers.drops{chance=100, nb=1, {defined="TOOTH_MOUTH", random_art_replace={chance=35}} },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, TOOL=1 },
+	resolvers.equip{{type="tool", subtype="digger", defined="TOOTH_MOUTH", random_art_replace={chance=35}, autoreq = true}},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.talents{
 		[Talents.T_CALL_OF_AMAKTHEL]=1,
-		[Talents.T_DRAIN]=1,
+		[Talents.T_DRAIN]={base=1, every=10},
 	},
 
 	autolevel = "warriormage",

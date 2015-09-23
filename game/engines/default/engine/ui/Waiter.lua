@@ -41,8 +41,10 @@ function _M:manualStep(nb)
 end
 
 function _M:generate()
-	local left = core.display.loadImage("/data/gfx/metal-ui/waiter/left_basic.png")
-	local right = core.display.loadImage("/data/gfx/metal-ui/waiter/right_basic.png")
+	self.base_gfx = "/data/gfx/metal-ui"
+	if fs.exists("/data/gfx/"..Base.ui.."-ui/waiter/left_basic.png") then self.base_gfx = "/data/gfx/"..Base.ui.."-ui" end
+	local left = core.display.loadImage(self.base_gfx.."/waiter/left_basic.png")
+	local right = core.display.loadImage(self.base_gfx.."/waiter/right_basic.png")
 	local lw, lh = left:getSize()
 	local rw, rh = right:getSize()
 	self.w, self.h = self.size + lw + lw, lh
@@ -75,10 +77,10 @@ function _M:getWaitDisplay(d)
 		if has_max then core.wait.addMaxTicks(has_max) end
 		local i, max, dir = 0, has_max or 20, 1
 
-		local left = {core.display.loadImage("/data/gfx/metal-ui/waiter/left_basic.png"):glTexture()}
-		local right = {core.display.loadImage("/data/gfx/metal-ui/waiter/right_basic.png"):glTexture()}
-		local middle = {core.display.loadImage("/data/gfx/metal-ui/waiter/middle.png"):glTexture()}
-		local bar = {core.display.loadImage("/data/gfx/metal-ui/waiter/bar.png"):glTexture()}
+		local left = {core.display.loadImage(self.base_gfx.."/waiter/left_basic.png"):glTexture()}
+		local right = {core.display.loadImage(self.base_gfx.."/waiter/right_basic.png"):glTexture()}
+		local middle = {core.display.loadImage(self.base_gfx.."/waiter/middle.png"):glTexture()}
+		local bar = {core.display.loadImage(self.base_gfx.."/waiter/bar.png"):glTexture()}
 
 		return function()
 			-- Background

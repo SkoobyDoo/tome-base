@@ -33,7 +33,7 @@ return {
 --	all_lited = true,
 	ambient_music = "Enemy at the gates.ogg",
 	persistent = "zone",
-	max_material_level = 2,
+	max_material_level = 1,
 	no_random_lore = true,
 	is_invaded = is_invaded,
 	underwater = true,

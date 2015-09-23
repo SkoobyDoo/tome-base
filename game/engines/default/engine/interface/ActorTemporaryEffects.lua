@@ -133,9 +133,10 @@ function _M:setEffect(eff_id, dur, p, silent)
 		local ret, fly = ed.on_gain(self, p)
 		if not silent and not had then
 			if ret then
-				game.logSeen(self, ret:gsub("#Target#", self.name:capitalize()):gsub("#target#", self.name))
+				game.logSeen(self, ret:gsub("#Target#", self.name:capitalize()):gsub("#target#", self.name):gsub("#himher#", self.female and "her" or "him"))
 			end
 			if fly and game.flyers and self.x and self.y and game.level.map.seens(self.x, self.y) then
+				if fly == true then fly = "+"..ed.desc end
 				local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
 				if game.level.map.seens(self.x, self.y) then game.flyers:add(sx, sy, 20, (rng.range(0,2)-1) * 0.5, -3, fly, {255,100,80}) end
 			end
@@ -175,13 +176,15 @@ function _M:removeEffect(eff, silent, force)
 	if _M.tempeffect_def[eff].no_remove and not force then return end
 	self.tmp[eff] = nil
 	self.changed = true
-	if _M.tempeffect_def[eff].on_lose then
-		local ret, fly = _M.tempeffect_def[eff].on_lose(self, p)
+	local ed = _M.tempeffect_def[eff]
+	if ed.on_lose then
+		local ret, fly = ed.on_lose(self, p)
 		if not silent then
 			if ret then
-				game.logSeen(self, ret:gsub("#Target#", self.name:capitalize()):gsub("#target#", self.name))
+				game.logSeen(self, ret:gsub("#Target#", self.name:capitalize()):gsub("#target#", self.name):gsub("#himher#", self.female and "her" or "him"))
 			end
 			if fly and game.flyers and self.x and self.y then
+				if fly == true then fly = "-"..ed.desc end
 				local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
 				if game.level.map.seens(self.x, self.y) then game.flyers:add(sx, sy, 20, (rng.range(0,2)-1) * 0.5, -3, fly, {255,100,80}) end
 			end
@@ -197,7 +200,6 @@ function _M:removeEffect(eff, silent, force)
 			self:removeParticles(p.__tmpparticles[i])
 		end
 	end
-	local ed = _M.tempeffect_def[eff]
 	if ed.deactivate then ed.deactivate(self, p, ed) end
 	if ed.lists then
 		local lists = ed.lists

@@ -1565,6 +1565,10 @@ end
 function _M:combatPhysicalpower(mod, weapon, add)
 	mod = mod or 1
 	add = add or 0
+
+	if self.combat_generic_power then
+		add = add + self.combat_generic_power
+	end
 	if self:knowTalent(Talents.T_ARCANE_DESTRUCTION) then
 		add = add + self:combatSpellpower() * self:callTalent(Talents.T_ARCANE_DESTRUCTION, "getSPMult")
 	end
@@ -1612,6 +1616,10 @@ end
 function _M:combatSpellpower(mod, add)
 	mod = mod or 1
 	add = add or 0
+
+	if self.combat_generic_power then
+		add = add + self.combat_generic_power
+	end
 	if self:knowTalent(self.T_ARCANE_CUNNING) then
 		add = add + self:callTalent(self.T_ARCANE_CUNNING,"getSpellpower") * self:getCun() / 100
 	end
@@ -1653,6 +1661,7 @@ end
 
 --- Gets the off hand multiplier
 function _M:getOffHandMult(combat, mult)
+	if combat and combat.range and not combat.dam then return mult or 1 end --no penalty for ranged shooters
 	local offmult = 1/2
 	-- Take the bigger multiplier from Dual weapon training and Corrupted Strength
 	if self:knowTalent(Talents.T_DUAL_WEAPON_TRAINING) then
@@ -1922,6 +1931,10 @@ function _M:combatMindpower(mod, add)
 	mod = mod or 1
 	add = add or 0
 
+	if self.combat_generic_power then
+		add = add + self.combat_generic_power
+	end
+
 	if self:knowTalent(self.T_SUPERPOWER) then
 		add = add + 50 * self:getStr() / 100
 	end
@@ -2082,6 +2095,13 @@ function _M:combatGetResist(type)
 	local b = math.min((self.resists[type] or 0) / 100,1)
 	local r = math.min(100 * (1 - (1 - a) * (1 - b)), (self.resists_cap.all or 0) + (self.resists_cap[type] or 0))
 	return r * power / 100
+end
+
+--- Returns the resistance penetration
+function _M:combatGetResistPen(type)
+	if not self.resists_pen then return 0 end
+	local pen = (self.resists_pen.all or 0) + (self.resists_pen[type] or 0)
+	return pen
 end
 
 --- Returns the damage increase

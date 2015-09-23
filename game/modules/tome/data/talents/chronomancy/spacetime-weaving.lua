@@ -40,7 +40,7 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
 		if not self:hasLOS(x, y) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then -- To prevent teleporting through walls
-			game.logSeen(self, "You do not have line of sight.")
+			game.logPlayer(self, "You do not have line of sight.")
 			return nil
 		end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -59,22 +59,23 @@ newTalent{
 				if self:teleportRandom(x, y, 0) then
 					-- Move the target to our old location
 					target:move(ox, oy, true)
-					
+					self:logCombat(target, "#Source# folds space with with #target#!")
 					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
 					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 				else
 					-- If we can't teleport, return the target
 					game.level.map(target.x, target.y, Map.ACTOR, target)
-					game.logSeen(self, "The spell fizzles!")
+					self:logCombat(target, "#Source#'s space-time folding with #target# fizzles!")
 				end
 			else
-				game.logSeen(target, "%s resists the swap!", target.name:capitalize())
+				target:logCombat(self, "#Source# resists #target#'s space-time folding!")
 			end
 		else
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			if not self:teleportRandom(x, y, 0) then
-				game.logSeen(self, "The spell fizzles!")
+				game.logSeen(self, "%s's space-time folding fizzles!", self.name:capitalize())
 			else
+				game.logSeen(self, "%s emerges from a space-time rift!", self.name:capitalize())
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			end
 		end

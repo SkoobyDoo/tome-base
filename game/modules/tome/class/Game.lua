@@ -939,6 +939,7 @@ function _M:changeLevelReal(lev, zone, params)
 
 	-- Post process if needed once the nicer tiles are done
 	if self.level.data and self.level.data.post_nicer_tiles then self.level.data.post_nicer_tiles(self.level) end
+	self.zone:runPostGeneration(self.level)
 
 	-- After ? events ?
 	if afternicer then afternicer() end
@@ -1331,16 +1332,16 @@ function _M:logMessage(source, srcSeen, target, tgtSeen, style, ...)
 		if srcname ~= "something" then Dstring = source.__is_actor and source.getDisplayString and source:getDisplayString() end
 	style = style:gsub("#source#", srcname)
 	style = style:gsub("#Source#", (Dstring or "")..srcname:capitalize())
+	local tgtname = "something"
 	if target then
-		local tgtname = "something"
-			if target.player then
-				tgtname = "#fbd578#"..target.name.."#LAST#"
-			elseif tgtSeen then
-				tgtname = engine.Entity.check(target, "getName") or target.name or "unknown"
-			end
-		style = style:gsub("#target#", tgtname)
-		style = style:gsub("#Target#", tgtname:capitalize())
+		if target.player then
+			tgtname = "#fbd578#"..target.name.."#LAST#"
+		elseif tgtSeen then
+			tgtname = engine.Entity.check(target, "getName") or target.name or "unknown"
+		end
 	end
+	style = style:gsub("#target#", tgtname)
+	style = style:gsub("#Target#", tgtname:capitalize())
 	return style
 end
 
@@ -1669,9 +1670,9 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(1, "orcs+slumbering-caves")
+			self:changeLevel(6, "orcs+palace-fumes")
 do return end
-			local o = game.zone:makeEntity(game.level, "object", {random_object=true}, nil, true)
+			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
 			if o then
 				o:identify(true)
 				game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)
@@ -1906,6 +1907,13 @@ do return end
 			self:registerDialog(require("mod.dialogs.CharacterSheet").new(self.player))
 		end,
 
+		SHOW_CHARACTER_SHEET_CURSOR = function()
+			local mx, my = self.mouse.last_pos.x, self.mouse.last_pos.y
+			local tmx, tmy = game.level.map:getMouseTile(mx, my)
+			local a = self.level.map(tmx, tmy, Map.ACTOR)
+			self:registerDialog(require("mod.dialogs.CharacterSheet").new((config.settings.cheat or self.player:canSee(a)) and a or self.player))
+		end,
+		
 		SHOW_MESSAGE_LOG = function()
 			self:registerDialog(require("mod.dialogs.ShowChatLog").new("Message Log", 0.6, self.uiset.logdisplay, profile.chat))
 		end,
@@ -2052,6 +2060,18 @@ do return end
 				game_or_player.bump_attack_disabled = true
 			end
 		end
+	}
+	-- add key bindings for targeting mode
+	self.targetmode_key:addBinds{
+		SHOW_CHARACTER_SHEET_CURSOR = function()
+			local target = table.get(self, "target", "target", "entity") -- gets the actor under the targeting reticle
+			target = target and (config.settings.cheat or self.player:canSee(target)) and target or self.player
+			self:registerDialog(require("mod.dialogs.CharacterSheet").new(target))
+		end,
+		SHOW_CHARACTER_SHEET = function()
+			self:registerDialog(require("mod.dialogs.CharacterSheet").new(self.player))
+		end,
+		LUA_CONSOLE = self.key.virtuals.LUA_CONSOLE,
 	}
 	engine.interface.PlayerHotkeys:bindAllHotkeys(self.key, not_wild(function(i)
 		self:targetTriggerHotkey(i)
@@ -2388,13 +2408,17 @@ end
 
 --- Create a random lore object and place it
 function _M:placeRandomLoreObjectScale(base, nb, level)
-	local dist = ({
-		[5] = { {1}, {2,3}, {4,5} }, -- 5 => 3
-		korpul = { {1,2}, {3,4} }, -- 5 => 3
-		maze = { {1,2,3,4},{5,6,7} }, -- 5 => 3
-		daikara = { {1}, {2}, {3}, {4,5} },
-		[7] = { {1,2}, {3,4}, {5,6}, {7} }, -- 7 => 4
-	})[nb][level]
+	local dist
+	if type(nb) == "table" then dist = nb[level]
+	else
+		dist = ({
+			[5] = { {1}, {2,3}, {4,5} }, -- 5 => 3
+			korpul = { {1,2}, {3,4} }, -- 5 => 3
+			maze = { {1,2,3,4},{5,6,7} }, -- 5 => 3
+			daikara = { {1}, {2}, {3}, {4,5} },
+			[7] = { {1,2}, {3,4}, {5,6}, {7} }, -- 7 => 4
+		})[nb][level]
+	end
 	if not dist then return end
 	for _, i in ipairs(dist) do self:placeRandomLoreObject(base..i) end
 end

@@ -94,7 +94,7 @@ local function shieldOnDamage(self, t, elementTest, transcendId, dam)
 	local absorbable_dam = getEfficiency(self, t) * total_dam
 	local strength = getShieldStrength(self, t)
 	if self:hasEffect(transcendId) then
-		absorbable = total_dam
+		absorbable_dam = total_dam
 		strength = strength * 2
 	end
 	local guaranteed_dam = total_dam - absorbable_dam
@@ -327,7 +327,8 @@ newTalent{
 	sustain_psi = 30,
 	cooldown = 40,
 	no_energy = true,
-	tactical = { BUFF = 2, HEAL = 4 },
+	tactical = { DEFEND = 3 },
+	on_pre_use_ai = function(self, t) return self.psi > self.max_psi * .5 end,
 	range = 0,
 	radius = 1,
 	getResist = function(self, t) return self:combatTalentLimit(t, 80, 30, 65) end,

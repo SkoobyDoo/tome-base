@@ -37,6 +37,11 @@ Your total number of lives depends on the permadeath setting you choose.
 You may find other ways to save yourself but they are not considered extra lives.
 ]]
 
+TOOLTIP_BLOOD_LIFE = [[#GOLD#Blood of Life#LAST#
+The Blood of Life courses through your veins.
+This can save you from death and restore you to full health (once) if you would otherwise die.
+]]
+
 TOOLTIP_LIFE = [[#GOLD#Life#LAST#
 This is your life force, which is reduced each time you take damage.
 Normally, you will die if this drops below zero, though some effects will allow you survive with negative life.
@@ -46,7 +51,7 @@ It is increased by Constitution.
 
 TOOLTIP_DAMAGE_SHIELD = [[#GOLD#Damage shields#LAST#
 Various talents, items and powers can grant you a temporary damage shield.
-They all work in slightly different manners, but usually will absorb some damage before crumbling down.
+Each works in a distinct manner, but will usually intercept a certain amount of damage that would otherwise hit you before crumbling.
 ]]
 
 TOOLTIP_UNNATURAL_BODY = [[#GOLD#Unnatrual Body Regeneration#LAST#
@@ -81,13 +86,13 @@ Mana represents your reserve of magical energies. Each spell cast consumes mana 
 It is increased by Willpower.
 ]]
 
-TOOLTIP_POSITIVE = [[#GOLD#Positive#LAST#
-Positive energy represents your reserve of positive "celestial" power.
+TOOLTIP_POSITIVE = [[#GOLD#Positive Energy#LAST#
+Positive energy represents your reserve of positive "celestial" power, most closely associated with the Sun.
 It slowly decreases and is replenished by using some talents.
 ]]
 
-TOOLTIP_NEGATIVE = [[#GOLD#Negative#LAST#
-Negative energy represents your reserve of negative "celestial" power.
+TOOLTIP_NEGATIVE = [[#GOLD#Negative Energy#LAST#
+Negative energy represents your reserve of negative "celestial" power, most closely associated with the Moon.
 It slowly decreases and is replenished by using some talents.
 ]]
 
@@ -99,8 +104,9 @@ Also if you used a Corruption spell that cost Vim to kill a creature, that cost 
 ]]
 
 TOOLTIP_EQUILIBRIUM = [[#GOLD#Equilibrium#LAST#
-Equilibrium represents your standing in the grand balance of nature.
-The closer it is to 0 the more in-balance you are. Being out of equilibrium will negatively affect your ability to use Wild Gifts.
+Equilibrium reflects your standing in the grand balance of nature and how easily you can access Wild Gifts.
+The closer it is to 0 the more in-balance you are.
+Being too far out of balance may cause your Wild Gifts to fail when called upon.
 ]]
 
 TOOLTIP_HATE = [[#GOLD#Hate#LAST#
@@ -182,6 +188,9 @@ Higher is faster, so 200% means that you can use mind powers twice as fast as no
 -------------------------------------------------------------
 -- Stats
 -------------------------------------------------------------
+TOOLTIP_STATS = [[#GOLD#Stats#LAST#
+Your character's primary attributes.  Base: the value inherent to your character, which may be increased by applying stat points (limited by character level). Current: the base value plus any bonuses from equipment, effects, certain talents, etc. that is used to determine the overall effectiveness of the stat.
+]]
 TOOLTIP_STR = [[#GOLD#Strength#LAST#
 Strength defines your character's ability to apply physical force. It increases Physical Power, damage done with heavy weapons, Physical Save, and carrying capacity.
 ]]
@@ -236,9 +245,9 @@ TOOLTIP_COMBAT_RANGE = [[#GOLD#Firing range#LAST#
 The maximum distance your weapon can reach.
 ]]
 TOOLTIP_COMBAT_AMMO = [[#GOLD#Ammo remaining#LAST#
-This is the amount of ammo you have left.
-Bows and slings must be reloaded when this reaches 0.
-Alchemists use gems as ammo to throw bombs.
+This is the amount of ammunition you have left.
+Bows and slings must be reloaded when this reaches 0, which you will do automatically each turn you rest or don't perform a non-movement action.
+Alchemists use specially prepared gems as ammunition to throw bombs, which must be reloaded manually.
 ]]
 
 -------------------------------------------------------------
@@ -269,6 +278,9 @@ Defense represents your chance to avoid physical melee attacks and reduces the c
 ]]
 TOOLTIP_RDEFENSE = [[#GOLD#Ranged Defense#LAST#
 Defense represents your chance to avoid physical ranged attacks and reduces the chance you'll be knocked off-balance by an enemy's attack. It is measured against the attacker's Accuracy.
+]]
+TOOLTIP_SAVES = [[#GOLD#Saves#LAST#
+Saving throws represent your ability to shrug off, partially or fully, detrimental effects applied to you.  Most detrimental effects will check their power (physical, spell, mental) vs your corresponding save type to determine if they take effect or not.  The chance is usually ~50% when power and save are equal.
 ]]
 TOOLTIP_PHYS_SAVE = [[#GOLD#Physical saving throw#LAST#
 Increases chance to shrug off physically-induced effects.  Also reduces duration of detrimental physical effects by up to 5% per point, depending on the power of the opponent's effect.
@@ -326,15 +338,34 @@ This stacks with individual damage type increases.
 TOOLTIP_INC_DAMAGE = [[#GOLD#Damage increase: specific#LAST#
 All damage of this type that you deal, through any means, is increased by this percentage.
 ]]
+TOOLTIP_INC_DAMAGE_ACTOR = [[#GOLD#Damage increase: creature type#LAST#
+All damage you deal to creatures of this type, through any means, is increased by this percentage.  This is applied in addition to (stacks with) other damage modifiers.
+]]
 TOOLTIP_INC_CRIT_POWER = [[#GOLD#Critical multiplier#LAST#
-All critical hits (melee, spells, ...) do this much damage.
+All critical hits (melee, spells, ...) do this much damage compared to normal.
+]]
+TOOLTIP_RESIST_DAMAGE = [[#GOLD#Damage resistance#LAST#
+Whenever you take damage, the percent resistance you have to its type, if any, is checked.  The damage is reduced by this percentage (which may be partially negated by the attacker's Damage Penetration) before being applied.
+Your effective resistance can never be higher than your resistance cap and negative resistances increase the damage you recieve (up to +100%).
 ]]
 TOOLTIP_RESIST_ALL = [[#GOLD#Damage resistance: all#LAST#
 All damage you receive, through any means, is decreased by this percentage.
-This stacks with individual damage type resistances.
+This stacks (multiplicatively) with individual damage type resistances up to their respective caps.
+(So 20% resistance: All + 50% resistance: Fire = 60% total resistance to Fire.)
+]]
+TOOLTIP_RESIST_ABSOLUTE = [[#GOLD#Damage resistance: absolute#LAST#
+All damage you receive, through any means, is decreased by this percentage.
+This is applied after normal damage resistance and is not affected by resistance penetration.
 ]]
 TOOLTIP_RESIST = [[#GOLD#Damage resistance: specific#LAST#
 All damage of this type that you receive, through any means, is reduced by this percentage.
+]]
+TOOLTIP_RESIST_SPEED = [[#GOLD#Damage resistance: by speed#LAST#
+All damage you receive, through any means, is decreased by this percentage, which increases as your total movement speed (global times movement) decreases.
+This is applied after normal damage type resistances.
+]]
+TOOLTIP_RESIST_DAMAGE_ACTOR = [[#GOLD#Damage resistance: creature type#LAST#
+All damage you receive from creatures of this type, through any means, is decreased by this percentage.  This is applied separately to (stacks with) normal resistances.
 ]]
 TOOLTIP_AFFINITY_ALL = [[#GOLD#Damage affinity: all#LAST#
 All damage you receive, through any means, also heals you for this percentage of the damage.
@@ -342,14 +373,26 @@ This stacks with individual damage type affinities.
 Important: Affinity healing happens after damage has been taken, it can not prevent death.
 ]]
 TOOLTIP_AFFINITY = [[#GOLD#Damage affinity: specific#LAST#
-All damage of this type that you receive, through any means, also heals you for this percentage of the damage..
+All damage of this type that you receive, through any means, also heals you for this percentage of the damage.
 Important: Affinity healing happens after damage has been taken, it can not prevent death.
 ]]
+TOOLTIP_STATUS_IMMUNE = [[#GOLD#Status resistance#LAST#
+Most bad status effects can be avoided by having an appropriate immunity, represented by a percent chance to completely avoid the effect in question.  This chance is applied in addition to any saving throws or other checks that may apply.
+]]
 TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
-This represents your chance to completely avoid the effect in question.
+This represents your chance to completely avoid this specific effect.
+]]
+TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
+This represents your chance to completely being stunned, dazed, or frozen.
+]]
+TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
+This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
+]]
+TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative effect immunity chance#LAST#
+This represents your chance to completely avoid ANY bad effects applied to you from others.
 ]]
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
-Each time a creature hits you in melee it will suffer damage.
+Each time a creature hits you with a melee attack, it will suffer damage or other effects.
 ]]
 TOOLTIP_RESISTS_PEN_ALL = [[#GOLD#Damage penetration: all#LAST#
 Reduces the amount of effective resistance of your foes to any damage you deal by this percent.
@@ -357,7 +400,7 @@ If you have 50% penetration against a creature with 50% resistance it will have 
 This stacks with individual damage type penetrations.
 ]]
 TOOLTIP_RESISTS_PEN = [[#GOLD#Damage penetration: specific#LAST#
-Reduces the amount of effective resistance of your foes to all damage you deal of this type by this percent.
+Reduces the effective resistance of your foes to all damage of this type you deal by this percent.
 If you have 50% penetration against a creature with 50% resistance it will have an effective resistance of 25%.
 ]]
 
@@ -397,4 +440,8 @@ Invisible creatures are magically removed from the sight of all others. They can
 TOOLTIP_VISION_SEE_INVISIBLE = [[#GOLD#See invisible#LAST#
 Your power to see invisible creatures. The higher it is, the more likely you are to see them (based on their own invisibility score).
 If you do not have any see invisible score you will never be able to see invisible creatures.
+]]
+TOOLTIP_ANTIMAGIC_USER = [[#GOLD#Antimagic User#LAST#
+Dedicated to opposing and destroying magical and arcane influence in the world.
+The use of spells or arcane-powered equipment is impossible.
 ]]

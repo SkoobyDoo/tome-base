@@ -51,7 +51,7 @@ function resolvers.calc.equip(t, e)
 					filter.random_art_replace.chance = 100
 				end
 			end
-			if o and o.power_source and (o.power_source.antimagic and e:attr("has_arcane_knowledge") or o.power_source.arcane and e:attr("forbid_arcane")) then -- check antimagic restrictions
+			if not game.state:checkPowers(e, o, nil, "antimagic_only") then
 				ok = false
 				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
 			end
@@ -599,8 +599,7 @@ function resolvers.calc.sustains_at_birth(_, e)
 			local t = self:getTalentFromId(tid)
 			if t and t.mode == "sustained" then
 				self.energy.value = game.energy_to_act
---				print("===== activating sustain", self.name, tid)
-				self:useTalent(tid)
+				self:useTalent(tid, nil, nil, nil, nil, true)
 			end
 		end
 	end
@@ -615,11 +614,11 @@ function resolvers.calc.randartmax(t, e)
 end
 
 --- Inscription resolver
-function resolvers.inscription(name, data)
-	return {__resolver="inscription", name, data}
+function resolvers.inscription(name, data, force_id)
+	return {__resolver="inscription", name, data, force_id}
 end
 function resolvers.calc.inscription(t, e)
-	e:setInscription(nil, t[1], t[2], false, false, nil, true, true)
+	e:setInscription(t[3] or nil, t[1], t[2], false, false, nil, true, true)
 	return nil
 end
 

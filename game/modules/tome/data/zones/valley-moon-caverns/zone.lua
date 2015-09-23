@@ -32,7 +32,7 @@ return {
 	-- Apply a darkish tint to all the map
 	color_shown = {0.7, 0.7, 0.7, 1},
 	color_obscure = {0.7*0.6, 0.7*0.6, 0.7*0.6, 0.6},
-	min_material_level = 3,
+	min_material_level = 4,
 	max_material_level = 4,
 	generator =  {
 		map = {

@@ -118,11 +118,11 @@ newEntity{ base = "BASE_NPC_RITCH_REL", define_as = "HIVE_MOTHER",
 
 	resists = { [DamageType.BLIGHT] = 40 },
 
-	body = { INVEN = 10, BODY=1 },
+	body = { INVEN = 10, BODY=1, HANDS=1 },
 
 	inc_damage = {all=-70},
 
-	resolvers.drops{chance=100, nb=1, {defined="FLAMEWROUGHT", random_art_replace={chance=75}}, },
+	resolvers.equip{{defined="FLAMEWROUGHT", random_art_replace={chance=75}, autoreq=true}},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.talents{

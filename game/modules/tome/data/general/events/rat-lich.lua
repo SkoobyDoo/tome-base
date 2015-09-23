@@ -51,7 +51,7 @@ local changer = function(id)
 		cost = 150,
 		encumber = 1,
 		material_level = 3,
-		desc = [[This ancient skull is all that remains of the Rat Lich. Some fragments of its power remain and a faint red light still glows within its eyes.]],
+		desc = [[This ancient skull is all that remains of the Rat Lich. Some fragments of its power remain and a faint red light still glows within its eye sockets.]],
 
 		wielder = {
 			combat_spellpower = 10,
@@ -59,12 +59,15 @@ local changer = function(id)
 			on_melee_hit = {[engine.DamageType.DARKNESS]=12},
 		},
 		max_power = 70, power_regen = 1,
-		use_power = { name = "raise undead rats", power = 70, use = function(self, who)
+		use_power = { name = "raise one or two undead rats to fight beside you", power = 70,
+			tactical = {ATTACK = 2},
+			use = function(self, who)
 			if not who:canBe("summon") then game.logPlayer(who, "You cannot summon; you are suppressed!") return end
 
 			local NPC = require "mod.class.NPC"
 			local list = NPC:loadList("/data/general/npcs/undead-rat.lua")
 
+			game.logSeen(who, "%s raises %s %s, and a red light flashes from it's eye sockets!", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name=true}))
 			for i = 1, 2 do
 				-- Find space
 				local x, y = util.findFreeGrid(who.x, who.y, 5, true, {[engine.Map.ACTOR]=true})
@@ -85,7 +88,7 @@ local changer = function(id)
 
 				local necroSetupSummon = getfenv(who:getTalentFromId(who.T_CREATE_MINIONS).action).necroSetupSummon
 				necroSetupSummon(who, rat, x, y, nil, true, true)
-
+				game.logSeen(rat, "From the dust of decay a %s forms!", rat.name:capitalize())
 				game:playSoundNear(who, "talents/spell_generic2")
 			end
 			return {id=true, used=true}

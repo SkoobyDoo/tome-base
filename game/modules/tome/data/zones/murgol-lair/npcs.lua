@@ -43,11 +43,12 @@ newEntity{ base = "BASE_NPC_YAECH", define_as = "MURGOL",
 
 	resists = { [DamageType.BLIGHT] = 40 },
 
-	body = { INVEN = 10, BODY=1, MAINHAND=1 },
+	body = { INVEN = 10, BODY=1, MAINHAND=1, TOOL=1 },
 
 	resolvers.equip{
 		{type="weapon", subtype="trident", autoreq=true, special_rarity="trident_rarity"},
 		{type="armor", subtype="light", defined="EEL_SKIN", random_art_replace={chance=65}, autoreq=true},
+		{type="charm", subtype="torque", autoreq=true}
 	},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
@@ -111,6 +112,7 @@ newEntity{ base = "BASE_NPC_NAGA", define_as = "NAGA_TIDEWARDEN",
 		{type="weapon", subtype="trident", autoreq=true, force_drop=true, special_rarity="trident_rarity"},
 	},
 	resolvers.talents{
+		[Talents.T_EXOTIC_WEAPONS_MASTERY]={base=1, every=8, max=6},
 		[Talents.T_SPIT_POISON]={base=1, every=10, max=5},
 	},
 }
@@ -127,6 +129,7 @@ newEntity{ base = "BASE_NPC_NAGA", define_as = "NAGA_TIDECALLER",
 		{type="weapon", subtype="staff", autoreq=true},
 	},
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=2, every=7, max=5},
 		[Talents.T_WATER_JET]={base=2, every=7, max=5},
 	},
@@ -143,6 +146,7 @@ newEntity{ base = "BASE_NPC_NAGA",
 		{type="weapon", subtype="staff", autoreq=true},
 	},
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=2, every=7, max=5},
 		[Talents.T_MIND_SEAR]={base=2, every=7, max=5},
 		[Talents.T_TELEKINETIC_BLAST]={base=2, every=7, max=5},

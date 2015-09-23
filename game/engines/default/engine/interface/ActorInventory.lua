@@ -504,7 +504,7 @@ function _M:wearObject(o, replace, vocal, force_inven, force_item)
 		return true, stack
 	elseif not force_inven and offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
 		if vocal then game.logSeen(self, "%s wears (offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
-		added, slot, stack = self:addObject(self:getInven(offslot), o)
+		added, slot, stack = self:addObject(offslot, o)
 		return added, stack
 	elseif replace then -- no room but replacement is allowed
 		local ro = self:takeoffObject(inven_id, force_item or 1)

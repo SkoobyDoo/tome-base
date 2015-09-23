@@ -53,6 +53,7 @@ if type(config.settings.tome.small_frame_side) == "nil" then config.settings.tom
 if type(config.settings.tome.fullscreen_stun) == "nil" then config.settings.tome.fullscreen_stun = true end
 if type(config.settings.tome.fullscreen_confusion) == "nil" then config.settings.tome.fullscreen_confusion = true end
 if type(config.settings.tome.show_grid_lines) == "nil" then config.settings.tome.show_grid_lines = false end
+if type(config.settings.tome.tinker_auto_switch) == "nil" then config.settings.tome.tinker_auto_switch = true end
 if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end
 if not config.settings.tome.ui_theme2 then config.settings.tome.ui_theme2 = "metal" end
 if not config.settings.tome.uiset_mode then config.settings.tome.uiset_mode = "Minimalist" end

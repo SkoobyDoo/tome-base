@@ -285,7 +285,7 @@ local minions_list = {
 		max_mana = resolvers.rngavg(70,80),
 		combat_armor = 3, combat_def = 1,
 		stats = { str=10, dex=12, cun=14, mag=14, con=10 },
-		resolvers.talents{ T_FLAME={base=1, every=7, max=5}, T_MANATHRUST={base=2, every=7, max=5} },
+		resolvers.talents{ T_STAFF_MASTERY={base=1, every=10, max=5}, T_FLAME={base=1, every=7, max=5}, T_MANATHRUST={base=2, every=7, max=5} },
 		blighted_summon_talent = "T_BONE_SPEAR",
 		resolvers.equip{ {type="weapon", subtype="staff", autoreq=true} },
 		autolevel = "caster",
