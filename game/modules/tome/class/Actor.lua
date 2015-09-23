@@ -1458,7 +1458,7 @@ function _M:dropNoTeleportObjects()
 end
 
 --- Blink through walls
-function _M:probabilityTravel(x, y, dist)
+function _M:probabilityTravel(x, y, dist, checker)
 	if game.zone.wilderness then return true end
 	if self:attr("encased_in_ice") then return end
 
@@ -1467,6 +1467,7 @@ function _M:probabilityTravel(x, y, dist)
 	while game.level.map:isBound(tx, ty) and game.level.map:checkAllEntities(tx, ty, "block_move", self) and dist > 0 do
 		if game.level.map.attrs(tx, ty, "no_teleport") then break end
 		if game.level.map:checkAllEntities(tx, ty, "no_prob_travel", self) then break end
+		if checker and checker(tx, ty) then break end
 		tx = tx + dirx
 		ty = ty + diry
 		dist = dist - 1
