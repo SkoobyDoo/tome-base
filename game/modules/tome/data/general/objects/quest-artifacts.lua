@@ -405,9 +405,9 @@ Items in the chest will not encumber you.]],
 						if not ret then return end
 						for i = floor, 1, -1 do
 							local o = game.level.map:getObject(who.x, who.y, i)
-							if who:transmoFilter(o) then
+							if who:transmoFilter(o, self) then
 								game.level.map:removeObject(who.x, who.y, i)
-								who:transmoInven(nil, nil, o)
+								who:transmoInven(nil, nil, o, self)
 							end
 						end
 					end)
@@ -420,7 +420,7 @@ Items in the chest will not encumber you.]],
 				for i = #inven, 1, -1 do
 					local o = inven[i]
 					if o.__transmo then
-						who:transmoInven(inven, i, o)
+						who:transmoInven(inven, i, o, self)
 					end
 				end
 			end)
