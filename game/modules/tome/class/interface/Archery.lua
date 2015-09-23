@@ -27,6 +27,19 @@ local Talents = require "engine.interface.ActorTalents"
 --- Interface to add ToME archery combat system
 module(..., package.seeall, class.make)
 
+-- Imported into Talents.main_env later
+function _M:archery_range()
+	local weapon, ammo, offweapon = self:hasArcheryWeapon()
+	if not weapon or not weapon.combat then 
+		if self:attr("warden_swap") and self:hasArcheryWeaponQS() then
+			weapon, ammo, offweapon = self:hasArcheryWeaponQS()
+		else
+			return 1
+		end
+	end
+	return math.max(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 0)
+end
+
 --- Look for possible archery targets
 -- Take care of removing enough ammo
 function _M:archeryAcquireTargets(tg, params)
@@ -48,17 +61,18 @@ function _M:archeryAcquireTargets(tg, params)
 	print("[ARCHERY ACQUIRE TARGETS WITH]", weapon.name, ammo.name)
 	local realweapon = weapon
 	weapon = weapon.combat
+	local realoffweapon = offweapon
+	offweapon = offweapon and offweapon.combat
 
 	if weapon.use_resource then
 		local val = self['get'..weapon.use_resource.kind:capitalize()](self)
 		if val < weapon.use_resource.value then
 			game.logPlayer(self, "You do not have enough %s left!", weapon.use_resource.kind)
-			print("== no ressource")
 			return nil
 		end
 	end
 
-	local tg = tg or {}
+	local tg = table.clone(tg or {}, false)
 	tg.type = tg.type or weapon.tg_type or ammo.combat.tg_type or tg.type or "bolt"
 	
 	-- Pass friendly actors
@@ -67,7 +81,9 @@ function _M:archeryAcquireTargets(tg, params)
 		tg.friendlyblock=false
 	end
 
-	if not tg.range then tg.range=math.max(math.min(weapon.range or 6, offweapon and offweapon.range or 40), self:attr("archery_range_override") or 1) end
+	if not tg.range then tg.range = self:archery_range() end
+	local base_range = tg.range
+
 	tg.display = tg.display or self:archeryDefaultProjectileVisual(weapon, ammo)
 	local wtravel_speed = weapon.travel_speed
 	if offweapon then wtravel_speed = math.ceil(((weapon.travel_speed or 0) + (offweapon.travel_speed or 0)) / 2) end
@@ -84,6 +100,9 @@ function _M:archeryAcquireTargets(tg, params)
 	local targets = {}
 
 	local runfire = function(weapon, targets)
+		if weapon.range then tg.range = math.min(base_range, weapon.range)
+		else tg.range = base_range end
+
 		if params.one_shot then
 			local a = ammo
 			if not infinite and ammo.combat.shots_left > 0 then
@@ -531,8 +550,10 @@ function _M:archeryShoot(targets, talent, tg, params)
 	print("[SHOOT WITH]", weapon.name, ammo.name)
 	local realweapon = weapon
 	weapon = weapon.combat
+	local realoffweapon = offweapon
+	offweapon = offweapon and offweapon.combat
 
-	local tg = tg or {}
+	local tg = table.clone(tg or {}, false)
 	tg.type = tg.type or weapon.tg_type or ammo.combat.tg_type or tg.type or "bolt"
 	tg.talent = tg.talent or talent
 	
@@ -545,8 +566,12 @@ function _M:archeryShoot(targets, talent, tg, params)
 	params = params or {}
 	self:triggerHook{"Combat:archeryTargetKind", tg=tg, params=params, mode="fire"}
 
+	if not tg.range then tg.range = self:archery_range() end
+	local base_range = tg.range
 	local dofire = function(weapon, targets)
-		if not tg.range then tg.range=weapon.range or 6 end
+		if weapon.range then tg.range = math.min(base_range, weapon.range)
+		else tg.range = base_range end
+
 		tg.display = tg.display or self:archeryDefaultProjectileVisual(realweapon, ammo)
 		tg.speed = (tg.speed or 10) + (ammo.combat.travel_speed or 0) + (weapon.travel_speed or 0) + (self.travel_speed or 0)
 		tg.archery = params or {}
@@ -563,7 +588,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 		dofire(weapon, targets)
 	elseif offweapon and targets.dual then
 		dofire(weapon, targets.main)
-		dofire(offweapon.combat, targets.off)
+		dofire(offweapon, targets.off)
 	else
 		print("[SHOOT] error, mismatch between dual weapon/dual targets")
 	end

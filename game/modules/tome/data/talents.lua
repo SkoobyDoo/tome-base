@@ -74,6 +74,9 @@ Talents.is_a_type = {
 Talents.damDesc = damDesc
 Talents.main_env = getfenv(1)
 
+-- Archery range talents
+Talents.main_env.archery_range = require("mod.class.interface.Archery").archery_range
+
 load("/data/talents/misc/misc.lua")
 load("/data/talents/techniques/techniques.lua")
 load("/data/talents/cunning/cunning.lua")
