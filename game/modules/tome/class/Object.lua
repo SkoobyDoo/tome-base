@@ -540,7 +540,6 @@ function _M:getTextualDesc(compare_with, use_actor)
 	desc:add(true)
 
 	if not self:isIdentified() then -- give limited information if the item is unidentified
---desc:add("----START UNIDED DESC----", true)
 		local combat = self.combat
 		if not combat and self.wielded then
 			-- shield combat
