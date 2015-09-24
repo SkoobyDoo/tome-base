@@ -2308,6 +2308,9 @@ function _M:hasDualWeapon(type)
 	if not self:getInven("MAINHAND") or not self:getInven("OFFHAND") then return end
 	local weapon = self:getInven("MAINHAND")[1]
 	local offweapon = self:getInven("OFFHAND")[1]
+
+	if not offweapon and weapon and weapon.double_weapon then offweapon = weapon end
+
 	if not weapon or not offweapon or not weapon.combat or not offweapon.combat then
 		return nil
 	end
