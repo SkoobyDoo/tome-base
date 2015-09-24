@@ -684,6 +684,7 @@ end
 
 function _M:hasDualArcheryWeapon(type)
 	local w, a, o = self:hasArcheryWeapon(type)
+	if w and w.double_weapon and a and not o then return w, a, w end
 	if self.can_solo_dual_archery and w and not o then w, o = w, w end
 	if self.can_solo_dual_archery and not w and o then w, o = o, o end
 	if w and a and o then return w, a, o end
