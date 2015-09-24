@@ -1697,9 +1697,11 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 	if self.special_desc then
 		local d = self:special_desc(use_actor)
-		desc:add({"color", "ROYAL_BLUE"})
-		desc:merge(d:toTString())
-		desc:add({"color", "LAST"}, true)
+		if d then
+			desc:add({"color", "ROYAL_BLUE"})
+			desc:merge(d:toTString())
+			desc:add({"color", "LAST"}, true)
+		end
 	end
 
 	if self.on_block and self.on_block.desc then
