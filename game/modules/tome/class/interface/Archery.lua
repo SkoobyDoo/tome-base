@@ -547,7 +547,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 		game.logPlayer(self, "You are disarmed!")
 		return nil
 	end
-	print("[SHOOT WITH]", weapon.name, ammo.name)
+	print("[SHOOT WITH]", weapon.name, ammo.name, offweapon and offweapon.name)
 	local realweapon = weapon
 	weapon = weapon.combat
 	local realoffweapon = offweapon
@@ -612,6 +612,8 @@ function _M:hasArcheryWeapon(type)
 	if not self:getInven("QUIVER") then return nil, "no ammo" end
 	local weapon = self:getInven("MAINHAND")[1]
 	local offweapon = self:getInven("OFFHAND") and self:getInven("OFFHAND")[1]
+	if not offweapon and weapon and weapon.double_weapon then offweapon = weapon end
+
 	local ammo = self:getInven("QUIVER")[1]
 	if self.inven[self.INVEN_PSIONIC_FOCUS] then
 		local pf_weapon = self:getInven("PSIONIC_FOCUS")[1]
@@ -652,6 +654,8 @@ function _M:hasArcheryWeaponQS(type)
 	if not self:getInven("QS_QUIVER") then return nil, "no ammo" end
 	local weapon = self:getInven("QS_MAINHAND")[1]
 	local offweapon = self:getInven("QS_OFFHAND") and self:getInven("QS_OFFHAND")[1]
+	if not offweapon and weapon and weapon.double_weapon then offweapon = weapon end
+
 	local ammo = self:getInven("QS_QUIVER")[1]
 	if self.inven[self.INVEN_PSIONIC_FOCUS] then
 		local pf_weapon = self:getInven("QS_PSIONIC_FOCUS")[1]

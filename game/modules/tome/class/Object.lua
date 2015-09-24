@@ -536,6 +536,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 	if self.material_level then desc:add(" ; tier ", tostring(self.material_level)) end
 	desc:add(true)
 	if self.slot_forbid == "OFFHAND" then desc:add("It must be held with both hands.", true) end
+	if self.double_weapon then desc:add("It can be used as a weapon and offhand.", true) end
 	desc:add(true)
 
 	if not self:isIdentified() then -- give limited information if the item is unidentified
