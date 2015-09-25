@@ -6562,6 +6562,14 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 		game.logPlayer(self, "This tinker can not be applied to this item.")
 		return
 	end
+	if wear_o.on_subtype and wear_o.on_subtype ~= rawget(base_o, "subtype") then
+		game.logPlayer(self, "This tinker can not be applied to this item.")
+		return
+	end
+	if wear_o.on_special and not wear_o.on_special(wear_o, base_o, self) then
+		game.logPlayer(self, "This tinker can not be applied to this item.")
+		return
+	end
 	if wear_o.on_slot and wear_o.on_slot ~= base_o.slot then
 		game.logPlayer(self, "This tinker can not be applied to this item.")
 		return
