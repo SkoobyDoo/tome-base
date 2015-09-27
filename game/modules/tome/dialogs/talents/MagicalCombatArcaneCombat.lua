@@ -104,7 +104,7 @@ function _M:generateList()
 	local chars = {}
 
 	for _, t in pairs(self.actor.talents_def) do
-		if t.allow_for_arcane_combat and self.actor:knowTalent(t) then
+		if t.allow_for_arcane_combat and t.mode == "activated" and t.is_spell and self.actor:knowTalent(t) then
 			local status = tstring{{"color", "LIGHT_GREEN"}, "Talents"}
 			
 			-- Pregenerate icon with the Tiles instance that allows images
