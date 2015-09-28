@@ -38,6 +38,7 @@ local Tiles = require "engine.Tiles"
 local Particles = require "engine.Particles"
 local CharacterVaultSave = require "engine.CharacterVaultSave"
 local Object = require "mod.class.Object"
+local OptionTree = require "mod.dialogs.OptionTree"
 
 module(..., package.seeall, class.inherit(Birther))
 
@@ -68,6 +69,8 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self.c_tut = Button.new{text="Tutorial", fct=function() self:tutorial() end}
 	self.c_options = Button.new{text="Customize", fct=function() self:customizeOptions() end}
 	self.c_options.hide = true
+	self.c_extra_options = Button.new{text="Extra Options", fct=function() self:extraOptions() end}
+	self.c_extra_options.hide = #game.extraBirthOptionDefs == 0
 
 	self.c_name = Textbox.new{title="Name: ", text=(not config.settings.cheat and game.player_name == "player") and "" or game.player_name, chars=30, max_len=50, fct=function()
 		if config.settings.cheat then self:makeDefault() end
@@ -103,7 +106,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self:setDescriptor("sex", "Female")
 
 	self:generateRaces()
-	self.c_race = TreeList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, columns={
+	self.c_race = TreeList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - self.c_extra_options.h - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, columns={
 		{width=100, display_prop="name"},
 	}, tree=self.all_races,
 		fct=function(item, sel, v) self:raceUse(item, sel, v) end,
@@ -154,6 +157,8 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 		{left=self.c_premade, bottom=0, ui=self.c_tile},
 		{left=self.c_tile, bottom=0, ui=self.c_options},
 		{right=0, bottom=0, ui=self.c_cancel},
+
+		{left=0, bottom=self.c_ok, ui=self.c_extra_options},
 	}
 	self:setupUI()
 
@@ -1467,4 +1472,10 @@ function _M:customizeOptions()
 	d:setupUI(true, true)
 	d.key:addBind("EXIT", function() game:unregisterDialog(d) end)
 	game:registerDialog(d)
+end
+
+function _M:extraOptions()
+  local options = OptionTree.new(game.extraBirthOptionDefs, 'Birth Options', 600, 550)
+  options:initialize()
+  game:registerDialog(options)
 end

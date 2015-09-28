@@ -236,6 +236,8 @@ function _M:newGame()
 	end
 	local nb_unlocks, max_unlocks = self:countBirthUnlocks()
 	self.creating_player = true
+	self.extraBirthOptionDefs = {}
+	class:triggerHook{"ToME:extraBirthOptions", options = self.extraBirthOptionDefs}
 	local birth; birth = Birther.new("Character Creation ("..nb_unlocks.."/"..max_unlocks.." unlocked birth options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
 		if not loaded then
 			self.calendar = Calendar.new("/data/calendar_"..(self.player.calendar or "allied")..".lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
@@ -243,6 +245,14 @@ function _M:newGame()
 			self.player.make_tile = nil
 			self.player:check("before_starting_zone")
 			self.player:check("class_start_check")
+
+			-- Save current state of extra birth options.
+			self.player.extraBirthOptions = {}
+			for _, option in ipairs(self.extraBirthOptionDefs) do
+				if option.id then
+					self.player.extraBirthOptions[option.id] = config.settings.tome[option.id]
+				end
+			end
 
 			-- Configure & create the worldmap
 			self.player.last_wilderness = self.player.default_wilderness[3] or "wilderness"
