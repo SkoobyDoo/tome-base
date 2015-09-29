@@ -206,7 +206,7 @@ newTalent {
 	activate = function(self, t) return {} end,
 	deactivate = function(self, t, p) return true end,
 	info = function(self, t)
-		return ([[While activated, your basic Shot talent now fires %d sling bullets, each dealing %d%% Ranged damage, at a cost of %d Stamina per attack.]])
+		return ([[While activated, your basic Shot talent now fires %d times, with each attack dealing %d%% Ranged damage, at a cost of %d Stamina per attack.]])
 		:format(t.bullet_count(self, t), t.damage_multiplier(self, t) * 100, t.shot_stamina(self, t))
 	end,
 }

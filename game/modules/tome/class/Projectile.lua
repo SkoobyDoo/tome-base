@@ -29,8 +29,6 @@ function _M:init(t, no_default)
 	engine.Projectile.init(self, t, no_default)
 end
 
-_M.__is_projectile = true
-
 --- Moves a projectile on the map
 -- We override it to allow for movement animations
 function _M:move(x, y, force)
@@ -56,6 +54,9 @@ function _M:tooltip(x, y)
 	end
 
 	if self.project and self.project.def and self.project.def.typ then
+		if self.project.def.x then
+			tstr:add(true, ("Speed: %d%% %s"):format(self.energy.mod*100, game.level.map:compassDirection(self.project.def.x - self.x, self.project.def.y - self.y) or ""))
+		end
 		if self.project.def.typ.selffire then
 			local x = self.project.def.typ.selffire
 			if x == true then x = 100 end
@@ -70,6 +71,7 @@ function _M:tooltip(x, y)
 
 	if config.settings.cheat then
 		tstr:add(true, "UID: ", tostring(self.uid), true, "Coords: ", tostring(x), "x", tostring(y))
+		tstr:add(" range: ", tostring(self.project.def.typ.range or "nil"), " ==> (", tostring(self.project.def.x), ",", tostring(self.project.def.y), ")")
 	end
 	return tstr
 end

@@ -1838,33 +1838,45 @@ function _M:tooltip(x, y, seen_by)
 	if self.summon_time then
 		ts:add("Time left: ", {"color", "ANTIQUE_WHITE"}, ("%d"):format(self.summon_time), {"color", "WHITE"}, true)
 	end
-
-	if self:getInven("MAINHAND") and self:getInven("MAINHAND").worn and self:getInven("MAINHAND")[1] and self:getInven("MAINHAND")[1].keywords then
-		ts:add("Weapon Keywords: ", {"color", "RED"})
-		local keywords = tstring{}
-		local archery = self:getInven("MAINHAND")[1].archery or false
-
-
-		for k, v in pairs(self:getInven("MAINHAND")[1].keywords) do
-			ts:add(tostring(k), ", " )
+	-- Short names of wielded weapons/ammo
+	if self:getInven("MAINHAND") then
+		for i, o in ipairs(self:getInven("MAINHAND")) do
+			local tst = ("#LIGHT_BLUE#Main:#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
+			tst = tst:extractLines(true)[1]
+			table.append(ts, tst)
+			ts:add(true)
 		end
-
-		if self:getInven("OFFHAND") and self:getInven("OFFHAND").worn and self:getInven("OFFHAND")[1] and self:getInven("OFFHAND")[1].keywords then
-			for k, v in pairs(self:getInven("OFFHAND")[1].keywords) do
-				ts:add(tostring(k), ", ")
-			end
+	end
+	if self:getInven("OFFHAND") then
+		for i, o in ipairs(self:getInven("OFFHAND")) do
+			local tst = ("#LIGHT_BLUE#Off :#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
+			tst = tst:extractLines(true)[1]
+			table.append(ts, tst)
+			ts:add(true)
 		end
-
-		if archery and self:getInven("QUIVER") and self:getInven("QUIVER").worn and self:getInven("QUIVER")[1] and self:getInven("QUIVER")[1].keywords then
-			for k, v in pairs(self:getInven("QUIVER")[1].keywords) do
-				ts:add(tostring(k), ", ")
-			end
+	end
+	if self:getInven("PSIONIC_FOCUS") and self:attr("psi_focus_combat") then
+		for i, o in ipairs(self:getInven("PSIONIC_FOCUS")) do
+			local tst = ("#LIGHT_BLUE#Psi :#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
+			tst = tst:extractLines(true)[1]
+			table.append(ts, tst)
+			ts:add(true)
 		end
-
-		if ts[#ts] == ", " then table.remove(ts) end
-		ts:add({"color", "LAST"}, true)
+	end
+	if self:getInven("QUIVER") then
+		for i, o in ipairs(self:getInven("QUIVER")) do
+			local tst = ("#LIGHT_BLUE#Ammo:#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
+			tst = tst:extractLines(true)[1]
+			table.append(ts, tst)
+			ts:add(true)
+		end
 	end
 
+	ts:add({"color", "WHITE"})
 	local retal = 0
 	for k, v in pairs(self.on_melee_hit) do
 		if type(v) == "number" then retal = retal + v
@@ -3573,7 +3585,7 @@ function _M:updateModdableTile()
 end
 
 -- Go through all sustained talents and turn them off if pre_use fails
-function _M:actorCheckSustains()
+function _M:actorCheckSustains(silent, fake)
 	for tid, _ in pairs(self.talents) do
 		local t = self:getTalentFromId(tid)
 		if t and t.mode == "sustained" and self:isTalentActive(t.id) then
@@ -3642,37 +3654,43 @@ function _M:quickSwitchWeapons(free_swap, message, silent)
 		for i = 1, #qvset2 do self:addObject(qv1, qvset2[i]) end
 	end
 	if free_swap == false then self:useEnergy() end
-	local names = ""
-	if pf1 and pf2 then
-		if not pf1[1] then
-			if mh1[1] and oh1[1] then names = mh1[1]:getName{do_color=true}.." and "..oh1[1]:getName{do_color=true}
-			elseif mh1[1] and not oh1[1] then names = mh1[1]:getName{do_color=true}
-			elseif not mh1[1] and oh1[1] then names = oh1[1]:getName{do_color=true}
-			end
-		else
-			if mh1[1] and oh1[1] then names = mh1[1]:getName{do_color=true}.." and "..oh1[1]:getName{do_color=true}.." and "..pf1[1]:getName{do_color=true}
-			elseif mh1[1] and not oh1[1] then names = mh1[1]:getName{do_color=true}.." and "..pf1[1]:getName{do_color=true}
-			elseif not mh1[1] and oh1[1] then names = oh1[1]:getName{do_color=true}.." and "..pf1[1]:getName{do_color=true}
-			end
-		end
-	else
-		if mh1[1] and oh1[1] then names = mh1[1]:getName{do_color=true}.." and "..oh1[1]:getName{do_color=true}
-		elseif mh1[1] and not oh1[1] then names = mh1[1]:getName{do_color=true}
-		elseif not mh1[1] and oh1[1] then names = oh1[1]:getName{do_color=true}
-		end
-	end
 
 	self.no_power_reset_on_wear = nil
 
-	-- Special Messages
 	if not silent then
+		local names = tstring{}
+		if mh1 and mh2 then
+			for i = 1, #mh1 do
+				if #names > 0 then names:add(true) end
+				names:add(mh1[i]:getName({do_color=true, no_add_name=true}))
+			end
+		end
+		if oh1 and oh2 then
+			for i = 1, #oh1 do
+				if #names > 0 then names:add(true) end
+				names:add(oh1[i]:getName({do_color=true, no_add_name=true}))
+			end
+		end
+		if pf1 and pf2 then
+			for i = 1, #pf1 do
+				if #names > 0 then names:add(true) end
+				names:add(pf1[i]:getName({do_color=true, no_add_name=true}))
+			end
+		end
+		if qv1 and qv2 then
+			for i = 1, #qv1 do
+				if #names > 0 then names:add(true) end
+				names:add(qv1[i]:getName({do_color=true, no_add_name=true}))
+			end
+		end
+		-- Special Messages
+		if #names == 0 then names = "unarmed" end
 		if message == "warden" then
-			game.logPlayer(self, "You teleport %s into your hands.", names)
+			game.logSeen(self, "%s warps space-time to equip: %s.", self.name:capitalize(), names)
 		else
-			game.logPlayer(self, "You switch your weapons to: %s.", names)
+			game.logSeen(self, "%s switches %s weapons to: %s.", self.name:capitalize(), self:his_her(), names)
 		end
 	end
-
 	-- Make sure sustains are still active
 	self:actorCheckSustains()
 	self:breakLightningSpeed()
@@ -4210,6 +4228,54 @@ function _M:unlearnItemTalent(o, tid, level)
 			self:unlearnTalent(tid, nil, nil, {no_unlearn = true})
 		end
 	end
+end
+
+-- Should a version of this go in the engine?
+
+-- use a lists of resources (no resources are used unless there are enough of all of them)
+-- @param costs a table of costs = {resource1 = value1, resource2 = value2, ...}
+-- @check if true the available resources will be checked but not depleted
+-- @return true if there are/were adequate resources to deplete
+function _M:useResources(costs, check)
+	local ok = true
+	if costs then
+		local res_def, avail, invert
+		local min, max
+		local inc = {}
+		-- check for availability of each resource and record increments
+		for kind, val in pairs(costs) do -- fatigue effects not applied
+			res_def = self.resources_def[kind]
+			invert = res_def and res_def.invert_values or false
+			avail = res_def and self[res_def.getFunction](self) or util.getval(self['get'..kind:capitalize()], self) or 0
+			if invert then
+				max = (res_def and self[res_def.maxname]) or (not res_def and util.getval(self['getMax'..kind:capitalize()], self))
+				if max and avail + val > max then -- too much
+					ok = false
+				end
+				inc[kind] = val
+			else
+				min = (res_def and self[res_def.minname]) or (not res_def and util.getval(self['getMin'..kind:capitalize()], self))
+				if min and avail - val < min then -- too little
+					ok = false
+				end
+				inc[kind] = -val
+			end
+			if not ok then return false, kind end
+		end
+		-- Adequate resources available, apply the cost(s)
+		if ok and not check then
+			for kind, val in pairs(inc) do
+				res_def = self.resources_def[kind]
+				if res_def then
+					self[res_def.incFunction](self, val)
+				else
+					local incFun = self["inc"..kind:capitalize()]
+					if incFun then incFun(self, val) else self[kind] = self[kind] + val end
+				end
+			end
+		end
+	end
+	return ok
 end
 
 -- learn a talent associated with another talent, usually a resource pool
@@ -6413,7 +6479,7 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 	end
 
 	dst:sortInven()
-	self:actorCheckSustains()
+	self:actorCheckSustains(true)
 	self:breakLightningSpeed()
 	self:breakReloading()
 	self:breakStepUp()
@@ -6441,7 +6507,7 @@ function _M:doTakeoff(inven, item, o, simple, dst)
 		if not self:attr("quick_wear_takeoff") or self:attr("quick_wear_takeoff_disable") then self:useEnergy() end
 		if self:attr("quick_wear_takeoff") then self:setEffect(self.EFF_SWIFT_HANDS_CD, 1, {}) self.tmp[self.EFF_SWIFT_HANDS_CD].dur = 0 end
 	end
-	self:actorCheckSustains()
+	self:actorCheckSustains(true)
 	self:breakLightningSpeed()
 	self:breakReloading()
 	self:breakStepUp()
