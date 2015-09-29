@@ -106,7 +106,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self:setDescriptor("sex", "Female")
 
 	self:generateRaces()
-	self.c_race = TreeList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - self.c_extra_options.h - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, columns={
+	self.c_race = TreeList.new{width=math.floor(self.iw / 3 - 10), height=self.ih - self.c_female.h - self.c_ok.h - (self.c_extra_options.hide and 0 or self.c_extra_options.h) - self.c_difficulty.h - self.c_campaign.h - 10, scrollbar=true, columns={
 		{width=100, display_prop="name"},
 	}, tree=self.all_races,
 		fct=function(item, sel, v) self:raceUse(item, sel, v) end,
