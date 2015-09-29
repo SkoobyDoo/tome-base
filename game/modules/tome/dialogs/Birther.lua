@@ -70,7 +70,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self.c_options = Button.new{text="Customize", fct=function() self:customizeOptions() end}
 	self.c_options.hide = true
 	self.c_extra_options = Button.new{text="Extra Options", fct=function() self:extraOptions() end}
-	self.c_extra_options.hide = #game.extraBirthOptionDefs == 0
+	self.c_extra_options.hide = #game.extra_birth_option_defs == 0
 
 	self.c_name = Textbox.new{title="Name: ", text=(not config.settings.cheat and game.player_name == "player") and "" or game.player_name, chars=30, max_len=50, fct=function()
 		if config.settings.cheat then self:makeDefault() end
@@ -1042,7 +1042,7 @@ end
 
 function _M:resetAttachementSpots()
 	self.actor.attachement_spots = nil
-	if self.has_custom_tile then 
+	if self.has_custom_tile then
 		self.actor.attachement_spots = self.has_custom_tile.f
 		return
 	end
@@ -1410,7 +1410,7 @@ function _M:selectTile()
 	fs.mkdir("/data/gfx/custom-tiles/")
 	for file in fs.iterate("/data/gfx/custom-tiles/", function(file) return file:find("%.png") end) do
 		list[#list+1] = "custom-tiles/"..file
-	end	
+	end
 
 	self:triggerHook{"Birther:donatorTiles", list=list}
 	local remove = Button.new{text="Use default tile", width=240, fct=function()
@@ -1475,7 +1475,7 @@ function _M:customizeOptions()
 end
 
 function _M:extraOptions()
-  local options = OptionTree.new(game.extraBirthOptionDefs, 'Birth Options', 600, 550)
+  local options = OptionTree.new(game.extra_birth_option_defs, 'Birth Options', 600, 550)
   options:initialize()
   game:registerDialog(options)
 end
