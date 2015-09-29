@@ -875,8 +875,6 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			local text2 = (combat.obj and combat.obj.slot_forbid == "OFFHAND" and "Two-Handed, " or "")..(weap_type and weap_type or "")
 			s:drawColorStringBlended(self.font, (text or "Weapon")..(weap_type and " ("..text2..")" or "")..":", w, h, 255, 255, 255, true) h = h + self.font_h
 
---game.log("#GREY#Actor(test) to compare: %s, atk:%s/%s, dmg:%s/%s, apr:%s/%s, crit:%s/%s, apseed:%s/%s, range:%s/%s, mspeed:%s/%s", actor == actor_to_compare, combat.atk, combatc.atk, combat.dmg, combatc.dmg, combat.apr, combatc.apr, combat.crit, combatc.crit, combat.aspeed, combatc.aspeed, combat.range, combatc.range, combat.mspeed, combatc.mspeed)
-
 			text = compare_fields(player, actor_to_compare,
 				function(actor, ...)
 					return actor == actor_to_compare and combatc.atk or combat.atk

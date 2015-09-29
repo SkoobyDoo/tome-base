@@ -27,13 +27,6 @@ local Talents = require "engine.interface.ActorTalents"
 --- Interface to add ToME archery combat system
 module(..., package.seeall, class.make)
 
--- just for debugging
-function _M:getArcheryWeapons(type, quickset)
-	local weaps = {}
-	weaps.main, weaps.ammo, weaps.off, weaps.psi = _M.hasArcheryWeapon(self, type, quickset)
-	return weaps
-end
-
 -- Typical Archery Sequence:
 -- targets = archeryAcquireTargets(tg, params) to create a list of target spots for projectiles
 -- 		This checks that the actor can shoot, gets the target (blocking until the target is selected)
@@ -75,7 +68,6 @@ end
 function _M:archeryAcquireTargets(tg, params)
 	params = params or {}
 	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(params.type)
---game.log("#GREY# -- [archeryAcquireTargets] (%s)--weapon:%12s, ammo:%12s, offweapon:%12s, pf_weapon:%12s", self.name, weapon and weapon.name, ammo and ammo.name, offweapon and offweapon.name, pf_weapon and pf_weapon.name)
 	-- Awesome, we can shoot from our offhand!
 	if not weapon and offweapon then weapon, offweapon = offweapon, nil end -- treat offweapon as primary
 	if not weapon and not pf_weapon then
@@ -195,8 +187,6 @@ function _M:archeryAcquireTargets(tg, params)
 	local targets = {}
 	-- populate the targets table for a weapon using ammo and resources as required
 	local runfire = function(weapon, targets, realweapon)
---print("runfire tg:")
---table.print(tg, "+++")
 		--	Note: if shooters with built-in infinite ammo are reintroduced, handle it here by specifying ammo to use
 		-- calculate the range for the current weapon
 		local weapon_range = math.min(tg.range or 40, math.max(weapon.range or 6, self:attr("archery_range_override") or 1))
@@ -261,20 +251,16 @@ function _M:archeryAcquireTargets(tg, params)
 -- note: because talent resources are deducted in Actor:postUseTalent, which is called after this, shot resource costs will not prevent talent usage
 	local any = 0
 	if weaponC and not offweaponC then
---game.log("#GREY# runfire main weapon")
 		runfire(weaponC, targets, weapon)
 		any = any + #targets
 	elseif weaponC and offweaponC then
 		targets = {main={}, off={}, dual=true}
---game.log("#GREY# runfire main weapon")
 		runfire(weaponC, targets.main, weapon)
---game.log("#GREY# runfire off weapon")
 		runfire(offweaponC, targets.off, offweapon)
 		any = any + #targets.main + #targets.off
 	end
 	if pf_weaponC then
 		targets.psi = {}
---game.log("#GREY# runfire psi weapon")
 		runfire(pf_weaponC, targets.psi, pf_weapon)
 		any = any + #targets.psi
 	end
@@ -634,9 +620,6 @@ function _M:archeryShoot(targets, talent, tg, params)
 		return nil
 	end
 	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(params.type)
---game.log("#GREY# -- [archeryShoot]  (%s) -- weapon:%12s, ammo:%12s, offweapon:%12s, pf_weapon:%12s", self.name, weapon, ammo, offweapon, pf_weapon)
---print("[archeryShoot] targets:")
---table.print(targets)
 	if not weapon and not pf_weapon then
 		game.logPlayer(self, "You must wield a ranged weapon (%s)!", ammo)
 		return nil
@@ -669,13 +652,10 @@ function _M:archeryShoot(targets, talent, tg, params)
 			tg.speed = (tg.speed or 10) + (ammo.travel_speed or 0) + (weapon.travel_speed or 0) + (self.combat and self.combat.travel_speed or 0)
 			tg.type = tg.type or weapon.tg_type or tg.archery.ammo.tg_type or "bolt"
 			tg.display = tg.display or targets[i].display or self:archeryDefaultProjectileVisual(realweapon, ammo)
---game.log("Archery Bonus(%s): %f%%, %d", weapon.talented, self:combatTrainingPercentInc(weapon), self:combatTrainingDamage(weapon))
 		
 			tg.archery.use_psi_archery = self:attr("use_psi_combat") or weapon.use_psi_archery
 			print("[ARCHERY SHOOT dofire] Shooting weapon:", realweapon and realweapon.name, "to:", targets[i].x, targets[i].y)
 			if realweapon.on_archery_trigger then realweapon.on_archery_trigger(realweapon, self, tg, params, targets[i], talent) end -- resources must be handled by the weapon function
---print("dofire: projectile creation:", tg)
---table.print(tg, "---")
 			-- hook to trigger as each archery projectile is created
 			local hd = {"Combat:archeryFire", tg=tg, archery = tg.archery, weapon=weapon, realweapon = realweapon, ammo=ammo}
 			self:triggerHook(hd)
@@ -684,17 +664,14 @@ function _M:archeryShoot(targets, talent, tg, params)
 	end
 
 	if weapon and not offweapon and not targets.dual then
---game.log("#GREY# ---- [archeryShoot]firing main weapon")
 		dofire(weaponC, targets, weapon)
 	elseif weapon and offweapon and targets.dual then
---game.log("#GREY# ---- [archeryShoot]firing main and off weapons")
 		dofire(weaponC, targets.main, weapon)
 		dofire(offweaponC, targets.off, offweapon)
 	else
 		print("[SHOOT] error, mismatch between dual weapon/dual targets")
 	end
 	if pf_weapon and targets.psi then
---game.log("#GREY# ---- [archeryShoot]psi weapon")
 		local combat = table.clone(pf_weaponC)
 		combat.use_psi_archery = true -- psionic focus weapons always use psi combat
 		dofire(combat, targets.psi, pf_weapon)

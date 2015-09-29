@@ -186,8 +186,6 @@ function _M:targetSetupKey()
 	local accept = function() self:targetMode(false, false) self.tooltip_x, self.tooltip_y = nil, nil end
 
 	self.targetmode_key = engine.KeyBind.new()
---	self.targetmode_key:addCommands{ _SPACE=accept, }
-
 	self.targetmode_key:addCommands{ _SPACE=accept, [{"_SPACE","ctrl"}]=accept, [{"_RETURN","ctrl"}]=accept, [{"_KP_ENTER","ctrl"}]=accept }
 	
 	if engine.interface and engine.interface.PlayerHotkeys then
