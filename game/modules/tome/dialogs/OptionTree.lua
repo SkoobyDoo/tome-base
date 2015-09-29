@@ -167,8 +167,11 @@ function _M:addCycling(t)
 	end
 	option.fct = function(item)
 		config.settings.tome[t.id] = next_value[config.settings.tome[t.id]]
+		if config.settings.tome[t.id] == nil then
+			config.settings.tome[t.id] = t.default or values[1]
+		end
 		local name = 'tome.'..(t.id)
-		game:saveSettings(name, ('%s = %s\n'):format(name, tostring(config.settings.tome[t.id])))
+		game:saveSettings(name, ('%s = "%s"\n'):format(name, tostring(config.settings.tome[t.id])))
 		this.c_tree:drawItem(item)
 		if t.action then t.action(config.settings.tome[t.id]) end
 	end
