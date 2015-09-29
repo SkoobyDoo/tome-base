@@ -1913,7 +1913,11 @@ do return end
 			local a = self.level.map(tmx, tmy, Map.ACTOR)
 			self:registerDialog(require("mod.dialogs.CharacterSheet").new((config.settings.cheat or self.player:canSee(a)) and a or self.player))
 		end,
-		
+
+		CENTER_ON_PLAYER = function()
+			game.level.map:centerViewAround(game.player.x, game.player.y)
+		end,
+
 		SHOW_MESSAGE_LOG = function()
 			self:registerDialog(require("mod.dialogs.ShowChatLog").new("Message Log", 0.6, self.uiset.logdisplay, profile.chat))
 		end,
