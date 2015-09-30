@@ -80,6 +80,13 @@ defineAction{
 }
 
 defineAction{
+	default = { "sym:_HOME:true:false:false:false"},
+	type = "CENTER_ON_PLAYER",
+	group = "actions",
+	name = "Center the view on the player",
+}
+
+defineAction{
 	default = { "sym:_TAB:false:false:false:false" },
 	type = "TOGGLE_MINIMAP",
 	group = "actions",
