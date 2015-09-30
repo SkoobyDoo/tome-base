@@ -27,6 +27,7 @@ require "engine.interface.ObjectIdentify"
 local Stats = require("engine.interface.ActorStats")
 local Talents = require("engine.interface.ActorTalents")
 local DamageType = require("engine.DamageType")
+local ActorResource = require "engine.interface.ActorResource"
 local Combat = require("mod.class.interface.Combat")
 
 module(..., package.seeall, class.inherit(
@@ -1093,6 +1094,17 @@ function _M:getTextualDesc(compare_with, use_actor)
 					return t:capitalize()
 				end
 			end)
+
+		-- resources used to attack
+		compare_table_fields(
+			combat, compare_with, field, "use_resources", "%d", "#ORANGE#Attacks use: #LAST#",
+			function(item)
+				local res_def = ActorResource.resources_def[item]
+				local col = (res_def and res_def.color or "#SALMON#"):toTString()
+				return col[2], (" %s"):format(res_def and res_def.name or item:capitalize()),{"color","LAST"}
+			end,
+			nil,
+			true)
 
 		self:triggerHook{"Object:descCombat", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, combat=combat}
 	end

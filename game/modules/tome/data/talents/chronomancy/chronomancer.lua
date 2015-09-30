@@ -217,11 +217,11 @@ end
 -- Checks for weapons in main and quickslot
 doWardenPreUse = function(self, weapon, silent)
 	if weapon == "bow" then
-		local bow, ammo = self:hasArcheryWeapon("bow")
-		if not bow then
-			bow, ammo = self:hasArcheryWeaponQS("bow")
+		local bow, ammo, oh, pf_bow= self:hasArcheryWeapon("bow")
+		if not bow and not pf_bow then
+			bow, ammo, oh, pf_bow= self:hasArcheryWeapon("bow", true)
 		end
-		return bow, ammo
+		return bow or pf_bow, ammo
 	end
 	if weapon == "dual" then
 		local mh, oh = self:hasDualWeapon()
@@ -235,19 +235,20 @@ end
 -- Swaps weapons if needed
 doWardenWeaponSwap = function(self, t, type, silent)
 	local swap = false
-	local warden_weapon
-
+	local mainhand, offhand, ammo, pf_weapon
+	
 	if type == "blade" then
-		local mainhand, offhand = self:hasDualWeapon()
-		if not mainhand or self:hasArcheryWeapon("bow") then  -- weird but this is lets ogers offhanding daggers still swap
+		mainhand, offhand = self:hasDualWeapon()
+		if not mainhand and self:hasDualWeapon(nil, true) then  -- weird but this is lets ogers offhanding daggers still swap
+		
 			swap = true
-			warden_weapon = "blade"
 		end
 	end
 	if type == "bow" then
-		if not self:hasArcheryWeapon("bow") then
-			swap = true
-			warden_weapon = "bow"
+		mainhand, offhand, ammo, pf_weapon = self:hasArcheryWeapon("bow")
+		if not mainhand and not pf_weapon then
+			mainhand, offhand, ammo, pf_weapon = self:hasArcheryWeapon("bow", true)
+			if mainhand or pf_weapon then swap = true end
 		end
 	end
 	
@@ -259,8 +260,7 @@ doWardenWeaponSwap = function(self, t, type, silent)
 		self:attr("no_sound", -1)
 		self.no_inventory_access = old_inv_access
 	end
-	
-	return swap, dam
+	return swap
 end
 
 -- Target helper function for focus fire
