@@ -145,7 +145,7 @@ ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, 
 	},
 })
 ActorResource:defineResource("Psi", "psi", ActorTalents.T_PSI_POOL, "psi_regen", "Psi represents your reserve of psychic energy.", nil, nil, {
-	color = "#PURPLE#", --color = "#4080ff#",
+	color = "#4080ff#",
 	cost_factor = function(self, t) return (100 + 2 * self:combatFatigue()) / 100 end,
 })
 ActorResource:defineResource("Souls", "soul", ActorTalents.T_SOUL_POOL, "soul_regen", "This is the number of soul fragments you have extracted from your foes for your own use.", 0, 10, {

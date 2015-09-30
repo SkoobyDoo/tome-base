@@ -26,7 +26,7 @@ newTalent{
 	type_no_req = true,
 	no_unlearn_last = true,
 	no_npc_use = true,
-	filter = function(o) return (o.type == "weapon" or o.type == "gem") and o.subtype ~= "sling" end,
+	filter = function(o) return (o.type == "weapon" or o.type == "gem") end,
 	action = function(self, t)
 		local inven = self:getInven("INVEN")
 		local ret = self:talentDialog(self:showInventory("Telekinetically grasp which item?", inven, t.filter, function(o, item)
@@ -67,7 +67,7 @@ newTalent{
 			o = self:removeObject(inven, item)
 			-- Force "wield"
 			self:addObject(pf, o)
-			game.logSeen(self, "%s wears: %s.", self.name:capitalize(), o:getName{do_color=true})
+			game.logSeen(self, "%s telekinetically seizes: %s.", self.name:capitalize(), o:getName{do_color=true})
 			
 			self:sortInven()
 			self:talentDialogReturn(true)
@@ -76,7 +76,8 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Encase a weapon or gem in mentally-controlled forces, holding it aloft and bringing it to bear with the power of your mind alone.]])
+		return ([[Telekintically grasp a weapon or gem using mentally-directed forces, holding it aloft and bringing it to bear with the power of your mind alone.
+		Note: The normal restrictions on worn equipment do not apply to this item.]])
 	end,
 }
 
@@ -95,13 +96,12 @@ newTalent{
 	do_tk_strike = function(self, t)
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
 		if type(tkweapon) == "boolean" then tkweapon = nil end
-		if not tkweapon or tkweapon.type ~= "weapon" or tkweapon.subtype == "mindstar" then return end
+		if not tkweapon or tkweapon.type ~= "weapon" or tkweapon.subtype == "mindstar" or tkweapon.archery then return end
 
 		local targnum = 1
 		if self:hasEffect(self.EFF_PSIFRENZY) then targnum = self:hasEffect(self.EFF_PSIFRENZY).power end
 		local speed, hit = nil, false
 		local sound, sound_miss = nil, nil
-		--dam = self:getTalentLevel(t)
 		local tgts = {}
 		local grids = core.fov.circle_grids(self.x, self.y, targnum, true)
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
@@ -211,8 +211,8 @@ newTalent{
 		game:onTickEnd(function()
 			self.__to_recompute_beyond_the_flesh = nil
 			local p = self.sustain_talents[t.id]
-			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
-			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
+			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})
+			if t.on_pre_use(self, t, true) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true, silent=true}) end
 		end)
 	end,
 	callbackOnTakeoff = function(self, t, p)
@@ -221,15 +221,16 @@ newTalent{
 		game:onTickEnd(function()
 			self.__to_recompute_beyond_the_flesh = nil
 			local p = self.sustain_talents[t.id]
-			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
-			if t.on_pre_use(self, t) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
+			self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})
+			if t.on_pre_use(self, t, true) then self:forceUseTalent(t.id, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true, silent=true}) end
 		end)
 	end,
-	on_pre_use = function (self, t)
+	on_pre_use = function (self, t, silent, fake)
 		if not self:getInven("PSIONIC_FOCUS") then return false end
 		local tkweapon = self:getInven("PSIONIC_FOCUS")[1]
 		if type(tkweapon) == "boolean" then tkweapon = nil end
 		if not tkweapon or (tkweapon.type ~= "weapon" and tkweapon.type ~= "gem") then
+			if not silent then game.logPlayer(self, "You require a telekinetically wielded weapon or gem for your psionic focus.") end
 			return false
 		end
 		return true
@@ -238,7 +239,7 @@ newTalent{
 		local tk = self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1]
 		if not tk then return false end
 
-		local ret = {}
+		local ret = {name = self.name:capitalize().."'s "..t.name}
 		if tk.type == "gem" then
 			local power = (tk.material_level or 1) * 3 + math.ceil(self:callTalent(self.T_RESONANT_FOCUS, "bonus") / 5)
 			self:talentTemporaryValue(ret, "inc_stats", {
@@ -254,19 +255,28 @@ newTalent{
 				chance = (tk.material_level or 1) * 5 + 5 + self:callTalent(self.T_RESONANT_FOCUS, "bonus"),
 				range = 2 + (tk.material_level or 1),
 			}
-		else
-			self:talentTemporaryValue(ret, "use_psi_combat", 1)
+		elseif tk.combat then
+			self:talentTemporaryValue(ret, "psi_focus_combat", 1) -- enables Psi Focus attacks
 		end
+		self:talentTemporaryValue(ret, "use_psi_combat", 1) -- Affects all weapons
+		game:onTickEnd(function()
+			self:actorCheckSustains(true) end -- affects equipment for some talents
+		)
 		return ret
 	end,
 	deactivate =  function (self, t)
+		game:onTickEnd(function()
+			self:actorCheckSustains(true) end-- affects equipment for some talents
+		)
 		return true
 	end,
 	info = function(self, t)
-		local base = [[Allows you to wield a physical melee weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
-		A gem will provide +3 bonus to all primary stats per tier of the gem.
+		local base = [[Allows you to wield a physical melee or ranged weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
+		A gem will provide a +3 bonus to all primary stats per tier of the gem.
 		A mindstar will randomly try to telekinetically grab a far away foe (10% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
-		A physical melee weapon will act as a semi independant entity, attacking foes nearby each turn while also replacing Strength and Dexterity with 60% of your Willpower and Cunning, for accuracy and damage calculations. This stat usage modification will also apply to conventionally wielded weapons.
+		A physical melee weapon will act as a semi independant entity, automatically attacking adjacent foes each turn, while a ranged weapon will fire at your target whenever you perform a ranged attack.
+		While this talent is active, all melee and ranged attacks use 60% of your Cunning and Willpower in place of Dexterity and Strength for accuracy and damage calculations respectively.
+		
 
 		]]
 
@@ -279,12 +289,33 @@ newTalent{
 		local apr = 0
 		local crit = 0
 		local speed = 1
+		local range = 0
+		local ammo = self:getInven("QUIVER") and self:getInven("QUIVER")[1]
+		if ammo and ammo.archery_ammo ~= o.archery then ammo = nil end
 		if o.type == "gem" then
 			local ml = o.material_level or 1
 			base = base..([[The telekinetically-wielded gem grants you +%d stats.]]):format(ml * 3)
 		elseif o.subtype == "mindstar" then
 			local ml = o.material_level or 1
 			base = base..([[The telekinetically-wielded mindstar has a %d%% chance to grab a foe up to %d range away.]]):format((ml + 1) * 5, ml + 2)
+		elseif o.archery and ammo then
+			self:attr("use_psi_combat", 1)
+			range = math.max(math.min(o.combat.range or 6), self:attr("archery_range_override") or 1)
+			atk = self:combatAttackRanged(o.combat, ammo.combat)
+			dam = self:combatDamage(o.combat, nil, ammo.combat)
+			apr = self:combatAPR(ammo.combat) + (o.combat and o.combat.apr or 0)
+			crit = self:combatCrit(o.combat)
+			speed = self:combatSpeed(o.combat)
+			self:attr("use_psi_combat", -1)
+			base = base..([[The telekinetically-wielded ranged weapon uses Willpower in place of Strength, and Cunning in place of Dexterity, to determine Accuracy and damage respectively.
+			Combat stats:
+			Range: %d
+			Accuracy: %d
+			Damage: %d
+			APR: %d
+			Crit: %0.1f%%
+			Speed: %0.1f%%]]):
+			format(range, atk, dam, apr, crit, speed*100)
 		else
 			self:attr("use_psi_combat", 1)
 			atk = self:combatAttack(o.combat)
@@ -293,7 +324,7 @@ newTalent{
 			crit = self:combatCrit(o.combat)
 			speed = self:combatSpeed(o.combat)
 			self:attr("use_psi_combat", -1)
-			base = base..([[The telekinetically-wielded weapon uses Willpower in place of Strength, and Cunning in place of Dexterity, to determine Accuracy and damage.
+			base = base..([[The telekinetically-wielded weapon uses Willpower in place of Strength, and Cunning in place of Dexterity, to determine Accuracy and damage respectively.
 			Combat stats:
 			Accuracy: %d
 			Damage: %d

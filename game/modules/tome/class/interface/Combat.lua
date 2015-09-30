@@ -82,7 +82,14 @@ The ToME combat system has the following attributes:
 - armor penetration: reduction of target's armor
 - damage: raw damage done
 ]]
-function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
+-- Attempts to attack a target with all melee weapons (calls self:attackTargetWith for each)
+-- @param target - target actor
+-- @param damtype a damage type ID <PHYSICAL>
+-- @param mult a damage multiplier <1>
+-- @noenergy if true the attack uses no energy
+-- @force_unarmed if true the attacker uses unarmed (innate) combat parameters
+-- @return true if an attack hit the target, false otherwise
+function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 	local speed, hit = nil, false
 	local sound, sound_miss = nil, nil
 
@@ -92,7 +99,7 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 
 	if self:attr("feared") then
 		if not noenergy then
-			self:useEnergy(game.energy_to_act * speed)
+			self:useEnergy(game.energy_to_act)
 			self.did_energy = true
 		end
 		game.logSeen(self, "%s is too afraid to attack.", self.name:capitalize())
@@ -161,14 +168,15 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 		break_stealth = true
 	end
 
-	local mean
-	if not speed and not self:attr("disarmed") and not self:isUnarmed() and not force_unharmed then
+	if not speed and not self:attr("disarmed") and not self:isUnarmed() and not force_unarmed then
+		local double_weapon
 		-- All weapons in main hands
 		if self:getInven(self.INVEN_MAINHAND) then
 			for i, o in ipairs(self:getInven(self.INVEN_MAINHAND)) do
 				local combat = self:getObjectCombat(o, "mainhand")
 				if combat and not o.archery then
-					print("[ATTACK] attacking with", o.name)
+					if o.double_weapon and not double_weapon then double_weapon = o end
+					print("[ATTACK] attacking with (mainhand)", o.name)
 					local s, h = self:attackTargetWith(target, combat, damtype, mult)
 					speed = math.max(speed or 0, s)
 					hit = hit or h
@@ -179,14 +187,22 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 			end
 		end
 		-- All weapons in off hands
+		local oh_weaps, offhand = table.clone(self:getInven(self.INVEN_OFFHAND)) or {}, false
 		-- Offhand attacks are with a damage penalty, that can be reduced by talents
-		if self:getInven(self.INVEN_OFFHAND) then
-			for i, o in ipairs(self:getInven(self.INVEN_OFFHAND)) do
-				local offmult = self:getOffHandMult(o.combat, mult)
-				local combat = self:getObjectCombat(o, "offhand")
-				if o.special_combat and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then combat = o.special_combat end
-				if combat and not o.archery then
-					print("[ATTACK] attacking with", o.name)
+		if double_weapon then oh_weaps[#oh_weaps+1] = double_weapon end -- use double weapon as OFFHAND if there are no others
+		for i = 1, #oh_weaps do
+			if i == #oh_weaps and double_weapon and offhand then break end
+			local o = oh_weaps[i]
+			local offmult = self:getOffHandMult(o.combat, mult)
+			local combat = self:getObjectCombat(o, "offhand")
+			if o.special_combat and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then combat = o.special_combat end
+			-- no offhand unarmed attacks
+			if combat and not o.archery then
+				if combat.use_resources and not self:useResources(combat.use_resources, true) then
+					print("[ATTACK] Cancelling attack (offhand) with", o.name , "(resources)")
+				else
+					offhand = true
+					print("[ATTACK] attacking with (offhand)", o.name)
 					local s, h = self:attackTargetWith(target, combat, damtype, offmult)
 					speed = math.max(speed or 0, s)
 					hit = hit or h
@@ -196,7 +212,6 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 				end
 			end
 		end
-		mean = "weapon"
 	end
 
 	-- Barehanded ?
@@ -209,7 +224,6 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unharmed)
 		if hit and not sound then sound = combat.sound
 		elseif not hit and not sound_miss then sound_miss = combat.sound_miss end
 		if not combat.no_stealth_break then break_stealth = true end
-		mean = "unharmed"
 	end
 
 	-- We use up our own energy
@@ -319,10 +333,9 @@ function _M:checkHit(atk, def, min, max, factor, p)
 		min = 0
 		max = 100
 	end --ensures predictable combat for the tutorial
-	print("checkHit", atk, def)
 	local hit = math.ceil(50 + 2.5 * (atk - def))
 	hit = util.bound(hit, min, max)
-	print("=> chance to hit", hit)
+	print("checkHit", atk, "vs", def, "=> chance to hit", hit)
 	return rng.percent(hit), hit
 end
 
@@ -351,6 +364,23 @@ end
 
 --- Attacks with one weapon
 function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
+	-- if insufficient resources, try to use unarmed or cancel attack
+	local unarmed = self:getObjectCombat(nil, "barehand")
+	if (weapon or unarmed).use_resources and not self:useResources((weapon or unarmed).use_resources) then
+--	if weapon.use_resources and not self:useResources(weapon.use_resources) then
+--		local unarmed = self:getObjectCombat(nil, "barehand")
+		if unarmed == weapon then
+			print("[attackTargetWith] (unarmed) against ", target.name, "unarmed attack fails due to resources")
+			return self:combatSpeed(unarmed), false, 0
+		else
+			weapon = unarmed
+			print("[attackTargetWith] against ", target.name, "insufficient weapon resources, using unarmed combat")
+			if weapon.use_resources and not self:useResources(weapon.use_resources) then
+				print("[attackTargetWith] against ", target.name, "unarmed attack fails due to resources")
+				return self:combatSpeed(weapon), false, 0
+			end
+		end
+	end
 	damtype = damtype or (weapon and weapon.damtype) or DamageType.PHYSICAL
 	mult = mult or 1
 
@@ -398,7 +428,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
 
 	local dam, apr, armor = force_dam or self:combatDamage(weapon), self:combatAPR(weapon), target:combatArmor()
-	print("[ATTACK] to ", target.name, " :: ", dam, apr, armor, def, "::", mult)
+	print("[ATTACK] to ", target.name, " :: ", dam, apr, armor, atk, "vs.", def, "::", mult)
 
 	-- check repel
 	local repelled = false
@@ -463,7 +493,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 
 		if self:isAccuracyEffect(weapon, "knife") then
 			local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 0.005, 0.25)
-			print("[ATTACJ] dagger accuracy bonus", atk, def, "=", bonus, "previous", apr)
+			print("[ATTACK] dagger accuracy bonus", atk, def, "=", bonus, "previous", apr)
 			apr = apr * bonus
 		end
 
@@ -1529,12 +1559,11 @@ function _M:getDammod(combat)
 	return dammod
 end
 
---- Gets the damage
-function _M:combatDamage(weapon, adddammod)
+-- Calculate combat damage for a weapon (with an optional damage field for ranged)
+-- Talent bonuses are always based on the base weapon
+function _M:combatDamage(weapon, adddammod, damage)
 	weapon = weapon or self.combat or {}
-
-	local dammod = self:getDammod(weapon)
-
+	local dammod = self:getDammod(damage or weapon)
 	local totstat = 0
 	for stat, mod in pairs(dammod) do
 		totstat = totstat + self:getStat(stat) * mod
@@ -1544,11 +1573,8 @@ function _M:combatDamage(weapon, adddammod)
 			totstat = totstat + self:getStat(stat) * mod
 		end
 	end
-
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
-
-	local power = self:combatDamagePower(weapon)
---	print(("[COMBAT DAMAGE] power(%f) totstat(%f) talent_mod(%f)"):format(power, totstat, talented_mod))
+	local power = self:combatDamagePower(damage or weapon)
 	return self:rescaleDamage(0.3*(self:combatPhysicalpower(nil, weapon) + totstat) * power * talented_mod)
 end
 
@@ -1753,8 +1779,6 @@ end
 --- Computes physical crit for a damage
 function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_add)
 	self.turn_procs.is_crit = nil
-
-	local tier_diff = self:getTierDiff(atk, def)
 
 	local chance = self:combatCrit(weapon) + (add_chance or 0)
 	crit_power_add = crit_power_add or 0
@@ -2299,19 +2323,16 @@ function _M:getFreeHands()
 	return 2
 end
 
---- Check if the actor dual wields
-function _M:hasDualWeapon(type)
+--- Check if the actor dual wields melee weapons (use Archery:hasDualArcheryWeapon for ranged)
+function _M:hasDualWeapon(type, quickset)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
-
-	if not self:getInven("MAINHAND") or not self:getInven("OFFHAND") then return end
-	local weapon = self:getInven("MAINHAND")[1]
-	local offweapon = self:getInven("OFFHAND")[1]
-
+	local maininv, offinv = self:getInven(quickset and "QS_MAINHAND" or "MAINHAND"), self:getInven(quickset and "QS_OFFHAND" or "OFFHAND")
+	local weapon, offweapon = maininv and maininv[1], offinv and offinv[1]
 	if not offweapon and weapon and weapon.double_weapon then offweapon = weapon end
-
-	if not weapon or not offweapon or not weapon.combat or not offweapon.combat then
+	
+	if not (weapon and weapon.combat and not weapon.archery) or not (offweapon and offweapon.combat and not offweapon.archery) then
 		return nil
 	end
 	if type and weapon.combat.talented ~= type then return nil end
@@ -2319,21 +2340,12 @@ function _M:hasDualWeapon(type)
 	return weapon, offweapon
 end
 
--- Get the weapons in the quick slot
+--- Check if the actor dual wields melee weapons in the quick slot
 function _M:hasDualWeaponQS(type)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
-
-	if not self:getInven("QS_MAINHAND") or not self:getInven("QS_OFFHAND") then return end
-	local weapon = self:getInven("QS_MAINHAND")[1]
-	local offweapon = self:getInven("QS_OFFHAND")[1]
-	if not weapon or not offweapon or not weapon.combat or not offweapon.combat then
-		return nil
-	end
-	if type and weapon.combat.talented ~= type then return nil end
-	if type and offweapon.combat.talented ~= type then return nil end
-	return weapon, offweapon
+	return self:hasDualWeapon(type, true)
 end
 
 --- Check if the actor uses psiblades
@@ -2510,6 +2522,7 @@ end
 -- #target#|#Target# -> target.name|target.name:capitalize()
 function _M:logCombat(target, style, ...)
 	if not game.uiset or not game.uiset.logdisplay then return end
-	local visible, srcSeen, tgtSeen = game:logVisible(self, target)  -- should a message be displayed?
-	if visible then game.uiset.logdisplay(game:logMessage(self, srcSeen, target, tgtSeen, style, ...)) end
+	local src = self.__project_source or self
+	local visible, srcSeen, tgtSeen = game:logVisible(src, target)  -- should a message be displayed?
+	if visible then game.uiset.logdisplay(game:logMessage(src, srcSeen, target, tgtSeen, style, ...)) end
 end

@@ -228,6 +228,10 @@ This is the damage you inflict on your foes when you hit them.
 This damage can be reduced by the target's armour or by percentile damage resistances.
 It is improved by Strength or Dexterity, depending on your weapon. Some talents can change the stats that affect it.
 ]]
+TOOLTIP_COMBAT_BLOCK = [[#GOLD#Shield Block Value#LAST#
+The amount of damage a shield will block when actively used in defense.
+Usually this is only effective against Physical damage, but some special shields (and talents) allow the wearer to block other types.
+]]
 TOOLTIP_COMBAT_APR = [[#GOLD#Armour Penetration#LAST#
 Armour penetration allows you to ignore a part of the target's armour (this only works for armour, not damage resistance).
 This can never increase the damage you do beyond reducing armour, so it is only useful against armoured foes.
@@ -243,6 +247,10 @@ Higher is faster, representing more attacks performed in the same amount of time
 ]]
 TOOLTIP_COMBAT_RANGE = [[#GOLD#Firing range#LAST#
 The maximum distance your weapon can reach.
+]]
+TOOLTIP_ARCHERY_RANGE_SPEED = [[#GOLD#Archery range and speed#LAST#
+Archery attacks create projectiles with a maximum range, beyond which they will terminate.
+The projectiles travel at their own speed, measured as a percentage (higher, usually) of normal movement speed.
 ]]
 TOOLTIP_COMBAT_AMMO = [[#GOLD#Ammo remaining#LAST#
 This is the amount of ammunition you have left.
