@@ -66,6 +66,17 @@ You may select a spell for Contingency to automatically use when your life falls
 	self:setFocus(self.c_list)
 	self:setupUI()
 
+	self.key:addCommands{
+		__TEXTINPUT = function(c)
+			if c == '~' then
+				self:use(self.cur_item, "right")
+			end
+			if self.list and self.list.chars[c] then
+				self:use(self.list.chars[c])
+			end
+		end,
+	}
+	engine.interface.PlayerHotkeys:bindAllHotkeys(self.key, function(i) self:defineHotkey(i) end)
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
 	}
