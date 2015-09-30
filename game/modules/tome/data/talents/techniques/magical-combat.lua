@@ -29,11 +29,9 @@ newTalent{
 	cooldown = 5,
 	tactical = { BUFF = 2 },
 	getChance = function(self, t) return self:combatLimit(self:getTalentLevel(t) * (1 + self:getCun(9, true)), 100, 20, 0, 70, 50) end, -- Limit < 100%
-	canUseTalent = function(self, t) -- Returns true if the actor can currently trigger the talent with Arcane Combat
-		local talent = self:getTalentFromId(t)
+	canUseTalent = function(self, t, proc) -- Returns true if the actor can currently trigger the "proc" talent with Arcane Combat
+		local talent = self:getTalentFromId(proc)
 		if not talent or not talent.allow_for_arcane_combat then return false end
-		if talent.mode ~= "activated" then return false end
-		if not talent.is_spell then return false end
 		if not self:knowTalent(talent) then return false end
 		if self:isTalentCoolingDown(talent) then return false end
 		if not self:attr("force_talent_ignore_ressources") then
@@ -77,14 +75,14 @@ newTalent{
 			local p = self:isTalentActive(t.id)
 			if p and p.talent then
 				local talent = self:getTalentFromId(p.talent)
-				if t.canUseTalent(self, talent) then
+				if t.canUseTalent(self, t, talent) then
 					spells[1] = talent.id
 				end
 			end
 			-- If no appropriate spell is selected, pick a random spell
 			if #spells < 1 then
 				for _, talent in pairs(self.talents_def) do
-					if t.canUseTalent(self, talent) then
+					if t.canUseTalent(self, t, talent) then
 						spells[#spells+1] = talent.id
 					end
 				end
@@ -136,7 +134,7 @@ newTalent{
 	info = function(self, t)
 		local talent_list = ""
 		for _, talent in pairs(self.talents_def) do
-			if talent.allow_for_arcane_combat and talent.mode == "activated" and talent.is_spell and talent.name then
+			if talent.allow_for_arcane_combat and talent.name then
 				if #talent_list > 0 then talent_list = talent_list .. ", " end
 				talent_list = talent_list .. talent.name
 			end
