@@ -133,6 +133,51 @@ function _M:init(t)
 	end
 end
 
+-- use a lists of resources (no resources are used unless there are enough of all of them)
+-- @param costs a table of costs = {resource1 = value1, resource2 = value2, ...}
+-- @check if true the available resources will be checked but not depleted
+-- @return true if there are/were adequate resources to deplete
+function _M:useResources(costs, check)
+	local ok = true
+	if costs then
+		local res_def, avail, invert
+		local min, max
+		local inc = {}
+		-- check for availability of each resource and record increments
+		for kind, val in pairs(costs) do -- fatigue effects not applied
+			res_def = self.resources_def[kind]
+			invert = res_def and res_def.invert_values or false
+			avail = res_def and self[res_def.getFunction](self) or util.getval(self['get'..kind:capitalize()], self) or 0
+			if invert then
+				max = (res_def and self[res_def.maxname]) or (not res_def and util.getval(self['getMax'..kind:capitalize()], self))
+				if max and avail + val > max then -- too much
+					ok = false
+				end
+				inc[kind] = val
+			else
+				min = (res_def and self[res_def.minname]) or (not res_def and util.getval(self['getMin'..kind:capitalize()], self))
+				if min and avail - val < min then -- too little
+					ok = false
+				end
+				inc[kind] = -val
+			end
+			if not ok then return false, kind end
+		end
+		if ok and not check then -- Adequate resources available, apply the cost(s)
+			for kind, val in pairs(inc) do
+				res_def = self.resources_def[kind]
+				if res_def then
+					self[res_def.incFunction](self, val)
+				else
+					local incFun = self["inc"..kind:capitalize()]
+					if incFun then incFun(self, val) else self[kind] = self[kind] + val end
+				end
+			end
+		end
+	end
+	return ok
+end
+
 function _M:recomputeRegenResources()
 	if not self._no_save_fields.regenResourcesFast then return end
 	local fstr = "return function(self) "

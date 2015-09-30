@@ -498,7 +498,9 @@ newTalent{
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
-		self:probabilityTravel(x, y, t.getRange(self, t))
+		local ox, oy = self.x, self.y
+		self:probabilityTravel(x, y, t.getRange(self, t), function(tx, ty) return game.level.map(tx, ty, Map.ACTOR) and true or false end)
+		if ox == self.x and oy == self.y then return nil end
 		game:playSoundNear(self, "talents/earth")
 		return true
 	end,

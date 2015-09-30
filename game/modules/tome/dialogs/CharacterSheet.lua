@@ -813,101 +813,129 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 	elseif kind=="attack" then
 		h = 0
 		w = 0
+
+		-- get the combat stats for weapon by inventory and slot
+		local function get_combat_stats(actor, type, inven_id, item)
+			local o = table.get(actor:getInven(inven_id), item)
+			local mean
+			local ammo
+			local atk
+			local dmg
+			local apr
+			local crit
+			local aspeed
+			local range
+			local mspeed
+			local dam, archery
+			ammo = table.get(actor:getInven("QUIVER"), 1)
+			archery = o and o.archery and ammo and ammo.archery_ammo == o.archery and ammo.combat and (type ~= "offhand" or actor:attr("can_offshoot")) and (type ~= "psionic" or actor:attr("psi_focus_combat")) -- ranged combat
+			if type == "psionic" then
+				if not o or o.archery and not archery then return end
+				actor:attr("use_psi_combat", 1)
+			end
+			if not o or (o.archery and not archery) or actor:attr("disarmed") then -- unarmed
+				mean = actor.combat
+				dmg = actor:combatDamage(mean) * (mean.dam_mult or 1)
+				atk = actor:combatAttack(mean)
+				apr = actor:combatAPR(mean)
+				crit = actor:combatCrit(mean)
+				aspeed = 1/actor:combatSpeed(mean)
+				archery = false
+			else -- weapon combat
+				mean = o and (o.special_combat or actor:getObjectCombat(o, type == "psionic" and "mainhand" or type)) or actor.combat
+
+				if archery then -- ranged combat
+					dam = ammo.combat
+					atk = actor:combatAttackRanged(mean, dam)
+					dmg = actor:combatDamage(mean, nil, dam) * (mean.dam_mult or 1)
+					apr = actor:combatAPR(mean) + (dam.apr or 0)
+					range = math.max(mean.range or 6, actor:attr("archery_range_override") or 1)
+					mspeed = 10 + (actor.combat.travel_speed or 0) + (mean.travel_speed or 0) + (dam.travel_speed or 0)
+				else -- melee combat
+					dam = o.combat
+					atk = actor:combatAttack(mean)
+					dmg = actor:combatDamage(mean) * (type == "offhand" and actor:getOffHandMult(dam) or 1) * (mean.dam_mult or 1)
+					apr = actor:combatAPR(mean)
+				end
+				crit = actor:combatCrit(dam)
+				aspeed = 1/actor:combatSpeed(mean)
+			end
+			if type == "psionic" then actor:attr("use_psi_combat", -1) end
+			return {obj=o, atk=atk, dmg=dmg, apr=apr, crit=crit, aspeed=aspeed, range=range, mspeed=mspeed, archery=archery, mean=mean, ammo=ammo, block=mean.block}
+		end
+
+
+		-- display the combat (comparison) stats for a combat slot
+		local function display_combat_stats(text, player, actor_to_compare, inven_id, type, item)
+			local combat = get_combat_stats(player, type, inven_id, item)
+			if not combat then return end
+			local combatc = actor_to_compare and get_combat_stats(actor_to_compare, type, inven_id, item) or {}
+			local color
+			local weap_type = table.get(combat.mean, "talented")
+			local text2 = (combat.obj and combat.obj.slot_forbid == "OFFHAND" and "Two-Handed, " or "")..(weap_type and weap_type or "")
+			s:drawColorStringBlended(self.font, (text or "Weapon")..(weap_type and " ("..text2..")" or "")..":", w, h, 255, 255, 255, true) h = h + self.font_h
+
+			text = compare_fields(player, actor_to_compare,
+				function(actor, ...)
+					return actor == actor_to_compare and combatc.atk or combat.atk
+				end,
+				"%3d", "%+.0f", 1, false, false, mean, dam)
+			self:mouseTooltip(self.TOOLTIP_COMBAT_ATTACK, s:drawColorStringBlended(self.font, ("Accuracy     : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			text = compare_fields(player, actor_to_compare,
+				function(actor, ...)
+					return actor == actor_to_compare and combatc.dmg or combat.dmg
+				end,
+				"%3d", "%+.0f", 1, false, false, dam)
+			self:mouseTooltip(self.TOOLTIP_COMBAT_DAMAGE, s:drawColorStringBlended(self.font, ("Damage       : #00ff00#%s"):format(text), w, h, 255, 255, 255, true))
+			if combat.block then -- or combatc and combatc.block then
+				text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.block or combat.block end, "%3d", "%+.0f", 1, false, false, dam)
+				self:mouseTooltip(self.TOOLTIP_COMBAT_BLOCK, s:drawColorStringBlended(self.font, ("Block : #00ff00#%s"):format(text), self.w*.14, h, 255, 255, 255, true))-- h = h + self.font_h
+			end
+			h = h + self.font_h
+			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.apr or combat.apr end, "%3d", "%+.0f", 1, false, false, dam)
+			self:mouseTooltip(self.TOOLTIP_COMBAT_APR,    s:drawColorStringBlended(self.font, ("APR          : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.crit or combat.crit end, "%3d%%", "%+.0f%%", 1, false, false, dam)
+			self:mouseTooltip(self.TOOLTIP_COMBAT_CRIT,   s:drawColorStringBlended(self.font, ("Crit. chance : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			color = combat.aspeed
+			color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
+			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.aspeed or combat.aspeed end, color.."%.1f%%", "%+.1f%%", 100, false, false, mean)
+			self:mouseTooltip(self.TOOLTIP_COMBAT_SPEED,  s:drawColorStringBlended(self.font, ("Attack Speed : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			if combat.archery then -- display range and projectile speed
+				text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.range or combat.range end, "range %2d", "%+d", 1, false, false, mean)
+				local text2 = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.mspeed or combat.mspeed end, "speed %3d%%", "%+.0f%%", 100, false, false, dam)
+				self:mouseTooltip(self.TOOLTIP_ARCHERY_RANGE_SPEED, s:drawColorStringBlended(self.font, ("Archery      : #00ff00#%s, %s"):format(text, text2), w, h, 255, 255, 255, true)) h = h + self.font_h
+			end
+		end
+
 		local color
 		local mainhand = player:getInven(player.INVEN_MAINHAND)
+		local double_weapon
 		if mainhand and (#mainhand > 0) and not player:attr("disarmed") then
-			local WeaponTxt = "#LIGHT_BLUE#Main Hand"
-			if player:hasTwoHandedWeapon() then
-				WeaponTxt = WeaponTxt.."(2-handed)"
-			end
-			WeaponTxt = WeaponTxt..":"
-
 			for i, o in ipairs(player:getInven(player.INVEN_MAINHAND)) do
-				local mean, dam = player:getObjectCombat(o, "mainhand"), player:getObjectCombat(o, "mainhand")
-				local range
-				if o.archery and mean then
-					local ammo = player:getInven("QUIVER") and player:getInven("QUIVER")[1]
-					if ammo and ammo.archery_ammo == o.archery then -- make sure ammo matches launcher
-						dam = player:getObjectCombat(ammo, "mainhand")
-						range = mean.range
-					end
-				end
-				if mean and dam then
-					s:drawColorStringBlended(self.font, WeaponTxt, w, h, 255, 255, 255, true) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return math.floor(actor:combatAttack(...)) end, "%3d", "%+.0f", 1, false, false, mean, dam)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_ATTACK, s:drawColorStringBlended(self.font, ("Accuracy    : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatDamage(...) end, "%3d", "%+.0f", 1, false, false, dam)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_DAMAGE, s:drawColorStringBlended(self.font, ("Damage      : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatAPR(...) end, "%3d", "%+.0f", 1, false, false, dam)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_APR,    s:drawColorStringBlended(self.font, ("APR         : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatCrit(...) end, "%3d%%", "%+.0f%%", 1, false, false, dam)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_CRIT,   s:drawColorStringBlended(self.font, ("Crit. chance: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					color = 1/player:combatSpeed(mean)
-					color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatSpeed(...) end, color.."%.1f%%", "%+.1f%%", 100, true, false, mean)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_SPEED,  s:drawColorStringBlended(self.font, ("Speed       : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-				end
-				
- -- compare fields
-				if range then
-					self:mouseTooltip(self.TOOLTIP_COMBAT_RANGE, s:drawColorStringBlended(self.font, ("Range (Main Hand): #00ff00#%3d"):format(range), w, h, 255, 255, 255, true)) h = h + self.font_h
-				end
+				if not double_weapon and o.double_weapon then double_weapon = i end
+				display_combat_stats("#LIGHT_BLUE#Main Hand", player, actor_to_compare, player.INVEN_MAINHAND, "mainhand", i) h = h + self.font_h
 			end
-		-- Handle bare-handed combat
-		else
-			s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Unarmed:", w, h, 255, 255, 255, true) h = h + self.font_h
-			local mean, dam = player:getObjectCombat(nil, "barehand"), player:getObjectCombat(nil, "barehand")
-			if mean and dam then
-				text = compare_fields(player, actor_to_compare, function(actor, ...) return math.floor(actor:combatAttack(...)) end, "%3d", "%+.0f", 1, false, false, mean)
-				self:mouseTooltip(self.TOOLTIP_COMBAT_ATTACK, s:drawColorStringBlended(self.font, ("Accuracy    : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-				text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatDamage(...) end, "%3d", "%+.0f", 1, false, false, dam)
-				self:mouseTooltip(self.TOOLTIP_COMBAT_DAMAGE, s:drawColorStringBlended(self.font, ("Damage      : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-				text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatAPR(...) end, "%3d", "%+.0f", 1, false, false, dam)
-				self:mouseTooltip(self.TOOLTIP_COMBAT_APR,    s:drawColorStringBlended(self.font, ("APR         : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-				text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatCrit(...) end, "%3d%%", "%+.0f%%", 1, false, false, dam)
-				self:mouseTooltip(self.TOOLTIP_COMBAT_CRIT,   s:drawColorStringBlended(self.font, ("Crit. chance: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-				color = 1/player:combatSpeed(mean)
-				color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
-				text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatSpeed(...) end, color.."%.1f%%", "%+.1f%%", 100, false, false, mean)
-				self:mouseTooltip(self.TOOLTIP_COMBAT_SPEED,  s:drawColorStringBlended(self.font, ("Speed       : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-			end
-			if mean and mean.range then
-				self:mouseTooltip(self.TOOLTIP_COMBAT_RANGE, s:drawColorStringBlended(self.font, ("Range (Main Hand): #00ff00#%3d"):format(mean.range), w, h, 255, 255, 255, true)) h = h + self.font_h
-			end
+		else -- Handle bare-handed combat
+			display_combat_stats("#LIGHT_BLUE#Unarmed", player, actor_to_compare, player.INVEN_MAINHAND, "barehand", 1) h = h + self.font_h
 		end
-
-		h = h + self.font_h
 		-- All weapons in off hands
-		-- Offhand attacks are with a damage penalty, that can be reduced by talents
-		
+		-- Most offhand attacks are with a damage penalty, that can be reduced by talents
+		local count = 0
 		if player:getInven(player.INVEN_OFFHAND) then
 			for i, o in ipairs(player:getInven(player.INVEN_OFFHAND)) do
-				local offmult = player:getOffHandMult(o.combat)
-				local mean, dam = player:getObjectCombat(o, "offhand"), player:getObjectCombat(o, "offhand")
-				if o.archery and mean then
-					dam = (player:getInven("QUIVER") and player:getInven("QUIVER")[1] and player:getInven("QUIVER")[1].combat)
-				end
-				if mean and dam then
-					s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Off Hand:"..(player:attr("disarmed") and " (disabled)" or ""), w, h, 255, 255, 255, true) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return math.floor(actor:combatAttack(...)) end, "%3d", "%+.0f", 1, false, false, mean)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_ATTACK, s:drawColorStringBlended(self.font, ("Accuracy    : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatDamage(...) end, "%3d", "%+.0f", offmult, false, false, dam)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_DAMAGE, s:drawColorStringBlended(self.font, ("Damage      : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatAPR(...) end, "%3d", "%+.0f", 1, false, false, dam)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_APR,    s:drawColorStringBlended(self.font, ("APR         : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatCrit(...) end, "%3d%%", "%+.0f%%", 1, false, false, dam)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_CRIT,   s:drawColorStringBlended(self.font, ("Crit. chance: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-					color = 1/player:combatSpeed(mean)
-					color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
-					text = compare_fields(player, actor_to_compare, function(actor, ...) return 1/actor:combatSpeed(...) end, color.."%.1f%%", "%+.1f%%", 100, false, false, mean)
-					self:mouseTooltip(self.TOOLTIP_COMBAT_SPEED,  s:drawColorStringBlended(self.font, ("Speed       : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-				end
- -- compare fields
-				if mean and mean.range then self:mouseTooltip(self.TOOLTIP_COMBAT_RANGE, s:drawColorStringBlended(self.font, ("Range (Off Hand): #00ff00#%3d"):format(mean.range), w, h, 255, 255, 255, true)) h = h + self.font_h end
+				count = count + 1
+				display_combat_stats("#LIGHT_BLUE#Offhand"..(player:attr("disarmed") and " (disabled)" or ""), player, actor_to_compare, player.INVEN_OFFHAND, "offhand", i) h = h + self.font_h
 			end
 		end
+		-- special case: double weapon in mainhand
+		if double_weapon and count == 0 then
+			display_combat_stats("#LIGHT_BLUE#Offhand-Dual Weapon"..(player:attr("disarmed") and " (disabled)" or ""), player, actor_to_compare, player.INVEN_MAINHAND, "offhand", double_weapon) h = h + self.font_h
+		end
+		-- Psionic Focus weapon if present (only 1 slot)
+		if player:getInven(player.INVEN_PSIONIC_FOCUS) and player:attr("psi_focus_combat") then
+			display_combat_stats("#LIGHT_BLUE#Psionic Focus", player, actor_to_compare, player.INVEN_PSIONIC_FOCUS, "psionic", 1) h = h + self.font_h
+		end
 
-		-- Magical and Mental power
 		h = 0
 		w = self.w * 0.25
 		s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Magical:", w, h, 255, 255, 255, true) h = h + self.font_h
@@ -1059,7 +1087,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					local rdiff, capdiff = res-reso, cap-capo
 					change = ("(%s%+3.0f%%#LAST#/%s%+3.0f%%#LAST#)"):format(rdiff>0 and "#LIGHT_GREEN#" or rdiff<0 and "#RED#" or "#GREY#", rdiff, capdiff>0 and "#LIGHT_GREEN#" or capdiff<0 and "#RED#" or "#GREY#", capdiff)
 				end
-				self:mouseTooltip(self.TOOLTIP_RESIST_ALL, s:drawColorStringBlended(self.font, ("%-14s: #00ff00#%3d%% / %d%% %s"):format("All", res, cap, change), w, h, 255, 255, 255, true)) h = h + self.font_h
+				self:mouseTooltip(self.TOOLTIP_RESIST_ALL, s:drawColorStringBlended(self.font, ("%-14s: #00ff00#%3d%% / %3.0f%% %s"):format("All", res, cap, change), w, h, 255, 255, 255, true)) h = h + self.font_h
 			end
 		end
 		if player.resists.absolute or actor_to_compare and actor_to_compare.resists.absolute then
@@ -1074,7 +1102,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					local rdiff, capdiff = res-reso, cap-capo
 					change = ("(%s%+3.0f%%#LAST#/%s%+3.0f%%#LAST#)"):format(rdiff>0 and "#LIGHT_GREEN#" or rdiff<0 and "#RED#" or "#GREY#", rdiff, capdiff>0 and "#LIGHT_GREEN#" or capdiff<0 and "#RED#" or "#GREY#", capdiff)
 				end
-				self:mouseTooltip(self.TOOLTIP_RESIST_ABSOLUTE, s:drawColorStringBlended(self.font, ("#SALMON#%-14s: #00ff00#%3d%% / %d%% %s"):format("Absolute", res, cap, change), w, h, 255, 255, 255, true)) h = h + self.font_h
+				self:mouseTooltip(self.TOOLTIP_RESIST_ABSOLUTE, s:drawColorStringBlended(self.font, ("#SALMON#%-14s: #00ff00#%3d%% / %3.0f%% %s"):format("Absolute", res, cap, change), w, h, 255, 255, 255, true)) h = h + self.font_h
 			end
 		end
 		if player:attr("speed_resist") or actor_to_compare and actor_to_compare:attr("speed_resist") then
@@ -1091,7 +1119,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 				local rdiff, capdiff = res-reso, cap-capo
 				change = ("(%s%+3.0f%%#LAST#/%s%+3.0f%%#LAST#)"):format(rdiff>0 and "#LIGHT_GREEN#" or rdiff<0 and "#RED#" or "#GREY#", rdiff, capdiff>0 and "#LIGHT_GREEN#" or capdiff<0 and "#RED#" or "#GREY#", capdiff)
 			end
-			self:mouseTooltip(self.TOOLTIP_RESIST_SPEED, s:drawColorStringBlended(self.font, ("#SALMON#%-14s: #00ff00#%3d%% / %d%% %s"):format("Speed Res", res, cap, change), w, h, 255, 255, 255, true)) h = h + self.font_h
+			self:mouseTooltip(self.TOOLTIP_RESIST_SPEED, s:drawColorStringBlended(self.font, ("#SALMON#%-14s: #00ff00#%3d%% / %3.0f%% %s"):format("Speed Res", res, cap, change), w, h, 255, 255, 255, true)) h = h + self.font_h
 		end
 		-- Resists vs specific damage types
 		for i, t in pairs(DamageType.dam_def) do

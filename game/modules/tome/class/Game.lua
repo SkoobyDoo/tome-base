@@ -236,6 +236,8 @@ function _M:newGame()
 	end
 	local nb_unlocks, max_unlocks = self:countBirthUnlocks()
 	self.creating_player = true
+	self.extra_birth_option_defs = {}
+	class:triggerHook{"ToME:extraBirthOptions", options = self.extra_birth_option_defs}
 	local birth; birth = Birther.new("Character Creation ("..nb_unlocks.."/"..max_unlocks.." unlocked birth options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
 		if not loaded then
 			self.calendar = Calendar.new("/data/calendar_"..(self.player.calendar or "allied")..".lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
@@ -243,6 +245,14 @@ function _M:newGame()
 			self.player.make_tile = nil
 			self.player:check("before_starting_zone")
 			self.player:check("class_start_check")
+
+			-- Save current state of extra birth options.
+			self.player.extra_birth_options = {}
+			for _, option in ipairs(self.extra_birth_option_defs) do
+				if option.id then
+					self.player.extra_birth_options[option.id] = config.settings.tome[option.id]
+				end
+			end
 
 			-- Configure & create the worldmap
 			self.player.last_wilderness = self.player.default_wilderness[3] or "wilderness"
@@ -259,7 +269,7 @@ function _M:newGame()
 			self:setupPermadeath(self.player)
 			--self:changeLevel(1, "test")
 			self:changeLevel(self.player.starting_level or 1, self.player.starting_zone, {force_down=self.player.starting_level_force_down})
-			
+
 			print("[PLAYER BIRTH] resolve...")
 			self.player:resolve()
 			self.player:resolve(nil, true)
@@ -429,7 +439,7 @@ function _M:computeAttachementSpots()
 			setfenv(f, t)
 			local ok, err = pcall(f)
 			if not ok then print("Loading tileset attachements error", err) end
-		end		
+		end
 	end
 	for _, file in ipairs(fs.list(Tiles.prefix)) do if file:find("^attachements%-.+.lua$") then
 		print("Loading tileset attachements from ", Tiles.prefix..file)
@@ -439,7 +449,7 @@ function _M:computeAttachementSpots()
 			setfenv(f, t)
 			local ok, err = pcall(f)
 			if not ok then print("Loading tileset attachements error", err) end
-		end		
+		end
 	end end
 	self:computeAttachementSpotsFromTable(t)
 end
@@ -473,7 +483,7 @@ function _M:computeFacings()
 			setfenv(f, t)
 			local ok, err = pcall(f)
 			if not ok then print("Loading tileset facings error", err) end
-		end		
+		end
 	end
 	for _, file in ipairs(fs.list(Tiles.prefix)) do if file:find("^facings%-.+.lua$") then
 		print("Loading tileset facings from ", Tiles.prefix..file)
@@ -483,7 +493,7 @@ function _M:computeFacings()
 			setfenv(f, t)
 			local ok, err = pcall(f)
 			if not ok then print("Loading tileset facings error", err) end
-		end		
+		end
 	end end
 	self:computeFacingsFromTable(t)
 end
@@ -596,12 +606,12 @@ function _M:createFBOs()
 			gestures = Shader.new("main_fbo/gestures"),
 		}
 		self.posteffects_use = { self.fbo_shader.shad }
-		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end 
+		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end
 		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
 
 		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
 	end
-	
+
 	if self.player then self.player:updateMainShader() end
 
 	self.full_fbo = core.display.newFBO(self.w, self.h)
@@ -1081,7 +1091,7 @@ function _M:changeLevelReal(lev, zone, params)
 		end
 	end
 	if self.level.data.effects then
-		for uid, act in pairs(self.level.entities) do 
+		for uid, act in pairs(self.level.entities) do
 			if act.setEffect then for _, effid in ipairs(self.level.data.effects) do
 				act:setEffect(effid, 1, {})
 			end end
@@ -1285,8 +1295,8 @@ end
 -- displayDelayedLogDamage to display the queued combat messages
 
 -- output a message to the log based on the visibility of an actor to the player
-function _M.logSeen(e, style, ...) 
-	if e and e.player or (not e.dead and e.x and e.y and game.level and game.level.map.seens(e.x, e.y) and game.player:canSee(e)) then game.log(style, ...) end 
+function _M.logSeen(e, style, ...)
+	if e and e.player or (not e.dead and e.x and e.y and game.level and game.level.map.seens(e.x, e.y) and game.player:canSee(e)) then game.log(style, ...) end
 end
 
 -- determine whether an action between 2 actors should produce a message in the log and if the player
@@ -1309,8 +1319,8 @@ function _M:logVisible(source, target)
 	else -- source should display if it's the player or an actor (or projectile) in a seen tile, or same as target for non-actors
 		src = source.player or ((source.__is_actor or source.__is_projectile) and game.level.map.seens(source.x, source.y)) or (not source.__is_actor and tgt)
 		srcSeen = src and game.player:canSee(source) or false
-	end	
-	
+	end
+
 	return src or tgt or false, srcSeen, tgtSeen
 end
 
@@ -1909,11 +1919,15 @@ do return end
 
 		SHOW_CHARACTER_SHEET_CURSOR = function()
 			local mx, my = self.mouse.last_pos.x, self.mouse.last_pos.y
-			local tmx, tmy = game.level.map:getMouseTile(mx, my)
+			local tmx, tmy = self.level.map:getMouseTile(mx, my)
 			local a = self.level.map(tmx, tmy, Map.ACTOR)
 			self:registerDialog(require("mod.dialogs.CharacterSheet").new((config.settings.cheat or self.player:canSee(a)) and a or self.player))
 		end,
-		
+
+		CENTER_ON_PLAYER = function()
+			self.level.map:centerViewAround(self.player.x, self.player.y)
+		end,
+
 		SHOW_MESSAGE_LOG = function()
 			self:registerDialog(require("mod.dialogs.ShowChatLog").new("Message Log", 0.6, self.uiset.logdisplay, profile.chat))
 		end,
@@ -2448,7 +2462,7 @@ unlocks_list = {
 	birth_zigur_sacrifice = "Birth option: Zigur sacrifice",
 	cosmetic_race_human_redhead = "Cosmetic: Redheads",
 	cosmetic_race_dwarf_female_beard = "Cosmetic: Female dwarves facial pilosity",
-	
+
 	difficulty_insane = "Difficulty: Insane",
 	difficulty_madness = "Difficulty: Madness",
 
@@ -2513,7 +2527,7 @@ function _M:getGenericTextTiles(en)
 	if not disp then return "" end
 	if not en.getDisplayString then
 		if en.display_entity and en.display_entity.getDisplayString then
-			disp = en.display_entity 
+			disp = en.display_entity
 		else
 			return ""
 		end
