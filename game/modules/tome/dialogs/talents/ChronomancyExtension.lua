@@ -83,7 +83,7 @@ You may select a chronomancy spell to Extend, increasing the duration of that sp
 	self.key:addCommands{
 		__TEXTINPUT = function(c)
 			if c == '~' then
-				self:use(self.cur_item, "right")
+				self:use(self.cur_item)
 			end
 			if self.list and self.list.chars[c] then
 				self:use(self.list.chars[c])

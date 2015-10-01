@@ -69,7 +69,7 @@ You may select a spell for Contingency to automatically use when your life falls
 	self.key:addCommands{
 		__TEXTINPUT = function(c)
 			if c == '~' then
-				self:use(self.cur_item, "right")
+				self:use(self.cur_item)
 			end
 			if self.list and self.list.chars[c] then
 				self:use(self.list.chars[c])

@@ -66,7 +66,7 @@ You may select a spell for Arcane Combat to automatically trigger with melee att
 	self.key:addCommands{
 		__TEXTINPUT = function(c)
 			if c == '~' then
-				self:use(self.cur_item, "right")
+				self:use(self.cur_item)
 			end
 			if self.list and self.list.chars[c] then
 				self:use(self.list.chars[c])
