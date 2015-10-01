@@ -2123,7 +2123,7 @@ core.display.countDraws()
 	end
 
 	core.vo.disablePipe()
--- print("==minimalist ui draws", core.display.countDraws())
+print("==minimalist ui draws", core.display.countDraws())
 end
 
 function _M:setupMouse(mouse)
