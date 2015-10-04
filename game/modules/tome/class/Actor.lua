@@ -3335,7 +3335,7 @@ function _M:onStatChange(stat, v)
 	if stat == self.STAT_CON then
 		-- life
 		local multi_life = 4 + (self.inc_resource_multi.life or 0)
-		self.max_life = self.max_life + multi_life * v
+		self.max_life = math.max(1, self.max_life + multi_life * v)  -- no negative max life
 	elseif stat == self.STAT_DEX then
 		self.ignore_direct_crits = (self.ignore_direct_crits or 0) + 0.3 * v
 	elseif stat == self.STAT_WIL then
