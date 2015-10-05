@@ -233,7 +233,7 @@ end
 function _M:alterEffectDuration(eff_id, v)
 	local e = self.tmp[eff_id]
 	if not e then return end
-	e.dur = e.dur - 1
+	e.dur = e.dur + v
 	if e.dur <= 0 then self:removeEffect(eff_id) return true end
 end
 
