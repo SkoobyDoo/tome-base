@@ -968,17 +968,23 @@ function _M:restCheck()
 	if not self.resting.rest_turns then
 		if self.air_regen < 0 then return false, "losing breath!" end
 		if self.life_regen <= 0 then return false, "losing health!" end
-		if self:getMana() < self:getMaxMana() and self.mana_regen > 0 then return true end
-		if self:getStamina() < self:getMaxStamina() and self.stamina_regen > 0 then return true end
-		if self:getPsi() < self:getMaxPsi() and self.psi_regen > 0 then return true end
-		if self:getVim() < self:getMaxVim() and self.vim_regen > 0 then return true end
-		if self:getEquilibrium() > self:getMinEquilibrium() and self.equilibrium_regen < 0 then return true end
 		if self.life < self.max_life and self.life_regen> 0 then return true end
 		if self.air < self.max_air and self.air_regen > 0 and not self.is_suffocating then return true end
 		for act, def in pairs(game.party.members) do if game.level:hasEntity(act) and not act.dead then
 			if act.life < act.max_life and act.life_regen > 0 and not act:attr("no_life_regen") then return true end
 		end end
 		if ammo and ammo.combat.shots_left < ammo.combat.capacity then return true end
+
+		-- Check for resources
+		for res, res_def in ipairs(_M.resources_def) do
+			if res_def.wait_on_rest and res_def.regen_prop and self:attr(res_def.regen_prop) then
+				if not res_def.invert_values then
+					if self[res_def.regen_prop] > 0 and self:check(res_def.getFunction) < self:check(res_def.getMaxFunction) then return true end
+				else
+					if self[res_def.regen_prop] < 0 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
+				end
+			end
+		end
 
 		-- Check for detrimental effects
 		for id, _ in pairs(self.tmp) do
