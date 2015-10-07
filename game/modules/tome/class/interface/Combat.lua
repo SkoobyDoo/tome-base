@@ -1334,6 +1334,9 @@ function _M:combatCrit(weapon)
 	if weapon.talented and self:knowTalent(Talents.T_LETHALITY) then
 		addcrit = 1 + self:callTalent(Talents.T_LETHALITY, "getCriticalChance")
 	end
+	if self:knowTalent(Talents.T_ARCANE_MIGHT) then
+		addcrit = addcrit + 0.5 * self.combat_spellcrit
+	end
 	local crit = self.combat_physcrit + (self.combat_generic_crit or 0) + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + (weapon.physcrit or 1) + addcrit
 
 	return math.max(crit, 0) -- note: crit > 100% may be offset by crit reduction elsewhere
@@ -1627,7 +1630,12 @@ function _M:combatPhysicalpower(mod, weapon, add)
 
 	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
-	return self:rescaleCombatStats(d) * mod
+	local amight = 0
+	if self:knowTalent(self.T_ARCANE_MIGHT) then
+		amight = self:combatSpellpower() * 0.5
+	end
+
+	return self:rescaleCombatStats(d) * mod + amight * mod
 end
 
 --- Gets damage based on talent
