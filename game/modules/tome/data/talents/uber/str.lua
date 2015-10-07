@@ -155,8 +155,7 @@ uberTalent{
 	require = { special={desc="Be able to use massive armours", fct=function(self) return self:getTalentLevelRaw(self.T_ARMOUR_TRAINING) >= 3 end} },
 	on_learn = function(self, t)
 		self:attr("max_encumber", 500)
-		self.inc_stats[self.STAT_STR] = (self.inc_stats[self.STAT_STR] or 0) + 40
-  		self:onStatChange(self.STAT_STR, 40)
+		self:incIncStat(self.STAT_STR, 40)
 	end,
 	info = function(self, t)
 		return ([[Your strength is legendary; fatigue and physical exertion mean nothing to you.
