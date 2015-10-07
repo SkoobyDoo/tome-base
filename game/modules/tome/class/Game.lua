@@ -121,7 +121,7 @@ function _M:runReal()
 
 	self:setupDisplayMode(false, "postinit")
 	if self.level and self.level.data.day_night then self.state:dayNightCycle() end
-	if self.level and self.player then self.calendar = Calendar.new("/data/calendar_"..(self.player.calendar or "allied")..".lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11) end
+	if self.level and self.player then self:rebuildCalendar() end
 
 	-- Setup inputs
 	self:setupCommands()
@@ -164,6 +164,10 @@ function _M:runReal()
 	if self.level and self.level.map then
 		self.nicer_tiles:postProcessLevelTilesOnLoad(self.level)
 	end
+end
+
+function _M:rebuildCalendar()
+	self.calendar = Calendar.new("/data/calendar_"..(self.player.calendar or "allied")..".lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", (self.player.calendar_start_year or 122), (self.player.calendar_start_day or 167), (self.player.calendar_start_hour or 11))
 end
 
 --- Resize the hotkeys
@@ -220,6 +224,7 @@ function _M:newGame()
 		if config.settings.cheat then self.player.__cheated = true end
 
 		self.player:recomputeGlobalSpeed()
+		self:rebuildCalendar()
 
 		-- Force the hotkeys to be sorted.
 		self.player:sortHotkeys()
