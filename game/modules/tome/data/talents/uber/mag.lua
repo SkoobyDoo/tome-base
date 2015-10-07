@@ -45,13 +45,14 @@ uberTalent{
 		local ret = {}
 		self:talentTemporaryValue(ret, "force_use_resist", DamageType.ARCANE)
 		self:talentTemporaryValue(ret, "force_use_resist_percent", 66)
+		self:talentTemporaryValue(ret, "resists", {[DamageType.ARCANE] = 20})
 		return ret
 	end,
 	on_unlearn = function(self, t)
 	end,
 	info = function(self, t)
 		return ([[You manifest a thin layer of aether all around you. Any attack passing through it will check arcane resistance instead of the incoming damage resistance.
-		In effect, all of your resistances are equal to 66%% of your arcane resistance.]])
+		In effect, all of your resistances are equal to 66%% of your arcane resistance, which is increased by 20%%.]])
 		:format()
 	end,
 }
