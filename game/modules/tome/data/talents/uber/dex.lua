@@ -85,7 +85,7 @@ uberTalent{
 	require = { special={desc="Have dealt over 50000 damage with dual wielded weapons", fct=function(self) return self.damage_log and self.damage_log.weapon.dualwield and self.damage_log.weapon.dualwield >= 50000 end} },
 	cooldown = 12,
 	radius = 4,
-	range = 1,
+	range = 0,
 	tactical = { ATTACKAREA = {  weapon = 2  }, DISABLE = { disarm = 2 } },
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
