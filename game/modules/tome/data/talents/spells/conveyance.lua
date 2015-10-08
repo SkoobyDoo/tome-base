@@ -78,6 +78,7 @@ newTalent{
 				end
 			end
 		end
+		target = target or self
 		if target ~= self and target:canBe("teleport") then
 			local hit = self:checkHit(self:combatSpellpower(), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
 			if not hit then
@@ -186,6 +187,7 @@ newTalent{
 				end
 			end
 		end
+		target = target or self
 		if target ~= self and target:canBe("teleport") then
 			local hit = self:checkHit(self:combatSpellpower(), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
 			if not hit then
