@@ -324,7 +324,7 @@ newTalent{
 			crit = self:combatCrit(o.combat)
 			speed = self:combatSpeed(o.combat)
 			self:attr("use_psi_combat", -1)
-			base = base..([[The telekinetically-wielded weapon uses Willpower in place of Strength, and Cunning in place of Dexterity, to determine Accuracy and damage respectively.
+			base = base..([[The telekinetically-wielded weapon uses Willpower in place of Strength, and Cunning in place of Dexterity, to determine damage and Accuracy respectively.
 			Combat stats:
 			Accuracy: %d
 			Damage: %d

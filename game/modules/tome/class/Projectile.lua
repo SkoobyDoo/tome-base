@@ -71,7 +71,11 @@ function _M:tooltip(x, y)
 
 	if config.settings.cheat then
 		tstr:add(true, "UID: ", tostring(self.uid), true, "Coords: ", tostring(x), "x", tostring(y))
-		tstr:add(" range: ", tostring(self.project.def.typ.range or "nil"), " ==> (", tostring(self.project.def.x), ",", tostring(self.project.def.y), ")")
+		if self.homing then
+			tstr:add((" homing: %s(%s, %s)"):format(self.homing.target.name, self.homing.target.x,self.homing.target.y))
+		else
+			tstr:add(" range: ", tostring(self.project.def.typ.range or "nil"), " ==> (", tostring(self.project.def.x), ",", tostring(self.project.def.y), ")")
+		end
 	end
 	return tstr
 end

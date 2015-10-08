@@ -53,6 +53,8 @@ newEntity{
 	dig = function(src, x, y, old)
 		local sand = require("engine.Object").new{
 			name = "unstable sand tunnel", image = "terrain/sand.png",
+			show_tooltip = true,
+			desc = [[Loose sand is steadily filling this void, which could collapse suddenly and completely.]],
 			display = '.', color={r=203,g=189,b=72}, back_color={r=93,g=79,b=22},
 			canAct = false,
 			act = function(self)
@@ -77,6 +79,7 @@ newEntity{
 				old.temporary = 20
 				return nil, old, true
 			end,
+			tooltip = mod.class.Grid.tooltip
 		}
 		sand.summoner_gain_exp = true
 		sand.summoner = src

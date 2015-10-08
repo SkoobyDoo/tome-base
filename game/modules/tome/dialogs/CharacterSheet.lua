@@ -65,11 +65,9 @@ function _M:init(actor, start_tab)
 			if not self.actor.quickSwitchWeapons then return end
 			if s then
 				if self.last_tab == "equipment" then
-					local last_set = self.equip_set
-					self.equip_set = last_set == "off" and "main" or "off"
-					if not self:updateEquipDollRefs() then
-						self.equip_set = last_set
-					else
+					local switch_set = self.equip_set == "off" and "main" or "off"
+					if self:updateEquipDollRefs(switch_set) then
+						self.equip_set = switch_set
 						game.logPlayer(self.actor, "#RED#Displaying %s set for %s (equipment NOT switched)", self.equip_set, self.actor.name:capitalize())
 					end
 				end
@@ -149,7 +147,7 @@ Mouse: Hover over stat for info
 			subobject=self.actor:attr("can_tinker") and "getTinker" or nil,
 			subobject_restrict_slots=self.actor.tinker_restrict_slots,
 			drag_enable=false, filter=nil,
-			scale = math.min(self.ih/630, self.iw/1700), --scale doll to fit dialog
+			scale = math.min(self.ih/660, self.iw/1700), --scale doll to fit dialog
 			fct=function(item) end,
 			on_select=function(ui, inven, item, o)
 --game.log("c_doll select called with item %s (ui:%s, inven:%s, item:%s)", o and o.name, tostring(ui), inven, item)
@@ -305,15 +303,8 @@ end
 -- Switch between equipment sets (by reference only) for the equip doll
 -- This makes sure the equipment shown in the equipdoll matches the tab setting
 -- Done this way to make sure the actor's equipment is never actually touched
-function _M:updateEquipDollRefs()
+function _M:updateEquipDollRefs(showset)
 	local actor, c_doll = self.actor, self.equip_frame.c_doll
-	local showset = "main"
-	
-	if (actor.off_weapon_slots and self.equip_set ~= "off") or (actor.off_weapon_slots == false and self.equip_set ~= "main") then
-		showset = "off"
-	else showset = "main"
-	end
---game.log("Showing actual %s set", showset)
 	local mh1, mh2 = actor.inven[actor.INVEN_MAINHAND], actor.inven[actor.INVEN_QS_MAINHAND]
 	local oh1, oh2 = actor.inven[actor.INVEN_OFFHAND], actor.inven[actor.INVEN_QS_OFFHAND]
 	local pf1, pf2 = actor.inven[actor.INVEN_PSIONIC_FOCUS], actor.inven[actor.INVEN_QS_PSIONIC_FOCUS]
@@ -336,10 +327,8 @@ function _M:updateEquipDollRefs()
 			elseif ui.ui.inven_name == "QUIVER" then
 				ui.ui.inven = showset == "main" and qv1 or qv2
 			end
---game.log("#GREY#--UI %d: %s (showing: %s)", i, ui.ui.inven_name, ui.ui.inven.id)
 		end
 	end
---	return showset == self.equip_set
 	return true
 end
 
@@ -842,8 +831,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 				aspeed = 1/actor:combatSpeed(mean)
 				archery = false
 			else -- weapon combat
-				mean = o and (o.special_combat or actor:getObjectCombat(o, type == "psionic" and "mainhand" or type)) or actor.combat
-
+				mean = o and (o.special_combat and (o.slot == actor.inven[inven_id].name or actor:knowTalent(actor.T_STONESHIELD)) and o.special_combat) or actor:getObjectCombat(o, type == "psionic" and "mainhand" or type) or actor.combat -- handles stone wardens
 				if archery then -- ranged combat
 					dam = ammo.combat
 					atk = actor:combatAttackRanged(mean, dam)
@@ -854,16 +842,15 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 				else -- melee combat
 					dam = o.combat
 					atk = actor:combatAttack(mean)
-					dmg = actor:combatDamage(mean) * (type == "offhand" and actor:getOffHandMult(dam) or 1) * (mean.dam_mult or 1)
+					dmg = actor:combatDamage(mean) * (type == "offhand" and mean.talented ~= "shield" and actor:getOffHandMult(dam) or 1) * (mean.dam_mult or 1)
 					apr = actor:combatAPR(mean)
 				end
 				crit = actor:combatCrit(dam)
 				aspeed = 1/actor:combatSpeed(mean)
 			end
 			if type == "psionic" then actor:attr("use_psi_combat", -1) end
-			return {obj=o, atk=atk, dmg=dmg, apr=apr, crit=crit, aspeed=aspeed, range=range, mspeed=mspeed, archery=archery, mean=mean, ammo=ammo, block=mean.block}
+			return {obj=o, atk=atk, dmg=dmg, apr=apr, crit=crit, aspeed=aspeed, range=range, mspeed=mspeed, archery=archery, mean=mean, ammo=ammo, block=mean.block, talented=mean.talented}
 		end
-
 
 		-- display the combat (comparison) stats for a combat slot
 		local function display_combat_stats(text, player, actor_to_compare, inven_id, type, item)
@@ -871,7 +858,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			if not combat then return end
 			local combatc = actor_to_compare and get_combat_stats(actor_to_compare, type, inven_id, item) or {}
 			local color
-			local weap_type = table.get(combat.mean, "talented")
+			local weap_type = combat.talented or table.get(combat.mean, "talented")
 			local text2 = (combat.obj and combat.obj.slot_forbid == "OFFHAND" and "Two-Handed, " or "")..(weap_type and weap_type or "")
 			s:drawColorStringBlended(self.font, (text or "Weapon")..(weap_type and " ("..text2..")" or "")..":", w, h, 255, 255, 255, true) h = h + self.font_h
 
