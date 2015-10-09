@@ -295,6 +295,11 @@ function _M:move(x, y, force)
 
 	local moved = mod.class.Actor.move(self, x, y, force)
 
+	if not moved and self.encumbered then
+		game.logPlayer(self, "#FF0000#You carry too much--you are encumbered!")
+		game.logPlayer(self, "#FF0000#Drop some of your items.")
+	end
+
 	if not force and ox == self.x and oy == self.y and self.doPlayerSlide then
 		self.doPlayerSlide = nil
 		local tx, ty = self:tryPlayerSlide(x, y, false)
