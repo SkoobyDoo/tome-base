@@ -135,6 +135,15 @@ load(...)
 fs.umount(homepath)
 
 __addons_superload_order = {}
+__addons_fn_superloads = {}
+
+local apply_superloads = function(orig, order)
+	return function(...)
+		local r = orig(...)
+		for i, f in ipairs(order) do r = f(r) end
+	end
+end
+
 local te4_loader = function(name)
 	local bname = name
 
@@ -167,6 +176,10 @@ local te4_loader = function(name)
 				end
 			}, {__index=_G}))
 			prev = f
+		end
+		if __addons_fn_superloads[addon] and __addons_fn_superloads[addon][bname] then
+			print("FUNCTIONS FOUND", addon, bname)
+			prev = apply_superloads(prev, __addons_fn_superloads[addon][bname])
 		end
 	end
 	return prev

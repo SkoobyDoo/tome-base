@@ -620,7 +620,16 @@ You may try to force loading if you are sure the savefile does not use that addo
 	print("Post-processing hooks.")
 	for i, dir in ipairs(hooks_list) do
 		self:setCurrentHookDir(dir.."/")
-		dofile(dir.."/load.lua")
+		local superload = (function(add)
+			return function(bname, f)
+				_G.__addons_fn_superloads[add] = _G.__addons_fn_superloads[add] or {}
+				_G.__addons_fn_superloads[add][bname] = _G.__addons_fn_superloads[add][bname] or {}
+				table.insert(_G.__addons_fn_superloads[add][bname], f)
+			end
+		end)(dir:gsub(".*/", ""))
+		local f = loadfile(dir.."/load.lua")
+		setfenv(f, setmetatable({superload = superload,}, {__index = _G}))
+		f()
 	end
 	self:setCurrentHookDir(nil)
 	return hashlist
