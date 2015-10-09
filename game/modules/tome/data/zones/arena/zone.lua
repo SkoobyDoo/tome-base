@@ -308,7 +308,7 @@ return {
 				if game.level.arena.rank >= #game.level.arena.ranks then game.level.arena.rank = #game.level.arena.ranks end
 				local newRank = math.floor(game.level.arena.rank)
 				if currentRank < newRank then --Player's rank increases!
-					local x, y = game.level.map:getTileToScreen(game.player.x, game.player.y)
+					local x, y = game.level.map:getTileToScreen(game.player.x, game.player.y, true)
 					if newRank == 13 then world:gainAchievement("XXX_THE_DESTROYER", game.player)
 					elseif newRank == 24 then world:gainAchievement("GRAND_MASTER", game.player)
 					end
@@ -320,7 +320,7 @@ return {
 			checkCombo = function (k)
 				if k >= 10 then world:gainAchievement("TEN_AT_ONE_BLOW", game.player) end
 				if k > 2 then
-					local x, y = game.level.map:getTileToScreen(game.player.x, game.player.y)
+					local x, y = game.level.map:getTileToScreen(game.player.x, game.player.y, true)
 					local b = (k * 0.035) + 0.04
 					game.level.arena.raiseRank(b)
 					game.flyers:add(x, y, 90, 0.5, 0, k.." kills!", { 2, 57, 185 }, false)

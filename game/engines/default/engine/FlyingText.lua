@@ -86,12 +86,12 @@ function _M:display(nb_keyframes)
 
 	for fl, _ in pairs(self.flyers) do
 		local zoom = nil
-		local x, y = fl.x, fl.y
+		local x, y = -fl.w / 2, -fl.h / 2
 		local tx, ty = fl.x, fl.y
+		core.display.glTranslate(tx, ty, 0)
+
 		if fl.duration <= fl.popout_dur then
 			zoom = (fl.duration / fl.popout_dur)
-			x, y = -fl.w / 2 * zoom, -fl.h / 2 * zoom
-			core.display.glTranslate(tx, ty, 0)
 			core.display.glScale(zoom, zoom, zoom)
 		end
 
@@ -101,10 +101,8 @@ function _M:display(nb_keyframes)
 		fl.y = fl.y + fl.yvel * nb_keyframes
 		fl.duration = fl.duration - nb_keyframes
 
-		if zoom then
-			core.display.glScale()
-			core.display.glTranslate(-tx, -ty, 0)
-		end
+		if zoom then core.display.glScale() end
+		core.display.glTranslate(-tx, -ty, 0)
 
 		-- Delete the flyer
 		if fl.duration <= 0 then

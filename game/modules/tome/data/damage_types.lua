@@ -1349,7 +1349,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
+			local sx, sy = game.level.map:getTileToScreen(x, y, true)
 			if target:canBe("stun") then
 				target:setEffect(target.EFF_FROZEN, dam.dur, {hp=dam.hp * 1.5, apply_power=math.max(src:combatSpellpower(), src:combatMindpower()), min_dur=1})
 				game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -3, "Frozen!", {0,255,155})
@@ -1849,7 +1849,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			target:setEffect(target.EFF_SLOW, 7, {power=dam, apply_power=src:combatSpellpower()})
 		end
 	end,
@@ -1863,7 +1862,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			target:setEffect(target.EFF_CONGEAL_TIME, 7, {slow=dam.slow, proj=dam.proj, apply_power=src:combatSpellpower()})
 		end
 	end,
@@ -1878,7 +1876,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			if src == target then
 				target:setEffect(target.EFF_TIME_PRISON, dam, {no_ct_effect=true})
 				target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=src:combatSpellpower(0.3), no_ct_effect=true})
@@ -2953,7 +2950,6 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			target:setEffect(target.EFF_SLOW, 4, {power=dam/100, apply_power=src:combatMindpower()})
 		end
 	end,
@@ -2968,7 +2964,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			if target:canBe("stun") then
 				target:setEffect(target.EFF_FROZEN, dam, {hp=70 + src:combatMindpower() * 10, apply_power=src:combatMindpower()})
 			else

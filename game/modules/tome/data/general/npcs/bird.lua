@@ -100,7 +100,7 @@ newEntity{ base="BASE_NPC_BIRD", define_as = "NPC_PHOENIX",
 			self.life = math.min(1500, self.max_life)
 			self:setEffect(self.EFF_PHOENIX_EGG, dur, {life_regen = 25, mana_regen = -9.75, never_move = 1, never_blow = 1, silence = 1})
 			game.logSeen(src, "#LIGHT_RED#%s raises from the dead!", self.name:capitalize())
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -3, "RESURRECT!", {255,120,0})
 			self.died = (self.died or 0) + 1
 		else

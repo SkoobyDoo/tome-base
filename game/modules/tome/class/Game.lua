@@ -1406,7 +1406,7 @@ function _M:displayDelayedLogDamage()
 				local rsrc = real_src.resolveSource and real_src:resolveSource() or real_src
 				local rtarget = target.resolveSource and target:resolveSource() or target
 				local x, y = target.x or -1, target.y or -1
-				local sx, sy = self.level.map:getTileToScreen(x, y)
+				local sx, sy = self.level.map:getTileToScreen(x, y, true)
 				if target.dead then
 					if dams.tgtSeen and (rsrc == self.player or rtarget == self.player or self.party:hasMember(rsrc) or self.party:hasMember(rtarget)) then
 						self.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), ("Kill (%d)!"):format(dams.total), {255,0,255}, true)

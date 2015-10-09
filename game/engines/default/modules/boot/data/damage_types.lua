@@ -22,7 +22,7 @@ setDefaultProjector(function(src, x, y, type, dam)
 	local target = game.level.map(x, y, Map.ACTOR)
 	if target then
 		if src.player then dam = dam * 6 end
-		local sx, sy = game.level.map:getTileToScreen(x, y)
+		local sx, sy = game.level.map:getTileToScreen(x, y, true)
 		if target:takeHit(dam, src) then
 			if src == game.player or target == game.player then
 				game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -3, "Kill!", {255,0,255})

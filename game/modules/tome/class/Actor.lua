@@ -2046,7 +2046,7 @@ function _M:onHeal(value, src)
 --	print("[HEALING]", self.uid, self.name, "for", value)
 	if (not self.resting and (not game.party:hasMember(self) or not game:getPlayer(true).resting)) and value + psi_heal >= 1 and not self:attr("silent_heal") then
 		if game.level.map.seens(self.x, self.y) then
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, rng.float(-3, -2), (rng.range(0,2)-1) * 0.5, tostring(math.ceil(value)), {255,255,0})
 		end
 		if psi_heal > 0 then
@@ -2812,7 +2812,7 @@ function _M:die(src, death_note)
 	if self:attr("self_resurrect") and not self.no_resurrect then
 		self:attr("self_resurrect", -1)
 		game.logSeen(self, self.self_resurrect_msg or "#LIGHT_RED#%s rises from the dead!", self.name:capitalize()) -- src, not self as the source, to make sure the player knows his doom ;>
-		local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+		local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 		game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -3, "RESURRECT!", {255,120,0})
 
 		local effs = {}
@@ -3306,7 +3306,7 @@ function _M:levelup()
 
 	-- Notify party levelups
 	if self.x and self.y and game.party:hasMember(self) and not self.silent_levelup then
-		local x, y = game.level.map:getTileToScreen(self.x, self.y)
+		local x, y = game.level.map:getTileToScreen(self.x, self.y, true)
 		game.flyers:add(x, y, 80, 0.5, -2, "LEVEL UP!", {0,255,255})
 		game.log("#00ffff#Welcome to level %d [%s].", self.level, self.name:capitalize())
 		local more = "Press p to use them."
@@ -3429,7 +3429,7 @@ function _M:checkEncumbrance()
 		self.encumbered = self:addTemporaryValue("never_move", 1)
 
 		if self.x and self.y then
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), "+ENCUMBERED!", {255,0,0}, true)
 		end
 	elseif self.encumbered and enc <= max then
@@ -3438,7 +3438,7 @@ function _M:checkEncumbrance()
 		game.logPlayer(self, "#00FF00#You are no longer encumbered.")
 
 		if self.x and self.y then
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), "-ENCUMBERED!", {255,0,0}, true)
 		end
 	end

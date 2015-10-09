@@ -137,7 +137,7 @@ function _M:setEffect(eff_id, dur, p, silent)
 			end
 			if fly and game.flyers and self.x and self.y and game.level.map.seens(self.x, self.y) then
 				if fly == true then fly = "+"..ed.desc end
-				local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+				local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 				if game.level.map.seens(self.x, self.y) then game.flyers:add(sx, sy, 20, (rng.range(0,2)-1) * 0.5, -3, fly, {255,100,80}) end
 			end
 		end
@@ -185,7 +185,7 @@ function _M:removeEffect(eff, silent, force)
 			end
 			if fly and game.flyers and self.x and self.y then
 				if fly == true then fly = "-"..ed.desc end
-				local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+				local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 				if game.level.map.seens(self.x, self.y) then game.flyers:add(sx, sy, 20, (rng.range(0,2)-1) * 0.5, -3, fly, {255,100,80}) end
 			end
 		end

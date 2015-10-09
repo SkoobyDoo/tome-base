@@ -264,7 +264,7 @@ function _M:describeFloor(x, y, force)
 	local g = game.level.map(x, y, game.level.map.TERRAIN)
 	if g and g.change_level then
 		game.logPlayer(self, "#YELLOW_GREEN#There is "..g.name:a_an().." here (press '<', '>' or right click to use).")
-		local sx, sy = game.level.map:getTileToScreen(x, y)
+		local sx, sy = game.level.map:getTileToScreen(x, y, true)
 		game.flyers:add(sx, sy, 60, 0, -1.5, ("Level change (%s)!"):format(g.name), colors.simple(colors.YELLOW_GREEN), true)
 	end
 end
@@ -694,7 +694,7 @@ function _M:onTakeHit(value, src, death_note)
 	self:restStop("taken damage")
 	local ret = mod.class.Actor.onTakeHit(self, value, src, death_note)
 	if self.life < self.max_life * 0.3 then
-		local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+		local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 		game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, 2, "LOW HEALTH!", {255,0,0}, true)
 	end
 
@@ -765,7 +765,7 @@ function _M:onTalentCooledDown(tid)
 	if not self:knowTalent(tid) then return end
 	local t = self:getTalentFromId(tid)
 
-	local x, y = game.level.map:getTileToScreen(self.x, self.y)
+	local x, y = game.level.map:getTileToScreen(self.x, self.y, true)
 	game.flyers:add(x, y, 30, -0.3, -3.5, ("%s available"):format(t.name:capitalize()), {0,255,00})
 	game.log("#00ff00#%sTalent %s is ready to use.", (t.display_entity and t.display_entity:getDisplayString() or ""), t.name)
 end

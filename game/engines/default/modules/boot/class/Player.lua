@@ -109,7 +109,7 @@ end
 function _M:onTalentCooledDown(tid)
 	local t = self:getTalentFromId(tid)
 
-	local x, y = game.level.map:getTileToScreen(self.x, self.y)
+	local x, y = game.level.map:getTileToScreen(self.x, self.y, true)
 	game.flyers:add(x, y, 30, -0.3, -3.5, ("%s available"):format(t.name:capitalize()), {0,255,00})
 	game.log("#00ff00#Talent %s is ready to use.", t.name)
 end
@@ -117,6 +117,6 @@ end
 function _M:levelup()
 	mod.class.NPC.levelup(self)
 
-	local x, y = game.level.map:getTileToScreen(self.x, self.y)
+	local x, y = game.level.map:getTileToScreen(self.x, self.y, true)
 	game.flyers:add(x, y, 80, 0.5, -2, "LEVEL UP!", {0,255,255})
 end
