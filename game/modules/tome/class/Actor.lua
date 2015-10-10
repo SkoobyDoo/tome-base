@@ -5949,7 +5949,7 @@ end
 function _M:canSee(actor, def, def_pct)
 	if not actor then return false, 0 end
 
-	self.can_see_cache = self.can_see_cache or {}
+	self.can_see_cache = self.can_see_cache or setmetatable({}, {__mode="k"})
 	local s = tostring(def).."/"..tostring(def_pct)
 
 	if self.can_see_cache[actor] and self.can_see_cache[actor][s] then return self.can_see_cache[actor][s][1], self.can_see_cache[actor][s][2] end
@@ -5967,8 +5967,7 @@ end
 
 --- Reset our own seeing cache
 function _M:resetCanSeeCache()
-	self.can_see_cache = {}
-	setmetatable(self.can_see_cache, {__mode="k"})
+	self.can_see_cache = setmetatable({}, {__mode="k"})
 end
 
 --- Reset the cache of everything else that had see us on the level
