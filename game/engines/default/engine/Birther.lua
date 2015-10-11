@@ -41,16 +41,17 @@ _M.step_names = {}
 --- Defines birth descriptors from specified lua file
 -- @static
 -- @string file the lua file containing the descriptor
-function _M:loadDefinition(file)
-	local f, err = util.loadfilemods(file, setmetatable({
+function _M:loadDefinition(file, env)
+	env = env or setmetatable({
 		ActorTalents = require("engine.interface.ActorTalents"),
 		newBirthDescriptor = function(t) self:newBirthDescriptor(t) end,
 		getBirthDescriptor = function(type, name) return self:getBirthDescriptor(type, name) end,
 		setAuto = function(type, v) self.birth_auto[type] = v end,
 		setStepNames = function(names) self.step_names = names end,
-		load = function(f) self:loadDefinition(f) end,
+		load = function(f) self:loadDefinition(f, env) end,
 		Birther = self,
-	}, {__index=_G}))
+	}, {__index=getfenv(2)})
+	local f, err = util.loadfilemods(file, env)
 	if not f and err then error(err) os.exit() end
 	local ok, err = pcall(f)
 	if not ok and err then error(err) end

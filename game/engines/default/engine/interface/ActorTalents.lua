@@ -29,7 +29,7 @@ _M.talents_types_def = {}
 --- Defines actor talents
 -- Static!
 function _M:loadDefinition(file, env)
-	local f, err = util.loadfilemods(file, setmetatable(env or {
+	env = env or setmetatable({
 		DamageType = require("engine.DamageType"),
 		Particles = require("engine.Particles"),
 		Talents = self,
@@ -37,8 +37,9 @@ function _M:loadDefinition(file, env)
 		MapEffect = require("engine.MapEffect"),
 		newTalent = function(t) self:newTalent(t) end,
 		newTalentType = function(t) self:newTalentType(t) end,
-		load = function(f) self:loadDefinition(f, getfenv(2)) end
-	}, {__index=_G}))
+		load = function(f) self:loadDefinition(f, env) end
+	}, {__index=getfenv(2)})
+	local f, err = util.loadfilemods(file, env)
 	if not f and err then error(err) end
 	f()
 end
