@@ -2060,9 +2060,6 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 	end
 end
 
--- random bosses get enhancement to certain resources (can also set RandomBossEnhancedResources=true in resource definition)
-_M.RandomBossEnhancedResources = {equilibrium=true, mana=true, negative=true, positive=true, psi=true, soul=true, stamina=true, vim=true, paradox=true}
-
 --- Creates a random Boss (or elite) actor
 --	@param base = base actor to add classes/talents to
 --	calls _M:applyRandomClass(b, data, instant) to add classes, talents, and equipment based on class descriptors
@@ -2196,7 +2193,7 @@ function _M:createRandomBoss(base, data)
 
 		-- Enhance resource pools (cheat a bit with recovery)
 		for res, res_def in ipairs(self.resources_def) do
-			if _M.RandomBossEnhancedResources[res_def.short_name] or res_def.RandomBossEnhancedResources then
+			if res_def.randomboss_enhanced then
 				local capacity
 				if self[res_def.minname] and self[res_def.maxname] then -- expand capacity
 					capacity = (self[res_def.maxname] - self[res_def.minname]) * self._rndboss_resources_boost
