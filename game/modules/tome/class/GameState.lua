@@ -1462,7 +1462,7 @@ function _M:entityFilter(zone, e, filter, type)
 		if not filter.ignore_material_restriction then
 			local min_mlvl = util.getval(zone.min_material_level)
 			local max_mlvl = util.getval(zone.max_material_level)
-			if filter.tome_mod and filter.tome_mod.material_mod then max_mlvl = max_mlvl + filter.tome_mod.material_mod end
+			if filter.tome_mod and filter.tome_mod.material_mod then max_mlvl = util.bound((max_mlvl or 3) + filter.tome_mod.material_mod, 1, 5) end
 			if min_mlvl and not e.material_level_min_only then
 				if not e.material_level then return true end
 				if e.material_level < min_mlvl then return false end
@@ -1959,17 +1959,21 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 
 		-- Add starting equipment
 		local apply_resolvers = function(k, resolver)
-			if type(resolver) == "table" and resolver.__resolver and resolver.__resolver == "equip" and not data.forbid_equip then
-				resolver[1].id = nil
-				-- Make sure we equip some nifty stuff instead of player's starting iron stuff
-				for i, d in ipairs(resolver[1]) do
-					d.name = nil
-					d.ego_chance = nil
-					d.forbid_power_source=b.not_power_source
-					d.tome_drops = data.loot_quality or "boss"
-					d.force_drop = (data.drop_equipment == nil) and true or data.drop_equipment
+			if type(resolver) == "table" and resolver.__resolver then
+				if resolver.__resolver == "equip" and not data.forbid_equip then
+					resolver[1].id = nil
+					-- Make sure we equip some nifty stuff instead of player's starting iron stuff
+					for i, d in ipairs(resolver[1]) do
+						d.name = nil
+						d.ego_chance = nil
+						d.forbid_power_source=b.not_power_source
+						d.tome_drops = data.loot_quality or "boss"
+						d.force_drop = (data.drop_equipment == nil) and true or data.drop_equipment
+					end
+					b[#b+1] = resolver
+				elseif resolver.__resolver == "inscription" then -- add support for inscriptions
+					b[#b+1] = resolver
 				end
-				b[#b+1] = resolver
 			elseif k == "innate_alchemy_golem" then 
 				b.innate_alchemy_golem = true
 			elseif k == "birth_create_alchemist_golem" then
@@ -2056,6 +2060,9 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 	end
 end
 
+-- random bosses get enhancement to certain resources (can also set RandomBossEnhancedResources=true in resource definition)
+_M.RandomBossEnhancedResources = {equilibrium=true, mana=true, negative=true, positive=true, psi=true, soul=true, stamina=true, vim=true, paradox=true}
+
 --- Creates a random Boss (or elite) actor
 --	@param base = base actor to add classes/talents to
 --	calls _M:applyRandomClass(b, data, instant) to add classes, talents, and equipment based on class descriptors
@@ -2111,6 +2118,7 @@ function _M:createRandomBoss(base, data)
 		b.life_rating = b.life_rating * 1.7 + rng.range(4, 9)
 	end
 	b.max_life = b.max_life or 150
+	b.max_inscriptions = 5
 
 	if b.can_multiply or b.clone_on_hit then
 		b.clone_base = base:clone()
@@ -2160,7 +2168,7 @@ function _M:createRandomBoss(base, data)
 	self:applyRandomClass(b, data)
 
 	b.rnd_boss_on_added_to_level = b.on_added_to_level
-	b._rndboss_resources_boost = data.resources_boost
+	b._rndboss_resources_boost = data.resources_boost or 3
 	b._rndboss_talent_cds = data.talent_cds_factor
 	b.on_added_to_level = function(self, ...)
 		self:check("birth_create_alchemist_golem")
@@ -2186,13 +2194,22 @@ function _M:createRandomBoss(base, data)
 			end
 		end
 
-		-- Cheat a bit with resources
-		self.max_mana = self.max_mana * (self._rndboss_resources_boost or 3) self.mana_regen = self.mana_regen + 1
-		self.max_vim = self.max_vim * (self._rndboss_resources_boost or 3) self.vim_regen = self.vim_regen + 1
-		self.soul_regen = self.soul_regen + 0.5
-		self.max_stamina = self.max_stamina * (self._rndboss_resources_boost or 3) self.stamina_regen = self.stamina_regen + 1
-		self.max_psi = self.max_psi * (self._rndboss_resources_boost or 3) self.psi_regen = self.psi_regen + 2
-		self.equilibrium_regen = self.equilibrium_regen - 2
+		-- Enhance resource pools (cheat a bit with recovery)
+		for res, res_def in ipairs(self.resources_def) do
+			if _M.RandomBossEnhancedResources[res_def.short_name] or res_def.RandomBossEnhancedResources then
+				local capacity
+				if self[res_def.minname] and self[res_def.maxname] then -- expand capacity
+					capacity = (self[res_def.maxname] - self[res_def.minname]) * self._rndboss_resources_boost
+				end
+				if res_def.invert_values then
+					if capacity then self[res_def.minname] = self[res_def.maxname] - capacity end
+					self[res_def.regen_prop] = self[res_def.regen_prop] - (res_def.min and res_def.max and (res_def.max-res_def.min)*.01 or 1) * self._rndboss_resources_boost
+				else
+					if capacity then self[res_def.maxname] = self[res_def.minname] + capacity end
+					self[res_def.regen_prop] = self[res_def.regen_prop] + (res_def.min and res_def.max and (res_def.max-res_def.min)*.01 or 1) * self._rndboss_resources_boost
+				end
+			end
+		end
 		self:resetToFull()
 	end
 

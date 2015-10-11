@@ -1097,7 +1097,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		-- resources used to attack
 		compare_table_fields(
-			combat, compare_with, field, "use_resources", "%d", "#ORANGE#Attacks use: #LAST#",
+			combat, compare_with, field, "use_resources", "%0.1f", "#ORANGE#Attacks use: #LAST#",
 			function(item)
 				local res_def = ActorResource.resources_def[item]
 				local col = (res_def and res_def.color or "#SALMON#"):toTString()
