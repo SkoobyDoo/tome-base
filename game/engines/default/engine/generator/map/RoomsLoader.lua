@@ -28,8 +28,8 @@ function _M:init(data)
 	self.rooms = {}
 	self.required_rooms = {}
 
-	data.tunnel_change = self.data.tunnel_change or 30
-	data.tunnel_random = self.data.tunnel_random or 10
+	data.tunnel_change = data.tunnel_change or 30
+	data.tunnel_random = data.tunnel_random or 10
 
 	if data.rooms then for i, file in ipairs(data.rooms) do
 		if type(file) == "table" then

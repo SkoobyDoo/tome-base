@@ -748,3 +748,10 @@ end
 function _M:getGenericTextTiles(en)
 	return "" 
 end
+
+--- Checks the presence of a specific addon
+function _M:isAddonActive(name)
+	if not self.__mod_info then return end
+	if not self.__mod_info.addons then return end
+	return game.__mod_info.addons[name]
+end
