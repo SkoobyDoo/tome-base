@@ -39,10 +39,6 @@ function _M:init(t)
 	self.first = true
 end
 
-function _M:on_focus(v)
-	game:onTickEnd(function() self.key:unicodeInput(v) end)
-end
-
 function _M:generate()
 	Textbox.generate(self)
 
