@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+if not game:isCampaign("Maj'Eyal") then return end
+
 level.data.on_enter_list.noxious_caldera = function()
 	if game.level.data.noxious_caldera_added then return end
 	if game:getPlayer(true).level < 20 then return end

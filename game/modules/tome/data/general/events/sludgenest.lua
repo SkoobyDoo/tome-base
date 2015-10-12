@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+if not game:isCampaign("Maj'Eyal") then return end
+
 level.data.on_enter_list.sludgenest = function()
 	if game.level.data.sludgenest_added then return end
 	if game:getPlayer(true).level < 30 then return end

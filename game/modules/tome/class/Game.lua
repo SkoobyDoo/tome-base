@@ -1184,6 +1184,10 @@ function _M:getCampaign()
 	return self:getPlayer(true).descriptor.world
 end
 
+function _M:isCampaign(name)
+	return self:getPlayer(true).descriptor.world == name
+end
+
 --- Says if this savefile is usable or not
 function _M:isLoadable()
 	if not self:getPlayer(true).dead or not self.player.dead then return true end
