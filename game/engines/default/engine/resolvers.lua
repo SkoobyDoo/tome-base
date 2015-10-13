@@ -133,7 +133,7 @@ end
 
 --- Levelup resolver
 function resolvers.levelup(base, every, inc, max)
-	return {__resolver="levelup", __resolve_instant=false, base, every, inc, max}
+	return {__resolver="levelup", base, every, inc, max}
 end
 function resolvers.calc.levelup(t, e, _, _, k, kchain)
 	if not e._levelup_info then e._levelup_info = {} end

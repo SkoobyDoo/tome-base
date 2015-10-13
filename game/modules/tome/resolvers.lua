@@ -74,10 +74,6 @@ function resolvers.calc.equip(t, e)
 					end
 				end
 			end
---game.debug._debug_object = o -- temp for debugging
---if o.keywords and o.keywords.searing and e.melee_project and e.melee_project.FIRE then
---	game.log("#PINK# Searing armor with melee_project.FIRE on %s[%s]", e.name, e.uid)
---end
 			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
 				if filter.force_inven and e:getInven(filter.force_inven) then  -- we just really want it
 					e:addObject(filter.force_inven, o, true, filter.force_item)
@@ -994,10 +990,3 @@ function resolvers.calc.command_staff(t, e)
 	e:commandStaff()
 end
 
--- test resolver for recursion
-function resolvers.test_resolver(base, every, inc, max)
-	return {__resolver="test_resolver", base, every, inc, max}
-end
-function resolvers.calc.test_resolver(t, e)
-	return {base=(t[1] or 0) + e.level, every=t[2], inc=t[3], max=t[4]}
-end

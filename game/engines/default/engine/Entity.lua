@@ -738,18 +738,12 @@ function _M:resolve(t, last, on_entity, key_chain)
 	local r
 	for k, e in pairs(list) do
 		if type(e) == "table" and e.__resolver then
---print("Resolver for ", t.name,": ", e.__resolver, ":")
---table.print(e, "---")
---print("=== on key_chain:", table.concat(key_chain, "."))
 		end
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(key_chain, ".")) end
 			r = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
 			t[k] = r
 			if type(r) == "table" and r.__resolver and r.__resolve_instant and (not r.__resolve_last or last) then --handle a nested instant resolver immediately
---print("+++Processing nested resolver", k, r.__resolver)
---table.print(r)
---print("last:", last, "on_entity:", on_entity, "key_chain:")
 				t[k] = resolvers.calc[r.__resolver](r, on_entity or self, self, t, k, key_chain)
 			end
 		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
