@@ -74,7 +74,10 @@ function resolvers.calc.equip(t, e)
 					end
 				end
 			end
-
+--game.debug._debug_object = o -- temp for debugging
+--if o.keywords and o.keywords.searing and e.melee_project and e.melee_project.FIRE then
+--	game.log("#PINK# Searing armor with melee_project.FIRE on %s[%s]", e.name, e.uid)
+--end
 			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
 				if filter.force_inven and e:getInven(filter.force_inven) then  -- we just really want it
 					e:addObject(filter.force_inven, o, true, filter.force_item)
@@ -381,7 +384,7 @@ resolvers.mbonus_max_level = 90
 --- Random bonus based on level and material quality
 resolvers.current_level = 1
 function resolvers.mbonus_material(max, add, pricefct)
-	return {__resolver="mbonus_material", max, add, pricefct}
+	return {__resolver="mbonus_material",  __resolve_instant=true, max, add, pricefct}
 end
 function resolvers.calc.mbonus_material(t, e)
 	local ml = e.material_level or 1
@@ -407,7 +410,7 @@ end
 --- Random bonus based on level, more strict
 resolvers.current_level = 1
 function resolvers.mbonus_level(max, add, pricefct, step)
-	return {__resolver="mbonus_level", max, add, step or 10, pricefct}
+	return {__resolver="mbonus_level",  __resolve_instant=true, max, add, step or 10, pricefct}
 end
 function resolvers.calc.mbonus_level(t, e)
 	local max = resolvers.mbonus_max_level
@@ -432,7 +435,7 @@ end
 --- Random bonus based on level
 resolvers.current_level = 1
 function resolvers.mbonus(max, add, pricefct)
-	return {__resolver="mbonus", max, add, pricefct}
+	return {__resolver="mbonus",  __resolve_instant=true, max, add, pricefct}
 end
 function resolvers.calc.mbonus(t, e)
 	local v = rng.mbonus(t[1], resolvers.current_level, resolvers.mbonus_max_level) + (t[2] or 0)
@@ -452,7 +455,7 @@ end
 -- result is (base +/- spread)*(current_level/base_level)^power
 -- min = optional minimum value
 function resolvers.clscale(base, base_level, spread, power, min)
-	return {__resolver="clscale", base, base_level, spread, power or 0.75, min}
+	return {__resolver="clscale",  __resolve_instant=true, base, base_level, spread, power or 0.75, min}
 end
 function resolvers.calc.clscale(t, e)
 	return math.max(math.ceil((t[1] + (t[3] and rng.range(-t[3],t[3]) or 0))*(resolvers.current_level/t[2])^t[4]),t[5] or t[1])
@@ -989,4 +992,12 @@ function resolvers.command_staff()
 end
 function resolvers.calc.command_staff(t, e)
 	e:commandStaff()
+end
+
+-- test resolver for recursion
+function resolvers.test_resolver(base, every, inc, max)
+	return {__resolver="test_resolver", base, every, inc, max}
+end
+function resolvers.calc.test_resolver(t, e)
+	return {base=(t[1] or 0) + e.level, every=t[2], inc=t[3], max=t[4]}
 end
