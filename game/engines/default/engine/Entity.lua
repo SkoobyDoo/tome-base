@@ -735,10 +735,17 @@ function _M:resolve(t, last, on_entity, key_chain)
 	end
 
 	-- Then we handle it, this is because resolvers can modify the list with their returns, or handlers, so we must make sure to not modify the list we are iterating over
+	local r
 	for k, e in pairs(list) do
+		if type(e) == "table" and e.__resolver then
+		end
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
-			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(".", key_chain)) end
-			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
+			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(key_chain, ".")) end
+			r = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
+			t[k] = r
+			if type(r) == "table" and r.__resolver and r.__resolve_instant and (not r.__resolve_last or last) then --handle a nested instant resolver immediately
+				t[k] = resolvers.calc[r.__resolver](r, on_entity or self, self, t, k, key_chain)
+			end
 		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			local key_chain = table.clone(key_chain)
 			key_chain[#key_chain+1] = k
@@ -886,6 +893,11 @@ function _M:addTemporaryValue(prop, v, noupdate)
 				table.sort(b, function(a, b) return a[1] > b[1] end)
 				base[prop] = b[1] and b[1][2]
 			else
+if type(base[prop] or 0) ~= "number" or type(v) ~= "number" then
+	print("ERROR: Attempting to add value", v, "property", prop, "to", base[prop]) table.print(base[prop]) table.print(v)
+	print("Entity:", self) -- table.print(self)
+	game.debug._debug_entity = self
+end
 				base[prop] = (base[prop] or 0) + v
 			end
 			self:onTemporaryValueChange(prop, v, base)

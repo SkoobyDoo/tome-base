@@ -24,7 +24,7 @@ resolvers.calc = {}
 
 --- Resolves a rng range
 function resolvers.rngrange(x, y)
-	return {__resolver="rngrange", x, y}
+	return {__resolver="rngrange",  __resolve_instant=true, x, y}
 end
 function resolvers.calc.rngrange(t)
 	return rng.range(t[1], t[2])
@@ -32,7 +32,7 @@ end
 
 --- Average random
 function resolvers.rngavg(x, y)
-	return {__resolver="rngavg", x, y}
+	return {__resolver="rngavg",  __resolve_instant=true, x, y}
 end
 function resolvers.calc.rngavg(t)
 	return rng.avg(t[1], t[2])
@@ -40,7 +40,7 @@ end
 
 --- Dice roll
 function resolvers.dice(x, y)
-	return {__resolver="dice", x, y}
+	return {__resolver="dice",  __resolve_instant=true, x, y}
 end
 function resolvers.calc.dice(t)
 	return rng.dice(t[1], t[2])
@@ -48,7 +48,7 @@ end
 
 --- Random table element
 function resolvers.rngtable(t)
-	return {__resolver="rngtable", t}
+	return {__resolver="rngtable",  __resolve_instant=true, t}
 end
 function resolvers.calc.rngtable(t)
 	return rng.table(t[1])
@@ -56,7 +56,7 @@ end
 
 --- Random color
 function resolvers.rngcolor(t)
-	return {__resolver="rngcolor", t}
+	return {__resolver="rngcolor",  __resolve_instant=true, t}
 end
 function resolvers.calc.rngcolor(t, e)
 	local c = rng.table(t[1])
@@ -69,7 +69,7 @@ end
 resolvers.current_level = 1
 resolvers.mbonus_max_level = 50
 function resolvers.mbonus(max, add)
-	return {__resolver="mbonus", max, add}
+	return {__resolver="mbonus", __resolve_instant=true, max, add}
 end
 function resolvers.calc.mbonus(t)
 	return rng.mbonus(t[1], resolvers.current_level, resolvers.mbonus_max_level) + (t[2] or 0)
