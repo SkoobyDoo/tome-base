@@ -44,6 +44,7 @@ function _M:generate()
 
 	self.key:addIgnore("_UP", false)
 	self.key:addIgnore("_DOWN", false)
+	self.key:addBind("ACCEPT", function() self.fct(self.number) end)
 
 	self.key:addCommands{
 		_UP = function() self:updateText(1) end,
