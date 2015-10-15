@@ -55,8 +55,8 @@ function _M:receiveMouse(button, x, y, isup, force_name, extra)
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
 		if (not m.mode or m.mode.button) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, isup and "button" or "button-down", extra)
-			break
+			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, isup and "button" or "button-down", extra)
+			if r ~= false then break end
 		end
 	end
 end
@@ -75,9 +75,11 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
 		if (not m.mode or m.mode.move) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			m.fct(button, x, y, xrel, yrel, (x-m.x1) / m.scale, (y-m.y1) / m.scale, "motion", extra)
-			cur_m = m
-			break
+			local r = m.fct(button, x, y, xrel, yrel, (x-m.x1) / m.scale, (y-m.y1) / m.scale, "motion", extra)
+			if r ~= false then
+				cur_m = m
+				break
+			end
 		end
 	end
 	if self.last_m and self.last_m.allow_out_events and self.last_m ~= cur_m then
