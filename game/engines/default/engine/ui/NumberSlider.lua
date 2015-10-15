@@ -69,7 +69,25 @@ function _M:generate()
 	}
 	self.key.atLast = function(sym, ctrl, shift, alt, meta, unicode, isup, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key) print("KEY", unicode) end
 
-	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(...) self.nbox.mouse:delegate(...) end, nil, "box")
+	-- precise click
+	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event ~= "button" or button ~= "left" then return false end
+		x = x - self.title_w - self.left.w
+		local full = self.size - self.left.w - self.right.w
+		local point = util.bound(x, 0, full)
+		local delta = self.max - self.min
+		if full > 0 then
+			local value = point / full * delta
+			value = math.floor((value / self.step) + 0.5) * self.step
+			self.nbox:updateText(value + self.min - self.value)
+			self:onChange()
+		end
+	end, {button=true}, "precise")
+	-- the box
+	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(button, x, y, ...)
+		if x < self.range[1] or x > self.range[2] then return false end
+		self.nbox.mouse:delegate(button, x, y, ...)
+	end, nil, "box")
 	self.nbox.mouse.delegate_offset_y = (self.h - self.nbox.h) / 2
 	-- wheeeeeeee
 	local wheelTable = {wheelup = 1, wheeldown = -1}
@@ -109,13 +127,11 @@ function _M:onChange()
 	local prop = delta > 0 and shift / delta or 0.5
 	local xmin, xmax = self.left.w + halfw, self.size - self.right.w - halfw
 	local nbx = xmin + (xmax - xmin) * prop
-	self.range = {nbx - halfw, nbx + halfw}
+	self.range = {self.title_w + nbx - halfw, self.title_w + nbx + halfw}
 	local offsety = (self.h - self.nbox.h) / 2
 
-	self.nbox.mouse.delegate_offset_x = self.title_w + self.range[1]
-	self.mouse:updateZone("left", self.title_w, 0, self.range[1], self.h)
-	self.mouse:updateZone("right", self.title_w + self.range[2], 0, self.w - self.range[2], self.h)
-	self.mouse:updateZone("box", self.title_w + self.range[1], offsety, self.range[2] - self.range[1], self.h - 2 * offsety)
+	self.nbox.mouse.delegate_offset_x = self.range[1]
+	self.mouse:updateZone("box", self.range[1], offsety, self.range[2] - self.range[1], self.h - 2 * offsety)
 end
 
 function _M:display(x, y, nb_keyframes)
@@ -123,6 +139,6 @@ function _M:display(x, y, nb_keyframes)
 	self:textureToScreen(self.left, x + self.title_w, y + (self.h - self.left.h) / 2)
 	self:textureToScreen(self.right, x + self.title_w + self.size - self.right.w, y + (self.h - self.right.h) / 2)
 	self.middle.t:toScreenFull(x + self.title_w + self.left.w, y, self.size - self.left.w - self.right.w, self.middle.h, self.middle.tw, self.middle.th)
-	self.nbox:display(x + self.title_w + self.range[1], y + (self.h - self.nbox.h) / 2, nb_keyframes)
+	self.nbox:display(x + self.range[1], y + (self.h - self.nbox.h) / 2, nb_keyframes)
 end
 
