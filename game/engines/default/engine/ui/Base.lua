@@ -135,7 +135,7 @@ function _M:textureToScreen(tex, x, y, r, g, b, a, allow_uid)
 	return res
 end
 
-function _M:makeFrame(base, w, h)
+function _M:makeFrame(base, w, h, iw, ih)
 	local f = {}
 	if base then
 		f.b7 = self:getUITexture(base.."7.png")
@@ -147,6 +147,8 @@ function _M:makeFrame(base, w, h)
 		f.b2 = self:getUITexture(base.."2.png")
 		f.b6 = self:getUITexture(base.."6.png")
 		f.b5 = self:getUITexture(base.."5.png")
+		if not w then w = iw + f.b4.w + f.b6.w end
+		if not h then h = ih + f.b8.h + f.b2.h end
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)
