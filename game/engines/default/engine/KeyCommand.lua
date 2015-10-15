@@ -88,7 +88,13 @@ function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
 		handled = true
 	end
 
-	if not isup and self.atLast then self.atLast(sym, ctrl, shift, alt, meta, unicode, key) handled = true  end
+	if self.atLast then
+		if type(self.atLast) == "function" then
+			handled = self.atLast(sym, ctrl, shift, alt, meta, unicode, isup, key)
+		else
+			handled = self.atLast:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
+		end
+	end
 	return handled
 end
 
