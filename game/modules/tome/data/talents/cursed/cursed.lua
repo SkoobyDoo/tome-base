@@ -32,7 +32,7 @@ newTalentType{ allow_random=true, is_mind=true, type="cursed/darkness", name = "
 newTalentType{ allow_random=true, is_mind=true, type="cursed/shadows", name = "shadows", description = "Summon shadows from the darkness to aid you." }
 newTalentType{ allow_random=true, is_mind=true, type="cursed/punishments", name = "punishments", description = "Your hate becomes punishment in the minds of your foes." }
 newTalentType{ allow_random=true, is_mind=true, type="cursed/one-with-shadows", name = "one with shadows", min_lev = 10, description = "Harness your shadows to their full potential." }
-newTalentType{ allow_random=true, is_mind=true, type="cursed/advanced-shadowmancy", name = "advanced shadowmancy", description = "Gain more direct control over your shadows with physical damage talents." }
+newTalentType{ allow_random=true, is_mind=true, type="cursed/advanced-shadowmancy", name = "advanced shadowmancy", min_lev = 10, description = "Gain more direct control over your shadows with physical damage talents." }
 
 -- Generic
 newTalentType{ allow_random=true, is_mind=true, type="cursed/gestures", name = "gestures", generic = true, description = "Enhance the power of you mind with gestures." }
