@@ -31,7 +31,7 @@ function _M:init(t)
 	self.max = t.max or 9999
 	self.value = t.value or self.min
 	self.step = t.step or 10
-	self.on_change = on_change
+	self.on_change = t.on_change
 	assert(t.size or t.w, "no numberspinner size")
 	self.size = t.size
 	self.w = t.w
