@@ -966,6 +966,10 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 
 	UIBase:clearCache()
 
+	-- Some requires cleanup, to correctly let modules apply settings	
+	package.loaded["engine.ui.WithTile"] = nil
+	package.loaded["engine.ui.Textbox"] = nil
+
 	-- Init the module code
 	local M, W = mod.load("init")
 	class:runInherited()
