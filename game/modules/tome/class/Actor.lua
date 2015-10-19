@@ -659,7 +659,7 @@ function _M:act()
 
 	if self.on_act then self:on_act() end
 
-	if self.never_act then return false end
+	if self:attr("never_act") then return false end
 
 	if not game.zone.wilderness and not self:attr("confused") and not self:attr("terrified") then self:automaticTalents() end
 
