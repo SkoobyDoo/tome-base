@@ -17,6 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local rooms = {"random_room", {"pit",3}, {"greater_vault",7}}
+if game:isAddonActive("items-vault") then table.insert(rooms, {"!items-vault",12}) end
+
 return {
 	name = "Infinite Dungeon",
 	level_range = {1, 1},
@@ -57,11 +60,13 @@ return {
 		map = {
 			class = "engine.generator.map.Roomer",
 			nb_rooms = 14,
-			rooms = {"random_room", {"pit",3}, {"greater_vault",7}},
+			rooms = rooms,
 			rooms_config = {pit={filters={}}},
 			lite_room_chance = 50,
 			['.'] = "FLOOR",
 			['#'] = "WALL",
+			['+'] = "DOOR",
+			I = "ITEMS_VAULT",
 			up = "FLOOR",
 			down = "DOWN",
 			door = "DOOR",

@@ -23,6 +23,9 @@ load("/data/general/grids/forest.lua")
 load("/data/general/grids/lava.lua")
 load("/data/general/grids/sand.lua")
 
+newEntity{base = "FLOOR", define_as = "ITEMS_VAULT"}
+load("/data-items-vault/entities/fortress-grids.lua", function(e) if e.image == "terrain/solidwall/solid_floor1.png" then e.image = "terrain/marble_floor.png" end end)
+
 for id, i in ipairs{1, 10, 20, 30, 40} do
 newEntity{
 	define_as = "ID_HISTORY"..i,
