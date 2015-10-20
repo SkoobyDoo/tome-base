@@ -2288,16 +2288,39 @@ end
 
 --- Check if the actor has a shield
 function _M:hasShield()
-	if self:attr("disarmed") then
-		return nil, "disarmed"
-	end
+	if self:attr("disarmed") then return nil end
 
-	if not self:getInven("MAINHAND") or not self:getInven("OFFHAND") then return end
-	local shield = self:getInven("OFFHAND")[1]
-	if not shield or not shield.special_combat then
-		return nil
-	end
-	return shield
+	local shield1 = self:getInven("OFFHAND")[1]
+	local shield2 = self:getInven("MAINHAND")[1]
+
+	-- Switch if needed to find one
+	if not shield1 then shield1, shield2 = shield2, nil end
+	if not shield1 then return nil end
+
+	-- Grab combat datas
+	local combat1, combat2 = nil, nil
+	if shield1.shield_normal_combat then combat1 = shield1.combat else combat1 = shield1.special_combat end
+	if shield2 then if shield2.shield_normal_combat then combat2 = shield2.combat else combat2 = shield2.special_combat end end
+
+	-- If no combat fields, it's not a shield
+	if not combat1 then shield1 = nil end
+	if not combat2 then shield2 = nil end
+
+	-- Switch if needed to find one that is an actual shield
+	if not shield1 then shield1, shield2, combat1, combat2 = shield2, nil, combat2, nil end
+	if not shield1 then return nil end
+
+	return shield1, combat1, shield2, combat2
+end
+
+function _M:combatShieldBlock()
+	local shield1, combat1, shield2, combat2 = self:hasShield()
+	if not combat1 then return end
+
+	local block = combat1.block or 0
+	if combat2 then block = block + (combat2.block or 0) end
+
+	return block
 end
 
 -- Check if actor is unarmed

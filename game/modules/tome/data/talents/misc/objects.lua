@@ -225,35 +225,24 @@ newTalent{
 	tactical = { ATTACK = 3, DEFEND = 3 },
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a shield to use this talent.") end return false end return true end,
 	getProperties = function(self, t)
-		local shield = self:hasShield()
+		local shield1, combat1, shield2, combat2 = self:hasShield()
 		--if not shield then return nil end
 		local p = {
-			sp = (shield and shield.special_combat and shield.special_combat.spellplated or false),
-			ref = (shield and shield.special_combat and shield.special_combat.reflective or false),
-			br = (shield and shield.special_combat and shield.special_combat.bloodruned or false),
+			sp = (combat1 and combat1.spellplated or false) or (combat2 and combat2.spellplated or false),
+			ref = (combat1 and combat1.reflective or false) or (combat2 and combat2.reflective or false),
+			br = (combat1 and combat1.bloodruned or false) or (combat2 and combat2.bloodruned or false),
 		}
 		return p
 	end,
-	getBlockValue = function(self, t)
-		local val = 0
-		local shield1 = self:hasShield()
-		if shield1 then val = val + (shield1.special_combat and shield1.special_combat.block or 0) end
-
-		if not self:getInven("MAINHAND") then return val end
-		local shield2 = self:getInven("MAINHAND")[1]
-		if shield2 then val = val + (shield2.special_combat and shield2.special_combat.block or 0) end
-		return val
-	end,
+	getBlockValue = function(self, t) return self:combatShieldBlock() end,
 	getBlockedTypes = function(self, t)
-		local shield = self:hasShield()
+		local shield1, combat1, shield2, combat2 = self:hasShield()
 		local bt = {[DamageType.PHYSICAL]=true}
-		if not shield then return bt, "error!" end
-		local shield2 = self:getInven("MAINHAND") and self:getInven("MAINHAND")[1]
-		shield2 = shield2 and shield2.special_combat and shield2 or nil
+		if not shield1 then return bt, "error!" end
 
 		if not self:attr("spectral_shield") then
-			if shield.wielder.resists then for res, v in pairs(shield.wielder.resists) do if v > 0 then bt[res] = true end end end
-			if shield.wielder.on_melee_hit then for res, v in pairs(shield.wielder.on_melee_hit) do if v > 0 then bt[res] = true end end end
+			if shield1.wielder.resists then for res, v in pairs(shield1.wielder.resists) do if v > 0 then bt[res] = true end end end
+			if shield1.wielder.on_melee_hit then for res, v in pairs(shield1.wielder.on_melee_hit) do if v > 0 then bt[res] = true end end end
 			if shield2 and shield2.wielder.resists then for res, v in pairs(shield2.wielder.resists) do if v > 0 then bt[res] = true end end end
 			if shield2 and shield2.wielder.on_melee_hit then for res, v in pairs(shield2.wielder.on_melee_hit) do if v > 0 then bt[res] = true end end end
 		else

@@ -2069,8 +2069,9 @@ newEffect{
 		if not self:knowTalent(self.T_ETERNAL_GUARD) then eff.dur = 0 end
 		local amt = util.bound(dam - eff.power, 0, dam)
 		local blocked = dam - amt
-		local shield = self:hasShield()
-		if shield and shield.on_block and shield.on_block.fct then shield.on_block.fct(shield, self, src, type, dam, eff) end
+		local shield1, combat1, shield2, combat2 = self:hasShield()
+		if shield1 and shield1.on_block and shield1.on_block.fct then shield1.on_block.fct(shield1, self, src, type, dam, eff) end
+		if shield2 and shield2.on_block and shield2.on_block.fct then shield2.on_block.fct(shield2, self, src, type, dam, eff) end
 		if eff.properties.br then
 			self:heal(blocked, src)
 			game:delayedLogMessage(self, src, "block_heal", "#CRIMSON##Source# heals from blocking with %s shield!", string.his_her(self))

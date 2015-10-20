@@ -78,7 +78,7 @@ newTalent{
 	getLightDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200) end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Brandish without a shield!")
 			return nil
@@ -92,7 +92,7 @@ newTalent{
 		-- First attack with weapon
 		self:attackTarget(target, nil, t.getWeaponDamage(self, t), true)
 		-- Second attack with shield
-		local speed, hit = self:attackTargetWith(target, shield.special_combat, nil, t.getShieldDamage(self, t))
+		local speed, hit = self:attackTargetWith(target, shield_combat, nil, t.getShieldDamage(self, t))
 
 		-- Light Burst
 		if hit then
@@ -187,7 +187,7 @@ newTalent{
 	getCooldownReduction = function(self, t) return math.ceil(self:combatTalentScale(t, 1, 3)) end,
 	getDebuff = function(self, t) return 1 end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Crusade without a shield!")
 			return nil
@@ -201,7 +201,7 @@ newTalent{
 		local hit = self:attackTarget(target, DamageType.LIGHT, t.getWeaponDamage(self, t), true)
 		if hit then self:talentCooldownFilter(nil, 1, t.getCooldownReduction(self, t), true) end
 
-		local hit2 = self:attackTargetWith(target, shield.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
+		local hit2 = self:attackTargetWith(target, shield_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
 		if hit2 then self:removeEffectsFilter({status = "detrimental"}, t.getDebuff(self, t)) end
 
 		return true

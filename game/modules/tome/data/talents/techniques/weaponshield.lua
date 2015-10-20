@@ -37,7 +37,7 @@ newTalent{
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	getStunDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Shield Pummel without a shield!")
 			return nil
@@ -47,8 +47,8 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 
-		self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 1, 1.7, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
-		local speed, hit = self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 1.2, 2.1, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
+		self:attackTargetWith(target, shield_combat, nil, self:combatTalentWeaponDamage(t, 1, 1.7, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
+		local speed, hit = self:attackTargetWith(target, shield_combat, nil, self:combatTalentWeaponDamage(t, 1.2, 2.1, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
 
 		-- Try to stun !
 		if hit then
@@ -108,7 +108,7 @@ newTalent{
 	tactical = { ATTACK = 2}, -- is there a way to make this consider the free Block?
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Shield Slam without a shield!")
 			return nil
@@ -121,9 +121,9 @@ newTalent{
 		local damage = t.getShieldDamage(self, t)
 		self:forceUseTalent(self.T_BLOCK, {ignore_energy=true, ignore_cd = true, silent = true})
 
-		self:attackTargetWith(target, shield.special_combat, nil, damage)
-		self:attackTargetWith(target, shield.special_combat, nil, damage)
-		self:attackTargetWith(target, shield.special_combat, nil, damage)
+		self:attackTargetWith(target, shield_combat, nil, damage)
+		self:attackTargetWith(target, shield_combat, nil, damage)
+		self:attackTargetWith(target, shield_combat, nil, damage)
 
 		return true
 	end,
@@ -150,7 +150,7 @@ newTalent{
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Assault without a shield!")
 			return nil
@@ -161,7 +161,7 @@ newTalent{
 		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- First attack with shield
-		local speed, hit = self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
+		local speed, hit = self:attackTargetWith(target, shield_combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
 
 		-- Second & third attack with weapon
 		if hit then
@@ -246,7 +246,7 @@ newTalent{
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Repulsion without a shield!")
 			return nil
@@ -256,7 +256,7 @@ newTalent{
 		self:project(tg, self.x, self.y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
-				if target:checkHit(self:combatAttack(shield.special_combat), target:combatPhysicalResist(), 0, 95) and target:canBe("knockback") then --Deprecated checkHit call
+				if target:checkHit(self:combatAttack(shield_combat), target:combatPhysicalResist(), 0, 95) and target:canBe("knockback") then --Deprecated checkHit call
 					target:knockback(self.x, self.y, t.getDist(self, t))
 					if target:canBe("stun") then target:setEffect(target.EFF_DAZED, t.getDuration(self, t), {}) end
 				else

@@ -2449,7 +2449,7 @@ newTalent{
 	tactical = { ATTACK = 2, ESCAPE = { knockback = 1 }, DISABLE = { knockback = 1 } },
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Overpower without a shield!")
 			return nil
@@ -2462,13 +2462,13 @@ newTalent{
 		-- First attack with weapon
 		self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3), true)
 		-- Second attack with shield
-		self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
+		self:attackTargetWith(target, shield_combat, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
 		-- Third attack with shield
-		local speed, hit = self:attackTargetWith(target, shield.special_combat, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
+		local speed, hit = self:attackTargetWith(target, shield_combat, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
 
 		-- Try to stun !
 		if hit then
-			if target:checkHit(self:combatAttack(shield.special_combat), target:combatPhysicalResist(), 0, 95, 5 - self:getTalentLevel(t) / 2) and target:canBe("knockback") then
+			if target:checkHit(self:combatAttack(shield_combat), target:combatPhysicalResist(), 0, 95, 5 - self:getTalentLevel(t) / 2) and target:canBe("knockback") then
 				target:knockback(self.x, self.y, 4)
 			else
 				game.logSeen(target, "%s resists the knockback!", target.name:capitalize())
