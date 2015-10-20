@@ -5657,6 +5657,15 @@ function _M:checkClassification(type_str)
 	return class[self.type or "unknown"]
 end
 
+--- Gains some experience
+-- If a levelup happens it calls self:levelup(), modules are encouraged to rewrite it to do whatever is needed.
+function _M:gainExp(value)
+	if game.state.birth.exp_multiplier then
+		value = value * game.state.birth.exp_multiplier
+	end
+	return engine.interface.ActorLevel.gainExp(self, value)
+end
+
 --- How much experience is this actor worth
 -- @param target to whom is the exp rewarded
 -- @return the experience rewarded
