@@ -295,12 +295,12 @@ local function makeParadoxCloneRecurs(clonetable, d, noclonecall, use_saveinstea
 		if alt_nodes then
 			for node, alt in pairs(alt_nodes) do
 				if node == k or node == e then
-					if alt.k == nil and alt.v == nil then 
+					if alt.v == nil then 
 						skip = true
 						break
 					else
 						if alt.k ~= nil then nk_alt = alt.k end
-						if alt.v ~= nil then ne_alt = alt.v end
+						ne_alt = alt.v
 						break
 					end
 				end
@@ -336,7 +336,7 @@ end
 -- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
 -- @  Table keys should be the nodes to skip (field name or table reference).
 -- @  Each key should be set to a table with up to two nodes:
--- @    k = a name/ref to substitute for isntances of this field,
+-- @    k = a name/ref to substitute for instances of this field,
 -- @      or nil to use the default name/ref as keys on the clone
 -- @    v = the value to assign for instances of this node,
 -- @      or nil to skip assignment
