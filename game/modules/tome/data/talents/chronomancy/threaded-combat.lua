@@ -283,6 +283,19 @@ newTalent{
 		
 		return tgts
 	end,
+	cleanupClone = function(self, t, clone)
+		if not self or not clone then return false end
+		if not clone.dead then clone:die() end
+		for _, ent in pairs(game.level.entities) do
+			-- Replace clone references in timed effects so they don't prevent GC
+			if ent.tmp then
+				for _, eff in pairs(ent.tmp) do
+					if eff.src and eff.src == clone then eff.src = self end
+				end
+			end
+		end
+		return true
+	end,
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.wardens_call then
@@ -328,6 +341,7 @@ newTalent{
 					end
 				end
 			end
+			t.cleanupClone(self, t, m)
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted)
@@ -353,7 +367,7 @@ newTalent{
 				self:die()
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			end
-			
+
 			-- Find a good location for our shot
 			local function find_space(self, target, clone)
 				local poss = {}
@@ -394,6 +408,7 @@ newTalent{
 					end
 				end
 			end
+			t.cleanupClone(self, t, m)
 		end
 	end,
 	info = function(self, t)

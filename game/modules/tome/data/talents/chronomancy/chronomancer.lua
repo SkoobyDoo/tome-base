@@ -274,21 +274,87 @@ checkWardenFocus = function(self)
 end
 
 -- Spell functions
-makeParadoxClone = function(self, target, duration)
 
-	-- Don't clone particles or inventory on short lived clones
-	local restore = false
-	local old_particles, old_inven
-	if duration == 0 then
-		old_particles = target.__particles 
-		old_inventory = target.inven[target.INVEN_INVEN]
-		target.__particles = {}
-		target.inven[target.INVEN_INVEN] = nil
-		restore = true	
+-- Automatically called by makeParadoxClone()
+-- Based on engine/class.lua : clonerecursfull(), with added functionality to skip/replace specified nodes.
+local function makeParadoxCloneRecurs(clonetable, d, noclonecall, use_saveinstead, alt_nodes)
+	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
+		d = d.__SAVEINSTEAD
+		if clonetable[d] then return d, 1 end
 	end
 
-	-- Clone them
-	local m = target:cloneFull{
+	local nb = 0
+	local add
+	local n = {}
+	clonetable[d] = n
+
+	local k, e = next(d)
+	while k do
+		local skip = false
+		local nk_alt, ne_alt = nil, nil
+		if alt_nodes then
+			for node, alt in pairs(alt_nodes) do
+				if node == k or node == e then
+					if alt.k == nil and alt.v == nil then 
+						skip = true
+						break
+					else
+						if alt.k ~= nil then nk_alt = alt.k end
+						if alt.v ~= nil then ne_alt = alt.v end
+						break
+					end
+				end
+			end
+		end
+		if not skip then
+			local nk, ne
+			if nk_alt ~= nil then nk = nk_alt else nk = k end
+			if ne_alt ~= nil then ne = ne_alt else ne = e end
+			
+			if clonetable[nk] then nk = clonetable[nk]
+			elseif type(nk) == "table" then nk, add = makeParadoxCloneRecurs(clonetable, nk, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			end
+
+			if clonetable[ne] then ne = clonetable[ne]
+			elseif type(ne) == "table" and (type(nk) ~= "string" or nk ~= "__threads") then ne, add = makeParadoxCloneRecurs(clonetable, ne, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			end
+			
+			n[nk] = ne
+		end
+		k, e = next(d, k)
+	end
+	setmetatable(n, getmetatable(d))
+	if not noclonecall and n.cloned and (n.__ATOMIC or n.__CLASSNAME) then n:cloned(d) end
+	if n.__ATOMIC or n.__CLASSNAME then nb = nb + 1 end
+	return n, nb
+end
+
+-- Create a temporal clone
+-- @param[type=table] self		Actor doing the cloning. Not currently used.
+-- @param[type=table] target	Actor to be cloned.
+-- @param[type=int] duration	How many turns the clone lasts. Zero is allowed.
+-- @param[type=table] alt_nodes	Optional, these nodes will use a specified key/value on the clone instead
+-- @							of copying from the target.
+-- @							Table keys should be the nodes to skip (field name or table reference).
+-- @							Each key should be set to a table with up to two nodes:
+-- @								k = a name/ref to substitute for isntances of this field,
+-- @									or nil to use the default name/ref as keys on the clone
+-- @								v = the value to assign for instances of this node,
+-- @									or nil to skip assignment
+-- @return a reference to the clone on success, or nil on failure
+makeParadoxClone = function(self, target, duration, alt_nodes)
+	if not target or not duration then return nil end
+
+	-- Don't clone particles or inventory on short-lived clones
+	if duration == 0 then
+		alt_nodes = alt_nodes or {}
+		alt_nodes.__particles = {v = {} }
+		alt_nodes[target:getInven("INVEN")] = {}
+	end
+
+	-- Clone the target
+	local m = makeParadoxCloneRecurs({}, target, nil, nil, alt_nodes)
+	for k, e in pairs({
 		no_drops = true,
 		keep_inven_on_death = false,
 		faction = target.faction,
@@ -298,15 +364,9 @@ makeParadoxClone = function(self, target, duration)
 		ai = "summoned", ai_real = "tactical",
 		name = ""..target.name.."'s temporal clone",
 		desc = [[A creature from another timeline.]],
-	}
+	}) do m[k] = e end
 	
-	-- restore values if needed
-	if restore then
-		target.__particles = old_particles
-		target.inven[target.INVEN_INVEN] = old_inventory
-	end
-	
-	-- remove some values
+	-- Remove some values
 	m:removeAllMOs()
 	m.make_escort = nil
 	m.on_added_to_level = nil
@@ -315,7 +375,7 @@ makeParadoxClone = function(self, target, duration)
 	mod.class.NPC.castAs(m)
 	engine.interface.ActorAI.init(m, m)
 
-	-- change some values
+	-- Change some values
 	m.exp_worth = 0
 	m.energy.value = 0
 	m.player = nil
@@ -353,10 +413,10 @@ makeParadoxClone = function(self, target, duration)
 		m:unlearnTalentFull(t.id)
 	end
 
-	-- remove timed effects
+	-- Remove timed effects
 	m:removeTimedEffectsOnClone()
 	
-	-- reset folds for our Warden clones
+	-- Reset folds for our Warden clones
 	for tid, cd in pairs(m.talents_cd) do
 		local t = m:getTalentFromId(tid)
 		if t.type[1]:find("^chronomancy/manifold") and m:knowTalent(tid) then
