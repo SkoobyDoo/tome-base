@@ -327,17 +327,16 @@ local function makeParadoxCloneRecurs(clonetable, d, noclonecall, use_saveinstea
 end
 
 -- Create a temporal clone
--- @param[type=table] self		Actor doing the cloning. Not currently used.
--- @param[type=table] target	Actor to be cloned.
--- @param[type=int] duration	How many turns the clone lasts. Zero is allowed.
--- @param[type=table] alt_nodes	Optional, these nodes will use a specified key/value on the clone instead
--- @							of copying from the target.
--- @							Table keys should be the nodes to skip (field name or table reference).
--- @							Each key should be set to a table with up to two nodes:
--- @								k = a name/ref to substitute for isntances of this field,
--- @									or nil to use the default name/ref as keys on the clone
--- @								v = the value to assign for instances of this node,
--- @									or nil to skip assignment
+-- @param[type=table] self  Actor doing the cloning. Not currently used.
+-- @param[type=table] target  Actor to be cloned.
+-- @param[type=int] duration  How many turns the clone lasts. Zero is allowed.
+-- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
+-- @  Table keys should be the nodes to skip (field name or table reference).
+-- @  Each key should be set to a table with up to two nodes:
+-- @    k = a name/ref to substitute for isntances of this field,
+-- @      or nil to use the default name/ref as keys on the clone
+-- @    v = the value to assign for instances of this node,
+-- @      or nil to skip assignment
 -- @return a reference to the clone on success, or nil on failure
 makeParadoxClone = function(self, target, duration, alt_nodes)
 	if not target or not duration then return nil end
