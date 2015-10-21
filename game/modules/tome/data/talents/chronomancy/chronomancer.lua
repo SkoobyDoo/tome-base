@@ -353,17 +353,19 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 
 	-- Clone the target
 	local m = makeParadoxCloneRecurs({}, target, nil, nil, alt_nodes)
-	for k, e in pairs({
-		no_drops = true,
-		keep_inven_on_death = false,
-		faction = target.faction,
-		summoner = target, summoner_gain_exp=true,
-		summon_time = duration,
-		ai_target = {actor=nil},
-		ai = "summoned", ai_real = "tactical",
-		name = ""..target.name.."'s temporal clone",
-		desc = [[A creature from another timeline.]],
-	}) do m[k] = e end
+
+	-- Basic setup
+	m.no_drops = true
+	m.keep_inven_on_death = false
+	m.faction = target.faction
+	m.summoner = target
+	m.summoner_gain_exp = true
+	m.summon_time = duration
+	m.ai_target = {actor = nil}
+	m.ai = "summoned"
+	m.ai_real = "tactical"
+	m.name = "" .. target.name .. "'s temporal clone"
+	m.desc = [[A creature from another timeline.]]
 	
 	-- Remove some values
 	m:removeAllMOs()
