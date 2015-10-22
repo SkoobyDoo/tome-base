@@ -137,7 +137,7 @@ newEntity{ base = "BASE_NPC_MAJOR_DEMON",
 	autolevel = "caster",
 	life_rating = 6,
 	combat_armor = 0, combat_def = 10,
-	equilibrium_regen = -100, -- Because they have vim spells
+	equilibrium_regen = -10, -- Because they have vim spells
 
 	ai = "tactical",
 
@@ -173,7 +173,7 @@ It moves swiftly toward you, casting terrible spells and swinging its weapons at
 	life_rating = 25,
 	combat_armor = 12, combat_def = 20,
 	max_mana = 1000,
-	mana_regen = 100, positive_regen = 100, negative_regen = 100, equilibrium_regen = -100, vim_regen = 100,
+	mana_regen = 1, positive_regen = 1, negative_regen = 1, equilibrium_regen = -1, vim_regen = 1,
 
 	ai = "tactical",
 
@@ -211,7 +211,7 @@ newEntity{ base = "BASE_NPC_MAJOR_DEMON",
 	autolevel = "warrior",
 	life_rating = 25,
 	combat_armor = 90, combat_def = 60,
-	mana_regen = 100, positive_regen = 100, negative_regen = 100, equilibrium_regen = -100, vim_regen = 100, stamina_regen = 100,
+	mana_regen = 1, positive_regen = 1, negative_regen = 1, equilibrium_regen = -1, vim_regen = 1, stamina_regen = 1,
 
 	stats = { str=22, dex=10, mag=20, con=13, wil=60 },
 
@@ -255,7 +255,7 @@ newEntity{ base = "BASE_NPC_MAJOR_DEMON",
 	autolevel = "warriormage",
 	life_rating = 30,
 	combat_armor = 32, combat_def = 40,
-	mana_regen = 100, positive_regen = 100, negative_regen = 100, equilibrium_regen = -100, vim_regen = 100, stamina_regen = 100,
+	mana_regen = 1, positive_regen = 1, negative_regen = 1, equilibrium_regen = -1, vim_regen = 1, stamina_regen = 1,
 
 	ai = "tactical",
 

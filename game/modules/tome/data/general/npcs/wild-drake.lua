@@ -84,7 +84,7 @@ newEntity{ base = "BASE_NPC_WILD_DRAKE",
 	autolevel = "caster",
 	max_life = resolvers.rngavg(100,120),
 	combat_armor = 0, combat_def = 90,
-	mana_regen = 100, positive_regen = 100, negative_regen = 100, equilibrium_regen = -100, vim_regen = 100, stamina_regen = 100,
+	mana_regen = 1, positive_regen = 1, negative_regen = 1, equilibrium_regen = -1, vim_regen = 1, stamina_regen = 1,
 
 	ai = "tactical",
 
