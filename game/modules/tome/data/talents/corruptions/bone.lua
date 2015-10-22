@@ -36,15 +36,15 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.PHYSICAL, self:spellCrit(self:combatTalentSpellDamage(t, 20, 200)))
+		self:project(tg, x, y, DamageType.PHYSICALBLEED, self:spellCrit(self:combatTalentSpellDamage(t, 20, 200)))
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 		game.level.map:particleEmitter(self.x, self.y, tg.range, "bone_spear", {tx=x - self.x, ty=y - self.y})
 		game:playSoundNear(self, "talents/arcane")
 		return true
 	end,
 	info = function(self, t)
-		return ([[Conjures up a spear of bones, doing %0.2f physical damage to all targets in line.
-		The damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 20, 200)))
+		return ([[Conjures up a spear of bones, doing %0.2f physical damage to all targets in line, and inflicting bleeding for another %0.2f damage over 5 turns.
+		The damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 20, 200)), damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 20, 200)/2))
 	end,
 }
 
@@ -72,7 +72,7 @@ newTalent{
 
 			target:pull(self.x, self.y, tg.range)
 
-			DamageType:get(DamageType.PHYSICAL).projector(self, target.x, target.y, DamageType.PHYSICAL, dam)
+			DamageType:get(DamageType.PHYSICALBLEED).projector(self, target.x, target.y, DamageType.PHYSICALBLEED, dam)
 			if target:canBe("pin") then
 				target:setEffect(target.EFF_BONE_GRAB, t.getDuration(self, t), {apply_power=self:combatSpellpower()})
 			else
@@ -85,9 +85,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Grab a target and teleport it to your side, pinning it there with a bone rising from the ground for %d turns.
-		The bone will also deal %0.2f physical damage.
+		The bone will also deal %0.2f physical damage, inflicting bleeding for another %0.2f damage over 5 turns.
 		The damage will increase with your Spellpower.]]):
-		format(t.getDuration(self, t), damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 5, 140)))
+		format(t.getDuration(self, t), damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 5, 140)), damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 20, 200)/2))
 	end,
 }
 
@@ -106,14 +106,14 @@ newTalent{
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		self:project(tg, self.x, self.y, DamageType.PHYSICAL, self:spellCrit(self:combatTalentSpellDamage(t, 8, 180)))
+		self:project(tg, self.x, self.y, DamageType.PHYSICALBLEED, self:spellCrit(self:combatTalentSpellDamage(t, 8, 180)))
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "circle", {oversize=1.1, a=255, limit_life=8, grow=true, speed=0, img="bone_nova", radius=self:getTalentRadius(t)})
 		game:playSoundNear(self, "talents/arcane")
 		return true
 	end,
 	info = function(self, t)
-		return ([[Fire bone spears in all directions, hitting all foes within radius %d for %0.2f physical damage.
-		The damage will increase with your Spellpower.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 8, 180)))
+		return ([[Fire bone spears in all directions, hitting all foes within radius %d for %0.2f physical damage, and inflicting bleeding for another %0.2f damage over 5 turns.
+		The damage will increase with your Spellpower.]]):format(self:getTalentRadius(t), damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 8, 180)), damDesc(self, DamageType.PHYSICAL, self:combatTalentSpellDamage(t, 20, 200)/2))
 	end,
 }
 
