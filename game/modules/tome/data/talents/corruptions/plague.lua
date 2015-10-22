@@ -129,9 +129,10 @@ newTalent{
 				if not target or target == source or target == self or (self:reactionToward(target) >= 0) then return end
 
 				for _, disease in ipairs(diseases) do
-					if disease.id == self.EFF_WEAKNESS_DISEASE or disease.id == self.EFF_DECREPITUDE_DISEASE or disease.id == self.EFF_ROTTING_DISEASE or disease.id == self.EFF_EPIDEMIC then
-						target:setEffect(disease.id, 6, {src=self, dam=disease.params.dam, str=disease.params.str, dex=disease.params.dex, con=disease.params.con, heal_factor=disease.params.heal_factor, resist=disease.params.resist, apply_power=self:combatSpellpower()})
-					end
+					local parameters = disease.params
+					parameters.src = self
+					parameters.apply_power = self:combatSpellpower()
+					target:setEffect(disease.id, 6, parameters)
 				end
 			end)
 			game.level.map:particleEmitter(x, y,self:getTalentRadius(t), "circle", {oversize=0.7, a=200, limit_life=8, appear=8, speed=-2, img="disease_circle", radius=self:getTalentRadius(t)})
@@ -254,12 +255,8 @@ newTalent{
 			local disease = rng.table(diseases)
 			local params = disease.params
 			params.src = self
-			local disease_spread = {
-				src=self, dam=disease.params.dam, str=disease.params.str, dex=disease.params.dex, con=disease.params.con, apply_power=self:combatSpellpower(),
-				heal_factor=disease.params.heal_factor, burst=disease.params.burst, rot_timer=disease.params.rot_timer, resist=disease.params.resist, make_ghoul=disease.params.make_ghoul,
-			}
 			if target:canBe("disease") then
-				target:setEffect(disease.id, 6, disease_spread)
+				target:setEffect(disease.id, 6, params)
 			else
 				game.logSeen(target, "%s resists the disease!", target.name:capitalize())
 			end
