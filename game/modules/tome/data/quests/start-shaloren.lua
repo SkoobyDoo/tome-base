@@ -21,7 +21,7 @@ name = "Echoes of the Spellblaze"
 desc = function(self, who)
 	local desc = {}
 	desc[#desc+1] = "You have heard that within the scintillating caves lie strange crystals imbued with Spellblaze energies.\n"
-	desc[#desc+1] = "There are also rumours of a regenade Shaloren camp to the west.\n"
+	desc[#desc+1] = "There are also rumours of a renegade Shaloren camp to the west.\n"
 	if self:isCompleted("spellblaze") then
 		desc[#desc+1] = "#LIGHT_GREEN#* You have explored the scintillating caves and destroyed the Spellblaze Crystal.#WHITE#"
 	else

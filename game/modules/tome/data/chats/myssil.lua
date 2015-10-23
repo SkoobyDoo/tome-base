@@ -55,9 +55,9 @@ Erase him.]],
 }
 
 newChat{ id="tempest-dead",
-	text = [[So have I heard, @playername@. You prove worthy of your training. Go with the blessing of nature, @playername@ of Zigur.
+	text = [[So I have heard, @playername@. You prove worthy of your training. Go with the blessing of nature, @playername@ of Zigur.
 #LIGHT_GREEN#*She touches your skin.  You can feel nature infusing your very being.*#WHITE#
-This shall help your on your travels. Farewell!]],
+This shall help you on your travels. Farewell!]],
 	answers = {
 		{"Thank you, Protector.", action=function(npc, player)
 			player:hasQuest("lightning-overload"):create_entrance()
