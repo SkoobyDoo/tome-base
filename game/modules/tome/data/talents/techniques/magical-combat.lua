@@ -133,15 +133,14 @@ newTalent{
 	end,
 	info = function(self, t)
 		local talent_list = ""
-		local build_string
+		local build_string = {}
 		for _, talent in pairs(self.talents_def) do
 			if talent.allow_for_arcane_combat and talent.name then
-				build_string = build_string or {}
 				if #build_string > 0 then build_string[#build_string+1] = ", " end
 				build_string[#build_string+1] = talent.name
 			end
 		end
-		if build_string and #build_string > 0 then talent_list = table.concat(build_string) end
+		if #build_string > 0 then talent_list = table.concat(build_string) end
 		
 		local talent_selected = ""
 		if self:isTalentActive(t.id) then
