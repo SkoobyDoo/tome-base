@@ -30,6 +30,7 @@ return {
 	is_demon_plane = true,
 	no_planechange = true,
 	ambient_music = "Straight Into Ambush.ogg",
+	effects = {"EFF_ZONE_AURA_FEARSCAPE"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Forest",

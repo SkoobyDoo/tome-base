@@ -34,6 +34,7 @@ return {
 	color_shown = {0.7, 0.6, 0.8, 1},
 	color_obscure = {0.7*0.6, 0.6*0.6, 0.8*0.6, 0.6},
 	allow_respec = "limited",
+	effects = {"EFF_ZONE_AURA_OUT_OF_TIME"},
 
 	no_level_connectivity = true,
 

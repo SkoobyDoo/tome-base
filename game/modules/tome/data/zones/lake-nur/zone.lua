@@ -85,6 +85,7 @@ return {
 		},
 		[2] = {
 			underwater = true,
+			effects = {"EFF_ZONE_AURA_UNDERWATER"},
 			generator = {
 				actor = {
 					filters = {{special_rarity="water_rarity"}},
@@ -98,6 +99,7 @@ return {
 					down = "SHERTUL_FORTRESS_FLOOD",
 					['.'] = {"WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR_BUBBLE"},
 					force_last_stair = true,
+					effects = {"EFF_ZONE_AURA_UNDERWATER"},
 				},
 				actor = {
 					filters = {{special_rarity="water_rarity"},{special_rarity="horror_water_rarity"}},

@@ -31,6 +31,7 @@ return {
 	ambient_music = "New Dawn.ogg",
 	min_material_level = 3,
 	max_material_level = 4,
+	effects = {"EFF_ZONE_AURA_VOR"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",

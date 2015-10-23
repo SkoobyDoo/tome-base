@@ -39,6 +39,7 @@ return {
 	ambient_music = "Thrall's Theme.ogg",
 	min_material_level = 4,
 	max_material_level = 5,
+	effects = {"EFF_ZONE_AURA_GRUSHNAK"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",

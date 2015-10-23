@@ -60,6 +60,7 @@ local changer = function(id)
 		persistent = "zone",
 		min_material_level = game.zone.min_material_level,
 		max_material_level = game.zone.max_material_level,
+		effects = {"EFF_ZONE_AURA_UNDERWATER"},
 		generator =  {
 			map = {
 				class = "engine.generator.map.Cavern",

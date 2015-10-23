@@ -62,6 +62,8 @@ game.zone.on_turn = function()
 
 end
 
+game.level.effects = {"EFF_ZONE_AURA_THUNDERSTORM"},
+
 require("engine.ui.Dialog"):simplePopup("Thunderstorm", "As you walk into the area you notice a huge thunderstorm over your head. Beware!")
 
 return true

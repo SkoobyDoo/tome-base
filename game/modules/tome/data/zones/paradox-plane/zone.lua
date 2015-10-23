@@ -39,6 +39,7 @@ return {
 	color_shown = {0.7, 0.6, 0.8, 1},
 	color_obscure = {0.7*0.6, 0.6*0.6, 0.8*0.6, 0.6},
 	ambient_music = "Through the Dark Portal.ogg",
+	effects = {"EFF_ZONE_AURA_OUT_OF_TIME"},
 	levels =
 	{
 		[1] = { generator = {

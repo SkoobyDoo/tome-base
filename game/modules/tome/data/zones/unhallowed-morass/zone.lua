@@ -33,6 +33,7 @@ return {
 	max_material_level = 1,
 	color_shown = {0.7, 0.6, 0.8, 1},
 	color_obscure = {0.7*0.6, 0.6*0.6, 0.8*0.6, 0.6},
+	effects = {"EFF_ZONE_AURA_OUT_OF_TIME"},
 
 	generator =  {
 		map = {

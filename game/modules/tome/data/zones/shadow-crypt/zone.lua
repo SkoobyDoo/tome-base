@@ -33,6 +33,7 @@ return {
 	ambient_music = {"Evening Falls.ogg","weather/dungeon_base.ogg"},
 	min_material_level = 4,
 	max_material_level = 5,
+	effects = {"EFF_ZONE_AURA_RAKSHOR"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",
