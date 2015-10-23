@@ -96,7 +96,7 @@ function _M:generateListUi()
 	local list = {}
 	local i = 0
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Select the graphical mode to display the world.\nDefault is 'Modern'.\nWhen you change it make a new character or it may lok strange."}
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Select the graphical mode to display the world.\nDefault is 'Modern'.\nWhen you change it, make a new character or it may look strange."}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Graphic Mode#WHITE##{normal}#", status=function(item)
 		local ts = GraphicMode.tiles_packs[config.settings.tome.gfx.tiles]
 		local size = config.settings.tome.gfx.size or "???x???"

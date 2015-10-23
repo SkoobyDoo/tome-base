@@ -81,7 +81,7 @@ newEntity{
 	cost = 3000,
 	quest = 1,
 
-	use_simple = { name="drink the vile blood", use = function(self, who)
+	use_simple = { name="drink the vile fluid", use = function(self, who)
 		game.logPlayer(who, "#00FFFF#You drink the wyrm bile and feel forever transformed!")
 		who.unused_talents_types = who.unused_talents_types + 1
 		game.log("You have %d category point(s) to spend. Press p to use them.", who.unused_talents_types)
