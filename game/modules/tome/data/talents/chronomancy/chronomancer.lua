@@ -280,7 +280,7 @@ end
 -- @param[type=table] target  Actor to be cloned.
 -- @param[type=int] duration  How many turns the clone lasts. Zero is allowed.
 -- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
--- @  Table keys should be the nodes to skip (field name or table reference).
+-- @  Table keys should be the nodes to skip/replace (field name or table reference).
 -- @  Each key should be set to false (to skip assignment entirely) or a table with up to two nodes:
 -- @    k = a name/ref to substitute for instances of this field,
 -- @      or nil to use the default name/ref as keys on the clone
