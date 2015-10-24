@@ -286,6 +286,7 @@ end
 -- @return a reference to the clone on success, or nil on failure
 makeParadoxClone = function(self, target, duration, alt_nodes)
 	if not target or not duration then return nil end
+	if duration < 0 then duration = 0 end
 
 	-- Don't copy certain properties from the target
 	alt_nodes = alt_nodes or {}
