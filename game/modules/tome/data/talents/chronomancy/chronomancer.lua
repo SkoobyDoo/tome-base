@@ -285,7 +285,7 @@ end
 -- @      or nil to use the default assignent value
 -- @return a reference to the clone on success, or nil on failure
 makeParadoxClone = function(self, target, duration, alt_nodes)
-	if not target or not duration then return nil end -- TODO Make sure nothing is passing duration==nil
+	if not target or not duration then return nil end
 
 	-- Don't copy certain properties from the target
 	alt_nodes = alt_nodes or {}
@@ -316,12 +316,8 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	end
 
 	-- Clone the target
-	local m ,num = target:cloneCustom(alt_nodes)
+	local m = target:cloneCustom(alt_nodes)
 	
-	print("[makeParadoxClone] Number returned by cloning function: ", num) -- DEBUG
-	print("[makeParadoxClone] Created clone: ", m, " uid: ", m.uid, " Player uid: ", target.uid) -- DEBUG
-	table.print(m) -- DEBUG
-
 	-- Basic setup
 	m.dead = false
 	m.no_drops = true
@@ -337,7 +333,7 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	m.desc = [[A creature from another timeline.]]
 	
 	-- Remove some values
-	--m:removeAllMOs() -- TODO Might be able to remove this if we skip the MO nodes
+	--m:removeAllMOs()
 	m.make_escort = nil
 	m.escort_quest = nil
 	m.on_added_to_level = nil
