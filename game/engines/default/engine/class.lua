@@ -184,6 +184,7 @@ function _M:clone(t)
 	return n
 end
 
+--- Automatically called by cloneFull()
 local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
 	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
 		d = d.__SAVEINSTEAD
@@ -215,19 +216,95 @@ local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
 	return n, nb
 end
 
---- Clones the object, all subobjects without cloning twice a subobject
--- @return the clone and the number of cloned objects
-function _M:cloneFull(t)
+--- Clones the object, and all subobjects without cloning a subobject twice
+-- @param[type=table] self  Object to be cloned.
+-- @param[type=table] post_copy  Optional, a table to be merged with the new object after cloning.
+-- @return a reference to the clone
+function _M:cloneFull(post_copy)
 	local clonetable = {}
 	local n = clonerecursfull(clonetable, self, nil, nil)
-	if t then
-		for k, e in pairs(t) do n[k] = e end
+	if post_copy then
+		for k, e in pairs(post_copy) do n[k] = e end
 	end
 	return n
 --	return core.serial.cloneFull(self)
 end
 
---- Clones the object, all subobjects without cloning twice a subobject
+--- Automatically called by cloneCustom()
+local function cloneCustomRecurs(clonetable, d, noclonecall, use_saveinstead, alt_nodes)
+	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
+		d = d.__SAVEINSTEAD
+		if clonetable[d] then return d, 1 end
+	end
+
+	local nb = 0
+	local add
+	local n = {}
+	clonetable[d] = n
+
+	local k, e = next(d)
+	while k do
+		local skip = false
+		local nk_alt, ne_alt = nil, nil
+		if alt_nodes then
+			for node, alt in pairs(alt_nodes) do
+				if node == k or node == e then
+					if alt == false then 
+						skip = true
+						break
+					elseif type(alt) == "table" then
+						if alt.k ~= nil and node == k then nk_alt = alt.k end
+						if alt.v ~= nil then ne_alt = alt.v end
+						break
+					end
+				end
+			end
+		end
+		if not skip then
+			local nk, ne
+			if nk_alt ~= nil then nk = nk_alt else nk = k end
+			if ne_alt ~= nil then ne = ne_alt else ne = e end
+			
+			if clonetable[nk] then nk = clonetable[nk]
+			elseif type(nk) == "table" then nk, add = cloneCustomRecurs(clonetable, nk, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			end
+
+			if clonetable[ne] then ne = clonetable[ne]
+			elseif type(ne) == "table" and (type(nk) ~= "string" or nk ~= "__threads") then ne, add = cloneCustomRecurs(clonetable, ne, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			end
+			
+			n[nk] = ne
+		end
+		k, e = next(d, k)
+	end
+	setmetatable(n, getmetatable(d))
+	if not noclonecall and n.cloned and (n.__ATOMIC or n.__CLASSNAME) then n:cloned(d) end
+	if n.__ATOMIC or n.__CLASSNAME then nb = nb + 1 end
+	return n, nb
+end
+
+--- Clone the object, with custom logic
+-- Based on cloneFull(), with added functionality to skip/replace specified nodes.
+-- @param[type=table] self  Object to be cloned.
+-- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
+-- @  Table keys should be the nodes to skip (field name or table reference).
+-- @  Each key should be set to false (to skip assignment entirely) or a table with up to two nodes:
+-- @    k = a name/ref to substitute for instances of this field,
+-- @      or nil to use the default name/ref as keys on the clone
+-- @    v = the value to assign for instances of this node,
+-- @      or nil to use the default assignment value
+-- @param[type=table] post_copy  Optional, a table to be merged with the new object after cloning.
+-- @return a reference to the clone
+function _M:cloneCustom(alt_nodes, post_copy)
+	local clonetable = {}
+	local n = cloneCustomRecurs(clonetable, self, nil, nil, alt_nodes)
+	if post_copy then
+		for k, e in pairs(post_copy) do n[k] = e end
+	end
+	return n
+end
+
+--- Clones the object, and all subobjects without cloning a subobject twice
 -- Does not invoke clone methods as this is not for reloading, just for saving
 -- @return the clone and the number of cloned objects
 function _M:cloneForSave()

@@ -275,87 +275,58 @@ end
 
 -- Spell functions
 
--- Automatically called by makeParadoxClone()
--- Based on engine/class.lua : clonerecursfull(), with added functionality to skip/replace specified nodes.
-local function makeParadoxCloneRecurs(clonetable, d, noclonecall, use_saveinstead, alt_nodes)
-	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
-		d = d.__SAVEINSTEAD
-		if clonetable[d] then return d, 1 end
-	end
-
-	local nb = 0
-	local add
-	local n = {}
-	clonetable[d] = n
-
-	local k, e = next(d)
-	while k do
-		local skip = false
-		local nk_alt, ne_alt = nil, nil
-		if alt_nodes then
-			for node, alt in pairs(alt_nodes) do
-				if node == k or node == e then
-					if alt.k == nil and alt.v == nil then 
-						skip = true
-						break
-					else
-						if alt.k ~= nil then nk_alt = alt.k end
-						if alt.v ~= nil then ne_alt = alt.v end
-						break
-					end
-				end
-			end
-		end
-		if not skip then
-			local nk, ne
-			if nk_alt ~= nil then nk = nk_alt else nk = k end
-			if ne_alt ~= nil then ne = ne_alt else ne = e end
-			
-			if clonetable[nk] then nk = clonetable[nk]
-			elseif type(nk) == "table" then nk, add = makeParadoxCloneRecurs(clonetable, nk, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
-			end
-
-			if clonetable[ne] then ne = clonetable[ne]
-			elseif type(ne) == "table" and (type(nk) ~= "string" or nk ~= "__threads") then ne, add = makeParadoxCloneRecurs(clonetable, ne, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
-			end
-			
-			n[nk] = ne
-		end
-		k, e = next(d, k)
-	end
-	setmetatable(n, getmetatable(d))
-	if not noclonecall and n.cloned and (n.__ATOMIC or n.__CLASSNAME) then n:cloned(d) end
-	if n.__ATOMIC or n.__CLASSNAME then nb = nb + 1 end
-	return n, nb
-end
-
--- Create a temporal clone
+--- Create a temporal clone
 -- @param[type=table] self  Actor doing the cloning. Not currently used.
 -- @param[type=table] target  Actor to be cloned.
 -- @param[type=int] duration  How many turns the clone lasts. Zero is allowed.
 -- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
 -- @  Table keys should be the nodes to skip (field name or table reference).
--- @  Each key should be set to a table with up to two nodes:
+-- @  Each key should be set to false (to skip assignment entirely) or a table with up to two nodes:
 -- @    k = a name/ref to substitute for instances of this field,
 -- @      or nil to use the default name/ref as keys on the clone
 -- @    v = the value to assign for instances of this node,
--- @      or nil to use the default value
--- @  If both k and v are nil, assigment for that node will be skipped entirely.
+-- @      or nil to use the default assignent value
 -- @return a reference to the clone on success, or nil on failure
 makeParadoxClone = function(self, target, duration, alt_nodes)
-	if not target or not duration then return nil end
+	if not target or not duration then return nil end -- TODO Make sure nothing is passing duration==nil
 
-	-- Don't clone particles or inventory on short-lived clones
+	-- Don't copy certain properties from the target
+	alt_nodes = alt_nodes or {}
+	alt_nodes[target:getInven("INVEN")] = false -- Skip main inventory; equipped items are still copied
+	alt_nodes.quests = false
+	alt_nodes.random_escort_levels = false
+	alt_nodes.achievements = false
+	alt_nodes.achievement_data = false
+	alt_nodes.last_learnt_talents = false
+	alt_nodes.died = false
+	alt_nodes.died_times = false
+	alt_nodes.killedBy = false
+	alt_nodes.all_kills = false
+	alt_nodes.all_kills_kind = false
+	alt_nodes.running_fov = false
+	alt_nodes.running_prev = false
+	alt_nodes._mo = false
+	alt_nodes._last_mo = false
+	alt_nodes.add_mos = false
+	alt_nodes.add_displays = false
+
+	-- Don't copy some additional properties for short-lived clones
 	if duration == 0 then
-		alt_nodes = alt_nodes or {}
 		alt_nodes.__particles = {v = {} }
-		alt_nodes[target:getInven("INVEN")] = {}
+		alt_nodes.hotkey = false
+		alt_nodes.talents_auto = {v = {} }
+		alt_nodes.talents_confirm_use = false
 	end
 
 	-- Clone the target
-	local m = makeParadoxCloneRecurs({}, target, nil, nil, alt_nodes)
+	local m ,num = target:cloneCustom(alt_nodes)
+	
+	print("[makeParadoxClone] Number returned by cloning function: ", num) -- DEBUG
+	print("[makeParadoxClone] Created clone: ", m, " uid: ", m.uid, " Player uid: ", target.uid) -- DEBUG
+	table.print(m) -- DEBUG
 
 	-- Basic setup
+	m.dead = false
 	m.no_drops = true
 	m.keep_inven_on_death = false
 	m.faction = target.faction
@@ -369,10 +340,12 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	m.desc = [[A creature from another timeline.]]
 	
 	-- Remove some values
-	m:removeAllMOs()
+	--m:removeAllMOs() -- TODO Might be able to remove this if we skip the MO nodes
 	m.make_escort = nil
+	m.escort_quest = nil
 	m.on_added_to_level = nil
 	m.on_added = nil
+	m.game_ender = nil
 
 	mod.class.NPC.castAs(m)
 	engine.interface.ActorAI.init(m, m)
@@ -394,9 +367,10 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	m.seen_by = nil
 	m.can_talk = nil
 	m.clone_on_hit = nil
-	m.escort_quest = nil
 	m.unused_talents = 0
 	m.unused_generics = 0
+	m.unused_talents_types = 0
+	m.unused_prodigies = 0
 	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
 	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
 	
@@ -426,9 +400,10 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 		end
 	end
 	
-	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
+	-- A bit of sanity in case anyone decides they should blow up the world..
 	if m.preferred_paradox and m.preferred_paradox > 600 then m.preferred_paradox = 600 end
 
+	-- Prevent respawning
 	m.self_resurrect = nil
 	
 	return m
