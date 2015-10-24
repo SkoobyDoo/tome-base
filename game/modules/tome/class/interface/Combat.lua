@@ -2290,8 +2290,8 @@ end
 function _M:hasShield()
 	if self:attr("disarmed") then return nil end
 
-	local shield1 = self:getInven("OFFHAND")[1]
-	local shield2 = self:getInven("MAINHAND")[1]
+	local shield1 = self:getInven("OFFHAND") and self:getInven("OFFHAND")[1]
+	local shield2 = self:getInven("MAINHAND") and self:getInven("MAINHAND")[1]
 
 	-- Switch if needed to find one
 	if not shield1 then shield1, shield2 = shield2, nil end

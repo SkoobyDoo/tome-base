@@ -35,6 +35,7 @@ return {
 	force_controlled_teleport = true,
 	projectile_speed_mod = 0.3,
 	no_autoexplore = true,
+	effects = {"EFF_ZONE_AURA_ABASHED"},
 
 	generator =  {
 		map = {

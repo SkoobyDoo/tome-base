@@ -184,7 +184,7 @@ newEntity{ base = "BASE_NPC_LICH",
 	combat_armor = 0, combat_def = 45,
 	on_melee_hit = {[DamageType.BLIGHT]=resolvers.mbonus(25, 30)},
 
-	mana_regen = 100,
+	vim_regen = 1,
 
 	resolvers.talents{
 		[Talents.T_FREEZE]={base=5, every=10, max=10},

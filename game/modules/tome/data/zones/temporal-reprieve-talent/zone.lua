@@ -30,6 +30,7 @@ return {
 	is_temporal_reprieve = true,
 	no_planechange = true,
 	ambient_music = {"last"},
+	effects = {"EFF_ZONE_AURA_OUT_OF_TIME"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",

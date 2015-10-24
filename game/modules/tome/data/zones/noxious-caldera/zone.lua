@@ -35,6 +35,7 @@ return {
 	no_level_connectivity = true,
 	min_material_level = 3,
 	max_material_level = 4,
+	effects = {"EFF_ZONE_AURA_CALDERA"},
 	levels = {
 		[1] = {
 			width = 150, height = 12,

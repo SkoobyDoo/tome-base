@@ -37,6 +37,7 @@ return {
 	no_random_lore = true,
 	is_invaded = is_invaded,
 	underwater = true,
+	effects = {"EFF_ZONE_AURA_UNDERWATER"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",

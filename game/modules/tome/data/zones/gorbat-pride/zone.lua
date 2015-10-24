@@ -32,6 +32,7 @@ return {
 	ambient_music = {"Breaking the siege.ogg", "weather/desert_base.ogg"},
 	min_material_level = 4,
 	max_material_level = 5,
+	effects = {"EFF_ZONE_AURA_GORBAT"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",

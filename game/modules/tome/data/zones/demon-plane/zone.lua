@@ -33,6 +33,7 @@ return {
 	ambient_music = "Straight Into Ambush.ogg",
 	min_material_level = 4,
 	max_material_level = 4,
+	effects = {"EFF_ZONE_AURA_FEARSCAPE"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Forest",

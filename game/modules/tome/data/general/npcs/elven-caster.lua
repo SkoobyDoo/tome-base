@@ -74,7 +74,7 @@ newEntity{ base = "BASE_NPC_ELVEN_CASTER",
 	level_range = {3, nil}, exp_worth = 1,
 	rarity = 2,
 	max_life = resolvers.rngavg(70, 80), life_rating = 10,
-	mana_regen = 30, max_mana = 200,
+	mana_regen = 3, max_mana = 200,
 	resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true},
 	},

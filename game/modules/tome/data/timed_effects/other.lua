@@ -2821,3 +2821,220 @@ newEffect{
 		game:delayedLogDamage(eff, self, val, ("%s%d %s#LAST#"):format(DamageType:get(DamageType.MIND).text_color or "#aaaaaa#", math.ceil(val), "dream"), false)
 	end,
 }
+
+newEffect{
+	name = "ZONE_AURA_GORBAT",
+	desc = "Natural Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +20 mindpower, +2 life regen, -1 equilibrium per turn, -20% resistance penetration.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_mindpower", 20)
+		self:effectTemporaryValue(eff, "life_regen", 2)
+		self:effectTemporaryValue(eff, "equilibrium_regen", -1)
+		self:effectTemporaryValue(eff, "resists_pen", {[all]=-20})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_VOR",
+	desc = "Sorcerous Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +20 magic, +2 mana regen, -20 accuracy, -20 stealth power.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_stats", {[Stats.STAT_MAG] = 20})
+		self:effectTemporaryValue(eff, "mana_regen", 2)
+		self:effectTemporaryValue(eff, "combat_atk", -20)
+		self:effectTemporaryValue(eff, "inc_stealth", -20)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_GRUSHNAK",
+	desc = "Disciplined Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +20 defense, +20 all saves, -20 spell power.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_def", 20)
+		self:effectTemporaryValue(eff, "combat_physresist", 20)
+		self:effectTemporaryValue(eff, "combat_spellresist", 20)
+		self:effectTemporaryValue(eff, "combat_mentalresist", 20)
+		self:effectTemporaryValue(eff, "combat_spellpower", -20)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_RAKSHOR",
+	desc = "Sinister Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +10% critical chance, +20% critical damage, -20% nature and blight resistance.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_physcrit", 10)
+		self:effectTemporaryValue(eff, "combat_spellcrit", 10)
+		self:effectTemporaryValue(eff, "combat_mindcrit", 10)
+		self:effectTemporaryValue(eff, "combat_critical_power", 20)
+		self:effectTemporaryValue(eff, "resists", {[DamageType.NATURE]=-20, [DamageType.BLIGHT]=-20})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_UNDERWATER",
+	desc = "Underwater Zone",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: Air decreases over time. If you run out of air you will start losing life. Look for bubbles to recover air. The water also reduces stun resistance by 10% and fire damage is reduced by 10%, however cold damage is increased by 10%.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "stun_immune", -0.1)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.COLD]=10, [DamageType.FIRE]=-10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_FEARSCAPE",
+	desc = "Fearscape Zone",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: The flames of the Fearscape increase all fire and blight damage by 10%, but the weird gravity reduces knockback resistance by 20%.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "knockback_immune", -0.2)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.BLIGHT]=10, [DamageType.FIRE]=10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_OUT_OF_TIME",
+	desc = "Out of Time Zone",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: You seem to be outside the normal spacetime continuum. +10% physical resistance, -10% temporal resistance and -20% teleport resistance.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "teleport_immune", -0.2)
+		self:effectTemporaryValue(eff, "resists", {[DamageType.PHYSICAL]=10, [DamageType.TEMPORAL]=-10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_SPELLBLAZE",
+	desc = "Spellblaze Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: The power of the Spellblaze still burns here. -10% resistance to fire, arcane and blight damage, but +10% cold resistance. WARNING: The powerful magic here reflects teleportation magic!") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "resists", {[DamageType.FIRE]=-10, [DamageType.ARCANE]=-10, [DamageType.BLIGHT]=-10, [DamageType.COLD]=10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_CALDERA",
+	desc = "Heady Scent",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: Strong scents fill the air and make you feel drowsy. If the timer reaches 0 you will fall into a dreaming sleep state. -10% mind resistance, -20% sleep resistance, +10% nature damage.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "sleep_immune", -0.2)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.NATURE]=10})
+		self:effectTemporaryValue(eff, "resists", {[DamageType.MIND]=-10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_THUNDERSTORM",
+	desc = "Thunderstorm",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: A huge thunderstorm rages above you. +10 lightning damage, -10% stun resistance.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "stun_immune", -0.1)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.LIGHTNING]=10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_ABASHED",
+	desc = "Abashed Expanse",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: Your Phase Door spell is super easy to use here, alllowing you to target it regardless of level.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}

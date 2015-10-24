@@ -35,6 +35,7 @@ return {
 	color_obscure = {0.5*0.6, 1*0.6, 0.8*0.6, 0.6},
 	min_material_level = 3,
 	max_material_level = 4,
+	effects = {"EFF_ZONE_AURA_UNDERWATER"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Cavern",
