@@ -44,7 +44,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local heal = t.getHeal(self, t)
-		return ([[Crush and consume one of your captured souls, healing your for %d life and restoring %d mana.
+		return ([[Crush and consume one of your captured souls, healing you for %d life and restoring %d mana.
 		The life and mana healed will increase with your Spellpower.]]):
 		format(heal, heal / 3)
 	end,
