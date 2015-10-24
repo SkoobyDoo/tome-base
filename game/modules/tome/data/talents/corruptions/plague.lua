@@ -143,7 +143,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Make your target's diseases burst, doing %0.2f blight damage for each disease it is infected with.
-		This will also spread any decrepitude, weakness, rotting or epidemic diseases to any nearby foes in a radius of %d.
+		This will also spread any diseases to any nearby foes in a radius of %d.
 		The damage will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.BLIGHT, self:combatTalentSpellDamage(t, 15, 85)), self:getTalentRadius(t))
 	end,
