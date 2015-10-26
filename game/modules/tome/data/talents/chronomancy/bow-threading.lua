@@ -32,6 +32,19 @@ newTalent{
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
 	getDamagePenalty = function(self, t) return 50 end,
+	cleanupClone = function(self, t, clone)
+		if not self or not clone then return false end
+		if not clone.dead then clone:die() end
+		for _, ent in pairs(game.level.entities) do
+			-- Replace clone references in timed effects so they don't prevent GC
+			if ent.tmp then
+				for _, eff in pairs(ent.tmp) do
+					if eff.src and eff.src == clone then eff.src = self end
+				end
+			end
+		end
+		return true
+	end,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
@@ -84,6 +97,7 @@ newTalent{
 				local pos = poss[rng.range(1, #poss)]
 				x, y = pos[1], pos[2]
 				game.zone:addEntity(game.level, m, "actor", x, y)
+				t.cleanupClone(self, t, m)
 			end
 		end
 

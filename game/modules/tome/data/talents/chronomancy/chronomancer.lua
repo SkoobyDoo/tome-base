@@ -272,12 +272,12 @@ end
 
 -- Spell functions
 
---- Create a temporal clone
+--- Creates a temporal clone
 -- @param[type=table] self  Actor doing the cloning. Not currently used.
 -- @param[type=table] target  Actor to be cloned.
 -- @param[type=int] duration  How many turns the clone lasts. Zero is allowed.
 -- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
--- @  Table keys should be the nodes to skip/replace (field name or table reference).
+-- @  Table keys should be the nodes to skip/replace (field name or object reference).
 -- @  Each key should be set to false (to skip assignment entirely) or a table with up to two nodes:
 -- @    k = a name/ref to substitute for instances of this field,
 -- @      or nil to use the default name/ref as keys on the clone
@@ -288,7 +288,7 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	if not target or not duration then return nil end
 	if duration < 0 then duration = 0 end
 
-	-- Don't copy certain properties from the target
+	-- Don't copy certain fields from the target
 	alt_nodes = alt_nodes or {}
 	alt_nodes[target:getInven("INVEN")] = false -- Skip main inventory; equipped items are still copied
 	alt_nodes.quests = false
@@ -307,8 +307,10 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	alt_nodes._last_mo = false
 	alt_nodes.add_mos = false
 	alt_nodes.add_displays = false
+	alt_nodes.fov = false
+	alt_nodes.distance_map = false
 
-	-- Don't copy some additional properties for short-lived clones
+	-- Don't copy some additional fields for short-lived clones
 	if duration == 0 then
 		alt_nodes.__particles = {v = {} }
 		alt_nodes.hotkey = false
@@ -342,6 +344,7 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	m.game_ender = nil
 
 	mod.class.NPC.castAs(m)
+	engine.interface.ActorFOV.init(m)
 	engine.interface.ActorAI.init(m, m)
 
 	-- Change some values
@@ -386,7 +389,7 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	-- Remove timed effects
 	m:removeTimedEffectsOnClone()
 	
-	-- Reset folds for our Warden clones
+	-- Reset folds for Temporal Warden clones
 	for tid, cd in pairs(m.talents_cd) do
 		local t = m:getTalentFromId(tid)
 		if t.type[1]:find("^chronomancy/manifold") and m:knowTalent(tid) then

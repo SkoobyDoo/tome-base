@@ -273,14 +273,15 @@ newTalent{
 	findTarget = function(self, t)
 		local tgts = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local target_type = Map.ACTOR
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and not a.dead and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-				tgts[#tgts+1] = a
+		for x, yy in pairs(grids) do
+			for y, _ in pairs(grids[x]) do
+				local target_type = Map.ACTOR
+				local a = game.level.map(x, y, Map.ACTOR)
+				if a and not a.dead and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+					tgts[#tgts+1] = a
+				end
 			end
-		end end
-		
+		end
 		return tgts
 	end,
 	cleanupClone = function(self, t, clone)
