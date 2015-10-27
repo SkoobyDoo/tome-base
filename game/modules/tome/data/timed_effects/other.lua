@@ -81,7 +81,7 @@ newEffect{
 			add_mos = {{image = "npc/giant_treant_wrathroot.png", 
 			display_y = -1, 
 			display_h = 2}},
-        }
+		}
 		
 		self:removeAllMOs()
 		game.level.map:updateMap(self.x, self.y)
