@@ -286,12 +286,23 @@ function _M:init(title, w, h, x, y, alpha, font, showup, skin)
 		shadow = conf.frame_shadow,
 		a = conf.frame_alpha or 1,
 		darkness = conf.frame_darkness or 1,
+		dialog_h_middles = conf.dialog_h_middles,
+		dialog_v_middles = conf.dialog_v_middles,
 		particles = table.clone(conf.particles, true),
 	}
 	self.frame.ox1 = self.frame.ox1 or conf.frame_ox1
 	self.frame.ox2 = self.frame.ox2 or conf.frame_ox2
 	self.frame.oy1 = self.frame.oy1 or conf.frame_oy1
 	self.frame.oy2 = self.frame.oy2 or conf.frame_oy2
+
+	if self.frame.dialog_h_middles then
+		self.frame.b8 = "ui/dialogframe_8_middle.png"
+		self.frame.b8l = "ui/dialogframe_8_left.png"
+		self.frame.b8r = "ui/dialogframe_8_right.png"
+		self.frame.b2 = "ui/dialogframe_2_middle.png"
+		self.frame.b2l = "ui/dialogframe_2_left.png"
+		self.frame.b2r = "ui/dialogframe_2_right.png"
+	end
 
 	self.particles = {}
 
@@ -356,6 +367,13 @@ function _M:generate()
 	self.b2 = self:getUITexture(self.frame.b2)
 	self.b6 = self:getUITexture(self.frame.b6)
 	self.b5 = self:getUITexture(self.frame.b5)
+
+	if self.frame.dialog_h_middles then
+		self.b8l = self:getUITexture(self.frame.b8l)
+		self.b8r = self:getUITexture(self.frame.b8r)
+		self.b2l = self:getUITexture(self.frame.b2l)
+		self.b2r = self:getUITexture(self.frame.b2r)
+	end
 
 	self.overs = {}
 	for i, o in ipairs(self.frame.overlays or {}) do
@@ -436,20 +454,19 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 				if ui.left and type(ui.left) == "table" then ui.left = self.ui_by_ui[ui.left].left + self.ui_by_ui[ui.left].ui.w + padding end
 				if ui.right and type(ui.right) == "table" then ui.right = self.ui_by_ui[ui.right].right + self.ui_by_ui[ui.right].ui.w + padding end
 				
-				if ui.top then mh = math.max(mh, ui.top + ui.ui.h + (ui.padding_h or 0))
-				elseif ui.bottom then addh = math.max(addh, ui.bottom + ui.ui.h + (ui.padding_h or 0))
-				end
+				if not ui.ignore_size then
+					if ui.top then mh = math.max(mh, ui.top + ui.ui.h + (ui.padding_h or 0))
+					elseif ui.bottom then addh = math.max(addh, ui.bottom + ui.ui.h + (ui.padding_h or 0))
+					end
 
---		print("ui", ui.left, ui.right, ui.ui.w)
-				if ui.left then mw = math.max(mw, ui.left + ui.ui.w + (ui.padding_w or 0))
-				elseif ui.right then addw = math.max(addw, ui.right + ui.ui.w + (ui.padding_w or 0))
+					if ui.left then mw = math.max(mw, ui.left + ui.ui.w + (ui.padding_w or 0))
+					elseif ui.right then addw = math.max(addw, ui.right + ui.ui.w + (ui.padding_w or 0))
+					end
 				end
 			end
 		end
---		print("===", mw, addw)
 		mw = mw + addw + 5 * 2 + (addmw or 0) + padding
 
---		print("===", mw, addw)
 		local tw, th = 0, 0
 		if self.title then tw, th = self.font_bold:size(self.title) end
 		mw = math.max(tw + 6, mw)
@@ -669,8 +686,21 @@ function _M:drawFrame(x, y, r, g, b, a)
 	y = y + self.frame.oy1
 
 	-- Sides
-	self.b8.t:toScreenFull(x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
-	self.b2.t:toScreenFull(x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+	if self.frame.dialog_h_middles then
+		local mw = math.floor(self.frame.w / 2)
+		local b8hw = math.floor(self.b8.w / 2)
+		self.b8l.t:toScreenFull(x + self.b7.w, y, mw - self.b7.w - b8hw, self.b8l.h, self.b8l.tw, self.b8l.th, r, g, b, a)
+		self.b8r.t:toScreenFull(x + mw + b8hw, y, mw - self.b9.w - b8hw, self.b8r.h, self.b8r.tw, self.b8r.th, r, g, b, a)
+		self.b8.t:toScreenFull(x + mw - b8hw, y, self.b8.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+
+		local b2hw = math.floor(self.b2.w / 2)
+		self.b2l.t:toScreenFull(x + self.b1.w, y + self.frame.h - self.b3.h, mw - self.b1.w - b2hw, self.b2l.h, self.b2l.tw, self.b2l.th, r, g, b, a)
+		self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
+		self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+	else
+		self.b8.t:toScreenFull(x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+		self.b2.t:toScreenFull(x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+	end
 	self.b4.t:toScreenFull(x, y + self.b7.h, self.b4.w, self.frame.h - self.b7.h - self.b1.h, self.b4.tw, self.b4.th, r, g, b, a)
 	self.b6.t:toScreenFull(x + self.frame.w - self.b9.w, y + self.b7.h, self.b6.w, self.frame.h - self.b7.h - self.b1.h, self.b6.tw, self.b6.th, r, g, b, a)
 

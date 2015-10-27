@@ -1513,24 +1513,60 @@ function _M:on_targeted(act)
 end
 
 ------ Quest Events
+local quest_popups = {}
+local function tick_end_quests()
+	local QuestPopup = require "mod.dialogs.QuestPopup"
+
+	local list = {}
+	for quest_id, status in pairs(quest_popups) do
+		list[#list+1] = { id=quest_id, status=status }
+	end
+	quest_popups = {}
+	table.sort(list, function(a, b) return a.status > b.status end)
+
+	local lastd = nil
+	for _, q in ipairs(list) do
+		local quest = game.player:hasQuest(q.id)
+		local d = QuestPopup.new(quest, q.status)
+		if lastd then
+			lastd.unload = function(self) game:registerDialog(d) end
+		else
+			game:registerDialog(d)
+		end
+		lastd = d
+	end
+end
+
+function _M:questPopup(quest, status)
+	if not quest_popups[quest.id] or quest_popups[quest.id] < status then
+		quest_popups[quest.id] = status
+		if not game:onTickEndGet("quest_popups") then game:onTickEnd(tick_end_quests, "quest_popups") end
+	end
+end
+
 function _M:on_quest_grant(quest)
 	game.logPlayer(game.player, "#LIGHT_GREEN#Accepted quest '%s'! #WHITE#(Press 'j' to see the quest log)", quest.name)
-	game.bignews:saySimple(60, "#LIGHT_GREEN#Accepted quest '%s'!", quest.name)
+	-- game.bignews:saySimple(60, "#LIGHT_GREEN#Accepted quest '%s'!", quest.name)
+	self:questPopup(quest, -1)
 end
 
 function _M:on_quest_status(quest, status, sub)
 	if sub then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' status updated! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' updated!", quest.name)
+		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' updated!", quest.name)
+		self:questPopup(quest, status)
 	elseif status == engine.Quest.COMPLETED then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' completed! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' completed!", quest.name)
+		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' completed!", quest.name)
+		self:questPopup(quest, status)
 	elseif status == engine.Quest.DONE then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' is done! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' done!", quest.name)
+		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' done!", quest.name)
+		self:questPopup(quest, status)
 	elseif status == engine.Quest.FAILED then
 		game.logPlayer(game.player, "#LIGHT_RED#Quest '%s' is failed! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_RED#Quest '%s' failed!", quest.name)
+		-- game.bignews:saySimple(60, "#LIGHT_RED#Quest '%s' failed!", quest.name)
+		self:questPopup(quest, status)
 	end
 end
 

@@ -328,6 +328,13 @@ function _M:onTickEnd(f, name)
 	self.on_tick_end[#self.on_tick_end+1] = f
 end
 
+--- Returns a registered function to do on tick end by name
+-- @string name callback to reference the function
+function _M:onTickEndGet(name)
+	if not self.on_tick_end_names then return end
+	return self.on_tick_end_names[name]
+end
+
 --- Called when a zone leaves a level
 -- @param level the level we're leaving
 -- @param lev the new level
