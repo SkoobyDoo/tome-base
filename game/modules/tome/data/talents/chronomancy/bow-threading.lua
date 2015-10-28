@@ -79,7 +79,6 @@ newTalent{
 		
 		-- Summon our clones
 		if not self.arrow_stitching_done then
-			--local clones = setmetatable({}, {__mode="k"})
 			local clones = {}
 			for i = 1, 2 do
 				local m = makeParadoxClone(self, self, 0)
