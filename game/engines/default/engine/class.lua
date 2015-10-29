@@ -19,6 +19,38 @@
 
 --- Base class used by pretty much everything
 -- @classmod engine.class
+
+if not _G.__class_module then
+	-- betterized version of module
+	local oldmodule = module
+	local _G = _G
+	function _G.module(name, ...)
+		setfenv(1, _G)
+		oldmodule(name, ...)
+		-- dance around since module() returns nothing
+		local modtab = _G.getfenv(1)
+		_G.setfenv(1, _G)
+		local meta = getmetatable(modtab)
+		-- remove _G!
+		if meta and meta.__index == _G then
+			meta.__index = nil
+			setmetatable(modtab, meta)
+		end
+		local env = {}
+		for k, v in pairs(modtab) do env[k] = v end
+		setmetatable(env, {__index = _G})
+		assert(env.getfenv == _G.getfenv)
+		local proxy = setmetatable({}, {__index = env,
+			__newindex = function(t, k, v)
+				env[k] = v
+				modtab[k] = v
+			end})
+		setfenv(2, proxy)
+		assert(proxy.getfenv == _G.getfenv)
+	end
+	_G.__class_module = true
+end
+
 module("class", package.seeall)
 
 local base = _G
@@ -38,6 +70,7 @@ end
 -- @return class
 function make(c)
 	setmetatable(c, {__index=_M})
+	c.__CLASS = true
 	c.new = function(...)
 		local obj = {}
 		obj.__CLASSNAME = c._NAME
