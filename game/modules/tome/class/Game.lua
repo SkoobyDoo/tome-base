@@ -1691,11 +1691,6 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			package.loaded["mod.dialogs.QuestPopup"] = nil
-			game.player:removeQuest("high-peak")
-			game.player:grantQuest("high-peak")
-			game.player:setQuestStatus("high-peak", engine.Quest.FAILED)
-do return end
 			self:changeLevel(5, "orcs+slumbering-caves")
 			-- self:changeLevel(6, "orcs+palace-fumes")
 do return end
