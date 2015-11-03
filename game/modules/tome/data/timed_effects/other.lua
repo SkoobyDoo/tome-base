@@ -1218,7 +1218,9 @@ newEffect{
 	on_timeout = function(self, eff) -- Chance for nightmare fades over time
 		if eff.nightmareChance then eff.nightmareChance = math.max(0, eff.nightmareChance-1) end
 	end,
-	-- called by _M:onTakeHit function in in mod.class.Actor.lua
+	callbackOnHit = function(self, eff, cb)
+		game:onTickEnd(function() eff.doNightmare(self, eff) end)
+	end,
 	doNightmare = function(self, eff)
 		if math.min(eff.unlockLevel, eff.level) >= 4 then
 			-- build chance for a nightmare
