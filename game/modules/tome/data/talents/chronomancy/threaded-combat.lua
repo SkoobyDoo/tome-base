@@ -269,7 +269,9 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	remove_on_clone = true,
-	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 65, 30, 50) end,
+	--getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
+	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 95, 60, 80) end,
 	findTarget = function(self, t)
 		local tgts = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
@@ -301,6 +303,8 @@ newTalent{
 		if hitted then
 			if self.turn_procs.wardens_call then
 				return
+			elseif not rng.percent(t.getChance(self, t)) then
+				return
 			else
 				self.turn_procs.wardens_call = true
 			end
@@ -323,6 +327,7 @@ newTalent{
 				local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
 				if tx and ty then
 					m.blended_target = wf
+					game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 					game.zone:addEntity(game.level, m, "actor", tx, ty)
 				end
 			end
@@ -333,8 +338,9 @@ newTalent{
 					local a, id = rng.tableRemove(tgts)
 					-- look for space
 					local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-					if tx and ty then	
-						m.blended_target = a				
+					if tx and ty then
+						m.blended_target = a
+						game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 						game.zone:addEntity(game.level, m, "actor", tx, ty)
 						break
 					else
@@ -348,6 +354,8 @@ newTalent{
 	callbackOnMeleeAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.wardens_call then
+				return
+			elseif not rng.percent(t.getChance(self, t)) then
 				return
 			else
 				self.turn_procs.wardens_call = true
@@ -396,6 +404,7 @@ newTalent{
 				local tx, ty = find_space(self, target, m)
 				if tx and ty then
 					m.blended_target = wf
+					game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 					game.zone:addEntity(game.level, m, "actor", tx, ty)
 				end
 			else
@@ -405,6 +414,7 @@ newTalent{
 					local tx, ty = find_space(self, target, m)
 					if tx and ty then
 						m.blended_target = a
+						game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 						game.zone:addEntity(game.level, m, "actor", tx, ty)
 					end
 				end
@@ -413,10 +423,10 @@ newTalent{
 		end
 	end,
 	info = function(self, t)
-		local damage_penalty = t.getDamagePenalty(self, t)
-		return ([[When you hit with a melee or arrow attack a warden may appear from another timeline, depending on available space, and shoot or attack a random enemy.
-		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
-		This effect can only occur once per turn and the wardens return to their own timeline after attacking.]])
-		:format(damage_penalty)
+		return ([[When you hit with a melee or arrow attack, there is a %d%% chance that a warden will appear from another timeline to attack a random enemy.
+		The summoned warden will attempt a melee attack if you made an arrow attack, or an arrow attack if you made a melee attack.
+		These wardens are out of phase with your reality and deal %d%% less damage, and their arrows will pass through friendly targets.
+		A warden can only be summoned this way once per turn and they return to their own timeline after attacking.]])
+		:format(t.getChance(self, t), t.getDamagePenalty(self, t))
 	end
 }
