@@ -30,7 +30,6 @@ local changer = function(id)
 		"trapped-hexagon", "yin-yang", "zigzag-chambers", "paladin-vs-vampire", "orc-hatred", "lich-lair",
 		"greater-crypt", "trickvault", "spider-den", "acidic-vault",
 	}
-	list={"demon-nest-1"}
 
 	local grid_list = mod.class.Grid:loadList{"/data/general/grids/basic.lua", "/data/general/grids/water.lua", "/data/general/grids/lava.lua"}
 	local npc_list = table.clone(game.zone.npc_list)
