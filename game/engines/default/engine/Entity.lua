@@ -1194,6 +1194,8 @@ function _M:loadList(file, no_default, res, mod, loaded)
 
 	self:triggerHook{"Entity:loadList", file=file, no_default=no_default, res=res, mod=mod, loaded=loaded}
 
+	res.__loaded_files = loaded
+
 	return res
 end
 

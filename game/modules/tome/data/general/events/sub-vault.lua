@@ -30,8 +30,14 @@ local changer = function(id)
 		"trapped-hexagon", "yin-yang", "zigzag-chambers", "paladin-vs-vampire", "orc-hatred", "lich-lair",
 		"greater-crypt", "trickvault", "spider-den", "acidic-vault",
 	}
+	list={"demon-nest-1"}
 
 	local grid_list = mod.class.Grid:loadList{"/data/general/grids/basic.lua", "/data/general/grids/water.lua", "/data/general/grids/lava.lua"}
+	local npc_list = table.clone(game.zone.npc_list)
+	npc_list.__loaded_files = table.clone(npc_list.__loaded_files, true) -- Separate full cloning to not alter the base
+	npc_list.ignore_loaded = true
+	mod.class.NPC:loadList("/data/general/npcs/all.lua", nil, npc_list, function(e) if e.rarity then e.rarity = math.ceil(e.rarity * 35 + 4) end end, npc_list.__loaded_files)
+	for i = 1, #npc_list do npc_list[i].faction = "enemies" end
 
 	local walltype = "HARDWALL"
 	-- if game.level.data.generator and game.level.data.generator.map and game.level.data.generator.map.wall then walltype = game.level.data.generator.map.wall end
@@ -57,9 +63,9 @@ local changer = function(id)
 		generator =  {
 			map = {
 				class = "mod.class.generator.map.VaultLevel",
-				vaultid = rng.table(game.level.data.greater_vaults_list or list),
 				["#"] = walltype,
 				up = "UP_SUB_VAULT_BACK",
+				greater_vaults_list = game.level.data.greater_vaults_list or list,
 			},
 			actor = {
 				class = "mod.class.generator.actor.Random",
@@ -74,7 +80,7 @@ local changer = function(id)
 				nb_trap = {0, 0},
 			},
 		},
-		npc_list = table.clone(game.zone.npc_list, false),
+		npc_list = npc_list,
 		grid_list = grid_list,
 		object_list = table.clone(game.zone.object_list, false),
 		trap_list = table.clone(game.zone.trap_list, false),
