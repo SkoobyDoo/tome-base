@@ -372,7 +372,7 @@ newEntity{
 	door_opened = "GENERIC_LEVER_DOOR_OPEN",
 	on_lever_change = function(self, x, y, who, val, oldval)
 		local toggle = game.level.map.attrs(x, y, "lever_toggle")
-		local trigger = game.level.map.attrs(x, y, "lever_action")
+		local trigger = game.level.map.attrs(x, y, "lever_action") or 1
 		if toggle or (val > oldval and val >= trigger) then
 			game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
 			game.log("#VIOLET#You hear a door opening.")
@@ -380,8 +380,8 @@ newEntity{
 		end
 	end,
 }
-newEntity{ base = "GENERIC_LEVER_DOOR", define_as = "GENERIC_LEVER_DOOR_HORIZ", image = "terrain/granite_door1.png", add_displays = {class.new{image="terrain/granite_wall3.png", z=18, display_y=-1, add_mos={{image="terrain/padlock2.png", display_y=0.1}}}}, door_opened = "DOOR_HORIZ_OPEN"}
-newEntity{ base = "GENERIC_LEVER_DOOR", define_as = "GENERIC_LEVER_DOOR_VERT", image = "terrain/marble_floor.png", add_displays = {class.new{image="terrain/granite_door1_vert.png", z=17, add_mos={{image="terrain/padlock2.png", display_x=0.2, display_y=-0.4}}}, class.new{image="terrain/granite_door1_vert_north.png", z=18, display_y=-1}}, door_opened = "DOOR_OPEN_VERT"}
+newEntity{ base = "GENERIC_LEVER_DOOR", define_as = "GENERIC_LEVER_DOOR_HORIZ", image = "terrain/granite_door1.png", add_displays = {class.new{image="terrain/granite_wall3.png", z=18, display_y=-1, add_mos={{image="terrain/padlock2.png", display_y=0.1}}}}, door_opened = "GENERIC_LEVER_GENERIC_LEVER_DOOR_HORIZ_OPEN"}
+newEntity{ base = "GENERIC_LEVER_DOOR", define_as = "GENERIC_LEVER_DOOR_VERT", image = "terrain/marble_floor.png", add_displays = {class.new{image="terrain/granite_door1_vert.png", z=17, add_mos={{image="terrain/padlock2.png", display_x=0.2, display_y=-0.4}}}, class.new{image="terrain/granite_door1_vert_north.png", z=18, display_y=-1}}, door_opened = "GENERIC_LEVER_DOOR_OPEN_VERT"}
 
 newEntity{
 	define_as = "GENERIC_LEVER_DOOR_OPEN",
@@ -395,7 +395,7 @@ newEntity{
 	door_player_stop = "This door seems to have been sealed off. You need to find a way to close it.",
 	on_lever_change = function(self, x, y, who, val, oldval)
 		local toggle = game.level.map.attrs(x, y, "lever_toggle")
-		local trigger = game.level.map.attrs(x, y, "lever_action")
+		local trigger = game.level.map.attrs(x, y, "lever_action") or 1
 		if toggle or (val < oldval and val < trigger) then
 			game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_closed])
 			game.log("#VIOLET#You hear a door closing.")

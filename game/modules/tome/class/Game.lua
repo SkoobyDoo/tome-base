@@ -1689,6 +1689,9 @@ function _M:setupCommands()
 			g:getMapObjects(game.level.map.tiles, mos, 1)
 			table.print(mos)
 			print("===============")
+			local attrs = game.level.map.attrs[self.player.x + self.player.y * self.level.map.w]
+			table.print(attrs)
+			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
 			self:changeLevel(5, "orcs+slumbering-caves")

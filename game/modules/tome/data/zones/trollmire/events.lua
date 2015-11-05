@@ -19,4 +19,5 @@
 
 return { one_per_level=true,
 	{name="font-life", minor=true, percent=60},
+	{name="sub-vault", minor=true, percent=4000, max_repeat=32},
 }

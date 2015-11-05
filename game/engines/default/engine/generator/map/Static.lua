@@ -217,15 +217,19 @@ function _M:tmxLoad(file)
 	end
 
 	local m = { w=w, h=h }
-	local function populate(i, j, c, tid)
-		local ii, jj = i, j
 
+	local function rotate_coords(i, j)
+		local ii, jj = i, j
 		if rotate == "flipx" then ii, jj = m.w - i + 1, j
 		elseif rotate == "flipy" then ii, jj = i, m.h - j + 1
 		elseif rotate == "90" then ii, jj = j, m.w - i + 1
 		elseif rotate == "180" then ii, jj = m.w - i + 1, m.h - j + 1
 		elseif rotate == "270" then ii, jj = m.h - j + 1, i
 		end
+		return ii, jj
+	end
+	local function populate(i, j, c, tid)
+		local ii, jj = rotate_coords(i, j)
 
 		m[ii] = m[ii] or {}
 		if type(c) == "string" then
@@ -291,6 +295,8 @@ function _M:tmxLoad(file)
 		end
 	end
 
+	self.add_attrs_later = {}
+
 	for _, og in ipairs(map:findAll("objectgroup")) do
 		for _, o in ipairs(map:findAll("object")) do
 			local props = o:findOne("properties"):findAllAttrs("property", "name", "value")
@@ -301,13 +307,25 @@ function _M:tmxLoad(file)
 				if props['end'] then m.endx = x m.endy = y end
 				if props.type and props.subtype then
 					for i = x, x + w do for j = y, y + h do
+						local i, j = rotate_coords(i, j)
 						g.addSpot({i, j}, props.type, props.subtype)
 					end end
 				end
 			elseif og.attr.name:find("^addZone") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
 				if props.type and props.subtype then
+					local i1, j2 = rotate_coords(x, y)
+					local i2, j2 = rotate_coords(x + w, y + h)
 					g.addZone({x, y, x + w, y + h}, props.type, props.subtype)
+				end
+			elseif og.attr.name:find("^attrs") then
+				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+				for k, v in pairs(props) do
+					for i = x, x + w do for j = y, y + h do
+						local i, j = rotate_coords(i, j)
+						self.add_attrs_later[#self.add_attrs_later+1] = {x=i, y=j, key=k, value=self:loadLuaInEnv(g, nil, "return "..v)}
+						print("====", i, j, k)
+					end end
 				end
 			end
 		end
@@ -528,6 +546,10 @@ function _M:generate(lev, old_lev)
 			define_spot.y = self.data.__import_offset_y+j-1
 			self.spots[#self.spots+1] = define_spot
 		end
+	end end
+
+	if self.add_attrs_later then for _, attr in ipairs(self.add_attrs_later) do
+		self.level.map.attrs(attr.x, attr.y, attr.key, attr.value)
 	end end
 
 	self:triggerHook{"MapGeneratorStatic:subgenRegister", mapfile=self.data.map, list=self.subgen}

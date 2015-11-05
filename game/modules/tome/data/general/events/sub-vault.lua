@@ -24,13 +24,6 @@ if not x then return false end
 local id = "sub-vault"..game.turn.."-"..rng.range(1,9999)
 
 local changer = function(id)
-	local list = {
-		"double-t", "crypt", "treasure1", "diggers", "hillbert_curve", "quiet", "lightning-vault", "water-vault",
-		"32-chambers", "demon-nest-1", "demon-nest-2", "demon-nest-3", "frost-dragon-lair", "greater-money-vault",
-		"trapped-hexagon", "yin-yang", "zigzag-chambers", "paladin-vs-vampire", "orc-hatred", "lich-lair",
-		"greater-crypt", "trickvault", "spider-den", "acidic-vault",
-	}
-
 	local grid_list = mod.class.Grid:loadList{"/data/general/grids/basic.lua", "/data/general/grids/water.lua", "/data/general/grids/lava.lua"}
 	local npc_list = table.clone(game.zone.npc_list)
 	npc_list.__loaded_files = table.clone(npc_list.__loaded_files, true) -- Separate full cloning to not alter the base
@@ -64,7 +57,7 @@ local changer = function(id)
 				class = "mod.class.generator.map.VaultLevel",
 				["#"] = walltype,
 				up = "UP_SUB_VAULT_BACK",
-				greater_vaults_list = game.level.data.generator.map.greater_vaults_list or list,
+				greater_vaults_list = game.level.data.generator.map.greater_vaults_list or nil,
 			},
 			actor = {
 				class = "mod.class.generator.actor.Random",

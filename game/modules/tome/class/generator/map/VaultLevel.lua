@@ -58,7 +58,7 @@ function _M:generate(lev, old_lev)
 		if self.map:checkEntity(2 + room.w - 1, j, Map.TERRAIN, "is_door") then possible_entrances[#possible_entrances+1] = {x=2 + room.w, y=j} end
 	end
 
-	local sx, sy, ex, ey = 1, 1, 1, 1
+	local sx, sy, ex, ey = 1, 2, 1, 2
 
 	if #possible_entrances > 0 then
 		local e = rng.table(possible_entrances)
