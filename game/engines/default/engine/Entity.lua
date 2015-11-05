@@ -1120,7 +1120,7 @@ function _M:loadList(file, no_default, res, mod, loaded)
 	if type(file) == "table" then
 		res = res or {}
 		for i, f in ipairs(file) do
-			self:loadList(f, no_default, res, mod)
+			self:loadList(f, no_default, res, mod, loaded)
 		end
 		return res
 	end

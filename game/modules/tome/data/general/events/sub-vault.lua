@@ -64,7 +64,7 @@ local changer = function(id)
 				class = "mod.class.generator.map.VaultLevel",
 				["#"] = walltype,
 				up = "UP_SUB_VAULT_BACK",
-				greater_vaults_list = game.level.data.greater_vaults_list or list,
+				greater_vaults_list = game.level.data.generator.map.greater_vaults_list or list,
 			},
 			actor = {
 				class = "mod.class.generator.actor.Random",

@@ -34,14 +34,19 @@ function _M:init(zone, map, level, data)
 end
 
 function _M:generate(lev, old_lev)
-	for i = 0, self.map.w - 1 do for j = 0, self.map.h - 1 do
-		self.map(i, j, Map.TERRAIN, self:resolve("#"))
-	end end
-
 	self.spots = {}
 
 	local room = self:roomGen(self.rooms[1], 1, lev, old_lev)
 	self:roomPlace(room, 1, 2, 2)
+
+	for i = 0, self.map.w - 1 do for j = 0, self.map.h - 1 do
+		if i < 2 or i >= 2 + room.w or j < 2 or j >= 2 + room.h then
+			local g
+			if self.level.data.subvaults_surroundings then g = self:resolve(self.level.data.subvaults_surroundings, nil, true)
+			else g = self:resolve("#") end
+			self.map(i, j, Map.TERRAIN, g)
+		end
+	end end
 
 	local possible_entrances = {}
 	for i = 2, 2 + room.w do

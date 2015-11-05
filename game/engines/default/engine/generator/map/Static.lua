@@ -162,6 +162,22 @@ function _M:tmxLoad(file)
 	local chars = {}
 	local start_tid, end_tid = nil, nil
 	for _, tileset in ipairs(map:findAll("tileset")) do
+		if tileset:findOne("properties") then for name, value in pairs(tileset:findOne("properties"):findAllAttrs("property", "name", "value")) do
+			if name == "load_terrains" then
+				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+				self.zone.grid_class:loadList(list, nil, self.grid_list, nil, self.grid_list.__loaded_files)
+			elseif name == "load_traps" then
+				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+				self.zone.trap_class:loadList(list, nil, self.trap_list, nil, self.trap_list.__loaded_files)
+			elseif name == "load_objects" then
+				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+				self.zone.object_class:loadList(list, nil, self.object_list, nil, self.object_list.__loaded_files)
+			elseif name == "load_actors" then
+				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+				self.zone.npc_class:loadList(list, nil, self.npc_list, nil, self.npc_list.__loaded_files)
+			end
+		end end
+
 		local firstgid = tonumber(tileset.attr.firstgid)
 		for _, tile in ipairs(tileset:findAll("tile")) do
 			local tid = tonumber(tile.attr.id + firstgid)
@@ -186,6 +202,18 @@ function _M:tmxLoad(file)
 	local rotate = "default"
 	if mapprops.rotate then
 		rotate = self:loadLuaInEnv(g, nil, "return "..mapprops.rotate) or mapprops.rotate
+	end
+
+	if mapprops.status_all then
+		self.status_all = self:loadLuaInEnv(g, nil, "return "..mapprops.status_all) or {}
+	end
+
+	if mapprops.add_data then
+		table.merge(self.level.data, self:loadLuaInEnv(g, nil, "return "..mapprops.add_data) or {}, true)
+	end
+
+	if mapprops.lua then
+		self:loadLuaInEnv(g, nil, "return "..mapprops.lua)
 	end
 
 	local m = { w=w, h=h }
