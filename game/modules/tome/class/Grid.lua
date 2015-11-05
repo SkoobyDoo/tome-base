@@ -423,3 +423,45 @@ function _M:mergeSubEntities(...)
 	end end
 	return tbl
 end
+
+--- Push a lever
+function _M:leverActivated(x, y, who)
+	if self.lever_dead then return end
+	self.lever = not self.lever
+
+	local spot = game.level.map.attrs(x, y, "lever_spot") or nil
+	local block = game.level.map.attrs(x, y, "lever_block") or nil
+	local radius = game.level.map.attrs(x, y, "lever_radius") or 10
+	local val = game.level.map.attrs(x, y, "lever")
+	local kind = game.level.map.attrs(x, y, "lever_kind")
+	if game.level.map.attrs(x, y, "lever_only_once") then self.lever_dead = true end
+	if type(kind) == "string" then kind = {[kind]=true} end
+	game.log("#VIOLET#You hear a mechanism clicking.")
+
+	local apply = function(i, j)
+		local akind = game.level.map.attrs(i, j, "lever_action_kind")
+		if not akind then return end
+		if type(akind) == "string" then akind = {[akind]=true} end
+		for k, _ in pairs(kind) do if akind[k] then
+			local old = game.level.map.attrs(i, j, "lever_action_value") or 0
+			local newval = old + (self.lever and val or -val)
+			game.level.map.attrs(i, j, "lever_action_value", newval)
+			if game.level.map:checkEntity(i, j, engine.Map.TERRAIN, "on_lever_change", e, newval, old) then
+				if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
+			end
+			local fct = game.level.map.attrs(i, j, "lever_action_custom")
+			if fct and fct(i, j, e, newval, old) then
+				if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
+			end
+		end end
+	end
+
+	if spot then
+		local spot = game.level:pickSpot(spot)
+		if spot then apply(spot.x, spot.y) end
+	else
+		core.fov.calc_circle(x, y, game.level.map.w, game.level.map.h, radius, function(_, i, j)
+			if block and game.level.map.attrs(i, j, block) then return true end
+		end, function(_, i, j) apply(i, j) end, nil)
+	end
+end

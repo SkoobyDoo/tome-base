@@ -380,7 +380,7 @@ newEntity{
 		end
 	end,
 }
-newEntity{ base = "GENERIC_LEVER_DOOR", define_as = "GENERIC_LEVER_DOOR_HORIZ", image = "terrain/granite_door1.png", add_displays = {class.new{image="terrain/granite_wall3.png", z=18, display_y=-1, add_mos={{image="terrain/padlock2.png", display_y=0.1}}}}, door_opened = "GENERIC_LEVER_GENERIC_LEVER_DOOR_HORIZ_OPEN"}
+newEntity{ base = "GENERIC_LEVER_DOOR", define_as = "GENERIC_LEVER_DOOR_HORIZ", image = "terrain/granite_door1.png", add_displays = {class.new{image="terrain/granite_wall3.png", z=18, display_y=-1, add_mos={{image="terrain/padlock2.png", display_y=0.1}}}}, door_opened = "GENERIC_LEVER_DOOR_HORIZ_OPEN"}
 newEntity{ base = "GENERIC_LEVER_DOOR", define_as = "GENERIC_LEVER_DOOR_VERT", image = "terrain/marble_floor.png", add_displays = {class.new{image="terrain/granite_door1_vert.png", z=17, add_mos={{image="terrain/padlock2.png", display_x=0.2, display_y=-0.4}}}, class.new{image="terrain/granite_door1_vert_north.png", z=18, display_y=-1}}, door_opened = "GENERIC_LEVER_DOOR_OPEN_VERT"}
 
 newEntity{
@@ -417,12 +417,6 @@ newEntity{
 	force_clone = true,
 	block_move = function(self, x, y, e, act)
 		if act and e.player then
-			local spot = game.level.map.attrs(x, y, "lever_spot") or nil
-			local block = game.level.map.attrs(x, y, "lever_block") or nil
-			local radius = game.level.map.attrs(x, y, "lever_radius") or 10
-			local val = game.level.map.attrs(x, y, "lever")
-			local kind = game.level.map.attrs(x, y, "lever_kind")
-			if type(kind) == "string" then kind = {[kind]=true} end
 			if self.lever then
 				self.color_r = colors.UMBER.r self.color_g = colors.UMBER.g self.color_b = colors.UMBER.b
 				self.add_mos[1].image = "terrain/lever1_state1.png"
@@ -432,36 +426,18 @@ newEntity{
 			end
 			self:removeAllMOs()
 			game.level.map:updateMap(x, y)
-			self.lever = not self.lever
-			game.log("#VIOLET#You hear a mechanism clicking.")
-
-			local apply = function(i, j)
-				local akind = game.level.map.attrs(i, j, "lever_action_kind")
-				if not akind then return end
-				if type(akind) == "string" then akind = {[akind]=true} end
-				for k, _ in pairs(kind) do if akind[k] then
-					local old = game.level.map.attrs(i, j, "lever_action_value") or 0
-					local newval = old + (self.lever and val or -val)
-					game.level.map.attrs(i, j, "lever_action_value", newval)
-					if game.level.map:checkEntity(i, j, engine.Map.TERRAIN, "on_lever_change", e, newval, old) then
-						if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
-					end
-					local fct = game.level.map.attrs(i, j, "lever_action_custom")
-					if fct and fct(i, j, e, newval, old) then
-						if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
-					end
-				end end
-			end
-
-			if spot then
-				local spot = game.level:pickSpot(spot)
-				if spot then apply(spot.x, spot.y) end
-			else
-				core.fov.calc_circle(x, y, game.level.map.w, game.level.map.h, radius, function(_, i, j)
-					if block and game.level.map.attrs(i, j, block) then return true end
-				end, function(_, i, j) apply(i, j) end, nil)
-			end
+			self:leverActivated(x, y, e)
 		end
 		return true
+	end,
+}
+
+-- This is for the Map.TRIGGER layer
+newEntity{
+	define_as = "GENERIC_TRIGGER_BOOL",
+	type = "trigger", subtype = "bool",
+	lever = false,
+	on_move = function(self, x, y, e)
+		if e.player then self:leverActivated(x, y, e) end
 	end,
 }

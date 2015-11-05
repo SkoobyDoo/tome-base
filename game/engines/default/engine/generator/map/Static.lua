@@ -491,14 +491,26 @@ function _M:generate(lev, old_lev)
 			actor = self.tiles[c] and self.tiles[c].actor
 			trap = self.tiles[c] and self.tiles[c].trap
 			object = self.tiles[c] and self.tiles[c].object
+			trigger = self.tiles[c] and self.tiles[c].trigger
 			status = self.tiles[c] and self.tiles[c].status
 			define_spot = self.tiles[c] and self.tiles[c].define_spot
 		else
 			actor = c.actor and self.tiles[c.actor]
 			trap = c.trap and self.tiles[c.trap]
 			object = c.object and self.tiles[c.object]
+			trigger = c.trigger and self.tiles[c.trigger]
 			status = c.status and self.tiles[c.status]
 			define_spot = c.define_spot and self.tiles[c.define_spot]
+		end
+
+		if trigger then
+			local t, mod
+			if type(trigger) == "string" then t = self.zone:makeEntityByName(self.level, "trigger", trigger)
+			elseif type(trigger) == "table" and trigger.random_filter then mod = trigger.entity_mod t = self.zone:makeEntity(self.level, "terrain", trigger.random_filter, nil, true)
+			else t = self.zone:finishEntity(self.level, "terrain", trigger)
+			end
+
+			if t then if mod then t = mod(t) end self:roomMapAddEntity(i-1, j-1, "trigger", t) end
 		end
 
 		if object then
