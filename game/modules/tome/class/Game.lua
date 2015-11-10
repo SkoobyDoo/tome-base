@@ -291,9 +291,9 @@ function _M:newGame()
 					self.player:onBirth(birth)
 					-- For quickbirth
 					savefile_pipe:push(self.player.name, "entity", self.party, "engine.CharacterVaultSave")
-					self.creating_player = false
 
 					self.player:grantQuest(self.player.starting_quest)
+					self.creating_player = false
 
 					birth_done()
 					self.player:check("on_birth_done")

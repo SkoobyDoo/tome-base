@@ -1538,6 +1538,7 @@ local function tick_end_quests()
 end
 
 function _M:questPopup(quest, status)
+	if game and game.creating_player then return end
 	if not quest_popups[quest.id] or quest_popups[quest.id] < status then
 		quest_popups[quest.id] = status
 		if not game:onTickEndGet("quest_popups") then game:onTickEnd(tick_end_quests, "quest_popups") end
