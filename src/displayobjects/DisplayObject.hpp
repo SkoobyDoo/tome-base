@@ -42,14 +42,40 @@ typedef struct {
 	vec4 color;
 } vertex;
 
-class Vertexes{
+class Renderer;
+class DisplayObject;
+
+class DisplayObject {
 private:
+	int lua_ref;
+	DisplayObject *parent = NULL;
+protected:
+	bool changed = false;
+public:
+	DisplayObject() {};
+	virtual ~DisplayObject() {};
+	void setLuaRef(int ref) { lua_ref = ref; };
+	void setParent(DisplayObject *parent) { this->parent = parent; };
+	void setChanged();
+	bool isChanged() { return changed; };
+	void resetChanged() { changed = false; };
+};
+
+class DOVertexes : public DisplayObject{
+public:
 	// static long next_id = 1;
 	vector<long> ids;
-	vector<vertex> list;
-	
-public:
-	Vertexes(int size);
+	vector<vertex> vertices;
+	GLuint tex;
+	shader_type *shader;
+
+	DOVertexes() {
+		ids.reserve(4);
+		vertices.reserve(4);
+		tex = 0;
+		shader = NULL;
+	};
+	virtual ~DOVertexes() {};
 
 	int addQuad(
 		float x1, float y1, float u1, float v1, 
@@ -58,38 +84,16 @@ public:
 		float x4, float y4, float u4, float v4, 
 		float r, float g, float b, float a
 	);
-};
-
-class DisplayObject {
-private:
-	int lua_ref;
-public:
-	bool changed = false;
-
-	void setLuaRef(int ref) { lua_ref = ref; };
-};
-
-class DOVertexes : public DisplayObject{
-private:
-	Vertexes v;
-	GLuint tex;
-	shader_type *shader;
-
-public:
-	DOVertexes() : v(4) {
-		tex = 0;
-		shader = NULL;
-	};
-
 	void setTexture(GLuint tex) { this->tex = tex; };
 	void setShader(shader_type *s) { shader = s; };
 };
 
 class DOContainer : public DisplayObject{
-private:
+protected:
 	vector<DisplayObject*> dos;
 public:
 	DOContainer() {};
+	virtual ~DOContainer() {};
 
 	void add(DisplayObject *dob);
 	void remove(DisplayObject *dob);

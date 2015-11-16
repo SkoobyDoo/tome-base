@@ -29,28 +29,51 @@
 
 using namespace glm;
 
-#include "RendererState.hpp"
-#include "RendererGL.hpp"
+#include "renderer-moderngl/RendererState.hpp"
+#include "renderer-moderngl/RendererGL.hpp"
 #include "displayobjects/Renderer.hpp"
 
-class RendererGL : public Renderer {
-private:
-	RendererState state;
-	GLuint *vbo_elements_data = NULL;
-	GLuint vbo_elements = 0;
-	int vbo_elements_nb = 0;
-
+class DisplayObjectGL {
+protected:
 	GLuint vbo;
 	GLuint mode;
 	GLenum kind;
+public:
+	vector<vertex> list;
+
+	DisplayObjectGL();
+	virtual ~DisplayObjectGL();
+	virtual void render(DisplayObjectGL *dogl) = 0;
+};
+
+class DORVertexes : public DOVertexes, public DisplayObjectGL {
+public:
+	DORVertexes() : DOVertexes(), DisplayObjectGL() {};
+	virtual ~DORVertexes() {};
+	virtual void render(DisplayObjectGL *dogl);
+};
+
+class DORContainer : public DOContainer, public DisplayObjectGL {
+public:
+	DORContainer() : DOContainer(), DisplayObjectGL() {};
+	virtual ~DORContainer() {};
+	virtual void render(DisplayObjectGL *dogl);
+};
+
+class RendererGL : public Renderer, public DORContainer {
+private:
+	RendererState *state;
+	GLuint *vbo_elements_data = NULL;
+	GLuint vbo_elements = 0;
+	int vbo_elements_nb = 0;
 
 public:
 	RendererGL();
 	~RendererGL();
 
-	RendererGL::update();
-	virtual void render(DisplayObject *dob);
-
+	virtual void render(DisplayObjectGL *dogl);
+	virtual void update();
+	virtual void toScreen(float x, float y, float r, float g, float b, float a);
 };
 
 #endif

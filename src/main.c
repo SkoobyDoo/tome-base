@@ -295,6 +295,8 @@ int event_filter(void *userdata, SDL_Event* event)
 	return 1;
 }
 
+bool testgl = FALSE;
+
 #define MIN(a,b) ((a < b) ? a : b)
 #define MAX(a,b) ((a < b) ? b : a)
 
@@ -339,6 +341,8 @@ bool on_event(SDL_Event *event)
 		return TRUE;
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
+		if (!testgl) { testgl=TRUE; setuptestgl(); }
+
 		if (current_keyhandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
@@ -723,6 +727,8 @@ void on_redraw()
 	total_keyframes += nb - last_keyframe;
 //	printf("keyframes: %f / %f by %f => %d\n", nb_keyframes, reference_fps, step, nb - (last_keyframe));
 	call_draw(nb - last_keyframe);
+
+	if (testgl) displaytestgl();
 
 	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);

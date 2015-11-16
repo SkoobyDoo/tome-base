@@ -538,6 +538,7 @@ project "te4-renderer"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-renderer"
+	buildoptions { "-std=c++11" }
 
 	files { "../src/renderer-moderngl/*.cpp", }
 

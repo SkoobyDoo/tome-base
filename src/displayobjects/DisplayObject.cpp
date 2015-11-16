@@ -30,47 +30,48 @@ extern "C" {
 
 #include "displayobjects/DisplayObject.hpp"
 
-Vertexes::Vertexes(int size) {
-	ids.reserve(size);
-	list.reserve(size);
+void DisplayObject::setChanged() {
+	changed = true;
+	DisplayObject *p = parent;
+	while (p) {
+		p->changed = true;
+		p = p->parent;
+	}
 }
 
-int Vertexes::addQuad(
+int DOVertexes::addQuad(
 		float x1, float y1, float u1, float v1, 
 		float x2, float y2, float u2, float v2, 
 		float x3, float y3, float u3, float v3, 
 		float x4, float y4, float u4, float v4, 
 		float r, float g, float b, float a
 	) {
-	if (list.size() + 4 < list.capacity()) list.reserve(list.size() * 2);
+	if (vertices.size() + 4 < vertices.capacity()) vertices.reserve(vertices.size() * 2);
 
 	vertex ve1 = {{x1, y1}, {u1, v1}, {r, g, b, a}};
 	vertex ve2 = {{x2, y2}, {u2, v2}, {r, g, b, a}};
 	vertex ve3 = {{x3, y3}, {u3, v3}, {r, g, b, a}};
 	vertex ve4 = {{x4, y4}, {u4, v4}, {r, g, b, a}};
-	list.push_back(ve1);
-	list.push_back(ve2);
-	list.push_back(ve3);
-	list.push_back(ve4);
+	vertices.push_back(ve1);
+	vertices.push_back(ve2);
+	vertices.push_back(ve3);
+	vertices.push_back(ve4);
+
+	setChanged();
 	return 0;
-}
-
-void DOVertexes::render() {
-
-}
-
-void DOContainer::render() {
-
 }
 
 void DOContainer::add(DisplayObject *dob) {
 	dos.push_back(dob);
+	dob->setParent(this);
+	setChanged();
 };
 
 void DOContainer::remove(DisplayObject *dob) {
-	for (std::vector<DisplayObject*>::iterator it = dos.begin() ; it != dos.end(); ++it) {
+	for (vector<DisplayObject*>::iterator it = dos.begin() ; it != dos.end(); ++it) {
 		if (*it == dob) {
 			dos.erase(it);
+			(*it)->setParent(NULL);
 			return;
 		}
 	}

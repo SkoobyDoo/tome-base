@@ -30,7 +30,7 @@ class Renderer {
 private:
 
 public:
-	virtual void render(DisplayObject *dob) = 0;
+	virtual void toScreen(float x, float y, float r, float g, float b, float a) = 0;
 };
 
 #endif
