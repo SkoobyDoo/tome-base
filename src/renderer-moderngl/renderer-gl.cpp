@@ -29,8 +29,6 @@ extern "C" {
 
 #include "renderer-gl.hpp"
 
-bool use_modern_gl = TRUE;
-
 static RendererState *state = NULL;
 
 // A pipe of quad optimization
@@ -93,77 +91,61 @@ void vertexes_renderer_toscreen(vertexes_renderer *vr, lua_vertexes *vx, float x
 	tglBindTexture(GL_TEXTURE_2D, vx->tex);
 	state->translate(x, y, 0);
 
-	// Modern(ish) OpenGL way
-	if (use_modern_gl) {
-		shader_type *shader;
+	shader_type *shader;
 
-		if (!current_shader) {
-			useNoShader();
-			if (!current_shader) return;
-		}
-
-		shader = current_shader;
-		if (shader->vertex_attrib == -1) return;
-
-		if (shader->p_color != -1) {
-			GLfloat d[4];
-			d[0] = r;
-			d[1] = g;
-			d[2] = b;
-			d[3] = a;
-			glUniform4fv(shader->p_color, 1, d);
-		}
-
-		if (shader->p_mvp != -1) {
-			if (vx == renderer_quad_pipe && state->quad_pipe_enabled) {
-				glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->view));
-			} else {
-				state->updateMVP(vx != renderer_quad_pipe);
-				glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
-			}
-		}
-
-		glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
-		if (vx->changed) {
-			vertexes_renderer_update(vr, vx);
-		}
-
-		glEnableVertexAttribArray(shader->vertex_attrib);
-		glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)0);
-		if (shader->texcoord_attrib != -1) {
-			glEnableVertexAttribArray(shader->texcoord_attrib);
-			glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)offsetof(vertex_data, u));
-		}
-		if (shader->color_attrib != -1) {
-			glEnableVertexAttribArray(shader->color_attrib);
-			glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)offsetof(vertex_data, r));
-		}
-
-		if (vx->kind == VO_QUADS) {
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
-			glDrawElements(vr->kind, vx->nb / 4 * 6, GL_UNSIGNED_INT, (void*)0);
-		} else {
-			glDrawArrays(vr->kind, 0, vx->nb);
-		}
-
-		glDisableVertexAttribArray(shader->vertex_attrib);
-		glDisableVertexAttribArray(shader->texcoord_attrib);
-		glDisableVertexAttribArray(shader->color_attrib);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// Fallback OpenGl 1.1 way, no shaders, fixed pipeline
-	} else {
-#ifndef NO_OLD_GL
-		glVertexPointer(2, GL_FLOAT, sizeof(vertex_data), vx->vertices);
-		glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].u);
-		glColorPointer(4, GL_FLOAT, sizeof(vertex_data), &vx->vertices[0].r);
-		if (vx->kind == VO_QUADS) {
-			glDrawArrays(GL_QUADS, 0, vx->nb);
-		} else {
-			glDrawArrays(vr->kind, 0, vx->nb);
-		}
-#endif
+	if (!current_shader) {
+		useNoShader();
+		if (!current_shader) return;
 	}
+
+	shader = current_shader;
+	if (shader->vertex_attrib == -1) return;
+
+	if (shader->p_color != -1) {
+		GLfloat d[4];
+		d[0] = r;
+		d[1] = g;
+		d[2] = b;
+		d[3] = a;
+		glUniform4fv(shader->p_color, 1, d);
+	}
+
+	if (shader->p_mvp != -1) {
+		if (vx == renderer_quad_pipe && state->quad_pipe_enabled) {
+			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->view));
+		} else {
+			state->updateMVP(vx != renderer_quad_pipe);
+			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, vr->vbo);
+	if (vx->changed) {
+		vertexes_renderer_update(vr, vx);
+	}
+
+	glEnableVertexAttribArray(shader->vertex_attrib);
+	glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)0);
+	if (shader->texcoord_attrib != -1) {
+		glEnableVertexAttribArray(shader->texcoord_attrib);
+		glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)offsetof(vertex_data, u));
+	}
+	if (shader->color_attrib != -1) {
+		glEnableVertexAttribArray(shader->color_attrib);
+		glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_data), (void*)offsetof(vertex_data, r));
+	}
+
+	if (vx->kind == VO_QUADS) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+		glDrawElements(vr->kind, vx->nb / 4 * 6, GL_UNSIGNED_INT, (void*)0);
+	} else {
+		glDrawArrays(vr->kind, 0, vx->nb);
+	}
+
+	glDisableVertexAttribArray(shader->vertex_attrib);
+	glDisableVertexAttribArray(shader->texcoord_attrib);
+	glDisableVertexAttribArray(shader->color_attrib);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	state->translate(-x, -y, 0);
 	vx->changed = FALSE;
@@ -244,12 +226,10 @@ void renderer_pipe_draw_quad(
 }
 
 void renderer_pipe_start() {
-	if (!use_modern_gl) return;
 	state->enableQuadPipe(true);
 }
 
 void renderer_pipe_flush() {
-	if (!use_modern_gl) return;
 	if (renderer_quad_pipe->nb > 0) {
 		vertex_toscreen(renderer_quad_pipe, 0, 0, -1, 1, 1, 1, 1);
 		vertex_clear(renderer_quad_pipe);
@@ -258,7 +238,6 @@ void renderer_pipe_flush() {
 }
 
 void renderer_pipe_stop() {
-	if (!use_modern_gl) return;
 	renderer_pipe_flush();
 	state->enableQuadPipe(false);
 }
@@ -273,7 +252,6 @@ void renderer_pipe_pop_at_end() {
 }
 
 bool renderer_pipe_is_active() {
-	if (!use_modern_gl) return false;
 	return state->quad_pipe_enabled ? true : false;
 }
 

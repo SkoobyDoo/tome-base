@@ -2050,7 +2050,7 @@ static int gl_counts_draws(lua_State *L) {
 }
 
 static int is_modern_gl(lua_State *L) {
-	lua_pushnumber(L, use_modern_gl);
+	lua_pushnumber(L, TRUE);
 	return 1;
 }
 

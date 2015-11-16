@@ -27,8 +27,6 @@
 
 using namespace std;
 
-class RendererState;
-
 class RendererState {
 	stack<mat4> saved_worlds;
 	stack<mat4> saved_pipe_worlds;

@@ -33,14 +33,14 @@ project "TEngine"
 	kind "WindowedApp"
 	language "C++"
 	targetname("t-engine")
-	files { "../src/*.c", }
+	files { "../src/*.c", "../src/*.cpp", "../src/displayobjects/*.cpp", }
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
 	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
-	buildoptions { "-O3" }
+	buildoptions { "-O3", "-std=c++11" }
 
 	if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib "} end
 	if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib64 "} end
@@ -539,7 +539,7 @@ project "te4-renderer"
 	language "C++"
 	targetname "te4-renderer"
 
-	files { "../src/renderer-gl/*.cpp", }
+	files { "../src/renderer-moderngl/*.cpp", }
 
 if _OPTIONS['web-awesomium'] and not _OPTIONS.wincross then
 project "te4-web"
