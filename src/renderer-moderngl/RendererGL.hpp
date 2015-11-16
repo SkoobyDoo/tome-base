@@ -33,6 +33,15 @@ using namespace glm;
 #include "renderer-moderngl/RendererGL.hpp"
 #include "displayobjects/Renderer.hpp"
 
+class RendererGL;
+
+class DisplayList {
+public:
+	GLuint tex = 0;
+	shader_type *shader = NULL;
+	vector<vertex> list;
+};
+
 class DisplayObjectGL {
 protected:
 	GLuint vbo;
@@ -43,21 +52,21 @@ public:
 
 	DisplayObjectGL();
 	virtual ~DisplayObjectGL();
-	virtual void render(DisplayObjectGL *dogl) = 0;
+	virtual void render(RendererGL *renderer) = 0;
 };
 
 class DORVertexes : public DOVertexes, public DisplayObjectGL {
 public:
 	DORVertexes() : DOVertexes(), DisplayObjectGL() {};
 	virtual ~DORVertexes() {};
-	virtual void render(DisplayObjectGL *dogl);
+	virtual void render(RendererGL *renderer);
 };
 
 class DORContainer : public DOContainer, public DisplayObjectGL {
 public:
 	DORContainer() : DOContainer(), DisplayObjectGL() {};
 	virtual ~DORContainer() {};
-	virtual void render(DisplayObjectGL *dogl);
+	virtual void render(RendererGL *renderer);
 };
 
 class RendererGL : public Renderer, public DORContainer {
@@ -66,12 +75,16 @@ private:
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;
 	int vbo_elements_nb = 0;
+	vector<DisplayList> displays;
 
 public:
 	RendererGL();
 	~RendererGL();
 
-	virtual void render(DisplayObjectGL *dogl);
+	DisplayList& getDisplayList();
+	DisplayList& getDisplayList(GLuint tex, shader_type *shader);
+
+	virtual void render();
 	virtual void update();
 	virtual void toScreen(float x, float y, float r, float g, float b, float a);
 };
