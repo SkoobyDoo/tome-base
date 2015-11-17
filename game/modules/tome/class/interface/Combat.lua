@@ -1335,7 +1335,7 @@ function _M:combatCrit(weapon)
 		addcrit = 1 + self:callTalent(Talents.T_LETHALITY, "getCriticalChance")
 	end
 	if self:knowTalent(Talents.T_ARCANE_MIGHT) then
-		addcrit = addcrit + 0.5 * self.combat_spellcrit
+		addcrit = addcrit + 0.25 * self.combat_spellcrit
 	end
 	local crit = self.combat_physcrit + (self.combat_generic_crit or 0) + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + (weapon.physcrit or 1) + addcrit
 
