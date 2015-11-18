@@ -2159,6 +2159,13 @@ function _M:combatGetDamageIncrease(type, straight)
 		return highest + self.auto_highest_inc_damage[type]
 	end
 
+	if self.inc_damage_level_penalty and self.level and self.inc_damage_level_penalty.end_level > self.level then
+		local end_level = self.inc_damage_level_penalty.end_level
+		local eff_level = end_level - self.level
+		local penalty = math.ceil((self.inc_damage_level_penalty.start_at / end_level) * eff_level)
+		inc = inc + penalty
+	end
+
 	return inc
 end
 
