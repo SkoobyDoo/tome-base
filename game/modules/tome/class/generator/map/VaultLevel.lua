@@ -43,7 +43,7 @@ function _M:generate(lev, old_lev)
 		if i < 2 or i >= 2 + room.w or j < 2 or j >= 2 + room.h then
 			local g
 			if self.level.data.subvaults_surroundings then g = self:resolve(self.level.data.subvaults_surroundings, nil, true)
-			else g = self:resolve("#") end
+			else g = self:resolve("subvault_wall") end
 			self.map(i, j, Map.TERRAIN, g)
 		end
 	end end
@@ -66,7 +66,7 @@ function _M:generate(lev, old_lev)
 		ex, ey = e.x, e.y
 	end
 
-	self.map(sx, sy, Map.TERRAIN, self:resolve("up"))
+	self.map(sx, sy, Map.TERRAIN, self:resolve("subvault_up"))
 
 	return sx, sy, ex, ey, spots
 end

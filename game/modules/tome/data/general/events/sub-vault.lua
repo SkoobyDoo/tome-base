@@ -24,7 +24,10 @@ if not x then return false end
 local id = "sub-vault"..game.turn.."-"..rng.range(1,9999)
 
 local changer = function(id)
-	local grid_list = mod.class.Grid:loadList{"/data/general/grids/basic.lua", "/data/general/grids/water.lua", "/data/general/grids/lava.lua"}
+	local grid_list = table.clone(game.zone.grid_list)
+	grid_list.__loaded_files = table.clone(grid_list.__loaded_files, true) -- Separate full cloning to not alter the base
+	grid_list.ignore_loaded = true
+	mod.class.Grid:loadList({"/data/general/grids/basic.lua", "/data/general/grids/water.lua", "/data/general/grids/lava.lua"}, nil, grid_list, nil, grid_list.__loaded_files)
 	local npc_list = table.clone(game.zone.npc_list)
 	npc_list.__loaded_files = table.clone(npc_list.__loaded_files, true) -- Separate full cloning to not alter the base
 	npc_list.ignore_loaded = true
@@ -53,12 +56,12 @@ local changer = function(id)
 		min_material_level = game.zone.min_material_level,
 		max_material_level = game.zone.max_material_level,
 		generator =  {
-			map = {
+			map = table.merge(table.clone(game.zone.generator.map, true), {
 				class = "mod.class.generator.map.VaultLevel",
-				["#"] = walltype,
-				up = "UP_SUB_VAULT_BACK",
+				subvault_wall = walltype,
+				subvault_up = "UP_SUB_VAULT_BACK",
 				greater_vaults_list = game.level.data.generator.map.greater_vaults_list or nil,
-			},
+			}),
 			actor = {
 				class = "mod.class.generator.actor.Random",
 				nb_npc = {0, 0},

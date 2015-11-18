@@ -183,6 +183,7 @@ function _M:tmxLoad(file)
 			local tid = tonumber(tile.attr.id + firstgid)
 			local display = tile:findOne("property", "name", "display")
 			local id = tile:findOne("property", "name", "id")
+			local data_id = tile:findOne("property", "name", "data_id")
 			local custom = tile:findOne("property", "name", "custom")
 			local is_start = tile:findOne("property", "name", "start")
 			local is_end = tile:findOne("property", "name", "end") or tile:findOne("property", "name", "stop")
@@ -190,6 +191,8 @@ function _M:tmxLoad(file)
 				chars[tid] = display.attr.value
 			elseif id then
 				t[tid] = id.attr.value
+			elseif data_id then
+				t[tid] = self.data[data_id.attr.value]
 			elseif custom then
 				local ret = self:loadLuaInEnv(g, nil, "return "..custom.attr.value)
 				t[tid] = ret
