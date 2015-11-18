@@ -230,6 +230,7 @@ end
 
 --- Loads profile module profile from disk
 function _M:loadModuleProfile(short_name, mod_def)
+	self.mod = {}
 	if short_name == "boot" then return end
 
 	-- Delay when we are currently saving
