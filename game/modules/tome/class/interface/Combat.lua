@@ -1068,6 +1068,22 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		self:attr("silent_heal", -1)
 	end
 
+	if self.__attacktargetwith_recursing or (weapon and weapon.attack_recurse) then
+		if self.__attacktargetwith_recursing then
+			self.__attacktargetwith_recursing = self.__attacktargetwith_recursing - 1
+		else
+			self.__attacktargetwith_recursing = weapon.attack_recurse - 1
+		end
+
+		if self.__attacktargetwith_recursing > 0 then
+			local _, newhitted, newdam = self:attackTargetWith(target, weapon, damtype, mult, force_dam)
+			hitted = newhitted or hitted
+			dam = math.max(dam, newdam)
+		else
+			self.__attacktargetwith_recursing = nil
+		end
+	end
+
 	return self:combatSpeed(weapon), hitted, dam
 end
 
