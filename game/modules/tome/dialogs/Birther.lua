@@ -306,7 +306,7 @@ function _M:atEnd(v)
 			save:delete()
 			save:close()
 
-			game:saveSettings("tome.default_birth", ("tome.default_birth = {permadeath=%q, sex=%q}\n"):format(self.actor.descriptor.permadeath, self.actor.descriptor.sex))
+			game:saveSettings("tome.default_birth", ("tome.default_birth = {permadeath=%q, difficulty=%q, sex=%q, campaign=%q}\n"):format(self.actor.descriptor.permadeath, self.actor.descriptor.difficulty, self.actor.descriptor.sex, self.actor.descriptor.world))
 
 			self.at_end(false)
 		end)
@@ -660,12 +660,13 @@ function _M:generateCampaigns()
 				local desc = d.desc
 				if type(desc) == "table" then desc = table.concat(d.desc, "\n") end
 				list[#list+1] = { name = tstring{d.display_name}:toString(), id=d.name, desc=desc }
+				if util.getval(d.selection_default) then self.default_campaign = d.name end
 			end
 		end
 	end
 
 	self.all_campaigns = list
-	self.default_campaign = list[1].id
+	if not self.default_campaign then self.default_campaign = list[1].id end
 end
 
 function _M:generateDifficulties()
