@@ -2268,7 +2268,7 @@ function _M:canEventGridRadius(level, x, y, radius, min)
 	end end
 
 	if #list < min then return false
-	else return list end
+	else list.center_x, list.center_y = x, y return list end
 end
 
 function _M:findEventGrid(level, checker)
