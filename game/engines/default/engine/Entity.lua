@@ -593,6 +593,7 @@ end
 function _M:MOflipX(v)
 	if not self._mo then return end
 	self._mo:flipX(v)
+	self._flipx = v
 
 	if not self.add_displays then return end
 
@@ -608,6 +609,7 @@ end
 function _M:MOflipY(v)
 	if not self._mo then return end
 	self._mo:flipY(v)
+	self._flipy = v
 
 	if not self.add_displays then return end
 

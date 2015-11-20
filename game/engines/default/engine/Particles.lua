@@ -29,7 +29,7 @@ setmetatable(__particles_gl, {__mode="v"})
 
 --- Make a particle emitter
 function _M:init(def, radius, args, shader)
-	self.args = args
+	self.args = args or {}
 	self.def = def
 	self.radius = radius or 1
 	self.shader = shader
