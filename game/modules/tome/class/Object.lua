@@ -1048,6 +1048,8 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(combat, compare_with, field, "phasing", "%+d%%", "Damage Shield penetration (this weapon only): ", 1, false, false, add_table)
 
 		compare_fields(combat, compare_with, field, "lifesteal", "%+d%%", "Lifesteal (this weapon only): ", 1, false, false, add_table)
+		
+		compare_fields(combat, compare_with, field, "attack_recurse", "%+d", "Multiple attacks: ", 1, false, false, add_table)
 
 		if combat.tg_type and combat.tg_type == "beam" then
 			desc:add({"color","YELLOW"}, ("Shots beam through all targets."), {"color","LAST"}, true)
