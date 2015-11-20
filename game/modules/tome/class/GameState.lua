@@ -46,6 +46,7 @@ end
 --- Restock all stores
 function _M:storesRestock()
 	self.stores_restock = self.stores_restock + 1
+	game.log("#AQUAMARINE#Most stores should have new stocks now.")
 	print("[STORES] restocking")
 end
 
