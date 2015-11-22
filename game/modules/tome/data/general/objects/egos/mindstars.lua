@@ -1186,6 +1186,11 @@ newEntity{
 				return
 			end
 
+			if self.tinker then
+				game.logPlayer(who, "You cannot split your %s while it has a tinker inside.", self:getName({no_add_name = true, do_color = true}))
+				return
+			end
+
 			if who:getInven("PSIONIC_FOCUS") and who:getInven("PSIONIC_FOCUS")[1] == self then
 				game.logPlayer(who, "You cannot split your %s while using it as a psionic focus.", self:getName({no_add_name = true, do_color = true}))
 				return

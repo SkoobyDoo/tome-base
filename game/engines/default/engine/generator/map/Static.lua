@@ -564,6 +564,10 @@ function _M:generate(lev, old_lev)
 	end end
 
 	if self.add_attrs_later then for _, attr in ipairs(self.add_attrs_later) do
+		if attr.key == "lite" then self.level.map.lites(attr.x, attr.y, true) end
+		if attr.key == "remember" then self.level.map.remembers(attr.x, attr.y, true) end
+		if attr.key == "special" then self.map.room_map[attr.x][attr.y].special = s.special end
+		if attr.key == "room_map" then for k, v in pairs(s.room_map) do self.map.room_map[attr.x][attr.y][k] = v end end
 		self.level.map.attrs(attr.x, attr.y, attr.key, attr.value)
 	end end
 
