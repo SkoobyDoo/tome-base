@@ -245,16 +245,17 @@ require("engine.dialogs.Chat").show_portraits = true
 
 -- Inventory tabs
 InventoryUI.default_tabslist = function(self)
-	local tabslist = {
-		{image="inven_tabs/weapons.png", 	kind="weapons",		desc="All kinds of weapons",		filter=function(o) return not o.__transmo and (o.type == "weapon") end},
-		{image="inven_tabs/armors.png", 	kind="armors",		desc="All kinds of armours",		filter=function(o) return not o.__transmo and (o.type == "armor") end},
-		{image="inven_tabs/jewelry.png", 	kind="jewelry",		desc="Rings and Amulets",		filter=function(o) return not o.__transmo and (o.type == "jewelry") end},
-		{image="inven_tabs/gems.png", 		kind="gems",		desc="Gems"		,		filter=function(o) return not o.__transmo and (o.type == "gem" or o.type == "alchemist-gem") end},
-		{image="inven_tabs/inscriptions.png", 	kind="inscriptions",	desc="Infusions, Runes, ...",		filter=function(o) return not o.__transmo and (o.type == "scroll") end},
-		{image="inven_tabs/misc.png", 		kind="misc",		desc="Miscellaneous",			filter="others"},
-		{image="inven_tabs/quests.png", 	kind="quests",		desc="Quest and plot related items",	filter=function(o) return not o.__transmo and (o.plot or o.quest) end},
-	}
+	local tabslist = {}
+	tabslist[#tabslist+1] = {image="inven_tabs/weapons.png", 	kind="weapons",		desc="All kinds of weapons",		filter=function(o) return not o.__transmo and (o.type == "weapon") end}
+	tabslist[#tabslist+1] = {image="inven_tabs/armors.png", 	kind="armors",		desc="All kinds of armours",		filter=function(o) return not o.__transmo and (o.type == "armor") end}
+	tabslist[#tabslist+1] = {image="inven_tabs/jewelry.png", 	kind="jewelry",		desc="Rings and Amulets",		filter=function(o) return not o.__transmo and (o.type == "jewelry") end}
+	tabslist[#tabslist+1] = {image="inven_tabs/gems.png", 		kind="gems",		desc="Gems"		,		filter=function(o) return not o.__transmo and (o.type == "gem" or o.type == "alchemist-gem") end}
+	tabslist[#tabslist+1] = {image="inven_tabs/inscriptions.png", 	kind="inscriptions",	desc="Infusions, Runes, ...",		filter=function(o) return not o.__transmo and (o.type == "scroll") end}
+	if self.actor.can_tinker then tabslist[#tabslist+1] = {image="inven_tabs/chest.png", kind="tinker", desc="Tinkers", filter=function(o) return o.is_tinker end} end
+	tabslist[#tabslist+1] = {image="inven_tabs/misc.png", 		kind="misc",		desc="Miscellaneous",			filter="others"}
+	tabslist[#tabslist+1] = {image="inven_tabs/quests.png", 	kind="quests",		desc="Quest and plot related items",	filter=function(o) return not o.__transmo and (o.plot or o.quest) end}
 	if self.actor:attr("has_transmo") then tabslist[#tabslist+1] = {image="inven_tabs/chest.png", kind="transmo", desc="Transmogrification Chest", filter=function(o) return o.__transmo end} end
+
 	self:triggerHook{"Inventory:makeTabs", tabslist=tabslist}
 	tabslist[#tabslist+1] = {image="inven_tabs/all.png", kind="all", desc="All", filter="all"}
 	for _, t in ipairs(tabslist) do if fs.exists("/data/gfx/"..UIBase.ui.."-ui/"..t.image) then t.image = UIBase.ui.."-ui/"..t.image else t.image = "metal-ui/"..t.image end end
