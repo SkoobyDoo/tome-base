@@ -227,6 +227,26 @@ function _M:generate(lev, old_lev)
 			rooms[#rooms+1] = r
 			end_room = r
 			print("Successfully loaded the end room")
+		else 
+			self.force_recreate = true return
+		end
+	end
+
+	-- Those we are required to have
+	if #self.required_rooms > 0 then
+		for i, rroom in ipairs(self.required_rooms) do
+			local ok = false
+			if type(rroom) == "table" and rroom.chance_room then
+				if rng.percent(rroom.chance_room) then rroom = rroom[1] ok = true end
+			else ok = true
+			end
+
+			if ok then
+				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
+				if r then rooms[#rooms+1] = r
+				else self.force_recreate = true return end
+				nb_room = nb_room - 1
+			end
 		end
 	end
 

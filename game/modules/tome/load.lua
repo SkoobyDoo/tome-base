@@ -251,7 +251,7 @@ InventoryUI.default_tabslist = function(self)
 	tabslist[#tabslist+1] = {image="inven_tabs/jewelry.png", 	kind="jewelry",		desc="Rings and Amulets",		filter=function(o) return not o.__transmo and (o.type == "jewelry") end}
 	tabslist[#tabslist+1] = {image="inven_tabs/gems.png", 		kind="gems",		desc="Gems"		,		filter=function(o) return not o.__transmo and (o.type == "gem" or o.type == "alchemist-gem") end}
 	tabslist[#tabslist+1] = {image="inven_tabs/inscriptions.png", 	kind="inscriptions",	desc="Infusions, Runes, ...",		filter=function(o) return not o.__transmo and (o.type == "scroll") end}
-	if self.actor.can_tinker then tabslist[#tabslist+1] = {image="inven_tabs/chest.png", kind="tinker", desc="Tinkers", filter=function(o) return o.is_tinker end} end
+	if self.actor.can_tinker then tabslist[#tabslist+1] = {image="inven_tabs/tinkers.png", kind="tinker", desc="Tinkers", filter=function(o) return o.is_tinker end} end
 	tabslist[#tabslist+1] = {image="inven_tabs/misc.png", 		kind="misc",		desc="Miscellaneous",			filter="others"}
 	tabslist[#tabslist+1] = {image="inven_tabs/quests.png", 	kind="quests",		desc="Quest and plot related items",	filter=function(o) return not o.__transmo and (o.plot or o.quest) end}
 	if self.actor:attr("has_transmo") then tabslist[#tabslist+1] = {image="inven_tabs/chest.png", kind="transmo", desc="Transmogrification Chest", filter=function(o) return o.__transmo end} end
