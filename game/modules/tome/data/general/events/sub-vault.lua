@@ -43,6 +43,9 @@ local changer = function(id)
 	grid_list.UP_SUB_VAULT_BACK.change_level_shift_back = true
 	grid_list.UP_SUB_VAULT_BACK.change_zone_auto_stairs = true
 
+	local basemap = table.clone(game.level.data.generator.map, true)
+	basemap.zoneclass = nil
+
 	local zone = mod.class.Zone.new(id, {
 		name = "Hidden Vault - "..(game.old_zone_name or "???"),
 		level_range = {game.zone:level_adjust_level(game.level, game.zone, "actor"), game.zone:level_adjust_level(game.level, game.zone, "actor")},
@@ -56,7 +59,7 @@ local changer = function(id)
 		min_material_level = game.zone.min_material_level,
 		max_material_level = game.zone.max_material_level,
 		generator =  {
-			map = table.merge(table.clone(game.zone.generator.map, true), {
+			map = table.merge(basemap, {
 				class = "mod.class.generator.map.VaultLevel",
 				subvault_wall = walltype,
 				subvault_up = "UP_SUB_VAULT_BACK",
