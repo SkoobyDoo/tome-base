@@ -1458,21 +1458,21 @@ function _M:dropNoTeleportObjects()
 end
 
 --- Blink through walls
-function _M:probabilityTravel(x, y, dist, checker)
+function _M:probabilityTravel(x, y, dist, checker, ignore_no_teleport)
 	if game.zone.wilderness then return true end
 	if self:attr("encased_in_ice") then return end
 
 	local dirx, diry = x - self.x, y - self.y
 	local tx, ty = x, y
 	while game.level.map:isBound(tx, ty) and game.level.map:checkAllEntities(tx, ty, "block_move", self) and dist > 0 do
-		if game.level.map.attrs(tx, ty, "no_teleport") then break end
+		if not ignore_no_teleport and game.level.map.attrs(tx, ty, "no_teleport") then break end
 		if game.level.map:checkAllEntities(tx, ty, "no_prob_travel", self) then break end
 		if checker and checker(tx, ty) then break end
 		tx = tx + dirx
 		ty = ty + diry
 		dist = dist - 1
 	end
-	if game.level.map:isBound(tx, ty) and not game.level.map:checkAllEntities(tx, ty, "block_move", self) and not game.level.map.attrs(tx, ty, "no_teleport") then
+	if game.level.map:isBound(tx, ty) and not game.level.map:checkAllEntities(tx, ty, "block_move", self) and (ignore_no_teleport or not game.level.map.attrs(tx, ty, "no_teleport")) then
 		self:dropNoTeleportObjects()
 		return engine.Actor.move(self, tx, ty, false)
 	end
@@ -3523,7 +3523,7 @@ function _M:updateModdableTile()
 
 	local base = "player/"..self.moddable_tile:gsub("#sex#", self.female and "female" or "male").."/"
 
-	self.image = base.."base_shadow_01.png"
+	self.image = base..(self.moddable_tile_shadow or "base_shadow_01.png")
 	self.add_mos = {}
 	local add = self.add_mos
 	local i

@@ -19,6 +19,7 @@
 
 require "engine.class"
 local Map = require "engine.Map"
+local lom = require "lxp.lom"
 
 --- Generator interface that can use rooms
 -- @classmod engine.generator.map.RoomsLoader
@@ -49,53 +50,58 @@ function _M:init(data)
 end
 
 local rooms_cache = {}
+local tmxid = 1
 
-function _M:tmxLoadRoom(file)
+function _M:loadLuaInEnv(g, file, code)
+	local f, err
+	if file then f, err = loadfile(file)
+	else f, err = loadstring(code) end
+	if not f and err then error(err) end
+	setfenv(f, setmetatable(g, {__index=_G}))
+	return f()
+end
+
+function _M:tmxLoadRoom(file, basefile)
 	file = file:gsub("%.lua$", ".tmx")
 	if not fs.exists(file) then return end
-	print("Static generator using file", file)
+	print("Room generator using file", file)
 	local f = fs.open(file, "r")
 	local data = f:read(10485760)
 	f:close()
 
+	local g = {}
 	local t = {}
-	local g = self:getLoader(t)
+	local openids = {}
 	local map = lom.parse(data)
 	local mapprops = {}
 	if map:findOne("properties") then mapprops = map:findOne("properties"):findAllAttrs("property", "name", "value") end
 	local w, h = tonumber(map.attr.width), tonumber(map.attr.height)
 	local tw, th = tonumber(map.attr.tilewidth), tonumber(map.attr.tileheight)
-	local chars = {}
-	local start_tid, end_tid = nil, nil
 	for _, tileset in ipairs(map:findAll("tileset")) do
-		if tileset:findOne("properties") then for name, value in pairs(tileset:findOne("properties"):findAllAttrs("property", "name", "value")) do
-			if name == "load_terrains" then
-				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.grid_class:loadList(list, nil, self.grid_list, nil, self.grid_list.__loaded_files)
-			elseif name == "load_traps" then
-				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.trap_class:loadList(list, nil, self.trap_list, nil, self.trap_list.__loaded_files)
-			elseif name == "load_objects" then
-				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.object_class:loadList(list, nil, self.object_list, nil, self.object_list.__loaded_files)
-			elseif name == "load_actors" then
-				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.npc_class:loadList(list, nil, self.npc_list, nil, self.npc_list.__loaded_files)
-			end
-		end end
+		-- if tileset:findOne("properties") then for name, value in pairs(tileset:findOne("properties"):findAllAttrs("property", "name", "value")) do
+		-- 	if name == "load_terrains" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.grid_class:loadList(list, nil, self.grid_list, nil, self.grid_list.__loaded_files)
+		-- 	elseif name == "load_traps" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.trap_class:loadList(list, nil, self.trap_list, nil, self.trap_list.__loaded_files)
+		-- 	elseif name == "load_objects" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.object_class:loadList(list, nil, self.object_list, nil, self.object_list.__loaded_files)
+		-- 	elseif name == "load_actors" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.npc_class:loadList(list, nil, self.npc_list, nil, self.npc_list.__loaded_files)
+		-- 	end
+		-- end end
 
 		local firstgid = tonumber(tileset.attr.firstgid)
 		for _, tile in ipairs(tileset:findAll("tile")) do
 			local tid = tonumber(tile.attr.id + firstgid)
-			local display = tile:findOne("property", "name", "display")
 			local id = tile:findOne("property", "name", "id")
 			local data_id = tile:findOne("property", "name", "data_id")
 			local custom = tile:findOne("property", "name", "custom")
-			local is_start = tile:findOne("property", "name", "start")
-			local is_end = tile:findOne("property", "name", "end") or tile:findOne("property", "name", "stop")
-			if display then
-				chars[tid] = display.attr.value
-			elseif id then
+			local open = tile:findOne("property", "name", "open")
+			if id then
 				t[tid] = id.attr.value
 			elseif data_id then
 				t[tid] = self.data[data_id.attr.value]
@@ -103,14 +109,8 @@ function _M:tmxLoadRoom(file)
 				local ret = self:loadLuaInEnv(g, nil, "return "..custom.attr.value)
 				t[tid] = ret
 			end
-			if is_start then start_tid = tid end
-			if is_end then end_tid = tid end
+			openids[tid] = open
 		end
-	end
-
-	local rotate = "default"
-	if mapprops.rotate then
-		rotate = self:loadLuaInEnv(g, nil, "return "..mapprops.rotate) or mapprops.rotate
 	end
 
 	if mapprops.status_all then
@@ -127,18 +127,8 @@ function _M:tmxLoadRoom(file)
 
 	local m = { w=w, h=h }
 
-	local function rotate_coords(i, j)
-		local ii, jj = i, j
-		if rotate == "flipx" then ii, jj = m.w - i + 1, j
-		elseif rotate == "flipy" then ii, jj = i, m.h - j + 1
-		elseif rotate == "90" then ii, jj = j, m.w - i + 1
-		elseif rotate == "180" then ii, jj = m.w - i + 1, m.h - j + 1
-		elseif rotate == "270" then ii, jj = m.h - j + 1, i
-		end
-		return ii, jj
-	end
 	local function populate(i, j, c, tid)
-		local ii, jj = rotate_coords(i, j)
+		local ii, jj = i, j
 
 		m[ii] = m[ii] or {}
 		if type(c) == "string" then
@@ -147,15 +137,7 @@ function _M:tmxLoadRoom(file)
 			m[ii][jj] = m[ii][jj] or {}
 			table.update(m[ii][jj], c)
 		end
-		if tid == start_tid then m.startx = ii - 1 m.starty = jj - 1 m.start_rotated = true end
-		if tid == end_tid then m.endx = ii - 1 m.endy = jj - 1 m.end_rotated = true end
 	end
-
-	self.gen_map = m
-	self.tiles = t
-
-	self.map.w = m.w
-	self.map.h = m.h
 
 	for _, layer in ipairs(map:findAll("layer")) do
 		local mapdata = layer:findOne("data")
@@ -173,9 +155,7 @@ function _M:tmxLoadRoom(file)
 			local x, y = 1, 1
 			while i <= #data do
 				gid, i = struct.unpack("<I4", data, i)
-				if chars[gid] then populate(x, y, chars[id])
-				else populate(x, y, {[layername] = gid}, gid)
-				end
+				populate(x, y, {[layername] = gid, can_open=openids[gid]}, gid)
 				x = x + 1
 				if x > w then x = 1 y = y + 1 end
 			end
@@ -184,9 +164,7 @@ function _M:tmxLoadRoom(file)
 			local x, y = 1, 1
 			for i, gid in ipairs(data) do
 				gid = tonumber(gid)
-				if chars[gid] then populate(x, y, chars[id])
-				else populate(x, y, {[layername] = gid}, gid)
-				end
+				populate(x, y, {[layername] = gid, can_open=openids[gid]}, gid)
 				x = x + 1
 				if x > w then x = 1 y = y + 1 end
 			end
@@ -195,76 +173,110 @@ function _M:tmxLoadRoom(file)
 			local x, y = 1, 1
 			for i, tile in ipairs(data) do
 				local gid = tonumber(tile.attr.gid)
-				if chars[gid] then populate(x, y, chars[id])
-				else populate(x, y, {[layername] = gid}, gid)
-				end
+				populate(x, y, {[layername] = gid, can_open=openids[gid]}, gid)
 				x = x + 1
 				if x > w then x = 1 y = y + 1 end
 			end
 		end
 	end
 
-	self.add_attrs_later = {}
-
 	for _, og in ipairs(map:findAll("objectgroup")) do
 		for _, o in ipairs(map:findAll("object")) do
 			local props = o:findOne("properties"):findAllAttrs("property", "name", "value")
 
-			if og.attr.name:find("^addSpot") then
-				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
-				if props.start then m.startx = x m.starty = y end
-				if props['end'] then m.endx = x m.endy = y end
-				if props.type and props.subtype then
-					for i = x, x + w do for j = y, y + h do
-						local i, j = rotate_coords(i, j)
-						g.addSpot({i, j}, props.type, props.subtype)
-					end end
-				end
-			elseif og.attr.name:find("^addZone") then
-				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
-				if props.type and props.subtype then
-					local i1, j2 = rotate_coords(x, y)
-					local i2, j2 = rotate_coords(x + w, y + h)
-					g.addZone({x, y, x + w, y + h}, props.type, props.subtype)
-				end
-			elseif og.attr.name:find("^attrs") then
-				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
-				for k, v in pairs(props) do
-					for i = x, x + w do for j = y, y + h do
-						local i, j = rotate_coords(i, j)
-						self.add_attrs_later[#self.add_attrs_later+1] = {x=i, y=j, key=k, value=self:loadLuaInEnv(g, nil, "return "..v)}
-						print("====", i, j, k)
-					end end
-				end
-			end
+			-- if og.attr.name:find("^addSpot") then
+			-- 	local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+			-- 	if props.start then m.startx = x m.starty = y end
+			-- 	if props['end'] then m.endx = x m.endy = y end
+			-- 	if props.type and props.subtype then
+			-- 		for i = x, x + w do for j = y, y + h do
+			-- 			local i, j = rotate_coords(i, j)
+			-- 			g.addSpot({i, j}, props.type, props.subtype)
+			-- 		end end
+			-- 	end
+			-- elseif og.attr.name:find("^addZone") then
+			-- 	local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+			-- 	if props.type and props.subtype then
+			-- 		local i1, j2 = rotate_coords(x, y)
+			-- 		local i2, j2 = rotate_coords(x + w, y + h)
+			-- 		g.addZone({x, y, x + w, y + h}, props.type, props.subtype)
+			-- 	end
+			-- elseif og.attr.name:find("^attrs") then
+			-- 	local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+			-- 	for k, v in pairs(props) do
+			-- 		for i = x, x + w do for j = y, y + h do
+			-- 			local i, j = rotate_coords(i, j)
+			-- 			self.add_attrs_later[#self.add_attrs_later+1] = {x=i, y=j, key=k, value=self:loadLuaInEnv(g, nil, "return "..v)}
+			-- 			print("====", i, j, k)
+			-- 		end end
+			-- 	end
+			-- end
 		end
 	end
 
-	m.startx = m.startx or math.floor(m.w / 2)
-	m.starty = m.starty or math.floor(m.h / 2)
-	m.endx = m.endx or math.floor(m.w / 2)
-	m.endy = m.endy or math.floor(m.h / 2)
-	if rotate == "flipx" then
-		if not m.start_rotated then m.startx = m.w - m.startx - 1 end
-		if not m.end_rotated then m.endx   = m.w - m.endx - 1 end
-	elseif rotate == "flipy" then
-		if not m.start_rotated then m.starty = m.h - m.starty - 1 end
-		if not m.end_rotated then m.endy   = m.h - m.endy - 1 end
-	elseif rotate == "90" then
-		if not m.start_rotated then m.startx, m.starty = m.starty, m.w - m.startx - 1 end
-		if not m.end_rotated then m.endx,   m.endy   = m.endy,   m.w - m.endx   - 1 end
-		m.w, m.h = m.h, m.w
-	elseif rotate == "180" then
-		if not m.start_rotated then m.startx, m.starty = m.w - m.startx - 1, m.h - m.starty - 1 end
-		if not m.end_rotated then m.endx,   m.endy   = m.w - m.endx   - 1, m.h - m.endy   - 1 end
-	elseif rotate == "270" then
-		if not m.start_rotated then m.startx, m.starty = m.h - m.starty - 1, m.startx end
-		if not m.end_rotated then m.endx,   m.endy   = m.h - m.endy   - 1, m.endx end
-		m.w, m.h = m.h, m.w
-	end
+	print("[ROOM TMX MAP] size", m.w, m.h)
 
-	print("[STATIC TMX MAP] size", m.w, m.h)
-	return true
+	local gen = function(gen, id)
+		return { name="tmxroom"..tmxid.."-"..m.w.."x"..m.h, w=m.w, h=m.h, generator = function(self, x, y, is_lit)
+			for i = 1, m.w do for j = 1, m.h do
+				gen.map.room_map[i-1+x][j-1+y].room = id
+				if is_lit then gen.map.lites(i-1+x, j-1+y, true) end
+
+				local c = m[i][j]
+				if c.can_open then
+					gen.map.room_map[i-1+x][j-1+y].room = nil
+					gen.map.room_map[i-1+x][j-1+y].can_open = true
+				end
+
+				if c.grid then
+					local g = gen:resolve(t[c.grid], nil, true)
+					if g then
+						if g.force_clone then g = g:clone() end
+						g:resolve()
+						g:resolve(nil, true)
+						gen.map(i-1+x, j-1+y, Map.TERRAIN, g)
+					end
+				end
+				if c.object then local d = t[c.object] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "object", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "object", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "object", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "object", e)
+						e.on_added_to_level = nil
+					end
+				end end
+				if c.actor then local d = t[c.actor] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "actor", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "actor", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "actor", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "actor", e)
+						e.on_added_to_level = nil
+					end
+				end end
+				if c.trap then local d = t[c.trap] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "trap", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "trap", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "trap", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "trap", e)
+						e.on_added_to_level = nil
+					end
+				end end
+			end end
+		end}
+	end
+	tmxid = tmxid + 1
+
+	rooms_cache[basefile] = gen
+	return gen
 end
 
 function _M:loadRoom(file)
@@ -273,9 +285,9 @@ function _M:loadRoom(file)
 	local filename = "/data/rooms/"..file..".lua"
 	-- Found in the zone itself ?
 	if file:find("^!") then filename = self.zone:getBaseName().."/rooms/"..file:sub(2)..".lua" end
-	local tmxed = self:tmxLoadRoom(filename)
+	local tmxed = self:tmxLoadRoom(filename, file)
 	if tmxed then return tmxed end
-	
+
 	local f, err = loadfile(filename)
 	if not f and err then error(err) end
 	setfenv(f, setmetatable({
