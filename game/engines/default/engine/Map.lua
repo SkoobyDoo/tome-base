@@ -1293,6 +1293,18 @@ function _M:getObjectTotal(x, y)
 	return i - 1
 end
 
+function _M:findObject(x, y, o)
+	-- Compute the map stack position
+	local i = 1
+	while true do
+		local oo = self:getObject(x, y, i)
+		if not oo then break end
+		if oo == o then return i end
+		i = i + 1
+	end
+	return nil
+end
+
 function _M:removeObject(x, y, i)
 	-- Compute the map stack position
 	i = i - 1 + self.OBJECT
