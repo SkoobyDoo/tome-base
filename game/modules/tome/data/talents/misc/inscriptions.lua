@@ -195,7 +195,7 @@ newInscription{
 		local data = self:getInscriptionData(t.short_name)
 		local what = table.concatNice(table.keys(data.what), ", ", " or ")
 
-		return ([[Activate the infusion to cure yourself of one random %s effect and increase affinity for all damage by %d%% for %d turns.
+		return ([[Activate the infusion to cure yourself of one random %s effect and increase affinity for all damage by %d%% (scales with Constitution) for %d turns.
 
 Also removes cross-tier effects of the affected types for free.]]):format(what, data.power+data.inc_stat, data.dur)
 	end,
