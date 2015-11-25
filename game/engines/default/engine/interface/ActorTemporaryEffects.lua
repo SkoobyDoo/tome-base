@@ -258,9 +258,10 @@ end
 
 --- Helper function to add particles and not have to remove them manualy
 function _M:effectParticles(eff, ...)
+	local Particles = require "engine.Particles"
 	if not eff.__tmpparticles then eff.__tmpparticles = {} end
 	for _, p in ipairs{...} do
-		eff.__tmpparticles[#eff.__tmpparticles+1] = p
+		eff.__tmpparticles[#eff.__tmpparticles+1] = self:addParticles(Particles.new(p.type, 1, p.args))
 	end
 end
 

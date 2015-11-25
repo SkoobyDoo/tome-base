@@ -926,9 +926,10 @@ end
 
 --- Helper function to add temporary particles and not have to remove them manualy
 function _M:talentParticles(p, ...)
+	local Particles = require "engine.Particles"
 	if not p.__tmpparticles then p.__tmpparticles = {} end
 	for _, ps in ipairs{...} do
-		p.__tmpparticles[#p.__tmpparticles+1] = ps
+		p.__tmpparticles[#p.__tmpparticles+1] = self:addParticles(Particles.new(ps.type, 1, ps.args))
 	end
 end
 
