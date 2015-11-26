@@ -1338,9 +1338,9 @@ function _M:combatAPR(weapon)
 end
 
 --- Gets the weapon speed
-function _M:combatSpeed(weapon)
+function _M:combatSpeed(weapon, add)
 	weapon = weapon or self.combat or {}
-	return (weapon.physspeed or 1) / math.max(self.combat_physspeed, 0.1)
+	return (weapon.physspeed or 1) / math.max(self.combat_physspeed + (add or 0), 0.1)
 end
 
 --- Gets the crit rate

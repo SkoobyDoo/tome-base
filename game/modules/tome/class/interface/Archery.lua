@@ -63,6 +63,7 @@ end
 --		one_shot = true(fire one shot), multishot (# of targets to hit)
 --		limit_shots = maximum # of shots to fire
 --		ignore_weapon_range = true (fire all weapons even if out of range of target)
+--		add_speed = add to combat_physspeed for this attack
 -- returns a table of target data containing a list of target spots {x=tx, y=ty, ammo=a.combat}
 --		entries may include main = {}, off = {}, psi = {}
 function _M:archeryAcquireTargets(tg, params)
@@ -266,7 +267,7 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 	if any > 0 then
 		local sound = (weaponC or pf_weaponC).sound
-		local speed = self:combatSpeed(weaponC or pf_weaponC)
+		local speed = self:combatSpeed(weaponC or pf_weaponC, params.add_speed or 0)
 		print("[SHOOT] speed", speed or 1, "=>", game.energy_to_act * (speed or 1))
 		if not params.no_energy then self:useEnergy(game.energy_to_act * (speed or 1)) end
 		if sound then game:playSoundNear(self, sound) end
