@@ -152,7 +152,7 @@ function _M:archeryAcquireTargets(tg, params)
 	if any then
 		local sound = weapon.sound
 
-		local speed = self:combatSpeed(weapon)
+		local speed = self:combatSpeed(weapon, params.add_speed or 0)
 		print("[SHOOT] speed", speed or 1, "=>", game.energy_to_act * (speed or 1))
 		if not params.no_energy then self:useEnergy(game.energy_to_act * (speed or 1)) end
 
