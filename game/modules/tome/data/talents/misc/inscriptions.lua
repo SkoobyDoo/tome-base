@@ -703,7 +703,7 @@ newInscription{
 			if not target or target == self then return end
 			
 			-- Minor damage, apply stun resist reduction, freeze
-			DamageType:get(DamageType.COLD).projector(target, tx, ty, DamageType.COLD, damage)
+			DamageType:get(DamageType.COLD).projector(self, tx, ty, DamageType.COLD, damage)
 			target:setEffect(target.EFF_WET, 5, {apply_power=data.inc_stat})
 			if target:canBe("stun") then
 				target:setEffect(target.EFF_FROZEN, 2, {hp=damage*1.5, apply_power=apply})
