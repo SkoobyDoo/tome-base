@@ -2690,8 +2690,12 @@ newEffect{
 		local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
 		if e and x then
 			game.zone:addEntity(game.level, e, "actor", x, y)
-			local g = game.zone.grid_list[self.to_vat]
-			if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+
+			local og = game.level.map(x, y, Map.TERRAIN)
+			if not og or (not og.special and not og.change_level) then
+				local g = game.zone.grid_list[self.to_vat]
+				if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+			end
 
 			game.level.map:particleEmitter(x, y, 1, "goosplosion")
 			game.level.map:particleEmitter(x, y, 1, "goosplosion")
