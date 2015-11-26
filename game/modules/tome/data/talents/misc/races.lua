@@ -889,7 +889,7 @@ newTalent{
 				faction = self.faction,
 				summoner = self, summoner_gain_exp=true,
 				summon_time = 6,
-				ai_target = {actor=target}
+				ai_target = {actor=target},
 				no_drops = 1,
 			}
 			setupSummon(self, m, x, y)
