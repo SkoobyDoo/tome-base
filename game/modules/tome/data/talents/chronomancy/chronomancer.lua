@@ -290,7 +290,7 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 
 	-- Don't copy certain fields from the target
 	alt_nodes = alt_nodes or {}
-	alt_nodes[target:getInven("INVEN")] = false -- Skip main inventory; equipped items are still copied
+	if target:getInven("INVEN") then alt_nodes[target:getInven("INVEN")] = false end -- Skip main inventory; equipped items are still copied
 	alt_nodes.quests = false
 	alt_nodes.random_escort_levels = false
 	alt_nodes.achievements = false
