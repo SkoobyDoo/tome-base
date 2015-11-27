@@ -322,7 +322,6 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	local m = target:cloneCustom(alt_nodes)
 	
 	-- Basic setup
-	m.dead = false
 	m.no_drops = true
 	m.keep_inven_on_death = false
 	m.faction = target.faction
