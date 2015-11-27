@@ -71,7 +71,7 @@ function _M:tmxLoadRoom(file, basefile)
 
 	local g = {}
 	local t = {}
-	local openids = {}
+	local openids, starts, ends = {}, {}, {}
 	local map = lom.parse(data)
 	local mapprops = {}
 	if map:findOne("properties") then mapprops = map:findOne("properties"):findAllAttrs("property", "name", "value") end
@@ -101,6 +101,8 @@ function _M:tmxLoadRoom(file, basefile)
 			local data_id = tile:findOne("property", "name", "data_id")
 			local custom = tile:findOne("property", "name", "custom")
 			local open = tile:findOne("property", "name", "open")
+			local is_start = tile:findOne("property", "name", "start")
+			local is_end = tile:findOne("property", "name", "stop") or tile:findOne("property", "name", "end")
 			if id then
 				t[tid] = id.attr.value
 			elseif data_id then
@@ -110,6 +112,8 @@ function _M:tmxLoadRoom(file, basefile)
 				t[tid] = ret
 			end
 			openids[tid] = open
+			starts[tid] = is_start
+			ends[tid] = is_end
 		end
 	end
 
@@ -155,7 +159,7 @@ function _M:tmxLoadRoom(file, basefile)
 			local x, y = 1, 1
 			while i <= #data do
 				gid, i = struct.unpack("<I4", data, i)
-				populate(x, y, {[layername] = gid, can_open=openids[gid]}, gid)
+				populate(x, y, {[layername] = gid, can_open=openids[gid], is_start=starts[gid], is_end=ends[gid]}, gid)
 				x = x + 1
 				if x > w then x = 1 y = y + 1 end
 			end
@@ -164,7 +168,7 @@ function _M:tmxLoadRoom(file, basefile)
 			local x, y = 1, 1
 			for i, gid in ipairs(data) do
 				gid = tonumber(gid)
-				populate(x, y, {[layername] = gid, can_open=openids[gid]}, gid)
+				populate(x, y, {[layername] = gid, can_open=openids[gid], is_start=starts[gid], is_end=ends[gid]}, gid)
 				x = x + 1
 				if x > w then x = 1 y = y + 1 end
 			end
@@ -173,7 +177,7 @@ function _M:tmxLoadRoom(file, basefile)
 			local x, y = 1, 1
 			for i, tile in ipairs(data) do
 				local gid = tonumber(tile.attr.gid)
-				populate(x, y, {[layername] = gid, can_open=openids[gid]}, gid)
+				populate(x, y, {[layername] = gid, can_open=openids[gid], is_start=starts[gid], is_end=ends[gid]}, gid)
 				x = x + 1
 				if x > w then x = 1 y = y + 1 end
 			end
@@ -226,6 +230,16 @@ function _M:tmxLoadRoom(file, basefile)
 				if c.can_open then
 					gen.map.room_map[i-1+x][j-1+y].room = nil
 					gen.map.room_map[i-1+x][j-1+y].can_open = true
+				end
+				if c.is_start then
+					gen.forced_up = {x=i-1+x, y=j-1+y}
+					gen.map.forced_up = {x=i-1+x, y=j-1+y}
+					gen.map.room_map[i-1+x][j-1+y].special = "exit"
+				end
+				if c.is_end then
+					gen.forced_down = {x=i-1+x, y=j-1+y}
+					gen.map.forced_down = {x=i-1+x, y=j-1+y}
+					gen.map.room_map[i-1+x][j-1+y].special = "exit"
 				end
 
 				if c.grid then
