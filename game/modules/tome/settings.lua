@@ -55,7 +55,7 @@ if type(config.settings.tome.fullscreen_confusion) == "nil" then config.settings
 if type(config.settings.tome.show_grid_lines) == "nil" then config.settings.tome.show_grid_lines = false end
 if type(config.settings.tome.tinker_auto_switch) == "nil" then config.settings.tome.tinker_auto_switch = true end
 if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end
-if not config.settings.tome.ui_theme2 then config.settings.tome.ui_theme2 = "metal" end
+if not config.settings.tome.ui_theme3 then config.settings.tome.ui_theme3 = "dark" end
 if not config.settings.tome.uiset_mode then config.settings.tome.uiset_mode = "Minimalist" end
 if not config.settings.tome.log_lines then config.settings.tome.log_lines = 5 end
 if not config.settings.tome.log_fade then config.settings.tome.log_fade = 3 end
