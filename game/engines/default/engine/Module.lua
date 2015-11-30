@@ -1,4 +1,3 @@
-
 -- TE4 - T-Engine 4
 -- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
@@ -839,6 +838,14 @@ function _M:loadScreen(mod)
 
 			if tip then tip(dw / 2, dy) end
 			if funfacts then funfacts(sw, 10) end
+			
+			local errs = core.game.checkError()
+			if errs then
+				local errgame = require("engine.BootErrorHandler").new(errs, mod)
+				_G.game = errgame
+				errgame:setCurrent()
+				core.wait.disable()
+			end
 		end
 	end)
 	core.display.forceRedraw()
