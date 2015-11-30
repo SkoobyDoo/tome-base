@@ -141,7 +141,7 @@ game = false
 -- Setup resolution
 engine.Game:setResolution(config.settings.window.size, true)
 core.display.setTextBlended(config.settings.aa_text)
-core.display.setGamma(config.settings.gamma_correction / 100)
+-- core.display.setGamma(config.settings.gamma_correction / 100)
 if not config.settings.fbo_active then core.display.disableFBO() print("Disabling FBO") end
 if not config.settings.shaders_active then core.shader.disable() print("Disabling Shaders") end
 
