@@ -648,12 +648,16 @@ end
 -- By default it uses SDL gamma settings, but it can also use a fullscreen shader if available
 -- @param gamma
 function _M:setGamma(gamma)
-	if self.support_shader_gamma and self.full_fbo_shader then
-		-- Tell the shader which gamma to use
-		self.full_fbo_shader:setUniform("gamma", gamma)
-		-- Remove SDL gamma correction
-		core.display.setGamma(1)
-		print("[GAMMA] Setting gamma correction using fullscreen shader", gamma)
+	if self.support_shader_gamma and core.shader.active() then
+		if self.full_fbo_shader then
+			-- Tell the shader which gamma to use
+			self.full_fbo_shader:setUniform("gamma", gamma)
+			-- Remove SDL gamma correction
+			core.display.setGamma(1)
+			print("[GAMMA] Setting gamma correction using fullscreen shader", gamma)
+		else
+			print("[GAMMA] Not setting gamma correction yet, no fullscreen shader found", gamma)
+		end
 	else
 		core.display.setGamma(gamma)
 		print("[GAMMA] Setting gamma correction using SDL", gamma)
