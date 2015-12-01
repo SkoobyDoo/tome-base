@@ -203,6 +203,8 @@ function _M:onEnterLevel(zone, level)
 		level:removeEntity(ent, true)
 		ent.dead = true
 	end
+
+	self:fireTalentCheck("callbackOnChangeLevel", "enter", zone, level)
 end
 
 function _M:onEnterLevelEnd(zone, level)
@@ -221,6 +223,8 @@ function _M:onLeaveLevel(zone, level)
 		q.abandoned = true
 		self:setQuestStatus(eid, q.FAILED)
 	end
+
+	self:fireTalentCheck("callbackOnChangeLevel", "leave", zone, level)
 end
 
 -- Wilderness encounter

@@ -4860,6 +4860,7 @@ local sustainCallbackCheck = {
 	callbackOnTemporaryEffectAdd = "talents_on_tmp_add",
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
+	callbackOnChangeLevel = "talents_on_change_level",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
