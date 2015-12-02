@@ -55,8 +55,8 @@ function _M:loaded()
 	local base_size = nil
 	local gl = nil
 	local islast = false
-	local sub_particle = nil
-	local sub_particle_args = nil
+	local sub_particle = self.args.sub_particle
+	local sub_particle_args = self.args.sub_particle_args
 	if type(self.def) == "string" then
 		local f, err = loadfile("/data/gfx/particles/"..self.def..".lua")
 		if not f and err then error(err) end
