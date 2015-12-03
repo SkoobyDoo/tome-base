@@ -34,7 +34,7 @@ function _M:init(l, w, force_height)
 
 	Dialog.init(self, "Lore found: #0080FF#"..l.name, 1, 1)
 
-	local text = util.getval(l.lore).."\n"
+	local text = util.getval(l.lore, true).."\n"
 	local list = text:splitLines(w - 10, self.font)
 
 	if l.bloodstains then
