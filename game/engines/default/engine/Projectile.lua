@@ -89,7 +89,7 @@ function _M:move(x, y, force)
 	if y >= map.h then y = map.h - 1 end
 
 	if self.x and self.y then
-		map:remove(self.x, self.y, Map.PROJECTILE)
+		map:remove(self.x, self.y, Map.PROJECTILE, self)
 	else
 --		print("[MOVE] projectile moved without a starting position", self.name, x, y)
 	end
