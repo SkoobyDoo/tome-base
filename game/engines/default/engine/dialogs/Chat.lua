@@ -30,12 +30,13 @@ module(..., package.seeall, class.inherit(Dialog))
 
 show_portraits = false
 
-function _M:init(chat, id)
+function _M:init(chat, id, width)
+	self.force_width = width
 	self.cur_id = id
 	self.chat = chat
 	self.npc = chat.npc
 	self.player = chat.player
-	Dialog.init(self, self.npc.name, 500, 400)
+	Dialog.init(self, self.npc.name, width or 500, 400)
 
 	local xoff = 0
 	if self.show_portraits then
@@ -109,7 +110,7 @@ function _M:use(item, a)
 end
 
 function _M:regen()
-	local d = new(self.chat, self.cur_id)
+	local d = new(self.chat, self.cur_id, self.force_width)
 	d.__showup = false
 	game:replaceDialog(self, d)
 	self.next_dialog = d
