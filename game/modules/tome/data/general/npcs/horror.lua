@@ -247,7 +247,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 	-- Needs an on death affect that kills off any remaining eyes.
 	on_die = function(self, src)
 		local nb = 0
-		for eye, _ in pairs(self.eyes) do
+		for eye, _ in pairs(self.eyes or {}) do
 			if not eye.dead then eye:die(src) nb = nb + 1 end
 		end
 		if nb > 0 then

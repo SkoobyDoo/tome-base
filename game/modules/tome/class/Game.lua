@@ -1694,6 +1694,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			game.player:setQuestStatus("orcs+yeti-abduction", engine.Quest.COMPLETED)
+do return end
 			self:changeLevel(1, "orcs+gem")
 			-- self:changeLevel(6, "orcs+palace-fumes")
 do return end
