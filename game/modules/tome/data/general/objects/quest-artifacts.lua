@@ -346,10 +346,11 @@ You have heard of such items before. They are very useful to adventurers, allowi
 							end
 						end
 					end, "Cancel", "Recall")
+					return {id=true, used=true}
 				end
 			end
 			game.logPlayer(who, "The rod emits a strange noise, glows briefly and returns to normal.")
-			return {id=true, used=true}
+			return {id=true}
 		end
 	},
 
