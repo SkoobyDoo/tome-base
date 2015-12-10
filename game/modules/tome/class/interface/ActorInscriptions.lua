@@ -38,6 +38,10 @@ function _M:setInscription(id, name, data, cooldown, vocal, src, bypass_max_same
 		if vocal then game.logPlayer(self, "You are unable to use this kind of inscription.") end
 		return
 	end
+	if self.inscription_forbids and self.inscription_forbids[t.type[1]] then
+		if vocal then game.logPlayer(self, "You are unable to use this kind of inscription.") end
+		return
+	end
 
 	-- Count occurrences
 	local nb_same = 0

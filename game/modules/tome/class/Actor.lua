@@ -4638,6 +4638,10 @@ function _M:preUseTalent(ab, silent, fake)
 		if not silent then game.logSeen(self, "%s is unable to use this kind of inscription.", self.name:capitalize()) end
 		return false
 	end
+	if ab.is_inscription and self.inscription_forbids and self.inscription_forbids[ab.type[1]] then
+		if not silent then game.logSeen(self, "%s is unable to use this kind of inscription.", self.name:capitalize()) end
+		return false
+	end
 
 	-- when using unarmed techniques check for weapons and heavy armor
 	if ab.is_unarmed and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) then

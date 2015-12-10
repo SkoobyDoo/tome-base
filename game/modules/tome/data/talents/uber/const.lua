@@ -134,13 +134,18 @@ uberTalent{
 
 uberTalent{
 	name = "Fungal Blood",
-	require = { special={desc="Be able to use infusions", fct=function(self) return not self.inscription_restrictions or self.inscription_restrictions['inscriptions/infusions'] end} },
+	require = { special={desc="Be able to use infusions", fct=function(self)
+		return 
+			(not self.inscription_restrictions or self.inscription_restrictions['inscriptions/infusions']) and
+			(not self.inscription_forbids or not self.inscription_forbids['inscriptions/infusions'])
+	end} },
 	tactical = { HEAL = function(self) return not self:hasEffect(self.EFF_FUNGAL_BLOOD) and 0 or math.ceil(self:hasEffect(self.EFF_FUNGAL_BLOOD).power / 150) end },
 	healmax = function(self, t) return self.max_life * self:combatStatLimit("con", 0.5, 0.1, 0.25) end, -- Limit < 50% max life
 	fungalPower = function(self, t) return self:getCon()*2 + self.max_life * self:combatStatLimit("con", 0.05, 0.005, 0.01) end,
 	on_pre_use = function(self, t) return self:hasEffect(self.EFF_FUNGAL_BLOOD) and self:hasEffect(self.EFF_FUNGAL_BLOOD).power > 0 and not self:attr("undead") end,
 	trigger = function(self, t)
 		if self.inscription_restrictions and not self.inscription_restrictions['inscriptions/infusions'] then return end
+		if self.inscription_forbids and self.inscription_forbids['inscriptions/infusions'] then return end
 		self:setEffect(self.EFF_FUNGAL_BLOOD, 6, {power=t.fungalPower(self, t)})
 	end,
 	no_energy = true,
