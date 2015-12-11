@@ -196,7 +196,7 @@ function _M:generateListUi()
 	end, fct=function(item)
 		local list = FontPackage:list()
 		Dialog:listPopup("Font style", "Select font", list, 300, 200, function(sel)
-			if not sel or not sel.type then return end
+			if not sel or not sel.id then return end
 			game:saveSettings("tome.fonts", ("tome.fonts = { type = %q, size = %q }\n"):format(sel.id, config.settings.tome.fonts.size))
 			config.settings.tome.fonts.type = sel.id
 			self.c_list:drawItem(item)
