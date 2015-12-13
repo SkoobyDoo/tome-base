@@ -80,7 +80,8 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	autolevel = "caster",
 	
 	summon = {
-		{type="undead", number=4, hasxp=false},
+		{type="undead", number=4, hasxp=false, base_list="mod.class.NPC:/data/general/npcs/ghoul.lua"},
+		{type="undead", number=4, hasxp=false, base_list="mod.class.NPC:/data/general/npcs/skeleton.lua"},
 	},
 	
 	resolvers.talents{
@@ -124,7 +125,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	autolevel = "warriormage",
 	
 	summon = {
-		{type="undead", subtype = "skeleton", number=5, hasxp=false},
+		{type="undead", subtype = "skeleton", number=5, hasxp=false, base_list="mod.class.NPC:/data/general/npcs/skeleton.lua"},
 	},
 	
 	resolvers.talents{

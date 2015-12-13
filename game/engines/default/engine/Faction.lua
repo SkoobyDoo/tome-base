@@ -112,6 +112,14 @@ function _M:setFactionReaction(f1, f2, reaction, mutual)
 	self:triggerHook{"Faction:setReaction", f1=f1, f2=f2, reaction=reaction, mutual=mutual}
 end
 
+--- Copies all the reactions from/to a faction onto a new one
+function _M:copyReactions(to, from)
+	table.merge(self.factions[to].reaction, self.factions[from].reaction)
+	for f, data in pairs(self.factions) do if f ~= to and f ~= from then
+		if data.reaction[from] then data.reaction[to] = data.reaction[from] end
+	end end
+end
+
 -- Add a few default factions
 _M:add{ name="Players", reaction={enemies=-100} }
 _M:add{ name="Enemies", reaction={players=-100} }
