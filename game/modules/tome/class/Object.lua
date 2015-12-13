@@ -1703,9 +1703,10 @@ function _M:getTextualDesc(compare_with, use_actor)
 		if self.on_type then desc:add("Attach on item of type '", {"color","ORANGE"}, self.on_type, {"color", "LAST"}, "'", true) end
 		if self.on_slot then desc:add("Attach on item worn on slot '", {"color","ORANGE"}, self.on_slot:lower():gsub('_', ' '), {"color", "LAST"}, "'", true) end
 
-		if self.object_tinker and self.object_tinker.wielder then
+		if self.object_tinker and (self.object_tinker.combat or self.object_tinker.wielder) then
 			desc:add({"color","YELLOW"}, "When attach to an other item:", {"color", "LAST"}, true)
-			desc_wielder(self.object_tinker, compare_with, "wielder")
+			if self.object_tinker.combat then desc_combat(self.object_tinker, compare_with, "combat") end
+			if self.object_tinker.wielder then desc_wielder(self.object_tinker, compare_with, "wielder") end
 		end
 	end
 
