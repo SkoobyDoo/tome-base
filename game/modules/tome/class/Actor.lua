@@ -3145,7 +3145,15 @@ function _M:die(src, death_note)
 	-- Ingredients
 	if src and self.ingredient_on_death then
 		local rsrc = src.resolveSource and src:resolveSource() or src
-		if game.party:hasMember(rsrc) then game.party:collectIngredient(self.ingredient_on_death) end
+		if game.party:hasMember(rsrc) then 
+			if type(self.ingredient_on_death) == "table" then
+				for _, ingredient in ipairs(self.ingredient_on_death) do
+					game.party:collectIngredient(ingredient)
+				end
+			else
+				game.party:collectIngredient(self.ingredient_on_death)
+			end
+		end
 	end
 
 	if self.sound_die and (self.unique or rng.chance(5)) then game:playSoundNear(self, self.sound_die) end
