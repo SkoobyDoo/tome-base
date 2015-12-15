@@ -56,6 +56,10 @@ function _M:loadUIDefinitions(file)
 	if not f then print("Error while loading UI definition from", file, ":", err) return end
 end
 
+function _M:uiExists(ui)
+	return self.ui_conf[ui]
+end
+
 function _M:inherited(base)
 	if base._NAME == "engine.ui.Base" then
 		self.font = base.font
