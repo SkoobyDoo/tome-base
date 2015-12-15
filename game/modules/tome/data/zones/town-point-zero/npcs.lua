@@ -128,7 +128,7 @@ newEntity{ base = "BASE_NPC_LOSGOROTH", define_as = "MONSTROUS_LOSGOROTH",
 
 
 newEntity{ base = "BASE_NPC_POINT_ZERO_TOWN", define_as = "ZEMEKKYS",
-	name = "Zemekkys, Grand Keeper of Reality", color=colors.VIOLET,
+	name = "Zemekkys, Grand Keeper of Reality", color=colors.VIOLET, unique = true,
 	image = "npc/humanoid_elf_high_chronomancer_zemekkys.png",
 	subtype = "shalore",
 	desc = [[A timeless elf stands before you. Even though his age is impossible to determine, you feel he has seen many things.]],

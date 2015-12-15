@@ -77,7 +77,7 @@ newEntity{ base = "BASE_NPC_SUNWALL_DEFENDER", define_as = "SUN_PALADIN_DEFENDER
 }
 
 newEntity{ base = "BASE_NPC_SUNWALL_DEFENDER", define_as = "SUN_PALADIN_DEFENDER_RODMOUR",
-	name = "High Sun-Paladin Rodmour", color=colors.VIOLET,
+	name = "High Sun-Paladin Rodmour", color=colors.VIOLET, unique = true,
 	desc = [[A Human in shiny plate armour.]],
 	level_range = {70, nil}, exp_worth = 1,
 	rank = 3,

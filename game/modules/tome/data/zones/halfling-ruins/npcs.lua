@@ -24,7 +24,7 @@ load("/data/general/npcs/bone-giant.lua", rarity(8))
 local Talents = require("engine.interface.ActorTalents")
 
 newEntity{ define_as="SUBJECT_Z",
-	name = "Subject Z", color=colors.VIOLET, display = "p",
+	name = "Subject Z", color=colors.VIOLET, display = "p", unique = true,
 	desc = "This seems to be the 'subject Z' the notes spoke about. He looks human, but this cannot be -- he would be about five thousands years old!",
 	type = "humanoid", subtype = "human",
 	killer_message = "and bloodily smeared across the granite walls",
@@ -104,7 +104,7 @@ newEntity{ define_as="SUBJECT_Z",
 }
 
 newEntity{ define_as="YEEK_WAYIST",
-	name = "Yeek Wayist", color=colors.VIOLET, display = "y",
+	name = "Yeek Wayist", color=colors.VIOLET, display = "y", unique = true,
 	desc = "This creature is about as tall as a halfling. It is covered in white silky fur and has a disproportionate head. The weirdest thing about it though, its weapon simply float in front of it.",
 	type = "humanoid", subtype = "yeek",
 	level_range = {10, nil},

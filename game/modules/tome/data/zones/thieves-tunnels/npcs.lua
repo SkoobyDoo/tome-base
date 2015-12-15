@@ -24,7 +24,7 @@ local Talents = require("engine.interface.ActorTalents")
 newEntity{ define_as = "ASSASSIN_LORD",
 	type = "humanoid", subtype = "human",
 	display = "p", color=colors.VIOLET,
-	name = "Assassin Lord",
+	name = "Assassin Lord", unique = true,
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 	cant_be_moved = true,
 

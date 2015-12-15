@@ -22,7 +22,7 @@ load("/data/general/npcs/feline.lua", function(e) e.rarity = nil end)
 local Talents = require("engine.interface.ActorTalents")
 
 newEntity{ base = "BASE_NPC_HORROR", define_as="WEIRDLING_BEAST",
-	name = "Weirdling Beast", color=colors.VIOLET,
+	name = "Weirdling Beast", color=colors.VIOLET, unique = true,
 	desc = "A roughly humanoid creature, with tentacle-like appendages in the place of arms and legs. You gasp in horror as you notice it has no head. Putrid warts form quickly on its skin and explode as quickly.",
 	killer_message = "and slowly consumed",
 	level_range = {19, nil}, exp_worth = 3,
@@ -162,7 +162,7 @@ newEntity{ define_as="TRAINING_DUMMY",
 
 
 newEntity{ base = "BASE_NPC_CAT", define_as = "KITTY",
-	name = "Pumpkin, the little kitty", color=colors.ORANGE,
+	name = "Pumpkin, the little kitty", color=colors.ORANGE, unique = true,
 	image="npc/sage_kitty.png",
 	desc = [[An orange kitty with a white star blaze on his chest. Has a strange affinity for licking your face whenever possible.]],
 	level_range = {1, nil}, exp_worth = 1,

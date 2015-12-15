@@ -30,7 +30,7 @@ function _M:init(errs, mod)
 	-- I like to fak'it fak'it !
 	self.__mod_info = mod
 	_G.game = self
-	UIBase.ui = "dark"
+	UIBase:changeDefault("dark")
 
 	-- Force load definitions of UI to be able to display the error
 	for _, file in ipairs(fs.list("/data/gfx/ui/definitions")) do
