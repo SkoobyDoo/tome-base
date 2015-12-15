@@ -92,6 +92,8 @@ local skip_key = {init=true, _NAME=true, _M=true, _PACKAGE=true, new=true, _BASE
 -- @return function(c)
 function inherit(...)
 	local bases = {...}
+	local basenames = {}
+	for _, b in ipairs(bases) do if b._NAME then basenames[b._NAME] = true end end
 	return function(c)
 		c._BASES = bases
 		-- Recursive inheritance caching
@@ -172,11 +174,23 @@ function _M:importInterface(base)
 end
 
 function _M:getClassName()
-	return self.__CLASSNAME
+	return self.__CLASSNAME or self._NAME
 end
 
 function _M:getClass()
 	return getmetatable(self).__index
+end
+
+function _M:isClassName(name)
+	if self.__CLASSNAME == name then return true end
+	if self._NAME == name then return true end
+	if self._BASES then
+		for _, b in ipairs(self._BASES) do
+			if b._NAME == name then return true end
+			if b:isClassName(name) then return true end
+		end
+	end
+	return false
 end
 
 function _M:runInherited()

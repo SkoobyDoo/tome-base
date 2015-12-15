@@ -44,7 +44,7 @@ Map.faction_danger_check = function(self, e, max) return (not max and e.rank > 3
 Level.remove_old_entity_on_duplicate = true
 
 -- Dialog UI
-UIBase.ui = config.settings.tome.ui_theme3
+UIBase:changeDefault(config.settings.tome.ui_theme3)
 UIBase:setTextShadow(0.6)
 
 -- Dialogs fonts

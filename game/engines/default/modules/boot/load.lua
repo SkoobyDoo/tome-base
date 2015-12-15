@@ -45,9 +45,6 @@ UIBase.font_mono_h = UIBase.font_mono:lineSkip()+2
 local n = core.noise.new(2)
 _2DNoise = n:makeTexture2D(64, 64)
 
-if config.settings.tome and config.settings.tome.ui_theme3 and UIBase:uiExists(config.settings.tome.ui_theme3) then
-	UIBase.ui = config.settings.tome.ui_theme3
-end
 UIBase:setTextShadow(0.6)
 
 -- Usefull keybinds
@@ -81,5 +78,8 @@ Birther:loadDefinition("/data/birth/descriptors.lua")
 core.game.setRealtime(8)
 
 class:triggerHook{"Boot:load"}
+if config.settings.tome and config.settings.tome.ui_theme3 then
+	UIBase:changeDefault(config.settings.tome.ui_theme3)
+end
 
 return {require "mod.class.Game" }
