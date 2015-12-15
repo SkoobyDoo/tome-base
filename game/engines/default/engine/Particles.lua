@@ -52,6 +52,7 @@ end
 
 local foo = {}
 function _M:loaded()
+	if not self.args then self.args = {} end
 	local base_size = nil
 	local gl = nil
 	local islast = false
