@@ -1343,6 +1343,7 @@ int main(int argc, char *argv[])
 	bool logtofile = FALSE;
 	bool is_zygote = FALSE;
 	bool os_autoflush = FALSE;
+	bool no_web = FALSE;
 	FILE *logfile = NULL;
 
 	// Parse arguments
@@ -1371,6 +1372,7 @@ int main(int argc, char *argv[])
 		if (!strncmp(arg, "--type=renderer", 15)) is_zygote = TRUE;
 		if (!strncmp(arg, "--no-sandbox", 12)) is_zygote = TRUE;
 		if (!strncmp(arg, "--logtofile", 11)) logtofile = TRUE;
+		if (!strncmp(arg, "--no-web", 8)) no_web = TRUE;
 	}
 
 #ifdef SELFEXE_WINDOWS
@@ -1392,7 +1394,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	te4_web_load();
+	if (!no_web) te4_web_load();
 
 	// Initialize display lock for thread safety.
 	renderingLock = SDL_CreateMutex();
