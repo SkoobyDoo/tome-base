@@ -1559,7 +1559,7 @@ function _M:on_quest_status(quest, status, sub)
 	if sub then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' status updated! #WHITE#(Press 'j' to see the quest log)", quest.name)
 		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' updated!", quest.name)
-		self:questPopup(quest, status)
+		self:questPopup(quest, engine.Quest.PENDING)
 	elseif status == engine.Quest.COMPLETED then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' completed! #WHITE#(Press 'j' to see the quest log)", quest.name)
 		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' completed!", quest.name)
