@@ -46,6 +46,10 @@ function _M:newLore(t)
 
 	t.order = #self.lore_defs+1
 
+	if t.lore and type(t.lore) == "string" then
+		t.lore = t.lore:gsub("%[i%]", "#{italic}#"):gsub("%[/i%]", "#{normal}#"):gsub("%[b%]", "#{bold}#"):gsub("%[/b%]", "#{normal}#")
+	end
+
 	self.lore_defs[t.id] = t
 	self.lore_defs[#self.lore_defs+1] = t
 --	print("[LORE] defined", t.order, t.id)
@@ -73,7 +77,7 @@ function _M:getLore(lore, silent)
 	if l.template then
 		local tpl = slt2.loadstring(l.lore)
 		l.lore = slt2.render(tpl, {player=self:findMember{main=true}, self=self})
-	end
+	end	
 
 	return l
 end
