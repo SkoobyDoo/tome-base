@@ -47,7 +47,9 @@ function _M:newLore(t)
 	t.order = #self.lore_defs+1
 
 	if t.lore and type(t.lore) == "string" then
-		t.lore = t.lore:gsub("%[i%]", "#{italic}#"):gsub("%[/i%]", "#{normal}#"):gsub("%[b%]", "#{bold}#"):gsub("%[/b%]", "#{normal}#")
+		t.lore = t.lore:gsub("%[i%]", "#{italic}#"):gsub("%[/i%]", "#{normal}#")
+		               :gsub("%[b%]", "#{bold}#"):gsub("%[/b%]", "#{normal}#")
+		               :gsub("%[u%]", "#{underline}#"):gsub("%[/u%]", "#{normal}#")
 	end
 
 	self.lore_defs[t.id] = t
