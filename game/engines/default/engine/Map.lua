@@ -830,6 +830,15 @@ function _M:rememberAll(x, y, w, h, v)
 	end end
 end
 
+--- Sets the current view at a precise location
+function _M:setScroll(x, y)
+	if self.mx == x and self.my == y then return end
+	self.mx = x
+	self.my = y
+	self.changed = true
+	self:checkMapViewBounded()
+end
+
 --- Sets the current view area with the given coords at the center
 function _M:centerViewAround(x, y)
 	self.mx = x - math.floor(self.viewport.mwidth / 2)

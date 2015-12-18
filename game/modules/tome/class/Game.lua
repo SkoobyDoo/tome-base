@@ -1498,6 +1498,7 @@ function _M:displayMap(nb_keyframes)
 
 		-- Display using Framebuffer, so that we can use shaders and all
 		if self.fbo then
+			if self.level.data.display_prepare then self.level.data.display_prepare(self.level, 0, 0, nb_keyframes) end
 			self.fbo:use(true)
 				if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
 				map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov, self.fbo)
@@ -1694,7 +1695,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(4, "orcs+krimbul")
+			self:changeLevel(1, "orcs+primal-forest")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
 			if o then
