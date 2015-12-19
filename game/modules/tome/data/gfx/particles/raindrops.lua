@@ -44,7 +44,7 @@ function(self)
 	if first then
 		self.ps:emit(700)
 	else
-		self.ps:emit(2)
+		self.ps:emit(intensity or 2)
 	end
 	first = false
 end,

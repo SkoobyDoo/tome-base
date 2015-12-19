@@ -69,6 +69,7 @@ newEntity{ base = "BASE_NPC_PLANT",
 	never_move = 0,
 	rank = 2,
 	size_category = 5,
+	is_treant = true,
 }
 
 newEntity{ base = "BASE_NPC_PLANT",

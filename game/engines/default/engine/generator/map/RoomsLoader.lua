@@ -129,7 +129,11 @@ function _M:tmxLoadRoom(file, basefile)
 		self:loadLuaInEnv(g, nil, "return "..mapprops.lua)
 	end
 
-	local m = { w=w, h=h }
+	local m = { w=w, h=h, room_map={} }
+
+	if mapprops.prefered_location then
+		m.prefered_location = self:loadLuaInEnv(g, nil, "return "..mapprops.prefered_location)
+	end
 
 	local function populate(i, j, c, tid)
 		local ii, jj = i, j
@@ -215,13 +219,23 @@ function _M:tmxLoadRoom(file, basefile)
 			-- 		end end
 			-- 	end
 			-- end
+			if og.attr.name:find("^room_map") then
+				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+				for k, v in pairs(props) do
+					for i = x, x + w do for j = y, y + h do
+						m.room_map[i] = m.room_map[i] or {}
+						m.room_map[i][j] = m.room_map[i][j] or {}
+						table.merge(m.room_map[i][j], {[k]=self:loadLuaInEnv(g, nil, "return "..v)})
+					end end
+				end
+			end
 		end
 	end
 
 	print("[ROOM TMX MAP] size", m.w, m.h)
 
 	local gen = function(gen, id)
-		return { name="tmxroom"..tmxid.."-"..m.w.."x"..m.h, w=m.w, h=m.h, generator = function(self, x, y, is_lit)
+		return { name="tmxroom"..tmxid.."-"..m.w.."x"..m.h, w=m.w, h=m.h, prefered_location=m.prefered_location, generator = function(self, x, y, is_lit)
 			for i = 1, m.w do for j = 1, m.h do
 				gen.map.room_map[i-1+x][j-1+y].room = id
 				if is_lit then gen.map.lites(i-1+x, j-1+y, true) end
@@ -241,6 +255,7 @@ function _M:tmxLoadRoom(file, basefile)
 					gen.map.forced_down = {x=i-1+x, y=j-1+y}
 					gen.map.room_map[i-1+x][j-1+y].special = "exit"
 				end
+				print("===room", i,j, "::", c.grid, c.grid and t[c.grid])
 
 				if c.grid then
 					local g = gen:resolve(t[c.grid], nil, true)
@@ -249,6 +264,7 @@ function _M:tmxLoadRoom(file, basefile)
 						g:resolve()
 						g:resolve(nil, true)
 						gen.map(i-1+x, j-1+y, Map.TERRAIN, g)
+					print(" => ", g, g and g.name)
 					end
 				end
 				if c.object then local d = t[c.object] if d then
@@ -284,6 +300,21 @@ function _M:tmxLoadRoom(file, basefile)
 						e.on_added_to_level = nil
 					end
 				end end
+				if c.trigger then local d = t[c.trigger] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "terrain", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "terrain", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "terrain", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "trigger", e)
+						e.on_added_to_level = nil
+					end
+				end end
+
+				if m.room_map[i] and m.room_map[i][j] then
+					table.merge(gen.map.room_map[i-1+x][j-1+y], m.room_map[i][j])
+				end
 			end end
 		end}
 	end
@@ -493,10 +524,18 @@ function _M:roomAlloc(room, id, lev, old_lev, add_check)
 	room = self:roomGen(room, id, lev, old_lev)
 	if not room then return end
 
+	local prefered_location = room.prefered_location
 	local tries = 100
 	while tries > 0 do
 		local ok = true
-		local x, y = rng.range(1, self.map.w - 2 - room.w), rng.range(1, self.map.h - 2 - room.h)
+		local x, y
+		if prefered_location then
+			x, y = prefered_location(self.map)
+			x, y = x - math.floor(room.w / 2), y - math.floor(room.h / 2)
+			prefered_location = nil
+		else
+			x, y = rng.range(1, self.map.w - 2 - room.w), rng.range(1, self.map.h - 2 - room.h)
+		end
 
 		-- Do we stomp ?
 		for i = 1, room.w do
