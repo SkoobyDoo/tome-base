@@ -47,7 +47,7 @@ newTalent{
 		local shield = self:hasShield()
 		if hitted and not target.dead and shield and not self.turn_procs.shield_of_light then
 			self.turn_procs.shield_of_light = true
-			self:attackTargetWith(target, weapon.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
+			self:attackTargetWith(target, shield.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
 		end
 	end,
 	info = function(self, t)
