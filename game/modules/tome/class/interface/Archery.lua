@@ -386,7 +386,9 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			end
 		end
 
+		if tg.archery.crushing_blow then self:attr("crushing_blow", 1) end
 		DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam), tmp)
+		if tg.archery.crushing_blow then self:attr("crushing_blow", -1) end
 
 		if not tg.no_archery_particle then game.level.map:particleEmitter(target.x, target.y, 1, "archery") end
 		hitted = true
