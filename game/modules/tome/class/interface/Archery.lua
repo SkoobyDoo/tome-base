@@ -587,7 +587,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		end
 	end
 
-	self:fireTalentCheck("callbackOnArcheryAttack", target, hitted, crit, weapon, ammo, damtype, mult, dam)
+	self:fireTalentCheck("callbackOnArcheryAttack", target, hitted, crit, weapon, ammo, damtype, mult, dam, talent)
 	-- hook to resolve after archery damage has been applied
 	local hd = {"Combat:archeryHit", hitted=hitted, crit=crit, tg=tg, target=target, weapon=weapon, ammo=ammo, damtype=damtype, mult=mult, dam=dam}
 	if self:triggerHook(hd) then hitted = hd.hitted end
