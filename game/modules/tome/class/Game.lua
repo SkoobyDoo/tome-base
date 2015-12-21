@@ -1783,6 +1783,7 @@ do return end
 					end
 				elseif not self.player:autoExplore() then
 					self.log("There is nowhere left to explore.")
+					self:triggerHook{"Player:autoExplore:nowhere"}
 				end
 			end end
 

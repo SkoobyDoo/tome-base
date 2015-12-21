@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 local rooms = {"random_room", {"pit",3}, {"greater_vault",7}}
-if game:isAddonActive("items-vault") then table.insert(rooms, {"!items-vault",12}) end
+if game:isAddonActive("items-vault") then table.insert(rooms, {"!items-vault",70}) end
 
 return {
 	name = "Infinite Dungeon",
