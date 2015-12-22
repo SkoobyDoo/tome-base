@@ -858,7 +858,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "zone" and not self.save_per_level then
@@ -874,7 +874,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "memory" then
@@ -890,7 +890,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif level_data.persistent then
@@ -924,7 +924,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	collectgarbage("collect")
 
 	-- Re-open the level if needed (the method does the check itself)
-	level.map:reopen()
+	if level.map then level.map:reopen() end
 
 	return level, new_level
 end
