@@ -323,8 +323,20 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after counterstrike", dam)
 		end
 
+		if weapon and weapon.inc_damage_type then
+			local inc = 0
+
+			for k, v in pairs(weapon.inc_damage_type) do
+				if target:checkClassification(tostring(k)) then inc = math.max(inc, v) end
+			end
+
+			dam = dam + dam * inc / 100
+
+			print("[ATTACK] after inc by type (weapon)", dam)
+		end
+
 		if ammo and ammo.inc_damage_type then
-                       local inc = 0
+			local inc = 0
 
 			for k, v in pairs(ammo.inc_damage_type) do
 				if target:checkClassification(tostring(k)) then inc = math.max(inc, v) end
@@ -332,7 +344,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 			dam = dam + dam * inc / 100
 
-			print("[ATTACK] after inc by type", dam)
+			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
 		dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0)
