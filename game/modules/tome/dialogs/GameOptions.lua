@@ -284,6 +284,15 @@ function _M:generateListUi()
 		end
 	end
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When you activate a hotkey, either by keyboard or click a visual feedback will appear over it in the hotkeys bar.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Visual hotkeys feedback#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.visual_hotkeys and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.visual_hotkeys = not config.settings.tome.visual_hotkeys
+		game:saveSettings("tome.visual_hotkeys", ("tome.visual_hotkeys = %s\n"):format(tostring(config.settings.tome.visual_hotkeys)))
+		self.c_list:drawItem(item)
+	end,}
+
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Size of the icons in the hotkeys toolbar.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons hotkey toolbar icon size#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.hotkey_icons_size)

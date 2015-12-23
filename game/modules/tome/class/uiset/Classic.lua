@@ -329,6 +329,8 @@ function _M:display(nb_keyframes)
 
 	-- UI
 	self:displayUI()
+
+	UISet.display(self, nb_keyframes)
 end
 
 function _M:setupMouse(mouse)

@@ -2010,6 +2010,8 @@ function _M:display(nb_keyframes)
 		if size.bottom then d.drawQuad(0, Map.viewport.height - 10, Map.viewport.width, 10, 0, 200, 0, 50) end
 		d.glTranslate(-Map.display_x, -Map.display_y, -0)
 	end
+
+	UISet.display(self, nb_keyframes)
 end
 
 function _M:setupMouse(mouse)
