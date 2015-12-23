@@ -58,7 +58,10 @@ function _M:block_move(x, y, e, act, couldpass)
 
 	-- Open doors
 	if self.door_opened and e.open_door and act then
+		print("====door1", self.name, x, y)
+		util.show_backtrace()
 		if self.door_player_check then
+			print("====door1.1")
 			if e.player then
 				Dialog:yesnoPopup(self.name, self.door_player_check, function(ret)
 					if ret then
@@ -71,16 +74,39 @@ function _M:block_move(x, y, e, act, couldpass)
 				end, "Open", "Leave")
 			end
 		elseif self.door_player_stop then
+			print("====door1.2")
 			if e.player then
 				Dialog:simplePopup(self.name, self.door_player_stop)
 			end
 		else
+			print("====door1.3")
 			game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
+			print("====door1.3.1")
 			game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
+			print("====door1.3.2")
 			game.level.map:checkAllEntities(x, y, "on_door_opened", e)
+			print("====door1.3.3")
 
 			if game.level.map.attrs(x, y, "vault_id") and e.openVault then e:openVault(game.level.map.attrs(x, y, "vault_id")) end
+			print("====door1.3.4")
 		end
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====")
+		print("====door2.stop")
 		return true
 	elseif self.door_opened and not couldpass then
 		return true
