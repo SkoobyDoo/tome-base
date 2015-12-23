@@ -80,13 +80,13 @@ function _M:collectIngredient(id, nb, silent)
 
 	if d.min == INFINITY then
 		self.ingredients[id] = INFINITY
+		game.log("You collect a new ingredient: #LIGHT_GREEN#%s%s#WHITE#.", d.display_entity:getDisplayString(), d.name)
 	else
 		self.ingredients[id] = math.max((self.ingredients[id] or 0) + nb, d.min)
 		if d.max ~= INFINITY then
 			self.ingredients[id] = math.min(self.ingredients[id], d.max)
 		end
-
-		game.log("You collect a new ingredient: #LIGHT_GREEN#%s%s#WHITE#.", d.display_entity:getDisplayString(), d.name)
+		game.log("You collect a new ingredient: #LIGHT_GREEN#%s%s (%d)#WHITE#.", d.display_entity:getDisplayString(), d.name, nb)
 	end
 end
 
