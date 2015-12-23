@@ -21,7 +21,7 @@
 -- Advanced shaders
 --------------------------------------------------------------------------------------
 if core.shader.active(4) then
-use_shader = {type="fireball"}
+use_shader = {type="fireball", trail_length=trail_length or 1}
 base_size = 64
 
 size_factor = size_factor or 1
