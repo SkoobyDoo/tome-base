@@ -361,7 +361,7 @@ void te4_web_new(web_view_type *view, int w, int h) {
 
 	CefWindowInfo window_info;
 	CefBrowserSettings browserSettings;
-	browserSettings.java = STATE_DISABLED;
+	// browserSettings.java = STATE_DISABLED;
 	browserSettings.plugins = STATE_DISABLED;
 	window_info.SetAsWindowless(NULL, true);
 	opaque->render = new RenderHandler(w, h);
