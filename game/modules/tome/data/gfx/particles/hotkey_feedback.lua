@@ -17,7 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-base_size = 64
 w = w * 0.90
 h = h * 0.90
 local hw = w / 2
