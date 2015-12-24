@@ -293,6 +293,15 @@ function _M:generateListUi()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When the player or an NPC uses a talent shows a quick popup with the talent's icon and name over its head.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Talents activations map display#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.talents_flyers and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.talents_flyers = not config.settings.tome.talents_flyers
+		game:saveSettings("tome.talents_flyers", ("tome.talents_flyers = %s\n"):format(tostring(config.settings.tome.talents_flyers)))
+		self.c_list:drawItem(item)
+	end,}
+
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Size of the icons in the hotkeys toolbar.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons hotkey toolbar icon size#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.hotkey_icons_size)

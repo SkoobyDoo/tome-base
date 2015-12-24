@@ -47,6 +47,8 @@ if type(config.settings.tome.actor_based_movement_mode) == "nil" then config.set
 if type(config.settings.tome.rest_before_explore) == "nil" then config.settings.tome.rest_before_explore = true end
 if type(config.settings.tome.lore_popup) == "nil" then config.settings.tome.lore_popup = true end
 if type(config.settings.tome.auto_hotkey_object) == "nil" then config.settings.tome.auto_hotkey_object = true end
+if type(config.settings.tome.visual_hotkeys) == "nil" then config.settings.tome.visual_hotkeys = true end
+if type(config.settings.tome.talents_flyers) == "nil" then config.settings.tome.talents_flyers = false end
 if type(config.settings.tome.immediate_melee_keys) == "nil" then config.settings.tome.immediate_melee_keys = true end
 if type(config.settings.tome.immediate_melee_keys_auto) == "nil" then config.settings.tome.immediate_melee_keys_auto = true end
 if type(config.settings.tome.allow_online_events) == "nil" then config.settings.tome.allow_online_events = true end

@@ -53,15 +53,13 @@ end
 function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	if not x or not y or not str then return end
 	color = color or {255,255,255}
-	local s = core.display.drawStringBlendedNewSurface(bigfont and self.bigfont or self.font, str, color[1], color[2], color[3])
-	if not s then return end
-	local w, h = s:getSize()
-	local t, tw, th = s:glTexture()
+	local gen, max_lines, max_w = self.font:draw(str, str:toTString():maxWidth(self.font), color[1], color[2], color[3])
+	if not gen or not gen[1] then return end
 	local f = {
+		item = gen[1],
 		x=x,
 		y=y,
-		w=w, h=h,
-		tw=tw, th=th,
+		w=gen[1].w, h=gen[1].h,
 		duration=duration or 10,
 		xvel = xvel or 0,
 		yvel = yvel or 0,
@@ -95,8 +93,11 @@ function _M:display(nb_keyframes)
 			core.display.glScale(zoom, zoom, zoom)
 		end
 
-		if self.shadow then fl.t:toScreenFull(x+1, y+1, fl.w, fl.h, fl.tw, fl.th, 0, 0, 0, self.shadow) end
-		fl.t:toScreenFull(x, y, fl.w, fl.h, fl.tw, fl.th)
+		if self.shadow then fl.item._tex:toScreenFull(x+1, y+1, fl.item.w, fl.item.h, fl.item._tex_w, fl.item._tex_h, 0, 0, 0, self.shadow) end
+		fl.item._tex:toScreenFull(x, y, fl.item.w, fl.item.h, fl.item._tex_w, fl.item._tex_h)
+
+		-- if self.shadow then fl.t:toScreenFull(x+1, y+1, fl.w, fl.h, fl.tw, fl.th, 0, 0, 0, self.shadow) end
+		-- fl.t:toScreenFull(x, y, fl.w, fl.h, fl.tw, fl.th)
 		fl.x = fl.x + fl.xvel * nb_keyframes
 		fl.y = fl.y + fl.yvel * nb_keyframes
 		fl.duration = fl.duration - nb_keyframes
