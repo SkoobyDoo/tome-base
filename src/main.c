@@ -43,6 +43,7 @@
 #include "main.h"
 #include "te4web.h"
 #include "lua_externs.h"
+#include "renderer-moderngl/renderer-lua.h"
 #include "runner/core.h"
 #ifdef SELFEXE_WINDOWS
 #include <windows.h>
@@ -709,7 +710,7 @@ void on_redraw()
 			float seconds = (t - T0) / 1000.0;
 			float fps = Frames / seconds;
 			reference_fps = fps;
-//			printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
+			// printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
 			T0 = t;
 			Frames = 0;
 			last_keyframe = 0;
@@ -1154,6 +1155,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_lpeg(L);
 		luaopen_lxp(L);
 		luaopen_md5_core(L);
+		luaopen_renderer(L);
 		luaopen_map(L);
 		luaopen_particles(L);
 		luaopen_sound(L);

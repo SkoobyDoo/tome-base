@@ -21,6 +21,7 @@
 
 -- load some utility functions
 dofile("/engine/utils.lua")
+dofile("/engine/renderer.lua")
 dofile("/engine/colors.lua")
 
 -- load resolver functions for entities cloning
@@ -146,6 +147,11 @@ core.display.setTextBlended(config.settings.aa_text)
 -- core.display.setGamma(config.settings.gamma_correction / 100)
 if not config.settings.fbo_active then core.display.disableFBO() print("Disabling FBO") end
 if not config.settings.shaders_active then core.shader.disable() print("Disabling Shaders") end
+if core.shader.active() then
+	local Shader = require "engine.Shader"
+	local default = Shader.new("default/gl")
+	if default.shad then default.shad:setDefault() end
+end
 
 -- Webcore local request resolver
 dofile("/engine/webcore.lua")

@@ -30,6 +30,10 @@ newoption {
 	}
 }
 newoption {
+	trigger     = "profiling",
+	description = "Enables gprof profiling data",
+}
+newoption {
 	trigger     = "force32bits",
 	description = "Forces compilation in 32bits mode, allowing to use the lua jit",
 }

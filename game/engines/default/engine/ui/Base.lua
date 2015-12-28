@@ -29,6 +29,10 @@ local gfx_prefix = "/data/gfx/"
 local cache = {}
 local tcache = {}
 
+_M.tilesets = {}
+_M.tilesets_texs = {}
+_M.atlas_cache = {}
+
 -- Default font
 _M.font = core.display.newFont("/data/font/DroidSans.ttf", 12)
 _M.font_h = _M.font:lineSkip()
@@ -127,9 +131,53 @@ function _M:getUITexture(file)
 	if not i then i, w, h = self:getImage(self.defaultui.."-"..file) end
 	if not i then error("bad UI texture: "..uifile) return end
 	local t, tw, th = i:glTexture()
-	local r = {t=t, w=w, h=h, tw=tw, th=th}
+	local r = {t=t, w=w, h=h, tw=w/tw, th=h/th, tx=0, ty=0}
 	tcache[uifile] = r
 	return r
+end
+
+function _M:loadTileset(file)
+	if not fs.exists(file) then print("Tileset file "..file.." does not exists.") return end
+	local f, err = loadfile(file)
+	if err then error(err) end
+	local env = {}
+	local ts = {}
+	setfenv(f, setmetatable(ts, {__index={_G=ts}}))
+	local ok, err = pcall(f)
+	if not ok then error(err) end
+	print("[TILESET] loading atlas", file, ok, err)
+	if ts.__width > core.display.glMaxTextureSize() or ts.__height > core.display.glMaxTextureSize() then
+		print("[TILESET] Refusing tileset "..file.." due to texture size "..ts.__width.."x"..ts.__height.." over max of "..core.display.glMaxTextureSize())
+		return
+	end
+	for k, e in pairs(ts) do self.tilesets[k] = e end
+end
+
+function _M:checkTileset(image)
+	local f = gfx_prefix..image
+	if not self.tilesets[f] then return end
+	local d = self.tilesets[f]
+	print("Loading tile from tileset", f)
+	local tex = self.tilesets_texs[d.set]
+	if not tex then
+		tex = core.display.loadImage(d.set):glTexture(true, true)
+		self.tilesets_texs[d.set] = tex
+		print("Loading tileset", d.set)
+	end
+	return tex, d.factorx, d.factory, d.x, d.y, d.w, d.h
+end
+
+function _M:getAtlasTexture(file)
+	local uifile = (self.ui ~= "" and self.ui.."-" or "")..file
+	if self.atlas_cache[uifile] then return self.atlas_cache[uifile] end
+	local ts, fx, fy, tsx, tsy, tw, th = self:checkTileset(uifile)
+	if ts then
+		local t = {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
+		self.atlas_cache[uifile] = t
+		return t
+	else
+		return self:getUITexture(file)
+	end
 end
 
 function _M:drawFontLine(font, text, width, r, g, b, direct_draw)
@@ -152,17 +200,52 @@ end
 function _M:makeFrame(base, w, h, iw, ih)
 	local f = {}
 	if base then
-		f.b7 = self:getUITexture(base.."7.png")
-		f.b9 = self:getUITexture(base.."9.png")
-		f.b1 = self:getUITexture(base.."1.png")
-		f.b3 = self:getUITexture(base.."3.png")
-		f.b8 = self:getUITexture(base.."8.png")
-		f.b4 = self:getUITexture(base.."4.png")
-		f.b2 = self:getUITexture(base.."2.png")
-		f.b6 = self:getUITexture(base.."6.png")
-		f.b5 = self:getUITexture(base.."5.png")
+		f.b7 = self:getAtlasTexture(base.."7.png")
+		f.b9 = self:getAtlasTexture(base.."9.png")
+		f.b1 = self:getAtlasTexture(base.."1.png")
+		f.b3 = self:getAtlasTexture(base.."3.png")
+		f.b8 = self:getAtlasTexture(base.."8.png")
+		f.b4 = self:getAtlasTexture(base.."4.png")
+		f.b2 = self:getAtlasTexture(base.."2.png")
+		f.b6 = self:getAtlasTexture(base.."6.png")
+		f.b5 = self:getAtlasTexture(base.."5.png")
 		if not w then w = iw + f.b4.w + f.b6.w end
 		if not h then h = ih + f.b8.h + f.b2.h end
+	end
+	f.w = math.floor(w)
+	f.h = math.floor(h)
+	return f
+end
+
+function _M:makeFrameDO(base, w, h, iw, ih)
+	local f = {}
+	f.container = core.renderer.container()
+	if base then
+		f.b7 = self:getAtlasTexture(base.."7.png")
+		f.b9 = self:getAtlasTexture(base.."9.png")
+		f.b1 = self:getAtlasTexture(base.."1.png")
+		f.b3 = self:getAtlasTexture(base.."3.png")
+		f.b8 = self:getAtlasTexture(base.."8.png")
+		f.b4 = self:getAtlasTexture(base.."4.png")
+		f.b2 = self:getAtlasTexture(base.."2.png")
+		f.b6 = self:getAtlasTexture(base.."6.png")
+		f.b5 = self:getAtlasTexture(base.."5.png")
+		if not w then w = iw + f.b4.w + f.b6.w end
+		if not h then h = ih + f.b8.h + f.b2.h end
+
+		f.container:add(core.renderer.fromTextureTable(f.b5, f.b4.w, f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
+
+		f.container:add(core.renderer.fromTextureTable(f.b7, 0, 0))
+		f.container:add(core.renderer.fromTextureTable(f.b9, w-f.b9.w, 0))
+
+		f.container:add(core.renderer.fromTextureTable(f.b1, 0, h-f.b1.h, nil, nil, true))
+		f.container:add(core.renderer.fromTextureTable(f.b3, w-f.b3.w, h-f.b3.h, nil, nil, true))
+
+		f.container:add(core.renderer.fromTextureTable(f.b4, 0, f.b7.h, nil, h - f.b7.h - f.b1.h, true))
+		f.container:add(core.renderer.fromTextureTable(f.b6, w-f.b6.w, f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+
+		f.container:add(core.renderer.fromTextureTable(f.b8, f.b7.w, 0, w - f.b7.w - f.b9.w, nil, true))
+		f.container:add(core.renderer.fromTextureTable(f.b2, f.b1.w, h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)

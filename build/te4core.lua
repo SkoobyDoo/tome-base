@@ -31,16 +31,18 @@ end
 
 project "TEngine"
 	kind "WindowedApp"
-	language "C"
+	language "C++"
 	targetname("t-engine")
-	files { "../src/*.c", }
+	files { "../src/*.c", "../src/*.cpp", "../src/displayobjects/*.cpp", }
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "te4-renderer" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
+	buildoptions { "-std=c++11" }
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib "} end
 	if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib64 "} end
@@ -159,6 +161,7 @@ project "physfs"
 
 	defines {"PHYSFS_SUPPORTS_ZIP"}
 	if _OPTIONS.no_rwops_size then defines{"NO_RWOPS_SIZE"} end
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/physfs/*.c", "../src/zlib/*.c", "../src/physfs/archivers/*.c", }
 
@@ -358,6 +361,7 @@ elseif _OPTIONS.lua == "jit2" then
 		language "C"
 		targetname "lua"
 		links { "buildvm" }
+		if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 		files { "../src/luajit2/src/*.c", "../src/luajit2/src/*.s", "../src/luajit2/src/lj_vm.s", "../src/luajit2/src/lj_bcdef.h", "../src/luajit2/src/lj_ffdef.h", "../src/luajit2/src/lj_ffdef.h", "../src/luajit2/src/lj_libdef.h", "../src/luajit2/src/lj_recdef.h", "../src/luajit2/src/lj_folddef.h" }
 		excludes { "../src/luajit2/src/buildvm*.c", "../src/luajit2/src/luajit.c", "../src/luajit2/src/ljamalg.c" }
@@ -422,6 +426,7 @@ project "luasocket"
 	kind "StaticLib"
 	language "C"
 	targetname "luasocket"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	configuration "not windows"
 		files {
@@ -460,6 +465,7 @@ project "fov"
 	kind "StaticLib"
 	language "C"
 	targetname "fov"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/fov/*.c", }
 
@@ -467,6 +473,7 @@ project "lpeg"
 	kind "StaticLib"
 	language "C"
 	targetname "lpeg"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/lpeg/*.c", }
 
@@ -474,6 +481,7 @@ project "luaprofiler"
 	kind "StaticLib"
 	language "C"
 	targetname "luaprofiler"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/luaprofiler/*.c", }
 
@@ -481,6 +489,7 @@ project "tcodimport"
 	kind "StaticLib"
 	language "C"
 	targetname "tcodimport"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/libtcod_import/*.c", }
 
@@ -489,6 +498,7 @@ project "expatstatic"
 	language "C"
 	targetname "expatstatic"
 	defines{ "HAVE_MEMMOVE" }
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/expat/*.c", }
 
@@ -496,6 +506,7 @@ project "lxp"
 	kind "StaticLib"
 	language "C"
 	targetname "lxp"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/lxp/*.c", }
 
@@ -503,6 +514,7 @@ project "luamd5"
 	kind "StaticLib"
 	language "C"
 	targetname "luamd5"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/luamd5/*.c", }
 
@@ -510,6 +522,7 @@ project "luazlib"
 	kind "StaticLib"
 	language "C"
 	targetname "luazlib"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/lzlib/*.c", }
 
@@ -517,6 +530,7 @@ project "luabitop"
 	kind "StaticLib"
 	language "C"
 	targetname "luabitop"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/luabitop/*.c", }
 
@@ -524,27 +538,16 @@ project "te4-bzip"
 	kind "StaticLib"
 	language "C"
 	targetname "te4-bzip"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/bzip2/*.c", }
-
-if _OPTIONS['web-awesomium'] and not _OPTIONS.wincross then
-project "te4-web"
-	kind "SharedLib"
-	language "C++"
-	targetname "te4-web"
-
-	libdirs {"/opt/awesomium/bin/"}
-	includedirs {"/opt/awesomium/include/"}
-	links { "awesomium-1-7" }
-	
-	files { "../src/web-awesomium/*.cpp", }
-end
 
 if _OPTIONS['web-cef3'] and not _OPTIONS.wincross then
 project "te4-web"
 	kind "SharedLib"
 	language "C++"
 	targetname "te4-web"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN "} end
 	if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN "} end
@@ -572,6 +575,7 @@ project "cef3spawn"
 	kind "WindowedApp"
 	language "C++"
 	targetname "cef3spawn"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	includedirs {"../src/web-cef3/", }
 	files {
@@ -593,6 +597,15 @@ project "cef3spawn"
 		if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib64 "} end
 		defines { 'SELFEXE_LINUX' }
 end
+
+project "te4-renderer"
+	kind "StaticLib"
+	language "C++"
+	targetname "te4-renderer"
+	buildoptions { "-std=c++11" }
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+
+	files { "../src/renderer-moderngl/*.cpp", }
 
 if _OPTIONS.steam then
 	dofile("../steamworks/build/steam-code.lua")

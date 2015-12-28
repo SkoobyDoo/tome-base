@@ -528,6 +528,21 @@ function _M:display(nb_keyframes)
 	if self.full_fbo then self.full_fbo:use(false) self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad) end
 end
 
+local renderer = core.renderer.renderer()
+local UIBase = require "engine.ui.Base"
+local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400)
+renderer:add(f.container)
+
+UIBase.ui = "metal"
+local f2 = UIBase:makeFrameDO("ui/button", 100, 40)
+f.container:add(f2.container)
+
+
+function _M:display()
+	renderer:toScreen(0, 0, 1, 1, 1, 1)
+	f.container:translate(1, 1)
+end
+
 --- Ask if we really want to close, if so, save the game first
 function _M:onQuit()
 	if self.is_quitting then return end

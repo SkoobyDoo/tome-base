@@ -623,9 +623,9 @@ end
 --- Called by the engine map draw code for each z-layer
 function _M:zDisplay(z, nb_keyframe, prevfbo)
 	self:calcEffectVisibility(z)
-	self:displayParticles(z, nb_keyframe)
-	self:displayEffects(z, prevfbo, nb_keyframe)
-	return true
+	local changed = self:displayParticles(z, nb_keyframe)
+	changed = self:displayEffects(z, prevfbo, nb_keyframe) or changed
+	return changed
 end
 
 --- Sets checks if a grid lets sight pass through
@@ -1153,6 +1153,7 @@ end
 
 --- Display the overlay effects, called by self:display()
 function _M:displayEffects(z, prevfbo, nb_keyframes)
+	if not next(self.z_effects[z]) then return false end
 	local sx, sy = self._map:getScroll()
 	for e, _ in pairs(self.z_effects[z]) do
 		-- Dont bother with obviously out of screen stuff or invisible stuff
@@ -1209,6 +1210,7 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 			end
 		end
 	end
+	return true
 end
 
 --- Process the overlay effects, call it from your tick function
@@ -1387,6 +1389,7 @@ end
 
 --- Display the particle emitters, called by self:display()
 function _M:displayParticles(z, nb_keyframes)
+	if not next(self.z_particles[z]) then return false end
 	nb_keyframes = nb_keyframes or 1
 	local adx, ady
 	local alive
@@ -1437,6 +1440,7 @@ function _M:displayParticles(z, nb_keyframes)
 			end
 		end
 	end
+	return true
 end
 
 -- Returns the compass direction from a vector
