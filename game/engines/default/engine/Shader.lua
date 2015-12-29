@@ -281,7 +281,7 @@ function _M:rewriteShaderFrag(code)
 end
 
 function _M:rewriteShaderVert(code)
-	code = [[attribute vec2 te4_position;
+	code = [[attribute vec4 te4_position;
 	attribute vec2 te4_texcoord;
 	attribute vec4 te4_color;
 	varying vec2 te4_uv;

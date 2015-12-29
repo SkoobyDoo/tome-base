@@ -233,19 +233,21 @@ function _M:makeFrameDO(base, w, h, iw, ih)
 		if not w then w = iw + f.b4.w + f.b6.w end
 		if not h then h = ih + f.b8.h + f.b2.h end
 
-		f.container:add(core.renderer.fromTextureTable(f.b5, f.b4.w, f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
+		local cx, cy = -math.floor(w / 2), -math.floor(h / 2)
 
-		f.container:add(core.renderer.fromTextureTable(f.b7, 0, 0))
-		f.container:add(core.renderer.fromTextureTable(f.b9, w-f.b9.w, 0))
+		f.container:add(core.renderer.fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
 
-		f.container:add(core.renderer.fromTextureTable(f.b1, 0, h-f.b1.h, nil, nil, true))
-		f.container:add(core.renderer.fromTextureTable(f.b3, w-f.b3.w, h-f.b3.h, nil, nil, true))
+		f.container:add(core.renderer.fromTextureTable(f.b7, cx + 0, cy + 0))
+		f.container:add(core.renderer.fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
 
-		f.container:add(core.renderer.fromTextureTable(f.b4, 0, f.b7.h, nil, h - f.b7.h - f.b1.h, true))
-		f.container:add(core.renderer.fromTextureTable(f.b6, w-f.b6.w, f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+		f.container:add(core.renderer.fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h, nil, nil, true))
+		f.container:add(core.renderer.fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h, nil, nil, true))
 
-		f.container:add(core.renderer.fromTextureTable(f.b8, f.b7.w, 0, w - f.b7.w - f.b9.w, nil, true))
-		f.container:add(core.renderer.fromTextureTable(f.b2, f.b1.w, h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
+		f.container:add(core.renderer.fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
+		f.container:add(core.renderer.fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+
+		f.container:add(core.renderer.fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true))
+		f.container:add(core.renderer.fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)

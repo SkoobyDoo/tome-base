@@ -56,7 +56,7 @@ public:
 
 	DisplayObjectGL();
 	virtual ~DisplayObjectGL();
-	virtual void render(DORContainer *container) = 0;
+	virtual void render(DORContainer *container, mat4 cur_model) = 0;
 };
 
 /****************************************************************************
@@ -66,7 +66,7 @@ class DORVertexes : public DOVertexes, public DisplayObjectGL {
 public:
 	DORVertexes() : DOVertexes(), DisplayObjectGL() {};
 	virtual ~DORVertexes() {};
-	virtual void render(DORContainer *container);
+	virtual void render(DORContainer *container, mat4 cur_model);
 };
 
 /****************************************************************************
@@ -80,7 +80,7 @@ protected:
 public:
 	DORContainer() : DOContainer(), DisplayObjectGL() {};
 	virtual ~DORContainer() {};
-	virtual void render(DORContainer *container);
+	virtual void render(DORContainer *container, mat4 cur_model);
 	virtual void addDisplayList(DisplayList* dl) {
 		displays.push_back(dl);
 	}

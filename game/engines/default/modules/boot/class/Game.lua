@@ -531,16 +531,27 @@ end
 local renderer = core.renderer.renderer()
 local UIBase = require "engine.ui.Base"
 local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400)
-renderer:add(f.container)
-
-UIBase.ui = "metal"
+f.container:translate(400, 400)
 local f2 = UIBase:makeFrameDO("ui/button", 100, 40)
+-- f2.container:translate(100, 150)
+local f3 = UIBase:makeFrameDO("ui/textbox", 25, 25)
+-- f3.container:translate(20, 10)
+-- f3.container:rotate(45, 0, 0, 1)
+-- f2.container:add(core.renderer.redPoint())
+-- f3.container:add(core.renderer.redPoint())
+f3.container:scale(3, 2, 1)
+
 f.container:add(f2.container)
+f2.container:add(f3.container)
+renderer:add(f.container)
 
 
 function _M:display()
 	renderer:toScreen(0, 0, 1, 1, 1, 1)
-	f.container:translate(1, 1)
+	-- f.container:rotate(math.rad(1), 0, 0, 1)
+	-- f2.container:rotate(math.rad(1), 0, 0, 1)
+	-- f3.container:rotate(-math.rad(2), 0, 0, 1)
+	-- f.container:translate(2, 1)
 end
 
 --- Ask if we really want to close, if so, save the game first

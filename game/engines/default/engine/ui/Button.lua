@@ -68,6 +68,14 @@ function _M:generate()
 	self.frame = self:makeFrame("ui/button", self.w, self.h)
 	self.frame_sel = self:makeFrame("ui/button_sel", self.w, self.h)
 
+	self.frame_do = self:makeFrameDO("ui/button", self.w, self.h)
+	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)
+	self.do_container = core.renderer.container()
+	self.do_container:add(self.frame_do.container)
+
+	self.renderer = core.renderer.renderer()
+	self.renderer:add(self.frame_do.container)
+
 	-- Add a bit of padding
 	self.w = self.w + 6
 	self.h = self.h + 6
@@ -83,32 +91,33 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	y = y + 3
 	ox = ox + 3
 	oy = oy + 3
-	local mx, my, button = core.mouse.get()
-	if self.focused then
-		if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
-			self:drawFrame(self.frame, x, y, 0, 1, 0, 1)
-		elseif self.glow then
-			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:drawFrame(self.frame, x, y, v*0.8, v, 0, 1)
-		else
-			self:drawFrame(self.frame_sel, x, y)
-		end
-		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
-	else
-		if self.glow then
-			local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-			self:drawFrame(self.frame, x, y, v*0.8, v, 0, self.alpha_unfocus)
-		else
-			self:drawFrame(self.frame, x, y, 1, 1, 1, self.alpha_unfocus)
-		end
+	-- local mx, my, button = core.mouse.get()
+	-- if self.focused then
+	-- 	if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
+	-- 		self:drawFrame(self.frame, x, y, 0, 1, 0, 1)
+	-- 	elseif self.glow then
+	-- 		local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
+	-- 		self:drawFrame(self.frame, x, y, v*0.8, v, 0, 1)
+	-- 	else
+	-- 		self:drawFrame(self.frame_sel, x, y)
+	-- 	end
+	-- 	if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow) end
+	-- 	self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
+	-- else
+	-- 	if self.glow then
+	-- 		local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
+	-- 		self:drawFrame(self.frame, x, y, v*0.8, v, 0, self.alpha_unfocus)
+	-- 	else
+	-- 		self:drawFrame(self.frame, x, y, 1, 1, 1, self.alpha_unfocus)
+	-- 	end
 
-		if self.focus_decay and not self.glow then
-			self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
-			self.focus_decay = self.focus_decay - nb_keyframes
-			if self.focus_decay <= 0 then self.focus_decay = nil end
-		end
-		if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
-		self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
-	end
+	-- 	if self.focus_decay and not self.glow then
+	-- 		self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
+	-- 		self.focus_decay = self.focus_decay - nb_keyframes
+	-- 		if self.focus_decay <= 0 then self.focus_decay = nil end
+	-- 	end
+	-- 	if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
+	-- 	self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
+	-- end
+	self.renderer:toScreen(800, 400, 1, 1, 1, 1)
 end

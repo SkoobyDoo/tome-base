@@ -37,7 +37,7 @@ project "TEngine"
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "te4-renderer" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
@@ -509,6 +509,14 @@ project "lxp"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/lxp/*.c", }
+
+project "utf8proc"
+	kind "StaticLib"
+	language "C"
+	targetname "utf8proc"
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+
+	files { "../src/utf8proc/utf8proc.c", }
 
 project "luamd5"
 	kind "StaticLib"

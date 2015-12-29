@@ -121,7 +121,21 @@ static int gl_container_remove(lua_State *L)
 static int gl_container_translate(lua_State *L)
 {
 	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	return 0;
+}
+
+static int gl_container_rotate(lua_State *L)
+{
+	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
+	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	return 0;
+}
+
+static int gl_container_scale(lua_State *L)
+{
+	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
+	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
 	return 0;
 }
 
@@ -167,9 +181,9 @@ static int gl_vertexes_quad(lua_State *L)
 static int gl_vertexes_texture(lua_State *L)
 {
 	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	GLuint *t = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 2);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
 	lua_pushvalue(L, 2);
-	(*v)->setTexture(*t, luaL_ref(L, LUA_REGISTRYINDEX));
+	(*v)->setTexture(t->tex, luaL_ref(L, LUA_REGISTRYINDEX));
 
 	return 0;
 }
@@ -185,7 +199,21 @@ static int gl_vertexes_shader(lua_State *L)
 static int gl_vertexes_translate(lua_State *L)
 {
 	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*v)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	(*v)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	return 0;
+}
+
+static int gl_vertexes_rotate(lua_State *L)
+{
+	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	(*v)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	return 0;
+}
+
+static int gl_vertexes_scale(lua_State *L)
+{
+	DORVertexes **c = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
+	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
 	return 0;
 }
 
@@ -208,6 +236,8 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"translate", gl_container_translate},
+	{"rotate", gl_container_rotate},
+	{"scale", gl_container_scale},
 	{NULL, NULL},
 };
 
@@ -218,6 +248,8 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
 	{"translate", gl_vertexes_translate},
+	{"rotate", gl_vertexes_rotate},
+	{"scale", gl_vertexes_scale},
 	{NULL, NULL},
 };
 

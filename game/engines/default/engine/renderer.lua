@@ -29,6 +29,24 @@ function DOVertexes:debugQuad()
 	)
 end
 
+local white = core.display.loadImage("/data/gfx/white.png"):glTexture()
+function core.renderer.redPoint()
+	local v = core.renderer.vertexes()
+	local x1, x2 = -4, 4
+	local y1, y2 = -4, 4
+	local u1, u2 = 0, 1
+	local v1, v2 = 0, 1
+	v:quad(
+		x1, y1, u1, v1,
+		x2, y1, u2, v1,
+		x2, y2, u2, v2,
+		x1, y2, u1, v2,
+		1, 0, 0, 1
+	)
+	v:texture(white)
+	return v
+end
+
 function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 	x = math.floor(x)
 	y = math.floor(y)
@@ -42,9 +60,9 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 		local v = core.renderer.vertexes()
 		v:quad(
 			x1, y1, u1, v1,
-			x2, y1, u2, v1,
-			x2, y2, u2, v2,
-			x1, y2, u1, v2,
+			x2+0.5, y1, u2, v1,
+			x2+0.5, y2+0.5, u2, v2,
+			x1, y2+0.5, u1, v2,
 			1, 1, 1, 1
 		)
 		v:texture(t.t)
@@ -70,9 +88,9 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 				local v = core.renderer.vertexes()
 				v:quad(
 					x1, y1, u1, v1,
-					x2, y1, u2, v1,
-					x2, y2, u2, v2,
-					x1, y2, u1, v2,
+					x2+0.5, y1, u2, v1,
+					x2+0.5, y2+0.5, u2, v2,
+					x1, y2+0.5, u1, v2,
 					1, 1, 1, 1
 				)
 				v:texture(t.t)

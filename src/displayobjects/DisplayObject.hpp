@@ -18,8 +18,8 @@
 	Nicolas Casalini "DarkGod"
 	darkgod@te4.org
 */
-#ifndef _VEXTEXES_HPP_
-#define _VEXTEXES_HPP_
+#ifndef DISPLAYOBJECTS_H
+#define DISPLAYOBJECTS_H
 
 extern "C" {
 #include "tgl.h"
@@ -37,7 +37,7 @@ using namespace glm;
 using namespace std;
 
 typedef struct {
-	vec2 pos;
+	vec4 pos;
 	vec2 tex;
 	vec4 color;
 } vertex;
@@ -51,9 +51,10 @@ private:
 	DisplayObject *parent = NULL;
 protected:
 	lua_State *L = NULL;
+	mat4 model;
 	bool changed = false;
 public:
-	DisplayObject() {};
+	DisplayObject() { model = mat4(); };
 	virtual ~DisplayObject() {};
 	void setLuaState(lua_State *L) { this->L = L; };
 	void setLuaRef(int ref) {lua_ref = ref; };
@@ -63,7 +64,9 @@ public:
 	bool isChanged() { return changed; };
 	void resetChanged() { changed = false; };
 
-	virtual void translate(float x, float y) = 0;
+	void translate(float x, float y, float z);
+	void rotate(float a, float x, float y, float z);
+	void scale(float x, float y, float z);
 };
 
 class DOVertexes : public DisplayObject{
@@ -96,7 +99,6 @@ public:
 		tex_lua_ref = lua_ref;
 	};
 	void setShader(shader_type *s) { shader = s; };
-	virtual void translate(float x, float y);
 };
 
 class DOContainer : public DisplayObject{
@@ -108,8 +110,7 @@ public:
 
 	void add(DisplayObject *dob);
 	void remove(DisplayObject *dob);
-
-	virtual void translate(float x, float y);
+	void clear();
 };
 
 #endif

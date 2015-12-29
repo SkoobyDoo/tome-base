@@ -137,7 +137,7 @@ static int particles_new(lua_State *L)
 	const char *args = luaL_checkstring(L, 2);
 	// float zoom = luaL_checknumber(L, 3);
 	int density = luaL_checknumber(L, 4);
-	GLuint *texture = (GLuint*)auxiliar_checkclass(L, "gl{texture}", 5);
+	texture_type *texture = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 5);
 	shader_type *s = NULL;
 	if (lua_isuserdata(L, 6)) s = (shader_type*)lua_touserdata(L, 6);
 	bool fboalter = lua_toboolean(L, 7);
@@ -157,7 +157,7 @@ static int particles_new(lua_State *L)
 	ps->colors = NULL;
 	ps->particles = NULL;
 	ps->init = FALSE;
-	ps->texture = *texture;
+	ps->texture = texture->tex;
 	ps->shader = s;
 	ps->fboalter = fboalter;
 	ps->sub = NULL;

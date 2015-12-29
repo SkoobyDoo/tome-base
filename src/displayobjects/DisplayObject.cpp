@@ -40,6 +40,26 @@ void DisplayObject::setChanged() {
 	}
 }
 
+	// printf("%f, %f, %f, %f\n", model[0][0], model[0][1], model[0][2], model[0][3]);
+	// printf("%f, %f, %f, %f\n", model[1][0], model[1][1], model[1][2], model[1][3]);
+	// printf("%f, %f, %f, %f\n", model[2][0], model[2][1], model[2][2], model[2][3]);
+	// printf("%f, %f, %f, %f\n", model[3][0], model[3][1], model[3][2], model[3][3]);
+
+void DisplayObject::translate(float x, float y, float z) {
+	model = glm::translate(model, glm::vec3(x, y, z));
+	setChanged();
+}
+
+void DisplayObject::rotate(float a, float x, float y, float z) {
+	model = glm::rotate(model, a, glm::vec3(x, y, z));
+	setChanged();
+}
+
+void DisplayObject::scale(float x, float y, float z) {
+	model = glm::scale(model, glm::vec3(x, y, z));
+	setChanged();
+}
+
 int DOVertexes::addQuad(
 		float x1, float y1, float u1, float v1, 
 		float x2, float y2, float u2, float v2, 
@@ -49,10 +69,10 @@ int DOVertexes::addQuad(
 	) {
 	if (vertices.size() + 4 < vertices.capacity()) vertices.reserve(vertices.size() * 2);
 
-	vertex ve1 = {{x1, y1}, {u1, v1}, {r, g, b, a}};
-	vertex ve2 = {{x2, y2}, {u2, v2}, {r, g, b, a}};
-	vertex ve3 = {{x3, y3}, {u3, v3}, {r, g, b, a}};
-	vertex ve4 = {{x4, y4}, {u4, v4}, {r, g, b, a}};
+	vertex ve1 = {{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}};
+	vertex ve2 = {{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}};
+	vertex ve3 = {{x3, y3, 0, 1}, {u3, v3}, {r, g, b, a}};
+	vertex ve4 = {{x4, y4, 0, 1}, {u4, v4}, {r, g, b, a}};
 	vertices.push_back(ve1);
 	vertices.push_back(ve2);
 	vertices.push_back(ve3);
@@ -61,15 +81,6 @@ int DOVertexes::addQuad(
 	setChanged();
 	return 0;
 }
-
-void DOVertexes::translate(float x, float y) {
-	vec2 t = {x, y};
-	for (auto it = vertices.begin(); it != vertices.end(); ++it) {
-		it->pos += t;
-	}
-	setChanged();
-}
-
 
 void DOContainer::add(DisplayObject *dob) {
 	dos.push_back(dob);
@@ -80,22 +91,28 @@ void DOContainer::add(DisplayObject *dob) {
 void DOContainer::remove(DisplayObject *dob) {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		if (*it == dob) {
+			setChanged();
+
 			dos.erase(it);
-			(*it)->setParent(NULL);
+
+			dob->setParent(NULL);
+			if (L) {
+				int ref = dob->unsetLuaRef();
+				if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+			}
 			return;
 		}
 	}
-	setChanged();
-
-	if (L) {
-		int ref = unsetLuaRef();
-		if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
-	}
 };
 
-void DOContainer::translate(float x, float y) {
+void DOContainer::clear() {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		(*it)->translate(x, y);
+		(*it)->setParent(NULL);
+		if (L) {
+			int ref = (*it)->unsetLuaRef();
+			if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+		}
 	}
-	// setChanged(); // not needed, changing the childs will recurse anyway
+	dos.clear();
+	setChanged();
 }

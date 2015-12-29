@@ -31,13 +31,14 @@ extern "C" {
 
 static stack<DisplayList*> available_dls;
 static DisplayList* current_used_dl = NULL;
+static DORContainer* current_used_dl_container = NULL;
 
 DisplayList* getDisplayList(DORContainer *container, GLuint tex, shader_type *shader) {
 	if (available_dls.empty()) {
 		available_dls.push(new DisplayList());
 	}
 
-	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader) {
+	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader && current_used_dl_container == container) {
 		// printf("Reussing current DL! %x with %d, %d, %x\n", current_used_dl, current_used_dl->vbo, current_used_dl->tex, current_used_dl->shader);
 		// current_used_dl->used++;
 		// container->addDisplayList(current_used_dl);
@@ -51,6 +52,7 @@ DisplayList* getDisplayList(DORContainer *container, GLuint tex, shader_type *sh
 	// printf("Getting DL! %x with %d, %d, %x\n", dl, dl->vbo, tex, shader);
 	dl->used++;
 	current_used_dl = dl;
+	current_used_dl_container = container;
 	container->addDisplayList(dl);
 	return dl;
 }
@@ -65,7 +67,10 @@ void releaseDisplayList(DisplayList *dl) {
 		dl->shader = NULL;
 
 		available_dls.push(dl);
-		current_used_dl = NULL;
+		if (current_used_dl == dl) {
+			current_used_dl = NULL;
+			current_used_dl_container = NULL;
+		}
 	}
 }
 
@@ -108,16 +113,31 @@ RendererGL::~RendererGL() {
 	delete state;
 }
 
-void DORVertexes::render(DORContainer *container) {
+void DORVertexes::render(DORContainer *container, mat4 cur_model) {
+	cur_model *= model;
 	auto dl = getDisplayList(container, tex, shader);
+
+	// Make sure we do not have to reallocate each step
+	int nb = vertices.size();
+	int startat = dl->list.size();
+	dl->list.reserve(startat + nb);
+
+	// Copy & apply the model matrix
+	// DG: is it better to first copy it all and then alter it ? most likely not, change me
 	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
+	vertex *dest = dl->list.data();
+	for (int di = startat; di < startat + nb; di++) {
+		dest[di].pos = cur_model * dest[di].pos;
+	}
+
 	resetChanged();
 }
 
-void DORContainer::render(DORContainer *container) {
+void DORContainer::render(DORContainer *container, mat4 cur_model) {
+	cur_model *= model;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObjectGL *i = dynamic_cast<DisplayObjectGL*>(*it);
-		if (i) i->render(container);
+		if (i) i->render(container, cur_model);
 	}
 	resetChanged();
 }
@@ -128,9 +148,10 @@ void RendererGL::update() {
 	displays.clear();
 
 	// Build up the new display lists
+	mat4 cur_model = mat4();
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObjectGL *i = dynamic_cast<DisplayObjectGL*>(*it);
-		if (i) i->render(this);
+		if (i) i->render(this, cur_model);
 	}
 
 	// Notify we dont need to be rebuilt again unless more stuff changes
@@ -216,7 +237,7 @@ void RendererGL::toScreen(float x, float y, float r, float g, float b, float a) 
 		}
 
 		glEnableVertexAttribArray(shader->vertex_attrib);
-		glVertexAttribPointer(shader->vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)0);
+		glVertexAttribPointer(shader->vertex_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)0);
 		if (shader->texcoord_attrib != -1) {
 			glEnableVertexAttribArray(shader->texcoord_attrib);
 			glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, tex));
