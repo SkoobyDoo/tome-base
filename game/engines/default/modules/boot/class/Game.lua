@@ -536,10 +536,11 @@ local f2 = UIBase:makeFrameDO("ui/button", 100, 40)
 -- f2.container:translate(100, 150)
 local f3 = UIBase:makeFrameDO("ui/textbox", 25, 25)
 -- f3.container:translate(20, 10)
--- f3.container:rotate(45, 0, 0, 1)
+-- f3.container:rotate(0, 0, math.rad(45))
 -- f2.container:add(core.renderer.redPoint())
 -- f3.container:add(core.renderer.redPoint())
 f3.container:scale(3, 2, 1)
+-- f.container:scale(0.1, 0.1, 1)
 
 f.container:add(f2.container)
 f2.container:add(f3.container)
@@ -548,10 +549,12 @@ renderer:add(f.container)
 
 function _M:display()
 	renderer:toScreen(0, 0, 1, 1, 1, 1)
-	-- f.container:rotate(math.rad(1), 0, 0, 1)
-	-- f2.container:rotate(math.rad(1), 0, 0, 1)
-	-- f3.container:rotate(-math.rad(2), 0, 0, 1)
+	-- f.container:scale(0.01, 0.01, 0, true)
+	f.container:rotate(0, 0, math.rad(1), true)
+	f2.container:rotate(0, 0, math.rad(1), true)
+	f3.container:rotate(0, 0, -math.rad(2), true)
 	-- f.container:translate(2, 1)
+	f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
 end
 
 --- Ask if we really want to close, if so, save the game first

@@ -121,21 +121,21 @@ static int gl_container_remove(lua_State *L)
 static int gl_container_translate(lua_State *L)
 {
 	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 
 static int gl_container_rotate(lua_State *L)
 {
 	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 
 static int gl_container_scale(lua_State *L)
 {
 	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 
@@ -199,21 +199,21 @@ static int gl_vertexes_shader(lua_State *L)
 static int gl_vertexes_translate(lua_State *L)
 {
 	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*v)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	(*v)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 
 static int gl_vertexes_rotate(lua_State *L)
 {
 	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*v)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	(*v)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 
 static int gl_vertexes_scale(lua_State *L)
 {
 	DORVertexes **c = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 

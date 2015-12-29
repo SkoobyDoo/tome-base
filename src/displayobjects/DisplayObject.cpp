@@ -45,19 +45,54 @@ void DisplayObject::setChanged() {
 	// printf("%f, %f, %f, %f\n", model[2][0], model[2][1], model[2][2], model[2][3]);
 	// printf("%f, %f, %f, %f\n", model[3][0], model[3][1], model[3][2], model[3][3]);
 
-void DisplayObject::translate(float x, float y, float z) {
+void DisplayObject::recomputeModelMatrix() {
+	model = mat4();
 	model = glm::translate(model, glm::vec3(x, y, z));
+	model = glm::rotate(model, rot_x, glm::vec3(1, 0, 0));
+	model = glm::rotate(model, rot_y, glm::vec3(0, 1, 0));
+	model = glm::rotate(model, rot_z, glm::vec3(0, 0, 1));
+	model = glm::scale(model, glm::vec3(scale_x, scale_y, scale_z));
+	
 	setChanged();
 }
 
-void DisplayObject::rotate(float a, float x, float y, float z) {
-	model = glm::rotate(model, a, glm::vec3(x, y, z));
-	setChanged();
+void DisplayObject::translate(float x, float y, float z, bool increment) {
+	if (increment) {
+		this->x += x;
+		this->y += y;
+		this->z += z;
+	} else {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+	recomputeModelMatrix();
 }
 
-void DisplayObject::scale(float x, float y, float z) {
-	model = glm::scale(model, glm::vec3(x, y, z));
-	setChanged();
+void DisplayObject::rotate(float x, float y, float z, bool increment) {
+	if (increment) {
+		this->rot_x += x;
+		this->rot_y += y;
+		this->rot_z += z;
+	} else {
+		this->rot_x = x;
+		this->rot_y = y;
+		this->rot_z = z;
+	}
+	recomputeModelMatrix();
+}
+
+void DisplayObject::scale(float x, float y, float z, bool increment) {
+	if (increment) {
+		this->scale_x += x;
+		this->scale_y += y;
+		this->scale_z += z;
+	} else {
+		this->scale_x = x;
+		this->scale_y = y;
+		this->scale_z = z;
+	}
+	recomputeModelMatrix();
 }
 
 int DOVertexes::addQuad(

@@ -52,6 +52,9 @@ private:
 protected:
 	lua_State *L = NULL;
 	mat4 model;
+	float x = 0, y = 0, z = 0;
+	float rot_x = 0, rot_y = 0, rot_z = 0;
+	float scale_x = 1, scale_y = 1, scale_z = 1;
 	bool changed = false;
 public:
 	DisplayObject() { model = mat4(); };
@@ -64,9 +67,11 @@ public:
 	bool isChanged() { return changed; };
 	void resetChanged() { changed = false; };
 
-	void translate(float x, float y, float z);
-	void rotate(float a, float x, float y, float z);
-	void scale(float x, float y, float z);
+	void recomputeModelMatrix();
+
+	void translate(float x, float y, float z, bool increment);
+	void rotate(float x, float y, float z, bool increment);
+	void scale(float x, float y, float z, bool increment);
 };
 
 class DOVertexes : public DisplayObject{
