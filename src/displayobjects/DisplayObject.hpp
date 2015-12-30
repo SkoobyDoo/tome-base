@@ -24,6 +24,7 @@
 extern "C" {
 #include "tgl.h"
 #include "useshader.h"
+#include "font.h"
 }
 
 #include <vector>
@@ -58,7 +59,9 @@ protected:
 	bool changed = false;
 public:
 	DisplayObject() { model = mat4(); };
-	virtual ~DisplayObject() {};
+	virtual ~DisplayObject() {
+		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
+	};
 	void setLuaState(lua_State *L) { this->L = L; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
@@ -76,20 +79,19 @@ public:
 
 class DOVertexes : public DisplayObject{
 public:
-	// static long next_id = 1;
-	vector<long> ids;
 	vector<vertex> vertices;
 	int tex_lua_ref = LUA_NOREF;
 	GLuint tex;
 	shader_type *shader;
 
 	DOVertexes() {
-		ids.reserve(4);
 		vertices.reserve(4);
 		tex = 0;
 		shader = default_shader;
 	};
-	virtual ~DOVertexes() {};
+	virtual ~DOVertexes() {
+		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
+	};
 
 	int addQuad(
 		float x1, float y1, float u1, float v1, 

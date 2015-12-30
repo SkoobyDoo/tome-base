@@ -133,6 +133,26 @@ void DORVertexes::render(DORContainer *container, mat4 cur_model) {
 	resetChanged();
 }
 
+void DORText::render(DORContainer *container, mat4 cur_model) {
+	cur_model *= model;
+	auto dl = getDisplayList(container, tex, shader);
+
+	// Make sure we do not have to reallocate each step
+	int nb = vertices.size();
+	int startat = dl->list.size();
+	dl->list.reserve(startat + nb);
+
+	// Copy & apply the model matrix
+	// DG: is it better to first copy it all and then alter it ? most likely not, change me
+	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
+	vertex *dest = dl->list.data();
+	for (int di = startat; di < startat + nb; di++) {
+		dest[di].pos = cur_model * dest[di].pos;
+	}
+
+	resetChanged();
+}
+
 void DORContainer::render(DORContainer *container, mat4 cur_model) {
 	cur_model *= model;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {

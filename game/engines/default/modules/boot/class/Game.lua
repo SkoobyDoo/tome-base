@@ -530,11 +530,11 @@ end
 
 local renderer = core.renderer.renderer()
 local UIBase = require "engine.ui.Base"
-local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400)
+local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400, nil, nil, true)
 f.container:translate(400, 400)
-local f2 = UIBase:makeFrameDO("ui/button", 100, 40)
+local f2 = UIBase:makeFrameDO("ui/button", 100, 40, nil, nil, true)
 -- f2.container:translate(100, 150)
-local f3 = UIBase:makeFrameDO("ui/textbox", 25, 25)
+local f3 = UIBase:makeFrameDO("ui/textbox", 25, 25, nil, nil, true)
 -- f3.container:translate(20, 10)
 -- f3.container:rotate(0, 0, math.rad(45))
 -- f2.container:add(core.renderer.redPoint())
@@ -546,15 +546,21 @@ f.container:add(f2.container)
 f2.container:add(f3.container)
 renderer:add(f.container)
 
+local t = core.renderer.text(UIBase.font)
+t:text("Coco l'asticot!")
+t:translate(50, 50)
+t:rotate(0, 0, math.rad(45))
+f.container:add(t)
 
 function _M:display()
 	renderer:toScreen(0, 0, 1, 1, 1, 1)
 	-- f.container:scale(0.01, 0.01, 0, true)
-	f.container:rotate(0, 0, math.rad(1), true)
-	f2.container:rotate(0, 0, math.rad(1), true)
-	f3.container:rotate(0, 0, -math.rad(2), true)
+	-- f.container:rotate(0, 0, math.rad(1), true)
+	-- f2.container:rotate(0, 0, math.rad(1), true)
+	-- f3.container:rotate(0, 0, -math.rad(2), true)
 	-- f.container:translate(2, 1)
 	f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
+	t:rotate(0, math.rad(1.5), 0, true)
 end
 
 --- Ask if we really want to close, if so, save the game first

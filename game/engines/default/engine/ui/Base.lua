@@ -217,7 +217,7 @@ function _M:makeFrame(base, w, h, iw, ih)
 	return f
 end
 
-function _M:makeFrameDO(base, w, h, iw, ih)
+function _M:makeFrameDO(base, w, h, iw, ih, center)
 	local f = {}
 	f.container = core.renderer.container()
 	if base then
@@ -233,7 +233,8 @@ function _M:makeFrameDO(base, w, h, iw, ih)
 		if not w then w = iw + f.b4.w + f.b6.w end
 		if not h then h = ih + f.b8.h + f.b2.h end
 
-		local cx, cy = -math.floor(w / 2), -math.floor(h / 2)
+		local cx, cy = 0,0
+		if center then cx, cy = -math.floor(w / 2), -math.floor(h / 2) end
 
 		f.container:add(core.renderer.fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
 
@@ -251,6 +252,7 @@ function _M:makeFrameDO(base, w, h, iw, ih)
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)
+
 	return f
 end
 

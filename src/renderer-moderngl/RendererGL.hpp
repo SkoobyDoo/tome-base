@@ -70,6 +70,16 @@ public:
 };
 
 /****************************************************************************
+ ** GL DO for text
+ ****************************************************************************/
+class DORText : public DOText, public DisplayObjectGL {
+public:
+	DORText() : DOText(), DisplayObjectGL() {};
+	virtual ~DORText() {};
+	virtual void render(DORContainer *container, mat4 cur_model);
+};
+
+/****************************************************************************
  ** GL DO Container, the base of the rendering pyramid
  ****************************************************************************/
 class DORContainer : public DOContainer, public DisplayObjectGL {
@@ -99,7 +109,7 @@ private:
 public:
 	RendererGL();
 	RendererGL(int w, int h);
-	~RendererGL();
+	virtual ~RendererGL();
 
 	virtual void update();
 	virtual void toScreen(float x, float y, float r, float g, float b, float a);

@@ -25,6 +25,7 @@
 using namespace glm;
 
 #include "displayobjects/DisplayObject.hpp"
+#include "displayobjects/TextObject.hpp"
 
 class Renderer {
 private:

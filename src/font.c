@@ -55,7 +55,7 @@ static int set_default_atlas_chars(lua_State *L) {
 
 static int sdl_free_font(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	if (f->font) TTF_CloseFont(f->font);
 	if (f->atlas) {
 		SDL_FreeSurface(f->atlas);
@@ -73,7 +73,7 @@ static int sdl_new_font(lua_State *L)
 	const char *name = luaL_checkstring(L, 1);
 	int size = luaL_checknumber(L, 2);
 
-	lua_font *f = (lua_font*)lua_newuserdata(L, sizeof(lua_font));
+	font_type *f = (font_type*)lua_newuserdata(L, sizeof(font_type));
 	auxiliar_setclass(L, "sdl{font}", -1);
 
 	SDL_RWops *src = PHYSFSRWOPS_openRead(name);
@@ -95,7 +95,7 @@ static int sdl_new_font(lua_State *L)
 	return 1;
 }
 
-bool font_add_atlas(lua_font *f, int32_t c, font_style style) {
+bool font_add_atlas(font_type *f, int32_t c, font_style style) {
 	if (c < 1 || c >= MAX_ATLAS_DATA) return FALSE;
 
 	SDL_Color color = {255, 255, 255};
@@ -126,7 +126,15 @@ bool font_add_atlas(lua_font *f, int32_t c, font_style style) {
 	}
 }
 
-void font_make_atlas(lua_font *f, int w, int h) {
+void font_update_atlas(font_type *f) {
+	if (f->atlas_changed) {
+		tfglBindTexture(GL_TEXTURE_2D, f->atlas_tex);
+		copy_surface_to_texture(f->atlas);
+		f->atlas_changed = FALSE;
+	}
+}
+
+void font_make_atlas(font_type *f, int w, int h) {
 	if (!w) w = DEFAULT_ATLAS_W;
 	if (!h) h = DEFAULT_ATLAS_H;
 
@@ -183,14 +191,14 @@ void font_make_atlas(lua_font *f, int w, int h) {
 
 static int sdl_font_make_atlas(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	if (!f->atlas) font_make_atlas(f, lua_tonumber(L, 2), lua_tonumber(L, 3));
 	return 0;
 }
 
 static int sdl_font_get_atlas_size(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	if (!f->atlas) font_make_atlas(f, 0, 0);
 	lua_pushnumber(L, f->atlas_w);
 	lua_pushnumber(L, f->atlas_h);
@@ -199,7 +207,7 @@ static int sdl_font_get_atlas_size(lua_State *L)
 
 // static int sdl_font_atlas_debug(lua_State *L)
 // {
-// 	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+// 	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 // 	if (!f->atlas) font_make_atlas(f, 0, 0);
 // 	int x = luaL_checknumber(L, 2);
 // 	int y = luaL_checknumber(L, 3);
@@ -221,7 +229,7 @@ static int sdl_font_get_atlas_size(lua_State *L)
 
 static int sdl_font_size(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	const char *str = luaL_checkstring(L, 2);
 	int w, h;
 
@@ -236,21 +244,21 @@ static int sdl_font_size(lua_State *L)
 
 static int sdl_font_height(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	lua_pushnumber(L, TTF_FontHeight(f->font));
 	return 1;
 }
 
 static int sdl_font_lineskip(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	lua_pushnumber(L, TTF_FontLineSkip(f->font));
 	return 1;
 }
 
 static int sdl_font_style_get(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	int style = TTF_GetFontStyle(f->font);
 
 	if (style & TTF_STYLE_BOLD) lua_pushliteral(L, "bold");
@@ -263,7 +271,7 @@ static int sdl_font_style_get(lua_State *L)
 
 static int sdl_font_style(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	const char *style = luaL_checkstring(L, 2);
 
 	if (!strcmp(style, "normal")) TTF_SetFontStyle(f->font, 0);
@@ -276,7 +284,7 @@ static int sdl_font_style(lua_State *L)
 int sdl_surface_drawstring(lua_State *L)
 {
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 2);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 2);
 	const char *str = luaL_checkstring(L, 3);
 	int x = luaL_checknumber(L, 4);
 	int y = luaL_checknumber(L, 5);
@@ -301,7 +309,7 @@ int sdl_surface_drawstring_aa(lua_State *L)
 {
 	if (no_text_aa) return sdl_surface_drawstring(L);
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 2);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 2);
 	const char *str = luaL_checkstring(L, 3);
 	int x = luaL_checknumber(L, 4);
 	int y = luaL_checknumber(L, 5);
@@ -324,7 +332,7 @@ int sdl_surface_drawstring_aa(lua_State *L)
 
 static int sdl_surface_drawstring_newsurface(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	const char *str = luaL_checkstring(L, 2);
 	int r = luaL_checknumber(L, 3);
 	int g = luaL_checknumber(L, 4);
@@ -349,7 +357,7 @@ static int sdl_surface_drawstring_newsurface(lua_State *L)
 static int sdl_surface_drawstring_newsurface_aa(lua_State *L)
 {
 	if (no_text_aa) return sdl_surface_drawstring_newsurface(L);
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	const char *str = luaL_checkstring(L, 2);
 	int r = luaL_checknumber(L, 3);
 	int g = luaL_checknumber(L, 4);
@@ -374,7 +382,7 @@ static int sdl_new_tile(lua_State *L)
 {
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 3);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 3);
 	const char *str = luaL_checkstring(L, 4);
 	int x = luaL_checknumber(L, 5);
 	int y = luaL_checknumber(L, 6);
@@ -494,7 +502,7 @@ static void font_make_texture_line(lua_State *L, SDL_Surface *s, int id, bool is
 
 static int sdl_font_draw(lua_State *L)
 {
-	lua_font *f = (lua_font*)auxiliar_checkclass(L, "sdl{font}", 1);
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	const char *str = luaL_checkstring(L, 2);
 	int max_width = luaL_checknumber(L, 3);
 	int r = luaL_checknumber(L, 4);

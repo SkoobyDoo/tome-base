@@ -57,8 +57,13 @@ typedef struct
 	int atlas_x, atlas_y;
 	font_atlas_data *atlas_data;
 	bool atlas_changed;
-} lua_font;
+} font_type;
 
 extern int luaopen_font(lua_State *L);
+
+extern bool font_add_atlas(font_type *f, int32_t c, font_style style);
+extern void font_update_atlas(font_type *f);
+extern void font_make_atlas(font_type *f, int w, int h);
+
 
 #endif

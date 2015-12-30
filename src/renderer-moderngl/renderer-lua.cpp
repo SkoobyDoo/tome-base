@@ -218,6 +218,71 @@ static int gl_vertexes_scale(lua_State *L)
 }
 
 /******************************************************************
+ ** Text
+ ******************************************************************/
+static int gl_text_new(lua_State *L)
+{
+	DORText **v = (DORText**)lua_newuserdata(L, sizeof(DORText*));
+	auxiliar_setclass(L, "gl{text}", -1);
+	*v = new DORText();
+	(*v)->setLuaState(L);
+
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
+	if (lua_isnumber(L, 2)) (*v)->setMaxWidth(lua_tonumber(L, 2));
+	(*v)->setNoLinefeed(lua_toboolean(L, 3));
+
+	lua_pushvalue(L, 1);
+	(*v)->setFont(f, luaL_ref(L, LUA_REGISTRYINDEX));
+
+	return 1;
+}
+
+static int gl_text_free(lua_State *L)
+{
+	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
+	delete(*v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_text_set(lua_State *L)
+{
+	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
+	(*v)->setText(lua_tostring(L, 2));
+
+	return 0;
+}
+
+static int gl_text_shader(lua_State *L)
+{
+	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
+	shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+	(*v)->setShader(shader);
+	return 0;
+}
+
+static int gl_text_translate(lua_State *L)
+{
+	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
+	(*v)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+static int gl_text_rotate(lua_State *L)
+{
+	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
+	(*v)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+static int gl_text_scale(lua_State *L)
+{
+	DORText **c = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
+	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+/******************************************************************
  ** Lua declarations
  ******************************************************************/
 
@@ -253,9 +318,21 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_text_reg[] =
+{
+	{"__gc", gl_text_free},
+	{"text", gl_text_set},
+	{"shader", gl_text_shader},
+	{"translate", gl_text_translate},
+	{"rotate", gl_text_rotate},
+	{"scale", gl_text_scale},
+	{NULL, NULL},
+};
+
 const luaL_Reg rendererlib[] = {
 	{"renderer", gl_renderer_new},
 	{"vertexes", gl_vertexes_new},
+	{"text", gl_text_new},
 	{"container", gl_container_new},
 	{NULL, NULL}
 };
@@ -264,6 +341,7 @@ int luaopen_renderer(lua_State *L)
 {
 	auxiliar_newclass(L, "gl{renderer}", gl_renderer_reg);
 	auxiliar_newclass(L, "gl{vertexes}", gl_vertexes_reg);
+	auxiliar_newclass(L, "gl{text}", gl_text_reg);
 	auxiliar_newclass(L, "gl{container}", gl_container_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 	return 1;
