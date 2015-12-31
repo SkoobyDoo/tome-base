@@ -156,3 +156,83 @@ void DORContainer::clear() {
 	dos.clear();
 	setChanged();
 }
+
+DORTarget::DORTarget() : DORTarget(screen->w, screen->h, 1) {
+}
+DORTarget::DORTarget(int w, int h, int nbt) {
+	this->nbt = nbt;
+	this->w = w;
+	this->h = h;
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	// Now setup a texture to render to
+	int i;
+	textures.resize(nbt);
+	buffers.resize(nbt);
+	glGenTextures(nbt, textures.data());
+	for (i = 0; i < nbt; i++) {
+		tfglBindTexture(GL_TEXTURE_2D, textures[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
+		buffers[i] = GL_COLOR_ATTACHMENT0 + i;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// For display as a DO
+	tex = textures[0];
+	addQuad(
+		0, 0, 0, 0,
+		w, 0, 1, 0,
+		w, h, 1, 1,
+		0, h, 0, 1,
+		1, 1, 1, 1
+	);
+}
+DORTarget::~DORTarget() {
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	for (int i = 0; i < nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glDeleteTextures(nbt, textures.data());
+	glDeleteFramebuffers(1, &fbo);
+}
+
+void DORTarget::setClearColor(float r, float g, float b, float a) {
+	clear_r = r;
+	clear_g = g;
+	clear_b = b;
+	clear_a = a;
+}
+
+static stack<GLuint> fbo_stack;
+void DORTarget::use(bool activate) {
+	if (activate)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		if (nbt > 1) glDrawBuffers(nbt, buffers.data());
+
+		// renderer_push_ortho_state(fbo->w, fbo->h);
+
+		tglClearColor(clear_r, clear_g, clear_b, clear_a);
+		glClear(GL_COLOR_BUFFER_BIT);
+		fbo_stack.push(fbo);
+	}
+	else
+	{
+		fbo_stack.pop();
+		// renderer_pop_ortho_state();
+
+		// Unbind texture from FBO and then unbind FBO
+		if (!fbo_stack.empty()) {
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo_stack.top());
+		} else {
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+	}
+}

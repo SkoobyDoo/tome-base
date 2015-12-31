@@ -147,6 +147,67 @@ static int gl_container_scale(lua_State *L)
 }
 
 /******************************************************************
+ ** Target (FBO)
+ ******************************************************************/
+static int gl_target_new(lua_State *L)
+{
+	DORTarget **c = (DORTarget**)lua_newuserdata(L, sizeof(DORTarget*));
+	auxiliar_setclass(L, "gl{target}", -1);
+	*c = new DORTarget();
+	(*c)->setLuaState(L);
+
+	return 1;
+}
+
+static int gl_target_free(lua_State *L)
+{
+	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
+	delete(*c);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_target_add(lua_State *L)
+{
+	// We do not make any checks on the types, so the same method can be used for target & renderer and to add any kind of display object
+	DORTarget **c = (DORTarget**)lua_touserdata(L, 1);
+	DisplayObject **add = (DisplayObject**)lua_touserdata(L, 2);
+	(*c)->add(*add);	
+	(*add)->setLuaRef(luaL_ref(L, LUA_REGISTRYINDEX));
+	return 0;
+}
+
+static int gl_target_remove(lua_State *L)
+{
+	// We do not make any checks on the types, so the same method can be used for target & renderer and to add any kind of display object
+	DORTarget **c = (DORTarget**)lua_touserdata(L, 1);
+	DisplayObject **add = (DisplayObject**)lua_touserdata(L, 2);
+	(*c)->remove(*add);
+	return 0;
+}
+
+static int gl_target_translate(lua_State *L)
+{
+	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
+	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+static int gl_target_rotate(lua_State *L)
+{
+	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
+	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+static int gl_target_scale(lua_State *L)
+{
+	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
+	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+/******************************************************************
  ** Vertexes
  ******************************************************************/
 static int gl_vertexes_new(lua_State *L)
@@ -351,6 +412,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{vertexes}", gl_vertexes_reg);
 	auxiliar_newclass(L, "gl{text}", gl_text_reg);
 	auxiliar_newclass(L, "gl{container}", gl_container_reg);
+	auxiliar_newclass(L, "gl{target}", gl_target_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 	return 1;
 }

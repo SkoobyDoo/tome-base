@@ -139,4 +139,27 @@ public:
 	virtual void renderZ(RendererGL *container, mat4 cur_model);
 };
 
+/****************************************************************************
+ ** A FBO that masquerades as a DORVertexes, draw stuff in it and
+ ** then add it to a renderer to use the content generated
+ ****************************************************************************/
+class DORTarget : public DORVertexes{
+protected:
+	int w, h;
+	GLuint fbo;
+	vector<GLuint> textures;
+	vector<GLenum> buffers;
+	int nbt = 0;
+	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
+
+public:
+	DORTarget();
+	DORTarget(int w, int h, int nbt);
+	virtual ~DORTarget();
+
+	void setClearColor(float r, float g, float b, float a);
+	void use(bool activate);
+	virtual void setTexture(GLuint tex, int lua_ref) { printf("Error, trying to set DORTarget texture.\n"); }; // impossible
+};
+
 #endif
