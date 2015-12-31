@@ -27,11 +27,4 @@ using namespace glm;
 #include "displayobjects/DisplayObject.hpp"
 #include "displayobjects/TextObject.hpp"
 
-class Renderer {
-private:
-
-public:
-	virtual void toScreen(float x, float y, float r, float g, float b, float a) = 0;
-};
-
 #endif

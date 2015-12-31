@@ -33,7 +33,7 @@ project "TEngine"
 	kind "WindowedApp"
 	language "C++"
 	targetname("t-engine")
-	files { "../src/*.c", "../src/*.cpp", "../src/displayobjects/*.cpp", }
+	files { "../src/*.c", "../src/*.cpp", }
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
@@ -613,7 +613,7 @@ project "te4-renderer"
 	buildoptions { "-std=c++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
-	files { "../src/renderer-moderngl/*.cpp", }
+	files { "../src/renderer-moderngl/*.cpp", "../src/displayobjects/*.cpp", }
 
 if _OPTIONS.steam then
 	dofile("../steamworks/build/steam-code.lua")

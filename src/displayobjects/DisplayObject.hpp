@@ -75,9 +75,11 @@ public:
 	void translate(float x, float y, float z, bool increment);
 	void rotate(float x, float y, float z, bool increment);
 	void scale(float x, float y, float z, bool increment);
+
+	virtual void render(DORContainer *container, mat4 cur_model) = 0;
 };
 
-class DOVertexes : public DisplayObject{
+class DORVertexes : public DisplayObject{
 public:
 	vector<vertex> vertices;
 	int tex_lua_ref = LUA_NOREF;
@@ -110,7 +112,7 @@ public:
 	void setShader(shader_type *s) { shader = s; };
 };
 
-class DOContainer : public DisplayObject{
+class DORContainer : public DisplayObject{
 protected:
 	vector<DisplayObject*> dos;
 public:

@@ -95,12 +95,12 @@ void DisplayObject::scale(float x, float y, float z, bool increment) {
 	recomputeModelMatrix();
 }
 
-void DOVertexes::clear() {
+void DORVertexes::clear() {
 	vertices.clear();
 	setChanged();
 }
 
-int DOVertexes::addQuad(
+int DORVertexes::addQuad(
 		float x1, float y1, float u1, float v1, 
 		float x2, float y2, float u2, float v2, 
 		float x3, float y3, float u3, float v3, 
@@ -122,13 +122,13 @@ int DOVertexes::addQuad(
 	return 0;
 }
 
-void DOContainer::add(DisplayObject *dob) {
+void DORContainer::add(DisplayObject *dob) {
 	dos.push_back(dob);
 	dob->setParent(this);
 	setChanged();
 };
 
-void DOContainer::remove(DisplayObject *dob) {
+void DORContainer::remove(DisplayObject *dob) {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		if (*it == dob) {
 			setChanged();
@@ -145,7 +145,7 @@ void DOContainer::remove(DisplayObject *dob) {
 	}
 };
 
-void DOContainer::clear() {
+void DORContainer::clear() {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		(*it)->setParent(NULL);
 		if (L) {

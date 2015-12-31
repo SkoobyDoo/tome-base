@@ -47,4 +47,7 @@ using namespace std;
 #include "renderer-moderngl/RendererState.hpp"
 #include "renderer-moderngl/RendererGL.hpp"
 
+export DisplayList* getDisplayList(DORContainer *container, GLuint tex, shader_type *shader);
+export void releaseDisplayList(DisplayList *dl);
+
 #endif

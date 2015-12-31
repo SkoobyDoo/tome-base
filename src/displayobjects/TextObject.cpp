@@ -31,7 +31,7 @@ extern "C" {
 
 #include "displayobjects/TextObject.hpp"
 
-int DOText::addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
+int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
 	int x = 0, y = by;
 	ssize_t off = 1;
 	int32_t c;
@@ -60,7 +60,7 @@ int DOText::addCharQuad(const char *str, size_t len, font_style style, int bx, i
 	return x;
 }
 
-int DOText::getTextChunkSize(const char *str, size_t len, font_style style) {
+int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 	int x = 0, y = 0;
 	ssize_t off = 1;
 	int32_t c;
@@ -82,7 +82,7 @@ int DOText::getTextChunkSize(const char *str, size_t len, font_style style) {
 	return x;
 }
 
-void DOText::parseText() {
+void DORText::parseText() {
 	font_type *f = font;
 	if (!f) return;
 	if (!f->atlas) font_make_atlas(f, 0, 0);
@@ -301,7 +301,7 @@ void DOText::parseText() {
 	this->h = nb_lines * font_h;
 }
 
-void DOText::setText(const char *text) {
+void DORText::setText(const char *text) {
 	free((void*)this->text);
 	this->text = strdup(text);
 	parseText();

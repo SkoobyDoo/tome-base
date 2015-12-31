@@ -24,10 +24,6 @@
 
 #include "displayobjects/Renderer.hpp"
 
-class RendererGL;
-class DisplayList;
-class DORContainer;
-
 /****************************************************************************
  ** Display lists contain a VBO, texture, ... and a list of vertices to be
  ** drawn; those dont change and dont get recomputed until needed
@@ -45,55 +41,23 @@ public:
 };
 
 /****************************************************************************
- ** Base GL display object
+ ** Teaches a display object to render a vertex list
  ****************************************************************************/
-class DisplayObjectGL {
+class VertexRenderer {
 protected:
 	GLuint mode;
 	GLenum kind;
 public:
-	vector<vertex> list;
 
-	DisplayObjectGL();
-	virtual ~DisplayObjectGL();
-	virtual void render(DORContainer *container, mat4 cur_model) = 0;
-};
-
-/****************************************************************************
- ** GL DO for simple vertexes lists
- ****************************************************************************/
-class DORVertexes : public DOVertexes, public DisplayObjectGL {
-public:
-	DORVertexes() : DOVertexes(), DisplayObjectGL() {};
-	virtual ~DORVertexes() {};
-	virtual void render(DORContainer *container, mat4 cur_model);
-};
-
-/****************************************************************************
- ** GL DO for text
- ****************************************************************************/
-class DORText : public DOText, public DisplayObjectGL {
-public:
-	DORText() : DOText(), DisplayObjectGL() {};
-	virtual ~DORText() {};
 	virtual void render(DORContainer *container, mat4 cur_model);
 };
 
 /****************************************************************************
  ** GL DO Container, the base of the rendering pyramid
  ****************************************************************************/
-class DORContainer : public DOContainer, public DisplayObjectGL {
-protected:
-	vector<DisplayList*> displays;
-	int nb_quads = 0;
-
+class ContainerRenderer {
 public:
-	DORContainer() : DOContainer(), DisplayObjectGL() {};
-	virtual ~DORContainer() {};
 	virtual void render(DORContainer *container, mat4 cur_model);
-	virtual void addDisplayList(DisplayList* dl) {
-		displays.push_back(dl);
-	}
 };
 
 /****************************************************************************
@@ -107,11 +71,17 @@ private:
 	int vbo_elements_nb = 0;
 	bool zsort = false;
 	vector<vertex> zvertices;
+	vector<DisplayList*> displays;
+	int nb_quads = 0;
 
 public:
 	RendererGL();
 	RendererGL(int w, int h);
 	virtual ~RendererGL();
+
+	virtual void addDisplayList(DisplayList* dl) {
+		displays.push_back(dl);
+	}
 
 	virtual void zSorting(bool sort) { zsort = sort; };
 	virtual void update();

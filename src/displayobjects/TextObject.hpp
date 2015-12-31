@@ -27,7 +27,7 @@ extern "C" {
 #include "utf8proc/utf8proc.h"
 }
 
-class DOText : public DOVertexes{
+class DORText : public DORVertexes{
 private:
 	int font_lua_ref = LUA_NOREF;
 	font_type *font = NULL;
