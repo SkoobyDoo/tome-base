@@ -60,9 +60,9 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 		local v = core.renderer.vertexes()
 		v:quad(
 			x1, y1, u1, v1,
-			x2+0.5, y1, u2, v1,
-			x2+0.5, y2+0.5, u2, v2,
-			x1, y2+0.5, u1, v2,
+			x2+0.1, y1, u2, v1,
+			x2+0.1, y2+0.1, u2, v2,
+			x1, y2+0.1, u1, v2,
 			1, 1, 1, 1
 		)
 		v:texture(t.t)
@@ -88,9 +88,9 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 				local v = core.renderer.vertexes()
 				v:quad(
 					x1, y1, u1, v1,
-					x2+0.5, y1, u2, v1,
-					x2+0.5, y2+0.5, u2, v2,
-					x1, y2+0.5, u1, v2,
+					x2+0.1, y1, u2, v1,
+					x2+0.1, y2+0.1, u2, v2,
+					x1, y2+0.1, u1, v2,
 					1, 1, 1, 1
 				)
 				v:texture(t.t)

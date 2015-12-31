@@ -110,7 +110,7 @@ public:
 		float x4, float y4, float u4, float v4, 
 		float r, float g, float b, float a
 	);
-	void setTexture(GLuint tex, int lua_ref) {
+	virtual void setTexture(GLuint tex, int lua_ref) {
 		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);
 		this->tex = tex;
 		tex_lua_ref = lua_ref;
@@ -121,6 +121,9 @@ public:
 	virtual void renderZ(RendererGL *container, mat4 cur_model);
 };
 
+/****************************************************************************
+ ** DO that can contain others
+ ****************************************************************************/
 class DORContainer : public DisplayObject{
 protected:
 	vector<DisplayObject*> dos;

@@ -89,15 +89,10 @@ DisplayList::~DisplayList() {
 
 RendererGL::RendererGL() : DORContainer() {
 	glGenBuffers(1, &vbo_elements);
-	state = new RendererState(screen->w, screen->h);
-}
-RendererGL::RendererGL(int w, int h) : DORContainer() {
-	glGenBuffers(1, &vbo_elements);
-	state = new RendererState(w, h);
+	view = glm::ortho(0.f, (float)screen->w, (float)screen->h, 0.f, -1001.f, 1001.f);
 }
 RendererGL::~RendererGL() {
 	glDeleteBuffers(1, &vbo_elements);
-	delete state;
 }
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model) {
@@ -253,7 +248,9 @@ void RendererGL::update() {
 void RendererGL::toScreen(float x, float y, float r, float g, float b, float a) {
 	if (changed) update();
 
- 	if (x || y) state->translate(x, y, 0);
+ 	if (x || y) translate(x, y, 0.f, true);
+
+	mat4 mvp = view * model;
 
 	// Bind the indices
 	// printf("=r= binding vbo_elements %d\n", vbo_elements);
@@ -291,8 +288,7 @@ void RendererGL::toScreen(float x, float y, float r, float g, float b, float a) 
 		}
 
 		if (shader->p_mvp != -1) {
-			state->updateMVP(true);
-			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(state->mvp));
+			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
 		}
 
 		glEnableVertexAttribArray(shader->vertex_attrib);
@@ -317,7 +313,8 @@ void RendererGL::toScreen(float x, float y, float r, float g, float b, float a) 
 		glDisableVertexAttribArray(shader->color_attrib);
 	}
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	if (x || y) state->translate(-x, -y, 0);
+	if (x || y) translate(-x, -y, 0.f, true);
 }

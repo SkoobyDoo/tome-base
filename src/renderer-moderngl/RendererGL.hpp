@@ -55,7 +55,8 @@ private:
 	GLuint mode = GL_DYNAMIC_DRAW;
 	GLenum kind = GL_TRIANGLES;
 
-	RendererState *state;
+	mat4 view;
+
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;
 	int vbo_elements_nb = 0;
@@ -67,7 +68,6 @@ private:
 
 public:
 	RendererGL();
-	RendererGL(int w, int h);
 	virtual ~RendererGL();
 
 	virtual void addDisplayList(DisplayList* dl) {
