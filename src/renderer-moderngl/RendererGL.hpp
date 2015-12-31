@@ -24,6 +24,12 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 
+typedef struct {
+	vertex v;
+	GLuint tex;
+	shader_type *shader;
+} sortable_vertex;
+
 /****************************************************************************
  ** Display lists contain a VBO, texture, ... and a list of vertices to be
  ** drawn; those dont change and dont get recomputed until needed
@@ -44,6 +50,7 @@ public:
  ** Handling actual rendering to the screen & such
  ****************************************************************************/
 class RendererGL : public DORContainer {
+	friend class DORVertexes;
 private:
 	GLuint mode = GL_DYNAMIC_DRAW;
 	GLenum kind = GL_TRIANGLES;
@@ -53,9 +60,10 @@ private:
 	GLuint vbo_elements = 0;
 	int vbo_elements_nb = 0;
 	bool zsort = false;
-	vector<vertex> zvertices;
 	vector<DisplayList*> displays;
 	int nb_quads = 0;
+
+	vector<sortable_vertex> zvertices;
 
 public:
 	RendererGL();
@@ -66,9 +74,10 @@ public:
 		displays.push_back(dl);
 	}
 
-	virtual void zSorting(bool sort) { zsort = sort; };
-	virtual void update();
-	virtual void toScreen(float x, float y, float r, float g, float b, float a);
+	void zSorting(bool sort) { zsort = sort; };
+	void sortedToDL();
+	void update();
+	void toScreen(float x, float y, float r, float g, float b, float a);
 };
 
 #endif

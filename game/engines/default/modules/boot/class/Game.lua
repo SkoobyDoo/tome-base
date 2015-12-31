@@ -542,16 +542,18 @@ local f3 = UIBase:makeFrameDO("ui/textbox", 25, 25, nil, nil, true)
 f3.container:scale(3, 2, 1)
 -- f.container:scale(0.1, 0.1, 1)
 
+local t1 = core.renderer.text(UIBase.font)
+t1:text("Coco l'asticot!")
+t1:translate(50, 50, 100)
+t1:rotate(0, 0, math.rad(45))
+f.container:add(t1)
+
 f.container:add(f2.container)
 f2.container:add(f3.container)
 renderer:add(f.container)
 
-local t = core.renderer.text(UIBase.font)
-t:text("Coco l'asticot!")
-t:translate(50, 50)
-t:rotate(0, 0, math.rad(45))
-f.container:add(t)
-
+local nb = 0
+local z = false
 function _M:display()
 	renderer:toScreen(0, 0, 1, 1, 1, 1)
 	-- f.container:scale(0.01, 0.01, 0, true)
@@ -560,7 +562,9 @@ function _M:display()
 	-- f3.container:rotate(0, 0, -math.rad(2), true)
 	-- f.container:translate(2, 1)
 	f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
-	t:rotate(0, math.rad(1.5), 0, true)
+	t1:rotate(0, 0, math.rad(2), true)
+	nb = (nb + 1) % 180
+	if nb == 0 then z = not z renderer:zSort(z) end
 end
 
 --- Ask if we really want to close, if so, save the game first

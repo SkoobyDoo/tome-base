@@ -78,6 +78,7 @@ public:
 	void scale(float x, float y, float z, bool increment);
 
 	virtual void render(RendererGL *container, mat4 cur_model) = 0;
+	virtual void renderZ(RendererGL *container, mat4 cur_model) = 0;
 };
 
 /****************************************************************************
@@ -117,6 +118,7 @@ public:
 	void setShader(shader_type *s) { shader = s; };
 
 	virtual void render(RendererGL *container, mat4 cur_model);
+	virtual void renderZ(RendererGL *container, mat4 cur_model);
 };
 
 class DORContainer : public DisplayObject{
@@ -131,6 +133,7 @@ public:
 	void clear();
 
 	virtual void render(RendererGL *container, mat4 cur_model);
+	virtual void renderZ(RendererGL *container, mat4 cur_model);
 };
 
 #endif

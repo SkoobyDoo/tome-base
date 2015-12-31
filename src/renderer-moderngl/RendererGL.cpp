@@ -20,6 +20,8 @@
 */
 
 #include "renderer-moderngl/Renderer.hpp"
+#include <algorithm>
+
 extern "C" {
        #include <sys/time.h>
        #include <unistd.h>
@@ -118,6 +120,28 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model) {
 	resetChanged();
 }
 
+void DORVertexes::renderZ(RendererGL *container, mat4 cur_model) {
+	cur_model *= model;
+
+	// Make sure we do not have to reallocate each step
+	int nb = vertices.size();
+	int startat = container->zvertices.size();
+	container->zvertices.resize(startat + nb);
+
+	// Copy & apply the model matrix
+	vertex *src = vertices.data();
+	sortable_vertex *dest = container->zvertices.data();
+	for (int di = startat, si = 0; di < startat + nb; di++, si++) {
+		dest[di].tex = tex;
+		dest[di].shader = shader;
+		dest[di].v.tex = src[si].tex;
+		dest[di].v.color = src[si].color;
+		dest[di].v.pos = cur_model * src[si].pos;
+	}
+
+	resetChanged();
+}
+
 void DORContainer::render(RendererGL *container, mat4 cur_model) {
 	cur_model *= model;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
@@ -127,10 +151,43 @@ void DORContainer::render(RendererGL *container, mat4 cur_model) {
 	resetChanged();
 }
 
-static bool zSorter(vertex i, vertex j) {
-	// return i.pos[z] < j.pos[z];
+void DORContainer::renderZ(RendererGL *container, mat4 cur_model) {
+	cur_model *= model;
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->renderZ(container, cur_model);
+	}
+	resetChanged();
+}
 
-	// ah but this wont work, we need to sort BEFORE display lists are made.. some kind of super big raw display list .. uh ..
+static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
+	if (i.v.pos.z == j.v.pos.z) {
+		if (i.shader == j.shader) return i.tex < j.tex;
+		else return i.shader < j.shader;
+	} else {
+		return i.v.pos.z < j.v.pos.z;
+	}
+}
+
+void RendererGL::sortedToDL() {
+	GLuint tex = 0;
+	shader_type *shader = NULL;
+	DisplayList *dl = NULL;
+
+	// Make sure we do not have to reallocate each step
+	int nb = zvertices.size();
+	int startat = -1;
+
+	for (auto v = zvertices.begin(); v != zvertices.end(); v++) {
+		if (!dl || (tex != v->tex) || (shader != v->shader)) {
+			tex = v->tex; shader = v->shader;
+			dl = getDisplayList(this, tex, shader);
+			startat = dl->list.size();
+			dl->list.reserve(startat + nb); // Meh; will probably reserve way too much. but meh
+		}
+
+		dl->list.push_back(v->v);
+	}
 }
 
 void RendererGL::update() {
@@ -140,9 +197,20 @@ void RendererGL::update() {
 
 	// Build up the new display lists
 	mat4 cur_model = mat4();
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->render(this, cur_model);
+	if (zsort) {
+		zvertices.clear();
+		for (auto it = dos.begin() ; it != dos.end(); ++it) {
+			DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+			if (i) i->renderZ(this, cur_model);
+		}
+		stable_sort(zvertices.begin(), zvertices.end(), zSorter);
+
+		sortedToDL();
+	} else {
+		for (auto it = dos.begin() ; it != dos.end(); ++it) {
+			DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+			if (i) i->render(this, cur_model);
+		}
 	}
 
 	// Notify we dont need to be rebuilt again unless more stuff changes

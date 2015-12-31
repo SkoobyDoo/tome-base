@@ -46,6 +46,13 @@ static int gl_renderer_free(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_zsort(lua_State *L)
+{
+	RendererGL **r = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
+	(*r)->zSorting(lua_toboolean(L, 2));
+	return 0;
+}
+
 static int gl_renderer_toscreen(lua_State *L)
 {
 	RendererGL **renderer = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
@@ -289,6 +296,7 @@ static int gl_text_scale(lua_State *L)
 static const struct luaL_Reg gl_renderer_reg[] =
 {
 	{"__gc", gl_renderer_free},
+	{"zSort", gl_renderer_zsort},
 	{"add", gl_renderer_add},
 	{"remove", gl_renderer_remove},
 	{"toScreen", gl_renderer_toscreen},
