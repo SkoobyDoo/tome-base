@@ -43,14 +43,15 @@ typedef struct {
 	vec4 color;
 } vertex;
 
-class Renderer;
-class DisplayObject;
+class RendererGL;
 
+/****************************************************************************
+ ** Generic display object
+ ****************************************************************************/
 class DisplayObject {
-private:
+protected:
 	int lua_ref = LUA_NOREF;
 	DisplayObject *parent = NULL;
-protected:
 	lua_State *L = NULL;
 	mat4 model;
 	float x = 0, y = 0, z = 0;
@@ -76,22 +77,26 @@ public:
 	void rotate(float x, float y, float z, bool increment);
 	void scale(float x, float y, float z, bool increment);
 
-	virtual void render(DORContainer *container, mat4 cur_model) = 0;
+	virtual void render(RendererGL *container, mat4 cur_model) = 0;
 };
 
+/****************************************************************************
+ ** DO that has a vertex list
+ ****************************************************************************/
 class DORVertexes : public DisplayObject{
-public:
+protected:
 	vector<vertex> vertices;
 	int tex_lua_ref = LUA_NOREF;
 	GLuint tex;
 	shader_type *shader;
 
-	DOVertexes() {
+public:
+	DORVertexes() {
 		vertices.reserve(4);
 		tex = 0;
 		shader = default_shader;
 	};
-	virtual ~DOVertexes() {
+	virtual ~DORVertexes() {
 		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
 	};
 
@@ -110,18 +115,22 @@ public:
 		tex_lua_ref = lua_ref;
 	};
 	void setShader(shader_type *s) { shader = s; };
+
+	virtual void render(RendererGL *container, mat4 cur_model);
 };
 
 class DORContainer : public DisplayObject{
 protected:
 	vector<DisplayObject*> dos;
 public:
-	DOContainer() {};
-	virtual ~DOContainer() {};
+	DORContainer() {};
+	virtual ~DORContainer() {};
 
 	void add(DisplayObject *dob);
 	void remove(DisplayObject *dob);
 	void clear();
+
+	virtual void render(RendererGL *container, mat4 cur_model);
 };
 
 #endif

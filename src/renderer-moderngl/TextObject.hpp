@@ -21,7 +21,7 @@
 #ifndef TEXTOBJECTS_H
 #define TEXTOBJECTS_H
 
-#include "displayobjects/DisplayObject.hpp"
+#include "renderer-moderngl/Renderer.hpp"
 extern "C" {
 #include "font.h"
 #include "utf8proc/utf8proc.h"
@@ -41,10 +41,10 @@ private:
 
 public:
 
-	DOText() {
+	DORText() {
 		text = strdup("");
 	};
-	virtual ~DOText() {
+	virtual ~DORText() {
 		free((void*)text);
 		if (font_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, font_lua_ref);
 	};

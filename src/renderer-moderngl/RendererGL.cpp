@@ -33,7 +33,7 @@ static stack<DisplayList*> available_dls;
 static DisplayList* current_used_dl = NULL;
 static DORContainer* current_used_dl_container = NULL;
 
-DisplayList* getDisplayList(DORContainer *container, GLuint tex, shader_type *shader) {
+DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader) {
 	if (available_dls.empty()) {
 		available_dls.push(new DisplayList());
 	}
@@ -85,26 +85,11 @@ DisplayList::~DisplayList() {
 	vbo = 0;
 }
 
-
-DisplayObjectGL::DisplayObjectGL() {
-	mode = GL_DYNAMIC_DRAW;
-	kind = GL_TRIANGLES;
-	// if (mode == VERTEX_STATIC) mode = GL_STATIC_DRAW;
-	// if (mode == VERTEX_DYNAMIC) mode = GL_DYNAMIC_DRAW;
-	// if (mode == VERTEX_STREAM) mode = GL_STREAM_DRAW;
-	// if (kind == VO_POINTS) kind = GL_POINTS;
-	// if (kind == VO_QUADS) kind = GL_TRIANGLES;
-	// if (kind == VO_TRIANGLE_FAN) kind = GL_TRIANGLE_FAN;
-}
-
-DisplayObjectGL::~DisplayObjectGL() {
-}
-
-RendererGL::RendererGL() : Renderer(), DORContainer() {
+RendererGL::RendererGL() : DORContainer() {
 	glGenBuffers(1, &vbo_elements);
 	state = new RendererState(screen->w, screen->h);
 }
-RendererGL::RendererGL(int w, int h) : Renderer(), DORContainer() {
+RendererGL::RendererGL(int w, int h) : DORContainer() {
 	glGenBuffers(1, &vbo_elements);
 	state = new RendererState(w, h);
 }
@@ -113,7 +98,7 @@ RendererGL::~RendererGL() {
 	delete state;
 }
 
-void DORVertexes::render(DORContainer *container, mat4 cur_model) {
+void DORVertexes::render(RendererGL *container, mat4 cur_model) {
 	cur_model *= model;
 	auto dl = getDisplayList(container, tex, shader);
 
@@ -133,30 +118,10 @@ void DORVertexes::render(DORContainer *container, mat4 cur_model) {
 	resetChanged();
 }
 
-void DORText::render(DORContainer *container, mat4 cur_model) {
-	cur_model *= model;
-	auto dl = getDisplayList(container, tex, shader);
-
-	// Make sure we do not have to reallocate each step
-	int nb = vertices.size();
-	int startat = dl->list.size();
-	dl->list.reserve(startat + nb);
-
-	// Copy & apply the model matrix
-	// DG: is it better to first copy it all and then alter it ? most likely not, change me
-	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
-	vertex *dest = dl->list.data();
-	for (int di = startat; di < startat + nb; di++) {
-		dest[di].pos = cur_model * dest[di].pos;
-	}
-
-	resetChanged();
-}
-
-void DORContainer::render(DORContainer *container, mat4 cur_model) {
+void DORContainer::render(RendererGL *container, mat4 cur_model) {
 	cur_model *= model;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObjectGL *i = dynamic_cast<DisplayObjectGL*>(*it);
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 		if (i) i->render(container, cur_model);
 	}
 	resetChanged();
@@ -176,7 +141,7 @@ void RendererGL::update() {
 	// Build up the new display lists
 	mat4 cur_model = mat4();
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObjectGL *i = dynamic_cast<DisplayObjectGL*>(*it);
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 		if (i) i->render(this, cur_model);
 	}
 

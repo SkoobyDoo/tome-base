@@ -40,14 +40,17 @@ extern "C" {
 #include <memory>
 #include <stack>
 #include <queue>
+#include <vector>
 
 using namespace glm;
 using namespace std;
 
+#include "renderer-moderngl/DisplayObject.hpp"
+#include "renderer-moderngl/TextObject.hpp"
 #include "renderer-moderngl/RendererState.hpp"
 #include "renderer-moderngl/RendererGL.hpp"
 
-export DisplayList* getDisplayList(DORContainer *container, GLuint tex, shader_type *shader);
-export void releaseDisplayList(DisplayList *dl);
+extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
+extern void releaseDisplayList(DisplayList *dl);
 
 #endif

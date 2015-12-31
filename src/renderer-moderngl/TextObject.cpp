@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 }
 
-#include "displayobjects/TextObject.hpp"
+#include "renderer-moderngl/Renderer.hpp"
 
 int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
 	int x = 0, y = by;

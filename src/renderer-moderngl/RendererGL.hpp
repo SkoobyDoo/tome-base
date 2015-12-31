@@ -22,7 +22,7 @@
 #ifndef RENDERER_GL_H
 #define RENDERER_GL_H
 
-#include "displayobjects/Renderer.hpp"
+#include "renderer-moderngl/Renderer.hpp"
 
 /****************************************************************************
  ** Display lists contain a VBO, texture, ... and a list of vertices to be
@@ -41,30 +41,13 @@ public:
 };
 
 /****************************************************************************
- ** Teaches a display object to render a vertex list
- ****************************************************************************/
-class VertexRenderer {
-protected:
-	GLuint mode;
-	GLenum kind;
-public:
-
-	virtual void render(DORContainer *container, mat4 cur_model);
-};
-
-/****************************************************************************
- ** GL DO Container, the base of the rendering pyramid
- ****************************************************************************/
-class ContainerRenderer {
-public:
-	virtual void render(DORContainer *container, mat4 cur_model);
-};
-
-/****************************************************************************
  ** Handling actual rendering to the screen & such
  ****************************************************************************/
-class RendererGL : public Renderer, public DORContainer {
+class RendererGL : public DORContainer {
 private:
+	GLuint mode = GL_DYNAMIC_DRAW;
+	GLenum kind = GL_TRIANGLES;
+
 	RendererState *state;
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;

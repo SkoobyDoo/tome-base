@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 }
 
-#include "displayobjects/DisplayObject.hpp"
+#include "renderer-moderngl/Renderer.hpp"
 
 void DisplayObject::setChanged() {
 	changed = true;
