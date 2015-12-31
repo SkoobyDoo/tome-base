@@ -186,11 +186,12 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 
 	// For display as a DO
 	tex = textures[0];
+	// Default display quad, can be removed and altered if needed with clear & addQuad
 	addQuad(
-		0, 0, 0, 0,
-		w, 0, 1, 0,
-		w, h, 1, 1,
-		0, h, 0, 1,
+		0, 0, 0, 1,
+		0, h, 0, 0,
+		w, h, 1, 0,
+		w, 0, 1, 1,
 		1, 1, 1, 1
 	);
 }

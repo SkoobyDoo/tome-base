@@ -552,19 +552,26 @@ f.container:add(f2.container)
 f2.container:add(f3.container)
 renderer:add(f.container)
 
+local fbo = core.renderer.target()
+fbo:scale(1, 0.4, 1)
+fbo:translate(400, 400)
+fbo:rotate(math.rad(45), 0, 0)
+local fborenderer = core.renderer.renderer()
+fborenderer:add(fbo)
+
 local nb = 0
 local z = false
 function _M:display()
-	renderer:toScreen(0, 0, 1, 1, 1, 1)
-	-- f.container:scale(0.01, 0.01, 0, true)
-	-- f.container:rotate(0, 0, math.rad(1), true)
-	-- f2.container:rotate(0, 0, math.rad(1), true)
-	-- f3.container:rotate(0, 0, -math.rad(2), true)
-	-- f.container:translate(2, 1)
-	f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
-	t1:rotate(0, 0, math.rad(2), true)
-	nb = (nb + 1) % 180
-	if nb == 0 then z = not z renderer:zSort(z) end
+	fbo:use(true)
+		renderer:toScreen(0, 0, 1, 1, 1, 1)
+		f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
+		t1:rotate(0, 0, math.rad(2), true)
+		nb = (nb + 1) % 180
+		if nb == 0 then z = not z renderer:zSort(z) end
+	fbo:use(false)
+
+	fborenderer:toScreen(0, 0, 1, 1, 1, 1)
+	-- fbo:rotate(0, math.rad(2), 0, true)
 end
 
 --- Ask if we really want to close, if so, save the game first

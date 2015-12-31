@@ -167,22 +167,19 @@ static int gl_target_free(lua_State *L)
 	return 1;
 }
 
-static int gl_target_add(lua_State *L)
+static int gl_target_use(lua_State *L)
 {
 	// We do not make any checks on the types, so the same method can be used for target & renderer and to add any kind of display object
 	DORTarget **c = (DORTarget**)lua_touserdata(L, 1);
-	DisplayObject **add = (DisplayObject**)lua_touserdata(L, 2);
-	(*c)->add(*add);	
-	(*add)->setLuaRef(luaL_ref(L, LUA_REGISTRYINDEX));
+	(*c)->use(lua_toboolean(L, 2));
 	return 0;
 }
 
-static int gl_target_remove(lua_State *L)
+static int gl_target_clearcolor(lua_State *L)
 {
 	// We do not make any checks on the types, so the same method can be used for target & renderer and to add any kind of display object
 	DORTarget **c = (DORTarget**)lua_touserdata(L, 1);
-	DisplayObject **add = (DisplayObject**)lua_touserdata(L, 2);
-	(*c)->remove(*add);
+	(*c)->setClearColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 	return 0;
 }
 
@@ -364,6 +361,17 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_target_reg[] =
+{
+	{"__gc", gl_target_free},
+	{"use", gl_target_use},
+	{"clearColor", gl_target_clearcolor},
+	{"translate", gl_target_translate},
+	{"rotate", gl_target_rotate},
+	{"scale", gl_target_scale},
+	{NULL, NULL},
+};
+
 static const struct luaL_Reg gl_container_reg[] =
 {
 	{"__gc", gl_container_free},
@@ -403,6 +411,7 @@ const luaL_Reg rendererlib[] = {
 	{"vertexes", gl_vertexes_new},
 	{"text", gl_text_new},
 	{"container", gl_container_new},
+	{"target", gl_target_new},
 	{NULL, NULL}
 };
 
