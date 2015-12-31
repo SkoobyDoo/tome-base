@@ -32,7 +32,13 @@ static int gl_renderer_new(lua_State *L)
 {
 	RendererGL **r = (RendererGL**)lua_newuserdata(L, sizeof(RendererGL*));
 	auxiliar_setclass(L, "gl{renderer}", -1);
-	*r = new RendererGL();
+
+	int w = screen->w;
+	int h = screen->h;
+	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
+	if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
+
+	*r = new RendererGL(w, h);
 	(*r)->setLuaState(L);
 
 	return 1;
@@ -153,7 +159,15 @@ static int gl_target_new(lua_State *L)
 {
 	DORTarget **c = (DORTarget**)lua_newuserdata(L, sizeof(DORTarget*));
 	auxiliar_setclass(L, "gl{target}", -1);
-	*c = new DORTarget();
+	int w = screen->w;
+	int h = screen->h;
+	int nbt = 1;
+
+	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
+	if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
+	if (lua_isnumber(L, 3)) nbt = lua_tonumber(L, 3);
+
+	*c = new DORTarget(w, h, nbt);
 	(*c)->setLuaState(L);
 
 	return 1;

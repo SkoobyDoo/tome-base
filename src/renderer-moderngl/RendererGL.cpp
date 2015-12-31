@@ -87,9 +87,10 @@ DisplayList::~DisplayList() {
 	vbo = 0;
 }
 
-RendererGL::RendererGL() : DORContainer() {
+RendererGL::RendererGL() : RendererGL(screen->w, screen->h) {}
+RendererGL::RendererGL(int w, int h) : DORContainer() {
 	glGenBuffers(1, &vbo_elements);
-	view = glm::ortho(0.f, (float)screen->w, (float)screen->h, 0.f, -1001.f, 1001.f);
+	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
 }
 RendererGL::~RendererGL() {
 	glDeleteBuffers(1, &vbo_elements);

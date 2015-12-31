@@ -68,6 +68,7 @@ private:
 
 public:
 	RendererGL();
+	RendererGL(int w, int h);
 	virtual ~RendererGL();
 
 	virtual void addDisplayList(DisplayList* dl) {

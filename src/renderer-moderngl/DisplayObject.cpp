@@ -237,17 +237,14 @@ void DORTarget::use(bool activate) {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		if (nbt > 1) glDrawBuffers(nbt, buffers.data());
 
-		// renderer_push_ortho_state(fbo->w, fbo->h);
-
 		tglClearColor(clear_r, clear_g, clear_b, clear_a);
 		glClear(GL_COLOR_BUFFER_BIT);
 		fbo_stack.push(fbo);
 	}
 	else
 	{
-		tglClearColor(0, 0, 0, 1);
 		fbo_stack.pop();
-		// renderer_pop_ortho_state();
+		tglClearColor(0, 0, 0, 1);
 
 		// Unbind texture from FBO and then unbind FBO
 		if (!fbo_stack.empty()) {
