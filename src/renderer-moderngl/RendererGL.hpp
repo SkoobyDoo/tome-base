@@ -105,12 +105,15 @@ private:
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;
 	int vbo_elements_nb = 0;
+	bool zsort = false;
+	vector<vertex> zvertices;
 
 public:
 	RendererGL();
 	RendererGL(int w, int h);
 	virtual ~RendererGL();
 
+	virtual void zSorting(bool sort) { zsort = sort; };
 	virtual void update();
 	virtual void toScreen(float x, float y, float r, float g, float b, float a);
 };

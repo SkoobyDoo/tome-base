@@ -93,6 +93,8 @@ public:
 		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
 	};
 
+	void clear();
+
 	int addQuad(
 		float x1, float y1, float u1, float v1, 
 		float x2, float y2, float u2, float v2, 

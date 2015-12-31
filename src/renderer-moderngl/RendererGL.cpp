@@ -162,6 +162,12 @@ void DORContainer::render(DORContainer *container, mat4 cur_model) {
 	resetChanged();
 }
 
+static bool zSorter(vertex i, vertex j) {
+	return i.pos[z] < j.pos[z];
+
+	// ah but this wont work, we need to sort BEFORE display lists are made.. some kind of super big raw display list .. uh ..
+}
+
 void RendererGL::update() {
 	// Release currently owned display lists
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) { releaseDisplayList(*dl); }

@@ -96,6 +96,7 @@ void DOText::parseText() {
 	bool no_linefeed = lua_toboolean(L, 11);
 
 	setTexture(f->atlas_tex, LUA_NOREF);
+	clear();
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	vertices.reserve(len * 4);
