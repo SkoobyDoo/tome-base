@@ -204,6 +204,25 @@ DORTarget::~DORTarget() {
 	glDeleteFramebuffers(1, &fbo);
 }
 
+void DORTarget::displaySize(int w, int h, bool center) {
+	clear();
+	int x1 = 0, x2 = w;
+	int y1 = 0, y2 = h;
+	if (center) {
+		w = w / 2;
+		h = h / 2;
+		x1 = -w; x2 = w;
+		y1 = -h; y2 = h;
+	}
+	addQuad(
+		x1, y1, 0, 1,
+		x1, y2, 0, 0,
+		x2, y2, 1, 0,
+		x2, y1, 1, 1,
+		1, 1, 1, 1
+	);
+}
+
 void DORTarget::setClearColor(float r, float g, float b, float a) {
 	clear_r = r;
 	clear_g = g;
@@ -226,6 +245,7 @@ void DORTarget::use(bool activate) {
 	}
 	else
 	{
+		tglClearColor(0, 0, 0, 1);
 		fbo_stack.pop();
 		// renderer_pop_ortho_state();
 

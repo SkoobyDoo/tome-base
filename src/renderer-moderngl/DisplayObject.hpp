@@ -158,6 +158,7 @@ public:
 	virtual ~DORTarget();
 
 	void setClearColor(float r, float g, float b, float a);
+	void displaySize(int w, int h, bool center);
 	void use(bool activate);
 	virtual void setTexture(GLuint tex, int lua_ref) { printf("Error, trying to set DORTarget texture.\n"); }; // impossible
 };

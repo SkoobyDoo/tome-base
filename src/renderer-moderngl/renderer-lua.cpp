@@ -175,6 +175,14 @@ static int gl_target_use(lua_State *L)
 	return 0;
 }
 
+static int gl_target_displaysize(lua_State *L)
+{
+	// We do not make any checks on the types, so the same method can be used for target & renderer and to add any kind of display object
+	DORTarget **c = (DORTarget**)lua_touserdata(L, 1);
+	(*c)->displaySize(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_toboolean(L, 4));
+	return 0;
+}
+
 static int gl_target_clearcolor(lua_State *L)
 {
 	// We do not make any checks on the types, so the same method can be used for target & renderer and to add any kind of display object
@@ -365,6 +373,7 @@ static const struct luaL_Reg gl_target_reg[] =
 {
 	{"__gc", gl_target_free},
 	{"use", gl_target_use},
+	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
 	{"translate", gl_target_translate},
 	{"rotate", gl_target_rotate},
