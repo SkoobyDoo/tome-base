@@ -4214,7 +4214,7 @@ function _M:learnItemTalent(o, tid, level)
 		end
 	end
 
-	if not self.talents_cd[tid] then
+	if not self.talents_cd[tid] and not self:attr("no_learn_talent_item_cd") then
 		local cd = math.ceil((self:getTalentCooldown(t) or 6) / 1.5)
 		self.talents_cd[tid] = cd
 	end
