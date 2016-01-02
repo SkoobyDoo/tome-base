@@ -137,7 +137,7 @@ defineTile('3', mod.class.Grid.new{
 )
 
 defineTile('4', mod.class.Grid.new{
-	define_as = "WALL_UP_FLOOR",
+	define_as = "WALL_UP_FLOOR2",
 	type = "floor", subtype = "floor",
 	name = "floor", image = "terrain/marble_floor.png",
 	display = '.', color=colors.UMBER, back_color=colors.LIGHT_UMBER,
@@ -169,7 +169,7 @@ defineTile('4', mod.class.Grid.new{
 )
 
 defineTile('5', mod.class.Grid.new{
-	define_as = "WALL_DOWN_FLOOR",
+	define_as = "WALL_DOWN_FLOOR2",
 	type = "floor", subtype = "floor",
 	name = "floor", image = "terrain/marble_floor.png",
 	display = '.', color=colors.UMBER, back_color=colors.LIGHT_UMBER,
