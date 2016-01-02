@@ -106,7 +106,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Target a nearby shadow, and force it to slam into a nearby enemy, dealing %0.1f Physical damage.
-Your shadow will than set them as their target, and they will target your shadow.
+Your shadow will then set them as their target, and they will target your shadow.
 Damage increases with your Mindpower.]]):
 		format(damDesc(self, DamageType.PHYSICAL, t.getDamage(self, t)))
 	end,
@@ -235,7 +235,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Share your hatred with all shadows within sight range, gaining temporary full control.
-Every shadow affected can than fire a blast of pure hate towards a nearby target, dealing %0.1f Mind damage.
+Every shadow affected can then fire a blast of pure hate towards a nearby target, dealing %0.1f Mind damage.
 You cannot cancel this talent once the first bolt is cast.
 Damage increases with your Mindpower.]]):
 		format(damDesc(self, DamageType.MIND, t.getDamage(self, t)))

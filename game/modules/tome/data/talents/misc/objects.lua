@@ -342,7 +342,7 @@ newTalent{
 	self:getTalentLevel(t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
+		if not x or not y or not target then return nil end
 		local dispower = t.getpower(self,t)
 		local dismax = t.maxpower(self, t)
 		self:project(tg, x, y, function(px, py)
