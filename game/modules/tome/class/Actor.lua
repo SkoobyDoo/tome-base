@@ -5270,7 +5270,7 @@ function _M:postUseTalent(ab, ret, silent)
 
 	if self.turn_procs.anomalies_checked then self.turn_procs.anomalies_checked = nil end  -- clears out anomaly checks
 
-	if config.settings.tome.talents_flyers and not self:attr("save_cleanup") and self.x and self.y then
+	if config.settings.tome.talents_flyers and not self:attr("save_cleanup") and self.x and self.y and game.level.map.seens(self.x, self.y) then
 		local name = (ab.display_entity and ab.display_entity:getDisplayString() or "")..ab.name
 		local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 		game.flyers:add(sx, sy - game.level.map.tile_h / 2, 20, rng.float(-0.1, 0.1), rng.float(-0.5,-0.8), name, colors.simple(colors.OLIVE_DRAB))
