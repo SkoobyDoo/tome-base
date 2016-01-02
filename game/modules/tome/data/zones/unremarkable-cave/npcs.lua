@@ -81,7 +81,7 @@ newEntity{ define_as = "FILLAREL",
 
 	seen_by = function(self, who)
 		if not self.has_been_seen and who.player then
-			for act, info in pairs(self.fov.actors) do
+			for uid, act in pairs(game.level.entities) do
 				if act.name == "Krogar" then
 					local Chat = require("engine.Chat")
 					local chat = Chat.new("unremarkable-cave-bosses", self, who)
