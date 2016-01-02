@@ -74,7 +74,7 @@ newTalent{
 				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
 				if tx then
 					target = game.level.map(tx, ty, Map.ACTOR)
-					if target ~= aitarget then target = self end
+					if ai_target and target ~= aitarget then target = self end
 				end
 			end
 		end
@@ -183,7 +183,7 @@ newTalent{
 				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
 				if tx then
 					target = game.level.map(tx, ty, Map.ACTOR)
-					if target ~= aitarget then target = self end
+					if ai_target and target ~= aitarget then target = self end
 				end
 			end
 		end
