@@ -140,7 +140,7 @@ function _M:on_register()
 end
 
 function _M:unload()
-	actor.is_dialog_talent_leveling = nil
+	self.actor.is_dialog_talent_leveling = nil
 	self.actor.no_last_learnt_talents_cap = nil
 	self.actor:capLastLearntTalents("class")
 	self.actor:capLastLearntTalents("generic")
