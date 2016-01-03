@@ -228,7 +228,7 @@ function _M:runStep()
 		ret, msg = self:runCheck()
 		if not ret then
 			self:runStop(msg)
-			return true
+			return false
 		end
 		if self.running.busy and self.running.busy.no_energy then
 			return self:runStep()

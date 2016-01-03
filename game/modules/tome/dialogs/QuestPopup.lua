@@ -37,12 +37,12 @@ local statuses = {
 function _M:init(quest, status)
 	self.quest = quest
 	self.ui = "quest"
-	Dialog.init(self, "", 500, 150)
+	Dialog.init(self, "", 666, 150)
 
 	self.blight = self:getUITexture("ui/dialogframe_backglow.png")
 
 	local f, fs = FontPackage:getFont("bold")
-	local quest = Textzone.new{auto_width=500, auto_height=true, text="#ANTIQUE_WHITE#Quest: #AQUAMARINE#"..self.quest.name, font={f, math.ceil(fs * 2)}}
+	local quest = Textzone.new{auto_width=true, auto_height=true, text="#ANTIQUE_WHITE#Quest: #AQUAMARINE#"..self.quest.name, font={f, math.ceil(fs * 2)}}
 	quest:setTextShadow(3)
 	quest:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
 
