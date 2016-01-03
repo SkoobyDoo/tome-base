@@ -53,6 +53,7 @@ end
 
 function _M:init(actor, on_finish, on_birth)
 	self.on_birth = on_birth
+	actor.is_dialog_talent_leveling = true
 	actor.no_last_learnt_talents_cap = true
 	self.actor = actor
 	self.unused_stats = self.actor.unused_stats
@@ -139,6 +140,7 @@ function _M:on_register()
 end
 
 function _M:unload()
+	actor.is_dialog_talent_leveling = nil
 	self.actor.no_last_learnt_talents_cap = nil
 	self.actor:capLastLearntTalents("class")
 	self.actor:capLastLearntTalents("generic")
@@ -211,7 +213,7 @@ function _M:finish()
 			local lvl_raw = self.actor:getTalentLevelRaw(t_id)
 			local old_lvl = self.actor_dup:getTalentLevel(t_id)
 			local old_lvl_raw = self.actor_dup:getTalentLevelRaw(t_id)
-			t.on_levelup_close(self, t, lvl, old_lvl, lvl_raw, old_lvl_raw)
+			t.on_levelup_close(self, t, lvl, old_lvl, lvl_raw, old_lvl_raw, true)
 		end
 	end
 	return true

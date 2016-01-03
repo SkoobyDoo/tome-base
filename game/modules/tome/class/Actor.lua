@@ -4150,6 +4150,8 @@ end
 -- @return true if the talent was learnt, nil and an error message otherwise
 function _M:learnTalent(t_id, force, nb, extra)
 	local just_learnt = not self:knowTalent(t_id)
+	local old_lvl = self:getTalentLevel(t_id)
+	local old_lvl_raw = self:getTalentLevelRaw(t_id)
 	if not engine.interface.ActorTalents.learnTalent(self, t_id, force, nb) then return false end
 
 	-- If we learned a spell, get mana, if you learned a technique get stamina, if we learned a wild gift, get power
@@ -4189,6 +4191,13 @@ function _M:learnTalent(t_id, force, nb, extra)
 			end
 		end
 		self:attr("autolearn_mindslayer_done", 1)
+	end
+
+	-- Simulate calling the talent's close method if we were not learnt from the levelup dialog
+	if t.on_levelup_close and not self.is_dialog_talent_leveling then
+		local lvl = self:getTalentLevel(t_id)
+		local lvl_raw = self:getTalentLevelRaw(t_id)
+		t.on_levelup_close(self, t, lvl, old_lvl, lvl_raw, old_lvl_raw, false)
 	end
 
 	return true
