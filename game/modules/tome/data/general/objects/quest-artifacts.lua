@@ -400,7 +400,13 @@ Items in the chest will not encumber you.]],
 			if nb <= 0 then
 				local floor = game.level.map:getObjectTotal(who.x, who.y)
 				if floor == 0 then
-					require("engine.ui.Dialog"):simplePopup("Transmogrification Chest", "You do not have any items to transmogrify in your chest or on the floor.")
+					if who:attr("has_transmo") >= 2 then
+						require("engine.ui.Dialog"):yesnoPopup("Transmogrification Chest", "Make the Transmogrification Chest the default item's destroyer?", function(ret) if ret then
+							who.default_transmo_source = self
+						end end)
+					else
+						require("engine.ui.Dialog"):simplePopup("Transmogrification Chest", "You do not have any items to transmogrify in your chest or on the floor.")
+					end
 				else
 					require("engine.ui.Dialog"):yesnoPopup("Transmogrification Chest", "Transmogrify all "..floor.." item(s) on the floor?", function(ret)
 						if not ret then return end
@@ -430,6 +436,7 @@ Items in the chest will not encumber you.]],
 	},
 
 	on_pickup = function(self, who)
+		who.default_transmo_source = self
 		require("engine.ui.Dialog"):simpleLongPopup("Transmogrification Chest", [[This chest is an extension of old Sher'Tul places of power. Any items dropped inside is transported to an other place, processed and destroyed to extract energy.
 The byproduct of this effect is the creation of gold, which is useless to process, so it is sent back to you.
 

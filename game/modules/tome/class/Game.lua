@@ -809,7 +809,7 @@ function _M:changeLevel(lev, zone, params)
 			for i = #inven, 1, -1 do
 				local o = inven[i]
 				if o.__transmo then
-					p:transmoInven(inven, i, o)
+					p:transmoInven(inven, i, o, p.default_transmo_source)
 				end
 			end
 			if game.zone == oldzone and game.level == oldlevel then
