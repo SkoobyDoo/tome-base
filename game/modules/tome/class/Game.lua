@@ -1271,6 +1271,7 @@ function _M:updateZoneName()
 end
 
 function _M:tick()
+	print("===ticktock goes the clok", game.player.energy.value)
 	if self.level then
 		self:targetOnTick()
 

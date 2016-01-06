@@ -2247,6 +2247,14 @@ function rng.poissonProcess(k, turn_scale, rate)
 	return math.exp(-rate*turn_scale) * ((rate*turn_scale) ^ k)/ util.factorial(k)
 end
 
+function util.show_function_calls()
+	debug.sethook(function(event, line)
+		local t = debug.getinfo(2)
+		local tp = debug.getinfo(3) or {}
+		print(tostring(t.short_src) .. ":" .. tostring(t.name).."@"..tostring(t.linedefined), "<from>", tostring(tp.short_src) .. ":" .. tostring(tp.name).."@"..tostring(tp.linedefined))
+	end, "c")
+end
+
 function util.show_backtrace()
 	local level = 2
 
