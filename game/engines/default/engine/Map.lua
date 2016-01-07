@@ -874,7 +874,7 @@ function _M:moveViewSurround(x, y, marginx, marginy, ignore_padding)
 			self.changed = true
 		end
 	else
-		if marginx * 2 + viewport_padding_4 + viewport_padding_6 > self.viewport.mwidth then
+		if marginx * 2 + self.viewport_padding_4 + self.viewport_padding_6 > self.viewport.mwidth then
 			self.mx = x - math.floor(self.viewport.mwidth / 2)
 			self.changed = true
 		elseif self.mx + marginx + self.viewport_padding_4 >= x then
@@ -884,7 +884,7 @@ function _M:moveViewSurround(x, y, marginx, marginy, ignore_padding)
 			self.mx = x - self.viewport.mwidth + marginx + self.viewport_padding_6
 			self.changed = true
 		end
-		if marginy * 2 + viewport_padding_2 + viewport_padding_8 > self.viewport.mheight then
+		if marginy * 2 + self.viewport_padding_2 + self.viewport_padding_8 > self.viewport.mheight then
 			self.my = y - math.floor(self.viewport.mheight / 2)
 			self.changed = true
 		elseif self.my + marginy + self.viewport_padding_8 >= y then

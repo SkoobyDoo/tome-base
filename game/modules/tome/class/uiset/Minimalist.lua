@@ -615,18 +615,18 @@ function _M:computePadding(what, x1, y1, x2, y2)
 	-- This is Marson's code to make you not get stuck under UI elements
 	-- I have tested and love it but I don't understand it very well, may be oversights
 	--if config.settings.marson.view_scrolling == "No Hiding" then
-		-- if x2 <= Map.viewport.width / 4 then
-		-- 	Map.viewport_padding_4 = math.max(Map.viewport_padding_4, math.ceil(x2 / Map.tile_w))
-		-- end
-		-- if x1 >= (Map.viewport.width / 4) * 3 then
-		-- 	Map.viewport_padding_6 = math.max(Map.viewport_padding_6, math.ceil((Map.viewport.width - x1) / Map.tile_w))
-		-- end
-		-- if y2 <= Map.viewport.height / 4 then
-		-- 	Map.viewport_padding_8 = math.max(Map.viewport_padding_8, math.ceil(y2 / Map.tile_h))
-		-- end
-		-- if y1 >= (Map.viewport.height / 4) * 3 then
-		-- 	Map.viewport_padding_2 = math.max(Map.viewport_padding_2, math.ceil((Map.viewport.height - y1) / Map.tile_h))
-		-- end
+		if x2 <= Map.viewport.width / 4 then
+			Map.viewport_padding_4 = math.max(Map.viewport_padding_4, math.ceil(x2 / Map.tile_w))
+		end
+		if x1 >= (Map.viewport.width / 4) * 3 then
+			Map.viewport_padding_6 = math.max(Map.viewport_padding_6, math.ceil((Map.viewport.width - x1) / Map.tile_w))
+		end
+		if y2 <= Map.viewport.height / 4 then
+			Map.viewport_padding_8 = math.max(Map.viewport_padding_8, math.ceil(y2 / Map.tile_h))
+		end
+		if y1 >= (Map.viewport.height / 4) * 3 then
+			Map.viewport_padding_2 = math.max(Map.viewport_padding_2, math.ceil((Map.viewport.height - y1) / Map.tile_h))
+		end
 
 	if x1 <= 0 then
 			size.orient = "right"
