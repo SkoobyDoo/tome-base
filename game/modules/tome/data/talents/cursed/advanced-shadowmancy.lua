@@ -30,25 +30,18 @@ newTalent{
 	getReduction = function(self, t) return self:combatTalentScale(t, 10, 40) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
-		local x, y, target = self:getTarget(tg)
+		local x, y, target = self:getTargetLimited(tg)
 		if x and y and target and target.summoner and target.summoner == self and target.is_doomed_shadow then
-			local tg2 = {type="hit", range=self:getTalentRange(t), source_actor=target, pass_terrain=true}
-			local x, y, target2 = self:getTarget(tg2)
-			local _ _, x, y = self:canProject(tg2, x, y)
+			local tg2 = {type="hit", range=self:getTalentRange(t), start_x=x, start_y=y, source_actor=target, pass_terrain=true}
+			local x, y, target2 = self:getTargetLimited(tg2)
 			if x and y and target2 and target2.x == x and target2.y == y then
-
 				game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 				game.level.map:particleEmitter(target2.x, target2.y, 1, "teleport")
 
 				target.die(target)
-
 				target2:setEffect(target2.EFF_CURSE_IMPOTENCE, 5, {power=t.getReduction(self, t)})
-
 				game:playSoundNear(target, "talents/earth")
-
 			else return nil end
-			
-
 		else return nil end
 
 		return true
@@ -73,12 +66,10 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 280) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
-		local x, y, target = self:getTarget(tg)
-		local _ _, x, y = self:canProject(tg, x, y)
+		local x, y, target = self:getTargetLimited(tg)
 		if x and y and target and target.x == x and target.y == y and target.is_doomed_shadow and target.summoner and target.summoner == self then
-			local tg2 = {type="hit", range=self:getTalentRange(t), source_actor=target, friendlyblock=false, pass_terrain=true,}
-			local x, y, target2 = self:getTarget(tg2)
-			local _ _, x, y = self:canProject(tg2, x, y)
+			local tg2 = {type="hit", range=self:getTalentRange(t), start_x=x, start_y=y, source_actor=target, friendlyblock=false, pass_terrain=true,}
+			local x, y, target2 = self:getTargetLimited(tg2)
 			if x and y and target2 and target2.x == x and target2.y == y then
 				local ox, oy = target.x, target.y
 				local sx, sy = util.findFreeGrid(x, y, 3, true, {[engine.Map.ACTOR]=true})
