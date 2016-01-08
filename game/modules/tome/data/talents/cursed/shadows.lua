@@ -371,15 +371,7 @@ newTalent{
 
 		return true
 	end,
-	callbackOnActBase = function(self, t)
-		if not self.shadows then
-			self.shadows = {
-				remainingCooldown = 0
-			}
-		end
-
-		if game.zone.wilderness then return false end
-
+	summonShadow = function(self, t)
 		local shadowCount = 0
 		for _, e in pairs(game.level.entities) do
 			if e.summoner and e.summoner == self and e.subtype == "shadow" then shadowCount = shadowCount + 1 end
@@ -389,10 +381,6 @@ newTalent{
 			return false
 		end
 		
-		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
-		if self.shadows.remainingCooldown > 0 then return false end
-		self.shadows.remainingCooldown = 10
-
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 8, true, {[Map.ACTOR]=true})
 		if not x then
@@ -400,12 +388,12 @@ newTalent{
 		end
 
 		-- use hate
-		if self.hate < 6 then
+		if self:getHate() < 5 then
 			-- not enough hate..just wait for another try
 			game.logPlayer(self, "Your hate is too low to call another shadow!", deflectDamage)
 			return false
 		end
-		self:incHate(-6)
+		self:incHate(-5)
 
 		local level = t.getLevel(self, t)
 		local tShadowWarriors = self:knowTalent(self.T_SHADOW_WARRIORS) and self:getTalentFromId(self.T_SHADOW_WARRIORS) or nil
@@ -432,6 +420,21 @@ newTalent{
 		end
 
 		game:playSoundNear(self, "talents/spell_generic")
+	end,
+	callbackOnActBase = function(self, t)
+		if not self.shadows then
+			self.shadows = {
+				remainingCooldown = 0
+			}
+		end
+
+		if game.zone.wilderness then return false end
+
+		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
+		if self.shadows.remainingCooldown > 0 then return false end
+		self.shadows.remainingCooldown = 10
+
+		t.summonShadow(self, t)
 		return true
 	end,
 	info = function(self, t)
@@ -440,7 +443,7 @@ newTalent{
 		local healLevel = t.getHealLevel(self, t)
 		local blindsideLevel = t.getBlindsideLevel(self, t)
 		local avoid_master_damage = t.getAvoidMasterDamage(self, t)
-		return ([[While this ability is active, you will continually call up to %d level %d shadows to aid you in battle. Each shadow costs 6 hate to summon. Shadows are weak combatants that can: Use Arcane Reconstruction to heal themselves (level %d), Blindside their opponents (level %d), and Phase Door from place to place.
+		return ([[While this ability is active, you will continually call up to %d level %d shadows to aid you in battle. Each shadow costs 5 hate to summon. Shadows are weak combatants that can: Use Arcane Reconstruction to heal themselves (level %d), Blindside their opponents (level %d), and Phase Door from place to place.
 		Shadows ignore %d%% of the damage dealt to them by their master.]]):format(maxShadows, level, healLevel, blindsideLevel, avoid_master_damage)
 	end,
 }
@@ -594,8 +597,13 @@ newTalent{
 	getBlindsideChance = function(self, t) return self:combatTalentLimit(t, 100, 40, 80) end, -- Limit < 100%
 	action = function(self, t)
 		local target = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(target)
-		if not target or not self:canProject(tg, x, y) then return nil end
+		local x, y, target = self:getTargetLimited(target)
+		if not target then return nil end
+
+		-- Ensure we have max shadows
+		for i = 1, self:callTalent(self.T_CALL_SHADOWS, "getMaxShadows") do
+			self:callTalent(self.T_CALL_SHADOWS, "summonShadow")
+		end
 
 		if self:reactionToward(target) < 0 then
 			-- attack the target
@@ -648,6 +656,7 @@ newTalent{
 		local defenseDuration = t.getDefenseDuration(self, t)
 		local blindsideChance = t.getBlindsideChance(self, t)
 		return ([[Focus your shadows on a single target. Friendly targets will be defended for %d turns. Hostile targets will be attacked, with a %d%% chance the shadows will blindside the target.
+		If you have less than maximum shadows available, they will automatically be summoned before focusing.
 		This talent has no cost.]]):format(defenseDuration, blindsideChance)
 	end,
 }
