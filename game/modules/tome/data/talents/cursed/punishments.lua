@@ -88,7 +88,7 @@ newTalent{
 		return self:combatTalentMindDamage(t, 0, 300)
 	end,
 	getJumpRange = function(self, t)
-		return math.min(6, math.sqrt(self:getTalentLevel(t) * 2))
+		return math.ceil(math.min(6, math.sqrt(self:getTalentLevel(t) * 2)))
 	end,
 	getJumpCount = function(self, t)
 		return math.min(3, self:getTalentLevelRaw(t))
