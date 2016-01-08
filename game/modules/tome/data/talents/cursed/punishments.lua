@@ -25,13 +25,13 @@ newTalent{
 	random_ego = "attack",
 	cooldown = 5,
 	hate =  5,
-	range = 2,
+	range = 3,
 	tactical = { ATTACKAREA = { MIND = 2 } },
 	getDamage = function(self, t)
-		return self:combatTalentMindDamage(t, 0, 280)
+		return self:combatTalentMindDamage(t, 0, 320)
 	end,
 	getSpreadFactor = function(self, t)
-		return 0.80
+		return self:combatTalentLimit(t, 95, 75, 90) / 100
 	end,
 	action = function(self, t)
 		local targets = {}
