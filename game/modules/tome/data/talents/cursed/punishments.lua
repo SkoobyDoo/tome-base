@@ -100,7 +100,7 @@ newTalent{
 		return 30
 	end,
 	getHateGain = function(self, t)
-		return 2
+		return self:combatTalentScale(t, 1, 5)
 	end,
 	action = function(self, t)
 		local range = self:getTalentRange(t)
