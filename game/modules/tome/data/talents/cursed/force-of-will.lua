@@ -333,7 +333,7 @@ newTalent{
 		return tLevel
 	end,
 	getSecondHitChance = function(self, t)
-		return self:combatTalentScale(t.getAdjustedTalentLevel(self, t), 15, 35)
+		return self:combatTalentScale(t, 25, 150)
 	end,
 	action = function(self, t)
 		local secondchance = t.getSecondHitChance(self, t)
