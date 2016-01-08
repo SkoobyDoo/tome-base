@@ -241,6 +241,8 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 		resists = { [DamageType.LIGHT] = -100, [DamageType.DARKNESS] = 100 },
 		resists_pen = { all=25 },
 
+		avoid_master_damage = (100 - tCallShadows.getAvoidMasterDamage(self, tCallShadows)) / 100,
+
 		ai = "shadow",
 		ai_state = {
 			summoner_range = 10,
@@ -309,6 +311,10 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 			end
 		end,
 		onTakeHit = function(self, value, src)
+			if src == self.summoner and self.avoid_master_damage then
+				value = value * self.avoid_master_damage
+			end
+
 			if self:knowTalent(self.T_SHADOW_FADE) and not self:isTalentCoolingDown(self.T_SHADOW_FADE) then
 				self:forceUseTalent(self.T_SHADOW_FADE, {ignore_energy=true})
 			end
@@ -339,6 +345,9 @@ newTalent{
 	getLevel = function(self, t) return self.level end,
 	getMaxShadows = function(self, t)
 		return math.min(4, math.max(1, math.floor(self:getTalentLevel(t) * 0.55)))
+	end,
+	getAvoidMasterDamage = function(self, t)
+		return util.bound(self:combatTalentScale(t, 5, 85), 0, 100)
 	end,
 	getPhaseDoorLevel = function(self, t)
 		return self:getTalentLevelRaw(t)
@@ -430,7 +439,9 @@ newTalent{
 		local level = t.getLevel(self, t)
 		local healLevel = t.getHealLevel(self, t)
 		local blindsideLevel = t.getBlindsideLevel(self, t)
-		return ([[While this ability is active, you will continually call up to %d level %d shadows to aid you in battle. Each shadow costs 6 hate to summon. Shadows are weak combatants that can: Use Arcane Reconstruction to heal themselves (level %d), Blindside their opponents (level %d), and Phase Door from place to place.]]):format(maxShadows, level, healLevel, blindsideLevel)
+		local avoid_master_damage = t.getAvoidMasterDamage(self, t)
+		return ([[While this ability is active, you will continually call up to %d level %d shadows to aid you in battle. Each shadow costs 6 hate to summon. Shadows are weak combatants that can: Use Arcane Reconstruction to heal themselves (level %d), Blindside their opponents (level %d), and Phase Door from place to place.
+		Shadows ignore %d%% of the damage dealt to them by their master.]]):format(maxShadows, level, healLevel, blindsideLevel, avoid_master_damage)
 	end,
 }
 
