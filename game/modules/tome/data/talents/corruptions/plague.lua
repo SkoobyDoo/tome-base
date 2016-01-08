@@ -129,7 +129,7 @@ newTalent{
 				if not target or target == source or target == self or (self:reactionToward(target) >= 0) then return end
 
 				for _, disease in ipairs(diseases) do
-					local parameters = disease.params
+					local parameters = table.clone(disease.params, true)
 					parameters.src = self
 					parameters.apply_power = self:combatSpellpower()
 					target:setEffect(disease.id, 6, parameters)
