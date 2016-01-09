@@ -681,3 +681,36 @@ newTalent{
 		return ([[Open a hole in space, summoning an animated blade for 10 turns.]])
 	end,
 }
+
+newTalent{
+	name = "Drench",
+	type = {"wild-gift/horror",1},
+	points = 5,
+	random_ego = "attack",
+	equilibrium = 25,
+	cooldown = 10,
+	tactical = { DISABLE = 4 },
+	direct_hit = true,
+	range = 0,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local grids = self:project(tg, self.x, self.y, function(tx, ty)
+			local target = game.level.map(tx, ty, Map.ACTOR)
+			if target then
+				target:setEffect(target.EFF_WET, 10, {})
+			end
+		end)
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "circle", {oversize=1.1, a=255, limit_life=16, grow=true, speed=0, img="healparadox", radius=tg.radius})
+		game:playSoundNear(self, "talents/tidalwave")
+		return true
+	end,
+	info = function(self, t)
+		local radius = self:getTalentRadius(t)
+		return ([[Blast a wave of water all around you with a radius of %d, making all creatures Wet for 10 turns.
+		The damage will increase with your Spellpower.]]):format(radius)
+	end,
+}
