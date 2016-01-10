@@ -1566,27 +1566,27 @@ end
 
 function _M:on_quest_grant(quest)
 	game.logPlayer(game.player, "#LIGHT_GREEN#Accepted quest '%s'! #WHITE#(Press 'j' to see the quest log)", quest.name)
-	-- game.bignews:saySimple(60, "#LIGHT_GREEN#Accepted quest '%s'!", quest.name)
-	self:questPopup(quest, -1)
+	if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Accepted quest '%s'!", quest.name)
+	else self:questPopup(quest, -1) end
 end
 
 function _M:on_quest_status(quest, status, sub)
 	if sub then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' status updated! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' updated!", quest.name)
-		self:questPopup(quest, engine.Quest.PENDING)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' updated!", quest.name)
+		else self:questPopup(quest, engine.Quest.PENDING) end
 	elseif status == engine.Quest.COMPLETED then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' completed! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' completed!", quest.name)
-		self:questPopup(quest, status)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' completed!", quest.name)
+		else self:questPopup(quest, status) end
 	elseif status == engine.Quest.DONE then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' is done! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		-- game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' done!", quest.name)
-		self:questPopup(quest, status)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' done!", quest.name)
+		else self:questPopup(quest, status) end
 	elseif status == engine.Quest.FAILED then
 		game.logPlayer(game.player, "#LIGHT_RED#Quest '%s' is failed! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		-- game.bignews:saySimple(60, "#LIGHT_RED#Quest '%s' failed!", quest.name)
-		self:questPopup(quest, status)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_RED#Quest '%s' failed!", quest.name)
+		else self:questPopup(quest, status) end
 	end
 end
 

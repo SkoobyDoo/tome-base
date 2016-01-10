@@ -423,6 +423,15 @@ function _M:generateListUi()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"If enabled new quests and quests updates will display a big popup, if not a simple line of text will fly on the screen.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Big Quest Popups#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.quest_popup and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.quest_popup = not config.settings.tome.quest_popup
+		game:saveSettings("tome.quest_popup", ("tome.quest_popup = %s\n"):format(tostring(config.settings.tome.quest_popup)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
