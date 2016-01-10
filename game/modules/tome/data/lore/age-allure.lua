@@ -157,6 +157,7 @@ I know you think yourself "above" such "petty politics" like how vital this faci
 ]],
 	always_pop = true,
 	on_learn = function(who)
+		if not game:isCampaign("Maj'Eyal") then return end
 		if not game.state.can_conclave_vault then return end
 		game:onLevelLoad("wilderness-1", function(zone, level)
 			local spot = game.level:pickSpot{type="world-encounter", subtype="conclave-vault"}

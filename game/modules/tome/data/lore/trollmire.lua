@@ -55,6 +55,7 @@ newLore{
 Alongside the note is a part of a plan of the region.]],
 	bloodstains = 3,
 	on_learn = function(who)
+		if not game:isCampaign("Maj'Eyal") then return end
 		local p = game:getPlayer(true)
 		p:grantQuest("trollmire-treasure")
 	end,

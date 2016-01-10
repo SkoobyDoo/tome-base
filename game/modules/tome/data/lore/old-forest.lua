@@ -91,6 +91,7 @@ If any come after, I bid you turn ... horrors ... too much. If you are foolish e
 #{italic}#You find with the note a tiny, faintly glowing orb - is this the key the note mentions?
 #{normal}#]],
 	on_learn = function(who)
+		if not game:isCampaign("Maj'Eyal") then return end
 		game.player:grantQuest("shertul-fortress")
 	end,
 }
