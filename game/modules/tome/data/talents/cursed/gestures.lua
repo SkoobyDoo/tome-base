@@ -172,7 +172,7 @@ newTalent{
 		local bonusDamage = t.getBonusDamage(self, t)
 		local bonusCritical = t.getBonusCritical(self, t)
 		return ([[Use a gesture of pain in place of a normal attack to assault the minds of your enemies, inflicting between %0.1f and %0.1f mind damage. If the attack succeeds, there is a %d%% chance to stun your opponent for 3 turns.
-		This strike replaces your melee physical and checks your Mindpower against your opponent's Mental Save, and is thus not affected by your Accuracy or the enemy's Defense. It also does not trigger any physical on-hit effects. However, the base damage (doubled) and the critical chance of any Mindstars equipped are added in when this attack is performed.
+		This strike replaces your melee physical and checks your Mindpower against your opponent's Mental Save, and is thus not affected by your Accuracy or the enemy's Defense. The base damage (doubled) and the critical chance of any Mindstars equipped are added in when this attack is performed.
 		This talent requires two free or mindstar-equipped hands and has a 25%% chance to inflict cross tier effects which can be critical hits. The damage will increase with your Mindpower.
 		If attacking with two mindstars the attack will trigger their proc effects, if any.
 		Mindstars bonuses from damage and physical criticals: (+%d damage, +%d critical chance)]])
