@@ -1426,7 +1426,7 @@ function _M:displayDelayedLogDamage()
 			end
 		end
 	end
-	if self.delayed_death_message then game.log(self.delayed_death_message) end
+	if self.delayed_death_message then game.log("%s", self.delayed_death_message) end
 	self.delayed_death_message = nil
 	self.delayed_log_damage = {}
 end
