@@ -1146,7 +1146,7 @@ newDamageType{
 		if _G.type(dam) == "number" then dam = {dam=dam, healfactor=0.1} end
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
 		local realdam = DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam.dam, state)
-		if target and realdam > 0 then
+		if target and realdam > 0 and not src:attr("dead") then
 			src:heal(realdam * dam.healfactor, target)
 			src:logCombat(target, "#Source# drains life from #Target#!")
 		end
@@ -2423,7 +2423,7 @@ newDamageType{
 		if _G.type(dam) == "number" then dam = {dam=dam, healfactor=0.4} end
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
 		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam, state)
-		if target and realdam > 0 then
+		if target and realdam > 0 and not src:attr("dead") then
 			src:heal(realdam * dam.healfactor, target)
 			src:logCombat(target, "#Source# drains life from #Target#!")
 		end
@@ -2592,11 +2592,11 @@ newDamageType{
 		if target and target ~= src then
 			--print("[JUDGEMENT] src ", src, "target", target, "src", src )
 			DamageType:get(DamageType.LIGHT).projector(src, x, y, DamageType.LIGHT, dam, state)
-			if dam >= 100 then src:attr("allow_on_heal", 1) end
-			src:heal(dam / 2, src)
-			if dam >= 100 then src:attr("allow_on_heal", -1) end
-
-
+			if not src:attr("dead") then
+				if dam >= 100 then src:attr("allow_on_heal", 1) end
+				src:heal(dam / 2, src)
+				if dam >= 100 then src:attr("allow_on_heal", -1) end
+			end
 		end
 	end,
 }
@@ -2832,7 +2832,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
 			local realdam = DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam, state)
-			if realdam > 0 then src:heal(realdam * dam.factor, target) end
+			if realdam > 0 and not src:attr("dead") then src:heal(realdam * dam.factor, target) end
 		end
 	end,
 }
@@ -3091,7 +3091,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
 		if target then dam.dam = math.max(0, math.min(target.life, dam.dam)) end
 		local realdam = DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam, state)
-		if target and realdam > 0 then
+		if target and realdam > 0 and not src:attr("dead") then
 			local heal = realdam * (dam.healfactor or 1)
 			-- cannot be reduced
 			local temp = src.healing_factor
