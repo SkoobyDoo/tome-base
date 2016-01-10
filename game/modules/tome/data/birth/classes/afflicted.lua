@@ -129,7 +129,7 @@ newBirthDescriptor{
 		["cursed/darkness"]={true, 0.3},
 		["cursed/cursed-form"]={true, 0.0},
 		["cunning/survival"]={false, 0.0},
-		["cursed/fears"]={false, 0.0},
+		["cursed/fears"]={false, 0.3},
 		["cursed/one-with-shadows"]={false, 0.3},
 		["cursed/advanced-shadowmancy"]={false, 0.3},
 	},
