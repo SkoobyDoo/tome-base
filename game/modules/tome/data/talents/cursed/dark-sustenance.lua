@@ -26,6 +26,7 @@ newTalent{
 	cooldown = 6,
 	range = 7,
 	hate = 0,
+	no_energy = true,
 	tactical = { BUFF = 2, DEFEND = 1 },
 	requires_target = true,
 	direct_hit = true,
