@@ -4559,6 +4559,16 @@ function _M:incVim(v)
 	end
 end
 
+-- Overwrite getVim to set up Bloodcasting
+local previous_getVim = _M.getVim
+function _M:getVim()
+	if self:attr("bloodcasting") and self.on_preuse_checking_resources then
+		return self.life
+	else
+		return previous_getVim(self)
+	end
+end
+
 -- Feedback Pseudo-Resource Functions
 function _M:getFeedback()
 	if self.psionic_feedback then
@@ -4707,6 +4717,7 @@ function _M:preUseTalent(ab, silent, fake)
 	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
 		local rname, cost, rmin, rmax
 		-- check for sustained resources
+		self.on_preuse_checking_resources = true
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name
 			cost = ab[rname]
@@ -4717,17 +4728,20 @@ function _M:preUseTalent(ab, silent, fake)
 					if res_def.invert_values then
 						if rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
 							if not silent then game.logPlayer(self, "You have too much %s to use %s.", res_def.name, ab.name) end
+							self.on_preuse_checking_resources = nil
 							return false
 						end
 					else
 						if rmin and self[res_def.getFunction](self) - cost < rmin then -- not enough
 							if not silent then game.logPlayer(self, "You do not have enough %s to use %s.", res_def.name, ab.name) end
+							self.on_preuse_checking_resources = nil
 							return false
 						end
 					end
 				end
 			end
 		end
+		self.on_preuse_checking_resources = nil
 	end
 	if not ab.never_fail then
 		-- Equilibrium is special, it has no max, but the higher it is the higher the chance of failure (and loss of the turn)
