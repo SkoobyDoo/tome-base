@@ -29,7 +29,7 @@ newTalent{
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
 		local tx, ty, target = self:getTarget(tg)
-		if not tx or not ty or not target or not target.summoner or not target.summoner == self or not target.wild_gift_summon then return nil end
+		if not tx or not ty or not target or not target.summoner or target.summoner ~= self or not target.wild_gift_summon then return nil end
 		target:setEffect(target.EFF_ALL_STAT, 10, {power=self:mindCrit(self:combatTalentMindDamage(t, 10, 100))/4})
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
@@ -53,7 +53,7 @@ newTalent{
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
 		local tx, ty, target = self:getTarget(tg)
-		if not tx or not ty or not target or not target.summoner or not target.summoner == self or not target.wild_gift_summon or not target.wild_gift_detonate then return nil end
+		if not tx or not ty or not target or not target.summoner or target.summoner ~= self or not target.wild_gift_summon or not target.wild_gift_detonate then return nil end
 
 		local dt = self:getTalentFromId(target.wild_gift_detonate)
 
@@ -122,7 +122,7 @@ newTalent{
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 		local tx, ty, target = self:getTarget(tg)
-		if not tx or not ty or not target or not target.summoner or not target.summoner == self or not target.wild_gift_summon then return nil end
+		if not tx or not ty or not target or not target.summoner or target.summoner ~= self or not target.wild_gift_summon then return nil end
 
 		local dur = t.getDuration(self, t)
 		self:setEffect(self.EFF_EVASION, dur, {chance=50})
