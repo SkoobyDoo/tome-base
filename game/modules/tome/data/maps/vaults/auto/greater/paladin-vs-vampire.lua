@@ -25,7 +25,7 @@ setStatusAll{no_teleport=true}
 
 defineTile('~', mod.class.Grid.new{
 	define_as = "NECRO",
-	name = "lava floor", image = "terrain/lava_floor.png",
+	name = "corrupted lava floor", image = "terrain/lava_floor.png",
 	display = '.', color=colors.RED, back_color=colors.DARK_GREY,
 	shader = "lava",
 	mindam = resolvers.mbonus(5, 15),
