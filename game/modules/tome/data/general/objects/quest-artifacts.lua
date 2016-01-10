@@ -345,7 +345,7 @@ You have heard of such items before. They are very useful to adventurers, allowi
 								who:hasQuest("shertul-fortress"):break_farportal()
 							end
 						end
-					end, "Cancel", "Recall")
+					end, "Cancel", "Recall", true)
 					return {id=true, used=true}
 				end
 			end
