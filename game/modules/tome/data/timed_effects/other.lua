@@ -2839,7 +2839,7 @@ newEffect{
 		self:effectTemporaryValue(eff, "combat_mindpower", 20)
 		self:effectTemporaryValue(eff, "life_regen", 2)
 		self:effectTemporaryValue(eff, "equilibrium_regen", -1)
-		self:effectTemporaryValue(eff, "resists_pen", {[all]=-20})
+		self:effectTemporaryValue(eff, "resists_pen", {all=-20})
 	end,
 	deactivate = function(self, eff)
 	end,
