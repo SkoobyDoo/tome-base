@@ -96,7 +96,7 @@ newEntity{ base = "BASE_NPC_RITCH_REL",
 
 -- Screw it just die, die, die
 newEntity{ base = "BASE_NPC_RITCH_REL", define_as = "HIVE_MOTHER",
-	unique = true,
+	unique = true, female = true,
 	name = "Ritch Great Hive Mother", image = "npc/insect_ritch_ritch_hive_mother.png",
 	display = "I", color=colors.VIOLET,
 	desc = [[This huge ritch seems to be the mother of all those here. Her sharp, fiery, claws dart toward you!]],
