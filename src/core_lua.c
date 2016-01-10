@@ -329,8 +329,8 @@ static int lua_get_mouse(lua_State *L)
 	int x = 0, y = 0;
 	int buttons = SDL_GetMouseState(&x, &y);
 
-	lua_pushnumber(L, x);
-	lua_pushnumber(L, y);
+	lua_pushnumber(L, x / screen_zoom);
+	lua_pushnumber(L, y / screen_zoom);
 	lua_pushnumber(L, SDL_BUTTON(buttons));
 
 	return 3;
@@ -339,7 +339,7 @@ static int lua_set_mouse(lua_State *L)
 {
 	int x = luaL_checknumber(L, 1);
 	int y = luaL_checknumber(L, 2);
-	SDL_WarpMouseInWindow(window, x, y);
+	SDL_WarpMouseInWindow(window, x * screen_zoom, y * screen_zoom);
 	return 0;
 }
 extern int current_mousehandler;
@@ -626,11 +626,13 @@ extern bool is_fullscreen;
 extern bool is_borderless;
 static int sdl_screen_size(lua_State *L)
 {
-	lua_pushnumber(L, screen->w);
-	lua_pushnumber(L, screen->h);
+	lua_pushnumber(L, screen->w / screen_zoom);
+	lua_pushnumber(L, screen->h / screen_zoom);
 	lua_pushboolean(L, is_fullscreen);
 	lua_pushboolean(L, is_borderless);
-	return 4;
+	lua_pushnumber(L, screen->w);
+	lua_pushnumber(L, screen->h);
+	return 6;
 }
 
 static int sdl_window_pos(lua_State *L)
@@ -2391,9 +2393,10 @@ static int sdl_set_window_size(lua_State *L)
 	int h = luaL_checknumber(L, 2);
 	bool fullscreen = lua_toboolean(L, 3);
 	bool borderless = lua_toboolean(L, 4);
+	float zoom = luaL_checknumber(L, 5);
 
 	printf("Setting resolution to %dx%d (%s, %s)\n", w, h, fullscreen ? "fullscreen" : "windowed", borderless ? "borderless" : "with borders");
-	do_resize(w, h, fullscreen, borderless);
+	do_resize(w, h, fullscreen, borderless, zoom);
 
 	lua_pushboolean(L, TRUE);
 	return 1;

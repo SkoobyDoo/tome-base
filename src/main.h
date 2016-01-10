@@ -52,7 +52,7 @@ void do_move(int w, int h);
  * and fullscreen.  These three modes are mutually exclusive, with the
  * fullscreen flag taking priority over the borderless flag.
  */
-extern void do_resize(int w, int h, bool fullscreen, bool borderless);
+extern void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom);
 
 extern void setupRealtime(float freq);
 extern void setupDisplayTimer(int fps);
@@ -68,6 +68,7 @@ extern int cur_frame_tick;
 extern int g_argc;
 extern char **g_argv;
 extern char *override_home;
+extern float screen_zoom;
 
 /* Error handling */
 struct lua_err_type_s {
