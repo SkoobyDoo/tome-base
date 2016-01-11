@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ local TreeList = require "engine.ui.TreeList"
 local Textzone = require "engine.ui.Textzone"
 local Separator = require "engine.ui.Separator"
 local GetQuantity = require "engine.dialogs.GetQuantity"
+local GetQuantitySlider = require "engine.dialogs.GetQuantitySlider"
 
 --- Video Options
 -- @classmod engine.dialogs.VideoOptions
@@ -72,24 +73,36 @@ function _M:generateList()
 		game:registerDialog(menu)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"If you have a very high DPI screen you may want to raise this value. Requires a restart to take effect.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Screen Zoom#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.screen_zoom * 100)
+	end, fct=function(item)
+		game:registerDialog(GetQuantitySlider.new("Enter Zoom %", "From 50 to 400", math.floor(config.settings.screen_zoom * 100), 50, 400, 5, function(qty)
+			qty = util.bound(qty, 50, 400)
+			game:saveSettings("screen_zoom", ("screen_zoom = %f\n"):format(qty / 100))
+			config.settings.screen_zoom = qty / 100
+			self.c_list:drawItem(item)
+		end))
+	end,}
+
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Request this display refresh rate.\nSet it lower to reduce CPU load, higher to increase interface responsiveness.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Requested FPS#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.display_fps)
 	end, fct=function(item)
-		game:registerDialog(GetQuantity.new("Enter density", "From 5 to 60", config.settings.display_fps, 60, function(qty)
+		game:registerDialog(GetQuantitySlider.new("Enter density", "From 5 to 60", config.settings.display_fps, 5, 60, 1, function(qty)
 			qty = util.bound(qty, 5, 60)
 			game:saveSettings("display_fps", ("display_fps = %d\n"):format(qty))
 			config.settings.display_fps = qty
 			core.game.setFPS(qty)
 			self.c_list:drawItem(item)
-		end), 5)
+		end))
 	end,}
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Controls the particle effects density.\nThis option allows to change the density of the many particle effects in the game.\nIf the game is slow when displaying spell effects try to lower this setting.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Particle effects density#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.particles_density)
 	end, fct=function(item)
-		game:registerDialog(GetQuantity.new("Enter density", "From 0 to 100", config.settings.particles_density, 100, function(qty)
+		game:registerDialog(GetQuantitySlider.new("Enter density", "From 0 to 100", config.settings.particles_density, 0, 100, 1, function(qty)
 			game:saveSettings("particles_density", ("particles_density = %d\n"):format(qty))
 			config.settings.particles_density = qty
 			self.c_list:drawItem(item)
@@ -165,13 +178,13 @@ function _M:generateList()
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Gamma correction#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.gamma_correction)
 	end, fct=function(item)
-		game:registerDialog(GetQuantity.new("Gamma correction", "From 50 to 300", config.settings.gamma_correction, 300, function(qty)
+		game:registerDialog(GetQuantitySlider.new("Gamma correction", "From 50 to 300", config.settings.gamma_correction, 50, 300, 5, function(qty)
 			qty = util.bound(qty, 50, 300)
 			game:saveSettings("gamma_correction", ("gamma_correction = %d\n"):format(qty))
 			config.settings.gamma_correction = qty
 			game:setGamma(config.settings.gamma_correction / 100)
 			self.c_list:drawItem(item)
-		end), 50)
+		end))
 	end,}
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Enable/disable usage of tilesets.\nIn some rare cases on very slow machines with bad GPUs/drivers it can be detrimental."}

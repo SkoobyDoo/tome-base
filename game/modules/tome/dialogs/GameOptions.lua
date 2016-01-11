@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -423,6 +423,15 @@ function _M:generateListUi()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"If enabled new quests and quests updates will display a big popup, if not a simple line of text will fly on the screen.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Big Quest Popups#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.quest_popup and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.quest_popup = not config.settings.tome.quest_popup
+		game:saveSettings("tome.quest_popup", ("tome.quest_popup = %s\n"):format(tostring(config.settings.tome.quest_popup)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
@@ -435,8 +444,8 @@ function _M:generateListGameplay()
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Scroll distance#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.scroll_dist)
 	end, fct=function(item)
-		game:registerDialog(GetQuantity.new("Scroll distance", "From 1 to 30", config.settings.tome.scroll_dist, 30, function(qty)
-			qty = util.bound(qty, 1, 30)
+		game:registerDialog(GetQuantity.new("Scroll distance", "From 1 to 50", config.settings.tome.scroll_dist, 50, function(qty)
+			qty = util.bound(qty, 1, 50)
 			game:saveSettings("tome.scroll_dist", ("tome.scroll_dist = %d\n"):format(qty))
 			config.settings.tome.scroll_dist = qty
 			self.c_list:drawItem(item)

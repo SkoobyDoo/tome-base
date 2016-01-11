@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -644,7 +644,8 @@ You may try to force loading if you are sure the savefile does not use that addo
 				table.insert(_G.__addons_fn_superloads[add][bname], f)
 			end
 		end)(addname)
-		local f = loadfile(dir.."/load.lua")
+		local f, err = loadfile(dir.."/load.lua")
+		if not f and err then error(err) end
 		setfenv(f, setmetatable({superload = superload, __addon_name = addname}, {__index = _G}))
 		f()
 	end

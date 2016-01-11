@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -809,7 +809,7 @@ function _M:changeLevel(lev, zone, params)
 			for i = #inven, 1, -1 do
 				local o = inven[i]
 				if o.__transmo then
-					p:transmoInven(inven, i, o)
+					p:transmoInven(inven, i, o, p.default_transmo_source)
 				end
 			end
 			if game.zone == oldzone and game.level == oldlevel then
@@ -1426,7 +1426,7 @@ function _M:displayDelayedLogDamage()
 			end
 		end
 	end
-	if self.delayed_death_message then game.log(self.delayed_death_message) end
+	if self.delayed_death_message then game.log("%s", self.delayed_death_message) end
 	self.delayed_death_message = nil
 	self.delayed_log_damage = {}
 end

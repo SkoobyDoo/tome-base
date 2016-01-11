@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -129,7 +129,7 @@ newBirthDescriptor{
 		["cursed/darkness"]={true, 0.3},
 		["cursed/cursed-form"]={true, 0.0},
 		["cunning/survival"]={false, 0.0},
-		["cursed/fears"]={false, 0.0},
+		["cursed/fears"]={false, 0.3},
 		["cursed/one-with-shadows"]={false, 0.3},
 		["cursed/advanced-shadowmancy"]={false, 0.3},
 	},

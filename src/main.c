@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2016 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ int start_xpos = -1, start_ypos = -1;
 char *override_home = NULL;
 int g_argc = 0;
 char **g_argv;
+float screen_zoom = 1;
 SDL_Window *window = NULL;
 SDL_Surface *windowIconSurface = NULL;
 SDL_GLContext maincontext; /* Our opengl context handle */
@@ -427,8 +428,8 @@ bool on_event(SDL_Event *event)
 				lua_concat(L, 2);
 				break;
 			}
-			lua_pushnumber(L, event->button.x);
-			lua_pushnumber(L, event->button.y);
+			lua_pushnumber(L, event->button.x / screen_zoom);
+			lua_pushnumber(L, event->button.y / screen_zoom);
 			lua_pushboolean(L, (event->type == SDL_MOUSEBUTTONUP) ? TRUE : FALSE);
 			docall(L, 5, 0);
 		}
@@ -452,8 +453,8 @@ bool on_event(SDL_Event *event)
 				else if (event->wheel.x > 0) lua_pushstring(L, "wheelleft");
 				else if (event->wheel.x < 0) lua_pushstring(L, "wheelright");
 				else lua_pushstring(L, "wheelnone");
-				lua_pushnumber(L, x);
-				lua_pushnumber(L, y);
+				lua_pushnumber(L, x / screen_zoom);
+				lua_pushnumber(L, y / screen_zoom);
 				lua_pushboolean(L, i);
 				docall(L, 5, 0);
 			}
@@ -476,8 +477,8 @@ bool on_event(SDL_Event *event)
 			else if (event->motion.state & SDL_BUTTON(4)) lua_pushstring(L, "wheelup");
 			else if (event->motion.state & SDL_BUTTON(5)) lua_pushstring(L, "wheeldown");
 			else lua_pushstring(L, "none");
-			lua_pushnumber(L, event->motion.x);
-			lua_pushnumber(L, event->motion.y);
+			lua_pushnumber(L, event->motion.x / screen_zoom);
+			lua_pushnumber(L, event->motion.y / screen_zoom);
 			lua_pushnumber(L, event->motion.xrel);
 			lua_pushnumber(L, event->motion.yrel);
 			docall(L, 6, 0);
@@ -493,8 +494,8 @@ bool on_event(SDL_Event *event)
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
 			lua_pushnumber(L, event->tfinger.fingerId);
-			lua_pushnumber(L, event->tfinger.x);
-			lua_pushnumber(L, event->tfinger.y);
+			lua_pushnumber(L, event->tfinger.x / screen_zoom);
+			lua_pushnumber(L, event->tfinger.y / screen_zoom);
 			lua_pushnumber(L, event->tfinger.dx);
 			lua_pushnumber(L, event->tfinger.dy);
 			lua_pushnumber(L, event->tfinger.pressure);
@@ -511,8 +512,8 @@ bool on_event(SDL_Event *event)
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
 			lua_pushnumber(L, event->tfinger.fingerId);
-			lua_pushnumber(L, event->tfinger.x);
-			lua_pushnumber(L, event->tfinger.y);
+			lua_pushnumber(L, event->tfinger.x / screen_zoom);
+			lua_pushnumber(L, event->tfinger.y / screen_zoom);
 			lua_pushnumber(L, event->tfinger.dx);
 			lua_pushnumber(L, event->tfinger.dy);
 			lua_pushnumber(L, event->tfinger.pressure);
@@ -528,8 +529,8 @@ bool on_event(SDL_Event *event)
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
 			lua_pushnumber(L, event->mgesture.numFingers);
-			lua_pushnumber(L, event->mgesture.x);
-			lua_pushnumber(L, event->mgesture.y);
+			lua_pushnumber(L, event->mgesture.x / screen_zoom);
+			lua_pushnumber(L, event->mgesture.y / screen_zoom);
 			lua_pushnumber(L, event->mgesture.dTheta);
 			lua_pushnumber(L, event->mgesture.dDist);
 			docall(L, 6, 0);
@@ -937,7 +938,7 @@ int resizeWindow(int width, int height)
 
 	/* Set our perspective */
 	//gluPerspective( 45.0f, ratio, 0.1f, 100.0f );
-	glOrtho(0, width, height, 0, -1001, 1001);
+	glOrtho(0, width / screen_zoom, height / screen_zoom, 0, -1001, 1001);
 
 	/* Make sure we're chaning the model view and not the projection */
 	glMatrixMode( GL_MODELVIEW );
@@ -997,7 +998,7 @@ void do_move(int w, int h) {
 }
 
 /* @see main.h#do_resize */
-void do_resize(int w, int h, bool fullscreen, bool borderless)
+void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 {
 	/* Temporary width, height (since SDL might reject our resize) */
 	int aw, ah;
@@ -1005,7 +1006,9 @@ void do_resize(int w, int h, bool fullscreen, bool borderless)
 	int mustCreateIconSurface = 0;
 	SDL_Event fsEvent;
 
-	printf("[DO RESIZE] Requested: %dx%d (%d, %d)\n", w, h, fullscreen, borderless);
+	screen_zoom = zoom;
+
+	printf("[DO RESIZE] Requested: %dx%d (%d, %d); zoom %d%%\n", w, h, fullscreen, borderless, (int)(zoom * 100));
 
 	/* See if we need to reinitialize the window */
 	if (resizeNeedsNewWindow(w, h, fullscreen, borderless)) {
@@ -1446,7 +1449,7 @@ int main(int argc, char *argv[])
 
 	boot_lua(1, FALSE, argc, argv);
 
-	do_resize(WIDTH, HEIGHT, FALSE, FALSE);
+	do_resize(WIDTH, HEIGHT, FALSE, FALSE, screen_zoom);
 	if (screen==NULL) {
 		printf("error opening screen: %s\n", SDL_GetError());
 		return 3;
@@ -1505,7 +1508,7 @@ int main(int argc, char *argv[])
 					/* Note: SDL can't resize a fullscreen window, so don't bother! */
 					if (!is_fullscreen) {
 						printf("SDL_WINDOWEVENT_RESIZED: %d x %d\n", event.window.data1, event.window.data2);
-						do_resize(event.window.data1, event.window.data2, is_fullscreen, is_borderless);
+						do_resize(event.window.data1, event.window.data2, is_fullscreen, is_borderless, screen_zoom);
 						if (current_game != LUA_NOREF)
 						{
 							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,7 +77,8 @@ function _M:loaded()
 	end
 
 	gl = gl or "particle"
-	if not __particles_gl[gl] then __particles_gl[gl] = core.display.loadImage("/data/gfx/"..gl..".png"):glTexture() end
+	if not __particles_gl[gl] then local s = core.display.loadImage("/data/gfx/"..gl..".png") if s then __particles_gl[gl] = s:glTexture() end end
+	if not __particles_gl[gl] then __particles_gl[gl] = core.display.loadImage("/data/gfx/particle.png"):glTexture() end
 	gl = __particles_gl[gl]
 
 	-- Zoom accordingly

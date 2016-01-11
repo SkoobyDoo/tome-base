@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -3038,11 +3038,6 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if self:hasEffect(self.EFF_CORROSIVE_WORM) then
-		local p = self:hasEffect(self.EFF_CORROSIVE_WORM)
-		p.src:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, DamageType.ACID, p.explosion, {type="acid"})
-	end
-
 	-- Chronomancy stuff
 	if self:hasEffect(self.EFF_TEMPORAL_DESTABILIZATION) then
 		local p = self:hasEffect(self.EFF_TEMPORAL_DESTABILIZATION)
@@ -4150,6 +4145,8 @@ end
 -- @return true if the talent was learnt, nil and an error message otherwise
 function _M:learnTalent(t_id, force, nb, extra)
 	local just_learnt = not self:knowTalent(t_id)
+	local old_lvl = self:getTalentLevel(t_id)
+	local old_lvl_raw = self:getTalentLevelRaw(t_id)
 	if not engine.interface.ActorTalents.learnTalent(self, t_id, force, nb) then return false end
 
 	-- If we learned a spell, get mana, if you learned a technique get stamina, if we learned a wild gift, get power
@@ -4191,6 +4188,13 @@ function _M:learnTalent(t_id, force, nb, extra)
 		self:attr("autolearn_mindslayer_done", 1)
 	end
 
+	-- Simulate calling the talent's close method if we were not learnt from the levelup dialog
+	if t.on_levelup_close and not self.is_dialog_talent_leveling then
+		local lvl = self:getTalentLevel(t_id)
+		local lvl_raw = self:getTalentLevelRaw(t_id)
+		t.on_levelup_close(self, t, lvl, old_lvl, lvl_raw, old_lvl_raw, false)
+	end
+
 	return true
 end
 
@@ -4214,7 +4218,7 @@ function _M:learnItemTalent(o, tid, level)
 		end
 	end
 
-	if not self.talents_cd[tid] then
+	if not self.talents_cd[tid] and not self:attr("no_learn_talent_item_cd") then
 		local cd = math.ceil((self:getTalentCooldown(t) or 6) / 1.5)
 		self.talents_cd[tid] = cd
 	end
@@ -4555,6 +4559,16 @@ function _M:incVim(v)
 	end
 end
 
+-- Overwrite getVim to set up Bloodcasting
+local previous_getVim = _M.getVim
+function _M:getVim()
+	if self:attr("bloodcasting") and self.on_preuse_checking_resources then
+		return self.life
+	else
+		return previous_getVim(self)
+	end
+end
+
 -- Feedback Pseudo-Resource Functions
 function _M:getFeedback()
 	if self.psionic_feedback then
@@ -4703,6 +4717,7 @@ function _M:preUseTalent(ab, silent, fake)
 	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
 		local rname, cost, rmin, rmax
 		-- check for sustained resources
+		self.on_preuse_checking_resources = true
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name
 			cost = ab[rname]
@@ -4713,17 +4728,20 @@ function _M:preUseTalent(ab, silent, fake)
 					if res_def.invert_values then
 						if rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
 							if not silent then game.logPlayer(self, "You have too much %s to use %s.", res_def.name, ab.name) end
+							self.on_preuse_checking_resources = nil
 							return false
 						end
 					else
 						if rmin and self[res_def.getFunction](self) - cost < rmin then -- not enough
 							if not silent then game.logPlayer(self, "You do not have enough %s to use %s.", res_def.name, ab.name) end
+							self.on_preuse_checking_resources = nil
 							return false
 						end
 					end
 				end
 			end
 		end
+		self.on_preuse_checking_resources = nil
 	end
 	if not ab.never_fail then
 		-- Equilibrium is special, it has no max, but the higher it is the higher the chance of failure (and loss of the turn)
@@ -5270,7 +5288,7 @@ function _M:postUseTalent(ab, ret, silent)
 
 	if self.turn_procs.anomalies_checked then self.turn_procs.anomalies_checked = nil end  -- clears out anomaly checks
 
-	if config.settings.tome.talents_flyers then
+	if config.settings.tome.talents_flyers and not self:attr("save_cleanup") and self.x and self.y and game.level.map.seens(self.x, self.y) then
 		local name = (ab.display_entity and ab.display_entity:getDisplayString() or "")..ab.name
 		local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 		game.flyers:add(sx, sy - game.level.map.tile_h / 2, 20, rng.float(-0.1, 0.1), rng.float(-0.5,-0.8), name, colors.simple(colors.OLIVE_DRAB))

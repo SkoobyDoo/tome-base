@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -137,7 +137,7 @@ defineTile('3', mod.class.Grid.new{
 )
 
 defineTile('4', mod.class.Grid.new{
-	define_as = "WALL_UP_FLOOR",
+	define_as = "WALL_UP_FLOOR2",
 	type = "floor", subtype = "floor",
 	name = "floor", image = "terrain/marble_floor.png",
 	display = '.', color=colors.UMBER, back_color=colors.LIGHT_UMBER,
@@ -169,7 +169,7 @@ defineTile('4', mod.class.Grid.new{
 )
 
 defineTile('5', mod.class.Grid.new{
-	define_as = "WALL_DOWN_FLOOR",
+	define_as = "WALL_DOWN_FLOOR2",
 	type = "floor", subtype = "floor",
 	name = "floor", image = "terrain/marble_floor.png",
 	display = '.', color=colors.UMBER, back_color=colors.LIGHT_UMBER,

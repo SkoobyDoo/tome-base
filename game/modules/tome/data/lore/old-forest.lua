@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -91,6 +91,7 @@ If any come after, I bid you turn ... horrors ... too much. If you are foolish e
 #{italic}#You find with the note a tiny, faintly glowing orb - is this the key the note mentions?
 #{normal}#]],
 	on_learn = function(who)
+		if not game:isCampaign("Maj'Eyal") then return end
 		game.player:grantQuest("shertul-fortress")
 	end,
 }

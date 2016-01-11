@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ function _M:init(t)
 	self.value = t.value or self.min
 	self.step = t.step or 10
 	self.on_change = t.on_change
+	self.fct = t.fct
 	assert(t.size or t.w, "no numberspinner size")
 	self.size = t.size
 	self.w = t.w
@@ -53,45 +54,58 @@ function _M:generate()
 		title="",
 		chars = #tostring(self.max) + 1,
 		number = self.value,
-		fct = function(v) self:onChange() end,
+		fct = function(v) self:onChange() if self.fct then self.fct() end end,
 	}
 
 	self.h = math.max(self.nbox.h, self.middle.h)
 	self.w = self.w or self.size + self.title_w
 	self.size = self.w - self.title_w
 
-	self.key:addBind("ACCEPT", function() self:onChange() end)
+	self.key:addBind("ACCEPT", function() self:onChange() if self.fct then self.fct() end end)
 	self.key:addCommands{
-		_UP = function() self.nbox:updateText(1) self:onChange() end,
-		_DOWN = function() self.nbox:updateText(-1) self:onChange() end,
+		_LEFT = function(sym, ctrl, shift, alt, meta, unicode, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, false, key) end,
+		_RIGHT = function(sym, ctrl, shift, alt, meta, unicode, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, false, key) end,
+		_UP = function() self.nbox:updateText(self.step) self:onChange() end,
+		_DOWN = function() self.nbox:updateText(-self.step) self:onChange() end,
 		_PAGEUP = function() self.nbox:updateText(self.step) self:onChange() end,
 		_PAGEDOWN = function() self.nbox:updateText(-self.step) self:onChange() end,
 	}
-	self.key.atLast = function(sym, ctrl, shift, alt, meta, unicode, isup, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key) print("KEY", unicode) end
+	self.key.atLast = function(sym, ctrl, shift, alt, meta, unicode, isup, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key) end
 
 	-- precise click
+	local current_button = "none"
+	self.mouse:allowDownEvent(true)
 	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
-		if event ~= "button" or button ~= "left" then return false end
-		x = x - self.title_w - self.left.w
-		local full = self.size - self.left.w - self.right.w
-		local point = util.bound(x, 0, full)
-		local delta = self.max - self.min
-		if full > 0 then
-			local value = point / full * delta
-			value = math.floor((value / self.step) + 0.5) * self.step
-			self.nbox:updateText(value + self.min - self.value)
-			self:onChange()
+		if 
+			((event == "button" or event == "button-down") and button == "left") or
+			(event == "motion" and current_button == "left")
+		then
+			x = x - self.title_w - self.left.w
+			local full = self.size - self.left.w - self.right.w
+			local point = util.bound(x, 0, full)
+			local delta = self.max - self.min
+			if full > 0 then
+				local value = point / full * delta
+				value = math.floor((value / self.step) + 0.5) * self.step
+				self.nbox:updateText(value + self.min - self.value)
+				self:onChange()
+			end
 		end
-	end, {button=true}, "precise")
+		if event == "button-down" then current_button = button
+		elseif event == "button" then current_button = "none" end
+	end, {button=true, move=true}, "precise")
 	-- the box
-	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(button, x, y, ...)
+	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event == "button-down" then current_button = button
+		elseif event == "button" then current_button = "none" end
 		if x < self.range[1] or x > self.range[2] then return false end
-		self.nbox.mouse:delegate(button, x, y, ...)
+		self.nbox.mouse:delegate(button, x, y, xrel, yrel, bx, by, button)
 	end, nil, "box")
 	self.nbox.mouse.delegate_offset_y = (self.h - self.nbox.h) / 2
 	-- wheeeeeeee
-	local wheelTable = {wheelup = 1, wheeldown = -1}
+	local wheelTable = {wheelup = 1 * self.step, wheeldown = -1 * self.step}
 	self.mouse:registerZone(self.title_w, 0, self.size, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event == "button-down" then return false end
 		if event ~= "button" or not wheelTable[button] then return false end
 		self.nbox:updateText(wheelTable[button])
 		self:onChange()
@@ -99,11 +113,13 @@ function _M:generate()
 	-- clicking on arrows
 	local stepTable = {left = self.step, right = 1}
 	self.mouse:registerZone(self.title_w, 0, self.left.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event == "button-down" then return false end
 		if event ~= "button" or not stepTable[button] then return false end
 		self.nbox:updateText(-stepTable[button])
 		self:onChange()
 	end, {button=true}, "left")
 	self.mouse:registerZone(self.title_w + self.size - self.right.w, 0, self.right.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event == "button-down" then return false end
 		if event ~= "button" or not stepTable[button] then return false end
 		self.nbox:updateText(stepTable[button])
 		self:onChange()
@@ -113,12 +129,13 @@ function _M:generate()
 end
 
 function _M:on_focus(v)
+	game:onTickEnd(function() self.key:unicodeInput(v) end)
 	self.nbox:setFocus(v)
 	self:onChange()
 end
 
 function _M:onChange()
-	self.value = self.nbox.number
+	self.value = util.bound(self.nbox.number, self.min, self.max)
 	if self.on_change then self.on_change(self.value) end
 
 	local halfw = self.nbox.w / 2

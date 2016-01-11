@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ shaders_active = true
 shaders_kind_distort = true
 shaders_kind_adv = true
 shaders_kind_volumetric = false
+screen_zoom = 1
 particles_density = 100
 background_saves = true
 mouse_cursor = true

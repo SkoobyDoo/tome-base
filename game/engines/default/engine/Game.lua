@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -524,14 +524,14 @@ function _M:setResolution(res, force)
 
 	-- Change the window size
 	print("setResolution: switching resolution to", res, r[1], r[2], r[3], r[4], force and "(forced)")
-	local old_w, old_h, old_f, old_b = self.w, self.h, self.fullscreen, self.borderless
-	core.display.setWindowSize(r[1], r[2], r[3], r[4])
+	local old_w, old_h, old_f, old_b, old_rw, old_rh = self.w, self.h, self.fullscreen, self.borderless
+	core.display.setWindowSize(r[1], r[2], r[3], r[4], config.settings.screen_zoom)
 	
 	-- Don't write self.w/h/fullscreen yet
-	local new_w, new_h, new_f, new_b = core.display.size()
+	local new_w, new_h, new_f, new_b, new_rw, new_rh = core.display.size()
 
 	-- Check if a resolution change actually happened
-	if new_w ~= old_w or new_h ~= old_h or new_f ~= old_f or new_b ~= old_b then
+	if new_w ~= old_w or new_h ~= old_h or new_rw ~= old_rw or new_rh ~= old_rh or new_f ~= old_f or new_b ~= old_b then
 		print("setResolution: performing onResolutionChange...\n")
 		self:onResolutionChange()
 		-- onResolutionChange saves settings...
@@ -552,11 +552,12 @@ function _M:onResolutionChange()
 	end
 	
 	-- Get new resolution and save
-	self.w, self.h, self.fullscreen, self.borderless = core.display.size()
-	config.settings.window.size = ("%dx%d%s"):format(self.w, self.h, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
+	local realw, realh
+	self.w, self.h, self.fullscreen, self.borderless, realw, realh = core.display.size()
+	config.settings.window.size = ("%dx%d%s"):format(realw, realh, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
 	
 	self:saveSettings("resolution", ("window.size = '%s'\n"):format(config.settings.window.size))
-	print("onResolutionChange: resolution changed to ", self.w, self.h, "from", ow, oh)
+	print("onResolutionChange: resolution changed to ", realw, realh, "from", ow, oh)
 
 	-- We do not even have a game yet
 	if not game then

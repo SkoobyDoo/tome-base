@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -299,6 +299,18 @@ local function generate_rewards()
 				end,
 			}
 		end end
+	end
+	if reward.special then
+		for _, data in ipairs(reward.special) do
+			answers[#answers+1] = {data.desc,
+				jump="done",
+				action=data.action,
+				on_select=function(npc, player)
+					game.tooltip_x, game.tooltip_y = 1, 1
+					game:tooltipDisplayAtMap(game.w, game.h, data.tooltip)
+				end,
+			}
+		end
 	end
 	return answers
 end

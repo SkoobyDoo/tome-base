@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -119,7 +119,7 @@ function _M:use(item)
 			self.onuse(self.inven, self.item, self.object, false)
 		end))		
 	elseif act == "transmo" then
-		self:yesnoPopup("Transmogrify", "Really transmogrify "..self.object:getName{}, function(ret)
+		self:yesnoPopup(self.actor:transmoGetWord():capitalize(), "Really "..self.actor:transmoGetWord().." "..self.object:getName{}, function(ret)
 			if not ret then return end
 			self.actor:transmoInven(self.inven, self.item, self.object)
 			self.onuse(self.inven, self.item, self.object, false)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,9 +31,9 @@ if type(config.settings.tome.twitch_move) == "nil" then config.settings.tome.twi
 if not config.settings.tome.gfx then
 	local w, h = core.display.size()
 	config.settings.tome.gfx = {size="64x64", tiles="shockbolt"}
-	-- if w >= 1000 then config.settings.tome.gfx = {size="64x64", tiles="shockbolt"}
-	-- else config.settings.tome.gfx = {size="48x48", tiles="shockbolt"}
-	-- end
+	if w >= 1000 then config.settings.tome.gfx = {size="64x64", tiles="shockbolt"}
+	else config.settings.tome.gfx = {size="48x48", tiles="shockbolt"}
+	end
 end
 if config.settings.tome.gfx.tiles == "mushroom" then config.settings.tome.gfx.tiles="shockbolt" end
 if type(config.settings.tome.weather_effects) == "nil" then config.settings.tome.weather_effects = true end
@@ -57,12 +57,13 @@ if type(config.settings.tome.fullscreen_stun) == "nil" then config.settings.tome
 if type(config.settings.tome.fullscreen_confusion) == "nil" then config.settings.tome.fullscreen_confusion = true end
 if type(config.settings.tome.show_grid_lines) == "nil" then config.settings.tome.show_grid_lines = false end
 if type(config.settings.tome.tinker_auto_switch) == "nil" then config.settings.tome.tinker_auto_switch = true end
+if type(config.settings.tome.quest_popup) == "nil" then config.settings.tome.quest_popup = true end
 if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end
 if not config.settings.tome.ui_theme3 then config.settings.tome.ui_theme3 = "dark" end
 if not config.settings.tome.uiset_mode then config.settings.tome.uiset_mode = "Minimalist" end
 if not config.settings.tome.log_lines then config.settings.tome.log_lines = 5 end
 if not config.settings.tome.log_fade then config.settings.tome.log_fade = 3 end
-if not config.settings.tome.scroll_dist then config.settings.tome.scroll_dist = 20 end
+if not config.settings.tome.scroll_dist then config.settings.tome.scroll_dist = 50 end
 if not config.settings.tome.hotkey_icons_rows then config.settings.tome.hotkey_icons_rows = 1 end
 if not config.settings.tome.hotkey_icons_size then config.settings.tome.hotkey_icons_size = 48 end
 

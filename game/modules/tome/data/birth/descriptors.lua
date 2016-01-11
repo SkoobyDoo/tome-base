@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -200,6 +200,7 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 3,
+		money = 100,
 	},
 }
 newBirthDescriptor{
@@ -227,6 +228,8 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 4,
+		money = 250,
+		start_level = 2,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
@@ -261,6 +264,8 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 5,
+		money = 500,
+		start_level = 3,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
