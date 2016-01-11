@@ -2216,7 +2216,12 @@ static int gl_scissor(lua_State *L)
 {
 	if (lua_toboolean(L, 1)) {
 		glEnable(GL_SCISSOR_TEST);
-		glScissor(luaL_checknumber(L, 2), screen->h - luaL_checknumber(L, 3) - luaL_checknumber(L, 5), luaL_checknumber(L, 4), luaL_checknumber(L, 5));
+		float x = luaL_checknumber(L, 2);
+		float y = luaL_checknumber(L, 3);
+		float w = luaL_checknumber(L, 4);
+		float h = luaL_checknumber(L, 5);
+		y = screen->h / screen_zoom - y - h;
+		glScissor(x, y, w, h);
 	} else glDisable(GL_SCISSOR_TEST);
 	return 0;
 }
