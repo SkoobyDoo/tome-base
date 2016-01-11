@@ -47,6 +47,30 @@ function core.renderer.redPoint()
 	return v
 end
 
+function core.renderer.image(file, x, y, w, h)
+	local s = core.display.loadImage(file)
+	if not s then return core.renderer.container() end
+	local tex, rw, rh, tw, th, iw, ih = s:glTexture()
+	x = x or 0
+	y = y or 0
+	w = w or iw
+	h = h or ih
+	local v = core.renderer.vertexes()
+	local x1, x2 = x, x + w
+	local y1, y2 = y, y + h
+	local u1, u2 = 0, iw / rw
+	local v1, v2 = 0, ih / rh
+	v:quad(
+		x1, y1, u1, v1,
+		x2, y1, u2, v1,
+		x2, y2, u2, v2,
+		x1, y2, u1, v2,
+		1, 1, 1, 1
+	)
+	v:texture(tex)
+	return v
+end
+
 function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 	x = math.floor(x)
 	y = math.floor(y)
