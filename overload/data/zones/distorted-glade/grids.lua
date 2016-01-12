@@ -126,5 +126,5 @@ load("/data/general/grids/water.lua")
 		display = '>', color_r=255, color_g=255, color_b=0, image = "terrain/grass/dark_grass_main_01.png", add_displays = {class.new{image = "terrain/temporal_instability_blue.png"}},
 		notice = true,
 		always_remember = true,
-		-- change_level = 1, change_zone = "point_zero",
+		change_level = 1, change_zone = "point-zero",
 	}
