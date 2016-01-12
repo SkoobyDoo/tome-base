@@ -769,7 +769,7 @@ newEffect{
 
 newEffect{
 	name = "ETERNAL_WRATH", image = "talents/thaloren_wrath.png",
-	desc = "Wrath of the Eternals",
+	desc = "Wrath of the Woods",
 	long_desc = function(self, eff) return ("The target calls upon its inner resources, improving all damage by %d%% and reducing all damage taken by %d%%."):format(eff.power, eff.power) end,
 	type = "physical",
 	subtype = { nature=true },
