@@ -17,15 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-load("/data/general/grids/basic.lua")
-load("/data/general/grids/forest.lua")
-load("/data/general/grids/water.lua")
+local events = { one_per_level=true,
+	{name="atof+time-storm", minor=true, percent=100},
+	{name="atof+time-calm", minor=true, percent=100},
+}
 
-	newEntity{
-		define_as = "DISTORTED_GROVE",
-		name = "way into the woods",
-		display = '>', color_r=255, color_g=255, color_b=0, image = "terrain/grass/grass_main_01.png", add_displays = {class.new{image = "terrain/way_next_6.png"}},
-		notice = true,
-		always_remember = true,
-		change_level = 1, change_zone = "distorted-grove",
-	}
+return events

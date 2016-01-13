@@ -112,17 +112,19 @@ load("/data/general/grids/water.lua")
 	end
 
 	newEntity{
-		define_as = "DISTORTED_GLADE", base = "GRASS_DOWN6",
+		define_as = "DISTORTED_GROVE", base = "GRASS_UP4",
 		image = "terrain/grass/dark_grass_main_01.png",
 		nice_editer = grass_editer,
-		change_zone = "distorted-glade",
-		notice = true, always_remember=true, 
+		change_level = 3, change_zone = "atof+distorted-grove",
+		notice = true, always_remember=true, force_down=true,
+
 	}
 
 	newEntity{
-		define_as = "GRASS_UP_VILLAGE", base = "GRASS_UP4",
-		image = "terrain/grass/dark_grass_main_01.png",
-		nice_editer = grass_editer,
-		change_zone = "abandoned-village",
-		notice = true, always_remember=true, force_down=true,
+		define_as = "POINT_ZERO_PORTAL",
+		name = "temporal portal",
+		display = '>', color_r=255, color_g=255, color_b=0, image = "terrain/grass/dark_grass_main_01.png", add_displays = {class.new{image = "terrain/temporal_instability_blue.png"}},
+		notice = true,
+		always_remember = true,
+		change_level = 1, change_zone = "atof+point-zero",
 	}

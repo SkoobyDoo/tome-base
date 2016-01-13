@@ -23,8 +23,8 @@ local PartyLore = require "mod.class.interface.PartyLore"
 local ActorTemporaryEffects = require "engine.interface.ActorTemporaryEffects"
 
 class:bindHook("ToME:load", function(self, data)
-	Birther:loadDefinition("/data-a-twist-of-fate/birth/worlds.lua")
-	PartyLore:loadDefinition("/data-a-twist-of-fate/lore/distorted-grove.lua")
-	ActorTemporaryEffects:loadDefinition("/data-a-twist-of-fate/timed_effects/time-floor.lua")
+	Birther:loadDefinition("/data-atof/birth/worlds.lua")
+	PartyLore:loadDefinition("/data-atof/lore/distorted-grove.lua")
+	ActorTemporaryEffects:loadDefinition("/data-atof/timed_effects/time-floor.lua")
 
 end)

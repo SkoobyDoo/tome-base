@@ -40,7 +40,7 @@ return {
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",
-			map = "zones/distorted-glade",
+			map = "atof+distorted-glade",
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",

@@ -45,7 +45,7 @@ return {
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",
-			map = "zones/atof-point-zero",
+			map = "atof+point-zero",
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",

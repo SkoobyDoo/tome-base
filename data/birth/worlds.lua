@@ -36,8 +36,8 @@ newBirthDescriptor{
 			self.starting_level = 1
 			self.money = 200
 			self.starting_level_force_down = nil
-			self.starting_zone = "abandoned-village"
-			self.starting_quest = "ashes-to-ashes"
+			self.starting_zone = "atof+abandoned-village"
+			self.starting_quest = "atof+ashes-to-ashes"
 			self.starting_intro = "atof"
 			self.faction = "keepers-of-reality" 
 		end,

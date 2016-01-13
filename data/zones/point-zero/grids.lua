@@ -31,8 +31,8 @@ newEntity{
 	always_remember = true,
 	show_tooltip = true,
 	desc = [[The rift leads to Maj'Eyal.]],
-	change_level = 1,
-	change_zone = "derthfields",
+	-- change_level = 1,
+	-- change_zone = "eyal",
 }
 
 local ice_editer = {method="borders_def", def="ice"}

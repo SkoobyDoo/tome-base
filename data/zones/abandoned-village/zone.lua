@@ -40,7 +40,7 @@ return {
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",
-			map = "zones/abandoned-village",
+			map = "atof+abandoned-village",
 			force_last_stair = true,
 		},
 		actor = {

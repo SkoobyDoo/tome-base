@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 long_name = "A Twist of Fate"
-short_name = "a-twist-of-fate"
+short_name = "atof"
 for_module = "tome"
 version = { 1, 3, 3 }
 weight = 501
