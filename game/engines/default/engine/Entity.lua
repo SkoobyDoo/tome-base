@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -593,6 +593,7 @@ end
 function _M:MOflipX(v)
 	if not self._mo then return end
 	self._mo:flipX(v)
+	self._flipx = v
 
 	if not self.add_displays then return end
 
@@ -608,6 +609,7 @@ end
 function _M:MOflipY(v)
 	if not self._mo then return end
 	self._mo:flipY(v)
+	self._flipy = v
 
 	if not self.add_displays then return end
 
@@ -1120,7 +1122,7 @@ function _M:loadList(file, no_default, res, mod, loaded)
 	if type(file) == "table" then
 		res = res or {}
 		for i, f in ipairs(file) do
-			self:loadList(f, no_default, res, mod)
+			self:loadList(f, no_default, res, mod, loaded)
 		end
 		return res
 	end
@@ -1193,6 +1195,8 @@ function _M:loadList(file, no_default, res, mod, loaded)
 	newenv.currentZone = nil
 
 	self:triggerHook{"Entity:loadList", file=file, no_default=no_default, res=res, mod=mod, loaded=loaded}
+
+	res.__loaded_files = loaded
 
 	return res
 end

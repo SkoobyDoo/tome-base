@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -166,7 +166,7 @@ end
 function _M:event(e)
 	if not profile.auth then return end
 	if e.se == "Talk" then
-		e.msg = e.msg:removeColorCodes()
+		e.msg = e.msg:removeColorCodes():gsub("#", "##")
 		local color = colors.WHITE
 		if e.status == 'dev' then color = colors.CRIMSON
 		elseif e.status == 'mod' then color = colors.GOLD

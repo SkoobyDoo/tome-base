@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -729,7 +729,7 @@ function _M:displayResources(scale, bx, by, a)
 			sshat[1]:toScreenFull(x-6, y+8, sshat[6], sshat[7], sshat[2], sshat[3], 1, 1, 1, a)
 			bshat[1]:toScreenFull(x, y, bshat[6], bshat[7], bshat[2], bshat[3], 1, 1, 1, a)
 			if air_sha.shad then air_sha:setUniform("a", a) air_sha.shad:use(true) end
-			local p = player:getAir() / player.max_air
+			local p = math.min(1, math.max(0, player:getAir() / player.max_air))
 			shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], air_c[1], air_c[2], air_c[3], a)
 			if air_sha.shad then air_sha.shad:use(false) end
 
@@ -844,7 +844,7 @@ function _M:displayResources(scale, bx, by, a)
 						if rgfx.shader and rgfx.shader.shad then rgfx.shader:setUniform("a", a) rgfx.shader.shad:use(true) end
 						local p -- proportion of resource bar to display
 						if vn and vm then
-							p = vc/vm
+							p = math.min(1, math.max(0, vc/vm))
 						else p = 1
 						end
 						shat[1]:toScreenPrecise(x+49, y+10, shat[6] * p, shat[7], 0, p * 1/shat[4], 0, 1/shat[5], rgfx.color[1], rgfx.color[2], rgfx.color[3], a)
@@ -2010,6 +2010,8 @@ function _M:display(nb_keyframes)
 		if size.bottom then d.drawQuad(0, Map.viewport.height - 10, Map.viewport.width, 10, 0, 200, 0, 50) end
 		d.glTranslate(-Map.display_x, -Map.display_y, -0)
 	end
+
+	UISet.display(self, nb_keyframes)
 end
 
 function _M:setupMouse(mouse)

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 require "engine.class"
 local Map = require "engine.Map"
+local lom = require "lxp.lom"
 
 --- Generator interface that can use rooms
 -- @classmod engine.generator.map.RoomsLoader
@@ -49,6 +50,279 @@ function _M:init(data)
 end
 
 local rooms_cache = {}
+local tmxid = 1
+
+function _M:loadLuaInEnv(g, file, code)
+	local f, err
+	if file then f, err = loadfile(file)
+	else f, err = loadstring(code) end
+	if not f and err then error(err) end
+	setfenv(f, setmetatable(g, {__index=_G}))
+	return f()
+end
+
+function _M:tmxLoadRoom(file, basefile)
+	file = file:gsub("%.lua$", ".tmx")
+	if not fs.exists(file) then return end
+	print("Room generator using file", file)
+	local f = fs.open(file, "r")
+	local data = f:read(10485760)
+	f:close()
+
+	local g = {}
+	local t = {}
+	local openids, starts, ends = {}, {}, {}
+	local map = lom.parse(data)
+	local mapprops = {}
+	if map:findOne("properties") then mapprops = map:findOne("properties"):findAllAttrs("property", "name", "value") end
+	local w, h = tonumber(map.attr.width), tonumber(map.attr.height)
+	local tw, th = tonumber(map.attr.tilewidth), tonumber(map.attr.tileheight)
+	for _, tileset in ipairs(map:findAll("tileset")) do
+		-- if tileset:findOne("properties") then for name, value in pairs(tileset:findOne("properties"):findAllAttrs("property", "name", "value")) do
+		-- 	if name == "load_terrains" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.grid_class:loadList(list, nil, self.grid_list, nil, self.grid_list.__loaded_files)
+		-- 	elseif name == "load_traps" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.trap_class:loadList(list, nil, self.trap_list, nil, self.trap_list.__loaded_files)
+		-- 	elseif name == "load_objects" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.object_class:loadList(list, nil, self.object_list, nil, self.object_list.__loaded_files)
+		-- 	elseif name == "load_actors" then
+		-- 		local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
+		-- 		self.zone.npc_class:loadList(list, nil, self.npc_list, nil, self.npc_list.__loaded_files)
+		-- 	end
+		-- end end
+
+		local firstgid = tonumber(tileset.attr.firstgid)
+		for _, tile in ipairs(tileset:findAll("tile")) do
+			local tid = tonumber(tile.attr.id + firstgid)
+			local id = tile:findOne("property", "name", "id")
+			local data_id = tile:findOne("property", "name", "data_id")
+			local custom = tile:findOne("property", "name", "custom")
+			local open = tile:findOne("property", "name", "open")
+			local is_start = tile:findOne("property", "name", "start")
+			local is_end = tile:findOne("property", "name", "stop") or tile:findOne("property", "name", "end")
+			if id then
+				t[tid] = id.attr.value
+			elseif data_id then
+				t[tid] = self.data[data_id.attr.value]
+			elseif custom then
+				local ret = self:loadLuaInEnv(g, nil, "return "..custom.attr.value)
+				t[tid] = ret
+			end
+			openids[tid] = open
+			starts[tid] = is_start
+			ends[tid] = is_end
+		end
+	end
+
+	if mapprops.status_all then
+		self.status_all = self:loadLuaInEnv(g, nil, "return "..mapprops.status_all) or {}
+	end
+
+	if mapprops.add_data then
+		table.merge(self.level.data, self:loadLuaInEnv(g, nil, "return "..mapprops.add_data) or {}, true)
+	end
+
+	if mapprops.lua then
+		self:loadLuaInEnv(g, nil, "return "..mapprops.lua)
+	end
+
+	local m = { w=w, h=h, room_map={} }
+
+	if mapprops.prefered_location then
+		m.prefered_location = self:loadLuaInEnv(g, nil, "return "..mapprops.prefered_location)
+	end
+
+	local function populate(i, j, c, tid)
+		local ii, jj = i, j
+
+		m[ii] = m[ii] or {}
+		if type(c) == "string" then
+			m[ii][jj] = c
+		else
+			m[ii][jj] = m[ii][jj] or {}
+			table.update(m[ii][jj], c)
+		end
+	end
+
+	for _, layer in ipairs(map:findAll("layer")) do
+		local mapdata = layer:findOne("data")
+		local layername = layer.attr.name:lower()
+		if layername == "terrain" then layername = "grid" end
+
+		if mapdata.attr.encoding == "base64" then
+			local b64 = mime.unb64(mapdata[1]:trim())
+			local data
+			if mapdata.attr.compression == "zlib" then data = zlib.decompress(b64)
+			elseif not mapdata.attr.compression then data = b64
+			else error("tmx map compression unsupported: "..mapdata.attr.compression)
+			end
+			local gid, i = nil, 1
+			local x, y = 1, 1
+			while i <= #data do
+				gid, i = struct.unpack("<I4", data, i)
+				populate(x, y, {[layername] = gid, can_open=openids[gid], is_start=starts[gid], is_end=ends[gid]}, gid)
+				x = x + 1
+				if x > w then x = 1 y = y + 1 end
+			end
+		elseif mapdata.attr.encoding == "csv" then
+			local data = mapdata[1]:gsub("[^,0-9]", ""):split(",")
+			local x, y = 1, 1
+			for i, gid in ipairs(data) do
+				gid = tonumber(gid)
+				populate(x, y, {[layername] = gid, can_open=openids[gid], is_start=starts[gid], is_end=ends[gid]}, gid)
+				x = x + 1
+				if x > w then x = 1 y = y + 1 end
+			end
+		elseif not mapdata.attr.encoding then
+			local data = mapdata:findAll("tile")
+			local x, y = 1, 1
+			for i, tile in ipairs(data) do
+				local gid = tonumber(tile.attr.gid)
+				populate(x, y, {[layername] = gid, can_open=openids[gid], is_start=starts[gid], is_end=ends[gid]}, gid)
+				x = x + 1
+				if x > w then x = 1 y = y + 1 end
+			end
+		end
+	end
+
+	for _, og in ipairs(map:findAll("objectgroup")) do
+		for _, o in ipairs(map:findAll("object")) do
+			local props = o:findOne("properties"):findAllAttrs("property", "name", "value")
+
+			-- if og.attr.name:find("^addSpot") then
+			-- 	local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+			-- 	if props.start then m.startx = x m.starty = y end
+			-- 	if props['end'] then m.endx = x m.endy = y end
+			-- 	if props.type and props.subtype then
+			-- 		for i = x, x + w do for j = y, y + h do
+			-- 			local i, j = rotate_coords(i, j)
+			-- 			g.addSpot({i, j}, props.type, props.subtype)
+			-- 		end end
+			-- 	end
+			-- elseif og.attr.name:find("^addZone") then
+			-- 	local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+			-- 	if props.type and props.subtype then
+			-- 		local i1, j2 = rotate_coords(x, y)
+			-- 		local i2, j2 = rotate_coords(x + w, y + h)
+			-- 		g.addZone({x, y, x + w, y + h}, props.type, props.subtype)
+			-- 	end
+			-- elseif og.attr.name:find("^attrs") then
+			-- 	local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+			-- 	for k, v in pairs(props) do
+			-- 		for i = x, x + w do for j = y, y + h do
+			-- 			local i, j = rotate_coords(i, j)
+			-- 			self.add_attrs_later[#self.add_attrs_later+1] = {x=i, y=j, key=k, value=self:loadLuaInEnv(g, nil, "return "..v)}
+			-- 			print("====", i, j, k)
+			-- 		end end
+			-- 	end
+			-- end
+			if og.attr.name:find("^room_map") then
+				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+				for k, v in pairs(props) do
+					for i = x, x + w do for j = y, y + h do
+						m.room_map[i] = m.room_map[i] or {}
+						m.room_map[i][j] = m.room_map[i][j] or {}
+						table.merge(m.room_map[i][j], {[k]=self:loadLuaInEnv(g, nil, "return "..v)})
+					end end
+				end
+			end
+		end
+	end
+
+	print("[ROOM TMX MAP] size", m.w, m.h)
+
+	local gen = function(gen, id)
+		return { name="tmxroom"..tmxid.."-"..m.w.."x"..m.h, w=m.w, h=m.h, prefered_location=m.prefered_location, generator = function(self, x, y, is_lit)
+			for i = 1, m.w do for j = 1, m.h do
+				gen.map.room_map[i-1+x][j-1+y].room = id
+				if is_lit then gen.map.lites(i-1+x, j-1+y, true) end
+
+				local c = m[i][j]
+				if c.can_open then
+					gen.map.room_map[i-1+x][j-1+y].room = nil
+					gen.map.room_map[i-1+x][j-1+y].can_open = true
+				end
+				if c.is_start then
+					gen.forced_up = {x=i-1+x, y=j-1+y}
+					gen.map.forced_up = {x=i-1+x, y=j-1+y}
+					gen.map.room_map[i-1+x][j-1+y].special = "exit"
+				end
+				if c.is_end then
+					gen.forced_down = {x=i-1+x, y=j-1+y}
+					gen.map.forced_down = {x=i-1+x, y=j-1+y}
+					gen.map.room_map[i-1+x][j-1+y].special = "exit"
+				end
+				print("===room", i,j, "::", c.grid, c.grid and t[c.grid])
+
+				if c.grid then
+					local g = gen:resolve(t[c.grid], nil, true)
+					if g then
+						if g.force_clone then g = g:clone() end
+						g:resolve()
+						g:resolve(nil, true)
+						gen.map(i-1+x, j-1+y, Map.TERRAIN, g)
+					print(" => ", g, g and g.name)
+					end
+				end
+				if c.object then local d = t[c.object] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "object", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "object", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "object", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "object", e)
+						e.on_added_to_level = nil
+					end
+				end end
+				if c.actor then local d = t[c.actor] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "actor", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "actor", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "actor", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "actor", e)
+						e.on_added_to_level = nil
+					end
+				end end
+				if c.trap then local d = t[c.trap] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "trap", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "trap", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "trap", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "trap", e)
+						e.on_added_to_level = nil
+					end
+				end end
+				if c.trigger then local d = t[c.trigger] if d then
+					local e
+					if type(d) == "string" then e = gen.zone:makeEntityByName(gen.level, "terrain", d)
+					elseif type(d) == "table" and d.random_filter then e = gen.zone:makeEntity(gen.level, "terrain", d.random_filter, nil, true)
+					else e = gen.zone:finishEntity(gen.level, "terrain", d)
+					end
+					if e then
+						gen:roomMapAddEntity(i-1+x, j-1+y, "trigger", e)
+						e.on_added_to_level = nil
+					end
+				end end
+
+				if m.room_map[i] and m.room_map[i][j] then
+					table.merge(gen.map.room_map[i-1+x][j-1+y], m.room_map[i][j])
+				end
+			end end
+		end}
+	end
+	tmxid = tmxid + 1
+
+	rooms_cache[basefile] = gen
+	return gen
+end
 
 function _M:loadRoom(file)
 	if rooms_cache[file] then return rooms_cache[file] end
@@ -56,6 +330,9 @@ function _M:loadRoom(file)
 	local filename = "/data/rooms/"..file..".lua"
 	-- Found in the zone itself ?
 	if file:find("^!") then filename = self.zone:getBaseName().."/rooms/"..file:sub(2)..".lua" end
+	local tmxed = self:tmxLoadRoom(filename, file)
+	if tmxed then return tmxed end
+
 	local f, err = loadfile(filename)
 	if not f and err then error(err) end
 	setfenv(f, setmetatable({
@@ -247,10 +524,18 @@ function _M:roomAlloc(room, id, lev, old_lev, add_check)
 	room = self:roomGen(room, id, lev, old_lev)
 	if not room then return end
 
+	local prefered_location = room.prefered_location
 	local tries = 100
 	while tries > 0 do
 		local ok = true
-		local x, y = rng.range(1, self.map.w - 2 - room.w), rng.range(1, self.map.h - 2 - room.h)
+		local x, y
+		if prefered_location then
+			x, y = prefered_location(self.map)
+			x, y = x - math.floor(room.w / 2), y - math.floor(room.h / 2)
+			prefered_location = nil
+		else
+			x, y = rng.range(1, self.map.w - 2 - room.w), rng.range(1, self.map.h - 2 - room.h)
+		end
 
 		-- Do we stomp ?
 		for i = 1, room.w do

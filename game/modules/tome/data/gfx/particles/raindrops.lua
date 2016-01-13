@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ function(self)
 	if first then
 		self.ps:emit(700)
 	else
-		self.ps:emit(2)
+		self.ps:emit(intensity or 2)
 	end
 	first = false
 end,

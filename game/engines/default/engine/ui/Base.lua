@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -54,6 +54,20 @@ function _M:loadUIDefinitions(file)
 	setfenv(f, self.ui_conf)
 	local ok, err = pcall(f)
 	if not f then print("Error while loading UI definition from", file, ":", err) return end
+end
+
+function _M:uiExists(ui)
+	return self.ui_conf[ui]
+end
+
+function _M:changeDefault(ui)
+	if not self:uiExists(ui) then return end
+	self.ui = ui
+	for name, c in pairs(package.loaded) do
+		if type(c) == "table" and c.isClassName and c:isClassName(self._NAME) then
+			c.ui = ui
+		end
+	end
 end
 
 function _M:inherited(base)

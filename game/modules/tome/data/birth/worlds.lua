@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ newBirthDescriptor{
 	type = "world",
 	name = "Maj'Eyal",
 	display_name = "Maj'Eyal: The Age of Ascendancy",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.campaign == "Maj'Eyal",
 	desc =
 	{
 		"The people of Maj'Eyal: Humans, Halflings, Elves and Dwarves.",
@@ -96,6 +97,7 @@ newBirthDescriptor{
 	display_name = "Infinite Dungeon: The Neverending Descent",
 	locked = function() return profile.mod.allow_build.campaign_infinite_dungeon end,
 	locked_desc = "Ever deeper, never ending, no reprieve, keep descending. In ruins old, through barred gate, once riddle solved, find thy fate.",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.campaign == "Infinite",
 	desc =
 	{
 		"Play as your favorite race and class and venture into the infinite dungeon.",
@@ -166,6 +168,7 @@ newBirthDescriptor{
 	display_name = "The Arena: Challenge of the Master",
 	locked = function() return profile.mod.allow_build.campaign_arena end,
 	locked_desc = "Blood spilled on sand, only the strong survive. Prove yourself worthy to enter.",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.campaign == "Arena",
 	desc =
 	{
 		"Play as a lone warrior facing the Arena's challenge!",

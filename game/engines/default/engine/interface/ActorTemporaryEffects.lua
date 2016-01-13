@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -258,9 +258,10 @@ end
 
 --- Helper function to add particles and not have to remove them manualy
 function _M:effectParticles(eff, ...)
+	local Particles = require "engine.Particles"
 	if not eff.__tmpparticles then eff.__tmpparticles = {} end
 	for _, p in ipairs{...} do
-		eff.__tmpparticles[#eff.__tmpparticles+1] = p
+		eff.__tmpparticles[#eff.__tmpparticles+1] = self:addParticles(Particles.new(p.type, 1, p.args))
 	end
 end
 

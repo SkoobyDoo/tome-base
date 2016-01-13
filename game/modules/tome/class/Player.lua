@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -203,6 +203,8 @@ function _M:onEnterLevel(zone, level)
 		level:removeEntity(ent, true)
 		ent.dead = true
 	end
+
+	self:fireTalentCheck("callbackOnChangeLevel", "enter", zone, level)
 end
 
 function _M:onEnterLevelEnd(zone, level)
@@ -221,6 +223,8 @@ function _M:onLeaveLevel(zone, level)
 		q.abandoned = true
 		self:setQuestStatus(eid, q.FAILED)
 	end
+
+	self:fireTalentCheck("callbackOnChangeLevel", "leave", zone, level)
 end
 
 -- Wilderness encounter
@@ -1192,6 +1196,21 @@ function _M:runStopped()
 	if obj then game.level.map.attrs(x, y, "obj_seen", true) end
 end
 
+--- Uses an hotkeyed talent
+-- This requires the ActorTalents interface to use talents and a method player:playerUseItem(o, item, inven) to use inventory objects
+function _M:activateHotkey(id)
+	-- Visual feedback to show whcih key was pressed
+	if config.settings.tome.visual_hotkeys and game.uiset.hotkeys_display and game.uiset.hotkeys_display.clics and game.uiset.hotkeys_display.clics[id] and self.hotkey[id] then
+		local zone = game.uiset.hotkeys_display.clics[id]
+		game.uiset:addParticle(
+			game.uiset.hotkeys_display.display_x + zone[1] + zone[3] / 2, game.uiset.hotkeys_display.display_y + zone[2] + zone[4] / 2,
+			"hotkey_feedback", {w=zone[3], h=zone[4]}
+		)
+	end
+
+	return engine.interface.PlayerHotkeys.activateHotkey(self, id)
+end
+
 --- Activates a hotkey with a type "inventory"
 function _M:hotkeyInventory(name)
 	local find = function(name)
@@ -1513,24 +1532,61 @@ function _M:on_targeted(act)
 end
 
 ------ Quest Events
+local quest_popups = {}
+local function tick_end_quests()
+	local QuestPopup = require "mod.dialogs.QuestPopup"
+
+	local list = {}
+	for quest_id, status in pairs(quest_popups) do
+		list[#list+1] = { id=quest_id, status=status }
+	end
+	quest_popups = {}
+	table.sort(list, function(a, b) return a.status > b.status end)
+
+	local lastd = nil
+	for _, q in ipairs(list) do
+		local quest = game.player:hasQuest(q.id)
+		local d = QuestPopup.new(quest, q.status)
+		if lastd then
+			lastd.unload = function(self) game:registerDialog(d) end
+		else
+			game:registerDialog(d)
+		end
+		lastd = d
+	end
+end
+
+function _M:questPopup(quest, status)
+	if game and game.creating_player then return end
+	if not quest_popups[quest.id] or quest_popups[quest.id] < status then
+		quest_popups[quest.id] = status
+		if not game:onTickEndGet("quest_popups") then game:onTickEnd(tick_end_quests, "quest_popups") end
+	end
+end
+
 function _M:on_quest_grant(quest)
 	game.logPlayer(game.player, "#LIGHT_GREEN#Accepted quest '%s'! #WHITE#(Press 'j' to see the quest log)", quest.name)
-	game.bignews:saySimple(60, "#LIGHT_GREEN#Accepted quest '%s'!", quest.name)
+	if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Accepted quest '%s'!", quest.name)
+	else self:questPopup(quest, -1) end
 end
 
 function _M:on_quest_status(quest, status, sub)
 	if sub then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' status updated! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' updated!", quest.name)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' updated!", quest.name)
+		else self:questPopup(quest, engine.Quest.PENDING) end
 	elseif status == engine.Quest.COMPLETED then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' completed! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' completed!", quest.name)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' completed!", quest.name)
+		else self:questPopup(quest, status) end
 	elseif status == engine.Quest.DONE then
 		game.logPlayer(game.player, "#LIGHT_GREEN#Quest '%s' is done! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' done!", quest.name)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_GREEN#Quest '%s' done!", quest.name)
+		else self:questPopup(quest, status) end
 	elseif status == engine.Quest.FAILED then
 		game.logPlayer(game.player, "#LIGHT_RED#Quest '%s' is failed! #WHITE#(Press 'j' to see the quest log)", quest.name)
-		game.bignews:saySimple(60, "#LIGHT_RED#Quest '%s' failed!", quest.name)
+		if not config.settings.tome.quest_popup then game.bignews:saySimple(60, "#LIGHT_RED#Quest '%s' failed!", quest.name)
+		else self:questPopup(quest, status) end
 	end
 end
 

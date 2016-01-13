@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,19 +18,25 @@
 -- darkgod@te4.org
 
 local max_w, max_h = 50, 50
-local list = {
-	"double-t", "crypt", "treasure1", "diggers", "hillbert_curve", "quiet", "lightning-vault", "water-vault",
-	"32-chambers", "demon-nest-1", "demon-nest-2", "demon-nest-3", "frost-dragon-lair", "greater-money-vault",
-	"trapped-hexagon", "yin-yang", "zigzag-chambers", "paladin-vs-vampire", "orc-hatred", "lich-lair",
-	"greater-crypt", "trickvault", "spider-den", "acidic-vault",
-}
+-- Dynamically build the list, this way addons can add new vaults easily
+local list = {}
+for _, f in ipairs(fs.list("/data/maps/vaults/auto/greater/")) do
+	if f:suffix(".lua") or f:suffix(".tmx") then
+		list[#list+1] = f:sub(1, #f - 4)
+	end
+end
+
+local function vault_exists(f)
+	if fs.exists("/data/maps/"..f..".lua") or fs.exists("/data/maps/"..f..".tmx") then return f end
+	return false
+end
 
 return function(gen, id, lev, old_lev)
 	local vaultid = rng.table(gen.data.greater_vaults_list or list)
 	local vault_map = engine.Map.new(max_w, max_h)
 	local Static = require("engine.generator.map.Static")
 	local data = table.clone(gen.data)
-	data.map = "vaults/"..vaultid
+	data.map = vault_exists("vaults/auto/greater/"..vaultid) or vault_exists("vaults/"..vaultid)
 
 	local old_map = gen.level.map
 	local old_game_level = game.level

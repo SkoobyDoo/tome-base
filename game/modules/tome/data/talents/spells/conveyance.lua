@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ newTalent{
 				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
 				if tx then
 					target = game.level.map(tx, ty, Map.ACTOR)
-					if target ~= aitarget then target = self end
+					if ai_target and target ~= aitarget then target = self end
 				end
 			end
 		end
@@ -183,7 +183,7 @@ newTalent{
 				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
 				if tx then
 					target = game.level.map(tx, ty, Map.ACTOR)
-					if target ~= aitarget then target = self end
+					if ai_target and target ~= aitarget then target = self end
 				end
 			end
 		end

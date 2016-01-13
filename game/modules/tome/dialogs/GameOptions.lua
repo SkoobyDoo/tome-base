@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ function _M:generateListUi()
 	local list = {}
 	local i = 0
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Select the graphical mode to display the world.\nDefault is 'Modern'.\nWhen you change it make a new character or it may lok strange."}
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Select the graphical mode to display the world.\nDefault is 'Modern'.\nWhen you change it, make a new character or it may look strange."}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Graphic Mode#WHITE##{normal}#", status=function(item)
 		local ts = GraphicMode.tiles_packs[config.settings.tome.gfx.tiles]
 		local size = config.settings.tome.gfx.size or "???x???"
@@ -137,14 +137,14 @@ function _M:generateListUi()
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Select the interface look. Metal is the default one. Simple is basic but takes less screen space.\nYou must restart the game for the change to take effect."}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Interface Style#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.tome.ui_theme2):capitalize()
+		return tostring(config.settings.tome.ui_theme3):capitalize()
 	end, fct=function(item)
 		local uis = {{name="Dark", ui="dark"}, {name="Metal", ui="metal"}, {name="Stone", ui="stone"}, {name="Simple", ui="simple"}}
 		self:triggerHook{"GameOptions:UIs", uis=uis}
 		Dialog:listPopup("Interface style", "Select style", uis, 300, 200, function(sel)
 			if not sel or not sel.ui then return end
-			game:saveSettings("tome.ui_theme2", ("tome.ui_theme2 = %q\n"):format(sel.ui))
-			config.settings.tome.ui_theme2 = sel.ui
+			game:saveSettings("tome.ui_theme3", ("tome.ui_theme3 = %q\n"):format(sel.ui))
+			config.settings.tome.ui_theme3 = sel.ui
 			self.c_list:drawItem(item)
 		end)
 	end,}
@@ -196,7 +196,7 @@ function _M:generateListUi()
 	end, fct=function(item)
 		local list = FontPackage:list()
 		Dialog:listPopup("Font style", "Select font", list, 300, 200, function(sel)
-			if not sel or not sel.type then return end
+			if not sel or not sel.id then return end
 			game:saveSettings("tome.fonts", ("tome.fonts = { type = %q, size = %q }\n"):format(sel.id, config.settings.tome.fonts.size))
 			config.settings.tome.fonts.type = sel.id
 			self.c_list:drawItem(item)
@@ -283,6 +283,24 @@ function _M:generateListUi()
 			end,}
 		end
 	end
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When you activate a hotkey, either by keyboard or click a visual feedback will appear over it in the hotkeys bar.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Visual hotkeys feedback#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.visual_hotkeys and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.visual_hotkeys = not config.settings.tome.visual_hotkeys
+		game:saveSettings("tome.visual_hotkeys", ("tome.visual_hotkeys = %s\n"):format(tostring(config.settings.tome.visual_hotkeys)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"When the player or an NPC uses a talent shows a quick popup with the talent's icon and name over its head.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Talents activations map display#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.talents_flyers and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.talents_flyers = not config.settings.tome.talents_flyers
+		game:saveSettings("tome.talents_flyers", ("tome.talents_flyers = %s\n"):format(tostring(config.settings.tome.talents_flyers)))
+		self.c_list:drawItem(item)
+	end,}
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Size of the icons in the hotkeys toolbar.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Icons hotkey toolbar icon size#WHITE##{normal}#", status=function(item)
@@ -405,6 +423,15 @@ function _M:generateListUi()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"If enabled new quests and quests updates will display a big popup, if not a simple line of text will fly on the screen.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Big Quest Popups#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.quest_popup and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.quest_popup = not config.settings.tome.quest_popup
+		game:saveSettings("tome.quest_popup", ("tome.quest_popup = %s\n"):format(tostring(config.settings.tome.quest_popup)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
@@ -417,8 +444,8 @@ function _M:generateListGameplay()
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Scroll distance#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.tome.scroll_dist)
 	end, fct=function(item)
-		game:registerDialog(GetQuantity.new("Scroll distance", "From 1 to 30", config.settings.tome.scroll_dist, 30, function(qty)
-			qty = util.bound(qty, 1, 30)
+		game:registerDialog(GetQuantity.new("Scroll distance", "From 1 to 50", config.settings.tome.scroll_dist, 50, function(qty)
+			qty = util.bound(qty, 1, 50)
 			game:saveSettings("tome.scroll_dist", ("tome.scroll_dist = %d\n"):format(qty))
 			config.settings.tome.scroll_dist = qty
 			self.c_list:drawItem(item)

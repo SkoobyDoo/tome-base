@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -190,9 +190,8 @@ newTalent{
 		self:attr("undead", 1)
 		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 20
 		self.resists[DamageType.DARKNESS] = (self.resists[DamageType.DARKNESS] or 0) + 20
-		self.inscription_restrictions = self.inscription_restrictions or {}
-		self.inscription_restrictions["inscriptions/runes"] = true
-		self.inscription_restrictions["inscriptions/taints"] = true
+		self.inscription_forbids = self.inscription_forbids or {}
+		self.inscription_forbids["inscriptions/infusions"] = true
 
 		local level = self:getTalentLevel(t)
 		if level < 2 then

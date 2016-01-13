@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ end
 --		one_shot = true(fire one shot), multishot (# of targets to hit)
 --		limit_shots = maximum # of shots to fire
 --		ignore_weapon_range = true (fire all weapons even if out of range of target)
+--		add_speed = add to combat_physspeed for this attack
 -- returns a table of target data containing a list of target spots {x=tx, y=ty, ammo=a.combat}
 --		entries may include main = {}, off = {}, psi = {}
 function _M:archeryAcquireTargets(tg, params)
@@ -266,7 +267,7 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 	if any > 0 then
 		local sound = (weaponC or pf_weaponC).sound
-		local speed = self:combatSpeed(weaponC or pf_weaponC)
+		local speed = self:combatSpeed(weaponC or pf_weaponC, params.add_speed or 0)
 		print("[SHOOT] speed", speed or 1, "=>", game.energy_to_act * (speed or 1))
 		if not params.no_energy then self:useEnergy(game.energy_to_act * (speed or 1)) end
 		if sound then game:playSoundNear(self, sound) end
@@ -322,8 +323,20 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after counterstrike", dam)
 		end
 
+		if weapon and weapon.inc_damage_type then
+			local inc = 0
+
+			for k, v in pairs(weapon.inc_damage_type) do
+				if target:checkClassification(tostring(k)) then inc = math.max(inc, v) end
+			end
+
+			dam = dam + dam * inc / 100
+
+			print("[ATTACK] after inc by type (weapon)", dam)
+		end
+
 		if ammo and ammo.inc_damage_type then
-                       local inc = 0
+			local inc = 0
 
 			for k, v in pairs(ammo.inc_damage_type) do
 				if target:checkClassification(tostring(k)) then inc = math.max(inc, v) end
@@ -331,7 +344,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 			dam = dam + dam * inc / 100
 
-			print("[ATTACK] after inc by type", dam)
+			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
 		dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0)
@@ -385,7 +398,9 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			end
 		end
 
+		if tg.archery.crushing_blow then self:attr("crushing_blow", 1) end
 		DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam), tmp)
+		if tg.archery.crushing_blow then self:attr("crushing_blow", -1) end
 
 		if not tg.no_archery_particle then game.level.map:particleEmitter(target.x, target.y, 1, "archery") end
 		hitted = true
@@ -584,7 +599,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		end
 	end
 
-	self:fireTalentCheck("callbackOnArcheryAttack", target, hitted, crit, weapon, ammo, damtype, mult, dam)
+	self:fireTalentCheck("callbackOnArcheryAttack", target, hitted, crit, weapon, ammo, damtype, mult, dam, talent)
 	-- hook to resolve after archery damage has been applied
 	local hd = {"Combat:archeryHit", hitted=hitted, crit=crit, tg=tg, target=target, weapon=weapon, ammo=ammo, damtype=damtype, mult=mult, dam=dam}
 	if self:triggerHook(hd) then hitted = hd.hitted end

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -769,7 +769,7 @@ newEffect{
 
 newEffect{
 	name = "ETERNAL_WRATH", image = "talents/thaloren_wrath.png",
-	desc = "Wrath of the Eternals",
+	desc = "Wrath of the Woods",
 	long_desc = function(self, eff) return ("The target calls upon its inner resources, improving all damage by %d%% and reducing all damage taken by %d%%."):format(eff.power, eff.power) end,
 	type = "physical",
 	subtype = { nature=true },

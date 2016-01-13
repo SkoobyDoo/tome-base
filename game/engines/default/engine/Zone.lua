@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -430,7 +430,7 @@ function _M:makeEntityByName(level, type, name, force_unique)
 	if _G.type(type) == "table" then e = type[name] type = type.__real_type or type
 	elseif type == "actor" then e = self.npc_list[name]
 	elseif type == "object" then e = self.object_list[name]
-	elseif type == "grid" or type == "terrain" then e = self.grid_list[name]
+	elseif type == "grid" or type == "terrain" or type == "trigger" then e = self.grid_list[name]
 	elseif type == "trap" then e = self.trap_list[name]
 	end
 	if not e then return nil end
@@ -716,6 +716,8 @@ function _M:addEntity(level, e, typ, x, y, no_added)
 		if not no_added then e:added() end
 	elseif typ == "terrain" or typ == "grid" then
 		if x and y then level.map(x, y, Map.TERRAIN, e) end
+	elseif typ == "trigger" then
+		if x and y then level.map(x, y, Map.TRIGGER, e) end
 	end
 	e:check("addedToLevel", level, x, y)
 	e:check("on_added", level, x, y)
@@ -856,7 +858,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "zone" and not self.save_per_level then
@@ -872,7 +874,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "memory" then
@@ -888,7 +890,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif level_data.persistent then
@@ -922,7 +924,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	collectgarbage("collect")
 
 	-- Re-open the level if needed (the method does the check itself)
-	level.map:reopen()
+	if level.map then level.map:reopen() end
 
 	return level, new_level
 end

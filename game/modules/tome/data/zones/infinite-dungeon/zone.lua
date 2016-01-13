@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 local rooms = {"random_room", {"pit",3}, {"greater_vault",7}}
-if game:isAddonActive("items-vault") then table.insert(rooms, {"!items-vault",12}) end
+if game:isAddonActive("items-vault") then table.insert(rooms, {"!items-vault",3}) end
 
 return {
 	name = "Infinite Dungeon",

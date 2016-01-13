@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2016 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,13 +46,13 @@ static int draw_last_frame(lua_State *L)
 {
 	if (!bkg_t) return 0;
 
-	int w, h;
-	SDL_GetWindowSize(window, &w, &h);
+	float w = screen->w / screen_zoom;
+	float h = screen->h / screen_zoom;
 
 	GLfloat btexcoords[2*4] = {
-		0, (float)h/(float)bkg_realh,
-		(float)w/(float)bkg_realw, (float)h/(float)bkg_realh,
-		(float)w/(float)bkg_realw, 0,
+		0, (float)screen->h/(float)bkg_realh,
+		(float)screen->w/(float)bkg_realw, (float)screen->h/(float)bkg_realh,
+		(float)screen->w/(float)bkg_realw, 0,
 		0, 0
 	};
 	GLfloat bcolors[4*4] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -119,8 +119,8 @@ static int enable(lua_State *L)
 
 		SDL_GL_SwapWindow(window);
 
-		int w, h;
-		SDL_GetWindowSize(window, &w, &h);
+		float w = screen->w;
+		float h = screen->h;
 
 		bkg_w = w;
 		bkg_h = h;

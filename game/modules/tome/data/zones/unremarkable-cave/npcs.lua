@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ newEntity{ define_as = "FILLAREL",
 
 	seen_by = function(self, who)
 		if not self.has_been_seen and who.player then
-			for act, info in pairs(self.fov.actors) do
+			for uid, act in pairs(game.level.entities) do
 				if act.name == "Krogar" then
 					local Chat = require("engine.Chat")
 					local chat = Chat.new("unremarkable-cave-bosses", self, who)

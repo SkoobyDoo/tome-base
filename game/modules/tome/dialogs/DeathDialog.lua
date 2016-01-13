@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -172,6 +172,9 @@ function _M:eidolonPlane()
 		local is_exploration = game.permadeath == game.PERMADEATH_INFINITE
 		self:cleanActor(self.actor)
 		self:resurrectBasic(self.actor)
+		for e, _ in pairs(game.party.members) do
+			self:cleanActor(e)
+		end
 		for uid, e in pairs(game.level.entities) do
 			if not is_exploration or game.party:hasMember(e) then
 				self:restoreResources(e)

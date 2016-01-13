@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -830,6 +830,15 @@ function _M:rememberAll(x, y, w, h, v)
 	end end
 end
 
+--- Sets the current view at a precise location
+function _M:setScroll(x, y)
+	if self.mx == x and self.my == y then return end
+	self.mx = x
+	self.my = y
+	self.changed = true
+	self:checkMapViewBounded()
+end
+
 --- Sets the current view area with the given coords at the center
 function _M:centerViewAround(x, y)
 	self.mx = x - math.floor(self.viewport.mwidth / 2)
@@ -865,7 +874,7 @@ function _M:moveViewSurround(x, y, marginx, marginy, ignore_padding)
 			self.changed = true
 		end
 	else
-		if marginx * 2 + viewport_padding_4 + viewport_padding_6 > self.viewport.mwidth then
+		if marginx * 2 + self.viewport_padding_4 + self.viewport_padding_6 > self.viewport.mwidth then
 			self.mx = x - math.floor(self.viewport.mwidth / 2)
 			self.changed = true
 		elseif self.mx + marginx + self.viewport_padding_4 >= x then
@@ -875,7 +884,7 @@ function _M:moveViewSurround(x, y, marginx, marginy, ignore_padding)
 			self.mx = x - self.viewport.mwidth + marginx + self.viewport_padding_6
 			self.changed = true
 		end
-		if marginy * 2 + viewport_padding_2 + viewport_padding_8 > self.viewport.mheight then
+		if marginy * 2 + self.viewport_padding_2 + self.viewport_padding_8 > self.viewport.mheight then
 			self.my = y - math.floor(self.viewport.mheight / 2)
 			self.changed = true
 		elseif self.my + marginy + self.viewport_padding_8 >= y then
@@ -962,8 +971,8 @@ end
 --- Get the screen offset where to start drawing (upper corner)
 function _M:getScreenUpperCorner()
 	local sx, sy = self._map:getScroll()
-	local x = -self.mx * self.tile_w * self.zoom + self.display_x + sx * zoom
-	local y = -self.my * self.tile_h * self.zoom + self.display_y + sy * zoom
+	local x = -self.mx * self.tile_w * self.zoom + self.display_x + sx * _M.zoom
+	local y = -self.my * self.tile_h * self.zoom + self.display_y + sy * _M.zoom
 	return x, y
 end
 
@@ -1291,6 +1300,18 @@ function _M:getObjectTotal(x, y)
 	local i = 1
 	while self:getObject(x, y, i) do i = i + 1 end
 	return i - 1
+end
+
+function _M:findObject(x, y, o)
+	-- Compute the map stack position
+	local i = 1
+	while true do
+		local oo = self:getObject(x, y, i)
+		if not oo then break end
+		if oo == o then return i end
+		i = i + 1
+	end
+	return nil
 end
 
 function _M:removeObject(x, y, i)

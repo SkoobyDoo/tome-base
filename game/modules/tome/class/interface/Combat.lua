@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -610,6 +610,40 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	end
 ]]
 
+	hitted = self:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
+
+	-- Visual feedback
+	if hitted then game.level.map:particleEmitter(target.x, target.y, 1, "melee_attack", {color=target.blood_color}) end
+	if Map.tiles and Map.tiles.use_images then if self.x and target.x then if target.x < self.x then self:MOflipX(self:isTileFlipped()) elseif target.x > self.x then self:MOflipX(not self:isTileFlipped()) end end end
+
+	self.turn_procs.weapon_type = nil
+
+	--Life Steal
+	if weapon and weapon.lifesteal then
+		self:attr("lifesteal", -weapon.lifesteal)
+		self:attr("silent_heal", -1)
+	end
+
+	if self.__attacktargetwith_recursing or (weapon and weapon.attack_recurse) then
+		if self.__attacktargetwith_recursing then
+			self.__attacktargetwith_recursing = self.__attacktargetwith_recursing - 1
+		else
+			self.__attacktargetwith_recursing = weapon.attack_recurse - 1
+		end
+
+		if self.__attacktargetwith_recursing > 0 then
+			local _, newhitted, newdam = self:attackTargetWith(target, weapon, damtype, mult, force_dam)
+			hitted = newhitted or hitted
+			dam = math.max(dam, newdam)
+		else
+			self.__attacktargetwith_recursing = nil
+		end
+	end
+
+	return self:combatSpeed(weapon), hitted, dam
+end
+
+function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
 	if self:isAccuracyEffect(weapon, "staff") then
 		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 0.025, 2)
 		print("[ATTACK] staff accuracy bonus", atk, def, "=", bonus)
@@ -1055,20 +1089,9 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	local hd = {"Combat:attackTargetWith", hitted=hitted, crit=crit, target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam}
 	if self:triggerHook(hd) then hitted = hd.hitted end
 
-	-- Visual feedback
-	if hitted then game.level.map:particleEmitter(target.x, target.y, 1, "melee_attack", {color=target.blood_color}) end
-	if Map.tiles and Map.tiles.use_images then if self.x and target.x then if target.x < self.x then self:MOflipX(self:isTileFlipped()) elseif target.x > self.x then self:MOflipX(not self:isTileFlipped()) end end end
-
-	self.turn_procs.weapon_type = nil
 	self.__global_accuracy_damage_bonus = nil
 
-	--Life Steal
-	if weapon and weapon.lifesteal then
-		self:attr("lifesteal", -weapon.lifesteal)
-		self:attr("silent_heal", -1)
-	end
-
-	return self:combatSpeed(weapon), hitted, dam
+	return hitted
 end
 
 _M.weapon_talents = {
@@ -1322,9 +1345,9 @@ function _M:combatAPR(weapon)
 end
 
 --- Gets the weapon speed
-function _M:combatSpeed(weapon)
+function _M:combatSpeed(weapon, add)
 	weapon = weapon or self.combat or {}
-	return (weapon.physspeed or 1) / math.max(self.combat_physspeed, 0.1)
+	return (weapon.physspeed or 1) / math.max(self.combat_physspeed + (add or 0), 0.1)
 end
 
 --- Gets the crit rate
@@ -1333,6 +1356,9 @@ function _M:combatCrit(weapon)
 	local addcrit = 0
 	if weapon.talented and self:knowTalent(Talents.T_LETHALITY) then
 		addcrit = 1 + self:callTalent(Talents.T_LETHALITY, "getCriticalChance")
+	end
+	if self:knowTalent(Talents.T_ARCANE_MIGHT) then
+		addcrit = addcrit + 0.25 * self.combat_spellcrit
 	end
 	local crit = self.combat_physcrit + (self.combat_generic_crit or 0) + (self:getCun() - 10) * 0.3 + (self:getLck() - 50) * 0.30 + (weapon.physcrit or 1) + addcrit
 
@@ -1627,7 +1653,12 @@ function _M:combatPhysicalpower(mod, weapon, add)
 
 	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
-	return self:rescaleCombatStats(d) * mod
+	local amight = 0
+	if self:knowTalent(self.T_ARCANE_MIGHT) then
+		amight = self:combatSpellpower() * 0.5
+	end
+
+	return self:rescaleCombatStats(d) * mod + amight * mod
 end
 
 --- Gets damage based on talent
@@ -2149,6 +2180,13 @@ function _M:combatGetDamageIncrease(type, straight)
 			end
 		end
 		return highest + self.auto_highest_inc_damage[type]
+	end
+
+	if self.inc_damage_level_penalty and self.level and self.inc_damage_level_penalty.end_level > self.level then
+		local end_level = self.inc_damage_level_penalty.end_level
+		local eff_level = end_level - self.level
+		local penalty = math.ceil((self.inc_damage_level_penalty.start_at / end_level) * eff_level)
+		inc = inc + penalty
 	end
 
 	return inc

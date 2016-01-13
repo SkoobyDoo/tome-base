@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ end
 -- @param block the property to look for FOV blocking, defaults to "block_sight"
 -- @param apply an apply function that will be called on each seen grids, defaults to nil
 -- @param force set to true to force a regeneration even if we did not move
--- @param no_store do not store FOV informations
+-- @param no_store do not store FOV informations (such as actors in FOV)
 -- @param cache if true it will use the cache given by the map, for the map actor. It can be used for other actors is they have the same block settings
 function _M:computeFOV(radius, block, apply, force, no_store, cache)
 	-- If we did not move, do not update

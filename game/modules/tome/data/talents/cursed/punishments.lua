@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,13 +25,13 @@ newTalent{
 	random_ego = "attack",
 	cooldown = 5,
 	hate =  5,
-	range = 2,
+	range = 3,
 	tactical = { ATTACKAREA = { MIND = 2 } },
 	getDamage = function(self, t)
-		return self:combatTalentMindDamage(t, 0, 280)
+		return self:combatTalentMindDamage(t, 0, 320)
 	end,
 	getSpreadFactor = function(self, t)
-		return 0.80
+		return self:combatTalentLimit(t, 95, 75, 90) / 100
 	end,
 	action = function(self, t)
 		local targets = {}
@@ -88,7 +88,7 @@ newTalent{
 		return self:combatTalentMindDamage(t, 0, 300)
 	end,
 	getJumpRange = function(self, t)
-		return math.min(6, math.sqrt(self:getTalentLevel(t) * 2))
+		return math.ceil(math.min(6, math.sqrt(self:getTalentLevel(t) * 2)))
 	end,
 	getJumpCount = function(self, t)
 		return math.min(3, self:getTalentLevelRaw(t))
@@ -100,7 +100,7 @@ newTalent{
 		return 30
 	end,
 	getHateGain = function(self, t)
-		return 2
+		return self:combatTalentScale(t, 1, 5)
 	end,
 	action = function(self, t)
 		local range = self:getTalentRange(t)

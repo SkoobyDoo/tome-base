@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ function _M:loadDefinition(file, env)
 	local f, err = loadfile(file)
 	if not f and err then error(err) end
 	setfenv(f, setmetatable(env or {
+		Lore = self,
 		newLore = function(t) self:newLore(t) end,
 		load = function(f) self:loadDefinition(f, getfenv(2)) end
 	}, {__index=_G}))
@@ -45,6 +46,12 @@ function _M:newLore(t)
 	assert(t.lore, "no lore lore")
 
 	t.order = #self.lore_defs+1
+
+	if t.lore and type(t.lore) == "string" then
+		t.lore = t.lore:gsub("%[i%]", "#{italic}#"):gsub("%[/i%]", "#{normal}#")
+		               :gsub("%[b%]", "#{bold}#"):gsub("%[/b%]", "#{normal}#")
+		               :gsub("%[u%]", "#{underline}#"):gsub("%[/u%]", "#{normal}#")
+	end
 
 	self.lore_defs[t.id] = t
 	self.lore_defs[#self.lore_defs+1] = t
@@ -72,8 +79,8 @@ function _M:getLore(lore, silent)
 
 	if l.template then
 		local tpl = slt2.loadstring(l.lore)
-		l.lore = slt2.render(tpl, {player=self:findMember{main=true}, self=self})
-	end
+		l.lore = slt2.render(tpl, {player=self:findMember{main=true}, self=self, Lore=_M})
+	end	
 
 	return l
 end

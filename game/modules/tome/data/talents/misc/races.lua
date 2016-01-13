@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -911,7 +911,8 @@ newTalent{
 				faction = self.faction,
 				summoner = self, summoner_gain_exp=true,
 				summon_time = 6,
-				ai_target = {actor=target}
+				ai_target = {actor=target},
+				no_drops = 1,
 			}
 			setupSummon(self, m, x, y)
 		end
@@ -994,7 +995,7 @@ newTalent{
 		return ([[An ogre's body is acclimated to spells and inscriptions.
 		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.
 		At level 5 your body is so strong you can use a two handed weapon in your main hand while still using an offhand item.
-		When using a two handed weapon this way you suffer a 20%% physical power, spellpower and mindpower penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#; also all damage procs from your offhand are reduced by 50%%.]]):
+		When using a two handed weapon this way you suffer a 20%% physical power, spellpower and mindpower penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#; also all damage procs from your weapons are reduced by 50%%.]]):
 		format(t.getSave(self, t), t.getMult(self, t) * 100)
 	end,
 }

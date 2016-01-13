@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ newBirthDescriptor
 	desc = {
 		"Highers are a special branch of Humans that have been imbued with latent magic since the Age of Allure.",
 		"They usually do not breed with other Humans, trying to keep their blood 'pure'.",
-		"They possess the #GOLD#Gift of the Pureborn#WHITE# which allows them to regenerate their wounds once in a while.",
+		"They possess the #GOLD#Gift of the Highborn#WHITE# which allows them to regenerate their wounds once in a while.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +1 Strength, +1 Dexterity, +0 Constitution",
 		"#LIGHT_BLUE# * +1 Magic, +1 Willpower, +0 Cunning",

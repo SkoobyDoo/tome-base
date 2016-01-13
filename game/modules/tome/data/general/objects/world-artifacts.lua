@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,6 +77,7 @@ newEntity{ base = "BASE_INFUSION",
 		dur = 6,
 		power = 10,
 		use_stat_mod = 0.1, 
+		use_stat = "con",
 		what = {physical=true, mental=true, magical=true},
 	},
 	inscription_talent = "INFUSION:_PRIMAL",

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,25 +30,18 @@ newTalent{
 	getReduction = function(self, t) return self:combatTalentScale(t, 10, 40) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
-		local x, y, target = self:getTarget(tg)
+		local x, y, target = self:getTargetLimited(tg)
 		if x and y and target and target.summoner and target.summoner == self and target.is_doomed_shadow then
-			local tg2 = {type="hit", range=self:getTalentRange(t), source_actor=target, pass_terrain=true}
-			local x, y, target2 = self:getTarget(tg2)
-			local _ _, x, y = self:canProject(tg2, x, y)
+			local tg2 = {type="hit", range=self:getTalentRange(t), start_x=x, start_y=y, source_actor=target, pass_terrain=true}
+			local x, y, target2 = self:getTargetLimited(tg2)
 			if x and y and target2 and target2.x == x and target2.y == y then
-
 				game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 				game.level.map:particleEmitter(target2.x, target2.y, 1, "teleport")
 
 				target.die(target)
-
 				target2:setEffect(target2.EFF_CURSE_IMPOTENCE, 5, {power=t.getReduction(self, t)})
-
 				game:playSoundNear(target, "talents/earth")
-
 			else return nil end
-			
-
 		else return nil end
 
 		return true
@@ -73,12 +66,10 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 280) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
-		local x, y, target = self:getTarget(tg)
-		local _ _, x, y = self:canProject(tg, x, y)
+		local x, y, target = self:getTargetLimited(tg)
 		if x and y and target and target.x == x and target.y == y and target.is_doomed_shadow and target.summoner and target.summoner == self then
-			local tg2 = {type="hit", range=self:getTalentRange(t), source_actor=target, friendlyblock=false, pass_terrain=true,}
-			local x, y, target2 = self:getTarget(tg2)
-			local _ _, x, y = self:canProject(tg2, x, y)
+			local tg2 = {type="hit", range=self:getTalentRange(t), start_x=x, start_y=y, source_actor=target, friendlyblock=false, pass_terrain=true,}
+			local x, y, target2 = self:getTargetLimited(tg2)
 			if x and y and target2 and target2.x == x and target2.y == y then
 				local ox, oy = target.x, target.y
 				local sx, sy = util.findFreeGrid(x, y, 3, true, {[engine.Map.ACTOR]=true})
@@ -106,7 +97,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Target a nearby shadow, and force it to slam into a nearby enemy, dealing %0.1f Physical damage.
-Your shadow will than set them as their target, and they will target your shadow.
+Your shadow will then set them as their target, and they will target your shadow.
 Damage increases with your Mindpower.]]):
 		format(damDesc(self, DamageType.PHYSICAL, t.getDamage(self, t)))
 	end,
@@ -235,7 +226,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Share your hatred with all shadows within sight range, gaining temporary full control.
-Every shadow affected can than fire a blast of pure hate towards a nearby target, dealing %0.1f Mind damage.
+Every shadow affected can then fire a blast of pure hate towards a nearby target, dealing %0.1f Mind damage.
 You cannot cancel this talent once the first bolt is cast.
 Damage increases with your Mindpower.]]):
 		format(damDesc(self, DamageType.MIND, t.getDamage(self, t)))

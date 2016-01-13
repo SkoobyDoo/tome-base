@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ newEffect{
 			add_mos = {{image = "npc/giant_treant_wrathroot.png", 
 			display_y = -1, 
 			display_h = 2}},
-        }
+		}
 		
 		self:removeAllMOs()
 		game.level.map:updateMap(self.x, self.y)
@@ -1126,7 +1126,7 @@ newEffect{
 	getWilChange = function(level) return -1 + level * 2 end,
 	getBaseSuffocateAirChange = function(level) return Combat:combatTalentLimit(level, 50, 4, 16) end, -- Limit < 50 to take >2 hits to kill most monsters
 	getSuffocateAirChange = function(level) return Combat:combatTalentLimit(level, 10, 0, 7) end, -- Limit < 10
-	getNightmareChance = function(level) return Combat:combatTalentLimit(math.max(0, level-4), 25, 3, 10) end, -- Limit < 25%
+	getNightmareChance = function(level) return Combat:combatTalentLimit(math.max(0, level-3), 25, 3, 10) end, -- Limit < 25%
 	getNightmareRadius = function(level) return 5 + (level - 4) * 2 end,
 	display_desc = function(self, eff)
 		if math.min(eff.unlockLevel, eff.level) >= 4 then
@@ -1218,15 +1218,11 @@ newEffect{
 	on_timeout = function(self, eff) -- Chance for nightmare fades over time
 		if eff.nightmareChance then eff.nightmareChance = math.max(0, eff.nightmareChance-1) end
 	end,
-	callbackOnHit = function(self, eff, cb)
-		game:onTickEnd(function() eff.doNightmare(self, eff) end)
-	end,
-	doNightmare = function(self, eff)
+	callbackOnHit = function(self, eff, cb)	game:onTickEnd(function()
 		if math.min(eff.unlockLevel, eff.level) >= 4 then
 			-- build chance for a nightmare
 			local def = self.tempeffect_def[self.EFF_CURSE_OF_NIGHTMARES]
 			eff.nightmareChance = (eff.nightmareChance or 0) + def.getNightmareChance(eff.level)
-
 
 			-- invoke the nightmare
 			if rng.percent(eff.nightmareChance) then
@@ -1291,7 +1287,7 @@ newEffect{
 				game:playSoundNear(self, "talents/cloud")
 			end
 		end
-	end,
+	end) end,
 }
 
 
@@ -2690,8 +2686,12 @@ newEffect{
 		local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
 		if e and x then
 			game.zone:addEntity(game.level, e, "actor", x, y)
-			local g = game.zone.grid_list[self.to_vat]
-			if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+
+			local og = game.level.map(x, y, Map.TERRAIN)
+			if not og or (not og.special and not og.change_level) then
+				local g = game.zone.grid_list[self.to_vat]
+				if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+			end
 
 			game.level.map:particleEmitter(x, y, 1, "goosplosion")
 			game.level.map:particleEmitter(x, y, 1, "goosplosion")
@@ -2839,7 +2839,7 @@ newEffect{
 		self:effectTemporaryValue(eff, "combat_mindpower", 20)
 		self:effectTemporaryValue(eff, "life_regen", 2)
 		self:effectTemporaryValue(eff, "equilibrium_regen", -1)
-		self:effectTemporaryValue(eff, "resists_pen", {[all]=-20})
+		self:effectTemporaryValue(eff, "resists_pen", {all=-20})
 	end,
 	deactivate = function(self, eff)
 	end,

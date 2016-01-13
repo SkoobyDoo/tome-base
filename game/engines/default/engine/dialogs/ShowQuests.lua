@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ local Separator = require "engine.ui.Separator"
 -- @classmod engine.dialogs.ShowQuests
 module(..., package.seeall, class.inherit(Dialog))
 
-function _M:init(actor)
+function _M:init(actor, select_id)
 	self.actor = actor
 	Dialog.init(self, "Quest Log for "..actor.name, game.w * 0.8, game.h * 0.8)
 
@@ -53,12 +53,25 @@ function _M:init(actor)
 		EXIT = function() game:unregisterDialog(self) end,
 	}
 
-	self:select(self.list[1])
+	local none_selected = true
+
+	if select_id then
+		for i, q in ipairs(self.list) do
+			if q.quest.id == select_id then
+				none_selected = false
+				self:select(q, true)
+				break
+			end
+		end
+	end
+
+	if none_selected then self:select(self.list[1], true) end
 end
 
-function _M:select(item)
+function _M:select(item, force)
 	if item then
 		self.c_desc:switchItem(item, item.desc)
+		if self.c_list and force then self.c_list.sel = item.list_id end
 	end
 end
 
@@ -73,7 +86,7 @@ function _M:generateList()
 			elseif q:isStatus(q.FAILED) then color = colors.simple(colors.RED)
 			end
 
-			list[#list+1] = {  name=q.name, quest=q, color = color, status=q.status_text[q.status], status_order=q.status, desc=q:desc(self.actor) }
+			list[#list+1] = { name=q.name, quest=q, color = color, status=q.status_text[q.status], status_order=q.status, desc=q:desc(self.actor), list_id=#list+1 }
 		end
 	end
 	if game.turn then

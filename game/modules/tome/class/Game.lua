@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -291,9 +291,9 @@ function _M:newGame()
 					self.player:onBirth(birth)
 					-- For quickbirth
 					savefile_pipe:push(self.player.name, "entity", self.party, "engine.CharacterVaultSave")
-					self.creating_player = false
 
 					self.player:grantQuest(self.player.starting_quest)
+					self.creating_player = false
 
 					birth_done()
 					self.player:check("on_birth_done")
@@ -809,7 +809,7 @@ function _M:changeLevel(lev, zone, params)
 			for i = #inven, 1, -1 do
 				local o = inven[i]
 				if o.__transmo then
-					p:transmoInven(inven, i, o)
+					p:transmoInven(inven, i, o, p.default_transmo_source)
 				end
 			end
 			if game.zone == oldzone and game.level == oldlevel then
@@ -1426,7 +1426,7 @@ function _M:displayDelayedLogDamage()
 			end
 		end
 	end
-	if self.delayed_death_message then game.log(self.delayed_death_message) end
+	if self.delayed_death_message then game.log("%s", self.delayed_death_message) end
 	self.delayed_death_message = nil
 	self.delayed_log_damage = {}
 end
@@ -1498,6 +1498,7 @@ function _M:displayMap(nb_keyframes)
 
 		-- Display using Framebuffer, so that we can use shaders and all
 		if self.fbo then
+			if self.level.data.display_prepare then self.level.data.display_prepare(self.level, 0, 0, nb_keyframes) end
 			self.fbo:use(true)
 				if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
 				map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov, self.fbo)
@@ -1689,10 +1690,12 @@ function _M:setupCommands()
 			g:getMapObjects(game.level.map.tiles, mos, 1)
 			table.print(mos)
 			print("===============")
+			local attrs = game.level.map.attrs[self.player.x + self.player.y * self.level.map.w]
+			table.print(attrs)
+			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(5, "orcs+slumbering-caves")
-			-- self:changeLevel(6, "orcs+palace-fumes")
+			self:changeLevel(1, "orcs+primal-forest")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
 			if o then
@@ -1780,6 +1783,7 @@ do return end
 					end
 				elseif not self.player:autoExplore() then
 					self.log("There is nowhere left to explore.")
+					self:triggerHook{"Player:autoExplore:nowhere"}
 				end
 			end end
 

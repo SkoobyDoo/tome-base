@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -230,6 +230,7 @@ end
 
 --- Loads profile module profile from disk
 function _M:loadModuleProfile(short_name, mod_def)
+	self.mod = {}
 	if short_name == "boot" then return end
 
 	-- Delay when we are currently saving

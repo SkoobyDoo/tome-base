@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local heal = t.getHeal(self, t)
-		return ([[Crush and consume one of your captured souls, healing your for %d life and restoring %d mana.
+		return ([[Crush and consume one of your captured souls, healing you for %d life and restoring %d mana.
 		The life and mana healed will increase with your Spellpower.]]):
 		format(heal, heal / 3)
 	end,

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1048,6 +1048,8 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(combat, compare_with, field, "phasing", "%+d%%", "Damage Shield penetration (this weapon only): ", 1, false, false, add_table)
 
 		compare_fields(combat, compare_with, field, "lifesteal", "%+d%%", "Lifesteal (this weapon only): ", 1, false, false, add_table)
+		
+		compare_fields(combat, compare_with, field, "attack_recurse", "%+d", "Multiple attacks: ", 1, false, false, add_table)
 
 		if combat.tg_type and combat.tg_type == "beam" then
 			desc:add({"color","YELLOW"}, ("Shots beam through all targets."), {"color","LAST"}, true)
@@ -1106,7 +1108,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			nil,
 			true)
 
-		self:triggerHook{"Object:descCombat", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, combat=combat}
+		self:triggerHook{"Object:descCombat", compare_with=compare_with, compare_fields=compare_fields, compare_scaled=compare_scaled, compare_scaled=compare_scaled, compare_table_fields=compare_table_fields, desc=desc, combat=combat}
 	end
 
 	local desc_wielder = function(w, compare_with, field)
@@ -1618,7 +1620,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			desc:add("Allows you to speak and read the old Sher'Tul language.", true)
 		end
 
-		self:triggerHook{"Object:descWielder", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, w=w, field=field}
+		self:triggerHook{"Object:descWielder", compare_with=compare_with, compare_fields=compare_fields, compare_scaled=compare_scaled, compare_table_fields=compare_table_fields, desc=desc, w=w, field=field}
 
 		-- Do not show "general effect" if nothing to show
 --		if desc[#desc-2] == "General effects: " then table.remove(desc) table.remove(desc) table.remove(desc) table.remove(desc) end
@@ -1698,12 +1700,19 @@ function _M:getTextualDesc(compare_with, use_actor)
 	end
 
 	if self.is_tinker then
-		if self.on_type then desc:add("Attach on item of type '", {"color","ORANGE"}, self.on_type, {"color", "LAST"}, "'", true) end
+		if self.on_type then
+			if self.on_subtype then
+				desc:add("Attach on item of type '", {"color","ORANGE"}, self.on_type, " / ", self.on_subtype, {"color", "LAST"}, "'", true)
+			else
+				desc:add("Attach on item of type '", {"color","ORANGE"}, self.on_type, {"color", "LAST"}, "'", true)
+			end
+		end
 		if self.on_slot then desc:add("Attach on item worn on slot '", {"color","ORANGE"}, self.on_slot:lower():gsub('_', ' '), {"color", "LAST"}, "'", true) end
 
-		if self.object_tinker and self.object_tinker.wielder then
+		if self.object_tinker and (self.object_tinker.combat or self.object_tinker.wielder) then
 			desc:add({"color","YELLOW"}, "When attach to an other item:", {"color", "LAST"}, true)
-			desc_wielder(self.object_tinker, compare_with, "wielder")
+			if self.object_tinker.combat then desc_combat(self.object_tinker, compare_with, "combat") end
+			if self.object_tinker.wielder then desc_wielder(self.object_tinker, compare_with, "wielder") end
 		end
 	end
 
@@ -1849,7 +1858,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		end
 	end
 
-	self:triggerHook{"Object:descMisc", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, object=self}
+	self:triggerHook{"Object:descMisc", compare_with=compare_with, compare_fields=compare_fields, compare_scaled=compare_scaled, compare_table_fields=compare_table_fields, desc=desc, object=self}
 
 	local use_desc = self:getUseDesc(use_actor)
 	if use_desc then desc:merge(use_desc:toTString()) end

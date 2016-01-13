@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,13 +45,14 @@ uberTalent{
 		local ret = {}
 		self:talentTemporaryValue(ret, "force_use_resist", DamageType.ARCANE)
 		self:talentTemporaryValue(ret, "force_use_resist_percent", 66)
+		self:talentTemporaryValue(ret, "resists", {[DamageType.ARCANE] = 20})
 		return ret
 	end,
 	on_unlearn = function(self, t)
 	end,
 	info = function(self, t)
 		return ([[You manifest a thin layer of aether all around you. Any attack passing through it will check arcane resistance instead of the incoming damage resistance.
-		In effect, all of your resistances are equal to 66%% of your arcane resistance.]])
+		In effect, all of your resistances are equal to 66%% of your arcane resistance, which is increased by 20%%.]])
 		:format()
 	end,
 }
@@ -85,7 +86,10 @@ uberTalent{
 	mode = "passive",
 	info = function(self, t)
 		return ([[You have learned to harness your latent arcane powers, channeling them through your weapon.
-		Equipped weapons are treated as having an additional 50%% Magic modifier.]])
+		This has the following effects:
+		Equipped weapons are treated as having an additional 50%% Magic modifier;
+		Your effective Physical Power is increased by 50%% of your effective Spellpower;
+		Your physical critical chance is increased by 25%% of your bonus spell critical chance.]])
 		:format()
 	end,
 }

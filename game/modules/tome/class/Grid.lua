@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ function _M:block_move(x, y, e, act, couldpass)
 					if ret then
 						game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
 						game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
+						game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
 						if game.level.map.attrs(x, y, "vault_id") and e.openVault then e:openVault(game.level.map.attrs(x, y, "vault_id")) end
 					end
@@ -76,6 +77,7 @@ function _M:block_move(x, y, e, act, couldpass)
 		else
 			game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
 			game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
+			game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
 			if game.level.map.attrs(x, y, "vault_id") and e.openVault then e:openVault(game.level.map.attrs(x, y, "vault_id")) end
 		end
@@ -174,6 +176,30 @@ function _M:tooltip(x, y)
 		tstr = tstring{{"uid", self.uid}, self.name}
 		if dist then tstr:merge(dist) end
 		tstr:add(true)
+	end
+
+	if self.change_zone then
+		-- Lets make very very sure that funky weird zone files dont explode things
+		local ok, data = pcall(function()
+			local fakezone = {short_name=self.change_zone}
+			local base = engine.Zone.getBaseName(fakezone)
+			local f = loadfile(base.."/zone.lua")
+			if f then
+				setfenv(f, setmetatable({self=fakezone, short_name=fakezone.short_name}, {__index=_G}))
+				local ok, z = pcall(f)
+				return z
+			end
+		end)
+		if ok and data then
+			if data.level_range then
+				local p = game:getPlayer(true)
+				local color = "AQUAMARINE"
+				if p.level <= data.level_range[1] - 10 then color = "CRIMSON"
+				elseif p.level <= data.level_range[1] - 4 then color = "ORANGE"
+				end
+				tstr:add(true, {"font","bold"}, {"color", color}, "Min.level: "..data.level_range[1], {"color", "LAST"}, {"font","normal"}, true)
+			end
+		end
 	end
 
 	if game.level.entrance_glow and self.change_zone and not game.visited_zones[self.change_zone] then
@@ -422,4 +448,46 @@ function _M:mergeSubEntities(...)
 		end
 	end end
 	return tbl
+end
+
+--- Push a lever
+function _M:leverActivated(x, y, who)
+	if self.lever_dead then return end
+	self.lever = not self.lever
+
+	local spot = game.level.map.attrs(x, y, "lever_spot") or nil
+	local block = game.level.map.attrs(x, y, "lever_block") or nil
+	local radius = game.level.map.attrs(x, y, "lever_radius") or 10
+	local val = game.level.map.attrs(x, y, "lever")
+	local kind = game.level.map.attrs(x, y, "lever_kind")
+	if game.level.map.attrs(x, y, "lever_only_once") then self.lever_dead = true end
+	if type(kind) == "string" then kind = {[kind]=true} end
+	game.log("#VIOLET#You hear a mechanism clicking.")
+
+	local apply = function(i, j)
+		local akind = game.level.map.attrs(i, j, "lever_action_kind")
+		if not akind then return end
+		if type(akind) == "string" then akind = {[akind]=true} end
+		for k, _ in pairs(kind) do if akind[k] then
+			local old = game.level.map.attrs(i, j, "lever_action_value") or 0
+			local newval = old + (self.lever and val or -val)
+			game.level.map.attrs(i, j, "lever_action_value", newval)
+			if game.level.map:checkEntity(i, j, engine.Map.TERRAIN, "on_lever_change", e, newval, old) then
+				if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
+			end
+			local fct = game.level.map.attrs(i, j, "lever_action_custom")
+			if fct and fct(i, j, e, newval, old) then
+				if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
+			end
+		end end
+	end
+
+	if spot then
+		local spot = game.level:pickSpot(spot)
+		if spot then apply(spot.x, spot.y) end
+	else
+		core.fov.calc_circle(x, y, game.level.map.w, game.level.map.h, radius, function(_, i, j)
+			if block and game.level.map.attrs(i, j, block) then return true end
+		end, function(_, i, j) apply(i, j) end, nil)
+	end
 end

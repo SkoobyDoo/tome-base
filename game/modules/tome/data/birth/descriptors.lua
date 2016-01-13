@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,13 +44,6 @@ newBirthDescriptor{
 			["Maj'Eyal"] = "allow",
 			Infinite = "allow",
 			Arena = "allow",
-			Ents = "disallow",
-			Spydre = "disallow",
-			Orcs = "disallow",
-			Trolls = "disallow",
-			Nagas = "disallow",
-			Undeads = "disallow",
-			Faeros = "disallow",
 		},
 		class =
 		{
@@ -147,6 +140,7 @@ newBirthDescriptor{
 	type = "difficulty",
 	name = "Easy",
 	display_name = "Easier",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Easy",
 	desc =
 	{
 		"#GOLD##{bold}#Easier mode#WHITE##{normal}#",
@@ -170,7 +164,7 @@ newBirthDescriptor{
 newBirthDescriptor{
 	type = "difficulty",
 	name = "Normal",
-	selection_default = true,
+	selection_default = (config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Normal") or (not config.settings.tome.default_birth) or (config.settings.tome.default_birth and not config.settings.tome.default_birth.difficulty),
 	desc =
 	{
 		"#GOLD##{bold}#Normal mode#WHITE##{normal}#",
@@ -189,6 +183,7 @@ newBirthDescriptor{
 newBirthDescriptor{
 	type = "difficulty",
 	name = "Nightmare",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Nightmare",
 	desc =
 	{
 		"#GOLD##{bold}#Nightmare mode#WHITE##{normal}#",
@@ -205,6 +200,7 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 3,
+		money = 100,
 	},
 }
 newBirthDescriptor{
@@ -212,6 +208,7 @@ newBirthDescriptor{
 	name = "Insane",
 	locked = function() return profile.mod.allow_build.difficulty_insane end,
 	locked_desc = "Easy is for the weak! Normal is for the weak! Nightmare is too easy! Bring on the true pain!",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Insane",
 	desc =
 	{
 		"#GOLD##{bold}#Insane mode#WHITE##{normal}#",
@@ -231,6 +228,8 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 4,
+		money = 250,
+		start_level = 2,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
@@ -242,6 +241,7 @@ newBirthDescriptor{
 	name = "Madness",
 	locked = function() return profile.mod.allow_build.difficulty_madness end,
 	locked_desc = "Insane is for the weak! Bring on the true mind-shattering experience!",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Madness",
 	desc =
 	{
 		"#GOLD##{bold}#Madness mode#WHITE##{normal}#",
@@ -264,6 +264,8 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 5,
+		money = 500,
+		start_level = 3,
 	},
 	game_state = {
 		default_random_rare_chance = 3,

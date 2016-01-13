@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ function _M:move(x, y, force)
 	if y >= map.h then y = map.h - 1 end
 
 	if self.x and self.y then
-		map:remove(self.x, self.y, Map.PROJECTILE)
+		map:remove(self.x, self.y, Map.PROJECTILE, self)
 	else
 --		print("[MOVE] projectile moved without a starting position", self.name, x, y)
 	end

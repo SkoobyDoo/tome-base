@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ function _M:setInscription(id, name, data, cooldown, vocal, src, bypass_max_same
 	-- Check allowance
 	local t = self:getTalentFromId(self["T_"..name.."_1"])
 	if self.inscription_restrictions and not self.inscription_restrictions[t.type[1]] then
+		if vocal then game.logPlayer(self, "You are unable to use this kind of inscription.") end
+		return
+	end
+	if self.inscription_forbids and self.inscription_forbids[t.type[1]] then
 		if vocal then game.logPlayer(self, "You are unable to use this kind of inscription.") end
 		return
 	end

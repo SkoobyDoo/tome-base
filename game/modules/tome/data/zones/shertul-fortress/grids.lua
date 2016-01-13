@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -141,8 +141,8 @@ It should automatically create a portal back, but it might not be near your arri
 		local Dialog = require "engine.ui.Dialog"
 		local q = who:hasQuest("shertul-fortress")
 		if not q then Dialog:simplePopup("Exploratory Farportal", "The farportal seems to be inactive") return end
-		if not q:exploratory_energy(true) then Dialog:simplePopup("Exploratory Farportal", "The fortress does not have enough energy to power a trip through the portal.") return end
 		if q:isCompleted("farportal-broken") then Dialog:simplePopup("Exploratory Farportal", "The farportal is broken and will not be usable anymore.") return end
+		if not q:exploratory_energy(true) then Dialog:simplePopup("Exploratory Farportal", "The fortress does not have enough energy to power a trip through the portal.") return end
 
 		Dialog:yesnoPopup("Exploratory Farportal", "Do you want to travel in the farportal? You cannot know where you will end up.", function(ret) if ret then
 			if self:checkSpecialLocation(who, q) then return end

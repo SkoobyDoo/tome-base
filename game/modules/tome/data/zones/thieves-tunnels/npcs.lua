@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ local Talents = require("engine.interface.ActorTalents")
 newEntity{ define_as = "ASSASSIN_LORD",
 	type = "humanoid", subtype = "human",
 	display = "p", color=colors.VIOLET,
-	name = "Assassin Lord",
+	name = "Assassin Lord", unique = true,
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 	cant_be_moved = true,
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 -- Advanced shaders
 --------------------------------------------------------------------------------------
 if core.shader.active(4) then
-use_shader = {type="fireball"}
+use_shader = {type="fireball", trail_length=trail_length or 1}
 base_size = 64
 
 size_factor = size_factor or 1

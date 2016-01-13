@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -286,6 +286,288 @@ function _M:niceTileWall3d(level, i, j, g, nt)
 	end
 end
 
+--- Make walls have a more elaborate pseudo 3D effect:
+function _M:niceTileWall3dSus(level, i, j, g, nt)
+	local s = (level.map:checkEntity(i, j, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i, j, Map.TERRAIN, "subtype") or "floor")
+	local gn = (level.map:checkEntity(i, j-1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i, j-1, Map.TERRAIN, "subtype") or "floor")
+	local gs = (level.map:checkEntity(i, j+1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i, j+1, Map.TERRAIN, "subtype") or "floor")
+	local gw = (level.map:checkEntity(i-1, j, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i-1, j, Map.TERRAIN, "subtype") or "floor")
+	local ge = (level.map:checkEntity(i+1, j, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i+1, j, Map.TERRAIN, "subtype") or "floor")
+	local gse = (level.map:checkEntity(i+1, j+1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i+1, j+1, Map.TERRAIN, "subtype") or "floor")
+	local gsw = (level.map:checkEntity(i-1, j+1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i-1, j+1, Map.TERRAIN, "subtype") or "floor")
+	local gne = (level.map:checkEntity(i+1, j-1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i+1, j-1, Map.TERRAIN, "subtype") or "floor")
+	local gnw = (level.map:checkEntity(i-1, j-1, Map.TERRAIN, "type") or "wall").."/"..(level.map:checkEntity(i-1, j-1, Map.TERRAIN, "subtype") or "floor")
+	
+	local ws = gs == s		--true if there is a wall to the south
+	local wn = gn == s      --true if there is a wall to the north
+	local ww = gw == s      --true if there is a wall to the west
+	local we = ge == s      --true if there is a wall to the east
+	local wse = gse == s    --true if there is a wall to the southeast
+	local wsw = gsw == s    --true if there is a wall to the southwest
+	local wne = gne == s	--true if there is a wall to the northeast
+	local wnw = gnw == s	--true if there is a wall to the northwest
+
+	local fs = not ws       --true if there is a floor to the south
+	local fn = not wn       --true if there is a floor to the north
+	local fw = not ww       --true if there is a floor to the west
+	local fe = not we       --true if there is a floor to the east
+	local fse = not wse     --true if there is a floor to the southeast
+	local fsw = not wsw     --true if there is a floor to the southwest
+	local fne = not wne     --true if there is a floor to the northeast
+	local fnw = not wnw     --true if there is a floor to the northwest
+	
+	local dn = level.map:checkEntity(i, j-1, Map.TERRAIN, "is_door")		--true if there is a door to the north
+	local ds = level.map:checkEntity(i, j+1, Map.TERRAIN, "is_door")		--true if there is a door to the south
+	local dw = level.map:checkEntity(i-1, j, Map.TERRAIN, "is_door")		--true if there is a door to the west
+	local de = level.map:checkEntity(i+1, j, Map.TERRAIN, "is_door")		--true if there is a door to the east
+	local dne = level.map:checkEntity(i+1, j-1, Map.TERRAIN, "is_door")		--true if there is a door to the northeast
+	local dse = level.map:checkEntity(i+1, j+1, Map.TERRAIN, "is_door")		--true if there is a door to the southeast
+	local dnw = level.map:checkEntity(i-1, j-1, Map.TERRAIN, "is_door")		--true if there is a door to the northwest
+	local dsw = level.map:checkEntity(i-1, j+1, Map.TERRAIN, "is_door")		--true if there is a door to the southwest
+	
+	local cornl = ww and fsw
+		--cornl for a tile X indicates this configuration: 	#X
+		--													.#
+	local cornr = we and fse
+		--cornr for a tile X indicates this configuration: 	X#
+		--													#.
+
+		
+	-- And now all the cases. There are a lot :(
+	
+	if ws and not ds and wn and (ww or dw) and (we or de) then --(inner walls, with walls to the north, south, east, and west)
+		if wsw and wse then self:replace(i, j, self:getTile(nt.inner))
+		elseif fsw and wse then self:replace(i, j, self:getTile(nt.inner_cornl))
+		elseif wsw and fse then self:replace(i, j, self:getTile(nt.inner_cornr))
+		elseif fsw and fse then self:replace(i, j, self:getTile(nt.inner_cornl_cornr))
+		end
+	elseif ws and not ds and wn and fe and fw then --(west-east walls. These have floor the west and east)
+		if (wsw or dsw) and (wse or dse) then self:replace(i, j, self:getTile(nt.wewall_sw_se))
+		elseif (wsw or dsw) and fse then self:replace(i, j, self:getTile(nt.wewall_sw))
+		elseif fsw and (wse or dse) then self:replace(i, j, self:getTile(nt.wewall_se))
+		elseif fsw and fse then self:replace(i, j, self:getTile(nt.wewall))
+		end
+	elseif ws and not ds and wn and we and fw then -- west walls (floor to the west only)
+		if (wsw or dsw) and wse then self:replace(i, j, self:getTile(nt.wwall_sw))
+		elseif (wsw or dsw) and fse then self:replace(i, j, self:getTile(nt.wwall_sw_cornr))
+		elseif fsw and wse then self:replace(i, j, self:getTile(nt.wwall))
+		elseif fsw and fse then self:replace(i, j, self:getTile(nt.wwall_cornr))
+		end
+	elseif ws and not ds and wn and fe and ww then -- east walls (floor to the east only)
+		if (wse or dse) and wsw then self:replace(i, j, self:getTile(nt.ewall_se))
+		elseif (wse or dse) and fsw then self:replace(i, j, self:getTile(nt.ewall_se_cornl))
+		elseif fse and wsw then self:replace(i, j, self:getTile(nt.ewall))
+		elseif fse and fsw then self:replace(i, j, self:getTile(nt.ewall_cornl))
+		end
+	elseif ws and not ds and (fn or dn) then --(north walls... not north-south; those are later)
+		-- north walls whose cap bends up at the left side (because there's a wall to the northwest that we want to join up with):
+		if ww and wnw and not dnw and we and wne and not dne then
+			if cornl and cornr then self:replace(i, j, self:getTile(nt.nwall_cap_lup_rup_cornl_cornr))
+			elseif cornl then self:replace(i, j, self:getTile(nt.nwall_cap_lup_rup_cornl))
+			elseif cornr then self:replace(i, j, self:getTile(nt.nwall_cap_lup_rup_cornr))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_lup_rup))
+			end
+		elseif ww and wnw and not dnw and we and (fne or dne) then
+			if cornl and cornr then self:replace(i, j, self:getTile(nt.nwall_cap_lup_cornl_cornr))
+			elseif cornl then self:replace(i, j, self:getTile(nt.nwall_cap_lup_cornl))
+			elseif cornr then self:replace(i, j, self:getTile(nt.nwall_cap_lup_cornr))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_lup))
+			end
+		elseif ww and wnw and not dnw and fe and fse then 
+			if cornl then self:replace(i, j, self:getTile(nt.nwall_cap_lup_rdn_cornl))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_lup_rdn))
+			end
+		elseif ww and wnw and not dnw and fe and wse then
+			if cornl then self:replace(i, j, self:getTile(nt.nwall_cap_lup_rdn_se_cornl))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_lup_rdn_se))
+			end
+			
+		-- north walls with a cap that doesn't bend up or down on the left side; there's a floor or door to the northwest, so we don't want to do any curving:
+		elseif ww and (fnw or dnw) and we and wne and not dne then
+			if cornl and cornr then self:replace(i, j, self:getTile(nt.nwall_cap_rup_cornl_cornr))
+			elseif cornl then self:replace(i, j, self:getTile(nt.nwall_cap_rup_cornl))
+			elseif cornr then self:replace(i, j, self:getTile(nt.nwall_cap_rup_cornr))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_rup))
+			end
+		elseif ww and (fnw or dnw) and we and (fne or dne) then self:replace(i, j, self:getTile(nt.nwall)) 
+			if cornl and cornr then self:replace(i, j, self:getTile(nt.nwall_cornl_cornr))
+			elseif cornl then self:replace(i, j, self:getTile(nt.nwall_cornl))
+			elseif cornr then self:replace(i, j, self:getTile(nt.nwall_cornr))
+			else self:replace(i, j, self:getTile(nt.nwall))
+			end
+		elseif ww and (fnw or dnw) and fe and fse then 
+			if cornl then self:replace(i, j, self:getTile(nt.nwall_cap_rdn_cornl))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_rdn))
+			end
+		elseif ww and (fnw or dnw) and fe and wse then
+			if cornl then self:replace(i, j, self:getTile(nt.nwall_cap_rdn_se_cornl))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_rdn_se))
+			end		
+		
+		-- north walls whose cap bends down at the left side (because there's a floor to the west):
+		elseif fw and we and wne and not dne and fsw then 
+			if cornr then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rup_cornr))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rup))
+			end
+		elseif fw and we and wne and not dne and wsw then 
+			if cornr then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rup_sw_cornr))
+			else self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rup_sw))
+			end
+		elseif fw and we and (fne or dne) and fsw then
+			if cornr then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_cornr)) 
+			else self:replace(i, j, self:getTile(nt.nwall_cap_ldn)) 
+			end
+		elseif fw and we and (fne or dne) and wsw then
+			if cornr then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_sw_cornr)) 
+			else self:replace(i, j, self:getTile(nt.nwall_cap_ldn_sw)) 
+			end
+		
+		elseif fw and fe and fsw and fse then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rdn)) 
+		elseif fw and fe and wsw and fse then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rdn_sw)) 
+		elseif fw and fe and fsw and wse then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rdn_se)) 
+		elseif fw and fe and wsw and wse then self:replace(i, j, self:getTile(nt.nwall_cap_ldn_rdn_sw_se)) 
+		end
+	elseif wn and (fs or ds) then --(south walls... not north-south; those are later):
+		if fw and fe then self:replace(i, j, self:getTile(nt.swall_lup_rup)) --Sandstone_21
+		elseif fw and we and (fse or dse) then self:replace(i, j, self:getTile(nt.swall_lup)) 
+		elseif fw and we and wse then self:replace(i, j, self:getTile(nt.swall_lup_rdn)) 
+
+		elseif ww and (fsw or dsw) and fe then self:replace(i, j, self:getTile(nt.swall_rup)) 
+		elseif ww and we and (fsw or dsw) and (fse or dse) then self:replace(i, j, self:getTile(nt.swall)) 
+		elseif ww and (fsw or dsw) and we and wse and not dse then self:replace(i, j, self:getTile(nt.swall_rdn)) 
+		
+		elseif ww and wsw and not dsw and fe then self:replace(i, j, self:getTile(nt.swall_ldn_rup)) 
+		elseif ww and wsw and not dsw and we and (fse or dse) then self:replace(i, j, self:getTile(nt.swall_ldn)) 
+		elseif ww and wsw and not dsw and we and wse and not dse then self:replace(i, j, self:getTile(nt.swall_ldn_rdn)) 
+		end
+
+	elseif (fn or dn) and (fs or ds) then --(north-south walls):
+		if fw and fe then self:replace(i, j, self:getTile(nt.nswall_lup_rup)) 
+		
+		elseif fw and we and (fse or dse) and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_lup)) 
+		elseif fw and we and (fse or dse) and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_lup_cap_rup)) 
+		
+		elseif fw and we and wse and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_lup_rdn)) 
+		elseif fw and we and wse and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_lup_rdn_cap_rup)) 
+	 
+	 
+		elseif ww and (fsw or dsw) and fe and (fnw or dnw) then self:replace(i, j, self:getTile(nt.nswall_rup)) 
+		elseif ww and (fsw or dsw) and fe and wnw and not dnw then self:replace(i, j, self:getTile(nt.nswall_rup_cap_lup)) 
+		
+		elseif ww and we and (fsw or dsw) and (fse or dse) and (fnw or dnw) and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall)) 
+		elseif ww and we and (fsw or dsw) and (fse or dse) and wnw and not dnw and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_cap_lup)) 
+		elseif ww and we and (fsw or dsw) and (fse or dse) and (fnw or dnw) and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_cap_rup)) 
+		elseif ww and we and (fsw or dsw) and (fse or dse) and wnw and not dnw and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_cap_lup_rup)) 
+		
+		elseif ww and (fsw or dsw) and we and wse and not dse and (fnw or dnw) and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_rdn)) 
+		elseif ww and (fsw or dsw) and we and wse and not dse and wnw and not dnw and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_rdn_cap_lup)) 
+		elseif ww and (fsw or dsw) and we and wse and not dse and (fnw or dnw) and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_rdn_cap_rup)) 
+		elseif ww and (fsw or dsw) and we and wse and not dse and wnw and not dnw and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_rdn_cap_lup_rup)) 
+
+		
+		elseif ww and wsw and not dsw and fe then self:replace(i, j, self:getTile(nt.nswall_ldn_rup)) 
+		elseif ww and wsw and not dsw and fe and wnw and not dnw and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_ldn_rup_cap_lup)) 
+		
+		elseif ww and wsw and not dsw and we and (fse or dse) and (fnw or dnw) and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_ldn)) 
+		elseif ww and wsw and not dsw and we and (fse or dse) and wnw and not dnw and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_ldn_cap_lup)) 
+		elseif ww and wsw and not dsw and we and (fse or dse) and (fnw or dnw) and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_ldn_cap_rup)) 
+		elseif ww and wsw and not dsw and we and (fse or dse) and wnw and not dnw and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_ldn_cap_lup_rup)) 
+		
+		elseif ww and wsw and not dsw and we and wse and not dse and (fnw or dnw) and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_ldn_rdn)) 
+		elseif ww and wsw and not dsw and we and wse and not dse and wnw and not dnw and (fne or dne) then self:replace(i, j, self:getTile(nt.nswall_ldn_rdn_cap_lup)) 
+		elseif ww and wsw and not dsw and we and wse and not dse and (fnw or dnw) and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_ldn_rdn_cap_rup)) 
+		elseif ww and wsw and not dsw and we and wse and not dse and wnw and not dnw and wne and not dne then self:replace(i, j, self:getTile(nt.nswall_ldn_rdn_cap_lup_rup)) 
+		end
+
+	end
+
+end
+
+--- Make doors have a more elaborate pseudo 3D effect:
+function _M:niceTileDoor3dSus(level, i, j, g, nt)
+	local gn = level.map:checkEntity(i, j-1, Map.TERRAIN, "type") or "wall"
+	local gs = level.map:checkEntity(i, j+1, Map.TERRAIN, "type") or "wall"
+	local gw = level.map:checkEntity(i-1, j, Map.TERRAIN, "type") or "wall"
+	local ge = level.map:checkEntity(i+1, j, Map.TERRAIN, "type") or "wall"
+	local gse = level.map:checkEntity(i+1, j+1, Map.TERRAIN, "type") or "wall"
+	local gsw = level.map:checkEntity(i-1, j+1, Map.TERRAIN, "type") or "wall"
+	local gne = level.map:checkEntity(i+1, j-1, Map.TERRAIN, "type") or "wall"
+	local gnw = level.map:checkEntity(i-1, j-1, Map.TERRAIN, "type") or "wall"
+
+	local ws = gs == "wall"		--true if there is a wall to the south
+	local wn = gn == "wall"      --true if there is a wall to the north
+	local ww = gw == "wall"      --true if there is a wall to the west
+	local we = ge == "wall"      --true if there is a wall to the east
+	local wse = gse == "wall"    --true if there is a wall to the southeast
+	local wsw = gsw == "wall"    --true if there is a wall to the southwest
+	local wne = gne == "wall"	--true if there is a wall to the northeast
+	local wnw = gnw == "wall"	--true if there is a wall to the northwest
+
+	local fs = not ws       --true if there is a floor to the south
+	local fn = not wn       --true if there is a floor to the north
+	local fw = not ww       --true if there is a floor to the west
+	local fe = not we       --true if there is a floor to the east
+	local fse = not wse     --true if there is a floor to the southeast
+	local fsw = not wsw     --true if there is a floor to the southwest
+	local fne = not wne     --true if there is a floor to the northeast
+	local fnw = not wnw     --true if there is a floor to the northwest
+	
+	local dn = level.map:checkEntity(i, j-1, Map.TERRAIN, "is_door")
+	local ds = level.map:checkEntity(i, j+1, Map.TERRAIN, "is_door")
+	local dw = level.map:checkEntity(i-1, j, Map.TERRAIN, "is_door")
+	local de = level.map:checkEntity(i+1, j, Map.TERRAIN, "is_door")
+	local dse = level.map:checkEntity(i+1, j+1, Map.TERRAIN, "is_door")
+	local dsw = level.map:checkEntity(i-1, j+1, Map.TERRAIN, "is_door")
+
+	if ws and wn then 
+		if wsw and wse and wnw and wne then self:replace(i, j, self:getTile(nt.vert)) 
+		elseif wsw and wse and fnw and wne then self:replace(i, j, self:getTile(nt.vert_cap_lup)) 
+		elseif wsw and wse and wnw and fne then self:replace(i, j, self:getTile(nt.vert_cap_rup)) 
+		elseif wsw and wse and fnw and fne then self:replace(i, j, self:getTile(nt.vert_cap_lup_rup)) 
+		
+		elseif fsw and wse and wnw and wne then self:replace(i, j, self:getTile(nt.vert_ldn)) 
+		elseif fsw and wse and fnw and wne then self:replace(i, j, self:getTile(nt.vert_ldn_cap_lup)) 
+		elseif fsw and wse and wnw and fne then self:replace(i, j, self:getTile(nt.vert_ldn_cap_rup)) 
+		elseif fsw and wse and fnw and fne then self:replace(i, j, self:getTile(nt.vert_ldn_cap_lup_rup)) 
+		
+		elseif wsw and fse and wnw and wne then self:replace(i, j, self:getTile(nt.vert_rdn)) 
+		elseif wsw and fse and fnw and wne then self:replace(i, j, self:getTile(nt.vert_rdn_cap_lup)) 
+		elseif wsw and fse and wnw and fne then self:replace(i, j, self:getTile(nt.vert_rdn_cap_rup)) 
+		elseif wsw and fse and fnw and fne then self:replace(i, j, self:getTile(nt.vert_rdn_cap_lup_rup)) 
+		
+		elseif fsw and fse and wnw and wne then self:replace(i, j, self:getTile(nt.vert_ldn_rdn)) 
+		elseif fsw and fse and fnw and wne then self:replace(i, j, self:getTile(nt.vert_ldn_rdn_cap_lup)) 
+		elseif fsw and fse and wnw and fne then self:replace(i, j, self:getTile(nt.vert_ldn_rdn_cap_rup)) 
+		elseif fsw and fse and fnw and fne then self:replace(i, j, self:getTile(nt.vert_ldn_rdn_cap_lup_rup)) 
+		end
+	elseif ww and we then 
+		if (fnw or dnw) and (fne or dne) and fsw and fse then self:replace(i, j, self:getTile(nt.horiz))
+		elseif (fnw or dnw) and (fne or dne) and wsw and fse then self:replace(i, j, self:getTile(nt.horiz_ldn))
+		elseif (fnw or dnw) and (fne or dne) and fsw and wse then self:replace(i, j, self:getTile(nt.horiz_rdn))
+		elseif (fnw or dnw) and (fne or dne) and wsw and wse then self:replace(i, j, self:getTile(nt.horiz_ldn_rdn))
+		
+		elseif wnw and (fne or dne) and fsw and fse then self:replace(i, j, self:getTile(nt.horiz_cap_lup))
+		elseif wnw and (fne or dne) and wsw and fse then self:replace(i, j, self:getTile(nt.horiz_ldn_cap_lup))
+		elseif wnw and (fne or dne) and fsw and wse then self:replace(i, j, self:getTile(nt.horiz_rdn_cap_lup))
+		elseif wnw and (fne or dne) and wsw and wse then self:replace(i, j, self:getTile(nt.horiz_ldn_rdn_cap_lup))
+		
+		elseif (fnw or dnw) and wne and fsw and fse then self:replace(i, j, self:getTile(nt.horiz_cap_rup))
+		elseif (fnw or dnw) and wne and wsw and fse then self:replace(i, j, self:getTile(nt.horiz_ldn_cap_rup))
+		elseif (fnw or dnw) and wne and fsw and wse then self:replace(i, j, self:getTile(nt.horiz_rdn_cap_rup))
+		elseif (fnw or dnw) and wne and wsw and wse then self:replace(i, j, self:getTile(nt.horiz_ldn_rdn_cap_rup))
+		
+		elseif wnw and wne and fsw and fse then self:replace(i, j, self:getTile(nt.horiz_cap_lup_rup))
+		elseif wnw and wne and wsw and fse then self:replace(i, j, self:getTile(nt.horiz_ldn_cap_lup_rup))
+		elseif wnw and wne and fsw and wse then self:replace(i, j, self:getTile(nt.horiz_rdn_cap_lup_rup))
+		elseif wnw and wne and wsw and wse then self:replace(i, j, self:getTile(nt.horiz_ldn_rdn_cap_lup_rup))
+		end
+	elseif nt.default == "north_south" then self:replace(i, j, self:getTile(nt.north_south)) print("niceTileDoor3dUnearth case 3")
+	elseif nt.default == "west_east" then self:replace(i, j, self:getTile(nt.west_east)) print("niceTileDoor3dUnearth case 4")
+	
+	end
+end
+
+
 function _M:niceTileSingleWall(level, i, j, g, nt)
 	local type = nt.type
 	local kind = nt.use_subtype and "subtype" or "type"
@@ -360,10 +642,16 @@ function _M:niceTileDoor3d(level, i, j, g, nt)
 	local gs = level.map:checkEntity(i, j+1, Map.TERRAIN, "type") or "wall"
 	local gw = level.map:checkEntity(i-1, j, Map.TERRAIN, "type") or "wall"
 	local ge = level.map:checkEntity(i+1, j, Map.TERRAIN, "type") or "wall"
-	if gs == "wall" and gn == "wall" then self:replace(i, j, self:getTile(nt.north_south))
-	elseif gw == "wall" and ge == "wall" then self:replace(i, j, self:getTile(nt.west_east))
-	elseif nt.default == "north_south" then self:replace(i, j, self:getTile(nt.north_south))
-	elseif nt.default == "west_east" then self:replace(i, j, self:getTile(nt.west_east))
+	--print("niceTileDoor3d report:")
+	--print(" gn:", tostring(gn))
+	--print(" gs:", tostring(gs))
+	--print(" gw:", tostring(gw))
+	--print(" ge:", tostring(ge))
+	if gs == "wall" and gn == "wall" then self:replace(i, j, self:getTile(nt.north_south)) --print(" case 1")
+	elseif gw == "wall" and ge == "wall" then self:replace(i, j, self:getTile(nt.west_east)) --print(" case 2")
+	elseif nt.default == "north_south" then self:replace(i, j, self:getTile(nt.north_south)) --print(" case 3")
+	elseif nt.default == "west_east" then self:replace(i, j, self:getTile(nt.west_east)) --print(" case 4")
+	
 	end
 end
 

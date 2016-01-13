@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -110,6 +110,14 @@ function _M:setFactionReaction(f1, f2, reaction, mutual)
 	end
 
 	self:triggerHook{"Faction:setReaction", f1=f1, f2=f2, reaction=reaction, mutual=mutual}
+end
+
+--- Copies all the reactions from/to a faction onto a new one
+function _M:copyReactions(to, from)
+	table.merge(self.factions[to].reaction, self.factions[from].reaction)
+	for f, data in pairs(self.factions) do if f ~= to and f ~= from then
+		if data.reaction[from] then data.reaction[to] = data.reaction[from] end
+	end end
 end
 
 -- Add a few default factions

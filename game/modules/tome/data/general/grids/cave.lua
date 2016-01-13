@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -49,6 +49,38 @@ newEntity{
 --	nice_tiler = { method="replace", base={"CAVEWALL", 20, 1, 6}},
 }
 --for i = 1, 6 do newEntity{ base = "CAVEWALL", define_as = "CAVEWALL"..i, image = "terrain/cave/cavewall_5_"..i..".png"} end
+
+newEntity{
+	define_as = "HARDCAVEWALL",
+	type = "wall", subtype = "cave",
+	name = "cave walls", image = "terrain/cave/cavewall_5_1.png",
+	display = '#', color={r=203,g=189,b=72}, back_color={r=93,g=79,b=22},
+	always_remember = true,
+	can_pass = {pass_wall=1},
+	does_block_move = true,
+	block_sight = true,
+	block_sense = true,
+	block_esp = true,
+	air_level = -10,
+	nice_editer = cave_wall_editer,
+--	nice_tiler = { method="replace", base={"CAVEWALL", 20, 1, 6}},
+}
+--for i = 1, 6 do newEntity{ base = "CAVEWALL", define_as = "CAVEWALL"..i, image = "terrain/cave/cavewall_5_"..i..".png"} end
+
+newEntity{
+	define_as = "CAVE_ROCK_VAULT",
+	type = "wall", subtype = "grass",
+	name = "huge loose rock", image = "terrain/cave/cave_floor_1_01.png", add_mos = {{image="terrain/huge_rock.png"}},
+	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	block_sense = true,
+	block_esp = true,
+	door_player_check = "This rock is loose, you think you can move it away.",
+	door_opened = "CAVEFLOOR",
+	dig = "CAVEFLOOR",
+}
 
 -----------------------------------------
 -- Cavy exits

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ end
 --- Restock all stores
 function _M:storesRestock()
 	self.stores_restock = self.stores_restock + 1
+	game.log("#AQUAMARINE#Most stores should have new stock now.")
 	print("[STORES] restocking")
 end
 
@@ -2268,7 +2269,7 @@ function _M:canEventGridRadius(level, x, y, radius, min)
 	end end
 
 	if #list < min then return false
-	else return list end
+	else list.center_x, list.center_y = x, y return list end
 end
 
 function _M:findEventGrid(level, checker)
