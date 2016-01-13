@@ -32,7 +32,7 @@ newEntity{
 	show_tooltip = true,
 	desc = [[The rift leads to Maj'Eyal.]],
 	change_level = 1,
-	change_zone = "wilderness",
+	change_zone = "derthfields",
 }
 
 local ice_editer = {method="borders_def", def="ice"}
