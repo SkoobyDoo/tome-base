@@ -234,6 +234,81 @@ function _M:yesnocancelLongPopup(title, text, w, fct, yes_text, no_text, cancel_
 	return d
 end
 
+--- Requests a simple multiple-choice dialog, with a button for each choice
+-- @param title = text at top of dialog box
+-- @param text = message to display inside the box
+-- @param fct = function(choice number) to handle the button pressed
+-- @param button_list = ordered table of text strings assigned to each choice
+-- @param no_leave set true to disable escape
+-- @param escape = the default choice to select if escape is pressed
+function _M:multiButtonPopup(title, text, fct, button_list, no_leave, escape)
+	escape = escape or 1
+	-- compute display sizes
+	local max_w, max_h = game.w*.75, game.h*.5
+	-- use tex params to place text
+	local text_w, text_h = self.font:size(text)
+	local tex, text_lines, text_width = self.font:draw(text, max_w*.9, 255, 255, 255, false, true)
+	local text_height = text_lines*text_h+5
+	local button_spacing = 10
+	
+	local d = new(title, 1, 1)
+
+	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) fct(escape) end) end
+
+	local num_buttons = math.min(#button_list, 50)
+	local buttons, buttons_width, button_height = {}, 0, 0
+	-- build list of buttons
+	for i = 1, num_buttons do
+		local choice = i
+		local b = require("engine.ui.Button").new{text=button_list[i],
+			fct=function()
+				print("[multiButtonPopup] button pressed:", i, button_list[i])
+				game:unregisterDialog(d)
+				fct(choice) 
+			end}
+		buttons[i] = b
+		buttons_width = buttons_width + b.w
+		button_height = math.max(button_height, b.h)
+	end
+
+	local rows_threshold = (buttons_width + (num_buttons - 1)*button_spacing)*1.1/math.ceil((buttons_width + (num_buttons - 1)*button_spacing)/max_w)
+	local rows = {{buttons_width=0}}
+	local left, nrow = 5, #rows
+	local max_buttons_width = 0
+	-- assign buttons to rows in a balanced arrangement
+	for i = 1, num_buttons do
+		left = left + buttons[i].w + button_spacing
+		buttons_width = buttons_width - buttons[i].w
+		if left >= max_w or left > rows_threshold then -- add a row
+			rows[nrow].left = left
+			left = 5 + buttons[i].w + button_spacing
+			table.insert(rows, {buttons_width=0})
+			nrow = #rows
+		end
+		table.insert(rows[nrow], buttons[i])
+		rows[nrow].buttons_width = rows[nrow].buttons_width + buttons[i].w
+		max_buttons_width = math.max(max_buttons_width, rows[nrow].buttons_width+button_spacing*(#rows[nrow]-1))
+	end
+	local width = math.min(max_w, math.max(text_width + 20, max_buttons_width + 20))
+	local height = math.min(max_h, text_height + 10 + nrow*button_height)
+	local uis = {
+		{left = 3, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text}}
+	}
+	-- place the buttons in the dialog
+	for i, row in ipairs(rows) do
+		left = 5 + (width - row.buttons_width - (#row - 1)*button_spacing)/2
+		for j, button in ipairs(row) do
+			uis[#uis+1] = {left=left, top=text_height+0+i*button_height, ui=button}
+			left = left + button.w + button_spacing
+		end
+	end
+	d:loadUI(uis)
+	d:setFocus(escape)
+	d:setupUI(true, true)
+	game:registerDialog(d)
+	return d
+end
+
 function _M:webPopup(url)
 	local d = new(url, game.w * 0.9, game.h * 0.9)
 	local w = require("engine.ui.WebView").new{width=d.iw, height=d.ih, url=url, allow_downloads={addons=true, modules=true}}
