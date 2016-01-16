@@ -1791,6 +1791,13 @@ function _M:displayHotkeys(scale, bx, by)
 						local d = require("mod.dialogs.UseTalents").new(game.player)
 						d:use({talent=hk[2], name=game.player:getTalentFromId(hk[2]).name}, "right")
 						return true
+					elseif button == "right" and hk and hk[1] == "inventory" then
+						Dialog:yesnoPopup("Unbind "..hk[2], "Remove this object from your hotkeys?", function(ret) if ret then
+							for i = 1, 12 * game.player.nb_hotkey_pages do
+								if game.player.hotkey[i] and game.player.hotkey[i][1] == "inventory" and game.player.hotkey[i][2] == hk[2] then game.player.hotkey[i] = nil end
+							end
+						end end)
+						return true
 					end
 				end
 			)
