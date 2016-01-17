@@ -1493,7 +1493,7 @@ function _M:teleportRandom(x, y, dist, min_dist)
 	
 	-- Special teleport handlers
 	if game.level.data.no_teleport_south and y + dist > self.y then
-		y = self.y - dist
+		y = self.y - math.ceil(dist)
 	end
 	
 	-- For precise teleports look for a free grid first
