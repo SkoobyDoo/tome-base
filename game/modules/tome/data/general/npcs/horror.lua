@@ -813,7 +813,7 @@ newEntity{ base = "BASE_NPC_HORROR", define_as = "DREAM_SEED",
 
 newEntity{ base = "BASE_NPC_HORROR",
 	name = "maelstrom", color=colors.CADET_BLUE,
-	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/elemental_air_ultimate_gwelgoroth.png", display_h=2, display_y=-1}}},
+	resolvers.nice_tile{tall=1},
 	desc = [[This powerful vortex of ice and lightning somehow gives you the impression of claws, teeth and intense hunger...]],
 	level_range = {30, nil}, exp_worth = 1,
 	rarity = 30,  -- Very rare; should feel almost like uniques though they aren't
