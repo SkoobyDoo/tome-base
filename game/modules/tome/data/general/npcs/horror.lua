@@ -810,6 +810,57 @@ newEntity{ base = "BASE_NPC_HORROR", define_as = "DREAM_SEED",
 		end
 	end,
 }
+
+newEntity{ base = "BASE_NPC_HORROR",
+	name = "maelstrom", color=colors.CADET_BLUE,
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/elemental_air_ultimate_gwelgoroth.png", display_h=2, display_y=-1}}},
+	desc = [[This powerful vortex of ice and lightning somehow gives you the impression of claws, teeth and intense hunger...]],
+	level_range = {30, nil}, exp_worth = 1,
+	rarity = 30,  -- Very rare; should feel almost like uniques though they aren't
+	rank = 3,
+	max_life = resolvers.rngavg(70,80),
+	autolevel = "caster",
+	mana_rating = 10,
+	mana_regen = 10,
+	equilibrium_regen = -1,
+	combat_armor = 0, combat_def = 20,
+	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 15), 1, 1.2), atk=15, apr=15, dammod={mag=0.8}, damtype=DamageType.LIGHTNING },
+	on_melee_hit = { [DamageType.COLD] = resolvers.mbonus(20, 10), [DamageType.LIGHTNING] = resolvers.mbonus(20, 10), },
+
+	ai = "tactical",
+	
+	resists = { [DamageType.PHYSICAL] = 10, [DamageType.COLD] = 100, [DamageType.LIGHTNING] = 100, [DamageType.LIGHT] = -30, },
+	damage_affinity = { [DamageType.COLD] = 50, [DamageType.LIGHTNING] = 50 },
+
+	no_breath = 1,
+	poison_immune = 1,
+	cut_immune = 1,
+	disease_immune = 1,
+	stun_immune = 1,
+	blind_immune = 1,
+	knockback_immune = 1,
+	confusion_immune = 1,
+	levitation = 1,
+	iceblock_pierce = 1,
+
+	resolvers.talents{
+		[Talents.T_DRENCH]={base=3, every=7},
+		[Talents.T_SHATTER]={base=3, every=7},
+		[Talents.T_ICE_CLAW]={base=3, every=7},
+		[Talents.T_HURRICANE]={base=3, every=7},
+		[Talents.T_THUNDERSTORM]={base=3, every=7},
+		[Talents.T_FROZEN_GROUND]={base=3, every=7},
+		[Talents.T_ICE_STORM]={base=3, every=7},
+		[Talents.T_LIVING_LIGHTNING]={base=3, every=7},
+	},
+	resolvers.sustains_at_birth(),
+	resolvers.genericlast(function(e)
+		e:addShaderAura("body_of_ice", "crystalineaura", {}, "particles_images/spikes.png")
+		e.snowparticle = e:addParticles(engine.Particles.new("snowfall", 1))
+	end),
+}
+
+
 ------------------------------------------------------------------------
 -- Uniques
 ------------------------------------------------------------------------
