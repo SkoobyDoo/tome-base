@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+unique = "items-vault" -- no more than one per level
+
 return {
 [[#!!!!#!!!!#]],
 [[!.........!]],

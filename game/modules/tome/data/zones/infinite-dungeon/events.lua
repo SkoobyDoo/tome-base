@@ -21,6 +21,9 @@ return { one_per_level=true,
 	{group="majeyal-generic", percent_factor=0.5},
 	{name="cultists", percent=5},
 
+	{name="sub-vault", percent=100},
+	{name="sub-vault", percent=100},
+	
 	{name="icy-ground", minor=true, percent=20},
 	{name="font-life", minor=true, percent=20},
 	{name="whistling-vortex", minor=true, percent=20},

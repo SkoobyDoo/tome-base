@@ -19,6 +19,17 @@
 
 setStatusAll{no_teleport=true}
 
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 5
+end)
+specialList("actor", {
+	"/data/general/npcs/orc.lua",
+}, true)
+specialList("trap", {
+	"/data/general/traps/complex.lua",
+	"/data/general/traps/elemental.lua",
+}, true)
+
 defineTile(' ', "FLOOR")
 defineTile('!', "DOOR_VAULT", nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
 defineTile('+', "DOOR")
@@ -28,7 +39,7 @@ defineTile('$', "FLOOR", {random_filter={add_levels=15, tome_mod="gvault"}})
 defineTile('m', "FLOOR", nil, {random_filter={add_levels=20}})
 defineTile('o', "FLOOR", nil, "HILL_ORC_ARCHER")
 
-startx = 22
+startx = 21
 starty = 7
 
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}

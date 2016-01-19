@@ -186,12 +186,15 @@ function _M:generate(lev, old_lev)
 
 
 	local nb_room = util.getval(self.data.nb_rooms or 0)
-	local rooms = {}
+	local rooms = self.map.room_map.rooms
 	local end_room
 	local axis = "x"
 	local direction = 1
 	local ending
 
+if config.settings.cheat then game.log("#LIGHT_RED#====[Forest] generating map with %s rooms (current level:%s)", nb_room, resolvers.current_level) end -- debugging
+
+	print("[Forest] generating map:", nb_room, "rooms")
 	-- get the axis and direction
 	if self.data.edge_entrances then
 		if self.data.edge_entrances[1] == 2 or self.data.edge_entrances[1] == 8 then axis = "y"
@@ -224,15 +227,14 @@ function _M:generate(lev, old_lev)
 			return far_enough
 		end)
 		if r then
-			rooms[#rooms+1] = r
 			end_room = r
 			print("Successfully loaded the end room")
 		else 
-			self.force_recreate = true return
+			self.level.force_recreate = "end_room "..self.end_road_room return
 		end
 	end
 
-	-- Those we are required to have
+	-- Place rooms we are required to have
 	if #self.required_rooms > 0 then
 		for i, rroom in ipairs(self.required_rooms) do
 			local ok = false
@@ -240,17 +242,16 @@ function _M:generate(lev, old_lev)
 				if rng.percent(rroom.chance_room) then rroom = rroom[1] ok = true end
 			else ok = true
 			end
-
 			if ok then
 				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
-				if r then rooms[#rooms+1] = r
-				else self.force_recreate = true return end
-				nb_room = nb_room - 1
+				if r then nb_room = nb_room - 1
+				else self.level.force_recreate = "required_room "..tostring(rroom) return end
 			end
 		end
 	end
-
-	while nb_room > 0 do
+	-- Place normal, random rooms
+	local tries = nb_room * 1.5 -- allow extra attempts for difficult to place rooms
+	while tries > 0 and nb_room > 0 do
 		local rroom
 		while true do
 			rroom = self.rooms[rng.range(1, #self.rooms)]
@@ -262,10 +263,14 @@ function _M:generate(lev, old_lev)
 		end
 
 		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
-		if r then rooms[#rooms+1] = r end
-		nb_room = nb_room - 1
+		if r then nb_room = nb_room - 1 end
+		tries = tries - 1
 	end
 
+-- debugging
+if config.settings.cheat then game.log("#LIGHT_RED#====[Forest] placed %d rooms", #rooms) end
+	print("[Forest] placed", #rooms, "rooms")
+	
 	local ux, uy, dx, dy
 	if self.data.edge_entrances then
 		ux, uy, dx, dy, spots = self:makeStairsSides(lev, old_lev, self.data.edge_entrances, spots)
@@ -273,8 +278,29 @@ function _M:generate(lev, old_lev)
 		ux, uy, dx, dy, spots = self:makeStairsInside(lev, old_lev, spots)
 	end
 
+	-- Tunnel between rooms to make sure they are not randomly blocked
+	if not self.data.no_tunnels then
+		local rs, re, tx, ty = 1, 2
+		while rs <= #rooms do
+			if rooms[rs].room.no_tunnels then -- don't tunnel to rooms marked no_tunnels
+				rs = rs + 1
+			else
+				re = rs
+				repeat
+					re = re%#rooms + 1
+				until not rooms[re].room.no_tunnels or re <= rs
+				if not rooms[re].room.no_tunnels then
+					print("[Forest]__tunneling: room", rooms[rs].id, "(", rooms[rs].cx, rooms[rs].cy, ") to room", rooms[re].id, "(",rooms[re].cx, rooms[re].cy, ")")
+					self:tunnel(rooms[rs].cx, rooms[rs].cy, rooms[re].cx, rooms[re].cy, rooms[re].id)
+				end
+				if re <= rs then break end
+				rs = re
+			end
+		end
+	end
+	
 	-- Create a road between the stairs via "waypoints" on the map
-	-- The rule is that no waypoint may further away (in terms of the directional axis) than the previous point
+	-- The rule is that no waypoint may be further away (in terms of the directional axis) than the previous point
 	if self.add_road then
 		if self.end_road then
 			ending = true
@@ -335,11 +361,11 @@ function _M:generate(lev, old_lev)
 			local s = possible_waypoints[i]
 			print ("Possible waypoint",i,s.x,s.y)
 			reason = self:checkValid(s,waypoints[#waypoints],axis,start,finish)
-			if not self.map.room_map[s.x][s.y].special and reason == true then
+			if not (self.map.room_map[s.x][s.y].special or self.map.room_map[s.x][s.y].border) and reason == true then
 				waypoints[#waypoints+1] = {x=s.x,y=s.y}
 				print("Waypoint",i,s.x,s.y,"accepted")
 			else
-				print("Waypoint",i,s.x,s.y,"rejected: ",reason)
+				print("Waypoint",i,s.x,s.y,"rejected: ", reason == true and "room" or reason)
 			end
 		end
 

@@ -17,8 +17,17 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, no_vaulted=true}
-
+setStatusAll{no_teleport=true,  no_vaulted=true, room_map = {can_open=true}}
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 15 and zone.grid_list.__loaded_files["/data/general/grids/water.lua"] and zone.grid_list.__loaded_files["/data/general/grids/forest.lua"] and zone.grid_list.GRASS_DARK1
+end)
+specialList("actor", {
+	"/data/general/npcs/plant.lua",
+})
+specialList("trap", {
+	"/data/general/traps/natural_forest.lua",
+})
+border = 0
 defineTile(',', "GRASS")
 defineTile(';', "GRASS_DARK1")
 defineTile('~', "DEEP_WATER")

@@ -57,6 +57,14 @@ function _M:getMapFile(file)
 	return "/data/maps/"..file..".lua"
 end
 
+-- create a loader to interpret the map file
+-- This sets the environment in which the file is interpreted and defines additional functions available within the map definition
+-- Some variables (unique, border, no_tunnels, roomcheck, prefer_location, onplace, map_data) assigned in the definition are automatically passed through to the map object (for rooms)
+-- in addition, the rotates table, if defined, lists possible rotations for the map (applied before grid assignment)
+--		"default" -> no rotation
+--		"flipx", "flipy" -> flip along the x or y axes respectively
+--		"90", "180", "270" -> rotate the room (counter-clockwise) by the corresponding number of degrees
+--	see RoomsLoader:loadRoom, tmxloadRoom)
 function _M:getLoader(t)
 	return {
 		level = self.level,
@@ -67,15 +75,20 @@ function _M:getLoader(t)
 		trap_class = self.zone.trap_class,
 		npc_class = self.zone.npc_class,
 		object_class = self.zone.object_class,
-		specialList = function(kind, files)
+		specialList = function(kind, files, add_zone_lists) -- specify entity lists to use (add_zone_lists == add to current list)
+			local elist
 			if kind == "terrain" then
-				self.grid_list = self.zone.grid_class:loadList(files)
+				if add_zone_lists then elist = table.clone(self.zone.grid_list) end
+				self.grid_list = self.zone.grid_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			elseif kind == "trap" then
-				self.trap_list = self.zone.trap_class:loadList(files)
+				if add_zone_lists then elist = table.clone(self.zone.trap_list) end
+				self.trap_list = self.zone.trap_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			elseif kind == "object" then
-				self.object_list = self.zone.object_class:loadList(files)
+				if add_zone_lists then elist = table.clone(self.zone.object_list) end
+				self.object_list = self.zone.object_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			elseif kind == "actor" then
-				self.npc_list = self.zone.npc_class:loadList(files)
+				if add_zone_lists then elist = table.clone(self.zone.npc_list) end
+				self.npc_list = self.zone.npc_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			else
 				error("kind unsupported")
 			end
@@ -104,6 +117,9 @@ function _M:getLoader(t)
 			self.level:setEntitiesList(type, list, true)
 		end,
 		setStatusAll = function(s) self.status_all = s end,
+		mapData = function(params) table.merge(self, params) end, -- add data to the map definition (for use with map generators)
+		roomCheck = function(testfn) self.roomcheck = testfn end,-- for rooms, set a function(room, zone, level, map) to test if the room should be added (true) to the map
+		onPlace = function(onplace) self.onplace = onplace end, -- for rooms, set a function(room, zone, level, map, placement_data) to be called after the room has been added to the map(see RoomsLoader:roomAlloc)
 		addData = function(t)
 			table.merge(self.level.data, t, true)
 		end,
@@ -127,7 +143,7 @@ function _M:getLoader(t)
 		updateZones = function(type, subtype, update)
 			for i, z in ipairs(self.level.custom_zones or {}) do update(z) end
 		end,
-		-- This is the module's responsability to invoke zone:runPostGeneration(level)
+		-- It's the module's responsibility to invoke zone:runPostGeneration(level), which will call fct(zone, level, level.map) after the level is generated
 		onGenerated = function(fct)
 			self.level.post_gen_callbacks = self.level.post_gen_callbacks or {}
 			self.level.post_gen_callbacks[#self.level.post_gen_callbacks+1] = fct
@@ -144,6 +160,19 @@ function _M:loadLuaInEnv(g, file, code)
 	return f()
 end
 
+-- load a map definition from a tmx file into the map
+-- @param file the file to load the definition from
+-- @returns true if successful
+-- Some lua functions are available within the map file (see Static:getLoader)
+-- Some properties set are passed through to the map object returned by the generator function:
+-- map_data: a table of properties to merge into the map (performed first)
+-- (for rooms):
+-- 	unique: a tag (true is converted to the room name) marking the room as unique, two rooms with the same unique tag will not be generated on the same map
+-- 	border: the width (in grids, default 0) of clear map area around the room in which no other rooms are allowed to be placed
+--	prefer_location: a function(map) returning the preferred map coordinates to place a room
+-- 	no_tunnels: set true to prevent automatically connecting tunnels to the room (handled by the map generator)
+-- 	roomcheck: a function(room, zone, level, map) checked (if defined) before the room is added to the map (return true to add)
+-- 	onplace: a function(room, zone, level, map, placement_data) called after the room has been added to the map (see RoomsLoader:roomPlace)
 function _M:tmxLoad(file)
 	file = file:gsub("%.lua$", ".tmx")
 	if not fs.exists(file) then return end
@@ -161,20 +190,30 @@ function _M:tmxLoad(file)
 	local tw, th = tonumber(map.attr.tilewidth), tonumber(map.attr.tileheight)
 	local chars = {}
 	local start_tid, end_tid = nil, nil
+	if mapprops.map_data then
+		local params = self:loadLuaInEnv(g, nil, "return "..mapprops.map_data)
+		table.merge(self, params, true)
+	end
 	for _, tileset in ipairs(map:findAll("tileset")) do
 		if tileset:findOne("properties") then for name, value in pairs(tileset:findOne("properties"):findAllAttrs("property", "name", "value")) do
+			-- setting .add_zone_lists = true in the file table causes the specified entity lists to be merged into a clone of the zone list
+			local elist
 			if name == "load_terrains" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.grid_class:loadList(list, nil, self.grid_list, nil, self.grid_list.__loaded_files)
+				if list.add_zone_lists then elist = table.clone(self.zone.grid_list) end
+				self.grid_list = self.zone.grid_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			elseif name == "load_traps" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.trap_class:loadList(list, nil, self.trap_list, nil, self.trap_list.__loaded_files)
+				if list.add_zone_lists then elist = table.clone(self.zone.trap_list) end
+				self.trap_list = self.zone.trap_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			elseif name == "load_objects" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.object_class:loadList(list, nil, self.object_list, nil, self.object_list.__loaded_files)
+				if list.add_zone_lists then elist = table.clone(self.zone.object_list) end
+				self.object_list = self.zone.object_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			elseif name == "load_actors" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				self.zone.npc_class:loadList(list, nil, self.npc_list, nil, self.npc_list.__loaded_files)
+				if list.add_zone_lists then elist = table.clone(self.zone.npc_list) end
+				self.npc_list = self.zone.npc_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			end
 		end end
 
@@ -203,8 +242,8 @@ function _M:tmxLoad(file)
 	end
 
 	local rotate = "default"
-	if mapprops.rotate then
-		rotate = self:loadLuaInEnv(g, nil, "return "..mapprops.rotate) or mapprops.rotate
+	if mapprops.rotates then
+		rotate = util.getval(self:loadLuaInEnv(g, nil, "return "..mapprops.rotates) or mapprops.rotates)
 	end
 
 	if mapprops.status_all then
@@ -219,6 +258,20 @@ function _M:tmxLoad(file)
 		self:loadLuaInEnv(g, nil, "return "..mapprops.lua)
 	end
 
+	-- copy certain variables from the map file
+	if mapprops.roomcheck then
+		self.roomcheck = self:loadLuaInEnv(g, nil, "return "..mapprops.roomcheck) 
+	end
+	self.unique = mapprops.unique
+	self.no_tunnels = mapprops.no_tunnels
+	self.border = mapprops.border and tonumber(mapprops.border)
+	if mapprops.prefer_location then
+		self.prefer_location = self:loadLuaInEnv(g, nil, "return "..mapprops.prefer_location) 
+	end
+	if mapprops.onplace then
+		self.onplace = self:loadLuaInEnv(g, nil, "return "..mapprops.onplace) 
+	end
+	
 	local m = { w=w, h=h }
 
 	local function rotate_coords(i, j)
@@ -344,7 +397,7 @@ function _M:tmxLoad(file)
 	elseif rotate == "flipy" then
 		if not m.start_rotated then m.starty = m.h - m.starty - 1 end
 		if not m.end_rotated then m.endy   = m.h - m.endy - 1 end
-	elseif rotate == "90" then
+	elseif rotate == "90" then -- counter-clockwise rotation
 		if not m.start_rotated then m.startx, m.starty = m.starty, m.w - m.startx - 1 end
 		if not m.end_rotated then m.endx,   m.endy   = m.endy,   m.w - m.endx   - 1 end
 		m.w, m.h = m.h, m.w
@@ -356,11 +409,24 @@ function _M:tmxLoad(file)
 		if not m.end_rotated then m.endx,   m.endy   = m.h - m.endy   - 1, m.endx end
 		m.w, m.h = m.h, m.w
 	end
-
-	print("[STATIC TMX MAP] size", m.w, m.h)
+	self.rotate = rotate
+	print("[STATIC TMX MAP] size", m.w, m.h, "rotate:", rotate)
 	return true
 end
 
+-- load a map from a lua file
+-- @param file the file to load the definition from
+-- attempts to load the file in tmx format if possible (see Static:tmxLoad)
+-- Some lua functions are available within the map file (see Static:getLoader)
+-- Some properties set are passed through to the map object returned by the generator function:
+-- map_data: a table of properties to merge into the map object (performed first)
+-- (for rooms):
+-- 	unique: a tag (true is converted to the room name) marking the room as unique, two rooms with the same unique tag will not be generated on the same map
+-- 	border: the size (in grids, default 0) of a border zone around the room in which no other rooms are allowed to be placed
+--	prefer_location: a function(map) returning the preferred map coordinates to place a room
+-- 	no_tunnels: set true to prevent automatically connecting tunnels to the room (handled by the map generator)
+-- 	roomcheck: a function(room, zone, level, map) checked (if defined) before the room is added to the map (return true to add)
+-- 	onplace: a function(room, zone, level, map, placement_data) called after the room has been added to the map (see RoomsLoader:roomPlace)
 function _M:loadMap(file)
 	local t = {}
 
@@ -370,9 +436,21 @@ function _M:loadMap(file)
 	print("Static generator using file", file)
 	local g = self:getLoader(t)
 	local ret, err = self:loadLuaInEnv(g, file)
-	if not ret and err then error(err) end
+	if not ret then 
+		if err then error(err) end
+		ret = {[[.]]}
+	end
 	if type(ret) == "string" then ret = ret:split("\n") end
 
+	-- copy certain variables from the map file
+	self.unique = g.unique
+	self.border = g.border
+	self.prefer_location = self.prefer_location or g.prefer_location
+	self.onplace = self.onplace or g.onplace
+	self.roomcheck = self.roomcheck or g.roomcheck
+	self.no_tunnels = self.no_tunnels or g.no_tunnels
+	if g.map_data then table.merge(self, g.map_data, true) end
+	
 	local m = { w=#(ret[1]), h=#ret }
 
 	local rotate = util.getval(g.rotates or "default")
@@ -407,47 +485,46 @@ function _M:loadMap(file)
 		end
 	end
 
-	m.startx = g.startx or math.floor(m.w / 2)
-	m.starty = g.starty or math.floor(m.h / 2)
-	m.endx = g.endx or math.floor(m.w / 2)
-	m.endy = g.endy or math.floor(m.h / 2)
+	m.startx = util.bound(g.startx or math.floor(m.w / 2), 0, m.w-1)
+	m.starty = util.bound(g.starty or math.floor(m.h / 2), 0, m.h-1)
+	m.endx = util.bound(g.endx or math.floor(m.w / 2), 0, m.w-1)
+	m.endy = util.bound(g.endy or math.floor(m.h / 2), 0, m.h-1)
 
 	if rotate == "flipx" then
-		m.startx = m.w - m.startx + 1
-		m.endx   = m.w - m.endx   + 1
+		m.startx = m.w - m.startx - 1
+		m.endx   = m.w - m.endx - 1
 	elseif rotate == "flipy" then
-		m.starty = m.h - m.starty + 1
-		m.endy   = m.h - m.endy   + 1
-	elseif rotate == "90" then
-		m.startx, m.starty = m.starty, m.w - m.startx + 1
-		m.endx,   m.endy   = m.endy,   m.w - m.endx   + 1
+		m.starty = m.h - m.starty - 1
+		m.endy   = m.h - m.endy - 1
+	elseif rotate == "90" then --counter-clockwise rotation
+		m.startx, m.starty = m.starty, m.w - m.startx - 1
+		m.endx, m.endy = m.endy, m.w - m.endx - 1
 		m.w, m.h = m.h, m.w
 	elseif rotate == "180" then
-		m.startx, m.starty = m.w - m.startx + 1, m.h - m.starty + 1
-		m.endx,   m.endy   = m.w - m.endx   + 1, m.h - m.endy   + 1
+		m.startx, m.starty = m.w - m.startx - 1, m.h - m.starty - 1
+		m.endx, m.endy = m.w - m.endx - 1, m.h - m.endy - 1
 	elseif rotate == "270" then
-		m.startx, m.starty = m.h - m.starty + 1, m.startx
-		m.endx,   m.endy   = m.h - m.endy   + 1, m.endx
+		m.startx, m.starty = m.h - m.starty - 1, m.startx
+		m.endx, m.endy = m.h - m.endy - 1, m.endx
 		m.w, m.h = m.h, m.w
 	end
-
 	self.gen_map = m
 	self.tiles = t
-
+	self.rotate = rotate
 	self.map.w = m.w
 	self.map.h = m.h
-	print("[STATIC MAP] size", m.w, m.h)
+	print("[STATIC MAP] size", m.w, m.h, "rotate:", rotate)
 end
 
 function _M:resolve(typ, c)
 	local res
 	if typ then
-		if not self.tiles[c] or not self.tiles[c][typ] then return end
-		res = self.tiles[c][typ]
+		res = self.tiles[c] and self.tiles[c][typ]
+		res = type(res) == "string" and self.data[res] or res
 	else
-		if not self.tiles[c] then return end
 		res = self.tiles[c]
 	end
+	if not res then return end
 	if type(res) == "function" then
 		return self.grid_list[res()]
 	elseif type(res) == "table" and (res.__ATOMIC or res.__CLASSNAME) then
@@ -462,6 +539,7 @@ end
 function _M:generate(lev, old_lev)
 	local spots = {}
 
+	-- populate the map with the grids specified first
 	for i = 1, self.gen_map.w do for j = 1, self.gen_map.h do
 		local c = self.gen_map[i][j]
 		local g
@@ -486,7 +564,15 @@ function _M:generate(lev, old_lev)
 		end
 	end end
 
-	-- generate the rest after because they might need full map data to be correctly made
+	-- then generate additional entities since they might need full map data to be correctly made
+	-- use specific entity lists, if defined
+	local zonelists = {grid_list=self.zone.grid_list, npc_list=self.zone.npc_list, object_list=self.zone.object_list, trap_list=self.zone.trap_list}
+	local elists
+	if self.grid_list ~= self.zone.grid_list or self.npc_list or self.object_list or self.trap_list then
+		self.zone.npc_list, self.zone.object_list, self.zone.trap_list = self.npc_list or self.zone.npc_list, self.object_list or self.zone.object_list, self.trap_list or self.zone.trap_list
+		elists = {grid_list = self.zone.grid_list, npc_list = self.zone.npc_list, object_list = self.zone.object_list, trap_list = self.zone.trap_list}
+	end
+	
 	for i = 1, self.gen_map.w do for j = 1, self.gen_map.h do
 		local c = self.gen_map[i][j]
 		local actor, trap, object, status, define_spot
@@ -512,7 +598,6 @@ function _M:generate(lev, old_lev)
 			elseif type(trigger) == "table" and trigger.random_filter then mod = trigger.entity_mod t = self.zone:makeEntity(self.level, "terrain", trigger.random_filter, nil, true)
 			else t = self.zone:finishEntity(self.level, "terrain", trigger)
 			end
-
 			if t then if mod then t = mod(t) end self:roomMapAddEntity(i-1, j-1, "trigger", t) end
 		end
 
@@ -522,8 +607,7 @@ function _M:generate(lev, old_lev)
 			elseif type(object) == "table" and object.random_filter then mod = object.entity_mod o = self.zone:makeEntity(self.level, "object", object.random_filter, nil, true)
 			else o = self.zone:finishEntity(self.level, "object", object)
 			end
-
-			if o then if mod then o = mod(o) end self:roomMapAddEntity(i-1, j-1, "object", o) end
+			if o then if mod then o = mod(o) end self:roomMapAddEntity(i-1, j-1, "object", o, elists) end --takes care of uniques
 		end
 
 		if trap then
@@ -532,7 +616,7 @@ function _M:generate(lev, old_lev)
 			elseif type(trap) == "table" and trap.random_filter then mod = trap.entity_mod t = self.zone:makeEntity(self.level, "trap", trap.random_filter, nil, true)
 			else t = self.zone:finishEntity(self.level, "trap", trap)
 			end
-			if t then if mod then t = mod(t) end self:roomMapAddEntity(i-1, j-1, "trap", t) end
+			if t then if mod then t = mod(t) end self:roomMapAddEntity(i-1, j-1, "trap", t, elists) end
 		end
 
 		if actor then
@@ -541,7 +625,10 @@ function _M:generate(lev, old_lev)
 			elseif type(actor) == "table" and actor.random_filter then mod = actor.entity_mod m = self.zone:makeEntity(self.level, "actor", actor.random_filter, nil, true)
 			else m = self.zone:finishEntity(self.level, "actor", actor)
 			end
-			if m then if mod then m = mod(m) end self:roomMapAddEntity(i-1, j-1, "actor", m) end
+			if m then
+				if mod then m = mod(m) end
+				self:roomMapAddEntity(i-1, j-1, "actor", m, elists)
+			end
 		end
 
 		if status then
@@ -588,26 +675,31 @@ function _M:generate(lev, old_lev)
 			data
 		)
 		local ux, uy, dx, dy, subspots = generator:generate(lev, old_lev)
-
-		if g.overlay then
-			self.map:overlay(map, g.x, g.y)
-		else
-			self.map:import(map, g.x, g.y)
-		end
-
-		if not generator.auto_handle_spot_offsets then
-			for _, spot in ipairs(subspots) do
-				spot.x = spot.x + data.__import_offset_x
-				spot.y = spot.y + data.__import_offset_y
+		if ux and uy then
+			if data.overlay then
+				self.map:overlay(map, g.x, g.y)
+			else
+				self.map:import(map, g.x, g.y)
 			end
+
+			if not generator.auto_handle_spot_offsets then
+				for _, spot in ipairs(subspots) do
+					spot.x = spot.x + data.__import_offset_x
+					spot.y = spot.y + data.__import_offset_y
+				end
+			end
+
+			table.append(self.spots, subspots)
+			if g.define_up then self.gen_map.startx, self.gen_map.starty = ux + self.data.__import_offset_x+g.x, uy + self.data.__import_offset_y+g.y end
+			if g.define_down then self.gen_map.endx, self.gen_map.endy = dx + self.data.__import_offset_x+g.x, dy + self.data.__import_offset_y+g.y end
+		else -- generator failed
+			if generator.removed then generator:removed(lev, old_lev) end
 		end
-
-		table.append(self.spots, subspots)
-
-		if g.define_up then self.gen_map.startx, self.gen_map.starty = ux + self.data.__import_offset_x+g.x, uy + self.data.__import_offset_y+g.y end
-		if g.define_down then self.gen_map.endx, self.gen_map.endy = dx + self.data.__import_offset_x+g.x, dy + self.data.__import_offset_y+g.y end
 	end
-
+	
+	-- restore entity lists
+	for l, list in pairs(zonelists) do self.zone[l] = list end
+	
 	if self.gen_map.startx and self.gen_map.starty then
 		self.map.room_map[self.gen_map.startx][self.gen_map.starty].special = "exit"
 	end

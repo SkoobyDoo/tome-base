@@ -19,12 +19,16 @@
 
 return {
 	name = "Slazish Fens",
-	level_range = {1, 5},
+--	level_range = {1, 5},
 	level_scheme = "player",
-	max_level = 3,
+--	max_level = 3,
+	level_range = {35, nil},
+--	level_range = {1, nil},
+	max_level = 35,
 	decay = {300, 800},
 	actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
-	width = 50, height = 50,
+--	width = 50, height = 50,
+	width = 100, height = 100,
 --	all_remembered = true,
 	all_lited = true,
 	tier1 = true,
@@ -34,6 +38,7 @@ return {
 	color_shown = {0.7, 0.7, 0.7, 1},
 	color_obscure = {0.7*0.6, 0.7*0.6, 0.7*0.6, 0.6},
 	ambient_music = "Valve.ogg",
+--	_max_level_generation_count= 2, -- debugging
 	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
 	max_material_level = function() return game.state:isAdvanced() and 4 or 1 end,
 	generator =  {
@@ -50,15 +55,25 @@ return {
 			up = "GRASS_UP4",
 			down = "GRASS_DOWN6",
 
+			road = "GRASS_ROAD_DIRT",
+			add_road = true,
+			
+			nb_rooms = 10,
+			required_rooms = {"greater_vault"},
+			rooms = {"forest_clearing", "random_room", {"lesser_vault",50}, {"greater_vault",50}},
 --			nb_rooms = {0,0,0,1},
---			rooms = {"lesser_vault"},
+--			rooms = {"lesser_vault"}, -- debugging
 --			lesser_vaults_list = {"honey_glade", "forest-ruined-building1", "forest-ruined-building2", "forest-ruined-building3", "forest-snake-pit", "mage-hideout"},
+			lesser_vaults_list = {"mold-path", "thief-hideout"},
+--			greater_vaults_list = {"portal-vault", "test"},
+			greater_vaults_list = {"test", "test2"},
 --			lite_room_chance = 100,
 		},
 		actor = {
 			class = "engine.generator.actor.Random",
 			--class = "mod.class.generator.actor.Random",
-			nb_npc = {7, 10},
+--			nb_npc = {7, 10},
+			nb_npc = {1, 1},
 			filters = { {max_ood=2}, },
 			randelite = 0,
 		},

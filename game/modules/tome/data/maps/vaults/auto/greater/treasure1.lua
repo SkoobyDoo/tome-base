@@ -17,8 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
-
+--setStatusAll{no_teleport=true, vault_only_door_open=true}
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+border = 0
 defineTile(';', "FLOOR", nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
 defineTile('.', "FLOOR")
 defineTile('#', "HARDWALL")

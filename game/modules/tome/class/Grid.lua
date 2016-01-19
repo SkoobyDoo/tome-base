@@ -218,6 +218,15 @@ function _M:tooltip(x, y)
 	if config.settings.cheat then
 		tstr:add(true, tostring(rawget(self, "type")), " / ", tostring(rawget(self, "subtype")))
 		tstr:add(true, "UID: ", tostring(self.uid), true, "Coords: ", tostring(x), "x", tostring(y))
+	
+		-- debugging
+		if game.level.map.room_map then
+			local data = game.level.map.room_map[x][y]
+			local room = table.get(game.level.map.room_map.rooms, data.room, "room")
+			tstr:add(true, {"color", "PINK"}, ("room_map: rm:%s(%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
+		end
+		-- end debugging
+
 	end
 	return tstr
 end
@@ -464,7 +473,7 @@ function _M:leverActivated(x, y, who)
 	if type(kind) == "string" then kind = {[kind]=true} end
 	game.log("#VIOLET#You hear a mechanism clicking.")
 
-	local apply = function(i, j)
+	local apply = function(i, j, who)
 		local akind = game.level.map.attrs(i, j, "lever_action_kind")
 		if not akind then return end
 		if type(akind) == "string" then akind = {[akind]=true} end
@@ -472,11 +481,11 @@ function _M:leverActivated(x, y, who)
 			local old = game.level.map.attrs(i, j, "lever_action_value") or 0
 			local newval = old + (self.lever and val or -val)
 			game.level.map.attrs(i, j, "lever_action_value", newval)
-			if game.level.map:checkEntity(i, j, engine.Map.TERRAIN, "on_lever_change", e, newval, old) then
+			if game.level.map:checkEntity(i, j, engine.Map.TERRAIN, "on_lever_change", who, newval, old) then
 				if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
 			end
 			local fct = game.level.map.attrs(i, j, "lever_action_custom")
-			if fct and fct(i, j, e, newval, old) then
+			if fct and fct(i, j, who, newval, old) then
 				if game.level.map.attrs(i, j, "lever_action_only_once") then game.level.map.attrs(i, j, "lever_action_kind", false) end
 			end
 		end end
@@ -484,10 +493,10 @@ function _M:leverActivated(x, y, who)
 
 	if spot then
 		local spot = game.level:pickSpot(spot)
-		if spot then apply(spot.x, spot.y) end
+		if spot then apply(spot.x, spot.y, who) end
 	else
 		core.fov.calc_circle(x, y, game.level.map.w, game.level.map.h, radius, function(_, i, j)
 			if block and game.level.map.attrs(i, j, block) then return true end
-		end, function(_, i, j) apply(i, j) end, nil)
+		end, function(_, i, j) apply(i, j, who) end, nil)
 	end
 end

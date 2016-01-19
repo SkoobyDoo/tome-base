@@ -17,12 +17,18 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
---32 chambers
--- lich liar
 setStatusAll{no_teleport=true}
 
-startx = 9
-starty = 16
+startx = 8
+starty = 15
+
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 30 and zone.npc_list.__loaded_files["/data/general/npcs/ghoul.lua"] --make sure ghouls can summon
+end)
+specialList("actor", {
+	"/data/general/npcs/lich.lua",
+	"/data/general/npcs/skeleton.lua",
+}, true)
 
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 

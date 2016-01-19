@@ -17,8 +17,11 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true}
-
+setStatusAll{no_teleport=true, room_map = {can_open=true}}
+specialList("actor", {
+	"/data/general/npcs/skeleton.lua",
+})
+border = 0
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('.', "FLOOR")

@@ -908,12 +908,13 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	end
 
-	-- In any cases, make one if none was found
+	-- In any case, make one if none was found
 	if not level then
 		forceprint("Creating level", self.short_name, lev)
 		local popup = Dialog:simpleWaiterTip("Generating level", "Please wait while generating the level... ", self:getLoadTips(), nil, 10000)
+		
 		core.display.forceRedraw()
-
+		self._level_generation_count = 0
 		level = self:newLevel(level_data, lev, old_lev, game)
 		new_level = true
 
@@ -924,7 +925,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	collectgarbage("collect")
 
 	-- Re-open the level if needed (the method does the check itself)
-	if level.map then level.map:reopen() end
+	if level and level.map then level.map:reopen() end
 
 	return level, new_level
 end
@@ -964,7 +965,19 @@ function _M:getGenerator(what, level, spots)
 	end
 end
 
+_M._level_generation_count = 0
+_M._max_level_generation_count = 50 -- newLevel will return the last level after this many attempts at generation
+
 function _M:newLevel(level_data, lev, old_lev, game)
+	self._level_generation_count = self._level_generation_count + 1
+--game.log("#PINK# Zone generating new level, attempt %s", self._level_generation_count) -- debugging
+	forceprint("[Zone:newLevel]", self.short_name, "beginning level generation, count:", self._level_generation_count)
+	if self._level_generation_count > self._max_level_generation_count then
+		forceprint("[Zone:newLevel] ABORTING level generation after too many failures.")
+		return game.level -- returns the (last generated, failed) level
+	end
+
+	resolvers.current_level = self.base_level + lev - 1
 	local map = self.map_class.new(level_data.width, level_data.height)
 	map.updateMap = function() end
 	if level_data.all_lited then map:liteAll(0, 0, map.w, map.h) end
@@ -972,10 +985,12 @@ function _M:newLevel(level_data, lev, old_lev, game)
 
 	-- Setup the entities list
 	local level = self.level_class.new(lev, map)
+	level._generation_count = self._level_generation_count
 	level:setEntitiesList("actor", self:computeRarities("actor", self.npc_list, level, nil))
 	level:setEntitiesList("object", self:computeRarities("object", self.object_list, level, nil))
 	level:setEntitiesList("trap", self:computeRarities("trap", self.trap_list, level, nil))
-
+	local zoneelists = {grid_list = self.grid_list, npc_list = self.npc_list, object_list = self.object_list, trap_list = self.trap_list}
+	
 	-- Save level data
 	level.data = level_data or {}
 	level.id = self.short_name.."-"..lev
@@ -985,8 +1000,15 @@ function _M:newLevel(level_data, lev, old_lev, game)
 
 	-- Generate the map
 	local generator = self:getGenerator("map", level, level_data.generator.map)
+	
+	self.debug = {gen = generator} -- debugging
+	
 	local ux, uy, dx, dy, spots = generator:generate(lev, old_lev)
 	if level.force_recreate then
+
+--game.log("#ORANGE# map generator %s forced recreation: %s", generator.__CLASSNAME, level.force_recreate) -- debugging
+
+		print("[Zone:newLevel] map generator"..generator.__CLASSNAME.." forced recreation: ",level.force_recreate)
 		level:removed()
 		return self:newLevel(level_data, lev, old_lev, game)
 	end
@@ -1011,14 +1033,20 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	-- Add the entities we are told to
 	for i = 0, map.w - 1 do for j = 0, map.h - 1 do
 		if map.room_map[i] and map.room_map[i][j] and map.room_map[i][j].add_entities then
-			for z = 1, #map.room_map[i][j].add_entities do
-				local ae = map.room_map[i][j].add_entities[z]
-				self:addEntity(level, ae[2], ae[1], i, j, true)
+			local ae = map.room_map[i][j].add_entities
+			for z = 1, #ae do
+				if ae[z].elists then -- use the specified entity lists
+					table.merge(self, ae[z].elists)
+					self:addEntity(level, ae[z][2], ae[z][1], i, j, true)
+					table.merge(self, zoneelists)
+				else
+					self:addEntity(level, ae[z][2], ae[z][1], i, j, true)
+				end
 			end
 		end
 	end end
 
-	-- Now update it all in one go (faster than letter the generators do it since they usualy overlay multiple terrains)
+	-- Now update it all in one go (faster than letting the generators do it since they usually overlay multiple terrains)
 	map.updateMap = nil
 	map:redisplay()
 
@@ -1053,19 +1081,54 @@ function _M:newLevel(level_data, lev, old_lev, game)
 		end
 	end
 
-	-- Delete the room_map, now useless
-	map.room_map = nil
+-- debugging
+if map.room_map then
+	game.log("#LIGHT_GREEN#====[Zone:newLevel] %s placed %d rooms (current level: %s):", table.get(self.generator, "map", "class"), #map.room_map.rooms, resolvers.current_level)
+	-- highlight room connection points
+	for i, rdata in ipairs(map.room_map.rooms) do
+		local name = rdata.room.name or "no_name"
+		local color = rdata.room.removed and "#YELLOW#" or "#PINK#"
+		game.log("%s[%2d] %-50s [%2sw x %2sh%s, %s border] at (%s, %s, c: %s, %s)", color, i, name, rdata.room.w, rdata.room.h, rdata.room.rotate and "-"..rdata.room.rotate or "", rdata.room.border, rdata.x, rdata.y, rdata.cx, rdata.cy)
+		if rdata.cx and rdata.cy then
+			local g = map(rdata.cx, rdata.cy, map.TERRAIN)
+			if g then
+				g=g:cloneFull()
+				g.nice_tiler = nil
+				g.add_displays = g.add_displays or {}
+				g.name = (g.name or "").." Connect: "..name
+				local parts = "data/gfx/particles/gravity_well.lua"
+--				g.add_displays[#g.add_displays+1] = mod.class.Grid.new{z=5, image=g.image, display_h=1, display_y=0, embed_particles = fs.exists(parts) and {{name="gravity_well", rad=1},} or nil}
+				g.add_displays[#g.add_displays+1] = mod.class.Grid.new{z=5, display_h=1, display_y=0, embed_particles = fs.exists(parts) and {{name="gravity_well", rad=1},} or nil}
+				map(rdata.cx, rdata.cy, map.TERRAIN, g)
+			end
+		end
+	end
+	game.log("#LIGHT_RED# [Zone:newLevel] %s failed to place %d rooms:", table.get(self.generator, "map", "class"), #map.room_map.rooms_failed)
+	for i, data in ipairs(map.room_map.rooms_failed) do
+		local rdata = type(data.room) == "table" and data.room or {name = tostring(data.room)}
+		local name = rdata.name or "no_name"
+		game.log("#SALMON#[%2d] %-40s (%2sw x %2sh, %s border) (%s)", i, name, rdata.w, rdata.h, rdata.border, data.failure:upper())
+	end
+end
+-- end debugging
 
 	-- Check for connectivity from entrance to exit
 	local a = Astar.new(map, game:getPlayer())
 	if not level_data.no_level_connectivity then
 		print("[LEVEL GENERATION] checking entrance to exit A*", ux, uy, "to", dx, dy)
-		if ux and uy and dx and dy and (ux ~= dx or uy ~= dy)  and not a:calc(ux, uy, dx, dy) then
-			forceprint("Level unconnected, no way from entrance to exit", ux, uy, "to", dx, dy)
+		if ux and uy and dx and dy and (ux ~= dx or uy ~= dy) and not a:calc(ux, uy, dx, dy) then
+			forceprint("Level unconnected, no way from entrance", ux, uy, "to exit", dx, dy)
+			
+if config.settings.cheat then -- debugging, short circuit Astar check
+game.log("#ORANGE# LEVEL RECREATION triggered Astar failure, (%s, %s) entrance to (%s, %s) exit", ux, uy, dx, dy)
+	return level
+end -- end debugging
+
 			level:removed()
 			return self:newLevel(level_data, lev, old_lev, game)
 		end
 	end
+	-- Check for connectivity for spots that request it
 	for i = 1, #spots do
 		local spot = spots[i]
 		if spot.check_connectivity then
@@ -1077,19 +1140,69 @@ function _M:newLevel(level_data, lev, old_lev, game)
 
 			print("[LEVEL GENERATION] checking A*", spot.x, spot.y, "to", cx, cy)
 			if spot.x and spot.y and cx and cy and (spot.x ~= cx or spot.y ~= cy) and not a:calc(spot.x, spot.y, cx, cy) then
-				forceprint("Level unconnected, no way from", spot.x, spot.y, "to", cx, cy)
+				forceprint("Level unconnected, no way from spot", spot.type, spot.subtyp, "at", spot.x, spot.y, "to", cx, cy, spot.check_connectivity)
+
+if config.settings.cheat then -- debugging, short circuit Astar check
+game.log("#ORANGE# LEVEL RECREATION triggered Astar failure, spot %d: (%s, %s, %s, %s) to (%s, %s)", i, spot.x, spot.y, spot.type, spot.subtyp, cx, cy)
+	return level
+end -- end debugging
+ 
+
 				level:removed()
 				return self:newLevel(level_data, lev, old_lev, game)
 			end
 		end
 	end
+	--debugging -- force extra level generations
+--	if false and self._level_generation_count < 3 then
+--		level:removed()
+--		return self:newLevel(level_data, lev, old_lev, game)
+--	end
+	-- end debugging
+	
+	-- Delete the room_map if it's no longer needed
+	if not self._retain_level_room_map then map.room_map = nil end
+
 	return level
 end
 
---- Module call this method when they are done generating a level to run any possible generation callbacks regeistered by generators
+--- Modules should call this method when done generating a level to run any callbacks registered by generators
 function _M:runPostGeneration(level)
-	if not level.post_gen_callbacks then return end
-	for _, fct in ipairs(level.post_gen_callbacks) do
-		fct(self, level, level.map)
+	if not level then return end
+
+	if level.post_gen_callbacks then
+		for _, fct in ipairs(level.post_gen_callbacks) do
+			fct(self, level, level.map)
+		end
 	end
+
+-- change self to level after debugging (level log vs. zone log):
+	-- log rooms data
+	if level.map.room_map then
+		level.rooms_placed = level.rooms_placed or {}
+		level.rooms_failed = level.rooms_failed or {}
+		if level.map.room_map.rooms then
+			for i, rdata in ipairs(level.map.room_map.rooms) do
+				local name = rdata.room.name or "no_name"
+				level.rooms_placed[name] = (level.rooms_placed[name] or 0) + 1
+			end
+		end
+		if level.map.room_map.rooms_failed then
+			for i, data in ipairs(level.map.room_map.rooms_failed) do
+				local rdata = type(data.room) == "table" and data.room or {name = tostring(data.room)}
+				local name = rdata.name or "no_name"
+				level.rooms_failed[name] = (level.rooms_failed[name] or 0) + 1
+			end
+		end
+		forceprint("===Level Placed rooms list:") table.print(level.rooms_placed, "...")
+		forceprint("===Level Failed rooms list:") table.print(level.rooms_failed, "...")
+		
+		-- debugging
+		self.rooms_placed = table.mergeAdd(self.rooms_placed or {}, level.rooms_placed)
+		self.rooms_failed = table.mergeAdd(self.rooms_failed or {}, level.rooms_failed)
+		--end debugging
+	end
+
+-- restore after debugging
+--	level.map.room_map = nil -- delete the room map
 end

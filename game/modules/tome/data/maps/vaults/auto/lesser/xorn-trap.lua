@@ -17,36 +17,35 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
+setStatusAll{no_teleport=true}
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 10
+end)
+specialList("actor", {
+	"/data/general/npcs/xorn.lua",
+})
+specialList("trap", {
+	"/data/general/traps/annoy.lua",
+})
+defineTile(' ', "FLOOR", nil, nil, nil, {room_map = {special=false, can_open=true}})
+defineTile('#', "HARDWALL")
+defineTile(':', "WALL")
+defineTile('^', "FLOOR", {random_filter={add_levels=20, type='jewelry'}}, nil, {random_filter={add_levels=50, name='lethargy trap'}})
+defineTile('X', "FLOOR", {random_filter={add_levels=15, tome_mod="gvault"}}, {random_filter={add_levels=15, subtype="xorn"}})
 
-defineTile('.', "FLOOR")
-defineTile('X', "HARDWALL")
-defineTile('!', "DOOR_VAULT")
-defineTile('D', "DOOR")
-defineTile('1', "FLOOR", {random_filter={add_levels=15, tome_mod="vault"}}, {random_filter={add_levels=20}})
-defineTile('2', "FLOOR", {random_filter={add_levels=12, tome_mod="vault"}}, {random_filter={add_levels=17}})
-defineTile('3', "FLOOR", {random_filter={add_levels=5}}, nil)
+--startx = 4
+--starty = 0
 
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
-startx = 5
-starty = 0
-
 return {
-[[...........]],
-[[...XX!XX...]],
-[[..XX.2.XX..]],
-[[.XXXDXDXXX.]],
-[[.X...X...X.]],
-[[.X3.3X3.3X.]],
-[[.XDXDXDXDX.]],
-[[.X2X.2.X2X.]],
-[[.XXXDXDXXX.]],
-[[.XX..X..XX.]],
-[[.X...X...X.]],
-[[.X3.3X3.3X.]],
-[[.XXXDXDXXX.]],
-[[..XX.1.XX..]],
-[[...XXXXX...]],
-[[...........]],
+[[#### ####]],
+[[#XX# #XX#]],
+[[#XX# #XX#]],
+[[##:: ::##]],
+[[    ^    ]],
+[[###: :###]],
+[[#XX: :XX#]],
+[[#XX# #XX#]],
+[[#### ####]],
 }

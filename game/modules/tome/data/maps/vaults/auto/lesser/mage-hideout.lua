@@ -18,22 +18,35 @@
 -- darkgod@te4.org
 
 setStatusAll{no_teleport=true, no_vaulted=true}
-
-defineTile('.', "FLOOR")
-defineTile('D', "DOOR")
-defineTile('X', "HARDWALL")
-defineTile('M', "FLOOR", nil, {random_filter={subtype="molds", add_levels=4}})
-defineTile('W', "FLOOR", nil, {random_filter={name="giant white rat"}})
-defineTile('B', "FLOOR", {random_filter={type="money"}}, {random_filter={name="giant brown rat"}})
-defineTile('G', "FLOOR", {random_filter={add_levels=4}}, {random_filter={name="giant grey rat"}})
+border = 0 -- override normal vault border
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level <= 20
+end)
+specialList("actor", {
+	"/data/general/npcs/skeleton.lua",
+})
+specialList("terrain", {
+	"/data/general/grids/forest.lua",
+}, true)
+local Floor = data.floor or data['.'] or "GRASS"
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
+defineTile(',', Floor)
+defineTile('#', "HARDWALL")
+defineTile('X', data.wall or data['#'] or "TREE")
+defineTile('+', "DOOR")
+defineTile('s', Floor, nil, {random_filter={name="skeleton mage", add_levels=6}})
+defineTile('$', "FLOOR", {random_filter={type="scroll", ego_chance=25}}, nil)
+
+startx = 1
+starty = 7
 
 return {
-[[.........WW......WW....]],
-[[.XXXXXXXXX..XX..XX....W]],
-[[.XMWWGWBGWX.XB..WW...X.]],
-[[.DBWBXXWWBDWD..WXXB..D.]],
-[[.XGBWBWWBMXWXM..MBG.MX.]],
-[[.XXXXXXXXXXWXXXXXXXXX.W]],
-[[...WW..............WW.W]],
+[[XXXXXXXXXXX]],
+[[X,,X,,,X,X,]],
+[[X,X,,,,,,XX]],
+[[X,X,,s####X]],
+[[X,X,,,#$$#X]],
+[[X,XX,,+$$#X]],
+[[X,,XX,####X]],
+[[X,,,XXXXXXX]],
 }

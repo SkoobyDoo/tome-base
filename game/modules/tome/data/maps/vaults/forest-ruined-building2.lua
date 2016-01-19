@@ -17,16 +17,19 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true}
-
+setStatusAll{no_teleport=true, room_map = {can_open=true}}
+roomCheck(function(room, zone, level, map)
+	return zone.npc_list.__loaded_files["/data/general/npcs/plant.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/swarm.lua"] --make sure the honey tree can summon
+end)
+border = 0
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('.', "FLOOR")
 defineTile(',', "GRASS")
 defineTile('#', "WALL")
 defineTile('X', "TREE")
-defineTile('+', "DOOR")
-
+--defineTile('+', "DOOR")
+defineTile('+', "DOOR", nil, nil, nil, {room_map = {can_open=true}})
 defineTile('T', "GRASS", nil, {random_filter={name="honey tree", add_levels=4}})
 
 return {

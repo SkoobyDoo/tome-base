@@ -732,9 +732,9 @@ function _M:leaveLevel(level, lev, old_lev)
 	if level:hasEntity(self.player) then
 		level.exited = level.exited or {}
 		if lev > old_lev then
-			level.exited.down = {x=self.player.x, y=self.player.y}
+			level.exited.down = {x=self.player.x, y=self.player.y, turn=self.turn}
 		else
-			level.exited.up = {x=self.player.x, y=self.player.y}
+			level.exited.up = {x=self.player.x, y=self.player.y, turn=self.turn}
 		end
 	end
 
@@ -826,6 +826,10 @@ function _M:changeLevel(lev, zone, params)
 end
 
 function _M:changeLevelReal(lev, zone, params)
+	local oz, ol = self.zone, self.level
+	
+--if config.settings.cheat then game.log("[Game:changeLevelReal] going to zone: %s, lev : %s", zone, lev) print("params:") table.print(params) end -- debugging
+
 	-- Unlock first!
 	if not params.temporary_zone_shift_back and self.level and self.level.temp_shift_zone then
 		self:changeLevelReal(1, "useless", {temporary_zone_shift_back=true})
@@ -862,11 +866,12 @@ function _M:changeLevelReal(lev, zone, params)
 	local popup = nil
 	local afternicer = nil
 
-	-- We only switch temporarily, keep the old one around
-	if params.temporary_zone_shift then
+	if params._debug_mode then
+		print("Entering zone:", self.zone.name, "level:", self.level and self.level.level, "in debug mode")	
+		if not self.level then return end
+	elseif params.temporary_zone_shift then -- We only switch temporarily, keep the old one around
 		self:leaveLevel(self.level, lev, old_lev)
 
-		local oz, ol = self.zone, self.level
 		if type(zone) == "string" then
 			self.zone = Zone.new(zone)
 		else
@@ -875,6 +880,9 @@ function _M:changeLevelReal(lev, zone, params)
 		if type(self.zone.save_per_level) == "nil" then self.zone.save_per_level = config.settings.tome.save_zone_levels and true or false end
 
 		self.zone:getLevel(self, lev, old_lev, true)
+		
+		-- could add another level generation failure prompt here.
+
 		self.visited_zones[self.zone.short_name] = true
 		world:seenZone(self.zone.short_name)
 
@@ -942,12 +950,104 @@ function _M:changeLevelReal(lev, zone, params)
 			end
 			if type(self.zone.save_per_level) == "nil" then self.zone.save_per_level = config.settings.tome.save_zone_levels and true or false end
 		end
-		local _, new_level = self.zone:getLevel(self, lev, old_lev)
-		self.visited_zones[self.zone.short_name] = true
-		world:seenZone(self.zone.short_name)
 
-		if new_level then
-			afternicer = self.state:startEvents()
+		local level, new_level = self.zone:getLevel(self, lev, old_lev)
+
+		-- handle successive level generation failures
+		if (config.settings.auto_level_fail or not level or self.zone._level_generation_count > self.zone._max_level_generation_count) and not params._debug_mode then -- debugging version
+--		if (not level or self.zone._level_generation_count > self.zone._max_level_generation_count) and not params._debug_mode then
+--			local failed_zone, failed_level = self.zone:clone(), level and level:clone() -- store failed zone/level
+			local failed_zone, failed_level = self.zone, level -- store failed zone/level
+			self.zone, self.level = failed_zone:clone(), level and level:clone() -- restore to copies so originals match memory addresses
+			local to_re_add_actors = self.to_re_add_actors
+			print("=====Level Generation Failure: Unable to create level", lev, "of zone:", failed_zone.short_name, "===")
+			print("=====Failed Zone====:", failed_zone, "====") table.print_shallow(failed_zone)
+			print("====Failed Level====:", failed_level, "====") table.print_shallow(failed_level)
+			
+-- temporary debugging code
+self.debug = self.debug or {}
+self.debug.failed_zone = failed_zone
+self.debug.failed_level = failed_level
+
+			if Dialog.multiButtonPopup then
+				local choices = {("Stay: level %d of %s"):format(ol.level, oz.name), "Keep trying"}
+				local STAY, TRY, REPORT, DEBUG = 1, 2
+				if true then -- setup criteria to report the problem
+					table.insert(choices, ("Report the problem, Stay: level %s of %s"):format(ol.level, oz.name))
+					REPORT = #choices
+				end
+				if config.settings.cheat then
+					table.insert(choices, "Debug the problem (move to the failed zone/level)")
+					DEBUG = #choices
+				end
+				local choice_handler = function(choice)
+					if choice == TRY then
+						print("Keep Trying selected")
+						game:changeLevelReal(lev, zone, params)
+					elseif choice == REPORT then -- get a description of the situation from the player and upload any relevant files for debugging
+-- DG: not sure how you prefer to handle this. failed_zone/failed_level are the copies of the last versions that failed to generate
+						print("Report selected")
+--						print("=====Failed Zone====:") table.print_shallow(failed_zone)
+--						print("====Failed Level====:") table.print_shallow(failed_level)
+					elseif choice == DEBUG then
+						print("Debug selected")
+						failed_zone._level_generation_count = nil
+						self.zone, self.level = failed_zone, failed_level
+						params._debug_mode = true
+						self.to_re_add_actors = to_re_add_actors
+						self:changeLevelReal(lev, failed_zone, params)
+					else
+						print("Stay selected")
+					end
+				end
+				local text = ("The game could not generate level %s of %s after %s attempts. What do you want to do?"):format(lev, failed_zone.name, failed_zone._level_generation_count)
+				Dialog:multiButtonPopup("Level Generation Failure", text,
+					choice_handler, choices,
+					false,
+					STAY -- for escape
+				)
+			else
+				local choices = {{name=("Stay: level %s of %s"):format(ol.level, oz.name), choice="stay"},
+				{name=("Keep Trying: level %s of %s"):format(lev, failed_zone.name), choice="try"}}
+				if true then -- setup criteria to report the problem
+					table.insert(choices, {name=("Report the problem, Stay: level %s of %s"):format(ol.level, oz.name), choice="report"})
+				end
+				if config.settings.cheat then
+					table.insert(choices, {name="Debug the problem (move to the failed zone/level)", choice="debug"})
+				end
+
+				local choice_handler = function(sel)
+					if not sel then
+						print("Stay selected by default")
+					elseif sel.choice == "try" then
+						print("Keep trying selected")
+						self:changeLevel(lev, failed_zone, params)
+					elseif sel.choice == "report" then -- get a description of the situation from the player and upload any relevant files for debugging
+-- DG: not sure how you prefer to handle this. failed_zone/failed_level are the copies of the last versions that failed to generate
+						print("Report selected")
+					elseif sel.choice == "debug" then
+						print("Debug selected")
+						failed_zone._level_generation_count = nil
+						self.zone, self.level = failed_zone, failed_level
+						params._debug_mode = true
+						self.to_re_add_actors = to_re_add_actors
+						self:changeLevelReal(lev, failed_zone, params)
+					else
+						print("Stay selected")
+					end
+				end
+				local text = ("The game could not complete generation of level %s of %s after %s attempts.\nWhat do you want to do?"):format(lev, failed_zone.name, failed_zone._level_generation_count)
+				Dialog:listPopup("Level Generation Failure", text, choices, math.min(600, self.w/2), math.min(300, self.h/2), choice_handler)
+			end
+			self.zone, self.level = oz, ol
+			new_level = false
+		else
+			self.visited_zones[self.zone.short_name] = true
+			world:seenZone(self.zone.short_name)
+
+			if new_level then
+				afternicer = self.state:startEvents()
+			end
 		end
 	end
 
@@ -987,8 +1087,8 @@ function _M:changeLevelReal(lev, zone, params)
 		end
 	end
 
-	-- Move back to old wilderness position
-	if self.zone.wilderness then
+	-- place the player on the level
+	if self.zone.wilderness then -- Move back to old wilderness position
 		self.player:move(self.player.wild_x, self.player.wild_y, true)
 		self.player.last_wilderness = self.zone.short_name
 	else
@@ -1015,8 +1115,17 @@ function _M:changeLevelReal(lev, zone, params)
 			if #list > 0 then x, y = unpack(rng.table(list)) end
 		end
 
-		-- Default to stairs
-		if not x then
+		if self.level.exited then -- use the last location, if defined
+			local turn = 0
+			if self.level.exited.down then
+				x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
+			end
+			if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
+				x, y = self.level.exited.up.x, self.level.exited.up.y
+			end
+		end
+
+		if not x then -- Default to stairs
 			if lev > old_lev and not params.force_down then x, y = self.level.default_up.x, self.level.default_up.y
 			else x, y = self.level.default_down.x, self.level.default_down.y
 			end

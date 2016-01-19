@@ -18,7 +18,15 @@
 -- darkgod@te4.org
 
 setStatusAll{no_teleport=true}
-
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 15
+end)
+specialList("actor", {
+	"/data/general/npcs/naga.lua",
+}, true)
+specialList("terrain", {
+	"/data/general/grids/water.lua",
+}, true)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 startx = 13

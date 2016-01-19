@@ -18,20 +18,29 @@
 -- darkgod@te4.org
 
 setStatusAll{no_teleport=true, vault_only_door_open=true}
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 10
+end)
+specialList("trap", {
+	"/data/general/traps/elemental.lua",
+}, true)
+specialList("actor", {
+	"/data/general/npcs/spider.lua",
+})
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 startx = 7
 starty = 0
 
-defineTile('.', "FLOOR")
+local Floor = data.floor or "FLOOR"
+defineTile('.', Floor)
 defineTile('X', "HARDWALL")
 defineTile('#', "DOOR_VAULT", nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
+defineTile('s', Floor, nil , {random_filter={add_levels=5,type="spiderkin",subtype="spider"}})
+defineTile('S', Floor, {random_filter={add_levels=10, tome_mod=vault}}, {random_filter={add_levels=10, type="spiderkin",subtype="spider"}})
+defineTile('g', Floor, {random_filter={add_levels=15, tome_mod=gvault}}, {random_filter={add_levels=15, type="spiderkin",subtype="spider"}})
+defineTile('B', Floor, {random_filter={add_levels=20, tome_mod=gvault}}, {random_filter={add_levels=20, type="spiderkin",subtype="spider"}})
 
-defineTile('s', "FLOOR", nil , {random_filter={add_levels=5,type="spiderkin",subtype="spider"}})
-defineTile('S', "FLOOR", {random_filter={add_levels=10, tome_mod=vault}}, {random_filter={add_levels=10, type="spiderkin",subtype="spider"}})
-defineTile('g', "FLOOR", {random_filter={add_levels=15, tome_mod=gvault}}, {random_filter={add_levels=15, type="spiderkin",subtype="spider"}})
-defineTile('B', "FLOOR", {random_filter={add_levels=20, tome_mod=gvault}}, {random_filter={add_levels=20, type="spiderkin",subtype="spider"}})
-
-defineTile('^', "FLOOR", nil, nil, {random_filter = {name="poison blast trap", add_levels=20}})
+defineTile('^', Floor, nil, nil, {random_filter = {name="poison blast trap", add_levels=20}})
 
 return {
 [[...XXXX#XXXX...]],

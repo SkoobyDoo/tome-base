@@ -28,7 +28,6 @@ module(..., package.seeall, class.make)
 function _M:init(data)
 	self.rooms = {}
 	self.required_rooms = {}
-
 	data.tunnel_change = data.tunnel_change or 30
 	data.tunnel_random = data.tunnel_random or 10
 
@@ -52,6 +51,10 @@ end
 local rooms_cache = {}
 local tmxid = 1
 
+function _M:getRoomsCache()
+	return rooms_cache
+end
+
 function _M:loadLuaInEnv(g, file, code)
 	local f, err
 	if file then f, err = loadfile(file)
@@ -61,6 +64,19 @@ function _M:loadLuaInEnv(g, file, code)
 	return f()
 end
 
+
+-- load a room definition from a tmx file and store it in the rooms_cache
+-- @param file the file to load the definition from
+-- @param basefile the index to use for the rooms_cache
+-- @return the room definition as a generator function(gen, id)
+-- Some properties (if defined) are passed through to the map object returned by the generator function:
+-- unique: a tag ("true" is converted to basefile) marking the room as unique, two rooms with the same unique tag will not be generated on the same map
+-- border: the width (in grids, default 0) of clear map area around the room in which no other rooms are allowed to be placed
+-- no_tunnels: set true to prevent automatically connecting tunnels to the room (depending on the map generator)
+-- roomcheck: a function(room, zone, level, map) checked (if defined) to determine if the room should be added to the map (return true to add)
+-- onplace: a function(room, zone, level, map, placement_data) called after the room has been added to the map (see RoomsLoader:roomPlace)
+-- prefer_location: a function(map) that returns the preferred coordinates to place the room
+-- map_data: table to merge into the room definition
 function _M:tmxLoadRoom(file, basefile)
 	file = file:gsub("%.lua$", ".tmx")
 	if not fs.exists(file) then return end
@@ -69,8 +85,8 @@ function _M:tmxLoadRoom(file, basefile)
 	local data = f:read(10485760)
 	f:close()
 
-	local g = {}
 	local t = {}
+	local g = {Map = require("engine.Map"),	mapData = function(params) table.merge(t, params) end}
 	local openids, starts, ends = {}, {}, {}
 	local map = lom.parse(data)
 	local mapprops = {}
@@ -130,11 +146,7 @@ function _M:tmxLoadRoom(file, basefile)
 	end
 
 	local m = { w=w, h=h, room_map={} }
-
-	if mapprops.prefered_location then
-		m.prefered_location = self:loadLuaInEnv(g, nil, "return "..mapprops.prefered_location)
-	end
-
+	
 	local function populate(i, j, c, tid)
 		local ii, jj = i, j
 
@@ -227,15 +239,25 @@ function _M:tmxLoadRoom(file, basefile)
 						m.room_map[i][j] = m.room_map[i][j] or {}
 						table.merge(m.room_map[i][j], {[k]=self:loadLuaInEnv(g, nil, "return "..v)})
 					end end
-				end
-			end
+		end
+	end
 		end
 	end
 
 	print("[ROOM TMX MAP] size", m.w, m.h)
 
 	local gen = function(gen, id)
-		return { name="tmxroom"..tmxid.."-"..m.w.."x"..m.h, w=m.w, h=m.h, prefered_location=m.prefered_location, generator = function(self, x, y, is_lit)
+		local ret = {name=(mapprops.name or "tmxroom").."_tmx"..tmxid.."-"..m.w.."x"..m.h, w=m.w, h=m.h,
+		
+		-- copy certain variables from the map file
+		roomcheck = mapprops.roomcheck and self:loadLuaInEnv(g, nil, "return "..mapprops.roomcheck),
+		unique = mapprops.unique == "true" and basefile or mapprops.unique,
+		no_tunnels = mapprops.no_tunnels,
+		border = mapprops.border and tonumber(mapprops.border),
+		onplace = mapprops.onplace and self:loadLuaInEnv(g, nil, "return "..mapprops.onplace),
+		prefer_location = mapprops.prefer_location and self:loadLuaInEnv(g, nil, "return "..mapprops.prefer_location),
+
+		generator = function(self, x, y, is_lit)
 			for i = 1, m.w do for j = 1, m.h do
 				gen.map.room_map[i-1+x][j-1+y].room = id
 				if is_lit then gen.map.lites(i-1+x, j-1+y, true) end
@@ -263,9 +285,13 @@ function _M:tmxLoadRoom(file, basefile)
 						if g.force_clone then g = g:clone() end
 						g:resolve()
 						g:resolve(nil, true)
-						gen.map(i-1+x, j-1+y, Map.TERRAIN, g)
-					print(" => ", g, g and g.name)
+						print(" => ", g, g and g.name)
+					else
+						print(("[RoomsLoader:tmxLoadRoom] WARNING: unable to resolve tile '%s' at %d, %d (%s), replacing with default grid."):format(c.grid, x+i-1, y+j-1, file))
+						table.print(c, " _c_ ")
+						g = gen:resolve('.') or gen:resolve('floor') or engine.Grid.new({name = "undefined grid"})
 					end
+					gen.map(i-1+x, j-1+y, Map.TERRAIN, g)
 				end
 				if c.object then local d = t[c.object] if d then
 					local e
@@ -310,13 +336,20 @@ function _M:tmxLoadRoom(file, basefile)
 						gen:roomMapAddEntity(i-1+x, j-1+y, "trigger", e)
 						e.on_added_to_level = nil
 					end
-				end end
+			end end
 
 				if m.room_map[i] and m.room_map[i][j] then
 					table.merge(gen.map.room_map[i-1+x][j-1+y], m.room_map[i][j])
 				end
 			end end
 		end}
+		
+		if mapprops.map_data then
+			local params = self:loadLuaInEnv(g, nil, "return "..mapprops.map_data)
+			table.merge(ret, params)
+		end
+		return ret
+
 	end
 	tmxid = tmxid + 1
 
@@ -324,6 +357,19 @@ function _M:tmxLoadRoom(file, basefile)
 	return gen
 end
 
+-- load and execute a lua file to create a room definition and store it in the rooms_cache
+-- @param file the (base) file to load the definition from
+-- @return the room definition
+--	returned directly if a function
+-- 	for a table, the ascii grid array [x][y] is parsed: '#' = wall, '.' = floor, '!' = possible exit (defined within the zone)
+-- Some variables assigned within the lua definition are passed through to the room definition:
+-- unique: a tag (true is converted to file) marking the room as unique, two rooms with the same unique tag will not be generated on the same map
+-- border: the width (in grids, default 0) of clear map area around the room in which no other rooms are allowed to be placed
+-- no_tunnels: set true to prevent automatically connecting tunnels to the room (depending on the map generator)
+-- roomcheck: if defined, a function(room, zone, level, map) checked before the room is added to the map (return true to add)
+-- onplace: if defined, a function(room, zone, level, map, placement_data) called after the room has been added to the map (see RoomsLoader:roomPlace)
+-- prefer_location: a function(map) that returns the preferred coordinates to place the room
+-- map_data: table to merge into the room definition (mapData({params}) can also be used.)
 function _M:loadRoom(file)
 	if rooms_cache[file] then return rooms_cache[file] end
 
@@ -335,10 +381,14 @@ function _M:loadRoom(file)
 
 	local f, err = loadfile(filename)
 	if not f and err then error(err) end
-	setfenv(f, setmetatable({
+	local t, ret = {}
+	local g = setmetatable({
 		Map = require("engine.Map"),
-	}, {__index=_G}))
-	local ret, err = f()
+		mapData = function(params) table.merge(t, params) end,
+	}, {__index=_G})
+
+	ret, err = self:loadLuaInEnv(g, filename)
+	
 	if not ret and err then error(err) end
 
 	-- We got a room generator function, save it for later
@@ -348,8 +398,8 @@ function _M:loadRoom(file)
 		return ret
 	end
 
-	-- Init the room with name and size
-	local t = { name=file, w=ret[1]:len(), h=#ret }
+	-- Update the room definition with name and size and copy certain parameters from the definition
+	table.merge(t, { name=file, w=ret[1]:len(), h=#ret, unique=g.unique == true and file or g.unique, border=g.border, no_tunnels = g.no_tunnels, roomcheck=g.roomcheck, prefer_location = g.prefer_location, onplace=g.onplace})
 
 	-- Read the room map
 	for j, line in ipairs(ret) do
@@ -360,13 +410,16 @@ function _M:loadRoom(file)
 			i = i + 1
 		end
 	end
+	
+	if g.map_data then table.merge(t, g.map_data) end
+	
 	print("loaded room",file,t.w,t.h)
 
 	rooms_cache[file] = t
 	return t
 end
 
---- Easy way to make an irregular shapped room
+--- Easy way to make an irregular shaped room
 function _M:makePod(x, y, radius, room_id, data, floor, wall)
 	self.map(x, y, Map.TERRAIN, self:resolve(floor or '.'))
 	self.map.room_map[x][y].room = room_id
@@ -428,16 +481,18 @@ function _M:makePod(x, y, radius, room_id, data, floor, wall)
 	return { id="podroom"..room_id, x=x, y=y, cx=x, cy=y }
 end
 
---- Generates parse data for from an ascii def, for function room generators
+--- Generates a basic (ascii) room definition (for use by function room generators)
 function _M:roomParse(def)
-	local room = { w=def[1]:len(), h=#def, spots={}, exits={}, special=def.special }
+	local room = { w=def[1]:len(), h=#def, spots={}, exits={}, special=def.special,
+		name=def.name, unique=def.unique == true and def.name or def.unique, border=def.border, no_tunnels = def.no_tunnels, roomcheck=def.roomcheck, prefer_location = def.prefer_location, onplace=def.onplace}
+		
+	if def.map_data then table.merge(room, def.map_data) end
 
 	-- Read the room map
 	for j, line in ipairs(def) do
 		local i = 1
 		for c in line:gmatch(".") do
 			room[i] = room[i] or {}
-
 			if tonumber(c) then
 				c = tonumber(c)
 				room.spots[c] = room.spots[c] or {}
@@ -447,16 +502,18 @@ function _M:roomParse(def)
 			if c == '!' then
 				room.exits[#room.exits+1] = {x=i-1, y=j-1}
 			end
-
 			room[i][j] = c
-
 			i = i + 1
 		end
 	end
 	return room
 end
 
---- Generates map data from an ascii def, for function room generators
+--- Updates the map with data from a (ascii) room definition (for use by function room generators)
+-- @param id the room id to reference
+-- @param x, y the position the room is being placed
+-- @param is_lit boolean to lite the room tiles
+-- @param room room definition (ascii format)
 function _M:roomFrom(id, x, y, is_lit, room)
 	for i = 1, room.w do
 		for j = 1, room.h do
@@ -465,39 +522,107 @@ function _M:roomFrom(id, x, y, is_lit, room)
 			if c == '!' then
 				self.map.room_map[i-1+x][j-1+y].room = nil
 				self.map.room_map[i-1+x][j-1+y].can_open = true
-				self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve('#'))
+				self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve('#') or self:resolve('wall'))
 			else
-				self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve(c))
+				if c == '#' and (i == 1 or i == room.w or j == 1 or j == room.h) then -- forces tunnelling around edge walls
+					self.map.room_map[i-1+x][j-1+y].room = nil
+					self.map.room_map[i-1+x][j-1+y].can_open = false
+				end
+				c = self:resolve(c)
+				if not c then  -- default to floor or a basic grid
+					print(("[RoomsLoader] WARNING: unable to resolve grid '%s' at %d, %d (%s), replacing with default grid."):format(room[i][j], i, j, room.name))
+					c = self:resolve('.') or self:resolve('floor') or engine.Grid.new({name = "undefined grid"})
+				end
+				self.map(i-1+x, j-1+y, Map.TERRAIN, c)
 			end
+			
 			if room.special then self.map.room_map[i-1+x][j-1+y].special = true end
 			if is_lit then self.map.lites(i-1+x, j-1+y, true) end
 		end
 	end
 end
 
---- Generates a room
-function _M:roomGen(room, id, lev, old_lev)
-	if type(room) == 'function' then
-		print("room generator", room, "is making a room")
-		room = room(self, id, lev, old_lev)
+-- Test if a room should be generated
+-- map generators can overload this to control which rooms are used
+-- @param room a room definition table
+-- @param zone <self.zone> the zone object to generate for
+-- @param level <self.level> the level object to generate for
+-- @param map <self.map> the map object in which the room is to be placed
+-- @note checks room.unique (must not match .unique for any rooms placed on map)
+-- 	and room.roomcheck(room, zone, level, map) (must return true if present)
+-- returns true if the room can be generated
+function _M:roomCheck(room, zone, level, map)
+	zone = zone or self.zone
+	level = level or self.level
+	map = map or self.map
+
+	if room.unique then -- make sure no other duplicate rooms have been placed
+		local rooms_list = map.room_map and map.room_map.rooms
+		if rooms_list then
+			for i, xroom in ipairs(rooms_list) do
+				if xroom.room then
+					if xroom.room.unique == room.unique then
+						print("[roomCheck]-- rejecting duplicate of unique room", room.unique)
+						return false, "unique:"..room.unique
+					end
+				end
+			end
+		end
 	end
-	print("alloc", room.name)
+	if room.roomcheck then 
+		local check, failure = room.roomcheck(room, zone, level, map)
+		if not check then
+			print("[RoomsLoader:roomCheck] ", room.name, " rejected by roomcheck function:", failure)
+			return false, failure or "roomcheck function"
+		end
+	end
+	return true
+end
 
-	-- Sanity check
-	if self.map.w - 2 - room.w < 2 or self.map.h - 2 - room.h < 2 then return false end
-
+--- Generates (resolves) a room
+-- @param room a room definition (if it's a function it will be called as room(self, id, lev, old_lev)
+-- @param id index of room for this generator
+-- @param lev level (number) to generate
+-- @param old_lev previous level (number) within the zone
+-- @return the room table or false
+function _M:roomGen(room, id, lev, old_lev)
+	local base_room, failure = room
+	if type(room) == 'function' then
+		print("[roomGen] room generator", base_room, "is making a room")
+		room, failure = room(self, id, lev, old_lev)
+	end
+	if not room then
+		table.insert(self.map.room_map.rooms_failed, {room=base_room, failure=failure or "generation"})
+		return false
+	elseif self.map.w - room.w - (room.border or 0)*2 < 2 or self.map.h - room.h - (room.border or 0)*2 < 2 then
+		table.insert(self.map.room_map.rooms_failed, {room=room or base_room, failure="placement"})
+		return false
+	else
+		local check, failure = self:roomCheck(room)
+		if not check then
+			table.insert(self.map.room_map.rooms_failed, {room=room or base_room, failure=failure or "roomcheck"})
+			return false
+		end
+	end
+	print("[roomGen] generated room", room and room.name or "unnamed room")
 	return room
 end
 
---- Place a room
+--- Use room data to update the map
+-- @param room a room definition
+-- @param id room index (count of rooms placed including this one)
+-- @param x, y coordinates (upper left) to place the room
+-- @return placement data: {id=id, x=placed x, y=placed y, cx=connection x, cy=connection y, room=room}
+-- calls room.generator(x, y, is_lit) if present to update the map, otherwise copies the room map to the current  map (unresolved grids will be replaced with '.' or 'floor' if possible)
+-- calls room.onplace(room, zone, level, map, data), if it's defined, after update
 function _M:roomPlace(room, id, x, y)
 	local is_lit = rng.percent(self.data.lite_room_chance or 100)
 
-	-- ok alloc it using the default generator or a specific one
 	local cx, cy
-	if room.generator then
+	if room.generator then -- use room-specific generator to update the map
 		cx, cy = room:generator(x, y, is_lit)
-	else
+	else -- default map update
+		cx, cy = room.startx and x + room.startx - 1, room.starty and y + room.starty - 1
 		for i = 1, room.w do
 			for j = 1, room.h do
 				self.map.room_map[i-1+x][j-1+y].room = id
@@ -505,62 +630,139 @@ function _M:roomPlace(room, id, x, y)
 				if c == '!' then
 					self.map.room_map[i-1+x][j-1+y].room = nil
 					self.map.room_map[i-1+x][j-1+y].can_open = true
-					self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve('#'))
+					self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve('#') or self:resolve('wall'))
 				else
-					self.map(i-1+x, j-1+y, Map.TERRAIN, self:resolve(c))
+					if c == '#' and (i == 1 or i == room.w or j == 1 or j == room.h) then -- forces tunnelling around edge walls
+						self.map.room_map[i-1+x][j-1+y].room = nil
+						self.map.room_map[i-1+x][j-1+y].can_open = false
+					end
+					c = self:resolve(c)
+					if not c then  -- default to floor or a basic grid
+						print(("[RoomsLoader:roomPlace] WARNING: unable to resolve grid '%s' at %d, %d (%s), replacing with default grid."):format(room[i][j], i, j, room.name))
+						c = self:resolve('.') or self:resolve('floor') or engine.Grid.new({name = "undefined grid"})
+					end
+					self.map(i-1+x, j-1+y, Map.TERRAIN, c)
 				end
 				if is_lit then self.map.lites(i-1+x, j-1+y, true) end
 			end
 		end
 	end
-	print("room allocated at", x, y,"with center",math.floor(x+(room.w-1)/2), math.floor(y+(room.h-1)/2))
+	if room.border and room.border > 0 then -- if needed, mark border grids for this room
+		for i = math.max(0, x - room.border), math.min(self.map.w - 1, x + room.w - 1 + room.border) do
+			for j = math.max(0, y - room.border), math.min(self.map.h - 1, y + room.h - 1 + room.border) do
+				if (i < x or i >= x + room.w) or (j < y or j >= y + room.h) then
+					self.map.room_map[i][j].border = id
+				end
+			end
+		end
+	end
+	
+	print("room placed at", x, y,"with center",math.floor(x+(room.w-1)/2), math.floor(y+(room.h-1)/2))
 	cx = cx or math.floor(x+(room.w-1)/2)
 	cy = cy or math.floor(y+(room.h-1)/2)
-	return { id=id, x=x, y=y, cx=cx, cy=cy, room=room }
-end
+	local ret = { id=id, x=x, y=y, cx=cx, cy=cy, room=room }
+	self.map.room_map.rooms[#self.map.room_map.rooms+1] = ret -- update the rooms list
 
---- Make up a room
-function _M:roomAlloc(room, id, lev, old_lev, add_check)
-	room = self:roomGen(room, id, lev, old_lev)
-	if not room then return end
-
-	local prefered_location = room.prefered_location
-	local tries = 100
-	while tries > 0 do
-		local ok = true
-		local x, y
-		if prefered_location then
-			x, y = prefered_location(self.map)
-			x, y = x - math.floor(room.w / 2), y - math.floor(room.h / 2)
-			prefered_location = nil
-		else
-			x, y = rng.range(1, self.map.w - 2 - room.w), rng.range(1, self.map.h - 2 - room.h)
-		end
-
-		-- Do we stomp ?
+	if room.onplace then -- perform any post placement actions
+		room.onplace(room, self.zone, self.level, self.map, ret)
+	end
+	
+	 -- Debugging: display all rooms
+	if config.settings.cheat then
 		for i = 1, room.w do
 			for j = 1, room.h do
-				if self.map.room_map[i-1+x][j-1+y].room then ok = false break end
+				local rx, ry = i-1+x, j-1+y
+				self.map.lites(rx, ry, 1)
+				self.map.remembers(rx, ry, 1)
+				local tr = self.map(rx, ry, self.map.TERRAIN)
+				if tr then
+					tr = tr:cloneFull()
+					tr.show_tooltip = true
+					tr.desc = (tr.desc or "").." #SALMON#room["..id.."]("..(room.name or "unnamed")..")"
+--					tr.nice_tiler = nil
+					self.map(rx, ry, self.map.TERRAIN, tr)
+					self.map:updateMap(rx, ry)
+				end
+			end
+		end
+	end
+	-- end debugging
+	return ret
+end
+
+--- Generate a room and place it (randomly) on the map
+-- @param room a room definition
+-- @param id room index (count of rooms placed including this one)
+-- @param lev level (number) to generate
+-- @param old_lev previous level (number) within the zone
+-- @param add_check optional function(room, x, y) to call (return true) to allow the room to be generated
+-- @return the results of roomPlace
+-- calls room.prefer_location(self.map), if defined, to obtain the first location to try to place the room (successive tries will be clustered around this location)
+function _M:roomAlloc(room, id, lev, old_lev, add_check)
+	local tries, ok = 2, false
+	
+	-- generate the room
+	local base_room = room
+	room = self:roomGen(room, id, lev, old_lev)
+	if not room then
+		print("[roomAlloc] No room generated by", base_room)
+		table.print(base_room, ">>>")
+		return
+	end
+	-- try to place the room
+	tries = 0
+	local border = room.border or 0 -- "open" grids around this room
+
+	local px, py
+	if room.prefer_location then
+		px, py = room.prefer_location(self.map)
+	end
+	while tries <= 100 do
+		local x, y
+			
+		if px and py then -- gradually spread additional tries around the preferred location
+			local sig = tries/100
+			x = util.bound(rng.normal(px, sig*self.map.w*2), math.max(1, border), self.map.w - room.w - math.max(1, border))
+			y = util.bound(rng.normal(px, sig*self.map.h*2), math.max(1, border), self.map.h - room.h - math.max(1, border))
+		else
+			x = rng.range(math.max(1, border), self.map.w - room.w - math.max(1, border))
+			y = rng.range(math.max(1, border), self.map.h - room.h - math.max(1, border))
+		end
+		ok = true
+		-- Don't overlap other rooms (includes borders)
+		for i = math.max(0, x - border), math.min(self.map.w-1, x + room.w - 1 + border) do
+			for j = math.max(0, y - border), math.min(self.map.h-1, y + room.h - 1 + border) do
+				if self.map.room_map[i][j].room then
+					ok = false break
+				elseif self.map.room_map[i][j].border and i >= x and i < x+room.w and j >= y and j < j+room.h then
+					ok = false break
+				end
 			end
 			if not ok then break end
 		end
-
 		if ok and (not add_check or add_check(room, x, y)) then
 			local res = self:roomPlace(room, id, x, y)
-			if res then return res end
+			if res then
+				return res
+			end
 		end
-		tries = tries - 1
+		tries = tries + 1
+	end
+	table.insert(self.map.room_map.rooms_failed, {room=room, failure="placement"})
+	print("[roomAlloc] could not place room", room.name)
+	if room.removed then -- the room can't be placed -- perform any cleanup needed (uniques)
+		room:removed(x, y)
 	end
 	return false
 end
 
---- Random tunnel dir
+--- Random tunnel dir (no diagonals)
 function _M:randDir(sx, sy)
 	local dirs = util.primaryDirs() --{4,6,8,2}
 	return util.dirToCoord(dirs[rng.range(1, #dirs)], sx, sy)
 end
 
---- Find the direction in which to tunnel
+--- Find the direction in which to tunnel (no diagonals)
 function _M:tunnelDir(x1, y1, x2, y2)
 	-- HEX TODO ?
 	local xdir = (x1 == x2) and 0 or ((x1 < x2) and 1 or -1)
@@ -587,7 +789,7 @@ function _M:markTunnel(x, y, xdir, ydir, id)
 		if self.map:isBound(x+xd, y+yd) and not self.map.room_map[x+xd][y+yd].tunnel then self.map.room_map[x+xd][y+yd].tunnel = id print("mark tunnel", x+xd, y+yd , id) end
 	end
 	if not self.map.room_map[x][y].tunnel then self.map.room_map[x][y].tunnel = id print("mark tunnel", x, y , id) end
-	self.map.room_map[x][y].real_tunnel = true
+	self.map.room_map[x][y].real_tunnel = id or true
 end
 
 --- Can we create a door (will it lead anywhere)
@@ -618,7 +820,16 @@ function _M:canDoor(x, y)
 	return false
 end
 
---- Tunnel from x1,y1 to x2,y2
+--- Tunnel between two points
+-- @param x1, y1 starting coordinates
+-- @param x2, y2 ending coordinates
+-- @param id tunnel id
+-- @param virtual set true to mark the tunnel without changing terrain
+-- tunnels according to the rules (based on the room_map):
+--	goes around .special unless .can_open is true
+--	goes through .room unless .can_open == false
+--	tries to go around previous tunnels
+-- places self:resolve('='), self:resolve('.') or self:resolve('floor')) on the tunnel path (never changes terrain if .room or .special are set)
 function _M:tunnel(x1, y1, x2, y2, id, virtual)
 	if x1 == x2 and y1 == y2 then return end
 	-- Disable the many prints of tunnelling
@@ -649,13 +860,34 @@ function _M:tunnel(x1, y1, x2, y2, id, virtual)
 			nx, ny = x1 + xdir, y1 + ydir
 		end
 		print(feat, "try pos", nx, ny, "dir", util.coordToDir(xdir, ydir, nx, ny))
-
+--[[
 		if self.map.room_map[nx][ny].special then
-			print(feat, "refuse special")
+			print(feat, "reject special")
+			if nx == x2 and ny == y2 then -- stop if next to special target
+				x1, y1 = nx, ny
+				print(feat, "end adjacent to special target")
+			end
+			--]]
+		if self.map.room_map[nx][ny].special then
+			if self.map.room_map[nx][ny].can_open then
+				tun[#tun+1] = {nx,ny,false,true}
+				x1, y1 = nx, ny
+				print(feat, "accept special (can open)")
+			else
+				print(feat, "reject special")
+				if nx == x2 and ny == y2 then -- stop if next to special target
+					x1, y1 = nx, ny
+					print(feat, "end adjacent to special target")
+				end
+			end
 		elseif self.map.room_map[nx][ny].room then
-			tun[#tun+1] = {nx,ny,false,true}
-			x1, y1 = nx, ny
-			print(feat, "accept room")
+			if self.map.room_map[nx][ny].can_open ~= false then
+				tun[#tun+1] = {nx,ny,false,true}
+				x1, y1 = nx, ny
+				print(feat, "accept room")
+			else
+				print(feat, "reject room (!can_open)")
+			end
 		elseif self.map.room_map[nx][ny].can_open ~= nil then
 			if self.map.room_map[nx][ny].can_open then
 				print(feat, "tunnel crossing can_open", nx,ny)
@@ -703,7 +935,7 @@ function _M:tunnel(x1, y1, x2, y2, id, virtual)
 		if t[3] and self.data.door then self.possible_doors[#self.possible_doors+1] = t end
 		if not t[4] and not virtual then
 			print("=======TUNN", nx, ny)
-			self.map(nx, ny, Map.TERRAIN, self:resolve('=') or self:resolve('.'))
+			self.map(nx, ny, Map.TERRAIN, self:resolve('=') or self:resolve('.') or self:resolve('floor'))
 		end
 	end
 end

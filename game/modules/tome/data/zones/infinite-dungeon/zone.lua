@@ -19,6 +19,11 @@
 
 local rooms = {"random_room", {"pit",3}, {"greater_vault",7}}
 if game:isAddonActive("items-vault") then table.insert(rooms, {"!items-vault",3}) end
+--local rooms = {"random_room", {"pit",3}, {"greater_vault",25}}
+--local rooms = {"random_room", {"pit",3}, {"greater_vault",25}, {"lesser_vault",25}} --debugging
+--if game:isAddonActive("items-vault") then table.insert(rooms, {"!items-vault",12}) end
+local rooms = {"random_room", {"pit",8}, {"lesser_vault", 20}, {"greater_vault",20}} -- debugging
+table.insert(rooms, {"!items-vault",12}) -- temporary debugging
 
 return {
 	name = "Infinite Dungeon",
@@ -26,9 +31,10 @@ return {
 	level_scheme = "player",
 	max_level = 1000000000,
 	actor_adjust_level = function(zone, level, e) return math.floor((zone.base_level + level.level-1) * 1.2) + e:getRankLevelAdjust() + rng.range(-1,2) end,
-	width = 70, height = 70,
+	width = 120, height = 120,
 --	all_remembered = true,
 --	all_lited = true,
+--	persistent = "zone",
 	no_worldport = true,
 	infinite_dungeon = true,
 	events_by_level = true,
@@ -59,7 +65,8 @@ return {
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",
-			nb_rooms = 14,
+--			nb_rooms = 14,
+			nb_rooms = 25, -- debugging
 			rooms = rooms,
 			rooms_config = {pit={filters={}}},
 			lite_room_chance = 50,

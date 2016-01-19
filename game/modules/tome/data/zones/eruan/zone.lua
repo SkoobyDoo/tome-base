@@ -49,7 +49,8 @@ return {
 				pond = {{0.6, "DEEP_OCEAN_WATER"}, {0.8, "DEEP_OCEAN_WATER"}},
 			},
 
-			nb_rooms = {0,0,0,0,1},
+--			nb_rooms = {0,0,0,0,1},
+			nb_rooms = {1,2,2,2,1}, -- debuggings
 			rooms = {"greater_vault"},
 			greater_vaults_list = {"dragon_lair", "lava_island", "bandit-fortress", "horror-chamber"},
 			lite_room_chance = 100,

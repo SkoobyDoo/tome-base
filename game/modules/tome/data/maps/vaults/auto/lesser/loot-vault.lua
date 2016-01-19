@@ -16,19 +16,30 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
-setStatusAll{no_teleport=true, vault_only_door_open=true}
 
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+--setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {special=false, can_open=true}}
+border = 0
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
-
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level > 5 and resolvers.current_level <= 25
+end)
+specialList("terrain", {
+	"/data/general/grids/forest.lua",
+}, true)
+startx = 4
+starty = 6
+--defineTile(',', data.floor or data['.'] or "GRASS")
+defineTile(',', data.floor or data['.'] or "GRASS", nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
+defineTile('.', "FLOOR")
+defineTile('#', "HARDWALL")
+defineTile('+', "DOOR_VAULT")
 -- Forest Tomb
 if rng.percent(66) then
-	startx = 4
-	starty = 6
 
-	defineTile(',', "GRASS")
-	defineTile('.', "FLOOR")
-	defineTile('#', "HARDWALL")
-	defineTile('+', "DOOR_VAULT")
+	specialList("actor", {
+		"/data/general/npcs/wight.lua",
+	})
 	defineTile('$', "FLOOR", {random_filter={add_levels=10, tome_mod="vault"}})
 	defineTile('W', "FLOOR", {random_filter={add_levels=10, tome_mod="vault"}}, {random_filter={add_levels=15, name="forest wight"}})
 
@@ -55,11 +66,7 @@ else
 		rarity = false,
 	}
 
-	defineTile('.', "FLOOR")
 	defineTile('?', "FLOOR", lore)
-	defineTile(',', "GRASS")
-	defineTile('#', "HARDWALL")
-	defineTile('+', "DOOR_VAULT")
 
 	return {
 	[[,,,,,,,,,]],

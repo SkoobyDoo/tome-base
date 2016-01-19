@@ -17,12 +17,18 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
-
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+specialList("actor", {
+	"/data/general/npcs/thieve.lua",
+})
+specialList("terrain", {
+	"/data/general/grids/forest.lua",
+}, true)
+border = 0
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('.', "FLOOR")
-defineTile(',', "GRASS")
+defineTile(',', data.floor or data['.'] or "GRASS")
 defineTile('#', "WALL")
 defineTile('X', "HARDWALL")
 defineTile('+', "DOOR")
@@ -35,8 +41,7 @@ defineTile('&', "FLOOR", {random_filter={type="scroll"}})
 defineTile('$', "FLOOR", "MONEY_SMALL")
 defineTile('*', "FLOOR", {random_filter={type="gem"}})
 
-startx = 10
-starty = 0
+--startx, starty = 10, 0
 
 return {
 [[,,,,,,,,,,,,,,]],
