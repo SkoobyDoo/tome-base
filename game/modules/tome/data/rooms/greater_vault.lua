@@ -36,16 +36,6 @@ local function vault_exists(f)
 	return false
 end
 
--- go through whole list of vaults (debugging)
-local function sequential_vault(zone, list)
-	zone._greater_vault_num = zone._greater_vault_num or 0
-	local vnbr = zone._greater_vault_num%#list+1
-	local vaultid = list[vnbr]
-	zone._greater_vault_num = zone._greater_vault_num + 1
---game.log("#PINK# RANDOM GREATER vault %s: %s", vnbr, vaultid)
-	return vaultid, vnbr
-end
-
 return function(gen, id, lev, old_lev)
 	local vault_map
 	local Static = require("engine.generator.map.Static")
@@ -62,9 +52,6 @@ return function(gen, id, lev, old_lev)
 	local tries = 5 -- try multiple times to generate a vault in case some are not allowed
 	repeat
 		vaultid, vnbr = rng.table(list)
-
-		vaultid, vnbr = sequential_vault(gen.zone, list) -- debugging
-
 		if not vaultid then break end
 		vault_map = engine.Map.new(max_w, max_h)
 		gen.level.map = vault_map
@@ -84,8 +71,8 @@ return function(gen, id, lev, old_lev)
 		tries = tries - 1
 	until vault or #list <= 0 or tries <= 0
 	if vault then
-	vault:generate(lev, old_lev)
-	print("generated greater_vault", vaultid) -- table.print_shallow(vault, "--")
+		vault:generate(lev, old_lev)
+		print("generated greater_vault", vaultid)
 	end
 	game.level = old_game_level
 	gen.level.map = old_map
@@ -109,7 +96,6 @@ return function(gen, id, lev, old_lev)
 			-- Make the grids special by default to prevent tunnelling through
 			for i = x, x + w - 1 do for j = y, y + h - 1 do
 				gen.map.room_map[i][j].special = gen.map.room_map[i][j].special ~= false and true
---				gen.map.room_map[i][j].room = id
 				gen.map.room_map[i][j].room = gen.map.room_map[i][j].room ~= false and id
 				gen.map.attrs(i, j, "no_decay", true)
 				gen.map.attrs(i, j, "vault_id", vaultuid)

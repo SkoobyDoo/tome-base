@@ -219,7 +219,7 @@ function _M:tooltip(x, y)
 		tstr:add(true, tostring(rawget(self, "type")), " / ", tostring(rawget(self, "subtype")))
 		tstr:add(true, "UID: ", tostring(self.uid), true, "Coords: ", tostring(x), "x", tostring(y))
 	
-		-- debugging
+		-- debugging info
 		if game.level.map.room_map then
 			local data = game.level.map.room_map[x][y]
 			local room = table.get(game.level.map.room_map.rooms, data.room, "room")
@@ -231,10 +231,7 @@ function _M:tooltip(x, y)
 			for atr, val in pairs(attrs) do
 				tstr:add(("%s=%s%s"):format(atr,val,", "))
 			end
-		
 		end
-		-- end debugging
-
 	end
 	return tstr
 end

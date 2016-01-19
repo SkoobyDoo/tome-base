@@ -157,12 +157,6 @@ function _M:generate(lev, old_lev)
 
 	local nb_room = util.getval(self.data.nb_rooms or 10)
 
--- debugging
-print("[Roomer] Begin generation with map data:")
---table.print(self.data, "*====*")
-game.log("#LIGHT_RED#====[Roomer] generating map with %s rooms (current level:%s)", nb_room, resolvers.current_level)
--- end debugging
-
 	local spots = {}
 	self.spots = spots
 

@@ -828,8 +828,6 @@ end
 function _M:changeLevelReal(lev, zone, params)
 	local oz, ol = self.zone, self.level
 	
---if config.settings.cheat then game.log("[Game:changeLevelReal] going to zone: %s, lev : %s", zone, lev) print("params:") table.print(params) end -- debugging
-
 	-- Unlock first!
 	if not params.temporary_zone_shift_back and self.level and self.level.temp_shift_zone then
 		self:changeLevelReal(1, "useless", {temporary_zone_shift_back=true})
@@ -881,7 +879,7 @@ function _M:changeLevelReal(lev, zone, params)
 
 		self.zone:getLevel(self, lev, old_lev, true)
 		
-		-- could add another level generation failure prompt here.
+		-- could add another level generation failure prompt here but the one below should be sufficient.
 
 		self.visited_zones[self.zone.short_name] = true
 		world:seenZone(self.zone.short_name)
@@ -954,22 +952,15 @@ function _M:changeLevelReal(lev, zone, params)
 		local level, new_level = self.zone:getLevel(self, lev, old_lev)
 
 		-- handle successive level generation failures
-		if (config.settings.auto_level_fail or not level or self.zone._level_generation_count > self.zone._max_level_generation_count) and not params._debug_mode then -- debugging version
---		if (not level or self.zone._level_generation_count > self.zone._max_level_generation_count) and not params._debug_mode then
---			local failed_zone, failed_level = self.zone:clone(), level and level:clone() -- store failed zone/level
+		if (not level or self.zone._level_generation_count > self.zone._max_level_generation_count) and not params._debug_mode then
 			local failed_zone, failed_level = self.zone, level -- store failed zone/level
 			self.zone, self.level = failed_zone:clone(), level and level:clone() -- restore to copies so originals match memory addresses
 			local to_re_add_actors = self.to_re_add_actors
 			print("=====Level Generation Failure: Unable to create level", lev, "of zone:", failed_zone.short_name, "===")
 			print("=====Failed Zone====:", failed_zone, "====") table.print_shallow(failed_zone)
-			print("====Failed Level====:", failed_level, "====") table.print_shallow(failed_level)
+			print("=====Failed Level===:", failed_level, "====") table.print_shallow(failed_level)
 			
--- temporary debugging code
-self.debug = self.debug or {}
-self.debug.failed_zone = failed_zone
-self.debug.failed_level = failed_level
-
-			if Dialog.multiButtonPopup then
+			if Dialog.multiButtonPopup then -- cleaner prompt if multiButtonPopup is implemented
 				local choices = {("Stay: level %d of %s"):format(ol.level, oz.name), "Keep trying"}
 				local STAY, TRY, REPORT, DEBUG = 1, 2
 				if true then -- setup criteria to report the problem
@@ -987,8 +978,6 @@ self.debug.failed_level = failed_level
 					elseif choice == REPORT then -- get a description of the situation from the player and upload any relevant files for debugging
 -- DG: not sure how you prefer to handle this. failed_zone/failed_level are the copies of the last versions that failed to generate
 						print("Report selected")
---						print("=====Failed Zone====:") table.print_shallow(failed_zone)
---						print("====Failed Level====:") table.print_shallow(failed_level)
 					elseif choice == DEBUG then
 						print("Debug selected")
 						failed_zone._level_generation_count = nil
@@ -1126,10 +1115,10 @@ self.debug.failed_level = failed_level
 		end
 
 		if not x then -- Default to stairs
-			if lev > old_lev and not params.force_down then x, y = self.level.default_up.x, self.level.default_up.y
-			else x, y = self.level.default_down.x, self.level.default_down.y
+			if lev > old_lev and not params.force_down and self.level.default_up then x, y = self.level.default_up.x, self.level.default_up.y
+			elseif self.level.default_down then x, y = self.level.default_down.x, self.level.default_down.y
 			end
-			if not x then x, y = self.level.default_up.x, self.level.default_up.y end
+			if not x and self.level.default_up then x, y = self.level.default_up.x, self.level.default_up.y end
 		end
 
 		-- Check if there is already an actor at that location, if so move it

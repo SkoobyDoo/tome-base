@@ -27,7 +27,6 @@ _M:enableLastPersistZones(3)
 
  -- retain the room map after level generation (for runPostGeneration callbacks)
 _M._retain_level_room_map = true
-_M._max_level_generation_count = 5 -- debugging temporary
 
 -- Merge special_on_crit values.
 _M:addEgoRule("object", function(dvalue, svalue, key, dst, src, rules, state)

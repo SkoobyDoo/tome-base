@@ -102,17 +102,17 @@ local trigger = function(self, who)
 			if not tx then
 				game.logPlayer(who, "#YELLOW#The Portal repels you briefly before becoming quiescent.  The other side seems to be blocked.")
 			else
-				who:move(tx, ty, true)
-				game:playSoundNear(who, "talents/distortion")
 				game.logPlayer(who, "#YELLOW#An overcome intense #LIGHT_BLUE#REPULSIVE FORCES#LAST# as you traverse the Portal.")
+				game:playSoundNear(who, "talents/distortion")
+				who:move(tx, ty, true)
 			end
 		else
 			if not tx then
 				game.logSeen(who, "#YELLOW#The Portal repels %s briefly as %s approaches it.", who.name:capitalize(), who:he_she())
 			else
-				who:move(tx, ty, true)
-				game:playSoundNear(who, "talents/distortion")
 				who:logCombat(nil, "#YELLOW#The Portal #LIGHT_BLUE#VIOLENTLY DISTORTS#LAST# before #source# emerges from it.")
+				game:playSoundNear(who, "talents/distortion")
+				who:move(tx, ty, true)
 			end
 		end
 	else

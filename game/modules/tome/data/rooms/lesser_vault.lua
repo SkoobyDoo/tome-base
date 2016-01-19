@@ -23,10 +23,6 @@
 local max_w, max_h = 50, 50
 -- Dynamically build the list, this way addons can add new vaults easily
 local list = {}
-
--- list for debugging
-local list = {"honey_glade", "troll-hideout", "mage-hideout", "thief-hideout", "plantlife", "mold-path", "bandit-fortress","loot-vault", "circle","amon-sul-crypt","rat-nest","skeleton-mage-cabal", "snow-giant-camp", "orc-armoury", "dragon_lair", "hostel", "horror-chamber", "crypt", "forest-ruined-building1", "forest-ruined-building2", "forest-ruined-building3", "old-forest-swamp", "forest-snake-pit"}
-
 for _, f in ipairs(fs.list("/data/maps/vaults/auto/lesser/")) do
 	if f:suffix(".lua") or f:suffix(".tmx") then
 		list[#list+1] = f:sub(1, #f - 4)
@@ -38,16 +34,6 @@ table.print(list, "---")
 local function vault_exists(f)
 	if fs.exists("/data/maps/"..f..".lua") or fs.exists("/data/maps/"..f..".tmx") then return f end
 	return false
-end
-
--- go through whole list of vaults (debugging)
-local function sequential_vault(zone, list)
-	zone._lesser_vault_num = zone._lesser_vault_num or 0
-	local vnbr = zone._lesser_vault_num%#list+1
-	local vaultid = list[vnbr]
-	zone._lesser_vault_num = zone._lesser_vault_num + 1
---game.log("#PINK# RANDOM LESSER vault %s: %s", vnbr, vaultid)
-	return vaultid, vnbr
 end
 
 return function(gen, id, lev, old_lev)
@@ -66,9 +52,6 @@ return function(gen, id, lev, old_lev)
 	local tries = 5 -- try multiple times to generate a vault in case some are not allowed
 	repeat
 		vaultid, vnbr = rng.table(list)
-		
-		vaultid, vnbr = sequential_vault(gen.zone, list) -- debugging
-
 		if not vaultid then break end
 		vault_map = engine.Map.new(max_w, max_h)
 		gen.level.map = vault_map
@@ -89,7 +72,7 @@ return function(gen, id, lev, old_lev)
 	until vault or #list <= 0 or tries <= 0
 	if vault then
 		vault:generate(lev, old_lev)
-	print("generated lesser_vault", vaultid) --table.print_shallow(vault, "--")
+		print("generated lesser_vault", vaultid)
 	end
 	game.level = old_game_level
 	gen.level.map = old_map
@@ -113,7 +96,6 @@ return function(gen, id, lev, old_lev)
 			-- Make the grids special by default to prevent tunnelling through
 			for i = x, x + w - 1 do for j = y, y + h - 1 do
 				gen.map.room_map[i][j].special = gen.map.room_map[i][j].special ~= false and true
---				gen.map.room_map[i][j].room = id
 				gen.map.room_map[i][j].room = gen.map.room_map[i][j].room ~= false and id
 				gen.map.attrs(i, j, "no_decay", true)
 				gen.map.attrs(i, j, "vault_id", vaultuid)

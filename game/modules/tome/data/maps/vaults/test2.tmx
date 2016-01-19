@@ -5,6 +5,7 @@
   <property name="no_tunnels" value="true"/>
   <property name="border" value="2"/>
   <property name="rotates" value="{&quot;default&quot;, &quot;flipx&quot;, &quot;flipy&quot;, &quot;90&quot;, &quot;180&quot;, &quot;270&quot;}"/>
+  <property name="rotates2" value="{&quot;flipy&quot;}"/>
   <property name="map_data" value="{test_data = &quot;This is test data&quot;, level_range = {10, 50}}"/>
   <property name="onplace" value="function(room, zone, level, map, data)
 	game.log([[#PINK#test2 onplace function called]])
@@ -12,7 +13,7 @@
 	"/>
   <property name="prefer_location" value="function(map)
 	game.log([[#PINK#test2 prefer_location function called]])
-	return 1, 1
+	return 2, 2
 	end
 	"/>
    <property name="roomcheck" value="function(room, zone, level, map)

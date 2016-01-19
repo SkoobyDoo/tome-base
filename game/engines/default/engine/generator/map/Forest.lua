@@ -192,8 +192,6 @@ function _M:generate(lev, old_lev)
 	local direction = 1
 	local ending
 
-if config.settings.cheat then game.log("#LIGHT_RED#====[Forest] generating map with %s rooms (current level:%s)", nb_room, resolvers.current_level) end -- debugging
-
 	print("[Forest] generating map:", nb_room, "rooms")
 	-- get the axis and direction
 	if self.data.edge_entrances then
@@ -267,8 +265,6 @@ if config.settings.cheat then game.log("#LIGHT_RED#====[Forest] generating map w
 		tries = tries - 1
 	end
 
--- debugging
-if config.settings.cheat then game.log("#LIGHT_RED#====[Forest] placed %d rooms", #rooms) end
 	print("[Forest] placed", #rooms, "rooms")
 	
 	local ux, uy, dx, dy
@@ -290,7 +286,7 @@ if config.settings.cheat then game.log("#LIGHT_RED#====[Forest] placed %d rooms"
 					re = re%#rooms + 1
 				until not rooms[re].room.no_tunnels or re <= rs
 				if not rooms[re].room.no_tunnels then
-					print("[Forest]__tunneling: room", rooms[rs].id, "(", rooms[rs].cx, rooms[rs].cy, ") to room", rooms[re].id, "(",rooms[re].cx, rooms[re].cy, ")")
+--					print("[Forest]__tunneling: room", rooms[rs].id, "(", rooms[rs].cx, rooms[rs].cy, ") to room", rooms[re].id, "(",rooms[re].cx, rooms[re].cy, ")")
 					self:tunnel(rooms[rs].cx, rooms[rs].cy, rooms[re].cx, rooms[re].cy, rooms[re].id)
 				end
 				if re <= rs then break end

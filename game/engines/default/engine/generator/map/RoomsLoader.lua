@@ -667,26 +667,6 @@ function _M:roomPlace(room, id, x, y)
 		room.onplace(room, self.zone, self.level, self.map, ret)
 	end
 	
-	 -- Debugging: display all rooms
-	if config.settings.cheat then
-		for i = 1, room.w do
-			for j = 1, room.h do
-				local rx, ry = i-1+x, j-1+y
-				self.map.lites(rx, ry, 1)
-				self.map.remembers(rx, ry, 1)
-				local tr = self.map(rx, ry, self.map.TERRAIN)
-				if tr then
-					tr = tr:cloneFull()
-					tr.show_tooltip = true
-					tr.desc = (tr.desc or "").." #SALMON#room["..id.."]("..(room.name or "unnamed")..")"
---					tr.nice_tiler = nil
-					self.map(rx, ry, self.map.TERRAIN, tr)
-					self.map:updateMap(rx, ry)
-				end
-			end
-		end
-	end
-	-- end debugging
 	return ret
 end
 
@@ -860,14 +840,6 @@ function _M:tunnel(x1, y1, x2, y2, id, virtual)
 			nx, ny = x1 + xdir, y1 + ydir
 		end
 		print(feat, "try pos", nx, ny, "dir", util.coordToDir(xdir, ydir, nx, ny))
---[[
-		if self.map.room_map[nx][ny].special then
-			print(feat, "reject special")
-			if nx == x2 and ny == y2 then -- stop if next to special target
-				x1, y1 = nx, ny
-				print(feat, "end adjacent to special target")
-			end
-			--]]
 		if self.map.room_map[nx][ny].special then
 			if self.map.room_map[nx][ny].can_open then
 				tun[#tun+1] = {nx,ny,false,true}
@@ -930,6 +902,7 @@ function _M:tunnel(x1, y1, x2, y2, id, virtual)
 	end
 
 	local doors = {}
+	self.possible_doors = self.possible_doors or {}
 	for _, t in ipairs(tun) do
 		local nx, ny = t[1], t[2]
 		if t[3] and self.data.door then self.possible_doors[#self.possible_doors+1] = t end
