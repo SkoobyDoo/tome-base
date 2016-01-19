@@ -225,6 +225,14 @@ function _M:tooltip(x, y)
 			local room = table.get(game.level.map.room_map.rooms, data.room, "room")
 			tstr:add(true, {"color", "PINK"}, ("room_map: rm:%s(%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
 		end
+		local attrs = game.level.map.attrs[x+y*game.level.map.w]
+		if attrs then
+			tstr:add(true, {"color", "TAN"}, "map attrs: ")
+			for atr, val in pairs(attrs) do
+				tstr:add(("%s=%s%s"):format(atr,val,", "))
+			end
+		
+		end
 		-- end debugging
 
 	end

@@ -378,7 +378,9 @@ function _M:tmxLoad(file)
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
 				for k, v in pairs(props) do
 					for i = x, x + w do for j = y, y + h do
-						local i, j = rotate_coords(i, j)
+						--print("=== found attrs", k, v, "at", i, j, "with rotate:", rotate)
+						local i, j = rotate_coords(i + 1, j + 1)
+						i, j = i - 1, j - 1
 						self.add_attrs_later[#self.add_attrs_later+1] = {x=i, y=j, key=k, value=self:loadLuaInEnv(g, nil, "return "..v)}
 						print("====", i, j, k)
 					end end
