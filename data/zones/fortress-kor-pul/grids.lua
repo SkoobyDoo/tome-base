@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2015 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,15 +17,4 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local class = require"engine.class"
-local Birther = require "engine.Birther"
-local PartyLore = require "mod.class.interface.PartyLore"
-local ActorTemporaryEffects = require "engine.interface.ActorTemporaryEffects"
-
-class:bindHook("ToME:load", function(self, data)
-	Birther:loadDefinition("/data-atof/birth/worlds.lua")
-	PartyLore:loadDefinition("/data-atof/lore/distorted-grove.lua")
-	PartyLore:loadDefinition("/data-atof/lore/fortress-kor-pul.lua")
-	ActorTemporaryEffects:loadDefinition("/data-atof/timed_effects/time-floor.lua")
-
-end)
+load("/data/general/grids/basic.lua")
