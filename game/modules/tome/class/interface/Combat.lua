@@ -161,10 +161,13 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 	end
 
 	if not speed and self:isTalentActive(self.T_GESTURE_OF_PAIN) then
+		if self.no_gesture_of_pain_recurse then return false end
 		print("[ATTACK] attacking with Gesture of Pain")
 		local t = self:getTalentFromId(self.T_GESTURE_OF_PAIN)
 		if not t.preAttack(self, t, target) then return false end
+		self.no_gesture_of_pain_recurse = true
 		speed, hit = t.attack(self, t, target)
+		self.no_gesture_of_pain_recurse = nil
 		break_stealth = true
 	end
 

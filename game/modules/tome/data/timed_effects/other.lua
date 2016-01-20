@@ -770,9 +770,9 @@ newEffect{
 		-- level 4: Reprieve from Death
 	end,
 	deactivate = function(self, eff)
-		if eff.resistsUndeadId then self:removeTemporaryValue("resists_actor_type", eff.resistsUndeadId) end
-		if eff.incDamageUndeadId then self:removeTemporaryValue("inc_damage_actor_type", eff.incDamageUndeadId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.resistsUndeadId then self:removeTemporaryValue("resists_actor_type", eff.resistsUndeadId) eff.resistsUndeadId = nil end
+		if eff.incDamageUndeadId then self:removeTemporaryValue("inc_damage_actor_type", eff.incDamageUndeadId) eff.incDamageUndeadId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
 	end,
 	on_merge = function(self, old_eff, new_eff) return old_eff end,
 	doCorpselight = function(self, eff, target)
@@ -911,10 +911,10 @@ newEffect{
 		-- level 4: Mania
 	end,
 	deactivate = function(self, eff)
-		if eff.mindResistId then self:removeTemporaryValue("resists", eff.mindResistId) end
-		if eff.confusionImmuneId then self:removeTemporaryValue("confusion_immune", eff.confusionImmuneId) end
-		if eff.getCombatCriticalPowerChangeId then self:removeTemporaryValue("combat_critical_power", eff.getCombatCriticalPowerChangeId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.mindResistId then self:removeTemporaryValue("resists", eff.mindResistId) eff.mindResistId = nil end
+		if eff.confusionImmuneId then self:removeTemporaryValue("confusion_immune", eff.confusionImmuneId) eff.confusionImmuneId = nil end
+		if eff.getCombatCriticalPowerChangeId then self:removeTemporaryValue("combat_critical_power", eff.getCombatCriticalPowerChangeId) eff.getCombatCriticalPowerChangeId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
 	end,
 	on_timeout = function(self, eff)
 		-- mania
@@ -1014,10 +1014,10 @@ newEffect{
 		-- level 4: Shroud of Death
 	end,
 	deactivate = function(self, eff)
-		if eff.resistsDarknessId then self:removeTemporaryValue("resists", eff.resistsDarknessId) end
-		if eff.resistsCapDarknessId then self:removeTemporaryValue("resists_cap", eff.resistsCapDarknessId) end
-		if eff.seeInvisibleId then self:removeTemporaryValue("see_invisible", eff.seeInvisibleId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.resistsDarknessId then self:removeTemporaryValue("resists", eff.resistsDarknessId) eff.resistsDarknessId = nil end
+		if eff.resistsCapDarknessId then self:removeTemporaryValue("resists_cap", eff.resistsCapDarknessId) eff.resistsCapDarknessId = nil end
+		if eff.seeInvisibleId then self:removeTemporaryValue("see_invisible", eff.seeInvisibleId) eff.seeInvisibleId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
 
 		if self:hasEffect(self.EFF_SHROUD_OF_WEAKNESS) then self:removeEffect(self.EFF_SHROUD_OF_WEAKNESS) end
 		if self:hasEffect(self.EFF_SHROUD_OF_PASSING) then self:removeEffect(self.EFF_SHROUD_OF_PASSING) end
@@ -1171,9 +1171,9 @@ newEffect{
 		-- level 4: Nightmare
 	end,
 	deactivate = function(self, eff)
-		if eff.resistsPhysicalId then self:removeTemporaryValue("resists", eff.resistsPhysicalId); end
-		if eff.resistsCapPhysicalId then self:removeTemporaryValue("resists_cap", eff.resistsCapPhysicalId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.resistsPhysicalId then self:removeTemporaryValue("resists", eff.resistsPhysicalId); eff.resistsPhysicalId =  nil end
+		if eff.resistsCapPhysicalId then self:removeTemporaryValue("resists_cap", eff.resistsCapPhysicalId) eff.resistsCapPhysicalId =  nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId =  nil end
 	end,
 	on_merge = function(self, old_eff, new_eff) return old_eff end,
 	doSuffocate = function(self, eff, target)
@@ -1355,11 +1355,11 @@ newEffect{
 		-- level 4: Unfortunate End
 	end,
 	deactivate = function(self, eff)
-		if eff.moneyValueMultiplierId then self:removeTemporaryValue("money_value_multiplier", eff.moneyValueMultiplierId) end
-		if eff.combatDefId then self:removeTemporaryValue("combat_def", eff.combatDefId) end
-		if eff.combatDefRangedId then self:removeTemporaryValue("combat_def_ranged", eff.combatDefRangedId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
-		if eff.trapAvoidanceId then self:removeTemporaryValue("trap_avoidance", eff.trapAvoidanceId) end
+		if eff.moneyValueMultiplierId then self:removeTemporaryValue("money_value_multiplier", eff.moneyValueMultiplierId) eff.moneyValueMultiplierId = nil end
+		if eff.combatDefId then self:removeTemporaryValue("combat_def", eff.combatDefId) eff.combatDefId = nil end
+		if eff.combatDefRangedId then self:removeTemporaryValue("combat_def_ranged", eff.combatDefRangedId) eff.combatDefRangedId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
+		if eff.trapAvoidanceId then self:removeTemporaryValue("trap_avoidance", eff.trapAvoidanceId) eff.trapAvoidanceId = nil end
 	end,
 	on_merge = function(self, old_eff, new_eff) return old_eff end,
 	

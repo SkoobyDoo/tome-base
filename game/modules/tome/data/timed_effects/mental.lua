@@ -607,7 +607,7 @@ newEffect{
 	subtype = { psychic_drain=true },
 	status = "beneficial",
 	parameters = { },
-	activate = function(self, eff)
+	activate = function(self, eff, ed)
 		eff.src = self
 
 		-- hate
@@ -641,6 +641,8 @@ newEffect{
 		end
 
 		eff.target:setEffect(eff.target.EFF_FED_UPON, eff.dur, { src = eff.src, target = eff.target, constitutionLoss = -eff.constitutionGain, lifeRegenLoss = -eff.lifeRegenGain, damageLoss = -eff.damageGain, resistLoss = -eff.resistGain })
+
+		ed.updateFeed(self, eff)
 	end,
 	deactivate = function(self, eff)
 		-- hate

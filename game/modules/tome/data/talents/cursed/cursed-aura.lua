@@ -213,7 +213,7 @@ newTalent{
 			local penalty = t.cursePenalty(self, t)
 			local currentLevel = eff and eff.level or 0
 			local currentPenalty = eff and eff.Penalty or 1
-			--print("* curse:", self.tempeffect_def[curse].desc, currentLevel, "->", level, eff)
+			-- print(i, "* curse:", self.tempeffect_def[curse].desc, currentLevel, "->", level, eff)
 			if currentLevel ~= level or currentPenalty ~= penalty or forceUpdateEffects then
 				if eff then
 					self:removeEffect(curse, false, true)

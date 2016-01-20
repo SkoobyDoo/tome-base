@@ -63,11 +63,10 @@ newAI("use_tactical", function(self)
 	local has_los = aitarget and self:hasLOS(ax, ay)
 	local self_compassion = (self.ai_state.self_compassion == false and 0) or self.ai_state.self_compassion or 5
 	local ally_compassion = (self.ai_state.ally_compassion == false and 0) or self.ai_state.ally_compassion or 1
-	for tid, lvl in pairs(self.talents) do
+	for tid, lvl in pairs(self.talents) do local t = self:getTalentFromId(tid) if t then
 		local aitarget = aitarget
 		local ax, ay = ax, ay
 		local target_dist = target_dist
-		local t = self:getTalentFromId(tid)
 
 		if t.onAIGetTarget then
 			_, _, aitarget = t.onAIGetTarget(self, t)
@@ -195,7 +194,7 @@ newAI("use_tactical", function(self)
 				end
 			end
 		end
-	end
+	end end
 	if ok then
 		local want = {}
 		local need_heal = 0
