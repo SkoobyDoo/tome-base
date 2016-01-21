@@ -2871,3 +2871,73 @@ newEffect{
 		end
 	end,
 }
+
+newEffect{
+	name = "PARASITIC_LEECHES", image = "talents/ritch_larva_infect.png", -- New icon needed.
+	desc = "Parasitic Leeches",
+	display_desc = function(self, eff) return eff.nb.." masses" end,
+	long_desc = function(self, eff)
+		local source = eff.src or self
+		return ("The target is being fed upon by %d masses of parasitic leeches for %0.2f physical and %0.2f acid damage each turn.  After a %d turn feeding period, one mass will drop off and multiply."):format(eff.nb,
+		source:damDesc("PHYSICAL", eff.dam*eff.nb/2), source:damDesc("ACID", eff.dam*eff.nb/2), eff.gestation)
+	end,
+	type = "physical",
+	subtype = { parasite=true },
+	status = "detrimental",
+	decrease = 0,
+	on_merge = function(self, old_eff, new_eff) -- More leeches = faster feeding and more damage.
+		old_eff.nb = old_eff.nb + 1
+		old_eff.gestation = old_eff.gestation - 1
+		return old_eff
+	end,
+	activate = function(self, eff)
+	end,
+	parameters = {dam=10, nb=1, gestation=5, turns=0 },
+	on_gain = function(self, err) return "#Target# is #GREEN#INFESTED#LAST# with parasitic leeches!", "+Parasitic Leeches" end,
+	on_timeout = function(self, eff)
+		eff.turns = eff.turns + 1
+		-- Creepy, so the player tries to get rid of it as soon as possible...
+		local source = eff.src or self
+		source:project({}, self.x, self.y, DamageType.PHYSICAL, eff.dam*eff.nb/2)
+		source:project({}, self.x, self.y, DamageType.ACID, eff.dam*eff.nb/2)
+		if eff.turns >= eff.gestation then
+			-- Find space
+			local x, y = util.findFreeGrid(self.x, self.y, 3, true, {[Map.ACTOR]=true})
+			if not x then
+				--game.logPlayer(self, "Not enough space to invoke!")
+				return
+			end
+			local m = game.zone:makeEntityByName(game.level, "actor", "HORROR_PARASITIC_LEECHES")
+			if m then
+				m.exp_worth = 0
+				m.can_multiply = 1
+				game.zone:addEntity(game.level, m, "actor", x, y)
+				m:learnTalent(m.T_MULTIPLY, 1)
+
+				game.logSeen(self, "Some leeches drop off %s!", self.name:capitalize())
+			end
+			eff.turns = 0
+			eff.nb = eff.nb - 1
+			eff.gestation = 6 - eff.nb
+			if eff.nb <= 0 then self:removeEffect(self.EFF_PARASITIC_LEECHES, false, true) end
+		end
+	end,
+	deactivate = function(self, eff)
+		if eff.nb >= 0 then -- prematurely removed, drop all leeches without multiply.
+			for n=1, eff.nb do
+				-- Find space
+				local x, y = util.findFreeGrid(self.x, self.y, 3, true, {[Map.ACTOR]=true})
+				if not x then
+					--game.logPlayer(self, "Not enough space to invoke!")
+					return
+				end
+				local m = game.zone:makeEntityByName(game.level, "actor", "HORROR_PARASITIC_LEECHES")
+				if m then
+					m.exp_worth = 0
+					game.zone:addEntity(game.level, m, "actor", x, y)
+				end
+			end
+			game.logSeen(self, "Some leeches drop off %s!", self.name:capitalize())
+		end
+	end,
+}
