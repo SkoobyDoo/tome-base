@@ -17,31 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local def = {lite=true}
-defineTile('>', "POINT_ZERO_PORTAL", nil, nil, nil, def)
-defineTile(';', "GRASS", nil, nil, nil, def)
-defineTile('T', "TREE", nil, nil, nil, def)
-defineTile('<', "DISTORTED_GROVE", nil, nil, nil,def)
-defineTile('A', "GRASS", nil, "AKHO")
-defineTile('D', "GRASS", nil, "DEFENDER_OF_REALITY")
+load("/data-atof/general/npcs/keepers.lua")
+load("data-atof/zones/point-zero/npcs.lua")
 
-startx = 0
-starty = 6
 
-endx = 11
-endy = 6
-
-return [[
-TTTTTTTTTTTTTTTTT
-TTTTTTTTTTTTTTTTT
-TTTTTT;;;;;TTTTTT
-TTTT;;;;T;;;;TTTT
-TTT;;T;;;;D;;;TTT
-TT;;D;;;;;;;;;;TT
-<;;;;;;;A;>;;;;TT
-TT;;;;;;;;;;;;;TT
-TTT;D;;;;D;T;;TTT
-TTTT;;;T;;;;;TTTT
-TTTTTT;;;;TTTTTTT
-TTTTTTTTTTTTTTTTT
-TTTTTTTTTTTTTTTTT]]
