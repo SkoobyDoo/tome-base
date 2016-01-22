@@ -556,7 +556,7 @@ newEffect{
 newEffect{
 	name = "HARASSED", image = "talents/harass_prey.png",
 	desc = "Harassed",
-	long_desc = function(self, eff) return ("The target has been harassed by its stalker, reducing damage by %d%%."):format( -eff.damageChange * 100) end,
+	long_desc = function(self, eff) return ("The target has been harassed by its stalker, reducing damage by %d%%."):format( -eff.damageChange) end,
 	type = "mental",
 	subtype = { fear=true },
 	status = "detrimental",
