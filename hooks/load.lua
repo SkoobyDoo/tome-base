@@ -29,3 +29,9 @@ class:bindHook("ToME:load", function(self, data)
 	ActorTemporaryEffects:loadDefinition("/data-atof/timed_effects/time-floor.lua")
 
 end)
+
+class:bindHook("Entity:loadList", function(self, data)
+	if data.file == "/data/general/stores/basic.lua" then
+		self:loadList("/data-atof/general/stores/naloren.lua", data.no_default, data.res, data.mod, data.loaded)
+	end
+end)
