@@ -895,7 +895,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 				local x, y = util.findFreeGrid(self.x, self.y, 3, true, {[engine.Map.ACTOR]=true})
 				if not x then
 					--game.logPlayer(self, "Not enough space to invoke!")
-					return
+					return value
 				end
 				local m = game.zone:makeEntityByName(game.level, "actor", "HORROR_PARASITIC_LEECHES")
 				if m then
@@ -915,7 +915,7 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "HORROR_PARASITIC_LEECHES",
 	name = "mass of parasitic leeches",
 	color = colors.LIGHT_GREEN,
 	desc = "Dozens - hundreds maybe? - of blood-gorged worms, of varying shapes and sizes, making a writhing, ichor-soaked sea of tooth-lined maws and sickly green skin, ready to latch onto you and drink until they burst or your veins run dry.",
-	level_range = {20, nil}, exp_worth = 1,
+	level_range = {25, nil}, exp_worth = 1,
 	rarity = 10,
 	rank = 2,
 	autolevel = "warrior",

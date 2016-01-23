@@ -2873,9 +2873,9 @@ newEffect{
 }
 
 newEffect{
-	name = "PARASITIC_LEECHES", image = "talents/ritch_larva_infect.png", -- New icon needed.
+	name = "PARASITIC_LEECHES", image = "talents/blood_suckers.png",
 	desc = "Parasitic Leeches",
-	display_desc = function(self, eff) return eff.nb.." masses" end,
+	display_desc = function(self, eff) return "Parasitic Leeches: "..eff.nb.." masses" end,
 	long_desc = function(self, eff)
 		local source = eff.src or self
 		return ("The target is being fed upon by %d masses of parasitic leeches for %0.2f physical and %0.2f acid damage each turn.  After a %d turn feeding period, one mass will drop off and multiply."):format(eff.nb,
@@ -2892,6 +2892,7 @@ newEffect{
 	end,
 	activate = function(self, eff)
 	end,
+	charges = function(self, eff) return eff.nb end,
 	parameters = {dam=10, nb=1, gestation=5, turns=0 },
 	on_gain = function(self, err) return "#Target# is #GREEN#INFESTED#LAST# with parasitic leeches!", "+Parasitic Leeches" end,
 	on_timeout = function(self, eff)
