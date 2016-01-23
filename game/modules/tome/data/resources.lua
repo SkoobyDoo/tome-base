@@ -24,7 +24,7 @@ print("[Resources] Defining Actor Resources")
 -- Actor resources
 -- Additional (ToME specific) fields:
 -- cost_factor increases/decreases resource cost (used mostly to account for the effect of armor-based fatigue)
--- invert_values = true means the resource starts at 0 and increases as it is consumed (equilibrium/paradox)
+-- invert_values = true means the resource increases as it is consumed (equilibrium/paradox)
 -- status_text = function(actor) returns a textual description of the resource status (defaults to "val/max")
 -- color = text color string ("#COLOR#") to use to display the resource (text or uiset graphics)
 -- hidden_resource = true prevents display of the resource in various interfaces
@@ -65,7 +65,7 @@ ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILI
 		end,
 	},
 	Minimalist = { --parameters for the Minimalist uiset
-		images = {front = "/data/gfx/ui/resources/front_nature.png", front_dark = "/data/gfx/ui/resources/front_nature_dark.png"},
+		images = {front = "resources/front_nature.png", front_dark = "resources/front_nature_dark.png"},
 		highlight = function(player, vc, vn, vm, vr) -- dim the resource display if fail chance <= 15%
 			if player then
 				local _, chance = player:equilibriumChance()
@@ -165,5 +165,5 @@ ActorResource:defineResource("Psi", "psi", ActorTalents.T_PSI_POOL, "psi_regen",
 ActorResource:defineResource("Souls", "soul", ActorTalents.T_SOUL_POOL, "soul_regen", "This is the number of soul fragments you have extracted from your foes for your own use.", 0, 10, {
 	color = "#bebebe#",
 	randomboss_enhanced = true,
-	Minimalist = {images = {front = "/data/gfx/ui/resources/front_souls.png", front_dark = "/data/gfx/ui/resources/front_souls_dark.png"}},
+	Minimalist = {images = {front = "resources/front_souls.png", front_dark = "resources/front_souls_dark.png"}},
 })
