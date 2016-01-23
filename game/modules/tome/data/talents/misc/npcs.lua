@@ -1441,7 +1441,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Elemental bolt",
+	name = "Elemental Bolt",
 	type = {"spell/other", 1},
 	points = 5,
 	mana = 10,
