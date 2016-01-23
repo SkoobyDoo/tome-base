@@ -554,6 +554,7 @@ function _M:onResolutionChange()
 	-- Get new resolution and save
 	local realw, realh
 	self.w, self.h, self.fullscreen, self.borderless, realw, realh = core.display.size()
+	realw, realh = realw or self.w, realh or self.h
 	config.settings.window.size = ("%dx%d%s"):format(realw, realh, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
 	
 	self:saveSettings("resolution", ("window.size = '%s'\n"):format(config.settings.window.size))
