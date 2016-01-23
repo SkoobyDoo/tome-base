@@ -816,7 +816,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 	resolvers.nice_tile{tall=1},
 	desc = [[This powerful vortex of ice and lightning somehow gives you the impression of claws, teeth and intense hunger...]],
 	level_range = {30, nil}, exp_worth = 1,
-	rarity = 30,  -- Very rare; should feel almost like uniques though they aren't
+	rarity = 20,
 	rank = 3,
 	max_life = resolvers.rngavg(70,80),
 	autolevel = "caster",
@@ -858,6 +858,91 @@ newEntity{ base = "BASE_NPC_HORROR",
 		e:addShaderAura("body_of_ice", "crystalineaura", {}, "particles_images/spikes.png")
 		e.snowparticle = e:addParticles(engine.Particles.new("snowfall", 1))
 	end),
+}
+
+newEntity{ base = "BASE_NPC_HORROR",
+	name = "parasitic horror", color=colors.DARK_GREEN,
+	resolvers.nice_tile{tall=1},
+	desc ="You don't want to think about what sort of creature this lamprey-like horror was feeding on to grow so large.  Its skin pulsates and writhes, like things are moving underneath...",
+	level_range = {35, nil}, exp_worth = 1,
+	rarity = 20,
+	rank = 3,
+	autolevel = "warrior",
+	max_life = resolvers.rngavg(220,250),
+	life_rating = 16,
+	combat_armor = 1, combat_def = 10,
+	combat = { dam=20, atk=30, apr=40, dammod={str=1}, lifesteal = 100, damtype=DamageType.ACID},
+	ai = "tactical", ai_state = { ai_move="move_complex", talent_in=2, },
+
+	resists = { [DamageType.LIGHTNING] = -50, [DamageType.ACID] = 100, [DamageType.NATURE] = 50, [DamageType.BLIGHT] = 50},
+	damage_affinity = { [DamageType.ACID] = 50 },
+
+	blind_immune = 1,
+	see_invisible = 20,
+	movement_speed = 2,
+
+	resolvers.talents{
+		[Talents.T_CRAWL_ACID]={base=5, every=10},
+		[Talents.T_SWALLOW]={base=5, every=10},
+		[Talents.T_ACIDIC_SKIN]={base=5, every=10},
+		[Talents.T_BLOOD_SPLASH]={base=5, every=10},
+	},
+
+	on_takehit = function(self, value, src, death_note)
+		if value >= self.max_life / 10 then
+			for n=1, math.ceil(5*value/self.max_life) do
+				-- Find space
+				local x, y = util.findFreeGrid(self.x, self.y, 3, true, {[engine.Map.ACTOR]=true})
+				if not x then
+					--game.logPlayer(self, "Not enough space to invoke!")
+					return value
+				end
+				local m = game.zone:makeEntityByName(game.level, "actor", "HORROR_PARASITIC_LEECHES")
+				if m then
+					m.exp_worth = 0
+					game.zone:addEntity(game.level, m, "actor", x, y)
+				end
+			end
+			game.logSeen(self, "%s's severed flesh starts crawling!", self.name:capitalize())
+		end
+		return value
+	end,
+	
+	resolvers.sustains_at_birth(),
+}
+
+newEntity{ base="BASE_NPC_HORROR", define_as = "HORROR_PARASITIC_LEECHES",
+	name = "mass of parasitic leeches",
+	color = colors.LIGHT_GREEN,
+	desc = "Dozens - hundreds maybe? - of blood-gorged worms, of varying shapes and sizes, making a writhing, ichor-soaked sea of tooth-lined maws and sickly green skin, ready to latch onto you and drink until they burst or your veins run dry.",
+	level_range = {25, nil}, exp_worth = 1,
+	rarity = 10,
+	rank = 2,
+	autolevel = "warrior",
+	size_category = 2,
+	max_life = resolvers.rngavg(120,150),
+	life_rating = 10,
+	combat_armor = 1, combat_def = 10,
+	combat = { dam=10, atk=20, apr=30, dammod={str=1}, lifesteal = 100, damtype=DamageType.ACID},
+	ai = "tactical", ai_state = { ai_move="move_complex", talent_in=2, },
+
+	resists = { [DamageType.LIGHTNING] = -50, [DamageType.ACID] = 100, [DamageType.NATURE] = 50, [DamageType.BLIGHT] = 50},
+	damage_affinity = { [DamageType.ACID] = 50 },
+
+	blind_immune = 1,
+	see_invisible = 20,
+
+	resolvers.talents{
+		[Talents.T_CRAWL_ACID]={base=5, every=10},
+		[Talents.T_ACIDIC_SKIN]={base=5, every=10},
+		[Talents.T_BLOOD_SUCKERS]={base=5, every=10},
+	},
+
+	resolvers.sustains_at_birth(),
+	
+	make_escort = {
+		{type="horror", subtype="eldritch", name="parasitic leech", number=2, no_subescort=true},
+	},
 }
 
 
