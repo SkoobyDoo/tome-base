@@ -17,12 +17,10 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-name = "Ashes to Ashes"
+name = "Through the Portal"
 desc = function(self, who)
 	local desc = {}
-	desc[#desc+1] = "You awoke to find your home town empty and ruined, as if destroyed a long time ago."
-	desc[#desc+1] = "There is evidence of magics in the nearby woods."
-	desc[#desc+1] = "You must explore the Distorted Grove and investigate!"
+	desc[#desc+1] = "Commander Akho has told you to go to Point Zero and talk to the Grand Keeper of Reality, Zemekkys."
 	return table.concat(desc, "\n")
 end
 

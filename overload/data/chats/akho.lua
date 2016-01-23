@@ -25,7 +25,7 @@ I am Lady Akho, commander of the Temporal Wardens. I was sent here to investigat
 Surely you have encountered some of the temporal distortions? 
 	]],
 	answers = {
-		{"Hello, I am @playername@. #LIGHT_GREEN#*Tell her about the disappearance your hometown*#WHITE#", jump="catastrophe", },
+		{"Hello, I am @playername@. #LIGHT_GREEN#*Tell her about the disappearance of your hometown*#WHITE#", jump="catastrophe", },
 	}
 }
 
@@ -46,7 +46,11 @@ I will take a closer look at this place, perhaps it will lead to a better unders
 Take care, @playername@! I wish you luck!
 	]],
 	answers = {
-		{"Thank you, Lady Akho!", action = function (self, player) self.talked_to = 1 end},
+		{"Thank you, Lady Akho!", action = function(self, player)
+			self.talked_to = 1
+			player:grantQuest("atof+point-zero")
+			end
+		},
 	}
 }
 
