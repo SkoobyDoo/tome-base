@@ -2180,6 +2180,24 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
+	if value > 0 and self:attr("displacement_shield") then
+		-- Absorb damage into the displacement shield
+		if rng.percent(self.displacement_shield_chance) then
+			game:delayedLogMessage(self, src,  "displacement_shield"..(self.displacement_shield_target.uid or ""), "#CRIMSON##Source# teleports some damage to #Target#!")
+			local displaced = math.min(value, self.displacement_shield)
+			self.displacement_shield_target:takeHit(displaced, src)
+			game:delayedLogDamage(src, self, 0, ("#CRIMSON#(%d teleported)#LAST#"):format(displaced), false)
+			game:delayedLogDamage(src, self.displacement_shield_target, displaced, ("#CRIMSON#%d teleported#LAST#"):format(displaced), false)
+			if self.displacement_shield and displaced < self.displacement_shield then
+				self.displacement_shield = self.displacement_shield - displaced
+				value = 0
+			else
+				self:removeEffect(self.EFF_DISPLACEMENT_SHIELD)
+				value = value - displaced
+			end
+		end
+	end
+
 	if value > 0 and self:attr("time_shield") then
 		-- Absorb damage into the time shield
 		self.time_shield_absorb = self.time_shield_absorb or 0
@@ -2250,24 +2268,6 @@ function _M:onTakeHit(value, src, death_note)
 			game:delayedLogDamage(src, self, 0, ("#PINK#(%d linked)#LAST#"):format(displaced), false)
 			game:delayedLogDamage(src, shadow, displaced, ("#PINK#%d linked#LAST#"):format(displaced), false)
 			value = value - displaced
-		end
-	end
-
-	if value > 0 and self:attr("displacement_shield") then
-		-- Absorb damage into the displacement shield
-		if rng.percent(self.displacement_shield_chance) then
-			game:delayedLogMessage(self, src,  "displacement_shield"..(self.displacement_shield_target.uid or ""), "#CRIMSON##Source# teleports some damage to #Target#!")
-			local displaced = math.min(value, self.displacement_shield)
-			self.displacement_shield_target:takeHit(displaced, src)
-			game:delayedLogDamage(src, self, 0, ("#CRIMSON#(%d teleported)#LAST#"):format(displaced), false)
-			game:delayedLogDamage(src, self.displacement_shield_target, displaced, ("#CRIMSON#%d teleported#LAST#"):format(displaced), false)
-			if self.displacement_shield and displaced < self.displacement_shield then
-				self.displacement_shield = self.displacement_shield - displaced
-				value = 0
-			else
-				self:removeEffect(self.EFF_DISPLACEMENT_SHIELD)
-				value = value - displaced
-			end
 		end
 	end
 
