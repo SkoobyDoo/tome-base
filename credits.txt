@@ -1,5 +1,7 @@
 Artwork Credits
 ---------------
 
-trenggiling: Crocodile and Shark sprites
-
+trenggiling: 
+- Crocodile
+- Shark
+- Naloren Guard
