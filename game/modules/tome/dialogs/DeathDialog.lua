@@ -112,7 +112,7 @@ function _M:cleanActor(actor)
 		local eff = rng.tableRemove(effs)
 
 		if eff[1] == "effect" then
-			actor:removeEffect(eff[2])
+			actor:removeEffect(eff[2], false, true)
 		else
 			actor:forceUseTalent(eff[2], {ignore_energy=true, no_equilibrium_fail=true, no_paradox_fail=true, save_cleanup=true})
 		end
