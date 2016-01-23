@@ -639,8 +639,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local count = t.getRemoveCount(self, t)
 		return ([[Halflings have one of the most powerful military forces in the known world and they have been at war with most other races for thousand of years.
-		Removes %d stun, daze, or pin effects, and makes you immune to stuns, dazes and pins for %d turns.
-		This talent takes no time to use.]]):format(duration, count)
+		Removes %d stun, daze, or pin effects, and makes you immune to stuns, dazes and pins for %d turns.]]):format(duration, count)
 	end,
 }
 
