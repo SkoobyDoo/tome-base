@@ -2588,7 +2588,7 @@ static int gl_new_fbo(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
 		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 
@@ -2606,11 +2606,11 @@ static int gl_free_fbo(lua_State *L)
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
 	int i;
-	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	glDeleteTextures(fbo->nbt, fbo->textures);
-	glDeleteFramebuffers(1, &(fbo->fbo));
+	glDeleteFramebuffersEXT(1, &(fbo->fbo));
 
 	free(fbo->textures);
 	free(fbo->buffers);
