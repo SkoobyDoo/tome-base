@@ -105,6 +105,7 @@ return {
 				map = {
 					class = "engine.generator.map.Cavern",
 					zoom = 16,
+					nb_rooms = 0,
 					min_floor = 1200,
 					floor = "CAVEFLOOR",
 					wall = "CAVEWALL",
