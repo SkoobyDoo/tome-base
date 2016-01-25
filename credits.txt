@@ -5,3 +5,4 @@ trenggiling:
 - Crocodile
 - Shark
 - Naloren Guard
+- Akho

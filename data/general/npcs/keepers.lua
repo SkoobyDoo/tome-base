@@ -24,8 +24,8 @@ newEntity{ define_as = "AKHO",
 	display = "p", color=colors.PURPLE,
 	faction = "keepers-of-reality",
 	name = "Commander Akho",
-	image = "npc/humanoid_elf_star_crusader.png", -- replace with custom tile later
-	desc = [[A woman clad in dark mail armour, a great bow in her hands. She looks very young, but you have a feeling that she is much, much older.]],
+	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/akho.jpg", display_h=2, display_y=-1}}},
+	desc = [[A young woman in dark plate armor, flickering softly as her timeline readjusts itself. She looks very young, but you have a feeling that she is much, much older.]],
 	
 	level_range = {50, nil}, exp_worth = 1,
 	rarity = false,
@@ -38,27 +38,30 @@ newEntity{ define_as = "AKHO",
 	size_category = 3,
 	female = true,
 	infravision = 10,
-	stats = { str=10, dex=10, cun=12, mag=16, con=14 },
+	stats = { str=10, dex=20, cun=12, mag=16, wil=20, con=14 },
 	instakill_immune = 1,
 	teleport_immune = 1,
 
 	can_talk = "akho",
 	
+	autolevel = "warriormage",
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"ranged",
-	resolvers.inscriptions(5, {}),
-	resolvers.inscriptions(1, "rune"),
+	resolvers.inscriptions(3, "rune"),
 	
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
-	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
+	--resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 	
 	resolvers.equip{
-		{type="weapon", subtype="bow", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="heavy", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="ammo", subtype="arrows", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="weapon", subtype="longbow", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="massive", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="ammo", subtype="arrow", forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	
 	resolvers.talents{
+		[Talents.T_SHOOT]=5,
+		[Talents.T_ARMOUR_TRAINING]=5,
+	
 		[Talents.T_FORESIGHT]=5,
 		[Talents.T_PRECOGNITION]=5,
 		
@@ -75,7 +78,6 @@ newEntity{ define_as = "AKHO",
 	
 		[Talents.T_TIME_STOP]=5,
 	},
-
 	resolvers.sustains_at_birth(),
 
 }
