@@ -1378,7 +1378,13 @@ newTalent{
 
 			game.zone:addEntity(game.level, m, "actor", x, y)
 
-			game.logSeen(self, "%s spawns one of its tentacles!", self.name:capitalize())
+			if self.is_grgglck then
+				game.logSeen(self, "%s spawns one of its tentacles!", self.name:capitalize())
+			else
+				m.name = "summoned tentacle"
+				m.desc = "Ewwww.."
+				game.logSeen(self, "%s spawns a tentacle!", self.name:capitalize())
+			end
 		end
 
 		return true
