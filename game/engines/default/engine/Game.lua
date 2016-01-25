@@ -57,8 +57,10 @@ function _M:logSeen() end
 --- Default mouse cursor
 function _M:defaultMouseCursor()
 	local UIBase = require "engine.ui.Base"
-	if fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse-down.png") then
-		self:setMouseCursor("/data/gfx/"..UIBase.ui.."-ui/mouse.png", "/data/gfx/"..UIBase.ui.."-ui/mouse-down.png", -4, -4)
+	local ui = UIBase.ui or "dark"
+
+	if fs.exists("/data/gfx/"..ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..ui.."-ui/mouse-down.png") then
+		self:setMouseCursor("/data/gfx/"..ui.."-ui/mouse.png", "/data/gfx/"..ui.."-ui/mouse-down.png", -4, -4)
 	else
 		self:setMouseCursor("/data/gfx/ui/mouse.png", "/data/gfx/ui/mouse-down.png", -4, -4)
 	end
