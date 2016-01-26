@@ -1079,7 +1079,7 @@ newTalent{
 						end
 					end,
 					dig = function(src, x, y, old)
-						game.level:removeEntity(old)
+						game.level:removeEntity(old, true)
 						game.level.map:scheduleRedisplay()
 						return nil, old.old_feat
 					end,
