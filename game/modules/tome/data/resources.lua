@@ -94,7 +94,7 @@ ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILI
 })
 
 ActorResource:defineResource("Vim", "vim", ActorTalents.T_VIM_POOL, "vim_regen", "Vim represents the amount of life energy/souls you have stolen. Each corruption talent requires some.", nil, nil, {
-	color = "#888888#",
+	color = "#904010#",
 	wait_on_rest = true,
 	randomboss_enhanced = true,
 	Minimalist = {shader_params = {color = {0x90/255, 0x40/255, 0x10/255}}} --parameters for the Minimalist uiset
