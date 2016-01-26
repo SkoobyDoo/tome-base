@@ -372,6 +372,7 @@ newTalent{
 		return true
 	end,
 	nbShadowsUp = function(self, t)
+		if not game.level then return 0 end
 		local shadowCount = 0
 		for _, e in pairs(game.level.entities) do
 			if e.summoner and e.summoner == self and e.subtype == "shadow" then shadowCount = shadowCount + 1 end
