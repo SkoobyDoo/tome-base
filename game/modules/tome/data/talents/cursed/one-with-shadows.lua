@@ -60,6 +60,7 @@ newTalent{
 	end,
 	getDur = function(self, t) return math.floor(self:combatTalentScale(t, 3, 10)) end,
 	getPower = function(self, t) return 5 + self:combatTalentMindDamage(t, 0, 300) / 8 end,
+	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		self:setEffect(self.EFF_SHADOW_EMPATHY, t.getDur(self, t), {power=t.getPower(self, t)})
 		return true
@@ -83,6 +84,7 @@ newTalent{
 	no_npc_use = true,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 15, 1)) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, 1)) end,
+	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRadius(t)}
 		local x, y, target = self:getTarget(tg)
