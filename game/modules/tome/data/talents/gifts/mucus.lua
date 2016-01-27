@@ -292,6 +292,7 @@ newTalent{
 		if not x then return nil end
 		if not isOnMucus(game.level.map, x, y) then return nil end
 		if not self:canMove(x, y) then return nil end
+		if not self:hasLOS(x, y) then return nil end
 
 		local energy = 1 - t.getEnergy(self, t)
 		self.energy.value = self.energy.value + game.energy_to_act * self.energy.mod * energy
