@@ -43,7 +43,7 @@ function _M:init(zone, map, level, data)
 		self.adjust_level = {base=zone.base_level, lev = self.level.level, min=0, max=0}
 	end
 
-	self:loadMap(data.map)
+	self:loadMap(data.map, data.inline_map)
 end
 
 function _M:getMapFile(file)
@@ -361,16 +361,23 @@ function _M:tmxLoad(file)
 	return true
 end
 
-function _M:loadMap(file)
+function _M:loadMap(file, is_inline)
 	local t = {}
-
-	file = self:getMapFile(file)
-	if self:tmxLoad(file) then return end
-
-	print("Static generator using file", file)
 	local g = self:getLoader(t)
-	local ret, err = self:loadLuaInEnv(g, file)
-	if not ret and err then error(err) end
+	local ret, err
+
+	if is_inline then
+		print("Static generator using inline data")
+		ret, err = self:loadLuaInEnv(g, nil, file)
+		if not ret and err then error(err) end
+	else
+		file = self:getMapFile(file)
+		if self:tmxLoad(file) then return end
+
+		print("Static generator using file", file)
+		ret, err = self:loadLuaInEnv(g, file)
+		if not ret and err then error(err) end
+	end
 	if type(ret) == "string" then ret = ret:split("\n") end
 
 	local m = { w=#(ret[1]), h=#ret }

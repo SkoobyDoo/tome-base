@@ -67,7 +67,7 @@ newEffect{
 		})
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("inc_stats", eff.tmpid)
+		self:removeTemporaryValue("inc_stats", eff.tmpid) eff.tmpid = nil
 	end,
 }
 
@@ -1869,7 +1869,7 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("inc_stats", {[Stats.STAT_CON] = -eff.con})
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("inc_stats", eff.tmpid)
+		self:removeTemporaryValue("inc_stats", eff.tmpid) eff.tmpid = nil
 	end,
 }
 
@@ -1894,7 +1894,7 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("inc_stats", {[Stats.STAT_DEX] = -eff.dex})
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("inc_stats", eff.tmpid)
+		self:removeTemporaryValue("inc_stats", eff.tmpid) eff.tmpid = nil
 	end,
 }
 
@@ -1919,7 +1919,7 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("inc_stats", {[Stats.STAT_STR] = -eff.str})
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("inc_stats", eff.tmpid)
+		self:removeTemporaryValue("inc_stats", eff.tmpid) eff.tmpid = nil
 	end,
 }
 
@@ -1945,9 +1945,9 @@ newEffect{
 		eff.immid = self:addTemporaryValue("disease_immune", -eff.resist / 100)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("diseases_spread_on_blight", eff.tmpid)
-		self:removeTemporaryValue("healing_factor", eff.healid)
-		self:removeTemporaryValue("disease_immune", eff.immid)
+		self:removeTemporaryValue("diseases_spread_on_blight", eff.tmpid) eff.tmpid = nil
+		self:removeTemporaryValue("healing_factor", eff.healid) eff.healid = nil
+		self:removeTemporaryValue("disease_immune", eff.immid) eff.immid = nil
 	end,
 }
 
@@ -2026,7 +2026,7 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("inc_stats", {[Stats.STAT_STR] = -eff.str, [Stats.STAT_DEX] = -eff.dex, [Stats.STAT_CON] = -eff.con})
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("inc_stats", eff.tmpid)
+		self:removeTemporaryValue("inc_stats", eff.tmpid) eff.tmpid = nil
 	end,
 }
 
