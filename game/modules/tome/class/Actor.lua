@@ -3928,7 +3928,7 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	end
 
 	if o.wielder then
-		-- o.wielder.wielded = nil
+		o.wielder.wielded = nil
 	end
 
 	if o.wielder and o.wielder.learn_talent then
