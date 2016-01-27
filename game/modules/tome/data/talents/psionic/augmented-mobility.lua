@@ -144,7 +144,7 @@ newTalent{
 			if not x or not y then return nil end
 		end
 		local fx, fy = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-		if not fx then
+		if not fx or not self:hasLOS(fx, fy) then
 			return
 		end
 		game.logSeen(self, "%s performs a telekinetically enhanced leap!", self.name:capitalize())
