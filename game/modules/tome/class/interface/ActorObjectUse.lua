@@ -251,6 +251,7 @@ function _M:useObjectTalent(base_name, num)
 		t = table.clone(self.useObjectBaseTalent)
 		t.id = tid
 		t.short_name = short_name
+		t.no_unlearn_last = true
 		Talents:newTalent(t)
 		-- defined here after parsing in data.talents.lua
 		t.tactical = function(self, t, ...)
