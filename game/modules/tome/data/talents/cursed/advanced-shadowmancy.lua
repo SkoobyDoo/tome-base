@@ -174,7 +174,7 @@ newTalent{
 				a:project(tg, x, y, DamageType.PHYSICAL, dam)
 
 				game.level.map:particleEmitter(a.x, a.y, 1, "teleport")
-				a:teleportRandom(x, y, 1)
+				a:move(sx, sy, true)
 				game.level.map:particleEmitter(a.x, a.y, 1, "teleport")
 				
 			end
