@@ -129,14 +129,26 @@ newTalent{
 		-- Grab all shadows in sight range, and link them together in grayswandir's quite amazing multi-target targeting.
 		local tg = {nolock=true, multiple=true}
 		local shadows = {}
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		local grids = nil
+		local targeted = false
+		if self:knowTalent(self.T_SHADOW_SENSES) then
+			grids = core.fov.circle_grids(self.x, self.y, 10)
+		else
+			grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		end
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 			local a = game.level.map(x, y, Map.ACTOR)
 			if a and a.is_doomed_shadow and a.summoner == self then
 				shadows[#shadows+1] = a
 				tg[#tg+1] = {type="beam", nolock=true, range=20, friendlyfire=false, selffire=false, talent=t, pass_terrain=true, nowarning=true, source_actor=a, block_path=function(typ, lx, ly, for_highlights) if core.fov.distance(self.x, self.y, lx, ly) > 10 then return true, false, false else return old_block_path(typ, lx, ly, for_highlights) end end}
+				if targeted == false then targeted = true end
 			end
 		end end
+		
+		if targeted == false then
+			game.logPlayer(self, "You need a shadow in sight range!")
+			return
+		end
 		
 		-- Get a target.
 		local x, y = self:getTarget(tg)
@@ -193,7 +205,12 @@ newTalent{
 	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local shadows = {}
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		local grids = nil
+		if self:knowTalent(self.T_SHADOW_SENSES) then
+			grids = core.fov.circle_grids(self.x, self.y, 10)
+		else
+			grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		end
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 			local a = game.level.map(x, y, Map.ACTOR)
 			if a and a.is_doomed_shadow and a.summoner == self then
