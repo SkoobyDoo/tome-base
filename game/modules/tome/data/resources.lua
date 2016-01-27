@@ -34,7 +34,7 @@ print("[Resources] Defining Actor Resources")
 -- Minimalist = table of parameters to be used with the Minimalist uiset (see uiset.Minimalist.lua)
 ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breathe are not affected.", nil, nil, {
 	color = "#LIGHT_STEEL_BLUE#",
-	wait_on_rest = true,
+	-- wait_on_rest = true,
 })
 ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue.  Most physical abilities consume it.", nil, nil, {
 	color = "#ffcc80#",
