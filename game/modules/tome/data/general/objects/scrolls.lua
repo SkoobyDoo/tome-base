@@ -189,7 +189,7 @@ newEntity{ base = "BASE_INFUSION",
 	level_range = {10, 50},
 	rarity = 15,
 	cost = 30,
-	material_level = 3,
+	material_level = 2,
 
 	inscription_kind = "movement",
 	inscription_data = {
