@@ -163,7 +163,7 @@ newTalent{
 			if #shadows <= 0 then break end
 			local a, id = rng.table(shadows)
 			table.remove(shadows, id)
-			local sx, sy = util.findFreeGrid(x, y, 1, true, {[engine.Map.ACTOR]=true})
+			local sx, sy = util.findFreeGrid(x, y, 2, true, {[engine.Map.ACTOR]=true})
 			if sx and sy then
 				tg.source_actor = a
 
