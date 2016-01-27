@@ -217,7 +217,10 @@ newTalent{
 			end
 		end end
 		
-		if #shadows <= 0 then return nil end
+		if #shadows <= 0 then
+			game.logPlayer(self, "You need a shadow in sight range!")
+			return
+		end
 		
 		local damage = self:mindCrit(t.getDamage(self, t))
 		
