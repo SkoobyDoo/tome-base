@@ -28,7 +28,7 @@ newTalent{
 	require = cursed_cun_req_high1,
 	tactical = { DISABLE = 2 },
 	getReduction = function(self, t) return self:combatTalentScale(t, 10, 40) end,
-	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
 		local x, y, target = self:getTargetLimited(tg)
@@ -65,7 +65,7 @@ newTalent{
 	require = cursed_cun_req_high2,
 	tactical = { ATTACK = {PHYSICAL = 2} },
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 280) end,
-	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
 		local x, y, target = self:getTargetLimited(tg)
@@ -120,7 +120,7 @@ newTalent{
 	target = function(self, t)
 		return {type="beam", nolock=true, range=self:getTalentRange(t), friendlyfire=false, selffire=false, talent=t, pass_terrain=true, nowarning=true}
 	end,
-	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		-- I wouldn't recommend doing this on a regular basis. We're copying an Engine function. This is so that we can put a manual check on targeting so shadows will never go farther than 10 tiles away from us.
 		-- We have to copy it as well, so that we can call it afterwards for normal block_path checks.
@@ -190,7 +190,7 @@ newTalent{
 	tactical = { ATTACK = {MIND = 2} },
 	require = cursed_cun_req_high4,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 150) end,
-	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local shadows = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
