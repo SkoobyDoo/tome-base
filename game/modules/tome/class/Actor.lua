@@ -3928,6 +3928,7 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	end
 
 	if o.wielder then
+		-- To fix a fucking bug in 1.4; in some time we can remove that line
 		o.wielder.wielded = nil
 	end
 
