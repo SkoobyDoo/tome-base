@@ -168,18 +168,17 @@ newTalent{
 				tg.source_actor = a
 
 				game.level.map:particleEmitter(a.x, a.y, math.max(math.abs(x-a.x), math.abs(y-a.y)), "earth_beam", {tx=x-a.x, ty=y-a.y})
-				game.level.map:particleEmitter(a.x, a.y, math.max(math.abs(sx-a.x), math.abs(sy-a.y)), "shadow_beam", {tx=sx-a.x, ty=sy-a.y})
+				game.level.map:particleEmitter(a.x, a.y, math.max(math.abs(x-a.x), math.abs(y-a.y)), "shadow_beam", {tx=x-a.x, ty=y-a.y})
 
 				local dam = self:mindCrit(t.getDamage(self, t))
 				a:project(tg, x, y, DamageType.PHYSICAL, dam)
 
-				game.level.map:particleEmitter(a.x, a.y, 1, "teleport")
 				a:move(sx, sy, true)
-				game.level.map:particleEmitter(a.x, a.y, 1, "teleport")
 				
 			end
 		end
 
+		game.level.map:particleEmitter(x, y, 0, "teleport")
 		game:playSoundNear(self, "talents/earth")
 		return true
 	end,
