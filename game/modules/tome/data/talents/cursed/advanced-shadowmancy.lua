@@ -189,7 +189,7 @@ newTalent{
 	hate = 10,
 	tactical = { ATTACK = {MIND = 2} },
 	require = cursed_cun_req_high4,
-	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 150) end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 180) end,
 	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local shadows = {}
