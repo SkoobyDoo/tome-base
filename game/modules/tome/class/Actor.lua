@@ -5217,6 +5217,10 @@ function _M:postUseTalent(ab, ret, silent)
 				trigger = true; q.shertul_energy = q.shertul_energy - util.getval(ab.fortress_energy, self, ab)
 			end
 		end
+		-- Vim increases equilibrium
+		if ab.vim then
+			self:incEquilibrium(util.getval(ab.vim, self, ab) * 5)
+		end
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name
 			cost = ab[rname] and util.getval(ab[rname], self, ab) or 0
