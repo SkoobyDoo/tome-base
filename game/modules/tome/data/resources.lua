@@ -117,7 +117,7 @@ ActorResource:defineResource("Hate", "hate", ActorTalents.T_HATE_POOL, "hate_reg
 	Minimalist = {highlight = function(player, vc, vn, vm, vr) return vc >=100 end},
 })
 ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, "paradox_regen", "Paradox represents how much damage you've done to the space-time continuum. A high Paradox score makes Chronomancy less reliable and more dangerous to use but also amplifies its effects.", 0, false, {
-	color = "#b0c4d3#", invert_values = true,
+	color = "#4198dc#", invert_values = true,
 	randomboss_enhanced = true,
 	status_text = function(act)
 		local chance = act:paradoxFailChance()
