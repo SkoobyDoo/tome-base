@@ -214,7 +214,7 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 			dammod={str=0.5, dex=0.5}
 		},
 		mana = 100,
-		spellpower = tShadowMages and tShadowMages.getSpellpowerChange(self, tShadowMages) or 0,
+		combat_spellpower = tShadowMages and tShadowMages.getSpellpowerChange(self, tShadowMages) or 0,
 		summoner_hate_per_kill = self.hate_per_kill,
 		resolvers.talents{
 			[self.T_SHADOW_PHASE_DOOR]=tCallShadows.getPhaseDoorLevel(self, tCallShadows),
