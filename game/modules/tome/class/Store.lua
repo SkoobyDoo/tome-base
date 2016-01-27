@@ -164,7 +164,7 @@ function _M:doBuy(who, o, item, nb, store_dialog)
 				game.party:learnLore(o.lore)
 			else
 				self:transfer(self, who, item, nb)
-				o, item = who:findInInventory(who:getInven("INVEN"), o:getName())
+				o, item = who:findInInventory(who:getInven("INVEN"), o:getName()) or o
 			end
 			if o then
 				if who.money >= price then
