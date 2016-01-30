@@ -56,7 +56,7 @@ return function(gen, id, lev, old_lev)
 		vault_map = engine.Map.new(max_w, max_h)
 		gen.level.map = vault_map
 		data = table.clone(gen.data)
-		data.map = vault_exists("vaults/auto/lesser/"..vaultid) or vault_exists("vaults/"..vaultid)
+		data.map = vault_exists("vaults/auto/lesser/"..vaultid) or vault_exists("vaults/"..vaultid) or vault_exists("vaults/auto/greater/"..vaultid)
 		vault = data.map and Static.new(gen.zone, vault_map, gen.level, data)
 		if vault then -- make sure the vault can be placed
 			vault.name = vaultid
