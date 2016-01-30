@@ -267,8 +267,8 @@ It represents the fatigue created by wearing heavy equipment.
 Not all talents are affected; notably, Wild Gifts are not.
 ]]
 TOOLTIP_ARMOR = [[#GOLD#Armour#LAST#
-Armour value is a damage reduction from all incoming melee and ranged physical attacks.
-Absorbs (hardiness)% of incoming physical damage, up to a maximum of (armour) damage absorbed.
+Armour value is a damage reduction from all incoming melee and ranged weapon attacks.
+Absorbs (hardiness)% of incoming weapon damage, up to a maximum of (armour) damage absorbed.
 This is countered by armour penetration and is applied before all kinds of critical damage increase, talent multipliers and damage multiplier, thus making even small amounts have greater effects.
 ]]
 TOOLTIP_ARMOR_HARDINESS = [[#GOLD#Armour Hardiness#LAST#

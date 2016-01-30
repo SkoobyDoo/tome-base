@@ -28,6 +28,7 @@ newTalent{
 	require = cursed_cun_req_high1,
 	tactical = { DISABLE = 2 },
 	getReduction = function(self, t) return self:combatTalentScale(t, 10, 40) end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
 		local x, y, target = self:getTargetLimited(tg)
@@ -48,7 +49,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Target a nearby shadow, and command it to merge into a nearby enemy, reducing their damage by %d%% for 5 turns.
-Killing your shadow releases some of your inner hatred, restoring 8 Hate to yourself.]]):
+		Killing your shadow releases some of your inner hatred, restoring 8 Hate to yourself.]]):
 		format(t.getReduction(self, t))
 	end,
 }
@@ -64,6 +65,7 @@ newTalent{
 	require = cursed_cun_req_high2,
 	tactical = { ATTACK = {PHYSICAL = 2} },
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 280) end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
 		local x, y, target = self:getTargetLimited(tg)
@@ -97,8 +99,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Target a nearby shadow, and force it to slam into a nearby enemy, dealing %0.1f Physical damage.
-Your shadow will then set them as their target, and they will target your shadow.
-Damage increases with your Mindpower.]]):
+		Your shadow will then set them as their target, and they will target your shadow.
+		Damage increases with your Mindpower.]]):
 		format(damDesc(self, DamageType.PHYSICAL, t.getDamage(self, t)))
 	end,
 }
@@ -118,6 +120,7 @@ newTalent{
 	target = function(self, t)
 		return {type="beam", nolock=true, range=self:getTalentRange(t), friendlyfire=false, selffire=false, talent=t, pass_terrain=true, nowarning=true}
 	end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		-- I wouldn't recommend doing this on a regular basis. We're copying an Engine function. This is so that we can put a manual check on targeting so shadows will never go farther than 10 tiles away from us.
 		-- We have to copy it as well, so that we can call it afterwards for normal block_path checks.
@@ -126,14 +129,26 @@ newTalent{
 		-- Grab all shadows in sight range, and link them together in grayswandir's quite amazing multi-target targeting.
 		local tg = {nolock=true, multiple=true}
 		local shadows = {}
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		local grids = nil
+		local targeted = false
+		if self:knowTalent(self.T_SHADOW_SENSES) then
+			grids = core.fov.circle_grids(self.x, self.y, 10)
+		else
+			grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		end
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 			local a = game.level.map(x, y, Map.ACTOR)
 			if a and a.is_doomed_shadow and a.summoner == self then
 				shadows[#shadows+1] = a
 				tg[#tg+1] = {type="beam", nolock=true, range=20, friendlyfire=false, selffire=false, talent=t, pass_terrain=true, nowarning=true, source_actor=a, block_path=function(typ, lx, ly, for_highlights) if core.fov.distance(self.x, self.y, lx, ly) > 10 then return true, false, false else return old_block_path(typ, lx, ly, for_highlights) end end}
+				if targeted == false then targeted = true end
 			end
 		end end
+		
+		if targeted == false then
+			game.logPlayer(self, "You need a shadow in sight range!")
+			return
+		end
 		
 		-- Get a target.
 		local x, y = self:getTarget(tg)
@@ -148,30 +163,29 @@ newTalent{
 			if #shadows <= 0 then break end
 			local a, id = rng.table(shadows)
 			table.remove(shadows, id)
-			local sx, sy = util.findFreeGrid(x, y, 1, true, {[engine.Map.ACTOR]=true})
+			local sx, sy = util.findFreeGrid(x, y, 2, true, {[engine.Map.ACTOR]=true})
 			if sx and sy then
 				tg.source_actor = a
 
 				game.level.map:particleEmitter(a.x, a.y, math.max(math.abs(x-a.x), math.abs(y-a.y)), "earth_beam", {tx=x-a.x, ty=y-a.y})
-				game.level.map:particleEmitter(a.x, a.y, math.max(math.abs(sx-a.x), math.abs(sy-a.y)), "shadow_beam", {tx=sx-a.x, ty=sy-a.y})
+				game.level.map:particleEmitter(a.x, a.y, math.max(math.abs(x-a.x), math.abs(y-a.y)), "shadow_beam", {tx=x-a.x, ty=y-a.y})
 
 				local dam = self:mindCrit(t.getDamage(self, t))
 				a:project(tg, x, y, DamageType.PHYSICAL, dam)
 
-				game.level.map:particleEmitter(a.x, a.y, 1, "teleport")
-				a:teleportRandom(x, y, 1)
-				game.level.map:particleEmitter(a.x, a.y, 1, "teleport")
+				a:move(sx, sy, true)
 				
 			end
 		end
 
+		game.level.map:particleEmitter(x, y, 0, "teleport")
 		game:playSoundNear(self, "talents/earth")
 		return true
 	end,
 	info = function(self, t)
-		return ([[Command all Shadows within sight to tele-dash to your target location, damaging any enemies they pass through for %0.1f Physical damage.
-For the purpose of this talent, you force your shadows through any walls in their way.
-Damage increases with your Mindpower.]]):
+		return ([[Command all Shadows within sight to tele-dash to a target location, damaging any enemies they pass through for %0.1f Physical damage.
+		For the purpose of this talent, you force your shadows through any walls in their way.
+		Damage increases with your Mindpower.]]):
 		format(damDesc(self, DamageType.PHYSICAL, t.getDamage(self, t)))
 	end,
 }
@@ -186,10 +200,16 @@ newTalent{
 	hate = 10,
 	tactical = { ATTACK = {MIND = 2} },
 	require = cursed_cun_req_high4,
-	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 150) end,
+	getDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 180) end,
+	on_pre_use = function(self, t) return game.level and self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local shadows = {}
-		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		local grids = nil
+		if self:knowTalent(self.T_SHADOW_SENSES) then
+			grids = core.fov.circle_grids(self.x, self.y, 10)
+		else
+			grids = core.fov.circle_grids(self.x, self.y, 10, true)
+		end
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
 			local a = game.level.map(x, y, Map.ACTOR)
 			if a and a.is_doomed_shadow and a.summoner == self then
@@ -197,7 +217,10 @@ newTalent{
 			end
 		end end
 		
-		if #shadows <= 0 then return nil end
+		if #shadows <= 0 then
+			game.logPlayer(self, "You need a shadow in sight range!")
+			return
+		end
 		
 		local damage = self:mindCrit(t.getDamage(self, t))
 		
@@ -225,10 +248,9 @@ newTalent{
 		if failed == true then return nil else return true end
 	end,
 	info = function(self, t)
-		return ([[Share your hatred with all shadows within sight range, gaining temporary full control.
-Every shadow affected can then fire a blast of pure hate towards a nearby target, dealing %0.1f Mind damage.
-You cannot cancel this talent once the first bolt is cast.
-Damage increases with your Mindpower.]]):
+		return ([[Share your hatred with all shadows within sight range, gaining temporary full control. You then fire a blast of pure hatred from all affected shadows, dealing %0.1f Mind damage per blast.
+		You cannot cancel this talent once the first bolt is cast.
+		Damage increases with your Mindpower.]]):
 		format(damDesc(self, DamageType.MIND, t.getDamage(self, t)))
 	end,
 }

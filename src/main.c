@@ -461,8 +461,8 @@ bool on_event(SDL_Event *event)
 		}
 		return TRUE;
 	case SDL_MOUSEMOTION:
-		mousex = event->motion.x;
-		mousey = event->motion.y;
+		mousex = event->motion.x / screen_zoom;
+		mousey = event->motion.y / screen_zoom;
 
 		if (current_mousehandler != LUA_NOREF)
 		{

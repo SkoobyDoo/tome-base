@@ -210,6 +210,7 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +1 Willpower, +4 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +0",
 	},
+	not_on_random_boss = true,
 	power_source = {technique=true},
 	stats = {dex = 4, cun = 4, wil = 1},
 	talents_types = {

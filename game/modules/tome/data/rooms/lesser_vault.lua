@@ -22,12 +22,17 @@ local list = {
 	"honey_glade",
 }
 
+local function vault_exists(f)
+	if fs.exists("/data/maps/"..f..".lua") or fs.exists("/data/maps/"..f..".tmx") then return f end
+	return false
+end
+
 return function(gen, id, lev, old_lev)
 	local vaultid = rng.table(gen.data.lesser_vaults_list or list)
 	local vault_map = engine.Map.new(max_w, max_h)
 	local Static = require("engine.generator.map.Static")
 	local data = table.clone(gen.data)
-	data.map = "vaults/"..vaultid
+	data.map = vault_exists("vaults/auto/greater/"..vaultid) or vault_exists("vaults/"..vaultid)
 
 	local old_map = gen.level.map
 	local old_game_level = game.level

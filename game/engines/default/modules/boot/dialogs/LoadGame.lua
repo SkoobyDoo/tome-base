@@ -247,6 +247,10 @@ function _M:installOldGame(version_string)
 		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
 		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
 		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
+	elseif version_string == "tome-1.3.3" then
+		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3-gfx.team", name="tome-1.3.3-gfx.team"}
+		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3-music.team", name="tome-1.3.3-music.team"}
+		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3.team", name="tome-1.3.3.team"}
 	end
 
 	if #dls == 0 then

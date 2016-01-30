@@ -80,7 +80,7 @@ newTalent{
 				end
 			end
 			-- If no appropriate spell is selected, pick a random spell
-			if #spells < 1 then
+			if #spells < 1 and (not p or not p.talent) then
 				for _, talent in pairs(self.talents_def) do
 					if t.canUseTalent(self, t, talent) then
 						spells[#spells+1] = talent.id

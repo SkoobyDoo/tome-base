@@ -33,8 +33,8 @@ return {
 	persistent = "zone",
 	ambient_music = {"Dreaming of Flying.ogg", "weather/town_medium_base.ogg"},
 	allow_respec = "limited",
-	min_material_level = function() if game.state.stores_restock >= 3 then return 3 elseif game.state.stores_restock >= 2 then return 2 else return 1 end end,
-	max_material_level = function() if game.state.stores_restock >= 3 then return 4 elseif game.state.stores_restock >= 2 then return 3 else return 2 end end,
+	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
+	max_material_level = function() return game.state:isAdvanced() and 4 or 3 end,
 	store_levels_by_restock = { 20, 35, 45 },
 
 	generator =  {

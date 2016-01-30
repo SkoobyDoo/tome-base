@@ -603,16 +603,11 @@ function _M:playerFOV()
 			end, true, true, true)
 		end
 
-		-- Overseer of Nations bonus
-		local bonus = 0
-		if self:knowTalent(self.T_OVERSEER_OF_NATIONS) then
-			bonus = math.ceil(self:getTalentLevelRaw(self.T_OVERSEER_OF_NATIONS)/2)
-		end
-
 		-- Handle infravision/heightened_senses which allow to see outside of lite radius but with LOS
+		-- Note: Overseer of Nations bonus already factored into attributes
 		if self:attr("infravision") or self:attr("heightened_senses") then
 			local radius = math.max((self.heightened_senses or 0), (self.infravision or 0))
-			radius = math.min(radius + bonus, self.sight)
+			radius = math.min(radius, self.sight)
 			local rad2 = math.max(1, math.floor(radius / 4))
 			self:computeFOV(radius, "block_sight", function(x, y, dx, dy, sqdist) if game.level.map(x, y, game.level.map.ACTOR) then game.level.map.seens(x, y, fovdist[sqdist]) end end, true, true, true)
 			self:computeFOV(rad2, "block_sight", function(x, y, dx, dy, sqdist) game.level.map:applyLite(x, y, fovdist[sqdist]) end, true, true, true)
@@ -626,7 +621,7 @@ function _M:playerFOV()
 		local lradius = self.lite
 		if self.radiance_aura and lradius < self.radiance_aura then lradius = self.radiance_aura end
 		if self.lite <= 0 then game.level.map:applyLite(self.x, self.y)
-		else self:computeFOV(lradius + bonus, "block_sight", function(x, y, dx, dy, sqdist) game.level.map:applyLite(x, y) end, true, true, true) end
+		else self:computeFOV(lradius, "block_sight", function(x, y, dx, dy, sqdist) game.level.map:applyLite(x, y) end, true, true, true) end
 
 		-- For each entity, generate lite
 		local uid, e = next(game.level.entities)
@@ -988,9 +983,9 @@ function _M:restCheck()
 		for res, res_def in ipairs(_M.resources_def) do
 			if res_def.wait_on_rest and res_def.regen_prop and self:attr(res_def.regen_prop) then
 				if not res_def.invert_values then
-					if self[res_def.regen_prop] > 0 and self:check(res_def.getFunction) < self:check(res_def.getMaxFunction) then return true end
+					if self[res_def.regen_prop] > 0.0001 and self:check(res_def.getFunction) < self:check(res_def.getMaxFunction) then return true end
 				else
-					if self[res_def.regen_prop] < 0 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
+					if self[res_def.regen_prop] < 0.0001 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
 				end
 			end
 		end

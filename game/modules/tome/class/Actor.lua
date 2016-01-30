@@ -1493,7 +1493,7 @@ function _M:teleportRandom(x, y, dist, min_dist)
 	
 	-- Special teleport handlers
 	if game.level.data.no_teleport_south and y + dist > self.y then
-		y = self.y - dist
+		y = self.y - math.ceil(dist)
 	end
 	
 	-- For precise teleports look for a free grid first
@@ -1841,7 +1841,7 @@ function _M:tooltip(x, y, seen_by)
 	-- Short names of wielded weapons/ammo
 	if self:getInven("MAINHAND") then
 		for i, o in ipairs(self:getInven("MAINHAND")) do
-			local tst = ("#LIGHT_BLUE#Main:#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			local tst = ("#LIGHT_BLUE#Main:#LAST#"..o:getShortName({force_id=true, do_color=true, no_add_name=true})):toTString()
 			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
 			tst = tst:extractLines(true)[1]
 			table.append(ts, tst)
@@ -1850,7 +1850,7 @@ function _M:tooltip(x, y, seen_by)
 	end
 	if self:getInven("OFFHAND") then
 		for i, o in ipairs(self:getInven("OFFHAND")) do
-			local tst = ("#LIGHT_BLUE#Off :#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			local tst = ("#LIGHT_BLUE#Off :#LAST#"..o:getShortName({force_id=true, do_color=true, no_add_name=true})):toTString()
 			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
 			tst = tst:extractLines(true)[1]
 			table.append(ts, tst)
@@ -1859,7 +1859,7 @@ function _M:tooltip(x, y, seen_by)
 	end
 	if self:getInven("PSIONIC_FOCUS") and self:attr("psi_focus_combat") then
 		for i, o in ipairs(self:getInven("PSIONIC_FOCUS")) do
-			local tst = ("#LIGHT_BLUE#Psi :#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			local tst = ("#LIGHT_BLUE#Psi :#LAST#"..o:getShortName({force_id=true, do_color=true, no_add_name=true})):toTString()
 			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
 			tst = tst:extractLines(true)[1]
 			table.append(ts, tst)
@@ -1868,7 +1868,7 @@ function _M:tooltip(x, y, seen_by)
 	end
 	if self:getInven("QUIVER") then
 		for i, o in ipairs(self:getInven("QUIVER")) do
-			local tst = ("#LIGHT_BLUE#Ammo:#LAST#"..o:getShortName({do_color=true, no_add_name=true})):toTString()
+			local tst = ("#LIGHT_BLUE#Ammo:#LAST#"..o:getShortName({force_id=true, do_color=true, no_add_name=true})):toTString()
 			tst = tst:splitLines(game.tooltip.max-1, game.tooltip.font, 2)
 			tst = tst:extractLines(true)[1]
 			table.append(ts, tst)
@@ -2180,6 +2180,24 @@ function _M:onTakeHit(value, src, death_note)
 		end
 	end
 
+	if value > 0 and self:attr("displacement_shield") then
+		-- Absorb damage into the displacement shield
+		if rng.percent(self.displacement_shield_chance) then
+			game:delayedLogMessage(self, src,  "displacement_shield"..(self.displacement_shield_target.uid or ""), "#CRIMSON##Source# teleports some damage to #Target#!")
+			local displaced = math.min(value, self.displacement_shield)
+			self.displacement_shield_target:takeHit(displaced, src)
+			game:delayedLogDamage(src, self, 0, ("#CRIMSON#(%d teleported)#LAST#"):format(displaced), false)
+			game:delayedLogDamage(src, self.displacement_shield_target, displaced, ("#CRIMSON#%d teleported#LAST#"):format(displaced), false)
+			if self.displacement_shield and displaced < self.displacement_shield then
+				self.displacement_shield = self.displacement_shield - displaced
+				value = 0
+			else
+				self:removeEffect(self.EFF_DISPLACEMENT_SHIELD)
+				value = value - displaced
+			end
+		end
+	end
+
 	if value > 0 and self:attr("time_shield") then
 		-- Absorb damage into the time shield
 		self.time_shield_absorb = self.time_shield_absorb or 0
@@ -2250,24 +2268,6 @@ function _M:onTakeHit(value, src, death_note)
 			game:delayedLogDamage(src, self, 0, ("#PINK#(%d linked)#LAST#"):format(displaced), false)
 			game:delayedLogDamage(src, shadow, displaced, ("#PINK#%d linked#LAST#"):format(displaced), false)
 			value = value - displaced
-		end
-	end
-
-	if value > 0 and self:attr("displacement_shield") then
-		-- Absorb damage into the displacement shield
-		if rng.percent(self.displacement_shield_chance) then
-			game:delayedLogMessage(self, src,  "displacement_shield"..(self.displacement_shield_target.uid or ""), "#CRIMSON##Source# teleports some damage to #Target#!")
-			local displaced = math.min(value, self.displacement_shield)
-			self.displacement_shield_target:takeHit(displaced, src)
-			game:delayedLogDamage(src, self, 0, ("#CRIMSON#(%d teleported)#LAST#"):format(displaced), false)
-			game:delayedLogDamage(src, self.displacement_shield_target, displaced, ("#CRIMSON#%d teleported#LAST#"):format(displaced), false)
-			if self.displacement_shield and displaced < self.displacement_shield then
-				self.displacement_shield = self.displacement_shield - displaced
-				value = 0
-			else
-				self:removeEffect(self.EFF_DISPLACEMENT_SHIELD)
-				value = value - displaced
-			end
 		end
 	end
 
@@ -3778,7 +3778,7 @@ function _M:onWear(o, inven_id, bypass_set, silent)
 		for k, e in pairs(o.wielder) do
 			o.wielded[k] = self:addTemporaryValue(k, e)
 		end
-		o.wielder.wielded = true
+		-- o.wielder.wielded = true
 	end
 
 	if o.talent_on_spell then
@@ -3928,6 +3928,7 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	end
 
 	if o.wielder then
+		-- To fix a fucking bug in 1.4; in some time we can remove that line
 		o.wielder.wielded = nil
 	end
 
@@ -5215,6 +5216,10 @@ function _M:postUseTalent(ab, ret, silent)
 			if q then
 				trigger = true; q.shertul_energy = q.shertul_energy - util.getval(ab.fortress_energy, self, ab)
 			end
+		end
+		-- Vim increases equilibrium
+		if ab.vim then
+			self:incEquilibrium(util.getval(ab.vim, self, ab) * 5)
 		end
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name

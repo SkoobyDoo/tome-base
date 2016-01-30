@@ -639,8 +639,7 @@ newTalent{
 		local duration = t.getDuration(self, t)
 		local count = t.getRemoveCount(self, t)
 		return ([[Halflings have one of the most powerful military forces in the known world and they have been at war with most other races for thousand of years.
-		Removes %d stun, daze, or pin effects, and makes you immune to stuns, dazes and pins for %d turns.
-		This talent takes no time to use.]]):format(duration, count)
+		Removes %d stun, daze, or pin effects, and makes you immune to stuns, dazes and pins for %d turns.]]):format(duration, count)
 	end,
 }
 
@@ -713,7 +712,6 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 46, 30)) end, -- Limit to >10
 	remcount  = function(self,t) return math.ceil(self:combatTalentScale(t, 0.5, 3, "log", 0, 3)) end,
 	heal = function(self, t) return 25 + 2.3* self:getCon() + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life end,
-	is_heal = true,
 	tactical = { DEFEND = 1, HEAL = 2, CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
@@ -744,18 +742,22 @@ newTalent{
 				target:removeEffect(eff[2])
 			end
 		end
-		self:attr("allow_on_heal", 1)
-		self:heal(t.heal(self, t), t)
-		if core.shader.active(4) then
-			self:addParticles(Particles.new("shader_shield_temp", 1, {toback=true , size_factor=1.5, y=-0.3, img="healgreen", life=25}, {type="healing", time_factor=2000, beamsCount=20, noup=2.0}))
-			self:addParticles(Particles.new("shader_shield_temp", 1, {toback=false, size_factor=1.5, y=-0.3, img="healgreen", life=25}, {type="healing", time_factor=2000, beamsCount=20, noup=1.0}))
+
+		if not self:attr("no_healing") and ((self.healing_factor or 1) > 0) then
+			self:attr("allow_on_heal", 1)
+			self:heal(t.heal(self, t), t)
+			if core.shader.active(4) then
+				self:addParticles(Particles.new("shader_shield_temp", 1, {toback=true , size_factor=1.5, y=-0.3, img="healgreen", life=25}, {type="healing", time_factor=2000, beamsCount=20, noup=2.0}))
+				self:addParticles(Particles.new("shader_shield_temp", 1, {toback=false, size_factor=1.5, y=-0.3, img="healgreen", life=25}, {type="healing", time_factor=2000, beamsCount=20, noup=1.0}))
+			end
+			self:attr("allow_on_heal", -1)
 		end
-		self:attr("allow_on_heal", -1)
 		return true
 	end,
 	info = function(self, t)
 		return ([[Call upon the will of all of the Orc Prides to survive this battle.
 		You heal for %d life, and remove up to %d detrimental effects.
+		Even though this is a part-healing talent it can be used while frozen. If it fails to remove the frozen status the heal part will not work however.
 		The healing will increase with your Constitution.]]):
 		format(t.heal(self, t), t.remcount(self,t))
 	end,

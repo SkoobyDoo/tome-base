@@ -1643,7 +1643,12 @@ static int gl_scissor(lua_State *L)
 {
 	if (lua_toboolean(L, 1)) {
 		glEnable(GL_SCISSOR_TEST);
-		glScissor(luaL_checknumber(L, 2), screen->h - luaL_checknumber(L, 3) - luaL_checknumber(L, 5), luaL_checknumber(L, 4), luaL_checknumber(L, 5));
+		float x = luaL_checknumber(L, 2);
+		float y = luaL_checknumber(L, 3);
+		float w = luaL_checknumber(L, 4);
+		float h = luaL_checknumber(L, 5);
+		y = screen->h / screen_zoom - y - h;
+		glScissor(x, y, w, h);
 	} else glDisable(GL_SCISSOR_TEST);
 	return 0;
 }
@@ -2011,7 +2016,7 @@ static int gl_new_fbo(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
 		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 
@@ -2029,11 +2034,11 @@ static int gl_free_fbo(lua_State *L)
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
 	int i;
-	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	glDeleteTextures(fbo->nbt, fbo->textures);
-	glDeleteFramebuffers(1, &(fbo->fbo));
+	glDeleteFramebuffersEXT(1, &(fbo->fbo));
 
 	free(fbo->textures);
 	free(fbo->buffers);

@@ -109,8 +109,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local count = t.getRemoveCount(self, t)
-		return ([[Clears your mind of current mental effects, and blocks additional ones over 6 turns.  At most, %d mental effects will be affected.
-		This talent takes no time to use.]]):format(count)
+		return ([[Clears your mind of current mental effects, and blocks additional ones over 6 turns.  At most, %d mental effects will be affected.]]):format(count)
 	end,
 }
 

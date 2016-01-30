@@ -26,8 +26,7 @@ newAI("dumb_talented", function(self)
 	local avail = {}
 	local tx, ty = self:aiSeeTargetPos(self.ai_target.actor)
 	local target_dist = core.fov.distance(self.x, self.y, tx, ty)
-	for tid, _ in pairs(self.talents) do
-		local t = self:getTalentFromId(tid)
+	for tid, _ in pairs(self.talents) do local t = self:getTalentFromId(tid) if t then
 --		print(self.name, self.uid, "dumb ai talents can try use", t.name, tid, "::", t.mode, not self:isTalentCoolingDown(t), target_dist <= self:getTalentRange(t), self:preUseTalent(t, true), self:canProject({type="bolt"}, self.ai_target.actor.x, self.ai_target.actor.y))
 		-- For dumb AI assume we need range and LOS
 		-- No special check for bolts, etc.
@@ -47,7 +46,7 @@ newAI("dumb_talented", function(self)
 			avail[#avail+1] = tid
 			print(self.name, self.uid, "dumb ai talents can activate", t.name, tid)
 		end
-	end
+	end end
 	if #avail > 0 then
 		local tid = avail[rng.range(1, #avail)]
 		print("dumb ai uses", tid)

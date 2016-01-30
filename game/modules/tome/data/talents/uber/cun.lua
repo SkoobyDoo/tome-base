@@ -316,7 +316,7 @@ uberTalent{
 	end,
 	info = function(self, t)
 		return ([[You have friends in low places and have learned some underhanded tricks.
-		Gain 0.2 Category Mastery to the Cunning/Stealth Category (or unlock it, if locked), and either gain +0.1 to the Cunning/Scoundrel category or learn and unlock the category at 0.9 if you lack it.
+		Gain 0.2 Category Mastery to the Cunning/Stealth Category (or unlock it, if you have the tree and it is locked), and either gain +0.1 to the Cunning/Scoundrel category or learn and unlock the category at 0.9 if you lack it.
 		Additionally, all of your damage penalties from invisibility are permanently halved.]]):
 		format()
 	end,

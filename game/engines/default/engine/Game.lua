@@ -57,8 +57,10 @@ function _M:logSeen() end
 --- Default mouse cursor
 function _M:defaultMouseCursor()
 	local UIBase = require "engine.ui.Base"
-	if fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse-down.png") then
-		self:setMouseCursor("/data/gfx/"..UIBase.ui.."-ui/mouse.png", "/data/gfx/"..UIBase.ui.."-ui/mouse-down.png", -4, -4)
+	local ui = UIBase.ui or "dark"
+
+	if fs.exists("/data/gfx/"..ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..ui.."-ui/mouse-down.png") then
+		self:setMouseCursor("/data/gfx/"..ui.."-ui/mouse.png", "/data/gfx/"..ui.."-ui/mouse-down.png", -4, -4)
 	else
 		self:setMouseCursor("/data/gfx/ui/mouse.png", "/data/gfx/ui/mouse-down.png", -4, -4)
 	end
@@ -554,6 +556,7 @@ function _M:onResolutionChange()
 	-- Get new resolution and save
 	local realw, realh
 	self.w, self.h, self.fullscreen, self.borderless, realw, realh = core.display.size()
+	realw, realh = realw or self.w, realh or self.h
 	config.settings.window.size = ("%dx%d%s"):format(realw, realh, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
 	
 	self:saveSettings("resolution", ("window.size = '%s'\n"):format(config.settings.window.size))

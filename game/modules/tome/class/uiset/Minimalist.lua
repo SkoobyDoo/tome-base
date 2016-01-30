@@ -182,6 +182,7 @@ end)
 
 -- Additional (optional) resource parameters for the Minimalist UI (defined in ActorResource:resources_def[resource_name].Minimalist):
 --	images = {front = <highlighted graphic file path> , front_dark = <unhighlighted graphic file path>}
+-- 		(base directories: "/data/gfx/"..UI.ui.."-ui/minimalist/" or "/data/gfx/ui/")
 --	highlight = function(player, vc, vn, vm, vr) return true to display the highlighted resource graphic
 --		vc, vn, vm, vr = resource current, min, max, regen values
 --	shader_params = { shader parameters used to define the shader for the resource bar (merged into default parameters below)
@@ -262,17 +263,18 @@ function _M:initialize_resources()
 		res_gfx[rname].highlight = table.get(res_def, "Minimalist", "highlight")	
 		-- load graphic images
 		local res_imgs = table.merge({front = "resources/front_"..rname..".png", front_dark = "resources/front_"..rname.."_dark.png"}, table.get(res_def, "Minimalist", "images") or {})
+		local sbase, bbase = "/data/gfx/"..UI.ui.."-ui/minimalist/", "/data/gfx/ui/"
 		for typ, file in pairs(res_imgs) do
-			local sfile = "/data/gfx/"..UI.ui.."-ui/minimalist/"..file
-			local bfile = "/data/gfx/ui/"..file
+			local sfile = sbase..file
+			local bfile = bbase..file
 			if fs.exists(sfile) then -- load the specific image
-				print("[Minimalist] resource ui:", rname, "gfx file", file, "found")
+				print("[Minimalist] resource ui:", rname, "gfx file", sfile, "found")
 				res_gfx[rname][typ] = {core.display.loadImage(sfile):glTexture()}
 			elseif fs.exists(bfile) then -- load the specific image
-				print("[Minimalist] resource base:", rname, "gfx file", file, "found")
+				print("[Minimalist] resource base:", rname, "gfx file", bfile, "found")
 				res_gfx[rname][typ] = {core.display.loadImage(bfile):glTexture()}
 			else -- load a default image (Psi graphics)
-				print("[Minimalist] Warning: resource", rname, "gfx file", file, "NOT FOUND, using default")
+				print("[Minimalist] Warning: resource", rname, "gfx file", file, "**NOT FOUND** in directories", sbase, "or", bbase, "(using default image)")
 				if typ == "front" then
 					res_gfx[rname][typ] = {imageLoader("resources/front_psi.png"):glTexture()}
 				else
@@ -1790,6 +1792,13 @@ function _M:displayHotkeys(scale, bx, by)
 					if button == "right" and hk and hk[1] == "talent" then
 						local d = require("mod.dialogs.UseTalents").new(game.player)
 						d:use({talent=hk[2], name=game.player:getTalentFromId(hk[2]).name}, "right")
+						return true
+					elseif button == "right" and hk and hk[1] == "inventory" then
+						Dialog:yesnoPopup("Unbind "..hk[2], "Remove this object from your hotkeys?", function(ret) if ret then
+							for i = 1, 12 * game.player.nb_hotkey_pages do
+								if game.player.hotkey[i] and game.player.hotkey[i][1] == "inventory" and game.player.hotkey[i][2] == hk[2] then game.player.hotkey[i] = nil end
+							end
+						end end)
 						return true
 					end
 				end

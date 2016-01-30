@@ -697,7 +697,7 @@ function _M:getSaveDescription()
 		description = ([[%s the level %d %s %s.
 Difficulty: %s / %s
 Campaign: %s
-Exploring level %d of %s.]]):format(
+Exploring level %s of %s.]]):format(
 		player.name, player.level, player.descriptor.subrace, player.descriptor.subclass,
 		player.descriptor.difficulty, player.descriptor.permadeath,
 		player.descriptor.world,
@@ -1695,7 +1695,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(1, "orcs+primal-forest")
+			self:changeLevel(5, "orcs+slumbering-caves")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
 			if o then

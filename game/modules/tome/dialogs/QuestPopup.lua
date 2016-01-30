@@ -63,6 +63,7 @@ function _M:init(quest, status)
 
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
+		ACCEPT = function() game:unregisterDialog(self) end,
 	}
 end
 
