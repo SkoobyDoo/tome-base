@@ -2258,16 +2258,17 @@ newEffect{
 	end,
 }
 
-
 newEffect{
 	name = "CLOAK_OF_DECEPTION", image = "shockbolt/object/artifact/black_cloak.png",
 	desc = "Cloak of Deception",
-	long_desc = function(self, eff) return "The target is under the effect of the cloak of deception, making it look alive." end,
+	long_desc = function(self, eff) return "The target is under the effect of the cloak of deception, making it look human." end,
 	decrease = 0, no_remove = true,
 	type = "other",
 	subtype = { undead=true },
 	status = "neutral",
 	parameters = {},
+	on_gain = function(self, err) return ("#LIGHT_BLUE#An illusion appears around #Target# making %s appear human."):format(self:him_her()), "+CLOAK OF DECEPTION" end,
+	on_lose = function(self, err) return "#LIGHT_BLUE#The illusion covering #Target# disappears.", "-CLOAK OF DECEPTION" end,
 	activate = function(self, eff)
 		self.old_faction_cloak = self.faction
 		self.faction = "allied-kingdoms"
@@ -2635,8 +2636,8 @@ newEffect{
 	subtype = { time=true },
 	status = "detrimental",
 	parameters = { paradox=10 },
-	on_gain = function(self, err) return "#Target# converts damage into paradox.", "+Smearing" end,
-	on_lose = function(self, err) return "#Target# stops converting damage to paradox..", "-Smearing" end,
+	on_gain = function(self, err) return "Reality smears around #Target#.", "+Smearing" end,
+	on_lose = function(self, err) return "Reality around #Target# is coherent again.", "-Smearing" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the flames!
 		local oldparadox = old_eff.paradox * old_eff.dur

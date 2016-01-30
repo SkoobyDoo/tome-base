@@ -27,6 +27,7 @@ newTalent{
 	points = 5,
 	cooldown = 0,
 	no_energy = true,
+	sustain_hate = 0, -- make sure hate pool is learned
 	tactical = { BUFF = 5 },
 	activate = function(self, t)
 		return {
