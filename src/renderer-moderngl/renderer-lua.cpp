@@ -91,6 +91,14 @@ static int gl_renderer_remove(lua_State *L)
 	return 0;
 }
 
+static int gl_renderer_clear(lua_State *L)
+{
+	// We do not make any checks on the types, so the same method can be used for container & renderer and to add any kind of display object
+	RendererGL **c = (RendererGL**)lua_touserdata(L, 1);
+	(*c)->clear();
+	return 0;
+}
+
 /******************************************************************
  ** Container
  ******************************************************************/
@@ -128,6 +136,14 @@ static int gl_container_remove(lua_State *L)
 	DORContainer **c = (DORContainer**)lua_touserdata(L, 1);
 	DisplayObject **add = (DisplayObject**)lua_touserdata(L, 2);
 	(*c)->remove(*add);
+	return 0;
+}
+
+static int gl_container_clear(lua_State *L)
+{
+	// We do not make any checks on the types, so the same method can be used for container & renderer and to add any kind of display object
+	DORContainer **c = (DORContainer**)lua_touserdata(L, 1);
+	(*c)->clear();
 	return 0;
 }
 
@@ -379,6 +395,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"zSort", gl_renderer_zsort},
 	{"add", gl_renderer_add},
 	{"remove", gl_renderer_remove},
+	{"clear", gl_renderer_clear},
 	{"toScreen", gl_renderer_toscreen},
 	{NULL, NULL},
 };
@@ -400,6 +417,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"__gc", gl_container_free},
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
+	{"clear", gl_container_clear},
 	{"translate", gl_container_translate},
 	{"rotate", gl_container_rotate},
 	{"scale", gl_container_scale},

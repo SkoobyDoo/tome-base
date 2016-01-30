@@ -45,16 +45,24 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.container:clear()
 
 	-- Draw UI
-	self.font:setStyle("bold")
 	local w, h = self.font:size(self.text)
 	self.iw, self.ih = w, h
-	if self.force_w then w = self.force_w end
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
+	if self.force_w then w = self.force_w end
 
-	self.tex = self:drawFontLine(self.font, self.text, w)
-	self.font:setStyle("normal")
+	-- self.tex = self:drawFontLine(self.font, self.text, w)
+	local text = core.renderer.text(self.font)
+	text:text(self.text)
+	text:translate(-frame_ox1 + 3, -frame_oy1 + 3, 10)
+	self.container:add(text)
+
+	self.frame_do = self:makeFrameDO("ui/button", self.w, self.h)
+	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)
+	self.frame_do.container:translate(3, 3, 0)
+	self.container:add(self.frame_do.container)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
@@ -65,16 +73,6 @@ function _M:generate()
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 
 	self.rw, self.rh = w, h
-	self.frame = self:makeFrame("ui/button", self.w, self.h)
-	self.frame_sel = self:makeFrame("ui/button_sel", self.w, self.h)
-
-	self.frame_do = self:makeFrameDO("ui/button", self.w, self.h)
-	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)
-	self.do_container = core.renderer.container()
-	self.do_container:add(self.frame_do.container)
-
-	self.renderer = core.renderer.renderer()
-	self.renderer:add(self.frame_do.container)
 
 	-- Add a bit of padding
 	self.w = self.w + 6
@@ -119,5 +117,4 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	-- 	if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
 	-- 	self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
 	-- end
-	self.renderer:toScreen(800, 400, 1, 1, 1, 1)
 end

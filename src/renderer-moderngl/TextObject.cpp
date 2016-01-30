@@ -299,6 +299,8 @@ void DORText::parseText() {
 	this->nb_lines = nb_lines;
 	this->w = max_size;
 	this->h = nb_lines * font_h;
+
+	font_update_atlas(f); // Make sure any texture changes are upload to the GPU
 }
 
 void DORText::setText(const char *text) {

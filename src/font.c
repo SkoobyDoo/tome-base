@@ -95,6 +95,7 @@ static int sdl_new_font(lua_State *L)
 	return 1;
 }
 
+#define FONT_PADDING 2
 bool font_add_atlas(font_type *f, int32_t c, font_style style) {
 	if (c < 1 || c >= MAX_ATLAS_DATA) return FALSE;
 
@@ -107,7 +108,7 @@ bool font_add_atlas(font_type *f, int32_t c, font_style style) {
 	{
 		if (f->atlas_x + txt->w >= f->atlas_w) {
 			f->atlas_x = 0;
-			f->atlas_y += txt->h;
+			f->atlas_y += txt->h + FONT_PADDING;
 		}
 		SDL_SetAlpha(txt, 0, 0);
 		sdlDrawImage(f->atlas, txt, f->atlas_x, f->atlas_y);
@@ -120,7 +121,7 @@ bool font_add_atlas(font_type *f, int32_t c, font_style style) {
 		d->w = txt->w;
 		d->h = txt->h;
 
-		f->atlas_x += txt->w;
+		f->atlas_x += txt->w + FONT_PADDING;
 		f->atlas_changed = TRUE;
 		SDL_FreeSurface(txt);
 	}

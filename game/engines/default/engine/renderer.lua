@@ -47,9 +47,10 @@ function core.renderer.redPoint()
 	return v
 end
 
-function core.renderer.image(file, x, y, w, h)
+function core.renderer.image(file, x, y, w, h, r, g, b, a)
 	local s = core.display.loadImage(file)
 	if not s then return core.renderer.container() end
+	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	local tex, rw, rh, tw, th, iw, ih = s:glTexture()
 	x = x or 0
 	y = y or 0
@@ -71,7 +72,8 @@ function core.renderer.image(file, x, y, w, h)
 	return v
 end
 
-function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
+function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
+	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	x = math.floor(x)
 	y = math.floor(y)
 	local u1, v1 = t.tx, t.ty
@@ -87,7 +89,7 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 			x2+0.1, y1, u2, v1,
 			x2+0.1, y2+0.1, u2, v2,
 			x1, y2+0.1, u1, v2,
-			1, 1, 1, 1
+			r, g, b, a
 		)
 		v:texture(t.t)
 		return v
@@ -115,7 +117,7 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads)
 					x2+0.1, y1, u2, v1,
 					x2+0.1, y2+0.1, u2, v2,
 					x1, y2+0.1, u1, v2,
-					1, 1, 1, 1
+					r, g, b, a
 				)
 				v:texture(t.t)
 				c:add(v)

@@ -435,41 +435,80 @@ function _M:resize(w, h, nogen)
 
 	if not nogen then self:generate() end
 end
-
 function _M:generate()
+	local fromTextureTable = core.renderer.fromTextureTable
 	local gamew, gameh = core.display.size()
 
 	self.frame.w = self.w - self.frame.ox1 + self.frame.ox2
 	self.frame.h = self.h - self.frame.oy1 + self.frame.oy2
 
-	self.b7 = self:getUITexture(self.frame.b7)
-	self.b9 = self:getUITexture(self.frame.b9)
-	self.b1 = self:getUITexture(self.frame.b1)
-	self.b3 = self:getUITexture(self.frame.b3)
-	self.b8 = self:getUITexture(self.frame.b8)
-	self.b4 = self:getUITexture(self.frame.b4)
-	self.b2 = self:getUITexture(self.frame.b2)
-	self.b6 = self:getUITexture(self.frame.b6)
-	self.b5 = self:getUITexture(self.frame.b5)
+	local r, g, b, a = self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a
+	local w, h = self.frame.w, self.frame.h
+
+	self.renderer = core.renderer.renderer()
+	self.renderer:zSort(true)
+	self.container = core.renderer.container()
+	self.container:translate(self.display_x, self.display_y, -100)
+	self.renderer:add(self.container)
+
+	local b7 = self:getAtlasTexture(self.frame.b7)
+	local b9 = self:getAtlasTexture(self.frame.b9)
+	local b1 = self:getAtlasTexture(self.frame.b1)
+	local b3 = self:getAtlasTexture(self.frame.b3)
+	local b8 = self:getAtlasTexture(self.frame.b8)
+	local b4 = self:getAtlasTexture(self.frame.b4)
+	local b2 = self:getAtlasTexture(self.frame.b2)
+	local b6 = self:getAtlasTexture(self.frame.b6)
+	local b5 = self:getAtlasTexture(self.frame.b5)
+
+	local cx, cy = 0, 0
+
+	self.container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
+
+	self.container:add(fromTextureTable(b7, cx + 0, cy + 0, nil, nil, nil, r, g, b, a))
+	self.container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, nil, nil, nil, r, g, b, a))
+
+	self.container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, nil, nil, true, r, g, b, a))
+	self.container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, nil, nil, true, r, g, b, a))
+
+	self.container:add(fromTextureTable(b4, cx + 0, cy + b7.h, nil, h - b7.h - b1.h, true, r, g, b, a))
+	self.container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, nil, h - b9.h - b3.h, true, r, g, b, a))
 
 	if self.frame.dialog_h_middles then
-		self.b8l = self:getUITexture(self.frame.b8l)
-		self.b8r = self:getUITexture(self.frame.b8r)
-		self.b2l = self:getUITexture(self.frame.b2l)
-		self.b2r = self:getUITexture(self.frame.b2r)
+		-- local mw = math.floor(self.frame.w / 2)
+		-- local b8hw = math.floor(self.b8.w / 2)
+		-- self.b8l.t:toScreenFull(x + self.b7.w, y, mw - self.b7.w - b8hw, self.b8l.h, self.b8l.tw, self.b8l.th, r, g, b, a)
+		-- self.b8r.t:toScreenFull(x + mw + b8hw, y, mw - self.b9.w - b8hw, self.b8r.h, self.b8r.tw, self.b8r.th, r, g, b, a)
+		-- self.b8.t:toScreenFull(x + mw - b8hw, y, self.b8.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+
+		-- local b2hw = math.floor(self.b2.w / 2)
+		-- self.b2l.t:toScreenFull(x + self.b1.w, y + self.frame.h - self.b3.h, mw - self.b1.w - b2hw, self.b2l.h, self.b2l.tw, self.b2l.th, r, g, b, a)
+		-- self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
+		-- self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+	else
+		self.container:add(fromTextureTable(b8, cx + b7.w, cy + 0, w - b7.w - b9.w, nil, true, r, g, b, a))
+		self.container:add(fromTextureTable(b2, cx + b1.w, cy + h - b2.h, w - b1.w - b3.w, nil, true, r, g, b, a))
 	end
 
+	-- Overlays
 	self.overs = {}
-	for i, o in ipairs(self.frame.overlays or {}) do
-		local ov = self:getUITexture(o.image)
-		if o.gen then
-			o.gen(ov, self)
-		else
-			ov.x = o.x
-			ov.y = o.y
-			ov.a = o.a
+	if #(self.frame.overlays or {}) > 0 then
+		local overs_container = core.renderer.container()
+		overs_container:translate(0, 0, 1)
+		self.container:add(overs_container)
+
+		for i, o in ipairs(self.frame.overlays) do
+			local ov = self:getAtlasTexture(o.image)
+			if o.gen then
+				o.gen(ov, self)
+			else
+				ov.x = o.x
+				ov.y = o.y
+				ov.a = o.a
+			end
+			self.overs[#self.overs+1] = ov
+			overs_container:add(fromTextureTable(ov, ov.x, ov.y, nil, nil, false, r, g, b, a * ov.a))
 		end
-		self.overs[#self.overs+1] = ov
 	end
 
 	self:updateTitle(self.title)
@@ -657,6 +696,10 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		ui.ui.mouse.delegate_offset_x = ux
 		ui.ui.mouse.delegate_offset_y = uy
 		ui.ui:positioned(ux, uy, self.display_x + ux, self.display_y + uy)
+		if ui.ui.container then
+			ui.ui.container:translate(ui.x, ui.y)
+			self.container:add(ui.ui.container)
+		end
 	end
 
 	self.setuped = true
@@ -853,66 +896,68 @@ end
 function _M:toScreen(x, y, nb_keyframes)
 	if self.__hidden then return end
 
-	local shader = self.shadow_shader
+	-- local shader = self.shadow_shader
 
-	local zoom = 1
-	if self.__showup then
-		local eff = self.__showup_effect or "pop"
-		if eff == "overpop" then
-			zoom = self.__showup / 7
-			if self.__showup >= 9 then
-				zoom = (9 - (self.__showup - 9)) / 7 - 1
-				zoom = 1 + zoom * 0.5
-			end
-			self.__showup = self.__showup + nb_keyframes
-			if self.__showup >= 11 then self.__showup = nil end
-		else
-			zoom = self.__showup / 7
-			self.__showup = self.__showup + nb_keyframes
-			if self.__showup >= 7 then self.__showup = nil end
-		end
-	end
+	-- local zoom = 1
+	-- if self.__showup then
+	-- 	local eff = self.__showup_effect or "pop"
+	-- 	if eff == "overpop" then
+	-- 		zoom = self.__showup / 7
+	-- 		if self.__showup >= 9 then
+	-- 			zoom = (9 - (self.__showup - 9)) / 7 - 1
+	-- 			zoom = 1 + zoom * 0.5
+	-- 		end
+	-- 		self.__showup = self.__showup + nb_keyframes
+	-- 		if self.__showup >= 11 then self.__showup = nil end
+	-- 	else
+	-- 		zoom = self.__showup / 7
+	-- 		self.__showup = self.__showup + nb_keyframes
+	-- 		if self.__showup >= 7 then self.__showup = nil end
+	-- 	end
+	-- end
 
-	-- We translate and scale opengl matrix to make the popup effect easily
-	local ox, oy = x, y
-	local hw, hh = math.floor(self.w / 2), math.floor(self.h / 2)
-	local tx, ty = x + hw, y + hh
-	x, y = -hw, -hh
-	core.display.glTranslate(tx, ty, 0)
-	if zoom < 1 then core.display.glScale(zoom, zoom, zoom) end
+	-- -- We translate and scale opengl matrix to make the popup effect easily
+	-- local ox, oy = x, y
+	-- local hw, hh = math.floor(self.w / 2), math.floor(self.h / 2)
+	-- local tx, ty = x + hw, y + hh
+	-- x, y = -hw, -hh
+	-- core.display.glTranslate(tx, ty, 0)
+	-- if zoom < 1 then core.display.glScale(zoom, zoom, zoom) end
 
-	-- Draw the frame and shadow
-	if self.frame.shadow then self:drawFrame(x + self.frame.shadow.x, y + self.frame.shadow.y, 0, 0, 0, self.frame.shadow.a) end
-	self:drawFrame(x, y, self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a)
+	-- -- Draw the frame and shadow
+	-- if self.frame.shadow then self:drawFrame(x + self.frame.shadow.x, y + self.frame.shadow.y, 0, 0, 0, self.frame.shadow.a) end
+	-- self:drawFrame(x, y, self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a)
 
-	-- Title
-	if self.title then
-		if self.title_shadow then
-			if shader then
-				shader:use(true)
-				shader:uniOutlineSize(self.shadow_power, self.shadow_power)
-				shader:uniTextSize(self.title_tex.tw, self.title_tex.th)
-			else
-				self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + 3 + self.frame.title_x, y + 3 + self.frame.title_y, 0, 0, 0, 0.5)
-			end
-		end
-		self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y)
-		if self.title_shadow and shader then shader:use(false) end
-	end
+	-- -- Title
+	-- if self.title then
+	-- 	if self.title_shadow then
+	-- 		if shader then
+	-- 			shader:use(true)
+	-- 			shader:uniOutlineSize(self.shadow_power, self.shadow_power)
+	-- 			shader:uniTextSize(self.title_tex.tw, self.title_tex.th)
+	-- 		else
+	-- 			self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + 3 + self.frame.title_x, y + 3 + self.frame.title_y, 0, 0, 0, 0.5)
+	-- 		end
+	-- 	end
+	-- 	self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y)
+	-- 	if self.title_shadow and shader then shader:use(false) end
+	-- end
 
-	self:innerDisplayBack(x, y, nb_keyframes, tx, ty)
+	-- self:innerDisplayBack(x, y, nb_keyframes, tx, ty)
 
-	-- UI elements
-	for i = 1, #self.uis do
-		local ui = self.uis[i]
-		if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
-	end
+	-- -- UI elements
+	-- for i = 1, #self.uis do
+	-- 	local ui = self.uis[i]
+	-- 	if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
+	-- end
 
-	self:innerDisplay(x, y, nb_keyframes, tx, ty)
+	-- self:innerDisplay(x, y, nb_keyframes, tx, ty)
 
-	if self.first_display then self:firstDisplay() self.first_display = false end
+	-- if self.first_display then self:firstDisplay() self.first_display = false end
 
-	-- Restore normal opengl matrix
-	if zoom < 1 then core.display.glScale() end
-	core.display.glTranslate(-tx, -ty, 0)
+	-- -- Restore normal opengl matrix
+	-- if zoom < 1 then core.display.glScale() end
+	-- core.display.glTranslate(-tx, -ty, 0)
+
+	self.renderer:toScreen(0, 0, 1, 1, 1, 1)
 end

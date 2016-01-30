@@ -362,18 +362,28 @@ end
 
 function _M:createFBOs()
 	-- Create the framebuffer
-	self.fbo = core.display.newFBO(game.w, game.h)
-	if self.fbo then
-		self.fbo_shader = Shader.new("main_fbo")
-		if not self.fbo_shader.shad then
-			self.fbo = nil self.fbo_shader = nil
-		else
-			self.fbo_shader:setUniform("colorize", {1,1,1,0.9})
-		end
-	end
+	-- self.fbo = core.display.newFBO(game.w, game.h)
+	-- if self.fbo then
+	-- 	self.fbo_shader = Shader.new("main_fbo")
+	-- 	if not self.fbo_shader.shad then
+	-- 		self.fbo = nil self.fbo_shader = nil
+	-- 	else
+	-- 		self.fbo_shader:setUniform("colorize", {1,1,1,0.9})
+	-- 	end
+	-- end
 
-	self.full_fbo = core.display.newFBO(self.w, self.h)
-	if self.full_fbo then self.full_fbo_shader = Shader.new("full_fbo") if not self.full_fbo_shader.shad then self.full_fbo = nil self.full_fbo_shader = nil end end
+	-- self.full_fbo = core.display.newFBO(self.w, self.h)
+	-- if self.full_fbo then self.full_fbo_shader = Shader.new("full_fbo") if not self.full_fbo_shader.shad then self.full_fbo = nil self.full_fbo_shader = nil end end
+
+	self.fbo = core.renderer.target()
+	self.fbo:displaySize(game.w, game.h)
+	self.fborenderer = core.renderer.renderer()
+	self.fborenderer:add(self.fbo)
+
+	self.full_fbo = core.renderer.target()
+	self.full_fbo:displaySize(game.w, game.h)
+	self.full_fborenderer = core.renderer.renderer()
+	self.full_fborenderer:add(self.full_fbo)
 end
 
 function _M:changeLevel(lev, zone)
@@ -477,7 +487,7 @@ function _M:display(nb_keyframes)
 		end
 		self.logdisplay:toScreen()
 		engine.GameEnergyBased.display(self, nb_keyframes)
-		if self.full_fbo then self.full_fbo:use(false) self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad) end
+		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
 		return
 	end
 
@@ -525,7 +535,7 @@ function _M:display(nb_keyframes)
 	engine.GameEnergyBased.display(self, nb_keyframes)
 	self.flyers = old
 
-	if self.full_fbo then self.full_fbo:use(false) self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad) end
+	if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
 end
 
 local renderer = core.renderer.renderer()
@@ -579,16 +589,16 @@ fborenderer:add(fbo)
 
 local nb = 0
 local z = false
-function _M:display()
-	-- fbo:use(true)
-		renderer:toScreen(0, 0, 1, 1, 1, 1)
-		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
-		-- t1:rotate(0, 0, math.rad(2), true)
-	-- fbo:use(false)
+-- function _M:display()
+-- 	-- fbo:use(true)
+-- 		renderer:toScreen(0, 0, 1, 1, 1, 1)
+-- 		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
+-- 		-- t1:rotate(0, 0, math.rad(2), true)
+-- 	-- fbo:use(false)
 
-	-- fborenderer:toScreen(0, 0, 1, 1, 1, 1)
-	-- fbo:rotate(0, math.rad(2), 0, true)
-end
+-- 	-- fborenderer:toScreen(0, 0, 1, 1, 1, 1)
+-- 	-- fbo:rotate(0, math.rad(2), 0, true)
+-- end
 
 --- Ask if we really want to close, if so, save the game first
 function _M:onQuit()
