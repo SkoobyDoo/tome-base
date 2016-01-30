@@ -148,6 +148,7 @@ return {
 					act:move(x, y, true)
 					act.changed = true
 					game.level.map:particleEmitter(x, y, 1, "teleport")
+					act:fireTalentCheck("callbackOnChangeLevel")
 				end
 			end
 

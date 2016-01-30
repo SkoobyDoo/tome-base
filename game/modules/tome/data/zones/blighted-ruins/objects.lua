@@ -37,13 +37,14 @@ newEntity{ define_as = "CLOAK_DECEPTION",
 		combat_mindpower = 5,
 		combat_dam = 5,
 	},
-
+	callbackOnChangeLevel = function(self, who)
+		return self:on_wear(who)
+	end,
 	on_wear = function(self, who)
 		if game.party:hasMember(who) then
 			for m, _ in pairs(game.party.members) do
 				m:setEffect(m.EFF_CLOAK_OF_DECEPTION, 1, {})
 			end
-			game.logPlayer(who, "#LIGHT_BLUE#An illusion appears around %s, making it appear human.", who.name:capitalize())
 		end
 	end,
 	on_takeoff = function(self, who)
@@ -52,7 +53,6 @@ newEntity{ define_as = "CLOAK_DECEPTION",
 			for m, _ in pairs(game.party.members) do
 				m:removeEffect(m.EFF_CLOAK_OF_DECEPTION, true, true)
 			end
-			game.logPlayer(who, "#LIGHT_BLUE#The illusion covering %s disappears", who.name:capitalize())
 		end
 	end,
 	on_pickup = function(self, who)
