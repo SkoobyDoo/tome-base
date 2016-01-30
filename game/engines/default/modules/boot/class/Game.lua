@@ -529,6 +529,7 @@ function _M:display(nb_keyframes)
 end
 
 local renderer = core.renderer.renderer()
+renderer:zSort(true)
 local UIBase = require "engine.ui.Base"
 local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400, nil, nil, true)
 f.container:translate(400, 400)
@@ -547,11 +548,21 @@ i:translate(0, 0, -1)
 i:scale(0.4, 0.2, 1)
 f.container:add(i)
 
+local t0 = core.renderer.text(UIBase.font_bold)
+t0:text("MELTOPAL")
+t0:translate(50, 20, 100)
+f.container:add(t0)
+
 local t1 = core.renderer.text(UIBase.font)
 t1:text("Coco l'asticot!")
 t1:translate(50, 50, 100)
 t1:rotate(0, 0, math.rad(45))
 f.container:add(t1)
+
+local t2 = core.renderer.text(UIBase.font_bold)
+t2:text("MELTOPAL")
+t2:translate(50, 90, 100)
+f.container:add(t2)
 
 f.container:add(f2.container)
 f2.container:add(f3.container)
@@ -571,10 +582,8 @@ local z = false
 function _M:display()
 	-- fbo:use(true)
 		renderer:toScreen(0, 0, 1, 1, 1, 1)
-		f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
-		t1:rotate(0, 0, math.rad(2), true)
-		nb = (nb + 1) % 180
-		if nb == 0 then z = not z renderer:zSort(z) end
+		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
+		-- t1:rotate(0, 0, math.rad(2), true)
 	-- fbo:use(false)
 
 	-- fborenderer:toScreen(0, 0, 1, 1, 1, 1)

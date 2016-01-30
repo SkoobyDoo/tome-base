@@ -87,7 +87,7 @@ DisplayList::~DisplayList() {
 	vbo = 0;
 }
 
-RendererGL::RendererGL() : RendererGL(screen->w, screen->h) {}
+RendererGL::RendererGL() : RendererGL(screen->w / screen_zoom, screen->h / screen_zoom) {}
 RendererGL::RendererGL(int w, int h) : DORContainer() {
 	glGenBuffers(1, &vbo_elements);
 	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);

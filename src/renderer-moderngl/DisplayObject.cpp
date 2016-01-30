@@ -157,7 +157,7 @@ void DORContainer::clear() {
 	setChanged();
 }
 
-DORTarget::DORTarget() : DORTarget(screen->w, screen->h, 1) {
+DORTarget::DORTarget() : DORTarget(screen->w / screen_zoom, screen->h / screen_zoom, 1) {
 }
 DORTarget::DORTarget(int w, int h, int nbt) {
 	this->nbt = nbt;
