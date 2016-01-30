@@ -48,6 +48,7 @@ function _M:generate()
 	self.container:clear()
 
 	-- Draw UI
+	self.font:setStyle("bold")
 	local w, h = self.font:size(self.text)
 	self.iw, self.ih = w, h
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
@@ -58,6 +59,7 @@ function _M:generate()
 	text:text(self.text)
 	text:translate(-frame_ox1 + 3, -frame_oy1 + 3, 10)
 	self.container:add(text)
+	self.font:setStyle("normal")
 
 	self.frame_do = self:makeFrameDO("ui/button", self.w, self.h)
 	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)

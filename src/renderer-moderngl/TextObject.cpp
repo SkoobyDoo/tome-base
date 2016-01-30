@@ -114,6 +114,12 @@ void DORText::parseText() {
 	int i;
 	bool force_nl = false;
 	font_style style = FONT_STYLE_NORMAL;
+
+	int fstyle = TTF_GetFontStyle(f->font);
+	if (fstyle & TTF_STYLE_BOLD) style = FONT_STYLE_BOLD;
+	else if (fstyle & TTF_STYLE_ITALIC) style = FONT_STYLE_ITALIC;
+	else if (fstyle & TTF_STYLE_UNDERLINE) style = FONT_STYLE_UNDERLINED;
+
 	while (true)
 	{
 		if ((*next == '\n') || (*next == ' ') || (*next == '\0') || (*next == '#'))
