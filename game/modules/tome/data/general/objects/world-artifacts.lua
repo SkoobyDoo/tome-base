@@ -3461,7 +3461,11 @@ newEntity{ base = "BASE_GAUNTLETS",
 	rarity = 550, -- Extra rare to make it not ALWAYS appear.
 	addedToLevel = function(self, level, x, y) -- generated on a level
 		local mat_level = util.getval(game.zone.min_material_level) or 1
-		self.power_up(self, nil, mat_level)
+		if mat_level == 1 then
+			self.material_level = 1
+		else
+			self.power_up(self, nil, mat_level)
+		end
 	end,
 	on_preaddobject = function(self, who, inven) -- generated in an actor's inventory
 		if not self.material_level then self.addedToLevel(self, game.level) end

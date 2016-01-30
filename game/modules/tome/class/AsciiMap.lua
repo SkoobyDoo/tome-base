@@ -18,6 +18,9 @@
 -- darkgod@te4.org
 
 local ffi = require "ffi"
+local pairs = pairs
+local loadstring = loadstring
+local table = table
 local _M = require "engine.Map"
 setfenv(1, _M)
 

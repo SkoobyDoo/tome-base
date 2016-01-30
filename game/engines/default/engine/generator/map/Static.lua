@@ -43,7 +43,7 @@ function _M:init(zone, map, level, data)
 		self.adjust_level = {base=zone.base_level, lev = self.level.level, min=0, max=0}
 	end
 
-	self:loadMap(data.map)
+	self:loadMap(data.map, data.inline_map)
 end
 
 function _M:getMapFile(file)
@@ -429,18 +429,25 @@ end
 -- 	no_tunnels: set true to prevent automatically connecting tunnels to the room (handled by the map generator)
 -- 	roomcheck: a function(room, zone, level, map) checked (if defined) before the room is added to the map (return true to add)
 -- 	onplace: a function(room, zone, level, map, placement_data) called after the room has been added to the map (see RoomsLoader:roomPlace)
-function _M:loadMap(file)
+function _M:loadMap(file, is_inline)
 	local t = {}
-
-	file = self:getMapFile(file)
-	if self:tmxLoad(file) then return end
-
-	print("Static generator using file", file)
 	local g = self:getLoader(t)
-	local ret, err = self:loadLuaInEnv(g, file)
-	if not ret then 
-		if err then error(err) end
-		ret = {[[.]]}
+	local ret, err
+
+	if is_inline then
+		print("Static generator using inline data")
+		ret, err = self:loadLuaInEnv(g, nil, file)
+		if not ret and err then error(err) end
+	else
+		file = self:getMapFile(file)
+		if self:tmxLoad(file) then return end
+		print("Static generator using file", file)
+--	local g = self:getLoader(t)
+		ret, err = self:loadLuaInEnv(g, file)
+		if not ret then 
+			if err then error(err) end
+			ret = {[[.]]}
+		end
 	end
 	if type(ret) == "string" then ret = ret:split("\n") end
 

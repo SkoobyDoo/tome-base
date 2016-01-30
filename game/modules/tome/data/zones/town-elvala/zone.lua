@@ -33,8 +33,7 @@ return {
 	ambient_music = {"Virtue lost.ogg", "weather/town_large_base.ogg"},
 	allow_respec = "limited",
 
-	min_material_level = function() if game.state.stores_restock >= 3 then return 3 elseif game.state.stores_restock >= 2 then return 2 else return 1 end end,
-	max_material_level = function() if game.state.stores_restock >= 3 then return 4 elseif game.state.stores_restock >= 2 then return 3 else return 2 end end,
+	max_material_level = 2,
 	store_levels_by_restock = { 8, 25, 40 },
 	nicer_tiler_overlay = "DungeonWallsGrass",
 

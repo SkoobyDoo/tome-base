@@ -318,7 +318,7 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 		alt_nodes.__particles = {v = {} }
 		alt_nodes.hotkey = false
 		alt_nodes.talents_auto = {v = {} }
-		alt_nodes.talents_confirm_use = false
+		alt_nodes.talents_confirm_use = {}
 	end
 
 	-- Clone the target

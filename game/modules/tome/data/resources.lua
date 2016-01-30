@@ -24,7 +24,7 @@ print("[Resources] Defining Actor Resources")
 -- Actor resources
 -- Additional (ToME specific) fields:
 -- cost_factor increases/decreases resource cost (used mostly to account for the effect of armor-based fatigue)
--- invert_values = true means the resource starts at 0 and increases as it is consumed (equilibrium/paradox)
+-- invert_values = true means the resource increases as it is consumed (equilibrium/paradox)
 -- status_text = function(actor) returns a textual description of the resource status (defaults to "val/max")
 -- color = text color string ("#COLOR#") to use to display the resource (text or uiset graphics)
 -- hidden_resource = true prevents display of the resource in various interfaces
@@ -34,7 +34,7 @@ print("[Resources] Defining Actor Resources")
 -- Minimalist = table of parameters to be used with the Minimalist uiset (see uiset.Minimalist.lua)
 ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breathe are not affected.", nil, nil, {
 	color = "#LIGHT_STEEL_BLUE#",
-	wait_on_rest = true,
+	-- wait_on_rest = true,
 })
 ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue.  Most physical abilities consume it.", nil, nil, {
 	color = "#ffcc80#",
@@ -65,7 +65,7 @@ ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILI
 		end,
 	},
 	Minimalist = { --parameters for the Minimalist uiset
-		images = {front = "/data/gfx/ui/resources/front_nature.png", front_dark = "/data/gfx/ui/resources/front_nature_dark.png"},
+		images = {front = "resources/front_nature.png", front_dark = "resources/front_nature_dark.png"},
 		highlight = function(player, vc, vn, vm, vr) -- dim the resource display if fail chance <= 15%
 			if player then
 				local _, chance = player:equilibriumChance()
@@ -94,7 +94,7 @@ ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILI
 })
 
 ActorResource:defineResource("Vim", "vim", ActorTalents.T_VIM_POOL, "vim_regen", "Vim represents the amount of life energy/souls you have stolen. Each corruption talent requires some.", nil, nil, {
-	color = "#888888#",
+	color = "#904010#",
 	wait_on_rest = true,
 	randomboss_enhanced = true,
 	Minimalist = {shader_params = {color = {0x90/255, 0x40/255, 0x10/255}}} --parameters for the Minimalist uiset
@@ -117,7 +117,7 @@ ActorResource:defineResource("Hate", "hate", ActorTalents.T_HATE_POOL, "hate_reg
 	Minimalist = {highlight = function(player, vc, vn, vm, vr) return vc >=100 end},
 })
 ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, "paradox_regen", "Paradox represents how much damage you've done to the space-time continuum. A high Paradox score makes Chronomancy less reliable and more dangerous to use but also amplifies its effects.", 0, false, {
-	color = "#b0c4d3#", invert_values = true,
+	color = "#4198dc#", invert_values = true,
 	randomboss_enhanced = true,
 	status_text = function(act)
 		local chance = act:paradoxFailChance()
@@ -165,5 +165,5 @@ ActorResource:defineResource("Psi", "psi", ActorTalents.T_PSI_POOL, "psi_regen",
 ActorResource:defineResource("Souls", "soul", ActorTalents.T_SOUL_POOL, "soul_regen", "This is the number of soul fragments you have extracted from your foes for your own use.", 0, 10, {
 	color = "#bebebe#",
 	randomboss_enhanced = true,
-	Minimalist = {images = {front = "/data/gfx/ui/resources/front_souls.png", front_dark = "/data/gfx/ui/resources/front_souls_dark.png"}},
+	Minimalist = {images = {front = "resources/front_souls.png", front_dark = "resources/front_souls_dark.png"}},
 })
