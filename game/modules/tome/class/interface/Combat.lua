@@ -659,6 +659,7 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 
 	-- handle stalk targeting for hits (also handled in Actor for turn end effects)
 	if hitted and target ~= self then
+		local effStalker = self:hasEffect(self.EFF_STALKER)
 		if effStalker then
 			-- mark if stalkee was hit
 			effStalker.hit = effStalker.hit or effStalker.target == target
