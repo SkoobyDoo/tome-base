@@ -269,7 +269,7 @@ newTalent{
 		game.level.map(x, y, Map.TERRAIN+3, e)
 
 		-- add particles
-		e.particles = Particles.new("creeping_dark", 1, { })
+		e.particles = Particles.new("creeping_dark", 1, {is_ascii = config.settings.tome.gfx.tiles == "ascii" or config.settings.tome.gfx.tiles == "ascii_full"})
 		e.particles.x = x
 		e.particles.y = y
 		game.level.map:addParticleEmitter(e.particles)

@@ -21,6 +21,9 @@ base_size = 32
 
 local toggle = false
 
+r = 0 g = 0 b = 0
+if is_ascii then r = 32 g = 0 b = 64 end
+
 return { generator = function()
 	local ad = rng.range(0, 360)
 	local a = math.rad(ad)
@@ -37,9 +40,9 @@ return { generator = function()
 		dir = 0, dirv = 0, dira = 0,
 		vel = 0, velv = 0, vela = 0,
 
-		r = 0 / 255,  rv = 0, ra = 0,
-		g = 0 / 255,  gv = 0, ga = 0,
-		b = 0 / 255,  bv = 0, ba = 0,
+		r = r / 255,  rv = 0, ra = 0,
+		g = g / 255,  gv = 0, ga = 0,
+		b = b / 255,  bv = 0, ba = 0,
 		a = rng.range(64, 120) / 255,  av = -1 / 255, aa = 0
 	}
 end, },
