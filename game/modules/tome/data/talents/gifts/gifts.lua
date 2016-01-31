@@ -189,7 +189,7 @@ function setupSummon(self, m, x, y, no_control)
 		end
 	end
 
-	if self:knowTalent(self.T_BLIGHTED_SUMMONING) then m:incIncStat("mag", self:getMag()) end
+	if self:knowTalent(self.T_BLIGHTED_SUMMONING) then m:incIncStat("mag", self:getMag()) m:incVim(m:getMaxVim()) end
 
 	self:attr("summoned_times", 1)
 end
