@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 require "engine.class"
+local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -49,22 +50,25 @@ function _M:generate()
 
 	-- Draw UI
 	self.font:setStyle("bold")
-	local w, h = self.font:size(self.text)
+	local text = core.renderer.text(self.font)
+	text:text(self.text)
+	self.font:setStyle("normal")
+
+	local w, h = text:getStats()
 	self.iw, self.ih = w, h
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
 	if self.force_w then w = self.force_w end
 
-	-- self.tex = self:drawFontLine(self.font, self.text, w)
-	local text = core.renderer.text(self.font)
-	text:text(self.text)
 	text:translate(-frame_ox1 + 3, -frame_oy1 + 3, 10)
 	self.container:add(text)
-	self.font:setStyle("normal")
 
 	self.frame_do = self:makeFrameDO("ui/button", self.w, self.h)
-	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)
 	self.frame_do.container:translate(3, 3, 0)
+	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)
+	self.frame_sel_do.container:translate(3, 3, 1)
+	self.frame_sel_do.container:color(1, 1, 1, 0)
 	self.container:add(self.frame_do.container)
+	self.container:add(self.frame_sel_do.container)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
@@ -81,17 +85,29 @@ function _M:generate()
 	self.h = self.h + 6
 end
 
+function _M:on_focus_change(status)
+	tween.stop(self.tweenid)
+	if status then
+		self.tweenid = tween(8, function(v) self.frame_sel_do.container:color(1, 1, 1, v) end, {0, 1}, "linear")
+	else
+		self.tweenid = tween(8, function(v) self.frame_sel_do.container:color(1, 1, 1, v) end, {1, 0}, "linear")
+	end
+end
+
 function _M:display(x, y, nb_keyframes, ox, oy)
 	self.last_display_x = ox
 	self.last_display_y = oy
 
-	if self.hide then return end
-
-	x = x + 3
-	y = y + 3
-	ox = ox + 3
-	oy = oy + 3
 	-- local mx, my, button = core.mouse.get()
+	-- if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
+	-- 	self.frame_sel_do.container:color(0, 1, 0, 1)
+	-- elseif self.focus_decay and not self.glow then
+	-- 	print("====",self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
+	-- 	self.frame_sel_do.container:color(1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
+	-- 	self.focus_decay = self.focus_decay - nb_keyframes
+	-- 	if self.focus_decay <= 0 then self.focus_decay = nil self.frame_sel_do.container:color(1, 1, 1, 0) end
+	-- end
+
 	-- if self.focused then
 	-- 	if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
 	-- 		self:drawFrame(self.frame, x, y, 0, 1, 0, 1)

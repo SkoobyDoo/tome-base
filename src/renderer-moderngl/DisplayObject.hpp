@@ -54,12 +54,13 @@ protected:
 	DisplayObject *parent = NULL;
 	lua_State *L = NULL;
 	mat4 model;
+	vec4 color;
 	float x = 0, y = 0, z = 0;
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
 	bool changed = false;
 public:
-	DisplayObject() { model = mat4(); };
+	DisplayObject() { model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1; };
 	virtual ~DisplayObject() {
 		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
 	};
@@ -73,12 +74,13 @@ public:
 
 	void recomputeModelMatrix();
 
+	void setColor(float r, float g, float b, float a);
 	void translate(float x, float y, float z, bool increment);
 	void rotate(float x, float y, float z, bool increment);
 	void scale(float x, float y, float z, bool increment);
 
-	virtual void render(RendererGL *container, mat4 cur_model) = 0;
-	virtual void renderZ(RendererGL *container, mat4 cur_model) = 0;
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color) = 0;
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color) = 0;
 };
 
 /****************************************************************************
@@ -117,8 +119,8 @@ public:
 	};
 	void setShader(shader_type *s) { shader = s; };
 
-	virtual void render(RendererGL *container, mat4 cur_model);
-	virtual void renderZ(RendererGL *container, mat4 cur_model);
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
 };
 
 /****************************************************************************
@@ -135,8 +137,8 @@ public:
 	void remove(DisplayObject *dob);
 	void clear();
 
-	virtual void render(RendererGL *container, mat4 cur_model);
-	virtual void renderZ(RendererGL *container, mat4 cur_model);
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
 };
 
 /****************************************************************************

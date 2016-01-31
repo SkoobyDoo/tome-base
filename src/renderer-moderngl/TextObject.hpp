@@ -35,11 +35,11 @@ private:
 	char *text;
 	int line_max_width = 99999;
 	bool no_linefeed = false;
+
+public:
 	int nb_lines = 1;
 	int w = 0;
 	int h = 0;
-
-public:
 
 	DORText() {
 		text = strdup("");

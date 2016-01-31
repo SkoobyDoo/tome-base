@@ -55,8 +55,9 @@ end
 local function checkStartParams(time, subject, target, easing, callback)
   assert(type(time) == 'number' and time > 0, "time must be a positive number. Was " .. tostring(time))
   local tsubject = type(subject)
-  assert(tsubject == 'table' or tsubject == 'userdata', "subject must be a table or userdata. Was " .. tostring(subject))
-  assert(type(target)== 'table', "target must be a table. Was " .. tostring(target))
+  local ttarget = type(target)
+  assert(tsubject == 'table' or tsubject == 'userdata' or tsubject == 'function', "subject must be a table or userdata or function. Was " .. tostring(subject))
+  assert(ttarget == 'table' or ttarget == 'nil', "target must be a table or nil. Was " .. tostring(target))
   assert(isCallable(easing), "easing must be a function or functable. Was " .. tostring(easing))
   assert(callback==nil or isCallable(callback), "callback must be nil, a function or functable. Was " .. tostring(time))
   checkSubjectAndTargetRecursively(subject, target)
@@ -74,28 +75,48 @@ local function getEasingFunction(easing)
 end
 
 local function newTween(time, subject, target, easing, callback, args)
-  local self = {
-    time = time,
-    subject = subject,
-    target = copyTables({},target),
-    easing = easing,
-    callback = callback,
-    args = args,
-    initial = copyTables({}, target, subject),
-    running = 0
-  }
+  local self
+  if type(subject) == 'function' then
+    self = {
+      time = time,
+      subject = subject,
+      target = target[2],
+      easing = easing,
+      callback = callback,
+      args = args,
+      initial = target[1],
+      running = 0,
+      fct = true,
+    }
+  else
+    self = {
+      time = time,
+      subject = subject,
+      target = copyTables({},target),
+      easing = easing,
+      callback = callback,
+      args = args,
+      initial = copyTables({}, target, subject),
+      running = 0
+    }
+  end
   tweens[self] = self
   return self
 end
 
 local function easeWithTween(self, subject, target, initial)
   local t,b,c,d
-  for k,v in pairs(target) do
-    if type(v)=='table' then
-      easeWithTween(self, subject[k], v, initial[k])
-    else
-      t,b,c,d = self.running, initial[k], v - initial[k], self.time
-      subject[k] = self.easing(t,b,c,d)
+  if self.fct then
+    t,b,c,d = self.running, initial, target - initial, self.time
+    subject(self.easing(t,b,c,d))
+  else    
+    for k,v in pairs(target) do
+      if type(v)=='table' then
+        easeWithTween(self, subject[k], v, initial[k])
+      else
+        t,b,c,d = self.running, initial[k], v - initial[k], self.time
+        subject[k] = self.easing(t,b,c,d)
+      end
     end
   end
 end
@@ -110,13 +131,13 @@ local function hasExpiredTween(self)
 end
 
 local function finishTween(self)
-  copyTables(self.subject, self.target)
+  if not self.fct then copyTables(self.subject, self.target) end
   if self.callback then self.callback(unpack(self.args)) end
   tween.stop(self)
 end
 
 local function resetTween(self)
-  copyTables(self.subject, self.initial)
+  if not self.fct then copyTables(self.subject, self.initial) end
 end
 
 -- easing
@@ -337,7 +358,7 @@ tween.easing = {
 
 function tween.start(time, subject, target, easing, callback, ...)
   easing = getEasingFunction(easing)
-  checkStartParams(time, subject, target, easing, callback)
+  -- checkStartParams(time, subject, target, easing, callback)
   return newTween(time, subject, target, easing, callback, {...})
 end
 

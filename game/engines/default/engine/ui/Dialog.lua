@@ -461,7 +461,7 @@ function _M:generate()
 	local b6 = self:getAtlasTexture(self.frame.b6)
 	local b5 = self:getAtlasTexture(self.frame.b5)
 
-	local cx, cy = 0, 0
+	local cx, cy = self.frame.ox1, self.frame.oy1
 
 	self.container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
 
@@ -536,8 +536,15 @@ function _M:updateTitle(title)
 	if not title then return end
 	local title = title
 	if type(title)=="function" then title = title() end
+
+	if not self.title_do then
+		self.title_do = core.renderer.text(self.font_bold)
+		self.container:add(self.title_do)
+	end
+
 	self.font_bold:setStyle("bold")
-	self.title_tex = self:drawFontLine(self.font_bold, title)
+	self.title_do:text(title)
+	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, 10)
 	self.font_bold:setStyle("normal")
 end
 
@@ -917,7 +924,7 @@ function _M:toScreen(x, y, nb_keyframes)
 	-- end
 
 	-- -- We translate and scale opengl matrix to make the popup effect easily
-	-- local ox, oy = x, y
+	local ox, oy = x, y
 	-- local hw, hh = math.floor(self.w / 2), math.floor(self.h / 2)
 	-- local tx, ty = x + hw, y + hh
 	-- x, y = -hw, -hh
@@ -945,11 +952,11 @@ function _M:toScreen(x, y, nb_keyframes)
 
 	-- self:innerDisplayBack(x, y, nb_keyframes, tx, ty)
 
-	-- -- UI elements
-	-- for i = 1, #self.uis do
-	-- 	local ui = self.uis[i]
-	-- 	if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
-	-- end
+	-- UI elements
+	for i = 1, #self.uis do
+		local ui = self.uis[i]
+		if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
+	end
 
 	-- self:innerDisplay(x, y, nb_keyframes, tx, ty)
 

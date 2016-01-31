@@ -587,11 +587,16 @@ fbo:rotate(math.rad(45), 0, 0)
 local fborenderer = core.renderer.renderer()
 fborenderer:add(fbo)
 
-local nb = 0
-local z = false
+
+-- renderer:translate(100,100,0)
+-- renderer:scale(2,0.7,1)
+-- renderer:rotate(math.rad(45),0,0)
+-- local nb = 0
+-- local z = false
 -- function _M:display()
 -- 	-- fbo:use(true)
 -- 		renderer:toScreen(0, 0, 1, 1, 1, 1)
+-- 		renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
 -- 		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
 -- 		-- t1:rotate(0, 0, math.rad(2), true)
 -- 	-- fbo:use(false)

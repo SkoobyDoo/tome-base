@@ -96,8 +96,9 @@ RendererGL::~RendererGL() {
 	glDeleteBuffers(1, &vbo_elements);
 }
 
-void DORVertexes::render(RendererGL *container, mat4 cur_model) {
+void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	cur_model *= model;
+	cur_color *= color;
 	auto dl = getDisplayList(container, tex, shader);
 
 	// Make sure we do not have to reallocate each step
@@ -111,13 +112,15 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model) {
 	vertex *dest = dl->list.data();
 	for (int di = startat; di < startat + nb; di++) {
 		dest[di].pos = cur_model * dest[di].pos;
+		dest[di].color = cur_color * dest[di].color;
 	}
 
 	resetChanged();
 }
 
-void DORVertexes::renderZ(RendererGL *container, mat4 cur_model) {
+void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	cur_model *= model;
+	cur_color *= color;
 
 	// Make sure we do not have to reallocate each step
 	int nb = vertices.size();
@@ -131,27 +134,29 @@ void DORVertexes::renderZ(RendererGL *container, mat4 cur_model) {
 		dest[di].tex = tex;
 		dest[di].shader = shader;
 		dest[di].v.tex = src[si].tex;
-		dest[di].v.color = src[si].color;
+		dest[di].v.color = cur_color * src[si].color;
 		dest[di].v.pos = cur_model * src[si].pos;
 	}
 
 	resetChanged();
 }
 
-void DORContainer::render(RendererGL *container, mat4 cur_model) {
+void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	cur_model *= model;
+	cur_color *= color;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->render(container, cur_model);
+		if (i) i->render(container, cur_model, cur_color);
 	}
 	resetChanged();
 }
 
-void DORContainer::renderZ(RendererGL *container, mat4 cur_model) {
+void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	cur_model *= model;
+	cur_color *= color;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->renderZ(container, cur_model);
+		if (i) i->renderZ(container, cur_model, cur_color);
 	}
 	resetChanged();
 }
@@ -197,7 +202,7 @@ void RendererGL::update() {
 		zvertices.clear();
 		for (auto it = dos.begin() ; it != dos.end(); ++it) {
 			DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-			if (i) i->renderZ(this, cur_model);
+			if (i) i->renderZ(this, cur_model, color);
 		}
 		stable_sort(zvertices.begin(), zvertices.end(), zSorter);
 
@@ -205,7 +210,7 @@ void RendererGL::update() {
 	} else {
 		for (auto it = dos.begin() ; it != dos.end(); ++it) {
 			DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-			if (i) i->render(this, cur_model);
+			if (i) i->render(this, cur_model, color);
 		}
 	}
 
@@ -258,7 +263,7 @@ void RendererGL::toScreen(float x, float y, float r, float g, float b, float a) 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 
 	// Draw all display lists
-	printf("=r= drawing %d lists\n", displays.size());
+	// printf("=r= drawing %d lists\n", displays.size());
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		// Bind the vertices
 		glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
