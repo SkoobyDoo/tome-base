@@ -164,6 +164,8 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 }
 
 void RendererGL::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	this->use_model = cur_model * model;
+	this->use_color = cur_color * color;
 	current_used_dl = NULL; // Needed to make sure we break texture chaining
 	auto dl = getDisplayList(container, 0, NULL);
 	current_used_dl = NULL; // Needed to make sure we break texture chaining
@@ -172,6 +174,8 @@ void RendererGL::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 }
 
 void RendererGL::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	this->use_model = cur_model * model;
+	this->use_color = cur_color * color;
 	int startat = container->zvertices.size();
 	container->zvertices.resize(startat + 1);
 	sortable_vertex *dest = container->zvertices.data();
@@ -303,7 +307,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	// printf("=r= drawing %d lists\n", displays.size());
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if ((*dl)->sub) {
-			(*dl)->sub->toScreen(cur_model, cur_color);
+			(*dl)->sub->toScreen(cur_model * (*dl)->sub->use_model, cur_color * (*dl)->sub->use_color);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 			if (cutting) {
 				glEnable(GL_SCISSOR_TEST);
@@ -348,11 +352,9 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, color));
 			}
 
-
 			// printf("=r= drawing %d elements\n", (*dl)->list.size() / 4 * 6);
 			glDrawElements(kind, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
 			// glDrawArrays(kind, 0, (*dl)->list.size());
-
 
 			glDisableVertexAttribArray(shader->vertex_attrib);
 			glDisableVertexAttribArray(shader->texcoord_attrib);

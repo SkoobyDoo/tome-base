@@ -21,6 +21,7 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local Slider = require "engine.ui.Slider"
+local Entry = require "engine.ui.blocks.Entry"
 
 --- A generic UI list
 -- @classmod engine.ui.List
@@ -133,19 +134,14 @@ end
 
 function _M:drawItem(item)
 	local pos = (item._i - 1) * self.fh
-	local color = item.color or {255,255,255}
 	local text = item[self.display_prop]
 
 	if not item._text then
-		item._container = core.renderer.container()
-		item._frame = self:makeFrameDO("ui/selector", self.fw, self.fh)
-		item._text = core.renderer.text(self.font) item._text:translate(item._frame.b4.w, (self.fh - self.font_h) / 2, 10)
-		item._container:add(item._frame.container) item._container:add(item._text)
-		item._container:translate(0, pos, 0)
-		self.renderer:add(item._container)
+		item._text = Entry.new(nil, "", color, self.fw, self.fh)
+		item._text:translate(0, pos, 0)
+		self.renderer:add(item._text:get())
 	end
-	item._text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
-	item._text:text(text)
+	item._text:setText(text, item.color)
 end
 
 function _M:select(i)

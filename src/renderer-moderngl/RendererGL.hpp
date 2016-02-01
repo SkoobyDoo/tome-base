@@ -73,6 +73,10 @@ private:
 
 	vector<sortable_vertex> zvertices;
 
+	// Wehn used as a sub
+	vec4 use_color;
+	mat4 use_model;
+
 public:
 	RendererGL();
 	RendererGL(int w, int h);
