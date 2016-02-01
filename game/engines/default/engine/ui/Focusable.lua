@@ -32,8 +32,16 @@ function _M:setFocus(v)
 	local prev_focus = self.focused
 	self.focused = v
 	if not v then self.focus_decay = self.focus_decay_max end
-	if v ~= prev_focus and self.on_focus_change then self:on_focus_change(v) end
+	if v ~= prev_focus then self:onFocusChange(v) end
 	if self.on_focus then self:on_focus(v) end
+end
+
+function _M:onFocusChange(v)
+	if self.on_focus_change then self:on_focus_change(v) end
+
+	for block, _ in pairs(self.blocks) do
+		block:onFocusChange(v)
+	end
 end
 
 --while focused

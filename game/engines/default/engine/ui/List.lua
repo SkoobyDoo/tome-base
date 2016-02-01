@@ -82,7 +82,6 @@ function _M:generate()
 		if button == "wheelup" and event == "button" then self.scroll = util.bound(self.scroll - 1, 1, self.max - self.max_display + 1)
 		elseif button == "wheeldown" and event == "button" then self.scroll = util.bound(self.scroll + 1, 1, self.max - self.max_display + 1) end
 
-		if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 		self.sel = util.bound(self.scroll + math.floor(by / self.fh), 1, self.max)
 		if (self.all_clicks or button == "left") and event == "button" then self:onUse(button) end
 		if event == "motion" and button == "left" and self.on_drag then self.on_drag(self.list[self.sel], self.sel) end
@@ -91,12 +90,10 @@ function _M:generate()
 	self.key:addBinds{
 		ACCEPT = function() self:onUse() end,
 		MOVE_UP = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 			self.sel = util.boundWrap(self.sel - 1, 1, self.max) self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 			self:onSelect()
 		end,
 		MOVE_DOWN = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 			self.sel = util.boundWrap(self.sel + 1, 1, self.max) self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 			self:onSelect()
 		end,
@@ -105,25 +102,21 @@ function _M:generate()
 		[{"_UP","ctrl"}] = function() self.key:triggerVirtual("MOVE_UP") end,
 		[{"_DOWN","ctrl"}] = function() self.key:triggerVirtual("MOVE_DOWN") end,
 		_HOME = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 			self.sel = 1
 			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 			self:onSelect()
 		end,
 		_END = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 			self.sel = self.max
 			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 			self:onSelect()
 		end,
 		_PAGEUP = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 			self.sel = util.bound(self.sel - self.max_display, 1, self.max)
 			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 			self:onSelect()
 		end,
 		_PAGEDOWN = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 			self.sel = util.bound(self.sel + self.max_display, 1, self.max)
 			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 			self:onSelect()
@@ -136,16 +129,15 @@ function _M:drawItem(item)
 	local pos = (item._i - 1) * self.fh
 	local text = item[self.display_prop]
 
-	if not item._text then
-		item._text = Entry.new(nil, "", color, self.fw, self.fh)
-		item._text:translate(0, pos, 0)
-		self.renderer:add(item._text:get())
+	if not item._entry then
+		item._entry = Entry.new(nil, "", color, self.fw, self.fh)
+		item._entry:translate(0, pos, 0)
+		self.renderer:add(item._entry:get())
 	end
-	item._text:setText(text, item.color)
+	item._entry:setText(text, item.color)
 end
 
 function _M:select(i)
-	if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 	self.sel = util.bound(i, 1, #self.list)
 	self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 	self:onSelect()
@@ -154,6 +146,10 @@ end
 function _M:onSelect()
 	local item = self.list[self.sel]
 	if not item then return end
+
+	if self.last_selected_item and self.last_selected_item ~= item then self.last_selected_item._entry:select(false) end
+	item._entry:select(true)
+	self.last_selected_item = item
 
 	if rawget(self, "on_select") then self.on_select(item, self.sel) end
 end

@@ -90,6 +90,7 @@ function _M:init(t, no_gen)
 	self.mouse = Mouse.new()
 	self.key = KeyBind.new()
 	self.do_container = core.renderer.container()
+	self.blocks = setmetatable({}, {__mode="k"})
 
 	if not rawget(self, "ui") then self.ui = self.ui end
 
@@ -330,6 +331,10 @@ function _M:setTextShadow(v)
 end
 
 function _M:positioned(x, y)
+end
+
+function _M:blockAdded(block)
+	self.blocks[block] = true
 end
 
 function _M:sound(name)

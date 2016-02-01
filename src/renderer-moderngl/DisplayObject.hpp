@@ -55,6 +55,7 @@ protected:
 	lua_State *L = NULL;
 	mat4 model;
 	vec4 color;
+	bool visible = true;
 	float x = 0, y = 0, z = 0;
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
@@ -79,6 +80,7 @@ public:
 	void translate(float x, float y, float z, bool increment);
 	void rotate(float x, float y, float z, bool increment);
 	void scale(float x, float y, float z, bool increment);
+	void shown(bool v);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color) = 0;
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color) = 0;

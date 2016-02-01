@@ -57,6 +57,13 @@ static int gl_generic_scale(lua_State *L)
 	return 0;
 }
 
+static int gl_generic_shown(lua_State *L)
+{
+	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
+	(*c)->shown(lua_toboolean(L, 2));
+	return 0;
+}
+
 /******************************************************************
  ** Renderer
  ******************************************************************/
@@ -377,6 +384,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 {
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
+	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -395,6 +403,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
+	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -408,6 +417,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
+	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -421,6 +431,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"quad", gl_vertexes_quad},
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
+	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -437,6 +448,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"maxWidth", gl_text_max_width},
 	{"linefeed", gl_text_linefeed},
 	{"shader", gl_text_shader},
+	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},

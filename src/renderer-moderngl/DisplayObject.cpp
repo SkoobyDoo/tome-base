@@ -56,6 +56,11 @@ void DisplayObject::recomputeModelMatrix() {
 	setChanged();
 }
 
+void DisplayObject::shown(bool v) {
+	visible = v;
+	setChanged();
+}
+
 void DisplayObject::setColor(float r, float g, float b, float a) {
 	color.r = r;
 	color.g = g;

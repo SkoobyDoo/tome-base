@@ -49,6 +49,11 @@ function _M:init(t)
 	self.font_h = t.font_h or self.parent.ui.font_h
 
 	self.do_container = core.renderer.container()
+
+	self.parent.ui:blockAdded(self) -- This does not provoke cycle tables because the parent stores us as a weak table
+end
+
+function _M:onFocusChange(v)
 end
 
 function _M:get()
@@ -69,4 +74,8 @@ end
 
 function _M:color(r, g, b, a)
 	self.do_container:color(r, g, b, a)
+end
+
+function _M:shown(v)
+	self.do_container:shown(v)
 end

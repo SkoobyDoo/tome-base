@@ -98,6 +98,7 @@ RendererGL::~RendererGL() {
 }
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
 	cur_model *= model;
 	cur_color *= color;
 	auto dl = getDisplayList(container, tex, shader);
@@ -120,6 +121,7 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 }
 
 void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
 	cur_model *= model;
 	cur_color *= color;
 
@@ -144,6 +146,7 @@ void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color)
 }
 
 void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
 	cur_model *= model;
 	cur_color *= color;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
@@ -154,6 +157,7 @@ void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color)
 }
 
 void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
 	cur_model *= model;
 	cur_color *= color;
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
@@ -164,6 +168,7 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 }
 
 void RendererGL::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
 	this->use_model = cur_model * model;
 	this->use_color = cur_color * color;
 	current_used_dl = NULL; // Needed to make sure we break texture chaining
@@ -174,6 +179,7 @@ void RendererGL::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 }
 
 void RendererGL::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
 	this->use_model = cur_model * model;
 	this->use_color = cur_color * color;
 	int startat = container->zvertices.size();
@@ -286,6 +292,8 @@ void RendererGL::toScreen() {
 }
 
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+
 	if (changed) update();
 
 	cur_model = cur_model * model;

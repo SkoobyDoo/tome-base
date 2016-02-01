@@ -19,6 +19,7 @@
 
 require "engine.class"
 local Block = require "engine.ui.blocks.Block"
+local tween = require "tween"
 
 --- A generic UI block
 -- @classmod engine.ui.blocks.block
@@ -29,16 +30,33 @@ function _M:init(t, text, color, w, h)
 
 	Block.init(self, t)
 
+	self.selected = false
+
 	self.frame = self.parent.ui:makeFrameDO("ui/selector", w, h)
+	self.frame.container:shown(false)
+	self.frame_sel = self.parent.ui:makeFrameDO("ui/selector-sel", w, h)
+	self.frame_sel.container:shown(false)
+	self.cur_frame = self.frame
 
 	self.text = core.renderer.text(self.font)
 	self.text:translate(self.frame.b4.w, (h - self.font_h) / 2, 10)
 	self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 	
 	self.do_container:add(self.frame.container)
+	self.do_container:add(self.frame_sel.container)
 	self.do_container:add(self.text)
 
 	self:setText(text)
+end
+
+function _M:onFocusChange(v)
+	-- tween.stop(self.tweenid)
+	self.cur_frame.container:shown(false)
+	self.cur_frame = v and self.frame_sel or self.frame
+	if self.selected then
+		self.cur_frame.container:color(1, 1, 1, 1)
+		self.cur_frame.container:shown(true)
+	end
 end
 
 function _M:setText(text, color)
@@ -46,4 +64,17 @@ function _M:setText(text, color)
 		self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 	end
 	self.text:text(text)
+	self.str = text
+end
+
+function _M:select(v)
+	if self.selected == v then return end
+	self.selected = v
+	if v then
+		self.cur_frame.container:color(1, 1, 1, 1)
+		self.cur_frame.container:shown(v)
+	else
+		tween.stop(self.tweenid)
+		self.tweenid = tween(8, function(a) self.cur_frame.container:color(1, 1, 1, a) end, {1, 0}, "linear", function() self.cur_frame.container:shown(false) end)
+	end
 end
