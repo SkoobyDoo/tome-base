@@ -89,7 +89,7 @@ end
 function _M:init(t, no_gen)
 	self.mouse = Mouse.new()
 	self.key = KeyBind.new()
-	self.container = core.renderer.container()
+	self.do_container = core.renderer.container()
 
 	if not rawget(self, "ui") then self.ui = self.ui end
 

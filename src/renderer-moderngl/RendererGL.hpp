@@ -24,10 +24,13 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 
+class RendererGL;
+
 typedef struct {
 	vertex v;
 	GLuint tex;
 	shader_type *shader;
+	RendererGL *sub;
 } sortable_vertex;
 
 /****************************************************************************
@@ -41,6 +44,7 @@ public:
 	GLuint tex = 0;
 	shader_type *shader = NULL;
 	vector<vertex> list;
+	RendererGL *sub = NULL;
 
 	DisplayList();
 	~DisplayList();
@@ -64,6 +68,9 @@ private:
 	vector<DisplayList*> displays;
 	int nb_quads = 0;
 
+	bool cutting = false;
+	vec4 cutsize;
+
 	vector<sortable_vertex> zvertices;
 
 public:
@@ -75,10 +82,15 @@ public:
 		displays.push_back(dl);
 	}
 
+	void cutoff(float x, float y, float w, float h) { cutting = true; y = screen->h / screen_zoom - y - h; cutsize = vec4(x, y, w, h); };
 	void zSorting(bool sort) { zsort = sort; };
 	void sortedToDL();
 	void update();
-	void toScreen(float x, float y, float r, float g, float b, float a);
+	void toScreen(mat4 cur_model, vec4 color);
+	void toScreen();
+
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
 };
 
 #endif

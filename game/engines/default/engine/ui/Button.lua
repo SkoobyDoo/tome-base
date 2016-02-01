@@ -46,7 +46,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-	self.container:clear()
+	self.do_container:clear()
 
 	-- Draw UI
 	self.font:setStyle("bold")
@@ -60,15 +60,15 @@ function _M:generate()
 	if self.force_w then w = self.force_w end
 
 	text:translate(-frame_ox1 + 3, -frame_oy1 + 3, 10)
-	self.container:add(text)
+	self.do_container:add(text)
 
 	self.frame_do = self:makeFrameDO("ui/button", self.w, self.h)
 	self.frame_do.container:translate(3, 3, 0)
 	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)
 	self.frame_sel_do.container:translate(3, 3, 1)
 	self.frame_sel_do.container:color(1, 1, 1, 0)
-	self.container:add(self.frame_do.container)
-	self.container:add(self.frame_sel_do.container)
+	self.do_container:add(self.frame_do.container)
+	self.do_container:add(self.frame_sel_do.container)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)

@@ -447,9 +447,9 @@ function _M:generate()
 
 	self.renderer = core.renderer.renderer()
 	self.renderer:zSort(true)
-	self.container = core.renderer.container()
-	self.container:translate(self.display_x, self.display_y, -100)
-	self.renderer:add(self.container)
+	self.do_container = core.renderer.container()
+	self.do_container:translate(self.display_x, self.display_y, -100)
+	self.renderer:add(self.do_container)
 
 	local b7 = self:getAtlasTexture(self.frame.b7)
 	local b9 = self:getAtlasTexture(self.frame.b9)
@@ -463,16 +463,16 @@ function _M:generate()
 
 	local cx, cy = self.frame.ox1, self.frame.oy1
 
-	self.container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
+	self.do_container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
 
-	self.container:add(fromTextureTable(b7, cx + 0, cy + 0, nil, nil, nil, r, g, b, a))
-	self.container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, nil, nil, nil, r, g, b, a))
+	self.do_container:add(fromTextureTable(b7, cx + 0, cy + 0, nil, nil, nil, r, g, b, a))
+	self.do_container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, nil, nil, nil, r, g, b, a))
 
-	self.container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, nil, nil, true, r, g, b, a))
-	self.container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, nil, nil, true, r, g, b, a))
+	self.do_container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, nil, nil, true, r, g, b, a))
+	self.do_container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, nil, nil, true, r, g, b, a))
 
-	self.container:add(fromTextureTable(b4, cx + 0, cy + b7.h, nil, h - b7.h - b1.h, true, r, g, b, a))
-	self.container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, nil, h - b9.h - b3.h, true, r, g, b, a))
+	self.do_container:add(fromTextureTable(b4, cx + 0, cy + b7.h, nil, h - b7.h - b1.h, true, r, g, b, a))
+	self.do_container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, nil, h - b9.h - b3.h, true, r, g, b, a))
 
 	if self.frame.dialog_h_middles then
 		-- local mw = math.floor(self.frame.w / 2)
@@ -486,16 +486,16 @@ function _M:generate()
 		-- self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
 		-- self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
 	else
-		self.container:add(fromTextureTable(b8, cx + b7.w, cy + 0, w - b7.w - b9.w, nil, true, r, g, b, a))
-		self.container:add(fromTextureTable(b2, cx + b1.w, cy + h - b2.h, w - b1.w - b3.w, nil, true, r, g, b, a))
+		self.do_container:add(fromTextureTable(b8, cx + b7.w, cy + 0, w - b7.w - b9.w, nil, true, r, g, b, a))
+		self.do_container:add(fromTextureTable(b2, cx + b1.w, cy + h - b2.h, w - b1.w - b3.w, nil, true, r, g, b, a))
 	end
 
 	-- Overlays
 	self.overs = {}
 	if #(self.frame.overlays or {}) > 0 then
-		local overs_container = core.renderer.container()
+		local overs_container = core.renderer.do_container()
 		overs_container:translate(0, 0, 1)
-		self.container:add(overs_container)
+		self.do_container:add(overs_container)
 
 		for i, o in ipairs(self.frame.overlays) do
 			local ov = self:getAtlasTexture(o.image)
@@ -539,7 +539,7 @@ function _M:updateTitle(title)
 
 	if not self.title_do then
 		self.title_do = core.renderer.text(self.font_bold)
-		self.container:add(self.title_do)
+		self.do_container:add(self.title_do)
 	end
 
 	self.font_bold:setStyle("bold")
@@ -703,9 +703,9 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		ui.ui.mouse.delegate_offset_x = ux
 		ui.ui.mouse.delegate_offset_y = uy
 		ui.ui:positioned(ux, uy, self.display_x + ux, self.display_y + uy)
-		if ui.ui.container then
-			ui.ui.container:translate(ui.x, ui.y)
-			self.container:add(ui.ui.container)
+		if ui.ui.do_container then
+			ui.ui.do_container:translate(ui.x, ui.y)
+			self.do_container:add(ui.ui.do_container)
 		end
 	end
 
@@ -966,5 +966,5 @@ function _M:toScreen(x, y, nb_keyframes)
 	-- if zoom < 1 then core.display.glScale() end
 	-- core.display.glTranslate(-tx, -ty, 0)
 
-	self.renderer:toScreen(0, 0, 1, 1, 1, 1)
+	self.renderer:toScreen()
 end

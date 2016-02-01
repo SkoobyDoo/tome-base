@@ -578,32 +578,43 @@ f.container:add(f2.container)
 f2.container:add(f3.container)
 renderer:add(f.container)
 
-local fbo = core.renderer.target()
--- fbo:scale(1, 0.4, 1)
-fbo:clearColor(0, 1, 0, 1)
-fbo:displaySize(400, 400)
-fbo:translate(400, 400)
-fbo:rotate(math.rad(45), 0, 0)
-local fborenderer = core.renderer.renderer()
-fborenderer:add(fbo)
+local subrenderer = core.renderer.renderer()
+subrenderer:translate(0, 0, 10)
+subrenderer:cutoff(20, 20, 50, 50)
+local i2 = core.renderer.image("/data/gfx/background/tome2.png")
+i2:translate(0, 0, -1)
+i2:scale(0.2, 0.2, 1)
+subrenderer:add(i2)
+renderer:add(subrenderer)
 
+-- local fbo = core.renderer.target()
+-- -- fbo:scale(1, 0.4, 1)
+-- fbo:clearColor(0, 1, 0, 1)
+-- fbo:displaySize(400, 400)
+-- fbo:translate(400, 400)
+-- fbo:rotate(math.rad(45), 0, 0)
+-- local fborenderer = core.renderer.renderer()
+-- fborenderer:add(fbo)
 
 -- renderer:translate(100,100,0)
 -- renderer:scale(2,0.7,1)
 -- renderer:rotate(math.rad(45),0,0)
--- local nb = 0
--- local z = false
--- function _M:display()
--- 	-- fbo:use(true)
--- 		renderer:toScreen(0, 0, 1, 1, 1, 1)
--- 		renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
--- 		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
--- 		-- t1:rotate(0, 0, math.rad(2), true)
--- 	-- fbo:use(false)
+-- renderer:cutoff(450, 400, 125, 200)
 
--- 	-- fborenderer:toScreen(0, 0, 1, 1, 1, 1)
--- 	-- fbo:rotate(0, math.rad(2), 0, true)
--- end
+local nb = 0
+local z = false
+function _M:display()
+	-- fbo:use(true)
+		renderer:toScreen()
+		-- subrenderer:toScreen()
+		-- renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
+		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
+		-- t1:rotate(0, 0, math.rad(2), true)
+	-- fbo:use(false)
+
+	-- fborenderer:toScreen()
+	-- fbo:rotate(0, math.rad(2), 0, true)
+end
 
 --- Ask if we really want to close, if so, save the game first
 function _M:onQuit()

@@ -67,6 +67,7 @@ void releaseDisplayList(DisplayList *dl) {
 		dl->list.clear();
 		dl->tex = 0;
 		dl->shader = NULL;
+		dl->sub = NULL;
 
 		available_dls.push(dl);
 		if (current_used_dl == dl) {
@@ -131,6 +132,7 @@ void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color)
 	vertex *src = vertices.data();
 	sortable_vertex *dest = container->zvertices.data();
 	for (int di = startat, si = 0; di < startat + nb; di++, si++) {
+		dest[di].sub = NULL;
 		dest[di].tex = tex;
 		dest[di].shader = shader;
 		dest[di].v.tex = src[si].tex;
@@ -161,6 +163,22 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 	resetChanged();
 }
 
+void RendererGL::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	current_used_dl = NULL; // Needed to make sure we break texture chaining
+	auto dl = getDisplayList(container, 0, NULL);
+	current_used_dl = NULL; // Needed to make sure we break texture chaining
+	dl->sub = this;
+	// resetChanged();
+}
+
+void RendererGL::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	int startat = container->zvertices.size();
+	container->zvertices.resize(startat + 1);
+	sortable_vertex *dest = container->zvertices.data();
+	dest[startat].sub = this;
+	// resetChanged();
+}
+
 static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
 	if (i.v.pos.z == j.v.pos.z) {
 		if (i.shader == j.shader) return i.tex < j.tex;
@@ -180,14 +198,21 @@ void RendererGL::sortedToDL() {
 	int startat = -1;
 
 	for (auto v = zvertices.begin(); v != zvertices.end(); v++) {
-		if (!dl || (tex != v->tex) || (shader != v->shader)) {
-			tex = v->tex; shader = v->shader;
-			dl = getDisplayList(this, tex, shader);
-			startat = dl->list.size();
-			dl->list.reserve(startat + nb); // Meh; will probably reserve way too much. but meh
+		if (v->sub) {
+			current_used_dl = NULL; // Needed to make sure we break texture chaining
+			dl = getDisplayList(this, 0, NULL);
+			current_used_dl = NULL; // Needed to make sure we break texture chaining
+			dl->sub = v->sub;
+			dl = NULL;
+		} else {
+			if (!dl || (tex != v->tex) || (shader != v->shader)) {
+				tex = v->tex; shader = v->shader;
+				dl = getDisplayList(this, tex, shader);
+				startat = dl->list.size();
+				dl->list.reserve(startat + nb); // Meh; will probably reserve way too much. but meh
+			}
+			dl->list.push_back(v->v);
 		}
-
-		dl->list.push_back(v->v);
 	}
 }
 
@@ -251,76 +276,94 @@ void RendererGL::update() {
 	}
 }
 
-void RendererGL::toScreen(float x, float y, float r, float g, float b, float a) {
+void RendererGL::toScreen() {
+	vec4 color = {1.0, 1.0, 1.0, 1.0};
+	toScreen(mat4(), color);
+}
+
+void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (changed) update();
 
- 	if (x || y) translate(x, y, 0.f, true);
+	cur_model = cur_model * model;
+	mat4 mvp = view * cur_model;
+	cur_color = cur_color * color;
 
-	mat4 mvp = view * model;
+	if (cutting) {
+		glEnable(GL_SCISSOR_TEST);
+		glScissor(cutsize.x, cutsize.y, cutsize.z, cutsize.w);
+	} else {
+		glDisable(GL_SCISSOR_TEST);
+	}
 
 	// Bind the indices
 	// printf("=r= binding vbo_elements %d\n", vbo_elements);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 
 	// Draw all display lists
-	// printf("=r= drawing %d lists\n", displays.size());
+	printf("=r= drawing %d lists\n", displays.size());
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
-		// Bind the vertices
-		glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
-	 	tglBindTexture(GL_TEXTURE_2D, (*dl)->tex);
-		// printf("=r= binding vbo %d\n", (*dl)->vbo);
-		// printf("=r= binding tex %d\n", (*dl)->tex);
-
-		shader_type *shader = (*dl)->shader;
-		if (!shader) {
-			useNoShader();
-			if (!current_shader) return;
+		if ((*dl)->sub) {
+			(*dl)->sub->toScreen(cur_model, cur_color);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+			if (cutting) {
+				glEnable(GL_SCISSOR_TEST);
+				glScissor(cutsize.x, cutsize.y, cutsize.z, cutsize.w);
+			}
 		} else {
-			tglUseProgramObject(shader->shader);
-			current_shader = default_shader;
+			// Bind the vertices
+			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
+		 	tglBindTexture(GL_TEXTURE_2D, (*dl)->tex);
+			// printf("=r= binding vbo %d\n", (*dl)->vbo);
+			// printf("=r= binding tex %d\n", (*dl)->tex);
+
+			shader_type *shader = (*dl)->shader;
+			if (!shader) {
+				useNoShader();
+				if (!current_shader) return;
+			} else {
+				tglUseProgramObject(shader->shader);
+				current_shader = default_shader;
+			}
+
+			shader = current_shader;
+			if (shader->vertex_attrib == -1) return;
+			// printf("=r= binding shader %d\n", current_shader->shader);
+
+			if (shader->p_color != -1) {
+				glUniform4fv(shader->p_color, 1, glm::value_ptr(cur_color));
+			}
+
+			if (shader->p_mvp != -1) {
+				glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+			}
+
+			glEnableVertexAttribArray(shader->vertex_attrib);
+			glVertexAttribPointer(shader->vertex_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)0);
+			if (shader->texcoord_attrib != -1) {
+				glEnableVertexAttribArray(shader->texcoord_attrib);
+				glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, tex));
+			}
+			if (shader->color_attrib != -1) {
+				glEnableVertexAttribArray(shader->color_attrib);
+				glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, color));
+			}
+
+
+			// printf("=r= drawing %d elements\n", (*dl)->list.size() / 4 * 6);
+			glDrawElements(kind, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
+			// glDrawArrays(kind, 0, (*dl)->list.size());
+
+
+			glDisableVertexAttribArray(shader->vertex_attrib);
+			glDisableVertexAttribArray(shader->texcoord_attrib);
+			glDisableVertexAttribArray(shader->color_attrib);
 		}
-
-		shader = current_shader;
-		if (shader->vertex_attrib == -1) return;
-		// printf("=r= binding shader %d\n", current_shader->shader);
-
-		if (shader->p_color != -1) {
-			GLfloat d[4];
-			d[0] = r;
-			d[1] = g;
-			d[2] = b;
-			d[3] = a;
-			glUniform4fv(shader->p_color, 1, d);
-		}
-
-		if (shader->p_mvp != -1) {
-			glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
-		}
-
-		glEnableVertexAttribArray(shader->vertex_attrib);
-		glVertexAttribPointer(shader->vertex_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)0);
-		if (shader->texcoord_attrib != -1) {
-			glEnableVertexAttribArray(shader->texcoord_attrib);
-			glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, tex));
-		}
-		if (shader->color_attrib != -1) {
-			glEnableVertexAttribArray(shader->color_attrib);
-			glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, color));
-		}
-
-
-		// printf("=r= drawing %d elements\n", (*dl)->list.size() / 4 * 6);
-		glDrawElements(kind, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
-		// glDrawArrays(kind, 0, (*dl)->list.size());
-
-
-		glDisableVertexAttribArray(shader->vertex_attrib);
-		glDisableVertexAttribArray(shader->texcoord_attrib);
-		glDisableVertexAttribArray(shader->color_attrib);
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	if (x || y) translate(-x, -y, 0.f, true);
+	if (cutting) {
+		glDisable(GL_SCISSOR_TEST);
+	}
 }

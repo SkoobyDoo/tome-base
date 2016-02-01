@@ -26,6 +26,38 @@ extern "C" {
 }
 
 /******************************************************************
+ ** Generic
+ ******************************************************************/
+
+static int gl_generic_color(lua_State *L)
+{
+	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
+	(*c)->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	return 0;
+}
+
+static int gl_generic_translate(lua_State *L)
+{
+	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
+	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+static int gl_generic_rotate(lua_State *L)
+{
+	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
+	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+static int gl_generic_scale(lua_State *L)
+{
+	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
+	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	return 0;
+}
+
+/******************************************************************
  ** Renderer
  ******************************************************************/
 static int gl_renderer_new(lua_State *L)
@@ -59,44 +91,17 @@ static int gl_renderer_zsort(lua_State *L)
 	return 0;
 }
 
-static int gl_renderer_color(lua_State *L)
+static int gl_renderer_cutoff(lua_State *L)
 {
 	RendererGL **c = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
-	(*c)->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
-
-static int gl_renderer_translate(lua_State *L)
-{
-	RendererGL **c = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
-	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_renderer_rotate(lua_State *L)
-{
-	RendererGL **c = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
-	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_renderer_scale(lua_State *L)
-{
-	RendererGL **c = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
+	(*c)->cutoff(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 	return 0;
 }
 
 static int gl_renderer_toscreen(lua_State *L)
 {
 	RendererGL **renderer = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
-	float x = lua_tonumber(L, 2);
-	float y = lua_tonumber(L, 3);
-	float r = lua_tonumber(L, 4);
-	float g = lua_tonumber(L, 5);
-	float b = lua_tonumber(L, 6);
-	float a = lua_tonumber(L, 7);
-	(*renderer)->toScreen(x, y, r, g, b, a);
+	(*renderer)->toScreen();
 	return 0;
 }
 
@@ -175,34 +180,6 @@ static int gl_container_clear(lua_State *L)
 	return 0;
 }
 
-static int gl_container_color(lua_State *L)
-{
-	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
-
-static int gl_container_translate(lua_State *L)
-{
-	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_container_rotate(lua_State *L)
-{
-	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_container_scale(lua_State *L)
-{
-	DORContainer **c = (DORContainer**)auxiliar_checkclass(L, "gl{container}", 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
 /******************************************************************
  ** Target (FBO)
  ******************************************************************/
@@ -253,34 +230,6 @@ static int gl_target_clearcolor(lua_State *L)
 	// We do not make any checks on the types, so the same method can be used for target & renderer and to add any kind of display object
 	DORTarget **c = (DORTarget**)lua_touserdata(L, 1);
 	(*c)->setClearColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
-
-static int gl_target_color(lua_State *L)
-{
-	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
-	(*c)->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
-
-static int gl_target_translate(lua_State *L)
-{
-	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
-	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_target_rotate(lua_State *L)
-{
-	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
-	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_target_scale(lua_State *L)
-{
-	DORTarget **c = (DORTarget**)auxiliar_checkclass(L, "gl{target}", 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 
@@ -338,34 +287,6 @@ static int gl_vertexes_shader(lua_State *L)
 	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
 	shader_type *shader = (shader_type*)lua_touserdata(L, 2);
 	(*v)->setShader(shader);
-	return 0;
-}
-
-static int gl_vertexes_color(lua_State *L)
-{
-	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*v)->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
-
-static int gl_vertexes_translate(lua_State *L)
-{
-	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*v)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_vertexes_rotate(lua_State *L)
-{
-	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*v)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_vertexes_scale(lua_State *L)
-{
-	DORVertexes **c = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	return 0;
 }
 
@@ -439,33 +360,6 @@ static int gl_text_shader(lua_State *L)
 	return 0;
 }
 
-static int gl_text_color(lua_State *L)
-{
-	DORText **c = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
-	(*c)->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
-
-static int gl_text_translate(lua_State *L)
-{
-	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
-	(*v)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_text_rotate(lua_State *L)
-{
-	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
-	(*v)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_text_scale(lua_State *L)
-{
-	DORText **c = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
 
 /******************************************************************
  ** Lua declarations
@@ -475,13 +369,14 @@ static const struct luaL_Reg gl_renderer_reg[] =
 {
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
-	{"color", gl_renderer_color},
-	{"translate", gl_renderer_translate},
-	{"rotate", gl_renderer_rotate},
-	{"scale", gl_renderer_scale},
+	{"color", gl_generic_color},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
 	{"add", gl_renderer_add},
 	{"remove", gl_renderer_remove},
 	{"clear", gl_renderer_clear},
+	{"cutoff", gl_renderer_cutoff},
 	{"toScreen", gl_renderer_toscreen},
 	{NULL, NULL},
 };
@@ -492,10 +387,10 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
-	{"color", gl_target_color},
-	{"translate", gl_target_translate},
-	{"rotate", gl_target_rotate},
-	{"scale", gl_target_scale},
+	{"color", gl_generic_color},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
 	{NULL, NULL},
 };
 
@@ -505,10 +400,10 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
-	{"color", gl_container_color},
-	{"translate", gl_container_translate},
-	{"rotate", gl_container_rotate},
-	{"scale", gl_container_scale},
+	{"color", gl_generic_color},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
 	{NULL, NULL},
 };
 
@@ -518,10 +413,10 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"quad", gl_vertexes_quad},
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
-	{"color", gl_vertexes_color},
-	{"translate", gl_vertexes_translate},
-	{"rotate", gl_vertexes_rotate},
-	{"scale", gl_vertexes_scale},
+	{"color", gl_generic_color},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
 	{NULL, NULL},
 };
 
@@ -533,10 +428,10 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"maxWidth", gl_text_max_width},
 	{"linefeed", gl_text_linefeed},
 	{"shader", gl_text_shader},
-	{"color", gl_text_color},
-	{"translate", gl_text_translate},
-	{"rotate", gl_text_rotate},
-	{"scale", gl_text_scale},
+	{"color", gl_generic_color},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
 	{NULL, NULL},
 };
 
