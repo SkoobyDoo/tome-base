@@ -21,7 +21,7 @@ require "engine.class"
 local Block = require "engine.ui.blocks.Block"
 local tween = require "tween"
 
---- An entry for any kind of lists and such
+--- A text entry zone
 -- @classmod engine.ui.blocks.block
 module(..., package.seeall, class.inherit(Block))
 
@@ -32,9 +32,8 @@ function _M:init(t, text, color, w, h)
 
 	self.selected = false
 
-	self.frame = self.parent.ui:makeFrameDO("ui/selector", w, h)
-	self.frame.container:shown(false)
-	self.frame_sel = self.parent.ui:makeFrameDO("ui/selector-sel", w, h)
+	self.frame = self.parent.ui:makeFrameDO("ui/textbox", w, h)
+	self.frame_sel = self.parent.ui:makeFrameDO("ui/textbox-sel", w, h)
 	self.frame_sel.container:shown(false)
 	self.cur_frame = self.frame
 
@@ -53,10 +52,7 @@ function _M:onFocusChange(v)
 	-- tween.stop(self.tweenid)
 	self.cur_frame.container:shown(false)
 	self.cur_frame = v and self.frame_sel or self.frame
-	if self.selected then
-		self.cur_frame.container:color(1, 1, 1, 1)
-		self.cur_frame.container:shown(true)
-	end
+	if self.selected then self.cur_frame.container:shown(true) end
 end
 
 function _M:setText(text, color)
@@ -64,16 +60,4 @@ function _M:setText(text, color)
 		self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 	end
 	self.text:text(text)
-end
-
-function _M:select(v)
-	if self.selected == v then return end
-	self.selected = v
-	if v then
-		self.cur_frame.container:color(1, 1, 1, 1)
-		self.cur_frame.container:shown(v)
-	else
-		tween.stop(self.tweenid)
-		self.tweenid = tween(8, function(a) self.cur_frame.container:color(1, 1, 1, a) end, {1, 0}, "linear", function() self.cur_frame.container:shown(false) end)
-	end
 end

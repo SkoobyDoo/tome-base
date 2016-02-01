@@ -33,6 +33,8 @@ function _M:init(t)
 end
 
 function _M:generate()
+	self.do_container:clear()
+
 	if self.dir == "horizontal" then
 		local top = self:getAtlasTexture("ui/border_vert_top.png")
 		local middle = self:getAtlasTexture("ui/border_vert_middle.png")

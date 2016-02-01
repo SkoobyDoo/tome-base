@@ -51,6 +51,8 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
+
 	-- Draw UI
 	self:generateTitle()
 	local title_w = self.title_w
@@ -171,22 +173,22 @@ function _M:updateText()
 	self.old_text = self.text
 end
 
-function _M:display(x, y, nb_keyframes)
-	local text_x, text_y = self.text_x, self.text_y
-	self:displayTitle(x, y, nb_keyframes)
-	if self.focused then
-		self:drawFrame(self.frame_sel, x + self.title_w, y)
-		local cursor_x = self.font_mono:size(self.text:sub(self.scroll, self.cursor - 1))
-		self.texcursor.t:toScreenFull(x + self.text_x + cursor_x - (self.texcursor.w / 2) + 2, y + text_y + 5,
-			self.texcursor.w, self.fh - 7, self.texcursor.tw, self.texcursor.th)
-	else
-		self:drawFrame(self.frame, x + self.title_w, y)
-		if self.focus_decay then
-			self:drawFrame(self.frame_sel, x + self.title_w, y, 1, 1, 1, self.focus_decay / self.focus_decay_max_d)
-			self.focus_decay = self.focus_decay - nb_keyframes
-			if self.focus_decay <= 0 then self.focus_decay = nil end
-		end
-	end
-	if self.text_shadow then self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y, 0, 0, 0, self.text_shadow) end
-	self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y)
-end
+-- function _M:display(x, y, nb_keyframes)
+-- 	local text_x, text_y = self.text_x, self.text_y
+-- 	self:displayTitle(x, y, nb_keyframes)
+-- 	if self.focused then
+-- 		self:drawFrame(self.frame_sel, x + self.title_w, y)
+-- 		local cursor_x = self.font_mono:size(self.text:sub(self.scroll, self.cursor - 1))
+-- 		self.texcursor.t:toScreenFull(x + self.text_x + cursor_x - (self.texcursor.w / 2) + 2, y + text_y + 5,
+-- 			self.texcursor.w, self.fh - 7, self.texcursor.tw, self.texcursor.th)
+-- 	else
+-- 		self:drawFrame(self.frame, x + self.title_w, y)
+-- 		if self.focus_decay then
+-- 			self:drawFrame(self.frame_sel, x + self.title_w, y, 1, 1, 1, self.focus_decay / self.focus_decay_max_d)
+-- 			self.focus_decay = self.focus_decay - nb_keyframes
+-- 			if self.focus_decay <= 0 then self.focus_decay = nil end
+-- 		end
+-- 	end
+-- 	if self.text_shadow then self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y, 0, 0, 0, self.text_shadow) end
+-- 	self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y)
+-- end
