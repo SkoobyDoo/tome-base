@@ -39,6 +39,7 @@ local function findUI()
 	error("Could not find parent UI")
 end
 
+--- Blocks are kind "smart", they intrincincally know which UI created them and register themselves into it for things like focusing
 function _M:init(t)
 	t = t or {}
 	self.parent = setmetatable({}, {__mode="v"})

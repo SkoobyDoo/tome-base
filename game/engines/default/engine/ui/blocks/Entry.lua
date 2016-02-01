@@ -21,7 +21,7 @@ require "engine.class"
 local Block = require "engine.ui.blocks.Block"
 local tween = require "tween"
 
---- A generic UI block
+--- An entry for any kind of lists and such
 -- @classmod engine.ui.blocks.block
 module(..., package.seeall, class.inherit(Block))
 
