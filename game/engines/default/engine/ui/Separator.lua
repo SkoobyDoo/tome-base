@@ -34,29 +34,26 @@ end
 
 function _M:generate()
 	if self.dir == "horizontal" then
-		self.top = self:getUITexture("ui/border_vert_top.png")
-		self.middle = self:getUITexture("ui/border_vert_middle.png")
-		self.bottom = self:getUITexture("ui/border_vert_bottom.png")
-		self.w, self.h = self.middle.w, self.size
-		
+		local top = self:getAtlasTexture("ui/border_vert_top.png")
+		local middle = self:getAtlasTexture("ui/border_vert_middle.png")
+		local bottom = self:getAtlasTexture("ui/border_vert_bottom.png")
+
+		self.do_container:add(core.renderer.fromTextureTable(top, 0, 0))
+		self.do_container:add(core.renderer.fromTextureTable(middle, 0, top.h, middle.w, self.size - top.h - bottom.h, true))
+		self.do_container:add(core.renderer.fromTextureTable(bottom, 0, self.size - bottom.h))
+
+		self.w, self.h = middle.w, self.size		
 	else
-		self.left = self:getUITexture("ui/border_hor_left.png")
-		self.middle = self:getUITexture("ui/border_hor_middle.png")
-		self.right = self:getUITexture("ui/border_hor_right.png")
-		self.w, self.h = self.size, self.middle.h
+		local left = self:getAtlasTexture("ui/border_hor_left.png")
+		local middle = self:getAtlasTexture("ui/border_hor_middle.png")
+		local right = self:getAtlasTexture("ui/border_hor_right.png")
+
+		self.do_container:add(core.renderer.fromTextureTable(left, 0, 0))
+		self.do_container:add(core.renderer.fromTextureTable(middle, left.w, 0, self.size - left.w - right.w, middle.h, true))
+		self.do_container:add(core.renderer.fromTextureTable(right, self.size - right.w, 0))
+
+		self.w, self.h = self.size, middle.h
 	end
 	self.dest_area.w = self.w
 	self.dest_area.h = self.h
-end
-
-function _M:display(x, y, nb_keyframes)
-	if self.dir == "horizontal" then
-		self.top.t:toScreenFull(x, y, self.top.w, self.top.h, self.top.tw, self.top.th)
-		self.bottom.t:toScreenFull(x, y + self.h - self.bottom.h, self.bottom.w, self.bottom.h, self.bottom.tw, self.bottom.th)
-		self.middle.t:toScreenFull(x, y + self.top.h, self.middle.w, self.h - self.top.h - self.bottom.h, self.middle.tw, self.middle.th)
-	else
-		self.left.t:toScreenFull(x, y, self.left.w, self.left.h, self.left.tw, self.left.th)
-		self.right.t:toScreenFull(x + self.w - self.right.w, y, self.right.w, self.right.h, self.right.tw, self.right.th)
-		self.middle.t:toScreenFull(x + self.left.w, y, self.w - self.left.w - self.right.w, self.middle.h, self.middle.tw, self.middle.th)
-	end
 end

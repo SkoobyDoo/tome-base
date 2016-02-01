@@ -356,3 +356,6 @@ function _M:makeKeyChar(i)
 		return "  "
 	end
 end
+
+function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
+end
