@@ -127,12 +127,10 @@ function _M:generate()
 end
 
 function _M:drawItem(item)
-	local pos = (item._i - 1) * self.fh
 	local text = item[self.display_prop]
 
 	if not item._entry then
 		item._entry = Entry.new(nil, "", color, self.fw, self.fh)
-		item._entry:translate(0, pos, 0)
 		self.renderer:add(item._entry:get())
 	end
 	item._entry:setText(text, item.color)
@@ -152,6 +150,18 @@ function _M:onSelect()
 	item._entry:select(true)
 	self.last_selected_item = item
 
+	-- Update scrolling
+	local max = math.min(self.scroll + self.max_display - 1, self.max)
+	for i, item in ipairs(self.list) do
+		if i >= self.scroll and i <= max then
+			local pos = (item._i - self.scroll) * self.fh
+			item._entry:translate(0, pos, 0)
+			item._entry:shown(true)
+		else
+			item._entry:shown(false)
+		end
+	end
+
 	if self.scrollbar then self.scrollbar:setPos(self.sel - 1) end
 
 	if rawget(self, "on_select") then self.on_select(item, self.sel) end
@@ -163,35 +173,4 @@ function _M:onUse(...)
 	self:sound("button")
 	if item.fct then item:fct(item, self.sel, ...)
 	else self.fct(item, self.sel, ...) end
-end
-
-function _M:display(x, y, nb_keyframes)
-	-- local bx, by = x, y
-
-	-- local max = math.min(self.scroll + self.max_display - 1, self.max)
-	-- local cy = (self.fh - self.font_h) / 2
-	-- for i = self.scroll, max do
-	-- 	local item = self.list[i]
-	-- 	if not item then break end
-	-- 	if self.sel == i then
-	-- 		if self.focused then self:drawFrame(self.frame_sel, x, y)
-	-- 		else self:drawFrame(self.frame_usel, x, y) end
-	-- 	else
-	-- 		self:drawFrame(self.frame, x, y)
-	-- 		if item.focus_decay then
-	-- 			if self.focused then self:drawFrame(self.frame_sel, x, y, 1, 1, 1, item.focus_decay / self.focus_decay_max_d)
-	-- 			else self:drawFrame(self.frame_usel, x, y, 1, 1, 1, item.focus_decay / self.focus_decay_max_d) end
-	-- 			item.focus_decay = item.focus_decay - nb_keyframes
-	-- 			if item.focus_decay <= 0 then item.focus_decay = nil end
-	-- 		end
-	-- 	end
-	-- 	if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
-	-- 	self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, 1, 1, 1, 1)
-	-- 	y = y + self.fh
-	-- end
-
-	-- if self.focused and self.scrollbar then
-	-- 	self.scrollbar.pos = self.sel - 1
-	-- 	self.scrollbar:display(bx + self.w - self.scrollbar.w, by, by + self.fh)
-	-- end
 end
