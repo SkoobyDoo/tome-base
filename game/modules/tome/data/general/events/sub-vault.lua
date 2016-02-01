@@ -67,6 +67,7 @@ local changer = function(id)
 		ambient_music = game.zone.ambient_music,
 		reload_lists = false,
 		persistent = "zone",
+--		_max_level_generation_count = 2,
 		min_material_level = game.zone.min_material_level,
 		max_material_level = game.zone.max_material_level,
 		no_worldport = game.zone.no_worldport,

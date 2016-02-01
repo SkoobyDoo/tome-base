@@ -825,6 +825,72 @@ function _M:changeLevel(lev, zone, params)
 	end
 end
 
+--- Handle level generation failure with input from the player
+-- @param lev = level (number) that failed to generate
+-- @param zone = zone to change to, either short_name (string) or a zone object
+-- @param params = table of params for changeLevel
+-- @params level = new level (that failed to generate)
+-- @params old_zone = previous zone
+-- @params old_level = previous level
+function _M:changeLevelFailure(lev, zone, params, level, old_zone, old_level)
+	local failed_zone, failed_level = self.zone, level -- store failed zone/level
+	local failed_room_map = table.get(level, "map", "room_map") -- store the room map
+
+	self.zone, self.level = failed_zone:clone(), level and level:clone() -- restore to copies so originals match memory addresses
+	local to_re_add_actors = self.to_re_add_actors
+	print("=====Level Generation Failure: Unable to create level", lev, "of zone:", failed_zone.short_name, "===")
+
+	local choices = {{name=("Stay: level %s of %s"):format(old_level.level, old_zone.name), choice="stay"},
+	{name=("Keep Trying: level %s of %s"):format(lev, failed_zone.name), choice="try"},
+	{name=("Log the problem, Stay: level %s of %s"):format(old_level.level, old_zone.name), choice="log"}}
+	if config.settings.cheat then
+		table.insert(choices, {name="Debug the problem (move to the failed zone/level)", choice="debug"})
+	end
+	local function generation_dump()
+		print("\n=====START Level Generation Failure Log=====\n")
+		print("=====Zone=====:", failed_zone, "====") table.print_shallow(failed_zone)
+		print("=====Generator Data:=====", failed_zone.generator, "====") table.print(failed_zone.generator)
+		print("=====Failed Level====:", failed_level, "====") table.print_shallow(failed_level)
+		print("\n=====END Level Generation Failure Log=====\n")
+	end
+	local choice_handler = function(sel)
+		if not sel then 
+			print("[changeLevelFailure] Stay selected by default")
+		elseif sel.choice == "try" then
+			print("[changeLevelFailure]", sel.name)
+			game:changeLevelReal(lev, zone, params)
+		elseif sel.choice == "log" then -- output zone/level/generator summary to the output log
+		-- failed_zone/failed_level are the copies of the last versions that failed to generate
+		-- Could add bug uploading here if desired
+		-- Consider grabbing last xx lines of the game.log to find out what forcing the level to be recreated.
+		-- (Search for last instance of "[Zone:newLevel]".."\t"..failed_zone.short_name.."\tbeginning level generation, count:\t1")
+
+			print("[changeLevelFailure]", sel.name)
+			generation_dump()
+			Dialog:simplePopup("Information logged", "Information on the failed zone and level dumped to the log file.")
+		elseif sel.choice == "debug" then
+			print("[changeLevelFailure]", sel.name)
+			generation_dump()
+			failed_zone._level_generation_count = nil
+			self.zone, self.level = failed_zone, failed_level
+			params._debug_mode = true
+			self.to_re_add_actors = to_re_add_actors
+			self:changeLevelReal(lev, failed_zone, params)
+			table.set(self.level, "map", "room_map", failed_room_map) -- restore the room map
+		else
+			print("[changeLevelFailure]", sel.name)
+		end
+	end
+	local text = ("The game could not generate level %s of %s after %s attempts. What do you want to do?"):format(lev, failed_zone.name, failed_zone._level_generation_count-1)
+	Dialog:multiButtonPopup("Level Generation Failure", text,
+		choices, math.max(500, game.w/2), nil, choice_handler,
+		false,
+		1 -- default to stay on the previous level
+	)
+	self.zone, self.level = old_zone, old_level
+	new_level = false
+end
+
 function _M:changeLevelReal(lev, zone, params)
 	local oz, ol = self.zone, self.level
 	
@@ -877,17 +943,16 @@ function _M:changeLevelReal(lev, zone, params)
 		end
 		if type(self.zone.save_per_level) == "nil" then self.zone.save_per_level = config.settings.tome.save_zone_levels and true or false end
 
-		self.zone:getLevel(self, lev, old_lev, true)
-		
-		-- could add another level generation failure prompt here but the one below should be sufficient.
-
-		self.visited_zones[self.zone.short_name] = true
-		world:seenZone(self.zone.short_name)
-
-		self.level.temp_shift_zone = oz
-		self.level.temp_shift_level = ol
-	-- We switch back
-	elseif params.temporary_zone_shift_back then
+		local level, new_level = self.zone:getLevel(self, lev, old_lev, true)
+		if (not level or self.zone._level_generation_count > self.zone._max_level_generation_count) and not params._debug_mode then -- handle level generation failure
+			self:changeLevelFailure(lev, zone, params, level, oz, ol)
+		else
+			self.visited_zones[self.zone.short_name] = true
+			world:seenZone(self.zone.short_name)
+			self.level.temp_shift_zone = oz
+			self.level.temp_shift_level = ol
+		end
+	elseif params.temporary_zone_shift_back then -- We switch back
 		popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
 		core.display.forceRedraw()
 
@@ -911,14 +976,8 @@ function _M:changeLevelReal(lev, zone, params)
 
 		self.visited_zones[self.zone.short_name] = true
 		world:seenZone(self.zone.short_name)
---		if self.level.map.closed then
 			force_recreate = true
---		else
---			print("Reloading back map without having it closed")
---			recreate_nothing = true
---		end
-	-- We move to a new zone as normal
-	elseif not params.temporary_zone_shift then
+	elseif not params.temporary_zone_shift then -- We move to a new zone as normal
 		if self.zone and self.zone.on_leave then
 			local nl, nz, stop = self.zone.on_leave(lev, old_lev, zone)
 			if stop then return end
@@ -951,84 +1010,10 @@ function _M:changeLevelReal(lev, zone, params)
 
 		local level, new_level = self.zone:getLevel(self, lev, old_lev)
 
-		-- handle successive level generation failures
+		-- handle level generation failure
 		if (not level or self.zone._level_generation_count > self.zone._max_level_generation_count) and not params._debug_mode then
-			local failed_zone, failed_level = self.zone, level -- store failed zone/level
-			self.zone, self.level = failed_zone:clone(), level and level:clone() -- restore to copies so originals match memory addresses
-			local to_re_add_actors = self.to_re_add_actors
-			print("=====Level Generation Failure: Unable to create level", lev, "of zone:", failed_zone.short_name, "===")
-			print("=====Failed Zone====:", failed_zone, "====") table.print_shallow(failed_zone)
-			print("=====Failed Level===:", failed_level, "====") table.print_shallow(failed_level)
-			
-			if Dialog.multiButtonPopup then -- cleaner prompt if multiButtonPopup is implemented
-				local choices = {("Stay: level %d of %s"):format(ol.level, oz.name), "Keep trying"}
-				local STAY, TRY, REPORT, DEBUG = 1, 2
-				if true then -- setup criteria to report the problem
-					table.insert(choices, ("Report the problem, Stay: level %s of %s"):format(ol.level, oz.name))
-					REPORT = #choices
-				end
-				if config.settings.cheat then
-					table.insert(choices, "Debug the problem (move to the failed zone/level)")
-					DEBUG = #choices
-				end
-				local choice_handler = function(choice)
-					if choice == TRY then
-						print("Keep Trying selected")
-						game:changeLevelReal(lev, zone, params)
-					elseif choice == REPORT then -- get a description of the situation from the player and upload any relevant files for debugging
--- DG: not sure how you prefer to handle this. failed_zone/failed_level are the copies of the last versions that failed to generate
-						print("Report selected")
-					elseif choice == DEBUG then
-						print("Debug selected")
-						failed_zone._level_generation_count = nil
-						self.zone, self.level = failed_zone, failed_level
-						params._debug_mode = true
-						self.to_re_add_actors = to_re_add_actors
-						self:changeLevelReal(lev, failed_zone, params)
-					else
-						print("Stay selected")
-					end
-				end
-				local text = ("The game could not generate level %s of %s after %s attempts. What do you want to do?"):format(lev, failed_zone.name, failed_zone._level_generation_count)
-				Dialog:multiButtonPopup("Level Generation Failure", text,
-					choice_handler, choices,
-					false,
-					STAY -- for escape
-				)
-			else
-				local choices = {{name=("Stay: level %s of %s"):format(ol.level, oz.name), choice="stay"},
-				{name=("Keep Trying: level %s of %s"):format(lev, failed_zone.name), choice="try"}}
-				if true then -- setup criteria to report the problem
-					table.insert(choices, {name=("Report the problem, Stay: level %s of %s"):format(ol.level, oz.name), choice="report"})
-				end
-				if config.settings.cheat then
-					table.insert(choices, {name="Debug the problem (move to the failed zone/level)", choice="debug"})
-				end
-
-				local choice_handler = function(sel)
-					if not sel then
-						print("Stay selected by default")
-					elseif sel.choice == "try" then
-						print("Keep trying selected")
-						self:changeLevel(lev, failed_zone, params)
-					elseif sel.choice == "report" then -- get a description of the situation from the player and upload any relevant files for debugging
--- DG: not sure how you prefer to handle this. failed_zone/failed_level are the copies of the last versions that failed to generate
-						print("Report selected")
-					elseif sel.choice == "debug" then
-						print("Debug selected")
-						failed_zone._level_generation_count = nil
-						self.zone, self.level = failed_zone, failed_level
-						params._debug_mode = true
-						self.to_re_add_actors = to_re_add_actors
-						self:changeLevelReal(lev, failed_zone, params)
-					else
-						print("Stay selected")
-					end
-				end
-				local text = ("The game could not complete generation of level %s of %s after %s attempts.\nWhat do you want to do?"):format(lev, failed_zone.name, failed_zone._level_generation_count)
-				Dialog:listPopup("Level Generation Failure", text, choices, math.min(600, self.w/2), math.min(300, self.h/2), choice_handler)
-			end
-			self.zone, self.level = oz, ol
+			self:changeLevelFailure(lev, zone, params, level, oz, ol)
+			self.zone, self.level = oz, ol -- by default, stay on current zone/level
 			new_level = false
 		else
 			self.visited_zones[self.zone.short_name] = true

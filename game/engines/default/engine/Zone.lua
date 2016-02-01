@@ -832,8 +832,8 @@ end
 
 --- Asks the zone to generate a level of level "lev"
 -- @param game which `Game`?
--- @param lev the level (from 1 to zone.max_level)
--- @param old_lev where are we leaving
+-- @param lev the level number going to (from 1 to zone.max_level)
+-- @param old_lev level number leaving from
 -- @param no_close pass to `leaveLevel`
 -- @return a `Level` object
 function _M:getLevel(game, lev, old_lev, no_close)
@@ -1003,7 +1003,7 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	local ux, uy, dx, dy, spots = generator:generate(lev, old_lev)
 	if level.force_recreate then
 
-		print("[Zone:newLevel] map generator"..generator.__CLASSNAME.." forced recreation: ",level.force_recreate)
+		forceprint("[Zone:newLevel] map generator"..generator.__CLASSNAME.." forced recreation: ",level.force_recreate)
 		level:removed()
 		return self:newLevel(level_data, lev, old_lev, game)
 	end

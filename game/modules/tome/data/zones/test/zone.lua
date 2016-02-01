@@ -28,9 +28,13 @@ return {
 	all_remembered = true,
 	all_lited = true,
 	no_level_connectivity = true,
+	
+--	events_by_level = true,
+--	_max_level_generation_count = 2,
+	
 	generator =  {
 		map = {
--- [[
+--[[
 			class = "engine.generator.map.Hexacle",
 			up = "FLOOR",
 			down = "FLOOR",
@@ -71,6 +75,19 @@ return {
 			down = "JUNGLE_GRASS_DOWN6",
 			door = "JUNGLE_GRASS",
 --]]
+-- [[
+			class = "engine.generator.map.Roomer",
+			nb_rooms = 10,
+			edge_entrances = {4,6},
+			rooms = {"forest_clearing"},
+--			required_rooms = {"greater_vault"}, -- triggers level generation failure
+			greater_vaults_list = {"portal-vault"},
+			['.'] = {"GRASS"},
+			['#'] = "TREE",
+			up = "GRASS_UP4",
+			down = "GRASS_DOWN6",
+			door = "GRASS",
+--]]
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",
@@ -87,6 +104,10 @@ return {
 		},
 ]]
 	},
+	post_process = function(level) -- testing level generation failure
+		if level.level >=3 then level.force_recreate = true end
+	end,
+	
 --[[
 	post_process = function(level)
 		local Map = require "engine.Map"

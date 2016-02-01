@@ -24,6 +24,11 @@ local RoomsLoader = require "engine.generator.map.RoomsLoader"
 --- @classmod engine.generator.map.Roomer
 module(..., package.seeall, class.inherit(engine.Generator, RoomsLoader))
 
+-- Generate a simple level containing a single room ("greater_vault")
+-- special grids:
+--		subvault_wall = grid to use to fill out the level outside of the vault
+--		subvault_up = grid for stairs back up
+--		entry_path_length = length of tunnel from entrance to vault
 function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	data.rooms = {"greater_vault"}
@@ -34,7 +39,6 @@ end
 
 function _M:generate(lev, old_lev)
 	self.spots = {}
-
 	local tries, room = 5
 	repeat
 		tries = tries - 1
@@ -42,7 +46,8 @@ function _M:generate(lev, old_lev)
 	until room or tries <= 0
 	local sx, sy, ex, ey = 1, 2, 1, 2
 	if not room then
-		print("[VaultLevel] has no room")
+		print("[VaultLevel] has no vault")
+		self.level.force_recreate = "no vault"
 	else
 		print("[VaultLevel] using room:", room and room.name)
 		local entry_path_length = util.getval(self.data.entry_path_length) or math.round((self.map.w + self.map.h)/20+1)

@@ -73,7 +73,7 @@ local theme = get_theme(filters, zone, level)
 mapData({theme = theme})
 
 roomcheck = function(room, zone, level, map)
-	if resolvers.current_level < 15 then return nil, "in appropriate level" end
+	if resolvers.current_level < 15 then return nil, "inappropriate level" end
 	if not room.theme then room.theme = get_theme(filters, zone, level) end
 	return room.theme, not room.theme and "no appropriate npcs"
 end
