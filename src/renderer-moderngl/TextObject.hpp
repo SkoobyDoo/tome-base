@@ -31,6 +31,7 @@ class DORText : public DORVertexes{
 private:
 	int font_lua_ref = LUA_NOREF;
 	font_type *font = NULL;
+	vec4 font_color;
 
 	char *text;
 	int line_max_width = 99999;
@@ -43,6 +44,7 @@ public:
 
 	DORText() {
 		text = strdup("");
+		font_color = {1, 1, 1, 1};
 	};
 	virtual ~DORText() {
 		free((void*)text);
@@ -57,6 +59,7 @@ public:
 
 	void setNoLinefeed(bool no_linefeed) { this->no_linefeed = no_linefeed; parseText(); };
 	void setMaxWidth(int width) { this->line_max_width = width; parseText(); };
+	void setTextColor(float r, float g, float b, float a) { font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a; parseText(); };
 
 	void setText(const char *text);
 

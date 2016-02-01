@@ -300,7 +300,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 
 	// Draw all display lists
-	printf("=r= drawing %d lists\n", displays.size());
+	// printf("=r= drawing %d lists\n", displays.size());
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if ((*dl)->sub) {
 			(*dl)->sub->toScreen(cur_model, cur_color);

@@ -561,6 +561,7 @@ f.container:add(i)
 local t0 = core.renderer.text(UIBase.font_bold)
 t0:text("MELTOPAL")
 t0:translate(50, 20, 100)
+t0:textColor(0, 1, 1, 1)
 f.container:add(t0)
 
 local t1 = core.renderer.text(UIBase.font)
@@ -601,20 +602,20 @@ renderer:add(subrenderer)
 -- renderer:rotate(math.rad(45),0,0)
 -- renderer:cutoff(450, 400, 125, 200)
 
-local nb = 0
-local z = false
-function _M:display()
-	-- fbo:use(true)
-		renderer:toScreen()
-		-- subrenderer:toScreen()
-		-- renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
-		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
-		-- t1:rotate(0, 0, math.rad(2), true)
-	-- fbo:use(false)
+-- local nb = 0
+-- local z = false
+-- function _M:display()
+-- 	-- fbo:use(true)
+-- 		renderer:toScreen()
+-- 		-- subrenderer:toScreen()
+-- 		-- renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
+-- 		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
+-- 		-- t1:rotate(0, 0, math.rad(2), true)
+-- 	-- fbo:use(false)
 
-	-- fborenderer:toScreen()
-	-- fbo:rotate(0, math.rad(2), 0, true)
-end
+-- 	-- fborenderer:toScreen()
+-- 	-- fbo:rotate(0, math.rad(2), 0, true)
+-- end
 
 --- Ask if we really want to close, if so, save the game first
 function _M:onQuit()

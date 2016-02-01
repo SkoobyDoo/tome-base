@@ -89,8 +89,8 @@ void DORText::parseText() {
 	size_t len = strlen(text);
 	if (!len) return;
 	const char *str = text;
-	float r = 1, g = 1, b = 1, a = 1;
-	float lr = 1, lg = 1, lb = 1, la = 1;
+	float r = font_color.r, g = font_color.g, b = font_color.b, a = font_color.a;
+	float lr = r, lg = g, lb = b, la = a;
 	int max_width = line_max_width;
 	int bx = 0, by = 0;
 	bool no_linefeed = lua_toboolean(L, 11);
