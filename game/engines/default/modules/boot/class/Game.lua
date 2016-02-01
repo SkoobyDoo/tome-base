@@ -580,11 +580,12 @@ f2.container:add(f3.container)
 renderer:add(f.container)
 
 local subrenderer = core.renderer.renderer()
-subrenderer:translate(0, 0, 10)
-subrenderer:cutoff(20, 20, 50, 50)
+-- subrenderer:translate(0, 0, 0)
+-- subrenderer:rotate(0, 0, math.rad(25))
+subrenderer:cutoff(200, 200, 30, 30)
 local i2 = core.renderer.image("/data/gfx/background/tome2.png")
-i2:translate(0, 0, -1)
-i2:scale(0.2, 0.2, 1)
+i2:translate(0, 0, 1)
+i2:scale(0.5, 0.5, 1)
 subrenderer:add(i2)
 renderer:add(subrenderer)
 
@@ -599,7 +600,7 @@ renderer:add(subrenderer)
 
 -- renderer:translate(100,100,0)
 -- renderer:scale(2,0.7,1)
--- renderer:rotate(math.rad(45),0,0)
+-- renderer:rotate(0, 0,math.rad(45))
 -- renderer:cutoff(450, 400, 125, 200)
 
 -- local nb = 0

@@ -69,7 +69,8 @@ private:
 	int nb_quads = 0;
 
 	bool cutting = false;
-	vec4 cutsize;
+	vec4 cutpos1;
+	vec4 cutpos2;
 
 	vector<sortable_vertex> zvertices;
 
@@ -86,12 +87,14 @@ public:
 		displays.push_back(dl);
 	}
 
-	void cutoff(float x, float y, float w, float h) { cutting = true; y = screen->h / screen_zoom - y - h; cutsize = vec4(x, y, w, h); };
+	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
 	void zSorting(bool sort) { zsort = sort; };
 	void sortedToDL();
 	void update();
 	void toScreen(mat4 cur_model, vec4 color);
 	void toScreen();
+
+	void activateCutting(mat4 cur_model, bool v);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);

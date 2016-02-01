@@ -22,6 +22,7 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local Slider = require "engine.ui.Slider"
 local Entry = require "engine.ui.blocks.Entry"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI list
 -- @classmod engine.ui.List
@@ -58,17 +59,17 @@ function _M:generate()
 	local fw, fh = self.w, self.font_h + 6
 	self.fw, self.fh = fw, fh
 
-	-- self.frame = self:makeFrame(nil, fw, fh)
-	-- self.frame_sel = self:makeFrame("ui/selector-sel", fw, fh)
-	-- self.frame_usel = self:makeFrame("ui/selector", fw, fh)
-
 	if not self.h then self.h = self.nb_items * fh end
+
+	self.renderer:cutoff(0, 0, self.w, self.h)
 
 	self.max_display = math.min(self.max, math.floor(self.h / fh))
 
 	-- Draw the scrollbar
 	if self.scrollbar then
-		self.scrollbar = Slider.new{size=self.h - fh, max=self.max - 1}
+		self.scrollbar = Scrollbar.new(nil, self.h, self.max - 1)
+		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
+		self.renderer:add(self.scrollbar:get())
 	end
 
 	-- Draw the list items
@@ -150,6 +151,8 @@ function _M:onSelect()
 	if self.last_selected_item and self.last_selected_item ~= item then self.last_selected_item._entry:select(false) end
 	item._entry:select(true)
 	self.last_selected_item = item
+
+	if self.scrollbar then self.scrollbar:setPos(self.sel - 1) end
 
 	if rawget(self, "on_select") then self.on_select(item, self.sel) end
 end

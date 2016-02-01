@@ -291,6 +291,18 @@ void RendererGL::toScreen() {
 	toScreen(mat4(), color);
 }
 
+void RendererGL::activateCutting(mat4 cur_model, bool v) {
+	if (v) {
+		glEnable(GL_SCISSOR_TEST);
+		vec4 cut1 = cur_model * cutpos1;
+		vec4 cut2 = cur_model * cutpos2;
+		cut2 -= cut1;
+		glScissor(cut1.x, screen->h / screen_zoom - cut1.y - cut2.y, cut2.x, cut2.y);
+	} else {
+		glDisable(GL_SCISSOR_TEST);
+	}
+}
+
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 
@@ -300,12 +312,8 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	mat4 mvp = view * cur_model;
 	cur_color = cur_color * color;
 
-	if (cutting) {
-		glEnable(GL_SCISSOR_TEST);
-		glScissor(cutsize.x, cutsize.y, cutsize.z, cutsize.w);
-	} else {
-		glDisable(GL_SCISSOR_TEST);
-	}
+	if (cutting) activateCutting(cur_model, true);
+	else glDisable(GL_SCISSOR_TEST);
 
 	// Bind the indices
 	// printf("=r= binding vbo_elements %d\n", vbo_elements);
@@ -317,10 +325,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 		if ((*dl)->sub) {
 			(*dl)->sub->toScreen(cur_model * (*dl)->sub->use_model, cur_color * (*dl)->sub->use_color);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
-			if (cutting) {
-				glEnable(GL_SCISSOR_TEST);
-				glScissor(cutsize.x, cutsize.y, cutsize.z, cutsize.w);
-			}
+			if (cutting) activateCutting(cur_model, true);
 		} else {
 			// Bind the vertices
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
