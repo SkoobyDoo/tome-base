@@ -83,6 +83,8 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 }
 
 void DORText::parseText() {
+	clear();
+
 	font_type *f = font;
 	if (!f) return;
 	if (!f->atlas) font_make_atlas(f, 0, 0);
@@ -96,7 +98,6 @@ void DORText::parseText() {
 	bool no_linefeed = lua_toboolean(L, 11);
 
 	setTexture(f->atlas_tex, LUA_NOREF);
-	clear();
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	vertices.reserve(len * 4);

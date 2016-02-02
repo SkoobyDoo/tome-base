@@ -20,7 +20,7 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
-local Slider = require "engine.ui.Slider"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI text zone
 -- @classmod engine.ui.Textzone
@@ -52,15 +52,26 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-	
-	if self.scrollbar then 
-		self.can_focus = true
-		self.scrollbar = Slider.new{size=self.h, max=1} 
-	end
+	self.do_container:clear()
+	self.text_container = core.renderer.container()
 
-	local gen, max_lines, max_w = self.font:draw(self.text, self.auto_width and self.text:toTString():maxWidth(self.font) or (self.scrollbar and self.w - self.scrollbar.w or self.w), self.color.r, self.color.g, self.color.b)
-	if self.auto_width then self.w = max_w end
-	
+	local tstr = self.text:toTString()
+
+	if self.auto_width then self.w = tstr:maxWidth(self.font) end
+
+	local draw_max_w
+	if self.scrollbar then draw_max_w = self.w - Scrollbar:getWidth()
+	else draw_max_w = self.w end
+
+	local strs = self.text:splitLines(self.w, self.font)
+	local max_lines = #strs
+
+	for i, str in ipairs(strs) do
+		local textzone = core.renderer.text(self.font)
+		textzone:text(str)
+		textzone:translate(0, (i - 1) * self.font_h, 10)
+		self.text_container:add(textzone)
+	end
 	self.max = max_lines
 
 	if self.auto_height then 
@@ -69,13 +80,28 @@ function _M:generate()
 	end
 
 	self.max_display = max_lines * self.font_h
-	self.list = gen
 
-	if self.scrollbar then self.scrollbar.max=self.max_display - self.h end
+	if self.max_display > self.h then
+		self.do_renderer = core.renderer.renderer()
+		self.do_renderer:cutoff(0, 0, self.w, self.h)
+		self.do_renderer:add(self.text_container)
+		self.do_container:add(self.do_renderer)
+	else
+		self.do_container:add(self.text_container)
+	end
+
+	if self.scrollbar and self.do_renderer then
+		self.scrollbar = Scrollbar.new(nil, self.h, self.max_display - self.h)
+		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
+		self.do_container:add(self.scrollbar:get())
+	else
+		self.scrollbar = nil
+	end
 
 	if self.has_box then
-		self.frame = self:makeFrame("ui/textbox", nil, nil, self.w, self.h)
-		self.frame_ox, self.frame_oy = self.frame.b4.w, self.frame.b8.h
+		local frame = self:makeFrameDO("ui/textbox", nil, nil, self.w, self.h)
+		frame.container:translate(-frame.b4.w, -frame.b8.h, 0)
+		self.do_container:add(frame.container)
 	end
 
 	-- Add UI controls
@@ -118,78 +144,13 @@ function _M:setShadowShader(shader, power)
 end
 
 function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
-	if not self.list then return end
-	offset_x = offset_x and offset_x or 0
-	offset_y = (offset_y and offset_y) or (self.scrollbar and self.scrollbar.pos or 0)
-	local_x = local_x and local_x or 0
-	local_y = local_y and local_y or 0
-
-	local shader = self.shadow_shader
-	
-	local loffset_y = offset_y - local_y
-	local current_y = 0
-	local current_x = 0
-	local total_h = 0
-	local clip_y_start = 0
-	local clip_y_end = 0
-
-	if self.frame then
-		self:drawFrame(self.frame, x - self.frame_ox, y - self.frame_oy)
-	end
-	
 	if self.scrollbar then
-		self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max)
+		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
 		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
 		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
-	end
-	
-	local scroll_w = 0
-	if self.focused and self.scrollbar and self.h < self.max_display then
-		scroll_w = self.w
-	end
-	
-	for i = 1, #self.list do
-		local item = self.list[i]
-		clip_y_start = 0
-		clip_y_end = 0
-		
-		-- if item is within visible area bounds
-		if total_h + item.h > loffset_y and total_h < loffset_y + self.dest_area.h then
-			-- if it started before visible area then compute its top clip
-			if total_h < loffset_y then 
-				clip_y_start = loffset_y - total_h 
-			end
-			-- if it ended after visible area then compute its bottom clip
-			if total_h + item.h > loffset_y + self.dest_area.h then 
-			   clip_y_end = total_h + item.h - (loffset_y + self.dest_area.h)
-			end
-			if item.background then
-				core.display.drawQuad(x + current_x, y + current_y, item._tex_w, item.h - (clip_y_start + clip_y_end), item.background[1], item.background[2], item.background[3], item.background[4])
-			end
 
-			local one_by_tex_h = 1 / item._tex_h
-			if self.text_shadow then
-				if shader then
-					shader:use(true)
-					shader:uniOutlineSize(self.shadow_power, self.shadow_power)
-					shader:uniTextSize(item._tex_w, item._tex_h)
-				else
-					item._tex:toScreenPrecise(x + current_x + 1, y + current_y + 1, item.w, item.h - (clip_y_start + clip_y_end), 0, item.w / item._tex_w, clip_y_start * one_by_tex_h, (item.h - clip_y_end) * one_by_tex_h, 0, 0, 0, self.text_shadow)
-				end
-			end
-			item._tex:toScreenPrecise(x + current_x, y + current_y, item.w, item.h - (clip_y_start + clip_y_end), 0, item.w / item._tex_w, clip_y_start * one_by_tex_h, (item.h - clip_y_end) * one_by_tex_h )
-			if self.text_shadow and shader then shader:use(false) end
-			-- add only visible part of item
-			current_y = current_y + self.font_h - clip_y_start
-		end
-		-- add full size of item
-		total_h = total_h + self.font_h
-		-- if we are too deep then end this
-		if total_h > loffset_y + self.dest_area.h then break end
-	end
-	if self.focused and self.scrollbar and self.h < self.max_display then
-		self.scrollbar:display(x + self.w - self.scrollbar.w, y)
+		self.text_container:translate(0, -self.scrollbar.pos, 0)
 	end
 end

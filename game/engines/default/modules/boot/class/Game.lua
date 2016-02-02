@@ -56,6 +56,8 @@ function _M:init()
 	engine.GameEnergyBased.init(self, engine.KeyBind.new(), 100, 100)
 	self.profile_font = FontPackage:get("default")
 
+	self.renderer = core.renderer.renderer()
+
 	self.background = self.__mod_info.keep_background_texture
 
 	if type(self.background) ~= "userdata" then
@@ -70,8 +72,25 @@ function _M:init()
 	end
 
 	if self.background then
-		self.background_w, self.background_h = self.background:getSize()
-		self.background, self.background_tw, self.background_th = self.background:glTexture()
+		local background_w, background_h = self.background:getSize()
+		local x, y = 0, 0
+		local w, h = self.w, self.h
+		if w > h then
+			h = w * background_h / background_w
+			y = (self.h - h) / 2
+			if h < self.h then
+				h = self.h
+				w = h * background_w / background_h
+				x = (self.w - w) / 2
+				y = 0
+			end
+		else
+			w = h * background_w / background_h
+			x = (self.w - w) / 2
+		end
+
+		self.background = core.renderer.fromSurface(self.background, x, y, w, h)
+		self.renderer:add(self.background)
 	end
 	
 	self:handleEvents()
@@ -461,24 +480,7 @@ function _M:display(nb_keyframes)
 
 	-- If background anim is stopped, things are greatly simplified
 	if self.stopped then
-		if self.background then
-			local x, y = 0, 0
-			local w, h = self.w, self.h
-			if w > h then
-				h = w * self.background_h / self.background_w
-				y = (self.h - h) / 2
-				if h < self.h then
-					h = self.h
-					w = h * self.background_w / self.background_h
-					x = (self.w - w) / 2
-					y = 0
-				end
-			else
-				w = h * self.background_w / self.background_h
-				x = (self.w - w) / 2
-			end
-			self.background:toScreenFull(x, y, w, h, w * self.background_tw / self.background_w, h * self.background_th / self.background_h)
-		end
+		self.renderer:toScreen()
 		if self.tooltip then
 			if #self.dialogs == 0 or not self.dialogs[#self.dialogs].__show_only then
 				self.tooltip:display()

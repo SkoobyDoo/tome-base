@@ -24,6 +24,12 @@ local Block = require "engine.ui.blocks.Block"
 -- @classmod engine.ui.blocks.block
 module(..., package.seeall, class.inherit(Block))
 
+function _M:getWidth()
+	local UIBase = require "engine.ui.Base"
+	local middle = UIBase:getAtlasTexture("ui/scrollbar.png")
+	return middle.w
+end
+
 function _M:init(t, size, max, pos, inverse)
 	Block.init(self, t)
 
@@ -51,6 +57,11 @@ end
 
 function _M:onFocusChange(v)
 	self.do_container:shown(v)
+end
+
+function _M:setMax(max)
+	self.max = max
+	self:setPos(self.pos)
 end
 
 function _M:setPos(pos)

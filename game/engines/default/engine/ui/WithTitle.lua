@@ -33,7 +33,7 @@ function _M:init(t)
 	Base.init(self, t)
 end
 
-function _M:generateTitle()
+function _M:generateTitle(h)
 	if not self.size_title and not self.title_w then
 		self.title_w = 0
 		self.title_h = 0
@@ -41,20 +41,9 @@ function _M:generateTitle()
 	end
 	self.title_w = self.title_w or self.font:size(self.size_title)
 	self.title_h = self.font:height()
-	if self.title then
-		self.title_tex = self:drawFontLine(self.font, self.title, self.title_w)
-	end
-end
 
-function _M:displayTitle(x, y, nb_keyframes)
-	if self.title_tex then
-		local title_x = x + (self.title_x or 0)
-		local title_y = y + (self.title_y or (self.h - self.title_h) / 2)
-		if self.text_shadow then
-			self:textureToScreen(self.title_tex, title_x + 1, title_y + 1, 0, 0, 0, self.text_shadow)
-		end
-		self:textureToScreen(self.title_tex, title_x, title_y)
-	end
-	return x + self.title_w, y
+	self.title_do = core.renderer.text(self.font)
+	self.title_do:text(self.title or "")
+	self.title_do:translate(self.title_x or 0, (self.title_y or ((h - self.title_h) / 2)), 10)
+	self.do_container:add(self.title_do)
 end
-

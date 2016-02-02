@@ -72,10 +72,19 @@ function core.renderer.image(file, x, y, w, h, r, g, b, a)
 	return v
 end
 
+function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a)
+	local t = {tx=0, ty=0}
+	t.w, t.h = s:getSize()
+	t.t, t.tw, t.th = s:glTexture()
+	t.tw = t.w / t.tw
+	t.th = t.h / t.th
+	return core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
+end
+
 function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
-	x = math.floor(x)
-	y = math.floor(y)
+	x = math.floor(x or 0)
+	y = math.floor(y or 0)
 	local u1, v1 = t.tx, t.ty
 	local u2, v2 = u1 + t.tw, v1 + t.th
 	w = math.floor(w or t.w)

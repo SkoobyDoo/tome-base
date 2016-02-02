@@ -244,30 +244,30 @@ function _M:onDownload(handlers)
 	end
 end
 
-function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
-	if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
-	elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
-	end
+-- function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
+-- 	if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
+-- 	elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+-- 	end
 
-	if self.frame then
-		self:drawFrame(self.frame, x - 4, y - 4, 0, 0, 0, 0.3, self.w, self.h) -- shadow
-		self:drawFrame(self.frame, x - 4, y - 4, 1, 1, 1, 0.75) -- unlocked frame
-	end
+-- 	if self.frame then
+-- 		self:drawFrame(self.frame, x - 4, y - 4, 0, 0, 0, 0.3, self.w, self.h) -- shadow
+-- 		self:drawFrame(self.frame, x - 4, y - 4, 1, 1, 1, 0.75) -- unlocked frame
+-- 	end
 
-	if self.view then
-		if self.scroll_inertia ~= 0 then self.view:injectMouseWheel(0, self.scroll_inertia) end
-		self.view:toScreen(x, y)
-	end
+-- 	if self.view then
+-- 		if self.scroll_inertia ~= 0 then self.view:injectMouseWheel(0, self.scroll_inertia) end
+-- 		self.view:toScreen(x, y)
+-- 	end
 
-	if self.loading < 1 then
-		self.loading_rotation = self.loading_rotation + nb_keyframes * 8
-		core.display.glMatrix(true)
-		core.display.glTranslate(x + self.loading_icon.w / 2, y + self.loading_icon.h / 2, 0)
-		core.display.glRotate(self.loading_rotation, 0, 0, 1)
-		self.loading_icon.t:toScreenFull(-self.loading_icon.w / 2, -self.loading_icon.h / 2, self.loading_icon.w, self.loading_icon.h, self.loading_icon.tw, self.loading_icon.th)
-		core.display.glMatrix(false)
-	end
-end
+-- 	if self.loading < 1 then
+-- 		self.loading_rotation = self.loading_rotation + nb_keyframes * 8
+-- 		core.display.glMatrix(true)
+-- 		core.display.glTranslate(x + self.loading_icon.w / 2, y + self.loading_icon.h / 2, 0)
+-- 		core.display.glRotate(self.loading_rotation, 0, 0, 1)
+-- 		self.loading_icon.t:toScreenFull(-self.loading_icon.w / 2, -self.loading_icon.h / 2, self.loading_icon.w, self.loading_icon.h, self.loading_icon.tw, self.loading_icon.th)
+-- 		core.display.glMatrix(false)
+-- 	end
+-- end
 
 
 _M.awesomiumMapKey = {

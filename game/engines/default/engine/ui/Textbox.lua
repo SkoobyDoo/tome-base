@@ -20,6 +20,7 @@
 require "engine.class"
 local WithTitle = require "engine.ui.WithTitle"
 local Focusable = require "engine.ui.Focusable"
+local Input = require "engine.ui.blocks.Input"
 
 --- A generic UI textbox
 -- @classmod engine.ui.Textbox
@@ -54,36 +55,25 @@ function _M:generate()
 	self.do_container:clear()
 
 	-- Draw UI
-	self:generateTitle()
-	local title_w = self.title_w
-
-	local font_height = self.font_mono:height()
-	local fw, fh = self.chars * self.font_mono_w, font_height
+	local fw, fh = self.chars * self.font_mono_w, self.font_mono_h
 	-- the following constants are to account for empty pixels on the frames
 	local ew, eh = 2, 2
-	local frame = self:makeFrame("ui/textbox", nil, nil, fw - 2 * ew, fh - 2 * eh)
-	self.frame = frame
-	self.frame_sel = self:makeFrame("ui/textbox-sel", nil, nil, fw - 2 * ew, fh - 2 * eh)
-	self.w = title_w + frame.w
-	self.h = frame.h
 
-	self.texcursor = self:getUITexture("ui/textbox-cursor.png")
+	self.textinput = Input.new(nil, "", nil, fw - 2 * ew, fh - 2 * eh)
+	self.do_container:add(self.textinput:get())
 
-	local b2, b8, b4, b6 = frame.b2.h, frame.b8.h, frame.b4.w, frame.b6.w
-	local w, h = self.w, self.h
-	self.fw, self.fh = fw, fh
-	self.text_x = b4 - ew + title_w
-	self.text_y = b8 - eh
-	self.title_y = self.text_y + self.font_mono:lineSkip() - self.font:lineSkip()  -- align baselines
+	self.h = self.textinput.h
+	self:generateTitle(self.h)
+	local title_w = self.title_w
+	self.w = title_w + self.textinput.w
+
+	self.textinput:translate(title_w, 0, 0)
+
 	self.max_display = self.chars
 	self:updateText()
 
-	if title_w > 0 then
-		self.tex = self:drawFontLine(self.font, self.title, title_w)
-	end
-
 	-- Add UI controls
-	self.mouse:registerZone(title_w + 6, 0, fw, h, function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(title_w + self.textinput.frame.b4.w, 0, self.textinput.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button" and button == "left" then
 			self.cursor = util.bound(math.floor(bx / self.font_mono_w) + self.scroll, 1, #self.tmp+1)
 			self:updateText()
@@ -167,28 +157,9 @@ function _M:updateText()
 	if not self.hide then text = table.concat(self.tmp, nil, b, e)
 	else text = string.rep("*", e - b + 1) end
 
-	self.text_tex = self:drawFontLine(self.font_mono, text, self.fw)
+	self.textinput:setText(text)
+	self.textinput:setPos(self.cursor - self.scroll + 1)
 
 	if self.on_change and self.old_text ~= self.text then self.on_change(self.text) end
 	self.old_text = self.text
 end
-
--- function _M:display(x, y, nb_keyframes)
--- 	local text_x, text_y = self.text_x, self.text_y
--- 	self:displayTitle(x, y, nb_keyframes)
--- 	if self.focused then
--- 		self:drawFrame(self.frame_sel, x + self.title_w, y)
--- 		local cursor_x = self.font_mono:size(self.text:sub(self.scroll, self.cursor - 1))
--- 		self.texcursor.t:toScreenFull(x + self.text_x + cursor_x - (self.texcursor.w / 2) + 2, y + text_y + 5,
--- 			self.texcursor.w, self.fh - 7, self.texcursor.tw, self.texcursor.th)
--- 	else
--- 		self:drawFrame(self.frame, x + self.title_w, y)
--- 		if self.focus_decay then
--- 			self:drawFrame(self.frame_sel, x + self.title_w, y, 1, 1, 1, self.focus_decay / self.focus_decay_max_d)
--- 			self.focus_decay = self.focus_decay - nb_keyframes
--- 			if self.focus_decay <= 0 then self.focus_decay = nil end
--- 		end
--- 	end
--- 	if self.text_shadow then self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y, 0, 0, 0, self.text_shadow) end
--- 	self:textureToScreen(self.text_tex, x+1 + self.text_x, y+1 + self.text_y)
--- end
