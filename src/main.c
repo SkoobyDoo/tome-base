@@ -482,6 +482,8 @@ bool on_event(SDL_Event *event)
 			docall(L, 6, 0);
 		}
 		return TRUE;
+// For now, seems to crash for people
+#if 0
 	case SDL_FINGERDOWN:
 	case SDL_FINGERUP:
 		if (current_mousehandler != LUA_NOREF)
@@ -599,6 +601,7 @@ bool on_event(SDL_Event *event)
 			docall(L, 3, 0);
 		}
 		return TRUE;
+#endif
 	}
 	return FALSE;
 }
@@ -1423,7 +1426,7 @@ int main(int argc, char *argv[])
 	}
 
 	// initialize engine and set up resolution and depth
-	Uint32 flags=SDL_INIT_TIMER | SDL_INIT_JOYSTICK;
+	Uint32 flags=SDL_INIT_TIMER; // | SDL_INIT_JOYSTICK;
 	if (SDL_Init (flags) < 0) {
 		printf("cannot initialize SDL: %s\n", SDL_GetError ());
 		return 1;
@@ -1434,11 +1437,14 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 
+// Bugs out people it seems
+#if 0
 	if (SDL_NumJoysticks() >= 1) {
 		if (gamepad = SDL_JoystickOpen(0)) {
 			printf("Found gamepad, enabling support\n");
 		}
 	}
+#endif
 
 	// Filter events, to catch the quit event
 	SDL_SetEventFilter(event_filter, NULL);
