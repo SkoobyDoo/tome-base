@@ -309,6 +309,14 @@ function _M:getTargetLimited(t)
 	return x, y, target
 end
 
+--- Calls :getTarget and :canProject to limit the results and returns the same as getTarget
+function _M:getTargetLimitedWallStop(t)
+	local x, y = self:getTarget(t)
+	local _ _, _, _, x, y = self:canProject(t, x, y)
+	local target = game.level.map(x, y, Map.ACTOR)
+	return x, y, target
+end
+
 --- Project damage to a distance using a moving projectile
 -- @param t a type table describing the attack, passed to engine.Target:getType() for interpretation
 -- @param x target coords

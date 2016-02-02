@@ -253,7 +253,7 @@ newTalent{
 			if not target or target == carrier or target == self then return end
 
 			local disease = rng.table(diseases)
-			local params = disease.params
+			local params = table.clone(disease.params, true)
 			params.src = self
 			if target:canBe("disease") then
 				target:setEffect(disease.id, 6, params)

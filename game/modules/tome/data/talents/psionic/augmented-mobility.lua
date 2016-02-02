@@ -130,21 +130,21 @@ newTalent{
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local tx, ty = self:getTarget(tg)
+		local tx, ty = self:getTargetLimitedWallStop(tg)
 		if not tx or not ty then return nil end
 		local x, y
 		if not self.player and self.ai_state.tactic == "escape" then -- NPC trying to jump away
 			x = self.x + (self.x - tx)*100
 			y = self.y + (self.y - ty)*100
-			local _ _, x, y = self:canProject(tg, x, y)
+			local _ _, _, _, x, y = self:canProject(tg, x, y)
 			if not x or not y then return nil end
 			if not x or not y or core.fov.distance(x, y, tx, ty) <=1 then return nil end
 		else -- jump to target location
-			local _ _, x, y = self:canProject(tg, tx, ty)
+			local _ _, _, _, x, y = self:canProject(tg, tx, ty)
 			if not x or not y then return nil end
 		end
 		local fx, fy = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-		if not fx or not self:hasLOS(fx, fy) then
+		if not fx then
 			return
 		end
 		game.logSeen(self, "%s performs a telekinetically enhanced leap!", self.name:capitalize())
