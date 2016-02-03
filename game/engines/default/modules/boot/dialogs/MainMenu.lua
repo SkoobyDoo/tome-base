@@ -112,10 +112,11 @@ function _M:init()
 end
 
 function _M:enableWebtooltip()
-	if core.webview and game.webtooltip and not self.c_tooltip then
-		self.c_tooltip = game.webtooltip
-		self.base_uis[#self.base_uis+1] = {left=9, top=9, absolute=true, ui=self.c_tooltip}
-	end
+	if self.c_tooltip then return end
+	if core.webview and game.webtooltip then self.c_tooltip = game.webtooltip
+	else self.c_tooltip = game.tooltip end
+
+	self.base_uis[#self.base_uis+1] = {left=20, top=20, absolute=true, ui=self.c_tooltip}
 end
 
 function _M:updateUI()

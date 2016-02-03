@@ -26,7 +26,7 @@ require "engine.KeyBind"
 
 local Module = require "engine.Module"
 local Dialog = require "engine.ui.Dialog"
-local Tooltip = require "engine.Tooltip"
+local Textzone = require "engine.ui.Textzone"
 local MainMenu = require "mod.dialogs.MainMenu"
 local Downloader = require "engine.dialogs.Downloader"
 local FontPackage = require "engine.FontPackage"
@@ -95,7 +95,6 @@ function _M:init()
 	
 	self:handleEvents()
 	if not profile.connected then core.webview, core.webview_inactive = nil, core.webview end
-	if not core.webview then self.tooltip = Tooltip.new(nil, 14, nil, colors.DARK_GREY, 380) end
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
@@ -119,22 +118,18 @@ function _M:loaded()
 end
 
 function _M:makeWebtooltip()
-	self.webtooltip = require("engine.ui.WebView").new{width=380, height=500, has_frame=true, never_clean=true, allow_popup=true,
+	self.webtooltip = require("engine.ui.WebView").new{width=380, height=500, has_box="ui/tooltip/", has_box_alpha=0.75, never_clean=true, allow_popup=true,
 		url = ("http://te4.org/tooltip-ingame?steam=%d&vM=%d&vm=%d&vp=%d"):format(core.steam and 1 or 0, engine.version[1], engine.version[2], engine.version[3])
 	}
-	if self.webtooltip.unusable then
-		self.webtooltip = nil
-		self.tooltip = Tooltip.new(nil, 14, nil, colors.DARK_GREY, 380)
-	end
+	if self.webtooltip.unusable then self.webtooltip = nil end
 end
 
 function _M:run()
 	self:triggerHook{"Boot:run"}
 
 	-- Web Tooltip?
-	if core.webview then
-		self:makeWebtooltip()
-	end
+	if core.webview then self:makeWebtooltip() end
+	self.tooltip = Textzone.new{text="", width=380, auto_height=true, has_box="ui/tooltip/", has_box_alpha=0.75, fct=function() end}
 
 	local flyfont, flysize = FontPackage:getFont("flyer")
 	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
@@ -437,9 +432,9 @@ function _M:updateNews()
 	if not self.tooltip then return end
 
 	if self.news.link then
-		self.tooltip:set("#AQUAMARINE#%s#WHITE#\n---\n%s\n---\n#LIGHT_BLUE##{underline}#%s#LAST##{normal}#", self.news.title, self.news.text, self.news.link)
+		self.tooltip:setText(("#AQUAMARINE#%s#WHITE#\n---\n%s\n---\n#LIGHT_BLUE##{underline}#%s#LAST##{normal}#"):format(self.news.title, self.news.text, self.news.link))
 	else
-		self.tooltip:set("#AQUAMARINE#%s#WHITE#\n---\n%s", self.news.title, self.news.text)
+		self.tooltip:setText(("#AQUAMARINE#%s#WHITE#\n---\n%s"):format(self.news.title, self.news.text))
 	end
 
 	if self.news.link then
@@ -481,12 +476,6 @@ function _M:display(nb_keyframes)
 	-- If background anim is stopped, things are greatly simplified
 	if self.stopped then
 		self.renderer:toScreen()
-		if self.tooltip then
-			if #self.dialogs == 0 or not self.dialogs[#self.dialogs].__show_only then
-				self.tooltip:display()
-				self.tooltip:toScreen(5, 5)
-			end
-		end
 		self.logdisplay:toScreen()
 		engine.GameEnergyBased.display(self, nb_keyframes)
 		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
@@ -731,7 +720,6 @@ function _M:handleProfileEvent(evt)
 	if evt and evt.e == "Connected" then
 		if core.webview_inactive then
 			core.webview, core.webview_inactive = core.webview_inactive, nil
-			self.tooltip = nil
 			self:makeWebtooltip()
 
 			local d = self.dialogs[#self.dialogs]

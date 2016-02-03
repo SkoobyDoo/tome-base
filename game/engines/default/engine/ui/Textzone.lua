@@ -38,6 +38,7 @@ function _M:init(t)
 	self.auto_height = t.auto_height
 	self.auto_width = t.auto_width
 	self.has_box = t.has_box
+	self.has_box_alpha = t.has_box_alpha
 	self.fct = t.fct
 
 	self.dest_area = t.dest_area and t.dest_area or { h = self.h }
@@ -99,8 +100,10 @@ function _M:generate()
 	end
 
 	if self.has_box then
-		local frame = self:makeFrameDO("ui/textbox", nil, nil, self.w, self.h)
+		local kind = self.has_box == true and "ui/textbox" or self.has_box
+		local frame = self:makeFrameDO(kind, nil, nil, self.w, self.h)
 		frame.container:translate(-frame.b4.w, -frame.b8.h, 0)
+		frame.container:color(1, 1, 1, self.has_box_alpha or 1)
 		self.do_container:add(frame.container)
 	end
 
@@ -136,6 +139,11 @@ function _M:generate()
 		_PAGEUP = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos - self.h, 0, self.scrollbar.max) end end,
 		_PAGEDOWN = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.h, 0, self.scrollbar.max) end end,
 	}
+end
+
+function _M:setText(text)
+	self.text = text
+	self:generate()
 end
 
 function _M:setShadowShader(shader, power)

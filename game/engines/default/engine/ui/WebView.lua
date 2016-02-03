@@ -32,7 +32,8 @@ function _M:init(t)
 	self.url = assert(t.url, "no webview url")
 	self.on_title = t.on_title
 	self.allow_downloads = t.allow_downloads or {}
-	self.has_frame = t.has_frame
+	self.has_box = t.has_box
+	self.has_box_alpha = t.has_box_alpha
 	self.never_clean = t.never_clean
 	self.allow_popup = t.allow_popup
 	self.allow_login = t.allow_login
@@ -108,9 +109,11 @@ function _M:generate()
 	self.loading_rotation = 0
 	self.scroll_inertia = 0
 
-	if self.has_frame then
-		local frame = self:makeFrameDO("ui/tooltip/", self.w, self.h)
-		-- frame.container:translate(-frame.b4.w, -frame.b8.h)
+	if self.has_box then
+		local kind = self.has_box == true and "ui/textbox" or self.has_box
+		local frame = self:makeFrameDO(kind, nil, nil, self.w, self.h)
+		frame.container:translate(-frame.b4.w, -frame.b8.h, 0)
+		frame.container:color(1, 1, 1, self.has_box_alpha or 1)
 		self.do_container:add(frame.container)
 	end
 	self.do_container:add(core.renderer.texture(self.view:glTexture()))
