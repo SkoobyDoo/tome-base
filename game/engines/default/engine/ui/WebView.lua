@@ -116,7 +116,9 @@ function _M:generate()
 		frame.container:color(1, 1, 1, self.has_box_alpha or 1)
 		self.do_container:add(frame.container)
 	end
-	self.do_container:add(core.renderer.texture(self.view:glTexture()))
+	local view_container = core.renderer.texture(self.view:glTexture())
+	view_container:translate(0, 0, 19)
+	self.do_container:add(view_container)
 	local li = self:getAtlasTexture("ui/waiter/loading.png")
 	self.loading_icon = core.renderer.fromTextureTable(li, -li.w / 2, -li.h / 2)
 	self.loading_icon:translate(self.w - li.w / 2, li.h / 2, 20)
@@ -165,6 +167,11 @@ function _M:generate()
 			self.view:injectKey(isup, keysym, 0, "")
 		end
 	end
+end
+
+function _M:goto(url)
+	self.url = self.url
+	self.view:loadURL(self.url)
 end
 
 function _M:startLoadingSpin()

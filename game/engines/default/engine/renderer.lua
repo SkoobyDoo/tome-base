@@ -49,6 +49,10 @@ end
 
 function core.renderer.image(file, x, y, w, h, r, g, b, a)
 	local s = core.display.loadImage(file)
+	return core.renderer.surface(s, x, y, w, h, r, g, b, a)
+end
+
+function core.renderer.surface(s, x, y, w, h, r, g, b, a)
 	if not s then return core.renderer.container() end
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	local tex, rw, rh, tw, th, iw, ih = s:glTexture()

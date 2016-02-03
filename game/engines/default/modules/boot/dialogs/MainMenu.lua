@@ -241,6 +241,10 @@ function _M:switchBackground()
 end
 
 function _M:on_recover_focus()
+	-- Remove them from us so they can be added back
+	if game.tooltip then game.tooltip.do_container:removeFromParent() end
+	if game.webtooltip then game.webtooltip.do_container:removeFromParent() end
+
 	game:unregisterDialog(self)
 	local d = new()
 	game:registerDialog(d)

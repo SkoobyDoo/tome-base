@@ -64,6 +64,13 @@ static int gl_generic_shown(lua_State *L)
 	return 0;
 }
 
+static int gl_generic_remove_from_parent(lua_State *L)
+{
+	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
+	(*c)->removeFromParent();
+	return 0;
+}
+
 /******************************************************************
  ** Renderer
  ******************************************************************/
@@ -389,6 +396,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
 	{"add", gl_renderer_add},
 	{"remove", gl_renderer_remove},
 	{"clear", gl_renderer_clear},
@@ -408,6 +416,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
 
@@ -422,6 +431,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
 
@@ -436,6 +446,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
 
@@ -453,6 +464,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
 

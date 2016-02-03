@@ -31,10 +31,36 @@ extern "C" {
 
 #include "renderer-moderngl/Renderer.hpp"
 
+#define DEBUG_CHECKPARENTS
+
+void DisplayObject::removeFromParent() {
+	if (!parent) return;
+	DORContainer *p = dynamic_cast<DORContainer*>(parent);
+	if (p) p->remove(this);
+}
+
+void DisplayObject::setParent(DisplayObject *parent) {
+#ifdef DEBUG_CHECKPARENTS
+	if (parent && this->parent && L) {
+		lua_pushstring(L, "Setting DO parent when already set");
+		lua_error(L);
+		return;
+	}
+#endif
+	this->parent = parent;
+};
+
 void DisplayObject::setChanged() {
 	changed = true;
 	DisplayObject *p = parent;
 	while (p) {
+#ifdef DEBUG_CHECKPARENTS
+		if (p == this && L) {
+			lua_pushstring(L, "setChanged recursing in loop");
+			lua_error(L);
+			return;
+		}
+#endif
 		p->changed = true;
 		p = p->parent;
 	}

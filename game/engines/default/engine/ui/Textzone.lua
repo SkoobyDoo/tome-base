@@ -82,7 +82,7 @@ function _M:generate()
 
 	self.max_display = max_lines * self.font_h
 
-	if self.max_display > self.h then
+	if self.max_display > self.h and false then
 		self.do_renderer = core.renderer.renderer()
 		self.do_renderer:cutoff(0, 0, self.w, self.h)
 		self.do_renderer:add(self.text_container)

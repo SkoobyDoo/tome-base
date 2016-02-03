@@ -37,11 +37,7 @@ function _M:init(t)
 	else	
 		self.file = tostring(assert(t.file, "no button file"))
 		self.image = Tiles:loadImage(self.file)
-		local iw, ih = 0, 0
-		if self.image then iw, ih = self.image:getSize() end
-		self.iw, self.ih = iw, ih
 	end
-	if t.force_w then self.iw = t.force_w end
 
 	self.fct = assert(t.fct, "no button fct")
 	self.on_select = t.on_select
@@ -56,11 +52,20 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
+
+	if self.tex then
+		self.content = core.renderer.texture(self.tex)
+		self.iw, self.ih = self.tex:getSize()
+	else
+		self.content = core.renderer.surface(self.image)
+		self.iw, self.ih = self.image:getSize()
+	end
 
 	-- Draw UI
 	local w, h = self.iw, self.ih
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
-	if self.image then self.tex = self.tex or {self.image:glTexture()} end
+	self.do_container:add(self.content)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
@@ -71,52 +76,66 @@ function _M:generate()
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 
 	self.rw, self.rh = w, h
-	self.frame = self:makeFrame("ui/button", self.w, self.h)
-	self.frame_sel = self:makeFrame("ui/button_sel", self.w, self.h)
 
-	-- Add a bit of padding
-	self.w = self.w + 6
-	self.h = self.h + 6
-end
+	if not self.no_decoration then
+		self.frame = self:makeFrameDO("ui/button", nil, nil, self.w, self.h)
+		self.frame.container:translate(-self.frame.b4.w, -self.frame.b8.h, 0)
+		self.frame_sel = self:makeFrameDO("ui/button_sel", nil, nil, self.w, self.h)
+		self.frame.container:translate(-self.frame.b4.w, -self.frame.b8.h, 0)
+		self.frame_sel.container:shown(false)
+		self.do_container:add(self.frame.container)
+		self.do_container:add(self.frame_sel.container)
 
-function _M:display(x, y, nb_keyframes, ox, oy)
-	self.last_display_x = ox
-	self.last_display_y = oy
-
-	if self.hide then return end
-
-	x = x + 3
-	y = y + 3
-	ox = ox + 3
-	oy = oy + 3
-	local mx, my, button = core.mouse.get()
-	if self.focused then
-		if not self.no_decoration then
-			if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
-				self:drawFrame(self.frame, x, y, 0, 1, 0, 1)
-			elseif self.glow then
-				local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-				self:drawFrame(self.frame, x, y, v*0.8, v, 0, 1)
-			else
-				self:drawFrame(self.frame_sel, x, y)
-			end
-		end
-		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3])
-	else
-		if not self.no_decoration then
-			if self.glow then
-				local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-				self:drawFrame(self.frame, x, y, v*0.8, v, 0, self.alpha_unfocus)
-			else
-				self:drawFrame(self.frame, x, y, 1, 1, 1, self.alpha_unfocus)
-			end
-
-			if self.focus_decay and not self.glow then
-				self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
-				self.focus_decay = self.focus_decay - nb_keyframes
-				if self.focus_decay <= 0 then self.focus_decay = nil end
-			end
-		end
-		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3], 1, 1, 1, self.alpha_unfocus)
+		self.w, self.h = self.frame.w, self.frame.h
 	end
 end
+
+function _M:on_focus_change(status)
+	if self.frame then
+		self.frame.container:shown(not status)
+		self.frame_sel.container:shown(status)
+	end
+	self.content:color(1, 1, 1, status and 1 or self.alpha_unfocus)
+end
+
+-- function _M:display(x, y, nb_keyframes, ox, oy)
+-- 	self.last_display_x = ox
+-- 	self.last_display_y = oy
+
+-- 	if self.hide then return end
+
+-- 	x = x + 3
+-- 	y = y + 3
+-- 	ox = ox + 3
+-- 	oy = oy + 3
+-- 	local mx, my, button = core.mouse.get()
+-- 	if self.focused then
+-- 		if not self.no_decoration then
+-- 			if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
+-- 				self:drawFrame(self.frame, x, y, 0, 1, 0, 1)
+-- 			elseif self.glow then
+-- 				local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
+-- 				self:drawFrame(self.frame, x, y, v*0.8, v, 0, 1)
+-- 			else
+-- 				self:drawFrame(self.frame_sel, x, y)
+-- 			end
+-- 		end
+-- 		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3])
+-- 	else
+-- 		if not self.no_decoration then
+-- 			if self.glow then
+-- 				local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
+-- 				self:drawFrame(self.frame, x, y, v*0.8, v, 0, self.alpha_unfocus)
+-- 			else
+-- 				self:drawFrame(self.frame, x, y, 1, 1, 1, self.alpha_unfocus)
+-- 			end
+
+-- 			if self.focus_decay and not self.glow then
+-- 				self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
+-- 				self.focus_decay = self.focus_decay - nb_keyframes
+-- 				if self.focus_decay <= 0 then self.focus_decay = nil end
+-- 			end
+-- 		end
+-- 		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3], 1, 1, 1, self.alpha_unfocus)
+-- 	end
+-- end

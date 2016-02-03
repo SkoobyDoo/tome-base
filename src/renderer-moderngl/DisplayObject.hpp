@@ -68,7 +68,8 @@ public:
 	void setLuaState(lua_State *L) { this->L = L; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
-	void setParent(DisplayObject *parent) { this->parent = parent; };
+	void setParent(DisplayObject *parent);
+	void removeFromParent();
 	// FIXME: setChanged repercutes over all the parents, but it should stop at RendererGLs
 	void setChanged();
 	bool isChanged() { return changed; };
