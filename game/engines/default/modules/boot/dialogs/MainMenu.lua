@@ -80,7 +80,7 @@ function _M:init()
 --	if config.settings.cheat then l[#l+1] = {name="webtest", fct=function() util.browserOpenUrl("asset://te4/html/test.html") end} end
 
 	self.c_background = Button.new{text=game.stopped and "Enable background" or "Disable background", fct=function() self:switchBackground() end}
-	self.c_version = Textzone.new{font={FontPackage:getFont("default"), 10}, auto_width=true, auto_height=true, text=("#{bold}##B9E100#T-Engine4 version: %d.%d.%d"):format(engine.version[1], engine.version[2], engine.version[3])}
+	self.c_version = Textzone.new{font={FontPackage:getFont("default"), 10}, auto_width=true, auto_height=true, text=("#B9E100#T-Engine4 version: %d.%d.%d"):format(engine.version[1], engine.version[2], engine.version[3])}
 
 	self.c_list = List.new{width=self.iw, nb_items=#self.list, list=self.list, fct=function(item) end, font={FontPackage:getFont("default")}}
 

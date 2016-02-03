@@ -470,14 +470,15 @@ end
 function _M:display(nb_keyframes)
 	-- If switching resolution, blank everything but the dialog
 	if self.change_res_dialog then engine.GameEnergyBased.display(self, nb_keyframes) return end
-
 	if self.full_fbo then self.full_fbo:use(true) end
 
 	-- If background anim is stopped, things are greatly simplified
 	if self.stopped then
 		self.renderer:toScreen()
 		self.logdisplay:toScreen()
+-- core.display.countDraws()
 		engine.GameEnergyBased.display(self, nb_keyframes)
+-- print("===", core.display.countDraws())
 		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
 		return
 	end
@@ -519,6 +520,7 @@ function _M:display(nb_keyframes)
 	self.flyers = old
 
 	if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
+print("===", core.display.countDraws())
 end
 
 local renderer = core.renderer.renderer()

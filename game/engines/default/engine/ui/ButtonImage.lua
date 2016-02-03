@@ -65,6 +65,7 @@ function _M:generate()
 	-- Draw UI
 	local w, h = self.iw, self.ih
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
+	self.content:translate(0, 0, 50)
 	self.do_container:add(self.content)
 
 	-- Add UI controls
