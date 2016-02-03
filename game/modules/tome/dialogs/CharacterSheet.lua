@@ -93,6 +93,10 @@ function _M:init(actor, start_tab)
 		self:showInventory()
 		return
 	end}
+	self.b_levelup = Button.new{text="[L]evelup", fct=function()
+		game.key:triggerVirtual("LEVELUP")
+		return
+	end}
 	
 	local tw, th = self.font_bold:size(self.title)
 
@@ -174,6 +178,7 @@ Mouse: Hover over stat for info
 		{left=15, top=self.c_tut.h, ui=self.c_general},
 --		{right=130, top=50, ui=self.b_show_equipment}, -- misaligned mouse zone?
 		{right=200, top=self.c_tut.h, ui=self.b_show_equipment},
+		{right=self.b_show_equipment, top=self.c_tut.h, ui=self.b_levelup},
 		{left=15+self.c_general.w, top=self.c_tut.h, ui=self.c_attack},
 		{left=15+self.c_general.w+self.c_attack.w, top=self.c_tut.h, ui=self.c_defence},
 		{left=15+self.c_general.w+self.c_attack.w+self.c_defence.w, top=self.c_tut.h, ui=self.c_talents},
@@ -184,6 +189,8 @@ Mouse: Hover over stat for info
 	}
 --	self:setFocus(self.c_general)
 	self:setupUI()
+
+	self:toggleDisplay(self.b_levelup, (self.actor == game:getPlayer()) and (self.actor.unused_stats > 0 or self.actor.unused_talents > 0 or self.actor.unused_generics > 0 or self.actor.unused_talents_types > 0))
 
 	self:switchTo(start_tab)
 
@@ -244,6 +251,8 @@ function _M:updateKeys()
 			self.c_equipment:select()
 		elseif (c == 'i' or c == 'I') then
 			self:showInventory()
+		elseif (c == 'l' or c == 'L') then
+			game.key:triggerVirtual("LEVELUP")
 		end
 	end,
 	}

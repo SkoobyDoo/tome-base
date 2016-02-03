@@ -214,7 +214,7 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 			dammod={str=0.5, dex=0.5}
 		},
 		mana = 100,
-		spellpower = tShadowMages and tShadowMages.getSpellpowerChange(self, tShadowMages) or 0,
+		combat_spellpower = tShadowMages and tShadowMages.getSpellpowerChange(self, tShadowMages) or 0,
 		summoner_hate_per_kill = self.hate_per_kill,
 		resolvers.talents{
 			[self.T_SHADOW_PHASE_DOOR]=tCallShadows.getPhaseDoorLevel(self, tCallShadows),
@@ -370,6 +370,14 @@ newTalent{
 		end
 
 		return true
+	end,
+	nbShadowsUp = function(self, t)
+		if not game.level then return 0 end
+		local shadowCount = 0
+		for _, e in pairs(game.level.entities) do
+			if e.summoner and e.summoner == self and e.subtype == "shadow" then shadowCount = shadowCount + 1 end
+		end
+		return shadowCount
 	end,
 	summonShadow = function(self, t)
 		local shadowCount = 0

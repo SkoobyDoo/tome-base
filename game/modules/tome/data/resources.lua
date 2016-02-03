@@ -34,7 +34,7 @@ print("[Resources] Defining Actor Resources")
 -- Minimalist = table of parameters to be used with the Minimalist uiset (see uiset.Minimalist.lua)
 ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breathe are not affected.", nil, nil, {
 	color = "#LIGHT_STEEL_BLUE#",
-	wait_on_rest = true,
+	-- wait_on_rest = true,
 })
 ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue.  Most physical abilities consume it.", nil, nil, {
 	color = "#ffcc80#",
@@ -94,7 +94,7 @@ ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILI
 })
 
 ActorResource:defineResource("Vim", "vim", ActorTalents.T_VIM_POOL, "vim_regen", "Vim represents the amount of life energy/souls you have stolen. Each corruption talent requires some.", nil, nil, {
-	color = "#888888#",
+	color = "#904010#",
 	wait_on_rest = true,
 	randomboss_enhanced = true,
 	Minimalist = {shader_params = {color = {0x90/255, 0x40/255, 0x10/255}}} --parameters for the Minimalist uiset
@@ -117,7 +117,7 @@ ActorResource:defineResource("Hate", "hate", ActorTalents.T_HATE_POOL, "hate_reg
 	Minimalist = {highlight = function(player, vc, vn, vm, vr) return vc >=100 end},
 })
 ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, "paradox_regen", "Paradox represents how much damage you've done to the space-time continuum. A high Paradox score makes Chronomancy less reliable and more dangerous to use but also amplifies its effects.", 0, false, {
-	color = "#b0c4d3#", invert_values = true,
+	color = "#4198dc#", invert_values = true,
 	randomboss_enhanced = true,
 	status_text = function(act)
 		local chance = act:paradoxFailChance()

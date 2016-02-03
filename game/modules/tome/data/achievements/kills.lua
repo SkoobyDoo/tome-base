@@ -138,7 +138,7 @@ newAchievement{
 	name = "Kill Bill!", id = "KILL_BILL",
 	image = "object/artifact/bill_treestump.png",
 	show = "full", huge=true,
-	desc = [[Killed Bill in the Trollmire with a level one character.]],
+	desc = [[Killed Bill in the Trollmire without leveling beyond your starting level.]],
 	mode = "player",
 }
 

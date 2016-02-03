@@ -283,12 +283,8 @@ newTalent{
 		return game.level and game.level.map and isOnMucus(game.level.map, self.x, self.y)
 	end,
 	action = function(self, t)
-		local tg = {type="hit", nolock=true, pass_terrain=true, nowarning=true, range=self:getTalentRange(t), requires_knowledge=false}
-		local x, y = self:getTarget(tg)
-		if not x then return nil end
-		-- Target code does not restrict the target coordinates to the range, it lets the project function do it
-		-- but we cant ...
-		local _ _, x, y = self:canProject(tg, x, y)
+		local tg = {type="hit", nolock=true, nowarning=true, range=self:getTalentRange(t), requires_knowledge=false}
+		local x, y = self:getTargetLimitedWallStop(tg)
 		if not x then return nil end
 		if not isOnMucus(game.level.map, x, y) then return nil end
 		if not self:canMove(x, y) then return nil end
