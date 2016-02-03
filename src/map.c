@@ -18,13 +18,13 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+#include "lua.h"
+#include "types.h"
 #include "display.h"
 #include <math.h>
-#include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
-#include "types.h"
 #include "map.h"
 #include "main.h"
 #include "script.h"
@@ -666,6 +666,7 @@ static int map_objects_display(lua_State *L)
 	t->tex = img;
 	t->w = w;
 	t->h = h;
+	t->no_free = FALSE;
 
 	return 1;
 }

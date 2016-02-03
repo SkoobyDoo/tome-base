@@ -39,6 +39,7 @@
 typedef struct {
 	GLuint tex;
 	int w, h;
+	bool no_free;
 } texture_type;
 
 extern GLint max_texture_size;

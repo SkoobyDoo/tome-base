@@ -18,6 +18,8 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+#include "lua.h"
+#include "types.h"
 #include "display_sdl.h"
 #include <stdlib.h>
 

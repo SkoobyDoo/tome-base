@@ -19,14 +19,14 @@
     darkgod@te4.org
 */
 
-#include "display.h"
 #include "lua.h"
+#include "types.h"
+#include "display.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
 #include "physfs.h"
 #include "core_lua.h"
-#include "types.h"
 #include "main.h"
 #include "getself.h"
 #include "te4web.h"
@@ -142,6 +142,22 @@ static int lua_web_toscreen(lua_State *L) {
 	return 0;
 }
 
+static int lua_web_get_texture(lua_State *L) {
+	web_view_type *view = (web_view_type*)auxiliar_checkclass(L, "web{view}", 1);
+	int w = -1;
+	int h = -1;
+	GLuint *tex = (GLuint*)te4_web_toscreen(view, &w, &h);
+
+	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
+	auxiliar_setclass(L, "gl{texture}", -1);
+	t->no_free = TRUE;
+	t->tex = *tex;
+	t->w = w;
+	t->h = h;
+
+	return 1;
+}
+
 static int lua_web_loading(lua_State *L) {
 	web_view_type *view = (web_view_type*)auxiliar_checkclass(L, "web{view}", 1);
 
@@ -252,6 +268,7 @@ static const struct luaL_Reg view_reg[] =
 	{"downloadAction", lua_web_download_action},
 	{"loadURL", lua_web_load_url},
 	{"toScreen", lua_web_toscreen},
+	{"glTexture", lua_web_get_texture},
 	{"focus", lua_web_focus},
 	{"loading", lua_web_loading},
 	{"injectMouseMove", lua_web_inject_mouse_move},

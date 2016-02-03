@@ -18,12 +18,12 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
-#include "display.h"
 #include "lua.h"
+#include "types.h"
+#include "display.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
-#include "types.h"
 #include "script.h"
 #include <math.h>
 #include <stdlib.h>
@@ -203,7 +203,7 @@ static int noise_texture2d(lua_State *L)
 	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
 
-	t->w = w; t->h = h;
+	t->w = w; t->h = h; t->no_free = FALSE;
 	glGenTextures(1, &t->tex);
 	glBindTexture(GL_TEXTURE_2D, t->tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -279,7 +279,7 @@ static int noise_texture3d(lua_State *L)
 	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
 
-	t->w = w; t->h = h;
+	t->w = w; t->h = h; t->no_free = FALSE;
 	glGenTextures(1, &t->tex);
 	tglBindTexture(GL_TEXTURE_3D, t->tex);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -317,7 +317,7 @@ static int noise_texture2d(lua_State *L)
 	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
 
-	t->w = w; t->h = h;
+	t->w = w; t->h = h; t->no_free = FALSE;
 	glGenTextures(1, &t->tex);
 	tglBindTexture(GL_TEXTURE_3D, t->tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -361,7 +361,7 @@ static int noise_texture2dstack(lua_State *L)
 		auxiliar_setclass(L, "gl{texture}", -1);
 		lua_settable(L, -3);
 
-		t->w = w; t->h = h;
+		t->w = w; t->h = h; t->no_free = FALSE;
 		glGenTextures(1, &t->tex);
 		tglBindTexture(GL_TEXTURE_2D, t->tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

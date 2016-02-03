@@ -18,13 +18,13 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+#include "lua.h"
+#include "types.h"
 #include "display.h"
 #include "fov/fov.h"
-#include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
-#include "types.h"
 #include "script.h"
 #include "display.h"
 #include "physfs.h"

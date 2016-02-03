@@ -19,13 +19,13 @@
     darkgod@te4.org
 */
 
+#include "lua.h"
+#include "types.h"
 #include "display.h"
 #include "fov/fov.h"
-#include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
-#include "types.h"
 #include "script.h"
 #include "display.h"
 #include "physfs.h"
@@ -461,6 +461,7 @@ static void font_make_texture_line(lua_State *L, SDL_Surface *s, int id, bool is
 	copy_surface_to_texture(s);
 	t->w = fw;
 	t->h = fh;
+	t->no_free = FALSE;
 
 	lua_pushliteral(L, "_tex_w");
 	lua_pushnumber(L, fw);

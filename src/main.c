@@ -18,20 +18,20 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+#include "lua.h"
+#include "types.h"
 #include "display.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
 #include <sys/time.h>
-#include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "luasocket.h"
 #include "luasocket/mime.h"
 #include "SFMT.h"
 
-#include "types.h"
 #include "script.h"
 #include "physfs.h"
 #include "physfsrwops.h"

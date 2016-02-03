@@ -18,13 +18,13 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+#include "lua.h"
+#include "types.h"
 #include "display.h"
 #include "fov/fov.h"
-#include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
-#include "types.h"
 #include "script.h"
 #include "display.h"
 #include "physfs.h"
@@ -887,7 +887,7 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	texture_type *st = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
 
-	st->w = w; st->h = dh;
+	st->w = w; st->h = dh; st->no_free = FALSE;
 	glGenTextures(1, &st->tex);
 	tfglBindTexture(GL_TEXTURE_2D, st->tex);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -1311,6 +1311,7 @@ static int sdl_surface_to_texture(lua_State *L)
 	copy_surface_to_texture(*s);
 	t->w = (*s)->w;
 	t->h = (*s)->h;
+	t->no_free = FALSE;
 
 	lua_pushnumber(L, fw);
 	lua_pushnumber(L, fh);
@@ -1353,7 +1354,7 @@ static int sdl_surface_alpha(lua_State *L)
 static int sdl_free_texture(lua_State *L)
 {
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
-	glDeleteTextures(1, &t->tex);
+	if (!t->no_free) glDeleteTextures(1, &t->tex);
 	lua_pushnumber(L, 1);
 //	printf("freeing texture %d\n", *t);
 	return 1;
@@ -1681,6 +1682,13 @@ static int sdl_texture_bind(lua_State *L)
 
 	return 0;
 }
+static int sdl_texture_get_size(lua_State *L)
+{
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+	lua_pushnumber(L, t->w);
+	lua_pushnumber(L, t->h);
+	return 2;
+}
 
 static bool _CheckGL_Error(const char* GLcall, const char* file, const int line)
 {
@@ -1732,7 +1740,7 @@ static int sdl_texture_outline(lua_State *L)
 	auxiliar_setclass(L, "gl{texture}", -1);
 	glGenTextures(1, &img->tex);
 	tfglBindTexture(GL_TEXTURE_2D, img->tex);
-	img->w = w; img->h = h;
+	img->w = w; img->h = h;	img->no_free = FALSE;
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -2815,6 +2823,7 @@ static const struct luaL_Reg sdl_texture_reg[] =
 	{"toSurface", gl_texture_to_sdl},
 	{"generateSDM", gl_texture_alter_sdm},
 	{"bind", sdl_texture_bind},
+	{"getSize", sdl_texture_get_size},
 	{NULL, NULL},
 };
 

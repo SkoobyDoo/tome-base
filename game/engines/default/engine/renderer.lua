@@ -66,7 +66,30 @@ function core.renderer.image(file, x, y, w, h, r, g, b, a)
 		x2, y1, u2, v1,
 		x2, y2, u2, v2,
 		x1, y2, u1, v2,
-		1, 1, 1, 1
+		r, g, b, a
+	)
+	v:texture(tex)
+	return v
+end
+
+function core.renderer.texture(tex, x, y, w, h, r, g, b, a)
+	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
+	local rw, rh = tex:getSize()
+	x = x or 0
+	y = y or 0
+	w = w or rw
+	h = h or rh
+	local v = core.renderer.vertexes()
+	local x1, x2 = x, x + w
+	local y1, y2 = y, y + h
+	local u1, u2 = 0, 1
+	local v1, v2 = 0, 1
+	v:quad(
+		x1, y1, u1, v1,
+		x2, y1, u2, v1,
+		x2, y2, u2, v2,
+		x1, y2, u1, v2,
+		r, g, b, a
 	)
 	v:texture(tex)
 	return v

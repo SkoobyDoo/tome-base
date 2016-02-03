@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 require "engine.class"
+local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -62,6 +63,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	local handlers = {
 		on_title = function(title) if self.on_title then self.on_title(title) end end,
@@ -72,6 +74,7 @@ function _M:generate()
 		on_loading = function(url, status)
 			self.cur_url = url
 			self.loading = status
+			if status < 1 then self:startLoadingSpin() else self:stopLoadingSpin() end
 		end,
 		on_crash = function()
 			print("WebView crashed, closing C view")
@@ -106,9 +109,16 @@ function _M:generate()
 	self.scroll_inertia = 0
 
 	if self.has_frame then
-		self.frame = Base:makeFrame("ui/tooltip/", self.w + 8, self.h + 8)
+		local frame = self:makeFrameDO("ui/tooltip/", self.w, self.h)
+		-- frame.container:translate(-frame.b4.w, -frame.b8.h)
+		self.do_container:add(frame.container)
 	end
-	self.loading_icon = self:getUITexture("ui/waiter/loading.png")
+	self.do_container:add(core.renderer.texture(self.view:glTexture()))
+	local li = self:getAtlasTexture("ui/waiter/loading.png")
+	self.loading_icon = core.renderer.fromTextureTable(li, -li.w / 2, -li.h / 2)
+	self.loading_icon:translate(self.w - li.w / 2, li.h / 2, 20)
+	self.do_container:add(self.loading_icon)
+	self:startLoadingSpin()
 
 	self.mouse:allowDownEvent(true)
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -152,6 +162,16 @@ function _M:generate()
 			self.view:injectKey(isup, keysym, 0, "")
 		end
 	end
+end
+
+function _M:startLoadingSpin()
+	self.loading_icon:shown(true)
+	tween.stop(self.loading_icon_tween)
+	self.loading_icon_tween = tween(25, function(v) self.loading_icon:rotate(0, 0, v) end, {0, math.rad(360)}, "linear", function() self:startLoadingSpin() end)
+end
+function _M:stopLoadingSpin()
+	tween.stop(self.loading_icon_tween)
+	self.loading_icon:shown(false)
 end
 
 function _M:on_focus(v)
@@ -244,30 +264,14 @@ function _M:onDownload(handlers)
 	end
 end
 
--- function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
--- 	if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
--- 	elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
--- 	end
-
--- 	if self.frame then
--- 		self:drawFrame(self.frame, x - 4, y - 4, 0, 0, 0, 0.3, self.w, self.h) -- shadow
--- 		self:drawFrame(self.frame, x - 4, y - 4, 1, 1, 1, 0.75) -- unlocked frame
--- 	end
-
--- 	if self.view then
--- 		if self.scroll_inertia ~= 0 then self.view:injectMouseWheel(0, self.scroll_inertia) end
--- 		self.view:toScreen(x, y)
--- 	end
-
--- 	if self.loading < 1 then
--- 		self.loading_rotation = self.loading_rotation + nb_keyframes * 8
--- 		core.display.glMatrix(true)
--- 		core.display.glTranslate(x + self.loading_icon.w / 2, y + self.loading_icon.h / 2, 0)
--- 		core.display.glRotate(self.loading_rotation, 0, 0, 1)
--- 		self.loading_icon.t:toScreenFull(-self.loading_icon.w / 2, -self.loading_icon.h / 2, self.loading_icon.w, self.loading_icon.h, self.loading_icon.tw, self.loading_icon.th)
--- 		core.display.glMatrix(false)
--- 	end
--- end
+function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
+	if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
+	elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+	end
+	if self.view then
+		if self.scroll_inertia ~= 0 then self.view:injectMouseWheel(0, self.scroll_inertia) end
+	end
+end
 
 
 _M.awesomiumMapKey = {
