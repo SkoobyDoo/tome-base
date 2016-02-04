@@ -82,6 +82,7 @@ public:
 	RendererGL();
 	RendererGL(int w, int h);
 	virtual ~RendererGL();
+	virtual const char* getKind() { return "RendererGL"; };
 
 	virtual void addDisplayList(DisplayList* dl) {
 		displays.push_back(dl);
