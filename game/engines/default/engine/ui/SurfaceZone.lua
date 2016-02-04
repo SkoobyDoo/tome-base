@@ -32,8 +32,6 @@ function _M:init(t)
 
 	self.s = core.display.newSurface(self.w, self.h)
 
-	self.texture, self.texture_w, self.texture_h = self.s:glTexture()
-
 	self.color = t.color or {r=255, g=255, b=255}
 
 	Base.init(self, t)
@@ -42,17 +40,16 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	self.s:updateTexture(self.texture)
+
+	if self.text_shadow then self.do:do_container:add(core.renderer.fromSurface(self.s, 2, 2, self.w, self.h, false, 0, 0, 0, self.text_shadow)) end
+	self.do:do_container:add(core.renderer.fromSurface(self.s, 0, 0, self.w, self.h))
 
 	self.can_focus = false
 end
 
 function _M:update()
 	self.s:updateTexture(self.texture)
-end
-
-function _M:display(x, y)
-	if self.text_shadow then self.texture:toScreenFull(x+2, y+2, self.w, self.h, self.texture_w, self.texture_h, 0, 0, 0, self.text_shadow) end
-	self.texture:toScreenFull(x, y, self.w, self.h, self.texture_w, self.texture_h)
 end
