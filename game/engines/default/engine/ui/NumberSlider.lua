@@ -44,10 +44,10 @@ function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
 
-	self:generateTitle()
-	self.left = self:getUITexture("ui/border_hor_left.png")
-	self.middle = self:getUITexture("ui/border_hor_middle.png")
-	self.right = self:getUITexture("ui/border_hor_right.png")
+	local left, middle, right
+	left = self:getUITexture("ui/border_hor_left.png")
+	middle = self:getUITexture("ui/border_hor_middle.png")
+	right = self:getUITexture("ui/border_hor_right.png")
 	self.nbox = Numberbox.new{
 		min=self.min,
 		max=self.max,
@@ -57,9 +57,27 @@ function _M:generate()
 		fct = function(v) self:onChange() if self.fct then self.fct() end end,
 	}
 
-	self.h = math.max(self.nbox.h, self.middle.h)
+	self.h = math.max(self.nbox.h, middle.h)
+	self:generateTitle(self.h)
 	self.w = self.w or self.size + self.title_w
 	self.size = self.w - self.title_w
+
+	local left_t, middle_t, right_t
+	left_t = core.renderer.fromTextureTable(left, self.title_w, (self.h - left.h) / 2)
+	right_t = core.renderer.fromTextureTable(right, self.w - right.w, (self.h - right.h) / 2)
+	middle_t = core.renderer.texture(middle.t, self.title_w + left.w, (self.h - middle.h) / 2, self.size - left.w - right.w, middle.h)
+	self.backdrop = core.renderer.container()
+	self.backdrop:add(left_t)
+	self.backdrop:add(middle_t)
+	self.backdrop:add(right_t)
+	self.backdrop:translate(0, 0, 0.5)
+	self.do_container:add(self.backdrop)
+	self.left_w = left.w
+	self.right_w = right.w
+
+	self.do_container:add(self.nbox.do_container)
+	self.nbox.do_container:translate(0, 0, 1)
+	self.nbox.do_container:translate(0, 0, 1)
 
 	self.key:addBind("ACCEPT", function() self:onChange() if self.fct then self.fct() end end)
 	self.key:addCommands{
@@ -75,13 +93,13 @@ function _M:generate()
 	-- precise click
 	local current_button = "none"
 	self.mouse:allowDownEvent(true)
-	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(self.title_w + self.left_w, 0, self.size - self.left_w - self.right_w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if 
 			((event == "button" or event == "button-down") and button == "left") or
 			(event == "motion" and current_button == "left")
 		then
-			x = x - self.title_w - self.left.w
-			local full = self.size - self.left.w - self.right.w
+			x = x - self.title_w - self.left_w
+			local full = self.size - self.left_w - self.right_w
 			local point = util.bound(x, 0, full)
 			local delta = self.max - self.min
 			if full > 0 then
@@ -95,7 +113,7 @@ function _M:generate()
 		elseif event == "button" then current_button = "none" end
 	end, {button=true, move=true}, "precise")
 	-- the box
-	self.mouse:registerZone(self.title_w + self.left.w, 0, self.size - self.left.w - self.right.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(self.title_w + self.left_w, 0, self.size - self.left_w - self.right_w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button-down" then current_button = button
 		elseif event == "button" then current_button = "none" end
 		if x < self.range[1] or x > self.range[2] then return false end
@@ -112,13 +130,13 @@ function _M:generate()
 	end, {button=true})
 	-- clicking on arrows
 	local stepTable = {left = self.step, right = 1}
-	self.mouse:registerZone(self.title_w, 0, self.left.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(self.title_w, 0, self.left_w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button-down" then return false end
 		if event ~= "button" or not stepTable[button] then return false end
 		self.nbox:updateText(-stepTable[button])
 		self:onChange()
 	end, {button=true}, "left")
-	self.mouse:registerZone(self.title_w + self.size - self.right.w, 0, self.right.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(self.title_w + self.size - self.right_w, 0, self.right_w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button-down" then return false end
 		if event ~= "button" or not stepTable[button] then return false end
 		self.nbox:updateText(stepTable[button])
@@ -142,20 +160,17 @@ function _M:onChange()
 	local delta = self.max - self.min
 	local shift = self.value - self.min
 	local prop = delta > 0 and shift / delta or 0.5
-	local xmin, xmax = self.left.w + halfw, self.size - self.right.w - halfw
+	local xmin, xmax = self.left_w + halfw, self.size - self.right_w - halfw
 	local nbx = xmin + (xmax - xmin) * prop
 	self.range = {self.title_w + nbx - halfw, self.title_w + nbx + halfw}
 	local offsety = (self.h - self.nbox.h) / 2
 
 	self.nbox.mouse.delegate_offset_x = self.range[1]
+	self.nbox.mouse.delegate_offset_y = offsety
 	self.mouse:updateZone("box", self.range[1], offsety, self.range[2] - self.range[1], self.h - 2 * offsety)
+	self.nbox.do_container:translate(self.range[1], offsety)
 end
 
 function _M:display(x, y, nb_keyframes)
-	self:displayTitle(x, y, nb_keyframes)
-	self:textureToScreen(self.left, x + self.title_w, y + (self.h - self.left.h) / 2)
-	self:textureToScreen(self.right, x + self.title_w + self.size - self.right.w, y + (self.h - self.right.h) / 2)
-	self.middle.t:toScreenFull(x + self.title_w + self.left.w, y, self.size - self.left.w - self.right.w, self.middle.h, self.middle.tw, self.middle.th)
-	self.nbox:display(x + self.range[1], y + (self.h - self.nbox.h) / 2, nb_keyframes)
 end
 
