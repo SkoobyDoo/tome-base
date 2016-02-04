@@ -71,12 +71,15 @@ function _M:init(actor, start_tab)
 						game.logPlayer(self.actor, "#RED#Displaying %s set for %s (equipment NOT switched)", self.equip_set, self.actor.name:capitalize())
 					end
 				end
-				self.c_equipment.title = "[E]quipment: "..self.equip_set.." set"
 				self:switchTo("equipment")
 				self.c_equipment:generate() -- Force redraw
 			end
 		end
 	}
+	self.c_equipment.generate = function(tab)
+		tab.title = "[E]quipment: "..self.equip_set.." set"
+		Tab.generate(tab)
+	end
 	self.b_talents_sorting = Button.new{text="Sort: "..({"Groups", "Name", "Type"})[self.talent_sorting], hide=true, width=100, fct=function()
 		self.talent_sorting = self.talent_sorting + 1
 		if self.talent_sorting > 3 then self.talent_sorting = 1 end
@@ -320,6 +323,10 @@ function _M:updateEquipDollRefs(showset)
 	local qv1, qv2 = actor.inven[actor.INVEN_QUIVER], actor.inven[actor.INVEN_QS_QUIVER]
 	if not mh1 or not mh2 or not oh1 or not oh2 then return end
 	
+	if self.actor.off_weapon_slots then -- make the reference match the inventory dialog
+		showset = showset == "off" and "main" or "off"
+	end
+	
 	--find ui's corresponding to displayed inventory slots and update refs to the displayed slots
 	local mhui, ohui, qvui, pfui
 	for i, ui in ipairs(c_doll.uis) do
@@ -386,12 +393,12 @@ function _M:hideEquipmentFrame()
 	self:toggleDisplay(EF.vsep, false)
 end
 
---Failing to update Csheet on equipment drag?
 -- show the inventory screen
 function _M:showInventory()
 	if self.actor.no_inventory_access or not self.actor.player then return end
 	local d
 	local titleupdator = self.actor:getEncumberTitleUpdator("Inventory")
+	local offset = self.actor.off_weapon_slots
 	d = require("mod.dialogs.ShowEquipInven").new(titleupdator(), self.actor, nil,
 		function(o, inven, item, button, event)
 			if not o then return end
@@ -409,6 +416,15 @@ function _M:showInventory()
 			game:registerDialog(ud)
 		end
 		)
+	--overload the switchSets function in ShowEquipInven to update CharacterSheet
+	d.base_switchSets = d.switchSets
+	d.switchSets = function(d, which)
+		d:base_switchSets(which)
+		if offset ~= self.actor.off_weapon_slots then -- if the sets are switched, update displayed sets also
+			self:updateEquipDollRefs(self.equip_set)
+			self.c_equipment:generate() -- Force redraw of equipment tab
+		end
+	end
 	game:registerDialog(d)
 	d._actor_to_compare = d._actor_to_compare or game.player:clone() -- save comparison info
 end
@@ -586,7 +602,8 @@ function _M:drawDialog(kind, actor_to_compare)
 				if status_text then --use resource specific status text if available
 					val_text = status_text(player, actor_to_compare, compare_fields)
 				else -- generate std. status text
-					text = compare_fields(player, actor_to_compare, function(act) return act[res_def.invert_values and res_def.getMinFunction or res_def.getMaxFunction](act) or 0 end, "%d", "%+.0f "..(res_def.invert_values and "min" or "max"), nil, res_def.invert_values)
+					local show_min = not player[res_def.getMaxFunction](player) and player[res_def.getMinFunction](player)
+					text = compare_fields(player, actor_to_compare, function(act) return act[show_min and res_def.getMinFunction or res_def.getMaxFunction](act) or 0 end, "%d", "%+.0f "..(show_min and "min" or "max"), nil, show_min)
 					val_text = ("%d/%s"):format(player[res_def.getFunction](player), text)
 				end
 				local tt = self["TOOLTIP_"..rname:upper()] or ([[#GOLD#%s#LAST#
