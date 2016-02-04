@@ -81,6 +81,7 @@ public:
 	void recomputeModelMatrix();
 
 	void setColor(float r, float g, float b, float a);
+	void resetModelMatrix();
 	void translate(float x, float y, float z, bool increment);
 	void rotate(float x, float y, float z, bool increment);
 	void scale(float x, float y, float z, bool increment);

@@ -57,6 +57,13 @@ static int gl_generic_scale(lua_State *L)
 	return 0;
 }
 
+static int gl_generic_reset_matrix(lua_State *L)
+{
+	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
+	(*c)->resetModelMatrix();
+	return 0;
+}
+
 static int gl_generic_shown(lua_State *L)
 {
 	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
@@ -268,6 +275,14 @@ static int gl_vertexes_free(lua_State *L)
 	return 1;
 }
 
+static int gl_vertexes_clear(lua_State *L)
+{
+	DisplayObject **d = (DisplayObject**)lua_touserdata(L, 1);
+	DORVertexes *v = dynamic_cast<DORVertexes*>(*d);
+	v->clear();
+	return 0;
+}
+
 static int gl_vertexes_quad(lua_State *L)
 {
 	DORVertexes **v = (DORVertexes**)auxiliar_checkclass(L, "gl{vertexes}", 1);
@@ -393,6 +408,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"zSort", gl_renderer_zsort},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -411,8 +427,10 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
+	{"clear", gl_vertexes_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -428,6 +446,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"clear", gl_container_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -441,8 +460,10 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"quad", gl_vertexes_quad},
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
+	{"clear", gl_vertexes_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -459,8 +480,10 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"maxWidth", gl_text_max_width},
 	{"linefeed", gl_text_linefeed},
 	{"shader", gl_text_shader},
+	{"clear", gl_vertexes_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},

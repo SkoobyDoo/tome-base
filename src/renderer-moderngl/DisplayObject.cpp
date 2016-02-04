@@ -95,6 +95,13 @@ void DisplayObject::setColor(float r, float g, float b, float a) {
 	setChanged();
 }
 
+void DisplayObject::resetModelMatrix() {
+	x = y = z = 0;
+	rot_x = rot_y = rot_z = 0;
+	scale_x = scale_y = scale_z = 0;
+	recomputeModelMatrix();
+}
+
 void DisplayObject::translate(float x, float y, float z, bool increment) {
 	if (increment) {
 		this->x += x;
