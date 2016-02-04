@@ -76,10 +76,8 @@ function _M:generate()
 	self.right_w = right.w
 
 	self.do_container:add(self.nbox.do_container)
-	-- hax
-	-- we need the text input frame to be above the backdrop, but want to reside the text at z=10 still
-	self.nbox.textinput.frame.container:translate(0, 0, 1)
-	self.nbox.textinput.frame_sel.container:translate(0, 0, 1)
+	self.nbox.do_container:translate(0, 0, 1)
+	self.nbox.do_container:translate(0, 0, 1)
 
 	self.key:addBind("ACCEPT", function() self:onChange() if self.fct then self.fct() end end)
 	self.key:addCommands{
