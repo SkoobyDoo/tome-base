@@ -45,9 +45,9 @@ function _M:generate()
 	self.key:reset()
 
 	local left, middle, right
-	left = self:getUITexture("ui/border_hor_left.png")
-	middle = self:getUITexture("ui/border_hor_middle.png")
-	right = self:getUITexture("ui/border_hor_right.png")
+	left = self:getAtlasTexture("ui/border_hor_left.png")
+	middle = self:getAtlasTexture("ui/border_hor_middle.png")
+	right = self:getAtlasTexture("ui/border_hor_right.png")
 	self.nbox = Numberbox.new{
 		min=self.min,
 		max=self.max,
@@ -64,19 +64,18 @@ function _M:generate()
 
 	local left_t, middle_t, right_t
 	left_t = core.renderer.fromTextureTable(left, self.title_w, (self.h - left.h) / 2)
+	middle_t = core.renderer.fromTextureTable(middle, self.title_w + left.w, 0, self.size - left.w - right.w, middle.h, true)
 	right_t = core.renderer.fromTextureTable(right, self.w - right.w, (self.h - right.h) / 2)
-	middle_t = core.renderer.texture(middle.t, self.title_w + left.w, (self.h - middle.h) / 2, self.size - left.w - right.w, middle.h)
 	self.backdrop = core.renderer.container()
 	self.backdrop:add(left_t)
 	self.backdrop:add(middle_t)
 	self.backdrop:add(right_t)
-	self.backdrop:translate(0, 0, 0.5)
+	-- self.backdrop:translate(0, 0, 0.5)
 	self.do_container:add(self.backdrop)
 	self.left_w = left.w
 	self.right_w = right.w
 
 	self.do_container:add(self.nbox.do_container)
-	self.nbox.do_container:translate(0, 0, 1)
 	self.nbox.do_container:translate(0, 0, 1)
 
 	self.key:addBind("ACCEPT", function() self:onChange() if self.fct then self.fct() end end)
