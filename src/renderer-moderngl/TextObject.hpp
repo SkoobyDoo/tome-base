@@ -22,6 +22,7 @@
 #define TEXTOBJECTS_H
 
 #include "renderer-moderngl/Renderer.hpp"
+#include <string.h>
 extern "C" {
 #include "font.h"
 #include "utf8proc/utf8proc.h"
@@ -43,7 +44,8 @@ public:
 	int h = 0;
 
 	DORText() {
-		text = strdup("");
+		text = (char*)malloc(1);
+		text[0] = '\0';
 		font_color = {1, 1, 1, 1};
 	};
 	virtual ~DORText() {

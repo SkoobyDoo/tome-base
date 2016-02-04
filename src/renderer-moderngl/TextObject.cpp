@@ -312,6 +312,8 @@ void DORText::parseText() {
 
 void DORText::setText(const char *text) {
 	free((void*)this->text);
-	this->text = strdup(text);
+	size_t len = strlen(text);
+	this->text = (char*)malloc(len + 1);
+	strcpy(this->text, text);
 	parseText();
 }
