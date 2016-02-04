@@ -50,6 +50,7 @@ public:
 		free((void*)text);
 		if (font_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, font_lua_ref);
 	};
+	virtual const char* getKind() { return "DORText"; };
 	
 	void setFont(font_type *font, int lua_ref) {
 		if (font_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, font_lua_ref);

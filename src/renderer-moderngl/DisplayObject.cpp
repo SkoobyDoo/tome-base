@@ -28,7 +28,7 @@ extern "C" {
 #include "physfsrwops.h"
 #include "main.h"
 }
-
+int donb = 0;
 #include "renderer-moderngl/Renderer.hpp"
 
 #define DEBUG_CHECKPARENTS

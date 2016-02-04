@@ -44,7 +44,7 @@ typedef struct {
 } vertex;
 
 class RendererGL;
-
+extern int donb;
 /****************************************************************************
  ** Generic display object
  ****************************************************************************/
@@ -65,6 +65,9 @@ public:
 	virtual ~DisplayObject() {
 		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
 	};
+
+	virtual const char* getKind() = 0;
+
 	void setLuaState(lua_State *L) { this->L = L; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
@@ -102,10 +105,13 @@ public:
 		vertices.reserve(4);
 		tex = 0;
 		shader = default_shader;
+		// donb++; printf("=====NEW %d :: %s\n", donb, this->getKind()); 
 	};
 	virtual ~DORVertexes() {
+		// donb--; printf("=====KILL %d :: %s\n", donb, this->getKind());
 		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
 	};
+	virtual const char* getKind() { return "DORVertexes"; };
 
 	void clear();
 
@@ -134,8 +140,14 @@ class DORContainer : public DisplayObject{
 protected:
 	vector<DisplayObject*> dos;
 public:
-	DORContainer() {};
-	virtual ~DORContainer() {};
+	DORContainer() {
+		// donb++; printf("=====NEW %d :: %s\n", donb, this->getKind()); 
+	};
+	virtual ~DORContainer() {
+		clear();
+		// donb--; printf("=====KILL %d :: %s\n", donb, this->getKind());
+	};
+	virtual const char* getKind() { return "DORContainer"; };
 
 	void add(DisplayObject *dob);
 	void remove(DisplayObject *dob);
@@ -162,6 +174,7 @@ public:
 	DORTarget();
 	DORTarget(int w, int h, int nbt);
 	virtual ~DORTarget();
+	virtual const char* getKind() { return "DORTarget"; };
 
 	void setClearColor(float r, float g, float b, float a);
 	void displaySize(int w, int h, bool center);
