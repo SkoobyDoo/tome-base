@@ -20,7 +20,6 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
-local Slider = require "engine.ui.Slider"
 local Entry = require "engine.ui.blocks.Entry"
 local Scrollbar = require "engine.ui.blocks.Scrollbar"
 

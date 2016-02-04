@@ -20,7 +20,8 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
-local Slider = require "engine.ui.Slider"
+local Entry = require "engine.ui.blocks.Entry"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI tree list
 -- @classmod engine.ui.TreeList
@@ -46,12 +47,12 @@ function _M:init(t)
 
 	self.fh = t.item_height or (self.font_h + 6)
 
-	self.plus = _M:getUITexture("ui/plus.png")
-	self.minus = _M:getUITexture("ui/minus.png")
+	self.plus = self:getAtlasTexture("ui/plus.png")
+	self.minus = self:getAtlasTexture("ui/minus.png")
 
 	-- Draw the scrollbar
 	if self.scrollbar then
-		self.scrollbar = Slider.new{size=self.h, max=1}
+		self.scrollbar = Scrollbar.new(nil, self.h, 1)
 	end
 
 	local w = self.w

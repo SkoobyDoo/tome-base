@@ -363,6 +363,14 @@ static int gl_text_max_width(lua_State *L)
 	return 0;
 }
 
+static int gl_text_max_lines(lua_State *L)
+{
+	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
+	(*v)->setMaxLines(lua_tonumber(L, 2));
+
+	return 0;
+}
+
 static int gl_text_text_color(lua_State *L)
 {
 	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
@@ -478,6 +486,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"textColor", gl_text_text_color},
 	{"getStats", gl_text_stats},
 	{"maxWidth", gl_text_max_width},
+	{"maxLines", gl_text_max_lines},
 	{"linefeed", gl_text_linefeed},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},

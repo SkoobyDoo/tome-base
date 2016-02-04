@@ -141,12 +141,16 @@ void DORText::parseText() {
 			// If we must do a newline, flush the previous word and the start the new line
 			if (!no_linefeed && (force_nl || (future_size && max_width && (size + future_size > max_width))))
 			{
+				if (size > max_size) max_size = size;
+				size = 0;
+
+				// Stop?
+				if (nb_lines >= max_lines) break;
+
 				// Push it & reset the surface
 				id_dduid = 1;
 				is_separator = false;
 //				printf("Ending previous line at size %d\n", size);
-				if (size > max_size) max_size = size;
-				size = 0;
 				nb_lines++;
 				if (force_nl)
 				{
