@@ -44,6 +44,7 @@ function _M:generateTitle(h)
 
 	self.title_do = core.renderer.text(self.font)
 	self.title_do:text(self.title or "")
+	self.title_do:maxWidth(self.title_w)
 	self.title_do:translate(self.title_x or 0, (self.title_y or ((h - self.title_h) / 2)), 10)
 	self.do_container:add(self.title_do)
 end
