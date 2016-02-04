@@ -54,6 +54,8 @@ function _M:updateFill(v, max, text)
 end
 
 function _M:generate()
+	self.do_container:clear()
+
 	self.t_left = self:getUITexture("ui/waiter/left_basic.png")
 	self.t_right = self:getUITexture("ui/waiter/right_basic.png")
 	self.t_middle = self:getUITexture("ui/waiter/middle.png")

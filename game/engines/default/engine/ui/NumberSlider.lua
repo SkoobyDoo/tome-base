@@ -43,6 +43,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	local left, middle, right
 	left = self:getAtlasTexture("ui/border_hor_left.png")
