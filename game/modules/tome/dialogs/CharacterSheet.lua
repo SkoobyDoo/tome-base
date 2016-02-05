@@ -1244,27 +1244,28 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		local function sort_talents()
 			local talents = {}
 			local get_group
-			if self.talent_sorting == 1 then
-				-- Get the group/display name for a given talent type
+			local sort_rank, sort_rank_keys
+			-- set up talent sorting data and functions
+			if self.talent_sorting == 1 then -- Grouped by talent type, Racial/infusions first, then alphabetical order
+				sort_rank = {"race/.*", "Inscriptions", "Prodigies", "Item_Talents"}
 				get_group = function(t, tt)
 					if tt.type:match("inscriptions/.*") then
 						return "Inscriptions"
 					elseif tt.type:match("uber/.*") then
 						return "Prodigies"
 					elseif tt.type:match(".*/objects") then
-						return "Item Talents"
+						return "Item_Talents"
 					end
 
 					local cat = tt.type:gsub("/.*", ""):bookCapitalize()
 					return cat.."/"..(tt.name or ""):bookCapitalize()
 				end
-			elseif self.talent_sorting == 2 then
-				-- Alphabetically, so no groups at all.
+			elseif self.talent_sorting == 2 then -- Alphabetically, so no groups at all.
 				get_group = function(t, tt)
 					return "Talents"
 				end
-			else
-				-- Sort by usage type/speed
+			else --Group by usage type/speed:  instant > activated > sustained > passive > alphabetically
+				sort_rank = {"Instant", "Activated", "Sustained", "Passive" }
 				get_group = function(t, tt)
 					if t.mode == "activated" then
 						local no_energy = util.getval(t.no_energy, player, t)
@@ -1274,6 +1275,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					end
 				end
 			end
+			sort_rank_keys = sort_rank and table.keys_to_values(sort_rank)
 
 			-- Process the talents
 			for j, t in pairs(player.talents_def) do
@@ -1296,7 +1298,13 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 						local group_name = get_group(t, tt)
 
 						if not talents[group_name] then
-							talents[group_name] = {type_name = group_name, talent_type=tt, talents={}}
+							talents[group_name] = {type_name = group_name, talents={}}
+							
+							if sort_rank_keys and sort_rank_keys[group_name] then -- use special tooltips for group names
+								talents[group_name].talent_type = {description = self["TOOLTIP_"..group_name:upper()]}
+							else -- use the talent type tooltip
+								talents[group_name].talent_type = tt
+							end
 						end
 						table.insert(talents[group_name]["talents"], data)
 					end
@@ -1306,9 +1314,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			local sort_tt
 
 			-- Decide what sorting method to use
-			if self.talent_sorting == 1 then
-				-- Sorting of talent groups, Racial/infusions first, then alphabetical order
-				local sort_rank = {"race/.*", "Inscriptions", "Prodigies", "Item Talents"} -- Relies on the groups
+			if self.talent_sorting == 1 then -- by groups
 				sort_tt = function(a, b)
 					a, b = a["type_name"], b["type_name"]
 					for i, v in ipairs(sort_rank) do
@@ -1323,13 +1329,10 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					end
 					return a < b
 				end
-			elseif self.talent_sorting == 2 then
-				-- Only care about alphabetically sorting
+			elseif self.talent_sorting == 2 then -- alphabetically
 				sort_tt = function(a, b)
 					return a.name < b.name end
-			else
-				-- instant > activated > sustained > passive > alphabetically
-				local sort_rank = {"Instant", "Activated", "Sustained", "Passive" }
+			else -- Sort by usage type/speed
 				sort_tt = function(a, b)
 					a, b = a["type_name"], b["type_name"]
 					for i, v in ipairs(sort_rank) do

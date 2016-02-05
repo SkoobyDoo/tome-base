@@ -155,10 +155,43 @@ Each object you carry has an encumbrance value. Your maximum carrying capacity i
 You cannot move while encumbered; drop some items.
 ]]
 
+-------------------------------------------------------------
+-- Talents
+-------------------------------------------------------------
 TOOLTIP_INSCRIPTIONS = [[#GOLD#Inscriptions#LAST#
-The people of Eyal have found a way to create herbal infusions and runes that can be inscribed on the skin of a creature.
-Those inscriptions give the bearer always-accessible powers. Usually most people have a simple regeneration infusion, but there are other kind of potion inscriptions.
+The people of Eyal have found a way to create herbal infusions and runes that can be inscribed on the skin of a creature.  More exotic types of inscriptions also exist.
+Those inscriptions give the bearer always-accessible powers that can be used an unlimited number of times.
+A simple regeneration infusion is the most common type of infusion, and the use of runes of various types is also common among arcane users.
 ]]
+
+TOOLTIP_PRODIGIES = [[#GOLD#Prodigies#LAST#
+Prodigies are special talents that only the most powerful of characters can acquire.
+All of them require at least 50 in a core stat and many also have other, very specific and/or demanding requirements to learn.
+Players can learn new prodigies at levels 30 and 42.]]
+
+TOOLTIP_ITEM_TALENTS = [[#GOLD#Item Talents#LAST#
+Some objects bestow additional talents on the wearer or holder.
+These talents work like normal, learned talents, but are lost if the object granting them is taken off or dropped, even for a moment.]]
+
+TOOLTIP_ACTIVATED = [[#GOLD#Activated Talents#LAST#
+Most talents require activation (i.e. time) to use, and create a specific effect when called upon.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_INSTANT = [[#GOLD#Instant Talents#LAST#
+Some activated talents take no time to use, being activated with but a thought.
+Unlike most talents, instant talents are never put on cooldown from being stunned, and may be usable when most other talents are not.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_PASSIVE = [[#GOLD#Passive Talents#LAST#
+When learned, passive talents permanently alter the user in some way.
+The effects are always present and are usually not dispellable or removable, though other effects may counteract or negate them.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_SUSTAINED = [[#GOLD#Sustained Talents#LAST#
+Sustained talents are turned on and left on.
+While active, a sustained talent produces some effects on the user that stay in effect until the talent is deactivated. Activating most sustained talents require the user to put aside some resources, which become unavailable until the talent is turned off.
+Deactivating a sustained talent causes it to go on cooldown.
+Specific information on each talent appears its tooltip.]]
 
 -------------------------------------------------------------
 -- Speeds
