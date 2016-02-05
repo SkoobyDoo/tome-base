@@ -435,6 +435,18 @@ This represents your chance to completely avoid ANY bad effects applied to you f
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
 Each time a creature hits you with a melee attack, it will suffer damage or other effects.
 ]]
+TOOLTIP_MELEE_PROJECT = [[#GOLD#Additional Melee Damage#LAST#
+Each time you strike a creature with a melee attack, you will deal additional damage or other effects.
+]]
+TOOLTIP_MELEE_PROJECT_INNATE = TOOLTIP_MELEE_PROJECT..[[
+This is separate from any special damage of your weapon.
+]]
+TOOLTIP_RANGED_PROJECT = [[#GOLD#Additional Ranged Damage#LAST#
+Each time you strike a creature with a ranged attack, you will deal additional damage or other effects.
+]]
+TOOLTIP_RANGED_PROJECT_INNATE = TOOLTIP_RANGED_PROJECT..[[
+This is separate from any special damage of your weapon or ammo.
+]]
 TOOLTIP_RESISTS_PEN_ALL = [[#GOLD#Damage penetration: all#LAST#
 Reduces the amount of effective resistance of your foes to any damage you deal by this percent.
 If you have 50% penetration against a creature with 50% resistance it will have an effective resistance of 25%.

@@ -1021,8 +1021,10 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		h = 0
 		w = self.w * 0.75
 		--Resist penetration
-		s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Damage penetration.:", w, h, 255, 255, 255, true) h = h + self.font_h
-
+		text=[[#GOLD#Restance Penetration#LAST#
+Ability to reduce opponent resistances to your damage]]
+		self:mouseTooltip(text, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Damage penetration:", w, h, 255, 255, 255, true)) h = h + self.font_h
+		
 		if player.resists_pen.all then
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor.resists_pen and actor.resists_pen.all or 0 end, "%3d%%", "%+.0f%%")
 			
@@ -1035,6 +1037,34 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			if valn~=0 or valo~=0 then
 				text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatGetResistPen(DamageType[t.type]) end, "%3d%%", "%+.0f%%")
 				self:mouseTooltip(self.TOOLTIP_RESISTS_PEN, s:drawColorStringBlended(self.font, ("%s%-20s: #00ff00#%s"):format((t.text_color or "#WHITE#"), t.name:capitalize().."#LAST#", text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			end
+		end
+		
+		-- melee project
+		if next(player.melee_project) or (actor_to_compare and next(actor_to_compare.melee_project)) then
+			h = h + self.font_h
+			self:mouseTooltip(self.TOOLTIP_MELEE_PROJECT_INNATE, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Additional Melee Damage:", w, h, 255, 255, 255, true)) h = h + self.font_h
+			for i, t in pairs(DamageType.dam_def) do
+				local valn = player.melee_project[DamageType[t.type]] and player:damDesc(t.type, player.melee_project[DamageType[t.type]]) or 0
+				local valo = actor_to_compare and actor_to_compare.melee_project[DamageType[t.type]] and actor_to_compare:damDesc(t, actor_to_compare.melee_project[DamageType[t.type]]) or 0
+				if valn~=0 or valo~=0 then
+					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == player and valn or actor == actor_to_compare and valo or 0 end, "%3d", "%+d")
+					self:mouseTooltip(self.TOOLTIP_MELEE_PROJECT_INNATE, s:drawColorStringBlended(self.font, ("%s%-20s: #00ff00#%s"):format((t.text_color or "#WHITE#"), t.name:capitalize().."#LAST#", text), w, h, 255, 255, 255, true)) h = h + self.font_h
+				end
+			end
+		end
+		
+		-- ranged project
+		if next(player.ranged_project) or (actor_to_compare and next(actor_to_compare.ranged_project)) then
+			h = h + self.font_h
+			self:mouseTooltip(self.TOOLTIP_RANGED_PROJECT_INNATE, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Additional Ranged Damage:", w, h, 255, 255, 255, true)) h = h + self.font_h
+			for i, t in pairs(DamageType.dam_def) do
+				local valn = player.ranged_project[DamageType[t.type]] and player:damDesc(t.type, player.ranged_project[DamageType[t.type]]) or 0
+				local valo = actor_to_compare and actor_to_compare.ranged_project[DamageType[t.type]] and actor_to_compare:damDesc(t, actor_to_compare.ranged_project[DamageType[t.type]]) or 0
+				if valn~=0 or valo~=0 then
+					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == player and valn or actor == actor_to_compare and valo or 0 end, "%3d", "%+d")
+					self:mouseTooltip(self.TOOLTIP_RANGED_PROJECT_INNATE, s:drawColorStringBlended(self.font, ("%s%-20s: #00ff00#%s"):format((t.text_color or "#WHITE#"), t.name:capitalize().."#LAST#", text), w, h, 255, 255, 255, true)) h = h + self.font_h
+				end
 			end
 		end
 		
