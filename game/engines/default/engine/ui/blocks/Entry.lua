@@ -54,6 +54,7 @@ function _M:init(t, text, color, w, h)
 	self.do_container:add(self.text_container)
 
 	self.uses_own_renderer = false
+	self.cur_v_scroll = 0
 
 	self:setText(text)
 end
@@ -121,14 +122,18 @@ function _M:startScrolling()
 
 	local dir
 	if not self.invert_scroll then
-		dir = {0, -(self.parent.ui.font:size(self.str) - self.max_text_w + 20)}
+		dir = {0, -(self.parent.ui.font:size(self.str) - self.max_text_w + 10)}
 	else
-		dir = {-(self.parent.ui.font:size(self.str) - self.max_text_w + 20), 0}
+		dir = {-(self.parent.ui.font:size(self.str) - self.max_text_w + 10), 0}
 	end
-	self.scrolltween = tween(4 * #self.str, function(v) self.text:translate(v, 0, 0) end, dir, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
+	tween.stop(self.scrolltween)
+	self.scrolltween = tween(4 * #self.str, function(v) self.cur_v_scroll = v self.text:translate(v, 0, 0) end, dir, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
 end
 
 function _M:stopScrolling()
+	if not self.uses_own_renderer then return end
+
 	self.invert_scroll = false
 	tween.stop(self.scrolltween)
+	self.scrolltween = tween(8, function(v) self.cur_v_scroll = v self.text:translate(v, 0, 0) end, {self.cur_v_scroll, 0}, "inQuad")
 end
