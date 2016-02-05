@@ -47,20 +47,20 @@ function core.renderer.redPoint()
 	return v
 end
 
-function core.renderer.image(file, x, y, w, h, r, g, b, a)
+function core.renderer.image(file, x, y, w, h, r, g, b, a, v)
 	local s = core.display.loadImage(file)
-	return core.renderer.surface(s, x, y, w, h, r, g, b, a)
+	return core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
 end
 
-function core.renderer.surface(s, x, y, w, h, r, g, b, a)
-	if not s then return core.renderer.container() end
+function core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
+	if not s then return v or core.renderer.container() end
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	local tex, rw, rh, tw, th, iw, ih = s:glTexture()
 	x = x or 0
 	y = y or 0
 	w = w or iw
 	h = h or ih
-	local v = core.renderer.vertexes()
+	if not v then v = core.renderer.vertexes() end
 	local x1, x2 = x, x + w
 	local y1, y2 = y, y + h
 	local u1, u2 = 0, iw / rw
@@ -76,14 +76,14 @@ function core.renderer.surface(s, x, y, w, h, r, g, b, a)
 	return v
 end
 
-function core.renderer.texture(tex, x, y, w, h, r, g, b, a)
+function core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	local rw, rh = tex:getSize()
 	x = x or 0
 	y = y or 0
 	w = w or rw
 	h = h or rh
-	local v = core.renderer.vertexes()
+	if not v then v = core.renderer.vertexes() end
 	local x1, x2 = x, x + w
 	local y1, y2 = y, y + h
 	local u1, u2 = 0, 1
@@ -99,16 +99,16 @@ function core.renderer.texture(tex, x, y, w, h, r, g, b, a)
 	return v
 end
 
-function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a)
+function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
 	local t = {tx=0, ty=0}
 	t.w, t.h = s:getSize()
 	t.t, t.tw, t.th = s:glTexture()
 	t.tw = t.w / t.tw
 	t.th = t.h / t.th
-	return core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
+	return core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
 end
 
-function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
+function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	x = math.floor(x or 0)
 	y = math.floor(y or 0)
@@ -119,7 +119,7 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
 	if not repeat_quads or (w <= t.w and h <= t.h) then
 		local x1, y1 = x, y
 		local x2, y2 = x + w, y + h
-		local v = core.renderer.vertexes()
+		if not v then v = core.renderer.vertexes() end
 		v:quad(
 			x1, y1, u1, v1,
 			x2+0.1, y1, u2, v1,
@@ -130,7 +130,8 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
 		v:texture(t.t)
 		return v
 	else
-		local c = core.renderer.container()
+		if not v then v = core.renderer.vertexes() end
+		v:texture(t.t)
 		local Mi, Mj = math.ceil(w / t.w) - 1, math.ceil(h / t.h) - 1
 		for i = 0, Mi do
 			for j = 0, Mj do
@@ -147,7 +148,6 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
 					v2 = v1 + t.th * (h % t.h) / t.h
 				end
 
-				local v = core.renderer.vertexes()
 				v:quad(
 					x1, y1, u1, v1,
 					x2+0.1, y1, u2, v1,
@@ -155,10 +155,8 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a)
 					x1, y2+0.1, u1, v2,
 					r, g, b, a
 				)
-				v:texture(t.t)
-				c:add(v)
 			end
 		end
-		return c
+		return v
 	end
 end
