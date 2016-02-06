@@ -59,16 +59,13 @@ function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
 	self.do_container:clear()
-	self.renderer = core.renderer.renderer()
-	self.renderer:zSort(true)
-	self.do_container:add(self.renderer)
 
 	-- Draw the scrollbar
 	if self.scrollbar then
 		self.scrollbar = Scrollbar.new(nil, self.h, 1)
 		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
 		self.use_w = self.w - self.scrollbar.w
-		self.renderer:add(self.scrollbar:get())
+		self.do_container:add(self.scrollbar:get())
 	else
 		self.use_w = self.w
 	end
@@ -182,7 +179,7 @@ function _M:drawItem(item)
 	if not item._container then
 		item.cols = {}
 		item._container = core.renderer.container()
-		self.renderer:add(item._container)
+		self.do_container:add(item._container)
 	end
 
 	local x = 0

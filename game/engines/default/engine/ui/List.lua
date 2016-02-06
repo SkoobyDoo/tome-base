@@ -47,9 +47,6 @@ function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
 	self.do_container:clear()
-	self.renderer = core.renderer.renderer()
-	self.renderer:zSort(true)
-	self.do_container:add(self.renderer)
 
 	self.sel = 1
 	self.scroll = 1
@@ -60,15 +57,13 @@ function _M:generate()
 
 	if not self.h then self.h = self.nb_items * fh end
 
-	self.renderer:cutoff(0, 0, self.w, self.h)
-
 	self.max_display = math.min(self.max, math.floor(self.h / fh))
 
 	-- Draw the scrollbar
 	if self.scrollbar then
 		self.scrollbar = Scrollbar.new(nil, self.h, self.max - 1)
 		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
-		self.renderer:add(self.scrollbar:get())
+		self.do_container:add(self.scrollbar:get())
 	end
 
 	-- Draw the list items
@@ -130,7 +125,7 @@ function _M:drawItem(item)
 
 	if not item._entry then
 		item._entry = Entry.new(nil, "", color, self.fw, self.fh)
-		self.renderer:add(item._entry:get())
+		self.do_container:add(item._entry:get())
 	end
 	item._entry:setText(text, item.color)
 end
