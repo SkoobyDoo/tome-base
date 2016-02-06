@@ -966,5 +966,7 @@ function _M:toScreen(x, y, nb_keyframes)
 	-- if zoom < 1 then core.display.glScale() end
 	-- core.display.glTranslate(-tx, -ty, 0)
 
+-- print("=====<", self:getClassName()) core.display.countDraws()
 	self.renderer:toScreen()
+-- print("=====>", core.display.countDraws())
 end

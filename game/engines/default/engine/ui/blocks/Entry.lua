@@ -25,7 +25,7 @@ local tween = require "tween"
 -- @classmod engine.ui.blocks.block
 module(..., package.seeall, class.inherit(Block))
 
-function _M:init(t, text, color, w, h)
+function _M:init(t, text, color, w, h, offset)
 	color = color or {255,255,255}
 
 	Block.init(self, t)
@@ -46,7 +46,7 @@ function _M:init(t, text, color, w, h)
 	self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 
 	self.text_container = core.renderer.container()
-	self.text_container:translate(self.frame.b4.w, self.up_text_h, 10)
+	self.text_container:translate(self.frame.b4.w + (offset or 0), self.up_text_h, 10)
 	self.text_container:add(self.text)
 
 	self.do_container:add(self.frame.container)
@@ -75,6 +75,7 @@ function _M:onFocusChange(v)
 end
 
 function _M:setText(text, color)
+	if self.str == text then return end
 	self.str = text
 	if color then
 		self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)

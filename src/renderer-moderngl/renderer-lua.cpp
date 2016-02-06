@@ -382,7 +382,7 @@ static int gl_text_text_color(lua_State *L)
 static int gl_text_set(lua_State *L)
 {
 	DORText **v = (DORText**)auxiliar_checkclass(L, "gl{text}", 1);
-	(*v)->setText(lua_tostring(L, 2));
+	(*v)->setText(luaL_checkstring(L, 2));
 
 	return 0;
 }

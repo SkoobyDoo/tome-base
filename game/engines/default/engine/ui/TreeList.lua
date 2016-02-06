@@ -50,13 +50,30 @@ function _M:init(t)
 	self.plus = self:getAtlasTexture("ui/plus.png")
 	self.minus = self:getAtlasTexture("ui/minus.png")
 
+	self.items_by_key = {}
+
+	Base.init(self, t)
+end
+
+function _M:generate()
+	self.mouse:reset()
+	self.key:reset()
+	self.do_container:clear()
+	self.renderer = core.renderer.renderer()
+	self.renderer:zSort(true)
+	self.do_container:add(self.renderer)
+
 	-- Draw the scrollbar
 	if self.scrollbar then
 		self.scrollbar = Scrollbar.new(nil, self.h, 1)
+		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
+		self.use_w = self.w - self.scrollbar.w
+		self.renderer:add(self.scrollbar:get())
+	else
+		self.use_w = self.w
 	end
 
-	local w = self.w
-	if self.scrollbar then w = w - self.scrollbar.w end
+	local w = self.use_w
 	local colw = 0
 	for j, col in ipairs(self.columns) do
 		if type(col.width) == "table" then
@@ -78,103 +95,7 @@ function _M:init(t)
 			colw = colw + col.width
 			self.sel_by_col[j] = colw
 		end
-
-		col.surface = core.display.newSurface(col.width, self.fh)
-		col.frame = self:makeFrame(nil, col.width, self.fh)
-		col.frame_sel = self:makeFrame("ui/selector-sel", col.width, self.fh)
-		col.frame_usel = self:makeFrame("ui/selector", col.width, self.fh)
-		col.frame_col = self:makeFrame("ui/selector", col.width, self.fh)
-		col.frame_col_sel = self:makeFrame("ui/selector-sel", col.width, self.fh)
-
-		col._backs = {}
 	end
-
-	self.items_by_key = {}
-
-	Base.init(self, t)
-end
-
-function _M:drawItem(item, nb_keyframes)
-	nb_keyframes = (nb_keyframes or 0) / 2
-	item.cols = {}
-	for i, col in ipairs(self.columns) do
-		if not col.direct_draw then
-			local fw = col.width
-			local level = item.level
-			local color = util.getval(item.color, item) or {255,255,255}
-			local text
-			if type(col.display_prop) == "function" then
-				text = col.display_prop(item):toTString()
-			else
-				text = item[col.display_prop or col.sort]
-				if type(text) ~= "table" or not text.is_tstring then
-					text = util.getval(text, item)
-					if type(text) ~= "table" then text = tstring.from(tostring(text)) end
-				end
-			end
-			local s = col.surface
-
-			local offset = 0
-			if i == 1 then
-				offset = level * self.level_offset
-				if item.nodes then offset = offset + self.plus.w end
-			end
-			local startx = col.frame_sel.b4.w + offset
-
-			item.cols[i] = {}
-
-			s:erase(0, 0, 0, 0)
-			local test_text = text:toString()
-			local font_w, _ = self.font:size(test_text)
-			font_w = font_w + startx
-
-			if font_w > fw then
-				item.displayx_offset = item.displayx_offset or {}
-				item.displayx_offset[i] = item.displayx_offset[i] or 0
-				item.dir = item.dir or {}
-				item.dir[i] = item.dir[i] or 0
-
-				if item.dir[i] == 0 then
-					item.displayx_offset[i] = item.displayx_offset[i] - nb_keyframes
-					if -item.displayx_offset[i] >= font_w - fw + 15 then
-						item.dir[i] = 1
-					end
-				elseif item.dir[i] == 1 then
-					item.displayx_offset[i] = item.displayx_offset[i] + nb_keyframes
-					if item.displayx_offset[i] >= 0 then
-						item.dir[i] = 0
-					end
-				end
-
-				-- We use 1000 and do not cut lines to make sure it draws as much as possible
-				text:drawOnSurface(s, 10000, nil, self.font, startx + item.displayx_offset[i], (self.fh - self.font_h) / 2, color[1], color[2], color[3])
-				item.autoscroll = true
-			else
-				text:drawOnSurface(s, 10000, nil, self.font, startx, (self.fh - self.font_h) / 2, color[1], color[2], color[3])
-			end
-
-			--text:drawOnSurface(s, col.width - startx - col.frame_sel.b6.w, 1, self.font, startx, (self.fh - self.font_h) / 2, color[1], color[2], color[3])
-			item.cols[i]._tex, item.cols[i]._tex_w, item.cols[i]._tex_h = s:glTexture()
-		end
-	end
-	if self.on_drawitem then self.on_drawitem(item) end
-end
-
-function _M:drawTree()
-	local recurs recurs = function(list, level)
-		for i, item in ipairs(list) do
-			item.level = level
-			if item[self.key_prop] then self.items_by_key[item[self.key_prop]] = item end
-			self:drawItem(item)
-			if item.nodes then recurs(item.nodes, level+1) end
-		end
-	end
-	recurs(self.tree, 0)
-end
-
-function _M:generate()
-	self.mouse:reset()
-	self.key:reset()
 
 	local fw, fh = self.w, self.fh
 	self.fw, self.fh = fw, fh
@@ -257,6 +178,77 @@ function _M:generate()
 	self:onSelect()
 end
 
+function _M:drawItem(item)
+	if not item._container then
+		item.cols = {}
+		item._container = core.renderer.container()
+		self.renderer:add(item._container)
+	end
+
+	local x = 0
+	for i, col in ipairs(self.columns) do
+		if not col.direct_draw then
+			local fw = col.width
+			local level = item.level
+			local color = util.getval(item.color, item) or {255,255,255}
+			local text
+			if type(col.display_prop) == "function" then
+				text = col.display_prop(item):toString()
+			else
+				text = item[col.display_prop or col.sort]
+				if type(text) ~= "table" or not text.is_tstring then
+					text = util.getval(text, item)
+					if type(text) == "table" then text = text:toString() end
+				elseif type(text) == "table" and text.is_tstring then
+					text = text:toString()
+				else
+					text = tostring(text)
+				end
+			end
+
+			if not item.cols[i] then
+				local offset = 0
+				if i == 1 then
+					offset = level * self.level_offset
+					if item.nodes then offset = offset + self.plus.w end
+				end
+
+				item.cols[i] = {}
+				item.cols[i]._entry = Entry.new(nil, "", color, col.width, self.fh, offset)
+				item.cols[i]._entry:translate(x, 0, 0)
+				local ec = item.cols[i]._entry:get()
+				item._container:add(ec)
+	
+				if i == 1 and item.nodes then
+					item.plus = core.renderer.fromTextureTable(self.plus)
+					item.minus = core.renderer.fromTextureTable(self.minus)
+					item.plus:translate(0, (item.cols[i]._entry.h - self.plus.h) / 2, 0)
+					item.minus:translate(0, (item.cols[i]._entry.h - self.minus.h) / 2, 0)
+					item.plus:shown(not item.shown)
+					item.minus:shown(item.shown)
+					ec:add(item.plus)
+					ec:add(item.minus)
+				end
+			end
+			item.cols[i]._entry:setText(text, color)
+		end
+		x = x + col.width
+	end
+	if self.on_drawitem then self.on_drawitem(item) end
+end
+
+function _M:drawTree()
+	local recurs recurs = function(list, level)
+		for i, item in ipairs(list) do
+			item.level = level
+			if item[self.key_prop] then self.items_by_key[item[self.key_prop]] = item end
+--			self:drawItem(item)
+			if item.nodes then recurs(item.nodes, level+1) end
+		end
+	end
+	recurs(self.tree, 0)
+end
+
 function _M:outputList()
 	local flist = {}
 	self.list = flist
@@ -264,6 +256,7 @@ function _M:outputList()
 	local recurs recurs = function(list)
 		for i, item in ipairs(list) do
 			flist[#flist+1] = item
+			item._i = #flist
 			if item.nodes and item.shown then recurs(item.nodes) end
 		end
 	end
@@ -274,6 +267,10 @@ function _M:outputList()
 	self.max_display = math.min(math.floor(self.h/self.fh), self.max)
 	self.scroll = self.scroll or 1
 	self.cur_col = self.cur_col or 1
+
+	if self.scrollbar then self.scrollbar:setMax(self.max - 1) self.scrollbar:setPos(self.sel - 1) end
+
+	self.old_sel = nil self:onSelect()
 end
 
 function _M:treeExpand(v, item)
@@ -284,19 +281,52 @@ function _M:treeExpand(v, item)
 	else
 		item.shown = v
 	end
+	
+	item.plus:shown(not item.shown)
+	item.minus:shown(item.shown)
+
+	for i, sitem in ipairs(item.nodes or {}) do
+		sitem._container:shown(item.shown)
+	end
+
 	if self.on_expand then self.on_expand(item) end
-	self:drawItem(item)
 	self:outputList()
 end
 
 function _M:onSelect()
 	local item = self.list[self.sel]
 	if not item then return end
-	if self.old_sel and self.sel == self.old_sel then return end
+	if self.old_sel and self.sel == self.old_sel and self.cur_col == self.old_col then return end
+
+	-- Update scrolling
+	local max = math.min(self.scroll + self.max_display - 1, self.max)
+	for i, item in ipairs(self.list) do
+		if i >= self.scroll and i <= max then
+			local pos = (item._i - self.scroll) * self.fh
+			self:drawItem(item)
+			item._container:translate(0, pos, 0)
+			item._container:shown(true)
+		else
+			if item._container then item._container:shown(false) end
+		end
+	end
+
+	if self.last_selected_item and self.last_selected_item ~= item then
+		if self.last_selected_item.cols then for i, c in ipairs(self.last_selected_item.cols) do c._entry:select(false) end end
+	end
+	if self.sel_by_col then
+		if item.cols then for i, c in ipairs(item.cols) do c._entry:select(self.cur_col == i) end end
+	else
+		if item.cols then for i, c in ipairs(item.cols) do c._entry:select(true) end end
+	end
+	self.last_selected_item = item
+
+	if self.scrollbar then self.scrollbar:setPos(self.sel - 1) end
 
 	if rawget(self, "select") then self.select(item, self.sel) end
 
 	self.old_sel = self.sel
+	self.old_col = self.cur_col
 end
 
 function _M:onUse(...)
@@ -305,63 +335,4 @@ function _M:onUse(...)
 	self:sound("button")
 	if item.fct then item.fct(item, self.sel, ...)
 	else self.fct(item, self.sel, ...) end
-end
-
-function _M:display(x, y, nb_keyframes)
-	local bx, by = x, y
-	if self.sel then
-		local item = self.list[self.sel]
-		if self.previtem and self.previtem~=item then
-			self.previtem.displayx_offset = {}
-			self:drawItem(self.previtem)
-			self.previtem = nil
-		end
-		if item and item.autoscroll then
-			self:drawItem(item, nb_keyframes)
-			self.previtem = item
-		end
-	end
-
-	local max = math.min(self.scroll + self.max_display - 1, self.max)
-	for i = self.scroll, max do
-		local x = x
-		for j = 1, #self.columns do
-			local col = self.columns[j]
-			local item = self.list[i]
-			if not item then break end
-			if self.sel == i and (not self.sel_by_col or self.cur_col == j) then
-				if self.focused then self:drawFrame(col.frame_sel, x, y)
-				else self:drawFrame(col.frame_usel, x, y) end
-			elseif (not self.sel_by_col or self.cur_col == j) then
-				self:drawFrame(col.frame, x, y)
-				if item.focus_decay then
-					if self.focused then self:drawFrame(col.frame_sel, x, y, 1, 1, 1, item.focus_decay / self.focus_decay_max_d)
-					else self:drawFrame(col.frame_usel, x, y, 1, 1, 1, item.focus_decay / self.focus_decay_max_d) end
-					item.focus_decay = item.focus_decay - nb_keyframes
-					if item.focus_decay <= 0 then item.focus_decay = nil end
-				end
-			end
-
-			if col.direct_draw then
-				col.direct_draw(item, x, y, col.width, self.fh)
-			else
-				if self.text_shadow then item.cols[j]._tex:toScreenFull(x+1, y+1, col.width, self.fh, item.cols[j]._tex_w, item.cols[j]._tex_h, 0, 0, 0, self.text_shadow) end
-				item.cols[j]._tex:toScreenFull(x, y, col.width, self.fh, item.cols[j]._tex_w, item.cols[j]._tex_h)
-			end
-
-			if item.nodes and j == 1 then
-				local s = item.shown and self.minus or self.plus
-				s.t:toScreenFull(x, y + (self.fh - s.h) / 2, s.w, s.h, s.th, s.th)
-			end
-
-			x = x + col.width
-		end
-		y = y + self.fh
-	end
-
-	if self.focused and self.scrollbar then
-		self.scrollbar.pos = self.sel - 1
-		self.scrollbar.max = self.max - 1
-		self.scrollbar:display(bx + self.w - self.scrollbar.w, by, by + self.fh)
-	end
 end
