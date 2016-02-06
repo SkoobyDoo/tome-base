@@ -28,55 +28,35 @@ extern "C" {
 /******************************************************************
  ** Generic
  ******************************************************************/
+#undef __KIND
+#undef __DISPLAY_OBJECT
+#define __KIND(f) gl_renderer_##f
+#define __DISPLAY_OBJECT RendererGL
+#include "renderer-lua.inc.hpp"
 
-static int gl_generic_color(lua_State *L)
-{
-	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
-	(*c)->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
+#undef __KIND
+#undef __DISPLAY_OBJECT
+#define __KIND(f) gl_container_##f
+#define __DISPLAY_OBJECT DORContainer
+#include "renderer-lua.inc.hpp"
 
-static int gl_generic_translate(lua_State *L)
-{
-	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
-	(*c)->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
+#undef __KIND
+#undef __DISPLAY_OBJECT
+#define __KIND(f) gl_target_##f
+#define __DISPLAY_OBJECT DORTarget
+#include "renderer-lua.inc.hpp"
 
-static int gl_generic_rotate(lua_State *L)
-{
-	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
-	(*c)->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
+#undef __KIND
+#undef __DISPLAY_OBJECT
+#define __KIND(f) gl_vertexes_##f
+#define __DISPLAY_OBJECT DORVertexes
+#include "renderer-lua.inc.hpp"
 
-static int gl_generic_scale(lua_State *L)
-{
-	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
-	(*c)->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
-	return 0;
-}
-
-static int gl_generic_reset_matrix(lua_State *L)
-{
-	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
-	(*c)->resetModelMatrix();
-	return 0;
-}
-
-static int gl_generic_shown(lua_State *L)
-{
-	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
-	(*c)->shown(lua_toboolean(L, 2));
-	return 0;
-}
-
-static int gl_generic_remove_from_parent(lua_State *L)
-{
-	DisplayObject **c = (DisplayObject**)lua_touserdata(L, 1);
-	(*c)->removeFromParent();
-	return 0;
-}
+#undef __KIND
+#undef __DISPLAY_OBJECT
+#define __KIND(f) gl_text_##f
+#define __DISPLAY_OBJECT DORText
+#include "renderer-lua.inc.hpp"
 
 /******************************************************************
  ** Renderer
@@ -414,13 +394,13 @@ static const struct luaL_Reg gl_renderer_reg[] =
 {
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	{"shown", gl_renderer_shown},
+	{"color", gl_renderer_color},
+	{"resetMatrix", gl_renderer_reset_matrix},
+	{"translate", gl_renderer_translate},
+	{"rotate", gl_renderer_rotate},
+	{"scale", gl_renderer_scale},
+	{"removeFromParent", gl_renderer_remove_from_parent},
 	{"add", gl_renderer_add},
 	{"remove", gl_renderer_remove},
 	{"clear", gl_renderer_clear},
@@ -436,13 +416,13 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
 	{"clear", gl_vertexes_clear},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	{"shown", gl_target_shown},
+	{"color", gl_target_color},
+	{"resetMatrix", gl_target_reset_matrix},
+	{"translate", gl_target_translate},
+	{"rotate", gl_target_rotate},
+	{"scale", gl_target_scale},
+	{"removeFromParent", gl_target_remove_from_parent},
 	{NULL, NULL},
 };
 
@@ -452,13 +432,13 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	{"shown", gl_container_shown},
+	{"color", gl_container_color},
+	{"resetMatrix", gl_container_reset_matrix},
+	{"translate", gl_container_translate},
+	{"rotate", gl_container_rotate},
+	{"scale", gl_container_scale},
+	{"removeFromParent", gl_container_remove_from_parent},
 	{NULL, NULL},
 };
 
@@ -469,13 +449,13 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
 	{"clear", gl_vertexes_clear},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	{"shown", gl_vertexes_shown},
+	{"color", gl_vertexes_color},
+	{"resetMatrix", gl_vertexes_reset_matrix},
+	{"translate", gl_vertexes_translate},
+	{"rotate", gl_vertexes_rotate},
+	{"scale", gl_vertexes_scale},
+	{"removeFromParent", gl_vertexes_remove_from_parent},
 	{NULL, NULL},
 };
 
@@ -490,13 +470,13 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"linefeed", gl_text_linefeed},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	{"shown", gl_text_shown},
+	{"color", gl_text_color},
+	{"resetMatrix", gl_text_reset_matrix},
+	{"translate", gl_text_translate},
+	{"rotate", gl_text_rotate},
+	{"scale", gl_text_scale},
+	{"removeFromParent", gl_text_remove_from_parent},
 	{NULL, NULL},
 };
 
