@@ -91,7 +91,7 @@ public:
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
 	void zSorting(bool sort) { zsort = sort; };
 	void sortedToDL();
-	void update();
+	virtual void update();
 	void toScreen(mat4 cur_model, vec4 color);
 	void toScreen();
 

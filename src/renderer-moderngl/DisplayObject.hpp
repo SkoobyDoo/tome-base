@@ -106,10 +106,8 @@ public:
 		vertices.reserve(4);
 		tex = 0;
 		shader = default_shader;
-		// donb++; printf("=====NEW %d :: %s\n", donb, this->getKind()); 
 	};
 	virtual ~DORVertexes() {
-		// donb--; printf("=====KILL %d :: %s\n", donb, this->getKind());
 		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
 	};
 	virtual const char* getKind() { return "DORVertexes"; };
