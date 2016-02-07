@@ -71,12 +71,15 @@ function _M:init(actor, start_tab)
 						game.logPlayer(self.actor, "#RED#Displaying %s set for %s (equipment NOT switched)", self.equip_set, self.actor.name:capitalize())
 					end
 				end
-				self.c_equipment.title = "[E]quipment: "..self.equip_set.." set"
 				self:switchTo("equipment")
 				self.c_equipment:generate() -- Force redraw
 			end
 		end
 	}
+	self.c_equipment.generate = function(tab)
+		tab.title = "[E]quipment: "..self.equip_set.." set"
+		Tab.generate(tab)
+	end
 	self.b_talents_sorting = Button.new{text="Sort: "..({"Groups", "Name", "Type"})[self.talent_sorting], hide=true, width=100, fct=function()
 		self.talent_sorting = self.talent_sorting + 1
 		if self.talent_sorting > 3 then self.talent_sorting = 1 end
@@ -320,6 +323,10 @@ function _M:updateEquipDollRefs(showset)
 	local qv1, qv2 = actor.inven[actor.INVEN_QUIVER], actor.inven[actor.INVEN_QS_QUIVER]
 	if not mh1 or not mh2 or not oh1 or not oh2 then return end
 	
+	if self.actor.off_weapon_slots then -- make the reference match the inventory dialog
+		showset = showset == "off" and "main" or "off"
+	end
+	
 	--find ui's corresponding to displayed inventory slots and update refs to the displayed slots
 	local mhui, ohui, qvui, pfui
 	for i, ui in ipairs(c_doll.uis) do
@@ -386,12 +393,12 @@ function _M:hideEquipmentFrame()
 	self:toggleDisplay(EF.vsep, false)
 end
 
---Failing to update Csheet on equipment drag?
 -- show the inventory screen
 function _M:showInventory()
 	if self.actor.no_inventory_access or not self.actor.player then return end
 	local d
 	local titleupdator = self.actor:getEncumberTitleUpdator("Inventory")
+	local offset = self.actor.off_weapon_slots
 	d = require("mod.dialogs.ShowEquipInven").new(titleupdator(), self.actor, nil,
 		function(o, inven, item, button, event)
 			if not o then return end
@@ -409,6 +416,15 @@ function _M:showInventory()
 			game:registerDialog(ud)
 		end
 		)
+	--overload the switchSets function in ShowEquipInven to update CharacterSheet
+	d.base_switchSets = d.switchSets
+	d.switchSets = function(d, which)
+		d:base_switchSets(which)
+		if offset ~= self.actor.off_weapon_slots then -- if the sets are switched, update displayed sets also
+			self:updateEquipDollRefs(self.equip_set)
+			self.c_equipment:generate() -- Force redraw of equipment tab
+		end
+	end
 	game:registerDialog(d)
 	d._actor_to_compare = d._actor_to_compare or game.player:clone() -- save comparison info
 end
@@ -586,7 +602,8 @@ function _M:drawDialog(kind, actor_to_compare)
 				if status_text then --use resource specific status text if available
 					val_text = status_text(player, actor_to_compare, compare_fields)
 				else -- generate std. status text
-					text = compare_fields(player, actor_to_compare, function(act) return act[res_def.invert_values and res_def.getMinFunction or res_def.getMaxFunction](act) or 0 end, "%d", "%+.0f "..(res_def.invert_values and "min" or "max"), nil, res_def.invert_values)
+					local show_min = not player[res_def.getMaxFunction](player) and player[res_def.getMinFunction](player)
+					text = compare_fields(player, actor_to_compare, function(act) return act[show_min and res_def.getMinFunction or res_def.getMaxFunction](act) or 0 end, "%d", "%+.0f "..(show_min and "min" or "max"), nil, show_min)
 					val_text = ("%d/%s"):format(player[res_def.getFunction](player), text)
 				end
 				local tt = self["TOOLTIP_"..rname:upper()] or ([[#GOLD#%s#LAST#
@@ -1004,8 +1021,10 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		h = 0
 		w = self.w * 0.75
 		--Resist penetration
-		s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Damage penetration.:", w, h, 255, 255, 255, true) h = h + self.font_h
-
+		text=[[#GOLD#Restance Penetration#LAST#
+Ability to reduce opponent resistances to your damage]]
+		self:mouseTooltip(text, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Damage penetration:", w, h, 255, 255, 255, true)) h = h + self.font_h
+		
 		if player.resists_pen.all then
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor.resists_pen and actor.resists_pen.all or 0 end, "%3d%%", "%+.0f%%")
 			
@@ -1018,6 +1037,34 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			if valn~=0 or valo~=0 then
 				text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatGetResistPen(DamageType[t.type]) end, "%3d%%", "%+.0f%%")
 				self:mouseTooltip(self.TOOLTIP_RESISTS_PEN, s:drawColorStringBlended(self.font, ("%s%-20s: #00ff00#%s"):format((t.text_color or "#WHITE#"), t.name:capitalize().."#LAST#", text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			end
+		end
+		
+		-- melee project
+		if next(player.melee_project) or (actor_to_compare and next(actor_to_compare.melee_project)) then
+			h = h + self.font_h
+			self:mouseTooltip(self.TOOLTIP_MELEE_PROJECT_INNATE, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Additional Melee Damage:", w, h, 255, 255, 255, true)) h = h + self.font_h
+			for i, t in pairs(DamageType.dam_def) do
+				local valn = player.melee_project[DamageType[t.type]] and player:damDesc(t.type, player.melee_project[DamageType[t.type]]) or 0
+				local valo = actor_to_compare and actor_to_compare.melee_project[DamageType[t.type]] and actor_to_compare:damDesc(t, actor_to_compare.melee_project[DamageType[t.type]]) or 0
+				if valn~=0 or valo~=0 then
+					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == player and valn or actor == actor_to_compare and valo or 0 end, "%3d", "%+d")
+					self:mouseTooltip(self.TOOLTIP_MELEE_PROJECT_INNATE, s:drawColorStringBlended(self.font, ("%s%-20s: #00ff00#%s"):format((t.text_color or "#WHITE#"), t.name:capitalize().."#LAST#", text), w, h, 255, 255, 255, true)) h = h + self.font_h
+				end
+			end
+		end
+		
+		-- ranged project
+		if next(player.ranged_project) or (actor_to_compare and next(actor_to_compare.ranged_project)) then
+			h = h + self.font_h
+			self:mouseTooltip(self.TOOLTIP_RANGED_PROJECT_INNATE, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Additional Ranged Damage:", w, h, 255, 255, 255, true)) h = h + self.font_h
+			for i, t in pairs(DamageType.dam_def) do
+				local valn = player.ranged_project[DamageType[t.type]] and player:damDesc(t.type, player.ranged_project[DamageType[t.type]]) or 0
+				local valo = actor_to_compare and actor_to_compare.ranged_project[DamageType[t.type]] and actor_to_compare:damDesc(t, actor_to_compare.ranged_project[DamageType[t.type]]) or 0
+				if valn~=0 or valo~=0 then
+					text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == player and valn or actor == actor_to_compare and valo or 0 end, "%3d", "%+d")
+					self:mouseTooltip(self.TOOLTIP_RANGED_PROJECT_INNATE, s:drawColorStringBlended(self.font, ("%s%-20s: #00ff00#%s"):format((t.text_color or "#WHITE#"), t.name:capitalize().."#LAST#", text), w, h, 255, 255, 255, true)) h = h + self.font_h
+				end
 			end
 		end
 		
@@ -1227,27 +1274,28 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		local function sort_talents()
 			local talents = {}
 			local get_group
-			if self.talent_sorting == 1 then
-				-- Get the group/display name for a given talent type
+			local sort_rank, sort_rank_keys
+			-- set up talent sorting data and functions
+			if self.talent_sorting == 1 then -- Grouped by talent type, Racial/infusions first, then alphabetical order
+				sort_rank = {"race/.*", "Inscriptions", "Prodigies", "Item_Talents"}
 				get_group = function(t, tt)
 					if tt.type:match("inscriptions/.*") then
 						return "Inscriptions"
 					elseif tt.type:match("uber/.*") then
 						return "Prodigies"
 					elseif tt.type:match(".*/objects") then
-						return "Item Talents"
+						return "Item_Talents"
 					end
 
 					local cat = tt.type:gsub("/.*", ""):bookCapitalize()
 					return cat.."/"..(tt.name or ""):bookCapitalize()
 				end
-			elseif self.talent_sorting == 2 then
-				-- Alphabetically, so no groups at all.
+			elseif self.talent_sorting == 2 then -- Alphabetically, so no groups at all.
 				get_group = function(t, tt)
 					return "Talents"
 				end
-			else
-				-- Sort by usage type/speed
+			else --Group by usage type/speed:  instant > activated > sustained > passive > alphabetically
+				sort_rank = {"Instant", "Activated", "Sustained", "Passive" }
 				get_group = function(t, tt)
 					if t.mode == "activated" then
 						local no_energy = util.getval(t.no_energy, player, t)
@@ -1257,6 +1305,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					end
 				end
 			end
+			sort_rank_keys = sort_rank and table.keys_to_values(sort_rank)
 
 			-- Process the talents
 			for j, t in pairs(player.talents_def) do
@@ -1279,7 +1328,13 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 						local group_name = get_group(t, tt)
 
 						if not talents[group_name] then
-							talents[group_name] = {type_name = group_name, talent_type=tt, talents={}}
+							talents[group_name] = {type_name = group_name, talents={}}
+							
+							if sort_rank_keys and sort_rank_keys[group_name] then -- use special tooltips for group names
+								talents[group_name].talent_type = {description = self["TOOLTIP_"..group_name:upper()]}
+							else -- use the talent type tooltip
+								talents[group_name].talent_type = tt
+							end
 						end
 						table.insert(talents[group_name]["talents"], data)
 					end
@@ -1289,9 +1344,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			local sort_tt
 
 			-- Decide what sorting method to use
-			if self.talent_sorting == 1 then
-				-- Sorting of talent groups, Racial/infusions first, then alphabetical order
-				local sort_rank = {"race/.*", "Inscriptions", "Prodigies", "Item Talents"} -- Relies on the groups
+			if self.talent_sorting == 1 then -- by groups
 				sort_tt = function(a, b)
 					a, b = a["type_name"], b["type_name"]
 					for i, v in ipairs(sort_rank) do
@@ -1306,13 +1359,10 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					end
 					return a < b
 				end
-			elseif self.talent_sorting == 2 then
-				-- Only care about alphabetically sorting
+			elseif self.talent_sorting == 2 then -- alphabetically
 				sort_tt = function(a, b)
 					return a.name < b.name end
-			else
-				-- instant > activated > sustained > passive > alphabetically
-				local sort_rank = {"Instant", "Activated", "Sustained", "Passive" }
+			else -- Sort by usage type/speed
 				sort_tt = function(a, b)
 					a, b = a["type_name"], b["type_name"]
 					for i, v in ipairs(sort_rank) do
