@@ -103,8 +103,6 @@ public:
 	Particles();
 	virtual ~Particles();
 	virtual const char* getKind() { return "Particles"; };
-
-	virtual void update();
 };
 
 #endif

@@ -89,7 +89,7 @@ DisplayList::~DisplayList() {
 }
 
 RendererGL::RendererGL() : RendererGL(screen->w / screen_zoom, screen->h / screen_zoom) {}
-RendererGL::RendererGL(int w, int h) : DORContainer() {
+RendererGL::RendererGL(int w, int h) {
 	glGenBuffers(1, &vbo_elements);
 	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
 }
@@ -167,7 +167,7 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 	resetChanged();
 }
 
-void RendererGL::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	this->use_model = cur_model * model;
 	this->use_color = cur_color * color;
@@ -178,7 +178,7 @@ void RendererGL::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	// resetChanged();
 }
 
-void RendererGL::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	this->use_model = cur_model * model;
 	this->use_color = cur_color * color;
@@ -286,7 +286,7 @@ void RendererGL::update() {
 	}
 }
 
-void RendererGL::toScreen() {
+void SubRenderer::toScreenSimple() {
 	vec4 color = {1.0, 1.0, 1.0, 1.0};
 	toScreen(mat4(), color);
 }

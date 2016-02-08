@@ -28,7 +28,3 @@ Particles::Particles() {
 Particles::~Particles() {
 
 }
-
-void Particles::update() {
-
-}

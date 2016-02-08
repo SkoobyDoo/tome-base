@@ -180,7 +180,7 @@ void font_make_atlas(font_type *f, int w, int h) {
 		glGenTextures(1, &f->atlas_tex);
 		tfglBindTexture(GL_TEXTURE_2D, f->atlas_tex);
 		make_texture_for_surface(f->atlas, NULL, NULL, false);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		copy_surface_to_texture(f->atlas);
 	} else {
 		tfglBindTexture(GL_TEXTURE_2D, f->atlas_tex);

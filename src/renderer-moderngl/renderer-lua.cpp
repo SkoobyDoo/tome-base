@@ -102,7 +102,7 @@ static int gl_renderer_cutoff(lua_State *L)
 static int gl_renderer_toscreen(lua_State *L)
 {
 	RendererGL **renderer = (RendererGL**)auxiliar_checkclass(L, "gl{renderer}", 1);
-	(*renderer)->toScreen();
+	(*renderer)->toScreenSimple();
 	return 0;
 }
 

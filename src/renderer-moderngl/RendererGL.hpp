@@ -24,13 +24,14 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 
+class SubRenderer;
 class RendererGL;
 
 typedef struct {
 	vertex v;
 	GLuint tex;
 	shader_type *shader;
-	RendererGL *sub;
+	SubRenderer *sub;
 } sortable_vertex;
 
 /****************************************************************************
@@ -44,18 +45,36 @@ public:
 	GLuint tex = 0;
 	shader_type *shader = NULL;
 	vector<vertex> list;
-	RendererGL *sub = NULL;
+	SubRenderer *sub = NULL;
 
 	DisplayList();
 	~DisplayList();
 };
 
 /****************************************************************************
+ ** Interface to make a DisplayObject be a sub-renderer: breaking chaining
+ ** and using it's own render method
+ ****************************************************************************/
+class SubRenderer : public DORContainer {
+	friend class RendererGL;
+private:
+	vec4 use_color;
+	mat4 use_model;
+
+public:
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+
+	virtual void toScreenSimple();
+	virtual void toScreen(mat4 cur_model, vec4 color) = 0;
+};
+
+/****************************************************************************
  ** Handling actual rendering to the screen & such
  ****************************************************************************/
-class RendererGL : public DORContainer {
+class RendererGL : public SubRenderer {
 	friend class DORVertexes;
-private:
+protected:
 	GLuint mode = GL_DYNAMIC_DRAW;
 	GLenum kind = GL_TRIANGLES;
 
@@ -72,11 +91,8 @@ private:
 	vec4 cutpos1;
 	vec4 cutpos2;
 
+public:
 	vector<sortable_vertex> zvertices;
-
-	// Wehn used as a sub
-	vec4 use_color;
-	mat4 use_model;
 
 public:
 	RendererGL();
@@ -91,14 +107,10 @@ public:
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
 	void zSorting(bool sort) { zsort = sort; };
 	void sortedToDL();
-	virtual void update();
-	void toScreen(mat4 cur_model, vec4 color);
-	void toScreen();
+	void update();
+	virtual void toScreen(mat4 cur_model, vec4 color);
 
 	void activateCutting(mat4 cur_model, bool v);
-
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
 };
 
 #endif
