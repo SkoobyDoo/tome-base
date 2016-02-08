@@ -139,13 +139,8 @@ class DORContainer : public DisplayObject{
 protected:
 	vector<DisplayObject*> dos;
 public:
-	DORContainer() {
-		// donb++; printf("=====NEW %d :: %s\n", donb, this->getKind()); 
-	};
-	virtual ~DORContainer() {
-		clear();
-		// donb--; printf("=====KILL %d :: %s\n", donb, this->getKind());
-	};
+	DORContainer() {};
+	virtual ~DORContainer();
 	virtual const char* getKind() { return "DORContainer"; };
 
 	void add(DisplayObject *dob);
