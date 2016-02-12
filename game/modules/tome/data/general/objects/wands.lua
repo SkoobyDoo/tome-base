@@ -72,7 +72,7 @@ newEntity{ base = "BASE_WAND",
 }
 
 newEntity{ base = "BASE_WAND",
-	name = "dragonbone wand", short_name = "dargonbone",
+	name = "dragonbone wand", short_name = "dragonbone",
 	color = colors.UMBER,
 	level_range = {40, 50},
 	cost = 5,
