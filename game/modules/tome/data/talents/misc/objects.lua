@@ -234,7 +234,7 @@ newTalent{
 		}
 		return p
 	end,
-	getBlockValue = function(self, t) return self:combatShieldBlock() end,
+	getBlockValue = function(self, t) return self:combatShieldBlock() or 0 end,
 	getBlockedTypes = function(self, t)
 		local shield1, combat1, shield2, combat2 = self:hasShield()
 		local bt = {[DamageType.PHYSICAL]=true}
