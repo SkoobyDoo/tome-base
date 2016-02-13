@@ -332,10 +332,9 @@ newTalent{
 		return ([[Summon a part of the Fearscape to intersect with the current level.
 		Your target and yourself are taken to the Fearscape, trapped there until you end the spell or until your target dies.
 		While inside, a constant aura of flames will burn both of you (and heal demons) for %0.2f fire damage.
-		When the spell ends, only you and the target (if still alive) are taken back to your home plane; all summons are left in the Fearscape.
-		Objects will be moved as well.
+		When the spell ends, only you and the target (if still alive) are taken back to your home plane; all summons are left in the Fearscape. Objects will be moved as well.
 		This spell has no effect if cast when already inside the Fearscape.
-		This powerful spell drains 5 vim per turn, ending when it reaches 0, the amount drained increases by one each turn.
+		This powerful spell drains 5 vim per turn, ending when it reaches 0; the amount drained increases by one each turn.
 		The damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.FIRE, self:combatTalentSpellDamage(t, 12, 140)))
 	end,
 }

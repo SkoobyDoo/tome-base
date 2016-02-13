@@ -188,7 +188,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local resistGain = t.getResistGain(self, t)
-		return ([[Enhances your feeding by reducing your targeted foe's positive resistances by %d%%, and increasing yours by the same amount. Resistance to "all" is not affected.
-		Improves with your Mindpower.]]):format(resistGain)
+		return ([[Enhances your feeding by reducing your targeted foe's resistances, multiplying them by %0.2f and increasing your resistances by the amount drained. Resistance to "all" is not affected.
+		Improves with your Mindpower.]]):format((1-(resistGain/100)))
 	end,
 }

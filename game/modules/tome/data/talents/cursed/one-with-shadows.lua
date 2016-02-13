@@ -144,7 +144,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your shadows guard you with their lifes.
+		return ([[Your shadows guard you with their lives.
 		When you would receive a fatal blow, you instantly transpose with a random shadow that takes the blow instead, putting this talent on cooldown.
 		For the next 4 turns you only die if you reach -%d life. However, when below 0 you cannot see how much life you have left.
 		Effect increases with Mindpower.]]):

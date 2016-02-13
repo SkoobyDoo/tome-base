@@ -43,7 +43,7 @@ Tell High Sun Paladin Aeryn that you met me. I'll send word to let you pass.]],
 
 newChat{ id="back",
 	text = [[Gone? Wait, this face.. you are @playername@! We thought you died in the naga portal explosion!
-Thanks to your courrage the Gates of Morning still stand.
+Thanks to your courage the Gates of Morning still stand.
 You should go there at once.]],
 	answers = {
 		{"Sadly I am the bringer of bad news, the orcs are planning something. Good luck, my lady."},

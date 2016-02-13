@@ -101,7 +101,7 @@ newTalent{
 		local drain = t.getDrain(self, t)
 		local share = t.getSharePct(self, t)*100
 		local damage = t.getDamage(self, t)*100
-		return ([[Make a melee attack for %d%% damage and then attempt to grapple a target up to one size category larger then yourself for %d turns. A grappled opponent will be unable to move, take %d damage each turn, and %d%% of the damage you receive from any source will be redirected to them.  Any movement from the target or you will break the grapple.  Maintaining a grapple drains %d stamina per turn.
+		return ([[Make a melee attack for %d%% damage and then attempt to grapple a target up to one size category larger than yourself for %d turns. A grappled opponent will be unable to move, take %d damage each turn, and %d%% of the damage you receive from any source will be redirected to them.  Any movement from the target or you will break the grapple.  Maintaining a grapple drains %d stamina per turn.
 		You may only grapple a single target at a time, and using any targeted unarmed talent on a target that you're not grappling will break the grapple.]])
 		:format(damage, duration, power, share, drain)
 	end,

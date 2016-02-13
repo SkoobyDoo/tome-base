@@ -211,7 +211,7 @@ newTalent{
 		local shield = t.getShieldDamage(self, t)*100
 		local cooldown = t.getCooldownReduction(self, t)
 		local cleanse = t.getDebuff(self, t)
-		return ([[You demonstrate your dedication to the light with a measured attack striking once with your weapon for %d%% damage and once with your shield for %d%% damage.
+		return ([[You demonstrate your dedication to the light with a measured attack striking once with your weapon for %d%% Light damage and once with your shield for %d%% Light damage.
 			If the first strike connects %d random talent cooldowns are reduced by 1.
 			If the second strike connects you are cleansed of %d debuffs.]]):
 		format(weapon, shield, cooldown, cleanse)
