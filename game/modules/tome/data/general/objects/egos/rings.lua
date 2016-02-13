@@ -303,7 +303,7 @@ newEntity{
 newEntity{
 	power_source = {technique=true},
 	name = "marksman's ", prefix=true, instant_resolve="last",
-	keywords = {marskman=true},
+	keywords = {marksman=true},
 	level_range = {1, 50},
 	rarity = 7,
 	cost = 6,

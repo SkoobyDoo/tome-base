@@ -269,7 +269,7 @@ newInscription{
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
-		return ([[rad %d; power %d; turns %d%s]]):format(data.range, apply, data.turns, apply >= 19 and "; dispells darkness" or "")
+		return ([[rad %d; power %d; turns %d%s]]):format(data.range, apply, data.turns, apply >= 19 and "; dispels darkness" or "")
 	end,
 }
 
