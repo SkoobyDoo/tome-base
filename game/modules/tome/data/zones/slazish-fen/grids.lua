@@ -33,7 +33,7 @@ newEntity{
 	can_pass = {pass_tree=1},
 	does_block_move = true,
 	block_sight = true,
-	dig = "SHALLOW_WATER",
+	dig = "BOGWATER",
 	nice_tiler = { method="replace", base={"BOGTREE", 100, 1, 40}},
 	shader = "water",
 }
