@@ -25,8 +25,8 @@ local Base = require "engine.ui.Base"
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)
-	self.size = assert(t.size, "no waiter size")
-	self.text = assert(t.text, "no waiter text")
+	self.size = assert(t.size, "no waitbar size")
+	self.text = assert(t.text, "no waitbar text")
 	self.fill = t.fill or 0
 	self.maxfill = t.maxfill or 100
 
@@ -38,19 +38,14 @@ function _M:updateFill(v, max, text)
 	if max then self.maxfill = max end
 	if text then
 		self.text = text
-		local width = self.font_bold:size(text)
 		self.text_gen:text(text)
-		self.text_gen:translate(self.t_left.w + (self.size - width) / 2)
+		local w, h = self.text_gen:getStats()
+		self.text_gen:translate(self.t_left.w + (self.size - w) / 2, (self.h - h) / 2, 13)
 	end
 	self.bar_quad:clear()
-	local x2, y2 = v * self.size / self.maxfill, self.t_bar.h
-	local u2, v2 = self.tbar.tw, self.tbar.th
-	self.bar_quad:quad(
-		0, 0, 0, 0,
-		x2, 0, u2, 0,
-		x2, y2, u2, v2,
-		0, y2, 0, v2
-	)
+	core.renderer.fromTextureTable(self.t_bar, 0, 0, (v * self.size) / self.maxfill, nil, true,
+		nil, nil, nil, nil, --rgba
+		self.bar_quad)
 end
 
 function _M:generate()
@@ -60,18 +55,20 @@ function _M:generate()
 	self.t_right = self:getUITexture("ui/waiter/right_basic.png")
 	self.t_middle = self:getUITexture("ui/waiter/middle.png")
 	self.t_bar = self:getUITexture("ui/waiter/bar.png")
-	self.do_contaner:add(core.renderer.fromTextureTable(self.t_left, 0, 0))
+
+	self.w, self.h = self.size + self.t_left.w + self.t_right.w, self.t_left.h
+
+	self.do_container:add(core.renderer.fromTextureTable(self.t_left, 0, 0))
 	self.do_container:add(core.renderer.fromTextureTable(self.t_right, self.w - self.t_right.w, 0))
 	self.do_container:add(core.renderer.texture(self.t_middle.t, self.t_left.w, (self.t_left.h - self.t_middle.h) / 2,
 		self.size, self.t_middle.h))
 	self.bar_quad = core.renderer.vertexes()
 	self.bar_quad:translate(self.t_left.w, (self.t_left.h - self.t_bar.h) / 2)
-	self.bar_quad:texture(self.t_bar.t)
 	self.text_gen = core.renderer.text(self.font_bold)
+	self.do_container:add(self.bar_quad)
+	self.do_container:add(self.text_gen)
 
 	self:updateFill(self.fill, self.maxfill, self.text)
-
-	self.w, self.h = self.size + self.t_left.w + self.t_right.w, self.t_left.h
 end
 
 function _M:display(x, y)
