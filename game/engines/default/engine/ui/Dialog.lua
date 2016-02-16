@@ -462,32 +462,40 @@ function _M:generate()
 	local b5 = self:getAtlasTexture(self.frame.b5)
 
 	local cx, cy = self.frame.ox1, self.frame.oy1
+	self.frame_container = core.renderer.container()
+	self.frame_container:translate(self.display_x, self.display_y, -101)
+	self.renderer:add(self.frame_container)
 
-	self.do_container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
 
-	self.do_container:add(fromTextureTable(b7, cx + 0, cy + 0, nil, nil, nil, r, g, b, a))
-	self.do_container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, nil, nil, nil, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b7, cx + 0, cy + 0, nil, nil, nil, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, nil, nil, nil, r, g, b, a))
 
-	self.do_container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, nil, nil, true, r, g, b, a))
-	self.do_container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, nil, nil, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, nil, nil, false, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, nil, nil, false, r, g, b, a))
 
-	self.do_container:add(fromTextureTable(b4, cx + 0, cy + b7.h, nil, h - b7.h - b1.h, true, r, g, b, a))
-	self.do_container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, nil, h - b9.h - b3.h, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b4, cx + 0, cy + b7.h, nil, h - b7.h - b1.h, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, nil, h - b9.h - b3.h, true, r, g, b, a))
 
 	if self.frame.dialog_h_middles then
-		-- local mw = math.floor(self.frame.w / 2)
-		-- local b8hw = math.floor(self.b8.w / 2)
-		-- self.b8l.t:toScreenFull(x + self.b7.w, y, mw - self.b7.w - b8hw, self.b8l.h, self.b8l.tw, self.b8l.th, r, g, b, a)
-		-- self.b8r.t:toScreenFull(x + mw + b8hw, y, mw - self.b9.w - b8hw, self.b8r.h, self.b8r.tw, self.b8r.th, r, g, b, a)
-		-- self.b8.t:toScreenFull(x + mw - b8hw, y, self.b8.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+		local mw = math.floor(self.frame.w / 2)
 
-		-- local b2hw = math.floor(self.b2.w / 2)
-		-- self.b2l.t:toScreenFull(x + self.b1.w, y + self.frame.h - self.b3.h, mw - self.b1.w - b2hw, self.b2l.h, self.b2l.tw, self.b2l.th, r, g, b, a)
-		-- self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
-		-- self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+		local b8hw = math.floor(b8.w / 2)
+		local b8l = self:getAtlasTexture(self.frame.b8l)
+		local b8r = self:getAtlasTexture(self.frame.b8r)
+		self.frame_container:add(fromTextureTable(b8l, cx + b7.w, cy, mw - b7.w - b8hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b8r, cx + mw + b8hw, cy, mw - b9.w - b8hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b8, cx + mw - b8hw, cy, nil, nil, false, r, g, b, a))
+
+		local b8hw = math.floor(b2.w / 2)
+		local b8l = self:getAtlasTexture(self.frame.b2l)
+		local b8r = self:getAtlasTexture(self.frame.b2r)
+		self.frame_container:add(fromTextureTable(b2l, cx + b1.w, cy, mw - b1.w - b2hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2r, cx + mw + b2hw, cy, mw - b3.w - b2hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2, cx + mw - b2hw, cy, nil, nil, false, r, g, b, a))
 	else
-		self.do_container:add(fromTextureTable(b8, cx + b7.w, cy + 0, w - b7.w - b9.w, nil, true, r, g, b, a))
-		self.do_container:add(fromTextureTable(b2, cx + b1.w, cy + h - b2.h, w - b1.w - b3.w, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b8, cx + b7.w, cy + 0, w - b7.w - b9.w, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2, cx + b1.w, cy + h - b2.h, w - b1.w - b3.w, nil, true, r, g, b, a))
 	end
 
 	-- Overlays
