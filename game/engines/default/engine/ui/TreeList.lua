@@ -265,7 +265,10 @@ function _M:outputList()
 	self.scroll = self.scroll or 1
 	self.cur_col = self.cur_col or 1
 
-	if self.scrollbar then self.scrollbar:setMax(self.max - 1) self.scrollbar:setPos(self.sel - 1) end
+	if self.scrollbar then
+		self.scrollbar:setMax(self.max - self.max_display)
+		self.scrollbar:setPos(self.scroll - 1)
+	end
 
 	self.old_sel = nil self:onSelect()
 end
@@ -318,7 +321,7 @@ function _M:onSelect()
 	end
 	self.last_selected_item = item
 
-	if self.scrollbar then self.scrollbar:setPos(self.sel - 1) end
+	if self.scrollbar then self.scrollbar:setPos(self.scroll - 1) end
 
 	if rawget(self, "select") then self.select(item, self.sel) end
 

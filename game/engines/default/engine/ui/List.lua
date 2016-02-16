@@ -58,10 +58,9 @@ function _M:generate()
 	if not self.h then self.h = self.nb_items * fh end
 
 	self.max_display = math.min(self.max, math.floor(self.h / fh))
-
 	-- Draw the scrollbar
 	if self.scrollbar then
-		self.scrollbar = Scrollbar.new(nil, self.h, self.max - 1)
+		self.scrollbar = Scrollbar.new(nil, self.h, self.max - self.max_display)
 		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
 		self.do_container:add(self.scrollbar:get())
 	end
@@ -131,7 +130,7 @@ function _M:drawItem(item)
 end
 
 function _M:select(i)
-	self.sel = util.bound(i, 1, #self.list)
+	self.sel = util.bound(i, 1, self.max)
 	self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 	self:onSelect()
 end
@@ -156,7 +155,7 @@ function _M:onSelect()
 		end
 	end
 
-	if self.scrollbar then self.scrollbar:setPos(self.sel - 1) end
+	if self.scrollbar then self.scrollbar:setPos(self.scroll - 1) end
 
 	if rawget(self, "on_select") then self.on_select(item, self.sel) end
 end
