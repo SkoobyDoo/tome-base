@@ -4892,6 +4892,7 @@ local sustainCallbackCheck = {
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
 	callbackOnChangeLevel = "talents_on_change_level",
+	callbackOnEffectSave = "talents_on_effect_save",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
