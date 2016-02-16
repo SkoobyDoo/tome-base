@@ -610,6 +610,8 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		self:resize(self.w, self.h)
 	end
 
+	self.do_container:clear()
+
 	for i, ui in ipairs(self.uis) do
 		local ux, uy
 
@@ -705,6 +707,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		ui.ui:positioned(ux, uy, self.display_x + ux, self.display_y + uy)
 		if ui.ui.do_container then
 			ui.ui.do_container:translate(ui.x, ui.y)
+			ui.ui.do_container:removeFromParent()
 			self.do_container:add(ui.ui.do_container)
 		end
 	end
