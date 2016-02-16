@@ -89,6 +89,7 @@ function _M:switchTo(kind)
 		self.c_list.mouse.delegate_offset_y = self.uis[2].ui.mouse.delegate_offset_y
 		self.uis[2].ui = self.c_list
 	end
+	self:setupUI()
 end
 
 function _M:generateListUi()
