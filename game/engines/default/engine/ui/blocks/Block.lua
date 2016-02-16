@@ -42,16 +42,15 @@ end
 --- Blocks are kind "smart", they intrincincally know which UI created them and register themselves into it for things like focusing
 function _M:init(t)
 	t = t or {}
-	self.parent = setmetatable({}, {__mode="v"})
-	if t.for_ui then self.parent.ui = t.for_ui end
-	if not self.parent.ui then self.parent.ui = findUI() end
+	if t.for_ui then self.parent = t.for_ui end
+	if not self.parent then self.parent = findUI() end
 
-	self.font = t.font or self.parent.ui.font
-	self.font_h = t.font_h or self.parent.ui.font_h
+	self.font = t.font or self.parent.font
+	self.font_h = t.font_h or self.parent.font_h
 
 	self.do_container = core.renderer.container()
 
-	self.parent.ui:blockAdded(self) -- This does not provoke cycle tables because the parent stores us as a weak table
+	self.parent:blockAdded(self) -- This does not provoke cycle tables because the parent stores us as a weak table
 end
 
 function _M:onFocusChange(v)

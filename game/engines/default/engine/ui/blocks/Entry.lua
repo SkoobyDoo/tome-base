@@ -32,16 +32,16 @@ function _M:init(t, text, color, w, h, offset)
 
 	self.selected = false
 
-	self.frame = self.parent.ui:makeFrameDO("ui/selector", w, h)
+	self.frame = self.parent:makeFrameDO("ui/selector", w, h)
 	self.frame.container:shown(false)
-	self.frame_sel = self.parent.ui:makeFrameDO("ui/selector-sel", w, h)
+	self.frame_sel = self.parent:makeFrameDO("ui/selector-sel", w, h)
 	self.frame_sel.container:shown(false)
 	self.cur_frame = self.frame
 
 	self.w, self.h = w, h
 	self.max_text_w = w - self.frame.b4.w - self.frame.b6.w
 	self.up_text_h = (h - self.font_h) / 2
-	self.text = core.renderer.text(self.parent.ui.font)
+	self.text = core.renderer.text(self.parent.font)
 	self.text:maxLines(1)
 	self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 
@@ -81,7 +81,7 @@ function _M:setText(text, color)
 		self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 	end
 
-	if self.parent.ui.font:size(self.str) <= self.max_text_w then
+	if self.parent.font:size(self.str) <= self.max_text_w then
 		if self.uses_own_renderer then
 			self.text_container:remove(self.renderer)
 			self.text_container:add(self.text)
@@ -123,9 +123,9 @@ function _M:startScrolling()
 
 	local dir
 	if not self.invert_scroll then
-		dir = {0, -(self.parent.ui.font:size(self.str) - self.max_text_w + 10)}
+		dir = {0, -(self.parent.font:size(self.str) - self.max_text_w + 10)}
 	else
-		dir = {-(self.parent.ui.font:size(self.str) - self.max_text_w + 10), 0}
+		dir = {-(self.parent.font:size(self.str) - self.max_text_w + 10), 0}
 	end
 	tween.stop(self.scrolltween)
 	self.scrolltween = tween(4 * #self.str, function(v) self.cur_v_scroll = v self.text:translate(v, 0, 0) end, dir, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)

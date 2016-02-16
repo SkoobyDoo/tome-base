@@ -30,18 +30,18 @@ function _M:init(t, text, color, w, h)
 
 	Block.init(self, t)
 
-	self.cursor_t = self.parent.ui:getAtlasTexture("ui/textbox-cursor.png")
+	self.cursor_t = self.parent:getAtlasTexture("ui/textbox-cursor.png")
 	self.cursor = core.renderer.fromTextureTable(self.cursor_t, 0, 0)
 
-	self.frame = self.parent.ui:makeFrameDO("ui/textbox", nil, nil, w, h)
-	self.frame_sel = self.parent.ui:makeFrameDO("ui/textbox-sel", nil, nil, w, h)
+	self.frame = self.parent:makeFrameDO("ui/textbox", nil, nil, w, h)
+	self.frame_sel = self.parent:makeFrameDO("ui/textbox-sel", nil, nil, w, h)
 	self.frame_sel.container:shown(false)
 	self.cur_frame = self.frame
 	
 	self.w, self.h = self.frame.w, self.frame.h
 
-	self.text = core.renderer.text(self.parent.ui.font)
-	self.text:translate(self.frame.b4.w, (self.h - self.parent.ui.font_h) / 2, 10)
+	self.text = core.renderer.text(self.parent.font)
+	self.text:translate(self.frame.b4.w, (self.h - self.parent.font_h) / 2, 10)
 	self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 	
 	self.do_container:add(self.frame.container)
@@ -70,6 +70,6 @@ end
 
 function _M:setPos(i)
 	i = i - 1
-	local size = self.parent.ui.font:size(self.lasttext:sub(1, i))
+	local size = self.parent.font:size(self.lasttext:sub(1, i))
 	self.cursor:translate(self.frame.b4.w + size, (self.h - self.cursor_t.h) / 2, 11)
 end
