@@ -51,10 +51,10 @@ function _M:init(actor, start_tab)
 
 	self.talent_sorting = config.settings.tome.charsheet_talent_sorting or 1
 
-	self.c_general = Tab.new{title="[G]eneral", default=start_tab == "general", fct=function() end, on_change=function(s) if s then self:switchTo("general") end end}
-	self.c_attack = Tab.new{title="[A]ttack", default=start_tab == "attack", fct=function() end, on_change=function(s) if s then self:switchTo("attack") end end}
-	self.c_defence = Tab.new{title="[D]efense", default=start_tab == "defense", fct=function() end, on_change=function(s) if s then self:switchTo("defence") end end}
-	self.c_talents = Tab.new{title="[T]alents", default=start_tab == "talents", fct=function() end, on_change=function(s) if s then self:switchTo("talents") end end }
+	self.c_general = Tab.new{title="[G]eneral", default=start_tab == "general", on_change=function(s) if s then self:switchTo("general") end end}
+	self.c_attack = Tab.new{title="[A]ttack", default=start_tab == "attack", on_change=function(s) if s then self:switchTo("attack") end end}
+	self.c_defence = Tab.new{title="[D]efense", default=start_tab == "defense", on_change=function(s) if s then self:switchTo("defence") end end}
+	self.c_talents = Tab.new{title="[T]alents", default=start_tab == "talents", on_change=function(s) if s then self:switchTo("talents") end end }
 
 	-- Select equipment/switch sets
 	self.equip_set = self.actor.off_weapon_slots and "off" or "main"
