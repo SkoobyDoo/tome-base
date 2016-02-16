@@ -41,8 +41,8 @@ function _M:init(title, equip_actor, filter, action, on_select, inven_actor)
 	end
 	Dialog.init(self, title or "Inventory", math.max(800, game.w * 0.8), math.max(600, game.h * 0.8))
 
-	self.c_main_set = Tab.new{title="Main Set", default=not equip_actor.off_weapon_slots, fct=function() end, on_change=function(s) if s then self:switchSets("main") end end}
-	self.c_off_set = Tab.new{title="Off Set", default=equip_actor.off_weapon_slots, fct=function() end, on_change=function(s) if s then self:switchSets("off") end end}
+	self.c_main_set = Tab.new{title="Main Set", default=not equip_actor.off_weapon_slots, on_change=function(s) if s then self:switchSets("main") end end}
+	self.c_off_set = Tab.new{title="Off Set", default=equip_actor.off_weapon_slots, on_change=function(s) if s then self:switchSets("off") end end}
 
 	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
 

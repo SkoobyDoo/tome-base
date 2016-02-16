@@ -244,8 +244,8 @@ function _M:makeFrameDO(base, w, h, iw, ih, center)
 		f.container:add(fromTextureTable(f.b7, cx + 0, cy + 0))
 		f.container:add(fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
 
-		f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h, nil, nil, true))
-		f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h, nil, nil, true))
+		f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h))
+		f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h))
 
 		f.container:add(fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
 		f.container:add(fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))

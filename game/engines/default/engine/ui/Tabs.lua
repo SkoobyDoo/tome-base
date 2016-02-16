@@ -39,16 +39,19 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	self.uis = {}
 
 	local cx = 0
 	for i, tdef in ipairs(self.tabs) do
 		local kind = tdef.kind
-		local tab = Tab.new{title=tdef.title, on_change=function() self:select(kind) end}
+		local tab = Tab.new{title=tdef.title, on_change=function(s) if s then self:select(kind) end end}
 		tab.mouse.delegate_offset_x = cx
 		tab.mouse.delegate_offset_y = 0
 		self.uis[#self.uis+1] = {x=cx, y=0, ui=tab}
+		tab.do_container:translate(cx, 0)
+		self.do_container:add(tab.do_container)
 		cx = cx + tab.w
 		self.h = math.max(tab.h, self.h or 0)
 	end
@@ -78,20 +81,10 @@ end
 
 function _M:select(kind)
 	for i, ui in ipairs(self.uis) do
-		if self.tabs[i].kind == kind then ui.ui.selected = true
-		else ui.ui.selected = false
+		if self.tabs[i].kind ~= kind then
+			ui.ui:select(false)
 		end
 	end
 
 	self.on_change(kind)
-end
-
-function _M:display(x, y, nb_keyframes, ox, oy)
-	self._last_x, _last_y, self._last_ox, self._last_oy = x, y, ox, oy
-
-	-- UI elements
-	for i = 1, #self.uis do
-		local ui = self.uis[i]
-		if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
-	end
 end

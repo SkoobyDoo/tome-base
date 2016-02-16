@@ -43,7 +43,7 @@ function _M:init(title, shadow, log, chat)
 	for name, data in pairs(chat.channels) do list[#list+1] = name end
 	table.sort(list, function(a,b) if a == "global" then return 1 elseif b == "global" then return nil else return a < b end end)
 
-	tabs[#tabs+1] = {top=0, left=0, ui = Tab.new{title="Game Log", fct=function() end, on_change=function() local i = #tabs self:switchTo(tabs[1]) end, default=true}, tab_channel="__log", timestamp=log:getLogLast()}
+	tabs[#tabs+1] = {top=0, left=0, ui = Tab.new{title="Game Log", on_change=function(s) if s then self:switchTo(tabs[1]) end end, default=true}, tab_channel="__log", timestamp=log:getLogLast()}
 	for i, name in ipairs(list) do
 		local oname = name
 		local nb_users = 0
@@ -51,7 +51,7 @@ function _M:init(title, shadow, log, chat)
 		name = name:capitalize().." ("..nb_users..")"
 
 		local ii = i
-		tabs[#tabs+1] = {top=0, left=(#tabs==0) and 0 or tabs[#tabs].ui, ui = Tab.new{title=name, fct=function() end, on_change=function() local i = ii+1 self:switchTo(tabs[i]) end, default=false}, tab_channel=oname, timestamp=chat:getLogLast(oname)}
+		tabs[#tabs+1] = {top=0, left=(#tabs==0) and 0 or tabs[#tabs].ui, ui = Tab.new{title=name,  on_change=function(s) if s then self:switchTo(tabs[ii + 1]) end end, default=false}, tab_channel=oname, timestamp=chat:getLogLast(oname)}
 	end
 
 	self.start_y = tabs[1].ui.h + 5

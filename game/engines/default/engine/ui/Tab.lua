@@ -21,20 +21,13 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
---- A generic UI tab
+--- A generic UI tab button
 -- @classmod engine.ui.Tab
 module(..., package.seeall, class.inherit(Base, Focusable))
 
-frame_ox1 = -5
-frame_ox2 = 5
-frame_oy1 = -1
-frame_oy2 = 1
-
 function _M:init(t)
 	self.title = assert(t.title, "no tab title")
-	self.text = t.text or ""
 	self.selected = t.default
-	self.fct = t.fct
 	self.on_change = t.on_change
 
 	Base.init(self, t)
@@ -43,71 +36,43 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	-- Draw UI
-	self.tex = self:drawFontLine(self.font, self.title)
-	self.w, self.h = self.tex.w - frame_ox1 + frame_ox2, self.tex.h - frame_oy1 + frame_oy2
+	local title_line = core.renderer.text(self.font)
+	title_line:text(self.title)
+	local w, h = title_line:getStats()
+	local f = self:makeFrameDO("ui/button", nil, nil, w, h)
+	self.frame_do = f
+	self.frame_sel_do = self:makeFrameDO("ui/button_sel", f.w, f.h)
+	self.w, self.h  = f.w, f.h
+
+	title_line:translate(f.b4.w, f.b8.h, 10)
+	self.do_container:add(self.frame_do.container)
+	self.do_container:add(self.frame_sel_do.container)
+	self.do_container:add(title_line)
+
+	self:select(self.selected)
 
 	-- Add UI controls
-	self.mouse:registerZone(0, 0, self.w+1, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button" then
 			self:select()
 		end
 	end)
 
-	self.rw, self.rh = self.tex.w, self.tex.h
-	self.frame = self:makeFrame("ui/button", self.w, self.h)
---	self.frame.b2 = self:getUITexture("ui/border_hor_middle.png")
 
-	self.frame_sel = self:makeFrame("ui/button_sel", self.w, self.h)
-
-	self.key:addBind("ACCEPT", function()
-		self:sound("button")
-		self.fct(self.selected)
-	end)
+	self.key:addBind("ACCEPT", function() self:select() end)
 	self.key:addCommands{
 		_SPACE = function() self:select() end,
 	}
 
-	self.w = self.w + 1
-	self.h = self.h + 6
 end
 
-function _M:drawFrame(f, x, y, r, g, b, a)
-	-- Sides
-	f.b8.t:toScreenFull(x + f.b7.w, y, f.w - f.b7.w - f.b9.w + 1, f.b8.h, f.b8.tw, f.b8.th, r, g, b, a)
-	f.b2.t:toScreenFull(x , y + f.h - 3, f.w , f.b2.h, f.b2.tw, f.b2.th, r, g, b, a)
-	f.b4.t:toScreenFull(x, y + f.b7.h, f.b4.w, f.h - f.b7.h + 1, f.b4.tw, f.b4.th, r, g, b, a)
-	f.b6.t:toScreenFull(x + f.w - f.b9.w, y + f.b7.h, f.b6.w, f.h - f.b7.h + 1, f.b6.tw, f.b6.th, r, g, b, a)
-
-	-- Body
-	f.b5.t:toScreenFull(x + f.b7.w, y + f.b7.h, f.w - f.b7.w - f.b9.w + 1, f.h - f.b7.h + 1, f.b6.tw, f.b6.th, r, g, b, a)
-
-	-- Corners
-	f.b7.t:toScreenFull(x, y, f.b7.w, f.b7.h, f.b7.tw, f.b7.th, r, g, b, a)
-	f.b9.t:toScreenFull(x + f.w - f.b9.w, y, f.b9.w, f.b9.h, f.b9.tw, f.b9.th, r, g, b, a)
-end
-
-function _M:select()
-	self.selected = true
-	if self.on_change then self.on_change(self.selected) end
-end
-
-function _M:display(x, y, nb_keyframes)
-	x = x + 3
-	y = y + 4
-	if self.selected then
-		self:drawFrame(self.frame_sel, x, y)
-	elseif not self.focused then
-		self:drawFrame(self.frame, x, y, 1, 1, 1, 1)
-		if self.focus_decay then
-			self:drawFrame(self.frame_sel, x, y, 1, 0.5, 0.5, self.focus_decay / self.focus_decay_max_d)
-			self.focus_decay = self.focus_decay - nb_keyframes
-			if self.focus_decay <= 0 then self.focus_decay = nil end
-		end
-	else
-		self:drawFrame(self.frame_sel, x, y, 1, 0.5, 0.5, 1)
-	end
-	if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 0, 0, 0, self.text_shadow) end
-	self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
+function _M:select(selected)
+	if selected == nil then selected = true end
+	self.selected = selected
+	self.frame_do.container:shown(not selected)
+	self.frame_sel_do.container:shown(selected)
+	if self.on_change then self.on_change(selected) end
 end

@@ -26,11 +26,6 @@ local Focusable = require "engine.ui.Focusable"
 -- @classmod engine.ui.Button
 module(..., package.seeall, class.inherit(Base, Focusable))
 
-frame_ox1 = -5
-frame_ox2 = 5
-frame_oy1 = -5
-frame_oy2 = 5
-
 function _M:init(t)
 	self.text = assert(t.text, "no button text")
 	self.fct = assert(t.fct, "no button fct")
@@ -55,34 +50,31 @@ function _M:generate()
 	self.font:setStyle("normal")
 
 	local w, h = text:getStats()
+	local f = self:makeFrameDO("ui/button", self.force_w, nil, w, h)
+	self.frame_do = f
+	w = f.w - f.b4.w - f.b6.w
 	self.iw, self.ih = w, h
-	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
+
+	self.w, self.h = f.w, f.h
 	if self.force_w then w = self.force_w end
 
-	text:translate(-frame_ox1 + 3, -frame_oy1 + 3, 10)
+	text:translate(f.b4.w, f.b8.h, 10)
 	self.do_container:add(text)
 
-	self.frame_do = self:makeFrameDO("ui/button", self.w, self.h)
-	self.frame_do.container:translate(3, 3, 0)
-	self.frame_sel_do = self:makeFrameDO("ui/button_sel", self.w, self.h)
-	self.frame_sel_do.container:translate(3, 3, 1)
+	self.frame_sel_do = self:makeFrameDO("ui/button_sel", f.w, f.h)
+	self.frame_sel_do.container:translate(0, 0, 1)
 	self.frame_sel_do.container:color(1, 1, 1, 0)
 	self.do_container:add(self.frame_do.container)
 	self.do_container:add(self.frame_sel_do.container)
 
 	-- Add UI controls
-	self.mouse:registerZone(0, 0, self.w+6, self.h+6, function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if self.hide then return end
 		if self.on_select then self.on_select() end
 		if button == "left" and event == "button" then self:sound("button") self.fct() end
 	end)
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 
-	self.rw, self.rh = w, h
-
-	-- Add a bit of padding
-	self.w = self.w + 6
-	self.h = self.h + 6
 end
 
 function _M:on_focus_change(status)
@@ -92,47 +84,4 @@ function _M:on_focus_change(status)
 	else
 		self.tweenid = tween(8, function(v) self.frame_sel_do.container:color(1, 1, 1, v) end, {1, 0}, "linear")
 	end
-end
-
-function _M:display(x, y, nb_keyframes, ox, oy)
-	self.last_display_x = ox
-	self.last_display_y = oy
-
-	-- local mx, my, button = core.mouse.get()
-	-- if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
-	-- 	self.frame_sel_do.container:color(0, 1, 0, 1)
-	-- elseif self.focus_decay and not self.glow then
-	-- 	print("====",self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
-	-- 	self.frame_sel_do.container:color(1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
-	-- 	self.focus_decay = self.focus_decay - nb_keyframes
-	-- 	if self.focus_decay <= 0 then self.focus_decay = nil self.frame_sel_do.container:color(1, 1, 1, 0) end
-	-- end
-
-	-- if self.focused then
-	-- 	if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
-	-- 		self:drawFrame(self.frame, x, y, 0, 1, 0, 1)
-	-- 	elseif self.glow then
-	-- 		local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-	-- 		self:drawFrame(self.frame, x, y, v*0.8, v, 0, 1)
-	-- 	else
-	-- 		self:drawFrame(self.frame_sel, x, y)
-	-- 	end
-	-- 	if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.text_shadow) end
-	-- 	self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1)
-	-- else
-	-- 	if self.glow then
-	-- 		local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
-	-- 		self:drawFrame(self.frame, x, y, v*0.8, v, 0, self.alpha_unfocus)
-	-- 	else
-	-- 		self:drawFrame(self.frame, x, y, 1, 1, 1, self.alpha_unfocus)
-	-- 	end
-
-	-- 	if self.focus_decay and not self.glow then
-	-- 		self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
-	-- 		self.focus_decay = self.focus_decay - nb_keyframes
-	-- 		if self.focus_decay <= 0 then self.focus_decay = nil end
-	-- 	end
-	-- 	if self.text_shadow then self:textureToScreen(self.tex, x-frame_ox1+1, y-frame_oy1+1, 0, 0, 0, self.alpha_unfocus * self.text_shadow) end
-	-- 	self:textureToScreen(self.tex, x-frame_ox1, y-frame_oy1, 1, 1, 1, self.alpha_unfocus)
-	-- end
 end
