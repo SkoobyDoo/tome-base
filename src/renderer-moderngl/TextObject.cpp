@@ -95,7 +95,6 @@ void DORText::parseText() {
 	float lr = r, lg = g, lb = b, la = a;
 	int max_width = line_max_width;
 	int bx = 0, by = 0;
-	bool no_linefeed = lua_toboolean(L, 11);
 
 	setTexture(f->atlas_tex, LUA_NOREF);
 
