@@ -510,7 +510,7 @@ end
 
 -- WARNING the thing may be in need of re-identifying after this
 local function reapplyEgos(self, e)
-	if not e.__original then return e end
+	if not e.__original then e.__original = e:clone() end
 	local id = e.isIdentified and e:isIdentified()
 	local brandNew = e.__original -- it will be cloned upon first ego application
 	if e.ego_list and #e.ego_list > 0 then
