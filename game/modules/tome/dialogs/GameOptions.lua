@@ -52,6 +52,11 @@ function _M:init()
 
 	self.c_tabs = Tabs.new{width=self.iw - 5, tabs=tabs, on_change=function(kind) self:switchTo(kind) end}
 
+	self.c_list = TreeList.new{width=math.floor((self.iw - self.vsep.w)/2), height=self.ih - 10, scrollbar=true, columns={
+		{width=60, display_prop="name", name="Name"},
+		{width=40, display_prop="status", name="Status"},
+	}, tree={}, fct=function(item) end, select=function(item, sel) self:select(item) end}
+
 	self:loadUI{
 		{left=0, top=0, ui=self.c_tabs},
 		{left=0, top=self.c_tabs.h, ui=self.c_list},
@@ -60,6 +65,8 @@ function _M:init()
 	}
 	self:setFocus(self.c_list)
 	self:setupUI()
+
+	self:switchTo("ui")
 
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
@@ -80,17 +87,7 @@ end
 function _M:switchTo(kind)
 	self['generateList'..kind:capitalize()](self)
 	self:triggerHook{"GameOptions:generateList", list=self.list, kind=kind}
-
-	self.c_list = TreeList.new{width=math.floor((self.iw - self.vsep.w)/2), height=self.ih - 10, scrollbar=true, columns={
-		{width=60, display_prop="name"},
-		{width=40, display_prop="status"},
-	}, tree=self.list, fct=function(item) end, select=function(item, sel) self:select(item) end}
-	if self.uis and self.uis[2] then
-		self.c_list.mouse.delegate_offset_x = self.uis[2].ui.mouse.delegate_offset_x
-		self.c_list.mouse.delegate_offset_y = self.uis[2].ui.mouse.delegate_offset_y
-		self.uis[2].ui = self.c_list
-	end
-	self:setupUI()
+	self.c_list:setList(self.list)
 end
 
 function _M:generateListUi()
