@@ -209,10 +209,17 @@ function _M:drawItem(item)
 					offset = level * self.level_offset
 					if item.nodes then offset = offset + self.plus.w end
 				end
+				local offset = 0
+				if i == 1 then
+					offset = item._level
+					if item.nodes then offset = offset + 1 end
+				end
+
+				offset = offset * self.plus.w
 
 				item.cols[i] = {}
-				item.cols[i]._entry = Entry.new(nil, "", color, col.width, self.fh, offset)
-				item.cols[i]._entry:translate(x, 0, 0)
+				item.cols[i]._entry = Entry.new(nil, text, color, col.width - offset, self.fh, offset)
+				item.cols[i]._entry:translate(x + offset, 0, 0)
 				local ec = item.cols[i]._entry:get()
 				item._container:add(ec)
 	
@@ -226,8 +233,10 @@ function _M:drawItem(item)
 					ec:add(item.plus)
 					ec:add(item.minus)
 				end
+			else
+				item.cols[i]._entry:setText(text, color)
 			end
-			item.cols[i]._entry:setText(text, color)
+			item.cols[i]._value = text
 		end
 		x = x + col.width
 	end
@@ -250,14 +259,15 @@ function _M:outputList()
 	local flist = {}
 	self.list = flist
 
-	local recurs recurs = function(list)
+	local recurs recurs = function(list, level)
 		for i, item in ipairs(list) do
 			flist[#flist+1] = item
 			item._i = #flist
-			if item.nodes and item.shown then recurs(item.nodes) end
+			item._level = level
+			if item.nodes and item.shown then recurs(item.nodes, level+1) end
 		end
 	end
-	recurs(self.tree)
+	recurs(self.tree, 0)
 
 	self.max = #self.list
 	self.sel = util.bound(self.sel or 1, 1, self.max)
