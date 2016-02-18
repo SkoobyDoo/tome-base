@@ -179,7 +179,6 @@ function _M:drawItem(item)
 	if not item._container then
 		item.cols = {}
 		item._container = core.renderer.container()
-		self.do_container:add(item._container)
 	end
 
 	local x = 0
@@ -295,10 +294,6 @@ function _M:treeExpand(v, item)
 	item.plus:shown(not item.shown)
 	item.minus:shown(item.shown)
 
-	for i, sitem in ipairs(item.nodes or {}) do
-		sitem._container:shown(item.shown)
-	end
-
 	if self.on_expand then self.on_expand(item) end
 	self:outputList()
 end
@@ -309,15 +304,14 @@ function _M:onSelect()
 	if self.old_sel and self.sel == self.old_sel and self.cur_col == self.old_col then return end
 
 	-- Update scrolling
+	self.do_container:clear()
 	local max = math.min(self.scroll + self.max_display - 1, self.max)
 	for i, item in ipairs(self.list) do
 		if i >= self.scroll and i <= max then
 			local pos = (item._i - self.scroll) * self.fh
 			self:drawItem(item)
 			item._container:translate(0, pos, 0)
-			item._container:shown(true)
-		else
-			if item._container then item._container:shown(false) end
+			self.do_container:add(item._container)
 		end
 	end
 
