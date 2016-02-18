@@ -52,7 +52,7 @@ function _M:generate()
 	self.do_container:add(self.frame_sel_do.container)
 	self.do_container:add(title_line)
 
-	self:select(self.selected)
+	self:select(self.selected, true)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -69,10 +69,10 @@ function _M:generate()
 
 end
 
-function _M:select(selected)
+function _M:select(selected, notrig)
 	if selected == nil then selected = true end
 	self.selected = selected
 	self.frame_do.container:shown(not selected)
 	self.frame_sel_do.container:shown(selected)
-	if self.on_change then self.on_change(selected) end
+	if self.on_change and not notrig then self.on_change(selected) end
 end
