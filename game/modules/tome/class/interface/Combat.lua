@@ -1633,7 +1633,7 @@ function _M:combatPhysicalpower(mod, weapon, add)
 		add = add + self.combat_generic_power
 	end
 	if self:knowTalent(Talents.T_ARCANE_DESTRUCTION) then
-		add = add + self:combatSpellpower() * self:callTalent(Talents.T_ARCANE_DESTRUCTION, "getSPMult")
+		add = add + self:getMag() * self:callTalent(Talents.T_ARCANE_DESTRUCTION, "getSPMult")
 	end
 	if self:isTalentActive(Talents.T_BLOOD_FRENZY) then
 		add = add + self.blood_frenzy
