@@ -1657,12 +1657,11 @@ function _M:combatPhysicalpower(mod, weapon, add)
 
 	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
-	local amight = 0
 	if self:knowTalent(self.T_ARCANE_MIGHT) then
-		amight = self:combatSpellpower() * 0.5
+		return self:combatSpellpower(mod, d) -- will do the rescaling and multiplying for us
+	else
+		return self:rescaleCombatStats(d) * mod
 	end
-
-	return self:rescaleCombatStats(d) * mod + amight * mod
 end
 
 --- Gets damage based on talent
