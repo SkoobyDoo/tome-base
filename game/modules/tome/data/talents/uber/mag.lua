@@ -88,7 +88,7 @@ uberTalent{
 		return ([[You have learned to harness your latent arcane powers, channeling them through your weapon.
 		This has the following effects:
 		Equipped weapons are treated as having an additional 50%% Magic modifier;
-		Your effective Physical Power is increased by 50%% of your effective Spellpower;
+		Your raw Physical Power is increased by 100%% of your raw Spellpower;
 		Your physical critical chance is increased by 25%% of your bonus spell critical chance.]])
 		:format()
 	end,
