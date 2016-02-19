@@ -646,6 +646,7 @@ newTalent{
 ------------------------------------------------------------------
 -- Orcs' powers
 ------------------------------------------------------------------
+-- Bonus for all enemies in LOS?
 newTalentType{ type="race/orc", name = "orc", generic = true, description = "The various racial bonuses a character can have." }
 newTalent{
 	short_name = "ORC_FURY",
@@ -655,14 +656,23 @@ newTalent{
 	points = 5,
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 46, 30)) end, -- Limit to >5 turns
-	getPower = function(self, t) return self:combatStatScale("wil", 12, 30) end,
+	getPower = function(self, t) return self:combatStatScale("wil", 1, 5 ) end,
 	tactical = { ATTACK = 2 },
 	action = function(self, t)
-		self:setEffect(self.EFF_ORC_FURY, 5, {power=t.getPower(self, t)})
+		-- Count actors in view
+		local nb = 0
+		for i = 1, #self.fov.actors_dist do
+			local act = self.fov.actors_dist[i]
+			if act and self:reactionToward(act) < 0 and self:canSee(act) then nb = nb + 1 end
+		end
+		if nb <= 0 then return false end
+
+		self:setEffect(self.EFF_ORC_FURY, 3, {power=t.getPower(self, t)})
 		return true
 	end,
 	info = function(self, t)
-		return ([[Summons your lust for blood and destruction, increasing all damage you deal by %d%% for 5 turns.
+		return ([[Summons your lust for blood and destruction, especially when the odds are against you.  
+		For each enemy in LOS (up to 5) your damage increases by %d%% for 3 turns.
 		The bonus will increase with your Willpower.]]):
 		format(t.getPower(self, t))
 	end,
@@ -673,16 +683,29 @@ newTalent{
 	type = {"race/orc", 2},
 	require = racial_req2,
 	points = 5,
+	cooldown = function(self, t) return 10 end,
 	mode = "passive",
-	getSaves = function(self, t) return self:combatTalentScale(t, 6, 25, 0.75) end,
+	getSaves = function(self, t) return self:combatTalentScale(t, 4, 16, 0.75) end,
+	getDebuff = function(self, t) return self:combatTalentStatDamage(t, "wil", 1.5, 4) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_physresist", t.getSaves(self, t))
 		self:talentTemporaryValue(p, "combat_mentalresist", t.getSaves(self, t))
 	end,
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, state)
+		if self:isTalentCoolingDown(t) then return end
+		if not ( (self.life - dam) < (self.max_life * 0.5) ) then return end
+		
+		game.logSeen(self, "%s roars with rage shaking off %d debuffs!", self.name:capitalize(), t.getDebuff(self, t))
+		self:removeEffectsFilter({["cross tier"] = true}, 3) -- Cleanse effects usually clear cross tiers free
+		self:removeEffectsFilter({status = "detrimental"}, t.getDebuff(self, t))
+		
+		self:startTalentCooldown(t)
+	end,
 	info = function(self, t)
 		return ([[Orcs have been the prey of the other races for thousands of years, with or without justification. They have learnt to withstand things that would break weaker races.
+		When your life goes below 50%% your sheer determination cleanses you of %d debuffs based on talent level and Willpower.  This can only happen once every 10 turns.
 		Increase physical and mental save by +%d.]]):
-		format(t.getSaves(self, t))
+		format(t.getDebuff(self, t), t.getSaves(self, t))
 	end,
 }
 
@@ -693,13 +716,21 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getPen = function(self, t) return self:combatTalentLimit(t, 20, 7, 15) end,
+	getResist = function(self, t) return self:combatTalentStatDamage(t, "con", 3, 10) end,
+
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "resists_pen", {all = t.getPen(self, t)})
 	end,
+
+	callbackOnKill = function(self, t, who)
+		self:setEffect(self.EFF_ORC_TRIUMPH, 2, {resists = t.getResist(self, t)})
+	end,
+
 	info = function(self, t)
 		return ([[Orcs have seen countless battles, and won many of them.
+		You revel in the defeat of your foes, gaining %d%% damage resistance for 2 turns each time you kill an enemy.
 		Increase all damage penetration by %d%%.]]):
-		format(t.getPen(self, t))
+		format(t.getResist(self, t), t.getPen(self, t))
 	end,
 }
 
@@ -711,7 +742,8 @@ newTalent{
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 46, 30)) end, -- Limit to >10
 	remcount  = function(self,t) return math.ceil(self:combatTalentScale(t, 0.5, 3, "log", 0, 3)) end,
-	heal = function(self, t) return 25 + 2.3* self:getCon() + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life end,
+	--heal = function(self, t) return 25 + 2.3* self:getCon() + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life end,
+	heal = function(self, t) return self:combatTalentStatDamage(t, "con", 100, 500) end,
 	tactical = { DEFEND = 1, HEAL = 2, CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
@@ -756,10 +788,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Call upon the will of all of the Orc Prides to survive this battle.
-		You heal for %d life, and remove up to %d detrimental effects.
-		Even though this is a part-healing talent it can be used while frozen. If it fails to remove the frozen status the heal part will not work however.
+		You remove up to %d detrimental effects then heal for %d life.
 		The healing will increase with your Constitution.]]):
-		format(t.heal(self, t), t.remcount(self,t))
+		format(t.remcount(self,t), t.heal(self, t))
 	end,
 }
 
