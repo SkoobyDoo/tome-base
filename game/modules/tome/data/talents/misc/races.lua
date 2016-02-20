@@ -655,7 +655,7 @@ newTalent{
 	points = 5,
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 46, 30)) end, -- Limit to >5 turns
-	getPower = function(self, t) return self:combatStatScale("wil", 1, 5 ) end,
+	getPower = function(self, t) return self:combatStatScale("con", 1, 6 ) end,
 	tactical = { ATTACK = 2 },
 	action = function(self, t)
 		-- Count actors in view
@@ -672,7 +672,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Summons your lust for blood and destruction, especially when the odds are against you.  
 		You increase your damage by 10%% + %0.1f%% per enemy in line of sight up to 5 (max %0.1f%%) for 3 turns.
-		The damage bonus will increase with your Willpower.]]):
+		The damage bonus will increase with your Constitution.]]):
 		format(t.getPower(self, t), 10 + t.getPower(self, t) * 5)
 	end,
 }
@@ -688,22 +688,21 @@ newTalent{
 	getDebuff = function(self, t) return math.ceil(self:combatTalentStatDamage(t, "wil", 1, 5)) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_physresist", t.getSaves(self, t))
-		self:talentTemporaryValue(p, "combat_mentalresist", t.getSaves(self, t))
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, state)
 		if self:isTalentCoolingDown(t) then return end
 		if not ( (self.life - dam) < (self.max_life * 0.5) ) then return end
 		
-		local nb = 0
-		nb = nb + self:removeEffectsFilter({status = "detrimental", type = "mental"}, t.getDebuff(self, t))
-		game.logSeen(self, "%s roars with rage shaking off %d mental debuffs!", self.name:capitalize(), nb)
-		
-		self:startTalentCooldown(t)
+		local nb = self:removeEffectsFilter({status = "detrimental", type = "mental"}, t.getDebuff(self, t))
+		if nb > 0 then
+			game.logSeen(self, "#CRIMSON#%s roars with rage shaking off %d mental debuffs!", self.name:capitalize(), nb)
+			self:startTalentCooldown(t)
+		end
 	end,
 	info = function(self, t)
 		return ([[Orcs have been the prey of the other races for thousands of years, with or without justification. They have learnt to withstand things that would break weaker races.
 		When your life goes below 50%% your sheer determination cleanses you of %d mental debuff(s) based on talent level and Willpower.  This can only happen once every 10 turns.
-		Increase physical and mental save by +%d.]]):
+		Also increase physical save by +%d.]]):
 		format(t.getDebuff(self, t), t.getSaves(self, t))
 	end,
 }
@@ -741,7 +740,7 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 46, 30)) end, -- Limit to >10
 	remcount  = function(self,t) return math.ceil(self:combatTalentScale(t, 0.5, 3, "log", 0, 3)) end,
 	--heal = function(self, t) return 25 + 2.3* self:getCon() + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life end,
-	heal = function(self, t) return 50+self:combatTalentStatDamage(t, "con", 100, 500) end,
+	heal = function(self, t) return 50+self:combatTalentStatDamage(t, "wil", 100, 500) end,
 	tactical = { DEFEND = 1, HEAL = 2, CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
@@ -787,7 +786,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Call upon the will of all of the Orc Prides to survive this battle.
 		You remove up to %d detrimental effect(s) then heal for %d life.
-		The healing will increase with your talent level and Constitution.]]):
+		The healing will increase with your talent level and Willpower.]]):
 		format(t.remcount(self,t), t.heal(self, t))
 	end,
 }
