@@ -46,6 +46,7 @@ function _M:init(t)
 	self.sel_by_col = t.sel_by_col and {} or nil
 	self.floating_headers = (t.floating_headers == nil and true) or t.floating_headers
 	self.hide_columns = t.hide_columns
+	self.only_display = t.only_display
 
 	self.fh = t.item_height or (self.font_h + 6)
 
@@ -111,7 +112,6 @@ function _M:generate()
 		if button == "wheelup" and event == "button" then self.scroll = util.bound(self.scroll - 1, 1, self.max - self.max_display + 1)
 		elseif button == "wheeldown" and event == "button" then self.scroll = util.bound(self.scroll + 1, 1, self.max - self.max_display + 1) end
 
-		if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
 		self.sel = util.bound(self.scroll + math.floor(by / self.fh) - self:headerOffset(), self:selMin(), self.max)
 		if self.sel_by_col then
 			for i = 1, #self.sel_by_col do if bx > (self.sel_by_col[i-1] or 0) and bx <= self.sel_by_col[i] then
@@ -129,14 +129,8 @@ function _M:generate()
 	end)
 	self.key:addBinds{
 		ACCEPT = function() self:onUse("left") end,
-		MOVE_UP = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
-			self.sel = util.boundWrap(self.sel - 1, 1, self.max) self.scroll = util.scroll(self.sel, self.scroll, self.max_display) self:onSelect()
-		end,
-		MOVE_DOWN = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
-			self.sel = util.boundWrap(self.sel + 1, 1, self.max) self.scroll = util.scroll(self.sel, self.scroll, self.max_display) self:onSelect()
-		end,
+		MOVE_UP = function() self:onSelect(util.boundWrap(self.sel - 1, 1, self.max)) end,
+		MOVE_DOWN = function() self:onSelect(util.boundWrap(self.sel + 1, 1, self.max)) end,
 	}
 	if self.sel_by_col then
 		self.key:addBinds{
@@ -147,30 +141,10 @@ function _M:generate()
 	self.key:addCommands{
 		[{"_UP","ctrl"}] = function() self.key:triggerVirtual("MOVE_UP") end,
 		[{"_DOWN","ctrl"}] = function() self.key:triggerVirtual("MOVE_DOWN") end,
-		_HOME = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
-			self.sel = 1
-			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
-			self:onSelect()
-		end,
-		_END = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
-			self.sel = self.max
-			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
-			self:onSelect()
-		end,
-		_PAGEUP = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
-			self.sel = util.bound(self.sel - self.max_display, 1, self.max)
-			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
-			self:onSelect()
-		end,
-		_PAGEDOWN = function()
-			if self.sel and self.list[self.sel] then self.list[self.sel].focus_decay = self.focus_decay_max end
-			self.sel = util.bound(self.sel + self.max_display, 1, self.max)
-			self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
-			self:onSelect()
-		end,
+		_HOME = function() self:onSelect(1) end,
+		_END = function() self:onSelect(self.max) end,
+		_PAGEUP = function() self:onSelect(self.sel - self.max_display) end,
+		_PAGEDOWN = function() self:onSelect(self.sel + self.max_display) end,
 	}
 
 	self:walkTree()
@@ -361,7 +335,12 @@ function _M:treeExpand(v, item)
 	self:outputList()
 end
 
-function _M:onSelect()
+function _M:onSelect(sel)
+	if sel then
+		self.sel = util.bound(sel, 1, self.max)
+		self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
+	end
+	if self.old_sel and self.sel == self.old_sel and self.cur_col == self.old_col then return end
 	local item = nil
 	if #self.tree > 0 then
 		item = self.list[self.sel]
@@ -369,7 +348,6 @@ function _M:onSelect()
 	print("ONSELECT", self.sel, item)
 	table.print(item)
 	if not item then return end
-	if self.old_sel and self.sel == self.old_sel and self.cur_col == self.old_col then return end
 
 	-- Update scrolling
 	self.item_container:clear()
