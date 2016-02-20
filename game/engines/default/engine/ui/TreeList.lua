@@ -43,7 +43,8 @@ function _M:init(t)
 	self.all_clicks = t.all_clicks
 	self.level_offset = t.level_offset or 12
 	self.key_prop = t.key_prop or "__id"
-	self.sel_by_col = t.sel_by_col and {} or nil
+	self.sel_by_col = t.sel_by_col
+	self.col_width = {}
 	self.floating_headers = (t.floating_headers == nil and true) or t.floating_headers
 	self.hide_columns = t.hide_columns
 	self.only_display = t.only_display
@@ -93,28 +94,33 @@ function _M:generate()
 		self.use_w = self.w
 	end
 
-	self:setColumns(self.columns)
-
 	self.item_container = core.renderer.container()
 	self.do_container:add(self.item_container)
-	self.item_container:translate(0, self.fh * self:headerOffset(), 0)
-
 
 	local fw, fh = self.w, self.fh
 	self.fw, self.fh = fw, fh
 
 	if not self.h then self.h = self.nb_items * fh end
 
-	self.max_display = math.floor(self.h / fh) - self:headerOffset()
+	self:setColumns(self.columns)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if button == "wheelup" and event == "button" then self.scroll = util.bound(self.scroll - 1, 1, self.max - self.max_display + 1)
 		elseif button == "wheeldown" and event == "button" then self.scroll = util.bound(self.scroll + 1, 1, self.max - self.max_display + 1) end
 
-		self.sel = util.bound(self.scroll + math.floor(by / self.fh) - self:headerOffset(), self:selMin(), self.max)
+		local sel = self.scroll + math.floor(by / self.fh) - self:headerOffset()
+		if (button == "left" or button == "right") and self:hasHeader() and (sel < self.scroll or sel < self:selMin()) then
+			local col
+			for i = 1, #self.col_width do if bx <= self.col_width[i] then
+				col = i
+				break
+			end end
+			if col  then self:sortByColumn(col, button == "right") return end
+		end
+		self.sel = util.bound(sel, self:selMin(), self.max)
 		if self.sel_by_col then
-			for i = 1, #self.sel_by_col do if bx > (self.sel_by_col[i-1] or 0) and bx <= self.sel_by_col[i] then
+			for i = 1, #self.col_width do if bx <= self.col_width[i] then
 				self.cur_col = i
 				break
 			end end
@@ -134,8 +140,8 @@ function _M:generate()
 	}
 	if self.sel_by_col then
 		self.key:addBinds{
-			MOVE_LEFT = function() self.cur_col = util.boundWrap(self.cur_col - 1, 1, #self.sel_by_col) self:onSelect() end,
-			MOVE_RIGHT = function() self.cur_col = util.boundWrap(self.cur_col + 1, 1, #self.sel_by_col) self:onSelect() end,
+			MOVE_LEFT = function() self.cur_col = util.boundWrap(self.cur_col - 1, 1, #self.columns) self:onSelect() end,
+			MOVE_RIGHT = function() self.cur_col = util.boundWrap(self.cur_col + 1, 1, #self.columns) self:onSelect() end,
 		}
 	end
 	self.key:addCommands{
@@ -160,6 +166,8 @@ function _M:setColumns(columns)
 	self.columns._is_header = true
 	self.columns.level = 0
 
+	self.col_width = {}
+
 	local w = self.use_w
 	local colw = 0
 	for j, col in ipairs(self.columns) do
@@ -178,10 +186,8 @@ function _M:setColumns(columns)
 		else
 			col.width = w * col.width / 100
 		end
-		if self.sel_by_col then
-			colw = colw + col.width
-			self.sel_by_col[j] = colw
-		end
+		colw = colw + col.width
+		self.col_width[j] = colw
 	end
 
 	local has_header = false
@@ -201,11 +207,54 @@ function _M:setColumns(columns)
 			self.do_container:add(self.columns._container)
 		end
 	end
+
+	self.max_display = math.floor(self.h / self.fh) - self:headerOffset()
+	self.item_container:translate(0, self.fh * self:headerOffset(), 0)
+
+	self:walkTree(true)
+	self:outputList()
+end
+
+function _M:sortByColumn(column, reverse)
+	local col = self.columns[column]
+	if not col.sort then return end
+	reverse = reverse and true or false
+	local function cmpf(a, b)
+		-- true if less, false if greater, nil if equal
+		if a < b then
+			return not reverse
+		elseif a > b then
+			return reverse
+		else
+			return nil
+		end
+	end
+	local function sortf(a, b)
+		av = util.getitem(a, col.sort)
+		bv = util.getitem(b, col.sort)
+		local ok, cmpres = pcall(cmpf, av, bv)
+		if not ok then cmpres = cmpf(tostring(av), tostring(bv)) end
+		if cmpres ~= nil then
+			return cmpres
+		else
+			return cmpf(a._number, b._number)
+		end
+	end
+	local function recursive_sort(nodes)
+		local ok, err = pcall(table.sort, nodes, sortf)  --in case our order function is invalid
+		if not ok and err ~= "invalid order function for sorting" then error(err) end
+		for i, node in ipairs(nodes) do
+			if node.nodes then recursive_sort(node.nodes) end
+		end
+	end
+	recursive_sort(self.tree)
+	self:walkTree()
+	self:outputList()
 end
 
 function _M:setList(tree) -- the name is a bit misleading but legacy
 	self.tree = tree
-	self:walkTree()
+	self:walkTree(true)
 	self:outputList()
 end
 
@@ -224,19 +273,10 @@ function _M:drawItem(item)
 			local color = util.getval(item.color, item) or {255,255,255}
 			local text
 			if is_header then
-				text = item[i].name:toString()
-			elseif type(col.display_prop) == "function" then
-				text = col.display_prop(item):toString()
+				text = tostring(item[i].name)
 			else
-				text = item[col.display_prop or col.sort]
-				if type(text) ~= "table" or not text.is_tstring then
-					text = util.getval(text, item)
-					if type(text) == "table" then text = text:toString() end
-				elseif type(text) == "table" and text.is_tstring then
-					text = text:toString()
-				else
-					text = tostring(text)
-				end
+				text = util.getitem(item, col.display_prop or col.sort)
+				text = tostring(text)
 			end
 
 			if not item.cols[i] then
@@ -277,15 +317,19 @@ function _M:drawItem(item)
 	if self.on_drawitem then self.on_drawitem(item) end
 end
 
-function _M:walkTree()
-	local recurs recurs = function(list, level)
+function _M:walkTree(purge_cache)
+	local recurs recurs = function(list, level, count)
 		for i, item in ipairs(list) do
 			item.level = level
+			item._number = count
+			count = count + 1
 			if item[self.key_prop] then self.items_by_key[item[self.key_prop]] = item end
-			if item.nodes then recurs(item.nodes, level+1) end
+			if purge_cache then item.cols = nil end
+			if item.nodes then count = recurs(item.nodes, level+1, count) end
 		end
+		return count
 	end
-	recurs(self.tree, 0)
+	recurs(self.tree, 0, 0)
 end
 
 function _M:outputList()
@@ -345,8 +389,6 @@ function _M:onSelect(sel)
 	if #self.tree > 0 then
 		item = self.list[self.sel]
 	end
-	print("ONSELECT", self.sel, item)
-	table.print(item)
 	if not item then return end
 
 	-- Update scrolling
@@ -367,16 +409,18 @@ function _M:onSelect(sel)
 		table.print(self.last_selected_item)
 		if self.last_selected_item.cols then for i, c in ipairs(self.last_selected_item.cols) do c._entry:select(false) end end
 	end
-	if self.sel_by_col then
-		if item and item.cols then for i, c in ipairs(item.cols) do c._entry:select(self.cur_col == i) end end
-	else
-		if item and item.cols then for i, c in ipairs(item.cols) do c._entry:select(true) end end
+	if not self.display_only then
+		if self.sel_by_col then
+			if item.cols then for i, c in ipairs(item.cols) do c._entry:select(self.cur_col == i) end end
+		else
+			if item.cols then for i, c in ipairs(item.cols) do c._entry:select(true) end end
+		end
 	end
 	self.last_selected_item = item
 
 	if self.scrollbar then self.scrollbar:setPos(self.scroll - 1) end
 
-	if item and rawget(self, "select") then self.select(item, self.sel) end
+	if not self.display_only and rawget(self, "select") then self.select(item, self.sel) end
 
 	self.old_sel = self.sel
 	self.old_col = self.cur_col
