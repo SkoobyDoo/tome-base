@@ -672,7 +672,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Summons your lust for blood and destruction, especially when the odds are against you.  
 		You increase your damage by 10%% + %d%% per enemy in line of sight up to 5 (max %d%%) for 3 turns.
-		The bonus will increase with your Willpower.]]):
+		The damage bonus will increase with your Willpower.]]):
 		format(t.getPower(self, t), 10 + t.getPower(self, t) * 5)
 	end,
 }
