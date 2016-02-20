@@ -671,7 +671,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Summons your lust for blood and destruction, especially when the odds are against you.  
-		You increase your damage by 10%% + %d%% per enemy in line of sight up to 5 (max %d%%) for 3 turns.
+		You increase your damage by 10%% + %0.1f%% per enemy in line of sight up to 5 (max %0.1f%%) for 3 turns.
 		The damage bonus will increase with your Willpower.]]):
 		format(t.getPower(self, t), 10 + t.getPower(self, t) * 5)
 	end,
@@ -703,7 +703,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Orcs have been the prey of the other races for thousands of years, with or without justification. They have learnt to withstand things that would break weaker races.
-		When your life goes below 50%% your sheer determination cleanses you of %d debuffs based on talent level and Willpower.  This can only happen once every 10 turns.
+		When your life goes below 50%% your sheer determination cleanses you of %d debuff(s) based on talent level and Willpower.  This can only happen once every 10 turns.
 		Increase physical and mental save by +%d.]]):
 		format(t.getDebuff(self, t), t.getSaves(self, t))
 	end,
@@ -787,7 +787,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Call upon the will of all of the Orc Prides to survive this battle.
-		You remove up to %d detrimental effects then heal for %d life.
+		You remove up to %d detrimental effect(s) then heal for %d life.
 		The healing will increase with your talent level and Constitution.]]):
 		format(t.remcount(self,t), t.heal(self, t))
 	end,
