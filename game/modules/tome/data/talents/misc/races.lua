@@ -646,7 +646,6 @@ newTalent{
 ------------------------------------------------------------------
 -- Orcs' powers
 ------------------------------------------------------------------
--- Bonus for all enemies in LOS?
 newTalentType{ type="race/orc", name = "orc", generic = true, description = "The various racial bonuses a character can have." }
 newTalent{
 	short_name = "ORC_FURY",
@@ -667,14 +666,14 @@ newTalent{
 		end
 		if nb <= 0 then return false end
 
-		self:setEffect(self.EFF_ORC_FURY, 3, {power=t.getPower(self, t)})
+		self:setEffect(self.EFF_ORC_FURY, 3, {power=10 + t.getPower(self, t) * math.min(5, nb)})
 		return true
 	end,
 	info = function(self, t)
 		return ([[Summons your lust for blood and destruction, especially when the odds are against you.  
-		For each enemy in LOS (up to 5) your damage increases by %d%% for 3 turns.
+		You increase your damage by 10%% + %d%% per enemy in line of sight up to 5 (max %d%%) for 3 turns.
 		The bonus will increase with your Willpower.]]):
-		format(t.getPower(self, t))
+		format(t.getPower(self, t), 10 + t.getPower(self, t) * 5)
 	end,
 }
 
@@ -686,7 +685,7 @@ newTalent{
 	cooldown = function(self, t) return 10 end,
 	mode = "passive",
 	getSaves = function(self, t) return self:combatTalentScale(t, 4, 16, 0.75) end,
-	getDebuff = function(self, t) return self:combatTalentStatDamage(t, "wil", 1.5, 4) end,
+	getDebuff = function(self, t) return math.ceil(self:combatTalentStatDamage(t, "wil", 1, 6)) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_physresist", t.getSaves(self, t))
 		self:talentTemporaryValue(p, "combat_mentalresist", t.getSaves(self, t))
@@ -695,9 +694,10 @@ newTalent{
 		if self:isTalentCoolingDown(t) then return end
 		if not ( (self.life - dam) < (self.max_life * 0.5) ) then return end
 		
-		game.logSeen(self, "%s roars with rage shaking off %d debuffs!", self.name:capitalize(), t.getDebuff(self, t))
-		self:removeEffectsFilter({["cross tier"] = true}, 3) -- Cleanse effects usually clear cross tiers free
-		self:removeEffectsFilter({status = "detrimental"}, t.getDebuff(self, t))
+		local nb = 0
+		nb = self:removeEffectsFilter({ subtype ={["cross tier"] = true} }, 3) -- Cleanse effects usually clear cross tiers free
+		nb = nb + self:removeEffectsFilter({status = "detrimental"}, t.getDebuff(self, t))
+		game.logSeen(self, "%s roars with rage shaking off %d debuffs!", self.name:capitalize(), nb)
 		
 		self:startTalentCooldown(t)
 	end,
@@ -716,12 +716,10 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getPen = function(self, t) return self:combatTalentLimit(t, 20, 7, 15) end,
-	getResist = function(self, t) return self:combatTalentStatDamage(t, "con", 3, 10) end,
-
+	getResist = function(self, t) return 5+self:combatTalentStatDamage(t, "con", 3, 10) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "resists_pen", {all = t.getPen(self, t)})
 	end,
-
 	callbackOnKill = function(self, t, who)
 		self:setEffect(self.EFF_ORC_TRIUMPH, 2, {resists = t.getResist(self, t)})
 	end,
@@ -729,7 +727,8 @@ newTalent{
 	info = function(self, t)
 		return ([[Orcs have seen countless battles, and won many of them.
 		You revel in the defeat of your foes, gaining %d%% damage resistance for 2 turns each time you kill an enemy.
-		Increase all damage penetration by %d%%.]]):
+		The resistance will scale with your talent level and Constitution.
+		Passively increase all damage penetration by %d%%.]]):
 		format(t.getResist(self, t), t.getPen(self, t))
 	end,
 }
@@ -789,7 +788,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Call upon the will of all of the Orc Prides to survive this battle.
 		You remove up to %d detrimental effects then heal for %d life.
-		The healing will increase with your Constitution.]]):
+		The healing will increase with your talent level and Constitution.]]):
 		format(t.remcount(self,t), t.heal(self, t))
 	end,
 }

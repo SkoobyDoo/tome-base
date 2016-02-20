@@ -2268,6 +2268,24 @@ newEffect{
 }
 
 newEffect{
+	name = "ORC_TRIUMPH", image = "talents/skirmisher.png",
+	desc = "Orcish Triumph",
+	long_desc = function(self, eff) return ("Inspired by a recent kill increasing all resistance by %d%%."):format(eff.resists) end,
+	type = "mental",
+	subtype = { frenzy=true },
+	status = "beneficial",
+	parameters = { resists=10 },
+	on_gain = function(self, err) return "#Target# roars triumphantly." end, -- Too spammy?
+	on_lose = function(self, err) return "#Target# is no longer inspired." end,
+	activate = function(self, eff)
+		eff.pid = self:addTemporaryValue("resists", {all=eff.resists})
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("resists", eff.pid)
+	end,
+}
+
+newEffect{
 	name = "INTIMIDATED",
 	desc = "Intimidated",
 	long_desc = function(self, eff) return ("The target's morale is weakened, reducing its attack power, mind power, and spellpower by %d."):format(eff.power) end,
