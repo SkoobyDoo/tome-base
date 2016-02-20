@@ -682,10 +682,10 @@ newTalent{
 	type = {"race/orc", 2},
 	require = racial_req2,
 	points = 5,
-	cooldown = function(self, t) return 10 end,
+	cooldown = function(self, t) return 12 end,
 	mode = "passive",
 	getSaves = function(self, t) return self:combatTalentScale(t, 4, 16, 0.75) end,
-	getDebuff = function(self, t) return math.ceil(self:combatTalentStatDamage(t, "wil", 1, 6)) end,
+	getDebuff = function(self, t) return math.ceil(self:combatTalentStatDamage(t, "wil", 1, 5)) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_physresist", t.getSaves(self, t))
 		self:talentTemporaryValue(p, "combat_mentalresist", t.getSaves(self, t))
@@ -742,7 +742,7 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 46, 30)) end, -- Limit to >10
 	remcount  = function(self,t) return math.ceil(self:combatTalentScale(t, 0.5, 3, "log", 0, 3)) end,
 	--heal = function(self, t) return 25 + 2.3* self:getCon() + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life end,
-	heal = function(self, t) return self:combatTalentStatDamage(t, "con", 100, 500) end,
+	heal = function(self, t) return 50+self:combatTalentStatDamage(t, "con", 100, 500) end,
 	tactical = { DEFEND = 1, HEAL = 2, CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
