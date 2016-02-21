@@ -219,6 +219,12 @@ function _M:sortByColumn(column, reverse)
 	local col = self.columns[column]
 	if not col.sort then return end
 	reverse = reverse and true or false
+
+	if self._last_sort and self._last_sort ~= column then
+		-- reenumerate stuff
+		self:walkTree()
+	end
+	self._last_sort = column
 	local function cmpf(a, b)
 		-- true if less, false if greater, nil if equal
 		if a < b then
@@ -248,7 +254,6 @@ function _M:sortByColumn(column, reverse)
 		end
 	end
 	recursive_sort(self.tree)
-	self:walkTree()
 	self:outputList()
 end
 
