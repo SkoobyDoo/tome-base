@@ -503,7 +503,7 @@ function _M:generate()
 	if #(self.frame.overlays or {}) > 0 then
 		local overs_container = core.renderer.do_container()
 		overs_container:translate(0, 0, 1)
-		self.do_container:add(overs_container)
+		self.renderer:add(overs_container)
 
 		for i, o in ipairs(self.frame.overlays) do
 			local ov = self:getAtlasTexture(o.image)
@@ -542,17 +542,16 @@ end
 
 function _M:updateTitle(title)
 	if not title then return end
-	local title = title
 	if type(title)=="function" then title = title() end
 
 	if not self.title_do then
 		self.title_do = core.renderer.text(self.font_bold)
-		self.do_container:add(self.title_do)
+		self.renderer:add(self.title_do)
 	end
 
 	self.font_bold:setStyle("bold")
 	self.title_do:text(title)
-	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, 10)
+	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, -100 + 10)
 	self.font_bold:setStyle("normal")
 end
 
