@@ -28,6 +28,7 @@ module(..., package.seeall, class.inherit(engine.Generator, RoomsLoader))
 function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	data.rooms = {"greater_vault"}
+	data.required_rooms = nil
 	self.data = data
 	self.grid_list = zone.grid_list
 	RoomsLoader.init(self, data)
