@@ -98,7 +98,7 @@ end
 function _M:runReal()
 	self.delayed_log_damage = {}
 	self.delayed_log_messages = {}
-	self.calendar = Calendar.new("/data/calendar_allied.lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
+	self.calendar = Calendar.new("/data/calendar_allied.lua", "Today is the % %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
 
 	self.uiset:activate()
 
@@ -1697,7 +1697,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(6, "orcs+palace-fumes")
+			self:changeLevel(1, "orcs+steam-quarry")
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="sling", random_object=true}, nil, true)
 			if o then

@@ -45,6 +45,8 @@ local changer = function(id)
 
 	local basemap = table.clone(game.level.data.generator.map, true)
 	basemap.zoneclass = nil
+	basemap.rooms = nil
+	basemap.required_rooms = nil
 
 	local zone = mod.class.Zone.new(id, {
 		name = "Hidden Vault - "..(game.old_zone_name or "???"),
