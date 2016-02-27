@@ -988,6 +988,10 @@ end
 tstring = {}
 tstring.is_tstring = true
 
+function tstring.is_tstring(x)
+	return type(x) == "table" and x.is_tstring
+end
+
 function tstring:add(...)
 	local v = {...}
 	for i = 1, #v do
@@ -1773,15 +1777,21 @@ function util.minBound(i, min, max)
 end
 
 function util.scroll(sel, scroll, max)
-	if sel > scroll + max - 1 then scroll = sel - max + 1 end
-	if sel < scroll then scroll = sel end
-	return scroll
+	return util.bound(scroll, sel - max + 1, sel)
 end
 
 function util.getval(val, ...)
 	if type(val) == "function" then return val(...)
-	elseif type(val) == "table" then return val[rng.range(1, #val)]
+	elseif type(val) == "table" and not val.is_tstring then return val[rng.range(1, #val)]
 	else return val
+	end
+end
+
+function util.getitem(val, index)
+	if type(index) == "function" then
+		return index(val)
+	else
+		return util.getval(val[index], val)
 	end
 end
 

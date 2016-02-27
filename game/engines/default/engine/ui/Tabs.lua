@@ -61,7 +61,7 @@ function _M:generate()
 		self:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	end)
 
-	self:select(self.tabs[1].kind)
+	self:select(self.tabs[1].kind, true)
 end
 
 function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
@@ -79,12 +79,14 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	self:no_focus()
 end
 
-function _M:select(kind)
+function _M:select(kind, notrig)
 	for i, ui in ipairs(self.uis) do
 		if self.tabs[i].kind ~= kind then
 			ui.ui:select(false)
 		end
 	end
 
-	self.on_change(kind)
+	if not notrig then
+		self.on_change(kind)
+	end
 end

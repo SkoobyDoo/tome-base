@@ -37,13 +37,13 @@ function _M:init(t, size, max, pos, inverse)
 	self.max = max
 	self.pos = util.minBound(pos or 0, 0, self.max)
 
-	local top = self.parent.ui:getAtlasTexture("ui/scrollbar_top.png")
-	local middle = self.parent.ui:getAtlasTexture("ui/scrollbar.png")
-	local bottom = self.parent.ui:getAtlasTexture("ui/scrollbar_bottom.png")
+	local top = self.parent:getAtlasTexture("ui/scrollbar_top.png")
+	local middle = self.parent:getAtlasTexture("ui/scrollbar.png")
+	local bottom = self.parent:getAtlasTexture("ui/scrollbar_bottom.png")
 	self.top_w = top.w
 	self.top_h = top.h
 	self.bottom_h = bottom.h
-	self.sel_t = self.parent.ui:getAtlasTexture("ui/scrollbar-sel.png")
+	self.sel_t = self.parent:getAtlasTexture("ui/scrollbar-sel.png")
 	self.sel = core.renderer.fromTextureTable(self.sel_t, 0, 0)
 
 	self.w = middle.w
