@@ -60,6 +60,7 @@ local changer = function(id)
 		persistent = "zone",
 		min_material_level = game.zone.min_material_level,
 		max_material_level = game.zone.max_material_level,
+		no_worldport = true,
 		generator =  {
 			map = table.merge(basemap, {
 				class = "mod.class.generator.map.VaultLevel",
