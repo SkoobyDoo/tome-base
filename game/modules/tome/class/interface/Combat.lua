@@ -1384,18 +1384,19 @@ function _M:rescaleDamage(dam)
 end
 
 --Diminishing-returns method of scaling combat stats, observing this rule: the first twenty ranks cost 1 point each, the second twenty cost two each, and so on. This is much, much better for players than some logarithmic mess, since they always know exactly what's going on, and there are nice breakpoints to strive for.
-function _M:rescaleCombatStats(raw_combat_stat_value)
+function _M:rescaleCombatStats(raw_combat_stat_value, interval)
 	local x = raw_combat_stat_value
 	-- the rescaling plot is a convex hull of functions x, 20 + (x - 20) / 2, 40 + (x - 60) / 3, ...
 	-- we find the value just by applying minimum over and over
 	local result = x
-	local shift, tier, base = 2, 20, 20
+	interval = interval or 20
+	local shift, tier, base = 2, interval, interval
 	while true do
 		local nextresult = tier + (x - base) / shift
 		if nextresult < result then
 			result = nextresult
-			base = base + 20 * shift
-			tier = tier + 20
+			base = base + interval * shift
+			tier = tier + interval
 			shift = shift + 1
 		else
 			return math.floor(result)
@@ -2146,6 +2147,13 @@ end
 function _M:checkOnDefenseCall(type)
 	local add = 0
 	return add
+end
+
+--- Returns the resistance
+function _M:combatGetFlatResist(type)
+	if not self.flat_damage_armor then return 0 end
+	local dec = (self.flat_damage_armor.all or 0) + (self.flat_damage_armor[type] or 0)
+	return self:rescaleCombatStats(dec, 40)
 end
 
 --- Returns the resistance
