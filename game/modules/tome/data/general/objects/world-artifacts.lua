@@ -3668,6 +3668,11 @@ newEntity{ base = "BASE_GAUNTLETS",
 	name = "destroy an arcane item (of a higher tier than the gauntlets)", power = 1,
 	no_npc_use = true,
 	use = function(self, who, obj_inven, obj_item)
+		if self.tinker then
+			game.log("#LIGHT_RED#You can not do that with a tinker attached. Remove it first.")
+			return
+		end
+
 		local d = who:showInventory("Destroy which item?", who:getInven("INVEN"), function(o) return o.unique and o.power_source and o.power_source.arcane and o.power_source.arcane and o.power_source.arcane == true and o.material_level and o.material_level > self.material_level end, function(o, item, inven)
 			if o.material_level <= self.material_level then return end
 			self.material_level=self.material_level + 1
