@@ -3960,25 +3960,27 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=6, radius=2, requires_knowledge=false}
 			local tx, ty = who:getTarget(tg)
 			if not tx or not ty then return nil end
-			local x, y
+			local x, y = tx, ty
 			
-			if who.ai_state.tactic == "closein" then  -- teleport to target location
-				local _ _, x, y = who:canProject(tg, tx, ty)
---game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
-				if not x or not y then return {id=true} end
-			else  -- try to teleport away
---			if who.ai_state.tactic == "escape" then -- try to teleport away
---game.log("--%s trying to jump away from (%s, %s)", who.name, tx, ty)
-				x = who.x + (who.x - tx)*100
-				y = who.y + (who.y - ty)*100
-				local _ _, x, y = who:canProject(tg, x, y)
-				if not x or not y then return nil end
---game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
-				if not x or not y or core.fov.distance(x, y, tx, ty) <=1 then return nil end
---			else -- teleport to target location
---				local _ _, x, y = who:canProject(tg, tx, ty)
---game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
---				if not x or not y then return {id=true} end
+			if not who.player then
+				if who.ai_state.tactic == "closein" then  -- teleport to target location
+					local _ _, x, y = who:canProject(tg, tx, ty)
+	--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
+					if not x or not y then return {id=true} end
+				else  -- try to teleport away
+	--			if who.ai_state.tactic == "escape" then -- try to teleport away
+	--game.log("--%s trying to jump away from (%s, %s)", who.name, tx, ty)
+					x = who.x + (who.x - tx)*100
+					y = who.y + (who.y - ty)*100
+					local _ _, x, y = who:canProject(tg, x, y)
+					if not x or not y then return nil end
+	--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
+					if not x or not y or core.fov.distance(x, y, tx, ty) <=1 then return nil end
+	--			else -- teleport to target location
+	--				local _ _, x, y = who:canProject(tg, tx, ty)
+	--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
+	--				if not x or not y then return {id=true} end
+				end
 			end
 			local rad = 2
 			game.logSeen(who, "%s is #PURPLE#ENVELOPED#LAST# in a deep purple aura from %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
