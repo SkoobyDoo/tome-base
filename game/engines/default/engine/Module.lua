@@ -568,6 +568,32 @@ You may try to force loading if you are sure the savefile does not use that addo
 		end
 	end
 
+	-- Let addons require other addons, this must be done last so that all addons are filtered, and repeated until no addons complain
+	local function handle_requires_addons()
+		for i = #adds, 1, -1 do
+			local add = adds[i]
+			if add.requires_addons then
+				local unfound_name
+				local ok = true
+				for _, sn in ipairs(add.requires_addons) do
+					local found = false
+					for _, radd in ipairs(adds) do
+						if radd.short_name == sn then found = true break end
+					end
+					if not found then ok = false unfound_name = sn break end
+				end
+
+				if not ok then
+					print("Removing addon "..add.short_name..": missing required addon "..tostring(unfound_name))
+					table.remove(adds, i)
+					-- Retry
+					handle_requires_addons()
+				end
+			end
+		end
+	end
+	handle_requires_addons()
+
 	local hooks_list = {}
 	mod.addons = {}
 	_G.__addons_superload_order = {}
