@@ -5147,7 +5147,6 @@ function _M:postUseTalent(ab, ret, silent)
 						else
 							self:attr(res_def.regen_prop, -cost)
 						end
-
 					end
 				end
 			end
@@ -5189,7 +5188,6 @@ function _M:postUseTalent(ab, ret, silent)
 						else
 							self:attr(res_def.regen_prop, cost)
 						end
-
 					end
 				end
 			end
@@ -5261,7 +5259,10 @@ function _M:postUseTalent(ab, ret, silent)
 	for tid, _ in pairs(self.sustain_talents) do
 		local t = self:getTalentFromId(tid)
 		if t and t.callbackBreakOnTalent then
-			self:callTalent(tid, "callbackBreakOnTalent", ab)
+			-- Break things at the end, only if they are still on
+			game:onTickEnd(function()
+				if self.sustain_talents[t.id] then self:callTalent(tid, "callbackBreakOnTalent", ab) end
+			end)
 		end
 	end
 

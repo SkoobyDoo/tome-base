@@ -899,6 +899,7 @@ function _M:automaticTalents()
 			end
 		end
 	end)
+	print("[AUTOMATIC TALENTS] : ")
 	table.print(uses)
 	for _, use in ipairs(uses) do
 		use.fct()
