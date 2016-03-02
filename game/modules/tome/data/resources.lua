@@ -38,7 +38,7 @@ ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in yo
 })
 ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue.  Most physical abilities consume it.", nil, nil, {
 	color = "#ffcc80#",
-	cost_factor = function(self, ab, fake) return fake and self:hasEffect(self.EFF_ADRENALINE_SURGE) and 0 or (100 + self:combatFatigue()) / 100 end,
+	cost_factor = function(self, t, check) return (check and self:hasEffect(self.EFF_ADRENALINE_SURGE)) and 0 or (100 + self:combatFatigue()) / 100 end,
 	depleted_unsustain = true,
 	wait_on_rest = true,
 	randomboss_enhanced = true,
