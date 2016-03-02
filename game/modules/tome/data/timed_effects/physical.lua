@@ -1211,6 +1211,9 @@ newEffect{
 			[DamageType.PHYSICAL]=30,
 			[DamageType.LIGHTNING]=100,
 		})
+		eff.capresistsid = self:addTemporaryValue("resists_cap", {
+			[DamageType.LIGHTNING]=100,
+		})
 		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it
 		eff.particle = self:addParticles(Particles.new("bolt_lightning", 1))
 	end,
@@ -1218,6 +1221,7 @@ newEffect{
 		self:removeParticles(eff.particle)
 		self:removeTemporaryValue("lightning_speed", eff.tmpid)
 		self:removeTemporaryValue("resists", eff.resistsid)
+		self:removeTemporaryValue("resists_cap", eff.capresistsid)
 		if eff.aiid then self:removeTemporaryValue("ai_state", eff.aiid) end
 		self:removeTemporaryValue("movement_speed", eff.moveid)
 	end,

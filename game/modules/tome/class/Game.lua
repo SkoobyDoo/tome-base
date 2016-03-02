@@ -98,7 +98,7 @@ end
 function _M:runReal()
 	self.delayed_log_damage = {}
 	self.delayed_log_messages = {}
-	self.calendar = Calendar.new("/data/calendar_allied.lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
+	self.calendar = Calendar.new("/data/calendar_allied.lua", "Today is the % %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
 
 	self.uiset:activate()
 
@@ -1597,10 +1597,12 @@ function _M:display(nb_keyframes)
 	self.ctrl_state = core.key.modState("ctrl")
 
 	-- if tooltip is in way of mouse and its not locked then move it
-	if self.tooltip.w and mx > self.w - self.tooltip.w and my > Tooltip:tooltip_bound_y2() - self.tooltip.h and not self.tooltip.locked then
-		self:targetDisplayTooltip(Map.display_x, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
-	else
-		self:targetDisplayTooltip(self.w, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
+	if not self.uiset.no_ui then
+		if self.tooltip.w and mx > self.w - self.tooltip.w and my > Tooltip:tooltip_bound_y2() - self.tooltip.h and not self.tooltip.locked then
+			self:targetDisplayTooltip(Map.display_x, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
+		else
+			self:targetDisplayTooltip(self.w, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
+		end
 	end
 
 	if self.full_fbo then
@@ -1695,9 +1697,9 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(5, "orcs+slumbering-caves")
+			self:changeLevel(1, "orcs+steam-quarry")
 do return end
-			local o = game.zone:makeEntity(game.level, "object", {subtype="steamsaw", random_object=true}, nil, true)
+			local o = game.zone:makeEntity(game.level, "object", {subtype="sling", random_object=true}, nil, true)
 			if o then
 				o:identify(true)
 				game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)

@@ -3557,10 +3557,11 @@ function _M:updateModdableTile()
 	i = self.inven[self.INVEN_CLOAK]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile):format("shoulder")..".png", auto_tall=1} end
 	i = self.inven[self.INVEN_FEET]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} end
 	i = self.inven[self.INVEN_BODY]; if i and i[1] and i[1].moddable_tile2 then add[#add+1] = {image = base..(i[1].moddable_tile2)..".png", auto_tall=1}
-	elseif not self:attr("moddable_tile_nude") then add[#add+1] = {image = base.."lower_body_01.png", auto_tall=1} end
+	elseif not self:attr("moddable_tile_nude") then add[#add+1] = {image = base..(self:attr("moddable_tile_lower_underwear") or "lower_body_01.png"), auto_tall=1} end
 	i = self.inven[self.INVEN_BODY]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1}
-	elseif not self:attr("moddable_tile_nude") then add[#add+1] = {image = base.."upper_body_01.png", auto_tall=1} end
-	i = self.inven[self.INVEN_HEAD]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} end
+	elseif not self:attr("moddable_tile_nude") then add[#add+1] = {image = base..(self:attr("moddable_tile_higher_underwear") or "upper_body_01.png"), auto_tall=1} end
+	i = self.inven[self.INVEN_HEAD]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1}
+	elseif self:attr("moddable_tile_head_underwear") then add[#add+1] = {image = base..self:attr("moddable_tile_head_underwear"), auto_tall=1} end
 	i = self.inven[self.INVEN_HANDS]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} end
 	i = self.inven[self.INVEN_CLOAK]; if i and i[1] and i[1].moddable_tile_hood then add[#add+1] = {image = base..(i[1].moddable_tile):format("hood")..".png", auto_tall=1} end
 	i = self.inven[self.INVEN_QUIVER]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} end
@@ -4723,7 +4724,7 @@ function _M:preUseTalent(ab, silent, fake)
 			rname = res_def.short_name
 			cost = ab[rname]
 			if cost then
-				cost = (util.getval(cost, self, ab) or 0) * (util.getval(res_def.cost_factor, self, ab) or 1)
+				cost = (util.getval(cost, self, ab) or 0) * (util.getval(res_def.cost_factor, self, ab, true) or 1)
 				if cost ~= 0 then
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
 					if res_def.invert_values then
@@ -4892,6 +4893,7 @@ local sustainCallbackCheck = {
 	callbackOnTalentDisturbed = "talents_on_talent_disturbed",
 	callbackOnBlock = "talents_on_block",
 	callbackOnChangeLevel = "talents_on_change_level",
+	callbackOnEffectSave = "talents_on_effect_save",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -5146,7 +5148,6 @@ function _M:postUseTalent(ab, ret, silent)
 						else
 							self:attr(res_def.regen_prop, -cost)
 						end
-
 					end
 				end
 			end
@@ -5188,7 +5189,6 @@ function _M:postUseTalent(ab, ret, silent)
 						else
 							self:attr(res_def.regen_prop, cost)
 						end
-
 					end
 				end
 			end
@@ -5260,7 +5260,10 @@ function _M:postUseTalent(ab, ret, silent)
 	for tid, _ in pairs(self.sustain_talents) do
 		local t = self:getTalentFromId(tid)
 		if t and t.callbackBreakOnTalent then
-			self:callTalent(tid, "callbackBreakOnTalent", ab)
+			-- Break things at the end, only if they are still on
+			game:onTickEnd(function()
+				if self.sustain_talents[t.id] then self:callTalent(tid, "callbackBreakOnTalent", ab) end
+			end)
 		end
 	end
 

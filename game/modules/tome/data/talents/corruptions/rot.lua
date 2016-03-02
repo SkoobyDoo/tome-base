@@ -214,7 +214,7 @@ newTalent{
 	getDam = function(self, t) return self:combatTalentLimit(t, 4, 20, 10) end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-		local tx, ty, target = self:getTarget(tg)
+		local tx, ty, target = self:getTargetLimited(tg)
 		if not tx or not ty then return nil end
 		if target and target.summoner and target.summoner == self and target.name == "carrion worm mass" then
 			local didcrit = self:spellCrit(1)

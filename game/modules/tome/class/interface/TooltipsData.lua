@@ -155,10 +155,43 @@ Each object you carry has an encumbrance value. Your maximum carrying capacity i
 You cannot move while encumbered; drop some items.
 ]]
 
+-------------------------------------------------------------
+-- Talents
+-------------------------------------------------------------
 TOOLTIP_INSCRIPTIONS = [[#GOLD#Inscriptions#LAST#
-The people of Eyal have found a way to create herbal infusions and runes that can be inscribed on the skin of a creature.
-Those inscriptions give the bearer always-accessible powers. Usually most people have a simple regeneration infusion, but there are other kind of potion inscriptions.
+The people of Eyal have found a way to create herbal infusions and runes that can be inscribed on the skin of a creature.  More exotic types of inscriptions also exist.
+Those inscriptions give the bearer always-accessible powers that can be used an unlimited number of times.
+A simple regeneration infusion is the most common type of infusion, and the use of runes of various types is also common among arcane users.
 ]]
+
+TOOLTIP_PRODIGIES = [[#GOLD#Prodigies#LAST#
+Prodigies are special talents that only the most powerful of characters can acquire.
+All of them require at least 50 in a core stat and many also have other, very specific and/or demanding requirements to learn.
+Players can learn new prodigies at levels 30 and 42.]]
+
+TOOLTIP_ITEM_TALENTS = [[#GOLD#Item Talents#LAST#
+Some objects bestow additional talents on the wearer or holder.
+These talents work like normal, learned talents, but are lost if the object granting them is taken off or dropped, even for a moment.]]
+
+TOOLTIP_ACTIVATED = [[#GOLD#Activated Talents#LAST#
+Most talents require activation (i.e. time) to use, and create a specific effect when called upon.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_INSTANT = [[#GOLD#Instant Talents#LAST#
+Some activated talents take no time to use, being activated with but a thought.
+Unlike most talents, instant talents are never put on cooldown from being stunned, and may be usable when most other talents are not.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_PASSIVE = [[#GOLD#Passive Talents#LAST#
+When learned, passive talents permanently alter the user in some way.
+The effects are always present and are usually not dispellable or removable, though other effects may counteract or negate them.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_SUSTAINED = [[#GOLD#Sustained Talents#LAST#
+Sustained talents are turned on and left on.
+While active, a sustained talent produces some effects on the user that stay in effect until the talent is deactivated. Activating most sustained talents require the user to put aside some resources, which become unavailable until the talent is turned off.
+Deactivating a sustained talent causes it to go on cooldown.
+Specific information on each talent appears its tooltip.]]
 
 -------------------------------------------------------------
 -- Speeds
@@ -402,6 +435,18 @@ This represents your chance to completely avoid ANY bad effects applied to you f
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
 Each time a creature hits you with a melee attack, it will suffer damage or other effects.
 ]]
+TOOLTIP_MELEE_PROJECT = [[#GOLD#Additional Melee Damage#LAST#
+Each time you strike a creature with a melee attack, you will deal additional damage or other effects.
+]]
+TOOLTIP_MELEE_PROJECT_INNATE = TOOLTIP_MELEE_PROJECT..[[
+This is separate from any special damage of your weapon.
+]]
+TOOLTIP_RANGED_PROJECT = [[#GOLD#Additional Ranged Damage#LAST#
+Each time you strike a creature with a ranged attack, you will deal additional damage or other effects.
+]]
+TOOLTIP_RANGED_PROJECT_INNATE = TOOLTIP_RANGED_PROJECT..[[
+This is separate from any special damage of your weapon or ammo.
+]]
 TOOLTIP_RESISTS_PEN_ALL = [[#GOLD#Damage penetration: all#LAST#
 Reduces the amount of effective resistance of your foes to any damage you deal by this percent.
 If you have 50% penetration against a creature with 50% resistance it will have an effective resistance of 25%.
@@ -410,6 +455,10 @@ This stacks with individual damage type penetrations.
 TOOLTIP_RESISTS_PEN = [[#GOLD#Damage penetration: specific#LAST#
 Reduces the effective resistance of your foes to all damage of this type you deal by this percent.
 If you have 50% penetration against a creature with 50% resistance it will have an effective resistance of 25%.
+]]
+TOOLTIP_FLAT_RESIST = [[#GOLD#Flat resistances#LAST#
+Reduces each hit of a certain damage type (or all) by this amount.
+This has disminishing returns, every tier of 40 it takes one more point to increase by 1. The value showed here is the one after computation of disminishing returns.
 ]]
 
 -------------------------------------------------------------

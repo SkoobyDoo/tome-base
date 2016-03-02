@@ -50,6 +50,7 @@ function _M:newAchievement(t)
 	t.id = t.id or t.name
 	t.id = t.id:upper():gsub("[ ]", "_")
 	t.order = #self.achiev_defs+1
+	t.category = t.category or "--"
 
 	self.achiev_defs[t.id] = t
 	self.achiev_defs[#self.achiev_defs+1] = t

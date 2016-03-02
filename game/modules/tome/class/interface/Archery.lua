@@ -185,9 +185,10 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 	if not x or not y then return nil end
 
+	local recursing = false
 	local targets = {}
 	-- populate the targets table for a weapon using ammo and resources as required
-	local runfire = function(weapon, targets, realweapon)
+	local runfire runfire = function(weapon, targets, realweapon)
 		--	Note: if shooters with built-in infinite ammo are reintroduced, handle it here by specifying ammo to use
 		-- calculate the range for the current weapon
 		local weapon_range = math.min(tg.range or 40, math.max(weapon.range or 6, self:attr("archery_range_override") or 1))
@@ -245,6 +246,11 @@ function _M:archeryAcquireTargets(tg, params)
 					targets[#targets+1] = {x=tx, y=ty, ammo=ammo.combat}
 				end
 			end)
+		end
+		if weapon.attack_recurse and not recursing then
+			recursing = true
+			for i = 1, weapon.attack_recurse do runfire(weapon, targets, realweapon) end
+			recursing = false
 		end
 	end
 

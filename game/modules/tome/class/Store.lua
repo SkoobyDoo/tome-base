@@ -65,15 +65,24 @@ end
 -- @param zone the zone to generate for
 function _M:loadup(level, zone)
 	local oldlev = zone.base_level
+	local old_minml = zone.min_material_level
+	local old_maxml = zone.max_material_level
 
 	if zone.store_levels_by_restock then
 		zone.base_level = zone.store_levels_by_restock[game.state.stores_restock] or zone.base_level
+	end
+
+	if self.store.ignore_material_levels then
+		zone.min_material_level = 1
+		zone.max_material_level = 5
 	end
 
 	if Store.loadup(self, level, zone, self.store.nb_fill) then
 		self.last_filled = game.state.stores_restock
 	end
 
+	zone.min_material_level = old_minml
+	zone.max_material_level = old_maxml
 	zone.base_level = oldlev
 
 	-- clear chrono worlds and their various effects

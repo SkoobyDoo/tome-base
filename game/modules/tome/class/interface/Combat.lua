@@ -1384,16 +1384,24 @@ function _M:rescaleDamage(dam)
 end
 
 --Diminishing-returns method of scaling combat stats, observing this rule: the first twenty ranks cost 1 point each, the second twenty cost two each, and so on. This is much, much better for players than some logarithmic mess, since they always know exactly what's going on, and there are nice breakpoints to strive for.
-function _M:rescaleCombatStats(raw_combat_stat_value)
+function _M:rescaleCombatStats(raw_combat_stat_value, interval)
 	local x = raw_combat_stat_value
-	local tiers = 50 -- Just increase this if you want to add high-level content that allows for combat stat scores over 100.
-	--return math.floor(math.min(x, 20) + math.min(math.max((x-20), 0)/2, 20) + math.min(math.max((x-60), 0)/3, 20) + math.min(math.max((x-120), 0)/4, 20) + math.min(math.max((x-200), 0)/5, 20)) --Five terms of the summation below.
-	local total = 0
-	for i = 1, tiers do
-		local sub = 20*(i*(i-1)/2)
-		total = total + math.min(math.max(x-sub, 0)/i, 20)
+	-- the rescaling plot is a convex hull of functions x, 20 + (x - 20) / 2, 40 + (x - 60) / 3, ...
+	-- we find the value just by applying minimum over and over
+	local result = x
+	interval = interval or 20
+	local shift, tier, base = 2, interval, interval
+	while true do
+		local nextresult = tier + (x - base) / shift
+		if nextresult < result then
+			result = nextresult
+			base = base + interval * shift
+			tier = tier + interval
+			shift = shift + 1
+		else
+			return math.floor(result)
+		end
 	end
-	return total
 end
 
 -- Scale a value up or down by a power
@@ -1626,7 +1634,7 @@ function _M:combatPhysicalpower(mod, weapon, add)
 		add = add + self.combat_generic_power
 	end
 	if self:knowTalent(Talents.T_ARCANE_DESTRUCTION) then
-		add = add + self:combatSpellpower() * self:callTalent(Talents.T_ARCANE_DESTRUCTION, "getSPMult")
+		add = add + self:getMag() * self:callTalent(Talents.T_ARCANE_DESTRUCTION, "getSPMult")
 	end
 	if self:isTalentActive(Talents.T_BLOOD_FRENZY) then
 		add = add + self.blood_frenzy
@@ -1657,12 +1665,11 @@ function _M:combatPhysicalpower(mod, weapon, add)
 
 	if self:attr("hit_penalty_2h") then d = d * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
-	local amight = 0
 	if self:knowTalent(self.T_ARCANE_MIGHT) then
-		amight = self:combatSpellpower() * 0.5
+		return self:combatSpellpower(mod, d) -- will do the rescaling and multiplying for us
+	else
+		return self:rescaleCombatStats(d) * mod
 	end
-
-	return self:rescaleCombatStats(d) * mod + amight * mod
 end
 
 --- Gets damage based on talent
@@ -2140,6 +2147,13 @@ end
 function _M:checkOnDefenseCall(type)
 	local add = 0
 	return add
+end
+
+--- Returns the resistance
+function _M:combatGetFlatResist(type)
+	if not self.flat_damage_armor then return 0 end
+	local dec = (self.flat_damage_armor.all or 0) + (self.flat_damage_armor[type] or 0)
+	return self:rescaleCombatStats(dec, 40)
 end
 
 --- Returns the resistance
