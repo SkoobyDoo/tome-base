@@ -403,15 +403,17 @@ function _M:onSelect(sel)
 
 	for i = self.scroll, math.min(max, self.max) do
 		local item = self.list[i]
-		self:drawItem(item)
-		item._container:translate(0, pos, 0)
-		self.item_container:add(item._container)
-		pos = pos + self.fh
+		if item then
+			self:drawItem(item)
+			item._container:translate(0, pos, 0)
+			self.item_container:add(item._container)
+			pos = pos + self.fh
+		end
 	end
 
 	if self.last_selected_item and self.last_selected_item ~= item then
-		print("LAST", self.last_selected_item)
-		table.print(self.last_selected_item)
+		-- print("LAST", self.last_selected_item)
+		-- table.print(self.last_selected_item)
 		if self.last_selected_item.cols then for i, c in ipairs(self.last_selected_item.cols) do c._entry:select(false) end end
 	end
 	if not self.display_only then
