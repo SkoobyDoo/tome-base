@@ -106,8 +106,9 @@ function _M:generate()
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
-		if button == "wheelup" and event == "button" then self.scroll = util.bound(self.scroll - 1, 1, self.max - self.max_display + 1)
-		elseif button == "wheeldown" and event == "button" then self.scroll = util.bound(self.scroll + 1, 1, self.max - self.max_display + 1) end
+		if button == "wheelup" and event == "button" then self.scroll = util.bound(self.scroll - 1, 1, math.max(1, self.max - self.max_display + 1))
+		elseif button == "wheeldown" and event == "button" then self.scroll = util.bound(self.scroll + 1, 1, math.max(1, self.max - self.max_display + 1)) end
+		print("=====", self.max, self.max_display)
 
 		local sel = self.scroll + math.floor(by / self.fh) - self:headerOffset()
 		if (button == "left" or button == "right") and self:hasHeader() and (sel < self.scroll or sel < self:selMin()) then
