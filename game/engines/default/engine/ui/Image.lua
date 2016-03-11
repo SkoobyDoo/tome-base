@@ -50,7 +50,7 @@ function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
 
-	if self.image then self.item = self.tex or {self.image:glTexture()} end
+	if self.image then self.item = self.tex or {self.image:glTexture(Tiles.sharp_scaling)} end
 end
 
 function _M:display(x, y)
