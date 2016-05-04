@@ -17,8 +17,15 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
-
+startx, starty = 19, 0
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 25
+end)
+specialList("actor", {
+	"/data/general/npcs/all.lua",
+})
+border = 0
 defineTile('.', "FLOOR")
 defineTile('#', "WALL")
 defineTile('X', "HARDWALL")

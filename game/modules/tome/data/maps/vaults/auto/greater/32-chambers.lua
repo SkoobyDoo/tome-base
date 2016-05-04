@@ -22,6 +22,12 @@ startx = 0
 starty = 1
 
 setStatusAll{no_teleport=true}
+specialList("actor", {
+	"/data/general/npcs/all.lua",
+})
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 30, "too high level"
+end)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 defineTile('%', "WALL")
 defineTile('.', "FLOOR")

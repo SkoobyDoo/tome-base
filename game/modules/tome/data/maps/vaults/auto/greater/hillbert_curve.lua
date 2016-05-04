@@ -24,6 +24,13 @@ rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 startx = 15
 starty = 16
 
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 10 and #zone.trap_list > 5 -- make sure there are some traps to place
+end)
+specialList("actor", {
+	"/data/general/npcs/skeleton.lua",
+}, true)
+
 defineTile(' ', "FLOOR")
 defineTile('!', "DOOR_VAULT")
 defineTile('+', "DOOR")

@@ -19,6 +19,16 @@
 
 setStatusAll{no_teleport=true}
 
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 20
+end)
+specialList("actor", {
+	"/data/general/npcs/minor-demon.lua",
+	"/data/general/npcs/fire-drake.lua",
+})
+specialList("terrain", {
+	"/data/general/grids/lava.lua",
+}, true)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 startx = 7

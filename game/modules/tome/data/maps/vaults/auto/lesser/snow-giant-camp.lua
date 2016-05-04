@@ -18,9 +18,29 @@
 -- darkgod@te4.org
 
 -- Snow Giant Camp
-setStatusAll{no_teleport=true}
-rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
+setStatusAll{no_teleport=true}
+
+-- only generate in mountains populated by snow-giants, one per zone
+unique = "snow-giant-camp"
+roomCheck(function(room, zone, level, map)
+	if resolvers.current_level < 10 then return nil, "level" end -- restrict to levels appropriate for the npc's (Static:getloader)
+	return not zone["_snow-giant-camp"] and zone.grid_list.__loaded_files["/data/general/grids/mountain.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/snow-giant.lua"], "missing entities lists"
+end)
+onplace = function(room, zone, level, map, data) -- flag the map as having this vault
+	map["_snow-giant-camp"] = level.level
+end
+onGenerated(function(zone, level, map) -- flag the zone as having this vault (after generation is finished in case map is recreated)
+	if map["_snow-giant-camp"] == level.level then
+		zone["_snow-giant-camp"] = level.level
+	end
+end
+)
+specialList("actor", {
+	"/data/general/npcs/snow-giant.lua",
+})
+rotates = {"default", "90", "180", "270", "flipx", "flipy"}
+border = 0
 defineTile('.', "FLOOR")
 defineTile(',', "ROCKY_GROUND")
 defineTile('#', "HARDWALL")

@@ -115,6 +115,7 @@ newEntity{
 	block_sight = true,
 	block_sense = true,
 	block_esp = true,
+	is_door = true,
 	door_player_check = "This rock is loose, you think you can move it away.",
 	door_opened = "GRASS",
 	dig = "GRASS",

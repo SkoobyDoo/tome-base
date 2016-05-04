@@ -23,6 +23,12 @@ startx = 28
 starty = 6
 
 setStatusAll{no_teleport=true}
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 20
+end)
+specialList("actor", {
+	"/data/general/npcs/cold-drake.lua",
+})
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('.', "FLOOR")

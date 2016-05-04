@@ -19,6 +19,12 @@
 
 setStatusAll{no_teleport=true}
 
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 5-- restrict by level (Static:getloader)
+end)
+specialList("trap", {
+	"/data/general/traps/alarm.lua",
+})
 startx = 9
 starty = 12
 

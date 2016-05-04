@@ -17,8 +17,12 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
-
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+--setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {special=false, can_open=true}}
+specialList("actor", {
+	"/data/general/npcs/skeleton.lua",
+})
+border = 0
 defineTile('.', "FLOOR")
 defineTile('#', "WALL")
 defineTile('X', "HARDWALL")
@@ -30,6 +34,7 @@ defineTile('A', "FLOOR", {random_filter={type="armor", tome_mod="vault"}}, nil)
 defineTile('G', "FLOOR", nil, {random_filter={name="armoured skeleton warrior", add_levels=4}})
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
+--startx, starty = 4, 13
 return {
 [[.........]],
 [[...X.X...]],

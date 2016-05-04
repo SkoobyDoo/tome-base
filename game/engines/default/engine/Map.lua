@@ -989,7 +989,7 @@ function _M:import(map, dx, dy, sx, sy, sw, sh)
 	sy = sy or 0
 	sw = sw or map.w
 	sh = sh or map.h
-
+	-- import
 	for i = sx, sx + sw - 1 do for j = sy, sy + sh - 1 do
 		local x, y = dx + i, dy + j
 
@@ -1011,7 +1011,14 @@ function _M:import(map, dx, dy, sx, sy, sw, sh)
 
 		self:updateMap(x, y)
 	end end
-
+	-- update the rooms list if needed
+	if self.room_map and map.room_map then
+		for i, room in ipairs(map.room_map.rooms) do
+			room.x, room.y, room.cx, room.cy = room.x + dx, room.y + dy, room.cx + dx, room.cy + dy
+			self.room_map.rooms[#self.room_map.rooms+1] = room
+		end
+		table.append(self.room_map.rooms_failed, map.room_map.rooms_failed)
+	end
 	self.changed = true
 end
 
@@ -1028,7 +1035,7 @@ function _M:overlay(map, dx, dy, sx, sy, sw, sh)
 	sy = sy or 0
 	sw = sw or map.w
 	sh = sh or map.h
-
+	-- overlay
 	for i = sx, sx + sw - 1 do for j = sy, sy + sh - 1 do
 		local x, y = dx + i, dy + j
 
@@ -1053,6 +1060,14 @@ function _M:overlay(map, dx, dy, sx, sy, sw, sh)
 
 		self:updateMap(x, y)
 	end end
+	-- update the rooms list if needed
+	if self.room_map and map.room_map then
+		for i, room in ipairs(map.room_map.rooms) do
+			room.x, room.y, room.cx, room.cy = room.x + dx, room.y + dy, room.cx + dx, room.cy + dy
+			self.room_map.rooms[#self.room_map.rooms+1] = room
+		end
+		table.append(self.room_map.rooms_failed, map.room_map.rooms_failed)
+	end
 
 	self.changed = true
 end

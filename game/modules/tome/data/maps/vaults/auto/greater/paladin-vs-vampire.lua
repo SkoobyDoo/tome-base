@@ -22,7 +22,13 @@
 local Talents = require("engine.interface.ActorTalents")
 setStatusAll{no_teleport=true}
 
-
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 25 and zone.npc_list.__loaded_files["/data/general/npcs/vampire.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/ghoul.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/wight.lua"]
+end)
+specialList("actor", {
+	"/data/general/npcs/vampire.lua",
+	"/data/general/npcs/wight.lua",
+}, true)
 defineTile('~', mod.class.Grid.new{
 	define_as = "NECRO",
 	name = "corrupted lava floor", image = "terrain/lava_floor.png",
@@ -38,8 +44,8 @@ defineTile('~', mod.class.Grid.new{
 		if who.dead and not who:attr("undead") then
 			--add undead
 			local m = game.zone:makeEntityByName(game.level, "actor", "RISEN_CORPSE")
-			game.logSeen(who, "The corrupted lava reanimates %s's corpse!", who.name:capitalize())
 			game.zone:addEntity(game.level, m, "actor", x, y)
+			game.logSeen(m, "The corrupted lava reanimates %s's corpse!", who.name:capitalize())
 		end
 	end,
 })
@@ -92,7 +98,7 @@ defineTile('V', "FLOOR", {random_filter={add_levels=15, tome_mod="gvault"}}, {ra
 defineTile('L', "FLOOR", {random_filter={add_levels=20, tome_mod="gvault"}}, {random_filter={add_levels=20, type="undead", subtype="vampire", name="vampire lord"}})
 defineTile('W', "FLOOR", {random_filter={add_levels=15, tome_mod="gvault"}}, {random_filter={add_levels=15, type="undead", subtype="wight", name="grave wight"}})
 startx = 0
-starty = 6
+starty = 7
 
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 

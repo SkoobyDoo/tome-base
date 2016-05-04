@@ -77,6 +77,7 @@ end
 
 --- Create the stairs on the sides
 function _M:makeStairsSides(lev, old_lev, sides, rooms, spots)
+	rooms = table.clone(rooms)
 	-- Put down stairs
 	local dx, dy
 	if self.forced_down then
@@ -91,8 +92,19 @@ function _M:makeStairsSides(lev, old_lev, sides, rooms, spots)
 				end
 
 				if not self.map.room_map[dx][dy].special then
-					local i = rng.range(1, #rooms)
-					if not self.data.no_tunnels then self:tunnel(dx, dy, rooms[i].cx, rooms[i].cy, rooms[i].id) end
+					if not self.data.no_tunnels then
+						local i
+						repeat
+							i = rng.range(1, #rooms)
+							if rooms[i].room.no_tunnels then
+								print("[Roomer:makeStairsSides] refusing tunnel from exit to room", rooms[i].id)
+								table.remove(rooms, i)
+							else
+								print("[Roomer:makeStairsSides] tunnelling from exit to room", rooms[i].id)
+								self:tunnel(dx, dy, rooms[i].cx, rooms[i].cy, rooms[i].id) break
+							end
+						until #rooms <= 0
+					end
 					self.map(dx, dy, Map.TERRAIN, self:resolve("down"))
 					self.map.room_map[dx][dy].special = "exit"
 					break
@@ -112,10 +124,20 @@ function _M:makeStairsSides(lev, old_lev, sides, rooms, spots)
 			elseif sides[1] == 8 then ux, uy = rng.range(1, self.map.w - 1), 0
 			elseif sides[1] == 2 then ux, uy = rng.range(1, self.map.w - 1), self.map.h - 1
 			end
-
 			if not self.map.room_map[ux][uy].special then
-				local i = rng.range(1, #rooms)
-				if not self.data.no_tunnels then self:tunnel(ux, uy, rooms[i].cx, rooms[i].cy, rooms[i].id) end
+				if not self.data.no_tunnels then
+					local i
+					repeat
+						i = rng.range(1, #rooms)
+						if rooms[i].room.no_tunnels then
+							print("[Roomer:makeStairsSides] refusing tunnel from entrance to room", rooms[i].id)
+							table.remove(rooms, i)
+						else
+							print("[Roomer:makeStairsSides] tunnelling from entrance to room", rooms[i].id)
+							self:tunnel(ux, uy, rooms[i].cx, rooms[i].cy, rooms[i].id) break
+						end
+					until #rooms <= 0
+				end
 				self.map(ux, uy, Map.TERRAIN, self:resolve("up"))
 				self.map.room_map[ux][uy].special = "exit"
 				break
@@ -128,17 +150,18 @@ end
 
 --- Make rooms and connect them with tunnels
 function _M:generate(lev, old_lev)
+	-- fill in the map
 	for i = 0, self.map.w - 1 do for j = 0, self.map.h - 1 do
 		self.map(i, j, Map.TERRAIN, self:resolve("#"))
 	end end
 
+	local nb_room = util.getval(self.data.nb_rooms or 10)
+
 	local spots = {}
 	self.spots = spots
 
-	local nb_room = util.getval(self.data.nb_rooms or 10)
-	local rooms = {}
-
-	-- Those we are required to have
+	local rooms = self.map.room_map.rooms
+	-- Place rooms we are required to have
 	if #self.required_rooms > 0 then
 		for i, rroom in ipairs(self.required_rooms) do
 			local ok = false
@@ -149,15 +172,16 @@ function _M:generate(lev, old_lev)
 
 			if ok then
 				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
-				if r then rooms[#rooms+1] = r
-				else self.force_recreate = true return end
-				nb_room = nb_room - 1
+				if r then nb_room = nb_room - 1
+				else self.level.force_recreate = "required_room "..tostring(rroom)
+				return end
 			end
 		end
 	end
 
-	-- Normal, random rooms	
-	while nb_room > 0 do
+	-- Place normal, random rooms
+	local tries = nb_room * 1.5 -- allow extra attempts for difficult to place rooms
+	while tries > 0 and nb_room > 0 do
 		local rroom
 		while true do
 			rroom = self.rooms[rng.range(1, #self.rooms)]
@@ -169,21 +193,31 @@ function _M:generate(lev, old_lev)
 		end
 
 		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
-		if r then rooms[#rooms+1] = r end
-		nb_room = nb_room - 1
+		if r then nb_room = nb_room -1 end
+		tries = tries - 1
 	end
 
 	-- Tunnels !
 	if not self.data.no_tunnels then
-		print("Begin tunnel", #rooms, rooms[1])
-		local tx, ty = rooms[1].cx, rooms[1].cy
-		for ii = 2, #rooms + 1 do
-			local i = util.boundWrap(ii, 1, #rooms)
-			self:tunnel(tx, ty, rooms[i].cx, rooms[i].cy, rooms[i].id)
-			tx, ty = rooms[i].cx, rooms[i].cy
+
+		local rs, re, tx, ty = 1, 2
+		while rs <= #rooms do
+			if rooms[rs].room.no_tunnels then -- don't tunnel to rooms marked no_tunnels
+				rs = rs + 1
+			else
+				re = rs
+				repeat
+					re = re%#rooms + 1
+				until not rooms[re].room.no_tunnels or re <= rs
+				if not rooms[re].room.no_tunnels then
+--					print("[Roomer]__tunneling: room", rooms[rs].id, "(", rooms[rs].cx, rooms[rs].cy, ") to room", rooms[re].id, "(",rooms[re].cx, rooms[re].cy, ")")
+					self:tunnel(rooms[rs].cx, rooms[rs].cy, rooms[re].cx, rooms[re].cy, rooms[re].id)
+				end
+				if re <= rs then break end
+				rs = re
+			end
 		end
 	end
-
 	-- Forced tunnels
 	if self.data.force_tunnels then
 		for _, t in ipairs(self.data.force_tunnels) do

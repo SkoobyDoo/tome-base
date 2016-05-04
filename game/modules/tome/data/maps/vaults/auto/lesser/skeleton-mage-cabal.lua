@@ -17,9 +17,17 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
-
-defineTile('.', "FLOOR")
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 5 and resolvers.current_level <= 25
+end)
+specialList("actor", {
+	"/data/general/npcs/skeleton.lua",
+})
+border = 0
+startx, starty = 4, 10
+defineTile('.', data.floor or "FLOOR")
+defineTile(',', "FLOOR")
 defineTile('D', "DOOR")
 defineTile('!', "DOOR_VAULT")
 defineTile('X', "HARDWALL")
@@ -34,9 +42,9 @@ return {
 [[.XXXXXXX.]],
 [[.XSSSSSX.]],
 [[.XXXDXXX.]],
-[[.X..M..X.]],
-[[.X.M.M.X.]],
-[[.X..M..X.]],
+[[.X,,M,,X.]],
+[[.X,M,M,X.]],
+[[.X,,M,,X.]],
 [[.XDX!XDX.]],
 [[.XWX.XWX.]],
 [[.XXX.XXX.]],

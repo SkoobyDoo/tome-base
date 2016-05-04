@@ -17,9 +17,10 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
-
-defineTile(';', "FLOOR", nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+border = 0
+local Floor = data.floor or data['.'] or "FLOOR"
+defineTile(';', Floor, nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
 defineTile('.', "FLOOR")
 defineTile('^', "FLOOR", nil, nil, {random_filter={}})
 defineTile('X', "HARDWALL")
@@ -38,9 +39,9 @@ rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 return {
 [[;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;]],
-[[;.........XXXXXXXXXX.........;]],
-[[;....XXXXXXO.O..O.OXXXXXX....;]],
-[[;....X..................X....;]],
+[[;;;;;;;;;;XXXXXXXXXX;;;;;;;;;;]],
+[[;;;;;XXXXXXO.O..O.OXXXXXX;;;;;]],
+[[;;;;;X..................X;;;;;]],
 [[;XXXXX.###.###..###.###.XXXXX;]],
 [[;X.....#3#^#1#..#4#^#3#.....X;]],
 [[;X.o.X.###.###..###.###.X.o.X;]],
@@ -51,9 +52,9 @@ return {
 [[;X.o.X..................X.o.X;]],
 [[;X..........................X;]],
 [[;XXXXXXXXXXXXX++XXXXXXXXXXXXX;]],
-[[;..X..Xoo...X^oo^X...ooX..X..;]],
-[[;..X..X..X..X^oo^X..X..X..X..;]],
-[[;..!.....X..........X.....!..;]],
-[[;..XXXXXXXXXXXXXXXXXXXXXXXX..;]],
+[[;;;X..Xoo...X^oo^X...ooX..X;;;]],
+[[;;;X..X..X..X^oo^X..X..X..X;;;]],
+[[;;;!.....X..........X.....!;;;]],
+[[;;;XXXXXXXXXXXXXXXXXXXXXXXX;;;]],
 [[;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;]],
 }

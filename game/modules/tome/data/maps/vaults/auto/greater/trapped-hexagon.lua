@@ -22,6 +22,16 @@ startx = 23
 starty = 6
 
 setStatusAll{no_teleport=true}
+specialList("trap", {
+	"/data/general/traps/elemental.lua",
+	"/data/general/traps/complex.lua",
+	"/data/general/traps/annoy.lua",
+	"/data/general/traps/water.lua",
+	"/data/general/traps/temporal.lua",
+}, true)
+specialList("terrain", {
+	"/data/general/grids/water.lua",
+}, true)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 defineTile('%', "WALL")
 defineTile('.', "FLOOR")

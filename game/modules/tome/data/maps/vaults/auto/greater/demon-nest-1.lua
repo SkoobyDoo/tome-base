@@ -22,6 +22,14 @@ startx = 0
 starty = 10
 
 setStatusAll{no_teleport=true}
+
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 25 and zone.npc_list.__loaded_files["/data/general/npcs/minor-demon.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/major-demon.lua"]
+end)
+specialList("terrain", {
+	"/data/general/grids/lava.lua",
+}, true)
+
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 defineTile('%', "WALL")
 defineTile('.', "FLOOR")
