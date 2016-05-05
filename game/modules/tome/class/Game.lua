@@ -1781,9 +1781,13 @@ do return end
 					for _, node in ipairs(seen) do
 						node.actor:addParticles(engine.Particles.new("notice_enemy", 1))
 					end
-				elseif not self.player:autoExplore() then
-					self.log("There is nowhere left to explore.")
-					self:triggerHook{"Player:autoExplore:nowhere"}
+				else
+					if not self.player:autoExplore() then
+						self.log("There is nowhere left to explore.")
+						self:triggerHook{"Player:autoExplore:nowhere"}
+					else
+						while self.player:enoughEnergy() and self.player:runStep() do end
+					end
 				end
 			end end
 
@@ -1795,14 +1799,14 @@ do return end
 			end
 		end,
 
-		RUN_LEFT = function() self.player:runInit(4) end,
-		RUN_RIGHT = function() self.player:runInit(6) end,
-		RUN_UP = function() self.player:runInit(8) end,
-		RUN_DOWN = function() self.player:runInit(2) end,
-		RUN_LEFT_UP = function() self.player:runInit(7) end,
-		RUN_LEFT_DOWN = function() self.player:runInit(1) end,
-		RUN_RIGHT_UP = function() self.player:runInit(9) end,
-		RUN_RIGHT_DOWN = function() self.player:runInit(3) end,
+		RUN_LEFT = function() self.player:runInit(4) while self.player:enoughEnergy() and self.player:runStep() do end  end,
+		RUN_RIGHT = function() self.player:runInit(6) while self.player:enoughEnergy() and self.player:runStep() do end  end,
+		RUN_UP = function() self.player:runInit(8) while self.player:enoughEnergy() and self.player:runStep() do end  end,
+		RUN_DOWN = function() self.player:runInit(2) while self.player:enoughEnergy() and self.player:runStep() do end  end,
+		RUN_LEFT_UP = function() self.player:runInit(7) while self.player:enoughEnergy() and self.player:runStep() do end  end,
+		RUN_LEFT_DOWN = function() self.player:runInit(1) while self.player:enoughEnergy() and self.player:runStep() do end  end,
+		RUN_RIGHT_UP = function() self.player:runInit(9) while self.player:enoughEnergy() and self.player:runStep() do end  end,
+		RUN_RIGHT_DOWN = function() self.player:runInit(3) while self.player:enoughEnergy() and self.player:runStep() do end  end,
 
 		ATTACK_OR_MOVE_LEFT = function() self.player:attackOrMoveDir(4) end,
 		ATTACK_OR_MOVE_RIGHT = function() self.player:attackOrMoveDir(6) end,
