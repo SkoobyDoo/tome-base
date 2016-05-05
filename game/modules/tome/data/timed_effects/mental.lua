@@ -2464,17 +2464,17 @@ newEffect{
 newEffect{
 	name = "CLEAR_MIND", image = "talents/mental_shielding.png",
 	desc = "Clear Mind",
-	long_desc = function(self, eff) return ("Nullifies the next %d detrimental mental effects."):format(self.mental_negative_status_effect_immune) end,
+	long_desc = function(self, eff) return ("Nullifies the next %d detrimental mental effects."):format(self.clear_mind_immune) end,
 	type = "mental",
 	subtype = { psionic=true, },
 	status = "beneficial",
 	parameters = { power=2 },
 	activate = function(self, eff)
-		self.mental_negative_status_effect_immune = eff.power
+		self.clear_mind_immune = eff.power
 		eff.particles = self:addParticles(engine.Particles.new("generic_power", 1, {rm=0, rM=0, gm=100, gM=180, bm=180, bM=255, am=200, aM=255}))
 	end,
 	deactivate = function(self, eff)
-		self.mental_negative_status_effect_immune = nil
+		self.clear_mind_immune = nil
 		self:removeParticles(eff.particles)
 	end,
 }
