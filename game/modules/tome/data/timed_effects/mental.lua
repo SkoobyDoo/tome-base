@@ -117,34 +117,36 @@ newEffect{
 		self.summoner = eff.src
 		self.summoner_gain_exp = true
 		if self.dead then return end
-		game.party:addMember(self, {
-			control="full",
-			type="thrall",
-			title="Thrall",
-			orders = {leash=true, follow=true},
-			on_control = function(self)
-				self:hotkeyAutoTalents()
-			end,
-			leave_level = function(self, party_def) -- Cancel control and restore previous actor status.
-				local eff = self:hasEffect(self.EFF_DOMINANT_WILL)
-				local uid = self.uid
-				eff.survive_domination = true
-				self:removeTemporaryValue("inc_damage", eff.pid)
-				game.party:removeMember(self)
-				self:replaceWith(require("mod.class.NPC").new(self))
-				self.uid = uid
-				__uids[uid] = self
-				self.faction = eff.oldstate.faction
-				self.ai_state = eff.oldstate.ai_state
-				self.ai = eff.oldstate.ai
-				self.remove_from_party_on_death = eff.oldstate.remove_from_party_on_death
-				self.no_inventory_access = eff.oldstate.no_inventory_access
-				self.move_others = eff.oldstate.move_others
-				self.summoner = eff.oldstate.summoner
-				self.summoner_gain_exp = eff.oldstate.summoner_gain_exp
-				self:removeEffect(self.EFF_DOMINANT_WILL)
-			end,
-		})
+		game:onTickEnd(function()
+			game.party:addMember(self, {
+				control="full",
+				type="thrall",
+				title="Thrall",
+				orders = {leash=true, follow=true},
+				on_control = function(self)
+					self:hotkeyAutoTalents()
+				end,
+				leave_level = function(self, party_def) -- Cancel control and restore previous actor status.
+					local eff = self:hasEffect(self.EFF_DOMINANT_WILL)
+					local uid = self.uid
+					eff.survive_domination = true
+					self:removeTemporaryValue("inc_damage", eff.pid)
+					game.party:removeMember(self)
+					self:replaceWith(require("mod.class.NPC").new(self))
+					self.uid = uid
+					__uids[uid] = self
+					self.faction = eff.oldstate.faction
+					self.ai_state = eff.oldstate.ai_state
+					self.ai = eff.oldstate.ai
+					self.remove_from_party_on_death = eff.oldstate.remove_from_party_on_death
+					self.no_inventory_access = eff.oldstate.no_inventory_access
+					self.move_others = eff.oldstate.move_others
+					self.summoner = eff.oldstate.summoner
+					self.summoner_gain_exp = eff.oldstate.summoner_gain_exp
+					self:removeEffect(self.EFF_DOMINANT_WILL)
+				end,
+			})
+		end)
 	end,
 	deactivate = function(self, eff)
 		if eff.survive_domination then
