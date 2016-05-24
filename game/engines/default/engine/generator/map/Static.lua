@@ -286,7 +286,6 @@ function _M:tmxLoad(file)
 	end
 	local function populate(i, j, c, tid)
 		local ii, jj = rotate_coords(i, j)
-
 		m[ii] = m[ii] or {}
 		if type(c) == "string" then
 			m[ii][jj] = c
@@ -320,7 +319,7 @@ function _M:tmxLoad(file)
 			local x, y = 1, 1
 			while i <= #data do
 				gid, i = struct.unpack("<I4", data, i)
-				if chars[gid] then populate(x, y, chars[id])
+				if chars[gid] then populate(x, y, chars[gid])
 				else populate(x, y, {[layername] = gid}, gid)
 				end
 				x = x + 1
@@ -556,13 +555,16 @@ function _M:generate(lev, old_lev)
 		else g = self:resolve(nil, c.grid) end
 		if g then
 			if g.force_clone then g = g:clone() end
-			g:resolve()
-			g:resolve(nil, true)
-			self.map(i-1, j-1, Map.TERRAIN, g)
-			g:check("addedToLevel", self.level, i-1, j-1)
-			g:check("on_added", self.level, i-1, j-1)
+			g:resolve() g:resolve(nil, true)
+		else
+			g = self:resolve('.') or self:resolve('floor') or engine.Grid.new({name = "undefined grid"})
+			if g then g:resolve() g:resolve(nil, true) end
+			print(("[generator.map.Static] WARNING: unable to resolve tile '%s' at %d, %d (zone: %s, map:%s), replacing with grid: %s."):format(type(c) == "table" and c.grid or c, i-1, j-1, self.zone.short_name, self.data.map, g and g.name))
 		end
-
+		self.map(i-1, j-1, Map.TERRAIN, g)
+--		print(" => ", g, g and g.name)
+		g:check("addedToLevel", self.level, i-1, j-1)
+		g:check("on_added", self.level, i-1, j-1)
 		if self.status_all then
 			local s = table.clone(self.status_all)
 			if s.lite then self.level.map.lites(i-1, j-1, true) s.lite = nil end
