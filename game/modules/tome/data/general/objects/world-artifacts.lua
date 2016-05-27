@@ -2757,7 +2757,7 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	desc = [[Said to have belonged to a master of avoiding attacks, this gilded steel emblem symbolizes his talent.]],
 	level_range = {28, 38},
 	rarity = 200,
-	cost = 50,
+	cost = 450,
 	material_level = 4,
 	wielder = {
 		inc_stats = { [Stats.STAT_LCK] = 8, [Stats.STAT_DEX] = 12, [Stats.STAT_CUN] = 10,},
