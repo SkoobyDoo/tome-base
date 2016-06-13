@@ -206,12 +206,12 @@ function _M:newGame()
 	-- Create the entity to store various game state things
 	self.state = GameState.new{}
 	local birth_done = function()
-		if self.state.birth.__allow_rod_recall then game.state:allowRodRecall(true) self.state.birth.__allow_rod_recall = nil end
+		if self.state.birth.__allow_rod_recall then self.state:allowRodRecall(true) self.state.birth.__allow_rod_recall = nil end
 		if self.state.birth.__allow_transmo_chest and profile.mod.allow_build.birth_transmo_chest then
 			self.state.birth.__allow_transmo_chest = nil
-			local chest = game.zone:makeEntityByName(game.level, "object", "TRANSMO_CHEST")
+			local chest = self.zone:makeEntityByName(self.level, "object", "TRANSMO_CHEST")
 			if chest then
-				game.zone:addEntity(game.level, chest, "object")
+				self.zone:addEntity(self.level, chest, "object")
 				self.player:addObject(self.player:getInven("INVEN"), chest)
 			end
 		end
@@ -273,7 +273,7 @@ function _M:newGame()
 			if self.player.__game_difficulty then self:setupDifficulty(self.player.__game_difficulty) end
 			self:setupPermadeath(self.player)
 			--self:changeLevel(1, "test")
-			self:changeLevel(self.player.starting_level or 1, self.player.starting_zone, {force_down=self.player.starting_level_force_down})
+			self:changeLevel(self.player.starting_level or 1, self.player.starting_zone, {force_down=self.player.starting_level_force_down, direct_switch=true})
 
 			print("[PLAYER BIRTH] resolve...")
 			self.player:resolve()
@@ -329,7 +329,7 @@ function _M:newGame()
 			self.to_re_add_actors = {}
 			for act, _ in pairs(self.party.members) do if self.player ~= act then self.to_re_add_actors[act] = true end end
 
-			self:changeLevel(self.player.starting_level or 1, self.player.starting_zone, {force_down=self.player.starting_level_force_down})
+			self:changeLevel(self.player.starting_level or 1, self.player.starting_zone, {force_down=self.player.starting_level_force_down, direct_switch=true})
 			self.player:grantQuest(self.player.starting_quest)
 			self.creating_player = false
 
