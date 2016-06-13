@@ -116,7 +116,7 @@ function _M:select(v)
 	else
 		tween.stop(self.tweenid)
 		self:stopScrolling()
-		self.tweenid = tween(8, function(a) self.cur_frame.container:color(1, 1, 1, a) end, {1, 0}, "linear", function() self.cur_frame.container:shown(false) end)
+		self.tweenid = self.cur_frame.container:colorTween(8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
 	end
 end
 

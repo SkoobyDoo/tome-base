@@ -168,21 +168,21 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 end
 
 
-local function voColorTween(self, time, component, from, to, mode)
+local function voColorTween(self, time, component, from, to, mode, on_end)
 	mode = mode or "linear"
 	local fr, fg, fb, fa = self:getColor()
 	if component == "r" then
 		from = from or fr
-		return tween(time, function(v) self:color(v, -1, -1, -1) end, {from, to}, mode)
+		return tween(time, function(v) self:color(v, -1, -1, -1) end, {from, to}, mode, on_end)
 	elseif component == "g" then
 		from = from or fg
-		return tween(time, function(v) self:color(-1, v, -1, -1) end, {from, to}, mode)
+		return tween(time, function(v) self:color(-1, v, -1, -1) end, {from, to}, mode, on_end)
 	elseif component == "b" then
 		from = from or fb
-		return tween(time, function(v) self:color(-1, -1, v, -1) end, {from, to}, mode)
+		return tween(time, function(v) self:color(-1, -1, v, -1) end, {from, to}, mode, on_end)
 	else
 		from = from or fa
-		return tween(time, function(v) self:color(-1, -1, -1, v) end, {from, to}, mode)
+		return tween(time, function(v) self:color(-1, -1, -1, v) end, {from, to}, mode, on_end)
 	end
 end
 
