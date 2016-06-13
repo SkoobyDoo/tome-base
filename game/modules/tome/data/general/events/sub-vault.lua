@@ -43,6 +43,17 @@ local changer = function(id)
 	grid_list.UP_SUB_VAULT_BACK.change_level_shift_back = true
 	grid_list.UP_SUB_VAULT_BACK.change_zone_auto_stairs = true
 
+	grid_list.UP_SUB_VAULT_BACK.name = "way up ("..game.zone.name..")"
+	grid_list.UP_SUB_VAULT_BACK.change_level_check = function(self)
+		if not self.change_level then
+			game.log("#VIOLET# The stairway collapses completely as you ascend!")
+		else
+			game.log("#VIOLET# The decrepit stairs crumble some more as you climb them.")
+		end
+		return
+	end
+	grid_list.UP_SUB_VAULT_BACK.nicer_tiles = nil
+	
 	local basemap = table.clone(game.level.data.generator.map, true)
 	basemap.zoneclass = nil
 	basemap.rooms = nil
