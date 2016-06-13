@@ -814,6 +814,7 @@ newEntity{ base = "BASE_RING",
 		combat_dam = 10,
 		combat_physcrit = 5,
 		talents_types_mastery = {
+			["technique/strength-of-the-berserker"] = 0.3,
 			["technique/2hweapon-cripple"] = 0.3,
 			["technique/2hweapon-offense"] = 0.3,
 			["technique/2hweapon-assault"] = 0.3,

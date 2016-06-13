@@ -276,6 +276,7 @@ newEntity{ base = "BASE_GREATSWORD",
 	wielder = {
 		inc_stats = { [Stats.STAT_CON] = 15, [Stats.STAT_STR] = 15, [Stats.STAT_DEX] = 5, },
 		talents_types_mastery = {
+			["technique/strength-of-the-berserker"] = 0.3,
 			["technique/2hweapon-cripple"] = 0.2,
 			["technique/2hweapon-offense"] = 0.2,
 			["technique/2hweapon-assault"] = 0.2,
