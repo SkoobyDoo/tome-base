@@ -79,9 +79,5 @@ end
 
 function _M:on_focus_change(status)
 	tween.stop(self.tweenid)
-	if status then
-		self.tweenid = tween(8, function(v) self.frame_sel_do.container:color(1, 1, 1, v) end, {0, 1}, "linear")
-	else
-		self.tweenid = tween(8, function(v) self.frame_sel_do.container:color(1, 1, 1, v) end, {1, 0}, "linear")
-	end
+	self.tweenid = self.frame_sel_do.container:colorTween(8, "a", nil, status and 1 or 0, "linear")
 end

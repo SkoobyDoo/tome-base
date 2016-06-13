@@ -173,6 +173,49 @@ function _M:importInterface(base)
 	end
 end
 
+-- This wont work for classes that need to be serializable
+function _M:proxyData(data_keys, data)
+	self._proxy_data_keys = table.reverse(data_keys)
+	self._proxy_data = data or {}
+	local m = getmetatable(self)
+	m.__newindex = function(t, k, v)
+		if rawget(t, "_proxy_data_keys")[k] then
+			if self:proxyDataSet(k, v) then
+				rawset(rawget(t, "_proxy_data"), k, v)
+			end
+		else
+			rawset(t, k, v)
+		end
+	end
+
+	local oldidx = m.__index
+	m.__index = function(t, k)
+		if rawget(t, "_proxy_data_keys")[k] then
+			local ok, over = self:proxyDataGet(k)
+			if ok then return rawget(rawget(t, "_proxy_data"), k)
+			else return over end
+		else
+			local v = rawget(t, k)
+			if v then return v
+			else return oldidx[k] end
+		end
+	end
+end
+
+--- Called when a proxied data is accesses
+-- Overload me if needed
+-- @return true to get the stored value, false and an other value to return it
+function _M:proxyDataGet(k)
+	return true
+end
+
+--- Called when a proxied data is set
+-- Overload me if needed
+-- @return true to set the given value in the store, false to cancel
+function _M:proxyDataSet(k, v)
+	return true
+end
+
 function _M:getClassName()
 	return self.__CLASSNAME or self._NAME
 end

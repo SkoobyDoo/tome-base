@@ -80,6 +80,8 @@ public:
 
 	void recomputeModelMatrix();
 
+	vec4 getColor() { return color; };
+
 	void setColor(float r, float g, float b, float a);
 	void resetModelMatrix();
 	void translate(float x, float y, float z, bool increment);

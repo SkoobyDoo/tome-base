@@ -17,7 +17,13 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local DOVertexes = getmetatable(core.renderer.vertexes()).__index
+local tween = require "tween"
+local DOVertexes = core.game.getCClass("gl{vertexes}")
+local DORenderer = core.game.getCClass("gl{renderer}")
+local DOText = core.game.getCClass("gl{text}")
+local DOContainer = core.game.getCClass("gl{container}")
+local DOTarget = core.game.getCClass("gl{target}")
+local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget }
 
 function DOVertexes:debugQuad()
 	self:quad(
@@ -159,4 +165,27 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 		end
 		return v
 	end
+end
+
+
+local function voColorTween(self, time, component, from, to, mode)
+	mode = mode or "linear"
+	local fr, fg, fb, fa = self:getColor()
+	if component == "r" then
+		from = from or fr
+		return tween(time, function(v) self:color(v, -1, -1, -1) end, {from, to}, mode)
+	elseif component == "g" then
+		from = from or fg
+		return tween(time, function(v) self:color(-1, v, -1, -1) end, {from, to}, mode)
+	elseif component == "b" then
+		from = from or fb
+		return tween(time, function(v) self:color(-1, -1, v, -1) end, {from, to}, mode)
+	else
+		from = from or fa
+		return tween(time, function(v) self:color(-1, -1, -1, v) end, {from, to}, mode)
+	end
+end
+
+for _, DO in pairs(DOAll) do
+	DO.colorTween = voColorTween
 end

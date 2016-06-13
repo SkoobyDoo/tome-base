@@ -49,6 +49,16 @@ static int gl_generic_color(lua_State *L)
 	c->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 	return 0;
 }
+static int gl_generic_color_get(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(L, 1);
+	vec4 color = c->getColor();
+	lua_pushnumber(L, color.r);
+	lua_pushnumber(L, color.g);
+	lua_pushnumber(L, color.b);
+	lua_pushnumber(L, color.a);
+	return 4;
+}
 
 static int gl_generic_translate(lua_State *L)
 {
@@ -401,6 +411,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"zSort", gl_renderer_zsort},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -423,6 +434,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"clear", gl_vertexes_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -439,6 +451,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"clear", gl_container_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -456,6 +469,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"clear", gl_vertexes_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -477,6 +491,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"clear", gl_vertexes_clear},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
+	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},

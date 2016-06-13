@@ -88,10 +88,10 @@ void DisplayObject::shown(bool v) {
 }
 
 void DisplayObject::setColor(float r, float g, float b, float a) {
-	color.r = r;
-	color.g = g;
-	color.b = b;
-	color.a = a;
+	if (r != -1) color.r = r;
+	if (g != -1) color.g = g;
+	if (b != -1) color.b = b;
+	if (a != -1) color.a = a;
 	setChanged();
 }
 

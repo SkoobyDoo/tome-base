@@ -597,8 +597,20 @@ static int lua_force_next_tick(lua_State *L)
 	return 0;
 }
 
+static int lua_getclasstable(lua_State *L) {
+	const char *classname = luaL_checkstring(L, 1);
+	bool raw = lua_toboolean(L, 2);
+	luaL_getmetatable(L, classname);
+	if (!raw) {
+		lua_pushstring(L, "__index");
+		lua_gettable(L, -2);
+	}
+	return 1;
+}
+
 static const struct luaL_Reg gamelib[] =
 {
+	{"getCClass", lua_getclasstable},
 	{"setRebootMessage", lua_set_reboot_message},
 	{"getRebootMessage", lua_get_reboot_message},
 	{"reboot", lua_reboot_lua},

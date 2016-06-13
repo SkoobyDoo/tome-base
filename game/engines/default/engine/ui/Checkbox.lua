@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 require "engine.class"
+local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -26,6 +27,8 @@ local Focusable = require "engine.ui.Focusable"
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
+	self:proxyData{"checked"}
+
 	self.title = assert(t.title, "no checkbox title")
 	self.text = t.text or ""
 	self.checked = t.default
@@ -37,17 +40,29 @@ function _M:init(t)
 end
 
 function _M:generate()
+	self.do_container:clear()
 	self.mouse:reset()
 	self.key:reset()
 
-	self.check = self:getUITexture("ui/checkbox.png")
-	self.tick = self:getUITexture("ui/checkbox-ok.png")
+	local check = self:getAtlasTexture("ui/checkbox.png")
+	local tick = self:getAtlasTexture("ui/checkbox-ok.png")
 
 	-- Draw UI
+	local text = core.renderer.text(self.font)
+	text:text(self.title)
+
 	self.tex = self:drawFontLine(self.font, self.title)
-	self.w, self.h = self.tex.w + self.check.w, math.max(self.font_h, self.check.h)
+	local w, h = text:getStats()
+	self.w, self.h = w + check.w + 3, math.max(h, check.h)
+	self.do_container:add(text)
 
+	self.do_container:add(core.renderer.fromTextureTable(check, 0, (check.h - h) / 2))
 
+	self.tickvo = core.renderer.fromTextureTable(tick, 0, (check.h - h) / 2)
+	self.tickvo:color(1, 1, 1, self.checked and 1 or 0)
+	self.do_container:add(self.tickvo)
+
+	text:translate(check.w + 3, (self.h - h) / 2, 10)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -67,28 +82,11 @@ function _M:select()
 	if self.on_change then self.on_change(self.checked) end
 end
 
-function _M:display(x, y, nb_keyframes)
-	if self.check_first then
-		if self.text_shadow then self:textureToScreen(self.tex, x+1 + self.check.w, y+1 + (self.h - self.tex.h) / 2, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(self.tex, x + self.check.w, y + (self.h - self.tex.h) / 2)
-		if self.focused then
-			self.check.t:toScreenFull(x, y, self.check.w, self.check.h, self.check.tw, self.check.th)
-		else
-			self.check.t:toScreenFull(x, y, self.check.w, self.check.h, self.check.tw, self.check.th)
-		end
-		if self.checked then
-			self.tick.t:toScreenFull(x, y, self.tick.w, self.tick.h, self.tick.tw, self.tick.th)
-		end
-	else
-		if self.text_shadow then self:textureToScreen(self.tex, x+1, y+1 + (self.h - self.tex.h) / 2, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(self.tex, x, y + (self.h - self.tex.h) / 2)
-		if self.focused then
-			self.check.t:toScreenFull(x + self.tex.w, y, self.check.w, self.check.h, self.check.tw, self.check.th)
-		else
-			self.check.t:toScreenFull(x + self.tex.w, y, self.check.w, self.check.h, self.check.tw, self.check.th)
-		end
-		if self.checked then
-			self.tick.t:toScreenFull(x + self.tex.w, y, self.tick.w, self.tick.h, self.tick.tw, self.tick.th)
-		end
+function _M:proxyDataSet(k, v)
+	-- Detect when checked field is changed and update
+	if k == "checked" and self.tickvo then
+		tween.stop(self.tweenid)
+		self.tweenid = self.tickvo:colorTween(4, "a", nil, v and 1 or 0, "linear")
 	end
+	return true
 end
