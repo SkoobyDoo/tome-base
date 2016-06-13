@@ -687,7 +687,7 @@ function _M:generate(lev, old_lev)
 		)
 		local ux, uy, dx, dy, subspots = generator:generate(lev, old_lev)
 		if ux and uy then
-			if data.overlay then
+			if data.overlay or g.overlay then
 				self.map:overlay(map, g.x, g.y)
 			else
 				self.map:import(map, g.x, g.y)
