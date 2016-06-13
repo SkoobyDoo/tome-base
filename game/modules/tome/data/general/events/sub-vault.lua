@@ -20,7 +20,7 @@
 -- Find a random spot
 local x, y = game.state:findEventGrid(level)
 if not x then return false end
-
+print("placing sub-vault at", x, y)
 local id = "sub-vault"..game.turn.."-"..rng.range(1,9999)
 
 local changer = function(id)
@@ -43,6 +43,19 @@ local changer = function(id)
 	grid_list.UP_SUB_VAULT_BACK.change_level_shift_back = true
 	grid_list.UP_SUB_VAULT_BACK.change_zone_auto_stairs = true
 
+	grid_list.UP_SUB_VAULT_BACK.name = "way up ("..game.zone.name..")"
+	grid_list.UP_SUB_VAULT_BACK.change_level_check = function(self)
+		if not self.change_level then
+			game.log("#VIOLET# The stairway collapses completely as you ascend!")
+		else
+			game.log("#VIOLET# The decrepit stairs crumble some more as you climb them.")
+		end
+		return
+	end
+	grid_list.UP_SUB_VAULT_BACK.nicer_tiles = nil
+	grid_list.UP_SUB_VAULT_BACK.nice_editer = nil
+	grid_list.UP_SUB_VAULT_BACK.nice_editer2 = nil
+	
 	local basemap = table.clone(game.level.data.generator.map, true)
 	basemap.zoneclass = nil
 	basemap.rooms = nil
@@ -53,20 +66,23 @@ local changer = function(id)
 		level_range = {game.zone:level_adjust_level(game.level, game.zone, "actor"), game.zone:level_adjust_level(game.level, game.zone, "actor")},
 		level_scheme = "player",
 		max_level = 1,
+		__applied_difficulty = true, --Difficulty already applied to parent zone
 		actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
 		width = 50, height = 50,
 		ambient_music = game.zone.ambient_music,
 		reload_lists = false,
 		persistent = "zone",
+--		_max_level_generation_count = 2,
 		min_material_level = game.zone.min_material_level,
 		max_material_level = game.zone.max_material_level,
-		no_worldport = true,
+		no_worldport = game.zone.no_worldport,
 		generator =  {
 			map = table.merge(basemap, {
 				class = "mod.class.generator.map.VaultLevel",
 				subvault_wall = walltype,
 				subvault_up = "UP_SUB_VAULT_BACK",
 				greater_vaults_list = game.level.data.generator.map.greater_vaults_list or nil,
+				entry_path_length = 10, -- path from level entrance to vault (affects space to fight when opening the vault)
 			}),
 			actor = {
 				class = "mod.class.generator.actor.Random",
@@ -91,6 +107,8 @@ end
 
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "hidden vault"
+g.desc = [[Crumbling stairs lead down to something.]]
+g.show_tooltip = true
 g.display='>' g.color_r=0 g.color_g=0 g.color_b=255 g.notice = true
 g.change_level=1 g.change_zone=id g.glow=true
 g:removeAllMOs()
@@ -98,15 +116,26 @@ if engine.Map.tiles.nicer_tiles then
 	g.add_displays = g.add_displays or {}
 	g.add_displays[#g.add_displays+1] = mod.class.Grid.new{image="terrain/stair_down.png", z=5}
 end
+g._use_count = rng.range(2, 4)
 g:altered()
 g:initGlow()
 g.real_change = changer
-g.change_level_check = function(self)
+g.change_level_check = function(self) -- limit stair scumming
 	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
-	self.change_level_check = nil
-	self.real_change = nil
+	self._use_count = self._use_count - 1
+	self.name = "collapsing hidden vault"
+	if self._use_count < 1 then
+		self.change_level_check = nil
+		self.real_change = nil
+		self.change_level = nil
+		self.name = "collapsed hidden vault"
+		self.desc = [[A collapsed stairway, leading down]]
+	elseif self._use_count < 2 then
+		self.name = "nearly collapsed hidden vault"
+	end
+	self.special_minimap = colors.BLUE
 	return true
 end
 game.zone:addEntity(game.level, g, "terrain", x, y)
 
-return true
+return x, y

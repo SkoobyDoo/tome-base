@@ -17,8 +17,31 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
---bandit fortress
-setStatusAll{no_teleport=true, vault_only_door_open=true}
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+--setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {special=false, can_open=true}}
+unique = "bandit-fortress" -- one per map
+--startx, starty = 40, 19
+border = 0
+roomcheck = function(room, zone, level, map) -- one per zone, level restricted
+	return not zone._bandit_fortress and resolvers.current_level >= 10 and zone.npc_list.__loaded_files["/data/general/npcs/thieve.lua"]
+end
+specialList("actor", {
+	"/data/general/npcs/fire-drake.lua",
+	"/data/general/npcs/aquatic_critter.lua",
+	"/data/general/npcs/minotaur.lua",
+	"/data/general/npcs/troll.lua",
+	"/data/general/npcs/thieve.lua",
+})
+onplace = function(room, zone, level, map, data) -- flag the map as having this vault
+	map._bandit_fortress = level.level
+end
+onGenerated(function(zone, level, map) -- update the zone after the vault is placed (in case the level was regenerated)
+	if map._bandit_fortress == level.level then
+		zone._bandit_fortress = level.level
+	end
+end
+)
+
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 defineTile('%', "WALL")
 defineTile('.', "FLOOR")

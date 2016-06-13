@@ -18,11 +18,18 @@
 -- darkgod@te4.org
 
 setStatusAll{no_teleport=true}
-
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level <= 25
+end)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
-
+specialList("actor", {
+	"/data/general/npcs/plant.lua",
+})
+specialList("terrain", {
+	"/data/general/grids/forest.lua",
+}, true)
 defineTile('.', "GRASS")
-defineTile('#', "TREE")
+defineTile('#', data.wall or "TREE")
 defineTile('X', "HARDTREE")
 defineTile('!', "ROCK_VAULT")
 

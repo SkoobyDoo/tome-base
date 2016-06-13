@@ -170,7 +170,7 @@ function _M:roomAlloc(bx, by, bw, bh, rid)
 	if bx + bw - 1 > self.cols or by + bh - 1 > self.rows then return false end
 	if bx < 0 or by < 0 then return false end
 
-	-- Do we stomp ?
+	-- Don't overlap other rooms
 	for i = bx, bx + bw - 1 do
 		for j = by, by + bh - 1 do
 			if self.room_map[i][j] then return false end

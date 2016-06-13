@@ -18,7 +18,12 @@
 -- darkgod@te4.org
 
 setStatusAll{no_teleport=true}
-
+specialList("actor", {
+	"/data/general/npcs/troll.lua",
+}, true)
+roomCheck(function(zone, level, map)
+	return resolvers.current_level >= 10 and zone.grid_list.__loaded_files["/data/general/npcs/orc.lua"]
+end)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 startx = 0

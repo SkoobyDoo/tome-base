@@ -17,7 +17,26 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+startx, starty = 30, 7
+border = 0
+specialList("terrain", {
+	"/data/general/grids/water.lua",
+}, true)
+specialList("actor", {
+	"/data/general/npcs/bone-giant.lua",
+}, true)
+roomCheck(function(room, zone, level, map)
+	local ret = resolvers.current_level >= 20 and zone.npc_list.__loaded_files["/data/general/npcs/orc.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/orc-rak-shor.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/ghost.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/ghoul.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/skeleton.lua"]
+	if ret then
+		for i, e in ipairs(room.npc_list) do -- set up special bonegiant rarity
+			if not e.bonegiant_rarity and e.type == "undead" and e.subtype == "giant" and not e.unique then
+				e.bonegiant_rarity = e.rarity; e.rarity = nil
+			end
+		end
+		return true
+	end
+end)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('.', "FLOOR")
@@ -26,19 +45,14 @@ defineTile('#', "HARDWALL")
 defineTile('%', "WALL")
 defineTile('+', "DOOR")
 defineTile('X', "DOOR_VAULT")
+--a floor tile with a +15 level guaranteed ego and a +15 level dreadmaster
 defineTile('$', "FLOOR", {random_filter={add_levels=15, tome_mod="vault"}}, {random_filter={add_levels=15, name="dreadmaster"}})
---the above is a floor tile with a +15 level guaranteed ego and a +15 level dreadmaster?
+--a floor tile with a staff and no monster
 defineTile('\\', "FLOOR", {random_filter={subtype="staff", tome_mod="vault", add_levels=5}}, nil)
---the above is a floor tile with a staff and no monster?
 defineTile('(', "FLOOR", {random_filter={subtype="cloth", tome_mod="uvault", add_levels=5}}, nil)
---robe with no monster?
 defineTile('o', "FLOOR", nil, {random_filter={subtype="orc", add_levels=5}})
---floor tile with no object and a random +5 level orc from npcs/orc.lua?
 defineTile('O', "FLOOR", nil, {random_filter={add_levels=15, name="orc necromancer"}})
---floor tile with no object and an +15 level orc necromancer?
 defineTile('K', "FLOOR", nil, {random_filter={add_levels=5, type="undead", subtype="giant", special_rarity="bonegiant_rarity"}})
---floor tile with no object and a random +5 level bone giant from npcs/bone-giant.lua
-
 
 return {
 [[...............................]],

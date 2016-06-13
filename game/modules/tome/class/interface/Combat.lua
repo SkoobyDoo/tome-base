@@ -427,9 +427,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	-- track weakness for hate bonus before the target removes it
-	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
-
 	local dam, apr, armor = force_dam or self:combatDamage(weapon), self:combatAPR(weapon), target:combatArmor()
 	print("[ATTACK] to ", target.name, " :: ", dam, apr, armor, atk, "vs.", def, "::", mult)
 
@@ -438,6 +435,12 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	if target:isTalentActive(target.T_REPEL) then
 		local t = target:getTalentFromId(target.T_REPEL)
 		repelled = t.isRepelled(target, t)
+	end
+
+	local hd = {"Combat:attackTargetWith:attackerBonuses", target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam, apr=apr, atk=atk, def=def, armor=armor}
+	if self:triggerHook(hd) then
+		target, weapon, damtype, mult, dam, apr, atk, def, armor = hd.target, hd.weapon, hd.damtype, hd.mult, hd.dam, hd.apr, hd.atk, hd.def, hd.armor
+		if hd.stop then return end
 	end
 
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
@@ -1015,6 +1018,7 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	end
 
 	-- Weakness hate bonus
+	local effGloomWeakness = target:hasEffect(target.EFF_GLOOM_WEAKNESS)
 	if hitted and effGloomWeakness and effGloomWeakness.hateBonus or 0 > 0 then
 		self:incHate(effGloomWeakness.hateBonus)
 		game.logPlayer(self, "#F53CBE#You revel in attacking a weakened foe! (+%d hate)", effGloomWeakness.hateBonus)

@@ -17,27 +17,37 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, no_vaulted=true}
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+border = 0
+defineTile('.', "FLOOR")
+defineTile(',', data.floor or data['.'] or "FLOOR")
+defineTile('X', "HARDWALL")
+defineTile('!', "DOOR_VAULT")
+defineTile('D', "DOOR")
+defineTile('1', "FLOOR", {random_filter={add_levels=15, tome_mod="vault"}}, {random_filter={add_levels=20}})
+defineTile('2', "FLOOR", {random_filter={add_levels=12, tome_mod="vault"}}, {random_filter={add_levels=17}})
+defineTile('3', "FLOOR", {random_filter={add_levels=5}}, nil)
 
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
-defineTile(',', "GRASS")
-defineTile('#', "WALL")
-defineTile('X', "TREE")
-defineTile('+', "DOOR")
-defineTile('s', "GRASS", nil, {random_filter={name="skeleton mage", add_levels=6}})
-defineTile('$', "FLOOR", {random_filter={type="scroll", ego_chance=25}}, nil)
-
-startx = 1
-starty = 7
+--startx = 5
+--starty = 0
 
 return {
-[[XXXXXXXXXXX]],
-[[X,,X,,,X,X,]],
-[[X,X,,,,,,XX]],
-[[X,X,,s####X]],
-[[X,X,,,#$$#X]],
-[[X,XX,,+$$#X]],
-[[X,,XX,####X]],
-[[X,,,XXXXXXX]],
+[[,,,,,,,,,,,]],
+[[,,,XX!XX,,,]],
+[[,,XX.2.XX,,]],
+[[,XXXDXDXXX,]],
+[[,X...X...X,]],
+[[,X3.3X3.3X,]],
+[[,XDXDXDXDX,]],
+[[,X2X.2.X2X,]],
+[[,XXXDXDXXX,]],
+[[,XX..X..XX,]],
+[[,X...X...X,]],
+[[,X3.3X3.3X,]],
+[[,XXXDXDXXX,]],
+[[,,XX.1.XX,,]],
+[[,,,XXXXX,,,]],
+[[,,,,,,,,,,,]],
 }

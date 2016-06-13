@@ -23,6 +23,17 @@ startx = 0
 starty = 6
 
 setStatusAll{no_teleport=true}
+specialList("actor", {
+	"/data/general/npcs/orc.lua",
+	"/data/general/npcs/orc-vor.lua",
+})
+specialList("terrain", {
+	"/data/general/grids/lava.lua",
+}, true)
+roomCheck(function(zone, level, map)
+	return resolvers.current_level >= 30 -- restrict to levels appropriate for the npc's (Static:getloader)
+end)
+
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('u', mod.class.Grid.new{

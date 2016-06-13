@@ -5118,18 +5118,21 @@ function _M:postUseTalent(ab, ret, silent)
 
 	local trigger = false
 	if ab.mode == "sustained" then
-		if not self:isTalentActive(ab.id) then
+		local is_active = self:isTalentActive(ab.id)
+		if not is_active then -- check resources
 			if ab.sustain_feedback then -- pseudo resource
 				trigger = true; self:incMaxFeedback(-util.getval(ab.sustain_feedback, self, ab))
 			end
-			-- check resources
+			local cost
+			ret._applied_costs,	ret._applied_drains = {}, {} -- to store the resource effects
 			for res, res_def in ipairs(_M.resources_def) do
 				-- apply sustain costs
-				local cost = ab[res_def.sustain_prop]
+				cost = ab[res_def.sustain_prop]
 				if cost then
 					cost = (util.getval(cost, self, ab) or 0)
 					if cost ~= 0 then
 						trigger = true
+						ret._applied_costs[res_def.short_name] = cost
 						if res_def.invert_values then
 							self[res_def.incMinFunction](self, cost)
 						else
@@ -5143,6 +5146,7 @@ function _M:postUseTalent(ab, ret, silent)
 					cost = util.getval(cost, self, ab) or 0
 					if cost ~= 0 then
 						trigger = true
+						ret._applied_drains[res_def.short_name] = cost
 						if res_def.invert_values then
 							self:attr(res_def.regen_prop, cost)
 						else
@@ -5163,32 +5167,32 @@ function _M:postUseTalent(ab, ret, silent)
 			end
 			if not ab.passive_callbacks then self:registerCallbacks(ab, ab.id, "talent") end
 		else
+			ret = is_active
 			if ab.sustain_feedback then -- pseudo resource
 				self:incMaxFeedback(util.getval(ab.sustain_feedback, self, ab))
 			end
-			for res, res_def in ipairs(_M.resources_def) do
-				-- release sustain costs
-				local cost = ab[res_def.sustain_prop]
-				if cost then
-					cost = (util.getval(cost, self, ab) or 0)
-					if cost ~= 0 then
-						if res_def.invert_values then
-							self[res_def.incMinFunction](self, -cost)
-						else
-							self[res_def.incMaxFunction](self, cost)
-						end
+			-- reverse the resource effects  (assumes resource functions are reversible)
+			-- release sustain costs
+			if ret._applied_costs then
+				local res_def
+				for res, cost in pairs(ret._applied_costs) do
+					res_def = _M.resources_def[res]
+					if res_def.invert_values then
+						self[res_def.incMinFunction](self, -cost)
+					else
+						self[res_def.incMaxFunction](self, cost)
 					end
 				end
-				-- reverse drain costs
-				cost = ab[res_def.drain_prop]
-				if cost then
-					cost = util.getval(cost, self, ab) or 0
-					if cost ~= 0 then
-						if res_def.invert_values then
-							self:attr(res_def.regen_prop, -cost)
-						else
-							self:attr(res_def.regen_prop, cost)
-						end
+			end
+			-- reverse resource drains
+			if ret._applied_drains then
+				local res_def
+				for res, cost in pairs(ret._applied_drains) do
+					res_def = _M.resources_def[res]
+					if res_def.invert_values then
+						self:attr(res_def.regen_prop, -cost)
+					else
+						self:attr(res_def.regen_prop, cost)
 					end
 				end
 			end
@@ -6186,13 +6190,16 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 	if e.status == "detrimental" and e.type ~= "other" and self:attr("negative_status_effect_immune") then
 		p.dur = 0
 	end
-	if e.status == "detrimental" and e.type == "mental" and self:attr("mental_negative_status_effect_immune") and not e.subtype["cross tier"] then
+	if e.status == "detrimental" and e.type == "mental" and self:attr("clear_mind_immune") and not e.subtype["cross tier"] then
 		p.dur = 0
-		self:attr("mental_negative_status_effect_immune", -1)
-		if not self:attr("mental_negative_status_effect_immune") then self:removeEffect(self.EFF_CLEAR_MIND) end
+		self:attr("clear_mind_immune", -1)
+		if not self:attr("clear_mind_immune") then self:removeEffect(self.EFF_CLEAR_MIND) end
 	end
 	if e.status == "detrimental" and e.type == "mental" and self:knowTalent(self.T_UNBREAKABLE_WILL) and not e.subtype["cross tier"] then
 		if self:triggerTalent(self.T_UNBREAKABLE_WILL) then p.dur = 0 end
+	end
+	if e.status == "detrimental" and e.type == "mental" and self:attr("mental_negative_status_effect_immune") and not e.subtype["cross tier"] then
+		p.dur = 0
 	end
 	if e.status == "detrimental" and e.type == "physical" and self:attr("physical_negative_status_effect_immune") and not e.subtype["cross tier"] then
 		p.dur = 0

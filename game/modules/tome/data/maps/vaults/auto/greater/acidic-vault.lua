@@ -18,6 +18,18 @@
 -- darkgod@te4.org
 
 setStatusAll{no_teleport=true}
+specialList("actor", {
+	"/data/general/npcs/venom-drake.lua",
+	"/data/general/npcs/minor-demon.lua",
+	"/data/general/npcs/horror.lua",
+	"/data/general/npcs/ooze.lua",
+})
+specialList("trap", {
+	"/data/general/traps/elemental.lua",
+})
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 20
+end)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 startx = 7
 starty = 0

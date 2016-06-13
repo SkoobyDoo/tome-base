@@ -111,9 +111,9 @@ function _M:generate(lev, old_lev)
 
 	local nb_room = util.getval(self.data.nb_rooms or 0)
 	self.required_rooms = self.required_rooms or {}
-	local rooms = {}
-
-	-- Those we are required to have
+	local rooms = self.map.room_map.rooms
+	
+	-- Place required rooms
 	if #self.required_rooms > 0 then
 		for i, rroom in ipairs(self.required_rooms) do
 			local ok = false
@@ -124,17 +124,18 @@ function _M:generate(lev, old_lev)
 
 			if ok then
 				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
-				if r then rooms[#rooms+1] = r
-				else self.force_recreate = true return end
-				nb_room = nb_room - 1
+				if r then nb_room = nb_room - 1
+				else self.level.force_recreate = "required_room "..tostring(rroom) return end
 			end
 		end
 	end
 
+	-- Place random rooms
 	while nb_room > 0 do
 		local rroom
 		while true do
 			rroom = self.rooms[rng.range(1, #self.rooms)]
+			print("[Cavern] picked random room", rroom)
 			if type(rroom) == "table" and rroom.chance_room then
 				if rng.percent(rroom.chance_room) then rroom = rroom[1] break end
 			else
@@ -142,8 +143,7 @@ function _M:generate(lev, old_lev)
 			end
 		end
 
-		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
-		if r then rooms[#rooms+1] = r end
+		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev) -- Will not attempt to replace failed random rooms
 		nb_room = nb_room - 1
 	end
 

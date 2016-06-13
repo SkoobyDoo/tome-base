@@ -20,16 +20,21 @@
 -- Horror Chamber
 
 setStatusAll{no_teleport=true, vault_only_door_open=true}
-
-startx = 2
-starty = 1
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 30
+end)
+specialList("actor", {
+	"/data/general/npcs/orc.lua",
+	"/data/general/npcs/horror.lua",
+	"/data/general/npcs/horror_temporal.lua",
+}, true)
 
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 -- tiles
 defineTile('.', "OLD_FLOOR")
 defineTile('#', "OLD_WALL")
-defineTile(' ', "FLOOR")
+defineTile(' ', data.floor or "FLOOR")
 defineTile('X', "HARDWALL")
 defineTile('+', "DOOR")
 defineTile('!', "DOOR_VAULT", nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
@@ -50,6 +55,8 @@ defineTile('t', 'OLD_FLOOR', {random_filter={add_levels=20, tome_mod="gvault"}})
 defineTile('l', 'OLD_FLOOR', {random_filter={add_levels=20, tome_mod="vault"}}, {random_filter={subtype='eldritch', add_levels=20}})
 defineTile('H', 'OLD_FLOOR', {random_filter={add_levels=20, tome_mod="gvault"}}, {random_filter={name="headless horror", add_levels=20}})
 defineTile('R', 'OLD_FLOOR', {random_filter={add_levels=20, tome_mod="gvault"}}, {random_filter={name="radiant horror", add_levels=20}})
+
+startx, starty = 2, 1
 
 return {
 [[                    ]],

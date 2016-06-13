@@ -19,6 +19,15 @@
 
 setStatusAll{no_teleport=true}
 
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 20 
+end)
+specialList("actor", {
+	"/data/general/npcs/snow-giant.lua",
+	"/data/general/npcs/gwelgoroth.lua",
+	"/data/general/npcs/troll.lua",
+	"/data/general/npcs/storm-drake.lua",
+})
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 startx = 8
