@@ -976,7 +976,7 @@ function _M:changeLevelReal(lev, zone, params)
 
 		self.visited_zones[self.zone.short_name] = true
 		world:seenZone(self.zone.short_name)
-			force_recreate = true
+		force_recreate = true
 	elseif not params.temporary_zone_shift then -- We move to a new zone as normal
 		if self.zone and self.zone.on_leave then
 			local nl, nz, stop = self.zone.on_leave(lev, old_lev, zone)
