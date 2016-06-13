@@ -556,15 +556,15 @@ function _M:generate(lev, old_lev)
 		if g then
 			if g.force_clone then g = g:clone() end
 			g:resolve() g:resolve(nil, true)
-		else
-			g = self:resolve('.') or self:resolve('floor') or engine.Grid.new({name = "undefined grid"})
-			if g then g:resolve() g:resolve(nil, true) end
-			print(("[generator.map.Static] WARNING: unable to resolve tile '%s' at %d, %d (zone: %s, map:%s), replacing with grid: %s."):format(type(c) == "table" and c.grid or c, i-1, j-1, self.zone.short_name, self.data.map, g and g.name))
+			self.map(i-1, j-1, Map.TERRAIN, g)
+			g:check("addedToLevel", self.level, i-1, j-1)
+			g:check("on_added", self.level, i-1, j-1)
+		-- else
+		-- 	g = self:resolve('.') or self:resolve('floor') or engine.Grid.new({name = "undefined grid"})
+		-- 	if g then g:resolve() g:resolve(nil, true) end
+		-- 	print(("[generator.map.Static] WARNING: unable to resolve tile '%s' at %d, %d (zone: %s, map:%s), replacing with grid: %s."):format(type(c) == "table" and c.grid or c, i-1, j-1, self.zone.short_name, self.data.map, g and g.name))
 		end
-		self.map(i-1, j-1, Map.TERRAIN, g)
---		print(" => ", g, g and g.name)
-		g:check("addedToLevel", self.level, i-1, j-1)
-		g:check("on_added", self.level, i-1, j-1)
+
 		if self.status_all then
 			local s = table.clone(self.status_all)
 			if s.lite then self.level.map.lites(i-1, j-1, true) s.lite = nil end
