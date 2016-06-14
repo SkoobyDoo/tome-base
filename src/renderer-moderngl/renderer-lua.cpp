@@ -43,12 +43,6 @@ T* userdata_to_DO(lua_State *L, int index, const char *auxclass = nullptr) {
 /******************************************************************
  ** Generic
  ******************************************************************/
-static int gl_generic_color(lua_State *L)
-{
-	DisplayObject *c = userdata_to_DO(L, 1);
-	c->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	return 0;
-}
 static int gl_generic_color_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(L, 1);
@@ -58,6 +52,49 @@ static int gl_generic_color_get(lua_State *L)
 	lua_pushnumber(L, color.b);
 	lua_pushnumber(L, color.a);
 	return 4;
+}
+static int gl_generic_translate_get(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(L, 1);
+	float x, y, z;
+	c->getTranslate(&x, &y, &z);
+	lua_pushnumber(L, x);
+	lua_pushnumber(L, y);
+	lua_pushnumber(L, z);
+	return 3;
+}
+static int gl_generic_rotate_get(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(L, 1);
+	float x, y, z;
+	c->getRotate(&x, &y, &z);
+	lua_pushnumber(L, x);
+	lua_pushnumber(L, y);
+	lua_pushnumber(L, z);
+	return 3;
+}
+static int gl_generic_scale_get(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(L, 1);
+	float x, y, z;
+	c->getScale(&x, &y, &z);
+	lua_pushnumber(L, x);
+	lua_pushnumber(L, y);
+	lua_pushnumber(L, z);
+	return 3;
+}
+static int gl_generic_shown_get(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(L, 1);
+	lua_pushboolean(L, c->getShown());
+	return 1;
+}
+
+static int gl_generic_color(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(L, 1);
+	c->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	return 0;
 }
 
 static int gl_generic_translate(lua_State *L)
@@ -409,9 +446,13 @@ static const struct luaL_Reg gl_renderer_reg[] =
 {
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
-	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -432,9 +473,13 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
 	{"clear", gl_vertexes_clear},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
-	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -449,9 +494,13 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
-	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -467,9 +516,13 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
 	{"clear", gl_vertexes_clear},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
-	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
@@ -489,9 +542,13 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"linefeed", gl_text_linefeed},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
-	{"getColor", gl_generic_color_get},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},

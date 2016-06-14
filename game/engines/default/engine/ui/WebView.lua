@@ -176,12 +176,11 @@ end
 
 function _M:startLoadingSpin()
 	self.loading_icon:shown(true)
-	tween.stop(self.loading_icon_tween)
-	self.loading_icon_tween = tween(25, function(v) self.loading_icon:rotate(0, 0, v) end, {0, math.rad(360)}, "linear", function() self:startLoadingSpin() end)
+	self.loading_icon:rotateTween("spinner", 25, "z", 0, math.rad(360), "linear", function() self:startLoadingSpin() end)
 end
 function _M:stopLoadingSpin()
-	tween.stop(self.loading_icon_tween)
 	self.loading_icon:shown(false)
+	self.loading_icon:cancelTween("spinner")
 end
 
 function _M:on_focus(v)

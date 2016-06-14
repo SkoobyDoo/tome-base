@@ -85,8 +85,7 @@ end
 function _M:proxyDataSet(k, v)
 	-- Detect when checked field is changed and update
 	if k == "checked" and self.tickvo then
-		tween.stop(self.tweenid)
-		self.tweenid = self.tickvo:colorTween(4, "a", nil, v and 1 or 0, "linear")
+		self.tickvo:colorTween("checked", 4, "a", nil, v and 1 or 0, "linear")
 	end
 	return true
 end

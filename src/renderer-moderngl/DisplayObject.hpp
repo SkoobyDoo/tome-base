@@ -81,6 +81,10 @@ public:
 	void recomputeModelMatrix();
 
 	vec4 getColor() { return color; };
+	void getRotate(float *dx, float *dy, float *dz) { *dx = rot_x; *dy = rot_y; *dz = rot_z; };
+	void getTranslate(float *dx, float *dy, float *dz) { *dx = x; *dy = y; *dz = z; };
+	void getScale(float *dx, float *dy, float *dz) { *dx = scale_x; *dy = scale_y; *dz = scale_z; };
+	bool getShown() { return visible; };
 
 	void setColor(float r, float g, float b, float a);
 	void resetModelMatrix();

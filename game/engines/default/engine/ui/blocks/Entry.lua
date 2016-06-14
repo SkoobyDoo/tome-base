@@ -56,7 +56,6 @@ function _M:init(t, text, color, w, h, offset)
 	self.do_container:add(self.text_container)
 
 	self.uses_own_renderer = false
-	self.cur_v_scroll = 0
 
 	self:setText(text)
 end
@@ -114,9 +113,8 @@ function _M:select(v)
 		self.cur_frame.container:shown(v)
 		self:startScrolling()
 	else
-		tween.stop(self.tweenid)
 		self:stopScrolling()
-		self.tweenid = self.cur_frame.container:colorTween(8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
+		self.cur_frame.container:colorTween("selected", 8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
 	end
 end
 
@@ -124,21 +122,19 @@ function _M:startScrolling()
 	if not self.focused then return end
 	if not self.uses_own_renderer then return end
 
-	local dir
+	local dirm, dirM
 	local w = self.text:getStats()
 	if not self.invert_scroll then
-		dir = {0, -(w - self.max_text_w + 10)}
+		dirm, dirM = 0, -(w - self.max_text_w + 10)
 	else
-		dir = {-(w - self.max_text_w + 10), 0}
+		dirm, dirM = -(w - self.max_text_w + 10), 0
 	end
-	tween.stop(self.scrolltween)
-	self.scrolltween = tween(4 * #self.str, function(v) self.cur_v_scroll = v self.text:translate(v, 0, 0) end, dir, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
+	self.text:translateTween("scroll", 4 * #self.str, "x", dirm, dirM, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
 end
 
 function _M:stopScrolling()
 	if not self.uses_own_renderer then return end
 
 	self.invert_scroll = false
-	tween.stop(self.scrolltween)
-	self.scrolltween = tween(8, function(v) self.cur_v_scroll = v self.text:translate(v, 0, 0) end, {self.cur_v_scroll, 0}, "inQuad")
+	self.text:translateTween("scroll", 8, "x", nil, 0, "inOutQuad")
 end

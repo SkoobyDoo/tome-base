@@ -78,6 +78,5 @@ function _M:generate()
 end
 
 function _M:on_focus_change(status)
-	tween.stop(self.tweenid)
-	self.tweenid = self.frame_sel_do.container:colorTween(8, "a", nil, status and 1 or 0, "linear")
+	self.frame_sel_do.container:colorTween("focus", 8, "a", nil, status and 1 or 0, "linear")
 end
