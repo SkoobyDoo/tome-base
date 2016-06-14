@@ -193,6 +193,7 @@ void DORContainer::remove(DisplayObject *dob) {
 
 void DORContainer::clear() {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		printf("DORContainer clearing : %lx\n", (long int)*it);
 		(*it)->setParent(NULL);
 		if (L) {
 			int ref = (*it)->unsetLuaRef();

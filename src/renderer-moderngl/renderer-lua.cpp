@@ -161,6 +161,7 @@ static int gl_renderer_new(lua_State *L)
 static int gl_renderer_free(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
+	r->removeFromParent(); // This is needed when the lua state closes it seems to be destroying stuff in strange order
 	delete(r);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -203,6 +204,7 @@ static int gl_container_new(lua_State *L)
 static int gl_container_free(lua_State *L)
 {
 	DORContainer *c = userdata_to_DO<DORContainer>(L, 1, "gl{container}");
+	c->removeFromParent(); // This is needed when the lua state closes it seems to be destroying stuff in strange order
 	delete(c);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -213,7 +215,7 @@ static int gl_container_add(lua_State *L)
 	// We do not make any checks on the types, so the same method can be used for container & renderer and to add any kind of display object
 	DORContainer *c = userdata_to_DO<DORContainer>(L, 1);
 	DisplayObject *add = userdata_to_DO(L, 2);
-	c->add(add);	
+	c->add(add);
 	add->setLuaRef(luaL_ref(L, LUA_REGISTRYINDEX));
 	return 0;
 }
@@ -259,6 +261,7 @@ static int gl_target_new(lua_State *L)
 static int gl_target_free(lua_State *L)
 {
 	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
+	c->removeFromParent(); // This is needed when the lua state closes it seems to be destroying stuff in strange order
 	delete(c);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -301,6 +304,7 @@ static int gl_vertexes_new(lua_State *L)
 static int gl_vertexes_free(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
+	v->removeFromParent(); // This is needed when the lua state closes it seems to be destroying stuff in strange order
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -374,6 +378,7 @@ static int gl_text_new(lua_State *L)
 static int gl_text_free(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
+	v->removeFromParent(); // This is needed when the lua state closes it seems to be destroying stuff in strange order
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
