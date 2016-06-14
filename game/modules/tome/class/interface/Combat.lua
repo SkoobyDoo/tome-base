@@ -1739,6 +1739,8 @@ function _M:getOffHandMult(combat, mult)
 	if self:knowTalent(Talents.T_CORRUPTED_STRENGTH) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_CORRUPTED_STRENGTH,"getoffmult"))
 	end
+	if combat and combat.no_offhand_penalty then offmult = math.max(1, offmult) end
+
 	offmult = (mult or 1)*offmult
 	if self:hasEffect(self.EFF_CURSE_OF_MADNESS) then
 		local eff = self:hasEffect(self.EFF_CURSE_OF_MADNESS)
@@ -1748,11 +1750,7 @@ function _M:getOffHandMult(combat, mult)
 		end
 	end
 
-	if combat and combat.no_offhand_penalty then
-		return math.max(1, offmult)
-	else
-		return offmult
-	end
+	return offmult
 end
 
 --- Gets fatigue
