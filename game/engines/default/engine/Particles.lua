@@ -58,7 +58,12 @@ function _M:loaded()
 	local islast = false
 	local sub_particle = self.args.sub_particle
 	local sub_particle_args = self.args.sub_particle_args
-	if type(self.def) == "string" then
+	if type(self.def) == "string" then	
+		if not config.settings.cheat and not fs.exists("/data/gfx/particles/"..self.def..".lua") then
+			print("[PARTICLES] system"..self.def.." does not exist, replacing with dummy")
+			self.def = "dummy"
+		end
+		
 		local f, err = loadfile("/data/gfx/particles/"..self.def..".lua")
 		if not f and err then error(err) end
 		local t = self.args or {}
