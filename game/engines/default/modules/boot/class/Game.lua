@@ -480,7 +480,7 @@ function _M:display(nb_keyframes)
 		engine.GameEnergyBased.display(self, nb_keyframes)
 -- print("===", core.display.countDraws())
 		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
--- core.renderer.dumpCurrentTweens()
+if nb_keyframes >0 then  core.renderer.dumpCurrentTweens() end
 		return
 	end
 
@@ -524,9 +524,9 @@ function _M:display(nb_keyframes)
 print("===", core.display.countDraws())
 end
 
-local renderer = core.renderer.renderer()
-renderer:zSort(true)
-local UIBase = require "engine.ui.Base"
+-- local renderer = core.renderer.renderer()
+-- renderer:zSort(true)
+-- local UIBase = require "engine.ui.Base"
 -- local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400, nil, nil, true)
 -- f.container:translate(400, 400)
 -- local f2 = UIBase:makeFrameDO("ui/button", 100, 40, nil, nil, true)
@@ -542,6 +542,7 @@ local UIBase = require "engine.ui.Base"
 -- local i = core.renderer.image("/data/gfx/background/tome.png")
 -- i:translate(0, 0, -1)
 -- i:scale(0.4, 0.2, 1)
+-- i:translateTween("toto", 60, "x", nil, 200, "linear", function() print("dddeleting ",i) game:test()game:test() end)
 -- f.container:add(i)
 
 -- local t0 = core.renderer.text(UIBase.font_bold)
@@ -584,14 +585,15 @@ local UIBase = require "engine.ui.Base"
 -- local fborenderer = core.renderer.renderer()
 -- fborenderer:add(fbo)
 
--- renderer:translate(100,100,0)
--- renderer:scale(2,0.7,1)
--- renderer:rotate(0, 0,math.rad(45))
--- renderer:cutoff(450, 400, 125, 200)
+-- -- renderer:translate(100,100,0)
+-- -- renderer:scale(2,0.7,1)
+-- -- renderer:rotate(0, 0,math.rad(45))
+-- -- renderer:cutoff(450, 400, 125, 200)
 
 -- local nb = 0
 -- local z = false
--- function _M:display()
+-- local tween = require "tween"
+-- function _M:display(nb_keyframes)
 -- 	-- fbo:use(true)
 -- 		renderer:toScreen()
 -- 		-- subrenderer:toScreen()
@@ -602,27 +604,13 @@ local UIBase = require "engine.ui.Base"
 
 -- 	-- fborenderer:toScreen()
 -- 	-- fbo:rotate(0, math.rad(2), 0, true)
+-- 	if nb_keyframes > 0 then tween.update(nb_keyframes) end
+-- 	core.renderer.dumpCurrentTweens()
 -- end
 -- local f
 -- function _M:test()
--- 	if not f then
--- 		-- f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400, nil, nil, true)
--- 		f= {container=core.renderer.container()}
--- 		f.container:translate(400, 400)
-
--- 		local i = core.renderer.image("/data/gfx/background/tome.png")
--- 		i:translate(100, 100, 1)
--- 		i:scale(0.4, 0.2, 1)
--- 		f.container:add(i)
-
--- 		renderer:add(f.container)
--- 		print("++===")
--- 	else
--- 		renderer:remove(f.container)
--- 		f = nil
--- 		collectgarbage("collect")
--- 		print("--===")
--- 	end
+-- 	print("test")
+-- 	print("dddeleting2 ",i) if i then i:removeFromParent() end i = nil collectgarbage("collect")
 -- end
 
 --- Ask if we really want to close, if so, save the game first

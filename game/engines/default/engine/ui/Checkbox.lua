@@ -53,16 +53,20 @@ function _M:generate()
 
 	self.tex = self:drawFontLine(self.font, self.title)
 	local w, h = text:getStats()
+
+	local tick_x, text_x = 0, check.w + 3
+	if not self.check_first then tick_x, text_x = w + 3, 0 end
+
 	self.w, self.h = w + check.w + 3, math.max(h, check.h)
 	self.do_container:add(text)
 
-	self.do_container:add(core.renderer.fromTextureTable(check, 0, (check.h - h) / 2))
+	self.do_container:add(core.renderer.fromTextureTable(check, tick_x, (check.h - h) / 2))
 
-	self.tickvo = core.renderer.fromTextureTable(tick, 0, (check.h - h) / 2)
+	self.tickvo = core.renderer.fromTextureTable(tick, tick_x, (check.h - h) / 2)
 	self.tickvo:color(1, 1, 1, self.checked and 1 or 0)
 	self.do_container:add(self.tickvo)
 
-	text:translate(check.w + 3, (self.h - h) / 2, 10)
+	text:translate(text_x, (self.h - h) / 2, 10)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
