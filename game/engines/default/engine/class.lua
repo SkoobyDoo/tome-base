@@ -216,6 +216,12 @@ function _M:proxyDataSet(k, v)
 	return true
 end
 
+--- Returns a weak "self" reference
+-- Can be then used to call methods, get & set data and will silently fail if self is no more
+function _M:weakSelf()
+	return setmetatable({__getstrong=self}, {__mode = "v"})
+end
+
 function _M:getClassName()
 	return self.__CLASSNAME or self._NAME
 end
