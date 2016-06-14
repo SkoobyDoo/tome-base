@@ -292,7 +292,7 @@ newTalent{
 		local energy = 1 - t.getEnergy(self, t)
 		self.energy.value = self.energy.value + game.energy_to_act * self.energy.mod * energy
 
-		self:removeEffectsFilter(function(t) return t.type == "physical" or t.type == "magical" end, t.getNb(self, t))
+		self:removeEffectsFilter(function(t) return (t.type == "physical" or t.type == "magical") and t.status == "detrimental" end, t.getNb(self, t))
 
 		game.level.map:particleEmitter(self.x, self.y, 1, "slime")
 		self:move(x, y, true)
@@ -303,7 +303,7 @@ newTalent{
 	info = function(self, t)
 		local nb = t.getNb(self, t)
 		local energy = t.getEnergy(self, t)
-		return ([[You temporarily merge with your mucus, cleansing yourself of %d physical or magical effects.
+		return ([[You temporarily merge with your mucus, cleansing yourself of %d physical or magical detrimental effects.
 		You can then reemerge on any tile within sight and range that is also covered by mucus.
 		This is quick, requiring only %d%% of a turn to perform, but you must be in contact with your mucus.]]):
 		format(nb, (energy) * 100)
