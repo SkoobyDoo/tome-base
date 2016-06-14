@@ -480,7 +480,7 @@ function _M:display(nb_keyframes)
 		engine.GameEnergyBased.display(self, nb_keyframes)
 -- print("===", core.display.countDraws())
 		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
-core.renderer.dumpCurrentTweens()
+-- core.renderer.dumpCurrentTweens()
 		return
 	end
 
