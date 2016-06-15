@@ -1707,20 +1707,18 @@ newEffect{
 newEffect{
 	name = "HALFLING_LUCK", image = "talents/halfling_luck.png",
 	desc = "Halflings's Luck",
-	long_desc = function(self, eff) return ("The target's luck and cunning combine to grant it %d%% higher combat critical chance, %d%% higher mental critical chance, and %d%% higher spell critical chance."):format(eff.physical, eff.mind, eff.spell) end,
+	long_desc = function(self, eff) return ("The target's luck and cunning combine to grant it %d%% higher critical chance and %d saves."):format(eff.crit, eff.save) end,
 	type = "mental",
 	subtype = { focus=true },
 	status = "beneficial",
-	parameters = { spell=10, physical=10 },
+	parameters = { crit=10, save=10 },
 	on_gain = function(self, err) return "#Target# seems more aware." end,
 	on_lose = function(self, err) return "#Target#'s awareness returns to normal." end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "combat_physcrit", eff.physical)
-		self:effectTemporaryValue(eff, "combat_spellcrit", eff.spell)
-		self:effectTemporaryValue(eff, "combat_mindcrit", eff.mind)
-		self:effectTemporaryValue(eff, "combat_physresist", eff.physical)
-		self:effectTemporaryValue(eff, "combat_spellresist", eff.spell)
-		self:effectTemporaryValue(eff, "combat_mentalresist", eff.mind)
+		self:effectTemporaryValue(eff, "combat_generic_crit", eff.crit)
+		self:effectTemporaryValue(eff, "combat_physresist", eff.save)
+		self:effectTemporaryValue(eff, "combat_spellresist", eff.save)
+		self:effectTemporaryValue(eff, "combat_mentalresist", eff.save)
 	end,
 }
 

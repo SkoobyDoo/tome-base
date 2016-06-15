@@ -527,9 +527,8 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 45, 25)) end, -- Limit >5
 	getParams = function(self, t)
 		return {
-			physical = self:combatStatScale("cun", 15, 60, 0.75),
-			spell = self:combatStatScale("cun", 15, 60, 0.75),
-			mind = self:combatStatScale("cun", 15, 60, 0.75),
+			crit = self:combatStatScale("cun", 15, 60, 0.75),
+			save = self:combatStatScale("cun", 15, 60, 0.75),
 			}
 	end,
 	tactical = { ATTACK = 2 },
@@ -539,9 +538,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local params = t.getParams(self, t)
-		return ([[Call upon the luck and cunning of the Little Folk to increase your physical, mental, and spell critical strike chance by %d%% and your saves by %d for 5 turns.
+		return ([[Call upon the luck and cunning of the Little Folk to increase your critical strike chance by %d%% and your saves by %d for 5 turns.
 		The bonus will increase with your Cunning.]]):
-		format(params.mind, params.mind)
+		format(params.crit, params.save)
 	end,
 }
 
