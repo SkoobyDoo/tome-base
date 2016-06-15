@@ -108,7 +108,12 @@ function _M:init()
 		end
 	end
 
-	self:updateUI()	
+	self:updateUI()
+
+	local mo = game.player:getEntityDisplayObject(nil, 64, 64)
+	mo:translate(0, 0, 20)
+	mo:removeFromParent()
+	self.do_container:add(mo)
 end
 
 function _M:enableWebtooltip()

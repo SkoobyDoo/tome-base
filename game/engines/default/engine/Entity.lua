@@ -624,12 +624,10 @@ end
 -- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
 -- @param w the width
 -- @param h the height
--- @return[1] nil if no texture
--- @return[2] the sdl surface
--- @return[2] the texture
-function _M:getEntityFinalSurface(tiles, w, h)
+-- @return[1] the display object, that can then be chained to others DOs or renderer
+function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader)
 	local id = w.."x"..h
-	if _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].surface, _M.__mo_final_repo[self][id].tex end
+	if _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].DO end
 
 	local Map = require "engine.Map"
 	tiles = tiles or Map.tiles
@@ -640,38 +638,12 @@ function _M:getEntityFinalSurface(tiles, w, h)
 	for i = 1, Map.zdepth do
 		if mos[i] then list[#list+1] = mos[i] end
 	end
-	local tex = core.map.mapObjectsToTexture(w, h, unpack(list))
-	if not tex then return nil end
+	local DO = core.map.mapObjectsToDisplayObject(w, h, a, allow_cb, allow_shader, unpack(list))
+	if not DO then return nil end
+
 	_M.__mo_final_repo[self] = _M.__mo_final_repo[self] or {}
-	_M.__mo_final_repo[self][id] = {surface=tex:toSurface(), tex=tex}
-	return _M.__mo_final_repo[self][id].surface, _M.__mo_final_repo[self][id].tex
-end
-
---- Get the entity image as an sdl texture for the given tiles and size
--- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
--- @param w the width
--- @param h the height
--- @return[1] nil if no texture
--- @return[2] the texture
-function _M:getEntityFinalTexture(tiles, w, h)
-	local id = w.."x"..h
-	if _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].tex end
-
-	local Map = require "engine.Map"
-	tiles = tiles or Map.tiles
-
-	local mos = {}
-	local list = {}
-	self:getMapObjects(tiles, mos, 1)
-	local listsize = #list
-	for i = 1, Map.zdepth do
-		if mos[i] then list[listsize+i] = mos[i] end
-	end
-	local tex = core.map.mapObjectsToTexture(w, h, unpack(list))
-	if not tex then return nil end
-	_M.__mo_final_repo[self] = _M.__mo_final_repo[self] or {}
-	_M.__mo_final_repo[self][id] = {tex=tex}
-	return _M.__mo_final_repo[self][id].tex
+	_M.__mo_final_repo[self][id] = {DO=DO}
+	return _M.__mo_final_repo[self][id].DO
 end
 
 --- Get a string that will display in text the texture of this entity
@@ -702,16 +674,18 @@ end
 -- @param allow_cb
 -- @param allow_shader
 function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_shader)
-	local Map = require "engine.Map"
-	tiles = tiles or Map.tiles
+	-- local Map = require "engine.Map"
+	-- tiles = tiles or Map.tiles
 
-	local mos = {}
-	local list = {}
-	self:getMapObjects(tiles, mos, 1)
-	for i = 1, Map.zdepth do
-		if mos[i] then list[#list+1] = mos[i] end
-	end
-	core.map.mapObjectsToScreen(x, y, w, h, a, allow_cb, allow_shader, unpack(list))
+	-- local mos = {}
+	-- local list = {}
+	-- self:getMapObjects(tiles, mos, 1)
+	-- for i = 1, Map.zdepth do
+	-- 	if mos[i] then list[#list+1] = mos[i] end
+	-- end
+	-- core.map.mapObjectsToScreen(x, y, w, h, a, allow_cb, allow_shader, unpack(list))
+	local DO = self:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader)
+	DO:toScreen(x, y)
 end
 
 --- Resolves an entity  

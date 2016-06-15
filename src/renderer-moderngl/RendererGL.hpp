@@ -51,6 +51,7 @@ public:
 	~DisplayList();
 };
 
+extern void stopDisplayList();
 extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
 
 /****************************************************************************
@@ -69,6 +70,18 @@ public:
 
 	virtual void toScreenSimple();
 	virtual void toScreen(mat4 cur_model, vec4 color) = 0;
+};
+
+/****************************************************************************
+ ** A Dummy DO taht displays nothing and instead calls a lua callback
+ ****************************************************************************/
+class DORCallback : public SubRenderer {
+private:
+	vec4 use_color;
+	mat4 use_model;
+
+public:
+	virtual void toScreen(mat4 cur_model, vec4 color);
 };
 
 /****************************************************************************

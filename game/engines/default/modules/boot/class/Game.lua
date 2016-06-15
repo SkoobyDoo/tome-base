@@ -476,9 +476,7 @@ function _M:display(nb_keyframes)
 	if self.stopped then
 		self.renderer:toScreen()
 		self.logdisplay:toScreen()
--- core.display.countDraws()
 		engine.GameEnergyBased.display(self, nb_keyframes)
--- print("===", core.display.countDraws())
 		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
 if nb_keyframes >0 then  core.renderer.dumpCurrentTweens() end
 		return
@@ -517,14 +515,15 @@ if nb_keyframes >0 then  core.renderer.dumpCurrentTweens() end
 
 	local old = self.flyers
 	self.flyers = nil
+core.display.countDraws()
 	engine.GameEnergyBased.display(self, nb_keyframes)
+print("===", core.display.countDraws())
 	self.flyers = old
 
 	if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
-print("===", core.display.countDraws())
 end
 
--- [[
+--[[
 local renderer = core.renderer.renderer()
 renderer:zSort(true)
 local UIBase = require "engine.ui.Base"

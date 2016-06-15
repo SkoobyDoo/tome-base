@@ -35,6 +35,10 @@ static stack<DisplayList*> available_dls;
 static DisplayList* current_used_dl = NULL;
 static DORContainer* current_used_dl_container = NULL;
 
+void stopDisplayList() {
+	current_used_dl = NULL;
+}
+
 DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader) {
 	if (available_dls.empty()) {
 		available_dls.push(new DisplayList());
@@ -96,9 +100,9 @@ void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 	if (!visible) return;
 	this->use_model = cur_model * model;
 	this->use_color = cur_color * color;
-	current_used_dl = NULL; // Needed to make sure we break texture chaining
+	stopDisplayList(); // Needed to make sure we break texture chaining
 	auto dl = getDisplayList(container, 0, NULL);
-	current_used_dl = NULL; // Needed to make sure we break texture chaining
+	stopDisplayList(); // Needed to make sure we break texture chaining
 	dl->sub = this;
 	// resetChanged();
 }
@@ -117,6 +121,12 @@ void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color)
 void SubRenderer::toScreenSimple() {
 	vec4 color = {1.0, 1.0, 1.0, 1.0};
 	toScreen(mat4(), color);
+}
+
+/***************************************************************************
+ ** DORCallback class
+ ***************************************************************************/
+void DORCallback::toScreen(mat4 cur_model, vec4 color) {
 }
 
 /***************************************************************************
@@ -155,9 +165,9 @@ void RendererGL::sortedToDL() {
 
 	for (auto v = zvertices.begin(); v != zvertices.end(); v++) {
 		if (v->sub) {
-			current_used_dl = NULL; // Needed to make sure we break texture chaining
+			stopDisplayList(); // Needed to make sure we break texture chaining
 			dl = getDisplayList(this, 0, NULL);
-			current_used_dl = NULL; // Needed to make sure we break texture chaining
+			stopDisplayList(); // Needed to make sure we break texture chaining
 			dl->sub = v->sub;
 			dl = NULL;
 		} else {

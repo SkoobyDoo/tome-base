@@ -153,20 +153,33 @@ int DORVertexes::addQuad(
 		float x4, float y4, float u4, float v4, 
 		float r, float g, float b, float a
 	) {
+	return addQuad(
+		x1, y1, 0, u1, v1,
+		x2, y2, 0, u2, v2,
+		x3, y3, 0, u3, v3,
+		x4, y4, 0, u4, v4,
+		r, g, b, a
+	);
+}
+
+int DORVertexes::addQuad(
+		float x1, float y1, float z1, float u1, float v1, 
+		float x2, float y2, float z2, float u2, float v2, 
+		float x3, float y3, float z3, float u3, float v3, 
+		float x4, float y4, float z4, float u4, float v4, 
+		float r, float g, float b, float a
+	) {
 	if (vertices.size() + 4 < vertices.capacity()) vertices.reserve(vertices.size() * 2);
 
-	vertex ve1 = {{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}};
-	vertex ve2 = {{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}};
-	vertex ve3 = {{x3, y3, 0, 1}, {u3, v3}, {r, g, b, a}};
-	vertex ve4 = {{x4, y4, 0, 1}, {u4, v4}, {r, g, b, a}};
-	vertices.push_back(ve1);
-	vertices.push_back(ve2);
-	vertices.push_back(ve3);
-	vertices.push_back(ve4);
+	vertices.push_back({{x1, y1, z1, 1}, {u1, v1}, {r, g, b, a}});
+	vertices.push_back({{x2, y2, z2, 1}, {u2, v2}, {r, g, b, a}});
+	vertices.push_back({{x3, y3, z3, 1}, {u3, v3}, {r, g, b, a}});
+	vertices.push_back({{x4, y4, z4, 1}, {u4, v4}, {r, g, b, a}});
 
 	setChanged();
 	return 0;
 }
+
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
@@ -180,7 +193,7 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 	dl->list.reserve(startat + nb);
 
 	// Copy & apply the model matrix
-	// DG: is it better to first copy it all and then alter it ? most likely not, change me
+	// DGDGDGDG: is it better to first copy it all and then alter it ? most likely not, change me
 	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
 	vertex *dest = dl->list.data();
 	for (int di = startat; di < startat + nb; di++) {

@@ -75,7 +75,7 @@ public:
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
 	void setParent(DisplayObject *parent);
 	void removeFromParent();
-	// FIXME: setChanged repercutes over all the parents, but it should stop at RendererGLs
+	// DGDGDGDG: setChanged repercutes over all the parents, but it should stop at RendererGLs
 	void setChanged();
 	bool isChanged() { return changed; };
 	void resetChanged() { changed = false; };
@@ -127,6 +127,13 @@ public:
 		float x2, float y2, float u2, float v2, 
 		float x3, float y3, float u3, float v3, 
 		float x4, float y4, float u4, float v4, 
+		float r, float g, float b, float a
+	);
+	int addQuad(
+		float x1, float y1, float z1, float u1, float v1, 
+		float x2, float y2, float z2, float u2, float v2, 
+		float x3, float y3, float z3, float u3, float v3, 
+		float x4, float y4, float z4, float u4, float v4, 
 		float r, float g, float b, float a
 	);
 	virtual void setTexture(GLuint tex, int lua_ref) {

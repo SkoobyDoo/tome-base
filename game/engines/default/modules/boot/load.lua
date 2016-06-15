@@ -32,6 +32,7 @@ local ActorTemporaryEffects = require "engine.interface.ActorTemporaryEffects"
 local Birther = require "engine.Birther"
 local UIBase = require "engine.ui.Base"
 local FontPackage = require "engine.FontPackage"
+local Tiles = require "engine.Tiles"
 
 -- Dialogs fonts
 UIBase.font = FontPackage:get("default")
@@ -73,6 +74,10 @@ ActorAI:loadDefinition("/mod/ai/")
 
 -- Birther descriptor
 Birther:loadDefinition("/data/birth/descriptors.lua")
+
+-- Load tilesets, to speed up image loads
+Tiles:loadTileset("/data/gfx/ts-gfx-npc.lua")
+Tiles:loadTileset("/data/gfx/ts-gfx-terrain.lua")
 
 -- Switch to realtime, with 8 ticks per second
 core.game.setRealtime(8)

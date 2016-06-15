@@ -439,6 +439,17 @@ static int gl_text_shader(lua_State *L)
 
 
 /******************************************************************
+ ** TileObject -- no constructor, this is in map.cpp
+ ******************************************************************/
+static int gl_tileobject_free(lua_State *L)
+{
+	DORTileObject *v = userdata_to_DO<DORTileObject>(L, 1, "gl{tileobject}");
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+/******************************************************************
  ** Lua declarations
  ******************************************************************/
 
@@ -557,6 +568,24 @@ static const struct luaL_Reg gl_text_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_tileobject_reg[] =
+{
+	{"__gc", gl_tileobject_free},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
+	{"shown", gl_generic_shown},
+	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
+	{NULL, NULL},
+};
+
 const luaL_Reg rendererlib[] = {
 	{"renderer", gl_renderer_new},
 	{"vertexes", gl_vertexes_new},
@@ -573,6 +602,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{text}", gl_text_reg);
 	auxiliar_newclass(L, "gl{container}", gl_container_reg);
 	auxiliar_newclass(L, "gl{target}", gl_target_reg);
+	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 	return 1;
 }

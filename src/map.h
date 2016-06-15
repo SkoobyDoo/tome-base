@@ -24,6 +24,8 @@
 #include "tgl.h"
 #include "useshader.h"
 
+enum display_last_kind {DL_NONE, DL_TRUE_LAST, DL_TRUE};
+
 struct s_map_object {
 	int nb_textures;
 	int *textures_ref;
@@ -53,7 +55,7 @@ struct s_map_object {
 	float move_twitch;
 	int anim_max, anim_loop;
 	float anim_step, anim_speed;
-	enum {DL_NONE, DL_TRUE_LAST, DL_TRUE} display_last;
+	enum display_last_kind display_last;
 	long uid;
 
 	int cb_ref;
@@ -121,5 +123,7 @@ typedef struct {
 	int seensinfo_h;
 	bool seen_changed;
 } map_type;
+
+extern int luaopen_map(lua_State *L);
 
 #endif
