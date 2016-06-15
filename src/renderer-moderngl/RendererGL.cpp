@@ -88,84 +88,9 @@ DisplayList::~DisplayList() {
 	vbo = 0;
 }
 
-RendererGL::RendererGL() : RendererGL(screen->w / screen_zoom, screen->h / screen_zoom) {}
-RendererGL::RendererGL(int w, int h) {
-	glGenBuffers(1, &vbo_elements);
-	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
-}
-RendererGL::~RendererGL() {
-	glDeleteBuffers(1, &vbo_elements);
-}
-
-void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	cur_model *= model;
-	cur_color *= color;
-	auto dl = getDisplayList(container, tex, shader);
-
-	// Make sure we do not have to reallocate each step
-	int nb = vertices.size();
-	int startat = dl->list.size();
-	dl->list.reserve(startat + nb);
-
-	// Copy & apply the model matrix
-	// DG: is it better to first copy it all and then alter it ? most likely not, change me
-	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
-	vertex *dest = dl->list.data();
-	for (int di = startat; di < startat + nb; di++) {
-		dest[di].pos = cur_model * dest[di].pos;
-		dest[di].color = cur_color * dest[di].color;
-	}
-
-	resetChanged();
-}
-
-void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	cur_model *= model;
-	cur_color *= color;
-
-	// Make sure we do not have to reallocate each step
-	int nb = vertices.size();
-	int startat = container->zvertices.size();
-	container->zvertices.resize(startat + nb);
-
-	// Copy & apply the model matrix
-	vertex *src = vertices.data();
-	sortable_vertex *dest = container->zvertices.data();
-	for (int di = startat, si = 0; di < startat + nb; di++, si++) {
-		dest[di].sub = NULL;
-		dest[di].tex = tex;
-		dest[di].shader = shader;
-		dest[di].v.tex = src[si].tex;
-		dest[di].v.color = cur_color * src[si].color;
-		dest[di].v.pos = cur_model * src[si].pos;
-	}
-
-	resetChanged();
-}
-
-void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	cur_model *= model;
-	cur_color *= color;
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->render(container, cur_model, cur_color);
-	}
-	resetChanged();
-}
-
-void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	cur_model *= model;
-	cur_color *= color;
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->renderZ(container, cur_model, cur_color);
-	}
-	resetChanged();
-}
+/***************************************************************************
+ ** SubRenderer
+ ***************************************************************************/
 
 void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
@@ -187,6 +112,27 @@ void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color)
 	sortable_vertex *dest = container->zvertices.data();
 	dest[startat].sub = this;
 	// resetChanged();
+}
+
+void SubRenderer::toScreenSimple() {
+	vec4 color = {1.0, 1.0, 1.0, 1.0};
+	toScreen(mat4(), color);
+}
+
+/***************************************************************************
+ ** RendererGL class
+ ***************************************************************************/
+
+RendererGL::RendererGL() : RendererGL(screen->w / screen_zoom, screen->h / screen_zoom) {}
+RendererGL::RendererGL(int w, int h) {
+	glGenBuffers(1, &vbo_elements);
+	this->w = w;
+	this->h = h;
+	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+}
+RendererGL::~RendererGL() {
+	enablePostProcessing(false);
+	glDeleteBuffers(1, &vbo_elements);
 }
 
 static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
@@ -286,9 +232,40 @@ void RendererGL::update() {
 	}
 }
 
-void SubRenderer::toScreenSimple() {
-	vec4 color = {1.0, 1.0, 1.0, 1.0};
-	toScreen(mat4(), color);
+void RendererGL::enablePostProcessing(bool v) {
+	post_processing = v;
+	if (v) {
+		glGenFramebuffers(2, post_process_fbos);
+		glGenTextures(2, post_process_textures);
+		for (int i = 0; i < 2; i++) {
+			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
+			tfglBindTexture(GL_TEXTURE_2D, post_process_textures[i]);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, post_process_textures[i], 0);
+		}
+		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
+	} else {
+		for (int i = 0; i < 2; i++) {
+			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+		}
+		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glDeleteTextures(2, post_process_textures);
+		glDeleteFramebuffers(2, post_process_fbos);
+	}
+}
+
+void RendererGL::clearPostProcessShaders() {
+	post_process_shaders.clear();
+}
+
+// DGDGDGDG: test & finish post processing
+void RendererGL::addPostProcessShader(shader_type *s) {
+	post_process_shaders.push_back(s);
 }
 
 void RendererGL::activateCutting(mat4 cur_model, bool v) {

@@ -168,6 +168,54 @@ int DORVertexes::addQuad(
 	return 0;
 }
 
+void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	cur_model *= model;
+	cur_color *= color;
+	auto dl = getDisplayList(container, tex, shader);
+
+	// Make sure we do not have to reallocate each step
+	int nb = vertices.size();
+	int startat = dl->list.size();
+	dl->list.reserve(startat + nb);
+
+	// Copy & apply the model matrix
+	// DG: is it better to first copy it all and then alter it ? most likely not, change me
+	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
+	vertex *dest = dl->list.data();
+	for (int di = startat; di < startat + nb; di++) {
+		dest[di].pos = cur_model * dest[di].pos;
+		dest[di].color = cur_color * dest[di].color;
+	}
+
+	resetChanged();
+}
+
+void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	cur_model *= model;
+	cur_color *= color;
+
+	// Make sure we do not have to reallocate each step
+	int nb = vertices.size();
+	int startat = container->zvertices.size();
+	container->zvertices.resize(startat + nb);
+
+	// Copy & apply the model matrix
+	vertex *src = vertices.data();
+	sortable_vertex *dest = container->zvertices.data();
+	for (int di = startat, si = 0; di < startat + nb; di++, si++) {
+		dest[di].sub = NULL;
+		dest[di].tex = tex;
+		dest[di].shader = shader;
+		dest[di].v.tex = src[si].tex;
+		dest[di].v.color = cur_color * src[si].color;
+		dest[di].v.pos = cur_model * src[si].pos;
+	}
+
+	resetChanged();
+}
+
 void DORContainer::add(DisplayObject *dob) {
 	dos.push_back(dob);
 	dob->setParent(this);
@@ -193,7 +241,7 @@ void DORContainer::remove(DisplayObject *dob) {
 
 void DORContainer::clear() {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		printf("DORContainer clearing : %lx\n", (long int)*it);
+		// printf("DORContainer clearing : %lx\n", (long int)*it);
 		(*it)->setParent(NULL);
 		if (L) {
 			int ref = (*it)->unsetLuaRef();
@@ -208,6 +256,28 @@ DORContainer::~DORContainer() {
 	clear();
 }
 
+void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	cur_model *= model;
+	cur_color *= color;
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->render(container, cur_model, cur_color);
+	}
+	resetChanged();
+}
+
+void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	cur_model *= model;
+	cur_color *= color;
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->renderZ(container, cur_model, cur_color);
+	}
+	resetChanged();
+}
+
 DORTarget::DORTarget() : DORTarget(screen->w / screen_zoom, screen->h / screen_zoom, 1) {
 }
 DORTarget::DORTarget(int w, int h, int nbt) {
@@ -216,7 +286,7 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 	this->h = h;
 
 	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 	// Now setup a texture to render to
 	int i;
@@ -233,7 +303,7 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 		buffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// For display as a DO
 	tex = textures[0];
@@ -247,9 +317,9 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 	);
 }
 DORTarget::~DORTarget() {
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	for (int i = 0; i < nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDeleteTextures(nbt, textures.data());
 	glDeleteFramebuffers(1, &fbo);
@@ -285,7 +355,7 @@ static stack<GLuint> fbo_stack;
 void DORTarget::use(bool activate) {
 	if (activate)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		if (nbt > 1) glDrawBuffers(nbt, buffers.data());
 
 		tglClearColor(clear_r, clear_g, clear_b, clear_a);
@@ -299,9 +369,9 @@ void DORTarget::use(bool activate) {
 
 		// Unbind texture from FBO and then unbind FBO
 		if (!fbo_stack.empty()) {
-			glBindFramebuffer(GL_FRAMEBUFFER, fbo_stack.top());
+			tglBindFramebuffer(GL_FRAMEBUFFER, fbo_stack.top());
 		} else {
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 	}
 }

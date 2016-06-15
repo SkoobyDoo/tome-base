@@ -1744,8 +1744,8 @@ static int sdl_texture_outline(lua_State *L)
 	// WARNING: this is a static, only one FBO is ever made, and never deleted, for some reasons
 	// deleting it makes the game crash when doing a chain lightning spell under luajit1 ... (yeah I know .. weird)
 	static GLuint fbo = 0;
-	if (!fbo) glGenFramebuffersEXT(1, &fbo);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
+	if (!fbo) glGenFramebuffers(1, &fbo);
+	tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 	// Now setup a texture to render to
 	texture_type *img = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
@@ -1757,10 +1757,10 @@ static int sdl_texture_outline(lua_State *L)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, img->tex, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img->tex, 0);
 
-	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) return 0;
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(status != GL_FRAMEBUFFER_COMPLETE) return 0;
 
 	// Set the viewport and save the old one
 	glPushAttrib(GL_VIEWPORT_BIT);
@@ -1815,14 +1815,14 @@ static int sdl_texture_outline(lua_State *L)
 	glDrawArrays(GL_QUADS, 0, 4);
 
 	// Unbind texture from FBO and then unbind FBO
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, gl_c_fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+	tglBindFramebuffer(GL_FRAMEBUFFER, gl_c_fbo);
 	// Restore viewport
 	glPopAttrib();
 
 	// Cleanup
 	// No, dot not it's a static, see upwards
-//	CHECKGL(glDeleteFramebuffersEXT(1, &fbo));
+//	CHECKGL(glDeleteFramebuffers(1, &fbo));
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -2024,8 +2024,8 @@ static int gl_new_fbo(lua_State *L)
 	fbo->textures = calloc(nbt, sizeof(GLuint));
 	fbo->buffers = calloc(nbt, sizeof(GLenum));
 
-	glGenFramebuffersEXT(1, &(fbo->fbo));
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+	glGenFramebuffers(1, &(fbo->fbo));
+	tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
 
 	// Now setup a texture to render to
 	int i;
@@ -2036,14 +2036,14 @@ static int gl_new_fbo(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
 		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 
-	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) return 0;
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(status != GL_FRAMEBUFFER_COMPLETE) return 0;
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return 1;
 }
@@ -2052,13 +2052,13 @@ static int gl_free_fbo(lua_State *L)
 {
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+	tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
 	int i;
-	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDeleteTextures(fbo->nbt, fbo->textures);
-	glDeleteFramebuffersEXT(1, &(fbo->fbo));
+	glDeleteFramebuffers(1, &(fbo->fbo));
 
 	free(fbo->textures);
 	free(fbo->buffers);
@@ -2083,7 +2083,7 @@ static int gl_fbo_use(lua_State *L)
 
 	if (active)
 	{
-		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+		tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
 		if (fbo->nbt > 1) glDrawBuffers(fbo->nbt, fbo->buffers);
 
 		// Set the viewport and save the old one
@@ -2112,11 +2112,11 @@ static int gl_fbo_use(lua_State *L)
 		glPopAttrib();
 
 		// Unbind texture from FBO and then unbind FBO
-		if (!lua_isuserdata(L, 3)) { tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); }
+		if (!lua_isuserdata(L, 3)) { tglBindFramebuffer(GL_FRAMEBUFFER, 0); }
 		else
 		{
 			lua_fbo *pfbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 3);
-			tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, pfbo->fbo);
+			tglBindFramebuffer(GL_FRAMEBUFFER, pfbo->fbo);
 		}
 
 
@@ -2245,7 +2245,7 @@ static int gl_fbo_posteffects(lua_State *L)
 		shader_type *s = (shader_type*)lua_touserdata(L, shad_idx);
 		useShader(s, fbo->w, fbo->h, w, h, 0, 0, 1, 1, 1, 1, 1, 1);
 
-		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
+		tglBindFramebuffer(GL_FRAMEBUFFER, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
 		tglBindTexture(GL_TEXTURE_2D, srcfbo->textures[0]);
 		glDrawArrays(GL_QUADS, 0, 4);
@@ -2263,7 +2263,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopAttrib();
-	tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_final->fbo);
+	tglBindFramebuffer(GL_FRAMEBUFFER, fbo_final->fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
 	tglBindTexture(GL_TEXTURE_2D, srcfbo->textures[0]);
 	vertices[0] = x; vertices[1] = y;

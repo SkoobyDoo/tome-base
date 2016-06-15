@@ -24,7 +24,7 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 
-#define PARTICLE_ETERNAL = 999999;
+#define PARTICLE_ETERNAL 999999
 
 enum engine_kinds {
 	ENGINE_POINTS = 0,
@@ -50,13 +50,9 @@ typedef struct {
 
 class Particles;
 
-class Particles : public RendererGL {
+class Particles : public DORVertexes {
 private:
 	SDL_mutex *lock;
-
-	// Read only by main
-	GLuint texture;
-	shader_type *shader;
 
 	// W by main, R by thread
 	const char *name_def;
@@ -100,9 +96,13 @@ private:
 
 	Particles *sub;
 public:
-	Particles();
+	Particles(const char *name_def, const char *args, int density, bool fboalter);
 	virtual ~Particles();
 	virtual const char* getKind() { return "Particles"; };
+
+	bool isAlive() { return alive; };
+	void die() { i_want_to_die = true; };
+	void tick(bool last, bool no_update);
 };
 
 #endif

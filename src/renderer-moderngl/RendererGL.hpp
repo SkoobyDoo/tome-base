@@ -51,6 +51,8 @@ public:
 	~DisplayList();
 };
 
+extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
+
 /****************************************************************************
  ** Interface to make a DisplayObject be a sub-renderer: breaking chaining
  ** and using it's own render method
@@ -79,6 +81,7 @@ protected:
 	GLenum kind = GL_TRIANGLES;
 
 	mat4 view;
+	int w, h;
 
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;
@@ -90,6 +93,11 @@ protected:
 	bool cutting = false;
 	vec4 cutpos1;
 	vec4 cutpos2;
+
+	bool post_processing = false;
+	vector<shader_type*> post_process_shaders;
+	GLuint post_process_fbos[2] = {0, 0};
+	GLuint post_process_textures[2] = {0, 0};
 
 public:
 	vector<sortable_vertex> zvertices;
@@ -111,6 +119,10 @@ public:
 	virtual void toScreen(mat4 cur_model, vec4 color);
 
 	void activateCutting(mat4 cur_model, bool v);
+
+	void enablePostProcessing(bool v);
+	void clearPostProcessShaders();
+	void addPostProcessShader(shader_type *s);
 };
 
 #endif

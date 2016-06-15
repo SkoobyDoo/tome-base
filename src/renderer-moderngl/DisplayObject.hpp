@@ -64,6 +64,7 @@ public:
 	DisplayObject() { donb++; printf("+DOs %d\n", donb); model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1; };
 	virtual ~DisplayObject() {
 		donb--; printf("-DOs %d\n", donb);
+		removeFromParent();
 		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
 	};
 
