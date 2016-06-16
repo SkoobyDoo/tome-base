@@ -101,9 +101,9 @@ end
 function _M:onDrag(inven, item, o)
 	if not self.drag_enable then return end
 	if o then
-		local s = o:getEntityFinalSurface(nil, 64, 64)
+		local DO = o:getEntityDisplayObject(nil, 64, 64)
 		local x, y = core.mouse.get()
-		game.mouse:startDrag(x, y, s, {kind="inventory", item_idx=item, inven=inven, object=o, id=o:getName{no_add_name=true, force_id=true, no_count=true}}, function(drag, used)
+		game.mouse:startDrag(x, y, DO, {kind="inventory", item_idx=item, inven=inven, object=o, id=o:getName{no_add_name=true, force_id=true, no_count=true}}, function(drag, used)
 			local x, y = core.mouse.get()
 			game.mouse:receiveMouse("drag-end", x, y, true, nil, {drag=drag})
 		end)

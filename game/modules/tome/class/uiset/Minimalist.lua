@@ -575,14 +575,14 @@ function _M:uiMoveResize(what, button, mx, my, xrel, yrel, bx, by, event, mode, 
 	if event == "button" and button == "middle" then self.places[what].scale = 1 self:saveSettings()
 	elseif event == "motion" and button == "left" then
 		self.ui_moving = what
-		game.mouse:startDrag(mx, my, s, {kind="ui:move", id=what, dx=bx*self.places[what].scale, dy=by*self.places[what].scale},
+		game.mouse:startDrag(mx, my, nil, {kind="ui:move", id=what, dx=bx*self.places[what].scale, dy=by*self.places[what].scale},
 			function(drag, used) self:saveSettings() self.ui_moving = nil if on_change then on_change("move") end end,
 			function(drag, _, x, y) if self.places[drag.payload.id] then self.places[drag.payload.id].x = x-drag.payload.dx self.places[drag.payload.id].y = y-drag.payload.dy self:boundPlaces() if on_change then on_change("move") end end end,
 			true
 		)
 	elseif event == "motion" and button == "right" then
 		if mode == "rescale" then
-			game.mouse:startDrag(mx, my, s, {kind="ui:rescale", id=what, bx=bx, by=by},
+			game.mouse:startDrag(mx, my, nil, {kind="ui:rescale", id=what, bx=bx, by=by},
 				function(drag, used) self:saveSettings() if on_change then on_change(mode) end end,
 				function(drag, _, x, y) if self.places[drag.payload.id] then
 					self.places[drag.payload.id].scale = util.bound(math.max((x-self.places[drag.payload.id].x)/drag.payload.bx), 0.5, 2)
@@ -592,7 +592,7 @@ function _M:uiMoveResize(what, button, mx, my, xrel, yrel, bx, by, event, mode, 
 				true
 			)
 		elseif mode == "resize" and self.places[what] then
-			game.mouse:startDrag(mx, my, s, {kind="ui:resize", id=what, ox=mx - (self.places[what].x + util.getval(self.mhandle_pos[what].x, self)), oy=my - (self.places[what].y + util.getval(self.mhandle_pos[what].y, self))},
+			game.mouse:startDrag(mx, my, nil, {kind="ui:resize", id=what, ox=mx - (self.places[what].x + util.getval(self.mhandle_pos[what].x, self)), oy=my - (self.places[what].y + util.getval(self.mhandle_pos[what].y, self))},
 				function(drag, used) self:saveSettings() if on_change then on_change(mode) end end,
 				function(drag, _, x, y) if self.places[drag.payload.id] then
 					self.places[drag.payload.id].w = math.max(20, x - self.places[drag.payload.id].x + drag.payload.ox)

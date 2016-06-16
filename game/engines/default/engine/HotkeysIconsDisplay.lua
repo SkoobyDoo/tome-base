@@ -385,13 +385,13 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 				else
 					if a.hotkey[i][1] == "talent" then
 						local t = self.actor:getTalentFromId(a.hotkey[i][2])
-						local s = t.display_entity:getEntityFinalSurface(nil, 64, 64)
-						game.mouse:startDrag(mx, my, s, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
+						local DO = t.display_entity:getEntityDisplayObject(nil, 64, 64)
+						game.mouse:startDrag(mx, my, DO, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
 					elseif a.hotkey[i][1] == "inventory" then
 						local o = a:findInAllInventories(a.hotkey[i][2], {no_add_name=true, force_id=true, no_count=true})
-						local s = nil
-						if o then s = o:getEntityFinalSurface(nil, 64, 64) end
-						game.mouse:startDrag(mx, my, s, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
+						local DO = nil
+						if o then DO = o:getEntityDisplayObject(nil, 64, 64) end
+						game.mouse:startDrag(mx, my, DO, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
 					end
 				end
 			elseif button == "right" and click and not zone.fake then
