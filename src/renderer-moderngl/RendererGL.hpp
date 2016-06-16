@@ -79,8 +79,13 @@ class DORCallback : public SubRenderer {
 private:
 	vec4 use_color;
 	mat4 use_model;
+	int cb_ref;
 
 public:
+	DORCallback(int ref) { cb_ref = ref; };
+	virtual ~DORCallback() { if (cb_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, cb_ref); };
+	virtual const char* getKind() { return "DORCallback"; };
+
 	virtual void toScreen(mat4 cur_model, vec4 color);
 };
 

@@ -158,9 +158,9 @@ public:
 	virtual ~DORContainer();
 	virtual const char* getKind() { return "DORContainer"; };
 
-	void add(DisplayObject *dob);
-	void remove(DisplayObject *dob);
-	void clear();
+	virtual void add(DisplayObject *dob);
+	virtual void remove(DisplayObject *dob);
+	virtual void clear();
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);

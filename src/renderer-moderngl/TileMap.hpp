@@ -65,6 +65,8 @@ public:
 	void resetMapObjects();
 	void addMapObject(map_object *mo, int ref);
 
+	virtual void clear();
+
 	void regenData();
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
