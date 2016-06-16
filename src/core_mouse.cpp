@@ -135,29 +135,33 @@ static int sdl_set_mouse_cursor(lua_State *L)
 	return 0;
 }
 
-extern int mouse_drag_tex, mouse_drag_tex_ref;
-extern int mouse_drag_w, mouse_drag_h;
+extern int mousex, mousey;
+static RendererGL *mouse_renderer = NULL;
+static DisplayObject *mouse_drag_do = NULL;
+static bool mouse_drag_set = false;
+static int mouse_drag_w = 32, mouse_drag_h = 32;
 static int sdl_set_mouse_cursor_drag(lua_State *L)
 {
-	mouse_drag_w = luaL_checknumber(L, 2);
-	mouse_drag_h = luaL_checknumber(L, 3);
-
-	/* Default */
-	if (mouse_drag_tex_ref != LUA_NOREF)
-	{
-		luaL_unref(L, LUA_REGISTRYINDEX, mouse_drag_tex_ref);
-		mouse_drag_tex_ref = LUA_NOREF;
-	}
-
 	if (lua_isnil(L, 1))
 	{
-		mouse_drag_tex = 0;
+		mouse_renderer->clear();
+		mouse_drag_set = false;
+		if (mouse_drag_do) {
+			delete mouse_drag_do;
+			mouse_drag_do = NULL;
+		}
 	}
 	else
 	{
-		texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
-		mouse_drag_tex = t->tex;
-		mouse_drag_tex_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+		mouse_drag_w = luaL_checknumber(L, 2);
+		mouse_drag_h = luaL_checknumber(L, 3);
+
+		if (!mouse_renderer) mouse_renderer = new RendererGL();
+		DisplayObject *c = userdata_to_DO(L, 1);
+		mouse_drag_do = c->clone();
+		mouse_drag_do->setLuaState(NULL); // Lua state ? where we are going we don't need a lua state!
+		mouse_renderer->add(mouse_drag_do);
+		mouse_drag_set = true;
 	}
 	return 0;
 }
@@ -177,8 +181,26 @@ static const struct luaL_Reg mouselib[] =
 
 int luaopen_core_mouse(lua_State *L)
 {
+	if (mouse_drag_do) {
+		mouse_renderer->clear();
+		mouse_drag_set = false;
+		delete mouse_drag_do;
+		mouse_drag_do = NULL;
+	}
+
 	luaL_openlib(L, "core.mouse", mouselib, 0);
 	lua_settop(L, 0);
 	return 1;
 }
 
+void mouse_draw_drag() {
+	if (!mouse_drag_set) return;
+
+	int x = mousex;
+	int y = mousey;
+	int w = mouse_drag_w / 2;
+	int h = mouse_drag_h / 2;
+
+	mouse_renderer->translate(x - w, y - h, 0, false);
+	mouse_renderer->toScreenSimple();
+}

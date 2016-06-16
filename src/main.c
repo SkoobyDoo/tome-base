@@ -82,8 +82,6 @@ bool isActive = TRUE;
 bool tickPaused = FALSE;
 bool anims_paused = FALSE;
 int mouse_cursor_ox, mouse_cursor_oy;
-int mouse_drag_w = 32, mouse_drag_h = 32;
-int mouse_drag_tex = 0, mouse_drag_tex_ref = LUA_NOREF;
 int mousex = 0, mousey = 0;
 float gamma_correction = 1;
 int cur_frame_tick = 0;
@@ -657,40 +655,7 @@ void call_draw(int nb_keyframes)
 		docall(L, 2, 0);
 	}
 
-	/* Mouse pointer */
-	if (mouse_drag_tex)
-	{
-		GLfloat texcoords[2*4] = {
-			0, 0,
-			0, 1,
-			1, 1,
-			1, 0,
-		};
-		GLfloat colors[4*4] = {
-			1, 1, 1, 0.6,
-			1, 1, 1, 0.6,
-			1, 1, 1, 0.6,
-			1, 1, 1, 0.6,
-		};
-
-		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-		glColorPointer(4, GL_FLOAT, 0, colors);
-
-		int x = mousex;
-		int y = mousey;
-		int w = mouse_drag_w / 2;
-		int h = mouse_drag_h / 2;
-		tglBindTexture(GL_TEXTURE_2D, mouse_drag_tex);
-
-		GLfloat vertices[2*4] = {
-			x - w, y - h,
-			x - w, y + h,
-			x + w, y + h,
-			x + w, y - h,
-		};
-		glVertexPointer(2, GL_FLOAT, 0, vertices);
-		glDrawArrays(GL_QUADS, 0, 4);
-	}
+	mouse_draw_drag();
 }
 
 long total_keyframes = 0;
