@@ -31,6 +31,24 @@ extern "C" {
 
 #include "renderer-moderngl/Renderer.hpp"
 
+void DORText::cloneInto(DisplayObject* _into) {
+	DORVertexes::cloneInto(_into);
+	DORText *into = dynamic_cast<DORText*>(_into);
+
+	// Clone reference
+	if (L && font_lua_ref) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, font_lua_ref);
+		into->font_lua_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+
+	into->font = font;
+	into->font_color = font_color;
+	into->line_max_width = line_max_width;
+	into->max_lines = max_lines;
+	into->no_linefeed = no_linefeed;
+	into->setText(text);
+}
+
 int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
 	int x = 0, y = by;
 	ssize_t off = 1;

@@ -98,6 +98,7 @@ private:
 public:
 	Particles(const char *name_def, const char *args, int density, bool fboalter);
 	virtual ~Particles();
+	virtual DisplayObject* clone();
 	virtual const char* getKind() { return "Particles"; };
 
 	bool isAlive() { return alive; };

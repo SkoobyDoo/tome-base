@@ -60,10 +60,11 @@ extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_typ
  ****************************************************************************/
 class SubRenderer : public DORContainer {
 	friend class RendererGL;
-private:
+protected:
 	vec4 use_color;
 	mat4 use_model;
 
+	virtual void cloneInto(DisplayObject *into);
 public:
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
@@ -76,14 +77,16 @@ public:
  ** A Dummy DO taht displays nothing and instead calls a lua callback
  ****************************************************************************/
 class DORCallback : public SubRenderer {
-private:
-	vec4 use_color;
-	mat4 use_model;
-	int cb_ref;
+protected:
+	int cb_ref = LUA_NOREF;
+
+	virtual void cloneInto(DisplayObject *into);
+	DORCallback() { cb_ref = LUA_NOREF; };
 
 public:
 	DORCallback(int ref) { cb_ref = ref; };
 	virtual ~DORCallback() { if (cb_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, cb_ref); };
+	DO_STANDARD_CLONE_METHOD(DORCallback);
 	virtual const char* getKind() { return "DORCallback"; };
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
@@ -117,13 +120,15 @@ protected:
 	GLuint post_process_fbos[2] = {0, 0};
 	GLuint post_process_textures[2] = {0, 0};
 
+	virtual void cloneInto(DisplayObject *into);
+
 public:
 	vector<sortable_vertex> zvertices;
 
-public:
 	RendererGL();
 	RendererGL(int w, int h);
 	virtual ~RendererGL();
+	virtual DisplayObject* clone();
 	virtual const char* getKind() { return "RendererGL"; };
 
 	virtual void addDisplayList(DisplayList* dl) {

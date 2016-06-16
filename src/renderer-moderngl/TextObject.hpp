@@ -39,6 +39,8 @@ private:
 	int max_lines = 999999;
 	bool no_linefeed = false;
 
+	virtual void cloneInto(DisplayObject *into);
+
 public:
 	int nb_lines = 1;
 	int w = 0;
@@ -53,6 +55,7 @@ public:
 		free((void*)text);
 		if (font_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, font_lua_ref);
 	};
+	DO_STANDARD_CLONE_METHOD(DORText);
 	virtual const char* getKind() { return "DORText"; };
 	
 	void setFont(font_type *font, int lua_ref) {

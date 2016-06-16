@@ -36,6 +36,7 @@ public:
 	};
 	virtual ~DORTileMap() {
 	};
+	virtual DisplayObject* clone();
 	virtual const char* getKind() { return "DORTileMap"; };
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
@@ -55,11 +56,14 @@ private:
 	float w, h, a;	
 	bool mos_changed = true;
 
+	virtual void cloneInto(DisplayObject *into);
+
 public:
 	DORTileObject(float w, float h, float a, bool allow_cb, bool allow_shader) {
 		this->w = w; this->h = h; this->a = a; this->allow_cb = allow_cb; this->allow_shader = allow_shader;
 	};
 	virtual ~DORTileObject();
+	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
 	virtual const char* getKind() { return "DORTileObject"; };
 
 	void resetMapObjects();

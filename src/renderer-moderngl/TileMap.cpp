@@ -31,6 +31,11 @@ extern "C" {
 
 #include "renderer-moderngl/Renderer.hpp"
 
+// We cant clone a map, you silly!
+DisplayObject* DORTileMap::clone() {
+	return new DORContainer();
+}
+
 void DORTileMap::toScreen(mat4 cur_model, vec4 color) {
 
 }
@@ -38,6 +43,25 @@ void DORTileMap::toScreen(mat4 cur_model, vec4 color) {
 
 DORTileObject::~DORTileObject() {
 	resetMapObjects();
+}
+
+DisplayObject* DORTileObject::clone() {
+	DORTileObject *into = new DORTileObject(w, h, a, allow_cb, allow_shader);
+	this->cloneInto(into);
+	return into;
+}
+void DORTileObject::cloneInto(DisplayObject *_into) {
+	DORContainer::cloneInto(_into);
+	DORTileObject *into = dynamic_cast<DORTileObject*>(_into);
+
+	for (auto it = mos.begin() ; it != mos.end(); ++it) {
+		int ref = LUA_NOREF;
+		if (L && it->ref) {
+			lua_rawgeti(L, LUA_REGISTRYINDEX, it->ref);
+			ref = luaL_ref(L, LUA_REGISTRYINDEX);
+		}
+		into->addMapObject(it->mo, ref);
+	}
 }
 
 void DORTileObject::resetMapObjects() {

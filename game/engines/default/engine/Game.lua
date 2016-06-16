@@ -77,9 +77,9 @@ function _M:setMouseCursor(mouse, mouse_down, offsetx, offsety)
 	if mouse then
 		self.__cursor = { up=mouse, down=(mouse_down or mouse), ox=offsetx, oy=offsety }
 		if config.settings.mouse_cursor then
-			core.display.setMouseCursor(self.__cursor.ox, self.__cursor.oy, self.__cursor.up, self.__cursor.down)
+			core.mouse.setMouseCursor(self.__cursor.ox, self.__cursor.oy, self.__cursor.up, self.__cursor.down)
 		else
-			core.display.setMouseCursor(0, 0, nil, nil)
+			core.mouse.setMouseCursor(0, 0, nil, nil)
 		end
 	end
 end
@@ -88,9 +88,9 @@ end
 function _M:updateMouseCursor()
 	if self.__cursor then
 		if config.settings.mouse_cursor then
-			core.display.setMouseCursor(self.__cursor.ox, self.__cursor.oy, self.__cursor.up, self.__cursor.down)
+			core.mouse.setMouseCursor(self.__cursor.ox, self.__cursor.oy, self.__cursor.up, self.__cursor.down)
 		else
-			core.display.setMouseCursor(0, 0, nil, nil)
+			core.mouse.setMouseCursor(0, 0, nil, nil)
 		end
 	end
 end

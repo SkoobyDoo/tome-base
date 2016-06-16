@@ -96,6 +96,13 @@ DisplayList::~DisplayList() {
  ** SubRenderer
  ***************************************************************************/
 
+void SubRenderer::cloneInto(DisplayObject* _into) {
+	DORContainer::cloneInto(_into);
+	SubRenderer *into = dynamic_cast<SubRenderer*>(_into);
+	into->use_model = use_model;
+	into->use_color = use_color;
+}
+
 void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	this->use_model = cur_model * model;
@@ -126,6 +133,15 @@ void SubRenderer::toScreenSimple() {
 /***************************************************************************
  ** DORCallback class
  ***************************************************************************/
+void DORCallback::cloneInto(DisplayObject* _into) {
+	SubRenderer::cloneInto(_into);
+	DORCallback *into = dynamic_cast<DORCallback*>(_into);
+	if (L && cb_ref) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
+		into->cb_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+}
+
 void DORCallback::toScreen(mat4 cur_model, vec4 color) {
 }
 
@@ -144,6 +160,34 @@ RendererGL::~RendererGL() {
 	enablePostProcessing(false);
 	glDeleteBuffers(1, &vbo_elements);
 }
+
+DisplayObject* RendererGL::clone() {
+	RendererGL *into = new RendererGL(w, h);
+	this->cloneInto(into);
+	return into;
+}
+void RendererGL::cloneInto(DisplayObject* _into) {
+	SubRenderer::cloneInto(_into);
+	RendererGL *into = dynamic_cast<RendererGL*>(_into);
+
+	into->mode = mode;
+	into->kind = kind;
+
+	into->view = view;
+
+	into->zsort = zsort;
+	into->cutting = cutting;
+	into->cutpos1 = cutpos1;
+	into->cutpos2 = cutpos2;
+
+	if (post_processing) {
+		into->enablePostProcessing(true);
+		for (auto it = post_process_shaders.begin(); it != post_process_shaders.end(); it++) {
+			into->addPostProcessShader(*it);
+		}
+	}
+}
+
 
 static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
 	if (i.v.pos.z == j.v.pos.z) {

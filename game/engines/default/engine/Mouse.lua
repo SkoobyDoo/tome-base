@@ -168,7 +168,7 @@ function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 		if _M.drag.cursor then
 			local w, h = _M.drag.cursor:getSize()
 			_M.drag.cursor = _M.drag.cursor:glTexture()
-			core.display.setMouseDrag(_M.drag.cursor, w, h)
+			core.mouse.setMouseDrag(_M.drag.cursor, w, h)
 		end
 		print("[MOUSE] enabling drag from predrag")
 	end
@@ -188,7 +188,7 @@ end
 function _M:endDrag(x, y)
 	local drag = _M.drag
 	print("[MOUSE] ending drag'n'drop")
-	core.display.setMouseDrag(nil, 0, 0)
+	core.mouse.setMouseDrag(nil, 0, 0)
 	_M.drag = nil
 	_M.dragged = drag
 	_M.current:receiveMouse("drag-end", x, y, true, nil, {drag=drag})

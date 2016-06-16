@@ -33,6 +33,9 @@ int donb = 0;
 
 #define DEBUG_CHECKPARENTS
 
+/*************************************************************************
+ ** DisplayObject
+ *************************************************************************/
 void DisplayObject::removeFromParent() {
 	if (!parent) return;
 	DORContainer *p = dynamic_cast<DORContainer*>(parent);
@@ -141,9 +144,53 @@ void DisplayObject::scale(float x, float y, float z, bool increment) {
 	recomputeModelMatrix();
 }
 
+void DisplayObject::cloneInto(DisplayObject *into) {
+	into->L = L;
+
+	// No parent
+	into->parent = NULL;
+
+	// Clone reference
+	if (L && lua_ref) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, lua_ref);
+		into->lua_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+
+	into->model = model;
+	into->color = color;
+	into->visible = visible;
+	into->x = x;
+	into->y = y;
+	into->z = z;
+	into->rot_x = rot_x;
+	into->rot_y = rot_y;
+	into->rot_z = rot_z;
+	into->scale_x = scale_x;
+	into->scale_y = scale_y;
+	into->scale_z = scale_z;
+
+	into->changed = true;
+}
+
+/*************************************************************************
+ ** DORVertexes
+ *************************************************************************/
 void DORVertexes::clear() {
 	vertices.clear();
 	setChanged();
+}
+
+void DORVertexes::cloneInto(DisplayObject *_into) {
+	DisplayObject::cloneInto(_into);
+	DORVertexes *into = dynamic_cast<DORVertexes*>(_into);
+	into->vertices.insert(into->vertices.begin(), vertices.begin(), vertices.end());
+	into->tex = tex;
+	into->shader = shader;
+	// Clone reference
+	if (L && tex_lua_ref) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, tex_lua_ref);
+		into->tex_lua_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
 }
 
 int DORVertexes::addQuad(
@@ -229,6 +276,17 @@ void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color)
 	resetChanged();
 }
 
+/*************************************************************************
+ ** DORContainer
+ *************************************************************************/
+void DORContainer::cloneInto(DisplayObject* _into) {
+	DisplayObject::cloneInto(_into);
+	DORContainer *into = dynamic_cast<DORContainer*>(_into);
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		into->add((*it)->clone());
+	}	
+}
+
 void DORContainer::add(DisplayObject *dob) {
 	dos.push_back(dob);
 	dob->setParent(this);
@@ -289,6 +347,23 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 		if (i) i->renderZ(container, cur_model, cur_color);
 	}
 	resetChanged();
+}
+
+/*************************************************************************
+ ** DORTarget
+ *************************************************************************/
+DisplayObject* DORTarget::clone() {
+	DORTarget *into = new DORTarget(w, h, nbt);
+	this->cloneInto(into);
+	return into;
+}
+void DORTarget::cloneInto(DisplayObject* _into) {
+	DORVertexes::cloneInto(_into);
+	DORTarget *into = dynamic_cast<DORTarget*>(_into);
+	into->clear_r = clear_r;
+	into->clear_g = clear_g;
+	into->clear_b = clear_b;
+	into->clear_a = clear_a;
 }
 
 DORTarget::DORTarget() : DORTarget(screen->w / screen_zoom, screen->h / screen_zoom, 1) {

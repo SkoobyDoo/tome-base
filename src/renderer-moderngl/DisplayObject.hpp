@@ -37,6 +37,8 @@ extern "C" {
 using namespace glm;
 using namespace std;
 
+#define DO_STANDARD_CLONE_METHOD(class_name) virtual DisplayObject* clone() { DisplayObject *into = new class_name(); this->cloneInto(into); return into; }
+
 typedef struct {
 	vec4 pos;
 	vec2 tex;
@@ -60,6 +62,8 @@ protected:
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
 	bool changed = false;
+	
+	virtual void cloneInto(DisplayObject *into);
 public:
 	DisplayObject() { donb++; printf("+DOs %d\n", donb); model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1; };
 	virtual ~DisplayObject() {
@@ -67,8 +71,8 @@ public:
 		removeFromParent();
 		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
 	};
-
 	virtual const char* getKind() = 0;
+	virtual DisplayObject* clone() = 0;
 
 	void setLuaState(lua_State *L) { this->L = L; };
 	void setLuaRef(int ref) {lua_ref = ref; };
@@ -109,6 +113,8 @@ protected:
 	GLuint tex;
 	shader_type *shader;
 
+	virtual void cloneInto(DisplayObject *into);
+
 public:
 	DORVertexes() {
 		vertices.reserve(4);
@@ -118,6 +124,7 @@ public:
 	virtual ~DORVertexes() {
 		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
 	};
+	DO_STANDARD_CLONE_METHOD(DORVertexes);
 	virtual const char* getKind() { return "DORVertexes"; };
 
 	void clear();
@@ -153,9 +160,12 @@ public:
 class DORContainer : public DisplayObject{
 protected:
 	vector<DisplayObject*> dos;
+	
+	virtual void cloneInto(DisplayObject *into);
 public:
 	DORContainer() {};
 	virtual ~DORContainer();
+	DO_STANDARD_CLONE_METHOD(DORVertexes);
 	virtual const char* getKind() { return "DORContainer"; };
 
 	virtual void add(DisplayObject *dob);
@@ -179,10 +189,13 @@ protected:
 	int nbt = 0;
 	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
 
+	virtual void cloneInto(DisplayObject *into);
+
 public:
 	DORTarget();
 	DORTarget(int w, int h, int nbt);
 	virtual ~DORTarget();
+	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
 	virtual const char* getKind() { return "DORTarget"; };
 
 	void setClearColor(float r, float g, float b, float a);

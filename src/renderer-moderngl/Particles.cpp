@@ -44,6 +44,11 @@ Particles::~Particles() {
 	SDL_DestroyMutex(lock);
 }
 
+// We cant clone a Particles, for now
+DisplayObject* Particles::clone() {
+	return new DORContainer();
+}
+
 void Particles::tick(bool last, bool no_update) {
 	if (!init) return;
 
