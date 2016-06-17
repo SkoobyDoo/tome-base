@@ -31,6 +31,7 @@ typedef struct {
 	GLuint tex;
 	shader_type *shader;
 	SubRenderer *sub;
+	DisplayObject *tick;
 } sortable_vertex;
 
 /****************************************************************************

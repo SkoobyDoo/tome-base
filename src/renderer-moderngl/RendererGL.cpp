@@ -72,6 +72,7 @@ void releaseDisplayList(DisplayList *dl) {
 		dl->tex = 0;
 		dl->shader = NULL;
 		dl->sub = NULL;
+		dl->tick = NULL;
 
 		available_dls.push(dl);
 		if (current_used_dl == dl) {
@@ -178,6 +179,12 @@ void RendererGL::sortedToDL() {
 			dl = getDisplayList(this, 0, NULL);
 			stopDisplayList(); // Needed to make sure we break texture chaining
 			dl->sub = v->sub;
+			dl = NULL;
+		} else if (v->tick) {
+			stopDisplayList(); // Needed to make sure we break texture chaining
+			dl = getDisplayList(this, 0, NULL);
+			stopDisplayList(); // Needed to make sure we break texture chaining
+			dl->tick = v->tick;
 			dl = NULL;
 		} else {
 			if (!dl || (tex != v->tex) || (shader != v->shader)) {

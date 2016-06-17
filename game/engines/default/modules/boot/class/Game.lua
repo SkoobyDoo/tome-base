@@ -596,8 +596,6 @@ fborenderer:setRendererName("fborenderer")
 fborenderer:add(fbo)
 fborenderer:add(i2)
 
--- print("==WTF PLEASE WORK !") os.crash()
-
 -- 
 -- renderer:translate(100,100,0)
 -- renderer:scale(2,0.7,1)

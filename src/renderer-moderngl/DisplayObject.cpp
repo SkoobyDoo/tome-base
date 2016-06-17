@@ -529,9 +529,10 @@ void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 
 void DORTarget::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (subrender) {
-		stopDisplayList(); // Needed to make sure we break texture chaining
-		auto dl = getDisplayList(container, 0, NULL);
-		dl->tick = this;
+		int startat = container->zvertices.size();
+		container->zvertices.resize(startat + 1);
+		sortable_vertex *dest = container->zvertices.data();
+		dest[startat].tick = this;
 	}
 
 	DORVertexes::renderZ(container, cur_model, cur_color);
