@@ -264,6 +264,18 @@ static int map_object_flip_x(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
 	obj->flip_x = lua_toboolean(L, 2);
+
+	// Invalidate layers upon which we exist, so that the animation can actually play
+	if (lua_isuserdata(L, 3) && lua_istable(L, 4)) {
+		map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 3);
+		lua_pushnil(L);
+		while (lua_next(L, 4) != 0) {
+			int z = lua_tonumber(L, -1) - 1;
+			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
+			map->z_changed[z] = true;
+			lua_pop(L, 1);
+		}		
+	}
 	return 0;
 }
 
@@ -271,6 +283,18 @@ static int map_object_flip_y(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
 	obj->flip_y = lua_toboolean(L, 2);
+
+	// Invalidate layers upon which we exist, so that the animation can actually play
+	if (lua_isuserdata(L, 3) && lua_istable(L, 4)) {
+		map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 3);
+		lua_pushnil(L);
+		while (lua_next(L, 4) != 0) {
+			int z = lua_tonumber(L, -1) - 1;
+			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
+			map->z_changed[z] = true;
+			lua_pop(L, 1);
+		}		
+	}
 	return 0;
 }
 
@@ -305,6 +329,18 @@ static int map_object_reset_move_anim(lua_State *L)
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
 	obj->move_max = 0;
 	obj->animdx = obj->animdy = 0;
+
+	// Invalidate layers upon which we exist, so that the animation can actually play
+	if (lua_isuserdata(L, 2) && lua_istable(L, 3)) {
+		map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 2);
+		lua_pushnil(L);
+		while (lua_next(L, 3) != 0) {
+			int z = lua_tonumber(L, -1) - 1;
+			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
+			map->z_changed[z] = true;
+			lua_pop(L, 1);
+		}		
+	}
 	return 0;
 }
 
@@ -339,6 +375,18 @@ static int map_object_set_move_anim(lua_State *L)
 	// obj->animdx = obj->animdx - ((float)obj->cur_x - obj->oldx);
 	// obj->animdy = obj->animdy - ((float)obj->cur_y - obj->oldy);
 
+	// Invalidate layers upon which we exist, so that the animation can actually play
+	if (lua_isuserdata(L, 10) && lua_istable(L, 11)) {
+		map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 10);
+		lua_pushnil(L);
+		while (lua_next(L, 11) != 0) {
+			int z = lua_tonumber(L, -1) - 1;
+			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
+			map->z_changed[z] = true;
+			lua_pop(L, 1);
+		}		
+	}
+	
 	return 0;
 }
 
@@ -358,7 +406,7 @@ static int map_object_get_move_anim(lua_State *L)
 		mapdy = -(ady * map->move_step / (float)map->move_max - ady);
 	}
 
-	if (!obj->move_max || obj->display_last == DL_NONE)
+	if (!obj->move_max) // || obj->display_last == DL_NONE)
 	{
 //		printf("==== GET %f x %f\n", mapdx, mapdy);
 		lua_pushnumber(L, mapdx);
@@ -1333,37 +1381,18 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 		a = map->obscure_r;
 	}
 
-	// /* Reset vertices&all buffers, we are changing texture/shader */
-	// if ((gl_c_texture != m->textures[0]) || m->shader || (m->nb_textures > 1))
-	// {
-	// 	/* Draw remaining ones */
-	// 	unbatchQuads((*vert_idx), (*col_idx));
-	// 	// printf(" -- unbatch2 %d %d %d :: %d!=%d\n", (gl_c_texture != m->textures[0]), m->shader != 0, (m->nb_textures > 1), gl_c_texture, m->textures[0]);
-	// }
-	// if (gl_c_texture != m->textures[0])
-	// {
-	// 	tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
-	// }
-
 	/********************************************************
 	 ** Setup all textures we need
 	 ********************************************************/
 	a = (a > 1) ? 1 : ((a < 0) ? 0 : a);
 	int z;
-	// if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, m->tex_x[0], m->tex_y[0], m->tex_factorx[0], m->tex_factory[0], r, g, b, a);
-	// for (z = (!shaders_active) ? 0 : (m->nb_textures - 1); z > 0; z--)
-	// {
-	// 	if (multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0+z);
-	// 	tglBindTexture(m->textures_is3d[z] ? GL_TEXTURE_3D : GL_TEXTURE_2D, m->textures[z]);
-	// }
-	// if (m->nb_textures && multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
 
 	/********************************************************
 	 ** Compute/display movement and motion blur
 	 ********************************************************/
 	float animdx = 0, animdy = 0;
 	float tlanimdx = 0, tlanimdy = 0;
-	if (m->display_last == DL_NONE) m->move_max = 0;
+	// if (m->display_last == DL_NONE) m->move_max = 0;
 
 	// WTF?!
 	// lua_is_hex(L);
@@ -1375,7 +1404,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 		map->z_changed[dz] = true;
 		m->move_step += nb_keyframes;
 		if (m->move_step >= m->move_max) m->move_max = 0; // Reset once in place
-		if (m->display_last == DL_NONE) m->display_last = DL_TRUE;
+		// if (m->display_last == DL_NONE) m->display_last = DL_TRUE;
 
 		if (m->move_max)
 		{
@@ -1410,11 +1439,6 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 						 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 						 	// }
 
-						 	// if (gl_c_texture != dm->textures[0]) {
-								// unbatchQuads((*vert_idx), (*col_idx));
-								// // printf(" -- unbatch6\n");
-								// tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-						 	// }
 							do_quad(L, m, dm, map, dz,
 								0,
 								dx + dm->dx * map->tile_w + animdx,
@@ -1425,10 +1449,6 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 								dm->dh,
 								r, g, b, a,
 								i, j);
-							// if (m != dm) {
-						 // 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-						 // 		else useDefaultShader(map);
-						 // 	}
 							dm = dm->next;
 						}
 					}
@@ -1493,12 +1513,6 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 	// }
 
-	 	// if (gl_c_texture != dm->textures[0]) {
-			// unbatchQuads((*vert_idx), (*col_idx));
-			// // printf(" -- unbatch6\n");
-			// tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-	 	// }
-
 		do_quad(L, m, dm, map, dz,
 			anim,
 			dx + (dm->dx + animdx) * map->tile_w,
@@ -1509,10 +1523,6 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 			dm->dh,
 			r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
 			i, j);
-		// if (m != dm) {
-	 // 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-	 // 		else useDefaultShader(map);
-	 // 	}
 		dm->animdx = animdx;
 		dm->animdy = animdy;
 		dm = dm->next;
@@ -1521,14 +1531,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	/********************************************************
 	 ** Cleanup
 	 ********************************************************/
-	// if (m->shader || m->nb_textures > 1)
-	// {
-	// 	/* Draw remaining ones */
-	// 	unbatchQuads((*vert_idx), (*col_idx));
-	// 		// printf(" -- unbatch4 %d %d %d\n", m->shader != 0, m->nb_textures > 1, m->next !=0);
-	// }
-	// if (m->shader) useDefaultShader(map);
-	m->display_last = DL_TRUE;
+	// m->display_last = DL_TRUE;
 }
 
 #define MIN(a,b) ((a < b) ? a : b)
@@ -1539,7 +1542,6 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 	int i = 0, j = 0, z = 0;
 	int mx = map->mx;
 	int my = map->my;
-	bool force_redraw = false;
 
 	// nb_draws = 0;
 
@@ -1566,23 +1568,22 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 			my = (int)(map->oldmy + animdy);
 		}
 		changed = true;
-		force_redraw = true;
 	}
-	x -= map->tile_w * (animdx + map->oldmx);
-	y -= map->tile_h * (animdy + map->oldmy);
+	float scrollx = map->tile_w * (animdx + map->oldmx);
+	float scrolly = map->tile_h * (animdy + map->oldmy);
 	map->used_animdx = animdx;
 	map->used_animdy = animdy;
-	map->displayed_x = x;
-	map->displayed_y = y;
+	map->displayed_x = x - scrollx;
+	map->displayed_y = y - scrolly;
+
+	mat4 scrollmodel = mat4();
+	scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx, -scrolly, 0));
+	model = model * scrollmodel;
 
 	map->used_mx = mx;
 	map->used_my = my;
 
-	// DGDGDGDG: instead of updating x/y and forcing a regen of EVERYTHING, better to not alter x/y
-	// and instead alter the model matrix with a translation; will make scrolling WAY more efficient
-
 	int mini = mx - 1, maxi = mx + map->mwidth + 2, minj =  my - 1, maxj = my + map->mheight + 2;
-
 	if(mini < 0)
 		mini = 0;
 	if(minj < 0)
@@ -1596,7 +1597,8 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 	for (z = 0; z < map->zdepth; z++)
 	{
 		auto render = map->z_renderers[z];
-		if (map->z_changed[z] || force_redraw) {
+		if (map->z_changed[z]) {
+			// printf("map layer %d is invalid\n", z);
 			render->resetDisplayLists();
 			render->setChanged();
 			map->z_changed[z] = false;
@@ -1653,23 +1655,17 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 		render->toScreen(model, color);
 	}
 
-	/* Display any leftovers */
-	// unbatchQuads(vert_idx, col_idx);
-	// useNoShader();
-
-	// printf("draws %d\n", nb_draws);
-
 	// "Decay" displayed status for all mos
 	if (L) {
-		lua_rawgeti(L, LUA_REGISTRYINDEX, map->mo_list_ref);
-		lua_pushnil(L);
-		while (lua_next(L, -2) != 0)
-		{
-			map_object *mo = (map_object*)auxiliar_checkclass(L, "core{mapobj}", -1);
-			if (mo->display_last == DL_TRUE) mo->display_last = DL_TRUE_LAST;
-			else if (mo->display_last == DL_TRUE_LAST) mo->display_last = DL_NONE;
-			lua_pop(L, 1); // Remove value, keep key for next iteration
-		}
+		// lua_rawgeti(L, LUA_REGISTRYINDEX, map->mo_list_ref);
+		// lua_pushnil(L);
+		// while (lua_next(L, -2) != 0)
+		// {
+		// 	map_object *mo = (map_object*)auxiliar_checkclass(L, "core{mapobj}", -1);
+		// 	if (mo->display_last == DL_TRUE) mo->display_last = DL_TRUE_LAST;
+		// 	else if (mo->display_last == DL_TRUE_LAST) mo->display_last = DL_NONE;
+		// 	lua_pop(L, 1); // Remove value, keep key for next iteration
+		// }
 
 		if (always_show && changed)
 		{

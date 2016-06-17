@@ -323,6 +323,7 @@ function _M:newGame()
 
 	Zone:setup{npc_class="mod.class.NPC", grid_class="mod.class.Grid", }
 	self:changeLevel(rng.range(1, 3), "dungeon")
+	-- self:changeLevel(1, "dungeon")
 end
 --[[
 function _M:onResolutionChange()
@@ -494,7 +495,7 @@ function _M:display(nb_keyframes)
 -- core.display.countDraws()
 		self.level.map:display(nil, nil, nb_keyframes, true)
 -- print("[draw calls] map", core.display.countDraws())
-		self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
+		-- self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
 	end
 
 	-- Draw it here, inside the FBO

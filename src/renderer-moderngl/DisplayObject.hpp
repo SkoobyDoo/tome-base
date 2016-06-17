@@ -62,6 +62,7 @@ protected:
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
 	bool changed = false;
+	bool stop_parent_recursing = false;
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
@@ -84,7 +85,6 @@ public:
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
 	void setParent(DisplayObject *parent);
 	void removeFromParent();
-	// DGDGDGDG: setChanged repercutes over all the parents, but it should stop at RendererGLs
 	void setChanged();
 	bool isChanged() { return changed; };
 	void resetChanged() { changed = false; };
@@ -197,7 +197,7 @@ protected:
 
 	virtual void cloneInto(DisplayObject *into);
 public:
-	SubRenderer() { renderer_name = strdup(getKind()); };
+	SubRenderer() { renderer_name = strdup(getKind()); stop_parent_recursing = true; };
 	~SubRenderer() { free((void*)renderer_name); };
 	const char* getRendererName() { return renderer_name ? renderer_name : "---unknown---"; };
 	void setRendererName(const char *name);

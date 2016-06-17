@@ -65,6 +65,7 @@ void DisplayObject::setChanged() {
 		}
 #endif
 		p->changed = true;
+		if (p->stop_parent_recursing) break;
 		p = p->parent;
 	}
 }
