@@ -2111,8 +2111,10 @@ function _M:display(nb_keyframes)
 	self.now = core.game.getTime()
 
 	-- Now the map, if any
+core.display.countDraws()
 	game:displayMap(nb_keyframes)
-
+print("==map draws", core.display.countDraws())
+do return end
 	if self.no_ui then return end
 
 core.display.countDraws()
