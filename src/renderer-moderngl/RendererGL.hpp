@@ -24,7 +24,6 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 
-class SubRenderer;
 class RendererGL;
 
 typedef struct {
@@ -46,6 +45,7 @@ public:
 	shader_type *shader = NULL;
 	vector<vertex> list;
 	SubRenderer *sub = NULL;
+	DisplayObject *tick = NULL;
 
 	DisplayList();
 	~DisplayList();
@@ -53,25 +53,6 @@ public:
 
 extern void stopDisplayList();
 extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
-
-/****************************************************************************
- ** Interface to make a DisplayObject be a sub-renderer: breaking chaining
- ** and using it's own render method
- ****************************************************************************/
-class SubRenderer : public DORContainer {
-	friend class RendererGL;
-protected:
-	vec4 use_color;
-	mat4 use_model;
-
-	virtual void cloneInto(DisplayObject *into);
-public:
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
-
-	virtual void toScreenSimple();
-	virtual void toScreen(mat4 cur_model, vec4 color) = 0;
-};
 
 /****************************************************************************
  ** A Dummy DO taht displays nothing and instead calls a lua callback
@@ -95,7 +76,7 @@ public:
 /****************************************************************************
  ** Handling actual rendering to the screen & such
  ****************************************************************************/
-class RendererGL : public SubRenderer {
+class RendererGL : public SubRenderer, public DOResizable {
 	friend class DORVertexes;
 protected:
 	GLuint mode = GL_DYNAMIC_DRAW;
@@ -146,6 +127,8 @@ public:
 	void enablePostProcessing(bool v);
 	void clearPostProcessShaders();
 	void addPostProcessShader(shader_type *s);
+
+	virtual void onScreenResize(int w, int h);
 };
 
 #endif

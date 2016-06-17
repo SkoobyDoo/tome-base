@@ -99,6 +99,8 @@ public:
 	void scale(float x, float y, float z, bool increment);
 	void shown(bool v);
 
+	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
+
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color) = 0;
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color) = 0;
 };
@@ -176,11 +178,37 @@ public:
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
 };
 
+
+/****************************************************************************
+ ** Interface to make a DisplayObject be a sub-renderer: breaking chaining
+ ** and using it's own render method
+ ****************************************************************************/
+class SubRenderer : public DORContainer {
+	friend class RendererGL;
+protected:
+	vec4 use_color;
+	mat4 use_model;
+	char *renderer_name = NULL;
+
+	virtual void cloneInto(DisplayObject *into);
+public:
+	SubRenderer() { renderer_name = strdup(getKind()); printf("[[[[[[ CREATING RENERER %s\n", renderer_name); };
+	~SubRenderer() { printf("]]]]]] DELETING RENERER %s\n", renderer_name); free((void*)renderer_name); };
+	const char* getRendererName() { return renderer_name ? renderer_name : "---unknown---"; };
+	void setRendererName(const char *name);
+
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+
+	virtual void toScreenSimple();
+	virtual void toScreen(mat4 cur_model, vec4 color) = 0;
+};
+
 /****************************************************************************
  ** A FBO that masquerades as a DORVertexes, draw stuff in it and
  ** then add it to a renderer to use the content generated
  ****************************************************************************/
-class DORTarget : public DORVertexes{
+class DORTarget : public DORVertexes, public DOResizable {
 protected:
 	int w, h;
 	GLuint fbo;
@@ -188,6 +216,8 @@ protected:
 	vector<GLenum> buffers;
 	int nbt = 0;
 	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
+	SubRenderer *subrender = NULL;
+	int subrender_lua_ref = LUA_NOREF;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -197,11 +227,18 @@ public:
 	virtual ~DORTarget();
 	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
 	virtual const char* getKind() { return "DORTarget"; };
+	virtual void setTexture(GLuint tex, int lua_ref) { printf("Error, trying to set DORTarget texture.\n"); }; // impossible
 
 	void setClearColor(float r, float g, float b, float a);
 	void displaySize(int w, int h, bool center);
 	void use(bool activate);
-	virtual void setTexture(GLuint tex, int lua_ref) { printf("Error, trying to set DORTarget texture.\n"); }; // impossible
+	void setAutoRender(SubRenderer *subrender, int ref);
+
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void tick();
+
+	virtual void onScreenResize(int w, int h);
 };
 
 #endif

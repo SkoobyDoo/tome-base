@@ -27,7 +27,7 @@ extern "C" {
        #include <unistd.h>
 }
 
-/***************************************************************************
+/**********************************
  ** Permanent VBO/DisplayList store
  ***************************************************************************/
 
@@ -93,44 +93,6 @@ DisplayList::~DisplayList() {
 }
 
 /***************************************************************************
- ** SubRenderer
- ***************************************************************************/
-
-void SubRenderer::cloneInto(DisplayObject* _into) {
-	DORContainer::cloneInto(_into);
-	SubRenderer *into = dynamic_cast<SubRenderer*>(_into);
-	into->use_model = use_model;
-	into->use_color = use_color;
-}
-
-void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	this->use_model = cur_model * model;
-	this->use_color = cur_color * color;
-	stopDisplayList(); // Needed to make sure we break texture chaining
-	auto dl = getDisplayList(container, 0, NULL);
-	stopDisplayList(); // Needed to make sure we break texture chaining
-	dl->sub = this;
-	// resetChanged();
-}
-
-void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	this->use_model = cur_model * model;
-	this->use_color = cur_color * color;
-	int startat = container->zvertices.size();
-	container->zvertices.resize(startat + 1);
-	sortable_vertex *dest = container->zvertices.data();
-	dest[startat].sub = this;
-	// resetChanged();
-}
-
-void SubRenderer::toScreenSimple() {
-	vec4 color = {1.0, 1.0, 1.0, 1.0};
-	toScreen(mat4(), color);
-}
-
-/***************************************************************************
  ** DORCallback class
  ***************************************************************************/
 void DORCallback::cloneInto(DisplayObject* _into) {
@@ -188,6 +150,9 @@ void RendererGL::cloneInto(DisplayObject* _into) {
 	}
 }
 
+void RendererGL::onScreenResize(int w, int h) {
+
+}
 
 static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
 	if (i.v.pos.z == j.v.pos.z) {
@@ -227,6 +192,8 @@ void RendererGL::sortedToDL() {
 }
 
 void RendererGL::update() {
+	// printf("Renderer %s needs updating\n", getRendererName());
+
 	// Release currently owned display lists
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) { releaseDisplayList(*dl); }
 	displays.clear();
@@ -255,12 +222,14 @@ void RendererGL::update() {
 	// Upload each display list vertices data to the corresponding VBO on the GPU memory
 	nb_quads = 0;
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
-		if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
+		if (!(*dl)->sub && !(*dl)->tick) {
+			if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
 
-		// printf("REBUILDING THE VBO %d...\n", (*dl)->vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, mode);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());
+			// printf("REBUILDING THE VBO %d...\n", (*dl)->vbo);
+			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, mode);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());
+		}
 	}
 	nb_quads /= 4;
 	// printf("max quads %d / %d\n", nb_quads, displays.size());
@@ -282,7 +251,7 @@ void RendererGL::update() {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * vbo_elements_nb * 6, NULL, GL_STATIC_DRAW); // Static because this wont change often
 		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * vbo_elements_nb * 6, vbo_elements_data);
-		printf("Upping vbo_elements to %d\n", nb_quads);
+		printf("Upping vbo_elements to %d in renderer %s\n", nb_quads, getRendererName());
 	}
 }
 
@@ -355,6 +324,10 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if ((*dl)->sub) {
 			(*dl)->sub->toScreen(cur_model * (*dl)->sub->use_model, cur_color * (*dl)->sub->use_color);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+			if (cutting) activateCutting(cur_model, true);
+		} else if ((*dl)->tick) {
+			(*dl)->tick->tick();
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 			if (cutting) activateCutting(cur_model, true);
 		} else {

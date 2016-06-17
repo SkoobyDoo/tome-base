@@ -349,6 +349,50 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 	resetChanged();
 }
 
+/***************************************************************************
+ ** SubRenderer
+ ***************************************************************************/
+
+void SubRenderer::cloneInto(DisplayObject* _into) {
+	DORContainer::cloneInto(_into);
+	SubRenderer *into = dynamic_cast<SubRenderer*>(_into);
+	into->use_model = use_model;
+	into->use_color = use_color;
+	if (into->renderer_name) free((void*)into->renderer_name);
+	into->renderer_name = strdup(renderer_name);
+}
+
+void SubRenderer::setRendererName(const char *name) {
+	if (renderer_name) free((void*)renderer_name);
+	renderer_name = strdup(name);
+}
+
+void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	this->use_model = cur_model * model;
+	this->use_color = cur_color * color;
+	stopDisplayList(); // Needed to make sure we break texture chaining
+	auto dl = getDisplayList(container, 0, NULL);
+	stopDisplayList(); // Needed to make sure we break texture chaining
+	dl->sub = this;
+	// resetChanged();
+}
+
+void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	this->use_model = cur_model * model;
+	this->use_color = cur_color * color;
+	int startat = container->zvertices.size();
+	container->zvertices.resize(startat + 1);
+	sortable_vertex *dest = container->zvertices.data();
+	dest[startat].sub = this;
+	// resetChanged();
+}
+
+void SubRenderer::toScreenSimple() {
+	toScreen(mat4(), {1.0, 1.0, 1.0, 1.0});
+}
+
 /*************************************************************************
  ** DORTarget
  *************************************************************************/
@@ -405,6 +449,8 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 	);
 }
 DORTarget::~DORTarget() {
+	if (subrender_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, subrender_lua_ref);
+
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	for (int i = 0; i < nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
 	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -462,4 +508,42 @@ void DORTarget::use(bool activate) {
 			tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 	}
+}
+
+void DORTarget::setAutoRender(SubRenderer *o, int ref) {
+	if (subrender_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, subrender_lua_ref);
+	subrender_lua_ref = ref;
+	subrender = o;
+	setChanged();
+}
+
+void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (subrender) {
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		auto dl = getDisplayList(container, 0, NULL);
+		dl->tick = this;
+	}
+
+	DORVertexes::render(container, cur_model, cur_color);
+}
+
+void DORTarget::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (subrender) {
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		auto dl = getDisplayList(container, 0, NULL);
+		dl->tick = this;
+	}
+
+	DORVertexes::renderZ(container, cur_model, cur_color);
+}
+
+void DORTarget::tick() {
+	if (!subrender) return;
+	use(true);
+	subrender->toScreenSimple();
+	use(false);
+}
+
+void DORTarget::onScreenResize(int w, int h) {
+
 }

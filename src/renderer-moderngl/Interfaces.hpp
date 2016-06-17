@@ -18,43 +18,30 @@
 	Nicolas Casalini "DarkGod"
 	darkgod@te4.org
 */
-
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef DO_INTERFACES_H
+#define DO_INTERFACES_H
 
 extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "display.h"
-#include "types.h"
-#include "physfs.h"
-#include "physfsrwops.h"
-#include "main.h"
+#include "tgl.h"
+#include "useshader.h"
+#include "font.h"
 }
+
+#include <vector>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/ext.hpp"
 
-#include <memory>
-#include <stack>
-#include <queue>
-#include <vector>
-
 using namespace glm;
 using namespace std;
 
-#include "renderer-moderngl/Interfaces.hpp"
-#include "renderer-moderngl/DisplayObject.hpp"
-#include "renderer-moderngl/TextObject.hpp"
-#include "renderer-moderngl/RendererState.hpp"
-#include "renderer-moderngl/RendererGL.hpp"
-#include "renderer-moderngl/TileMap.hpp"
-
-extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
-extern void releaseDisplayList(DisplayList *dl);
-
-template<class T=DisplayObject> extern T* userdata_to_DO(lua_State *L, int index, const char *auxclass = nullptr);
+class DOResizable {
+public:
+	DOResizable();
+	virtual ~DOResizable();
+	virtual void onScreenResize(int w, int h) = 0;
+};
 
 #endif

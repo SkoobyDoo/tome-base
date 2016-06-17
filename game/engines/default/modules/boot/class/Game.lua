@@ -478,7 +478,6 @@ function _M:display(nb_keyframes)
 		self.logdisplay:toScreen()
 		engine.GameEnergyBased.display(self, nb_keyframes)
 		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
-if nb_keyframes >0 then  core.renderer.dumpCurrentTweens() end
 		return
 	end
 
@@ -523,8 +522,13 @@ print("===", core.display.countDraws())
 	if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
 end
 
---[[
+-- [[
+local blur = require("engine.Shader").new("blur")
+local w, h = core.display.size()
+blur:setUniform("texSize", {w, h})
+blur:setUniform("blur", 10)
 local renderer = core.renderer.renderer()
+renderer:setRendererName("renderer")
 renderer:zSort(true)
 local UIBase = require "engine.ui.Base"
 local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400, nil, nil, true)
@@ -567,45 +571,58 @@ f2.container:add(f3.container)
 renderer:add(f.container)
 -- 
 local subrenderer = core.renderer.renderer()
+subrenderer:setRendererName("subrenderer")
 -- subrenderer:translate(0, 0, 0)
 -- subrenderer:rotate(0, 0, math.rad(25))
-subrenderer:cutoff(200, 200, 30, 30)
+-- subrenderer:cutoff(200, 200, 30, 30)
 local i2 = core.renderer.image("/data/gfx/background/tome2.png")
-i2:translate(0, 0, 1)
+i2:shader(blur.shad)
+i2:translate(800, 50, 1)
 i2:scale(0.5, 0.5, 1)
-subrenderer:add(i2)
+i2:rotate(math.rad(45), 0, 0)
+-- subrenderer:add(i2)
 renderer:add(subrenderer)
 -- 
 local fbo = core.renderer.target()
 -- fbo:scale(1, 0.4, 1)
-fbo:clearColor(0, 1, 0, 1)
+fbo:clearColor(0, 0.1, 0, 1)
 fbo:displaySize(400, 400)
 fbo:translate(400, 400)
 fbo:rotate(math.rad(45), 0, 0)
+fbo:setAutoRender(renderer)
+
 local fborenderer = core.renderer.renderer()
+fborenderer:setRendererName("fborenderer")
 fborenderer:add(fbo)
+fborenderer:add(i2)
+
+-- print("==WTF PLEASE WORK !") os.crash()
+
 -- 
 -- renderer:translate(100,100,0)
 -- renderer:scale(2,0.7,1)
 -- renderer:rotate(0, 0,math.rad(45))
 -- renderer:cutoff(450, 400, 125, 200)
 -- 
-local nb = 0
+local nb = 1
 local z = false
 local tween = require "tween"
 function _M:display(nb_keyframes)
 	-- fbo:use(true)
-		renderer:toScreen()
-		-- subrenderer:toScreen()
-		-- renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
-		-- f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
-		-- t1:rotate(0, 0, math.rad(2), true)
+	-- 	renderer:toScreen()
 	-- fbo:use(false)
--- 
-	-- fborenderer:toScreen()
+
+	fborenderer:toScreen()
+
 	-- fbo:rotate(0, math.rad(2), 0, true)
+	i2:rotate(0, math.rad(2), math.rad(5), true)
+	f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
+	t1:rotate(0, 0, math.rad(2), true)
+	-- renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
+
 	if nb_keyframes > 0 then tween.update(nb_keyframes) end
-	core.renderer.dumpCurrentTweens()
+	-- core.renderer.dumpCurrentTweens()
+	nb=nb+nb_keyframes
 end
 local f
 function _M:test()

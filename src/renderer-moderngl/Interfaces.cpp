@@ -19,9 +19,6 @@
 	darkgod@te4.org
 */
 
-#ifndef RENDERER_H
-#define RENDERER_H
-
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -31,30 +28,16 @@ extern "C" {
 #include "physfsrwops.h"
 #include "main.h"
 }
+#include "renderer-moderngl/Renderer.hpp"
 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/ext.hpp"
+#include <set>
 
-#include <memory>
-#include <stack>
-#include <queue>
-#include <vector>
+static set<DOResizable*> to_resize_list;
 
-using namespace glm;
-using namespace std;
+DOResizable::DOResizable() {
+	to_resize_list.insert(this);
+}
 
-#include "renderer-moderngl/Interfaces.hpp"
-#include "renderer-moderngl/DisplayObject.hpp"
-#include "renderer-moderngl/TextObject.hpp"
-#include "renderer-moderngl/RendererState.hpp"
-#include "renderer-moderngl/RendererGL.hpp"
-#include "renderer-moderngl/TileMap.hpp"
-
-extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
-extern void releaseDisplayList(DisplayList *dl);
-
-template<class T=DisplayObject> extern T* userdata_to_DO(lua_State *L, int index, const char *auxclass = nullptr);
-
-#endif
+DOResizable::~DOResizable() {
+	to_resize_list.erase(this);
+}

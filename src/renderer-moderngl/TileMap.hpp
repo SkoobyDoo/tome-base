@@ -28,16 +28,24 @@ extern "C" {
 #include "map.h"
 }
 
+// This one is a little strange, it is not the master of map_type it's a slave, as such it will never try to free it or anything, it is created by it
+// This is, in essence, a DO warper around map code
 class DORTileMap : public SubRenderer{
 private:
+	map_type *map = NULL;
+
+	virtual void cloneInto(DisplayObject *into);
 
 public:
-	DORTileMap() {
-	};
+	DORTileMap() { setRendererName("map"); };
 	virtual ~DORTileMap() {
 	};
-	virtual DisplayObject* clone();
+	DO_STANDARD_CLONE_METHOD(DORTileMap);
 	virtual const char* getKind() { return "DORTileMap"; };
+
+	void setMap(map_type *map) {
+		this->map = map;
+	};
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
 };

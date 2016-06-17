@@ -1241,7 +1241,7 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 		unbatchQuads((*vert_idx), (*col_idx));
 		// printf(" -- unbatch1 %d %d\n", force, dm->cb_ref != LUA_NOREF);
 	}
-	if (dm->cb_ref != LUA_NOREF)
+	if (L && dm->cb_ref != LUA_NOREF)
 	{
 		useNoShader();
 		lua_rawgeti(L, LUA_REGISTRYINDEX, dm->cb_ref);
@@ -1357,8 +1357,12 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	float animdx = 0, animdy = 0;
 	float tlanimdx = 0, tlanimdy = 0;
 	if (m->display_last == DL_NONE) m->move_max = 0;
-	lua_is_hex(L);
-	int is_hex = luaL_checknumber(L, -1);
+
+	// WTF?!
+	// lua_is_hex(L);
+	// int is_hex = luaL_checknumber(L, -1);
+	bool is_hex = map->is_hex;
+
 	if (m->move_max)
 	{
 		m->move_step += nb_keyframes;
@@ -1526,23 +1530,14 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 
 #define MIN(a,b) ((a < b) ? a : b)
 
-static int map_to_screen(lua_State *L)
+void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show)
 {
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
-	int x = luaL_checknumber(L, 2);
-	int y = luaL_checknumber(L, 3);
-	int nb_keyframes = luaL_checknumber(L, 4);
-	bool always_show = lua_toboolean(L, 5);
-	bool changed = lua_toboolean(L, 6);
-	// id 7 is fbo to be passed back to z-callbacks
+	bool changed = FALSE;
 	int i = 0, j = 0, z = 0;
 	int vert_idx = 0;
 	int col_idx = 0;
 	int mx = map->mx;
 	int my = map->my;
-
-	/* Enables Depth Testing */
-	//glEnable(GL_DEPTH_TEST);
 
 	GLfloat *vertices = map->vertices;
 	GLfloat *colors = map->colors;
@@ -1623,7 +1618,7 @@ static int map_to_screen(lua_State *L)
 			}
 		}
 
-		if (map->z_callbacks[z] != LUA_NOREF) {
+		if (L && map->z_callbacks[z] != LUA_NOREF) {
 			/* Draw remaining ones */
 			unbatchQuads(vert_idx, col_idx);
 				// printf(" -- unbatch5\n");
@@ -1654,34 +1649,43 @@ static int map_to_screen(lua_State *L)
 	// printf("draws %d\n", nb_draws);
 
 	// "Decay" displayed status for all mos
-	lua_rawgeti(L, LUA_REGISTRYINDEX, map->mo_list_ref);
-	lua_pushnil(L);
-	while (lua_next(L, -2) != 0)
-	{
-		map_object *mo = (map_object*)auxiliar_checkclass(L, "core{mapobj}", -1);
-		if (mo->display_last == DL_TRUE) mo->display_last = DL_TRUE_LAST;
-		else if (mo->display_last == DL_TRUE_LAST) mo->display_last = DL_NONE;
-		lua_pop(L, 1); // Remove value, keep key for next iteration
-	}
-
-	/* Disables Depth Testing, we do not need it for the rest of the display */
-	//glDisable(GL_DEPTH_TEST);
-
-
-	if (always_show && changed)
-	{
-		lua_getglobal(L, "game");
-		lua_pushliteral(L, "updateFOV");
-		lua_gettable(L, -2);
-		if (lua_isfunction(L, -1)) {
-			lua_pushvalue(L, -2);
-			lua_call(L, 1, 0);
-			lua_pop(L, 1);
+	if (L) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, map->mo_list_ref);
+		lua_pushnil(L);
+		while (lua_next(L, -2) != 0)
+		{
+			map_object *mo = (map_object*)auxiliar_checkclass(L, "core{mapobj}", -1);
+			if (mo->display_last == DL_TRUE) mo->display_last = DL_TRUE_LAST;
+			else if (mo->display_last == DL_TRUE_LAST) mo->display_last = DL_NONE;
+			lua_pop(L, 1); // Remove value, keep key for next iteration
 		}
-		else lua_pop(L, 2);
-		map_update_seen_texture(map);
-		map->seen_changed = FALSE;
+
+		if (always_show && changed)
+		{
+			lua_getglobal(L, "game");
+			lua_pushliteral(L, "updateFOV");
+			lua_gettable(L, -2);
+			if (lua_isfunction(L, -1)) {
+				lua_pushvalue(L, -2);
+				lua_call(L, 1, 0);
+				lua_pop(L, 1);
+			}
+			else lua_pop(L, 2);
+			map_update_seen_texture(map);
+			map->seen_changed = FALSE;
+		}
 	}
+}
+
+static int lua_map_toscreen(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	int x = luaL_checknumber(L, 2);
+	int y = luaL_checknumber(L, 3);
+	int nb_keyframes = luaL_checknumber(L, 4);
+	bool always_show = lua_toboolean(L, 5);
+
+	map_toscreen(L, map, x, y, nb_keyframes, always_show);
 
 	return 0;
 }
@@ -1842,6 +1846,19 @@ static int minimap_to_screen(lua_State *L)
 	return 0;
 }
 
+static int map_get_display_object(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+
+	DORTileMap *tm = new DORTileMap();
+	tm->setMap(map);
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	*v = tm;
+	auxiliar_setclass(L, "gl{tilemap}", -1);
+	return 1;
+}
+
 static const struct luaL_Reg maplib[] =
 {
 	{"newMap", map_new},
@@ -1873,11 +1890,12 @@ static const struct luaL_Reg map_reg[] =
 	{"getSeensInfo", map_get_seensinfo},
 	{"setScroll", map_set_scroll},
 	{"getScroll", map_get_scroll},
-	{"toScreen", map_to_screen},
+	{"toScreen", lua_map_toscreen},
 	{"toScreenMiniMap", minimap_to_screen},
 	{"toScreenLineGrids", map_line_grids},
 	{"setupGridLines", map_define_grid_lines},
 	{"setupMiniMapGridSize", map_set_minimap_gridsize},
+	{"getMapDO", map_get_display_object},
 	{NULL, NULL},
 };
 

@@ -42,6 +42,12 @@ template<class T=DisplayObject>T* userdata_to_DO(lua_State *L, int index, const 
 /******************************************************************
  ** Generic
  ******************************************************************/
+static int gl_generic_getkind(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(L, 1);
+	lua_pushstring(L, c->getKind());
+	return 1;
+}
 static int gl_generic_color_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(L, 1);
@@ -179,6 +185,13 @@ static int gl_renderer_cutoff(lua_State *L)
 	return 0;
 }
 
+static int gl_renderer_set_name(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
+	r->setRendererName(luaL_checkstring(L, 2));
+	return 0;
+}
+
 static int gl_renderer_toscreen(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
@@ -281,6 +294,29 @@ static int gl_target_clearcolor(lua_State *L)
 {
 	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	c->setClearColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	return 0;
+}
+
+static int gl_target_shader(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
+	shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+	v->setShader(shader);
+	return 0;
+}
+
+static int gl_target_set_auto_render(lua_State *L)
+{
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
+	if (lua_isnil(L, 2)) {
+		c->setAutoRender(NULL, LUA_NOREF);
+	} else {
+		SubRenderer *o = userdata_to_DO<SubRenderer>(L, 2);
+		if (o) {
+			lua_pushvalue(L, 2);
+			c->setAutoRender(o, luaL_ref(L, LUA_REGISTRYINDEX));
+		}
+	}
 	return 0;
 }
 
@@ -449,6 +485,26 @@ static int gl_tileobject_free(lua_State *L)
 }
 
 /******************************************************************
+ ** TileMap -- no constructor, this is in map.cpp
+ ******************************************************************/
+static int gl_tilemap_free(lua_State *L)
+{
+	DORTileObject *v = userdata_to_DO<DORTileObject>(L, 1, "gl{tileobject}");
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_tilemap_setmap(lua_State *L)
+{
+	DORTileMap *v = userdata_to_DO<DORTileMap>(L, 1, "gl{tileobject}");
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 2);
+
+	v->setMap(map);	
+	return 0;
+}
+
+/******************************************************************
  ** Lua declarations
  ******************************************************************/
 
@@ -456,6 +512,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 {
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
+	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
 	{"getRotate", gl_generic_rotate_get},
@@ -472,6 +529,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
 	{"cutoff", gl_renderer_cutoff},
+	{"setRendererName", gl_renderer_set_name},
 	{"toScreen", gl_renderer_toscreen},
 	{NULL, NULL},
 };
@@ -482,7 +540,10 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
+	{"shader", gl_target_shader},
+	{"setAutoRender", gl_target_set_auto_render},
 	{"clear", gl_vertexes_clear},
+	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
 	{"getRotate", gl_generic_rotate_get},
@@ -504,6 +565,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
+	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
 	{"getRotate", gl_generic_rotate_get},
@@ -526,6 +588,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
 	{"clear", gl_vertexes_clear},
+	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
 	{"getRotate", gl_generic_rotate_get},
@@ -552,6 +615,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"linefeed", gl_text_linefeed},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},
+	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
 	{"getRotate", gl_generic_rotate_get},
@@ -570,6 +634,7 @@ static const struct luaL_Reg gl_text_reg[] =
 static const struct luaL_Reg gl_tileobject_reg[] =
 {
 	{"__gc", gl_tileobject_free},
+	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
 	{"getRotate", gl_generic_rotate_get},
@@ -582,6 +647,26 @@ static const struct luaL_Reg gl_tileobject_reg[] =
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
 	{"removeFromParent", gl_generic_remove_from_parent},
+	{NULL, NULL},
+};
+
+static const struct luaL_Reg gl_tilemap_reg[] =
+{
+	{"__gc", gl_tilemap_free},
+	{"getKind", gl_generic_getkind},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
+	{"shown", gl_generic_shown},
+	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
+	{"setMap", gl_tilemap_setmap},
 	{NULL, NULL},
 };
 
@@ -602,6 +687,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{container}", gl_container_reg);
 	auxiliar_newclass(L, "gl{target}", gl_target_reg);
 	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
+	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 	return 1;
 }

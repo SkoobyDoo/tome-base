@@ -38,16 +38,6 @@ function _M:init()
 
 	local l = {}
 	self.list = l
-	local plop=false l[#l+1] = {name="toto", fct=function() 
-		plop = not plop
-		if plop then
-			local mo = game.player:getEntityDisplayObject(nil, 64, 64)
-			mo:removeFromParent()
-			core.mouse.setMouseDrag(mo, 64, 64)
-		else
-			core.mouse.setMouseDrag(nil)
-		end
-	end}
 	l[#l+1] = {name="New Game", fct=function() game:registerDialog(require("mod.dialogs.NewGame").new()) end}
 	l[#l+1] = {name="Load Game", fct=function() game:registerDialog(require("mod.dialogs.LoadGame").new()) end}
 --	l[#l+1] = {name="Online Profile", fct=function() game:registerDialog(require("mod.dialogs.Profile").new()) end}

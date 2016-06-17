@@ -125,5 +125,6 @@ typedef struct {
 } map_type;
 
 extern int luaopen_map(lua_State *L);
+extern void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show);
 
 #endif

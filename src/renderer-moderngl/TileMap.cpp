@@ -31,15 +31,24 @@ extern "C" {
 
 #include "renderer-moderngl/Renderer.hpp"
 
-// We cant clone a map, you silly!
-DisplayObject* DORTileMap::clone() {
-	return new DORContainer();
+
+/*************************************************************************
+ ** DORTileMap - a DO of a map
+ *************************************************************************/
+
+void DORTileMap::cloneInto(DisplayObject *_into) {
+	DisplayObject::cloneInto(_into);
+	DORTileMap *into = dynamic_cast<DORTileMap*>(_into);
+	into->map = map;
 }
 
 void DORTileMap::toScreen(mat4 cur_model, vec4 color) {
-
+	map_toscreen(NULL, map, 0, 0, 1, true);
 }
 
+/*************************************************************************
+ ** DORTileObject - a DO of an entity (kinda, more exactly of a list of MOs)
+ *************************************************************************/
 
 DORTileObject::~DORTileObject() {
 	resetMapObjects();
