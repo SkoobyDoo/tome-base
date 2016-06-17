@@ -480,7 +480,7 @@ function _M:makePod(x, y, radius, room_id, data, floor, wall)
 		end
 	end end
 
-	return { id="podroom"..room_id, x=x, y=y, cx=x, cy=y }
+	return { id="podroom"..room_id, x=x, y=y, cx=x, cy=y, room={} }
 end
 
 --- Generates a basic (ascii) room definition (for use by function room generators)
