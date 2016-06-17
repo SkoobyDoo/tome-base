@@ -1392,6 +1392,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	 ********************************************************/
 	float animdx = 0, animdy = 0;
 	float tlanimdx = 0, tlanimdy = 0;
+	// DGDGDGDG: what the frell was display_last even useful for ??? and is it still needed ?????
 	// if (m->display_last == DL_NONE) m->move_max = 0;
 
 	// WTF?!
