@@ -322,8 +322,8 @@ function _M:newGame()
 	self.player.energy.value = self.energy_to_act
 
 	Zone:setup{npc_class="mod.class.NPC", grid_class="mod.class.Grid", }
-	self:changeLevel(rng.range(1, 3), "dungeon")
-	-- self:changeLevel(1, "dungeon")
+	-- self:changeLevel(rng.range(1, 3), "dungeon")
+	self:changeLevel(1, "dungeon")
 end
 --[[
 function _M:onResolutionChange()

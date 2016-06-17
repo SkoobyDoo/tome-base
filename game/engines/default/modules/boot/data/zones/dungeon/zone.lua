@@ -24,7 +24,7 @@ return {
 	max_level = 5,
 	decay = {300, 800},
 	actor_adjust_level = function(zone, level, e) return zone.base_level + level.level-1 + rng.range(-1,2) end,
-	width = 50, height = 50,
+	width = 25, height = 25,
 	-- all_remembered = true,
 	all_lited = true,
 	levels = {
@@ -41,7 +41,7 @@ return {
 					up = "GRASS",
 					down = "GRASS",
 					do_ponds =  {
-						nb = {0, 2},
+						nb = {1, 2},
 						size = {w=25, h=25},
 						pond = {{0.6, "DEEP_WATER"}, {0.8, "DEEP_WATER"}},
 					},
