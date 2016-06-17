@@ -34,7 +34,8 @@ extern "C" {
 #include "assert.h"
 }
 
-#include <renderer-moderngl/Renderer.hpp>
+#include "map.hpp"
+#include "renderer-moderngl/TileMap.hpp"
 
 static const char IS_HEX_KEY = 'k';
 
@@ -89,7 +90,7 @@ static int map_object_new(lua_State *L)
 
 	obj->move_max = 0;
 	obj->anim_max = 0;
-	obj->flip_x = obj->flip_y = FALSE;
+	obj->flip_x = obj->flip_y = false;
 
 	obj->cb_ref = LUA_NOREF;
 
@@ -97,7 +98,7 @@ static int map_object_new(lua_State *L)
 	obj->mm_g = -1;
 	obj->mm_b = -1;
 
-	obj->valid = TRUE;
+	obj->valid = true;
 	obj->world_x = obj->world_y = 0;
 	obj->dx = luaL_checknumber(L, 6);
 	obj->dy = luaL_checknumber(L, 7);
@@ -110,7 +111,7 @@ static int map_object_new(lua_State *L)
 	for (i = 0; i < nb_textures; i++)
 	{
 		obj->textures[i] = 0;
-		obj->textures_is3d[i] = FALSE;
+		obj->textures_is3d[i] = false;
 		obj->textures_ref[i] = LUA_NOREF;
 	}
 
@@ -283,7 +284,7 @@ static int map_object_print(lua_State *L)
 static int map_object_invalid(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
-	obj->valid = FALSE;
+	obj->valid = false;
 	return 0;
 }
 
@@ -392,8 +393,8 @@ static int map_objects_to_displayobject(lua_State *L)
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
 	float a = (lua_isnumber(L, 3) ? lua_tonumber(L, 3) : 1);
-	bool allow_cb = TRUE;
-	bool allow_shader = TRUE;
+	bool allow_cb = true;
+	bool allow_shader = true;
 	if (lua_isboolean(L, 4)) allow_cb = lua_toboolean(L, 4);
 	if (lua_isboolean(L, 5)) allow_shader = lua_toboolean(L, 5);
 
@@ -438,7 +439,7 @@ static void setup_seens_texture(map_type *map)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 	map->seens_map = (GLubyte*)calloc((map->seens_map_w)*(map->seens_map_h)*4, sizeof(GLubyte));
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 
 	// Black it all
 	int i;
@@ -552,12 +553,18 @@ static int map_new(lua_State *L)
 		{
 			map->grids[i][j] = (map_object**)calloc(zdepth, sizeof(map_object*));
 			map->grids_ref[i][j] = (int*)calloc(zdepth, sizeof(int));
-			map->grids_important[i][j] = FALSE;
+			map->grids_important[i][j] = false;
 		}
 	}
 
 	map->z_callbacks = (int*)calloc(zdepth, sizeof(int));
 	for (i = 0; i < zdepth; i++) map->z_callbacks[i] = LUA_NOREF;
+
+	map->z_changed = (bool*)calloc(zdepth, sizeof(bool));
+	for (i = 0; i < zdepth; i++) map->z_changed[i] = true;
+
+	map->z_dls = (vector<DisplayList*>**)calloc(zdepth, sizeof(vector<DisplayList*>));
+	for (i = 0; i < zdepth; i++) map->z_dls[i] = new vector<DisplayList*>();
 
 	return 1;
 }
@@ -590,8 +597,11 @@ static int map_free(lua_State *L)
 
 	for (i = 0; i < map->zdepth; i++) {
 		if (map->z_callbacks[i] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map->z_callbacks[i]);
+		delete map->z_dls[i];
 	}
 	free(map->z_callbacks);
+	free(map->z_changed);
+	free(map->z_dls);
 
 	free(map->colors);
 	free(map->texcoords);
@@ -709,7 +719,7 @@ static int map_set_zoom(lua_State *L)
 	map->tile_h = tile_h;
 	map->mwidth = mwidth;
 	map->mheight = mheight;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	setup_seens_texture(map);
 	return 0;
 }
@@ -737,7 +747,7 @@ static int map_set_obscure(lua_State *L)
 	map->obscure_g = g;
 	map->obscure_b = b;
 	map->obscure_a = a;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -752,7 +762,7 @@ static int map_set_shown(lua_State *L)
 	map->shown_g = g;
 	map->shown_b = b;
 	map->shown_a = a;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -799,6 +809,7 @@ static int map_set_grid(lua_State *L)
 
 		lua_pushnumber(L, i + 1);
 		lua_gettable(L, 4); // Access the table of mos for this spot
+		map_object *old = map->grids[x][y][i];
 		map->grids[x][y][i] = lua_isnoneornil(L, -1) ? NULL : (map_object*)auxiliar_checkclass(L, "core{mapobj}", -1);
 		if (map->grids[x][y][i])
 		{
@@ -806,6 +817,11 @@ static int map_set_grid(lua_State *L)
 			map->grids[x][y][i]->cur_y = y;
 			lua_pushvalue(L, -1);
 			map->grids_ref[x][y][i] = luaL_ref(L, LUA_REGISTRYINDEX);
+		}
+
+		// Note that the layer changed so that we rebuild DisplayLists for this layer
+		if (map->grids[x][y][i] != old) {
+			map->z_changed[i] = true;
 		}
 
 		// Set the object in the mo list
@@ -832,7 +848,7 @@ static int map_set_seen(lua_State *L)
 
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_seens[y*map->w+x] = v;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -845,7 +861,7 @@ static int map_set_remember(lua_State *L)
 
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_remembers[x][y] = v;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -858,7 +874,7 @@ static int map_set_lite(lua_State *L)
 
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_lites[x][y] = v;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -871,7 +887,7 @@ static int map_set_important(lua_State *L)
 
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_important[x][y] = v;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -883,7 +899,7 @@ static int map_clean_seen(lua_State *L)
 	for (i = 0; i < map->w; i++)
 		for (j = 0; j < map->h; j++)
 			map->grids_seens[j*map->w+i] = 0;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -894,8 +910,8 @@ static int map_clean_remember(lua_State *L)
 
 	for (i = 0; i < map->w; i++)
 		for (j = 0; j < map->h; j++)
-			map->grids_remembers[i][j] = FALSE;
-	map->seen_changed = TRUE;
+			map->grids_remembers[i][j] = false;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -906,8 +922,8 @@ static int map_clean_lite(lua_State *L)
 
 	for (i = 0; i < map->w; i++)
 		for (j = 0; j < map->h; j++)
-			map->grids_lites[i][j] = FALSE;
-	map->seen_changed = TRUE;
+			map->grids_lites[i][j] = false;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -1154,7 +1170,7 @@ static int map_set_scroll(lua_State *L)
 	map->used_animdy = 0;
 	map->mx = x;
 	map->my = y;
-	map->seen_changed = TRUE;
+	map->seen_changed = true;
 	return 0;
 }
 
@@ -1251,7 +1267,7 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 		lua_pushnumber(L, map->tile_w * (dw) * (dm->scale));
 		lua_pushnumber(L, map->tile_h * (dh) * (dm->scale));
 		lua_pushnumber(L, (dm->scale));
-		lua_pushboolean(L, TRUE);
+		lua_pushboolean(L, true);
 		lua_pushnumber(L, tldx);
 		lua_pushnumber(L, tldy);
 		if (lua_pcall(L, 8, 1, 0))
@@ -1276,7 +1292,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	GLfloat *vertices = map->vertices;
 	GLfloat *colors = map->colors;
 	GLfloat *texcoords = map->texcoords;
-	bool up_important = FALSE;
+	bool up_important = false;
 	float anim;
 	int zc;
 	int anim_step;
@@ -1450,7 +1466,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 		}
 	}
 
-//	if ((j - 1 >= 0) && map->grids_important[i][j - 1] && map->grids[i][j-1][9] && !map->grids[i][j-1][9]->move_max) up_important = TRUE;
+//	if ((j - 1 >= 0) && map->grids_important[i][j - 1] && map->grids[i][j-1][9] && !map->grids[i][j-1][9]->move_max) up_important = true;
 
 	/********************************************************
 	 ** Display the entity
@@ -1532,7 +1548,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 
 void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show)
 {
-	bool changed = FALSE;
+	bool changed = false;
 	int i = 0, j = 0, z = 0;
 	int vert_idx = 0;
 	int col_idx = 0;
@@ -1569,7 +1585,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 			mx = (int)(map->oldmx + animdx);
 			my = (int)(map->oldmy + animdy);
 		}
-		changed = TRUE;
+		changed = true;
 	}
 	x -= map->tile_w * (animdx + map->oldmx);
 	y -= map->tile_h * (animdy + map->oldmy);
@@ -1672,7 +1688,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 			}
 			else lua_pop(L, 2);
 			map_update_seen_texture(map);
-			map->seen_changed = FALSE;
+			map->seen_changed = false;
 		}
 	}
 }

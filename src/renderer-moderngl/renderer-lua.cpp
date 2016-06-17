@@ -20,6 +20,8 @@
 */
 
 #include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/TileMap.hpp"
+
 extern "C" {
 #include "auxiliar.h"
 #include "renderer-moderngl/renderer-lua.h"

@@ -30,6 +30,7 @@ extern "C" {
 }
 
 #include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/TileMap.hpp"
 
 
 /*************************************************************************
@@ -144,6 +145,7 @@ void DORTileObject::regenData() {
 			);
 			add(v);
 
+			// DGDGDGDG
 			// if (allow_cb && (dm->cb_ref != LUA_NOREF))
 			// {
 			// 	if (allow_shader && m->shader) tglUseProgramObject(0);

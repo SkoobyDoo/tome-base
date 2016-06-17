@@ -1432,9 +1432,9 @@ int main(int argc, char *argv[])
 	SDL_StartTextInput();
 
 	// Get OpenGL capabilities
-	multitexture_active = GLEW_ARB_multitexture;
-	shaders_active = GLEW_ARB_shader_objects;
-	fbo_active = GLEW_EXT_framebuffer_object || GLEW_ARB_framebuffer_object;
+	multitexture_active = TRUE;
+	shaders_active = TRUE;
+	fbo_active = TRUE;
 	if (!multitexture_active) shaders_active = FALSE;
 	if (!GLEW_VERSION_2_1)
 	{

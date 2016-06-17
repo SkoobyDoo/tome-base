@@ -24,9 +24,7 @@
 #include "renderer-moderngl/Renderer.hpp"
 #include <string.h>
 
-extern "C" {
-#include "map.h"
-}
+#include "map.hpp"
 
 // This one is a little strange, it is not the master of map_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around map code
