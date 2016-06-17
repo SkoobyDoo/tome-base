@@ -563,8 +563,14 @@ static int map_new(lua_State *L)
 	map->z_changed = (bool*)calloc(zdepth, sizeof(bool));
 	for (i = 0; i < zdepth; i++) map->z_changed[i] = true;
 
-	map->z_dls = (vector<DisplayList*>**)calloc(zdepth, sizeof(vector<DisplayList*>));
-	for (i = 0; i < zdepth; i++) map->z_dls[i] = new vector<DisplayList*>();
+	map->z_renderers = (RendererGL**)calloc(zdepth, sizeof(RendererGL*));
+	for (i = 0; i < zdepth; i++) {
+		map->z_renderers[i] = new RendererGL();
+		char *name = (char*)calloc(20, sizeof(char));
+		sprintf(name, "map-layer-%d", i);
+		map->z_renderers[i]->setRendererName(name, false);
+		map->z_renderers[i]->setManualManagement(true);
+	}
 
 	return 1;
 }
@@ -597,11 +603,11 @@ static int map_free(lua_State *L)
 
 	for (i = 0; i < map->zdepth; i++) {
 		if (map->z_callbacks[i] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map->z_callbacks[i]);
-		delete map->z_dls[i];
+		delete map->z_renderers[i];
 	}
 	free(map->z_callbacks);
 	free(map->z_changed);
-	free(map->z_dls);
+	free(map->z_renderers);
 
 	free(map->colors);
 	free(map->texcoords);
@@ -1171,6 +1177,8 @@ static int map_set_scroll(lua_State *L)
 	map->mx = x;
 	map->my = y;
 	map->seen_changed = true;
+
+	for (int z = 0; z < map->zdepth; z++) map->z_changed[z] = true;
 	return 0;
 }
 
@@ -1182,36 +1190,31 @@ static int map_get_scroll(lua_State *L)
 	return 2;
 }
 
-#define useDefaultShader(map) { \
-	if (map->default_shader) tglUseProgramObject(map->default_shader->shader) \
-	else tglUseProgramObject(0) \
-}
+// #define useDefaultShader(map) { \
+// 	if (map->default_shader) tglUseProgramObject(map->default_shader->shader) \
+// 	else tglUseProgramObject(0) \
+// }
 
-#define useNoShader() { \
-	tglUseProgramObject(0); \
-}
+// #define useNoShader() { \
+// 	tglUseProgramObject(0); \
+// }
 
-#define unbatchQuads(vert, col) { \
-	if ((vert)) glDrawArrays(GL_TRIANGLES, 0, (vert) / 2); \
-	(vert) = 0; \
-	(col) = 0; \
-}
+// #define unbatchQuads(vert, col) { \
+// 	if ((vert)) glDrawArrays(GL_TRIANGLES, 0, (vert) / 2); \
+// 	(vert) = 0; \
+// 	(col) = 0; \
+// }
 
-#define setMapGLArrays(vertices, texcoords, colors) { \
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords); \
-	glVertexPointer(2, GL_FLOAT, 0, vertices); \
-	glColorPointer(4, GL_FLOAT, 0, colors);	 \
-}
+// #define setMapGLArrays(vertices, texcoords, colors) { \
+// 	glTexCoordPointer(2, GL_FLOAT, 0, texcoords); \
+// 	glVertexPointer(2, GL_FLOAT, 0, vertices); \
+// 	glColorPointer(4, GL_FLOAT, 0, colors);	 \
+// }
 
-void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_type *map,
-		float *vertices, float *texcoords, float *colors, int *vert_idx, int
-		*col_idx, float anim, float dx, float dy, float tldx, float tldy, float
-		dw, float dh, float r, float g, float b, float a, int force, int i, int j)
+static inline void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_type *map, int z,
+		float anim, float dx, float dy, float tldx, float tldy, float
+		dw, float dh, float r, float g, float b, float a, int i, int j)
 {
-	int idx = 0, row;
-
-	idx = *vert_idx;
-
 	float x1, x2, y1, y2;
 
 	if (m->flip_x) { // Check m and not dm so the whole thing flips
@@ -1225,67 +1228,55 @@ void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_
 		y1 = dy; y2 = map->tile_h * dh * dm->scale + dy;
 	}
 
-
-	vertices[idx + 0] = x1;   vertices[idx + 1] = y1;
-	vertices[idx + 2] = x2;   vertices[idx + 3] = y1;
-	vertices[idx + 4] = x2;   vertices[idx + 5] = y2;
-	vertices[idx + 6] = x1;   vertices[idx + 7] = y1;
-	vertices[idx + 8] = x2;   vertices[idx + 9] = y2;
-	vertices[idx +10] = x1;   vertices[idx +11] = y2;
-
 	float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
 	float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
-	texcoords[idx + 0] = tx1; texcoords[idx + 1] = ty1;
-	texcoords[idx + 2] = tx2; texcoords[idx + 3] = ty1;
-	texcoords[idx + 4] = tx2; texcoords[idx + 5] = ty2;
-	texcoords[idx + 6] = tx1; texcoords[idx + 7] = ty1;
-	texcoords[idx + 8] = tx2; texcoords[idx + 9] = ty2;
-	texcoords[idx +10] = tx1; texcoords[idx +11] = ty2;
 
-	idx = *col_idx;
+	shader_type *shader = default_shader;
+	if (dm->shader) shader = dm->shader;
+	else if (m->shader) shader = m->shader;
+	else if (map->default_shader) shader = map->default_shader;
 
-	for (row = 0; row < 6; row++) {
-		colors[idx + (4 * row + 0)] = r;
-		colors[idx + (4 * row + 1)] = g;
-		colors[idx + (4 * row + 2)] = b;
-		colors[idx + (4 * row + 3)] = a;
-	}
+	auto dl = getDisplayList(map->z_renderers[z], dm->textures[0], shader);
 
-	(*vert_idx) += 2 * 6;
-	(*col_idx) += 4 * 6;
-	if ((*vert_idx) >= 2 * 6 * QUADS_PER_BATCH || force || dm->cb_ref != LUA_NOREF) {\
-		unbatchQuads((*vert_idx), (*col_idx));
-		// printf(" -- unbatch1 %d %d\n", force, dm->cb_ref != LUA_NOREF);
-	}
-	if (L && dm->cb_ref != LUA_NOREF)
-	{
-		useNoShader();
-		lua_rawgeti(L, LUA_REGISTRYINDEX, dm->cb_ref);
-		lua_checkstack(L, 8);
-		lua_pushnumber(L, dx);
-		lua_pushnumber(L, dy);
-		lua_pushnumber(L, map->tile_w * (dw) * (dm->scale));
-		lua_pushnumber(L, map->tile_h * (dh) * (dm->scale));
-		lua_pushnumber(L, (dm->scale));
-		lua_pushboolean(L, true);
-		lua_pushnumber(L, tldx);
-		lua_pushnumber(L, tldy);
-		if (lua_pcall(L, 8, 1, 0))
-		{
-			printf("Display callback error: UID %ld: %s\n", dm->uid, lua_tostring(L, -1));
-			lua_pop(L, 1);
-		}
-		if (lua_isboolean(L, -1)) {
-			setMapGLArrays(vertices, texcoords, colors);
-		}
-		lua_pop(L, 1);
-		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-		else useDefaultShader(map);
-	}
+	// Make sure we do not have to reallocate each step
+	// DGDGDGDG: actually do it
+
+	// Put it directly into the DisplayList
+	dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}});
+	dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}});
+	dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}});
+	dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}});
+
+	// DGDGDGDG
+	// if (L && dm->cb_ref != LUA_NOREF)
+	// {
+	// 	useNoShader();
+	// 	lua_rawgeti(L, LUA_REGISTRYINDEX, dm->cb_ref);
+	// 	lua_checkstack(L, 8);
+	// 	lua_pushnumber(L, dx);
+	// 	lua_pushnumber(L, dy);
+	// 	lua_pushnumber(L, map->tile_w * (dw) * (dm->scale));
+	// 	lua_pushnumber(L, map->tile_h * (dh) * (dm->scale));
+	// 	lua_pushnumber(L, (dm->scale));
+	// 	lua_pushboolean(L, true);
+	// 	lua_pushnumber(L, tldx);
+	// 	lua_pushnumber(L, tldy);
+	// 	if (lua_pcall(L, 8, 1, 0))
+	// 	{
+	// 		printf("Display callback error: UID %ld: %s\n", dm->uid, lua_tostring(L, -1));
+	// 		lua_pop(L, 1);
+	// 	}
+	// 	if (lua_isboolean(L, -1)) {
+	// 		setMapGLArrays(vertices, texcoords, colors);
+	// 	}
+	// 	lua_pop(L, 1);
+	// 	if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+	// 	else useDefaultShader(map);
+	// }
 }
 
-inline void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
-void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, int scrollx, int scrolly, int bdx, int bdy, float dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
+// static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
+static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
 {
 	map_object *dm;
 	float r, g, b;
@@ -1342,30 +1333,30 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 		a = map->obscure_r;
 	}
 
-	/* Reset vertices&all buffers, we are changing texture/shader */
-	if ((gl_c_texture != m->textures[0]) || m->shader || (m->nb_textures > 1))
-	{
-		/* Draw remaining ones */
-		unbatchQuads((*vert_idx), (*col_idx));
-		// printf(" -- unbatch2 %d %d %d :: %d!=%d\n", (gl_c_texture != m->textures[0]), m->shader != 0, (m->nb_textures > 1), gl_c_texture, m->textures[0]);
-	}
-	if (gl_c_texture != m->textures[0])
-	{
-		tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
-	}
+	// /* Reset vertices&all buffers, we are changing texture/shader */
+	// if ((gl_c_texture != m->textures[0]) || m->shader || (m->nb_textures > 1))
+	// {
+	// 	/* Draw remaining ones */
+	// 	unbatchQuads((*vert_idx), (*col_idx));
+	// 	// printf(" -- unbatch2 %d %d %d :: %d!=%d\n", (gl_c_texture != m->textures[0]), m->shader != 0, (m->nb_textures > 1), gl_c_texture, m->textures[0]);
+	// }
+	// if (gl_c_texture != m->textures[0])
+	// {
+	// 	tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
+	// }
 
 	/********************************************************
 	 ** Setup all textures we need
 	 ********************************************************/
 	a = (a > 1) ? 1 : ((a < 0) ? 0 : a);
 	int z;
-	if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, m->tex_x[0], m->tex_y[0], m->tex_factorx[0], m->tex_factory[0], r, g, b, a);
-	for (z = (!shaders_active) ? 0 : (m->nb_textures - 1); z > 0; z--)
-	{
-		if (multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0+z);
-		tglBindTexture(m->textures_is3d[z] ? GL_TEXTURE_3D : GL_TEXTURE_2D, m->textures[z]);
-	}
-	if (m->nb_textures && multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
+	// if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, m->tex_x[0], m->tex_y[0], m->tex_factorx[0], m->tex_factory[0], r, g, b, a);
+	// for (z = (!shaders_active) ? 0 : (m->nb_textures - 1); z > 0; z--)
+	// {
+	// 	if (multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0+z);
+	// 	tglBindTexture(m->textures_is3d[z] ? GL_TEXTURE_3D : GL_TEXTURE_2D, m->textures[z]);
+	// }
+	// if (m->nb_textures && multitexture_active && shaders_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
 
 	/********************************************************
 	 ** Compute/display movement and motion blur
@@ -1381,6 +1372,7 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 
 	if (m->move_max)
 	{
+		map->z_changed[dz] = true;
 		m->move_step += nb_keyframes;
 		if (m->move_step >= m->move_max) m->move_max = 0; // Reset once in place
 		if (m->display_last == DL_NONE) m->display_last = DL_TRUE;
@@ -1404,28 +1396,26 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 						dm = m;
 						while (dm)
 						{
-						 	if (m != dm && dm->shader) {
-								unbatchQuads((*vert_idx), (*col_idx));
-								// printf(" -- unbatch3\n");
+						 	// if (m != dm && dm->shader) {
+								// unbatchQuads((*vert_idx), (*col_idx));
+								// // printf(" -- unbatch3\n");
 
-								for (zc = dm->nb_textures - 1; zc > 0; zc--)
-								{
-									if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
-									tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
-								}
-								if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
+								// for (zc = dm->nb_textures - 1; zc > 0; zc--)
+								// {
+								// 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
+								// 	tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
+								// }
+								// if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
 
-						 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-						 	}
+						 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+						 	// }
 
-						 	if (gl_c_texture != dm->textures[0]) {
-								unbatchQuads((*vert_idx), (*col_idx));
-								// printf(" -- unbatch6\n");
-								tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-						 	}
-							do_quad(L, m, dm, map, vertices, texcoords, colors,
-								vert_idx,
-								col_idx,
+						 	// if (gl_c_texture != dm->textures[0]) {
+								// unbatchQuads((*vert_idx), (*col_idx));
+								// // printf(" -- unbatch6\n");
+								// tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
+						 	// }
+							do_quad(L, m, dm, map, dz,
 								0,
 								dx + dm->dx * map->tile_w + animdx,
 								dy + dm->dy * map->tile_h + animdy,
@@ -1434,12 +1424,11 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 								dm->dw,
 								dm->dh,
 								r, g, b, a,
-								(dm->shader && dm->shader != m->shader) ? 1 : 0,
 								i, j);
-							if (m != dm) {
-						 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-						 		else useDefaultShader(map);
-						 	}
+							// if (m != dm) {
+						 // 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+						 // 		else useDefaultShader(map);
+						 // 	}
 							dm = dm->next;
 						}
 					}
@@ -1485,33 +1474,32 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 				else if (dm->anim_loop > 0) dm->anim_loop--;
 			}
 			anim = (float)anim_step / dm->anim_max;
+			map->z_changed[dz] = true;
 		}
 		dm->world_x = bdx + (dm->dx + animdx) * map->tile_w;
 		dm->world_y = bdy + (dm->dy + animdy) * map->tile_h;
 
-	 	if (m != dm && dm->shader) {
-			unbatchQuads((*vert_idx), (*col_idx));
-			// printf(" -- unbatch3\n");
+	 	// if (m != dm && dm->shader) {
+			// unbatchQuads((*vert_idx), (*col_idx));
+			// // printf(" -- unbatch3\n");
 
-			for (zc = dm->nb_textures - 1; zc > 0; zc--)
-			{
-				if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
-				tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
-			}
-			if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
+			// for (zc = dm->nb_textures - 1; zc > 0; zc--)
+			// {
+			// 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
+			// 	tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
+			// }
+			// if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
 
-	 		useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-	 	}
+	 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+	 	// }
 
-	 	if (gl_c_texture != dm->textures[0]) {
-			unbatchQuads((*vert_idx), (*col_idx));
-			// printf(" -- unbatch6\n");
-			tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
-	 	}
+	 	// if (gl_c_texture != dm->textures[0]) {
+			// unbatchQuads((*vert_idx), (*col_idx));
+			// // printf(" -- unbatch6\n");
+			// tglBindTexture(GL_TEXTURE_2D, dm->textures[0]);
+	 	// }
 
-		do_quad(L, m, dm, map, vertices, texcoords, colors,
-			vert_idx,
-			col_idx,
+		do_quad(L, m, dm, map, dz,
 			anim,
 			dx + (dm->dx + animdx) * map->tile_w,
 			dy + (dm->dy + animdy) * map->tile_h,
@@ -1520,12 +1508,11 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 			dm->dw,
 			dm->dh,
 			r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
-			(dm->shader && dm->shader != m->shader) ? 1 : 0,
 			i, j);
-		if (m != dm) {
-	 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-	 		else useDefaultShader(map);
-	 	}
+		// if (m != dm) {
+	 // 		if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
+	 // 		else useDefaultShader(map);
+	 // 	}
 		dm->animdx = animdx;
 		dm->animdy = animdy;
 		dm = dm->next;
@@ -1534,32 +1521,25 @@ void display_map_quad(lua_State *L, int *vert_idx, int *col_idx, map_type *map, 
 	/********************************************************
 	 ** Cleanup
 	 ********************************************************/
-	if (m->shader || m->nb_textures > 1)
-	{
-		/* Draw remaining ones */
-		unbatchQuads((*vert_idx), (*col_idx));
-			// printf(" -- unbatch4 %d %d %d\n", m->shader != 0, m->nb_textures > 1, m->next !=0);
-	}
-	if (m->shader) useDefaultShader(map);
+	// if (m->shader || m->nb_textures > 1)
+	// {
+	// 	/* Draw remaining ones */
+	// 	unbatchQuads((*vert_idx), (*col_idx));
+	// 		// printf(" -- unbatch4 %d %d %d\n", m->shader != 0, m->nb_textures > 1, m->next !=0);
+	// }
+	// if (m->shader) useDefaultShader(map);
 	m->display_last = DL_TRUE;
 }
 
 #define MIN(a,b) ((a < b) ? a : b)
 
-void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show)
+void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show, mat4 model, vec4 color)
 {
 	bool changed = false;
 	int i = 0, j = 0, z = 0;
-	int vert_idx = 0;
-	int col_idx = 0;
 	int mx = map->mx;
 	int my = map->my;
-
-	GLfloat *vertices = map->vertices;
-	GLfloat *colors = map->colors;
-	GLfloat *texcoords = map->texcoords;
-	setMapGLArrays(vertices, texcoords, colors);
-	useDefaultShader(map);
+	bool force_redraw = false;
 
 	// nb_draws = 0;
 
@@ -1586,6 +1566,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 			my = (int)(map->oldmy + animdy);
 		}
 		changed = true;
+		force_redraw = true;
 	}
 	x -= map->tile_w * (animdx + map->oldmx);
 	y -= map->tile_h * (animdy + map->oldmy);
@@ -1596,6 +1577,9 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 
 	map->used_mx = mx;
 	map->used_my = my;
+
+	// DGDGDGDG: instead of updating x/y and forcing a regen of EVERYTHING, better to not alter x/y
+	// and instead alter the model matrix with a translation; will make scrolling WAY more efficient
 
 	int mini = mx - 1, maxi = mx + map->mwidth + 2, minj =  my - 1, maxj = my + map->mheight + 2;
 
@@ -1611,56 +1595,67 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 	// Always display some more of the map to make sure we always see it all
 	for (z = 0; z < map->zdepth; z++)
 	{
-		for (j = minj; j < maxj; j++)
-		{
-			for (i = mini; i < maxi; i++)
-			{
-				int dx = i * map->tile_w;
-				int dy = j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
-				map_object *mo = map->grids[i][j][z];
-				if (!mo) continue;
+		auto render = map->z_renderers[z];
+		if (map->z_changed[z] || force_redraw) {
+			render->resetDisplayLists();
+			render->setChanged();
+			map->z_changed[z] = false;
 
-				if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && (always_show || map->grids_remembers[i][j])) || mo->on_unknown)
+			for (j = minj; j < maxj; j++)
+			{
+				for (i = mini; i < maxi; i++)
 				{
-					if (map->grids_seens[j*map->w+i])
+					int dx = i * map->tile_w;
+					int dy = j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
+					map_object *mo = map->grids[i][j][z];
+					if (!mo) continue;
+
+					if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && (always_show || map->grids_remembers[i][j])) || mo->on_unknown)
 					{
-						display_map_quad(L, &vert_idx, &col_idx, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
-					}
-					else
-					{
-						display_map_quad(L, &vert_idx, &col_idx, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+						if (map->grids_seens[j*map->w+i])
+						{
+							display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
+						}
+						else
+						{
+							display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+						}
 					}
 				}
 			}
+			// printf(">===HANDLING layer %d\n", z);
 		}
 
-		if (L && map->z_callbacks[z] != LUA_NOREF) {
-			/* Draw remaining ones */
-			unbatchQuads(vert_idx, col_idx);
-				// printf(" -- unbatch5\n");
+		// DGDGDGDG
+		// if (L && map->z_callbacks[z] != LUA_NOREF) {
+		// 	/* Draw remaining ones */
+		// 	unbatchQuads(vert_idx, col_idx);
+		// 		// printf(" -- unbatch5\n");
 
-			lua_rawgeti(L, LUA_REGISTRYINDEX, map->z_callbacks[z]);
-			lua_checkstack(L, 4);
-			lua_pushnumber(L, z);
-			lua_pushnumber(L, nb_keyframes);
-			lua_pushvalue(L, 7);
-			if (lua_pcall(L, 3, 1, 0))
-			{
-				printf("Map z-callback error: Z %d: %s\n", z, lua_tostring(L, -1));
-				lua_pop(L, 1);
-			}
-			if (lua_isboolean(L, -1)) {
-				glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-				glVertexPointer(2, GL_FLOAT, 0, vertices);
-				glColorPointer(4, GL_FLOAT, 0, colors);
-			}
-			lua_pop(L, 1);
-		}
+		// 	lua_rawgeti(L, LUA_REGISTRYINDEX, map->z_callbacks[z]);
+		// 	lua_checkstack(L, 4);
+		// 	lua_pushnumber(L, z);
+		// 	lua_pushnumber(L, nb_keyframes);
+		// 	lua_pushvalue(L, 7);
+		// 	if (lua_pcall(L, 3, 1, 0))
+		// 	{
+		// 		printf("Map z-callback error: Z %d: %s\n", z, lua_tostring(L, -1));
+		// 		lua_pop(L, 1);
+		// 	}
+		// 	if (lua_isboolean(L, -1)) {
+		// 		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+		// 		glVertexPointer(2, GL_FLOAT, 0, vertices);
+		// 		glColorPointer(4, GL_FLOAT, 0, colors);
+		// 	}
+		// 	lua_pop(L, 1);
+		// }
+
+		render->toScreen(model, color);
 	}
 
 	/* Display any leftovers */
-	unbatchQuads(vert_idx, col_idx);
-	useNoShader();
+	// unbatchQuads(vert_idx, col_idx);
+	// useNoShader();
 
 	// printf("draws %d\n", nb_draws);
 
@@ -1701,7 +1696,10 @@ static int lua_map_toscreen(lua_State *L)
 	int nb_keyframes = luaL_checknumber(L, 4);
 	bool always_show = lua_toboolean(L, 5);
 
-	map_toscreen(L, map, x, y, nb_keyframes, always_show);
+	vec4 color = {1, 1, 1, 1};
+	mat4 model = mat4();
+
+	map_toscreen(L, map, x, y, nb_keyframes, always_show, model, color);
 
 	return 0;
 }

@@ -546,12 +546,15 @@ function _M:updateTitle(title)
 
 	if not self.title_do then
 		self.title_do = core.renderer.text(self.font_bold)
-		self.renderer:add(self.title_do)
+		self.do_container:add(self.title_do)
+	else
+		self.title_do:removeFromParent()
+		self.do_container:add(self.title_do)
 	end
 
 	self.font_bold:setStyle("bold")
 	self.title_do:text(title)
-	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, -100 + 10)
+	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, 10)
 	self.font_bold:setStyle("normal")
 end
 
@@ -718,6 +721,9 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 			self.do_container:add(ui.ui.do_container)
 		end
 	end
+
+
+	self:updateTitle(self.title)
 
 	self.setuped = true
 end

@@ -43,8 +43,8 @@ void DORTileMap::cloneInto(DisplayObject *_into) {
 	into->map = map;
 }
 
-void DORTileMap::toScreen(mat4 cur_model, vec4 color) {
-	map_toscreen(NULL, map, 0, 0, 1, true);
+void DORTileMap::toScreen(mat4 model, vec4 color) {
+	map_toscreen(NULL, map, 0, 0, 1, true, model, color);
 }
 
 /*************************************************************************
@@ -176,8 +176,6 @@ void DORTileObject::regenData() {
 
 			dm = dm->next;
 		}
-
-		if (allow_shader && m->shader) tglUseProgramObject(0);
 
 		moid++;
 	}

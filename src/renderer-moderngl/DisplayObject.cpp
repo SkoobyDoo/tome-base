@@ -362,9 +362,13 @@ void SubRenderer::cloneInto(DisplayObject* _into) {
 	into->renderer_name = strdup(renderer_name);
 }
 
-void SubRenderer::setRendererName(const char *name) {
+void SubRenderer::setRendererName(char *name, bool copy) {
 	if (renderer_name) free((void*)renderer_name);
-	renderer_name = strdup(name);
+	if (copy) renderer_name = strdup(name);
+	else renderer_name = name;
+}
+void SubRenderer::setRendererName(const char *name) {
+	setRendererName((char*)name, true);
 }
 
 void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {

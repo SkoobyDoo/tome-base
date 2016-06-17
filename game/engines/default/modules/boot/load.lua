@@ -33,6 +33,9 @@ local Birther = require "engine.Birther"
 local UIBase = require "engine.ui.Base"
 local FontPackage = require "engine.FontPackage"
 local Tiles = require "engine.Tiles"
+local Map = require "engine.Map"
+
+Map.smooth_scroll = 3
 
 -- Dialogs fonts
 UIBase.font = FontPackage:get("default")

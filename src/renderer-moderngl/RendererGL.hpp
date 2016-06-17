@@ -92,6 +92,7 @@ protected:
 	bool zsort = false;
 	vector<DisplayList*> displays;
 	int nb_quads = 0;
+	bool manual_dl_management = false;
 
 	bool cutting = false;
 	vec4 cutpos1;
@@ -122,6 +123,9 @@ public:
 	void sortedToDL();
 	void update();
 	virtual void toScreen(mat4 cur_model, vec4 color);
+
+	void setManualManagement(bool v) { manual_dl_management = v; };
+	void resetDisplayLists();
 
 	void activateCutting(mat4 cur_model, bool v);
 

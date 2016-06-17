@@ -90,7 +90,7 @@ function _M:checkTileset(image, base)
 		return
 	end
 	local d = self.tilesets[f]
-	print("Loading tile from tileset", f)
+	print("Loading tile from tileset", f, "=>", d.factorx, d.factory, d.x, d.y, d.w, d.h)
 	local tex = self.tilesets_texs[d.set]
 	if not tex then
 		tex = core.display.loadImage(d.set):glTexture()

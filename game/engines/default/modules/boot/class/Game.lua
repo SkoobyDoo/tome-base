@@ -486,15 +486,15 @@ function _M:display(nb_keyframes)
 
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
-core.display.countDraws()
 		-- Display the map and compute FOV for the player if needed
 		if self.level.map.changed then
 			self.player:playerFOV()
 		end
 
+-- core.display.countDraws()
 		self.level.map:display(nil, nil, nb_keyframes, true)
+-- print("[draw calls] map", core.display.countDraws())
 		self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
-print("[draw calls] map", core.display.countDraws())
 	end
 
 	-- Draw it here, inside the FBO
@@ -516,9 +516,9 @@ print("[draw calls] map", core.display.countDraws())
 
 	local old = self.flyers
 	self.flyers = nil
-core.display.countDraws()
+-- core.display.countDraws()
 	engine.GameEnergyBased.display(self, nb_keyframes)
-print("[draw calls] UI", core.display.countDraws())
+-- print("[draw calls] UI", core.display.countDraws())
 	self.flyers = old
 
 	if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end

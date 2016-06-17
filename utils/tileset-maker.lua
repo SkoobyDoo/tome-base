@@ -111,6 +111,10 @@ function fillSet(rlist)
 		end
 
 		local ri, rj = i * 68, j * 68
+		im:copyResampled(d.src, ri-1, rj, 0, 0, d.mw, d.mh, d.mw, d.mh)
+		im:copyResampled(d.src, ri+1, rj, 0, 0, d.mw, d.mh, d.mw, d.mh)
+		im:copyResampled(d.src, ri, rj-1, 0, 0, d.mw, d.mh, d.mw, d.mh)
+		im:copyResampled(d.src, ri, rj+1, 0, 0, d.mw, d.mh, d.mw, d.mh)
 		im:copyResampled(d.src, ri, rj, 0, 0, d.mw, d.mh, d.mw, d.mh)
 		pos[prefix..d.file] = {x=ri/w, y=rj/h, factorx=d.mw/w, factory=d.mh/h, w=d.mw, h=d.mh, set=prefix..basename..id..".png"}
 

@@ -65,9 +65,14 @@ protected:
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
-	DisplayObject() { donb++; printf("+DOs %d\n", donb); model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1; };
+	DisplayObject() {
+		donb++;
+		// printf("+DOs %d\n", donb);
+		model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1;
+	};
 	virtual ~DisplayObject() {
-		donb--; printf("-DOs %d\n", donb);
+		donb--;
+		// printf("-DOs %d\n", donb);
 		removeFromParent();
 		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
 	};
@@ -192,10 +197,11 @@ protected:
 
 	virtual void cloneInto(DisplayObject *into);
 public:
-	SubRenderer() { renderer_name = strdup(getKind()); printf("[[[[[[ CREATING RENERER %s\n", renderer_name); };
-	~SubRenderer() { printf("]]]]]] DELETING RENERER %s\n", renderer_name); free((void*)renderer_name); };
+	SubRenderer() { renderer_name = strdup(getKind()); };
+	~SubRenderer() { free((void*)renderer_name); };
 	const char* getRendererName() { return renderer_name ? renderer_name : "---unknown---"; };
 	void setRendererName(const char *name);
+	void setRendererName(char *name, bool copy);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);

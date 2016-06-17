@@ -198,32 +198,38 @@ void RendererGL::sortedToDL() {
 	}
 }
 
-void RendererGL::update() {
-	// printf("Renderer %s needs updating\n", getRendererName());
-
+void RendererGL::resetDisplayLists() {
 	// Release currently owned display lists
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) { releaseDisplayList(*dl); }
 	displays.clear();
+}
 
-	// Build up the new display lists
-	mat4 cur_model = mat4();
-	if (zsort) {
-		zvertices.clear();
-		for (auto it = dos.begin() ; it != dos.end(); ++it) {
-			DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-			if (i) i->renderZ(this, cur_model, color);
-		}
-		stable_sort(zvertices.begin(), zvertices.end(), zSorter);
+void RendererGL::update() {
+	// printf("Renderer %s needs updating\n", getRendererName());
 
-		sortedToDL();
-	} else {
-		for (auto it = dos.begin() ; it != dos.end(); ++it) {
-			DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-			if (i) i->render(this, cur_model, color);
+	if (!manual_dl_management) {
+		resetDisplayLists();
+
+		// Build up the new display lists
+		mat4 cur_model = mat4();
+		if (zsort) {
+			zvertices.clear();
+			for (auto it = dos.begin() ; it != dos.end(); ++it) {
+				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+				if (i) i->renderZ(this, cur_model, color);
+			}
+			stable_sort(zvertices.begin(), zvertices.end(), zSorter);
+
+			sortedToDL();
+		} else {
+			for (auto it = dos.begin() ; it != dos.end(); ++it) {
+				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+				if (i) i->render(this, cur_model, color);
+			}
 		}
+
+		// Notify we dont need to be rebuilt again unless more stuff changes
 	}
-
-	// Notify we dont need to be rebuilt again unless more stuff changes
 	resetChanged();
 
 	// Upload each display list vertices data to the corresponding VBO on the GPU memory
@@ -312,8 +318,9 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
-
 	if (changed) update();
+	if (displays.empty()) return;
+	// printf("Displaying renderer %s\n", getRendererName());
 
 	cur_model = cur_model * model;
 	mat4 mvp = view * cur_model;

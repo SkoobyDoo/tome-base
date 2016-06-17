@@ -677,7 +677,7 @@ void on_redraw()
 			float seconds = (t - T0) / 1000.0;
 			float fps = Frames / seconds;
 			reference_fps = fps;
-			// printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
+			printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
 			T0 = t;
 			Frames = 0;
 			last_keyframe = 0;
