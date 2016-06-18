@@ -129,6 +129,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 					self.repo[char] = self.repo[char] or {}
 					self.repo[char][fgidx] = self.repo[char][fgidx] or {}
 					self.repo[char][fgidx][bgidx] = {ts, fx, fy, tw, th, tsx, tsy}
+					-- print(("------- TILE[%s] = texture (tileset/%s: %fx%f %dx%d)"):format(char, ts:getValue(), fx, fy, tw, th))
 					return ts, fx, fy, tw, th, tsx, tsy
 				end
 			end
@@ -170,6 +171,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 		self.repo[char] = self.repo[char] or {}
 		self.repo[char][fgidx] = self.repo[char][fgidx] or {}
 		self.repo[char][fgidx][bgidx] = {s, sw, sh, w, h, 0, 0}
+		-- print(("------- TILE[%s] = texture (%s: %fx%f %dx%d)"):format(char, s:getValue(), sw, sh, w, h))
 		return s, sw, sh, w, h
 	end
 end

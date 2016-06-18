@@ -19,7 +19,7 @@
 
 return {
 	frag = "tree",
-	vert = nil,
+	vert = "default/gl-extended",
 	args = {
 		attenuation = attenuation or 35,
 	},

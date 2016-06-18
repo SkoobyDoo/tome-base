@@ -1284,16 +1284,17 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 	else if (m->shader) shader = m->shader;
 	else if (map->default_shader) shader = map->default_shader;
 
+	// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
 	auto dl = getDisplayList(map->z_renderers[z], dm->textures[0], shader);
 
 	// Make sure we do not have to reallocate each step
 	// DGDGDGDG: actually do it
 
 	// Put it directly into the DisplayList
-	dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}});
-	dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}});
-	dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}});
-	dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}});
+	dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
+	dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
+	dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
+	dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
 
 	// DGDGDGDG
 	// if (L && dm->cb_ref != LUA_NOREF)

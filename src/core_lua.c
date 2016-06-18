@@ -1633,6 +1633,12 @@ static int sdl_texture_get_size(lua_State *L)
 	lua_pushnumber(L, t->h);
 	return 2;
 }
+static int sdl_texture_get_value(lua_State *L)
+{
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+	lua_pushnumber(L, t->tex);
+	return 1;
+}
 
 static bool _CheckGL_Error(const char* GLcall, const char* file, const int line)
 {
@@ -2688,6 +2694,7 @@ static const struct luaL_Reg sdl_texture_reg[] =
 	{"generateSDM", gl_texture_alter_sdm},
 	{"bind", sdl_texture_bind},
 	{"getSize", sdl_texture_get_size},
+	{"getValue", sdl_texture_get_value},
 	{NULL, NULL},
 };
 

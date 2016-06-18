@@ -43,6 +43,13 @@ typedef struct {
 	vec4 pos;
 	vec2 tex;
 	vec4 color;
+
+	// DGDGDGDG: really if that could be split off and only "tacked on" when needed it'd rule ..
+	// We could even exclude color when unwanted, and to make it all configurable maybe use C++ <bitset> which
+	// converts to a long int, making display list invalidation very easy for any combo
+	vec4 texcoords;
+	vec4 mapcoords;
+ 	float kind;
 } vertex;
 
 class RendererGL;

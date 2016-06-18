@@ -155,6 +155,7 @@ function _M:createProgram(def)
 	if def.vert then shad:attach(self:getVertex(def.vert)) end
 	if def.frag then shad:attach(self:getFragment(def.frag)) end
 	if not shad:compile() then return nil end
+	shad:setName(self.name)
 	return shad
 end
 

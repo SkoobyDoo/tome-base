@@ -1,8 +1,8 @@
 uniform sampler2D tex;
 uniform float tick;
-uniform vec2 mapCoord;
-uniform vec4 texCoord;
 uniform float attenuation;
+varying vec2 mapCoord;
+varying vec4 texCoord;
 
 void main(void)
 {

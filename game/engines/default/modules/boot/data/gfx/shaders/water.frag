@@ -6,11 +6,11 @@
 precision highp float;
 #endif
 
-uniform vec2 texSize;
 uniform float tick;
 uniform sampler2D tex;
-uniform vec2 mapCoord;
-uniform vec4 texCoord;
+varying vec2 mapCoord;
+varying vec4 texCoord;
+varying vec2 texSize;
 
 const float PI = 3.1415926535897932;
 

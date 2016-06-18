@@ -100,10 +100,10 @@ newEntity{
 	name = "flower", image = "terrain/flower.png",
 	display = ';', color=colors.YELLOW, back_color={r=44,g=95,b=43},
 	grow = "TREE",
-	nice_tiler = { method="replace", base={"FLOWER", 100, 1, 6+7}},
+	nice_tiler = { method="replace", base={"FLOWER", 100, 1, 5+7}},
 	nice_editer = grass_editer,
 }
-for i = 1, 6+7 do newEntity{ base = "FLOWER", define_as = "FLOWER"..i, image = "terrain/grass.png", add_mos = {{image = "terrain/"..(i<=6 and "flower_0"..i..".png" or "mushroom_0"..(i-6)..".png")}}} end
+for i = 1, 5+7 do newEntity{ base = "FLOWER", define_as = "FLOWER"..i, image = "terrain/grass.png", add_mos = {{image = "terrain/"..(i<=5 and "flower_0"..i..".png" or "mushroom_0"..(i-5)..".png")}}} end
 
 newEntity{
 	define_as = "ROCK_VAULT",

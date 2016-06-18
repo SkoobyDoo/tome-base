@@ -44,6 +44,7 @@ public:
 	GLuint vbo = 0;
 	GLuint tex = 0;
 	shader_type *shader = NULL;
+	// DGDGDGDG: make two kind of vertex, the extended & non expanded one and thus two vectors. RendererGL should be able to detect abd pul lthe correct one
 	vector<vertex> list;
 	SubRenderer *sub = NULL;
 	DisplayObject *tick = NULL;

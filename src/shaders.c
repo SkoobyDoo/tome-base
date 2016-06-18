@@ -151,6 +151,7 @@ static int program_new(lua_State *L)
 	p->shader = glCreateProgram();
 	p->reset_uniforms = NULL;
 	p->clone = FALSE;
+	p->name = strdup("--unknown--");
 
 	printf("New GL Shader program %d\n", p->shader);
 
@@ -218,6 +219,7 @@ static int program_clone(lua_State *L)
 
 	np->clone = TRUE;
 	np->shader = p->shader;
+	np->name = strdup(p->name);
 	np->p_tick = p->p_tick;
 	np->p_color = p->p_color;
 	np->p_mapcoord = p->p_mapcoord;
@@ -667,11 +669,15 @@ static int program_compile(lua_State *L)
 	p->p_texcoord = glGetUniformLocation(p->shader, "texCoord");
 	p->p_tex = glGetUniformLocation(p->shader, "tex");
 	p->p_mvp = glGetUniformLocation(p->shader, "mvp");
+	// printf("Uniform locations %d %d %d %d %d %d %d\n", p->p_tick, p->p_color, p->p_mapcoord, p->p_texsize, p->p_texcoord, p->p_tex, p->p_mvp);
 
 	p->vertex_attrib = glGetAttribLocation(p->shader, "te4_position");
 	p->texcoord_attrib = glGetAttribLocation(p->shader, "te4_texcoord");
 	p->color_attrib = glGetAttribLocation(p->shader, "te4_color");
-	printf("Attri locations %d %d %d\n", p->vertex_attrib, p->texcoord_attrib, p->color_attrib);
+	p->texcoorddata_attrib = glGetAttribLocation(p->shader, "te4_texinfo");
+	p->mapcoord_attrib = glGetAttribLocation(p->shader, "te4_mapcoord");
+	p->kind_attrib = glGetAttribLocation(p->shader, "te4_kind");
+	// printf("Attri locations %d %d %d\n", p->vertex_attrib, p->texcoord_attrib, p->color_attrib);
 
 	lua_pushboolean(L, TRUE);
 	return 1;
@@ -698,6 +704,15 @@ static int program_use(lua_State *L)
 	return 0;
 }
 
+static int program_set_name(lua_State *L)
+{
+	shader_type *p = (shader_type*)lua_touserdata(L, 1);
+	char *name = luaL_checkstring(L, 2);
+	if (p->name) free(p->name);
+	p->name = strdup(name);
+	printf("Shader created with name %s : %lx\n", name, p);
+	return 0;
+}
 
 static int program_set_default(lua_State *L)
 {
@@ -752,6 +767,7 @@ static const struct luaL_Reg program_reg[] =
 	{"resetParamNumber3", program_reset_uniform_number3},
 	{"resetParamNumber4", program_reset_uniform_number4},
 	{"use", program_use},
+	{"setName", program_set_name},
 	{"setDefault", program_set_default},
 	{NULL, NULL},
 };

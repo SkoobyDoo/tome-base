@@ -492,9 +492,9 @@ function _M:display(nb_keyframes)
 			self.player:playerFOV()
 		end
 
--- core.display.countDraws()
+core.display.countDraws()
 		self.level.map:display(nil, nil, nb_keyframes, true)
--- print("[draw calls] map", core.display.countDraws())
+print("[draw calls] map", core.display.countDraws())
 		-- self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
 	end
 

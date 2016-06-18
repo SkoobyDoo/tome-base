@@ -44,6 +44,7 @@ DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shad
 		available_dls.push(new DisplayList());
 	}
 
+	// printf("test::: %d ?? %d ::: %lx ?? %lx\n", current_used_dl ? current_used_dl->tex : 0 ,tex, current_used_dl ? current_used_dl->shader : 0 ,shader);
 	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader && current_used_dl_container == container) {
 		// printf("Reussing current DL! %x with %d, %d, %x\n", current_used_dl, current_used_dl->vbo, current_used_dl->tex, current_used_dl->shader);
 		// current_used_dl->used++;
@@ -357,12 +358,17 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				if (!current_shader) return;
 			} else {
 				tglUseProgramObject(shader->shader);
-				current_shader = default_shader;
+				current_shader = shader;
 			}
 
 			shader = current_shader;
 			if (shader->vertex_attrib == -1) return;
-			// printf("=r= binding shader %d\n", current_shader->shader);
+			// printf("=r= binding shader %s in renderer %s : %lx (default %lx)\n", shader->name, getRendererName(), shader, default_shader);
+
+			if (shader->p_tick != -1) {
+				GLfloat t = cur_frame_tick;
+				glUniform1fv(shader->p_tick, 1, &t);
+			}
 
 			if (shader->p_color != -1) {
 				glUniform4fv(shader->p_color, 1, glm::value_ptr(cur_color));
@@ -382,6 +388,18 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				glEnableVertexAttribArray(shader->color_attrib);
 				glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, color));
 			}
+			if (shader->texcoorddata_attrib != -1) {
+				glEnableVertexAttribArray(shader->texcoorddata_attrib);
+				glVertexAttribPointer(shader->texcoorddata_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, texcoords));
+			}
+			if (shader->mapcoord_attrib != -1) {
+				glEnableVertexAttribArray(shader->mapcoord_attrib);
+				glVertexAttribPointer(shader->mapcoord_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, mapcoords));
+			}
+			if (shader->kind_attrib != -1) {
+				glEnableVertexAttribArray(shader->kind_attrib);
+				glVertexAttribPointer(shader->kind_attrib, 1, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, kind));
+			}
 
 			// printf("=r= drawing %d elements\n", (*dl)->list.size() / 4 * 6);
 			glDrawElements(kind, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
@@ -390,6 +408,9 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 			glDisableVertexAttribArray(shader->vertex_attrib);
 			glDisableVertexAttribArray(shader->texcoord_attrib);
 			glDisableVertexAttribArray(shader->color_attrib);
+			glDisableVertexAttribArray(shader->mapcoord_attrib);
+			glDisableVertexAttribArray(shader->texcoorddata_attrib);
+			glDisableVertexAttribArray(shader->kind_attrib);
 		}
 	}
 
