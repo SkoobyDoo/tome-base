@@ -357,7 +357,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				useNoShader();
 				if (!current_shader) return;
 			} else {
-				tglUseProgramObject(shader->shader);
+				useShaderSimple(shader);
 				current_shader = shader;
 			}
 

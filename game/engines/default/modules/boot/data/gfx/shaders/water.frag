@@ -83,5 +83,6 @@ void main(void)
 	
 	c1 = clamp(c1, texCoord.xy, texCoord.xy + texCoord.zw);
 	vec4 col = texture2D(tex, texCoord.xy + c1 * texCoord.zw)*(alpha);
+	col = texture2D(tex, te4_uv)*(alpha);
 	gl_FragColor = col;
 }

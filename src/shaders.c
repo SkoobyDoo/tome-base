@@ -97,6 +97,31 @@ void useShader(shader_type *p, int x, int y, int w, int h, float tx, float ty, f
 	}
 }
 
+void useShaderSimple(shader_type *p)
+{
+	current_shader = p;
+	tglUseProgramObject(p->shader);
+
+	shader_reset_uniform *ru = p->reset_uniforms;
+	while (ru) {
+		switch (ru->kind) {
+			case UNIFORM_NUMBER:
+				glUniform1fv(ru->p, 1, &ru->data.number);
+				break;
+			case UNIFORM_VEC2:
+				glUniform2fv(ru->p, 1, ru->data.vec2);
+				break;
+			case UNIFORM_VEC3:
+				glUniform3fv(ru->p, 1, ru->data.vec3);
+				break;
+			case UNIFORM_VEC4:
+				glUniform4fv(ru->p, 1, ru->data.vec4);
+				break;
+		}
+		ru = ru->next;
+	}
+}
+
 void useNoShader() {
 	if (default_shader) {
 		tglUseProgramObject(default_shader->shader);

@@ -7,7 +7,7 @@ varying vec4 texCoord;
 void main(void)
 {
 	float time = tick / 1000.0;
-	vec2 xy = gl_TexCoord[0].xy;
+	vec2 xy = te4_uv.xy;
 //	if (xy.y <= 0.5) xy.x = xy.x + (0.5-xy.y) * sin(time + mapCoord.x / 40.0 + mapCoord.y) / 14.0;
 	// if (xy.y <= 0.75) xy.x = xy.x + (0.75-xy.y) * sin(time + mapCoord.x / 40.0 + mapCoord.y) / attenuation;
 
