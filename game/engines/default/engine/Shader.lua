@@ -283,12 +283,16 @@ end
 ----------------------------------------------------------------------------
 
 function _M:preprocess(code, kind)
+	code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
+	code = code:gsub("gl_Color", "te4_fragcolor")
+
 	if kind == "frag" then
 		code = code:gsub("#kinddefinitions#", function()
 			local selectors = self.data.kindselectors or {[0] = "normal"}
 			local blocks = {}
 			for kind, file in pairs(selectors) do
 				local subcode = self:loadFile("/data/gfx/shaders/modules/"..file..".frag")
+				subcode = self:preprocess(subcode, "frag")
 				blocks[#blocks+1] = subcode
 			end
 			return table.concat(blocks, "\n")
@@ -303,16 +307,12 @@ function _M:preprocess(code, kind)
 			end
 			return table.concat(blocks)
 		end)
-		
-		if self.name == "map_default" then
-			print("=================================")
-			print("=================================")
-			print(code)
-			print("=================================")
-			print("=================================")
-			-- os.crash()
-		end
 	end
+	code = code:gsub('#include "([^"]+)"#', function(file)
+		local subcode = self:loadFile("/data/gfx/shaders/"..file)
+		subcode = self:preprocess(subcode, kind)
+		return subcode
+	end)
 	return code
 end
 
@@ -320,8 +320,6 @@ function _M:rewriteShaderFrag(code)
 	code = [[varying vec2 te4_uv;
 	varying vec4 te4_fragcolor;		
 	]]..code
-	code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
-	code = code:gsub("gl_Color", "te4_fragcolor")
 	code = self:preprocess(code, "frag")
 	return code
 end

@@ -27,6 +27,14 @@ return {
 	width = 50, height = 50,
 	-- all_remembered = true,
 	all_lited = true,
+	map_shader = {
+		data = {
+			kindselectors = { [0] = "normal", [1] = "tree", [2] = "water" },
+		},
+		resetargs = {
+			tree_attenuation = 35,
+		}
+	},
 	levels = {
 		[1] = {
 			generator =  {

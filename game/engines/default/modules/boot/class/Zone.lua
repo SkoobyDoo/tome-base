@@ -24,14 +24,10 @@ local Map = require "engine.Map"
 module(..., package.seeall, class.inherit(Zone))
 
 function _M:onMapBuilding(level, map)
-	map:setDefaultShader({"map_default", {
-		frag = "map_default",
-		vert = "default/gl-extended",
-		data = {
-			kindselectors = { [0] = "normal", [1] = "tree", [2] = "water" },
-		},
-		resetargs = {
-			tree_attenuation = 35,
-		}
-	}}, nil, true)
+	if not level.data or not level.data.map_shader then return end
+	local config = table.clone(level.data.map_shader, true)
+	config.frag = config.frag or "map_default"
+	config.vert = config.vert or "default/gl-extended"
+
+	map:setDefaultShader({"map_default", config}, nil, true)
 end

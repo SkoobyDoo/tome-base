@@ -1,4 +1,4 @@
-float tree_attenuation = 35.0;
+uniform float tree_attenuation;
 
 vec4 map_shader_tree(void)
 {
