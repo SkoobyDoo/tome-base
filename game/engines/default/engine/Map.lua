@@ -23,6 +23,7 @@ local Tiles = require "engine.Tiles"
 local Particles = require "engine.Particles"
 local Faction = require "engine.Faction"
 local DamageType = require "engine.DamageType"
+local Shader = require "engine.Shader"
 
 --- Represents a level map, handles display and various low level map work
 -- @classmod engine.Map
@@ -70,7 +71,6 @@ color_obscure = { 0.6, 0.6, 0.6, 0.5 }
 smooth_scroll = 0
 
 grid_lines = {0, 0, 0, 0}
-default_shader = false
 
 faction_friend = "tactical_friend.png"
 faction_neutral = "tactical_neutral.png"
@@ -112,10 +112,6 @@ end
 
 function _M:setupGridLines(size, r, g, b, a)
 	self.grid_lines = {size, r, g, b, a}
-end
-
-function _M:setDefaultShader(shad)
-	default_shader = shad
 end
 
 --- Setup a fbo/shader pair to display map effects
@@ -211,6 +207,7 @@ function _M:init(w, h)
 	self.mx = 0
 	self.my = 0
 	self.w, self.h = w, h
+	self.default_shader = false
 	self.map = {}
 	self.attrs = {}
 	self.lites = {}
@@ -248,6 +245,20 @@ function _M:save()
 	})
 end
 
+function _M:setDefaultShader(name, args, unique)
+	self.default_shader = {name=name, args=args, unique=unique}
+	if self._map then self:updateDefaultShader() end
+end
+
+function _M:updateDefaultShader()
+	if self.default_shader then
+		print("[MAP] Building default shader for map", self.default_shader.name, self.default_shader.args, self.default_shader.unique)
+		local shader = Shader.new(self.default_shader.name, self.default_shader.args, self.default_shader.unique)
+		print("[MAP] Shader built: ", shader, shader.shad)
+		if shader.shad then self._map:setDefaultShader(shader.shad, shader.data.kindselectors) end	
+	end
+end
+
 function _M:makeCMap()
 	--util.show_backtrace()
 	self._map = core.map.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
@@ -257,7 +268,9 @@ function _M:makeCMap()
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))
 	self._map:setupGridLines(unpack(self.grid_lines))
-	self._map:setDefaultShader(default_shader)
+
+	self:updateDefaultShader()
+
 	self._fovcache =
 	{
 		block_sight = core.fov.newCache(self.w, self.h),
@@ -290,12 +303,6 @@ end
 function _M:regenGridLines()
 	if not self._map or not self.grid_lines then return end
 	self._map:setupGridLines(unpack(self.grid_lines))
-end
-
---- Reset default shader
-function _M:resetDefaultShader()
-	if not self._map then return end
-	self._map:setDefaultShader(self.default_shader)
 end
 
 --- Adds a "path string" to the map

@@ -968,6 +968,10 @@ end
 _M._level_generation_count = 0
 _M._max_level_generation_count = 50 -- newLevel will return the last level generated after this many attempts at generation. Modules should check ._level_generation_count to be sure level generation was successful
 
+--- Can overload to alter the newly created map before data is put in. I.E: to add dynamic map shaders
+function _M:onMapBuilding(level, map)
+end
+
 function _M:newLevel(level_data, lev, old_lev, game)
 	self._level_generation_count = self._level_generation_count + 1
 	forceprint("[Zone:newLevel]", self.short_name, "beginning level generation, count:", self._level_generation_count)
@@ -989,6 +993,8 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	level:setEntitiesList("object", self:computeRarities("object", self.object_list, level, nil))
 	level:setEntitiesList("trap", self:computeRarities("trap", self.trap_list, level, nil))
 	local zoneelists = {grid_list = self.grid_list, npc_list = self.npc_list, object_list = self.object_list, trap_list = self.trap_list}
+
+	self:onMapBuilding(level, map)
 	
 	-- Save level data
 	level.data = level_data or {}

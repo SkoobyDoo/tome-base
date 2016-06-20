@@ -50,10 +50,15 @@ function _M:cleanup()
 end
 
 --- Make a shader
-function _M:init(name, args)
+function _M:init(name, args, unique)
 	self.args = args or {}
-	self.name = name
-	self.totalname = self:makeTotalName()
+	if type(name) == "table" then
+		self.name = name[1]
+		self.shader_def = name[2]
+	else
+		self.name = name
+	end
+	self.totalname = self:makeTotalName(nil, unique)
 --	print("[SHADER] making shader from", name, " into ", self.totalname)
 
 	if args and args.require_shader then
@@ -80,7 +85,7 @@ function _M:init(name, args)
 	end
 end
 
-function _M:makeTotalName(add)
+function _M:makeTotalName(add, unique)
 	local str = {}
 	local args = self.args
 	if add then args = table.clone(add) table.merge(args, self.args) end
@@ -102,6 +107,7 @@ function _M:makeTotalName(add)
 		end
 	end
 	table.sort(str)
+	if unique then str[#str+1] = "uniqueid="..rng.range(1, 99999) end
 	return self.name.."["..table.concat(str,",").."]"
 end
 
@@ -112,10 +118,8 @@ function _M:save()
 	})
 end
 
-function _M:getFragment(name)
-	if not name then return nil end
-	if self.frags[name] then return self.frags[name] end
-	local f = fs.open("/data/gfx/shaders/"..name..".frag", "r")
+function _M:loadFile(file)
+	local f = fs.open(file, "r")
 	local code = {}
 	while true do
 		local l = f:read(1)
@@ -123,7 +127,13 @@ function _M:getFragment(name)
 		code[#code+1] = l
 	end
 	f:close()
-	code = table.concat(code)
+	return table.concat(code)
+end
+
+function _M:getFragment(name)
+	if not name then return nil end
+	if self.frags[name] then return self.frags[name] end
+	local code = self:loadFile("/data/gfx/shaders/"..name..".frag")
 	code = self:rewriteShaderFrag(code)
 	self.frags[name] = core.shader.newShader(code)
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
@@ -133,15 +143,7 @@ end
 function _M:getVertex(name)
 	if not name then name = "default/gl" end
 	if self.verts[name] then print("[SHADER] reusing vertex shader from /data/gfx/shaders/"..name..".vert") return self.verts[name] end
-	local f = fs.open("/data/gfx/shaders/"..name..".vert", "r")
-	local code = {}
-	while true do
-		local l = f:read(1)
-		if not l then break end
-		code[#code+1] = l
-	end
-	f:close()
-	code = table.concat(code)
+	local code = self:loadFile("/data/gfx/shaders/"..name..".vert")
 	code = self:rewriteShaderVert(code)
 	self.verts[name] = core.shader.newShader(code, true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
@@ -160,6 +162,7 @@ function _M:createProgram(def)
 end
 
 function _M:loaded()
+	local def = nil
 	if _M.progsperm[self.totalname] then
 		-- print("[SHADER] using permcached shader "..self.totalname)
 		self.shad = _M.progsperm[self.totalname]
@@ -170,12 +173,15 @@ function _M:loaded()
 		if _M.progsreset[self.totalname] and self.shad then
 			self.shad = self.shad:clone()
 		end
-	else
+	elseif self.shader_def then
+		print("[SHADER] Loading from dynamic data")
+		def = self.shader_def
+	elseif not self.shader_def then
 		print("[SHADER] Loading from /data/gfx/shaders/"..self.name..".lua")
 		local f, err = loadfile("/data/gfx/shaders/"..self.name..".lua")
 		if not f and err then error(err) end
 		setfenv(f, setmetatable(self.args or {}, {__index=_G}))
-		local def = f()
+		def = f()
 
 		if def.require_shader then
 			if not core.shader.active(def.require_shader) then return end
@@ -183,8 +189,11 @@ function _M:loaded()
 		if def.require_kind then
 			if not core.shader.allow(def.require_kind) then return end
 		end
+	end
 
+	if def then
 		print("[SHADER] Loaded shader with totalname", self.totalname)
+		if def.data then self.data = def.data end
 
 		if not _M.progs[self.totalname] then
 			_M.progs[self.totalname] = {shad=self:createProgram(def), dieat=(os.time() + 60*4)}
@@ -196,9 +205,10 @@ function _M:loaded()
 			_M.progsreset[self.totalname] = def.resetargs
 		end
 
+
 		self.shad = _M.progs[self.totalname].shad
 		if self.shad then
-			for k, v in pairs(def.args) do
+			for k, v in pairs(def.args or {}) do
 				self:setUniform(k, v)
 			end
 		end
@@ -209,7 +219,7 @@ function _M:loaded()
 	if self.shad and _M.progsreset[self.totalname] then
 		self.shad:resetClean()
 		for k, v in pairs(_M.progsreset[self.totalname]) do
-			self:setResetUniform(k, v(self))
+			self:setResetUniform(k, util.getval(v, self))
 		end
 	end
 end
@@ -272,12 +282,47 @@ end
 -- Later on this can be extended to support various GLSL versions
 ----------------------------------------------------------------------------
 
+function _M:preprocess(code, kind)
+	if kind == "frag" then
+		code = code:gsub("#kinddefinitions#", function()
+			local selectors = self.data.kindselectors or {[0] = "normal"}
+			local blocks = {}
+			for kind, file in pairs(selectors) do
+				local subcode = self:loadFile("/data/gfx/shaders/modules/"..file..".frag")
+				blocks[#blocks+1] = subcode
+			end
+			return table.concat(blocks, "\n")
+		end)
+		code = code:gsub("#kindselectors#", function()
+			local selectors = self.data.kindselectors or {[0] = "normal"}
+			local blocks = {}
+			for kind, file in pairs(selectors) do
+				local isfirst = #blocks == 0
+				
+				blocks[#blocks+1] = ("%s (kind == %0.1f) { gl_FragColor = map_shader_%s(); }\n"):format(isfirst and "if" or "else if", kind, file)
+			end
+			return table.concat(blocks)
+		end)
+		
+		if self.name == "map_default" then
+			print("=================================")
+			print("=================================")
+			print(code)
+			print("=================================")
+			print("=================================")
+			-- os.crash()
+		end
+	end
+	return code
+end
+
 function _M:rewriteShaderFrag(code)
 	code = [[varying vec2 te4_uv;
 	varying vec4 te4_fragcolor;		
 	]]..code
 	code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
 	code = code:gsub("gl_Color", "te4_fragcolor")
+	code = self:preprocess(code, "frag")
 	return code
 end
 
@@ -288,5 +333,6 @@ function _M:rewriteShaderVert(code)
 	varying vec2 te4_uv;
 	varying vec4 te4_fragcolor;
 	]]..code
+	code = self:preprocess(code, "vert")
 	return code
 end

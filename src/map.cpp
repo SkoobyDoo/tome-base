@@ -229,8 +229,10 @@ static int map_object_shader(lua_State *L)
 		lua_pushvalue(L, 2);
 		obj->shader_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	} else {
-		luaL_unref(L, LUA_REGISTRYINDEX, obj->shader_ref);
-		obj->shader_ref = LUA_NOREF;
+		if (obj->shader_ref != LUA_NOREF) {
+			luaL_unref(L, LUA_REGISTRYINDEX, obj->shader_ref);
+			obj->shader_ref = LUA_NOREF;
+		}
 		obj->shader = NULL;
 	}
 	return 0;
@@ -524,6 +526,7 @@ static int map_new(lua_State *L)
 	map->shown_r = map->shown_g = map->shown_b = 1;
 	map->shown_a = 1;
 
+	map->default_shader_ref = LUA_NOREF;
 	map->default_shader = NULL;
 
 	map->minimap = NULL;
@@ -620,6 +623,8 @@ static int map_new(lua_State *L)
 		map->z_renderers[i]->setManualManagement(true);
 	}
 
+	map->shader_to_shaderkind = new unordered_map<string, float>;
+
 	return 1;
 }
 
@@ -656,6 +661,8 @@ static int map_free(lua_State *L)
 	free(map->z_callbacks);
 	free(map->z_changed);
 	free(map->z_renderers);
+
+	delete map->shader_to_shaderkind;
 
 	free(map->colors);
 	free(map->texcoords);
@@ -784,8 +791,26 @@ static int map_set_default_shader(lua_State *L)
 	if (!lua_isnil(L, 2)) {
 		shader_type *s = (shader_type*)lua_touserdata(L, 2);
 		map->default_shader = s;
+		lua_pushvalue(L, 2);
+		map->default_shader_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+		lua_pushnil(L);
+		while (lua_next(L, 3) != 0) {
+			float kind = lua_tonumber(L, -2);
+			const char *name = luaL_checkstring(L, -1);
+			printf("====== %s = %f\n", name, kind);
+			std::pair<string, float> p(name, kind);
+			map->shader_to_shaderkind->insert(p);
+			lua_pop(L, 1);
+		}		
+
 	} else {
+		if (map->default_shader_ref != LUA_NOREF) {
+			luaL_unref(L, LUA_REGISTRYINDEX, map->default_shader_ref);
+			map->default_shader_ref = LUA_NOREF;
+		}
 		map->default_shader = NULL;
+		map->shader_to_shaderkind->clear();
 	}
 	return 0;
 }
@@ -1279,10 +1304,20 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 	float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
 	float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
 
+	float shaderkind = 0;
 	shader_type *shader = default_shader;
 	if (dm->shader) shader = dm->shader;
 	else if (m->shader) shader = m->shader;
 	else if (map->default_shader) shader = map->default_shader;
+
+	// DGDGDGDG: perhaps need to optimize here? chagning shader->name to a string instead of a char* ?
+	if (shader != map->default_shader && !map->shader_to_shaderkind->empty()) {
+		auto kind = map->shader_to_shaderkind->find(shader->name);
+		if (kind != map->shader_to_shaderkind->end()) {
+			shaderkind = kind->second;
+			shader = map->default_shader;
+		}
+	}
 
 	// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
 	auto dl = getDisplayList(map->z_renderers[z], dm->textures[0], shader);
@@ -1291,10 +1326,10 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 	// DGDGDGDG: actually do it
 
 	// Put it directly into the DisplayList
-	dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
-	dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
-	dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
-	dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shader ? 1 : 0});
+	dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
+	dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
+	dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
+	dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 
 	// DGDGDGDG
 	// if (L && dm->cb_ref != LUA_NOREF)

@@ -81,8 +81,8 @@ void main(void)
 	if (ddx > 0. && ddy > 0.)
 		alpha = pow(alpha, ddx*ddy*reflectionIntence);
 	
-	c1 = clamp(c1, texCoord.xy, texCoord.xy + texCoord.zw);
-	vec4 col = texture2D(tex, texCoord.xy + c1 * texCoord.zw)*(alpha);
-	col = texture2D(tex, te4_uv)*(alpha);
+	// c1 = clamp(c1, texCoord.xy, texCoord.xy + texCoord.zw);
+	// vec4 col = texture2D(tex, texCoord.xy + c1 * texCoord.zw)*(alpha);
+	vec4 col = texture2D(tex, te4_uv)*(alpha);
 	gl_FragColor = col;
 }

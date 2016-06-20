@@ -32,7 +32,7 @@ local Downloader = require "engine.dialogs.Downloader"
 local FontPackage = require "engine.FontPackage"
 
 local Shader = require "engine.Shader"
-local Zone = require "engine.Zone"
+local Zone = require "mod.class.Zone"
 local Map = require "engine.Map"
 local Level = require "engine.Level"
 local LogDisplay = require "engine.LogDisplay"
@@ -448,7 +448,7 @@ end
 function _M:tick()
 	if self.stopped then engine.Game.tick(self) return true end
 	if self.level then
-		-- engine.GameEnergyBased.tick(self)
+		engine.GameEnergyBased.tick(self)
 		-- Fun stuff: this can make the game realtime, although calling it in display() will make it work better
 		-- (since display is on a set FPS while tick() ticks as much as possible
 		-- engine.GameEnergyBased.tick(self)
