@@ -67,7 +67,7 @@ SDL_GLContext maincontext; /* Our opengl context handle */
 SDL_Joystick* gamepad = NULL;
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
-static lua_State *L = NULL;
+lua_State *L = NULL;
 int nb_cpus;
 bool no_debug = FALSE;
 bool safe_mode = FALSE;

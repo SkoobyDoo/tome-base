@@ -146,7 +146,7 @@ void DisplayObject::scale(float x, float y, float z, bool increment) {
 }
 
 void DisplayObject::cloneInto(DisplayObject *into) {
-	into->L = L;
+	// into->L = L;
 
 	// No parent
 	into->parent = NULL;

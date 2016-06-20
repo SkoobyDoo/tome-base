@@ -33,7 +33,7 @@ private:
 	int font_lua_ref = LUA_NOREF;
 	font_type *font = NULL;
 	vec4 font_color;
-
+	bool centered = false;
 	char *text;
 	int line_max_width = 99999;
 	int max_lines = 999999;
@@ -70,6 +70,7 @@ public:
 	void setTextColor(float r, float g, float b, float a) { font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a; parseText(); };
 
 	void setText(const char *text);
+	void center();
 
 private:
 	void parseText();

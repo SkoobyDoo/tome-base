@@ -159,7 +159,7 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 		if (!mouse_renderer) mouse_renderer = new RendererGL();
 		DisplayObject *c = userdata_to_DO(L, 1);
 		mouse_drag_do = c->clone();
-		mouse_drag_do->setLuaState(NULL); // Lua state ? where we are going we don't need a lua state!
+		// mouse_drag_do->setLuaState(NULL); // Lua state ? where we are going we don't need a lua state!
 		mouse_renderer->add(mouse_drag_do);
 		mouse_drag_set = true;
 	}

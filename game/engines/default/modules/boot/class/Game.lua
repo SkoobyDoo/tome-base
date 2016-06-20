@@ -518,7 +518,7 @@ print("[draw calls] map", core.display.countDraws())
 	local old = self.flyers
 	self.flyers = nil
 -- core.display.countDraws()
-	engine.GameEnergyBased.display(self, nb_keyframes)
+	-- engine.GameEnergyBased.display(self, nb_keyframes)
 -- print("[draw calls] UI", core.display.countDraws())
 	self.flyers = old
 

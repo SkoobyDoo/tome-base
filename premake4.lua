@@ -82,7 +82,7 @@ configuration "Debug"
 	buildoptions { "-ggdb" }
 --	buildoptions { "-O3" }
 	targetdir "bin/Debug"
-	if _OPTIONS.luaassert then defines {"LUA_USE_APICHECK"} end
+	if _OPTIONS.luaassert then defines {"LUA_USE_APICHECK", "LUA_USE_ASSERT"} end
 	if _OPTIONS.pedantic then buildoptions { "-Wall" } end
 
 configuration "Release"

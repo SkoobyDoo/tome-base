@@ -25,6 +25,7 @@ extern "C" {
 #include "tgl.h"
 #include "useshader.h"
 #include "font.h"
+extern lua_State *L;
 }
 
 #include <vector>
@@ -61,7 +62,7 @@ class DisplayObject {
 protected:
 	int lua_ref = LUA_NOREF;
 	DisplayObject *parent = NULL;
-	lua_State *L = NULL;
+	// lua_State *L = NULL;
 	mat4 model;
 	vec4 color;
 	bool visible = true;
@@ -87,7 +88,7 @@ public:
 	virtual const char* getKind() = 0;
 	virtual DisplayObject* clone() = 0;
 
-	void setLuaState(lua_State *L) { this->L = L; };
+	// void setLuaState(lua_State *L) { this->L = L; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
 	void setParent(DisplayObject *parent);

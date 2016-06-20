@@ -102,6 +102,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 
 void DORText::parseText() {
 	clear();
+	centered = false;
 
 	font_type *f = font;
 	if (!f) return;
@@ -337,4 +338,18 @@ void DORText::setText(const char *text) {
 	this->text = (char*)malloc(len + 1);
 	strcpy(this->text, text);
 	parseText();
+}
+
+void DORText::center() {
+	if (!w || !h) return;
+	if (centered) return;
+	centered = true;
+	
+	// We dont use translate() to now make other translate fail, we move the actual center
+	float hw = w / 2, hh = h / 2;
+	for (auto it = vertices.begin() ; it != vertices.end(); ++it) {
+		it->pos.x -= hw;
+		it->pos.y -= hh;
+	}
+	setChanged();
 }

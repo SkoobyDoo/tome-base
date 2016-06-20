@@ -9,17 +9,17 @@ void main(void)
 	float xOffset = outlineSize.x / textSize.x;
 	float yOffset = outlineSize.y / textSize.y;
 
-	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy); //default text color
+	gl_FragColor = texture2D(tex, te4_uv); //default text color
 
 	//sobel distance to glyph base line approximation
-	vec4 col02 = texture2D(tex, gl_TexCoord[0].xy + vec2(xOffset,  -yOffset));
-	vec4 col12 = texture2D(tex, gl_TexCoord[0].xy + vec2(xOffset,   0.0     ));
-	vec4 col22 = texture2D(tex, gl_TexCoord[0].xy + vec2(xOffset,   yOffset));
-	vec4 col01 = texture2D(tex, gl_TexCoord[0].xy + vec2(0.0,        -yOffset));
-	vec4 col21 = texture2D(tex, gl_TexCoord[0].xy + vec2(0.0,         yOffset));
-	vec4 col00 = texture2D(tex, gl_TexCoord[0].xy + vec2(-xOffset, -yOffset));
-	vec4 col10 = texture2D(tex, gl_TexCoord[0].xy + vec2(-xOffset,  0.0     ));
-	vec4 col20 = texture2D(tex, gl_TexCoord[0].xy + vec2(-xOffset,  yOffset));
+	vec4 col02 = texture2D(tex, te4_uv + vec2(xOffset,  -yOffset));
+	vec4 col12 = texture2D(tex, te4_uv + vec2(xOffset,   0.0     ));
+	vec4 col22 = texture2D(tex, te4_uv + vec2(xOffset,   yOffset));
+	vec4 col01 = texture2D(tex, te4_uv + vec2(0.0,        -yOffset));
+	vec4 col21 = texture2D(tex, te4_uv + vec2(0.0,         yOffset));
+	vec4 col00 = texture2D(tex, te4_uv + vec2(-xOffset, -yOffset));
+	vec4 col10 = texture2D(tex, te4_uv + vec2(-xOffset,  0.0     ));
+	vec4 col20 = texture2D(tex, te4_uv + vec2(-xOffset,  yOffset));
 	
 	
 	float xDist = 0.0 - col00.a - col01.a * 2.0 - col02.a + col20.a + col21.a * 2.0 + col22.a;
@@ -30,5 +30,5 @@ void main(void)
 	
 	//outlineColor = vec4(0, 0, 0, 1);
 	//blending character glyph over its outline
-	gl_FragColor = (gl_FragColor * gl_FragColor.a + outlineColor * alpha * (1.0 - gl_FragColor.a)) * gl_Color;
+	gl_FragColor = (gl_FragColor * gl_FragColor.a + outlineColor * alpha * (1.0 - gl_FragColor.a)) * te4_fragcolor;
 }

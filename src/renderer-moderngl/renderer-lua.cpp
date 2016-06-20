@@ -160,7 +160,7 @@ static int gl_renderer_new(lua_State *L)
 	if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
 
 	*r = new RendererGL(w, h);
-	(*r)->setLuaState(L);
+	// (*r)->setLuaState(L);
 
 	return 1;
 }
@@ -209,7 +209,7 @@ static int gl_container_new(lua_State *L)
 	DisplayObject **c = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{container}", -1);
 	*c = new DORContainer();
-	(*c)->setLuaState(L);
+	// (*c)->setLuaState(L);
 
 	return 1;
 }
@@ -265,7 +265,7 @@ static int gl_target_new(lua_State *L)
 	if (lua_isnumber(L, 3)) nbt = lua_tonumber(L, 3);
 
 	*c = new DORTarget(w, h, nbt);
-	(*c)->setLuaState(L);
+	// (*c)->setLuaState(L);
 
 	return 1;
 }
@@ -330,7 +330,7 @@ static int gl_vertexes_new(lua_State *L)
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{vertexes}", -1);
 	*v = new DORVertexes();
-	(*v)->setLuaState(L);
+	// (*v)->setLuaState(L);
 
 	return 1;
 }
@@ -396,7 +396,7 @@ static int gl_text_new(lua_State *L)
 	auxiliar_setclass(L, "gl{text}", -1);
 
 	*v = t = new DORText();
-	(*v)->setLuaState(L);
+	// (*v)->setLuaState(L);
 
 	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	if (lua_isnumber(L, 2)) t->setMaxWidth(lua_tonumber(L, 2));
@@ -445,6 +445,13 @@ static int gl_text_text_color(lua_State *L)
 	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->setTextColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 
+	return 0;
+}
+
+static int gl_text_center(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
+	v->center();
 	return 0;
 }
 
@@ -615,6 +622,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"maxWidth", gl_text_max_width},
 	{"maxLines", gl_text_max_lines},
 	{"linefeed", gl_text_linefeed},
+	{"center", gl_text_center},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},
 	{"getKind", gl_generic_getkind},

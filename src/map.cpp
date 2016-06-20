@@ -449,7 +449,7 @@ static int map_objects_to_displayobject(lua_State *L)
 	if (lua_isboolean(L, 5)) allow_shader = lua_toboolean(L, 5);
 
 	DORTileObject *to = new DORTileObject(w, h, a, allow_cb, allow_shader);
-	to->setLuaState(L);
+	// to->setLuaState(L);
 
 	int moid = 6;
 	while (lua_isuserdata(L, moid))
