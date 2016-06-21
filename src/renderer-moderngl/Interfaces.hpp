@@ -44,4 +44,13 @@ public:
 	virtual void onScreenResize(int w, int h) = 0;
 };
 
+class DORRealtime {
+public:
+	DORRealtime();
+	virtual ~DORRealtime();
+	virtual void onKeyframe(int nb_keyframes) = 0;
+};
+
+extern "C" void dor_interface_realtime(int nb_keyframes);
+
 #endif

@@ -163,6 +163,10 @@ function _M:updateUI()
 	self.key:addBind("USERCHAT_TALK", function() profile.chat:talkBox(nil, true) end)
 
 	self:setFocus(self.c_list)
+
+	local sp = core.renderer.spriter("/data/gfx/spriters/GreyGuy/player.scml", "Player")
+	sp:translate(500, 500, 100)
+	self.do_container:add(sp)
 end
 
 function _M:uiLogin(uis)

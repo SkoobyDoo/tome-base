@@ -37,7 +37,7 @@ project "TEngine"
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-spriter", "tinyxml2" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
@@ -606,6 +606,19 @@ project "cef3spawn"
 		defines { 'SELFEXE_LINUX' }
 end
 
+project "tinyxml2"
+	kind "StaticLib"
+	language "C++"
+	targetname "tinyxml2"
+	buildoptions { "-std=c++11" }
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+
+	files { "../src/tinyxml2/*.cpp", }
+
+if _OPTIONS.steam then
+	dofile("../steamworks/build/steam-code.lua")
+end
+
 project "te4-renderer"
 	kind "StaticLib"
 	language "C++"
@@ -614,6 +627,22 @@ project "te4-renderer"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/renderer-moderngl/*.cpp", "../src/displayobjects/*.cpp", }
+
+if _OPTIONS.steam then
+	dofile("../steamworks/build/steam-code.lua")
+end
+
+project "te4-spriter"
+	kind "StaticLib"
+	language "C++"
+	targetname "te4-spriter"
+	buildoptions { "-std=c++11" }
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+
+	files { "../src/spriterengine/animation/*.cpp", "../src/spriterengine/charactermap/*.cpp", "../src/spriterengine/entity/*.cpp", "../src/spriterengine/file/*.cpp", "../src/spriterengine/global/*.cpp", "../src/spriterengine/loading/*.cpp", "../src/spriterengine/model/*.cpp", "../src/spriterengine/objectinfo/*.cpp", "../src/spriterengine/objectref/*.cpp", "../src/spriterengine/override/*.cpp", "../src/spriterengine/timeinfo/*.cpp", "../src/spriterengine/timeline/*.cpp", "../src/spriterengine/variable/*.cpp", "../src/spriter/*.cpp", }
+
+
+
 
 if _OPTIONS.steam then
 	dofile("../steamworks/build/steam-code.lua")

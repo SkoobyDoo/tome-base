@@ -22,6 +22,7 @@
 #define _CORELUA_H_
 
 #include "tgl.h"
+#include "tSDL.h"
 
 typedef struct
 {
@@ -44,5 +45,6 @@ extern int luaopen_core_mouse(lua_State *L);
 extern int luaopen_core(lua_State *L);
 extern int init_blank_surface();
 extern void mouse_draw_drag();
+extern GLenum sdl_gl_texture_format(SDL_Surface *s);
 
 #endif

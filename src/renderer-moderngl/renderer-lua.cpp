@@ -21,6 +21,7 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/TileMap.hpp"
+#include "spriter/Spriter.hpp"
 
 extern "C" {
 #include "auxiliar.h"
@@ -330,7 +331,6 @@ static int gl_vertexes_new(lua_State *L)
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{vertexes}", -1);
 	*v = new DORVertexes();
-	// (*v)->setLuaState(L);
 
 	return 1;
 }
@@ -396,7 +396,6 @@ static int gl_text_new(lua_State *L)
 	auxiliar_setclass(L, "gl{text}", -1);
 
 	*v = t = new DORText();
-	// (*v)->setLuaState(L);
 
 	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	if (lua_isnumber(L, 2)) t->setMaxWidth(lua_tonumber(L, 2));
@@ -481,6 +480,56 @@ static int gl_text_shader(lua_State *L)
 	return 0;
 }
 
+/******************************************************************
+ ** DORCallback 
+ ******************************************************************/
+static int gl_callback_new(lua_State *L)
+{
+	if (!lua_isfunction(L, 1)) {
+		lua_pushstring(L, "callback arg is not a function");
+		lua_error(L);
+		return 0;
+	}
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	DORCallback *t;
+	auxiliar_setclass(L, "gl{callback}", -1);
+
+	*v = t = new DORCallback();
+
+	lua_pushvalue(L, 1);
+	t->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+
+	return 1;
+}
+
+static int gl_callback_free(lua_State *L)
+{
+	DORCallback *v = userdata_to_DO<DORCallback>(L, 1, "gl{callback}");
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_callback_set(lua_State *L)
+{
+	DORCallback *v = userdata_to_DO<DORCallback>(L, 1, "gl{callback}");
+	if (!lua_isfunction(L, 2)) {
+		lua_pushstring(L, "callback arg is not a function");
+		lua_error(L);
+		return 0;
+	}
+	lua_pushvalue(L, 2);
+	v->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+	return 0;
+}
+
+static int gl_callback_enable(lua_State *L)
+{
+	DORCallback *v = userdata_to_DO<DORCallback>(L, 1, "gl{callback}");
+	v->enable(lua_toboolean(L, 2));
+	return 0;
+}
 
 /******************************************************************
  ** TileObject -- no constructor, this is in map.cpp
@@ -511,6 +560,31 @@ static int gl_tilemap_setmap(lua_State *L)
 
 	v->setMap(map);	
 	return 0;
+}
+
+/******************************************************************
+ ** DORSpriter
+ ******************************************************************/
+static int gl_spriter_new(lua_State *L)
+{
+	const char *file = luaL_checkstring(L, 1);
+	const char *name = luaL_checkstring(L, 2);
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	DORSpriter *t;
+	auxiliar_setclass(L, "gl{spriter}", -1);
+
+	*v = t = new DORSpriter();
+	t->load(file, name);
+	return 1;
+}
+
+static int gl_spriter_free(lua_State *L)
+{
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
 }
 
 /******************************************************************
@@ -641,6 +715,27 @@ static const struct luaL_Reg gl_text_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_callback_reg[] =
+{
+	{"__gc", gl_callback_free},
+	{"set", gl_callback_set},
+	{"enable", gl_callback_enable},
+	{"getKind", gl_generic_getkind},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
+	{"shown", gl_generic_shown},
+	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
+	{NULL, NULL},
+};
+
 static const struct luaL_Reg gl_tileobject_reg[] =
 {
 	{"__gc", gl_tileobject_free},
@@ -680,12 +775,33 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_spriter_reg[] =
+{
+	{"__gc", gl_spriter_free},
+	{"getKind", gl_generic_getkind},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
+	{"shown", gl_generic_shown},
+	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
+	{NULL, NULL},
+};
+
 const luaL_Reg rendererlib[] = {
 	{"renderer", gl_renderer_new},
 	{"vertexes", gl_vertexes_new},
 	{"text", gl_text_new},
 	{"container", gl_container_new},
 	{"target", gl_target_new},
+	{"callback", gl_callback_new},
+	{"spriter", gl_spriter_new},
 	{NULL, NULL}
 };
 
@@ -696,8 +812,10 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{text}", gl_text_reg);
 	auxiliar_newclass(L, "gl{container}", gl_container_reg);
 	auxiliar_newclass(L, "gl{target}", gl_target_reg);
+	auxiliar_newclass(L, "gl{callback}", gl_callback_reg);
 	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
 	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
+	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 	return 1;
 }

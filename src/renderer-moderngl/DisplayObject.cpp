@@ -553,3 +553,24 @@ void DORTarget::tick() {
 void DORTarget::onScreenResize(int w, int h) {
 
 }
+
+/***************************************************************************
+ ** DORCallback class
+ ***************************************************************************/
+void DORCallback::cloneInto(DisplayObject* _into) {
+	SubRenderer::cloneInto(_into);
+	DORCallback *into = dynamic_cast<DORCallback*>(_into);
+	if (L && cb_ref) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
+		into->cb_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+}
+
+void DORCallback::toScreen(mat4 cur_model, vec4 color) {
+	lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
+	if (lua_pcall(L, 0, 0, 0))
+	{
+		printf("DORCallback callback error: %s\n", lua_tostring(L, -1));
+		lua_pop(L, 1);
+	}
+}

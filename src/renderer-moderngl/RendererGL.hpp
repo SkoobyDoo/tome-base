@@ -57,25 +57,6 @@ extern void stopDisplayList();
 extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
 
 /****************************************************************************
- ** A Dummy DO taht displays nothing and instead calls a lua callback
- ****************************************************************************/
-class DORCallback : public SubRenderer {
-protected:
-	int cb_ref = LUA_NOREF;
-
-	virtual void cloneInto(DisplayObject *into);
-	DORCallback() { cb_ref = LUA_NOREF; };
-
-public:
-	DORCallback(int ref) { cb_ref = ref; };
-	virtual ~DORCallback() { if (cb_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, cb_ref); };
-	DO_STANDARD_CLONE_METHOD(DORCallback);
-	virtual const char* getKind() { return "DORCallback"; };
-
-	virtual void toScreen(mat4 cur_model, vec4 color);
-};
-
-/****************************************************************************
  ** Handling actual rendering to the screen & such
  ****************************************************************************/
 class RendererGL : public SubRenderer, public DOResizable {

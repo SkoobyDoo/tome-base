@@ -255,4 +255,29 @@ public:
 	virtual void onScreenResize(int w, int h);
 };
 
+/****************************************************************************
+ ** A Dummy DO taht displays nothing and instead calls a lua callback
+ ****************************************************************************/
+class DORCallback : public SubRenderer {
+protected:
+	int cb_ref = LUA_NOREF;
+	bool enabled = true;
+
+	virtual void cloneInto(DisplayObject *into);
+
+public:
+	DORCallback() { };
+	virtual ~DORCallback() { if (cb_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, cb_ref); };
+	DO_STANDARD_CLONE_METHOD(DORCallback);
+	virtual const char* getKind() { return "DORCallback"; };
+
+	void setCallback(int ref) {
+		if (cb_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, cb_ref);
+		cb_ref = ref;
+	};
+	void enable(bool v) { enabled = v; setChanged(); };
+
+	virtual void toScreen(mat4 cur_model, vec4 color);
+};
+
 #endif

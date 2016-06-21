@@ -36,6 +36,11 @@ function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.renderer = core.renderer.renderer()
 end
 
+--- Return the DisplayObject to draw
+function _M:getDO()
+	return self.renderer
+end
+
 --- @param[type=boolean] v enable the shadowssss
 function _M:enableShadow(v)
 	self.shadow = v

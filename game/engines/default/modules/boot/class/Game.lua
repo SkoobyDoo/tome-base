@@ -322,8 +322,8 @@ function _M:newGame()
 	self.player.energy.value = self.energy_to_act
 
 	Zone:setup{npc_class="mod.class.NPC", grid_class="mod.class.Grid", }
-	-- self:changeLevel(rng.range(1, 3), "dungeon")
-	self:changeLevel(1, "dungeon")
+	self:changeLevel(rng.range(1, 3), "dungeon")
+	-- self:changeLevel(1, "dungeon")
 end
 --[[
 function _M:onResolutionChange()
@@ -368,7 +368,7 @@ function _M:resizeMapViewport(w, h)
 end
 
 function _M:setupDisplayMode()
-	Map:setViewPort(0, 0, self.w, self.h, 48, 48, nil, 22, true, true)
+	Map:setViewPort(0, 0, self.w, self.h, 64, 64, nil, 22, true, true)
 	Map:resetTiles()
 	Map.tiles.use_images = true
 
@@ -492,9 +492,9 @@ function _M:display(nb_keyframes)
 			self.player:playerFOV()
 		end
 
-core.display.countDraws()
+-- core.display.countDraws()
 		self.level.map:display(nil, nil, nb_keyframes, true)
-print("[draw calls] map", core.display.countDraws())
+-- print("[draw calls] map", core.display.countDraws())
 		-- self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
 	end
 
@@ -518,7 +518,7 @@ print("[draw calls] map", core.display.countDraws())
 	local old = self.flyers
 	self.flyers = nil
 -- core.display.countDraws()
-	-- engine.GameEnergyBased.display(self, nb_keyframes)
+	engine.GameEnergyBased.display(self, nb_keyframes)
 -- print("[draw calls] UI", core.display.countDraws())
 	self.flyers = old
 

@@ -658,6 +658,8 @@ void call_draw(int nb_keyframes)
 	mouse_draw_drag();
 }
 
+void dor_interface_realtime(int nb_keyframes); // From renderer-moderngl/Interfaces.hpp
+
 long total_keyframes = 0;
 void on_redraw()
 {
@@ -695,6 +697,7 @@ void on_redraw()
 		count_keyframes = 0;
 	}
 
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
@@ -705,6 +708,7 @@ void on_redraw()
 	count_keyframes += nb - last_keyframe;
 	total_keyframes += nb - last_keyframe;
 //	printf("keyframes: %f / %f by %f => %d\n", nb_keyframes, reference_fps, step, nb - (last_keyframe));
+	dor_interface_realtime(nb - last_keyframe);
 	call_draw(nb - last_keyframe);
 
 	//SDL_GL_SwapBuffers();

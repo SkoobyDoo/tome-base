@@ -36,6 +36,8 @@
 #endif
 #endif
 
+#define KEYFRAMES_PER_SEC 30
+
 typedef struct {
 	GLuint tex;
 	int w, h;

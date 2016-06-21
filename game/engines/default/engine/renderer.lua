@@ -23,7 +23,10 @@ local DORenderer = core.game.getCClass("gl{renderer}")
 local DOText = core.game.getCClass("gl{text}")
 local DOContainer = core.game.getCClass("gl{container}")
 local DOTarget = core.game.getCClass("gl{target}")
-local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget }
+local DOCallback = core.game.getCClass("gl{callback}")
+local DOTileMap = core.game.getCClass("gl{tilemap}")
+local DOTileObject = core.game.getCClass("gl{tileobject}")
+local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOTileObject, DOTileMap }
 
 -----------------------------------------------------------------------------------
 -- Loaders and initializers
