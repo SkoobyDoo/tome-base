@@ -2361,11 +2361,11 @@ newEffect{
 newEffect{
 	name = "VULNERABILITY_POISON", image = "talents/vulnerability_poison.png",
 	desc = "Vulnerability Poison",
-	long_desc = function(self, eff) return ("The target is poisoned and sick, suffering %0.2f arcane damage per turn. All resistances are reduced by %d%%."):format(eff.power, eff.res) end,
+	long_desc = function(self, eff) return ("The target is poisoned and sick, suffering %0.2f arcane damage per turn. All resistances are reduced by 10%% and poison resistance is reduced by 50%%."):format(eff.power) end,
 	type = "magical",
 	subtype = { poison=true, arcane=true },
 	status = "detrimental",
-	parameters = {power=10, res=15},
+	parameters = {power=10},
 	on_gain = function(self, err) return "#Target# is poisoned!", "+Vulnerability Poison" end,
 	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Vulnerability Poison" end,
 	-- Damage each turn
@@ -2375,10 +2375,14 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("resists", {all=-eff.res})
+		eff.tmpid = self:addTemporaryValue("resists", {all=-10})
+		if self:attr("poison_immune") then
+			eff.poisonid = self:addTemporaryValue("poison_immune", -self:attr("poison_immune") / 2)
+		end
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("resists", eff.tmpid)
+		if eff.poisonid then self:removeTemporaryValue("poison_immune", eff.poisonid) end
 	end,
 }
 

@@ -81,6 +81,10 @@ newEntity{ define_as = "RANTHA_THE_WORM",
 		game.state:activateBackupGuardian("MASSOK", 4, 43, "I have heard there is a dragon hunter in the Daikara that is unhappy about the wyrm being already dead.")
 		game.player:resolveSource():grantQuest("starter-zones")
 		game.player:resolveSource():setQuestStatus("starter-zones", engine.Quest.COMPLETED, "daikara")
+		
+		if game.player:knowTalentType("cunning/trapping") then
+			game.party:learnLore("daikara-dragonsfire-trap")
+		end
 	end,
 }
 
@@ -134,6 +138,10 @@ newEntity{ define_as = "VARSHA_THE_WRITHING",
 		game.player:resolveSource():grantQuest("starter-zones")
 		game.player:resolveSource():setQuestStatus("starter-zones", engine.Quest.COMPLETED, "daikara")
 		game.player:resolveSource():setQuestStatus("starter-zones", engine.Quest.COMPLETED, "daikara-volcano")
+		
+		if game.player:knowTalentType("cunning/trapping") then
+			game.party:learnLore("daikara-freezing-trap")
+		end
 	end,
 }
 

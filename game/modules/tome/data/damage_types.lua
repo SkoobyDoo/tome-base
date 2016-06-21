@@ -238,6 +238,20 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 				game:delayedLogMessage(source, target, "dark_strike"..(source.uid or ""), "#Source# strikes #Target# in the darkness (%+d%%%%%%%% damage).", dark.damageIncrease) -- resolve %% 3 levels deep
 			end
 		end
+
+		if src and dam > 0 and src.knowTalent and src:knowTalent(src.T_BACKSTAB) and src.__CLASSNAME ~= "mod.class.Grid" then
+			local power = src:callTalent("T_BACKSTAB", "getDamageBoost")
+			local nb = 0
+			for eff_id, p in pairs(target.tmp) do
+				local e = target.tempeffect_def[eff_id]
+				if (e.subtype.stun or e.subtype.blind or e.subtype.pin or e.subtype.disarm or e.subtype.cripple or e.subtype.confusion or e.subtype.silence)then nb = nb + 1 end
+			end
+			if nb > 0 then			
+				local boost = math.min(power*nb, power*3)
+				inc = inc + boost
+				print("[PROJECTOR] after backstab", dam + (dam * inc / 100))
+			end
+		end
 		
 		dam = dam + (dam * inc / 100)
 
@@ -297,6 +311,8 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 			local dominated = target:hasEffect(target.EFF_DOMINATED)
 			if dominated and dominated.src == src then pen = pen + (dominated.resistPenetration or 0) end
+			local exposed = target:hasEffect(target.EFF_EXPOSE_WEAKNESS)
+			if exposed then pen = pen + 50 end
 			if target:attr("sleep") and src.attr and src:attr("night_terror") then pen = pen + src:attr("night_terror") end
 			local res = target:combatGetResist(type)
 			pen = util.bound(pen, 0, 100)
@@ -3857,5 +3873,106 @@ newDamageType{
 			end
 		end
 		return realdam
+	end,
+}
+
+newDamageType{
+	name = "terror", type = "TERROR",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			if not src:checkHit(src:combatAttack(), target:combatMentalResist()) then return end
+			local effect = rng.range(1, 3)
+			if effect == 1 then
+				-- confusion
+				if target:canBe("confusion") and not target:hasEffect(target.EFF_CONFUSED) then
+					target:setEffect(target.EFF_CONFUSED, dam.dur, {power=50})
+					game.level.map:particleEmitter(target.x, target.y, 1, "circle", {base_rot=0, oversize=0.7, a=130, limit_life=8, appear=8, speed=0, img="curse_gfx_04", radius=0})					
+				end
+			elseif effect == 2 then
+				-- stun
+				if target:canBe("stun") and not target:hasEffect(target.EFF_STUNNED) then
+					target:setEffect(target.EFF_STUNNED, dam.dur, {})
+					game.level.map:particleEmitter(target.x, target.y, 1, "circle", {base_rot=0, oversize=0.7, a=130, limit_life=8, appear=8, speed=0, img="curse_gfx_04", radius=0})
+				end
+			elseif effect == 3 then
+				-- slow
+				if target:canBe("slow") and not target:hasEffect(target.EFF_SLOW) then
+					target:setEffect(target.EFF_SLOW, dam.dur, {power=0.4})
+					game.level.map:particleEmitter(target.x, target.y, 1, "circle", {base_rot=0, oversize=0.7, a=130, limit_life=8, appear=8, speed=0, img="curse_gfx_04", radius=0})
+				end
+			end
+		end
+	end,
+}
+
+newDamageType{
+	name = "random poison", type = "RANDOM_POISON", text_color = "#LIGHT_GREEN#",
+	projector = function(src, x, y, t, dam, poison, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local power
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and src:reactionToward(target) < 0 then
+			local realdam = DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / 6, state)
+			chance = rng.range(1, 3)
+			if target and target:canBe("poison") and rng.percent(25) then
+				if chance == 1 then
+					target:setEffect(target.EFF_INSIDIOUS_POISON, 5, {src=src, power=dam.dam / 6, heal_factor=dam.power*2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				elseif chance == 2 then
+					target:setEffect(target.EFF_NUMBING_POISON, 5, {src=src, power=dam.dam / 6, reduce=dam.power*1.2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				elseif chance == 3 then
+					target:setEffect(target.EFF_CRIPPLING_POISON, 5, {src=src, power=dam.dam / 6, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				end
+			elseif target and target:canBe("poison") then
+				target:setEffect(target.EFF_POISONED, 5, {src=src, power=dam.dam / 6, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+			end
+			return realdam
+		end
+	end,
+}
+
+newDamageType{
+	name = "blinding powder", type = "BLINDING_POWDER",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			if not src:checkHit(src:combatAttack(), target:combatPhysicalResist()) then return end
+			
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_BLINDED, dam.dur, {})
+			end
+			
+			target:setEffect(target.EFF_DISABLE, dam.dur, {speed=dam.slow, atk=dam.acc})
+
+		end
+	end,
+}
+
+newDamageType{
+	name = "smokescreen", type = "SMOKESCREEN",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and src:reactionToward(target) < 0 then
+		
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_DIM_VISION, 2, {sight=dam.dam, apply_power=src:combatAttack(), no_ct_effect=true})
+			else
+				game.logSeen(target, "%s resists!", target.name:capitalize())
+			end
+			
+			if dam.poison and dam.poison > 0 then
+				DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.poison)
+				if target:canBe("silence") and rng.percent(50) then
+					target:setEffect(target.EFF_SILENCED, 2, {apply_power=src:combatAttack(), no_ct_effect=true})
+				end
+			end
+		end
 	end,
 }

@@ -31,9 +31,9 @@ local function evil(npc, player)
 		end
 	end
 
-	if p:knowTalent(p.T_TRAP_MASTERY) then
-		p:learnTalent(p.T_FLASH_BANG_TRAP, 1, nil, {no_unlearn=true})
-		game.log("#LIGHT_GREEN#Before you leave the Lord teaches you how to create flash bang traps!")
+	if p:knowTalentType("cunning/trapping") then
+		game.state.ambush_trap = true
+		game.log("#LIGHT_GREEN#Before you leave the Lord teaches you how to create ambush traps!")
 	end
 
 	game:changeLevel(1, "wilderness")

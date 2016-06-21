@@ -19,6 +19,21 @@
 
 local Object = require "mod.class.Object"
 
+local function stealthDetection(self, radius, estimate)
+	if not self.x then return nil end
+	local dist = 0
+	local closest, detect = math.huge, 0
+	for i, act in ipairs(self.fov.actors_dist) do
+		dist = core.fov.distance(self.x, self.y, act.x, act.y)
+		if dist > radius then break end
+		if act ~= self and act:reactionToward(self) < 0 and not act:attr("blind") and (not act.fov or not act.fov.actors or act.fov.actors[self]) and (not estimate or self:canSee(act)) then
+			detect = detect + act:combatSeeStealth() * (1.1 - dist/10) -- detection strength reduced 10% per tile
+			if dist < closest then closest = dist end
+		end
+	end
+	return detect, closest
+end
+
 -- race & classes
 newTalentType{ type="technique/other", name = "other", hide = true, description = "Talents of the various entities of the world." }
 newTalentType{ no_silence=true, is_spell=true, type="chronomancy/other", name = "other", hide = true, description = "Talents of the various entities of the world." }
@@ -2695,5 +2710,424 @@ newTalent{
 
 		Reloading does not break stealth.]])
 		:format(self:reloadRate())
+	end,
+}
+
+newTalent{
+	name = "Sweep",
+	type = {"technique/other", 1},
+	points = 5,
+	random_ego = "attack",
+	cooldown = 8,
+	stamina = 30,
+--	require = techs_dex_req3,
+	requires_target = true,
+	tactical = { ATTACKAREA = { weapon = 1, cut = 1 } },
+	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	cutdur = function(self,t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
+	cutPower = function(self, t)
+		local main, off = self:hasDualWeapon()
+		if main then
+			-- Damage based on mainhand weapon and dex with an assumed 8 turn cut duration
+			return self:combatTalentScale(t, 1, 1.7) * self:combatDamage(main.combat)/8 + self:getDex()/2
+		else 
+			return 0
+		end
+	end,
+	action = function(self, t)
+		local weapon, offweapon = self:hasDualWeapon()
+		if not weapon then
+			game.logPlayer(self, "You cannot use Sweep without dual wielding!")
+			return nil
+		end
+
+		local tg = {type="hit", range=self:getTalentRange(t)}
+		local x, y, target = self:getTarget(tg)
+		if not x or not y or not target then return nil end
+		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+
+		local dir = util.getDir(x, y, self.x, self.y)
+		if dir == 5 then return nil end
+		local lx, ly = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).left)
+		local rx, ry = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).right)
+		local lt, rt = game.level.map(lx, ly, Map.ACTOR), game.level.map(rx, ry, Map.ACTOR)
+
+		local hit
+		hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
+		if hit and target:canBe("cut") then target:setEffect(target.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
+
+		if lt then
+			hit = self:attackTarget(lt, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
+			if hit and lt:canBe("cut") then lt:setEffect(lt.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
+		end
+
+		if rt then
+			hit = self:attackTarget(rt, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
+			if hit and rt:canBe("cut") then rt:setEffect(rt.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
+		end
+		print(x,y,target)
+		print(lx,ly,lt)
+		print(rx,ry,rt)
+
+		return true
+	end,
+	info = function(self, t)
+		return ([[Attack your foes in a frontal arc, doing %d%% weapon damage and making your targets bleed for %d each turn for %d turns.
+		The bleed damage increases with your main hand weapon damage and Dexterity.]]):
+		format(100 * self:combatTalentWeaponDamage(t, 1, 1.7), damDesc(self, DamageType.PHYSICAL, t.cutPower(self, t)), t.cutdur(self, t))
+	end,
+}
+
+newTalent{
+	name = "Empower Poisons",
+	type = {"other/other", 1},
+	points = 5,
+	cooldown = 24,
+	stamina = 15,
+--	require = cuns_req_high3,
+	requires_target = true,
+	no_energy = true,
+	tactical = { ATTACK = {NATURE = 1} },
+	range = 1,
+	action = function(self, t)
+		local tg = {type="hit", range=self:getTalentRange(t)}
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then return nil end
+
+		local mod = (100 + self:combatTalentStatDamage(t, "cun", 40, 250)) / 100
+		for eff_id, p in pairs(target.tmp) do
+			local e = target.tempeffect_def[eff_id]
+			if e.subtype.poison then
+				p.dur = math.ceil(p.dur / 2)
+				p.power = (p.power or 0) * mod
+			end
+		end
+
+		game.level.map:particleEmitter(target.x, target.y, 1, "slime")
+		game:playSoundNear(self, "talents/slime")
+		return true
+	end,
+	info = function(self, t)
+		return ([[Reduces the duration of all poisons on the target by 50%%, but increases their damage by %d%%.
+		The effect increases with your Cunning.]]):
+		format(100 + self:combatTalentStatDamage(t, "cun", 40, 250))
+	end,
+}
+
+newTalent{
+	name = "Willful Combat",
+	type = {"other/other", 1},
+	points = 5,
+	random_ego = "attack",
+	cooldown = 60,
+	stamina = 25,
+	tactical = { BUFF = 3 },
+--	require = cuns_req3,
+	no_energy = true,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 60, 5, 11.1)) end, -- Limit <60
+	getDamage = function(self, t) return self:combatStatScale("wil", 4, 40, 0.75) + self:combatStatScale("cun", 4, 40, 0.75) end,
+	action = function(self, t)
+		self:setEffect(self.EFF_WILLFUL_COMBAT, t.getDuration(self, t), {power=t.getDamage(self, t)})
+		return true
+	end,
+	info = function(self, t)
+		local duration = t.getDuration(self, t)
+		local damage = t.getDamage(self, t)
+		return ([[For %d turns, you put all your will into your blows, adding %d physical power to each strike.
+		The effect will improve with your Cunning and Willpower stats.]]):
+		format(duration, damage)
+	end,
+}
+
+newTalent{
+	name = "Deadly Strikes",
+	type = {"other/other", 1},
+	points = 5,
+	random_ego = "attack",
+	cooldown = 12,
+	stamina = 15,
+--	require = cuns_req2,
+	tactical = { ATTACK = {weapon = 2} },
+	no_energy = true,
+	requires_target = true,
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.4) end,
+	getArmorPierce = function(self, t) return self:combatTalentStatDamage(t, "cun", 5, 45) end,  -- Adjust to scale like armor progression elsewhere
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 12, 6, 10)) end, --Limit to <12
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		if not target then return nil end
+
+		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+
+		if hitted then
+			self:setEffect(self.EFF_DEADLY_STRIKES, t.getDuration(self, t), {power=t.getArmorPierce(self, t)})
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local apr = t.getArmorPierce(self, t)
+		local duration = t.getDuration(self, t)
+		return ([[You hit your target, doing %d%% damage. If your attack hits, you gain %d armour penetration for %d turns.
+		The APR will increase with your Cunning.]]):
+		format(100 * damage, apr, duration)
+	end,
+}
+
+newTalent{
+	name = "Sticky Smoke",
+	type = {"other/other", 1},
+	points = 5,
+	cooldown = 15,
+	stamina = 10,
+--	require = cuns_req3,
+	no_break_stealth = true,
+	reflectable = true,
+	proj_speed = 10,
+	requires_target = true,
+	range = 10,
+	speed = "combat",
+	radius = function(self, t) return math.max(0,math.floor(self:combatTalentScale(t, 0.5, 2.5))) end,
+	getSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
+	tactical = { DISABLE = { blind = 2 } },
+	action = function(self, t)
+		local tg = {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t, display={particle="bolt_dark"}}
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		self:projectile(tg, x, y, DamageType.STICKY_SMOKE, t.getSightLoss(self,t), {type="slime"})
+		game:playSoundNear(self, "talents/slime")
+		return true
+	end,
+	info = function(self, t)
+		return ([[Throws a vial of sticky smoke that explodes in radius %d on your foes, reducing their vision range by %d for 5 turns.
+		Creatures affected by smoke bomb can never prevent you from stealthing, even if their proximity would normally forbid it.
+		Use of this will not break stealth.]]):
+		format(self:getTalentRadius(t), t.getSightLoss(self,t))
+	end,
+}
+
+newTalent{
+	name = "Switch Place",
+	type = {"other/other", 1},
+	points = 5,
+	random_ego = "defensive",
+	cooldown = 10,
+	stamina = 15,
+--	require = cuns_req3,
+	requires_target = true,
+	tactical = { DISABLE = 2 },
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	on_pre_use = function(self, t)
+		if self:attr("never_move") then return false end
+		return true
+	end,
+	speed = "weapon",
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then return nil end
+		local tx, ty, sx, sy = target.x, target.y, self.x, self.y
+		local hitted = self:attackTarget(target, nil, 0, true)
+
+		if hitted and not self.dead and tx == target.x and ty == target.y then
+			if not self:canMove(tx,ty,true) or not target:canMove(sx,sy,true) then
+				self:logCombat(target, "Terrain prevents #Source# from switching places with #Target#.")
+				return true
+			end
+			self:setEffect(self.EFF_EVASION, t.getDuration(self, t), {chance=50})
+			-- Displace
+			if not target.dead then
+				self:move(tx, ty, true)
+				target:move(sx, sy, true)
+			end
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local duration = t.getDuration(self, t)
+		return ([[Using a series of tricks and maneuvers, you switch places with your target.
+		Switching places will confuse your foes, granting you Evasion (50%%) for %d turns.
+		While switching places, your weapon(s) will connect with the target; this will not do weapon damage, but on hit effects of the weapons can trigger.]]):
+		format(duration)
+	end,
+}
+
+newTalent{
+	name = "Cripple",
+	type = {"other/other", 1},
+	points = 5,
+	random_ego = "attack",
+	cooldown = 25,
+	stamina = 20,
+--	require = cuns_req4,
+	requires_target = true,
+	tactical = { DISABLE = 2, ATTACK = {weapon = 2} },
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.9) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
+	getSpeedPenalty = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "cun", 5, 50), 100, 20, 0, 55.7, 35.7) end, -- Limit < 100%
+	speed = "weapon",
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then return nil end
+		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+
+		if hitted then
+			local speed = t.getSpeedPenalty(self, t) / 100
+			target:setEffect(target.EFF_CRIPPLE, t.getDuration(self, t), {speed=speed, apply_power=self:combatAttack()})
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local duration = t.getDuration(self, t)
+		local speedpen = t.getSpeedPenalty(self, t)
+		return ([[You hit your target, doing %d%% damage. If your attack connects, the target is crippled for %d turns, losing %d%% melee, spellcasting and mind speed.
+		The chance to land the status improves with Accuracy, and the status power improves with Cunning.]]):
+		format(100 * damage, duration, speedpen)
+	end,
+}
+
+newTalent{
+	name = "Nimble Movements",
+	type = {"other/other",1},
+	message = "@Source@ dashes quickly!",
+	no_break_stealth = true,
+--	require = cuns_req3,
+	points = 5,
+	random_ego = "attack",
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 31.9, 17)) end, -- Limit >= 5
+	tactical = { CLOSEIN = 3 },
+	requires_target = true,
+	range = function(self, t) return math.floor(self:combatTalentScale(t, 6.8, 8.6)) end,
+	speed = "movement",
+	action = function(self, t)
+		if self:attr("never_move") then game.logPlayer(self, "You can not do that currently.") return end
+
+		local tg = {type="hit", range=self:getTalentRange(t)}
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
+		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+
+		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+		local l = self:lineFOV(x, y, block_actor)
+		local lx, ly, is_corner_blocked = l:step()
+		if is_corner_blocked or game.level.map:checkAllEntities(lx, ly, "block_move", self) then
+			game.logPlayer(self, "You cannot dash through that!")
+			return
+		end
+		local tx, ty = lx, ly
+		lx, ly, is_corner_blocked = l:step()
+		while lx and ly do
+			if is_corner_blocked or game.level.map:checkAllEntities(lx, ly, "block_move", self) then break end
+			tx, ty = lx, ly
+			lx, ly, is_corner_blocked = l:step()
+		end
+
+		local ox, oy = self.x, self.y
+		self:move(tx, ty, true)
+		if config.settings.tome.smooth_move > 0 then
+			self:resetMoveAnim()
+			self:setMoveAnim(ox, oy, 8, 5)
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		return ([[Quickly and quietly dash your way to the target square, if it is not blocked by enemies or obstacles. This talent will not break Stealth.]])
+	end,
+}
+
+newTalent{
+	name = "Hide in Plain Sight",
+	type = {"other/other",3},
+--	require = cuns_req3,
+	no_energy = true,
+	points = 5,
+	stamina = 20,
+	cooldown = 40,
+	tactical = { DEFEND = 2 },
+	-- Assume level 50 w/100 cun --> stealth = 54, detection = 50
+	-- 90% (~= 47% chance against 1 opponent (range 1) at talent level 1, 270% (~= 75% chance against 1 opponent (range 1) and 3 opponents (range 6) at talent level 5
+	stealthMult = function(self, t) return self:combatTalentScale(t, 0.9, 2.7) end,
+	no_break_stealth = true,
+	on_pre_use = function(self, t, silent, fake)
+		local armor = self:getInven("BODY") and self:getInven("BODY")[1]
+		if armor and (armor.subtype == "heavy" or armor.subtype == "massive") then
+			if not silent then game.logPlayer(self, "You cannot be stealthy with such heavy armour on!") end
+			return nil
+		end
+		return true
+	end,
+	getChance = function(self, t, fake, estimate)
+		local netstealth = t.stealthMult(self, t) * (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
+		if fake then return netstealth end
+		local detection = stealthDetection(self, 10, estimate) -- Default radius 10
+		if detection <= 0 then return 100 end
+		local _, chance = self:checkHit(netstealth, detection)
+		print("Hide in Plain Sight: "..netstealth.." stealth vs "..detection.." detection -->chance "..chance)
+		return chance
+	end,
+	action = function(self, t)
+		self.talents_cd[self.T_STEALTH] = nil
+		self.changed = true
+		self.hide_chance = t.getChance(self, t)
+		self:useTalent(self.T_STEALTH)
+		self.hide_chance = nil
+
+		for uid, e in pairs(game.level.entities) do
+			if e.ai_target and e.ai_target.actor == self then e:setTarget(nil) end
+		end
+		return true
+	end,
+	info = function(self, t)
+		return ([[You have learned how to be stealthy even when in plain sight of your foes.  You may attempt to enter stealth regardless of how close you are to your enemies, but success is more likely against fewer opponents that are farther away.
+		Your chance to succeed is determined by comparing %0.2f times your stealth power (currently %d) to the stealth detection of all enemies (reduced by 10%% per tile distance) that have a clear line of sight to you.
+		You always succeed if you are not directly observed.
+		This resets the cooldown of your Stealth talent, and, if successful, all creatures currently following you will lose track of your position.
+		You estimate your current chance to hide as %0.1f%%.]]):
+		format(t.stealthMult(self, t), t.getChance(self, t, true), t.getChance(self, t, false, true))
+	end,
+}
+
+newTalent{
+	name = "Unseen Actions",
+	type = {"other/other", 1},
+--	require = cuns_req4,
+	mode = "passive",
+	points = 5,
+	-- Assume level 50 w/100 cun --> stealth = 54, detection = 50
+	-- 40% (~= 20% chance against 1 opponent (range 1) at talent level 1, 189% (~= 55% chance against 1 opponent (range 1) and 2 opponents (range 6) at talent level 5
+	stealthMult = function(self, t) return self:combatTalentScale(t, 0.4, 1.89) end,
+	getChance = function(self, t, fake, estimate)
+		local netstealth = t.stealthMult(self, t) * (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
+		if fake then return netstealth end
+		local detection = stealthDetection(self, 10, estimate)
+		if detection <= 0 then return 100 end
+		local _, chance = self:checkHit(netstealth, detection)
+		print("Unseen Actions: "..netstealth.." stealth vs "..detection.." detection -->chance(no luck): "..chance)
+		if estimate then return chance end
+		return util.bound(chance + (self:getLck() - 50) * 0.2, 0, 100)
+	end,
+	info = function(self, t)
+		return ([[You are able to perform usually unstealthy actions (attacking, using objects, ...) without breaking stealth.	 When you perform such an action while stealthed, you have a chance to stay hidden.
+		Success is more likely against fewer opponents and is determined by comparing %0.2f times your stealth power (currently %d) to the stealth detection (reduced by 10%% per tile distance) of all enemies that have a clear line of sight to you.
+		Your base chance of success is 100%% if you are not directly observed, and good or bad luck may also affect it.
+		You estimate your current chance to maintain stealth as %0.1f%%.]]):
+		format(t.stealthMult(self, t), t.getChance(self, t, true), t.getChance(self, t, false, true))
 	end,
 }

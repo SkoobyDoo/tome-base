@@ -83,7 +83,7 @@ newEntity{ base = "BASE_NPC_CAT",
 		[Talents.T_STEALTH]={base=2, every=6, max=5},
 		[Talents.T_RUSH]={base=2, every=8, max=5},
 		[Talents.T_LETHALITY]={base=2, every=8, max=5},
-		[Talents.T_HIDE_IN_PLAIN_SIGHT]={base=10, every=8, max=5},
+		[Talents.T_SHADOW_DANCE]={base=1, every=8, max=5},
 	},
 }
 
@@ -101,6 +101,6 @@ newEntity{ base = "BASE_NPC_CAT",
 		[Talents.T_RUSH]={base=3, every=8, max=5},
 		[Talents.T_LETHALITY]={base=3, every=8, max=5},
 		[Talents.T_CRIPPLE]={base=3, every=8, max=5},
-		[Talents.T_DEADLY_STRIKES]={base=3, every=8, max=5},
+		[Talents.T_EXPOSE_WEAKNESS]={base=3, every=8, max=5},
 	},
 }

@@ -193,7 +193,7 @@ return {
 		game:placeRandomLoreObject("NOTE"..level.level)
 
 		local p = game.party:findMember{main=true}
-		if level.level == 1 and p:knowTalent(p.T_TRAP_MASTERY) then
+		if level.level == 1 and p:knowTalentType("cunning/trapping") then
 			local l = game.zone:makeEntityByName(level, "object", "NOTE_LEARN_TRAP")
 			if not l then return end
 			for _, coord in pairs(util.adjacentCoords(level.default_down.x, level.default_down.y)) do
