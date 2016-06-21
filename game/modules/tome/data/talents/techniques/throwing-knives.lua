@@ -301,7 +301,7 @@ newTalent{
 	require = techs_dex_req4,
 	mode = "sustained",
 	points = 5,
-	cooldown = 10,
+	cooldown = 50,
 	sustain_stamina = 30,
 	tactical = { BUFF = 2 },
 	range = 7,

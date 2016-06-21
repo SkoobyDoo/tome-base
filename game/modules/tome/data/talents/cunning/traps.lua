@@ -568,7 +568,7 @@ newTalent{
 				
 				-- Check hit
 				local hit = self:checkHit(self.check_hit, who:combatPhysicalResist())
-				if not hit then game.logSeen(who, "%s resists!", who.name:capitalize()) return true end
+				if not hit then game.logSeen(who, "%s resists!", who.name:capitalize()) return true, true end
 								
 				-- Placeholder for the actor
 				local oe = game.level.map(x, y, engine.Map.TERRAIN+1)
