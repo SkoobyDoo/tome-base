@@ -58,6 +58,8 @@ struct s_map_object {
 	enum display_last_kind display_last;
 	long uid;
 
+	DisplayObject *displayobject;
+
 	int cb_ref;
 
 	struct s_map_object *next;

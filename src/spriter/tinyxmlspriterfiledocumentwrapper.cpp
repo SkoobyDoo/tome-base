@@ -14,13 +14,13 @@ namespace SpriterEngine
 	void TinyXmlSpriterFileDocumentWrapper::loadFile(std::string fileName)
 	{
 		if (!PHYSFS_exists(fileName.c_str())) {
-			Settings::error("TE4SPriter load, file not found: " + fileName);
+			Settings::error("Spriter load, file not found: " + fileName);
 			return;
 		}
 		PHYSFS_file *f = PHYSFS_openRead(fileName.c_str());
 		size_t len = PHYSFS_fileLength(f);
 		if (len < 1) {
-			Settings::error("TE4SPriter load, file has -1 size: " + fileName);
+			Settings::error("Spriter load, file has -1 size: " + fileName);
 			PHYSFS_close(f);
 			return;
 		}
@@ -31,7 +31,11 @@ namespace SpriterEngine
 			if (read == 0) break;
 			if (read > 0) pos += read;
 		}
-		doc.Parse(data);
+		doc.Parse(data, len);
+		if (doc.Error()) {
+			doc.PrintError();
+			Settings::error("Spriter load XML error: '" + fileName);
+		}
 		free((void*)data);
 		PHYSFS_close(f);
 	}

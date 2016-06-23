@@ -28,21 +28,24 @@ extern "C" {
 #include "physfsrwops.h"
 #include "main.h"
 #include "core_lua.h"
+#include "math.h"
 }
 
 #include "renderer-moderngl/Renderer.hpp"
 #include "spriter/Spriter.hpp"
 #include "spriterengine/global/settings.h"
 
+// Note using SpriterPlusPlus from git @ 05abe101f0c937adf8b7b154ef3746e51a8a538f
+
 /****************************************************************************
  ** Spriter file stuff
  ****************************************************************************/
-ImageFile * TE4FileFactory::newImageFile(const std::string &initialFilePath, point initialDefaultPivot) {
-	return new TE4SpriterImageFile(initialFilePath, initialDefaultPivot);
+ImageFile * TE4FileFactory::newImageFile(const std::string &initialFilePath, point initialDefaultPivot, atlasdata atlasData) {
+	return new TE4SpriterImageFile(spriter, initialFilePath, initialDefaultPivot, atlasData);
 }
 
 SoundFile * TE4FileFactory::newSoundFile(const std::string &initialFilePath) {
-	return NULL; //new TE4SpriterSoundFile(initialFilePath);
+	return NULL; //new TE4SpriterSoundFile(spriter, initialFilePath);
 }
 
 SpriterFileDocumentWrapper * TE4FileFactory::newScmlDocumentWrapper() {
@@ -70,16 +73,52 @@ BoneInstanceInfo * TE4ObjectFactory::newBoneInstanceInfo(point size) {
 /****************************************************************************
  ** Spriter image stuff
  ****************************************************************************/
-TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point initialDefaultPivot) : ImageFile(initialFilePath,initialDefaultPivot)
+TE4SpriterImageFile::TE4SpriterImageFile(DORSpriter *spriter, std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData) : ImageFile(initialFilePath,initialDefaultPivot), spriter(spriter)
 {	
-	SDL_Surface *s = IMG_Load_RW(PHYSFSRWOPS_openRead(initialFilePath.c_str()), TRUE);
+	if (!atlasData.active) {
+		makeTexture(initialFilePath, &texture, &w, &h);
+	} else {
+		if (!spriter->atlas_loaded) {
+			float dummy;
+			string png = spriter->scml;
+			png.replace(png.end() - 4, png.end(), "png");
+			makeTexture(png, &spriter->atlas, &dummy, &dummy);
+			spriter->atlas_loaded =true;
+		}
+		using_atlas = true;
+		texture = spriter->atlas;
+		xoff = atlasData.xoff;
+		yoff = atlasData.yoff;
+		w = atlasData.w;
+		h = atlasData.h;
+		if (atlasData.rotated) {
+			tx1 = atlasData.x / spriter->atlas.w;
+			ty1 = atlasData.y / spriter->atlas.h;
+			tx2 = (atlasData.x + atlasData.h) / spriter->atlas.w;
+			ty2 = (atlasData.y + atlasData.w) / spriter->atlas.h;
+		} else {
+			tx1 = atlasData.x / spriter->atlas.w;
+			ty1 = atlasData.y / spriter->atlas.h;
+			tx2 = (atlasData.x + atlasData.w) / spriter->atlas.w;
+			ty2 = (atlasData.y + atlasData.h) / spriter->atlas.h;
+		}
+		rotated = atlasData.rotated;
+	}
+}
+TE4SpriterImageFile::~TE4SpriterImageFile() {	
+	if (!using_atlas) glDeleteTextures(1, &texture.tex);
+}
+
+bool TE4SpriterImageFile::makeTexture(std::string file, texture_type *t, float *w, float *h) {
+	SDL_Surface *s = IMG_Load_RW(PHYSFSRWOPS_openRead(file.c_str()), TRUE);
 	if (!s) {
-		printf("[SPRITER] texture file not found %s\n", initialFilePath.c_str());
-		texture.tex = 0;
+		printf("[SPRITER] texture file not found %s\n", file.c_str());
+		t->tex = 0;
+		return false;
 	}
 
-	glGenTextures(1, &texture.tex);
-	tfglBindTexture(GL_TEXTURE_2D, texture.tex);
+	glGenTextures(1, &t->tex);
+	tfglBindTexture(GL_TEXTURE_2D, t->tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -88,38 +127,27 @@ TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point init
 	GLenum texture_format = sdl_gl_texture_format(s);
 	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
 
-	w = texture.w = s->w;
-	h = texture.h = s->h;
-	texture.no_free = FALSE;
+	*w = t->w = s->w;
+	*h = t->h = s->h;
+	t->no_free = FALSE;
 
 	SDL_FreeSurface(s);
-
-	printf("[SPRITER] New texture %s = %d\n", initialFilePath.c_str(), texture.tex);
-}
-TE4SpriterImageFile::~TE4SpriterImageFile() {	
-	glDeleteTextures(1, &texture.tex);
+	printf("[SPRITER] New texture %s = %d\n", file.c_str(), t->tex);
+	return true;
 }
 
-static DORSpriter *renderInto = NULL;
 void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
-	if (!renderInto) return;
-
-	// sprite.setColor(sf::Color(255, 255, 255, 255 * spriteInfo->getAlpha()));
-	// sprite.setPosition(spriteInfo->getPosition().x, spriteInfo->getPosition().y);
-	// sprite.setRotation(toDegrees(spriteInfo->getAngle()));
-	// sprite.setScale(spriteInfo->getScale().x, spriteInfo->getScale().y);
-	// sprite.setOrigin(spriteInfo->getPivot().x*texture.getSize().x, spriteInfo->getPivot().y*texture.getSize().y);
-	// renderWindow->draw(sprite);
-	
-	renderInto->quads.push_back({
+	// printf("%fx%f :: %fx%f\n", spriteInfo->getPosition().x,spriteInfo->getPosition().y, spriteInfo->getScale().x, spriteInfo->getScale().y);
+	spriter->quads.push_back({
 		texture.tex,
 		{spriteInfo->getPosition().x, spriteInfo->getPosition().y},
 		{w, h},
 		{spriteInfo->getPivot().x * w, spriteInfo->getPivot().y * h},
 		{spriteInfo->getScale().x, spriteInfo->getScale().y},
 		spriteInfo->getAngle(),
-		{0, 0, 1, 1}, // DGDGDGDG support atlases !!!
-		spriteInfo->getAlpha()
+		{tx1, ty1, tx2, ty2},
+		spriteInfo->getAlpha(),
+		rotated
 	});
 }
 
@@ -141,10 +169,12 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
  ****************************************************************************/
 DORSpriter::DORSpriter() {
 	shader = default_shader;
+	scml = "";
 }
 DORSpriter::~DORSpriter() {
 	if (spritermodel) delete spritermodel;
 	if (instance) delete instance;
+	if (atlas_loaded) glDeleteTextures(1, &atlas.tex);
 }
 
 void DORSpriter::cloneInto(DisplayObject* _into) {
@@ -153,18 +183,21 @@ void DORSpriter::cloneInto(DisplayObject* _into) {
 }
 
 void DORSpriter::load(const char *file, const char *name) {
-	spritermodel = new SpriterModel(file, new TE4FileFactory(), new TE4ObjectFactory());
-	instance = spritermodel->getNewEntityInstance(name);
-	instance->setCurrentAnimation("walk");
+	scml = file;
+	spritermodel = new SpriterModel(file, new TE4FileFactory(this), new TE4ObjectFactory());
+	instance = spritermodel->getNewEntityInstance(0);
+}
+
+void DORSpriter::startAnim(const char *name) {
+	if (!instance) return;
+	instance->setCurrentAnimation(name);
 }
 
 void DORSpriter::onKeyframe(int nb_keyframe) {
-	instance->setTimeElapsed(1000.0 * (float)nb_keyframe / KEYFRAMES_PER_SEC);
-
-	renderInto = this;
+	if (!instance) return;
 	this->quads.clear();
+	instance->setTimeElapsed(1000.0 * (float)nb_keyframe / KEYFRAMES_PER_SEC);
 	instance->render();
-	renderInto = NULL;
 	setChanged();
 }
 
@@ -172,7 +205,6 @@ void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible || !instance) return;
 	cur_model *= model;
 	cur_color *= color;
-
 	for (auto quad = quads.begin(); quad != quads.end(); quad++) {
 		auto dl = getDisplayList(container, quad->texture, shader);
 
@@ -188,10 +220,22 @@ void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 		float px1 = -quad->origin.x, py1 = -quad->origin.y;
 		float px2 = quad->size.x-quad->origin.x, py2 = quad->size.y-quad->origin.y;
 		color = cur_color * color;
-		vertex p1 = {{px1, py1, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-		vertex p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-		vertex p3 = {{px2, py2, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-		vertex p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
+
+		vertex p1;
+		vertex p2;
+		vertex p3;
+		vertex p4;
+		if (quad->rotated) {
+			p1 = {{px1, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
+			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.w}, color};
+			p3 = {{px2, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
+			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.y}, color};
+		} else {
+			p1 = {{px1, py1, 0, 1}, {quad->tex.x, quad->tex.y}, color};
+			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
+			p3 = {{px2, py2, 0, 1}, {quad->tex.z, quad->tex.w}, color};
+			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
+		}
 
 		// Now apply the matrix on them
 		p1.pos = qm * p1.pos;
@@ -228,10 +272,22 @@ void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 		float px1 = -quad->origin.x, py1 = -quad->origin.y;
 		float px2 = quad->size.x-quad->origin.x, py2 = quad->size.y-quad->origin.y;
 		color = cur_color * color;
-		vertex p1 = {{px1, py1, microz, 1}, {quad->tex.x, quad->tex.y}, color};
-		vertex p2 = {{px2, py1, microz, 1}, {quad->tex.z, quad->tex.y}, color};
-		vertex p3 = {{px2, py2, microz, 1}, {quad->tex.z, quad->tex.w}, color};
-		vertex p4 = {{px1, py2, microz, 1}, {quad->tex.x, quad->tex.w}, color};
+
+		vertex p1;
+		vertex p2;
+		vertex p3;
+		vertex p4;
+		if (quad->rotated) {
+			p1 = {{px1, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
+			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.w}, color};
+			p3 = {{px2, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
+			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.y}, color};
+		} else {
+			p1 = {{px1, py1, 0, 1}, {quad->tex.x, quad->tex.y}, color};
+			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
+			p3 = {{px2, py2, 0, 1}, {quad->tex.z, quad->tex.w}, color};
+			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
+		}
 
 		// Now apply the matrix on them
 		p1.pos = qm * p1.pos;
@@ -249,4 +305,15 @@ void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 	}
 
 	resetChanged();
+}
+
+static void spriterErrorHandler(const std::string &err) {
+	lua_pushstring(L, "Spriter Error: ");
+	lua_pushstring(L, err.c_str());
+	lua_concat(L, 2);
+	lua_error(L);
+}
+
+void init_spriter() {
+	Settings::setErrorFunction(spriterErrorHandler);
 }

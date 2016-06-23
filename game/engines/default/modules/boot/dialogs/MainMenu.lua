@@ -164,9 +164,19 @@ function _M:updateUI()
 
 	self:setFocus(self.c_list)
 
-	local sp = core.renderer.spriter("/data/gfx/spriters/GreyGuy/player.scml", "Player")
-	sp:translate(500, 500, 100)
-	self.do_container:add(sp)
+	local sp1 = core.renderer.spriter("/data/gfx/spriters/GreyGuy/player.scml", "Player")
+	local sp2 = core.renderer.spriter("/data/gfx/spriters/test_02/test_embedded_03.scml", "Player")
+	-- local sp3 = core.renderer.spriter("/data/gfx/spriters/test/test.scml", "Player")
+	-- local sp = core.renderer.spriter("/data/gfx/spriters/test_02/arrows_atlas.scml", "arrows")
+	sp1:translate(500, 500, 100) sp1:color(1, 0, 1, 1)
+	sp2:translate(500, 500, 100) sp2:color(0, 1, 0, 0.5)
+	-- sp3:translate(200, 600, 100)
+	local spr = core.renderer.renderer()
+	spr:add(sp1)
+	spr:add(sp2)
+	-- spr:add(sp3)
+	self.do_container:add(spr)
+	-- os.crash()
 end
 
 function _M:uiLogin(uis)

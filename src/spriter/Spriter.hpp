@@ -40,9 +40,11 @@ class DORSpriter;
 
 class TE4FileFactory : public FileFactory
 {
+private:
+	DORSpriter *spriter = NULL;
 public:
-
-	ImageFile *newImageFile(const std::string &initialFilePath, point initialDefaultPivot) override;
+	TE4FileFactory(DORSpriter *spriter) : spriter(spriter) {};
+	ImageFile *newImageFile(const std::string &initialFilePath, point initialDefaultPivot, atlasdata atlasData) override;
 	SoundFile *newSoundFile(const std::string &initialFilePath) override;
 	SpriterFileDocumentWrapper *newScmlDocumentWrapper() override;
 };
@@ -78,12 +80,16 @@ public:
 class TE4SpriterImageFile : public ImageFile
 {
 private:
+	DORSpriter *spriter = NULL;
+	bool using_atlas = false;
 	texture_type texture;
-	float w = 1, h = 1;
-	void initializeFile();
+	float w = 1, h = 1, tx1 = 0, ty1 = 0, tx2 = 1, ty2 = 1, xoff = 0, yoff = 0;
+	bool rotated = false;
+
+	bool makeTexture(std::string file, texture_type *t, float *w, float *h);
 
 public:
-	TE4SpriterImageFile(std::string initialFilePath, point initialDefaultPivot);
+	TE4SpriterImageFile(DORSpriter *spriter, std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData);
 	virtual ~TE4SpriterImageFile();
 
 	void renderSprite(UniversalObjectInterface *spriteInfo) override;
@@ -107,6 +113,7 @@ typedef struct {
 	float angle;
 	vec4 tex;
 	float alpha;
+	bool rotated;
 } spriter_quads;
 
 class DORSpriter : public DisplayObject, public DORRealtime{
@@ -115,11 +122,14 @@ private:
 	virtual void cloneInto(DisplayObject *into);
 
 protected:
+	texture_type atlas;
+	bool atlas_loaded = false;
 	SpriterModel *spritermodel = NULL;
 	EntityInstance *instance = NULL;
 
 	vector<spriter_quads> quads;
 	shader_type *shader;
+	string scml;
 
 public:
 	DORSpriter();
@@ -128,6 +138,7 @@ public:
 	virtual const char* getKind() { return "DORSpriter"; };
 
 	void load(const char *file, const char *name);
+	void startAnim(const char *name);
 
 	void setShader(shader_type *s) { shader = s; };
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
@@ -135,5 +146,7 @@ public:
 
 	virtual void onKeyframe(int nb_keyframes);
 };
+
+extern void init_spriter();
 
 #endif

@@ -81,6 +81,7 @@ namespace SpriterEngine
 				else
 				{
 					point pivot(0, 0);
+					atlasdata atlasData(0, 0, 0, 0, 0, 0, false, false);
 					att = fileElement->getFirstAttribute("width");
 
 					if (att->isValid())
@@ -103,12 +104,49 @@ namespace SpriterEngine
 						pivot.y = att->getRealValue();
 					}
 
+					att = fileElement->getFirstAttribute("ax");
+					if (att->isValid())
+					{
+						atlasData.active = true;
+						atlasData.x = att->getRealValue();
+					}
+					att = fileElement->getFirstAttribute("ay");
+					if (att->isValid())
+					{
+						atlasData.y = att->getRealValue();
+					}
+					att = fileElement->getFirstAttribute("aw");
+					if (att->isValid())
+					{
+						atlasData.w = att->getRealValue();
+					}
+					att = fileElement->getFirstAttribute("ah");
+					if (att->isValid())
+					{
+						atlasData.h = att->getRealValue();
+					}
+					att = fileElement->getFirstAttribute("axoff");
+					if (att->isValid())
+					{
+						atlasData.xoff = att->getRealValue();
+					}
+					att = fileElement->getFirstAttribute("ayoff");
+					if (att->isValid())
+					{
+						atlasData.yoff = att->getRealValue();
+					}
+					att = fileElement->getFirstAttribute("arot");
+					if (att->isValid() && att->getStringValue() == "true")
+					{
+						atlasData.rotated = true;
+					}
+
 					if (Settings::reversePivotYOnLoad)
 					{
 						pivot.y = 1 - pivot.y;
 					}
 
-					model->pushBackImageFile(filePath + fileName, pivot);
+					model->pushBackImageFile(filePath + fileName, pivot, atlasData);
 				}
 
 				fileElement->advanceToNextSiblingElementOfSameName();

@@ -84,6 +84,8 @@ static int map_object_new(lua_State *L)
 	obj->nb_textures = nb_textures;
 	obj->uid = uid;
 
+	obj->displayobject = NULL;
+
 	obj->on_seen = lua_toboolean(L, 3);
 	obj->on_remember = lua_toboolean(L, 4);
 	obj->on_unknown = lua_toboolean(L, 5);

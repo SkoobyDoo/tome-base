@@ -587,6 +587,13 @@ static int gl_spriter_free(lua_State *L)
 	return 1;
 }
 
+static int gl_spriter_set_anim(lua_State *L)
+{
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
+	v->startAnim(luaL_checkstring(L, 2));
+	return 0;
+}
+
 /******************************************************************
  ** Lua declarations
  ******************************************************************/
@@ -778,6 +785,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 static const struct luaL_Reg gl_spriter_reg[] =
 {
 	{"__gc", gl_spriter_free},
+	{"setAnim", gl_spriter_set_anim},
 	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
@@ -817,5 +825,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
+
+	init_spriter();
 	return 1;
 }

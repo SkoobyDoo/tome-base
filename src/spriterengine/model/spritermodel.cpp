@@ -102,6 +102,7 @@ namespace SpriterEngine
 
 	EntityInstance * SpriterModel::getNewEntityInstance(std::string entityName)
 	{
+		Settings::error("SpriterModel::getNewEntityInstance - could not find entity with name \"" + entityName + "\"");
 		for (auto& it : entities)
 		{
 			if (it->getName() == entityName)
@@ -109,7 +110,6 @@ namespace SpriterEngine
 				return it->getNewEntityInstance(this, objectFactory);
 			}
 		}
-		Settings::error("SpriterModel::getNewEntityInstance - could not find entity with name \"" + entityName + "\"");
 		return 0;
 	}
 
@@ -127,9 +127,9 @@ namespace SpriterEngine
 		return entities.back();
 	}
 
-	void SpriterModel::pushBackImageFile(std::string initialFilePath, point initialDefaultPivot)
+	void SpriterModel::pushBackImageFile(std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData)
 	{
-		files.push_back(fileFactory->newImageFile(initialFilePath, initialDefaultPivot));
+		files.push_back(fileFactory->newImageFile(initialFilePath, initialDefaultPivot, atlasData));
 	}
 
 	void SpriterModel::pushBackSoundFile(std::string initialFilePath)
