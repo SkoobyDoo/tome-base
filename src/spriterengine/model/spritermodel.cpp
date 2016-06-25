@@ -102,7 +102,6 @@ namespace SpriterEngine
 
 	EntityInstance * SpriterModel::getNewEntityInstance(std::string entityName)
 	{
-		Settings::error("SpriterModel::getNewEntityInstance - could not find entity with name \"" + entityName + "\"");
 		for (auto& it : entities)
 		{
 			if (it->getName() == entityName)
@@ -110,6 +109,7 @@ namespace SpriterEngine
 				return it->getNewEntityInstance(this, objectFactory);
 			}
 		}
+		Settings::error("SpriterModel::getNewEntityInstance - could not find entity with name \"" + entityName + "\"");
 		return 0;
 	}
 

@@ -33,6 +33,7 @@
 #include "spriterengine/objectinfo/boneinstanceinfo.h"
 #include "spriterengine/objectinfo/boxinstanceinfo.h"
 #include "spriterengine/objectinfo/pointinstanceinfo.h"
+#include "spriterengine/objectinfo/triggerobjectinfo.h"
 
 using namespace SpriterEngine;
 
@@ -75,6 +76,14 @@ public:
 	PointInstanceInfo *newPointInstanceInfo() override;
 	BoxInstanceInfo *newBoxInstanceInfo(point size) override;
 	BoneInstanceInfo *newBoneInstanceInfo(point size) override;
+	TriggerObjectInfo *newTriggerObjectInfo(std::string triggerName) override;
+};
+
+class TE4SpriterTriggerObjectInfo : public TriggerObjectInfo {
+	std::string triggerName;
+public:
+	TE4SpriterTriggerObjectInfo(std::string triggerName);
+	virtual void playTrigger();
 };
 
 class TE4SpriterImageFile : public ImageFile
@@ -83,7 +92,7 @@ private:
 	DORSpriter *spriter = NULL;
 	bool using_atlas = false;
 	texture_type texture;
-	float w = 1, h = 1, tx1 = 0, ty1 = 0, tx2 = 1, ty2 = 1, xoff = 0, yoff = 0;
+	float w = 1, h = 1, aw = 1, ah = 1, tx1 = 0, ty1 = 0, tx2 = 1, ty2 = 1, xoff = 0, yoff = 0;
 	bool rotated = false;
 
 	bool makeTexture(std::string file, texture_type *t, float *w, float *h);

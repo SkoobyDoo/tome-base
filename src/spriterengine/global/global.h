@@ -106,11 +106,13 @@ namespace SpriterEngine
 
 	struct atlasdata
 	{
-		atlasdata(real initialX = 0, real initialY = 0, real initialW = 0, real initialH = 0, real initialXoff = 0, real initialYoff = 0, bool initialRotated = false, bool initialActive = false) :
+		atlasdata(real initialX = 0, real initialY = 0, real initialW = 0, real initialH = 0, real initialOW = 0, real initialOH = 0, real initialXoff = 0, real initialYoff = 0, bool initialRotated = false, bool initialActive = false) :
 			x(initialX),
 			y(initialY),
 			w(initialW),
 			h(initialH),
+			ow(initialOW),
+			oh(initialOH),
 			xoff(initialXoff),
 			yoff(initialYoff),
 			rotated(initialRotated),
@@ -122,6 +124,8 @@ namespace SpriterEngine
 		real y;
 		real w;
 		real h;
+		real ow;
+		real oh;
 		real xoff;
 		real yoff;
 		bool rotated;

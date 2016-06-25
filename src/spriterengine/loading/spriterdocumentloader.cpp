@@ -104,6 +104,16 @@ namespace SpriterEngine
 						pivot.y = att->getRealValue();
 					}
 
+					att = fileElement->getFirstAttribute("width");
+					if (att->isValid())
+					{
+						atlasData.ow = att->getRealValue();
+					}
+					att = fileElement->getFirstAttribute("height");
+					if (att->isValid())
+					{
+						atlasData.oh = att->getRealValue();
+					}
 					att = fileElement->getFirstAttribute("ax");
 					if (att->isValid())
 					{
@@ -1213,7 +1223,6 @@ namespace SpriterEngine
 		{
 			std::string timelineName;
 			SpriterFileAttributeWrapper *att = eventlineElement->getFirstAttribute("name");
-
 			if (att->isValid())
 			{
 				timelineName = att->getStringValue();

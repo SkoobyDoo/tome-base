@@ -70,6 +70,21 @@ BoneInstanceInfo * TE4ObjectFactory::newBoneInstanceInfo(point size) {
 	return new TE4BoneInstanceInfo(size);
 }
 
+TriggerObjectInfo *TE4ObjectFactory::newTriggerObjectInfo(std::string triggerName) {
+	printf("[SPRITER] PLOP\n");
+	return new TE4SpriterTriggerObjectInfo(triggerName);
+}
+
+/****************************************************************************
+ ** Spriter event trigger stuff
+ ****************************************************************************/
+TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(std::string triggerName) : triggerName(triggerName) {
+	printf("[SPRITER] trigger defiend %s\n", triggerName.c_str());
+}
+void TE4SpriterTriggerObjectInfo::playTrigger() {
+	printf("[SPRITER] trigger %s %d times\n", triggerName.c_str(), getTriggerCount());
+}
+
 /****************************************************************************
  ** Spriter image stuff
  ****************************************************************************/
@@ -77,6 +92,7 @@ TE4SpriterImageFile::TE4SpriterImageFile(DORSpriter *spriter, std::string initia
 {	
 	if (!atlasData.active) {
 		makeTexture(initialFilePath, &texture, &w, &h);
+		aw = w; ah = h;
 	} else {
 		if (!spriter->atlas_loaded) {
 			float dummy;
@@ -89,18 +105,22 @@ TE4SpriterImageFile::TE4SpriterImageFile(DORSpriter *spriter, std::string initia
 		texture = spriter->atlas;
 		xoff = atlasData.xoff;
 		yoff = atlasData.yoff;
-		w = atlasData.w;
-		h = atlasData.h;
+		float ax = atlasData.x;
+		float ay = atlasData.y;
+		aw = atlasData.w;
+		ah = atlasData.h;
+		w = atlasData.ow;
+		h = atlasData.oh;
 		if (atlasData.rotated) {
-			tx1 = atlasData.x / spriter->atlas.w;
-			ty1 = atlasData.y / spriter->atlas.h;
-			tx2 = (atlasData.x + atlasData.h) / spriter->atlas.w;
-			ty2 = (atlasData.y + atlasData.w) / spriter->atlas.h;
+			tx1 = ax / spriter->atlas.w;
+			ty1 = ay / spriter->atlas.h;
+			tx2 = (ax + ah) / spriter->atlas.w;
+			ty2 = (ay + aw) / spriter->atlas.h;
 		} else {
-			tx1 = atlasData.x / spriter->atlas.w;
-			ty1 = atlasData.y / spriter->atlas.h;
-			tx2 = (atlasData.x + atlasData.w) / spriter->atlas.w;
-			ty2 = (atlasData.y + atlasData.h) / spriter->atlas.h;
+			tx1 = ax / spriter->atlas.w;
+			ty1 = ay / spriter->atlas.h;
+			tx2 = (ax + aw) / spriter->atlas.w;
+			ty2 = (ay + ah) / spriter->atlas.h;
 		}
 		rotated = atlasData.rotated;
 	}
@@ -141,8 +161,8 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 	spriter->quads.push_back({
 		texture.tex,
 		{spriteInfo->getPosition().x, spriteInfo->getPosition().y},
-		{w, h},
-		{spriteInfo->getPivot().x * w, spriteInfo->getPivot().y * h},
+		{aw, ah},
+		{spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff},
 		{spriteInfo->getScale().x, spriteInfo->getScale().y},
 		spriteInfo->getAngle(),
 		{tx1, ty1, tx2, ty2},
@@ -183,9 +203,10 @@ void DORSpriter::cloneInto(DisplayObject* _into) {
 }
 
 void DORSpriter::load(const char *file, const char *name) {
+	printf("[SPRITER] Loading %s (%s)\n", file, name);
 	scml = file;
 	spritermodel = new SpriterModel(file, new TE4FileFactory(this), new TE4ObjectFactory());
-	instance = spritermodel->getNewEntityInstance(0);
+	instance = spritermodel->getNewEntityInstance(name);
 }
 
 void DORSpriter::startAnim(const char *name) {
