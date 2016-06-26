@@ -83,6 +83,7 @@ newTalent{
 	cooldown = 30,
 	sustain_stamina = 50,
 	tactical = { BUFF = 2 },
+	drain_stamina = 6,
 	no_break_stealth = true,
 	no_energy = true,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.14, 0.45, 0.75) end,
@@ -90,12 +91,10 @@ newTalent{
 	activate = function(self, t)
 		return {
 			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
-			stamina_regen = self:addTemporaryValue("stamina_regen", -6),
 		}
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)
-		self:removeTemporaryValue("stamina_regen", p.stamina_regen)
 		return true
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)

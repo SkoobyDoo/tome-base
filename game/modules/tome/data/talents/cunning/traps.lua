@@ -607,8 +607,9 @@ newTalent{
 				}
 				
 				-- Remove the target
-				game.logSeen(who, "%s falls into a deep pit!", who.name:capitalize())
+				game.logSeen(who, "The ground collapses under %s!", who.name:capitalize())
 				game.level:removeEntity(who, true)
+				game.level.map:particleEmitter(x, y, 1, "fireflash", {radius=2, tx=x, ty=y})
 				
 				local particle = Particles.new("wormhole", 1, {image="shockbolt/trap/trap_pitfall_pit", speed=0})
 				particle.zdepth = 6
@@ -1075,6 +1076,7 @@ newTalent{
 						end
 					end
 				end)
+				game.level.map:particleEmitter(self.x, self.y, 5, "gravity_spike", {radius=5, allow=core.shader.allow("distort")})
 			end,
 		})
 		t:identify(true)
