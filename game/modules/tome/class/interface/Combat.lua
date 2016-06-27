@@ -472,6 +472,18 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			repelled = true
 		end
 	end
+	
+	if target:isTalentActive(target.T_PARRY) then
+		local chance = target:callTalent(target.T_PARRY, "getChance")
+		if rng.percent(chance) then
+			game.logSeen(target, "#ORCHID#%s parries the attack with %s dagger!#LAST#", target.name:capitalize(), string.his_her(target))
+			repelled = true
+			if target:knowTalent(target.T_TEMPO) then
+				local t = target:getTalentFromId(target.T_TEMPO)
+				t.do_tempo(target, t)
+			end
+		end
+	end
 
 	if repelled then
 		self:logCombat(target, "#Target# repels an attack from #Source#.")
@@ -875,18 +887,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		t.do_weakness(self, t, target)
 	end
 
-	-- Lacerating Strikes
-	if hitted and not target.dead and self:isTalentActive(self.T_LACERATING_STRIKES) then
-		local t = self:getTalentFromId(self.T_LACERATING_STRIKES)
-		t.do_cut(self, t, target, dam)
-	end
-
-	-- Scoundrel's Strategies
-	if hitted and not target.dead and self:knowTalent(self.T_SCOUNDREL) and target:hasEffect(target.EFF_CUT) then
-		local t = self:getTalentFromId(self.T_SCOUNDREL)
-		t.do_scoundrel(self, t, target)
-	end
-
 	-- Special weapon effects  (passing the special definition to facilitate encapsulating multiple special effects)
 	if hitted and weapon and weapon.special_on_hit then
 		local specials = weapon.special_on_hit
@@ -915,21 +915,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 			if special.fct then
 				special.fct(weapon, self, target, dam, special)
 			end
-		end
-	end
-
-	if hitted and crit and not target.dead and self:knowTalent(self.T_BACKSTAB) and not target:attr("stunned") and rng.percent(self:callTalent(self.T_BACKSTAB, "getStunChance")) then
-		if target:canBe("stun") then
-			target:setEffect(target.EFF_STUNNED, 3, {apply_power=self:combatAttack()})
-		end
-	end
-
-	-- Poison coating
-	if hitted and not target.dead and self.vile_poisons and next(self.vile_poisons) and target:canBe("poison") then
-		local tid = rng.table(table.keys(self.vile_poisons))
-		if tid then
-			local t = self:getTalentFromId(tid)
-			t.proc(self, t, target, weapon)
 		end
 	end
 
@@ -1212,9 +1197,6 @@ function _M:combatDefenseBase(fake)
 		mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
 	end
 
-	if self:knowTalent(self.T_MISDIRECTION) then
-		mult = mult + self:callTalent(self.T_MISDIRECTION,"getDefense")/100
-	end
 	return math.max(0, d * mult + add) -- Add bonuses last to avoid compounding defense multipliers from talents
 end
 
@@ -1280,7 +1262,7 @@ function _M:combatArmorHardiness()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
 	end
-	if self:hasEffect(self.EFF_BREACH) then
+	if self:hasEffect(self.EFF_BREACH) or self:hasEffect(self.EXPOSE_WEAKNESS) then
 		multi = 0.5
 	end
 	return util.bound(30 + self.combat_armor_hardiness + add, 0, 100) * multi
@@ -1742,6 +1724,9 @@ function _M:getOffHandMult(combat, mult)
 	if self:knowTalent(Talents.T_CORRUPTED_STRENGTH) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_CORRUPTED_STRENGTH,"getoffmult"))
 	end
+	if self:knowTalent(Talents.T_LETHALITY) then
+		offmult = math.max(offmult,self:callTalent(Talents.T_LETHALITY,"getOffMult"))
+	end
 	if combat and combat.no_offhand_penalty then offmult = math.max(1, offmult) end
 
 	offmult = (mult or 1)*offmult
@@ -1832,7 +1817,6 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 	end
 
 	local crit = false
-	if self:knowTalent(self.T_BACKSTAB) and target and target:attr("stunned") then chance = chance + self:callTalent(self.T_BACKSTAB,"getCriticalChance") end
 
 	if target and target:attr("combat_crit_vulnerable") then
 		chance = chance + target:attr("combat_crit_vulnerable")
@@ -1862,8 +1846,6 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 
 	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) and target and not target:canSee(self) then -- bug fix
 		chance = 100
-		self.turn_procs.shadowstrike_crit = self:callTalent(self.T_SHADOWSTRIKE,"getMultiplier")
-		crit_power_add = crit_power_add + self.turn_procs.shadowstrike_crit
 	end
 
 	if self:isAccuracyEffect(weapon, "axe") then
@@ -1909,8 +1891,6 @@ function _M:spellCrit(dam, add_chance, crit_power_add)
 	-- Unlike physical crits we can't know anything about our target here so we can't check if they can see us
 	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) then
 		chance = 100
-		crit_power_add = crit_power_add + self:callTalent(self.T_SHADOWSTRIKE,"getMultiplier")
-		self.turn_procs.shadowstrike_crit = self:callTalent(self.T_SHADOWSTRIKE,"getMultiplier")
 	end
 
 	print("[SPELL CRIT %]", self.turn_procs.auto_spell_crit and 100 or chance)
@@ -1959,8 +1939,6 @@ function _M:mindCrit(dam, add_chance, crit_power_add)
 
 	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) then
 		chance = 100
-		crit_power_add = crit_power_add + self:callTalent(self.T_SHADOWSTRIKE,"getMultiplier")
-		self.turn_procs.shadowstrike_crit = self:callTalent(self.T_SHADOWSTRIKE,"getMultiplier")
 	end
 
 	print("[MIND CRIT %]", self.turn_procs.auto_mind_crit and 100 or chance)

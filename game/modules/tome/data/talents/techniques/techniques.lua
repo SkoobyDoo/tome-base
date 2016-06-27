@@ -43,6 +43,9 @@ newTalentType{ allow_random=true, type="technique/combat-training", name = "comb
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="technique/magical-combat", name = "magical combat", description = "The blending together of magic and melee prowess." }
 newTalentType{ allow_random=true, type="technique/mobility", name = "mobility", generic = true, description = "Controlling your movements on the battlefields is the sure way to victory." }
 newTalentType{ allow_random=true, type="technique/thuggery", name = "thuggery", generic = true, description = "Whatever wins the day, wins the day." }
+newTalentType{ allow_random=true, type="technique/assassination", name = "assassination", min_lev=10, description = "Bring death from the shadows." }
+newTalentType{ allow_random=true, type="technique/throwing-knives", name = "throwing knives", description = "Master the art of throwing knives to fight from a distance." }
+newTalentType{ allow_random=true, type="technique/duelist", name = "duelist", description = "Use your dual weapons to parry and counter." }
 
 -- Skirmisher
 newTalentType {
@@ -320,6 +323,9 @@ load("/data/talents/techniques/excellence.lua")
 load("/data/talents/techniques/magical-combat.lua")
 load("/data/talents/techniques/mobility.lua")
 load("/data/talents/techniques/thuggery.lua")
+load("/data/talents/techniques/assassination.lua")
+load("/data/talents/techniques/throwing-knives.lua")
+load("/data/talents/techniques/duelist.lua")
 
 load("/data/talents/techniques/skirmisher-slings.lua")
 load("/data/talents/techniques/buckler-training.lua")

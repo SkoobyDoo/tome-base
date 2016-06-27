@@ -968,6 +968,10 @@ function _M:restCheck()
 	if ammo and ammo.combat.shots_left < ammo.combat.capacity then return true end
 	-- Spacetime Tuning handles Paradox regen
 	if self:hasEffect(self.EFF_SPACETIME_TUNING) then return true end
+	if self:knowTalent(self.T_THROWING_KNIVES) then
+		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
+		if not eff or (eff and eff.stacks < eff.max_stacks) then return true end
+	end
 	
 	-- Check resources, make sure they CAN go up, otherwise we will never stop
 	if not self.resting.rest_turns then

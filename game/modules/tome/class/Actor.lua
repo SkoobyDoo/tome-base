@@ -381,7 +381,10 @@ function _M:getSpeed(speed_type)
 		end
 
 		if not speed then speed = self:combatSpeed() end
-
+	elseif speed_type == "throwing" then
+		   local turn = 0
+		   if self:knowTalent(self.T_QUICKDRAW) then turn = self:callTalent("T_QUICKDRAW", "getSpeed") end
+		   speed = 1 * self:combatSpeed() * (100 - turn) / 100
 	elseif speed_type == "spell" then speed = self:combatSpellSpeed()
 	elseif speed_type == "summon" then speed = self:combatSummonSpeed()
 	elseif speed_type == "mind" then speed = self:combatMindSpeed()
@@ -1404,6 +1407,12 @@ function _M:waitTurn()
 	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
 		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
 	end
+	
+	if self:knowTalent(self.T_THROWING_KNIVES) then
+		local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
+		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
+		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
+	end
 
 	self:useEnergy()
 end
@@ -2095,6 +2104,10 @@ function _M:onTakeHit(value, src, death_note)
 	end
 
 	if self:attr("cancel_damage_chance") and rng.percent(self.cancel_damage_chance) then
+		if self:knowTalent(self.T_TEMPO) then
+			local t = self:getTalentFromId(self.T_TEMPO)
+			t.do_tempo(self, t)
+		end
 		return 0
 	end
 
@@ -4822,6 +4835,18 @@ function _M:preUseTalent(ab, silent, fake)
 				return false
 			end
 		end
+		
+		-- Fumble
+		if self:attr("scoundrel_failure") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
+			local eff = self:hasEffect(self.EFF_FUMBLE)
+			if rng.percent(self:attr("scoundrel_failure")) then
+				if not silent then game.logSeen(self, "%s fumbles and fails to use %s, injuring themselves!", self.name:capitalize(), ab.name) end
+				self:useEnergy()
+				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
+				return false
+			end
+		end
+
 	end
 	-- Special checks
 	if ab.on_pre_use and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) and not ab.on_pre_use(self, ab, silent, fake) then return false end
@@ -5253,7 +5278,7 @@ function _M:postUseTalent(ab, ret, silent)
 	end
 
 	-- Cancel stealth!
-	if not util.getval(ab.no_break_stealth, self, ab) then self:breakStealth() end
+	if not util.getval(ab.no_break_stealth, self, ab) and not util.getval(ab.no_energy, self, ab)  then self:breakStealth() end
 	if ab.id ~= self.T_LIGHTNING_SPEED then self:breakLightningSpeed() end
 	if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
 	if not ab.no_reload_break then self:breakReloading() end
@@ -5371,13 +5396,14 @@ end
 function _M:breakStealth()
 	local breaks = self.break_with_stealth
 	if breaks and #breaks > 0 then
+		if self:hasEffect(self.EFF_SHADOW_DANCE) then return nil end
 		local chance = 0
 		if self:knowTalent(self.T_UNSEEN_ACTIONS) then
 			chance = self:callTalent(self.T_UNSEEN_ACTIONS,"getChance")
 		end
 		-- Do not break stealth
 		if rng.percent(chance) then return end
-
+		
 		if self._breaking_stealth then return end
 		self._breaking_stealth = true
 		self:removeModifierList(breaks)
