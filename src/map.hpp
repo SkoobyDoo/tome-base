@@ -59,6 +59,7 @@ struct s_map_object {
 	long uid;
 
 	DisplayObject *displayobject;
+	int do_ref;
 
 	int cb_ref;
 

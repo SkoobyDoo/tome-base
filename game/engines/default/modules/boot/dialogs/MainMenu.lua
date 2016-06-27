@@ -143,11 +143,6 @@ function _M:updateUI()
 	-- 	fct = function() end,
 	-- }
 	-- uis = { {left=0, top=0, ui=test} }  
-	game.log("plop1")
-	game.log("plop2")
-	game.log("plop3")
-	game.log("plop4")
-	game.log("plop5")
 
 
 	self:loadUI(uis)
@@ -164,18 +159,27 @@ function _M:updateUI()
 
 	self:setFocus(self.c_list)
 
-	local sp1  = core.renderer.spriter("/data/gfx/spriters/GreyGuy/player.scml", "Player")
-	local sp2  = core.renderer.spriter("/data/gfx/spriters/test_02/test_embedded_03.scml", "Player")
-	local sp1b = core.renderer.spriter("/data/gfx/spriters/GreyGuy/player.scml", "Player")
-	local sp2b  = core.renderer.spriter("/data/gfx/spriters/test_02/test_embedded_03.scml", "Player")
-	-- local sp3 =  core.renderer.spriter("/data/gfx/spriters/test/test.scml", "Player")
 	local spr = core.renderer.renderer()
-	sp1:translate(500, 500, 100) sp1:color(1, 0, 1, 1) sp1:setAnim("walk") spr:add(sp1)
-	sp2:translate(500, 500, 100) sp2:color(0, 1, 0, 0.5) sp2:setAnim("walk") spr:add(sp2)
-	sp1b:translate(500, 780, 100) sp1b:color(1, 0, 1, 1) sp1b:setAnim("walk") spr:add(sp1b)
-	sp2b:translate(650, 780, 100) sp2b:color(0, 1, 0, 0.5) sp2b:setAnim("walk") spr:add(sp2b)
+	local i = core.renderer.image("/data/gfx/background/tome.png") i:translate(500, 500, 10) spr:add(i)
+	local sp1  = core.renderer.spriter("/data/gfx/spriters/GreyGuy/player.scml", "Player") sp1:setAnim("walk")
+	local sp2  = core.renderer.spriter("/data/gfx/spriters/test_02/test_embedded_03.scml", "Player")
+	-- -- local sp1b = core.renderer.spriter("/data/gfx/spriters/GreyGuy/player.scml", "Player")
+	-- -- local sp2b  = core.renderer.spriter("/data/gfx/spriters/test_02/test_embedded_03.scml", "Player")
+	-- local sp3 =  core.renderer.spriter("/data/gfx/spriters/test/test.scml", "Player")
+	-- sp1:translate(500, 500, 100) sp1:color(1, 0, 1, 1) sp1:setAnim("walk") spr:add(sp1)
+	sp2:translate(500, 500, 100) sp2:color(0, 1, 0, 1) sp2:setAnim("walk") spr:add(sp2)
+	-- -- sp1b:translate(500, 780, 100) sp1b:color(1, 0, 1, 1) sp1b:setAnim("walk") spr:add(sp1b)
+	-- -- sp2b:translate(650, 780, 100) sp2b:color(0, 1, 0, 0.5) sp2b:setAnim("walk") spr:add(sp2b)
 	-- sp3:translate(200, 600, 100) spr:add(sp3)
 	self.do_container:add(spr)
+
+	-- sp3:triggerCallback(function(nb)
+	-- 	print("!!!, nb", nb)
+	-- end)
+	game:onTickEnd(function()
+		sp1:scale(0.2, 0.2, 0.2)
+		game.player._mo:displayObject(sp1)
+	end)
 	-- os.crash()
 end
 

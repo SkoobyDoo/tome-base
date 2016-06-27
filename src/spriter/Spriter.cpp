@@ -55,7 +55,7 @@ SpriterFileDocumentWrapper * TE4FileFactory::newScmlDocumentWrapper() {
 /****************************************************************************
  ** Spriter object stuff
  ****************************************************************************/
-TE4ObjectFactory::TE4ObjectFactory() {
+TE4ObjectFactory::TE4ObjectFactory(DORSpriter *spriter) : spriter(spriter) {
 }
 
 PointInstanceInfo * TE4ObjectFactory::newPointInstanceInfo() {
@@ -71,18 +71,30 @@ BoneInstanceInfo * TE4ObjectFactory::newBoneInstanceInfo(point size) {
 }
 
 TriggerObjectInfo *TE4ObjectFactory::newTriggerObjectInfo(std::string triggerName) {
-	printf("[SPRITER] PLOP\n");
-	return new TE4SpriterTriggerObjectInfo(triggerName);
+	return new TE4SpriterTriggerObjectInfo(spriter, triggerName);
 }
 
 /****************************************************************************
  ** Spriter event trigger stuff
  ****************************************************************************/
-TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(std::string triggerName) : triggerName(triggerName) {
-	printf("[SPRITER] trigger defiend %s\n", triggerName.c_str());
+TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(DORSpriter *spriter, std::string triggerName) : triggerName(triggerName), spriter(spriter) {
+	printf("[SPRITER] trigger defined %s\n", triggerName.c_str());
+}
+void TE4SpriterTriggerObjectInfo::setTriggerCount(int newTriggerCount)
+{
+	TriggerObjectInfo::setTriggerCount(newTriggerCount);
+	if (newTriggerCount) playTrigger();
 }
 void TE4SpriterTriggerObjectInfo::playTrigger() {
-	printf("[SPRITER] trigger %s %d times\n", triggerName.c_str(), getTriggerCount());
+	if (spriter->trigger_cb_lua_ref == LUA_NOREF) return;
+
+	lua_rawgeti(L, LUA_REGISTRYINDEX, spriter->trigger_cb_lua_ref);
+	lua_pushnumber(L, getTriggerCount());
+	if (lua_pcall(L, 1, 0, 0))
+	{
+		printf("DORSpriter trigger callback error: %s\n", lua_tostring(L, -1));
+		lua_pop(L, 1);
+	}
 }
 
 /****************************************************************************
@@ -157,7 +169,6 @@ bool TE4SpriterImageFile::makeTexture(std::string file, texture_type *t, float *
 }
 
 void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
-	// printf("%fx%f :: %fx%f\n", spriteInfo->getPosition().x,spriteInfo->getPosition().y, spriteInfo->getScale().x, spriteInfo->getScale().y);
 	spriter->quads.push_back({
 		texture.tex,
 		{spriteInfo->getPosition().x, spriteInfo->getPosition().y},
@@ -202,10 +213,15 @@ void DORSpriter::cloneInto(DisplayObject* _into) {
 	DORSpriter *into = dynamic_cast<DORSpriter*>(_into);
 }
 
+void DORSpriter::setTriggerCallback(int ref) {
+	if (trigger_cb_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, trigger_cb_lua_ref);
+	trigger_cb_lua_ref = ref;
+}
+
 void DORSpriter::load(const char *file, const char *name) {
 	printf("[SPRITER] Loading %s (%s)\n", file, name);
 	scml = file;
-	spritermodel = new SpriterModel(file, new TE4FileFactory(this), new TE4ObjectFactory());
+	spritermodel = new SpriterModel(file, new TE4FileFactory(this), new TE4ObjectFactory(this));
 	instance = spritermodel->getNewEntityInstance(name);
 }
 

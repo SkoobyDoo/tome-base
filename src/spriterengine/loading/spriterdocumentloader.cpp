@@ -81,7 +81,7 @@ namespace SpriterEngine
 				else
 				{
 					point pivot(0, 0);
-					atlasdata atlasData(0, 0, 0, 0, 0, 0, false, false);
+					atlasdata atlasData(0, 0, 0, 0, 0, 0, 0, 0, false, false);
 					att = fileElement->getFirstAttribute("width");
 
 					if (att->isValid())

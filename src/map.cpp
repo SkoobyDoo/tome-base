@@ -85,6 +85,7 @@ static int map_object_new(lua_State *L)
 	obj->uid = uid;
 
 	obj->displayobject = NULL;
+	obj->do_ref = LUA_NOREF;
 
 	obj->on_seen = lua_toboolean(L, 3);
 	obj->on_remember = lua_toboolean(L, 4);
@@ -144,6 +145,12 @@ static int map_object_free(lua_State *L)
 	{
 		luaL_unref(L, LUA_REGISTRYINDEX, obj->next_ref);
 		obj->next = NULL;
+	}
+
+	if (obj->do_ref != LUA_NOREF)
+	{
+		luaL_unref(L, LUA_REGISTRYINDEX, obj->do_ref);
+		obj->do_ref = LUA_NOREF;
 	}
 
 	if (obj->cb_ref != LUA_NOREF)
@@ -218,6 +225,24 @@ static int map_object_texture(lua_State *L)
 	{
 		obj->tex_x[i] = 0;
 		obj->tex_y[i] = 0;
+	}
+	return 0;
+}
+
+static int map_object_set_do(lua_State *L)
+{
+	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
+	if (!lua_isnil(L, 2)) {
+		DisplayObject *v = userdata_to_DO(L, 2);
+		obj->displayobject = v;
+		lua_pushvalue(L, 2);
+		obj->do_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	} else {
+		if (obj->do_ref != LUA_NOREF) {
+			luaL_unref(L, LUA_REGISTRYINDEX, obj->do_ref);
+			obj->do_ref = LUA_NOREF;
+		}
+		obj->displayobject = NULL;
 	}
 	return 0;
 }
@@ -1303,35 +1328,42 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		y1 = dy; y2 = map->tile_h * dh * dm->scale + dy;
 	}
 
-	float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
-	float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
+	if (dm->displayobject) {
+		vec4 color = {r, g, b, a};
+		mat4 model = mat4();
+		model = glm::translate(model, glm::vec3(x1, y1, 0));
+		dm->displayobject->render(map->z_renderers[z], model, color);
+	} else {
+		float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
+		float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
 
-	float shaderkind = 0;
-	shader_type *shader = default_shader;
-	if (dm->shader) shader = dm->shader;
-	else if (m->shader) shader = m->shader;
-	else if (map->default_shader) shader = map->default_shader;
+		float shaderkind = 0;
+		shader_type *shader = default_shader;
+		if (dm->shader) shader = dm->shader;
+		else if (m->shader) shader = m->shader;
+		else if (map->default_shader) shader = map->default_shader;
 
-	// DGDGDGDG: perhaps need to optimize here? chagning shader->name to a string instead of a char* ?
-	if (shader != map->default_shader && !map->shader_to_shaderkind->empty()) {
-		auto kind = map->shader_to_shaderkind->find(shader->name);
-		if (kind != map->shader_to_shaderkind->end()) {
-			shaderkind = kind->second;
-			shader = map->default_shader;
+		// DGDGDGDG: perhaps need to optimize here? chagning shader->name to a string instead of a char* ?
+		if (shader != map->default_shader && !map->shader_to_shaderkind->empty()) {
+			auto kind = map->shader_to_shaderkind->find(shader->name);
+			if (kind != map->shader_to_shaderkind->end()) {
+				shaderkind = kind->second;
+				shader = map->default_shader;
+			}
 		}
+
+		// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
+		auto dl = getDisplayList(map->z_renderers[z], dm->textures[0], shader);
+
+		// Make sure we do not have to reallocate each step
+		// DGDGDGDG: actually do it
+
+		// Put it directly into the DisplayList
+		dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
+		dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
+		dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
+		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 	}
-
-	// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
-	auto dl = getDisplayList(map->z_renderers[z], dm->textures[0], shader);
-
-	// Make sure we do not have to reallocate each step
-	// DGDGDGDG: actually do it
-
-	// Put it directly into the DisplayList
-	dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-	dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-	dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-	dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 
 	// DGDGDGDG
 	// if (L && dm->cb_ref != LUA_NOREF)
@@ -1952,6 +1984,7 @@ static const struct luaL_Reg map_object_reg[] =
 {
 	{"__gc", map_object_free},
 	{"texture", map_object_texture},
+	{"displayObject", map_object_set_do},
 	{"displayCallback", map_object_cb},
 	{"chain", map_object_chain},
 	{"tint", map_object_tint},

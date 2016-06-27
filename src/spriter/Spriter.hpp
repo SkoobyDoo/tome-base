@@ -71,8 +71,10 @@ public:
 
 class TE4ObjectFactory : public ObjectFactory
 {
+private:
+	DORSpriter *spriter = NULL;
 public:
-	TE4ObjectFactory();
+	TE4ObjectFactory(DORSpriter *spriter);
 	PointInstanceInfo *newPointInstanceInfo() override;
 	BoxInstanceInfo *newBoxInstanceInfo(point size) override;
 	BoneInstanceInfo *newBoneInstanceInfo(point size) override;
@@ -80,10 +82,13 @@ public:
 };
 
 class TE4SpriterTriggerObjectInfo : public TriggerObjectInfo {
+private:
 	std::string triggerName;
+	DORSpriter *spriter = NULL;
 public:
-	TE4SpriterTriggerObjectInfo(std::string triggerName);
-	virtual void playTrigger();
+	TE4SpriterTriggerObjectInfo(DORSpriter *spriter, std::string triggerName);
+	void setTriggerCount(int newTriggerCount) override;
+	virtual void playTrigger() override;
 };
 
 class TE4SpriterImageFile : public ImageFile
@@ -126,7 +131,7 @@ typedef struct {
 } spriter_quads;
 
 class DORSpriter : public DisplayObject, public DORRealtime{
-	friend class TE4SpriterImageFile;
+	friend class TE4SpriterImageFile; friend class TE4SpriterTriggerObjectInfo;
 private:
 	virtual void cloneInto(DisplayObject *into);
 
@@ -140,11 +145,15 @@ protected:
 	shader_type *shader;
 	string scml;
 
+	int trigger_cb_lua_ref = LUA_NOREF;
+
 public:
 	DORSpriter();
 	virtual ~DORSpriter();
 	DO_STANDARD_CLONE_METHOD(DORSpriter);
 	virtual const char* getKind() { return "DORSpriter"; };
+
+	void setTriggerCallback(int ref);
 
 	void load(const char *file, const char *name);
 	void startAnim(const char *name);

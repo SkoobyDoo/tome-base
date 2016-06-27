@@ -594,6 +594,19 @@ static int gl_spriter_set_anim(lua_State *L)
 	return 0;
 }
 
+static int gl_spriter_trigger_callback(lua_State *L)
+{
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
+	if (!lua_isfunction(L, 2)) {
+		lua_pushstring(L, "callback arg is not a function");
+		lua_error(L);
+		return 0;
+	}
+	lua_pushvalue(L, 2);
+	v->setTriggerCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+	return 0;
+}
+
 /******************************************************************
  ** Lua declarations
  ******************************************************************/
@@ -785,6 +798,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 static const struct luaL_Reg gl_spriter_reg[] =
 {
 	{"__gc", gl_spriter_free},
+	{"triggerCallback", gl_spriter_trigger_callback},
 	{"setAnim", gl_spriter_set_anim},
 	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
