@@ -96,6 +96,7 @@ public:
 	void setChanged();
 	bool isChanged() { return changed; };
 	void resetChanged() { changed = false; };
+	bool independantRenderer() { return stop_parent_recursing; };
 
 	void recomputeModelMatrix();
 

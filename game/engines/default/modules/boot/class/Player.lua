@@ -64,6 +64,7 @@ function _M:init(t, no_default)
 	elseif tile == 4 then
 		self.image = "player/humanoid_halfling_protector_myssil.png"
 	end
+	-- self.spriter = {"test_02/test_embedded_03", "Player", anim="walk", scale=0.2}
 	self:removeAllMOs()
 end
 
