@@ -167,6 +167,12 @@ function _M:updateUI()
 	-- 	spr:add(sp1)
 	-- 	game.player._mo:displayObject(spr)
 	-- end)
+
+	local ps = require("engine.Particles").new("fireflash", 1, {radius=5})
+	local psr = core.renderer.renderer()
+	psr:translate(700, 500, 0)
+	psr:add(ps)
+	self.do_container:add(psr)
 end
 
 function _M:uiLogin(uis)

@@ -31,4 +31,6 @@ extern void useShader(shader_type *p, int x, int y, int w, int h, float tx, floa
 extern void useShaderSimple(shader_type *p);
 extern void useNoShader();
 
+extern int luaopen_shaders(lua_State *L);
+
 #endif

@@ -37,20 +37,22 @@ extern "C" {
 using namespace glm;
 using namespace std;
 
-class DOResizable {
+class IResizable {
 public:
-	DOResizable();
-	virtual ~DOResizable();
+	IResizable();
+	virtual ~IResizable();
 	virtual void onScreenResize(int w, int h) = 0;
 };
 
-class DORRealtime {
+extern "C" void interface_resize(int w, int h);
+
+class IRealtime {
 public:
-	DORRealtime();
-	virtual ~DORRealtime();
+	IRealtime();
+	virtual ~IRealtime();
 	virtual void onKeyframe(int nb_keyframes) = 0;
 };
 
-extern "C" void dor_interface_realtime(int nb_keyframes);
+extern "C" void interface_realtime(int nb_keyframes);
 
 #endif

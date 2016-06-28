@@ -211,6 +211,7 @@ DORSpriter::~DORSpriter() {
 void DORSpriter::cloneInto(DisplayObject* _into) {
 	DisplayObject::cloneInto(_into);
 	DORSpriter *into = dynamic_cast<DORSpriter*>(_into);
+	// DGDGDGDG: finish me
 }
 
 void DORSpriter::setTriggerCallback(int ref) {

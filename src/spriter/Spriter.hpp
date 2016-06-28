@@ -130,7 +130,7 @@ typedef struct {
 	bool rotated;
 } spriter_quads;
 
-class DORSpriter : public DisplayObject, public DORRealtime{
+class DORSpriter : public DisplayObject, public IRealtime{
 	friend class TE4SpriterImageFile; friend class TE4SpriterTriggerObjectInfo;
 private:
 	virtual void cloneInto(DisplayObject *into);

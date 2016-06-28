@@ -38,6 +38,8 @@ extern lua_State *L;
 using namespace glm;
 using namespace std;
 
+class View;
+
 #define DO_STANDARD_CLONE_METHOD(class_name) virtual DisplayObject* clone() { DisplayObject *into = new class_name(); this->cloneInto(into); return into; }
 
 typedef struct {
@@ -223,7 +225,7 @@ public:
  ** A FBO that masquerades as a DORVertexes, draw stuff in it and
  ** then add it to a renderer to use the content generated
  ****************************************************************************/
-class DORTarget : public DORVertexes, public DOResizable {
+class DORTarget : public DORVertexes, public IResizable {
 protected:
 	int w, h;
 	GLuint fbo;
@@ -233,6 +235,7 @@ protected:
 	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
 	SubRenderer *subrender = NULL;
 	int subrender_lua_ref = LUA_NOREF;
+	View *view;
 
 	virtual void cloneInto(DisplayObject *into);
 

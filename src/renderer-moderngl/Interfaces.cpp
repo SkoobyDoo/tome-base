@@ -32,27 +32,33 @@ extern "C" {
 
 #include <set>
 
-static set<DOResizable*> to_resize_list;
-static set<DORRealtime*> realtime_list;
+static set<IResizable*> to_resize_list;
+static set<IRealtime*> realtime_list;
 
-DOResizable::DOResizable() {
+IResizable::IResizable() {
 	to_resize_list.insert(this);
 }
 
-DOResizable::~DOResizable() {
+IResizable::~IResizable() {
 	to_resize_list.erase(this);
 }
 
-DORRealtime::DORRealtime() {
+void interface_resize(int w, int h) {
+	for (auto it : to_resize_list) {
+		it->onScreenResize(w, h);
+	}
+}
+
+IRealtime::IRealtime() {
 	realtime_list.insert(this);
 }
 
-DORRealtime::~DORRealtime() {
+IRealtime::~IRealtime() {
 	realtime_list.erase(this);
 }
 
-void dor_interface_realtime(int nb_keyframes) {
-	for (auto it = realtime_list.begin(); it != realtime_list.end(); it++) {
-		(*it)->onKeyframe(nb_keyframes);
+void interface_realtime(int nb_keyframes) {
+	for (auto it : realtime_list) {
+		it->onKeyframe(nb_keyframes);
 	}
 }

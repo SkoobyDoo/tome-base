@@ -44,6 +44,7 @@
 #include "main.h"
 #include "te4web.h"
 #include "lua_externs.h"
+#include "particles.h"
 #include "renderer-moderngl/renderer-lua.h"
 #include "runner/core.h"
 #ifdef SELFEXE_WINDOWS
@@ -635,6 +636,8 @@ void on_tick()
 	}
 }
 
+extern void interface_realtime(int nb_keyframes); // From renderer-moderngl/Interfaces.hpp
+
 void call_draw(int nb_keyframes)
 {
 	if (draw_waiting(L)) return;
@@ -642,7 +645,10 @@ void call_draw(int nb_keyframes)
 	if (nb_keyframes > 30) nb_keyframes = 30;
 
 	// Notify the particles threads that there are new keyframes
-	if (!anims_paused) thread_particle_new_keyframes(nb_keyframes);
+	if (!anims_paused) {
+		thread_particle_new_keyframes(nb_keyframes);
+		interface_realtime(nb_keyframes);
+	}
 
 	if (current_game != LUA_NOREF)
 	{
@@ -658,7 +664,6 @@ void call_draw(int nb_keyframes)
 	mouse_draw_drag();
 }
 
-void dor_interface_realtime(int nb_keyframes); // From renderer-moderngl/Interfaces.hpp
 
 long total_keyframes = 0;
 void on_redraw()
@@ -708,7 +713,6 @@ void on_redraw()
 	count_keyframes += nb - last_keyframe;
 	total_keyframes += nb - last_keyframe;
 //	printf("keyframes: %f / %f by %f => %d\n", nb_keyframes, reference_fps, step, nb - (last_keyframe));
-	dor_interface_realtime(nb - last_keyframe);
 	call_draw(nb - last_keyframe);
 
 	//SDL_GL_SwapBuffers();
@@ -966,6 +970,8 @@ void do_move(int w, int h) {
 
 }
 
+extern void interface_resize(int w, int h); // From Interface.cpp
+
 /* @see main.h#do_resize */
 void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 {
@@ -1081,6 +1087,7 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 	SDL_GL_MakeCurrent(window, maincontext);
 	resizeWindow(aw, ah);
 
+	interface_resize(aw, ah);
 }
 
 void boot_lua(int state, bool rebooting, int argc, char *argv[])

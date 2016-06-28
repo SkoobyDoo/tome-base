@@ -46,6 +46,7 @@ using namespace glm;
 using namespace std;
 
 #include "renderer-moderngl/Interfaces.hpp"
+#include "renderer-moderngl/View.hpp"
 #include "renderer-moderngl/DisplayObject.hpp"
 #include "renderer-moderngl/TextObject.hpp"
 #include "renderer-moderngl/RendererState.hpp"

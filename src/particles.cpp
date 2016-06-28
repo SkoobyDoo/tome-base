@@ -18,6 +18,7 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+extern "C" {
 #include "lua.h"
 #include "types.h"
 #include "display.h"
@@ -26,8 +27,6 @@
 #include "core_lua.h"
 #include "auxiliar.h"
 #include "core_lua.h"
-#include <setjmp.h>
-#include "particles.h"
 #include "script.h"
 #include <math.h>
 #include "SFMT.h"
@@ -36,6 +35,9 @@
 #include "useshader.h"
 #include "physfs.h"
 #include "physfsrwops.h"
+}
+#include "renderer-moderngl/Particles.hpp"
+#include "particles.hpp"
 
 #define rng(x, y) (x + rand_div(1 + y - x))
 
@@ -152,9 +154,7 @@ static int particles_new(lua_State *L)
 	ps->alive = TRUE;
 	ps->i_want_to_die = FALSE;
 	ps->l = NULL;
-	ps->texcoords = NULL;
 	ps->vertices = NULL;
-	ps->colors = NULL;
 	ps->particles = NULL;
 	ps->init = FALSE;
 	ps->texture = texture->tex;
@@ -162,6 +162,7 @@ static int particles_new(lua_State *L)
 	ps->fboalter = fboalter;
 	ps->sub = NULL;
 	ps->recompile = FALSE;
+	glGenBuffers(1, &ps->vbo);
 
 	thread_add(ps);
 	return 1;
@@ -233,12 +234,12 @@ static int particles_free(lua_State *L)
 	ps->l = NULL;
 	SDL_DestroyMutex(ps->lock);
 
-	if (ps->texcoords) { free(ps->texcoords); ps->texcoords = NULL; }
 	if (ps->vertices) { free(ps->vertices); ps->vertices = NULL; }
-	if (ps->colors) { free(ps->colors); ps->colors = NULL; }
 	if (ps->particles) { free(ps->particles); ps->particles = NULL; }
 
 	if (l && l->pt) SDL_mutexV(l->pt->lock);
+
+	if (ps->vbo) glDeleteBuffers(1, &ps->vbo);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -268,7 +269,6 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 	int w = 0;
 	bool alive = FALSE;
 	float zoom = 1;
-	int vert_idx = 0, col_idx = 0;
 	float i, j;
 	float a;
 	float lx, ly, lsize;
@@ -279,12 +279,11 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 
 	ps->recompile = FALSE;
 
-	GLfloat *vertices = ps->vertices;
-	GLfloat *colors = ps->colors;
-	GLshort *texcoords = ps->texcoords;
+	particles_vertex *vertices = ps->vertices;
 
 	if (!no_update) ps->rotate += ps->rotate_v;
 
+	ps->batch_nb = 0;
 	for (w = 0; w < ps->nb; w++)
 	{
 		particle_type *p = &ps->particles[w];
@@ -329,6 +328,7 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 
 			if (last)
 			{
+				float r = p->r, g = p->g, b = p->b, a = p->a;
 				if (ps->engine == ENGINE_LINES) {
 					if (p->trail >= 0 && p->trail < ps->nb) {
 						lx = ps->particles[p->trail].x;
@@ -337,10 +337,10 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						a = atan2(p->y - ly, p->x - lx) + M_PI_2;
 //						printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,a*180/M_PI,p->x,p->y,p->size);
 
-						vertices[vert_idx] = lx + cos(a) * lsize / 2; vertices[vert_idx+1] = ly + sin(a) * lsize / 2;
-						vertices[vert_idx+2] = lx - cos(a) * lsize / 2; vertices[vert_idx+3] = ly - sin(a) * lsize / 2;
-						vertices[vert_idx+4] = p->x - cos(a) * p->size / 2; vertices[vert_idx+5] = p->y - sin(a) * p->size / 2;
-						vertices[vert_idx+6] = p->x + cos(a) * p->size / 2; vertices[vert_idx+7] = p->y + sin(a) * p->size / 2;
+						vertices[ps->batch_nb++] = particles_vertex({{lx + cos(a) * lsize / 2, ly + sin(a) * lsize / 2, 0, 1}, {0, 0}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{lx - cos(a) * lsize / 2, ly - sin(a) * lsize / 2, 0, 1}, {1, 0}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x - cos(a) * p->size / 2, p->y - sin(a) * p->size / 2, 0, 1}, {1, 1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x + cos(a) * p->size / 2, p->y + sin(a) * p->size / 2, 0, 1}, {0, 1}, {r, g, b, a}});
 					}
 				} else {
 					if (!p->trail)
@@ -348,65 +348,49 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						i = p->x * zoom - p->size / 2;
 						j = p->y * zoom - p->size / 2;
 
-						vertices[vert_idx] = i; vertices[vert_idx+1] = j;
-						vertices[vert_idx+2] = p->size + i; vertices[vert_idx+3] = j;
-						vertices[vert_idx+4] = p->size + i; vertices[vert_idx+5] = p->size + j;
-						vertices[vert_idx+6] = i; vertices[vert_idx+7] = p->size + j;
+						vertices[ps->batch_nb++] = particles_vertex({{i, j, 0, 1}, {0, 0}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, j, 0, 1}, {1, 0}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, p->size + j, 0, 1}, {1, 1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{i, p->size + j, 0, 1}, {0, 1}, {r, g, b, a}});
 					}
 					else
 					{
 						if ((p->ox <= p->x) && (p->oy <= p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->ox * zoom; vertices[vert_idx+1] = 0 +  p->oy * zoom;
-							vertices[vert_idx+2] = p->size +  p->x * zoom; vertices[vert_idx+3] = 0 +  p->y * zoom;
-							vertices[vert_idx+4] = p->size +  p->x * zoom; vertices[vert_idx+5] = p->size +  p->y * zoom;
-							vertices[vert_idx+6] = 0 +  p->x * zoom; vertices[vert_idx+7] = p->size +  p->y * zoom;
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
 						}
 						else if ((p->ox <= p->x) && (p->oy > p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->x * zoom; vertices[vert_idx+1] = 0 +  p->y * zoom;
-							vertices[vert_idx+2] = p->size +  p->x * zoom; vertices[vert_idx+3] = 0 +  p->y * zoom;
-							vertices[vert_idx+4] = p->size +  p->x * zoom; vertices[vert_idx+5] = p->size +  p->y * zoom;
-							vertices[vert_idx+6] = 0 +  p->ox * zoom; vertices[vert_idx+7] = p->size +  p->oy * zoom;
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
 						}
 						else if ((p->ox > p->x) && (p->oy <= p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->x * zoom; vertices[vert_idx+1] = 0 +  p->y * zoom;
-							vertices[vert_idx+2] = p->size +  p->ox * zoom; vertices[vert_idx+3] = 0 +  p->oy * zoom;
-							vertices[vert_idx+4] = p->size +  p->x * zoom; vertices[vert_idx+5] = p->size +  p->y * zoom;
-							vertices[vert_idx+6] = 0 +  p->x * zoom; vertices[vert_idx+7] = p->size +  p->y * zoom;
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
 						}
 						else if ((p->ox > p->x) && (p->oy > p->y))
 						{
-							vertices[vert_idx+0] = 0 +  p->x * zoom; vertices[vert_idx+1] = 0 +  p->y * zoom;
-							vertices[vert_idx+2] = p->size +  p->x * zoom; vertices[vert_idx+3] = 0 +  p->y * zoom;
-							vertices[vert_idx+4] = p->size +  p->ox * zoom; vertices[vert_idx+5] = p->size +  p->oy * zoom;
-							vertices[vert_idx+6] = 0 +  p->x * zoom; vertices[vert_idx+7] = p->size +  p->y * zoom;
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
 						}
 					}
 				}
-
-				/* Setup texture coords */
-				texcoords[vert_idx] = 0; texcoords[vert_idx+1] = 0;
-				texcoords[vert_idx+2] = 1; texcoords[vert_idx+3] = 0;
-				texcoords[vert_idx+4] = 1; texcoords[vert_idx+5] = 1;
-				texcoords[vert_idx+6] = 0; texcoords[vert_idx+7] = 1;
-
-				/* Setup color */
-				colors[col_idx] = p->r; colors[col_idx+1] = p->g; colors[col_idx+2] = p->b; colors[col_idx+3] = p->a;
-				colors[col_idx+4] = p->r; colors[col_idx+5] = p->g; colors[col_idx+6] = p->b; colors[col_idx+7] = p->a;
-				colors[col_idx+8] = p->r; colors[col_idx+9] = p->g; colors[col_idx+10] = p->b; colors[col_idx+11] = p->a;
-				colors[col_idx+12] = p->r; colors[col_idx+13] = p->g; colors[col_idx+14] = p->b; colors[col_idx+15] = p->a;
-
-				vert_idx += 8;
-				col_idx += 16;
 			}
 		}
 	}
 
 	if (last)
 	{
-		ps->batch_nb = vert_idx / 2;
 		if (!no_update) ps->alive = alive || ps->no_stop;
 
 		SDL_mutexV(ps->lock);
@@ -416,10 +400,7 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 // Runs into main thread
 static void particles_draw(particles_type *ps, float x, float y, float zoom) 
 {
-	if (!ps->alive || !ps->vertices || !ps->colors || !ps->texcoords) return;
-	GLfloat *vertices = ps->vertices;
-	GLfloat *colors = ps->colors;
-	GLshort *texcoords = ps->texcoords;
+	if (!ps->alive || !ps->vertices) return;
 
 	if (x < -10000) x = -10000;
 	if (x > 10000) x = 10000;
@@ -438,29 +419,41 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 		tglActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, main_fbo->textures[0]);
 	}
-	glTexCoordPointer(2, GL_SHORT, 0, texcoords);
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
 
-	glTranslatef(x, y, 0);
-	glPushMatrix();
-	glScalef(ps->zoom * zoom, ps->zoom * zoom, ps->zoom * zoom);
-	glRotatef(ps->rotate, 0, 0, 1);
+	glBindBuffer(GL_ARRAY_BUFFER, ps->vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particles_vertex) * ps->batch_nb, NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(particles_vertex) * ps->batch_nb, ps->vertices);
 
-	if (ps->shader) useShader(ps->shader, 1, 1, main_fbo ? main_fbo->w : 1, main_fbo ? main_fbo->h : 1, 0, 0, 1, 1, 1, 1, 1, 1);
+	vec4 color(1, 1, 1, 1);
+	mat4 model = mat4();
+	model = glm::translate(model, glm::vec3(x, y, 0));
+	model = glm::rotate(model, ps->rotate, glm::vec3(0, 0, 1));
+	model = glm::scale(model, glm::vec3(ps->zoom * zoom, ps->zoom * zoom, ps->zoom * zoom));
+	mat4 mvp = View::getCurrent()->view * model;
 
-	int remaining = ps->batch_nb;
-	while (remaining >= PARTICLES_PER_ARRAY)
-	{
-		glDrawArrays(GL_QUADS, remaining - PARTICLES_PER_ARRAY, PARTICLES_PER_ARRAY);
-		remaining -= PARTICLES_PER_ARRAY;
+	shader_type *shader = ps->shader;
+	if (!shader) { useNoShader(); if (!current_shader) return; }
+	else { useShaderSimple(shader); current_shader = shader; }
+	shader = current_shader;
+
+	if (shader->p_tick != -1) { GLfloat t = cur_frame_tick; glUniform1fv(shader->p_tick, 1, &t); }
+	if (shader->p_color != -1) { glUniform4fv(shader->p_color, 1, glm::value_ptr(color)); }
+	if (shader->p_mvp != -1) { glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp)); }
+	if (shader->p_texsize != -1) {
+		GLfloat c[2];
+		c[0] = main_fbo ? main_fbo->w : 1;
+		c[1] = main_fbo ? main_fbo->h : 1;
+		glUniform2fv(shader->p_texsize, 1, c);
 	}
-	if (remaining) glDrawArrays(GL_QUADS, 0, remaining);
+	glEnableVertexAttribArray(shader->vertex_attrib);
+	glVertexAttribPointer(shader->vertex_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)0);
+	glEnableVertexAttribArray(shader->texcoord_attrib);
+	glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)offsetof(particles_vertex, tex));
+	glEnableVertexAttribArray(shader->color_attrib);
+	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)offsetof(particles_vertex, color));
 
-	if (ps->shader) tglUseProgramObject(0);
-
-	glPopMatrix();
-	glTranslatef(-x, -y, 0);
+	// glDrawArrays(GL_TRIANGLES, 0, ps->batch_nb);
+	glDrawArrays(GL_QUADS, 0, ps->batch_nb);
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
@@ -472,34 +465,29 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 }
 
 // Runs into main thread
-static int particles_to_screen(lua_State *L)
+void particles_to_screen(particles_type *ps, float x, float y, float zoom)
 {
-	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
-	float x = luaL_checknumber(L, 2);
-	float y = luaL_checknumber(L, 3);
-	bool show = lua_toboolean(L, 4);
-	float zoom = lua_isnumber(L, 5) ? lua_tonumber(L, 5) : 1;
-	if (!show || !ps->init) return 0;
-	if (!ps->texture) return 0;
+	if (!ps->init) return;
+	if (!ps->texture) return;
 
 	if (ps->recompile) particles_update(ps, TRUE, TRUE);
 
 	if (ps->fboalter) {
-		particle_draw_last *pdl = malloc(sizeof(particle_draw_last));
+		particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 		pdl->ps = ps;
 		pdl->x = x;
 		pdl->y = y;
 		pdl->zoom = zoom;
 		pdl->next = pdls_head;
 		pdls_head = pdl;
-		return 0;
+		return;
 	}
 	particles_draw(ps, x, y, zoom);
 
 	if (ps->sub) {
 		ps = ps->sub;
 		if (ps->fboalter) {
-			particle_draw_last *pdl = malloc(sizeof(particle_draw_last));
+			particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 			pdl->ps = ps;
 			pdl->x = x;
 			pdl->y = y;
@@ -509,7 +497,41 @@ static int particles_to_screen(lua_State *L)
 		}
 		else particles_draw(ps, x, y, zoom);
 	}
+	return;
+}
+
+// Runs into main thread
+static int lua_particles_to_screen(lua_State *L)
+{
+	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
+	float x = luaL_checknumber(L, 2);
+	float y = luaL_checknumber(L, 3);
+	bool show = lua_toboolean(L, 4);
+	float zoom = lua_isnumber(L, 5) ? lua_tonumber(L, 5) : 1;
+	if (!show) return 0;
+
+	particles_to_screen(ps, x, y, zoom);
 	return 0;
+}
+
+// Runs into main thread
+static int particles_get_do(lua_State *L)
+{
+	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
+	if (!lua_istable(L, 2)) {
+		lua_pushstring(L, "2nd argument is not an engine.Particles");
+		lua_error(L);
+		return 0;
+	}
+
+	DORParticles *pdo = new DORParticles();
+	lua_pushvalue(L, 2);
+	pdo->setParticles(ps, luaL_ref(L, LUA_REGISTRYINDEX));
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	*v = pdo;
+	auxiliar_setclass(L, "gl{particles}", -1);
+	return 1;
 }
 
 // Runs into main thread
@@ -675,11 +697,12 @@ static const struct luaL_Reg particleslib[] =
 static const struct luaL_Reg particles_reg[] =
 {
 	{"__gc", particles_free},
-	{"toScreen", particles_to_screen},
+	{"toScreen", lua_particles_to_screen},
 	{"isAlive", particles_is_alive},
 	{"setSub", particles_set_sub},
 	{"shift", particles_shift},
 	{"die", particles_die},
+	{"getDO", particles_get_do},
 	{NULL, NULL},
 };
 
@@ -793,7 +816,7 @@ void thread_particle_init(particle_thread *pt, plist *l)
 			lua_setfenv(L, -2); // Set it as the function env
 			if (lua_pcall(L, 0, 0, 0))
 			{
-				printf("Particle args init error %x (%s): %s\n", (int)l, ps->args, lua_tostring(L, -1));
+				printf("Particle args init error %lx (%s): %s\n", (long int)l, ps->args, lua_tostring(L, -1));
 				lua_pop(L, 1);
 			}
 		}
@@ -841,7 +864,7 @@ void thread_particle_init(particle_thread *pt, plist *l)
 		// Call the method
 		if (lua_pcall(L, 0, 5, 0))
 		{
-			printf("Particle run error %x (%s): %s\n", (int)l, ps->args, lua_tostring(L, -1));
+			printf("Particle run error %lx (%s): %s\n", (long int)l, ps->args, lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
 
@@ -868,10 +891,8 @@ void thread_particle_init(particle_thread *pt, plist *l)
 
 	int batch = nb;
 	ps->batch_nb = 0;
-	ps->vertices = calloc(2*4*batch, sizeof(GLfloat)); // 2 coords, 4 vertices per particles
-	ps->colors = calloc(4*4*batch, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
-	ps->texcoords = calloc(2*4*batch, sizeof(GLshort));
-	ps->particles = calloc(nb, sizeof(particle_type));
+	ps->vertices = (particles_vertex*)calloc(6*batch, sizeof(particles_vertex)); // 4 vertices per particles, but 6 since we dont use indexing
+	ps->particles = (particle_type*)calloc(nb, sizeof(particle_type));
 
 	// Locate the updator
 	lua_getglobal(L, "__fcts");
@@ -1018,9 +1039,7 @@ void thread_particle_die(particle_thread *pt, plist *l)
 
 	if (ps)
 	{
-		if (ps->texcoords) { free(ps->texcoords); ps->texcoords = NULL; }
 		if (ps->vertices) { free(ps->vertices); ps->vertices = NULL; }
-		if (ps->colors) { free(ps->colors); ps->colors = NULL; }
 		if (ps->particles) { free(ps->particles); ps->particles = NULL; }
 		ps->init = FALSE;
 		ps->alive = FALSE;
@@ -1135,7 +1154,7 @@ void thread_add(particles_type *ps)
 
 	// Insert it in the head of the list
 	SDL_mutexP(pt->lock);
-	plist *l = malloc(sizeof(plist));
+	plist *l = (plist*)malloc(sizeof(plist));
 	l->pt = pt;
 	l->ps = ps;
 	l->next = pt->list;
@@ -1169,7 +1188,7 @@ void free_particles_thread()
 		printf("Destroying particle thread %d\n", i);
 		sem_res = SDL_SemPost(pt->keyframes);
 		if (sem_res) printf("Error while waiting for particle thread to die: %s\n", SDL_GetError());
-		printf("Destroying particle thread %d (waiting for thread %x)\n", i, (int)pt->thread);
+		printf("Destroying particle thread %d (waiting for thread %lx)\n", i, (long int)pt->thread);
 		SDL_WaitThread(pt->thread, &status);
 		printf("Destroyed particle thread %d (%d)\n", i, status);
 	}
@@ -1192,7 +1211,7 @@ void create_particles_thread()
 	MAX_THREADS = nb_cpus - 1;
 	MAX_THREADS = (MAX_THREADS < 1) ? 1 : MAX_THREADS;
 	//MAX_THREADS = 1;
-	threads = calloc(MAX_THREADS, sizeof(particle_thread));
+	threads = (particle_thread*)calloc(MAX_THREADS, sizeof(particle_thread));
 
 	cur_thread = 0;
 	for (i = 0; i < MAX_THREADS; i++)

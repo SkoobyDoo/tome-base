@@ -28,6 +28,7 @@ local DOTileMap = core.game.getCClass("gl{tilemap}")
 local DOTileObject = core.game.getCClass("gl{tileobject}")
 local DOSpriter = core.game.getCClass("gl{spriter}")
 local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOTileObject, DOTileMap, DOSpriter }
+local DOAllContainers = { DORenderer, DOContainer }
 
 -----------------------------------------------------------------------------------
 -- Loaders and initializers
@@ -319,4 +320,23 @@ for _, DO in pairs(DOAll) do
 	DO.translateTween = doTranslateTween
 	DO.rotateTween = doRotateTween
 	DO.scaleTween = doScaleTween
+end
+
+local function doContainerAdd(self, d)
+	local t = type(d)
+	print("===", self, d, t)
+	if t == "userdata" then
+		self:_add(d)
+	elseif t == "table" and d.__CLASSNAME then
+		if d:isClassName("engine.Particles") then
+			self:_add(d:getDO())
+		end
+	else
+		error("Trying to add value of type "..t.." into container "..tostring(self))
+	end
+end
+
+for _, DO in pairs(DOAllContainers) do
+	DO._add = DO.add
+	DO.add = doContainerAdd
 end

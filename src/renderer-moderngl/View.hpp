@@ -19,15 +19,34 @@
 	darkgod@te4.org
 */
 
-#include "renderer-moderngl/Particles.hpp"
+#ifndef VIEW_HPP
+#define VIEW_HPP
 
-void DORParticles::cloneInto(DisplayObject *_into) {
-	DisplayObject::cloneInto(_into);
-	DORParticles *into = dynamic_cast<DORParticles*>(_into);
-	into->ps = ps;
-}
+#include "renderer-moderngl/Renderer.hpp"
 
-void DORParticles::toScreen(mat4 model, vec4 color) {
-	if (!ps) return;
-	particles_to_screen(ps, 0, 0, 1); // DGDGDGDG use model ? uhh
-}
+enum class ViewMode { ORTHO };
+
+class View : public IResizable {
+private:
+	bool in_use = false;
+	bool from_screen_size = false;
+	ViewMode mode = ViewMode::ORTHO;
+
+public:
+	mat4 view;
+
+	View();
+	View(int w, int h);
+	virtual ~View();
+
+	void setOrthoView(int w, int h);
+
+	void use(bool v);
+
+	virtual void onScreenResize(int w, int h);
+
+	static void initFirst();
+	static View* getCurrent();
+};
+
+#endif

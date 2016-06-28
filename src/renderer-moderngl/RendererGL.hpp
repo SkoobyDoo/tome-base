@@ -59,14 +59,11 @@ extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_typ
 /****************************************************************************
  ** Handling actual rendering to the screen & such
  ****************************************************************************/
-class RendererGL : public SubRenderer, public DOResizable {
+class RendererGL : public SubRenderer {
 	friend class DORVertexes;
 protected:
 	GLuint mode = GL_DYNAMIC_DRAW;
 	GLenum kind = GL_TRIANGLES;
-
-	mat4 view;
-	int w, h;
 
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;
@@ -80,10 +77,10 @@ protected:
 	vec4 cutpos1;
 	vec4 cutpos2;
 
-	bool post_processing = false;
-	vector<shader_type*> post_process_shaders;
-	GLuint post_process_fbos[2] = {0, 0};
-	GLuint post_process_textures[2] = {0, 0};
+	// bool post_processing = false;
+	// vector<shader_type*> post_process_shaders;
+	// GLuint post_process_fbos[2] = {0, 0};
+	// GLuint post_process_textures[2] = {0, 0};
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -91,7 +88,6 @@ public:
 	vector<sortable_vertex> zvertices;
 
 	RendererGL();
-	RendererGL(int w, int h);
 	virtual ~RendererGL();
 	virtual DisplayObject* clone();
 	virtual const char* getKind() { return "RendererGL"; };
@@ -111,11 +107,10 @@ public:
 
 	void activateCutting(mat4 cur_model, bool v);
 
-	void enablePostProcessing(bool v);
-	void clearPostProcessShaders();
-	void addPostProcessShader(shader_type *s);
-
-	virtual void onScreenResize(int w, int h);
+	// This should be in DORTarget
+	// void enablePostProcessing(bool v);
+	// void clearPostProcessShaders();
+	// void addPostProcessShader(shader_type *s);
 };
 
 #endif

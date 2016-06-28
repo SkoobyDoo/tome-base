@@ -422,6 +422,8 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 	this->w = w;
 	this->h = h;
 
+	view = new View(w, h);
+
 	glGenFramebuffers(1, &fbo);
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -454,6 +456,8 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 	);
 }
 DORTarget::~DORTarget() {
+	delete view;
+
 	if (subrender_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, subrender_lua_ref);
 
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -500,9 +504,11 @@ void DORTarget::use(bool activate) {
 		tglClearColor(clear_r, clear_g, clear_b, clear_a);
 		glClear(GL_COLOR_BUFFER_BIT);
 		fbo_stack.push(fbo);
+		view->use(true);
 	}
 	else
 	{
+		view->use(false);
 		fbo_stack.pop();
 		tglClearColor(0, 0, 0, 1);
 

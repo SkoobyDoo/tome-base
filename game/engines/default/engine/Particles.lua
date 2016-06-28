@@ -41,6 +41,7 @@ end
 function _M:save()
 	return class.save(self, {
 		ps = true,
+		_do = true,
 		gl_texture = true,
 		_shader = true,
 	})
@@ -112,6 +113,14 @@ function _M:loaded()
 	if sub_particle then
 		self:setSub(sub_particle, 1, sub_particle_args)
 	end
+
+end
+
+--- Gets a DisplayObject representing this particle
+-- Beware, do not keep a reference to the Particles afterwards unless needed; just keep one to the DO which will itself reference the Particles
+function _M:getDO()
+	if not self.ps then return end
+	return self.ps:getDO(self)
 end
 
 function _M:setSub(def, radius, args, shader)

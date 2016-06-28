@@ -98,20 +98,15 @@ DisplayList::~DisplayList() {
  ** RendererGL class
  ***************************************************************************/
 
-RendererGL::RendererGL() : RendererGL(screen->w / screen_zoom, screen->h / screen_zoom) {}
-RendererGL::RendererGL(int w, int h) {
+RendererGL::RendererGL() {
 	glGenBuffers(1, &vbo_elements);
-	this->w = w;
-	this->h = h;
-	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
 }
 RendererGL::~RendererGL() {
-	enablePostProcessing(false);
 	glDeleteBuffers(1, &vbo_elements);
 }
 
 DisplayObject* RendererGL::clone() {
-	RendererGL *into = new RendererGL(w, h);
+	RendererGL *into = new RendererGL();
 	this->cloneInto(into);
 	return into;
 }
@@ -122,23 +117,10 @@ void RendererGL::cloneInto(DisplayObject* _into) {
 	into->mode = mode;
 	into->kind = kind;
 
-	into->view = view;
-
 	into->zsort = zsort;
 	into->cutting = cutting;
 	into->cutpos1 = cutpos1;
 	into->cutpos2 = cutpos2;
-
-	if (post_processing) {
-		into->enablePostProcessing(true);
-		for (auto it = post_process_shaders.begin(); it != post_process_shaders.end(); it++) {
-			into->addPostProcessShader(*it);
-		}
-	}
-}
-
-void RendererGL::onScreenResize(int w, int h) {
-
 }
 
 static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
@@ -254,41 +236,41 @@ void RendererGL::update() {
 	}
 }
 
-void RendererGL::enablePostProcessing(bool v) {
-	post_processing = v;
-	if (v) {
-		glGenFramebuffers(2, post_process_fbos);
-		glGenTextures(2, post_process_textures);
-		for (int i = 0; i < 2; i++) {
-			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
-			tfglBindTexture(GL_TEXTURE_2D, post_process_textures[i]);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, post_process_textures[i], 0);
-		}
-		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
-	} else {
-		for (int i = 0; i < 2; i++) {
-			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-		}
-		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
+// void RendererGL::enablePostProcessing(bool v) {
+// 	post_processing = v;
+// 	if (v) {
+// 		glGenFramebuffers(2, post_process_fbos);
+// 		glGenTextures(2, post_process_textures);
+// 		for (int i = 0; i < 2; i++) {
+// 			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
+// 			tfglBindTexture(GL_TEXTURE_2D, post_process_textures[i]);
+// 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+// 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+// 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+// 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+// 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, post_process_textures[i], 0);
+// 		}
+// 		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
+// 	} else {
+// 		for (int i = 0; i < 2; i++) {
+// 			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
+// 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+// 		}
+// 		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glDeleteTextures(2, post_process_textures);
-		glDeleteFramebuffers(2, post_process_fbos);
-	}
-}
+// 		glDeleteTextures(2, post_process_textures);
+// 		glDeleteFramebuffers(2, post_process_fbos);
+// 	}
+// }
 
-void RendererGL::clearPostProcessShaders() {
-	post_process_shaders.clear();
-}
+// void RendererGL::clearPostProcessShaders() {
+// 	post_process_shaders.clear();
+// }
 
-// DGDGDGDG: test & finish post processing
-void RendererGL::addPostProcessShader(shader_type *s) {
-	post_process_shaders.push_back(s);
-}
+// // DGDGDGDG: test & finish post processing
+// void RendererGL::addPostProcessShader(shader_type *s) {
+// 	post_process_shaders.push_back(s);
+// }
 
 void RendererGL::activateCutting(mat4 cur_model, bool v) {
 	if (v) {
@@ -309,7 +291,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	// printf("Displaying renderer %s\n", getRendererName());
 
 	cur_model = cur_model * model;
-	mat4 mvp = view * cur_model;
+	mat4 mvp = View::getCurrent()->view * cur_model;
 	cur_color = cur_color * color;
 
 	if (cutting) activateCutting(cur_model, true);
@@ -390,12 +372,12 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 			glDrawElements(kind, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
 			// glDrawArrays(kind, 0, (*dl)->list.size());
 
-			glDisableVertexAttribArray(shader->vertex_attrib);
-			glDisableVertexAttribArray(shader->texcoord_attrib);
-			glDisableVertexAttribArray(shader->color_attrib);
-			glDisableVertexAttribArray(shader->mapcoord_attrib);
-			glDisableVertexAttribArray(shader->texcoorddata_attrib);
-			glDisableVertexAttribArray(shader->kind_attrib);
+			// glDisableVertexAttribArray(shader->vertex_attrib);
+			// glDisableVertexAttribArray(shader->texcoord_attrib);
+			// glDisableVertexAttribArray(shader->color_attrib);
+			// glDisableVertexAttribArray(shader->mapcoord_attrib);
+			// glDisableVertexAttribArray(shader->texcoorddata_attrib);
+			// glDisableVertexAttribArray(shader->kind_attrib);
 		}
 	}
 

@@ -21,6 +21,7 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/TileMap.hpp"
+#include "renderer-moderngl/Particles.hpp"
 #include "spriter/Spriter.hpp"
 
 extern "C" {
@@ -155,14 +156,7 @@ static int gl_renderer_new(lua_State *L)
 	DisplayObject **r = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{renderer}", -1);
 
-	int w = screen->w / screen_zoom;
-	int h = screen->h / screen_zoom;
-	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
-	if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
-
-	*r = new RendererGL(w, h);
-	// (*r)->setLuaState(L);
-
+	*r = new RendererGL();
 	return 1;
 }
 
@@ -210,7 +204,6 @@ static int gl_container_new(lua_State *L)
 	DisplayObject **c = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{container}", -1);
 	*c = new DORContainer();
-	// (*c)->setLuaState(L);
 
 	return 1;
 }
@@ -266,7 +259,6 @@ static int gl_target_new(lua_State *L)
 	if (lua_isnumber(L, 3)) nbt = lua_tonumber(L, 3);
 
 	*c = new DORTarget(w, h, nbt);
-	// (*c)->setLuaState(L);
 
 	return 1;
 }
@@ -543,6 +535,17 @@ static int gl_tileobject_free(lua_State *L)
 }
 
 /******************************************************************
+ ** Particles -- no constructor, this is in particles.cpp
+ ******************************************************************/
+static int gl_particles_free(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+/******************************************************************
  ** TileMap -- no constructor, this is in map.cpp
  ******************************************************************/
 static int gl_tilemap_free(lua_State *L)
@@ -795,6 +798,25 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_particles_reg[] =
+{
+	{"__gc", gl_particles_free},
+	{"getKind", gl_generic_getkind},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
+	{"shown", gl_generic_shown},
+	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
+	{"removeFromParent", gl_generic_remove_from_parent},
+	{NULL, NULL},
+};
+
 static const struct luaL_Reg gl_spriter_reg[] =
 {
 	{"__gc", gl_spriter_free},
@@ -837,6 +859,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{callback}", gl_callback_reg);
 	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
 	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
+	auxiliar_newclass(L, "gl{particles}", gl_particles_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 

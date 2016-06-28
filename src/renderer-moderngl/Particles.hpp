@@ -19,91 +19,35 @@
 	darkgod@te4.org
 */
 
-#ifndef PARTICLES_GL_H
-#define PARTICLES_GL_H
+#ifndef PARTICLES_GL_HPP
+#define PARTICLES_GL_HPP
 
 #include "renderer-moderngl/Renderer.hpp"
+#include "particles.hpp"
 
-#define PARTICLE_ETERNAL 999999
-
-enum engine_kinds {
-	ENGINE_POINTS = 0,
-	ENGINE_LINES = 1,
-};
-
-enum blend_modes {
-	BLEND_NORMAL = 0,
-	BLEND_SHINY = 1,
-	BLEND_ADDITIVE = 2,
-	BLEND_MIXED = 3,
-};
-
-typedef struct {
-	float size, sizev, sizea;
-	float ox, oy;
-	float x, y, xv, yv, xa, ya;
-	float dir, dirv, dira, vel, velv, vela;
-	float r, g, b, a, rv, gv, bv, av, ra, ga, ba, aa;
-	int life;
-	int trail;
-} particle_type;
-
-class Particles;
-
-class Particles : public DORVertexes {
+// This one is a little strange, it is not the master of particles_type it's a slave, as such it will never try to free it or anything, it is created by it
+// This is, in essence, a DO warper around particle code
+class DORParticles : public SubRenderer{
 private:
-	SDL_mutex *lock;
+	particles_type *ps = NULL;
+	int ps_lua_ref = LUA_NOREF;
 
-	// W by main, R by thread
-	const char *name_def;
-	const char *args;
-	float zoom;
+	virtual void cloneInto(DisplayObject *into);
 
-	// R/W only by thread
-	vector<particle_type> particles;
-	int nb;
-	int density;
-	bool no_stop;
-
-	// W only by thread, R only by main
-	bool alive;
-	bool i_want_to_die;
-	bool init;
-	bool recompile;
-
-	// R/W only by thread
-	int base;
-
-	int angle_min, anglev_min, anglea_min;
-	int angle_max, anglev_max, anglea_max;
-
-	int size_min, sizev_min, sizea_min;
-	int x_min, y_min, xv_min, yv_min, xa_min, ya_min;
-	int r_min, g_min, b_min, a_min, rv_min, gv_min, bv_min, av_min, ra_min, ga_min, ba_min, aa_min;
-
-	int size_max, sizev_max, sizea_max;
-	int x_max, y_max, xv_max, yv_max, xa_max, ya_max;
-	int r_max, g_max, b_max, a_max, rv_max, gv_max, bv_max, av_max, ra_max, ga_max, ba_max, aa_max;
-
-	int life_min, life_max;
-
-	engine_kinds engine;
-	blend_modes blend_mode;
-
-	float rotate, rotate_v;
-
-	bool fboalter;
-
-	Particles *sub;
 public:
-	Particles(const char *name_def, const char *args, int density, bool fboalter);
-	virtual ~Particles();
-	virtual DisplayObject* clone();
-	virtual const char* getKind() { return "Particles"; };
+	DORParticles() { setRendererName("particles"); };
+	virtual ~DORParticles() {
+	};
+	DO_STANDARD_CLONE_METHOD(DORParticles);
+	virtual const char* getKind() { return "DORParticles"; };
 
-	bool isAlive() { return alive; };
-	void die() { i_want_to_die = true; };
-	void tick(bool last, bool no_update);
+	void setParticles(particles_type *ps, int ref) {
+		if (ps_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, ps_lua_ref);
+		ps_lua_ref = ref;
+		this->ps = ps;
+	};
+
+	virtual void toScreen(mat4 cur_model, vec4 color);
 };
 
 #endif
