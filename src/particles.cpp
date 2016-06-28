@@ -398,14 +398,9 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 }
 
 // Runs into main thread
-static void particles_draw(particles_type *ps, float x, float y, float zoom) 
+static void particles_draw(particles_type *ps, mat4 model) 
 {
 	if (!ps->alive || !ps->vertices) return;
-
-	if (x < -10000) x = -10000;
-	if (x > 10000) x = 10000;
-	if (y < -10000) y = -10000;
-	if (y > 10000) y = 10000;
 
 	SDL_mutexP(ps->lock);
 
@@ -425,11 +420,10 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(particles_vertex) * ps->batch_nb, ps->vertices);
 
 	vec4 color(1, 1, 1, 1);
-	mat4 model = mat4();
-	model = glm::translate(model, glm::vec3(x, y, 0));
-	model = glm::rotate(model, ps->rotate, glm::vec3(0, 0, 1));
-	model = glm::scale(model, glm::vec3(ps->zoom * zoom, ps->zoom * zoom, ps->zoom * zoom));
-	mat4 mvp = View::getCurrent()->view * model;
+	mat4 rot = mat4();
+	rot = glm::rotate(rot, ps->rotate, glm::vec3(0, 0, 1));
+	rot = glm::scale(rot, glm::vec3(ps->zoom, ps->zoom, ps->zoom));
+	mat4 mvp = View::getCurrent()->view * rot * model;
 
 	shader_type *shader = ps->shader;
 	if (!shader) { useNoShader(); if (!current_shader) return; }
@@ -465,7 +459,7 @@ static void particles_draw(particles_type *ps, float x, float y, float zoom)
 }
 
 // Runs into main thread
-void particles_to_screen(particles_type *ps, float x, float y, float zoom)
+void particles_to_screen(particles_type *ps, mat4 model)
 {
 	if (!ps->init) return;
 	if (!ps->texture) return;
@@ -475,27 +469,23 @@ void particles_to_screen(particles_type *ps, float x, float y, float zoom)
 	if (ps->fboalter) {
 		particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 		pdl->ps = ps;
-		pdl->x = x;
-		pdl->y = y;
-		pdl->zoom = zoom;
+		pdl->model = model;
 		pdl->next = pdls_head;
 		pdls_head = pdl;
 		return;
 	}
-	particles_draw(ps, x, y, zoom);
+	particles_draw(ps, model);
 
 	if (ps->sub) {
 		ps = ps->sub;
 		if (ps->fboalter) {
 			particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 			pdl->ps = ps;
-			pdl->x = x;
-			pdl->y = y;
-			pdl->zoom = zoom;
+			pdl->model = model;
 			pdl->next = pdls_head;
 			pdls_head = pdl;
 		}
-		else particles_draw(ps, x, y, zoom);
+		else particles_draw(ps, model);
 	}
 	return;
 }
@@ -510,7 +500,11 @@ static int lua_particles_to_screen(lua_State *L)
 	float zoom = lua_isnumber(L, 5) ? lua_tonumber(L, 5) : 1;
 	if (!show) return 0;
 
-	particles_to_screen(ps, x, y, zoom);
+	mat4 model = mat4();
+	model = glm::translate(model, glm::vec3(x, y, 0));
+	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
+
+	particles_to_screen(ps, model);
 	return 0;
 }
 
@@ -540,7 +534,7 @@ static int particles_draw_last(lua_State *L)
 	if (!pdls_head) return 0;
 	while (pdls_head) {
 		particle_draw_last *pdl = pdls_head;
-		particles_draw(pdl->ps, pdl->x, pdl->y, pdl->zoom);
+		particles_draw(pdl->ps, pdl->model);
 		pdls_head = pdls_head->next;
 		free(pdl);
 	}

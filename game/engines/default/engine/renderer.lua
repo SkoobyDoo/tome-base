@@ -324,7 +324,6 @@ end
 
 local function doContainerAdd(self, d)
 	local t = type(d)
-	print("===", self, d, t)
 	if t == "userdata" then
 		self:_add(d)
 	elseif t == "table" and d.__CLASSNAME then

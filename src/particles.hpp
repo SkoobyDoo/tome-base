@@ -105,9 +105,7 @@ typedef struct s_particles_type particles_type;
 //To draw last linked list
 struct s_particle_draw_last {
 	particles_type *ps;
-	float x;
-	float y;
-	float zoom;
+	mat4 model;
 	struct s_particle_draw_last *next;
 };
 typedef struct s_particle_draw_last particle_draw_last;
@@ -136,6 +134,6 @@ struct s_particle_thread {
 };
 typedef struct s_particle_thread particle_thread;
 
-extern void particles_to_screen(particles_type *ps, float x, float y, float zoom);
+extern void particles_to_screen(particles_type *ps, mat4 model);
 
 #endif

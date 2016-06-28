@@ -36,8 +36,7 @@ private:
 
 public:
 	DORParticles() { setRendererName("particles"); };
-	virtual ~DORParticles() {
-	};
+	virtual ~DORParticles() { };
 	DO_STANDARD_CLONE_METHOD(DORParticles);
 	virtual const char* getKind() { return "DORParticles"; };
 

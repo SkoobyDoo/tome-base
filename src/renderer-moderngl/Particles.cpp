@@ -29,5 +29,12 @@ void DORParticles::cloneInto(DisplayObject *_into) {
 
 void DORParticles::toScreen(mat4 model, vec4 color) {
 	if (!ps) return;
-	particles_to_screen(ps, 0, 0, 1); // DGDGDGDG use model ? uhh
+
+	// If we are dead, our parent has no more uses for us
+	if (!ps->alive) {
+		removeFromParent();
+		return;
+	}
+
+	particles_to_screen(ps, model);
 }

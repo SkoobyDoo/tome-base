@@ -550,7 +550,7 @@ static int gl_particles_free(lua_State *L)
  ******************************************************************/
 static int gl_tilemap_free(lua_State *L)
 {
-	DORTileObject *v = userdata_to_DO<DORTileObject>(L, 1, "gl{tileobject}");
+	DORTileObject *v = userdata_to_DO<DORTileObject>(L, 1, "gl{tilemap}");
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -558,7 +558,7 @@ static int gl_tilemap_free(lua_State *L)
 
 static int gl_tilemap_setmap(lua_State *L)
 {
-	DORTileMap *v = userdata_to_DO<DORTileMap>(L, 1, "gl{tileobject}");
+	DORTileMap *v = userdata_to_DO<DORTileMap>(L, 1, "gl{tilemap}");
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 2);
 
 	v->setMap(map);	
