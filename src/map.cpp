@@ -1338,7 +1338,8 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 	}
 
-	// DGDGDGDG
+	// DGDGDGDG: this needs to be done smartly, no actual CB here, but creation of a callback put into the DisplayList
+	/*
 	if (L && dm->cb_ref != LUA_NOREF)
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, dm->cb_ref);
@@ -1358,6 +1359,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		}
 		lua_pop(L, 1);
 	}
+	*/
 }
 
 // static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
