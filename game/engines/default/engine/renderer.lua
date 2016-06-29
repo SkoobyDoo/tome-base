@@ -313,6 +313,23 @@ local function doScaleTween(self, tn, time, component, from, to, mode, on_end)
 	return tw
 end
 
+local function doShader(self, shader)
+	local t = type(shader)
+	if t == "userdata" or t == "nil" then
+		self:_shader(shader)
+	elseif t == "table" and shader.__CLASSNAME then
+		if shader:isClassName("engine.Shader") then
+			if shader.shad then
+				self:_shader(shader.shad)
+			else
+				error("Setting shader without .shad")
+			end
+		end
+	else
+		error("Trying to set shader of type "..t.." on DO "..tostring(self))
+	end
+end
+
 for _, DO in pairs(DOAll) do
 	DO.cancelTween = doCancelTween
 	DO.cancelAllTweens = doCancelAllTweens
@@ -320,6 +337,7 @@ for _, DO in pairs(DOAll) do
 	DO.translateTween = doTranslateTween
 	DO.rotateTween = doRotateTween
 	DO.scaleTween = doScaleTween
+	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
 end
 
 local function doContainerAdd(self, d)
@@ -336,6 +354,5 @@ local function doContainerAdd(self, d)
 end
 
 for _, DO in pairs(DOAllContainers) do
-	DO._add = DO.add
-	DO.add = doContainerAdd
+	DO._add, DO.add = DO.add, doContainerAdd
 end

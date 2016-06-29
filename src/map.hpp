@@ -22,6 +22,7 @@
 #define _MAP_HPP_
 
 #include <renderer-moderngl/Renderer.hpp>
+#include <renderer-moderngl/VBO.hpp>
 #include <unordered_map>
 
 enum display_last_kind {DL_NONE, DL_TRUE_LAST, DL_TRUE};
@@ -131,6 +132,8 @@ typedef struct {
 	bool *z_changed;
 	RendererGL **z_renderers;
 	unordered_map<string, float> *shader_to_shaderkind;
+	VBO *seens_vbo;
+	VBO *mm_vbo;
 } map_type;
 
 extern void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show, mat4 model, vec4 color);

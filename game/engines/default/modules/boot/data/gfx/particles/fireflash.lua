@@ -80,7 +80,7 @@ return { generator = function()
 	}
 end, },
 function(self)
-	if true or nb < 5 then
+	if nb < 5 then
 		self.ps:emit(radius*266)
 		nb = nb + 1
 		self.ps:emit(radius*266)

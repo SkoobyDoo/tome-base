@@ -172,6 +172,7 @@ void RendererGL::resetDisplayLists() {
 	displays.clear();
 }
 
+// DGDGDGDG: make that (optionally?) process in a second thread; making it nearly costless
 void RendererGL::update() {
 	// printf("Renderer %s needs updating\n", getRendererName());
 

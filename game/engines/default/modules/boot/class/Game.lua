@@ -390,12 +390,17 @@ function _M:createFBOs()
 	-- self.full_fbo = core.display.newFBO(self.w, self.h)
 	-- if self.full_fbo then self.full_fbo_shader = Shader.new("full_fbo") if not self.full_fbo_shader.shad then self.full_fbo = nil self.full_fbo_shader = nil end end
 
+	self.fbo_shader = Shader.new("main_fbo")
+	self.fbo_shader:setUniform("colorize", {1,1,1,0.9})
 	self.fbo = core.renderer.target()
+	self.fbo:shader(self.fbo_shader)
 	self.fbo:displaySize(game.w, game.h)
 	self.fborenderer = core.renderer.renderer()
 	self.fborenderer:add(self.fbo)
 
+	self.full_fbo_shader = Shader.new("full_fbo")
 	self.full_fbo = core.renderer.target()
+	self.full_fbo:shader(self.full_fbo_shader)
 	self.full_fbo:displaySize(game.w, game.h)
 	self.full_fborenderer = core.renderer.renderer()
 	self.full_fborenderer:add(self.full_fbo)
@@ -495,7 +500,7 @@ function _M:display(nb_keyframes)
 -- core.display.countDraws()
 		self.level.map:display(nil, nil, nb_keyframes, true)
 -- print("[draw calls] map", core.display.countDraws())
-		-- self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
+		self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
 	end
 
 	-- Draw it here, inside the FBO
@@ -518,7 +523,7 @@ function _M:display(nb_keyframes)
 	local old = self.flyers
 	self.flyers = nil
 -- core.display.countDraws()
-	engine.GameEnergyBased.display(self, nb_keyframes)
+	-- engine.GameEnergyBased.display(self, nb_keyframes)
 -- print("[draw calls] UI", core.display.countDraws())
 	self.flyers = old
 

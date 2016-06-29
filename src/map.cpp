@@ -652,6 +652,9 @@ static int map_new(lua_State *L)
 
 	map->shader_to_shaderkind = new unordered_map<string, float>;
 
+	map->seens_vbo = NULL;
+	map->mm_vbo = NULL;
+
 	return 1;
 }
 
@@ -706,6 +709,9 @@ static int map_free(lua_State *L)
 
 	if (map->minimap) free(map->minimap);
 	if (map->mm_texture) glDeleteTextures(1, &map->mm_texture);
+
+	if (map->seens_vbo) delete map->seens_vbo;
+	if (map->mm_vbo) delete map->seens_vbo;
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -1173,6 +1179,23 @@ static void map_update_seen_texture(map_type *map)
 		//ptr += (map->seens_map_w - map->w) * 4;
 	}
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, GL_BGRA, GL_UNSIGNED_BYTE, seens);
+
+	if (!map->seens_vbo) {
+		map->seens_vbo = new VBO(VBOMode::STATIC);
+		
+		map->seens_vbo->setTexture(map->seens_texture);
+
+		int w = (map->seens_map_w) * map->tile_w;
+		int h = (map->seens_map_h) * map->tile_h;
+		int f = 1 + (map->is_hex & 1);
+		map->seens_vbo->addQuad(
+			0, 0, 0, 0,
+			w, 0, f, 0,
+			w, h, f, f,
+			0, h, 0, f,
+			1, 1, 1, 1
+		);
+	}
 }
 
 static int map_update_seen_texture_lua(lua_State *L)
@@ -1188,46 +1211,14 @@ static int map_draw_seen_texture(lua_State *L)
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
 	int nb_keyframes = 0;
-	x += -map->tile_w * 5;
-	y += -map->tile_h * 5;
-	int w = (map->seens_map_w) * map->tile_w;
-	int h = (map->seens_map_h) * map->tile_h;
-
 	int mx = map->mx;
 	int my = map->my;
-//	x -= map->tile_w * (map->used_animdx + map->used_mx);
-//	y -= map->tile_h * (map->used_animdy + map->used_my);
+	x += -map->tile_w * 5;
+	y += -map->tile_h * 5;
 	x -= map->tile_w * (map->used_animdx + map->oldmx);
 	y -= map->tile_h * (map->used_animdy + map->oldmy);
 
-
-	tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
-
-	int f = 1 + (map->is_hex & 1);
-	GLfloat texcoords[2*4] = {
-		0, 0,
-		0, (GLfloat)f,
-		(GLfloat)f, (GLfloat)f,
-		(GLfloat)f, 0,
-	};
-	GLfloat colors[4*4] = {
-		1,1,1,1,
-		1,1,1,1,
-		1,1,1,1,
-		1,1,1,1,
-	};
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-
-	GLfloat vertices[2*4] = {
-		(GLfloat)x, (GLfloat)y,
-		(GLfloat)x, (GLfloat)y + (GLfloat)h,
-		(GLfloat)x + (GLfloat)w, (GLfloat)y + (GLfloat)h,
-		(GLfloat)x + (GLfloat)w, (GLfloat)y,
-	};
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-
-	glDrawArrays(GL_QUADS, 0, 4);
+	map->seens_vbo->toScreen(x, y, 0, 1, 1);
 	return 0;
 }
 
@@ -1290,27 +1281,6 @@ static int map_get_scroll(lua_State *L)
 	return 2;
 }
 
-// #define useDefaultShader(map) { \
-// 	if (map->default_shader) tglUseProgramObject(map->default_shader->shader) \
-// 	else tglUseProgramObject(0) \
-// }
-
-// #define useNoShader() { \
-// 	tglUseProgramObject(0); \
-// }
-
-// #define unbatchQuads(vert, col) { \
-// 	if ((vert)) glDrawArrays(GL_TRIANGLES, 0, (vert) / 2); \
-// 	(vert) = 0; \
-// 	(col) = 0; \
-// }
-
-// #define setMapGLArrays(vertices, texcoords, colors) { \
-// 	glTexCoordPointer(2, GL_FLOAT, 0, texcoords); \
-// 	glVertexPointer(2, GL_FLOAT, 0, vertices); \
-// 	glColorPointer(4, GL_FLOAT, 0, colors);	 \
-// }
-
 static inline void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_type *map, int z,
 		float anim, float dx, float dy, float tldx, float tldy, float
 		dw, float dh, float r, float g, float b, float a, int i, int j)
@@ -1369,31 +1339,25 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 	}
 
 	// DGDGDGDG
-	// if (L && dm->cb_ref != LUA_NOREF)
-	// {
-	// 	useNoShader();
-	// 	lua_rawgeti(L, LUA_REGISTRYINDEX, dm->cb_ref);
-	// 	lua_checkstack(L, 8);
-	// 	lua_pushnumber(L, dx);
-	// 	lua_pushnumber(L, dy);
-	// 	lua_pushnumber(L, map->tile_w * (dw) * (dm->scale));
-	// 	lua_pushnumber(L, map->tile_h * (dh) * (dm->scale));
-	// 	lua_pushnumber(L, (dm->scale));
-	// 	lua_pushboolean(L, true);
-	// 	lua_pushnumber(L, tldx);
-	// 	lua_pushnumber(L, tldy);
-	// 	if (lua_pcall(L, 8, 1, 0))
-	// 	{
-	// 		printf("Display callback error: UID %ld: %s\n", dm->uid, lua_tostring(L, -1));
-	// 		lua_pop(L, 1);
-	// 	}
-	// 	if (lua_isboolean(L, -1)) {
-	// 		setMapGLArrays(vertices, texcoords, colors);
-	// 	}
-	// 	lua_pop(L, 1);
-	// 	if (m->shader) useShader(m->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-	// 	else useDefaultShader(map);
-	// }
+	if (L && dm->cb_ref != LUA_NOREF)
+	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, dm->cb_ref);
+		lua_checkstack(L, 8);
+		lua_pushnumber(L, dx);
+		lua_pushnumber(L, dy);
+		lua_pushnumber(L, map->tile_w * (dw) * (dm->scale));
+		lua_pushnumber(L, map->tile_h * (dh) * (dm->scale));
+		lua_pushnumber(L, (dm->scale));
+		lua_pushboolean(L, true);
+		lua_pushnumber(L, tldx);
+		lua_pushnumber(L, tldy);
+		if (lua_pcall(L, 8, 1, 0))
+		{
+			printf("Display callback error: UID %ld: %s\n", dm->uid, lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+	}
 }
 
 // static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
@@ -1702,31 +1666,21 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 			// printf(">===HANDLING layer %d\n", z);
 		}
 
-		// DGDGDGDG
-		// if (L && map->z_callbacks[z] != LUA_NOREF) {
-		// 	/* Draw remaining ones */
-		// 	unbatchQuads(vert_idx, col_idx);
-		// 		// printf(" -- unbatch5\n");
-
-		// 	lua_rawgeti(L, LUA_REGISTRYINDEX, map->z_callbacks[z]);
-		// 	lua_checkstack(L, 4);
-		// 	lua_pushnumber(L, z);
-		// 	lua_pushnumber(L, nb_keyframes);
-		// 	lua_pushvalue(L, 7);
-		// 	if (lua_pcall(L, 3, 1, 0))
-		// 	{
-		// 		printf("Map z-callback error: Z %d: %s\n", z, lua_tostring(L, -1));
-		// 		lua_pop(L, 1);
-		// 	}
-		// 	if (lua_isboolean(L, -1)) {
-		// 		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-		// 		glVertexPointer(2, GL_FLOAT, 0, vertices);
-		// 		glColorPointer(4, GL_FLOAT, 0, colors);
-		// 	}
-		// 	lua_pop(L, 1);
-		// }
-
 		render->toScreen(model, color);
+
+		if (L && map->z_callbacks[z] != LUA_NOREF) {
+			lua_rawgeti(L, LUA_REGISTRYINDEX, map->z_callbacks[z]);
+			lua_checkstack(L, 4);
+			lua_pushnumber(L, z);
+			lua_pushnumber(L, nb_keyframes);
+			lua_pushvalue(L, 7);
+			if (lua_pcall(L, 3, 1, 0))
+			{
+				printf("Map z-callback error: Z %d: %s\n", z, lua_tostring(L, -1));
+				lua_pop(L, 1);
+			}
+			lua_pop(L, 1);
+		}
 	}
 
 	// "Decay" displayed status for all mos
@@ -1820,6 +1774,8 @@ static int minimap_to_screen(lua_State *L)
 	int col_idx = 0;
 	GLfloat r, g, b, a;
 
+	if (!map->mm_vbo) map->mm_vbo = new VBO(VBOMode::STATIC);
+
 	int f = (map->is_hex & 1);
 	// Create/recreate the minimap data if needed
 	if (map->mm_w != mdw || map->mm_h != mdh)
@@ -1846,9 +1802,16 @@ static int minimap_to_screen(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 		map->minimap = (GLubyte*)calloc(realw*realh*4, sizeof(GLubyte));
-	}
 
-	tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
+		map->mm_vbo->setTexture(map->mm_texture);
+		map->mm_vbo->addQuad(
+			0, 0, 0, 0,
+			0, mdh * map->minimap_gridsize, 0, (float)((1+f)*mdh)/(float)map->mm_rh,
+			mdw * map->minimap_gridsize, mdh * map->minimap_gridsize, (float)mdw/(float)map->mm_rw, (float)((1+f)*mdh)/(float)map->mm_rh,
+			mdw * map->minimap_gridsize, 0, (float)mdw/(float)map->mm_rw, 0,
+			1, 1, 1, 1
+		);
+	}
 
 	int ptr;
 	GLubyte *mm = map->minimap;
@@ -1900,33 +1863,10 @@ static int minimap_to_screen(lua_State *L)
 			}
 		}
 	}
+	tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_BGRA, GL_UNSIGNED_BYTE, mm);
 
-	// Display it
-	GLfloat texcoords[2*4] = {
-		0, 0,
-		0, (float)((1+f)*mdh)/(float)map->mm_rh,
-		(float)mdw/(float)map->mm_rw, (float)((1+f)*mdh)/(float)map->mm_rh,
-		(float)mdw/(float)map->mm_rw, 0,
-	};
-	GLfloat colors[4*4] = {
-		1,1,1,1,
-		1,1,1,1,
-		1,1,1,1,
-		1,1,1,1,
-	};
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-
-	GLfloat vertices[2*4] = {
-		(GLfloat)x, (GLfloat)y,
-		(GLfloat)x, (GLfloat)y + mdh * map->minimap_gridsize,
-		(GLfloat)x + mdw * map->minimap_gridsize, (GLfloat)y + mdh * map->minimap_gridsize,
-		(GLfloat)x + mdw * map->minimap_gridsize, (GLfloat)y,
-	};
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glDrawArrays(GL_QUADS, 0, 4);
-//	printf("display mm %dx%d :: %dx%d\n",x,y,mdw,mdh);
+	map->mm_vbo->toScreen(x, y, 0, 1, 1);
 	return 0;
 }
 
