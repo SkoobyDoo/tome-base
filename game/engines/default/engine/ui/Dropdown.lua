@@ -82,21 +82,21 @@ function _M:showSelect()
 end
 
 function _M:display(x, y, nb_keyframes)
-	if self.focused then
-		self:drawFrame(self.frame_sel, x, y)
-	else
-		self:drawFrame(self.frame, x, y)
-		if self.focus_decay then
-			self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.focus_decay / self.focus_decay_max_d)
-			self.focus_decay = self.focus_decay - nb_keyframes
-			if self.focus_decay <= 0 then self.focus_decay = nil end
-		end
-	end
+	-- if self.focused then
+	-- 	self:drawFrame(self.frame_sel, x, y)
+	-- else
+	-- 	self:drawFrame(self.frame, x, y)
+	-- 	if self.focus_decay then
+	-- 		self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.focus_decay / self.focus_decay_max_d)
+	-- 		self.focus_decay = self.focus_decay - nb_keyframes
+	-- 		if self.focus_decay <= 0 then self.focus_decay = nil end
+	-- 	end
+	-- end
 
-	local item = self.c_list.list[self.c_list.sel]
-	if item then
-		local cy = (self.c_list.fh - self.c_list.font_h) / 2
-		if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, 1, 1, 1, 1)
-	end
+	-- local item = self.c_list.list[self.c_list.sel]
+	-- if item then
+	-- 	local cy = (self.c_list.fh - self.c_list.font_h) / 2
+	-- 	if self.text_shadow then self:textureToScreen(item._tex, x + 1 + self.frame_sel.b4.w, y + 1 + cy, 0, 0, 0, self.text_shadow) end
+	-- 	self:textureToScreen(item._tex, x + self.frame_sel.b4.w, y + cy, 1, 1, 1, 1)
+	-- end
 end

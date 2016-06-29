@@ -65,6 +65,16 @@ function table.concatNice(t, sep, endsep)
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
 end
 
+function ripairs(t)
+	local i = #t
+	return function()
+		if i == 0 then return nil end
+		local oi = i
+		i = i - 1
+		return oi, t[oi]
+	end
+end
+
 function table.count(t)
 	local i = 0
 	for k, v in pairs(t) do

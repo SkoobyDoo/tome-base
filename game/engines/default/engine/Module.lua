@@ -707,7 +707,7 @@ end
 --- Make a module loadscreen
 function _M:loadScreen(mod)
 	core.display.forceRedraw()
-	core.wait.enable(10000, function()
+	core.wait.enable(10000, function() -- DGDGDGDG omfg rewrite that with DOs ..
 		local has_max = mod.loading_wait_ticks
 		if has_max then core.wait.addMaxTicks(has_max) end
 		local i, max, dir = has_max or 20, has_max or 20, -1

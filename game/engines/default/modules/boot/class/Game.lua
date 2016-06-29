@@ -476,19 +476,21 @@ end
 function _M:display(nb_keyframes)
 	-- If switching resolution, blank everything but the dialog
 	if self.change_res_dialog then engine.GameEnergyBased.display(self, nb_keyframes) return end
-	if self.full_fbo then self.full_fbo:use(true) end
+	
 
 	-- If background anim is stopped, things are greatly simplified
 	if self.stopped then
+		self.full_fbo:use(true)
 		self.renderer:toScreen()
 		self.logdisplay:toScreen()
 		engine.GameEnergyBased.display(self, nb_keyframes)
-		if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
+		self.full_fbo:use(false)
+		self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1)
 		return
 	end
 
 	-- Display using Framebuffer, so that we can use shaders and all
-	if self.fbo then self.fbo:use(true) end
+	self.fbo:use(true)
 
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
@@ -507,27 +509,22 @@ function _M:display(nb_keyframes)
 	if self.flyers then self.flyers:display(nb_keyframes) end
 
 	-- Display using Framebuffer, so that we can use shaders and all
-	if self.fbo then
-		self.fbo:use(false, self.full_fbo)
-		_2DNoise:bind(1, false)
-		self.fborenderer:toScreen(
-			-- ,
-			-- self.fbo_shader.shad
-		)
-	else
---		core.display.drawQuad(0, 0, game.w, game.h, 128, 128, 128, 128)
-	end
+	self.fbo:use(false)
+
+	self.full_fbo:use(true)
+	self.fborenderer:toScreen()
 
 	self.logdisplay:toScreen()
 
 	local old = self.flyers
 	self.flyers = nil
 -- core.display.countDraws()
-	-- engine.GameEnergyBased.display(self, nb_keyframes)
+	engine.GameEnergyBased.display(self, nb_keyframes)
 -- print("[draw calls] UI", core.display.countDraws())
 	self.flyers = old
 
-	if self.full_fbo then self.full_fbo:use(false) self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1) end
+	self.full_fbo:use(false)
+	self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1)
 end
 
 --[[

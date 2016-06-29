@@ -291,7 +291,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (displays.empty()) return;
 	// printf("Displaying renderer %s\n", getRendererName());
 
-	// cur_model = cur_model * model; // This is .. undeeded ..??
+	cur_model = cur_model * model; // This is .. undeeded ..??
 	mat4 mvp = View::getCurrent()->view * cur_model;
 	cur_color = cur_color * color;
 

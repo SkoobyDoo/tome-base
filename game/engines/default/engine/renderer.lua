@@ -214,7 +214,7 @@ local function doColorTween(self, tn, time, component, from, to, mode, on_end)
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
-	on_end = function() if base_on_end then base_on_end() end doCancelTween(weak.__getstrong, tn) end
+	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
 	local tw
 	mode = mode or "linear"
 	local fr, fg, fb, fa = self:getColor()
@@ -242,7 +242,7 @@ local function doRotateTween(self, tn, time, component, from, to, mode, on_end)
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
-	on_end = function() if base_on_end then base_on_end() end doCancelTween(weak.__getstrong, tn) end
+	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
 	local tw
 	mode = mode or "linear"
 	local x, y, z = self:getRotate()
@@ -267,7 +267,7 @@ local function doTranslateTween(self, tn, time, component, from, to, mode, on_en
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
-	on_end = function() if base_on_end then base_on_end() end print("????", base_on_end) doCancelTween(weak.__getstrong, tn) end
+	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
 	local tw
 	mode = mode or "linear"
 	local x, y, z = self:getTranslate()
@@ -292,7 +292,7 @@ local function doScaleTween(self, tn, time, component, from, to, mode, on_end)
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
-	on_end = function() if base_on_end then base_on_end() end doCancelTween(weak.__getstrong, tn) end
+	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
 	local tw
 	mode = mode or "linear"
 	local x, y, z = self:getScale()
@@ -310,6 +310,17 @@ local function doScaleTween(self, tn, time, component, from, to, mode, on_end)
 		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
 		tweenstore[self][tn] = tw
 	end
+	return tw
+end
+
+local function doWaitTween(self, tn, time, on_end)
+	local weak = class.weakSelf(self)
+	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
+	local base_on_end = on_end
+	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
+	local tw = tween(time, function() end, {0, 0}, "linear", on_end)
+	if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
+	tweenstore[self][tn] = tw
 	return tw
 end
 
@@ -337,6 +348,7 @@ for _, DO in pairs(DOAll) do
 	DO.translateTween = doTranslateTween
 	DO.rotateTween = doRotateTween
 	DO.scaleTween = doScaleTween
+	DO.waitTween = doWaitTween
 	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
 end
 

@@ -28,14 +28,9 @@ local Slider = require "engine.ui.Slider"
 module(..., package.seeall, class.inherit(engine.ui.Base))
 
 --- Creates the log zone
-function _M:init(x, y, w, h, max, fontname, fontsize, color, bgcolor)
-	self.color = color or {255,255,255}
-	if type(bgcolor) ~= "string" then
-		self.bgcolor = bgcolor or {0,0,0}
-	else
-		self.bgcolor = {0,0,0}
-		self.bg_image = bgcolor
-	end
+function _M:init(x, y, w, h, max, fontname, fontsize, color)
+	color = color or {255,255,255}
+	self.color = {color[1] / 255, color[2] / 255, color[3] / 255, 1}
 	self.font = core.display.newFont(fontname or "/data/font/DroidSans.ttf", fontsize or 12)
 	self.font_h = self.font:lineSkip()
 	self.log = {}
@@ -43,10 +38,13 @@ function _M:init(x, y, w, h, max, fontname, fontsize, color, bgcolor)
 	self.max_log = max or 4000
 	self.scroll = 0
 	self.changed = true
-	self.cache = {}
-	setmetatable(self.cache, {__mode="v"})
+
+	self.renderer = core.renderer.renderer()
 
 	self:resize(x, y, w, h)
+
+	self.cache_next_id = 1
+	self.cache = {}
 
 --	if config.settings.log_to_disk then self.out_f = fs.open("/game-log-"..(game and type(game) == "table" and game.__mod_info and game.__mod_info.short_name or "default").."-"..os.time()..".txt", "w") end
 end
@@ -67,16 +65,8 @@ function _M:resize(x, y, w, h)
 	self.max_display = math.floor(self.h / self.fh)
 	self.changed = true
 
-	if self.bg_image then
-		local fill = core.display.loadImage(self.bg_image)
-		local fw, fh = fill:getSize()
-		self.bg_surface = core.display.newSurface(w, h)
-		self.bg_surface:erase(0, 0, 0)
-		for i = 0, w, fw do for j = 0, h, fh do
-			self.bg_surface:merge(fill, i, j)
-		end end
-		self.bg_texture, self.bg_texture_w, self.bg_texture_h = self.bg_surface:glTexture()
-	end
+	self.renderer:cutoff(0, 0, w, h)
+	self.renderer:translate(self.display_x, self.display_y, 0)
 
 	self.scrollbar = Slider.new{size=self.h - 20, max=1, inverse=true}
 
@@ -126,15 +116,22 @@ function _M:call(str, ...)
 	local tstr = str:toString()
 	if self.out_f then self.out_f:write(tstr:removeColorCodes()) self.out_f:write("\n") end
 
-	local url = urlmatch:match(tstr)
-	if url then
-		tstr = tstr:lpegSub(urlfind, "#LIGHT_BLUE##{italic}#"..url.."#{normal}##LAST#")
-	end
+	local lines = str:splitLines(self.fw, self.font)
 
-	table.insert(self.log, 1, {str=tstr, timestamp = core.game.getTime(), url=url})
-	while #self.log > self.max_log do
-		local old = table.remove(self.log)
-		self.cache[old] = nil
+	for _, line in ipairs(lines) do
+		local url = urlmatch:match(line)
+		if url then
+			line = line:lpegSub(urlfind, "#LIGHT_BLUE##{italic}#"..url.."#{normal}##LAST#")
+		end
+
+		local d = {str=line, timestamp = core.game.getTime(), url=url, id=self.cache_next_id}
+		table.insert(self.log, 1, d)
+		self.cache_next_id = self.cache_next_id + 1
+
+		while #self.log > self.max_log do
+			local od = table.remove(self.log)
+			self.cache[od.id] = nil
+		end
 	end
 	self.max = #self.log
 	self.changed = true
@@ -148,8 +145,9 @@ end
 
 --- Clear the log
 function _M:empty()
-	self.cache = {}
 	self.log = {}
+	self.cache_next_id = 1
+	self.cache = {}
 	self.changed = true
 end
 
@@ -201,66 +199,42 @@ function _M:display()
 	self.changed = false
 
 	-- Erase and the display
+	self.renderer:clear()
 	self.dlist = {}
 	local h = 0
-	local old_style = self.font:getStyle()
 	for z = 1 + self.scroll, #self.log do
-		local stop = false
+		local tid = self.log[z].id
 		local tstr = self.log[z].str
 		local gen
-		if self.cache[tstr] then
-			gen = self.cache[tstr]
+
+		local text
+		if self.cache[tid] then
+			text = self.cache[tid]
 		else
-			gen = self.font:draw(tstr, self.w, 255, 255, 255, false, true)
-			self.cache[tstr] = gen
+			text = core.renderer.text(self.font)
+			text:textColor(unpack(self.color))
+			text:text(tstr)
+			self.cache[tid] = text
 		end
-		for i = #gen, 1, -1 do
-			self.dlist[#self.dlist+1] = {item=gen[i], date=self.log[z].reset_fade or self.log[z].timestamp, url=self.log[z].url}
-			h = h + self.fh
-			if h > self.h - self.fh then stop=true break end
-		end
-		if stop then break end
+
+		local fw, fh = text:getStats()
+		h = h + fh
+
+		self.dlist[#self.dlist+1] = {item=text, date=self.log[z].reset_fade or self.log[z].timestamp, url=self.log[z].url}
+		text:translate(0, self.h - h, 10)
+		self.renderer:add(text)
+
+		if self.fading then text:waitTween("fade", 60, function(text) text:colorTween("fade", 30, "a", nil, 0, "linear") end) end
+
+		if h > self.h - self.fh then break end
 	end
-	self.font:setStyle(old_style)
 	return
 end
 
 function _M:toScreen()
 	self:display()
 
-	if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
-
-	local now = core.game.getTime()
-	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
-
-	local h = self.display_y + self.h -  self.fh
-	for i = 1, #self.dlist do
-		local item = self.dlist[i].item
-
-		local fade = 1
-		if self.fading and self.fading > 0 then
-			fade = now - self.dlist[i].date
-			if fade < self.fading * 1000 then fade = 1
-			elseif fade < self.fading * 2000 then fade = (self.fading * 2000 - fade) / (self.fading * 1000)
-			else fade = 0 end
-			self.dlist[i].faded = fade
-		end
-
-		self.dlist[i].dh = h
-		if self.shadow then
-			if shader then
-				shader:use(true)
-				shader:uniOutlineSize(0.7, 0.7)
-				shader:uniTextSize(item._tex_w, item._tex_h)
-			else
-				item._tex:toScreenFull(self.display_x+2, h+2, item.w, item.h, item._tex_w, item._tex_h, 0,0,0, self.shadow * fade)
-			end
-		end
-		item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
-		if self.shadow and shader then shader:use(false) end
-		for e, d in pairs(item._dduids) do e:toScreen(nil, self.display_x + d.x, h, d.w, d.w, fade, false, false) end
-		h = h - self.fh
-	end
+	self.renderer:toScreen()
 
 	if not self.fading then
 		self.scrollbar.pos = self.scroll
@@ -284,6 +258,7 @@ function _M:resetFade()
 
 	-- Reset fade
 	for i = 1,#log do
-		log[i].reset_fade = core.game.getTime()
+		log[i].item:cancelTween("fade")
+		log[i]:colorTween("fade", 5, "a", nil, 1, "linear")
 	end
 end

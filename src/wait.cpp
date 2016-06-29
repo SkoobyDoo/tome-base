@@ -19,6 +19,7 @@
     darkgod@te4.org
 */
 
+extern "C" {
 #include "lua.h"
 #include "types.h"
 #include "lauxlib.h"
@@ -28,6 +29,9 @@
 #include "tgl.h"
 #include "main.h"
 #include "lua_externs.h"
+}
+
+#include "renderer-moderngl/VBO.hpp"
 
 extern SDL_Window *window;
 extern SDL_Surface *screen;
@@ -38,60 +42,22 @@ static int waiting = 0;
 static int waited_count = 0;
 static int waited_count_max = 0;
 static long waited_ticks = 0;
-static int bkg_realw, bkg_realh, bkg_w, bkg_h;
+static int bkg_w, bkg_h;
 static GLuint bkg_t = 0;
 static int wait_draw_ref = LUA_NOREF;
+static VBO *wait_vbo = NULL;
 
 static int draw_last_frame(lua_State *L)
 {
-	if (!bkg_t) return 0;
+	if (!wait_vbo) return 0;
 
-	float w = screen->w / screen_zoom;
-	float h = screen->h / screen_zoom;
-
-	GLfloat btexcoords[2*4] = {
-		0, (float)screen->h/(float)bkg_realh,
-		(float)screen->w/(float)bkg_realw, (float)screen->h/(float)bkg_realh,
-		(float)screen->w/(float)bkg_realw, 0,
-		0, 0
-	};
-	GLfloat bcolors[4*4] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-	GLfloat bvertices[2*4] = {
-		0, 0,
-		w, 0,
-		w, h,
-		0, h,
-	};
-	glTexCoordPointer(2, GL_FLOAT, 0, btexcoords);
-	glColorPointer(4, GL_FLOAT, 0, bcolors);
-	tglBindTexture(GL_TEXTURE_2D, bkg_t);
-	glVertexPointer(2, GL_FLOAT, 0, bvertices);
-	glDrawArrays(GL_QUADS, 0, 4);
+	wait_vbo->toScreen(0, 0, 0, 1, 1);
+	printf("!!!!\n");
 	return 0;
 }
 
-bool draw_waiting(lua_State *L)
-{
-	if (!waiting) return FALSE;
-
-	if (wait_draw_ref != LUA_NOREF)
-	{
-		lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);
-		lua_call(L, 0, 0);
-	}
-	else draw_last_frame(L);
-
-	return TRUE;
-}
-
-bool is_waiting()
-{
-	if (!waiting) return FALSE;
-	return TRUE;
-}
-
 extern int requested_fps;
-extern void on_redraw();
+extern "C" void on_redraw();
 static void hook_wait_display(lua_State *L, lua_Debug *ar)
 {
 	if (!manual_ticks_enabled) waited_count++;
@@ -131,14 +97,9 @@ static int enable(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		// In case we can't support NPOT textures round up to nearest POT
-		bkg_realw=1;
-		bkg_realh=1;
-		while (bkg_realw < w) bkg_realw *= 2;
-		while (bkg_realh < h) bkg_realh *= 2;
-		glTexImage2D(GL_TEXTURE_2D, 0, 3, bkg_realw, bkg_realh, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, bkg_w, bkg_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, w, h);
-		printf("Make wait background texture %d : %dx%d (%d, %d)\n", bkg_t, w, h, bkg_realw, bkg_realh);
+		printf("Make wait background texture %d : %dx%d\n", bkg_t, w, h);
 
 		int count = 300;
 		if (lua_isnumber(L, 1)) count = lua_tonumber(L, 1);
@@ -154,6 +115,16 @@ static int enable(lua_State *L)
 			lua_call(L, 0, 1);
 			wait_draw_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 		}
+
+		wait_vbo = new VBO(VBOMode::STATIC);
+		wait_vbo->setTexture(bkg_t);
+		wait_vbo->addQuad(
+			0, 0, 0, 0,
+			w / screen_zoom, 0, 1, 0,
+			w / screen_zoom, h / screen_zoom, 1, 1,
+			0, h / screen_zoom, 1, 1,
+			1, 1, 1, 1
+		);
 
 		on_redraw();
 	}
@@ -173,6 +144,10 @@ static int disable(lua_State *L)
 		{
 			glDeleteTextures(1, &bkg_t);
 			bkg_t = 0;
+		}
+		if (wait_vbo) {
+			delete wait_vbo;
+			wait_vbo = NULL;
 		}
 		if (wait_hooked) lua_sethook(L, NULL, 0, 0);
 		if (wait_draw_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, wait_draw_ref);
@@ -240,3 +215,22 @@ int luaopen_wait(lua_State *L)
 	return 1;
 }
 
+bool draw_waiting(lua_State *L)
+{
+	if (!waiting) return FALSE;
+
+	if (wait_draw_ref != LUA_NOREF)
+	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);
+		lua_call(L, 0, 0);
+	}
+	else draw_last_frame(L);
+
+	return TRUE;
+}
+
+bool is_waiting()
+{
+	if (!waiting) return FALSE;
+	return TRUE;
+}
