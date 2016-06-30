@@ -64,6 +64,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			font_atlas_data_style *d = &font->atlas_data[c].data[style];
 			if (!d->w) font_add_atlas(font, c, style);
 			if (d->w) {
+				positions.push_back({x, y});
 				addQuad(
 					d->w * italic + bx + x,		y,		d->tx1, d->ty1,
 					d->w * italic + bx + x + d->w,	y,		d->tx2, d->ty1,
@@ -102,6 +103,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 
 void DORText::parseText() {
 	clear();
+	positions.clear();
 	centered = false;
 
 	font_type *f = font;
@@ -352,4 +354,11 @@ void DORText::center() {
 		it->pos.y -= hh;
 	}
 	setChanged();
+}
+
+vec2 DORText::getLetterPosition(int idx) {
+	idx = idx - 1;
+	if (positions.empty()) return {0, 0};
+	if (idx > positions.size()) idx = positions.size();
+	return positions[idx];
 }

@@ -38,6 +38,7 @@ private:
 	int line_max_width = 99999;
 	int max_lines = 999999;
 	bool no_linefeed = false;
+	vector<vec2> positions;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -68,6 +69,8 @@ public:
 	void setMaxWidth(int width) { this->line_max_width = width; parseText(); };
 	void setMaxLines(int max) { this->max_lines = max; parseText(); };
 	void setTextColor(float r, float g, float b, float a) { font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a; parseText(); };
+
+	vec2 getLetterPosition(int idx);
 
 	void setText(const char *text);
 	void center();

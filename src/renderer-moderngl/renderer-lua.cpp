@@ -415,6 +415,15 @@ static int gl_text_linefeed(lua_State *L)
 	return 0;
 }
 
+static int gl_text_get_letter_position(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
+	vec2 pos = v->getLetterPosition(lua_tonumber(L, 2));
+	lua_pushnumber(L, pos.x);
+	lua_pushnumber(L, pos.y);
+	return 2;
+}
+
 static int gl_text_max_width(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
@@ -719,6 +728,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"maxWidth", gl_text_max_width},
 	{"maxLines", gl_text_max_lines},
 	{"linefeed", gl_text_linefeed},
+	{"getLetterPosition", gl_text_get_letter_position},
 	{"center", gl_text_center},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},
