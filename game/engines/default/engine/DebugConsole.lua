@@ -18,12 +18,13 @@
 -- darkgod@te4.org
 
 require "engine.class"
-require "engine.Dialog"
+local Dialog = require "engine.ui.Dialog"
+local Input = require "engine.ui.blocks.Input"
 
 --- Debug Console
 -- @classmod engine.DebugConsole
 -- @inherit engine.Dialog
-module(..., package.seeall, class.inherit(engine.Dialog))
+module(..., package.seeall, class.inherit(Dialog))
 
 -- Globals to all instances of the console
 --- Current scroll offset
@@ -127,13 +128,24 @@ end
 
 --- Init the debug console
 function _M:init()
-	self.cursor = "|"
 	self.blink_period = 20
 	self.blink = self.blink_period
 	local w, h = core.display.size()
-	engine.Dialog.init(self, "Lua Console", w, h, 0, 0, nil, core.display.newFont("/data/font/DroidSansMono.ttf", 12))
+	Dialog.init(self, "Lua Console", w, h, 0, 0)
+	self.font, self.font_h = self.font_mono, self.font_mono_h
 	game:onTickEnd(function() self.key:unicodeInput(true) end)
-	self:keyCommands{
+
+	self:setupUI(false, false)
+
+	self.textinput = Input.new(nil, "", colors.simple(colors.GREEN), w - 15, self.font_h)
+	self.renderer:add(self.textinput:get())
+	self.textinput:translate(0, h - self.textinput.h, 0)
+	self.textinput:onFocusChange(true)
+
+	self.history_container = core.renderer.container()
+	self.renderer:add(self.history_container)
+
+	self.key:addCommands{
 		_RETURN = function()
 			table.insert(_M.commands, _M.line)
 			_M.com_sel = #_M.commands + 1
@@ -298,45 +310,45 @@ function _M:init()
 		end,
 	}
 	-- Scroll message log
-	self:mouseZones{
+	self.mouse:registerZones{
 		{ x=0, y=0, w=game.w, h=game.h, mode={button=true}, norestrict=true, fct=function(button) if button ~= "none" then game:unregisterDialog(self) end end},
 		{ x=0, y=0, w=self.iw, h=self.ih, mode={button=true}, fct=function(button, x, y, xrel, yrel, tx, ty)
 			if button == "wheelup" then self:scrollUp(1) end
 			if button == "wheeldown" then self:scrollUp(-1) end
 		end },
 	}
+	self.changed = true
 end
 
 --- Display function
+-- This is not super efficient as we rerender all text, but meh we don't really care either for a debug console
 function _M:display()
-	-- Blinking cursor
-	self.blink = self.blink - 1
-	if self.blink <= 0 then
-		self.cursor = self.cursor == "|" and " " or "|"
-		self.blink = self.blink_period
-		self.changed = true
-	end
-	engine.Dialog.display(self)
-end
+	if not self.changed then return end
 
---- @param s screen
--- @param w width
--- @param h height
-function _M:drawDialog(s, w, h)
-	local buffer = (self.ih % self.font_h) / 2
-	local i, dh = #_M.history - _M.offset, self.ih - buffer - self.font:lineSkip()
-	-- Start at the bottom and work up
-	-- Draw the current command
-	s:drawStringBlended(self.font, _M.line:sub(1, _M.line_pos) .. self.cursor .. _M.line:sub(_M.line_pos+1), 0, dh, 255, 255, 255)
-	dh = dh - self.font:lineSkip()
-	-- Now draw the history with any offset
-	while dh > buffer do
-		if not _M.history[i] then break end
-		s:drawStringBlended(self.font, _M.history[i], 0, dh, 255, 255, 255)
-		i = i - 1
-		dh = dh - self.font:lineSkip()
+	local line = _M.line
+	if line:match("^=") then line = "return "..line:sub(2) end
+	local f, err = loadstring(line)
+	if not f then
+		self.textinput.text:textColor(unpack(colors.simple1(colors.RED)))
+	else
+		self.textinput.text:textColor(unpack(colors.simple1(colors.GREEN)))
 	end
-	self.changed = false
+
+	self.history_container:clear()
+	self.textinput:setText(self.line)
+	self.textinput:setPos(self.line_pos)
+
+	local i = #_M.history - _M.offset
+	local dh = self.h - self.textinput.h - self.font_h
+	while dh > 0 and i > 0 do
+		local text = core.renderer.text(self.font)
+		text:text(_M.history[i])
+		text:translate(0, dh, 0)
+		self.history_container:add(text)
+		local w, h = text:getStats()
+		dh = dh - h
+		i = i - 1
+	end
 end
 
 --- Scroll the zone
