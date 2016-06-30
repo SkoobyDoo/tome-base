@@ -1208,6 +1208,7 @@ static int map_update_seen_texture_lua(lua_State *L)
 static int map_draw_seen_texture(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	if (!map->seens_vbo) return 0;
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
 	int nb_keyframes = 0;

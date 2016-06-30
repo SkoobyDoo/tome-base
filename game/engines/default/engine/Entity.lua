@@ -1144,6 +1144,16 @@ function _M:loadList(file, no_default, res, mod, loaded)
 		ignoreLoaded = function(v) res.ignore_loaded = v end,
 		rarity = function(add, mult) add = add or 0; mult = mult or 1; return function(e) if e.rarity then e.rarity = math.ceil(e.rarity * mult + add) end end end,
 		switchRarity = function(name) return function(e) if e.rarity then e[name], e.rarity = e.rarity, nil end end end,
+		mapShaderKind = function(k) 
+			local zone = Zone:getCurrentLoadingZone()
+			if not zone then return end
+			zone:mapShaderKind(k)
+		end,
+		mapShaderArg = function(k, v)
+			local zone = Zone:getCurrentLoadingZone()
+			if not zone then return end
+			zone:mapShaderArg(k, v)
+		end,
 		newEntity = function(t)
 			-- Do we inherit things ?
 			if t.base then

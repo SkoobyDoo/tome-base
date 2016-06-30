@@ -18,11 +18,10 @@
 -- darkgod@te4.org
 
 return {
-	frag = "map/default",
-	vert = "map/default",
-	args = {
-		tex = { texture = 0 },
+	frag = "map_default",
+	vert = "default/gl-extended",
+	resetargs = {
+		tree_attenuation = 35,
 	},
-	clone = false,
-	permanent = true,
+	clone = true,
 }

@@ -22,12 +22,3 @@ local Zone = require "engine.Zone"
 local Map = require "engine.Map"
 
 module(..., package.seeall, class.inherit(Zone))
-
-function _M:onMapBuilding(level, map)
-	if not level.data or not level.data.map_shader then return end
-	local config = table.clone(level.data.map_shader, true)
-	config.frag = config.frag or "map_default"
-	config.vert = config.vert or "default/gl-extended"
-
-	map:setDefaultShader({"map_default", config}, nil, true)
-end

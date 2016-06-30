@@ -237,6 +237,7 @@ function _M:save()
 		_check_entities = true,
 		_check_entities_store = true,
 		_map = true,
+		_do_map = true,
 		_fovcache = true,
 		path_strings_computed = true,
 		surface = true,

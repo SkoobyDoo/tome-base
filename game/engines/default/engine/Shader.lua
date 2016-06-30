@@ -130,21 +130,21 @@ function _M:loadFile(file)
 	return table.concat(code)
 end
 
-function _M:getFragment(name)
+function _M:getFragment(name, def)
 	if not name then return nil end
 	if self.frags[name] then return self.frags[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".frag")
-	code = self:rewriteShaderFrag(code)
+	code = self:rewriteShaderFrag(code, def)
 	self.frags[name] = core.shader.newShader(code)
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
 end
 
-function _M:getVertex(name)
+function _M:getVertex(name, def)
 	if not name then name = "default/gl" end
 	if self.verts[name] then print("[SHADER] reusing vertex shader from /data/gfx/shaders/"..name..".vert") return self.verts[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".vert")
-	code = self:rewriteShaderVert(code)
+	code = self:rewriteShaderVert(code, def)
 	self.verts[name] = core.shader.newShader(code, true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]
@@ -154,8 +154,8 @@ function _M:createProgram(def)
 	local shad = core.shader.newProgram()
 	if not shad then return nil end
 	def.vert = def.vert or "default/gl"
-	if def.vert then shad:attach(self:getVertex(def.vert)) end
-	if def.frag then shad:attach(self:getFragment(def.frag)) end
+	if def.vert then shad:attach(self:getVertex(def.vert, def)) end
+	if def.frag then shad:attach(self:getFragment(def.frag, def)) end
 	if not shad:compile() then return nil end
 	shad:setName(self.name)
 	return shad
@@ -282,7 +282,7 @@ end
 -- Later on this can be extended to support various GLSL versions
 ----------------------------------------------------------------------------
 
-function _M:preprocess(code, kind)
+function _M:preprocess(code, kind, def)
 	code = code:gsub("gl_TexCoord%[0%]", "te4_uv")
 	code = code:gsub("gl_Color", "te4_fragcolor")
 
@@ -292,7 +292,7 @@ function _M:preprocess(code, kind)
 			local blocks = {}
 			for kind, file in pairs(selectors) do
 				local subcode = self:loadFile("/data/gfx/shaders/modules/"..file..".frag")
-				subcode = self:preprocess(subcode, "frag")
+				subcode = self:preprocess(subcode, "frag", def)
 				blocks[#blocks+1] = subcode
 			end
 			return table.concat(blocks, "\n")
@@ -308,29 +308,53 @@ function _M:preprocess(code, kind)
 			return table.concat(blocks)
 		end)
 	end
-	code = code:gsub('#include "([^"]+)"#', function(file)
+	code = code:gsub('#include "([^"]+)"', function(file)
 		local subcode = self:loadFile("/data/gfx/shaders/"..file)
-		subcode = self:preprocess(subcode, kind)
+		subcode = self:preprocess(subcode, kind, def)
 		return subcode
+	end)
+	code = code:gsub('#resetarg ([^=]+)=([^\n]+)', function(name, val)
+		def.resetargs = def.resetargs or {}
+		local f, err = loadstring("return "..val)
+		if not f then error(err) end
+		local ok, val = pcall(f, self)
+		if not ok then error(val) end
+		def.resetargs[name] = val
+		return ''
+	end)
+	code = code:gsub('#arg ([^=]+)=([^\n]+)', function(name, val)
+		self.args = self.args or {}
+		local f, err = loadstring("return "..val)
+		if not f then error(err) end
+		local ok, val = pcall(f, self)
+		if not ok then error(val) end
+		self.args[name] = val
+		return ''
 	end)
 	return code
 end
 
-function _M:rewriteShaderFrag(code)
+function _M:rewriteShaderFrag(code, def)
 	code = [[varying vec2 te4_uv;
 	varying vec4 te4_fragcolor;		
 	]]..code
-	code = self:preprocess(code, "frag")
+	code = self:preprocess(code, "frag", def)
+	-- print("=====frag\n")
+	-- print(code)
+	-- print("=====frag+\n")
 	return code
 end
 
-function _M:rewriteShaderVert(code)
+function _M:rewriteShaderVert(code, def)
 	code = [[attribute vec4 te4_position;
 	attribute vec2 te4_texcoord;
 	attribute vec4 te4_color;
 	varying vec2 te4_uv;
 	varying vec4 te4_fragcolor;
 	]]..code
-	code = self:preprocess(code, "vert")
+	code = self:preprocess(code, "vert", def)
+	-- print("=====vert\n")
+	-- print(code)
+	-- print("=====vert+\n")
 	return code
 end

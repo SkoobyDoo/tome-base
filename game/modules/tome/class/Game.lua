@@ -598,7 +598,7 @@ end
 
 function _M:createFBOs()
 	print("[GAME] Creating FBOs")
-
+--[[
 	-- Create the framebuffer
 	self.fbo = core.display.newFBO(Map.viewport.width, Map.viewport.height)
 	if self.fbo then
@@ -633,6 +633,7 @@ function _M:createFBOs()
 
 --	self.mm_fbo = core.display.newFBO(200, 200)
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
+]]
 end
 
 function _M:resizeMapViewport(w, h, x, y)
@@ -1664,7 +1665,9 @@ function _M:display(nb_keyframes)
 	if self.full_fbo then self.full_fbo:use(true) end
 
 	-- Now the ui
+core.display.countDraws()
 	self.uiset:display(nb_keyframes)
+print("[draw calls] map & hud", core.display.countDraws())
 
 	-- "Big News"
 	self.bignews:display(nb_keyframes)
@@ -1680,13 +1683,13 @@ function _M:display(nb_keyframes)
 	self.ctrl_state = core.key.modState("ctrl")
 
 	-- if tooltip is in way of mouse and its not locked then move it
-	if not self.uiset.no_ui then
-		if self.tooltip.w and mx > self.w - self.tooltip.w and my > Tooltip:tooltip_bound_y2() - self.tooltip.h and not self.tooltip.locked then
-			self:targetDisplayTooltip(Map.display_x, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
-		else
-			self:targetDisplayTooltip(self.w, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
-		end
-	end
+	-- if not self.uiset.no_ui then
+	-- 	if self.tooltip.w and mx > self.w - self.tooltip.w and my > Tooltip:tooltip_bound_y2() - self.tooltip.h and not self.tooltip.locked then
+	-- 		self:targetDisplayTooltip(Map.display_x, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
+	-- 	else
+	-- 		self:targetDisplayTooltip(self.w, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
+	-- 	end
+	-- end
 
 	if self.full_fbo then
 		self.full_fbo:use(false)

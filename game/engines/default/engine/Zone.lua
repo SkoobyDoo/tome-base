@@ -968,8 +968,27 @@ end
 _M._level_generation_count = 0
 _M._max_level_generation_count = 50 -- newLevel will return the last level generated after this many attempts at generation. Modules should check ._level_generation_count to be sure level generation was successful
 
---- Can overload to alter the newly created map before data is put in. I.E: to add dynamic map shaders
+function _M:mapShaderKind(k)
+	self.map_shader = self.map_shader or {}
+	self.map_shader.data = self.map_shader.data or {}
+	self.map_shader.data.kindselectors = self.map_shader.data.kindselectors or {[0] = "normal"}
+	if table.reverse(self.map_shader.data.kindselectors)[k] then return end
+	table.insert(self.map_shader.data.kindselectors, k)
+end
+function _M:mapShaderArg(k, v)
+	self.map_shader = self.map_shader or {}
+	self.map_shader.resetargs = self.map_shader.resetargs or {}
+	self.map_shader.resetargs[k] = v
+end
+
+-- Add dynamic map shaders, if needed
 function _M:onMapBuilding(level, map)
+	if not level.data or not level.data.map_shader then return end
+	local config = table.clone(level.data.map_shader, true)
+	config.frag = config.frag or "map_default"
+	config.vert = config.vert or "default/gl-extended"
+
+	map:setDefaultShader({"map_default", config}, nil, true)
 end
 
 function _M:newLevel(level_data, lev, old_lev, game)

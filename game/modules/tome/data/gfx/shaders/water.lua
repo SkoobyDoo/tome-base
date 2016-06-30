@@ -20,7 +20,7 @@
 return {
 	require_kind = "adv",
 	frag = "water",
-	vert = nil,
+	vert = "default/gl-extended",
 	args = {
 		tex = { texture = 0 },
 		iResolution = size or {64.0, 64.0},

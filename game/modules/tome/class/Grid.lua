@@ -23,6 +23,7 @@ local Map = require "engine.Map"
 local Dialog = require "engine.ui.Dialog"
 local DamageType = require "engine.DamageType"
 local Combat = require "mod.class.interface.Combat"
+local Zone = require "mod.class.Zone"
 
 module(..., package.seeall, class.inherit(engine.Grid))
 
@@ -32,6 +33,10 @@ function _M:init(t, no_default)
 	engine.Grid.init(self, t, no_default)
 
 	self:initGlow()
+
+	if Zone:getCurrentLoadingZone() and self.shader == "water" then 
+		Zone:getCurrentLoadingZone():mapShaderKind("water")
+	end
 end
 
 --- Make wilderness zone entrances glow until entered once
@@ -308,6 +313,11 @@ function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
 	end
 	table.sort(tbl, function(a,b) return a._st < b._st end)
 	for i = 1, #tbl do tbl[i].z = 16 + i - 1 end
+
+	if Zone:getCurrentLoadingZone() then 
+		Zone:getCurrentLoadingZone():mapShaderKind("tree")
+	end
+
 	return g
 end
 
@@ -342,6 +352,11 @@ function _M:makeTrees(base, max, bigheight_limit, tint, attenuation)
 	end
 	table.sort(tbl, function(a,b) return a.display_scale < b.display_scale end)
 	for i = 1, #tbl do tbl[i].z = 16 + i - 1 end
+	
+	if Zone:getCurrentLoadingZone() then 
+		Zone:getCurrentLoadingZone():mapShaderKind("tree")
+	end
+
 	return tbl
 end
 
@@ -439,18 +454,6 @@ function _M:makeShells(base, max)
 	end
 	table.sort(tbl, function(a,b) return a.display_y < b.display_y end)
 	return tbl
-end
-
---- Generate sub entities to make translucent water
-function _M:makeWater(z, prefix)
-	prefix = prefix or ""
-	return { engine.Entity.new{
-		z = z and 16 or 9,
-		image = "terrain/"..prefix.."water_floor_alpha.png",
-		shader = prefix.."water", textures = { function() return _3DNoise, true end },
-		display_on_seen = true,
-		display_on_remember = true,
-	} }
 end
 
 --- Merge sub entities

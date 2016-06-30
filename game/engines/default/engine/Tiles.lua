@@ -156,7 +156,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 			w, h = s:getSize()
 			s, sw, sh = s:glTexture(self.sharp_scaling, not force_texture_repeat)
 			sw, sh = w / sw, h / sh
-			if not is_image and do_outline then
+			if not is_image and do_outline and false then
 				if type(do_outline) == "boolean" then
 					s = s:makeOutline(2*pot_width/self.w, 2*pot_height/self.h, pot_width, pot_height, 0, 0, 0, 1) or s
 				else
