@@ -98,7 +98,6 @@ function _M:init(minimalist, w, h)
 	self.do_container:add(self.player_do) self.player_do:translate(config.player.x, config.player.y, 1)
 
 	MiniContainer.init(self, minimalist)
-
 	self:update(0)
 end
 
