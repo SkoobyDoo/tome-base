@@ -60,62 +60,31 @@ local function knives(self)
 end
 
 local function throw(self, range, dam, x, y, dtype, special, fok)
-		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if not eff then return nil end
-		self.turn_procs.quickdraw = true
-		local tg = {type="bolt", range=range, selffire=false, display={display='', particle="arrow", particle_args={tile="particles_images/rogue_throwing_knife"} }}
-		self:projectile(tg, x, y, function(px, py, tg, self)
-			local target = game.level.map(px, py, engine.Map.ACTOR)
-			if target and target ~= self then
-				local t = self:getTalentFromId(self.T_THROWING_KNIVES)
-				local t2 = self:getTalentFromId(self.T_PRECISE_AIM)
-				local critstore = self.combat_critical_power or 0
-				self.combat_critical_power = nil
-				self.combat_critical_power = critstore + t2.getCritPower(self,t2)
-				local hit = self:attackTargetWith(target, t.getKnives(self, t), dtype, dam)
-				self.combat_critical_power = nil
-				self.combat_critical_power = critstore
-				if hit then
-					if special==1 then
-						local t2 = self:getTalentFromId(self.T_VENOMOUS_STRIKE)
-						local dam = t2.getDamage(self,t2)
-						local idam = t2.getSecondaryDamage(self,t2)
-						local vdam = t2.getSecondaryDamage(self,t2)*0.6
-						local power = t2.getPower(self,t2)
-						local heal = t2.getSecondaryDamage(self,t2)
-						local nb = t2.getNb(self,t2)
-						
-						if hit and self:isTalentActive(self.T_NUMBING_POISON) then target:setEffect(target.EFF_SLOW, 5, {power=power, no_ct_effect=true}) end
-						if hit and self:isTalentActive(self.T_INSIDIOUS_POISON) then target:setEffect(target.EFF_POISONED, 5, {src=self, power=idam/5, no_ct_effect=true}) end		
-						if hit and self:isTalentActive(self.T_CRIPPLING_POISON) then 
-							local tids = {}
-							for tid, lev in pairs(target.talents) do
-								local t = target:getTalentFromId(tid)
-								if t and not target.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
-							end
-						
-							local count = 0
-							local cdr = nb*1.5
-						
-							for i = 1, nb do
-								local t = rng.tableRemove(tids)
-								if not t then break end
-								target.talents_cd[t.id] = cdr
-								game.logSeen(target, "%s's %s is disrupted by the crippling poison!", target.name:capitalize(), t.name)
-								count = count + 1
-							end		
-						end
-						if hit and self:isTalentActive(self.T_LEECHING_POISON) then self:heal(heal, target) end
-						if hit and self:isTalentActive(self.T_VOLATILE_POISON) then 
-							local tg = {type="ball", radius=nb, friendlyfire=false, x=target.x, y=target.y}
-							self:project(tg, target.x, target.y, DamageType.NATURE, vdam)
-						end
-					end
+	local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
+	if not eff then return nil end
+	self.turn_procs.quickdraw = true
+	local tg = {type="bolt", range=range, selffire=false, display={display='', particle="arrow", particle_args={tile="particles_images/rogue_throwing_knife"} }}
+	local proj = self:projectile(tg, x, y, function(px, py, tg, self)
+		local target = game.level.map(px, py, engine.Map.ACTOR)
+		if target and target ~= self then
+			local t = self:getTalentFromId(self.T_THROWING_KNIVES)
+			local t2 = self:getTalentFromId(self.T_PRECISE_AIM)
+			local critstore = self.combat_critical_power or 0
+			self.combat_critical_power = nil
+			self.combat_critical_power = critstore + t2.getCritPower(self,t2)
+			local hit = self:attackTargetWith(target, t.getKnives(self, t), dtype, dam)
+			self.combat_critical_power = nil
+			self.combat_critical_power = critstore
+			if hit then
+				if special==1 then
+					self:callTalent(self.T_VENOMOUS_STRIKE, "applyVenomousEffects", target)
 				end
 			end
-		end)
-		if not fok then eff.stacks = eff.stacks - 1 end
-		if eff.stacks <= 0 then self:removeEffect(self.EFF_THROWING_KNIVES) end
+		end
+	end)
+	if not fok then eff.stacks = eff.stacks - 1 end
+	if eff.stacks <= 0 then self:removeEffect(self.EFF_THROWING_KNIVES) end
+	return proj
 end
 
 
@@ -142,7 +111,7 @@ newTalent{
 		self:removeEffect(self.EFF_THROWING_KNIVES)
 	end,
 	speed = "throwing",
-	tactical = { ATTACK = { weapon = 2 } },
+	tactical = { ATTACK = { PHYSICAL = 2 } },
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	requires_target = true,
 	target = function(self, t)
@@ -173,7 +142,8 @@ newTalent{
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
 
-		throw(self, self:getTalentRange(t), 1, x, y, nil, nil, nil)
+		local proj = throw(self, tg.range, 1, x, y, nil, nil, nil)
+		proj.name = "Throwing Knife"
 
 		return true
 	end,
@@ -214,7 +184,7 @@ newTalent{
 	type = {"technique/throwing-knives", 2},
 	require = techs_dex_req2,
 	points = 5,
-	tactical = { ATTACKAREA = 3 },
+	tactical = { ATTACKAREA = { PHYSICAL = 2}},
 	speed = "throwing",
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
@@ -256,7 +226,8 @@ newTalent{
 				if #tgts <= 0 then break end
 				local a, id = tgts[i]
 				if a then
-					throw(self, self:getTalentRadius(t), t.getDamage(self,t), a.x, a.y, nil, nil, 1)
+					local proj = throw(self, self:getTalentRadius(t), t.getDamage(self,t), a.x, a.y, nil, nil, 1)
+					proj.name = "Fan of Knives"
 					count = count - 1
 					a.turn_procs.fan_of_knives = 1 + (a.turn_procs.fan_of_knives or 0)
 					if a.turn_procs.fan_of_knives==3 then table.remove(tgts, id) end
@@ -316,8 +287,7 @@ newTalent{
 		return true
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-	
-		if not rng.percent(t.getChance(self,t)) then return nil end
+		if not hitted or core.fov.distance(self.x, self.y, target.x, target.y) > 1 or not rng.percent(t.getChance(self,t)) then return nil end
 		
 		local tg = {type="ball", range=0, radius=7, friendlyfire=false }
 		local tgts = {}
@@ -335,15 +305,16 @@ newTalent{
 		
 		if #tgts <= 0 then return nil end
 		local a, id = rng.table(tgts)
-		throw(self, self:getTalentRange(t), 1, a.x, a.y, nil, nil, nil)
+		local proj = throw(self, self:getTalentRange(t), 1, a.x, a.y, nil, nil, nil)
+		proj.name = "Quickdraw Knife"
 		self.turn_procs.quickdraw = true
 
 	end,
 	info = function(self, t)
 		local speed = t.getSpeed(self, t)
 		local chance = t.getChance(self, t)
-		return ([[You can throw knives with lightning speed, increasing your attack speed with them by %d%% and giving you a %d%% chance when striking a target in melee to throw a knife at a random target within 7 tiles for 100%% damage. 
-		This bonus knife can only trigger once per turn, and does not trigger from throwing knife attacks.]]):
+		return ([[You can throw knives with lightning speed, increasing your attack speed with them by %d%% and giving you a %d%% chance when striking a target in melee to throw a knife at a random foe within 7 tiles for 100%% damage. 
+		This bonus attack can only trigger once per turn, and does not trigger from throwing knife attacks.]]):
 		format(speed, chance)
 	end,
 }
@@ -356,7 +327,7 @@ newTalent{
 	cooldown = 8,
 	stamina = 14,
 	speed = "throwing",
-	tactical = { ATTACK = { weapon = 2 } },
+	tactical = { ATTACK = { NATURE = 2 } },
 	range = function(self, t) 
 		local t = self:getTalentFromId(self.T_THROWING_KNIVES)
 		return self:getTalentRange(t) 
@@ -380,25 +351,20 @@ newTalent{
 		local t2 = self:getTalentFromId(self.T_VENOMOUS_STRIKE)
 		local dam = t2.getDamage(self,t2)
 
-		throw(self, self:getTalentRange(t), dam, x, y, DamageType.NATURE, 1, nil)
+		local proj = throw(self, self:getTalentRange(t), dam, x, y, DamageType.NATURE, 1, nil)
+		proj.name = "Venomous Throw"
 		self.talents_cd[self.T_VENOMOUS_STRIKE] = 8
 
 		return true
 	end,
-info = function(self, t)
+	info = function(self, t)
 		local t = self:getTalentFromId(self.T_VENOMOUS_STRIKE)
 		local dam = 100 * t.getDamage(self,t)
-		local idam = t.getSecondaryDamage(self,t)
-		local vdam = t.getSecondaryDamage(self,t)*0.6
-		local power = t.getPower(self,t)
-		local heal = t.getSecondaryDamage(self,t)
-		local nb = t.getNb(self,t)
-		return ([[Throw a knife coated with venom, doing %d%% damage as nature and inflicting additional effects based on the poisons the target is affected by:
-Numbing Poison - Reduces global speed by 5 for %d turns.
-Insidious Poison - Deals a further %0.2f nature damage over 5 turns.
-Crippling Poison - Places %d talents on cooldown for %d turns.
-Leeching Poison - Heals you for %d.
-Volatile Poison - Deals a further %0.2f nature damage in a %d radius ball.]]):
-		format(dam, power*100, damDesc(self, DamageType.NATURE, idam), nb, nb*1.5, heal, damDesc(self, DamageType.NATURE, vdam), nb, nb)
+		local desc = t.effectsDescription(self, t)
+		return ([[Throw a knife coated with venom, doing %d%% damage as nature and inflicting additional effects based on your active vile poisons (as per the Venomous Strike talent):
+		
+		%s
+		Using this talent puts your Venomous Strike talent on cooldown.]]):
+		format(dam, desc)
 	end,
 }

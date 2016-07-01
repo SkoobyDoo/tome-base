@@ -494,8 +494,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	if hitted and not target.dead and self.vile_poisons and next(self.vile_poisons) and target:canBe("poison") and weapon and (weapon.talented == "sling" or weapon.talented == "bow") then
 		local tid = rng.table(table.keys(self.vile_poisons))
 		if tid then
-			local t = self:getTalentFromId(tid)
-			t.proc(self, t, target, weapon)
+			self:callTalent(tid, "proc", target, weapon)
 		end
 	end
 	
