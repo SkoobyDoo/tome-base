@@ -111,6 +111,7 @@ function _M:display(nb_keyframes)
 	Map.viewport_padding_6 = 0
 	Map.viewport_padding_8 = 0
 	Map.viewport_padding_2 = 0
+	self.map_h_stop_tooltip = game.h
 
 	for _, container in ipairs(self.minicontainers) do container:update(nb_keyframes) end
 	self.renderer:toScreen()

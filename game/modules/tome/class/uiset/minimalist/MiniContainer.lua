@@ -89,6 +89,20 @@ end
 function _M:onFocus(v)
 end
 
+function _M:tooltipAll(fct, desc)
+	return function(button, mx, my, xrel, yrel, bx, by, event)
+		if event ~= "out" then game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, tostring(util.getval(desc))) end
+		fct(button, mx, my, xrel, yrel, bx, by, event)
+	end
+end
+
+function _M:tooltipButton(fct, desc)
+	return function(button, mx, my, xrel, yrel, bx, by, event)
+		if event ~= "out" then game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, tostring(util.getval(desc))) end
+		if event == "button" then fct(button, mx, my, xrel, yrel, bx, by, event) end
+	end
+end
+
 function _M:setupMouse(first)
 	if first then self.mouse_first_setup = true end
 	if not self.mouse_first_setup then return end

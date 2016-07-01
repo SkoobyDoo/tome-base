@@ -26,13 +26,13 @@ local Map = require "engine.Map"
 module(..., package.seeall, class.inherit(MiniContainer))
 
 _M.iconslist = {
-	{name="tb_talents", file="hotkeys/talents.png", fct=function() game.key:triggerVirtual("USE_TALENTS") end},
-	{name="tb_inven", file="hotkeys/inventory.png", fct=function() game.key:triggerVirtual("SHOW_INVENTORY") end},
-	{name="tb_lore", file="hotkeys/lore.png", fct=function(button) if button == "left" then game.key:triggerVirtual("SHOW_QUESTS") elseif button == "right" then game:registerDialog(require("mod.dialogs.ShowLore").new("Tales of Maj'Eyal Lore", game.party)) end end},
-	{name="tb_quest", file="hotkeys/quest.png", fct=function() game.key:triggerVirtual("SHOW_MESSAGE_LOG") end},
-	{name="tb_mainmenu", file="hotkeys/mainmenu.png", fct=function() game.key:triggerVirtual("EXIT") end},
-	{name="tb_padlock_closed", file="padlock_closed.png", fct=function() game.uiset:switchLocked() end},
-	{name="tb_padlock_open", file="padlock_open.png", no_increment=true, fct=function() game.uiset:switchLocked() end},
+	{name="tb_talents", file="hotkeys/talents.png", fct=function() game.key:triggerVirtual("USE_TALENTS") end, tooltip="Click to show known talents"},
+	{name="tb_inven", file="hotkeys/inventory.png", fct=function() game.key:triggerVirtual("SHOW_INVENTORY") end, tooltip="Click to show inventory"},
+	{name="tb_lore", file="hotkeys/lore.png", fct=function(button) if button == "left" then game.key:triggerVirtual("SHOW_QUESTS") elseif button == "right" then game:registerDialog(require("mod.dialogs.ShowLore").new("Tales of Maj'Eyal Lore", game.party)) end end, tooltip="Left mouse to show quest log.\nRight mouse to show all known lore."},
+	{name="tb_quest", file="hotkeys/quest.png", fct=function() game.key:triggerVirtual("SHOW_MESSAGE_LOG") end, tooltip="Click to show message/chat log."},
+	{name="tb_mainmenu", file="hotkeys/mainmenu.png", fct=function() game.key:triggerVirtual("EXIT") end, tooltip="Click to show main menu"},
+	{name="tb_padlock_closed", file="padlock_closed.png", fct=function() game.uiset:switchLocked() end, tooltip="Unlock all interface elements so they can be moved and resized."},
+	{name="tb_padlock_open", file="padlock_open.png", no_increment=true, fct=function() game.uiset:switchLocked() end, tooltip="Lock all interface elements so they can not be moved nor resized."},
 }
 
 function _M:init(minimalist, w, h)
@@ -55,12 +55,12 @@ function _M:init(minimalist, w, h)
 	MiniContainer.init(self, minimalist)
 
 	for _, d in ipairs(self.iconslist) do
-		self.mouse:registerZone(0, 0, self.icon_w, self.icon_h, function(button, mx, my, xrel, yrel, bx, by, event)
+		self.mouse:registerZone(0, 0, self.icon_w, self.icon_h, self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "button" then d.fct(button)
 			elseif event == "out" then self[d.name]:colorTween("focus", 8, "a", nil, 0.5)
 			elseif event == "motion" then self[d.name]:colorTween("focus", 5, "a", nil, 1)
 			end
-		end, nil, d.name, true, 1)
+		end, d.tooltip), nil, d.name, true, 1)
 	end
 
 	self:update(0)

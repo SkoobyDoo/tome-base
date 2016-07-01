@@ -94,15 +94,16 @@ function _M:init(minimalist, w, h)
 	
 	MiniContainer.init(self, minimalist)
 
-	self.mouse:registerZone(config.attack.x, config.attack.y, pf_defend_w, pf_defend_h, function(button, mx, my, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(config.attack.x, config.attack.y, pf_defend_w, pf_defend_h, self:tooltipButton(function(button, mx, my, xrel, yrel, bx, by, event)
 		game.key:triggerVirtual("TOGGLE_BUMP_ATTACK")
-	end, {button=true}, "attack", false, 1)
-	self.mouse:registerZone(config.levelup.x, config.levelup.y, pf_levelup_w, pf_levelup_h, function(button, mx, my, xrel, yrel, bx, by, event)
+	end, "Toggle for movement mode.\nDefault: when trying to move onto a creature it will attack if hostile.\nPassive: when trying to move onto a creature it will not attack (use ctrl+direction, or right click to attack manually)"), nil, "attack", false, 1)
+	self.mouse:registerZone(config.levelup.x, config.levelup.y, pf_levelup_w, pf_levelup_h, self:tooltipButton(function(button, mx, my, xrel, yrel, bx, by, event)
 		game.key:triggerVirtual("LEVELUP")
-	end, {button=true}, "levelup", false, 1)
-	self.mouse:registerZone(config.player.x, config.player.y, 40, 40, function(button, mx, my, xrel, yrel, bx, by, event)
+	end, "Show character infos"), nil, "levelup", false, 1)
+	self.mouse:registerZone(config.player.x, config.player.y, 40, 40, self:tooltipButton(function(button, mx, my, xrel, yrel, bx, by, event)
 		game.key:triggerVirtual("SHOW_CHARACTER_SHEET")
-	end, {button=true}, "charsheet", false, 1)
+	end, "Click to assign stats and talents!"), nil, "charsheet", false, 1)
+
 	self:update(0)
 end
 
