@@ -561,6 +561,7 @@ static int map_new(lua_State *L)
 	map->mm_w = map->mm_h = 0;
 
 	map->minimap_gridsize = 4;
+	map->old_minimap_gridsize = 0;
 
 	map->is_hex = (is_hex > 0);
 	lua_pushlightuserdata(L, (void *)&IS_HEX_KEY); // push address as guaranteed unique key
@@ -882,6 +883,7 @@ static int map_set_minimap_gridsize(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 	float s = luaL_checknumber(L, 2);
+	map->old_minimap_gridsize = map->minimap_gridsize;
 	map->minimap_gridsize = s;
 	return 0;
 }
@@ -1762,16 +1764,7 @@ static int map_line_grids(lua_State *L) {
 	return 0;	
 }
 
-static int minimap_to_screen(lua_State *L)
-{
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
-	int x = luaL_checknumber(L, 2);
-	int y = luaL_checknumber(L, 3);
-	int mdx = luaL_checknumber(L, 4);
-	int mdy = luaL_checknumber(L, 5);
-	int mdw = luaL_checknumber(L, 6);
-	int mdh = luaL_checknumber(L, 7);
-	float transp = luaL_checknumber(L, 8);
+static void minimap_update(map_type *map, int mdx, int mdy, int mdw, int mdh, float transp) {
 	int z = 0, i = 0, j = 0;
 	int vert_idx = 0;
 	int col_idx = 0;
@@ -1781,7 +1774,7 @@ static int minimap_to_screen(lua_State *L)
 
 	int f = (map->is_hex & 1);
 	// Create/recreate the minimap data if needed
-	if (map->mm_w != mdw || map->mm_h != mdh)
+	if (map->mm_w != mdw || map->mm_h != mdh || map->old_minimap_gridsize != map->minimap_gridsize)
 	{
 		if (map->mm_texture) glDeleteTextures(1, &(map->mm_texture));
 		if (map->minimap) free(map->minimap);
@@ -1814,6 +1807,7 @@ static int minimap_to_screen(lua_State *L)
 			mdw * map->minimap_gridsize, 0, (float)mdw/(float)map->mm_rw, 0,
 			1, 1, 1, 1
 		);
+		map->old_minimap_gridsize = map->minimap_gridsize;
 	}
 
 	int ptr;
@@ -1868,9 +1862,30 @@ static int minimap_to_screen(lua_State *L)
 	}
 	tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_BGRA, GL_UNSIGNED_BYTE, mm);
+}
+
+static int lua_minimap_to_screen(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	int x = luaL_checknumber(L, 2);
+	int y = luaL_checknumber(L, 3);
+	int mdx = luaL_checknumber(L, 4);
+	int mdy = luaL_checknumber(L, 5);
+	int mdw = luaL_checknumber(L, 6);
+	int mdh = luaL_checknumber(L, 7);
+	float transp = luaL_checknumber(L, 8);
+
+	minimap_update(map, mdx, mdy, mdw, mdh, transp);
 
 	map->mm_vbo->toScreen(x, y, 0, 1, 1);
 	return 0;
+}
+
+void minimap_toscreen(map_type *map, mat4 model, int gridsize, int mdx, int mdy, int mdw, int mdh, float transp) {
+	map->old_minimap_gridsize = map->minimap_gridsize;
+	map->minimap_gridsize = gridsize;
+	minimap_update(map, mdx, mdy, mdw, mdh, transp);
+	map->mm_vbo->toScreen(model);
 }
 
 static int map_get_display_object(lua_State *L)
@@ -1879,6 +1894,21 @@ static int map_get_display_object(lua_State *L)
 
 	DORTileMap *tm = new DORTileMap();
 	tm->setMap(map);
+	tm->setMode(TileMapMode::MAP);
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	*v = tm;
+	auxiliar_setclass(L, "gl{tilemap}", -1);
+	return 1;
+}
+
+static int map_get_display_object_mm(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+
+	DORTileMap *tm = new DORTileMap();
+	tm->setMap(map);
+	tm->setMode(TileMapMode::MINIMAP);
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = tm;
@@ -1918,11 +1948,12 @@ static const struct luaL_Reg map_reg[] =
 	{"setScroll", map_set_scroll},
 	{"getScroll", map_get_scroll},
 	{"toScreen", lua_map_toscreen},
-	{"toScreenMiniMap", minimap_to_screen},
+	{"toScreenMiniMap", lua_minimap_to_screen},
 	{"toScreenLineGrids", map_line_grids},
 	{"setupGridLines", map_define_grid_lines},
 	{"setupMiniMapGridSize", map_set_minimap_gridsize},
 	{"getMapDO", map_get_display_object},
+	{"getMinimapDO", map_get_display_object_mm},
 	{NULL, NULL},
 };
 

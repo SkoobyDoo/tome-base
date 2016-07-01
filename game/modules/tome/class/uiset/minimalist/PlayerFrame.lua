@@ -20,7 +20,6 @@
 require "engine.class"
 local UI = require "engine.ui.Base"
 local FontPackage = require "engine.FontPackage"
-local LogDisplay = require "engine.LogDisplay"
 local MiniContainer = require "mod.class.uiset.minimalist.MiniContainer"
 local Map = require "engine.Map"
 
@@ -68,8 +67,6 @@ function _M:init(minimalist, w, h)
 	self.pf_exp, expbar_w, expbar_h = self:imageLoader("playerframe/exp.png")
 	self.pf_exp_levelup, lexpbar_w, lexpbar_h = self:imageLoader("playerframe/exp_levelup.png")
 
-	self.player_do = self:getPlayerDO()
-
 	local font, smallfont = FontPackage:get("resources_normal", true), FontPackage:get("resources_small", true)
 
 	self.do_container = core.renderer.renderer("playerframe") -- Should we use renderer or container ?
@@ -95,8 +92,6 @@ function _M:init(minimalist, w, h)
 	self.text_money:textColor(colors.unpack1(colors.GOLD))
 	self.do_container:add(self.text_money) self.text_money:translate(config.money.x, config.money.y, 10)
 
-	self.do_container:add(self.player_do) self.player_do:translate(config.player.x, config.player.y, 1)
-
 	MiniContainer.init(self, minimalist)
 	self:update(0)
 end
@@ -111,6 +106,20 @@ end
 
 function _M:update(nb_keyframes)
 	local player = self:getPlayer()
+	if not player then
+		if self.old_player ~= player then self.do_container:shown(false) end
+		self.old_player = player
+		return
+	else
+		if self.old_player ~= player then
+			local config = configs[UI.ui] or configs.dark
+			self.do_container:shown(true)
+			if self.player_do then self.do_container:remove(self.player_do) end
+			self.player_do = self:getPlayerDO()
+			self.do_container:add(self.player_do) self.player_do:translate(config.player.x, config.player.y, 1)
+		end
+	end
+	self.old_player = player
 
 	if self.old_exp ~= player.exp then
 		local cur_exp, max_exp = player.exp, player:getExpChart(player.level+1)
@@ -160,10 +169,6 @@ function _M:getPlayerDO()
 	return core.map.mapObjectsToDisplayObject(40, 40, 1, false, true, unpack(list))
 end
 
-function _M:getDO()
-	return self.do_container
-end
-
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
 	self:getDO():translate(x, y, 0)
@@ -171,8 +176,4 @@ end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
-end
-
-function _M:getPlace()
-	return "player", {x=0, y=hup-210, scale=1, a=0}
 end

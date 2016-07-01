@@ -29,7 +29,7 @@ module(..., package.seeall, class.inherit(UISet, TooltipsData))
 function _M:init()
 	UISet.init(self)
 
-	self.renderer = core.renderer.renderer()
+	self.renderer = core.renderer.renderer():zSort(false)
 	self.minicontainers = {}
 	self.locked = true
 end
@@ -65,6 +65,8 @@ end
 _M.allcontainers = {
 	playerframe = "mod.class.uiset.minimalist.PlayerFrame",
 	gamelog = "mod.class.uiset.minimalist.Log",
+	minimap = "mod.class.uiset.minimalist.Minimap",
+	toolbar = "mod.class.uiset.minimalist.Toolbar",
 }
 
 function _M:activate()
@@ -116,4 +118,5 @@ function _M:display(nb_keyframes)
 end
 
 function _M:setupMouse(mouse)
+	for _, container in ipairs(self.minicontainers) do container:setupMouse(true) end
 end

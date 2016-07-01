@@ -613,6 +613,15 @@ static int gl_tilemap_setmap(lua_State *L)
 	return 1;
 }
 
+static int gl_tilemap_setminimap_info(lua_State *L)
+{
+	DORTileMap *v = userdata_to_DO<DORTileMap>(L, 1, "gl{tilemap}");
+
+	v->setMinimapInfo(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6), luaL_checknumber(L, 7));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 /******************************************************************
  ** DORSpriter
  ******************************************************************/
@@ -846,6 +855,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"scale", gl_generic_scale},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{"setMap", gl_tilemap_setmap},
+	{"setMinimapInfo", gl_tilemap_setminimap_info},
 	{NULL, NULL},
 };
 

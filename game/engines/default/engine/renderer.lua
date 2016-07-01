@@ -111,7 +111,7 @@ function core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 		r, g, b, a
 	)
 	v:texture(tex)
-	return v
+	return v, w, h
 end
 
 function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
@@ -143,7 +143,7 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 			r, g, b, a
 		)
 		v:texture(t.t)
-		return v
+		return v, w, h
 	else
 		if not v then v = core.renderer.vertexes() end
 		v:texture(t.t)
@@ -172,7 +172,7 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 				)
 			end
 		end
-		return v
+		return v, w, h
 	end
 end
 

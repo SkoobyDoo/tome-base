@@ -238,6 +238,7 @@ function _M:save()
 		_check_entities_store = true,
 		_map = true,
 		_do_map = true,
+		_do_mm = true,
 		_fovcache = true,
 		path_strings_computed = true,
 		surface = true,
@@ -260,11 +261,22 @@ function _M:updateDefaultShader()
 	end
 end
 
+function _M:getMapDO()
+	return self._do_map
+end
+
+function _M:getMinimapDO()
+	return self._do_mm
+end
+
 function _M:makeCMap()
 	--util.show_backtrace()
 	self._map = core.map.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
 	if not self._do_map then self._do_map = self._map:getMapDO()
 	else self._do_map:setMap(self._map)
+	end
+	if not self._do_mm then self._do_mm = self._map:getMinimapDO()
+	else self._do_mm:setMap(self._map)
 	end
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))

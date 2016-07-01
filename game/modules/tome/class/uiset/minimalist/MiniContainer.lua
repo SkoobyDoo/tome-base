@@ -33,17 +33,23 @@ function _M:init(minimalist, w, h)
 	self.mouse = Mouse.new()
 	self.x, self.y = 0, 0
 	self.w, self.h = w, h
+	self.scale = 1
 	self.locked = true
+	self.focused = false
 	self.orientation = "left"
+	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
 end
 
-function _M:imageLoader(file)
-	local sfile = "/data/gfx/"..UI.ui.."-ui/minimalist/"..file
-	-- DGDGDGDG: use atlas !!!!
-	if fs.exists(sfile) then
-		return core.renderer.surface(core.display.loadImage(sfile), 0, 0)
+function _M:imageLoader(file, rw, rh)
+	local sfile = UI.ui.."-ui/minimalist/"..file
+	if fs.exists("/data/gfx/"..sfile) then
+		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset(sfile)
+		if ts then return core.renderer.fromTextureTable({t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}, 0, 0, rw, rh)
+		else return core.renderer.surface(core.display.loadImage("/data/gfx/"..sfile), 0, 0, rw, rh) end
 	else
-		return core.renderer.surface(core.display.loadImage("/data/gfx/ui/"..file), 0, 0)
+		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset("ui/"..file)
+		if ts then return core.renderer.fromTextureTable({t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}, 0, 0, rw, rh)
+		else return core.renderer.surface(core.display.loadImage("/data/gfx/ui/"..file), 0, 0, rw, rh) end
 	end
 end
 
@@ -60,7 +66,7 @@ end
 
 function _M:move(x, y)
 	self.x, self.y = x, y
-	self.mouse.delegate_offset_x, self.mouse.delegate_offset_y = x, y
+	self:setupMouse()
 end
 
 function _M:resize(w, h)
@@ -75,6 +81,30 @@ function _M:lock(v)
 	self.locked = v
 end
 
-function _M:getPlace()
-	return "bad", {x=0, y=0, scale=1, a=0}
+function _M:getDO()
+	-- By default assume this name, overload if different
+	return self.do_container
+end
+
+function _M:onFocus(v)
+end
+
+function _M:setupMouse(first)
+	if first then self.mouse_first_setup = true end
+	if not self.mouse_first_setup then return end
+
+	self.mouse.delegate_offset_x, self.mouse.delegate_offset_y = self.x, self.y
+	if not game.mouse:updateZone(self.mousezone_id, self.x, self.y, self.w, self.h, nil, self.scale) then
+		game.mouse:unregisterZone(self.mousezone_id)
+
+		local fct = function(button, mx, my, xrel, yrel, bx, by, event)
+			local newfocus = event ~= "out"
+			if newfocus ~= focus then
+				self.focused = newfocus
+				self:onFocus(self.focused)
+			end
+			self.mouse:delegate(button, mx, my, xrel, yrel, bx, by, event)
+		end
+		game.mouse:registerZone(self.x, self.y, self.w, self.h, fct, nil, self.mousezone_id, true, self.scale)
+	end
 end

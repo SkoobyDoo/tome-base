@@ -81,6 +81,7 @@ typedef struct {
 	GLuint mm_texture;
 	int mm_w, mm_h;
 	int mm_rw, mm_rh;
+	int minimap_gridsize, old_minimap_gridsize;
 
 	int nb_grid_lines_vertices;
 	GLfloat *grid_lines_vertices;
@@ -102,7 +103,6 @@ typedef struct {
 
 	int mo_list_ref;
 
-	int minimap_gridsize;
 
 	int is_hex;
 
@@ -137,5 +137,6 @@ typedef struct {
 } map_type;
 
 extern void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show, mat4 model, vec4 color);
+extern void minimap_toscreen(map_type *map, mat4 model, int gridsize, int mdx, int mdy, int mdw, int mdh, float transp);
 
 #endif

@@ -44,7 +44,12 @@ void DORTileMap::cloneInto(DisplayObject *_into) {
 }
 
 void DORTileMap::toScreen(mat4 model, vec4 color) {
-	map_toscreen(NULL, map, 0, 0, 1, true, model, color);
+	switch (mode) {
+		case TileMapMode::MAP:
+			map_toscreen(L, map, 0, 0, 1, true, model, color);
+		case TileMapMode::MINIMAP:
+			minimap_toscreen(map, model, mm_info.gridsize, mm_info.mdx, mm_info.mdy, mm_info.mdw, mm_info.mdh, mm_info.transp);
+	}
 }
 
 /*************************************************************************

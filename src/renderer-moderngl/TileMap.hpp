@@ -26,11 +26,20 @@
 
 #include "map.hpp"
 
+enum class TileMapMode { MAP, MINIMAP, GRID_LINES, FOV };
+
 // This one is a little strange, it is not the master of map_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around map code
 class DORTileMap : public SubRenderer{
 private:
 	map_type *map = NULL;
+	TileMapMode mode = TileMapMode::MAP;
+	struct {
+		int gridsize = 4;
+		int mdx = 0, mdy = 0;
+		int mdw = 50, mdh = 50;
+		float transp = 1;
+	} mm_info;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -44,6 +53,17 @@ public:
 	void setMap(map_type *map) {
 		this->map = map;
 	};
+	void setMode(TileMapMode mode) {
+		this->mode = mode;
+	}
+	void setMinimapInfo(int gridsize, int mdx, int mdy, int mdw, int mdh, float transp) {
+		mm_info.gridsize = gridsize;
+		mm_info.mdx = mdx;
+		mm_info.mdy = mdy;
+		mm_info.mdw = mdw;
+		mm_info.mdh = mdh;
+		mm_info.transp = transp;
+	}
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
 };

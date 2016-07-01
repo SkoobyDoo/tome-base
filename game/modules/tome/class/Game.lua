@@ -1171,7 +1171,7 @@ function _M:changeLevelReal(lev, zone, params)
 			self.level.map:addPathString(e:getPathString())
 		end
 	end
-	self.zone_name_s = nil
+	self.zone_name = nil
 
 	-- Special stuff
 	for uid, act in pairs(self.level.entities) do if act.removeEffectsFilter then act:removeEffectsFilter(function(e) return e.zone_wide_effect end, nil, nil, true) end end
@@ -1345,12 +1345,7 @@ function _M:updateZoneName()
 			name = ("%s (%d)"):format(self.zone.name, lev)
 		end
 	end
-	if self.zone_name_s and self.old_zone_name == name then return end
-
-	local s = core.display.drawStringBlendedNewSurface(self.zone_font, name, unpack(colors.simple(colors.GOLD)))
-	self.zone_name_w, self.zone_name_h = s:getSize()
-	self.zone_name_s, self.zone_name_tw, self.zone_name_th = s:glTexture()
-	self.old_zone_name = name
+	self.zone_name = name
 	print("Updating zone name", name)
 end
 
@@ -1623,7 +1618,7 @@ function _M:displayMap(nb_keyframes)
 		-- Handle ambient sounds
 		if self.level.data.ambient_bg_sounds then self.state:playAmbientSounds(self.level, self.level.data.ambient_bg_sounds, nb_keyframes) end
 
-		if not self.zone_name_s then self:updateZoneName() end
+		if not self.zone_name then self:updateZoneName() end
 
 		-- emotes display
 		map:displayEmotes(nb_keyframe or 1)
@@ -1665,9 +1660,9 @@ function _M:display(nb_keyframes)
 	if self.full_fbo then self.full_fbo:use(true) end
 
 	-- Now the ui
-core.display.countDraws()
+-- core.display.countDraws()
 	self.uiset:display(nb_keyframes)
-print("[draw calls] map & hud", core.display.countDraws())
+-- print("[draw calls] map & hud", core.display.countDraws())
 
 	-- "Big News"
 	self.bignews:display(nb_keyframes)

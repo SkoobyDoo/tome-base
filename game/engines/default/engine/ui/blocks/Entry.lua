@@ -57,7 +57,7 @@ function _M:init(t, text, color, w, h, offset)
 
 	self.uses_own_renderer = false
 
-	self:setText(text)
+	if text ~= "" then self:setText(text) end
 end
 
 function _M:onFocusChange(v)
