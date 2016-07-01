@@ -138,8 +138,8 @@ function _M:runReal()
 	engine.interface.GameTargeting.init(self)
 	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
 
-	self.uiset.hotkeys_display.actor = self.player
-	self.uiset.npcs_display.actor = self.player
+	if self.uiset.hotkeys_display then self.uiset.hotkeys_display.actor = self.player end
+	if self.uiset.npcs_display then self.uiset.npcs_display.actor = self.player end
 
 	-- Run the current music if any
 	self:onTickEnd(function()

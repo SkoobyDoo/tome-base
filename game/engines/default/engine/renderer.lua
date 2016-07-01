@@ -88,7 +88,7 @@ function core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
 		r, g, b, a
 	)
 	v:texture(tex)
-	return v
+	return v, w, h
 end
 
 function core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)

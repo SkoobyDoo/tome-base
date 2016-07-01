@@ -528,78 +528,16 @@ function _M:display(nb_keyframes)
 end
 
 --[[
-local blur = require("engine.Shader").new("blur")
-local w, h = core.display.size()
-blur:setUniform("texSize", {w, h})
-blur:setUniform("blur", 10)
-local renderer = core.renderer.renderer()
+local renderer = core.renderer.renderer():translate(100, 100)
+local srenderer = core.renderer.renderer()
 renderer:setRendererName("renderer")
-renderer:zSort(true)
-local UIBase = require "engine.ui.Base"
-local f = UIBase:makeFrameDO("ui/dialogframe_", 400, 400, nil, nil, true)
-f.container:translate(400, 400)
-local f2 = UIBase:makeFrameDO("ui/button", 100, 40, nil, nil, true)
--- f2.container:translate(100, 150)
-local f3 = UIBase:makeFrameDO("ui/textbox", 25, 25, nil, nil, true)
--- f3.container:translate(20, 10)
--- f3.container:rotate(0, 0, math.rad(45))
--- f2.container:add(core.renderer.redPoint())
--- f3.container:add(core.renderer.redPoint())
-f3.container:scale(3, 2, 1)
--- f.container:scale(0.1, 0.1, 1)
--- 
-local i = core.renderer.image("/data/gfx/background/tome.png")
-i:translate(0, 0, 1000)
-i:scale(0.4, 0.2, 1)
--- i:translateTween("toto", 60, "x", nil, 200, "linear", function() print("dddeleting ",i) game:test()game:test() end)
-f.container:add(i)
--- 
-local t0 = core.renderer.text(UIBase.font_bold)
-t0:text("MELTOPAL")
-t0:translate(50, 20, 100)
-t0:textColor(0, 1, 1, 1)
-f.container:add(t0)
--- 
-local t1 = core.renderer.text(UIBase.font)
-t1:text("Coco l'asticot!")
-t1:translate(50, 50, 100)
-t1:rotate(0, 0, math.rad(45))
-f.container:add(t1)
--- 
-local t2 = core.renderer.text(UIBase.font_bold)
-t2:text("MELTOPAL")
-t2:translate(50, 90, 100)
-f.container:add(t2)
--- 
-f.container:add(f2.container)
-f2.container:add(f3.container)
-renderer:add(f.container)
--- 
-local subrenderer = core.renderer.renderer()
-subrenderer:setRendererName("subrenderer")
--- subrenderer:translate(0, 0, 0)
--- subrenderer:rotate(0, 0, math.rad(25))
--- subrenderer:cutoff(200, 200, 30, 30)
-local i2 = core.renderer.image("/data/gfx/background/tome2.png")
-i2:shader(blur.shad)
-i2:translate(800, 50, 1)
-i2:scale(0.5, 0.5, 1)
-i2:rotate(math.rad(45), 0, 0)
--- subrenderer:add(i2)
-renderer:add(subrenderer)
--- 
-local fbo = core.renderer.target()
--- fbo:scale(1, 0.4, 1)
-fbo:clearColor(0, 0.1, 0, 1)
-fbo:displaySize(400, 400)
-fbo:translate(400, 400)
-fbo:rotate(math.rad(45), 0, 0)
-fbo:setAutoRender(renderer)
+local i = core.renderer.image("/data/gfx/background/tome.png"):scale(0.1, 0.1, 1)
+local i2 = core.renderer.renderer():translate(102.4, 76.8, 0)
+i2:add(core.renderer.image("/data/gfx/background/tome.png"):scale(0.1, 0.1, 1))
 
-local fborenderer = core.renderer.renderer()
-fborenderer:setRendererName("fborenderer")
-fborenderer:add(fbo)
-fborenderer:add(i2)
+renderer:add(srenderer)
+srenderer:add(i)
+srenderer:add(i2)
 
 -- 
 -- renderer:translate(100,100,0)
@@ -611,26 +549,7 @@ local nb = 1
 local z = false
 local tween = require "tween"
 function _M:display(nb_keyframes)
-	-- fbo:use(true)
-	-- 	renderer:toScreen()
-	-- fbo:use(false)
-
-	fborenderer:toScreen()
-
-	-- fbo:rotate(0, math.rad(2), 0, true)
-	i2:rotate(0, math.rad(2), math.rad(5), true)
-	f3.container:scale(1, 2 + math.sin(core.game.getTime()/500), 1)
-	t1:rotate(0, 0, math.rad(2), true)
-	-- renderer:color(1, 1, 1, math.sin(core.game.getTime()/500))
-
-	if nb_keyframes > 0 then tween.update(nb_keyframes) end
-	-- core.renderer.dumpCurrentTweens()
-	nb=nb+nb_keyframes
-end
-local f
-function _M:test()
-	print("test")
-	print("dddeleting2 ",i) if i then i:removeFromParent() end i = nil collectgarbage("collect")
+	renderer:toScreen()
 end
 --]]
 

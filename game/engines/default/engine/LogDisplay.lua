@@ -41,6 +41,13 @@ function _M:init(x, y, w, h, max, fontname, fontsize, color)
 
 	self.renderer = core.renderer.renderer()
 
+	local wself = self:weakSelf()
+	local cb = core.renderer.callback(function()
+		if not wself.__getstrong then return end
+		wself.__getstrong:update()
+	end)
+	self.renderer:add(cb)
+
 	self:resize(x, y, w, h)
 
 	self.cache_next_id = 1
@@ -67,6 +74,8 @@ function _M:resize(x, y, w, h)
 
 	self.renderer:cutoff(0, 0, w, h)
 	self.renderer:translate(self.display_x, self.display_y, 0)
+	self.history_container = core.renderer.container()
+	self.renderer:add(self.history_container)
 
 	self.scrollbar = Slider.new{size=self.h - 20, max=1, inverse=true}
 
@@ -193,13 +202,13 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	end
 end
 
-function _M:display()
+function _M:update()
 	-- If nothing changed, return the same surface as before
 	if not self.changed then return end
 	self.changed = false
 
 	-- Erase and the display
-	self.renderer:clear()
+	self.history_container:clear()
 	self.dlist = {}
 	local h = 0
 	for z = 1 + self.scroll, #self.log do
@@ -222,7 +231,7 @@ function _M:display()
 
 		self.dlist[#self.dlist+1] = {item=text, date=self.log[z].reset_fade or self.log[z].timestamp, url=self.log[z].url}
 		text:translate(0, self.h - h, 10)
-		self.renderer:add(text)
+		self.history_container:add(text)
 
 		if self.fading then text:waitTween("fade", 60, function(text) text:colorTween("fade", 30, "a", nil, 0, "linear") end) end
 
@@ -232,8 +241,6 @@ function _M:display()
 end
 
 function _M:toScreen()
-	self:display()
-
 	self.renderer:toScreen()
 
 	if not self.fading then
@@ -254,11 +261,9 @@ function _M:scrollUp(i)
 end
 
 function _M:resetFade()
-	local log = self.log
-
 	-- Reset fade
-	for i = 1,#log do
-		log[i].item:cancelTween("fade")
-		log[i]:colorTween("fade", 5, "a", nil, 1, "linear")
+	for _, d in ipairs(self.cache) do
+		d:cancelTween("fade")
+		d:colorTween("fade", 5, "a", nil, 1, "linear")
 	end
 end

@@ -76,3 +76,6 @@ function _M:addParticle(x, y, name, args)
 	local p = Particles.new(name, 1, args)
 	self.particles[p] = {x=x, y=y}
 end
+
+function _M:setupMinimap(level)
+end

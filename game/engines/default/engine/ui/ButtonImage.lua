@@ -96,47 +96,5 @@ function _M:on_focus_change(status)
 		self.frame.container:shown(not status)
 		self.frame_sel.container:shown(status)
 	end
-	self.content:color(1, 1, 1, status and 1 or self.alpha_unfocus)
+	self.content:colorTween("focus", 8, "a", nil, status and 1 or self.alpha_unfocus)
 end
-
--- function _M:display(x, y, nb_keyframes, ox, oy)
--- 	self.last_display_x = ox
--- 	self.last_display_y = oy
-
--- 	if self.hide then return end
-
--- 	x = x + 3
--- 	y = y + 3
--- 	ox = ox + 3
--- 	oy = oy + 3
--- 	local mx, my, button = core.mouse.get()
--- 	if self.focused then
--- 		if not self.no_decoration then
--- 			if button == 1 and mx > ox and mx < ox+self.w and my > oy and my < oy+self.h then
--- 				self:drawFrame(self.frame, x, y, 0, 1, 0, 1)
--- 			elseif self.glow then
--- 				local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
--- 				self:drawFrame(self.frame, x, y, v*0.8, v, 0, 1)
--- 			else
--- 				self:drawFrame(self.frame_sel, x, y)
--- 			end
--- 		end
--- 		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3])
--- 	else
--- 		if not self.no_decoration then
--- 			if self.glow then
--- 				local v = self.glow + (1 - self.glow) * (1 + math.cos(core.game.getTime() / 300)) / 2
--- 				self:drawFrame(self.frame, x, y, v*0.8, v, 0, self.alpha_unfocus)
--- 			else
--- 				self:drawFrame(self.frame, x, y, 1, 1, 1, self.alpha_unfocus)
--- 			end
-
--- 			if self.focus_decay and not self.glow then
--- 				self:drawFrame(self.frame_sel, x, y, 1, 1, 1, self.alpha_unfocus * self.focus_decay / self.focus_decay_max_d)
--- 				self.focus_decay = self.focus_decay - nb_keyframes
--- 				if self.focus_decay <= 0 then self.focus_decay = nil end
--- 			end
--- 		end
--- 		self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3], 1, 1, 1, self.alpha_unfocus)
--- 	end
--- end

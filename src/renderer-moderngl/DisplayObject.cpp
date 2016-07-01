@@ -374,8 +374,8 @@ void SubRenderer::setRendererName(const char *name) {
 
 void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
-	this->use_model = cur_model * model;
-	this->use_color = cur_color * color;
+	this->use_model = cur_model;
+	this->use_color = cur_color;
 	stopDisplayList(); // Needed to make sure we break texture chaining
 	auto dl = getDisplayList(container, 0, NULL);
 	stopDisplayList(); // Needed to make sure we break texture chaining
@@ -385,8 +385,8 @@ void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 
 void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
-	this->use_model = cur_model * model;
-	this->use_color = cur_color * color;
+	this->use_model = cur_model;
+	this->use_color = cur_color;
 	int startat = container->zvertices.size();
 	container->zvertices.resize(startat + 1);
 	sortable_vertex *dest = container->zvertices.data();

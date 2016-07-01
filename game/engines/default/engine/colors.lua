@@ -53,6 +53,13 @@ function colors.simple1(c, a) return {c.r/255, c.g/255, c.b/255, a or 1} end
 -- @return b
 function colors.unpack(c) return c.r, c.g, c.b end
 
+--- color -> foreground arguments
+-- @param[type=table] c
+-- @return r
+-- @return g
+-- @return b
+function colors.unpack1(c, a) return c.r/255, c.g/255, c.b/255, a or 1 end
+
 --- hex -> color
 -- @usage colors.hex1("FFBBCC")
 -- @string hex RRGGBB format hex string, 00->FF
