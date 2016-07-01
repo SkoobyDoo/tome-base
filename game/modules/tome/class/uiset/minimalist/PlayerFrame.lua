@@ -103,7 +103,6 @@ function _M:init(minimalist, w, h)
 	self.mouse:registerZone(config.player.x, config.player.y, 40, 40, function(button, mx, my, xrel, yrel, bx, by, event)
 		game.key:triggerVirtual("SHOW_CHARACTER_SHEET")
 	end, {button=true}, "charsheet", false, 1)
-
 	self:update(0)
 end
 
