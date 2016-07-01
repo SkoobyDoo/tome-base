@@ -65,6 +65,18 @@ function _M:init(minimalist, w, h)
 
 	MiniContainer.init(self, minimalist)
 	self:update(0)
+
+	self.mouse:registerZone(config.draw.x, config.draw.y, 150, 150, function(button, mx, my, xrel, yrel, bx, by, event)
+		if button == "left" and not xrel and not yrel and event == "button" then
+			local tmx, tmy = math.floor(bx / 3), math.floor((by-30) / 3)
+			game.player:mouseMove(tmx + game.minimap_scroll_x, tmy + game.minimap_scroll_y)
+		elseif button == "right" then
+			local tmx, tmy = math.floor(bx / 3), math.floor((by-30) / 3)
+			game.level.map:moveViewSurround(tmx + game.minimap_scroll_x, tmy + game.minimap_scroll_y, 1000, 1000)
+		elseif event == "button" and button == "middle" then
+			game.key:triggerVirtual("SHOW_MAP")
+		end
+	end, nil, "minimap", true, 1)
 end
 
 function _M:getDefaultGeometry()
