@@ -56,12 +56,12 @@ local configs = {
 function _M:init(minimalist, w, h)
 	local config = configs[UI.ui] or configs.dark
 
-	local pf_bg
+	local pf_bg, pf_defend_w, pf_defend_h, pf_levelup_w, pf_levelup_h
 	pf_bg, self.def_w, self.def_h = self:imageLoader("playerframe/back.png")
 	local pf_shadow = self:imageLoader("playerframe/shadow.png")
-	self.pf_defend = self:imageLoader("playerframe/defend.png") 
+	self.pf_defend, pf_defend_w, pf_defend_h = self:imageLoader("playerframe/defend.png") 
 	self.pf_attack = self:imageLoader("playerframe/attack.png") 
-	self.pf_levelup = self:imageLoader("playerframe/levelup.png") 
+	self.pf_levelup, pf_levelup_w, pf_levelup_h = self:imageLoader("playerframe/levelup.png") 
 	self.pf_encumber = self:imageLoader("playerframe/encumber.png") 
 	local expbar_w, expbar_h, lexpbar_w, lexpbar_h
 	self.pf_exp, expbar_w, expbar_h = self:imageLoader("playerframe/exp.png")
@@ -91,8 +91,19 @@ function _M:init(minimalist, w, h)
 	self.text_money = core.renderer.text(font)
 	self.text_money:textColor(colors.unpack1(colors.GOLD))
 	self.do_container:add(self.text_money) self.text_money:translate(config.money.x, config.money.y, 10)
-
+	
 	MiniContainer.init(self, minimalist)
+
+	self.mouse:registerZone(config.attack.x, config.attack.y, pf_defend_w, pf_defend_h, function(button, mx, my, xrel, yrel, bx, by, event)
+		game.key:triggerVirtual("TOGGLE_BUMP_ATTACK")
+	end, {button=true}, "attack", false, 1)
+	self.mouse:registerZone(config.levelup.x, config.levelup.y, pf_levelup_w, pf_levelup_h, function(button, mx, my, xrel, yrel, bx, by, event)
+		game.key:triggerVirtual("LEVELUP")
+	end, {button=true}, "levelup", false, 1)
+	self.mouse:registerZone(config.player.x, config.player.y, 40, 40, function(button, mx, my, xrel, yrel, bx, by, event)
+		game.key:triggerVirtual("SHOW_CHARACTER_SHEET")
+	end, {button=true}, "charsheet", false, 1)
+
 	self:update(0)
 end
 
