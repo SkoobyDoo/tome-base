@@ -20,7 +20,7 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
-local Slider = require "engine.ui.Slider"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI Container
 -- @classmod engine.ui.UIContainer
@@ -29,98 +29,97 @@ module(..., package.seeall, class.inherit(Base, Focusable))
 function _M:init(t)
 	self.w = assert(t.width, "no container width")
 	self.h = assert(t.height, "no container height")
-	self.dest_area = t.dest_area or { h = self.h }
 	
-	self:erase()
+	self.uis = {}
 	
-	self.scrollbar = Slider.new{size=self.h, max=0}
 	self.uis_h = 0
 	
 	self.scroll_inertia = 0
+	self.do_scroller = core.renderer.container()
 
+	t.require_renderer = true
 	Base.init(self, t)
 end
 
 function _M:generate()
+	self.do_container:clear()
+	self.do_scroller:clear()
 	self.mouse:reset()
 	self.key:reset()
 
+	self.do_container:cutoff(0, 0, self.w, self.h)
+
+	self.do_container:add(self.do_scroller)
+
+	self.scrollbar = Scrollbar.new(nil, self.h, 1)
+	self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
+	self.scrollbar:get():shown(false)
+	self.do_container:add(self.scrollbar:get())
+
 	-- Add UI controls
-	local on_mousewheel = function(button, x, y, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if button == "wheelup" and event == "button" then self.key:triggerVirtual("MOVE_UP")
 		elseif button == "wheeldown" and event == "button" then self.key:triggerVirtual("MOVE_DOWN")
 		end
-	end
-	
-	self.mouse:registerZone(0, 0, self.w, self.h, on_mousewheel)
-	
+	end)
 	self.key:addBinds{
-		MOVE_UP = function() if self.scrollbar.pos and self.uis_h > self.h then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 5 end end,
-		MOVE_DOWN = function() if self.scrollbar.pos and self.uis_h > self.h then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 5 end end,
+		MOVE_UP = function() self:scroll(false) end,
+		MOVE_DOWN = function() self:scroll(true) end,
 	}
 end
 
+function _M:scroll(down)
+	if self.uis_h <= self.h then return end
+	if down then self.scroll_inertia = math.min(self.scroll_inertia, 0) + 10
+	else self.scroll_inertia = math.min(self.scroll_inertia, 0) - 10
+	end
+end
+
 function _M:erase()
+	for _, ui in ipairs(self.uis) do
+		ui.do_container:removeFromParent()
+	end
 	self.uis = {}
 end
 
 function _M:changeUI(uis)
+	self:erase()
 	local max_h = 0
 	self.uis = uis
 	for i=1, #self.uis do
-		max_h = max_h + self.uis[i].h
+		local ui = self.uis[i]
+		if ui.do_container then
+			ui.do_container:translate(0, max_h)
+			ui.do_container:removeFromParent()
+			self.do_scroller:add(ui.do_container)
+			max_h = max_h + ui.h
+		end
 	end
 	self.uis_h = max_h
-	self.scrollbar.max = max_h - self.h
-	if not self.dest_area.fixed then self.dest_area.h = max_h end
+	if max_h <= self.h then
+		self.scrollbar:get():shown(false)
+	else
+		self.scrollbar:get():shown(true)
+		self.scrollbar:setMax(max_h - self.h)
+		self.scrollbar:setPos(0)
+		self.do_scroller:translate(0, 0, 0)
+	end
 end
 
-function _M:resize(w, h, dest_w, dest_h)
+function _M:resize(w, h)
 	self.w = w
 	self.h = h
-	self.dest_area.w = dest_w
-	self.dest_area.h = dest_h
-	self.scrollbar.max = self.uis_h - self.h
-	self.scrollbar.pos = util.minBound(self.scrollbar.pos, 0, self.scrollbar.max)
-	self.scrollbar.h = dest_h
+	self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
+	self:changeUI(self.uids)
 end
 
-function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
-	local_x = local_x and local_x or 0
-	local_y = local_y and local_y or 0
-	
-	if self.scrollbar then
-		self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max)
-		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
-		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+function _M:display(x, y, nb_keyframes)
+	if self.scroll_inertia ~= 0 and nb_keyframes > 0 then
+		self.scrollbar:setPos(self.scrollbar.pos + self.scroll_inertia * nb_keyframes)
+		self.do_scroller:translate(0, -self.scrollbar.pos, 0)
+		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
-	end
-	
-	offset_x = offset_x and offset_x or 0
-	offset_y = offset_y and offset_y or (self.scrollbar and self.scrollbar.pos or 0)
-	
-	local current_y = y
-	local prev_loffset = 0
-	local total_h = 0 
-	local ui
-	local first = true
-	for i=1, #self.uis do
-		ui = self.uis[i]
-		ui.dest_area = ui.dest_area or {}
-		ui.dest_area.h = self.dest_area.h
-		if offset_y <= total_h + self.uis[i].h then 
-			ui:display(x, current_y, nb_keyframes, x, current_y, offset_x, offset_y, local_x, local_y) 
-			current_y = current_y + self.uis[i].h
-			if total_h < offset_y then current_y = current_y + local_y - offset_y end
-		end
-		
-		local_y = local_y + self.uis[i].h
-		total_h = total_h + self.uis[i].h
-		if total_h > offset_y + self.h then break end
-	end
-	
-	if self.focused and self.uis_h > self.h then
-		self.scrollbar:display(x + self.w - self.scrollbar.w, y)
 	end
 end

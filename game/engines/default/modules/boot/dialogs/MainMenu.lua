@@ -128,21 +128,14 @@ function _M:updateUI()
 		self:uiLogin(uis)
 	end
 
-	-- local tree = {}
-	-- for i = 1, 100 do tree[#tree+1] = {name="toto"..i, b1="lol"..i, b2=""..(100-i)} end
-	-- tree[1].nodes = {} tree[1].shown = true tree[1].color = function() return colors_simple.RED end
-	-- tree[2].nodes = {} tree[2].shown = true tree[2].color = function() return colors_simple.RED end
-	-- tree[3].nodes = {} tree[3].shown = true tree[3].color = function() return colors_simple.RED end
-	-- for i = 1, 3 do tree[1].nodes[#tree[1].nodes+1] = {name="caca"..i, b1="lol"..i, b2=""..(100-i)} end
-	-- for i = 1, 2 do tree[2].nodes[#tree[2].nodes+1] = {name="caca"..i, b1="lol"..i, b2=""..(100-i)} end
-	-- local test = require("engine.ui.TreeList").new{width=self.iw, height=self.ih, sel_by_col=true, scrollbar=true, columns={
-	-- 		{width=50, display_prop="name"},
-	-- 		{width=30, display_prop="b1"},
-	-- 		{width=20, display_prop="b2"},
-	-- 	}, tree = tree,
-	-- 	fct = function() end,
-	-- }
-	-- uis = { {left=0, top=0, ui=test} }  
+	local test = require("engine.ui.UIContainer").new{width=self.iw, height=self.ih}
+	uis = { {left=0, top=0, ui=test} }
+	local uilist = {}
+	for i = 1, 100 do
+		local b = Button.new{text="Test "..i, width=50, fct=function() local i=i print(i) end}
+		uilist[#uilist+1] = b
+	end
+	test:changeUI(uilist)
 
 
 	self:loadUI(uis)

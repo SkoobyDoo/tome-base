@@ -45,9 +45,12 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	self.locked = false
 	
 	if lockstatus_icon then
-		local open, ow, oh = self:getImage(lockstatus_icon.open)
-		local locked, lw, lh = self:getImage(lockstatus_icon.locked)
-		self.status_icon = {open = {_tex = open:glTexture(), w = ow, h = oh}, locked = {_tex = locked:glTexture(), w = lw, h = lh} }
+		local open = self:getAtlasTexture(lockstatus_icon.open)
+		local locked = self:getAtlasTexture(lockstatus_icon.locked)
+		self.status_icon = {
+			open = {item=core.renderer.fromTextureTable(open, 0, 0), w = open.w, h = open.h},
+			locked = {item=core.renderer.fromTextureTable(locked, 0, 0), w = locked.w, h = locked.h},
+		}
 	end
 	
 	self.empty = true
@@ -56,16 +59,18 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	self.w = self.max
 	self.h = 200
 	self.uis_h = 0
-	self.pingpong = 0
 	self.last_display_x = 0
 	self.last_display_y = 0
-	self.dest_area = { h = self.h }
-	self.container = UIContainer.new{width = self.w, height = self.h, dest_area = { h = self.h, fixed = true} }
-	Base.init(self, {})
+	self.container = UIContainer.new{width = self.w, height = self.h }
+	Base.init(self, {require_renderer=true})
+
 end
 
 function _M:generate()
-	self.frame = Base:makeFrame("ui/tooltip/", self.w + 6, self.h + 6)
+	self.do_container:add(self.container.do_container)
+
+	UH WE NEED A RESIZABLE FRAME
+	frame = Base:makeFrame("ui/tooltip/", self.w + 6, self.h + 6)
 end
 
 --- Set the tooltip text	
@@ -194,6 +199,10 @@ function _M:erase()
 	self.empty = true
 end
 
+function _M:hide(v)
+	self.inhibited = v
+end
+
 function _M:display() end
 
 function _M:toScreen(x, y, nb_keyframes)
@@ -202,59 +211,63 @@ function _M:toScreen(x, y, nb_keyframes)
 
 	if self.inhibited == true or self.empty == true then return nil end
 	nb_keyframes = nb_keyframes or 0
-	-- Save current matrix and load coords to default values
-	core.display.glPush()
-	core.display.glIdentity()
-	
-	local locked_w = ( (self.locked and self.uis_h > self.container.dest_area.h) and self.container.scrollbar.w or 0)
-	
-	local time = core.game.getTime()
-	if not self.pingpong_last then self.pingpong_last = time + self.scroll_delay * self.container.h / 3 end
-	local delta = math.max(time - self.pingpong_last, 0) / self.scroll_delay
 
-	local scrollbar = self.container.scrollbar
-	if not self.locked and delta > 0 and scrollbar.max > 0 then
-		local slowdown = 0.5 * scrollbar.pos / scrollbar.max
-		self.pingpong_last = time
-		if self.pingpong == 0 then
-			scrollbar.pos = scrollbar.pos + delta * (0.5 + slowdown)
-			if scrollbar.pos >= scrollbar.max then 
-				scrollbar.pos = scrollbar.max 
-				self.pingpong = 1
-				self.pingpong_last = time + self.scroll_delay * self.container.h / 3
-			end
-		else
-			-- scroll back twice as fast, since it's awkward to read during that time
-			scrollbar.pos = scrollbar.pos - delta * 2
-			if scrollbar.pos <= 0 then 
-				scrollbar.pos = 0
-				self.pingpong = 0
-				self.pingpong_last = time + self.scroll_delay * self.container.h / 3
-			end
-		end
-	end
-	
-	-- Draw the frame and shadow
-	self:drawFrame(self.frame, x - locked_w, y, 0, 0, 0, 0.3, self.w + locked_w, self.h) -- shadow
-	if self.locked then
-		self:drawFrame(self.frame, x - locked_w, y, 1, 1, 1, 1, self.w + locked_w, self.h) -- locked frame
-	else
-		self:drawFrame(self.frame, x, y, 1, 1, 1, 0.75) -- unlocked frame
-	end
-	
-	if self.status_icon then
-		local status_off = ( (self.locked and self.uis_h > self.container.dest_area.h) and 0 or self.container.scrollbar.w)
-		if self.locked then
-			self.status_icon.locked._tex:toScreen(x + status_off - self.status_icon.locked.w, y + (self.h - self.status_icon.locked.h) * 0.5, self.status_icon.locked.w, self.status_icon.locked.h)
-		else
-			self.status_icon.open._tex:toScreen(x + status_off - self.status_icon.open.w, y + (self.h - self.status_icon.open.h) * 0.5, self.status_icon.open.w, self.status_icon.open.h )
-		end
-	end
+	self.do_container:translate(x, y, 0)
+	self.do_container:toScreen()
 
-	self.container:display(x + 8 - locked_w, y + 8, nb_keyframes, x + 8 - locked_w, y + 8)
+	-- -- Save current matrix and load coords to default values
+	-- core.display.glPush()
+	-- core.display.glIdentity()
 	
-	-- Restore saved opengl matrix
-	core.display.glPop()
+	-- local locked_w = ( (self.locked and self.uis_h > self.container.dest_area.h) and self.container.scrollbar.w or 0)
+	
+	-- local time = core.game.getTime()
+	-- if not self.pingpong_last then self.pingpong_last = time + self.scroll_delay * self.container.h / 3 end
+	-- local delta = math.max(time - self.pingpong_last, 0) / self.scroll_delay
+
+	-- local scrollbar = self.container.scrollbar
+	-- if not self.locked and delta > 0 and scrollbar.max > 0 then
+	-- 	local slowdown = 0.5 * scrollbar.pos / scrollbar.max
+	-- 	self.pingpong_last = time
+	-- 	if self.pingpong == 0 then
+	-- 		scrollbar.pos = scrollbar.pos + delta * (0.5 + slowdown)
+	-- 		if scrollbar.pos >= scrollbar.max then 
+	-- 			scrollbar.pos = scrollbar.max 
+	-- 			self.pingpong = 1
+	-- 			self.pingpong_last = time + self.scroll_delay * self.container.h / 3
+	-- 		end
+	-- 	else
+	-- 		-- scroll back twice as fast, since it's awkward to read during that time
+	-- 		scrollbar.pos = scrollbar.pos - delta * 2
+	-- 		if scrollbar.pos <= 0 then 
+	-- 			scrollbar.pos = 0
+	-- 			self.pingpong = 0
+	-- 			self.pingpong_last = time + self.scroll_delay * self.container.h / 3
+	-- 		end
+	-- 	end
+	-- end
+	
+	-- -- Draw the frame and shadow
+	-- self:drawFrame(self.frame, x - locked_w, y, 0, 0, 0, 0.3, self.w + locked_w, self.h) -- shadow
+	-- if self.locked then
+	-- 	self:drawFrame(self.frame, x - locked_w, y, 1, 1, 1, 1, self.w + locked_w, self.h) -- locked frame
+	-- else
+	-- 	self:drawFrame(self.frame, x, y, 1, 1, 1, 0.75) -- unlocked frame
+	-- end
+	
+	-- if self.status_icon then
+	-- 	local status_off = ( (self.locked and self.uis_h > self.container.dest_area.h) and 0 or self.container.scrollbar.w)
+	-- 	if self.locked then
+	-- 		self.status_icon.locked._tex:toScreen(x + status_off - self.status_icon.locked.w, y + (self.h - self.status_icon.locked.h) * 0.5, self.status_icon.locked.w, self.status_icon.locked.h)
+	-- 	else
+	-- 		self.status_icon.open._tex:toScreen(x + status_off - self.status_icon.open.w, y + (self.h - self.status_icon.open.h) * 0.5, self.status_icon.open.w, self.status_icon.open.h )
+	-- 	end
+	-- end
+
+	-- self.container:display(x + 8 - locked_w, y + 8, nb_keyframes, x + 8 - locked_w, y + 8)
+	
+	-- -- Restore saved opengl matrix
+	-- core.display.glPop()
 end
 
 --- Displays the tooltip at the given map coordinates

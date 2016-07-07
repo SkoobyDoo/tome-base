@@ -76,7 +76,7 @@ function _M:init(l, w, force_height)
 	end
 	
 	local on_end = function() 
-		game.tooltip.inhibited = false
+		game.tooltip:hide(false)
 		game:unregisterDialog(self) 
 		if fct then 
 			fct() 
@@ -104,5 +104,5 @@ function _M:init(l, w, force_height)
 	game:registerDialog(self)
 	game:playSound("actions/read")
 	
-	game.tooltip.inhibited = true
+	game.tooltip:hide(true)
 end

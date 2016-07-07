@@ -44,15 +44,16 @@ function _M:init(t, size, max, pos, inverse)
 	self.top_h = top.h
 	self.bottom_h = bottom.h
 	self.sel_t = self.parent:getAtlasTexture("ui/scrollbar-sel.png")
-	self.sel = core.renderer.fromTextureTable(self.sel_t, 0, 0)
+	local max_w = math.max(self.sel_t.w, top.w, middle.w, bottom.w)
 
-	self.w = middle.w
+	self.w = max_w
 	self.h = size
 
-	self.do_container:add(core.renderer.fromTextureTable(top, 0, 0))
-	self.do_container:add(core.renderer.fromTextureTable(middle, 0, top.h, middle.w, size - top.h - bottom.h, true))
-	self.do_container:add(core.renderer.fromTextureTable(bottom, 0, size - bottom.h))
-	self.do_container:add(self.sel)
+	self.do_container:add(core.renderer.fromTextureTable(top, -top.w/2, 0):translate(max_w/2, 0, 0))
+	self.do_container:add(core.renderer.fromTextureTable(middle, -middle.w/2, top.h, middle.w, size - top.h - bottom.h, true):translate(max_w/2, 0, 0))
+	self.do_container:add(core.renderer.fromTextureTable(bottom, -bottom.w/2, size - bottom.h):translate(max_w/2, 0, 0))
+	self.sel = core.renderer.fromTextureTable(self.sel_t, -self.sel_t.w/2 + max_w/2, 0)
+	self.do_container:add(self.sel:translate(0, 0, 0.1))
 end
 
 function _M:onFocusChange(v)
@@ -74,5 +75,5 @@ function _M:setPos(pos)
 	else
 		y = (self.pos / self.max) * (self.h - self.bottom_h - self.top_h - self.sel_t.h) + self.top_h
 	end
-	self.sel:translate((self.top_w-self.sel_t.w ) * 0.5, y, 1)
+	self.sel:translate(0, y, 1)
 end

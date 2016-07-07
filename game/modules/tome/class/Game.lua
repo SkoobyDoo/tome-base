@@ -157,8 +157,6 @@ function _M:runReal()
 	self.caps_scroll = {s:glTexture()}
 	self.caps_scroll.w, self.caps_scroll.h = s:getSize()
 
-	self.zone_font = FontPackage:get("zone")
-
 	self.inited = true
 
 	if self.level and self.level.map then
