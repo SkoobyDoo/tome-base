@@ -3071,7 +3071,8 @@ newEffect{
 	end,
 	callbackOnHit = function(self, eff, cb, src)
 		if eff.src == src and eff.leeching > 0 then
-			src:heal(cb.value * eff.leeching / 100, self)
+			src = src.resolveSource and src:resolveSource()
+			if src then src:heal(cb.value * eff.leeching / 100, self) end
 		end
 	end,
 }
