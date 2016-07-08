@@ -1091,11 +1091,11 @@ newEffect{
 newEffect{
 	name = "CORROSIVE_WORM", image = "talents/corrosive_worm.png",
 	desc = "Corrosive Worm",
-	long_desc = function(self, eff) return ("The target is infected with a corrosive worm, reducing blight and acid resistance by %d%%. When the effect ends, the worm will explode, dealing %d acid damage in a 4 radius ball. This damage will increase by %d%% of all damage taken while under torment"):format(eff.power, eff.finaldam, eff.rate*100) end,
+	long_desc = function(self, eff) return ("The target is infected with a corrosive worm, reducing blight and acid resistance by %d%%. When the effect ends, the worm will explode, dealing %d acid damage in a 4 radius ball."):format(eff.power, eff.finaldam) end,
 	type = "magical",
 	subtype = { acid=true },
 	status = "detrimental",
-	parameters = { power=20, rate=10, finaldam=50, },
+	parameters = { power=20, finaldam=50, },
 	on_gain = function(self, err) return "#Target# is infected by a corrosive worm.", "+Corrosive Worm" end,
 	on_lose = function(self, err) return "#Target# is free from the corrosive worm.", "-Corrosive Worm" end,
 	activate = function(self, eff)
@@ -1107,11 +1107,6 @@ newEffect{
 		eff.src:project(tg, self.x, self.y, DamageType.ACID, eff.finaldam, {type="acid"})
 		self:removeParticles(eff.particle)
 	end,
-	callbackOnHit = function(self, eff, cb)
-		eff.finaldam = eff.finaldam + (cb.value * eff.rate)
-		return true
-	end,
-	
 	on_die = function(self, eff)
 		local tg = {type="ball", radius=4, selffire=false, x=self.x, y=self.y}
 		eff.src:project(tg, self.x, self.y, DamageType.ACID, eff.finaldam, {type="acid"})

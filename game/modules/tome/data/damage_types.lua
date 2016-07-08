@@ -3849,9 +3849,9 @@ newDamageType{
 			if chance == 1 then
 				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 2 then
-				target:setEffect(target.EFF_INSIDIOUS_BLIGHT, 4, {src=src, power=dam.dam / 4, heal_factor=dam.power*2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_INSIDIOUS_BLIGHT, 4, {src=src, power=dam.dam / 4, heal_factor=dam.power*1.5, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 3 then
-				target:setEffect(target.EFF_NUMBING_BLIGHT, 4, {src=src, power=dam.dam / 4, reduce=dam.power*1.2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_NUMBING_BLIGHT, 4, {src=src, power=dam.dam / 4, reduce=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 4 then
 				target:setEffect(target.EFF_CRIPPLING_BLIGHT, 4, {src=src, power=dam.dam / 4, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			end
