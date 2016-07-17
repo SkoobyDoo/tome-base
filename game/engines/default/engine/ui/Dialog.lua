@@ -716,7 +716,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		ui.ui.mouse.delegate_offset_y = uy
 		ui.ui:positioned(ux, uy, self.display_x + ux, self.display_y + uy)
 		if ui.ui.do_container then
-			ui.ui.do_container:translate(ui.x, ui.y)
+			ui.ui.do_container:translate(ui.x, ui.y, 0)
 			ui.ui.do_container:removeFromParent()
 			self.do_container:add(ui.ui.do_container)
 		end

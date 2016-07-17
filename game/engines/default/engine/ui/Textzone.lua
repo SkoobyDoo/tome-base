@@ -82,7 +82,7 @@ function _M:generate()
 
 	self.max_display = max_lines * self.font_h
 
-	if self.max_display > self.h and false then
+	if self.max_display > self.h then
 		self.do_renderer = core.renderer.renderer()
 		self.do_renderer:cutoff(0, 0, self.w, self.h)
 		self.do_renderer:add(self.text_container)
@@ -139,6 +139,10 @@ function _M:generate()
 		_PAGEUP = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos - self.h, 0, self.scrollbar.max) end end,
 		_PAGEDOWN = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.h, 0, self.scrollbar.max) end end,
 	}
+end
+
+function _M:isScrollable()
+	return self.max_display and self.max_display > self.h and self.scrollbar
 end
 
 function _M:setText(text)
