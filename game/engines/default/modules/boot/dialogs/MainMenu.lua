@@ -128,7 +128,7 @@ function _M:updateUI()
 		self:uiLogin(uis)
 	end
 
-	local tz = require("engine.ui.TextzoneList").new{width=self.iw, height=self.ih / 2, scrollbar=true, focus_check=true}
+	local tz = require("engine.ui.TextzoneList").new{width=self.iw, height=self.ih / 2, scrollbar=true, focus_check=true, pingpong=true}
 	local test = require("engine.ui.List").new{width=self.iw, height=self.ih / 2, list={
 		{name='p1', desc='this is a long text 1\nthis is a long text 1\nthis is a long text 1\nthis is a long text 1\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo'},
 		{name='p2', desc='this is a long text 2'},

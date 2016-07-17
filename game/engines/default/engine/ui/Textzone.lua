@@ -155,14 +155,38 @@ function _M:setShadowShader(shader, power)
 	self.shadow_power = power
 end
 
+function _M:startAutoScrolling()
+	if not self.do_renderer then return end
+	print("STAT")
+
+	local dirm, dirM
+	local h = self.max_display
+	if not self.invert_scroll then
+		dirm, dirM = nil, -(h - self.h + 10)
+	else
+		dirm, dirM = nil, 0
+	end
+	self.text_container:translateTween("autoscroll", h / 3, "y", dirm, dirM, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startAutoScrolling() end)
+end
+
+function _M:stopAutoScrolling()
+	if not self.do_renderer then return end
+
+	self.invert_scroll = false
+	self.text_container:translateTween("autoscroll", 8, "y", nil, 0, "inOutQuad")
+end
+
 function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
 	if self.scrollbar then
+		local oldpos = self.scrollbar.pos
 		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
 		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
 		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
 
-		self.text_container:translate(0, -self.scrollbar.pos, 0)
+		if self.scrollbar.pos ~= oldpos then
+			self.text_container:translate(0, -self.scrollbar.pos, 0)
+		end
 	end
 end

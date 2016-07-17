@@ -35,11 +35,8 @@ function _M:init(t)
 	self.scrollbar = t.scrollbar
 	self.focus_check = t.focus_check
 	self.variable_height = t.variable_height
-	self.pingpong = t.pingpong and 0
-	self.scroll_delay = t.pingpong
-	self.dest_area = t.dest_area and t.dest_area or { h = self.h }
+	self.pingpong = t.pingpong
 	self.max_h = 0
-	self.scroll_inertia = 0
 
 	if t.can_focus ~= nil then self.can_focus = t.can_focus end
 
@@ -61,13 +58,16 @@ function _M:generate()
 end
 
 function _M:createItem(item, text)
-	local ui = Textzone.new{width=self.w, height=self.h, fct=function() end, scrollbar=self.scrollbar, text=text}
+	local ui = Textzone.new{width=self.w, height=self.h, auto_height=self.variable_height, fct=function() end, scrollbar=self.scrollbar, text=text}
 	self.items[item] = { ui = ui }
 end
 
 function _M:on_focus_change(status)
 	if self.cur_item and self.items[self.cur_item] then
 		self.items[self.cur_item].ui:setFocus(status)
+		if not status then
+			self.items[self.cur_item].ui:stopAutoScrolling()
+		end
 	end
 end
 
@@ -90,6 +90,14 @@ function _M:switchItem(item, create_if_needed, force)
 	else
 		self.can_focus = false
 	end end
+
+	if self.variable_height then
+		self.h = d.ui.h
+	end
+
+	if self.pingpong then
+		d.ui:startAutoScrolling()
+	end
 
 	return true
 end
