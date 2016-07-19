@@ -157,7 +157,6 @@ end
 
 function _M:startAutoScrolling()
 	if not self.do_renderer then return end
-	print("STAT")
 
 	local dirm, dirM
 	local h = self.max_display
