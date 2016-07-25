@@ -63,12 +63,12 @@ function _M:createItem(item, text)
 end
 
 function _M:on_focus_change(status)
-	if self.cur_item and self.items[self.cur_item] then
-		self.items[self.cur_item].ui:setFocus(status)
-		if not status then
-			self.items[self.cur_item].ui:stopAutoScrolling()
-		end
-	end
+	-- if self.cur_item and self.items[self.cur_item] then
+	-- 	self.items[self.cur_item].ui:setFocus(status)
+	-- 	if not status then
+	-- 		self.items[self.cur_item].ui:stopAutoScrolling()
+	-- 	end
+	-- end
 end
 
 function _M:switchItem(item, create_if_needed, force)
@@ -76,6 +76,10 @@ function _M:switchItem(item, create_if_needed, force)
 	if (create_if_needed and not self.items[item]) or force then self:createItem(item, create_if_needed) end
 	if not item or not self.items[item] then self.cur_item = nil self.do_container:clear() return false end
 	local d = self.items[item]
+
+	if self.pingpong and self.items[self.cur_item] then
+		self.items[self.cur_item].ui:stopAutoScrolling()
+	end
 
 	self.cur_item = item
 
