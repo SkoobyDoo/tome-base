@@ -1122,12 +1122,14 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	color = colors.LIGHT_RED,
 	level_range = {1, 25},
 	rarity = 170,
-	cost = 350,
+	cost = 150,
 	material_level = 2,
 	wielder = {
 		knockback_immune = 0.4,
 		max_encumber = 70,
 		combat_armor = 4,
+		max_life = 40,
+		fatigue = -10,
 	},
 
 	set_list = { {"define_as", "SET_GIANT_WRAPS"} },
@@ -1135,8 +1137,9 @@ newEntity{ base = "BASE_LEATHER_BELT",
 		giantset = "Some giant wraps would make you feel great.",
 	},
 	on_set_complete = function(self, who)
-		self:specialSetAdd({"wielder","max_life"}, 100)
+		self:specialSetAdd({"wielder","max_life"}, 60)
 		self:specialSetAdd({"wielder","size_category"}, 2)
+		self:specialSetAdd({"wielder","fatigue"}, -10)
 		game.logPlayer(who, "#GOLD#You grow to immense size!")
 	end,
 	on_set_broken = function(self, who)
