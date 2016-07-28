@@ -1517,7 +1517,7 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
 
 			self:specialWearAdd({"wielder", "talents_types_mastery"}, { ["cunning/stealth"] = 0.2 })
 			self:specialWearAdd({"wielder","confusion_immune"}, 0.3)
-			self:specialWearAdd({"wielder","fear_immune"}, 0.3)
+			self:specialWearAdd({"wielder","blind_immune"}, 0.3)
 			game.logPlayer(who, "#DARK_BLUE#The skin seems pleased to be worn by the unliving, and grows silent.")
 		end
 	end,
@@ -5168,7 +5168,7 @@ newEntity{ base = "BASE_TOOL_MISC", --Thanks Alex!
 }
 
 newEntity{ base = "BASE_WIZARD_HAT", --Thanks SageAcrin!
-	power_source = {psionic=true, arcane=true},
+	power_source = {psionic=true},
 	unique = true,
 	name = "Malslek the Accursed's Hat",
 	unided_name = "black charred hat",
