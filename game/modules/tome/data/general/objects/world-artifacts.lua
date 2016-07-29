@@ -888,12 +888,15 @@ newEntity{ base = "BASE_MACE",
 		physcrit = 10,
 		dammod = {str=1},
 		melee_project={[DamageType.RANDOM_CONFUSION_PHYS] = 14},
-		talent_on_hit = { T_BATTLE_CALL = {level=1, chance=10},},
 		burst_on_crit = {
-			[DamageType.PHYSKNOCKBACK] = 20,
+			[DamageType.PHYSICAL] = 20,
 		},
 	},
-	wielder = {combat_atk=12,},
+	wielder = {		
+		combat_atk = 12,
+	},
+	max_power = 20, power_regen = 1,
+	use_talent = { id = Talents.T_BATTLE_CALL, level = 2, power = 20 },
 }
 
 newEntity{ base = "BASE_CLOTH_ARMOR",
