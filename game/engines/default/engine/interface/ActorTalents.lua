@@ -117,7 +117,7 @@ function _M:resolveLevelTalents()
 	end
 end
 
--- Make the actor use the talent
+--- Make the actor use a talent
 -- @param id talent ID
 -- @param who talent user
 -- @param force_level talent level(raw) override
@@ -125,52 +125,60 @@ end
 -- @param force_target the target of the talent (override)
 -- @param silent do not display messages about use
 -- @param no_confirm  Never ask confirmation
+-- @return the return value from the talent code if successful or false:
+--	activatable talents: value returned from the action function
+--	sustainable talents: value returned from the activate function (if inactive, should be a table of parameters)
+--		or value returned from the talent deactivate function (if active)
+--  talent code should always return a non false/nil result if successful
 function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_confirm)
 	who = who or self
-	local ab = _M.talents_def[id]
-	assert(ab, "trying to cast talent "..tostring(id).." but it is not defined")
+	local ab, ret = _M.talents_def[id]
+	assert(ab, "trying to use talent "..tostring(id).." but it is not defined")
 
 	local cancel = false
 	local co, success, err
 	if ab.mode == "activated" and ab.action then
 		if self:isTalentCoolingDown(ab) and not ignore_cd then
 			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
-			return
+			return false
 		end
-		co = coroutine.create(function()
+		co = coroutine.create(function() -- coroutine to run activated talent code
 			if cancel then
 				success = false
 				return false
 			end
-			if not self:preUseTalent(ab, silent) then return end
 			
+			if not self:preUseTalent(ab, silent) then return false end
+
 			local ok, ret, special = xpcall(function() return ab.action(who, ab) end, debug.traceback)
 			self.__talent_running = nil
-
 			if not ok then error(ret) end
-
-			if not self:postUseTalent(ab, ret, silent) then return end
+			if not self:postUseTalent(ab, ret, silent) then return false end
 
 			-- Everything went ok? then start cooldown if any
 			if not ignore_cd and (not special or not special.ignore_cd) then self:startTalentCooldown(ab) end
+			return ret
 		end)
 	elseif ab.mode == "sustained" and ab.activate and ab.deactivate then
 		if self:isTalentCoolingDown(ab) and not ignore_cd then
 			game.logPlayer(who, "%s is still on cooldown for %d turns.", ab.name:capitalize(), self.talents_cd[ab.id])
-			return
+			return false
 		end
-		co = coroutine.create(function()
+		co = coroutine.create(function() -- coroutine to run sustainable talent code
 			if cancel then
 				success = false
 				return false
 			end
-			if not self:preUseTalent(ab, silent) then return end
-			if not self.sustain_talents[id] then
-				local ret = ab.activate(who, ab)
+			if not self:preUseTalent(ab, silent) then return false end
+			
+			local ok, ret, special
+			if not self.sustain_talents[id] then -- activating
+				ok, ret, special = xpcall(function() return ab.activate(who, ab) end, debug.traceback)
+				if not ok then error(ret) end
 				if ret == true then ret = {} end -- fix for badly coded talents
 				if ret then ret.name = ret.name or ab.name end
 
-				if not self:postUseTalent(ab, ret) then return end
+				if not self:postUseTalent(ab, ret, silent) then return false end
 
 				self.sustain_talents[id] = ret
 
@@ -186,7 +194,7 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 						table.insert(list, id)
 					end
 				end
-			else
+			else -- deactivating
 				if self.deactivating_sustain_talent == ab.id then return end
 
 				local p = self.sustain_talents[id]
@@ -202,10 +210,10 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 					end
 				end
 				p.__tmpparticles = nil
-				local ret = ab.deactivate(who, ab, p)
-
+				ok, ret, special = xpcall(function() return ab.deactivate(who, ab, p) end, debug.traceback)
+				if not ok then error(ret) end
 				self.deactivating_sustain_talent = ab.id
-				if not self:postUseTalent(ab, ret, silent) then self.deactivating_sustain_talent = nil return end
+				if not self:postUseTalent(ab, ret, silent) then self.deactivating_sustain_talent = nil return false end
 				self.deactivating_sustain_talent = nil
 
 				-- Everything went ok? then start cooldown if any
@@ -225,11 +233,12 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 					end
 				end
 			end
+			return ret
 		end)
 	else
-		print("Activating non activable or sustainable talent: "..id.." :: "..ab.name.." :: "..ab.mode)
+		print("[useTalent] Activating non activatable or sustainable talent: "..id.." :: "..ab.name.." :: "..ab.mode)
 	end
-	if co then
+	if co then -- talent is usable and has passed checks
 		-- Stub some stuff
 		local old_level, old_target, new_target = nil, nil, nil
 		if force_level then old_level = who.talents[id] end
@@ -237,51 +246,63 @@ function _M:useTalent(id, who, force_level, ignore_cd, force_target, silent, no_
 			if ab.onAIGetTarget and not who.player then old_target = rawget(who, "getTarget"); new_target = function() return ab.onAIGetTarget(self, ab) end end
 			if force_target and not old_target then old_target = rawget(who, "getTarget"); new_target = function(a) return force_target.x, force_target.y, not force_target.__no_self and force_target end end
 		end
-		local co_wrapper = coroutine.create(function()
+		
+		local msg, line = game.logNewest()
+		local co_wrapper = coroutine.create(function() -- coroutine for talent interface
 			success = true
 			local ok
 			while success do
 				if new_target then who.getTarget = new_target end
 				if force_level then who.talents[id] = force_level end
 				self.__talent_running = ab
-				ok, err = coroutine.resume(co)
+				ok, ret = coroutine.resume(co) -- ret == error or return value from co
 				success = success and ok
 				if new_target then who.getTarget = old_target end
 				if force_level then who.talents[id] = old_level end
 				self.__talent_running = nil
-				if ok and coroutine.status(co) == "dead" then
-					-- terminated
-					return
+				if ok and coroutine.status(co) == "dead" then -- coroutine terminated normally
+					if not ret then -- talent failed
+						print("[useTalent] TALENT FAILED:", ab.id, "for", self.name, self.uid)
+						if not self.player then -- remove any messages in the game log generated by the failed talent
+							local msg, newline = game.logNewest()
+							if newline ~= line then 
+								game.logRollback(line)
+							end
+						end
+					end
+					return ret
 				end
-				if err then error(err) end  --propagate
+				if ret then error(ret) end --propagate error
 				coroutine.yield()
 			end
 		end)
 		if not no_confirm and self:isTalentConfirmable(ab) then
 			local abname = game:getGenericTextTiles(ab)..tostring(self:getTalentDisplayName(ab))
-			require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
+			confirm_dialog = require "engine.ui.Dialog":yesnoPopup("Talent Use Confirmation", ("Use %s?"):format(abname),
 			function(quit)
 				if quit ~= false then
 					cancel = true
 				end
-				success, err = coroutine.resume(co_wrapper)
+				success, ret = coroutine.resume(co_wrapper)
+				if not success and ret then -- Error Dialog
+					-- Note: This output is poorly formatted :/
+					game:registerDialog(require("engine.dialogs.ShowErrorStack").new(string.split(ret, '\n')))
+				end
 			end,
 			"Cancel","Continue")
 		else
-			-- cancel checked in coroutine
-			success, err = coroutine.resume(co_wrapper)
+			success, ret = coroutine.resume(co_wrapper) -- cancel checked in coroutine
 		end
 		-- Cleanup in case we coroutine'd out
 		self.__talent_running = nil
-		if not success and err then
+		if not success and ret then
 			print(debug.traceback(co_wrapper))
-			self:onTalentLuaError(err)
-			error(err)
+			self:onTalentLuaError(ret)
+			error(ret)
 		end
 	end
 	self.changed = true
-	return true
-
+	return ret -- return value from successfully used talent
 end
 
 --- Replace some markers in a string with info on the talent
@@ -299,7 +320,7 @@ function _M:useTalentMessage(ab)
 	return str
 end
 
---- Called before a talent is used  
+--- Called BEFORE a talent is used -- CAN it be used?
 -- Redefine as needed
 -- @param[type=table] talent the talent (not the id, the table)
 -- @param[type=boolean] silent no messages will be outputted
@@ -310,10 +331,10 @@ function _M:preUseTalent(talent, silent, fake)
 	return true
 end
 
---- Called before a talent is used  
+--- Called AFTER a talent is used -- WAS it successfully used?
 -- Redefine as needed
 -- @param[type=table] talent the talent (not the id, the table)
--- @param ret the return of the talent action
+-- @param ret the return of the talent action, activate, or deactivate function
 -- @param[type=boolean] silent no messages will be outputted
 -- @return[1] true to continue
 -- @return[2] false to stop
@@ -552,7 +573,7 @@ function _M:updateTalentPassives(tid)
 	t.passives(self, t, self.talents_learn_vals[t.id])
 end
 
---- Checks the talent if learnable
+--- Checks if the talent can be learned
 -- @param t the talent to check
 -- @param offset the level offset to check, defaults to 1
 -- @param ignore_special ignore requirement of special
@@ -691,7 +712,7 @@ function _M:getTalentLevelRaw(id)
 end
 
 --- Talent level, 0 if not known
--- Includes mastery
+-- Includes mastery (defaults to 1)
 function _M:getTalentLevel(id)
 	local t
 
@@ -700,7 +721,7 @@ function _M:getTalentLevel(id)
 	else
 		t = _M.talents_def[id]
 	end
-	return (self:getTalentLevelRaw(id)) * ((self.talents_types_mastery[t.type[1]] or 0) + 1)
+	return (self:getTalentLevelRaw(id)) * ((self.talents_types_mastery[t and t.type[1]] or 0) + 1)
 end
 
 --- Talent type level, sum of all raw levels of talents inside
@@ -823,21 +844,21 @@ function _M:isTalentCoolingDown(t)
 	if self.talents_cd[t.id] and self.talents_cd[t.id] > 0 then return self.talents_cd[t.id] else return false end
 end
 
---- Returns the range of a talent
+--- Returns the range of a talent (defaults to 1)
 function _M:getTalentRange(t)
 	if not t.range then return 1 end
 	if type(t.range) == "function" then return t.range(self, t) end
 	return t.range
 end
 
---- Returns the radius of a talent
+--- Returns the radius of a talent (defaults to 0)
 function _M:getTalentRadius(t)
 	if not t.radius then return 0 end
 	if type(t.radius) == "function" then return t.radius(self, t) end
 	return t.radius
 end
 
---- Returns the target type of a talent
+--- Returns the target table for a talent
 function _M:getTalentTarget(t)
 	if type(t.target) == "function" then return t.target(self, t) end
 	return t.target

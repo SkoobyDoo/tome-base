@@ -31,10 +31,10 @@ module(..., package.seeall, class.make)
 -- Talk ? attack ? displace ?
 function _M:bumpInto(target, x, y)
 	local reaction = self:reactionToward(target)
-	if reaction < 0 then
+	if reaction < 0 then -- attack target if possible
 		if target.encounterAttack and self.player then self:onWorldEncounter(target, x, y) return end
 		if game.player == self and ((not config.settings.tome.actor_based_movement_mode and game.bump_attack_disabled) or (config.settings.tome.actor_based_movement_mode and self.bump_attack_disabled)) then return end
-		return self:useTalent(self.T_ATTACK, nil, nil, nil, target)
+		return self:enoughEnergy(game.energy_to_act*self:combatSpeed()) and self:useTalent(self.T_ATTACK, nil, nil, nil, target)
 	elseif reaction >= 0 then
 		-- Talk ? Bump ?
 		if self.player and target.on_bump then

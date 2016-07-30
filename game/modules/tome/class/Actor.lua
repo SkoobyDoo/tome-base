@@ -3408,8 +3408,11 @@ function _M:onTemporaryValueChange(prop, v, base)
 	end
 end
 
+--- Actor attacks target
+-- @param target the actor being attacked
+-- @param x, y coordinates of target grid
 function _M:attack(target, x, y)
-	self:bumpInto(target, x, y)
+	return self:bumpInto(target, x, y)
 end
 
 function _M:getMaxEncumbrance()
