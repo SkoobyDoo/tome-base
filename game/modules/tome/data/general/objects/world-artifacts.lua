@@ -930,28 +930,35 @@ newEntity{ base = "BASE_HELM", define_as = "HELM_KROLTAR",
 	name = "Dragon-helm of Kroltar", image = "object/artifact/dragon_helm_of_kroltar.png",
 	unided_name = "dragon-helm",
 	desc = [[A visored steel helm, embossed and embellished with gold, that bears as its crest the head of Kroltar, the greatest of the fire drakes.]],
-	require = { talent = { {Talents.T_ARMOUR_TRAINING,3} }, stat = { str=35 }, },
+	require = { talent = { {Talents.T_ARMOUR_TRAINING,1} }, stat = { str=35 }, },
 	level_range = {37, 45},
 	rarity = 280,
 	cost = 400,
 	material_level = 4,
 	wielder = {
-		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_CON] = 5, [Stats.STAT_LCK] = -4, },
+		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_CON] = 5, [Stats.STAT_LCK] = -4, [Stats.STAT_WIL] = 5 },
+		inc_damage={
+			[DamageType.PHYSICAL] = 10,
+			[DamageType.FIRE] = 10,
+		},		
+		talents_types_mastery = { ["wild-gift/fire-drake"] = 0.2, },
 		combat_def = 5,
 		combat_armor = 9,
 		fatigue = 10,
 	},
 	max_power = 45, power_regen = 1,
-	use_talent = { id = Talents.T_WARSHOUT, level = 2, power = 45 },
+	use_talent = { id = Talents.T_BELLOWING_ROAR, level = 3, power = 45 },
 	set_list = { {"define_as","SCALE_MAIL_KROLTAR"} },
 	set_desc = {
 		kroltar = "Kroltar's power resides in his scales.",
 	},
 	on_set_complete = function(self, who)
+		local Stats = require "engine.interface.ActorStats"
 		self:specialSetAdd("skullcracker_mult", 1)
 		self:specialSetAdd({"wielder","combat_spellresist"}, 15)
 		self:specialSetAdd({"wielder","combat_mentalresist"}, 15)
 		self:specialSetAdd({"wielder","combat_physresist"}, 15)
+		self:specialSetAdd({"wielder","inc_stats"}, { [Stats.STAT_LCK] = 14 })
 		game.logPlayer(who, "#GOLD#As the helm of Kroltar approaches the your scale armour, they begin to fume and emit fire.")
 	end,
 	on_set_broken = function(self, who)
