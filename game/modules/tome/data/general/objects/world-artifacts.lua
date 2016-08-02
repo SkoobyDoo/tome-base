@@ -1593,7 +1593,7 @@ newEntity{ base = "BASE_HEAVY_ARMOR", define_as = "SCALE_MAIL_KROLTAR",
 		fatigue = 16,
 	},
 	max_power = 80, power_regen = 1,
-	use_talent = { id = Talents.T_INFERNO, level = 3, power = 50 },
+	use_talent = { id = Talents.T_DEVOURING_FLAME, level = 3, power = 50 },
 	set_list = { {"define_as","HELM_KROLTAR"} },
 	set_desc = {
 		kroltar = "Kroltar's head would turn up the heat.",
