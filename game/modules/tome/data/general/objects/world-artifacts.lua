@@ -4531,7 +4531,7 @@ newEntity{ base = "BASE_SHIELD", --Thanks SageAcrin!
 		learn_talent = { [Talents.T_BLOCK] = 2, },
 		max_air = 20,
 	},
-	on_block = {desc = "Chance that a blast of icy cold water will spray at the target.", fct = function(self, who, target, type, dam, eff)
+	on_block = {desc = "30% chance that a blast of freezing water will spray at the target.", fct = function(self, who, target, type, dam, eff)
 		if rng.percent(30) then
 			if not target or target:attr("dead") or not target.x or not target.y then return end
 
