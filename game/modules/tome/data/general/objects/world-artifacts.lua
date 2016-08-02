@@ -502,46 +502,48 @@ newEntity{ base = "BASE_SHIELD",
 }
 
 newEntity{ base = "BASE_SHIELD",
-	power_source = {nature=true},
-	unique = true,
-	name = "Black Mesh", image = "object/artifact/shield_mesh.png",
-	unided_name = "pile of tendrils",
-	desc = [[Black, interwoven tendrils form this mesh that can be used as a shield. It reacts visibly to your touch, clinging to your arm and engulfing it in a warm, black mass.]],
-	color = colors.BLACK,
-	level_range = {15, 30},
-	rarity = 270,
-	require = { stat = { str=20 }, },
-	cost = 400,
-	material_level = 3,
-	moddable_tile = "special/%s_black_mesh",
-	moddable_tile_big = true,
-	metallic = false,
-	special_combat = {
-		dam = resolvers.rngavg(25,35),
-		block = resolvers.rngavg(90, 120),
-		physcrit = 5,
-		dammod = {str=1},
-	},
-	wielder = {
-		combat_armor = 2,
-		combat_def = 8,
-		combat_def_ranged = 8,
-		fatigue = 12,
-		learn_talent = { [Talents.T_BLOCK] = 3, },
-		resists = { [DamageType.BLIGHT] = 15, [DamageType.DARKNESS] = 30, },
-		stamina_regen = 2,
-	},
-	on_block = {desc = "30% chance of pulling in the attacker", fct = function(self, who, src, type, dam, eff)
-		if rng.percent(30) then
-			if not src then return end
-
-			src:pull(who.x, who.y, 15)
-			game.logSeen(src, "Black tendrils shoot out of the mesh and pull %s to you!", src.name:capitalize())
-			if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
-				src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
-			end
-		end
-	end,}
+    power_source = {nature=true},
+    unique = true,
+    name = "Black Mesh", image = "object/artifact/shield_mesh.png",
+    unided_name = "pile of tendrils",
+    desc = [[Black, interwoven tendrils form this mesh that can be used as a shield. It reacts visibly to your touch, clinging to your arm and engulfing it in a warm, black mass.]],
+    color = colors.BLACK,
+    level_range = {15, 30},
+    rarity = 270,
+    require = { stat = { str=20 }, },
+    cost = 400,
+    material_level = 3,
+    moddable_tile = "special/%s_black_mesh",
+    moddable_tile_big = true,
+    metallic = false,
+    special_combat = {
+        dam = 40,
+        block = 120,
+        physcrit = 5,
+        dammod = {str=1},
+    },
+    wielder = {
+        combat_armor = 2,
+        combat_def = 8,
+        combat_def_ranged = 8,
+        fatigue = 6,
+        learn_talent = { [Talents.T_BLOCK] = 3, },
+        resists = { [DamageType.BLIGHT] = 25, [DamageType.DARKNESS] = 25, },
+        inc_stats = { [Stats.STAT_WIL] = 5, },
+    },
+    on_block = {desc = "Pull up to 1 attacker per turn, up to 15 spaces away into melee range, pinning and asphixiating them", fct = function(self, who, src, type, dam, eff)
+        if not src then return end
+        if who.turn_procs.black_mesh then return end
+ 
+        src:pull(who.x, who.y, 15)
+        game.logSeen(src, "Black tendrils shoot out of the mesh and pull %s to you!", src.name:capitalize())
+        if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
+            src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
+        end
+ 
+        who.turn_procs.black_mesh = true
+ 
+    end,}
 }
 
 newEntity{ base = "BASE_LIGHT_ARMOR",
