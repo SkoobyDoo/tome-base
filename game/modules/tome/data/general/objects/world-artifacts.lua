@@ -532,13 +532,13 @@ newEntity{ base = "BASE_SHIELD",
 		inc_stats = { [Stats.STAT_WIL] = 5, },
 	},
 	on_block = {desc = "Pull up to 1 attacker per turn, up to 15 spaces away into melee range, pinning and asphixiating them", fct = function(self, who, src, type, dam, eff)
-        if not src then return end
-        if who.turn_procs.black_mesh then return end
+		if not src then return end
+		if who.turn_procs.black_mesh then return end
  
 		src:pull(who.x, who.y, 15)
 		game.logSeen(src, "Black tendrils shoot out of the mesh and pull %s to you!", src.name:capitalize())
 		if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
-		    src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
+			src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
 		end
  
 		who.turn_procs.black_mesh = true
