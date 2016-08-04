@@ -2461,3 +2461,6 @@ function _M:allowOnlineEvent()
 	if self.birth.grab_online_event_forbid then return end
 	return true
 end
+
+function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
+end
