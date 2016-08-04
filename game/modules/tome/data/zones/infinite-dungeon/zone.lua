@@ -95,6 +95,108 @@ return {
 			nb_trap = {0, 0},
 		},
 	},
+	alter_level_data = function(zone, lev, data)
+		if lev < 5 or rng.percent(30) then return end
+
+		-- Randomize the size of the dungeon, increasing it slightly as the game progresses.
+		-- Also change enemy count to fit with the new size.		
+		local size = 50
+		local vx = math.ceil(math.random(0.75, 1.25) * size)
+		local vy = math.ceil(math.random(0.75, 1.25) * size)
+		local enemy_count = math.ceil((vx + vy) * 0.35)
+		data.width = vx
+		data.height = vy
+		data.generator.actor.nb_npc = {enemy_count-5, enemy_count+5}
+		
+		-- Takent from random zone generation, modified slightly for use here.
+		-- Grab a random layout for the floor.		
+		local layouts = {
+			{
+				class = "engine.generator.map.Forest",
+				edge_entrances = rng.table{{2,8}, {4,6}, {6,4}, {8,2}},
+				zoom = rng.range(2,6),
+				sqrt_percent = rng.range(30, 50),
+				sqrt_percent = rng.range(5, 10),
+				noise = "fbm_perlin",
+			},
+			{
+				class = "engine.generator.map.Cavern",
+				zoom = math.random(10, 20),
+				min_floor = math.floor(rng.range(vx * vy * 0.4 / 2, vx * vy * 0.4)),
+			},
+			{
+				class = "engine.generator.map.Roomer",
+				nb_rooms = 14,
+				rooms = {"random_room", {"pit",3}, {"greater_vault",7}},
+				rooms_config = {pit={filters={}}},
+				lite_room_chance = 50,
+			},
+			{
+				class = "engine.generator.map.Maze",
+				widen_w = math.random(1,7), widen_h = math.random(1,7),
+			},
+			{
+				class = "engine.generator.map.Town",
+				building_chance = math.random(50,90),
+				max_building_w = math.random(5,11), max_building_h = math.random(5,11),
+				edge_entrances = {6,4},
+				nb_rooms = math.random(1,2),
+				rooms = {{"greater_vault",2}},
+			},
+			{
+				class = "engine.generator.map.Building",
+				lite_room_chance = rng.range(0, 100),
+				max_block_w = rng.range(7, 20), max_block_h = rng.range(7, 20),
+				max_building_w = rng.range(2, 8), max_building_h = rng.range(2, 8),
+			},
+			{
+				class = "engine.generator.map.Octopus",
+				main_radius = {0.3, 0.4},
+				arms_radius = {0.1, 0.2},
+				arms_range = {0.7, 0.8},
+				nb_rooms = {3, 9},
+			},
+		}
+		self:triggerHook{"InfiniteDungeon:getLayouts", layouts=layouts}
+		
+		data.generator.map = rng.table(layouts)
+		
+		local vgrids = rng.table{
+			{floor="GRASS", wall="TREE", door="GRASS_ROCK", down="GRASS_DOWN2"}, -- tree
+			{floor="FLOOR", wall="WALL", door="DOOR", down="DOWN"}, -- wall
+			{floor="UNDERGROUND_FLOOR", wall="UNDERGROUND_TREE", door="UNDERGROUND_ROCK", down="UNDERGROUND_LADDER_DOWN"}, -- underground
+			{floor="CRYSTAL_FLOOR", wall={"CRYSTAL_WALL","CRYSTAL_WALL2","CRYSTAL_WALL3","CRYSTAL_WALL4","CRYSTAL_WALL5","CRYSTAL_WALL6","CRYSTAL_WALL7","CRYSTAL_WALL8","CRYSTAL_WALL9","CRYSTAL_WALL10","CRYSTAL_WALL11","CRYSTAL_WALL12","CRYSTAL_WALL13","CRYSTAL_WALL14","CRYSTAL_WALL15","CRYSTAL_WALL16","CRYSTAL_WALL17","CRYSTAL_WALL18","CRYSTAL_WALL19","CRYSTAL_WALL20",}, door="CRYSTAL_ROCK", down="CRYSTAL_LADDER_DOWN"}, -- crystals
+			{floor="UNDERGROUND_SAND", wall="SANDWALL", door="UNDERGROUND_SAND", down="SAND_LADDER_DOWN"}, -- sand
+			{floor="SAND", wall="PALMTREE", door="DESERT_ROCK", down="SAND_DOWN2"}, -- desert
+			{floor="SLIME_FLOOR", wall="SLIME_WALL", door="SLIME_DOOR", down="SLIME_DOWN"}, -- slime
+			{floor="JUNGLE_GRASS", wall="JUNGLE_TREE", door="JUNGLE_ROCK", down="JUNGLE_GRASS_DOWN2"}, -- jungle
+			{floor="CAVEFLOOR", wall="CAVEWALL", door="CAVE_ROCK", down="CAVE_LADDER_DOWN"}, -- cave
+			{floor="BURNT_GROUND", wall="BURNT_TREE", door="BURNT_GROUND", down="BURNT_DOWN6"}, -- burntland
+			{floor="ROCKY_GROUND", wall="MOUNTAIN_WALL", door="ROCKY_GROUND", down="ROCKY_DOWN2"}, -- mountain
+			{floor="ROCKY_GROUND", wall="ROCKY_SNOWY_TREE", door="ROCKY_GROUND", down="ROCKY_DOWN2"}, -- mountain_forest
+			{floor="SNOWY_GRASS_2", wall="SNOWY_TREE_2", door="SNOWY_GRASS_2", down="snowy_DOWN2"}, -- snowy_forest
+			{floor="VOID", wall="SPACETIME_RIFT2", door="VOID", down="RIFT2"}, -- temporal_void
+			{floor="WATER_FLOOR_FAKE", wall="WATER_WALL_FAKE", door="WATER_DOOR_FAKE", down="WATER_DOWN_FAKE"}, -- water
+			{floor="LAVA_FLOOR_FAKE", wall="LAVA_WALL_FAKE", door="LAVA_FLOOR_FAKE", down="LAVA_DOWN_FAKE"}, -- lava
+			{floor="AUTUMN_GRASS", wall="AUTUMN_TREE", door="AUTUMN_GRASS", down="AUTUMN_GRASS_DOWN2"}, -- autumn_forest
+		}
+		self:triggerHook{"InfiniteDungeon:getGrids", grids=vgrids}
+		
+		data.generator.map.floor = vgrids.floor
+		data.generator.map['.'] = vgrids.floor
+		data.generator.map.external_floor = vgrids.floor
+		if data.generator.map.widen_w then
+			-- Special sanity check. Maze generation tends to... mess up if their height/width values aren't multiplies of the tunnel sizes.
+			while data.width % data.generator.map.widen_w ~= 0 do data.width = data.width + 1 end
+			while data.height % data.generator.map.widen_h ~= 0 do data.height = data.height + 1 end
+		end
+		data.generator.map.wall = vgrids.wall
+		data.generator.map['#'] = vgrids.wall
+		data.generator.map.up = vgrids.floor
+		data.generator.map.down = vgrids.down
+		data.generator.map.door = vgrids.door
+		data.generator.map["'"] = vgrids.door
+	end,
 	post_process = function(level)
 		-- Provide some achievements
 		if level.level == 10 then world:gainAchievement("INFINITE_X10", game.player)
@@ -119,11 +221,11 @@ return {
 
 		-- Some lore
 		if level.level == 1 or level.level == 10 or level.level == 20 or level.level == 30 or level.level == 40 then
-			local l = game.zone:makeEntityByName(level, "terrain", "ID_HISTORY"..level.level)
+			local l = game.zone:makeEntityByName(level, "object", "ID_HISTORY"..level.level)
 			if not l then return end
 			for _, coord in pairs(util.adjacentCoords(level.default_up.x, level.default_up.y)) do
 				if game.level.map:isBound(coord[1], coord[2]) and (i ~= 0 or j ~= 0) and not game.level.map:checkEntity(coord[1], coord[2], engine.Map.TERRAIN, "block_move") then
-					game.zone:addEntity(level, l, "terrain", coord[1], coord[2])
+					game.zone:addEntity(level, l, "object", coord[1], coord[2])
 					return
 				end
 			end
