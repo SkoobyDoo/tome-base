@@ -53,7 +53,7 @@ newTalent{
 		local a
 		if self.clone_base then a = self.clone_base:clone() else a = self:clone() end
 		a.can_multiply = a.can_multiply - 1
-		a.energy.val = 0
+		a.energy.value = 0
 		a.exp_worth = 0.1
 		a.inven = {}
 		a.x, a.y = nil, nil
