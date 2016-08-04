@@ -125,7 +125,7 @@
  <tileset firstgid="101" name="Trees" tilewidth="64" tileheight="64" tilecount="100">
   <properties>
    <property name="load_terrains" value="{&quot;/data/general/grids/forest.lua&quot;, &quot;/data/general/grids/autumn_forest.lua&quot;, &quot;/data/general/grids/snowy_forest.lua&quot;, &quot;/data/general/grids/lava.lua&quot;, add_zone_lists=true}"/>
-   <property name="load_actors" value="{&quot;/data/general/npcs/cold-drake.lua&quot;, &quot;/data/general/npcs/vampire.lua&quot;, add_zone_lists=false}"/>
+   <property name="load_actors" value="{&quot;/data/general/npcs/cold-drake.lua&quot;, &quot;/data/general/npcs/vampire.lua&quot;}"/>
   </properties>
   <image source="../../../../../../tiled-maps/gfx/vault_trees.png" width="640" height="640"/>
   <tile id="0">
