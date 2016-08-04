@@ -3148,6 +3148,10 @@ function _M:die(src, death_note)
 		elseif self.rank >= 3.2 and self.rank < 3.5 then p.all_kills_kind.rare = (p.all_kills_kind.rare or 0) + 1
 		elseif self.rank >= 3.5 then p.all_kills_kind.boss = (p.all_kills_kind.boss or 0) + 1
 		end
+
+		if game.level and game.level.data.record_player_kills then
+			game.level.data.record_player_kills = game.level.data.record_player_kills + 1
+		end
 	end
 
 	-- Ingredients

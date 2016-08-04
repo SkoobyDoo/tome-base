@@ -2463,4 +2463,137 @@ function _M:allowOnlineEvent()
 end
 
 function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
+	if lev < 3 then return end
+	-- if not rng.percent(30 + lev) then return end
+
+	local challenges = {
+		{ id = "pacifist", rarity = 3 },
+		{ id = "exterminator", rarity = 1 },
+		{ id = "dream-horror", rarity = 10, min_lev = 15 },
+	}
+	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
+
+	for i, c in ripairs(challenges) do
+		if c.min_lev and lev < c.min_lev then table.remove(challenges, i) end
+	end
+
+	local challenge = rng.rarityTable(challenges)
+	data.id_challenge = challenge.id
+	data.id_layout_name = id_layout_name
+	data.id_grids_name = id_grids_name
+	print("[INFINITE DUNGEON] Selected challenge", data.id_challenge)
+end
+
+function _M:makeChallengeQuest(level, name, desc, data)
+	local q = {
+		id = "id-challenge-"..level.level,
+		name = "Level "..level.level.." Challenge: "..name,
+		challenge_desc = desc,
+		desc = function(self, who)
+			local desc = {}
+			desc[#desc+1] = self.challenge_desc
+			return table.concat(desc, "\n")
+		end,
+		on_status_change = function(self, who, status, sub)
+			if self:isCompleted() then
+				who:setQuestStatus(self.id, engine.Quest.DONE)
+				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
+				self:check("on_challenge_success", who)
+			end
+		end,
+		on_exit_level = function(self, who)
+			self:check("on_exit_check", who)
+			if self.status ~= self.DONE then
+				who:setQuestStatus(self.id, self.FAILED)
+			end
+		end,
+		on_challenge_success = function(self, who)
+			game.state:infiniteDungeonChallengeReward(self, who)
+		end,
+		popup_text = {},
+	}
+	table.merge(q, data)
+	local p = game:getPlayer(true)
+	p:grantQuest(q)
+	game:onTickEnd(function() p:setEffect(p.EFF_ZONE_AURA_CHALLENGE, 1, {id_challenge_quest = q.id}) end)
+	return q
+end
+
+
+function _M:infiniteDungeonChallengeFinish(zone, level)
+	local id_challenge = level.data.id_challenge
+	if not id_challenge then return end
+
+	if id_challenge == "pacifist" then
+		level.data.record_player_kills = 0
+		self:makeChallengeQuest(level, "Pacifist", "Get to the end of the level without killing a single creature.", {
+			on_exit_check = function(self, who)
+				if self.check_level.data.record_player_kills == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+				self.check_level = nil
+			end,
+			check_level = level,
+		})
+	elseif id_challenge == "exterminator" then
+		self:makeChallengeQuest(level, "Exterminator", "Exit the level with no single foes left alive.", {
+			on_exit_check = function(self, who)
+				local nb = 0
+				for uid, e in pairs(self.check_level.entities) do
+					if who:reactionToward(e) < 0 then nb = nb + 1 break end
+				end
+				if nb == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+				self.check_level = nil
+			end,
+			check_level = level,
+		})
+	elseif id_challenge == "dream-horror" then
+		local m = zone:makeEntity(level, "actor", {name="dreaming horror", random_boss=true}, nil, true)
+		if m then
+			local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+			local tries = 0
+			while not m:canMove(x, y) and tries < 100 do
+				x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+				tries = tries + 1
+			end
+			if tries < 100 then
+				local q = self:makeChallengeQuest(level, "Dream Hunter", "Wake up and kill the dreaming horror boss '"..m.name.."'.", {})
+				m.id_challenge_quest = q.id
+				m.on_die = function(self, who)
+					who:setQuestStatus(self.id_challenge_quest, engine.Quest.COMPLETED)
+				end
+				zone:addEntity(level, m, "actor", x, y)
+			end
+		end
+	else
+		self:triggerHook{"InfiniteDungeon:setupChallenge", id_challenge=id_challenge, zone=zone, level=level}
+	end
+end
+
+function _M:infiniteDungeonChallengeReward(quest, who)
+	local rewards = {
+		{name = "Random Artifact", rarity=1, give=function(who)
+			local tries = 100
+			while tries > 0 do
+				local o = game.zone:makeEntity(game.level, "object", {random_object=true, properties={"randart_able"}}, nil, true)
+				if o then
+					o:identify(true)
+					who:addObject(who.INVEN_INVEN, o)
+					who:sortInven()
+					return "Random Artifact: "..o:getName{do_color=true}
+				end
+			end
+			-- Fallback
+			who.unused_stats = who.unused_stats + 3
+			return "+3 Stat Points"
+		end},
+		{name = "+3 Stat Points", rarity=3, give=function(who) who.unused_stats = who.unused_stats + 3 end},
+		{name = "+1 Class Point", rarity=5, give=function(who) who.unused_talents = who.unused_talents + 1 end},
+		{name = "+1 Generic Point", rarity=4, give=function(who) who.unused_generics = who.unused_generics + 1 end},
+		{name = "+1 Category Point", rarity=30, give=function(who) who.unused_talents_types = who.unused_talents_types + 1 end},
+		{name = "+1 Prodigy Point", rarity=60, give=function(who) who.unused_prodigies = who.unused_prodigies + 1 end},
+	}
+	self:triggerHook{"InfiniteDungeon:getRewards", rewards=rewards}
+
+	local reward = rng.rarityTable(rewards)
+	reward.name = reward.give(who) or reward.name
+	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward: "..reward.name
 end

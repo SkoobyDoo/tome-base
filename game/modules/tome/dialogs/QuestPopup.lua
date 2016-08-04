@@ -39,6 +39,9 @@ function _M:init(quest, status)
 	self.ui = "quest"
 	Dialog.init(self, "", 666, 150)
 
+	local add = ''
+	if quest.popup_text and quest.popup_text[status] then add = quest.popup_text[status].."\n" end
+
 	self.blight = self:getUITexture("ui/dialogframe_backglow.png")
 
 	local f, fs = FontPackage:getFont("bold")
@@ -46,7 +49,7 @@ function _M:init(quest, status)
 	quest:setTextShadow(3)
 	quest:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
 
-	local info = Textzone.new{auto_width=true, auto_height=true, text='#ANTIQUE_WHITE#(See your Journal for further details or click here)', font={f, math.ceil(fs)}}
+	local info = Textzone.new{auto_width=true, auto_height=true, text=add..'#ANTIQUE_WHITE#(See your Journal for further details or click here)', font={f, math.ceil(fs)}}
 	info:setTextShadow(3)
 	info:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
 	

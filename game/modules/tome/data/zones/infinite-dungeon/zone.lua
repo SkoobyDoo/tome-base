@@ -169,12 +169,12 @@ return {
 				force_square_size = true,
 			},
 		}
-		self:triggerHook{"InfiniteDungeon:getLayouts", layouts=layouts}
+		zone:triggerHook{"InfiniteDungeon:getLayouts", layouts=layouts}
 		
 		local layout = rng.table(layouts)
 		data.generator.map = layout
 		
-		local vgrids = rng.table{
+		local vgrids = {
 			{id_grids_name="tree", floor="GRASS", wall="TREE", door="GRASS_ROCK", down="GRASS_DOWN2"},
 			{id_grids_name="wall", floor="FLOOR", wall="WALL", door="DOOR", down="DOWN"},
 			{id_grids_name="underground", floor="UNDERGROUND_FLOOR", wall="UNDERGROUND_TREE", door="UNDERGROUND_ROCK", down="UNDERGROUND_LADDER_DOWN"},
@@ -193,22 +193,24 @@ return {
 			{id_grids_name="lava", floor="LAVA_FLOOR_FAKE", wall="LAVA_WALL_FAKE", door="LAVA_FLOOR_FAKE", down="LAVA_DOWN_FAKE"},
 			{id_grids_name="autumn_forest", floor="AUTUMN_GRASS", wall="AUTUMN_TREE", door="AUTUMN_GRASS", down="AUTUMN_GRASS_DOWN2"},
 		}
-		self:triggerHook{"InfiniteDungeon:getGrids", grids=vgrids}
+		zone:triggerHook{"InfiniteDungeon:getGrids", grids=vgrids}
+		local vgrid = rng.table(vgrids)
+		-- local vgrid = vgrids[#vgrids]
 		
-		data.generator.map.floor = vgrids.floor
-		data.generator.map['.'] = vgrids.floor
-		data.generator.map.external_floor = vgrids.floor
+		data.generator.map.floor = vgrid.floor
+		data.generator.map['.'] = vgrid.floor
+		data.generator.map.external_floor = vgrid.floor
 		if data.generator.map.widen_w then
 			-- Special sanity check. Maze generation tends to... mess up if their height/width values aren't multiplies of the tunnel sizes.
 			while data.width % data.generator.map.widen_w ~= 0 do data.width = data.width + 1 end
 			while data.height % data.generator.map.widen_h ~= 0 do data.height = data.height + 1 end
 		end
-		data.generator.map.wall = vgrids.wall
-		data.generator.map['#'] = vgrids.wall
-		data.generator.map.up = vgrids.floor
-		data.generator.map.down = vgrids.down
-		data.generator.map.door = vgrids.door
-		data.generator.map["'"] = vgrids.door
+		data.generator.map.wall = vgrid.wall
+		data.generator.map['#'] = vgrid.wall
+		data.generator.map.up = vgrid.floor
+		data.generator.map.down = vgrid.down
+		data.generator.map.door = vgrid.door
+		data.generator.map["'"] = vgrid.door
 
 		data.width = vx
 		data.height = vy
@@ -221,7 +223,7 @@ return {
 		local enemy_count = math.ceil((vx + vy) * 0.35)
 		data.generator.actor.nb_npc = {enemy_count-5, enemy_count+5}
 
-		game.state:infiniteDungeonChallenge(zone, lev, data, data.generator.map.id_layout_name, vgrids.id_grids_name)
+		game.state:infiniteDungeonChallenge(zone, lev, data, data.generator.map.id_layout_name, vgrid.id_grids_name)
 	end,
 	post_process = function(level)
 		-- Provide some achievements
@@ -256,6 +258,8 @@ return {
 				end
 			end
 		end
+
+		game.state:infiniteDungeonChallengeFinish(game.zone, level)
 	end,
 }
 

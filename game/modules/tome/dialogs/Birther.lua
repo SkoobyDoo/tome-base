@@ -331,6 +331,7 @@ end
 function _M:makeDefault()
 	self:setDescriptor("sex", "Female")
 	self:setDescriptor("world", "Maj'Eyal")
+	-- self:setDescriptor("world", "Infinite")
 	self:setDescriptor("difficulty", "Normal")
 	self:setDescriptor("permadeath", "Adventure")
 	self:setDescriptor("race", "Human")
