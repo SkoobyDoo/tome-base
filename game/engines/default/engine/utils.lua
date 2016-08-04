@@ -2268,7 +2268,7 @@ function rng.rarityTable(t, rarity_field)
 		local nb = math.floor(max / e[rarity_field])
 		for i = 1, nb do rt[#rt+1] = e end
 	end
-	return rng.table(t)
+	return rng.table(rt)
 end
 
 function util.show_function_calls()

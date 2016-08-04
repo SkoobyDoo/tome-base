@@ -196,23 +196,22 @@ function _M:tmxLoad(file)
 	end
 	for _, tileset in ipairs(map:findAll("tileset")) do
 		if tileset:findOne("properties") then for name, value in pairs(tileset:findOne("properties"):findAllAttrs("property", "name", "value")) do
-			-- setting .add_zone_lists = true in the file table causes the specified entity lists to be merged into a clone of the zone list
 			local elist
 			if name == "load_terrains" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.grid_list) end
+				elist = table.clone(self.zone.grid_list, false)
 				self.grid_list = self.zone.grid_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			elseif name == "load_traps" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.trap_list) end
+				elist = table.clone(self.zone.trap_list, false)
 				self.trap_list = self.zone.trap_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			elseif name == "load_objects" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.object_list) end
+				elist = table.clone(self.zone.object_list, false)
 				self.object_list = self.zone.object_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			elseif name == "load_actors" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.npc_list) end
+				elist = table.clone(self.zone.npc_list, false)
 				self.npc_list = self.zone.npc_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
 			end
 		end end
