@@ -65,6 +65,16 @@ function table.concatNice(t, sep, endsep)
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
 end
 
+function ripairs(t)
+	local i = #t
+	return function()
+		if i == 0 then return nil end
+		local oi = i
+		i = i - 1
+		return oi, t[oi]
+	end
+end
+
 function table.count(t)
 	local i = 0
 	for k, v in pairs(t) do
@@ -2245,6 +2255,20 @@ end
 
 function rng.poissonProcess(k, turn_scale, rate)
 	return math.exp(-rate*turn_scale) * ((rate*turn_scale) ^ k)/ util.factorial(k)
+end
+
+function rng.rarityTable(t, rarity_field)
+	if #t == 0 then return end
+
+	rarity_field = rarity_field or "rarity"
+	local max = 0
+	for _, e in ipairs(t) do max = max + e[rarity_field] end
+	local rt = {}
+	for _, e in ipairs(t) do
+		local nb = math.floor(max / e[rarity_field])
+		for i = 1, nb do rt[#rt+1] = e end
+	end
+	return rng.table(t)
 end
 
 function util.show_function_calls()
