@@ -3057,7 +3057,15 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
-		self:hasQuest(eff.id_challenge_quest):on_exit_level(self)
+		self:hasQuest(eff.id_challenge_quest):check("on_exit_level", self)
+	end,
+	callbackOnKill = function(self, eff, who, death_note)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_kill_foe", self)
+	end,
+	callbackOnActBase = function(self, eff)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_act_base", self)
 	end,
 }
 

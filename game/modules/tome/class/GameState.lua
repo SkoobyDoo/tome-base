@@ -2251,8 +2251,8 @@ function _M:locationRevealAround(x, y)
 	game.level.map.lites(x, y, true)
 	game.level.map.remembers(x, y, true)
 	for _, c in pairs(util.adjacentCoords(x, y)) do
-		game.level.map.lites(x+c[1], y+c[2], true)
-		game.level.map.remembers(x+c[1], y+c[2], true)
+		game.level.map.lites(c[1], c[2], true)
+		game.level.map.remembers(c[1], c[2], true)
 	end
 end
 
@@ -2470,6 +2470,7 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 		{ id = "pacifist", rarity = 3 },
 		{ id = "exterminator", rarity = 1 },
 		{ id = "dream-horror", rarity = 10, min_lev = 15 },
+		{ id = "fast-exit", rarity = 3, min_lev = 8 },
 	}
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
 
@@ -2499,6 +2500,9 @@ function _M:makeChallengeQuest(level, name, desc, data)
 				who:setQuestStatus(self.id, engine.Quest.DONE)
 				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
 				self:check("on_challenge_success", who)
+			elseif self:isFailed() then
+				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
+				self:check("on_challenge_failed", who)
 			end
 		end,
 		on_exit_level = function(self, who)
@@ -2528,14 +2532,19 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 		level.data.record_player_kills = 0
 		self:makeChallengeQuest(level, "Pacifist", "Get to the end of the level without killing a single creature.", {
 			on_exit_check = function(self, who)
+				if not self.check_level then return end
 				if self.check_level.data.record_player_kills == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
 				self.check_level = nil
+			end,
+			on_kill_foe = function(self, who, target)
+				who:setQuestStatus(self.id, self.FAILED)
 			end,
 			check_level = level,
 		})
 	elseif id_challenge == "exterminator" then
 		self:makeChallengeQuest(level, "Exterminator", "Exit the level with no single foes left alive.", {
 			on_exit_check = function(self, who)
+				if not self.check_level then return end
 				local nb = 0
 				for uid, e in pairs(self.check_level.entities) do
 					if who:reactionToward(e) < 0 then nb = nb + 1 break end
@@ -2543,8 +2552,42 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 				if nb == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
 				self.check_level = nil
 			end,
+			on_kill_foe = function(self, who, target)
+				if not self.check_level then return end
+				local nb = 0
+				for uid, e in pairs(self.check_level.entities) do
+					if who:reactionToward(e) < 0 then nb = nb + 1 break end
+				end
+				if nb == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+			end,
 			check_level = level,
 		})
+	elseif id_challenge == "fast-exit" then
+		local a = require("engine.Astar").new(level.map, game:getPlayer(true))
+		local path = a:calc(level.default_up.x, level.default_up.y, level.default_down.x, level.default_down.y)
+		if path and #path > 5 then
+			local turns = #path * 3
+			self:makeChallengeQuest(level, "Rush Hour ("..turns..")", "Leave the level in less than "..turns.." turns (exit is revealed on your map).", {
+				turns_left = turns,
+				desc = function(self, who)
+					local desc = {}
+					desc[#desc+1] = self.challenge_desc
+					desc[#desc+1] = ""
+					desc[#desc+1] = "Turns left: #LIGHT_GREEN#"..self.turns_left
+					return table.concat(desc, "\n")
+				end,
+				on_exit_check = function(self, who)
+					if self.turns_left >= 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+				end,
+				on_act_base = function(self, who)
+					self.turns_left = self.turns_left - 1
+					if self.turns_left < 0 then
+						who:setQuestStatus(self.id, self.FAILED)
+					end
+				end,
+			})
+			self:locationRevealAround(level.default_down.x, level.default_down.y)
+		end
 	elseif id_challenge == "dream-horror" then
 		local m = zone:makeEntity(level, "actor", {name="dreaming horror", random_boss=true}, nil, true)
 		if m then
