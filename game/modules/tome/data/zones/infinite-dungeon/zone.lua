@@ -172,7 +172,6 @@ return {
 		zone:triggerHook{"InfiniteDungeon:getLayouts", layouts=layouts}
 		
 		local layout = rng.table(layouts)
-		local layout = layouts[4]
 		data.generator.map = layout
 		
 		local vgrids = {
@@ -196,7 +195,6 @@ return {
 		}
 		zone:triggerHook{"InfiniteDungeon:getGrids", grids=vgrids}
 		local vgrid = rng.table(vgrids)
-		-- local vgrid = vgrids[#vgrids]
 		
 		data.generator.map.floor = vgrid.floor
 		data.generator.map['.'] = vgrid.floor
