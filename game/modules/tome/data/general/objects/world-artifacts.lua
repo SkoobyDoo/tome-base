@@ -4114,9 +4114,12 @@ newEntity{ base = "BASE_ARROW", --Thanks Grayswandir!
 		apr = 10,
 		physcrit = 5,
 		dammod = {dex=0.7, str=0.5},
-		ranged_project={
-			[DamageType.CRIPPLING_POISON] = 45,
-		},
+		-- Items can't pass parameters to DamageTypes, so we use special_on_hit instead. Thanks Shibari!
+		special_on_hit = {desc="afflicts the target with a poison dealing 20 damage per turn and causing actions to fail 20% of the time for 6 turns", fct=function(combat, who, target)
+			if target and target:canBe("poison") then
+				target:setEffect(target.EFF_CRIPPLING_POISON, 6, {src=who, power=20, fail=20, no_ct_effect=true})
+			end
+		end},
 	},
 }
 
