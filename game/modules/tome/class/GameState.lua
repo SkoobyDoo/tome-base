@@ -389,6 +389,7 @@ end
 -- @param data.lev = character level to generate for (affects point budget, #themes and #powers) <12-50>
 -- @param data.power_points_factor = lev based power points multiplier <1>
 -- @param data.nb_points_add = #extra budget points to spend on random powers <0>
+-- @param data.nb_powers_add = #extra random powers to add <0>
 -- @param data.powers_special = function(p) that must return true on each random power to add (from base.randart_able)
 -- @param data.nb_themes = #power themes (power groups) for random powers to use <scales to 5 with lev>
 -- @param data.force_themes = additional power theme(s) to use for random powers = {"attack", "arcane", ...}
@@ -1524,7 +1525,7 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 								return (not e.unique and e.randart_able) and (not e.material_level or e.material_level >= 1) and true or false
 							end}
 						}
-						local o = game.state:generateRandart(fil,nil, true)
+						local o = game.state:generateRandart(fil, nil, true)
 						if o then
 --							print("[entityFilterPost]: Generated random object for", tostring(b.name))
 							o.unique, o.randart, o.rare = nil, nil, true
@@ -1544,21 +1545,25 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 			e = self:createRandomBoss(e, table.merge(base, filter.random_elite, true))
 		end
 	elseif type == "object" then
-		if filter.random_object and not e.unique and e.randart_able then
-			local data = _G.type(filter.random_object) == "table" and filter.random_object or {}
-			local lev = math.max(1, game.zone:level_adjust_level(game.level, game.zone, "object"))
-			print("[entityFilterPost]: Generating obsolete random_object")
-			print(debug.traceback())
-			e = game.state:generateRandart{
-				lev = lev,
-				egos = 0,
-				nb_powers_add = data.nb_powers_add or 2, 
-				nb_points_add = data.nb_points_add or 4, -- ~1 ego Note: resolvers conflicts prevent specifying egos here
-				force_themes = data.force_themes or nil,
-				base = e,
-				post = function(o) o.rare = true o.unique = nil o.randart = nil end,
-				namescheme = 3
+		if filter.random_object and not e.unique and e.randart_able then -- convert the object to a (weak) Randart
+			local f_data = _G.type(filter.random_object) == "table" and filter.random_object or {}
+			-- default parameters
+			local data = {base = e, egos = 1, nb_powers_add = 1, nb_points_add = 2,
+				lev = math.max(1, game.zone:level_adjust_level(game.level, game.zone, "object")),
+				post = function(o)
+					if f_data.post then f_data.post(o) end
+					o.rare = true o.unique = nil o.randart = nil 
+				end,
+				namescheme = 3,
 			}
+			-- update with filter specifications
+			table.merge(data, f_data, false, {base=true, post=true, base_filter=true})
+			print("[entityFilterPost]: filter.random_object forcing conversion to Randart:", e.name) table.print(data)
+			e = game.state:generateRandart(data)
+			if not e then
+				print("[GameState:entityFilterPost] failed to generate random object, data:") table.print(data)
+				print("traceback:") print(debug.traceback())
+			end
 		end
 	end
 	return e
