@@ -172,6 +172,7 @@ return {
 		zone:triggerHook{"InfiniteDungeon:getLayouts", layouts=layouts}
 		
 		local layout = rng.table(layouts)
+		local layout = layouts[4]
 		data.generator.map = layout
 		
 		local vgrids = {
@@ -200,11 +201,6 @@ return {
 		data.generator.map.floor = vgrid.floor
 		data.generator.map['.'] = vgrid.floor
 		data.generator.map.external_floor = vgrid.floor
-		if data.generator.map.widen_w then
-			-- Special sanity check. Maze generation tends to... mess up if their height/width values aren't multiplies of the tunnel sizes.
-			while data.width % data.generator.map.widen_w ~= 0 do data.width = data.width + 1 end
-			while data.height % data.generator.map.widen_h ~= 0 do data.height = data.height + 1 end
-		end
 		data.generator.map.wall = vgrid.wall
 		data.generator.map['#'] = vgrid.wall
 		data.generator.map.up = vgrid.floor
@@ -214,6 +210,11 @@ return {
 
 		data.width = vx
 		data.height = vy
+		if data.generator.map.widen_w then
+			-- Special sanity check. Maze generation tends to... mess up if their height/width values aren't multiplies of the tunnel sizes.
+			while data.width % data.generator.map.widen_w ~= 0 do data.width = data.width + 1 end
+			while data.height % data.generator.map.widen_h ~= 0 do data.height = data.height + 1 end
+		end
 
 		if layout.force_square_size then
 			data.width = math.max(vx, vy)

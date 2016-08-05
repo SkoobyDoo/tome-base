@@ -2621,7 +2621,7 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 		{name = "Random Artifact", rarity=1, give=function(who)
 			local tries = 100
 			while tries > 0 do
-				local o = game.zone:makeEntity(game.level, "object", {random_object=true, properties={"randart_able"}}, nil, true)
+				local o = game.zone:makeEntity(game.level, "object", {random_object={egos=rng.range(2,3), nb_powers_add=rng.range(10,30)}, properties={"randart_able"}}, nil, true)
 				if o then
 					o:identify(true)
 					who:addObject(who.INVEN_INVEN, o)
