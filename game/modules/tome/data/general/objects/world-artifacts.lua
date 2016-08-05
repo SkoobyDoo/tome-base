@@ -463,9 +463,9 @@ newEntity{ base = "BASE_SHIELD",
 	},
 	on_block = {desc = "30% chance that you'll breath stunning fire on foes in a 6 radius cone.", fct = function(self, who, target, type, dam, eff)
 	if rng.percent(30) then
-	  if not target or target:attr("dead") or not target.x or not target.y or core.fov.distance(who.x, who.y, target.x, target.y) > 6 then return end
+		if not target or not target.x or not target.y or core.fov.distance(who.x, who.y, target.x, target.y) > 6 then return end
 
-          who:forceUseTalent(who.T_FIRE_BREATH, {ignore_energy=true, no_talent_fail=true, no_equilibrium_fail=true, ignore_cd=true, force_target=target, force_level=2, ignore_ressources=true})
+			who:forceUseTalent(who.T_FIRE_BREATH, {ignore_energy=true, no_talent_fail=true, no_equilibrium_fail=true, ignore_cd=true, force_target=target, force_level=2, ignore_ressources=true})
 		end
 	end,
 	},
