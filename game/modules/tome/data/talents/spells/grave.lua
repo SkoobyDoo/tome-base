@@ -103,10 +103,11 @@ newTalent{
 		local x, y = util.findFreeGrid(src.x or self.x, src.y or self.y, 5, true, {[Map.ACTOR]=true})
 		if minion and x and y then
 			necroSetupSummon(self, minion, x, y, lev, true)
-			minion.on_die = nil
+			--minion.on_die = nil
 			minion.on_act = nil
 			minion:setTarget(killer)
 		end
+		return true
 	end,
 	activate = function(self, t)
 		local chance, dam = t.getParams(self, t)
