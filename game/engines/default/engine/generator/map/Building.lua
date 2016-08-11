@@ -151,11 +151,6 @@ function _M:block(leaf, spots)
 end
 
 function _M:generate(lev, old_lev)
-
-print("Building generate with data:", self.data) table.print(self.data) -- debugging
-table.set(game.zone, "debug", "map_gen", self) -- debugging
-game.log("#LIGHT_GREEN# Beginning BUILDING map generation (%sw, %sh) count %s", self.map.w, self.map.h, game.zone._level_generation_count) -- debugging
-
 	for i = 0, self.map.w - 1 do for j = 0, self.map.h - 1 do
 		if i <= self.margin_w - 1 or i >= self.map.w - self.margin_w + 0 or j <= self.margin_h - 1 or j >= self.map.h - self.margin_h + 0 then
 			self.map(i, j, Map.TERRAIN, self:resolve("outside_floor")) -- outside of building space
@@ -167,13 +162,12 @@ game.log("#LIGHT_GREEN# Beginning BUILDING map generation (%sw, %sh) count %s", 
 	self.spots = spots
 	self.walls = {}
 
-	-- place rooms if needed
+	-- place specific rooms if needed
 	local nb_room = util.getval(self.data.nb_rooms or 0)
 	local rooms = self.map.room_map.rooms
 
-	-- make sure rooms meet size limits and is placed inside the margins
+	-- make sure rooms meet size limits and are placed inside the margins
 	local add_check = function(room, x, y)
-print("[Building] add check called for room:", room, "at", x, y) table.print_shallow(room) -- debugging
 		local border = room.border or 0
 		if room.w + 2*border > self.max_room_w or room.h > self.max_room_h + 2*border then
 			return false
@@ -184,7 +178,7 @@ print("[Building] add check called for room:", room, "at", x, y) table.print_sha
 		return true
 	end
 
-	print("[Building] placing", nb_rooms, "rooms")
+	print("[Building] placing", nb_room, "rooms")
 	-- Place required rooms
 	if #self.required_rooms > 0 then
 		for i, rroom in ipairs(self.required_rooms) do
@@ -197,7 +191,6 @@ print("[Building] add check called for room:", room, "at", x, y) table.print_sha
 			if ok then
 				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev, add_check)
 				if r then nb_room = nb_room - 1
-print("[Building]roomAlloc returned", r) table.print_shallow(r, "\t_ra_") -- debugging
 				else self.level.force_recreate = "required_room "..tostring(rroom) return end
 			end
 		end
@@ -219,7 +212,6 @@ print("[Building]roomAlloc returned", r) table.print_shallow(r, "\t_ra_") -- deb
 
 		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev, add_check)
 		if r then nb_room = nb_room -1 end
-print("[Building]roomAlloc returned", r) table.print_shallow(r, "\t_ra_") -- debugging
 		tries = tries - 1
 	end
 
@@ -261,7 +253,7 @@ print("[Building]roomAlloc returned", r) table.print_shallow(r, "\t_ra_") -- deb
 	return ux, uy, dx, dy, spots
 end
 
---- Create the stairs inside the level
+--- Create the stairs inside the level (inside the margin, if any)
 function _M:makeStairsInside(lev, old_lev, spots)
 	local m_w, m_h = self.margin_w, self.margin_h
 	-- Put down stairs
@@ -291,7 +283,7 @@ function _M:makeStairsInside(lev, old_lev, spots)
 	return ux, uy, dx, dy, spots
 end
 
---- Create the stairs on the sides (within margin, if any)
+--- Create the stairs on the sides (inside the margin, if any)
 function _M:makeStairsSides(lev, old_lev, sides, spots)
 	local m_w, m_h = self.margin_w, self.margin_h
 	-- Put down stairs

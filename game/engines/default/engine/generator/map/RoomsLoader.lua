@@ -34,16 +34,20 @@ function _M:init(data)
 	if data.rooms then for i, file in ipairs(data.rooms) do
 		if type(file) == "table" then
 			table.insert(self.rooms, {self:loadRoom(file[1]), chance_room=file[2]})
+			print("[RoomsLoader:init] loaded room:", file[1], self.rooms[#self.rooms][1], "chance:", file[2])
 		else
 			table.insert(self.rooms, self:loadRoom(file))
+			print("[RoomsLoader:init] loaded room:", file, self.rooms[#self.rooms])
 		end
 	end end
 
 	if data.required_rooms then for i, file in ipairs(data.required_rooms) do
 		if type(file) == "table" then
 			table.insert(self.required_rooms, {self:loadRoom(file[1]), chance_room=file[2]})
+			print("[RoomsLoader:init] loaded required room:", file[1], self.required_rooms[#self.required_rooms][1], "chance:", file[2])
 		else
 			table.insert(self.required_rooms, self:loadRoom(file))
+			print("[RoomsLoader:init] loaded required room:", file, self.required_rooms[#self.required_rooms])
 		end
 	end end
 end
@@ -593,7 +597,6 @@ function _M:roomGen(room, id, lev, old_lev)
 		print("[roomGen] room generator", base_room, "is making a room")
 		room, failure = room(self, id, lev, old_lev)
 	end
---print("[RoomsLoader:roomGen] generating room:", room, "base_room:", base_room) table.print(room, "\t_r_") table.print(base_room, "\t_br_")
 	if not room then
 		table.insert(self.map.room_map.rooms_failed, {room=base_room, failure=failure or "generation"})
 		return false
@@ -660,7 +663,6 @@ function _M:roomPlace(room, id, x, y)
 		end
 	end
 	print("placed room", room.name ,"at", x, y,"with center",math.floor(x+(room.w-1)/2), math.floor(y+(room.h-1)/2))
-game.log("#SALMON# placed room %s at (%d, %d)", room.name, x, y)
 	cx = cx or math.floor(x+(room.w-1)/2)
 	cy = cy or math.floor(y+(room.h-1)/2)
 	local ret = { id=id, x=x, y=y, cx=cx, cy=cy, room=room }
