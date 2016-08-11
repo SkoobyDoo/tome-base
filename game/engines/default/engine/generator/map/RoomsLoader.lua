@@ -564,7 +564,7 @@ function _M:roomCheck(room, zone, level, map)
 			for i, xroom in ipairs(rooms_list) do
 				if xroom.room then
 					if xroom.room.unique == room.unique then
-						print("[roomCheck]-- rejecting duplicate of unique room", room.unique)
+						print("[RoomsLoader:roomCheck]-- rejecting duplicate of unique room", room.unique)
 						return false, "unique:"..room.unique
 					end
 				end
@@ -593,6 +593,7 @@ function _M:roomGen(room, id, lev, old_lev)
 		print("[roomGen] room generator", base_room, "is making a room")
 		room, failure = room(self, id, lev, old_lev)
 	end
+--print("[RoomsLoader:roomGen] generating room:", room, "base_room:", base_room) table.print(room, "\t_r_") table.print(base_room, "\t_br_")
 	if not room then
 		table.insert(self.map.room_map.rooms_failed, {room=base_room, failure=failure or "generation"})
 		return false
@@ -658,8 +659,8 @@ function _M:roomPlace(room, id, x, y)
 			end
 		end
 	end
-	
-	print("room placed at", x, y,"with center",math.floor(x+(room.w-1)/2), math.floor(y+(room.h-1)/2))
+	print("placed room", room.name ,"at", x, y,"with center",math.floor(x+(room.w-1)/2), math.floor(y+(room.h-1)/2))
+game.log("#SALMON# placed room %s at (%d, %d)", room.name, x, y)
 	cx = cx or math.floor(x+(room.w-1)/2)
 	cy = cy or math.floor(y+(room.h-1)/2)
 	local ret = { id=id, x=x, y=y, cx=cx, cy=cy, room=room }
@@ -705,7 +706,7 @@ function _M:roomAlloc(room, id, lev, old_lev, add_check)
 		if px and py then -- gradually spread additional tries around the preferred location
 			local sig = tries/100
 			x = util.bound(rng.normal(px, sig*self.map.w*2), math.max(1, border), self.map.w - room.w - math.max(1, border))
-			y = util.bound(rng.normal(px, sig*self.map.h*2), math.max(1, border), self.map.h - room.h - math.max(1, border))
+			y = util.bound(rng.normal(py, sig*self.map.h*2), math.max(1, border), self.map.h - room.h - math.max(1, border))
 		else
 			x = rng.range(math.max(1, border), self.map.w - room.w - math.max(1, border))
 			y = rng.range(math.max(1, border), self.map.h - room.h - math.max(1, border))
