@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 local slime_wall_editer = {method="walls_def", def="slime_wall"}
+local slime_floor_editer = {method="borders_def", def="slimy_creep"}
 
 newEntity{
 	define_as = "SLIME_FLOOR",
@@ -56,6 +57,7 @@ newEntity{
 	display = '<', color=colors.LIGHT_GREEN, back_color=colors.GREEN,
 	notice = true,
 	always_remember = true,
+	nice_editer = slime_floor_editer,
 	change_level = -1,
 }
 
@@ -66,6 +68,7 @@ newEntity{
 	display = '>', color=colors.LIGHT_GREEN, back_color=colors.GREEN,
 	notice = true,
 	always_remember = true,
+	nice_editer = slime_floor_editer,
 	change_level = 1,
 }
 
