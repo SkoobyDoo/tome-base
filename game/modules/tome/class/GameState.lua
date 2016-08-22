@@ -2468,10 +2468,9 @@ function _M:allowOnlineEvent()
 end
 
 function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
-game.log("#ORCHID# infiniteDungeonChallenge called (%s, %s)", id_layout_name, id_grids_name)
 	self.id_challenge = self.id_challenge or {count=0, level_entering_id=game:getPlayer(true).level, quests={}, rewarded={}}
-	-- challenges become more rare with depth (lev 3+ between 20% and 70% chance, 65%@3, 45%@30, 35%@75)
---	if lev < 3 or rng.percent(30 + 50*lev/(lev + 30)) then return end -- !debugging 
+	-- challenges become more rare with depth (lev 3+ :: between 20% and 70% chance, 65%@3, 45%@30, 35%@75)
+	if lev < 3 or rng.percent(30 + 50*lev/(lev + 30)) then return end
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
@@ -2487,8 +2486,7 @@ game.log("#ORCHID# infiniteDungeonChallenge called (%s, %s)", id_layout_name, id
 		if c.min_lev and lev < c.min_lev then table.remove(challenges, i) end
 	end
 
---	local challenge = rng.rarityTable(challenges) -- !debugging
-	local challenge = rng.table(challenges) -- debugging
+	local challenge = rng.rarityTable(challenges)
 	data.id_challenge = challenge.id
 	data.id_layout_name = id_layout_name
 	data.id_grids_name = id_grids_name
@@ -2658,12 +2656,7 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 	}
 	self:triggerHook{"InfiniteDungeon:getRewards", rewards=rewards}
 
-for i, rew in ipairs(rewards) do -- debugging
-	game.log("#GREY#ID Challenge Reward %d: %s[%s], rarity:%2.1f", i, rew.name, rew.id, rew.rarity)
-end -- debugging
-
---	local reward = rng.rarityTable(rewards) -- !debugging
-	local reward = rng.table(rewards) -- debugging
+	local reward = rng.rarityTable(rewards)
 	reward.name = reward.give(who) or reward.name
 	self.id_challenge.rewarded[reward.id] = (self.id_challenge.rewarded[reward.id] or 0) + 1
 	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward: "..reward.name

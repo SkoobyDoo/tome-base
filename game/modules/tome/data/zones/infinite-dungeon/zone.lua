@@ -99,7 +99,6 @@ return {
 		},
 	},
 	alter_level_data = function(zone, lev, data)
---print("Infinite Dungeon: alter_level_data", lev, "data:", data) table.print_shallow(data)
 		
 		-- Randomize the size of the dungeon, increasing it slightly as the game progresses.
 		local size = 60 + math.floor(30*lev/(lev + 50)) -- from 60 to 90, 70 @ level 25, 75 @ level 50
@@ -208,25 +207,20 @@ return {
 		-- select layout and grids for the level from those set previously (default 1)
 		local layoutN = ((zone.layoutN or 1) - 1)%#layouts + 1
 		local vgridN = ((zone.vgridN or 1) - 1)%#vgrids + 1
-		
---vgridN = 12 -- debugging
---layoutN = 6 -- debugging
-
 		layout = layouts[layoutN]
 		vgrid = vgrids[vgridN]
-		print("[Infinite Dungeon] using zone layout #", layoutN, layout.id_layout_name) table.print(layout)
-		print("[Infinite Dungeon] using variable grid set #", vgridN, vgrid.id_grids_name) table.print(vgrid)
+		print("[Infinite Dungeon] using zone layout #", layoutN, layout.id_layout_name) table.print(layout, "\t")
+		print("[Infinite Dungeon] using variable grid set #", vgridN, vgrid.id_grids_name) table.print(vgrid, "\t")
 		
 		data.generator.map = layout
 		
 		-- set up exit properties (to be finished post_process)
 		data.alternate_exit = {}
-		for i = 1, 10 do -- debugging
---		for i = 1, 2 do -- !debugging
+		for i = 1, 2 do
 			layoutN = rng.normal(layoutN + 1, 2)%#layouts + 1  --statistically rotate through all sets
 			vgridN = rng.normal(vgridN + 1, 2)%#vgrids + 1
-game.log("#LIGHT_BLUE# selected alternate down variables[%s]: %s, %s", i, layouts[layoutN].id_layout_name, vgrids[vgridN].id_grids_name) -- debugging
 			data.alternate_exit[i] = {layoutN=layoutN, layout=layouts[layoutN], vgridN=vgridN, grids=vgrids[vgridN]}
+--			print("[Infinite Dungeon] Exit", i, "layout:", layoutN, layouts[layoutN].id_layout_name, "grids:",vgridN, vgrids[vgridN].id_grids_name)
 		end
 
 		-- adjust map size for certain layouts
@@ -258,7 +252,6 @@ game.log("#LIGHT_BLUE# selected alternate down variables[%s]: %s, %s", i, layout
 		-- Scale enemy count according to map or with map area
 		local enemy_count = layout.enemy_count or math.ceil(vx * vy *34/4900) -- avg: 25 @ 60x60, 34 @ 70x70, 57 @ 90x90
 		data.generator.actor.nb_npc = {enemy_count-5, enemy_count+5}
-game.log("#LIGHT_BLUE#Setting up variable map (%s, %s) (%dw, %dh, %s rooms, %s enemies) data:%s", data.generator.map.id_layout_name, data.generator.map.id_grids_name, vx, vy, layout.nb_rooms, enemy_count, data) -- debugging
 		print(("[Infinite Dungeon] alter_level_data: (%dw, %dh) %s rooms, %d enemies, layout:%s, grids:%s"):format(vx, vy, layout.nb_rooms, enemy_count, data.generator.map.id_layout_name, data.generator.map.id_grids_name))
 		game.state:infiniteDungeonChallenge(zone, lev, data, data.generator.map.id_layout_name, vgrid.id_grids_name)
 	end,
@@ -304,19 +297,17 @@ game.log("#LIGHT_BLUE#Setting up variable map (%s, %s) (%dw, %dh, %s rooms, %s e
 						if data.guard and (not data.guard_test or data.guard_test(level)) then
 							local m = zone:makeEntity(level, "actor", rng.table(data.guard), nil, true)
 							if m then
-game.log("#LIGHT_BLUE# Adding stair guard to alternate exit [%d] at (%d, %d)", i, x, y)
 								zone:addEntity(level, m, "actor", x, y)
-								print("[Infinite Dungeon] placed additional stair guard", m.name, "at", x, y)
+								print("[Infinite Dungeon] placed (additional) stair guard", m.name, "at", x, y)
 							end
 						end
 					end
 				end
 				
 				if x and y and ex and ex.change_level then -- update the exit tile
-game.log("#LIGHT_BLUE# Adding Alternate exit[%d] [%s, %s] at {%d, %d)", i, ae.layout.id_layout_name, ae.grids.id_grids_name, x, y) table.print(ae) -- debugging
 					ex = ex:clone()
 					ex.show_tooltip = true
-					ex.desc = (ex.desc or "")..("\nAppears to lead to:\n%s%s"):format(ae.grids.desc or "indistinct", ae.layout.desc or "continuation of the Infinite Dungeon")
+					ex.desc = (ex.desc or "")..("\nEncroaching terrain:\n%s%s"):format(ae.grids.desc or "indistinct", ae.layout.desc or "continuation of the Infinite Dungeon")
 					-- make sure the exit is clearly marked (in case the nice tiler hides it)
 					if ex.add_displays then -- migrate graphics up, but below actor and nice tiler 3d z levels
 						for i, d in ipairs(ex.add_displays) do
@@ -325,9 +316,6 @@ game.log("#LIGHT_BLUE# Adding Alternate exit[%d] [%s, %s] at {%d, %d)", i, ae.la
 					else ex.add_displays = {}
 					end
 					ex.add_displays[#ex.add_displays+1] = marker -- add extra marker just in case
-					
-ex.desc = (ex.desc or "")..("\n[Alternate Exit[%d] (%s[%s], %s[%s])]"):format(i, ae.grids.id_grids_name, ae.vgridN, ae.layout.id_layout_name, ae.layoutN) -- debugging
-
 					ex.layoutN, ex.vgridN = ae.layoutN, ae.vgridN
 					ex.change_level_check = function(self, player)
 						game.zone.layoutN = self.layoutN
@@ -335,6 +323,7 @@ ex.desc = (ex.desc or "")..("\n[Alternate Exit[%d] (%s[%s], %s[%s])]"):format(i,
 					end
 					zone:addEntity(level, ex, "terrain", x, y)
 					level.spots[#level.spots+1] = {x=x, y=y, check_connectivity="exit"}
+					print("[Infinite Dungeon] Added/updated Exit#", i, x, y, "layout:", ex.layoutN, ae.layout.id_layout_name, "grids:",ex.vgridN, ae.grids.id_grids_name)
 				end
 			end
 		end
@@ -364,7 +353,6 @@ ex.desc = (ex.desc or "")..("\n[Alternate Exit[%d] (%s[%s], %s[%s])]"):format(i,
 			end end
 			local closed = 100*block_count/(level.map.w*level.map.h) local open = 100-closed
 			print(("[Infinite Dungeon] Open space calculation: (%s, %s, %dw x %dh) space -- (open:%2.1f%%, closed:%2.1f%%)"):format(level.data.id_layout_name, level.data.id_grids_name, level.map.w, level.map.h, open, closed))
-game.log("#ORCHID# Level (%s, %s) grid count: %d blocking (open:%2.1f%%, closed:%2.1f%%)", level.data.id_layout_name, level.data.id_grids_name, block_count, open, closed) -- debugging
 		end
 	end,
 }

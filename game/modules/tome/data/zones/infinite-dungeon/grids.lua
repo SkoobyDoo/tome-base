@@ -142,7 +142,6 @@ newEntity{
 	define_as = "LAVA_ROCK",
 	type = "wall", subtype = "lava",
 	name = "huge loose rock", image = "terrain/lava_floor.png", add_mos = {{image="terrain/maze_rock.png"}},
---	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
 	display = '+', color=colors.GREY, back_color=colors.DARK_GREY,
 	shader = "lava",
 	notice = true,
