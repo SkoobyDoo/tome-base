@@ -51,7 +51,8 @@ for i = 1, 5 do newEntity{ base="SLIME_WALL", define_as = "SLIME_WALL"..i, image
 -- Level changers
 -----------------------------------------
 newEntity{
-	define_as = "SLIME_UP", image = "terrain/slime/slime_floor_01.png", add_mos = {{image="terrain/slime/slime_stairs_up_left_01.png"}},
+	define_as = "SLIME_UP", image = "terrain/slime/slime_floor_01.png",
+	add_displays = {class.new{image="terrain/slime/slime_stairs_up_left_01.png"}},
 	type = "floor", subtype = "slime",
 	name = "previous level",
 	display = '<', color=colors.LIGHT_GREEN, back_color=colors.GREEN,
@@ -62,7 +63,8 @@ newEntity{
 }
 
 newEntity{
-	define_as = "SLIME_DOWN", image = "tterrain/slime/slime_floor_01.png", add_mos = {{image="terrain/slime/slime_stair_down_01.png"}},
+	define_as = "SLIME_DOWN", image = "tterrain/slime/slime_floor_01.png",
+	add_displays = {class.new{image="terrain/slime/slime_stair_down_01.png"}},
 	type = "floor", subtype = "slime",
 	name = "next level",
 	display = '>', color=colors.LIGHT_GREEN, back_color=colors.GREEN,
@@ -84,7 +86,7 @@ newEntity{
 	notice = true,
 	always_remember = true,
 	block_sight = true,
---	nice_editer = slime_wall_editer,
+	nice_editer = slime_wall_editer,
 	is_door = true,
 	door_opened = "SLIME_DOOR_OPEN",
 	dig = "FLOOR",
@@ -95,7 +97,7 @@ newEntity{
 	name = "open slime door",
 	display = "'", color=colors.LIGHT_GREEN, back_color=colors.GREEN,
 	always_remember = true,
---	nice_editer = slime_wall_editer,
+	nice_editer = slime_wall_editer,
 	is_door = true,
 	door_closed = "SLIME_DOOR",
 }

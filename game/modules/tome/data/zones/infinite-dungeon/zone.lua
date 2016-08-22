@@ -99,7 +99,7 @@ return {
 		},
 	},
 	alter_level_data = function(zone, lev, data)
-print("Infinite Dungeon: alter_level_data", lev, "data:", data) table.print_shallow(data)
+--print("Infinite Dungeon: alter_level_data", lev, "data:", data) table.print_shallow(data)
 		
 		-- Randomize the size of the dungeon, increasing it slightly as the game progresses.
 		local size = 60 + math.floor(30*lev/(lev + 50)) -- from 60 to 90, 70 @ level 25, 75 @ level 50
@@ -189,25 +189,29 @@ print("Infinite Dungeon: alter_level_data", lev, "data:", data) table.print_shal
 			{id_grids_name="tree", floor="GRASS", wall="TREE", door="GRASS_ROCK", down="GRASS_DOWN2", desc="sylvan"},
 			{id_grids_name="underground", floor="UNDERGROUND_FLOOR", wall="UNDERGROUND_TREE", door="UNDERGROUND_ROCK", down="UNDERGROUND_LADDER_DOWN", desc="subterranean"},
 			{id_grids_name="crystals", floor="CRYSTAL_FLOOR", wall={"CRYSTAL_WALL","CRYSTAL_WALL2","CRYSTAL_WALL3","CRYSTAL_WALL4","CRYSTAL_WALL5","CRYSTAL_WALL6","CRYSTAL_WALL7","CRYSTAL_WALL8","CRYSTAL_WALL9","CRYSTAL_WALL10","CRYSTAL_WALL11","CRYSTAL_WALL12","CRYSTAL_WALL13","CRYSTAL_WALL14","CRYSTAL_WALL15","CRYSTAL_WALL16","CRYSTAL_WALL17","CRYSTAL_WALL18","CRYSTAL_WALL19","CRYSTAL_WALL20",}, door="CRYSTAL_ROCK", down="CRYSTAL_LADDER_DOWN", desc="crystalline"},
-			{id_grids_name="sand", floor="UNDERGROUND_SAND", wall="SANDWALL", door="UNDERGROUND_SAND", down="SAND_LADDER_DOWN", desc="sandy"},
+			{id_grids_name="sand", floor="UNDERGROUND_SAND", wall="SANDWALL", door="SAND_ROCK", down="SAND_LADDER_DOWN", desc="sandy"},
 			{id_grids_name="desert", floor="SAND", wall="PALMTREE", door="DESERT_ROCK", down="SAND_DOWN2", desc="arrid"},
 			{id_grids_name="slime", floor="SLIME_FLOOR", wall="SLIME_WALL", door="SLIME_DOOR", down="SLIME_DOWN", desc="slimey"},
 			{id_grids_name="jungle", floor="JUNGLE_GRASS", wall="JUNGLE_TREE", door="JUNGLE_ROCK", down="JUNGLE_GRASS_DOWN2", desc="humid, tropical"},
 			{id_grids_name="cave", floor="CAVEFLOOR", wall="CAVEWALL", door="CAVE_ROCK", down="CAVE_LADDER_DOWN", desc="unhewn"},
-			{id_grids_name="burntland", floor="BURNT_GROUND", wall="BURNT_TREE", door="BURNT_GROUND", down="BURNT_DOWN6", desc="burned"},
+			{id_grids_name="burntland", floor="BURNT_GROUND", wall="BURNT_TREE", door="BURNT_DOOR", down="BURNT_DOWN6", desc="burned"},
 			{id_grids_name="mountain", floor="ROCKY_GROUND", wall="MOUNTAIN_WALL", door="DOOR", down="ROCKY_DOWN2", desc="mountainous"},
-			{id_grids_name="mountain_forest", floor="ROCKY_GROUND", wall="ROCKY_SNOWY_TREE", door="ROCKY_GROUND", down="ROCKY_DOWN2", desc="alpine"},
-			{id_grids_name="snowy_forest", floor="SNOWY_GRASS_2", wall="SNOWY_TREE_2", door="SNOWY_GRASS_2", down="snowy_DOWN2", desc="cold, wooded"},
+			{id_grids_name="mountain_forest", floor="ROCKY_GROUND", wall="ROCKY_SNOWY_TREE", door="ROCKY_SNOWY_DOOR", down="ROCKY_DOWN2", desc="alpine"},
+			{id_grids_name="snowy_forest", floor="SNOWY_GRASS_2", wall="SNOWY_TREE_2", door="SNOWY_DOOR", down="snowy_DOWN2", desc="cold, wooded"},
 			{id_grids_name="temporal_void", floor="VOID", wall="SPACETIME_RIFT2", door="VOID", down="RIFT2", desc="empty"},
 			{id_grids_name="water", floor="WATER_FLOOR_FAKE", wall="WATER_WALL_FAKE", door="WATER_DOOR_FAKE", down="WATER_DOWN_FAKE", desc="flooded"},
-			{id_grids_name="lava", floor="LAVA_FLOOR_FAKE", wall="LAVA_WALL_FAKE", door="LAVA_FLOOR_FAKE", down="LAVA_DOWN_FAKE", desc="molten"},
-			{id_grids_name="autumn_forest", floor="AUTUMN_GRASS", wall="AUTUMN_TREE", door="AUTUMN_GRASS", down="AUTUMN_GRASS_DOWN2", desc="temperate"},
+			{id_grids_name="lava", floor="LAVA_FLOOR_FAKE", wall="LAVA_WALL_FAKE", door="LAVA_ROCK", down="LAVA_DOWN_FAKE", desc="molten"},
+			{id_grids_name="autumn_forest", floor="AUTUMN_GRASS", wall="AUTUMN_TREE", door="AUTUMN_ROCK", down="AUTUMN_GRASS_DOWN2", desc="temperate"},
 		}
 		zone:triggerHook{"InfiniteDungeon:getGrids", grids=vgrids}
 		
 		-- select layout and grids for the level from those set previously (default 1)
 		local layoutN = ((zone.layoutN or 1) - 1)%#layouts + 1
 		local vgridN = ((zone.vgridN or 1) - 1)%#vgrids + 1
+		
+--vgridN = 12 -- debugging
+--layoutN = 6 -- debugging
+
 		layout = layouts[layoutN]
 		vgrid = vgrids[vgridN]
 		print("[Infinite Dungeon] using zone layout #", layoutN, layout.id_layout_name) table.print(layout)
@@ -221,7 +225,7 @@ print("Infinite Dungeon: alter_level_data", lev, "data:", data) table.print_shal
 --		for i = 1, 2 do -- !debugging
 			layoutN = rng.normal(layoutN + 1, 2)%#layouts + 1  --statistically rotate through all sets
 			vgridN = rng.normal(vgridN + 1, 2)%#vgrids + 1
-game.log("#LIGHT_BLUE# selected alternate down variables[%s]: %s, %s", i, layouts[layoutN].id_layout_name, vgrids[vgridN].id_grids_name) -- debuggins
+game.log("#LIGHT_BLUE# selected alternate down variables[%s]: %s, %s", i, layouts[layoutN].id_layout_name, vgrids[vgridN].id_grids_name) -- debugging
 			data.alternate_exit[i] = {layoutN=layoutN, layout=layouts[layoutN], vgridN=vgridN, grids=vgrids[vgridN]}
 		end
 
@@ -254,7 +258,7 @@ game.log("#LIGHT_BLUE# selected alternate down variables[%s]: %s, %s", i, layout
 		-- Scale enemy count according to map or with map area
 		local enemy_count = layout.enemy_count or math.ceil(vx * vy *34/4900) -- avg: 25 @ 60x60, 34 @ 70x70, 57 @ 90x90
 		data.generator.actor.nb_npc = {enemy_count-5, enemy_count+5}
-game.log("#LIGHT_BLUE#Setting up variable map (%s, %s) (%dw, %dh, %s rooms, %s enemies) data:%s", data.generator.map.id_layout_name, data.generator.map.id_grids_name, vx, vy, enemy_count, layout.nb_rooms, data) -- debugging
+game.log("#LIGHT_BLUE#Setting up variable map (%s, %s) (%dw, %dh, %s rooms, %s enemies) data:%s", data.generator.map.id_layout_name, data.generator.map.id_grids_name, vx, vy, layout.nb_rooms, enemy_count, data) -- debugging
 		print(("[Infinite Dungeon] alter_level_data: (%dw, %dh) %s rooms, %d enemies, layout:%s, grids:%s"):format(vx, vy, layout.nb_rooms, enemy_count, data.generator.map.id_layout_name, data.generator.map.id_grids_name))
 		game.state:infiniteDungeonChallenge(zone, lev, data, data.generator.map.id_layout_name, vgrid.id_grids_name)
 	end,
@@ -308,14 +312,22 @@ game.log("#LIGHT_BLUE# Adding stair guard to alternate exit [%d] at (%d, %d)", i
 					end
 				end
 				
-				if x and y and ex and ex.change_level then
+				if x and y and ex and ex.change_level then -- update the exit tile
 game.log("#LIGHT_BLUE# Adding Alternate exit[%d] [%s, %s] at {%d, %d)", i, ae.layout.id_layout_name, ae.grids.id_grids_name, x, y) table.print(ae) -- debugging
 					ex = ex:clone()
 					ex.show_tooltip = true
 					ex.desc = (ex.desc or "")..("\nAppears to lead to:\n%s%s"):format(ae.grids.desc or "indistinct", ae.layout.desc or "continuation of the Infinite Dungeon")
 					-- make sure the exit is clearly marked (in case the nice tiler hides it)
-					ex.add_displays = ex.add_displays or {}	ex.add_displays[#ex.add_displays+1] = marker
+					if ex.add_displays then -- migrate graphics up, but below actor and nice tiler 3d z levels
+						for i, d in ipairs(ex.add_displays) do
+							d.z = math.min(9, (d.z or 0) + 6)
+						end
+					else ex.add_displays = {}
+					end
+					ex.add_displays[#ex.add_displays+1] = marker -- add extra marker just in case
+					
 ex.desc = (ex.desc or "")..("\n[Alternate Exit[%d] (%s[%s], %s[%s])]"):format(i, ae.grids.id_grids_name, ae.vgridN, ae.layout.id_layout_name, ae.layoutN) -- debugging
+
 					ex.layoutN, ex.vgridN = ae.layoutN, ae.vgridN
 					ex.change_level_check = function(self, player)
 						game.zone.layoutN = self.layoutN
