@@ -86,7 +86,7 @@ newEntity{
 	notice = true,
 	always_remember = true,
 	block_sight = true,
-	nice_editer = slime_wall_editer,
+	nice_editer = slime_floor_editer,
 	is_door = true,
 	door_opened = "SLIME_DOOR_OPEN",
 	dig = "FLOOR",
@@ -97,7 +97,7 @@ newEntity{
 	name = "open slime door",
 	display = "'", color=colors.LIGHT_GREEN, back_color=colors.GREEN,
 	always_remember = true,
-	nice_editer = slime_wall_editer,
+	nice_editer = slime_floor_editer,
 	is_door = true,
 	door_closed = "SLIME_DOOR",
 }
