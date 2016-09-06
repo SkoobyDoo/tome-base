@@ -1120,5 +1120,5 @@ function _M:runPostGeneration(level)
 		end
 	end
 
-	level.map.room_map = nil -- delete the room map
+--	level.map.room_map = nil -- delete the room map
 end
