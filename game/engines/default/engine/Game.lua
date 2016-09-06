@@ -273,12 +273,8 @@ function _M:tick()
 	-- Check out any possible errors
 	local errs = core.game.checkError()
 	if errs then
---table.set(game, "debug", "last_errs", errs)
---table.print(errs, "_le_")
 		if config.settings.cheat then for id = #self.dialogs, 1, -1 do self:unregisterDialog(self.dialogs[id]) end end
 		self:registerDialog(require("engine.dialogs.ShowErrorStack").new(errs))
---errs = core.game.checkError()
---table.print(errs, "_mle_")
 	end
 
 	local stop = {}
