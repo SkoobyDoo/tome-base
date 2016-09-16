@@ -538,7 +538,7 @@ function _M:generateListGameplay()
 		return tostring(config.settings.tome.tinker_auto_switch and "enabled" or "disabled")
 	end, fct=function(item)
 		config.settings.tome.tinker_auto_switch = not config.settings.tome.tinker_auto_switch
-		game:saveSettings("tome.tinker_auto_switch", ("tome.tinker_auto_switch = %s\n"):format(tostring(config.settings.tome.rest_before_explore)))
+		game:saveSettings("tome.tinker_auto_switch", ("tome.tinker_auto_switch = %s\n"):format(tostring(config.settings.tome.tinker_auto_switch)))
 		self.c_list:drawItem(item)
 	end,}
 
