@@ -34,6 +34,8 @@ function _M:init(t, no_default)
 	if not self.image and self.name ~= "unknown actor" then self.image = "npc/"..tostring(self.type or "unknown").."_"..tostring(self.subtype or "unknown"):lower():gsub("[^a-z0-9]", "_").."_"..(self.name or "unknown"):lower():gsub("[^a-z0-9]", "_")..".png" end
 end
 
+_M._silent_talent_failure = true
+
 function _M:actBase()
 	-- Reduce shoving pressure every turn
 	if self.shove_pressure then
@@ -109,6 +111,7 @@ local function spotHostiles(self)
 end
 
 function _M:onTalentLuaError(ab, err)
+	engine.interface.ActorTalents.onTalentLuaError(self, ab, err)
 	self:useEnergy()  -- prevent infinitely long erroring out turns
 end
 
