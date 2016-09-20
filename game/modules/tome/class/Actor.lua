@@ -4879,7 +4879,6 @@ end
 -- called when the talent is used after successful preUseTalent check
 -- @param ab the talent (not the id, the table)
 function _M:logTalentMessage(ab)
-print("[Actor:logTalentMessage] outputting talent message for", ab.id, self.uid, self.name, self.x, self.y, game.level.map.seens(self.x, self.y)) -- debugging
 	if ab.message ~= false and not util.getval(ab.no_message, self, ab) then
 		if ab.message then
 			game.logSeen(self, "%s", self:useTalentMessage(ab))
