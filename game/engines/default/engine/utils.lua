@@ -2315,6 +2315,7 @@ function util.uuid()
 end
 
 function util.browserOpenUrl(url, forbid_methods)
+	local osexecute = os.execute
 	forbid_methods = forbid_methods or {}
 	if forbid_methods.is_external and config.settings.open_links_external then
 		forbid_methods.webview = true
@@ -2340,7 +2341,7 @@ function util.browserOpenUrl(url, forbid_methods)
 		local urlbase = table.remove(tries, 1)
 		urlbase = urlbase:format(url)
 		print("Trying to run URL with command: ", urlbase)
-		if os.execute(urlbase) == 0 then return "native", true end
+		if osexecute(urlbase) == 0 then return "native", true end
 	end
 	return false
 end
@@ -2389,3 +2390,12 @@ end
 function util.steamCanCloud()
 	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then return true end
 end
+
+--------------------------------------------------------------
+-- Remove invalidate some dangerous functions
+--------------------------------------------------------------
+os.execute = nil
+os.getenv = nil
+os.remove = nil
+os.rename = nil
+
