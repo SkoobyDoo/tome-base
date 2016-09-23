@@ -83,6 +83,9 @@ extern lua_err_type *last_lua_error_head, *last_lua_error_tail;
 extern void del_lua_error();
 extern core_boot_type *core_def;
 
+extern void physfs_reset_dir_allowed(lua_State *L);
+extern bool physfs_check_allow_path(lua_State *L, const char *path);
+
 #ifdef STEAM_TE4
 #include "steam-te4.h"
 #endif
