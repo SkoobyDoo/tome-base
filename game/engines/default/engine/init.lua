@@ -44,7 +44,13 @@ fs.mkdir(fs.getHomePath())
 fs.mkdir(fs.getHomePath().."/4.0/")
 fs.mkdir(fs.getHomePath().."/4.0/profiles/")
 fs.mkdir(fs.getHomePath().."/4.0/settings/")
-fs.setWritePath(fs.getHomePath())
+
+fs.setPathAllowed(engine.homepath)
+fs.setPathAllowed(fs.getRealPath("/addons/"))
+fs.setPathAllowed(fs.getRealPath("/dlcs/"))
+fs.setPathAllowed(fs.getRealPath("/modules/"))
+fs.doneSettingPathAllowed()
+fs.setWritePath(engine.homepath)
 
 -- Loads default config & user config
 fs.mount(engine.homepath, "/")
