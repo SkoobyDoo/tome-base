@@ -2315,7 +2315,6 @@ function util.uuid()
 end
 
 function util.browserOpenUrl(url, forbid_methods)
-	local osexecute = os.execute
 	forbid_methods = forbid_methods or {}
 	if forbid_methods.is_external and config.settings.open_links_external then
 		forbid_methods.webview = true
@@ -2324,25 +2323,10 @@ function util.browserOpenUrl(url, forbid_methods)
 
 	if core.webview and not forbid_methods.webview then local d = require("engine.ui.Dialog"):webPopup(url) if d then return "webview", d end end
 	if core.steam and not forbid_methods.steam and core.steam.openOverlayUrl(url) then return "steam", true end
+	
 	if forbid_methods.native then return false end
+	if core.game.openBrowser(url) then return "native", true end
 
-	local tries = {
-		"rundll32 url.dll,FileProtocolHandler %s",	-- Windows
-		"open %s",	-- OSX
-		"xdg-open %s",	-- Linux - portable way
-		"gnome-open %s",  -- Linux - Gnome
-		"kde-open %s",	-- Linux - Kde
-		"firefox %s",  -- Linux - try to find something
-		"mozilla-firefox %s",  -- Linux - try to find something
-		"google-chrome-stable %s",  -- Linux - try to find something
-		"google-chrome %s",  -- Linux - try to find something
-	}
-	while #tries > 0 do
-		local urlbase = table.remove(tries, 1)
-		urlbase = urlbase:format(url)
-		print("Trying to run URL with command: ", urlbase)
-		if osexecute(urlbase) == 0 then return "native", true end
-	end
 	return false
 end
 
@@ -2390,12 +2374,3 @@ end
 function util.steamCanCloud()
 	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then return true end
 end
-
---------------------------------------------------------------
--- Remove invalidate some dangerous functions
---------------------------------------------------------------
-os.execute = nil
-os.getenv = nil
-os.remove = nil
-os.rename = nil
-
