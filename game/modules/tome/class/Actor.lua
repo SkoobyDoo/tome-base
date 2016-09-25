@@ -251,9 +251,9 @@ function _M:init(t, no_default)
 		physspeed =1,
 		dammod = { str=1 },
 		damrange=1.1,
-		talented = "unarmed",
 	}
-	-- Insures we have certain values for gloves to modify
+	-- Ensures we have certain values for gloves to modify
+	self.combat.talented = self.combat.talented or "unarmed"
 	self.combat.damrange = self.combat.damrange or 1.1
 	self.combat.physspeed = self.combat.physspeed or 1
 	self.combat.dammod = self.combat.dammod or {str=0.6}
@@ -1330,11 +1330,7 @@ function _M:move(x, y, force)
 		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 			local trap = game.level.map(x, y, Map.TRAP)
-			if trap and not trap:knownBy(self) and self:canSee(trap) and self:checkHit(power, trap.detect_power) then
-				trap:setKnown(self, true, x, y)
-				game.level.map:updateMap(x, y)
-				game.logPlayer(self, "You have found a trap (%s)!", trap:getName())
-			end
+			if trap then self:detectTrap(trap, x, y, power) end
 		end end
 	end
 
@@ -1569,6 +1565,32 @@ function _M:doQuake(tg, x, y)
 	return game.zone:doQuake(typ.ball or 1, x, y, function(tx, ty)
 		return not game.level.map.attrs(tx, ty, "no_teleport") and not game.level.map:checkAllEntities(tx, ty, "change_level") and game.level.map(tx, ty, Map.TERRAIN) and (game.level.map(tx, ty, Map.TERRAIN).dig or game.level.map(tx, ty, Map.TERRAIN).grow)
 	end)
+end
+
+--- Attempt to detect a trap at x, y
+-- param trap the trap to be detected
+-- param x, y trap coordinates
+-- param power detection power (optional)
+function _M:detectTrap(trap, x, y, power)
+	power = power or self:callTalent(self.T_HEIGHTENED_SENSES, "trapPower")
+	if power <= 0 then return end
+	trap = trap or game.level.map(x, y, Map.TRAP)
+	if trap then
+		x, y = x or trap.x, y or trap.y
+--print("[Actor:detectTrap]", self.name, "attempting to detect trap at", x, y, trap.name, power, trap.detect_power)
+		local known = trap:knownBy(self)
+		if not known then
+			if self == trap.summoner and known == nil then trap:setKnown(self, true, x, y) return end
+			known = self:canSee(trap) and self:checkHit(power, trap.detect_power)
+			if known then 
+				trap:setKnown(self, true, x, y)
+				if self.player then
+					game.level.map:updateMap(x, y)
+					game.logPlayer(self, "#AQUAMARINE#You notice a trap (%s)!", trap:getName())
+				end
+			end
+		end
+	end
 end
 
 --- Reveals location surrounding the actor
@@ -5978,27 +6000,31 @@ function _M:suffocate(value, src, death_message)
 	return false, true
 end
 
--- Can the actor see the target actor (or other entity)
+-- Can the actor see the target (Actor or other Entity), recomputes results (does not use can_see_cache)
 -- This does not check LOS or such, only the actual ability to see it.<br/>
--- Check for telepathy, invisibility, stealth, ...
+-- Checks for telepathy, invisibility, stealth, ...
+-- @param[type=Entity] actor the target Entity (usually Actor) to be seen
+-- @param[type=boolean] def the default result
+-- @param[type=number] def_pct the default percent chance
+-- @return[1] true or false
+-- @return[2] a number from 0 to 100 representing the percent "chance" to be seen
 function _M:canSeeNoCache(actor, def, def_pct)
 	if not actor then return false, 0 end
 
-	-- Full ESP
-	if self.esp_all and self.esp_all > 0 then
-		return true, 100
-	end
+	if actor.__is_actor then -- check ESP against actors
+		if self.esp_all and self.esp_all > 0 then return true, 100 end -- Full ESP
 
-	-- ESP, see all, or only types/subtypes
-	if self.esp then
-		local esp = self.esp
-		local t, st = tostring(rawget(actor, "type") or "???"), tostring(rawget(actor, "subtype") or "???")
-		-- Type based ESP
-		if esp[t] and esp[t] > 0 then
-			return true, 100
-		end
-		if esp[t.."/"..st] and esp[t.."/"..st] > 0 then
-			return true, 100
+		-- ESP, see all, or only types/subtypes
+		if self.esp then
+			local esp = self.esp
+			local t, st = tostring(rawget(actor, "type") or "???"), tostring(rawget(actor, "subtype") or "???")
+			-- Type based ESP
+			if esp[t] and esp[t] > 0 then
+				return true, 100
+			end
+			if esp[t.."/"..st] and esp[t.."/"..st] > 0 then
+				return true, 100
+			end
 		end
 	end
 
@@ -6007,33 +6033,38 @@ function _M:canSeeNoCache(actor, def, def_pct)
 		return false, 0
 	end
 
-	-- Check for stealth. Checks against the target cunning and level
-	if actor ~= self and actor.attr and actor:attr("stealth") then
-		local def = self:combatSeeStealth()
-		local hit, chance = self:checkHitOld(def, actor:attr("stealth") + (actor:attr("inc_stealth") or 0), 0, 100)
-		if not hit then
-			return false, chance
-		end
-	end
-
+	local chance, hit = 100
 	-- Check for invisibility. This is a "simple" checkHit between invisible and see_invisible attrs
 	if actor ~= self and actor.attr and actor:attr("invisible") then
 		-- Special case, 0 see invisible, can NEVER see invisible things
 		local def = self:combatSeeInvisible()
 		if def <= 0 then return false, 0 end
-		local hit, chance = self:checkHitOld(def, actor:attr("invisible"), 0, 100)
-		if not hit then
-			return false, chance
+		hit, chance = self:checkHitOld(def, actor:attr("invisible"), 0, 100)
 		end
+	-- Check for stealth. Applies cunning and level vs target's stealth attributes
+	if actor ~= self and actor.attr and actor:attr("stealth") then
+		local def, st_chance = self:combatSeeStealth()
+		hit, st_chance = self:checkHitOld(def, actor:attr("stealth") + (actor:attr("inc_stealth") or 0), 0, 100)
+		chance = chance*st_chance/100
 	end
+	if chance < 100 then hit = rng.percent(chance) else hit = true end
 
 	if def ~= nil then
 		return def, def_pct
 	else
-		return true, 100
+		return hit, chance
 	end
 end
 
+--- Can the actor see the target (Actor or other Entity)?
+-- This does not check LOS or such, only the actual ability to see it.<br/>
+-- Checks for telepathy, invisibility, stealth, ...
+-- Stores results in self.can_see_cache for later calls
+-- @param[type=Actor] actor the target actor to check
+-- @param[type=boolean] def the default result
+-- @param[type=number] def_pct the default percent chance
+-- @return[1] true or false
+-- @return[2] a number from 0 to 100 representing the "chance" to be seen
 function _M:canSee(actor, def, def_pct)
 	if not actor then return false, 0 end
 
@@ -6058,7 +6089,7 @@ function _M:resetCanSeeCache()
 	self.can_see_cache = setmetatable({}, {__mode="k"})
 end
 
---- Reset the cache of everything else that had see us on the level
+--- Reset the cache of everything else that had seen us on the level
 function _M:resetCanSeeCacheOf()
 	if not game.level then return end
 	for uid, e in pairs(game.level.entities) do
