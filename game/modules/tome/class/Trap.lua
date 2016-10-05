@@ -65,6 +65,21 @@ function _M:resolveSource()
 	end
 end
 
+--- Called when the trap is added to the level
+function _M:added()
+	engine.Entity.added(self)
+	if self.x and self.y then --give adjacent actors a chance to detect the trap when it is placed
+		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
+		local act
+		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
+			act = game.level.map(x, y, engine.Map.ACTOR)
+			if act and not self:knownBy(act) then
+				act:detectTrap(self, self.x, self.y)
+			end
+		end end
+	end
+end
+
 -- Gets the full name of the trap
 function _M:getName()
 	local name = self.name or "trap"

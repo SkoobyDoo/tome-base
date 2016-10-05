@@ -41,6 +41,9 @@ _M.projectile_class = "mod.class.Projectile"
 
 _M.logCombat = Combat.logCombat
 
+-- ego fields that are appended as a list when the ego is applied (by Zone:applyEgo)
+_M._special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_kill=true, charm_on_use=true}
+
 function _M:getRequirementDesc(who)
 	local base_getRequirementDesc = engine.Object.getRequirementDesc
 	if self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_SKIRMISHER_BUCKLER_EXPERTISE) then
