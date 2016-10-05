@@ -454,11 +454,20 @@ newEntity{ base = "BASE_SHIELD",
 	wielder = {
 		resists={[DamageType.FIRE] = 35},
 		on_melee_hit={[DamageType.FIRE] = 17},
+		damage_affinity = { [DamageType.FIRE] = 15, },
 		combat_armor = 9,
 		combat_def = 16,
 		combat_def_ranged = 15,
 		fatigue = 20,
 		learn_talent = { [Talents.T_BLOCK] = 5, },
+	},
+	on_block = {desc = "30% chance that you'll breath stunning fire on foes in a 6 radius cone.", fct = function(self, who, target, type, dam, eff)
+	if rng.percent(30) then
+		if not target or not target.x or not target.y or core.fov.distance(who.x, who.y, target.x, target.y) > 6 then return end
+
+			who:forceUseTalent(who.T_FIRE_BREATH, {ignore_energy=true, no_talent_fail=true, no_equilibrium_fail=true, ignore_cd=true, force_target=target, force_level=2, ignore_ressources=true})
+		end
+	end,
 	},
 }
 
@@ -508,8 +517,8 @@ newEntity{ base = "BASE_SHIELD",
 	moddable_tile_big = true,
 	metallic = false,
 	special_combat = {
-		dam = resolvers.rngavg(25,35),
-		block = resolvers.rngavg(90, 120),
+		dam = 40,
+		block = 120,
 		physcrit = 5,
 		dammod = {str=1},
 	},
@@ -517,21 +526,23 @@ newEntity{ base = "BASE_SHIELD",
 		combat_armor = 2,
 		combat_def = 8,
 		combat_def_ranged = 8,
-		fatigue = 12,
+		fatigue = 6,
 		learn_talent = { [Talents.T_BLOCK] = 3, },
-		resists = { [DamageType.BLIGHT] = 15, [DamageType.DARKNESS] = 30, },
-		stamina_regen = 2,
+		resists = { [DamageType.BLIGHT] = 25, [DamageType.DARKNESS] = 25, },
+		inc_stats = { [Stats.STAT_WIL] = 5, },
 	},
-	on_block = {desc = "30% chance of pulling in the attacker", fct = function(self, who, src, type, dam, eff)
-		if rng.percent(30) then
-			if not src then return end
-
-			src:pull(who.x, who.y, 15)
-			game.logSeen(src, "Black tendrils shoot out of the mesh and pull %s to you!", src.name:capitalize())
-			if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
-				src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
-			end
+	on_block = {desc = "Pull up to 1 attacker per turn, up to 15 spaces away into melee range, pinning and asphixiating them", fct = function(self, who, src, type, dam, eff)
+		if not src then return end
+		if who.turn_procs.black_mesh then return end
+ 
+		src:pull(who.x, who.y, 15)
+		game.logSeen(src, "Black tendrils shoot out of the mesh and pull %s to you!", src.name:capitalize())
+		if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
+			src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
 		end
+ 
+		who.turn_procs.black_mesh = true
+ 
 	end,}
 }
 
@@ -888,12 +899,15 @@ newEntity{ base = "BASE_MACE",
 		physcrit = 10,
 		dammod = {str=1},
 		melee_project={[DamageType.RANDOM_CONFUSION_PHYS] = 14},
-		talent_on_hit = { T_BATTLE_CALL = {level=1, chance=10},},
 		burst_on_crit = {
-			[DamageType.PHYSKNOCKBACK] = 20,
+			[DamageType.PHYSICAL] = 20,
 		},
 	},
-	wielder = {combat_atk=12,},
+	wielder = {		
+		combat_atk = 12,
+	},
+	max_power = 20, power_regen = 1,
+	use_talent = { id = Talents.T_BATTLE_CALL, level = 2, power = 20 },
 }
 
 newEntity{ base = "BASE_CLOTH_ARMOR",
@@ -927,28 +941,35 @@ newEntity{ base = "BASE_HELM", define_as = "HELM_KROLTAR",
 	name = "Dragon-helm of Kroltar", image = "object/artifact/dragon_helm_of_kroltar.png",
 	unided_name = "dragon-helm",
 	desc = [[A visored steel helm, embossed and embellished with gold, that bears as its crest the head of Kroltar, the greatest of the fire drakes.]],
-	require = { talent = { {Talents.T_ARMOUR_TRAINING,3} }, stat = { str=35 }, },
+	require = { talent = { {Talents.T_ARMOUR_TRAINING,1} }, stat = { str=35 }, },
 	level_range = {37, 45},
 	rarity = 280,
 	cost = 400,
 	material_level = 4,
 	wielder = {
-		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_CON] = 5, [Stats.STAT_LCK] = -4, },
+		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_CON] = 5, [Stats.STAT_LCK] = -4, [Stats.STAT_WIL] = 5 },
+		inc_damage={
+			[DamageType.PHYSICAL] = 10,
+			[DamageType.FIRE] = 10,
+		},		
+		talents_types_mastery = { ["wild-gift/fire-drake"] = 0.2, },
 		combat_def = 5,
 		combat_armor = 9,
 		fatigue = 10,
 	},
 	max_power = 45, power_regen = 1,
-	use_talent = { id = Talents.T_WARSHOUT, level = 2, power = 45 },
+	use_talent = { id = Talents.T_BELLOWING_ROAR, level = 3, power = 45 },
 	set_list = { {"define_as","SCALE_MAIL_KROLTAR"} },
 	set_desc = {
 		kroltar = "Kroltar's power resides in his scales.",
 	},
 	on_set_complete = function(self, who)
+		local Stats = require "engine.interface.ActorStats"
 		self:specialSetAdd("skullcracker_mult", 1)
 		self:specialSetAdd({"wielder","combat_spellresist"}, 15)
 		self:specialSetAdd({"wielder","combat_mentalresist"}, 15)
 		self:specialSetAdd({"wielder","combat_physresist"}, 15)
+		self:specialSetAdd({"wielder","inc_stats"}, { [Stats.STAT_LCK] = 14 })
 		game.logPlayer(who, "#GOLD#As the helm of Kroltar approaches the your scale armour, they begin to fume and emit fire.")
 	end,
 	on_set_broken = function(self, who)
@@ -1122,12 +1143,14 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	color = colors.LIGHT_RED,
 	level_range = {1, 25},
 	rarity = 170,
-	cost = 350,
+	cost = 150,
 	material_level = 2,
 	wielder = {
 		knockback_immune = 0.4,
 		max_encumber = 70,
 		combat_armor = 4,
+		max_life = 40,
+		fatigue = -10,
 	},
 
 	set_list = { {"define_as", "SET_GIANT_WRAPS"} },
@@ -1135,8 +1158,9 @@ newEntity{ base = "BASE_LEATHER_BELT",
 		giantset = "Some giant wraps would make you feel great.",
 	},
 	on_set_complete = function(self, who)
-		self:specialSetAdd({"wielder","max_life"}, 100)
+		self:specialSetAdd({"wielder","max_life"}, 60)
 		self:specialSetAdd({"wielder","size_category"}, 2)
+		self:specialSetAdd({"wielder","fatigue"}, -10)
 		game.logPlayer(who, "#GOLD#You grow to immense size!")
 	end,
 	on_set_broken = function(self, who)
@@ -1514,7 +1538,7 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
 
 			self:specialWearAdd({"wielder", "talents_types_mastery"}, { ["cunning/stealth"] = 0.2 })
 			self:specialWearAdd({"wielder","confusion_immune"}, 0.3)
-			self:specialWearAdd({"wielder","fear_immune"}, 0.3)
+			self:specialWearAdd({"wielder","blind_immune"}, 0.3)
 			game.logPlayer(who, "#DARK_BLUE#The skin seems pleased to be worn by the unliving, and grows silent.")
 		end
 	end,
@@ -1580,7 +1604,7 @@ newEntity{ base = "BASE_HEAVY_ARMOR", define_as = "SCALE_MAIL_KROLTAR",
 		fatigue = 16,
 	},
 	max_power = 80, power_regen = 1,
-	use_talent = { id = Talents.T_INFERNO, level = 3, power = 50 },
+	use_talent = { id = Talents.T_DEVOURING_FLAME, level = 3, power = 50 },
 	set_list = { {"define_as","HELM_KROLTAR"} },
 	set_desc = {
 		kroltar = "Kroltar's head would turn up the heat.",
@@ -4090,9 +4114,12 @@ newEntity{ base = "BASE_ARROW", --Thanks Grayswandir!
 		apr = 10,
 		physcrit = 5,
 		dammod = {dex=0.7, str=0.5},
-		ranged_project={
-			[DamageType.CRIPPLING_POISON] = 45,
-		},
+		-- Items can't pass parameters to DamageTypes, so we use special_on_hit instead. Thanks Shibari!
+		special_on_hit = {desc="afflicts the target with a poison dealing 20 damage per turn and causing actions to fail 20% of the time for 6 turns", fct=function(combat, who, target)
+			if target and target:canBe("poison") then
+				target:setEffect(target.EFF_CRIPPLING_POISON, 6, {src=who, power=20, fail=20, no_ct_effect=true})
+			end
+		end},
 	},
 }
 
@@ -4509,7 +4536,7 @@ newEntity{ base = "BASE_SHIELD", --Thanks SageAcrin!
 		learn_talent = { [Talents.T_BLOCK] = 2, },
 		max_air = 20,
 	},
-	on_block = {desc = "Chance that a blast of icy cold water will spray at the target.", fct = function(self, who, target, type, dam, eff)
+	on_block = {desc = "30% chance that a blast of freezing water will spray at the target.", fct = function(self, who, target, type, dam, eff)
 		if rng.percent(30) then
 			if not target or target:attr("dead") or not target.x or not target.y then return end
 
@@ -5165,7 +5192,7 @@ newEntity{ base = "BASE_TOOL_MISC", --Thanks Alex!
 }
 
 newEntity{ base = "BASE_WIZARD_HAT", --Thanks SageAcrin!
-	power_source = {psionic=true, arcane=true},
+	power_source = {psionic=true},
 	unique = true,
 	name = "Malslek the Accursed's Hat",
 	unided_name = "black charred hat",
@@ -7727,7 +7754,7 @@ newEntity{ base = "BASE_GAUNTLETS",
 	desc = [[Crafted for a warlord who wanted to keep his subjects under a stralite grip. Dark thoughts went into the making of these gauntlets, literally.]],
 	level_range = {30, 40},
 	rarity = 300,
-	cost = 300,
+	cost = 400,
 	material_level = 4,
 	wielder = {
 		combat_armor = 5,
@@ -7736,19 +7763,20 @@ newEntity{ base = "BASE_GAUNTLETS",
 			[DamageType.COLD]=20,
 		},
 		melee_project = {
-			[DamageType.DARKNESS]=20,
-			[DamageType.COLD]=20,
+			[DamageType.DARKNESS]=15,
+			[DamageType.COLD]=15,
 		},
 		max_hate = 20,
-		healing_factor = -0.2,
+		healing_factor = -0.1,
 		die_at = -100,
 		combat = {
-			dam = 30,
+			dam = 25,
 			apr = 15,
 			physcrit = 10,
 			physspeed = 0.2,
 			dammod = {dex=0.4, str=-0.6, cun=0.4, wil=0.4 },
 			damrange = 0.3,
+			talent_on_hit = { T_DOMINATE = {level = 3, chance = 10}, T_SLASH = {level = 3, chance = 5} },
 		},
 	},
 	max_power = 30, power_regen = 1,
