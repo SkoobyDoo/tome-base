@@ -497,7 +497,7 @@ function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
 	e.max_power = cd
 	e.power = e.max_power
-	e.use_power = {name=tt[1], power=cd, use=tt[3], __no_merge_add=true}
+	e.use_power = table.merge(e.use_power or {}, {name=tt[1], power=cd, use=tt[3], __no_merge_add=true})
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
 	if tt[5] then table.merge(e.use_power, tt[5], true) end
 	return
