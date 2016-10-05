@@ -28,6 +28,7 @@ module(..., package.seeall, class.inherit(Entity))
 _M.display_on_seen = true
 _M.display_on_remember = true
 _M.display_on_unknown = false
+_M.__is_trap = true
 
 function _M:init(t, no_default)
 	t = t or {}
@@ -88,7 +89,7 @@ end
 
 --- Get the known status for the given actor
 function _M:knownBy(actor)
-	return self.known_by[actor] or self.all_know
+	return self.all_know or self.known_by[actor]
 end
 
 --- Can we disarm this trap?
