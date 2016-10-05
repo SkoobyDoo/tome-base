@@ -2468,8 +2468,10 @@ function _M:allowOnlineEvent()
 end
 
 function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
-	if lev < 3 then return end
-	-- if not rng.percent(30 + lev) then return end
+	self.id_challenge = self.id_challenge or {count=0, level_entering_id=game:getPlayer(true).level, quests={}, rewarded={}}
+	-- challenges become more rare with depth (lev 3+ :: between 20% and 70% chance, 65%@3, 45%@30, 35%@75)
+	if lev < 3 or rng.percent(30 + 50*lev/(lev + 30)) then return end
+	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
 		{ id = "pacifist", rarity = 3 },
@@ -2477,6 +2479,7 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 		{ id = "dream-horror", rarity = 10, min_lev = 15 },
 		{ id = "fast-exit", rarity = 3, min_lev = 8 },
 	}
+	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
 
 	for i, c in ripairs(challenges) do
@@ -2493,11 +2496,12 @@ end
 function _M:makeChallengeQuest(level, name, desc, data)
 	local q = {
 		id = "id-challenge-"..level.level,
-		name = "Level "..level.level.." Challenge: "..name,
+		name = "Infinite Dungeon Challenge: "..name.." (Level "..level.level..")",
 		challenge_desc = desc,
 		desc = function(self, who)
 			local desc = {}
 			desc[#desc+1] = self.challenge_desc
+			if self.reward_desc then desc[#desc+1] = "\nYou completed the challenge and received:\n"..self.reward_desc end
 			return table.concat(desc, "\n")
 		end,
 		on_status_change = function(self, who, status, sub)
@@ -2517,7 +2521,7 @@ function _M:makeChallengeQuest(level, name, desc, data)
 			end
 		end,
 		on_challenge_success = function(self, who)
-			game.state:infiniteDungeonChallengeReward(self, who)
+			self.reward_desc = game.state:infiniteDungeonChallengeReward(self, who)
 		end,
 		popup_text = {},
 	}
@@ -2528,14 +2532,13 @@ function _M:makeChallengeQuest(level, name, desc, data)
 	return q
 end
 
-
 function _M:infiniteDungeonChallengeFinish(zone, level)
 	local id_challenge = level.data.id_challenge
 	if not id_challenge then return end
 
 	if id_challenge == "pacifist" then
 		level.data.record_player_kills = 0
-		self:makeChallengeQuest(level, "Pacifist", "Get to the end of the level without killing a single creature.", {
+		self:makeChallengeQuest(level, "Pacifist", "Leave the level (to the next level) without killing a single creature.", {
 			on_exit_check = function(self, who)
 				if not self.check_level then return end
 				if self.check_level.data.record_player_kills == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
@@ -2547,7 +2550,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			check_level = level,
 		})
 	elseif id_challenge == "exterminator" then
-		self:makeChallengeQuest(level, "Exterminator", "Exit the level with no single foes left alive.", {
+		self:makeChallengeQuest(level, "Exterminator", "Exterminate every foe on the level.", {
 			on_exit_check = function(self, who)
 				if not self.check_level then return end
 				local nb = 0
@@ -2614,15 +2617,18 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 	else
 		self:triggerHook{"InfiniteDungeon:setupChallenge", id_challenge=id_challenge, zone=zone, level=level}
 	end
+	self.id_challenge.quests[id_challenge] = (self.id_challenge.quests[id_challenge] or 0) + 1
 end
 
 function _M:infiniteDungeonChallengeReward(quest, who)
 	local rewards = {
-		{name = "Random Artifact", rarity=1, give=function(who)
+		{name = "Random Artifact", id="randart", rarity=1,
+		give=function(who)
 			local tries = 100
 			while tries > 0 do
 				local o = game.zone:makeEntity(game.level, "object", {random_object={egos=rng.range(2,3), nb_powers_add=rng.range(10,30)}, properties={"randart_able"}}, nil, true)
 				if o then
+					if o.__transmo == nil and who:attr("has_transmo") then o.__transmo = true end
 					o:identify(true)
 					who:addObject(who.INVEN_INVEN, o)
 					who:sortInven()
@@ -2633,15 +2639,27 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 			who.unused_stats = who.unused_stats + 3
 			return "+3 Stat Points"
 		end},
-		{name = "+3 Stat Points", rarity=3, give=function(who) who.unused_stats = who.unused_stats + 3 end},
-		{name = "+1 Class Point", rarity=5, give=function(who) who.unused_talents = who.unused_talents + 1 end},
-		{name = "+1 Generic Point", rarity=4, give=function(who) who.unused_generics = who.unused_generics + 1 end},
-		{name = "+1 Category Point", rarity=30, give=function(who) who.unused_talents_types = who.unused_talents_types + 1 end},
-		{name = "+1 Prodigy Point", rarity=60, give=function(who) who.unused_prodigies = who.unused_prodigies + 1 end},
+		{name = "+3 Stat Points", id="stat_pts", rarity=3, give=function(who) who.unused_stats = who.unused_stats + 3 end},
+		{name = "+1 Class Point", id="class_pt", rarity=5, give=function(who) who.unused_talents = who.unused_talents + 1 end},
+		{name = "+1 Generic Point", id="generic_pt", rarity=4, give=function(who) who.unused_generics = who.unused_generics + 1 end},
+		{name = "+1 Category Point", id="category_pt",
+			rarity=13.5*((self.id_challenge.rewarded["category_pt"] or 1)*30/math.max(30, who.level - self.id_challenge.level_entering_id)),
+			-- Note: rarity is adjusted to give ~ 1 category point every 30 character levels gained in the I.D.
+			-- a rarity of 30 with a challenge every level ~= 13.5 rarity with 45% challenge frequency (avg. first 50 I.D. levels, decreases with depth)
+			-- Rarity reduced if fewer than 1 category point has been awarded per 30 character levels
+			give=function(who) who.unused_talents_types = who.unused_talents_types + 1 end
+		},
+		{name = "+1 Prodigy Point", id="prodigy_pt",
+			rarity=60*((self.id_challenge.rewarded["prodigy_pt"] or 0)*5 + 1), -- make more than 1 bonus prodigy extremely rare
+			give=function(who) who.unused_prodigies = who.unused_prodigies + 1 end
+		},
 	}
 	self:triggerHook{"InfiniteDungeon:getRewards", rewards=rewards}
 
 	local reward = rng.rarityTable(rewards)
 	reward.name = reward.give(who) or reward.name
+	self.id_challenge.rewarded[reward.id] = (self.id_challenge.rewarded[reward.id] or 0) + 1
 	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward: "..reward.name
+	game.log("#LIGHT_BLUE#%s has received: %s.", who.name:capitalize(), reward.name)
+	return reward.name
 end

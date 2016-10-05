@@ -28,6 +28,7 @@ load("/data/general/grids/jungle.lua")
 load("/data/general/grids/cave.lua")
 load("/data/general/grids/burntland.lua")
 load("/data/general/grids/mountain.lua")
+load("/data/general/grids/fortress.lua")
 load("/data/general/grids/void.lua")
 load("/data/general/grids/autumn_forest.lua")
 load("/data/general/grids/snowy_forest.lua")
@@ -49,7 +50,7 @@ newEntity{
 newEntity{
 	define_as = "UNDERGROUND_ROCK",
 	type = "wall", subtype = "underground",
-	name = "huge loose rock", image = "terrain/underground_floor.png", add_mos = {{image="terrain/huge_rock.png"}},
+	name = "huge loose rock", image = "terrain/underground_floor.png", add_mos = {{image="terrain/maze_rock.png"}},
 	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
 	notice = true,
 	always_remember = true,
@@ -62,7 +63,7 @@ newEntity{
 newEntity{
 	define_as = "CRYSTAL_ROCK",
 	type = "wall", subtype = "crystal",
-	name = "huge loose rock", image = "terrain/crystal_floor1.png", add_mos = {{image="terrain/huge_rock.png"}},
+	name = "huge loose rock", image = "terrain/crystal_floor1.png", add_mos = {{image="terrain/maze_rock.png"}},
 	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
 	notice = true,
 	always_remember = true,
@@ -75,7 +76,7 @@ newEntity{
 newEntity{
 	define_as = "DESERT_ROCK",
 	type = "wall", subtype = "sand",
-	name = "huge loose rock", image = "terrain/sandfloor.png", add_mos = {{image="terrain/huge_rock.png"}},
+	name = "huge loose rock", image = "terrain/sandfloor.png", add_mos = {{image="terrain/maze_rock.png"}},
 	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
 	notice = true,
 	always_remember = true,
@@ -86,9 +87,22 @@ newEntity{
 }
 
 newEntity{
+	define_as = "SAND_ROCK",
+	type = "wall", subtype = "sand",
+	name = "huge loose rock", image = "terrain/sand.png", add_mos = {{image="terrain/maze_rock.png"}},
+	display = '+', color={r=203,g=189,b=72}, back_color={r=93,g=79,b=22},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	is_door = true,
+	door_opened = "UNDERGROUND_SAND",
+	dig = "UNDERGROUND_SAND",
+}
+
+newEntity{
 	define_as = "CAVE_ROCK",
 	type = "wall", subtype = "grass",
-	name = "huge loose rock", image = "terrain/cave/cave_floor_1_01.png", add_mos = {{image="terrain/huge_rock.png"}},
+	name = "huge loose rock", image = "terrain/cave/cave_floor_1_01.png", add_mos = {{image="terrain/maze_rock.png"}},
 	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
 	notice = true,
 	always_remember = true,
@@ -109,6 +123,46 @@ newEntity{
 	is_door = true,
 	door_opened = "JUNGLE_GRASS",
 	dig = "JUNGLE_GRASS",
+}
+
+newEntity{
+	define_as = "AUTUMN_ROCK",
+	type = "wall", subtype = "autumn_grass",
+	name = "huge loose rock", image = "terrain/grass/autumn_grass_main_01.png", add_mos = {{image="terrain/huge_rock.png"}},
+	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	is_door = true,
+	door_opened = "AUTUMN_GRASS",
+	dig = "AUTUMN_GRASS",
+}
+
+newEntity{
+	define_as = "LAVA_ROCK",
+	type = "wall", subtype = "lava",
+	name = "huge loose rock", image = "terrain/lava_floor.png", add_mos = {{image="terrain/maze_rock.png"}},
+	display = '+', color=colors.GREY, back_color=colors.DARK_GREY,
+	shader = "lava",
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	is_door = true,
+	door_opened = "LAVA_FLOOR_FAKE",
+	dig = "LAVA_FLOOR_FAKE",
+}
+
+newEntity{ define_as = "BURNT_DOOR",
+	type = "wall", subtype = "burnt",
+	name='burnt passage',
+	display='.', color=colors.UMBER, back_color=colors.DARK_GREY, image="terrain/grass_burnt1.png",
+	add_mos = {{image="terrain/burnt_floor_deco6.png"},{image="terrain/trees/small_burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0.5, display_y=0.5}, {image="terrain/trees/burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0, display_y=0.5}, {image="terrain/trees/small_burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0.5, display_y=0}, {image="terrain/trees/burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0, display_y=0}},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	is_door = true,
+	door_opened = "BURNT_GROUND",
+	dig = "BURNT_GROUND",
 }
 
 -- add snowy door
@@ -146,9 +200,38 @@ for i = 1, 30 do
 	newEntity(class:makeNewTrees({base="SNOWY_TREE_2", define_as = "SNOWY_TREE_2"..i, image = "terrain/grass/snowy_grass_main_01.png"}, snowy_treesdef))
 end
 
+newEntity{ define_as = "ROCKY_SNOWY_DOOR",
+	type = "wall", subtype = "rock",
+	name='snowy passage',
+	display= '+', color=colors.UMBER, back_color=colors.LIGHT_UMBER,
+	image = "terrain/rocky_ground.png",
+	add_mos = {{image="terrain/icecave/icecave_rock_2_01.png", display_w=1, display_h=1.5, display_x=0, display_y=-0.5}, {image="terrain/icecave/icecave_rock_3_01.png", display_w=1, display_h=1.5, display_x=0, display_y=-0.5}},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	is_door = true,
+	door_opened = "ROCKY_GROUND",
+	dig = "ROCKY_GROUND",
+}
+
+newEntity{ define_as = "SNOWY_DOOR",
+	type = "wall", subtype = "snowy_grass",
+	name='snowy passage',
+	display= '+', color=colors.LIGHT_GREEN, back_color={r=44,g=95,b=43},
+	image = "terrain/grass/snowy_grass_main_01.png",
+	add_mos = {{image="terrain/trees/narrow_cypress_trunk.png", display_w=1, display_h=1, display_x=-0.25, display_y=-0}, {image="terrain/trees/narrow_cypress_trunk.png", display_w=1, display_h=1, display_x=0.25, display_y=-0}, {image="terrain/icecave/icecave_rock_5_01.png", display_w=1.5, display_h=1.5, display_x=-.5, display_y=-0.5}, {image="terrain/trees/narrow_cypress_foliage_winter_01.png", display_w=1, display_h=1, display_x=-0.25, display_y=-0.25}, {image="terrain/trees/narrow_cypress_foliage_winter_02.png", display_w=1, display_h=1, display_x=0.25, display_y=-0.25}},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	is_door = true,
+	door_opened = "SNOWY_GRASS",
+	dig = "SNOWY_GRASS",
+}
+
 newEntity{
 	define_as = "RIFT2",
-	name = "Temporal Rift", add_mos={{image="terrain/demon_portal2.png"}},
+	name = "Temporal Rift",
+	add_displays = {class.new{image="terrain/demon_portal2.png"}},
 	display = '&', color_r=255, color_g=0, color_b=220, back_color=colors.VIOLET,
 	notice = true,
 	always_remember = true,
@@ -246,7 +329,8 @@ newEntity{ base = "WATER_DOOR_OPEN_FAKE", define_as = "WATER_DOOR_OPEN_VERT_FAKE
 
 newEntity{
 	define_as = "WATER_DOWN_FAKE",
-	image = "terrain/underwater/subsea_floor_02.png", add_mos = {{image="terrain/underwater/subsea_stair_down_03_64.png"}},
+	image = "terrain/underwater/subsea_floor_02.png",
+	add_displays = {class.new{image="terrain/underwater/subsea_stair_down_03_64.png"}},
 	name = "next level",
 	display = '>', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -286,7 +370,8 @@ for i = 1, 6 do newEntity{ base="LAVA_WALL_FAKE", define_as = "LAVA_WALL_FAKE"..
 newEntity{
 	define_as = "LAVA_DOWN_FAKE",
 	type = "floor", subtype = "lava",
-	name = "next level", image = "terrain/lava_floor.png", add_mos = {{image="terrain/stair_down.png"}},
+	name = "next level", image = "terrain/lava_floor.png",
+	add_displays = {class.new{image="terrain/stair_down.png"}},
 	display = '.', color=colors.RED, back_color=colors.DARK_GREY,
 	shader = "lava",
 	nice_tiler = { method="replace", base={"LAVA_FLOOR_FAKE", 100, 1, 16}},
