@@ -716,7 +716,7 @@ function _M:niceTileOuterSpace(level, i, j, g, nt)
 end
 
 local defs = {
-grass = { method="borders", type="grass", forbid={lava=true, rock=true},
+grass = { method="borders", type="grass", forbid={lava=true, rock=true, sand=true},
 	default8={add_mos={{image="terrain/grass/grass_2_%02d.png", display_y=-1}}, min=1, max=2},
 	default2={add_mos={{image="terrain/grass/grass_8_%02d.png", display_y=1}}, min=1, max=2},
 	default4={add_mos={{image="terrain/grass/grass_6_%02d.png", display_x=-1}}, min=1, max=2},

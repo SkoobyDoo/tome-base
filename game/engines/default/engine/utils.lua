@@ -2257,18 +2257,27 @@ function rng.poissonProcess(k, turn_scale, rate)
 	return math.exp(-rate*turn_scale) * ((rate*turn_scale) ^ k)/ util.factorial(k)
 end
 
+--- Randomly select a table from a list of tables based on rarity
+-- @param t <table> indexed table containing the tables to choose from
+-- @param rarity_field <string, default "rarity">, field in each table containing its rarity value
+--		rarity values are numbers > 0, such that higher values reduce the chance to be selected
+-- @raturn the table selected, index
 function rng.rarityTable(t, rarity_field)
 	if #t == 0 then return end
-
-	rarity_field = rarity_field or "rarity"
-	local max = 0
-	for _, e in ipairs(t) do max = max + e[rarity_field] end
 	local rt = {}
-	for _, e in ipairs(t) do
-		local nb = math.floor(max / e[rarity_field])
-		for i = 1, nb do rt[#rt+1] = e end
+	rarity_field = rarity_field or "rarity"
+	local total, val = 0
+	for i, e in ipairs(t) do
+		val = e[rarity_field]; val = val and 1/val or 0
+		total = total + val
+		rt[i] = total
 	end
-	return rng.table(rt)
+	val = rng.float(0, total)
+	for i, total in ipairs(rt) do
+		if total >= val then
+			return t[i], i
+		end
+	end
 end
 
 function util.show_function_calls()
