@@ -556,24 +556,24 @@ function resolvers.calc.moddable_tile(t, e)
 		r = {"upper_body_05","upper_body_06","upper_body_07","upper_body_08","upper_body_19",}
 		r2 = {"lower_body_03","lower_body_04","lower_body_05","lower_body_06","lower_body_06",}
 	elseif slot == "robe" then r = {"upper_body_18","upper_body_16","upper_body_13","upper_body_15","upper_body_17",}
-	elseif slot == "shield" then r = {"%s_hand_10","%s_hand_11","%s_hand_11","%s_hand_12","%s_hand_12",}
+	elseif slot == "shield" then r = {"%s_hand_10_01","%s_hand_11_01","%s_hand_11_02","%s_hand_12_01","%s_hand_12_02",}
 	elseif slot == "staff" then r = {{"%s_hand_08",true}}
 	elseif slot == "leather_boots" then r = {"feet_03","feet_04","feet_04","feet_05","feet_05",}
 	elseif slot == "heavy_boots" then r = {"feet_06","feet_06","feet_07","feet_09","feet_08",}
 	elseif slot == "gauntlets" then r = {"hands_03","hands_04","hands_05","hands_07","hands_06",}
-	elseif slot == "gloves" then r = {"hands_02",}
-	elseif slot == "sword" then r = {"%s_hand_04",}
-	elseif slot == "2hsword" then r = {"%s_2hsword",}
+	elseif slot == "gloves" then r = {"hands_02"}
+	elseif slot == "sword" then r = {"%s_hand_04_01", "%s_hand_04_02", "%s_hand_04_03", "%s_hand_04_04", "%s_hand_04_05"}
+	elseif slot == "2hsword" then r = {"%s_2hsword_01", "%s_2hsword_02", "%s_2hsword_03", "%s_2hsword_04", "%s_2hsword_05"}
 	elseif slot == "wizard_hat" then r = {{"head_11",true},{"head_13",true},{"head_17",true},{"head_12",true},{"head_15",true},}
-	elseif slot == "trident" then r = {{"%s_hand_13",true}}
+	elseif slot == "trident" then r = {"%s_hand_13_01", "%s_hand_13_02", "%s_hand_13_03", "%s_hand_13_04", "%s_hand_13_05"}
 	elseif slot == "whip" then r = {"%s_hand_09"}
-	elseif slot == "mace" then r = {"%s_hand_05"}
-	elseif slot == "2hmace" then r = {"%s_2hmace"}
-	elseif slot == "axe" then r = {"%s_hand_06"}
-	elseif slot == "2haxe" then r = {"%s_2haxe"}
-	elseif slot == "bow" then r = {"%s_hand_01"}
-	elseif slot == "sling" then r = {"%s_hand_02"}
-	elseif slot == "dagger" then r = {"%s_hand_03"}
+	elseif slot == "mace" then r = {"%s_hand_05_01", "%s_hand_05_02", "%s_hand_05_03", "%s_hand_05_04", "%s_hand_05_05"}
+	elseif slot == "2hmace" then r = {"%s_2hmace_01", "%s_2hmace_02", "%s_2hmace_03", "%s_2hmace_04", "%s_2hmace_05"}
+	elseif slot == "axe" then r = {"%s_hand_06_01", "%s_hand_06_02", "%s_hand_06_03", "%s_hand_06_04", "%s_hand_06_05"}
+	elseif slot == "2haxe" then r = {"%s_2haxe_01", "%s_2haxe_02", "%s_2haxe_03", "%s_2haxe_04", "%s_2haxe_05"}
+	elseif slot == "bow" then r = {"%s_hand_01_01", "%s_hand_01_02", "%s_hand_01_03", "%s_hand_01_04", "%s_hand_01_05"}
+	elseif slot == "sling" then r = {"%s_hand_02_01", "%s_hand_02_02", "%s_hand_02_03", "%s_hand_02_04", "%s_hand_02_05"}
+	elseif slot == "dagger" then r = {"%s_hand_03_01", "%s_hand_03_02", "%s_hand_03_03", "%s_hand_03_04", "%s_hand_03_05"}
 	elseif slot == "mindstar" then r = {{"mindstar_mossy_%s_01",true},{"mindstar_vines_%s_01",true},{"mindstar_thorn_%s_01",true},{"mindstar_pulsing_%s_01",true},{"mindstar_living_%s_01",true},}
 	elseif slot == "helm" then r = {"head_05","head_06","head_08","head_10","head_09",}
 	elseif slot == "leather_cap" then r = {"head_03"}

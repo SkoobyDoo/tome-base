@@ -1819,6 +1819,16 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			for i in pairs{
+				"iron longsword", "steel longsword", "dwarven-steel longsword", "stralite longsword", "voratun longsword", 
+			} do
+				local o = game.zone:makeEntity(game.level, "object", {name=i}, nil, true)
+				if o then
+					o:identify(true)
+					game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)
+				end
+			end
+do return end
 			self:changeLevel(game.level.level + 1)
 do return end
 			local o = game.zone:makeEntity(game.level, "object", {subtype="sling", random_object=true}, nil, true)
