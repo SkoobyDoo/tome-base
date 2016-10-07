@@ -1039,6 +1039,20 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 				fake_ego = true,
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			local images = {
+				battleaxe = "object/artifact/2haxe_crystalline.png",
+				greatmaul = "object/artifact/2hmace_crystalline.png",
+				greatsword = "object/artifact/2hsword_crystalline.png",
+				dagger = "object/artifact/dagger_crystalline.png",
+				longsword = "object/artifact/1hsword_crystalline.png",
+				mace = "object/artifact/1hmace_crystalline.png",
+				waraxe = "object/artifact/1haxe_crystalline.png",
+				shield = "object/artifact/shield_crystalline.png",
+				staff = "object/artifact/staff_crystalline.png",
+				trident = "object/artifact/trident_crystalline.png",
+				hands = "object/artifact/gauntlets_crystalline.png",
+			}
+			if images[o.subtype] then o.image = images[o.subtype] o:removeAllMOs() end
 			o:resolve()
 
 			who:sortInven()
@@ -1110,6 +1124,13 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 				end),
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			local images = {
+				cloth = "object/artifact/cloth_armour_crystalline.png",
+				leather = "object/artifact/leather_armour_crystalline.png",
+				heavy = "object/artifact/heavy_armour_crystalline.png",
+				massive = "object/artifact/massive_armour_crystalline.png",
+			}
+			if images[o.subtype] then o.image = images[o.subtype] o:removeAllMOs() end
 			o:resolve()
 
 			who:sortInven()
