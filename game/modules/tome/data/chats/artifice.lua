@@ -18,63 +18,79 @@
 -- darkgod@te4.org
 
 local Talents = require("engine.interface.ActorTalents")
+chat_talent = player:getTalentFromId(chat_tid)
+chat_level = player:getTalentLevelRaw(chat_tid)
 
 local function generate_tools()
-	local answers = {}
-	local tools = 
-	{	
-	}
-
-	--populate the tool list, also apply a temp value so talents display correctly
-	if not player.artifice_hidden_blades then 
-		tools[Talents.T_HIDDEN_BLADES] = 1
-		player.artifice_hidden_blades = slot
-	end
-	if not player.artifice_smokescreen then 
-		tools[Talents.T_SMOKESCREEN] = 1
-		player.artifice_smokescreen = slot
-	end
-	if not player.artifice_rogue_s_brew then 
-		tools[Talents.T_ROGUE_S_BREW] = 1
-		player.artifice_rogue_s_brew = slot
-	end
-	if not player.artifice_dart_launcher then 
-		tools[Talents.T_DART_LAUNCHER] = 1
-		player.artifice_dart_launcher = slot
-	end
+	local answers = {{"[Cancel]"}}
+	local tool_ids = tool_ids or player.main_env.artifice_tool_tids
+	player.artifice_tools = player.artifice_tools or {}
 	
-	if tools then
-		for tid, level in pairs(tools) do
-			local t = npc:getTalentFromId(tid)
-			level = math.min(t.points - game.player:getTalentLevelRaw(tid), level)
-			
-			local doit = function(npc, player)
-				if game.player:knowTalentType(t.type[1]) == nil then player:setTalentTypeMastery(t.type[1], 1.0) end
-				player:learnTalent(tid, true, level, {no_unlearn=true})
-				--remove the temp values set earlier
-				if not (t.name=="Hidden Blades" or player:knowTalent(player.T_HIDDEN_BLADES)) then player.artifice_hidden_blades = null end
-				if not (t.name=="Smokescreen" or player:knowTalent(player.T_SMOKESCREEN)) then player.artifice_smokescreen = null end
-				if not (t.name=="Rogue's Brew" or player:knowTalent(player.T_ROGUE_S_BREW)) then player.artifice_rogue_s_brew = null end
-				if not (t.name=="Dart Launcher" or player:knowTalent(player.T_DART_LAUNCHER)) then player.artifice_dart_launcher = null end
-				player:startTalentCooldown(tid)
+	for tid, m_tid in pairs(tool_ids) do
+		local t = player:getTalentFromId(tid)
+		if t then
+
+			local tool_level = player:getTalentLevelRaw(t)
+			local equip_tool = function(npc, player) -- equip a tool
+				if tool_level == chat_level then return end -- already selected and up to date
+				-- unlearn the previous talent
+				player:unlearnTalentFull(player.artifice_tools[chat_tid])
+				-- (re)learn the talent
+				player:unlearnTalentFull(tid)
+				player:learnTalent(tid, true, chat_level, {no_unlearn=true})
+				-- clear other tool slots
+				for slot, tool_id in pairs(player.artifice_tools) do
+					if tool_id == tid then player.artifice_tools[slot] = nil end
+				end
+				player.artifice_tools[chat_tid] = tid
+
+				-- start talent cooldowns and use energy
+				player.turn_procs._did_artifice = true -- controls energy use
+				player:startTalentCooldown(tid) player:startTalentCooldown(m_tid)
 			end
-			answers[#answers+1] = {("[Equip %s]"):format(t.name),
-				action=doit,
+			local txt, slot
+			-- check for an existing slot
+			for slot_id, tool_id in pairs(player.artifice_tools) do
+				if tool_id == tid then slot = slot_id break end
+			end
+			if slot then
+				txt = ("[%sEquip %s%s#LAST#]"):format(slot==chat_tid and "#YELLOW#" or "", t.name, slot and (" (%s)"):format(player:getTalentFromId(slot).name) or "")
+			else
+				txt = ("[Equip %s]"):format(t.name)
+			end
+
+			answers[#answers+1] = {txt,
+				action=equip_tool,
 				on_select=function(npc, player)
-					local mastery = nil
-					if player:knowTalentType(t.type[1]) == nil then mastery = 1.0 end
+					local display_level
+					display_level = chat_level - tool_level
 					game.tooltip_x, game.tooltip_y = 1, 1
-					game:tooltipDisplayAtMap(game.w, game.h, "#GOLD#"..t.name.."#LAST#\n"..tostring(player:getTalentFullDescription(t, 1, nil, mastery)))
+
+					-- set up tooltip
+					local text = tstring{}
+					if display_level ~= 0 and player:knowTalent(t) then
+						local diff = function(i2, i1, res)
+							if i2 > i1 then
+								res:add({"color", "LIGHT_GREEN"}, i1, {"color", "LAST"}, " [->", {"color", "YELLOW_GREEN"}, i2, {"color", "LAST"}, "]")
+							elseif i2 < i1 then
+								res:add({"color", "LIGHT_GREEN"}, i1, {"color", "LAST"}, " [->", {"color", "LIGHT_RED"}, i2, {"color", "LAST"}, "]")
+							end
+						end
+						text:merge(player:getTalentFullDescription(t, display_level, nil):diffWith(player:getTalentFullDescription(t, 0, nil), diff))
+					else
+						text = player:getTalentFullDescription(t, nil, {force_level=chat_level})
+					end
+					game:tooltipDisplayAtMap(game.w, game.h, "#GOLD#"..t.name.."#LAST#\n"..tostring(text))
 				end,
 			}
 		end
-
 	end
+
 	return answers
 end
 
 newChat{ id="welcome",
-	text = [[Equip which tools?]],
+	text = ([[Equip which tool for #YELLOW#%s#LAST#?]]):format(chat_talent.name),
 	answers = generate_tools(),
 }
 
