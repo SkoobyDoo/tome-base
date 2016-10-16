@@ -700,7 +700,7 @@ function _M:getTalentLevel(id)
 	else
 		t = _M.talents_def[id]
 	end
-	return (self:getTalentLevelRaw(id)) * ((self.talents_types_mastery[t.type[1]] or 0) + 1)
+	return t and (self:getTalentLevelRaw(id)) * ((self.talents_types_mastery[t.type[1]] or 0) + 1) or 0
 end
 
 --- Talent type level, sum of all raw levels of talents inside
