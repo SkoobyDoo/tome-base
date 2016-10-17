@@ -1819,15 +1819,26 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			for i in pairs{
-				"iron longsword", "steel longsword", "dwarven-steel longsword", "stralite longsword", "voratun longsword", 
-			} do
-				local o = game.zone:makeEntity(game.level, "object", {name=i}, nil, true)
-				if o then
-					o:identify(true)
-					game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)
+			local list = {}
+			local loaded = {}
+			for i, file in ipairs{"/data/general/objects/objects-maj-eyal.lua", "/data/general/objects/objects-far-east.lua"} do
+				require("mod.class.Object"):loadList(file, nil, list, nil, loaded)
+			end
+			local images = {}
+			for i, e in ipairs(list) do
+				if e.unique and not e.randart and not e.lore and type(e.image) == "string" then
+					print("===== ", e.name, "::", e.image)
+					images[e.image] = images[e.image] or {}
+					table.insert(images[e.image], e.name)
 				end
 			end
+			local filter = {}
+			for i, n in pairs(images) do
+				if #n > 1 then
+					filter[i] = n
+				end
+			end
+			table.print(filter)
 do return end
 			self:changeLevel(game.level.level + 1)
 do return end

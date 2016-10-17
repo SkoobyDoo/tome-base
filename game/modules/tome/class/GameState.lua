@@ -25,6 +25,7 @@ local Map = require "engine.Map"
 local NameGenerator = require "engine.NameGenerator"
 local NameGenerator2 = require "engine.NameGenerator2"
 local Donation = require "mod.dialogs.Donation"
+local Dialog = require "engine.ui.Dialog"
 
 module(..., package.seeall, class.inherit(engine.Entity))
 
@@ -2474,10 +2475,11 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
-		{ id = "pacifist", rarity = 3 },
-		{ id = "exterminator", rarity = 1 },
-		{ id = "dream-horror", rarity = 10, min_lev = 15 },
-		{ id = "fast-exit", rarity = 3, min_lev = 8 },
+		-- { id = "pacifist", rarity = 3 },
+		-- { id = "exterminator", rarity = 1 },
+		-- { id = "dream-horror", rarity = 10, min_lev = 15 },
+		-- { id = "fast-exit", rarity = 3, min_lev = 8 },
+		{ id = "near-sighted", rarity = 3, min_lev = 4 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
@@ -2493,7 +2495,7 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 	print("[INFINITE DUNGEON] Selected challenge", data.id_challenge)
 end
 
-function _M:makeChallengeQuest(level, name, desc, data)
+function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
 	local q = {
 		id = "id-challenge-"..level.level,
 		name = "Infinite Dungeon Challenge: "..name.." (Level "..level.level..")",
@@ -2528,7 +2530,11 @@ function _M:makeChallengeQuest(level, name, desc, data)
 	table.merge(q, data)
 	local p = game:getPlayer(true)
 	p:grantQuest(q)
-	game:onTickEnd(function() p:setEffect(p.EFF_ZONE_AURA_CHALLENGE, 1, {id_challenge_quest = q.id}) end)
+	game:onTickEnd(function()
+		p:setEffect(p.EFF_ZONE_AURA_CHALLENGE, 1, {id_challenge_quest = q.id})
+		local eff = p:hasEffect(p.EFF_ZONE_AURA_CHALLENGE)
+		if eff and alter_effect then alter_effect(p, eff) end
+	end)
 	return q
 end
 
@@ -2614,6 +2620,15 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 				zone:addEntity(level, m, "actor", x, y)
 			end
 		end
+	elseif id_challenge == "near-sighted" then
+		Dialog:yesnoPopup("Challenge: #PURPLE#Near Sighted", "Finish the level with -7 sight range for a reward.", function(r) if not r then
+			self:makeChallengeQuest(level, "Near Sighted", "Finish the level with -7 sight range.", {
+				on_exit_check = function(self, who) who:setQuestStatus(self.id, self.COMPLETED) end,
+			}, function(actor, eff)
+				actor:effectTemporaryValue(eff, "sight", -7)
+			end)
+
+		end end, "Refuse", "Accept", true)
 	else
 		self:triggerHook{"InfiniteDungeon:setupChallenge", id_challenge=id_challenge, zone=zone, level=level}
 	end
