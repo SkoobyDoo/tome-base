@@ -63,8 +63,8 @@ function artifice_tools_get_descs(self, t)
 		else
 			desc = tool.name..":\n"
 		end
-		if tool.toolInfo then
-			desc = desc..tool.toolInfo(self, tool, t).."\n"
+		if tool.short_info then
+			desc = desc..tool.short_info(self, tool, t).."\n"
 		else
 			desc = desc.."#GREY#(see talent description)#LAST#\n"
 		end
@@ -232,19 +232,21 @@ newTalent{
 		local mastery_descs = {}
 		for tool_id, m_tid in pairs(artifice_tool_tids) do
 			local tool, mt = self:getTalentFromId(tool_id), self:getTalentFromId(m_tid)
-			local desc
-			local prepped = self.artifice_tools_mastery == tool_id
-			if prepped then
-				desc = ("#YELLOW#%s (%s)#LAST#\n"):format(tool.name, mt.name)
-			else
-				desc = ("%s (%s)\n"):format(tool.name, mt.name)
+			if mt then
+				local desc
+				local prepped = self.artifice_tools_mastery == tool_id
+				if prepped then
+					desc = ("#YELLOW#%s (%s)#LAST#\n"):format(tool.name, mt.name)
+				else
+					desc = ("%s (%s)\n"):format(tool.name, mt.name)
+				end
+				if mt.short_info then
+					desc = desc..mt.short_info(self, mt).."\n"
+				else
+					desc = desc.."#GREY#(see talent description)#LAST#\n"
+				end
+				mastery_descs[#mastery_descs+1] = desc
 			end
-			if mt.masteryInfo then
-				desc = desc..mt.masteryInfo(self, mt).."\n"
-			else
-				desc = desc.."#GREY#(see talent description)#LAST#\n"
-			end
-			mastery_descs[#mastery_descs+1] = desc
 		end
 		mastery_descs = table.concatNice(mastery_descs, "\n\t")
 		return ([[You become a master of your craft, allowing you to focus on a single tool {#YELLOW#currently %s#LAST#) to greatly improve its capabilities:
@@ -286,7 +288,7 @@ newTalent{
 			self:startTalentCooldown(t)
 		end	
 	end,
-	toolInfo = function(self, t, slot_talent)
+	short_info = function(self, t, slot_talent)
 		return ([[Melee criticals trigger an extra unarmed attack, inflicting %d%% damage. 4 turn cooldown.]]):format(t.getDamage(self, slot_talent)*100)
 	end,
 	info = function(self, t)
@@ -352,7 +354,7 @@ newTalent{
 
 		return true
 	end,
-	masteryInfo = function(self, t)
+	short_info = function(self, t)
 		return ([[You prime your Hidden Blades to cause bleeding and facilitate the Assassinate ability, which allows you to strike twice for %d%% unarmed damage, hitting automatically while ignoring armor and resistance.]]):format(t.getDamage(self, t)*100)
 	end,
 	info = function(self, t)
@@ -424,7 +426,7 @@ newTalent{
 		return true
 
 	end,
-	toolInfo = function(self, t, slot_talent)
+	short_info = function(self, t, slot_talent)
 		return ([[Prepare a potion that restores %d life, %d stamina, and cures %d negative physical effects. 20 turn cooldown.]]):format(t.getHeal(self, slot_talent), t.getStam(self, slot_talent), t.getCure(self, slot_talent))
 	end,
 	info = function(self, t)
@@ -446,7 +448,7 @@ newTalent{
 	mode = "passive",
 	points = 1,
 	getDieAt = function(self, t) return self:combatTalentScale(self:getTalentFromId(self.T_MASTER_ARTIFICER), 100, 600) end,
-	masteryInfo = function(self, t)
+	short_info = function(self, t)
 		return ([[Your Rogue's Brew fortifies you for 8 turns, preventing you from dying until you reach -%d life.]]):format(t.getDieAt(self, t))
 	end,
 	info = function(self, t)
@@ -528,7 +530,7 @@ newTalent{
 		game.level.map:redisplay()
 		return true
 	end,
-	toolInfo = function(self, t, slot_talent)
+	short_info = function(self, t, slot_talent)
 		return ([[Throw a smokebomb creating a radius 2 cloud of smoke, lasting %d turns, that blocks sight and reduces enemies' vision by %d. 15 turn cooldown.]]):format(t.getSightLoss(self, slot_talent), t.getDuration(self, slot_talent))
 	end,
 	info = function(self, t)
@@ -550,7 +552,7 @@ newTalent{
 	points = 1,
 	mode = "passive",
 	getDamage = function (self, t) return 30 + self:combatTalentStatDamage(self:getTalentFromId(self.T_MASTER_ARTIFICER), "cun", 10, 150) end,
-	masteryInfo = function(self, t)
+	short_info = function(self, t)
 		return ([[Your Smokescreen is infused with chokedust. Enemies in the smoke take %0.2f nature damage and may be silenced.]]):format(t.getDamage(self, t))
 	end,
 	info = function(self, t)
@@ -565,7 +567,7 @@ newTalent{
 	points = 1,
 	tactical = { ATTACK = {PHYSICAL = 1},
 		DISABLE = function(self, t, target)
-			return self:knowTalent(self.T_DART_LAUNCHER_MASTERY) and 2 or {sleep = 1, poison = 1}
+			return target:checkClassification("unliving") and 0 or self:knowTalent(self.T_DART_LAUNCHER_MASTERY) and 2 or {sleep = 1, poison = 1}
 		end
 	},
 	range = 5,
@@ -593,18 +595,18 @@ newTalent{
 			local target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return nil end
 			self:project(tg, x, y, DamageType.PHYSICAL, t.getDamage(self,t))
-			if (target:canBe("sleep") and target:canBe("poison")) or self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then
+			if target:checkClassification("living") and (self:knowTalent(self.T_DART_LAUNCHER_MASTERY) or target:canBe("sleep") and target:canBe("poison")) then
 				target:setEffect(target.EFF_SEDATED, 4, {src=self, power=t.getSleepPower(self,t), slow=slow, insomnia=20, no_ct_effect=true, apply_power=self:combatAttack()})
 				game.level.map:particleEmitter(target.x, target.y, 1, "generic_charge", {rm=180, rM=200, gm=100, gM=120, bm=30, bM=50, am=70, aM=180})
 			else
-				game.logSeen(self, "%s resists the sleep!", target.name:capitalize())
+				game.logSeen(self, "%s resists the sedation!", target.name:capitalize())
 			end
 
 		end)
 
 		return true
 	end,
-	toolInfo = function(self, t, slot_talent)
+	short_info = function(self, t, slot_talent)
 		return ([[Fire a poisoned dart dealing %0.2f physical damage that puts the target to sleep for 4 turns. 10 turn cooldown.]]):format(t.getDamage(self, slot_talent))
 	end,
 	info = function(self, t)
@@ -614,7 +616,7 @@ newTalent{
 		for slot_id, tool_id in pairs(self.artifice_tools) do
 			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
-		return ([[Fire a poisoned dart from a silent, concealed launcher on your person that deals %0.2f physical damage and puts the target to sleep for 4 turns, rendering them unable to act. Every %d points of damage the target takes brings it closer to waking by 1 turn.
+		return ([[Fire a poisoned dart from a silent, concealed launcher on your person that deals %0.2f physical damage and puts the target (living only) to sleep for 4 turns, rendering them unable to act. Every %d points of damage the target takes brings it closer to waking by 1 turn.
 This can be used without breaking stealth.
 #YELLOW#Prepared with: %s#LAST#]]):
 	format(damDesc(self, DamageType.PHYSICAL, dam), power, slot)
@@ -627,7 +629,7 @@ newTalent{
 	mode = "passive",
 	points = 1,
 	getSlow = function(self, t) return self:combatTalentLimit(self:getTalentFromId(self.T_MASTER_ARTIFICER), 50, 15, 40)/100 end,
-	masteryInfo = function(self, t)
+	short_info = function(self, t)
 		return ([[Your darts ignore poison and sleep immunity and waking targets are slowed by %d%% for 4 turns.]]):format(t.getSlow(self, t)*100)
 	end,
 	info = function(self, t)

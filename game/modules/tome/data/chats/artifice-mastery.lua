@@ -25,34 +25,35 @@ local function generate_tools()
 	for tid, m_tid in pairs(tool_ids) do
 		local t = player:getTalentFromId(tid)
 		local m_t = player:getTalentFromId(m_tid)
-		
-		local master_talent = function(npc, player)
-			local old_mastery_level = player:getTalentLevelRaw(m_tid)
-			if old_mastery_level == chat_level then return end
-			-- unlearn mastery talent(s)
-			for tid, m_tid in pairs(tool_ids) do
-				if player:knowTalent(m_tid) then player:unlearnTalentFull(m_tid) end
-			end
-			
-			player:learnTalent(m_tid, true, chat_level, {no_unlearn=true})
-			player.artifice_tools_mastery = tid
-			
-			-- start talent cooldowns
-			if old_mastery_level == 0 then
-				player:startTalentCooldown(tid) player:startTalentCooldown(m_tid)
-				player:startTalentCooldown(chat_tid)
-				game.log("#LIGHT_BLUE# You enhance your preparation of %s.", t.name)
-			end
+		if m_t then
+			local master_talent = function(npc, player)
+				local old_mastery_level = player:getTalentLevelRaw(m_tid)
+				if old_mastery_level == chat_level then return end
+				-- unlearn mastery talent(s)
+				for tid, m_tid in pairs(tool_ids) do
+					if player:knowTalent(m_tid) then player:unlearnTalentFull(m_tid) end
+				end
+				
+				player:learnTalent(m_tid, true, chat_level, {no_unlearn=true})
+				player.artifice_tools_mastery = tid
+				
+				-- start talent cooldowns
+				if old_mastery_level == 0 then
+					player:startTalentCooldown(tid) player:startTalentCooldown(m_tid)
+					player:startTalentCooldown(chat_tid)
+					game.log("#LIGHT_BLUE# You enhance your preparation of %s.", t.name)
+				end
 
+			end
+			answers[#answers+1] = {("%s[%s -- mastery: %s]#LAST#"):format(player.artifice_tools_mastery == tid and "#YELLOW#" or "", t.name, m_t.name),
+				action=master_talent,
+				on_select=function(npc, player)
+					local mastery = nil
+					game.tooltip_x, game.tooltip_y = 1, 1
+					game:tooltipDisplayAtMap(game.w, game.h, "#GOLD#"..m_t.name.."#LAST#\n"..tostring(player:getTalentFullDescription(m_t, nil, {force_level=chat_level}, mastery)))
+				end,
+			}
 		end
-		answers[#answers+1] = {("%s[%s -- mastery: %s]#LAST#"):format(player.artifice_tools_mastery == tid and "#YELLOW#" or "", t.name, m_t.name),
-			action=master_talent,
-			on_select=function(npc, player)
-				local mastery = nil
-				game.tooltip_x, game.tooltip_y = 1, 1
-				game:tooltipDisplayAtMap(game.w, game.h, "#GOLD#"..m_t.name.."#LAST#\n"..tostring(player:getTalentFullDescription(m_t, nil, {force_level=chat_level}, mastery)))
-			end,
-		}
 	end
 	return answers
 end

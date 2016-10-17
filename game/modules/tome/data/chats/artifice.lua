@@ -46,7 +46,8 @@ local function generate_tools()
 
 				-- start talent cooldowns and use energy
 				player.turn_procs._did_artifice = true -- controls energy use
-				player:startTalentCooldown(tid) player:startTalentCooldown(m_tid)
+				player:startTalentCooldown(tid)
+				if player:getTalentFromId(m_tid) then player:startTalentCooldown(m_tid) end
 			end
 			local txt, slot
 			-- check for an existing slot
