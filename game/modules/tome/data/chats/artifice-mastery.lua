@@ -18,40 +18,42 @@
 -- darkgod@te4.org
 
 local Talents = require("engine.interface.ActorTalents")
-
+chat_talent = player:getTalentFromId(chat_tid)
+chat_level = player:getTalentLevelRaw(chat_tid)
 local function generate_tools()
-	local answers = {}
-	local tools = 
-	{	
-	}
-	
-	if player:knowTalent(player.T_HIDDEN_BLADES) then tools[Talents.T_ASSASSINATE] = 1 end 
-	if player:knowTalent(player.T_SMOKESCREEN) then tools[Talents.T_SMOKESCREEN_MASTERY] = 1 end 
-	if player:knowTalent(player.T_ROGUE_S_BREW) then tools[Talents.T_ROGUE_S_BREW_MASTERY] = 1 end 
-	if player:knowTalent(player.T_DART_LAUNCHER) then tools[Talents.T_DART_LAUNCHER_MASTERY] = 1 end 
+	local answers = {{"Cancel"}}
+	for tid, m_tid in pairs(tool_ids) do
+		local t = player:getTalentFromId(tid)
+		local m_t = player:getTalentFromId(m_tid)
+		if m_t then
+			local master_talent = function(npc, player)
+				local old_mastery_level = player:getTalentLevelRaw(m_tid)
+				if old_mastery_level == chat_level then return end
+				-- unlearn mastery talent(s)
+				for tid, m_tid in pairs(tool_ids) do
+					if player:knowTalent(m_tid) then player:unlearnTalentFull(m_tid) end
+				end
+				
+				player:learnTalent(m_tid, true, chat_level, {no_unlearn=true})
+				player.artifice_tools_mastery = tid
+				
+				-- start talent cooldowns
+				if old_mastery_level == 0 then
+					player:startTalentCooldown(tid) player:startTalentCooldown(m_tid)
+					player:startTalentCooldown(chat_tid)
+					game.log("#LIGHT_BLUE# You enhance your preparation of %s.", t.name)
+				end
 
-	
-	if tools then
-		for tid, level in pairs(tools) do
-			local t = npc:getTalentFromId(tid)
-			level = math.min(t.points - game.player:getTalentLevelRaw(tid), level)
-			
-			local doit = function(npc, player)
-				if game.player:knowTalentType(t.type[1]) == nil then player:setTalentTypeMastery(t.type[1], 1.0) end
-				player:learnTalent(tid, true, level, {no_unlearn=true})
-				player:startTalentCooldown(tid)
 			end
-			answers[#answers+1] = {("[%s]"):format(t.name),
-				action=doit,
+			answers[#answers+1] = {("%s[%s -- mastery: %s]#LAST#"):format(player.artifice_tools_mastery == tid and "#YELLOW#" or "", t.name, m_t.name),
+				action=master_talent,
 				on_select=function(npc, player)
 					local mastery = nil
-					if player:knowTalentType(t.type[1]) == nil then mastery = 1.0 end
 					game.tooltip_x, game.tooltip_y = 1, 1
-					game:tooltipDisplayAtMap(game.w, game.h, "#GOLD#"..t.name.."#LAST#\n"..tostring(player:getTalentFullDescription(t, 1, nil, mastery)))
+					game:tooltipDisplayAtMap(game.w, game.h, "#GOLD#"..m_t.name.."#LAST#\n"..tostring(player:getTalentFullDescription(m_t, nil, {force_level=chat_level}, mastery)))
 				end,
 			}
 		end
-		answers[#answers+1] = {"Cancel"}
 	end
 	return answers
 end
