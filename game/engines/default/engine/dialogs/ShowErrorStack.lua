@@ -94,6 +94,12 @@ If you are not currently connected to the internet, please report this bug when 
 
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
+		LUA_CONSOLE = function()
+			if config.settings.cheat then
+				local DebugConsole = require "engine.DebugConsole"
+				game:registerDialog(DebugConsole.new())
+			end
+		end,
 	}
 end
 

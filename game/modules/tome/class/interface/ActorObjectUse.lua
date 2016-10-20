@@ -225,6 +225,7 @@ _M.useObjectBaseTalent ={
 			end
 		end)
 		coroutine.resume(co)
+		return ret and ret.used
 	end,
 	info = function(self, t)
 		local o = t.getObject(self, t)
