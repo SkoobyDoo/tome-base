@@ -239,7 +239,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 		end
 
-		if src and dam > 0 and src.knowTalent and src:knowTalent(src.T_BACKSTAB) and src.__CLASSNAME ~= "mod.class.Grid" then
+		if dam > 0 and src and src.__is_actor and src:knowTalent(src.T_BACKSTAB) and src.__CLASSNAME ~= "mod.class.Grid" then
 			local power = src:callTalent("T_BACKSTAB", "getDamageBoost")
 			local nb = 0
 			for eff_id, p in pairs(target.tmp) do
@@ -3878,11 +3878,13 @@ newDamageType{
 
 newDamageType{
 	name = "terror", type = "TERROR",
+	text_color = "#YELLOW#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
+			game:delayedLogDamage(src, target, 0, ("%s<terror chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
 			if not src:checkHit(src:combatAttack(), target:combatMentalResist()) then return end
 			local effect = rng.range(1, 3)
 			if effect == 1 then
@@ -3908,6 +3910,7 @@ newDamageType{
 	end,
 }
 
+-- Random poison: 25% to be enhanced
 newDamageType{
 	name = "random poison", type = "RANDOM_POISON", text_color = "#LIGHT_GREEN#",
 	projector = function(src, x, y, t, dam, poison, state)
@@ -3915,10 +3918,10 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local power
 		local target = game.level.map(x, y, Map.ACTOR)
-		if target and src:reactionToward(target) < 0 then
+		if target and src:reactionToward(target) < 0 and target:canBe("poison") then
 			local realdam = DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / 6, state)
-			chance = rng.range(1, 3)
-			if target and target:canBe("poison") and rng.percent(25) then
+			if rng.percent(dam.random_chance or 25) then
+				local chance = rng.range(1, 3)
 				if chance == 1 then
 					target:setEffect(target.EFF_INSIDIOUS_POISON, 5, {src=src, power=dam.dam / 6, heal_factor=dam.power*2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 				elseif chance == 2 then
@@ -3926,7 +3929,7 @@ newDamageType{
 				elseif chance == 3 then
 					target:setEffect(target.EFF_CRIPPLING_POISON, 5, {src=src, power=dam.dam / 6, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 				end
-			elseif target and target:canBe("poison") then
+			else
 				target:setEffect(target.EFF_POISONED, 5, {src=src, power=dam.dam / 6, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			end
 			return realdam
@@ -3936,11 +3939,13 @@ newDamageType{
 
 newDamageType{
 	name = "blinding powder", type = "BLINDING_POWDER",
+	text_color = "#GREY#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
+			game:delayedLogDamage(src, target, 0, ("%s<blinding powder>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
 			if not src:checkHit(src:combatAttack(), target:combatPhysicalResist()) then return end
 			
 			if target:canBe("blind") then
@@ -3955,12 +3960,13 @@ newDamageType{
 
 newDamageType{
 	name = "smokescreen", type = "SMOKESCREEN",
+	text_color = "#GREY#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
-		
+			game:delayedLogDamage(src, target, 0, ("%s<smoke>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
 			if target:canBe("blind") then
 				target:setEffect(target.EFF_DIM_VISION, 2, {sight=dam.dam, apply_power=src:combatAttack(), no_ct_effect=true})
 			else

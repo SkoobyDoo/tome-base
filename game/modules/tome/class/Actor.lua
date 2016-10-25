@@ -3434,8 +3434,11 @@ function _M:onTemporaryValueChange(prop, v, base)
 	end
 end
 
+--- Actor attacks target
+-- @param target the actor being attacked
+-- @param x, y coordinates of target grid
 function _M:attack(target, x, y)
-	self:bumpInto(target, x, y)
+	return self:bumpInto(target, x, y)
 end
 
 function _M:getMaxEncumbrance()
@@ -4891,24 +4894,24 @@ function _M:preUseTalent(ab, silent, fake)
 	-- Special checks -- AI
 	if not self.player and ab.on_pre_use_ai and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) and not ab.on_pre_use_ai(self, ab, silent, fake) then return false end
 
-	if not silent then
-		-- Allow for silent talents
-		if ab.message ~= nil then
-			if ab.message then
-				game.logSeen(self, "%s", self:useTalentMessage(ab))
-			end
-		elseif ab.mode == "sustained" and not self:isTalentActive(ab.id) then
-			game.logSeen(self, "%s activates %s.", self.name:capitalize(), ab.name)
-		elseif ab.mode == "sustained" and self:isTalentActive(ab.id) then
-			game.logSeen(self, "%s deactivates %s.", self.name:capitalize(), ab.name)
+	return true
+end
+
+--- Display the talent use message in the game log
+-- called when the talent is used after successful preUseTalent check
+-- @param ab the talent (not the id, the table)
+function _M:logTalentMessage(ab)
+	if ab.message ~= false and not util.getval(ab.no_message, self, ab) then
+		if ab.message then
+			game.logSeen(self, "%s", self:useTalentMessage(ab))
+		elseif ab.mode == "sustained" then
+			game.logSeen(self, "%s %s %s.", self.name:capitalize(), self:isTalentActive(ab.id) and "deactivates" or "activates", ab.name)
 		elseif ab.is_spell then
 			game.logSeen(self, "%s casts %s.", self.name:capitalize(), ab.name)
-		elseif not ab.no_message then
+		else
 			game.logSeen(self, "%s uses %s.", self.name:capitalize(), ab.name)
 		end
 	end
-
-	return true
 end
 
 local sustainCallbackCheck = {

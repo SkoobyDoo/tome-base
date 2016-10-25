@@ -95,7 +95,7 @@ end
 
 --- Actor is being attacked!
 -- Module authors should rewrite it to handle combat, dialog, ...
--- @param target the actor attacking us
+-- @param target the actor being attacked
 -- @param x placeholder
 -- @param y placeholder
 function _M:attack(target, x, y)

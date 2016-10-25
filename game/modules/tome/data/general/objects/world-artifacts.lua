@@ -461,7 +461,7 @@ newEntity{ base = "BASE_SHIELD",
 		fatigue = 20,
 		learn_talent = { [Talents.T_BLOCK] = 5, },
 	},
-	on_block = {desc = "30% chance that you'll breath stunning fire on foes in a 6 radius cone.", fct = function(self, who, target, type, dam, eff)
+	on_block = {desc = "30% chance that you'll breath stunning fire in a cone at the attacker (if within range 6).", fct = function(self, who, target, type, dam, eff)
 	if rng.percent(30) then
 		if not target or not target.x or not target.y or core.fov.distance(who.x, who.y, target.x, target.y) > 6 then return end
 
@@ -531,18 +531,22 @@ newEntity{ base = "BASE_SHIELD",
 		resists = { [DamageType.BLIGHT] = 25, [DamageType.DARKNESS] = 25, },
 		inc_stats = { [Stats.STAT_WIL] = 5, },
 	},
-	on_block = {desc = "Pull up to 1 attacker per turn, up to 15 spaces away into melee range, pinning and asphixiating them", fct = function(self, who, src, type, dam, eff)
+	on_block = {desc = "Up to once per turn, pull an attacker up to 15 spaces away into melee range, pinning and asphyxiating it", fct = function(self, who, src, type, dam, eff)
 		if not src then return end
 		if who.turn_procs.black_mesh then return end
  
-		src:pull(who.x, who.y, 15)
-		game.logSeen(src, "Black tendrils shoot out of the mesh and pull %s to you!", src.name:capitalize())
+		who:logCombat(src, "#ORCHID#Black tendrils from #Source# grab #Target#!")
+		local kb = src:canBe("knockback")
+		if kb then
+			who:logCombat(src, "#ORCHID##Source#'s tendrils pull #Target# in!")
+			src:pull(who.x, who.y, 15)
+		else
+			game.logSeen(src, "#ORCHID#%s resists the tendrils' pull!", src.name:capitalize())
+		end
 		if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
 			src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
 		end
- 
 		who.turn_procs.black_mesh = true
- 
 	end,}
 }
 
@@ -4536,7 +4540,7 @@ newEntity{ base = "BASE_SHIELD", --Thanks SageAcrin!
 		learn_talent = { [Talents.T_BLOCK] = 2, },
 		max_air = 20,
 	},
-	on_block = {desc = "30% chance that a blast of freezing water will spray at the target.", fct = function(self, who, target, type, dam, eff)
+	on_block = {desc = "30% chance to spray freezing water (radius 4 cone) at the target.", fct = function(self, who, target, type, dam, eff)
 		if rng.percent(30) then
 			if not target or target:attr("dead") or not target.x or not target.y then return end
 
@@ -4544,7 +4548,7 @@ newEntity{ base = "BASE_SHIELD", --Thanks SageAcrin!
 		
 			who:project(burst, target.x, target.y, engine.DamageType.ICE, 30)
 			game.level.map:particleEmitter(who.x, who.y, burst.radius, "breath_cold", {radius=burst.radius, tx=target.x-who.x, ty=target.y-who.y})
-			who:logCombat(target, "A wave of icy water bursts out from #Source#'s shield towards #Target#!")
+			who:logCombat(target, "A wave of icy water sprays out from #Source# towards #Target#!")
 		end
 	end,},
 }
