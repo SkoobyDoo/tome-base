@@ -433,7 +433,7 @@ end
 -- @see Target:getType(t) below
 -- @param typ = updated targeting table (from Target:getType)
 -- @param lx, ly = grid coordinates
--- @param for_highlights [type=boolean] highlight grids for player targeting mode
+-- @param for_highlights [type=boolean] grid highlighting mode for player targeting
 -- @return[1] [type=boolean] grid blocks the projection
 -- @return[2] [type=boolean] grid may be hit by the projection
 -- @return[2] "unknown" (with for_highlights) if the grid is unknown
@@ -513,7 +513,7 @@ end
 -- @see Target:getType(t) below
 -- @param typ = updated targeting table (from Target:getType)
 -- @param lx, ly = grid coordinates
--- @param for_highlights [type=boolean] highlight grids for player targeting mode
+-- @param for_highlights [type=boolean] grid highlighting mode for player targeting
 -- @return[1] [type=boolean] grid blocks the projection
 _M.defaults.block_radius = function(typ, lx, ly, for_highlights)
 	local map = game.level.map
