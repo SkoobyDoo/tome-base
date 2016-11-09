@@ -2475,11 +2475,12 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
-		-- { id = "pacifist", rarity = 3 },
-		-- { id = "exterminator", rarity = 1 },
-		-- { id = "dream-horror", rarity = 10, min_lev = 15 },
-		-- { id = "fast-exit", rarity = 3, min_lev = 8 },
+		{ id = "pacifist", rarity = 3 },
+		{ id = "exterminator", rarity = 1 },
+		{ id = "dream-horror", rarity = 10, min_lev = 15 },
+		{ id = "fast-exit", rarity = 3, min_lev = 8 },
 		{ id = "near-sighted", rarity = 3, min_lev = 4 },
+		{ id = "mirror-match", rarity = 9, min_lev = 5 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
@@ -2618,6 +2619,69 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 					who:setQuestStatus(self.id_challenge_quest, engine.Quest.COMPLETED)
 				end
 				zone:addEntity(level, m, "actor", x, y)
+			end
+		end
+	elseif id_challenge == "mirror-match" then
+		local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+		local tries = 0
+		while not game.player:canMove(x, y) and tries < 100 do
+			x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+			tries = tries + 1
+		end
+		if tries < 100 then
+			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge and kill your mirror clone on the level.", {})
+
+			local a = mod.class.NPC.new{}
+			a:replaceWith(game:getPlayer(true):cloneFull())
+			mod.class.NPC.castAs(a)
+			engine.interface.ActorAI.init(a, a)
+			a.no_drops = true
+			a.keep_inven_on_death = false
+			a.energy.value = 0
+			a.player = nil
+			a.rank = 4
+			a.name = "Mirror Challenge of "..a.name
+			a.killer_message = "but nobody knew why #sex# suddenly became evil"
+			a.color_r = 150 a.color_g = 150 a.color_b = 150
+			a:removeAllMOs()
+			a.ai = "none"
+			a.puuid = nil
+			a.ai_state = {talent_in=1}
+			a.faction = "neutral"
+			a.inc_damage.all = (a.inc_damage.all or 0) - 20
+			a.max_life = a.max_life * 2
+			a.life = a.max_life
+			a.id_challenge_quest = q.id
+			a.invulnerable = 1
+			a.on_bump = function(self, who)
+				Dialog:yesnoPopup("Challenge: #PURPLE#Mirror Match", "Challenge your mirror clone and triumph!", function(r) if not r then
+					self.invulnerable = nil
+					self.faction = "enemies"
+					self.ai = "tactical"
+					game.bignews:say(60, "#CRIMSON#FIGHT!")
+				end end, "Refuse", "Accept", true)
+			end
+			a.on_die = function(self, who)
+				who:setQuestStatus(self.id_challenge_quest, engine.Quest.COMPLETED)
+			end
+
+			game.zone:addEntity(game.level, a, "actor", x, y)
+
+			-- Remove some talents
+			local tids = {}
+			for tid, _ in pairs(a.talents) do
+				local t = a:getTalentFromId(tid)
+				if t.no_npc_use then tids[#tids+1] = t end
+			end
+			for i, t in ipairs(tids) do
+				if t.mode == "sustained" and a:isTalentActive(t.id) then a:forceUseTalent(t.id, {ignore_energy=true}) end
+				a.talents[t.id] = nil
+			end
+
+			if a.alchemy_golem then
+				a.alchemy_golem = nil
+				local t = a:getTalentFromId(a.T_REFIT_GOLEM)
+				t.action(a, t)
 			end
 		end
 	elseif id_challenge == "near-sighted" then
