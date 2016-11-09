@@ -2481,6 +2481,7 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 		{ id = "fast-exit", rarity = 3, min_lev = 8 },
 		{ id = "near-sighted", rarity = 3, min_lev = 4 },
 		{ id = "mirror-match", rarity = 9, min_lev = 5 },
+		{ id = "multiplicity", rarity = 8, min_lev = 10 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
@@ -2692,6 +2693,21 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 				actor:effectTemporaryValue(eff, "sight", -7)
 			end)
 
+		end end, "Refuse", "Accept", true)
+	elseif id_challenge == "multiplicity" then
+		Dialog:yesnoPopup("Challenge: #PURPLE#Multiplicity", "Survive the level while all the foes have the multiply talent, even bosses, for a reward.", function(r) if not r then
+			self:makeChallengeQuest(level, "Multiplicity", "All foes have the multiply talent!", {
+				on_exit_check = function(self, who) who:setQuestStatus(self.id, self.COMPLETED) end,
+			})
+			game:onTickEnd(function()
+				local p = game:getPlayer(true)
+				for uid, e in pairs(game.level.entities) do
+					if p:reactionToward(e) < 0 and not game.party:hasMember(e) then
+						e:learnTalent(e.T_MULTIPLY, true)
+						e.can_multiply = 3
+					end
+				end
+			end)
 		end end, "Refuse", "Accept", true)
 	else
 		self:triggerHook{"InfiniteDungeon:setupChallenge", id_challenge=id_challenge, zone=zone, level=level}
