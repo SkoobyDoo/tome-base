@@ -119,6 +119,18 @@ function _M:generateList()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Apply a global scaling to all fonts.\nApplies after restarting the game"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Font Scale#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.font_scale)
+	end, fct=function(item)
+		game:registerDialog(GetQuantity.new("Font Scale %", "From 50 to 300", config.settings.font_scale, 300, function(qty)
+			qty = util.bound(qty, 50, 300)
+			game:saveSettings("font_scale", ("font_scale = %d\n"):format(qty))
+			config.settings.font_scale = qty
+			self.c_list:drawItem(item)
+		end, 50))
+	end,}
+
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates framebuffers.\nThis option allows for some special graphical effects.\nIf you encounter weird graphical glitches try to disable it.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Framebuffers#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.fbo_active and "enabled" or "disabled")

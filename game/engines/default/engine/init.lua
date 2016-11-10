@@ -70,6 +70,7 @@ background_saves = true
 mouse_cursor = true
 display_fps = 30
 gamma_correction = 120
+font_scale = 100
 mouse_move = true
 censor_boot = true
 chat.filter = {}
