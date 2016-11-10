@@ -44,3 +44,10 @@ defineAction{
 	group = "actions",
 	name = "Show map",
 }
+
+defineAction{
+	default = { "sym:_CAPSLOCK:false:false:false:false" },
+	type = "SCROLL_MAP",
+	group = "actions",
+	name = "Scroll map mode",
+}
