@@ -152,7 +152,7 @@ function _M:runReal()
 	-- Create the map scroll text overlay
 	local lfont = FontPackage:get("bignews", true)
 	lfont:setStyle("bold")
-	local s = core.display.drawStringBlendedNewSurface(lfont, "<Scroll mode, press keys to scroll, caps lock to exit>", unpack(colors.simple(colors.GOLD)))
+	local s = core.display.drawStringBlendedNewSurface(lfont, "<Scroll mode, press direction keys to scroll, press again to exit>", unpack(colors.simple(colors.GOLD)))
 	lfont:setStyle("normal")
 	self.caps_scroll = {s:glTexture()}
 	self.caps_scroll.w, self.caps_scroll.h = s:getSize()
@@ -1672,7 +1672,7 @@ function _M:displayMap(nb_keyframes)
 		self.gestures:display(map.display_x, map.display_y, nb_keyframes)
 
 		-- Inform the player that map is in scroll mode
-		if core.key.modState("caps") then
+		if self.scroll_lock_enabled then
 			local w = map.viewport.width * 0.5
 			local h = w * self.caps_scroll.h / self.caps_scroll.w
 			self.caps_scroll[1]:toScreenFull(
@@ -1887,15 +1887,17 @@ do return end
 	self.key:addBinds
 	{
 		-- Movements
-		MOVE_LEFT = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(4) else self.player:moveDir(4) end end,
-		MOVE_RIGHT = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(6) else self.player:moveDir(6) end end,
-		MOVE_UP = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(8) else self.player:moveDir(8) end end,
-		MOVE_DOWN = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(2) else self.player:moveDir(2) end end,
-		MOVE_LEFT_UP = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(7) else self.player:moveDir(7) end end,
-		MOVE_LEFT_DOWN = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(1) else self.player:moveDir(1) end end,
-		MOVE_RIGHT_UP = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(9) else self.player:moveDir(9) end end,
-		MOVE_RIGHT_DOWN = function() if core.key.modState("caps") and self.level then self.level.map:scrollDir(3) else self.player:moveDir(3) end end,
-		MOVE_STAY = function() if core.key.modState("caps") and self.level then self.level.map:centerViewAround(self.player.x, self.player.y) else if self.player:enoughEnergy() then self.player:describeFloor(self.player.x, self.player.y) self.player:waitTurn() end end end,
+		MOVE_LEFT = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(4) else self.player:moveDir(4) end end,
+		MOVE_RIGHT = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(6) else self.player:moveDir(6) end end,
+		MOVE_UP = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(8) else self.player:moveDir(8) end end,
+		MOVE_DOWN = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(2) else self.player:moveDir(2) end end,
+		MOVE_LEFT_UP = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(7) else self.player:moveDir(7) end end,
+		MOVE_LEFT_DOWN = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(1) else self.player:moveDir(1) end end,
+		MOVE_RIGHT_UP = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(9) else self.player:moveDir(9) end end,
+		MOVE_RIGHT_DOWN = function() if self.scroll_lock_enabled and self.level then self.level.map:scrollDir(3) else self.player:moveDir(3) end end,
+		MOVE_STAY = function() if self.scroll_lock_enabled and self.level then self.level.map:centerViewAround(self.player.x, self.player.y) else if self.player:enoughEnergy() then self.player:describeFloor(self.player.x, self.player.y) self.player:waitTurn() end end end,
+
+		SCROLL_MAP = function() self.scroll_lock_enabled = not self.scroll_lock_enabled end,
 
 		RUN = function()
 			self.log("Run in which direction?")
