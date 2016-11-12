@@ -1819,34 +1819,20 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			local list = {}
-			local loaded = {}
-			for i, file in ipairs{"/data/general/objects/objects-maj-eyal.lua", "/data/general/objects/objects-far-east.lua"} do
-				require("mod.class.Object"):loadList(file, nil, list, nil, loaded)
-			end
-			local images = {}
-			for i, e in ipairs(list) do
-				if e.unique and not e.randart and not e.lore and type(e.image) == "string" then
-					print("===== ", e.name, "::", e.image)
-					images[e.image] = images[e.image] or {}
-					table.insert(images[e.image], e.name)
+			for _, ip in ipairs{
+				{"armor", "cloak"},
+			} do
+				for tier = 1, 5 do
+					local special = function(e) return e.material_level == tier and (not ip[3] or ip[3](e)) end
+					local o = game.zone:makeEntity(game.level, "object", {ignore_material_restriction=true, type=ip[1], subtype=ip[2], special=special, not_properties={"unique"}, ego_filter={ego_chance=-1000}}, nil, true)
+					if o then
+						o:identify(true)
+						game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y)
+					end
 				end
 			end
-			local filter = {}
-			for i, n in pairs(images) do
-				if #n > 1 then
-					filter[i] = n
-				end
-			end
-			table.print(filter)
 do return end
 			self:changeLevel(game.level.level + 1)
-do return end
-			local o = game.zone:makeEntity(game.level, "object", {subtype="sling", random_object=true}, nil, true)
-			if o then
-				o:identify(true)
-				game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y-1)
-			end
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
 			print(f, err)

@@ -623,5 +623,19 @@ function _M:generateListMisc()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Replace headwear images by cloak hoods if a cloak is worn#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Show cloak hoods#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.tome.show_cloak_hoods and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.tome.show_cloak_hoods = not config.settings.tome.show_cloak_hoods
+		game:saveSettings("tome.show_cloak_hoods", ("tome.show_cloak_hoods = %s\n"):format(tostring(config.settings.tome.show_cloak_hoods)))
+		self.c_list:drawItem(item)
+		if self:isTome() and game.level then
+			for uid, e in pairs(game.level.entities) do
+				e:updateModdableTile()
+			end
+		end
+	end,}
+
 	self.list = list
 end
