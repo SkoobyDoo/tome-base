@@ -33,6 +33,7 @@ newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	unided_name = "ominous, dark runed staff",
 	force_lore_artifact=true,
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
+	moddable_tile = "special/%s_awaken_staff_of_absorbtion",
 	encumber = 7,
 	plot=true,
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.

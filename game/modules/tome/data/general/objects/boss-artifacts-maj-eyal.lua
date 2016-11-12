@@ -1310,6 +1310,7 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 	desc = [[Inch-thick stralite plates lock together with voratun joints. The whole suit looks impenetrable, but has clearly been subjected to terrible treatment - great dents and misshaping warps, and caustic fissures bored across the surface.
 Though clearly a powerful piece, it must once have been much greater.]],
 	color = colors.WHITE, image = "object/artifact/armor_plate_borfasts_cage.png",
+	moddable_tile = "special/armor_plate_borfasts_cage",
 	level_range = {20, 28},
 	rarity = 200,
 	require = { stat = { str=35 }, },
@@ -1340,6 +1341,7 @@ newEntity{ base = "BASE_LEATHER_CAP", -- No armor training requirement
 	power_source = {psionic=true},
 	define_as = "ALETTA_DIADEM",
 	name = "Aletta's Diadem", unique=true, unided_name="jeweled diadem", image = "object/artifact/diadem_alettas_diadem.png",
+	moddable_tile = "special/diadem_alettas_diadem",
 	desc = [[A filigree of silver set with many small jewels, this diadem seems radiant - ethereal almost. But its touch seems to freeze your skin and brings wild thoughts to your mind. You want to drop it, throw it away, and yet you cannot resist thinking of what powers it might bring you.
 Is this temptation a weak will on your part, or some domination from the artifact itself...?]],
 	require = { stat = { wil=24 }, },
@@ -1363,6 +1365,7 @@ newEntity{ base = "BASE_SLING",
 	power_source = {nature=true},
 	define_as = "HARESKIN_SLING",
 	name = "Hare-Skin Sling", unique=true, unided_name = "hare-skin sling", image = "object/artifact/sling_hareskin_sling.png",
+	moddable_tile = "special/%s_hareskin_sling",
 	desc = [[This well-tended sling is made from the leather and sinews of a large hare. It feels smooth to the touch, yet very durable. Some say that the skin of a hare brings luck and fortune.
 Hard to tell if that really helped its former owner, but it's clear that the skin is at least also strong and reliable.]],
 	level_range = {20, 28},
