@@ -353,3 +353,18 @@ newEntity{
 	always_remember = true,
 	block_move = true,
 }
+
+newEntity{
+	define_as = "SHIMMER_CONTROL",
+	name = "Mirror of Reflection", image = "terrain/solidwall/solid_floor1.png", add_displays = {class.new{image="terrain/pedestal_orb_02.png", display_h=2, display_y=-1}},
+	display = '*', color=colors.PURPLE,
+	notice = true,
+	always_remember = true,
+	block_move = function(self, x, y, e, act, couldpass)
+		if e and e.player and act then
+			local chat = require("engine.Chat").new("shertul-fortress-shimmer", self, e, {player=e})
+			chat:invoke()
+		end
+		return true
+	end,
+}

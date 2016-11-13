@@ -1399,6 +1399,12 @@ function _M:onWear(o, slot, bypass_set)
 	if o.power_source and o.power_source.antimagic and not game.party:knownLore("nature-vs-magic") and self:attr("has_arcane_knowledge") then
 		game.party:learnLore("nature-vs-magic")
 	end
+
+	-- Shimmer stuff
+	local invendef = self:getInvenDef(slot)
+	if invendef and invendef.infos and invendef.infos.shimmerable then
+		world:unlockShimmer(o)
+	end
 end
 
 --- Call when an object is added

@@ -87,8 +87,13 @@ function _M:use(item)
 				local a = game.zone:finishEntity(game.level, "object", e)
 				a.no_unique_lore = true -- to not spam
 				a:identify(true)
-				if a.name == a.unided_name then print("=================", a.name) end
 				game.zone:addEntity(game.level, a, "object", game.player.x, game.player.y)
+				if a.slot then
+					local invendef = game.player:getInvenDef(a.slot)
+					if invendef and invendef.infos and invendef.infos.shimmerable then
+						world:unlockShimmer(a)
+					end
+				end
 			end
 		end
 	elseif act == "magic_map" then

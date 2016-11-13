@@ -97,6 +97,17 @@ function _M:getInven(id)
 	end
 end
 
+--- Returns the content of an inventory as a table
+function _M:getInvenDef(id)
+	if type(id) == "number" then
+		return self.inven_def[id]
+	elseif type(id) == "string" then
+		return self.inven_def[self["INVEN_"..id]]
+	else
+		return nil
+	end
+end
+
 --- Tells if an inventory still has room left
 function _M:canAddToInven(id)
 	if type(id) == "number" then
