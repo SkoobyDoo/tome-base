@@ -3527,6 +3527,14 @@ function _M:removeShaderAura(kind)
 	self:updateModdableTile()
 end
 
+function _M:getObjectModdableTile(slot)
+	local i = self.inven[slot]
+	if not i or not i[1] then return nil end
+	local o = i[1]	
+	if o.shimmer_moddable then return o.shimmer_moddable end
+	return o
+end
+
 --- Update tile for races that can handle it
 function _M:updateModdableTile()
 	if not self.moddable_tile or Map.tiles.no_moddable_tiles then
@@ -3575,7 +3583,7 @@ function _M:updateModdableTile()
 
 	self:triggerHook{"Actor:updateModdableTile:back", base=base, add=add}
 
-	i = self.inven[self.INVEN_CLOAK]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile):format("behind")..".png", auto_tall=1} end
+	i = self:getObjectModdableTile(self.INVEN_CLOAK); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile):format("behind")..".png", auto_tall=1} end
 
 	if self.shader_auras and next(self.shader_auras) then
 		for _, def in pairs(self.shader_auras) do
@@ -3588,38 +3596,38 @@ function _M:updateModdableTile()
 	add[#add+1] = {image = base..basebody, auto_tall=1}
 
 	if not self:attr("disarmed") then
-		i = self.inven[self.INVEN_MAINHAND]; if i and i[1] and i[1].moddable_tile_back then
-			add[#add+1] = {image = base..(i[1].moddable_tile_back):format("right")..".png", auto_tall=1}
+		i = self:getObjectModdableTile(self.INVEN_MAINHAND); if i and i.moddable_tile_back then
+			add[#add+1] = {image = base..(i.moddable_tile_back):format("right")..".png", auto_tall=1}
 		end
-		i = self.inven[self.INVEN_OFFHAND]; if i and i[1] and i[1].moddable_tile_back then
-			add[#add+1] = {image = base..(i[1].moddable_tile_back):format("left")..".png", auto_tall=1}
+		i = self:getObjectModdableTile(self.INVEN_OFFHAND); if i and i.moddable_tile_back then
+			add[#add+1] = {image = base..(i.moddable_tile_back):format("left")..".png", auto_tall=1}
 		end
 	end
 
-	i = self.inven[self.INVEN_FEET]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} end
-	i = self.inven[self.INVEN_BODY]; if i and i[1] and i[1].moddable_tile2 then add[#add+1] = {image = base..(i[1].moddable_tile2)..".png", auto_tall=1}
+	i = self:getObjectModdableTile(self.INVEN_FEET); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1} end
+	i = self:getObjectModdableTile(self.INVEN_BODY); if i and i.moddable_tile2 then add[#add+1] = {image = base..(i.moddable_tile2)..".png", auto_tall=1}
 	elseif not self:attr("moddable_tile_nude") then add[#add+1] = {image = base..(self:attr("moddable_tile_lower_underwear") or "lower_body_01.png"), auto_tall=1} end
-	i = self.inven[self.INVEN_BODY]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1}
+	i = self:getObjectModdableTile(self.INVEN_BODY); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1}
 	elseif not self:attr("moddable_tile_nude") then add[#add+1] = {image = base..(self:attr("moddable_tile_higher_underwear") or "upper_body_01.png"), auto_tall=1} end
-	i = self.inven[self.INVEN_CLOAK]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile):format("shoulder")..".png", auto_tall=1} end
+	i = self:getObjectModdableTile(self.INVEN_CLOAK); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile):format("shoulder")..".png", auto_tall=1} end
 	local done_head = false
-	i = self.inven[self.INVEN_CLOAK]; if config.settings.tome.show_cloak_hoods and i and i[1] and i[1].moddable_tile_hood then add[#add+1] = {image = base..(i[1].moddable_tile):format("hood")..".png", auto_tall=1} done_head = true end
-	i = self.inven[self.INVEN_HEAD]; if not done_head and i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} done_head = true end
+	i = self:getObjectModdableTile(self.INVEN_CLOAK); if config.settings.tome.show_cloak_hoods and i and i[1] and i.moddable_tile_hood then add[#add+1] = {image = base..(i.moddable_tile):format("hood")..".png", auto_tall=1} done_head = true end
+	i = self:getObjectModdableTile(self.INVEN_HEAD); if not done_head and i and i[1] and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1} done_head = true end
 	if not done_head and self:attr("moddable_tile_head_underwear") then add[#add+1] = {image = base..self:attr("moddable_tile_head_underwear"), auto_tall=1} end
-	i = self.inven[self.INVEN_HANDS]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} end
-	i = self.inven[self.INVEN_QUIVER]; if i and i[1] and i[1].moddable_tile then add[#add+1] = {image = base..(i[1].moddable_tile)..".png", auto_tall=1} end
+	i = self:getObjectModdableTile(self.INVEN_HANDS); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1} end
+	i = self:getObjectModdableTile(self.INVEN_QUIVER); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1} end
 	if not self:attr("disarmed") then
-		i = self.inven[self.INVEN_MAINHAND]; if i and i[1] and i[1].moddable_tile then
-			add[#add+1] = {image = base..(i[1].moddable_tile):format("right")..".png", auto_tall=1}
-			if i[1].moddable_tile_particle then
-				add[#add].particle = i[1].moddable_tile_particle[1]
-				add[#add].particle_args = i[1].moddable_tile_particle[2]
+		i = self:getObjectModdableTile(self.INVEN_MAINHAND); if i and i.moddable_tile then
+			add[#add+1] = {image = base..(i.moddable_tile):format("right")..".png", auto_tall=1}
+			if i.moddable_tile_particle then
+				add[#add].particle = i.moddable_tile_particle[1]
+				add[#add].particle_args = i.moddable_tile_particle[2]
 			end
-			if i[1].moddable_tile_ornament then add[#add+1] = {image = base..(i[1].moddable_tile_ornament):format("right")..".png", auto_tall=1} end
+			if i.moddable_tile_ornament then add[#add+1] = {image = base..(i.moddable_tile_ornament):format("right")..".png", auto_tall=1} end
 		end
-		i = self.inven[self.INVEN_OFFHAND]; if i and i[1] and i[1].moddable_tile then
-			add[#add+1] = {image = base..(i[1].moddable_tile):format("left")..".png", auto_tall=1}
-			if i[1].moddable_tile_ornament then add[#add+1] = {image = base..(i[1].moddable_tile_ornament):format("left")..".png", auto_tall=1} end
+		i = self:getObjectModdableTile(self.INVEN_OFFHAND); if i and i.moddable_tile then
+			add[#add+1] = {image = base..(i.moddable_tile):format("left")..".png", auto_tall=1}
+			if i.moddable_tile_ornament then add[#add+1] = {image = base..(i.moddable_tile_ornament):format("left")..".png", auto_tall=1} end
 		end
 	end
 
