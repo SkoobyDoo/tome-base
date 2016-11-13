@@ -249,7 +249,16 @@ newTalent{
 	range = function(self, t) return math.ceil(self:combatTalentScale(t, 3, 5)) end,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
-	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) 
+		if not self:hasDualWeapon() then 
+			if not silent then 
+			game.logPlayer(self, "You require two weapons to use this talent.") 
+		end 
+			return false 
+		end
+		if self:attr("never_move") then return false end
+		return true 
+	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
@@ -278,14 +287,12 @@ newTalent{
 		-- Attack
 		if not core.fov.distance(self.x, self.y, x, y) == 1 then return nil end
 		
-		self:attr("combat_apr", 1000)
 		local critstore = self.combat_critical_power or 0
 		self.combat_critical_power = nil
 		self.combat_critical_power = critstore + t.getCrit(self,t)
 			
 		self:attackTarget(target, nil, t.getDamage(self,t), true)
 		
-		self:attr("combat_apr", -1000)
 		self.combat_critical_power = nil
 		self.combat_critical_power = critstore
 
@@ -296,7 +303,7 @@ newTalent{
 	info = function(self, t)
 		dam = t.getDamage(self,t)*100
 		crit = t.getCrit(self,t)
-		return ([[Swiftly leap to your target and strike at their vital points with both weapons, dealing %d%% weapon damage. This attack ignores armor and deals %d%% increased critical strike damage.]]):
+		return ([[Swiftly leap to your target and strike at their vital points with both weapons, dealing %d%% weapon damage. This attack deals %d%% increased critical strike damage.]]):
 		format(dam, crit)
 	end,
 }
@@ -317,13 +324,22 @@ newTalent{
 	end,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.6) end,
 	proj_speed = 20, --not really a projectile, so make this super fast
-	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) 
+		if not self:hasDualWeapon() then 
+			if not silent then 
+			game.logPlayer(self, "You require two weapons to use this talent.") 
+		end 
+			return false 
+		end
+		if self:attr("never_move") then return false end
+		return true 
+	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return end
+		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return nil end
 		if target or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self) then return nil end
 
 

@@ -164,7 +164,7 @@ newBirthDescriptor{
 	stats = { dex=4, str=4, cun=1, },
 	talents_types = {
 		["technique/dualweapon-attack"]={true, 0.2},
-		["technique/duelist"]={true, 0.2},
+		["technique/dualweapon-training"]={true, 0.2},
 		["technique/combat-techniques-active"]={true, 0.3},
 		["technique/combat-techniques-passive"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},

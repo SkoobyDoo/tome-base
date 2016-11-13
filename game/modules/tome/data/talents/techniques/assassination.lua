@@ -30,7 +30,7 @@ newTalent{
 	stamina = 24,
 	require = techs_dex_req_high1,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.5) end,
-	getPercent = function(self, t) return self:combatTalentLimit(t, 30, 10, 20)/120 end,
+	getPercent = function(self, t) return self:combatTalentLimit(t, 30, 10, 25)/100 end,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	range = 1,
 	requires_target = true,

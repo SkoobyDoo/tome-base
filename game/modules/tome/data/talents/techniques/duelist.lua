@@ -25,36 +25,50 @@ newTalent{
 	name = "Parry",
 	type = {"technique/duelist", 1},
 	points = 5,
-	mode = "sustained",
-	cooldown = 10,
-	sustain_stamina = 10,
 	require = techs_dex_req1,
-	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 25) end, -- Limit < 40%
-	getDeflectRange = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, "log")) end,
-	on_pre_use = function(self, t, silent)
-	local dam,_,weapon = 0,self:hasDualWeapon()
-	if not weapon or weapon.subtype~="dagger" then
-		if not silent then 
-			game.logPlayer(self, "You require a dagger in your offhand for this talent.") 
-		end 
-	return false end 
-	return true end,
-	activate = function(self, t)
-		local ret = {}
-		local ev = t.getChance(self, t)
-		local spread = t.getDeflectRange(self,t)
-		self:talentTemporaryValue(ret, "projectile_evasion", ev)
-		self:talentTemporaryValue(ret, "projectile_evasion_spread", spread)
-		return ret
+	mode = "passive",
+	getDeflectChance = function(self, t) return self:combatTalentLimit(t, 75, 15, 50) end,
+	getDeflectPercent = function(self, t) return self:combatTalentScale(t, 15, 40) end,
+	getDeflect = function(self, t, fake)
+		local dam,_,weapon = 0,self:hasDualWeapon()
+		if not weapon or weapon.subtype=="mindstar" and not fake then return 0 end
+		if weapon then
+			dam = self:combatDamage(weapon.combat) * self:getOffHandMult(weapon.combat)
+		end
+		return t.getDeflectPercent(self, t) * dam/100
 	end,
-	deactivate = function(self, t, p)
-		return true
+	getDeflects = function(self, t, fake)
+		return 2
+	end,
+	getDamageChange = function(self, t, fake)
+		local dam,_,weapon = 0,self:hasDualWeapon()
+		if not weapon or weapon.subtype=="mindstar" and not fake then return 0 end
+		if weapon then
+			dam = self:combatDamage(weapon.combat) * self:getOffHandMult(weapon.combat)
+		end
+		return t.getDeflectPercent(self, t) * dam/100
+	end,
+	doDeflect = function(self, t)
+		local eff = self:hasEffect(self.EFF_PARRY)
+		if not eff then return 0 end
+		local deflected = 0
+		if rng.percent(self.tempeffect_def.EFF_PARRY.deflectchance(self, eff)) then
+			deflected = eff.dam
+		end
+		eff.deflects = eff.deflects -1
+		if eff.deflects <=0 then self:removeEffect(self.EFF_PARRY) end
+		return deflected
+	end,
+	callbackOnActBase = function(self, t)
+		self:setEffect(self.EFF_PARRY,1,{})
 	end,
 	info = function(self, t)
-		chance = t.getChance(self,t)
-		range = t.getDeflectRange(self,t)
-		return ([[You are able to use your dagger to deflect incoming blows, giving you a %d%% chance to parry melee attacks and a %d%% chance to deflect incoming projectiles %d tiles away.]]):
-		format(chance, chance, range)
+		block = t.getDeflect(self,t)
+		chance = t.getDeflectChance(self,t)
+		perc = t.getDeflectPercent(self,t)
+		return ([[You have a %d%% chance to parry melee or ranged attacks against you with your offhand weapon (except mindstars), reducing the damage dealt by %d (%d%% of your offhand weapon damage). This reduction is applied alongside your armor value.
+You can parry up to 2 attacks per turn.]]):
+		format(chance, block, perc)
 	end,
 }
 
@@ -116,6 +130,7 @@ newTalent{
 	mode = "sustained",
 	sustain_stamina = 20,
 	cooldown = 30,
+	no_energy = true,
 	getChance = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
 	critResist = function(self, t) return self:combatTalentScale(t, 15, 50, 0.75) end,
 	on_pre_use = function(self, t, silent, fake)

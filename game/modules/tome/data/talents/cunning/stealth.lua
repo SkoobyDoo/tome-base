@@ -161,9 +161,9 @@ newTalent{
 	require = cuns_req3,
 	points = 5,
 	mode = "passive",
-	getLife = function(self, t) return self:combatTalentScale(t, 5, 30, 0.75) end,
+	getLife = function(self, t) return self:combatTalentScale(t, 5, 25, 0.75) end,
 	getStamina = function(self, t) return self:combatTalentScale(t, 1, 4.5, 0.75) end,
-	getReduction = function(self, t) return math.min(self:combatTalentStatDamage(t, "cun", 10, 80),80) end,
+	getReduction = function(self, t) return math.min(self:combatTalentStatDamage(t, "cun", 10, 75),50) end,
 	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
 	info = function(self, t)
 		return ([[While stealthed your foes are less able to land a clean blow, reducing all damage taken by %d. This also buys you time to tend to your wounds, increasing your life regeneration by %0.1f and stamina regeneration by %0.1f.
@@ -183,7 +183,8 @@ newTalent{
 	cooldown = function(self, t) return self:combatTalentLimit(t, 10, 30, 15) end,
 	tactical = { DEFEND = 2 },
 	on_pre_use = function(self, t, silent) if self:isTalentActive(self.T_STEALTH) then if not silent then game.logPlayer(self, "You must be out of stealth to enter Shadow Dance.") end return false end return true end,
-	getDuration = function(self, t) if self:getTalentLevel(t) >=4 then return 4 else return 3 end end,
+	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.6)) end, -- Limit to range >= 1
+	getDuration = function(self, t) return 1 + math.min(self:combatTalentScale(t, 1, 3),3) end,
 	action = function(self, t)
 		if self:isTalentActive(self.T_STEALTH) then return end
 		
@@ -197,13 +198,14 @@ newTalent{
 			if e.ai_target and e.ai_target.actor == self then e:setTarget(nil) end
 		end
 		
-		self:setEffect(self.EFF_SHADOW_DANCE, t.getDuration(self,t), {power=1000}) 
+		self:setEffect(self.EFF_SHADOW_DANCE, t.getDuration(self,t), {src=self, rad=t.getRadius(self,t)}) 
 		
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your mastery of stealth allows you to vanish from sight, returning to stealth and becoming undetectable for the next 3 turns (or 4 at talent level 4 and above) regardless of detections or what actions you take.
+		return ([[Your mastery of stealth allows you to vanish from sight, returning to stealth and causing stealth to no longer break from unstealthy actions for %d turns.
+		When this effect ends, you must make a stealth check against targets in radius %d or be revealed.
 You must be unstealthed to use this talent.]]):
-		format(t.getDuration(self, t))
+		format(t.getDuration(self, t), t.getRadius(self,t))
 	end,
 }

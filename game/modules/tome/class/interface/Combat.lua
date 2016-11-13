@@ -473,18 +473,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
-	if target:isTalentActive(target.T_PARRY) then
-		local chance = target:callTalent(target.T_PARRY, "getChance")
-		if rng.percent(chance) then
-			game.logSeen(target, "#ORCHID#%s parries the attack with %s dagger!#LAST#", target.name:capitalize(), string.his_her(target))
-			repelled = true
-			if target:knowTalent(target.T_TEMPO) then
-				local t = target:getTalentFromId(target.T_TEMPO)
-				t.do_tempo(target, t)
-			end
-		end
-	end
-
 	if repelled then
 		self:logCombat(target, "#Target# repels an attack from #Source#.")
 	elseif self:checkEvasion(target) then
@@ -498,6 +486,18 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 				game:delayedLogDamage(self, target, 0, ("%s(%d parried#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
 				dam = math.max(dam - deflect,0)
 				print("[ATTACK] after DUAL_WEAPON_DEFENSE", dam)
+			end
+		end
+		if target.knowTalent and target:hasEffect(target.EFF_PARRY) then
+			local deflect = math.min(dam, target:callTalent(target.T_PARRY, "doDeflect"))
+			if deflect > 0 then
+				game:delayedLogDamage(self, target, 0, ("%s(%d parried#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
+				dam = math.max(dam - deflect,0)
+				print("[ATTACK] after PARRY", dam)
+				if target:knowTalent(target.T_TEMPO) then
+					local t = target:getTalentFromId(target.T_TEMPO)
+					t.do_tempo(target, t)
+				end
 			end
 		end
 		if target.knowTalent and target:hasEffect(target.EFF_GESTURE_OF_GUARDING) and not target:attr("encased_in_ice") then

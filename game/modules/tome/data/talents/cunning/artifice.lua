@@ -24,7 +24,7 @@ local Chat = require "engine.Chat"
 
 -- equipable artifice tool talents and associated mastery talents
 -- to add a new tool, define a tool talent and a mastery talent and update this table
-artifice_tool_tids = {T_HIDDEN_BLADES="T_ASSASSINATE", T_SMOKESCREEN="T_SMOKESCREEN_MASTERY", T_ROGUE_S_BREW="T_ROGUE_S_BREW_MASTERY", T_DART_LAUNCHER="T_DART_LAUNCHER_MASTERY"}
+artifice_tool_tids = {T_HIDDEN_BLADES="T_ASSASSINATE", T_SMOKESCREEN="T_SMOKESCREEN_MASTERY", T_ROGUE_S_BREW="T_ROGUE_S_BREW_MASTERY", T_DART_LAUNCHER="T_DART_LAUNCHER_MASTERY", T_GRAPPLING_HOOK="T_GRAPPLING_HOOK_MASTERY",}
 
 --- initialize artifice tools, update mastery level and unlearn any unselected tools talents
 function artifice_tools_setup(self, t)
@@ -297,7 +297,7 @@ newTalent{
 		for slot_id, tool_id in pairs(self.artifice_tools) do
 			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
-		return ([[You conceal spring loaded blades within your equipment.  On scoring a critical strike against an adjacent target, you follow up with your blades for %d%% damage (as an unarmed attack).
+		return ([[You conceal spring loaded blades within your equipment. On scoring a critical strike against an adjacent target, you follow up with your blades for %d%% damage (as an unarmed attack).
 This talent has a cooldown.
 #YELLOW#Prepared with: %s#LAST#]]):format(dam*100, slot)
 	end,
@@ -635,5 +635,122 @@ newTalent{
 	info = function(self, t)
 		return ([[The sleeping poison of your Dart Launcher becomes potent enough to ignore immunity, and upon waking the target is slowed by %d%% for 4 turns.]]):
 		format(t.getSlow(self, t)*100)
+	end,
+}
+
+newTalent{
+	name = "Grappling Hook",
+	type = {"cunning/tools", 1},
+	points = 1,
+	tactical = { DISABLE = 1, CLOSEIN = 3 },
+	getRange = function(self, t) return self:combatTalentScale(t, 4, 7) end,
+	cooldown = 8,
+	stamina = 14,
+	requires_target = true,
+	action = function(self, t)
+		local tg = {type="bolt", range=t.getRange(self,t), talent=t}
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
+
+		self:project(tg, x, y, function(px, py)
+			local target = game.level.map(px, py, engine.Map.ACTOR)
+			if target then
+	
+				local size = target.size_category - self.size_category
+				if size > 1 then
+					local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+					local linestep = self:lineFOV(x, y, block_actor)
+			
+					local tx, ty, lx, ly, is_corner_blocked
+					repeat  -- make sure each tile is passable
+						tx, ty = lx, ly
+						lx, ly, is_corner_blocked = linestep:step()
+					until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
+					if not tx or core.fov.distance(self.x, self.y, tx, ty) < 1 then
+						game.logPlayer(self, "You are too close to build up momentum!")
+						return
+					end
+					if not tx or not ty or core.fov.distance(x, y, tx, ty) > 1 then return nil end
+			
+					local ox, oy = self.x, self.y
+					self:move(tx, ty, true)
+					if config.settings.tome.smooth_move > 0 then
+						self:resetMoveAnim()
+						self:setMoveAnim(ox, oy, 8, 5)
+					end
+				else
+					target:pull(self.x, self.y, tg.range)
+				end
+	
+				if self:knowTalent(self.T_GRAPPLING_HOOK_MASTERY) then
+					dam = self:callTalent(self.T_GRAPPLING_HOOK_MASTERY, "getDamage")
+					dam2 = self:callTalent(self.T_GRAPPLING_HOOK_MASTERY, "getSecondaryDamage")
+					local hit = self:attackTarget(target, nil, dam, true, true)
+					if hit then
+						if target:canBe("cut") then target:setEffect(target.EFF_CUT, 4, {power=dam2/4, src=self, no_ct_effect=true}) end
+						if target:canBe("poison") then target:setEffect(target.EFF_POISONED, 4, {power=dam2/4, src=self, no_ct_effect=true}) end						
+					end
+				end
+				if target:canBe("pin") then
+					target:setEffect(target.EFF_PINNED, 2, {apply_power=self:combatAttack()})
+				else
+					game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+				end
+			else
+				if game.level.map:checkAllEntities(x, y, "block_move", target) then
+					local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+					local linestep = self:lineFOV(x, y, block_actor)
+			
+					local tx, ty, lx, ly, is_corner_blocked
+					repeat  -- make sure each tile is passable
+						tx, ty = lx, ly
+						lx, ly, is_corner_blocked = linestep:step()
+					until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
+					if not tx or core.fov.distance(self.x, self.y, tx, ty) < 1 then
+						game.logPlayer(self, "You are too close to build up momentum!")
+						return
+					end
+					if not tx or not ty or core.fov.distance(x, y, tx, ty) > 1 then return nil end
+			
+					local ox, oy = self.x, self.y
+					self:move(tx, ty, true)
+					if config.settings.tome.smooth_move > 0 then
+						self:resetMoveAnim()
+						self:setMoveAnim(ox, oy, 8, 5)
+					end
+				end
+			end
+		end)
+
+		return true
+	end,
+	short_info = function(self, t, slot_talent)
+		return ([[Launch a range %d grappling hook that pulls smaller targets to you, or drags you towards walls and larger targets. 8 turn cooldown.]]):format(t.getRange(self, slot_talent))
+	end,
+	info = function(self, t)
+		local range = t.getRange(self,t)
+		local slot = "not prepared"
+		for slot_id, tool_id in pairs(self.artifice_tools) do
+			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
+		end
+		return ([[Toss out a grappling hook to a target within %d tiles. If this strikes a target or equal size or smaller, they will be dragged towards you. If this strikes a larger target or a wall, you will be pulled towards them. Targets will also be pinned for 2 turns.
+#YELLOW#Prepared with: %s#LAST#]]):
+	format(range, slot)
+	end,
+}
+
+newTalent{
+	name = "Grappling Hook Mastery",
+	type = {"cunning/tools", 1},
+	mode = "passive",
+	points = 1,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(self:getTalentFromId(self.T_MASTER_ARTIFICER), 1.0, 1.9) end,
+	getSecondaryDamage = function (self, t) return 30 + self:combatTalentStatDamage(self:getTalentFromId(self.T_MASTER_ARTIFICER), "cun", 15, 200) end,
+	short_info = function(self, t)
+		return ([[Your grappling hook deals %d%% unarmed damage on impact and a further %0.2f physical and %0.2f nature damage over 4 turns.]]):format(t.getDamage(self, t)*100, damDesc(self, DamageType.PHYSICAL, t.getSecondaryDamage(self,t)), damDesc(self, DamageType.NATURE, t.getSecondaryDamage(self,t)))
+	end,
+	info = function(self, t)
+		return ([[Your grappling hook is tipped with vicious, venomous barbs. On striking a target they will take a hit for %d%% unarmed damage, bleed for %0.2f physical damage and be poisoned for %0.2f nature damage over 4 turns.]]):
+		format(t.getDamage(self, t)*100, damDesc(self, DamageType.PHYSICAL, t.getSecondaryDamage(self,t)), damDesc(self, DamageType.NATURE, t.getSecondaryDamage(self,t)))
 	end,
 }
