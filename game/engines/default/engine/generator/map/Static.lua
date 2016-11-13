@@ -321,7 +321,7 @@ function _M:tmxLoad(file)
 			local gid, i = nil, 1
 			local x, y = 1, 1
 			while i <= #data do
-				gid, i = struct.unpack("<I4", data, i)
+				gid, i = struct.unpack("<I4", data, i)				
 				if chars[gid] then populate(x, y, chars[gid])
 				else populate(x, y, {[layername] = gid}, gid)
 				end
@@ -355,6 +355,7 @@ function _M:tmxLoad(file)
 
 	self.add_attrs_later = {}
 
+	local fakeid = -1
 	for _, og in ipairs(map:findAll("objectgroup")) do
 		for _, o in ipairs(map:findAll("object")) do
 			local props = o:findOne("properties"):findAllAttrs("property", "name", "value")
@@ -372,9 +373,9 @@ function _M:tmxLoad(file)
 			elseif og.attr.name:find("^addZone") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
 				if props.type and props.subtype then
-					local i1, j2 = rotate_coords(x, y)
+					local i1, j1 = rotate_coords(x, y)
 					local i2, j2 = rotate_coords(x + w, y + h)
-					g.addZone({x, y, x + w, y + h}, props.type, props.subtype)
+					g.addZone({i1, j1, i2, j2}, props.type, props.subtype)
 				end
 			elseif og.attr.name:find("^attrs") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
@@ -384,7 +385,18 @@ function _M:tmxLoad(file)
 						local i, j = rotate_coords(i + 1, j + 1)
 						i, j = i - 1, j - 1
 						self.add_attrs_later[#self.add_attrs_later+1] = {x=i, y=j, key=k, value=self:loadLuaInEnv(g, nil, "return "..v)}
-						print("====", i, j, k)
+						-- print("====", i, j, k)
+					end end
+				end
+			elseif og.attr.name:find("^spawn#") then
+				local layername = og.attr.name:sub(7)
+				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+				if props.id then
+					for i = x, x + w do for j = y, y + h do
+						local i, j = rotate_coords(i, j)
+						t[fakeid] = props.id
+						populate(i+1, j+1, {[layername] = fakeid}, fakeid)
+						fakeid = fakeid - 1
 					end end
 				end
 			end
