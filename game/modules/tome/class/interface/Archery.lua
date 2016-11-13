@@ -316,6 +316,18 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		print("[ATTACK ARCHERY] raw dam", dam, "versus", armor, "with APR", apr)
 
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
+		if target.knowTalent and target:hasEffect(target.EFF_PARRY) then
+			local deflect = math.min(dam, target:callTalent(target.T_PARRY, "doDeflect"))
+			if deflect > 0 then
+				game:delayedLogDamage(self, target, 0, ("%s(%d parried#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
+				dam = math.max(dam - deflect,0)
+				print("[ATTACK] after PARRY", dam)
+				if target:knowTalent(target.T_TEMPO) then
+					local t = target:getTalentFromId(target.T_TEMPO)
+					t.do_tempo(target, t)
+				end
+			end
+		end
 		armor = math.max(0, armor - apr)
 		dam = math.max(dam * pres - armor, 0) + (dam * (1 - pres))
 		print("[ATTACK ARCHERY] after armor", dam)

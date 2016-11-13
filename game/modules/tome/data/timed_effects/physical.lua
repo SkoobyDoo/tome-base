@@ -24,6 +24,21 @@ local Chat = require "engine.Chat"
 local Map = require "engine.Map"
 local Level = require "engine.Level"
 
+local function stealthDetection(self, radius, estimate)
+	if not self.x then return nil end
+	local dist = 0
+	local closest, detect = math.huge, 0
+	for i, act in ipairs(self.fov.actors_dist) do
+		dist = core.fov.distance(self.x, self.y, act.x, act.y)
+		if dist > radius then break end
+		if act ~= self and act:reactionToward(self) < 0 and not act:attr("blind") and (not act.fov or not act.fov.actors or act.fov.actors[self]) and (not estimate or self:canSee(act)) then
+			detect = detect + act:combatSeeStealth() * (1.1 - dist/10) -- detection strength reduced 10% per tile
+			if dist < closest then closest = dist end
+		end
+	end
+	return detect, closest
+end
+
 -- Item specific
 newEffect{
 	name = "ITEM_ANTIMAGIC_SCOURED", image = "talents/acidic_skin.png",
@@ -498,6 +513,7 @@ newEffect{
 	activate = function(self, eff)
 		self:removeEffect(self.EFF_COUNTER_ATTACKING) -- Cannot parry or counterattack while disarmed
 		self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) 
+		self:removeEffect(self.EFF_PARRY) 
 		eff.tmpid = self:addTemporaryValue("disarmed", 1)
 	end,
 	deactivate = function(self, eff)
@@ -2047,6 +2063,36 @@ newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 	end,
 }
 
+newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
+	name = "PARRY", image = "talents/parry.png",
+	desc = "Parrying",
+	deflectchance = function(self, eff) -- The last partial deflect has a reduced chance to happen
+		if self:attr("encased_in_ice") or self:hasEffect(self.EFF_DISARMED) then return 0 end
+		return util.bound(eff.deflects>=1 and eff.chance or eff.chance*math.mod(eff.deflects,1),0,100)
+	end,
+	long_desc = function(self, eff)
+		return ("Parrying melee attacks: Has a %d%% chance to deflect up to %d damage from the next %0.1f attack(s)."):format(self.tempeffect_def.EFF_PARRY.deflectchance(self, eff),eff.dam, math.max(eff.deflects,1))
+	end,
+	charges = function(self, eff) return math.ceil(eff.deflects) end,
+	type = "physical",
+	subtype = {tactic=true},
+	status = "beneficial",
+	decrease = 0,
+	no_stop_enter_worlmap = true, no_stop_resting = true,
+	parameters = {chance=10,dam = 1, deflects = 1},
+	activate = function(self, eff)
+		if self:attr("disarmed") or not self:hasDualWeapon() then
+			eff.dur = 0 self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) return
+			end
+		eff.dam = self:callTalent(self.T_PARRY,"getDamageChange")
+		eff.deflects = self:callTalent(self.T_PARRY,"getDeflects")
+		eff.chance = self:callTalent(self.T_PARRY,"getDeflectChance")
+		if eff.dam <= 0 or eff.deflects <= 0 then eff.dur = 0 end
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
 newEffect{
 	name = "BLOCKING", image = "talents/block.png",
 	desc = "Blocking",
@@ -3189,16 +3235,21 @@ newEffect{
 newEffect{
 	name = "SHADOW_DANCE", image = "talents/shadow_dance.png",
 	desc = "Shadow Dance", 
-	long_desc = function(self, eff) return ("The target is able to make actions and attacks while remaining stealthed, and is nearly undetectable."):format() end,
+	long_desc = function(self, eff) return ("The target is able to make actions and attacks while remaining stealthed."):format() end,
 	type = "physical",
 	subtype = { tactical=true, darkness=true },
 	status = "beneficial",
 	parameters = { },
 	activate = function(self, eff)
-		eff.stealthid = self:addTemporaryValue("inc_stealth", eff.power)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("inc_stealth", eff.stealthid)
+		if not rng.percent(self.hide_chance or 0) then
+			if stealthDetection(self, 4) > 0 then
+				if not silent then game.logPlayer(self, "You have been detected!") 
+					self:forceUseTalent(self.T_STEALTH, {ignore_energy=true})
+				end
+			end
+		end
 	end,
 }
 
