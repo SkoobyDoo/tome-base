@@ -3061,7 +3061,7 @@ newEffect{
 	end,
 	callbackOnKill = function(self, eff, who, death_note)
 		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
-		self:hasQuest(eff.id_challenge_quest):check("on_kill_foe", self)
+		self:hasQuest(eff.id_challenge_quest):check("on_kill_foe", self, who)
 	end,
 	callbackOnActBase = function(self, eff)
 		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end

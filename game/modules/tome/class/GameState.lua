@@ -2475,13 +2475,14 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
-		{ id = "pacifist", rarity = 3 },
 		{ id = "exterminator", rarity = 1 },
-		{ id = "dream-horror", rarity = 10, min_lev = 15 },
+		{ id = "pacifist", rarity = 3 },
 		{ id = "fast-exit", rarity = 3, min_lev = 8 },
-		{ id = "near-sighted", rarity = 3, min_lev = 4 },
-		{ id = "mirror-match", rarity = 9, min_lev = 5 },
+		{ id = "near-sighted", rarity = 4, min_lev = 4 },
+		{ id = "mirror-match", rarity = 6, min_lev = 5 },
 		{ id = "multiplicity", rarity = 8, min_lev = 10 },
+		{ id = "dream-horror", rarity = 10, min_lev = 15 },
+		{ id = "headhunter", rarity = 12, min_lev = 12 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
@@ -2505,6 +2506,7 @@ function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
 		desc = function(self, who)
 			local desc = {}
 			desc[#desc+1] = self.challenge_desc
+			if self.dynamic_desc then self:dynamic_desc(desc, who) end
 			if self.reward_desc then desc[#desc+1] = "\nYou completed the challenge and received:\n"..self.reward_desc end
 			return table.concat(desc, "\n")
 		end,
@@ -2559,6 +2561,15 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 		})
 	elseif id_challenge == "exterminator" then
 		self:makeChallengeQuest(level, "Exterminator", "Exterminate every foe on the level.", {
+			dynamic_desc = function(self, desc, who)
+				if not self.check_level then return end
+				local nb = 0
+				for uid, e in pairs(self.check_level.entities) do
+					if who:reactionToward(e) < 0 then nb = nb + 1 end
+				end
+
+				desc[#desc+1] = "Foes left: #LIGHT_RED#"..nb
+			end,
 			on_exit_check = function(self, who)
 				if not self.check_level then return end
 				local nb = 0
@@ -2585,12 +2596,8 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			local turns = #path * 3
 			self:makeChallengeQuest(level, "Rush Hour ("..turns..")", "Leave the level in less than "..turns.." turns (exit is revealed on your map).", {
 				turns_left = turns,
-				desc = function(self, who)
-					local desc = {}
-					desc[#desc+1] = self.challenge_desc
-					desc[#desc+1] = ""
+				dynamic_desc = function(self, desc)
 					desc[#desc+1] = "Turns left: #LIGHT_GREEN#"..self.turns_left
-					return table.concat(desc, "\n")
 				end,
 				on_exit_check = function(self, who)
 					if self.turns_left >= 0 then who:setQuestStatus(self.id, self.COMPLETED) end
@@ -2609,7 +2616,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 		if m then
 			local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
 			local tries = 0
-			while not m:canMove(x, y) and tries < 100 do
+			while not m:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
 				x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
 				tries = tries + 1
 			end
@@ -2625,7 +2632,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 	elseif id_challenge == "mirror-match" then
 		local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
 		local tries = 0
-		while not game.player:canMove(x, y) and tries < 100 do
+		while not game.player:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
 			x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
 			tries = tries + 1
 		end
@@ -2709,6 +2716,57 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 				end
 			end)
 		end end, "Refuse", "Accept", true)
+	elseif id_challenge == "headhunter" then
+		local mlist = {}
+		for i = 1, 1 do
+			local m = zone:makeEntity(level, "actor", {type="demon", random_boss={
+				nb_classes = 2,
+				rank=3.5, ai = "tactical",
+				life_rating=function(v) return v * 1.5 + 5 end,
+				loot_quantity = 2,
+				no_loot_randart = true,
+				name_scheme = "#rng# the Spawn of Urh'Rok",
+			}}, nil, true)
+			if m then
+				local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+				local tries = 0
+				while not m:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
+					x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+					tries = tries + 1
+				end
+				if tries < 100 then
+					m.is_headhunter_npc = true
+					zone:addEntity(level, m, "actor", x, y)
+					mlist[#mlist+1] = m
+				end
+			end
+		end
+		if #mlist > 0 then
+			Dialog:yesnoPopup("Challenge: #PURPLE#Headhunter", "Kill all "..#mlist.." spawns of Urh'Rok on the level and no other creatures, for a reward.", function(r)
+				if not r then
+					local q = self:makeChallengeQuest(level, "Headhunter", "Kill all "..#mlist.." spawns of Urh'Rok on the level and no other creatures.", {
+						dynamic_desc = function(self, desc)
+							desc[#desc+1] = ("%d / %d spawns killed."):format(self.nb_killed, self.to_kill)
+						end,
+						nb_killed = 0, to_kill = #mlist,
+						on_kill_foe = function(self, who, target)
+							if self:isEnded() then return end
+							if target.is_headhunter_npc then
+								self.nb_killed = self.nb_killed + 1
+								if self.nb_killed >= self.to_kill then
+									who:setQuestStatus(self.id, self.COMPLETED)
+								end
+							else
+								who:setQuestStatus(self.id, self.FAILED)
+							end
+						end,
+						forbid_rewards = {"randart", "stat_pts", "generic_pt"},
+					})
+				else
+					for _, m in ipairs(mlist) do m:disappear() m:removed() end
+				end
+			end, "Refuse", "Accept", true)
+		end
 	else
 		self:triggerHook{"InfiniteDungeon:setupChallenge", id_challenge=id_challenge, zone=zone, level=level}
 	end
@@ -2750,6 +2808,14 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 		},
 	}
 	self:triggerHook{"InfiniteDungeon:getRewards", rewards=rewards}
+
+	if quest.forbid_rewards then
+		for _, f in ipairs(quest.forbid_rewards) do
+			for i, r in ipairs(rewards) do
+				if r.id == f then table.remove(rewards, i) break end
+			end
+		end
+	end
 
 	local reward = rng.rarityTable(rewards)
 	reward.name = reward.give(who) or reward.name
