@@ -41,7 +41,7 @@ function _M:init(player, slot)
 	self.c_list = List.new{scrollbar=true, width=300, height=self.ih - 5, list=self.list, fct=function(item) self:use(item) end, select=function(item) self:select(item) end}
 	local donatortext = ""
 	if not profile:isDonator(1) then donatortext = "\n#{italic}##CRIMSON#This cosmetic feature is only available to donators/buyers. You can only preview.#WHITE##{normal}#" end
-	local help = Textzone.new{width=math.floor(self.iw - self.c_list.w - 20), height=self.ih, no_color_bleed=true, auto_height=true, text="You can alter "..oname.." to look like an other item of the same type/slot.\n#{bold}#This is a purely cosmetic change.#{normal}#"..donatortext}
+	local help = Textzone.new{width=math.floor(self.iw - self.c_list.w - 20), height=self.ih, no_color_bleed=true, auto_height=true, text="You can alter "..oname.." to look like another item of the same type/slot.\n#{bold}#This is a purely cosmetic change.#{normal}#"..donatortext}
 	local actorframe = ActorFrame.new{actor=self.actor, w=128, h=128}
 
 	self:loadUI{

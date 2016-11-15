@@ -557,7 +557,7 @@ function resolvers.calc.moddable_tile(t, e)
 		r2 = {"lower_body_03","lower_body_04","lower_body_05","lower_body_06","lower_body_06",}
 	elseif slot == "robe" then r = {"upper_body_34","upper_body_35","upper_body_36","upper_body_37","upper_body_38",}
 	elseif slot == "shield" then r = {"%s_hand_10_01","%s_hand_11_01","%s_hand_11_02","%s_hand_12_01","%s_hand_12_02",}
-	elseif slot == "staff" then r = {"%s_hand_08_01", "%s_hand_08_02", "%s_hand_08_03", "%s_hand_08_04", "%s_hand_08_05"}
+	elseif slot == "staff" then r = {"%s_hand_08_01", "%s_hand_08_03", "%s_hand_08_02", "%s_hand_08_04", "%s_hand_08_05"} -- 03 & 02 are reversed due to an error in gfx, don't change it!
 	elseif slot == "leather_boots" then r = {"feet_03","feet_10","feet_10","feet_11","feet_11",}
 	elseif slot == "heavy_boots" then r = {"feet_06","feet_06","feet_07","feet_09","feet_08",}
 	elseif slot == "gauntlets" then r = {"hands_03","hands_04","hands_05","hands_07","hands_06",}
