@@ -90,11 +90,13 @@ function _M:generateList()
 
 	for name, data in pairs(unlocked) do
 		if self.object.type == data.type and self.object.subtype == data.subtype then
-			list[#list+1] = {
+			local d = {
 				moddables = table.clone(data.moddables, true),
 				name = name,
 				sortname = name:removeColorCodes(),
 			}
+			d.moddables.name = name
+			list[#list+1] = d
 		end
 	end
 	table.sort(list, "sortname")

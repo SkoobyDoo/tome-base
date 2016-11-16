@@ -2036,6 +2036,13 @@ function _M:getDesc(name_param, compare_with, never_compare, use_actor)
 		desc:add({"color", "WHITE"})
 	end
 
+	if self.shimmer_moddable then
+		local oname = (self.shimmer_moddable.name or "???"):toTString()
+		desc:add(true, {"color", "OLIVE_DRAB"}, "This object's appearance was changed to ")
+		desc:merge(oname)
+		desc:add(".", {"color","LAST"}, true)
+	end
+
 	if could_compare and not never_compare then desc:add(true, {"font","italic"}, {"color","GOLD"}, "Press <control> to compare", {"color","LAST"}, {"font","normal"}) end
 
 	return desc
