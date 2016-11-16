@@ -26,6 +26,8 @@ module(..., package.seeall, class.inherit(Base))
 local function oktodie(self, value, src, death_note)
 	if self:knowTalent(self.T_CAUTERIZE) and self:triggerTalent(self.T_CAUTERIZE, nil, value) then
 		return false, 0
+	elseif self:fireTalentCheck("callbackOnDie", value, src, death_note) then
+		return false, 0
 	else
 		if src and src.on_kill and src:on_kill(self) then return false, value end
 		return self:die(src, death_note), value

@@ -34,6 +34,10 @@ function _M:init(t)
 	Base.init(self, t)
 end
 
+function _M:setActor(actor)
+	self.actor = actor
+end
+
 function _M:generate()
 end
 

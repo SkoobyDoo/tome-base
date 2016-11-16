@@ -4936,6 +4936,7 @@ local sustainCallbackCheck = {
 	callbackOnDeath = "talents_on_death",
 	callbackOnDeathbox = "talents_on_deathbox",
 	callbackOnSummonDeath = "talents_on_summon_death",
+	callbackOnDie = "talents_on_die",
 	callbackOnKill = "talents_on_kill",
 	callbackOnMeleeAttack = "talents_on_melee_attack",
 	callbackOnMeleeHit = "talents_on_melee_hit",

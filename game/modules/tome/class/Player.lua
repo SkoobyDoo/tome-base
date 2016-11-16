@@ -436,7 +436,7 @@ function _M:updateMainShader()
 			if solipsism_power > 0 then game.fbo_shader:setUniform("solipsism_warning", solipsism_power)
 			else game.fbo_shader:setUniform("solipsism_warning", 0) end
 		end
-		if (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) ~= self.old_healwarn then
+		if ((self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) ~= self.old_healwarn) and not self:attr("no_healing_no_warning") then
 			if (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) then
 				game.fbo_shader:setUniform("intensify", {0.3,1.3,0.3,1})
 			else
@@ -977,7 +977,7 @@ function _M:restCheck()
 	if not self.resting.rest_turns then
 		if self.air_regen < 0 then return false, "losing breath!" end
 		if self.life_regen <= 0 then return false, "losing health!" end
-		if self.life < self.max_life and self.life_regen> 0 then return true end
+		if self.life < self.max_life and self.life_regen > 0 and not self:attr("no_life_regen") then return true end
 		if self.air < self.max_air and self.air_regen > 0 and not self.is_suffocating then return true end
 		for act, def in pairs(game.party.members) do if game.level:hasEntity(act) and not act.dead then
 			if act.life < act.max_life and act.life_regen > 0 and not act:attr("no_life_regen") then return true end
