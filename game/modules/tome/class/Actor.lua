@@ -1827,12 +1827,15 @@ function _M:tooltip(x, y, seen_by)
 	--if #resists > 0 then ts:add("Resists: ", table.concat(resists, ','), true) end
 
 	local resists = tstring{}
+	local first = true
 	ts:add({"color", "ANTIQUE_WHITE"}, "Resists: ")
 	for t, v in pairs(self.resists) do
 		if t == "all" or t == "absolute" then
+			if first then first = false else ts:add(", ") end
 			ts:add({"color", "LIGHT_BLUE"}, tostring(math.floor(v)) .. "%", " ", {"color", "LAST"}, t..", ")
 		elseif type(t) == "string" and math.abs(v) >= 20 then
 			local res = tostring ( math.floor(self:combatGetResist(t)) ) .. "%"
+			if first then first = false else ts:add(", ") end
 			if v > 0 then
 				ts:add({"color", "LIGHT_GREEN"}, res, " ", {"color", "LAST"}, DamageType:get(t).name, ", ")
 			else
