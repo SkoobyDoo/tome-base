@@ -1931,7 +1931,6 @@ function _M:tooltip(x, y, seen_by)
 	for tid, act in pairs(self.sustain_talents) do
 		if act then ts:add(true, "- ", {"color", "LIGHT_GREEN"}, self:getTalentFromId(tid) and self:getTalentFromId(tid).name or "???", {"color", "WHITE"} ) end
 	end
-
 	if ts[#ts-1] == "Sustained Talents: " then table.remove(ts) table.remove(ts) table.remove(ts) table.remove(ts) end
 
 	ts:add(true, {"color", "ORANGE"}, "Temporary Status Effects: ",{"color", "WHITE"})
@@ -3394,6 +3393,9 @@ function _M:onStatChange(stat, v)
 		-- life
 		local multi_life = 4 + (self.inc_resource_multi.life or 0)
 		self.max_life = math.max(1, self.max_life + multi_life * v)  -- no negative max life
+
+		-- heal mod
+		self.healing_factor = self.healing_factor + v * 0.005
 	elseif stat == self.STAT_DEX then
 		self.ignore_direct_crits = (self.ignore_direct_crits or 0) + 0.3 * v
 	elseif stat == self.STAT_WIL then
