@@ -30,7 +30,7 @@ return {
 	persistent = "zone",
 	ambient_music = "To the Depths.ogg",
 	min_material_level = function() return game.state:isAdvanced() and 3 or 3 end,
-	max_material_level = function() return game.state:isAdvanced() and 4 or 3 end,
+	max_material_level = function() return game.state:isAdvanced() and 5 or 3 end,
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",
