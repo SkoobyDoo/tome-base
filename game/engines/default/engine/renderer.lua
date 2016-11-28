@@ -210,7 +210,7 @@ local function doCancelTween(self, tn)
 	tweenstore[self][tn] = nil
 end
 
-local function doColorTween(self, tn, time, component, from, to, mode, on_end)
+local function doColorTween(self, tn, time, component, from, to, mode, on_end, on_change)
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
@@ -220,16 +220,16 @@ local function doColorTween(self, tn, time, component, from, to, mode, on_end)
 	local fr, fg, fb, fa = self:getColor()
 	if component == "r" then
 		from = from or fr
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(v, -1, -1, -1) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(v, -1, -1, -1) if on_change then on_change(v, -1, -1, -1) end end end, {from, to}, mode, on_end)
 	elseif component == "g" then
 		from = from or fg
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, v, -1, -1) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, v, -1, -1) if on_change then on_change(-1, v, -1, -1) end end end, {from, to}, mode, on_end)
 	elseif component == "b" then
 		from = from or fb
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, v, -1) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, v, -1) if on_change then on_change(-1, -1, v, -1) end end end, {from, to}, mode, on_end)
 	else
 		from = from or fa
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, -1, v) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, -1, v) if on_change then on_change(-1, -1, -1, v) end end end, {from, to}, mode, on_end)
 	end
 	if tw then
 		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
@@ -238,7 +238,7 @@ local function doColorTween(self, tn, time, component, from, to, mode, on_end)
 	return tw
 end
 
-local function doRotateTween(self, tn, time, component, from, to, mode, on_end)
+local function doRotateTween(self, tn, time, component, from, to, mode, on_end, on_change)
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
@@ -248,13 +248,13 @@ local function doRotateTween(self, tn, time, component, from, to, mode, on_end)
 	local x, y, z = self:getRotate()
 	if component == "x" then
 		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(v, y, z) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
 	elseif component == "y" then
 		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, v, z) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
 	else
 		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, y, v) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
 	end
 	if tw then
 		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
@@ -263,7 +263,7 @@ local function doRotateTween(self, tn, time, component, from, to, mode, on_end)
 	return tw
 end
 
-local function doTranslateTween(self, tn, time, component, from, to, mode, on_end)
+local function doTranslateTween(self, tn, time, component, from, to, mode, on_end, on_change)
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
@@ -273,13 +273,13 @@ local function doTranslateTween(self, tn, time, component, from, to, mode, on_en
 	local x, y, z = self:getTranslate()
 	if component == "x" then
 		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(v, y, z) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
 	elseif component == "y" then
 		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, v, z) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
 	else
 		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, y, v) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
 	end
 	if tw then
 		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
@@ -288,7 +288,7 @@ local function doTranslateTween(self, tn, time, component, from, to, mode, on_en
 	return tw
 end
 
-local function doScaleTween(self, tn, time, component, from, to, mode, on_end)
+local function doScaleTween(self, tn, time, component, from, to, mode, on_end, on_change)
 	local weak = class.weakSelf(self)
 	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
 	local base_on_end = on_end
@@ -298,13 +298,13 @@ local function doScaleTween(self, tn, time, component, from, to, mode, on_end)
 	local x, y, z = self:getScale()
 	if component == "x" then
 		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(v, y, z) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
 	elseif component == "y" then
 		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, v, z) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
 	else
 		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, y, v) end end, {from, to}, mode, on_end)
+		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
 	end
 	if tw then
 		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end

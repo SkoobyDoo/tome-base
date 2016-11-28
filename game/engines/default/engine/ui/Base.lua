@@ -223,8 +223,27 @@ function _M:makeFrame(base, w, h, iw, ih)
 	return f
 end
 
-function _M:makeFrameDO(base, w, h, iw, ih, center)
-	local fromTextureTable = core.renderer.fromTextureTable
+local fromTextureTable = core.renderer.fromTextureTable
+
+local function resizeFrame(f, w, h)
+	local cx, cy = f.cx, f.cy
+	f.container:clear()
+	f.container:add(fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
+
+	f.container:add(fromTextureTable(f.b7, cx + 0, cy + 0))
+	f.container:add(fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
+
+	f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h))
+	f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h))
+
+	f.container:add(fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
+	f.container:add(fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+
+	f.container:add(fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true))
+	f.container:add(fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
+end
+
+function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 	local f = {}
 	f.container = core.renderer.container()
 	if base then
@@ -233,32 +252,22 @@ function _M:makeFrameDO(base, w, h, iw, ih, center)
 		f.b1 = self:getAtlasTexture(base.."1.png")
 		f.b3 = self:getAtlasTexture(base.."3.png")
 		f.b8 = self:getAtlasTexture(base.."8.png")
+		f.b5 = self:getAtlasTexture(base.."5.png")
 		f.b4 = self:getAtlasTexture(base.."4.png")
 		f.b2 = self:getAtlasTexture(base.."2.png")
 		f.b6 = self:getAtlasTexture(base.."6.png")
-		f.b5 = self:getAtlasTexture(base.."5.png")
 		if not w then w = iw + f.b4.w + f.b6.w end
 		if not h then h = ih + f.b8.h + f.b2.h end
 
 		local cx, cy = 0,0
 		if center then cx, cy = -math.floor(w / 2), -math.floor(h / 2) end
+		f.cx, f.cy = cx, cy
 
-		f.container:add(fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
-
-		f.container:add(fromTextureTable(f.b7, cx + 0, cy + 0))
-		f.container:add(fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
-
-		f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h))
-		f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h))
-
-		f.container:add(fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
-		f.container:add(fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))
-
-		f.container:add(fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true))
-		f.container:add(fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
+		resizeFrame(f, w, h)
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)
+	if resizable then f.resize = resizeFrame end
 
 	return f
 end

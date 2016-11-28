@@ -157,6 +157,7 @@ end
 
 function _M:startAutoScrolling()
 	if not self.do_renderer then return end
+	self.pingpong = true
 
 	local dirm, dirM
 	local h = self.max_display
@@ -165,11 +166,15 @@ function _M:startAutoScrolling()
 	else
 		dirm, dirM = nil, 0
 	end
-	self.text_container:translateTween("autoscroll", h / 3, "y", dirm, dirM, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startAutoScrolling() end)
+	self.text_container:translateTween("autoscroll", h / 3, "y", dirm, dirM, "inOutQuad",
+		function() self.invert_scroll = not self.invert_scroll self:startAutoScrolling() end,
+		function(x, y, z) if self.scrollbar then self.scrollbar:setPos(-y) end end
+	)
 end
 
 function _M:stopAutoScrolling()
 	if not self.do_renderer then return end
+	self.pingpong = false
 
 	self.invert_scroll = false
 	self.text_container:translateTween("autoscroll", 8, "y", nil, 0, "inOutQuad")
@@ -179,8 +184,8 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, 
 	if self.scrollbar then
 		local oldpos = self.scrollbar.pos
 		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
-		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
-		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+		if self.scroll_inertia > 0 then self:stopAutoScrolling() self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
+		elseif self.scroll_inertia < 0 then self:stopAutoScrolling() self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
 

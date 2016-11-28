@@ -128,6 +128,9 @@ function _M:updateUI()
 		self:uiLogin(uis)
 	end
 
+----------------------------
+----------------------------
+----------------------------
 	local tz = require("engine.ui.TextzoneList").new{width=self.iw, height=self.ih / 2, scrollbar=true, focus_check=true, pingpong=true}
 	local test = require("engine.ui.List").new{width=self.iw, height=self.ih / 2, list={
 		{name='p1', desc='this is a long text 1\nthis is a long text 1\nthis is a long text 1\nthis is a long text 1\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo'},
@@ -136,6 +139,9 @@ function _M:updateUI()
 	}, fct=function(t) tz:switchItem(t, t.desc) end}
 	
 	uis = { {left=0, top=0, ui=test}, {left=0, top=test, ui=tz}, }
+----------------------------
+----------------------------
+----------------------------
 
 
 	self:loadUI(uis)

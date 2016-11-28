@@ -69,8 +69,7 @@ end
 function _M:generate()
 	self.do_container:add(self.container.do_container)
 
-	UH WE NEED A RESIZABLE FRAME
-	frame = Base:makeFrame("ui/tooltip/", self.w + 6, self.h + 6)
+	self.frame = Base:makeFrameDO("ui/tooltip/", nil, nil, self.w, self.h, nil, true)
 end
 
 --- Set the tooltip text	
