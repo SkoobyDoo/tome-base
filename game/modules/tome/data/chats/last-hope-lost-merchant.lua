@@ -24,7 +24,7 @@ local p = game:getPlayer(true)
 newChat{ id="welcome",
 	text = [[Ah, my #{italic}#good#{normal}# friend @playername@!
 Thanks to you I made it safely to this great city! I am planning to open my most excellent boutique soon, but since I am in your debt, perhaps I could open early for you if you are in need of rare goods.]]
-..((p:knowTalent(p.T_TRAP_MASTERY) and not p:knowTalent(p.T_FLASH_BANG_TRAP)) and "\nDuring our escape I found the plans for a #YELLOW#Flash Bang Trap#LAST#, you would not happen to be interested by any chance?" or "")
+..((p:knowTalentType("cunning/trapping") and not game.state.ambush_trap) and "\nDuring our escape I found the plans for a #YELLOW#Ambush Trap#LAST#, you would not happen to be interested by any chance?" or "")
 ..((game.state:isAdvanced() and "\nOh my friend, good news! As I told you I can now request a truly #{italic}#unique#{normal}# object to be crafted just for you. For a truly unique price..." or "\nI eventually plan to arrange a truly unique service for the most discerning of customers. If you come back later when I'm fully set up I shall be able to order for you something quite marvellous. For a perfectly #{italic}#suitable#{normal}# price, of course.")),
 	answers = {
 		{"Yes please, let me see your wares.", action=function(npc, player)
@@ -32,7 +32,7 @@ Thanks to you I made it safely to this great city! I am planning to open my most
 			npc.store:interact(player)
 		end},
 		{"What about the unique object?", cond=function(npc, player) return game.state:isAdvanced() end, jump="unique1"},
-		{"Flash Bang Trap ? Sounds useful.", cond=function(npc, player) return p:knowTalent(p.T_TRAP_MASTERY) and not p:knowTalent(p.T_FLASH_BANG_TRAP) end, jump="trap"},
+		{"Ambush Trap ? Sounds useful.", cond=function(npc, player) return p:knowTalentType("cunning/trapping") and not game.state.ambush_trap end, jump="trap"},
 		{"Sorry, I have to go!"},
 	}
 }
@@ -50,9 +50,9 @@ newChat{ id="traplearn",
 	text = [[Nice doing business with you my friend. There you go!]],
 	answers = {
 		{"Thanks.", action=function(npc, player)
-			p:learnTalent(p.T_FLASH_BANG_TRAP, 1, nil, {no_unlearn=true})
+			game.state.ambush_trap = true
 			p:incMoney(-3000)
-			game.log("#LIGHT_GREEN#You learn the schematic, you can now create flash bang traps!")
+			game.log("#LIGHT_GREEN#You learn the schematic, you can now create ambush traps!")
 		end},
 	}
 }

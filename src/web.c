@@ -214,8 +214,13 @@ static int lua_web_inject_key(lua_State *L) {
 static int lua_web_download_action(lua_State *L) {
 	web_view_type *view = (web_view_type*)auxiliar_checkclass(L, "web{view}", 1);
 	long id = lua_tonumber(L, 2);
-	if (lua_isstring(L, 3)) te4_web_download_action(view, id, lua_tostring(L, 3));
-	else te4_web_download_action(view, id, NULL);
+	if (lua_isstring(L, 3)) {
+		const char *path = lua_tostring(L, 3);
+		if (!physfs_check_allow_path(L, path)) return 0;
+		te4_web_download_action(view, id, path);
+	} else {
+		te4_web_download_action(view, id, NULL);
+	}
 	return 0;
 }
 

@@ -71,6 +71,9 @@ This shall help you on your travels. Farewell!]],
 			-- Make sure a previous amulet didnt bug it out
 			if player:getTalentTypeMastery("wild-gift/fungus") == 0 then player:setTalentTypeMastery("wild-gift/fungus", 1) end
 			game.logPlayer(player, "#00FF00#You gain the fungus talents school.")
+			if player:knowTalentType("cunning/trapping") then
+				game.party:learnLore("zigur-purging-trap")
+			end	
 			player:hasQuest("lightning-overload"):setStatus(engine.Quest.COMPLETED, "antimagic-reward")
 		end},
 	}

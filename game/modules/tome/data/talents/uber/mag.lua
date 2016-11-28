@@ -61,11 +61,11 @@ uberTalent{
 	name = "Mystical Cunning", image = "talents/vulnerability_poison.png",
 	mode = "passive",
 	require = { special={desc="Know either traps or poisons", fct=function(self)
-		return self:knowTalent(self.T_VILE_POISONS) or self:knowTalent(self.T_TRAP_MASTERY)
+		return self:knowTalent(self.T_APPLY_POISON) or self:knowTalent(self.T_TRAP_MASTERY)
 	end} },
 	on_learn = function(self, t)
 		self:attr("combat_spellresist", 20)
-		if self:knowTalent(self.T_VILE_POISONS) then self:learnTalent(self.T_VULNERABILITY_POISON, true, nil, {no_unlearn=true}) end
+		if self:knowTalent(self.T_APPLY_POISON) then self:learnTalent(self.T_VULNERABILITY_POISON, true, nil, {no_unlearn=true}) end
 		if self:knowTalent(self.T_TRAP_MASTERY) then self:learnTalent(self.T_GRAVITIC_TRAP, true, nil, {no_unlearn=true}) end
 	end,
 	on_unlearn = function(self, t)
@@ -74,8 +74,8 @@ uberTalent{
 	info = function(self, t)
 		return ([[Your study of arcane forces has let you develop new traps and poisons (depending on which you know when learning this prodigy).
 		You can learn:
-		- Vulnerability Poison: reduces all resistances and deals arcane damage.
-		- Gravitic Trap: each turn, all foes in a radius 5 around it are pulled in and take temporal damage.
+		- Vulnerability Poison: Your Apply Poison also applies a poison dealing arcane damage, reducing resistances and reducing poison resistance.
+		- Gravitic Trap: Each turn, all foes in a radius 5 around it are pulled in and take temporal damage. This trap does not count towards your usual trap limit.
 		You also permanently gain 20 Spell Save.]])
 		:format()
 	end,

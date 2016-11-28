@@ -24,31 +24,25 @@ newTalent{
 	type = {"cunning/dirty", 1},
 	points = 5,
 	random_ego = "attack",
-	cooldown = 12,
-	stamina = 10,
-	tactical = { DISABLE = {stun = 2}, ATTACK = {weapon = 0.5} },
+	cooldown = 10,
+	stamina = 12,
+	tactical = { DISABLE = 2, ATTACK = {weapon = 0.5} },
 	require = cuns_req1,
 	requires_target = true,
 	range = 1,
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.2, 0.7) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.5) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 8)) end,
+	getPower = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
 	speed = "weapon",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
-		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
-
+		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true, true)
 		if hitted then
-			if target:canBe("stun") then
-				target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {apply_power=self:combatAttack()})
-			end
-			if not target:hasEffect(target.EFF_STUNNED) then
-				self:logCombat(target, "#Target# resists the stun and #Source# quickly regains its footing!")
-				self.energy.value = self.energy.value + game.energy_to_act * self:getSpeed("weapon")
-			end
+			target:setEffect(target.EFF_DIRTY_FIGHTING, t.getDuration(self, t), {power = t.getPower(self,t), apply_power=self:combatAttack()})
 		end
 
 		return true
@@ -56,10 +50,10 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[You hit your target doing %d%% damage, trying to stun it instead of damaging it. If your attack hits, the target is stunned for %d turns.
-		Stun chance increase with your Accuracy.
-		If you fail to stun the target (or if it shrugs off the effect), you quickly recover; the use of the skill does not take a turn.]]):
-		format(100 * damage, duration)
+		local power = t.getPower(self,t)
+		return ([[You make a low blow against a vulnerable point on the target, dealing %d%% unarmed damage. If your attack hits, the target is left reeling, reducing their stun, blind, confusion and pin resistance by 50%% and physical save by %d for %d turns.
+The chance to apply this effect increases with your Accuracy.]]):
+		format(100 * damage, power, duration)
 	end,
 }
 
@@ -69,102 +63,147 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = cuns_req2,
-	-- called by _M:physicalCrit in mod.class.interface.Combat.la
-	getCriticalChance = function(self, t) return self:combatTalentScale(t, 15, 50, 0.75) end,
-	-- called by _M:attackTargetWith in mod.class.interface.Combat.lua
-	getStunChance = function(self, t) return self:combatTalentLimit(t, 100, 3, 15) end, -- Limit < 100%
-	info = function(self, t)
-		return ([[Your quick wit gives you a big advantage against stunned targets; all your hits will have a %d%% greater chance of being critical.
-		Also, your melee critical strikes have %d%% chance to stun the target for 3 turns.]]):
-		format(t.getCriticalChance(self, t), t.getStunChance(self, t))
-	end,
-}
-newTalent{
-	name = "Switch Place",
-	type = {"cunning/dirty", 3},
-	points = 5,
-	random_ego = "defensive",
-	cooldown = 10,
-	stamina = 15,
-	require = cuns_req3,
-	requires_target = true,
-	tactical = { DISABLE = 2 },
-	is_melee = true,
-	range = 1,
-	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
-	on_pre_use = function(self, t)
-		if self:attr("never_move") then return false end
-		return true
-	end,
-	speed = "weapon",
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then return nil end
-		local tx, ty, sx, sy = target.x, target.y, self.x, self.y
-		local hitted = self:attackTarget(target, nil, 0, true)
-
-		if hitted and not self.dead and tx == target.x and ty == target.y then
-			if not self:canMove(tx,ty,true) or not target:canMove(sx,sy,true) then
-				self:logCombat(target, "Terrain prevents #Source# from switching places with #Target#.")
-				return true
+	getDamageBoost = function(self, t) return math.floor(self:combatTalentScale(t, 4, 10, 0.75)) end,
+	getDisableChance = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 1, 5)) end, -- Limit < 100%
+	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		if target then
+		
+			local nb = 0
+			for eff_id, p in pairs(target.tmp) do
+				local e = target.tempeffect_def[eff_id]
+				if (e.subtype.stun or e.subtype.blind or e.subtype.pin or e.subtype.disarm or e.subtype.cripple or e.subtype.confusion or e.subtype.silence)then nb = nb + 1 end
 			end
-			self:setEffect(self.EFF_EVASION, t.getDuration(self, t), {chance=50})
-			-- Displace
-			if not target.dead then
-				self:move(tx, ty, true)
-				target:move(sx, sy, true)
+			local chance = math.min(nb*t.getDisableChance(self,t),t.getDisableChance(self,t)*3)
+			if rng.percent(chance) then
+				if not self:checkHit(self:combatAttack(), target:combatPhysicalResist()) then return end
+				local effect = rng.range(1, 3)
+				if effect == 1 then
+					-- disarm
+					if target:canBe("disarm") then
+						target:setEffect(target.EFF_DISARMED, 2, {})
+					end
+				elseif effect == 2 then
+					-- pin
+					if target:canBe("pinned") then
+						target:setEffect(target.EFF_PINNED, 2, {})
+					end
+				elseif effect == 3 then
+					-- cripple
+					target:setEffect(target.EFF_CRIPPLE, 2, {speed=0.4})
+				end
 			end
 		end
-
-		return true
 	end,
 	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		return ([[Using a series of tricks and maneuvers, you switch places with your target.
-		Switching places will confuse your foes, granting you Evasion (50%%) for %d turns.
-		While switching places, your weapon(s) will connect with the target; this will not do weapon damage, but on hit effects of the weapons can trigger.]]):
-		format(duration)
+	local dam = t.getDamageBoost(self, t)
+	local chance = t.getDisableChance(self,t)
+		return ([[Your quick wit gives you a big advantage against disabled targets, increasing your damage by %d%% for each disabling effect the target is under, to a maximum of %d%%.
+In addition, for each disabling effect the target is under, your melee attacks have a %d%% (to a maximum of %d%%) chance to disarm, cripple (40%% power) or pin them for 2 turns.
+Disabling effects are stun, blind, daze, confuse, pin, disarm, cripple and silence.]]):
+		format(dam, dam*3, chance, chance*3)
 	end,
 }
 
 newTalent{
-	name = "Cripple",
-	type = {"cunning/dirty", 4},
+	name = "Blinding Powder",
+	type = {"cunning/dirty", 3},
+	require = cuns_req3,
 	points = 5,
 	random_ego = "attack",
-	cooldown = 25,
-	stamina = 20,
+	stamina = 18,
+	cooldown = 12,
+	tactical = { DISABLE = { blind = 2, } },
+	range = 0,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2.5)) end,
+	direct_hit = true,
+	requires_target = true,
+	target = function(self, t)
+		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 5)) end,
+	getSlow = function(self, t) return math.ceil(self:combatTalentScale(t, 15, 30, 0.75)) end,
+	getAcc = function(self, t) return math.ceil(self:combatTalentScale(t, 8, 24, 0.75)) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		self:project(tg, x, y, DamageType.BLINDING_POWDER, {dur=t.getDuration(self, t), acc=t.getAcc(self,t), slow=t.getSlow(self,t)/100})
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "breath_earth", {radius=tg.radius, tx=x-self.x, ty=y-self.y})
+
+		return true
+	end,
+	info = function(self, t)
+		local accuracy = t.getAcc(self,t)
+		local speed = t.getSlow(self,t)
+		local duration = t.getDuration(self, t)
+		return ([[Throw a cloud of blinding dust in a radius %d cone. Enemies within will be blinded, as well as having their accuracy reduced by %d and movement speed by %d%% for %d turns.
+		The chance to inflict these effects increase with your Accuracy.]]):format(self:getTalentRadius(t), accuracy, speed, duration)
+	end,
+}
+
+newTalent{
+	name = "Twist the Knife",
+	type = {"cunning/dirty", 4},
 	require = cuns_req4,
+	points = 5,
+	random_ego = "attack",
+	cooldown = 15,
+	stamina = 20,
 	requires_target = true,
 	tactical = { DISABLE = 2, ATTACK = {weapon = 2} },
 	is_melee = true,
 	range = 1,
+	no_npc_use = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.9) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
-	getSpeedPenalty = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "cun", 5, 50), 100, 20, 0, 55.7, 35.7) end, -- Limit < 100%
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getDuration = function(self, t) return self:combatTalentScale(t, 1, 3) end,
+	getDebuffs = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
 	speed = "weapon",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+		local nb = 0
+		local effs = {}
 
 		if hitted then
-			local speed = t.getSpeedPenalty(self, t) / 100
-			target:setEffect(target.EFF_CRIPPLE, t.getDuration(self, t), {speed=speed, apply_power=self:combatAttack()})
+			for eff_id, p in pairs(target.tmp) do
+				local e = target.tempeffect_def[eff_id]
+				if e.type ~= "other" and e.status == "detrimental" then
+					p.dur = p.dur + t.getDuration(self, t)
+					nb = nb + 1
+					if nb >= t.getDebuffs(self,t) then break end
+				end
+			end
+		end
+		
+		if nb > 0 then
+			for eff_id, p in pairs(target.tmp) do
+				local e = target.tempeffect_def[eff_id]
+				if e.status == "beneficial" then
+					effs[#effs+1] = {"effect", eff_id}
+				end
+			end
+			
+			for i = 1, nb do
+				if #effs == 0 then break end
+				local eff = rng.tableRemove(effs)
+
+				if eff[1] == "effect" then
+					target:removeEffect(eff[2])
+					game.logSeen(self, "#CRIMSON#%s's beneficial effect was stripped!#LAST#", target.name:capitalize())
+				end
+			end			
 		end
 
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		local duration = t.getDuration(self, t)
-		local speedpen = t.getSpeedPenalty(self, t)
-		return ([[You hit your target, doing %d%% damage. If your attack connects, the target is crippled for %d turns, losing %d%% melee, spellcasting and mind speed.
-		The chance to land the status improves with Accuracy, and the status power improves with Cunning.]]):
-		format(100 * damage, duration, speedpen)
+		local dur = t.getDuration(self, t)
+		local nb = t.getDebuffs(self, t)
+		return ([[Make a painful strike dealing %d%% weapon damage that increases the duration of up to %d negative effects on the target by %d turns. For each negative effect extended this way, a beneficial effect is stripped from the target.]]):
+		format(100 * damage, nb, dur)
 	end,
 }

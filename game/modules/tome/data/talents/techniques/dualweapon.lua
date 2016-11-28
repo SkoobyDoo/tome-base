@@ -159,7 +159,7 @@ newTalent{
 	type = {"technique/dualweapon-attack", 1},
 	points = 5,
 	random_ego = "attack",
-	cooldown = 12,
+	cooldown = 6,
 	stamina = 15,
 	require = techs_dex_req1,
 	requires_target = true,
@@ -235,72 +235,76 @@ newTalent{
 	end,
 }
 
--- This is a good candidate for replacement if someone has a clever idea
--- A.  Its boring
--- B.  Its pretty bad
--- D.  I think we should solidify 2H as generally the best at multitarget hits, so having 1 less AoE than 2H Assault would be good
 newTalent{
-	name = "Sweep",
+	name = "Heartseeker",
 	type = {"technique/dualweapon-attack", 3},
 	points = 5,
 	random_ego = "attack",
 	cooldown = 8,
-	stamina = 30,
+	stamina = 18,
 	require = techs_dex_req3,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.7) end,
+	getCrit = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
+	range = function(self, t) return math.ceil(self:combatTalentScale(t, 3, 5)) end,
 	requires_target = true,
-	tactical = { ATTACKAREA = { weapon = 1, cut = 1 } },
-	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
-	cutdur = function(self,t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
-	cutPower = function(self, t)
-		local main, off = self:hasDualWeapon()
-		if main then
-			-- Damage based on mainhand weapon and dex with an assumed 8 turn cut duration
-			return self:combatTalentScale(t, 1, 1.7) * self:combatDamage(main.combat)/8 + self:getDex()/2
-		else 
-			return 0
+	tactical = { ATTACK = { weapon = 2 } },
+	on_pre_use = function(self, t, silent) 
+		if not self:hasDualWeapon() then 
+			if not silent then 
+			game.logPlayer(self, "You require two weapons to use this talent.") 
+		end 
+			return false 
 		end
+		if self:attr("never_move") then return false end
+		return true 
 	end,
 	action = function(self, t)
-		local weapon, offweapon = self:hasDualWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Sweep without dual wielding!")
-			return nil
-		end
-
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
-		local dir = util.getDir(x, y, self.x, self.y)
-		if dir == 5 then return nil end
-		local lx, ly = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).left)
-		local rx, ry = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).right)
-		local lt, rt = game.level.map(lx, ly, Map.ACTOR), game.level.map(rx, ry, Map.ACTOR)
-
-		local hit
-		hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
-		if hit and target:canBe("cut") then target:setEffect(target.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
-
-		if lt then
-			hit = self:attackTarget(lt, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
-			if hit and lt:canBe("cut") then lt:setEffect(lt.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
+		if core.fov.distance(self.x, self.y, x, y) > 1 then
+			local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+			local linestep = self:lineFOV(x, y, block_actor)
+	
+			local tx, ty, lx, ly, is_corner_blocked
+			repeat  -- make sure each tile is passable
+				tx, ty = lx, ly
+				lx, ly, is_corner_blocked = linestep:step()
+			until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
+	
+			if not tx or not ty or core.fov.distance(x, y, tx, ty) > 1 then return nil end
+	
+			local ox, oy = self.x, self.y
+			self:move(tx, ty, true)
+			if config.settings.tome.smooth_move > 0 then
+				self:resetMoveAnim()
+				self:setMoveAnim(ox, oy, 8, 5)
+			end
 		end
+		
+		-- Attack
+		if not core.fov.distance(self.x, self.y, x, y) == 1 then return nil end
+		
+		local critstore = self.combat_critical_power or 0
+		self.combat_critical_power = nil
+		self.combat_critical_power = critstore + t.getCrit(self,t)
+			
+		self:attackTarget(target, nil, t.getDamage(self,t), true)
+		
+		self.combat_critical_power = nil
+		self.combat_critical_power = critstore
 
-		if rt then
-			hit = self:attackTarget(rt, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
-			if hit and rt:canBe("cut") then rt:setEffect(rt.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
-		end
-		print(x,y,target)
-		print(lx,ly,lt)
-		print(rx,ry,rt)
+		
 
 		return true
 	end,
 	info = function(self, t)
-		return ([[Attack your foes in a frontal arc, doing %d%% weapon damage and making your targets bleed for %d each turn for %d turns.
-		The bleed damage increases with your main hand weapon damage and Dexterity.]]):
-		format(100 * self:combatTalentWeaponDamage(t, 1, 1.7), damDesc(self, DamageType.PHYSICAL, t.cutPower(self, t)), t.cutdur(self, t))
+		dam = t.getDamage(self,t)*100
+		crit = t.getCrit(self,t)
+		return ([[Swiftly leap to your target and strike at their vital points with both weapons, dealing %d%% weapon damage. This attack deals %d%% increased critical strike damage.]]):
+		format(dam, crit)
 	end,
 }
 
@@ -309,37 +313,69 @@ newTalent{
 	type = {"technique/dualweapon-attack", 4},
 	points = 5,
 	random_ego = "attack",
-	cooldown = 8,
+	cooldown = 10,
 	stamina = 30,
 	require = techs_dex_req4,
 	tactical = { ATTACKAREA = { weapon = 2 } },
-	range = 0,
+	range = function(self, t) if self:getTalentLevel(t) >=3 then return 3 else return 2 end end,
 	radius = 1,
 	target = function(self, t)
-		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t)}
+		return  {type="beam", range=self:getTalentRange(t), talent=t }
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.6) end,
+	proj_speed = 20, --not really a projectile, so make this super fast
+	on_pre_use = function(self, t, silent) 
+		if not self:hasDualWeapon() then 
+			if not silent then 
+			game.logPlayer(self, "You require two weapons to use this talent.") 
+		end 
+			return false 
+		end
+		if self:attr("never_move") then return false end
+		return true 
+	end,
 	action = function(self, t)
-		local weapon, offweapon = self:hasDualWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Whirlwind without dual wielding!")
-			return nil
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, x, y = self:canProject(tg, x, y)
+		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return nil end
+		if target or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self) then return nil end
+
+
+		self:projectile(tg, x, y, function(px, py, tg, self)
+			local aoe = {type="ball", radius=1, friendlyfire=true, selffire=false, talent=t, display={ } }
+			
+			self:project(aoe, px, py, function(tx, ty)
+				local target = game.level.map(tx, ty, engine.Map.ACTOR)
+				if not target then return end
+				if target.turn_procs.whirlwind then return end
+				target.turn_procs.whirlwind = true
+				local oldlife = target.life
+				local hit = self:attackTarget(target, nil, t.getDamage(self,t), true)
+				local life_diff = oldlife - target.life
+				if life_diff > 0 and target:canBe('cut') then
+					target:setEffect(target.EFF_CUT, 5, {power=life_diff * 0.1, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
+				end
+			end)
+			
+		end)
+		
+		local mx, my = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
+		if not mx or not mx then 
+			game.logSeen(self, "You cannot jump to that location.")
+			return nil 
 		end
 
-		local tg = self:getTalentTarget(t)
-		self:project(tg, self.x, self.y, function(px, py, tg, self)
-			local target = game.level.map(px, py, Map.ACTOR)
-			if target and target ~= self then
-				self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1.2, 1.9), true)
-			end
-		end)
-
-		self:addParticles(Particles.new("meleestorm2", 1, {}))
-
+		self:move(mx, my, true)	
+		
 		return true
 	end,
 	info = function(self, t)
-		return ([[Spin around, damaging all targets around you with both weapons for %d%% weapon damage.]]):format(100 * self:combatTalentWeaponDamage(t, 1.2, 1.9))
+		local damage = t.getDamage(self, t)
+		local range = self:getTalentRange(t)
+		return ([[You quickly move 2 tiles (or 3 at talent level 3 and above) to the target location, leaping around and over anyone in your path and striking any adjacent enemies with both weapons for %d%% weapon damage. All those struck will bleed for 50%% of the damage dealt over 5 turns.]]):
+		format(damage*100)
 	end,
 }
 

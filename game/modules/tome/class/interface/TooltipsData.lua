@@ -67,6 +67,7 @@ This value can be improved with spells, talents, infusions, equipment.
 TOOLTIP_HEALING_MOD = [[#GOLD#Healing mod#LAST#
 This represents how effective healing is for you.
 All healing values are multiplied by this value (including life regeneration).
+It is increased by Constitution.
 ]]
 
 TOOLTIP_AIR = [[#GOLD#Air#LAST#
@@ -231,7 +232,7 @@ TOOLTIP_DEX = [[#GOLD#Dexterity#LAST#
 Dexterity defines your character's ability to be agile and alert. It increases Accuracy, Defense, chance to shrug off critical hits and your damage with light weapons.
 ]]
 TOOLTIP_CON = [[#GOLD#Constitution#LAST#
-Constitution defines your character's ability to withstand and resist damage. It increases your maximum life and Physical Save.
+Constitution defines your character's ability to withstand and resist damage. It increases your maximum life, Physical Save and Healing mod.
 ]]
 TOOLTIP_MAG = [[#GOLD#Magic#LAST#
 Magic defines your character's ability to manipulate the magical energy of the world. It increases your Spellpower, Spell Save, and the effect of spells and other magic items.

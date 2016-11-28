@@ -401,6 +401,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	power_source = {technique=true},
 	unique = true,
 	name = "Eden's Guile", image = "object/artifact/boots_edens_guile.png",
+	moddable_tile = "special/boots_edens_guile",
 	unided_name = "pair of yellow boots",
 	desc = [[The boots of a Rogue outcast, who knew that the best way to deal with a problem was to run from it.]],
 	on_id_lore = "eden-guile",
@@ -454,11 +455,20 @@ newEntity{ base = "BASE_SHIELD",
 	wielder = {
 		resists={[DamageType.FIRE] = 35},
 		on_melee_hit={[DamageType.FIRE] = 17},
+		damage_affinity = { [DamageType.FIRE] = 15, },
 		combat_armor = 9,
 		combat_def = 16,
 		combat_def_ranged = 15,
 		fatigue = 20,
 		learn_talent = { [Talents.T_BLOCK] = 5, },
+	},
+	on_block = {desc = "30% chance that you'll breath stunning fire in a cone at the attacker (if within range 6).", fct = function(self, who, target, type, dam, eff)
+	if rng.percent(30) then
+		if not target or not target.x or not target.y or core.fov.distance(who.x, who.y, target.x, target.y) > 6 then return end
+
+			who:forceUseTalent(who.T_FIRE_BREATH, {ignore_energy=true, no_talent_fail=true, no_equilibrium_fail=true, ignore_cd=true, force_target=target, force_level=2, ignore_ressources=true})
+		end
+	end,
 	},
 }
 
@@ -508,8 +518,8 @@ newEntity{ base = "BASE_SHIELD",
 	moddable_tile_big = true,
 	metallic = false,
 	special_combat = {
-		dam = resolvers.rngavg(25,35),
-		block = resolvers.rngavg(90, 120),
+		dam = 40,
+		block = 120,
 		physcrit = 5,
 		dammod = {str=1},
 	},
@@ -517,21 +527,27 @@ newEntity{ base = "BASE_SHIELD",
 		combat_armor = 2,
 		combat_def = 8,
 		combat_def_ranged = 8,
-		fatigue = 12,
+		fatigue = 6,
 		learn_talent = { [Talents.T_BLOCK] = 3, },
-		resists = { [DamageType.BLIGHT] = 15, [DamageType.DARKNESS] = 30, },
-		stamina_regen = 2,
+		resists = { [DamageType.BLIGHT] = 25, [DamageType.DARKNESS] = 25, },
+		inc_stats = { [Stats.STAT_WIL] = 5, },
 	},
-	on_block = {desc = "30% chance of pulling in the attacker", fct = function(self, who, src, type, dam, eff)
-		if rng.percent(30) then
-			if not src then return end
-
+	on_block = {desc = "Up to once per turn, pull an attacker up to 15 spaces away into melee range, pinning and asphyxiating it", fct = function(self, who, src, type, dam, eff)
+		if not src then return end
+		if who.turn_procs.black_mesh then return end
+ 
+		who:logCombat(src, "#ORCHID#Black tendrils from #Source# grab #Target#!")
+		local kb = src:canBe("knockback")
+		if kb then
+			who:logCombat(src, "#ORCHID##Source#'s tendrils pull #Target# in!")
 			src:pull(who.x, who.y, 15)
-			game.logSeen(src, "Black tendrils shoot out of the mesh and pull %s to you!", src.name:capitalize())
-			if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
-				src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
-			end
+		else
+			game.logSeen(src, "#ORCHID#%s resists the tendrils' pull!", src.name:capitalize())
 		end
+		if core.fov.distance(who.x, who.y, src.x, src.y) <= 1 and src:canBe('pin') then
+			src:setEffect(src.EFF_CONSTRICTED, 6, {src=who})
+		end
+		who.turn_procs.black_mesh = true
 	end,}
 }
 
@@ -888,12 +904,15 @@ newEntity{ base = "BASE_MACE",
 		physcrit = 10,
 		dammod = {str=1},
 		melee_project={[DamageType.RANDOM_CONFUSION_PHYS] = 14},
-		talent_on_hit = { T_BATTLE_CALL = {level=1, chance=10},},
 		burst_on_crit = {
-			[DamageType.PHYSKNOCKBACK] = 20,
+			[DamageType.PHYSICAL] = 20,
 		},
 	},
-	wielder = {combat_atk=12,},
+	wielder = {		
+		combat_atk = 12,
+	},
+	max_power = 20, power_regen = 1,
+	use_talent = { id = Talents.T_BATTLE_CALL, level = 2, power = 20 },
 }
 
 newEntity{ base = "BASE_CLOTH_ARMOR",
@@ -927,28 +946,35 @@ newEntity{ base = "BASE_HELM", define_as = "HELM_KROLTAR",
 	name = "Dragon-helm of Kroltar", image = "object/artifact/dragon_helm_of_kroltar.png",
 	unided_name = "dragon-helm",
 	desc = [[A visored steel helm, embossed and embellished with gold, that bears as its crest the head of Kroltar, the greatest of the fire drakes.]],
-	require = { talent = { {Talents.T_ARMOUR_TRAINING,3} }, stat = { str=35 }, },
+	require = { talent = { {Talents.T_ARMOUR_TRAINING,1} }, stat = { str=35 }, },
 	level_range = {37, 45},
 	rarity = 280,
 	cost = 400,
 	material_level = 4,
 	wielder = {
-		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_CON] = 5, [Stats.STAT_LCK] = -4, },
+		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_CON] = 5, [Stats.STAT_LCK] = -4, [Stats.STAT_WIL] = 5 },
+		inc_damage={
+			[DamageType.PHYSICAL] = 10,
+			[DamageType.FIRE] = 10,
+		},		
+		talents_types_mastery = { ["wild-gift/fire-drake"] = 0.2, },
 		combat_def = 5,
 		combat_armor = 9,
 		fatigue = 10,
 	},
 	max_power = 45, power_regen = 1,
-	use_talent = { id = Talents.T_WARSHOUT, level = 2, power = 45 },
+	use_talent = { id = Talents.T_BELLOWING_ROAR, level = 3, power = 45 },
 	set_list = { {"define_as","SCALE_MAIL_KROLTAR"} },
 	set_desc = {
 		kroltar = "Kroltar's power resides in his scales.",
 	},
 	on_set_complete = function(self, who)
+		local Stats = require "engine.interface.ActorStats"
 		self:specialSetAdd("skullcracker_mult", 1)
 		self:specialSetAdd({"wielder","combat_spellresist"}, 15)
 		self:specialSetAdd({"wielder","combat_mentalresist"}, 15)
 		self:specialSetAdd({"wielder","combat_physresist"}, 15)
+		self:specialSetAdd({"wielder","inc_stats"}, { [Stats.STAT_LCK] = 14 })
 		game.logPlayer(who, "#GOLD#As the helm of Kroltar approaches the your scale armour, they begin to fume and emit fire.")
 	end,
 	on_set_broken = function(self, who)
@@ -1122,12 +1148,14 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	color = colors.LIGHT_RED,
 	level_range = {1, 25},
 	rarity = 170,
-	cost = 350,
+	cost = 150,
 	material_level = 2,
 	wielder = {
 		knockback_immune = 0.4,
 		max_encumber = 70,
 		combat_armor = 4,
+		max_life = 40,
+		fatigue = -10,
 	},
 
 	set_list = { {"define_as", "SET_GIANT_WRAPS"} },
@@ -1135,8 +1163,9 @@ newEntity{ base = "BASE_LEATHER_BELT",
 		giantset = "Some giant wraps would make you feel great.",
 	},
 	on_set_complete = function(self, who)
-		self:specialSetAdd({"wielder","max_life"}, 100)
+		self:specialSetAdd({"wielder","max_life"}, 60)
 		self:specialSetAdd({"wielder","size_category"}, 2)
+		self:specialSetAdd({"wielder","fatigue"}, -10)
 		game.logPlayer(who, "#GOLD#You grow to immense size!")
 	end,
 	on_set_broken = function(self, who)
@@ -1341,7 +1370,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "crude iron battle axe",
 	name = "Crude Iron Battle Axe of Kroll", color = colors.GREY, image = "object/artifact/crude_iron_battleaxe_of_kroll.png",
-	moddable = "special/crude_iron_battleaxe_of_kroll",
+	moddable_tile = "special/crude_iron_battleaxe_of_kroll",
 	moddable_tile_big = true,
 	desc = [[Made in times before the Dwarves learned beautiful craftsmanship, the rough appearance of this axe belies its great power. Only Dwarves may harness its true strength, however.]],
 	require = { stat = { str=50 }, },
@@ -1457,6 +1486,7 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
 	power_source = {technique=true},
 	unique = true,
 	name = "Behemoth Hide", image = "object/artifact/behemoth_skin.png",
+	moddable_tile = "special/behemoth_skin",
 	unided_name = "tough weathered hide",
 	desc = [[A rough hide made from a massive beast.  Seeing as it's so weathered but still usable, maybe it's a bit special...]],
 	color = colors.BROWN,
@@ -1514,7 +1544,7 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
 
 			self:specialWearAdd({"wielder", "talents_types_mastery"}, { ["cunning/stealth"] = 0.2 })
 			self:specialWearAdd({"wielder","confusion_immune"}, 0.3)
-			self:specialWearAdd({"wielder","fear_immune"}, 0.3)
+			self:specialWearAdd({"wielder","blind_immune"}, 0.3)
 			game.logPlayer(who, "#DARK_BLUE#The skin seems pleased to be worn by the unliving, and grows silent.")
 		end
 	end,
@@ -1580,7 +1610,7 @@ newEntity{ base = "BASE_HEAVY_ARMOR", define_as = "SCALE_MAIL_KROLTAR",
 		fatigue = 16,
 	},
 	max_power = 80, power_regen = 1,
-	use_talent = { id = Talents.T_INFERNO, level = 3, power = 50 },
+	use_talent = { id = Talents.T_DEVOURING_FLAME, level = 3, power = 50 },
 	set_list = { {"define_as","HELM_KROLTAR"} },
 	set_desc = {
 		kroltar = "Kroltar's head would turn up the heat.",
@@ -2001,6 +2031,7 @@ newEntity{ base = "BASE_ARROW",
 	unided_name = "bright quiver",
 	desc = [[This strange orange quiver is made of brass and etched with many bright red runes that glow and glitter in the light.  The arrows themselves appear to be solid shafts of blazing hot light, like rays of sunshine, hammered and forged into a solid state.]],
 	color = colors.BLUE, image = "object/artifact/quiver_of_the_sun.png",
+	proj_image = "object/artifact/arrow_s_quiver_of_the_sun.png",
 	level_range = {20, 40},
 	rarity = 300,
 	cost = 100,
@@ -2025,6 +2056,7 @@ newEntity{ base = "BASE_ARROW",
 	unided_name = "grey quiver",
 	desc = [[Powerful telepathic forces emanate from the arrows of this quiver. The tips appear dull, but touching them causes you intense pain.]],
 	color = colors.GREY, image = "object/artifact/quiver_of_domination.png",
+	proj_image = "object/artifact/arrow_s_quiver_of_domination.png",
 	level_range = {20, 40},
 	rarity = 300,
 	cost = 100,
@@ -2170,6 +2202,7 @@ newEntity{ base = "BASE_SHOT",
 	unided_name = "blazing shot",
 	desc = [[Intense heat radiates from this powerful shot.]],
 	color = colors.RED, image = "object/artifact/star_shot.png",
+	proj_image = "object/artifact/shot_s_star_shot.png",
 	level_range = {25, 40},
 	rarity = 300,
 	cost = 110,
@@ -2799,6 +2832,7 @@ newEntity{ base = "BASE_SHOT",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Frozen Shards", image = "object/artifact/frozen_shards.png",
+	proj_image = "object/artifact/shot_s_frozen_shards.png",
 	unided_name = "pouch of crystallized ice",
 	desc = [[In this dark blue pouch lie several small orbs of ice. A strange vapour surrounds them, and touching them chills you to the bone.]],
 	color = colors.BLUE,
@@ -3935,6 +3969,7 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 	power_source = {arcane=true},
 	unique = true,
 	name = "Aetherwalk", image = "object/artifact/aether_walk.png",
+	moddable_tile = "special/aether_walk",
 	unided_name = "ethereal boots",
 	desc = [[A wispy purple aura surrounds these translucent black boots.]],
 	color = colors.PURPLE,
@@ -4054,6 +4089,7 @@ newEntity{ base = "BASE_ARROW", --Thanks Grayswandir!
 	unided_name = "ethereal quiver",
 	desc = [[An endless supply of arrows lay within this deep black quiver. Tiny white lights dot its surface.]],
 	color = colors.BLUE, image = "object/artifact/void_quiver.png",
+	proj_image = "object/artifact/arrow_s_void_quiver.png",
 	level_range = {35, 50},
 	rarity = 300,
 	cost = 100,
@@ -4076,6 +4112,7 @@ newEntity{ base = "BASE_ARROW", --Thanks Grayswandir!
 	power_source = {nature=true},
 	unique = true,
 	name = "Hornet Stingers", image = "object/artifact/hornet_stingers.png",
+	proj_image = "object/artifact/arrow_s_hornet_stingers.png",
 	unided_name = "sting tipped arrows",
 	desc = [[A vile poison drips from the tips of these arrows.]],
 	color = colors.BLUE,
@@ -4090,9 +4127,12 @@ newEntity{ base = "BASE_ARROW", --Thanks Grayswandir!
 		apr = 10,
 		physcrit = 5,
 		dammod = {dex=0.7, str=0.5},
-		ranged_project={
-			[DamageType.CRIPPLING_POISON] = 45,
-		},
+		-- Items can't pass parameters to DamageTypes, so we use special_on_hit instead. Thanks Shibari!
+		special_on_hit = {desc="afflicts the target with a poison dealing 20 damage per turn and causing actions to fail 20% of the time for 6 turns", fct=function(combat, who, target)
+			if target and target:canBe("poison") then
+				target:setEffect(target.EFF_CRIPPLING_POISON, 6, {src=who, power=20, fail=20, no_ct_effect=true})
+			end
+		end},
 	},
 }
 
@@ -4509,7 +4549,7 @@ newEntity{ base = "BASE_SHIELD", --Thanks SageAcrin!
 		learn_talent = { [Talents.T_BLOCK] = 2, },
 		max_air = 20,
 	},
-	on_block = {desc = "Chance that a blast of icy cold water will spray at the target.", fct = function(self, who, target, type, dam, eff)
+	on_block = {desc = "30% chance to spray freezing water (radius 4 cone) at the target.", fct = function(self, who, target, type, dam, eff)
 		if rng.percent(30) then
 			if not target or target:attr("dead") or not target.x or not target.y then return end
 
@@ -4517,7 +4557,7 @@ newEntity{ base = "BASE_SHIELD", --Thanks SageAcrin!
 		
 			who:project(burst, target.x, target.y, engine.DamageType.ICE, 30)
 			game.level.map:particleEmitter(who.x, who.y, burst.radius, "breath_cold", {radius=burst.radius, tx=target.x-who.x, ty=target.y-who.y})
-			who:logCombat(target, "A wave of icy water bursts out from #Source#'s shield towards #Target#!")
+			who:logCombat(target, "A wave of icy water sprays out from #Source# towards #Target#!")
 		end
 	end,},
 }
@@ -4557,6 +4597,7 @@ newEntity{ base = "BASE_SHOT", --Thanks Grayswandir!
 	power_source = {psionic=true},
 	unique = true,
 	name = "Pouch of the Subconscious", image = "object/artifact/pouch_of_the_subconscious.png",
+	proj_image = "object/artifact/shot_s_pouch_of_the_subconscious.png",
 	unided_name = "familiar pouch",
 	desc = [[You find yourself constantly fighting an urge to handle this strange pouch of shot.]],
 	color = colors.RED,
@@ -4588,6 +4629,7 @@ newEntity{ base = "BASE_SHOT", --Thanks Grayswandir!
 	power_source = {nature=true},
 	unique = true,
 	name = "Wind Worn Shot", image = "object/artifact/wind_worn_shot.png",
+	proj_image = "object/artifact/shot_s_wind_worn_shot.png",
 	unided_name = "perfectly smooth shot",
 	desc = [[These perfectly white spheres appear to have been worn down by years of exposure to strong winds.]],
 	color = colors.RED,
@@ -5165,7 +5207,7 @@ newEntity{ base = "BASE_TOOL_MISC", --Thanks Alex!
 }
 
 newEntity{ base = "BASE_WIZARD_HAT", --Thanks SageAcrin!
-	power_source = {psionic=true, arcane=true},
+	power_source = {psionic=true},
 	unique = true,
 	name = "Malslek the Accursed's Hat",
 	unided_name = "black charred hat",
@@ -5326,7 +5368,7 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 newEntity{ base = "BASE_SLING",
 	power_source = {arcane=true},
 	unique = true,
-	name = "Nithan's Force", image = "object/artifact/sling_eldoral_last_resort.png",
+	name = "Nithan's Force", image = "object/artifact/nithans_force.png",
 	unided_name = "massive sling",
 	desc = [[This powerful sling is said to have belonged to a warrior so strong his shots could knock down a brick wall. It appears he may have had some magical assistance...]],
 	level_range = {35, 50},
@@ -5354,6 +5396,7 @@ newEntity{ base = "BASE_ARROW",
 	power_source = {technique=true},
 	unique = true,
 	name = "The Titan's Quiver", image = "object/artifact/the_titans_quiver.png",
+	proj_image = "object/artifact/arrow_s_the_titans_quiver.png",
 	unided_name = "gigantic ceramic arrows",
 	desc = [[These massive arrows are honed to a vicious sharpness, and appear to be nearly unbreakable. They seem more like spikes than any arrow you've ever seen.]],
 	color = colors.GREY,
@@ -5976,6 +6019,7 @@ newEntity{ base = "BASE_GREATSWORD",
 	power_source = {technique=true},
 	define_as = "DOUBLESWORD",
 	name = "Borosk's Hate", unique=true, image="object/artifact/borosks_hate.png",
+	moddable_tile = "special/%s_borosks_hate",
 	unided_name = "double-bladed sword", color=colors.GREY,
 	desc = [[This impressive looking sword features two massive blades aligned in parallel. They seem weighted remarkably well.]],
 	require = { stat = { str=35 }, },
@@ -6411,6 +6455,8 @@ newEntity{ base = "BASE_ARROW",
 	power_source = {technique=true},
 	unique = true,
 	name = "Arkul's Siege Arrows", image = "object/artifact/arkuls_seige_arrows.png",
+	moddable_tile = "special/arkuls_seige_arrows",
+	proj_image = "object/artifact/arrow_s_arkuls_seige_arrows.png",
 	unided_name = "gigantic spiral arrows",
 	desc = [[These titanic double-helical arrows seem to have been designed more for knocking down towers than for use in regular combat. They'll no doubt make short work of most foes.]],
 	color = colors.GREY,
@@ -7055,6 +7101,7 @@ newEntity{ base = "BASE_HELM",
 newEntity{ base = "BASE_GREATSWORD",
 	power_source = {technique=true, arcane=true},
 	name = "Champion's Will", unique=true, image = "object/artifact/champions_will.png",
+	moddable_tile = "special/%s_champions_will",
 	unided_name = "blindingly bright sword", color=colors.YELLOW,
 	desc = [[This impressive looking sword features a golden engraving of a sun in its hilt. Etched into its blade are a series of runes claiming that only one who has mastered both their body and mind may wield this sword effectively.]],
 	require = { stat = { str=35 }, },
@@ -7458,7 +7505,7 @@ newEntity{ base = "BASE_LEATHER_CAP", define_as = "DECAYED_VISAGE",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Decayed Visage",
-	unided_name = "mask of mummified skin", image = "object/artifact/bone_runed_skull.png",
+	unided_name = "mask of mummified skin", image = "object/artifact/decayed_visage.png",
 	level_range = {24, 32},
 	color=colors.GRAY,
 	rarity = 200,
@@ -7485,7 +7532,7 @@ newEntity{ base = "BASE_LEATHER_CAP", define_as = "DECAYED_VISAGE",
 newEntity{ base = "BASE_GREATMAUL", define_as = "DREAM_MALLEUS",
 	power_source = {technique=true, psionic=true},
 	unique = true,
-	name = "Dream Malleus", color = colors.UMBER, image = "object/artifact/unstoppable_mauler.png",
+	name = "Dream Malleus", color = colors.UMBER, image = "object/artifact/dream_malleus.png",
 	unided_name = "keening hammer",
 	desc = [[A large shimmering maul that seems to produce a ringing in your ears.  It is both as malleable as thought and as hard as the strongest steel.]],
 	level_range = {25, 40},
@@ -7727,7 +7774,7 @@ newEntity{ base = "BASE_GAUNTLETS",
 	desc = [[Crafted for a warlord who wanted to keep his subjects under a stralite grip. Dark thoughts went into the making of these gauntlets, literally.]],
 	level_range = {30, 40},
 	rarity = 300,
-	cost = 300,
+	cost = 400,
 	material_level = 4,
 	wielder = {
 		combat_armor = 5,
@@ -7736,19 +7783,20 @@ newEntity{ base = "BASE_GAUNTLETS",
 			[DamageType.COLD]=20,
 		},
 		melee_project = {
-			[DamageType.DARKNESS]=20,
-			[DamageType.COLD]=20,
+			[DamageType.DARKNESS]=15,
+			[DamageType.COLD]=15,
 		},
 		max_hate = 20,
-		healing_factor = -0.2,
+		healing_factor = -0.1,
 		die_at = -100,
 		combat = {
-			dam = 30,
+			dam = 25,
 			apr = 15,
 			physcrit = 10,
 			physspeed = 0.2,
 			dammod = {dex=0.4, str=-0.6, cun=0.4, wil=0.4 },
 			damrange = 0.3,
+			talent_on_hit = { T_DOMINATE = {level = 3, chance = 10}, T_SLASH = {level = 3, chance = 5} },
 		},
 	},
 	max_power = 30, power_regen = 1,

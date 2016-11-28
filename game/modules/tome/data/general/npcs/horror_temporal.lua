@@ -149,7 +149,7 @@ newEntity{ base = "BASE_NPC_HORROR_TEMPORAL",
 		[Talents.T_SPIN_FATE]={base=5, every=7, max=8},
 		[Talents.T_STEALTH]={base=3, every=7, max=5},
 		[Talents.T_SHADOWSTRIKE]={base=3, every=7, max=5},
-		[Talents.T_UNSEEN_ACTIONS]={base=3, every=7, max=5},
+		[Talents.T_SHADOW_DANCE]={base=3, every=7, max=5},
 	},
 
 	resolvers.inscriptions(1, "rune"),

@@ -185,3 +185,11 @@ function string.unserialize(str)
 	local ok, err = pcall(f)
 	if ok then return setmetatable(t, nil) else print("[UNSERIALIZE] error", err) return nil end
 end
+
+--------------------------------------------------------------
+-- Remove invalidate some dangerous functions
+--------------------------------------------------------------
+os.execute = nil
+os.getenv = nil
+os.remove = nil
+os.rename = nil

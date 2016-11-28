@@ -34,7 +34,7 @@ return {
 	persistent = "zone",
 	ambient_music = "World of Ice.ogg",
 	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
-	max_material_level = function() return game.state:isAdvanced() and 4 or 2 end,
+	max_material_level = function() return game.state:isAdvanced() and 5 or 2 end,
 	is_volcano = is_volcano,
 	generator =  {
 		map = {

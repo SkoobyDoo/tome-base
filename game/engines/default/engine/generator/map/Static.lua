@@ -75,20 +75,24 @@ function _M:getLoader(t)
 		trap_class = self.zone.trap_class,
 		npc_class = self.zone.npc_class,
 		object_class = self.zone.object_class,
-		specialList = function(kind, files, add_zone_lists) -- specify entity lists to use (add_zone_lists == add to current list)
+		specialList = function(kind, files, add_zone_lists) -- specify entity lists to use (add_zone_lists == include current list)
 			local elist
 			if kind == "terrain" then
 				if add_zone_lists then elist = table.clone(self.zone.grid_list) end
-				self.grid_list = self.zone.grid_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
+				self.grid_list = self.zone.grid_class:loadList(files, nil, elist, nil, elist and table.clone(elist.__loaded_files))
+--				self.grid_list = self.zone.grid_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			elseif kind == "trap" then
 				if add_zone_lists then elist = table.clone(self.zone.trap_list) end
-				self.trap_list = self.zone.trap_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
+				self.trap_list = self.zone.trap_class:loadList(files, nil, elist, nil, elist and table.clone(elist.__loaded_files))
+--				self.trap_list = self.zone.trap_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			elseif kind == "object" then
 				if add_zone_lists then elist = table.clone(self.zone.object_list) end
-				self.object_list = self.zone.object_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
+				self.object_list = self.zone.object_class:loadList(files, nil, elist, nil, elist and table.clone(elist.__loaded_files))
+--				self.object_list = self.zone.object_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			elseif kind == "actor" then
 				if add_zone_lists then elist = table.clone(self.zone.npc_list) end
-				self.npc_list = self.zone.npc_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
+				self.npc_list = self.zone.npc_class:loadList(files, nil, elist, nil, elist and table.clone(elist.__loaded_files))
+--				self.npc_list = self.zone.npc_class:loadList(files, nil, elist, nil, elist and elist.__loaded_files)
 			else
 				error("kind unsupported")
 			end
@@ -196,24 +200,23 @@ function _M:tmxLoad(file)
 	end
 	for _, tileset in ipairs(map:findAll("tileset")) do
 		if tileset:findOne("properties") then for name, value in pairs(tileset:findOne("properties"):findAllAttrs("property", "name", "value")) do
-			-- setting .add_zone_lists = true in the file table causes the specified entity lists to be merged into a clone of the zone list
 			local elist
 			if name == "load_terrains" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.grid_list) end
-				self.grid_list = self.zone.grid_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
+				elist = table.clone(self.zone.grid_list, false)
+				self.grid_list = self.zone.grid_class:loadList(list, nil, elist, nil, elist and table.clone(elist.__loaded_files))
 			elseif name == "load_traps" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.trap_list) end
-				self.trap_list = self.zone.trap_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
+				elist = table.clone(self.zone.trap_list, false)
+				self.trap_list = self.zone.trap_class:loadList(list, nil, elist, nil, elist and table.clone(elist.__loaded_files))
 			elseif name == "load_objects" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.object_list) end
-				self.object_list = self.zone.object_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
+				elist = table.clone(self.zone.object_list, false)
+				self.object_list = self.zone.object_class:loadList(list, nil, elist, nil, elist and table.clone(elist.__loaded_files))
 			elseif name == "load_actors" then
 				local list = self:loadLuaInEnv(g, nil, "return "..value) or {}
-				if list.add_zone_lists then elist = table.clone(self.zone.npc_list) end
-				self.npc_list = self.zone.npc_class:loadList(list, nil, elist, nil, elist and elist.__loaded_files)
+				elist = table.clone(self.zone.npc_list, false)
+				self.npc_list = self.zone.npc_class:loadList(list, nil, elist, nil, elist and table.clone(elist.__loaded_files))
 			end
 		end end
 
@@ -318,7 +321,7 @@ function _M:tmxLoad(file)
 			local gid, i = nil, 1
 			local x, y = 1, 1
 			while i <= #data do
-				gid, i = struct.unpack("<I4", data, i)
+				gid, i = struct.unpack("<I4", data, i)				
 				if chars[gid] then populate(x, y, chars[gid])
 				else populate(x, y, {[layername] = gid}, gid)
 				end
@@ -352,6 +355,7 @@ function _M:tmxLoad(file)
 
 	self.add_attrs_later = {}
 
+	local fakeid = -1
 	for _, og in ipairs(map:findAll("objectgroup")) do
 		for _, o in ipairs(map:findAll("object")) do
 			local props = o:findOne("properties"):findAllAttrs("property", "name", "value")
@@ -369,9 +373,9 @@ function _M:tmxLoad(file)
 			elseif og.attr.name:find("^addZone") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
 				if props.type and props.subtype then
-					local i1, j2 = rotate_coords(x, y)
+					local i1, j1 = rotate_coords(x, y)
 					local i2, j2 = rotate_coords(x + w, y + h)
-					g.addZone({x, y, x + w, y + h}, props.type, props.subtype)
+					g.addZone({i1, j1, i2, j2}, props.type, props.subtype)
 				end
 			elseif og.attr.name:find("^attrs") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
@@ -381,7 +385,18 @@ function _M:tmxLoad(file)
 						local i, j = rotate_coords(i + 1, j + 1)
 						i, j = i - 1, j - 1
 						self.add_attrs_later[#self.add_attrs_later+1] = {x=i, y=j, key=k, value=self:loadLuaInEnv(g, nil, "return "..v)}
-						print("====", i, j, k)
+						-- print("====", i, j, k)
+					end end
+				end
+			elseif og.attr.name:find("^spawn#") then
+				local layername = og.attr.name:sub(7)
+				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
+				if props.id then
+					for i = x, x + w do for j = y, y + h do
+						local i, j = rotate_coords(i, j)
+						t[fakeid] = props.id
+						populate(i+1, j+1, {[layername] = fakeid}, fakeid)
+						fakeid = fakeid - 1
 					end end
 				end
 			end

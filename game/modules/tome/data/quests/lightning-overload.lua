@@ -158,6 +158,10 @@ reenter_derth = function(self)
 			require("engine.ui.Dialog"):simpleLongPopup("Clear sky", "It seems the Ziguranth have kept their word.\nDerth is free of the storm cloud.", 400)
 		else
 			require("engine.ui.Dialog"):simpleLongPopup("Clear sky", "It seems the mages have kept their word.\nDerth is free of the storm cloud.", 400)
+			local p = game.party:findMember{main=true}
+			if p:knowTalentType("cunning/trapping") then
+				game.party:learnLore("derth-beam-trap")
+			end
 		end
 	end
 end

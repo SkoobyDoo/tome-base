@@ -31,6 +31,8 @@ newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="cunning/
 newTalentType{ allow_random=true, type="cunning/survival", name = "survival", generic = true, description = "The knowledge of the dangers of the world, and how to best avoid them." }
 newTalentType{ allow_random=true, type="cunning/tactical", name = "tactical", description = "Tactical combat abilities." }
 newTalentType{ allow_random=true, type="cunning/scoundrel", name = "scoundrel", generic = true, description = "The use of ungentlemanly techniques." }
+newTalentType{ allow_random=true, type="cunning/artifice", name = "artifice", min_lev = 10, description = "Create and use cunning tools." }
+newTalentType{ allow_random=true, type="cunning/tools", name = "tools", description = "Artificer's tools." }
 
 -- Skirmisher
 newTalentType {
@@ -93,3 +95,4 @@ load("/data/talents/cunning/shadow-magic.lua")
 load("/data/talents/cunning/ambush.lua")
 load("/data/talents/cunning/scoundrel.lua")
 load("/data/talents/cunning/called-shots.lua")
+load("/data/talents/cunning/artifice.lua")

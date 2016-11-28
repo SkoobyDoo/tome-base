@@ -653,6 +653,11 @@ newEntity{
 	cost = 25,
 	wielder = {
 	},
+	resolvers.genericlast(function(e)
+		if e.moddable_tile:find("_hand_08_0[1-5]") then
+			e.moddable_tile = e.moddable_tile:gsub("_hand_08_0([1-5])", "_hand_08_0%1_1h")
+		end
+	end),
 }
 
 newEntity{
@@ -673,6 +678,11 @@ newEntity{
 		combat_spellcrit = resolvers.mbonus_material(2, 2),
 		combat_critical_power = resolvers.mbonus_material(7, 7),
 	},
+	resolvers.genericlast(function(e)
+		if e.moddable_tile:find("_hand_08_0[1-5]") then
+			e.moddable_tile = e.moddable_tile:gsub("_hand_08_0([1-5])", "_hand_08_0%1_1h")
+		end
+	end)
 }
 
 

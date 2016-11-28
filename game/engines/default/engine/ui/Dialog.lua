@@ -728,6 +728,17 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 	self.setuped = true
 end
 
+function _M:replaceUI(oldui, newui)
+	for i, ui in ipairs(self.uis) do
+		if ui.ui == oldui then
+			ui.ui = newui
+			ui.ui.mouse.delegate_offset_x = ui.x
+			ui.ui.mouse.delegate_offset_y = ui.y
+			ui.ui:positioned(ui.x, ui.y, self.display_x + ui.x, self.display_y + ui.y)
+		end
+	end
+end
+
 function _M:setFocus(id, how)
 	if type(id) == "table" then
 		for i = 1, #self.uis do

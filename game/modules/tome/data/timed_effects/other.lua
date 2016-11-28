@@ -3041,3 +3041,120 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "ZONE_AURA_CHALLENGE",
+	desc = "Challenge",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return "???" else return self:hasQuest(eff.id_challenge_quest).name end end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "neutral",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_exit_level", self)
+	end,
+	callbackOnKill = function(self, eff, who, death_note)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_kill_foe", self, who)
+	end,
+	callbackOnActBase = function(self, eff)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_act_base", self)
+	end,
+}
+
+newEffect{
+	name = "THROWING_KNIVES", image = "talents/throwing_knives.png",
+	desc = "Throwing Knives",  decrease = 0,
+	display_desc = function(self, eff) return eff.stacks.." Knives" end,
+	long_desc = function(self, eff) return ("You have %d throwing knives."):format(eff.stacks) end,
+	type = "other",
+	subtype = { },
+	status = "beneficial",
+	parameters = { stacks=1, max_stacks=10 },
+	charges = function(self, eff) return eff.stacks end,
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = new_eff.dur
+		old_eff.stacks = util.bound(old_eff.stacks + new_eff.stacks, 1, new_eff.max_stacks)
+		return old_eff
+	end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+--while strictly speaking these fit better as physical effects, the ability for a mob to layer 3 different physical debuffs on a player with one swing and block off clearing stuns via wild infusions is not good. bad enough that they can bleed/poison
+
+newEffect{
+	name = "SCOUNDREL", image = "talents/scoundrel.png",
+	desc = "Scoundrel's Strategies",
+	long_desc = function(self, eff) return ("The target is suffering from disabling wounds, reducing their critical strike chance by %d%%."):
+		format( eff.power ) end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	parameters = { power=1 },
+	activate = function(self, eff)
+		eff.cur_pcrit = -eff.power
+		eff.cur_scrit = -eff.power
+		eff.cur_mcrit = -eff.power
+
+		eff.pcritid = self:addTemporaryValue("combat_physcrit", eff.cur_pcrit)
+		eff.scritid = self:addTemporaryValue("combat_spellcrit", eff.cur_scrit)
+		eff.mcritid = self:addTemporaryValue("combat_mindcrit", eff.cur_mcrit)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("combat_physcrit", eff.pcritid)
+		self:removeTemporaryValue("combat_spellcrit", eff.scritid)
+		self:removeTemporaryValue("combat_mindcrit", eff.mcritid)
+	end,
+}
+
+newEffect{
+	name = "FUMBLE", image = "talents/fumble.png",
+	desc = "Fumble",
+	long_desc = function(self, eff) return ("The target is suffering from distracting wounds, giving them a %d%% chance to fail their next talent usage and injure themself."):
+		format( eff.power*eff.stacks ) end,
+	charges = function(self, eff) return eff.stacks end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	charges = function(self, eff) return eff.stacks or 1 end,
+	parameters = { power=1, dam=10, stacks = 0, max_stacks=10 },
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = new_eff.dur
+		
+		local stackCount = old_eff.stacks + new_eff.stacks
+		if stackCount >= old_eff.max_stacks then 
+			stackCount = old_eff.max_stacks
+		end
+		
+		self:removeTemporaryValue("scoundrel_failure", old_eff.failid)
+		old_eff.failid = self:addTemporaryValue("scoundrel_failure", old_eff.cur_fail*stackCount)
+		
+		old_eff.stacks = stackCount
+		
+		return old_eff
+		
+	end,
+	activate = function(self, eff)
+		eff.cur_fail = eff.power
+		eff.failid = self:addTemporaryValue("scoundrel_failure", eff.cur_fail)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("scoundrel_failure", eff.failid)
+	end,
+	callbackOnTalentDisturbed = function(self, eff, t)
+		if self:attr("scoundrel_failure") then
+			DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam)
+			self:removeEffect(self.EFF_FUMBLE)
+		end
+	end,
+}

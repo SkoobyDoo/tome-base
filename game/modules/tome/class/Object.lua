@@ -41,6 +41,9 @@ _M.projectile_class = "mod.class.Projectile"
 
 _M.logCombat = Combat.logCombat
 
+-- ego fields that are appended as a list when the ego is applied (by Zone:applyEgo)
+_M._special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_kill=true, charm_on_use=true}
+
 function _M:getRequirementDesc(who)
 	local base_getRequirementDesc = engine.Object.getRequirementDesc
 	if self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_SKIRMISHER_BUCKLER_EXPERTISE) then
@@ -78,6 +81,17 @@ function _M:getRequirementDesc(who)
 	end
 end
 
+local auto_moddable_tile_slots = {
+	MAINHAND = true,
+	OFFHAND = true,
+	BODY = true,
+	CLOAK = true,
+	HEAD = true,
+	HANDS = true,
+	FEET = true,
+	QUIVER = true,
+}
+
 function _M:init(t, no_default)
 	t.encumber = t.encumber or 0
 
@@ -90,6 +104,61 @@ function _M:init(t, no_default)
 		self.auto_image = nil
 		self.image = "object/"..(self.unique and "artifact/" or "")..self.name:lower():gsub("[^a-z0-9]", "")..".png"
 	end
+	if not self.auto_moddable_tile_check and self.unique and self.slot and auto_moddable_tile_slots[self.slot] and (not self.moddable_tile or type(self.moddable_tile) == "table" or (type(self.moddable_tile) == "string" and not self.moddable_tile:find("^special/"))) then
+		self.auto_moddable_tile_check = true
+		local file, filecheck = nil, nil
+		if self.type == "weapon" or self.subtype == "shield" then
+			file = "special/%s_"..self.name:lower():gsub("[^a-z0-9]", "_")
+			filecheck = file:format("left")
+		elseif self.subtype == "cloak" then
+			file = "special/"..self.name:lower():gsub("[^a-z0-9]", "_").."_%s"
+			filecheck = file:format("behind")
+		else
+			file = "special/"..self.name:lower():gsub("[^a-z0-9]", "_")
+			filecheck = file
+		end
+		if file and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+			self.moddable_tile = file
+			-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+		else
+			-- Try using the artifact image name
+			if type(self.image) == "string" and self.image:find("^object/artifact/") then
+				local base = self.image:gsub("object/artifact/", ""):gsub("%.png$", "")
+				if self.type == "weapon" or self.subtype == "shield" then
+					file = "special/%s_"..base
+					filecheck = file:format("left")
+				elseif self.subtype == "cloak" then
+					file = "special/"..base.."_%s"
+					filecheck = file:format("behind")
+				else
+					file = "special/"..base
+					filecheck = file
+				end
+				if file and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+					self.moddable_tile = file
+					-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+				else
+					print("[UNIQUE MODDABLE] auto moddable failed for ", self.name)
+				end
+			end
+		end
+	end
+
+	-- if self.unique and self.slot and type(self.moddable_tile) == "string" then
+	-- 	local filecheck = nil, nil
+	-- 	if self.type == "weapon" or self.subtype == "shield" then
+	-- 		filecheck = self.moddable_tile:format("left")
+	-- 	elseif self.subtype == "cloak" then
+	-- 		filecheck = self.moddable_tile:format("behind")
+	-- 	else
+	-- 		filecheck = self.moddable_tile
+	-- 	end
+	-- 	if filecheck and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+	-- 		-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+	-- 	else
+	-- 		print("[UNIQUE MODDABLE] auto moddable failed for ", self.name, self.moddable_tile, filecheck)
+	-- 	end
+	-- end
 end
 
 function _M:altered(t)
@@ -1965,6 +2034,13 @@ function _M:getDesc(name_param, compare_with, never_compare, use_actor)
 		desc:add(true, true, {"color", "ANTIQUE_WHITE"})
 		desc:merge(self.desc:toTString())
 		desc:add({"color", "WHITE"})
+	end
+
+	if self.shimmer_moddable then
+		local oname = (self.shimmer_moddable.name or "???"):toTString()
+		desc:add(true, {"color", "OLIVE_DRAB"}, "This object's appearance was changed to ")
+		desc:merge(oname)
+		desc:add(".", {"color","LAST"}, true)
 	end
 
 	if could_compare and not never_compare then desc:add(true, {"font","italic"}, {"color","GOLD"}, "Press <control> to compare", {"color","LAST"}, {"font","normal"}) end

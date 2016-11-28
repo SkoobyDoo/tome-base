@@ -55,6 +55,17 @@ function _M:isCompleted(sub)
 	if self.status == COMPLETED then return true else return false end
 end
 
+--- Checks if the quest (or sub-objective) is failed
+-- @param sub a subobjective id or nil for the whole quest
+-- @return[1] false if objective is not failed
+-- @return[2] true if objective failed
+function _M:isFailed(sub)
+	if sub then
+		if self.objectives[sub] and self.objectives[sub] == FAILED then return true else return false end
+	end
+	if self.status == FAILED then return true else return false end
+end
+
 --- Checks if the quest is ended (DONE or FAILED)
 -- @return[1] false if quest didn't end
 -- @return[2] true if quest ended

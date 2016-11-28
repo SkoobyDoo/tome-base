@@ -25,6 +25,7 @@ local Map = require "engine.Map"
 local NameGenerator = require "engine.NameGenerator"
 local NameGenerator2 = require "engine.NameGenerator2"
 local Donation = require "mod.dialogs.Donation"
+local Dialog = require "engine.ui.Dialog"
 
 module(..., package.seeall, class.inherit(engine.Entity))
 
@@ -389,6 +390,7 @@ end
 -- @param data.lev = character level to generate for (affects point budget, #themes and #powers) <12-50>
 -- @param data.power_points_factor = lev based power points multiplier <1>
 -- @param data.nb_points_add = #extra budget points to spend on random powers <0>
+-- @param data.nb_powers_add = #extra random powers to add <0>
 -- @param data.powers_special = function(p) that must return true on each random power to add (from base.randart_able)
 -- @param data.nb_themes = #power themes (power groups) for random powers to use <scales to 5 with lev>
 -- @param data.force_themes = additional power theme(s) to use for random powers = {"attack", "arcane", ...}
@@ -1524,7 +1526,7 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 								return (not e.unique and e.randart_able) and (not e.material_level or e.material_level >= 1) and true or false
 							end}
 						}
-						local o = game.state:generateRandart(fil,nil, true)
+						local o = game.state:generateRandart(fil, nil, true)
 						if o then
 --							print("[entityFilterPost]: Generated random object for", tostring(b.name))
 							o.unique, o.randart, o.rare = nil, nil, true
@@ -1544,21 +1546,25 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 			e = self:createRandomBoss(e, table.merge(base, filter.random_elite, true))
 		end
 	elseif type == "object" then
-		if filter.random_object and not e.unique and e.randart_able then
-			local data = _G.type(filter.random_object) == "table" and filter.random_object or {}
-			local lev = math.max(1, game.zone:level_adjust_level(game.level, game.zone, "object"))
-			print("[entityFilterPost]: Generating obsolete random_object")
-			print(debug.traceback())
-			e = game.state:generateRandart{
-				lev = lev,
-				egos = 0,
-				nb_powers_add = data.nb_powers_add or 2, 
-				nb_points_add = data.nb_points_add or 4, -- ~1 ego Note: resolvers conflicts prevent specifying egos here
-				force_themes = data.force_themes or nil,
-				base = e,
-				post = function(o) o.rare = true o.unique = nil o.randart = nil end,
-				namescheme = 3
+		if filter.random_object and not e.unique and e.randart_able then -- convert the object to a (weak) Randart
+			local f_data = _G.type(filter.random_object) == "table" and filter.random_object or {}
+			-- default parameters
+			local data = {base = e, egos = 1, nb_powers_add = 1, nb_points_add = 2,
+				lev = math.max(1, game.zone:level_adjust_level(game.level, game.zone, "object")),
+				post = function(o)
+					if f_data.post then f_data.post(o) end
+					o.rare = true o.unique = nil o.randart = nil 
+				end,
+				namescheme = 3,
 			}
+			-- update with filter specifications
+			table.merge(data, f_data, false, {base=true, post=true, base_filter=true})
+			print("[entityFilterPost]: filter.random_object forcing conversion to Randart:", e.name) table.print(data)
+			e = game.state:generateRandart(data)
+			if not e then
+				print("[GameState:entityFilterPost] failed to generate random object, data:") table.print(data)
+				print("traceback:") print(debug.traceback())
+			end
 		end
 	end
 	return e
@@ -2251,8 +2257,8 @@ function _M:locationRevealAround(x, y)
 	game.level.map.lites(x, y, true)
 	game.level.map.remembers(x, y, true)
 	for _, c in pairs(util.adjacentCoords(x, y)) do
-		game.level.map.lites(x+c[1], y+c[2], true)
-		game.level.map.remembers(x+c[1], y+c[2], true)
+		game.level.map.lites(c[1], c[2], true)
+		game.level.map.remembers(c[1], c[2], true)
 	end
 end
 
@@ -2460,4 +2466,361 @@ function _M:allowOnlineEvent()
 	if not config.settings.tome.allow_online_events then return end
 	if self.birth.grab_online_event_forbid then return end
 	return true
+end
+
+function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
+	self.id_challenge = self.id_challenge or {count=0, level_entering_id=game:getPlayer(true).level, quests={}, rewarded={}}
+	-- challenges become more rare with depth (lev 3+ :: between 20% and 70% chance, 65%@3, 45%@30, 35%@75)
+	if lev < 3 or rng.percent(30 + 50*lev/(lev + 30)) then return end
+	self.id_challenge.count = self.id_challenge.count + 1
+
+	local challenges = {
+		{ id = "exterminator", rarity = 1 },
+		{ id = "pacifist", rarity = 3 },
+		{ id = "fast-exit", rarity = 3, min_lev = 8 },
+		{ id = "near-sighted", rarity = 4, min_lev = 4 },
+		{ id = "mirror-match", rarity = 6, min_lev = 5 },
+		{ id = "multiplicity", rarity = 8, min_lev = 10 },
+		{ id = "dream-horror", rarity = 10, min_lev = 15 },
+		{ id = "headhunter", rarity = 12, min_lev = 12 },
+	}
+	
+	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
+
+	for i, c in ripairs(challenges) do
+		if c.min_lev and lev < c.min_lev then table.remove(challenges, i) end
+	end
+
+	local challenge = rng.rarityTable(challenges)
+	data.id_challenge = challenge.id
+	data.id_layout_name = id_layout_name
+	data.id_grids_name = id_grids_name
+	print("[INFINITE DUNGEON] Selected challenge", data.id_challenge)
+end
+
+function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
+	local q = {
+		id = "id-challenge-"..level.level,
+		name = "Infinite Dungeon Challenge: "..name.." (Level "..level.level..")",
+		challenge_desc = desc,
+		desc = function(self, who)
+			local desc = {}
+			desc[#desc+1] = self.challenge_desc
+			if self.dynamic_desc then self:dynamic_desc(desc, who) end
+			if self.reward_desc then desc[#desc+1] = "\nYou completed the challenge and received:\n"..self.reward_desc end
+			return table.concat(desc, "\n")
+		end,
+		on_status_change = function(self, who, status, sub)
+			if self:isCompleted() then
+				who:setQuestStatus(self.id, engine.Quest.DONE)
+				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
+				self:check("on_challenge_success", who)
+			elseif self:isFailed() then
+				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
+				self:check("on_challenge_failed", who)
+			end
+		end,
+		on_exit_level = function(self, who)
+			self:check("on_exit_check", who)
+			if self.status ~= self.DONE then
+				who:setQuestStatus(self.id, self.FAILED)
+			end
+		end,
+		on_challenge_success = function(self, who)
+			self.reward_desc = game.state:infiniteDungeonChallengeReward(self, who)
+		end,
+		popup_text = {},
+	}
+	table.merge(q, data)
+	local p = game:getPlayer(true)
+	p:grantQuest(q)
+	game:onTickEnd(function()
+		p:setEffect(p.EFF_ZONE_AURA_CHALLENGE, 1, {id_challenge_quest = q.id})
+		local eff = p:hasEffect(p.EFF_ZONE_AURA_CHALLENGE)
+		if eff and alter_effect then alter_effect(p, eff) end
+	end)
+	return q
+end
+
+function _M:infiniteDungeonChallengeFinish(zone, level)
+	local id_challenge = level.data.id_challenge
+	if not id_challenge then return end
+
+	if id_challenge == "pacifist" then
+		level.data.record_player_kills = 0
+		self:makeChallengeQuest(level, "Pacifist", "Leave the level (to the next level) without killing a single creature.", {
+			on_exit_check = function(self, who)
+				if not self.check_level then return end
+				if self.check_level.data.record_player_kills == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+				self.check_level = nil
+			end,
+			on_kill_foe = function(self, who, target)
+				who:setQuestStatus(self.id, self.FAILED)
+			end,
+			check_level = level,
+		})
+	elseif id_challenge == "exterminator" then
+		self:makeChallengeQuest(level, "Exterminator", "Exterminate every foe on the level.", {
+			dynamic_desc = function(self, desc, who)
+				if not self.check_level then return end
+				local nb = 0
+				for uid, e in pairs(self.check_level.entities) do
+					if who:reactionToward(e) < 0 then nb = nb + 1 end
+				end
+
+				desc[#desc+1] = "Foes left: #LIGHT_RED#"..nb
+			end,
+			on_exit_check = function(self, who)
+				if not self.check_level then return end
+				local nb = 0
+				for uid, e in pairs(self.check_level.entities) do
+					if who:reactionToward(e) < 0 then nb = nb + 1 break end
+				end
+				if nb == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+				self.check_level = nil
+			end,
+			on_kill_foe = function(self, who, target)
+				if not self.check_level then return end
+				local nb = 0
+				for uid, e in pairs(self.check_level.entities) do
+					if who:reactionToward(e) < 0 then nb = nb + 1 break end
+				end
+				if nb == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+			end,
+			check_level = level,
+		})
+	elseif id_challenge == "fast-exit" then
+		local a = require("engine.Astar").new(level.map, game:getPlayer(true))
+		local path = a:calc(level.default_up.x, level.default_up.y, level.default_down.x, level.default_down.y)
+		if path and #path > 5 then
+			local turns = #path * 3
+			self:makeChallengeQuest(level, "Rush Hour ("..turns..")", "Leave the level in less than "..turns.." turns (exit is revealed on your map).", {
+				turns_left = turns,
+				dynamic_desc = function(self, desc)
+					desc[#desc+1] = "Turns left: #LIGHT_GREEN#"..self.turns_left
+				end,
+				on_exit_check = function(self, who)
+					if self.turns_left >= 0 then who:setQuestStatus(self.id, self.COMPLETED) end
+				end,
+				on_act_base = function(self, who)
+					self.turns_left = self.turns_left - 1
+					if self.turns_left < 0 then
+						who:setQuestStatus(self.id, self.FAILED)
+					end
+				end,
+			})
+			self:locationRevealAround(level.default_down.x, level.default_down.y)
+		end
+	elseif id_challenge == "dream-horror" then
+		local m = zone:makeEntity(level, "actor", {name="dreaming horror", random_boss=true}, nil, true)
+		if m then
+			local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+			local tries = 0
+			while not m:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
+				x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+				tries = tries + 1
+			end
+			if tries < 100 then
+				local q = self:makeChallengeQuest(level, "Dream Hunter", "Wake up and kill the dreaming horror boss '"..m.name.."'.", {})
+				m.id_challenge_quest = q.id
+				m.on_die = function(self, who)
+					who:setQuestStatus(self.id_challenge_quest, engine.Quest.COMPLETED)
+				end
+				zone:addEntity(level, m, "actor", x, y)
+			end
+		end
+	elseif id_challenge == "mirror-match" then
+		local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+		local tries = 0
+		while not game.player:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
+			x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+			tries = tries + 1
+		end
+		if tries < 100 then
+			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge and kill your mirror clone on the level.", {})
+
+			local a = mod.class.NPC.new{}
+			a:replaceWith(game:getPlayer(true):cloneFull())
+			mod.class.NPC.castAs(a)
+			engine.interface.ActorAI.init(a, a)
+			a.no_drops = true
+			a.keep_inven_on_death = false
+			a.energy.value = 0
+			a.player = nil
+			a.rank = 4
+			a.name = "Mirror Challenge of "..a.name
+			a.killer_message = "but nobody knew why #sex# suddenly became evil"
+			a.color_r = 150 a.color_g = 150 a.color_b = 150
+			a:removeAllMOs()
+			a.ai = "none"
+			a.puuid = nil
+			a.ai_state = {talent_in=1}
+			a.faction = "neutral"
+			a.inc_damage.all = (a.inc_damage.all or 0) - 20
+			a.max_life = a.max_life * 2
+			a.life = a.max_life
+			a.id_challenge_quest = q.id
+			a.invulnerable = 1
+			a.on_bump = function(self, who)
+				Dialog:yesnoPopup("Challenge: #PURPLE#Mirror Match", "Challenge your mirror clone and triumph!", function(r) if not r then
+					self.invulnerable = nil
+					self.faction = "enemies"
+					self.ai = "tactical"
+					game.bignews:say(60, "#CRIMSON#FIGHT!")
+				end end, "Refuse", "Accept", true)
+			end
+			a.on_die = function(self, who)
+				who:setQuestStatus(self.id_challenge_quest, engine.Quest.COMPLETED)
+			end
+
+			game.zone:addEntity(game.level, a, "actor", x, y)
+
+			-- Remove some talents
+			local tids = {}
+			for tid, _ in pairs(a.talents) do
+				local t = a:getTalentFromId(tid)
+				if t.no_npc_use then tids[#tids+1] = t end
+			end
+			for i, t in ipairs(tids) do
+				if t.mode == "sustained" and a:isTalentActive(t.id) then a:forceUseTalent(t.id, {ignore_energy=true}) end
+				a.talents[t.id] = nil
+			end
+
+			if a.alchemy_golem then
+				a.alchemy_golem = nil
+				local t = a:getTalentFromId(a.T_REFIT_GOLEM)
+				t.action(a, t)
+			end
+		end
+	elseif id_challenge == "near-sighted" then
+		Dialog:yesnoPopup("Challenge: #PURPLE#Near Sighted", "Finish the level with -7 sight range for a reward.", function(r) if not r then
+			self:makeChallengeQuest(level, "Near Sighted", "Finish the level with -7 sight range.", {
+				on_exit_check = function(self, who) who:setQuestStatus(self.id, self.COMPLETED) end,
+			}, function(actor, eff)
+				actor:effectTemporaryValue(eff, "sight", -7)
+			end)
+
+		end end, "Refuse", "Accept", true)
+	elseif id_challenge == "multiplicity" then
+		Dialog:yesnoPopup("Challenge: #PURPLE#Multiplicity", "Survive the level while all the foes have the multiply talent, even bosses, for a reward.", function(r) if not r then
+			self:makeChallengeQuest(level, "Multiplicity", "All foes have the multiply talent!", {
+				on_exit_check = function(self, who) who:setQuestStatus(self.id, self.COMPLETED) end,
+			})
+			game:onTickEnd(function()
+				local p = game:getPlayer(true)
+				for uid, e in pairs(game.level.entities) do
+					if p:reactionToward(e) < 0 and not game.party:hasMember(e) then
+						e:learnTalent(e.T_MULTIPLY, true)
+						e.can_multiply = 3
+					end
+				end
+			end)
+		end end, "Refuse", "Accept", true)
+	elseif id_challenge == "headhunter" then
+		local mlist = {}
+		for i = 1, 1 do
+			local m = zone:makeEntity(level, "actor", {type="demon", random_boss={
+				nb_classes = 2,
+				rank=3.5, ai = "tactical",
+				life_rating=function(v) return v * 1.5 + 5 end,
+				loot_quantity = 2,
+				no_loot_randart = true,
+				name_scheme = "#rng# the Spawn of Urh'Rok",
+			}}, nil, true)
+			if m then
+				local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+				local tries = 0
+				while not m:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
+					x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
+					tries = tries + 1
+				end
+				if tries < 100 then
+					m.is_headhunter_npc = true
+					zone:addEntity(level, m, "actor", x, y)
+					mlist[#mlist+1] = m
+				end
+			end
+		end
+		if #mlist > 0 then
+			Dialog:yesnoPopup("Challenge: #PURPLE#Headhunter", "Kill all "..#mlist.." spawns of Urh'Rok on the level and no other creatures, for a reward.", function(r)
+				if not r then
+					local q = self:makeChallengeQuest(level, "Headhunter", "Kill all "..#mlist.." spawns of Urh'Rok on the level and no other creatures.", {
+						dynamic_desc = function(self, desc)
+							desc[#desc+1] = ("%d / %d spawns killed."):format(self.nb_killed, self.to_kill)
+						end,
+						nb_killed = 0, to_kill = #mlist,
+						on_kill_foe = function(self, who, target)
+							if self:isEnded() then return end
+							if target.is_headhunter_npc then
+								self.nb_killed = self.nb_killed + 1
+								if self.nb_killed >= self.to_kill then
+									who:setQuestStatus(self.id, self.COMPLETED)
+								end
+							else
+								who:setQuestStatus(self.id, self.FAILED)
+							end
+						end,
+						forbid_rewards = {"randart", "stat_pts", "generic_pt"},
+					})
+				else
+					for _, m in ipairs(mlist) do m:disappear() m:removed() end
+				end
+			end, "Refuse", "Accept", true)
+		end
+	else
+		self:triggerHook{"InfiniteDungeon:setupChallenge", id_challenge=id_challenge, zone=zone, level=level}
+	end
+	self.id_challenge.quests[id_challenge] = (self.id_challenge.quests[id_challenge] or 0) + 1
+end
+
+function _M:infiniteDungeonChallengeReward(quest, who)
+	local rewards = {
+		{name = "Random Artifact", id="randart", rarity=1,
+		give=function(who)
+			local tries = 100
+			while tries > 0 do
+				local o = game.zone:makeEntity(game.level, "object", {random_object={egos=rng.range(2,3), nb_powers_add=rng.range(10,30)}, properties={"randart_able"}}, nil, true)
+				if o then
+					if o.__transmo == nil and who:attr("has_transmo") then o.__transmo = true end
+					o:identify(true)
+					who:addObject(who.INVEN_INVEN, o)
+					who:sortInven()
+					return "Random Artifact: "..o:getName{do_color=true}
+				end
+			end
+			-- Fallback
+			who.unused_stats = who.unused_stats + 3
+			return "+3 Stat Points"
+		end},
+		{name = "+3 Stat Points", id="stat_pts", rarity=3, give=function(who) who.unused_stats = who.unused_stats + 3 end},
+		{name = "+1 Class Point", id="class_pt", rarity=5, give=function(who) who.unused_talents = who.unused_talents + 1 end},
+		{name = "+1 Generic Point", id="generic_pt", rarity=4, give=function(who) who.unused_generics = who.unused_generics + 1 end},
+		{name = "+1 Category Point", id="category_pt",
+			rarity=13.5*((self.id_challenge.rewarded["category_pt"] or 1)*30/math.max(30, who.level - self.id_challenge.level_entering_id)),
+			-- Note: rarity is adjusted to give ~ 1 category point every 30 character levels gained in the I.D.
+			-- a rarity of 30 with a challenge every level ~= 13.5 rarity with 45% challenge frequency (avg. first 50 I.D. levels, decreases with depth)
+			-- Rarity reduced if fewer than 1 category point has been awarded per 30 character levels
+			give=function(who) who.unused_talents_types = who.unused_talents_types + 1 end
+		},
+		{name = "+1 Prodigy Point", id="prodigy_pt",
+			rarity=60*((self.id_challenge.rewarded["prodigy_pt"] or 0)*5 + 1), -- make more than 1 bonus prodigy extremely rare
+			give=function(who) who.unused_prodigies = who.unused_prodigies + 1 end
+		},
+	}
+	self:triggerHook{"InfiniteDungeon:getRewards", rewards=rewards}
+
+	if quest.forbid_rewards then
+		for _, f in ipairs(quest.forbid_rewards) do
+			for i, r in ipairs(rewards) do
+				if r.id == f then table.remove(rewards, i) break end
+			end
+		end
+	end
+
+	local reward = rng.rarityTable(rewards)
+	reward.name = reward.give(who) or reward.name
+	self.id_challenge.rewarded[reward.id] = (self.id_challenge.rewarded[reward.id] or 0) + 1
+	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward: "..reward.name
+	game.log("#LIGHT_BLUE#%s has received: %s.", who.name:capitalize(), reward.name)
+	return reward.name
 end

@@ -45,7 +45,13 @@ fs.mkdir(fs.getHomePath())
 fs.mkdir(fs.getHomePath().."/4.0/")
 fs.mkdir(fs.getHomePath().."/4.0/profiles/")
 fs.mkdir(fs.getHomePath().."/4.0/settings/")
-fs.setWritePath(fs.getHomePath())
+
+fs.setPathAllowed(engine.homepath)
+fs.setPathAllowed(fs.getRealPath("/addons/"))
+if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/")) end
+fs.setPathAllowed(fs.getRealPath("/modules/"))
+fs.doneSettingPathAllowed()
+fs.setWritePath(engine.homepath)
 
 -- Loads default config & user config
 fs.mount(engine.homepath, "/")
@@ -65,6 +71,7 @@ background_saves = true
 mouse_cursor = true
 display_fps = 30
 gamma_correction = 120
+font_scale = 100
 mouse_move = true
 censor_boot = true
 chat.filter = {}

@@ -497,7 +497,7 @@ function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
 	e.max_power = cd
 	e.power = e.max_power
-	e.use_power = {name=tt[1], power=cd, use=tt[3], __no_merge_add=true}
+	e.use_power = table.merge(e.use_power or {}, {name=tt[1], power=cd, use=tt[3], __no_merge_add=true})
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
 	if tt[5] then table.merge(e.use_power, tt[5], true) end
 	return
@@ -545,39 +545,42 @@ end
 function resolvers.calc.moddable_tile(t, e)
 	local slot = t[1]
 	local r, r2
-	if slot == "cloak" then r = {"cloak_%s_01","cloak_%s_02","cloak_%s_03","cloak_%s_04","cloak_%s_05"}
+	if slot == "cloak" then r = {"cloak_%s_07","cloak_%s_08","cloak_%s_08","cloak_%s_09","cloak_%s_09"}
 	elseif slot == "massive" then
 		r = {"upper_body_20","upper_body_21","upper_body_22","upper_body_24","upper_body_23",}
 		r2 = {"lower_body_09","lower_body_10","lower_body_11","lower_body_13","lower_body_12",}
 	elseif slot == "heavy" then
 		r = {"upper_body_25","upper_body_11","upper_body_26","upper_body_28","upper_body_27",}
-		r2 = {"lower_body_08","lower_body_08","lower_body_08","lower_body_08","lower_body_08",}
+		r2 = {"lower_body_16","lower_body_08","lower_body_17","lower_body_18","lower_body_19",}
 	elseif slot == "light" then
-		r = {"upper_body_05","upper_body_06","upper_body_07","upper_body_08","upper_body_19",}
+		r = {"upper_body_29","upper_body_30","upper_body_31","upper_body_32","upper_body_33",}
 		r2 = {"lower_body_03","lower_body_04","lower_body_05","lower_body_06","lower_body_06",}
-	elseif slot == "robe" then r = {"upper_body_18","upper_body_16","upper_body_13","upper_body_15","upper_body_17",}
-	elseif slot == "shield" then r = {"%s_hand_10","%s_hand_11","%s_hand_11","%s_hand_12","%s_hand_12",}
-	elseif slot == "staff" then r = {{"%s_hand_08",true}}
-	elseif slot == "leather_boots" then r = {"feet_03","feet_04","feet_04","feet_05","feet_05",}
+	elseif slot == "robe" then r = {"upper_body_34","upper_body_35","upper_body_36","upper_body_37","upper_body_38",}
+	elseif slot == "shield" then r = {"%s_hand_10_01","%s_hand_11_01","%s_hand_11_02","%s_hand_12_01","%s_hand_12_02",}
+	elseif slot == "staff" then r = {"%s_hand_08_01", "%s_hand_08_03", "%s_hand_08_02", "%s_hand_08_04", "%s_hand_08_05"} -- 03 & 02 are reversed due to an error in gfx, don't change it!
+	elseif slot == "leather_boots" then r = {"feet_03","feet_10","feet_10","feet_11","feet_11",}
 	elseif slot == "heavy_boots" then r = {"feet_06","feet_06","feet_07","feet_09","feet_08",}
 	elseif slot == "gauntlets" then r = {"hands_03","hands_04","hands_05","hands_07","hands_06",}
-	elseif slot == "gloves" then r = {"hands_02",}
-	elseif slot == "sword" then r = {"%s_hand_04",}
-	elseif slot == "2hsword" then r = {"%s_2hsword",}
-	elseif slot == "wizard_hat" then r = {{"head_11",true},{"head_13",true},{"head_17",true},{"head_12",true},{"head_15",true},}
-	elseif slot == "trident" then r = {{"%s_hand_13",true}}
+	elseif slot == "gloves" then r = {"hands_02","hands_02","hands_08","hands_08","hands_09"}
+	elseif slot == "sword" then r = {"%s_hand_04_01", "%s_hand_04_02", "%s_hand_04_03", "%s_hand_04_04", "%s_hand_04_05"}
+	elseif slot == "2hsword" then r = {"%s_2hsword_01", "%s_2hsword_02", "%s_2hsword_03", "%s_2hsword_04", "%s_2hsword_05"}
+	elseif slot == "wizard_hat" then r = {"head_21","head_21","head_22","head_22","head_23"}
+	elseif slot == "trident" then r = {"%s_hand_13_01", "%s_hand_13_02", "%s_hand_13_03", "%s_hand_13_04", "%s_hand_13_05"}
 	elseif slot == "whip" then r = {"%s_hand_09"}
-	elseif slot == "mace" then r = {"%s_hand_05"}
-	elseif slot == "2hmace" then r = {"%s_2hmace"}
-	elseif slot == "axe" then r = {"%s_hand_06"}
-	elseif slot == "2haxe" then r = {"%s_2haxe"}
-	elseif slot == "bow" then r = {"%s_hand_01"}
-	elseif slot == "sling" then r = {"%s_hand_02"}
-	elseif slot == "dagger" then r = {"%s_hand_03"}
+	elseif slot == "mace" then r = {"%s_hand_05_01", "%s_hand_05_02", "%s_hand_05_03", "%s_hand_05_04", "%s_hand_05_05"}
+	elseif slot == "2hmace" then r = {"%s_2hmace_01", "%s_2hmace_02", "%s_2hmace_03", "%s_2hmace_04", "%s_2hmace_05"}
+	elseif slot == "axe" then r = {"%s_hand_06_01", "%s_hand_06_02", "%s_hand_06_03", "%s_hand_06_04", "%s_hand_06_05"}
+	elseif slot == "2haxe" then r = {"%s_2haxe_01", "%s_2haxe_02", "%s_2haxe_03", "%s_2haxe_04", "%s_2haxe_05"}
+	elseif slot == "bow" then r = {"%s_hand_01_01", "%s_hand_01_02", "%s_hand_01_03", "%s_hand_01_04", "%s_hand_01_05"}
+	elseif slot == "sling" then r = {"%s_hand_02_01", "%s_hand_02_02", "%s_hand_02_03", "%s_hand_02_04", "%s_hand_02_05"}
+	elseif slot == "dagger" then r = {"%s_hand_03_01", "%s_hand_03_02", "%s_hand_03_03", "%s_hand_03_04", "%s_hand_03_05"}
 	elseif slot == "mindstar" then r = {{"mindstar_mossy_%s_01",true},{"mindstar_vines_%s_01",true},{"mindstar_thorn_%s_01",true},{"mindstar_pulsing_%s_01",true},{"mindstar_living_%s_01",true},}
 	elseif slot == "helm" then r = {"head_05","head_06","head_08","head_10","head_09",}
-	elseif slot == "leather_cap" then r = {"head_03"}
+	elseif slot == "leather_cap" then r = {"head_03","head_03","head_19","head_19","head_20"}
 	elseif slot == "mummy_wrapping" then r = {{"special/mummy_wrappings",true}}
+	elseif slot == "quiver" then r = {"quiver_01","quiver_02","quiver_03","quiver_04","quiver_05"}
+	elseif slot == "shotbag" then r = {"shotbag_01","shotbag_02","shotbag_03","shotbag_04","shotbag_05"}
+	elseif slot == "gembag" then r = {"gembag_01","gembag_02","gembag_03","gembag_04","gembag_05"}
 	end
 	local ml = e.material_level or 1
 	r = r[util.bound(ml, 1, #r)]

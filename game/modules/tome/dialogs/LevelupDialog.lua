@@ -28,6 +28,7 @@ local UIContainer = require "engine.ui.UIContainer"
 local TalentTrees = require "mod.dialogs.elements.TalentTrees"
 local StatusBox = require "mod.dialogs.elements.StatusBox"
 local Separator = require "engine.ui.Separator"
+local Checkbox = require "engine.ui.Checkbox"
 local Empty = require "engine.ui.Empty"
 local DamageType = require "engine.DamageType"
 local FontPackage = require "engine.FontPackage"
@@ -459,9 +460,9 @@ function _M:generateList()
 	local gtree = {}
 	self.talents_deps = {}
 	for i, tt in ipairs(self.actor.talents_types_def) do
-		if not tt.hide and not (self.actor.talents_types[tt.type] == nil) then
+		local ttknown = self.actor:knowTalentType(tt.type)
+		if (ttknown or not self.actor.levelup_hide_unknown_catgories) and not tt.hide and not (self.actor.talents_types[tt.type] == nil) then
 			local cat = tt.type:gsub("/.*", "")
-			local ttknown = self.actor:knowTalentType(tt.type)
 			local isgeneric = self.actor.talents_types_def[tt.type].generic
 			local tshown = (self.actor.__hidden_talent_types[tt.type] == nil and ttknown) or (self.actor.__hidden_talent_types[tt.type] ~= nil and not self.actor.__hidden_talent_types[tt.type])
 			local node = {
@@ -663,46 +664,49 @@ function _M:createDisplay()
 	if self.actor.unused_prodigies > 0 then self.b_prodigies.glow = 0.6 end
 	if self.actor.unused_talents_types > 0 and self.b_inscriptions then self.b_inscriptions.glow = 0.6 end
 
-	self.c_ctree = TalentTrees.new{
-		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
-		tiles=game.uiset.hotkeys_display_icons,
-		tree=self.ctree,
-		width=320, height=self.ih-50,
-		tooltip=function(item)
-			local x = self.display_x + self.uis[5].x - game.tooltip.max
-			if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
-			local ret = self:getTalentDesc(item), x, nil
-			if self.no_tooltip then
-				self.c_desc:erase()
-				self.c_desc:switchItem(ret, ret)
-			end
-			return ret
-		end,
-		on_use = function(item, inc) self:onUseTalent(item, inc) end,
-		on_expand = function(item) self.actor.__hidden_talent_types[item.type] = not item.shown end,
-		scrollbar = true, no_tooltip = self.no_tooltip,
-		message_box = self.t_
-	}
+	local recreate_trees = function()
+		self.c_ctree = TalentTrees.new{
+			font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+			tiles=game.uiset.hotkeys_display_icons,
+			tree=self.ctree,
+			width=320, height=self.ih-50,
+			tooltip=function(item)
+				local x = self.display_x + self.uis[5].x - game.tooltip.max
+				if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
+				local ret = self:getTalentDesc(item), x, nil
+				if self.no_tooltip then
+					self.c_desc:erase()
+					self.c_desc:switchItem(ret, ret)
+				end
+				return ret
+			end,
+			on_use = function(item, inc) self:onUseTalent(item, inc) end,
+			on_expand = function(item) self.actor.__hidden_talent_types[item.type] = not item.shown end,
+			scrollbar = true, no_tooltip = self.no_tooltip,
+			message_box = self.t_
+		}
 
-	self.c_gtree = TalentTrees.new{
-		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
-		tiles=game.uiset.hotkeys_display_icons,
-		tree=self.gtree,
-		width=320, height=(self.no_tooltip and self.ih - 50) or self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
-		tooltip=function(item)
-			local x = self.display_x + self.uis[8].x - game.tooltip.max
-			if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
-			local ret = self:getTalentDesc(item), x, nil
-			if self.no_tooltip then
-				self.c_desc:erase()
-				self.c_desc:switchItem(ret, ret)
-			end
-			return ret
-		end,
-		on_use = function(item, inc) self:onUseTalent(item, inc) end,
-		on_expand = function(item) self.actor.__hidden_talent_types[item.type] = not item.shown end,
-		scrollbar = true, no_tooltip = self.no_tooltip,
-	}
+		self.c_gtree = TalentTrees.new{
+			font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+			tiles=game.uiset.hotkeys_display_icons,
+			tree=self.gtree,
+			width=320, height=(self.no_tooltip and self.ih - 50) or self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
+			tooltip=function(item)
+				local x = self.display_x + self.uis[8].x - game.tooltip.max
+				if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
+				local ret = self:getTalentDesc(item), x, nil
+				if self.no_tooltip then
+					self.c_desc:erase()
+					self.c_desc:switchItem(ret, ret)
+				end
+				return ret
+			end,
+			on_use = function(item, inc) self:onUseTalent(item, inc) end,
+			on_expand = function(item) self.actor.__hidden_talent_types[item.type] = not item.shown end,
+			scrollbar = true, no_tooltip = self.no_tooltip,
+		}
+	end
+	recreate_trees()
 
 	self.c_stat = TalentTrees.new{
 		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
@@ -761,6 +765,15 @@ function _M:createDisplay()
 		end
 	end}
 
+	self.c_hide_unknown = Checkbox.new{title="Hide unlearnt categories", default=self.actor.levelup_hide_unknown_catgories, fct=function() end, on_change=function(s)
+		self.actor.levelup_hide_unknown_catgories = s
+		self:generateList()
+		local oldctree, oldgtree = self.c_ctree, self.c_gtree
+		recreate_trees()
+		self:replaceUI(oldctree, self.c_ctree)
+		self:replaceUI(oldgtree, self.c_gtree)
+	end}
+
 	self.t_messages = StatusBox.new{
 		font = core.display.newFont("/data/font/DroidSans.ttf", 16),
 		width = math.floor(2 * self.iw / 3), delay = 1,
@@ -795,6 +808,7 @@ function _M:createDisplay()
 		{hcenter=self.b_types, top=-self.t_messages.h, ui=self.t_messages},
 	}
 	if self.b_inscriptions then table.insert(ret, {right=self.b_prodigies.w, bottom=0, ui=self.b_inscriptions}) end
+	table.insert(ret, {right=self.b_inscriptions or self.b_prodigies, bottom=0, ui=self.c_hide_unknown})
 
 	if self.no_tooltip then
 		local vsep3 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
@@ -825,6 +839,7 @@ function _M:getStatDesc(item)
 		local multi_life = 4 + (self.actor.inc_resource_multi.life or 0)
 		text:add("Max life: ", color, ("%0.2f"):format(diff * multi_life), dc, true)
 		text:add("Physical save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
+		text:add("Healing mod: ", color, ("%0.1f%%"):format(diff * 0.5), dc, true)
 	elseif stat_id == self.actor.STAT_WIL then
 		if self.actor:knowTalent(self.actor.T_MANA_POOL) then
 			local multi_mana = 5 + (self.actor.inc_resource_multi.mana or 0)

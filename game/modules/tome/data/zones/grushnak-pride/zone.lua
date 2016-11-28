@@ -92,6 +92,16 @@ return {
 		}},
 		[6] = {
 			generator = { map = {
+				['.'] = {
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_CREEP",
+				},
 				down = "SLIME_TUNNELS",
 				force_last_stair = true,
 			}, },

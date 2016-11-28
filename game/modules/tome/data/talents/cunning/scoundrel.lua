@@ -25,12 +25,19 @@ newTalent{
 	points = 5,
 	require = cuns_req1,
 	mode = "sustained",
-	cutChance = function(self,t) return self:combatTalentLimit(t, 100, 20, 60) end, --Limit < 100%
-	do_cut = function(self, t, target, dam)
-		if target:canBe("cut") and rng.percent(t.cutChance(self, t)) then
-			dam = dam * self:combatTalentWeaponDamage(t, 0.15, 0.35)
-			target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam / 10)})
-		end
+	no_break_stealth = true,
+	getChance = function(self,t) return self:combatTalentLimit(t, 50, 15, 35) end, --Limit < 100%
+	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		if not target then return nil end
+		if self:reactionToward(target) >=0 then return nil end
+		if rng.percent(t.getChance(self, t)) then
+			local energyDrain = (game.energy_to_act * 0.1)	
+			target.energy.value = target.energy.value - energyDrain
+			if target:canBe("cut") then
+				local bleed = dam*0.75
+				target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam / 10)})
+			end
+		end		
 	end,
 	activate = function(self, t)
 		return {}
@@ -39,8 +46,9 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Rend your foe with every attack you do. All attacks now have a %d%% chance of inflicting an additional %d%% of your attack's damage in Bleeding damage, divided over ten turns.]]):
-		format(t.cutChance(self, t), 100 * self:combatTalentWeaponDamage(t, 0.15, 0.35))
+		local chance = t.getChance(self,t)
+		return ([[You melee attacks have a %d%% chance to inflict a deep, disabling wound inflicting an additional 75%% of the damage dealt as a bleed over 10 turns, as well as causing the target to lose 10%% of a turn.]]):
+		format(chance)
 	end,
 }
 
@@ -50,108 +58,101 @@ newTalent{
 	require = cuns_req2,
 	mode = "passive",
 	points = 5,
-	getDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 3.3, 5.3)) end,
-	-- _M:physicalCrit function in mod\class\interface\Combat.lua handles crit penalty
 	getCritPenalty = function(self,t) return self:combatTalentScale(t, 10, 30) end,
-	disableChance = function(self,t) return self:combatTalentLimit(t, 100, 8, 20) end, -- Limit <100%
-	getMovePenalty = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "cun", 10, 30), 1, 0.05, 0, 0.274, 22.4) end, -- Limit <100%
-	getAttackPenalty = function(self, t) return 5 + self:combatTalentStatDamage(t, "cun", 5, 20) end,
-	getWillPenalty = function(self, t) return 5 + self:combatTalentStatDamage(t, "cun", 5, 20) end,
-	getCunPenalty = function(self, t) return 5 + self:combatTalentStatDamage(t, "cun", 5, 20) end,
-	do_scoundrel = function(self, t, target)
-		if not rng.percent(t.disableChance(self, t)) then return end
-		if rng.percent(50) then
-			if target:hasEffect(target.EFF_DISABLE) then return end
-			target:setEffect(target.EFF_DISABLE, t.getDuration(self, t), {speed=t.getMovePenalty(self, t), atk=t.getAttackPenalty(self, t), apply_power=self:combatAttack()})
-		else
-			if target:hasEffect(target.EFF_ANGUISH) then return end
-			target:setEffect(target.EFF_ANGUISH, t.getDuration(self, t), {will=t.getWillPenalty(self, t), cun=t.getCunPenalty(self, t), apply_power=self:combatAttack()})
+	getDuration = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	getChance = function(self, t) return self:combatTalentScale(t, 8, 24) end,
+	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		if not target then return nil end
+		if self:reactionToward(target) >=0 then return nil end
+		if target then target:setEffect(target.EFF_SCOUNDREL, 10, {src=self, power=t.getCritPenalty(self,t) }) end
+		if self:knowTalent(self.T_FUMBLE) and target then
+			local dam = self:callTalent(self.T_FUMBLE, "getDamage")
+			local stacks = self:callTalent(self.T_FUMBLE, "getStacks")
+			target:setEffect(target.EFF_FUMBLE, 10, {power=3, max_power = stacks*3, dam=dam, stacks=1, max_stacks=stacks })
 		end
+
+		local nb = 0
+		for eff_id, p in pairs(target.tmp) do
+			local e = target.tempeffect_def[eff_id]
+			if e.subtype.cut then nb = nb + 1 end
+		end
+		
+		if nb <= 0 or not rng.percent(t.getChance(self,t)) or target.turn_procs.scoundrel then return end
+		local tids = {}
+		for tid, lev in pairs(target.talents) do
+			local t = target:getTalentFromId(tid)
+			if t and not target.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
+		end
+		
+		local cd = t.getDuration(self,t)
+		local t = rng.tableRemove(tids)
+		if not t or #tids<=0 then return end
+		target.talents_cd[t.id] = cd
+		game.logSeen(target, "%s's %s is disrupted by their wounds!", target.name:capitalize(), t.name)
+		target.turn_procs.scoundrel = true
+		
 	end,
 	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local move = t.getMovePenalty(self, t)
-		local attack = t.getAttackPenalty(self, t)
-		local will = t.getWillPenalty(self, t)
-		local cun = t.getCunPenalty(self, t)
-		return ([[Learn to take advantage of your enemy's pain.
-		If your enemy is bleeding and attempts to attack you, their critical hit rate is reduced by %d%%, as their wounds make them more predictable.
-		If you attack a bleeding enemy, there is a %d%% chance that, for %d turns, they are disabled as you take advantage of openings (reducing their movement speed by %d%% and Accuracy by %d) or anguished as you strike their painful wounds (reducing their Willpower by %d and their Cunning by %d).
-		The statistical reductions will increase with your Cunning.
-		]]):format(t.getCritPenalty(self,t), t.disableChance(self, t), duration, move * 100, attack, will, cun)
+		local chance = t.getChance(self,t)
+		local crit = t.getCritPenalty(self, t)
+		local dur = t.getDuration(self,t)
+		return ([[Your melee attacks inflict distracting wounds that reduce the target’s critical strike chance by %d%% for 10 turns. 
+In addition, your attacks against bleeding targets have a %d%% chance to inflict a painful wound that causes them to forget a random talent for %d turns. This cannot affect a target more than once per turn.
+		]]):format(crit, chance, dur)
 	end,
 }
-
-newTalent{
-	name = "Nimble Movements",
-	type = {"cunning/scoundrel",3},
-	message = "@Source@ dashes quickly!",
-	no_break_stealth = true,
-	require = cuns_req3,
-	points = 5,
-	random_ego = "attack",
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 31.9, 17)) end, -- Limit >= 5
-	tactical = { CLOSEIN = 3 },
-	requires_target = true,
-	range = function(self, t) return math.floor(self:combatTalentScale(t, 6.8, 8.6)) end,
-	speed = "movement",
-	action = function(self, t)
-		if self:attr("never_move") then game.logPlayer(self, "You can not do that currently.") return end
-
-		local tg = {type="hit", range=self:getTalentRange(t)}
-		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
-
-		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
-		local l = self:lineFOV(x, y, block_actor)
-		local lx, ly, is_corner_blocked = l:step()
-		if is_corner_blocked or game.level.map:checkAllEntities(lx, ly, "block_move", self) then
-			game.logPlayer(self, "You cannot dash through that!")
-			return
-		end
-		local tx, ty = lx, ly
-		lx, ly, is_corner_blocked = l:step()
-		while lx and ly do
-			if is_corner_blocked or game.level.map:checkAllEntities(lx, ly, "block_move", self) then break end
-			tx, ty = lx, ly
-			lx, ly, is_corner_blocked = l:step()
-		end
-
-		local ox, oy = self.x, self.y
-		self:move(tx, ty, true)
-		if config.settings.tome.smooth_move > 0 then
-			self:resetMoveAnim()
-			self:setMoveAnim(ox, oy, 8, 5)
-		end
-
-		return true
-	end,
-	info = function(self, t)
-		return ([[Quickly and quietly dash your way to the target square, if it is not blocked by enemies or obstacles. This talent will not break Stealth.]])
-	end,
-}
-
 
 newTalent{
 	name = "Misdirection",
-	type = {"cunning/scoundrel", 4},
+	type = {"cunning/scoundrel", 3},
 	mode = "passive",
 	points = 5,
-	require = cuns_req4,
+	require = cuns_req3,
 	mode = "passive",
-	-- Defense bonus implemented in _M:combatDefenseBase function in mod\class\interface\Combat.lua
-	getDefense = function(self,t) return self:combatScale(self:getTalentLevel(t) * 2 * (1 + self:getCun()/85), 0, 0, 21.8, 21.8) end,
-	getDeflect = function(self, t) return self:combatTalentLimit(t, 100, 3, 15) end, --limit < 100%
-	getDeflectRange = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "projectile_evasion", t.getDeflect(self, t))
-		self:talentTemporaryValue(p, "projectile_evasion_spread", t.getDeflectRange(self, t))
+	getDuration = function(self, t) return self:combatTalentLimit(t, 100, 30, 55) end, --limit < 100%
+	getChance = function(self, t) return self:combatTalentLimit(t, 50, 5, 25) end, --limit < 100%
+	callbackOnTemporaryEffect = function(self, eff, eff_id, e, p)
+		if e.status ~= "detrimental" or e.type ~= "physical" then return end
+		local chance = self:callTalent(self.T_MISDIRECTION, "getChance")
+		if not rng.percent(chance) then return end
+		game.logSeen(self, "#ORANGE#%s redirects the effect '%s'!", self.name:capitalize(), e.desc)
+		
+		local tgts = {}
+		self:project({type="ball", radius=1}, self.x, self.y, function(px, py)
+			local act = game.level.map(px, py, Map.ACTOR)
+			if not act or self:reactionToward(act) >= 0 then return end
+			tgts[#tgts+1] = act
+		end)
+		if #tgts > 0 then
+			local target = rng.table(tgts)
+			local newp = table.clone(p, false)
+			newp.apply_power = self:combatAttack()
+			target:setEffect(eff_id, newp.dur, newp)
+		end
+		
+		return true
 	end,
 	info = function(self, t)
-		return ([[Your abilities in sowing confusion and chaos have reached their peak. Now, even your most simple moves confuse your enemies, rendering their offense less effective.
-		Your Defense increases by %d%%, and enemies have a %d%% chance of targetting a random square within %d squares of you.
-		The bonus to Defense will increase with Cunning.]]):
-		format(t.getDefense(self, t) ,t.getDeflect(self, t) ,t.getDeflectRange(self,t))
+		return ([[Your abilities in sowing confusion and chaos have reached their peak. Whenever a foe attempts to apply a detrimental physical effect to you, they have a %d%% chance to fail. If there is an adjacent enemy to you, you misdirect your foe into applying it to them at %d%% duration.
+The chance to apply status effects increases with your Accuracy.]]):
+		format(t.getChance(self,t),t.getDuration(self,t))
+	end,
+}
+
+newTalent{
+	name = "Fumble",
+	type = {"cunning/scoundrel", 4},
+	require = cuns_req4,
+	mode = "passive",
+	points = 5,
+	getDamage = function(self, t) return self:combatTalentStatDamage(t, "cun", 25, 300) end,
+	getStacks = function(self,t) return math.floor(self:combatTalentLimit(t, 20, 3, 15)) end,
+	info = function(self, t)
+		local stacks = t.getStacks(self, t)
+		local dam = t.getDamage(self, t)
+		return ([[Your Scoundrel's Strategies effect leaves your foes unable to focus on any complex actions, giving them a stacking 3%% chance to fail their next talent usage (to a maximum of %d%%).
+		On failing a talent the target fumbles and injures themself, taking %0.2f physical damage and removing the fumble effect.
+		The damage dealt increases with your Cunning.
+		]]):format(stacks*3, damDesc(self, DamageType.PHYSICAL, dam))
 	end,
 }

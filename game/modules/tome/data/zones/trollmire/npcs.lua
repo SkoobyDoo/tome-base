@@ -235,7 +235,7 @@ newEntity{ define_as = "ALUIN",
 		{type="armor", subtype="shield", defined="SANGUINE_SHIELD", random_art_replace={chance=65}, autoreq=true},
 		{type="armor", subtype="massive", force_drop=true, tome_drops="boss", autoreq=true},
 	},
-	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
+	resolvers.drops{chance=100, nb=100, {tome_drops="boss"} },
 
 	resolvers.talents{
 		[Talents.T_ARMOUR_TRAINING]=5,

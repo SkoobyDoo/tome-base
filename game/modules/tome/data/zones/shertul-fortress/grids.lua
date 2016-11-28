@@ -353,3 +353,33 @@ newEntity{
 	always_remember = true,
 	block_move = true,
 }
+
+newEntity{
+	define_as = "SHIMMER_CONTROL",
+	name = "Mirror of Reflection", image = "terrain/solidwall/solid_floor1.png",
+	add_displays = {
+		class.new{
+			image="terrain/mirror_of_reflection_back.png",
+			defineDisplayCallback = function(self)
+				if not self._mo then return end
+				self._mo:displayCallback(function(x, y, w, h)
+					local p = game:getPlayer(true)
+					if not p or not game.level or not game.level.map then return end
+					p:toScreen(game.level.map.tiles, x + w * 0.23, y + h * 0.3, w * 0.6, h * 0.6, 0.5, false, false)
+				end)
+			end,
+			shader = "shadow_simulacrum",
+		},
+		class.new{image="terrain/mirror_of_reflection_front.png"},
+	},
+	display = '*', color=colors.PURPLE,
+	notice = true,
+	always_remember = true,
+	block_move = function(self, x, y, e, act, couldpass)
+		if e and e.player and act then
+			local chat = require("engine.Chat").new("shertul-fortress-shimmer", self, e, {player=e})
+			chat:invoke()
+		end
+		return true
+	end,
+}

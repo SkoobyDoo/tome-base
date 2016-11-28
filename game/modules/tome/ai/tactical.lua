@@ -469,6 +469,7 @@ newAI("tactical", function(self)
 			self.energy.used = true
 			self.ai_state.last_tid = used_talent
 		end
+		return true
 	end
 	return false
 end)

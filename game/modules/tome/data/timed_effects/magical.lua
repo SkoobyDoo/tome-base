@@ -1091,11 +1091,11 @@ newEffect{
 newEffect{
 	name = "CORROSIVE_WORM", image = "talents/corrosive_worm.png",
 	desc = "Corrosive Worm",
-	long_desc = function(self, eff) return ("The target is infected with a corrosive worm, reducing blight and acid resistance by %d%%. When the effect ends, the worm will explode, dealing %d acid damage in a 4 radius ball. This damage will increase by %d%% of all damage taken while under torment"):format(eff.power, eff.finaldam, eff.rate*100) end,
+	long_desc = function(self, eff) return ("The target is infected with a corrosive worm, reducing blight and acid resistance by %d%%. When the effect ends, the worm will explode, dealing %d acid damage in a 4 radius ball."):format(eff.power, eff.finaldam) end,
 	type = "magical",
 	subtype = { acid=true },
 	status = "detrimental",
-	parameters = { power=20, rate=10, finaldam=50, },
+	parameters = { power=20, finaldam=50, },
 	on_gain = function(self, err) return "#Target# is infected by a corrosive worm.", "+Corrosive Worm" end,
 	on_lose = function(self, err) return "#Target# is free from the corrosive worm.", "-Corrosive Worm" end,
 	activate = function(self, eff)
@@ -1107,11 +1107,6 @@ newEffect{
 		eff.src:project(tg, self.x, self.y, DamageType.ACID, eff.finaldam, {type="acid"})
 		self:removeParticles(eff.particle)
 	end,
-	callbackOnHit = function(self, eff, cb)
-		eff.finaldam = eff.finaldam + (cb.value * eff.rate)
-		return true
-	end,
-	
 	on_die = function(self, eff)
 		local tg = {type="ball", radius=4, selffire=false, x=self.x, y=self.y}
 		eff.src:project(tg, self.x, self.y, DamageType.ACID, eff.finaldam, {type="acid"})
@@ -1716,7 +1711,7 @@ newEffect{
 newEffect{
 	name = "IMPENDING_DOOM", image = "talents/impending_doom.png",
 	desc = "Impending Doom",
-	long_desc = function(self, eff) return ("The target's final doom is drawing near, reducing healing factor by 100%% and dealing %0.2f arcane damage per turn. The effect will stop if the caster dies."):format(eff.dam) end,
+	long_desc = function(self, eff) return ("The target's final doom is drawing near, reducing healing factor by 80%% and dealing %0.2f arcane damage per turn. The effect will stop if the caster dies."):format(eff.dam) end,
 	type = "magical",
 	subtype = { arcane=true },
 	status = "detrimental",
@@ -1724,7 +1719,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is doomed!", "+Doomed" end,
 	on_lose = function(self, err) return "#Target# is freed from the impending doom.", "-Doomed" end,
 	activate = function(self, eff)
-		eff.healid = self:addTemporaryValue("healing_factor", -1)
+		eff.healid = self:addTemporaryValue("healing_factor", -0.8)
 	end,
 	on_timeout = function(self, eff)
 		if eff.src.dead or not game.level:hasEntity(eff.src) then return true end
@@ -2361,11 +2356,11 @@ newEffect{
 newEffect{
 	name = "VULNERABILITY_POISON", image = "talents/vulnerability_poison.png",
 	desc = "Vulnerability Poison",
-	long_desc = function(self, eff) return ("The target is poisoned and sick, suffering %0.2f arcane damage per turn. All resistances are reduced by %d%%."):format(eff.power, eff.res) end,
+	long_desc = function(self, eff) return ("The target is poisoned and sick, suffering %0.2f arcane damage per turn. All resistances are reduced by 10%% and poison resistance is reduced by 50%%."):format(eff.power) end,
 	type = "magical",
 	subtype = { poison=true, arcane=true },
 	status = "detrimental",
-	parameters = {power=10, res=15},
+	parameters = {power=10},
 	on_gain = function(self, err) return "#Target# is poisoned!", "+Vulnerability Poison" end,
 	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Vulnerability Poison" end,
 	-- Damage each turn
@@ -2375,10 +2370,14 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("resists", {all=-eff.res})
+		eff.tmpid = self:addTemporaryValue("resists", {all=-10})
+		if self:attr("poison_immune") then
+			eff.poisonid = self:addTemporaryValue("poison_immune", -self:attr("poison_immune") / 2)
+		end
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("resists", eff.tmpid)
+		if eff.poisonid then self:removeTemporaryValue("poison_immune", eff.poisonid) end
 	end,
 }
 

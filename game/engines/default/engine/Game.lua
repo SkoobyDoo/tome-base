@@ -50,9 +50,16 @@ function _M:init(keyhandler)
 end
 
 --- Log a message
-function _M:log() end
---- Log something that was seen
-function _M:logSeen() end
+-- Redefine as needed
+function _M.log(style, ...) end
+
+--- Log something associated with an entity that is seen by the player
+-- Redefine as needed
+function _M.logSeen(e, style, ...) end
+
+--- Log something associated with an entity if it is the player
+-- Redefine as needed
+function _M.logPlayer(e, style, ...) end
 
 --- Default mouse cursor
 function _M:defaultMouseCursor()
@@ -270,9 +277,11 @@ end
 
 --- This is the "main game loop", do something here
 function _M:tick()
-	-- Check out any possible errors
+	-- If any errors have occurred, save them and open the error dialog
 	local errs = core.game.checkError()
 	if errs then
+		if not self.errors or self.errors.turn ~= self.turn then self.errors = {turn=self.turn, first_error = errs} end
+		self.errors.last_error = errs table.insert(self.errors, (#self.errors%10) + 1, errs)
 		if config.settings.cheat then for id = #self.dialogs, 1, -1 do self:unregisterDialog(self.dialogs[id]) end end
 		self:registerDialog(require("engine.dialogs.ShowErrorStack").new(errs))
 	end
