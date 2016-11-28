@@ -344,6 +344,19 @@ return {
 			end
 		end
 
+		-- Give some random auras
+		if level.level >= 5 and rng.percent(level.level * 4) then
+			local p = game.player
+			local effid = rng.table{
+				p.EFF_ZONE_AURA_FIRE, p.EFF_ZONE_AURA_COLD, p.EFF_ZONE_AURA_LIGHTNING, p.EFF_ZONE_AURA_ACID,
+				p.EFF_ZONE_AURA_DARKNESS, p.EFF_ZONE_AURA_MIND, p.EFF_ZONE_AURA_LIGHT, p.EFF_ZONE_AURA_ARCANE,
+				p.EFF_ZONE_AURA_TEMPORAL, p.EFF_ZONE_AURA_PHYSICAL, p.EFF_ZONE_AURA_BLIGHT, p.EFF_ZONE_AURA_NATURE,
+				p.EFF_ZONE_AURA_GORBAT, p.EFF_ZONE_AURA_VOR, p.EFF_ZONE_AURA_GRUSHNAK, p.EFF_ZONE_AURA_RAKSHOR,
+				p.EFF_ZONE_AURA_OUT_OF_TIME, p.EFF_ZONE_AURA_THUNDERSTORM, 
+			}
+			level.data.effects = {effid}
+		end
+
 		game.state:infiniteDungeonChallengeFinish(zone, level)
 		
 		if config.settings.cheat then -- gather statistics
