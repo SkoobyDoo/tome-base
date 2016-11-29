@@ -98,11 +98,13 @@ void DORTileObject::addMapObject(map_object *mo, int ref) {
 // Normal clear, but also free the allocated objects, since they are not lua managed
 // beware this means nothing besides regenData() should ::add() DOs
 void DORTileObject::clear() {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+	vector<DisplayObject*> olddos(dos);
+	DORContainer::clear();
+	for (auto it = olddos.begin() ; it != olddos.end(); ++it) {
+		printf("======================+DELETING %s\n", (*it)->getKind());
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 		if (i) delete i;
 	}
-	DORContainer::clear();
 }
 
 void DORTileObject::render(RendererGL *container, mat4 cur_model, vec4 color) {

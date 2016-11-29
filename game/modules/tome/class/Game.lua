@@ -1727,7 +1727,6 @@ function _M:display(nb_keyframes)
 		self.full_fbo:use(false)
 		self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad)
 	end
-
 end
 
 --- Called when a dialog is registered to appear on screen

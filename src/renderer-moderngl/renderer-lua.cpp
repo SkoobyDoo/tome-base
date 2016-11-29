@@ -678,6 +678,15 @@ static int gl_spriter_trigger_callback(lua_State *L)
 }
 
 /******************************************************************
+ ** Generic non object functions
+ ******************************************************************/
+static int gl_dos_count(lua_State *L) 
+{
+	lua_pushnumber(L, donb);
+	return 1;
+}
+
+/******************************************************************
  ** Lua declarations
  ******************************************************************/
 
@@ -915,6 +924,7 @@ const luaL_Reg rendererlib[] = {
 	{"target", gl_target_new},
 	{"callback", gl_callback_new},
 	{"spriter", gl_spriter_new},
+	{"countDOs", gl_dos_count},
 	{NULL, NULL}
 };
 
