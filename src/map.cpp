@@ -832,7 +832,6 @@ static int map_set_default_shader(lua_State *L)
 		while (lua_next(L, 3) != 0) {
 			float kind = lua_tonumber(L, -2);
 			const char *name = luaL_checkstring(L, -1);
-			printf("====== %s = %f\n", name, kind);
 			std::pair<string, float> p(name, kind);
 			map->shader_to_shaderkind->insert(p);
 			lua_pop(L, 1);
