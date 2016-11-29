@@ -225,7 +225,10 @@ end
 
 local fromTextureTable = core.renderer.fromTextureTable
 
-local function resizeFrame(f, w, h)
+local function resizeFrame(f, w, h, iw, ih)
+	if not w then w = iw + f.b4.w + f.b6.w end
+	if not h then h = ih + f.b8.h + f.b2.h end
+
 	local cx, cy = f.cx, f.cy
 	f.container:clear()
 	f.container:add(fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))

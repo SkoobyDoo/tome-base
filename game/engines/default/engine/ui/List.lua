@@ -119,6 +119,11 @@ function _M:generate()
 	self:onSelect()
 end
 
+function _M:getCurrentText()
+	if not self.sel then return "" end
+	return self.list[self.sel][self.display_prop]
+end
+
 function _M:drawItem(item)
 	local text = item[self.display_prop]
 

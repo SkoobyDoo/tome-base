@@ -110,7 +110,7 @@ function _M:resize(w, h)
 	self.w = w
 	self.h = h
 	self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
-	self:changeUI(self.uids)
+	self:changeUI(self.uis)
 end
 
 function _M:display(x, y, nb_keyframes)

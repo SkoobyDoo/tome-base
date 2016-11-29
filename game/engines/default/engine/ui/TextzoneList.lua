@@ -58,7 +58,7 @@ function _M:generate()
 end
 
 function _M:createItem(item, text)
-	local ui = Textzone.new{width=self.w, height=self.h, auto_height=self.variable_height, fct=function() end, scrollbar=self.scrollbar, text=text}
+	local ui = Textzone.new{width=self.w, height=self.h, auto_height=self.variable_height, font=self.font, fct=function() end, scrollbar=self.scrollbar, text=text}
 	self.items[item] = { ui = ui }
 end
 

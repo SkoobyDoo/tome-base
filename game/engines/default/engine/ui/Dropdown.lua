@@ -22,6 +22,7 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local List = require "engine.ui.List"
 local Dialog = require "engine.ui.Dialog"
+local Input = require "engine.ui.blocks.Input"
 
 --- A generic UI list dropdown box
 -- @classmod engine.ui.Dropdown
@@ -48,8 +49,9 @@ function _M:generate()
 	self.h = self.font_h + 6
 	self.height = self.h
 
-	self.frame = self:makeFrame("ui/textbox", self.w, self.h)
-	self.frame_sel = self:makeFrame("ui/textbox-sel", self.w, self.h)
+	self.textinput = Input.new(nil, "", nil, self.w - 8, self.h - 11)
+	self.textinput:showCursor(false)
+	self.do_container:add(self.textinput:get())
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -63,6 +65,7 @@ function _M:positioned(x, y, sx, sy)
 		game:unregisterDialog(self.popup)
 		self:sound("button")
 		self.fct(self.c_list.list[self.c_list.sel])
+		self.textinput:setText(self.c_list:getCurrentText())
 	end}
 	self.popup = Dialog.new(nil, self.w, self.c_list.h, sx, sy + self.h, nil, nil, false, "simple")
 	self.popup.frame.a = 0.7
@@ -73,7 +76,9 @@ function _M:positioned(x, y, sx, sy)
 		self.c_list.sel = self.previous
 		self:sound("button")
 		self.fct(self.c_list.list[self.c_list.sel])
+		self.textinput:setText(self.c_list:getCurrentText())
 	end)
+	self.textinput:setText(self.c_list:getCurrentText())
 end
 
 function _M:showSelect()

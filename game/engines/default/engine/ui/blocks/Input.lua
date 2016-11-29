@@ -74,3 +74,7 @@ function _M:setPos(i)
 	-- local size = self.parent.font:size(self.lasttext:sub(1, i))
 	self.cursor:translate(self.frame.b4.w + self.cursor_t.w + size, (self.h - self.cursor_t.h) / 2, 11)
 end
+
+function _M:showCursor(v)
+	self.cursor:color(1, 1, 1, v and 1 or 0)
+end

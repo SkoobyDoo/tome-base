@@ -1715,13 +1715,13 @@ function _M:display(nb_keyframes)
 	self.ctrl_state = core.key.modState("ctrl")
 
 	-- if tooltip is in way of mouse and its not locked then move it
-	-- if not self.uiset.no_ui then
-	-- 	if self.tooltip.w and mx > self.w - self.tooltip.w and my > Tooltip:tooltip_bound_y2() - self.tooltip.h and not self.tooltip.locked then
-	-- 		self:targetDisplayTooltip(Map.display_x, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
-	-- 	else
-	-- 		self:targetDisplayTooltip(self.w, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
-	-- 	end
-	-- end
+	if not self.uiset.no_ui then
+		if self.tooltip.w and mx > self.w - self.tooltip.w and my > Tooltip:tooltip_bound_y2() - self.tooltip.h and not self.tooltip.locked then
+			self:targetDisplayTooltip(Map.display_x, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
+		else
+			self:targetDisplayTooltip(self.w, self.h, self.old_ctrl_state~=self.ctrl_state, nb_keyframes )
+		end
+	end
 
 	if self.full_fbo then
 		self.full_fbo:use(false)

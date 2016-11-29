@@ -184,7 +184,7 @@ static void add_lua_error(const char *file, int line, const char *func)
 	last_lua_error_tail = cur;
 }
 
-static int traceback (lua_State *L) {
+int traceback (lua_State *L) {
 	lua_Debug ar;
 	int n = 0;
 	printf("Lua Error: %s\n", lua_tostring(L, 1));

@@ -67,9 +67,11 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 end
 
 function _M:generate()
-	self.do_container:add(self.container.do_container)
-
 	self.frame = Base:makeFrameDO("ui/tooltip/", nil, nil, self.w, self.h, nil, true)
+	self.frame.container:translate(-self.frame.b7.w, -self.frame.b7.h, 0)
+	self.frame.container:color(1, 1, 1, 0.7)
+	self.do_container:add(self.frame.container)
+	self.do_container:add(self.container.do_container)
 end
 
 --- Set the tooltip text	
@@ -99,6 +101,7 @@ function _M:set(str, ...)
 	local max_str_w = 0
 	local uis = {}
 	local part
+
 	if not str.is_tstring then
 		-- format all texts into tstring and calculate required width 
 		for i=1, #str do
@@ -187,8 +190,7 @@ function _M:set(str, ...)
 	self.container:resize(self.w, clip_h - self.frame.b2.h, self.w, clip_h - self.frame.b2.h)
 	self.h = clip_h
 	-- resize background frame
-	self.frame.h = self.h
-	self.frame.w = self.w
+	self.frame:resize(nil, nil, max_w, uih)
 end
 
 function _M:erase()
@@ -213,6 +215,8 @@ function _M:toScreen(x, y, nb_keyframes)
 
 	self.do_container:translate(x, y, 0)
 	self.do_container:toScreen()
+
+	--DGDGDGDG: implement locking
 
 	-- -- Save current matrix and load coords to default values
 	-- core.display.glPush()
