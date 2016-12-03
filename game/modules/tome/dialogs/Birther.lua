@@ -330,8 +330,8 @@ end
 --- Make a default character when using cheat mode, for easier testing
 function _M:makeDefault()
 	self:setDescriptor("sex", "Female")
-	-- self:setDescriptor("world", "Maj'Eyal")
-	self:setDescriptor("world", "Infinite")
+	self:setDescriptor("world", "Maj'Eyal")
+	-- self:setDescriptor("world", "Infinite")
 	self:setDescriptor("difficulty", "Normal")
 	self:setDescriptor("permadeath", "Adventure")
 	self:setDescriptor("race", "Human")

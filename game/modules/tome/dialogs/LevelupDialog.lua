@@ -214,7 +214,7 @@ function _M:finish()
 			local lvl_raw = self.actor:getTalentLevelRaw(t_id)
 			local old_lvl = self.actor_dup:getTalentLevel(t_id)
 			local old_lvl_raw = self.actor_dup:getTalentLevelRaw(t_id)
-			t.on_levelup_close(self, t, lvl, old_lvl, lvl_raw, old_lvl_raw, true)
+			t.on_levelup_close(self.actor, t, lvl, old_lvl, lvl_raw, old_lvl_raw, true)
 		end
 	end
 	return true
