@@ -145,26 +145,34 @@ newEffect{
 newEffect{
 	name = "STONED", image = "talents/stone_touch.png",
 	desc = "Stoned",
-	long_desc = function(self, eff) return "The target has been turned to stone, making it subject to shattering but improving physical(+20%), fire(+80%) and lightning(+50%) resistances." end,
+	long_desc = function(self, eff) return "The target has been turned to stone: it is rooted in place, unable to act, and may be shattered by a single blow dealing more than 30% of its maximum life.  It's new form makes it immune to being poisoned or cut, and grants improved physical(+20%), fire(+80%) and lightning(+50%) resistances." end,
 	type = "magical",
 	subtype = { earth=true, stone=true, stun = true},
 	status = "detrimental",
 	parameters = {},
-	on_gain = function(self, err) return "#Target# turns to stone!", "+Stoned" end,
-	on_lose = function(self, err) return "#Target# is not stoned anymore.", "-Stoned" end,
+	on_gain = function(self, err) return "#Target# turns to #GREY#STONE#LAST#!", "+Stoned" end,
+	on_lose = function(self, err) return "#Target# is no longer a #GREY#statue#LAST#.", "-Stoned" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("stoned", 1)
+		eff.poison = self:addTemporaryValue("poison_immune", 1)
+		eff.cut = self:addTemporaryValue("cut_immune", 1)
+		eff.never_move = self:addTemporaryValue("never_move", 1)
+		eff.breath = self:addTemporaryValue("no_breath", 1)
 		eff.resistsid = self:addTemporaryValue("resists", {
 			[DamageType.PHYSICAL]=20,
 			[DamageType.FIRE]=80,
-			[DamageType.LIGHTNING]=50,
-		})
+			[DamageType.LIGHTNING]=50,}
+			)
 	end,
 	on_timeout = function(self, eff)
 		if eff.dur > 7 then eff.dur = 7 end -- instakilling players is dumb and this is still lethal at 7s
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("stoned", eff.tmpid)
+		self:removeTemporaryValue("poison_immune", eff.poison)
+		self:removeTemporaryValue("cut_immune", eff.cut)
+		self:removeTemporaryValue("never_move", eff.never_move)
+		self:removeTemporaryValue("no_breath", eff.breath)
 		self:removeTemporaryValue("resists", eff.resistsid)
 	end,
 }
@@ -2356,13 +2364,13 @@ newEffect{
 newEffect{
 	name = "VULNERABILITY_POISON", image = "talents/vulnerability_poison.png",
 	desc = "Vulnerability Poison",
-	long_desc = function(self, eff) return ("The target is poisoned and sick, suffering %0.2f arcane damage per turn. All resistances are reduced by 10%% and poison resistance is reduced by 50%%."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is afflicted with a magical poison and is suffering %0.2f arcane damage per turn.  All resistances are reduced by 10%% and poison resistance is reduced by 50%%."):format(eff.src:damDesc("ARCANE", eff.power)) end,
 	type = "magical",
 	subtype = { poison=true, arcane=true },
 	status = "detrimental",
 	parameters = {power=10},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Vulnerability Poison" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Vulnerability Poison" end,
+	on_gain = function(self, err) return "#Target# is magically poisoned!", "+Vulnerability Poison" end,
+	on_lose = function(self, err) return "#Target# is no longer magically poisoned.", "-Vulnerability Poison" end,
 	-- Damage each turn
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then self:heal(eff.power, eff.src)
@@ -2371,7 +2379,7 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("resists", {all=-10})
-		if self:attr("poison_immune") then
+		if self:attr("poison_immune") and self:checkClassification("living") then
 			eff.poisonid = self:addTemporaryValue("poison_immune", -self:attr("poison_immune") / 2)
 		end
 	end,

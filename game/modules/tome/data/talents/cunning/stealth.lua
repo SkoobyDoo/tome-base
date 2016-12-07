@@ -35,6 +35,7 @@ local function stealthDetection(self, radius, estimate)
 	end
 	return detect, closest
 end
+Talents.stealthDetection = stealthDetection
 
 newTalent{
 	name = "Stealth",
@@ -59,6 +60,7 @@ newTalent{
 		
 		-- Check nearby actors detection ability
 		if not self.x or not self.y or not game.level then return end
+		if self:knowTalent(self.T_SOOTHING_DARKNESS) and not game.level.map.lites(self.x, self.y) then return true end
 		if not rng.percent(self.hide_chance or 0) then
 			if stealthDetection(self, t.getRadius(self, t)) > 0 then
 				if not silent then game.logPlayer(self, "You are being observed too closely to enter Stealth!") end
@@ -161,14 +163,15 @@ newTalent{
 	require = cuns_req3,
 	points = 5,
 	mode = "passive",
-	getLife = function(self, t) return self:combatTalentScale(t, 5, 25, 0.75) end,
-	getStamina = function(self, t) return self:combatTalentScale(t, 1, 4.5, 0.75) end,
-	getReduction = function(self, t) return math.min(self:combatTalentStatDamage(t, "cun", 10, 75),50) end,
+	getLife = function(self, t) return self:combatTalentScale(t, 1, 3) end,
+	getStamina = function(self, t) return self:combatTalentScale(t, 0.5, 2) end,
+	getReduction = function(self, t) return self:combatTalentStatDamage(t, "cun", 5, 25) end,
 	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
 	info = function(self, t)
-		return ([[While stealthed your foes are less able to land a clean blow, reducing all damage taken by %d. This also buys you time to tend to your wounds, increasing your life regeneration by %0.1f and stamina regeneration by %0.1f.
-This effect persists for 3 turns after exiting stealth, or 4 turns at talent level 3 and above.]]):
-		format(t.getReduction(self,t), t.getLife(self,t), t.getStamina(self,t))
+		return ([[You have a special affinity for darkness.
+		When standing in an unlit grid, enemies observing you will not prevent you from entering stealth.
+		While stealted, and for %d turns thereafter, all damage against you is reduced by %d, your life regeneration is increased by %0.1f, and your stamina regeneration is increased %0.1f]]):
+		format(t.getDuration(self, t), t.getReduction(self,t), t.getLife(self,t), t.getStamina(self,t))
 	end,
 }
 
@@ -181,21 +184,22 @@ newTalent{
 	points = 5,
 	stamina = 30,
 	cooldown = function(self, t) return self:combatTalentLimit(t, 10, 30, 15) end,
-	tactical = { DEFEND = 2 },
-	on_pre_use = function(self, t, silent) if self:isTalentActive(self.T_STEALTH) then if not silent then game.logPlayer(self, "You must be out of stealth to enter Shadow Dance.") end return false end return true end,
+	tactical = { DEFEND = 2, ESCAPE = 2 },
+	on_pre_use = function(self, t, silent)
+		if self:isTalentActive(self.T_STEALTH) then 
+			if not silent then game.logPlayer(self, "You must be out of stealth to enter Shadow Dance.") end
+			return false
+		end
+		return true
+	end,
 	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.6)) end, -- Limit to range >= 1
 	getDuration = function(self, t) return 1 + math.min(self:combatTalentScale(t, 1, 3),3) end,
 	action = function(self, t)
 		if self:isTalentActive(self.T_STEALTH) then return end
 		
-		self.talents_cd[self.T_STEALTH] = nil
-		self.changed = true
-		self.hide_chance = 1000
-		self:useTalent(self.T_STEALTH)
-		self.hide_chance = nil
-		
-		for uid, e in pairs(game.level.entities) do
-			if e.ai_target and e.ai_target.actor == self then e:setTarget(nil) end
+		self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})
+		for act, param in pairs(self.fov.actors) do
+			if act ~= self and act.ai_target and act.ai_target.actor == self then act:setTarget() end
 		end
 		
 		self:setEffect(self.EFF_SHADOW_DANCE, t.getDuration(self,t), {src=self, rad=t.getRadius(self,t)}) 
@@ -204,6 +208,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Your mastery of stealth allows you to vanish from sight, returning to stealth and causing stealth to no longer break from unstealthy actions for %d turns.
+		When triggered, all enemies with a direct line of sight to you completely lose track of you.
 		When this effect ends, you must make a stealth check against targets in radius %d or be revealed.
 You must be unstealthed to use this talent.]]):
 		format(t.getDuration(self, t), t.getRadius(self,t))

@@ -24,21 +24,6 @@ local Chat = require "engine.Chat"
 local Map = require "engine.Map"
 local Level = require "engine.Level"
 
-local function stealthDetection(self, radius, estimate)
-	if not self.x then return nil end
-	local dist = 0
-	local closest, detect = math.huge, 0
-	for i, act in ipairs(self.fov.actors_dist) do
-		dist = core.fov.distance(self.x, self.y, act.x, act.y)
-		if dist > radius then break end
-		if act ~= self and act:reactionToward(self) < 0 and not act:attr("blind") and (not act.fov or not act.fov.actors or act.fov.actors[self]) and (not estimate or self:canSee(act)) then
-			detect = detect + act:combatSeeStealth() * (1.1 - dist/10) -- detection strength reduced 10% per tile
-			if dist < closest then closest = dist end
-		end
-	end
-	return detect, closest
-end
-
 -- Item specific
 newEffect{
 	name = "ITEM_ANTIMAGIC_SCOURED", image = "talents/acidic_skin.png",
@@ -117,7 +102,6 @@ newEffect{
 	end,
 }
 
-
 newEffect{
 	name = "DELIRIOUS_CONCUSSION", image = "talents/slippery_moss.png",
 	desc = "Concussion",
@@ -135,8 +119,6 @@ newEffect{
 		self:removeTemporaryValue("talent_fail_chance", eff.tmpid)
 	end,
 }
-
-
 
 newEffect{
 	name = "CUT", image = "effects/cut.png",
@@ -318,7 +300,6 @@ newEffect{
 	end,
 }
 
-
 newEffect{
 	name = "CRIPPLING_POISON", image = "talents/crippling_poison.png",
 	desc = "Crippling Poison",
@@ -380,30 +361,54 @@ newEffect{
 newEffect{
 	name = "STONE_POISON", image = "talents/stoning_poison.png",
 	desc = "Stoning Poison",
-	long_desc = function(self, eff) return ("The target is poisoned and sick, taking %0.2f nature damage per turn. If the effect runs its full course, the target will turn to stone for %d turns."):format(eff.power, eff.stone) end,
+	long_desc = function(self, eff)
+		local chance = util.bound((eff.turn_count + eff.dur)*100/eff.time_to_stone, 0, 100)
+		return ("The target is taking %0.2f nature damage per turn from a potent earth-based poison.  In %d more turn(s), or when the poison has run its course (%d%% chance), the target will be turned to stone for %d turns."):format(eff.power, eff.time_to_stone - eff.turn_count, chance, eff.stone)
+	end,
 	type = "physical",
 	subtype = { poison=true, earth=true }, no_ct_effect = true,
 	status = "detrimental",
-	parameters = {power=10, reduce=5},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Stoning Poison" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Stoning Poison" end,
-	-- Damage each turn
-	on_timeout = function(self, eff)
+	parameters = {power=10, stone=1, time_to_stone=10, turn_count=0},
+	on_gain = function(self, err) return "#Target# is infused with stone poison!", "+Stoning Poison" end,
+	on_lose = function(self, err) return "#Target# is free of the stone poison!", "-Stoning Poison" end,
+	on_timeout = function(self, eff) -- Damage each turn, stone after enough time
 		if self:attr("purify_poison") then self:heal(eff.power, eff.src)
 		else DamageType:get(DamageType.NATURE).projector(eff.src, self.x, self.y, DamageType.NATURE, eff.power)
+		end
+		eff.turn_count = eff.turn_count + 1
+		if eff.turn_count >= eff.time_to_stone and not self.dead then
+			eff.turn_count = 0
+			self:callEffect(eff.effect_id, "doStone")
+		end
+	end,
+	charges = function(self, eff)
+		return eff.time_to_stone - eff.turn_count
+	end,
+	doStone = function(self, eff, chance) -- turn to stone
+		chance = chance or 100
+		if self:canBe("stun") and self:canBe("instakill") and self:canBe("stone") and rng.percent(chance) then
+			self:removeEffect(eff.effect_id)
+			self:setEffect(self.EFF_STONED, math.floor(eff.stone*chance/100), {})
+		else
+			game.logSeen(self, "#GREY#%s looks stony for a moment, but resists the transformation.", self.name:capitalize())
 		end
 	end,
 	-- There are situations this matters, such as copyEffect
 	on_merge = function(self, old_eff, new_eff)
+		local new_fct = new_eff.dur/(new_eff.dur + old_eff.dur)
+		local dam = old_eff.power*old_eff.dur + new_eff.power*new_eff.dur
+		old_eff.stone = math.floor(new_eff.stone*new_fct + old_eff.stone*(1-new_fct))
+		old_eff.time_to_stone = math.ceil(new_eff.time_to_stone*new_fct + old_eff.time_to_stone*(1-new_fct))
 		old_eff.dur = math.max(old_eff.dur, new_eff.dur)
+		old_eff.power = dam/old_eff.dur
+		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
 		return old_eff
 	end,
 	activate = function(self, eff)
 	end,
-	deactivate = function(self, eff)
-		if eff.dur <= 0 and self:canBe("stun") and self:canBe("stone") and self:canBe("instakill") then
-			self:setEffect(self.EFF_STONED, eff.stone, {})
-		end
+	deactivate = function(self, eff) -- chance to stone when deactivated
+		local chance = eff.dur <= 0 and eff.turn_count*100/eff.time_to_stone or 0
+		if chance > 0 then self:callEffect(eff.effect_id, "doStone", chance) end
 	end,
 }
 
@@ -2032,11 +2037,12 @@ newEffect{
 	end,
 }
 
+-- left in for backwards compatibility
 newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 	name = "DUAL_WEAPON_DEFENSE", image = "talents/dual_weapon_defense.png",
 	desc = "Parrying",
 	deflectchance = function(self, eff) -- The last partial deflect has a reduced chance to happen
-		if self:attr("encased_in_ice") or self:hasEffect(self.EFF_DISARMED) then return 0 end
+		if self:attr("encased_in_ice") or self:attr("disarmed") then return 0 end
 		return util.bound(eff.deflects>=1 and eff.chance or eff.chance*math.mod(eff.deflects,1),0,100)
 	end,
 	long_desc = function(self, eff)
@@ -2048,9 +2054,8 @@ newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 	status = "beneficial",
 	decrease = 0,
 	no_stop_enter_worlmap = true, no_stop_resting = true,
-	parameters = {chance=10,dam = 1, deflects = 1},
+	parameters = {chance=10, dam = 1, deflects = 1},
 	activate = function(self, eff)
---		if self:attr("disarmed") or not self:hasDualWeapon() then eff.dur = 0 return end
 		if self:attr("disarmed") or not self:hasDualWeapon() then
 			eff.dur = 0 self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) return
 			end
@@ -2066,27 +2071,51 @@ newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 	name = "PARRY", image = "talents/parry.png",
 	desc = "Parrying",
-	deflectchance = function(self, eff) -- The last partial deflect has a reduced chance to happen
-		if self:attr("encased_in_ice") or self:hasEffect(self.EFF_DISARMED) then return 0 end
-		return util.bound(eff.deflects>=1 and eff.chance or eff.chance*math.mod(eff.deflects,1),0,100)
+	deflectchance = function(self, eff, adj) -- The last partial deflect has a reduced chance to happen
+		adj = adj or 1
+		if self:attr("encased_in_ice") or self:attr("disarmed") then return 0 end
+		return util.bound(adj*(eff.deflects >=1 and eff.chance or eff.chance*math.mod(eff.deflects, 1)), 0, 100)
 	end,
 	long_desc = function(self, eff)
-		return ("Parrying melee attacks: Has a %d%% chance to deflect up to %d damage from the next %0.1f attack(s)."):format(self.tempeffect_def.EFF_PARRY.deflectchance(self, eff),eff.dam, math.max(eff.deflects,1))
+		return ("Parrying melee%s attacks: Has a %d%% chance to deflect up to %d damage from the next %0.1f attack(s).  Parried attacks cannot crit."):format(eff.parry_ranged and " and ranged" or "", math.floor(self:callEffect(self.EFF_PARRY, "deflectchance")), eff.dam, math.max(eff.deflects, 1))
 	end,
 	charges = function(self, eff) return math.ceil(eff.deflects) end,
 	type = "physical",
 	subtype = {tactic=true},
 	status = "beneficial",
 	decrease = 0,
+	on_timeout = function(self, eff) -- always remove before refreshing each turn
+		self:removeEffect(self.EFF_PARRY)
+	end,
 	no_stop_enter_worlmap = true, no_stop_resting = true,
-	parameters = {chance=10,dam = 1, deflects = 1},
+	parameters = {chance=10, dam = 1, deflects = 1, parry_ranged=false},
+	doDeflect = function(self, eff, src) -- determine how much damage is deflected from src
+		if not eff then return 0 end
+		local deflected = 0
+		local s = src.__project_source or src
+		local adj = (self:canSee(s) or self:attr("blind_fight")) and 1 or 1/3 -- 1/3 chance to parry attack from unseen source
+		if rng.percent(self:callEffect(eff.effect_id, "deflectchance", adj)) then
+			deflected = eff.dam
+			if self:knowTalent(self.T_TEMPO) then
+				self:callTalent(self.T_TEMPO, "do_tempo")
+			end
+		end
+
+		eff.deflects = eff.deflects - 1
+		if eff.deflects <= 0 then self:removeEffect(self.EFF_PARRY) end
+		return deflected
+	end,
+	on_merge = function(self, old_eff, new_eff)
+		new_eff.chance = math.max(old_eff.chance, new_eff.chance) + math.min(old_eff.chance, new_eff.chance)*.5
+		new_eff.dam = math.max(old_eff.dam, new_eff.dam)
+		new_eff.deflects = math.max(old_eff.deflects, new_eff.deflects) + math.min(old_eff.deflects, new_eff.deflects)*.5
+		new_eff.parry_ranged = old_eff.parry_ranged or new_eff.parry_ranged
+		return new_eff
+	end,
 	activate = function(self, eff)
 		if self:attr("disarmed") or not self:hasDualWeapon() then
-			eff.dur = 0 self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) return
-			end
-		eff.dam = self:callTalent(self.T_PARRY,"getDamageChange")
-		eff.deflects = self:callTalent(self.T_PARRY,"getDeflects")
-		eff.chance = self:callTalent(self.T_PARRY,"getDeflectChance")
+			eff.dur = 0 self:removeEffect(self.EFF_PARRY) return
+		end
 		if eff.dam <= 0 or eff.deflects <= 0 then eff.dur = 0 end
 	end,
 	deactivate = function(self, eff)
@@ -2165,7 +2194,7 @@ newEffect{
 	name = "COUNTER_ATTACKING", image = "talents/counter_attack.png",
 	desc = "Counter Attacking",
 	counterchance = function(self, eff) --The last partial counter attack has a reduced chance to happen
-		if self:attr("encased_in_ice") or self:hasEffect(self.EFF_DISARMED) then return 0 end
+		if self:attr("encased_in_ice") or self:attr("disarmed") then return 0 end
 		return util.bound(eff.counterattacks>=1 and eff.chance or eff.chance*math.mod(eff.counterattacks,1),0,100)
 	end,
 	long_desc = function(self, eff)
@@ -3023,27 +3052,33 @@ newEffect{
 newEffect{
 	name = "MARKED_FOR_DEATH", image = "talents/marked_for_death.png",
 	desc = "Marked for Death",
-	long_desc = function(self, eff) return ("The target takes %d%% increased damage from all sources, and will take %0.2f physical damage when this effect ends, increased by %d%% of all damage taken."):format(eff.power, eff.dam, eff.perc*100) end,
+	long_desc = function(self, eff) return ("The target takes %d%% increased damage from all sources.  If this effect runs its full course, the target will take an additional %0.2f physical damage (%d%% of all damage taken since it was applied)."):format(eff.power, eff.dam, eff.perc*100) end,
 	type = "physical",
 	subtype = {  },
 	status = "detrimental",
-	parameters = { power=20, perc=20, },
+	parameters = { power=20, perc=20, stam=0, turns = 0, max_dur=6},
 	on_gain = function(self, err) return "#Target# is marked for death!", "+Marked for Death!" end,
 	on_lose = function(self, err) return "#Target# is free from the deathmark.", "-Marked for Death" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "resists", {all=-eff.power})
-
 	end,
 	deactivate = function(self, eff)
-		eff.src:project({type="hit", x=self.x, y=self.y}, self.x, self.y, DamageType.PHYSICAL, eff.dam, nil)
-		game.level.map:particleEmitter(self.x, self.y, 1, "blood")
+		if eff.turns >= eff.max_dur then
+			eff.src.__project_source = eff
+			eff.src:project({type="hit", x=self.x, y=self.y}, self.x, self.y, DamageType.PHYSICAL, eff.dam, nil)
+			game.level.map:particleEmitter(self.x, self.y, 1, "blood")
+			eff.src.__project_source = nil
+		end
+	end,
+	on_timeout = function(self, eff)
+		eff.turns = eff.turns + 1
 	end,
 	callbackOnHit = function(self, eff, cb)
 		eff.dam = eff.dam + (cb.value * eff.perc)
 		return true
 	end,
 	on_die = function(self, eff)
-		eff.src:incStamina(30)
+		eff.src:incStamina(eff.stam)
 		eff.src.talents_cd[eff.src.T_MARKED_FOR_DEATH] = 0
 	end,
 }
@@ -3145,11 +3180,10 @@ newEffect{
 	end,
 }
 
-
 newEffect{
 	name = "RAZORWIRE", image = "talents/springrazor_trap.png",
 	desc = "Razorwire",
-	long_desc = function(self, eff) return ("The target's equipment has been shredded by razorwire, reducing their accuracy by %d, their armor by %d, and their defense by %d."):format(eff.power, eff.power, eff.power) end,
+	long_desc = function(self, eff) return ("The target's equipment has been shredded by razorwire, reducing its accuracy by %d, armour by %d, and defense by %d."):format(eff.power, eff.power, eff.power) end,
 	type = "physical",
 	subtype = { physical=true },
 	status = "detrimental",
@@ -3198,7 +3232,7 @@ newEffect{
 newEffect{
 	name = "SOOTHING_DARKNESS", image = "talents/soothing_darkness.png",
 	desc = "Soothing Darkness",
-	long_desc = function(self, eff) return ("The target is wreathed in shadows, increasing life regen by %0.1f, stamina regenration by %0.1f and reducing all damage taken by %d."):format(eff.life, eff.stamina, eff.dr) end,
+	long_desc = function(self, eff) return ("The target is wreathed in shadows, increasing life regen by %0.1f, stamina regeneration by %0.1f and reducing all damage taken by %d."):format(eff.life, eff.stamina, eff.dr) end,
 	type = "physical",
 	subtype = { darkness=true, healing=true },
 	status = "beneficial",
@@ -3239,15 +3273,18 @@ newEffect{
 	type = "physical",
 	subtype = { tactical=true, darkness=true },
 	status = "beneficial",
-	parameters = { },
+	on_gain = function(self, err) game.logPlayer(self, "#GREY#You begin your shadowdance.") end,
+	on_lose = function(self, err) game.logPlayer(self, "#GREY#You end your shadowdance.") end,
+	parameters = {rad=10},
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
 		if not rng.percent(self.hide_chance or 0) then
-			if stealthDetection(self, 4) > 0 then
-				if not silent then game.logPlayer(self, "You have been detected!") 
-					self:forceUseTalent(self.T_STEALTH, {ignore_energy=true})
-				end
+			local detect = self:stealthDetection(eff.rad)
+			local netstealth = (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
+			if detect > 0 and self:checkHit(detect, netstealth) then
+				game.logPlayer(self, "You have been detected!")
+				self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=false})
 			end
 		end
 	end,
@@ -3305,85 +3342,44 @@ newEffect{
 newEffect{
 	name = "BEAR_TRAP", image = "talents/bear_trap.png",
 	desc = "Bear Trap",
-	long_desc = function(self, eff) return ("Caught in a bear trap, reducing global speed by %d%%, pinning and dealing %0.2f physical damage each turn."):format(eff.power * 100, eff.dam) end,
+	long_desc = function(self, eff)
+		local desc = {}
+		if eff.pinid then desc[#desc+1] = "pinned" end
+		if eff.slowid then desc[#desc+1] = ("slowed (%d%%)"):format(eff.power*100) end
+		if eff.dam > 0 then desc[#desc+1] = ("taking %0.2f physical damage each turn"):format(eff.dam) end
+		return "Caught in a bear trap: "..table.concat(desc, ", ")
+	end,
 	type = "physical",
 	subtype = { slow=true, pin=true, wound=true, cut=true, bleed=true },
 	status = "detrimental",
 	parameters = { power=0.1, dam=10 },
-	on_gain = function(self, err) return "#Target# is caught in a bear trap!", "+Bear Trap" end,
-	on_lose = function(self, err) return "#Target# is freed from the trap.", "-Bear Trap" end,
+	on_gain = function(self, err) return "A bear trap snaps onto #Target#!", "+Bear Trap" end,
+	on_lose = function(self, err) return "#Target# is freed from a bear trap.", "-Bear Trap" end,
 	activate = function(self, eff)
-		eff.slowid = self:addTemporaryValue("global_speed_add", -eff.power)
-		eff.pinid = self:addTemporaryValue("never_move", 1)
-
-		if eff.src and eff.src:knowTalent(self.T_BLOODY_BUTCHER) and self:canBe("cut") then
+		local pin, cut = self:canBe("pin"), self:canBe("cut")
+		if pin then
+			eff.pinid = self:addTemporaryValue("never_move", 1)
+			if self:canBe("slow") then eff.slowid = self:addTemporaryValue("global_speed_add", -eff.power) end
+			if not cut then eff.dam = 0 end
+		else
+			self:removeEffect(eff.effect_id)
+			if cut then
+				self:setEffect(self.EFF_CUT, 5, {src=eff.src, power=eff.dam})
+			end
+			return
+		end
+		
+		if cut and eff.src and eff.src:knowTalent(self.T_BLOODY_BUTCHER)then
 			local t = eff.src:getTalentFromId(eff.src.T_BLOODY_BUTCHER)
 			local resist = math.min(t.getResist(eff.src, t), math.max(0, self:combatGetResist(DamageType.PHYSICAL)))
 			self:effectTemporaryValue(eff, "resists", {[DamageType.PHYSICAL] = -resist})
 		end
-
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("global_speed_add", eff.slowid)
 		self:removeTemporaryValue("never_move", eff.pinid)
 	end,
 	on_timeout = function(self, eff)
-		if self:canBe("cut") then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
-	end,
-}
-
-newEffect{
-	name = "BEAR_TRAP_PIN", image = "talents/bear_trap.png",
-	desc = "Bear Trap",
-	long_desc = function(self, eff) return ("Caught in a bear trap, pinning and dealing %0.2f physical damage each turn."):format(eff.dam) end,
-	type = "physical",
-	subtype = { pin=true, wound=true, cut=true, bleed=true },
-	status = "detrimental",
-	parameters = { power=0.1, dam=10 },
-	on_gain = function(self, err) return "#Target# is caught in a bear trap!", "+Bear Trap" end,
-	on_lose = function(self, err) return "#Target# is freed from the trap.", "-Bear Trap" end,
-	activate = function(self, eff)
-		eff.pinid = self:addTemporaryValue("never_move", 1)
-
-		if eff.src and eff.src:knowTalent(self.T_BLOODY_BUTCHER) and self:canBe("cut") then
-			local t = eff.src:getTalentFromId(eff.src.T_BLOODY_BUTCHER)
-			local resist = math.min(t.getResist(eff.src, t), math.max(0, self:combatGetResist(DamageType.PHYSICAL)))
-			self:effectTemporaryValue(eff, "resists", {[DamageType.PHYSICAL] = -resist})
-		end
-
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("never_move", eff.pinid)
-	end,
-	on_timeout = function(self, eff)
-		if self:canBe("cut") then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
-	end,
-}
-
-newEffect{
-	name = "BEAR_TRAP_SLOW", image = "talents/bear_trap.png",
-	desc = "Bear Trap",
-	long_desc = function(self, eff) return ("Caught in a bear trap, reducing global speed by %d%% and dealing %0.2f physical damage each turn."):format(eff.power * 100, eff.dam) end,
-	type = "physical",
-	subtype = { slow=true, wound=true, cut=true, bleed=true },
-	status = "detrimental",
-	parameters = { power=0.1, dam=10 },
-	on_gain = function(self, err) return "#Target# is caught in a bear trap!", "+Bear Trap" end,
-	on_lose = function(self, err) return "#Target# is freed from the trap.", "-Bear Trap" end,
-	activate = function(self, eff)
-		eff.slowid = self:addTemporaryValue("global_speed_add", -eff.power)
-
-		if eff.src and eff.src:knowTalent(self.T_BLOODY_BUTCHER) and self:canBe("cut") then
-			local t = eff.src:getTalentFromId(eff.src.T_BLOODY_BUTCHER)
-			local resist = math.min(t.getResist(eff.src, t), math.max(0, self:combatGetResist(DamageType.PHYSICAL)))
-			self:effectTemporaryValue(eff, "resists", {[DamageType.PHYSICAL] = -resist})
-		end
-
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("global_speed_add", eff.slowid)
-	end,
-	on_timeout = function(self, eff)
-		if self:canBe("cut") then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
+		if eff.dam > 0 then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
 	end,
 }

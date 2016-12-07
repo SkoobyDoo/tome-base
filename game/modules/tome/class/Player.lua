@@ -858,6 +858,8 @@ local function spotHostiles(self, actors_only)
 	return seen
 end
 
+_M.spotHostiles = spotHostiles
+
 --- Try to auto use listed talents
 -- This should be called in your actors "act()" method
 function _M:automaticTalents()
@@ -1243,6 +1245,51 @@ function _M:hotkeyInventory(name)
 			end
 		end
 		self:playerUseItem(o, item, inven)
+	end
+end
+
+--- Player specifically requests disarming a trap
+function _M:playerDisarmTrap(tx, ty)
+	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+		game.log("You can not disarm traps while asleep!") return
+	elseif self:getTalentLevel(self.T_HEIGHTENED_SENSES) < 3 and not self:attr("can_disarm") then
+		game.log("You don't know how to disarm traps!") return
+	end
+	core.mouse.set(game.level.map:getTileToScreen(self.x, self.y, true))
+	local function do_disarm(x, y)
+		if x and y then
+			local dir = util.getDir(x, y, self.x, self.y)
+			x, y = util.coordAddDir(self.x, self.y, dir)
+			print("Disarm trap command", x, y)
+			if (x == self.x and y == self.y) or self:canMove(x, y) then
+				local trap = self:detectTrap(nil, x, y)
+				if trap then
+					print("Attempting to disarm trap", trap.name, x, y)
+					game.log("#CADET_BLUE#You attempt to disarm a trap (%s).", trap:getName())
+					local px, py = self.x, self.y
+					self:move(x, y, true) -- temporarily move the player to make sure trap can trigger properly
+						-- attempt to disarm the trap, may trigger it
+					trap:trigger(self.x, self.y, self) -- try to disarm, or trigger the trap
+					if not self.dead then self:move(px, py, true) end
+				else
+					game.log("#CADET_BLUE#You don't see a trap there.")
+				end
+				self:useEnergy()
+			else
+				game.log("#CADET_BLUE#You cannot disarm traps in grids you cannot enter.")
+			end
+		end
+	end
+	if tx and ty then
+		do_disarm(tx, ty)
+	else
+		local co = coroutine.create(function()
+			game.log("Disarm A Trap: (direction keys to select where to disarm, shift+direction keys to move freely)")
+			local x, y, dir = self:getTarget({type="hit", range=1, nowarning=true, immediate_keys=true, no_lock=false})
+			do_disarm(x, y)
+		end)
+		local ok, err = coroutine.resume(co)
+		if not ok and err then print(debug.traceback(co)) error(err) end
 	end
 end
 

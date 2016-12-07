@@ -69,8 +69,7 @@ No, NO! I have - I --- acci--- pain, such pa--______
 	on_learn = function(who)
 		local p = game.party:findMember{main=true}
 		if p:knowTalentType("cunning/trapping") then
-			game.state.poison_gas_trap = true
-			game.log("#LIGHT_GREEN#You have learnt to create poison gas traps!")
+			game.state:unlockTalent(p.T_POISON_GAS_TRAP, p)
 		end
 	end,
 }

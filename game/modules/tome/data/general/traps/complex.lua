@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 local DamageType = require "engine.DamageType"
+local Talents = require"engine.interface.ActorTalents"
 
 newEntity{ define_as = "TRAP_COMPLEX",
 	type = "complex", id_by_type=true, unided_name = "trap",
@@ -35,6 +36,12 @@ newEntity{ base = "TRAP_COMPLEX",
 	rarity = 3, level_range = {1, nil},
 	color = colors.UMBER,
 	message = "@Target@ walks on a trap, and there is a loud noise.",
+	unided_name = "large pressure plate",
+	desc = function(self)
+		local dir = game.level.map:compassDirection(self.spawn_x - self.x, self.spawn_y - self.y)
+		dir = dir and (" (from %s)"):format(dir) or ""
+		return ("Releases a large boulder%s that smashes into the target for %d physical damage and knocking it back."):format(dir,self.dam)
+	end,
 	pressure_trap = true,
 	on_added = function(self, level, x, y)
 		local walls = {}
@@ -61,6 +68,7 @@ newEntity{ base = "TRAP_COMPLEX",
 	end,
 	str = resolvers.mbonus(200, 30),
 	dam = resolvers.clscale(200, 50, 50, 0.75, 0),
+	unlock_talent_on_disarm = {tid = Talents.T_CATAPULT_TRAP, chance = 10},
 	triggered = function(self, x, y, who)
 		if not self.spawn_x then return end
 		local tg = {name="huge boulder", type="bolt", range=core.fov.distance(x, y, self.spawn_x, self.spawn_y), x=self.spawn_x, y=self.spawn_y, speed=2, display={image="trap/trap_big_boulder_01.png"}, blur_move=4}
@@ -71,12 +79,17 @@ newEntity{ base = "TRAP_COMPLEX",
 
 newEntity{ base = "TRAP_COMPLEX",
 	subtype = "arcane",
-	name = "spinning beam", image = "trap/trap_glyph_explosion_01_64.png",
+	name = "spinning beam trap", image = "trap/trap_glyph_explosion_01_64.png",
 	detect_power = resolvers.clscale(40, 50, 8),
 	disarm_power = resolvers.clscale(50, 50, 8),
 	rarity = 3, level_range = {1, nil},
 	color=colors.PURPLE,
-	message = "@Target@ walks on a trap, and the beam changes.",
+	message = "@Target@ walks on a trap, and its magical energies change.",
+	unided_name = "magical emitter",
+	desc = function(self)
+		local dtype = engine.DamageType[self.dammode] and engine.DamageType:get(self.dammode)
+		return dtype and ("Projects a rapidly spinning beam of magical energies (range %d), dealing %d damage (%s%s#WHITE#) to those struck."):format(self.rad, self.dam, dtype.text_color or "#WHITE#", dtype.name)
+	end,
 	on_added = function(self, level, x, y)
 		self.x, self.y = x, y
 		self.rad = rng.range(2, 8)
@@ -98,6 +111,7 @@ newEntity{ base = "TRAP_COMPLEX",
 	dammode = rng.table{engine.DamageType.ARCANE_SILENCE, engine.DamageType.DARKSTUN, engine.DamageType.COLDNEVERMOVE},
 	dam = resolvers.clscale(200, 50, 50, 0.75, 0),
 	mag = resolvers.mbonus(200, 30),
+	unlock_talent_on_disarm = {tid = Talents.T_BEAM_TRAP, chance = 35},
 	triggered = function(self, x, y, who)
 		if self:reactionToward(who) < 0 then
 			local dammode = self.dammode
@@ -142,6 +156,10 @@ newEntity{ base = "TRAP_COMPLEX",
 	rarity = 3, level_range = {1, nil},
 	color=colors.GREEN,
 	message = "@Target@ walks on a poison spore.",
+	unided_name = "spore colony",
+	desc = function(self)
+		return ("Releases a cloud of poison spores (radius %d), poisoning for #LIGHT_GREEN#%d#LAST# damage over 5 turns."):format(self.rad, self.dam)
+	end,
 	on_added = function(self, level, x, y)
 		self.x, self.y = x, y
 		self.rad = rng.range(2, 8)
@@ -158,6 +176,7 @@ newEntity{ base = "TRAP_COMPLEX",
 	disarmed = function(self, x, y, who)
 		game.level:removeEntity(self, true)
 	end,
+	unlock_talent_on_disarm = {tid = Talents.T_POISON_GAS_TRAP, chance = 25},
 	canAct = false,
 	energy = {value=0},
 	nb = 3,
@@ -200,14 +219,20 @@ newEntity{ base = "TRAP_COMPLEX",
 	rarity = 3, level_range = {1, nil},
 	color=colors.RED,
 	pressure_trap = true,
-	message = "Flames start to appear arround @target@.",
+	message = "Flames start to appear around @target@.",
+	unided_name = "hot spot",
+	desc = function(self)
+		return ("Releases up to 4 delayed fuse fireballs within range %d that explode for #LIGHT_RED#%d#LAST# fire damage after %d turns."):format(self.rad, self.dam, 5)
+	end,
+	rad = 3,
 	dam = resolvers.clscale(200, 50, 50, 0.75, 0),
+	unlock_talent_on_disarm = {tid = Talents.T_EXPLOSION_TRAP, chance = 25},
 	triggered = function(self, x, y, who)
 		if self:reactionToward(who) >= 0 then return end
 
 		local ps, p = {}, self.points or {}
 		self.x, self.y = x, y
-		self:project({type="ball", radius=3}, x, y, function(px, py)
+		self:project({type="ball", radius=self.rad}, x, y, function(px, py)
 			local g = game.level.map(px, py, engine.Map.TERRAIN)
 			if not g:check("block_move") then
 				ps[#ps+1] = {x=px, y=py}
@@ -246,11 +271,23 @@ newEntity{ base = "TRAP_COMPLEX",
 	rarity = 3, level_range = {1, nil},
 	color=colors.BLUE,
 	pressure_trap = true,
-	message = "Cold flames start to appear arround @target@.",
+	message = "Cold flames start to appear around @target@.",
+	unided_name = "cold spot",
+	desc = function(self)
+		local actor = self.actor
+		if actor then
+			local t = actor:getTalentFromId(actor.T_COLD_FLAMES)
+			local pts = t.getDarkCount(actor, t)
+			local rad = actor:getTalentRadius(t)
+			local dam = t.getDamage(actor, t)
+			return ("Cold flames slowly spread from %d spots within radius %d, The flames deal %d cold damage with a chance to freeze."):format(pts, rad, dam)
+		end
+	end,
+	mag = resolvers.mbonus(200, 30),
+	rad = 3,
 	dam = resolvers.clscale(100, 50, 25, 0.75, 0),
-	triggered = function(self, x, y, who)
-		local NPC = require "mod.class.NPC"
-		local m = NPC.new{
+	on_added = function(self, level, x, y)
+		self.actor = (require "mod.class.NPC").new{
 			name = "cold flames trap",
 			type = "trap", subtype = "arcane",
 			combatSpellpower = function(self) return self.dam end,
@@ -260,7 +297,18 @@ newEntity{ base = "TRAP_COMPLEX",
 			x = x, y = y,
 			faction = self.faction,
 		}
-		m:forceUseTalent(m.T_COLD_FLAMES, {ignore_cd=true, ignore_energy=true, force_level=2, ignore_ressources=true})
-		return true
+		if self.actor and self.actor.T_COLD_FLAMES then
+			self.actor:learnTalent(self.actor.T_COLD_FLAMES, true, 2)
+		else
+			print("Cold Flames Trap failed to generate completely. Removing from", x, y)
+			game.level.map:remove(x, y, engine.Map.TRAP)
+		end
+	end,
+	unlock_talent_on_disarm = {tid = Talents.T_FREEZING_TRAP, chance = 25},
+	triggered = function(self, x, y, who)
+		if self.actor and self.actor.T_COLD_FLAMES then
+			self.actor:forceUseTalent(self.actor.T_COLD_FLAMES, {ignore_cd=true, ignore_energy=true, force_level=2, ignore_ressources=true})
+			return true
+		end
 	end,
 }

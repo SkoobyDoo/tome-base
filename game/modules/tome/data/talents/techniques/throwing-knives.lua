@@ -61,9 +61,9 @@ end
 
 local function throw(self, range, dam, x, y, dtype, special, fok)
 	local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-	if not eff then return nil end
+	if not eff and not fok then return nil end
 	self.turn_procs.quickdraw = true
-	local tg = {type="bolt", range=range, selffire=false, display={display='', particle="arrow", particle_args={tile="particles_images/rogue_throwing_knife"} }}
+	local tg = {speed = 10, type="bolt", range=range, selffire=false, display={display='', particle="arrow", particle_args={tile="particles_images/rogue_throwing_knife"} }}
 	local proj = self:projectile(tg, x, y, function(px, py, tg, self)
 		local target = game.level.map(px, py, engine.Map.ACTOR)
 		if target and target ~= self then
@@ -82,11 +82,12 @@ local function throw(self, range, dam, x, y, dtype, special, fok)
 			end
 		end
 	end)
-	if not fok then eff.stacks = eff.stacks - 1 end
-	if eff.stacks <= 0 then self:removeEffect(self.EFF_THROWING_KNIVES) end
+	if not fok then
+		eff.stacks = eff.stacks - 1
+		if eff.stacks <= 0 then self:removeEffect(self.EFF_THROWING_KNIVES) end
+	end
 	return proj
 end
-
 
 newTalent{
 	name = "Throwing Knives",
@@ -111,6 +112,7 @@ newTalent{
 		self:removeEffect(self.EFF_THROWING_KNIVES)
 	end,
 	speed = "throwing",
+	proj_speed = 10,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	requires_target = true,
@@ -130,10 +132,10 @@ newTalent{
 			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
 		end
 	end,
-	getBaseDamage = function(self, t) return 5 + self:combatTalentScale(t, 10, 40) end,
+	getBaseDamage = function(self, t) return self:combatTalentLimit(t, 72, 9, 35) end, -- Scale as dagger damage by material tier (~voratun dagger @ TL 6.5), limit base damage < voratun greatmaul
 	getBaseApr = function(self, t) return self:combatTalentScale(t, 2, 10) end,
 	getReload = function(self, t) return 2 end,
-	getNb = function(self, t) return 6 end,
+	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 6, 9.5, 0.25)) end,
 	getBaseCrit = function(self, t) return self:combatTalentScale(t, 2, 5) end,
 	getKnives = function(self, t) return knives(self) end, -- To prevent upvalue issues
 	action = function(self, t)
@@ -150,32 +152,56 @@ newTalent{
 	callbackOnMove = function(self, t, moved, force, ox, oy)
 		if moved and not force and ox and oy and (ox ~= self.x or oy ~= self.y) then
 			if self.turn_procs.tkreload then return end
-			local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
+			local reload = math.ceil(self:callTalent(self.T_THROWING_KNIVES, "getReload")/2)
 			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
 			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
 			self.turn_procs.tkreload = true
 		end
 	end,
-
+	knivesInfo = function(self, t)
+		local combat = knives(self)
+		local atk = self:combatAttack(combat)
+		local talented = combat.talented or "knife"
+		local dmg =  self:combatDamage(combat)
+		local apr = self:combatAPR(combat)
+		local damrange = combat.damrange or 1.1
+		local crit = self:combatCrit(combat)
+		
+		local stat_desc = {}
+		for stat, i in pairs(combat.dammod or {}) do
+			local name = engine.interface.ActorStats.stats_def[stat].short_name:capitalize()
+			if self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
+				if name == "Str" then name = "Mag" end
+			end
+			if talented == "knife" and self:knowTalent(self.T_LETHALITY) then
+				if name == "Str" then name = "Cun" end
+			end
+			stat_desc[#stat_desc+1] = ("%d%% %s"):format(i * 100, name)
+		end
+		stat_desc = table.concat(stat_desc, ", ")
+		return ([[Range: %d
+Net Damage: %d - %d
+Accuracy: %d (%s)
+APR: %d
+Physical Crit Chance: %+d%%
+Uses Stats: %s
+]]):format(t.range(self, t), dmg, dmg*damrange, atk, talented, apr, crit, stat_desc)
+	end,
 	info = function(self, t)
 		local nb = t.getNb(self,t)
 		local reload = t.getReload(self,t)
-		local weapon_damage = knives(self).dam
-		local weapon_range = knives(self).dam * knives(self).damrange
-		local weapon_atk = knives(self).atk
-		local weapon_apr = knives(self).apr
-		local weapon_crit = knives(self).physcrit
-		return ([[Equip a bandolier of throwing knives, allowing you to attack from range. You can hold up to a maximum of %d knives, and will reload %d per turn while waiting, resting or moving.
-		The base power, Accuracy, Armour penetration, and critical strike chance of your knives will increase with your talent investment, and their damage will be further improved with Dagger Mastery.
+		local knives = knives(self)
+		local weapon_damage = knives.dam
+		local weapon_range = knives.dam * knives.damrange
+		local weapon_atk = knives.atk
+		local weapon_apr = knives.apr
+		local weapon_crit = knives.physcrit
+		return ([[Equip a bandolier holding up to %d throwing knives, allowing you to attack from range.  You automatically reload %d knives per turn while resting, or half as many while moving.
+		The base power, Accuracy, Armour penetration, and critical strike chance of your knives increase with talent level, and damage is improved with Dagger Mastery.
 		Throwing Knives count as melee attacks for the purpose of on-hit effects.
+		Effective Throwing Knife Stats:
 
-		Current Throwing Knife Stats
-		Base Power: %0.2f - %0.2f
-		Uses Stats: 70%% Dex 50%% Cun
-		Damage Type: Physical
-		Accuracy: +%d
-		Armour Penetration: +%d
-		Physical Crit. Chance: +%d]]):format(nb, reload, weapon_damage, weapon_range, weapon_atk, weapon_apr, weapon_crit)
+%s]]):format(nb, reload, t.knivesInfo(self, t))
 	end,
 }
 
@@ -186,32 +212,24 @@ newTalent{
 	points = 5,
 	tactical = { ATTACKAREA = { PHYSICAL = 2}},
 	speed = "throwing",
-	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
+	proj_speed = 10,
+	getDamage = function (self, t) return self:combatTalentLimit(t, 1, 0.6, 0.75) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	range = 0,
 	cooldown = 10,
 	stamina = 30,
-	on_pre_use = function(self, t)
-		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if eff then
-			return true
-		end	
-	end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	target = function(self, t)
-		return {type="cone", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t)}
-	end,
+	target = function(self, t) return {type="cone", range=0, stop_block = true, friendlyfire=false, radius=t.radius(self, t), display_line_step=false} end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return end
 
-
 		local count = t.getNb(self,t)
-		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
 		local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
 		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
 		
+		local tg2 = {type="bolt", range=tg.radius}
 		local tgts = {}
 		grids = self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, engine.Map.ACTOR)
@@ -221,7 +239,7 @@ newTalent{
 
 		table.shuffle(tgts)
 		
-		while count > 0 and #tgts > 0 and eff do
+		while count > 0 and #tgts > 0 do
 			for i = 1, math.min(count, #tgts) do
 				if #tgts <= 0 then break end
 				local a, id = tgts[i]
@@ -235,12 +253,11 @@ newTalent{
 			end
 		end
 
-
 		return true
 	end,
 	info = function(self, t)
-		return ([[Throw up to %d throwing knives at enemies within a radius %d cone, for %d%% damage each. If the number of knives exceeds the number of enemies, a target can be hit up to 3 times.
-This does not consume throwing knives, but requires at least one throwing knife available.]]):
+		return ([[You keep a special stash of %d throwing knives in your bandolier, which you can throw all at once at enemies within a radius %d cone, for %d%% damage each.
+		Each target can be hit up to 3 times, if the number of knives exceeds the number of enemies.  Creatures block knives from hitting targets behind them.]]):
 		format(t.getNb(self,t), self:getTalentRadius(t), t.getDamage(self, t)*100)
 	end,
 }
@@ -252,16 +269,15 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	range = 0,
-	no_npc_use = true,
 	getCrit = function(self, t) return self:combatTalentScale(t, 3, 15) end,
-	getCritPower = function(self, t) return self:combatTalentScale(t, 10, 40) end,
+	getCritPower = function(self, t) return self:combatTalentScale(t, 7, 20) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 15, 45) end,
 	info = function(self, t)
 		local crit = t.getCrit(self,t)
 		local power = t.getCritPower(self,t)
 		local chance = t.getChance(self,t)
 		return ([[You are able to target your throwing knives with pinpoint accuracy, increasing their critical strike chance by %d%% and critical strike damage by %d%%. 
-In addition, your critical strikes with throwing knives will now randomly strike your target’s hand, throat or leg, giving them a %d%% chance to disarm, silence or pin them for 2 turns.]])
+In addition, your critical strikes with throwing knives have a %d%% chance will to randomly disable your target, possibly disarming, silencing or pinning them for 2 turns.]])
 		:format(crit, power, chance)
 	end,
 }
@@ -327,6 +343,7 @@ newTalent{
 	cooldown = 8,
 	stamina = 14,
 	speed = "throwing",
+	proj_speed = 10,
 	tactical = { ATTACK = { NATURE = 2 } },
 	range = function(self, t) 
 		local t = self:getTalentFromId(self.T_THROWING_KNIVES)

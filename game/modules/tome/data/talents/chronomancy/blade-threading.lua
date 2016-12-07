@@ -271,7 +271,7 @@ newTalent{
 	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	info = function(self, t)
 		local chance = t.getChance(self, t)
-		return ([[While dual-wielding you have a %d%% chance of parrying melee attacks made against you.]])
+		return ([[While dual-wielding you have a %d%% chance of completely parrying melee attacks made against you.]])
 		:format(chance)
 	end
 }

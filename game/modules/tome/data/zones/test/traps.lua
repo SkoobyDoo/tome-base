@@ -19,3 +19,8 @@
 
 --load("/data/general/traps/elemental.lua")
 --load("/data/general/traps/alarm.lua")
+load("/data/general/traps/water.lua")
+load("/data/general/traps/temporal.lua")
+load("/data/general/traps/annoy.lua")
+load("/data/general/traps/natural_forest.lua")
+load("/data/general/traps/teleport.lua")

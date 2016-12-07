@@ -2009,19 +2009,29 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 		end
 
 		-- Select additional talents from the class
+		local known_types = {}
+		for tt, d in pairs(b.talents_types) do
+			known_types[tt] = b:numberKnownTalent(tt)
+		end
+		
 		local list = {}
 		for _, t in pairs(b.talents_def) do
-			if (b.talents_types[t.type[1]] or (data.add_trees and data.add_trees[t.type[1]])) and not t.no_npc_use and not t.not_on_random_boss then
-				local ok = true
-				if data.check_talents_level and rawget(t, 'require') then
-					local req = t.require
-					if type(req) == "function" then req = req(b, t) end
-					if req and req.level and util.getval(req.level, 1) > math.ceil(data.level/2) then
-						print("Random boss forbade talent because of level", t.name, data.level)
-						ok = false
+		
+			if (b.talents_types[t.type[1]] or (data.add_trees and data.add_trees[t.type[1]])) then
+				if t.no_npc_use or t.not_on_random_boss then
+					known_types[t.type[1]] = known_types[t.type[1]] + 1 -- allows higher tier talents to be learnt
+				else
+					local ok = true
+					if data.check_talents_level and rawget(t, 'require') then
+						local req = t.require
+						if type(req) == "function" then req = req(b, t) end
+						if req and req.level and util.getval(req.level, 1) > math.ceil(data.level/2) then
+							print("Random boss forbade talent because of level", t.name, t.id, data.level)
+							ok = false
+						end
 					end
+					if ok then list[t.id] = true end
 				end
-				if ok then list[t.id] = true end
 			end
 		end
 
@@ -2029,22 +2039,33 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 		nb = math.max(rng.range(math.floor(nb * 0.7), math.ceil(nb * 1.3)), 1)
 		print("Adding "..nb.." random class talents to boss")
 
-		for i = 1, nb do
+		local count, fails = 0, 0
+		while count < nb do
 			local tid = rng.tableIndex(list, b.learn_tids)
+			if not tid or fails > nb * 5 then break end
 			local t = b:getTalentFromId(tid)
 			if t then
-				print(" * talent", tid)
-				local max = (t.points == 1) and 1 or math.ceil(t.points * 1.2)
-				local step = max / 50
-				local lev = math.ceil(step * data.level)
-				if instant then
-					if b:getTalentLevelRaw(tid) < lev then b:learnTalent(tid, true, lev - b:getTalentLevelRaw(tid)) end
-					if t.mode == "sustained" and data.auto_sustain then b:forceUseTalent(tid, {ignore_energy=true}) end
-				else
-					b.learn_tids[tid] = lev
+				if t.type[2] and known_types[t.type[1]] < t.type[2] - 1 then -- not enough of talents of type
+					fails = fails + 1
+				else -- ok to add
+					count = count + 1
+					local max = (t.points == 1) and 1 or math.ceil(t.points * 1.2)
+					local step = max / 50
+					local lev = math.ceil(step * data.level)
+					print(count, " * talent:", tid, lev)
+					if instant then
+						if b:getTalentLevelRaw(tid) < lev then b:learnTalent(tid, true, lev - b:getTalentLevelRaw(tid)) end
+						if t.mode == "sustained" and data.auto_sustain then b:forceUseTalent(tid, {ignore_energy=true}) end
+					else
+						b.learn_tids[tid] = lev
+					end
+					known_types[t.type[1]] = known_types[t.type[1]] + 1
+					list[tid] = nil
 				end
+			else list[tid] = nil
 			end
 		end
+		print(" ** Finished adding", count, "of", nb, "random class talents")
 		return true
 	end
 
@@ -2823,4 +2844,51 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward: "..reward.name
 	game.log("#LIGHT_BLUE#%s has received: %s.", who.name:capitalize(), reward.name)
 	return reward.name
+end
+
+--- Allow the actor to learn a specific talent
+-- @param tid -- talent id
+-- @param who -- the talent user <default main player>
+-- @param v -- value to assign (boolean <default true> or a function(who, t) returning boolean, "message to player on unlock")
+-- outputs a message when the player unlocks a talent
+function _M:unlockTalent(tid, who, v)
+	self.unlocked_talents = self.unlocked_talents or {}
+	who = who or game:getPlayer(true)
+	local t = who:getTalentFromId(tid)
+	if t then
+		local new_unlock = not self:unlockTalentCheck(tid, who)
+		self.unlocked_talents[tid] = v == nil and true or v
+		if new_unlock then -- test the unlock
+			local unlock = self:unlockTalentCheck(tid, who)
+			if unlock then 
+				game.logPlayer(who, "#LIGHT_GREEN#%s", type(unlock) == "string" and unlock or ("You have unlocked a new talent: %s!"):format(t.name))
+			end
+		end
+	end
+end
+
+--- Check if the actor is allowed to learn a specific talent
+-- By default, NPC's can learn talents without unlocking them
+-- Evaluates game state value (boolean or function(who, t)), then talent.unlock_talent (boolean or function(who, t))
+-- @param tid -- talent id
+-- @param who -- the talent user <default main player>
+-- @return[1] boolean or string (always true if the talent unlock_talent field is undefined)
+-- @return[2] game.state stored value
+function _M:unlockTalentCheck(tid, who)
+	self.unlocked_talents = self.unlocked_talents or {}
+	who = who or game:getPlayer(true)
+	local t = who:getTalentFromId(tid)
+	if t then
+		if not t.unlock_talent then return true, self.unlocked_talents[tid] end
+		local unlock, msg = true
+		if game.party:hasMember(who) then -- For party members, talent must be unlocked in GameState
+			unlock, msg = util.getval(self.unlocked_talents[tid], who, t)
+		end
+		if unlock then -- evaluate talent unlock field
+			unlock = t.unlock_talent
+			if type(unlock) == "function" then unlock, msg = unlock(who, t) end
+			return unlock and msg or unlock, self.unlocked_talents[tid]
+		end
+	end
+	return false, self.unlocked_talents[tid]
 end
