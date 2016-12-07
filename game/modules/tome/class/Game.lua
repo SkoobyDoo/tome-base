@@ -2049,7 +2049,12 @@ do return end
 		end),
 
 		LEVELUP = function()
-			if self.player:attr("no_levelup_access") then return end
+			if self.player:attr("no_levelup_access") then
+				if type(self.player.no_levelup_access_log) == "string" then
+					game.log(self.player.no_levelup_access_log)
+				end
+				return
+			end
 			self.player:playerLevelup(nil, false)
 		end,
 
