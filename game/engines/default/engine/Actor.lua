@@ -268,7 +268,7 @@ end
 function _M:canMove(x, y, terrain_only)
 	if not game.level.map:isBound(x, y) then return false end
 	if terrain_only then
-		return not game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move")
+		return not game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self)
 	else
 		return not game.level.map:checkAllEntities(x, y, "block_move", self)
 	end
