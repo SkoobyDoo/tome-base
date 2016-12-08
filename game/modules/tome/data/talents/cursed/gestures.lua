@@ -231,7 +231,7 @@ newTalent{
 	mode = "passive",
 	cooldown = 10,
 	points = 5,
-	getGuardPercent = function(self, t) return self:combatTalentLimit(t, 390, 80, 270) end,
+	getGuardPercent = function(self, t) return self:combatTalentLimit(t, 80, 20, 45) end,
 	-- Damage reduction handled in _M:attackTargetWith function in mod.class.interface.Combat.lua
 	getDamageChange = function(self, t, fake)
 		local test, dam = canUseGestures(self)

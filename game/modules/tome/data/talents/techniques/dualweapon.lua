@@ -62,7 +62,9 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 		return self:combatStatScale("cun", 1, 2.25)
 	end,
 	callbackOnActBase = function(self, t) -- refresh the buff each turn in mod.class.Actor.lua _M:actBase
-		if self:hasDualWeapon() then
+		local mh, oh = self:hasDualWeapon()
+--		if self:hasDualWeapon() then
+		if (mh and oh) and oh.subtype ~= "mindstar" then
 			self:setEffect(self.EFF_PARRY,1,{chance=t.getDeflectChance(self, t), dam=t.getDamageChange(self, t), deflects=t.getDeflects(self, t)})
 		end
 	end,

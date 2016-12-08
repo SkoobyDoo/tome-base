@@ -109,7 +109,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self,t)
 		return ([[When you exit stealth, you reveal yourself dramatically, intimitading foes around you. 
-		All enemies that witness you leaving stealth within radius %d will be stricken with terror, randomly inflicting stun, slow (40%% power) or confusion (50%% power) for %d turns.]])
+		All enemies that witness you leaving stealth within radius %d will be stricken with terror, which randomly inflicts stun, slow (40%% power), or confusion (50%% power) for %d turns.]])
 		:format(radius, duration)
 	end,
 }

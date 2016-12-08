@@ -49,7 +49,9 @@ newTalent{
 		return t.getDeflectPercent(self, t) * dam/100
 	end,
 	callbackOnActBase = function(self, t)
-		if self:hasDualWeapon() then
+		local mh, oh = self:hasDualWeapon()
+--		if self:hasDualWeapon() then
+		if (mh and oh) and oh.subtype ~= "mindstar" then
 			self:setEffect(self.EFF_PARRY,1,{chance=t.getDeflectChance(self, t), dam=t.getDamageChange(self, t), deflects=t.getDeflects(self, t), parry_ranged=true})
 		end
 	end,
