@@ -1183,7 +1183,7 @@ newDamageType{
 
 -- Darkness + Stun
 newDamageType{
-	name = "darkness", type = "DARKSTUN",
+	name = "stunning darkness", type = "DARKSTUN", text_color = "#GREY#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
@@ -1337,7 +1337,7 @@ newDamageType{
 
 -- Cold damage + freeze ground
 newDamageType{
-	name = "cold ground", type = "COLDNEVERMOVE",
+	name = "pinning cold", type = "COLDNEVERMOVE", text_color = "#CADET_BLUE#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)

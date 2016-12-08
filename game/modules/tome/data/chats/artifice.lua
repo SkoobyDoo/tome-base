@@ -32,7 +32,11 @@ local function generate_tools()
 
 			local tool_level = player:getTalentLevelRaw(t)
 			local equip_tool = function(npc, player) -- equip a tool
-				if tool_level == chat_level then return end -- already selected and up to date
+				if tool_level == chat_level then -- already selected and up to date
+					game.log("#CADET_BLUE#%s already equipped at level %d.", t.name, tool_level)
+					player:talentDialogReturn()
+					return
+				end
 				-- unlearn the previous talent
 				player:unlearnTalentFull(player.artifice_tools[chat_tid])
 				-- (re)learn the talent
@@ -45,9 +49,10 @@ local function generate_tools()
 				player.artifice_tools[chat_tid] = tid
 
 				-- start talent cooldowns and use energy
-				player.turn_procs._did_artifice = true -- controls energy use
 				player:startTalentCooldown(tid)
 				if player:getTalentFromId(m_tid) then player:startTalentCooldown(m_tid) end
+				game.log("#CADET_BLUE#Equipping %s with %s (level %d).", t.name, chat_talent.name, chat_level)
+				player:talentDialogReturn(tid, m_tid)
 			end
 			local txt, slot
 			-- check for an existing slot

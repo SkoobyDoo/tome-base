@@ -325,32 +325,34 @@ function _M:timedEffects(filter)
 end
 
 --- Called by ActorLife interface
--- We use it to pass aggression values to the AIs
+-- We use it to pass aggression values between NPCs
 function _M:onTakeHit(value, src, death_note)
 	value = mod.class.Actor.onTakeHit(self, value, src, death_note)
-
-	if not self.ai_target.actor and src and src.targetable and value > 0 then
-		self.ai_target.actor = src
-	end
-
+	
 	-- Switch to astar pathing temporarily
 	if src and src == self.ai_target.actor and not self._in_timed_effects then
 		self.ai_state.damaged_turns = 10
 	end
 
-	-- Get angry if attacked by a friend
-	if src and src ~= self and src.resolveSource and src.faction and self:reactionToward(src) >= 0 and value > 0 then
-		self:checkAngered(src, false, -50)
+	if value > 0 and src and src ~= self and src.resolveSource then
+		if not src.targetable then src = util.getval(src.resolveSource, src) end
+		if src then
+			if src.targetable and not self.ai_target.actor then self:setTarget(src) end
+			-- Get angry if hurt by a friend
+			if src.faction and self:reactionToward(src) >= 0 then
+				self:checkAngered(src, false, -50)
 
-		-- Call for help if we become hostile
-		for i = 1, #self.fov.actors_dist do
-			local act = self.fov.actors_dist[i]
-			if act and act ~= self and self:reactionToward(act) > 0 and not act.dead and act.checkAngered then
-				act:checkAngered(src, false, -50)
+				-- Share reaction with allies
+				for i = 1, #self.fov.actors_dist do
+					local act = self.fov.actors_dist[i]
+					if act and act ~= self and not act.dead and act.checkAngered and self:reactionToward(act) > 0 then
+						act:checkAngered(src, false, -50)
+					end
+				end
 			end
 		end
 	end
-
+	
 	return value
 end
 

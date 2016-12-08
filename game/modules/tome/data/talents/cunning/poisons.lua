@@ -27,13 +27,12 @@ local function cancelPoisons(self)
 	local todel = {}
 	for tid, p in pairs(self.sustain_talents) do
 		local t = self:getTalentFromId(tid)
-		if t.type[1] == "cunning/poisons-effects" then
+		if t.vile_poison or t.type[1] == "cunning/poisons-effects" then
 			todel[#todel+1] = tid
 		end
 	end
 	while #todel > 1 do self:forceUseTalent(rng.tableRemove(todel), {ignore_energy=true}) end
 end
-
 
 newTalent{
 	name = "Apply Poison",
@@ -49,35 +48,39 @@ newTalent{
 	getChance = function(self,t) return self:combatTalentLimit(t, 100, 25, 45) end,
 	getDamage = function(self, t) return 8 + self:combatTalentStatDamage(t, "cun", 10, 60) * 0.6 end,
 	ApplyPoisons = function(self, t, target, weapon) -- apply poison(s) to a target
-		local insidious = 0
-		if self:isTalentActive(self.T_INSIDIOUS_POISON) then insidious = self:callTalent(self.T_INSIDIOUS_POISON, "getEffect") end
-		local numbing = 0
-		if self:isTalentActive(self.T_NUMBING_POISON) then numbing = self:callTalent(self.T_NUMBING_POISON, "getEffect") end
-		local crippling = 0
-		if self:isTalentActive(self.T_CRIPPLING_POISON) then crippling = self:callTalent(self.T_CRIPPLING_POISON, "getEffect") end
-		local leeching = 0
-		if self:isTalentActive(self.T_LEECHING_POISON) then leeching = self:callTalent(self.T_LEECHING_POISON, "getEffect") end
-		local volatile = 0
-		if self:isTalentActive(self.T_VOLATILE_POISON) then volatile = self:callTalent(self.T_VOLATILE_POISON, "getEffect")/100 end
-		local dam = t.getDamage(self,t) * (1 + volatile)
-		target:setEffect(target.EFF_DEADLY_POISON, t.getDuration(self, t), {src=self, power=dam, max_power=dam*4, insidious=insidious, crippling=crippling, numbing=numbing, leeching=leeching, volatile=volatile, apply_power=self:combatAttack(), no_ct_effect=true})
-		if self:knowTalent(self.T_VULNERABILITY_POISON) then 
+		if self:knowTalent(self.T_VULNERABILITY_POISON) then -- apply vulnerability first
 			target:setEffect(target.EFF_VULNERABILITY_POISON, t.getDuration(self, t), {src=self, power=self:callTalent(self.T_VULNERABILITY_POISON, "getDamage") , apply_power=self:combatAttack(), no_ct_effect=true})
 		end
-		for tid, val in pairs(self.vile_poisons) do -- apply any special procs
-			local tal = self:getTalentFromId(tid)
-			if tal and tal.proc then
-				tal.proc(self, tal, target, weapon)
+		if target:canBe("poison") then
+			local insidious = 0
+			if self:isTalentActive(self.T_INSIDIOUS_POISON) then insidious = self:callTalent(self.T_INSIDIOUS_POISON, "getEffect") end
+			local numbing = 0
+			if self:isTalentActive(self.T_NUMBING_POISON) then numbing = self:callTalent(self.T_NUMBING_POISON, "getEffect") end
+			local crippling = 0
+			if self:isTalentActive(self.T_CRIPPLING_POISON) then crippling = self:callTalent(self.T_CRIPPLING_POISON, "getEffect") end
+			local leeching = 0
+			if self:isTalentActive(self.T_LEECHING_POISON) then leeching = self:callTalent(self.T_LEECHING_POISON, "getEffect") end
+			local volatile = 0
+			if self:isTalentActive(self.T_VOLATILE_POISON) then volatile = self:callTalent(self.T_VOLATILE_POISON, "getEffect")/100 end
+			local dam = t.getDamage(self,t) * (1 + volatile)
+			target:setEffect(target.EFF_DEADLY_POISON, t.getDuration(self, t), {src=self, power=dam, max_power=dam*4, insidious=insidious, crippling=crippling, numbing=numbing, leeching=leeching, volatile=volatile, apply_power=self:combatAttack(), no_ct_effect=true})
+			if self.vile_poisons then
+				for tid, val in pairs(self.vile_poisons) do -- apply any special procs
+					local tal = self:getTalentFromId(tid)
+					if tal and tal.proc then
+						tal.proc(self, tal, target, weapon)
+					end
+				end
 			end
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if self.vile_poisons and target and hitted and target:canBe("poison") and rng.percent(t.getChance(self,t)) then
+		if target and hitted and rng.percent(t.getChance(self,t)) then
 			t.ApplyPoisons(self, t, target, weapon)
 		end
 	end,
 	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
-		if self.vile_poisons and target and hitted and target:canBe("poison") and rng.percent(t.getChance(self,t)) then
+		if target and hitted and rng.percent(t.getChance(self,t)) then
 			t.ApplyPoisons(self, t, target, weapon)
 		end
 	end,
@@ -422,22 +425,26 @@ newTalent{
 	end,
 }
 
+-- learned only with the Mystical Cunning prodigy
 newTalent{
 	name = "Vulnerability Poison",
 	type = {"cunning/poisons-effects", 1},
 	points = 1,
 	mode = "passive",
 	no_unlearn_last = true,
-	getDamage = function(self, t) return 10 + self:getCun() end,
+	getDamage = function(self, t) return 10 + self:getMag() end,
 	info = function(self, t)
-	return ([[Whenever you apply Deadly Poison you also apply a magical poison dealing %0.2f arcane damage each turn. Those affected by the poison take 10%% increased damage and have their poison resistance reduced by 50%%.]]):
+	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity (for living targets) by 50%%.]]):
 	format(damDesc(self, DamageType.ARCANE, t.getDamage(self,t)))
 	end,
 }
 
+-- learned from the lost merchant
 newTalent{
 	name = "Stoning Poison",
-	type = {"cunning/poisons-effects", 1},
+	type = {"cunning/poisons", 4},
+	require = {stat = {cun=40}, level=25},
+	hide = true,
 	points = 1,
 	mode = "sustained",
 	cooldown = 10,
@@ -445,12 +452,21 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getDuration = function(self, t) return math.ceil(self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 0, 11, 7)) end, -- Make sure it takes at least 1 turn
+	vile_poison = true,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 6, 8)) end,
 	getDOT = function(self, t) return 8 + self:combatTalentStatDamage(self.T_VILE_POISONS, "cun", 10, 30) * 0.4 end,
-	getEffect = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 3, 5)) end,
+	stoneTime = function(self, t) return math.ceil(self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 1, 11, 7)) end, -- Time to stone target, always > 1 turn
+	getEffect = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 3, 4)) end,
+	on_learn = function(self, t)
+		self.__show_special_talents[t.id] = true
+	end,
+	on_unlearn = function(self, t)
+		self.__show_special_talents[t.id] = false
+	end,
 	proc = function(self, t, target, weapon) -- apply when applying other poisons with the Apply Poison talent
-		if target:hasEffect(target.EFF_STONED) or target:hasEffect(target.EFF_STONE_POISON) then return end
-		target:setEffect(target.EFF_STONE_POISON, t.getDuration(self, t), {src=self, power=t.getDOT(self, t), stone=t.getEffect(self, t)})
+		local dam = t.getDOT(self, t)
+		if target:hasEffect(target.EFF_STONED) then return end
+		target:setEffect(target.EFF_STONE_POISON, t.getDuration(self, t), {src=self, power=dam, max_power=dam*4, stone=t.getEffect(self, t), time_to_stone = t.stoneTime(self, t)})
 	end,
 	activate = function(self, t)
 		cancelPoisons(self)
@@ -463,9 +479,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Enhance your Deadly Poison with a stoning agent.  Whenever you apply Deadly Poison you afflict your target with an additional special poison that inflicts %d nature damage per turn for %d turns.
-		If this poison runs its full course, the victim will be turned to stone for %d turns.
+		local dam = damDesc(self, DamageType.NATURE, t.getDOT(self, t))
+		return ([[Enhance your Deadly Poison with a stoning agent.  Whenever you apply Deadly Poison, you afflict your target with an additional earth-based poison that inflicts %d nature damage per turn (stacking up to %d damage per turn) for %d turns.
+		After either %d turns or the poison has run its course (<100%% chance, see effect description), the target will be turned to stone for %d turns.
 		The damage scales with your Cunning.]]):
-		format(damDesc(self, DamageType.NATURE, t.getDOT(self, t)), t.getDuration(self, t), t.getEffect(self, t))
+		format(dam, dam*4, t.getDuration(self, t), t.stoneTime(self, t), t.getEffect(self, t))
 	end,
 }

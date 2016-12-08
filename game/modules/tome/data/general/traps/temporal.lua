@@ -27,11 +27,13 @@ newEntity{ define_as = "TRAP_TEMPORAL",
 
 newEntity{ base = "TRAP_TEMPORAL",
 	name = "disturbed pocket of time", auto_id = true, image = "trap/disturbed_pocket_of_time.png",
-	detect_power = resolvers.clscale(8,50,8),
-	disarm_power = resolvers.clscale(2,50,8),
+	detect_power = resolvers.clscale(10,50,8),
+	disarm_power = resolvers.clscale(35,50,8),
 	rarity = 3, level_range = {1, 50},
 	color=colors.VIOLET,
 	message = "@Target@ is caught in a distorted pocket of time!",
+	unided_name = "faint distortion",
+	desc = [[Creates a temporal anomaly when triggered.]],
 	triggered = function(self, x, y, who)
 		who:paradoxDoAnomaly(100, 0, {anomaly_type="no-major"})
 		return true
@@ -41,10 +43,12 @@ newEntity{ base = "TRAP_TEMPORAL",
 newEntity{ base = "TRAP_TEMPORAL",
 	name = "extremely disturbed pocket of time", auto_id = true, image = "trap/extremely_disturbed_pocket_of_time.png",
 	detect_power = resolvers.clscale(8,50,8),
-	disarm_power = resolvers.clscale(2,50,8),
+	disarm_power = resolvers.clscale(45,50,8),
 	rarity = 6, level_range = {1, 50},
 	color=colors.PURPLE,
 	message = "@Target@ is caught in an extremely distorted pocket of time!",
+	unided_name = "distortion",
+	desc = [[Creates a major temporal anomaly when triggered.]],
 	triggered = function(self, x, y, who)
 		who:paradoxDoAnomaly(100, 0, {anomaly_type="major"})
 		return true

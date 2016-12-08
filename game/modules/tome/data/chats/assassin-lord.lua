@@ -32,8 +32,8 @@ local function evil(npc, player)
 	end
 
 	if p:knowTalentType("cunning/trapping") then
-		game.state.ambush_trap = true
-		game.log("#LIGHT_GREEN#Before you leave the Lord teaches you how to create ambush traps!")
+		game.log("#LIGHT_GREEN#You and the Lord discuss your new relationship at some length, including the merits of assassination by proxy and some additional trapping techniques.")
+		game.state:unlockTalent(player.T_AMBUSH_TRAP, player)
 	end
 
 	game:changeLevel(1, "wilderness")

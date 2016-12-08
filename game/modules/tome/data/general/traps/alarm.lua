@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local Talents = require"engine.interface.ActorTalents"
+
 newEntity{ define_as = "TRAP_ALARM",
 	type = "annoy", subtype="alarm", id_by_type=true, unided_name = "trap",
 	display = '^',
@@ -25,11 +27,13 @@ newEntity{ define_as = "TRAP_ALARM",
 
 newEntity{ base = "TRAP_ALARM",
 	name = "intruder alarm", auto_id = true, image = "trap/trap_intruder_alarm_01.png",
-	detect_power = resolvers.clscale(20,50,8),
-	disarm_power = resolvers.clscale(36,50,8),
+	detect_power = resolvers.clscale(36,50,8),
+	disarm_power = resolvers.clscale(20,50,8),
 	rarity = 3, level_range = {1, 50},
 	color=colors.UMBER,
 	message = "@Target@ triggers an alarm!",
+	unided_name = "pressure plate",
+	desc = function(self) return ("Makes noise, alerting others.") end,
 	pressure_trap = true,
 	triggered = function(self, x, y, who)
 		for i = x - 20, x + 20 do for j = y - 20, y + 20 do if game.level.map:isBound(i, j) then
@@ -51,12 +55,15 @@ newEntity{ base = "TRAP_ALARM",
 
 newEntity{ base = "TRAP_ALARM",
 	name = "summoning alarm", auto_id = true, image = "trap/trap_summoning_alarm_01.png",
-	detect_power = resolvers.clscale(8,50,8),
-	disarm_power = resolvers.clscale(2,50,8),
+	detect_power = resolvers.clscale(30,50,8),
+	disarm_power = resolvers.clscale(46,50,8),
 	rarity = 3, level_range = {10, 50},
 	color=colors.DARK_UMBER,
 	nb_summon = resolvers.mbonus(3, 2),
 	message = "An alarm rings!",
+	unided_name = "ring of faded sigils",
+	desc = function(self) return ("Summons creatures.") end,
+	unlock_talent_on_disarm = {tid=Talents.T_AMBUSH_TRAP, chance=8},
 	triggered = function(self, sx, sy, who)
 		for i = 1, self.nb_summon do
 			-- Find space
@@ -69,7 +76,8 @@ newEntity{ base = "TRAP_ALARM",
 			local m = game.zone:makeEntity(game.level, "actor")
 			if m then
 				game.zone:addEntity(game.level, m, "actor", x, y)
-				game.logSeen(who, "%s appears out of the thin air!", m.name:capitalize())
+				m:setTarget(who)
+				game.logSeen(m, "%s appears out of the thin air!", m.name:capitalize())
 			end
 		end
 		return true, true

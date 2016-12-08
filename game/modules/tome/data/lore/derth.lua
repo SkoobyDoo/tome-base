@@ -32,8 +32,7 @@ It's not that I don't trust her, not after you and they - mostly you! - saved us
 	on_learn = function(who)
 		local p = game.party:findMember{main=true}
 		if p:knowTalentType("cunning/trapping") then
-			game.state.beam_trap = true
-			game.log("#LIGHT_GREEN#You have learnt to create beam traps!")
+			game.state:unlockTalent(p.T_BEAM_TRAP, p)
 		end
 	end,
 }

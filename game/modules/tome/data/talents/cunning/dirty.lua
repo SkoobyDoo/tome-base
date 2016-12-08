@@ -148,51 +148,59 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	cooldown = 15,
+	fixed_cooldown = true,
 	stamina = 20,
 	requires_target = true,
 	tactical = { DISABLE = 2, ATTACK = {weapon = 2} },
 	is_melee = true,
 	range = 1,
-	no_npc_use = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
-	getDuration = function(self, t) return self:combatTalentScale(t, 1, 3) end,
-	getDebuffs = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	getDuration = function(self, t) return self:combatTalentScale(t, 2, 4, "log") end,
+	getDebuffs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, "log")) end,
 	speed = "weapon",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
-		local nb = 0
-		local effs = {}
+		if not hitted then return true end
 
-		if hitted then
-			for eff_id, p in pairs(target.tmp) do
-				local e = target.tempeffect_def[eff_id]
-				if e.type ~= "other" and e.status == "detrimental" then
-					p.dur = p.dur + t.getDuration(self, t)
-					nb = nb + 1
-					if nb >= t.getDebuffs(self,t) then break end
-				end
+		local max_nb, dur = t.getDebuffs(self,t), t.getDuration(self, t)
+		local nb = 0
+
+		for eff_id, p in pairs(target.tmp) do
+			local e = target.tempeffect_def[eff_id]
+			if e.status == "detrimental" and e.type ~= "other" and e.decrease ~= 0 then
+				p.dur = p.dur + dur
+				nb = nb + 1
+				game.logSeen(target, "#CRIMSON#%s's %s was extended!#LAST#", target.name:capitalize(), util.getval(p.getName, p) or e.desc)
+				if nb >= max_nb then break end
 			end
 		end
 		
 		if nb > 0 then
+			local effs = {}
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
-				if e.status == "beneficial" then
-					effs[#effs+1] = {"effect", eff_id}
+				if e.status == "beneficial" and e.type ~= "other" and e.decrease ~= 0 then
+					effs[#effs+1] = {eff_id, e}
 				end
 			end
 			
 			for i = 1, nb do
 				if #effs == 0 then break end
 				local eff = rng.tableRemove(effs)
-
-				if eff[1] == "effect" then
-					target:removeEffect(eff[2])
-					game.logSeen(self, "#CRIMSON#%s's beneficial effect was stripped!#LAST#", target.name:capitalize())
+				if eff then
+					local p = target.tmp[eff[1]]
+					p.dur = p.dur - dur
+					if p.dur <= 0 then
+						target:removeEffect(eff[1])
+						game.logSeen(target, "#CRIMSON#%s's %s was stripped!#LAST#", target.name:capitalize(), util.getval(p.getName, p) or eff[2].desc)
+					else
+						game.logSeen(target, "#CRIMSON#%s's %s was disrupted!#LAST#", target.name:capitalize(), util.getval(p.getName, p) or eff[2].desc)
+					end
+				else break
 				end
 			end			
 		end
@@ -203,7 +211,7 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local dur = t.getDuration(self, t)
 		local nb = t.getDebuffs(self, t)
-		return ([[Make a painful strike dealing %d%% weapon damage that increases the duration of up to %d negative effects on the target by %d turns. For each negative effect extended this way, a beneficial effect is stripped from the target.]]):
+		return ([[Make a painful strike dealing %d%% weapon damage that increases the duration of up to %d negative effect(s) on the target by %d turns. For each negative effect extended this way, the duration of a beneficial effect is reduced by the same amount, possibly canceling it.]]):
 		format(100 * damage, nb, dur)
 	end,
 }

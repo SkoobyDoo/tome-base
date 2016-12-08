@@ -41,6 +41,7 @@ newEntity{
 	rank = 1,
 	size_category = 1,
 	cut_immune = 1,
+	levitation = 1,
 	not_power_source = {arcane=true, technique_ranged=true},
 }
 
