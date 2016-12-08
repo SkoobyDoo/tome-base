@@ -73,7 +73,7 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 		return ([[You have learned to block incoming blows with your offhand weapon.
 		When dual wielding, your defense is increased by %d.
 		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee attack.
-		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  Partial parries have a proportionally reduced chance to succeed.  You cannot parry attacks from an unseen attacker or with a mindstar.
+		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  Partial parries have a proportionally reduced chance to succeed.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.
 		The defense and chance to parry improve with Dexterity.  The number of parries increases with Cunning.]]):format(t.getDefense(self, t), t.getDeflects(self, t, true), t.getDeflectChance(self,t), t.getDamageChange(self, t, true), t.getDeflectPercent(self,t))
 	end,
 }

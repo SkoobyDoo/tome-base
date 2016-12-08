@@ -427,6 +427,7 @@ summon_bladestorm = function(self, target, duration, x, y, scale )
 
 		life_rating = 12,
 		never_move = 1,
+		cant_be_moved = 1,
 		negative_status_effect_immune = 1,
 		
 		combat_armor = math.floor(self.level*.75 + 10), combat_def = self.level * 2,

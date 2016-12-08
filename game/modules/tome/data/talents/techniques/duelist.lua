@@ -59,7 +59,7 @@ newTalent{
 		chance = t.getDeflectChance(self,t)
 		perc = t.getDeflectPercent(self,t)
 		return ([[Up to %d times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee or ranged attack.
-		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  You cannot parry attacks from an unseen attacker or with a mindstar.
+		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.
 		The number of attacks you can parry and their chance partially stacks with those of Dual Weapon Defense.]]):
 		format(t.getDeflects(self, t, true), chance, block, perc)
 	end,

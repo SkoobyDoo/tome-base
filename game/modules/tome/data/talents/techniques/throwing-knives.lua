@@ -224,33 +224,29 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return end
-
 		local count = t.getNb(self,t)
-		local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
-		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
 		
-		local tg2 = {type="bolt", range=tg.radius}
 		local tgts = {}
-		grids = self:project(tg, x, y, function(px, py)
+		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return end
-			tgts[#tgts+1] = target
+			tgts[#tgts+1] = {act=target, cnt=0}
 		end)
-
-		table.shuffle(tgts)
-		
-		while count > 0 and #tgts > 0 do
-			for i = 1, math.min(count, #tgts) do
-				if #tgts <= 0 then break end
-				local a, id = tgts[i]
-				if a then
-					local proj = throw(self, self:getTalentRadius(t), t.getDamage(self,t), a.x, a.y, nil, nil, 1)
+		local tgt_cnt = #tgts
+		if tgt_cnt > 0 then
+			local tgt_max = math.min(3, math.ceil(count/tgt_cnt))
+			while count > 0 and #tgts > 0 do
+				local tgt, id = rng.table(tgts)
+				if tgt then
+					local proj = throw(self, self:getTalentRadius(t), t.getDamage(self,t), tgt.act.x, tgt.act.y, nil, nil, 1)
 					proj.name = "Fan of Knives"
+					tgt.cnt = tgt.cnt + 1
+					print(("Fan of Knives #%d: target:%s (%s, %s) = %d"):format(count, tgt.act.name, tgt.act.x, tgt.act.y, tgt.cnt))
 					count = count - 1
-					a.turn_procs.fan_of_knives = 1 + (a.turn_procs.fan_of_knives or 0)
-					if a.turn_procs.fan_of_knives==3 then table.remove(tgts, id) end
+					if tgt.cnt >= tgt_max then table.remove(tgts, id) end
 				end
 			end
+			print(count, "knives untargeted.")
 		end
 
 		return true
