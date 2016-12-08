@@ -529,7 +529,6 @@ _M.defaults.block_radius = function(typ, lx, ly, for_highlights)
 			if not trn_pass then blocked = true end -- blocked by terrain
 		end
 	end
-	
 	if not blocked and typ.stop_block then -- check all entities
 		 -- get #blocking entities and subtract for each entity that can be explicitly passed through
 		local nb = map:checkAllEntitiesCount(lx, ly, "block_move")
@@ -539,19 +538,27 @@ _M.defaults.block_radius = function(typ, lx, ly, for_highlights)
 				nb = nb - 1
 			end
 		end
-		if nb > 0 and (typ.friendlyblock ~= nil or not typ.actorblock) then -- decrement for passable actors
+		
+		if nb > 0 then
 			local a = map(lx, ly, engine.Map.ACTOR)
-			if a then -- friendly block controls if specified
-				if typ.friendlyblock ~= nil and typ.source_actor and typ.source_actor.reactionToward and typ.source_actor:reactionToward(a) >= 0 then
-					if not typ.friendlyblock then nb = nb - 1 end
-				elseif not typ.actorblock then 
+			if a then -- decrement for passable actors
+				-- For targeting highlights, don't show as blocked if the player can't see the actor
+				if for_highlights and typ.source_actor and typ.source_actor.canSee and not typ.source_actor:canSee(a) then
 					nb = nb - 1
+				else
+					if typ.friendlyblock == nil and not typ.actorblock then  -- friendly block controls if specified
+						nb = nb - 1
+					else
+						if typ.friendlyblock ~= nil and typ.source_actor and typ.source_actor.reactionToward and typ.source_actor:reactionToward(a) >= 0 then
+							if not typ.friendlyblock then nb = nb - 1 end
+						elseif not typ.actorblock then 
+							nb = nb - 1
+						end
+					end
 				end
 			end
 		end
-		if nb > 0 then
-			blocked = true
-		end
+		if nb > 0 then blocked = true end
 	end
 	-- treat unknown grids as non-blocking for player targeting highlights
 	if blocked and not (for_highlights and not (map.remembers(lx, ly) or map.seens(lx, ly))) then return true end
