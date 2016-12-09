@@ -32,13 +32,6 @@ defineAction{
 }
 
 defineAction{
-	default = { "sym:=d:false:true:false:false" },
-	type = "DISARM_TRAP",
-	group = "actions",
-	name = "Disarm a trap",
-}
-
-defineAction{
 	default = { "sym:_TAB:true:false:false:false" },
 	type = "SWITCH_PARTY",
 	group = "party",
