@@ -176,7 +176,8 @@ uberTalent{
 		elseif who.subtype == "shadow" then
 			local tl = who:getTalentLevelRaw(who.T_EMPATHIC_HEX)
 			tl = tlevel-tl
-			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end		
+			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end
+			who:incVim(who:getMaxVim())
 		elseif who.type == "thought-form" then
 			who:learnTalent(who.T_FLAME_OF_URH_ROK,true,tlevel)
 		elseif who.subtype == "yeek" then
