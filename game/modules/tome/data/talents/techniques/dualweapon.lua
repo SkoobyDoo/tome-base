@@ -33,6 +33,7 @@ newTalent{
 	end,
 }
 
+
 newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 	name = "Dual Weapon Defense",
 	type = {"technique/dualweapon-training", 2},
@@ -41,11 +42,11 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 	require = techs_dex_req2,
 	-- called by _M:combatDefenseBase in mod.class.interface.Combat.lua
 	getDefense = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 45.7, 500) end,
-	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon, kicks in for TL > 5
-		return self:combatTalentLimit(math.max(0, self:getTalentLevel(t)-5), 100, 16.7, 50)
+	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
+		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 100, 15, 20, 60, 250) -- ~67% at TL 6.5, 55 dex
 	end,
 	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
-		return math.max(0, self:combatTalentLimit(self:getTalentLevel(t)-5, 100, 10, 40))
+		return math.max(0, self:combatTalentLimit(self:getTalentLevel(t), 100, 10, 50))
 	end,
 	getDamageChange = function(self, t, fake)
 		local dam,_,weapon = 0,self:hasDualWeapon()
@@ -55,33 +56,27 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 		end
 		return t.getDeflectPercent(self, t) * dam/100
 	end,
-	-- deflect count handled in physical effect "DUAL_WEAPON_DEFENSE" in mod.data.timed_effects.physical.lua
-	-- buff refreshed each turn in mod.class.Actor.lua _M:actBase
+	-- deflect count handled in physical effect "PARRY" in mod.data.timed_effects.physical.lua
 	getDeflects = function(self, t, fake)
 		if not self:hasDualWeapon() and not fake then return 0 end
-		return self:combatStatScale("cun", 0, 2.25)
+		return self:combatStatScale("cun", 1, 2.25)
 	end,
-	-- Called by _M:attackTargetWith in mod.class.interface.Combat.lua
-	doDeflect = function(self, t)
-		local eff = self:hasEffect(self.EFF_DUAL_WEAPON_DEFENSE)
-		if not eff then return 0 end
-		local deflected = 0
-		if rng.percent(self.tempeffect_def.EFF_DUAL_WEAPON_DEFENSE.deflectchance(self, eff)) then
-			deflected = eff.dam
+	callbackOnActBase = function(self, t) -- refresh the buff each turn in mod.class.Actor.lua _M:actBase
+		local mh, oh = self:hasDualWeapon()
+--		if self:hasDualWeapon() then
+		if (mh and oh) and oh.subtype ~= "mindstar" then
+			self:setEffect(self.EFF_PARRY,1,{chance=t.getDeflectChance(self, t), dam=t.getDamageChange(self, t), deflects=t.getDeflects(self, t)})
 		end
-		eff.deflects = eff.deflects -1
-		if eff.deflects <=0 then self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) end
-		return deflected
 	end,
 	on_unlearn = function(self, t)
-		self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE)
+		self:removeEffect(self.EFF_PARRY)
 	end,
 	info = function(self, t)
-		local xs = ([[At talent levels higher than 5, you may parry melee attacks with your offhand weapon (except mindstars).
-		(You currently have a %d%% chance to deflect up to %d damage (%d%% of your offhand weapon damage) from approximately %0.1f melee attacks (based on your Cunning) each turn.)]]):
-		format(t.getDeflectChance(self,t),t.getDamageChange(self, t, true), t.getDeflectPercent(self,t), t.getDeflects(self, t, true))
-		return ([[You have learned to block incoming blows with your weapons.  When dual wielding, your defense is increased by %d.
-		The Defense bonus scales with your Dexterity.%s]]):format(t.getDefense(self, t),xs)
+		return ([[You have learned to block incoming blows with your offhand weapon.
+		When dual wielding, your defense is increased by %d.
+		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee attack.
+		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  Partial parries have a proportionally reduced chance to succeed.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.
+		The defense and chance to parry improve with Dexterity.  The number of parries increases with Cunning.]]):format(t.getDefense(self, t), t.getDeflects(self, t, true), t.getDeflectChance(self,t), t.getDamageChange(self, t, true), t.getDeflectPercent(self,t))
 	end,
 }
 
@@ -246,9 +241,9 @@ newTalent{
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.7) end,
 	getCrit = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end,
 	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
-	range = function(self, t) return math.ceil(self:combatTalentScale(t, 3, 5)) end,
+	range = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 3, 5)) end,
 	requires_target = true,
-	tactical = { ATTACK = { weapon = 2 } },
+	tactical = { ATTACK = { weapon = 2 }, CLOSEIN = 2 },
 	on_pre_use = function(self, t, silent) 
 		if not self:hasDualWeapon() then 
 			if not silent then 
@@ -316,9 +311,10 @@ newTalent{
 	cooldown = 10,
 	stamina = 30,
 	require = techs_dex_req4,
-	tactical = { ATTACKAREA = { weapon = 2 } },
+	tactical = { ATTACKAREA = { weapon = 2 }, CLOSEIN = 1.5 },
 	range = function(self, t) if self:getTalentLevel(t) >=3 then return 3 else return 2 end end,
 	radius = 1,
+	requires_target = true,
 	target = function(self, t)
 		return  {type="beam", range=self:getTalentRange(t), talent=t }
 	end,
@@ -341,7 +337,6 @@ newTalent{
 		local _ _, x, y = self:canProject(tg, x, y)
 		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return nil end
 		if target or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self) then return nil end
-
 
 		self:projectile(tg, x, y, function(px, py, tg, self)
 			local aoe = {type="ball", radius=1, friendlyfire=true, selffire=false, talent=t, display={ } }

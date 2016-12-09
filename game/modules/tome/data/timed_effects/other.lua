@@ -3073,7 +3073,7 @@ newEffect{
 	name = "THROWING_KNIVES", image = "talents/throwing_knives.png",
 	desc = "Throwing Knives",  decrease = 0,
 	display_desc = function(self, eff) return eff.stacks.." Knives" end,
-	long_desc = function(self, eff) return ("You have %d throwing knives."):format(eff.stacks) end,
+	long_desc = function(self, eff) return ("Has %d throwing knives prepared:\n\n%s"):format(eff.stacks, self:callTalent(self.T_THROWING_KNIVES, "knivesInfo")) end,
 	type = "other",
 	subtype = { },
 	status = "beneficial",

@@ -99,8 +99,7 @@ Actually...  You fight in a more subtle way than most, do you not?  It is a poin
 	on_learn = function(who)
 		local p = game.party:findMember{main=true}
 		if p:knowTalentType("cunning/trapping") then
-			game.state.purging_trap = true
-			game.log("#LIGHT_GREEN#You have learnt to create purging traps!")
+			game.state:unlockTalent(p.T_PURGING_TRAP, p)
 		end
 	end,
 }

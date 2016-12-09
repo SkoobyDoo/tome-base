@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local Talents = require"engine.interface.ActorTalents"
+
 newEntity{ define_as = "TRAP_NATURAL_FOREST",
 	type = "natural", subtype="forest", id_by_type=true, unided_name = "trap",
 	display = '^',
@@ -34,6 +36,8 @@ newEntity{ base = "TRAP_NATURAL_FOREST",
 	color=colors.UMBER,
 	pressure_trap = true,
 	message = "@Target@ slides on a rock!",
+	unided_name = "slippery rock",
+	desc = "Stuns for 4 turns.",
 	triggered = function(self, x, y, who)
 		if who:canBe("stun") then
 			who:setEffect(who.EFF_STUNNED, 4, {apply_power=self.disarm_power + 5})
@@ -51,7 +55,13 @@ newEntity{ base = "TRAP_NATURAL_FOREST",
 	rarity = 3, level_range = {1, 50},
 	color=colors.GREEN,
 	message = "A poisonous vine strikes at @Target@!",
+	unided_name = "venomous vine",
+	desc = function(self)
+		local dtype = engine.DamageType[self.damtype] and engine.DamageType:get(self.damtype)
+		return dtype and ("A motile vine that strikes out for %s%d#LAST# %s damage."):format(dtype.text_color or "#WHITE#", self.dam, dtype.name)
+	end,
 	dam = resolvers.clscale(100, 15, 25, 0.75, 0),
 	damtype = DamageType.POISON,
-	combatAttack = function(self) return self.dam end
+	combatAttack = function(self) return self.dam end,
+	unlock_talent_on_disarm = {tid=Talents.T_NIGHTSHADE_TRAP, chance=20},
 }

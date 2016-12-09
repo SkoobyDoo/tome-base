@@ -231,7 +231,7 @@ newTalent{
 	mode = "passive",
 	cooldown = 10,
 	points = 5,
-	getGuardPercent = function(self, t) return self:combatTalentLimit(t, 390, 80, 270) end,
+	getGuardPercent = function(self, t) return self:combatTalentLimit(t, 80, 20, 45) end,
 	-- Damage reduction handled in _M:attackTargetWith function in mod.class.interface.Combat.lua
 	getDamageChange = function(self, t, fake)
 		local test, dam = canUseGestures(self)
@@ -271,7 +271,7 @@ newTalent{
 	info = function(self, t)
 		local damageChange = t.getDamageChange(self, t, true)
 		local counterAttackChance = t.getCounterAttackChance(self, t, true)
-		return ([[You guard against melee damage with a sweep of your hand. So long as you can use Gestures (Requires two free or mindstar-equipped hands), you deflect up to %d damage (%0.1f%% of your best free hand melee damage) from up to %0.1f melee attack(s) each turn (based on your cunning).
+		return ([[You guard against melee damage with a sweep of your hand. So long as you can use Gestures (Requires two free or mindstar-equipped hands), you deflect up to %d damage (%0.1f%% of your best free hand melee damage) from up to %0.1f melee attack(s) each turn (based on your cunning).  Deflected attacks cannot be crits.
 		If Gesture of Pain is active, you also have a %0.1f%% chance to counterattack.]]):
 		format(damageChange, t.getGuardPercent(self, t), t.getDeflects(self, t, true), counterAttackChance)
 	end,

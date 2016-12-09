@@ -28,7 +28,10 @@ local function generate_tools()
 		if m_t then
 			local master_talent = function(npc, player)
 				local old_mastery_level = player:getTalentLevelRaw(m_tid)
-				if old_mastery_level == chat_level then return end
+				if old_mastery_level == chat_level then -- already selected and up to date
+					game.log("#CADET_BLUE#%s already mastered.", t.name)
+					return 
+				end
 				-- unlearn mastery talent(s)
 				for tid, m_tid in pairs(tool_ids) do
 					if player:knowTalent(m_tid) then player:unlearnTalentFull(m_tid) end
@@ -40,10 +43,9 @@ local function generate_tools()
 				-- start talent cooldowns
 				if old_mastery_level == 0 then
 					player:startTalentCooldown(tid) player:startTalentCooldown(m_tid)
-					player:startTalentCooldown(chat_tid)
 					game.log("#LIGHT_BLUE# You enhance your preparation of %s.", t.name)
+					player:talentDialogReturn(m_tid)
 				end
-
 			end
 			answers[#answers+1] = {("%s[%s -- mastery: %s]#LAST#"):format(player.artifice_tools_mastery == tid and "#YELLOW#" or "", t.name, m_t.name),
 				action=master_talent,

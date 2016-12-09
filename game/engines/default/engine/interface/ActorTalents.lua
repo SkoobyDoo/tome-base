@@ -638,7 +638,7 @@ function _M:canLearnTalent(t, offset, ignore_special)
 		if req.stat then
 			for s, v in pairs(req.stat) do
 				v = util.getval(v, tlev)
-				if self:getStat(s) < v then return nil, "not enough stat" end
+				if self:getStat(s) < v then return nil, "not enough stat: "..s:upper() end
 			end
 		end
 		if req.level then
@@ -1038,6 +1038,11 @@ end
 
 local dialog_returns_list = setmetatable({}, {__mode="v"})
 local dialog_returns = setmetatable({}, {__mode="k"})
+
+--- Retrieve talent dialog data
+function _M:talentDialogData()
+	return dialog_returns_list, dialog_returns
+end
 
 --- Set the result for a talent dialog
 function _M:talentDialogReturn(...)

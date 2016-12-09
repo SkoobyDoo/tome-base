@@ -19,21 +19,6 @@
 
 local Object = require "mod.class.Object"
 
-local function stealthDetection(self, radius, estimate)
-	if not self.x then return nil end
-	local dist = 0
-	local closest, detect = math.huge, 0
-	for i, act in ipairs(self.fov.actors_dist) do
-		dist = core.fov.distance(self.x, self.y, act.x, act.y)
-		if dist > radius then break end
-		if act ~= self and act:reactionToward(self) < 0 and not act:attr("blind") and (not act.fov or not act.fov.actors or act.fov.actors[self]) and (not estimate or self:canSee(act)) then
-			detect = detect + act:combatSeeStealth() * (1.1 - dist/10) -- detection strength reduced 10% per tile
-			if dist < closest then closest = dist end
-		end
-	end
-	return detect, closest
-end
-
 -- race & classes
 newTalentType{ type="technique/other", name = "other", hide = true, description = "Talents of the various entities of the world." }
 newTalentType{ no_silence=true, is_spell=true, type="chronomancy/other", name = "other", hide = true, description = "Talents of the various entities of the world." }
@@ -3058,6 +3043,7 @@ newTalent{
 --	require = cuns_req3,
 	no_energy = true,
 	points = 5,
+	hide = false,
 	stamina = 20,
 	cooldown = 40,
 	tactical = { DEFEND = 2 },
@@ -3076,7 +3062,7 @@ newTalent{
 	getChance = function(self, t, fake, estimate)
 		local netstealth = t.stealthMult(self, t) * (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
 		if fake then return netstealth end
-		local detection = stealthDetection(self, 10, estimate) -- Default radius 10
+		local detection = self:stealthDetection(10, estimate) -- Default radius 10
 		if detection <= 0 then return 100 end
 		local _, chance = self:checkHit(netstealth, detection)
 		print("Hide in Plain Sight: "..netstealth.." stealth vs "..detection.." detection -->chance "..chance)
@@ -3110,13 +3096,14 @@ newTalent{
 --	require = cuns_req4,
 	mode = "passive",
 	points = 5,
+	hide = false,
 	-- Assume level 50 w/100 cun --> stealth = 54, detection = 50
 	-- 40% (~= 20% chance against 1 opponent (range 1) at talent level 1, 189% (~= 55% chance against 1 opponent (range 1) and 2 opponents (range 6) at talent level 5
 	stealthMult = function(self, t) return self:combatTalentScale(t, 0.4, 1.89) end,
 	getChance = function(self, t, fake, estimate)
 		local netstealth = t.stealthMult(self, t) * (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
 		if fake then return netstealth end
-		local detection = stealthDetection(self, 10, estimate)
+		local detection = self:stealthDetection(10, estimate) -- Default radius 10
 		if detection <= 0 then return 100 end
 		local _, chance = self:checkHit(netstealth, detection)
 		print("Unseen Actions: "..netstealth.." stealth vs "..detection.." detection -->chance(no luck): "..chance)

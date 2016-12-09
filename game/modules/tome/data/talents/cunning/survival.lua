@@ -24,7 +24,7 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	sense = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	trapPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 125, 125) end,
+	trapPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 90, 125) end, -- ~90 at TL5, 100 cunning
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "heightened_senses", t.sense(self, t))
 	end,

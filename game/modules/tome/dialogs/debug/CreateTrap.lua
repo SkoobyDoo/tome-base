@@ -62,7 +62,7 @@ function _M:use(item)
 		game.zone:addEntity(game.level, n, "trap", game.player.x, game.player.y)
 	else
 		local n = game.zone:finishEntity(game.level, "trap", item.e)
-		n:setKnown(game.player, true)
+		n:setKnown(game.player, true) n:identify(true)
 		game.zone:addEntity(game.level, n, "trap", game.player.x, game.player.y)
 	end
 end

@@ -55,6 +55,7 @@ newEntity{
 	cut_immune = 1,
 	see_invisible = 80,
 	undead = 1,
+	avoid_pressure_traps = 1,
 	resolvers.sustains_at_birth(),
 	not_power_source = {nature=true},
 }

@@ -28,11 +28,16 @@ newEntity{ define_as = "TRAP_WATER",
 
 newEntity{ base = "TRAP_WATER",
 	name = "water jet", auto_id = true, image = "trap/trap_water_jet_01.png",
-	detect_power = resolvers.clscale(6,50,8),
-	disarm_power = resolvers.clscale(16,50,8),
+	detect_power = resolvers.clscale(6,10,4),
+	disarm_power = resolvers.clscale(16,10,8),
 	rarity = 3, level_range = {1, 50},
 	color=colors.LIGHT_BLUE,
 	message = "@Target@ triggers a water jet!",
+	unided_name = "a nozzle",
+	desc = function(self)
+		local dtype = engine.DamageType[self.damtype] and engine.DamageType:get(self.damtype)
+		return dtype and ("Deals %s%d#LAST# %s damage."):format(dtype.text_color or "#WHITE#", self.dam, dtype.name)
+	end,
 	dam = resolvers.clscale(100, 50, 25, 0.75, 0),
 	damtype = DamageType.PHYSICAL,
 	auto_disarm = true,
@@ -40,15 +45,22 @@ newEntity{ base = "TRAP_WATER",
 
 newEntity{ base = "TRAP_WATER",
 	name = "water siphon", auto_id = true, image = "trap/trap_water_siphon_01.png",
-	detect_power = resolvers.clscale(8,50,8),
-	disarm_power = resolvers.clscale(2,50,8),
+	detect_power = resolvers.clscale(8,10,6),
+	disarm_power = resolvers.clscale(4,10,3),
 	rarity = 3, level_range = {1, 50},
 	color=colors.BLUE,
 	message = "@Target@ is caught by a water siphon!",
+	unided_name = "a drain",
+	desc = function(self)
+		local dtype = engine.DamageType[self.damtype] and engine.DamageType:get(self.damtype)
+		return dtype and ("Deals %s%d#LAST# %s damage (radius %d)."):format(dtype.text_color or "#WHITE#", self.dam, dtype.name, self.radius or 2)
+	end,
+	redius = 2,
 	dam = resolvers.clscale(60, 50, 15, 0.75, 0),
+	damtype = DamageType.PINNING,
 	combatPhysicalpower = function(self) return self.disarm_power * 2 end,
 	triggered = function(self, x, y, who)
-		self:project({type="ball",radius=2,x=x,y=y}, x, y, engine.DamageType.PINNING, {dam=self.dam,dur=4})
+		self:project({type="ball",radius=self.radius,x=x,y=y}, x, y, self.damtype, {dam=self.dam,dur=4})
 		return true
 	end,
 }
