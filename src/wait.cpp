@@ -219,12 +219,14 @@ bool draw_waiting(lua_State *L)
 {
 	if (!waiting) return FALSE;
 
-	if (wait_draw_ref != LUA_NOREF)
-	{
-		lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);
-		lua_call(L, 0, 0);
-	}
-	else draw_last_frame(L);
+	// DGDGDGDG reenable me
+	printf("===FAKE DRAWING WAIT===\n");
+	// if (wait_draw_ref != LUA_NOREF)
+	// {
+	// 	lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);
+	// 	lua_call(L, 0, 0);
+	// }
+	// else draw_last_frame(L);
 
 	return TRUE;
 }

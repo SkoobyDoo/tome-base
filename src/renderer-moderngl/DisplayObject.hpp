@@ -147,6 +147,8 @@ public:
 
 	void clear();
 
+	void reserveQuads(int nb) { vertices.reserve(4 * nb); };
+
 	int addQuad(
 		float x1, float y1, float u1, float v1, 
 		float x2, float y2, float u2, float v2, 

@@ -376,6 +376,13 @@ static int gl_vertexes_clear(lua_State *L)
 	return 1;
 }
 
+static int gl_vertexes_reserve(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	v->reserveQuads(lua_tonumber(L, 2));
+	return 0;
+}
+
 static int gl_vertexes_quad(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
@@ -766,6 +773,7 @@ static const struct luaL_Reg gl_container_reg[] =
 static const struct luaL_Reg gl_vertexes_reg[] =
 {
 	{"__gc", gl_vertexes_free},
+	{"reserve", gl_vertexes_reserve},
 	{"quad", gl_vertexes_quad},
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},

@@ -129,7 +129,7 @@ function _M:updateUI()
 	end
 
 ----------------------------
-----------------------------
+----------------------------DGDGDGDG remove this
 ----------------------------
 	local tz = require("engine.ui.TextzoneList").new{width=self.iw, height=self.ih / 2, scrollbar=true, focus_check=true, pingpong=true}
 	local test = require("engine.ui.List").new{width=self.iw, height=self.ih / 2, list={
@@ -138,7 +138,7 @@ function _M:updateUI()
 		{name='p3', desc='this is a long text 3'},
 	}, fct=function(t) tz:switchItem(t, t.desc) end}
 	
-	uis = { {left=0, top=0, ui=test}, {left=0, top=test, ui=tz}, }
+	-- uis = { {left=0, top=0, ui=test}, {left=0, top=test, ui=tz}, }
 ----------------------------
 ----------------------------
 ----------------------------

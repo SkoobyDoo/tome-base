@@ -47,7 +47,6 @@ function _M:init(t)
 	self.col_width = {}
 	self.floating_headers = (t.floating_headers == nil and true) or t.floating_headers
 	self.hide_columns = t.hide_columns
-	self.only_display = t.only_display
 
 	self.fh = t.item_height or (self.font_h + 6)
 
@@ -108,7 +107,6 @@ function _M:generate()
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if button == "wheelup" and event == "button" then self.scroll = util.bound(self.scroll - 1, 1, math.max(1, self.max - self.max_display + 1))
 		elseif button == "wheeldown" and event == "button" then self.scroll = util.bound(self.scroll + 1, 1, math.max(1, self.max - self.max_display + 1)) end
-		print("=====", self.max, self.max_display)
 
 		local sel = self.scroll + math.floor(by / self.fh) - self:headerOffset()
 		if (button == "left" or button == "right") and self:hasHeader() and (sel < self.scroll or sel < self:selMin()) then
@@ -258,10 +256,13 @@ function _M:sortByColumn(column, reverse)
 	self:outputList()
 end
 
-function _M:setList(tree) -- the name is a bit misleading but legacy
+function _M:setTree(tree)
 	self.tree = tree
 	self:walkTree(true)
 	self:outputList()
+end
+function _M:setList(tree) -- the name is a bit misleading but legacy
+	self:setTree(tree)
 end
 
 function _M:drawItem(item)

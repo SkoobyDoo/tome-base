@@ -148,6 +148,7 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 		if not v then v = core.renderer.vertexes() end
 		v:texture(t.t)
 		local Mi, Mj = math.ceil(w / t.w) - 1, math.ceil(h / t.h) - 1
+		v:reserve((Mi+1) * (Mj+1)) -- To prevent multiple reallocations each time we :quad
 		for i = 0, Mi do
 			for j = 0, Mj do
 				local u1, u2, v1, v2 = u1, u2, v1, v2

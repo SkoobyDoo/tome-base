@@ -69,6 +69,7 @@ function _M:generate()
 
 	for i, str in ipairs(strs) do
 		local textzone = core.renderer.text(self.font)
+		textzone:textColor(self.color.r / 255, self.color.g / 255, self.color.b / 255, 1)
 		textzone:text(str)
 		textzone:translate(0, (i - 1) * self.font_h, 10)
 		self.text_container:add(textzone)

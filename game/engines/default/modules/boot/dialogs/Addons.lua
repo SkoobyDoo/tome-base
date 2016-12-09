@@ -90,7 +90,7 @@ function _M:init()
 	self:setFocus(self.c_list)
 	self:setupUI()
 
---	self:select(self.list[1])
+	self:select(self.list[1])
 
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
@@ -117,7 +117,7 @@ function _M:switchAddon(item)
 	elseif v == true then config.settings.addons[item.for_module][item.short_name] = false
 	elseif v == false then config.settings.addons[item.for_module][item.short_name] = nil
 	end
-	self.c_adds:generateRow(item)
+	self.c_adds:drawItem(item)
 
 	local lines = {}
 	lines[#lines+1] = ("addons = {}"):format(w)

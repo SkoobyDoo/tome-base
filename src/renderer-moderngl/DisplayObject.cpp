@@ -217,7 +217,7 @@ int DORVertexes::addQuad(
 		float x4, float y4, float z4, float u4, float v4, 
 		float r, float g, float b, float a
 	) {
-	if (vertices.size() + 4 < vertices.capacity()) vertices.reserve(vertices.size() * 2);
+	if (vertices.size() + 4 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
 
 	vertices.push_back({{x1, y1, z1, 1}, {u1, v1}, {r, g, b, a}});
 	vertices.push_back({{x2, y2, z2, 1}, {u2, v2}, {r, g, b, a}});
@@ -227,7 +227,6 @@ int DORVertexes::addQuad(
 	setChanged();
 	return 0;
 }
-
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;

@@ -25,30 +25,44 @@ local tween = require "tween"
 -- @classmod engine.ui.blocks.block
 module(..., package.seeall, class.inherit(Block))
 
-function _M:init(t, text, color, w, h, offset)
+function _M:init(t, text, color, w, h, offset, default_unseen)
 	color = color or {255,255,255}
+	self.color = color
+	self.offset = offset
 
 	Block.init(self, t)
 
 	self.selected = false
+	self.default_unseen = true
 
 	t = t or {}
+	self.t = t
+	self.w, self.h = w, h
 
-	self.frame = self.parent:makeFrameDO(t.frame or "ui/selector", w, h)
+	if default_unseen then
+		self:shown(false)
+	elseif text ~= "" then
+		self:generateContainer()
+		self:setText(text, nil, default_unseen)
+	end
+end
+
+function _M:generateContainer()
+	local w, h = self.w, self.h
+	self.frame = self.parent:makeFrameDO(self.t.frame or "ui/selector", w, h)
 	self.frame.container:shown(false)
-	self.frame_sel = self.parent:makeFrameDO(t.frame_sel or "ui/selector-sel", w, h)
+	self.frame_sel = self.parent:makeFrameDO(self.t.frame_sel or "ui/selector-sel", w, h)
 	self.frame_sel.container:shown(false)
 	self.cur_frame = self.frame
 
-	self.w, self.h = w, h
 	self.max_text_w = w - self.frame.b4.w - self.frame.b6.w
 	self.up_text_h = (h - self.font_h) / 2
 	self.text = core.renderer.text(self.parent.font)
 	self.text:maxLines(1)
-	self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
+	self.text:textColor(self.color[1] / 255, self.color[2] / 255, self.color[3] / 255, 1)
 
 	self.text_container = core.renderer.container()
-	self.text_container:translate(self.frame.b4.w + (offset or 0), self.up_text_h, 10)
+	self.text_container:translate(self.frame.b4.w + (self.offset or 0), self.up_text_h, 10)
 	self.text_container:add(self.text)
 
 	self.do_container:add(self.frame.container)
@@ -56,13 +70,24 @@ function _M:init(t, text, color, w, h, offset)
 	self.do_container:add(self.text_container)
 
 	self.uses_own_renderer = false
+end
 
-	if text ~= "" then self:setText(text) end
+function _M:lazyGenerate()
+	if self.default_unseen then
+		self.default_unseen = false
+		self:generateContainer()
+		self:setText(self.lazy_text or "", self.lazy_color, false)
+		self:onFocusChange(self.focused)
+		self:select(self.selected)
+	end
 end
 
 function _M:onFocusChange(v)
 	-- tween.stop(self.tweenid)
 	self.focused = v
+
+	if not self.frame then return end
+
 	self.cur_frame.container:shown(false)
 	self.cur_frame = v and self.frame_sel or self.frame
 	if self.selected then
@@ -75,7 +100,15 @@ function _M:onFocusChange(v)
 	end
 end
 
-function _M:setText(text, color)
+function _M:setText(text, color, lazy_load)
+	if self.default_unseen and lazy_load then
+		self.lazy_text = text
+		self.lazy_color = color
+		return
+	else
+		self:lazyGenerate()
+	end	
+
 	if self.str == text then return end
 	self.str = text
 	if color then
@@ -108,6 +141,7 @@ end
 function _M:select(v)
 	if self.selected == v then return end
 	self.selected = v
+	if not self.frame then return end
 	if v then
 		self.cur_frame.container:color(1, 1, 1, 1)
 		self.cur_frame.container:shown(v)
@@ -121,6 +155,7 @@ end
 function _M:startScrolling()
 	if not self.focused then return end
 	if not self.uses_own_renderer then return end
+	if not self.frame then return end
 
 	local dirm, dirM
 	local w = self.text:getStats()
@@ -134,7 +169,13 @@ end
 
 function _M:stopScrolling()
 	if not self.uses_own_renderer then return end
+	if not self.frame then return end
 
 	self.invert_scroll = false
 	self.text:translateTween("scroll", 8, "x", nil, 0, "inOutQuad")
+end
+
+function _M:shown(v)
+	if v then self:lazyGenerate() end
+	Block.shown(self, v)
 end

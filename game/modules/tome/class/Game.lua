@@ -1706,7 +1706,9 @@ function _M:display(nb_keyframes)
 
 	if self.player then self.player.changed = false end
 
+-- core.display.countDraws()
 	engine.GameTurnBased.display(self, nb_keyframes)
+-- print("[draw calls] dialogs", core.display.countDraws())
 
 	-- Tooltip is displayed over all else, even dialogs but before FBO
 	local mx, my, button = core.mouse.get()

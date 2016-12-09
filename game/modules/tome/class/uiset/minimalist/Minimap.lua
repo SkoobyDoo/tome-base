@@ -88,8 +88,9 @@ function _M:getDefaultGeometry()
 end
 
 function _M:update(nb_keyframes)
+	if not game.level or not game.level.map then return end
 	if self.old_name ~= game.zone_name then self.text_name:text(game.zone_name or ""):center() end
-	if game.level and game.level.map and self.old_map ~= game.level.map then
+	if self.old_map ~= game.level.map then
 		self.mm_do = game.level.map:getMinimapDO()
 		self.mm_container:clear()
 		self.mm_container:add(self.mm_do)
