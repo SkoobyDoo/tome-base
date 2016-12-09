@@ -145,26 +145,34 @@ newEffect{
 newEffect{
 	name = "STONED", image = "talents/stone_touch.png",
 	desc = "Stoned",
-	long_desc = function(self, eff) return "The target has been turned to stone, making it subject to shattering but improving physical(+20%), fire(+80%) and lightning(+50%) resistances." end,
+	long_desc = function(self, eff) return "The target has been turned to stone: it is rooted in place, unable to act, and may be shattered by a single blow dealing more than 30% of its maximum life.  It's new form makes it immune to being poisoned or cut, and grants improved physical(+20%), fire(+80%) and lightning(+50%) resistances." end,
 	type = "magical",
 	subtype = { earth=true, stone=true, stun = true},
 	status = "detrimental",
 	parameters = {},
-	on_gain = function(self, err) return "#Target# turns to stone!", "+Stoned" end,
-	on_lose = function(self, err) return "#Target# is not stoned anymore.", "-Stoned" end,
+	on_gain = function(self, err) return "#Target# turns to #GREY#STONE#LAST#!", "+Stoned" end,
+	on_lose = function(self, err) return "#Target# is no longer a #GREY#statue#LAST#.", "-Stoned" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("stoned", 1)
+		eff.poison = self:addTemporaryValue("poison_immune", 1)
+		eff.cut = self:addTemporaryValue("cut_immune", 1)
+		eff.never_move = self:addTemporaryValue("never_move", 1)
+		eff.breath = self:addTemporaryValue("no_breath", 1)
 		eff.resistsid = self:addTemporaryValue("resists", {
 			[DamageType.PHYSICAL]=20,
 			[DamageType.FIRE]=80,
-			[DamageType.LIGHTNING]=50,
-		})
+			[DamageType.LIGHTNING]=50,}
+			)
 	end,
 	on_timeout = function(self, eff)
 		if eff.dur > 7 then eff.dur = 7 end -- instakilling players is dumb and this is still lethal at 7s
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("stoned", eff.tmpid)
+		self:removeTemporaryValue("poison_immune", eff.poison)
+		self:removeTemporaryValue("cut_immune", eff.cut)
+		self:removeTemporaryValue("never_move", eff.never_move)
+		self:removeTemporaryValue("no_breath", eff.breath)
 		self:removeTemporaryValue("resists", eff.resistsid)
 	end,
 }
@@ -2356,13 +2364,13 @@ newEffect{
 newEffect{
 	name = "VULNERABILITY_POISON", image = "talents/vulnerability_poison.png",
 	desc = "Vulnerability Poison",
-	long_desc = function(self, eff) return ("The target is poisoned and sick, suffering %0.2f arcane damage per turn. All resistances are reduced by 10%% and poison resistance is reduced by 50%%."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is afflicted with a magical poison and is suffering %0.2f arcane damage per turn.  All resistances are reduced by 10%% and poison resistance is reduced by 50%%."):format(eff.src:damDesc("ARCANE", eff.power)) end,
 	type = "magical",
 	subtype = { poison=true, arcane=true },
 	status = "detrimental",
 	parameters = {power=10},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Vulnerability Poison" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Vulnerability Poison" end,
+	on_gain = function(self, err) return "#Target# is magically poisoned!", "+Vulnerability Poison" end,
+	on_lose = function(self, err) return "#Target# is no longer magically poisoned.", "-Vulnerability Poison" end,
 	-- Damage each turn
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then self:heal(eff.power, eff.src)
@@ -2371,7 +2379,7 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("resists", {all=-10})
-		if self:attr("poison_immune") then
+		if self:attr("poison_immune") and self:checkClassification("living") then
 			eff.poisonid = self:addTemporaryValue("poison_immune", -self:attr("poison_immune") / 2)
 		end
 	end,
@@ -3797,5 +3805,139 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("numbed", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "ELDRITCH_STONE", image = "talents/eldritch_stone.png",
+	desc = "Eldritch Stone Shield",
+	long_desc = function(self, eff)
+		return ("The target is surrounded by a stone shield absorbing %d/%d damage.  When the shield is removed, it will explode for up to %d (currently %d) Arcane damage in a radius %d."):
+		format(eff.power, eff.max, eff.maxdam, math.min(eff.maxdam, self:getEquilibrium() - self:getMinEquilibrium()), eff.radius)
+	end,
+	type = "magical",
+	subtype = { earth=true, shield=true },
+	status = "beneficial",
+	parameters = { power=100, radius=3 , maxdam=500},
+	on_gain = function(self, err) return "#Target# is encased in a stone shield." end,
+	on_lose = function(self, err)
+		return ("The stone shield around #Target# %s"):format(self:getEquilibrium() - self:getMinEquilibrium() > 0 and "explodes!" or "crumbles.")
+	end,
+	on_aegis = function(self, eff, aegis)
+		eff.power = eff.power + eff.max * aegis / 100
+		if core.shader.active(4) then
+			self:removeParticles(eff.particle)
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.3, img="runicshield_stonewarden"}, {type="runicshield", shieldIntensity=0.2, oscillationSpeed=4, ellipsoidalFactor=1.3, time_factor=5000, auraColor={0x61/255, 0xff/255, 0x6a/255, 1}}))
+		end		
+	end,
+	damage_feedback = function(self, eff, src, value)
+		if eff.particle and eff.particle._shader and eff.particle._shader.shad and src and src.x and src.y then
+			local r = -rng.float(0.2, 0.4)
+			local a = math.atan2(src.y - self.y, src.x - self.x)
+			eff.particle._shader:setUniform("impact", {math.cos(a) * r, math.sin(a) * r})
+			eff.particle._shader:setUniform("impact_tick", core.game.getTime())
+		end
+	end,
+	activate = function(self, eff)
+		if self:attr("shield_factor") then eff.power = eff.power * (100 + self:attr("shield_factor")) / 100 end
+		if self:attr("shield_dur") then eff.dur = eff.dur + self:attr("shield_dur") end
+		eff.max = eff.power
+		if core.shader.active(4) then
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.3, img="runicshield_stonewarden"}, {type="runicshield", shieldIntensity=0.2, oscillationSpeed=4, ellipsoidalFactor=1.3, time_factor=9000, auraColor={0x61/255, 0xff/255, 0x6a/255, 0}}))
+		else
+			eff.particle = self:addParticles(Particles.new("damage_shield", 1))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle)
+
+		local equi = self:getEquilibrium() - self:getMinEquilibrium()
+		if equi > 0 then
+			self:incMana(equi)
+			self:incEquilibrium(-equi)
+			self:project({type="ball", radius=eff.radius, friendlyfire=false}, self.x, self.y, DamageType.ARCANE, math.min(equi, eff.maxdam))
+			game.level.map:particleEmitter(self.x, self.y, eff.radius, "eldricth_stone_explo", {radius=eff.radius})
+		end
+	end,
+}
+
+newEffect{
+	name = "DEEPROCK_FORM", image = "talents/deeprock_form.png",
+	desc = "Deeprock Form",
+	long_desc = function(self, eff)
+		local xs = ""
+		if eff.arcaneDam and eff.arcanePen then
+			xs = xs..(", +%d%% Arcane damage and +%d%% Arcane damage penetration,"):format(eff.arcaneDam, eff.arcanePen)
+		end
+		if eff.natureDam and eff.naturePen then
+			xs = (", +%d%% Nature damage and +%d%% Nature damage penetration"):format(eff.natureDam, eff.naturePen)..xs
+		end
+		if eff.immune then
+			xs = (", %d%% bleeding, poison, disease, and stun immunity"):format(eff.immune*100)..xs
+		end
+		return ("The target has turned into a huge deeprock elemental.  It gains 2 size categories%s and +%d%% Physical damage and +%d%% Physical damage penetration.%s"):format(xs, eff.dam, eff.pen, eff.useResist and "  In addition, it uses its physical resistance against all damage." or "")
+	end,
+	type = "magical",
+	subtype = { earth=true, elemental=true },
+	status = "beneficial",
+	parameters = { dam = 10, pen = 5, armor = 5},
+	on_gain = function(self, err) return "#Target# is imbued by the power of the Stone.", "+Deeprock Form" end,
+	on_lose = function(self, err) return "#Target# is abandoned by the Stone's power.", "-Deeprock Form" end,
+	activate = function(self, eff)
+		if self:knowTalent(self.T_VOLCANIC_ROCK) then
+			self:learnTalent(self.T_VOLCANO, true, self:getTalentLevelRaw(self.T_VOLCANIC_ROCK) * 2, {no_unlearn=true})
+			self:effectTemporaryValue(eff, "talent_cd_reduction", {[self.T_VOLCANO] = 15})
+
+			local t = self:getTalentFromId(self.T_VOLCANIC_ROCK)
+			eff.arcaneDam, eff.arcanePen = t.getDam(self, t), t.getPen(self, t)
+			self:effectTemporaryValue(eff, "inc_damage", {[DamageType.ARCANE] = eff.arcaneDam})
+			self:effectTemporaryValue(eff, "resists_pen", {[DamageType.ARCANE] = eff.arcanePen})
+		end
+
+		if self:knowTalent(self.T_BOULDER_ROCK) then
+			self:learnTalent(self.T_THROW_BOULDER, true, self:getTalentLevelRaw(self.T_BOULDER_ROCK) * 2, {no_unlearn=true})
+
+			local t = self:getTalentFromId(self.T_BOULDER_ROCK)
+			eff.natureDam, eff.naturePen = t.getDam(self, t), t.getPen(self, t)
+			self:effectTemporaryValue(eff, "inc_damage", {[DamageType.NATURE] = eff.natureDam})
+			self:effectTemporaryValue(eff, "resists_pen", {[DamageType.NATURE] = eff.naturePen})
+		end
+
+		if self:knowTalent(self.T_MOUNTAINHEWN) then
+			local t = self:getTalentFromId(self.T_MOUNTAINHEWN)
+			if self:getTalentLevel(self.T_MOUNTAINHEWN) >= 5 then
+				eff.useResist = true
+				self:effectTemporaryValue(eff, "force_use_resist", DamageType.PHYSICAL)
+			end
+			eff.immune = t.getImmune(self, t)
+			self:effectTemporaryValue(eff, "cut_immune", eff.immune)
+			self:effectTemporaryValue(eff, "poison_immune", eff.immune)
+			self:effectTemporaryValue(eff, "disease_immune", eff.immune)
+			self:effectTemporaryValue(eff, "stun_immune", eff.immune)
+		end
+
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.PHYSICAL] = eff.dam})
+		self:effectTemporaryValue(eff, "resists_pen", {[DamageType.PHYSICAL] = eff.pen})
+		self:effectTemporaryValue(eff, "combat_armor", eff.armor)
+		self:effectTemporaryValue(eff, "size_category", 2)
+
+		self.replace_display = mod.class.Actor.new{
+			image = "invis.png",
+			add_displays = {mod.class.Actor.new{
+				image = "npc/elemental_xorn_harkor_zun.png", display_y=-1, display_h=2,
+				shader = "shadow_simulacrum",
+				shader_args = { color = {0.6, 0.5, 0.2}, base = 0.95, time_factor = 1500 },
+			}},
+		}
+		self:removeAllMOs()
+		game.level.map:updateMap(self.x, self.y)
+	end,
+	deactivate = function(self, eff)
+		if self:knowTalent(self.T_VOLCANIC_ROCK) then self:unlearnTalent(self.T_VOLCANO, self:getTalentLevelRaw(self.T_VOLCANIC_ROCK) * 2) end
+		if self:knowTalent(self.T_BOULDER_ROCK) then self:unlearnTalent(self.T_THROW_BOULDER, self:getTalentLevelRaw(self.T_BOULDER_ROCK) * 2) end
+
+		self.replace_display = nil
+		self:removeAllMOs()
+		game.level.map:updateMap(self.x, self.y)
 	end,
 }

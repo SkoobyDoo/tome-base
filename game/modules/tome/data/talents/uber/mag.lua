@@ -60,24 +60,29 @@ uberTalent{
 uberTalent{
 	name = "Mystical Cunning", image = "talents/vulnerability_poison.png",
 	mode = "passive",
-	require = { special={desc="Know either traps or poisons", fct=function(self)
+	require = { special={desc="Know how to either prepare traps or apply poisons", fct=function(self)
 		return self:knowTalent(self.T_APPLY_POISON) or self:knowTalent(self.T_TRAP_MASTERY)
 	end} },
+	autolearn_talent = {Talents.T_VULNERABILITY_POISON, Talents.T_GRAVITIC_TRAP}, -- requires uber.lua loaded last
 	on_learn = function(self, t)
 		self:attr("combat_spellresist", 20)
-		if self:knowTalent(self.T_APPLY_POISON) then self:learnTalent(self.T_VULNERABILITY_POISON, true, nil, {no_unlearn=true}) end
-		if self:knowTalent(self.T_TRAP_MASTERY) then self:learnTalent(self.T_GRAVITIC_TRAP, true, nil, {no_unlearn=true}) end
 	end,
 	on_unlearn = function(self, t)
 		self:attr("combat_spellresist", -20)
 	end,
 	info = function(self, t)
-		return ([[Your study of arcane forces has let you develop new traps and poisons (depending on which you know when learning this prodigy).
-		You can learn:
-		- Vulnerability Poison: Your Apply Poison also applies a poison dealing arcane damage, reducing resistances and reducing poison resistance.
-		- Gravitic Trap: Each turn, all foes in a radius 5 around it are pulled in and take temporal damage. This trap does not count towards your usual trap limit.
+		local descs = ""
+		for i, tid in pairs(t.autolearn_talent) do
+			local bonus_t = self:getTalentFromId(tid)
+			if bonus_t then
+				descs = ("%s\n#YELLOW#%s#LAST#\n%s\n"):format(descs, bonus_t.name, self:callTalent(bonus_t.id, "info"))
+			end
+		end
+		return ([[Your study of arcane forces has let you develop a new way of applying your aptitude for  trapping and poisons.
+		You learn the following talents:
+%s
 		You also permanently gain 20 Spell Save.]])
-		:format()
+		:format(descs)
 	end,
 }
 
@@ -176,7 +181,8 @@ uberTalent{
 		elseif who.subtype == "shadow" then
 			local tl = who:getTalentLevelRaw(who.T_EMPATHIC_HEX)
 			tl = tlevel-tl
-			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end		
+			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end
+			who:incVim(who:getMaxVim())
 		elseif who.type == "thought-form" then
 			who:learnTalent(who.T_FLAME_OF_URH_ROK,true,tlevel)
 		elseif who.subtype == "yeek" then

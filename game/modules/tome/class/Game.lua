@@ -1992,11 +1992,12 @@ do return end
 				self.log("There is no way out of this level here.")
 			end
 		end,
-
 		REST = function()
 			self.player:restInit()
 		end,
-
+		DISARM_TRAP = function()
+			self.player:playerDisarmTrap()
+		end,
 		PICKUP_FLOOR = not_wild(function()
 			if self.player.no_inventory_access then return end
 			self.player:playerPickup()
@@ -2044,7 +2045,12 @@ do return end
 		end),
 
 		LEVELUP = function()
-			if self.player:attr("no_levelup_access") then return end
+			if self.player:attr("no_levelup_access") then
+				if type(self.player.no_levelup_access_log) == "string" then
+					game.log(self.player.no_levelup_access_log)
+				end
+				return
+			end
 			self.player:playerLevelup(nil, false)
 		end,
 

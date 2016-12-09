@@ -343,7 +343,7 @@ function _M:realDisplay(dispx, dispy, display_highlight)
 			self.target_type.display_update_min_range(self, d)
 		end
 
-		self.target_type.display_line_step(self, d)
+		if self.target_type.display_line_step then self.target_type.display_line_step(self, d) end
 
 		if d.block then self.target_type.display_on_block(self, d) end
 
@@ -429,8 +429,18 @@ function _M:realDisplay(dispx, dispy, display_highlight)
 	self:triggerHook(d)
 end
 
+--- Determine if a grid blocks projection along a path based on targeting table parameters
+-- @see Target:getType(t) below
+-- @param typ = updated targeting table (from Target:getType)
+-- @param lx, ly = grid coordinates
+-- @param for_highlights [type=boolean] grid highlighting mode for player targeting
+-- @return[1] [type=boolean] grid blocks the projection
+-- @return[2] [type=boolean] grid may be hit by the projection
+-- @return[2] "unknown" (with for_highlights) if the grid is unknown
+-- @return[3] [type=boolean] grid blocks the projection, path around not allowed (corner blocked)
 _M.defaults.block_path = function(typ, lx, ly, for_highlights)
-	if not game.level.map:isBound(lx, ly) then
+	local map = game.level.map
+	if not map:isBound(lx, ly) then
 		return true, false, false
 	elseif not typ.no_restrict then
 		if typ.range and typ.start_x then
@@ -440,37 +450,51 @@ _M.defaults.block_path = function(typ, lx, ly, for_highlights)
 			local dist = core.fov.distance(typ.source_actor.x, typ.source_actor.y, lx, ly)
 			if dist > typ.range then return true, false, false end
 		end
-		local is_known = game.level.map.remembers(lx, ly) or game.level.map.seens(lx, ly)
+		local is_known = map.remembers(lx, ly) or map.seens(lx, ly)
 		if typ.requires_knowledge and not is_known then
 			return true, false, false
 		end
-		if not typ.pass_terrain and game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") and not game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "pass_projectile") then
-			if for_highlights and not is_known then
-				return false, "unknown", true
-			else
-				return true, true, false
+		local trn_block, trn_pass
+		if not typ.pass_terrain then -- check terrain
+			trn_block = map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") or false
+			if trn_block then 
+				trn_pass = map:checkEntity(lx, ly, engine.Map.TERRAIN, "pass_projectile") or false
+				if not trn_pass then -- blocked by terrain
+					if for_highlights and not is_known then
+						return false, "unknown", true
+					else
+						return true, true, false
+					end
+				end
 			end
-		-- If we explode due to something other than terrain, then we should explode ON the tile, not before it
-		elseif typ.stop_block then
-			local nb = game.level.map:checkAllEntitiesCount(lx, ly, "block_move")
-			-- Reduce for pass_projectile or pass_terrain, which was handled above
-			if game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") and (typ.pass_terrain or game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "pass_projectile")) then
+		end
+		-- If the projection is blocked by something other than terrain, the grid should be hit
+		if typ.stop_block then -- check all entities
+			 -- get #blocking entities and subtract for each entity that can be explicitly passed through
+			local nb = map:checkAllEntitiesCount(lx, ly, "block_move")
+			if nb > 0 then -- decrement for passable terrain
+				if trn_block == nil then trn_block = map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") end
+				if trn_block and (typ.pass_terrain or (trn_pass == nil and map:checkEntity(lx, ly, engine.Map.TERRAIN, "pass_projectile") or trn_pass)) then
 				nb = nb - 1
+				end
 			end
-			-- Reduce the nb blocking for friendlies
-			if not typ.friendlyblock and typ.source_actor and typ.source_actor.reactionToward then
-				local a = game.level.map(lx, ly, engine.Map.ACTOR)
-				if a and typ.source_actor:reactionToward(a) >= 0 then
-					nb = nb - 1
+			if nb > 0 and (typ.friendlyblock ~= nil or not typ.actorblock) then -- decrement for passable actors
+				local a = map(lx, ly, engine.Map.ACTOR)
+				if a then -- friendly block controls if specified
+					if typ.friendlyblock ~= nil and typ.source_actor and typ.source_actor.reactionToward and typ.source_actor:reactionToward(a) >= 0 then
+						if not typ.friendlyblock then nb = nb - 1 end
+					elseif not typ.actorblock then 
+						nb = nb - 1
+					end
 				end
 			end
 			if nb > 0 then
 				if for_highlights then
-					-- Targeting highlight should be yellow if we don't know what we're firing through
+					-- Targeting highlight should be yellow if the grid is not known
 					if not is_known then
 						return false, "unknown", true
 					-- Don't show the path as blocked if it's blocked by an actor we can't see
-					elseif nb == 1 and typ.source_actor and typ.source_actor.canSee and not typ.source_actor:canSee(game.level.map(lx, ly, engine.Map.ACTOR)) then
+					elseif nb == 1 and typ.source_actor and typ.source_actor.canSee and not typ.source_actor:canSee(map(lx, ly, engine.Map.ACTOR)) then
 						return false, true, true
 					end
 				end
@@ -481,15 +505,63 @@ _M.defaults.block_path = function(typ, lx, ly, for_highlights)
 			return false, "unknown", true
 		end
 	end
-	-- If we don't block the path, then the explode point should be here
+	-- Projection not blocked, grid is hit
 	return false, true, true
 end
 
+--- Determine if a grid blocks projection based on targeting table parameters (radius test)
+-- @see Target:getType(t) below
+-- @param typ = updated targeting table (from Target:getType)
+-- @param lx, ly = grid coordinates
+-- @param for_highlights [type=boolean] grid highlighting mode for player targeting
+-- @return[1] [type=boolean] grid blocks the projection
 _M.defaults.block_radius = function(typ, lx, ly, for_highlights)
-	return not typ.no_restrict and
-		game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") and
-		not game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "pass_projectile") and
-		not (for_highlights and not (game.level.map.remembers(lx, ly) or game.level.map.seens(lx, ly)))
+	local map = game.level.map
+	if not map:isBound(lx, ly) then return true end
+	if typ.no_restrict then return end
+	if typ.requires_knowledge and not (map.remembers(lx, ly) or map.seens(lx, ly)) then return true end
+
+	local blocked, trn_block, trn_pass
+	if not typ.pass_terrain then -- check terrain
+		trn_block = map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") or false
+		if trn_block then 
+			trn_pass = map:checkEntity(lx, ly, engine.Map.TERRAIN, "pass_projectile") or false
+			if not trn_pass then blocked = true end -- blocked by terrain
+		end
+	end
+	if not blocked and typ.stop_block then -- check all entities
+		 -- get #blocking entities and subtract for each entity that can be explicitly passed through
+		local nb = map:checkAllEntitiesCount(lx, ly, "block_move")
+		if nb > 0 then -- decrement for passable terrain
+			if trn_block == nil then trn_block = map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") end
+			if trn_block and (typ.pass_terrain or (trn_pass == nil and map:checkEntity(lx, ly, engine.Map.TERRAIN, "pass_projectile") or trn_pass)) then
+				nb = nb - 1
+			end
+		end
+		
+		if nb > 0 then
+			local a = map(lx, ly, engine.Map.ACTOR)
+			if a then -- decrement for passable actors
+				-- For targeting highlights, don't show as blocked if the player can't see the actor
+				if for_highlights and typ.source_actor and typ.source_actor.canSee and not typ.source_actor:canSee(a) then
+					nb = nb - 1
+				else
+					if typ.friendlyblock == nil and not typ.actorblock then  -- friendly block controls if specified
+						nb = nb - 1
+					else
+						if typ.friendlyblock ~= nil and typ.source_actor and typ.source_actor.reactionToward and typ.source_actor:reactionToward(a) >= 0 then
+							if not typ.friendlyblock then nb = nb - 1 end
+						elseif not typ.actorblock then 
+							nb = nb - 1
+						end
+					end
+				end
+			end
+		end
+		if nb > 0 then blocked = true end
+	end
+	-- treat unknown grids as non-blocking for player targeting highlights
+	if blocked and not (for_highlights and not (map.remembers(lx, ly) or map.seens(lx, ly))) then return true end
 end
 
 --- targeting type strings -> modification function.
@@ -509,31 +581,39 @@ _M.types_def = {
 		dest.wall = src.halflength
 		end,
 	bolt = function(dest, src) dest.stop_block = true end,
-	beam = function(dest, scr) dest.line = true end,}
+	beam = function(dest, scr) dest.line = true end,
+}
 
--- @param t Target table used to generate the
--- @param t.type The engine-defined type, populates other more complex variables (see below)
--- Hit: simple project in LOS<br/>
--- Beam: hits everything in LOS<br/>
--- Bolt: hits first thing in path<br/>
--- Ball: hits everything in a ball around the target<br/>
--- Cone: hits everything in a cone in the direction<br/>
--- @param t.radius The radius of the ball/cone AoE
--- @param t.cone_angle The angle for the cone AoE (default 55°)
--- @param t.grid_exclude = {[x1][y1]=true,...[x2][y2]=true...} Grids to exclude - for making holes in the AOE
+--- Interpret a targeting table, applying default fields needed by ActorProject and realDisplay
+-- @param t = targeting table to be interpreted/updated, containing specific target parameters
+-- @param t.type = string target geometric type, populates other default variables (see below), defined types:
+-- 		hit: hit a single grid in LOS
+-- 		beam: hit all grids along a LOS path
+-- 		bolt: hit the first blocking grid along a LOS path
+-- 		ball: hit all grids in a ball around the target
+-- 		cone: hit all grids in a cone aimed at the target
+-- @param t.range = maximum range from origin to target <default: 20>
+-- @param t.min_range = minimum range from origin to target
+-- @param t.cone_angle = angle for cone AoE <default: 55°>
+-- @param t.radius = radius for ball/cone AoE
+-- @param t.grid_exclude = {[x1][y1]=true,...[x2][y2]=true...} Grids to exclude - (makes holes in AoE)
 -- @param t.act_exclude = {[uid] = true,...} exclude grids containing actor(s) with the matching uid(s)
--- @param t.selffire = boolean or % chance to project against grids with self
--- @param t.friendlyfire = boolean or % chance to project against grids with friendly Actors (based on 			Actor:reactionToward(target)>0)
--- @param t.no_restrict Boolean that removes all restrictions in the t.type defined block functions.
--- @param t.stop_block Boolean that stops the target on the first tile that has an entity that blocks move.
--- @param t.range The range the target can be from the origin.
--- @param t.pass_terrain Boolean that allows the target to pass through terrain to remembered tiles on the other side.
--- @param t.block_path(typ, lx, ly) Function called on each tile to determine if the targeting is blocked.  Automatically set when using t.typ, but the user can provide their own if they know what they are doing.  It should return three arguments: block, hit, hit_radius
--- @param t.block_radius(typ, lx, ly) Function called on each tile when projecting the radius to determine if the radius projection is blocked.  Automatically set when using t.typ, but the user can provide their own if they know what they are doing.
--- @return[1] t The target table used by ActorProject
--- @return[2] `Projectile`
--- @return[3] `GameTargeting`
--- @return[4] etc
+-- @param t.selffire = boolean or % chance to project against grids with self <default: true>
+-- @param t.friendlyfire = boolean or % chance to project against grids with friendly Actors (based on Actor:reactionToward(target)>0) <default: true>
+-- @param t.multiple = boolean t contains multiple indexed targeting tables (interpreted in place)
+-- @param t.block_path = function(typ, lx, ly, for_highlights) (default set according to t.type):
+--		Determines if/how a projection is blocked along a path
+--		returns block (grid blocks), hit (grid hit), hit_radius (grid blocks, path around disallowed)
+-- @param t.block_radius = function(typ, lx, ly, for_highlights) (default set according to t.type):
+--		Determines if a radial projection from a point is blocked
+ --Parameters interpreted by the default blocking functions:
+-- @param t.no_restrict = boolean all grids are treated as non-blocking
+-- @param t.pass_terrain = boolean pass through all terrain (Grid.pass_projectile also checked)
+-- @param t.requires_knowledge = boolean stop at unknown grids (for player)
+-- @param t.stop_block = boolean stop at first grid that has any entity (not just terrain) that blocks move
+-- @param t.actorblock (req. stop_block) = boolean stop at the first Actor <default: true>
+-- @param t.friendlyblock (req. stop_block) = boolean stop/no stop at friendly Actors (overrides actorblock)
+-- @return[1] An updated targeting table ready to be used by ActorProject
 function _M:getType(t)
 	if not t then return {} end
 
@@ -552,7 +632,7 @@ function _M:getType(t)
 		range = 20,
 		selffire = true,
 		friendlyfire = true,
-		friendlyblock = true,
+		actorblock = true,
 	}
 	for k, v in pairs(self.defaults) do target_type[k] = v end
 

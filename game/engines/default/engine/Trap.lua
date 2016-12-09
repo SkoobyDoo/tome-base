@@ -29,6 +29,7 @@ _M.display_on_seen = true
 _M.display_on_remember = true
 _M.display_on_unknown = false
 _M.__is_trap = true
+_M.__position_aware = true
 
 function _M:init(t, no_default)
 	t = t or {}
@@ -104,11 +105,12 @@ function _M:disarm(x, y, who)
 		game.logSeen(who, "%s fails to disarm a trap (%s).", who.name:capitalize(), self:getName())
 		return false
 	end
+	game.logSeen(who, "%s disarms a trap (%s).", who.name:capitalize(), self:getName())
 	game.level.map:remove(x, y, Map.TRAP)
 	if self.removed then
 		self:removed(x, y, who)
 	end
-	game.logSeen(who, "%s disarms a trap (%s).", who.name:capitalize(), self:getName())
+
 	self:onDisarm(x, y, who)
 	return true
 end
@@ -117,7 +119,6 @@ end
 function _M:trigger(x, y, who)
 	-- Try to disarm
 	if self:knownBy(who) then
-		-- Try to disarm
 		if self:disarm(x, y, who) then
 			return
 		end

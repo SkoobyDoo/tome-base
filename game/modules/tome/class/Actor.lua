@@ -561,7 +561,6 @@ function _M:actBase()
 	end
 
 	if self:knowTalent(self.T_GESTURE_OF_GUARDING) then self:setEffect(self.EFF_GESTURE_OF_GUARDING,1,{}) end
-	if self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then self:setEffect(self.EFF_DUAL_WEAPON_DEFENSE,1,{}) end
 	if self:knowTalent(self.T_COUNTER_ATTACK) then self:setEffect(self.EFF_COUNTER_ATTACKING,1,{}) end
 	if self:knowTalent(self.T_DEFENSIVE_THROW) then self:setEffect(self.EFF_DEFENSIVE_GRAPPLING,1,{}) end
 	
@@ -1571,13 +1570,13 @@ end
 -- param trap the trap to be detected
 -- param x, y trap coordinates
 -- param power detection power (optional)
+-- @return the trap @ x, y if present and detected
 function _M:detectTrap(trap, x, y, power)
 	power = power or self:callTalent(self.T_HEIGHTENED_SENSES, "trapPower")
 	if power <= 0 then return end
 	trap = trap or game.level.map(x, y, Map.TRAP)
 	if trap then
 		x, y = x or trap.x, y or trap.y
---print("[Actor:detectTrap]", self.name, "attempting to detect trap at", x, y, trap.name, power, trap.detect_power)
 		local known = trap:knownBy(self)
 		if not known then
 			if self == trap.summoner and known == nil then trap:setKnown(self, true, x, y) return end
@@ -1590,6 +1589,7 @@ function _M:detectTrap(trap, x, y, power)
 				end
 			end
 		end
+		return known and trap
 	end
 end
 
@@ -2743,6 +2743,41 @@ function _M:onTakeHit(value, src, death_note)
 	end
 
 	if self.on_takehit then value = self:check("on_takehit", value, src, death_note) end
+
+	local eff = self:hasEffect(self.EFF_ELDRITCH_STONE)
+	if eff then
+		local abs = math.min(value, eff.power)
+		self:incEquilibrium(abs * 2)
+		if eff.power > abs then
+			eff.power = eff.power - abs
+			value = 0
+		else
+			value = value - abs
+			self:removeEffect(self.EFF_ELDRITCH_STONE)
+		end
+		game:delayedLogDamage(src, self, 0, ("#SLATE#(%d to stone)#LAST#"):format(abs), false)
+	end
+
+	if self:knowTalent(self.T_STONESHIELD) and not self.turn_procs.stoneshield then
+		local t = self:getTalentFromId(self.T_STONESHIELD)
+		local m, mm, e, em = t.getValues(self, t)
+		self:incMana(math.min(mm, value * m))
+		self:incEquilibrium(-math.min(em, value * e))
+		self.turn_procs.stoneshield = true
+	end
+
+	local eff = self:hasEffect(self.EFF_STONE_LINK)
+	if eff then
+		if eff.src:attr("dead") then
+			self:removeEffect(self.EFF_STONE_LINK)
+		else
+			game:delayedLogMessage(eff.src, self, "stone_link"..(self.uid or ""), "#OLIVE_DRAB##Source# redirects damage from #Target# to %s!#LAST#", string.his_her_self(eff.src))
+			game:delayedLogDamage(src, self, 0, ("#OLIVE_DRAB#(%d redirected)#LAST#"):format(value), false)
+			eff.src:takeHit(value, src)
+			game:delayedLogDamage(src, eff.src, value, ("#OLIVE_DRAB#%d redirected#LAST#"):format(value), false)
+			value = 0
+		end
+	end
 
 	local cb = {value=value}
 	if self:fireTalentCheck("callbackOnHit", cb, src, death_note) then
@@ -4128,6 +4163,7 @@ end
 
 --- Returns the possible offslot
 function _M:getObjectOffslot(o)
+	if o.type == "armor" and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then return "MAINHAND" end
 	if o.dual_wieldable and self:attr("allow_any_dual_weapons") then
 		return "OFFHAND"
 	else
@@ -4343,7 +4379,15 @@ function _M:learnPool(t)
 	end
 
 	-- Generic
-	if t.autolearn_talent then self:checkPool(t.id, t.autolearn_talent) end
+	if t.autolearn_talent then
+		if type(t.autolearn_talent) == "table" then
+			for i, auto_tid in ipairs(t.autolearn_talent) do
+				self:checkPool(t.id, auto_tid)
+			end
+		else
+			self:checkPool(t.id, t.autolearn_talent)
+		end
+	end
 	
 	self:recomputeRegenResources()
 
@@ -5322,7 +5366,8 @@ function _M:postUseTalent(ab, ret, silent)
 	end
 
 	-- Cancel stealth!
-	if not util.getval(ab.no_break_stealth, self, ab) and not util.getval(ab.no_energy, self, ab)  then self:breakStealth() end
+	if not util.getval(ab.no_break_stealth, self, ab) and util.getval(ab.no_energy, self, ab) ~= true then self:breakStealth() end
+	
 	if ab.id ~= self.T_LIGHTNING_SPEED then self:breakLightningSpeed() end
 	if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
 	if not ab.no_reload_break then self:breakReloading() end

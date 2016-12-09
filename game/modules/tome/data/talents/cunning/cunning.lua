@@ -84,6 +84,13 @@ cuns_req_high5 = {
 	level = function(level) return 26 + (level-1)  end,
 }
 
+-- talents that require unlocking (specific poisons, traps)
+cuns_req_unlock = {
+	special = {desc="Talent not unlocked", fct=function(self, t, offset)
+		return game.state:unlockTalentCheck(t.id, self)
+	end}
+}
+
 load("/data/talents/cunning/stealth.lua")
 load("/data/talents/cunning/traps.lua")
 load("/data/talents/cunning/poisons.lua")

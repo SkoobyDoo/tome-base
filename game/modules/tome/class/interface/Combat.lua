@@ -34,7 +34,7 @@ function _M:bumpInto(target, x, y)
 	if reaction < 0 then -- attack target if possible
 		if target.encounterAttack and self.player then self:onWorldEncounter(target, x, y) return end
 		if game.player == self and ((not config.settings.tome.actor_based_movement_mode and game.bump_attack_disabled) or (config.settings.tome.actor_based_movement_mode and self.bump_attack_disabled)) then return end
-		return self:enoughEnergy(game.energy_to_act*self:combatSpeed()) and self:useTalent(self.T_ATTACK, nil, nil, nil, target)
+		return self:enoughEnergy() and self:useTalent(self.T_ATTACK, nil, nil, nil, target)
 	elseif reaction >= 0 then
 		-- Talk ? Bump ?
 		if self.player and target.on_bump then
@@ -264,6 +264,8 @@ end
 function _M:getObjectCombat(o, kind)
 	if kind == "barehand" then return self.combat end
 	if not o then return nil end
+	if kind == "mainhand" and o.type == "armor" and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then return o.special_combat end
+	if kind == "offhand" and o.type == "armor" and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then return o.special_combat end
 	if kind == "mainhand" then return o.combat end
 	if kind == "offhand" then return o.combat end
 	return nil
@@ -447,6 +449,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	local hitted = false
 	local crit = false
 	local evaded = false
+	local deflect = 0
 	local old_target_life = target.life
 
 	if target:knowTalent(target.T_SKIRMISHER_BUCKLER_EXPERTISE) then
@@ -480,31 +483,22 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		self:logCombat(target, "#Target# evades #Source#.")
 	elseif self.turn_procs.auto_melee_hit or (self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or target:attr("blind_fighted") or rng.chance(3))) then
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
-		if target.knowTalent and target:hasEffect(target.EFF_DUAL_WEAPON_DEFENSE) then
-			local deflect = math.min(dam, target:callTalent(target.T_DUAL_WEAPON_DEFENSE, "doDeflect"))
+		local eff = target.knowTalent and target:hasEffect(target.EFF_PARRY)
+		-- check if target deflects the blow (deflected blows cannot crit)
+		if eff then
+			deflect = target:callEffect(target.EFF_PARRY, "doDeflect", self) or 0
 			if deflect > 0 then
 				game:delayedLogDamage(self, target, 0, ("%s(%d parried#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
-				dam = math.max(dam - deflect,0)
-				print("[ATTACK] after DUAL_WEAPON_DEFENSE", dam)
-			end
-		end
-		if target.knowTalent and target:hasEffect(target.EFF_PARRY) then
-			local deflect = math.min(dam, target:callTalent(target.T_PARRY, "doDeflect"))
-			if deflect > 0 then
-				game:delayedLogDamage(self, target, 0, ("%s(%d parried#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
-				dam = math.max(dam - deflect,0)
+				dam = math.max(dam - deflect , 0)
 				print("[ATTACK] after PARRY", dam)
-				if target:knowTalent(target.T_TEMPO) then
-					local t = target:getTalentFromId(target.T_TEMPO)
-					t.do_tempo(target, t)
-				end
 			end
 		end
+
 		if target.knowTalent and target:hasEffect(target.EFF_GESTURE_OF_GUARDING) and not target:attr("encased_in_ice") then
-			local deflected = math.min(dam, target:callTalent(target.T_GESTURE_OF_GUARDING, "doGuard")) or 0
-			if deflected > 0 then
-				game:delayedLogDamage(self, target, 0, ("%s(%d gestured#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflected), false)
-				dam = dam - deflected
+			local deflect = math.min(dam, target:callTalent(target.T_GESTURE_OF_GUARDING, "doGuard")) or 0
+			if deflect > 0 then
+				game:delayedLogDamage(self, target, 0, ("%s(%d gestured#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
+				dam = dam - deflect
 			end
 			print("[ATTACK] after GESTURE_OF_GUARDING", dam)
 		end
@@ -522,7 +516,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		local damrange = self:combatDamageRange(weapon)
 		dam = rng.range(dam, dam * damrange)
 		print("[ATTACK] after range", dam)
-		dam, crit = self:physicalCrit(dam, weapon, target, atk, def)
+		if deflect == 0 then dam, crit = self:physicalCrit(dam, weapon, target, atk, def) end
 		print("[ATTACK] after crit", dam)
 		dam = dam * mult
 		print("[ATTACK] after mult", dam)
@@ -1077,6 +1071,13 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		end
 	end
 
+	if target:isTalentActive(target.T_SHARDS) and hitted and not target.dead and not target.turn_procs.shield_shards then
+		local t = target:getTalentFromId(target.T_SHARDS)
+		target.turn_procs.shield_shards = true
+		self.logCombat(target, self, "#Source# counter attacks #Target# with %s shield shards!", string.his_her(target))
+		target:attackTarget(self, DamageType.NATURE, self:combatTalentWeaponDamage(t, 0.4, 1), true)
+	end
+
 	self:fireTalentCheck("callbackOnMeleeAttack", target, hitted, crit, weapon, damtype, mult, dam)
 
 	local hd = {"Combat:attackTargetWith", hitted=hitted, crit=crit, target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam}
@@ -1100,6 +1101,7 @@ _M.weapon_talents = {
 	mindstar ="T_PSIBLADES",
 	dream =   "T_DREAM_CRUSHER",
 	unarmed = "T_UNARMED_MASTERY",
+	shield = {"T_STONESHIELD"},
 }
 
 --- Static!
@@ -1723,9 +1725,6 @@ function _M:getOffHandMult(combat, mult)
 	end
 	if self:knowTalent(Talents.T_CORRUPTED_STRENGTH) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_CORRUPTED_STRENGTH,"getoffmult"))
-	end
-	if self:knowTalent(Talents.T_LETHALITY) then
-		offmult = math.max(offmult,self:callTalent(Talents.T_LETHALITY,"getOffMult"))
 	end
 	if combat and combat.no_offhand_penalty then offmult = math.max(1, offmult) end
 

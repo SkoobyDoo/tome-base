@@ -41,7 +41,6 @@ newTalentType{ allow_random=true, is_mind=true, autolearn_mindslayer=true, type=
 -- Solipsist Talent Trees
 newTalentType{ allow_random=true, is_mind=true, type="psionic/discharge", name = "discharge", description = "Project feedback on the world around you." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/distortion", name = "distortion", description = "Distort reality with your mental energy." }
-newTalentType{ allow_random=true, is_mind=true, type="psionic/dream-forge", generic = true, name = "Dream Forge", description = "Master the dream forge to create powerful armor and effects." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/dream-smith", name = "Dream Smith", description = "Call the dream-forge hammer to smite your foes." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/nightmare", name = "nightmare", description = "Manifest your enemies nightmares." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/psychic-assault", name = "Psychic Assault", description = "Directly attack your opponents minds." }
@@ -50,6 +49,7 @@ newTalentType{ allow_random=true, is_mind=true, type="psionic/solipsism", name =
 newTalentType{ allow_random=true, is_mind=true, type="psionic/thought-forms", name = "Thought-Forms", description = "Manifest your thoughts as psionic summons." }
 
 -- Generic Solipsist Trees
+newTalentType{ allow_random=true, is_mind=true, type="psionic/dream-forge", generic = true, name = "Dream Forge", description = "Master the dream forge to create powerful armor and effects." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/dreaming", generic = true, name = "dreaming", description = "Manipulate the sleep cycles of yourself and your enemies." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/mentalism", generic = true, name = "mentalism", description = "Various mind based effects." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/feedback", generic = true, name = "feedback", description = "Store feedback as you get damaged and use it to protect and heal your body." }

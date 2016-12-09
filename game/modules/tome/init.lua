@@ -46,6 +46,9 @@ You are an adventurer, set out to discover wonders, explore old places, and vent
 ]]
 starter = "mod.load"
 
+-- Forbid some now useless addons
+forbid_addons = {"stone-wardens"}
+
 -- List of additional team files required
 teams = {
 	-- Normal packaging

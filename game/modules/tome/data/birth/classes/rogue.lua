@@ -55,6 +55,7 @@ newBirthDescriptor{
 	stats = { dex=3, str=1, cun=5, },
 	talents_types = {
 		["technique/dualweapon-attack"]={true, 0.3},
+		["technique/dualweapon-training"]={true, 0.3},
 		["technique/duelist"]={true, 0.3},
 		["technique/combat-techniques-active"]={false, 0.3},
 		["technique/combat-training"]={true, 0.3},
@@ -66,7 +67,7 @@ newBirthDescriptor{
 		["cunning/trapping"]={true, 0.3},
 		["cunning/lethality"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
-		["cunning/scoundrel"]={true, 0.3},
+		["cunning/scoundrel"]={false, 0.3},
 		["cunning/dirty"]={false, 0.3},
 		["cunning/artifice"]={false, 0.3},
 	},
@@ -118,11 +119,11 @@ newBirthDescriptor{
 		["spell/divination"]={false, 0},
 		["spell/conveyance"]={true, 0},
 		["technique/dualweapon-attack"]={true, 0.2},
-		["technique/duelist"]={true, 0.2},
+		["technique/dualweapon-training"]={true, 0.2},
 		["technique/combat-techniques-active"]={true, 0.3},
 		["technique/combat-techniques-passive"]={false, 0.3},
 		["technique/combat-training"]={true, 0.2},
-		["cunning/stealth"]={false, 0.3},
+		["cunning/stealth"]={true, 0.3},
 		["cunning/survival"]={true, 0.1},
 		["cunning/lethality"]={true, 0.3},
 		["cunning/dirty"]={true, 0.3},
@@ -165,6 +166,7 @@ newBirthDescriptor{
 	talents_types = {
 		["technique/dualweapon-attack"]={true, 0.2},
 		["technique/dualweapon-training"]={true, 0.2},
+		["technique/duelist"]={false, 0.2},
 		["technique/combat-techniques-active"]={true, 0.3},
 		["technique/combat-techniques-passive"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},
@@ -223,7 +225,8 @@ newBirthDescriptor{
 		["cunning/called-shots"]={true, 0.3},
 		["technique/tireless-combatant"]={true, 0.3},
 		["cunning/trapping"]={false, 0.1},
-
+		["technique/mobility"]={true, 0.3},
+		
 		-- generic
 		["technique/acrobatics"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},

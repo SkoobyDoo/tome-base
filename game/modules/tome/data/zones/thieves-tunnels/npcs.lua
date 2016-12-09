@@ -41,9 +41,9 @@ newEntity{ define_as = "ASSASSIN_LORD",
 
 	open_door = true,
 
-	autolevel = "rogue",
+	autolevel = "roguemage",
 	ai = "dumb_talented_simple", ai_state = { talent_in=5, },
-	stats = { str=8, dex=15, mag=6, cun=15, con=7 },
+	stats = { str=8, dex=15, mag=15, cun=15, con=7 },
 
 	resolvers.tmasteries{ ["cunning/stealth"]=1.3, },
 
@@ -52,6 +52,8 @@ newEntity{ define_as = "ASSASSIN_LORD",
 	combat_armor = 5, combat_def = 7,
 	max_life = resolvers.rngavg(90,100), life_rating = 14,
 	resolvers.talents{
+		[Talents.T_WEAPON_COMBAT] = {base=1, every=8, max=5},
+		[Talents.T_KNIFE_MASTERY] = {base=1, every=8, max=5},
 		[engine.interface.ActorTalents.T_LETHALITY]={base=3, every=4, max=10},
 		[engine.interface.ActorTalents.T_STEALTH]={base=4, every=4, max=10},
 		[engine.interface.ActorTalents.T_VILE_POISONS]={base=3, every=4, max=10},

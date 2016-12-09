@@ -60,7 +60,7 @@ newTalent{
 		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not target then
 			if swap then doWardenWeaponSwap(self, t, "bow") end
-			return true -- Make sure this is done if an NPC attacks an emptry grid.
+			return true -- Make sure this is done if an NPC attacks an empty grid.
 		end
 
 		local did_alternate = false

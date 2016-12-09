@@ -74,8 +74,7 @@ I might not know a great deal about artifice, but I know how wild animals work, 
 	on_learn = function(who)
 		local p = game.party:findMember{main=true}
 		if p:knowTalentType("cunning/trapping") then
-			game.state.dragonsfire_trap = true
-			game.log("#LIGHT_GREEN#You have learnt to create dragonsfire traps!")
+			game.state:unlockTalent(p.T_DRAGONSFIRE_TRAP, p)
 		end
 	end,
 }
@@ -91,8 +90,7 @@ I might not know a great deal about artifice, but I know how wild animals work, 
 	on_learn = function(who)
 		local p = game.party:findMember{main=true}
 		if p:knowTalentType("cunning/trapping") then
-			game.state.freezing_trap = true
-			game.log("#LIGHT_GREEN#You have learnt to create freezing traps!")
+			game.state:unlockTalent(p.T_FREEZING_TRAP, p)
 		end
 	end,
 }

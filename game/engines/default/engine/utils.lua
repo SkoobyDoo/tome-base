@@ -308,6 +308,11 @@ function table.from_list(t, k, v)
 	return tt
 end
 
+function table.hasInList(t, v)
+	for i = #t, 1, -1 do if t[i] == v then return true end end
+	return false
+end
+
 function table.removeFromList(t, ...)
 	for _, v in ipairs{...} do
 		for i = #t, 1, -1 do if t[i] == v then table.remove(t, i) end end

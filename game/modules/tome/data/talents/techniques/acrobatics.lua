@@ -33,8 +33,12 @@ newTalent {
 	cooldown = function(self, t) return 10 - cooldown_bonus(self) end,
 	stamina = function(self, t) return math.max(0, 18 - stamina_bonus(self)) end,
 	tactical = {ESCAPE = 2},
-	on_pre_use = function(self, t)
-		return not self:attr("never_move")
+	on_pre_use = function(self, t, silent, fake)
+		if self:attr("never_move") then
+			if not silent then game.logPlayer(self, "You cannot move!") end
+			return
+		end
+		return true
 	end,
 	range = function(self, t)
 		return math.floor(self:combatTalentScale(t, 3, 8))
@@ -107,6 +111,13 @@ newTalent {
 		return math.max(0, 20 - stamina_bonus(self))
 	end,
 	tactical = {ESCAPE = 2, BUFF = 1},
+	on_pre_use = function(self, t, silent, fake)
+		if self:attr("never_move") then
+			if not silent then game.logPlayer(self, "You cannot move!") end
+			return
+		end
+		return true
+	end,
 	range = function(self, t)
 		return math.floor(self:combatTalentScale(t, 2, 4))
 	end,
@@ -171,7 +182,6 @@ newTalent {
 	-- called by mod/Actor.lua, although it could be a callback one day
 	onHit = function(self, t, damage)
 		-- Don't have trigger cooldown.
-		-- if self:hasEffect("EFF_SKIRMISHER_TRAINED_REACTIONS_COOLDOWN") then return damage end
 
 		local cost = t.stamina_per_use(self, t)
 		if damage >= self.max_life * t.getLifeTrigger(self, t) * 0.01 then
@@ -202,7 +212,7 @@ newTalent {
 		local reduce = t.getReduction(self, t)
 		local cost = t.stamina_per_use(self, t) * (1 + self:combatFatigue() * 0.01)
 		return ([[While this talent is sustained, you anticipate deadly attacks against you.
-		Any time you would lose more than %d%% of your life in a single hit, you instead duck out of the way and assume a defensive posture.
+		Any time you would lose more than %d%% of your maximum life in a single hit, you instead duck out of the way and assume a defensive posture.
 		This reduces the triggering damage and all further damage in the same turn by %d%%.
 		You need %0.1f Stamina and an adjacent open tile to perform this feat (though it does not cause you to move).]])
 		:format(trigger, reduce, cost)

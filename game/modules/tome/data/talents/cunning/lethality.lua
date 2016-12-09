@@ -23,14 +23,12 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = cuns_req1,
-	getOffMult = function(self,t) return self:combatTalentLimit(t, 1, 0.65, 0.85) end,
 	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.75) end,
 	info = function(self, t)
 		local critchance = t.getCriticalChance(self, t)
-		local power = t.getOffMult(self, t)
-		return ([[You are trained in the use of two weapons for fighting, increasing your critical strike chance by %d%% and increasing the damage dealt by your offhand weapon to %d%%.
-		Also, when using knives, you now use your Cunning instead of your Strength for bonus damage.]]):
-		format(critchance, power*100)
+		return ([[You are trained to strike critical areas when fighting, and have a %d%% increased critical strike chance.
+		Also, when using knives, you use your Cunning instead of your Strength for bonus damage.]]):
+		format(critchance)
 	end,
 }
 

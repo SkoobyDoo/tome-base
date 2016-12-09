@@ -312,20 +312,19 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
 	local hitted = false
 	local crit = false
+	local deflect = 0
 	if self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or rng.chance(3)) then
 		print("[ATTACK ARCHERY] raw dam", dam, "versus", armor, "with APR", apr)
 
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
-		if target.knowTalent and target:hasEffect(target.EFF_PARRY) then
-			local deflect = math.min(dam, target:callTalent(target.T_PARRY, "doDeflect"))
+		-- check if target deflects the blow (deflected blows cannot crit)
+		local eff = target.knowTalent and target:hasEffect(target.EFF_PARRY)
+		if eff and eff.parry_ranged then
+			deflect = target:callEffect(target.EFF_PARRY, "doDeflect", self) or 0
 			if deflect > 0 then
 				game:delayedLogDamage(self, target, 0, ("%s(%d parried#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
-				dam = math.max(dam - deflect,0)
+				dam = math.max(dam - deflect , 0)
 				print("[ATTACK] after PARRY", dam)
-				if target:knowTalent(target.T_TEMPO) then
-					local t = target:getTalentFromId(target.T_TEMPO)
-					t.do_tempo(target, t)
-				end
 			end
 		end
 		armor = math.max(0, armor - apr)
@@ -365,7 +364,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
-		dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0)
+		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0) end
 		print("[ATTACK ARCHERY] after crit", dam)
 
 		dam = dam * mult * (weapon.dam_mult or 1)
