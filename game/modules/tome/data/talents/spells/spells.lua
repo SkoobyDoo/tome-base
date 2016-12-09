@@ -68,6 +68,10 @@ newTalentType{ allow_random=true, no_silence=true, is_spell=true, mana_regen=tru
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, mana_regen=true, type="spell/grave", name = "grave", description = "Use the rotting cold doom of the tomb to fell your foes." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, mana_regen=true, type="spell/animus", name = "animus", description = "Crush the souls of your foes to improve yourself." }
 
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="spell/eldritch-shield", name = "eldritch shield", description = "Infuse arcane forces into your shield." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="spell/eldritch-stone", name = "eldritch stone", description = "Summon stony spikes imbued with various powers." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="spell/deeprock", name = "deeprock", description = "Harness the power of the world to turn into a Deeprock Form." }
+
 -- Generic requires for spells based on talent level
 spells_req1 = {
 	stat = { mag=function(level) return 12 + (level-1) * 2 end },
@@ -279,3 +283,7 @@ load("/data/talents/spells/shades.lua")
 load("/data/talents/spells/necrosis.lua")
 load("/data/talents/spells/grave.lua")
 load("/data/talents/spells/animus.lua")
+
+load("/data/talents/spells/eldritch-shield.lua")
+load("/data/talents/spells/eldritch-stone.lua")
+load("/data/talents/spells/deeprock.lua")

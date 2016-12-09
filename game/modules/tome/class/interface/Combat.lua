@@ -264,6 +264,8 @@ end
 function _M:getObjectCombat(o, kind)
 	if kind == "barehand" then return self.combat end
 	if not o then return nil end
+	if kind == "mainhand" and o.type == "armor" and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then return o.special_combat end
+	if kind == "offhand" and o.type == "armor" and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then return o.special_combat end
 	if kind == "mainhand" then return o.combat end
 	if kind == "offhand" then return o.combat end
 	return nil
@@ -1069,6 +1071,13 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		end
 	end
 
+	if target:isTalentActive(target.T_SHARDS) and hitted and not target.dead and not target.turn_procs.shield_shards then
+		local t = target:getTalentFromId(target.T_SHARDS)
+		target.turn_procs.shield_shards = true
+		self.logCombat(target, self, "#Source# counter attacks #Target# with %s shield shards!", string.his_her(target))
+		target:attackTarget(self, DamageType.NATURE, self:combatTalentWeaponDamage(t, 0.4, 1), true)
+	end
+
 	self:fireTalentCheck("callbackOnMeleeAttack", target, hitted, crit, weapon, damtype, mult, dam)
 
 	local hd = {"Combat:attackTargetWith", hitted=hitted, crit=crit, target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam}
@@ -1092,6 +1101,7 @@ _M.weapon_talents = {
 	mindstar ="T_PSIBLADES",
 	dream =   "T_DREAM_CRUSHER",
 	unarmed = "T_UNARMED_MASTERY",
+	shield = {"T_STONESHIELD"},
 }
 
 --- Static!

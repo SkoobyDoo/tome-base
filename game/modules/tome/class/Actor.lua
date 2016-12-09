@@ -2744,6 +2744,41 @@ function _M:onTakeHit(value, src, death_note)
 
 	if self.on_takehit then value = self:check("on_takehit", value, src, death_note) end
 
+	local eff = self:hasEffect(self.EFF_ELDRITCH_STONE)
+	if eff then
+		local abs = math.min(value, eff.power)
+		self:incEquilibrium(abs * 2)
+		if eff.power > abs then
+			eff.power = eff.power - abs
+			value = 0
+		else
+			value = value - abs
+			self:removeEffect(self.EFF_ELDRITCH_STONE)
+		end
+		game:delayedLogDamage(src, self, 0, ("#SLATE#(%d to stone)#LAST#"):format(abs), false)
+	end
+
+	if self:knowTalent(self.T_STONESHIELD) and not self.turn_procs.stoneshield then
+		local t = self:getTalentFromId(self.T_STONESHIELD)
+		local m, mm, e, em = t.getValues(self, t)
+		self:incMana(math.min(mm, value * m))
+		self:incEquilibrium(-math.min(em, value * e))
+		self.turn_procs.stoneshield = true
+	end
+
+	local eff = self:hasEffect(self.EFF_STONE_LINK)
+	if eff then
+		if eff.src:attr("dead") then
+			self:removeEffect(self.EFF_STONE_LINK)
+		else
+			game:delayedLogMessage(eff.src, self, "stone_link"..(self.uid or ""), "#OLIVE_DRAB##Source# redirects damage from #Target# to %s!#LAST#", string.his_her_self(eff.src))
+			game:delayedLogDamage(src, self, 0, ("#OLIVE_DRAB#(%d redirected)#LAST#"):format(value), false)
+			eff.src:takeHit(value, src)
+			game:delayedLogDamage(src, eff.src, value, ("#OLIVE_DRAB#%d redirected#LAST#"):format(value), false)
+			value = 0
+		end
+	end
+
 	local cb = {value=value}
 	if self:fireTalentCheck("callbackOnHit", cb, src, death_note) then
 		value = cb.value
@@ -4128,6 +4163,7 @@ end
 
 --- Returns the possible offslot
 function _M:getObjectOffslot(o)
+	if o.type == "armor" and o.subtype == "shield" and self:knowTalent(self.T_STONESHIELD) then return "MAINHAND" end
 	if o.dual_wieldable and self:attr("allow_any_dual_weapons") then
 		return "OFFHAND"
 	else

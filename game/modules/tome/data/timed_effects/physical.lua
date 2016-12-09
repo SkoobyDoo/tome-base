@@ -3383,3 +3383,127 @@ newEffect{
 		if eff.dam > 0 then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
 	end,
 }
+
+newEffect{
+	name = "STONE_VINE",
+	desc = "Stone Vine",
+	long_desc = function(self, eff) return ("A living stone vine holds the target in place, inflicting %0.1f Physical%s damage per turn."):format(eff.dam, eff.arcanedam and (" and %0.1f Arcane"):format(eff.arcanedam) or "") end,
+	type = "physical",
+	subtype = { earth=true, pin=true },
+	status = "detrimental",
+	parameters = { dam=10 },
+	on_gain = function(self, err) return "#Target# is seized by a stone vine.", "+Stone Vine" end,
+	on_lose = function(self, err) return "#Target# is free from the stone vine.", "-Stone Vine" end,
+	activate = function(self, eff)
+		eff.last_x = eff.src.x
+		eff.last_y = eff.src.y
+		eff.tmpid = self:addTemporaryValue("never_move", 1)
+		eff.particle = self:addParticles(Particles.new("stonevine", 1, {tx=eff.src.x-self.x, ty=eff.src.y-self.y}))
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("never_move", eff.tmpid)
+		self:removeParticles(eff.particle)
+	end,
+	on_timeout = function(self, eff)
+		local severed = false
+		local src = eff.src or self
+		if core.fov.distance(self.x, self.y, src.x, src.y) >= eff.free or src.dead or not game.level:hasEntity(src) then severed = true end
+		if rng.percent(eff.free_chance) then severed = true end
+
+		self:removeParticles(eff.particle)
+		eff.particle = self:addParticles(Particles.new("stonevine", 1, {tx=eff.src.x-self.x, ty=eff.src.y-self.y}))
+
+		if severed then
+			return true
+		else
+			DamageType:get(DamageType.PHYSICAL).projector(src, self.x, self.y, DamageType.PHYSICAL, eff.dam)
+			
+			if eff.arcanedam and src:knowTalent(src.T_ELDRITCH_VINES) then
+				src:incEquilibrium(-src:callTalent(src.T_ELDRITCH_VINES, "getEquilibrium"))
+				src:incMana(src:callTalent(src.T_ELDRITCH_VINES, "getMana"))
+				DamageType:get(DamageType.ARCANE).projector(src, self.x, self.y, DamageType.ARCANE, eff.arcanedam)
+			end
+		end
+		eff.last_x = src.x
+		eff.last_y = src.y
+	end,
+}
+
+newEffect{
+	name = "DWARVEN_RESILIENCE", image = "talents/dwarf_resilience.png",
+	desc = "Dwarven Resilience",
+	long_desc = function(self, eff)
+		if eff.mid_ac then
+			return ("The target's skin turns to stone, granting %d armour, %d physical save and %d spell save. Also applies %d armour to all non-physical damage."):format(eff.armor, eff.physical, eff.spell, eff.mid_ac)
+		else
+			return ("The target's skin turns to stone, granting %d armour, %d physical save and %d spell save."):format(eff.armor, eff.physical, eff.spell)
+		end
+	end,
+	type = "physical",
+	subtype = { earth=true },
+	status = "beneficial",
+	parameters = { armor=10, spell=10, physical=10 },
+	on_gain = function(self, err) return "#Target#'s skin turns to stone." end,
+	on_lose = function(self, err) return "#Target#'s skin returns to normal." end,
+	activate = function(self, eff)
+		eff.aid = self:addTemporaryValue("combat_armor", eff.armor)
+		eff.pid = self:addTemporaryValue("combat_physresist", eff.physical)
+		eff.sid = self:addTemporaryValue("combat_spellresist", eff.spell)
+		if self:knowTalent(self.T_STONE_FORTRESS) then
+			local ac = self:combatArmor() * self:callTalent(self.T_STONE_FORTRESS, "getPercent")/ 100
+			eff.mid_ac = ac
+			eff.mid = self:addTemporaryValue("flat_damage_armor", {all=ac, [DamageType.PHYSICAL]=-ac})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("combat_armor", eff.aid)
+		self:removeTemporaryValue("combat_physresist", eff.pid)
+		self:removeTemporaryValue("combat_spellresist", eff.sid)
+		if eff.mid then self:removeTemporaryValue("flat_damage_armor", eff.mid) end
+	end,
+}
+
+newEffect{
+	name = "STONE_LINK_SOURCE", image = "talents/stone_link.png",
+	desc = "Stone Link",
+	long_desc = function(self, eff) return ("The target protects all those around it in radius %d by redirecting all damage against them to itself."):format(eff.rad) end,
+	type = "physical",
+	subtype = { earth=true, shield=true },
+	status = "beneficial",
+	parameters = { rad=3 },
+	on_gain = function(self, err) return ("#Target# begins protecting %s friends with a stone shield."):format(string.his_her(self)), "+Stone Link" end,
+	on_lose = function(self, err) return "#Target# is no longer protecting anyone.", "-Stone Link" end,
+	activate = function(self, eff)
+		if core.shader.active() then
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=eff.rad}, {type="shield", time_factor=4000, color={0.7, 0.4, 0.3}}))
+		else
+			eff.particle = self:addParticles(Particles.new("eldritch_stone", 1, {size_factor=eff.rad}))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle)
+	end,
+	on_timeout = function(self, eff)
+		self:project({type="ball", radius=eff.rad, selffire=false}, self.x, self.y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if not target or self:reactionToward(target) < 0 then return end
+			target:setEffect(target.EFF_STONE_LINK, 2, {src=self})
+		end)
+	end,
+}
+
+newEffect{
+	name = "STONE_LINK", image = "talents/stone_link.png",
+	desc = "Stone Link",
+	long_desc = function(self, eff) return ("The target is protected by %s, redirecting all damage to it."):format(eff.src.name) end,
+	type = "physical",
+	subtype = { earth=true, shield=true },
+	status = "beneficial",
+	parameters = { },
+	on_gain = function(self, err) return "#Target# is protected by a stone shield.", "+Stone Link" end,
+	on_lose = function(self, err) return "#Target# is less protected.", "-Stone Link" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
