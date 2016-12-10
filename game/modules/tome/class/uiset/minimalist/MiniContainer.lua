@@ -53,6 +53,29 @@ function _M:imageLoader(file, rw, rh)
 	end
 end
 
+function _M:texLoader(file, rw, rh)
+	local sfile = UI.ui.."-ui/minimalist/"..file
+	if fs.exists("/data/gfx/"..sfile) then
+		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset(sfile)
+		if ts then return {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
+		else
+			local tex, rw, rh, tw, th, iw, ih = core.display.loadImage("/data/gfx/"..sfile):glTexture()
+			return {t=tex, w=iw, h=ih, tw=iw/rw, th=ih/rh, tx=0, ty=0}
+		end
+	else
+		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset("ui/"..file)
+		if ts then return {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
+		else
+			local tex, rw, rh, tw, th, iw, ih = core.display.loadImage("/data/gfx/ui/"..file):glTexture()
+			return {t=tex, w=iw, h=ih, tw=iw/rw, th=ih/rh, tx=0, ty=0}
+		end
+	end
+end
+
+function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
+	return UI:makeFrameDO({base=base, fct=function(s) return self:texLoader(s) end}, w, h, iw, ih, center, resizable)
+end
+
 function _M:update(nb_keyframes)
 end
 

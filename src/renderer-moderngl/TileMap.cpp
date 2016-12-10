@@ -101,7 +101,6 @@ void DORTileObject::clear() {
 	vector<DisplayObject*> olddos(dos);
 	DORContainer::clear();
 	for (auto it = olddos.begin() ; it != olddos.end(); ++it) {
-		printf("======================+DELETING %s\n", (*it)->getKind());
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 		if (i) delete i;
 	}

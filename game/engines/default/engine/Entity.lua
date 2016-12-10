@@ -629,14 +629,14 @@ function _M:MOflipY(v)
 	end
 end
 
---- Get the entity image as an sdl surface and texture for the given tiles and size
+--- Get the entity image as a DisplayObject for the given tiles and size
 -- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
 -- @param w the width
 -- @param h the height
 -- @return[1] the display object, that can then be chained to others DOs or renderer
-function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader)
+function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader, no_cache)
 	local id = w.."x"..h
-	if _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].DO end
+	if not no_cache and _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].DO end
 
 	local Map = require "engine.Map"
 	tiles = tiles or Map.tiles
@@ -650,9 +650,13 @@ function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader)
 	local DO = core.map.mapObjectsToDisplayObject(w, h, a, allow_cb, allow_shader, unpack(list))
 	if not DO then return nil end
 
-	_M.__mo_final_repo[self] = _M.__mo_final_repo[self] or {}
-	_M.__mo_final_repo[self][id] = {DO=DO}
-	return _M.__mo_final_repo[self][id].DO
+	if no_cache then
+		return DO
+	else
+		_M.__mo_final_repo[self] = _M.__mo_final_repo[self] or {}
+		_M.__mo_final_repo[self][id] = {DO=DO}
+		return _M.__mo_final_repo[self][id].DO
+	end
 end
 
 --- Get a string that will display in text the texture of this entity

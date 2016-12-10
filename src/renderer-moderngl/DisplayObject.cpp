@@ -391,6 +391,56 @@ void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color)
 }
 
 /*************************************************************************
+ ** IContainer
+ *************************************************************************/
+void IContainer::containerAdd(DisplayObject *self, DisplayObject *dob) {
+	dos.push_back(dob);
+	dob->setParent(self);
+};
+
+bool IContainer::containerRemove(DisplayObject *dob) {
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		if (*it == dob) {
+			dos.erase(it);
+
+			dob->setParent(NULL);
+			if (L) {
+				int ref = dob->unsetLuaRef();
+				if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+			}
+			return true;
+		}
+	}
+	return false;
+};
+
+void IContainer::containerClear() {
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		// printf("IContainer clearing : %lx\n", (long int)*it);
+		(*it)->setParent(NULL);
+		if (L) {
+			int ref = (*it)->unsetLuaRef();
+			if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+		}
+	}
+	dos.clear();
+}
+
+void IContainer::containerRender(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->render(container, cur_model, cur_color);
+	}
+}
+
+void IContainer::containerRenderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->renderZ(container, cur_model, cur_color);
+	}
+}
+
+/*************************************************************************
  ** DORContainer
  *************************************************************************/
 void DORContainer::cloneInto(DisplayObject* _into) {
@@ -400,40 +450,17 @@ void DORContainer::cloneInto(DisplayObject* _into) {
 		into->add((*it)->clone());
 	}	
 }
-
 void DORContainer::add(DisplayObject *dob) {
-	dos.push_back(dob);
-	dob->setParent(this);
+	containerAdd(this, dob);
 	setChanged();
 };
 
 void DORContainer::remove(DisplayObject *dob) {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		if (*it == dob) {
-			setChanged();
-
-			dos.erase(it);
-
-			dob->setParent(NULL);
-			if (L) {
-				int ref = dob->unsetLuaRef();
-				if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
-			}
-			return;
-		}
-	}
+	if (containerRemove(dob)) setChanged();
 };
 
 void DORContainer::clear() {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		// printf("DORContainer clearing : %lx\n", (long int)*it);
-		(*it)->setParent(NULL);
-		if (L) {
-			int ref = (*it)->unsetLuaRef();
-			if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
-		}
-	}
-	dos.clear();
+	containerClear();
 	setChanged();
 }
 
@@ -445,10 +472,7 @@ void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color)
 	if (!visible) return;
 	cur_model *= model;
 	cur_color *= color;
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->render(container, cur_model, cur_color);
-	}
+	containerRender(container, cur_model, cur_color);
 	resetChanged();
 }
 
@@ -456,12 +480,10 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 	if (!visible) return;
 	cur_model *= model;
 	cur_color *= color;
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->renderZ(container, cur_model, cur_color);
-	}
+	containerRenderZ(container, cur_model, cur_color);
 	resetChanged();
 }
+
 
 /***************************************************************************
  ** SubRenderer

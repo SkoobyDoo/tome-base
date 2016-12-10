@@ -183,10 +183,22 @@ public:
 /****************************************************************************
  ** DO that can contain others
  ****************************************************************************/
-class DORContainer : public DisplayObject{
+class IContainer{
 protected:
 	vector<DisplayObject*> dos;
-	
+public:
+	IContainer() {};
+	virtual ~IContainer() {};
+
+	virtual void containerAdd(DisplayObject *self, DisplayObject *dob);
+	virtual bool containerRemove(DisplayObject *dob);
+	virtual void containerClear();
+
+	virtual void containerRender(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void containerRenderZ(RendererGL *container, mat4 cur_model, vec4 color);
+};
+class DORContainer : public DisplayObject, public IContainer{
+protected:
 	virtual void cloneInto(DisplayObject *into);
 public:
 	DORContainer() {};

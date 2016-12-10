@@ -33,18 +33,18 @@ module(..., package.seeall, class.make)
 -- @number y y coordinate
 -- @number w width
 -- @number h height
--- @param[type=table] bgcolor background color
+-- @param[type=table] bg_color background color
 -- @string[opt="DroidSansMono"] fontname
 -- @number[opt=10] fontsize
 -- @number icon_w icon width
 -- @number icon_h icon height
-function _M:init(actor, x, y, w, h, bgcolor, fontname, fontsize, icon_w, icon_h)
+function _M:init(actor, x, y, w, h, bg_color, fontname, fontsize, icon_w, icon_h)
 	self.actor = actor
-	if type(bgcolor) ~= "string" then
-		self.bgcolor = bgcolor or {0,0,0}
+	if type(bg_color) ~= "string" then
+		self.bg_color = bg_color
 	else
-		self.bgcolor = {0,0,0}
-		self.bg_image = bgcolor
+		self.bg_color = nil
+		self.bg_image = bg_color
 	end
 	self.font = core.display.newFont(fontname or "/data/font/DroidSansMono.ttf", fontsize or 10)
 	self.fontbig = core.display.newFont(fontname or "/data/font/DroidSansMono.ttf", (fontsize or 10) * 2)
@@ -95,7 +95,7 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.max_cols = math.floor(self.w / self.frames.w)
 	self.max_rows = math.floor(self.h / self.frames.h)
 
-	self.renderer = core.renderer.renderer():zSort(false):setRendererName("HotkeysRenderer"):countDraws(true)
+	self.renderer = core.renderer.renderer():zSort(false):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(true)
 	self.bg_container = core.renderer.container()
 	self.renderer:add(self.bg_container)
 
@@ -104,8 +104,8 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.texts_layer = core.renderer.container():translate(0, 0, 20) self.renderer:add(self.texts_layer)
 	self.frames_layer = core.renderer.container():translate(0, 0, 30) self.renderer:add(self.frames_layer)
 
-	-- DGDGDGDG handle bgcolor ?
-	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0)) end
+	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0, self.w, self.h)) end
+	if self.bg_color then self.bg_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.bg_color))) end
 end
 
 local page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
@@ -255,10 +255,12 @@ function _M:display()
 			local color = {190,190,190}
 			local frame = "disabled"
 
-			self.font:setStyle("bold")
-			local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
-			local key = self.font:draw(ks, self.font:size(ks), colors.ANTIQUE_WHITE.r, colors.ANTIQUE_WHITE.g, colors.ANTIQUE_WHITE.b, true)[1]
-			self.font:setStyle("normal")
+			-- self.font:setStyle("bold")
+			-- local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
+			-- local key = self.font:draw(ks, self.font:size(ks), colors.ANTIQUE_WHITE.r, colors.ANTIQUE_WHITE.g, colors.ANTIQUE_WHITE.b, true)[1]
+			-- self.font:setStyle("normal")
+
+			-- DGDGDGDG make that work
 
 			self.items[#self.items+1] = {show_on_drag=true, i=i, x=x, y=y, e=nil, color=color, angle=angle, key=key, gtxt=nil, frame=frame}
 			self.clics[i] = {x,y,w,h, fake=true}

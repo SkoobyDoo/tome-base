@@ -21,6 +21,7 @@ require "engine.class"
 local FontPackage = require "engine.FontPackage"
 local HotkeysIconsDisplay = require "engine.HotkeysIconsDisplay"
 local MiniContainer = require "mod.class.uiset.minimalist.MiniContainer"
+local UI = require "engine.ui.Base"
 
 --- Log display for Minimalist ui
 module(..., package.seeall, class.inherit(MiniContainer))
@@ -29,7 +30,6 @@ function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
 
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
-	print(config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
 	self.hotkeys_display_icons:enableShadow(0.6)
 	self.hotkeys_display_icons.actor = game.player
@@ -37,8 +37,11 @@ function _M:init(minimalist)
 	minimalist.hotkeys_display_icons = self.hotkeys_display_icons -- for old code compatibility
 	minimalist.hotkeys_display = self.hotkeys_display_icons
 
+	local hkframe = self:makeFrameDO("hotkeys/hotkey_", nil, nil, self.w, self.h)
+	self.hotkeys_display_icons.bg_container:add(hkframe.container:translate(-4, -4))
+
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
-		
+		-- dgdgdgdg
 	end, nil, "hotkeys", true, 1)
 
 end

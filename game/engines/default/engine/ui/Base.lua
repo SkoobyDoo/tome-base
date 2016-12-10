@@ -250,19 +250,31 @@ function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 	local f = {}
 	f.container = core.renderer.container()
 	if base then
-		f.b7 = self:getAtlasTexture(base.."7.png")
-		f.b9 = self:getAtlasTexture(base.."9.png")
-		f.b1 = self:getAtlasTexture(base.."1.png")
-		f.b3 = self:getAtlasTexture(base.."3.png")
-		f.b8 = self:getAtlasTexture(base.."8.png")
-		f.b5 = self:getAtlasTexture(base.."5.png")
-		f.b4 = self:getAtlasTexture(base.."4.png")
-		f.b2 = self:getAtlasTexture(base.."2.png")
-		f.b6 = self:getAtlasTexture(base.."6.png")
-		if not w then w = iw + f.b4.w + f.b6.w end
-		if not h then h = ih + f.b8.h + f.b2.h end
-
+		if type(base) == "string" then
+			f.b7 = self:getAtlasTexture(base.."7.png")
+			f.b9 = self:getAtlasTexture(base.."9.png")
+			f.b1 = self:getAtlasTexture(base.."1.png")
+			f.b3 = self:getAtlasTexture(base.."3.png")
+			f.b8 = self:getAtlasTexture(base.."8.png")
+			f.b5 = self:getAtlasTexture(base.."5.png")
+			f.b4 = self:getAtlasTexture(base.."4.png")
+			f.b2 = self:getAtlasTexture(base.."2.png")
+			f.b6 = self:getAtlasTexture(base.."6.png")
+		else
+			f.b7 = base.fct(base.base.."7.png")
+			f.b9 = base.fct(base.base.."9.png")
+			f.b1 = base.fct(base.base.."1.png")
+			f.b3 = base.fct(base.base.."3.png")
+			f.b8 = base.fct(base.base.."8.png")
+			f.b5 = base.fct(base.base.."5.png")
+			f.b4 = base.fct(base.base.."4.png")
+			f.b2 = base.fct(base.base.."2.png")
+			f.b6 = base.fct(base.base.."6.png")
+		end
 		local cx, cy = 0,0
+		if not w then w = iw + f.b4.w + f.b6.w cx = -f.b4.w end
+		if not h then h = ih + f.b8.h + f.b2.h cy = -f.b8.h end
+
 		if center then cx, cy = -math.floor(w / 2), -math.floor(h / 2) end
 		f.cx, f.cy = cx, cy
 

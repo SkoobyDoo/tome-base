@@ -103,6 +103,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 
 void DORText::parseText() {
 	clear();
+	containerClear();
 	positions.clear();
 	centered = false;
 
@@ -208,33 +209,39 @@ void DORText::parseText() {
 				}
 				// Entity UID
 				else if ((codestop - (next+1) > 4) && (*(next+1) == 'U') && (*(next+2) == 'I') && (*(next+3) == 'D') && (*(next+4) == ':')) {
-// 					lua_getglobal(L, "__get_uid_entity");
-// 					char *colon = next + 5;
-// 					while (*colon && *colon != ':') colon++;
-// 					lua_pushlstring(L, next+5, colon - (next+5));
-// 					lua_call(L, 1, 1);
-// 					if (lua_istable(L, -1))
-// 					{
-// //							printf("DirectDrawUID in font:draw %d : %d\n", size, h);
-// 						lua_createtable(L, 0, 4);
+					// Grab the entity
+					lua_getglobal(L, "__get_uid_entity");
+					char *colon = next + 5;
+					while (*colon && *colon != ':') colon++;
+					lua_pushlstring(L, next+5, colon - (next+5));
+					lua_call(L, 1, 1);
+					if (lua_istable(L, -1))
+					{
+						// Grab the method
+						lua_pushstring(L, "getEntityDisplayObject");
+						lua_gettable(L, -2);
+						// Add parameters
+						lua_pushvalue(L, -2);
+						lua_pushnil(L);
+						lua_pushnumber(L, font_h);
+						lua_pushnumber(L, font_h);
+						lua_pushnumber(L, 1);
+						lua_pushnil(L);
+						lua_pushnil(L);
+						lua_pushboolean(L, true);
+						// Call method to get the DO
+						lua_call(L, 8, 1);
 
-// 						lua_pushliteral(L, "e");
-// 						lua_pushvalue(L, -3);
-// 						lua_rawset(L, -3);
-
-// 						lua_pushliteral(L, "x");
-// 						lua_pushnumber(L, size);
-// 						lua_rawset(L, -3);
-
-// 						lua_pushliteral(L, "w");
-// 						lua_pushnumber(L, h);
-// 						lua_rawset(L, -3);
-
-// 						lua_rawseti(L, -4, id_dduid++); // __dduids
-
-// 						size += h;
-// 					}
-// 					lua_pop(L, 1);
+						DisplayObject *c = userdata_to_DO(__FUNCTION__, L, -1);
+						if (c) {
+							c->setLuaRef(luaL_ref(L, LUA_REGISTRYINDEX));
+							c->translate(size, 0, -1, false);
+							containerAdd(this, c);
+						}
+						lua_pop(L, 1);
+						size += font_h;
+					}
+					lua_pop(L, 1);
 				}
 				// Extra data
 				else if (*(next+1) == '&') {
@@ -361,4 +368,22 @@ vec2 DORText::getLetterPosition(int idx) {
 	if (positions.empty()) return {0, 0};
 	if (idx > positions.size()) idx = positions.size();
 	return positions[idx];
+}
+
+void DORText::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	DORVertexes::render(container, cur_model, cur_color);
+
+	cur_model *= model;
+	cur_color *= color;
+	containerRender(container, cur_model, cur_color);
+}
+
+void DORText::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+	if (!visible) return;
+	DORVertexes::renderZ(container, cur_model, cur_color);
+
+	cur_model *= model;
+	cur_color *= color;
+	containerRenderZ(container, cur_model, cur_color);
 }

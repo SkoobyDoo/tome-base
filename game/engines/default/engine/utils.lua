@@ -933,12 +933,9 @@ getmetatable(tmps).__index.size = function(font, str)
 				local uid = v[2]
 				local e = __uids[uid]
 				if e then
-					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-					if surf then
-						local w, h = surf:getSize()
-						mw = mw + w
-						if h > mh then mh = h end
-					end
+					local w, h = font:lineSkip(), font:lineSkip()
+					mw = mw + w
+					if h > mh then mh = h end
 				end
 			end -- ignore colors and all that
 		elseif type(v) == "string" then
@@ -1002,10 +999,6 @@ end
 
 tstring = {}
 tstring.is_tstring = true
-
-function tstring.is_tstring(x)
-	return type(x) == "table" and x.is_tstring
-end
 
 function tstring:add(...)
 	local v = {...}
@@ -1173,18 +1166,15 @@ function tstring:splitLines(max_width, font, max_lines)
 		elseif tv == "table" and v[1] == "uid" then
 			local e = __uids[v[2]]
 			if e and game.level then
-				local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-				if surf then
-					local w, h = surf:getSize()
-					if cur_size + w < max_width then
-						cur_size = cur_size + w
-						ret[#ret+1] = v
-					else
-						ret[#ret+1] = true
-						ret[#ret+1] = v
-						max_w = math.max(max_w, cur_size)
-						cur_size = w
-					end
+				local w, h = font:lineSkip(), font:lineSkip()
+				if cur_size + w < max_width then
+					cur_size = cur_size + w
+					ret[#ret+1] = v
+				else
+					ret[#ret+1] = true
+					ret[#ret+1] = v
+					max_w = math.max(max_w, cur_size)
+					cur_size = w
 				end
 			end
 		elseif tv == "boolean" then
@@ -1293,12 +1283,9 @@ function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
 			elseif v[1] == "uid" then
 				local e = __uids[v[2]]
 				if e then
-					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-					if surf then
-						local sw = surf:getSize()
-						s:merge(surf, w, 0)
-						w = w + sw
-					end
+					local sw = font:lineSkip()
+					s:merge(surf, w, 0)
+					w = w + sw
 				end
 			end
 		end
@@ -1362,12 +1349,9 @@ function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_
 			elseif v[1] == "uid" then
 				local e = __uids[v[2]]
 				if e then
-					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
-					if surf then
-						local sw = surf:getSize()
-						s:merge(surf, x + w, y + h)
-						w = w + sw
-					end
+					local sw = font:lineSkip()
+					s:merge(surf, x + w, y + h)
+					w = w + sw
 				end
 			end
 		end
@@ -1792,21 +1776,15 @@ function util.minBound(i, min, max)
 end
 
 function util.scroll(sel, scroll, max)
-	return util.bound(scroll, sel - max + 1, sel)
+	if sel > scroll + max - 1 then scroll = sel - max + 1 end
+	if sel < scroll then scroll = sel end
+	return scroll
 end
 
 function util.getval(val, ...)
 	if type(val) == "function" then return val(...)
-	elseif type(val) == "table" and not val.is_tstring then return val[rng.range(1, #val)]
+	elseif type(val) == "table" then return val[rng.range(1, #val)]
 	else return val
-	end
-end
-
-function util.getitem(val, index)
-	if type(index) == "function" then
-		return index(val)
-	else
-		return util.getval(val[index], val)
 	end
 end
 

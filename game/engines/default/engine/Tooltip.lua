@@ -67,7 +67,7 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 end
 
 function _M:generate()
-	self.frame = Base:makeFrameDO("ui/tooltip/", nil, nil, self.w, self.h, nil, true)
+	self.frame = Base:makeFrameDO("ui/tooltip/", self.w, self.h, nil, nil, nil, true)
 	self.frame.container:translate(-self.frame.b7.w, -self.frame.b7.h, 0)
 	self.frame.container:color(1, 1, 1, 0.7)
 	self.do_container:add(self.frame.container)

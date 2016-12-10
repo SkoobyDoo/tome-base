@@ -28,7 +28,7 @@ extern "C" {
 #include "utf8proc/utf8proc.h"
 }
 
-class DORText : public DORVertexes{
+class DORText : public DORVertexes, public IContainer{
 private:
 	int font_lua_ref = LUA_NOREF;
 	font_type *font = NULL;
@@ -74,6 +74,9 @@ public:
 
 	void setText(const char *text);
 	void center();
+
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
 
 private:
 	void parseText();
