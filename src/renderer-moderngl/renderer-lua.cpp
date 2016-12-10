@@ -213,6 +213,14 @@ static int gl_renderer_set_name(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_count_draws(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	r->countDraws(lua_toboolean(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_renderer_toscreen(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
@@ -396,6 +404,21 @@ static int gl_vertexes_quad(lua_State *L)
 		x2, y2, u2, v2, 
 		x3, y3, u3, v3, 
 		x4, y4, u4, v4, 
+		r, g, b, a
+	);
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vertexes_quad_pie(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float x2 = lua_tonumber(L, 4);  float y2 = lua_tonumber(L, 5); 
+	float angle = lua_tonumber(L, 6);
+	float r = lua_tonumber(L, 7); float g = lua_tonumber(L, 8); float b = lua_tonumber(L, 9); float a = lua_tonumber(L, 10);
+	v->addQuadPie(
+		x1, y1, x2, y2,
+		angle,
 		r, g, b, a
 	);
 	lua_pushvalue(L, 1);
@@ -719,6 +742,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"clear", gl_container_clear},
 	{"cutoff", gl_renderer_cutoff},
 	{"setRendererName", gl_renderer_set_name},
+	{"countDraws", gl_renderer_count_draws},
 	{"toScreen", gl_renderer_toscreen},
 	{NULL, NULL},
 };
@@ -775,6 +799,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"__gc", gl_vertexes_free},
 	{"reserve", gl_vertexes_reserve},
 	{"quad", gl_vertexes_quad},
+	{"quadPie", gl_vertexes_quad_pie},
 	{"texture", gl_vertexes_texture},
 	{"shader", gl_vertexes_shader},
 	{"clear", gl_vertexes_clear},

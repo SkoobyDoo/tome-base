@@ -99,6 +99,38 @@ function colors.hex1alphaunpack(hex)
 	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255, tonumber("0x"..hex:sub(7, 8)) / 255
 end
 
+--- Tries to detect the format (.r.g.b or []) and the range (255 or 1) and normalize it to a [] format of range 1
+-- Note that if you try to use a very light grey like 1,1,1 in a 255 color range, it'll be confused for bright white
+-- @return r
+-- @return g
+-- @return b
+-- @return a
+function colors.smart1unpack(color)
+	if color[1] then
+		if math.max(color[1], color[2], color[3]) > 1 then
+			return color[1] / 255, color[2] / 255, color[3] / 255, (color[4] or 255) / 255
+		else
+			return color[1], color[2], color[3], color[4] or 1
+		end
+	elseif color.r then
+		if math.max(color.r, color.g, color.b) > 1 then
+			return color.r / 255, color.g / 255, color.b / 255, (color.a or 255) / 255
+		else
+			return color.r, color.g, color.b, color.a or 1
+		end
+	else
+		table.print(color)
+		error("Color is neither .r.g.b or [] format")
+	end
+end
+
+--- Tries to detect the format (.r.g.b or []) and the range (255 or 1) and normalize it to a [] format of range 1
+-- Note that if you try to use a very light grey like 1,1,1 in a 255 color range, it'll be confused for bright white
+-- @return {r, g, b, a}
+function colors.smart1(color)
+	return {colors.smart1unpack(color)}
+end
+
 defineColor('BLACK', 0, 0, 0)
 defineColor('WHITE', 0xFF, 0xFF, 0xFF)
 defineColor('SLATE', 0x8C, 0x8C, 0x8C)

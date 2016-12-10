@@ -27,7 +27,7 @@ module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)
 	if t.tex then
-		self.tex = t.tex
+		error("ui.Image t.tex unsupported")
 	else
 		self.file = tostring(assert(t.file, "no image file"))
 		self.image = Tiles:loadImage(self.file)
@@ -49,20 +49,11 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
-	if self.image then self.item = self.tex or {self.image:glTexture(Tiles.sharp_scaling)} end
-end
-
-function _M:display(x, y)
-	if not self.item then return end
-
-	if self.back_color then
-		core.display.drawQuad(x, y, self.w, self.h, unpack(self.back_color))
+	if self.image then
+		if self.shadow then self.do_container:add(core.renderer.fromSurface(self.image, 5, 5, self.w, self.h, false, 0, 0, 0, 0.5)) end
+		if self.back_color then self.do_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.back_color))) end
+		self.do_container:add(core.renderer.fromSurface(self.image, 0, 0, self.w, self.h, false, 1, 1, 1, 1))
 	end
-
-	if self.shadow then
-		self.item[1]:toScreenFull(x + 5, y + 5, self.w, self.h, self.item[2] * self.w / self.iw, self.item[3] * self.h / self.ih, 0, 0, 0, 0.5)
-	end
-
-	self.item[1]:toScreenFull(x, y, self.w, self.h, self.item[2] * self.w / self.iw, self.item[3] * self.h / self.ih)
 end

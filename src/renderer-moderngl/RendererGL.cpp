@@ -291,6 +291,10 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (displays.empty()) return;
 	// printf("Displaying renderer %s\n", getRendererName());
 
+	if (count_draws) {
+		nb_draws = 0;
+	}
+
 	cur_model = cur_model * model; // This is .. undeeded ..??
 	mat4 mvp = View::getCurrent()->view * cur_model;
 	cur_color = cur_color * color;
@@ -387,5 +391,9 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 
 	if (cutting) {
 		glDisable(GL_SCISSOR_TEST);
+	}
+
+	if (count_draws) {
+		printf("RendererGL<%s> drew in %d calls\n", renderer_name, nb_draws);
 	}
 }

@@ -73,6 +73,8 @@ protected:
 	int nb_quads = 0;
 	bool manual_dl_management = false;
 
+	bool count_draws = false;
+
 	bool cutting = false;
 	vec4 cutpos1;
 	vec4 cutpos2;
@@ -97,6 +99,7 @@ public:
 	}
 
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
+	void countDraws(bool count) { count_draws = count; };
 	void zSorting(bool sort) { zsort = sort; };
 	void sortedToDL();
 	void update();

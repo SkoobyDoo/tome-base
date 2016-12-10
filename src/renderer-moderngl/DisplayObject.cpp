@@ -228,6 +228,112 @@ int DORVertexes::addQuad(
 	return 0;
 }
 
+int DORVertexes::addQuadPart(
+		float x1, float y1, float w, float h,
+		float angle,
+		float r, float g, float b, float a
+	) {
+	if (angle < 0) angle = 0;
+	else if (angle > 360) angle = 360;
+	if (angle == 360) return 0;
+
+	if (vertices.size() + 10 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
+
+	float x2 = w + x1;
+	float y2 = h + y1;
+	float mw = w / 2, mh = h / 2;
+	float midx = x1 + mw, midy = y1 + mh;
+
+	float scale = cos(M_PI / 4);
+
+	int quadrant = angle / 45;
+	float baseangle = (angle + 90) * M_PI / 180;
+	// Now we project the circle coordinates on a bounding square thanks to scale
+	float c = -cos(baseangle) / scale * mw;
+	float s = -sin(baseangle) / scale * mh;
+
+	if (quadrant >= 0 && quadrant < 2) {
+		// Cover all the left
+		vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
+		vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
+		vertices.push_back({{midx, y2, 0, 1}, {1, 1}, {r, g, b, a}});
+		vertices.push_back({{x1, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		// Cover bottom right
+		vertices.push_back({{midx, midy, 0, 1}, {0, 0}, {r, g, b, a}});
+		vertices.push_back({{x2, midy, 0, 1}, {1, 0}, {r, g, b, a}});
+		vertices.push_back({{x2, y2, 0, 1}, {1, 1}, {r, g, b, a}});
+		vertices.push_back({{midx, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		// Cover top right
+		if (quadrant == 0) {
+			vertices.push_back({{midx + c, y1, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{x2, y1, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{x2, midy, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{midx, midy, 0, 1}, {0, 1}, {r, g, b, a}});
+		} else {
+			vertices.push_back({{x2, midy + s, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{x2, midy + s, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{x2, midy, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{midx, midy, 0, 1}, {0, 1}, {r, g, b, a}});
+		}
+	}
+	else if (quadrant >= 2 && quadrant < 4) {
+		// Cover all the left
+		vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
+		vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
+		vertices.push_back({{midx, y2, 0, 1}, {1, 1}, {r, g, b, a}});
+		vertices.push_back({{x1, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		// Cover bottom right
+		if (quadrant == 2) {
+			vertices.push_back({{midx, midy, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{x2, midy + s, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{x2, y2, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{midx, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		} else {
+			vertices.push_back({{midx, midy, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{midx + c, y2, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{midx + c, y2, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{midx, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+
+		}
+	}
+	else if (quadrant >= 4 && quadrant < 6) {
+		// Cover top left
+		vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
+		vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
+		vertices.push_back({{midx, midy, 0, 1}, {1, 1}, {r, g, b, a}});
+		vertices.push_back({{x1, midy, 0, 1}, {0, 1}, {r, g, b, a}});
+		// Cover bottom right
+		if (quadrant == 4) {
+			vertices.push_back({{x1, midy, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{midx, midy, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{midx + c, y2, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{x1, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		} else {
+			vertices.push_back({{x1, midy, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{midx, midy, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{x1, midy + s, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{x1, midy + s, 0, 1}, {0, 1}, {r, g, b, a}});
+		}
+	}
+	else if (quadrant >= 6 && quadrant < 8) {
+		// Cover top left
+		if (quadrant == 6) {
+			vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{midx, midy, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{x1, midy + s, 0, 1}, {0, 1}, {r, g, b, a}});
+		} else {
+			vertices.push_back({{midx + c, y1, 0, 1}, {0, 0}, {r, g, b, a}});
+			vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
+			vertices.push_back({{midx, midy, 0, 1}, {1, 1}, {r, g, b, a}});
+			vertices.push_back({{midx + c, y1, 0, 1}, {0, 1}, {r, g, b, a}});
+		}
+	}
+
+	setChanged();
+	return 0;
+}
+
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	cur_model *= model;

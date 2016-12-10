@@ -262,11 +262,19 @@ function _M:updateDefaultShader()
 end
 
 function _M:getMapDO()
-	return self._do_map
+	if forcenew then
+		return self._map:getMapDO()
+	else
+		return self._do_map
+	end
 end
 
-function _M:getMinimapDO()
-	return self._do_mm
+function _M:getMinimapDO(forcenew)
+	if forcenew then
+		return self._map:getMinimapDO()
+	else
+		return self._do_mm
+	end
 end
 
 function _M:makeCMap()

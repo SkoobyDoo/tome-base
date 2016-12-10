@@ -1344,6 +1344,7 @@ function _M:updateZoneName()
 		end
 	end
 	self.zone_name = name
+	self.old_zone_name = self.zone_name -- For compatibility
 	print("Updating zone name", name)
 end
 

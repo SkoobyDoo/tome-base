@@ -79,6 +79,8 @@ function _M:init(mm_mode)
 
 	end, nil, nil, true)
 
+	mc.do_container:add(game.level.map:getMinimapDO(true))
+
 	self:loadUI(uis)
 	self.key:addBind("EXIT", function() game:unregisterDialog(self) end)
 	self.key:addBind("ACCEPT", function() game:unregisterDialog(self) end)

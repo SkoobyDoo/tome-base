@@ -42,9 +42,17 @@ function DOVertexes:debugQuad()
 		100, 164, 0, 1,
 		1, 1, 1, 1
 	)
+	return self
 end
 
 local white = core.display.loadImage("/data/gfx/white.png"):glTexture()
+core.renderer.white = white
+
+function DOVertexes:plainColorQuad()
+	self:texture(white)
+	return self
+end
+
 function core.renderer.redPoint()
 	local v = core.renderer.vertexes()
 	local x1, x2 = -4, 4
@@ -57,6 +65,23 @@ function core.renderer.redPoint()
 		x2, y2, u2, v2,
 		x1, y2, u1, v2,
 		1, 0, 0, 1
+	)
+	v:texture(white)
+	return v
+end
+
+function core.renderer.colorQuad(x, y, w, h, r, g, b, a)
+	local v = core.renderer.vertexes()
+	local x1, x2 = x, x + w
+	local y1, y2 = y, y + h
+	local u1, u2 = 0, 1
+	local v1, v2 = 0, 1
+	v:quad(
+		x1, y1, u1, v1,
+		x2, y1, u2, v1,
+		x2, y2, u2, v2,
+		x1, y2, u1, v2,
+		r, g, b, a
 	)
 	v:texture(white)
 	return v

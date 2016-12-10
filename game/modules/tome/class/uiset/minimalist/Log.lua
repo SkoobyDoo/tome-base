@@ -65,10 +65,13 @@ function _M:init(minimalist)
 end
 
 function _M:getDefaultGeometry()
+	local th = 52
+	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+
 	local x = 0
 	local w = math.floor(game.w / 2)
-	local h = math.floor(game.h / 5)
-	local y = game.h - h
+	local h = math.floor(game.h / 5) - th
+	local y = game.h - h - th
 	return x, y, w, h
 end
 
@@ -85,13 +88,4 @@ function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
 	self.logdisplay:resize(0, 0, w, h)
 	self:getDO():translate(self.x, self.y, 0)
-end
-
-function _M:getPlace()
-	local w, h = core.display.size()
-
-	local th = 52
-	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
-	local hup = h - th
-	return "gamelog", {x=0, y=0, scale=1, a=0}
 end

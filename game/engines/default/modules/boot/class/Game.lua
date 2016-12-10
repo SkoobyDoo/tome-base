@@ -529,28 +529,22 @@ function _M:display(nb_keyframes)
 	self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1)
 end
 
---[[
-local renderer = core.renderer.renderer():translate(100, 100)
-local srenderer = core.renderer.renderer()
+-- [[
+local renderer = core.renderer.renderer():translate(900, 200)
 renderer:setRendererName("renderer")
-local i = core.renderer.image("/data/gfx/background/tome.png"):scale(0.1, 0.1, 1)
-local i2 = core.renderer.renderer():translate(102.4, 76.8, 0)
-i2:add(core.renderer.image("/data/gfx/background/tome.png"):scale(0.1, 0.1, 1))
+local i = core.renderer.image("/data/gfx/background/tome.png", 0, 0, 200, 200)
+renderer:add(i)
 
-renderer:add(srenderer)
-srenderer:add(i)
-srenderer:add(i2)
+local v = core.renderer.vertexes():plainColorQuad():translate(-300)
+renderer:add(v)
 
--- 
--- renderer:translate(100,100,0)
--- renderer:scale(2,0.7,1)
--- renderer:rotate(0, 0,math.rad(45))
--- renderer:cutoff(450, 400, 125, 200)
--- 
 local nb = 1
 local z = false
 local tween = require "tween"
 function _M:display(nb_keyframes)
+	v:clear()
+	v:quadPart(0, 0, 200, 200, core.game.getTime() / 50, 0, 1, 0.5, 1)
+
 	renderer:toScreen()
 end
 --]]

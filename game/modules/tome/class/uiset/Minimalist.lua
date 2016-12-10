@@ -29,7 +29,7 @@ module(..., package.seeall, class.inherit(UISet, TooltipsData))
 function _M:init()
 	UISet.init(self)
 
-	self.renderer = core.renderer.renderer():zSort(false)
+	self.renderer = core.renderer.renderer():zSort(true)
 	self.minicontainers = {}
 	self.locked = true
 end
@@ -67,6 +67,7 @@ _M.allcontainers = {
 	gamelog = "mod.class.uiset.minimalist.Log",
 	minimap = "mod.class.uiset.minimalist.Minimap",
 	toolbar = "mod.class.uiset.minimalist.Toolbar",
+	hotkeys = "mod.class.uiset.minimalist.Hotkeys",
 }
 
 function _M:activate()
