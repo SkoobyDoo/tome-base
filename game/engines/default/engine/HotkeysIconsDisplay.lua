@@ -95,7 +95,7 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.max_cols = math.floor(self.w / self.frames.w)
 	self.max_rows = math.floor(self.h / self.frames.h)
 
-	self.renderer = core.renderer.renderer():zSort(false):setRendererName("HotkeysRenderer"):countDraws(false)
+	self.renderer = core.renderer.renderer():zSort(false):setRendererName("HotkeysRenderer"):countDraws(true)
 	self.bg_container = core.renderer.container()
 	self.renderer:add(self.bg_container)
 
@@ -170,19 +170,19 @@ function _M:display()
 					display_entity = t.display_entity
 					if a:isTalentCoolingDown(t) then
 						if not a:preUseTalent(t, true, true) then
-							color = {190,190,190}
+							color = {0.745,0.745,0.745,0.4}
 							frame = "disabled"
 						else
 							frame = "cooldown"
-							color = {255,0,0}
+							color = {1,0,0,0.4}
 							angle = 360 * (1 - (a.talents_cd[t.id] / a:getTalentCooldown(t)))
 						end
 						txt = tostring(a:isTalentCoolingDown(t))
 					elseif a:isTalentActive(t.id) then
-						color = {255,255,0}
+						color = {1,1,0,0.4}
 						frame = "sustain"
 					elseif not a:preUseTalent(t, true, true) then
-						color = {190,190,190}
+						color = {0.745,0.745,0.745,0.4}
 						frame = "disabled"
 					end
 				end
@@ -191,7 +191,7 @@ function _M:display()
 				local cnt = 0
 				if o then cnt = o:getNumber() end
 				if cnt == 0 then
-					color = {190,190,190}
+					color = {0.745,0.745,0.745,0.4}
 					frame = "disabled"
 				end
 				display_entity = o
@@ -203,14 +203,14 @@ function _M:display()
 					local t = a:getTalentFromId(o.talent_cooldown)
 					angle = 360
 					if a:isTalentCoolingDown(t) then
-						color = {255,0,0}
+						color = {1,0,0,0.4}
 						angle = 360 * (1 - (a.talents_cd[t.id] / a:getTalentCooldown(t)))
 						frame = "cooldown"
 						txt = tostring(a:isTalentCoolingDown(t))
 					end
 				elseif o and (o.use_talent or o.use_power) then
 					angle = 360 * ((o.power / o.max_power))
-					color = {255,0,0}
+					color = {1,0,0,0.4}
 					local cd = o:getObjectCooldown(a)
 					if cd and cd > 0 then
 						frame = "cooldown"
@@ -226,7 +226,7 @@ function _M:display()
 
 			if color then
 				local cdpart = core.renderer.vertexes():plainColorQuad()
-				cdpart:quadPart(0, 0, self.icon_w, self.icon_h, angle, colors.unpack1(colors.GREEN, 1))
+				cdpart:quadPie(0, 0, self.icon_w, self.icon_h, 0, 0, 1, 1, angle, unpack(color))
 				self.cooldowns_layer:add(cdpart:translate(x, y, 0))
 			end
 

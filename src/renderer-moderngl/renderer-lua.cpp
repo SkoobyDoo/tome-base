@@ -414,10 +414,12 @@ static int gl_vertexes_quad_pie(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
 	float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float x2 = lua_tonumber(L, 4);  float y2 = lua_tonumber(L, 5); 
-	float angle = lua_tonumber(L, 6);
-	float r = lua_tonumber(L, 7); float g = lua_tonumber(L, 8); float b = lua_tonumber(L, 9); float a = lua_tonumber(L, 10);
+	float u1 = lua_tonumber(L, 6);  float v1 = lua_tonumber(L, 7);  float u2 = lua_tonumber(L, 8);  float v2 = lua_tonumber(L, 9); 
+	float angle = lua_tonumber(L, 10);
+	float r = lua_tonumber(L, 11); float g = lua_tonumber(L, 12); float b = lua_tonumber(L, 13); float a = lua_tonumber(L, 14);
 	v->addQuadPie(
 		x1, y1, x2, y2,
+		u1, v1, u2, v2,
 		angle,
 		r, g, b, a
 	);

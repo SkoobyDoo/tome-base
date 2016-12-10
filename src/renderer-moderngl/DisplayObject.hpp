@@ -150,7 +150,8 @@ public:
 	void reserveQuads(int nb) { vertices.reserve(4 * nb); };
 
 	int addQuadPie(
-		float x, float y, float w, float h,
+		float x1, float y1, float x2, float y2,
+		float u1, float v1, float u2, float v2,
 		float angle,
 		float r, float g, float b, float a
 	);

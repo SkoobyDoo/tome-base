@@ -228,8 +228,9 @@ int DORVertexes::addQuad(
 	return 0;
 }
 
-int DORVertexes::addQuadPart(
-		float x1, float y1, float w, float h,
+int DORVertexes::addQuadPie(
+		float x1, float y1, float x2, float y2,
+		float u1, float v1, float u2, float v2,
 		float angle,
 		float r, float g, float b, float a
 	) {
@@ -239,10 +240,15 @@ int DORVertexes::addQuadPart(
 
 	if (vertices.size() + 10 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
 
-	float x2 = w + x1;
-	float y2 = h + y1;
+	float w = x2 - x1;
+	float h = y2 - y1;
 	float mw = w / 2, mh = h / 2;
-	float midx = x1 + mw, midy = y1 + mh;
+	float xmid = x1 + mw, ymid = y1 + mh;
+
+	float uw = u2 - u1;
+	float vh = v2 - v1;
+	float mu = uw / 2, mv = vh / 2;
+	float umid = u1 + mu, vmid = v1 + mv;
 
 	float scale = cos(M_PI / 4);
 
@@ -251,82 +257,84 @@ int DORVertexes::addQuadPart(
 	// Now we project the circle coordinates on a bounding square thanks to scale
 	float c = -cos(baseangle) / scale * mw;
 	float s = -sin(baseangle) / scale * mh;
+	float cu = -cos(baseangle) / scale * mu;
+	float sv = -sin(baseangle) / scale * mv;
 
 	if (quadrant >= 0 && quadrant < 2) {
 		// Cover all the left
-		vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
-		vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
-		vertices.push_back({{midx, y2, 0, 1}, {1, 1}, {r, g, b, a}});
-		vertices.push_back({{x1, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
+		vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
 		// Cover bottom right
-		vertices.push_back({{midx, midy, 0, 1}, {0, 0}, {r, g, b, a}});
-		vertices.push_back({{x2, midy, 0, 1}, {1, 0}, {r, g, b, a}});
-		vertices.push_back({{x2, y2, 0, 1}, {1, 1}, {r, g, b, a}});
-		vertices.push_back({{midx, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+		vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
+		vertices.push_back({{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}});
+		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
 		// Cover top right
 		if (quadrant == 0) {
-			vertices.push_back({{midx + c, y1, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{x2, y1, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{x2, midy, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{midx, midy, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{xmid + c, y1, 0, 1}, {umid +cu, v1}, {r, g, b, a}});
+			vertices.push_back({{x2, y1, 0, 1}, {u2, v1}, {r, g, b, a}});
+			vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
 		} else {
-			vertices.push_back({{x2, midy + s, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{x2, midy + s, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{x2, midy, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{midx, midy, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
+			vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
+			vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
 		}
 	}
 	else if (quadrant >= 2 && quadrant < 4) {
 		// Cover all the left
-		vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
-		vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
-		vertices.push_back({{midx, y2, 0, 1}, {1, 1}, {r, g, b, a}});
-		vertices.push_back({{x1, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+		vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
+		vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
 		// Cover bottom right
 		if (quadrant == 2) {
-			vertices.push_back({{midx, midy, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{x2, midy + s, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{x2, y2, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{midx, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+			vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
+			vertices.push_back({{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}});
+			vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
 		} else {
-			vertices.push_back({{midx, midy, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{midx + c, y2, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{midx + c, y2, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{midx, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+			vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
+			vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
+			vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
 
 		}
 	}
 	else if (quadrant >= 4 && quadrant < 6) {
 		// Cover top left
-		vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
-		vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
-		vertices.push_back({{midx, midy, 0, 1}, {1, 1}, {r, g, b, a}});
-		vertices.push_back({{x1, midy, 0, 1}, {0, 1}, {r, g, b, a}});
+		vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+		vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
 		// Cover bottom right
 		if (quadrant == 4) {
-			vertices.push_back({{x1, midy, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{midx, midy, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{midx + c, y2, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{x1, y2, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+			vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
+			vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
 		} else {
-			vertices.push_back({{x1, midy, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{midx, midy, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{x1, midy + s, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{x1, midy + s, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+			vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
+			vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
 		}
 	}
 	else if (quadrant >= 6 && quadrant < 8) {
 		// Cover top left
 		if (quadrant == 6) {
-			vertices.push_back({{x1, y1, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{midx, midy, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{x1, midy + s, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+			vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+			vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
 		} else {
-			vertices.push_back({{midx + c, y1, 0, 1}, {0, 0}, {r, g, b, a}});
-			vertices.push_back({{midx, y1, 0, 1}, {1, 0}, {r, g, b, a}});
-			vertices.push_back({{midx, midy, 0, 1}, {1, 1}, {r, g, b, a}});
-			vertices.push_back({{midx + c, y1, 0, 1}, {0, 1}, {r, g, b, a}});
+			vertices.push_back({{xmid + c, y1, 0, 1}, {umid + cu, v1}, {r, g, b, a}});
+			vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+			vertices.push_back({{xmid + c, y1, 0, 1}, {umid + cu, v1}, {r, g, b, a}});
 		}
 	}
 
