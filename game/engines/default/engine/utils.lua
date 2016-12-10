@@ -1788,6 +1788,14 @@ function util.getval(val, ...)
 	end
 end
 
+function util.getitem(val, index)
+	if type(index) == "function" then
+		return index(val)
+	else
+		return util.getval(val[index], val)
+	end
+end
+
 function fs.reset()
 	local list = fs.getSearchPath(true)
 	for i, m in ipairs(list) do

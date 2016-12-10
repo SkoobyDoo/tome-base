@@ -272,8 +272,8 @@ function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 			f.b6 = base.fct(base.base.."6.png")
 		end
 		local cx, cy = 0,0
-		if not w then w = iw + f.b4.w + f.b6.w cx = -f.b4.w end
-		if not h then h = ih + f.b8.h + f.b2.h cy = -f.b8.h end
+		if not w then w = iw + f.b4.w + f.b6.w end
+		if not h then h = ih + f.b8.h + f.b2.h end
 
 		if center then cx, cy = -math.floor(w / 2), -math.floor(h / 2) end
 		f.cx, f.cy = cx, cy

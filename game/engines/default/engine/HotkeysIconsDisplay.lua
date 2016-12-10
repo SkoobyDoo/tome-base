@@ -95,7 +95,7 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.max_cols = math.floor(self.w / self.frames.w)
 	self.max_rows = math.floor(self.h / self.frames.h)
 
-	self.renderer = core.renderer.renderer():zSort(false):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(true)
+	self.renderer = core.renderer.renderer():zSort(false):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(false)
 	self.bg_container = core.renderer.container()
 	self.renderer:add(self.bg_container)
 
