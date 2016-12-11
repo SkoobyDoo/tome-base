@@ -27,7 +27,7 @@ local Separator = require "engine.ui.Separator"
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(l, w, force_height)
-	self.title_shadow = false
+	-- self.title_shadow = false
 	self.color = l.text_color or {r=0x3a, g=0x35, b=0x33}
 
 	self.ui = l.special_ui or "parchment"

@@ -529,7 +529,7 @@ function _M:display(nb_keyframes)
 	self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1)
 end
 
--- [[
+--[[
 local renderer = core.renderer.renderer():translate(200, 200)
 renderer:setRendererName("renderer")
 -- local i = core.renderer.image("/data/gfx/background/tome.png", 0, 0, 2000, 2000)
@@ -537,7 +537,6 @@ local i = core.renderer.colorQuad(0, 0, 2000, 2000, colors.unpack1(colors.RED, 1
 renderer:add(i)
 
 local f = core.display.newFont("/data/font/Salsa-Regular.ttf", 32)
-f:makeAtlas()
 local v = core.renderer.colorQuad(0, 0, 512, 512, 1,1,1,1)
 v:textureFontAtlas(f)
 renderer:add(v:translate(200, 200))

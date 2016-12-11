@@ -36,7 +36,6 @@
 #include "physfs.h"
 #include "physfsrwops.h"
 #include "core_lua.h"
-#include "font.h"
 #include "getself.h"
 #include "music.h"
 #include "serial.h"

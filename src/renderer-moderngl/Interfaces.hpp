@@ -24,7 +24,6 @@
 extern "C" {
 #include "tgl.h"
 #include "useshader.h"
-#include "font.h"
 }
 
 #include <vector>

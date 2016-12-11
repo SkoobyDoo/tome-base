@@ -20,6 +20,7 @@
 */
 
 #include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/TextObject.hpp"
 #include "renderer-moderngl/TileMap.hpp"
 #include "renderer-moderngl/Particles.hpp"
 #include "spriter/Spriter.hpp"
@@ -449,7 +450,7 @@ static int gl_vertexes_font_atlas_texture(lua_State *L)
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
 	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 2);
 	lua_pushvalue(L, 2);
-	v->setTexture(f->atlas_tex, luaL_ref(L, LUA_REGISTRYINDEX));
+	v->setTexture(f->atlas->id, luaL_ref(L, LUA_REGISTRYINDEX));
 
 	lua_pushvalue(L, 1);
 	return 1;
@@ -524,6 +525,15 @@ static int gl_text_max_lines(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
 	v->setMaxLines(lua_tonumber(L, 2));
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_text_shadow(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	v->setShadow(lua_tonumber(L, 2), lua_tonumber(L, 3), {lua_tonumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7)});
 
 	lua_pushvalue(L, 1);
 	return 1;
@@ -735,6 +745,13 @@ static int gl_dos_count(lua_State *L)
 	return 1;
 }
 
+static int gl_set_default_text_shader(lua_State *L) 
+{
+	shader_type *shader = (shader_type*)lua_touserdata(L, 1);
+	DORText::defaultShader(shader);
+	return 0;
+}
+
 /******************************************************************
  ** Lua declarations
  ******************************************************************/
@@ -843,6 +860,7 @@ static const struct luaL_Reg gl_text_reg[] =
 {
 	{"__gc", gl_text_free},
 	{"text", gl_text_set},
+	{"shadow", gl_text_shadow},
 	{"textColor", gl_text_text_color},
 	{"getStats", gl_text_stats},
 	{"maxWidth", gl_text_max_width},
@@ -978,6 +996,7 @@ const luaL_Reg rendererlib[] = {
 	{"callback", gl_callback_new},
 	{"spriter", gl_spriter_new},
 	{"countDOs", gl_dos_count},
+	{"defaultTextShader", gl_set_default_text_shader},
 	{NULL, NULL}
 };
 

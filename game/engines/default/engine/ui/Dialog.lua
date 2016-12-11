@@ -553,6 +553,7 @@ function _M:updateTitle(title)
 	end
 
 	self.font_bold:setStyle("bold")
+	if self.title_shadow then self.title_do:shadow(self.font_bold_h / 10, self.font_bold_h / 10, 0, 0, 0, 0.7) end
 	self.title_do:text(title)
 	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, 10)
 	self.font_bold:setStyle("normal")

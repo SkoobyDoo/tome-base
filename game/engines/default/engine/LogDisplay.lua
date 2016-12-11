@@ -31,7 +31,8 @@ module(..., package.seeall, class.inherit(engine.ui.Base))
 function _M:init(x, y, w, h, max, fontname, fontsize, color)
 	color = color or {255,255,255}
 	self.color = {color[1] / 255, color[2] / 255, color[3] / 255, 1}
-	self.font = core.display.newFont(fontname or "/data/font/DroidSans.ttf", fontsize or 12)
+	self.fontsize = fontsize or 12
+	self.font = core.display.newFont(fontname or "/data/font/DroidSans.ttf", self.fontsize)
 	self.font_h = self.font:lineSkip()
 	self.log = {}
 	getmetatable(self).__call = _M.call
@@ -249,6 +250,7 @@ function _M:update()
 			text = self.cache[tid]
 		else
 			text = core.renderer.text(self.font)
+			if self.shadow then text:shadow(self.fontsize / 10, self.fontsize / 10, 0, 0, 0, 0.7) end
 			text:textColor(unpack(self.color))
 			text:text(tstr)
 			self.cache[tid] = text

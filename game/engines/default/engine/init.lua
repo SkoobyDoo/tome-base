@@ -158,6 +158,7 @@ if core.shader.active() then
 	local Shader = require "engine.Shader"
 	local default = Shader.new("default/gl")
 	if default.shad then default.shad:setDefault() end
+	Shader:setDefault("text", "default/text")
 end
 
 -- Webcore local request resolver

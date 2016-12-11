@@ -23,13 +23,12 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 #include <string.h>
-extern "C" {
-#include "font.h"
-#include "utf8proc/utf8proc.h"
-}
+#include "font.hpp"
 
 class DORText : public DORVertexes{
 private:
+	static shader_type *default_shader;
+
 	DORContainer entities_container;
 
 	int font_lua_ref = LUA_NOREF;
@@ -41,6 +40,10 @@ private:
 	int max_lines = 999999;
 	bool no_linefeed = false;
 	vector<vec2> positions;
+	uint32_t last_glyph = 0;
+
+	float shadow_x = 0, shadow_y = 0;
+	vec4 shadow_color;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -49,11 +52,14 @@ public:
 	int w = 0;
 	int h = 0;
 
+	static void defaultShader(shader_type *s) { default_shader = s; };
+
 	DORText() {
 		text = (char*)malloc(1);
 		text[0] = '\0';
 		font_color = {1, 1, 1, 1};
 		entities_container.setParent(this);
+		if (default_shader) setShader(default_shader);
 	};
 	virtual ~DORText();
 	DO_STANDARD_CLONE_METHOD(DORText);
@@ -74,6 +80,8 @@ public:
 
 	void setText(const char *text);
 	void center();
+
+	void setShadow(float offx, float offy, vec4 color) { shadow_x = offx; shadow_y = offy; shadow_color = color; };
 
 	virtual void clear();
 

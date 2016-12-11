@@ -272,10 +272,16 @@ end
 default = {}
 
 function _M:setDefault(kind, name, args)
-	default[kind] = _M.new(name, args)
+	local shad = _M.new(name, args)
+	if not shad.shad then return end
+	
+	if kind == "text" then core.renderer.defaultTextShader(shad.shad) end
+	default[kind] = shad
 end
 
-
+function _M:getDefault(kind)
+	return default[kind]
+end
 
 ----------------------------------------------------------------------------
 -- Shaders rewriting

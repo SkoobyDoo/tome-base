@@ -27,9 +27,13 @@ extern "C" {
 #include "physfs.h"
 #include "physfsrwops.h"
 #include "main.h"
+#include "utf8proc/utf8proc.h"
 }
 
 #include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/TextObject.hpp"
+
+shader_type *DORText::default_shader = NULL;
 
 void DORText::cloneInto(DisplayObject* _into) {
 	DORVertexes::cloneInto(_into);
@@ -60,20 +64,38 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 		str += off;
 		len -= off;
 
-		if (c > 0 && c < MAX_ATLAS_DATA) {
-			font_atlas_data_style *d = &font->atlas_data[c].data[style];
-			if (!d->w) font_add_atlas(font, c, style);
-			if (d->w) {
-				positions.push_back({x, y});
-				addQuad(
-					d->w * italic + bx + x,		y,		d->tx1, d->ty1,
-					d->w * italic + bx + x + d->w,	y,		d->tx2, d->ty1,
-					bx + x + d->w,			y + d->h,	d->tx2, d->ty2,
-					bx + x,				y + d->h,	d->tx1, d->ty2,
-					r, g, b, a
-				);
-				x += d->w;
+		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
+		if (d) {
+			if (last_glyph) {
+				x += texture_glyph_get_kerning(d, last_glyph) * font->scale;
 			}
+			positions.push_back({x, y});
+			last_glyph = c;
+			
+			float x0  = bx + x + d->offset_x * font->scale;
+			float x1  = x0 + d->width * font->scale;
+			float ydec = d->height * font->scale - d->offset_y * font->scale;
+			float y0  = by + font->font->height * font->scale + ydec;
+			float y1  = y0 - d->height * font->scale;
+
+			if (shadow_x || shadow_y) {
+				addQuad(
+					shadow_x+x0, shadow_y+y0,		d->s0, d->t1,
+					shadow_x+x1, shadow_y+y0,		d->s1, d->t1,
+					shadow_x+x1, shadow_y+y1,		d->s1, d->t0,
+					shadow_x+x0, shadow_y+y1,		d->s0, d->t0,
+					shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a 
+				);
+			}
+
+			addQuad(
+				x0, y0,		d->s0, d->t1,
+				x1, y0,		d->s1, d->t1,
+				x1, y1,		d->s1, d->t0,
+				x0, y1,		d->s0, d->t0,
+				r, g, b, a
+			);
+			x += d->advance_x * font->scale;
 		}
 	}
 	return x;
@@ -82,21 +104,20 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 	int x = 0, y = 0;
 	ssize_t off = 1;
-	int32_t c;
-	float italic = 0;
-	if (style == FONT_STYLE_ITALIC) { style = FONT_STYLE_NORMAL; italic = 0.2; }
+	int32_t c, oldc = 0;
 	while (off > 0) {
 		off = utf8proc_iterate((const uint8_t*)str, len, &c);
 		str += off;
 		len -= off;
 
-		if (c > 0 && c < MAX_ATLAS_DATA) {
-			font_atlas_data_style *d = &font->atlas_data[c].data[style];
-			if (!d->w) font_add_atlas(font, c, style);
-			if (d->w) {
-				x += d->w;
+		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
+		if (d) {
+			if (last_glyph) {
+				x += texture_glyph_get_kerning(d, oldc) * font->scale;
 			}
+			x += d->advance_x * font->scale;
 		}
+		oldc = c;
 	}
 	return x;
 }
@@ -109,7 +130,6 @@ void DORText::parseText() {
 
 	font_type *f = font;
 	if (!f) return;
-	if (!f->atlas) font_make_atlas(f, 0, 0);
 	size_t len = strlen(text);
 	if (!len) return;
 	const char *str = text;
@@ -118,13 +138,12 @@ void DORText::parseText() {
 	int max_width = line_max_width;
 	int bx = 0, by = 0;
 
-	setTexture(f->atlas_tex, LUA_NOREF);
+	setTexture(f->atlas->id, LUA_NOREF);
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	vertices.reserve(len * 4);
 
-	int font_h = TTF_FontHeight(f->font);
-	int id_dduid = 1;
+	int font_h = f->font->height * f->scale;
 	int nb_lines = 1;
 	int id_real_line = 1;
 	char *line_data = NULL;
@@ -137,10 +156,12 @@ void DORText::parseText() {
 	bool force_nl = false;
 	font_style style = FONT_STYLE_NORMAL;
 
-	int fstyle = TTF_GetFontStyle(f->font);
-	if (fstyle & TTF_STYLE_BOLD) style = FONT_STYLE_BOLD;
-	else if (fstyle & TTF_STYLE_ITALIC) style = FONT_STYLE_ITALIC;
-	else if (fstyle & TTF_STYLE_UNDERLINE) style = FONT_STYLE_UNDERLINED;
+	last_glyph = 0;
+
+	// int fstyle = TTF_GetFontStyle(f->font);
+	// if (fstyle & TTF_STYLE_BOLD) style = FONT_STYLE_BOLD;
+	// else if (fstyle & TTF_STYLE_ITALIC) style = FONT_STYLE_ITALIC;
+	// else if (fstyle & TTF_STYLE_UNDERLINE) style = FONT_STYLE_UNDERLINED;
 
 	while (true)
 	{
@@ -164,12 +185,12 @@ void DORText::parseText() {
 			{
 				if (size > max_size) max_size = size;
 				size = 0;
+				last_glyph = 0;
 
 				// Stop?
 				if (nb_lines >= max_lines) break;
 
 				// Push it & reset the surface
-				id_dduid = 1;
 				is_separator = false;
 //				printf("Ending previous line at size %d\n", size);
 				nb_lines++;
@@ -331,7 +352,6 @@ void DORText::parseText() {
 		next++;
 	}
 
-	id_dduid = 1;
 	if (size > max_size) max_size = size;
 
 	this->nb_lines = nb_lines;

@@ -33,6 +33,7 @@ solution "TEngine"
 		includedirs {
 			"/opt/SDL-2.0/include/SDL2",
 			"/usr/include/GL",
+			"/usr/include/freetype2",
 		}
 	end
 	if _OPTIONS.lua == "default" then includedirs{"src/lua"}

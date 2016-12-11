@@ -87,6 +87,8 @@ extern int traceback (lua_State *L);
 extern void physfs_reset_dir_allowed(lua_State *L);
 extern bool physfs_check_allow_path(lua_State *L, const char *path);
 
+extern int luaopen_font(lua_State *L);
+
 #ifdef STEAM_TE4
 #include "steam-te4.h"
 #endif
