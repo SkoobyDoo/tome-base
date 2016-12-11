@@ -224,7 +224,13 @@ static int gl_renderer_count_draws(lua_State *L)
 static int gl_renderer_toscreen(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
-	r->toScreenSimple();
+	if (lua_isnumber(L, 2)) {
+		mat4 model = mat4();
+		model = glm::translate(model, glm::vec3(lua_tonumber(L, 2), lua_tonumber(L, 3), 0));
+		r->toScreen(model, {1, 1, 1, 1});
+	} else {
+		r->toScreenSimple();
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }

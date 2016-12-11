@@ -109,6 +109,7 @@ end
 function _M:resize(w, h)
 	self.w = w
 	self.h = h
+	self.do_container:cutoff(0, 0, self.w, self.h)
 	self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
 	self:changeUI(self.uis)
 end

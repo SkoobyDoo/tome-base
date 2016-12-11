@@ -38,12 +38,32 @@ function _M:init(minimalist)
 	minimalist.hotkeys_display = self.hotkeys_display_icons
 
 	local hkframe = self:makeFrameDO("hotkeys/hotkey_", nil, nil, self.w, self.h)
-	self.hotkeys_display_icons.bg_container:add(hkframe.container:translate(-4, -4))
+	self.hotkeys_display_icons.bg_container:add(hkframe.container:translate(-4 - hkframe.b7.w, -4 - hkframe.b7.h))
 
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
-		-- dgdgdgdg
+		if event == "button" and button == "left" and ((game.zone and game.zone.wilderness and not game.player.allow_talents_worldmap) or (game.key ~= game.normal_key)) then return end
+		self.hotkeys_display_icons:onMouse(button, mx, my, event == "button",
+			function(text)
+				text = text:toTString()
+				text:add(true, "---", true, {"font","italic"}, {"color","GOLD"}, "Left click to use", true, "Right click to configure", true, "Press 'm' to setup", {"color","LAST"}, {"font","normal"})
+				game:tooltipDisplayAtMap(game.w, game.h, text)
+			end,
+			function(i, hk)
+				if button == "right" and hk and hk[1] == "talent" then
+					local d = require("mod.dialogs.UseTalents").new(game.player)
+					d:use({talent=hk[2], name=game.player:getTalentFromId(hk[2]).name}, "right")
+					return true
+				elseif button == "right" and hk and hk[1] == "inventory" then
+					Dialog:yesnoPopup("Unbind "..hk[2], "Remove this object from your hotkeys?", function(ret) if ret then
+						for i = 1, 12 * game.player.nb_hotkey_pages do
+							if game.player.hotkey[i] and game.player.hotkey[i][1] == "inventory" and game.player.hotkey[i][2] == hk[2] then game.player.hotkey[i] = nil end
+						end
+					end end)
+					return true
+				end
+			end
+		)
 	end, nil, "hotkeys", true, 1)
-
 end
 
 function _M:getDefaultGeometry()
@@ -69,7 +89,7 @@ end
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
 	self.hotkeys_display_icons:resize(0, 0, w, h)
-	self:getDO():translate(self.x, self.y, 0)
+	self:getDO():translate(self.x, self.y, 100)
 end
 
 function _M:update(nb_keyframes)

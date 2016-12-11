@@ -378,7 +378,7 @@ end
 function table.map(f, source)
 	local result = {}
 	for k, v in pairs(source) do
-		k2, v2 = f(k, v)
+		local k2, v2 = f(k, v)
 		result[k2] = v2
 	end
 	return result

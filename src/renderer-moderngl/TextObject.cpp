@@ -103,7 +103,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 
 void DORText::parseText() {
 	clear();
-	containerClear();
+	entities_container.clear();
 	positions.clear();
 	centered = false;
 
@@ -235,8 +235,8 @@ void DORText::parseText() {
 						DisplayObject *c = userdata_to_DO(__FUNCTION__, L, -1);
 						if (c) {
 							c->setLuaRef(luaL_ref(L, LUA_REGISTRYINDEX));
-							c->translate(size, 0, -1, false);
-							containerAdd(this, c);
+							c->translate(bx + size, by + (nb_lines-1) * font_h, -1, false);
+							entities_container.add(c);
 						}
 						lua_pop(L, 1);
 						size += font_h;
@@ -370,20 +370,24 @@ vec2 DORText::getLetterPosition(int idx) {
 	return positions[idx];
 }
 
+void DORText::clear() {
+	DORVertexes::clear();
+	entities_container.clear();
+}
+
 void DORText::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	DORVertexes::render(container, cur_model, cur_color);
-
-	cur_model *= model;
-	cur_color *= color;
-	containerRender(container, cur_model, cur_color);
+	entities_container.render(container, cur_model, cur_color);
 }
 
 void DORText::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	DORVertexes::renderZ(container, cur_model, cur_color);
-
-	cur_model *= model;
-	cur_color *= color;
-	containerRenderZ(container, cur_model, cur_color);
+	entities_container.renderZ(container, cur_model, cur_color);
 }
+
+DORText::~DORText() {
+	free((void*)text);
+	if (font_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, font_lua_ref);
+};

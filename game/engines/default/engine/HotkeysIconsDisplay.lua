@@ -106,6 +106,10 @@ function _M:resize(x, y, w, h, iw, ih)
 
 	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0, self.w, self.h)) end
 	if self.bg_color then self.bg_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.bg_color))) end
+
+	self.sel_frame = core.renderer.colorQuad(0, 0, self.icon_w, self.icon_h, 0.5, 0.5, 1, 0.313)
+	self.sel_frame:shown(false)
+	self.renderer:add(self.sel_frame)
 end
 
 local page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
@@ -386,6 +390,7 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 			end
 			local oldsel = self.cur_sel
 			self.cur_sel = i
+			if not zone.fake then self.sel_frame:shown(true):translate(zone[1], zone[2], 100) end
 			if button == "left" and not zone.fake then
 				if click then
 					a:activateHotkey(i)
@@ -425,4 +430,5 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 		end
 	end
 	self.cur_sel = nil
+	self.sel_frame:shown(false)
 end

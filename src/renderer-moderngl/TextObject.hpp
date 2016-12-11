@@ -28,8 +28,10 @@ extern "C" {
 #include "utf8proc/utf8proc.h"
 }
 
-class DORText : public DORVertexes, public IContainer{
+class DORText : public DORVertexes{
 private:
+	DORContainer entities_container;
+
 	int font_lua_ref = LUA_NOREF;
 	font_type *font = NULL;
 	vec4 font_color;
@@ -51,11 +53,9 @@ public:
 		text = (char*)malloc(1);
 		text[0] = '\0';
 		font_color = {1, 1, 1, 1};
+		entities_container.setParent(this);
 	};
-	virtual ~DORText() {
-		free((void*)text);
-		if (font_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, font_lua_ref);
-	};
+	virtual ~DORText();
 	DO_STANDARD_CLONE_METHOD(DORText);
 	virtual const char* getKind() { return "DORText"; };
 	
@@ -74,6 +74,8 @@ public:
 
 	void setText(const char *text);
 	void center();
+
+	virtual void clear();
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);

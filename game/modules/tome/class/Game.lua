@@ -150,12 +150,10 @@ function _M:runReal()
 	end)
 
 	-- Create the map scroll text overlay
+	self.caps_scroll = core.renderer.renderer():color(1, 1, 1, 0.7)
 	local lfont = FontPackage:get("bignews", true)
-	lfont:setStyle("bold")
-	local s = core.display.drawStringBlendedNewSurface(lfont, "<Scroll mode, press direction keys to scroll, press again to exit>", unpack(colors.simple(colors.GOLD)))
-	lfont:setStyle("normal")
-	self.caps_scroll = {s:glTexture()}
-	self.caps_scroll.w, self.caps_scroll.h = s:getSize()
+	local txt = core.renderer.text(lfont):text("#GOLD#<Scroll mode, press direction keys to scroll, press again to exit>"):center()
+	self.caps_scroll:add(txt)
 
 	self.inited = true
 
@@ -1668,15 +1666,7 @@ function _M:displayMap(nb_keyframes)
 
 		-- Inform the player that map is in scroll mode
 		if self.scroll_lock_enabled then
-			local w = map.viewport.width * 0.5
-			local h = w * self.caps_scroll.h / self.caps_scroll.w
-			self.caps_scroll[1]:toScreenFull(
-				map.display_x + (map.viewport.width - w) / 2,
-				map.display_y + (map.viewport.height - h) / 2,
-				w, h,
-				self.caps_scroll[2] * w / self.caps_scroll.w, self.caps_scroll[3] * h / self.caps_scroll.h,
-				1, 1, 1, 0.5
-			)
+			self.caps_scroll:toScreen(game.w / 2, game.h / 2)
 		end
 	end
 end
