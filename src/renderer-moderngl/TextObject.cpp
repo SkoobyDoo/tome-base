@@ -80,8 +80,8 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 
 			if (shadow_x || shadow_y) {
 				addQuad(
-					shadow_x+x0, shadow_y+y0,		d->s0, d->t1,
-					shadow_x+x1, shadow_y+y0,		d->s1, d->t1,
+					shadow_x+x0 - d->advance_x * font->scale * italic, shadow_y+y0,		d->s0, d->t1,
+					shadow_x+x1 - d->advance_x * font->scale * italic, shadow_y+y0,		d->s1, d->t1,
 					shadow_x+x1, shadow_y+y1,		d->s1, d->t0,
 					shadow_x+x0, shadow_y+y1,		d->s0, d->t0,
 					shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a 
@@ -89,8 +89,8 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			}
 
 			addQuad(
-				x0, y0,		d->s0, d->t1,
-				x1, y0,		d->s1, d->t1,
+				x0 - d->advance_x * font->scale * italic, y0,		d->s0, d->t1,
+				x1 - d->advance_x * font->scale * italic, y0,		d->s1, d->t1,
 				x1, y1,		d->s1, d->t0,
 				x0, y1,		d->s0, d->t0,
 				r, g, b, a
