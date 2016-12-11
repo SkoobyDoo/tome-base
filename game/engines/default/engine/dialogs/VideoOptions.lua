@@ -109,16 +109,6 @@ function _M:generateList()
 		end))
 	end,}
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates antialiased texts.\nTexts will look nicer but it can be slower on some computers.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}
-	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Antialiased texts#WHITE##{normal}#", status=function(item)
-		return tostring(core.display.getTextBlended() and "enabled" or "disabled")
-	end, fct=function(item)
-		local state = not core.display.getTextBlended()
-		core.display.setTextBlended(state)
-		game:saveSettings("aa_text", ("aa_text = %s\n"):format(tostring(state)))
-		self.c_list:drawItem(item)
-	end,}
-
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Apply a global scaling to all fonts.\nApplies after restarting the game"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Font Scale#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.font_scale).."%"

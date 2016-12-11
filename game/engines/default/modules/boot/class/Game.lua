@@ -529,26 +529,23 @@ function _M:display(nb_keyframes)
 	self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1)
 end
 
---[[
-local renderer = core.renderer.renderer():translate(900, 200)
+-- [[
+local renderer = core.renderer.renderer():translate(200, 200)
 renderer:setRendererName("renderer")
-local i = core.renderer.image("/data/gfx/background/tome.png", 0, 0, 200, 200)
+-- local i = core.renderer.image("/data/gfx/background/tome.png", 0, 0, 2000, 2000)
+local i = core.renderer.colorQuad(0, 0, 2000, 2000, colors.unpack1(colors.RED, 1))
 renderer:add(i)
 
-local v = core.renderer.vertexes():plainColorQuad()
-local tex, rw, rh, tw, th, iw, ih = core.display.loadImage("/data/gfx/background/tome.png"):glTexture()
-local u1, u2 = 0, iw / rw
-local v1, v2 = 0, ih / rh
-v:texture(tex)
-renderer:add(v)
+local f = core.display.newFont("/data/font/Salsa-Regular.ttf", 32)
+f:makeAtlas()
+local v = core.renderer.colorQuad(0, 0, 512, 512, 1,1,1,1)
+v:textureFontAtlas(f)
+renderer:add(v:translate(200, 200))
 
 local nb = 1
 local z = false
 local tween = require "tween"
 function _M:display(nb_keyframes)
-	v:clear()
-	v:quadPie(0, 0, 200, 200, u1, v1, u2, v2, (core.game.getTime() / 10) % 360, 0, 1, 0.5, 1)
-
 	renderer:toScreen()
 end
 --]]

@@ -872,18 +872,18 @@ function __get_uid_entity(uid)
 end
 
 local tmps = core.display.newSurface(1, 1)
-getmetatable(tmps).__index.drawColorStringBlended = function(s, font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-	local tstr = str:toTString()
-	return tstr:drawOnSurface(s, limit_w or 99999999, 1, font, x, y, r, g, b, not alpha_from_texture)
-end
-getmetatable(tmps).__index.drawColorString = getmetatable(tmps).__index.drawColorStringBlended
+-- getmetatable(tmps).__index.drawColorStringBlended = function(s, font, str, x, y, r, g, b, alpha_from_texture, limit_w)
+-- 	local tstr = str:toTString()
+-- 	return tstr:drawOnSurface(s, limit_w or 99999999, 1, font, x, y, r, g, b, not alpha_from_texture)
+-- end
+-- getmetatable(tmps).__index.drawColorString = getmetatable(tmps).__index.drawColorStringBlended
 
-getmetatable(tmps).__index.drawColorStringBlendedCentered = function(s, font, str, dx, dy, dw, dh, r, g, b, alpha_from_texture, limit_w)
-	local w, h = font:size(str)
-	local x, y = dx + (dw - w) / 2, dy + (dh - h) / 2
-	s:drawColorStringBlended(font, str, x, y, r, g, b, alpha_from_texture, limit_w)
-end
-getmetatable(tmps).__index.drawColorStringCentered = getmetatable(tmps).__index.drawColorStringBlendedCentered
+-- getmetatable(tmps).__index.drawColorStringBlendedCentered = function(s, font, str, dx, dy, dw, dh, r, g, b, alpha_from_texture, limit_w)
+-- 	local w, h = font:size(str)
+-- 	local x, y = dx + (dw - w) / 2, dy + (dh - h) / 2
+-- 	s:drawColorStringBlended(font, str, x, y, r, g, b, alpha_from_texture, limit_w)
+-- end
+-- getmetatable(tmps).__index.drawColorStringCentered = getmetatable(tmps).__index.drawColorStringBlendedCentered
 
 local font_cache = {}
 local oldNewFont = core.display.newFont
@@ -1244,120 +1244,120 @@ function tstring:isEmpty()
 	return #self == 0
 end
 
-function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
-	local list = no_split and self or self:splitLines(max_width, font)
-	local fh = font:lineSkip()
-	local s = core.display.newSurface(max_width, fh)
-	s:erase(0, 0, 0, 0)
-	local texs = {}
-	local w = 0
-	local r, g, b = r or 255, g or 255, b or 255
-	local oldr, oldg, oldb = r, g, b
-	local v, tv
-	for i = 1, #list do
-		v = list[i]
-		tv = type(v)
-		if tv == "string" then
-			s:drawStringBlended(font, v, w, 0, r, g, b, true)
-			w = w + fontoldsize(font, v)
-		elseif tv == "boolean" then
-			w = 0
-			local dat = {w=max_width, h=fh}
-			dat._tex, dat._tex_w, dat._tex_h = s:glTexture()
-			texs[#texs+1] = dat
-			s:erase(0, 0, 0, 0)
-		else
-			if v[1] == "color" and v[2] == "LAST" then
-				r, g, b = oldr, oldg, oldb
-			elseif v[1] == "color" and not v[3] then
-				oldr, oldg, oldb = r, g, b
-				r, g, b = unpack(colors.simple(colors[v[2]] or {255,255,255}))
-			elseif v[1] == "color" then
-				oldr, oldg, oldb = r, g, b
-				r, g, b = v[2], v[3], v[4]
-			elseif v[1] == "font" then
-				font:setStyle(v[2])
-				fstyle = v[2]
-			elseif v[1] == "extra" then
-				--
-			elseif v[1] == "uid" then
-				local e = __uids[v[2]]
-				if e then
-					local sw = font:lineSkip()
-					s:merge(surf, w, 0)
-					w = w + sw
-				end
-			end
-		end
-	end
+-- function tstring:makeLineTextures(max_width, font, no_split, r, g, b)
+-- 	local list = no_split and self or self:splitLines(max_width, font)
+-- 	local fh = font:lineSkip()
+-- 	local s = core.display.newSurface(max_width, fh)
+-- 	s:erase(0, 0, 0, 0)
+-- 	local texs = {}
+-- 	local w = 0
+-- 	local r, g, b = r or 255, g or 255, b or 255
+-- 	local oldr, oldg, oldb = r, g, b
+-- 	local v, tv
+-- 	for i = 1, #list do
+-- 		v = list[i]
+-- 		tv = type(v)
+-- 		if tv == "string" then
+-- 			s:drawStringBlended(font, v, w, 0, r, g, b, true)
+-- 			w = w + fontoldsize(font, v)
+-- 		elseif tv == "boolean" then
+-- 			w = 0
+-- 			local dat = {w=max_width, h=fh}
+-- 			dat._tex, dat._tex_w, dat._tex_h = s:glTexture()
+-- 			texs[#texs+1] = dat
+-- 			s:erase(0, 0, 0, 0)
+-- 		else
+-- 			if v[1] == "color" and v[2] == "LAST" then
+-- 				r, g, b = oldr, oldg, oldb
+-- 			elseif v[1] == "color" and not v[3] then
+-- 				oldr, oldg, oldb = r, g, b
+-- 				r, g, b = unpack(colors.simple(colors[v[2]] or {255,255,255}))
+-- 			elseif v[1] == "color" then
+-- 				oldr, oldg, oldb = r, g, b
+-- 				r, g, b = v[2], v[3], v[4]
+-- 			elseif v[1] == "font" then
+-- 				font:setStyle(v[2])
+-- 				fstyle = v[2]
+-- 			elseif v[1] == "extra" then
+-- 				--
+-- 			elseif v[1] == "uid" then
+-- 				local e = __uids[v[2]]
+-- 				if e then
+-- 					local sw = font:lineSkip()
+-- 					s:merge(surf, w, 0)
+-- 					w = w + sw
+-- 				end
+-- 			end
+-- 		end
+-- 	end
 
-	-- Last line
-	local dat = {w=max_width, h=fh}
-	dat._tex, dat._tex_w, dat._tex_h = s:glTexture()
-	texs[#texs+1] = dat
+-- 	-- Last line
+-- 	local dat = {w=max_width, h=fh}
+-- 	dat._tex, dat._tex_w, dat._tex_h = s:glTexture()
+-- 	texs[#texs+1] = dat
 
-	return texs
-end
+-- 	return texs
+-- end
 
-function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_alpha, on_word)
-	local list = self:splitLines(max_width, font, max_lines)
-	max_lines = util.bound(max_lines or #list, 1, #list)
-	local fh = font:lineSkip()
-	local fstyle = font:getStyle()
-	local w, h = 0, 0
-	r, g, b = r or 255, g or 255, b or 255
-	local oldr, oldg, oldb = r, g, b
-	local v, tv
-	local on_word_w, on_word_h
-	local last_line_h = 0
-	local max_w = 0
-	local lines_drawn = 0
-	for i = 1, #list do
-		v = list[i]
-		tv = type(v)
-		if tv == "string" then
-			if on_word then on_word_w, on_word_h = on_word(v, w, h) end
-			if on_word_w and on_word_h then
-				w, h = on_word_w, on_word_h
-			else
-				local dw, dh = fontcachewordsize(font, fstyle, v)
-				last_line_h = math.max(last_line_h, dh)
-				s:drawStringBlended(font, v, x + w, y + h, r, g, b, not no_alpha)
-				w = w + fontoldsize(font, v)
-			end
-		elseif tv == "boolean" then
-			max_w = math.max(max_w, w)
-			w = 0
-			h = h + fh
-			last_line_h = 0
-			lines_drawn = lines_drawn + 1
-			max_lines = max_lines - 1
-			if max_lines <= 0 then break end
-		else
-			if v[1] == "color" and v[2] == "LAST" then
-				r, g, b = oldr, oldg, oldb
-			elseif v[1] == "color" and not v[3] then
-				oldr, oldg, oldb = r, g, b
-				r, g, b = unpack(colors.simple(colors[v[2]] or {255,255,255}))
-			elseif v[1] == "color" then
-				oldr, oldg, oldb = r, g, b
-				r, g, b = v[2], v[3], v[4]
-			elseif v[1] == "font" then
-				font:setStyle(v[2])
-			elseif v[1] == "extra" then
-				--
-			elseif v[1] == "uid" then
-				local e = __uids[v[2]]
-				if e then
-					local sw = font:lineSkip()
-					s:merge(surf, x + w, y + h)
-					w = w + sw
-				end
-			end
-		end
-	end
-	return r, g, b, math.max(max_w, w), fh * lines_drawn + last_line_h, x, y
-end
+-- function tstring:drawOnSurface(s, max_width, max_lines, font, x, y, r, g, b, no_alpha, on_word)
+-- 	local list = self:splitLines(max_width, font, max_lines)
+-- 	max_lines = util.bound(max_lines or #list, 1, #list)
+-- 	local fh = font:lineSkip()
+-- 	local fstyle = font:getStyle()
+-- 	local w, h = 0, 0
+-- 	r, g, b = r or 255, g or 255, b or 255
+-- 	local oldr, oldg, oldb = r, g, b
+-- 	local v, tv
+-- 	local on_word_w, on_word_h
+-- 	local last_line_h = 0
+-- 	local max_w = 0
+-- 	local lines_drawn = 0
+-- 	for i = 1, #list do
+-- 		v = list[i]
+-- 		tv = type(v)
+-- 		if tv == "string" then
+-- 			if on_word then on_word_w, on_word_h = on_word(v, w, h) end
+-- 			if on_word_w and on_word_h then
+-- 				w, h = on_word_w, on_word_h
+-- 			else
+-- 				local dw, dh = fontcachewordsize(font, fstyle, v)
+-- 				last_line_h = math.max(last_line_h, dh)
+-- 				s:drawStringBlended(font, v, x + w, y + h, r, g, b, not no_alpha)
+-- 				w = w + fontoldsize(font, v)
+-- 			end
+-- 		elseif tv == "boolean" then
+-- 			max_w = math.max(max_w, w)
+-- 			w = 0
+-- 			h = h + fh
+-- 			last_line_h = 0
+-- 			lines_drawn = lines_drawn + 1
+-- 			max_lines = max_lines - 1
+-- 			if max_lines <= 0 then break end
+-- 		else
+-- 			if v[1] == "color" and v[2] == "LAST" then
+-- 				r, g, b = oldr, oldg, oldb
+-- 			elseif v[1] == "color" and not v[3] then
+-- 				oldr, oldg, oldb = r, g, b
+-- 				r, g, b = unpack(colors.simple(colors[v[2]] or {255,255,255}))
+-- 			elseif v[1] == "color" then
+-- 				oldr, oldg, oldb = r, g, b
+-- 				r, g, b = v[2], v[3], v[4]
+-- 			elseif v[1] == "font" then
+-- 				font:setStyle(v[2])
+-- 			elseif v[1] == "extra" then
+-- 				--
+-- 			elseif v[1] == "uid" then
+-- 				local e = __uids[v[2]]
+-- 				if e then
+-- 					local sw = font:lineSkip()
+-- 					s:merge(surf, x + w, y + h)
+-- 					w = w + sw
+-- 				end
+-- 			end
+-- 		end
+-- 	end
+-- 	return r, g, b, math.max(max_w, w), fh * lines_drawn + last_line_h, x, y
+-- end
 
 function tstring:diffWith(str2, on_diff)
 	local res = tstring{}

@@ -444,6 +444,17 @@ static int gl_vertexes_texture(lua_State *L)
 	return 1;
 }
 
+static int gl_vertexes_font_atlas_texture(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 2);
+	lua_pushvalue(L, 2);
+	v->setTexture(f->atlas_tex, luaL_ref(L, LUA_REGISTRYINDEX));
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_vertexes_shader(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
@@ -809,6 +820,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"quad", gl_vertexes_quad},
 	{"quadPie", gl_vertexes_quad_pie},
 	{"texture", gl_vertexes_texture},
+	{"textureFontAtlas", gl_vertexes_font_atlas_texture},
 	{"shader", gl_vertexes_shader},
 	{"clear", gl_vertexes_clear},
 	{"getKind", gl_generic_getkind},

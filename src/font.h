@@ -53,6 +53,7 @@ typedef struct
 	
 	GLuint atlas_tex;
 	SDL_Surface *atlas;
+	SDL_Surface *sdm_atlas;
 	int atlas_w, atlas_h;
 	int atlas_x, atlas_y;
 	font_atlas_data *atlas_data;
