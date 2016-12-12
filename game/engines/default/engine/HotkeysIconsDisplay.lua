@@ -65,8 +65,9 @@ end
 
 --- Enable our shadows
 local UI = require "engine.ui.Base"
-self.setTextOutline = UI.setTextOutline
-self.setTextShadow = UI.setTextShadow
+_M.setTextOutline = UI.setTextOutline
+_M.setTextShadow = UI.setTextShadow
+_M.applyShadowOutline = UI.applyShadowOutline
 
 --- Resize the display area
 -- @number x x coordinate

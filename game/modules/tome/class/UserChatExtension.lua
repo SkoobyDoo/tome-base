@@ -25,7 +25,7 @@ module(..., package.seeall, class.make)
 
 function _M:init(chat)
 	self.chat = chat
-	chat:enableShadow(0.6)
+	chat:setTextOutline(0.6)
 end
 
 function _M:sendObjectLink(o)

@@ -31,7 +31,7 @@ function _M:init(minimalist)
 	local font, size = FontPackage:getFont("default")
 	self.logdisplay = LogDisplay.new(0, 0, self.w, self.h, nil, font, size, nil, nil)
 	self.logdisplay.resizeToLines = function() end
-	self.logdisplay:enableShadow(1)
+	self.logdisplay:setTextOutline(0.7)
 	self.logdisplay:enableFading(config.settings.tome.log_fade or 3)
 
 	minimalist.logdisplay = self.logdisplay -- for old code compatibility

@@ -365,6 +365,8 @@ end
 function _M:setTextOutline(v)
 	if type(v) == "table" then -- Already a color, use it
 		self.text_outline = colors.smart1(v)
+	elseif type(v) == "number" then -- Assuem this is the desired alpha
+		self.text_outline = {0, 0, 0, v}
 	else -- Just use a default outline value
 		self.text_outline = {0, 0, 0, 0.7}
 	end

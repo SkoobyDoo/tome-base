@@ -31,7 +31,7 @@ function _M:init(minimalist)
 
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
-	self.hotkeys_display_icons:enableShadow(0.6)
+	self.hotkeys_display_icons:setTextOutline(0.7)
 	self.hotkeys_display_icons.actor = game.player
 
 	minimalist.hotkeys_display_icons = self.hotkeys_display_icons -- for old code compatibility
