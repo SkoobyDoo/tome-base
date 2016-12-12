@@ -354,8 +354,20 @@ function _M:drawFrame(f, x, y, r, g, b, a, w, h, total_w, total_h, loffset_x, lo
 	return 0, 0, 0, 0
 end
 
-function _M:setTextShadow(v)
-	self.text_shadow = v
+function _M:setTextShadow(color, x, y)
+	if type(v) == "table" then -- Already a color, use it
+		self.text_shadow = {x=x, y=y or x, color=colors.smart1(v)}
+	else -- Just use a default outline value
+		self.text_shadow = {x=color or 1, y=color or 1, color={0, 0, 0, 0.7}}
+	end
+end
+
+function _M:setTextOutline(v)
+	if type(v) == "table" then -- Already a color, use it
+		self.text_outline = colors.smart1(v)
+	else -- Just use a default outline value
+		self.text_outline = {0, 0, 0, 0.7}
+	end
 end
 
 function _M:positioned(x, y)

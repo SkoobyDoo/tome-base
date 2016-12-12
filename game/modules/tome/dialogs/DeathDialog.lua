@@ -50,7 +50,6 @@ You can dump your character data to a file to remember her/him forever, or you c
 	self:setTitleShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 1.5)
 	self.c_desc = Textzone.new{width=self.iw, auto_height=true, text=text}
 	self.c_desc:setTextShadow(1)
-	self.c_desc:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 1.2)
 
 	self.c_list = List.new{width=self.iw, nb_items=#self.list, list=self.list, fct=function(item) self:use(item) end, select=function(item) self.cur_item = item end}
 

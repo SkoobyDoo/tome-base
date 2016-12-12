@@ -136,7 +136,7 @@ function _M:setupMouse(first)
 
 		local fct = function(button, mx, my, xrel, yrel, bx, by, event)
 			local newfocus = event ~= "out"
-			if newfocus ~= focus then
+			if newfocus ~= self.focused then
 				self.focused = newfocus
 				self:onFocus(self.focused)
 			end

@@ -237,7 +237,7 @@ function _M:display()
 			self.frames_layer:add(UI:makeFrameDO("ui/icon-frame/frame", self.icon_w + 8, self.icon_h + 8).container:translate(x - 4, y - 4, 0):color(unpack(frames_colors[frame])))
 
 			local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
-			local key = core.renderer.text(self.fontbig):shadow(1, 1, 0, 0, 0, 0.7):textColor(colors.unpack1(colors.ANTIQUE_WHITE)):text(ks):scale(0.5, 0.5, 0.5) -- Scale so we can usethe same atlas for all text
+			local key = core.renderer.text(self.fontbig):outline(1):textColor(colors.unpack1(colors.ANTIQUE_WHITE)):text(ks):scale(0.5, 0.5, 0.5) -- Scale so we can usethe same atlas for all text
 			local tw, th = key:getStats()
 			self.texts_layer:add(key:translate(x + self.icon_w - tw/2, y + self.icon_h - th/2, 0)) -- /2 because we scale by 0.5
 
@@ -390,7 +390,8 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 			end
 			local oldsel = self.cur_sel
 			self.cur_sel = i
-			if not zone.fake then self.sel_frame:shown(true):translate(zone[1], zone[2], 100) end
+			if not zone.fake then self.sel_frame:shown(true):translate(zone[1], zone[2], 100)
+			else self.sel_frame:shown(false) end
 			if button == "left" and not zone.fake then
 				if click then
 					a:activateHotkey(i)

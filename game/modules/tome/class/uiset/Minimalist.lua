@@ -71,6 +71,21 @@ _M.allcontainers = {
 }
 
 function _M:activate()
+	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
+	local font_mono_h, font_h
+
+	local font, size = FontPackage:getFont("default")
+	local f = core.display.newFont(font, size)
+	font_h = f:lineSkip()
+	f = core.display.newFont(font_mono, size_mono)
+	font_mono_h = f:lineSkip()
+	self.init_font = font
+	self.init_size_font = size
+	self.init_font_h = font_h
+	self.init_font_mono = font_mono
+	self.init_size_mono = size_mono
+	self.init_font_mono_h = font_mono_h
+
 	for name, class in pairs(self.allcontainers) do
 		self[name] = require(class).new(self)
 		self.minicontainers[#self.minicontainers+1] = self[name]

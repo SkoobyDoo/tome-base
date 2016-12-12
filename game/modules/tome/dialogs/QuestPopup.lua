@@ -47,15 +47,12 @@ function _M:init(quest, status)
 	local f, fs = FontPackage:getFont("bold")
 	local quest = Textzone.new{auto_width=true, auto_height=true, text="#ANTIQUE_WHITE#Quest: #AQUAMARINE#"..self.quest.name, font={f, math.ceil(fs * 2)}}
 	quest:setTextShadow(3)
-	quest:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
 
 	local info = Textzone.new{auto_width=true, auto_height=true, text=add..'#ANTIQUE_WHITE#(See your Journal for further details or click here)', font={f, math.ceil(fs)}}
 	info:setTextShadow(3)
-	info:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
 	
 	local status = Textzone.new{ui="quest", auto_width=true, auto_height=true, text="#cc9f33#"..(statuses[status] or "????"), has_box=true, font={FontPackage:getFont("bignews")}}
 	status:setTextShadow(3)
-	status:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
    
 	self:loadUI{
 		{hcenter=0, top=0, ui=quest},

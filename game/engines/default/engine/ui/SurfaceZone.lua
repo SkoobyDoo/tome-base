@@ -44,7 +44,7 @@ function _M:generate()
 
 	self.s:updateTexture(self.texture)
 
-	if self.text_shadow then self.do:do_container:add(core.renderer.fromSurface(self.s, 2, 2, self.w, self.h, false, 0, 0, 0, self.text_shadow)) end
+	if self.text_shadow then self.do:do_container:add(core.renderer.fromSurface(self.s, self.text_shadow.x, self.text_shadow.y, self.w, self.h, false, 0, 0, 0, self.text_shadow)) end
 	self.do:do_container:add(core.renderer.fromSurface(self.s, 0, 0, self.w, self.h))
 
 	self.can_focus = false

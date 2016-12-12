@@ -46,6 +46,7 @@ private:
 	vec4 shadow_color;
 
 	float outline = 0;
+	vec4 outline_color;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -84,7 +85,7 @@ public:
 	void center();
 
 	void setShadow(float offx, float offy, vec4 color) { shadow_x = offx; shadow_y = offy; shadow_color = color; };
-	void setOutline(float o) { outline = o; };
+	void setOutline(float o, vec4 color) { outline = o; outline_color = color; };
 
 	virtual void clear();
 

@@ -35,8 +35,6 @@ function _M:init(title, a)
 	local color = a.huge and "#GOLD#" or "#LIGHT_GREEN#"
 	local c_desc = Textzone.new{width=500, auto_height=true, text=color..a.name.."#LAST#\n"..a.desc, font={"/data/font/DroidSans-Bold.ttf", 26}}
 	c_desc:setTextShadow(1)
-	c_desc:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 1.2)
-	self:setTitleShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 1.5)
 	self.ui = "achievement"
 
 	Dialog.init(self, title, 10, 10)

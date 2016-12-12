@@ -59,6 +59,8 @@ end
 
 function _M:createItem(item, text)
 	local ui = Textzone.new{width=self.w, height=self.h, auto_height=self.variable_height, font=self.font, fct=function() end, scrollbar=self.scrollbar, text=text}
+	if self.text_outline then ui:setTextOutline(self.text_outline) end
+	if self.text_shadow then ui:setTextShadow(self.text_shadow.color, self.text_shadow.x, self.text_shadow.y) end
 	self.items[item] = { ui = ui }
 end
 

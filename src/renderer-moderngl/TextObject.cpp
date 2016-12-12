@@ -64,6 +64,12 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 		str += off;
 		len -= off;
 
+		font->font->outline_thickness = 2;
+		font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
+		ftgl::texture_glyph_t *doutline = ftgl::texture_font_get_glyph(font->font, c);
+
+		font->font->outline_thickness = 0;
+		font->font->rendermode = ftgl::RENDER_SIGNED_DISTANCE_FIELD;
 		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
 		if (d) {
 			if (last_glyph) {
@@ -75,25 +81,27 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			float x0  = bx + x + d->offset_x * font->scale;
 			float x1  = x0 + d->width * font->scale;
 			float italicx = - d->offset_x * font->scale * italic;
-
-			// float ydec = d->height * font->scale - d->offset_y * font->scale;
-			// float y0  = by + font->font->height * font->scale + ydec;
-			// float y1  = y0 - d->height * font->scale;
-			float y0 = by + (font->font->ascender + font->font->descender - d->offset_y) * font->scale;
+			float y0 = by + (font->font->ascender - d->offset_y) * font->scale;
 			float y1 = y0 + (d->height) * font->scale;
 
 			if (shadow_x || shadow_y) {
-				vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				vertices.push_back({{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				vertices.push_back({{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				vertices.push_back({{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				vertices.push_back({{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				vertices.push_back({{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				vertices.push_back({{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 			}
 
 			if (outline) {
-				vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
-				vertices.push_back({{x1+italicx, y0, 0, 1},	{d->s1, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
-				vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
-				vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
+				float x0  = bx + x + doutline->offset_x * font->scale;
+				float x1  = x0 + doutline->width * font->scale;
+				float italicx = - doutline->offset_x * font->scale * italic;
+				float y0 = by + (font->font->ascender - doutline->offset_y) * font->scale;
+				float y1 = y0 + (doutline->height) * font->scale;
+
+				vertices.push_back({{x0+italicx, y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+				vertices.push_back({{x1+italicx, y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+				vertices.push_back({{x1, y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+				vertices.push_back({{x0, y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
 			}
 
 			vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
@@ -101,7 +109,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 			vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 
-			x += 1.1 * d->advance_x * font->scale; // WTF without a 110% factor letters always look too close .. uh
+			x += 1.05 * d->advance_x * font->scale; // WTF without a 110% factor letters always look too close .. uh
 		}
 	}
 	return x;

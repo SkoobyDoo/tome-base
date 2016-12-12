@@ -26,8 +26,9 @@ module(..., package.seeall, class.make)
 
 function _M:init(font, size)
 	self.font = core.display.newFont(font, size, true)
-	self.font:setStyle("bold")
-	self.text_shadow = 0.8
+	-- self:setTextOutline({0, 0, 0, 1})
+	-- self:setTextShadow()
+	-- self.text_shadow = 0.8
 end
 
 function _M:say(time, txt, ...)

@@ -533,7 +533,14 @@ static int gl_text_max_lines(lua_State *L)
 static int gl_text_shadow(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
-	v->setShadow(lua_tonumber(L, 2), lua_tonumber(L, 3), {lua_tonumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7)});
+	vec4 color = {0, 0, 0, 0.7};
+	if (lua_isnumber(L, 4)) {
+		color.r = lua_tonumber(L, 4);
+		color.g = lua_tonumber(L, 5);
+		color.b = lua_tonumber(L, 6);
+		color.a = lua_tonumber(L, 7);
+	}
+	v->setShadow(lua_tonumber(L, 2), lua_tonumber(L, 3), color);
 
 	lua_pushvalue(L, 1);
 	return 1;
@@ -542,7 +549,14 @@ static int gl_text_shadow(lua_State *L)
 static int gl_text_outline(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
-	v->setOutline(lua_tonumber(L, 2));
+	vec4 color = {0, 0, 0, 0.7};
+	if (lua_isnumber(L, 3)) {
+		color.r = lua_tonumber(L, 3);
+		color.g = lua_tonumber(L, 4);
+		color.b = lua_tonumber(L, 5);
+		color.a = lua_tonumber(L, 6);
+	}
+	v->setOutline(lua_tonumber(L, 2), color);
 
 	lua_pushvalue(L, 1);
 	return 1;

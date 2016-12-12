@@ -250,7 +250,8 @@ function _M:update()
 			text = self.cache[tid]
 		else
 			text = core.renderer.text(self.font)
-			if self.shadow then text:shadow(self.fontsize / 10, self.fontsize / 10, 0, 0, 0, 0.7) end
+			-- if self.shadow then text:shadow(self.fontsize / 10, self.fontsize / 10, 0, 0, 0, 0.7) end
+			if self.shadow then text:outline(1) end
 			text:textColor(unpack(self.color))
 			text:text(tstr)
 			self.cache[tid] = text
