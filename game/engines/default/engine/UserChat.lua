@@ -657,9 +657,10 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	end
 end
 
-function _M:enableShadow(v)
-	self.shadow = v
-end
+local UI = require "engine.ui.Base"
+_M.setTextOutline = UI.setTextOutline
+_M.setTextShadow = UI.setTextShadow
+_M.applyShadowOutline = UI.applyShadowOutline
 
 function _M:enableFading(v)
 	self.fading = v

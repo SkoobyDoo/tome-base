@@ -56,9 +56,10 @@ function _M:setColumns(nb)
 end
 
 --- Enable our shadows??
-function _M:enableShadow(v)
-	self.shadow = v
-end
+local UI = require "engine.ui.Base"
+_M.setTextOutline = UI.setTextOutline
+_M.setTextShadow = UI.setTextShadow
+_M.applyShadowOutline = UI.applyShadowOutline
 
 --- Resize the display area
 -- @number x x coordinate

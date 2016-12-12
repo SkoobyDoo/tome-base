@@ -133,7 +133,7 @@ function _M:run()
 
 	local flyfont, flysize = FontPackage:getFont("flyer")
 	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
-	self.flyers:enableShadow(0.6)
+	self.flyers:setTextShadow(1)
 	self:setFlyingText(self.flyers)
 	self.log = function(style, ...) end
 	self.logSeen = function(e, style, ...) end
@@ -150,7 +150,7 @@ function _M:run()
 
 	self.logdisplay = LogDisplay.new(self.w / 2, self.h - 200, self.w / 2, 200, 90, nil, 16, nil, nil)
 	self.logdisplay.resizeToLines = function() end
-	self.logdisplay:enableShadow(1)
+	self.logdisplay:setTextOutline(1)
 	self.logdisplay:enableFading(5)
 
 	game.logChat = function(style, ...)

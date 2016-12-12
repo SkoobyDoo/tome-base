@@ -69,8 +69,7 @@ function _M:generate()
 
 	for i, str in ipairs(strs) do
 		local textzone = core.renderer.text(self.font)
-		if self.text_outline then textzone:outline(1, unpack(self.text_outline)) end
-		if self.text_shadow then textzone:shadow(self.text_shadow.x, self.text_shadow.y, unpack(self.text_shadow.color)) end
+		self:applyShadowOutline(textzone)
 		textzone:textColor(self.color.r / 255, self.color.g / 255, self.color.b / 255, 1)
 		textzone:text(str)
 		textzone:translate(0, (i - 1) * self.font_h, 10)

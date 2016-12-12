@@ -41,10 +41,10 @@ function _M:getDO()
 	return self.renderer
 end
 
---- @param[type=boolean] v enable the shadowssss
-function _M:enableShadow(v)
-	self.shadow = v
-end
+local UI = require "engine.ui.Base"
+_M.setTextOutline = UI.setTextOutline
+_M.setTextShadow = UI.setTextShadow
+_M.applyShadowOutline = UI.applyShadowOutline
 
 --- Add a new flying text
 -- @int x x position
@@ -66,6 +66,7 @@ function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 		yvel = yvel or 0,
 	}
 	f.popout_dur = math.max(3, math.floor(f.duration / 4)),
+	self:applyShadowOutline(f.DO)
 	f.DO:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
 	f.DO:text(str)
 	f.DO:center()

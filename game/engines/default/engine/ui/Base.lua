@@ -370,6 +370,11 @@ function _M:setTextOutline(v)
 	end
 end
 
+function _M:applyShadowOutline(textdo)
+	if self.text_outline then textdo:outline(1, unpack(self.text_outline)) end
+	if self.text_shadow then textdo:shadow(self.text_shadow.x, self.text_shadow.y, unpack(self.text_shadow.color)) end
+end
+
 function _M:positioned(x, y)
 end
 

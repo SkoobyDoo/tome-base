@@ -57,9 +57,10 @@ function _M:init(x, y, w, h, max, fontname, fontsize, color)
 --	if config.settings.log_to_disk then self.out_f = fs.open("/game-log-"..(game and type(game) == "table" and game.__mod_info and game.__mod_info.short_name or "default").."-"..os.time()..".txt", "w") end
 end
 
-function _M:enableShadow(v)
-	self.shadow = v
-end
+local UI = require "engine.ui.Base"
+_M.setTextOutline = UI.setTextOutline
+_M.setTextShadow = UI.setTextShadow
+_M.applyShadowOutline = UI.applyShadowOutline
 
 function _M:enableFading(v)
 	self.fading = v
@@ -250,8 +251,7 @@ function _M:update()
 			text = self.cache[tid]
 		else
 			text = core.renderer.text(self.font)
-			-- if self.shadow then text:shadow(self.fontsize / 10, self.fontsize / 10, 0, 0, 0, 0.7) end
-			if self.shadow then text:outline(1) end
+			self:applyShadowOutline(text)
 			text:textColor(unpack(self.color))
 			text:text(tstr)
 			self.cache[tid] = text
