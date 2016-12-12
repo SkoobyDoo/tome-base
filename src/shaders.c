@@ -123,6 +123,7 @@ void useShaderSimple(shader_type *p)
 }
 
 void useNoShader() {
+	printf("Requesting default shader %lxd\n", default_shader);
 	if (default_shader) {
 		tglUseProgramObject(default_shader->shader);
 		current_shader = default_shader;
@@ -742,6 +743,7 @@ static int program_set_name(lua_State *L)
 static int program_set_default(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
+	printf("[SHADER] C Core setting %lx as default gl shader\n", p);
 	if (default_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, default_shader_ref);
 	default_shader = p;
 	default_shader_ref = luaL_ref(L, LUA_REGISTRYINDEX);

@@ -76,6 +76,7 @@ typedef char ICHAR;
 #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
 
 /* Handle the case where memmove() doesn't exist. */
+#ifndef USE_ANDROID
 #ifndef HAVE_MEMMOVE
 #ifdef HAVE_BCOPY
 #define memmove(d,s,l) bcopy((s),(d),(l))
@@ -83,6 +84,7 @@ typedef char ICHAR;
 #error memmove does not exist on this platform, nor is a substitute available
 #endif /* HAVE_BCOPY */
 #endif /* HAVE_MEMMOVE */
+#endif /* USE_ANDROID */
 
 #include "internal.h"
 #include "xmltok.h"

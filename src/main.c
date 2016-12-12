@@ -1160,9 +1160,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_profiler(L);
 		luaopen_bit(L);
 		luaopen_lpeg(L);
-#ifndef USE_ANDROID
 		luaopen_lxp(L);
-#endif
 		luaopen_md5_core(L);
 		luaopen_renderer(L);
 		luaopen_map(L);

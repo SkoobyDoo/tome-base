@@ -348,9 +348,9 @@ function _M:rewriteShaderFrag(code, def)
 	]]..code
 	code = self:preprocess(code, "frag", def)
 	if __ANDROID__ then code = "precision mediump float;\n"..code end
-	-- print("=====frag\n", self.name)
-	-- print(code)
-	-- print("=====frag+\n")
+	print("=====frag\n", self.name)
+	print(code)
+	print("=====frag+\n")
 	return code
 end
 
@@ -364,8 +364,8 @@ function _M:rewriteShaderVert(code, def)
 	]]..code
 	code = self:preprocess(code, "vert", def)
 	if __ANDROID__ then code = "precision mediump float;\n"..code end
-	-- print("=====vert\n", self.name)
-	-- print(code)
-	-- print("=====vert+\n")
+	print("=====vert\n", self.name)
+	print(code)
+	print("=====vert+\n")
 	return code
 end
