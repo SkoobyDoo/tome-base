@@ -70,7 +70,6 @@ project "TEngine"
 
 			"/Library/Frameworks/SDL2.framework/Headers",
 			"/Library/Frameworks/SDL2_image.framework/Headers",
-			"/Library/Frameworks/SDL2_ttf.framework/Headers",
 			"/Library/Frameworks/libpng.framework/Headers",
 			"/Library/Frameworks/ogg.framework/Headers",
 			"/Library/Frameworks/vorbis.framework/Headers",
@@ -91,7 +90,6 @@ project "TEngine"
 
 			"-framework SDL2",
 			"-framework SDL2_image",
-			"-framework SDL2_ttf",
 			"-framework libpng",
 			"-framework ogg",
 			"-framework vorbis",
@@ -108,7 +106,7 @@ project "TEngine"
 		links { "IOKit" }
 
 	configuration "windows"
-		links { "mingw32", "SDL2main", "SDL2", "SDL2_ttf", "SDL2_image", "OpenAL32", "vorbisfile", "opengl32", "glu32", "wsock32", "png" }
+		links { "mingw32", "SDL2main", "SDL2", "SDL2_image", "OpenAL32", "vorbisfile", "opengl32", "glu32", "wsock32", "png" }
 		defines { [[TENGINE_HOME_PATH='"T-Engine"']], 'SELFEXE_WINDOWS'  }
 		if _OPTIONS.wincross then
 			prebuildcommands { "i686-pc-mingw32-windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
@@ -121,14 +119,14 @@ project "TEngine"
 
 	configuration "linux"
 		libdirs {"/opt/SDL-2.0/lib/"}
-		links { "dl", "freetype", "SDL2", "SDL2_ttf", "SDL2_image", "png", "openal", "vorbisfile", "GL", "GLU", "m", "pthread" }
+		links { "dl", "freetype", "SDL2", "SDL2_image", "png", "openal", "vorbisfile", "GL", "GLU", "m", "pthread" }
 		linkoptions { "-Wl,-E" }
 		defines { [[TENGINE_HOME_PATH='".t-engine"']], 'SELFEXE_LINUX' }
 		if steamlin64 then steamlin64() end
 
 	configuration "bsd"
 		libdirs {"/usr/local/lib/"}
-		links { "SDL2", "SDL2_ttf", "SDL2_image", "png", "openal", "vorbisfile", "GL", "GLU", "m", "pthread" }
+		links { "SDL2", "SDL2_image", "png", "openal", "vorbisfile", "GL", "GLU", "m", "pthread" }
 		defines { [[TENGINE_HOME_PATH='".t-engine"']], 'SELFEXE_BSD' }
 
 	configuration {"Debug"}

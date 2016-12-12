@@ -1435,7 +1435,6 @@ int main(int argc, char *argv[])
 	}
 
 	SDL_SetWindowTitle(window, "T4Engine");
-	TTF_Init();
 
 	/* Sets up OpenGL double buffering */
 	resizeWindow(WIDTH, HEIGHT);
