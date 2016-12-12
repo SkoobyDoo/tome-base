@@ -51,6 +51,8 @@ typedef struct __PHYSFS_ERRMSGTYPE__
 
 
 /* The various i/o drivers...some of these may not be compiled in. */
+extern const PHYSFS_ArchiveInfo    __PHYSFS_ArchiveInfo_APK;
+extern const PHYSFS_Archiver       __PHYSFS_Archiver_APK;
 extern const PHYSFS_ArchiveInfo    __PHYSFS_ArchiveInfo_SUBZIP;
 extern const PHYSFS_Archiver       __PHYSFS_Archiver_SUBZIP;
 extern const PHYSFS_ArchiveInfo    __PHYSFS_ArchiveInfo_ZIP;

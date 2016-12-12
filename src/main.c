@@ -886,9 +886,11 @@ int initGL()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
+#if 0 // DGDGDGDG
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
+#endif
 
 	return( TRUE );
 }
@@ -911,6 +913,7 @@ int resizeWindow(int width, int height)
 	glEnable(GL_TEXTURE_2D);
 
 	/* Setup our viewport. */
+#if 0 // DGDGDGDG
 	glViewport( 0, 0, ( GLsizei )width, ( GLsizei )height );
 
 	/* change to the projection matrix and set our viewing volume. */
@@ -928,7 +931,7 @@ int resizeWindow(int width, int height)
 	glLoadIdentity( );
 
 //TSDL2	SDL_SetGamma(gamma_correction, gamma_correction, gamma_correction);
-
+#endif
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 	printf("OpenGL max texture size: %d\n", max_texture_size);
 
@@ -1477,7 +1480,7 @@ int main(int argc, char *argv[])
 	shaders_active = TRUE;
 	fbo_active = TRUE;
 	if (!multitexture_active) shaders_active = FALSE;
-#ifdef USE_GLES2
+#ifndef USE_GLES2
 	if (!GLEW_VERSION_2_1)
 	{
 		printf("OpenGL 2.1 required.\n");

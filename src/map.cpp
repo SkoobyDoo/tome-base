@@ -39,6 +39,12 @@ extern "C" {
 
 static const char IS_HEX_KEY = 'k';
 
+#ifdef USE_GLES2
+	#define TE4_MAP_GL_TYPE GL_RGBA
+#else
+	#define TE4_MAP_GL_TYPE GL_BGRA
+#endif
+
 /*
 static int lua_set_is_hex(lua_State *L)
 {
@@ -514,7 +520,7 @@ static void setup_seens_texture(map_type *map)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, map->seens_map_w, map->seens_map_h, 0, TE4_MAP_GL_TYPE, GL_UNSIGNED_BYTE, NULL);
 	map->seens_map = (GLubyte*)calloc((map->seens_map_w)*(map->seens_map_h)*4, sizeof(GLubyte));
 	map->seen_changed = true;
 
@@ -1179,7 +1185,7 @@ static void map_update_seen_texture(map_type *map)
 		// Skip the rest of the texture, silly GPUs not supporting NPOT textures!
 		//ptr += (map->seens_map_w - map->w) * 4;
 	}
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, GL_BGRA, GL_UNSIGNED_BYTE, seens);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, TE4_MAP_GL_TYPE, GL_UNSIGNED_BYTE, seens);
 
 	if (!map->seens_vbo) {
 		map->seens_vbo = new VBO(VBOMode::STATIC);
@@ -1797,7 +1803,7 @@ static void minimap_update(map_type *map, int mdx, int mdy, int mdw, int mdh, fl
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, TE4_MAP_GL_TYPE, GL_UNSIGNED_BYTE, NULL);
 		map->minimap = (GLubyte*)calloc(realw*realh*4, sizeof(GLubyte));
 
 		map->mm_vbo->setTexture(map->mm_texture);
@@ -1862,7 +1868,7 @@ static void minimap_update(map_type *map, int mdx, int mdy, int mdw, int mdh, fl
 		}
 	}
 	tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_BGRA, GL_UNSIGNED_BYTE, mm);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, TE4_MAP_GL_TYPE, GL_UNSIGNED_BYTE, mm);
 }
 
 static int lua_minimap_to_screen(lua_State *L)

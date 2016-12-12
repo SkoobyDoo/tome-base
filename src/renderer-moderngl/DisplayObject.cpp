@@ -569,7 +569,11 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 	glGenTextures(nbt, textures.data());
 	for (i = 0; i < nbt; i++) {
 		tfglBindTexture(GL_TEXTURE_2D, textures[i]);
+#ifdef USE_GLES2
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+#else
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+#endif
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -634,7 +638,9 @@ void DORTarget::use(bool activate) {
 	if (activate)
 	{
 		tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
+#ifndef USE_GLES2
 		if (nbt > 1) glDrawBuffers(nbt, buffers.data());
+#endif
 
 		tglClearColor(clear_r, clear_g, clear_b, clear_a);
 		glClear(GL_COLOR_BUFFER_BIT);

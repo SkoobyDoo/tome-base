@@ -558,6 +558,7 @@ static int lua_open_browser(lua_State *L)
 #elif defined(SELFEXE_MACOSX)
 	const char *command = "open  \"%s\"";
 #else
+	const char *command = "";
 	{ return 0; }
 #endif
 	char buf[2048];
@@ -656,6 +657,10 @@ static int sdl_new_surface(lua_State *L)
 
 static int gl_texture_to_sdl(lua_State *L)
 {
+#ifdef USE_GLES2
+	// DGDGDGDG unsupported on gl es
+	return 0;
+#else
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 
 	SDL_Surface **s = (SDL_Surface**)lua_newuserdata(L, sizeof(SDL_Surface*));
@@ -669,19 +674,20 @@ static int gl_texture_to_sdl(lua_State *L)
 //	printf("Making surface from texture %dx%d\n", w, h);
 	// Get texture data
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
-#ifdef USE_GLES2
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
-#else
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp);
-#endif
 
 	// Make sdl surface from it
 	*s = SDL_CreateRGBSurfaceFrom(tmp, w, h, 32, w*4, 0,0,0,0);
 
 	return 1;
+#endif
 }
 
 static int gl_texture_alter_sdm(lua_State *L) {
+#ifdef USE_GLES2
+	// DGDGDGDG unsupported on gl es
+	return 0;
+#else
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	bool doubleheight = lua_toboolean(L, 2);
 
@@ -714,6 +720,7 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	lua_pushnumber(L, 1);
 
 	return 3;
+	#endif
 }
 
 int gl_tex_white = 0;
@@ -1069,6 +1076,8 @@ static int sdl_surface_toscreen(lua_State *L)
 
 static int sdl_surface_toscreen_with_texture(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
+
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
 	int x = luaL_checknumber(L, 3);
@@ -1099,7 +1108,7 @@ static int sdl_surface_toscreen_with_texture(lua_State *L)
 
 	copy_surface_to_texture(*s);
 	draw_textured_quad(x,y,(*s)->w,(*s)->h);
-
+#endif
 	return 0;
 }
 
@@ -1439,26 +1448,34 @@ static int gl_rotate(lua_State *L)
 
 static int gl_push(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	glPushMatrix();
+#endif
 	return 0;
 }
 
 static int gl_pop(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	glPopMatrix();
+#endif
 	return 0;
 }
 
 static int gl_identity(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	glLoadIdentity();
+#endif
 	return 0;
 }
 
 static int gl_matrix(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	if (lua_toboolean(L, 1)) glPushMatrix();
 	else glPopMatrix();
+#endif
 	return 0;
 }
 
@@ -1485,7 +1502,9 @@ static int gl_scissor(lua_State *L)
 
 static int gl_color(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	tglColor4f(luaL_checknumber(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
+#endif
 	return 0;
 }
 
@@ -1715,6 +1734,7 @@ static int sdl_redraw_screen(lua_State *L)
  **************************************************************/
 static int gl_new_quadratic(lua_State *L)
 {
+#if 0 // DGDGDGDG
 	GLUquadricObj **quadratic = (GLUquadricObj**)lua_newuserdata(L, sizeof(GLUquadricObj*));
 	auxiliar_setclass(L, "gl{quadratic}", -1);
 
@@ -1723,25 +1743,31 @@ static int gl_new_quadratic(lua_State *L)
 	gluQuadricTexture(*quadratic, GL_TRUE);
 
 	return 1;
+#endif
+	return 0;
 }
 
 static int gl_free_quadratic(lua_State *L)
 {
+#if 0 // DGDGDGDG
 	GLUquadricObj **quadratic = (GLUquadricObj**)auxiliar_checkclass(L, "gl{quadratic}", 1);
 
 	gluDeleteQuadric(*quadratic);
 
 	lua_pushnumber(L, 1);
 	return 1;
+#endif
+	return 0;
 }
 
 static int gl_quadratic_sphere(lua_State *L)
 {
+#if 0 // DGDGDGDG
 	GLUquadricObj **quadratic = (GLUquadricObj**)auxiliar_checkclass(L, "gl{quadratic}", 1);
 	float rad = luaL_checknumber(L, 2);
 
 	gluSphere(*quadratic, rad, 64, 64);
-
+#endif
 	return 0;
 }
 
@@ -1756,6 +1782,7 @@ static int gl_fbo_supports_transparency(lua_State *L) {
 
 static int gl_new_fbo(lua_State *L)
 {
+#if 0 // DGDGDGDG
 	if (!fbo_active) return 0;
 
 	int w = luaL_checknumber(L, 1);
@@ -1794,6 +1821,8 @@ static int gl_new_fbo(lua_State *L)
 	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return 1;
+#endif
+	return 0;
 }
 
 static int gl_free_fbo(lua_State *L)
@@ -1817,6 +1846,7 @@ static int gl_free_fbo(lua_State *L)
 
 static int gl_fbo_use(lua_State *L)
 {
+#if 0 // DGDGDGDG
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	bool active = lua_toboolean(L, 2);
 	float r = 0, g = 0, b = 0, a = 1;
@@ -1869,6 +1899,7 @@ static int gl_fbo_use(lua_State *L)
 
 
 	}
+#endif
 	return 0;
 }
 
@@ -2144,6 +2175,7 @@ static void png_output_flush_fn(png_structp png_ptr)
 #endif
 static int sdl_get_png_screenshot(lua_State *L)
 {
+#ifndef USE_ANDROID
 	unsigned int x = luaL_checknumber(L, 1);
 	unsigned int y = luaL_checknumber(L, 2);
 	unsigned long width = luaL_checknumber(L, 3);
@@ -2222,10 +2254,14 @@ static int sdl_get_png_screenshot(lua_State *L)
 	luaL_pushresult(&B);
 
 	return 1;
+#else
+	return 0;
+#endif
 }
 
 static int gl_fbo_to_png(lua_State *L)
 {
+#ifndef USE_ANDROID
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	unsigned int x = 0;
 	unsigned int y = 0;
@@ -2306,6 +2342,9 @@ static int gl_fbo_to_png(lua_State *L)
 	luaL_pushresult(&B);
 
 	return 1;
+#else
+	return 0;
+#endif
 }
 
 
