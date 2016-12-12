@@ -738,6 +738,7 @@ int init_blank_surface()
 
 static int gl_draw_quad(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	int x = luaL_checknumber(L, 1);
 	int y = luaL_checknumber(L, 2);
 	int w = luaL_checknumber(L, 3);
@@ -786,10 +787,12 @@ static int gl_draw_quad(lua_State *L)
 
 	glDrawArrays(GL_QUADS, 0, 4);
 	return 0;
+#endif
 }
 
 static int gl_draw_quad_part(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	int x = luaL_checknumber(L, 1);
 	int y = luaL_checknumber(L, 2);
 	int w = luaL_checknumber(L, 3);
@@ -883,6 +886,7 @@ static int gl_draw_quad_part(lua_State *L)
 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, i / 2);
 	return 0;
+#endif
 }
 
 
@@ -977,6 +981,7 @@ static int sdl_surface_get_size(lua_State *L)
 
 
 static void draw_textured_quad(int x, int y, int w, int h) {
+#if 0 /* DGDGDGDG */
 	// In case we can't support NPOT textures, the tex coords will be different
 	// it might be more elegant to store the actual texture width/height somewhere.
 	// it's possible to ask opengl for it but I have a suspicion that is slow.
@@ -1005,10 +1010,12 @@ static void draw_textured_quad(int x, int y, int w, int h) {
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glDrawArrays(GL_QUADS, 0, 4);
+#endif
 }
 
 static int sdl_surface_toscreen(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
@@ -1045,6 +1052,7 @@ static int sdl_surface_toscreen(lua_State *L)
 	glDeleteTextures(1, &t);
 
 	return 0;
+#endif
 }
 
 static int sdl_surface_toscreen_with_texture(lua_State *L)
@@ -1163,6 +1171,7 @@ static int sdl_free_texture(lua_State *L)
 
 static int sdl_texture_toscreen(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
@@ -1208,11 +1217,13 @@ static int sdl_texture_toscreen(lua_State *L)
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glDrawArrays(GL_QUADS, 0, 4);
+#endif
 	return 0;
 }
 
 static int sdl_texture_toscreen_highlight_hex(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
@@ -1274,11 +1285,13 @@ static int sdl_texture_toscreen_highlight_hex(lua_State *L)
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 8);
+#endif
 	return 0;
 }
 
 static int sdl_texture_toscreen_full(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
@@ -1328,11 +1341,13 @@ static int sdl_texture_toscreen_full(lua_State *L)
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glDrawArrays(GL_QUADS, 0, 4);
+#endif
 	return 0;
 }
 
 static int sdl_texture_toscreen_precise(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
@@ -1382,6 +1397,7 @@ static int sdl_texture_toscreen_precise(lua_State *L)
 	};
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glDrawArrays(GL_QUADS, 0, 4);
+#endif
 	return 0;
 }
 
@@ -1522,6 +1538,7 @@ static bool _CheckGL_Error(const char* GLcall, const char* file, const int line)
 
 static int sdl_texture_outline(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	if (!fbo_active) return 0;
 
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
@@ -1626,6 +1643,8 @@ static int sdl_texture_outline(lua_State *L)
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	return 1;
+#endif
+	return 0;
 }
 
 static int sdl_set_window_title(lua_State *L)
@@ -1844,6 +1863,7 @@ static int gl_fbo_use(lua_State *L)
 extern GLuint mapseentex;
 static int gl_fbo_toscreen(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
@@ -1904,10 +1924,12 @@ static int gl_fbo_toscreen(lua_State *L)
 	if (lua_isuserdata(L, 6)) tglUseProgramObject(0);
 	if (!allowblend) glEnable(GL_BLEND);
 	return 0;
+#endif
 }
 
 static int gl_fbo_posteffects(lua_State *L)
 {
+#if 0 /* DGDGDGDG */
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 	lua_fbo *fbo2 = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 2);
 	lua_fbo *fbo_final = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 3);
@@ -1992,6 +2014,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	tglUseProgramObject(0);
 
 	glEnable(GL_BLEND);
+#endif
 	return 0;
 }
 
@@ -2430,6 +2453,7 @@ static int gl_vertex_add_quad(lua_State *L) {
 }
 
 static int gl_vertex_toscreen(lua_State *L) {
+#if 0 /* DGDGDGDG */
 	lua_vertexes *vx = (lua_vertexes*)auxiliar_checkclass(L, "gl{vertexes}", 1);
 	if (!vx->nb) return 0;
 	int x = luaL_checknumber(L, 2);
@@ -2463,6 +2487,7 @@ static int gl_vertex_toscreen(lua_State *L) {
 	glTexCoordPointer(2, GL_FLOAT, 0, vx->textures);
 	glDrawArrays(GL_QUADS, 0, vx->nb);
 	glTranslatef(-x, -y, 0);
+#endif
 	return 0;
 }
 

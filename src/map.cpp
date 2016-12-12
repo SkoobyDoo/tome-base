@@ -1734,6 +1734,7 @@ static int lua_map_toscreen(lua_State *L)
 
 extern int gl_tex_white;
 static int map_line_grids(lua_State *L) {
+#if 0 /* DGDGDGDG */
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 	if (!map->grid_lines_vertices) return 0;
 
@@ -1760,6 +1761,7 @@ static int map_line_grids(lua_State *L) {
 	glTexCoordPointer(2, GL_FLOAT, 0, map->grid_lines_textures);
 	glDrawArrays(GL_QUADS, 0, map->nb_grid_lines_vertices * 4);
 	glTranslatef(-x + map->used_animdx * map->tile_w, -y + map->used_animdy * map->tile_h, 0);
+#endif
 	return 0;	
 }
 
