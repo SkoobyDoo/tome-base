@@ -237,6 +237,9 @@ GLenum sdl_gl_texture_format(SDL_Surface *s) {
 	GLenum texture_format;
 	if (nOfColors == 4)	 // contains an alpha channel
 	{
+#ifdef USE_GLES2
+		texture_format = GL_RGBA;
+#else
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		if (s->format->Rmask == 0xff000000)
 #else
@@ -245,8 +248,12 @@ GLenum sdl_gl_texture_format(SDL_Surface *s) {
 			texture_format = GL_RGBA;
 		else
 			texture_format = GL_BGRA;
+#endif
 	} else if (nOfColors == 3)	 // no alpha channel
 	{
+#ifdef USE_GLES2
+		texture_format = GL_RGB;
+#else
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		if (s->format->Rmask == 0x00ff0000)
 #else
@@ -255,6 +262,7 @@ GLenum sdl_gl_texture_format(SDL_Surface *s) {
 			texture_format = GL_RGB;
 		else
 			texture_format = GL_BGR;
+#endif
 	} else {
 		printf("warning: the image is not truecolor..  this will probably break %d\n", nOfColors);
 		// this error should not go unhandled
@@ -661,7 +669,11 @@ static int gl_texture_to_sdl(lua_State *L)
 //	printf("Making surface from texture %dx%d\n", w, h);
 	// Get texture data
 	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
+#ifdef USE_GLES2
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
+#else
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp);
+#endif
 
 	// Make sdl surface from it
 	*s = SDL_CreateRGBSurfaceFrom(tmp, w, h, 32, w*4, 0,0,0,0);

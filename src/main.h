@@ -89,6 +89,10 @@ extern bool physfs_check_allow_path(lua_State *L, const char *path);
 
 extern int luaopen_font(lua_State *L);
 
+#ifdef USE_ANDROID
+extern int androprint(lua_State *L);
+#endif
+
 #ifdef STEAM_TE4
 #include "steam-te4.h"
 #endif

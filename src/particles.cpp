@@ -704,6 +704,10 @@ int luaopen_particles(lua_State *L)
 {
 	auxiliar_newclass(L, "core{particles}", particles_reg);
 	luaL_openlib(L, "core.particles", particleslib, 0);
+#ifdef USE_ANDROID
+	lua_pushcfunction(L, androprint);
+	lua_setglobal(L, "_androprint");
+#endif
 	lua_pushstring(L, "ETERNAL");
 	lua_pushnumber(L, PARTICLE_ETERNAL);
 	lua_rawset(L, -3);

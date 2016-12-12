@@ -74,6 +74,9 @@ extern const PHYSFS_Archiver       __PHYSFS_Archiver_BIND_PHYSFS;
 static const PHYSFS_ArchiveInfo *supported_types[] =
 {
     &__PHYSFS_Archiver_BIND_PHYSFS,
+#if (defined PHYSFS_SUPPORTS_APK)
+    &__PHYSFS_ArchiveInfo_APK,
+#endif
 #if (defined PHYSFS_SUPPORTS_ZIP)
     &__PHYSFS_ArchiveInfo_SUBZIP,
     &__PHYSFS_ArchiveInfo_ZIP,
@@ -102,6 +105,9 @@ static const PHYSFS_ArchiveInfo *supported_types[] =
 static const PHYSFS_Archiver * const archivers[] =
 {
     &__PHYSFS_Archiver_BIND_PHYSFS,
+#if (defined PHYSFS_SUPPORTS_APK)
+    &__PHYSFS_Archiver_APK,
+#endif
 #if (defined PHYSFS_SUPPORTS_ZIP)
     &__PHYSFS_Archiver_SUBZIP,
     &__PHYSFS_Archiver_ZIP,

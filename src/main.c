@@ -272,6 +272,15 @@ int noprint(lua_State *L)
 	return 0;
 }
 
+#ifdef USE_ANDROID
+/* Print to android log */
+int androprint(lua_State *L)
+{
+	printf("%s\n", lua_tostring(L, 1));
+	return 0;
+}
+#endif
+
 // define our data that is passed to our redraw function
 typedef struct {
 	Uint32 color;
@@ -1016,9 +1025,15 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 		is_fullscreen = fullscreen;
 		is_borderless = borderless;
 		screen = SDL_GetWindowSurface(window);
+#if defined(USE_GLES2)
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
 		maincontext = SDL_GL_CreateContext(window);
 		SDL_GL_MakeCurrent(window, maincontext);
+#if !defined(USE_GLES2)
 		glewInit();
+#endif
 
 		/* Set the window icon. */
 		windowIconSurface = IMG_Load_RW(PHYSFSRWOPS_openRead(WINDOW_ICON_PATH)
@@ -1123,6 +1138,14 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		/***************** Lua Init *****************/
 		L = lua_open();  /* create state */
 		luaL_openlibs(L);  /* open libraries */
+#ifdef USE_ANDROID
+		lua_pushcfunction(L, androprint);
+		lua_setglobal(L, "_androprint");
+		lua_pushstring(L, argv[2]);
+		lua_setglobal(L, "_androbootmod");
+		lua_pushstring(L, argv[3]);
+		lua_setglobal(L, "_androgamemod");
+#endif
 		luaopen_physfs(L);
 		luaopen_core(L);
 		luaopen_core_mouse(L);
@@ -1179,6 +1202,10 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 #ifdef __APPLE__
 		lua_pushboolean(L, TRUE);
 		lua_setglobal(L, "__APPLE__");
+#endif
+#ifdef USE_ANDROID
+		lua_pushboolean(L, TRUE);
+		lua_setglobal(L, "__ANDROID__");
 #endif
 
 		// Run bootstrapping
@@ -1394,7 +1421,9 @@ int main(int argc, char *argv[])
 	if (!no_steam) te4_steam_init();
 #endif
 
+#ifndef USE_ANDROID
 	init_openal();
+#endif
 
 	// RNG init
 	init_gen_rand(time(NULL));
@@ -1448,11 +1477,13 @@ int main(int argc, char *argv[])
 	shaders_active = TRUE;
 	fbo_active = TRUE;
 	if (!multitexture_active) shaders_active = FALSE;
+#ifdef USE_GLES2
 	if (!GLEW_VERSION_2_1)
 	{
 		printf("OpenGL 2.1 required.\n");
 		return 9;
 	}
+#endif
 	if (safe_mode) printf("Safe mode activated\n");
 
 //	setupDisplayTimer(30);
