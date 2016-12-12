@@ -47,6 +47,7 @@ end
 
 local white = core.display.loadImage("/data/gfx/white.png"):glTexture()
 core.renderer.white = white
+core.renderer.plaincolor = white
 
 function DOVertexes:plainColorQuad()
 	self:texture(white)

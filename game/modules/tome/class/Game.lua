@@ -624,13 +624,14 @@ function _M:createFBOs()
 	if self.fbo and self.fbo2 then core.particles.defineFramebuffer(self.fbo)
 	else core.particles.defineFramebuffer(nil) end
 
-	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
 
 	Map:enableFBORenderer("target_fbo")
 
 --	self.mm_fbo = core.display.newFBO(200, 200)
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
 ]]
+	
+	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
 end
 
 function _M:resizeMapViewport(w, h, x, y)

@@ -341,8 +341,12 @@ static int gl_target_clearcolor(lua_State *L)
 static int gl_target_shader(lua_State *L)
 {
 	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
-	shader_type *shader = (shader_type*)lua_touserdata(L, 2);
-	v->setShader(shader);
+	if (lua_isnil(L, 2)) {
+		v->setShader(NULL);
+	} else {
+		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		v->setShader(shader);
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -459,8 +463,12 @@ static int gl_vertexes_font_atlas_texture(lua_State *L)
 static int gl_vertexes_shader(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
-	shader_type *shader = (shader_type*)lua_touserdata(L, 2);
-	v->setShader(shader);
+	if (lua_isnil(L, 2)) {
+		v->setShader(NULL);
+	} else {
+		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		v->setShader(shader);
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -601,8 +609,12 @@ static int gl_text_stats(lua_State *L)
 static int gl_text_shader(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
-	shader_type *shader = (shader_type*)lua_touserdata(L, 2);
-	v->setShader(shader);
+	if (lua_isnil(L, 2)) {
+		v->setShader(NULL);
+	} else {
+		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		v->setShader(shader);
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }

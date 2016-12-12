@@ -2505,7 +2505,6 @@ static const struct luaL_Reg displaylib[] =
 	{"newSurface", sdl_new_surface},
 	{"newFBO", gl_new_fbo},
 	{"newVO", gl_new_vertex},
-	{"fboSupportsTransparency", gl_fbo_supports_transparency},
 	{"newQuadratic", gl_new_quadratic},
 	{"drawQuad", gl_draw_quad},
 	{"drawQuadPart", gl_draw_quad_part},

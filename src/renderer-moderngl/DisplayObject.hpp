@@ -173,7 +173,7 @@ public:
 		this->tex = tex;
 		tex_lua_ref = lua_ref;
 	};
-	void setShader(shader_type *s) { shader = s; };
+	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);

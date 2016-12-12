@@ -38,8 +38,6 @@ function _M:init(map, source_actor)
 	self.cursor = engine.Tiles:loadImage("target_cursor.png"):glTexture()
 	self.arrow = engine.Tiles:loadImage("target_arrow.png"):glTexture()
 
-	self:createTextures()
-
 	self.source_actor = source_actor
 
 	-- Setup the tracking target table
@@ -48,53 +46,50 @@ function _M:init(map, source_actor)
 	-- the garbage collection
 	self.target = {x=self.source_actor.x, y=self.source_actor.y, entity=nil}
 --	setmetatable(self.target, {__mode='v'})
+
+
+	self.renderer = core.renderer.renderer()
+	self.fbo = core.renderer.target()
+	self.fbo:displaySize(Map.viewport.width, Map.viewport.height)
+	self.fborenderer = core.renderer.renderer()
+	self.fbo:setAutoRender(self.fborenderer)
+	self.renderer:add(self.fbo)
+	self.zone_layer = core.renderer.vertexes()
+	self.arrows_layer = core.renderer.container():shown(false)
+	self.fborenderer:add(self.zone_layer)
+	self.fborenderer:add(self.arrows_layer)
+
+	self.zone_layer:texture(core.renderer.plaincolor)
+
+	-- Create the colors we will use
+	self:defineColors()
 end
 
-function _M:createTextures()
-	--Use power of two (pot) width and height, rounded up
-	local pot_width = math.pow(2, math.ceil(math.log(self.tile_w-0.1) / math.log(2.0)))
-	local pot_height = math.pow(2, math.ceil(math.log(self.tile_h-0.1) / math.log(2.0)))
-	self.sr = core.display.newSurface(pot_width, pot_height)
-	self.sr:erase(255, 0, 0, self.fbo and 150 or 90)
-	self.sr = self.sr:glTexture()
-	self.sb = core.display.newSurface(pot_width, pot_height)
-	self.sb:erase(0, 0, 255, self.fbo and 150 or 90)
-	self.sb = self.sb:glTexture()
-	self.sg = core.display.newSurface(pot_width, pot_height)
-	self.sg:erase(0, 255, 0, self.fbo and 150 or 90)
-	self.sg = self.sg:glTexture()
-	self.sy = core.display.newSurface(pot_width, pot_height)
-	self.sy:erase(255, 255, 0, self.fbo and 150 or 90)
-	self.sy = self.sy:glTexture()
-	self.syg = core.display.newSurface(pot_width, pot_height)
-	self.syg:erase(153, 204, 50, self.fbo and 150 or 90)
-	self.syg = self.syg:glTexture()
+function _M:defineColors()
+	self.sr = colors.smart1{255, 0, 0, 255} -- self.fbo_shader and 150 or 90}
+	self.sb = colors.smart1{0, 0, 255, 255} -- self.fbo_shader and 150 or 90}
+	self.sg = colors.smart1{0, 255, 0, 255} -- self.fbo_shader and 150 or 90}
+	self.sy = colors.smart1{255, 255, 0, 255} -- self.fbo_shader and 150 or 90}
+	self.syg = colors.smart1{153, 204, 50, 255} -- self.fbo_shader and 150 or 90}
 end
 
 function _M:enableFBORenderer(texture, shader)
-	if not shader or not core.display.fboSupportsTransparency then
-		self.fbo = nil
-		self:createTextures()
-		return
-	end
-	self.fbo = core.display.newFBO(Map.viewport.width, Map.viewport.height)
-	if not self.fbo then
-		self:createTextures()
+	if not shader then
+		self.fbo_shader = nil
+		self.fbo:shader(nil)
+		self:defineColors()
 		return
 	end
 
 	self.fbo_shader = Shader.new(shader)
-	if not self.fbo_shader.shad then
-		self.fbo = nil
-		self:createTextures()
-		return
-	end
+	self.fbo:shader(self.fbo_shader)
 
-	self.targetshader = engine.Tiles:loadImage(texture):glTexture()
-	self:createTextures()
+	self.quad_texture = engine.Tiles:loadImage(texture):glTexture()
+	self:defineColors()
 end
 
 function _M:displayArrow(sx, sy, tx, ty, full)
+do print("DGDGDGDG show arrow!!!") return end
 	local x, y = (tx*2.5 + sx) / 3.5, (ty*2.5 + sy) / 3.5
 
 	if full then x, y = (tx*3.5 + sx) / 4.5, (ty*3.5 + sy) / 4.5 end
@@ -107,49 +102,6 @@ function _M:displayArrow(sx, sy, tx, ty, full)
 	self.arrow:toScreenFull(- self.tile_w * Map.zoom / 2, - self.tile_h * Map.zoom / 2, self.tile_w * Map.zoom, self.tile_h * Map.zoom, self.tile_w * Map.zoom, self.tile_h * Map.zoom, 1, 1, 1, full and 1 or 0.85)
 
 	core.display.glMatrix(false)
-end
-
-function _M:display(dispx, dispy, prevfbo, rotate_keyframes)
-	local ox, oy = self.display_x, self.display_y
-	local sx, sy = game.level.map._map:getScroll()
-	sx = sx + game.level.map.display_x
-	sy = sy + game.level.map.display_y
-	self.display_x, self.display_y = dispx or sx or self.display_x, dispy or sy or self.display_y
-
-	if self.active then
-		if not self.fbo then
-			self:realDisplay(self.display_x, self.display_y)
-		else
-			self.fbo:use(true, 0, 0, 0, 0)
-			self:realDisplay(0, 0)
-			self.fbo:use(false, prevfbo)
-			self.targetshader:bind(1, false)
-			self.fbo_shader.shad:use(true)
-			self.fbo_shader.shad:uniTileSize(self.tile_w, self.tile_h)
-			self.fbo_shader.shad:uniScrollOffset(0, 0)
-			self.fbo:toScreen(self.display_x, self.display_y, Map.viewport.width, Map.viewport.height, self.fbo_shader.shad, 1, 1, 1, 1, true)
-			self.fbo_shader.shad:use(false)
-		end
-
-		if not self.target_type.immediate_keys or firstx then
-			core.display.glMatrix(true)
-			core.display.glTranslate(self.display_x + (self.target.x - game.level.map.mx) * self.tile_w * Map.zoom + self.tile_w * Map.zoom / 2, self.display_y + (self.target.y - game.level.map.my + util.hexOffset(self.target.x)) * self.tile_h * Map.zoom + self.tile_h * Map.zoom / 2, 0)
-			if rotate_keyframes then
-				self.cursor_rotate = self.cursor_rotate - rotate_keyframes / 2
-				core.display.glRotate(self.cursor_rotate, 0, 0, 1)
-			end
-			self.cursor:toScreen(-self.tile_w * Map.zoom / 2, -self.tile_h * Map.zoom / 2, self.tile_w * Map.zoom, self.tile_h * Map.zoom)
-			core.display.glMatrix(false)
-		end
-
-		if self.target_type.immediate_keys then
-			for dir, spot in pairs(util.adjacentCoords(self.target_type.start_x, self.target_type.start_y)) do
-				self:displayArrow(self.target_type.start_x, self.target_type.start_y, spot[1], spot[2], firstx == spot[1] and firsty == spot[2])
-			end
-		end
-	end
-
-	self.display_x, self.display_y = ox, oy
 end
 
 -- Being completely blocked by the corner of an adjacent tile is annoying, so let's make it a special case and hit it instead.
@@ -235,64 +187,112 @@ _M.defaults.display_default_target = function(self, d)
 	self.target.y = self.target.y or self.source_actor.y
 end
 
+function _M:display(dispx, dispy, prevfbo, rotate_keyframes)
+	local ox, oy = self.display_x, self.display_y
+	local sx, sy = game.level.map._map:getScroll()
+	sx = sx + game.level.map.display_x
+	sy = sy + game.level.map.display_y
+	self.display_x, self.display_y = dispx or sx or self.display_x, dispy or sy or self.display_y
+
+	if self.active then
+		self:realDisplay(self.display_x, self.display_y)
+		self.renderer:toScreen(self.display_x, self.display_y)
+
+		-- if not self.target_type.immediate_keys or firstx then
+		-- 	core.display.glMatrix(true)
+		-- 	core.display.glTranslate(self.display_x + (self.target.x - game.level.map.mx) * self.tile_w * Map.zoom + self.tile_w * Map.zoom / 2, self.display_y + (self.target.y - game.level.map.my + util.hexOffset(self.target.x)) * self.tile_h * Map.zoom + self.tile_h * Map.zoom / 2, 0)
+		-- 	if rotate_keyframes then
+		-- 		self.cursor_rotate = self.cursor_rotate - rotate_keyframes / 2
+		-- 		core.display.glRotate(self.cursor_rotate, 0, 0, 1)
+		-- 	end
+		-- 	self.cursor:toScreen(-self.tile_w * Map.zoom / 2, -self.tile_h * Map.zoom / 2, self.tile_w * Map.zoom, self.tile_h * Map.zoom)
+		-- 	core.display.glMatrix(false)
+		-- end
+
+		-- if self.target_type.immediate_keys then
+		-- 	for dir, spot in pairs(util.adjacentCoords(self.target_type.start_x, self.target_type.start_y)) do
+		-- 		self:displayArrow(self.target_type.start_x, self.target_type.start_y, spot[1], spot[2], firstx == spot[1] and firsty == spot[2])
+		-- 	end
+		-- end
+	end
+
+	self.display_x, self.display_y = ox, oy
+end
+
 function _M:realDisplay(dispx, dispy, display_highlight)
+	self.zone_layer:clear()
+
 	if not display_highlight then
 		if util.isHex() then
-			display_highlight = function(texture, tx, ty, count)
-				count = count or 1
-				if self.target_type.filter and not self.target_type.no_filter_highlight and self.target_type.filter(tx, ty) then count = count + 1 end
-				for i = 1, count do
-					texture:toScreenHighlightHex(
-						dispx + (tx - game.level.map.mx) * self.tile_w * Map.zoom,
-						dispy + (ty - game.level.map.my + util.hexOffset(tx)) * self.tile_h * Map.zoom,
-						self.tile_w * Map.zoom,
-						self.tile_h * Map.zoom)
-				end
-			end
+			-- DGDGDGDG
+			-- display_highlight = function(texture, tx, ty, count)
+			-- 	count = count or 1
+			-- 	if self.target_type.filter and not self.target_type.no_filter_highlight and self.target_type.filter(tx, ty) then count = count + 1 end
+			-- 	for i = 1, count do
+			-- 		texture:toScreenHighlightHex(
+			-- 			dispx + (tx - game.level.map.mx) * self.tile_w * Map.zoom,
+			-- 			dispy + (ty - game.level.map.my + util.hexOffset(tx)) * self.tile_h * Map.zoom,
+			-- 			self.tile_w * Map.zoom,
+			-- 			self.tile_h * Map.zoom)
+			-- 	end
+			-- end
 		else
-			display_highlight = function(texture, tx, ty, count)
+			display_highlight = function(color, tx, ty, count)
 				count = count or 1
 				if self.target_type.filter and not self.target_type.no_filter_highlight and self.target_type.filter(tx, ty) then count = count + 1 end
 				for i = 1, count do
-					texture:toScreen(
-						dispx + (tx - game.level.map.mx) * self.tile_w * Map.zoom,
-						dispy + (ty - game.level.map.my) * self.tile_h * Map.zoom,
-						self.tile_w * Map.zoom,
-						self.tile_h * Map.zoom)
+					local x1 = dispx + (tx - game.level.map.mx) * self.tile_w * Map.zoom
+					local y1 = dispy + (ty - game.level.map.my) * self.tile_h * Map.zoom
+					local x2 = x1 + self.tile_w * Map.zoom
+					local y2 = y1 + self.tile_h * Map.zoom
+					self.zone_layer:quad(
+						x1, y1, u1, v1,
+						x2, y1, u2, v1,
+						x2, y2, u2, v2,
+						x1, y2, u1, v2,
+						unpack(color)
+					)
+
+					-- texture:toScreen(
+					-- 	dispx + (tx - game.level.map.mx) * self.tile_w * Map.zoom,
+					-- 	dispy + (ty - game.level.map.my) * self.tile_h * Map.zoom,
+					-- 	self.tile_w * Map.zoom,
+					-- 	self.tile_h * Map.zoom)
 				end
 			end
 		end
 	end
 
-	if self.target_type.multiple then
-		local make_display_highlight = function(collector)
-			return function(texture, tx, ty, count)
-				count = count or 1
-				collector[tx] = collector[tx] or {}
-				collector[tx][ty] = {texture, count}
-			end
-		end
-		local draw_highlight = function(collector)
-			for x, ys in pairs(collector) do
-				for y, tex in pairs(ys) do
-					display_highlight(tex[1], x, y, tex[2])
-				end
-			end
-		end
+	-- DGDGDGDG oh my .. multitarget !! !
+	-- if self.target_type.multiple then
+	-- 	local make_display_highlight = function(collector)
+	-- 		return function(texture, tx, ty, count)
+	-- 			count = count or 1
+	-- 			collector[tx] = collector[tx] or {}
+	-- 			collector[tx][ty] = {texture, count}
+	-- 		end
+	-- 	end
+	-- 	local draw_highlight = function(collector)
+	-- 		for x, ys in pairs(collector) do
+	-- 			for y, tex in pairs(ys) do
+	-- 				display_highlight(tex[1], x, y, tex[2])
+	-- 			end
+	-- 		end
+	-- 	end
 
-		local target_type = self.target_type
+	-- 	local target_type = self.target_type
 
-		local textures = {}
-		local sub_display_highlight = make_display_highlight(textures)
-		for _, tt in ipairs(target_type) do
-			self.target_type = tt
-			self:realDisplay(dispx, dispy, sub_display_highlight)
-		end
-		draw_highlight(textures)
+	-- 	local textures = {}
+	-- 	local sub_display_highlight = make_display_highlight(textures)
+	-- 	for _, tt in ipairs(target_type) do
+	-- 		self.target_type = tt
+	-- 		self:realDisplay(dispx, dispy, sub_display_highlight)
+	-- 	end
+	-- 	draw_highlight(textures)
 
-		self.target_type = target_type
-		return
-	end
+	-- 	self.target_type = target_type
+	-- 	return
+	-- end
 
 	local d = {}
 	d.display_highlight = display_highlight
