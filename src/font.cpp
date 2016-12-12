@@ -158,7 +158,7 @@ bool font_add_atlas(font_type *f, int32_t c, font_style style) {
 void font_update_atlas(font_type *f) {
 	if (f->atlas->changed) {
 		glBindTexture(GL_TEXTURE_2D, f->atlas->id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, f->atlas->width, f->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, f->atlas->data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, f->atlas->width, f->atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, f->atlas->data);
 	}
 }
 
