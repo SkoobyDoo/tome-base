@@ -47,9 +47,11 @@ fs.mkdir(fs.getHomePath().."/4.0/profiles/")
 fs.mkdir(fs.getHomePath().."/4.0/settings/")
 
 fs.setPathAllowed(engine.homepath)
-fs.setPathAllowed(fs.getRealPath("/addons/"))
-if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/")) end
-fs.setPathAllowed(fs.getRealPath("/modules/"))
+if not __ANDROID__ then
+	fs.setPathAllowed(fs.getRealPath("/addons/"))
+	if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/")) end
+	fs.setPathAllowed(fs.getRealPath("/modules/"))
+end
 fs.doneSettingPathAllowed()
 fs.setWritePath(engine.homepath)
 
@@ -157,7 +159,12 @@ if not config.settings.shaders_active then core.shader.disable() print("Disablin
 if core.shader.active() then
 	local Shader = require "engine.Shader"
 	local default = Shader.new("default/gl")
-	if default.shad then default.shad:setDefault() end
+	if default.shad then
+		print("[SHADER] Defined default gl shader")
+		default.shad:setDefault()
+	else
+		print("[SHADER] ERROR !!!!! COULD NOT DEFINE default gl shader")
+	end
 	Shader:setDefault("text", "default/text")
 end
 

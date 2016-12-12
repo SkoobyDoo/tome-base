@@ -447,7 +447,9 @@ static void particles_draw(particles_type *ps, mat4 model)
 	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)offsetof(particles_vertex, color));
 
 	// glDrawArrays(GL_TRIANGLES, 0, ps->batch_nb);
+#if 0 // DGDGDGDG Open GL ES2  needs to be happy
 	glDrawArrays(GL_QUADS, 0, ps->batch_nb);
+#endif
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 

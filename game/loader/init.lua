@@ -26,7 +26,7 @@ local load load = function(...)
 	local args = {...}
 	local req_engine = args[1] or "te4"
 	local req_version = args[2] or "LATEST"
-	__load_module = args[3] or "boot"
+	__load_module = args[3] or "demo"
 	__player_name = args[4] or "player"
 	__player_new = args[5] and true or false
 	if args[6] then
@@ -75,6 +75,10 @@ local load load = function(...)
 				fs.umount(eng_path)
 			end
 		end
+	end
+	if __ANDROID__ then
+		local ff, err = loadfile("/engine/version.lua")
+		if ff and not err then tryLoadEngine(ff, "/engine/", nil) end
 	end
 
 	__available_engines = engines

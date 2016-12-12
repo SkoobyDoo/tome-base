@@ -712,7 +712,7 @@ void on_redraw()
 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
+//	glLoadIdentity();
 
 	float step = 30 / reference_fps;
 	nb_keyframes += step;
@@ -878,7 +878,7 @@ int initGL()
 	tglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	/* Depth buffer setup */
-	glClearDepth( 1.0f );
+//	glClearDepth( 1.0f );
 
 	/* The Type Of Depth Test To Do */
 	glDepthFunc(GL_LEQUAL);
@@ -1160,7 +1160,9 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_profiler(L);
 		luaopen_bit(L);
 		luaopen_lpeg(L);
+#ifndef USE_ANDROID
 		luaopen_lxp(L);
+#endif
 		luaopen_md5_core(L);
 		luaopen_renderer(L);
 		luaopen_map(L);

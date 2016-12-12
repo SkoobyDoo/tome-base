@@ -276,6 +276,7 @@ function _M:setDefault(kind, name, args)
 	if not shad.shad then return end
 	
 	if kind == "text" then core.renderer.defaultTextShader(shad.shad) end
+	print("[SHADER] defining default "..kind.." to ", shad, shad.shad)
 	default[kind] = shad
 end
 
@@ -341,25 +342,29 @@ function _M:preprocess(code, kind, def)
 end
 
 function _M:rewriteShaderFrag(code, def)
-	code = [[varying vec2 te4_uv;
+	code = [[
+	varying vec2 te4_uv;
 	varying vec4 te4_fragcolor;		
 	]]..code
 	code = self:preprocess(code, "frag", def)
-	-- print("=====frag\n")
+	if __ANDROID__ then code = "precision mediump float;\n"..code end
+	-- print("=====frag\n", self.name)
 	-- print(code)
 	-- print("=====frag+\n")
 	return code
 end
 
 function _M:rewriteShaderVert(code, def)
-	code = [[attribute vec4 te4_position;
+	code = [[
+	attribute vec4 te4_position;
 	attribute vec2 te4_texcoord;
 	attribute vec4 te4_color;
 	varying vec2 te4_uv;
 	varying vec4 te4_fragcolor;
 	]]..code
 	code = self:preprocess(code, "vert", def)
-	-- print("=====vert\n")
+	if __ANDROID__ then code = "precision mediump float;\n"..code end
+	-- print("=====vert\n", self.name)
 	-- print(code)
 	-- print("=====vert+\n")
 	return code

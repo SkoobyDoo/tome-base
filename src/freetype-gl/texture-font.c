@@ -460,6 +460,7 @@ texture_font_load_glyph( texture_font_t * self,
         flags |= FT_LOAD_FORCE_AUTOHINT;
     }
 
+#ifndef USE_ANDROID
     if( self->atlas->depth == 3 )
     {
         FT_Library_SetLcdFilter( library, FT_LCD_FILTER_LIGHT );
@@ -470,6 +471,7 @@ texture_font_load_glyph( texture_font_t * self,
             FT_Library_SetLcdFilterWeights( library, self->lcd_weights );
         }
     }
+#endif
 
     error = FT_Load_Glyph( face, glyph_index, flags );
     if( error )

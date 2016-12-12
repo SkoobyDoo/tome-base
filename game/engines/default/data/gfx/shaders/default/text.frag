@@ -9,11 +9,11 @@ void main(void)
 	vec4  color = texture2D(tex, te4_uv);
 	float dist  = color.a;
 
-	if (outline) {
+	if (outline != 0.0) {
 		// Outline -- it's actually a simple pregenerated outline, but without signed distance map
 		gl_FragColor = vec4(te4_fragcolor.rgb, dist);
 	} else {	
-		if (bold) { // Bold
+		if (bold != 0.0) { // Bold
 			dist = sqrt(dist);
 		}
 
