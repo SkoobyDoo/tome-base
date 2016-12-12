@@ -894,13 +894,13 @@ core.display.resetAllFonts = function(state)
 	end end
 end
 
-core.display.newFont = function(font, size, no_cache)
-	if no_cache then return oldNewFont(font, size) end
-	if font_cache[font] and font_cache[font][size] then print("Using cached font", font, size) return font_cache[font][size] end
-	font_cache[font] = font_cache[font] or {}
-	font_cache[font][size] = oldNewFont(font, size)
-	return font_cache[font][size]
-end
+-- core.display.newFont = function(font, size, no_cache)
+-- 	if no_cache then return oldNewFont(font, size) end
+-- 	if font_cache[font] and font_cache[font][size] then print("Using cached font", font, size) return font_cache[font][size] end
+-- 	font_cache[font] = font_cache[font] or {}
+-- 	font_cache[font][size] = oldNewFont(font, size)
+-- 	return font_cache[font][size]
+-- end
 core.display.getFontCache = function() return font_cache end
 
 local tmps = core.display.newFont("/data/font/Vera.ttf", 12)

@@ -539,6 +539,15 @@ static int gl_text_shadow(lua_State *L)
 	return 1;
 }
 
+static int gl_text_outline(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	v->setOutline(lua_tonumber(L, 2));
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_text_text_color(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
@@ -861,6 +870,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"__gc", gl_text_free},
 	{"text", gl_text_set},
 	{"shadow", gl_text_shadow},
+	{"outline", gl_text_outline},
 	{"textColor", gl_text_text_color},
 	{"getStats", gl_text_stats},
 	{"maxWidth", gl_text_max_width},

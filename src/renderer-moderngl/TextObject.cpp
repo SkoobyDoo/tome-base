@@ -58,7 +58,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 	ssize_t off = 1;
 	int32_t c;
 	float italic = 0;
-	if (style == FONT_STYLE_ITALIC) { style = FONT_STYLE_NORMAL; italic = 0.2; }
+	if (style == FONT_STYLE_ITALIC) { style = FONT_STYLE_NORMAL; italic = 0.3; }
 	while (off > 0) {
 		off = utf8proc_iterate((const uint8_t*)str, len, &c);
 		str += off;
@@ -74,28 +74,34 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			
 			float x0  = bx + x + d->offset_x * font->scale;
 			float x1  = x0 + d->width * font->scale;
-			float ydec = d->height * font->scale - d->offset_y * font->scale;
-			float y0  = by + font->font->height * font->scale + ydec;
-			float y1  = y0 - d->height * font->scale;
+			float italicx = - d->offset_x * font->scale * italic;
+
+			// float ydec = d->height * font->scale - d->offset_y * font->scale;
+			// float y0  = by + font->font->height * font->scale + ydec;
+			// float y1  = y0 - d->height * font->scale;
+			float y0 = by + (font->font->ascender + font->font->descender - d->offset_y) * font->scale;
+			float y1 = y0 + (d->height) * font->scale;
 
 			if (shadow_x || shadow_y) {
-				addQuad(
-					shadow_x+x0 - d->advance_x * font->scale * italic, shadow_y+y0,		d->s0, d->t1,
-					shadow_x+x1 - d->advance_x * font->scale * italic, shadow_y+y0,		d->s1, d->t1,
-					shadow_x+x1, shadow_y+y1,		d->s1, d->t0,
-					shadow_x+x0, shadow_y+y1,		d->s0, d->t0,
-					shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a 
-				);
+				vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				vertices.push_back({{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				vertices.push_back({{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				vertices.push_back({{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 			}
 
-			addQuad(
-				x0 - d->advance_x * font->scale * italic, y0,		d->s0, d->t1,
-				x1 - d->advance_x * font->scale * italic, y0,		d->s1, d->t1,
-				x1, y1,		d->s1, d->t0,
-				x0, y1,		d->s0, d->t0,
-				r, g, b, a
-			);
-			x += d->advance_x * font->scale;
+			if (outline) {
+				vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
+				vertices.push_back({{x1+italicx, y0, 0, 1},	{d->s1, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
+				vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
+				vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, outline, 0, 0}});
+			}
+
+			vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			vertices.push_back({{x1+italicx, y0, 0, 1},	{d->s1, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+
+			x += 1.1 * d->advance_x * font->scale; // WTF without a 110% factor letters always look too close .. uh
 		}
 	}
 	return x;
@@ -112,7 +118,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 
 		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
 		if (d) {
-			if (last_glyph) {
+			if (oldc) {
 				x += texture_glyph_get_kerning(d, oldc) * font->scale;
 			}
 			x += d->advance_x * font->scale;
@@ -143,7 +149,7 @@ void DORText::parseText() {
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	vertices.reserve(len * 4);
 
-	int font_h = f->font->height * f->scale;
+	int font_h = f->lineskip * f->scale;
 	int nb_lines = 1;
 	int id_real_line = 1;
 	char *line_data = NULL;

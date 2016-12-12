@@ -19,7 +19,7 @@
 
 return {
 	frag = "default/text",
-	vert = "default/gl",
+	vert = "default/text",
 	args = {
 		tex = { texture = 0 },
 	},
