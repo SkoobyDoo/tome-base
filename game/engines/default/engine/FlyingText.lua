@@ -41,6 +41,12 @@ function _M:getDO()
 	return self.renderer
 end
 
+--- Sets a tilt to the texts based on xvel
+-- @param angle, in degree when xvel is 5
+function _M:setTilt(a)
+	self.tilt = a
+end
+
 local UI = require "engine.ui.Base"
 _M.setTextOutline = UI.setTextOutline
 _M.setTextShadow = UI.setTextShadow
@@ -71,6 +77,7 @@ function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	f.DO:text(str)
 	f.DO:center()
 	f.DO:translate(x, y)
+	if self.tilt then f.DO:rotate(0, 0, math.rad(self.tilt * f.xvel / 5)) end
 	f.w, f.h = f.DO:getStats()
 	self.renderer:add(f.DO)
 	self.flyers[f] = true

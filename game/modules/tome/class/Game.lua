@@ -106,6 +106,7 @@ function _M:runReal()
 	self.tooltip = Tooltip.new(self.uiset.init_font_mono, self.uiset.init_size_mono, {255,255,255}, {30,30,30,230})
 	self.tooltip2 = Tooltip.new(self.uiset.init_font_mono, self.uiset.init_size_mono, {255,255,255}, {30,30,30,230})
 	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
+	self.flyers:setTilt(35)
 	self.flyers:setTextOutline(0.7)
 	game:setFlyingText(self.flyers)
 

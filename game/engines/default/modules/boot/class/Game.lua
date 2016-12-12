@@ -133,6 +133,7 @@ function _M:run()
 
 	local flyfont, flysize = FontPackage:getFont("flyer")
 	self.flyers = FlyingText.new(flyfont, flysize, flyfont, flysize + 3)
+	self.flyers:setTilt(35)
 	self.flyers:setTextShadow(1)
 	self:setFlyingText(self.flyers)
 	self.log = function(style, ...) end
