@@ -57,6 +57,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 	int x = 0, y = by;
 	ssize_t off = 1;
 	int32_t c;
+	float scale = font->scale;
 	float italic = 0;
 	if (style == FONT_STYLE_ITALIC) { style = FONT_STYLE_NORMAL; italic = 0.3; }
 	while (off > 0) {
@@ -64,25 +65,25 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 		str += off;
 		len -= off;
 
-		font->font->outline_thickness = 2;
-		font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
-		ftgl::texture_glyph_t *doutline = ftgl::texture_font_get_glyph(font->font, c);
-
 		font->font->outline_thickness = 0;
 		font->font->rendermode = ftgl::RENDER_SIGNED_DISTANCE_FIELD;
 		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
 		if (d) {
+			float kerning = 0;
 			if (last_glyph) {
-				x += texture_glyph_get_kerning(d, last_glyph) * font->scale;
+				kerning = texture_glyph_get_kerning(d, last_glyph) * scale;
 			}
+			x += texture_glyph_get_kerning(d, last_glyph) * scale;
 			positions.push_back({x, y});
 			last_glyph = c;
+
+		        // printf("Glyph: %c : %f + %f : %d : %d\n", c, kerning, d->advance_x, d->offset_x, d->width);
 			
-			float x0  = bx + x + d->offset_x * font->scale;
-			float x1  = x0 + d->width * font->scale;
-			float italicx = - d->offset_x * font->scale * italic;
-			float y0 = by + (font->font->ascender - d->offset_y) * font->scale;
-			float y1 = y0 + (d->height) * font->scale;
+			float x0  = bx + x + d->offset_x * scale;
+			float x1  = x0 + d->width * scale;
+			float italicx = - d->offset_x * scale * italic;
+			float y0 = by + (font->font->ascender - d->offset_y) * scale;
+			float y1 = y0 + (d->height) * scale;
 
 			if (shadow_x || shadow_y) {
 				vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
@@ -92,16 +93,21 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			}
 
 			if (outline) {
-				float x0  = bx + x + doutline->offset_x * font->scale;
-				float x1  = x0 + doutline->width * font->scale;
-				float italicx = - doutline->offset_x * font->scale * italic;
-				float y0 = by + (font->font->ascender - doutline->offset_y) * font->scale;
-				float y1 = y0 + (doutline->height) * font->scale;
+				font->font->outline_thickness = 2;
+				font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
+				ftgl::texture_glyph_t *doutline = ftgl::texture_font_get_glyph(font->font, c);
+				if (doutline) {
+					float x0  = bx + x + doutline->offset_x * scale;
+					float x1  = x0 + doutline->width * scale;
+					float italicx = - doutline->offset_x * scale * italic;
+					float y0 = by + (font->font->ascender - doutline->offset_y) * scale;
+					float y1 = y0 + (doutline->height) * scale;
 
-				vertices.push_back({{x0+italicx, y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-				vertices.push_back({{x1+italicx, y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-				vertices.push_back({{x1, y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-				vertices.push_back({{x0, y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{x0+italicx, y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{x1+italicx, y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{x1, y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{x0, y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+				}
 			}
 
 			vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
@@ -109,7 +115,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 			vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 
-			x += 1.05 * d->advance_x * font->scale; // WTF without a 110% factor letters always look too close .. uh
+			x += d->advance_x * scale; // WTF without a 110% factor letters always look too close .. uh
 		}
 	}
 	return x;
@@ -119,6 +125,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 	int x = 0, y = 0;
 	ssize_t off = 1;
 	int32_t c, oldc = 0;
+	float scale = font->scale;
 	while (off > 0) {
 		off = utf8proc_iterate((const uint8_t*)str, len, &c);
 		str += off;
@@ -127,9 +134,9 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
 		if (d) {
 			if (oldc) {
-				x += texture_glyph_get_kerning(d, oldc) * font->scale;
+				x += texture_glyph_get_kerning(d, oldc) * scale;
 			}
-			x += d->advance_x * font->scale;
+			x += d->advance_x * scale;
 		}
 		oldc = c;
 	}

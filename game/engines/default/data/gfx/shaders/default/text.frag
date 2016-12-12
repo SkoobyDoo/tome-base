@@ -2,7 +2,7 @@ uniform sampler2D tex;
 varying float bold;
 varying float outline;
 
-const float glyph_center   = 0.50;
+const float glyph_center = 0.50;
 
 void main(void)
 {
