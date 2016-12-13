@@ -65,7 +65,7 @@ end
 _M.allcontainers = {
 	playerframe = "mod.class.uiset.minimalist.PlayerFrame",
 	gamelog = "mod.class.uiset.minimalist.Log",
-	minimap = "mod.class.uiset.minimalist.Minimap",
+	-- minimap = "mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
 	toolbar = "mod.class.uiset.minimalist.Toolbar",
 	hotkeys = "mod.class.uiset.minimalist.Hotkeys",
 }

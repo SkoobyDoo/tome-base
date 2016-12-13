@@ -65,7 +65,7 @@ static void hook_wait_display(lua_State *L, lua_Debug *ar)
 
 	static int last_tick = 0;
 	int now = SDL_GetTicks();
-	if (now - last_tick < (3000 / requested_fps)) return;
+	if (now - last_tick < (3000 / (requested_fps ? requested_fps : 30))) return;
 	last_tick = now;
 	on_redraw();
 }
@@ -220,7 +220,7 @@ bool draw_waiting(lua_State *L)
 	if (!waiting) return FALSE;
 
 	// DGDGDGDG reenable me
-	printf("===FAKE DRAWING WAIT===\n");
+	// printf("===FAKE DRAWING WAIT===\n");
 	// if (wait_draw_ref != LUA_NOREF)
 	// {
 	// 	lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);

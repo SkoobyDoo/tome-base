@@ -77,6 +77,7 @@ protected:
 
 	bool count_draws = false;
 	bool count_time = false;
+	bool count_vertexes = false;
 
 	bool cutting = false;
 	vec4 cutpos1;
@@ -102,6 +103,7 @@ public:
 	}
 
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
+	void countVertexes(bool count) { count_vertexes = count; };
 	void countDraws(bool count) { count_draws = count; };
 	void countTime(bool count) { count_time = count; };
 	void zSorting(bool sort) { zsort = sort; };

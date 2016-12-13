@@ -313,7 +313,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 
 	// Draw all display lists
-	// printf("=r= drawing %d lists\n", displays.size());
+	int nb_vert = 0;
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if ((*dl)->sub) {
 			(*dl)->sub->toScreen(cur_model * (*dl)->sub->use_model, cur_color * (*dl)->sub->use_color);
@@ -386,6 +386,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 
 			// printf("=r= drawing %d elements\n", (*dl)->list.size() / 4 * 6);
 			glDrawElements(kind, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
+			nb_vert += (*dl)->list.size();
 			// glDrawArrays(kind, 0, (*dl)->list.size());
 
 			// glDisableVertexAttribArray(shader->vertex_attrib);
@@ -404,6 +405,9 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 		glDisable(GL_SCISSOR_TEST);
 	}
 
+	if (count_vertexes) {
+		printf("RendererGL<%s> drew %d vertexes in %d calls\n", renderer_name, nb_vert, displays.size());
+	}
 	if (count_draws) {
 		printf("RendererGL<%s> drew in %d calls\n", renderer_name, nb_draws);
 	}

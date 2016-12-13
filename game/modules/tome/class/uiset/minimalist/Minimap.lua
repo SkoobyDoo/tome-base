@@ -89,11 +89,12 @@ end
 
 function _M:update(nb_keyframes)
 	if not game.level or not game.level.map then return end
-	if self.old_name ~= game.zone_name then self.text_name:text(game.zone_name or ""):center() end
+	if self.old_name ~= game.zone_name then self.text_name:text(game.zone_name or ""):center() self.old_name = game.zone_name end
 	if self.old_map ~= game.level.map then
 		self.mm_do = game.level.map:getMinimapDO()
 		self.mm_container:clear()
 		self.mm_container:add(self.mm_do)
+		self.old_map = game.level.map
 	end
 	if self.mm_do then
 		if game.player.x then game.minimap_scroll_x, game.minimap_scroll_y = util.bound(game.player.x - 25, 0, game.level.map.w - 50), util.bound(game.player.y - 25, 0, game.level.map.h - 50)

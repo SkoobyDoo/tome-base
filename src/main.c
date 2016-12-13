@@ -854,8 +854,12 @@ void setupDisplayTimer(int fps)
 	
 	if (display_timer_id) SDL_RemoveTimer(display_timer_id);
 	requested_fps = fps;
-	display_timer_id = SDL_AddTimer(1000 / fps, redraw_timer, NULL);
-	printf("[ENGINE] Setting requested FPS to %d (%d ms)\n", fps, 1000 / fps);
+	if (requested_fps) {
+		display_timer_id = SDL_AddTimer(1000 / fps, redraw_timer, NULL);
+		printf("[ENGINE] Setting requested FPS to %d (%d ms)\n", fps, 1000 / fps);
+	} else {
+		printf("[ENGINE] Setting requested FPS to unbound\n");
+	}
 	
 	SDL_mutexV(renderingLock);
 
@@ -1465,7 +1469,11 @@ int main(int argc, char *argv[])
 	SDL_Event event;
 	while (!exit_engine)
 	{
-		if (!isActive || tickPaused) SDL_WaitEvent(NULL);
+		if (!requested_fps) { // Unbound FPS mode
+			on_redraw();
+		} else {
+			if (!isActive || tickPaused) SDL_WaitEvent(NULL);
+		}
 
 #ifdef SELFEXE_WINDOWS
 		if (os_autoflush) _commit(_fileno(stdout));

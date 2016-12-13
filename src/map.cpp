@@ -649,6 +649,7 @@ static int map_new(lua_State *L)
 		sprintf(name, "map-layer-%d", i);
 		map->z_renderers[i]->setRendererName(name, false);
 		map->z_renderers[i]->setManualManagement(true);
+		// map->z_renderers[i]->countVertexes(true);
 	}
 
 	map->shader_to_shaderkind = new unordered_map<string, float>;
@@ -934,6 +935,7 @@ static int map_set_grid(lua_State *L)
 
 		// Note that the layer changed so that we rebuild DisplayLists for this layer
 		if (map->grids[x][y][i] != old) {
+			// printf("Invalidagin layer %d at %dx%d because %lx != %lx\n", i,x,y, old, map->grids[x][y][i]);
 			map->z_changed[i] = true;
 		}
 
@@ -1618,14 +1620,18 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 	map->displayed_x = x - scrollx;
 	map->displayed_y = y - scrolly;
 
+	float tim = SDL_GetTicks() / 1500.0;
 	mat4 scrollmodel = mat4();
+	// scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx + map->w / 2 * map->tile_w * cos(tim), -scrolly + map->h / 2 * map->tile_w * sin(tim), 0));
 	scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx, -scrolly, 0));
 	model = model * scrollmodel;
 
 	map->used_mx = mx;
 	map->used_my = my;
 
+	// int mini = mx, maxi = mx + 2, minj =  my, maxj = my + 2;
 	int mini = mx - 1, maxi = mx + map->mwidth + 2, minj =  my - 1, maxj = my + map->mheight + 2;
+	// int mini = mx - 50, maxi = mx + map->mwidth + 50, minj =  my - 50, maxj = my + map->mheight + 50;
 	if(mini < 0)
 		mini = 0;
 	if(minj < 0)
