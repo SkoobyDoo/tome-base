@@ -1246,6 +1246,10 @@ static int map_set_scroll(lua_State *L)
 	int y = luaL_checknumber(L, 3);
 	int smooth = luaL_checknumber(L, 4);
 
+	if (map->mx != x || map->my != y) {
+		for (int z = 0; z < map->zdepth; z++) map->z_changed[z] = true;
+	}
+
 	if (smooth)
 	{
 		// Not moving, use starting point
@@ -1272,8 +1276,6 @@ static int map_set_scroll(lua_State *L)
 	map->mx = x;
 	map->my = y;
 	map->seen_changed = true;
-
-	for (int z = 0; z < map->zdepth; z++) map->z_changed[z] = true;
 	return 0;
 }
 
