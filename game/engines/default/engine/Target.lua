@@ -35,9 +35,6 @@ function _M:init(map, source_actor)
 	self.target_type = {}
 	self.cursor_rotate = 0
 
-	self.cursor = engine.Tiles:loadImage("target_cursor.png"):glTexture()
-	self.arrow = engine.Tiles:loadImage("target_arrow.png"):glTexture()
-
 	self.source_actor = source_actor
 
 	-- Setup the tracking target table
@@ -48,16 +45,39 @@ function _M:init(map, source_actor)
 --	setmetatable(self.target, {__mode='v'})
 
 
-	self.renderer = core.renderer.renderer()
-	self.fbo = core.renderer.target()
+	self.renderer = core.renderer.renderer("static"):setRendererName("Targetting System") -- The prime renderer
+
+	self.fbo = core.renderer.target() -- The fbo into which we draw the targetting quads
 	self.fbo:displaySize(Map.viewport.width, Map.viewport.height)
-	self.fborenderer = core.renderer.renderer()
+	
+	self.fborenderer = core.renderer.renderer("stream") -- The renderer used to draw into the fbo
 	self.fbo:setAutoRender(self.fborenderer)
+
 	self.renderer:add(self.fbo)
+
+	-- Targetting retina
+	self.cursor = core.renderer.surface(engine.Tiles:loadImage("target_cursor.png"), -self.tile_w/2, -self.tile_h/2, self.tile_w, self.tile_h)
+	self.renderer:add(self.cursor)
+
+	-- Zone layer will contain the constantly updated affected layer
 	self.zone_layer = core.renderer.vertexes()
-	self.arrows_layer = core.renderer.container():shown(false)
 	self.fborenderer:add(self.zone_layer)
-	self.fborenderer:add(self.arrows_layer)
+
+	-- The 8 directions arrows
+	self.arrow = engine.Tiles:loadImage("target_arrow.png"):glTexture()
+	self.arrows_layer = core.renderer.container():shown(true)
+	for dir, spot in pairs(util.adjacentCoords(0, 0)) do
+		local tx, ty = spot[1], spot[2]
+		local x, y = tx * 2.5 / 3.5, ty * 2.5 / 3.5
+
+		local a = core.renderer.texture(self.arrow, 0, 0, self.tile_w * Map.zoom, self.tile_h * Map.zoom)
+		a:translate(500+x * self.tile_w * Map.zoom, 500+(y + util.hexOffset(x)) * self.tile_h * Map.zoom, 0)
+		a:rotate(math.rad(180), 0, math.rad(90+util.dirToAngle(dir)))
+
+		self.arrows_layer:add(a)
+	end
+	self.renderer:add(self.arrows_layer)
+	-- self.renderer:countTime(true)
 
 	self.zone_layer:texture(core.renderer.plaincolor)
 
@@ -66,25 +86,29 @@ function _M:init(map, source_actor)
 end
 
 function _M:defineColors()
-	self.sr = colors.smart1{255, 0, 0, 255} -- self.fbo_shader and 150 or 90}
-	self.sb = colors.smart1{0, 0, 255, 255} -- self.fbo_shader and 150 or 90}
-	self.sg = colors.smart1{0, 255, 0, 255} -- self.fbo_shader and 150 or 90}
-	self.sy = colors.smart1{255, 255, 0, 255} -- self.fbo_shader and 150 or 90}
-	self.syg = colors.smart1{153, 204, 50, 255} -- self.fbo_shader and 150 or 90}
+	self.sr = colors.smart1{255, 0, 0, self.fbo_shader and 150 or 90}
+	self.sb = colors.smart1{0, 0, 255, self.fbo_shader and 150 or 90}
+	self.sg = colors.smart1{0, 255, 0, self.fbo_shader and 150 or 90}
+	self.sy = colors.smart1{255, 255, 0, self.fbo_shader and 150 or 90}
+	self.syg = colors.smart1{153, 204, 50, self.fbo_shader and 150 or 90}
 end
 
 function _M:enableFBORenderer(texture, shader)
-	if not shader then
-		self.fbo_shader = nil
+	if shader then self.fbo_shader = Shader.new(shader) else self.fbo_shader = nil end
+
+	if not self.fbo_shader then
 		self.fbo:shader(nil)
 		self:defineColors()
 		return
 	end
-
-	self.fbo_shader = Shader.new(shader)
-	self.fbo:shader(self.fbo_shader)
+	self.fbo_shader.shad:uniTileSize(self.tile_w, self.tile_h)
+	self.fbo_shader.shad:uniMapCoord(Map.viewport.width, Map.viewport.height)
+	self.fbo_shader.shad:uniScrollOffset(0, 0)
 
 	self.quad_texture = engine.Tiles:loadImage(texture):glTexture()
+	self.fbo:shader(self.fbo_shader)
+	self.fbo:texture(self.quad_texture, 1)
+
 	self:defineColors()
 end
 
@@ -196,24 +220,22 @@ function _M:display(dispx, dispy, prevfbo, rotate_keyframes)
 
 	if self.active then
 		self:realDisplay(self.display_x, self.display_y)
-		self.renderer:toScreen(self.display_x, self.display_y)
 
-		-- if not self.target_type.immediate_keys or firstx then
-		-- 	core.display.glMatrix(true)
-		-- 	core.display.glTranslate(self.display_x + (self.target.x - game.level.map.mx) * self.tile_w * Map.zoom + self.tile_w * Map.zoom / 2, self.display_y + (self.target.y - game.level.map.my + util.hexOffset(self.target.x)) * self.tile_h * Map.zoom + self.tile_h * Map.zoom / 2, 0)
-		-- 	if rotate_keyframes then
-		-- 		self.cursor_rotate = self.cursor_rotate - rotate_keyframes / 2
-		-- 		core.display.glRotate(self.cursor_rotate, 0, 0, 1)
-		-- 	end
-		-- 	self.cursor:toScreen(-self.tile_w * Map.zoom / 2, -self.tile_h * Map.zoom / 2, self.tile_w * Map.zoom, self.tile_h * Map.zoom)
-		-- 	core.display.glMatrix(false)
-		-- end
+		if not self.target_type.immediate_keys or firstx then
+			self.cursor:shown(true)
+			self.cursor:translate((self.target.x - game.level.map.mx) * self.tile_w * Map.zoom + self.tile_w * Map.zoom / 2, (self.target.y - game.level.map.my + util.hexOffset(self.target.x)) * self.tile_h * Map.zoom + self.tile_h * Map.zoom / 2)
+			self.cursor:rotate(0, 0, core.game.getTime() / 1600)
+		else
+			self.cursor:shown(false)
+		end
 
 		-- if self.target_type.immediate_keys then
 		-- 	for dir, spot in pairs(util.adjacentCoords(self.target_type.start_x, self.target_type.start_y)) do
 		-- 		self:displayArrow(self.target_type.start_x, self.target_type.start_y, spot[1], spot[2], firstx == spot[1] and firsty == spot[2])
 		-- 	end
 		-- end
+
+		self.renderer:toScreen(self.display_x, self.display_y)
 	end
 
 	self.display_x, self.display_y = ox, oy
@@ -246,10 +268,10 @@ function _M:realDisplay(dispx, dispy, display_highlight)
 					local x2 = x1 + self.tile_w * Map.zoom
 					local y2 = y1 + self.tile_h * Map.zoom
 					self.zone_layer:quad(
-						x1, y1, u1, v1,
-						x2, y1, u2, v1,
-						x2, y2, u2, v2,
-						x1, y2, u1, v2,
+						x1, y1, 0, 0,
+						x2, y1, 1, 0,
+						x2, y2, 1, 1,
+						x1, y2, 0, 1,
 						unpack(color)
 					)
 

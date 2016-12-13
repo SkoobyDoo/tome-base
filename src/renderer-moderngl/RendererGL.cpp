@@ -39,7 +39,10 @@ void stopDisplayList() {
 	current_used_dl = NULL;
 }
 
-DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader) {
+DisplayList* getDisplayList(RendererGL *container) {
+	return getDisplayList(container, {0,0,0}, NULL);
+}
+DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader) {
 	if (available_dls.empty()) {
 		available_dls.push(new DisplayList());
 	}
@@ -70,7 +73,7 @@ void releaseDisplayList(DisplayList *dl) {
 		// Clear will nto release the memory, just "forget" about the data
 		// we keep the VBO allocated for later
 		dl->list.clear();
-		dl->tex = 0;
+		dl->tex = {0,0,0};
 		dl->shader = NULL;
 		dl->sub = NULL;
 		dl->tick = NULL;
@@ -98,7 +101,8 @@ DisplayList::~DisplayList() {
  ** RendererGL class
  ***************************************************************************/
 
-RendererGL::RendererGL() {
+RendererGL::RendererGL(VBOMode mode) {
+	this->mode = mode;
 	glGenBuffers(1, &vbo_elements);
 }
 RendererGL::~RendererGL() {
@@ -106,7 +110,7 @@ RendererGL::~RendererGL() {
 }
 
 DisplayObject* RendererGL::clone() {
-	RendererGL *into = new RendererGL();
+	RendererGL *into = new RendererGL(mode);
 	this->cloneInto(into);
 	return into;
 }
@@ -133,7 +137,7 @@ static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
 }
 
 void RendererGL::sortedToDL() {
-	GLuint tex = 0;
+	array<GLuint, DO_MAX_TEX> tex {{0,0,0}};
 	shader_type *shader = NULL;
 	DisplayList *dl = NULL;
 
@@ -144,13 +148,13 @@ void RendererGL::sortedToDL() {
 	for (auto v = zvertices.begin(); v != zvertices.end(); v++) {
 		if (v->sub) {
 			stopDisplayList(); // Needed to make sure we break texture chaining
-			dl = getDisplayList(this, 0, NULL);
+			dl = getDisplayList(this);
 			stopDisplayList(); // Needed to make sure we break texture chaining
 			dl->sub = v->sub;
 			dl = NULL;
 		} else if (v->tick) {
 			stopDisplayList(); // Needed to make sure we break texture chaining
-			dl = getDisplayList(this, 0, NULL);
+			dl = getDisplayList(this);
 			stopDisplayList(); // Needed to make sure we break texture chaining
 			dl->tick = v->tick;
 			dl = NULL;
@@ -209,7 +213,7 @@ void RendererGL::update() {
 
 			// printf("REBUILDING THE VBO %d...\n", (*dl)->vbo);
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, mode);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, (GLuint)mode);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());
 		}
 	}
@@ -287,6 +291,8 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
+	long int start_time;
+	if (count_time) start_time = SDL_GetTicks();
 	if (changed) update();
 	if (displays.empty()) return;
 	// printf("Displaying renderer %s\n", getRendererName());
@@ -320,7 +326,12 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 		} else {
 			// Bind the vertices
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
-		 	tglBindTexture(GL_TEXTURE_2D, (*dl)->tex);
+	 		tglActiveTexture(GL_TEXTURE0);
+		 	tglBindTexture(GL_TEXTURE_2D, (*dl)->tex[0]);
+		 	for (int i = 1; i < DO_MAX_TEX; i++) { if ((*dl)->tex[i]) {
+		 		tglActiveTexture(GL_TEXTURE0 + i);
+		 		tglBindTexture(GL_TEXTURE_2D, (*dl)->tex[i]);
+		 	} }
 			// printf("=r= binding vbo %d\n", (*dl)->vbo);
 			// printf("=r= binding tex %d\n", (*dl)->tex);
 
@@ -395,5 +406,8 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 
 	if (count_draws) {
 		printf("RendererGL<%s> drew in %d calls\n", renderer_name, nb_draws);
+	}
+	if (count_time) {
+		printf("RendererGL<%s> drew in %d ms\n", renderer_name, SDL_GetTicks() - start_time);
 	}
 }

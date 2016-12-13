@@ -23,12 +23,13 @@
 #define RENDERER_GL_H
 
 #include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/VBO.hpp"
 
 class RendererGL;
 
 typedef struct {
 	vertex v;
-	GLuint tex;
+	array<GLuint, DO_MAX_TEX> tex;
 	shader_type *shader;
 	SubRenderer *sub;
 	DisplayObject *tick;
@@ -42,7 +43,7 @@ class DisplayList {
 public:
 	int used = 0;
 	GLuint vbo = 0;
-	GLuint tex = 0;
+	array<GLuint, DO_MAX_TEX> tex{{0,0,0}};
 	shader_type *shader = NULL;
 	// DGDGDGDG: make two kind of vertex, the extended & non expanded one and thus two vectors. RendererGL should be able to detect abd pul lthe correct one
 	vector<vertex> list;
@@ -54,7 +55,8 @@ public:
 };
 
 extern void stopDisplayList();
-extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
+extern DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader);
+extern DisplayList* getDisplayList(RendererGL *container);
 
 /****************************************************************************
  ** Handling actual rendering to the screen & such
@@ -62,7 +64,7 @@ extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_typ
 class RendererGL : public SubRenderer {
 	friend class DORVertexes;
 protected:
-	GLuint mode = GL_DYNAMIC_DRAW;
+	VBOMode mode = VBOMode::DYNAMIC;
 	GLenum kind = GL_TRIANGLES;
 
 	GLuint *vbo_elements_data = NULL;
@@ -74,6 +76,7 @@ protected:
 	bool manual_dl_management = false;
 
 	bool count_draws = false;
+	bool count_time = false;
 
 	bool cutting = false;
 	vec4 cutpos1;
@@ -89,7 +92,7 @@ protected:
 public:
 	vector<sortable_vertex> zvertices;
 
-	RendererGL();
+	RendererGL(VBOMode mode);
 	virtual ~RendererGL();
 	virtual DisplayObject* clone();
 	virtual const char* getKind() { return "RendererGL"; };
@@ -100,6 +103,7 @@ public:
 
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
 	void countDraws(bool count) { count_draws = count; };
+	void countTime(bool count) { count_time = count; };
 	void zSorting(bool sort) { zsort = sort; };
 	void sortedToDL();
 	void update();

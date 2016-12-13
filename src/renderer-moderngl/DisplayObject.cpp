@@ -176,6 +176,23 @@ void DisplayObject::cloneInto(DisplayObject *into) {
 /*************************************************************************
  ** DORVertexes
  *************************************************************************/
+DORVertexes::~DORVertexes() {
+	for (int i = 0; i < DO_MAX_TEX; i++) {
+		if (tex_lua_ref[i] != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref[i]);
+	}
+};
+
+void DORVertexes::setTexture(GLuint tex, int lua_ref, int id) {
+	if (id >= DO_MAX_TEX) id = DO_MAX_TEX - 1;
+	if (tex_lua_ref[id] != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref[id]);
+	this->tex[id] = tex;
+	tex_lua_ref[id] = lua_ref;
+
+	for (int i = 0; i < DO_MAX_TEX; i++) {
+		if (this->tex[i]) tex_max = i + 1;
+	}
+}
+
 void DORVertexes::clear() {
 	vertices.clear();
 	setChanged();
@@ -185,12 +202,15 @@ void DORVertexes::cloneInto(DisplayObject *_into) {
 	DisplayObject::cloneInto(_into);
 	DORVertexes *into = dynamic_cast<DORVertexes*>(_into);
 	into->vertices.insert(into->vertices.begin(), vertices.begin(), vertices.end());
+	into->tex_max = tex_max;
 	into->tex = tex;
 	into->shader = shader;
 	// Clone reference
-	if (L && tex_lua_ref) {
-		lua_rawgeti(L, LUA_REGISTRYINDEX, tex_lua_ref);
-		into->tex_lua_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	for (int i = 0; i < DO_MAX_TEX; i++) {
+		if (L && tex_lua_ref[i] != LUA_NOREF) {
+			lua_rawgeti(L, LUA_REGISTRYINDEX, tex_lua_ref[i]);
+			into->tex_lua_ref[i] = luaL_ref(L, LUA_REGISTRYINDEX);
+		}
 	}
 }
 
@@ -512,7 +532,7 @@ void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 	this->use_model = cur_model;
 	this->use_color = cur_color;
 	stopDisplayList(); // Needed to make sure we break texture chaining
-	auto dl = getDisplayList(container, 0, NULL);
+	auto dl = getDisplayList(container);
 	stopDisplayList(); // Needed to make sure we break texture chaining
 	dl->sub = this;
 	// resetChanged();
@@ -580,7 +600,7 @@ DORTarget::DORTarget(int w, int h, int nbt) {
 	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// For display as a DO
-	tex = textures[0];
+	tex[0] = textures[0];
 	// Default display quad, can be removed and altered if needed with clear & addQuad
 	addQuad(
 		0, 0, 0, 1,
@@ -601,6 +621,11 @@ DORTarget::~DORTarget() {
 
 	glDeleteTextures(nbt, textures.data());
 	glDeleteFramebuffers(1, &fbo);
+}
+
+void DORTarget::setTexture(GLuint tex, int lua_ref, int id) {
+	if (id == 0) printf("Error, trying to set DORTarget texture 0.\n");
+	else DORVertexes::setTexture(tex, lua_ref, id);
 }
 
 void DORTarget::displaySize(int w, int h, bool center) {
@@ -666,7 +691,7 @@ void DORTarget::setAutoRender(SubRenderer *o, int ref) {
 void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (subrender) {
 		stopDisplayList(); // Needed to make sure we break texture chaining
-		auto dl = getDisplayList(container, 0, NULL);
+		auto dl = getDisplayList(container);
 		dl->tick = this;
 	}
 

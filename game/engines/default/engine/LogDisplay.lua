@@ -40,7 +40,7 @@ function _M:init(x, y, w, h, max, fontname, fontsize, color)
 	self.scroll = 0
 	self.changed = true
 
-	self.renderer = core.renderer.renderer()
+	self.renderer = core.renderer.renderer("stream")
 
 	local wself = self:weakSelf()
 	local cb = core.renderer.callback(function()

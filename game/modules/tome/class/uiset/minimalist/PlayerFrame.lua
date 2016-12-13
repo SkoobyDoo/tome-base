@@ -69,7 +69,7 @@ function _M:init(minimalist, w, h)
 
 	local font, smallfont = FontPackage:get("resources_normal", true), FontPackage:get("resources_small", true)
 
-	self.do_container = core.renderer.renderer("playerframe") -- Should we use renderer or container ?
+	self.do_container = core.renderer.renderer("static"):setRendererName("playerframe") -- Should we use renderer or container ?
 	self.do_container:add(pf_shadow) pf_shadow:translate(0, 0, -0.1)
 	self.do_container:add(pf_bg) pf_bg:translate(config.bg.x, config.bg.y, 0)
 	self.do_container:add(self.pf_defend) self.pf_defend:translate(config.attack.x, config.attack.y, 0)

@@ -244,7 +244,7 @@ void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	cur_model *= model;
 	cur_color *= color;
 	for (auto quad = quads.begin(); quad != quads.end(); quad++) {
-		auto dl = getDisplayList(container, quad->texture, shader);
+		auto dl = getDisplayList(container, {quad->texture, 0, 0}, shader);
 
 		// Make the matrix corresponding to the shape
 		mat4 qm = mat4();
@@ -334,10 +334,10 @@ void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 		p4.pos = qm * p4.pos;
 
 		// And we're done!
-		container->zvertices.push_back({p1, quad->texture, shader, NULL, NULL});
-		container->zvertices.push_back({p2, quad->texture, shader, NULL, NULL});
-		container->zvertices.push_back({p3, quad->texture, shader, NULL, NULL});
-		container->zvertices.push_back({p4, quad->texture, shader, NULL, NULL});
+		container->zvertices.push_back({p1, {quad->texture}, shader, NULL, NULL});
+		container->zvertices.push_back({p2, {quad->texture}, shader, NULL, NULL});
+		container->zvertices.push_back({p3, {quad->texture}, shader, NULL, NULL});
+		container->zvertices.push_back({p4, {quad->texture}, shader, NULL, NULL});
 
 		microz += 0.01;
 	}

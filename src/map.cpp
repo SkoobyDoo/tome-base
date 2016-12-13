@@ -644,7 +644,7 @@ static int map_new(lua_State *L)
 
 	map->z_renderers = (RendererGL**)calloc(zdepth, sizeof(RendererGL*));
 	for (i = 0; i < zdepth; i++) {
-		map->z_renderers[i] = new RendererGL();
+		map->z_renderers[i] = new RendererGL(VBOMode::STREAM);
 		char *name = (char*)calloc(20, sizeof(char));
 		sprintf(name, "map-layer-%d", i);
 		map->z_renderers[i]->setRendererName(name, false);
@@ -1328,7 +1328,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		}
 
 		// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
-		auto dl = getDisplayList(map->z_renderers[z], dm->textures[0], shader);
+		auto dl = getDisplayList(map->z_renderers[z], {dm->textures[0], 0, 0}, shader);
 
 		// Make sure we do not have to reallocate each step
 		// DGDGDGDG: actually do it

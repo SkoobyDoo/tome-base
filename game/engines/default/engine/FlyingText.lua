@@ -33,7 +33,7 @@ function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.bigfont = core.display.newFont(bigfontname or "/data/font/DroidSans-Bold.ttf", bigfontsize or 14)
 	self.font_h = self.font:lineSkip()
 	self.flyers = {}
-	self.renderer = core.renderer.renderer()
+	self.renderer = core.renderer.renderer("stream")
 end
 
 --- Return the DisplayObject to draw

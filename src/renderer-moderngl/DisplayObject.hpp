@@ -123,11 +123,14 @@ public:
 /****************************************************************************
  ** DO that has a vertex list
  ****************************************************************************/
+const int DO_MAX_TEX = 3;
 class DORVertexes : public DisplayObject{
 protected:
 	vector<vertex> vertices;
-	int tex_lua_ref = LUA_NOREF;
-	GLuint tex;
+	array<int, DO_MAX_TEX> tex_lua_ref{{ LUA_NOREF, LUA_NOREF, LUA_NOREF}};
+	array<GLuint, DO_MAX_TEX> tex{{0, 0, 0}};
+	int tex_max = 1;
+
 	shader_type *shader;
 
 	virtual void cloneInto(DisplayObject *into);
@@ -135,12 +138,9 @@ protected:
 public:
 	DORVertexes() {
 		vertices.reserve(4);
-		tex = 0;
 		shader = default_shader;
 	};
-	virtual ~DORVertexes() {
-		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
-	};
+	virtual ~DORVertexes();
 	DO_STANDARD_CLONE_METHOD(DORVertexes);
 	virtual const char* getKind() { return "DORVertexes"; };
 
@@ -168,11 +168,8 @@ public:
 		float x4, float y4, float z4, float u4, float v4, 
 		float r, float g, float b, float a
 	);
-	virtual void setTexture(GLuint tex, int lua_ref) {
-		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);
-		this->tex = tex;
-		tex_lua_ref = lua_ref;
-	};
+	virtual void setTexture(GLuint tex, int lua_ref, int id);
+	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
@@ -264,7 +261,7 @@ public:
 	virtual ~DORTarget();
 	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
 	virtual const char* getKind() { return "DORTarget"; };
-	virtual void setTexture(GLuint tex, int lua_ref) { printf("Error, trying to set DORTarget texture.\n"); }; // impossible
+	virtual void setTexture(GLuint tex, int lua_ref, int id);
 
 	void setClearColor(float r, float g, float b, float a);
 	void displaySize(int w, int h, bool center);

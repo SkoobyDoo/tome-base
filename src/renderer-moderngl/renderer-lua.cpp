@@ -171,8 +171,19 @@ static int gl_renderer_new(lua_State *L)
 {
 	DisplayObject **r = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{renderer}", -1);
+	VBOMode mode = VBOMode::DYNAMIC;
+	if (lua_isstring(L, 1)) {
+		const char *ms = lua_tostring(L, 1);
+		if (!strcmp(ms, "static")) mode = VBOMode::STATIC;
+		else if (!strcmp(ms, "dynamic")) mode = VBOMode::DYNAMIC;
+		else if (!strcmp(ms, "stream")) mode = VBOMode::STREAM;
+		else {
+			lua_pushstring(L, "Parameter to renderer() must be either nil or static/dynamic/stream");
+			lua_error(L);
+		}		
+	}
 
-	RendererGL *rgl = new RendererGL();
+	RendererGL *rgl = new RendererGL(mode);
 	*r = rgl;
 
 	if (lua_isstring(L, 1)) {
@@ -210,6 +221,14 @@ static int gl_renderer_set_name(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
 	r->setRendererName(luaL_checkstring(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_renderer_count_time(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	r->countTime(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -338,6 +357,22 @@ static int gl_target_clearcolor(lua_State *L)
 	return 1;
 }
 
+static int gl_target_texture(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
+	int id = lua_tonumber(L, 3);
+	if (!id) {
+		lua_pushstring(L, "Can not set textute 0 of a target object");
+		lua_error(L);
+	}
+	lua_pushvalue(L, 2);
+	v->setTexture(t->tex, luaL_ref(L, LUA_REGISTRYINDEX), id);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_target_shader(lua_State *L)
 {
 	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
@@ -442,8 +477,9 @@ static int gl_vertexes_texture(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
+	int id = lua_tonumber(L, 3);
 	lua_pushvalue(L, 2);
-	v->setTexture(t->tex, luaL_ref(L, LUA_REGISTRYINDEX));
+	v->setTexture(t->tex, luaL_ref(L, LUA_REGISTRYINDEX), id);
 
 	lua_pushvalue(L, 1);
 	return 1;
@@ -813,6 +849,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"clear", gl_container_clear},
 	{"cutoff", gl_renderer_cutoff},
 	{"setRendererName", gl_renderer_set_name},
+	{"countTime", gl_renderer_count_time},
 	{"countDraws", gl_renderer_count_draws},
 	{"toScreen", gl_renderer_toscreen},
 	{NULL, NULL},
@@ -824,6 +861,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
+	{"texture", gl_target_texture},
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},
 	{"clear", gl_vertexes_clear},

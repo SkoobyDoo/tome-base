@@ -151,7 +151,7 @@ function _M:runReal()
 	end)
 
 	-- Create the map scroll text overlay
-	self.caps_scroll = core.renderer.renderer():color(1, 1, 1, 0.7)
+	self.caps_scroll = core.renderer.renderer("static"):color(1, 1, 1, 0.7)
 	local lfont = FontPackage:get("bignews", true)
 	local txt = core.renderer.text(lfont):text("#GOLD#<Scroll mode, press direction keys to scroll, press again to exit>"):center()
 	self.caps_scroll:add(txt)
