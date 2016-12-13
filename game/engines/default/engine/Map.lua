@@ -256,7 +256,8 @@ function _M:updateDefaultShader()
 	if self.default_shader then
 		print("[MAP] Building default shader for map", self.default_shader.name, self.default_shader.args, self.default_shader.unique)
 		local shader = Shader.new(self.default_shader.name, self.default_shader.args, self.default_shader.unique)
-		print("[MAP] Shader built: ", shader, shader.shad)
+		print("[MAP] Shader built: ", shader, shader.shad, "with kindselectors:")
+		table.print(shader.data and shader.data.kindselectors or {})
 		if shader.shad then self._map:setDefaultShader(shader.shad, shader.data.kindselectors) end	
 	end
 end

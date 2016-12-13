@@ -50,8 +50,6 @@ function _M:generate()
 	-- Draw UI
 	local text = core.renderer.text(self.font)
 	text:text(self.title)
-
-	self.tex = self:drawFontLine(self.font, self.title)
 	local w, h = text:getStats()
 
 	local tick_x, text_x = 0, check.w + 3
