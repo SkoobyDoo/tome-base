@@ -163,6 +163,7 @@ static int particles_new(lua_State *L)
 	ps->sub = NULL;
 	ps->recompile = FALSE;
 	glGenBuffers(1, &ps->vbo);
+	ps->vbo_elements = 0;
 
 	thread_add(ps);
 	return 1;
@@ -240,6 +241,7 @@ static int particles_free(lua_State *L)
 	if (l && l->pt) SDL_mutexV(l->pt->lock);
 
 	if (ps->vbo) glDeleteBuffers(1, &ps->vbo);
+	if (ps->vbo_elements) glDeleteBuffers(1, &ps->vbo_elements);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -415,6 +417,27 @@ static void particles_draw(particles_type *ps, mat4 model)
 		glBindTexture(GL_TEXTURE_2D, main_fbo->textures[0]);
 	}
 
+	// Make the elements vbo, but only once
+	// We do it now instead of on creation because we dont know at creation the max particles we'll need
+	if (!ps->vbo_elements) {
+		glGenBuffers(1, &ps->vbo_elements);
+		GLuint *vbo_elements_data = (GLuint*)malloc(sizeof(GLuint) * ps->nb * 6);
+		for (int i = 0; i < ps->nb; i++) {
+			vbo_elements_data[i * 6 + 0] = i * 4 + 0;
+			vbo_elements_data[i * 6 + 1] = i * 4 + 1;
+			vbo_elements_data[i * 6 + 2] = i * 4 + 2;
+
+			vbo_elements_data[i * 6 + 3] = i * 4 + 0;
+			vbo_elements_data[i * 6 + 4] = i * 4 + 2;
+			vbo_elements_data[i * 6 + 5] = i * 4 + 3;
+		}
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ps->vbo_elements);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * ps->nb * 6, vbo_elements_data, GL_STATIC_DRAW);
+		free(vbo_elements_data);
+	} else {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ps->vbo_elements);
+	}
+
 	glBindBuffer(GL_ARRAY_BUFFER, ps->vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particles_vertex) * ps->batch_nb, NULL, GL_STREAM_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(particles_vertex) * ps->batch_nb, ps->vertices);
@@ -447,7 +470,8 @@ static void particles_draw(particles_type *ps, mat4 model)
 	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)offsetof(particles_vertex, color));
 
 	// glDrawArrays(GL_TRIANGLES, 0, ps->batch_nb);
-	glDrawArrays(GL_QUADS, 0, ps->batch_nb);
+	glDrawElements(GL_TRIANGLES, ps->batch_nb * 6, GL_UNSIGNED_INT, (void*)0);
+	// glDrawArrays(GL_QUADS, 0, ps->batch_nb);
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 

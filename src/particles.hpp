@@ -94,7 +94,7 @@ struct s_particles_type {
 
 	bool fboalter;
 
-	GLuint vbo;
+	GLuint vbo, vbo_elements;
 
 	struct s_particles_type *sub;
 
