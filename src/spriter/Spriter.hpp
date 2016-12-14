@@ -147,11 +147,16 @@ protected:
 	SpriterModel *spritermodel = NULL;
 	EntityInstance *instance = NULL;
 
-	vector<spriter_quads> quads;
 	shader_type *shader;
 	string scml;
 
 	int trigger_cb_lua_ref = LUA_NOREF;
+
+	bool render_z;
+	float render_microz;
+	mat4 render_model;
+	vec4 render_color;
+	RendererGL *render_container;
 
 public:
 	static DORSpriter *currently_processing;

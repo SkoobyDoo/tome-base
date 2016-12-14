@@ -137,17 +137,97 @@ TE4SpriterImageFile::~TE4SpriterImageFile() {
 }
 
 void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
-	DORSpriter::currently_processing->quads.push_back({
-		texture->tex,
-		{spriteInfo->getPosition().x, spriteInfo->getPosition().y},
-		{aw, ah},
-		{spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff},
-		{spriteInfo->getScale().x, spriteInfo->getScale().y},
-		spriteInfo->getAngle(),
-		{tx1, ty1, tx2, ty2},
-		spriteInfo->getAlpha(),
-		rotated
-	});
+	DORSpriter *spriter = DORSpriter::currently_processing;
+
+	if (!spriter->render_z) {
+		auto dl = getDisplayList(spriter->render_container, {texture->tex, 0, 0}, spriter->shader);
+
+		// Make the matrix corresponding to the shape
+		mat4 qm = mat4();
+		qm = glm::translate(qm, glm::vec3((float)spriteInfo->getPosition().x, (float)spriteInfo->getPosition().y, 0));
+		qm = glm::rotate(qm, (float)spriteInfo->getAngle(), glm::vec3(0, 0, 1));
+		qm = glm::scale(qm, glm::vec3((float)spriteInfo->getScale().x, (float)spriteInfo->getScale().y, 1));
+		qm = spriter->render_model * qm;
+
+		// Make the vertexes, un-rotated & unscaled
+		vec2 origin = {spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff};
+		vec4 color = {1, 1, 1, spriteInfo->getAlpha()};
+		float px1 = -origin.x, py1 = -origin.y;
+		float px2 = aw-origin.x, py2 = ah-origin.y;
+		color = spriter->render_color * color;
+
+		vertex p1;
+		vertex p2;
+		vertex p3;
+		vertex p4;
+		if (rotated) {
+			p1 = {{px1, py1, 0, 1}, {tx2, ty1}, color};
+			p2 = {{px2, py1, 0, 1}, {tx2, ty2}, color};
+			p3 = {{px2, py2, 0, 1}, {tx1, ty2}, color};
+			p4 = {{px1, py2, 0, 1}, {tx1, ty1}, color};
+		} else {
+			p1 = {{px1, py1, 0, 1}, {tx1, ty1}, color};
+			p2 = {{px2, py1, 0, 1}, {tx2, ty1}, color};
+			p3 = {{px2, py2, 0, 1}, {tx2, ty2}, color};
+			p4 = {{px1, py2, 0, 1}, {tx1, ty2}, color};
+		}
+
+		// Now apply the matrix on them
+		p1.pos = qm * p1.pos;
+		p2.pos = qm * p2.pos;
+		p3.pos = qm * p3.pos;
+		p4.pos = qm * p4.pos;
+
+		// And we're done!
+		dl->list.push_back(p1);
+		dl->list.push_back(p2);
+		dl->list.push_back(p3);
+		dl->list.push_back(p4);
+	} else {
+		// Make the matrix corresponding to the shape
+		mat4 qm = mat4();
+		qm = glm::translate(qm, glm::vec3((float)spriteInfo->getPosition().x, (float)spriteInfo->getPosition().y, 0));
+		qm = glm::rotate(qm, (float)spriteInfo->getAngle(), glm::vec3(0, 0, 1));
+		qm = glm::scale(qm, glm::vec3((float)spriteInfo->getScale().x, (float)spriteInfo->getScale().y, 1));
+		qm = spriter->render_model * qm;
+
+		// Make the vertexes, un-rotated & unscaled
+		vec2 origin = {spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff};
+		vec4 color = {1, 1, 1, spriteInfo->getAlpha()};
+		float px1 = -origin.x, py1 = -origin.y;
+		float px2 = aw-origin.x, py2 = ah-origin.y;
+		color = spriter->render_color * color;
+
+		vertex p1;
+		vertex p2;
+		vertex p3;
+		vertex p4;
+		if (rotated) {
+			p1 = {{px1, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
+			p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty2}, color};
+			p3 = {{px2, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
+			p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty1}, color};
+		} else {
+			p1 = {{px1, py1, spriter->render_microz, 1}, {tx1, ty1}, color};
+			p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
+			p3 = {{px2, py2, spriter->render_microz, 1}, {tx2, ty2}, color};
+			p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
+		}
+
+		// Now apply the matrix on them
+		p1.pos = qm * p1.pos;
+		p2.pos = qm * p2.pos;
+		p3.pos = qm * p3.pos;
+		p4.pos = qm * p4.pos;
+
+		// And we're done!
+		spriter->render_container->zvertices.push_back({p1, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p2, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p3, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p4, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
+
+		spriter->render_microz += 0.01;
+	}
 }
 
 /****************************************************************************
@@ -190,7 +270,6 @@ void DORSpriter::setTriggerCallback(int ref) {
 
 void DORSpriter::load(const char *file, const char *name) {
 	currently_processing = this;
-	printf("[SPRITER] Loading %s (%s)\n", file, name);
 	scml = file;
 	spritermodel = DORSpriterCache::getModel(file);
 	instance = spritermodel->getNewEntityInstance(name);
@@ -211,113 +290,21 @@ void DORSpriter::onKeyframe(int nb_keyframe) {
 
 void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible || !instance) return;
-	currently_processing = this;
-	this->quads.clear();
-	instance->render();
 	cur_model *= model;
 	cur_color *= color;
-	for (auto quad = quads.begin(); quad != quads.end(); quad++) {
-		auto dl = getDisplayList(container, {quad->texture, 0, 0}, shader);
-
-		// Make the matrix corresponding to the shape
-		mat4 qm = mat4();
-		qm = glm::translate(qm, glm::vec3(quad->pos.x, quad->pos.y, 0));
-		qm = glm::rotate(qm, quad->angle, glm::vec3(0, 0, 1));
-		qm = glm::scale(qm, glm::vec3(quad->scale.x, quad->scale.y, 1));
-		qm = cur_model * qm;
-
-		// Make the vertexes, un-rotated & unscaled
-		vec4 color = {1, 1, 1, quad->alpha};
-		float px1 = -quad->origin.x, py1 = -quad->origin.y;
-		float px2 = quad->size.x-quad->origin.x, py2 = quad->size.y-quad->origin.y;
-		color = cur_color * color;
-
-		vertex p1;
-		vertex p2;
-		vertex p3;
-		vertex p4;
-		if (quad->rotated) {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-		} else {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-		}
-
-		// Now apply the matrix on them
-		p1.pos = qm * p1.pos;
-		p2.pos = qm * p2.pos;
-		p3.pos = qm * p3.pos;
-		p4.pos = qm * p4.pos;
-
-		// And we're done!
-		dl->list.push_back(p1);
-		dl->list.push_back(p2);
-		dl->list.push_back(p3);
-		dl->list.push_back(p4);
-	}
-
+	currently_processing = this;
+	render_z = false; render_model = cur_model; render_color = cur_color; render_container = container;
+	instance->render();
 	resetChanged();
 }
 
 void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	currently_processing = this;
-	this->quads.clear();
-	instance->render();
+	if (!visible || !instance) return;
 	cur_model *= model;
 	cur_color *= color;
-
-	float microz = 0;
-	for (auto quad = quads.begin(); quad != quads.end(); quad++) {
-		// Make the matrix corresponding to the shape
-		mat4 qm = mat4();
-		qm = glm::translate(qm, glm::vec3(quad->pos.x, quad->pos.y, 0));
-		qm = glm::rotate(qm, quad->angle, glm::vec3(0, 0, 1));
-		qm = glm::scale(qm, glm::vec3(quad->scale.x, quad->scale.y, 1));
-		qm = cur_model * qm;
-
-		// Make the vertexes, un-rotated & unscaled
-		vec4 color = {1, 1, 1, quad->alpha};
-		float px1 = -quad->origin.x, py1 = -quad->origin.y;
-		float px2 = quad->size.x-quad->origin.x, py2 = quad->size.y-quad->origin.y;
-		color = cur_color * color;
-
-		vertex p1;
-		vertex p2;
-		vertex p3;
-		vertex p4;
-		if (quad->rotated) {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-		} else {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-		}
-
-		// Now apply the matrix on them
-		p1.pos = qm * p1.pos;
-		p2.pos = qm * p2.pos;
-		p3.pos = qm * p3.pos;
-		p4.pos = qm * p4.pos;
-
-		// And we're done!
-		container->zvertices.push_back({p1, {quad->texture}, shader, NULL, NULL});
-		container->zvertices.push_back({p2, {quad->texture}, shader, NULL, NULL});
-		container->zvertices.push_back({p3, {quad->texture}, shader, NULL, NULL});
-		container->zvertices.push_back({p4, {quad->texture}, shader, NULL, NULL});
-
-		microz += 0.01;
-	}
-
+	currently_processing = this;
+	render_z = true; render_model = cur_model; render_color = cur_color; render_container = container; render_microz = 0;
+	instance->render();
 	resetChanged();
 }
 
