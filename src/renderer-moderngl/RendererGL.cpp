@@ -291,12 +291,12 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
-	long int start_time;
-	if (count_time) start_time = SDL_GetTicks();
 	if (changed) update();
 	if (displays.empty()) return;
 	// printf("Displaying renderer %s\n", getRendererName());
 
+	long int start_time;
+	if (count_time) start_time = SDL_GetTicks();
 	if (count_draws) {
 		nb_draws = 0;
 	}

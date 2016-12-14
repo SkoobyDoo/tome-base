@@ -419,13 +419,13 @@ void DORText::clear() {
 void DORText::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	DORVertexes::render(container, cur_model, cur_color);
-	entities_container.render(container, cur_model, cur_color);
+	entities_container.render(container, cur_model * model, cur_color * color);
 }
 
 void DORText::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	DORVertexes::renderZ(container, cur_model, cur_color);
-	entities_container.renderZ(container, cur_model, cur_color);
+	entities_container.renderZ(container, cur_model * model, cur_color * color);
 }
 
 DORText::~DORText() {

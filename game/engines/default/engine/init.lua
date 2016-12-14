@@ -19,6 +19,10 @@
 
 --- @script init.lua
 
+-- No need for the anim system to think it needs to compute the loading time
+-- This is unset in engine.Game:prerun
+core.display.pauseAnims(true)
+
 -- load some utility functions
 dofile("/engine/utils.lua")
 dofile("/engine/renderer.lua")

@@ -144,6 +144,7 @@ function _M:prerun()
 	if self.__persistent_hooks then for _, h in ipairs(self.__persistent_hooks) do
 		self:bindHook(h.hook, h.fct)
 	end end
+	core.display.pauseAnims(false)
 end
 
 --- Starts the game
