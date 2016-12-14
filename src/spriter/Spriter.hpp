@@ -35,21 +35,16 @@
 #include "spriterengine/objectinfo/pointinstanceinfo.h"
 #include "spriterengine/objectinfo/triggerobjectinfo.h"
 
+#include "spriter/SpriterCache.hpp"
+
 using namespace SpriterEngine;
 
 class DORSpriter;
 
-class TE4FileFactory : public FileFactory
-{
-private:
-	DORSpriter *spriter = NULL;
-public:
-	TE4FileFactory(DORSpriter *spriter) : spriter(spriter) {};
-	ImageFile *newImageFile(const std::string &initialFilePath, point initialDefaultPivot, atlasdata atlasData) override;
-	SoundFile *newSoundFile(const std::string &initialFilePath) override;
-	SpriterFileDocumentWrapper *newScmlDocumentWrapper() override;
-};
 
+/**************************************************************************
+ ** Misc debug stuff
+ **************************************************************************/
 class TE4BoneInstanceInfo : public BoneInstanceInfo
 {
 public:
@@ -69,12 +64,14 @@ public:
 	void render() override {};
 };
 
+/**************************************************************************
+ ** ObjectFactory
+ **************************************************************************/
 class TE4ObjectFactory : public ObjectFactory
 {
 private:
-	DORSpriter *spriter = NULL;
 public:
-	TE4ObjectFactory(DORSpriter *spriter);
+	TE4ObjectFactory();
 	PointInstanceInfo *newPointInstanceInfo() override;
 	BoxInstanceInfo *newBoxInstanceInfo(point size) override;
 	BoneInstanceInfo *newBoneInstanceInfo(point size) override;
@@ -84,26 +81,34 @@ public:
 class TE4SpriterTriggerObjectInfo : public TriggerObjectInfo {
 private:
 	std::string triggerName;
-	DORSpriter *spriter = NULL;
 public:
-	TE4SpriterTriggerObjectInfo(DORSpriter *spriter, std::string triggerName);
+	TE4SpriterTriggerObjectInfo(std::string triggerName);
 	void setTriggerCount(int newTriggerCount) override;
 	virtual void playTrigger() override;
+};
+
+/**************************************************************************
+ ** FileFactory
+ **************************************************************************/
+class TE4FileFactory : public FileFactory
+{
+private:
+public:
+	TE4FileFactory() {};
+	ImageFile *newImageFile(const std::string &initialFilePath, point initialDefaultPivot, atlasdata atlasData) override;
+	SoundFile *newSoundFile(const std::string &initialFilePath) override;
+	SpriterFileDocumentWrapper *newScmlDocumentWrapper() override;
 };
 
 class TE4SpriterImageFile : public ImageFile
 {
 private:
-	DORSpriter *spriter = NULL;
-	bool using_atlas = false;
-	texture_type texture;
+	texture_cache *texture = NULL;
 	float w = 1, h = 1, aw = 1, ah = 1, tx1 = 0, ty1 = 0, tx2 = 1, ty2 = 1, xoff = 0, yoff = 0;
 	bool rotated = false;
 
-	bool makeTexture(std::string file, texture_type *t, float *w, float *h);
-
 public:
-	TE4SpriterImageFile(DORSpriter *spriter, std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData);
+	TE4SpriterImageFile(std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData);
 	virtual ~TE4SpriterImageFile();
 
 	void renderSprite(UniversalObjectInterface *spriteInfo) override;
@@ -130,14 +135,15 @@ typedef struct {
 	bool rotated;
 } spriter_quads;
 
+/**************************************************************************
+ ** DORSpriter
+ **************************************************************************/
 class DORSpriter : public DisplayObject, public IRealtime{
 	friend class TE4SpriterImageFile; friend class TE4SpriterTriggerObjectInfo;
 private:
 	virtual void cloneInto(DisplayObject *into);
 
 protected:
-	texture_type atlas;
-	bool atlas_loaded = false;
 	SpriterModel *spritermodel = NULL;
 	EntityInstance *instance = NULL;
 
@@ -148,6 +154,8 @@ protected:
 	int trigger_cb_lua_ref = LUA_NOREF;
 
 public:
+	static DORSpriter *currently_processing;
+
 	DORSpriter();
 	virtual ~DORSpriter();
 	DO_STANDARD_CLONE_METHOD(DORSpriter);

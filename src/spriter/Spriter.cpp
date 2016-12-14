@@ -41,7 +41,7 @@ extern "C" {
  ** Spriter file stuff
  ****************************************************************************/
 ImageFile * TE4FileFactory::newImageFile(const std::string &initialFilePath, point initialDefaultPivot, atlasdata atlasData) {
-	return new TE4SpriterImageFile(spriter, initialFilePath, initialDefaultPivot, atlasData);
+	return new TE4SpriterImageFile(initialFilePath, initialDefaultPivot, atlasData);
 }
 
 SoundFile * TE4FileFactory::newSoundFile(const std::string &initialFilePath) {
@@ -55,7 +55,7 @@ SpriterFileDocumentWrapper * TE4FileFactory::newScmlDocumentWrapper() {
 /****************************************************************************
  ** Spriter object stuff
  ****************************************************************************/
-TE4ObjectFactory::TE4ObjectFactory(DORSpriter *spriter) : spriter(spriter) {
+TE4ObjectFactory::TE4ObjectFactory() {
 }
 
 PointInstanceInfo * TE4ObjectFactory::newPointInstanceInfo() {
@@ -71,13 +71,13 @@ BoneInstanceInfo * TE4ObjectFactory::newBoneInstanceInfo(point size) {
 }
 
 TriggerObjectInfo *TE4ObjectFactory::newTriggerObjectInfo(std::string triggerName) {
-	return new TE4SpriterTriggerObjectInfo(spriter, triggerName);
+	return new TE4SpriterTriggerObjectInfo(triggerName);
 }
 
 /****************************************************************************
  ** Spriter event trigger stuff
  ****************************************************************************/
-TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(DORSpriter *spriter, std::string triggerName) : triggerName(triggerName), spriter(spriter) {
+TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(std::string triggerName) : triggerName(triggerName) {
 	printf("[SPRITER] trigger defined %s\n", triggerName.c_str());
 }
 void TE4SpriterTriggerObjectInfo::setTriggerCount(int newTriggerCount)
@@ -86,6 +86,7 @@ void TE4SpriterTriggerObjectInfo::setTriggerCount(int newTriggerCount)
 	if (newTriggerCount) playTrigger();
 }
 void TE4SpriterTriggerObjectInfo::playTrigger() {
+	DORSpriter *spriter = DORSpriter::currently_processing;
 	if (spriter->trigger_cb_lua_ref == LUA_NOREF) return;
 
 	lua_rawgeti(L, LUA_REGISTRYINDEX, spriter->trigger_cb_lua_ref);
@@ -100,21 +101,15 @@ void TE4SpriterTriggerObjectInfo::playTrigger() {
 /****************************************************************************
  ** Spriter image stuff
  ****************************************************************************/
-TE4SpriterImageFile::TE4SpriterImageFile(DORSpriter *spriter, std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData) : ImageFile(initialFilePath,initialDefaultPivot), spriter(spriter)
-{	
-	if (!atlasData.active) {
-		makeTexture(initialFilePath, &texture, &w, &h);
-		aw = w; ah = h;
+TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData) : ImageFile(initialFilePath,initialDefaultPivot) {	
+	if (!atlasData.active) {		
+		texture = DORSpriterCache::getTexture(initialFilePath);
+		aw = w = texture->w; ah = h = texture->h;
 	} else {
-		if (!spriter->atlas_loaded) {
-			float dummy;
-			string png = spriter->scml;
-			png.replace(png.end() - 4, png.end(), "png");
-			makeTexture(png, &spriter->atlas, &dummy, &dummy);
-			spriter->atlas_loaded =true;
-		}
-		using_atlas = true;
-		texture = spriter->atlas;
+		string png = DORSpriter::currently_processing->scml;
+		png.replace(png.end() - 4, png.end(), "png");
+		texture = DORSpriterCache::getTexture(png);
+
 		xoff = atlasData.xoff;
 		yoff = atlasData.yoff;
 		float ax = atlasData.x;
@@ -124,53 +119,26 @@ TE4SpriterImageFile::TE4SpriterImageFile(DORSpriter *spriter, std::string initia
 		w = atlasData.ow;
 		h = atlasData.oh;
 		if (atlasData.rotated) {
-			tx1 = ax / spriter->atlas.w;
-			ty1 = ay / spriter->atlas.h;
-			tx2 = (ax + ah) / spriter->atlas.w;
-			ty2 = (ay + aw) / spriter->atlas.h;
+			tx1 = ax / texture->w;
+			ty1 = ay / texture->h;
+			tx2 = (ax + ah) / texture->w;
+			ty2 = (ay + aw) / texture->h;
 		} else {
-			tx1 = ax / spriter->atlas.w;
-			ty1 = ay / spriter->atlas.h;
-			tx2 = (ax + aw) / spriter->atlas.w;
-			ty2 = (ay + ah) / spriter->atlas.h;
+			tx1 = ax / texture->w;
+			ty1 = ay / texture->h;
+			tx2 = (ax + aw) / texture->w;
+			ty2 = (ay + ah) / texture->h;
 		}
 		rotated = atlasData.rotated;
 	}
 }
 TE4SpriterImageFile::~TE4SpriterImageFile() {	
-	if (!using_atlas) glDeleteTextures(1, &texture.tex);
-}
-
-bool TE4SpriterImageFile::makeTexture(std::string file, texture_type *t, float *w, float *h) {
-	SDL_Surface *s = IMG_Load_RW(PHYSFSRWOPS_openRead(file.c_str()), TRUE);
-	if (!s) {
-		printf("[SPRITER] texture file not found %s\n", file.c_str());
-		t->tex = 0;
-		return false;
-	}
-
-	glGenTextures(1, &t->tex);
-	tfglBindTexture(GL_TEXTURE_2D, t->tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	GLint nOfColors = s->format->BytesPerPixel;
-	GLenum texture_format = sdl_gl_texture_format(s);
-	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
-
-	*w = t->w = s->w;
-	*h = t->h = s->h;
-	t->no_free = FALSE;
-
-	SDL_FreeSurface(s);
-	printf("[SPRITER] New texture %s = %d\n", file.c_str(), t->tex);
-	return true;
+	DORSpriterCache::releaseTexture(texture);
 }
 
 void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
-	spriter->quads.push_back({
-		texture.tex,
+	DORSpriter::currently_processing->quads.push_back({
+		texture->tex,
 		{spriteInfo->getPosition().x, spriteInfo->getPosition().y},
 		{aw, ah},
 		{spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff},
@@ -198,14 +166,15 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 /****************************************************************************
  ** Spriter Display Object interface
  ****************************************************************************/
+DORSpriter *DORSpriter::currently_processing = NULL;
+
 DORSpriter::DORSpriter() {
 	shader = default_shader;
 	scml = "";
 }
 DORSpriter::~DORSpriter() {
-	if (spritermodel) delete spritermodel;
+	if (spritermodel) DORSpriterCache::releaseModel(spritermodel);
 	if (instance) delete instance;
-	if (atlas_loaded) glDeleteTextures(1, &atlas.tex);
 }
 
 void DORSpriter::cloneInto(DisplayObject* _into) {
@@ -220,27 +189,31 @@ void DORSpriter::setTriggerCallback(int ref) {
 }
 
 void DORSpriter::load(const char *file, const char *name) {
+	currently_processing = this;
 	printf("[SPRITER] Loading %s (%s)\n", file, name);
 	scml = file;
-	spritermodel = new SpriterModel(file, new TE4FileFactory(this), new TE4ObjectFactory(this));
+	spritermodel = DORSpriterCache::getModel(file);
 	instance = spritermodel->getNewEntityInstance(name);
 }
 
 void DORSpriter::startAnim(const char *name) {
 	if (!instance) return;
+	currently_processing = this;
 	instance->setCurrentAnimation(name);
 }
 
 void DORSpriter::onKeyframe(int nb_keyframe) {
 	if (!instance) return;
-	this->quads.clear();
+	currently_processing = this;
 	instance->setTimeElapsed(1000.0 * (float)nb_keyframe / KEYFRAMES_PER_SEC);
-	instance->render();
 	setChanged();
 }
 
 void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible || !instance) return;
+	currently_processing = this;
+	this->quads.clear();
+	instance->render();
 	cur_model *= model;
 	cur_color *= color;
 	for (auto quad = quads.begin(); quad != quads.end(); quad++) {
@@ -293,6 +266,9 @@ void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 
 void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
+	currently_processing = this;
+	this->quads.clear();
+	instance->render();
 	cur_model *= model;
 	cur_color *= color;
 

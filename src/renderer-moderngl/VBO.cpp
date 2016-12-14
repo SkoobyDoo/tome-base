@@ -120,6 +120,7 @@ void VBO::toScreen(mat4 model) {
 		tglBindTexture(GL_TEXTURE_2D, tex);
 		tex_unit++;
 	}
+	tglActiveTexture(GL_TEXTURE0);
 
 	mat4 mvp = View::getCurrent()->view * model;
 
