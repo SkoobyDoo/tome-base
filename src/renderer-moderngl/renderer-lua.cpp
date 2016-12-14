@@ -61,6 +61,16 @@ static int gl_generic_getkind(lua_State *L)
 	lua_pushstring(L, c->getKind());
 	return 1;
 }
+static int gl_generic_clone(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	const char *luatype = auxiliar_getclassname(L, 1);
+
+	DisplayObject **nc = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	auxiliar_setclass(L, luatype, -1);
+	*nc = c->clone();
+	return 1;
+}
 static int gl_generic_color_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
@@ -843,6 +853,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
@@ -877,6 +888,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
@@ -899,6 +911,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
@@ -925,6 +938,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
@@ -956,6 +970,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
@@ -977,6 +992,7 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
@@ -996,6 +1012,7 @@ static const struct luaL_Reg gl_tileobject_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
@@ -1015,6 +1032,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{"setMap", gl_tilemap_setmap},
 	{"setMinimapInfo", gl_tilemap_setminimap_info},
@@ -1036,6 +1054,7 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };
@@ -1057,6 +1076,7 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{NULL, NULL},
 };

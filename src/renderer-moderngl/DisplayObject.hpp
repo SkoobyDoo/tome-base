@@ -199,7 +199,7 @@ protected:
 public:
 	DORContainer() {};
 	virtual ~DORContainer();
-	DO_STANDARD_CLONE_METHOD(DORVertexes);
+	DO_STANDARD_CLONE_METHOD(DORContainer);
 	virtual const char* getKind() { return "DORContainer"; };
 
 	virtual void add(DisplayObject *dob);

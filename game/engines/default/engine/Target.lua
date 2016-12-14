@@ -64,18 +64,10 @@ function _M:init(map, source_actor)
 	self.fborenderer:add(self.zone_layer)
 
 	-- The 8 directions arrows
-	self.arrow = engine.Tiles:loadImage("target_arrow.png"):glTexture()
-	self.arrows_layer = core.renderer.container():shown(true)
-	for dir, spot in pairs(util.adjacentCoords(0, 0)) do
-		local tx, ty = spot[1], spot[2]
-		local x, y = tx * 2.5 / 3.5, ty * 2.5 / 3.5
-
-		local a = core.renderer.texture(self.arrow, 0, 0, self.tile_w * Map.zoom, self.tile_h * Map.zoom)
-		a:translate(500+x * self.tile_w * Map.zoom, 500+(y + util.hexOffset(x)) * self.tile_h * Map.zoom, 0)
-		a:rotate(math.rad(180), 0, math.rad(90+util.dirToAngle(dir)))
-
-		self.arrows_layer:add(a)
-	end
+	self.arrows_layer = core.renderer.container()
+	local a = core.renderer.surface(engine.Tiles:loadImage("target_arrow.png"), -self.tile_w * Map.zoom/2, -self.tile_h * Map.zoom/2, self.tile_w * Map.zoom, self.tile_h * Map.zoom)
+	self.arrow = {}
+	for dir, spot in pairs(util.adjacentCoords(0, 0)) do self.arrow[dir] = a:clone() self.arrows_layer:add(self.arrow[dir]) end
 	self.renderer:add(self.arrows_layer)
 	-- self.renderer:countTime(true)
 
@@ -110,22 +102,6 @@ function _M:enableFBORenderer(texture, shader)
 	self.fbo:texture(self.quad_texture, 1)
 
 	self:defineColors()
-end
-
-function _M:displayArrow(sx, sy, tx, ty, full)
-do print("DGDGDGDG show arrow!!!") return end
-	local x, y = (tx*2.5 + sx) / 3.5, (ty*2.5 + sy) / 3.5
-
-	if full then x, y = (tx*3.5 + sx) / 4.5, (ty*3.5 + sy) / 4.5 end
-
-	core.display.glMatrix(true)
-	core.display.glTranslate(self.display_x + (x - game.level.map.mx) * self.tile_w * Map.zoom + self.tile_w * Map.zoom / 2, self.display_y + (y - game.level.map.my + util.hexOffset(x)) * self.tile_h * Map.zoom + self.tile_h * Map.zoom / 2, 0)
-	core.display.glRotate(180, 1, 0, 0)
-	core.display.glRotate(90+util.dirToAngle(util.getDir(tx, ty, sx, sy)), 0, 0, 1)
-
-	self.arrow:toScreenFull(- self.tile_w * Map.zoom / 2, - self.tile_h * Map.zoom / 2, self.tile_w * Map.zoom, self.tile_h * Map.zoom, self.tile_w * Map.zoom, self.tile_h * Map.zoom, 1, 1, 1, full and 1 or 0.85)
-
-	core.display.glMatrix(false)
 end
 
 -- Being completely blocked by the corner of an adjacent tile is annoying, so let's make it a special case and hit it instead.
@@ -220,21 +196,6 @@ function _M:display(dispx, dispy, prevfbo, rotate_keyframes)
 
 	if self.active then
 		self:realDisplay(self.display_x, self.display_y)
-
-		if not self.target_type.immediate_keys or firstx then
-			self.cursor:shown(true)
-			self.cursor:translate((self.target.x - game.level.map.mx) * self.tile_w * Map.zoom + self.tile_w * Map.zoom / 2, (self.target.y - game.level.map.my + util.hexOffset(self.target.x)) * self.tile_h * Map.zoom + self.tile_h * Map.zoom / 2)
-			self.cursor:rotate(0, 0, core.game.getTime() / 1600)
-		else
-			self.cursor:shown(false)
-		end
-
-		-- if self.target_type.immediate_keys then
-		-- 	for dir, spot in pairs(util.adjacentCoords(self.target_type.start_x, self.target_type.start_y)) do
-		-- 		self:displayArrow(self.target_type.start_x, self.target_type.start_y, spot[1], spot[2], firstx == spot[1] and firsty == spot[2])
-		-- 	end
-		-- end
-
 		self.renderer:toScreen(self.display_x, self.display_y)
 	end
 
@@ -331,9 +292,6 @@ function _M:realDisplay(dispx, dispy, display_highlight)
 	self.target_type.start_y = self.target_type.start_y or self.target_type.y or self.target_type.source_actor and self.target_type.source_actor.y or self.y
 
 --	self.cursor:toScreen(dispx + (self.target.x - game.level.map.mx) * self.tile_w * Map.zoom, dispy + (self.target.y - game.level.map.my) * self.tile_h * Map.zoom, self.tile_w * Map.zoom, self.tile_h * Map.zoom)
-
-	-- Do not display if not requested
-	if not self.active then return end
 
 	d.s = self.sb
 	if self.target_type.source_actor.lineFOV then
@@ -449,6 +407,29 @@ function _M:realDisplay(dispx, dispy, display_highlight)
 
 	d[1] = "Target:realDisplay"
 	self:triggerHook(d)
+
+	if self.target_type.immediate_keys then
+		self.arrows_layer:shown(true)
+		for dir, spot in pairs(util.adjacentCoords(0, 0)) do
+			local tx, ty = spot[1], spot[2]
+			local x, y = tx * 2.5 / 3.5, ty * 2.5 / 3.5
+			if d.firstx == self.target_type.start_x + tx and d.firsty == self.target_type.start_y + ty then x, y = tx, ty end
+
+			local a = self.arrow[dir]
+			a:translate((self.target_type.start_x - game.level.map.mx + 0.5 + x) * self.tile_w * Map.zoom, (self.target_type.start_y - game.level.map.my + 0.5 + y + util.hexOffset(x)) * self.tile_h * Map.zoom, 0)
+			a:rotate(math.rad(180), 0, math.rad(90+util.dirToAngle(dir)))
+		end
+	else
+		self.arrows_layer:shown(false)
+	end
+
+	if not self.target_type.immediate_keys or d.firstx then
+		self.cursor:shown(true)
+		self.cursor:translate((self.target.x - game.level.map.mx) * self.tile_w * Map.zoom + self.tile_w * Map.zoom / 2, (self.target.y - game.level.map.my + util.hexOffset(self.target.x)) * self.tile_h * Map.zoom + self.tile_h * Map.zoom / 2)
+		self.cursor:rotate(0, 0, core.game.getTime() / 1600)
+	else
+		self.cursor:shown(false)
+	end
 end
 
 --- Determine if a grid blocks projection along a path based on targeting table parameters
