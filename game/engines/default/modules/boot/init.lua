@@ -30,6 +30,7 @@ Bootmenu!
 ]]
 starter = "mod.load"
 publisher_logo = "netcore-logo"
+publisher_url = "http://net-core.org/"
 show_funfacts = true
 loading_wait_ticks = 1600
 allow_userchat = {"mainmenu"} -- We can talk to the online community but not join any channel
