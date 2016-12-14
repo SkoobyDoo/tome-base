@@ -82,16 +82,17 @@ newTalent{ short_name = "SKELETON_REASSEMBLE",
 	end,
 	tactical = { HEAL = 2 },
 	is_heal = true,
-	on_learn = function(self, t)
-		if self:getTalentLevelRaw(t) == 5 then
-			self:attr("self_resurrect", 1)
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:getTalentLevelRaw(t) == 4 then
-			self:attr("self_resurrect", -1)
-		end
-	end,
+	no_unlearn_last = true,
+	-- on_learn = function(self, t)
+	-- 	if self:getTalentLevelRaw(t) == 5 then
+	-- 		self:attr("self_resurrect", 1)
+	-- 	end
+	-- end,
+	-- on_unlearn = function(self, t)
+	-- 	if self:getTalentLevelRaw(t) == 4 then
+	-- 		self:attr("self_resurrect", -1)
+	-- 	end
+	-- end,
 	action = function(self, t)
 		self:attr("allow_on_heal", 1)
 		self:heal(t.getHeal(self, t), t)
