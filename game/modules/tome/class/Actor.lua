@@ -3430,7 +3430,8 @@ function _M:onStatChange(stat, v)
 		self.max_life = math.max(1, self.max_life + multi_life * v)  -- no negative max life
 
 		-- heal mod
-		self.healing_factor = self.healing_factor + v * 0.005
+		if self.stats.hf_id then self:removeTemporaryValue("healing_factor", self.stats.hf_id) end
+		self.stats.hf_id = self:addTemporaryValue("healing_factor", ((self:getCon()/10)^.5-1)*.25) -- 0 @ 10, 1.54 @ 100
 	elseif stat == self.STAT_DEX then
 		self.ignore_direct_crits = (self.ignore_direct_crits or 0) + 0.3 * v
 	elseif stat == self.STAT_WIL then
