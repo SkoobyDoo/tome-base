@@ -59,7 +59,7 @@ project "TEngine"
 	end
 
 	if _OPTIONS.wincross then
-		prelinkcommands { "i686-pc-mingw32-ranlib ../bin/Debug/*.a" }
+		prelinkcommands { "i686-w64-mingw32-ranlib ../bin/Debug/*.a" }
 	end
 
 	configuration "macosx"
@@ -106,10 +106,10 @@ project "TEngine"
 		links { "IOKit" }
 
 	configuration "windows"
-		links { "mingw32", "SDL2main", "SDL2", "SDL2_image", "OpenAL32", "vorbisfile", "opengl32", "glu32", "wsock32", "png" }
+		links { "mingw32", "freetype", "SDL2main", "SDL2", "SDL2_image", "OpenAL32", "vorbisfile", "opengl32", "glu32", "wsock32", "png" }
 		defines { [[TENGINE_HOME_PATH='"T-Engine"']], 'SELFEXE_WINDOWS'  }
 		if _OPTIONS.wincross then
-			prebuildcommands { "i686-pc-mingw32-windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
+			prebuildcommands { "i686-w64-mingw32-windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
 		else
 			prebuildcommands { "windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
 		end
@@ -194,7 +194,7 @@ elseif _OPTIONS.lua == "jit2" then
 
 		local arch_test
 		if _OPTIONS.wincross then
-			arch_test = os.capture("i686-pc-mingw32-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			arch_test = os.capture("i686-w64-mingw32-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		else
 			arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		end
@@ -231,7 +231,7 @@ elseif _OPTIONS.lua == "jit2" then
 			if _OPTIONS.wincross then
 				postbuildcommands {
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/minilua/minilua.cross.o" -c "../src/luajit2/src/host/minilua.c"',
-					'gcc -o ../bin/Debug/minilua ../obj/Debug/minilua/minilua.cross.o  -m32 -L/usr/lib32 -L/Test/xcompile/local/lib   -lm',
+					'gcc -o ../bin/Debug/minilua ../obj/Debug/minilua/minilua.cross.o  -m32 -L/Test/xcompile/local/lib   -lm',
 				}
 			end
 			postbuildcommands { "cp ../bin/Debug/minilua ../src/luajit2/src/host/", }
@@ -239,7 +239,7 @@ elseif _OPTIONS.lua == "jit2" then
 			if _OPTIONS.wincross then
 				postbuildcommands {
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Release/minilua/minilua.cross.o" -c "../src/luajit2/src/host/minilua.c"',
-					'gcc -o ../bin/Release/minilua ../obj/Release/minilua/minilua.cross.o  -m32 -L/usr/lib32 -L/Test/xcompile/local/lib   -lm',
+					'gcc -o ../bin/Release/minilua ../obj/Release/minilua/minilua.cross.o  -m32 -L/Test/xcompile/local/lib   -lm',
 				}
 			end
 			postbuildcommands { "cp ../bin/Release/minilua ../src/luajit2/src/host/", }
@@ -253,7 +253,7 @@ elseif _OPTIONS.lua == "jit2" then
 		local dasm_flags = ""
 		local arch_test
 		if _OPTIONS.wincross then
-			arch_test = os.capture("i686-pc-mingw32-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			arch_test = os.capture("i686-w64-mingw32-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		else
 			arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		end
@@ -337,7 +337,7 @@ elseif _OPTIONS.lua == "jit2" then
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_peobj.cross.o" -c "../src/luajit2/src/host/buildvm_peobj.c"',
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_fold.cross.o" -c "../src/luajit2/src/host/buildvm_fold.c"',
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm.cross.o" -c "../src/luajit2/src/host/buildvm.c"',
-					'gcc -o ../bin/Debug/buildvm ../obj/Debug/buildvm/buildvm_lib.cross.o ../obj/Debug/buildvm/buildvm_asm.cross.o ../obj/Debug/buildvm/buildvm_peobj.cross.o ../obj/Debug/buildvm/buildvm_fold.cross.o ../obj/Debug/buildvm/buildvm.cross.o  -m32 -L/usr/lib32 -L/Test/xcompile/local/lib',
+					'gcc -o ../bin/Debug/buildvm ../obj/Debug/buildvm/buildvm_lib.cross.o ../obj/Debug/buildvm/buildvm_asm.cross.o ../obj/Debug/buildvm/buildvm_peobj.cross.o ../obj/Debug/buildvm/buildvm_fold.cross.o ../obj/Debug/buildvm/buildvm.cross.o  -m32 -L/Test/xcompile/local/lib',
 				}
 			end
 			postbuildcommands { "cp ../bin/Debug/buildvm ../src/luajit2/src/", }
@@ -349,7 +349,7 @@ elseif _OPTIONS.lua == "jit2" then
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Release/buildvm/buildvm_peobj.cross.o" -c "../src/luajit2/src/host/buildvm_peobj.c"',
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Release/buildvm/buildvm_fold.cross.o" -c "../src/luajit2/src/host/buildvm_fold.c"',
 					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Release/buildvm/buildvm.cross.o" -c "../src/luajit2/src/host/buildvm.c"',
-					'gcc -o ../bin/Release/buildvm ../obj/Release/buildvm/buildvm_lib.cross.o ../obj/Release/buildvm/buildvm_asm.cross.o ../obj/Release/buildvm/buildvm_peobj.cross.o ../obj/Release/buildvm/buildvm_fold.cross.o ../obj/Release/buildvm/buildvm.cross.o  -m32 -L/usr/lib32 -L/Test/xcompile/local/lib',
+					'gcc -o ../bin/Release/buildvm ../obj/Release/buildvm/buildvm_lib.cross.o ../obj/Release/buildvm/buildvm_asm.cross.o ../obj/Release/buildvm/buildvm_peobj.cross.o ../obj/Release/buildvm/buildvm_fold.cross.o ../obj/Release/buildvm/buildvm.cross.o  -m32 -L/Test/xcompile/local/lib',
 				}
 			end
 			postbuildcommands { "cp ../bin/Release/buildvm ../src/luajit2/src/", }
@@ -553,6 +553,9 @@ project "te4-freetype-gl"
 	language "C"
 	targetname "te4-freetype-gl"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	if _OPTIONS.wincross then
+		includedirs{'/opt/mxe/usr/i686-w64-mingw32/include/freetype2'}
+	end
 
 	files { "../src/freetype-gl/*.c", }
 
@@ -633,6 +636,7 @@ project "te4-renderer"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/renderer-moderngl/*.cpp", "../src/displayobjects/*.cpp", }
+
 
 if _OPTIONS.steam then
 	dofile("../steamworks/build/steam-code.lua")

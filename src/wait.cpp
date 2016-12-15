@@ -20,13 +20,12 @@
 */
 
 extern "C" {
+#include "display.h"
 #include "lua.h"
 #include "types.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "core_lua.h"
-#include "tSDL.h"
-#include "tgl.h"
 #include "main.h"
 #include "lua_externs.h"
 }

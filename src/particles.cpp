@@ -39,6 +39,10 @@ extern "C" {
 #include "renderer-moderngl/Particles.hpp"
 #include "particles.hpp"
 
+#ifndef M_PI_2
+# define M_PI_2		1.57079632679489661923	/* pi/2 */
+#endif
+
 #define rng(x, y) (x + rand_div(1 + y - x))
 
 #define PARTICLE_ETERNAL 999999
