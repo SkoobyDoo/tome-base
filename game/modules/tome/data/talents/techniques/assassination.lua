@@ -66,14 +66,11 @@ newTalent{
 			end
 		end
 
-		if target.dead then
+		if target.dead and self:knowTalent(self.T_STEALTH) and not self:isTalentActive(self.T_STEALTH) and not self:isTalentCoolingDown(self.T_STEALTH) then
 			game:onTickEnd(function()
-				if self:knowTalent(self.T_STEALTH) and not self:isTalentActive(self.T_STEALTH)  then
-					self.hide_chance = 1000
-					self.talents_cd[self.T_STEALTH] = 0
-					self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, silent = true})
-					self.hide_chance = nil
-				end
+				self.hide_chance = 1000
+				self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, silent = true})
+				self.hide_chance = nil
 			end)
 		end
 

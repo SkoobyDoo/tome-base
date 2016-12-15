@@ -100,7 +100,7 @@ function _M:setKnown(actor, v, x, y)
 	self.known_by[actor] = v
 	if x and y and v and actor.player and game.level.map(x, y, engine.Map.TRAP) == self then
 		game.level.map(x, y, engine.Map.TERRAIN).always_remember = true
-		if core.fov.distance(self.x, self.y, actor.x, actor.y) <= 1 then
+		if core.fov.distance(x, y, actor.x, actor.y) <= 1 then
 			if actor:checkHitOld(actor:callTalent(actor.T_TRAP_MASTERY, "getPower") + 5, self.disarm_power) then
 				self:identify(true) 
 			end
@@ -180,7 +180,7 @@ end
 function _M:disarm(x, y, who)
 	-- don't disarm "friendly" traps
 	if self.faction and who.reactionToward and who:reactionToward(self) >= 0 then return false end
-	if core.fov.distance(self.x, self.y, x, y) <= 1 then self:setKnown(who, true, x, y) end
+	if core.fov.distance(x, y, who.x, who.y) <= 1 then self:setKnown(who, true, x, y) end
 	return engine.Trap.disarm(self, x, y, who)
 end
 
