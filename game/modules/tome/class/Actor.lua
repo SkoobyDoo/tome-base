@@ -3579,21 +3579,25 @@ end
 --- Update tile for races that can handle it
 function _M:updateModdableTile()
 	if not self.moddable_tile or Map.tiles.no_moddable_tiles then
-		local add = self.add_mos or {}
+		local selfbase = self.replace_display or self
+		local add = selfbase.add_mos or {}
 		if self.shader_auras and next(self.shader_auras) then
 			local base, baseh, basey, base1 = nil
-			if self.image == "invis.png" and add[1] and add[1].image then
+			if selfbase.image == "invis.png" and add[1] and add[1].image then
 				base = add[1].image
 				base1 = true
 				baseh, basey = add[1].display_h, add[1].display_y
-			elseif not self.add_mos then
-				base = self.image
+			elseif not selfbase.add_mos then
+				base = selfbase.image
 				base1 = false
-				baseh, basey = self.display_h, self.display_y
+				baseh, basey = selfbase.display_h, selfbase.display_y
 			end
+			print("!!!!!!!!!!")
+			print("!!!!!!!!!!", base)
+			print("!!!!!!!!!!")
 
 			if base then
-				self.add_mos = add
+				selfbase.add_mos = add
 				for _, def in pairs(self.shader_auras) do
 					table.insert(add, 1, {_isshaderaura=true, image_alter="sdm", sdm_double=not baseh or baseh < 2, image=base, shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1})
 				end
@@ -3602,11 +3606,11 @@ function _M:updateModdableTile()
 				self:removeAllMOs()
 				if self.x and game.level then game.level.map:updateMap(self.x, self.y) end
 			end
-		elseif self.add_mos then
+		elseif selfbase.add_mos then
 			for i = #add, 1, -1 do
 				if add[i]._isshaderaura then table.remove(add, i) end
 			end
-			if not next(self.add_mos) then self.add_mos = nil end
+			if not next(selfbase.add_mos) then selfbase.add_mos = nil end
 
 			self:removeAllMOs()
 			if self.x and game.level then game.level.map:updateMap(self.x, self.y) end
