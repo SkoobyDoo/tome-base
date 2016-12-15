@@ -1324,7 +1324,7 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if not force and self:knowTalent(self.T_HEIGHTENED_SENSES) then
+	if self:knowTalent(self.T_HEIGHTENED_SENSES) then
 		local power = self:callTalent(self.T_HEIGHTENED_SENSES,"trapPower")
 		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
@@ -3430,8 +3430,7 @@ function _M:onStatChange(stat, v)
 		self.max_life = math.max(1, self.max_life + multi_life * v)  -- no negative max life
 
 		-- heal mod
-		if self.stats.hf_id then self:removeTemporaryValue("healing_factor", self.stats.hf_id) end
-		self.stats.hf_id = self:addTemporaryValue("healing_factor", ((self:getCon()/10)^.5-1)*.25) -- 0 @ 10, 1.54 @ 100
+		self.healing_factor = self.healing_factor + v * 0.005
 	elseif stat == self.STAT_DEX then
 		self.ignore_direct_crits = (self.ignore_direct_crits or 0) + 0.3 * v
 	elseif stat == self.STAT_WIL then
@@ -3578,8 +3577,8 @@ end
 
 --- Update tile for races that can handle it
 function _M:updateModdableTile()
-	if not self.moddable_tile or Map.tiles.no_moddable_tiles then
-		local selfbase = self.replace_display or self
+	local selfbase = self.replace_display or self
+	if not selfbase.moddable_tile or Map.tiles.no_moddable_tiles then
 		local add = selfbase.add_mos or {}
 		if self.shader_auras and next(self.shader_auras) then
 			local base, baseh, basey, base1 = nil
@@ -3592,9 +3591,6 @@ function _M:updateModdableTile()
 				base1 = false
 				baseh, basey = selfbase.display_h, selfbase.display_y
 			end
-			print("!!!!!!!!!!")
-			print("!!!!!!!!!!", base)
-			print("!!!!!!!!!!")
 
 			if base then
 				selfbase.add_mos = add
