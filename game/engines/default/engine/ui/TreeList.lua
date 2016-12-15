@@ -281,7 +281,9 @@ function _M:drawItem(item)
 			local color = util.getval(item.color, item) or {255,255,255}
 			local text
 
-			if type(col.display_prop) == "function" then
+			if is_header then
+				text = tostring(item[i].name)
+			elseif type(col.display_prop) == "function" then
 				text = tostring(col.display_prop(item))
 			else
 				text = item[col.display_prop or col.sort]
