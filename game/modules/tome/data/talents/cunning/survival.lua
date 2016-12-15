@@ -60,7 +60,7 @@ newTalent{
 	target = {type="hit", range=1, nowarning=true, immediate_keys=true, no_lock=false},
 	action = function(self, t)
 		if self.player then
-			core.mouse.set(game.level.map:getTileToScreen(self.x, self.y, true))
+--			core.mouse.set(game.level.map:getTileToScreen(self.x, self.y, true))
 			game.log("#CADET_BLUE#Disarm A Trap: (direction keys to select where to disarm, shift+direction keys to move freely)")
 		end
 		local tg = self:getTalentTarget(t)
