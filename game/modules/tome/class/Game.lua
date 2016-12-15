@@ -2000,9 +2000,6 @@ do return end
 		REST = function()
 			self.player:restInit()
 		end,
-		DISARM_TRAP = function()
-			self.player:playerDisarmTrap()
-		end,
 		PICKUP_FLOOR = not_wild(function()
 			if self.player.no_inventory_access then return end
 			self.player:playerPickup()
