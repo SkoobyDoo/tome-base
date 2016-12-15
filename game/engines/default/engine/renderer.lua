@@ -140,13 +140,17 @@ function core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 	return v, w, h
 end
 
-function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
+function core.renderer.textureTable(s)
 	local t = {tx=0, ty=0}
 	t.w, t.h = s:getSize()
 	t.t, t.tw, t.th = s:glTexture()
 	t.tw = t.w / t.tw
 	t.th = t.h / t.th
-	return core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
+	return t
+end
+
+function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
+	return core.renderer.fromTextureTable(core.renderer.textureTable(s), x, y, w, h, repeat_quads, r, g, b, a, v)
 end
 
 function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
