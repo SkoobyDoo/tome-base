@@ -1324,7 +1324,7 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if self:knowTalent(self.T_HEIGHTENED_SENSES) then
+	if not force and self:knowTalent(self.T_HEIGHTENED_SENSES) then
 		local power = self:callTalent(self.T_HEIGHTENED_SENSES,"trapPower")
 		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
