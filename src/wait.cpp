@@ -51,7 +51,6 @@ static int draw_last_frame(lua_State *L)
 	if (!wait_vbo) return 0;
 
 	wait_vbo->toScreen(0, 0, 0, 1, 1);
-	printf("!!!!\n");
 	return 0;
 }
 

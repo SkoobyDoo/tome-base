@@ -131,14 +131,25 @@ function _M:updateUI()
 ----------------------------
 ----------------------------DGDGDGDG remove this
 ----------------------------
-	local tz = require("engine.ui.TextzoneList").new{width=self.iw, height=self.ih / 2, scrollbar=true, focus_check=true, pingpong=true}
-	local test = require("engine.ui.List").new{width=self.iw, height=self.ih / 2, list={
-		{name='p1', desc='this is a long text 1\nthis is a long text 1\nthis is a long text 1\nthis is a long text 1\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo'},
-		{name='p2', desc='this is a long text 2'},
-		{name='p3', desc='this is a long text 3'},
-	}, fct=function(t) tz:switchItem(t, t.desc) end}
+	-- local tz = require("engine.ui.TextzoneList").new{width=self.iw, height=self.ih / 2, scrollbar=true, focus_check=true, pingpong=true}
+	-- local test = require("engine.ui.List").new{width=self.iw, height=self.ih / 2, list={
+	-- 	{name='p1', desc='this is a long text 1\nthis is a long text 1\nthis is a long text 1\nthis is a long text 1\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo'},
+	-- 	{name='p2', desc='this is a long text 2'},
+	-- 	{name='p3', desc='this is a long text 3'},
+	-- }, fct=function(t) tz:switchItem(t, t.desc) end}
 	
 	-- uis = { {left=0, top=0, ui=test}, {left=0, top=test, ui=tz}, }
+
+	local test = require("engine.ui.TreeList").new{width=self.iw, height=self.ih / 2, columns={
+		{width=60, display_prop="name"},
+		{width=40, display_prop="lol"},
+	}, tree={
+		{name=('p1'):toTString(), lol="lolzor1"},
+		{name='p2', lol="lolzor2"},
+		{name='p3', lol="lolzor3"},
+	}, fct=function(t) end}
+	
+	-- uis = { {left=0, top=0, ui=test}, }
 ----------------------------
 ----------------------------
 ----------------------------

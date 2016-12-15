@@ -279,11 +279,16 @@ function _M:drawItem(item)
 			local level = item.level
 			local color = util.getval(item.color, item) or {255,255,255}
 			local text
-			if is_header then
-				text = tostring(item[i].name)
+
+			if type(col.display_prop) == "function" then
+				text = tostring(col.display_prop(item))
 			else
-				text = util.getitem(item, col.display_prop or col.sort)
-				text = tostring(text)
+				text = item[col.display_prop or col.sort]
+				if type(text) == "table" and text.is_tstring then
+					text = tostring(text)
+				else
+					text = tostring(util.getval(text, item))
+				end
 			end
 
 			if not item.cols[i] then
@@ -322,6 +327,7 @@ function _M:drawItem(item)
 		x = x + col.width
 	end
 	if self.on_drawitem then self.on_drawitem(item) end
+	item.__drawn = true
 end
 
 function _M:walkTree(purge_cache)
@@ -406,7 +412,7 @@ function _M:onSelect(sel)
 	for i = self.scroll, math.min(max, self.max) do
 		local item = self.list[i]
 		if item then
-			self:drawItem(item)
+			if not item.__drawn then self:drawItem(item) end
 			item._container:translate(0, pos, 0)
 			self.item_container:add(item._container)
 			pos = pos + self.fh

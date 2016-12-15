@@ -148,7 +148,8 @@ function _M:select(v)
 		self:startScrolling()
 	else
 		self:stopScrolling()
-		self.cur_frame.container:colorTween("selected", 8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
+		-- self.cur_frame.container:colorTween("selected", 8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
+		self.cur_frame.container:color(1, 1, 1, 0)
 	end
 end
 
