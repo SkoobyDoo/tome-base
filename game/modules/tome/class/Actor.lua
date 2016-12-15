@@ -4739,6 +4739,11 @@ end
 -- @param ab the talent (not the id, the table)
 -- @return true to continue, false to stop
 function _M:preUseTalent(ab, silent, fake)
+	if self.forbid_talents and self.forbid_talents[ab.id] then
+		if not silent then game.logSeen(self, self.forbid_talents[ab.id] or "%s can not use %s.", self.name:capitalize(), ab.name) end
+		return false
+	end
+
 	if not self:attr("no_talent_fail") then
 	if not ab.never_fail and self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
 		if not silent then game.logSeen(self, "%s is too afraid to use %s.", self.name:capitalize(), ab.name) end
