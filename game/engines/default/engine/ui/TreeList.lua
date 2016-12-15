@@ -28,6 +28,7 @@ local Scrollbar = require "engine.ui.blocks.Scrollbar"
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
+	t.require_renderer = true
 	self.tree = assert(t.tree, "no tree tree")
 	self.columns = assert(t.columns, "no list columns")
 	self.w = assert(t.width, "no tree width")
