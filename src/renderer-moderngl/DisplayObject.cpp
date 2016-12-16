@@ -535,7 +535,7 @@ void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 	auto dl = getDisplayList(container);
 	stopDisplayList(); // Needed to make sure we break texture chaining
 	dl->sub = this;
-	resetChanged();
+	// resetChanged(); // DGDGDGDG: investigate why things break if this is on
 }
 
 void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
@@ -546,7 +546,7 @@ void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color)
 	container->zvertices.resize(startat + 1);
 	sortable_vertex *dest = container->zvertices.data();
 	dest[startat].sub = this;
-	resetChanged();
+	// resetChanged(); // DGDGDGDG: investigate why things break if this is on
 }
 
 void SubRenderer::toScreenSimple() {

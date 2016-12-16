@@ -21,6 +21,7 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local TreeList = require "engine.ui.TreeList"
 local Textzone = require "engine.ui.Textzone"
+local TextzoneList = require "engine.ui.TextzoneList"
 local Separator = require "engine.ui.Separator"
 local GetQuantity = require "engine.dialogs.GetQuantity"
 local Tabs = require "engine.ui.Tabs"
@@ -36,7 +37,7 @@ function _M:init()
 	Dialog.init(self, "Game Options", game.w * 0.8, game.h * 0.8)
 
 	self.vsep = Separator.new{dir="horizontal", size=self.ih - 10}
-	self.c_desc = Textzone.new{width=math.floor((self.iw - self.vsep.w)/2), height=self.ih, text=""}
+	self.c_desc = TextzoneList.new{width=math.floor((self.iw - self.vsep.w)/2), height=self.ih}
 
 	local tabs = {
 		{title="UI", kind="ui"},
@@ -75,8 +76,9 @@ end
 
 function _M:select(item)
 	if item and self.uis[3] then
-		self.uis[3].ui = item.zone
-		self:setupUI()
+		self.c_desc:switchItem(item, item.zone)
+		-- self.uis[3].ui = item.zone
+		-- self:setupUI()
 	end
 end
 

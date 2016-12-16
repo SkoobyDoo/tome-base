@@ -140,14 +140,15 @@ function _M:updateUI()
 	
 	-- uis = { {left=0, top=0, ui=test}, {left=0, top=test, ui=tz}, }
 
-	local test = require("engine.ui.TreeList").new{width=self.iw, height=self.ih / 2, columns={
-		{width=60, display_prop="name"},
-		{width=40, display_prop="lol"},
-	}, tree={
-		{name=('p1'):toTString(), lol="lolzor1"},
-		{name='p2', lol="lolzor2"},
-		{name='p3', lol="lolzor3"},
-	}, fct=function(t) end}
+	-- local test = require("engine.ui.TreeList").new{width=self.iw, height=self.ih / 2, columns={
+	-- 	{width=60, display_prop="name"},
+	-- 	{width=40, display_prop="lol"},
+	-- }, tree={
+	-- 	{name=('p1'):toTString(), lol="lolzor1"},
+	-- 	{name='p2', lol="lolzor2"},
+	-- 	{name='p3', lol="lolzor3"},
+	-- }, fct=function(t) end}
+	-- local test = require("engine.ui.Textzone").new{width=self.iw, height=self.ih / 2, text="plop"}
 	
 	-- uis = { {left=0, top=0, ui=test}, }
 ----------------------------

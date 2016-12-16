@@ -230,6 +230,12 @@ function _M:getClass()
 	return getmetatable(self).__index
 end
 
+function _M:isInstance(o)
+	if type(o) ~= "table" then return false end -- Lol nice try!
+	if not o.isClassName then return false end
+	return o:isClassName(self:getClassName())
+end
+
 function _M:isClassName(name)
 	if self.__CLASSNAME == name then return true end
 	if self._NAME == name then return true end

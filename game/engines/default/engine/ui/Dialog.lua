@@ -445,7 +445,7 @@ function _M:generate()
 	local r, g, b, a = self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a
 	local w, h = self.frame.w, self.frame.h
 
-	self.renderer = core.renderer.renderer()
+	self.renderer = core.renderer.renderer():setRendererName(self:getClassName()):countDraws(false)
 	self.renderer:zSort(true)
 	self.do_container = core.renderer.container()
 	self.do_container:translate(self.display_x, self.display_y, -100)
@@ -995,7 +995,5 @@ function _M:toScreen(x, y, nb_keyframes)
 	-- if zoom < 1 then core.display.glScale() end
 	-- core.display.glTranslate(-tx, -ty, 0)
 
--- print("=====<", self:getClassName()) core.display.countDraws()
 	self.renderer:toScreen()
--- print("=====>", core.display.countDraws())
 end

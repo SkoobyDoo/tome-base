@@ -27,13 +27,15 @@
 
 class RendererGL;
 
-typedef struct {
+struct sortable_vertex {
 	vertex v;
 	array<GLuint, DO_MAX_TEX> tex;
 	shader_type *shader;
 	SubRenderer *sub;
 	DisplayObject *tick;
-} sortable_vertex;
+	
+	bool operator<(const sortable_vertex &i) const;
+};
 
 /****************************************************************************
  ** Display lists contain a VBO, texture, ... and a list of vertices to be

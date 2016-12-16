@@ -127,12 +127,12 @@ void RendererGL::cloneInto(DisplayObject* _into) {
 	into->cutpos2 = cutpos2;
 }
 
-static bool zSorter(const sortable_vertex &i, const sortable_vertex &j) {
-	if (i.v.pos.z == j.v.pos.z) {
-		if (i.shader == j.shader) return i.tex < j.tex;
-		else return i.shader < j.shader;
+bool sortable_vertex::operator<(const sortable_vertex &i) const {
+	if (v.pos.z == i.v.pos.z) {
+		if (shader == i.shader) return tex < i.tex;
+		else return shader < i.shader;
 	} else {
-		return i.v.pos.z < j.v.pos.z;
+		return v.pos.z < i.v.pos.z;
 	}
 }
 
@@ -191,7 +191,7 @@ void RendererGL::update() {
 				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 				if (i) i->renderZ(this, cur_model, color);
 			}
-			stable_sort(zvertices.begin(), zvertices.end(), zSorter);
+			stable_sort(zvertices.begin(), zvertices.end());
 
 			sortedToDL();
 		} else {

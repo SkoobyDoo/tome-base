@@ -57,7 +57,7 @@ function _M:generateContainer()
 
 	self.max_text_w = w - self.frame.b4.w - self.frame.b6.w
 	self.up_text_h = (h - self.font_h) / 2
-	self.text = core.renderer.text(self.parent.font)
+	self.text = core.renderer.text(self.parent.font):translate(0, 0, 10)
 	self.text:maxLines(1)
 	self.text:textColor(self.color[1] / 255, self.color[2] / 255, self.color[3] / 255, 1)
 
