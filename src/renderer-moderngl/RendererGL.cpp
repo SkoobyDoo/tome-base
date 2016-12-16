@@ -136,6 +136,15 @@ bool sortable_vertex::operator<(const sortable_vertex &i) const {
 	}
 }
 
+static bool sort_dos(DORFlatSortable *i, DORFlatSortable *j) {
+	if (i->sort_z == j->sort_z) {
+		if (i->sort_shader == j->sort_shader) return i->sort_tex < j->sort_tex;
+		else return i->sort_shader < j->sort_shader;
+	} else {
+		return i->sort_z < j->sort_z;
+	}
+}
+
 void RendererGL::sortedToDL() {
 	array<GLuint, DO_MAX_TEX> tex {{0,0,0}};
 	shader_type *shader = NULL;
@@ -185,7 +194,38 @@ void RendererGL::update() {
 
 		// Build up the new display lists
 		mat4 cur_model = mat4();
-		if (zsort) {
+		if (zsort == SortMode::NO_SORT) {
+			for (auto it = dos.begin() ; it != dos.end(); ++it) {
+				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+				if (i) i->render(this, cur_model, color);
+			}
+		} else if (zsort == SortMode::FAST) {
+			// If nothing that can alter sort order changed, we can just quickly recompute the DisplayLists just like in the no sort method
+			if (recompute_fast_sort) {
+				recompute_fast_sort = false;
+				// printf("FST SORT\n");
+				sorted_dos.clear();
+
+				// First we iterate over the DOs tree to "flatten" in
+				for (auto it = dos.begin() ; it != dos.end(); ++it) {
+					DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+					if (i) i->sortZ(this, cur_model);
+				}
+
+				// Now we sort the flattened tree. This is awy faster than the full sort mode because here we sort DOs instead of vertices
+				// Also since we are not sorting vertices we likely dont need to use a stable sort -- DGDGDGDG: don't we ?
+				stable_sort(sorted_dos.begin(), sorted_dos.end(), sort_dos);
+			}
+
+			// And now we can iterate the sorted flattened tree and render as a normal no sort render
+			// printf("FST redraw\n");
+			for (auto it = sorted_dos.begin() ; it != sorted_dos.end(); ++it) {
+				DORFlatSortable *i = dynamic_cast<DORFlatSortable*>(*it);
+				if (i && i->parent) {
+					i->render(this, i->parent->computeParentCompositeMatrix(this, cur_model), i->parent->computeParentCompositeColor(this, color));
+				}
+			}
+		} else if (zsort == SortMode::FULL) {
 			zvertices.clear();
 			for (auto it = dos.begin() ; it != dos.end(); ++it) {
 				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
@@ -194,11 +234,6 @@ void RendererGL::update() {
 			stable_sort(zvertices.begin(), zvertices.end());
 
 			sortedToDL();
-		} else {
-			for (auto it = dos.begin() ; it != dos.end(); ++it) {
-				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-				if (i) i->render(this, cur_model, color);
-			}
 		}
 
 		// Notify we dont need to be rebuilt again unless more stuff changes

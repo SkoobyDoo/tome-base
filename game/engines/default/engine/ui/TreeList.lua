@@ -82,7 +82,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-	self.do_container:clear():zSort(true):countDraws(true)
+	self.do_container:clear():zSort(true):countDraws(false)
 
 	-- Draw the scrollbar
 	if self.scrollbar then

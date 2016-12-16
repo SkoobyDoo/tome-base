@@ -532,15 +532,15 @@ end
 
 --[[
 local renderer = core.renderer.renderer():translate(200, 200)
-renderer:setRendererName("renderer")
+renderer:setRendererName("renderer"):zSort("fast")
 -- local i = core.renderer.image("/data/gfx/background/tome.png", 0, 0, 2000, 2000)
-local i = core.renderer.colorQuad(0, 0, 2000, 2000, colors.unpack1(colors.RED, 1))
-renderer:add(i)
+local i2 = core.renderer.colorQuad(20, 20, 20, 20, colors.unpack1(colors.BLUE, 1)):translate(0, 0, 10)
+local i = core.renderer.colorQuad(0, 0, 200, 200, colors.unpack1(colors.RED, 1))
+local c = core.renderer.container()
+c:add(i2)
+c:add(i)
+renderer:add(c)
 
-local f = core.display.newFont("/data/font/Salsa-Regular.ttf", 32)
-local v = core.renderer.colorQuad(0, 0, 512, 512, 1,1,1,1)
-v:textureFontAtlas(f)
-renderer:add(v:translate(200, 200))
 
 local nb = 1
 local z = false

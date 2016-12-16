@@ -41,6 +41,8 @@ class View;
 
 #define DO_STANDARD_CLONE_METHOD(class_name) virtual DisplayObject* clone() { DisplayObject *into = new class_name(); this->cloneInto(into); return into; }
 
+const int DO_MAX_TEX = 3;
+
 typedef struct {
 	vec4 pos;
 	vec2 tex;
@@ -62,7 +64,6 @@ extern int donb;
 class DisplayObject {
 protected:
 	int lua_ref = LUA_NOREF;
-	DisplayObject *parent = NULL;
 	// lua_State *L = NULL;
 	mat4 model;
 	vec4 color;
@@ -75,6 +76,7 @@ protected:
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
+	DisplayObject *parent = NULL;
 	DisplayObject() {
 		donb++;
 		// printf("+DOs %d\n", donb);
@@ -95,11 +97,14 @@ public:
 	void setParent(DisplayObject *parent);
 	void removeFromParent();
 	void setChanged();
+	virtual void setSortingChanged();
 	bool isChanged() { return changed; };
 	void resetChanged() { changed = false; };
 	bool independantRenderer() { return stop_parent_recursing; };
 
 	void recomputeModelMatrix();
+	mat4 computeParentCompositeMatrix(DisplayObject *stop_at, mat4 cur_model);
+	vec4 computeParentCompositeColor(DisplayObject *stop_at, vec4 cur_color);
 
 	vec4 getColor() { return color; };
 	void getRotate(float *dx, float *dy, float *dz) { *dx = rot_x; *dy = rot_y; *dz = rot_z; };
@@ -118,18 +123,30 @@ public:
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color) = 0;
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color) = 0;
+	virtual void sortZ(RendererGL *container, mat4 cur_model) = 0;
+};
+
+/****************************************************************************
+ ** All childs of that can be sorted in fast mode by RendererGl
+ ****************************************************************************/
+class DORFlatSortable : public DisplayObject {
+public:
+	shader_type *sort_shader;
+	array<GLuint, DO_MAX_TEX> sort_tex;
+	float sort_z;
 };
 
 /****************************************************************************
  ** DO that has a vertex list
  ****************************************************************************/
-const int DO_MAX_TEX = 3;
-class DORVertexes : public DisplayObject{
+class DORVertexes : public DORFlatSortable{
 protected:
 	vector<vertex> vertices;
 	array<int, DO_MAX_TEX> tex_lua_ref{{ LUA_NOREF, LUA_NOREF, LUA_NOREF}};
 	array<GLuint, DO_MAX_TEX> tex{{0, 0, 0}};
 	int tex_max = 1;
+	bool is_zflat = true;
+	float zflat = 0;
 
 	shader_type *shader;
 
@@ -174,6 +191,7 @@ public:
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void sortZ(RendererGL *container, mat4 cur_model);
 };
 
 /****************************************************************************
@@ -192,8 +210,9 @@ public:
 
 	virtual void containerRender(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void containerRenderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void containerSortZ(RendererGL *container, mat4 cur_model);
 };
-class DORContainer : public DisplayObject, public IContainer{
+class DORContainer : public DORFlatSortable, public IContainer{
 protected:
 	virtual void cloneInto(DisplayObject *into);
 public:
@@ -208,6 +227,7 @@ public:
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void sortZ(RendererGL *container, mat4 cur_model);
 };
 
 
@@ -232,6 +252,7 @@ public:
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void sortZ(RendererGL *container, mat4 cur_model);
 
 	virtual void toScreenSimple();
 	virtual void toScreen(mat4 cur_model, vec4 color) = 0;

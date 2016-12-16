@@ -214,7 +214,20 @@ static int gl_renderer_free(lua_State *L)
 static int gl_renderer_zsort(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
-	r->zSorting(lua_toboolean(L, 2));
+	if (lua_isstring(L, 2)) {
+		SortMode mode = SortMode::NO_SORT;
+		const char *ms = lua_tostring(L, 2);
+		if (!strcmp(ms, "no")) mode = SortMode::NO_SORT;
+		else if (!strcmp(ms, "fast")) mode = SortMode::FAST;
+		else if (!strcmp(ms, "full")) mode = SortMode::FULL;
+		else {
+			lua_pushstring(L, "Parameter to zSort() must be either true/falase or no/fast/full");
+			lua_error(L);
+		}		
+		r->zSorting(mode);
+	} else {
+		r->zSorting(lua_toboolean(L, 2) ? SortMode::FAST : SortMode::NO_SORT);
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }

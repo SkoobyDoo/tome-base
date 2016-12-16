@@ -2039,9 +2039,6 @@ static int is_safe_mode(lua_State *L)
 static int set_safe_mode(lua_State *L)
 {
 	safe_mode = TRUE;
-	fbo_active = FALSE;
-	shaders_active = FALSE;
-	multitexture_active = FALSE;
 	return 0;
 }
 
