@@ -1308,7 +1308,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		vec4 color = {r, g, b, a};
 		mat4 model = mat4();
 		model = glm::translate(model, glm::vec3(x1, y1, 0));
-		dm->displayobject->render(map->z_renderers[z], model, color);
+		dm->displayobject->render(map->z_renderers[z], model, color, true);
 		if (!dm->displayobject->independantRenderer()) {
 			map->z_changed[z] = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
 		}

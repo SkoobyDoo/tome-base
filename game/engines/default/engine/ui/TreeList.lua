@@ -408,7 +408,7 @@ function _M:onSelect(sel)
 	if not item then return end
 
 	-- Update scrolling
-	self.item_container:clear()
+	if self.old_scroll ~= self.scroll then self.item_container:clear() end
 	local max = self.scroll + self.max_display - 1
 	local pos = 0
 
@@ -417,7 +417,7 @@ function _M:onSelect(sel)
 		if item then
 			if not item.__drawn then self:drawItem(item) end
 			item._container:translate(0, pos, 0)
-			self.item_container:add(item._container)
+			if self.old_scroll ~= self.scroll then self.item_container:add(item._container) end
 			pos = pos + self.fh
 		end
 	end
@@ -442,6 +442,7 @@ function _M:onSelect(sel)
 
 	self.old_sel = self.sel
 	self.old_col = self.cur_col
+	self.old_scroll = self.scroll
 end
 
 function _M:onUse(...)

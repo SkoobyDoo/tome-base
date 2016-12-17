@@ -97,24 +97,17 @@ void DisplayObject::recomputeModelMatrix() {
 	setChanged();
 }
 
-mat4 DisplayObject::computeParentCompositeMatrix(DisplayObject *stop_at, mat4 cur_model) {
-	if (!parent || this == stop_at) return cur_model;
-	cur_model = parent->computeParentCompositeMatrix(stop_at, cur_model) * model;
-	return cur_model;
-}
-
-vec4 DisplayObject::computeParentCompositeColor(DisplayObject *stop_at, vec4 cur_color) {
-	DisplayObject *p = this;
-	while (p) {
-		if (p == stop_at) break;
-		cur_color *= p->color;
-		p = p->parent;
-	}
-	return cur_color;
+recomputematrix DisplayObject::computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur) {
+	if (!parent || this == stop_at) return cur;
+	recomputematrix p = parent->computeParentCompositeMatrix(stop_at, cur);
+	cur.model = p.model * model;
+	cur.color = p.color * color;
+	cur.visible = p.visible && visible;
+	return cur;
 }
 
 void DisplayObject::shown(bool v) {
-	if (visible != v) setSortingChanged();
+	// if (visible != v) setSortingChanged();
 	visible = v;
 	setChanged();
 }
@@ -409,8 +402,8 @@ int DORVertexes::addQuadPie(
 	return 0;
 }
 
-void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
+void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible) return;
 	cur_model *= model;
 	cur_color *= color;
 	auto dl = getDisplayList(container, tex, shader);
@@ -432,8 +425,8 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 	resetChanged();
 }
 
-void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
+void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible) return;
 	cur_model *= model;
 	cur_color *= color;
 
@@ -509,17 +502,17 @@ void IContainer::containerClear() {
 	dos.clear();
 }
 
-void IContainer::containerRender(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+void IContainer::containerRender(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->render(container, cur_model, cur_color);
+		if (i) i->render(container, cur_model, cur_color, cur_visible);
 	}
 }
 
-void IContainer::containerRenderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+void IContainer::containerRenderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->renderZ(container, cur_model, cur_color);
+		if (i) i->renderZ(container, cur_model, cur_color, cur_visible);
 	}
 }
 
@@ -563,24 +556,24 @@ DORContainer::~DORContainer() {
 	clear();
 }
 
-void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
+void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible) return;
 	cur_model *= model;
 	cur_color *= color;
-	containerRender(container, cur_model, cur_color);
+	containerRender(container, cur_model, cur_color, true);
 	resetChanged();
 }
 
-void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
+void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible) return;
 	cur_model *= model;
 	cur_color *= color;
-	containerRenderZ(container, cur_model, cur_color);
+	containerRenderZ(container, cur_model, cur_color, true);
 	resetChanged();
 }
 
 void DORContainer::sortZ(RendererGL *container, mat4 cur_model) {
-	if (!visible) return; // DGDGDGDG: If you want :shown() to not trigger a Z rebuild we need to remove that. But to do that visible needs to be able to propagate like model & color; it does not currently
+	// if (!visible) return; // DGDGDGDG: If you want :shown() to not trigger a Z rebuild we need to remove that. But to do that visible needs to be able to propagate like model & color; it does not currently
 	cur_model *= model;
 	containerSortZ(container, cur_model);
 }
@@ -611,8 +604,8 @@ void SubRenderer::setRendererName(const char *name) {
 	setRendererName((char*)name, true);
 }
 
-void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
+void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible) return;
 	this->use_model = cur_model;
 	this->use_color = cur_color;
 	stopDisplayList(); // Needed to make sure we break texture chaining
@@ -622,8 +615,8 @@ void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color) 
 	// resetChanged(); // DGDGDGDG: investigate why things break if this is on
 }
 
-void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
+void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible) return;
 	this->use_model = cur_model;
 	this->use_color = cur_color;
 	int startat = container->zvertices.size();
@@ -783,17 +776,17 @@ void DORTarget::setAutoRender(SubRenderer *o, int ref) {
 	setChanged();
 }
 
-void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	if (subrender) {
 		stopDisplayList(); // Needed to make sure we break texture chaining
 		auto dl = getDisplayList(container);
 		dl->tick = this;
 	}
 
-	DORVertexes::render(container, cur_model, cur_color);
+	DORVertexes::render(container, cur_model, cur_color, cur_visible);
 }
 
-void DORTarget::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
+void DORTarget::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	if (subrender) {
 		int startat = container->zvertices.size();
 		container->zvertices.resize(startat + 1);
@@ -801,7 +794,7 @@ void DORTarget::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 		dest[startat].tick = this;
 	}
 
-	DORVertexes::renderZ(container, cur_model, cur_color);
+	DORVertexes::renderZ(container, cur_model, cur_color, cur_visible);
 }
 
 void DORTarget::tick() {

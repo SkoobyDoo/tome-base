@@ -106,14 +106,14 @@ void DORTileObject::clear() {
 	}
 }
 
-void DORTileObject::render(RendererGL *container, mat4 cur_model, vec4 color) {
+void DORTileObject::render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) {
 	if (mos_changed) regenData();
-	DORContainer::render(container, cur_model, color);
+	DORContainer::render(container, cur_model, color, cur_visible);
 }
 
-void DORTileObject::renderZ(RendererGL *container, mat4 cur_model, vec4 color) {
+void DORTileObject::renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) {
 	if (mos_changed) regenData();
-	DORContainer::renderZ(container, cur_model, color);
+	DORContainer::renderZ(container, cur_model, color, cur_visible);
 }
 
 

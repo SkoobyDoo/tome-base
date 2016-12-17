@@ -172,8 +172,8 @@ public:
 	void startAnim(const char *name);
 
 	void setShader(shader_type *s) { shader = s; };
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4 cur_model) {}; // DGDGDGDG make it
 
 	virtual void onKeyframe(int nb_keyframes);

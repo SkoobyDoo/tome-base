@@ -288,8 +288,8 @@ void DORSpriter::onKeyframe(int nb_keyframe) {
 	setChanged();
 }
 
-void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible || !instance) return;
+void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible || !instance) return;
 	cur_model *= model;
 	cur_color *= color;
 	currently_processing = this;
@@ -298,8 +298,8 @@ void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
 	resetChanged();
 }
 
-void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible || !instance) return;
+void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	if (!visible || !cur_visible || !instance) return;
 	cur_model *= model;
 	cur_color *= color;
 	currently_processing = this;

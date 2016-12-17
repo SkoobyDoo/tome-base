@@ -56,6 +56,12 @@ typedef struct {
  	float kind;
 } vertex;
 
+struct recomputematrix {
+	mat4 model;
+	vec4 color;
+	bool visible;
+};
+
 class RendererGL;
 extern int donb;
 /****************************************************************************
@@ -103,8 +109,7 @@ public:
 	bool independantRenderer() { return stop_parent_recursing; };
 
 	void recomputeModelMatrix();
-	mat4 computeParentCompositeMatrix(DisplayObject *stop_at, mat4 cur_model);
-	vec4 computeParentCompositeColor(DisplayObject *stop_at, vec4 cur_color);
+	recomputematrix computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur);
 
 	vec4 getColor() { return color; };
 	void getRotate(float *dx, float *dy, float *dz) { *dx = rot_x; *dy = rot_y; *dz = rot_z; };
@@ -121,8 +126,8 @@ public:
 
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color) = 0;
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color) = 0;
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
 	virtual void sortZ(RendererGL *container, mat4 cur_model) = 0;
 };
 
@@ -189,8 +194,8 @@ public:
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4 cur_model);
 };
 
@@ -208,8 +213,8 @@ public:
 	virtual bool containerRemove(DisplayObject *dob);
 	virtual void containerClear();
 
-	virtual void containerRender(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void containerRenderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void containerRender(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
+	virtual void containerRenderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void containerSortZ(RendererGL *container, mat4 cur_model);
 };
 class DORContainer : public DORFlatSortable, public IContainer{
@@ -225,8 +230,8 @@ public:
 	virtual void remove(DisplayObject *dob);
 	virtual void clear();
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4 cur_model);
 };
 
@@ -250,8 +255,8 @@ public:
 	void setRendererName(const char *name);
 	void setRendererName(char *name, bool copy);
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4 cur_model);
 
 	virtual void toScreenSimple();
@@ -289,8 +294,8 @@ public:
 	void use(bool activate);
 	void setAutoRender(SubRenderer *subrender, int ref);
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void tick();
 
 	virtual void onScreenResize(int w, int h);

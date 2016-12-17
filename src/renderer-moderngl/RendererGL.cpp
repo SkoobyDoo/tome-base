@@ -197,13 +197,13 @@ void RendererGL::update() {
 		if (zsort == SortMode::NO_SORT) {
 			for (auto it = dos.begin() ; it != dos.end(); ++it) {
 				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-				if (i) i->render(this, cur_model, color);
+				if (i) i->render(this, cur_model, color, true);
 			}
 		} else if (zsort == SortMode::FAST) {
 			// If nothing that can alter sort order changed, we can just quickly recompute the DisplayLists just like in the no sort method
 			if (recompute_fast_sort) {
 				recompute_fast_sort = false;
-				// printf("FST SORT\n");
+				printf("FST SORT\n");
 				sorted_dos.clear();
 
 				// First we iterate over the DOs tree to "flatten" in
@@ -222,14 +222,15 @@ void RendererGL::update() {
 			for (auto it = sorted_dos.begin() ; it != sorted_dos.end(); ++it) {
 				DORFlatSortable *i = dynamic_cast<DORFlatSortable*>(*it);
 				if (i && i->parent) {
-					i->render(this, i->parent->computeParentCompositeMatrix(this, cur_model), i->parent->computeParentCompositeColor(this, color));
+					recomputematrix cur = i->parent->computeParentCompositeMatrix(this, {cur_model, color, true});
+					i->render(this, cur.model, cur.color, cur.visible);
 				}
 			}
 		} else if (zsort == SortMode::FULL) {
 			zvertices.clear();
 			for (auto it = dos.begin() ; it != dos.end(); ++it) {
 				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-				if (i) i->renderZ(this, cur_model, color);
+				if (i) i->renderZ(this, cur_model, color, true);
 			}
 			stable_sort(zvertices.begin(), zvertices.end());
 
