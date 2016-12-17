@@ -308,6 +308,17 @@ void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, 
 	resetChanged();
 }
 
+void DORSpriter::sortZ(RendererGL *container, mat4 cur_model) {
+	cur_model *= model;
+
+	// We take a "virtual" point at 0 coordinates
+	vec4 virtualz = cur_model * vec4(0, 0, 0, 1);
+	sort_z = virtualz.z;
+	sort_shader = shader;
+	sort_tex = {99999,0,0}; // DGDGDGDG UGH we need a wayto find the actual texture
+	container->sorted_dos.push_back(this);
+}
+
 static void spriterErrorHandler(const std::string &err) {
 	lua_pushstring(L, "Spriter Error: ");
 	lua_pushstring(L, err.c_str());

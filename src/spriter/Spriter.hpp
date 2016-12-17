@@ -138,7 +138,7 @@ typedef struct {
 /**************************************************************************
  ** DORSpriter
  **************************************************************************/
-class DORSpriter : public DisplayObject, public IRealtime{
+class DORSpriter : public DORFlatSortable, public IRealtime{
 	friend class TE4SpriterImageFile; friend class TE4SpriterTriggerObjectInfo;
 private:
 	virtual void cloneInto(DisplayObject *into);
@@ -174,7 +174,7 @@ public:
 	void setShader(shader_type *s) { shader = s; };
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void sortZ(RendererGL *container, mat4 cur_model) {}; // DGDGDGDG make it
+	virtual void sortZ(RendererGL *container, mat4 cur_model);
 
 	virtual void onKeyframe(int nb_keyframes);
 };
