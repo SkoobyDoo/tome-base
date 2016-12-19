@@ -591,7 +591,8 @@ function _M:descAccuracyBonus(desc, weapon, use_actor)
 	elseif kind == "mace" then
 		desc:add("Accuracy bonus: ", {"color","LIGHT_GREEN"}, showpct(0.1, m), {"color","LAST"}, " dam / acc", true)
 	elseif kind == "staff" then
-		desc:add("Accuracy bonus: ", {"color","LIGHT_GREEN"}, showpct(2.5, m), {"color","LAST"}, " procs dam / acc", true)
+		local magbonus = util.bound(0.833 + use_actor:getMag() / 4 / 3 * 2 / 10, 0, 2.5) -- Same 2.5% as before at @100 mag, 0.8% @0 mag
+		desc:add("Accuracy bonus: ", {"color","LIGHT_GREEN"}, showpct(magbonus, m), {"color","LAST"}, " procs dam / acc", true)
 	elseif kind == "knife" then
 		desc:add("Accuracy bonus: ", {"color","LIGHT_GREEN"}, showpct(0.5, m), {"color","LAST"}, " APR / acc", true)
 	end
