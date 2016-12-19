@@ -141,11 +141,11 @@ newTalent{
 	getSpeed = function(self, t) return self:combatStatScale(math.max(self:getDex(), self:getMag()), 0.1, 0.476, 0.75) end,
 	tactical = { DEFEND = 1 },
 	action = function(self, t)
-		self:setEffect(self.EFF_SPEED, 8, {power=t.getSpeed(self, t)})
+		self:setEffect(self.EFF_SPEED, 5, {power=t.getSpeed(self, t)})
 		return true
 	end,
 	info = function(self, t)
-		return ([[Call upon the grace of the Eternals to increase your general speed by %d%% for 8 turns.
+		return ([[Call upon the grace of the Eternals to increase your general speed by %d%% for 5 turns.
 		The speed bonus will increase with your Dexterity or Magic (whichever is higher).]]):
 		format(t.getSpeed(self, t) * 100)
 	end,
@@ -158,7 +158,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	critChance = function(self, t) return self:combatTalentScale(t, 3, 10, 0.75) end,
-	critPower = function(self, t) return self:combatTalentScale(t, 6, 25, 0.75) end,
+	critPower = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_physcrit", t.critChance(self, t))
 		self:talentTemporaryValue(p, "combat_spellcrit", t.critChance(self, t))
@@ -177,7 +177,7 @@ newTalent{
 	type = {"race/shalore", 3},
 	require = racial_req3,
 	points = 5,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 47, 35)) end, -- Limit > 5
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 47, 25)) end, -- Limit > 5
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 21, 45) end, -- Limit < 100%
 	getInvis = function(self, t) return math.ceil(self:combatStatScale("mag" , 7, 25)) end,
 	mode = "sustained",
@@ -212,7 +212,7 @@ newTalent{
 	points = 5,
 	no_energy = true,
 	fixed_cooldown = true,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 20, 47, 35)) end, -- Limit to >20
+	cooldown = 50,
 	getEffectGood = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	getEffectBad = function(self, t) return math.floor(self:combatTalentScale(t, 2.9, 10.01, "log")) end,
 	tactical = {
