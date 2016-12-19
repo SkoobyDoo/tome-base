@@ -1278,6 +1278,8 @@ function _M:combatAttackBase(weapon, ammo)
 
 	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
 
+	if self:attr("hit_penalty_2h") then atk = atk * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
+
 	return atk
 end
 function _M:combatAttack(weapon, ammo)

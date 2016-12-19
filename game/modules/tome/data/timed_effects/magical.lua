@@ -3424,6 +3424,13 @@ newEffect{
 		self.turn_procs.ogric_wrath = true
 		self:setEffect(self.EFF_OGRE_FURY, 1, {})
 	end,
+	callbackOnTalentPost = function(self, eff, t)
+		if not t.is_inscription then return end
+		if self.turn_procs.ogric_wrath then return end
+
+		self.turn_procs.ogric_wrath = true
+		self:setEffect(self.EFF_OGRE_FURY, 1, {})
+	end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "stun_immune", 0.2)
 		self:effectTemporaryValue(eff, "pin_immune", 0.2)

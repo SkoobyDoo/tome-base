@@ -994,7 +994,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You enter an ogric wrath for %d turns, increasing your stun and pinning resistances by 20%% and all damage done by 10%%.
-		In addition, whenever you miss a melee attack or any damage you deal is reduced by a damage shield or similar effect you gain a charge of Ogre Fury(up to 5 charges, each lasts 7 turns).
+		In addition, whenever you use an infusion or rune, miss a melee attack or any damage you deal is reduced by a damage shield or similar effect you gain a charge of Ogre Fury(up to 5 charges, each lasts 7 turns).
 		Each charge grants 20%% critical damage power and 5%% critical strike chance.
 		You lose a charge each time you deal a critical strike.
 		The duration will increase with your Strength.]]):format(t.getduration(self))
@@ -1009,7 +1009,7 @@ newTalent{
 	mode = "passive",
 	no_unlearn_last = true,
 	getSave = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
-	getMult = function(self, t) return self:combatTalentScale(t, 15, 40) / 100 end,
+	getMult = function(self, t) return self:combatTalentScale(t, 15, 30) / 100 end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_spellresist", t.getSave(self, t))
 		self:talentTemporaryValue(p, "inscriptions_stat_multiplier", t.getMult(self, t))
@@ -1024,7 +1024,7 @@ newTalent{
 		return ([[An ogre's body is acclimated to spells and inscriptions.
 		Increases spell save by %d and improves the contribution of primary stats on infusions and runes by %d%%.
 		At level 5 your body is so strong you can use a two handed weapon in your main hand while still using an offhand item.
-		When using a two handed weapon this way you suffer a 20%% physical power, spellpower and mindpower penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#; also all damage procs from your weapons are reduced by 50%%.]]):
+		When using a two handed weapon this way you suffer a 20%% accuracy, physical power, spellpower and mindpower penalty, decreasing by 5%% per size category above #{italic}#big#{normal}#; also all damage procs from your weapons are reduced by 50%%.]]):
 		format(t.getSave(self, t), t.getMult(self, t) * 100)
 	end,
 }
@@ -1069,16 +1069,6 @@ newTalent{
 	no_unlearn_last = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 6, 47, 35)) end, -- Limit >6
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 15, 5, 10)) end,
-	on_learn = function(self, t)
-		if self:getTalentLevelRaw(t) == 5 then
-			self.max_inscriptions = self.max_inscriptions + 1
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:getTalentLevelRaw(t) == 4 then
-			self.max_inscriptions = self.max_inscriptions - 1
-		end
-	end,
 	action = function(self, t)
 		self:removeEffect(self.EFF_RUNE_COOLDOWN)
 		self:removeEffect(self.EFF_INFUSION_COOLDOWN)
@@ -1089,7 +1079,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Instantly removes runic and infusion saturations.
 		For %d turns your inscriptions cooldown twice as fast.
-		At level 5 your command over inscriptions is so good that you can use one more.]]):
+		]]):
 		format(t.getDuration(self, t))
 	end,
 }
