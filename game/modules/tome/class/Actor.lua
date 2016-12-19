@@ -4823,7 +4823,7 @@ function _M:preUseTalent(ab, silent, fake)
 	end
 	
 	-- check resource costs (sustains can always be deactivated at no cost)
-	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
+	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) and (not self.talent_no_resources or not self.talent_no_resources[ab.id]) then
 		local rname, cost, rmin, rmax
 		-- check for sustained resources
 		self.on_preuse_checking_resources = true
