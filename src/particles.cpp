@@ -450,7 +450,7 @@ static void particles_draw(particles_type *ps, mat4 model)
 	mat4 rot = mat4();
 	rot = glm::rotate(rot, ps->rotate, glm::vec3(0, 0, 1));
 	rot = glm::scale(rot, glm::vec3(ps->zoom, ps->zoom, ps->zoom));
-	mat4 mvp = View::getCurrent()->view * rot * model;
+	mat4 mvp = View::getCurrent()->view * model * rot;
 
 	shader_type *shader = ps->shader;
 	if (!shader) { useNoShader(); if (!current_shader) return; }
@@ -529,8 +529,8 @@ static int lua_particles_to_screen(lua_State *L)
 	if (!show) return 0;
 
 	mat4 model = mat4();
-	model = glm::translate(model, glm::vec3(x, y, 0));
 	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
+	model = glm::translate(model, glm::vec3(x, y, 0));
 
 	particles_to_screen(ps, model);
 	return 0;

@@ -95,7 +95,7 @@ static int map_object_new(lua_State *L)
 	obj->anim_max = 0;
 	obj->flip_x = obj->flip_y = false;
 
-	obj->cb_ref = LUA_NOREF;
+	obj->cb = NULL;
 
 	obj->mm_r = -1;
 	obj->mm_g = -1;
@@ -153,10 +153,9 @@ static int map_object_free(lua_State *L)
 		obj->do_ref = LUA_NOREF;
 	}
 
-	if (obj->cb_ref != LUA_NOREF)
+	if (obj->cb)
 	{
-		luaL_unref(L, LUA_REGISTRYINDEX, obj->cb_ref);
-		obj->cb_ref = LUA_NOREF;
+		delete obj->cb;
 	}
 
 	if (obj->shader_ref != LUA_NOREF) {
@@ -171,9 +170,15 @@ static int map_object_free(lua_State *L)
 static int map_object_cb(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
-	if (obj->cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, obj->cb_ref);
-	if (lua_isfunction(L, 2)) obj->cb_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	else obj->cb_ref = LUA_NOREF;
+	if (!obj->cb) obj->cb = new DORCallbackMap();
+
+	if (lua_isfunction(L, 2)) {
+		lua_pushvalue(L, 2);
+		obj->cb->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+	}
+
+	// if (obj->cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, obj->cb_ref);
+	// else obj->cb_ref = LUA_NOREF;
 	return 0;
 }
 
@@ -1305,6 +1310,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 	}
 
 	if (dm->displayobject) {
+		// DGDGDGDG: integrate that as a chained DO perhaps
 		vec4 color = {r, g, b, a};
 		mat4 model = mat4();
 		model = glm::translate(model, glm::vec3(x1, y1, 0));
@@ -1344,6 +1350,20 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 	}
 
+	if (L && dm->cb)
+	{
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		auto dl = getDisplayList(map->z_renderers[z]);
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		dm->cb->dx = dx - map->mx * map->tile_w * (dm->scale);
+		dm->cb->dy = dy - map->my * map->tile_h * (dm->scale);
+		dm->cb->dw = map->tile_w * (dw) * (dm->scale);
+		dm->cb->dh = map->tile_h * (dh) * (dm->scale);
+		dm->cb->scale = dm->scale;
+		dm->cb->tldx = tldx;
+		dm->cb->tldy = tldy;
+		dl->sub = dm->cb;
+	}
 	// DGDGDGDG: this needs to be done smartly, no actual CB here, but creation of a callback put into the DisplayList
 	/*
 	if (L && dm->cb_ref != LUA_NOREF)

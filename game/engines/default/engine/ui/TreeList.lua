@@ -322,9 +322,8 @@ function _M:drawItem(item)
 					ec:add(item.plus)
 					ec:add(item.minus)
 				end
-			else
-				item.cols[i]._entry:setText(text, color)
 			end
+			item.cols[i]._entry:setText(text, color, true)
 			item.cols[i]._value = text
 		end
 		x = x + col.width

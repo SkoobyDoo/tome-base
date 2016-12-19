@@ -25,6 +25,36 @@
 #include <renderer-moderngl/VBO.hpp>
 #include <unordered_map>
 
+/****************************************************************************
+ ** A special DORCallback to handle what is needed by map code
+ ****************************************************************************/
+class DORCallbackMap : public DORCallback {
+public:
+	float dx, dy, dw, dh, scale, tldx, tldy;
+
+	DO_STANDARD_CLONE_METHOD(DORCallbackMap);
+	virtual const char* getKind() { return "DORCallbackMap"; };
+	virtual void toScreen(mat4 cur_model, vec4 color) {
+		if (cb_ref == LUA_NOREF) return;
+		lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
+		lua_checkstack(L, 8);
+		lua_pushnumber(L, dx);
+		lua_pushnumber(L, dy);
+		lua_pushnumber(L, dw);
+		lua_pushnumber(L, dh);
+		lua_pushnumber(L, scale);
+		lua_pushboolean(L, true);
+		lua_pushnumber(L, tldx);
+		lua_pushnumber(L, tldy);
+		if (lua_pcall(L, 8, 1, 0))
+		{
+			printf("DORCallbackMap callback error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+	};
+};
+/****************************************************************************/
+
 enum display_last_kind {DL_NONE, DL_TRUE_LAST, DL_TRUE};
 
 struct s_map_object {
@@ -62,7 +92,7 @@ struct s_map_object {
 	DisplayObject *displayobject;
 	int do_ref;
 
-	int cb_ref;
+	DORCallbackMap *cb;
 
 	struct s_map_object *next;
 	int next_ref;

@@ -1212,6 +1212,7 @@ function _M:defineDisplayCallback()
 			e:checkDisplay()
 			if e.ps:isAlive() then
 				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
+				-- e.ps:toScreen(x/2,y/2, true, w / (game.level and game.level.map.tile_w or w))
 				e.ps:toScreen(x + w / 2, y + dy + h / 2, true, w / (game.level and game.level.map.tile_w or w))
 			else self:removeParticles(e)
 			end
@@ -1236,18 +1237,21 @@ function _M:defineDisplayCallback()
 
 	if self._mo == self._last_mo or not self._last_mo then
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			tactical(tlx or x, tly or y, w, h, zoom, on_map)
+			-- print("!!!!!IN1", x, y)
+			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
 			particles(x, y, w, h, zoom, on_map)
 			return true
 		end)
 	else
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			tactical(tlx or x, tly or y, w, h, zoom, on_map)
+			-- print("!!!!!IN2", x, y)
+			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
 			return true
 		end)
 		self._last_mo:displayCallback(function(x, y, w, h, zoom, on_map)
+			-- print("!!!!!IN3", x, y)
 			particles(x, y, w, h, zoom, on_map)
 			return true
 		end)
