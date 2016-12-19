@@ -516,7 +516,7 @@ function _M:getName(t)
 	end
 
 	if not t.no_add_name and self.tinker then
-		name = name .. ' [' .. self.tinker:getName(t) .. ']'
+		name = name .. ' #{italic}#<' .. self.tinker:getName(t) .. '>#{normal}#'
 	end
 
 	if not t.no_add_name and self.__tagged then
