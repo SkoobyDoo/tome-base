@@ -133,6 +133,9 @@ function applyDarkEmpathy(self, m)
 		for k, e in pairs(self.resists) do
 			m.resists[k] = (m.resists[k] or 0) + e * perc / 100
 		end
+		for k, e in pairs(self.resists_cap) do
+			m.resists_cap[k] = e
+		end
 		m.combat_physresist = m.combat_physresist + self:combatPhysicalResist() * perc / 100
 		m.combat_spellresist = m.combat_spellresist + self:combatSpellResist() * perc / 100
 		m.combat_mentalresist = m.combat_mentalresist + self:combatMentalResist() * perc / 100
