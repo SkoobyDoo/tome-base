@@ -306,7 +306,7 @@ function _M:drawItem(item)
 				if is_header then
 					opts = {frame="ui/heading-sel", frame_sel="ui/heading"}
 				end
-				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset)
+				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset, true)
 				item.cols[i]._entry:translate(x + offset, 0, 0)
 				item.cols[i]._entry:select(is_header)
 				local ec = item.cols[i]._entry:get()
@@ -375,6 +375,16 @@ function _M:outputList()
 		self.scrollbar:setPos(self.scroll - 1)
 	end
 
+	-- Generate all items, in lazy mode
+	self.item_container:clear()
+	for i = 1, self.max do
+		local item = self.list[i]
+		if item then
+			self:drawItem(item)
+			self.item_container:add(item._container)
+		end
+	end
+
 	self.old_sel = nil
 	self:onSelect()
 end
@@ -408,17 +418,18 @@ function _M:onSelect(sel)
 	if not item then return end
 
 	-- Update scrolling
-	if self.old_scroll ~= self.scroll then self.item_container:clear() end
-	local max = self.scroll + self.max_display - 1
 	local pos = 0
-
-	for i = self.scroll, math.min(max, self.max) do
+	local max = math.min(self.scroll + self.max_display - 1, self.max)
+	for i = 1, self.max do
 		local item = self.list[i]
 		if item then
-			if not item.__drawn then self:drawItem(item) end
-			item._container:translate(0, pos, 0)
-			if self.old_scroll ~= self.scroll then self.item_container:add(item._container) end
-			pos = pos + self.fh
+			if i >= self.scroll and i <= max then
+				item._container:translate(0, pos, 0)
+				for c = 1, #item.cols do item.cols[c]._entry:shown(true) end
+				pos = pos + self.fh
+			else
+				for c = 1, #item.cols do item.cols[c]._entry:shown(false) end
+			end
 		end
 	end
 
