@@ -82,6 +82,7 @@ local credits = {
 	{"Matt 'Amagad' Hill"},
 	{"Jeffrey 'Jotwebe' Buschhorn"},
 	{"Raymond 'Shockbolt' Gaustadnes"},
+	{"Richard 'Swoosh So Fast' Pallo"},
 	false,
 	false,
 

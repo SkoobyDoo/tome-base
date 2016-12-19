@@ -125,7 +125,6 @@ function _M:init(t, no_default)
 			error("Entity definition has a closure: "..err)
 		end
 	end
-
 	if self.color then
 		self.color_r = self.color.r
 		self.color_g = self.color.g
@@ -928,11 +927,11 @@ end
 -- @int id the id of the increase to delete
 -- @param[type=boolean] noupdate if true the actual property is not changed and needs to be changed by the caller
 function _M:removeTemporaryValue(prop, id, noupdate)
+	if not self.compute_vals then util.send_error_backtrace("removeTemporaryValue: attempting to remove prop "..tostring(prop).." with no temporary values initialized") return end
+	if not id then util.send_error_backtrace("removeTemporaryValue: error removing prop "..tostring(prop).." with id "..tostring(id)) return end
 	local oldval = self.compute_vals[id]
 --	print("removeTempVal", prop, oldval, " :=: ", id)
-	if not id then util.send_error_backtrace("error removing prop "..tostring(prop).." with id nil") return end
 	self.compute_vals[id] = nil
-
 	-- Find the base, one removed from the last prop
 	local initial_base, initial_prop
 	if type(prop) == "table" then

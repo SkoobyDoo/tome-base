@@ -28,6 +28,16 @@ newTalent{
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "heightened_senses", t.sense(self, t))
 	end,
+	on_learn = function(self, t)
+		if self:getTalentLevel(t) >= 3 and not self:knowTalent(self.T_DISARM_TRAP) then
+			self:learnTalent(self.T_DISARM_TRAP, true, 1)
+		end
+	end,
+	on_unlearn = function(self, t)
+		if self:getTalentLevel(t) < 3 and self:knowTalent(self.T_DISARM_TRAP) then
+			self:unlearnTalent(self.T_DISARM_TRAP, 1)
+		end
+	end,
 	info = function(self, t)
 		return ([[You notice the small things others do not notice, allowing you to "see" creatures in a %d radius even outside of light radius.
 		This is not telepathy, however, and it is still limited to line of sight.
@@ -35,6 +45,54 @@ newTalent{
 		At level 3, you learn to disarm known traps (%d disarm 'power').
 		The trap detection and disarming ability improves with your Cunning.]]):
 		format(t.sense(self,t),t.trapPower(self,t),t.trapPower(self,t))
+	end,
+}
+
+newTalent{
+	name = "Disarm Trap",
+	type = {"base/class", 1},
+	no_npc_use = true,
+	innate = true,
+	points = 1,
+	range = 1,
+	message = false,
+	image = "talents/trap_priming.png",
+	target = {type="hit", range=1, nowarning=true, immediate_keys=true, no_lock=false},
+	action = function(self, t)
+		if self.player then
+--			core.mouse.set(game.level.map:getTileToScreen(self.x, self.y, true))
+			game.log("#CADET_BLUE#Disarm A Trap: (direction keys to select where to disarm, shift+direction keys to move freely)")
+		end
+		local tg = self:getTalentTarget(t)
+		local x, y, dir = self:getTarget(tg)
+		if not (x and y) then return end
+		
+		dir = util.getDir(x, y, self.x, self.y)
+		x, y = util.coordAddDir(self.x, self.y, dir)
+		print("Requesting disarm trap", self.name, t.id, x, y)
+		local trap = self:detectTrap(nil, x, y)
+		if trap then
+			print("Found trap", trap.name, x, y)
+			if (x == self.x and y == self.y) or self:canMove(x, y) then
+				local px, py = self.x, self.y
+				self:move(x, y, true) -- temporarily move to make sure trap can trigger properly
+				trap:trigger(self.x, self.y, self) -- then attempt to disarm the trap, which may trigger it
+				self:move(px, py, true)
+			else
+				game.logPlayer(self, "#CADET_BLUE#You cannot disarm traps in grids you cannot enter.")
+			end
+		else
+			game.logPlayer(self, "#CADET_BLUE#You don't see a trap there.")
+		end
+		
+		return true
+	end,
+	info = function(self, t)
+		local ths = self:getTalentFromId(self.T_HEIGHTENED_SENSES)
+		local power = ths.trapPower(self,ths)
+		return ([[You search an adjacent grid for a hidden trap (%d detection 'power') and attempt to disarm it (%d disarm 'power').
+		To disarm a trap, you must be able to enter its grid to manipulate it, even though you stay in your current location.
+		Success depends on your skill in the %s talent and your Cunning, and failing to disarm a trap may trigger it.]]):format(power, power + (self:attr("disarm_bonus") or 0), ths.name)
 	end,
 }
 

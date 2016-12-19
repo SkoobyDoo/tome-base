@@ -32,6 +32,8 @@ _M._retain_level_room_map = true
 -- overridden by mod.class.Object._special_ego_rules (defined here for backwards compatibility)
 _M._object_special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_kill=true}
 
+_M.update_base_level_on_enter = true -- Always update base level on zone load
+
 -- Merge special_on_crit values.
 _M:addEgoRule("object", function(dvalue, svalue, key, dst, src, rules, state)
 	-- Only apply to some special fields

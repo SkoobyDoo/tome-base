@@ -75,7 +75,6 @@ function _M:use(item)
 	elseif act == "change_level" then game.key:triggerVirtual("CHANGE_LEVEL")
 	elseif act == "pickup" then game.key:triggerVirtual("PICKUP_FLOOR")
 	elseif act == "character_sheet" then game:registerDialog(require("mod.dialogs.CharacterSheet").new(item.actor))
-	elseif act == "disarm_trap" then game.player:playerDisarmTrap(self.tmx, self.tmy)
 	elseif act == "quests" then game.key:triggerVirtual("SHOW_QUESTS")
 	elseif act == "levelup" then game.key:triggerVirtual("LEVELUP")
 	elseif act == "inventory" then game.key:triggerVirtual("SHOW_INVENTORY")
@@ -153,8 +152,6 @@ function _M:generateList()
 	if self.on_player then list[#list+1] = {name="Inventory", action="inventory", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if self.on_player then list[#list+1] = {name="Quest Log", action="quests", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if a then list[#list+1] = {name="Inspect Creature", action="character_sheet", color=colors.simple(colors.ANTIQUE_WHITE), actor=a} end
-	-- check distance?
-	if core.fov.distance(self.tmx, self.tmy, player.x, player.y) <= 1 and player:getTalentLevel(player.T_HEIGHTENED_SENSES) >= 3 or player:attr("can_disarm") then list[#list+1] = {name="Find/Disarm Trap", action="disarm_trap", color=colors.simple(colors.ANTIQUE_WHITE), actor=t} end
 		-- can add extended inspection commands here by including the start tab with the dialog
 	-- space separating inspect from active actions
 	list[#list+1] = {name=" ", action=nil, color=colors.simple(colors.ANTIQUE_WHITE)}

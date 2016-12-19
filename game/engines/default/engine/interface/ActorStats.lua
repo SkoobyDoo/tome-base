@@ -51,8 +51,8 @@ end
 
 --- Initialises stats with default values if needed
 function _M:init(t)
-	self.stats = t.stats or {}
-	self.inc_stats = t.inc_stats or {}
+	self.stats = t.stats and table.clone(t.stats) or {}
+	self.inc_stats = t.inc_stats and table.clone(t.inc_stats) or {}
 	for i, s in ipairs(_M.stats_def) do
 		if self.stats[i] then
 		elseif self.stats[s.short_name] then

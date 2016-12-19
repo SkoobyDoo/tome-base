@@ -1324,7 +1324,7 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if self:knowTalent(self.T_HEIGHTENED_SENSES) then
+	if not force and self:knowTalent(self.T_HEIGHTENED_SENSES) then
 		local power = self:callTalent(self.T_HEIGHTENED_SENSES,"trapPower")
 		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
@@ -3430,7 +3430,8 @@ function _M:onStatChange(stat, v)
 		self.max_life = math.max(1, self.max_life + multi_life * v)  -- no negative max life
 
 		-- heal mod
-		self.healing_factor = self.healing_factor + v * 0.005
+		if self.stats.hf_id then self:removeTemporaryValue("healing_factor", self.stats.hf_id) end
+		self.stats.hf_id = self:addTemporaryValue("healing_factor", ((self:getCon()/10)^.5-1)*.25) -- 0 @ 10, 1.54 @ 100
 	elseif stat == self.STAT_DEX then
 		self.ignore_direct_crits = (self.ignore_direct_crits or 0) + 0.3 * v
 	elseif stat == self.STAT_WIL then
@@ -3577,22 +3578,23 @@ end
 
 --- Update tile for races that can handle it
 function _M:updateModdableTile()
-	if not self.moddable_tile or Map.tiles.no_moddable_tiles then
-		local add = self.add_mos or {}
+	local selfbase = self.replace_display or self
+	if not selfbase.moddable_tile or Map.tiles.no_moddable_tiles then
+		local add = selfbase.add_mos or {}
 		if self.shader_auras and next(self.shader_auras) then
 			local base, baseh, basey, base1 = nil
-			if self.image == "invis.png" and add[1] and add[1].image then
+			if selfbase.image == "invis.png" and add[1] and add[1].image then
 				base = add[1].image
 				base1 = true
 				baseh, basey = add[1].display_h, add[1].display_y
-			elseif not self.add_mos then
-				base = self.image
+			elseif not selfbase.add_mos then
+				base = selfbase.image
 				base1 = false
-				baseh, basey = self.display_h, self.display_y
+				baseh, basey = selfbase.display_h, selfbase.display_y
 			end
 
 			if base then
-				self.add_mos = add
+				selfbase.add_mos = add
 				for _, def in pairs(self.shader_auras) do
 					table.insert(add, 1, {_isshaderaura=true, image_alter="sdm", sdm_double=not baseh or baseh < 2, image=base, shader=def.shader, shader_args=def.shader_args, textures=def.textures, display_h=2, display_y=-1})
 				end
@@ -3601,11 +3603,11 @@ function _M:updateModdableTile()
 				self:removeAllMOs()
 				if self.x and game.level then game.level.map:updateMap(self.x, self.y) end
 			end
-		elseif self.add_mos then
+		elseif selfbase.add_mos then
 			for i = #add, 1, -1 do
 				if add[i]._isshaderaura then table.remove(add, i) end
 			end
-			if not next(self.add_mos) then self.add_mos = nil end
+			if not next(selfbase.add_mos) then selfbase.add_mos = nil end
 
 			self:removeAllMOs()
 			if self.x and game.level then game.level.map:updateMap(self.x, self.y) end
@@ -4738,6 +4740,11 @@ end
 -- @param ab the talent (not the id, the table)
 -- @return true to continue, false to stop
 function _M:preUseTalent(ab, silent, fake)
+	if self.forbid_talents and self.forbid_talents[ab.id] then
+		if not silent then game.logSeen(self, self.forbid_talents[ab.id] or "%s can not use %s.", self.name:capitalize(), ab.name) end
+		return false
+	end
+
 	if not self:attr("no_talent_fail") then
 	if not ab.never_fail and self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
 		if not silent then game.logSeen(self, "%s is too afraid to use %s.", self.name:capitalize(), ab.name) end
@@ -4816,7 +4823,7 @@ function _M:preUseTalent(ab, silent, fake)
 	end
 	
 	-- check resource costs (sustains can always be deactivated at no cost)
-	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
+	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) and (not self.talent_no_resources or not self.talent_no_resources[ab.id]) then
 		local rname, cost, rmin, rmax
 		-- check for sustained resources
 		self.on_preuse_checking_resources = true
@@ -5322,7 +5329,7 @@ function _M:postUseTalent(ab, ret, silent)
 		end
 	end
 	-- deduct resource costs
-	if not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource and not self:attr("zero_resource_cost") and not self:isTalentActive(ab.id) then
+	if not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource and not self:attr("zero_resource_cost") and (not self.talent_no_resources or not self.talent_no_resources[ab.id]) and not self:isTalentActive(ab.id) then
 		local rname, cost
 		
 		if ab.feedback then -- pseudo resource
