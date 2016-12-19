@@ -267,9 +267,8 @@ function _M:updateList()
 		item.char = self:makeKey(i-1)
 		self.list.chars[item.char] = i
 	end
-	self.c_list.list = self.list
 	self.c_list.columns[2].name = (self.step_names[self.current_type] or self.current_type:capitalize())
-	self.c_list:generate()
+	self.c_list:setList(self.list)
 end
 
 --- Returns to the previous birth descriptor specified in order

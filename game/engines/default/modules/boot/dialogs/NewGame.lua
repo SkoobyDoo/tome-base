@@ -131,6 +131,5 @@ end
 
 function _M:switch()
 	self:generateList()
-	self.c_list.list = self.list
-	self.c_list:generate()
+	self.c_list:setList(self.list)
 end

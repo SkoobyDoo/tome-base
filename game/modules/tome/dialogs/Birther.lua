@@ -777,8 +777,7 @@ function _M:generateRaces()
 
 	self.all_races = tree
 	if self.c_race then
-		self.c_race.tree = self.all_races
-		self.c_race:generate()
+		self.c_race:setTree(self.all_races)
 		if newsel then self:raceUse(newsel)
 		else
 			self.sel_race = nil
@@ -837,8 +836,7 @@ function _M:generateClasses()
 
 	self.all_classes = tree
 	if self.c_class then
-		self.c_class.tree = self.all_classes
-		self.c_class:generate()
+		self.c_class:setTree(self.all_classes)
 		if newsel then self:classUse(newsel)
 		else
 			self.sel_class = nil

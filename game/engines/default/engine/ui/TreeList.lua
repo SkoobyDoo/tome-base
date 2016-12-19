@@ -411,11 +411,6 @@ function _M:onSelect(sel)
 		self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 	end
 	if self.old_sel and self.sel == self.old_sel and self.cur_col == self.old_col then return end
-	local item = nil
-	if #self.tree > 0 then
-		item = self.list[self.sel]
-	end
-	if not item then return end
 
 	-- Update scrolling
 	local pos = 0
@@ -432,6 +427,10 @@ function _M:onSelect(sel)
 			end
 		end
 	end
+
+	local item = nil
+	if #self.tree > 0 then item = self.list[self.sel] end
+	if not item then return end
 
 	if self.last_selected_item and self.last_selected_item ~= item then
 		-- print("LAST", self.last_selected_item)

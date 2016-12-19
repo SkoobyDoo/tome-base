@@ -143,8 +143,7 @@ end
 
 function _M:switch()
 	self:generateList()
-	self.c_tree.tree = self.tree
-	self.c_tree:generate()
+	self.c_tree:setTree(self.tree)
 end
 
 function _M:on_focus(id, ui)

@@ -211,7 +211,7 @@ static int sdl_font_size(lua_State *L)
 			if (oldc) {
 				x += texture_glyph_get_kerning(d, oldc) * f->scale;
 			}
-			x += 1.05 * d->advance_x * f->scale; // WTF without a 110% factor letters always look too close .. uh
+			x += d->advance_x * f->scale;
 		}
 		oldc = c;
 	}
