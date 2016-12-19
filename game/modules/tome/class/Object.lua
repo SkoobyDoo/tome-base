@@ -515,6 +515,10 @@ function _M:getName(t)
 		end)
 	end
 
+	if not t.no_add_name and self.tinker then
+		name = name .. ' [' .. self.tinker:getName(t) .. ']'
+	end
+
 	if not t.no_add_name and self.__tagged then
 		name = name .. " #ORANGE#="..self.__tagged.."=#LAST#"
 	end
