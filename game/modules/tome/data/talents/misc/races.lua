@@ -46,13 +46,15 @@ newTalent{
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 45, 25)) end, -- Limit >10
 	tactical = { HEAL = 2 },
 	on_pre_use = function(self, t) return not self:hasEffect(self.EFF_REGENERATION) end,
+	getHealMod = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end,
 	action = function(self, t)
 		self:setEffect(self.EFF_REGENERATION, 10, {power=5 + self:getWil() * 0.5})
+		self:setEffect(self.EFF_EMPOWERED_HEALING, 10, {power=t.getHealMod(self, t) / 100})
 		return true
 	end,
 	info = function(self, t)
-		return ([[Call upon the gift of the highborn to regenerate your body for %d life every turn for 10 turns.
-		The life healed will increase with your Willpower.]]):format(5 + self:getWil() * 0.5)
+		return ([[Call upon the gift of the highborn to regenerate your body for %d life every turn and increase healing mod by %d%% for 10 turns.
+		The life healed will increase with your Willpower.]]):format(5 + self:getWil() * 0.5, t.getHealMod(self, t))
 	end,
 }
 
@@ -71,10 +73,16 @@ newTalent{
 		self:talentTemporaryValue(p, "infravision", t.getESight(self, t))
 		self:talentTemporaryValue(p, "heightened_senses", t.getESight(self, t))
 	end,
+	callbackOnDealDamage = function(self, t, val, target, dead, death_note)
+		if not game.player or self:getTalentLevel(t) < 5 then return end
+		if self:hasEffect(self.EFF_OVERSEER_OF_NATIONS) then return end
+		self:setEffect(self.EFF_OVERSEER_OF_NATIONS, 5, {type=tostring(target.type), subtype=tostring(target.subtype)})
+	end,
 	info = function(self, t)
 		return ([[While Highers are not meant to rule other humans - and show no particular will to do so - they are frequently called to higher duties.
 		Their nature grants them better senses than other humans.
-		Increase blindness immunity by %d%%, maximum sight range by %d, and increases existing infravision, and heightened senses range by %d.]]):
+		Increase blindness immunity by %d%%, maximum sight range by %d, and increases existing infravision, and heightened senses range by %d.
+		At level 5 each time you hit a target you gain telepathy to all similar creatures in radius 15 for 5 turns.]]):
 		format(t.getImmune(self, t) * 100, t.getSight(self, t), t.getESight(self, t))
 	end,
 }
@@ -85,8 +93,8 @@ newTalent{
 	require = racial_req3,
 	points = 5,
 	mode = "passive",
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 19, 7)) end, -- Limit > 0
-	getSave = function(self, t) return self:combatTalentScale(t, 5, 25, 0.75) end,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 19, 5)) end, -- Limit > 0
+	getSave = function(self, t) return self:combatTalentScale(t, 5, 35, 0.75) end,
 	power = function(self, t) return self:combatTalentScale(t, 7, 25) end,
 	trigger = function(self, t, damtype)
 		self:startTalentCooldown(t)
@@ -100,7 +108,7 @@ newTalent{
 		local netpower = t.power(self, t)
 		return ([[Highers were originally created during the Age of Allure by the human Conclave. They are imbued with magic at the very core of their being.
 		Increase spell save by +%d and arcane resistance by %d%%.
-		Also when you cast a spell dealing damage, you gain a 15%% bonus to the damage type for 5 turns. (This effect has a cooldown.)]]):
+		Also when you cast a spell dealing damage, you gain a 20%% bonus to the damage type for 5 turns. (This effect has a cooldown.)]]):
 		format(t.getSave(self, t), netpower)
 	end,
 }

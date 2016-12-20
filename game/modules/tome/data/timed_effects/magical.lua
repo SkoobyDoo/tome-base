@@ -3966,3 +3966,19 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "OVERSEER_OF_NATIONS", image = "talents/overseer_of_nations.png",
+	desc = "Overseer of Nations",
+	long_desc = function(self, eff) return ("Detects creatures of type %s/%s in radius 15."):format(eff.type, eff.subtype) end,
+	type = "magical",
+	subtype = { higher=true },
+	status = "beneficial",
+	parameters = { type="humanoid", subtype="human" },
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "esp", {[eff.type.."/"..eff.subtype]=1})
+		self:effectTemporaryValue(eff, "esp_range", 5)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
