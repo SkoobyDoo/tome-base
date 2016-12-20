@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2014 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,95 +20,186 @@
 local Map = require "engine.Map"
 
 newTalent{
-	name = "Hack'n'Back",
+	name = "Disengage",
 	type = {"technique/mobility", 1},
-	points = 5,
-	cooldown = 14,
-	stamina = 30,
-	tactical = { ESCAPE = 1, ATTACK = { weapon = 0.5 } },
 	require = techs_dex_req1,
+	points = 5,
+	random_ego = "utility",
+	cooldown = 10,
+	stamina = 12,
+	range = 7,
+	getSpeed = function(self, t) return self:combatTalentScale(t, 100, 250, 0.75) end,
+	getReload = function(self, t) return math.floor(self:combatTalentScale(t, 2, 10)) end,
+	tactical = { ESCAPE = 2 },
 	requires_target = true,
-	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	range = 1,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1) end,
-	getDist = function(self, t) return math.ceil(self:combatTalentScale(t, 1.2, 3.3)) end,
 	on_pre_use = function(self, t)
 		if self:attr("never_move") then return false end
 		return true
 	end,
+	getDist = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
-		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
-		if hitted then
-			self:knockback(target.x, target.y, t.getDist(self, t))
+		self:knockback(target.x, target.y, t.getDist(self, t))
+		
+		if self:getTalentLevel(t) >= 4 then
+			self:setEffect("EFF_AVOIDANCE", 1, {power=100})
+			local eff = self:hasEffect("EFF_AVOIDANCE")
+			eff.dur = eff.dur - 1
+		end
+		
+		game:onTickEnd(function()
+			self:setEffect(self.EFF_WILD_SPEED, 3, {power=t.getSpeed(self,t)}) 
+		end)
+		
+		local weapon, ammo, offweapon = self:hasArcheryWeapon()	
+		if weapon and ammo and not ammo.infinite then
+			ammo.combat.shots_left = math.min(ammo.combat.shots_left + t.getReload(self, t), ammo.combat.capacity)
+			game.logSeen(self, "%s reloads.", self.name:capitalize())
 		end
 
 		return true
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local dist = t.getDist(self, t)
-		return ([[You hit your target, doing %d%% damage, distracting it while you jump back %d squares away.]]):
-		format(100 * damage, dist)
+		return ([[Jump away %d grids from your target and gain a burst of speed on landing, increasing you movement speed by %d%% for 3 turns.
+		Any actions other than movement will end the speed boost.
+		At talent level 4 you avoid all attacks against you while disengaging.
+		If you have a quiver equip, you also take the time to reload %d shots.]]):
+		format(t.getDist(self, t), t.getSpeed(self,t), t.getReload(self,t))
 	end,
 }
 
-newTalent{
-	name = "Mobile Defence",
+newTalent {
+	name = "Tumble",
 	type = {"technique/mobility", 2},
-	mode = "passive",
-	points = 5,
 	require = techs_dex_req2,
-	getDef = function(self, t) return self:getTalentLevel(t) * 0.08 end,
-	getHardiness = function(self, t) return self:getTalentLevel(t) * 0.06 end,
-	-- called by _M:combatDefenseBase function in mod\class\interface\Combat.lua
-	getDef = function(self, t) return self:combatTalentLimit(t, 1, 0.10, 0.40) end, -- Limit to <100% defense bonus
-	-- called by _M:combatArmorHardiness function in mod\class\interface\Combat.lua
-	getHardiness = function(self, t) return self:combatTalentLimit(t, 100, 6, 30) end, -- Limit < 100%
-	info = function(self, t)
-		return ([[Whilst wearing leather or lighter armour, you gain %d%% Defense and %d%% Armour hardiness.]]):
-		format(t.getDef(self, t) * 100, t.getHardiness(self, t))
-	end,
-}
-
-newTalent{
-	name = "Light of Foot",
-	type = {"technique/mobility", 3},
-	mode = "passive",
 	points = 5,
-	require = techs_dex_req3,
-	getFatigue = function(self, t) return self:combatTalentLimit(t, 100, 1.5, 7.5) end, -- Limit < 50%
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "fatigue", -t.getFatigue(self, t))
+	random_ego = "attack",
+	cooldown = function(self, t) 
+		return math.max(10 - self:getTalentLevel(t), 1) 
+	end,
+	no_energy = true,
+	no_break_stealth = true,
+	tactical = { ESCAPE = 2 },
+	stamina = function(self, t)
+		local eff = self:hasEffect(self.EFF_EXHAUSTION)
+		if eff and eff.charges then
+			return 15 + eff.charges*15
+		else
+			return 15
+		end
+	end,
+	range = function(self, t)
+		return math.floor(self:combatTalentScale(t, 2, 4))
+	end,
+	getDuration = function(self, t)
+		return math.max(20 - self:getTalentLevel(t), 5)
+	end,
+	target = function(self, t)
+		return {type="beam", range=self:getTalentRange(t), talent=t}
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return end
+		if self.x == x and self.y == y then return end
+		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return end
+
+		if target or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self) then
+			game.logPlayer(self, "You must have an empty space to roll to.")
+			return false
+		end
+
+		self:move(x, y, true)
+		
+		game:onTickEnd(function()
+			self:setEffect(self.EFF_EXHAUSTION, t.getDuration(self,t), { max_stacks=5 })
+		end)
+		
+		return true
 	end,
 	info = function(self, t)
-		return ([[You are light on your feet, handling your armour better. Each step you take regenerates %0.2f stamina, and your fatigue is permanently reduced by %0.1f%%.
-		At level 3 you are able to walk so lightly that you never trigger traps that require pressure.]]):
-		format(self:getTalentLevelRaw(t) * 0.2, t.getFatigue(self, t))
-	end,
+		return ([[Move to a spot within range, bounding around, over, or through any enemies in the way. This can be used while pinned, and does not break stealth.
+		This quickly becomes exhausting to use, increasing the stamina cost by 15 for %d turns after use.]]):format(t.getDuration(self,t))
+	end
+}
 
+newTalent {
+	name = "Trained Reactions",
+	type = {"technique/mobility", 3},
+	mode = "sustained",
+	points = 5,
+	cooldown = function(self, t) return 10 end,
+	sustain_stamina = 10,
+	no_energy = true,
+	require = techs_dex_req3,
+	tactical = { BUFF = 2 },
+	activate = function(self, t)
+		return {}
+	end,
+	deactivate = function(self, t, p)
+		return true
+	end,
+	getLifeTrigger = function(self, t)
+		return self:combatTalentLimit(t, 10, 40, 22)
+	end,
+	getReduction = function(self, t) 
+		return (0.05 + (self:combatTalentLimit(t, 1, 0.15, 0.50) * self:combatLimit(self:combatDefense(), 1, 0.20, 10, 0.50, 50)))*100
+	end,
+	callbackOnHit = function(self, t, cb, src)
+		if cb.value >= self.max_life * t.getLifeTrigger(self, t) * 0.01 and use_stamina(self, 10) then
+				-- Apply effect with duration 0.
+				self:setEffect("EFF_SKIRMISHER_DEFENSIVE_ROLL", 1, {reduce = t.getReduction(self, t)})
+				local eff = self:hasEffect("EFF_SKIRMISHER_DEFENSIVE_ROLL")
+				eff.dur = eff.dur - 1
+
+				cb.value = cb.value * (100-t.getReduction(self, t)) / 100
+		end
+		return cb.value
+	end,
+	info = function(self, t)
+		local trigger = t.getLifeTrigger(self, t)
+		local reduce = t.getReduction(self, t)
+		return ([[While this talent is sustained, you anticipate deadly attacks against you.
+		Any time you would lose more than %d%% of your life in a single hit, you instead duck out of the way and assume a defensive posture.
+		This reduces the triggering damage and all further damage in the same turn by %d%%.
+		This costs 10 stamina each time it triggers.
+		The damage reduction increases based on your Defense.]])
+		:format(trigger, reduce, cost)
+	end,
 }
 
 newTalent{
-	name = "Strider",
+	name = "Evasion",
 	type = {"technique/mobility", 4},
-	mode = "passive",
 	points = 5,
 	require = techs_dex_req4,
-	incspeed = function(self, t) return self:combatTalentScale(t, 0.02, 0.10, 0.75) end,
-	CDreduce = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 1, 5)) end, -- Limit < 8
-	passives = function(self, t, p)
-		local cdr = t.CDreduce(self, t)
-		self:talentTemporaryValue(p, "movement_speed", t.incspeed(self, t))
-		self:talentTemporaryValue(p, "talent_cd_reduction",
-			{[Talents.T_RUSH]=cdr, [Talents.T_HACK_N_BACK]=cdr, [Talents.T_DISENGAGE]=cdr, [Talents.T_EVASION]=cdr})
+	random_ego = "defensive",
+	tactical = { ESCAPE = 2, DEFEND = 2 },
+	cooldown = 30,
+	stamina = 20,
+	no_energy = true,
+	getDur = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 5, 9)) end, -- Limit < 30
+	getChanceDef = function(self, t)
+		if self.perfect_evasion then return 100, 0 end
+		return self:combatLimit(5*self:getTalentLevel(t) + self:getDex(50,true), 50, 10, 10, 37.5, 75),
+		self:combatScale(self:getTalentLevel(t) * (self:getDex(50, true)), 0, 0, 55, 250, 0.75)
+		-- Limit evasion chance < 50%, defense bonus ~= 55 at level 50
+	end,
+	speed = "combat",
+	action = function(self, t)
+		local dur = t.getDur(self,t)
+		local chance, def = t.getChanceDef(self,t)
+		self:setEffect(self.EFF_EVASION, dur, {chance=chance, defense = def})
+		return true
 	end,
 	info = function(self, t)
-		return ([[You literally dance around your foes, increasing your movement speed by %d%% and reducing the cooldown of Hack'n'Back, Rush, Disengage and Evasion by %d turns.]]):
-		format(t.incspeed(self, t)*100,t.CDreduce(self, t))
+		local chance, def = t.getChanceDef(self,t)
+		return ([[Your quick wit allows you to see melee attacks before they land, granting you a %d%% chance to completely evade them and granting you %d defense for %d turns.
+		The chance to evade and defense increases with your Dexterity.]]):
+		format(chance, def,t.getDur(self,t))
 	end,
 }

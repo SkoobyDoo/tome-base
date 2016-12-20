@@ -22,13 +22,13 @@ local Object = require "engine.Object"
 local Map = require "engine.Map"
 
 newTalent{
-	name = "Parry",
+	name = "Dual Weapon Mastery",
 	type = {"technique/duelist", 1},
 	points = 5,
 	require = techs_dex_req1,
 	mode = "passive",
-	getDeflectChance = function(self, t) return self:combatTalentLimit(t, 100, 20, 61) end, -- ~67% at TL 6.5
-	getDeflectPercent = function(self, t) return self:combatTalentLimit(t, 100, 20, 40) end,
+	getDeflectChance = function(self, t) return self:combatTalentLimit(t, 100, 20, 65) end,
+	getDeflectPercent = function(self, t) return self:combatTalentLimit(t, 100, 20, 50) end,
 	getDeflect = function(self, t, fake)
 		local dam,_,weapon = 0,self:hasDualWeapon()
 		if not weapon or weapon.subtype=="mindstar" and not fake then return 0 end
@@ -48,6 +48,9 @@ newTalent{
 		end
 		return t.getDeflectPercent(self, t) * dam/100
 	end,
+	getoffmult = function(self,t)
+		return	self:combatTalentLimit(t, 1, 0.65, 0.85)-- limit <100%
+	end,
 	callbackOnActBase = function(self, t)
 		local mh, oh = self:hasDualWeapon()
 --		if self:hasDualWeapon() then
@@ -60,10 +63,11 @@ newTalent{
 		block = t.getDeflect(self,t)
 		chance = t.getDeflectChance(self,t)
 		perc = t.getDeflectPercent(self,t)
+		mult = t.getoffmult(self,t)*100
 		return ([[Up to %d times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee or ranged attack.
 		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.
-		The number of attacks you can parry and their chance partially stacks with those of Dual Weapon Defense.]]):
-		format(t.getDeflects(self, t, true), chance, block, perc)
+		In addition, the damage dealt by your offhand weapon is increased to %d%%.]]):
+		format(t.getDeflects(self, t, true), chance, block, perc, mult)
 	end,
 }
 
@@ -126,7 +130,7 @@ newTalent{
 	cooldown = 30,
 	no_energy = true,
 	getChance = function(self, t) return self:combatTalentLimit(t, 25, 5, 15) end,
-	critResist = function(self, t) return self:combatTalentScale(t, 3, 8, 0.75) end,
+	critResist = function(self, t) return self:combatTalentScale(t, 15, 50, 0.75) end,
 	on_pre_use = function(self, t, silent, fake)
 		local armor = self:getInven("BODY") and self:getInven("BODY")[1]
 		if armor and (armor.subtype == "heavy" or armor.subtype == "massive") then
@@ -168,8 +172,8 @@ newTalent{
 	range = 1,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 3, 5)) end,
-	getSpeedPenalty = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 5, 50), 50, 10, 0, 30, 35.7) end, -- Limit < 50%
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 1.5) end,
+	getSpeedPenalty = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 5, 50), 100, 10, 0, 50, 35.7) end, -- Limit < 100%
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.5) end,
 	on_pre_use = function(self, t, silent)
 		if self:attr("never_move") then
 			if not silent then game.logPlayer(self, "You must be able to move to use this talent.") end

@@ -152,7 +152,7 @@ newTalent{
 	info = function(self, t)
 	local multiplier = t.getMultiplier(self, t)
 	return ([[When striking from stealth, the attack is automatically critical if the target does not notice you just before you land it. Spell and mind crits always critically strike, regardless of whether the target can see you.
-In addition, the surprise caused by your assault increases your critical multiplier by %d%%. This effect persists for 3 turns after exiting stealth, or 4 turns at talent level 3 and above.]]):
+In addition, the surprise caused by your assault increases your critical multiplier by %d%%. This effect persists for 2 turns after exiting stealth, or 3 turns at talent level 3 and above.]]):
 		format(multiplier)
 	end,
 }
@@ -163,15 +163,15 @@ newTalent{
 	require = cuns_req3,
 	points = 5,
 	mode = "passive",
-	getLife = function(self, t) return self:combatTalentScale(t, 1, 3) end,
-	getStamina = function(self, t) return self:combatTalentScale(t, 0.5, 2) end,
-	getReduction = function(self, t) return self:combatTalentStatDamage(t, "cun", 5, 25) end,
+	getLife = function(self, t) return self:combatTalentScale(t, 2, 10) end, --12 @TL5, mostly useful for out of combat as this won't do much in a fight
+	getStamina = function(self, t) return self:combatTalentScale(t, 1, 2.5) end, --2.9 @TL5
+	getReduction = function(self, t) return self:combatTalentStatDamage(t, "cun", 10, 35) end, --29 @100 Cun, effectively about 40% weaker than Automated Cloak Tesselation with less uptime
 	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
 	info = function(self, t)
 		return ([[You have a special affinity for darkness.
 		When standing in an unlit grid, enemies observing you will not prevent you from entering stealth.
-		While stealted, and for %d turns thereafter, all damage against you is reduced by %d, your life regeneration is increased by %0.1f, and your stamina regeneration is increased %0.1f]]):
-		format(t.getDuration(self, t), t.getReduction(self,t), t.getLife(self,t), t.getStamina(self,t))
+		While stealthed, all damage against you is reduced by %d, your life regeneration is increased by %0.1f, and your stamina regeneration is increased %0.1f. This effect persists for 2 turns after exiting stealth, or 3 turns at talent level 3 and above.]]):
+		format(t.getReduction(self,t), t.getLife(self,t), t.getStamina(self,t))
 	end,
 }
 
