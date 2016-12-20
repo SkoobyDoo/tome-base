@@ -1079,6 +1079,12 @@ newTalent{
 	no_unlearn_last = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 6, 47, 35)) end, -- Limit >6
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 15, 5, 10)) end,
+	on_levelup_close = function(self, t, lvl, old_lvl, lvl_raw, old_lvl_raw)
+		if lvl >= 5 and old_lvl < 5 then
+			self.inscriptions_slots_added = self.inscriptions_slots_added - 1
+			game.logPlayer(self, "#PURPLE#Your mastery over inscriptions is unmatched! One more inscriptions slot available to buy.")
+		end
+	end,
 	action = function(self, t)
 		self:removeEffect(self.EFF_RUNE_COOLDOWN)
 		self:removeEffect(self.EFF_INFUSION_COOLDOWN)
@@ -1089,7 +1095,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Instantly removes runic and infusion saturations.
 		For %d turns your inscriptions cooldown twice as fast.
-		]]):
+		At level 5 your command over inscriptions is so good that you can use one more (you still need a category point to unlock it; you need to exit the levelup screen to validate it).]]):
 		format(t.getDuration(self, t))
 	end,
 }
