@@ -2387,7 +2387,7 @@ function _M:getFreeHands()
 end
 
 --- Check if the actor dual wields melee weapons (use Archery:hasDualArcheryWeapon for ranged)
-function _M:hasDualWeapon(type, quickset)
+function _M:hasDualWeapon(type, offtype, quickset)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
@@ -2398,17 +2398,18 @@ function _M:hasDualWeapon(type, quickset)
 	if not (weapon and weapon.combat and not weapon.archery) or not (offweapon and offweapon.combat and not offweapon.archery) then
 		return nil
 	end
+	offtype = offtype or type
 	if type and weapon.combat.talented ~= type then return nil end
-	if type and offweapon.combat.talented ~= type then return nil end
+	if offtype and offweapon.combat.talented ~= offtype then return nil end
 	return weapon, offweapon
 end
 
 --- Check if the actor dual wields melee weapons in the quick slot
-function _M:hasDualWeaponQS(type)
+function _M:hasDualWeaponQS(type, offtype)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
-	return self:hasDualWeapon(type, true)
+	return self:hasDualWeapon(type, offtype, true)
 end
 
 --- Check if the actor uses psiblades

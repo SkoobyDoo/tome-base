@@ -191,6 +191,7 @@ newBirthDescriptor{
 		"Unfair game setting",
 		"All zone levels increased by 50%",
 		"All creature talent levels increased by 30%",
+		"Rare creatures are slightly more frequent",
 		"Stairs can not be used for 5 turns after a kill.",
 		"Player can earn Nightmare version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
@@ -203,6 +204,9 @@ newBirthDescriptor{
 		instakill_immune = 1,
 		__game_difficulty = 3,
 		money = 100,
+	},
+	game_state = {
+		default_random_rare_chance = 15,
 	},
 }
 newBirthDescriptor{
