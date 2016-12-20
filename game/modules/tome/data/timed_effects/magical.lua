@@ -3948,3 +3948,21 @@ newEffect{
 		game.level.map:updateMap(self.x, self.y)
 	end,
 }
+
+newEffect{
+	name = "BATHE_IN_LIGHT", image = "talents/bathe_in_light.png",
+	desc = "Bathe in Light",
+	long_desc = function(self, eff) return ("Fire and Light damage increased by %d%%."):format(eff.power)
+	end,
+	type = "magical",
+	subtype = { celestial=true, light=true },
+	status = "beneficial",
+	parameters = { power = 10 },
+	on_gain = function(self, err) return "#Target# glows intensely!", true end,
+	on_lose = function(self, err) return "#Target# is no longer glowing .", true end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.FIRE]=eff.power, [DamageType.LIGHT]=eff.power})
+	end,
+	deactivate = function(self, eff)
+	end,
+}

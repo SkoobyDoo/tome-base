@@ -82,12 +82,11 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local heal = t.getHeal(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[A magical zone of Sunlight appears around you, healing and shielding all within a radius of %d for %0.2f per turn and increasing healing effects on everyone within by %d%%. The effect lasts for %d turns.
-		Existing damage shields will be added to instead of overwritten and have their duration set to 2 if it isn't higher.
-		If the same shield is refreshed 20 times it will become unstable and explode, removing it.
+		return ([[A magical zone of Sunlight appears around you, healing all within a radius of %d for %0.2f per turn and increasing healing effects on everyone within by %d%%. The effect lasts for %d turns.
+		Creatures that currently have a damage shield up also gain %d%% fire and light damage for 3 turns.
 		It also lights up the affected zone.
 		The amount healed will increase with the Magic stat]]):
-		format(radius, heal, heal / 2, duration)
+		format(radius, heal, heal / 2, duration, heal / 4)
 	end,
 }
 
