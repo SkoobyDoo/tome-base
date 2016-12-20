@@ -664,8 +664,7 @@ end
 
 function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
 	if self:isAccuracyEffect(weapon, "staff") then
-		local magbonus = util.bound(0.00833 + self:getMag() / 4 / 3 * 2 / 1000, 0, 0.025) -- Same 2.5% as before at @100 mag, 0.8% @0 mag
-		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, magbonus, 2)
+		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 2.5, 2)
 		print("[ATTACK] staff accuracy bonus", atk, def, "=", bonus)
 		self.__global_accuracy_damage_bonus = bonus
 	end
