@@ -35,7 +35,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Armour Training",
+	name = "Heavy Armour Training", short_name = "ARMOUR_TRAINING",
 	type = {"technique/combat-training", 1},
 	mode = "passive",
 	no_unlearn_last = true,
