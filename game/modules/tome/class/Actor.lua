@@ -3211,6 +3211,8 @@ function _M:die(src, death_note)
 		if game.level and game.level.data.record_player_kills then
 			game.level.data.record_player_kills = game.level.data.record_player_kills + 1
 		end
+
+		p.last_kill_turn = game.turn
 	end
 
 	-- Ingredients
