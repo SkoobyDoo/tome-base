@@ -475,6 +475,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			repelled = true
 		end
 	end
+
+	-- Dwarves stoneskin
+	if target:attr("auto_stoneskin") and rng.percent(15) then
+		game.logSeen(target, "#ORCHID#%s instinctively hardens %s skin and ignores the attack!#LAST#", target.name:capitalize(), string.his_her(target))
+		target:setEffect(target.EFF_STONE_SKIN, 5, {power=target:attr("auto_stoneskin")})
+		repelled = true
+	end
 	
 	if repelled then
 		self:logCombat(target, "#Target# repels an attack from #Source#.")
@@ -845,11 +852,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if hitted and not target.dead and self:knowTalent(self.T_MORTAL_TERROR) then
 		local t = self:getTalentFromId(self.T_MORTAL_TERROR)
 		t.do_terror(self, t, target, dam)
-	end
-
-	-- Dwarves stoneskin
-	if hitted and not target.dead and target:attr("auto_stoneskin") and rng.percent(15) then
-		target:setEffect(target.EFF_STONE_SKIN, 5, {power=target:attr("auto_stoneskin")})
 	end
 
 	-- Psi Auras

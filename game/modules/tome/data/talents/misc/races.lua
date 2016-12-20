@@ -458,7 +458,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Dwarf skin is a complex structure, it can automatically react to physical blows to harden itself.
-		When you are hit in melee, you have a 15%% chance to increase your armour total by %d for 5 turns.]]):
+		When you are hit in melee, you have a 15%% chance to increase your armour total by %d for 5 turns and fully ignore the attack triggering it.
+		There is no cooldown to this effect, it can happen while already active.]]):
 		format(t.armor(self, t))
 	end,
 }
