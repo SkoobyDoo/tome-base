@@ -527,6 +527,7 @@ function _M:addedToLevel(level, x, y)
 				local inven, worn = self:getInven(o:wornInven())
 				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
 					local ro, replace = inven and inven[1], false
+					print("====", self.inven[self.INVEN_INVEN][i].uid)
 					o = self:removeObject(self.INVEN_INVEN, i)
 					if o then
 
