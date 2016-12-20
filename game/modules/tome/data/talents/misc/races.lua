@@ -428,6 +428,7 @@ newTalent{
 	getParams = function(self, t)
 		return {
 			armor = self:combatStatScale("con", 7, 25),
+			armor_hardiness = self:combatTalentLimit(t, 40, 20, 35),
 			physical = self:combatStatScale("con", 12, 30, 0.75),
 			spell = self:combatStatScale("con", 12, 30, 0.75),
 		}
@@ -439,9 +440,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		local params = t.getParams(self, t)
-		return ([[Call upon the legendary resilience of the Dwarven race to increase your Armor (+%d), Spell (+%d) and Physical (+%d) saves for 8 turns.
+		return ([[Call upon the legendary resilience of the Dwarven race to increase your armour (+%d), armour hardiness (+%d%%), spell (+%d) and physical (+%d) saves for 8 turns.
 		The bonus will increase with your Constitution.]]):
-		format(params.armor, params.physical, params.spell)
+		format(params.armor, params.armor_hardiness, params.physical, params.spell)
 	end,
 }
 
@@ -451,13 +452,13 @@ newTalent{
 	require = racial_req2,
 	points = 5,
 	mode = "passive",
-	armor = function(self, t) return self:combatTalentScale(t, 6, 30) end,
+	armor = function(self, t) return self:combatTalentScale(t, 6, 40) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "auto_stoneskin", t.armor(self, t))
 	end,
 	info = function(self, t)
 		return ([[Dwarf skin is a complex structure, it can automatically react to physical blows to harden itself.
-		When you are hit in melee, you have a 15%% chance to increase your Armour total by %d for 5 turns.]]):
+		When you are hit in melee, you have a 15%% chance to increase your armour total by %d for 5 turns.]]):
 		format(t.armor(self, t))
 	end,
 }
@@ -468,7 +469,7 @@ newTalent{
 	require = racial_req3,
 	points = 5,
 	mode = "passive",
-	getMaxSaves = function(self, t) return self:combatTalentScale(t, 8, 35) end,
+	getMaxSaves = function(self, t) return self:combatTalentScale(t, 8, 50) end,
 	getGold = function(self, t) return self:combatTalentLimit(t, 40, 85, 65) end, -- Limit > 40
 	-- called by _M:combatPhysicalResist, _M:combatSpellResist, _M:combatMentalResist in mod.class.interface.Combat.lua
 	getSaves = function(self, t)

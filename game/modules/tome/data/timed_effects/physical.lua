@@ -653,28 +653,6 @@ newEffect{
 }
 
 newEffect{
-	name = "DWARVEN_RESILIENCE", image = "talents/dwarf_resilience.png",
-	desc = "Dwarven Resilience",
-	long_desc = function(self, eff) return ("The target's skin turns to stone, granting %d armour, %d physical save and %d spell save."):format(eff.armor, eff.physical, eff.spell) end,
-	type = "physical",
-	subtype = { earth=true },
-	status = "beneficial",
-	parameters = { armor=10, spell=10, physical=10 },
-	on_gain = function(self, err) return "#Target#'s skin turns to stone." end,
-	on_lose = function(self, err) return "#Target#'s skin returns to normal." end,
-	activate = function(self, eff)
-		eff.aid = self:addTemporaryValue("combat_armor", eff.armor)
-		eff.pid = self:addTemporaryValue("combat_physresist", eff.physical)
-		eff.sid = self:addTemporaryValue("combat_spellresist", eff.spell)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("combat_armor", eff.aid)
-		self:removeTemporaryValue("combat_physresist", eff.pid)
-		self:removeTemporaryValue("combat_spellresist", eff.sid)
-	end,
-}
-
-newEffect{
 	name = "STONE_SKIN", image = "talents/stoneskin.png",
 	desc = "Stoneskin",
 	long_desc = function(self, eff) return ("The target's skin reacts to damage, granting %d armour."):format(eff.power) end,
@@ -3447,6 +3425,7 @@ newEffect{
 	on_lose = function(self, err) return "#Target#'s skin returns to normal." end,
 	activate = function(self, eff)
 		eff.aid = self:addTemporaryValue("combat_armor", eff.armor)
+		eff.hid = self:addTemporaryValue("combat_armor_hardiness", eff.armor_hardiness)
 		eff.pid = self:addTemporaryValue("combat_physresist", eff.physical)
 		eff.sid = self:addTemporaryValue("combat_spellresist", eff.spell)
 		if self:knowTalent(self.T_STONE_FORTRESS) then
@@ -3457,6 +3436,7 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_armor", eff.aid)
+		self:removeTemporaryValue("combat_armor_hardiness", eff.hid)
 		self:removeTemporaryValue("combat_physresist", eff.pid)
 		self:removeTemporaryValue("combat_spellresist", eff.sid)
 		if eff.mid then self:removeTemporaryValue("flat_damage_armor", eff.mid) end
