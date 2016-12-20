@@ -3118,3 +3118,135 @@ newTalent{
 		format(t.stealthMult(self, t), t.getChance(self, t, true), t.getChance(self, t, false, true))
 	end,
 }
+
+newTalent{
+	name = "Hack'n'Back",
+	type = {"other/other", 1},
+	points = 5,
+	cooldown = 14,
+	stamina = 30,
+	tactical = { ESCAPE = 1, ATTACK = { weapon = 0.5 } },
+--	require = techs_dex_req1,
+	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1) end,
+	getDist = function(self, t) return math.ceil(self:combatTalentScale(t, 1.2, 3.3)) end,
+	on_pre_use = function(self, t)
+		if self:attr("never_move") then return false end
+		return true
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then return nil end
+		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+
+		if hitted then
+			self:knockback(target.x, target.y, t.getDist(self, t))
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local dist = t.getDist(self, t)
+		return ([[You hit your target, doing %d%% damage, distracting it while you jump back %d squares away.]]):
+		format(100 * damage, dist)
+	end,
+}
+
+newTalent{
+	name = "Mobile Defence",
+	type = {"other/other", 1},
+	mode = "passive",
+	points = 5,
+--	require = techs_dex_req2,
+	getDef = function(self, t) return self:getTalentLevel(t) * 0.08 end,
+	getHardiness = function(self, t) return self:getTalentLevel(t) * 0.06 end,
+	-- called by _M:combatDefenseBase function in mod\class\interface\Combat.lua
+	getDef = function(self, t) return self:combatTalentLimit(t, 1, 0.10, 0.40) end, -- Limit to <100% defense bonus
+	-- called by _M:combatArmorHardiness function in mod\class\interface\Combat.lua
+	getHardiness = function(self, t) return self:combatTalentLimit(t, 100, 6, 30) end, -- Limit < 100%
+	info = function(self, t)
+		return ([[Whilst wearing leather or lighter armour, you gain %d%% Defense and %d%% Armour hardiness.]]):
+		format(t.getDef(self, t) * 100, t.getHardiness(self, t))
+	end,
+}
+
+newTalent{
+	name = "Light of Foot",
+	type = {"other/other", 1},
+	mode = "passive",
+	points = 5,
+--	require = techs_dex_req3,
+	getFatigue = function(self, t) return self:combatTalentLimit(t, 100, 1.5, 7.5) end, -- Limit < 50%
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "fatigue", -t.getFatigue(self, t))
+	end,
+	info = function(self, t)
+		return ([[You are light on your feet, handling your armour better. Each step you take regenerates %0.2f stamina, and your fatigue is permanently reduced by %0.1f%%.
+		At level 3 you are able to walk so lightly that you never trigger traps that require pressure.]]):
+		format(self:getTalentLevelRaw(t) * 0.2, t.getFatigue(self, t))
+	end,
+
+}
+
+newTalent{
+	name = "Strider",
+	type = {"other/other", 1},
+	mode = "passive",
+	points = 5,
+--	require = techs_dex_req4,
+	incspeed = function(self, t) return self:combatTalentScale(t, 0.02, 0.10, 0.75) end,
+	CDreduce = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 1, 5)) end, -- Limit < 8
+	passives = function(self, t, p)
+		local cdr = t.CDreduce(self, t)
+		self:talentTemporaryValue(p, "movement_speed", t.incspeed(self, t))
+		self:talentTemporaryValue(p, "talent_cd_reduction",
+			{[Talents.T_RUSH]=cdr, [Talents.T_HACK_N_BACK]=cdr, [Talents.T_DISENGAGE]=cdr, [Talents.T_EVASION]=cdr})
+	end,
+	info = function(self, t)
+		return ([[You literally dance around your foes, increasing your movement speed by %d%% and reducing the cooldown of Hack'n'Back, Rush, Disengage and Evasion by %d turns.]]):
+		format(t.incspeed(self, t)*100,t.CDreduce(self, t))
+	end,
+}
+
+
+newTalent{
+	name = "Charm Mastery",
+	type = {"other/other", 1},
+--	require = cuns_req2,
+	mode = "passive",
+	points = 5,
+	cdReduc = function(tl)
+		if tl <=0 then return 0 end
+		return math.floor(100*tl/(tl+7.5)) -- Limit < 100%
+	end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t)))
+	end,
+--	on_unlearn = function(self, t)
+--	end,
+	info = function(self, t)
+		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns by %d%%.]]):
+		format(t.cdReduc(self:getTalentLevel(t)))
+	end,
+}
+
+newTalent{
+	name = "Piercing Sight",
+	type = {"other/other", 1},
+--	require = cuns_req3,
+	mode = "passive",
+	points = 5,
+	--  called by functions _M:combatSeeStealth and _M:combatSeeInvisible functions mod\class\interface\Combat.lua
+	seePower = function(self, t) return self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 5, 0, 80, 75) end, --I5
+	info = function(self, t)
+		return ([[You look at your surroundings with more intensity than most people, allowing you to see stealthed or invisible creatures.
+		Increases stealth detection by %d and invisibility detection by %d.
+		The detection power increases with your Cunning.]]):
+		format(t.seePower(self,t), t.seePower(self,t))
+	end,
+}

@@ -1324,8 +1324,8 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if not force and self:knowTalent(self.T_HEIGHTENED_SENSES) then
-		local power = self:callTalent(self.T_HEIGHTENED_SENSES,"trapPower")
+	if not force and self:knowTalent(self.T_DEVICE_MASTERY) then
+		local power = self:callTalent(self.T_DEVICE_MASTERY,"trapPower")
 		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 			local trap = game.level.map(x, y, Map.TRAP)
@@ -1572,7 +1572,7 @@ end
 -- param power detection power (optional)
 -- @return the trap @ x, y if present and detected
 function _M:detectTrap(trap, x, y, power)
-	power = power or self:callTalent(self.T_HEIGHTENED_SENSES, "trapPower")
+	power = power or self:callTalent(self.T_DEVICE_MASTERY, "trapPower")
 	if power <= 0 then return end
 	trap = trap or game.level.map(x, y, Map.TRAP)
 	if trap then

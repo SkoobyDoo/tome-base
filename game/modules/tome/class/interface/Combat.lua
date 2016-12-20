@@ -1173,6 +1173,9 @@ function _M:combatDefenseBase(fake)
 		if self:hasDualWeapon() and self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then
 			add = add + self:callTalent(self.T_DUAL_WEAPON_DEFENSE,"getDefense")
 		end
+		if self:hasLightArmor() and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+			add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING,"getDefense")
+		end
 		if not fake then
 			add = add + (self:checkOnDefenseCall("defense") or 0)
 		end
@@ -1197,6 +1200,11 @@ function _M:combatDefenseBase(fake)
 
 	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
 		mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
+	end
+	
+	if self:hasLightArmor() and self:hasEffect(self.EFF_MOBILE_DEFENCE) then
+		local eff = self:hasEffect(self.EFF_MOBILE_DEFENCE)
+		mult = mult + (eff.power/100)
 	end
 
 	return math.max(0, d * mult + add) -- Add bonuses last to avoid compounding defense multipliers from talents
@@ -1260,6 +1268,9 @@ function _M:combatArmorHardiness()
 	end
 	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
 		add = add + self:callTalent(self.T_MOBILE_DEFENCE, "getHardiness")
+	end
+	if self:hasLightArmor() and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+		add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getArmorHardiness")
 	end
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
@@ -1719,9 +1730,12 @@ end
 function _M:getOffHandMult(combat, mult)
 	if combat and combat.range and not combat.dam then return mult or 1 end --no penalty for ranged shooters
 	local offmult = 1/2
-	-- Take the bigger multiplier from Dual weapon training and Corrupted Strength
+	-- Take the bigger multiplier from Dual weapon training, Dual Weapon Mastery and Corrupted Strength
 	if self:knowTalent(Talents.T_DUAL_WEAPON_TRAINING) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_DUAL_WEAPON_TRAINING,"getoffmult"))
+	end
+	if self:knowTalent(Talents.T_DUAL_WEAPON_MASTERY) then
+		offmult = math.max(offmult,self:callTalent(Talents.T_DUAL_WEAPON_MASTERY,"getoffmult"))
 	end
 	if self:knowTalent(Talents.T_CORRUPTED_STRENGTH) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_CORRUPTED_STRENGTH,"getoffmult"))

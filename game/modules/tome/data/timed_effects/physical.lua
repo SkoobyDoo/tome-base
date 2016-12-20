@@ -2069,7 +2069,7 @@ newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 }
 
 newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
-	name = "PARRY", image = "talents/parry.png",
+	name = "PARRY", image = "talents/dual_weapon_mastery.png",
 	desc = "Parrying",
 	deflectchance = function(self, eff, adj) -- The last partial deflect has a reduced chance to happen
 		adj = adj or 1
@@ -3505,5 +3505,74 @@ newEffect{
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "AVOIDANCE", image = "talents/disengage.png",
+	desc = "Avoidance",
+	long_desc = function(self, eff) return ("%d%% chance to fully evade any damaging actions."):format(eff.power) end,
+	type = "physical",
+	subtype = { evade=true },
+	status = "beneficial",
+	parameters = { power=10 },
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("cancel_damage_chance", eff.power)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("cancel_damage_chance", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "EXHAUSTION", image = "talents/slumber.png",
+	desc = "Exhaustion",
+	long_desc = function(self, eff) return ("The target is exhausted, increasing the stamina cost of Tumble by %d."):format(eff.charges*30) end,
+	type = "other",
+	subtype = {  },
+	status = "detrimental",
+	parameters = {  },
+	charges = function(self, eff) return eff.charges end,
+	on_merge = function(self, old_eff, new_eff)
+		new_eff.charges = math.min(old_eff.charges + 1, 5)
+		return new_eff
+	end,
+	activate = function(self, eff)
+		eff.charges = 1
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect {
+	name = "DANGER_SENSE", image = "talents/danger_sense.png",
+	desc = "Danger Sense",
+	type = "physical",
+	subtype = {tactic = true},
+	status = "beneficial",
+	parameters = {
+		-- percent of all damage to ignore
+		reduce = 50
+	},
+	on_gain = function(self, eff) return "#Target# danger sense lets them narrowly avoid the blow!" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "incoming_reduce", eff.reduce)
+	end,
+	long_desc = function(self, eff)
+		return ([[The target is avoiding damage, ignoring %d%% of all incoming damage.]])
+		:format(eff.reduce)
+	end,
+}
+
+newEffect{
+	name = "MOBILE_DEFENCE", image = "talents/light_armour_training.png",
+	desc = "Mobile Defense",
+	long_desc = function(self, eff) return ("Increases stamina regeneration by %d and total defense by %d%%."):format(eff.stamina, eff.power) end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	parameters = {stamina=1, power=10},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "stamina_regen", eff.stamina)
 	end,
 }
