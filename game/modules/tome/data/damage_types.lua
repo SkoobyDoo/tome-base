@@ -2571,11 +2571,29 @@ newDamageType{
 			target:setEffect(target.EFF_EMPOWERED_HEALING, 1, {power=(dam/200)})
 			if dam >= 100 then target:attr("allow_on_heal", 1) end
 			target:heal(dam, src)
-			if dam >= 100 then target:attr("allow_on_heal", -1) end
 
-			if target:attr("damage_shield") then
-				target:setEffect(target.EFF_BATHE_IN_LIGHT, 3, {power=dam / 4})
+			-- If the target is shielded already then add to the shield power, else add a shield
+			local shield_power = dam * util.bound((target.healing_factor or 1), 0, 2.5)
+			if not target:hasEffect(target.EFF_DAMAGE_SHIELD) then
+				target:setEffect(target.EFF_DAMAGE_SHIELD, 2, {power=shield_power})
+			else
+				-- Shields can't usually merge, so change the parameters manually
+				local shield = target:hasEffect(target.EFF_DAMAGE_SHIELD)
+				shield.power = shield.power + shield_power
+				target.damage_shield_absorb = target.damage_shield_absorb + shield_power
+				target.damage_shield_absorb_max = target.damage_shield_absorb_max + shield_power
+				shield.dur = math.max(2, shield.dur)
+
+				-- Limit the number of times a shield can be extended
+				if shield.dur_extended then
+					shield.dur_extended = shield.dur_extended + 1
+					if shield.dur_extended >= 20 then
+						game.logPlayer(target, "#DARK_ORCHID#Your damage shield cannot be extended any farther and has exploded.")
+						target:removeEffect(target.EFF_DAMAGE_SHIELD)
+					end
+				else shield.dur_extended = 1 end
 			end
+			if dam >= 100 then target:attr("allow_on_heal", -1) end
 		end
 	end,
 }

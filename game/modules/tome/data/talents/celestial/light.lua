@@ -53,7 +53,7 @@ newTalent{
 	require = spells_req2,
 	random_ego = "defensive",
 	points = 5,
-	cooldown = 15,
+	cooldown = 20,
 	positive = -20,
 	tactical = { HEAL = 2.5 },
 	range = 0,
@@ -61,7 +61,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
-	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 4, 80) end,
+	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 4, 80) * 0.75 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -82,11 +82,12 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local heal = t.getHeal(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[A magical zone of Sunlight appears around you, healing all within a radius of %d for %0.2f per turn and increasing healing effects on everyone within by %d%%. The effect lasts for %d turns.
-		Creatures that currently have a damage shield up also gain %d%% fire and light damage for 3 turns.
+		return ([[A magical zone of Sunlight appears around you, healing and shielding all within a radius of %d for %0.2f per turn and increasing healing effects on everyone within by %d%%. The effect lasts for %d turns.
+		Existing damage shields will be added to instead of overwritten and have their duration set to 2 if it isn't higher.
+		If the same shield is refreshed 20 times it will become unstable and explode, removing it.
 		It also lights up the affected zone.
 		The amount healed will increase with the Magic stat]]):
-		format(radius, heal, heal / 2, duration, heal / 4)
+		format(radius, heal, heal / 2, duration)
 	end,
 }
 
