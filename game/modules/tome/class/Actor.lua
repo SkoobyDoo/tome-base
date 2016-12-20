@@ -3211,6 +3211,8 @@ function _M:die(src, death_note)
 		if game.level and game.level.data.record_player_kills then
 			game.level.data.record_player_kills = game.level.data.record_player_kills + 1
 		end
+
+		p.last_kill_turn = game.turn
 	end
 
 	-- Ingredients
@@ -4823,7 +4825,7 @@ function _M:preUseTalent(ab, silent, fake)
 	end
 	
 	-- check resource costs (sustains can always be deactivated at no cost)
-	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
+	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) and (not self.talent_no_resources or not self.talent_no_resources[ab.id]) then
 		local rname, cost, rmin, rmax
 		-- check for sustained resources
 		self.on_preuse_checking_resources = true
@@ -5329,7 +5331,7 @@ function _M:postUseTalent(ab, ret, silent)
 		end
 	end
 	-- deduct resource costs
-	if not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource and not self:attr("zero_resource_cost") and not self:isTalentActive(ab.id) then
+	if not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource and not self:attr("zero_resource_cost") and (not self.talent_no_resources or not self.talent_no_resources[ab.id]) and not self:isTalentActive(ab.id) then
 		local rname, cost
 		
 		if ab.feedback then -- pseudo resource

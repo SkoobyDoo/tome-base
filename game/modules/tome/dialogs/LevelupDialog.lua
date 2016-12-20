@@ -217,6 +217,20 @@ function _M:finish()
 			t.on_levelup_close(self.actor, t, lvl, old_lvl, lvl_raw, old_lvl_raw, true)
 		end
 	end
+
+	if self.actor.player then
+		if self.actor.descriptor and self.actor.descriptor.race == "Dwarf" then
+			local count_nature, count_spell = 0, 0
+			for tid, lev in pairs(self.actor.talents) do
+				local t = self.actor:getTalentFromId(tid)
+				if t and t.is_spell then count_spell = count_spell + lev end
+				if t and t.is_nature then count_nature = count_nature + lev end
+			end
+			if count_nature >= 10 and count_spell >= 10 then
+				game:setAllowedBuild("wilder_stone_warden", true)
+			end
+		end
+	end
 	return true
 end
 

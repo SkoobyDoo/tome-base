@@ -32,7 +32,7 @@ newTalent{
 	points = 5,
 	mode = "sustained",
 	sustain_equilibrium = 18,
-	cooldown = 6,
+	cooldown = 10,
 	tactical = { BUFF = 4 },
 	getPowermult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end, --I5
 	getStatmult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end, --I5

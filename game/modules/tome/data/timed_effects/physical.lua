@@ -3447,6 +3447,7 @@ newEffect{
 	on_lose = function(self, err) return "#Target#'s skin returns to normal." end,
 	activate = function(self, eff)
 		eff.aid = self:addTemporaryValue("combat_armor", eff.armor)
+		eff.hid = self:addTemporaryValue("combat_armor_hardiness", eff.armor_hardiness)
 		eff.pid = self:addTemporaryValue("combat_physresist", eff.physical)
 		eff.sid = self:addTemporaryValue("combat_spellresist", eff.spell)
 		if self:knowTalent(self.T_STONE_FORTRESS) then
@@ -3457,6 +3458,7 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_armor", eff.aid)
+		self:removeTemporaryValue("combat_armor_hardiness", eff.hid)
 		self:removeTemporaryValue("combat_physresist", eff.pid)
 		self:removeTemporaryValue("combat_spellresist", eff.sid)
 		if eff.mid then self:removeTemporaryValue("flat_damage_armor", eff.mid) end
@@ -3574,5 +3576,23 @@ newEffect{
 	parameters = {stamina=1, power=10},
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "stamina_regen", eff.stamina)
+	end,
+}
+
+newEffect{
+	name = "GHOULISH_LEAP", image = "talents/ghoulish_leap.png",
+	desc = "Ghoulish Leap",
+	long_desc = function(self, eff) return ("The target's global speed is increased by %d%%."):format(eff.speed * 100) end,
+	type = "physical",
+	subtype = { speed=true },
+	status = "beneficial",
+	parameters = { speed=0.1 },
+	on_gain = function(self, err) return "#Target# speeds up.", "+Fast" end,
+	on_lose = function(self, err) return "#Target# slows down.", "-Fast" end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.speed)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("global_speed_add", eff.tmpid)
 	end,
 }
