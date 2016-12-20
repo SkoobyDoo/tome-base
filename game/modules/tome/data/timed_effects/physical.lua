@@ -3487,3 +3487,21 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "GHOULISH_LEAP", image = "talents/ghoulish_leap.png",
+	desc = "Ghoulish Leap",
+	long_desc = function(self, eff) return ("The target's global speed is increased by %d%%."):format(eff.speed * 100) end,
+	type = "physical",
+	subtype = { speed=true },
+	status = "beneficial",
+	parameters = { speed=0.1 },
+	on_gain = function(self, err) return "#Target# speeds up.", "+Fast" end,
+	on_lose = function(self, err) return "#Target# slows down.", "-Fast" end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("global_speed_add", eff.speed)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("global_speed_add", eff.tmpid)
+	end,
+}

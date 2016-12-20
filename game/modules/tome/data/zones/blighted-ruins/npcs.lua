@@ -114,6 +114,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
 	ai = nil, ai_tactic = nil, ai_state = nil,
+	infravision = 4,
 	
 	combat = {
 		dam=resolvers.levelup(5, 1, 1.2),
@@ -145,6 +146,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
 	ai = nil, ai_tactic = nil, ai_state = nil,
+	infravision = 4,
 	
 	combat = {
 		dam=resolvers.levelup(5, 1, 1.2),
@@ -174,6 +176,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
 	ai = nil, ai_tactic = nil, ai_state = nil,
+	infravision = 4,
 	
 	lifesteal=15,
 	
