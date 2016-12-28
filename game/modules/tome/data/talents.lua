@@ -62,7 +62,7 @@ damDesc = function(self, type, dam)
 		dam = dam * 0.4
 	end
 	if self:attr("invisible_damage_penalty") then
-		dam = dam * util.bound(1 - (src.invisible_damage_penalty / (src.invisible_damage_penalty_divisor or 1)), 0, 1)
+		dam = dam * util.bound(1 - (self.invisible_damage_penalty / (self.invisible_damage_penalty_divisor or 1)), 0, 1)
 	end
 	if self:attr("numbed") then
 		dam = dam - dam * self:attr("numbed") / 100
