@@ -2176,7 +2176,7 @@ function _M:onTakeHit(value, src, death_note)
 		value = value * (util.bound(self.global_speed * self.movement_speed, 0.3, 1))
 	end
 
-	-- Reduce damage and trigger for Trained Reactions
+	-- General percent damage reduction
 	if self:attr("incoming_reduce") then
 		value = value * (100-self:attr("incoming_reduce")) / 100
 		print("[onTakeHit] After Trained Reactions effect reduction ", value)
@@ -4937,7 +4937,7 @@ function _M:preUseTalent(ab, silent, fake)
 		if self:attr("scoundrel_failure") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
 			local eff = self:hasEffect(self.EFF_FUMBLE)
 			if rng.percent(self:attr("scoundrel_failure")) then
-				if not silent then game.logSeen(self, "%s fumbles and fails to use %s, injuring themselves!", self.name:capitalize(), ab.name) end
+				if not silent then game.logSeen(self, "%s fumbles and fails to use %s, injuring %s!", self.name:capitalize(), ab.name, self:his_her_self()) end
 				self:useEnergy()
 				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 				return false
@@ -5375,23 +5375,26 @@ function _M:postUseTalent(ab, ret, silent)
 		DamageType:get(DamageType.FIRE).projector(p.src, self.x, self.y, DamageType.FIRE, p.dam)
 	end
 
-	-- Cancel stealth!
-	if not util.getval(ab.no_break_stealth, self, ab) and util.getval(ab.no_energy, self, ab) ~= true then self:breakStealth() end
-	
-	if ab.id ~= self.T_LIGHTNING_SPEED then self:breakLightningSpeed() end
-	if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
-	if not ab.no_reload_break then self:breakReloading() end
-	self:breakStepUp()
-	self:breakSpacetimeTuning()
-	--if not (util.getval(ab.no_energy, self, ab) or ab.no_break_channel) and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) then self:breakPsionicChannel(ab.id) end
+	-- break stealth, channels, etc...
+	if not self.turn_procs.resetting_talents then
+		-- Cancel stealth!
+		if not util.getval(ab.no_break_stealth, self, ab) and util.getval(ab.no_energy, self, ab) ~= true then self:breakStealth() end
+		
+		if ab.id ~= self.T_LIGHTNING_SPEED then self:breakLightningSpeed() end
+		if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
+		if not ab.no_reload_break then self:breakReloading() end
+		self:breakStepUp()
+		self:breakSpacetimeTuning()
+		--if not (util.getval(ab.no_energy, self, ab) or ab.no_break_channel) and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) then self:breakPsionicChannel(ab.id) end
 
-	for tid, _ in pairs(self.sustain_talents) do
-		local t = self:getTalentFromId(tid)
-		if t and t.callbackBreakOnTalent then
-			-- Break things at the end, only if they are still on
-			game:onTickEnd(function()
-				if self.sustain_talents[t.id] then self:callTalent(tid, "callbackBreakOnTalent", ab) end
-			end)
+		for tid, _ in pairs(self.sustain_talents) do
+			local t = self:getTalentFromId(tid)
+			if t and t.callbackBreakOnTalent then
+				-- Break things at the end, only if they are still on
+				game:onTickEnd(function()
+					if self.sustain_talents[t.id] then self:callTalent(tid, "callbackBreakOnTalent", ab) end
+				end)
+			end
 		end
 	end
 

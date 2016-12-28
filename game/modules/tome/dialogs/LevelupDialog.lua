@@ -190,11 +190,12 @@ function _M:finish()
 	if talents ~= "" then
 		game.logPlayer(self.actor, txt:format(talents))
 	end
+	self.actor.turn_procs.resetting_talents = true
 	for i, tid in ipairs(reset) do
 		self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
 		if self.actor:knowTalent(tid) then self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
 	end
-	
+	self.actor.turn_procs.resetting_talents = nil
 	-- Prodigies
 	if self.on_finish_prodigies then
 		for tid, ok in pairs(self.on_finish_prodigies) do if ok then self.actor:learnTalent(tid, true, nil, {no_unlearn=true}) end end
