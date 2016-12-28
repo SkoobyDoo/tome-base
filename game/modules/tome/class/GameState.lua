@@ -1913,7 +1913,7 @@ end
 -- 	@param data.class_filter = function(cdata, b) that must return true for any class picked.
 --		(cdata, b = subclass definition in engine.Birther.birth_descriptor_def.subclass, boss (before classes are applied))
 --	@param data.no_class_restrictions set true to skip class compatibility checks <nil>
---	@param data.add_trees = {["talent tree name 1"]=true, ["talent tree name 2"]=true, ..} additional talent trees to learn
+--	@param data.add_trees = {["talent tree name 1"]=true/mastery bonus, ["talent tree name 2"]=true/mastery bonus, ..} additional talent trees to learn
 --	@param data.check_talents_level set true to enforce talent level restrictions <nil>
 --	@param data.auto_sustain set true to activate sustained talents at birth <nil>
 --	@param data.forbid_equip set true for no equipment <nil>
@@ -1960,12 +1960,22 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 			end
 		end
 
-		-- Add talent categories
+		-- Class talent categories
 		for tt, d in pairs(mclass.talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 		for tt, d in pairs(mclass.unlockable_talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 		for tt, d in pairs(class.talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 		for tt, d in pairs(class.unlockable_talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 
+		-- Non-class talent categories
+		if data.add_trees then
+			for tt, d in pairs(data.add_trees) do
+				if not b:knowTalentType(tt) then
+					if type(d) ~= "number" then d = rng.range(1, 3)*0.1 end
+					b:learnTalentType(tt, true)
+					b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d)
+				end
+			end
+		end
 		-- Add starting equipment
 		local apply_resolvers = function(k, resolver)
 			if type(resolver) == "table" and resolver.__resolver then
@@ -2013,11 +2023,10 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 		for tt, d in pairs(b.talents_types) do
 			known_types[tt] = b:numberKnownTalent(tt)
 		end
-		
+
 		local list = {}
 		for _, t in pairs(b.talents_def) do
-		
-			if (b.talents_types[t.type[1]] or (data.add_trees and data.add_trees[t.type[1]])) then
+			if b.talents_types[t.type[1]] then
 				if t.no_npc_use or t.not_on_random_boss then
 					known_types[t.type[1]] = known_types[t.type[1]] + 1 -- allows higher tier talents to be learnt
 				else
