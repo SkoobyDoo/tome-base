@@ -1162,6 +1162,14 @@ function _M:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
 	end
 end
 
+local boss_rank_circles = {
+	[3.2] = { back="npc/boss_indicators/rare_circle_back.png", front="npc/boss_indicators/rare_circle_front.png" },
+	[3.5] = { back="npc/boss_indicators/unique_circle_back.png", front="npc/boss_indicators/unique_circle_front.png" },
+	[4]   = { back="npc/boss_indicators/boss_circle_back.png", front="npc/boss_indicators/boss_circle_front.png" },
+	[5]   = { back="npc/boss_indicators/elite_boss_circle_back.png", front="npc/boss_indicators/elite_boss_circle_front.png" },
+	[10]   = { back="npc/boss_indicators/god_circle_back.png", front="npc/boss_indicators/god_circle_front.png" },
+}
+
 --- Attach or remove a display callback
 -- Defines particles to display
 function _M:defineDisplayCallback()
@@ -1216,6 +1224,12 @@ function _M:defineDisplayCallback()
 			else self:removeParticles(e)
 			end
 		end
+
+		if boss_rank_circles[self.rank or 1] then
+			local b = boss_rank_circles[self.rank]
+			if not b.ifront then b.ifront = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.front) end
+			b.ifront:toScreen(x, y + h - w * (0.616 - 0.5), w, w / 2)
+		end
 	end
 
 	local function backparticles(x, y, w, h, zoom, on_map)
@@ -1231,6 +1245,12 @@ function _M:defineDisplayCallback()
 			if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
 			else self:removeParticles(e)
 			end
+		end
+
+		if boss_rank_circles[self.rank or 1] then
+			local b = boss_rank_circles[self.rank]
+			if not b.iback then b.iback = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.back) end
+			b.iback:toScreen(x, y + h - w * 0.616, w, w / 2)
 		end
 	end
 
