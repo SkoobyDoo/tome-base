@@ -1026,9 +1026,9 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 		else
 			if config.settings.cheat then
 				if type(v) == "nil" then
-					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(self.uid, self.name))
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				else
-					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(self.uid, self.name))
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				end
 			end
 		end
