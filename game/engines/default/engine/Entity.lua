@@ -1026,9 +1026,9 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 		else
 			if config.settings.cheat then
 				if type(v) == "nil" then
-					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(self.uid, self.name))
 				else
-					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(self.uid, self.name))
 				end
 			end
 		end
@@ -1038,6 +1038,12 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 	if not noupdate then
 		recursive(initial_base, initial_prop, oldval, "add")
 	end
+end
+
+--- Returns a previously set temporary value, see addTemporaryValue()
+-- @int id the index of the previously set property
+function _M:getTemporaryValue(id)
+	return self.compute_vals and self.compute_vals[id]
 end
 
 --- Helper function to add temporary values
