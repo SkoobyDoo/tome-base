@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ end
 
 --- Actor is being attacked!
 -- Module authors should rewrite it to handle combat, dialog, ...
--- @param target the actor attacking us
+-- @param target the actor being attacked
 -- @param x placeholder
 -- @param y placeholder
 function _M:attack(target, x, y)

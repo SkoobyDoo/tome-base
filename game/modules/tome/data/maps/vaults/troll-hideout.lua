@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,8 +17,15 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, vault_only_door_open=true}
-
+setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=true}}
+specialList("actor", {
+	"/data/general/npcs/troll.lua",
+})
+specialList("terrain", {
+	"/data/general/grids/water.lua",
+	"/data/general/grids/forest.lua",
+}, true)
+border = 0
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('.', "FLOOR")
@@ -31,7 +38,7 @@ defineTile('+', "DOOR")
 defineTile('T', "FLOOR", {random_filter={type="scroll", ego_chance=25}}, {random_filter={name="forest troll"}})
 defineTile('t', "FLOOR", nil, {random_filter={name="forest troll"}})
 defineTile('$', "FLOOR", {random_filter={type="scroll", ego_chance=25}}, nil)
-
+--startx, starty = 0, 9
 return {
 [[,,,,,,,,,,,,,,,,,,,,,,]],
 [[,,,XX,,X,,,,,,,,,,X,,,]],

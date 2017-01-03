@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ return {
 	ambient_music = "Thrall's Theme.ogg",
 	min_material_level = 4,
 	max_material_level = 5,
+	effects = {"EFF_ZONE_AURA_GRUSHNAK"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",
@@ -91,6 +92,16 @@ return {
 		}},
 		[6] = {
 			generator = { map = {
+				['.'] = {
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_CREEP",
+				},
 				down = "SLIME_TUNNELS",
 				force_last_stair = true,
 			}, },

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ newEntity{
 	sound_die = {"creatures/ghost/death%d", 1, 1},
 	sound_random = {"creatures/ghost/random%d", 1, 1},
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, CLOAK=1 },
 	autolevel = "warriormage",
 	ai = "dumb_talented_simple", ai_state = { ai_target="target_player_radius", ai_move="move_complex", sense_radius=40, talent_in=2, },
 	dont_pass_target = true,
@@ -55,6 +55,7 @@ newEntity{
 	cut_immune = 1,
 	see_invisible = 80,
 	undead = 1,
+	avoid_pressure_traps = 1,
 	resolvers.sustains_at_birth(),
 	not_power_source = {nature=true},
 }

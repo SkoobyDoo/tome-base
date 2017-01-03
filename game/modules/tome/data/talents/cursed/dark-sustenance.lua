@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ newTalent{
 	cooldown = 6,
 	range = 7,
 	hate = 0,
+	no_energy = true,
 	tactical = { BUFF = 2, DEFEND = 1 },
 	requires_target = true,
 	direct_hit = true,
@@ -187,7 +188,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local resistGain = t.getResistGain(self, t)
-		return ([[Enhances your feeding by reducing your targeted foe's positive resistances by %d%%, and increasing yours by the same amount. Resistance to "all" is not affected.
-		Improves with your Mindpower.]]):format(resistGain)
+		return ([[Enhances your feeding by reducing your targeted foe's resistances, multiplying them by %0.2f and increasing your resistances by the amount drained. Resistance to "all" is not affected.
+		Improves with your Mindpower.]]):format((1-(resistGain/100)))
 	end,
 }

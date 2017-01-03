@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ uberTalent{
 	info = function(self, t)
 		local dam = (50 + self:getStr() * 1.7) / 3
 		return ([[For 6 turns you gain the mass and power of a star, drawing all creatures within radius 5 toward you and dealing %0.2f fire, %0.2f light and %0.2f physical damage to all foes.
-		Foes closer to you take up to 150%% more damage.
+		Foes closer to you take up to 150%% damage.
 		The damage will increase with your Strength.]])
 		:format(damDesc(self, DamageType.FIRE, dam), damDesc(self, DamageType.LIGHT, dam), damDesc(self, DamageType.PHYSICAL, dam))
 	end,
@@ -155,8 +155,7 @@ uberTalent{
 	require = { special={desc="Be able to use massive armours", fct=function(self) return self:getTalentLevelRaw(self.T_ARMOUR_TRAINING) >= 3 end} },
 	on_learn = function(self, t)
 		self:attr("max_encumber", 500)
-		self.inc_stats[self.STAT_STR] = (self.inc_stats[self.STAT_STR] or 0) + 40
-  		self:onStatChange(self.STAT_STR, 40)
+		self:incIncStat(self.STAT_STR, 40)
 	end,
 	info = function(self, t)
 		return ([[Your strength is legendary; fatigue and physical exertion mean nothing to you.

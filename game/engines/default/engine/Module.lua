@@ -1,6 +1,5 @@
-
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -490,6 +489,8 @@ function _M:loadAddons(mod, saveuse)
 
 	if saveuse then saveuse = table.reverse(saveuse) end
 
+	local force_remove_addons = {}
+
 	-- Filter based on settings
 	for i = #adds, 1, -1 do
 		local add = adds[i]
@@ -500,7 +501,10 @@ function _M:loadAddons(mod, saveuse)
 				table.remove(adds, i) removed = true
 			end
 		else
-			if add.cheat_only and not config.settings.cheat then
+			if mod.forbid_addons and table.hasInList(mod.forbid_addons, add.short_name) then
+				print("Removing addon "..add.short_name..": module forbids it")
+				table.remove(adds, i) removed = true
+			elseif add.cheat_only and not config.settings.cheat then
 				print("Removing addon "..add.short_name..": cheat mode required")
 				table.remove(adds, i) removed = true
 			elseif add.dlc == "no" then
@@ -523,34 +527,75 @@ function _M:loadAddons(mod, saveuse)
 			end
 		end
 
-		if add.dlc and add.dlc_files then
-			if not removed and add.dlc_files.classes then
-				for _, name in ipairs(add.dlc_files.classes) do
-					print("Preloading DLC class", name)
-					local data = profile:getDLCD(add.for_module.."-"..add.short_name, ("%d.%d.%d"):format(add.version[1],add.version[2],add.version[3]), name:gsub("%.", "/")..".lua")
-					if data and data ~= '' then
-						profile.dlc_files.classes[name] = data
-					elseif not __module_extra_info.ignore_addons_not_loading then
-						print("Removing addon "..add.short_name..": DLC class not received")
-						table.remove(adds, i) removed = true
-						if saveuse then
-							-- The savefile requires it, but we couldnt activate it, abord
-							core.game.setRebootMessage(([[The savefile requires the #YELLOW#%s#WHITE# addon.
+		if not removed then
+			if add.dlc and add.dlc_files then
+				if add.dlc_files.classes then
+					for _, name in ipairs(add.dlc_files.classes) do
+						print("Preloading DLC class", name)
+						local data = profile:getDLCD(add.for_module.."-"..add.short_name, ("%d.%d.%d"):format(add.version[1],add.version[2],add.version[3]), name:gsub("%.", "/")..".lua")
+						if data and data ~= '' then
+							profile.dlc_files.classes[name] = data
+						elseif not __module_extra_info.ignore_addons_not_loading then
+							print("Removing addon "..add.short_name..": DLC class not received")
+							table.remove(adds, i) removed = true
+							if saveuse then
+								-- The savefile requires it, but we couldnt activate it, abord
+								core.game.setRebootMessage(([[The savefile requires the #YELLOW#%s#WHITE# addon.
 Some of its features require being online and could not be enabled. To prevent damaging the savefile loading was aborted.
 
 You may try to force loading if you are sure the savefile does not use that addon, at your own risk, by checking the "Ignore unloadable addons" checkbox on the load game screen..]]):format(add.long_name))
-							util.showMainMenu(nil, nil, nil, nil, nil, nil, "show_ignore_addons_not_loading=true")
+								util.showMainMenu(nil, nil, nil, nil, nil, nil, "show_ignore_addons_not_loading=true")
+							end
+							break
+						else
+							add.dlc = "no"
+							print("Removing addon "..add.short_name..": dlc file required not found")
+							table.remove(adds, i) removed = true
 						end
-						break
-					else
-						add.dlc = "no"
-						print("Removing addon "..add.short_name..": dlc file required not found")
-						table.remove(adds, i) removed = true
 					end
+				end
+			end
+
+			if add.disable_addons then
+				table.merge(force_remove_addons, table.reverse(add.disable_addons))
+			end
+		end
+	end
+
+	-- Let addons disable addons!
+	for i = #adds, 1, -1 do
+		local add = adds[i]
+		if force_remove_addons[add.short_name] then
+			print("Removing addon "..add.short_name..": disabled by an other addon")
+			table.remove(adds, i)
+		end
+	end
+
+	-- Let addons require other addons, this must be done last so that all addons are filtered, and repeated until no addons complain
+	local function handle_requires_addons()
+		for i = #adds, 1, -1 do
+			local add = adds[i]
+			if add.requires_addons then
+				local unfound_name
+				local ok = true
+				for _, sn in ipairs(add.requires_addons) do
+					local found = false
+					for _, radd in ipairs(adds) do
+						if radd.short_name == sn then found = true break end
+					end
+					if not found then ok = false unfound_name = sn break end
+				end
+
+				if not ok then
+					print("Removing addon "..add.short_name..": missing required addon "..tostring(unfound_name))
+					table.remove(adds, i)
+					-- Retry
+					handle_requires_addons()
 				end
 			end
 		end
 	end
+	handle_requires_addons()
 
 	local hooks_list = {}
 	mod.addons = {}
@@ -620,7 +665,18 @@ You may try to force loading if you are sure the savefile does not use that addo
 	print("Post-processing hooks.")
 	for i, dir in ipairs(hooks_list) do
 		self:setCurrentHookDir(dir.."/")
-		dofile(dir.."/load.lua")
+		local addname = dir:gsub(".*/", "")
+		local superload = (function(add)
+			return function(bname, f)
+				_G.__addons_fn_superloads[add] = _G.__addons_fn_superloads[add] or {}
+				_G.__addons_fn_superloads[add][bname] = _G.__addons_fn_superloads[add][bname] or {}
+				table.insert(_G.__addons_fn_superloads[add][bname], f)
+			end
+		end)(addname)
+		local f, err = loadfile(dir.."/load.lua")
+		if not f and err then error(err) end
+		setfenv(f, setmetatable({superload = superload, __addon_name = addname}, {__index = _G}))
+		f()
 	end
 	self:setCurrentHookDir(nil)
 	return hashlist
@@ -671,10 +727,12 @@ function _M:loadScreen(mod)
 		end
 		if pubimg then publisher = {pubimg:glTexture()} end
 
-		local left = {core.display.loadImage("/data/gfx/metal-ui/waiter/left.png"):glTexture()}
-		local right = {core.display.loadImage("/data/gfx/metal-ui/waiter/right.png"):glTexture()}
-		local middle = {core.display.loadImage("/data/gfx/metal-ui/waiter/middle.png"):glTexture()}
-		local bar = {core.display.loadImage("/data/gfx/metal-ui/waiter/bar.png"):glTexture()}
+		mod.waiter_load_ui = mod.waiter_load_ui or "dark-ui"
+
+		local left = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/left.png"):glTexture()}
+		local right = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/right.png"):glTexture()}
+		local middle = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/middle.png"):glTexture()}
+		local bar = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/bar.png"):glTexture()}
 
 		local font = FontPackage:get("small")
 		local bfont = FontPackage:get("default")
@@ -810,6 +868,14 @@ function _M:loadScreen(mod)
 
 			if tip then tip(dw / 2, dy) end
 			if funfacts then funfacts(sw, 10) end
+			
+			local errs = core.game.checkError()
+			if errs then
+				local errgame = require("engine.BootErrorHandler").new(errs, mod)
+				_G.game = errgame
+				errgame:setCurrent()
+				core.wait.disable()
+			end
 		end
 	end)
 	core.display.forceRedraw()
@@ -953,6 +1019,10 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	profile:currentCharacter(mod.full_version_string, "game did not tell us")
 
 	UIBase:clearCache()
+
+	-- Some requires cleanup, to correctly let modules apply settings	
+	package.loaded["engine.ui.WithTile"] = nil
+	package.loaded["engine.ui.Textbox"] = nil
 
 	-- Init the module code
 	local M, W = mod.load("init")

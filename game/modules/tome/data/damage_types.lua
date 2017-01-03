@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -238,6 +238,20 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 				game:delayedLogMessage(source, target, "dark_strike"..(source.uid or ""), "#Source# strikes #Target# in the darkness (%+d%%%%%%%% damage).", dark.damageIncrease) -- resolve %% 3 levels deep
 			end
 		end
+
+		if dam > 0 and src and src.__is_actor and src:knowTalent(src.T_BACKSTAB) and src.__CLASSNAME ~= "mod.class.Grid" then
+			local power = src:callTalent("T_BACKSTAB", "getDamageBoost")
+			local nb = 0
+			for eff_id, p in pairs(target.tmp) do
+				local e = target.tempeffect_def[eff_id]
+				if (e.subtype.stun or e.subtype.blind or e.subtype.pin or e.subtype.disarm or e.subtype.cripple or e.subtype.confusion or e.subtype.silence)then nb = nb + 1 end
+			end
+			if nb > 0 then			
+				local boost = math.min(power*nb, power*3)
+				inc = inc + boost
+				print("[PROJECTOR] after backstab", dam + (dam * inc / 100))
+			end
+		end
 		
 		dam = dam + (dam * inc / 100)
 
@@ -292,9 +306,13 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		-- Reduce damage with resistance
 		if target.resists then
 			local pen = 0
-			if src.resists_pen then pen = (src.resists_pen.all or 0) + (src.resists_pen[type] or 0) end
+			if src.combatGetResistPen then pen = src:combatGetResistPen(type)
+			elseif src.resists_pen then pen = (src.resists_pen.all or 0) + (src.resists_pen[type] or 0)
+			end
 			local dominated = target:hasEffect(target.EFF_DOMINATED)
 			if dominated and dominated.src == src then pen = pen + (dominated.resistPenetration or 0) end
+			local exposed = target:hasEffect(target.EFF_EXPOSE_WEAKNESS)
+			if exposed then pen = pen + 50 end
 			if target:attr("sleep") and src.attr and src:attr("night_terror") then pen = pen + src:attr("night_terror") end
 			local res = target:combatGetResist(type)
 			pen = util.bound(pen, 0, 100)
@@ -356,7 +374,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 
 		-- Flat damage reduction ("armour")
 		if dam > 0 and target.flat_damage_armor then
-			local dec = math.min(dam, (target.flat_damage_armor.all or 0) + (target.flat_damage_armor[type] or 0))
+			local dec = math.min(dam, target:combatGetFlatResist(type))
 			if dec > 0 then game:delayedLogDamage(src, target, 0, ("%s(%d resist armour)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dec), false) end
 			dam = math.max(0, dam - dec)
 			print("[PROJECTOR] after flat damage armor", dam)
@@ -440,9 +458,13 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 				end
 			end
 		end
+		
+		if target.resists and target.resists.absolute then -- absolute resistance (from Terrasca)
+			dam = dam * ((100 - math.min(target.resists_cap.absolute or 70, target.resists.absolute)) / 100)
+			print("[PROJECTOR] after absolute resistance dam", dam)
+		end
 
 		print("[PROJECTOR] final dam after hooks and callbacks", dam)
-
 
 		local source_talent = src.__projecting_for and src.__projecting_for.project_type and (src.__projecting_for.project_type.talent_id or src.__projecting_for.project_type.talent) and src.getTalentFromId and src:getTalentFromId(src.__projecting_for.project_type.talent or src.__projecting_for.project_type.talent_id)
 		local dead
@@ -787,7 +809,7 @@ newDamageType{
 		local realdam = DamageType.defaultProjector(src, x, y, type, dam, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		-- Spread diseases if possible
-		if realdam > 0 and target and target:attr("diseases_spread_on_blight") and (not state or not state.from_disease) then
+		if realdam > 0 and target and target:attr("diseases_spread_on_blight") and (not state or not state.from_disease) and src.callTalent then
 			src:callTalent(src.T_EPIDEMIC, "do_spread", target, realdam)
 		end
 		if src and src.knowTalent and realdam > 0 and target and src:knowTalent(src.T_PESTILENT_BLIGHT) then
@@ -1140,7 +1162,7 @@ newDamageType{
 		if _G.type(dam) == "number" then dam = {dam=dam, healfactor=0.1} end
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
 		local realdam = DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam.dam, state)
-		if target and realdam > 0 then
+		if target and realdam > 0 and not src:attr("dead") then
 			src:heal(realdam * dam.healfactor, target)
 			src:logCombat(target, "#Source# drains life from #Target#!")
 		end
@@ -1161,7 +1183,7 @@ newDamageType{
 
 -- Darkness + Stun
 newDamageType{
-	name = "darkness", type = "DARKSTUN",
+	name = "stunning darkness", type = "DARKSTUN", text_color = "#GREY#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
@@ -1315,7 +1337,7 @@ newDamageType{
 
 -- Cold damage + freeze ground
 newDamageType{
-	name = "cold ground", type = "COLDNEVERMOVE",
+	name = "pinning cold", type = "COLDNEVERMOVE", text_color = "#CADET_BLUE#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
@@ -1343,7 +1365,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
+			local sx, sy = game.level.map:getTileToScreen(x, y, true)
 			if target:canBe("stun") then
 				target:setEffect(target.EFF_FROZEN, dam.dur, {hp=dam.hp * 1.5, apply_power=math.max(src:combatSpellpower(), src:combatMindpower()), min_dur=1})
 				game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, -3, "Frozen!", {0,255,155})
@@ -1843,7 +1865,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			target:setEffect(target.EFF_SLOW, 7, {power=dam, apply_power=src:combatSpellpower()})
 		end
 	end,
@@ -1857,7 +1878,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			target:setEffect(target.EFF_CONGEAL_TIME, 7, {slow=dam.slow, proj=dam.proj, apply_power=src:combatSpellpower()})
 		end
 	end,
@@ -1872,7 +1892,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			if src == target then
 				target:setEffect(target.EFF_TIME_PRISON, dam, {no_ct_effect=true})
 				target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=src:combatSpellpower(0.3), no_ct_effect=true})
@@ -2420,7 +2439,7 @@ newDamageType{
 		if _G.type(dam) == "number" then dam = {dam=dam, healfactor=0.4} end
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
 		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam, state)
-		if target and realdam > 0 then
+		if target and realdam > 0 and not src:attr("dead") then
 			src:heal(realdam * dam.healfactor, target)
 			src:logCombat(target, "#Source# drains life from #Target#!")
 		end
@@ -2540,7 +2559,7 @@ newDamageType{
 	end,
 }
 
--- Used by Bathe in Light, healing+shielding
+-- Used by Bathe in Light, healing
 -- Keep an eye on this and Weapon of Light for any infinite stack shield then engage combos
 newDamageType{
 	name = "healing light", type = "HEALING_POWER",
@@ -2589,11 +2608,11 @@ newDamageType{
 		if target and target ~= src then
 			--print("[JUDGEMENT] src ", src, "target", target, "src", src )
 			DamageType:get(DamageType.LIGHT).projector(src, x, y, DamageType.LIGHT, dam, state)
-			if dam >= 100 then src:attr("allow_on_heal", 1) end
-			src:heal(dam / 2, src)
-			if dam >= 100 then src:attr("allow_on_heal", -1) end
-
-
+			if not src:attr("dead") then
+				if dam >= 100 then src:attr("allow_on_heal", 1) end
+				src:heal(dam / 2, src)
+				if dam >= 100 then src:attr("allow_on_heal", -1) end
+			end
 		end
 	end,
 }
@@ -2829,7 +2848,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and src:reactionToward(target) < 0 then
 			local realdam = DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam, state)
-			if realdam > 0 then src:heal(realdam * dam.factor, target) end
+			if realdam > 0 and not src:attr("dead") then src:heal(realdam * dam.factor, target) end
 		end
 	end,
 }
@@ -2947,7 +2966,6 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			target:setEffect(target.EFF_SLOW, 4, {power=dam/100, apply_power=src:combatMindpower()})
 		end
 	end,
@@ -2962,7 +2980,6 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			-- Freeze it, if we pass the test
-			local sx, sy = game.level.map:getTileToScreen(x, y)
 			if target:canBe("stun") then
 				target:setEffect(target.EFF_FROZEN, dam, {hp=70 + src:combatMindpower() * 10, apply_power=src:combatMindpower()})
 			else
@@ -3090,7 +3107,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR) -- Get the target first to make sure we heal even on kill
 		if target then dam.dam = math.max(0, math.min(target.life, dam.dam)) end
 		local realdam = DamageType:get(DamageType.PHYSICAL).projector(src, x, y, DamageType.PHYSICAL, dam.dam, state)
-		if target and realdam > 0 then
+		if target and realdam > 0 and not src:attr("dead") then
 			local heal = realdam * (dam.healfactor or 1)
 			-- cannot be reduced
 			local temp = src.healing_factor
@@ -3848,13 +3865,120 @@ newDamageType{
 			if chance == 1 then
 				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 2 then
-				target:setEffect(target.EFF_INSIDIOUS_BLIGHT, 4, {src=src, power=dam.dam / 4, heal_factor=dam.power*2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_INSIDIOUS_BLIGHT, 4, {src=src, power=dam.dam / 4, heal_factor=dam.power*1.5, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 3 then
-				target:setEffect(target.EFF_NUMBING_BLIGHT, 4, {src=src, power=dam.dam / 4, reduce=dam.power*1.2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_NUMBING_BLIGHT, 4, {src=src, power=dam.dam / 4, reduce=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 4 then
 				target:setEffect(target.EFF_CRIPPLING_BLIGHT, 4, {src=src, power=dam.dam / 4, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			end
 		end
 		return realdam
+	end,
+}
+
+newDamageType{
+	name = "terror", type = "TERROR",
+	text_color = "#YELLOW#",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			game:delayedLogDamage(src, target, 0, ("%s<terror chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
+			if not src:checkHit(src:combatAttack(), target:combatMentalResist()) then return end
+			local effect = rng.range(1, 3)
+			if effect == 1 then
+				-- confusion
+				if target:canBe("confusion") and not target:hasEffect(target.EFF_CONFUSED) then
+					target:setEffect(target.EFF_CONFUSED, dam.dur, {power=50})
+					game.level.map:particleEmitter(target.x, target.y, 1, "circle", {base_rot=0, oversize=0.7, a=130, limit_life=8, appear=8, speed=0, img="curse_gfx_04", radius=0})					
+				end
+			elseif effect == 2 then
+				-- stun
+				if target:canBe("stun") and not target:hasEffect(target.EFF_STUNNED) then
+					target:setEffect(target.EFF_STUNNED, dam.dur, {})
+					game.level.map:particleEmitter(target.x, target.y, 1, "circle", {base_rot=0, oversize=0.7, a=130, limit_life=8, appear=8, speed=0, img="curse_gfx_04", radius=0})
+				end
+			elseif effect == 3 then
+				-- slow
+				if target:canBe("slow") and not target:hasEffect(target.EFF_SLOW) then
+					target:setEffect(target.EFF_SLOW, dam.dur, {power=0.4})
+					game.level.map:particleEmitter(target.x, target.y, 1, "circle", {base_rot=0, oversize=0.7, a=130, limit_life=8, appear=8, speed=0, img="curse_gfx_04", radius=0})
+				end
+			end
+		end
+	end,
+}
+
+-- Random poison: 25% to be enhanced
+newDamageType{
+	name = "random poison", type = "RANDOM_POISON", text_color = "#LIGHT_GREEN#",
+	projector = function(src, x, y, t, dam, poison, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local power
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and src:reactionToward(target) < 0 and target:canBe("poison") then
+			local realdam = DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / 6, state)
+			if rng.percent(dam.random_chance or 25) then
+				local chance = rng.range(1, 3)
+				if chance == 1 then
+					target:setEffect(target.EFF_INSIDIOUS_POISON, 5, {src=src, power=dam.dam / 6, heal_factor=dam.power*2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				elseif chance == 2 then
+					target:setEffect(target.EFF_NUMBING_POISON, 5, {src=src, power=dam.dam / 6, reduce=dam.power*1.2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				elseif chance == 3 then
+					target:setEffect(target.EFF_CRIPPLING_POISON, 5, {src=src, power=dam.dam / 6, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				end
+			else
+				target:setEffect(target.EFF_POISONED, 5, {src=src, power=dam.dam / 6, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+			end
+			return realdam
+		end
+	end,
+}
+
+newDamageType{
+	name = "blinding powder", type = "BLINDING_POWDER",
+	text_color = "#GREY#",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			game:delayedLogDamage(src, target, 0, ("%s<blinding powder>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
+			if not src:checkHit(src:combatAttack(), target:combatPhysicalResist()) then return end
+			
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_BLINDED, dam.dur, {})
+			end
+			
+			target:setEffect(target.EFF_DISABLE, dam.dur, {speed=dam.slow, atk=dam.acc})
+
+		end
+	end,
+}
+
+newDamageType{
+	name = "smokescreen", type = "SMOKESCREEN",
+	text_color = "#GREY#",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and src:reactionToward(target) < 0 then
+			game:delayedLogDamage(src, target, 0, ("%s<smoke>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#"), false)
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_DIM_VISION, 2, {sight=dam.dam, apply_power=src:combatAttack(), no_ct_effect=true})
+			else
+				game.logSeen(target, "%s resists!", target.name:capitalize())
+			end
+			
+			if dam.poison and dam.poison > 0 then
+				DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.poison)
+				if target:canBe("silence") and rng.percent(50) then
+					target:setEffect(target.EFF_SILENCED, 2, {apply_power=src:combatAttack(), no_ct_effect=true})
+				end
+			end
+		end
 	end,
 }

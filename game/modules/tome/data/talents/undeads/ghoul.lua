@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ newTalent{
 	mode = "passive",
 	require = undeads_req1,
 	points = 5,
-	statBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 10, 0.75)) end,
+	statBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 15, 0.75)) end,
 	getMaxDamage = function(self, t) return math.max(50, 100 - self:getTalentLevelRaw(t) * 10) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "inc_stats", {[self.STAT_STR]=t.statBonus(self, t)})
@@ -44,14 +44,18 @@ newTalent{
 	points = 5,
 	tactical = { CLOSEIN = 3 },
 	direct_hit = true,
-	cooldown = function(self, t) return math.max(10, 22 - self:getTalentLevelRaw(t) * 2) end,
+	fixed_cooldown = true,
+	cooldown = function(self, t) return math.floor(self:combatTalentLimit(t, 5, 25, 15)) end,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 10, 0.5, 0, 1)) end,
+	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 40, 20, 30)) end,
 	requires_target = true,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), nolock=true}
 		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
 		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) then return nil end
+
+		local ox, oy = self.x, self.y
 
 		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
 		local l = self:lineFOV(x, y, block_actor)
@@ -70,11 +74,18 @@ newTalent{
 			return
 		end
 		self:move(fx, fy, true)
+		if config.settings.tome.smooth_move > 0 then
+			self:resetMoveAnim()
+			self:setMoveAnim(ox, oy, 9, 5)
+		end
+
+		self:setEffect(self.EFF_GHOULISH_LEAP, 4, {speed=t.getSpeed(self, t) / 100})
 
 		return true
 	end,
 	info = function(self, t)
-		return ([[Leap toward your target.]])
+		return ([[Leap toward your target.
+		When you land your global speed is increased by %d%% for 4 turns.]]):format(t.getSpeed(self, t))
 	end,
 }
 
@@ -83,7 +94,7 @@ newTalent{
 	type = {"undead/ghoul",3},
 	require = undeads_req3,
 	points = 5,
-	cooldown = 25,
+	cooldown = 20,
 	tactical = { ATTACKAREA = function(self, t, aitarget)
 			return not aitarget:attr("undead") and { BLIGHT = 1 } or nil
 		end,
@@ -138,10 +149,10 @@ newTalent{
 	requires_target = true,
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDamage = function(self, t) return self:combatTalentScale(t, 0.28, 0.62) end,
+	getDamage = function(self, t) return self:combatTalentScale(t, 0.5, 1.5) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	getDiseaseDamage = function(self, t) return self:combatTalentStatDamage(t, "con", 5, 50) end,
-	getStatDamage = function(self, t) return self:combatTalentStatDamage(t, "con", 5, 20) end,
+	getStatDamage = function(self, t) return self:combatTalentStatDamage(t, "con", 5, 50) end,
 	spawn_ghoul = function (self, target, t)
 		local x, y = util.findFreeGrid(target.x, target.y, 10, true, {[Map.ACTOR]=true})
 		if not x then return nil end
@@ -169,6 +180,16 @@ newTalent{
 		game.level.map:particleEmitter(target.x, target.y, 1, "slime")
 		game:playSoundNear(target, "talents/slime")
 		m:logCombat(target, "A #GREY##Source##LAST# rises from the corpse of #Target#.")
+
+		if game.party:hasMember(self) then
+			m.remove_from_party_on_death = true
+			game.party:addMember(m, {
+				control="full",
+				type="minion",
+				title="Ghoulish Minion",
+				orders = {target=true},
+			})
+		end
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -206,7 +227,7 @@ newTalent{
 		local stat_damage = t.getStatDamage(self, t)
 		return ([[Gnaw your target for %d%% damage.  If your attack hits, the target may be infected with Ghoul Rot for %d turns.
 		Each turn, Ghoul Rot inflicts %0.2f blight damage.  At talent level 2, Ghoul Rot also reduces Strength by %d; at level 3 it reduces Dexterity by %d, and at level 4 it reduces Constitution by %d.
-		At talent level 5 targets suffering from Ghoul Rot rise as friendly ghouls when slain.
+		At talent level 5 targets suffering from Ghoul Rot rise as friendly and fully controllable ghouls when slain.
 		The blight damage and stat damage scales with your Constitution.]]):
 		format(100 * damage, duration, damDesc(self, DamageType.BLIGHT, disease_damage), stat_damage, stat_damage, stat_damage)
 	end,

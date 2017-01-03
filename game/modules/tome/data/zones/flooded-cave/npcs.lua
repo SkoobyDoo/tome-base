@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ newEntity{ define_as = "UKLLMSWWIK",
 	resists = { [DamageType.COLD] = 60, [DamageType.LIGHTNING] = 20, },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
-	resolvers.drops{chance=100, nb=1, {defined="TRIDENT_TIDES", random_art_replace={chance=50}, autoreq=true} },
+	resolvers.equip{{type="weapon", subype="trident", defined="TRIDENT_TIDES", random_art_replace={chance=50}, autoreq=true}},
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 	resolvers.drops{chance=100, nb=10, {tome={money=1}} },
 

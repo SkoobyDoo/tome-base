@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ newEntity{ define_as = "SHARDSKIN",
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=2, every=8, max=5},
 		[Talents.T_ARMOUR_TRAINING]={base=4, every=5, max=15},
 		[Talents.T_FIRE_STORM]={base=1, every=6, max=6},
 		[Talents.T_BLOOD_SPRAY]={base=1, every=6, max=6},
@@ -118,7 +119,6 @@ newEntity{ define_as = "WRATHROOT",
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 	resolvers.equip{ {type="armor", subtype="shield", defined="WRATHROOT_SHIELD", random_art_replace={chance=75}, autoreq=true}, },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
-
 	resolvers.talents{
 		[Talents.T_ARMOUR_TRAINING]={base=4, every=5, max=15},
 		[Talents.T_STUN]={base=2, every=6, max=6},
@@ -179,15 +179,16 @@ newEntity{ define_as = "SNAPROOT", -- backup guardian
 	move_others = true,
 
 	resists = { [DamageType.FIRE] = -20, [DamageType.PHYSICAL] = 50, [DamageType.COLD] = 50, [DamageType.NATURE] = 25 },
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
-	resolvers.drops{chance=100, nb=1, {defined="PETRIFIED_WOOD", random_art_replace={chance=75}}},
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, GEM = {max = 1, stack_limit = 1} },
+	equipdoll = "alchemist_golem",
+	resolvers.equip{{type = "gem", defined="PETRIFIED_WOOD", random_art_replace={chance=75}}},
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
 	resolvers.talents{
-		[Talents.T_STUN]=5,
-		[Talents.T_GRAB]=5,
-		[Talents.T_THROW_BOULDER]=5,
-		[Talents.T_CRUSH]=5,
+		[Talents.T_STUN]={base=5, every=10},
+		[Talents.T_GRAB]={base=5, every=10},
+		[Talents.T_THROW_BOULDER]={base=5, every=10},
+		[Talents.T_CRUSH]={base=5, every=10},
 		[Talents.T_TITAN_S_SMASH] = 1, 
 		[Talents.T_MASSIVE_BLOW] = 1, 
 	},

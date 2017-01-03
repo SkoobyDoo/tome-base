@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ newEntity{ base = "BASE_NPC_ELVEN_CASTER", define_as = "GRAND_CORRUPTOR",
 	silence_immune = 0.5,
 
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=3, every=8, max=6},
 		[Talents.T_DRAIN]={base=5, every=10, max=7},
 		[Talents.T_BONE_SHIELD]={base=3, every=5, max=6},
 		[Talents.T_BLOOD_SPRAY]={base=4, every=5, max=7},

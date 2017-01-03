@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ Tell High Sun Paladin Aeryn that you met me. I'll send word to let you pass.]],
 
 newChat{ id="back",
 	text = [[Gone? Wait, this face.. you are @playername@! We thought you died in the naga portal explosion!
-Thanks to your courrage the Gates of Morning still stand.
+Thanks to your courage the Gates of Morning still stand.
 You should go there at once.]],
 	answers = {
 		{"Sadly I am the bringer of bad news, the orcs are planning something. Good luck, my lady."},

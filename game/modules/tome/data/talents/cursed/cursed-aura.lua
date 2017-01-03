@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -171,10 +171,6 @@ newTalent{
 							self:learnTalentType("cursed/cursed-aura", true)
 							self:learnTalent(self.T_DEFILING_TOUCH, true, 1, {no_unlearn=true})
 							self:incIncStat(Stats.STAT_WIL, -2)
-							t.curseItem(self, t, item)
-							t.curseInventory(self, t)
-							t.curseFloor(self, t, self.x, self.y)
-							t.updateCurses(self, t, false)
 						else
 							Dialog:simplePopup("Cursed Fate", ("The %s returns to normal and your hate subsides."):format(item.name))
 						end
@@ -217,7 +213,7 @@ newTalent{
 			local penalty = t.cursePenalty(self, t)
 			local currentLevel = eff and eff.level or 0
 			local currentPenalty = eff and eff.Penalty or 1
-			--print("* curse:", self.tempeffect_def[curse].desc, currentLevel, "->", level, eff)
+			-- print(i, "* curse:", self.tempeffect_def[curse].desc, currentLevel, "->", level, eff)
 			if currentLevel ~= level or currentPenalty ~= penalty or forceUpdateEffects then
 				if eff then
 					self:removeEffect(curse, false, true)
@@ -243,7 +239,7 @@ newTalent{
 	end,
 	on_learn = function(self, t)
 		t.curseInventory(self, t)
-		t.curseFloor(self, t, self.x, self.y)
+		if game.level and game.level.map then t.curseFloor(self, t, self.x, self.y) end
 		t.updateCurses(self, t)
 	end,
 	on_unlearn = function(self, t)
@@ -427,7 +423,8 @@ newTalent{
 		local sentry = NPC.new {
 			type = "construct", subtype = "weapon",
 			display = o.display, color=o.color, image = o.image, blood_color = colors.GREY,
-			name = "animated "..o:getName(), -- bug fix
+			name = "animated "..o:getName(),
+			neuter = true,
 			faction = self.faction,
 			desc = "A weapon imbued with a living curse. It seems to be searching for its next victim.",
 			faction = self.faction,
@@ -481,7 +478,7 @@ newTalent{
 			summon_time = t.getDuration(self, t),
 			summon_quiet = true,
 			on_die = function(self, who)
-				game.logSeen(self, "#F53CBE#%s drops to the ground.", self.name:capitalize())
+				game.logSeen({x=self.x, y=self.y}, "#F53CBE#%s drops to the ground.", self.name:capitalize())
 			end,
 		}
 
@@ -508,7 +505,9 @@ newTalent{
 			self.on_pickup = self.old_on_pickup
 			if self.old_on_pickup then self.old_on_pickup(self, who) end
 		end
+		local charges = o.power --don't cool down any activatable abilities :)
 		result = sentry:wearObject(o, true, false)
+		o.power = charges
 		if not result then
 			game.logPlayer(self, "Your animated sentry struggles for a moment and then drops to the ground inexplicably.")
 			game.level.map:addObject(x, y, o)
@@ -531,9 +530,8 @@ newTalent{
 			elseif o.archery == "sling" then filter.subtype = "shot"
 			end
 			qo = game.zone:makeEntity(game.level, "object", filter, nil, true)
-			if qo then qo.no_drop = true sentry:wearObject(qo, true, false) end
+			if qo then qo.no_drop = true qo.infinite = true sentry:wearObject(qo, true, false) end
 		end
-
 
 		-- level stats up for MAXIMUM DAMAGE
 		local stats = sentry.unused_stats

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ newBirthDescriptor
 		"Thaloren elves have spent most of the ages hidden within their forests, seldom leaving them.",
 		"The ages of the world passed by and yet they remained unchanged.",
 		"Their affinity for nature and their reclusion have made them great protectors of the natural order, often opposing their Shaloren cousins.",
-		"They possess the #GOLD#Wrath of the Eternals#WHITE# talent, which allows them a boost to the damage both inflicted and resisted once in a while.",
+		"They possess the #GOLD#Wrath of the Woods#WHITE# talent, which allows them a boost to the damage both inflicted and resisted once in a while.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +2 Strength, +3 Dexterity, +1 Constitution",
 		"#LIGHT_BLUE# * -2 Magic, +1 Willpower, +0 Cunning",

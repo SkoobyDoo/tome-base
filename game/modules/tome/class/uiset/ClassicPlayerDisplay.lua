@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 require "engine.class"
 local Mouse = require "engine.Mouse"
 local Button = require "engine.ui.Button"
+local ActorResource = require "engine.interface.ActorResource"
 local TooltipsData = require "mod.class.interface.TooltipsData"
 
 module(..., package.seeall, class.inherit(TooltipsData))
@@ -109,10 +110,10 @@ function _M:makeTextureBar(text, nfmt, val, max, reg, x, y, r, g, b, bar_col, ba
 			core.display.drawQuad(disp_x + self.bars_x, disp_y, self.bars_w * val / max, self.font_h, bar_col.r, bar_col.g, bar_col.b, 255)
 		end
 		items[#items+1] = {self.font:draw(text, self.w, r, g, b, true)[1], x=0, y=0}
-		items[#items+1] = {self.font:draw((nfmt or "%d/%d"):format(val, max), self.w, r, g, b, true)[1], x=self.bars_x + 5, y=0}
+		items[#items+1] = {self.font:draw((nfmt or "%d/%s"):format(val, max and math.round(max) or "--"), self.w, r, g, b, true)[1], x=self.bars_x + 5, y=0}
 
 		if reg and reg ~= 0 then
-			local reg_txt = (" (%s%.2f)"):format((reg > 0 and "+") or "",reg)
+			local reg_txt = string.limit_decimals(reg, 3, "+")
 			local tex = self.font:draw(reg_txt, self.w, r, g, b, true)[1]
 			items[#items+1] = {tex, x = self.bars_x + self.bars_w - self.font:size(reg_txt) - 3, y=0}
 		end
@@ -278,12 +279,12 @@ function _M:display()
 	end
 
 	if player:getAir() < player.max_air then
-		self:mouseTooltip(self.TOOLTIP_AIR, self:makeTexture(("Air level: %d/%d"):format(player:getAir(), player.max_air), x, h, 255, 0, 0)) h = h + self.font_h
+		self:mouseTooltip(self.TOOLTIP_AIR, self:makeTexture(("Air level: %d/%d"):format(player:getAir(), player:getMaxAir()), x, h, 255, 0, 0)) h = h + self.font_h
 		h = h + self.font_h
 	end
 
 	if player:attr("encumbered") then
-		self:mouseTooltip(self.TOOLTIP_ENCUMBERED, self:makeTexture("Encumbered!", x, h, 255, 0, 0)) h = h + self.font_h
+		self:mouseTooltip(self.TOOLTIP_ENCUMBERED, self:makeTexture(("Encumbered! (%d/%d)"):format(player:getEncumbrance(), player:getMaxEncumbrance()), x, h, 255, 0, 0)) h = h + self.font_h
 		h = h + self.font_h
 	end
 
@@ -292,10 +293,9 @@ function _M:display()
 	h = h + self.font_h
 
 	if player.life < 0 then
-		--self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life:", "???", 0, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
-		self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life:", nil, player.life, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h	
+		self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life    :", nil, player.life, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h	
 	else
-		self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life:", nil, player.life, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
+		self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life    :", nil, player.life, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
 	end
 
 	local shield, max_shield = 0, 0
@@ -306,76 +306,55 @@ function _M:display()
 		self:mouseTooltip(self.TOOLTIP_DAMAGE_SHIELD, self:makeTextureBar("#WHITE#Shield:", nil, shield, max_shield, nil, x, h, 255, 255, 255, {r=colors.GREY.r / 3, g=colors.GREY.g / 3, b=colors.GREY.b / 3}, {r=colors.GREY.r / 6, g=colors.GREY.g / 6, b=colors.GREY.b / 6})) h = h + self.font_h
 	end
 
-	if player:knowTalent(player.T_STAMINA_POOL) then
-		self:mouseTooltip(self.TOOLTIP_STAMINA, self:makeTextureBar("#ffcc80#Stamina:", nil, player:getStamina(), player.max_stamina, player.stamina_regen, x, h, 255, 255, 255, {r=0xff / 3, g=0xcc / 3, b=0x80 / 3}, {r=0xff / 6, g=0xcc / 6, b=0x80 / 6})) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_MANA_POOL) then
-		self:mouseTooltip(self.TOOLTIP_MANA, self:makeTextureBar("#7fffd4#Mana:", nil, player:getMana(), player.max_mana, player.mana_regen, x, h, 255, 255, 255,
-			{r=0x7f / 2, g=0xff / 2, b=0xd4 / 2},
-			{r=0x7f / 5, g=0xff / 5, b=0xd4 / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_SOUL_POOL) then
-		self:mouseTooltip(self.TOOLTIP_NECROTIC_AURA, self:makeTextureBar("#7fffd4#Necrotic", "%d", player:getSoul(), player.max_soul, nil, x, h, 255, 255, 255,
-			{r=colors.GREY.r / 2, g=colors.GREY.g / 2, b=colors.GREY.b / 2},
-			{r=colors.GREY.r / 5, g=colors.GREY.g / 5, b=colors.GREY.b / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_EQUILIBRIUM_POOL) then
-		local _, chance = player:equilibriumChance()
-		self:mouseTooltip(self.TOOLTIP_EQUILIBRIUM, self:makeTextureBar("#00ff74#Equi:", ("%d (%d%s)"):format(player:getEquilibrium(),100 - chance, "%%"), 100 - chance, 100, player.equilibrium_regen, x, h, 255, 255, 255,
-			{r=0x00 / 2, g=0xff / 2, b=0x74 / 2},
-			{r=0x00 / 5, g=0xff / 5, b=0x74 / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_POSITIVE_POOL) then
-		self:mouseTooltip(self.TOOLTIP_POSITIVE, self:makeTextureBar("#7fffd4#Positive:", nil, player:getPositive(), player.max_positive, player.positive_regen, x, h, 255, 255, 255,
-			{r=colors.GOLD.r / 2, g=colors.GOLD.g / 2, b=colors.GOLD.b / 2},
-			{r=colors.GOLD.r / 5, g=colors.GOLD.g / 5, b=colors.GOLD.b / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_NEGATIVE_POOL) then
-		self:mouseTooltip(self.TOOLTIP_NEGATIVE, self:makeTextureBar("#7fffd4#Negative:", nil, player:getNegative(), player.max_negative, player.negative_regen, x, h, 255, 255, 255,
-			{r=colors.GREY.r / 2, g=colors.GREY.g / 2, b=colors.GREY.b / 2},
-			{r=colors.GREY.r / 5, g=colors.GREY.g / 5, b=colors.GREY.b / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_VIM_POOL) then
-		self:mouseTooltip(self.TOOLTIP_VIM, self:makeTextureBar("#904010#Vim:", nil, player:getVim(), player.max_vim, player.vim_regen, x, h, 255, 255, 255,
-			{r=0x90 / 3, g=0x40 / 3, b=0x10 / 3},
-			{r=0x90 / 6, g=0x40 / 6, b=0x10 / 6}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_HATE_POOL) then
-		self:mouseTooltip(self.TOOLTIP_HATE, self:makeTextureBar("#F53CBE#Hate:", "%d/%d", player:getHate(), player.max_hate, player.hate_regen, x, h, 255, 255, 255,
-			{r=0xF5 / 2, g=0x3C / 2, b=0xBE / 2},
-			{r=0xF5 / 5, g=0x3C / 5, b=0xBE / 5}
-		)) h = h + self.font_h
-	end
-	if (player.unnatural_body_heal  or 0) > 0 and player:knowTalent(player.T_UNNATURAL_BODY) then
-		local t = player:getTalentFromId(player.T_UNNATURAL_BODY)
-		local regen = t.getRegenRate(player, t)
-		self:mouseTooltip(self.TOOLTIP_UNNATURAL_BODY, self:makeTextureBar("#c00000#Un.body:", ("%0.1f (%0.1f/turn)"):format(player.unnatural_body_heal, math.min(regen, player.unnatural_body_heal)), regen, player.unnatural_body_heal, nil, x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_PARADOX_POOL) then
-		local chance = player:paradoxFailChance()
-		self:mouseTooltip(self.TOOLTIP_PARADOX, self:makeTextureBar("#LIGHT_STEEL_BLUE#Paradox:", ("%d/%d (%d%s)"):format(player:getModifiedParadox(), player:getParadox(), chance, "%%"), chance, 100, chance, x, h, 255, 255, 255,
-			{r=176 / 2, g=196 / 2, b=222 / 2},
-			{r=176 / 5, g=196 / 5, b=222 / 5}
-		)) h = h + self.font_h
-	end
-	if player:knowTalent(player.T_PSI_POOL) then
-		self:mouseTooltip(self.TOOLTIP_PSI, self:makeTextureBar("#7fffd4#Psi:", nil, player:getPsi(), player.max_psi, player.psi_regen, x, h, 255, 255, 255,
-			{r=colors.BLUE.r / 2, g=colors.BLUE.g / 2, b=colors.BLUE.b / 2},
-			{r=colors.BLUE.r / 5, g=colors.BLUE.g / 5, b=colors.BLUE.b / 5}
-		)) h = h + self.font_h
+	-- Resources
+	for res, res_def in ipairs(ActorResource.resources_def) do
+		if not res_def.hidden_resource and player:knowTalent(res_def.talent) then -- only show resources if the player knows the appropriate pool
+			local tooltip = self["TOOLTIP_"..res_def.short_name:upper()]
+			if not tooltip then
+				tooltip = ([[#GOLD#%s#LAST#
+%s
+]]):format(res_def.name, res_def.description or "no description")
+			end
+			-- get resource color
+			local res_color = res_def.color or "#WHITE#"
+			local r, g, b
+			res_color = res_color:gsub("#", ""):upper()
+			if colors[res_color] then -- lookup
+				r, g, b = colors.unpack(colors[res_color])
+			else -- parse
+				r, g, b = colors.hex1unpack(res_color)
+				r, g, b = r*255, g*255, b*255
+			end
+				local status_text = res_def.status_text and res_def.status_text(player)
+				self:mouseTooltip(tooltip, self:makeTextureBar((res_def.color or "#WHITE#")..("%-8.8s:"):format(res_def.name), status_text, player[res_def.getFunction](player), player[res_def.getMaxFunction](player) or 100, not status_text and player[res_def.regen_prop] or 0, x, h, 
+				255, 255, 255,
+					{r=r/2, g=g/2, b=b/2},
+					{r=r/5, g=g/5, b=b/5}
+				))
+			h = h + self.font_h
+		end
 	end
 	
+	-- special resources
 	if player:knowTalent(player.T_FEEDBACK_POOL) then
 		self:mouseTooltip(self.TOOLTIP_FEEDBACK, self:makeTextureBar("#7fffd4#Feedback:", nil, player:getFeedback(), player:getMaxFeedback(), player:getFeedbackDecay(), x, h, 255, 255, 255,
 			{r=colors.YELLOW.r / 2, g=colors.YELLOW.g / 2, b=colors.YELLOW.b / 2},
 			{r=colors.YELLOW.r / 5, g=colors.YELLOW.g / 5, b=colors.YELLOW.b / 5}
 		)) h = h + self.font_h
+	end
+	if (player.unnatural_body_heal  or 0) > 0 and player:knowTalent(player.T_UNNATURAL_BODY) then
+		local t = player:getTalentFromId(player.T_UNNATURAL_BODY)
+		local regen = t.getRegenRate(player, t)
+		self:mouseTooltip(self.TOOLTIP_UNNATURAL_BODY, self:makeTextureBar("#c00000#Un.body :", ("%0.1f (%0.1f/turn)"):format(player.unnatural_body_heal, math.min(regen, player.unnatural_body_heal)), regen, player.unnatural_body_heal, nil, x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
+	end
+	if player.is_fortress then
+		local q = game:getPlayer(true):hasQuest("shertul-fortress")
+		if q then
+			self:mouseTooltip(self.TOOLTIP_FORTRESS_ENERGY, self:makeTextureBar("#LIGHT_GREEN#Fortress:", "%d", q.shertul_energy, 1000, 0, x, h, 255, 255, 255,
+				{r=colors.LIGHT_GREEN.r / 2, g=colors.LIGHT_GREEN.g / 2, b=colors.LIGHT_GREEN.b / 2},
+				{r=colors.LIGHT_GREEN.r / 5, g=colors.LIGHT_GREEN.g / 5, b=colors.LIGHT_GREEN.b / 5}
+			)) h = h + self.font_h
+		end
 	end
 
 	-- Any hooks
@@ -388,9 +367,9 @@ function _M:display()
 	local ammo = quiver and quiver[1]
 	if ammo then
 		if ammo.type == "alchemist-gem" then
-			self:mouseTooltip(self.TOOLTIP_COMBAT_AMMO, self:makeTexture(("#ANTIQUE_WHITE#Ammo:       #ffffff#%d"):format(ammo:getNumber()), 0, h, 255, 255, 255)) h = h + self.font_h
+			self:mouseTooltip(self.TOOLTIP_COMBAT_AMMO, self:makeTexture(("#ANTIQUE_WHITE#Ammo    :       #ffffff#%d"):format(ammo:getNumber()), 0, h, 255, 255, 255)) h = h + self.font_h
 		else
-			self:mouseTooltip(self.TOOLTIP_COMBAT_AMMO, self:makeTexture(("#ANTIQUE_WHITE#Ammo:       #ffffff#%d/%d"):format(ammo.combat.shots_left, ammo.combat.capacity), 0, h, 255, 255, 255)) h = h + self.font_h
+			self:mouseTooltip(self.TOOLTIP_COMBAT_AMMO, self:makeTexture(("#ANTIQUE_WHITE#Ammo    :       #ffffff#%d/%d"):format(ammo.combat.shots_left, ammo.combat.capacity), 0, h, 255, 255, 255)) h = h + self.font_h
 		end
 	end
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -195,7 +195,7 @@ newInscription{
 		local data = self:getInscriptionData(t.short_name)
 		local what = table.concatNice(table.keys(data.what), ", ", " or ")
 
-		return ([[Activate the infusion to cure yourself of one random %s effect and increase affinity for all damage by %d%% for %d turns.
+		return ([[Activate the infusion to cure yourself of one random %s effect and increase affinity for all damage by %d%% (scales with Constitution) for %d turns.
 
 Also removes cross-tier effects of the affected types for free.]]):format(what, data.power+data.inc_stat, data.dur)
 	end,
@@ -269,7 +269,7 @@ newInscription{
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
-		return ([[rad %d; power %d; turns %d%s]]):format(data.range, apply, data.turns, apply >= 19 and "; dispells darkness" or "")
+		return ([[rad %d; power %d; turns %d%s]]):format(data.range, apply, data.turns, apply >= 19 and "; dispels darkness" or "")
 	end,
 }
 
@@ -416,6 +416,7 @@ newInscription{
 	is_spell = true,
 	is_teleport = true,
 	tactical = { CLOSEIN = 2 },
+-- may want to update this to allow for escape tactic
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=data.range + data.inc_stat, radius=3, requires_knowledge=false}
@@ -703,7 +704,7 @@ newInscription{
 			if not target or target == self then return end
 			
 			-- Minor damage, apply stun resist reduction, freeze
-			DamageType:get(DamageType.COLD).projector(target, tx, ty, DamageType.COLD, damage)
+			DamageType:get(DamageType.COLD).projector(self, tx, ty, DamageType.COLD, damage)
 			target:setEffect(target.EFF_WET, 5, {apply_power=data.inc_stat})
 			if target:canBe("stun") then
 				target:setEffect(target.EFF_FROZEN, 2, {hp=damage*1.5, apply_power=apply})

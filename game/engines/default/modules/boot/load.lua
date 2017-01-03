@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -78,5 +78,8 @@ Birther:loadDefinition("/data/birth/descriptors.lua")
 core.game.setRealtime(8)
 
 class:triggerHook{"Boot:load"}
+if config.settings.tome and config.settings.tome.ui_theme3 then
+	UIBase:changeDefault(config.settings.tome.ui_theme3)
+end
 
 return {require "mod.class.Game" }

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ newEntity{
 	mana_regen = 0.3,
 	hate_regen = 2,
 	open_door = 1,
+	ignore_direct_crits = 50,
 	combat_spellpower = resolvers.mbonus(20, 10),
 	combat_spellcrit = resolvers.mbonus(5, 5),
 
@@ -149,6 +150,7 @@ newEntity{ base = "BASE_NPC_LICH",
 	combat_armor = 15, combat_def = 25,
 
 	self_resurrect = 1,
+	ignore_direct_crits = 100,
 
 	resolvers.talents{
 		[Talents.T_HYMN_OF_SHADOWS]=6,
@@ -184,7 +186,8 @@ newEntity{ base = "BASE_NPC_LICH",
 	combat_armor = 0, combat_def = 45,
 	on_melee_hit = {[DamageType.BLIGHT]=resolvers.mbonus(25, 30)},
 
-	mana_regen = 100,
+	vim_regen = 1,
+	ignore_direct_crits = 100,
 
 	resolvers.talents{
 		[Talents.T_FREEZE]={base=5, every=10, max=10},

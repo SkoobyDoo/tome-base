@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ newBirthDescriptor{
 		},
 	},
 	copy = {
+		chooseCursedAuraTree = true,
 	},
 }
 
@@ -93,7 +94,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="battleaxe", name="iron battleaxe", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="heavy", name="iron mail armour", autoreq=true, ego_chance=-1000, ego_chance=-1000}
 		},
-		chooseCursedAuraTree = true
 	},
 	copy_add = {
 		life_rating = 2,
@@ -129,8 +129,9 @@ newBirthDescriptor{
 		["cursed/darkness"]={true, 0.3},
 		["cursed/cursed-form"]={true, 0.0},
 		["cunning/survival"]={false, 0.0},
-		["cursed/fears"]={false, 0.0},
+		["cursed/fears"]={false, 0.3},
 		["cursed/one-with-shadows"]={false, 0.3},
+		["cursed/advanced-shadowmancy"]={false, 0.3},
 	},
 	talents = {
 		[ActorTalents.T_UNNATURAL_BODY] = 1,
@@ -146,7 +147,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 		},
-		chooseCursedAuraTree = true
 	},
 	copy_add = {
 	},

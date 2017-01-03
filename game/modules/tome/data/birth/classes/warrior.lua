@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,7 +67,6 @@ newBirthDescriptor{
 		["technique/conditioning"]={true, 0.3},
 		["technique/superiority"]={false, 0.3},
 		["technique/warcries"]={false, 0.3},
-		["technique/field-control"]={false, 0},
 		["technique/bloodthirst"]={false, 0.2},
 		["cunning/survival"]={true, 0},
 		["cunning/dirty"]={false, 0},
@@ -101,6 +100,12 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +2",
 	},
+	birth_example_particles = {
+		function(actor) if core.shader.active(4) then
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1, img="rotating_shield"}, {type="rotatingshield", noup=2.0, appearTime=0.2}))
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1, img="rotating_shield"}, {type="rotatingshield", noup=1.0, appearTime=0.2}))
+		end end,
+	},
 	power_source = {technique=true},
 	stats = { str=5, con=2, dex=2, },
 	talents_types = {
@@ -115,7 +120,6 @@ newBirthDescriptor{
 		["technique/superiority"]={false, 0.3},
 		["technique/warcries"]={false, 0.3},
 		["technique/battle-tactics"]={false, 0.3},
-		["technique/field-control"]={false, 0},
 		["cunning/survival"]={true, 0},
 		["cunning/dirty"]={false, 0},
 	},
@@ -162,7 +166,7 @@ newBirthDescriptor{
 		["technique/combat-techniques-active"]={false, -0.1},
 		["technique/combat-techniques-passive"]={true, -0.1},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={true, 0},
+		["technique/mobility"]={true, 0},
 		["cunning/trapping"]={false, 0.2},
 		["cunning/survival"]={true, 0},
 		["cunning/dirty"]={false, 0},
@@ -288,9 +292,8 @@ newBirthDescriptor{
 	talents_types = {
 		["cunning/dirty"]={false, 0},
 		["cunning/tactical"]={true, 0.3},
-		["cunning/survival"]={false, 0},
+		["cunning/survival"]={true, 0},
 		["technique/combat-training"]={true, 0.1},
-		["technique/field-control"]={true, 0},
 		["technique/combat-techniques-active"]={true, 0.1},
 		["technique/combat-techniques-passive"]={true, 0.1},
 		["technique/pugilism"]={true, 0.3},

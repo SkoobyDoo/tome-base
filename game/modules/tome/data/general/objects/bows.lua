@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ newEntity{ base = "BASE_LONGBOW",
 newEntity{
 	define_as = "BASE_ARROW",
 	slot = "QUIVER",
-	moddable_tile = "quiver",
+	moddable_tile = resolvers.moddable_tile("quiver"),
 	type = "ammo", subtype="arrow",
 	add_name = " (#COMBAT_AMMO#)",
 	display = "{", color=colors.UMBER, image = resolvers.image_material("arrow", "wood"),

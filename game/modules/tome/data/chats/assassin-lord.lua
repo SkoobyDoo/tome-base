@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,9 +31,9 @@ local function evil(npc, player)
 		end
 	end
 
-	if p:knowTalent(p.T_TRAP_MASTERY) then
-		p:learnTalent(p.T_FLASH_BANG_TRAP, 1, nil, {no_unlearn=true})
-		game.log("#LIGHT_GREEN#Before you leave the Lord teaches you how to create flash bang traps!")
+	if p:knowTalentType("cunning/trapping") then
+		game.log("#LIGHT_GREEN#You and the Lord discuss your new relationship at some length, including the merits of assassination by proxy and some additional trapping techniques.")
+		game.state:unlockTalent(player.T_AMBUSH_TRAP, player)
 	end
 
 	game:changeLevel(1, "wilderness")

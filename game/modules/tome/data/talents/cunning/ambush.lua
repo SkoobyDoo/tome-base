@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -212,6 +212,7 @@ newTalent{
 		return ([[You take full control of your own shadow for %d turns.
 		Your shadow possesses your talents and stats, has %d%% life and deals %d%% damage, -30%% all resistances, -100%% light resistance and 100%% darkness resistance.
 		Your shadow is permanently stealthed (%d power), and all melee damage it deals is converted to darkness damage.
+		The shadow cannot teleport.
 		If you release control early or if it leaves your sight for too long, your shadow will dissipate.]]):
 		format(t.getDuration(self, t), t.getHealth(self, t) * 100, t.getDam(self, t) * 100, t.getStealthPower(self, t))
 	end,
@@ -243,7 +244,6 @@ newTalent{
 		local res = t.getDamageRes(self, t)
 		return ([[You veil yourself in shadows for %d turns, and let them control you.
 		While veiled, you become immune to status effects and gain %d%% all damage reduction. Each turn, you blink to a nearby foe (within range %d), hitting it for %d%% darkness weapon damage.
-		The shadow cannot teleport.
 		While this goes on, you cannot be stopped unless you are killed, and you cannot control your character.]]):
 		format(duration, res, t.getBlinkRange(self, t) ,100 * damage)
 	end,

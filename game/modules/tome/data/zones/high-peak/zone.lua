@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -105,6 +105,7 @@ return {
 				map = {
 					class = "engine.generator.map.Cavern",
 					zoom = 16,
+					nb_rooms = 0,
 					min_floor = 1200,
 					floor = "CAVEFLOOR",
 					wall = "CAVEWALL",

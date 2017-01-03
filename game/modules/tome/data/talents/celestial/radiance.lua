@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -129,18 +129,17 @@ newTalent{
 	points = 5,
 	cooldown = 25,
 	positive = 20,
-	tactical = { ATTACKAREA = {LIGHT = 2} },
+	tactical = { ATTACKAREA = {LIGHT = 2}, HEAL = 2},
+	requires_target = true,
 	radius = function(self) return radianceRadius(self) end,
 	range = function(self) return radianceRadius(self) end,
+	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius = self:getTalentRadius(t), selffire = false, friendlyfire = false, talent=t} end,
 	getMoveDamage = function(self, t) return self:combatTalentSpellDamage(t, 1, 40) end,
 	getExplosionDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 150) end,
 	action = function(self, t)
-
-		local tg = {type="ball", range=self:getTalentRange(t), radius = self:getTalentRadius(t), selffire = false, friendlyfire = false, talent=t}
-
+		local tg = t.target(self, t)
 		local movedam = self:spellCrit(t.getMoveDamage(self, t))
 		local dam = self:spellCrit(t.getExplosionDamage(self, t))
-
 		self:project(tg, self.x, self.y, function(tx, ty)
 			local target = game.level.map(tx, ty, engine.Map.ACTOR)
 			if not target then return end

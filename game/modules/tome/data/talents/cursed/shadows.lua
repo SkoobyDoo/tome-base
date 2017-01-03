@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -214,7 +214,7 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 			dammod={str=0.5, dex=0.5}
 		},
 		mana = 100,
-		spellpower = tShadowMages and tShadowMages.getSpellpowerChange(self, tShadowMages) or 0,
+		combat_spellpower = tShadowMages and tShadowMages.getSpellpowerChange(self, tShadowMages) or 0,
 		summoner_hate_per_kill = self.hate_per_kill,
 		resolvers.talents{
 			[self.T_SHADOW_PHASE_DOOR]=tCallShadows.getPhaseDoorLevel(self, tCallShadows),
@@ -240,6 +240,8 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 		see_invisible = 80,
 		resists = { [DamageType.LIGHT] = -100, [DamageType.DARKNESS] = 100 },
 		resists_pen = { all=25 },
+
+		avoid_master_damage = (100 - tCallShadows.getAvoidMasterDamage(self, tCallShadows)) / 100,
 
 		ai = "shadow",
 		ai_state = {
@@ -309,6 +311,10 @@ local function createShadow(self, level, tCallShadows, tShadowWarriors, tShadowM
 			end
 		end,
 		onTakeHit = function(self, value, src)
+			if src == self.summoner and self.avoid_master_damage then
+				value = value * self.avoid_master_damage
+			end
+
 			if self:knowTalent(self.T_SHADOW_FADE) and not self:isTalentCoolingDown(self.T_SHADOW_FADE) then
 				self:forceUseTalent(self.T_SHADOW_FADE, {ignore_energy=true})
 			end
@@ -340,6 +346,9 @@ newTalent{
 	getMaxShadows = function(self, t)
 		return math.min(4, math.max(1, math.floor(self:getTalentLevel(t) * 0.55)))
 	end,
+	getAvoidMasterDamage = function(self, t)
+		return util.bound(self:combatTalentScale(t, 5, 85), 0, 100)
+	end,
 	getPhaseDoorLevel = function(self, t)
 		return self:getTalentLevelRaw(t)
 	end,
@@ -362,15 +371,15 @@ newTalent{
 
 		return true
 	end,
-	callbackOnActBase = function(self, t)
-		if not self.shadows then
-			self.shadows = {
-				remainingCooldown = 0
-			}
+	nbShadowsUp = function(self, t)
+		if not game.level then return 0 end
+		local shadowCount = 0
+		for _, e in pairs(game.level.entities) do
+			if e.summoner and e.summoner == self and e.subtype == "shadow" then shadowCount = shadowCount + 1 end
 		end
-
-		if game.zone.wilderness then return false end
-
+		return shadowCount
+	end,
+	summonShadow = function(self, t)
 		local shadowCount = 0
 		for _, e in pairs(game.level.entities) do
 			if e.summoner and e.summoner == self and e.subtype == "shadow" then shadowCount = shadowCount + 1 end
@@ -380,10 +389,6 @@ newTalent{
 			return false
 		end
 		
-		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
-		if self.shadows.remainingCooldown > 0 then return false end
-		self.shadows.remainingCooldown = 10
-
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 8, true, {[Map.ACTOR]=true})
 		if not x then
@@ -391,12 +396,12 @@ newTalent{
 		end
 
 		-- use hate
-		if self.hate < 6 then
+		if self:getHate() < 5 then
 			-- not enough hate..just wait for another try
 			game.logPlayer(self, "Your hate is too low to call another shadow!", deflectDamage)
 			return false
 		end
-		self:incHate(-6)
+		self:incHate(-5)
 
 		local level = t.getLevel(self, t)
 		local tShadowWarriors = self:knowTalent(self.T_SHADOW_WARRIORS) and self:getTalentFromId(self.T_SHADOW_WARRIORS) or nil
@@ -423,6 +428,21 @@ newTalent{
 		end
 
 		game:playSoundNear(self, "talents/spell_generic")
+	end,
+	callbackOnActBase = function(self, t)
+		if not self.shadows then
+			self.shadows = {
+				remainingCooldown = 0
+			}
+		end
+
+		if game.zone.wilderness then return false end
+
+		self.shadows.remainingCooldown = self.shadows.remainingCooldown - 1
+		if self.shadows.remainingCooldown > 0 then return false end
+		self.shadows.remainingCooldown = 10
+
+		t.summonShadow(self, t)
 		return true
 	end,
 	info = function(self, t)
@@ -430,7 +450,9 @@ newTalent{
 		local level = t.getLevel(self, t)
 		local healLevel = t.getHealLevel(self, t)
 		local blindsideLevel = t.getBlindsideLevel(self, t)
-		return ([[While this ability is active, you will continually call up to %d level %d shadows to aid you in battle. Each shadow costs 6 hate to summon. Shadows are weak combatants that can: Use Arcane Reconstruction to heal themselves (level %d), Blindside their opponents (level %d), and Phase Door from place to place.]]):format(maxShadows, level, healLevel, blindsideLevel)
+		local avoid_master_damage = t.getAvoidMasterDamage(self, t)
+		return ([[While this ability is active, you will continually call up to %d level %d shadows to aid you in battle. Each shadow costs 5 hate to summon. Shadows are weak combatants that can: Use Arcane Reconstruction to heal themselves (level %d), Blindside their opponents (level %d), and Phase Door from place to place.
+		Shadows ignore %d%% of the damage dealt to them by their master.]]):format(maxShadows, level, healLevel, blindsideLevel, avoid_master_damage)
 	end,
 }
 
@@ -583,8 +605,13 @@ newTalent{
 	getBlindsideChance = function(self, t) return self:combatTalentLimit(t, 100, 40, 80) end, -- Limit < 100%
 	action = function(self, t)
 		local target = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(target)
-		if not target or not self:canProject(tg, x, y) then return nil end
+		local x, y, target = self:getTargetLimited(target)
+		if not target then return nil end
+
+		-- Ensure we have max shadows
+		for i = 1, self:callTalent(self.T_CALL_SHADOWS, "getMaxShadows") do
+			self:callTalent(self.T_CALL_SHADOWS, "summonShadow")
+		end
 
 		if self:reactionToward(target) < 0 then
 			-- attack the target
@@ -637,6 +664,7 @@ newTalent{
 		local defenseDuration = t.getDefenseDuration(self, t)
 		local blindsideChance = t.getBlindsideChance(self, t)
 		return ([[Focus your shadows on a single target. Friendly targets will be defended for %d turns. Hostile targets will be attacked, with a %d%% chance the shadows will blindside the target.
+		If you have less than maximum shadows available, they will automatically be summoned before focusing.
 		This talent has no cost.]]):format(defenseDuration, blindsideChance)
 	end,
 }

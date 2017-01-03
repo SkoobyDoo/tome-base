@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ newTalent{
 	random_ego = "attack",
 	mana = 10,
 	cooldown = 3,
-	tactical = { ATTACK = 2 },
+	tactical = { ATTACK = {LIGHTNING = 2} },
 	range = 10,
 	direct_hit = true,
 	reflectable = true,
@@ -33,6 +33,7 @@ newTalent{
 	target = function(self, t)
 		return {type="beam", range=self:getTalentRange(t), talent=t}
 	end,
+	allow_for_arcane_combat = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 350) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -64,7 +65,7 @@ newTalent{
 	random_ego = "attack",
 	mana = 40,
 	cooldown = 8,
-	tactical = { ATTACKAREA = 2 }, --note: only considers the primary target
+	tactical = { ATTACKAREA = {LIGHTNING = 2} }, --note: only considers the primary target
 	range = 10,
 	direct_hit = true,
 	reflectable = true,
@@ -194,7 +195,7 @@ newTalent{
 	mode = "sustained",
 	sustain_mana = 100,
 	cooldown = 15,
-	tactical = { ATTACKAREA = 3 },
+	tactical = { ATTACKAREA = {LIGHTNING = 2} },
 	range = 6,
 	direct_hit = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 15, 80) end,

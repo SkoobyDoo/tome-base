@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,7 +19,15 @@
 
 -- Rain of Death
 setStatusAll{no_teleport=true}
-
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 10
+end)
+specialList("actor", {
+	"/data/general/npcs/skeleton.lua",
+})
+specialList("terrain", {
+	"/data/general/grids/lava.lua",
+}, true)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 defineTile('.', "FLOOR")

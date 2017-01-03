@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Armour Training",
+	name = "Heavy Armour Training", short_name = "ARMOUR_TRAINING",
 	type = {"technique/combat-training", 1},
 	mode = "passive",
 	no_unlearn_last = true,
@@ -100,10 +100,48 @@ newTalent{
 }
 
 newTalent{
+	name = "Light Armour Training",
+	type = {"technique/combat-training", 1},
+	mode = "passive",
+	levelup_screen_break_line = true,
+	no_unlearn_last = true,
+	points = 5,
+	require = {stat = {dex = function(level) return 16 + (level + 2) * (level - 1) end}},
+	getArmorHardiness = function(self, t)
+		return math.max(0, self:combatLimit(self:getTalentLevel(t) * 4, 100, 5, 3.75, 50, 37.5))
+	end,
+	getDefense = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 45.7, 500) end,
+	getPercentageDefense = function(self, t) return self:combatTalentLimit(t, 75, 15, 45) end,
+	getStamina = function(self, t) return self:combatTalentLimit(t, 5, 1.5, 3.5) end,
+	callbackOnMove = function(self, t, moved, force, ox, oy)
+		if not moved or force or (ox == self.x and oy == self.y) then return end
+
+		local nb_foes = 0
+		local add_if_visible_enemy = function(x, y)
+			local target = game.level.map(x, y, game.level.map.ACTOR)
+			if target and self:reactionToward(target) < 0 and self:canSee(target) then
+				nb_foes = nb_foes + 1
+			end
+		end
+		local adjacent_tg = {type = "ball", range = 0, radius = 1, selffire = false}
+		self:project(adjacent_tg, self.x, self.y, add_if_visible_enemy)
+
+		if nb_foes > 0 then
+			self:setEffect(self.EFF_MOBILE_DEFENCE, 2, {power=t.getDefense(self,t), stamina=t.getStamina(self,t)})
+		end
+	end,
+	info = function(self, t)
+		return ([[Whilst wearing leather or lighter armour, you gain %d Defense and %d%% Armour hardiness.
+		In addition, stepping into a tile adjacent to a visible enemy will increase your stamina regeneration by %0.1f and total Defense by %d%% for 2 turns.
+		The Defense bonus scales with your Dexterity.]]):
+		format(t.getDefense(self,t), t.getArmorHardiness(self,t), t.getStamina(self,t), t.getPercentageDefense(self,t))
+	end,
+}
+
+newTalent{
 	name = "Combat Accuracy", short_name = "WEAPON_COMBAT",
 	type = {"technique/combat-training", 1},
 	points = 5,
-	levelup_screen_break_line = true,
 	require = { level=function(level) return (level - 1) * 4 end },
 	mode = "passive",
 	--getAttack = function(self, t) return self:getTalentLevel(t) * 10 end,

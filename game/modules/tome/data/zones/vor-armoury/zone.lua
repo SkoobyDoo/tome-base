@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 return {
 	name = "Vor Armoury",
-	level_range = {35, 50},
+	level_range = {30, 40},
 	level_scheme = "player",
 	max_level = 2,
 --	decay = {300, 800},
@@ -29,8 +29,9 @@ return {
 --	all_remembered = true,
 --	all_lited = true,
 	ambient_music = "New Dawn.ogg",
-	min_material_level = 4,
-	max_material_level = 5,
+	min_material_level = 3,
+	max_material_level = 4,
+	effects = {"EFF_ZONE_AURA_VOR"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",

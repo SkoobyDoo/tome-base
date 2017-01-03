@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ newTalent{
 	points = 5,
 	require = psi_wil_req2,
 	cooldown = 12,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 2, HEAL = 2 },
 	mode = "sustained",
 	sustain_psi = 20,
 	getHeal = function(self, t) return self:combatTalentMindDamage(t, 20, 340) end,

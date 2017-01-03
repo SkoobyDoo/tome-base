@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -39,15 +39,12 @@ function _M:init(t)
 	self.first = true
 end
 
-function _M:on_focus(v)
-	game:onTickEnd(function() self.key:unicodeInput(v) end)
-end
-
 function _M:generate()
 	Textbox.generate(self)
 
 	self.key:addIgnore("_UP", false)
 	self.key:addIgnore("_DOWN", false)
+	self.key:addBind("ACCEPT", function() self.fct(self.number) end)
 
 	self.key:addCommands{
 		_UP = function() self:updateText(1) end,

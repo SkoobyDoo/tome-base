@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ local function stealthDetection(self, radius, estimate)
 	end
 	return detect, closest
 end
+Talents.stealthDetection = stealthDetection
 
 newTalent{
 	name = "Stealth",
@@ -59,6 +60,7 @@ newTalent{
 		
 		-- Check nearby actors detection ability
 		if not self.x or not self.y or not game.level then return end
+		if self:knowTalent(self.T_SOOTHING_DARKNESS) and not game.level.map.lites(self.x, self.y) then return true end
 		if not rng.percent(self.hide_chance or 0) then
 			if stealthDetection(self, t.getRadius(self, t)) > 0 then
 				if not silent then game.logPlayer(self, "You are being observed too closely to enter Stealth!") end
@@ -69,6 +71,22 @@ newTalent{
 	end,
 	sustain_lists = "break_with_stealth",
 	activate = function(self, t)
+		if self:knowTalent(self.T_SOOTHING_DARKNESS) then
+			local life = self:callTalent(self.T_SOOTHING_DARKNESS, "getLife")
+			local sta = self:callTalent(self.T_SOOTHING_DARKNESS, "getStamina")
+			local dr = self:callTalent(self.T_SOOTHING_DARKNESS, "getReduction")
+			local dur = self:callTalent(self.T_SOOTHING_DARKNESS, "getDuration")
+			
+			self:setEffect(self.EFF_SOOTHING_DARKNESS, dur, {life=life, stamina=sta, dr=dr})
+		end
+		
+		if self:knowTalent(self.T_SHADOWSTRIKE) then
+			local power = self:callTalent(self.T_SHADOWSTRIKE, "getMultiplier")
+			local dur = self:callTalent(self.T_SHADOWSTRIKE, "getDuration")
+			
+			self:setEffect(self.EFF_SHADOWSTRIKE, dur, {power=power})
+		end
+		
 		local res = {
 			stealth = self:addTemporaryValue("stealth", t.getStealthPower(self, t)),
 			lite = self:addTemporaryValue("lite", -1000),
@@ -82,9 +100,34 @@ newTalent{
 		self:removeTemporaryValue("stealth", p.stealth)
 		self:removeTemporaryValue("infravision", p.infra)
 		self:removeTemporaryValue("lite", p.lite)
+		if self:knowTalent(self.T_TERRORIZE) then
+			local t = self:getTalentFromId(self.T_TERRORIZE)
+			t.terrorize(self,t)
+		end
+		if self:hasEffect(self.EFF_SHADOW_DANCE) then
+			self:removeEffect(self.EFF_SHADOW_DANCE)
+		end
 		self:resetCanSeeCacheOf()
 		if self.updateMainShader then self:updateMainShader() end
 		return true
+	end,
+	callbackOnActBase = function(self, t)
+		if self:knowTalent(self.T_SOOTHING_DARKNESS) then
+			local life = self:callTalent(self.T_SOOTHING_DARKNESS, "getLife")
+			local sta = self:callTalent(self.T_SOOTHING_DARKNESS, "getStamina")
+			local dr = self:callTalent(self.T_SOOTHING_DARKNESS, "getReduction")
+			local dur = self:callTalent(self.T_SOOTHING_DARKNESS, "getDuration")
+			
+			self:setEffect(self.EFF_SOOTHING_DARKNESS, dur, {life=life, stamina=sta, dr=dr})
+		end
+		
+		if self:knowTalent(self.T_SHADOWSTRIKE) then
+			local power = self:callTalent(self.T_SHADOWSTRIKE, "getMultiplier")
+			local dur = self:callTalent(self.T_SHADOWSTRIKE, "getDuration")
+			
+			self:setEffect(self.EFF_SHADOWSTRIKE, dur, {power=power})
+		end
+
 	end,
 	info = function(self, t)
 		local stealthpower = t.getStealthPower(self, t) + (self:attr("inc_stealth") or 0)
@@ -92,7 +135,8 @@ newTalent{
 		return ([[Enters stealth mode (power %d, based on Cunning), making you harder to detect.
 		If successful (re-checked each turn), enemies will not know exactly where you are, or may not notice you at all.
 		Stealth reduces your light radius to 0, and will not work with heavy or massive armours.
-		You cannot enter stealth if there are foes in sight within range %d.]]):
+		You cannot enter stealth if there are foes in sight within range %d.
+		Any non-instant, non-movement actions will break stealth if not otherwise specified.]]):
 		format(stealthpower, radius)
 	end,
 }
@@ -103,92 +147,70 @@ newTalent{
 	require = cuns_req2,
 	mode = "passive",
 	points = 5,
-	getMultiplier = function(self, t) return self:combatTalentScale(t, 1/7, 5/7) end,
+	getMultiplier = function(self, t) return self:combatTalentScale(t, 10, 35) end,
+	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
 	info = function(self, t)
-		local multiplier = t.getMultiplier(self, t)
-		return ([[When striking from stealth, the attack is automatically critical if the target does not notice you just before you land it.
-		Shadowstrikes do +%.02f%% damage versus a normal critical hit up to 3 grids away and then disminishes to 0%% at distance 10.
-		These bonuses are guaranteed for spell and mind crits even if the target can see you before it hits.]]):
-		format(multiplier * 100)
+	local multiplier = t.getMultiplier(self, t)
+	return ([[When striking from stealth, the attack is automatically critical if the target does not notice you just before you land it. Spell and mind crits always critically strike, regardless of whether the target can see you.
+In addition, the surprise caused by your assault increases your critical multiplier by %d%%. This effect persists for 2 turns after exiting stealth, or 3 turns at talent level 3 and above.]]):
+		format(multiplier)
 	end,
 }
 
 newTalent{
-	name = "Hide in Plain Sight",
-	type = {"cunning/stealth",3},
+	name = "Soothing Darkness",
+	type = {"cunning/stealth", 3},
 	require = cuns_req3,
-	no_energy = true,
 	points = 5,
-	stamina = 20,
-	cooldown = 40,
-	tactical = { DEFEND = 2 },
-	-- Assume level 50 w/100 cun --> stealth = 54, detection = 50
-	-- 90% (~= 47% chance against 1 opponent (range 1) at talent level 1, 270% (~= 75% chance against 1 opponent (range 1) and 3 opponents (range 6) at talent level 5
-	stealthMult = function(self, t) return self:combatTalentScale(t, 0.9, 2.7) end,
-	no_break_stealth = true,
-	on_pre_use = function(self, t, silent, fake)
-		local armor = self:getInven("BODY") and self:getInven("BODY")[1]
-		if armor and (armor.subtype == "heavy" or armor.subtype == "massive") then
-			if not silent then game.logPlayer(self, "You cannot be stealthy with such heavy armour on!") end
-			return nil
-		end
-		return true
-	end,
-	getChance = function(self, t, fake, estimate)
-		local netstealth = t.stealthMult(self, t) * (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
-		if fake then return netstealth end
-		local detection = stealthDetection(self, 10, estimate) -- Default radius 10
-		if detection <= 0 then return 100 end
-		local _, chance = self:checkHit(netstealth, detection)
-		print("Hide in Plain Sight: "..netstealth.." stealth vs "..detection.." detection -->chance "..chance)
-		return chance
-	end,
-	action = function(self, t)
-		self.talents_cd[self.T_STEALTH] = nil
-		self.changed = true
-		self.hide_chance = t.getChance(self, t)
-		self:useTalent(self.T_STEALTH)
-		self.hide_chance = nil
-
-		for uid, e in pairs(game.level.entities) do
-			if e.ai_target and e.ai_target.actor == self then e:setTarget(nil) end
-		end
-		return true
-	end,
+	mode = "passive",
+	getLife = function(self, t) return self:combatTalentScale(t, 2, 10) end, --12 @TL5, mostly useful for out of combat as this won't do much in a fight
+	getStamina = function(self, t) return self:combatTalentScale(t, 1, 2.5) end, --2.9 @TL5
+	getReduction = function(self, t) return self:combatTalentStatDamage(t, "cun", 10, 35) end, --29 @100 Cun, effectively about 40% weaker than Automated Cloak Tesselation with less uptime
+	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
 	info = function(self, t)
-		return ([[You have learned how to be stealthy even when in plain sight of your foes.  You may attempt to enter stealth regardless of how close you are to your enemies, but success is more likely against fewer opponents that are farther away.
-		Your chance to succeed is determined by comparing %0.2f times your stealth power (currently %d) to the stealth detection of all enemies (reduced by 10%% per tile distance) that have a clear line of sight to you.
-		You always succeed if you are not directly observed.
-		This resets the cooldown of your Stealth talent, and, if successful, all creatures currently following you will lose track of your position.
-		You estimate your current chance to hide as %0.1f%%.]]):
-		format(t.stealthMult(self, t), t.getChance(self, t, true), t.getChance(self, t, false, true))
+		return ([[You have a special affinity for darkness.
+		When standing in an unlit grid, enemies observing you will not prevent you from entering stealth.
+		While stealthed, all damage against you is reduced by %d, your life regeneration is increased by %0.1f, and your stamina regeneration is increased %0.1f. This effect persists for 2 turns after exiting stealth, or 3 turns at talent level 3 and above.]]):
+		format(t.getReduction(self,t), t.getLife(self,t), t.getStamina(self,t))
 	end,
 }
 
 newTalent{
-	name = "Unseen Actions",
+	name = "Shadow Dance",
 	type = {"cunning/stealth", 4},
 	require = cuns_req4,
-	mode = "passive",
+	no_energy = true,
+	no_break_stealth = true,
 	points = 5,
-	-- Assume level 50 w/100 cun --> stealth = 54, detection = 50
-	-- 40% (~= 20% chance against 1 opponent (range 1) at talent level 1, 189% (~= 55% chance against 1 opponent (range 1) and 2 opponents (range 6) at talent level 5
-	stealthMult = function(self, t) return self:combatTalentScale(t, 0.4, 1.89) end,
-	getChance = function(self, t, fake, estimate)
-		local netstealth = t.stealthMult(self, t) * (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
-		if fake then return netstealth end
-		local detection = stealthDetection(self, 10, estimate)
-		if detection <= 0 then return 100 end
-		local _, chance = self:checkHit(netstealth, detection)
-		print("Unseen Actions: "..netstealth.." stealth vs "..detection.." detection -->chance(no luck): "..chance)
-		if estimate then return chance end
-		return util.bound(chance + (self:getLck() - 50) * 0.2, 0, 100)
+	stamina = 30,
+	cooldown = function(self, t) return self:combatTalentLimit(t, 10, 30, 15) end,
+	tactical = { DEFEND = 2, ESCAPE = 2 },
+	on_pre_use = function(self, t, silent)
+		if self:isTalentActive(self.T_STEALTH) then 
+			if not silent then game.logPlayer(self, "You must be out of stealth to enter Shadow Dance.") end
+			return false
+		end
+		return true
+	end,
+	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.6)) end, -- Limit to range >= 1
+	getDuration = function(self, t) return 1 + math.min(self:combatTalentScale(t, 1, 3),3) end,
+	action = function(self, t)
+		if self:isTalentActive(self.T_STEALTH) then return end
+		
+		self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})
+		for act, param in pairs(self.fov.actors) do
+			if act ~= self and act.ai_target and act.ai_target.actor == self then act:setTarget() end
+		end
+		
+		self:setEffect(self.EFF_SHADOW_DANCE, t.getDuration(self,t), {src=self, rad=t.getRadius(self,t)}) 
+		
+		return true
 	end,
 	info = function(self, t)
-		return ([[You are able to perform usually unstealthy actions (attacking, using objects, ...) without breaking stealth.	 When you perform such an action while stealthed, you have a chance to stay hidden.
-		Success is more likely against fewer opponents and is determined by comparing %0.2f times your stealth power (currently %d) to the stealth detection (reduced by 10%% per tile distance) of all enemies that have a clear line of sight to you.
-		Your base chance of success is 100%% if you are not directly observed, and good or bad luck may also affect it.
-		You estimate your current chance to maintain stealth as %0.1f%%.]]):
-		format(t.stealthMult(self, t), t.getChance(self, t, true), t.getChance(self, t, false, true))
+		return ([[Your mastery of stealth allows you to vanish from sight, returning to stealth and causing stealth to no longer break from unstealthy actions for %d turns.
+		When triggered, all enemies with a direct line of sight to you completely lose track of you.
+		When this effect ends, you must make a stealth check against targets in radius %d or be revealed.
+You must be unstealthed to use this talent.]]):
+		format(t.getDuration(self, t), t.getRadius(self,t))
 	end,
 }

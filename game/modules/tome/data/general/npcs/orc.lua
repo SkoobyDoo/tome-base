@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -186,7 +186,7 @@ newEntity{ base = "BASE_NPC_ORC",
 		[Talents.T_STEALTH]=5,
 		[Talents.T_LETHALITY]=4,
 		[Talents.T_SHADOWSTRIKE]={base=3, every=6, max=5},
-		[Talents.T_VILE_POISONS]={base=2, every=8, max=5},
+		[Talents.T_APPLY_POISON]={base=2, every=8, max=5},
 		[Talents.T_VENOMOUS_STRIKE]={last=15, base=0, every=6, max=5},
 	},
 	max_life = resolvers.rngavg(80,100),
@@ -220,7 +220,7 @@ newEntity{ base = "BASE_NPC_ORC",
 		[Talents.T_STEALTH]=5,
 		[Talents.T_LETHALITY]=4,
 		[Talents.T_SHADOWSTRIKE]=5,
-		[Talents.T_HIDE_IN_PLAIN_SIGHT]={base=2, every=6, max=5},
+		[Talents.T_APPLY_POISON]={base=2, every=6, max=5},
 		[Talents.T_VILE_POISONS]={base=3, every=8, max=5},
 		[Talents.T_VENOMOUS_STRIKE]={base=1, every=6, max=5},
 	},
@@ -255,11 +255,10 @@ newEntity{ base = "BASE_NPC_ORC",
 		[Talents.T_LETHALITY]={base=4, every=5, max=6},
 		[Talents.T_DEADLY_STRIKES]={base=3, every=5, max=6},
 		[Talents.T_SHADOWSTRIKE]=5,
-		[Talents.T_HIDE_IN_PLAIN_SIGHT]={base=3, every=5, max=5},
-		[Talents.T_UNSEEN_ACTIONS]={base=3, every=5, max=5},
+		[Talents.T_SHADOW_DANCE]={base=3, every=5, max=5},
+		[Talents.T_APPLY_POISON]={base=3, every=7, max=5},
 		[Talents.T_VILE_POISONS]={base=3, every=8, max=5},
 		[Talents.T_VENOMOUS_STRIKE]={base=2, every=6, max=5},
-		[Talents.T_EMPOWER_POISONS]={base=3, every=7, max=5},
 	},
 	max_life = resolvers.rngavg(80,100),
 

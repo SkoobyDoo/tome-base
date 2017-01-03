@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@ newTalent{
 	equilibrium = 5,
 	no_energy = true,
 	tactical = { ATTACKAREA = {NATURE=1}, HEAL = 1 },
+	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 6, 40) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 16, 4, 8)) end, -- Limit < 16
 	getHeal = function(self, t) return math.floor(self:combatTalentLimit(t, 200, 62, 110)) end, -- Limit < 200%	

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ local LogDisplay = require "engine.LogDisplay"
 local LogFlasher = require "engine.LogFlasher"
 local FlyingText = require "engine.FlyingText"
 local Tooltip = require "mod.class.Tooltip"
+local Dialog = require "engine.ui.Dialog"
 
 module(..., package.seeall, class.inherit(UISet))
 
@@ -66,8 +67,8 @@ function _M:activate()
 	self:resizeIconsHotkeysToolbar()
 
 	self.player_display = PlayerDisplay.new(0, 200, 200, game.h - 200, {30,30,0}, font_mono, size_mono)
-	self.logdisplay = LogDisplay.new(216, self.map_h_stop - font_h * config.settings.tome.log_lines -16, (game.w - 216) / 2, font_h * config.settings.tome.log_lines, nil, font, size, nil, nil)
-	self.logdisplay.resizeToLines = function() self.logdisplay:resize(216, self.map_h_stop - font_h * config.settings.tome.log_lines -16, (game.w - 216) / 2, font_h * config.settings.tome.log_lines) end
+	self.logdisplay = LogDisplay.new(self.player_display.w + 16, self.map_h_stop - font_h * config.settings.tome.log_lines -16, (game.w - self.player_display.w - 16) / 2, font_h * config.settings.tome.log_lines, nil, font, size, nil, nil)
+	self.logdisplay.resizeToLines = function() self.logdisplay:resize(self.player_display.w + 16, self.map_h_stop - font_h * config.settings.tome.log_lines -16, (game.w - self.player_display.w - 16) / 2, font_h * config.settings.tome.log_lines) end
 	self.logdisplay:enableShadow(1)
 	self.logdisplay:enableFading(config.settings.tome.log_fade or 3)
 
@@ -91,6 +92,8 @@ function _M:activate()
 		game.uiset.logdisplay(...) else game.uiset.logdisplay(style, ...) end
 		if game.uiset.show_userchat then game.uiset.logdisplay.changed = old end
 	end
+	game.logRollback = function(line, ...) return self.logdisplay:rollback(line, ...) end
+	game.logNewest = function() return self.logdisplay:getNewestLine() end
 --	game.logSeen = function(e, style, ...) if e and e.player or (not e.dead and e.x and e.y and game.level and game.level.map.seens(e.x, e.y) and game.player:canSee(e)) then game.log(style, ...) end end
 	game.logPlayer = function(e, style, ...) if e == game.player or e == game.party then game.log(style, ...) end end
 end
@@ -173,6 +176,7 @@ function _M:displayUI()
 	local icon_y = game.h - (_talents_icon_h * 1)
 	local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 77
 
+	local map_left = self.player_display.w -- left edge of the map space (to make resizing the player panel easier in the future)
 	-- Icons
 	local x, y = icon_x, icon_y
 	if (not game.show_npc_list) then
@@ -181,27 +185,6 @@ function _M:displayUI()
 		_actors_icon:toScreenFull(x, y, _actors_icon_w, _actors_icon_h, _actors_icon_w, _actors_icon_h)
 	end
 	x = x + _talents_icon_w
-
-	-- This is the old version of what's above. Probably should be deleted?
---	_talents_icon:toScreenFull(x, y, _talents_icon_w, _talents_icon_h, _talents_icon_w, _talents_icon_h)
---	if not self.show_npc_list then _sel_icon:toScreenFull(x, y, _sel_icon_w, _sel_icon_h, _sel_icon_w, _sel_icon_h) end
---	x = x + _talents_icon_w
---	_actors_icon:toScreenFull(x, y, _actors_icon_w, _actors_icon_h, _actors_icon_w, _actors_icon_h)
---	if self.show_npc_list then _sel_icon:toScreenFull(x, y, _sel_icon_w, _sel_icon_h, _sel_icon_w, _sel_icon_h) end
---	x = x + _talents_icon_w
-
---	if self.logdisplay.changed then core.display.drawQuad(x, y, _sel_icon_w, _sel_icon_h, 139, 210, 77, glow) end
---	_log_icon:toScreenFull(x, y, _log_icon_w, _log_icon_h, _log_icon_w, _log_icon_h)
---	if not self.show_userchat then _sel_icon:toScreenFull(x, y, _sel_icon_w, _sel_icon_h, _sel_icon_w, _sel_icon_h) end
---	x = x + _talents_icon_w
-
---	if profile.chat.changed then core.display.drawQuad(x, y, _sel_icon_w, _sel_icon_h, 139, 210, 77, glow) end
---	_chat_icon:toScreenFull(x, y, _chat_icon_w, _chat_icon_h, _chat_icon_w, _chat_icon_h)
---	if self.show_userchat then _sel_icon:toScreenFull(x, y, _sel_icon_w, _sel_icon_h, _sel_icon_w, _sel_icon_h) end
-
---	x = 0
---	y = y + _chat_icon_h
---	x = x + _talents_icon_w
 
 	_inventory_icon:toScreenFull(x, y, _inventory_icon_w, _inventory_icon_h, _inventory_icon_w, _inventory_icon_h)
 	x = x + _talents_icon_w
@@ -218,28 +201,16 @@ function _M:displayUI()
 	end
 
 	-- Separators
---	_sep_horiz.tex[1]:toScreenFull(0, 20, game.w, _sep_horiz[3], _sep_horiz.tex[2], _sep_horiz.tex[3])
-	_sep_horiz.tex[1]:toScreenFull(216, self.map_h_stop - _sep_horiz[3], game.w - 216, _sep_horiz[3], _sep_horiz.tex[2], _sep_horiz.tex[3])
+	_sep_horiz.tex[1]:toScreenFull(map_left + 16, self.map_h_stop - _sep_horiz[3], game.w - map_left - 16, _sep_horiz[3], _sep_horiz.tex[2], _sep_horiz.tex[3])
 
---	_sep_vert.tex[1]:toScreenFull(mid_min, bottom, _sep_vert[2], bottom_h, _sep_vert.tex[2], _sep_vert.tex[3])
---	_sep_vert.tex[1]:toScreenFull(mid_max, bottom, _sep_vert[2], bottom_h, _sep_vert.tex[2], _sep_vert.tex[3])
-
-	_sep_vert.tex[1]:toScreenFull(200, 0, _sep_vert[2], game.h, _sep_vert.tex[2], _sep_vert.tex[3])
+	_sep_vert.tex[1]:toScreenFull(map_left, 0, _sep_vert[2], game.h, _sep_vert.tex[2], _sep_vert.tex[3])
 
 	-- Ornaments
---	_sep_top.tex[1]:toScreenFull(mid_min - (-_sep_vert[2] + _sep_top[2]) / 2, bottom - 14, _sep_top[2], _sep_top[3], _sep_top.tex[2], _sep_top.tex[3])
---	_sep_top.tex[1]:toScreenFull(mid_max - (-_sep_vert[2] + _sep_top[2]) / 2, bottom - 14, _sep_top[2], _sep_top[3], _sep_top.tex[2], _sep_top.tex[3])
---	_sep_bottoml.tex[1]:toScreenFull(mid_min - (-_sep_vert[2] + _sep_bottoml[2]) / 2, game.h - _sep_bottoml[3], _sep_bottoml[2], _sep_bottoml[3], _sep_bottoml.tex[2], _sep_bottoml.tex[3])
---	_sep_bottoml.tex[1]:toScreenFull(mid_max - (-_sep_vert[2] + _sep_bottoml[2]) / 2, game.h - _sep_bottoml[3], _sep_bottoml[2], _sep_bottoml[3], _sep_bottoml.tex[2], _sep_bottoml.tex[3])
+	_sep_left.tex[1]:toScreenFull(map_left - 7, self.map_h_stop - 7 - _sep_left[3] / 2, _sep_left[2], _sep_left[3], _sep_left.tex[2], _sep_left.tex[3])
 
---	_sep_leftl.tex[1]:toScreenFull(0, 20 - _sep_leftl[3] / 2 + 7, _sep_leftl[2], _sep_leftl[3], _sep_leftl.tex[2], _sep_leftl.tex[3])
-	_sep_left.tex[1]:toScreenFull(200 - 7, self.map_h_stop - 7 - _sep_left[3] / 2, _sep_left[2], _sep_left[3], _sep_left.tex[2], _sep_left.tex[3])
-
---	_sep_rightl.tex[1]:toScreenFull(game.w - _sep_rightl[2], 20 - _sep_rightl[3] / 2 + 7, _sep_rightl[2], _sep_rightl[3], _sep_rightl.tex[2], _sep_rightl.tex[3])
 	_sep_rightl.tex[1]:toScreenFull(game.w - _sep_rightl[2], self.map_h_stop - _sep_left[3] / 2, _sep_rightl[2], _sep_rightl[3], _sep_rightl.tex[2], _sep_rightl.tex[3])
 
-	_sep_top.tex[1]:toScreenFull(200 - (_sep_top[2] - _sep_vert[2]) / 2, - 7, _sep_top[2], _sep_top[3], _sep_top.tex[2], _sep_top.tex[3])
---	_sep_bottom.tex[1]:toScreenFull(200 - (_sep_bottom[2] - _sep_vert[2]) / 2, bottom - 25, _sep_bottom[2], _sep_bottom[3], _sep_bottom.tex[2], _sep_bottom.tex[3])
+	_sep_top.tex[1]:toScreenFull(map_left - (_sep_top[2] - _sep_vert[2]) / 2, - 7, _sep_top[2], _sep_top[3], _sep_top.tex[2], _sep_top.tex[3])
 
 end
 
@@ -339,22 +310,13 @@ function _M:display(nb_keyframes)
 
 
 		local map = game.level.map
---		if self.mm_fbo then
---			self.mm_fbo:use(true)
---			self.minimap_scroll_x, self.minimap_scroll_y = util.bound(self.player.x - 25, 0, map.w - 50), util.bound(self.player.y - 25, 0, map.h - 50)
---			map:minimapDisplay(0, 0, self.minimap_scroll_x, self.minimap_scroll_y, 50, 50, 1)
---			self.mm_fbo:use(false, self.full_fbo)
---			self.minimap_bg:toScreen(0, 0, 200, 200)
---			self.mm_fbo:toScreen(0, 0, 200, 200, self.mm_fbo_shader.shad)
---		else
-			self.minimap_bg:toScreen(0, 0, 200, 200)
-			if game.player.x then
-				game.minimap_scroll_x, game.minimap_scroll_y = util.bound(game.player.x - 25, 0, map.w - 50), util.bound(game.player.y - 25, 0, map.h - 50)
-			else
-				game.minimap_scroll_x, game.minimap_scroll_y = 0, 0
-			end
-			map:minimapDisplay(0, 0, game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 1)
---		end
+		self.minimap_bg:toScreen(0, 0, 200, 200)
+		if game.player.x then
+			game.minimap_scroll_x, game.minimap_scroll_y = util.bound(game.player.x - 25, 0, map.w - 50), util.bound(game.player.y - 25, 0, map.h - 50)
+		else
+			game.minimap_scroll_x, game.minimap_scroll_y = 0, 0
+		end
+		map:minimapDisplay(0, 0, game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 1)
 	end
 
 	-- We display the player's interface
@@ -370,6 +332,8 @@ function _M:display(nb_keyframes)
 
 	-- UI
 	self:displayUI()
+
+	UISet.display(self, nb_keyframes)
 end
 
 function _M:setupMouse(mouse)
@@ -389,9 +353,16 @@ function _M:setupMouse(mouse)
 				game:tooltipDisplayAtMap(game.w, game.h, text)
 			end,
 			function(i, hk)
-				if button == "right" and hk[1] == "talent" then
+				if button == "right" and hk and hk[1] == "talent" then
 					local d = require("mod.dialogs.UseTalents").new(game.player)
 					d:use({talent=hk[2], name=game.player:getTalentFromId(hk[2]).name}, "right")
+					return true
+				elseif button == "right" and hk and hk[1] == "inventory" then
+					Dialog:yesnoPopup("Unbind "..hk[2], "Remove this object from your hotkeys?", function(ret) if ret then
+						for i = 1, 12 * game.player.nb_hotkey_pages do
+							if game.player.hotkey[i] and game.player.hotkey[i][1] == "inventory" and game.player.hotkey[i][2] == hk[2] then game.player.hotkey[i] = nil end
+						end
+					end end)
 					return true
 				end
 			end

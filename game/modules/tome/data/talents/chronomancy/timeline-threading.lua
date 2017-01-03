@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,12 +32,12 @@ newTalent{
 	reflectable = true,
 	requires_target = true,
 	target = function (self, t)
-		return {type="bolt", range=self:getTalentRange(t), talent=t}
+		return {type="ball", selffire=false, friendlyfire=50, radius=10, range=self:getTalentRange(t), talent = t} -- fake target parameters for ai only, to estimate # targets hit
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	getTargetCount = function(self, t) return 3 end,
 	action = function(self, t)
-		local tg = self:getTalentTarget(t)
+		local tg = {type="bolt", range=self:getTalentRange(t), talent=t} -- actual target parameters
 		local fx, fy = self:getTarget(tg)
 		if not fx or not fy then return nil end
 

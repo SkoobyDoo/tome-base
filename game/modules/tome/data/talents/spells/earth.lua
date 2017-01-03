@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -64,12 +64,13 @@ newTalent{
 	tactical = { ATTACK = {PHYSICAL = 2} },
 	direct_hit = true,
 	requires_target = true,
-	getDigs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
 	target = function(self, t)
 		local tg = {type="beam", range=self:getTalentRange(t), talent=t}
 		return tg
 	end,
+	allow_for_arcane_combat = true,
+	getDigs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
@@ -147,20 +148,25 @@ newTalent{
 			return self.summoner and self:getTalentLevel(t) >=4 and core.fov.distance(self.summoner.x, self.summoner.y, aitarget.x, aitarget.y) > 1 and 3 or nil
 		end,
 		ESCAPE = function(self, t, aitarget) -- protect self or trap target
-			return self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist > 1 and 1 or nil
+			return self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist > 1 and (self:getTalentLevel(t) >=4 and 3 or 1) or nil
 		end
 	},
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 250) end,
-	requires_target = true,
+	requires_target = function(self, t) return self:getTalentLevel(t) >=4 end,
 	getDuration = function(self, t) return util.bound(2 + self:combatTalentSpellDamage(t, 5, 12), 2, 25) end,
 	action = function(self, t)
-		local x, y = self.x, self.y
+		local ok, x, y, tx, ty = true, self.x, self.y
 		local tg = self:getTalentTarget(t)
-		if self:getTalentLevel(t) >= 4 then
-			x, y = self:getTarget(tg)
-			if not x or not y then return nil end
-			local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if self:getTalentLevel(t) >= 4 then --NPC's target based on current tactic
+			if self.summoner and self.ai_state.tactic == "protect" then
+				ok, tx, ty, x, y = self:canProject(tg, self.summoner.x, self.summoner.y)
+			elseif self.ai_state.tactic ~= "defend" then
+				x, y = self:getTarget(tg)
+				if not x or not y then return nil end
+				ok, tx, ty, x, y = self:canProject(tg, x, y)
+			end
 		end
+		if not ok or not x or not y then return nil end
 
 		self:project(tg, x, y, DamageType.PHYSICAL, self:spellCrit(t.getDamage(self, t)))
 

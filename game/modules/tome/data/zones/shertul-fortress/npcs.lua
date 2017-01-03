@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ load("/data/general/npcs/feline.lua", function(e) e.rarity = nil end)
 local Talents = require("engine.interface.ActorTalents")
 
 newEntity{ base = "BASE_NPC_HORROR", define_as="WEIRDLING_BEAST",
-	name = "Weirdling Beast", color=colors.VIOLET,
+	name = "Weirdling Beast", color=colors.VIOLET, unique = true,
 	desc = "A roughly humanoid creature, with tentacle-like appendages in the place of arms and legs. You gasp in horror as you notice it has no head. Putrid warts form quickly on its skin and explode as quickly.",
 	killer_message = "and slowly consumed",
 	level_range = {19, nil}, exp_worth = 3,
@@ -51,18 +51,19 @@ newEntity{ base = "BASE_NPC_HORROR", define_as="WEIRDLING_BEAST",
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.talents{
-		[Talents.T_ACID_BLOOD]=4,
-		[Talents.T_BONE_GRAB]=4,
-		[Talents.T_BONE_SHIELD]=3,
-		[Talents.T_MIND_SEAR]=4,
-		[Talents.T_TELEKINETIC_BLAST]=4,
-		[Talents.T_GLOOM]=5,
-		[Talents.T_SOUL_ROT]=3,
-		[Talents.T_CORRUPTED_NEGATION]=4,
-		[Talents.T_TIME_PRISON]=1,
-		[Talents.T_STARFALL]=3,
-		[Talents.T_MANATHRUST]=4,
-		[Talents.T_FREEZE]=2,
+		[Talents.T_STAFF_MASTERY]= {base=2, every=10, max=5},
+		[Talents.T_ACID_BLOOD]={base=4, every=8, max=5},
+		[Talents.T_BONE_GRAB]={base=4, every=8, max=5},
+		[Talents.T_BONE_SHIELD]={base=3, every=10, max=5},
+		[Talents.T_MIND_SEAR]={base=4, every=8, max=5},
+		[Talents.T_TELEKINETIC_BLAST]={base=4, every=8, max=5},
+		[Talents.T_GLOOM]={base=5, every=10, max=6},
+		[Talents.T_SOUL_ROT]={base=3, every=10, max=5},
+		[Talents.T_CORRUPTED_NEGATION]={base=4, every=8, max=5},
+		[Talents.T_TIME_PRISON]={base=1, every=10, max=5},
+		[Talents.T_STARFALL]={base=3, every=10, max=5},
+		[Talents.T_MANATHRUST]={base=4, every=8, max=5},
+		[Talents.T_FREEZE]={base=2, every=9, max=5},
 	},
 	max_inscriptions = 6,
 	resolvers.inscription("INFUSION:_HEALING", {cooldown=6, dur=5, heal=400}),
@@ -161,7 +162,7 @@ newEntity{ define_as="TRAINING_DUMMY",
 
 
 newEntity{ base = "BASE_NPC_CAT", define_as = "KITTY",
-	name = "Pumpkin, the little kitty", color=colors.ORANGE,
+	name = "Pumpkin, the little kitty", color=colors.ORANGE, unique = true,
 	image="npc/sage_kitty.png",
 	desc = [[An orange kitty with a white star blaze on his chest. Has a strange affinity for licking your face whenever possible.]],
 	level_range = {1, nil}, exp_worth = 1,

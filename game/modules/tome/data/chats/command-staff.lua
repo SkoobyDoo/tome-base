@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -127,14 +127,13 @@ local function set_element(element, new_flavor, player)
 
 end
 
-
 local DamageType = require "engine.DamageType"
-local flavors = o.flavors or {magestaff=true, starstaff=true, vilestaff=true}
+local flavors = o:getStaffFlavorList()
 local flavor_list = table.keys(flavors)
 table.sort(flavor_list)
 
 local aspect_answers = {}
-local aspect_chat_id = not is_sentient() and "welcome" or "which-aspect"
+local aspect_chat_id = not is_sentient() and "welcome" or "which_aspect"
 for _, flavor in ipairs(flavor_list) do
 	local damtypes = o:getStaffFlavor(flavor)
 	local answers = {}

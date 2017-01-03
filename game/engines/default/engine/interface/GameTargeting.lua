@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -186,8 +186,8 @@ function _M:targetSetupKey()
 	local accept = function() self:targetMode(false, false) self.tooltip_x, self.tooltip_y = nil, nil end
 
 	self.targetmode_key = engine.KeyBind.new()
-	self.targetmode_key:addCommands{ _SPACE=accept, }
-
+	self.targetmode_key:addCommands{ _SPACE=accept, [{"_SPACE","ctrl"}]=accept, [{"_RETURN","ctrl"}]=accept, [{"_KP_ENTER","ctrl"}]=accept }
+	
 	if engine.interface and engine.interface.PlayerHotkeys then
 		engine.interface.PlayerHotkeys:bindAllHotkeys(self.targetmode_key, function(i)
 			if self.targetmode_trigger_hotkey == i then accept() end

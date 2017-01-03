@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ newEntity{ base = "BASE_NPC_LOSGOROTH", define_as = "MONSTROUS_LOSGOROTH",
 
 
 newEntity{ base = "BASE_NPC_POINT_ZERO_TOWN", define_as = "ZEMEKKYS",
-	name = "Zemekkys, Grand Keeper of Reality", color=colors.VIOLET,
+	name = "Zemekkys, Grand Keeper of Reality", color=colors.VIOLET, unique = true,
 	image = "npc/humanoid_elf_high_chronomancer_zemekkys.png",
 	subtype = "shalore",
 	desc = [[A timeless elf stands before you. Even though his age is impossible to determine, you feel he has seen many things.]],
@@ -220,8 +220,8 @@ newEntity{ define_as = "TEMPORAL_DEFILER",
 	combat_armor = 10, combat_def = 10,
 	combat = { dam=resolvers.levelup(resolvers.rngavg(25,100), 1, 1.2), atk=resolvers.rngavg(25,100), apr=25, dammod={dex=1.1} },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
-	resolvers.drops{chance=100, nb=1, {defined="TIME_SHARD"} },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, TOOL=1 },
+	resolvers.equip{{defined="TIME_SHARD"}, autoreq=true},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	inc_damage = {all = -30},

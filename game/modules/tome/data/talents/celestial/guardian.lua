@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ newTalent{
 		local shield = self:hasShield()
 		if hitted and not target.dead and shield and not self.turn_procs.shield_of_light then
 			self.turn_procs.shield_of_light = true
-			self:attackTargetWith(target, weapon.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
+			self:attackTargetWith(target, shield.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
 		end
 	end,
 	info = function(self, t)
@@ -78,7 +78,7 @@ newTalent{
 	getLightDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200) end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Brandish without a shield!")
 			return nil
@@ -92,7 +92,7 @@ newTalent{
 		-- First attack with weapon
 		self:attackTarget(target, nil, t.getWeaponDamage(self, t), true)
 		-- Second attack with shield
-		local speed, hit = self:attackTargetWith(target, shield.special_combat, nil, t.getShieldDamage(self, t))
+		local speed, hit = self:attackTargetWith(target, shield_combat, nil, t.getShieldDamage(self, t))
 
 		-- Light Burst
 		if hit then
@@ -187,7 +187,7 @@ newTalent{
 	getCooldownReduction = function(self, t) return math.ceil(self:combatTalentScale(t, 1, 3)) end,
 	getDebuff = function(self, t) return 1 end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		if not shield then
 			game.logPlayer(self, "You cannot use Crusade without a shield!")
 			return nil
@@ -201,7 +201,7 @@ newTalent{
 		local hit = self:attackTarget(target, DamageType.LIGHT, t.getWeaponDamage(self, t), true)
 		if hit then self:talentCooldownFilter(nil, 1, t.getCooldownReduction(self, t), true) end
 
-		local hit2 = self:attackTargetWith(target, shield.special_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
+		local hit2 = self:attackTargetWith(target, shield_combat, DamageType.LIGHT, t.getShieldDamage(self, t))
 		if hit2 then self:removeEffectsFilter({status = "detrimental"}, t.getDebuff(self, t)) end
 
 		return true
@@ -211,7 +211,7 @@ newTalent{
 		local shield = t.getShieldDamage(self, t)*100
 		local cooldown = t.getCooldownReduction(self, t)
 		local cleanse = t.getDebuff(self, t)
-		return ([[You demonstrate your dedication to the light with a measured attack striking once with your weapon for %d%% damage and once with your shield for %d%% damage.
+		return ([[You demonstrate your dedication to the light with a measured attack striking once with your weapon for %d%% Light damage and once with your shield for %d%% Light damage.
 			If the first strike connects %d random talent cooldowns are reduced by 1.
 			If the second strike connects you are cleansed of %d debuffs.]]):
 		format(weapon, shield, cooldown, cleanse)

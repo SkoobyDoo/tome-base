@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,26 +55,27 @@ newBirthDescriptor{
 	stats = { dex=3, str=1, cun=5, },
 	talents_types = {
 		["technique/dualweapon-attack"]={true, 0.3},
-		["technique/dualweapon-training"]={true, 0.3},
+		["technique/duelist"]={true, 0.3},
 		["technique/combat-techniques-active"]={false, 0.3},
-		["technique/combat-techniques-passive"]={false, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={false, 0},
-		["technique/acrobatics"]={true, 0.3},
+		["technique/mobility"]={true, 0.3},
+		["technique/throwing-knives"]={true, 0.3},
+		["technique/assassination"]={false, 0.3},
 		["cunning/stealth"]={true, 0.3},
 		["cunning/trapping"]={true, 0.3},
-		["cunning/dirty"]={true, 0.3},
 		["cunning/lethality"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
-		["cunning/scoundrel"]={true, 0.3},
+		["cunning/scoundrel"]={false, 0.3},
+		["cunning/dirty"]={false, 0.3},
+		["cunning/artifice"]={false, 0.3},
 	},
 	unlockable_talents_types = {
-		["cunning/poisons"]={false, 0.3, "rogue_poisons"},
+		["cunning/poisons"]={true, 0.3, "rogue_poisons"},
 	},
 	talents = {
 		[ActorTalents.T_SHOOT] = 1,
 		[ActorTalents.T_STEALTH] = 1,
-		[ActorTalents.T_TRAP_MASTERY] = 1,
+		[ActorTalents.T_DUAL_WEAPON_MASTERY] = 1,
 		[ActorTalents.T_LETHALITY] = 1,
 		[ActorTalents.T_DUAL_STRIKE] = 1,
 		[ActorTalents.T_KNIFE_MASTERY] = 1,
@@ -116,11 +117,11 @@ newBirthDescriptor{
 		["spell/divination"]={false, 0},
 		["spell/conveyance"]={true, 0},
 		["technique/dualweapon-attack"]={true, 0.2},
-		["technique/dualweapon-training"]={true, 0.2},
+		["technique/duelist"]={true, 0.2},
 		["technique/combat-techniques-active"]={true, 0.3},
 		["technique/combat-techniques-passive"]={false, 0.3},
 		["technique/combat-training"]={true, 0.2},
-		["cunning/stealth"]={false, 0.3},
+		["cunning/stealth"]={true, 0.3},
 		["cunning/survival"]={true, 0.1},
 		["cunning/lethality"]={true, 0.3},
 		["cunning/dirty"]={true, 0.3},
@@ -162,16 +163,16 @@ newBirthDescriptor{
 	stats = { dex=4, str=4, cun=1, },
 	talents_types = {
 		["technique/dualweapon-attack"]={true, 0.2},
-		["technique/dualweapon-training"]={true, 0.2},
+		["technique/duelist"]={true, 0.2},
 		["technique/combat-techniques-active"]={true, 0.3},
 		["technique/combat-techniques-passive"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={true, 0.3},
 		["technique/battle-tactics"]={false, 0.2},
 		["technique/mobility"]={true, 0.3},
 		["technique/thuggery"]={true, 0.3},
 		["technique/conditioning"]={true, 0.3},
 		["technique/bloodthirst"]={false, 0.1},
+		["technique/throwing-knives"]={true, 0.2},
 		["cunning/dirty"]={true, 0.3},
 		["cunning/tactical"]={false, 0.2},
 		["cunning/survival"]={true, 0.3},
@@ -210,6 +211,7 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +1 Willpower, +4 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +0",
 	},
+	not_on_random_boss = true,
 	power_source = {technique=true},
 	stats = {dex = 4, cun = 4, wil = 1},
 	talents_types = {
@@ -219,9 +221,9 @@ newBirthDescriptor{
 		["cunning/called-shots"]={true, 0.3},
 		["technique/tireless-combatant"]={true, 0.3},
 		["cunning/trapping"]={false, 0.1},
-
+		
 		-- generic
-		["technique/acrobatics"]={true, 0.3},
+		["technique/mobility"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
 		["technique/combat-training"]={true, 0.3},
 		["technique/field-control"]={false, 0.1},

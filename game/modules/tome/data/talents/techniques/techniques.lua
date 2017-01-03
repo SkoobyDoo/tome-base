@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,6 +43,9 @@ newTalentType{ allow_random=true, type="technique/combat-training", name = "comb
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="technique/magical-combat", name = "magical combat", description = "The blending together of magic and melee prowess." }
 newTalentType{ allow_random=true, type="technique/mobility", name = "mobility", generic = true, description = "Controlling your movements on the battlefields is the sure way to victory." }
 newTalentType{ allow_random=true, type="technique/thuggery", name = "thuggery", generic = true, description = "Whatever wins the day, wins the day." }
+newTalentType{ allow_random=true, type="technique/assassination", name = "assassination", min_lev=10, description = "Bring death from the shadows." }
+newTalentType{ allow_random=true, type="technique/throwing-knives", name = "throwing knives", description = "Master the art of throwing knives to fight from a distance." }
+newTalentType{ allow_random=true, type="technique/duelist", name = "duelist", description = "Use your dual weapons to parry and counter." }
 
 -- Skirmisher
 newTalentType {
@@ -260,19 +263,6 @@ techs_wil_req5 = {
 	level = function(level) return 16 + (level-1)  end,
 }
 
--- Archery range talents
-archery_range = function(self, t)
-	local weapon, ammo, offweapon = self:hasArcheryWeapon()
-	if not weapon or not weapon.combat then 
-		if self:attr("warden_swap") and self:hasArcheryWeaponQS() then
-			weapon, ammo, offweapon = self:hasArcheryWeaponQS()
-		else
-			return 1
-		end
-	end
-	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
-end
-
 -- Unarmed stance changes and stance damage bonuses
 getStrikingStyle = function(self, dam)
 	local dam = 0
@@ -333,6 +323,9 @@ load("/data/talents/techniques/excellence.lua")
 load("/data/talents/techniques/magical-combat.lua")
 load("/data/talents/techniques/mobility.lua")
 load("/data/talents/techniques/thuggery.lua")
+load("/data/talents/techniques/assassination.lua")
+load("/data/talents/techniques/throwing-knives.lua")
+load("/data/talents/techniques/duelist.lua")
 
 load("/data/talents/techniques/skirmisher-slings.lua")
 load("/data/talents/techniques/buckler-training.lua")

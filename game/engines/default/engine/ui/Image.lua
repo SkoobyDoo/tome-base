@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
 
-	if self.image then self.item = self.tex or {self.image:glTexture()} end
+	if self.image then self.item = self.tex or {self.image:glTexture(Tiles.sharp_scaling)} end
 end
 
 function _M:display(x, y)

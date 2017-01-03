@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ newTalent{
 		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not target then
 			if swap then doWardenWeaponSwap(self, t, "bow") end
-			return nil
+			return true -- Make sure this is done if an NPC attacks an empty grid.
 		end
 
 		local did_alternate = false
@@ -129,7 +129,7 @@ newTalent{
 newTalent{
 	name = "Soul Pool",
 	type = {"base/class", 1},
-	info = "Allows you to have a mana soul. Souls are used to cast necrotic spells.",
+	info = "Allows you to have a soul pool. Souls are used to cast necrotic spells.",
 	mode = "passive",
 	hide = "always",
 	no_unlearn_last = true,

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -109,8 +109,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local count = t.getRemoveCount(self, t)
-		return ([[Clears your mind of current mental effects, and blocks additional ones over 6 turns.  At most, %d mental effects will be affected.
-		This talent takes no time to use.]]):format(count)
+		return ([[Clears your mind of current mental effects, and blocks additional ones over 6 turns.  At most, %d mental effects will be affected.]]):format(count)
 	end,
 }
 

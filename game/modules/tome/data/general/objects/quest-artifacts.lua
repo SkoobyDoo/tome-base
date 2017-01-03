@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,14 +31,14 @@ newEntity{ define_as = "STAFF_ABSORPTION",
 	flavor_name = "magestaff",
 	level_range = {30, 30},
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
+	moddable_tile = "special/%s_staff_of_absorbtion",
 	encumber = 7,
 	auto_pickup = 1,
-	moddable_tile = resolvers.moddable_tile("staff"),
 	plot = true, quest = true,
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.
 Light around it seems to dim and you can feel its tremendous power simply by touching it.]],
 
-	require = { stat = { mag=60 }, },
+	require = { stat = { mag=40 }, },
 	combat = {
 		dam = 30,
 		apr = 4,
@@ -54,6 +54,7 @@ Light around it seems to dim and you can feel its tremendous power simply by tou
 
 	max_power = 1000, power_regen = 1,
 	use_power = { name = "absorb energies", power = 1000,
+		no_npc_use = true,
 		use = function(self, who)
 			game.logPlayer(who, "This power seems too much to wield; you fear it might absorb YOU.")
 			return {used=true}
@@ -91,6 +92,7 @@ If used near a portal it could probably activate it.]],
 
 	max_power = 30, power_regen = 1,
 	use_power = { name = "activate a portal", power = 10,
+		no_npc_use = true,
 		use = function(self, who)
 			self:identify(true)
 			local g = game.level.map(who.x, who.y, game.level.map.TERRAIN)
@@ -128,6 +130,7 @@ If used near a portal it could probably activate it.]],
 
 	max_power = 30, power_regen = 1,
 	use_power = { name = "activate a portal", power = 10,
+		no_npc_use = true,
 		use = function(self, who)
 			local g = game.level.map(who.x, who.y, game.level.map.TERRAIN)
 			if g and g.orb_portal and game.zone.short_name ~= "high-peak" then
@@ -182,6 +185,7 @@ newEntity{ define_as = "ORB_UNDEATH",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -212,6 +216,7 @@ newEntity{ define_as = "ORB_DRAGON",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -242,6 +247,7 @@ newEntity{ define_as = "ORB_ELEMENTS",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -272,6 +278,7 @@ newEntity{ define_as = "ORB_DESTRUCTION",
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "use the orb", power = 1,
+		no_npc_use = true,
 		use = function(self, who) who:useCommandOrb(self) return {id=true, used=true} end
 	},
 
@@ -317,6 +324,7 @@ You have heard of such items before. They are very useful to adventurers, allowi
 
 	max_power = 400, power_regen = 1,
 	use_power = { name = "recall the user to the worldmap after 40 turns", power = 202,
+		no_npc_use = true,
 		use = function(self, who)
 			if who:hasEffect(who.EFF_RECALL) then
 				who:removeEffect(who.EFF_RECALL)
@@ -337,11 +345,12 @@ You have heard of such items before. They are very useful to adventurers, allowi
 								who:hasQuest("shertul-fortress"):break_farportal()
 							end
 						end
-					end, "Cancel", "Recall")
+					end, "Cancel", "Recall", true)
+					return {id=true, used=true}
 				end
 			end
 			game.logPlayer(who, "The rod emits a strange noise, glows briefly and returns to normal.")
-			return {id=true, used=true}
+			return {id=true}
 		end
 	},
 
@@ -380,6 +389,7 @@ Items in the chest will not encumber you.]],
 
 	max_power = 1000, power_regen = 1,
 	use_power = { name = "transmogrify all the items in your chest at once (also done automatically when you change level)", power = 0,
+		no_npc_use = true,
 		use = function(self, who)
 			local inven = who:getInven("INVEN")
 			local nb = 0
@@ -390,15 +400,21 @@ Items in the chest will not encumber you.]],
 			if nb <= 0 then
 				local floor = game.level.map:getObjectTotal(who.x, who.y)
 				if floor == 0 then
-					require("engine.ui.Dialog"):simplePopup("Transmogrification Chest", "You do not have any items to transmogrify in your chest or on the floor.")
+					if who:attr("has_transmo") >= 2 then
+						require("engine.ui.Dialog"):yesnoPopup("Transmogrification Chest", "Make the Transmogrification Chest the default item's destroyer?", function(ret) if ret then
+							who.default_transmo_source = self
+						end end)
+					else
+						require("engine.ui.Dialog"):simplePopup("Transmogrification Chest", "You do not have any items to transmogrify in your chest or on the floor.")
+					end
 				else
 					require("engine.ui.Dialog"):yesnoPopup("Transmogrification Chest", "Transmogrify all "..floor.." item(s) on the floor?", function(ret)
 						if not ret then return end
 						for i = floor, 1, -1 do
 							local o = game.level.map:getObject(who.x, who.y, i)
-							if who:transmoFilter(o) then
+							if who:transmoFilter(o, self) then
 								game.level.map:removeObject(who.x, who.y, i)
-								who:transmoInven(nil, nil, o)
+								who:transmoInven(nil, nil, o, self)
 							end
 						end
 					end)
@@ -411,7 +427,7 @@ Items in the chest will not encumber you.]],
 				for i = #inven, 1, -1 do
 					local o = inven[i]
 					if o.__transmo then
-						who:transmoInven(inven, i, o)
+						who:transmoInven(inven, i, o, self)
 					end
 				end
 			end)
@@ -420,6 +436,7 @@ Items in the chest will not encumber you.]],
 	},
 
 	on_pickup = function(self, who)
+		who.default_transmo_source = self
 		require("engine.ui.Dialog"):simpleLongPopup("Transmogrification Chest", [[This chest is an extension of old Sher'Tul places of power. Any items dropped inside is transported to an other place, processed and destroyed to extract energy.
 The byproduct of this effect is the creation of gold, which is useless to process, so it is sent back to you.
 

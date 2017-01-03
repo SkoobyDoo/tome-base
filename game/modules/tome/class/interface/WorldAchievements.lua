@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ end
 function _M:newAchievement(t)
 	t.id = t.id or t.name
 	t.id = t.id:upper():gsub("[ ]", "_")
+	t.category = t.category or "Maj'Eyal"
 	findTile(t)
 
 	WA.newAchievement(self, t)
@@ -131,6 +132,18 @@ function _M:newAchievement(t)
 		findTile(t9)
 		WA.newAchievement(self, t9)
 	end
+end
+
+function _M:getCurrentAchievementDifficultyId(game, id)
+	if game.difficulty == DIFFICULTY_NORMAL and game.permadeath == PERMADEATH_ONE then return "NORMAL_ROGUELIKE_"..id
+	elseif game.difficulty == DIFFICULTY_NIGHTMARE and game.permadeath == PERMADEATH_ONE then return "NIGHTMARE_"..id
+	elseif game.difficulty == DIFFICULTY_NIGHTMARE and game.permadeath == PERMADEATH_MANY then return "NIGHTMARE_ADVENTURE_"..id
+	elseif game.difficulty == DIFFICULTY_INSANE and game.permadeath == PERMADEATH_ONE then return "INSANE_"..id
+	elseif game.difficulty == DIFFICULTY_INSANE and game.permadeath == PERMADEATH_MANY then return "INSANE_ADVENTURE_"..id
+	elseif game.difficulty == DIFFICULTY_MADNESS and game.permadeath == PERMADEATH_ONE then return "MADNESS_"..id
+	elseif game.difficulty == DIFFICULTY_MADNESS and game.permadeath == PERMADEATH_MANY then return "MADNESS_ADVENTURE_"..id
+	elseif game.permadeath == PERMADEATH_INFINITE then return "EXPLORATION_"..id
+	else return id end
 end
 
 function _M:gainAchievement(id, src, ...)

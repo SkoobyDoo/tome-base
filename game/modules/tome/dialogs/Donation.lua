@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ function _M:init(source)
 	local recur = false
 
 	if not profile.auth or not tonumber(profile.auth.donated) or tonumber(profile.auth.donated) <= 1 then
-		local donation_features = { "#GOLD#Custom character tiles#WHITE#", "#GOLD#Exploration mode (infinite lives)#WHITE#"}
+		local donation_features = { "#GOLD#Custom character tiles#WHITE#", "#GOLD#Exploration mode (infinite lives)#WHITE#", "#GOLD#Item's appearance change (Shimmering)#WHITE#"}
 		self:triggerHook{"DonationDialog:features", list=donation_features}
 
 		-- First time donation

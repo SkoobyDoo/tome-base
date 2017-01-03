@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -129,9 +129,10 @@ newTalent{
 				if not target or target == source or target == self or (self:reactionToward(target) >= 0) then return end
 
 				for _, disease in ipairs(diseases) do
-					if disease.id == self.EFF_WEAKNESS_DISEASE or disease.id == self.EFF_DECREPITUDE_DISEASE or disease.id == self.EFF_ROTTING_DISEASE or disease.id == self.EFF_EPIDEMIC then
-						target:setEffect(disease.id, 6, {src=self, dam=disease.params.dam, str=disease.params.str, dex=disease.params.dex, con=disease.params.con, heal_factor=disease.params.heal_factor, resist=disease.params.resist, apply_power=self:combatSpellpower()})
-					end
+					local parameters = table.clone(disease.params, true)
+					parameters.src = self
+					parameters.apply_power = self:combatSpellpower()
+					target:setEffect(disease.id, 6, parameters)
 				end
 			end)
 			game.level.map:particleEmitter(x, y,self:getTalentRadius(t), "circle", {oversize=0.7, a=200, limit_life=8, appear=8, speed=-2, img="disease_circle", radius=self:getTalentRadius(t)})
@@ -142,7 +143,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Make your target's diseases burst, doing %0.2f blight damage for each disease it is infected with.
-		This will also spread any decrepitude, weakness, rotting or epidemic diseases to any nearby foes in a radius of %d.
+		This will also spread any diseases to any nearby foes in a radius of %d.
 		The damage will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.BLIGHT, self:combatTalentSpellDamage(t, 15, 85)), self:getTalentRadius(t))
 	end,
@@ -252,14 +253,10 @@ newTalent{
 			if not target or target == carrier or target == self then return end
 
 			local disease = rng.table(diseases)
-			local params = disease.params
+			local params = table.clone(disease.params, true)
 			params.src = self
-			local disease_spread = {
-				src=self, dam=disease.params.dam, str=disease.params.str, dex=disease.params.dex, con=disease.params.con, apply_power=self:combatSpellpower(),
-				heal_factor=disease.params.heal_factor, burst=disease.params.burst, rot_timer=disease.params.rot_timer, resist=disease.params.resist, make_ghoul=disease.params.make_ghoul,
-			}
 			if target:canBe("disease") then
-				target:setEffect(disease.id, 6, disease_spread)
+				target:setEffect(disease.id, 6, params)
 			else
 				game.logSeen(target, "%s resists the disease!", target.name:capitalize())
 			end

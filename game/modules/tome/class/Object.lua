@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ require "engine.interface.ObjectIdentify"
 local Stats = require("engine.interface.ActorStats")
 local Talents = require("engine.interface.ActorTalents")
 local DamageType = require("engine.DamageType")
+local ActorResource = require "engine.interface.ActorResource"
 local Combat = require("mod.class.interface.Combat")
 
 module(..., package.seeall, class.inherit(
@@ -39,6 +40,9 @@ module(..., package.seeall, class.inherit(
 _M.projectile_class = "mod.class.Projectile"
 
 _M.logCombat = Combat.logCombat
+
+-- ego fields that are appended as a list when the ego is applied (by Zone:applyEgo)
+_M._special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_kill=true, charm_on_use=true}
 
 function _M:getRequirementDesc(who)
 	local base_getRequirementDesc = engine.Object.getRequirementDesc
@@ -77,6 +81,17 @@ function _M:getRequirementDesc(who)
 	end
 end
 
+local auto_moddable_tile_slots = {
+	MAINHAND = true,
+	OFFHAND = true,
+	BODY = true,
+	CLOAK = true,
+	HEAD = true,
+	HANDS = true,
+	FEET = true,
+	QUIVER = true,
+}
+
 function _M:init(t, no_default)
 	t.encumber = t.encumber or 0
 
@@ -84,6 +99,66 @@ function _M:init(t, no_default)
 	engine.interface.ObjectActivable.init(self, t)
 	engine.interface.ObjectIdentify.init(self, t)
 	engine.interface.ActorTalents.init(self, t)
+
+	if self.auto_image then
+		self.auto_image = nil
+		self.image = "object/"..(self.unique and "artifact/" or "")..self.name:lower():gsub("[^a-z0-9]", "")..".png"
+	end
+	if not self.auto_moddable_tile_check and self.unique and self.slot and auto_moddable_tile_slots[self.slot] and (not self.moddable_tile or type(self.moddable_tile) == "table" or (type(self.moddable_tile) == "string" and not self.moddable_tile:find("^special/"))) then
+		self.auto_moddable_tile_check = true
+		local file, filecheck = nil, nil
+		if self.type == "weapon" or self.subtype == "shield" then
+			file = "special/%s_"..self.name:lower():gsub("[^a-z0-9]", "_")
+			filecheck = file:format("left")
+		elseif self.subtype == "cloak" then
+			file = "special/"..self.name:lower():gsub("[^a-z0-9]", "_").."_%s"
+			filecheck = file:format("behind")
+		else
+			file = "special/"..self.name:lower():gsub("[^a-z0-9]", "_")
+			filecheck = file
+		end
+		if file and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+			self.moddable_tile = file
+			-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+		else
+			-- Try using the artifact image name
+			if type(self.image) == "string" and self.image:find("^object/artifact/") then
+				local base = self.image:gsub("object/artifact/", ""):gsub("%.png$", "")
+				if self.type == "weapon" or self.subtype == "shield" then
+					file = "special/%s_"..base
+					filecheck = file:format("left")
+				elseif self.subtype == "cloak" then
+					file = "special/"..base.."_%s"
+					filecheck = file:format("behind")
+				else
+					file = "special/"..base
+					filecheck = file
+				end
+				if file and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+					self.moddable_tile = file
+					-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+				else
+					print("[UNIQUE MODDABLE] auto moddable failed for ", self.name)
+				end
+			end
+		end
+	end
+
+	-- if self.unique and self.slot and type(self.moddable_tile) == "string" then
+	-- 	local filecheck = nil, nil
+	-- 	if self.type == "weapon" or self.subtype == "shield" then
+	-- 		filecheck = self.moddable_tile:format("left")
+	-- 	elseif self.subtype == "cloak" then
+	-- 		filecheck = self.moddable_tile:format("behind")
+	-- 	else
+	-- 		filecheck = self.moddable_tile
+	-- 	end
+	-- 	if filecheck and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+	-- 		-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+	-- 	else
+	-- 		print("[UNIQUE MODDABLE] auto moddable failed for ", self.name, self.moddable_tile, filecheck)
+	-- 	end
+	-- end
 end
 
 function _M:altered(t)
@@ -135,7 +210,6 @@ function _M:canUseObject(who)
 			return false, "You can not use items during a battle frenzy!"
 		end
 		if who:attr("sleep") and not who:attr("lucid_dreamer") then
-			game.logPlayer(who, "You can not use items while sleeping!")
 			return false, "You can not use objects while sleeping!"
 		end
 	end
@@ -199,7 +273,7 @@ function _M:useObject(who, ...)
 				end
 			end
 
-			return {used=ret}
+			return {used=ret, no_energy = util.getval(ab.no_energy, who, ab)}
 		else
 			if self.talent_cooldown or (self.power_regen and self.power_regen ~= 0) then
 				game.logPlayer(who, "%s is still recharging.", self:getName{no_count=true})
@@ -253,7 +327,12 @@ function _M:use(who, typ, inven, item)
 				end
 			end
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
-			if not self.use_no_energy then
+			if not ret.nobreakStepUp then who:breakStepUp() end
+			if not ret.nobreakStealth then who:breakStealth() end
+			if not ret.nobreakLightningSpeed then who:breakLightningSpeed() end
+			if not ret.nobreakReloading then who:breakReloading() end
+			if not ret.nobreakSpacetimeTuning then who:breakSpacetimeTuning() end
+			if not (self.use_no_energy or ret.no_energy) then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
 			end
 		end
@@ -262,8 +341,9 @@ function _M:use(who, typ, inven, item)
 end
 
 --- Returns a tooltip for the object
-function _M:tooltip(x, y)
+function _M:tooltip(x, y, use_actor)
 	local str = self:getDesc({do_color=true}, game.player:getInven(self:wornInven()))
+--	local str = self:getDesc({do_color=true}, game.player:getInven(self:wornInven()), nil, use_actor)
 	if config.settings.cheat then str:add(true, "UID: "..self.uid, true, self.image) end
 	local nb = game.level.map:getObjectTotal(x, y)
 	if nb == 2 then str:add(true, "---", true, "You see one more object.")
@@ -373,8 +453,8 @@ function _M:getPowerRank()
 end
 
 --- Gets the color in which to display the object in lists
-function _M:getDisplayColor()
-	if not self:isIdentified() then return {180, 180, 180}, "#B4B4B4#" end
+function _M:getDisplayColor(fake)
+	if not fake and not self:isIdentified() then return {180, 180, 180}, "#B4B4B4#" end
 	if self.lore then return {0, 128, 255}, "#0080FF#"
 	elseif self.unique then
 		if self.randart then
@@ -435,6 +515,10 @@ function _M:getName(t)
 		end)
 	end
 
+	if not t.no_add_name and self.tinker then
+		name = name .. ' #{italic}#<' .. self.tinker:getName(t) .. '>#{normal}#'
+	end
+
 	if not t.no_add_name and self.__tagged then
 		name = name .. " #ORANGE#="..self.__tagged.."=#LAST#"
 	end
@@ -453,19 +537,28 @@ function _M:getName(t)
 end
 
 --- Gets the short name of the object
+-- currently, this is only used by EquipDollFrame
 function _M:getShortName(t)
 	if not self.short_name then return self:getName(t) end
 
 	t = t or {}
+	t.no_add_name = true
+	
 	local qty = self:getNumber()
-	local name = self.short_name
+	local identified = t.force_id or self:isIdentified()
+	local name = self.short_name or "object"
 
-	if not self:isIdentified() and not t.force_id and self:getUnidentifiedName() then name = self:getUnidentifiedName() end
-
-	if self.keywords and next(self.keywords) then
+	if not identified then
+		local _, c = self:getDisplayColor(true)
+		if self.unique then
+			name = self:getUnidentifiedName()..", "..c.."special#LAST#"
+		elseif self.egoed then
+			name = name..", "..c.."ego#LAST#"
+		end
+	elseif self.keywords and next(self.keywords) then
 		local k = table.keys(self.keywords)
 		table.sort(k)
-		name = name..","..table.concat(k, ',')
+		name = name..", "..table.concat(k, ', ')
 	end
 
 	if not t.do_color then
@@ -514,6 +607,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 	elseif self.unique then
 		if self.legendary then desc:add({"color", "FF4000"},"[Legendary]", {"color", "LAST"}, true)
 		elseif self.godslayer then desc:add({"color", "AAD500"},"[Godslayer]", {"color", "LAST"}, true)
+		elseif self.randart then desc:add({"color", "FF7700"},"[Random Unique]", {"color", "LAST"}, true)
 		else desc:add({"color", "FFD700"},"[Unique]", {"color", "LAST"}, true)
 		end
 	end
@@ -522,7 +616,65 @@ function _M:getTextualDesc(compare_with, use_actor)
 	if self.material_level then desc:add(" ; tier ", tostring(self.material_level)) end
 	desc:add(true)
 	if self.slot_forbid == "OFFHAND" then desc:add("It must be held with both hands.", true) end
+	if self.double_weapon then desc:add("It can be used as a weapon and offhand.", true) end
 	desc:add(true)
+
+	if not self:isIdentified() then -- give limited information if the item is unidentified
+		local combat = self.combat
+		if not combat and self.wielded then
+			-- shield combat
+			if self.subtype == "shield" and self.special_combat and ((use_actor:knowTalentType("technique/shield-offense") or use_actor:knowTalentType("technique/shield-defense") or use_actor:attr("show_shield_combat"))) then
+				combat = self.special_combat
+			end
+			-- gloves combat
+			if self.subtype == "hands" and self.wielder and self.wielder.combat and (use_actor:knowTalent(use_actor.T_EMPTY_HAND) or use_actor:attr("show_gloves_combat")) then
+				combat = self.wielder.combat
+			end
+		end
+		if combat then -- always list combat damage types (but not amounts)
+			local special = 0
+			if combat.talented then
+				local t = use_actor:combatGetTraining(combat)
+				if t and t.name then desc:add("Mastery: ", {"color","GOLD"}, t.name, {"color","LAST"}, true) end
+			end
+			self:descAccuracyBonus(desc, combat or {}, use_actor)
+			if combat.wil_attack then
+				desc:add("Accuracy is based on willpower for this weapon.", true)
+			end
+			local dt = DamageType:get(combat.damtype or DamageType.PHYSICAL)
+			desc:add("Weapon Damage: ", dt.text_color or "#WHITE#", dt.name:upper(),{"color","LAST"})
+			for dtyp, val in pairs(combat.melee_project or combat.ranged_project or {}) do
+				dt = DamageType:get(dtyp)
+				if dt then
+					if dt.tdesc then
+						special = special + 1
+					else
+						desc:add(", ", dt.text_color or "#WHITE#", dt.name, {"color", "LAST"})
+					end
+				end
+			end
+			desc:add(true)
+			--special_on_hit count # for both melee and ranged
+			if special>0 or combat.special_on_hit or combat.special_on_crit or combat.special_on_kill or combat.burst_on_crit or combat.burst_on_hit or combat.talent_on_hit or combat.talent_on_crit then
+				desc:add("#YELLOW#It can cause special effects when it strikes in combat.#LAST#", true)
+			end
+			if self.on_block then
+				desc:add("#ORCHID#It can cause special effects when a melee attack is blocked.#LAST#", true)
+			end
+		end
+		if self.wielder then
+			if self.wielder.lite then
+				desc:add(("It %s ambient light (%+d radius)."):format(self.wielder.lite >= 0 and "provides" or "dims", self.wielder.lite), true)
+			end
+		end
+		if self.wielded then
+			if self.use_power or self.use_simple or self.use_talent then
+				desc:add("#ORANGE#It has an activatable power.#LAST#", true)
+			end
+		end
+--desc:add("----END UNIDED DESC----", true)
+		return desc
+	end
 
 	if self.set_list then
 		desc:add({"color","GREEN"}, "It is part of a set of items.", {"color","LAST"}, true)
@@ -533,9 +685,6 @@ function _M:getTextualDesc(compare_with, use_actor)
 		end
 		if self.set_complete then desc:add({"color","LIGHT_GREEN"}, "The set is complete.", {"color","LAST"}, true) end
 	end
-
-	-- Stop here if unided
-	if not self:isIdentified() then return desc end
 
 	local compare_fields = function(item1, items, infield, field, outformat, text, mod, isinversed, isdiffinversed, add_table)
 		add_table = add_table or {}
@@ -978,6 +1127,8 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(combat, compare_with, field, "phasing", "%+d%%", "Damage Shield penetration (this weapon only): ", 1, false, false, add_table)
 
 		compare_fields(combat, compare_with, field, "lifesteal", "%+d%%", "Lifesteal (this weapon only): ", 1, false, false, add_table)
+		
+		compare_fields(combat, compare_with, field, "attack_recurse", "%+d", "Multiple attacks: ", 1, false, false, add_table)
 
 		if combat.tg_type and combat.tg_type == "beam" then
 			desc:add({"color","YELLOW"}, ("Shots beam through all targets."), {"color","LAST"}, true)
@@ -1025,7 +1176,18 @@ function _M:getTextualDesc(compare_with, use_actor)
 				end
 			end)
 
-		self:triggerHook{"Object:descCombat", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, combat=combat}
+		-- resources used to attack
+		compare_table_fields(
+			combat, compare_with, field, "use_resources", "%0.1f", "#ORANGE#Attacks use: #LAST#",
+			function(item)
+				local res_def = ActorResource.resources_def[item]
+				local col = (res_def and res_def.color or "#SALMON#"):toTString()
+				return col[2], (" %s"):format(res_def and res_def.name or item:capitalize()),{"color","LAST"}
+			end,
+			nil,
+			true)
+
+		self:triggerHook{"Object:descCombat", compare_with=compare_with, compare_fields=compare_fields, compare_scaled=compare_scaled, compare_scaled=compare_scaled, compare_table_fields=compare_table_fields, desc=desc, combat=combat}
 	end
 
 	local desc_wielder = function(w, compare_with, field)
@@ -1537,7 +1699,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 			desc:add("Allows you to speak and read the old Sher'Tul language.", true)
 		end
 
-		self:triggerHook{"Object:descWielder", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, w=w, field=field}
+		self:triggerHook{"Object:descWielder", compare_with=compare_with, compare_fields=compare_fields, compare_scaled=compare_scaled, compare_table_fields=compare_table_fields, desc=desc, w=w, field=field}
 
 		-- Do not show "general effect" if nothing to show
 --		if desc[#desc-2] == "General effects: " then table.remove(desc) table.remove(desc) table.remove(desc) table.remove(desc) end
@@ -1617,20 +1779,29 @@ function _M:getTextualDesc(compare_with, use_actor)
 	end
 
 	if self.is_tinker then
-		if self.on_type then desc:add("Attach on item of type '", {"color","ORANGE"}, self.on_type, {"color", "LAST"}, "'", true) end
+		if self.on_type then
+			if self.on_subtype then
+				desc:add("Attach on item of type '", {"color","ORANGE"}, self.on_type, " / ", self.on_subtype, {"color", "LAST"}, "'", true)
+			else
+				desc:add("Attach on item of type '", {"color","ORANGE"}, self.on_type, {"color", "LAST"}, "'", true)
+			end
+		end
 		if self.on_slot then desc:add("Attach on item worn on slot '", {"color","ORANGE"}, self.on_slot:lower():gsub('_', ' '), {"color", "LAST"}, "'", true) end
 
-		if self.object_tinker and self.object_tinker.wielder then
+		if self.object_tinker and (self.object_tinker.combat or self.object_tinker.wielder) then
 			desc:add({"color","YELLOW"}, "When attach to an other item:", {"color", "LAST"}, true)
-			desc_wielder(self.object_tinker, compare_with, "wielder")
+			if self.object_tinker.combat then desc_combat(self.object_tinker, compare_with, "combat") end
+			if self.object_tinker.wielder then desc_wielder(self.object_tinker, compare_with, "wielder") end
 		end
 	end
 
 	if self.special_desc then
-		local d = self:special_desc()
-		desc:add({"color", "ROYAL_BLUE"})
-		desc:merge(d:toTString())
-		desc:add({"color", "LAST"}, true)
+		local d = self:special_desc(use_actor)
+		if d then
+			desc:add({"color", "ROYAL_BLUE"})
+			desc:merge(d:toTString())
+			desc:add({"color", "LAST"}, true)
+		end
 	end
 
 	if self.on_block and self.on_block.desc then
@@ -1752,8 +1923,12 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 	if self.use_no_energy and self.use_no_energy ~= "fake" then
 		desc:add("Activating this item is instant.", true)
+	elseif self.use_talent then
+		local t = use_actor:getTalentFromId(self.use_talent.id)
+		if util.getval(t.no_energy, use_actor, t) == true then
+			desc:add("Activating this item is instant.", true)
+		end
 	end
-
 
 	if self.curse then
 		local t = use_actor:getTalentFromId(use_actor.T_DEFILING_TOUCH)
@@ -1762,8 +1937,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		end
 	end
 
-	self:triggerHook{"Object:descMisc", compare_with=compare_with, compare_fields=compare_fields, compare_table_fields=compare_table_fields, desc=desc, object=self}
-
+	self:triggerHook{"Object:descMisc", compare_with=compare_with, compare_fields=compare_fields, compare_scaled=compare_scaled, compare_table_fields=compare_table_fields, desc=desc, object=self}
 
 	local use_desc = self:getUseDesc(use_actor)
 	if use_desc then desc:merge(use_desc:toTString()) end
@@ -1864,6 +2038,13 @@ function _M:getDesc(name_param, compare_with, never_compare, use_actor)
 		desc:add(true, true, {"color", "ANTIQUE_WHITE"})
 		desc:merge(self.desc:toTString())
 		desc:add({"color", "WHITE"})
+	end
+
+	if self.shimmer_moddable then
+		local oname = (self.shimmer_moddable.name or "???"):toTString()
+		desc:add(true, {"color", "OLIVE_DRAB"}, "This object's appearance was changed to ")
+		desc:merge(oname)
+		desc:add(".", {"color","LAST"}, true)
 	end
 
 	if could_compare and not never_compare then desc:add(true, {"font","italic"}, {"color","GOLD"}, "Press <control> to compare", {"color","LAST"}, {"font","normal"}) end
@@ -2151,11 +2332,17 @@ local function update_staff_table(o, d_table_old, d_table_new, old_element, new_
 end
 
 function _M:getStaffFlavorList()
-	return table.keys(self.flavors or standard_flavors)
+	if self.modes and not self.flavors then -- build flavor list for older staves
+		self.flavors = {exoticstaff={}}
+		for i = 1, #self.modes do
+			self.flavors.exoticstaff[i] = self.modes[i]:upper()
+		end
+	end
+	return self.flavors or standard_flavors
 end
 
 function _M:getStaffFlavor(flavor)
-	local flavors = self.flavors or standard_flavors
+	local flavors = self:getStaffFlavorList()
 	if not flavors[flavor] then return nil end
 	if flavors[flavor] == true then return standard_flavors[flavor]
 	else return flavors[flavor] end
@@ -2173,7 +2360,6 @@ local function staff_command(o) -- compat
 	}
 	return o.command_staff
 end
-
 
 -- Command a staff to another element
 function _M:commandStaff(element, flavor)
@@ -2203,4 +2389,52 @@ function _M:commandStaff(element, flavor)
 	if self.combat.melee_element then self.combat.damtype = element end
 	if not self.unique then self.name = self.name:gsub(self.flavor_name or "staff", flavor) end
 	self.flavor_name = flavor
+end
+
+-- find the preferred element for a staff user based on talents
+-- @param who the staff user
+-- @param force force recalculation
+-- @return string or nil, best element type
+-- @return string, best aspect
+-- @return damage weights (based on tactical info), sets self.ai_state._pref_staff_element
+function _M:getStaffPreferredElement(who, force)
+	if not who then return end
+	-- get a list of elements the staff can use
+	local damweights, aspects = {}, {}
+	local aspect = self.flavor_name or "none"
+	local flavors = self:getStaffFlavorList()
+	for flav, dams in pairs(flavors) do
+		for j, typ in ipairs(self:getStaffFlavor(flav)) do
+			damweights[typ] = 0
+			aspects[typ] = flav
+		end
+	end
+	if not force and who.ai_state._pref_staff_element and damweights[who.ai_state._pref_staff_element] then
+		return who.ai_state._pref_staff_element, aspects[who.ai_state._pref_staff_element], damweights
+	end
+	for tid, lev in pairs(who.talents) do
+		if tid ~= "T_ATTACK" then
+			local t = who.talents_def[tid]
+			local tacs = t.tactical
+			local damType
+			if type(tacs) == "table" then
+				for tac, val in pairs(tacs) do
+					if (tac == "attack" or tac == "attackarea") and type(val) == "table" then
+						for typ, weight in pairs(val) do
+							if damweights[typ] then --matches a staff element
+								local wt = type(weight) == "number" and weight or type(weight) == "function" and weight(who, t, who) or 0
+								damweights[typ] = damweights[typ] + wt*lev
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	local best, wt = self.combat.element or self.combat.damtype, 0
+	for typ, weight in pairs(damweights) do
+		if weight > wt then best, wt = typ, weight end
+	end
+	if wt > 0 then aspect = aspects[best] end
+	return wt > 0 and best, aspect, damweights
 end

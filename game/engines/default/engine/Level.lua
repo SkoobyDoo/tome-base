@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -265,5 +265,26 @@ function _M:pickSpotRemove(filter)
 	local s = rng.table(list)
 	if not s then return end
 	table.remove(self.spots, s.idx)
+	return s.spot
+end
+
+--- Pick a random spot matching the given filter
+function _M:pickSpotFrom(filter, spots)
+	local list = {}
+	for i, spot in ipairs(spots) do
+		if not filter or game.zone:checkFilter(spot, filter) then list[#list+1] = spot end
+	end
+	return rng.table(list), list
+end
+
+--- Pick a random spot matching the given filter and remove it
+function _M:pickSpotRemoveFrom(filter, spots)
+	local list = {}
+	for i, spot in ipairs(spots) do
+		if not filter or game.zone:checkFilter(spot, filter) then list[#list+1] = {spot=spot, idx=i} end
+	end
+	local s = rng.table(list)
+	if not s then return end
+	table.remove(spots, s.idx)
 	return s.spot
 end

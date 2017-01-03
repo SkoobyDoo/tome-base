@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -98,8 +98,8 @@ local reward_types = {
 		},
 		talents = {
 			[Talents.T_HEIGHTENED_SENSES] = 1,
-			[Talents.T_CHARM_MASTERY] = 1,
-			[Talents.T_PIERCING_SIGHT] = 1,
+			[Talents.T_DEVICE_MASTERY] = 1,
+			[Talents.T_TRACK] = 1,
 		},
 		stats = {
 			[Stats.STAT_DEX] = 2,
@@ -123,8 +123,8 @@ local reward_types = {
 				["technique/mobility"] = 0.8,
 			},
 			talents = {
-				[Talents.T_HACK_N_BACK] = 1,
-				[Talents.T_LIGHT_OF_FOOT] = 1,
+				[Talents.T_DISENGAGE] = 1,
+				[Talents.T_EVASION] = 1,
 			},
 			saves = { spell = 4, phys = 4 },
 			stats = {
@@ -147,11 +147,11 @@ local reward_types = {
 		},
 		antimagic = {
 			types = {
-				["technique/field-control"] = 0.8,
+				["technique/feedback"] = 0.8,
 			},
 			talents = {
-				[Talents.T_TRACK] = 1,
-				[Talents.T_HEAVE] = 1,
+				[Talents.T_BIOFEEDBACK] = 1,
+				[Talents.T_CONVERSION] = 1,
 			},
 			saves = { spell = 4, mental = 4 },
 			stats = {
@@ -299,6 +299,18 @@ local function generate_rewards()
 				end,
 			}
 		end end
+	end
+	if reward.special then
+		for _, data in ipairs(reward.special) do
+			answers[#answers+1] = {data.desc,
+				jump="done",
+				action=data.action,
+				on_select=function(npc, player)
+					game.tooltip_x, game.tooltip_y = 1, 1
+					game:tooltipDisplayAtMap(game.w, game.h, data.tooltip)
+				end,
+			}
+		end
 	end
 	return answers
 end

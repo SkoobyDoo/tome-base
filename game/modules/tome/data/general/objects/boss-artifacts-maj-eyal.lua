@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -214,60 +214,46 @@ It is said the Conclave created this weapon for their warmaster during the dark 
 			end
 			return true
 		end,
-		tactStatus = function(o, who, aitarget) -- get Tactical info for tactical table functions
-			local TDist = core.fov.distance(who.x, who.y, aitarget.x, aitarget.y)
-			local TEnv = core.fov.distance(aitarget.x, aitarget.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
-			local SEnv = core.fov.distance(who.x, who.y, o.winterStorm.x, o.winterStorm.y) < math.floor(o.winterStorm.radius)
-			return TDist, TEnv, SEnv
+		tactical = function(self, who, aitarget)
+			if not (self.winterStorm and aitarget) then return end
+			local tx, ty
+			if who.aiSeeTargetPos then tx, ty = who:aiSeeTargetPos(aitarget)
+			else tx, ty = aitarget.x, aitarget.y end
+			local TDist, TEnv, SEnv=
+				core.fov.distance(who.x, who.y, tx, ty), -- dist to target
+				core.fov.distance(tx, ty, self.winterStorm.x, self.winterStorm.y) < math.floor(self.winterStorm.radius), -- walls would surround target
+				core.fov.distance(who.x, who.y, self.winterStorm.x, self.winterStorm.y) < math.floor(self.winterStorm.radius) -- walls would surround us
+			
+			local tac = {}
+			-- escape: want walls around target but not around us if possible (so we can flee)
+			local val = 0
+			if TEnv then -- walls around target
+				if not SEnv then val = val + 3 -- but not us
+				elseif TDist > 1 then val = val + 1
+				end
+			elseif SEnv then -- walls around us
+				if TDist > 1 then val = val + 0.5 end -- and target is not adjacent
+			end
+			if val > 0 then tac.escape = val end
+			-- defense against multiple foes: want target adjacent with walls around us and target if possible
+			val = 0
+			if (TDist or 0) <= 1 then
+				if SEnv then val = val + 1.5 end
+				if TEnv then val = val + 0.5 end
+			end
+			if val > 0 then tac.defend = val end
+			if who.summoner then -- protect summoner if we have one
+				TDist =	core.fov.distance(who.summoner.x, who.summoner.y, tx, ty)
+				SEnv = core.fov.distance(who.summoner.x, who.summoner.y, self.winterStorm.x, self.winterStorm.y) < math.floor(self.winterStorm.radius)
+				val = 0
+				if (TDist or 0) > 1 then -- summoner not adjacent to target
+					if TEnv then val = val + 1 end -- walls around target
+					if SEnv then val = val + 0.5 end -- walls around summoner
+				end
+				if val > 0 then tac.protect = val end
+			end
+			if true then return tac end
 		end,
-		tactical = {
-			ESCAPE = function(who, t, aitarget) -- try to trap target
-				local o = t.is_object_use and t.getObject(who, t)
-				if not (o and o.wielded and aitarget and o.winterStorm and o.winterStorm.duration > 0) then
-					return 0
-				else
-					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
-					local val = 0
-					if Tenv then
-						if not Senv then val = val + 3
-						elseif Tdist > 1 then val = val + 1
-						end
-					elseif Senv then
-						if Tdist > 1 then val = val + 0.5 end
-					end
-					return val
-				end
-			end,
-			DEFEND = function(who, t, aitarget) -- defense against multiple foes
-				local o = t.is_object_use and t.getObject(who, t)
-				if not (o and o.wielded and aitarget and o.winterStorm and o.winterStorm.duration > 0) then
-					return 0
-				else
-					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who, aitarget)
-					local val = 0
-					if Tdist <= 1 then
-						if Senv then val = val + 1.5 end
-						if Tenv then val = val + 0.5 end
-					end
-					return val
-				end
-			end,
-			PROTECT = function(who, t, aitarget) -- protect summoner
-				if not (who.summoner and aitarget) then return end
-				local o = t.is_object_use and t.getObject(who, t)
-				if not (o and o.wielded and o.winterStorm and o.winterStorm.duration > 0) then
-					return 0
-				else
-					local Tdist, Tenv, Senv = o.use_power.tactStatus(o, who.summoner, aitarget)
-					local val = 0
-					if Tdist > 1 then
-						if Tenv then val = val + 1 end
-						if Senv then val = val + 0.5 end
-					end
-					return val
-				end
-			end,
-		},
 		radius = function(self, who)
 			local winterStorm = self.winterStorm
 			if winterStorm and winterStorm.duration > 0 then
@@ -694,6 +680,7 @@ newEntity{ base = "BASE_STAFF",
 	define_as = "STAFF_KOR", image = "object/artifact/staff_kors_fall.png",
 	unided_name = "dark staff",
 	flavor_name = "vilestaff",
+	flavors = {vilestaff=true},
 	name = "Kor's Fall", unique=true,
 	desc = [[Made from the bones of many creatures, this staff glows with power. You can feel its evil presence even from a distance.]],
 	require = { stat = { mag=25 }, },
@@ -701,7 +688,6 @@ newEntity{ base = "BASE_STAFF",
 	rarity = 200,
 	cost = 60,
 	material_level = 1,
-	modes = {"darkness", "fire", "blight", "acid"},
 	combat = {
 		is_greater = true,
 		dam = 10,
@@ -754,6 +740,7 @@ newEntity{ base = "BASE_STAFF",
 	slot_forbid = false,
 	twohanded = false,
 	unided_name = "broken staff", flavor_name = "magestaff",
+	flavors = {magestaff=true},
 	name = "Telos's Staff (Top Half)", unique=true,
 	desc = [[The top part of Telos' broken staff.]],
 	require = { stat = { mag=35 }, },
@@ -761,7 +748,6 @@ newEntity{ base = "BASE_STAFF",
 	rarity = 210,
 	encumber = 2.5,
 	material_level = 5,
-	modes = {"fire", "cold", "lightning", "arcane"},
 	cost = 500,
 	combat = {
 		dam = 35,
@@ -1053,6 +1039,20 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 				fake_ego = true,
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			local images = {
+				battleaxe = "object/artifact/2haxe_crystalline.png",
+				greatmaul = "object/artifact/2hmace_crystalline.png",
+				greatsword = "object/artifact/2hsword_crystalline.png",
+				dagger = "object/artifact/dagger_crystalline.png",
+				longsword = "object/artifact/1hsword_crystalline.png",
+				mace = "object/artifact/1hmace_crystalline.png",
+				waraxe = "object/artifact/1haxe_crystalline.png",
+				shield = "object/artifact/shield_crystalline.png",
+				staff = "object/artifact/staff_crystalline.png",
+				trident = "object/artifact/trident_crystalline.png",
+				hands = "object/artifact/gauntlets_crystalline.png",
+			}
+			if images[o.subtype] then o.image = images[o.subtype] o:removeAllMOs() end
 			o:resolve()
 
 			who:sortInven()
@@ -1124,6 +1124,13 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 				end),
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			local images = {
+				cloth = "object/artifact/cloth_armour_crystalline.png",
+				leather = "object/artifact/leather_armour_crystalline.png",
+				heavy = "object/artifact/heavy_armour_crystalline.png",
+				massive = "object/artifact/massive_armour_crystalline.png",
+			}
+			if images[o.subtype] then o.image = images[o.subtype] o:removeAllMOs() end
 			o:resolve()
 
 			who:sortInven()
@@ -1303,6 +1310,7 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 	desc = [[Inch-thick stralite plates lock together with voratun joints. The whole suit looks impenetrable, but has clearly been subjected to terrible treatment - great dents and misshaping warps, and caustic fissures bored across the surface.
 Though clearly a powerful piece, it must once have been much greater.]],
 	color = colors.WHITE, image = "object/artifact/armor_plate_borfasts_cage.png",
+	moddable_tile = "special/armor_plate_borfasts_cage",
 	level_range = {20, 28},
 	rarity = 200,
 	require = { stat = { str=35 }, },
@@ -1333,6 +1341,7 @@ newEntity{ base = "BASE_LEATHER_CAP", -- No armor training requirement
 	power_source = {psionic=true},
 	define_as = "ALETTA_DIADEM",
 	name = "Aletta's Diadem", unique=true, unided_name="jeweled diadem", image = "object/artifact/diadem_alettas_diadem.png",
+	moddable_tile = "special/diadem_alettas_diadem",
 	desc = [[A filigree of silver set with many small jewels, this diadem seems radiant - ethereal almost. But its touch seems to freeze your skin and brings wild thoughts to your mind. You want to drop it, throw it away, and yet you cannot resist thinking of what powers it might bring you.
 Is this temptation a weak will on your part, or some domination from the artifact itself...?]],
 	require = { stat = { wil=24 }, },
@@ -1356,6 +1365,7 @@ newEntity{ base = "BASE_SLING",
 	power_source = {nature=true},
 	define_as = "HARESKIN_SLING",
 	name = "Hare-Skin Sling", unique=true, unided_name = "hare-skin sling", image = "object/artifact/sling_hareskin_sling.png",
+	moddable_tile = "special/%s_hareskin_sling",
 	desc = [[This well-tended sling is made from the leather and sinews of a large hare. It feels smooth to the touch, yet very durable. Some say that the skin of a hare brings luck and fortune.
 Hard to tell if that really helped its former owner, but it's clear that the skin is at least also strong and reliable.]],
 	level_range = {20, 28},

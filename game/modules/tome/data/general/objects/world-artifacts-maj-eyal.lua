@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -72,13 +72,25 @@ newEntity{ base = "BASE_STAFF",
 	use_power = {
 		name = function(self, who) return ("cure up to %d diseases or poisons (based on Magic)"):format(self.use_power.cures(self, who)) end,
 		power = 10,
+		tactical = {CURE = function(who, t, aitarget) -- count number of disease and poisons
+			local nb = 0
+			for eff_id, p in pairs(who.tmp) do
+				local e = who.tempeffect_def[eff_id]
+				if e.status == "detrimental" then
+					nb = nb + (e.subtype.poison and 1 or 0)
+					nb = nb + (e.subtype.disease and 1.5 or 0)
+				end
+			end
+			if nb > 0 then return nb end
+		end
+		},
 		cures = function(self, who) return math.floor(who:combatStatScale("mag", 2.5, 6, "log")) end, --Not that many kinds of poisons/disease can be contracted at one time
 		use = function(self, who)
 			local target = who
 			local effs = {}
 			local known = false
 
-			game.logSeen(who, "%s uses %s, curing %s afflictions!", who.name:capitalize(), self:getName({no_add_name = true}), who:his_her())
+			game.logSeen(who, "%s uses %s %s, curing %s afflictions!", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name = true}), who:his_her())
 			-- Create list of poison/disease effects
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
@@ -113,12 +125,13 @@ newEntity{ base = "BASE_STAFF",
 	resolvers.command_staff(), -- I'm too lazy to write out resists and affinities
 }
 
-newEntity{ base = "BASE_STAFF",
+newEntity{ base = "BASE_STAFF", define_as = "STAFF_TARELION",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Lost Staff of Archmage Tarelion", image = "object/artifact/staff_lost_staff_archmage_tarelion.png",
 	unided_name = "shining staff",
 	flavor_name = "magestaff",
+	flavors = {magestaff=true},
 	level_range = {37, 50},
 	color=colors.VIOLET,
 	rarity = 250,
@@ -127,7 +140,6 @@ newEntity{ base = "BASE_STAFF",
 	material_level = 5,
 
 	require = { stat = { mag=48 }, },
-	modes = {"fire", "cold", "lightning", "arcane"},
 	combat = {
 		is_greater = true,
 		dam = 30,
@@ -298,31 +310,35 @@ newEntity{ base = "BASE_LONGSWORD",
 	unided_name = "glowing long sword",
 	moddable_tile = "special/%s_weapon_spellblade",
 	moddable_tile_big = true,
-	level_range = {40, 45},
+	level_range = {35, 50},
 	color=colors.AQUAMARINE,
 	rarity = 250,
 	desc = [[Mages sometimes have funny ideas. Archmage Varil once learned how to handle a sword and found he preferred wielding it instead of his staff.]],
 	on_id_lore = "spellblade",
 	cost = 1000,
 
-	require = { stat = { mag=28, str=28, dex=28 }, },
+	require = { stat = { mag=28, str=28 }, },
 	material_level = 5,
 	combat = {
 		dam = 50,
-		apr = 2,
 		physcrit = 5,
 		dammod = {str=1},
 	},
 	wielder = {
 		lite = 1,
-		combat_spellpower = 20,
+		combat_spellpower = 25,
 		combat_spellcrit = 9,
 		inc_damage={
-			[DamageType.PHYSICAL] = 18,
-			[DamageType.FIRE] = 18,
-			[DamageType.LIGHT] = 18,
+			[DamageType.ARCANE] = 30,
+			[DamageType.FIRE] = 30,
+			[DamageType.LIGHTNING] = 30,
 		},
-		inc_stats = { [Stats.STAT_MAG] = 4, [Stats.STAT_STR] = 4, },
+		inc_stats = { [Stats.STAT_MAG] = 8, [Stats.STAT_STR] = 4, },
+	},
+	talent_on_spell = {
+		{chance=12, talent=Talents.T_MANATHRUST, level=5},
+		{chance=12, talent=Talents.T_FLAME, level=5},
+		{chance=12, talent=Talents.T_LIGHTNING, level=5},
 	},
 }
 
@@ -359,6 +375,7 @@ newEntity{ base = "BASE_STAFF",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Bolbum's Big Knocker", image = "object/artifact/staff_bolbums_big_knocker.png",
+	moddable_tile = "special/%s_staff_bolbums_big_knocker",
 	unided_name = "thick staff",
 	level_range = {20, 35},
 	color=colors.UMBER,

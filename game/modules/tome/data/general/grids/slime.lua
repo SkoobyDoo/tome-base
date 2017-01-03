@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 local slime_wall_editer = {method="walls_def", def="slime_wall"}
+local slime_floor_editer = {method="borders_def", def="slimy_creep"}
 
 newEntity{
 	define_as = "SLIME_FLOOR",
@@ -50,22 +51,26 @@ for i = 1, 5 do newEntity{ base="SLIME_WALL", define_as = "SLIME_WALL"..i, image
 -- Level changers
 -----------------------------------------
 newEntity{
-	define_as = "SLIME_UP", image = "terrain/slime/slime_floor_01.png", add_mos = {{image="terrain/slime/slime_stairs_up_left_01.png"}},
+	define_as = "SLIME_UP", image = "terrain/slime/slime_floor_01.png",
+	add_displays = {class.new{image="terrain/slime/slime_stairs_up_left_01.png"}},
 	type = "floor", subtype = "slime",
 	name = "previous level",
 	display = '<', color=colors.LIGHT_GREEN, back_color=colors.GREEN,
 	notice = true,
 	always_remember = true,
+	nice_editer = slime_floor_editer,
 	change_level = -1,
 }
 
 newEntity{
-	define_as = "SLIME_DOWN", image = "tterrain/slime/slime_floor_01.png", add_mos = {{image="terrain/slime/slime_stair_down_01.png"}},
+	define_as = "SLIME_DOWN", image = "tterrain/slime/slime_floor_01.png",
+	add_displays = {class.new{image="terrain/slime/slime_stair_down_01.png"}},
 	type = "floor", subtype = "slime",
 	name = "next level",
 	display = '>', color=colors.LIGHT_GREEN, back_color=colors.GREEN,
 	notice = true,
 	always_remember = true,
+	nice_editer = slime_floor_editer,
 	change_level = 1,
 }
 
@@ -81,7 +86,7 @@ newEntity{
 	notice = true,
 	always_remember = true,
 	block_sight = true,
---	nice_editer = slime_wall_editer,
+	nice_editer = slime_floor_editer,
 	is_door = true,
 	door_opened = "SLIME_DOOR_OPEN",
 	dig = "FLOOR",
@@ -92,7 +97,7 @@ newEntity{
 	name = "open slime door",
 	display = "'", color=colors.LIGHT_GREEN, back_color=colors.GREEN,
 	always_remember = true,
---	nice_editer = slime_wall_editer,
+	nice_editer = slime_floor_editer,
 	is_door = true,
 	door_closed = "SLIME_DOOR",
 }

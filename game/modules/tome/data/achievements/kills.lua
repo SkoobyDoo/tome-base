@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -138,7 +138,7 @@ newAchievement{
 	name = "Kill Bill!", id = "KILL_BILL",
 	image = "object/artifact/bill_treestump.png",
 	show = "full", huge=true,
-	desc = [[Killed Bill in the Trollmire with a level one character.]],
+	desc = [[Killed Bill in the Trollmire without leveling beyond your starting level.]],
 	mode = "player",
 }
 

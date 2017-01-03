@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -66,6 +66,17 @@ You may select a spell for Contingency to automatically use when your life falls
 	self:setFocus(self.c_list)
 	self:setupUI()
 
+	self.key:addCommands{
+		__TEXTINPUT = function(c)
+			if c == '~' then
+				self:use(self.cur_item)
+			end
+			if self.list and self.list.chars[c] then
+				self:use(self.list.chars[c])
+			end
+		end,
+	}
+	engine.interface.PlayerHotkeys:bindAllHotkeys(self.key, function(i) self:defineHotkey(i) end)
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
 	}
@@ -105,7 +116,7 @@ function _M:generateList()
 
 	-- Generate lists of all talents by category
 	for j, t in pairs(self.actor.talents_def) do
-		if self.actor:knowTalent(t.id) and t.mode == "activated" and t.is_spell and not t.requires_target and not t.hide then
+		if self.actor:knowTalent(t.id) and t.mode == "activated" and t.is_spell and not t.requires_target and not t.hide and not t.fixed_cooldown then
 			local nodes = talents
 			local status = tstring{{"color", "LIGHT_GREEN"}, "Talents"}
 			

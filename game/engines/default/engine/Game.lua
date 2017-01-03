@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,15 +50,24 @@ function _M:init(keyhandler)
 end
 
 --- Log a message
-function _M:log() end
---- Log something that was seen
-function _M:logSeen() end
+-- Redefine as needed
+function _M.log(style, ...) end
+
+--- Log something associated with an entity that is seen by the player
+-- Redefine as needed
+function _M.logSeen(e, style, ...) end
+
+--- Log something associated with an entity if it is the player
+-- Redefine as needed
+function _M.logPlayer(e, style, ...) end
 
 --- Default mouse cursor
 function _M:defaultMouseCursor()
 	local UIBase = require "engine.ui.Base"
-	if fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse-down.png") then
-		self:setMouseCursor("/data/gfx/"..UIBase.ui.."-ui/mouse.png", "/data/gfx/"..UIBase.ui.."-ui/mouse-down.png", -4, -4)
+	local ui = UIBase.ui or "dark"
+
+	if fs.exists("/data/gfx/"..ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..ui.."-ui/mouse-down.png") then
+		self:setMouseCursor("/data/gfx/"..ui.."-ui/mouse.png", "/data/gfx/"..ui.."-ui/mouse-down.png", -4, -4)
 	else
 		self:setMouseCursor("/data/gfx/ui/mouse.png", "/data/gfx/ui/mouse-down.png", -4, -4)
 	end
@@ -277,9 +286,11 @@ end
 
 --- This is the "main game loop", do something here
 function _M:tick()
-	-- Check out any possible errors
+	-- If any errors have occurred, save them and open the error dialog
 	local errs = core.game.checkError()
 	if errs then
+		if not self.errors or self.errors.turn ~= self.turn then self.errors = {turn=self.turn, first_error = errs} end
+		self.errors.last_error = errs table.insert(self.errors, (#self.errors%10) + 1, errs)
 		if config.settings.cheat then for id = #self.dialogs, 1, -1 do self:unregisterDialog(self.dialogs[id]) end end
 		self:registerDialog(require("engine.dialogs.ShowErrorStack").new(errs))
 	end
@@ -335,6 +346,13 @@ function _M:onTickEnd(f, name)
 	end
 
 	self.on_tick_end[#self.on_tick_end+1] = f
+end
+
+--- Returns a registered function to do on tick end by name
+-- @string name callback to reference the function
+function _M:onTickEndGet(name)
+	if not self.on_tick_end_names then return end
+	return self.on_tick_end_names[name]
 end
 
 --- Called when a zone leaves a level
@@ -526,14 +544,14 @@ function _M:setResolution(res, force)
 
 	-- Change the window size
 	print("setResolution: switching resolution to", res, r[1], r[2], r[3], r[4], force and "(forced)")
-	local old_w, old_h, old_f, old_b = self.w, self.h, self.fullscreen, self.borderless
-	core.display.setWindowSize(r[1], r[2], r[3], r[4])
+	local old_w, old_h, old_f, old_b, old_rw, old_rh = self.w, self.h, self.fullscreen, self.borderless
+	core.display.setWindowSize(r[1], r[2], r[3], r[4], config.settings.screen_zoom)
 	
 	-- Don't write self.w/h/fullscreen yet
-	local new_w, new_h, new_f, new_b = core.display.size()
+	local new_w, new_h, new_f, new_b, new_rw, new_rh = core.display.size()
 
 	-- Check if a resolution change actually happened
-	if new_w ~= old_w or new_h ~= old_h or new_f ~= old_f or new_b ~= old_b then
+	if new_w ~= old_w or new_h ~= old_h or new_rw ~= old_rw or new_rh ~= old_rh or new_f ~= old_f or new_b ~= old_b then
 		print("setResolution: performing onResolutionChange...\n")
 		self:onResolutionChange()
 		-- onResolutionChange saves settings...
@@ -554,11 +572,13 @@ function _M:onResolutionChange()
 	end
 	
 	-- Get new resolution and save
-	self.w, self.h, self.fullscreen, self.borderless = core.display.size()
-	config.settings.window.size = ("%dx%d%s"):format(self.w, self.h, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
+	local realw, realh
+	self.w, self.h, self.fullscreen, self.borderless, realw, realh = core.display.size()
+	realw, realh = realw or self.w, realh or self.h
+	config.settings.window.size = ("%dx%d%s"):format(realw, realh, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
 	
 	self:saveSettings("resolution", ("window.size = '%s'\n"):format(config.settings.window.size))
-	print("onResolutionChange: resolution changed to ", self.w, self.h, "from", ow, oh)
+	print("onResolutionChange: resolution changed to ", realw, realh, "from", ow, oh)
 
 	-- We do not even have a game yet
 	if not game then
@@ -650,12 +670,16 @@ end
 -- By default it uses SDL gamma settings, but it can also use a fullscreen shader if available
 -- @param gamma
 function _M:setGamma(gamma)
-	if self.support_shader_gamma and self.full_fbo_shader then
-		-- Tell the shader which gamma to use
-		self.full_fbo_shader:setUniform("gamma", gamma)
-		-- Remove SDL gamma correction
-		core.display.setGamma(1)
-		print("[GAMMA] Setting gamma correction using fullscreen shader", gamma)
+	if self.support_shader_gamma and core.shader.active() then
+		if self.full_fbo_shader then
+			-- Tell the shader which gamma to use
+			self.full_fbo_shader:setUniform("gamma", gamma)
+			-- Remove SDL gamma correction
+			core.display.setGamma(1)
+			print("[GAMMA] Setting gamma correction using fullscreen shader", gamma)
+		else
+			print("[GAMMA] Not setting gamma correction yet, no fullscreen shader found", gamma)
+		end
 	else
 		core.display.setGamma(gamma)
 		print("[GAMMA] Setting gamma correction using SDL", gamma)
@@ -756,4 +780,11 @@ end
 -- @return ""
 function _M:getGenericTextTiles(en)
 	return "" 
+end
+
+--- Checks the presence of a specific addon
+function _M:isAddonActive(name)
+	if not self.__mod_info then return end
+	if not self.__mod_info.addons then return end
+	return game.__mod_info.addons[name]
 end

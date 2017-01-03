@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ newEntity{ base = "TRAP_ANNOY",
 	rarity = 3, level_range = {1, 50},
 	color=colors.BLUE,
 	message = "@Target@ seems less active.",
+	unided_name = "pattern of glyphs",
+	desc = function(self) return "Disrupts activated talents." end,
 	triggered = function(self, x, y, who)
 		local tids = {}
 		for tid, lev in pairs(who.talents) do
@@ -53,6 +55,8 @@ newEntity{ base = "TRAP_ANNOY",
 	rarity = 3, level_range = {30, 50},
 	color=colors.ORCHID,
 	message = "@Target@ triggers a burning curse!",
+	unided_name = "dark pentagram",
+	desc = function(self) return ("Afflicts the target with a curse: talents inflict %d fire damage and have increased cooldowns."):format(self.dam) end,
 	dam = resolvers.clscale(60, 50, 15, 0.75, 25),
 	pressure_trap = true,
 	triggered = function(self, x, y, who)

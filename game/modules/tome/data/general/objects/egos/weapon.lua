@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -811,12 +811,11 @@ newEntity{
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)
+			if not x or not y then return nil end
 			local target = game.level.map(x, y, engine.Map.ACTOR)
+			who:logCombat(target, "#Source# psionically attacks #target# with %s %s!", who:his_her(), self:getName({do_color=true, no_add_name=true}))
 			if target then
-				who:logCombat(target, "#Source# psionically projects a melee attack against #target#!")
 				who:attackTarget(target, engine.DamageType.MIND, 1.5, true)
-			else
-				return
 			end
 			return {id=true, used=true}
 		end,

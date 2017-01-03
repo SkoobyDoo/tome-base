@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2016 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1043,6 +1043,7 @@ int thread_particles(void *data)
 	pt->L = L;
 	lua_newtable(L);
 	lua_setglobal(L, "__fcts");
+	luaL_dostring(L, "os.execute = nil os.getenv = nil os.remove = nil os.rename = nil");
 	luaL_dostring(L, "function core.shader.allow() return true end");
 
 	// Override "print" if requested

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,6 +19,38 @@
 
 --- Base class used by pretty much everything
 -- @classmod engine.class
+
+if not _G.__class_module then
+	-- betterized version of module
+	local oldmodule = module
+	local _G = _G
+	function _G.module(name, ...)
+		setfenv(1, _G)
+		oldmodule(name, ...)
+		-- dance around since module() returns nothing
+		local modtab = _G.getfenv(1)
+		_G.setfenv(1, _G)
+		local meta = getmetatable(modtab)
+		-- remove _G!
+		if meta and meta.__index == _G then
+			meta.__index = nil
+			setmetatable(modtab, meta)
+		end
+		local env = {}
+		for k, v in pairs(modtab) do env[k] = v end
+		setmetatable(env, {__index = _G})
+		assert(env.getfenv == _G.getfenv)
+		local proxy = setmetatable({}, {__index = env,
+			__newindex = function(t, k, v)
+				env[k] = v
+				modtab[k] = v
+			end})
+		setfenv(2, proxy)
+		assert(proxy.getfenv == _G.getfenv)
+	end
+	_G.__class_module = true
+end
+
 module("class", package.seeall)
 
 local base = _G
@@ -38,6 +70,7 @@ end
 -- @return class
 function make(c)
 	setmetatable(c, {__index=_M})
+	c.__CLASS = true
 	c.new = function(...)
 		local obj = {}
 		obj.__CLASSNAME = c._NAME
@@ -59,6 +92,8 @@ local skip_key = {init=true, _NAME=true, _M=true, _PACKAGE=true, new=true, _BASE
 -- @return function(c)
 function inherit(...)
 	local bases = {...}
+	local basenames = {}
+	for _, b in ipairs(bases) do if b._NAME then basenames[b._NAME] = true end end
 	return function(c)
 		c._BASES = bases
 		-- Recursive inheritance caching
@@ -139,11 +174,23 @@ function _M:importInterface(base)
 end
 
 function _M:getClassName()
-	return self.__CLASSNAME
+	return self.__CLASSNAME or self._NAME
 end
 
 function _M:getClass()
 	return getmetatable(self).__index
+end
+
+function _M:isClassName(name)
+	if self.__CLASSNAME == name then return true end
+	if self._NAME == name then return true end
+	if self._BASES then
+		for _, b in ipairs(self._BASES) do
+			if b._NAME == name then return true end
+			if b:isClassName(name) then return true end
+		end
+	end
+	return false
 end
 
 function _M:runInherited()
@@ -184,6 +231,7 @@ function _M:clone(t)
 	return n
 end
 
+--- Automatically called by cloneFull()
 local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
 	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
 		d = d.__SAVEINSTEAD
@@ -215,19 +263,95 @@ local function clonerecursfull(clonetable, d, noclonecall, use_saveinstead)
 	return n, nb
 end
 
---- Clones the object, all subobjects without cloning twice a subobject
--- @return the clone and the number of cloned objects
-function _M:cloneFull(t)
+--- Clones the object, and all subobjects without cloning a subobject twice
+-- @param[type=table] self  Object to be cloned.
+-- @param[type=table] post_copy  Optional, a table to be merged with the new object after cloning.
+-- @return a reference to the clone
+function _M:cloneFull(post_copy)
 	local clonetable = {}
 	local n = clonerecursfull(clonetable, self, nil, nil)
-	if t then
-		for k, e in pairs(t) do n[k] = e end
+	if post_copy then
+		for k, e in pairs(post_copy) do n[k] = e end
 	end
 	return n
 --	return core.serial.cloneFull(self)
 end
 
---- Clones the object, all subobjects without cloning twice a subobject
+--- Automatically called by cloneCustom()
+local function cloneCustomRecurs(clonetable, d, noclonecall, use_saveinstead, alt_nodes)
+	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
+		d = d.__SAVEINSTEAD
+		if clonetable[d] then return d, 1 end
+	end
+
+	local nb = 0
+	local add
+	local n = {}
+	clonetable[d] = n
+
+	local k, e = next(d)
+	while k do
+		local skip = false
+		local nk_alt, ne_alt = nil, nil
+		if alt_nodes then
+			for node, alt in pairs(alt_nodes) do
+				if node == k or node == e then
+					if alt == false then 
+						skip = true
+						break
+					elseif type(alt) == "table" then
+						if alt.k ~= nil and node == k then nk_alt = alt.k end
+						if alt.v ~= nil then ne_alt = alt.v end
+						break
+					end
+				end
+			end
+		end
+		if not skip then
+			local nk, ne
+			if nk_alt ~= nil then nk = nk_alt else nk = k end
+			if ne_alt ~= nil then ne = ne_alt else ne = e end
+			
+			if clonetable[nk] then nk = clonetable[nk]
+			elseif type(nk) == "table" then nk, add = cloneCustomRecurs(clonetable, nk, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			end
+
+			if clonetable[ne] then ne = clonetable[ne]
+			elseif type(ne) == "table" and (type(nk) ~= "string" or nk ~= "__threads") then ne, add = cloneCustomRecurs(clonetable, ne, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			end
+			
+			n[nk] = ne
+		end
+		k, e = next(d, k)
+	end
+	setmetatable(n, getmetatable(d))
+	if not noclonecall and n.cloned and (n.__ATOMIC or n.__CLASSNAME) then n:cloned(d) end
+	if n.__ATOMIC or n.__CLASSNAME then nb = nb + 1 end
+	return n, nb
+end
+
+--- Clones the object, with custom logic
+-- Based on cloneFull(), with added functionality to skip/replace specified nodes.
+-- @param[type=table] self  Object to be cloned.
+-- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
+-- @  Table keys should be the nodes to skip/replace (field name or object reference).
+-- @  Each key should be set to false (to skip assignment entirely) or a table with up to two nodes:
+-- @    k = a name/ref to substitute for instances of this field,
+-- @      or nil to use the default name/ref as keys on the clone
+-- @    v = the value to assign for instances of this node,
+-- @      or nil to use the default assignment value
+-- @param[type=table] post_copy  Optional, a table to be merged with the new object after cloning.
+-- @return a reference to the clone
+function _M:cloneCustom(alt_nodes, post_copy)
+	local clonetable = {}
+	local n = cloneCustomRecurs(clonetable, self, nil, nil, alt_nodes)
+	if post_copy then
+		for k, e in pairs(post_copy) do n[k] = e end
+	end
+	return n
+end
+
+--- Clones the object, and all subobjects without cloning a subobject twice
 -- Does not invoke clone methods as this is not for reloading, just for saving
 -- @return the clone and the number of cloned objects
 function _M:cloneForSave()

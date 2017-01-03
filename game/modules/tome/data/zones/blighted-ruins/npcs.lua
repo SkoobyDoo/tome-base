@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,7 +58,8 @@ newEntity{
 	},
 
 	resolvers.talents{
-		[Talents.T_SOUL_ROT]=1,
+		[Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},
+		[Talents.T_SOUL_ROT]={base=1, every=5, max=5},
 	},
 
 	die = function(self, src)
@@ -85,8 +86,11 @@ This specimen looks like it was hastily assembled and is not really complete yet
 	movement_speed = 1.0,
 	tier1 = true,
 
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, CLOAK=1, QUIVER=1 , LITE=1},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
-	resolvers.drops{chance=100, nb=1, {defined="WINTERTIDE_PHIAL", random_art_replace={chance=75}} },
+	equipment = resolvers.equip{
+		{type="lite", defined="WINTERTIDE_PHIAL", random_art_replace={chance=75}, autoreq=true},
+	},
 
 	ai = "tactical", ai_state = { talent_in=3, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
@@ -110,6 +114,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
 	ai = nil, ai_tactic = nil, ai_state = nil,
+	infravision = 4, sight = 4,
 	
 	combat = {
 		dam=resolvers.levelup(5, 1, 1.2),
@@ -141,6 +146,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
 	ai = nil, ai_tactic = nil, ai_state = nil,
+	infravision = 4, sight = 4,
 	
 	combat = {
 		dam=resolvers.levelup(5, 1, 1.2),
@@ -170,6 +176,7 @@ newEntity{ base = "BASE_NPC_HORROR_UNDEAD",
 	never_move = 1,
 	stats = { str=5, dex=5, wil=5, mag=5, con=5, cun=5 },
 	ai = nil, ai_tactic = nil, ai_state = nil,
+	infravision = 4, sight = 4,
 	
 	lifesteal=15,
 	

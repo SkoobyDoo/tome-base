@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,16 +17,35 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+-- modify the power and cooldown of charm powers
+-- This makes adjustments after zone:finishEntity is finished, which handles any egos added via e.addons
+local function modify_charm(e, e, zone, level)
+	for i, c_mod in ipairs(e.charm_power_mods) do
+		c_mod(e, e, zone, level)
+	end
+	if e._old_finish and e._old_finish ~= e._modify_charm then return e._old_finish(e, e, zone, level) end
+end
+
 newEntity{
 	name = "quick ", prefix=true,
 	keywords = {quick=true},
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 5,
+	_modify_charm = modify_charm,
 	resolvers.genericlast(function(e)
-		if not e.use_power or not e.charm_power then return end
-		e.use_power.power = math.ceil(e.use_power.power * rng.float(0.6, 0.8))
-		e.charm_power = math.ceil(e.charm_power * rng.float(0.4, 0.7))
+		if e.finish ~= e._modify_charm then e._old_finish = e.finish end
+		e.finish = e._modify_charm
+		e.charm_power_mods = e.charm_power_mods or {}
+		table.insert(e.charm_power_mods, function(e, e, zone, level)
+			if e.charm_power and e.use_power and e.use_power.power then
+				print("\t Applying quick ego changes.")
+				e.use_power.power = math.ceil(e.use_power.power * rng.float(0.6, 0.8))
+				e.charm_power = math.ceil(e.charm_power * rng.float(0.6, 0.9))
+			else
+				print("\tquick ego changes aborted.")
+			end
+		end)
 	end),
 }
 
@@ -36,10 +55,20 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 5,
+	_modify_charm = modify_charm,
 	resolvers.genericlast(function(e)
-		if not e.use_power or not e.charm_power then return end
-		e.use_power.power = math.ceil(e.use_power.power * rng.float(1.2, 1.5))
-		e.charm_power = math.ceil(e.charm_power * rng.float(1.3, 1.5))
+		if e.finish ~= e._modify_charm then e._old_finish = e.finish end
+		e.finish = e._modify_charm
+		e.charm_power_mods = e.charm_power_mods or {}
+		table.insert(e.charm_power_mods, function(e, e, zone, level)
+			if e.charm_power and e.use_power and e.use_power.power then
+				print("\t Applying supercharged ego changes.")
+				e.use_power.power = math.ceil(e.use_power.power * rng.float(1.1, 1.3))
+				e.charm_power = math.ceil(e.charm_power * rng.float(1.3, 1.5))
+			else
+				print("\tsupercharged ego changes aborted.")
+			end
+		end)
 	end),
 }
 
@@ -50,9 +79,19 @@ newEntity{
 	greater_ego = 1,
 	rarity = 16,
 	cost = 5,
+	_modify_charm = modify_charm,
 	resolvers.genericlast(function(e)
-		if not e.use_power or not e.charm_power then return end
-		e.use_power.power = math.ceil(e.use_power.power * rng.float(1.4, 1.7))
-		e.charm_power = math.ceil(e.charm_power * rng.float(1.6, 1.9))
+		if e.finish ~= e._modify_charm then e._old_finish = e.finish end
+		e.finish = e._modify_charm
+		e.charm_power_mods = e.charm_power_mods or {}
+		table.insert(e.charm_power_mods, function(e, e, zone, level)
+			if e.charm_power and e.use_power and e.use_power.power then
+				print("\t Applying overpowered ego changes.")
+				e.use_power.power = math.ceil(e.use_power.power * rng.float(1.2, 1.5))
+				e.charm_power = math.ceil(e.charm_power * rng.float(1.6, 1.9))
+			else
+				print("\toverpowered ego changes aborted.")
+			end
+		end)
 	end),
 }

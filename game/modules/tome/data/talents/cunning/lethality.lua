@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = cuns_req1,
-	critpower = function(self, t) return self:combatTalentScale(t, 7.5, 25, 0.75) end,
+	critpower = function(self, t) return self:combatTalentScale(t, 7.5, 20, 0.75) end,
 	-- called by _M:combatCrit in mod.class.interface.Combat.lua
 	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.75) end,
 	passives = function(self, t, p)
@@ -39,22 +39,21 @@ newTalent{
 }
 
 newTalent{
-	name = "Deadly Strikes",
+	name = "Expose Weakness",
 	type = {"cunning/lethality", 2},
 	points = 5,
 	random_ego = "attack",
-	cooldown = 12,
+	cooldown = 10,
 	stamina = 15,
 	require = cuns_req2,
 	tactical = { ATTACK = {weapon = 2} },
-	no_energy = true,
 	requires_target = true,
 	is_melee = true,
 	range = 1,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.4) end,
-	getArmorPierce = function(self, t) return self:combatTalentStatDamage(t, "cun", 5, 45) end,  -- Adjust to scale like armor progression elsewhere
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 12, 6, 10)) end, --Limit to <12
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 8)) end, --Limit to <12
+	getBonusDamage = function(self, t) return 4 + self:combatTalentStatDamage(t, "cun", 4, 40) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local _, x, y = self:canProject(tg, self:getTarget(tg))
@@ -64,43 +63,68 @@ newTalent{
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
 		if hitted then
-			self:setEffect(self.EFF_DEADLY_STRIKES, t.getDuration(self, t), {power=t.getArmorPierce(self, t)})
+			target:setEffect(target.EFF_EXPOSE_WEAKNESS, t.getDuration(self,t), {src = self, power=t.getBonusDamage(self,t), apply_power=self:combatAttack()})
 		end
 
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		local apr = t.getArmorPierce(self, t)
+		local bonus = t.getBonusDamage(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[You hit your target, doing %d%% damage. If your attack hits, you gain %d armour penetration for %d turns.
-		The APR will increase with your Cunning.]]):
-		format(100 * damage, apr, duration)
+		return ([[Attack your target with both weapons for %d%% damage, exposing flaws in their defences for %d turns. Exposed targets have their armor hardiness reduced by 50%%, and your attacks gain 50%% resistance penetration and deal a bonus %0.2f physical damage. 
+		The bonus damage will increase with your Cunning, and the chance to expose will increase with your Accuracy.]]):
+		format(100 * damage, duration, damDesc(self, DamageType.PHYSICAL, bonus))
 	end,
 }
 
 newTalent{
-	name = "Willful Combat",
+	name = "Blade Flurry",
 	type = {"cunning/lethality", 3},
-	points = 5,
-	random_ego = "attack",
-	cooldown = 60,
-	stamina = 25,
-	tactical = { BUFF = 3 },
 	require = cuns_req3,
+	mode = "sustained",
+	points = 5,
+	cooldown = 30,
+	sustain_stamina = 50,
+	tactical = { BUFF = 2 },
+	drain_stamina = 6,
+	no_break_stealth = true,
 	no_energy = true,
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 60, 5, 11.1)) end, -- Limit <60
-	getDamage = function(self, t) return self:combatStatScale("wil", 4, 40, 0.75) + self:combatStatScale("cun", 4, 40, 0.75) end,
-	action = function(self, t)
-		self:setEffect(self.EFF_WILLFUL_COMBAT, t.getDuration(self, t), {power=t.getDamage(self, t)})
+	getSpeed = function(self, t) return self:combatTalentScale(t, 0.14, 0.45, 0.75) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.2, 0.6) end,
+	activate = function(self, t)
+		return {
+			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)
 		return true
 	end,
+	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+	
+		local tg = {type="ball", range=0, radius=1, friendlyfire=false, act_exclude={[target.uid]=true}}
+		local tgts = {}
+		
+		if hitted and not self.turn_procs.blade_flurry then	
+			self:project(tg, self.x, self.y, function(px, py, tg, self)	
+				local target = game.level.map(px, py, Map.ACTOR)	
+				if target and target ~= self then	
+					tgts[#tgts+1] = target
+				end	
+			end)	
+		end
+		
+		if #tgts <= 0 then return end
+		local a, id = rng.table(tgts)
+		table.remove(tgts, id)
+		self.turn_procs.blade_flurry = true
+		self:attackTarget(a, nil, t.getDamage(self,t), true)
+	
+	end,
 	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local damage = t.getDamage(self, t)
-		return ([[For %d turns, you put all your will into your blows, adding %d physical power to each strike.
-		The effect will improve with your Cunning and Willpower stats.]]):
-		format(duration, damage)
+		return ([[Become a whirling storm of blades, increasing attack speed by %d%% and causing melee attacks to strike an additional adjacent target other than your primary target for %d%% weapon damage. 
+This talent is exhausting to use, draining 6 stamina each turn.]]):format(t.getSpeed(self, t)*100, t.getDamage(self,t)*100)
 	end,
 }
 

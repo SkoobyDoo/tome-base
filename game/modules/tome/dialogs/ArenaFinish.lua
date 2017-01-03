@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -150,6 +150,16 @@ function _M:use(item)
 		game:registerDialog(require("mod.dialogs.CharacterSheet").new(self.actor))
 	elseif act == "log" then
 		game:registerDialog(require("mod.dialogs.ShowChatLog").new("Message Log", 0.6, game.uiset.logdisplay, profile.chat))
+	elseif act == "lichform" then
+		local t = self.actor:getTalentFromId(self.actor.T_LICHFORM)
+
+		self:cleanActor(self.actor)
+		self:resurrectBasic(self.actor)
+		self:restoreResources(self.actor)
+		world:gainAchievement("LICHFORM", actor)
+		t.becomeLich(self.actor, t)
+		self.actor:updateModdableTile()
+		--game:saveGame()
 	end
 end
 
@@ -164,4 +174,9 @@ function _M:generateList()
 	list[#list+1] = {name="Exit to main menu", action="exit", subaction="none"}
 
 	self.list = list
+	if self.actor:isTalentActive(self.actor.T_LICHFORM) then
+		self:use{action="lichform"}
+		self.dont_show = true
+		return
+	end
 end

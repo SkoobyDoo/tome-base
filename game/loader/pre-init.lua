@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -185,3 +185,11 @@ function string.unserialize(str)
 	local ok, err = pcall(f)
 	if ok then return setmetatable(t, nil) else print("[UNSERIALIZE] error", err) return nil end
 end
+
+--------------------------------------------------------------
+-- Remove invalidate some dangerous functions
+--------------------------------------------------------------
+os.execute = nil
+os.getenv = nil
+os.remove = nil
+os.rename = nil

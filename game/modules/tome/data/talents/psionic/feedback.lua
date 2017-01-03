@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -101,7 +101,7 @@ newTalent{
 	cooldown = 24,
 	no_break_channel = true,
 	is_heal = true,
-	tactical = { MANA = 2, VIM = 2, EQUILIBRIUM = 2, STAMINA = 2, POSITIVE = 2, NEGATIVE = 2, PSI = 2, HATE = 2 },
+	tactical = { HEAL = 2, MANA = 2, VIM = 2, EQUILIBRIUM = 2, STAMINA = 2, POSITIVE = 2, NEGATIVE = 2, PSI = 2, HATE = 2 },
 	getConversion = function(self, t) return self:combatTalentMindDamage(t, 10, 50) end,
 	getData = function(self, t)
 		local base = t.getConversion(self, t)

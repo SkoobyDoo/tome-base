@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
-		talent_cd_reduction={[Talents.T_VOID_BLAST]=-6},
+--		talent_cd_reduction={[Talents.T_VOID_BLAST]=-6},
 		learn_talent = {[Talents.T_VOID_BLAST] = resolvers.mbonus_material(4, 1)},
 	},
 }
@@ -122,6 +122,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
+		talent_cd_reduction={[Talents.T_VOLCANO]=2},
 		learn_talent = {[Talents.T_VOLCANO] = resolvers.mbonus_material(4, 1)},
 	},
 }
@@ -135,6 +136,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
+		talent_cd_reduction={[Talents.T_STRIKE]=1},
 		learn_talent = {[Talents.T_STRIKE] = resolvers.mbonus_material(4, 1)},
 	},
 }

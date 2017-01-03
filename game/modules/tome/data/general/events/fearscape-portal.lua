@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -57,6 +57,7 @@ local changer = function(id)
 		persistent = "zone",
 		min_material_level = game.zone.min_material_level,
 		max_material_level = game.zone.max_material_level,
+		effects = {"EFF_ZONE_AURA_FEARSCAPE"},
 		generator =  {
 			map = {
 				class = "engine.generator.map.Cavern",

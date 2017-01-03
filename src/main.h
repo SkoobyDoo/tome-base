@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2016 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ void do_move(int w, int h);
  * and fullscreen.  These three modes are mutually exclusive, with the
  * fullscreen flag taking priority over the borderless flag.
  */
-extern void do_resize(int w, int h, bool fullscreen, bool borderless);
+extern void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom);
 
 extern void setupRealtime(float freq);
 extern void setupDisplayTimer(int fps);
@@ -68,6 +68,7 @@ extern int cur_frame_tick;
 extern int g_argc;
 extern char **g_argv;
 extern char *override_home;
+extern float screen_zoom;
 
 /* Error handling */
 struct lua_err_type_s {
@@ -81,6 +82,9 @@ typedef struct lua_err_type_s lua_err_type;
 extern lua_err_type *last_lua_error_head, *last_lua_error_tail;
 extern void del_lua_error();
 extern core_boot_type *core_def;
+
+extern void physfs_reset_dir_allowed(lua_State *L);
+extern bool physfs_check_allow_path(lua_State *L, const char *path);
 
 #ifdef STEAM_TE4
 #include "steam-te4.h"

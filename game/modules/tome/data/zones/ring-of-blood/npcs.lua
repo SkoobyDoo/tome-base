@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -180,6 +180,7 @@ newEntity{ base = "BASE_NPC_SLAVER",
 	},
 	combat_armor = 0, combat_def = 6,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=1, every=8, max=5},
 		[Talents.T_MANATHRUST]={base=3, every=5, max=6},
 		[Talents.T_FLAME]={base=3, every=5, max=6},
 		[Talents.T_LIGHTNING]={base=3, every=5, max=6},

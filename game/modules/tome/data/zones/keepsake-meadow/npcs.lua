@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -318,7 +318,7 @@ newEntity{ base = "BASE_BERETHH_COMPANION", define_as = "BERETHH_ARCHER",
 }
 
 newEntity{ define_as="KYLESS",
-	name = "Kyless",
+	name = "Kyless", unique = true,
 	type = "humanoid", subtype = "human",
 	color=colors.VIOLET, display = "p", image = "player/cornac_male.png",
 	desc = "This is Kyless, your old friend. He seems dirtier than you recall and a good bit more dangerous.",
@@ -385,7 +385,7 @@ newEntity{ define_as="KYLESS",
 }
 
 newEntity{ define_as="BERETHH",
-	name = "Berethh",
+	name = "Berethh", unique = true,
 	type = "humanoid", subtype = "thalore",
 	color=colors.LIGHT_GREEN, display = "p", image = "player/thalore_male.png",
 	desc = "This is Berethh, your old friend. He is dressed in well-worn leather and skillfully wields a bow. There is something noble about the way he carries himself but his expression carries no emotion.",

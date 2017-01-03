@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2016 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -329,8 +329,8 @@ static int lua_get_mouse(lua_State *L)
 	int x = 0, y = 0;
 	int buttons = SDL_GetMouseState(&x, &y);
 
-	lua_pushnumber(L, x);
-	lua_pushnumber(L, y);
+	lua_pushnumber(L, x / screen_zoom);
+	lua_pushnumber(L, y / screen_zoom);
 	lua_pushnumber(L, SDL_BUTTON(buttons));
 
 	return 3;
@@ -339,7 +339,7 @@ static int lua_set_mouse(lua_State *L)
 {
 	int x = luaL_checknumber(L, 1);
 	int y = luaL_checknumber(L, 2);
-	SDL_WarpMouseInWindow(window, x, y);
+	SDL_WarpMouseInWindow(window, x * screen_zoom, y * screen_zoom);
 	return 0;
 }
 extern int current_mousehandler;
@@ -616,6 +616,28 @@ static int lua_force_next_tick(lua_State *L)
 	return 0;
 }
 
+static int lua_open_browser(lua_State *L)
+{
+#if defined(SELFEXE_LINUX) || defined(SELFEXE_BSD)
+	const char *command = "xdg-open \"%s\"";
+#elif defined(SELFEXE_WINDOWS)
+	const char *command = "rundll32 url.dll,FileProtocolHandler \"%s\"";
+#elif defined(SELFEXE_MACOSX)
+	const char *command = "open  \"%s\"";
+#else
+	{ return 0; }
+#endif
+	char buf[2048];
+	size_t len;
+	char *path = strdup(luaL_checklstring(L, 1, &len));
+	size_t i;
+	for (i = 0; i < len; i++) if (path[i] == '"') path[i] = '_'; // Just dont put " in there
+	snprintf(buf, 2047, command, path);
+	lua_pushboolean(L, system(buf) == 0);
+	
+	return 1;
+}
+
 static const struct luaL_Reg gamelib[] =
 {
 	{"setRebootMessage", lua_set_reboot_message},
@@ -632,6 +654,7 @@ static const struct luaL_Reg gamelib[] =
 	{"checkError", lua_check_error},
 	{"resetLocale", lua_reset_locale},
 	{"forceTick", lua_force_tick},
+	{"openBrowser", lua_open_browser},
 	{NULL, NULL},
 };
 
@@ -646,11 +669,13 @@ extern bool is_fullscreen;
 extern bool is_borderless;
 static int sdl_screen_size(lua_State *L)
 {
-	lua_pushnumber(L, screen->w);
-	lua_pushnumber(L, screen->h);
+	lua_pushnumber(L, screen->w / screen_zoom);
+	lua_pushnumber(L, screen->h / screen_zoom);
 	lua_pushboolean(L, is_fullscreen);
 	lua_pushboolean(L, is_borderless);
-	return 4;
+	lua_pushnumber(L, screen->w);
+	lua_pushnumber(L, screen->h);
+	return 6;
 }
 
 static int sdl_window_pos(lua_State *L)
@@ -2234,7 +2259,12 @@ static int gl_scissor(lua_State *L)
 {
 	if (lua_toboolean(L, 1)) {
 		glEnable(GL_SCISSOR_TEST);
-		glScissor(luaL_checknumber(L, 2), screen->h - luaL_checknumber(L, 3) - luaL_checknumber(L, 5), luaL_checknumber(L, 4), luaL_checknumber(L, 5));
+		float x = luaL_checknumber(L, 2);
+		float y = luaL_checknumber(L, 3);
+		float w = luaL_checknumber(L, 4);
+		float h = luaL_checknumber(L, 5);
+		y = screen->h / screen_zoom - y - h;
+		glScissor(x, y, w, h);
 	} else glDisable(GL_SCISSOR_TEST);
 	return 0;
 }
@@ -2411,9 +2441,10 @@ static int sdl_set_window_size(lua_State *L)
 	int h = luaL_checknumber(L, 2);
 	bool fullscreen = lua_toboolean(L, 3);
 	bool borderless = lua_toboolean(L, 4);
+	float zoom = luaL_checknumber(L, 5);
 
 	printf("Setting resolution to %dx%d (%s, %s)\n", w, h, fullscreen ? "fullscreen" : "windowed", borderless ? "borderless" : "with borders");
-	do_resize(w, h, fullscreen, borderless);
+	do_resize(w, h, fullscreen, borderless, zoom);
 
 	lua_pushboolean(L, TRUE);
 	return 1;
@@ -2600,7 +2631,7 @@ static int gl_new_fbo(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
 		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 
@@ -2618,11 +2649,11 @@ static int gl_free_fbo(lua_State *L)
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
 	int i;
-	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	glDeleteTextures(fbo->nbt, fbo->textures);
-	glDeleteFramebuffers(1, &(fbo->fbo));
+	glDeleteFramebuffersEXT(1, &(fbo->fbo));
 
 	free(fbo->textures);
 	free(fbo->buffers);

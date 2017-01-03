@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,11 +55,12 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "RAK_SHOR",
 	ai_tactic = resolvers.tactic"ranged",
 	resolvers.inscriptions(4, "rune"),
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, TOOL=1 },
 
 	resolvers.equip{
 		{type="weapon", subtype="staff", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="cloth", defined="BLACK_ROBE", random_art_replace={chance=75}, autoreq=true},
+		{type="charm", forbid_power_source={antimagic=true, nature=true}, autoreq=true}
 	},
 	resolvers.drops{chance=20, nb=1, {defined="JEWELER_TOME"} },
 	resolvers.drops{chance=100, nb=1, {defined="ORB_UNDEATH"} },
@@ -80,13 +81,13 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "RAK_SHOR",
 		[Talents.T_SUMMON]=1,
 
 		[Talents.T_AURA_MASTERY]=5,
-		[Talents.T_CREATE_MINIONS]=3,
-
+		[Talents.T_CREATE_MINIONS]={base=4, every=5, max=7},
 		[Talents.T_SOUL_ROT]={base=5, every=6, max=8},
 		[Talents.T_BLOOD_GRASP]={base=5, every=6, max=8},
 		[Talents.T_CURSE_OF_VULNERABILITY]={base=5, every=6, max=8},
 		[Talents.T_BONE_SHIELD]={base=8, every=8, max=11},
 		[Talents.T_BLOOD_SPRAY]={base=5, every=6, max=8},
+		[Talents.T_STAFF_MASTERY]={base=3, every=8, max=5},
 		[Talents.T_BLIGHTED_SUMMONING]=1,
 		[Talents.T_ENDLESS_WOES]=1,
 	},
@@ -184,7 +185,7 @@ newEntity{ base = "BASE_NPC_GHOST", define_as = "GLACIAL_LEGION",
 	allow_infinite_dungeon = true,
 	name = "Glacial Legion", color=colors.BLUE, unique=true,
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_ghost_glacial_legion.png", display_h=2, display_y=-1}}},
-	desc = [[A massive, shifting, ethereal form floats in the air around an orb of frozen blood. Vapor pools on the floor beneath it.]],
+	desc = [[A massive, shifting, ethereal form floats in the air around an orb of frozen blood.  The air around it condenses into freezing pools on the floor beneath it.]],
 	level_range = {45, nil}, exp_worth = 2,
 	rarity = 25,
 	size_category=5,
@@ -196,7 +197,7 @@ newEntity{ base = "BASE_NPC_GHOST", define_as = "GLACIAL_LEGION",
 	stats = { str=13, dex=15, mag=45, con=14 },
 	combat_spellpower = 100,
 
-	resists = {all = -10, [DamageType.FIRE] = -100, [DamageType.LIGHT] = 30, [DamageType.COLD] = 100},
+	resists = {all = -10, [DamageType.FIRE] = -85, [DamageType.LIGHT] = 30, [DamageType.COLD] = 100},
 	combat_armor = 0, combat_def = resolvers.mbonus(10, 10),
 	--stealth = resolvers.mbonus(40, 10),
 
@@ -236,8 +237,8 @@ newEntity{ base = "BASE_NPC_GHOST", define_as = "GLACIAL_LEGION",
 		--[Talents.T_MANAFLOW]={base=5, every=4, max = 12},
 		[Talents.T_FROST_HANDS]={base=3, every=7, max=8},
 	},
+	resolvers.equip{{defined="GLACIAL_CLOAK", random_art_replace={chance=50}, autoreq=true} },
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
-	resolvers.drops{chance=100, nb=1, {defined="GLACIAL_CLOAK", random_art_replace={chance=50}} },
 }
 
 --Heavy Sentinel, flaming bone giant.
@@ -262,10 +263,10 @@ newEntity{ base = "BASE_NPC_BONE_GIANT", define_as = "HEAVY_SENTINEL",
 	
 	combat = { dam=resolvers.levelup(60, 1, 2), atk=resolvers.levelup(110, 1, 1), apr=20, dammod={str=1.2}, damtype=engine.DamageType.FIRE, convert_damage={[engine.DamageType.PHYSICAL]=50}},
 	
-	melee_project = {[DamageType.FIRE]=resolvers.mbonus(15, 25)},
+	melee_project = {[DamageType.FIRE]=resolvers.mbonus(5, 15)},
 	on_melee_hit = {[DamageType.FIRE]=resolvers.mbonus(15, 5)},
 	autolevel = "warriormage",
-	resists = {all = 10, [DamageType.FIRE]=100, [DamageType.COLD]=-75},
+	resists = {all = 10, [DamageType.FIRE]=100, [DamageType.COLD]=-70},
 	resolvers.talents{
 		[Talents.T_BONE_ARMOUR]={base=5, every=10, max=7},
 		[Talents.T_STUN]={base=3, every=10, max=5},
@@ -282,8 +283,8 @@ newEntity{ base = "BASE_NPC_BONE_GIANT", define_as = "HEAVY_SENTINEL",
 		[Talents.T_FIERY_HANDS]={base=3, every=7, max=7},
 	},
 	resolvers.sustains_at_birth(),
+	resolvers.equip{{defined="ARMOR_MOLTEN", random_art_replace={chance=50}, autoreq=true} },
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
-	resolvers.drops{chance=100, nb=1, {defined="ARMOR_MOLTEN", random_art_replace={chance=50}} },
 }
 
 -- Arch Zephyr, Vampiric Storm Lord. Wields a bow and lightning magic with equal effectiveness, and moves quickly.
@@ -360,6 +361,8 @@ newEntity{ base = "BASE_NPC_WIGHT",
 	
 	resists = { [DamageType.COLD] = 30, [DamageType.FIRE] = 30, [DamageType.LIGHTNING] = 30, [DamageType.PHYSICAL] = 0, [DamageType.LIGHT] = 0, [DamageType.ARCANE] = 100},
 
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, FINGER=1, BODY=1 },
+	resolvers.equip{{type = "jewelry", subtype="ring", defined="AETHER_RING", random_art_replace={chance=50}, autoreq=true, tome_drops = "boss"}},
 	ai = "tactical",
 	ai_tactic = resolvers.tactic"ranged",
 	resolvers.talents{ [Talents.T_FLAMESHOCK]={base=3, every=5, max=7}, [Talents.T_LIGHTNING]={base=4, every=5, max=8}, [Talents.T_GLACIAL_VAPOUR]={base=3, every=5, max=7}, [Talents.T_STRIKE]={base=3, every=5, max=7},
@@ -377,5 +380,4 @@ newEntity{ base = "BASE_NPC_WIGHT",
 	},
 	resolvers.sustains_at_birth(),
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
-	resolvers.drops{chance=100, nb=1, {defined="AETHER_RING", random_art_replace={chance=50}} },
 }

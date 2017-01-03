@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -243,7 +243,7 @@ function _M:display(x, y, nb_keyframes, ox, oy, offset_x, offset_y, local_x, loc
 				core.display.drawQuad(x + current_x, y + current_y, item._tex_w, item_h - (clip_y_start + clip_y_end), item.background[1], item.background[2], item.background[3], item.background[4])
 			end
 			if item.is_separator then
-				self.sep:display(x + current_x, y + current_y + (self.fh - self.sep.h) * 0.5 - clip_y_start, nb_keyframes, ox, oy, 0, total_h + (self.fh - self.sep.h) * 0.5, 0, loffset_y, self.dest_area)
+				self.sep:display(x + current_x, y + current_y + (self.fh - self.sep.h) * 0.5, nb_keyframes)
 			else
 				local one_by_tex_h = 1 / item._tex_h
 				if self.text_shadow then item._tex:toScreenPrecise(x + current_x + 1, y + current_y + 1, item.w, item_h - (clip_y_start + clip_y_end), 0, item.w / item._tex_w, clip_y_start * one_by_tex_h, (item_h - clip_y_end) * one_by_tex_h, 0, 0, 0, self.text_shadow) end

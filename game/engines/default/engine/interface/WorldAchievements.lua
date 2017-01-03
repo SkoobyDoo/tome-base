@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ function _M:newAchievement(t)
 	t.id = t.id or t.name
 	t.id = t.id:upper():gsub("[ ]", "_")
 	t.order = #self.achiev_defs+1
+	t.category = t.category or "--"
 
 	self.achiev_defs[t.id] = t
 	self.achiev_defs[#self.achiev_defs+1] = t

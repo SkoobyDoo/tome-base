@@ -95,7 +95,7 @@ newTalent {
 		return self:combatTalentWeaponDamage(t, 1.5, 3)
 	end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		local sling = self:hasArcheryWeapon()
 		if not shield or not sling then
 			game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.")
@@ -119,7 +119,7 @@ newTalent {
 		end
 
 		-- Modify shield combat to use dex.
-		local combat = table.clone(shield.special_combat, true)
+		local combat = table.clone(shield_combat, true)
 		if combat.dammod.str and combat.dammod.str > 0 then
 			combat.dammod.dex = (combat.dammod.dex or 0) + combat.dammod.str
 			combat.dammod.str = nil

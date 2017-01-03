@@ -189,7 +189,10 @@ echo "Computing MD5s..."
 cd t-engine4-linux64-"$ver"
 rm lib64/libopenal.so.1
 rm -f all.md5
-DISPLAY=:1 ./t-engine -Mtome -n -E'compute_md5_only="all.md5" sleep_on_auth=2' > /dev/null 2>&1
+while true; do
+	DISPLAY=:1 ./t-engine -Mtome -n -E'compute_md5_only="all.md5" sleep_on_auth=2' > /dev/null 2>&1
+	if test $? -eq 0; then break; fi
+done
 cd ..
 echo "..done"
 echo

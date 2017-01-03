@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -148,6 +148,7 @@ return {
 					act:move(x, y, true)
 					act.changed = true
 					game.level.map:particleEmitter(x, y, 1, "teleport")
+					act:fireTalentCheck("callbackOnChangeLevel")
 				end
 			end
 

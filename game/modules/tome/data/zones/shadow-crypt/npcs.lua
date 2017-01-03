@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -59,14 +59,15 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "CULTIST_RAK_SHOR",
 	inc_damage = {[DamageType.BLIGHT] = -30},
 
 	resolvers.talents{
-		[Talents.T_SOUL_ROT]=5,
-		[Talents.T_BLOOD_GRASP]=5,
-		[Talents.T_BONE_SHIELD]=5,
-		[Talents.T_EVASION]=5,
-		[Talents.T_VIRULENT_DISEASE]=5,
-		[Talents.T_CYST_BURST]=3,
-		[Talents.T_EPIDEMIC]=4,
-		[Talents.T_WORM_ROT]=4,
+		[Talents.T_STAFF_MASTERY]={base=3, every=7, max=5},
+		[Talents.T_SOUL_ROT]={base=5, every=10, max=7},
+		[Talents.T_BLOOD_GRASP]={base=5, every=10, max=7},
+		[Talents.T_BONE_SHIELD]={base=5, every=10, max=7},
+		[Talents.T_EVASION]={base=5, every=10, max=7},
+		[Talents.T_VIRULENT_DISEASE]={base=5, every=10, max=7},
+		[Talents.T_CYST_BURST]={base=3, every=10, max=7},
+		[Talents.T_EPIDEMIC]={base=4, every=10, max=7},
+		[Talents.T_WORM_ROT]={base=4, every=10, max=7},
 	},
 	resolvers.sustains_at_birth(),
 
@@ -86,6 +87,7 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "CULTIST_RAK_SHOR",
 			a.rank = 4
 			a.name = "Doomed Shade of "..a.name
 			a.killer_message = "but nobody knew why #sex# suddenly became evil"
+			a.is_player_doomed_shade = true
 			a.color_r = 150 a.color_g = 150 a.color_b = 150
 			a:removeAllMOs()
 			a.ai = "tactical"

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,3 +19,8 @@
 
 --load("/data/general/traps/elemental.lua")
 --load("/data/general/traps/alarm.lua")
+load("/data/general/traps/water.lua")
+load("/data/general/traps/temporal.lua")
+load("/data/general/traps/annoy.lua")
+load("/data/general/traps/natural_forest.lua")
+load("/data/general/traps/teleport.lua")

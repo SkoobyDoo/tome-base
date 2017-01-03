@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,9 +55,9 @@ Erase him.]],
 }
 
 newChat{ id="tempest-dead",
-	text = [[So have I heard, @playername@. You prove worthy of your training. Go with the blessing of nature, @playername@ of Zigur.
+	text = [[So I have heard, @playername@. You prove worthy of your training. Go with the blessing of nature, @playername@ of Zigur.
 #LIGHT_GREEN#*She touches your skin.  You can feel nature infusing your very being.*#WHITE#
-This shall help your on your travels. Farewell!]],
+This shall help you on your travels. Farewell!]],
 	answers = {
 		{"Thank you, Protector.", action=function(npc, player)
 			player:hasQuest("lightning-overload"):create_entrance()
@@ -71,6 +71,9 @@ This shall help your on your travels. Farewell!]],
 			-- Make sure a previous amulet didnt bug it out
 			if player:getTalentTypeMastery("wild-gift/fungus") == 0 then player:setTalentTypeMastery("wild-gift/fungus", 1) end
 			game.logPlayer(player, "#00FF00#You gain the fungus talents school.")
+			if player:knowTalentType("cunning/trapping") then
+				game.party:learnLore("zigur-purging-trap")
+			end	
 			player:hasQuest("lightning-overload"):setStatus(engine.Quest.COMPLETED, "antimagic-reward")
 		end},
 	}

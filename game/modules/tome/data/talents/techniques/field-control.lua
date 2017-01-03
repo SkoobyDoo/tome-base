@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,64 +18,64 @@
 -- darkgod@te4.org
 
 
-newTalent{
-	name = "Disengage",
-	type = {"technique/field-control", 1},
-	require = techs_dex_req1,
-	points = 5,
-	random_ego = "utility",
-	cooldown = 12,
-	stamina = 20,
-	range = 7,
-	tactical = { ESCAPE = 2 },
-	requires_target = true,
-	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	on_pre_use = function(self, t)
-		if self:attr("never_move") then return false end
-		return true
-	end,
-	getDist = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then return nil end
-
-		self:knockback(target.x, target.y, t.getDist(self, t))
-		return true
-	end,
-	info = function(self, t)
-		return ([[Jump away %d grids from your target.]]):format(t.getDist(self, t))
-	end,
-}
-
-newTalent{
-	name = "Track",
-	type = {"technique/field-control", 2},
-	require = techs_dex_req2,
-	points = 5,
-	random_ego = "utility",
-	stamina = 20,
-	cooldown = 20,
-	radius = function(self, t) return math.floor(self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 5, 0, 55, 50)) end,
-	no_npc_use = true,
-	action = function(self, t)
-		local rad = self:getTalentRadius(t)
-		self:setEffect(self.EFF_SENSE, 3 + self:getTalentLevel(t), {
-			range = rad,
-			actor = 1,
-		})
-		return true
-	end,
-	info = function(self, t)
-		local rad = self:getTalentRadius(t)
-		return ([[Sense foes around you in a radius of %d for %d turns.
-		The radius will increase with your Cunning.]]):format(rad, 3 + self:getTalentLevel(t))
-	end,
-}
+--newTalent{
+--	name = "Disengage",
+--	type = {"technique/field-control", 1},
+--	require = techs_dex_req1,
+--	points = 5,
+--	random_ego = "utility",
+--	cooldown = 12,
+--	stamina = 20,
+--	range = 7,
+--	tactical = { ESCAPE = 2 },
+--	requires_target = true,
+--	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+--	on_pre_use = function(self, t)
+--		if self:attr("never_move") then return false end
+--		return true
+--	end,
+--	getDist = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
+--	action = function(self, t)
+--		local tg = self:getTalentTarget(t)
+--		local x, y, target = self:getTarget(tg)
+--		if not target or not self:canProject(tg, x, y) then return nil end
+--
+--		self:knockback(target.x, target.y, t.getDist(self, t))
+--		return true
+--	end,
+--	info = function(self, t)
+--		return ([[Jump away %d grids from your target.]]):format(t.getDist(self, t))
+--	end,
+--}
+--
+--newTalent{
+--	name = "Track",
+--	type = {"technique/field-control", 2},
+--	require = techs_dex_req2,
+--	points = 5,
+--	random_ego = "utility",
+--	stamina = 20,
+--	cooldown = 20,
+--	radius = function(self, t) return math.floor(self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 5, 0, 55, 50)) end,
+--	no_npc_use = true,
+--	action = function(self, t)
+--		local rad = self:getTalentRadius(t)
+--		self:setEffect(self.EFF_SENSE, 3 + self:getTalentLevel(t), {
+--			range = rad,
+--			actor = 1,
+--		})
+--		return true
+--	end,
+--	info = function(self, t)
+--		local rad = self:getTalentRadius(t)
+--		return ([[Sense foes around you in a radius of %d for %d turns.
+--		The radius will increase with your Cunning.]]):format(rad, 3 + self:getTalentLevel(t))
+--	end,
+--}
 
 newTalent{
 	name = "Heave",
-	type = {"technique/field-control", 3},
+	type = {"technique/field-control", 1},
 	require = techs_dex_req3,
 	points = 5,
 	random_ego = "defensive",
@@ -117,7 +117,7 @@ newTalent{
 
 newTalent{
 	name = "Slow Motion",
-	type = {"technique/field-control", 4},
+	type = {"technique/field-control", 2},
 	require = techs_dex_req4,
 	mode = "sustained",
 	points = 5,

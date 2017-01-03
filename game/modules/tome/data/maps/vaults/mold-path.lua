@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,14 +18,23 @@
 -- darkgod@te4.org
 
 setStatusAll{no_teleport=true}
-
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level <= 25
+end)
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
-
+specialList("terrain", {
+	"/data/general/grids/water.lua",
+	"/data/general/grids/forest.lua",
+})
+specialList("actor", {
+	"/data/general/npcs/ooze.lua",
+	"/data/general/npcs/molds.lua",
+})
 defineTile('.', "GRASS_SHORT")
 defineTile('#', "TREE")
 defineTile('X', "HARDTREE")
 defineTile('~', "POISON_DEEP_WATER")
-defineTile('!', "ROCK_VAULT")
+defineTile('!', "ROCK_VAULT", nil, nil, nil, {room_map={special=false, room=false, can_open=true}})
 
 defineTile('m', "GRASS_SHORT", nil, {random_filter={subtype="molds", add_levels=2}})
 defineTile('j', "GRASS_SHORT", nil, {random_filter={subtype="oozes", add_levels=2}})

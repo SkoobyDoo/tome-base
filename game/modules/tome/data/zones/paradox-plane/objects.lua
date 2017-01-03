@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ According to legend it was made from the first ash sapling to sprout after the S
 	cost = 200,
 	material_level = 3,
 	combat = {
-		range = 8,
+		range = 9,
 		physspeed = 0.7,
 	},
 	wielder = {

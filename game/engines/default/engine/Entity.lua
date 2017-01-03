@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -125,7 +125,6 @@ function _M:init(t, no_default)
 			error("Entity definition has a closure: "..err)
 		end
 	end
-
 	if self.color then
 		self.color_r = self.color.r
 		self.color_g = self.color.g
@@ -593,6 +592,7 @@ end
 function _M:MOflipX(v)
 	if not self._mo then return end
 	self._mo:flipX(v)
+	self._flipx = v
 
 	if not self.add_displays then return end
 
@@ -608,6 +608,7 @@ end
 function _M:MOflipY(v)
 	if not self._mo then return end
 	self._mo:flipY(v)
+	self._flipy = v
 
 	if not self.add_displays then return end
 
@@ -735,10 +736,17 @@ function _M:resolve(t, last, on_entity, key_chain)
 	end
 
 	-- Then we handle it, this is because resolvers can modify the list with their returns, or handlers, so we must make sure to not modify the list we are iterating over
+	local r
 	for k, e in pairs(list) do
+		if type(e) == "table" and e.__resolver then
+		end
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
-			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(".", key_chain)) end
-			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
+			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(key_chain, ".")) end
+			r = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
+			t[k] = r
+			if type(r) == "table" and r.__resolver and r.__resolve_instant and (not r.__resolve_last or last) then --handle a nested instant resolver immediately
+				t[k] = resolvers.calc[r.__resolver](r, on_entity or self, self, t, k, key_chain)
+			end
 		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			local key_chain = table.clone(key_chain)
 			key_chain[#key_chain+1] = k
@@ -886,6 +894,11 @@ function _M:addTemporaryValue(prop, v, noupdate)
 				table.sort(b, function(a, b) return a[1] > b[1] end)
 				base[prop] = b[1] and b[1][2]
 			else
+if type(base[prop] or 0) ~= "number" or type(v) ~= "number" then
+	print("ERROR: Attempting to add value", v, "property", prop, "to", base[prop]) table.print(base[prop]) table.print(v)
+	print("Entity:", self) -- table.print(self)
+	game.debug._debug_entity = self
+end
 				base[prop] = (base[prop] or 0) + v
 			end
 			self:onTemporaryValueChange(prop, v, base)
@@ -927,11 +940,11 @@ end
 -- @int id the id of the increase to delete
 -- @param[type=boolean] noupdate if true the actual property is not changed and needs to be changed by the caller
 function _M:removeTemporaryValue(prop, id, noupdate)
+	if not self.compute_vals then util.send_error_backtrace("removeTemporaryValue: attempting to remove prop "..tostring(prop).." with no temporary values initialized") return end
+	if not id then util.send_error_backtrace("removeTemporaryValue: error removing prop "..tostring(prop).." with id "..tostring(id)) return end
 	local oldval = self.compute_vals[id]
 --	print("removeTempVal", prop, oldval, " :=: ", id)
-	if not id then util.send_error_backtrace("error removing prop "..tostring(prop).." with id nil") return end
 	self.compute_vals[id] = nil
-
 	-- Find the base, one removed from the last prop
 	local initial_base, initial_prop
 	if type(prop) == "table" then
@@ -1013,9 +1026,9 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 		else
 			if config.settings.cheat then
 				if type(v) == "nil" then
-					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				else
-					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				end
 			end
 		end
@@ -1025,6 +1038,12 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 	if not noupdate then
 		recursive(initial_base, initial_prop, oldval, "add")
 	end
+end
+
+--- Returns a previously set temporary value, see addTemporaryValue()
+-- @int id the index of the previously set property
+function _M:getTemporaryValue(id)
+	return self.compute_vals and self.compute_vals[id]
 end
 
 --- Helper function to add temporary values
@@ -1108,7 +1127,7 @@ function _M:loadList(file, no_default, res, mod, loaded)
 	if type(file) == "table" then
 		res = res or {}
 		for i, f in ipairs(file) do
-			self:loadList(f, no_default, res, mod)
+			self:loadList(f, no_default, res, mod, loaded)
 		end
 		return res
 	end
@@ -1181,6 +1200,8 @@ function _M:loadList(file, no_default, res, mod, loaded)
 	newenv.currentZone = nil
 
 	self:triggerHook{"Entity:loadList", file=file, no_default=no_default, res=res, mod=mod, loaded=loaded}
+
+	res.__loaded_files = loaded
 
 	return res
 end

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,13 +25,13 @@ return {
 	decay = {300, 800},
 	actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
 	width = 50, height = 50,
-	tier1 = true,
+--	tier1 = true,
 --	all_remembered = true,
 	all_lited = true,
 	persistent = "zone",
 	ambient_music = "Straight Into Ambush.ogg",
 	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
-	max_material_level = function() return game.state:isAdvanced() and 4 or 2 end,
+	max_material_level = function() return game.state:isAdvanced() and 5 or 1 end,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Cavern",

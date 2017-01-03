@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 15,
 	greater_ego = 1,
-	cost = 4,
+	cost = 20,
 	combat = {
 		physcrit = resolvers.mbonus_material(10, 5),
 		special_on_crit = {desc="cripple the target", fct=function(combat, who, target)

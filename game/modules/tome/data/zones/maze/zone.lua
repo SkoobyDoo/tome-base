@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,8 +32,8 @@ return {
 --	all_lited = true,
 	persistent = "zone",
 	ambient_music = {"The Ancients.ogg","weather/dungeon_base.ogg"},
-	min_material_level = function() return game.state:isAdvanced() and 2 or 1 end,
-	max_material_level = function() return game.state:isAdvanced() and 4 or 3 end,
+	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
+	max_material_level = function() return game.state:isAdvanced() and 5 or 2 end,
 	is_collapsed = true,
 	generator =  {
 		map = {
@@ -145,7 +145,7 @@ return {
 	persistent = "zone",
 	ambient_music = {"The Ancients.ogg","weather/dungeon_base.ogg"},
 	min_material_level = function() return game.state:isAdvanced() and 2 or 1 end,
-	max_material_level = function() return game.state:isAdvanced() and 4 or 3 end,
+	max_material_level = function() return game.state:isAdvanced() and 5 or 3 end,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Maze",
@@ -193,7 +193,7 @@ return {
 		game:placeRandomLoreObject("NOTE"..level.level)
 
 		local p = game.party:findMember{main=true}
-		if level.level == 1 and p:knowTalent(p.T_TRAP_MASTERY) then
+		if level.level == 1 and p:knowTalentType("cunning/trapping") then
 			local l = game.zone:makeEntityByName(level, "object", "NOTE_LEARN_TRAP")
 			if not l then return end
 			for _, coord in pairs(util.adjacentCoords(level.default_down.x, level.default_down.y)) do

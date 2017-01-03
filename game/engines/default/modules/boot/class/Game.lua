@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -128,6 +128,8 @@ function _M:run()
 	self.log = function(style, ...) end
 	self.logSeen = function(e, style, ...) end
 	self.logPlayer = function(e, style, ...) end
+	self.logRollback = function(line, ...) return self.logdisplay:rollback(line, ...) end
+	self.logNewest = function() return self.logdisplay:getNewestLine() end
 	self.nicer_tiles = NicerTiles.new()
 
 	-- Starting from here we create a new game

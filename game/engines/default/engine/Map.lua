@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -830,6 +830,15 @@ function _M:rememberAll(x, y, w, h, v)
 	end end
 end
 
+--- Sets the current view at a precise location
+function _M:setScroll(x, y)
+	if self.mx == x and self.my == y then return end
+	self.mx = x
+	self.my = y
+	self.changed = true
+	self:checkMapViewBounded()
+end
+
 --- Sets the current view area with the given coords at the center
 function _M:centerViewAround(x, y)
 	self.mx = x - math.floor(self.viewport.mwidth / 2)
@@ -865,7 +874,7 @@ function _M:moveViewSurround(x, y, marginx, marginy, ignore_padding)
 			self.changed = true
 		end
 	else
-		if marginx * 2 + viewport_padding_4 + viewport_padding_6 > self.viewport.mwidth then
+		if marginx * 2 + self.viewport_padding_4 + self.viewport_padding_6 > self.viewport.mwidth then
 			self.mx = x - math.floor(self.viewport.mwidth / 2)
 			self.changed = true
 		elseif self.mx + marginx + self.viewport_padding_4 >= x then
@@ -875,7 +884,7 @@ function _M:moveViewSurround(x, y, marginx, marginy, ignore_padding)
 			self.mx = x - self.viewport.mwidth + marginx + self.viewport_padding_6
 			self.changed = true
 		end
-		if marginy * 2 + viewport_padding_2 + viewport_padding_8 > self.viewport.mheight then
+		if marginy * 2 + self.viewport_padding_2 + self.viewport_padding_8 > self.viewport.mheight then
 			self.my = y - math.floor(self.viewport.mheight / 2)
 			self.changed = true
 		elseif self.my + marginy + self.viewport_padding_8 >= y then
@@ -909,10 +918,10 @@ function _M:checkMapViewBounded()
 
 	-- Center if smaller than map viewport
 	local centered = false
-	if self.w < self.viewport.mwidth then self.mx = math.floor((self.w - self.viewport.mwidth) / 2) centered = true self.changed = true end
-	if self.h < self.viewport.mheight then self.my = math.floor((self.h - self.viewport.mheight) / 2) centered = true self.changed = true end
+	if self.w + self.viewport_padding_4 + self.viewport_padding_6 < self.viewport.mwidth then self.mx = math.floor((self.w - self.viewport.mwidth) / 2) centered = true self.changed = true end
+	if self.h + self.viewport_padding_8 + self.viewport_padding_2 < self.viewport.mheight then self.my = math.floor((self.h - self.viewport.mheight) / 2) centered = true self.changed = true end
 
---	self._map:setScroll(self.mx, self.my, centered and 0 or self.smooth_scroll)
+	--   self._map:setScroll(self.mx, self.my, centered and 0 or self.smooth_scroll)
 	self._map:setScroll(self.mx, self.my, self.smooth_scroll)
 end
 
@@ -934,8 +943,12 @@ function _M:getMouseTile(mx, my)
 end
 
 --- Get the screen position corresponding to a tile
-function _M:getTileToScreen(tx, ty)
+-- @param tx tile x position
+-- @param tx tile y position
+-- @param center true to return the center of the tile instead of the top/left corner
+function _M:getTileToScreen(tx, ty, center)
 	if not tx or not ty then return nil, nil end
+	if center then tx = tx + 0.5 ty = ty + 0.5 end
 	local x = (tx - self.mx) * self.tile_w * self.zoom + self.display_x
 	local y = (ty - self.my + util.hexOffset(tx)) * self.tile_h * self.zoom + self.display_y
 	return x, y
@@ -958,8 +971,8 @@ end
 --- Get the screen offset where to start drawing (upper corner)
 function _M:getScreenUpperCorner()
 	local sx, sy = self._map:getScroll()
-	local x = -self.mx * self.tile_w * self.zoom + self.display_x + sx * zoom
-	local y = -self.my * self.tile_h * self.zoom + self.display_y + sy * zoom
+	local x = -self.mx * self.tile_w * self.zoom + self.display_x + sx * _M.zoom
+	local y = -self.my * self.tile_h * self.zoom + self.display_y + sy * _M.zoom
 	return x, y
 end
 
@@ -976,7 +989,7 @@ function _M:import(map, dx, dy, sx, sy, sw, sh)
 	sy = sy or 0
 	sw = sw or map.w
 	sh = sh or map.h
-
+	-- import
 	for i = sx, sx + sw - 1 do for j = sy, sy + sh - 1 do
 		local x, y = dx + i, dy + j
 
@@ -998,7 +1011,14 @@ function _M:import(map, dx, dy, sx, sy, sw, sh)
 
 		self:updateMap(x, y)
 	end end
-
+	-- update the rooms list if needed
+	if self.room_map and map.room_map then
+		for i, room in ipairs(map.room_map.rooms) do
+			room.x, room.y, room.cx, room.cy = room.x + dx, room.y + dy, room.cx + dx, room.cy + dy
+			self.room_map.rooms[#self.room_map.rooms+1] = room
+		end
+		table.append(self.room_map.rooms_failed, map.room_map.rooms_failed)
+	end
 	self.changed = true
 end
 
@@ -1015,7 +1035,7 @@ function _M:overlay(map, dx, dy, sx, sy, sw, sh)
 	sy = sy or 0
 	sw = sw or map.w
 	sh = sh or map.h
-
+	-- overlay
 	for i = sx, sx + sw - 1 do for j = sy, sy + sh - 1 do
 		local x, y = dx + i, dy + j
 
@@ -1040,6 +1060,14 @@ function _M:overlay(map, dx, dy, sx, sy, sw, sh)
 
 		self:updateMap(x, y)
 	end end
+	-- update the rooms list if needed
+	if self.room_map and map.room_map then
+		for i, room in ipairs(map.room_map.rooms) do
+			room.x, room.y, room.cx, room.cy = room.x + dx, room.y + dy, room.cx + dx, room.cy + dy
+			self.room_map.rooms[#self.room_map.rooms+1] = room
+		end
+		table.append(self.room_map.rooms_failed, map.room_map.rooms_failed)
+	end
 
 	self.changed = true
 end
@@ -1287,6 +1315,18 @@ function _M:getObjectTotal(x, y)
 	local i = 1
 	while self:getObject(x, y, i) do i = i + 1 end
 	return i - 1
+end
+
+function _M:findObject(x, y, o)
+	-- Compute the map stack position
+	local i = 1
+	while true do
+		local oo = self:getObject(x, y, i)
+		if not oo then break end
+		if oo == o then return i end
+		i = i + 1
+	end
+	return nil
 end
 
 function _M:removeObject(x, y, i)

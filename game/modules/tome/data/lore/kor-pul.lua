@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ newLore{
 	id = "kor-pul-note-3",
 	category = "kor'pul",
 	name = "journal page (kor'pul)",
-	lore = [[This place is infested! I've found a lot of skeletons now, and unfortunately most of them have borne a full set of limbs. However my holy quest cannot to be denied! Plus I got a really great sword off one of the blighters, I can chop anything up easily now!
+	lore = [[This place is infested! I've found a lot of skeletons now, and unfortunately most of them have borne a full set of limbs. However, my holy quest cannot be denied! Plus I got a really great sword off one of the blighters, I can chop anything up easily now!
 
 The skeletal mages have been a night-born nuisance, but I've found a new weapon to use against them - a phase door rune! As soon as I catch sight of one of the robed wretches I activate my rune and foom, I'm away!
 

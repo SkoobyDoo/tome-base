@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -127,24 +127,22 @@ newTalent{
 	tactical = { BUFF = 2 },
 	getCrit = function(self, t) return self:combatTalentStatDamage(t, "dex", 10, 50) / 1.5 end,
 	getPen = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "str", 10, 50), 100, 0, 0, 35.7, 35.7) end, -- Limit to <100%
-	getDrain = function(self, t) return self:combatTalentLimit(t, 0, 11, 6) end, -- Limit to >0 stam
+	drain_stamina = 6,
 	activate = function(self, t)
 		local ret = {
 			crit = self:addTemporaryValue("combat_physcrit", t.getCrit(self, t)),
 			pen = self:addTemporaryValue("resists_pen", {[DamageType.PHYSICAL] = t.getPen(self, t)}),
-			drain = self:addTemporaryValue("stamina_regen_on_hit", - t.getDrain(self, t)),
 		}
 		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_physcrit", p.crit)
 		self:removeTemporaryValue("resists_pen", p.pen)
-		self:removeTemporaryValue("stamina_regen_on_hit", p.drain)
 		return true
 	end,
 	info = function(self, t)
 		return ([[You go all out, trying to burn down your foes as fast as possible.
-		Every hit in battle has +%d%% critical chance and +%d%% physical resistance penetration, but each strike drains %0.1f stamina.]]):
-		format(t.getCrit(self, t), t.getPen(self, t), t.getDrain(self, t))
+		Every hit in battle has +%d%% critical chance and +%d%% physical resistance penetration, but this talent drains 6 stamina each turn.]]):
+		format(t.getCrit(self, t), t.getPen(self, t))
 	end,
 }

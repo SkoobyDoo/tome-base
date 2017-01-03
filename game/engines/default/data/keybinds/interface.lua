@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,4 +43,11 @@ defineAction{
 	type = "SHOW_MAP",
 	group = "actions",
 	name = "Show map",
+}
+
+defineAction{
+	default = { "sym:_CAPSLOCK:false:false:false:false" },
+	type = "SCROLL_MAP",
+	group = "actions",
+	name = "Scroll map mode",
 }

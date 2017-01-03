@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ newEntity{ base = "BASE_WAND",
 }
 
 newEntity{ base = "BASE_WAND",
-	name = "dragonbone wand", short_name = "dargonbone",
+	name = "dragonbone wand", short_name = "dragonbone",
 	color = colors.UMBER,
 	level_range = {40, 50},
 	cost = 5,

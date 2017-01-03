@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,10 +17,16 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-setStatusAll{no_teleport=true, no_vaulted=true}
-
+setStatusAll{no_teleport=true, no_vaulted=true, room_map={can_open=true}}
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
-
+border = 0
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 45 and zone.grid_list.__loaded_files["/data/general/grids/lava.lua"] and zone.grid_list.__loaded_files["/data/general/grids/sand.lua"]
+end)
+specialList("actor", {
+	"/data/general/npcs/major-demon.lua",
+	"/data/general/npcs/minor-demon.lua",
+})
 defineTile('.', "SAND")
 defineTile('~', "LAVA_FLOOR")
 defineTile('#', "SAND")

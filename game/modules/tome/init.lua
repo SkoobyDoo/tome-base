@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@ long_name = "Tales of Maj'Eyal: Age of Ascendancy"
 short_name = "tome"
 author = { "DarkGod", "darkgod@te4.org" }
 homepage = "http://te4.org/"
-version = {1,4,0}
-engine = {1,4,0,"te4"}
+version = {1,5,0}
+engine = {1,5,0,"te4"}
 description = [[
 Welcome to Maj'Eyal.
 
@@ -45,6 +45,9 @@ Still, this is a golden age. Civilisations are healing the wounds of thousands o
 You are an adventurer, set out to discover wonders, explore old places, and venture into the unknown for wealth and glory.
 ]]
 starter = "mod.load"
+
+-- Forbid some now useless addons
+forbid_addons = {"stone-wardens"}
 
 -- List of additional team files required
 teams = {

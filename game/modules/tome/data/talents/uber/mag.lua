@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,13 +45,14 @@ uberTalent{
 		local ret = {}
 		self:talentTemporaryValue(ret, "force_use_resist", DamageType.ARCANE)
 		self:talentTemporaryValue(ret, "force_use_resist_percent", 66)
+		self:talentTemporaryValue(ret, "resists", {[DamageType.ARCANE] = 20})
 		return ret
 	end,
 	on_unlearn = function(self, t)
 	end,
 	info = function(self, t)
 		return ([[You manifest a thin layer of aether all around you. Any attack passing through it will check arcane resistance instead of the incoming damage resistance.
-		In effect, all of your resistances are equal to 66%% of your arcane resistance.]])
+		In effect, all of your resistances are equal to 66%% of your arcane resistance, which is increased by 20%%.]])
 		:format()
 	end,
 }
@@ -59,24 +60,29 @@ uberTalent{
 uberTalent{
 	name = "Mystical Cunning", image = "talents/vulnerability_poison.png",
 	mode = "passive",
-	require = { special={desc="Know either traps or poisons", fct=function(self)
-		return self:knowTalent(self.T_VILE_POISONS) or self:knowTalent(self.T_TRAP_MASTERY)
+	require = { special={desc="Know how to either prepare traps or apply poisons", fct=function(self)
+		return self:knowTalent(self.T_APPLY_POISON) or self:knowTalent(self.T_TRAP_MASTERY)
 	end} },
+	autolearn_talent = {Talents.T_VULNERABILITY_POISON, Talents.T_GRAVITIC_TRAP}, -- requires uber.lua loaded last
 	on_learn = function(self, t)
 		self:attr("combat_spellresist", 20)
-		if self:knowTalent(self.T_VILE_POISONS) then self:learnTalent(self.T_VULNERABILITY_POISON, true, nil, {no_unlearn=true}) end
-		if self:knowTalent(self.T_TRAP_MASTERY) then self:learnTalent(self.T_GRAVITIC_TRAP, true, nil, {no_unlearn=true}) end
 	end,
 	on_unlearn = function(self, t)
 		self:attr("combat_spellresist", -20)
 	end,
 	info = function(self, t)
-		return ([[Your study of arcane forces has let you develop new traps and poisons (depending on which you know when learning this prodigy).
-		You can learn:
-		- Vulnerability Poison: reduces all resistances and deals arcane damage.
-		- Gravitic Trap: each turn, all foes in a radius 5 around it are pulled in and take temporal damage.
+		local descs = ""
+		for i, tid in pairs(t.autolearn_talent) do
+			local bonus_t = self:getTalentFromId(tid)
+			if bonus_t then
+				descs = ("%s\n#YELLOW#%s#LAST#\n%s\n"):format(descs, bonus_t.name, self:callTalent(bonus_t.id, "info"))
+			end
+		end
+		return ([[Your study of arcane forces has let you develop a new way of applying your aptitude for  trapping and poisons.
+		You learn the following talents:
+%s
 		You also permanently gain 20 Spell Save.]])
-		:format()
+		:format(descs)
 	end,
 }
 
@@ -85,7 +91,10 @@ uberTalent{
 	mode = "passive",
 	info = function(self, t)
 		return ([[You have learned to harness your latent arcane powers, channeling them through your weapon.
-		Equipped weapons are treated as having an additional 50%% Magic modifier.]])
+		This has the following effects:
+		Equipped weapons are treated as having an additional 50%% Magic modifier;
+		Your raw Physical Power is increased by 100%% of your raw Spellpower;
+		Your physical critical chance is increased by 25%% of your bonus spell critical chance.]])
 		:format()
 	end,
 }
@@ -172,7 +181,7 @@ uberTalent{
 		elseif who.subtype == "shadow" then
 			local tl = who:getTalentLevelRaw(who.T_EMPATHIC_HEX)
 			tl = tlevel-tl
-			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end		
+			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end
 		elseif who.type == "thought-form" then
 			who:learnTalent(who.T_FLAME_OF_URH_ROK,true,tlevel)
 		elseif who.subtype == "yeek" then
@@ -187,6 +196,7 @@ uberTalent{
 --			print("Error: attempting to apply talent Blighted Summoning to incorrect creature type")
 			return false
 		end
+		who:incVim(who:getMaxVim())
 		return true
 	end,
 	info = function(self, t)

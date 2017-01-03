@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -117,34 +117,36 @@ newEffect{
 		self.summoner = eff.src
 		self.summoner_gain_exp = true
 		if self.dead then return end
-		game.party:addMember(self, {
-			control="full",
-			type="thrall",
-			title="Thrall",
-			orders = {leash=true, follow=true},
-			on_control = function(self)
-				self:hotkeyAutoTalents()
-			end,
-			leave_level = function(self, party_def) -- Cancel control and restore previous actor status.
-				local eff = self:hasEffect(self.EFF_DOMINANT_WILL)
-				local uid = self.uid
-				eff.survive_domination = true
-				self:removeTemporaryValue("inc_damage", eff.pid)
-				game.party:removeMember(self)
-				self:replaceWith(require("mod.class.NPC").new(self))
-				self.uid = uid
-				__uids[uid] = self
-				self.faction = eff.oldstate.faction
-				self.ai_state = eff.oldstate.ai_state
-				self.ai = eff.oldstate.ai
-				self.remove_from_party_on_death = eff.oldstate.remove_from_party_on_death
-				self.no_inventory_access = eff.oldstate.no_inventory_access
-				self.move_others = eff.oldstate.move_others
-				self.summoner = eff.oldstate.summoner
-				self.summoner_gain_exp = eff.oldstate.summoner_gain_exp
-				self:removeEffect(self.EFF_DOMINANT_WILL)
-			end,
-		})
+		game:onTickEnd(function()
+			game.party:addMember(self, {
+				control="full",
+				type="thrall",
+				title="Thrall",
+				orders = {leash=true, follow=true},
+				on_control = function(self)
+					self:hotkeyAutoTalents()
+				end,
+				leave_level = function(self, party_def) -- Cancel control and restore previous actor status.
+					local eff = self:hasEffect(self.EFF_DOMINANT_WILL)
+					local uid = self.uid
+					eff.survive_domination = true
+					self:removeTemporaryValue("inc_damage", eff.pid)
+					game.party:removeMember(self)
+					self:replaceWith(require("mod.class.NPC").new(self))
+					self.uid = uid
+					__uids[uid] = self
+					self.faction = eff.oldstate.faction
+					self.ai_state = eff.oldstate.ai_state
+					self.ai = eff.oldstate.ai
+					self.remove_from_party_on_death = eff.oldstate.remove_from_party_on_death
+					self.no_inventory_access = eff.oldstate.no_inventory_access
+					self.move_others = eff.oldstate.move_others
+					self.summoner = eff.oldstate.summoner
+					self.summoner_gain_exp = eff.oldstate.summoner_gain_exp
+					self:removeEffect(self.EFF_DOMINANT_WILL)
+				end,
+			})
+		end)
 	end,
 	deactivate = function(self, eff)
 		if eff.survive_domination then
@@ -556,7 +558,7 @@ newEffect{
 newEffect{
 	name = "HARASSED", image = "talents/harass_prey.png",
 	desc = "Harassed",
-	long_desc = function(self, eff) return ("The target has been harassed by its stalker, reducing damage by %d%%."):format( -eff.damageChange * 100) end,
+	long_desc = function(self, eff) return ("The target has been harassed by its stalker, reducing damage by %d%%."):format( -eff.damageChange) end,
 	type = "mental",
 	subtype = { fear=true },
 	status = "detrimental",
@@ -607,7 +609,7 @@ newEffect{
 	subtype = { psychic_drain=true },
 	status = "beneficial",
 	parameters = { },
-	activate = function(self, eff)
+	activate = function(self, eff, ed)
 		eff.src = self
 
 		-- hate
@@ -641,6 +643,8 @@ newEffect{
 		end
 
 		eff.target:setEffect(eff.target.EFF_FED_UPON, eff.dur, { src = eff.src, target = eff.target, constitutionLoss = -eff.constitutionGain, lifeRegenLoss = -eff.lifeRegenGain, damageLoss = -eff.damageGain, resistLoss = -eff.resistGain })
+
+		ed.updateFeed(self, eff)
 	end,
 	deactivate = function(self, eff)
 		-- hate
@@ -1703,20 +1707,18 @@ newEffect{
 newEffect{
 	name = "HALFLING_LUCK", image = "talents/halfling_luck.png",
 	desc = "Halflings's Luck",
-	long_desc = function(self, eff) return ("The target's luck and cunning combine to grant it %d%% higher combat critical chance, %d%% higher mental critical chance, and %d%% higher spell critical chance."):format(eff.physical, eff.mind, eff.spell) end,
+	long_desc = function(self, eff) return ("The target's luck and cunning combine to grant it %d%% higher critical chance and %d saves."):format(eff.crit, eff.save) end,
 	type = "mental",
 	subtype = { focus=true },
 	status = "beneficial",
-	parameters = { spell=10, physical=10 },
+	parameters = { crit=10, save=10 },
 	on_gain = function(self, err) return "#Target# seems more aware." end,
 	on_lose = function(self, err) return "#Target#'s awareness returns to normal." end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "combat_physcrit", eff.physical)
-		self:effectTemporaryValue(eff, "combat_spellcrit", eff.spell)
-		self:effectTemporaryValue(eff, "combat_mindcrit", eff.mind)
-		self:effectTemporaryValue(eff, "combat_physresist", eff.physical)
-		self:effectTemporaryValue(eff, "combat_spellresist", eff.spell)
-		self:effectTemporaryValue(eff, "combat_mentalresist", eff.mind)
+		self:effectTemporaryValue(eff, "combat_generic_crit", eff.crit)
+		self:effectTemporaryValue(eff, "combat_physresist", eff.save)
+		self:effectTemporaryValue(eff, "combat_spellresist", eff.save)
+		self:effectTemporaryValue(eff, "combat_mentalresist", eff.save)
 	end,
 }
 
@@ -1787,7 +1789,7 @@ newEffect{
 
 		-- check negative life first incase the creature has healing
 		if self.life <= (self.die_at or 0) then
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), "Falls dead!", {255,0,255})
 			game.logSeen(self, "%s dies when its frenzy ends!", self.name:capitalize())
 			self:die(self)
@@ -2266,6 +2268,24 @@ newEffect{
 }
 
 newEffect{
+	name = "ORC_TRIUMPH", image = "talents/skirmisher.png",
+	desc = "Orcish Triumph",
+	long_desc = function(self, eff) return ("Inspired by a recent kill increasing all resistance by %d%%."):format(eff.resists) end,
+	type = "mental",
+	subtype = { frenzy=true },
+	status = "beneficial",
+	parameters = { resists=10 },
+	on_gain = function(self, err) return "#Target# roars triumphantly." end, -- Too spammy?
+	on_lose = function(self, err) return "#Target# is no longer inspired." end,
+	activate = function(self, eff)
+		eff.pid = self:addTemporaryValue("resists", {all=eff.resists})
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("resists", eff.pid)
+	end,
+}
+
+newEffect{
 	name = "INTIMIDATED",
 	desc = "Intimidated",
 	long_desc = function(self, eff) return ("The target's morale is weakened, reducing its attack power, mind power, and spellpower by %d."):format(eff.power) end,
@@ -2444,17 +2464,17 @@ newEffect{
 newEffect{
 	name = "CLEAR_MIND", image = "talents/mental_shielding.png",
 	desc = "Clear Mind",
-	long_desc = function(self, eff) return ("Nullifies the next %d detrimental mental effects."):format(self.mental_negative_status_effect_immune) end,
+	long_desc = function(self, eff) return ("Nullifies the next %d detrimental mental effects."):format(self.clear_mind_immune) end,
 	type = "mental",
 	subtype = { psionic=true, },
 	status = "beneficial",
 	parameters = { power=2 },
 	activate = function(self, eff)
-		self.mental_negative_status_effect_immune = eff.power
+		self.clear_mind_immune = eff.power
 		eff.particles = self:addParticles(engine.Particles.new("generic_power", 1, {rm=0, rM=0, gm=100, gM=180, bm=180, bM=255, am=200, aM=255}))
 	end,
 	deactivate = function(self, eff)
-		self.mental_negative_status_effect_immune = nil
+		self.clear_mind_immune = nil
 		self:removeParticles(eff.particles)
 	end,
 }
@@ -3175,7 +3195,7 @@ newEffect{
 		self.damage_shield_absorb = eff.power
 		self.damage_shield_absorb_max = eff.power
 		if core.shader.active(4) then
-			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="shield3"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor=colors.hex1alpha"9fe836a0", auraColor=colors.hex1alpha"36bce8da"}))
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {a=eff.shield_transparency or 1, size_factor=1.4, img="shield3"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor=colors.hex1alpha"9fe836a0", auraColor=colors.hex1alpha"36bce8da"}))
 		else
 			eff.particle = self:addParticles(Particles.new("damage_shield", 1))
 		end

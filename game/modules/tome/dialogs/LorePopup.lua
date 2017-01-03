@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ function _M:init(l, w, force_height)
 
 	Dialog.init(self, "Lore found: #0080FF#"..l.name, 1, 1)
 
-	local text = util.getval(l.lore).."\n"
+	local text = util.getval(l.lore, true).."\n"
 	local list = text:splitLines(w - 10, self.font)
 
 	if l.bloodstains then

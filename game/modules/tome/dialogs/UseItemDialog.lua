@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -95,6 +95,10 @@ function _M:use(item)
 		self.actor:doTakeoffTinker(self.inven[self.item], self.object)
 		self.actor:sortInven()
 		self.onuse(self.inven, self.item, self.object, false)
+	elseif act == "tinker-detach" then
+		self.actor:doTakeoffTinker(self.object, self.object.tinker)
+		self.actor:sortInven()
+		self.onuse(self.inven, self.item, self.object, false)
 	elseif act == "tinker-add" then
 		local list = {}
 		for inven_idx, inven in pairs(self.actor.inven) do if inven.worn then
@@ -119,7 +123,7 @@ function _M:use(item)
 			self.onuse(self.inven, self.item, self.object, false)
 		end))		
 	elseif act == "transmo" then
-		self:yesnoPopup("Transmogrify", "Really transmogrify "..self.object:getName{}, function(ret)
+		self:yesnoPopup(self.actor:transmoGetWord():capitalize(), "Really "..self.actor:transmoGetWord().." "..self.object:getName{}, function(ret)
 			if not ret then return end
 			self.actor:transmoInven(self.inven, self.item, self.object)
 			self.onuse(self.inven, self.item, self.object, false)
@@ -164,8 +168,9 @@ function _M:generateList()
 	if not self.object.__transmo then if self.inven ~= self.actor.INVEN_INVEN and self.object:wornInven() then list[#list+1] = {name="Take off", action="takeoff"} end end
 	if not self.object.__transmo then if self.inven ~= self.actor.INVEN_INVEN and self.object.is_tinker and self.object.tinkered then list[#list+1] = {name="Detach from item", action="tinker-remove"} end end
 	if not self.object.__transmo then if self.inven == self.actor.INVEN_INVEN and self.object.is_tinker and not self.object.tinkered then list[#list+1] = {name="Attach to item", action="tinker-add"} end end
+	if not self.object.__transmo and self.object.tinker then list[#list+1] = { name = 'Detach tinker', action='tinker-detach' } end
 	if not self.dst_actor and not self.object.__tagged and self.inven == self.actor.INVEN_INVEN then list[#list+1] = {name="Drop", action="drop"} end
-	if not self.dst_actor and self.inven == self.actor.INVEN_INVEN and game.party:countInventoryAble() >= 2 then list[#list+1] = {name="Transfer to party", action="transfer"} end
+	if not self.dst_actor and self.inven == self.actor.INVEN_INVEN and not self.object.plot and not self.object.quest and game.party:countInventoryAble() >= 2 then list[#list+1] = {name="Transfer to party", action="transfer"} end
 	if not self.dst_actor and not self.object.__tagged and self.inven == self.actor.INVEN_INVEN and transmo_chest and self.actor:transmoFilter(self.object) then list[#list+1] = {name=self.actor:transmoGetWord():capitalize().." now", action="transmo"} end
 	if profile.auth and profile.hash_valid then list[#list+1] = {name="Link item in chat", action="chat-link"} end
 	if config.settings.cheat then list[#list+1] = {name="Lua inspect", action="debug-inspect", color=colors.simple(colors.LIGHT_BLUE)} end

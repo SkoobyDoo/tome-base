@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,17 +18,15 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local Base = require "engine.ui.Base"
+local WithTitle = require "engine.ui.WithTitle"
 local Focusable = require "engine.ui.Focusable"
 
 --- A generic UI textbox
 -- @classmod engine.ui.Textbox
-module(..., package.seeall, class.inherit(Base, Focusable))
+module(..., package.seeall, class.inherit(WithTitle, Focusable))
 
 function _M:init(t)
-	self.title = assert(t.title, "no textbox title")
 	self.text = t.text or ""
-	self.size_title = t.size_title or t.title
 	self.old_text = self.text
 	self.on_mouse = t.on_mouse
 	self.hide = t.hide
@@ -43,7 +41,7 @@ function _M:init(t)
 	self.cursor = #self.tmp + 1
 	self.scroll = 1
 
-	Base.init(self, t)
+	WithTitle.init(self, t)
 end
 
 function _M:on_focus(v)
@@ -53,26 +51,29 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-
 	-- Draw UI
-	local title_w = self.font:size(self.size_title)
-	self.title_w = title_w
-	local frame_w = self.chars * self.font_mono_w + 12
-	self.w = title_w + frame_w
+	self:generateTitle()
+	local title_w = self.title_w
+
 	local font_height = self.font_mono:height()
-	self.h = font_height + 6
+	local fw, fh = self.chars * self.font_mono_w, font_height
+	-- the following constants are to account for empty pixels on the frames
+	local ew, eh = 2, 2
+	local frame = self:makeFrame("ui/textbox", nil, nil, fw - 2 * ew, fh - 2 * eh)
+	self.frame = frame
+	self.frame_sel = self:makeFrame("ui/textbox-sel", nil, nil, fw - 2 * ew, fh - 2 * eh)
+	self.w = title_w + frame.w
+	self.h = frame.h
 
 	self.texcursor = self:getUITexture("ui/textbox-cursor.png")
-	self.frame = self:makeFrame("ui/textbox", frame_w, self.h)
-	self.frame_sel = self:makeFrame("ui/textbox-sel", frame_w, self.h)
 
+	local b2, b8, b4, b6 = frame.b2.h, frame.b8.h, frame.b4.w, frame.b6.w
 	local w, h = self.w, self.h
-	local fw, fh = frame_w - 12, font_height
 	self.fw, self.fh = fw, fh
-	self.text_x = 6 + title_w
-	self.text_y = (h - fh) / 2
-	self.cursor_y = (h - self.texcursor.h) / 2
-	self.max_display = math.floor(fw / self.font_mono_w)
+	self.text_x = b4 - ew + title_w
+	self.text_y = b8 - eh
+	self.title_y = self.text_y + self.font_mono:lineSkip() - self.font:lineSkip()  -- align baselines
+	self.max_display = self.chars
 	self:updateText()
 
 	if title_w > 0 then
@@ -172,14 +173,12 @@ end
 
 function _M:display(x, y, nb_keyframes)
 	local text_x, text_y = self.text_x, self.text_y
-	if self.tex then
-		if self.text_shadow then self:textureToScreen(self.tex, x+1, y+text_y+1, 0, 0, 0, self.text_shadow) end
-		self:textureToScreen(self.tex, x, y+text_y)
-	end
+	self:displayTitle(x, y, nb_keyframes)
 	if self.focused then
 		self:drawFrame(self.frame_sel, x + self.title_w, y)
 		local cursor_x = self.font_mono:size(self.text:sub(self.scroll, self.cursor - 1))
-		self:textureToScreen(self.texcursor, x + self.text_x + cursor_x - (self.texcursor.w / 2) + 2, y + self.cursor_y)
+		self.texcursor.t:toScreenFull(x + self.text_x + cursor_x - (self.texcursor.w / 2) + 2, y + text_y + 5,
+			self.texcursor.w, self.fh - 7, self.texcursor.tw, self.texcursor.th)
 	else
 		self:drawFrame(self.frame, x + self.title_w, y)
 		if self.focus_decay then

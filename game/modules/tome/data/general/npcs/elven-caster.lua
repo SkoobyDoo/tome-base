@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -62,6 +62,7 @@ newEntity{ base = "BASE_NPC_ELVEN_CASTER",
 	},
 	combat_armor = 0, combat_def = 0,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},
 		[Talents.T_EARTHEN_MISSILES]={base=1, every=8, max=6},
 		[Talents.T_SHOCK]={base=1, every=8, max=5},
 	},
@@ -73,12 +74,13 @@ newEntity{ base = "BASE_NPC_ELVEN_CASTER",
 	level_range = {3, nil}, exp_worth = 1,
 	rarity = 2,
 	max_life = resolvers.rngavg(70, 80), life_rating = 10,
-	mana_regen = 30, max_mana = 200,
+	mana_regen = 3, max_mana = 200,
 	resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	combat_armor = 0, combat_def = 0,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},
 		[Talents.T_LIGHTNING]={base=1, every=8, max=6},
 		[Talents.T_THUNDERSTORM]={base=1, every=8, max=5},
 	},
@@ -100,6 +102,7 @@ newEntity{ base = "BASE_NPC_ELVEN_CASTER",
 	},
 	combat_armor = 0, combat_def = 0,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=2, every=7, max=5},
 		[Talents.T_DRAIN]={base=3, every=8, max=7},
 		[Talents.T_DARK_PORTAL]={base=3, every=7, max=6},
 		[Talents.T_SOUL_ROT]={base=4, every=8, max=6},
@@ -125,6 +128,7 @@ newEntity{ base = "BASE_NPC_ELVEN_CASTER",
 	},
 	combat_armor = 0, combat_def = 0,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=2, every=7, max=5},
 		[Talents.T_DRAIN]={base=4, every=8, max=7},
 		[Talents.T_BLOOD_SPRAY]={base=4, every=8, max=7},
 		[Talents.T_BLOOD_GRASP]={base=4, every=8, max=7},
@@ -151,6 +155,7 @@ newEntity{ base = "BASE_NPC_ELVEN_CASTER",
 	},
 	combat_armor = 0, combat_def = 0,
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=2, every=7, max=5},
 		[Talents.T_BONE_SHIELD]={base=2, every=10, max=5},
 		[Talents.T_BLOOD_SPRAY]={base=5, every=10, max=7},
 		[Talents.T_DRAIN]={base=5, every=10, max=7},

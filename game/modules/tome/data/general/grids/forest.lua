@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -115,6 +115,7 @@ newEntity{
 	block_sight = true,
 	block_sense = true,
 	block_esp = true,
+	is_door = true,
 	door_player_check = "This rock is loose, you think you can move it away.",
 	door_opened = "GRASS",
 	dig = "GRASS",

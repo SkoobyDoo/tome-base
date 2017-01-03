@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,11 +25,12 @@ local weaponCheck = function(self, weapon, ammo, silent, weapon_type)
 			-- ammo contains error message
 			game.logPlayer(self, ({
 				["disarmed"] = "You are currently disarmed and cannot use this talent.",
-				["no shooter"] = "You require a missile weapon to use this talent.",
+				["no shooter"] = ("You require a %s to use this talent."):format(weapon_type or "missile launcher"),
 				["no ammo"] = "You require ammo to use this talent.",
-				["bad ammo"] = "Your ammo type does not match your weapon type.",
-				["bad type"] = ("You require a %s to use this talent."):format(weapon_type or "bow"), --  warden hack
-			})[ammo] or "You require a bow or sling and ammo for this talent.")
+				["bad ammo"] = "Your ammo cannot be used.",
+				["incompatible ammo"] = "Your ammo is incompatible with your missile launcher.",
+				["incompatible missile launcher"] = ("You require a %s to use this talent."):format(weapon_type or "bow"),
+			})[ammo] or "You require a missile launcher and ammo for this talent.")
 		end
 		return false
 	else
@@ -43,12 +44,14 @@ local weaponCheck = function(self, weapon, ammo, silent, weapon_type)
 end
 
 local archerPreUse = function(self, t, silent, weapon_type)
-	local weapon, ammo = self:hasArcheryWeapon(weapon_type)
+	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(weapon_type)
+	weapon = weapon or pf_weapon
 	return weaponCheck(self, weapon, ammo, silent, weapon_type)
 end
 
 local wardenPreUse = function(self, t, silent, weapon_type)
-	local weapon, ammo = self:hasArcheryWeapon(weapon_type)
+	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(weapon_type)
+	weapon = weapon or pf_weapon
 	if self:attr("warden_swap") and not weapon and weapon_type == nil or weapon_type == "bow" then
 		weapon, ammo = doWardenPreUse(self, "bow")
 	end
@@ -68,7 +71,7 @@ newTalent{
 	points = 1,
 	cooldown = 0,
 	stamina = function(self, t)
-		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then return nil end
+		if not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") or not wardenPreUse(self, t, false, "sling") then return nil end
 
 		local b = self:getTalentFromId("T_SKIRMISHER_BOMBARDMENT")
 		return b.shot_stamina(self, b)
@@ -79,32 +82,21 @@ newTalent{
 	tactical = { ATTACK = { weapon = 1 } },
 	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent) end,
 	no_unlearn_last = true,
-	use_psi_archery = function(self, t)
-		local inven = self:getInven("PSIONIC_FOCUS")
-		if not inven then return false end
-		local pf_weapon = inven[1]
-		if pf_weapon and pf_weapon.archery then
-			return true
-		else
-			return false
-		end
-	end,
 	action = function(self, t)
 		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "bow"))
 	
 		-- Most of the time use the normal shoot.
-		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
+		if not wardenPreUse(self, t, true, "sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 			if not targets then if swap then doWardenWeaponSwap(self, t, "blade") end return end
-			self:archeryShoot(targets, t, nil, {use_psi_archery = t.use_psi_archery(self, t)})
+			self:archeryShoot(targets, t, nil) -- use_psi_archery set by Archery:archeryShoot
 			return true
 		end
 		
-		local weapon, ammo, offweapon = self:hasArcheryWeapon()
-		if not weapon then return nil end
+		-- perform Bombardment if possible
+		local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon("sling")
+		if not weapon and not pf_weapon then return nil end
 
-		-- Bombardment.
-		local weapon = self:hasArcheryWeapon("sling")
 		local bombardment = self:getTalentFromId("T_SKIRMISHER_BOMBARDMENT")
 		local shots = bombardment.bullet_count(self, bombardment)
 		local mult = bombardment.damage_multiplier(self, bombardment)
@@ -116,20 +108,28 @@ newTalent{
 		if not x or not y then return end
 		game.target.forced = {x, y, target}
 
-		-- Fire all shots.
-		local i
+		-- Fire all shots, limited by stamina
+		local count = 0
+		local stam = t.stamina(self, t)*self.resources_def[self.RS_STAMINA].cost_factor(self, t)
 		for i = 1, shots do
-			local targets = self:archeryAcquireTargets(nil, {no_energy=true, one_shot=true})
+			local targets = self:archeryAcquireTargets(nil, {no_energy=true, one_shot=true, type="sling"})
 			if not targets then break end
-			self:archeryShoot(targets, t, nil, {mult=mult, use_psi_archery = t.use_psi_archery(self, t)})
+			
+			if count > 0 then 
+				if self:getStamina() < stam*2 then break end
+				
+				self:incStamina(-stam)
+			end
+			count = i
+			self:archeryShoot(targets, t, nil, {mult=mult, type="sling"})
 		end
-
-		local speed = self:combatSpeed(weapon)
-		self:useEnergy(game.energy_to_act * (speed or 1))
-
+		if count > 0 then
+			local speed = self:combatSpeed(weapon or pf_weapon)
+			self:useEnergy(game.energy_to_act * (speed or 1))
+		end
 		game.target.forced = old_target_forced
 
-		return i ~= 1
+		return count > 0
 	end,
 	info = function(self, t)
 		return ([[Shoot your bow, sling or other missile launcher!]])

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,8 +33,8 @@ return {
 	day_night = true,
 	persistent = "zone",
 	ambient_music = "World of Ice.ogg",
-	min_material_level = function() return game.state:isAdvanced() and 4 or 2 end,
-	max_material_level = function() return game.state:isAdvanced() and 5 or 3 end,
+	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
+	max_material_level = function() return game.state:isAdvanced() and 5 or 2 end,
 	is_volcano = is_volcano,
 	generator =  {
 		map = {

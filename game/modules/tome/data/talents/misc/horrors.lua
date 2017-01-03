@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -672,11 +672,77 @@ newTalent{
 				m.summon_time=20
 			end
 			game.zone:addEntity(game.level, m, "actor", x, y)
+			if not self.player and self.ai_target.actor then m:setTarget(self.ai_target.actor) end
 		end
 
 		return true
 	end,
 	info = function(self, t)
-		return ([[Open a hole in space, summoning an animate blade for 10 turns.]])
+		return ([[Open a hole in space, summoning an animated blade for 10 turns.]])
+	end,
+}
+
+newTalent{
+	name = "Drench",
+	type = {"wild-gift/horror",1},
+	points = 5,
+	random_ego = "attack",
+	equilibrium = 25,
+	cooldown = 10,
+	tactical = { DISABLE = 4 },
+	direct_hit = true,
+	range = 0,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local grids = self:project(tg, self.x, self.y, function(tx, ty)
+			local target = game.level.map(tx, ty, Map.ACTOR)
+			if target then
+				target:setEffect(target.EFF_WET, 10, {})
+			end
+		end)
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "circle", {oversize=1.1, a=255, limit_life=16, grow=true, speed=0, img="healparadox", radius=tg.radius})
+		game:playSoundNear(self, "talents/tidalwave")
+		return true
+	end,
+	info = function(self, t)
+		local radius = self:getTalentRadius(t)
+		return ([[Blast a wave of water all around you with a radius of %d, making all creatures Wet for 10 turns.
+		The damage will increase with your Spellpower.]]):format(radius)
+	end,
+}
+
+newTalent{
+	name = "Blood Suckers",
+	type = {"wild-gift/other", 1},
+	message = "@Source@ tries to latch on and suck blood!",
+	points = 5,
+	cooldown = 2,
+	tactical = { ATTACK = { weapon = 2 } },
+	requires_target = true,
+	on_pre_use_ai = function(self, t, silent, fake) return self.ai_target.actor and (self.ai_target.actor:checkClassification("living") or rng.chance(2)) end,  -- AI less likely to use against undead/constructs
+	action = function(self, t)
+		local tg = {type="hit", range=self:getTalentRange(t)}
+		local x, y, target = self:getTarget(tg)
+		if not x or not y or not target then return nil end
+		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+
+		if self:attackTarget(target, nil, 1.0, true) and target:checkClassification("living") then
+			local nb = (target:hasEffect(target.EFF_PARASITIC_LEECHES) and target:hasEffect(target.EFF_PARASITIC_LEECHES).nb or 0)
+			target:setEffect(target.EFF_PARASITIC_LEECHES, 5, {src=self, apply_power=self:combatAttack(), dam=self.level, nb=1, gestation=5})
+			if (target:hasEffect(target.EFF_PARASITIC_LEECHES) and target:hasEffect(target.EFF_PARASITIC_LEECHES).nb or 0) > nb then self:die(self) end
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local Pdam, Fdam = self:damDesc(DamageType.PHYSICAL, self.level/2), self:damDesc(DamageType.ACID, self.level/2)
+		return ([[Latch on to the target and suck their blood, doing %0.2f physical and %0.2f acid damage per turn.
+		After 5 turns of drinking, drop off and gain the ability to Multiply.
+		Damage scales with your level.
+		]]):format(Pdam, Fdam)
 	end,
 }

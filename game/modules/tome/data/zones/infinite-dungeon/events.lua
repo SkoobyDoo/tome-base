@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 return { one_per_level=true,
 	{group="majeyal-generic", percent_factor=0.5},
 	{name="cultists", percent=5},
-
 	{name="icy-ground", minor=true, percent=20},
 	{name="font-life", minor=true, percent=20},
 	{name="whistling-vortex", minor=true, percent=20},

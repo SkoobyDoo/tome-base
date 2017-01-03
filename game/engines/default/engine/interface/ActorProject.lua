@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -253,6 +253,7 @@ function _M:canProject(t, x, y)
 	-- Stop at range or on block
 	local stop_x, stop_y = typ.start_x, typ.start_y
 	local stop_radius_x, stop_radius_y = typ.start_x, typ.start_y
+
 	local l, is_corner_blocked
 	if typ.source_actor.lineFOV then
 		l = typ.source_actor:lineFOV(x, y, nil, nil, typ.start_x, typ.start_y)
@@ -298,6 +299,22 @@ function _M:canProject(t, x, y)
 
 	local is_hit = stop_x == x and stop_y == y
 	return is_hit, stop_x, stop_y, stop_radius_x, stop_radius_y
+end
+
+--- Calls :getTarget and :canProject to limit the results and returns the same as getTarget
+function _M:getTargetLimited(t)
+	local x, y = self:getTarget(t)
+	local _ _, x, y = self:canProject(t, x, y)
+	local target = game.level.map(x, y, Map.ACTOR)
+	return x, y, target
+end
+
+--- Calls :getTarget and :canProject to limit the results and returns the same as getTarget
+function _M:getTargetLimitedWallStop(t)
+	local x, y = self:getTarget(t)
+	local _ _, _, _, x, y = self:canProject(t, x, y)
+	local target = game.level.map(x, y, Map.ACTOR)
+	return x, y, target
 end
 
 --- Project damage to a distance using a moving projectile

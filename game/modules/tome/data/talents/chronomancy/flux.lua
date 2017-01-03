@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -91,8 +91,8 @@ newTalent{
 	info = function(self, t)
 		local ratio = t.getPercent(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[While active 30%% of all damage you take is converted into %0.2f Paradox damage.
-		The Paradox damage is taken over three turns.]]):
+		return ([[While active 30%% of all damage you take is converted into %0.2f Paradox per point.
+		The Paradox is gained over three turns.]]):
 		format(ratio, duration)
 	end,
 }

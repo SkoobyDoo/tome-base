@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -88,7 +88,9 @@ newEntity{ base = "BASE_NPC_SKELETON",
 	max_mana = resolvers.rngavg(70,80),
 	combat_armor = 3, combat_def = 1,
 	stats = { str=10, dex=12, cun=14, mag=14, con=10 },
-	resolvers.talents{ [Talents.T_FLAME]={base=1, every=7, max=5}, [Talents.T_MANATHRUST]={base=1, every=7, max=5} },
+	resolvers.talents{ [Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},
+		[Talents.T_FLAME]={base=1, every=7, max=5},
+		[Talents.T_MANATHRUST]={base=1, every=7, max=5} },
 
 	resolvers.equip{ {type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true} },
 
@@ -132,7 +134,10 @@ newEntity{ base = "BASE_NPC_SKELETON",
 	max_mana = resolvers.rngavg(70,80),
 	combat_armor = 3, combat_def = 1,
 	stats = { str=10, dex=12, cun=16, mag=18, con=10 },
-	resolvers.talents{ [Talents.T_FLAME]={base=2, every=7, max=5}, [Talents.T_MANATHRUST]={base=2, every=7, max=5}, [Talents.T_ARCANE_POWER]={base=2, every=7, max=5} },
+	resolvers.talents{ [Talents.T_STAFF_MASTERY]={base=2, every=10, max=5},
+		[Talents.T_FLAME]={base=2, every=7, max=5},
+		[Talents.T_MANATHRUST]={base=2, every=7, max=5},
+		[Talents.T_ARCANE_POWER]={base=2, every=7, max=5} },
 
 	resolvers.equip{ {type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true} },
 
@@ -200,8 +205,8 @@ newEntity{ base = "BASE_NPC_SKELETON",
 	
 	resolvers.inscriptions(1, "rune"),
 	resolvers.talents{
-		[Talents.T_DUAL_WEAPON_DEFENSE]={base=1, every=10, max=7},
-		[Talents.T_DUAL_WEAPON_TRAINING]={base=1, every=10, max=7},
+		[Talents.T_DUAL_WEAPON_MASTERY]={base=1, every=10, max=7},
+		[Talents.T_TEMPO]={base=1, every=10, max=7},
 		[Talents.T_FLURRY]={base=1, every=10, max=7},
 		[Talents.T_DIRTY_FIGHTING]={base=1, every=10, max=7},
 		[Talents.T_LETHALITY]={base=1, every=10, max=7},

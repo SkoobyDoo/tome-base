@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -48,19 +48,20 @@ newEntity{ base="BASE_NPC_ORC_VOR", define_as = "VOR",
 	resolvers.inscriptions(4, "rune"),
 	max_inscriptions = 5,
 	
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, TOOL=1 },
 
 	resolvers.equip{
 		{type="weapon", subtype="staff", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="cloth", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="head", defined="CROWN_ELEMENTS", random_art_replace={chance=75}, autoreq=true},
+		{type="charm", subtype="wand"}
 	},
 	resolvers.drops{chance=100, nb=1, {defined="ORB_ELEMENTS"} },
 	resolvers.drops{chance=20, nb=1, {defined="JEWELER_TOME"} },
 	resolvers.drops{chance=100, nb=1, {defined="NOTE_LORE"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
-	in_damages = {all=25},
+	inc_damage = {all=15},
 
 	resolvers.talents{
 		[Talents.T_FLAME]={base=5, every=7, max=7},
@@ -82,7 +83,9 @@ newEntity{ base="BASE_NPC_ORC_VOR", define_as = "VOR",
 
 		[Talents.T_SPELLCRAFT]={base=5, every=7, max=7},
 		[Talents.T_ESSENCE_OF_SPEED]={base=1, every=6, max=7},
-
+		[Talents.T_PHASE_DOOR]={base=2, every=6, max=5},
+		[Talents.T_STAFF_MASTERY]={base=3, every=8, max=5},
+		
 		[Talents.T_METEORIC_CRASH]=1,
 		[Talents.T_ELEMENTAL_SURGE]=1,
 	},

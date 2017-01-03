@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,8 +77,8 @@ newTalent{
 		if not weapon then return nil end
 
 		local tg = self:getTalentTarget(t)
-		local x, y = self:canProject(tg, self:getTarget(tg))
-		if not x or not y then return nil end
+		local hit, x, y = self:canProject(tg, self:getTarget(tg))
+		if not hit or not x or not y then return nil end
 		local dir = util.getDir(x, y, self.x, self.y) or 6
 		local moved = 0.5
 		if self:canMove(x, y) then

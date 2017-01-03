@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ newTalent{
 	points = 5,
 	cooldown = 0,
 	no_energy = true,
+	sustain_hate = 0, -- make sure hate pool is learned
 	tactical = { BUFF = 5 },
 	activate = function(self, t)
 		return {

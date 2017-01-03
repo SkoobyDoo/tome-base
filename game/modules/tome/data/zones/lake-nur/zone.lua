@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -85,6 +85,7 @@ return {
 		},
 		[2] = {
 			underwater = true,
+			effects = {"EFF_ZONE_AURA_UNDERWATER"},
 			generator = {
 				actor = {
 					filters = {{special_rarity="water_rarity"}},
@@ -98,6 +99,7 @@ return {
 					down = "SHERTUL_FORTRESS_FLOOD",
 					['.'] = {"WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR","WATER_FLOOR_BUBBLE"},
 					force_last_stair = true,
+					effects = {"EFF_ZONE_AURA_UNDERWATER"},
 				},
 				actor = {
 					filters = {{special_rarity="water_rarity"},{special_rarity="horror_water_rarity"}},

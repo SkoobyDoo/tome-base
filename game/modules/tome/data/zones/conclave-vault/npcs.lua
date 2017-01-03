@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -137,7 +137,7 @@ newEntity{ base = "OGRE_SENTRY", define_as = "OGRE_SENTRY2",
 
 
 newEntity{ base = "BASE_NPC_OGRE", define_as = "HEALER_ASTELRID",
-	name = "Healer Astelrid", color=colors.VIOLET,
+	name = "Healer Astelrid", color=colors.VIOLET, unique = true,
 	resolvers.nice_tile{tall=1},
 	desc = [[An enormous ogre, clad in a tattered set of robes with an officer's badge.  She clutches a healer's staff, wrapped in casting plaster and scalpels for use as a massive spiked club.]],
 	killer_message = "and spliced for experiments",

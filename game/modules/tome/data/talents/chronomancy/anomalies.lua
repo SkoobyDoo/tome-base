@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -551,28 +551,28 @@ newTalent{
 				m.image = "npc/humanoid_human_human_farmer.png"
 				m.desc = [[A weather-worn Human farmer, looking at a loss as to what's going on.]]
 				m.faction = "allied-kingdoms"
-				m.resolvers.inscriptions(1, "infusion")
+				m[#m+1] = resolvers.inscriptions(1, "infusion")
 			elseif race == 2 then
 				m.name = "halfling gardener"
 				m.subtype = "halfling"
 				m.desc = [[A rugged Halfling gardener, looking quite confused as to what he's doing here.]]
 				m.faction = "allied-kingdoms"
 				m.image = "npc/humanoid_halfling_halfling_gardener.png"
-				m.resolvers.inscriptions(1, "infusion")
+				m[#m+1] = resolvers.inscriptions(1, "infusion")
 			elseif race == 3 then
 				m.name = "shalore scribe"
 				m.subtype = "shalore"
 				m.desc = [[A scrawny Elven scribe, looking bewildered at his surroundings.]]
 				m.faction = "shalore"
 				m.image = "npc/humanoid_shalore_shalore_rune_master.png"
-				m.resolvers.inscriptions(1, "rune")
+				m[#m+1] = resolvers.inscriptions(1, "rune")
 			elseif race == 4 then
 				m.name = "dwarven lumberjack"
 				m.subtype = "dwarf"
 				m.desc = [[A brawny Dwarven lumberjack, looking a bit upset at his current situation.]]
 				m.faction = "iron-throne"
 				m.image = "npc/humanoid_dwarf_lumberjack.png"
-				m.resolvers.inscriptions(1, "rune")
+				m[#m+1] = resolvers.inscriptions(1, "rune")
 			end
 
 			m:resolve() m:resolve(nil, true)
@@ -1079,7 +1079,7 @@ newTalent{
 						end
 					end,
 					dig = function(src, x, y, old)
-						game.level:removeEntity(old)
+						game.level:removeEntity(old, true)
 						game.level.map:scheduleRedisplay()
 						return nil, old.old_feat
 					end,

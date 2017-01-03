@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ function _M:init(zone, map, level, spots)
 
 	-- Setup the map's room-map
 	if not map.room_map then
-		map.room_map = {}
+		map.room_map = {rooms={}, rooms_failed={}}
 		for i = 0, map.w - 1 do
 			map.room_map[i] = {}
 			for j = 0, map.h - 1 do
@@ -77,17 +77,46 @@ function _M:resolve(c, list, force)
 end
 
 --- Add entity to a room of a map
--- @param i
--- @param j
--- @param type
--- @param e
-function _M:roomMapAddEntity(i, j, type, e)
+-- @param i x coord
+-- @param j y coord
+-- @param[type=string] type the entity type
+-- @param[type=Entity] e the entity to add
+-- @param[type=table, opt] elists a list of entity lists to use (to override the zone lists)
+function _M:roomMapAddEntity(i, j, type, e, elists)
 	self.map.room_map[i] = self.map.room_map[i] or {}
 	self.map.room_map[i][j] = self.map.room_map[i][j] or {}
 	self.map.room_map[i][j].add_entities = self.map.room_map[i][j].add_entities or {}
 	local rm = self.map.room_map[i][j].add_entities
-	rm[#rm+1] = {type, e}
+	rm[#rm+1] = {type, e, elists = elists}
 	e:added() -- we do it here to make sure uniques are uniques
+end
+
+--- Remove entities in a room from the map (used if a room has to be removed)
+-- @param i x coord
+-- @param j y coord
+function _M:roomMapRemoveEntities(i, j)
+	local ents = self.map.room_map[i] and self.map.room_map[i][j] and self.map.room_map[i][j].add_entities
+	if ents then
+		for i, e in ipairs(ents) do
+			if e[2].removed then e[2]:removed() end -- clears from uniques list
+		end
+	end
+end
+
+-- remove all entities in the room from the level (used if a room was generated but not added to the level)
+function _M:roomMapRemoveAllEntities(lev, oldlev)
+	for i = 0, self.map.w-1 do for j = 0, self.map.h-1 do
+		self:roomMapRemoveEntities(i, j)
+	end end
+end
+
+-- clean up entities generated if a generator fails (for map generators)
+-- overload as needed
+function _M:removed(lev, oldlev)
+	print("[Generator] removed called for:", self.__CLASSNAME)
+	if self.map and self.map.room_map then
+		self:roomMapRemoveAllEntities(lev, oldlev)
+	end
 end
 
 --- Class Gridlist

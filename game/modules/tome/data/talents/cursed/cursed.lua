@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ newTalentType{ allow_random=true, is_mind=true, type="cursed/darkness", name = "
 newTalentType{ allow_random=true, is_mind=true, type="cursed/shadows", name = "shadows", description = "Summon shadows from the darkness to aid you." }
 newTalentType{ allow_random=true, is_mind=true, type="cursed/punishments", name = "punishments", description = "Your hate becomes punishment in the minds of your foes." }
 newTalentType{ allow_random=true, is_mind=true, type="cursed/one-with-shadows", name = "one with shadows", min_lev = 10, description = "Harness your shadows to their full potential." }
+newTalentType{ allow_random=true, is_mind=true, type="cursed/advanced-shadowmancy", name = "advanced shadowmancy", min_lev = 10, description = "Gain more direct control over your shadows with physical damage talents." }
 
 -- Generic
 newTalentType{ allow_random=true, is_mind=true, type="cursed/gestures", name = "gestures", generic = true, description = "Enhance the power of you mind with gestures." }
@@ -169,6 +170,7 @@ load("/data/talents/cursed/darkness.lua")
 load("/data/talents/cursed/punishments.lua")
 load("/data/talents/cursed/gestures.lua")
 load("/data/talents/cursed/one-with-shadows.lua")
+load("/data/talents/cursed/advanced-shadowmancy.lua")
 
 load("/data/talents/cursed/cursed-form.lua")
 load("/data/talents/cursed/cursed-aura.lua")

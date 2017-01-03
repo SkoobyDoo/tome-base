@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1183,6 +1183,11 @@ newEntity{
 			-- Check for free slot first
 			if who:getFreeHands() == 0 then
 				game.logPlayer(who, "You must have a free hand to divide the %s.", self:getName({no_add_name = true, do_color = true}))
+				return
+			end
+
+			if self.tinker then
+				game.logPlayer(who, "You cannot split your %s while it has a tinker inside.", self:getName({no_add_name = true, do_color = true}))
 				return
 			end
 

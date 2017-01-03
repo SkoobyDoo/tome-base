@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,10 +18,13 @@
 -- darkgod@te4.org
 
 --greater crypt
-startx = 0
-starty = 17
 
 setStatusAll{no_teleport=true}
+
+roomCheck(function(room, zone, level, map)
+	-- restrict by level and make sure certain undead can summon
+	return resolvers.current_level >= 35 and zone.npc_list.__loaded_files["/data/general/npcs/vampire.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/wight.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/ghost.lua"] and zone.npc_list.__loaded_files["/data/general/npcs/ghoul.lua"]
+end)
 
 specialList("terrain", {
 	"/data/general/grids/basic.lua",
@@ -30,8 +33,11 @@ specialList("terrain", {
 	"/data/general/grids/lava.lua",
 	"/data/general/grids/.lua",
 })
+specialList("actor", {
+	"/data/general/npcs/skeleton.lua",
+	"/data/general/npcs/lich.lua",
+}, true)
 
-defineTile('%', "WALL")
 defineTile('.', "FLOOR")
 defineTile('r', "ROCKY_GROUND")
 defineTile('#', "HARDWALL")
@@ -51,7 +57,6 @@ defineTile('z', "FLOOR", nil, {random_filter={type = "undead", subtype = "ghoul"
 defineTile('u', "FLOOR", {random_filter={add_levels=15, tome_mod="vault"}}, {random_filter={type = "undead", add_levels=10}})
 defineTile('U', "FLOOR", {random_filter={add_levels=15, tome_mod="gvault"}}, {random_filter={type = "undead", add_levels=20}})
 defineTile('l', "ROCKY_GROUND", nil, {random_filter={type = "undead", subtype = "lich", add_levels=10}})
---defineTile('L', "ROCKY_GROUND", nil, {random_filter={type = "undead", subtype = "lich", random_boss={nb_classes=2, loot_quality="store", loot_quantity=3, rank=3.5,}}})
 defineTile('L', "ROCKY_GROUND", nil, {random_filter={add_levels=8, name="lich", random_boss={nb_classes=2, rank=3.5, loot_quantity = 3}}})
 defineTile('-', "FLOOR", {random_filter={add_levels=15, tome_mod="vault"}})
 defineTile('/', "FLOOR", {random_filter={add_levels=15, tome_mod="gvault"}})
@@ -60,7 +65,6 @@ defineTile('*', "ROCKY_GROUND", {random_filter={type="gem"}})
 
 defineTile('S', "FLOOR", nil, nil, {random_filter={name="summoning alarm"}})
 
-defineTile('D', "FLOOR", nil, {random_filter={name="greater multi-hued wyrm", add_levels=30}})
 defineTile('c', "FLOOR", {random_filter={add_levels=15, tome_mod="vault"}}, {random_filter={add_levels=20}})
 defineTile('=', "HARDWALL", nil, nil, nil, {on_block_change="DOOR", on_block_change_msg="You've discovered a secret door!"})
 defineTile('_', "HARDMOUNTAIN_WALL", nil, nil, nil, {on_block_change="FLOOR", on_block_change_msg="You've discovered a secret passage!"})
@@ -137,7 +141,7 @@ defineTile('3', mod.class.Grid.new{
 )
 
 defineTile('4', mod.class.Grid.new{
-	define_as = "WALL_UP_FLOOR",
+	define_as = "WALL_UP_FLOOR2",
 	type = "floor", subtype = "floor",
 	name = "floor", image = "terrain/marble_floor.png",
 	display = '.', color=colors.UMBER, back_color=colors.LIGHT_UMBER,
@@ -169,7 +173,7 @@ defineTile('4', mod.class.Grid.new{
 )
 
 defineTile('5', mod.class.Grid.new{
-	define_as = "WALL_DOWN_FLOOR",
+	define_as = "WALL_DOWN_FLOOR2",
 	type = "floor", subtype = "floor",
 	name = "floor", image = "terrain/marble_floor.png",
 	display = '.', color=colors.UMBER, back_color=colors.LIGHT_UMBER,
@@ -188,8 +192,7 @@ defineTile('5', mod.class.Grid.new{
 	end,
 }
 )
-
-
+startx, starty = 0, 17
 return {
 
 [[###############################MMM#]],

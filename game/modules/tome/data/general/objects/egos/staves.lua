@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -651,8 +651,16 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 25,
+	combat = {
+		accuracy_effect_scale = 0.5,
+	},
 	wielder = {
 	},
+	resolvers.genericlast(function(e)
+		if e.moddable_tile:find("_hand_08_0[1-5]") then
+			e.moddable_tile = e.moddable_tile:gsub("_hand_08_0([1-5])", "_hand_08_0%1_1h")
+		end
+	end),
 }
 
 newEntity{
@@ -673,6 +681,11 @@ newEntity{
 		combat_spellcrit = resolvers.mbonus_material(2, 2),
 		combat_critical_power = resolvers.mbonus_material(7, 7),
 	},
+	resolvers.genericlast(function(e)
+		if e.moddable_tile:find("_hand_08_0[1-5]") then
+			e.moddable_tile = e.moddable_tile:gsub("_hand_08_0([1-5])", "_hand_08_0%1_1h")
+		end
+	end)
 }
 
 

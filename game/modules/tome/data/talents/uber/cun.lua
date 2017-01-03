@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ uberTalent{
 		if eff.nb >= 3 and not eff.blink then
 			self:effectTemporaryValue(eff, "prob_travel", 5)
 			game.logSeen(self, "#LIGHT_BLUE#%s reaches critical velocity!", self.name:capitalize())
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, rng.float(-3, -2), (rng.range(0,2)-1) * 0.5, "CRITICAL VELOCITY!", {0,128,255})
 			eff.particle = self:addParticles(Particles.new("megaspeed", 1, {angle=util.dirToAngle((dir == 4 and 6) or (dir == 6 and 4 or dir))}))
 			eff.blink = true
@@ -203,7 +203,7 @@ uberTalent{
 		Arcane damage has a 30%% chance to increase your spellcasting speed by 20%% for 5 turns.
 		Fire damage has a 30%% chance to cleanse all physical or magical detrimental effects on you.
 		Cold damage has a 30%% chance to turn your skin into ice for 5 turns, reducing physical damage taken by %d%%, increasing armor by %d, and dealing %d ice damage to attackers.
-		Lightning damage has a 30%% chance to transform you into pure lightning for 5 turns; any damage will teleport you to an adjacent tile and ignore the damage (can only happen once per turn).
+		Lightning damage has a 30%% chance to transform you into pure lightning for 5 turns; any damage will displace you to an adjacent tile and ignore the damage (can only happen once per turn).
 		Light damage has a 30%% chance to create a barrier around you, absorbing %d damage for 5 turns.
 		Nature damage has a 30%% chance to harden your skin, preventing the application of any magical detrimental effects for 5 turns.
 		The Cold and Light effects scale with your Cunning.
@@ -316,7 +316,7 @@ uberTalent{
 	end,
 	info = function(self, t)
 		return ([[You have friends in low places and have learned some underhanded tricks.
-		Gain 0.2 Category Mastery to the Cunning/Stealth Category (or unlock it, if locked), and either gain +0.1 to the Cunning/Scoundrel category or learn and unlock the category at 0.9 if you lack it.
+		Gain 0.2 Category Mastery to the Cunning/Stealth Category (or unlock it, if you have the tree and it is locked), and either gain +0.1 to the Cunning/Scoundrel category or learn and unlock the category at 0.9 if you lack it.
 		Additionally, all of your damage penalties from invisibility are permanently halved.]]):
 		format()
 	end,

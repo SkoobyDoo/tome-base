@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -69,6 +69,7 @@ newEntity{ base = "BASE_NPC_NAGA", define_as = "NAGA_TIDEWARDEN",
 		{type="weapon", subtype="trident", autoreq=true, force_drop=true, special_rarity="trident_rarity"},
 	},
 	resolvers.talents{
+		[Talents.T_EXOTIC_WEAPONS_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=1, every=10, max=5},
 	},
 }
@@ -85,6 +86,7 @@ newEntity{ base = "BASE_NPC_NAGA", define_as = "NAGA_TIDECALLER",
 		{type="weapon", subtype="staff", autoreq=true},
 	},
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=2, every=7, max=5},
 		[Talents.T_WATER_JET]={base=2, every=7, max=5},
 	},
@@ -101,6 +103,7 @@ newEntity{ base = "BASE_NPC_NAGA",
 		{type="weapon", subtype="staff", autoreq=true},
 	},
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=2, every=7, max=5},
 		[Talents.T_MIND_SEAR]={base=2, every=7, max=5},
 		[Talents.T_TELEKINETIC_BLAST]={base=2, every=7, max=5},
@@ -127,7 +130,7 @@ newEntity{ base="BASE_NPC_NAGA", define_as = "ZOISLA",
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 	resolvers.equip{
-		{type="weapon", subtype="staff", autoreq=true},
+		{type="weapon", subtype="trident", autoreq=true, force_drop=true, special_rarity="trident_rarity"},
 		{defined="ROBES_DEFLECTION", autoreq=true},
 	},
 	resolvers.drops{chance=100, nb=1, {unique=true, not_properties={"lore"}} },

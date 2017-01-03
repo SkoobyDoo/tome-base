@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2016 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your target's doom draws near. Its healing factor is reduced by 100%%, and will take %d%% of its remaining life (or %0.2f, whichever is lower) over 10 turns as arcane damage.
+		return ([[Your target's doom draws near. Its healing factor is reduced by 80%%, and will take %d%% of its remaining life (or %0.2f, whichever is lower) over 10 turns as arcane damage.
 		The damage will increase with your Spellpower.]]):
 		format(t.getDamage(self, t), t.getMax(self, t))
 	end,
@@ -182,17 +182,16 @@ newTalent{
 		end
 		self.blood_color = colors.GREY
 		self:attr("poison_immune", 1)
-		self:attr("disease_immune", 0.5)
-		self:attr("stun_immune", 0.5)
+		self:attr("disease_immune", 1)
+		self:attr("stun_immune", 1)
 		self:attr("cut_immune", 1)
 		self:attr("fear_immune", 1)
 		self:attr("no_breath", 1)
 		self:attr("undead", 1)
 		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 20
 		self.resists[DamageType.DARKNESS] = (self.resists[DamageType.DARKNESS] or 0) + 20
-		self.inscription_restrictions = self.inscription_restrictions or {}
-		self.inscription_restrictions["inscriptions/runes"] = true
-		self.inscription_restrictions["inscriptions/taints"] = true
+		self.inscription_forbids = self.inscription_forbids or {}
+		self.inscription_forbids["inscriptions/infusions"] = true
 
 		local level = self:getTalentLevel(t)
 		if level < 2 then
@@ -218,13 +217,22 @@ newTalent{
 			self:learnTalentType("celestial/star-fury", true)
 			self:setTalentTypeMastery("celestial/star-fury", self:getTalentTypeMastery("celestial/star-fury") - 0.1)
 			self.negative_regen = self.negative_regen + 0.2 + 0.5
-		else
+		elseif level < 7 then
 			self:incIncStat("mag", 6) self:incIncStat("wil", 6) self:incIncStat("cun", 6)
 			self:attr("combat_spellresist", 15) self:attr("combat_mentalresist", 15)
 			self.resists_cap.all = (self.resists_cap.all or 0) + 15
 			self.life_rating = self.life_rating + 3
 			self:learnTalentType("celestial/star-fury", true)
 			self:setTalentTypeMastery("celestial/star-fury", self:getTalentTypeMastery("celestial/star-fury") + 0.1)
+			self.negative_regen = self.negative_regen + 0.2 + 1
+		else -- level 7
+			self:incIncStat("mag", 12) self:incIncStat("wil", 12) self:incIncStat("cun", 12)
+			self:attr("combat_spellresist", 35) self:attr("combat_mentalresist", 35)
+			self.resists_cap.all = (self.resists_cap.all or 0) + 15
+			self.life_rating = self.life_rating + 4
+			self:attr("ignore_direct_crits", 60)
+			self:learnTalentType("celestial/star-fury", true)
+			self:setTalentTypeMastery("celestial/star-fury", self:getTalentTypeMastery("celestial/star-fury") + 0.3)
 			self.negative_regen = self.negative_regen + 0.2 + 1
 		end
 
@@ -255,7 +263,7 @@ newTalent{
 		If you are killed while this spell is active, the arcane forces you unleash will be able to rebuild your body into the desired Lichform.
 		All liches gain the following intrinsics:
 		- Poison, cut, and fear immunity.
-		- 50%% disease and stun resistance.
+		- 100%% disease and stun resistance.
 		- 20%% cold and darkness resistance.
 		- No need to breathe.
 		- Infusions do not work.
@@ -265,7 +273,8 @@ newTalent{
 		At level 3: +3 Magic and Willpower, +1 life rating (not retroactive).
 		At level 4: +3 Magic and Willpower, +2 life rating (not retroactive), +10 spell and mental saves, Celestial/Star Fury category (0.7) and 0.1 negative energies regeneration.
 		At level 5: +5 Magic and Willpower, +2 life rating (not retroactive), +10 spell and mental saves, all resistance caps raised by 10%%, Celestial/Star Fury category (0.9) and 0.5 negative energy regeneration.
-		At level 6: +6 Magic, Willpower and Cunning, +3 life rating (not retroactive), +15 spell and mental saves, all resistance caps raised by 15%%, Celestial/Star Fury category (1.1) and 1.0 negative energy regeneration. Fear my power!
+		At level 6: +6 Magic, Willpower and Cunning, +3 life rating (not retroactive), +15 spell and mental saves, all resistance caps raised by 15%%, Celestial/Star Fury category (1.1) and 1.0 negative energy regeneration.
+		At level 7: #CRIMSON##{bold}#Your power becomes overwhelming!#{normal}##LAST# +12 Magic, Willpower and Cunning, 60%% chance to ignore critical hits, +4 life rating (not retroactive), +35 spell and mental saves, all resistance caps raised by 15%%, Celestial/Star Fury category (1.3) and 1.0 negative energy regeneration.
 		The undead cannot use this talent.
 		While active, it will drain 4 mana per turn.
 		Once you die and turn into a Lich you can not invest any more in this talent.]]):
