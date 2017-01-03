@@ -17,6 +17,14 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--[[ ideas:
+	Heightened Senses: restore trap detection, remove unseen attackers damage reduction
+	Device Mastery: remove trap detection, leave trap disarming
+	Danger Sense: get damage from unseen attackers, reduce general damage reduction,
+		gain? trap detection? blind-fighting like ability?
+
+--]]
+
 newTalent{
 	name = "Heightened Senses",
 	type = {"cunning/survival", 1},
@@ -24,7 +32,7 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	sense = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	seePower = function(self, t) return self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 5, 0, 80, 75) end, --I5
+	seePower = function(self, t) return self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 5, 0, 80, 75) end,
 	getResists = function(self, t) return self:combatTalentLimit(t, 40, 5, 25) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "heightened_senses", t.sense(self, t))
@@ -41,6 +49,29 @@ newTalent{
 		At level 3, you are able to react quickly to stealthed and invisible enemies attacking you, reducing the damage they deal by %d%%.
 		The detection power improves with your Cunning.]]):
 		format(t.sense(self,t), t.seePower(self,t), t.getResists(self,t))
+	end,
+}
+
+newTalent{
+	name = "Device Mastery",
+	type = {"cunning/survival", 2},
+	require = cuns_req2,
+	mode = "passive",
+	points = 5,
+	cdReduc = function(tl)
+		if tl <=0 then return 0 end
+		return math.floor(100*tl/(tl+7.5)) -- Limit < 100%
+	end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t)))
+	end,
+	autolearn_talent = "T_DISARM_TRAP",
+	trapPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 125, 125) end,
+	info = function(self, t)
+		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns and the power cost of all usable items by %d%%.
+In addition, your knowledge of devices allows you to detect traps around you and disarm known traps (%d detection and disarm 'power').
+The trap detection and disarming ability improves with your Cunning. ]]):
+		format(t.cdReduc(self:getTalentLevel(t)), t.trapPower(self,t)) --I5
 	end,
 }
 
@@ -68,67 +99,51 @@ newTalent{
 	end,
 }
 
-newTalent{
-	name = "Device Mastery",
-	type = {"cunning/survival", 3},
-	require = cuns_req3,
-	mode = "passive",
-	points = 5,
-	cdReduc = function(tl)
-		if tl <=0 then return 0 end
-		return math.floor(100*tl/(tl+7.5)) -- Limit < 100%
-	end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t)))
-	end,
-	on_learn = function(self, t)
-		if not self:knowTalent(self.T_DISARM_TRAP) then
-			self:learnTalent(self.T_DISARM_TRAP, true, 1)
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:getTalentLevel(t) < 1 and self:knowTalent(self.T_DISARM_TRAP) then
-			self:unlearnTalent(self.T_DISARM_TRAP, 1)
-		end
-	end,
-	trapPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 125, 125) end,
-	info = function(self, t)
-		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns and the power cost of all usable items by %d%%.
-In addition, your knowledge of devices allows you to detect traps around you and disarm known traps (%d detection and disarm 'power').
-The trap detection and disarming ability improves with your Cunning. ]]):
-		format(t.cdReduc(self:getTalentLevel(t)), t.trapPower(self,t)) --I5
-	end,
-}
-
+--- This presents some balance problems: Everyone can get this, and it defends against everything.
+-- consider flat damage armour instead of %? (based on Cun/Dex)
 newTalent{
 	name = "Danger Sense",
-	type = {"cunning/survival", 4},
+	type = {"cunning/survival", 3},
 	require = cuns_req4,
 	points = 5,
 	mode = "passive",
-	getTrigger = function(self, t) return self:combatTalentScale(t, 0.15, 0.40, 0.5) end,
-	cooldown = function(self, t) return 30 end,
-	no_npc_use = true,
-	getReduction = function(self, t)
-		return self:combatTalentLimit(t, 75, 25, 65)
+	cooldown = function(self, t) return math.ceil(self:combatStatLimit("wil", 10, 30, 20)) end, -- Limit > 10
+	fixed_cooldown = true,
+	getTrigger = function(self, t) -- return % of life, minimum life fraction
+		return self:combatTalentLimit(t, 0.15, 0.5, 0.3), 0.25
+	end,
+--	no_npc_use = true,
+	getReduction = function(self, t) -- depends on both Dex and Cun to prevent being too useful to Berserkers, Oozemancers,  Mages ...
+		return self:combatLimit((self:getDex() + self:getCun()-20)*self:getTalentLevel(t), 75, 5, 26, 55, 1170) -- Limit < 75%, = 5% @ TL1.0 dex/cun = 10/36, ~= 41% @ TL6.5, dex/cun = 50/50, ~= 55% @ TL6.5, dex/cun = 100/100
 	end,
 	callbackOnHit = function(self, t, cb, src)
-		if self.life > self.max_life*t.getTrigger(self,t) and self.life - cb.value <= self.max_life*t.getTrigger(self,t) and not self:isTalentCoolingDown(t) then
-			self:setEffect("EFF_DANGER_SENSE", 1, {reduce = t.getReduction(self, t)})
-			local eff = self:hasEffect("EFF_DANGER_SENSE")
-			eff.dur = eff.dur - 1
-			cb.value = cb.value * (100-t.getReduction(self, t)) / 100
-			self:startTalentCooldown(t)
+		if not self:isTalentCoolingDown(t) then
+			--game.log("#GREY#%s: Checking Danger Sense: dam=%0.2f, life = %d, max_life=%d", self.name, cb.value, self.life, self.max_life)
+			local dam_trigger, life_trigger = t.getTrigger(self, t)
+			dam_trigger, life_trigger = dam_trigger*self.life, life_trigger*self.max_life
+			if cb.value > dam_trigger or self.life - cb.value < life_trigger then
+				--game.log("#GREY#%s: Danger Sense Triggered! dam=%0.2f, d_t=%0.2f, l_t=%0.2f", self.name, cb.value, dam_trigger, life_trigger)
+				local reduce = t.getReduction(self, t)
+				self:setEffect("EFF_DANGER_SENSE", 1, {reduce = reduce})
+				local eff = self:hasEffect("EFF_DANGER_SENSE")
+				eff.dur = eff.dur - 1
+				cb.value = cb.value * (100-reduce) / 100
+				self:startTalentCooldown(t)
+				return cb.value
+			end
 		end
-		return cb.value
 	end,
 	info = function(self, t)
-		return ([[You react quickly when in danger - on falling below %d%% life, all damage you take from the attack and all further damage that turn is reduced by %d%%.
-This talent has a cooldown.]]):
-		format(t.getTrigger(self,t)*100, t.getReduction(self,t) )
+		local life_fct, life_min = t.getTrigger(self, t)
+		return ([[You have an enhanced sense of self preservation, and use keen intuition and fast reflexes to react quickly when you feel your life is in peril.
+		If damage would deal more than %d%% of your current life (ignoring any negative life limit), or would reduce your life below 25%% of maximum (%d), you avoid %d%% of that damage and any additional damage received later in the same turn.
+		The damage avoidance improves with Cunning and Dexterity.
+		This talent has a cooldown that decreases with your Willpower.]]):
+		format(life_fct*100, life_min*self.max_life, t.getReduction(self,t) )
 	end,
 }
 
+-- track to detect and device master to disarm?
 newTalent{
 	name = "Disarm Trap",
 	type = {"base/class", 1},
@@ -137,6 +152,7 @@ newTalent{
 	points = 1,
 	range = 1,
 	message = false,
+	no_break_stealth = true,
 	image = "talents/trap_priming.png",
 	target = {type="hit", range=1, nowarning=true, immediate_keys=true, no_lock=false},
 	action = function(self, t)
@@ -151,10 +167,13 @@ newTalent{
 		dir = util.getDir(x, y, self.x, self.y)
 		x, y = util.coordAddDir(self.x, self.y, dir)
 		print("Requesting disarm trap", self.name, t.id, x, y)
+		local tl = self:getTalentLevel(self.T_DEVICE_MASTERY)
 		local trap = self:detectTrap(nil, x, y)
 		if trap then
 			print("Found trap", trap.name, x, y)
-			if (x == self.x and y == self.y) or self:canMove(x, y) then
+			if tl < 3 then
+				game.logPlayer(self, "#CADET_BLUE#You need more skill to disarm traps.")
+			elseif (x == self.x and y == self.y) or self:canMove(x, y) then
 				local px, py = self.x, self.y
 				self:move(x, y, true) -- temporarily move to make sure trap can trigger properly
 				trap:trigger(self.x, self.y, self) -- then attempt to disarm the trap, which may trigger it
@@ -171,8 +190,8 @@ newTalent{
 	info = function(self, t)
 		local ths = self:getTalentFromId(self.T_DEVICE_MASTERY)
 		local power = ths.trapPower(self,ths)
-		return ([[You search an adjacent grid for a hidden trap (%d detection 'power') and attempt to disarm it (%d disarm 'power').
-		To disarm a trap, you must be able to enter its grid to manipulate it, even though you stay in your current location.
-		Success depends on your skill in the %s talent and your Cunning, and failing to disarm a trap may trigger it.]]):format(power, power + (self:attr("disarm_bonus") or 0), ths.name)
+		return ([[You search an adjacent grid for a hidden trap (%d detection 'power') and disarm it (%d disarm 'power') if possible.
+		To disarm, you must have at least 3 talent levels in %s and be able to enter the trap's grid to manipulate it, though you stay in your current location.  A failed attempt to disarm a trap may trigger it.
+		Your skill improves with your your Cunning.]]):format(power, power + (self:attr("disarm_bonus") or 0), ths.name)
 	end,
 }

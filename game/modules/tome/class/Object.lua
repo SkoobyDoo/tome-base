@@ -328,12 +328,12 @@ function _M:use(who, typ, inven, item)
 			end
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not ret.nobreakStepUp then who:breakStepUp() end
-			if not ret.nobreakStealth then who:breakStealth() end
 			if not ret.nobreakLightningSpeed then who:breakLightningSpeed() end
 			if not ret.nobreakReloading then who:breakReloading() end
 			if not ret.nobreakSpacetimeTuning then who:breakSpacetimeTuning() end
 			if not (self.use_no_energy or ret.no_energy) then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
+				if not ret.nobreakStealth then who:breakStealth() end
 			end
 		end
 		return ret

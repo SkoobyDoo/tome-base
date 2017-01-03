@@ -40,7 +40,7 @@ newEntity{ base = "TRAP_COMPLEX",
 	desc = function(self)
 		local dir = game.level.map:compassDirection(self.spawn_x - self.x, self.spawn_y - self.y)
 		dir = dir and (" (from %s)"):format(dir) or ""
-		return ("Releases a large boulder%s that smashes into the target for %d physical damage and knocking it back."):format(dir,self.dam)
+		return ("Releases a large boulder%s that smashes into the target for %d physical damage and knocks it back."):format(dir,self.dam)
 	end,
 	pressure_trap = true,
 	on_added = function(self, level, x, y)

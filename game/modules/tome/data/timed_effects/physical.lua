@@ -255,7 +255,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is poisoned and cannot move!", "+Spydric Poison" end,
 	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Spydric Poison" end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("never_move", 1)
+		self:effectTemporaryValue(eff, "never_move", 1)
 	end,
 	-- There are situations this matters, such as copyEffect
 	on_merge = function(self, old_eff, new_eff)
@@ -268,7 +268,6 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("never_move", eff.tmpid)
 	end,
 }
 
@@ -283,7 +282,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is poisoned!", "+Insidious Poison" end,
 	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Insidious Poison" end,
 	activate = function(self, eff)
-		eff.healid = self:addTemporaryValue("healing_factor", -eff.heal_factor / 100)
+		self:effectTemporaryValue(eff, "healing_factor", -eff.heal_factor / 100)
 	end,
 	-- There are situations this matters, such as copyEffect
 	on_merge = function(self, old_eff, new_eff)
@@ -296,7 +295,6 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("healing_factor", eff.healid)
 	end,
 }
 
@@ -322,10 +320,9 @@ newEffect{
 		return old_eff
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("talent_fail_chance", eff.fail)
+		self:effectTemporaryValue(eff, "talent_fail_chance", eff.fail)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("talent_fail_chance", eff.tmpid)
 	end,
 }
 
@@ -351,10 +348,9 @@ newEffect{
 		return old_eff
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("numbed", eff.reduce)
+		self:effectTemporaryValue(eff, "numbed", eff.reduce)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("numbed", eff.tmpid)
 	end,
 }
 
@@ -402,9 +398,14 @@ newEffect{
 		old_eff.dur = math.max(old_eff.dur, new_eff.dur)
 		old_eff.power = dam/old_eff.dur
 		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
+		old_eff._from_toxic_death = nil
 		return old_eff
 	end,
 	activate = function(self, eff)
+		if eff._from_toxic_death then -- reset turn counter if spread from Toxic Death
+			eff.turn_count = 0
+			eff._from_toxic_death = nil
+		end
 	end,
 	deactivate = function(self, eff) -- chance to stone when deactivated
 		local chance = eff.dur <= 0 and eff.turn_count*100/eff.time_to_stone or 0
@@ -1079,10 +1080,11 @@ newEffect{
 	parameters = { sight=5 },
 	on_gain = function(self, err) return "#Target# is surrounded by a thick smoke.", "+Dim Vision" end,
 	on_lose = function(self, err) return "The smoke around #target# dissipate.", "-Dim Vision" end,
+	charges = function(self, eff) return -eff.sight end,
 	activate = function(self, eff)
 		if self.sight - eff.sight < 1 then eff.sight = self.sight - 1 end
 		eff.tmpid = self:addTemporaryValue("sight", -eff.sight)
-		self:setTarget(nil) -- Loose target!
+--		self:setTarget(nil) -- Loose target!
 		self:doFOV()
 	end,
 	deactivate = function(self, eff)
@@ -1112,12 +1114,12 @@ newEffect{
 newEffect{
 	name = "WILD_SPEED", image = "talents/infusion__movement.png",
 	desc = "Wild Speed",
-	long_desc = function(self, eff) return ("The movement infusion allows you to run at extreme fast pace. Any other action other than movement will cancel it. Movement is %d%% faster."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Moving at extreme speed (%d%% faster).  Any action other than movement will cancel it."):format(eff.power) end,
 	type = "physical",
 	subtype = { nature=true, speed=true },
 	status = "beneficial",
 	parameters = {power=1000},
-	on_gain = function(self, err) return "#Target# prepares for the next kill!.", "+Wild Speed" end,
+	on_gain = function(self, err) return "#Target# is moving at extreme speed!", "+Wild Speed" end,
 	on_lose = function(self, err) return "#Target# slows down.", "-Wild Speed" end,
 	get_fractional_percent = function(self, eff)
 		local d = game.turn - eff.start_turn
@@ -2097,7 +2099,7 @@ newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 		if rng.percent(self:callEffect(eff.effect_id, "deflectchance", adj)) then
 			deflected = eff.dam
 			if self:knowTalent(self.T_TEMPO) then
-				self:callTalent(self.T_TEMPO, "do_tempo")
+				self:callTalent(self.T_TEMPO, "do_tempo", src)
 			end
 		end
 
@@ -2888,12 +2890,12 @@ newEffect {
 		-- percent of all damage to ignore
 		reduce = 50
 	},
-	on_gain = function(self, eff) return "#Target# rolls to avoid some damage!" end,
+	on_gain = function(self, eff) return "#Target# assumes an extreme defensive posture, avoiding some damage!" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "incoming_reduce", eff.reduce)
 	end,
 	long_desc = function(self, eff)
-		return ([[The target is in a defensive roll, ignoring %d%% of all incoming damage.]])
+		return ([[The target is in an extreme defensive posture, avoiding %d%% of all incoming damage.]])
 		:format(eff.reduce)
 	end,
 }
@@ -3092,7 +3094,7 @@ newEffect{
 		local crippling = eff.crippling > 0 and (" %d%% chance to fail talents."):format(eff.crippling) or ""
 		local volatile = eff.volatile > 0 and (" Poison damage also hits adjacent targets."):format() or ""
 		local leeching = eff.leeching > 0 and (" The source of this effect heals for %d%% of all damage dealt to the target."):format(eff.leeching) or ""	
-		return ("The target is poisoned, doing %0.2f nature damage per turn.%s%s%s%s%s"):format(eff.power, insidious, numbing, crippling, volatile, leeching) 
+		return ("The target is poisoned, taking %0.2f nature damage per turn.%s%s%s%s%s"):format(eff.power, insidious, numbing, crippling, volatile, leeching) 
 	end,
 	type = "physical",
 	subtype = { poison=true, nature=true }, no_ct_effect = true,
@@ -3113,7 +3115,7 @@ newEffect{
 			end
 		end
 	end,
-	on_merge = function(self, old_eff, new_eff)
+	on_merge = function(self, old_eff, new_eff) --Note: on_merge called before activate
 		-- Merge the poison
 		local olddam = old_eff.power * old_eff.dur
 		local newdam = new_eff.power * new_eff.dur
@@ -3141,9 +3143,10 @@ newEffect{
 		return old_eff
 	end,
 	activate = function(self, eff)
-		if eff.insidious > 0 then eff.healid = self:addTemporaryValue("healing_factor", -eff.insidious / 100) end
-		if eff.numbing > 0 then eff.numbid = self:addTemporaryValue("numbed", eff.numbing) end
-		if eff.crippling > 0 then eff.cripid = self:addTemporaryValue("talent_fail_chance", eff.crippling) end
+		-- Only store ids for new temp values (Toxic Death may copy ids from killed victim)
+		if eff.insidious > 0 then eff.healid = self:addTemporaryValue("healing_factor", -eff.insidious / 100) else eff.healid = nil end
+		if eff.numbing > 0 then eff.numbid = self:addTemporaryValue("numbed", eff.numbing) else eff.numbid = nil end
+		if eff.crippling > 0 then eff.cripid = self:addTemporaryValue("talent_fail_chance", eff.crippling) else eff.cripid = nil end
 	end,
 	deactivate = function(self, eff)
 		if eff.healid then self:removeTemporaryValue("healing_factor", eff.healid) end
@@ -3232,20 +3235,18 @@ newEffect{
 newEffect{
 	name = "SOOTHING_DARKNESS", image = "talents/soothing_darkness.png",
 	desc = "Soothing Darkness",
-	long_desc = function(self, eff) return ("The target is wreathed in shadows, increasing life regen by %0.1f, stamina regeneration by %0.1f and reducing all damage taken by %d."):format(eff.life, eff.stamina, eff.dr) end,
+	long_desc = function(self, eff) return ("The target is wreathed in shadows, increasing life regeneration by %0.1f and stamina regeneration by %0.1f."):format(eff.life, eff.stamina) end,
 	type = "physical",
 	subtype = { darkness=true, healing=true },
 	status = "beneficial",
-	parameters = { life=10, stamina=5, dr=30 },
+	parameters = { life=1, stamina=0.5, dr=0 },
 	activate = function(self, eff)
 		eff.lifeid = self:addTemporaryValue("life_regen", eff.life)
 		eff.staid = self:addTemporaryValue("stamina_regen", eff.stamina)
-		eff.drid = self:addTemporaryValue("flat_damage_armor", {all=eff.dr})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("life_regen", eff.lifeid)
 		self:removeTemporaryValue("stamina_regen", eff.staid)
-		self:removeTemporaryValue("flat_damage_armor", eff.drid)
 	end,
 }
 
@@ -3273,15 +3274,16 @@ newEffect{
 	type = "physical",
 	subtype = { tactical=true, darkness=true },
 	status = "beneficial",
-	on_gain = function(self, err) game.logPlayer(self, "#GREY#You begin your shadowdance.") end,
-	on_lose = function(self, err) game.logPlayer(self, "#GREY#You end your shadowdance.") end,
+	on_gain = function(self, err) game.logPlayer(self, "#GREY#You begin your Shadow Dance.") end,
+	on_lose = function(self, err) game.logPlayer(self, "#GREY#You end your Shadow Dance.") end,
 	parameters = {rad=10},
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
-		if not rng.percent(self.hide_chance or 0) then
+		if not eff.no_cancel_stealth and not rng.percent(self.hide_chance or 0) then
 			local detect = self:stealthDetection(eff.rad)
 			local netstealth = (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
+--			self:alterTalentCoolingdown(self.T_STEALTH, -20)
 			if detect > 0 and self:checkHit(detect, netstealth) then
 				game.logPlayer(self, "You have been detected!")
 				self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=false})
@@ -3297,22 +3299,30 @@ newEffect{
 	type = "physical",
 	subtype = { sleep=true, poison=true },
 	status = "detrimental",
-	parameters = { power=1, insomnia=1 },
-	on_gain = function(self, err) return "#Target# is in a deep sleep.", "+Sedated" end,
-	on_lose = function(self, err) return "#Target# is no longer sleeping.", "-Sedated" end,
+	parameters = { power=10, insomnia=10, slow=0 },
+	on_gain = function(self, eff)
+		-- check non-poison immunities if this is being applied by Toxic Death
+		if eff._from_toxic_death and not (self:checkClassification("living") and self:canBe("sleep")) then
+			eff.cancel = true
+			return
+		end
+		return "#Target# is in a deep sleep.", "+Sedated"
+	end,
+	on_lose = function(self, eff) return "#Target# is no longer sleeping.", "-Sedated" end,
 	on_timeout = function(self, eff)
-		-- Incriment Insomnia Duration
+		-- Increment Insomnia Duration
 		if not self:attr("lucid_dreamer") then
 			self:setEffect(self.EFF_INSOMNIA, 1, {power=eff.insomnia})
 		end
 				
 	end,
 	activate = function(self, eff)
-		eff.sid = self:addTemporaryValue("sleep", 1)
+		if eff.cancel then self:removeEffect(eff.effect_id, true) return end
+		eff._from_toxic_death = false
+		self:effectTemporaryValue(eff, "sleep", 1)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("sleep", eff.sid)
-		if not self:attr("sleep") and not self.dead and game.level:hasEntity(self) and eff.slow > 0 then
+		if not eff.cancel and not self:attr("sleep") and not self.dead and game.level:hasEntity(self) and eff.slow > 0 then
 			if self:canBe("slow") then
 				self:setEffect(self.EFF_SLOW, 4, {src=eff.src, power=eff.slow, no_ct_effect=true})
 			end
@@ -3511,36 +3521,24 @@ newEffect{
 }
 
 newEffect{
-	name = "AVOIDANCE", image = "talents/disengage.png",
-	desc = "Avoidance",
-	long_desc = function(self, eff) return ("%d%% chance to fully evade any damaging actions."):format(eff.power) end,
-	type = "physical",
-	subtype = { evade=true },
-	status = "beneficial",
-	parameters = { power=10 },
-	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("cancel_damage_chance", eff.power)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("cancel_damage_chance", eff.tmpid)
-	end,
-}
-
-newEffect{
 	name = "EXHAUSTION", image = "talents/slumber.png",
 	desc = "Exhaustion",
-	long_desc = function(self, eff) return ("The target is exhausted, increasing the stamina cost of Tumble by %d."):format(eff.charges*30) end,
+	long_desc = function(self, eff) return ("The target has recently performed an extreme feat of agility and is exhausted.  The stamina cost of activated Mobility talents is increased by %d%%."):format(eff.fatigue) end,
 	type = "other",
-	subtype = {  },
+	subtype = {tactic = true},
 	status = "detrimental",
-	parameters = {  },
-	charges = function(self, eff) return eff.charges end,
+	parameters = {fatigue = 50 },
+	charges = function(self, eff) return math.round(eff.fatigue) end,
+	on_timeout = function(self, eff)
+		local turns = eff.dur
+		if turns <= 1 then self:removeEffect(eff.effect_id) return end
+		eff.fatigue = eff.fatigue*(turns - 1)/turns
+	end,
 	on_merge = function(self, old_eff, new_eff)
-		new_eff.charges = math.min(old_eff.charges + 1, 5)
+		new_eff.fatigue = math.min(old_eff.fatigue + new_eff.fatigue)
 		return new_eff
 	end,
 	activate = function(self, eff)
-		eff.charges = 1
 	end,
 	deactivate = function(self, eff)
 	end,
@@ -3554,14 +3552,14 @@ newEffect {
 	status = "beneficial",
 	parameters = {
 		-- percent of all damage to ignore
-		reduce = 50
+		reduce = 10
 	},
-	on_gain = function(self, eff) return "#Target# danger sense lets them narrowly avoid the blow!" end,
+	on_gain = function(self, eff) return ("#RED##Target# instinctively senses danger, protecting %s!"):format(self:his_her_self()) end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "incoming_reduce", eff.reduce)
 	end,
 	long_desc = function(self, eff)
-		return ([[The target is avoiding damage, ignoring %d%% of all incoming damage.]])
+		return ([[The target is extremely vigilant, avoiding %d%% of all incoming damage.]])
 		:format(eff.reduce)
 	end,
 }
@@ -3569,7 +3567,10 @@ newEffect {
 newEffect{
 	name = "MOBILE_DEFENCE", image = "talents/light_armour_training.png",
 	desc = "Mobile Defense",
-	long_desc = function(self, eff) return ("Increases stamina regeneration by %d and total defense by %d%%."):format(eff.stamina, eff.power) end,
+	long_desc = function(self, eff)
+		local stam = eff.stamina > 0 and ("stamina regeneration by %0.1f and "):format(eff.stamina) or ""
+		return ("Increases %stotal defense by %d%%."):format(stam, eff.power)
+	end,
 	type = "physical",
 	subtype = { tactic=true },
 	status = "beneficial",

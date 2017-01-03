@@ -81,8 +81,8 @@ newTalent{
 	info = function(self, t)
 		dam = t.getDamage(self,t)*100
 		perc = t.getPercent(self,t)*100
-		return ([[Attempt to finish off a wounded enemy, striking them with both weapons for %d%% weapon damage, plus additional physical damage for each hit that lands equal to %d%% of their missing life (divided by rank: from 1 (critter) to 5 (elite boss)). 
-		A target brought below 20%% of its maximum life may be instantly slain, which you may take advantage of to slip back into stealth.]]):
+		return ([[Attempt to finish off a wounded enemy, striking them with both weapons for %d%% weapon damage, plus additional physical damage for each hit that lands equal to %d%% of their missing life (divided by rank: from 1 (critter) to 5 (elite boss)).  A target brought below 20%% of its maximum life may be instantly slain.
+		You may take advantage of finishing your foe this way to activate stealth (if known).]]):
 		format(dam, perc)
 	end,
 }

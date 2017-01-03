@@ -3250,3 +3250,71 @@ newTalent{
 		format(t.seePower(self,t), t.seePower(self,t))
 	end,
 }
+
+newTalent{
+	name = "Precision",
+--	type = {"technique/dualweapon-training", 3},
+	type = {"technique/other", 1},
+	mode = "sustained",
+	points = 5,
+	require = techs_dex_req3,
+	no_energy = true,
+	cooldown = 10,
+	sustain_stamina = 20,
+	tactical = { BUFF = 2 },
+	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	getApr = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 25, 500, 0.75) end,
+	activate = function(self, t)
+		local weapon, offweapon = self:hasDualWeapon()
+		if not weapon then
+			game.logPlayer(self, "You cannot use Precision without dual wielding!")
+			return nil
+		end
+
+		return {
+			apr = self:addTemporaryValue("combat_apr",t.getApr(self, t)),
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeTemporaryValue("combat_apr", p.apr)
+		return true
+	end,
+	info = function(self, t)
+		return ([[You have learned to hit the right spot, increasing your armor penetration by %d when dual wielding.
+		The Armour penetration bonus will increase with your Dexterity.]]):format(t.getApr(self, t))
+	end,
+}
+
+newTalent{
+	name = "Momentum",
+--	type = {"technique/dualweapon-training", 4},
+	type = {"technique/other", 1},
+	mode = "sustained",
+	points = 5,
+	cooldown = 30,
+	sustain_stamina = 50,
+	require = techs_dex_req4,
+	tactical = { BUFF = 2 },
+	on_pre_use = function(self, t, silent) if self:hasArcheryWeapon() or not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two melee weapons to use this talent.") end return false end return true end,
+	getSpeed = function(self, t) return self:combatTalentScale(t, 0.11, 0.40, 0.75) end,
+	activate = function(self, t)
+		local weapon, offweapon = self:hasDualWeapon()
+		if not weapon then
+			game.logPlayer(self, "You cannot use Momentum without dual wielding melee weapons!")
+			return nil
+		end
+
+		return {
+			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
+			stamina_regen = self:addTemporaryValue("stamina_regen", -6),
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)
+		self:removeTemporaryValue("stamina_regen", p.stamina_regen)
+		return true
+	end,
+	info = function(self, t)
+		return ([[When dual wielding, increases attack speed by %d%%, but drains stamina quickly (-6 stamina/turn).]]):format(t.getSpeed(self, t)*100)
+	end,
+}

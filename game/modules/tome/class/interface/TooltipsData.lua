@@ -425,7 +425,7 @@ TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
 This represents your chance to completely avoid this specific effect.
 ]]
 TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
-This represents your chance to completely being stunned, dazed, or frozen.
+This represents your chance to completely avoid being stunned, dazed, or frozen.
 ]]
 TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
 This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.

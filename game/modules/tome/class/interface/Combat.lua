@@ -116,9 +116,8 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 	end
 
 	-- Cancel stealth early if we are noticed
-	if self:isTalentActive(self.T_STEALTH) and target:canSee(self) then
-		self:useTalent(self.T_STEALTH)
-		self.changed = true
+	if self:attr("stealth") and target:canSee(self) then
+		self:breakStealth()
 		if self.player then self:logCombat(target, "#Target# notices you at the last moment!") end
 	end
 
@@ -523,6 +522,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		local damrange = self:combatDamageRange(weapon)
 		dam = rng.range(dam, dam * damrange)
 		print("[ATTACK] after range", dam)
+
 		if deflect == 0 then dam, crit = self:physicalCrit(dam, weapon, target, atk, def) end
 		print("[ATTACK] after crit", dam)
 		dam = dam * mult
@@ -566,27 +566,24 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 
 		if weapon and weapon.crushing_blow then self:attr("crushing_blow", 1) end
 
-		-- Damage conversion?
-		-- Reduces base damage but converts it into another damage type
-		local conv_dam
-		local conv_damtype
+		-- Convert base damage to other types according to weapon
 		local total_conversion = 0
-		if weapon and weapon.convert_damage then
+		local melee_state = {is_melee=true}
+		if weapon and weapon.convert_damage and dam > 0 then
+			local conv_dam
 			for typ, conv in pairs(weapon.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					total_conversion = total_conversion + conv_dam
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
+				conv_dam = math.min(dam, dam * (conv / 100))
+				print("[ATTACK]\tDamageType conversion%", conv, typ, conv_dam)
+				total_conversion = total_conversion + conv_dam
+				if conv_dam > 0 then
+					DamageType:get(typ).projector(self, target.x, target.y, typ, math.max(0, conv_dam), melee_state)
 				end
 			end
+			dam = dam - total_conversion
+			print("[ATTACK]\t after DamageType conversion dam:", dam)
 		end
-
 		if dam > 0 then
-			DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam))
+			DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam), melee_state)
 		end
 
 		if weapon and weapon.crushing_blow then self:attr("crushing_blow", -1) end
@@ -599,9 +596,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 
 		-- add damage conversion back in so the total damage still gets passed
-		if total_conversion > 0 then
-			dam = dam + total_conversion
-		end
+		dam = dam + total_conversion
 
 		target:fireTalentCheck("callbackOnMeleeHit", self, dam)
 
@@ -662,6 +657,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	return self:combatSpeed(weapon), hitted, dam
 end
 
+--- handle various on hit procs for melee combat
 function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
 	if self:isAccuracyEffect(weapon, "staff") then
 		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 2.5, 2)
@@ -828,13 +824,48 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		end
 	end
 
-	-- Reactive target on hit damage
-	if hitted then for typ, dam in pairs(target.on_melee_hit) do
-		if type(dam) == "number" then if dam > 0 then DamageType:get(typ).projector(target, self.x, self.y, typ, dam) end
-		elseif dam.dam and dam.dam > 0 then DamageType:get(typ).projector(target, self.x, self.y, typ, dam)
-		end
-	end end
-
+	-- Reactive target on_melee_hit damage
+	if hitted then
+		local dr, fa, pct = 0
+		for typ, dam in pairs(target.on_melee_hit) do
+			if not fa then
+				if self:knowTalent(self.T_CLOSE_COMBAT_MANAGEMENT) then
+					fa, pct = self:callTalent(self.T_CLOSE_COMBAT_MANAGEMENT, "reflectArmour", weapon)
+					print("[ATTACK]\tresolving on_melee_hit damage with:", fa, "flat_armor", pct, "% reflect")
+				else fa, pct = 0, 0
+				end
+			end
+			local DT = DamageType:get(typ)
+			if type(dam) == "number" then
+				if dam > 0 then
+					dr = math.min(dam, fa)
+					print("[ATTACK]\ttarget on_melee_hit:", dam, typ, "vs", fa)
+					dam = dam - dr
+					if dam > 0 then	DT.projector(target, self.x, self.y, typ, dam) end
+					if dr > 0 and pct > 0 then
+						dr = math.floor(dr*pct/100)
+						if dr > 0 then
+							print("[ATTACK]\ttarget on_melee_hit", dr, typ, "reflected")
+							DT.projector(self, target.x, target.y, typ, dr)
+						end
+					end
+				end
+			elseif dam.dam and dam.dam > 0 then
+				dr = math.min(dam.dam, fa)
+				print("[ATTACK]\ttarget on_melee_hit:", dam.dam, typ, "vs", fa)
+				if dr > 0 then dam = table.clone(dam); dam.dam = dam.dam - dr end
+				if dam.dam > 0 then DT.projector(target, self.x, self.y, typ, dam) end
+				if dr > 0 and pct > 0 then
+					dr = math.floor(dr*pct/100)
+					if dr > 0 then
+						print("[ATTACK]\ttarget on_melee_hit", dr, typ, "reflected")
+						dam.dam = dr -- only change dam
+						DT.projector(self, target.x, target.y, typ, dam)
+					end
+				end
+			end
+		end 
+	end
 	-- Acid splash
 	if hitted and not target.dead and target:knowTalent(target.T_ACID_BLOOD) then
 		local t = target:getTalentFromId(target.T_ACID_BLOOD)
@@ -1079,7 +1110,8 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		self.logCombat(target, self, "#Source# counter attacks #Target# with %s shield shards!", string.his_her(target))
 		target:attackTarget(self, DamageType.NATURE, self:combatTalentWeaponDamage(t, 0.4, 1), true)
 	end
-
+	-- pass all parameters here?
+--function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
 	self:fireTalentCheck("callbackOnMeleeAttack", target, hitted, crit, weapon, damtype, mult, dam)
 
 	local hd = {"Combat:attackTargetWith", hitted=hitted, crit=crit, target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam}
@@ -1171,11 +1203,12 @@ end
 --- Fake denotes a check not actually being made, used by character sheets etc.
 function _M:combatDefenseBase(fake)
 	local add = 0
+	local light_armor = self:hasLightArmor()
 	if not self:attr("encased_in_ice") then
 		if self:hasDualWeapon() and self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then
 			add = add + self:callTalent(self.T_DUAL_WEAPON_DEFENSE,"getDefense")
 		end
-		if self:hasLightArmor() and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+		if light_armor and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
 			add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING,"getDefense")
 		end
 		if not fake then
@@ -1199,16 +1232,14 @@ function _M:combatDefenseBase(fake)
 	end
 	local d = math.max(0, self.combat_def + (self:getDex() - 10) * 0.35 + (self:getLck() - 50) * 0.4)
 	local mult = 1
-
-	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
-		mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
+	if light_armor then
+		if self:knowTalent(self.T_MOBILE_DEFENCE) then
+			mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
+		end
+		local eff = self:hasEffect(self.EFF_MOBILE_DEFENCE)
+		if eff then	mult = mult + (eff.power/100) end
 	end
 	
-	if self:hasLightArmor() and self:hasEffect(self.EFF_MOBILE_DEFENCE) then
-		local eff = self:hasEffect(self.EFF_MOBILE_DEFENCE)
-		mult = mult + (eff.power/100)
-	end
-
 	return math.max(0, d * mult + add) -- Add bonuses last to avoid compounding defense multipliers from talents
 end
 
@@ -1268,11 +1299,14 @@ function _M:combatArmorHardiness()
 			add = add + ga.getArmorHardiness(self, ga)
 		end
 	end
-	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
-		add = add + self:callTalent(self.T_MOBILE_DEFENCE, "getHardiness")
-	end
-	if self:hasLightArmor() and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
-		add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getArmorHardiness")
+	local light_armor = self:hasLightArmor()
+	if light_armor then
+		if self:knowTalent(self.T_MOBILE_DEFENCE) then
+			add = add + self:callTalent(self.T_MOBILE_DEFENCE, "getHardiness")
+		end
+		if self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+			add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getArmorHardiness")
+		end
 	end
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
@@ -1765,6 +1799,9 @@ function _M:combatFatigue()
 
 	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then fatigue = fatigue - self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getFatigueBoost") end
 
+	if self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+		fatigue = fatigue - self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getFatigue")
+	end
 	if fatigue < min then return min end
 	if self:knowTalent(self.T_NO_FATIGUE) then return min end
 	return fatigue
@@ -1861,7 +1898,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		chance = chance - target:callTalent(target.T_SCOUNDREL,"getCritPenalty")
 	end
 
-	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) and target and not target:canSee(self) then -- bug fix
+	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) and target and not target:canSee(self) then
 		chance = 100
 	end
 
