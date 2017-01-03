@@ -143,6 +143,6 @@ newTalent{
 	info = function(self, t)
 		return ([[You go all out, trying to burn down your foes as fast as possible.
 		Every hit in battle has +%d%% critical chance and +%d%% physical resistance penetration, but this talent drains 6 stamina each turn.]]):
-		format(t.getCrit(self, t), t.getPen(self, t), t.getDrain(self, t))
+		format(t.getCrit(self, t), t.getPen(self, t))
 	end,
 }
