@@ -96,5 +96,5 @@ function _M:on_focus_change(status)
 		self.frame.container:shown(not status)
 		self.frame_sel.container:shown(status)
 	end
-	self.content:colorTween("focus", 8, "a", nil, status and 1 or self.alpha_unfocus)
+	self.content:tween(8, "a", nil, status and 1 or self.alpha_unfocus, "inOutQuad")
 end

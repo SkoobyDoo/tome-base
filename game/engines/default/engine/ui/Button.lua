@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -78,5 +77,5 @@ function _M:generate()
 end
 
 function _M:on_focus_change(status)
-	self.frame_sel_do.container:colorTween("focus", 8, "a", nil, status and 1 or 0, "inOutQuad")
+	self.frame_sel_do.container:tween(8, "a", nil, status and 1 or 0, "inOutQuad")
 end

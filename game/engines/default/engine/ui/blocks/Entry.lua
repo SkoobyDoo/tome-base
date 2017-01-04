@@ -19,7 +19,6 @@
 
 require "engine.class"
 local Block = require "engine.ui.blocks.Block"
-local tween = require "tween"
 
 --- An entry for any kind of lists and such
 -- @classmod engine.ui.blocks.block
@@ -149,7 +148,7 @@ function _M:select(v)
 	else
 		self:stopScrolling()
 		-- self.cur_frame.container:shown(false)
-		self.cur_frame.container:colorTween("selected", 8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
+		self.cur_frame.container:tween(8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
 	end
 end
 
@@ -165,7 +164,7 @@ function _M:startScrolling()
 	else
 		dirm, dirM = -(w - self.max_text_w + 10), 0
 	end
-	self.text:translateTween("scroll", 4 * #self.str, "x", dirm, dirM, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
+	self.text:tween(4 * #self.str, "x", dirm, dirM, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
 end
 
 function _M:stopScrolling()
@@ -173,7 +172,7 @@ function _M:stopScrolling()
 	if not self.frame then return end
 
 	self.invert_scroll = false
-	self.text:translateTween("scroll", 8, "x", nil, 0, "inOutQuad")
+	self.text:tween(8, "x", nil, 0, "inOutQuad")
 end
 
 function _M:shown(v)

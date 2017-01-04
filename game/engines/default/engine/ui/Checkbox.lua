@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -87,7 +86,7 @@ end
 function _M:proxyDataSet(k, v)
 	-- Detect when checked field is changed and update
 	if k == "checked" and self.tickvo then
-		self.tickvo:colorTween("checked", 4, "a", nil, v and 1 or 0, "linear")
+		self.tickvo:tween(4, "a", nil, v and 1 or 0, "linear")
 	end
 	return true
 end

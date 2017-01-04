@@ -47,8 +47,10 @@ extern "C" void interface_resize(int w, int h);
 
 class IRealtime {
 public:
+	bool dying = false;
 	IRealtime();
 	virtual ~IRealtime();
+	virtual void killMe();
 	virtual void onKeyframe(int nb_keyframes) = 0;
 };
 

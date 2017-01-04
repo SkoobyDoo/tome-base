@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -176,11 +175,11 @@ end
 
 function _M:startLoadingSpin()
 	self.loading_icon:shown(true)
-	self.loading_icon:rotateTween("spinner", 25, "z", 0, math.rad(360), "linear", function() self:startLoadingSpin() end)
+	self.loading_icon:tween(25, "rot_z", 0, math.rad(360), "linear", function() self:startLoadingSpin() end)
 end
 function _M:stopLoadingSpin()
 	self.loading_icon:shown(false)
-	self.loading_icon:cancelTween("spinner")
+	self.loading_icon:cancelTween("rot_z")
 end
 
 function _M:on_focus(v)

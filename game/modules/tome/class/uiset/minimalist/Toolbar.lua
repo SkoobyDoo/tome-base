@@ -57,8 +57,8 @@ function _M:init(minimalist, w, h)
 	for _, d in ipairs(self.iconslist) do
 		self.mouse:registerZone(0, 0, self.icon_w, self.icon_h, self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "button" then d.fct(button)
-			elseif event == "out" then self[d.name]:colorTween("focus", 8, "a", nil, 0.5)
-			elseif event == "motion" then self[d.name]:colorTween("focus", 5, "a", nil, 1)
+			elseif event == "out" then self[d.name]:tween(8, "a", nil, 0.5)
+			elseif event == "motion" then self[d.name]:tween(5, "a", nil, 1)
 			end
 		end, d.tooltip), nil, d.name, true, 1)
 	end
@@ -68,7 +68,7 @@ end
 
 function _M:onFocus(v)
 	if v then return end
-	for _, d in ipairs(self.iconslist) do self[d.name]:colorTween("focus", 8, "a", nil, 0.5) end
+	for _, d in ipairs(self.iconslist) do self[d.name]:tween(8, "a", nil, 0.5) end
 end
 
 function _M:update(nb_keyframes)

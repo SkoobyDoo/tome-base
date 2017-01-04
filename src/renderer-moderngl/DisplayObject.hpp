@@ -90,6 +90,7 @@ protected:
 public:
 	DORTweener(DisplayObject *d);
 	virtual ~DORTweener();
+	virtual void killMe();
 	void setTween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref);
 	void cancelTween(TweenSlot slot);
 	virtual void onKeyframe(int nb_keyframes);

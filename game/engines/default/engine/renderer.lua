@@ -395,6 +395,19 @@ local easings = table.reverse{
 	"backOut",
 	"backInOut",
 }
+local compat_easings = {
+	linear = "linear",
+	inQuad    = "quadraticIn",    outQuad    = "quadraticOut",    inOutQuad    = "quadraticInOut",    --outInQuad    = "outInQuad",
+	inCubic   = "cubicIn",   outCubic   = "cubicOut",   inOutCubic   = "cubicInOut",   --outInCubic   = "outInCubic",
+	inQuart   = "quarticIn",   outQuart   = "quarticOut",   inOutQuart   = "quarticInOut",   --outInQuart   = "outInQuart",
+	inQuint   = "quinticIn",   outQuint   = "quinticOut",   inOutQuint   = "quinticInOut",   --outInQuint   = "outInQuint",
+	inSine    = "sinusoidalIn",    outSine    = "sinusoidalOut",    inOutSine    = "sinusoidalInOut",    --outInSine    = "outInSine",
+	inExpo    = "exponentialIn",    outExpo    = "exponentialOut",    inOutExpo    = "exponentialInOut",    --outInExpo    = "outInExpo",
+	inCirc    = "circularIn",    outCirc    = "circularOut",    inOutCirc    = "circularInOut",    --outInCirc    = "outInCirc",
+	inElastic = "elasticIn", outElastic = "elasticOut", inOutElastic = "elasticInOut", --outInElastic = "outInElastic",
+	inBack    = "backIn",    outBack    = "backOut",    inOutBack    = "backInOut",    --outInBack    = "outInBack",
+	inBounce  = "bounceIn",  outBounce  = "bounceOut",  inOutBounce  = "bounceInOut",  --outInBounce  = "outInBounce",
+}
 local function doTween(self, time, slot, from, to, easing, on_end, on_change)
 	easing = easing or "linear"
 	local slotid = tweenslots[slot]
@@ -404,9 +417,9 @@ local function doTween(self, time, slot, from, to, easing, on_end, on_change)
 		-- So from becomes on_end and to becaomes on_change
 		self:rawtween(slotid, 0, 0, 1, time, from, to)
 	else
-		local easingid = easings[easing]
+		local easingid = easings[compat_easings[easing] or easing]
 		if not easingid then error("tweening on wrong easing: "..tostring(easing)) end
-		self:rawtween(slotid, easingid, from, to, time, on_end, on_change)
+		self:rawtween(slotid, easingid-1, from, to, time, on_end, on_change)
 	end
 end
 local function doCancelTween(self, slot)

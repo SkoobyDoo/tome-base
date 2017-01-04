@@ -264,7 +264,7 @@ function _M:update()
 		text:translate(0, self.h - h, 10)
 		self.history_container:add(text)
 
-		if self.fading then text:waitTween("fade", 60, function(text) text:colorTween("fade", 30, "a", nil, 0, "linear") end) end
+		if self.fading then text:tween(60, "wait", function(text) text:tween(30, "a", nil, 0, "linear") end) end
 
 		if h > self.h - self.fh then break end
 	end
@@ -294,7 +294,6 @@ end
 function _M:resetFade()
 	-- Reset fade
 	for _, d in ipairs(self.cache) do
-		d:cancelTween("fade")
-		d:colorTween("fade", 5, "a", nil, 1, "linear")
+		d:tween(5, "a", nil, 1, "linear")
 	end
 end

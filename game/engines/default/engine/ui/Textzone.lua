@@ -163,7 +163,7 @@ function _M:startAutoScrolling()
 	else
 		dirm, dirM = nil, 0
 	end
-	self.text_container:translateTween("autoscroll", h / 3, "y", dirm, dirM, "inOutQuad",
+	self.text_container:tween(h / 3, "y", dirm, dirM, "inOutQuad",
 		function() self.invert_scroll = not self.invert_scroll self:startAutoScrolling() end,
 		function(x, y, z) if self.scrollbar then self.scrollbar:setPos(-y) end end
 	)
@@ -174,7 +174,7 @@ function _M:stopAutoScrolling()
 	self.pingpong = false
 
 	self.invert_scroll = false
-	self.text_container:translateTween("autoscroll", 8, "y", nil, 0, "inOutQuad")
+	self.text_container:tween(8, "y", nil, 0, "inOutQuad")
 end
 
 function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)

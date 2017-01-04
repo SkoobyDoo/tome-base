@@ -33,6 +33,8 @@
 #define _te4_export
 #endif
 
+#define NORMALIZED_FPS 30
+
 extern int resizeWindow(int width, int height);
 
 /**

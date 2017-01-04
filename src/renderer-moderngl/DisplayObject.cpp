@@ -170,9 +170,10 @@ void DORTweener::onKeyframe(int nb_keyframes) {
 		auto &t = tweens[slot];
 		if (t.time) {
 			nb_tweening++;
-			t.cur += nb_keyframes / 30.0;
+			t.cur += nb_keyframes / (float)NORMALIZED_FPS;
 			if (t.cur > t.time) t.cur = t.time;
 			float val = t.easing(t.from, t.to, t.cur / t.time);
+			// printf("=== %f => %f over %f / %f == %f\n", t.from, t.to, t.cur, t.time, val);
 			switch (slot) {
 				case TweenSlot::TX:
 					who->x = val; mat = true;
@@ -233,17 +234,19 @@ void DORTweener::onKeyframe(int nb_keyframes) {
 					lua_rawgeti(L, -2, who->weak_self_ref);
 					lua_call(L, 1, 0);
 					lua_pop(L, 1); // the weak registry
-					luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF;
 				}
-				if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+				// Check time == 0, if it is not it means the on_end callback reassigned the slot, we dont want to touch it then, it's not "us" anymore
+				if (!t.time) {
+					if (t.on_end_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF; }
+					if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+				}
 			}
 		}
 	}
 	if (mat) who->recomputeModelMatrix();
 	if (changed) who->setChanged();
 	if (!nb_tweening) {
-		who->tweener = NULL;
-		delete this;
+		killMe();
 		return; // Just safety in case something is added later. "delete this" must always be the last thing done
 	}
 }
@@ -272,15 +275,14 @@ void DORTweener::setTween(TweenSlot slot, easing_ptr easing, float from, float t
 	t.from = from;
 	t.to = to;
 	t.cur = 0;
-	t.time = time;
+	t.time = time / (float)NORMALIZED_FPS;
 	t.on_end_ref = on_end_ref;
 	t.on_change_ref = on_change_ref;
 }
 
 void DORTweener::cancelTween(TweenSlot slot) {
 	if (slot == TweenSlot::MAX) {
-		who->tweener = NULL;
-		delete this;
+		killMe();
 		return; // Just safety in case something is added later. "delete this" must always be the last thing done		
 	} else {
 		auto &t = tweens[(short)slot];
@@ -288,6 +290,11 @@ void DORTweener::cancelTween(TweenSlot slot) {
 		if (t.on_end_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF; }
 		if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
 	}
+}
+
+void DORTweener::killMe() {
+	who->tweener = NULL;
+	IRealtime::killMe();
 }
 
 void DisplayObject::tween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref) {
