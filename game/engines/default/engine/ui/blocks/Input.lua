@@ -70,9 +70,7 @@ end
 
 function _M:setPos(i)
 	local size = self.text:getLetterPosition(i)
-	-- i = i - 1
-	-- local size = self.parent.font:size(self.lasttext:sub(1, i))
-	self.cursor:translate(self.frame.b4.w + self.cursor_t.w + size, (self.h - self.cursor_t.h) / 2, 11)
+	self.cursor:translate(self.frame.b4.w - self.cursor_t.w / 2 + size, (self.h - self.cursor_t.h) / 2, 11)
 end
 
 function _M:showCursor(v)

@@ -74,7 +74,6 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 				kerning = texture_glyph_get_kerning(d, last_glyph) * scale;
 			}
 			x += texture_glyph_get_kerning(d, last_glyph) * scale;
-			positions.push_back({x, y});
 			last_glyph = c;
 
 		        // printf("Glyph: %c : %f + %f : %d : %d\n", c, kerning, d->advance_x, d->offset_x, d->width);
@@ -84,6 +83,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			float italicx = - d->offset_x * scale * italic;
 			float y0 = by + (font->font->ascender - d->offset_y) * scale;
 			float y1 = y0 + (d->height) * scale;
+			positions.push_back({x0, y});
 
 			if (shadow_x || shadow_y) {
 				vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
