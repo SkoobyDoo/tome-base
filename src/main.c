@@ -61,6 +61,8 @@ char *override_home = NULL;
 int g_argc = 0;
 char **g_argv;
 float screen_zoom = 1;
+bool offscreen_render = FALSE;
+int locked_w = 0, locked_h = 0;
 SDL_Window *window = NULL;
 SDL_Surface *windowIconSurface = NULL;
 SDL_GLContext maincontext; /* Our opengl context handle */
@@ -986,6 +988,11 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 
 	screen_zoom = zoom;
 
+	if (locked_w && locked_h) {
+		printf("[DO RESIZE] locking size to %dx%d\n", locked_w, locked_h);
+		w = locked_w; h = locked_h;
+	}
+
 	printf("[DO RESIZE] Requested: %dx%d (%d, %d); zoom %d%%\n", w, h, fullscreen, borderless, (int)(zoom * 100));
 
 	/* See if we need to reinitialize the window */
@@ -1028,6 +1035,7 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 		windowIconSurface = IMG_Load_RW(PHYSFSRWOPS_openRead(WINDOW_ICON_PATH)
 				, TRUE);
 		SDL_SetWindowIcon(window, windowIconSurface);
+		if (offscreen_render) SDL_HideWindow(window);
 
 	} else {
 
@@ -1363,6 +1371,13 @@ int main(int argc, char *argv[])
 		if (!strncmp(arg, "--no-sandbox", 12)) is_zygote = TRUE;
 		if (!strncmp(arg, "--logtofile", 11)) logtofile = TRUE;
 		if (!strncmp(arg, "--no-web", 8)) no_web = TRUE;
+		if (!strncmp(arg, "--offscreen", 11)) offscreen_render = TRUE;
+		if (!strncmp(arg, "--lock-size", 11)) {
+			char *arg = argv[++i];
+			char *next;
+			locked_w = strtol(arg, &next, 10);
+			locked_h = strtol(++next, NULL, 10);
+		}
 	}
 
 #ifdef SELFEXE_WINDOWS
