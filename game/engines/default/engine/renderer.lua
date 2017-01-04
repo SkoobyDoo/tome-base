@@ -28,7 +28,6 @@ local DOTileMap = core.game.getCClass("gl{tilemap}")
 local DOTileObject = core.game.getCClass("gl{tileobject}")
 local DOSpriter = core.game.getCClass("gl{spriter}")
 local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOTileObject, DOTileMap, DOSpriter }
-local DOAllContainers = { DORenderer, DOContainer }
 
 -----------------------------------------------------------------------------------
 -- Loaders and initializers
@@ -210,151 +209,6 @@ end
 -----------------------------------------------------------------------------------
 -- Tweening stuff
 -----------------------------------------------------------------------------------
-local tweenstore = setmetatable({}, {__mode="k"})
-
-function core.renderer.dumpCurrentTweens()
-	print("== Tweenstore ==")
-	for DO, list in pairs(tweenstore) do
-		print("* "..tostring(DO))
-		for tn, tw in pairs(list) do
-			print("  - "..tn.." => "..tostring(tw))
-		end
-	end
-end
-
-local function doCancelAllTweens(self)
-	if not self then return end
-	if self.__getstrong then self = self.__getstrong end
-	if not tweenstore[self] then return end
-	for tn, tw in pairs(tweenstore[self]) do
-		tween.stop(tw)
-	end
-	tweenstore[self] = nil
-end
-
-local function doCancelTween(self, tn)
-	if tn == "toto" then print("!!TOTO CANCEL") util.show_backtrace() end
-	if not self then return end
-	if self.__getstrong then self = self.__getstrong end
-	if not tweenstore[self] or not tweenstore[self][tn] then return end
-	tween.stop(tweenstore[self][tn])
-	tweenstore[self][tn] = nil
-end
-
-local function doColorTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local fr, fg, fb, fa = self:getColor()
-	if component == "r" then
-		from = from or fr
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(v, -1, -1, -1) if on_change then on_change(v, -1, -1, -1) end end end, {from, to}, mode, on_end)
-	elseif component == "g" then
-		from = from or fg
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, v, -1, -1) if on_change then on_change(-1, v, -1, -1) end end end, {from, to}, mode, on_end)
-	elseif component == "b" then
-		from = from or fb
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, v, -1) if on_change then on_change(-1, -1, v, -1) end end end, {from, to}, mode, on_end)
-	else
-		from = from or fa
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, -1, v) if on_change then on_change(-1, -1, -1, v) end end end, {from, to}, mode, on_end)
-	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
-	end
-	return tw
-end
-
-local function doRotateTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local x, y, z = self:getRotate()
-	if component == "x" then
-		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
-	elseif component == "y" then
-		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
-	else
-		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
-	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
-	end
-	return tw
-end
-
-local function doTranslateTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local x, y, z = self:getTranslate()
-	if component == "x" then
-		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
-	elseif component == "y" then
-		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
-	else
-		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
-	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
-	end
-	return tw
-end
-
-local function doScaleTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local x, y, z = self:getScale()
-	if component == "x" then
-		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
-	elseif component == "y" then
-		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
-	else
-		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
-	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
-	end
-	return tw
-end
-
-local function doWaitTween(self, tn, time, on_end)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw = tween(time, function() end, {0, 0}, "linear", on_end)
-	if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-	tweenstore[self][tn] = tw
-	return tw
-end
-
 local tweenslots = {
 	x=0, y=1, z=2,
 	scale_x = 3, scale_y = 4, scale_z = 5, 
@@ -428,6 +282,9 @@ local function doCancelTween(self, slot)
 	self:rawcancelTween(slotid)
 end
 
+-----------------------------------------------------------------------------------
+-- Misc other convenient stuff
+-----------------------------------------------------------------------------------
 local function doShader(self, shader)
 	local t = type(shader)
 	if t == "userdata" or t == "nil" then
@@ -445,20 +302,6 @@ local function doShader(self, shader)
 	end
 end
 
-for _, DO in pairs(DOAll) do
-	DO.cancelTween = doCancelTween
-	DO.cancelAllTweens = doCancelAllTweens
-	DO.colorTween = doColorTween
-	DO.translateTween = doTranslateTween
-	DO.rotateTween = doRotateTween
-	DO.scaleTween = doScaleTween
-	DO.waitTween = doWaitTween
-	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
-
-	DO.tween = doTween
-	DO.cancelTween = doCancelTween
-end
-
 local function doContainerAdd(self, d)
 	local t = type(d)
 	if t == "userdata" then
@@ -472,6 +315,14 @@ local function doContainerAdd(self, d)
 	end
 end
 
-for _, DO in pairs(DOAllContainers) do
-	DO._add, DO.add = DO.add, doContainerAdd
+-----------------------------------------------------------------------------------
+-- Alter the DOs metatables to add the new methods
+-----------------------------------------------------------------------------------
+for _, DO in pairs(DOAll) do
+	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
+	if DO.add then DO._add, DO.add = DO.add, doContainerAdd end
+
+	DO.tween = doTween
+	DO.cancelTween = doCancelTween
 end
+
