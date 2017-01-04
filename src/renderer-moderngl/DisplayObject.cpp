@@ -36,6 +36,22 @@ int donb = 0;
 /*************************************************************************
  ** DisplayObject
  *************************************************************************/
+int DisplayObject::weak_registry_ref = LUA_NOREF;
+
+DisplayObject::DisplayObject() {
+	donb++;
+	// printf("+DOs %d\n", donb);
+	model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1;
+}
+DisplayObject::~DisplayObject() {
+	donb--;
+	// printf("-DOs %d\n", donb);
+	removeFromParent();
+	if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
+	if (tweener) delete tweener;
+	tweener = NULL;
+}
+
 void DisplayObject::removeFromParent() {
 	if (!parent) return;
 	DORContainer *p = dynamic_cast<DORContainer*>(parent);
@@ -127,6 +143,145 @@ void DisplayObject::resetModelMatrix() {
 	scale_x = scale_y = scale_z = 1;
 	recomputeModelMatrix();
 }
+
+DORTweener::DORTweener(DisplayObject *d) {
+	who = d;
+	for (short slot = 0; slot < TweenSlot::MAX; slot++) {
+		auto &t = tweens[slot];
+		t.time = 0;
+		t.on_end_ref = LUA_NOREF;
+		t.on_change_ref = LUA_NOREF;
+	}
+}
+DORTweener::~DORTweener() {
+	for (short slot = 0; slot < TweenSlot::MAX; slot++) {
+		auto &t = tweens[slot];
+		if (t.on_end_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF; }
+		if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+	}
+}
+
+void DORTweener::onKeyframe(int nb_keyframes) {
+	if (!nb_keyframes) return;
+
+	bool mat = false, changed = false;
+	int nb_tweening = 0;
+	for (short slot = 0; slot < TweenSlot::MAX; slot++) {
+		auto &t = tweens[slot];
+		if (t.time) {
+			nb_tweening++;
+			t.cur += nb_keyframes / 30.0;
+			if (t.cur > t.time) t.cur = t.time;
+			float val = t.easing(t.from, t.to, t.cur / t.time);
+			switch (slot) {
+				case TweenSlot::TX:
+					who->x = val; mat = true;
+					break;
+				case TweenSlot::TY:
+					who->y = val; mat = true;
+					break;
+				case TweenSlot::TZ:
+					who->z = val; mat = true;
+					who->setSortingChanged();
+					break;
+				case TweenSlot::RX:
+					who->rot_x = val; mat = true;
+					break;
+				case TweenSlot::RY:
+					who->rot_y = val; mat = true;
+					break;
+				case TweenSlot::RZ:
+					who->rot_z = val; mat = true;
+					break;
+				case TweenSlot::SX:
+					who->scale_x = val; mat = true;
+					break;
+				case TweenSlot::SY:
+					who->scale_y = val; mat = true;
+					break;
+				case TweenSlot::SZ:
+					who->scale_z = val; mat = true;
+					break;
+				case TweenSlot::R:
+					who->color.r = val; changed = true;
+					break;
+				case TweenSlot::G:
+					who->color.g = val; changed = true;
+					break;
+				case TweenSlot::B:
+					who->color.b = val; changed = true;
+					break;
+				case TweenSlot::A:
+					who->color.a = val; changed = true;
+					break;
+			}
+
+			if (t.on_change_ref != LUA_NOREF) {
+				lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+				lua_rawgeti(L, LUA_REGISTRYINDEX, t.on_change_ref);
+				lua_rawgeti(L, -2, who->weak_self_ref);
+				lua_pushnumber(L, val);
+				lua_call(L, 2, 0);
+				lua_pop(L, 1); // the weak registry
+			}
+
+			if (t.cur >= t.time) {
+				t.time = 0;
+				if (t.on_end_ref != LUA_NOREF) {
+					lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+					lua_rawgeti(L, LUA_REGISTRYINDEX, t.on_end_ref);
+					lua_rawgeti(L, -2, who->weak_self_ref);
+					lua_call(L, 1, 0);
+					lua_pop(L, 1); // the weak registry
+					luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF;
+				}
+				if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+			}
+		}
+	}
+	if (mat) who->recomputeModelMatrix();
+	if (changed) who->setChanged();
+	if (!nb_tweening) {
+		who->tweener = NULL;
+		delete this;
+		return; // Just safety in case something is added later. "delete this" must always be the last thing done
+	}
+}
+
+void DORTweener::setTween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref) {
+	auto &t = tweens[(short)slot];
+	t.easing = easing;
+	t.from = from;
+	t.to = to;
+	t.cur = 0;
+	t.time = time;
+	t.on_end_ref = on_end_ref;
+	t.on_change_ref = on_change_ref;
+}
+
+void DORTweener::cancelTween(TweenSlot slot) {
+	if (slot == TweenSlot::MAX) {
+		who->tweener = NULL;
+		delete this;
+		return; // Just safety in case something is added later. "delete this" must always be the last thing done		
+	} else {
+		auto &t = tweens[(short)slot];
+		t.time = 0;
+		if (t.on_end_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF; }
+		if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+	}
+}
+
+void DisplayObject::tween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref) {
+	if (!tweener) tweener = new DORTweener(this);
+	tweener->setTween(slot, easing, from, to, time, on_end_ref, on_change_ref);
+}
+
+void DisplayObject::cancelTween(TweenSlot slot) {
+	if (!tweener) return;
+	tweener->cancelTween(slot);
+}
+
 
 void DisplayObject::translate(float x, float y, float z, bool increment) {
 	if (increment) {

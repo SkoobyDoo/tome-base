@@ -38,6 +38,8 @@ using namespace glm;
 using namespace std;
 
 class View;
+class RendererGL;
+class DisplayObject;
 
 #define DO_STANDARD_CLONE_METHOD(class_name) virtual DisplayObject* clone() { DisplayObject *into = new class_name(); this->cloneInto(into); return into; }
 
@@ -62,13 +64,47 @@ struct recomputematrix {
 	bool visible;
 };
 
-class RendererGL;
+enum TweenSlot : unsigned char {
+	TX = 0, TY = 1, TZ = 2, 
+	SX = 3, SY = 4, SZ = 5, 
+	RX = 6, RY = 7, RZ = 8, 
+	R = 9, G = 10, B = 11, A = 12,
+	WAIT = 13,
+	MAX = 14
+};
+
+typedef float (*easing_ptr)(float,float,float);
+
+struct TweenState {
+	easing_ptr easing;
+	float from, to;
+	float cur, time;
+	int on_end_ref, on_change_ref;
+};
+
+class DORTweener : public IRealtime {
+protected:
+	DisplayObject *who = NULL;
+	array<TweenState, (short)TweenSlot::MAX> tweens;
+
+public:
+	DORTweener(DisplayObject *d);
+	virtual ~DORTweener();
+	void setTween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref);
+	void cancelTween(TweenSlot slot);
+	virtual void onKeyframe(int nb_keyframes);
+};
+
 extern int donb;
 /****************************************************************************
  ** Generic display object
  ****************************************************************************/
 class DisplayObject {
+	friend class DORTweener;
+public:
+	static int weak_registry_ref;
 protected:
+	int weak_self_ref = LUA_NOREF;
 	int lua_ref = LUA_NOREF;
 	// lua_State *L = NULL;
 	mat4 model;
@@ -79,25 +115,19 @@ protected:
 	float scale_x = 1, scale_y = 1, scale_z = 1;
 	bool changed = false;
 	bool stop_parent_recursing = false;
+
+	DORTweener *tweener = NULL;
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
 	DisplayObject *parent = NULL;
-	DisplayObject() {
-		donb++;
-		// printf("+DOs %d\n", donb);
-		model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1;
-	};
-	virtual ~DisplayObject() {
-		donb--;
-		// printf("-DOs %d\n", donb);
-		removeFromParent();
-		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
-	};
+	DisplayObject();
+	virtual ~DisplayObject();
 	virtual const char* getKind() = 0;
 	virtual DisplayObject* clone() = 0;
 
 	// void setLuaState(lua_State *L) { this->L = L; };
+	void setWeakSelfRef(int ref) {weak_self_ref = ref; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
 	void setParent(DisplayObject *parent);
@@ -123,6 +153,9 @@ public:
 	void rotate(float x, float y, float z, bool increment);
 	void scale(float x, float y, float z, bool increment);
 	void shown(bool v);
+
+	void tween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref);
+	void cancelTween(TweenSlot slot);
 
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 

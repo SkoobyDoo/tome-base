@@ -355,6 +355,60 @@ local function doWaitTween(self, tn, time, on_end)
 	return tw
 end
 
+local tweenslots = {
+	x=0, y=1, z=2,
+	scale_x = 3, scale_y = 4, scale_z = 5, 
+	rot_x = 6, rot_y = 7, rot_z = 8, 
+	r = 9, g = 10, b = 11, a = 12,
+	wait = 13,
+}
+local easings = table.reverse{
+	"linear",
+	"quadraticIn",
+	"quadraticOut",
+	"quadraticInOut",
+	"cubicIn",
+	"cubicOut",
+	"cubicInOut",
+	"quarticIn",
+	"quarticOut",
+	"quarticInOut",
+	"quinticIn",
+	"quinticOut",
+	"quinticInOut",
+	"sinusoidalIn",
+	"sinusoidalOut",
+	"sinusoidalInOut",
+	"exponentialIn",
+	"exponentialOut",
+	"exponentialInOut",
+	"circularIn",
+	"circularOut",
+	"circularInOut",
+	"bounceOut",
+	"bounceIn",
+	"bounceInOut",
+	"elasticIn",
+	"elasticOut",
+	"elasticInOut",
+	"backIn",
+	"backOut",
+	"backInOut",
+}
+local function doTween(self, time, slot, from, to, easing, on_end, on_change)
+	easing = easing or "linear"
+	local slotid = tweenslots[slot]
+	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
+	local easingid = easings[easing]
+	if not easingid then error("tweening on wrong easing: "..tostring(easing)) end
+	self:rawtween(slotid, easingid, from, to, time, on_end, on_change)
+end
+local function doCancelTween(self, slot)
+	local slotid = tweenslots[slot]
+	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
+	self:rawcancelTween(slotid)
+end
+
 local function doShader(self, shader)
 	local t = type(shader)
 	if t == "userdata" or t == "nil" then
@@ -381,6 +435,9 @@ for _, DO in pairs(DOAll) do
 	DO.scaleTween = doScaleTween
 	DO.waitTween = doWaitTween
 	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
+
+	DO.tween = doTween
+	DO.cancelTween = doCancelTween
 end
 
 local function doContainerAdd(self, d)

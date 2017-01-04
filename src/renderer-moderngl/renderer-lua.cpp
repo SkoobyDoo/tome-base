@@ -55,6 +55,15 @@ template<class T=DisplayObject>T* userdata_to_DO(const char *caller, lua_State *
 /******************************************************************
  ** Generic
  ******************************************************************/
+static void setWeakSelfRef(lua_State *L, int idx, DisplayObject *c) {
+	// Get the weak self storage
+	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+	// Grab a ref and put it there
+	lua_pushvalue(L, idx - 1); // ALWAYS use negative idx only, and -1 because we skip over the storage table
+	int ref = luaL_ref(L, -2);
+	c->setWeakSelfRef(ref);
+	lua_pop(L, 1); // Remove the weak storage table
+}
 static int gl_generic_getkind(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
@@ -122,6 +131,39 @@ static int gl_generic_color(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+#include "renderer-moderngl/easing.hpp" // This imports the code... yeah I know
+static int gl_generic_tween(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	int easing_id = lua_tonumber(L, 3);
+	easing_ptr easing = easings_table[easing_id];
+	int on_end_ref = LUA_NOREF;
+	int on_change_ref = LUA_NOREF;
+	if (lua_isfunction(L, 7)) {
+		lua_pushvalue(L, 7);
+		on_end_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+	if (lua_isfunction(L, 8)) {
+		lua_pushvalue(L, 8);
+		on_change_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+	c->tween((TweenSlot)lua_tonumber(L, 2), easing, lua_tonumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), on_end_ref, on_change_ref);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int gl_generic_cancel_tween(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	if (lua_isboolean(L, 2) && lua_toboolean(L, 2)) {
+		c->cancelTween(TweenSlot::MAX);
+	} else {
+		c->cancelTween((TweenSlot)lua_tonumber(L, 2));
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -195,6 +237,7 @@ static int gl_renderer_new(lua_State *L)
 
 	RendererGL *rgl = new RendererGL(mode);
 	*r = rgl;
+	setWeakSelfRef(L, -1, rgl);
 
 	if (lua_isstring(L, 1)) {
 		rgl->setRendererName(luaL_checkstring(L, 1));
@@ -286,6 +329,7 @@ static int gl_container_new(lua_State *L)
 	DisplayObject **c = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{container}", -1);
 	*c = new DORContainer();
+	setWeakSelfRef(L, -1, *c);
 
 	return 1;
 }
@@ -344,6 +388,7 @@ static int gl_target_new(lua_State *L)
 	if (lua_isnumber(L, 3)) nbt = lua_tonumber(L, 3);
 
 	*c = new DORTarget(w, h, nbt);
+	setWeakSelfRef(L, -1, *c);
 
 	return 1;
 }
@@ -433,6 +478,7 @@ static int gl_vertexes_new(lua_State *L)
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{vertexes}", -1);
 	*v = new DORVertexes();
+	setWeakSelfRef(L, -1, *v);
 
 	return 1;
 }
@@ -542,6 +588,7 @@ static int gl_text_new(lua_State *L)
 	auxiliar_setclass(L, "gl{text}", -1);
 
 	*v = t = new DORText();
+	setWeakSelfRef(L, -1, t);
 
 	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	if (lua_isnumber(L, 2)) t->setMaxWidth(lua_tonumber(L, 2));
@@ -694,6 +741,7 @@ static int gl_callback_new(lua_State *L)
 	auxiliar_setclass(L, "gl{callback}", -1);
 
 	*v = t = new DORCallback();
+	setWeakSelfRef(L, -1, t);
 
 	lua_pushvalue(L, 1);
 	t->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
@@ -796,6 +844,7 @@ static int gl_spriter_new(lua_State *L)
 	auxiliar_setclass(L, "gl{spriter}", -1);
 
 	*v = t = new DORSpriter();
+	setWeakSelfRef(L, -1, t);
 	t->load(file, name);
 	return 1;
 }
@@ -863,6 +912,8 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -898,6 +949,8 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -921,6 +974,8 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -948,6 +1003,8 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -980,6 +1037,8 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1002,6 +1061,8 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1022,6 +1083,8 @@ static const struct luaL_Reg gl_tileobject_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1042,6 +1105,8 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1064,6 +1129,8 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1086,6 +1153,8 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1120,6 +1189,15 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{particles}", gl_particles_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
+
+	// Build the weak self store registry
+	lua_newtable(L); // new_table={}
+	lua_newtable(L); // metatable={}       
+	lua_pushliteral(L, "__mode");
+	lua_pushliteral(L, "v");
+	lua_rawset(L, -3); // metatable._mode='v'
+	lua_setmetatable(L, -2); // setmetatable(new_table,metatable)
+	DisplayObject::weak_registry_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	init_spriter();
 	return 1;
