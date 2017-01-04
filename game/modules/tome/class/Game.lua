@@ -772,8 +772,23 @@ function _M:onLevelLoadRun()
 	self.on_level_load_fcts[self.zone.short_name.."-"..self.level.level] = nil
 end
 
+function _M:noStairsTime()
+	local nb = 3
+	if game.difficulty == game.DIFFICULTY_EASY then nb = 0
+	elseif game.difficulty == game.DIFFICULTY_NIGHTMARE then nb = 5
+	elseif game.difficulty == game.DIFFICULTY_INSANE then nb = 7
+	elseif game.difficulty == game.DIFFICULTY_MADNESS then nb = 10
+	end
+	return nb * 10
+end
+
 function _M:changeLevel(lev, zone, params)
 	params = params or {}
+	if self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime() then
+		local left = math.ceil((10 + self:getPlayer(true).last_kill_turn - self.turn + self:noStairsTime()) / 10)
+		self.logPlayer(self.player, "#LIGHT_RED#You may not change level so soon after a kill (%d game turns left to wait)!", left)
+		return
+	end
 	if not self.player.can_change_level then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level without your own body!")
 		return
@@ -2637,6 +2652,7 @@ unlocks_list = {
 	wilder_wyrmic = "Class: Wyrmic",
 	wilder_summoner = "Class: Summoner",
 	wilder_oozemancer = "Class: Oozemancer",
+	wilder_stone_warden = "Class: Stone Warden",
 
 	corrupter_reaver = "Class: Reaver",
 	corrupter_corruptor = "Class: Corruptor",

@@ -651,6 +651,9 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 25,
+	combat = {
+		accuracy_effect_scale = 0.5,
+	},
 	wielder = {
 	},
 	resolvers.genericlast(function(e)

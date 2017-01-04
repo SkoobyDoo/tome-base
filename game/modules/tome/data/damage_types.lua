@@ -2559,7 +2559,7 @@ newDamageType{
 	end,
 }
 
--- Used by Bathe in Light, healing+shielding
+-- Used by Bathe in Light, healing
 -- Keep an eye on this and Weapon of Light for any infinite stack shield then engage combos
 newDamageType{
 	name = "healing light", type = "HEALING_POWER",

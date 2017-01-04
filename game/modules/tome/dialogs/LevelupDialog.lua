@@ -190,11 +190,12 @@ function _M:finish()
 	if talents ~= "" then
 		game.logPlayer(self.actor, txt:format(talents))
 	end
+	self.actor.turn_procs.resetting_talents = true
 	for i, tid in ipairs(reset) do
 		self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
 		if self.actor:knowTalent(tid) then self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
 	end
-	
+	self.actor.turn_procs.resetting_talents = nil
 	-- Prodigies
 	if self.on_finish_prodigies then
 		for tid, ok in pairs(self.on_finish_prodigies) do if ok then self.actor:learnTalent(tid, true, nil, {no_unlearn=true}) end end
@@ -215,6 +216,20 @@ function _M:finish()
 			local old_lvl = self.actor_dup:getTalentLevel(t_id)
 			local old_lvl_raw = self.actor_dup:getTalentLevelRaw(t_id)
 			t.on_levelup_close(self.actor, t, lvl, old_lvl, lvl_raw, old_lvl_raw, true)
+		end
+	end
+
+	if self.actor.player then
+		if self.actor.descriptor and self.actor.descriptor.race == "Dwarf" then
+			local count_nature, count_spell = 0, 0
+			for tid, lev in pairs(self.actor.talents) do
+				local t = self.actor:getTalentFromId(tid)
+				if t and t.is_spell then count_spell = count_spell + lev end
+				if t and t.is_nature then count_nature = count_nature + lev end
+			end
+			if count_nature >= 10 and count_spell >= 10 then
+				game:setAllowedBuild("wilder_stone_warden", true)
+			end
 		end
 	end
 	return true

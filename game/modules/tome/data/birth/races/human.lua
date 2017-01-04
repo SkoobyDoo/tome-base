@@ -117,7 +117,7 @@ newBirthDescriptor
 	name = "Cornac",
 	desc = {
 		"Cornacs are Humans from the northern parts of the Allied Kingdoms.",
-		"Humans are an inherently very adaptable race and as such they gain a #GOLD#talent category point#WHITE# at birth (others only gain one at levels 10, 20 and 36).",
+		"Humans are an inherently very adaptable race and as such they gain a #GOLD#talent category point#WHITE# (others only gain one at levels 10, 20 and 36) and a #GOLD#generic talent point#WHITE# at birth.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +0 Strength, +0 Dexterity, +0 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
@@ -125,11 +125,14 @@ newBirthDescriptor
 		"#GOLD#Experience penalty:#LIGHT_BLUE# 0%",
 	},
 	experience = 1.0,
+	copy_add = {
+		unused_talents_types = 1,
+		unused_generics = 1,
+	},
 	copy = {
 		moddable_tile = "human_#sex#",
 		moddable_tile_base = "base_cornac_01.png",
 		random_name_def = "cornac_#sex#",
-		unused_talents_types = 1,
 		life_rating = 10,
 		default_wilderness = {"playerpop", "allied"},
 		starting_zone = "trollmire",

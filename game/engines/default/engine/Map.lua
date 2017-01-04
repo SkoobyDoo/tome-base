@@ -950,10 +950,10 @@ function _M:checkMapViewBounded()
 
 	-- Center if smaller than map viewport
 	local centered = false
-	if self.w < self.viewport.mwidth then self.mx = math.floor((self.w - self.viewport.mwidth) / 2) centered = true self.changed = true end
-	if self.h < self.viewport.mheight then self.my = math.floor((self.h - self.viewport.mheight) / 2) centered = true self.changed = true end
+	if self.w + self.viewport_padding_4 + self.viewport_padding_6 < self.viewport.mwidth then self.mx = math.floor((self.w - self.viewport.mwidth) / 2) centered = true self.changed = true end
+	if self.h + self.viewport_padding_8 + self.viewport_padding_2 < self.viewport.mheight then self.my = math.floor((self.h - self.viewport.mheight) / 2) centered = true self.changed = true end
 
---	self._map:setScroll(self.mx, self.my, centered and 0 or self.smooth_scroll)
+	--   self._map:setScroll(self.mx, self.my, centered and 0 or self.smooth_scroll)
 	self._map:setScroll(self.mx, self.my, self.smooth_scroll)
 end
 

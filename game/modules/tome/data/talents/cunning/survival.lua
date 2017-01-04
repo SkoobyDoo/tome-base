@@ -24,27 +24,108 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	sense = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	trapPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 90, 125) end, -- ~90 at TL5, 100 cunning
+	seePower = function(self, t) return self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 5, 0, 80, 75) end, --I5
+	getResists = function(self, t) return self:combatTalentLimit(t, 40, 5, 25) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "heightened_senses", t.sense(self, t))
-	end,
-	on_learn = function(self, t)
-		if self:getTalentLevel(t) >= 3 and not self:knowTalent(self.T_DISARM_TRAP) then
-			self:learnTalent(self.T_DISARM_TRAP, true, 1)
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:getTalentLevel(t) < 3 and self:knowTalent(self.T_DISARM_TRAP) then
-			self:unlearnTalent(self.T_DISARM_TRAP, 1)
+		self:talentTemporaryValue(p, "see_invisible", t.seePower(self, t))
+		self:talentTemporaryValue(p, "see_stealth", t.seePower(self, t))
+		if self:getTalentLevel(t) >= 3 then
+			self:talentTemporaryValue(p, "resist_unseen", t.getResists(self, t))
 		end
 	end,
 	info = function(self, t)
 		return ([[You notice the small things others do not notice, allowing you to "see" creatures in a %d radius even outside of light radius.
 		This is not telepathy, however, and it is still limited to line of sight.
-		Also, your attention to detail allows you to detect traps around you (%d detection 'power').
-		At level 3, you learn to disarm known traps (%d disarm 'power').
-		The trap detection and disarming ability improves with your Cunning.]]):
-		format(t.sense(self,t),t.trapPower(self,t),t.trapPower(self,t))
+		Also, your attention to detail increases stealth detection and invisibility detection by %d.
+		At level 3, you are able to react quickly to stealthed and invisible enemies attacking you, reducing the damage they deal by %d%%.
+		The detection power improves with your Cunning.]]):
+		format(t.sense(self,t), t.seePower(self,t), t.getResists(self,t))
+	end,
+}
+
+newTalent{
+	name = "Track",
+	type = {"cunning/survival", 2},
+	require = cuns_req2,
+	points = 5,
+	random_ego = "utility",
+	cooldown = 20,
+	radius = function(self, t) return math.floor(self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 5, 0, 55, 50)) end,
+	no_npc_use = true,
+	action = function(self, t)
+		local rad = self:getTalentRadius(t)
+		self:setEffect(self.EFF_SENSE, 3 + self:getTalentLevel(t), {
+			range = rad,
+			actor = 1,
+		})
+		return true
+	end,
+	info = function(self, t)
+		local rad = self:getTalentRadius(t)
+		return ([[Sense foes around you in a radius of %d for %d turns.
+		The radius will increase with your Cunning.]]):format(rad, 3 + self:getTalentLevel(t))
+	end,
+}
+
+newTalent{
+	name = "Device Mastery",
+	type = {"cunning/survival", 3},
+	require = cuns_req3,
+	mode = "passive",
+	points = 5,
+	cdReduc = function(tl)
+		if tl <=0 then return 0 end
+		return math.floor(100*tl/(tl+7.5)) -- Limit < 100%
+	end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t)))
+	end,
+	on_learn = function(self, t)
+		if not self:knowTalent(self.T_DISARM_TRAP) then
+			self:learnTalent(self.T_DISARM_TRAP, true, 1)
+		end
+	end,
+	on_unlearn = function(self, t)
+		if self:getTalentLevel(t) < 1 and self:knowTalent(self.T_DISARM_TRAP) then
+			self:unlearnTalent(self.T_DISARM_TRAP, 1)
+		end
+	end,
+	trapPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 125, 125) end,
+	info = function(self, t)
+		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns and the power cost of all usable items by %d%%.
+In addition, your knowledge of devices allows you to detect traps around you and disarm known traps (%d detection and disarm 'power').
+The trap detection and disarming ability improves with your Cunning. ]]):
+		format(t.cdReduc(self:getTalentLevel(t)), t.trapPower(self,t)) --I5
+	end,
+}
+
+newTalent{
+	name = "Danger Sense",
+	type = {"cunning/survival", 4},
+	require = cuns_req4,
+	points = 5,
+	mode = "passive",
+	getTrigger = function(self, t) return self:combatTalentScale(t, 0.15, 0.40, 0.5) end,
+	cooldown = function(self, t) return 30 end,
+	no_npc_use = true,
+	getReduction = function(self, t)
+		return self:combatTalentLimit(t, 75, 25, 65)
+	end,
+	callbackOnHit = function(self, t, cb, src)
+		if self.life > self.max_life*t.getTrigger(self,t) and self.life - cb.value <= self.max_life*t.getTrigger(self,t) and not self:isTalentCoolingDown(t) then
+			self:setEffect("EFF_DANGER_SENSE", 1, {reduce = t.getReduction(self, t)})
+			local eff = self:hasEffect("EFF_DANGER_SENSE")
+			eff.dur = eff.dur - 1
+			cb.value = cb.value * (100-t.getReduction(self, t)) / 100
+			self:startTalentCooldown(t)
+		end
+		return cb.value
+	end,
+	info = function(self, t)
+		return ([[You react quickly when in danger - on falling below %d%% life, all damage you take from the attack and all further damage that turn is reduced by %d%%.
+This talent has a cooldown.]]):
+		format(t.getTrigger(self,t)*100, t.getReduction(self,t) )
 	end,
 }
 
@@ -88,77 +169,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local ths = self:getTalentFromId(self.T_HEIGHTENED_SENSES)
+		local ths = self:getTalentFromId(self.T_DEVICE_MASTERY)
 		local power = ths.trapPower(self,ths)
 		return ([[You search an adjacent grid for a hidden trap (%d detection 'power') and attempt to disarm it (%d disarm 'power').
 		To disarm a trap, you must be able to enter its grid to manipulate it, even though you stay in your current location.
 		Success depends on your skill in the %s talent and your Cunning, and failing to disarm a trap may trigger it.]]):format(power, power + (self:attr("disarm_bonus") or 0), ths.name)
-	end,
-}
-
-newTalent{
-	name = "Charm Mastery",
-	type = {"cunning/survival", 2},
-	require = cuns_req2,
-	mode = "passive",
-	points = 5,
-	cdReduc = function(tl)
-		if tl <=0 then return 0 end
-		return math.floor(100*tl/(tl+7.5)) -- Limit < 100%
-	end,
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t)))
-	end,
---	on_unlearn = function(self, t)
---	end,
-	info = function(self, t)
-		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns by %d%%.]]):
-		format(t.cdReduc(self:getTalentLevel(t)))
-	end,
-}
-
-newTalent{
-	name = "Piercing Sight",
-	type = {"cunning/survival", 3},
-	require = cuns_req3,
-	mode = "passive",
-	points = 5,
-	--  called by functions _M:combatSeeStealth and _M:combatSeeInvisible functions mod\class\interface\Combat.lua
-	seePower = function(self, t) return self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 5, 0, 80, 75) end, --I5
-	info = function(self, t)
-		return ([[You look at your surroundings with more intensity than most people, allowing you to see stealthed or invisible creatures.
-		Increases stealth detection by %d and invisibility detection by %d.
-		The detection power increases with your Cunning.]]):
-		format(t.seePower(self,t), t.seePower(self,t))
-	end,
-}
-
-newTalent{
-	name = "Evasion",
-	type = {"cunning/survival", 4},
-	points = 5,
-	require = cuns_req4,
-	random_ego = "defensive",
-	tactical = { ESCAPE = 2, DEFEND = 2 },
-	cooldown = 30,
-	getDur = function(self) return math.floor(self:combatStatLimit("wil", 30, 6, 15)) end, -- Limit < 30
-	getChanceDef = function(self, t)
-		if self.perfect_evasion then return 100, 0 end
-		return self:combatLimit(5*self:getTalentLevel(t) + self:getCun(25,true) + self:getDex(25,true), 50, 10, 10, 37.5, 75),
-		self:combatScale(self:getTalentLevel(t) * (self:getCun(25, true) + self:getDex(25, true)), 0, 0, 55, 250, 0.75)
-		-- Limit evasion chance < 50%, defense bonus ~= 55 at level 50
-	end,
-	speed = "combat",
-	action = function(self, t)
-		local dur = t.getDur(self)
-		local chance, def = t.getChanceDef(self,t)
-		self:setEffect(self.EFF_EVASION, dur, {chance=chance, defense = def})
-		return true
-	end,
-	info = function(self, t)
-		local chance, def = t.getChanceDef(self,t)
-		return ([[Your quick wit allows you to see attacks before they land, granting you a %d%% chance to completely evade them and granting you %d defense for %d turns.
-		Duration increases with Willpower, and chance to evade and defense with Cunning and Dexterity.]]):
-		format(chance, def,t.getDur(self))
 	end,
 }

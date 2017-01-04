@@ -273,7 +273,7 @@ newTalent{
 		local power = t.getCritPower(self,t)
 		local chance = t.getChance(self,t)
 		return ([[You are able to target your throwing knives with pinpoint accuracy, increasing their critical strike chance by %d%% and critical strike damage by %d%%. 
-In addition, your critical strikes with throwing knives have a %d%% chance will to randomly disable your target, possibly disarming, silencing or pinning them for 2 turns.]])
+In addition, your critical strikes with throwing knives have a %d%% chance to randomly disable your target, possibly disarming, silencing or pinning them for 2 turns.]])
 		:format(crit, power, chance)
 	end,
 }

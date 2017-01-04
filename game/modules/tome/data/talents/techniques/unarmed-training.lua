@@ -112,30 +112,20 @@ newTalent{
 	end,
 }
 
--- It's a bit wierd that this works against mind attacks
 newTalent{
 	name = "Reflex Defense",
 	type = {"technique/unarmed-training", 4},
-	require = techs_cun_req4, -- bit icky since this is clearly dex, but whatever, cun turns defense special *handwave*
+	require = techs_cun_req4,
 	points = 5,
 	mode = "passive",
-	getDamageReduction = function(self, t) 
-		return self:combatTalentLimit(t, 1, 0.15, 0.50) * self:combatLimit(self:combatDefense(), 1, 0.15, 10, 0.5, 50) -- Limit < 100%, 25% for TL 5.0 and 50 defense
+	getFlatReduction = function(self, t) return self:combatTalentScale(t, 30, 70, 0.75) end,
+	critResist = function(self, t) return self:combatTalentScale(t, 15, 50, 0.75) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "ignore_direct_crits", t.critResist(self, t))
 	end,
-	getDamagePct = function(self, t)
-		return self:combatTalentLimit(t, 0.1, 0.3, 0.15) -- Limit trigger > 10% life
-	end,
-	callbackOnHit = function(self, t, cb)
-		if ( cb.value > (t.getDamagePct(self, t) * self.max_life) ) then
-			local damageReduction = cb.value * t.getDamageReduction(self, t)
-			cb.value = cb.value - damageReduction
-			game.logPlayer(self, "#GREEN#You twist your body in complex ways mitigating the blow by #ORCHID#" .. math.ceil(damageReduction) .. "#LAST#.")
-		end
-		return cb.value
-	end, 
 	info = function(self, t)
-		return ([[Your understanding of physiology allows you to apply your reflexes in new ways.  Whenever you would receive damage (from any source) greater than %d%% of your maximum life you reduce that damage by %0.1f%% (based on your Defense).]]):
-		format(t.getDamagePct(self, t)*100, t.getDamageReduction(self, t)*100 )
-	end,
+		return ([[Your understanding of physiology allows you to apply your reflexes in new ways, increasing the flat damage reduction granted by Striking Stance by %d%% and causing direct critical hits (physical, mental, spells) against you to have a %d%% lower Critical multiplier (but always do at least normal damage).]]):
+		format(t.getFlatReduction(self,t), t.critResist(self,t) )
+	end
 }
 

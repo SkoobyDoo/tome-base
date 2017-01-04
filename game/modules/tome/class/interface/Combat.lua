@@ -475,6 +475,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			repelled = true
 		end
 	end
+
+	-- Dwarves stoneskin
+	if target:attr("auto_stoneskin") and rng.percent(15) then
+		game.logSeen(target, "#ORCHID#%s instinctively hardens %s skin and ignores the attack!#LAST#", target.name:capitalize(), string.his_her(target))
+		target:setEffect(target.EFF_STONE_SKIN, 5, {power=target:attr("auto_stoneskin")})
+		repelled = true
+	end
 	
 	if repelled then
 		self:logCombat(target, "#Target# repels an attack from #Source#.")
@@ -657,8 +664,7 @@ end
 
 function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
 	if self:isAccuracyEffect(weapon, "staff") then
-		local magbonus = util.bound(0.00833 + self:getMag() / 4 / 3 * 2 / 1000, 0, 0.025) -- Same 2.5% as before at @100 mag, 0.8% @0 mag
-		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, magbonus, 2)
+		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 2.5, 2)
 		print("[ATTACK] staff accuracy bonus", atk, def, "=", bonus)
 		self.__global_accuracy_damage_bonus = bonus
 	end
@@ -845,11 +851,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if hitted and not target.dead and self:knowTalent(self.T_MORTAL_TERROR) then
 		local t = self:getTalentFromId(self.T_MORTAL_TERROR)
 		t.do_terror(self, t, target, dam)
-	end
-
-	-- Dwarves stoneskin
-	if hitted and not target.dead and target:attr("auto_stoneskin") and rng.percent(15) then
-		target:setEffect(target.EFF_STONE_SKIN, 5, {power=target:attr("auto_stoneskin")})
 	end
 
 	-- Psi Auras
@@ -1174,6 +1175,9 @@ function _M:combatDefenseBase(fake)
 		if self:hasDualWeapon() and self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then
 			add = add + self:callTalent(self.T_DUAL_WEAPON_DEFENSE,"getDefense")
 		end
+		if self:hasLightArmor() and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+			add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING,"getDefense")
+		end
 		if not fake then
 			add = add + (self:checkOnDefenseCall("defense") or 0)
 		end
@@ -1198,6 +1202,11 @@ function _M:combatDefenseBase(fake)
 
 	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
 		mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
+	end
+	
+	if self:hasLightArmor() and self:hasEffect(self.EFF_MOBILE_DEFENCE) then
+		local eff = self:hasEffect(self.EFF_MOBILE_DEFENCE)
+		mult = mult + (eff.power/100)
 	end
 
 	return math.max(0, d * mult + add) -- Add bonuses last to avoid compounding defense multipliers from talents
@@ -1262,6 +1271,9 @@ function _M:combatArmorHardiness()
 	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
 		add = add + self:callTalent(self.T_MOBILE_DEFENCE, "getHardiness")
 	end
+	if self:hasLightArmor() and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+		add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getArmorHardiness")
+	end
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
 	end
@@ -1277,6 +1289,8 @@ function _M:combatAttackBase(weapon, ammo)
 	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
 
 	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
+
+	if self:attr("hit_penalty_2h") then atk = atk * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return atk
 end
@@ -1720,9 +1734,12 @@ end
 function _M:getOffHandMult(combat, mult)
 	if combat and combat.range and not combat.dam then return mult or 1 end --no penalty for ranged shooters
 	local offmult = 1/2
-	-- Take the bigger multiplier from Dual weapon training and Corrupted Strength
+	-- Take the bigger multiplier from Dual weapon training, Dual Weapon Mastery and Corrupted Strength
 	if self:knowTalent(Talents.T_DUAL_WEAPON_TRAINING) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_DUAL_WEAPON_TRAINING,"getoffmult"))
+	end
+	if self:knowTalent(Talents.T_DUAL_WEAPON_MASTERY) then
+		offmult = math.max(offmult,self:callTalent(Talents.T_DUAL_WEAPON_MASTERY,"getoffmult"))
 	end
 	if self:knowTalent(Talents.T_CORRUPTED_STRENGTH) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_CORRUPTED_STRENGTH,"getoffmult"))
@@ -2383,7 +2400,7 @@ function _M:getFreeHands()
 end
 
 --- Check if the actor dual wields melee weapons (use Archery:hasDualArcheryWeapon for ranged)
-function _M:hasDualWeapon(type, quickset)
+function _M:hasDualWeapon(type, offtype, quickset)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
@@ -2394,17 +2411,18 @@ function _M:hasDualWeapon(type, quickset)
 	if not (weapon and weapon.combat and not weapon.archery) or not (offweapon and offweapon.combat and not offweapon.archery) then
 		return nil
 	end
+	offtype = offtype or type
 	if type and weapon.combat.talented ~= type then return nil end
-	if type and offweapon.combat.talented ~= type then return nil end
+	if offtype and offweapon.combat.talented ~= offtype then return nil end
 	return weapon, offweapon
 end
 
 --- Check if the actor dual wields melee weapons in the quick slot
-function _M:hasDualWeaponQS(type)
+function _M:hasDualWeaponQS(type, offtype)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
-	return self:hasDualWeapon(type, true)
+	return self:hasDualWeapon(type, offtype, true)
 end
 
 --- Check if the actor uses psiblades

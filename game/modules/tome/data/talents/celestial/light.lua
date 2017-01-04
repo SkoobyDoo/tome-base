@@ -53,7 +53,7 @@ newTalent{
 	require = spells_req2,
 	random_ego = "defensive",
 	points = 5,
-	cooldown = 15,
+	cooldown = 20,
 	positive = -20,
 	tactical = { HEAL = 2.5 },
 	range = 0,
@@ -61,7 +61,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
-	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 4, 80) end,
+	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 4, 80) * 0.75 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)

@@ -204,13 +204,18 @@ newTalent{
 			game.logPlayer(self, "You cannot use Shield Wall without a shield!")
 			return nil
 		end
-		return {
+		local ret = {
 			stun = self:addTemporaryValue("stun_immune", t.stunKBresist(self, t)),
 			knock = self:addTemporaryValue("knockback_immune", t.stunKBresist(self, t)),
 			dam = self:addTemporaryValue("inc_damage", {[DamageType.PHYSICAL]=-20}),
 			def = self:addTemporaryValue("combat_def", t.getDefense(self, t)),
 			armor = self:addTemporaryValue("combat_armor", t.getarmor(self,t)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="rotating_shield"}, shader={type="rotatingshield", noup=2.0, appearTime=0.2}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="rotating_shield"}, shader={type="rotatingshield", noup=1.0, appearTime=0.2}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_def", p.def)

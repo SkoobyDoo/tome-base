@@ -87,6 +87,7 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "CULTIST_RAK_SHOR",
 			a.rank = 4
 			a.name = "Doomed Shade of "..a.name
 			a.killer_message = "but nobody knew why #sex# suddenly became evil"
+			a.is_player_doomed_shade = true
 			a.color_r = 150 a.color_g = 150 a.color_b = 150
 			a:removeAllMOs()
 			a.ai = "tactical"

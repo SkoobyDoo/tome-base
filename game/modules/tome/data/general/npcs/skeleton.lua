@@ -205,7 +205,7 @@ newEntity{ base = "BASE_NPC_SKELETON",
 	
 	resolvers.inscriptions(1, "rune"),
 	resolvers.talents{
-		[Talents.T_PARRY]={base=1, every=10, max=7},
+		[Talents.T_DUAL_WEAPON_MASTERY]={base=1, every=10, max=7},
 		[Talents.T_TEMPO]={base=1, every=10, max=7},
 		[Talents.T_FLURRY]={base=1, every=10, max=7},
 		[Talents.T_DIRTY_FIGHTING]={base=1, every=10, max=7},

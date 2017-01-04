@@ -21,7 +21,11 @@
 -- Advanced shaders
 --------------------------------------------------------------------------------------
 if core.shader.allow("distort") and allow then
-use_shader = {type="distort"} alterscreen = true
+if distort_color then
+	use_shader = {type="distortcolor", distort_color=distort_color} alterscreen = true
+else
+	use_shader = {type="distort"} alterscreen = true
+end
 base_size = 64
 local nb = 0
 
