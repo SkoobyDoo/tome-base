@@ -156,6 +156,7 @@ public:
 
 	void tween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref);
 	void cancelTween(TweenSlot slot);
+	float getDefaultTweenSlotValue(TweenSlot slot);
 
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 

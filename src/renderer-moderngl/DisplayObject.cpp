@@ -248,6 +248,24 @@ void DORTweener::onKeyframe(int nb_keyframes) {
 	}
 }
 
+float DisplayObject::getDefaultTweenSlotValue(TweenSlot slot) {
+	switch (slot) {
+		case TweenSlot::TX: return x;
+		case TweenSlot::TY: return y;
+		case TweenSlot::TZ: return z;
+		case TweenSlot::RX: return rot_x;
+		case TweenSlot::RY: return rot_y;
+		case TweenSlot::RZ: return rot_z;
+		case TweenSlot::SX: return scale_x;
+		case TweenSlot::SY: return scale_y;
+		case TweenSlot::SZ: return scale_z;
+		case TweenSlot::R: return color.r;
+		case TweenSlot::G: return color.g;
+		case TweenSlot::B: return color.b;
+		case TweenSlot::A: return color.a;
+	}
+}
+
 void DORTweener::setTween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref) {
 	auto &t = tweens[(short)slot];
 	t.easing = easing;

@@ -151,7 +151,13 @@ static int gl_generic_tween(lua_State *L)
 		lua_pushvalue(L, 8);
 		on_change_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	}
-	c->tween((TweenSlot)lua_tonumber(L, 2), easing, lua_tonumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), on_end_ref, on_change_ref);
+	TweenSlot slot = (TweenSlot)lua_tonumber(L, 2);
+	float from, to;
+	if (lua_isnumber(L, 4)) from = lua_tonumber(L, 4);
+	else from = c->getDefaultTweenSlotValue(slot);
+	if (lua_isnumber(L, 5)) to = lua_tonumber(L, 5);
+	else to = c->getDefaultTweenSlotValue(slot);
+	c->tween(slot, easing, from, to, lua_tonumber(L, 6), on_end_ref, on_change_ref);
 
 	lua_pushvalue(L, 1);
 	return 1;

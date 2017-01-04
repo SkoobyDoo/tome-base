@@ -399,9 +399,15 @@ local function doTween(self, time, slot, from, to, easing, on_end, on_change)
 	easing = easing or "linear"
 	local slotid = tweenslots[slot]
 	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
-	local easingid = easings[easing]
-	if not easingid then error("tweening on wrong easing: "..tostring(easing)) end
-	self:rawtween(slotid, easingid, from, to, time, on_end, on_change)
+	if slot == "wait" then
+		-- If we use the wait slot, "from", "to", "easing" parameters are useless, so we dont use them
+		-- So from becomes on_end and to becaomes on_change
+		self:rawtween(slotid, 0, 0, 1, time, from, to)
+	else
+		local easingid = easings[easing]
+		if not easingid then error("tweening on wrong easing: "..tostring(easing)) end
+		self:rawtween(slotid, easingid, from, to, time, on_end, on_change)
+	end
 end
 local function doCancelTween(self, slot)
 	local slotid = tweenslots[slot]
