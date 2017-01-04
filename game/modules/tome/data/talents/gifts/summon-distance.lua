@@ -577,7 +577,7 @@ newTalent{
 
 				resists = { [DamageType.FIRE] = 100, },
 
-				summoner = self, summoner_gain_exp=true, wild_gift_summon=true,
+				summoner = self, summoner_gain_exp=true, wild_gift_summon=true, wild_gift_summon_ignore_cap=true,
 				summon_time = m.summon_time,
 				ai_target = {actor=m.ai_target.actor}
 			}
