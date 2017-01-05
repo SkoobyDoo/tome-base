@@ -41,6 +41,7 @@ local Map = require "engine.Map"
 local Chat = require "engine.Chat"
 local DamageType = require "engine.DamageType"
 local TacticalOverlay = require "mod.class.TacticalOverlay"
+local TacticalOverlayBottom = require "mod.class.TacticalOverlayBottom"
 
 module(..., package.seeall, class.inherit(
 	-- a ToME actor is a complex beast it uses may interfaces
@@ -1186,7 +1187,13 @@ function _M:defineDisplayCallback()
 	local backps = self:getParticlesList(true)
 	local ps = self:getParticlesList()
 
-	if not self._tactical then self._tactical = TacticalOverlay.new(self) end
+	if not self._tactical then
+		if config.settings.tome.small_frame_side and false then
+			self._tactical = TacticalOverlay.new(self)
+		else
+			self._tactical = TacticalOverlayBottom.new(self)
+		end
+	end
 
 	local function tactical(x, y, w, h, zoom, on_map, tlx, tly)
 		local self = weak[1] if not self then return end
