@@ -1188,7 +1188,7 @@ function _M:defineDisplayCallback()
 	local ps = self:getParticlesList()
 
 	if not self._tactical then
-		if config.settings.tome.small_frame_side and false then
+		if config.settings.tome.small_frame_side then
 			self._tactical = TacticalOverlay.new(self)
 		else
 			self._tactical = TacticalOverlayBottom.new(self)
