@@ -269,17 +269,17 @@ local function doTween(self, time, slot, from, to, easing, on_end, on_change)
 	if slot == "wait" then
 		-- If we use the wait slot, "from", "to", "easing" parameters are useless, so we dont use them
 		-- So from becomes on_end and to becaomes on_change
-		self:rawtween(slotid, 0, 0, 1, time, from, to)
+		return self:rawtween(slotid, 0, 0, 1, time, from, to)
 	else
 		local easingid = easings[compat_easings[easing] or easing]
 		if not easingid then error("tweening on wrong easing: "..tostring(easing)) end
-		self:rawtween(slotid, easingid-1, from, to, time, on_end, on_change)
+		return self:rawtween(slotid, easingid-1, from, to, time, on_end, on_change)
 	end
 end
 local function doCancelTween(self, slot)
 	local slotid = tweenslots[slot]
 	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
-	self:rawcancelTween(slotid)
+	return self:rawcancelTween(slotid)
 end
 
 -----------------------------------------------------------------------------------
@@ -288,11 +288,11 @@ end
 local function doShader(self, shader)
 	local t = type(shader)
 	if t == "userdata" or t == "nil" then
-		self:_shader(shader)
+		return self:_shader(shader)
 	elseif t == "table" and shader.__CLASSNAME then
 		if shader:isClassName("engine.Shader") then
 			if shader.shad then
-				self:_shader(shader.shad)
+				return self:_shader(shader.shad)
 			else
 				error("Setting shader without .shad")
 			end
@@ -305,10 +305,10 @@ end
 local function doContainerAdd(self, d)
 	local t = type(d)
 	if t == "userdata" then
-		self:_add(d)
+		return self:_add(d)
 	elseif t == "table" and d.__CLASSNAME then
 		if d:isClassName("engine.Particles") then
-			self:_add(d:getDO())
+			return self:_add(d:getDO())
 		end
 	else
 		error("Trying to add value of type "..t.." into container "..tostring(self))

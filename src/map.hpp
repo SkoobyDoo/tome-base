@@ -148,7 +148,7 @@ typedef struct {
 	GLfloat tex_tile_w[3], tex_tile_h[3];
 
 	// Scrolling
-	float displayed_x, displayed_y;
+	float scroll_x, scroll_y;
 	int mx, my, mwidth, mheight;
 	float oldmx, oldmy;
 	int move_step, move_max;

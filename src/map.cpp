@@ -577,7 +577,7 @@ static int map_new(lua_State *L)
 	map->colors = (GLfloat*)calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
 	map->texcoords = (GLfloat*)calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat));
 
-	map->displayed_x = map->displayed_y = 0;
+	map->scroll_x = map->scroll_y = 0;
 	map->w = w;
 	map->h = h;
 	map->zdepth = zdepth;
@@ -1355,13 +1355,13 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		stopDisplayList(); // Needed to make sure we break texture chaining
 		auto dl = getDisplayList(map->z_renderers[z]);
 		stopDisplayList(); // Needed to make sure we break texture chaining
-		dm->cb->dx = dx - map->mx * map->tile_w * (dm->scale);
-		dm->cb->dy = dy - map->my * map->tile_h * (dm->scale);
+		dm->cb->dx = dx - map->scroll_x;
+		dm->cb->dy = dy - map->scroll_y;
 		dm->cb->dw = map->tile_w * (dw) * (dm->scale);
 		dm->cb->dh = map->tile_h * (dh) * (dm->scale);
 		dm->cb->scale = dm->scale;
-		dm->cb->tldx = tldx;
-		dm->cb->tldy = tldy;
+		dm->cb->tldx = tldx - map->scroll_x;
+		dm->cb->tldy = tldy - map->scroll_y;
 		dl->sub = dm->cb;
 	}
 	// DGDGDGDG: this needs to be done smartly, no actual CB here, but creation of a callback put into the DisplayList
@@ -1639,8 +1639,8 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 	float scrolly = map->tile_h * (animdy + map->oldmy);
 	map->used_animdx = animdx;
 	map->used_animdy = animdy;
-	map->displayed_x = x - scrollx;
-	map->displayed_y = y - scrolly;
+	map->scroll_x = scrollx;
+	map->scroll_y = scrolly;
 
 	float tim = SDL_GetTicks() / 1500.0;
 	mat4 scrollmodel = mat4();

@@ -40,6 +40,7 @@ local Dialog = require "engine.ui.Dialog"
 local Map = require "engine.Map"
 local Chat = require "engine.Chat"
 local DamageType = require "engine.DamageType"
+local TacticalOverlay = require "mod.class.TacticalOverlay"
 
 module(..., package.seeall, class.inherit(
 	-- a ToME actor is a complex beast it uses may interfaces
@@ -66,6 +67,8 @@ _M._no_save_fields.can_see_cache = true
 
 -- Activate fast regen computing
 _M._no_save_fields.regenResourcesFast = true
+
+_M._no_save_fields._tactical = true
 
 -- Use distance maps
 _M.__do_distance_map = true
@@ -895,7 +898,7 @@ local assf_enemy = nil
 local assf_neutral = nil
 local ichat = nil
 
-function _M:smallTacticalFrame(map, x, y, w, h, zoom, on_map, tlx, tly)
+function _M:smallTacticalFrame(tact, map, x, y, w, h, zoom, on_map, tlx, tly)
 	if config.settings.tome.small_frame_side then
 		local friend = -100
 		if self.faction then
@@ -907,9 +910,7 @@ function _M:smallTacticalFrame(map, x, y, w, h, zoom, on_map, tlx, tly)
 		local dx = w * .0625 - sx
 		local sy = h * .03125
 		local dy = h * .953125 - sy
-		if friend < 0 then
-			sx = w * .9375
-		end
+		if friend < 0 then sx = w * .9375 end
 		local lp = math.max(0, self.life) / self.max_life + 0.0001
 		if lp > .75 then -- green
 			core.display.drawQuad(x + sx, y + sy, dx, dy, 129, 180, 57, 128)
@@ -1079,87 +1080,87 @@ function _M:smallTacticalFrame(map, x, y, w, h, zoom, on_map, tlx, tly)
 	end
 end
 
-function _M:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
-	-- Tactical info
-	if game.level and game.always_target then
-		-- Tactical life info
-		if on_map then
-			if config.settings.tome.small_frame_side then
-				local dw = w * 0.1
-				local lp = math.max(0, self.life) / self.max_life + 0.0001
-				if lp > .75 then -- green
-					core.display.drawQuad(x + 3, y + 3, dw, h - 6, 129, 180, 57, 128)
-					core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 50, 220, 77, 255)
-				elseif lp > .5 then -- yellow
-					core.display.drawQuad(x + 3, y + 3, dw, h - 6, 175, 175, 10, 128)
-					core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 240, 252, 35, 255)
-				elseif lp > .25 then -- orange
-					core.display.drawQuad(x + 3, y + 3, dw, h - 6, 185, 88, 0, 128)
-					core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 255, 156, 21, 255)
-				else -- red
-					core.display.drawQuad(x + 3, y + 3, dw, h - 6, 167, 55, 39, 128)
-					core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 235, 0, 0, 255)
-				end
-			else
-				local dh = h * 0.1
-				local lp = math.max(0, self.life) / self.max_life + 0.0001
-				if lp > .75 then -- green
-					core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 129, 180, 57, 128)
-					core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 50, 220, 77, 255)
-				elseif lp > .5 then -- yellow
-					core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 175, 175, 10, 128)
-					core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 240, 252, 35, 255)
-				elseif lp > .25 then -- orange
-					core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 185, 88, 0, 128)
-					core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 255, 156, 21, 255)
-				else -- red
-					core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 167, 55, 39, 128)
-					core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 235, 0, 0, 255)
-				end
-			end
-		end
-	end
+function _M:bigTacticalFrame(tact, x, y, w, h, zoom, on_map, tlx, tly)
+	-- -- Tactical info
+	-- if game.level and game.always_target then
+	-- 	-- Tactical life info
+	-- 	if on_map then
+	-- 		if config.settings.tome.small_frame_side then
+	-- 			local dw = w * 0.1
+	-- 			local lp = math.max(0, self.life) / self.max_life + 0.0001
+	-- 			if lp > .75 then -- green
+	-- 				core.display.drawQuad(x + 3, y + 3, dw, h - 6, 129, 180, 57, 128)
+	-- 				core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 50, 220, 77, 255)
+	-- 			elseif lp > .5 then -- yellow
+	-- 				core.display.drawQuad(x + 3, y + 3, dw, h - 6, 175, 175, 10, 128)
+	-- 				core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 240, 252, 35, 255)
+	-- 			elseif lp > .25 then -- orange
+	-- 				core.display.drawQuad(x + 3, y + 3, dw, h - 6, 185, 88, 0, 128)
+	-- 				core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 255, 156, 21, 255)
+	-- 			else -- red
+	-- 				core.display.drawQuad(x + 3, y + 3, dw, h - 6, 167, 55, 39, 128)
+	-- 				core.display.drawQuad(x + 3, y + 3 + (h - 6) * (1 - lp), dw, (h - 6) * lp, 235, 0, 0, 255)
+	-- 			end
+	-- 		else
+	-- 			local dh = h * 0.1
+	-- 			local lp = math.max(0, self.life) / self.max_life + 0.0001
+	-- 			if lp > .75 then -- green
+	-- 				core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 129, 180, 57, 128)
+	-- 				core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 50, 220, 77, 255)
+	-- 			elseif lp > .5 then -- yellow
+	-- 				core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 175, 175, 10, 128)
+	-- 				core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 240, 252, 35, 255)
+	-- 			elseif lp > .25 then -- orange
+	-- 				core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 185, 88, 0, 128)
+	-- 				core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 255, 156, 21, 255)
+	-- 			else -- red
+	-- 				core.display.drawQuad(x + 3, y + h - dh, w - 6, dh, 167, 55, 39, 128)
+	-- 				core.display.drawQuad(x + 3, y + h - dh, (w - 6) * lp, dh, 235, 0, 0, 255)
+	-- 			end
+	-- 		end
+	-- 	end
+	-- end
 
-	-- Tactical info
-	if game.level and game.level.map.view_faction then
-		local map = game.level.map
-		if on_map then
-			if not f_self then
-				f_self = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_self)
-				f_powerful = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_powerful)
-				f_danger2 = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_danger2)
-				f_danger1 = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_danger1)
-				f_friend = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_friend)
-				f_enemy = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_enemy)
-				f_neutral = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_neutral)
-			end
+	-- -- Tactical info
+	-- if game.level and game.level.map.view_faction then
+	-- 	local map = game.level.map
+	-- 	if on_map then
+	-- 		if not f_self then
+	-- 			f_self = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_self)
+	-- 			f_powerful = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_powerful)
+	-- 			f_danger2 = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_danger2)
+	-- 			f_danger1 = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_danger1)
+	-- 			f_friend = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_friend)
+	-- 			f_enemy = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_enemy)
+	-- 			f_neutral = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_neutral)
+	-- 		end
 
-			if self.faction then
-				local friend
-				if not map.actor_player then friend = Faction:factionReaction(map.view_faction, self.faction)
-				else friend = map.actor_player:reactionToward(self) end
+	-- 		if self.faction then
+	-- 			local friend
+	-- 			if not map.actor_player then friend = Faction:factionReaction(map.view_faction, self.faction)
+	-- 			else friend = map.actor_player:reactionToward(self) end
 
-				if self == map.actor_player then
-					f_self:toScreen(x, y, w, h)
-				elseif map:faction_danger_check(self) then
-					if friend >= 0 then f_powerful:toScreen(x, y, w, h)
-					else
-						if map:faction_danger_check(self, true) then
-							f_danger2:toScreen(x, y, w, h)
-						else
-							f_danger1:toScreen(x, y, w, h)
-						end
-					end
-				elseif friend > 0 then
-					f_friend:toScreen(x, y, w, h)
-				elseif friend < 0 then
-					f_enemy:toScreen(x, y, w, h)
-				else
-					f_neutral:toScreen(x, y, w, h)
-				end
-			end
-		end
-	end
+	-- 			if self == map.actor_player then
+	-- 				f_self:toScreen(x, y, w, h)
+	-- 			elseif map:faction_danger_check(self) then
+	-- 				if friend >= 0 then f_powerful:toScreen(x, y, w, h)
+	-- 				else
+	-- 					if map:faction_danger_check(self, true) then
+	-- 						f_danger2:toScreen(x, y, w, h)
+	-- 					else
+	-- 						f_danger1:toScreen(x, y, w, h)
+	-- 					end
+	-- 				end
+	-- 			elseif friend > 0 then
+	-- 				f_friend:toScreen(x, y, w, h)
+	-- 			elseif friend < 0 then
+	-- 				f_enemy:toScreen(x, y, w, h)
+	-- 			else
+	-- 				f_neutral:toScreen(x, y, w, h)
+	-- 			end
+	-- 		end
+	-- 	end
+	-- end
 end
 
 local boss_rank_circles = {
@@ -1185,27 +1186,29 @@ function _M:defineDisplayCallback()
 	local backps = self:getParticlesList(true)
 	local ps = self:getParticlesList()
 
+	if not self._tactical then self._tactical = TacticalOverlay.new(self) end
+
 	local function tactical(x, y, w, h, zoom, on_map, tlx, tly)
-		local self = weak[1]
-		if not self then return end
+		local self = weak[1] if not self then return end
+		-- if game.level and game.level.map.view_faction and game.always_target and game.always_target ~= "old" then
+		-- 	if on_map then
+		-- 		self:smallTacticalFrame(tact, game.level.map, x, y, w, h, zoom, on_map, tlx, tly)
+		-- 	end
+		-- else
+		-- 	self:bigTacticalFrame(tact, x, y, w, h, zoom, on_map, tlx, tly)
+		-- end
 
-		if game.level and game.level.map.view_faction and game.always_target and game.always_target ~= "old" then
-			if on_map then
-				self:smallTacticalFrame(game.level.map, x, y, w, h, zoom, on_map, tlx, tly)
-			end
-		else
-			self:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
-		end
+		self._tactical:toScreen(x, y, w, h)
 
-		-- Chat
-		if game.level and self.can_talk then
-			local map = game.level.map
-			if not ichat then
-				ichat = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, "speak_bubble.png")
-			end
+		-- -- Chat
+		-- if game.level and self.can_talk then
+		-- 	local map = game.level.map
+		-- 	if not ichat then
+		-- 		ichat = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, "speak_bubble.png")
+		-- 	end
 
-			ichat:toScreen(x + w - 8, y, 8, 8)
-		end
+		-- 	ichat:toScreen(x + w - 8, y, 8, 8)
+		-- end
 	end
 
 	local function particles(x, y, w, h, zoom, on_map)
@@ -1226,11 +1229,12 @@ function _M:defineDisplayCallback()
 			end
 		end
 
-		if boss_rank_circles[self.rank or 1] then
-			local b = boss_rank_circles[self.rank]
-			if not b.ifront then b.ifront = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.front) end
-			b.ifront:toScreen(x, y + h - w * (0.616 - 0.5), w, w / 2)
-		end
+		-- DGDGDGDG
+		-- if boss_rank_circles[self.rank or 1] then
+		-- 	local b = boss_rank_circles[self.rank]
+		-- 	if not b.ifront then b.ifront = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.front) end
+		-- 	b.ifront:toScreen(x, y + h - w * (0.616 - 0.5), w, w / 2)
+		-- end
 	end
 
 	local function backparticles(x, y, w, h, zoom, on_map)
@@ -1258,15 +1262,15 @@ function _M:defineDisplayCallback()
 	if self._mo == self._last_mo or not self._last_mo then
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
 			-- print("!!!!!IN1", x, y)
-			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
+			tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
 			particles(x, y, w, h, zoom, on_map)
 			return true
 		end)
 	else
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			-- print("!!!!!IN2", x, y)
-			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
+			-- print("!!!!!IN2", x, y, zoom)
+			tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
 			return true
 		end)
