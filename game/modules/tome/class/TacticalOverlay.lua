@@ -74,10 +74,8 @@ end
 
 function _M:init(actor)
 	self:setup()
-	print("new tactical frame")
 	self.actor = actor
 	self.DO = core.renderer.renderer():setRendererName("Tactical:UID:"..self.actor.uid)
-	-- DGDGDGDG do :scale()
 
 	self.DO_life = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
 	self.DO_life_missing = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
@@ -90,6 +88,7 @@ function _M:init(actor)
 	self.DO:add(self.DO_tactical)
 end
 
+-- DGDGDGDG make an other class for the other tactial display modes
 function _M:toScreen(x, y, w, h)
 	local map = game.level.map
 	local friend = -100
@@ -128,25 +127,29 @@ function _M:toScreen(x, y, w, h)
 		self.DO_life_missing:tween(7, "r", nil, color_missing[1], "inQuad"):tween(7, "g", nil, color_missing[2], "inQuad"):tween(7, "b", nil, color_missing[3], "inQuad")
 	end
 
+	local tactical_texture
 	if self.actor.faction and map then
 		if self.actor == map.actor_player then
-			self.DO_tactical:texture(b_self)
+			tactical_texture = b_self
 		elseif map:faction_danger_check(self.actor) then
-			if friend >= 0 then self.DO_tactical:texture(b_powerful)
+			if friend >= 0 then tactical_texture = b_powerful
 			else
 				if map:faction_danger_check(self.actor, true) then
-					self.DO_tactical:texture(b_danger2)
+					tactical_texture = b_danger2
 				else
-					self.DO_tactical:texture(b_danger1)
+					tactical_texture = b_danger1
 				end
 			end
 		elseif friend > 0 then
-			self.DO_tactical:texture(b_friend)
+			tactical_texture = b_friend
 		elseif friend < 0 then
-			self.DO_tactical:texture(b_enemy)
+			tactical_texture = b_enemy
 		else
-			self.DO_tactical:texture(b_neutral)
+			tactical_texture = b_neutral
 		end
+	end
+	if tactical_texture and self.old_tactical ~= tactical_texture then
+		self.DO_tactical:texture(tactical_texture)
 		self.DO_tactical:scale(w, h, 1)
 	end
 
@@ -154,4 +157,5 @@ function _M:toScreen(x, y, w, h)
 
 	self.old_friend = friend
 	self.old_life = lp
+	self.old_tactical = tactical_texture
 end
