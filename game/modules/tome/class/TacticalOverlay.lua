@@ -26,23 +26,54 @@ module(..., package.seeall, class.make)
 
 local BASE_W, BASE_H = 64, 64
 
-local tacttic_tiles = Tiles.new(BASE_W, BASE_H, nil, nil, true, false)
-local assf_self = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_self)
-local assf_powerful = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_powerful)
-local assf_danger2 = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger2)
-local assf_danger1 = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger1)
-local assf_friend = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_friend)
-local assf_enemy = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_enemy)
-local assf_neutral = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_neutral)
-local ssf_self = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_self)
-local ssf_powerful = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_powerful)
-local ssf_danger2 = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger2)
-local ssf_danger1 = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger1)
-local ssf_friend = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_friend)
-local ssf_enemy = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_enemy)
-local ssf_neutral = tacttic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_neutral)
+local b_self
+local b_powerful
+local b_danger2
+local b_danger1
+local b_friend
+local b_enemy
+local b_neutral
+
+function _M:setup()
+	if self.setuped then return end
+	self.setuped = true
+	local tactic_tiles = Tiles.new(BASE_W, BASE_H, nil, nil, true, false)
+	local assf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_self)
+	local assf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_powerful)
+	local assf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger2)
+	local assf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger1)
+	local assf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_friend)
+	local assf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_enemy)
+	local assf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_neutral)
+	local ssf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_self)
+	local ssf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_powerful)
+	local ssf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger2)
+	local ssf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger1)
+	local ssf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_friend)
+	local ssf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_enemy)
+	local ssf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_neutral)
+
+	if config.settings.tome.flagpost_tactical then
+		b_self = assf_self
+		b_powerful = assf_powerful
+		b_danger2 = assf_danger2
+		b_danger1 = assf_danger1
+		b_friend = assf_friend
+		b_enemy = assf_enemy
+		b_neutral = assf_neutral
+	else
+		b_self = ssf_self
+		b_powerful = ssf_powerful
+		b_danger2 = ssf_danger2
+		b_danger1 = ssf_danger1
+		b_friend = ssf_friend
+		b_enemy = ssf_enemy
+		b_neutral = ssf_neutral
+	end
+end
 
 function _M:init(actor)
+	self:setup()
 	print("new tactical frame")
 	self.actor = actor
 	self.DO = core.renderer.renderer():setRendererName("Tactical:UID:"..self.actor.uid)
@@ -54,6 +85,9 @@ function _M:init(actor)
 	self.CO_life:add(self.DO_life)
 	self.CO_life:add(self.DO_life_missing)
 	self.DO:add(self.CO_life)
+
+	self.DO_tactical = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
+	self.DO:add(self.DO_tactical)
 end
 
 function _M:toScreen(x, y, w, h)
@@ -92,6 +126,28 @@ function _M:toScreen(x, y, w, h)
 		end
 		self.DO_life:tween(7, "scale_y", nil, -dy * lp, "inQuad"):tween(7, "r", nil, color[1], "inQuad"):tween(7, "g", nil, color[2], "inQuad"):tween(7, "b", nil, color[3], "inQuad")
 		self.DO_life_missing:tween(7, "r", nil, color_missing[1], "inQuad"):tween(7, "g", nil, color_missing[2], "inQuad"):tween(7, "b", nil, color_missing[3], "inQuad")
+	end
+
+	if self.actor.faction and map then
+		if self.actor == map.actor_player then
+			self.DO_tactical:texture(b_self)
+		elseif map:faction_danger_check(self.actor) then
+			if friend >= 0 then self.DO_tactical:texture(b_powerful)
+			else
+				if map:faction_danger_check(self.actor, true) then
+					self.DO_tactical:texture(b_danger2)
+				else
+					self.DO_tactical:texture(b_danger1)
+				end
+			end
+		elseif friend > 0 then
+			self.DO_tactical:texture(b_friend)
+		elseif friend < 0 then
+			self.DO_tactical:texture(b_enemy)
+		else
+			self.DO_tactical:texture(b_neutral)
+		end
+		self.DO_tactical:scale(w, h, 1)
 	end
 
 	self.DO:toScreen(x, y)
