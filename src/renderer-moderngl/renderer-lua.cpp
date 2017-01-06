@@ -431,6 +431,17 @@ static int gl_target_clearcolor(lua_State *L)
 	return 1;
 }
 
+static int gl_target_view(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	View *t = *(View**)auxiliar_checkclass(L, "gl{view}", 2);
+	lua_pushvalue(L, 2);
+	v->setView(t, luaL_ref(L, LUA_REGISTRYINDEX));
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_target_texture(lua_State *L)
 {
 	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
@@ -886,6 +897,57 @@ static int gl_spriter_trigger_callback(lua_State *L)
 }
 
 /******************************************************************
+ ** View
+ ******************************************************************/
+static int gl_view_new(lua_State *L)
+{
+	View **v = (View**)lua_newuserdata(L, sizeof(View*));
+	auxiliar_setclass(L, "gl{view}", -1);
+
+	*v = new View();
+	return 1;
+}
+
+static int gl_view_free(lua_State *L)
+{
+	View *v = *(View**)auxiliar_checkclass(L, "gl{view}", 1);
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_view_ortho(lua_State *L)
+{
+	View *v = *(View**)auxiliar_checkclass(L, "gl{view}", 1);
+	v->setOrthoView(luaL_checknumber(L, 2), luaL_checknumber(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_view_project(lua_State *L)
+{
+	View *v = *(View**)auxiliar_checkclass(L, "gl{view}", 1);
+	DisplayObject *camera = userdata_to_DO(__FUNCTION__, L, 5);
+	DisplayObject *origin = userdata_to_DO(__FUNCTION__, L, 6);
+	lua_pushvalue(L, 5);
+	int camera_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	lua_pushvalue(L, 6);
+	int origin_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	v->setProjectView(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), 0.001, 1000, camera, camera_ref, origin, origin_ref);
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_view_use(lua_State *L)
+{
+	View *v = *(View**)auxiliar_checkclass(L, "gl{view}", 1);
+	v->use(lua_toboolean(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+/******************************************************************
  ** Generic non object functions
  ******************************************************************/
 static int gl_dos_count(lua_State *L) 
@@ -942,6 +1004,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
+	{"view", gl_target_view},
 	{"texture", gl_target_texture},
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},
@@ -1169,6 +1232,15 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_view_reg[] =
+{
+	{"__gc", gl_view_free},
+	{"ortho", gl_view_ortho},
+	{"project", gl_view_project},
+	{"use", gl_view_use},
+	{NULL, NULL},
+};
+
 const luaL_Reg rendererlib[] = {
 	{"renderer", gl_renderer_new},
 	{"vertexes", gl_vertexes_new},
@@ -1177,6 +1249,7 @@ const luaL_Reg rendererlib[] = {
 	{"target", gl_target_new},
 	{"callback", gl_callback_new},
 	{"spriter", gl_spriter_new},
+	{"view", gl_view_new},
 	{"countDOs", gl_dos_count},
 	{"defaultTextShader", gl_set_default_text_shader},
 	{NULL, NULL}
@@ -1194,6 +1267,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
 	auxiliar_newclass(L, "gl{particles}", gl_particles_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);
+	auxiliar_newclass(L, "gl{view}", gl_view_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 
 	// Build the weak self store registry

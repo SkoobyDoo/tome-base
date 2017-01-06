@@ -122,7 +122,7 @@ void VBO::toScreen(mat4 model) {
 	}
 	tglActiveTexture(GL_TEXTURE0);
 
-	mat4 mvp = View::getCurrent()->view * model;
+	mat4 mvp = View::getCurrent()->get() * model;
 
 	shader_type *shader = this->shader;
 	if (!shader) { useNoShader(); if (!current_shader) return; }

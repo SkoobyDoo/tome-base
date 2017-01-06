@@ -102,6 +102,7 @@ extern int donb;
  ****************************************************************************/
 class DisplayObject {
 	friend class DORTweener;
+	friend class View;
 public:
 	static int weak_registry_ref;
 protected:
@@ -312,6 +313,7 @@ protected:
 	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
 	SubRenderer *subrender = NULL;
 	int subrender_lua_ref = LUA_NOREF;
+	int view_lua_ref = LUA_NOREF;
 	View *view;
 
 	virtual void cloneInto(DisplayObject *into);
@@ -324,6 +326,7 @@ public:
 	virtual const char* getKind() { return "DORTarget"; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 
+	void setView(View *view, int ref);
 	void setClearColor(float r, float g, float b, float a);
 	void displaySize(int w, int h, bool center);
 	void use(bool activate);

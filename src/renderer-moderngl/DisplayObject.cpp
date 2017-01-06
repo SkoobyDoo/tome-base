@@ -891,6 +891,13 @@ DORTarget::~DORTarget() {
 	glDeleteFramebuffers(1, &fbo);
 }
 
+void DORTarget::setView(View *view, int ref) {
+	if (view_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, view_lua_ref);
+	delete this->view;
+	this->view = view;
+	view_lua_ref = ref;
+}
+
 void DORTarget::setTexture(GLuint tex, int lua_ref, int id) {
 	if (id == 0) printf("Error, trying to set DORTarget texture 0.\n");
 	else DORVertexes::setTexture(tex, lua_ref, id);

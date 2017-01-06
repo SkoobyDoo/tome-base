@@ -450,7 +450,7 @@ static void particles_draw(particles_type *ps, mat4 model)
 	mat4 rot = mat4();
 	rot = glm::rotate(rot, ps->rotate, glm::vec3(0, 0, 1));
 	rot = glm::scale(rot, glm::vec3(ps->zoom, ps->zoom, ps->zoom));
-	mat4 mvp = View::getCurrent()->view * model * rot;
+	mat4 mvp = View::getCurrent()->get() * model * rot;
 
 	shader_type *shader = ps->shader;
 	if (!shader) { useNoShader(); if (!current_shader) return; }

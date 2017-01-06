@@ -39,11 +39,33 @@ View::View(int w, int h) {
 
 View::~View() {
 	if (in_use) use(false);
+	if (camera_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, camera_lua_ref);
+	if (origin_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, origin_lua_ref);
 }
 
 void View::setOrthoView(int w, int h) {
 	mode = ViewMode::ORTHO;
 	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+}
+
+void View::setProjectView(
+	float fov_angle, int w, int h, float near_clip, float far_clip,
+	DisplayObject *camera, int camera_ref, DisplayObject *origin, int origin_ref
+) {
+	if (camera_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, camera_lua_ref);
+	if (origin_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, origin_lua_ref);
+
+	mode = ViewMode::PROJECT;
+	view = glm::perspective(
+		fov_angle,         // The horizontal Field of View, in degrees : the amount of "zoom". Think "camera lens". Usually between 90° (extra wide) and 30° (quite zoomed in)
+		(float)w / (float)h, // Aspect Ratio. Depends on the size of your window. Notice that 4/3 == 800/600 == 1280/960, sounds familiar ?
+		near_clip,        // Near clipping plane. Keep as big as possible, or you'll get precision issues.
+		far_clip       // Far clipping plane. Keep as little as possible.
+	);
+	camera_lua_ref = camera_ref;
+	origin_lua_ref = origin_ref;
+	camera_do = camera;
+	origin_do = origin;
 }
 
 void View::onScreenResize(int w, int h) {
@@ -69,6 +91,32 @@ void View::use(bool v) {
 		}
 		views_stack.pop();
 	}
+}
+
+mat4 View::get() {
+	if (mode == ViewMode::ORTHO) return view;
+
+	if (camera_do->isChanged() || origin_do->isChanged()) {
+		camera_do->changed = false;
+		origin_do->changed = false;
+		glm::vec4 camera_point = glm::vec4(0, 0, 0, 1);
+		glm::vec4 origin_point = glm::vec4(0, 0, 0, 1);
+
+		recomputematrix camm = camera_do->computeParentCompositeMatrix(NULL, {glm::mat4(), glm::vec4(1, 1, 1, 1), true});
+		recomputematrix orim = origin_do->computeParentCompositeMatrix(NULL, {glm::mat4(), glm::vec4(1, 1, 1, 1), true});
+		camera_point = camm.model * camera_point;
+		origin_point = orim.model * origin_point;
+
+		printf("recomputing %f x %f x %f\n", camera_point.x, camera_point.y, camera_point.z);
+
+		cam = glm::lookAt(
+			glm::vec3(camera_point),
+			glm::vec3(origin_point),
+			glm::vec3(0, -1, 0)
+		);
+	}
+
+	return view * cam;
 }
 
 // Make a default screensize orthogonal view, use it and stack it, never removing it so we have a default
