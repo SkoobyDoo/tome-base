@@ -219,7 +219,7 @@ function _M:display(nb_keyframes)
 	if nb_keyframes > 0 then tween.update(nb_keyframes) end
 
 	if _M.fps_shown then
-		fps_counter:text(("%0.1f"):format(core.display.getFPS()))
+		fps_counter:text(("%0.1f FPS - %d draws/frame"):format(core.display.getFPS(), core.display.countDraws()))
 		fps_counter_renderer:toScreen()
 	end
 end

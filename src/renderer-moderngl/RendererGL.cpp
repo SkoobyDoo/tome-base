@@ -49,7 +49,7 @@ DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex
 
 	// printf("test::: %d ?? %d ::: %lx ?? %lx\n", current_used_dl ? current_used_dl->tex : 0 ,tex, current_used_dl ? current_used_dl->shader : 0 ,shader);
 	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader && current_used_dl_container == container) {
-		// printf("Reussing current DL! %x with %d, %d, %x\n", current_used_dl, current_used_dl->vbo, current_used_dl->tex, current_used_dl->shader);
+		// printf("Reussing current DL! %x with %d, %d, %x\n", current_used_dl, current_used_dl->vbo, current_used_dl->tex[0], current_used_dl->shader);
 		// current_used_dl->used++;
 		// container->addDisplayList(current_used_dl);
 		return current_used_dl;

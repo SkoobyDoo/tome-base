@@ -954,7 +954,7 @@ function _M:defineDisplayCallback()
 			else self:removeParticles(e)
 			end
 		end
-
+MAKE ME WORK
 		if boss_rank_circles[self.rank or 1] then
 			local b = boss_rank_circles[self.rank]
 			if not b.iback then b.iback = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.back) end

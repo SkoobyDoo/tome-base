@@ -170,15 +170,20 @@ static int map_object_free(lua_State *L)
 static int map_object_cb(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
-	if (!obj->cb) obj->cb = new DORCallbackMap();
 
 	if (lua_isfunction(L, 2)) {
+		if (!obj->cb) obj->cb = new DORCallbackMap();
 		lua_pushvalue(L, 2);
 		obj->cb->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
 	}
-
-	// if (obj->cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, obj->cb_ref);
-	// else obj->cb_ref = LUA_NOREF;
+	// if (lua_isfunction(L, 2)) {
+	// 	if (!obj->cb) obj->cb = new DORCallbackMap();
+	// 	lua_pushvalue(L, 2);
+	// 	obj->cb->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+	// } else {
+	// 	delete obj->cb;
+	// 	obj->cb = NULL;
+	// }
 	return 0;
 }
 
@@ -654,7 +659,7 @@ static int map_new(lua_State *L)
 		sprintf(name, "map-layer-%d", i);
 		map->z_renderers[i]->setRendererName(name, false);
 		map->z_renderers[i]->setManualManagement(true);
-		// map->z_renderers[i]->countVertexes(true);
+		// map->z_renderers[i]->countDraws(true);
 	}
 
 	map->shader_to_shaderkind = new unordered_map<string, float>;
@@ -1339,7 +1344,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 
 		// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
 		auto dl = getDisplayList(map->z_renderers[z], {dm->textures[0], 0, 0}, shader);
-
+	
 		// Make sure we do not have to reallocate each step
 		// DGDGDGDG: actually do it
 

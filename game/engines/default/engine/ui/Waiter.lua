@@ -82,46 +82,47 @@ function _M:getWaitDisplay(d)
 		local middle = {core.display.loadImage(self.base_gfx.."/waiter/middle.png"):glTexture()}
 		local bar = {core.display.loadImage(self.base_gfx.."/waiter/bar.png"):glTexture()}
 
+-- DGDGDGDG
 		return function()
-			-- Background
-			core.wait.drawLastFrame()
+			-- -- Background
+			-- core.wait.drawLastFrame()
 
-			-- Progressbar
-			local x
-			if has_max then
-				i, max = core.wait.getTicks()
-				i = util.bound(i, 0, max)
-			else
-				i = i + dir
-				if dir > 0 and i >= max then dir = -1
-				elseif dir < 0 and i <= -max then dir = 1
-				end
-			end
+			-- -- Progressbar
+			-- local x
+			-- if has_max then
+			-- 	i, max = core.wait.getTicks()
+			-- 	i = util.bound(i, 0, max)
+			-- else
+			-- 	i = i + dir
+			-- 	if dir > 0 and i >= max then dir = -1
+			-- 	elseif dir < 0 and i <= -max then dir = 1
+			-- 	end
+			-- end
 
-			local x = dw * (i / max)
-			local x2 = x + dw
-			x = util.bound(x, 0, dw)
-			x2 = util.bound(x2, 0, dw)
-			if has_max then x, x2 = 0, x end
-			local w, h = x2 - x, dh
+			-- local x = dw * (i / max)
+			-- local x2 = x + dw
+			-- x = util.bound(x, 0, dw)
+			-- x2 = util.bound(x2, 0, dw)
+			-- if has_max then x, x2 = 0, x end
+			-- local w, h = x2 - x, dh
 
-			middle[1]:toScreenFull(dx, dy, dw, middle[7], middle[2], middle[3])
-			bar[1]:toScreenFull(dx + x, dy, w, bar[7], bar[2], bar[3])
-			left[1]:toScreenFull(dx - left[6] + 5, dy + (middle[7] - left[7]) / 2, left[6], left[7], left[2], left[3])
-			right[1]:toScreenFull(dx + dw - 5, dy + (middle[7] - right[7]) / 2, right[6], right[7], right[2], right[3])
+			-- middle[1]:toScreenFull(dx, dy, dw, middle[7], middle[2], middle[3])
+			-- bar[1]:toScreenFull(dx + x, dy, w, bar[7], bar[2], bar[3])
+			-- left[1]:toScreenFull(dx - left[6] + 5, dy + (middle[7] - left[7]) / 2, left[6], left[7], left[2], left[3])
+			-- right[1]:toScreenFull(dx + dw - 5, dy + (middle[7] - right[7]) / 2, right[6], right[7], right[2], right[3])
 
-			if has_max then
-				self.font:setStyle("bold")
-				local txt = {core.display.drawStringBlendedNewSurface(self.font, math.min(100, math.floor(core.wait.getTicks() * 100 / max)).."%", 255, 255, 255):glTexture()}
-				self.font:setStyle("normal")
-				txt[1]:toScreenFull(dx + (dw - txt[6]) / 2 + 2, dy + (bar[7] - txt[7]) / 2 + 2, txt[6], txt[7], txt[2], txt[3], 0, 0, 0, 0.6)
-				txt[1]:toScreenFull(dx + (dw - txt[6]) / 2, dy + (bar[7] - txt[7]) / 2, txt[6], txt[7], txt[2], txt[3])
-			end
+			-- if has_max then
+			-- 	self.font:setStyle("bold")
+			-- 	local txt = {core.display.drawStringBlendedNewSurface(self.font, math.min(100, math.floor(core.wait.getTicks() * 100 / max)).."%", 255, 255, 255):glTexture()}
+			-- 	self.font:setStyle("normal")
+			-- 	txt[1]:toScreenFull(dx + (dw - txt[6]) / 2 + 2, dy + (bar[7] - txt[7]) / 2 + 2, txt[6], txt[7], txt[2], txt[3], 0, 0, 0, 0.6)
+			-- 	txt[1]:toScreenFull(dx + (dw - txt[6]) / 2, dy + (bar[7] - txt[7]) / 2, txt[6], txt[7], txt[2], txt[3])
+			-- end
 
-			-- Timeout?
-			if self.timeout and core.game.getTime() - self.timeout_start >= self.timeout then
-				self.timeout_cb()
-			end
+			-- -- Timeout?
+			-- if self.timeout and core.game.getTime() - self.timeout_start >= self.timeout then
+			-- 	self.timeout_cb()
+			-- end
 		end
 	end
 end

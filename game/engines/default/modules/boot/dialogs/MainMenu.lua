@@ -109,6 +109,8 @@ function _M:init()
 	end
 
 	self:updateUI()
+
+	self.key:setupRebootKeys()
 end
 
 function _M:enableWebtooltip()
