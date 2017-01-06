@@ -30,6 +30,8 @@ extern "C" {
 }
 int donb = 0;
 #include "renderer-moderngl/Renderer.hpp"
+#include "tinyobjloader/tiny_obj_loader.h"
+#include <string>
 
 #define DEBUG_CHECKPARENTS
 
@@ -580,6 +582,128 @@ int DORVertexes::addQuadPie(
 
 	setChanged();
 	return 0;
+}
+
+void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
+	float v10[3];
+	v10[0] = v1[0] - v0[0];
+	v10[1] = v1[1] - v0[1];
+	v10[2] = v1[2] - v0[2];
+
+	float v20[3];
+	v20[0] = v2[0] - v0[0];
+	v20[1] = v2[1] - v0[1];
+	v20[2] = v2[2] - v0[2];
+
+	N[0] = v20[1] * v10[2] - v20[2] * v10[1];
+	N[1] = v20[2] * v10[0] - v20[0] * v10[2];
+	N[2] = v20[0] * v10[1] - v20[1] * v10[0];
+
+	float len2 = N[0] * N[0] + N[1] * N[1] + N[2] * N[2];
+	if (len2 > 0.0f) {
+		float len = sqrtf(len2);
+
+		N[0] /= len;
+		N[1] /= len;
+	}
+}
+
+void DORVertexes::loadObj(const string &filename) {
+	if (!PHYSFS_exists(filename.c_str())) {
+		printf("[DORVertexes] loadObj: file unknown %s\n", filename.c_str());
+		return;
+	}
+	tinyobj::attrib_t attrib;
+	vector<tinyobj::shape_t> shapes;
+	vector<tinyobj::material_t> materials;
+	string err;
+
+	string prefix = filename.substr(0, filename.find_last_of('/') + 1);
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str(), prefix.c_str(), true);
+
+	printf("[DORVertexes] loadObj: %s\n", err.c_str());
+	printf("# of vertices  = %d\n", (int)(attrib.vertices.size()) / 3);
+	printf("# of normals   = %d\n", (int)(attrib.normals.size()) / 3);
+	printf("# of texcoords = %d\n", (int)(attrib.texcoords.size()) / 2);
+	printf("# of materials = %d\n", (int)materials.size());
+	printf("# of shapes    = %d\n", (int)shapes.size());
+
+	for (size_t s = 0; s < shapes.size(); s++) {
+		for (size_t f = 0; f < shapes[s].mesh.indices.size() / 3; f++) {
+			tinyobj::index_t idx0 = shapes[s].mesh.indices[3 * f + 0];
+			tinyobj::index_t idx1 = shapes[s].mesh.indices[3 * f + 1];
+			tinyobj::index_t idx2 = shapes[s].mesh.indices[3 * f + 2];
+
+			float v[3][3];
+			for (int k = 0; k < 3; k++) {
+				int f0 = idx0.vertex_index;
+				int f1 = idx1.vertex_index;
+				int f2 = idx2.vertex_index;
+				assert(f0 >= 0);
+				assert(f1 >= 0);
+				assert(f2 >= 0);
+
+				v[0][k] = attrib.vertices[3 * f0 + k];
+				v[1][k] = attrib.vertices[3 * f1 + k];
+				v[2][k] = attrib.vertices[3 * f2 + k];
+			}
+
+
+			float uv[3][3];
+			if (attrib.texcoords.size() > 0) {
+				int f0 = idx0.texcoord_index;
+				int f1 = idx1.texcoord_index;
+				int f2 = idx2.texcoord_index;
+				assert(f0 >= 0);
+				assert(f1 >= 0);
+				assert(f2 >= 0);
+				for (int k = 0; k < 2; k++) {
+					uv[0][k] = attrib.texcoords[2 * f0 + k];
+					uv[1][k] = attrib.texcoords[2 * f1 + k];
+					uv[2][k] = attrib.texcoords[2 * f2 + k];
+				}
+			}
+
+			float n[3][2];
+			if (attrib.normals.size() > 0) {
+				int f0 = idx0.normal_index;
+				int f1 = idx1.normal_index;
+				int f2 = idx2.normal_index;
+				assert(f0 >= 0);
+				assert(f1 >= 0);
+				assert(f2 >= 0);
+				for (int k = 0; k < 3; k++) {
+					n[0][k] = attrib.normals[3 * f0 + k];
+					n[1][k] = attrib.normals[3 * f1 + k];
+					n[2][k] = attrib.normals[3 * f2 + k];
+				}
+			} else {
+				// compute geometric normal
+				CalcNormal(n[0], v[0], v[1], v[2]);
+				n[1][0] = n[0][0];
+				n[1][1] = n[0][1];
+				n[1][2] = n[0][2];
+				n[2][0] = n[0][0];
+				n[2][1] = n[0][1];
+				n[2][2] = n[0][2];
+			}
+
+			for (int k = 0; k < 3; k++) {
+				// Use normal as color.
+				float c[3] = {n[k][0], n[k][1], n[k][2]};
+				float len2 = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
+				if (len2 > 0.0f) {
+					float len = sqrtf(len2);
+
+					c[0] /= len;
+					c[1] /= len;
+					c[2] /= len;
+				}
+
+				vertices.push_back({{v[k][0], v[k][1], v[k][2], 1}, {uv[k][0], uv[k][1]}, {c[0] * 0.5 + 0.5, c[1] * 0.5 + 0.5, c[2] * 0.5 + 0.5, 1}});
+			}
+		}
+	}
 }
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {

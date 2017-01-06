@@ -230,6 +230,7 @@ static int gl_renderer_new(lua_State *L)
 	DisplayObject **r = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{renderer}", -1);
 	VBOMode mode = VBOMode::DYNAMIC;
+	RenderKind kind = RenderKind::QUADS;
 	if (lua_isstring(L, 1)) {
 		const char *ms = lua_tostring(L, 1);
 		if (!strcmp(ms, "static")) mode = VBOMode::STATIC;
@@ -240,14 +241,20 @@ static int gl_renderer_new(lua_State *L)
 			lua_error(L);
 		}		
 	}
+	if (lua_isstring(L, 2)) {
+		const char *ms = lua_tostring(L, 2);
+		if (!strcmp(ms, "quads")) kind = RenderKind::QUADS;
+		else if (!strcmp(ms, "triangles")) kind = RenderKind::TRIANGLES;
+		else {
+			lua_pushstring(L, "Parameter to renderer() must be either nil or quads/triangles");
+			lua_error(L);
+		}
+	}
 
 	RendererGL *rgl = new RendererGL(mode);
+	rgl->renderKind(kind);
 	*r = rgl;
 	setWeakSelfRef(L, -1, rgl);
-
-	if (lua_isstring(L, 1)) {
-		rgl->setRendererName(luaL_checkstring(L, 1));
-	}
 
 	return 1;
 }
@@ -269,8 +276,9 @@ static int gl_renderer_zsort(lua_State *L)
 		if (!strcmp(ms, "no")) mode = SortMode::NO_SORT;
 		else if (!strcmp(ms, "fast")) mode = SortMode::FAST;
 		else if (!strcmp(ms, "full")) mode = SortMode::FULL;
+		else if (!strcmp(ms, "gl")) mode = SortMode::GL;
 		else {
-			lua_pushstring(L, "Parameter to zSort() must be either true/falase or no/fast/full");
+			lua_pushstring(L, "Parameter to zSort() must be either true/falase or no/fast/full/gl");
 			lua_error(L);
 		}		
 		r->zSorting(mode);
@@ -555,6 +563,15 @@ static int gl_vertexes_quad_pie(lua_State *L)
 		angle,
 		r, g, b, a
 	);
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vertexes_load_obj(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	string filename(luaL_checkstring(L, 2));
+	v->loadObj(filename);
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -1059,6 +1076,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"reserve", gl_vertexes_reserve},
 	{"quad", gl_vertexes_quad},
 	{"quadPie", gl_vertexes_quad_pie},
+	{"loadObj", gl_vertexes_load_obj},
 	{"texture", gl_vertexes_texture},
 	{"textureFontAtlas", gl_vertexes_font_atlas_texture},
 	{"shader", gl_vertexes_shader},

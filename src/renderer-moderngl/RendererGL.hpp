@@ -63,13 +63,18 @@ extern DisplayList* getDisplayList(RendererGL *container);
 /****************************************************************************
  ** Handling actual rendering to the screen & such
  ****************************************************************************/
-enum class SortMode { NO_SORT, FAST, FULL }; // Full sort will sort the vertices at the end, it's slow but precise. Fast sort will sort the DOs, it's faster but only works on DORFlatSortable childs that are flat on the z plane
+// Full sort will sort the vertices at the end, it's slow but precise.
+// Fast sort will sort the DOs, it's faster but only works on DORFlatSortable childs that are flat on the z plane
+// GL sort will turn on depth test and let OpenGL handle it. Transparency will bork
+enum class SortMode { NO_SORT, FAST, FULL, GL }; 
+
+enum class RenderKind { QUADS, TRIANGLES }; 
 
 class RendererGL : public SubRenderer {
 	friend class DORVertexes;
 protected:
 	VBOMode mode = VBOMode::DYNAMIC;
-	GLenum kind = GL_TRIANGLES;
+	RenderKind kind = RenderKind::QUADS;
 
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;
@@ -77,7 +82,6 @@ protected:
 	SortMode zsort = SortMode::NO_SORT;
 	vector<DisplayList*> displays;
 	bool recompute_fast_sort = true;
-	int nb_quads = 0;
 	bool manual_dl_management = false;
 
 	bool count_draws = false;
@@ -95,6 +99,8 @@ protected:
 
 	virtual void cloneInto(DisplayObject *into);
 
+	bool usesElementsVBO();
+
 public:
 	vector<DORFlatSortable*> sorted_dos;
 	vector<sortable_vertex> zvertices;
@@ -110,6 +116,7 @@ public:
 
 	virtual void setSortingChanged() { recompute_fast_sort = true; }
 
+	void renderKind(RenderKind k) { kind = k; };
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
 	void countVertexes(bool count) { count_vertexes = count; };
 	void countDraws(bool count) { count_draws = count; };

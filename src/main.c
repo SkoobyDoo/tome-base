@@ -995,6 +995,8 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 
 	/* If there is no current window, we have to make one and initialize */
 	if (!window) {
+		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+		
 		window = SDL_CreateWindow("TE4",
 				(start_xpos == -1) ? SDL_WINDOWPOS_CENTERED : start_xpos,
 				(start_ypos == -1) ? SDL_WINDOWPOS_CENTERED : start_ypos, w, h,

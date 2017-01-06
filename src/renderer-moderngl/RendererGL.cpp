@@ -145,6 +145,10 @@ static bool sort_dos(DORFlatSortable *i, DORFlatSortable *j) {
 	}
 }
 
+bool RendererGL::usesElementsVBO() {
+	return kind == RenderKind::QUADS;
+}
+
 void RendererGL::sortedToDL() {
 	array<GLuint, DO_MAX_TEX> tex {{0,0,0}};
 	shader_type *shader = NULL;
@@ -194,7 +198,7 @@ void RendererGL::update() {
 
 		// Build up the new display lists
 		mat4 cur_model = mat4();
-		if (zsort == SortMode::NO_SORT) {
+		if (zsort == SortMode::NO_SORT || zsort == SortMode::GL) {
 			for (auto it = dos.begin() ; it != dos.end(); ++it) {
 				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 				if (i) i->render(this, cur_model, color, true);
@@ -203,7 +207,7 @@ void RendererGL::update() {
 			// If nothing that can alter sort order changed, we can just quickly recompute the DisplayLists just like in the no sort method
 			if (recompute_fast_sort) {
 				recompute_fast_sort = false;
-				printf("FST SORT\n");
+				// printf("FST SORT\n");
 				sorted_dos.clear();
 
 				// First we iterate over the DOs tree to "flatten" in
@@ -242,7 +246,7 @@ void RendererGL::update() {
 	resetChanged();
 
 	// Upload each display list vertices data to the corresponding VBO on the GPU memory
-	nb_quads = 0;
+	int nb_quads = 0;
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if (!(*dl)->sub && !(*dl)->tick) {
 			if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
@@ -253,27 +257,28 @@ void RendererGL::update() {
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());
 		}
 	}
-	nb_quads /= 4;
-	// printf("max quads %d / %d\n", nb_quads, displays.size());
 
 	// Update the indices
-	if (nb_quads > vbo_elements_nb) {
-		vbo_elements_data = (GLuint*)realloc((void*)vbo_elements_data, nb_quads * 6 * sizeof(GLuint));
-		for (; vbo_elements_nb < nb_quads; vbo_elements_nb++) {
-			// printf("Initing a quad elements %d\n", vbo_elements_nb);
-			vbo_elements_data[vbo_elements_nb * 6 + 0] = vbo_elements_nb * 4 + 0;
-			vbo_elements_data[vbo_elements_nb * 6 + 1] = vbo_elements_nb * 4 + 1;
-			vbo_elements_data[vbo_elements_nb * 6 + 2] = vbo_elements_nb * 4 + 2;
+	if (usesElementsVBO()) {
+		nb_quads /= 4;
+		if (nb_quads > vbo_elements_nb) {
+			vbo_elements_data = (GLuint*)realloc((void*)vbo_elements_data, nb_quads * 6 * sizeof(GLuint));
+			for (; vbo_elements_nb < nb_quads; vbo_elements_nb++) {
+				// printf("Initing a quad elements %d\n", vbo_elements_nb);
+				vbo_elements_data[vbo_elements_nb * 6 + 0] = vbo_elements_nb * 4 + 0;
+				vbo_elements_data[vbo_elements_nb * 6 + 1] = vbo_elements_nb * 4 + 1;
+				vbo_elements_data[vbo_elements_nb * 6 + 2] = vbo_elements_nb * 4 + 2;
 
-			vbo_elements_data[vbo_elements_nb * 6 + 3] = vbo_elements_nb * 4 + 0;
-			vbo_elements_data[vbo_elements_nb * 6 + 4] = vbo_elements_nb * 4 + 2;
-			vbo_elements_data[vbo_elements_nb * 6 + 5] = vbo_elements_nb * 4 + 3;
+				vbo_elements_data[vbo_elements_nb * 6 + 3] = vbo_elements_nb * 4 + 0;
+				vbo_elements_data[vbo_elements_nb * 6 + 4] = vbo_elements_nb * 4 + 2;
+				vbo_elements_data[vbo_elements_nb * 6 + 5] = vbo_elements_nb * 4 + 3;
+			}
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * vbo_elements_nb * 6, NULL, GL_STATIC_DRAW); // Static because this wont change often
+			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * vbo_elements_nb * 6, vbo_elements_data);
+			printf("Upping vbo_elements to %d in renderer %s\n", nb_quads, getRendererName());
 		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * vbo_elements_nb * 6, NULL, GL_STATIC_DRAW); // Static because this wont change often
-		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * vbo_elements_nb * 6, vbo_elements_data);
-		printf("Upping vbo_elements to %d in renderer %s\n", nb_quads, getRendererName());
 	}
 }
 
@@ -344,20 +349,21 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (cutting) activateCutting(cur_model, true);
 	else glDisable(GL_SCISSOR_TEST);
 
+	if (zsort == SortMode::GL) glEnable(GL_DEPTH_TEST);
+
 	// Bind the indices
-	// printf("=r= binding vbo_elements %d\n", vbo_elements);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+	if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 
 	// Draw all display lists
 	int nb_vert = 0;
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if ((*dl)->sub) {
 			(*dl)->sub->toScreen(cur_model * (*dl)->sub->use_model, cur_color * (*dl)->sub->use_color);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+			if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 			if (cutting) activateCutting(cur_model, true);
 		} else if ((*dl)->tick) {
 			(*dl)->tick->tick();
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+			if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 			if (cutting) activateCutting(cur_model, true);
 		} else {
 			// Bind the vertices
@@ -420,22 +426,19 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				glVertexAttribPointer(shader->kind_attrib, 1, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, kind));
 			}
 
-			// printf("=r= drawing %d elements\n", (*dl)->list.size() / 4 * 6);
-			glDrawElements(kind, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
+			if (kind == RenderKind::QUADS) {
+				glDrawElements(GL_TRIANGLES, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
+			} else if (kind == RenderKind::TRIANGLES) {
+				glDrawArrays(GL_TRIANGLES, 0, (*dl)->list.size());
+			}
 			nb_vert += (*dl)->list.size();
-			// glDrawArrays(kind, 0, (*dl)->list.size());
-
-			// glDisableVertexAttribArray(shader->vertex_attrib);
-			// glDisableVertexAttribArray(shader->texcoord_attrib);
-			// glDisableVertexAttribArray(shader->color_attrib);
-			// glDisableVertexAttribArray(shader->mapcoord_attrib);
-			// glDisableVertexAttribArray(shader->texcoorddata_attrib);
-			// glDisableVertexAttribArray(shader->kind_attrib);
 		}
 	}
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	if (zsort == SortMode::GL) glDisable(GL_DEPTH_TEST);
 
 	if (cutting) {
 		glDisable(GL_SCISSOR_TEST);

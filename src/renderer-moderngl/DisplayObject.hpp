@@ -226,6 +226,7 @@ public:
 		float x4, float y4, float z4, float u4, float v4, 
 		float r, float g, float b, float a
 	);
+	void loadObj(const string &filename);
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };

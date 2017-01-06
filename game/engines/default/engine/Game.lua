@@ -221,6 +221,7 @@ function _M:display(nb_keyframes)
 	if _M.fps_shown then
 		fps_counter:text(("%0.1f FPS - %d draws/frame"):format(core.display.getFPS(), core.display.countDraws()))
 		fps_counter_renderer:toScreen()
+		print(("%0.1f FPS - %d draws/frame"):format(core.display.getFPS(), core.display.countDraws()))
 	end
 end
 
