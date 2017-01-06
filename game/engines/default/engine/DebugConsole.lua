@@ -131,7 +131,7 @@ function _M:init()
 	self.blink_period = 20
 	self.blink = self.blink_period
 	local w, h = core.display.size()
-	Dialog.init(self, "Lua Console", w, h, 0, 0)
+	Dialog.init(self, "Lua Console", w, h, 0, 0, nil, nil, false)
 	self.font, self.font_h = self.font_mono, self.font_mono_h
 	game:onTickEnd(function() self.key:unicodeInput(true) end)
 
@@ -353,6 +353,7 @@ function _M:display()
 		dh = dh - h
 		i = i - 1
 	end
+	self.changed = false
 end
 
 --- Scroll the zone

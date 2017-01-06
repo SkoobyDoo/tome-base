@@ -729,7 +729,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 	self:updateTitle(self.title)
 
-	local mw, mh = math.floor(self.w / 2), math.floor(self.h / 2)
+	local mw, mh = self.display_x + math.floor(self.w / 2), self.display_y + math.floor(self.h / 2)
 	self.renderer:translate(mw, mh)
 	self.full_container:translate(-mw, -mh)
 
