@@ -26,136 +26,64 @@ module(..., package.seeall, class.make)
 
 local BASE_W, BASE_H = 64, 64
 
-local b_self
-local b_powerful
-local b_danger2
-local b_danger1
-local b_friend
-local b_enemy
-local b_neutral
+local ichat
 
-function _M:setup()
-	if self.setuped then return end
-	self.setuped = true
-	local tactic_tiles = Tiles.new(BASE_W, BASE_H, nil, nil, true, false)
-	local assf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_self)
-	local assf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_powerful)
-	local assf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger2)
-	local assf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger1)
-	local assf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_friend)
-	local assf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_enemy)
-	local assf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_neutral)
-	local ssf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_self)
-	local ssf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_powerful)
-	local ssf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger2)
-	local ssf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger1)
-	local ssf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_friend)
-	local ssf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_enemy)
-	local ssf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_neutral)
+local boss_rank_circles = {
+	[3.2] = { back="npc/boss_indicators/rare_circle_back.png", front="npc/boss_indicators/rare_circle_front.png" },
+	[3.5] = { back="npc/boss_indicators/unique_circle_back.png", front="npc/boss_indicators/unique_circle_front.png" },
+	[4]   = { back="npc/boss_indicators/boss_circle_back.png", front="npc/boss_indicators/boss_circle_front.png" },
+	[5]   = { back="npc/boss_indicators/elite_boss_circle_back.png", front="npc/boss_indicators/elite_boss_circle_front.png" },
+	[10]   = { back="npc/boss_indicators/god_circle_back.png", front="npc/boss_indicators/god_circle_front.png" },
+}
 
-	if config.settings.tome.flagpost_tactical then
-		b_self = assf_self
-		b_powerful = assf_powerful
-		b_danger2 = assf_danger2
-		b_danger1 = assf_danger1
-		b_friend = assf_friend
-		b_enemy = assf_enemy
-		b_neutral = assf_neutral
-	else
-		b_self = ssf_self
-		b_powerful = ssf_powerful
-		b_danger2 = ssf_danger2
-		b_danger1 = ssf_danger1
-		b_friend = ssf_friend
-		b_enemy = ssf_enemy
-		b_neutral = ssf_neutral
+function _M:setup(tactic_tiles)
+	for rank, data in pairs(boss_rank_circles) do
+		data.iback = tactic_tiles:get(nil, 0,0,0, 0,0,0, data.back)
+		data.ifront = tactic_tiles:get(nil, 0,0,0, 0,0,0, data.front)
 	end
+	ichat = tactic_tiles:get(nil, 0,0,0, 0,0,0, "speak_bubble.png")
 end
 
-function _M:init(actor)
-	_M:setup()
-	self.actor = actor
-	self.DO = core.renderer.renderer():setRendererName("Tactical:UID:"..self.actor.uid)
+function _M:init()
+	self.DO_rank_back = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1):shown(false)
+	self.DO_rank_front = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1):shown(false)
+	self.DO_chat = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1):texture(ichat):shown(false)
 
-	self.DO_life = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
-	self.DO_life_missing = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
-	self.CO_life = core.renderer.container()
-	self.CO_life:add(self.DO_life)
-	self.CO_life:add(self.DO_life_missing)
-	self.DO:add(self.CO_life)
+	self.DO_front = core.renderer.renderer():setRendererName("TacticalFront:UID:"..self.actor.uid)
 
-	self.DO_tactical = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
-	self.DO:add(self.DO_tactical)
+	self.DO:add(self.DO_rank_back)
+	self.DO_front:add(self.DO_rank_front)
+	self.DO_front:add(self.DO_chat)
 end
 
--- DGDGDGDG make an other class for the other tactial display modes
-function _M:toScreen(x, y, w, h)
-	local map = game.level.map
-	local friend = -100
-	local lp = math.max(0, self.actor.life) / self.actor.max_life + 0.0001
-	if self.actor.faction and map then
-		if not map.actor_player then friend = Faction:factionReaction(map.view_faction, self.actor.faction)
-		else friend = map.actor_player:reactionToward(self.actor) end
-	end
-
-	if self.old_friend ~= friend or self.old_life ~= lp then
-		local sx = w * .015625
-		local dx = w * .0625 - sx
-		local sy = h * .03125
-		local dy = h * .953125 - sy
-		if friend < 0 then sx = w * .9375 end
-		local color, color_missing
-		if lp > .75 then -- green
-			color_missing = {0.5058, 0.7058, 0.2235}
-			color = {0.1916, 0.8627, 0.3019}
-		elseif lp > .5 then -- yellow
-			color_missing = {0.6862, 0.6862, 0.0392}
-			color = {0.9411, 0.9882, 0.1372}
-		elseif lp > .25 then -- orange
-			color_missing = {0.7254, 0.6450, 0}
-			color = {0, 0.6117, 0.0823}
-		else -- red
-			color_missing = {0.6549, 0.2156, 0.1529}
-			color = {0.9215, 0, 0}
-		end
-		if not self.old_life then
-			self.CO_life:translate(sx, sy)
-			self.DO_life_missing:translate(0, 0):scale(dx, dy, 1):color(1, 1, 1, 0.5)
-			self.DO_life:translate(0, dy):scale(dx, 1, 1):color(1, 1, 1, 1)
-		end
-		self.DO_life:tween(7, "scale_y", nil, -dy * lp, "inQuad"):tween(7, "r", nil, color[1], "inQuad"):tween(7, "g", nil, color[2], "inQuad"):tween(7, "b", nil, color[3], "inQuad")
-		self.DO_life_missing:tween(7, "r", nil, color_missing[1], "inQuad"):tween(7, "g", nil, color_missing[2], "inQuad"):tween(7, "b", nil, color_missing[3], "inQuad")
-	end
-
-	local tactical_texture
-	if self.actor.faction and map then
-		if self.actor == map.actor_player then
-			tactical_texture = b_self
-		elseif map:faction_danger_check(self.actor) then
-			if friend >= 0 then tactical_texture = b_powerful
-			else
-				if map:faction_danger_check(self.actor, true) then
-					tactical_texture = b_danger2
-				else
-					tactical_texture = b_danger1
-				end
-			end
-		elseif friend > 0 then
-			tactical_texture = b_friend
-		elseif friend < 0 then
-			tactical_texture = b_enemy
+function _M:toScreenBack(x, y, w, h)
+	if self.actor.rank ~= self.old_rank then
+		if boss_rank_circles[self.actor.rank or 1] then
+			local b = boss_rank_circles[self.actor.rank]
+			self.DO_rank_back:texture(b.iback):translate(0, h - w * 0.616):scale(w, w / 2, 1):shown(true)
+			self.DO_rank_front:texture(b.ifront):translate(0, h - w * (0.616 - 0.5)):scale(w, w / 2, 1):shown(true)
 		else
-			tactical_texture = b_neutral
+			self.DO_rank_back:shown(false)
+			self.DO_rank_front:shown(false)
 		end
 	end
-	if tactical_texture and self.old_tactical ~= tactical_texture then
-		self.DO_tactical:texture(tactical_texture)
-		self.DO_tactical:scale(w, h, 1)
+	self.old_rank = self.actor.rank
+end
+
+function _M:toScreenFront(x, y, w, h)
+	if not boss_rank_circles[self.actor.rank or 1] and not self.can_talk then return end
+	local dy = 0
+	if h > w then dy = (h - w) / 2 end
+
+	-- Chat
+	if self.actor.can_talk ~= self.old_talk then
+		if self.actor.can_talk then
+			self.DO_chat:translate(w - 8, 0):scale(8, 8):shown(true)
+		else
+			self.DO_chat:shown(false)
+		end
 	end
+	self.old_talk = self.actor.can_talk
 
-	self.DO:toScreen(x, y)
-
-	self.old_friend = friend
-	self.old_life = lp
-	self.old_tactical = tactical_texture
+	self.DO_front:toScreen(x, y + dy)
 end

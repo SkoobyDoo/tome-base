@@ -40,7 +40,7 @@ local Dialog = require "engine.ui.Dialog"
 local Map = require "engine.Map"
 local Chat = require "engine.Chat"
 local DamageType = require "engine.DamageType"
-local TacticalOverlay = require "mod.class.TacticalOverlay"
+local TacticalOverlaySide = require "mod.class.TacticalOverlaySide"
 local TacticalOverlayBottom = require "mod.class.TacticalOverlayBottom"
 local TacticalOverlayBig = require "mod.class.TacticalOverlayBig"
 
@@ -863,14 +863,6 @@ function _M:alterMakeMapObject(tiles, mo, z, lastmo)
 	return mo, z, lastmo
 end
 
-local boss_rank_circles = {
-	[3.2] = { back="npc/boss_indicators/rare_circle_back.png", front="npc/boss_indicators/rare_circle_front.png" },
-	[3.5] = { back="npc/boss_indicators/unique_circle_back.png", front="npc/boss_indicators/unique_circle_front.png" },
-	[4]   = { back="npc/boss_indicators/boss_circle_back.png", front="npc/boss_indicators/boss_circle_front.png" },
-	[5]   = { back="npc/boss_indicators/elite_boss_circle_back.png", front="npc/boss_indicators/elite_boss_circle_front.png" },
-	[10]   = { back="npc/boss_indicators/god_circle_back.png", front="npc/boss_indicators/god_circle_front.png" },
-}
-
 --- Attach or remove a display callback
 -- Defines particles to display
 function _M:defineDisplayCallback()
@@ -889,7 +881,7 @@ function _M:defineDisplayCallback()
 	if not self._tactical then
 		if game.always_target and game.always_target ~= "old" then
 			if config.settings.tome.small_frame_side then
-				self._tactical = TacticalOverlay.new(self)
+				self._tactical = TacticalOverlaySide.new(self)
 			else
 				self._tactical = TacticalOverlayBottom.new(self)
 			end
@@ -898,25 +890,11 @@ function _M:defineDisplayCallback()
 		end
 	end
 
-	local function tactical(x, y, w, h, zoom, on_map, tlx, tly)
-		local self = weak[1] if not self then return end
-		self._tactical:toScreen(x, y, w, h)
-
-		-- DGDGDGDG
-		-- -- Chat
-		-- if game.level and self.can_talk then
-		-- 	local map = game.level.map
-		-- 	if not ichat then
-		-- 		ichat = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, "speak_bubble.png")
-		-- 	end
-
-		-- 	ichat:toScreen(x + w - 8, y, 8, 8)
-		-- end
-	end
-
 	local function particles(x, y, w, h, zoom, on_map)
 		local self = weak[1]
 		if not self or not self._mo then return end
+
+		self._tactical:toScreenFront(x, y, w, h)
 
 		local e
 		local dy = 0
@@ -931,13 +909,6 @@ function _M:defineDisplayCallback()
 			else self:removeParticles(e)
 			end
 		end
-
-		-- DGDGDGDG
-		-- if boss_rank_circles[self.rank or 1] then
-		-- 	local b = boss_rank_circles[self.rank]
-		-- 	if not b.ifront then b.ifront = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.front) end
-		-- 	b.ifront:toScreen(x, y + h - w * (0.616 - 0.5), w, w / 2)
-		-- end
 	end
 
 	local function backparticles(x, y, w, h, zoom, on_map)
@@ -954,31 +925,21 @@ function _M:defineDisplayCallback()
 			else self:removeParticles(e)
 			end
 		end
-MAKE ME WORK
-		if boss_rank_circles[self.rank or 1] then
-			local b = boss_rank_circles[self.rank]
-			if not b.iback then b.iback = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.back) end
-			b.iback:toScreen(x, y + h - w * 0.616, w, w / 2)
-		end
+
+		self._tactical:toScreenBack(x, y, w, h)
 	end
 
 	if self._mo == self._last_mo or not self._last_mo then
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			-- print("!!!!!IN1", x, y)
-			tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
-			particles(x, y, w, h, zoom, on_map)
 			return true
 		end)
 	else
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			-- print("!!!!!IN2", x, y, zoom)
-			tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
 			return true
 		end)
 		self._last_mo:displayCallback(function(x, y, w, h, zoom, on_map)
-			-- print("!!!!!IN3", x, y)
 			particles(x, y, w, h, zoom, on_map)
 			return true
 		end)

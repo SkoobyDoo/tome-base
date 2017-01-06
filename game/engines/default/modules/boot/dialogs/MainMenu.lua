@@ -171,21 +171,6 @@ function _M:updateUI()
 	self.key:addBind("USERCHAT_TALK", function() profile.chat:talkBox(nil, true) end)
 
 	self:setFocus(self.c_list)
-
-	-- game:onTickEnd(function()
-	-- 	local sp1  = core.renderer.spriter("/data/gfx/spriters/test_02/test_embedded_03.scml", "Player") sp1:setAnim('walk')
-	-- 	sp1:scale(0.2, 0.2, 0.2)
-	-- 	-- game.player._mo:displayObject(sp1)
-	-- 	local spr = core.renderer.renderer()
-	-- 	spr:add(sp1)
-	-- 	game.player._mo:displayObject(spr)
-	-- end)
-
-	-- local ps = require("engine.Particles").new("fireflash", 1, {radius=0.2}):getDO()
-	-- local psr = core.renderer.renderer()
-	-- psr:translate(10, 0, 0)
-	-- psr:add(ps)
-	-- self.do_container:add(psr)
 end
 
 function _M:uiLogin(uis)

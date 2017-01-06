@@ -20,9 +20,9 @@
 require "engine.class"
 local Map = require "engine.Map"
 local Tiles = require "engine.Tiles"
-local Faction = require "engine.Faction"
+local TacticalOverlay = require "mod.class.TacticalOverlay"
 
-module(..., package.seeall, class.make)
+module(..., package.seeall, class.inherit(TacticalOverlay))
 
 local BASE_W, BASE_H = 64, 64
 
@@ -45,6 +45,8 @@ function _M:setup()
 	b_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_friend)
 	b_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_enemy)
 	b_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_neutral)
+
+	TacticalOverlay.setup(self, tactic_tiles)
 end
 
 function _M:init(actor)
@@ -61,9 +63,13 @@ function _M:init(actor)
 
 	self.DO_tactical = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
 	self.DO:add(self.DO_tactical)
+
+	TacticalOverlay.init(self)
 end
 
-function _M:toScreen(x, y, w, h)
+function _M:toScreenBack(x, y, w, h)
+	TacticalOverlay.toScreenBack(self, x, y, w, h)
+
 	local map = game.level.map
 	local friend = -100
 	local lp = math.max(0, self.actor.life) / self.actor.max_life + 0.0001

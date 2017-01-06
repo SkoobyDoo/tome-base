@@ -20,6 +20,7 @@
 require "engine.class"
 local Map = require "engine.Map"
 local Tiles = require "engine.Tiles"
+local Faction = require "engine.Faction"
 local TacticalOverlay = require "mod.class.TacticalOverlay"
 
 module(..., package.seeall, class.inherit(TacticalOverlay))
@@ -38,20 +39,20 @@ function _M:setup()
 	if self.setuped then return end
 	self.setuped = true
 	local tactic_tiles = Tiles.new(BASE_W, BASE_H, nil, nil, true, false)
-	local assf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_self)
-	local assf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_powerful)
-	local assf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_danger2)
-	local assf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_danger1)
-	local assf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_friend)
-	local assf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_enemy)
-	local assf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_neutral)
-	local ssf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_self)
-	local ssf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_powerful)
-	local ssf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_danger2)
-	local ssf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_danger1)
-	local ssf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_friend)
-	local ssf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_enemy)
-	local ssf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_neutral)
+	local assf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_self)
+	local assf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_powerful)
+	local assf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger2)
+	local assf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger1)
+	local assf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_friend)
+	local assf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_enemy)
+	local assf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_neutral)
+	local ssf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_self)
+	local ssf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_powerful)
+	local ssf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger2)
+	local ssf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger1)
+	local ssf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_friend)
+	local ssf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_enemy)
+	local ssf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_neutral)
 
 	if config.settings.tome.flagpost_tactical then
 		b_self = assf_self
@@ -104,11 +105,11 @@ function _M:toScreenBack(x, y, w, h)
 	end
 
 	if self.old_friend ~= friend or self.old_life ~= lp then
-		local sx = w * .078125
-		local dx = w * .90625 - sx
-		local sy = h * .9375
-		local dy = h * .984375 - sy
-		local lp = math.max(0, self.actor.life) / self.actor.max_life + 0.0001
+		local sx = w * .015625
+		local dx = w * .0625 - sx
+		local sy = h * .03125
+		local dy = h * .953125 - sy
+		if friend < 0 then sx = w * .9375 end
 		local color, color_missing
 		if lp > .75 then -- green
 			color_missing = {0.5058, 0.7058, 0.2235}
@@ -126,9 +127,9 @@ function _M:toScreenBack(x, y, w, h)
 		if not self.old_life then
 			self.CO_life:translate(sx, sy)
 			self.DO_life_missing:translate(0, 0):scale(dx, dy, 1):color(1, 1, 1, 0.5)
-			self.DO_life:translate(0, 0):scale(1, dy, 1):color(1, 1, 1, 1)
+			self.DO_life:translate(0, dy):scale(dx, 1, 1):color(1, 1, 1, 1)
 		end
-		self.DO_life:tween(7, "scale_x", nil, dx * lp, "inQuad"):tween(7, "r", nil, color[1], "inQuad"):tween(7, "g", nil, color[2], "inQuad"):tween(7, "b", nil, color[3], "inQuad")
+		self.DO_life:tween(7, "scale_y", nil, -dy * lp, "inQuad"):tween(7, "r", nil, color[1], "inQuad"):tween(7, "g", nil, color[2], "inQuad"):tween(7, "b", nil, color[3], "inQuad")
 		self.DO_life_missing:tween(7, "r", nil, color_missing[1], "inQuad"):tween(7, "g", nil, color_missing[2], "inQuad"):tween(7, "b", nil, color_missing[3], "inQuad")
 	end
 
