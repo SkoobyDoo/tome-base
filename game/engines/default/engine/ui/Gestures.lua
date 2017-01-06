@@ -76,6 +76,7 @@ end
 
 function _M:initGesturing()
 	if self.gesturing then return end
+	-- DGDGDGDG
 	self.vo = core.display.newVO()
 	self.gesturing = true
 	self.gesture = ""

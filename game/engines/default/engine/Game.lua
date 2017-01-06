@@ -28,6 +28,11 @@ local Shader = require "engine.Shader"
 -- @classmod engine.Game
 module(..., package.seeall, class.make)
 
+-- A simple FPS counter
+local fps_counter_renderer
+local fps_counter
+_M.fps_shown = false
+
 --- Sets up the default keyhandler
 -- Also requests the display size and stores it in "w" and "h" properties
 -- @param[type=Key] keyhandler the default keyhandler for this game
@@ -47,6 +52,11 @@ function _M:init(keyhandler)
 	self.__savefile_version_tokens = {}
 
 	self:defaultMouseCursor()
+
+	local fps_font = core.display.newFont("/data/font/DroidSans.ttf", 24)
+	fps_counter_renderer = core.renderer.renderer():color(1, 1, 1, 0.7)
+	fps_counter = core.renderer.text(fps_font):outline(1, 0, 0, 0, 1)
+	fps_counter_renderer:add(fps_counter)
 end
 
 --- Log a message
@@ -207,6 +217,11 @@ function _M:display(nb_keyframes)
 
 	-- Update tweening engine
 	if nb_keyframes > 0 then tween.update(nb_keyframes) end
+
+	if _M.fps_shown then
+		fps_counter:text(("%0.1f"):format(core.display.getFPS()))
+		fps_counter_renderer:toScreen()
+	end
 end
 
 --- Register a timer

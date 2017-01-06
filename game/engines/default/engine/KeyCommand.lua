@@ -58,6 +58,10 @@ function _M:setupRebootKeys()
 		if not config.settings.cheat then return end
 		util.showMainMenu(false, engine.version[4], engine.version[1].."."..engine.version[2].."."..engine.version[3], game.__mod_info.short_name, game.save_name, true)
 	end)
+	self:addCommand(self._f, {"ctrl","alt","shift"}, function()
+		if not config.settings.cheat then return end
+		require("engine.Game").fps_shown = not require("engine.Game").fps_shown
+	end)
 end
 
 function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)

@@ -89,6 +89,7 @@ float gamma_correction = 1;
 int cur_frame_tick = 0;
 int frame_tick_paused_time = 0;
 /* The currently requested fps for the program */
+float current_fps = NORMALIZED_FPS;
 int requested_fps = NORMALIZED_FPS;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
 int requested_fps_idle = DEFAULT_IDLE_FPS;
@@ -666,60 +667,42 @@ void call_draw(int nb_keyframes)
 }
 
 
-long total_keyframes = 0;
 void on_redraw()
 {
-	static int Frames = 0;
-	static int T0     = 0;
-	static float nb_keyframes = 0;
-	static int last_keyframe = 0;
-	static float reference_fps = NORMALIZED_FPS;
-	static int count_keyframes = 0;
+	static int last_ticks = 0;
+	static int ticks_count = 0;
+	static int keyframes_done = 0;
+	static int frames_done = 0;
+	static float frames_count = 0;
 
-	/* Gather our frames per second */
-	Frames++;
-	if (!is_waiting()) {
-		int t = SDL_GetTicks();
-		if (!anims_paused) cur_frame_tick = t - frame_tick_paused_time;
-		if (t - T0 >= 1000) {
-			float seconds = (t - T0) / 1000.0;
-			float fps = Frames / seconds;
-			reference_fps = fps;
-			printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
-			T0 = t;
-			Frames = 0;
-			last_keyframe = 0;
-			nb_keyframes = 0;
-			count_keyframes = 0;
-		}
-	}
-	else
-	{
-		// If we are waiting we ignore the fact that we are losing time, this way we never try to "catch up" later
-		T0 = SDL_GetTicks();
-		Frames = 0;
-		last_keyframe = 0;
-		nb_keyframes = 0;
-		count_keyframes = 0;
-	}
+	int ticks = SDL_GetTicks();
+	ticks_count += ticks - last_ticks;
 
+	if (!anims_paused) cur_frame_tick = ticks - frame_tick_paused_time;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	float step = NORMALIZED_FPS / reference_fps;
-	nb_keyframes += step;
-
-	int nb = ceilf(nb_keyframes);
-	count_keyframes += nb - last_keyframe;
-	total_keyframes += nb - last_keyframe;
-//	printf("keyframes: %f / %f by %f => %d\n", nb_keyframes, reference_fps, step, nb - (last_keyframe));
-	call_draw(nb - last_keyframe);
+	frames_count += (float)(ticks - last_ticks) / (1000.0 / (float)NORMALIZED_FPS);
+	// printf("ticks %d :: %d\n", ticks - last_ticks, (int)frames_count);
+	int nb_keyframes = (int)frames_count;
+	call_draw(nb_keyframes);
+	keyframes_done += nb_keyframes;
+	frames_done++;
+	frames_count -= nb_keyframes;
 
 	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);
 
-	last_keyframe = nb;
+	last_ticks = ticks;
+
+	if (ticks_count >= 500) {
+		current_fps = (float)frames_done * 1000.0 / (float)ticks_count;
+		// printf("%d frames in %d ms = %0.2f FPS (%d keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
+		ticks_count = 0;
+		frames_done = 0;
+		keyframes_done = 0;
+	}
 
 #ifdef STEAM_TE4
 	if (!no_steam) te4_steam_callbacks();

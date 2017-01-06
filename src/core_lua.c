@@ -1432,6 +1432,11 @@ static int gl_counts_draws(lua_State *L) {
 	return 1;
 }
 
+static int gl_get_fps(lua_State *L) {
+	lua_pushnumber(L, current_fps);
+	return 1;
+}
+
 static const struct luaL_Reg displaylib[] =
 {
 	{"forceRedraw", sdl_redraw_screen},
@@ -1455,6 +1460,7 @@ static const struct luaL_Reg displaylib[] =
 	{"glDepthTest", gl_depth_test},
 	{"glMaxTextureSize", gl_get_max_texture_size},
 	{"countDraws", gl_counts_draws},
+	{"getFPS", gl_get_fps},
 	{NULL, NULL},
 };
 
