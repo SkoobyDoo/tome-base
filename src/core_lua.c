@@ -946,29 +946,6 @@ static int sdl_texture_get_value(lua_State *L)
 	return 1;
 }
 
-static bool _CheckGL_Error(const char* GLcall, const char* file, const int line)
-{
-    GLenum errCode;
-    if((errCode = glGetError())!=GL_NO_ERROR)
-    {
-		printf("OPENGL ERROR #%i: (%s) in file %s on line %i\n",errCode,gluErrorString(errCode), file, line);
-        printf("OPENGL Call: %s\n",GLcall);
-        return FALSE;
-    }
-    return TRUE;
-}
-
-//#define _DEBUG
-#ifdef _DEBUG
-#define CHECKGL( GLcall )                               		\
-    GLcall;                                             		\
-    if(!_CheckGL_Error( #GLcall, __FILE__, __LINE__))     		\
-    exit(-1);
-#else
-#define CHECKGL( GLcall)        \
-    GLcall;
-#endif
-
 static int sdl_texture_outline(lua_State *L)
 {
 #if 0 /* DGDGDGDG */
