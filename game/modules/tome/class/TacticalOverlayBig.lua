@@ -38,38 +38,13 @@ function _M:setup()
 	if self.setuped then return end
 	self.setuped = true
 	local tactic_tiles = Tiles.new(BASE_W, BASE_H, nil, nil, true, false)
-	local assf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_self)
-	local assf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_powerful)
-	local assf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_danger2)
-	local assf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_danger1)
-	local assf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_friend)
-	local assf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_enemy)
-	local assf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_down_"..Map.faction_neutral)
-	local ssf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_self)
-	local ssf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_powerful)
-	local ssf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_danger2)
-	local ssf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_danger1)
-	local ssf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_friend)
-	local ssf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_enemy)
-	local ssf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "small_"..Map.faction_neutral)
-
-	if config.settings.tome.flagpost_tactical then
-		b_self = assf_self
-		b_powerful = assf_powerful
-		b_danger2 = assf_danger2
-		b_danger1 = assf_danger1
-		b_friend = assf_friend
-		b_enemy = assf_enemy
-		b_neutral = assf_neutral
-	else
-		b_self = ssf_self
-		b_powerful = ssf_powerful
-		b_danger2 = ssf_danger2
-		b_danger1 = ssf_danger1
-		b_friend = ssf_friend
-		b_enemy = ssf_enemy
-		b_neutral = ssf_neutral
-	end
+	b_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_self)
+	b_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_powerful)
+	b_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_danger2)
+	b_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_danger1)
+	b_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_friend)
+	b_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_enemy)
+	b_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, Map.faction_neutral)
 end
 
 function _M:init(actor)

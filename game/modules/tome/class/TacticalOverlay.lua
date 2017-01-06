@@ -73,7 +73,7 @@ function _M:setup()
 end
 
 function _M:init(actor)
-	self:setup()
+	_M:setup()
 	self.actor = actor
 	self.DO = core.renderer.renderer():setRendererName("Tactical:UID:"..self.actor.uid)
 
