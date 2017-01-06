@@ -63,7 +63,7 @@ static void hook_wait_display(lua_State *L, lua_Debug *ar)
 
 	static int last_tick = 0;
 	int now = SDL_GetTicks();
-	if (now - last_tick < (3000 / (requested_fps ? requested_fps : 30))) return;
+	if (now - last_tick < (3000 / (requested_fps ? requested_fps : NORMALIZED_FPS))) return;
 	last_tick = now;
 	on_redraw();
 }

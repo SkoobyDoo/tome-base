@@ -89,7 +89,7 @@ float gamma_correction = 1;
 int cur_frame_tick = 0;
 int frame_tick_paused_time = 0;
 /* The currently requested fps for the program */
-int requested_fps = 30;
+int requested_fps = NORMALIZED_FPS;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
 int requested_fps_idle = DEFAULT_IDLE_FPS;
 /* The currently "saved" fps, used for idle transitions. */
@@ -643,7 +643,7 @@ void call_draw(int nb_keyframes)
 {
 	if (draw_waiting(L)) return;
 
-	if (nb_keyframes > 30) nb_keyframes = 30;
+	if (nb_keyframes > NORMALIZED_FPS) nb_keyframes = NORMALIZED_FPS;
 
 	// Notify the particles threads that there are new keyframes
 	if (!anims_paused) {
@@ -673,7 +673,7 @@ void on_redraw()
 	static int T0     = 0;
 	static float nb_keyframes = 0;
 	static int last_keyframe = 0;
-	static float reference_fps = 30;
+	static float reference_fps = NORMALIZED_FPS;
 	static int count_keyframes = 0;
 
 	/* Gather our frames per second */
@@ -707,7 +707,7 @@ void on_redraw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	float step = 30 / reference_fps;
+	float step = NORMALIZED_FPS / reference_fps;
 	nb_keyframes += step;
 
 	int nb = ceilf(nb_keyframes);
@@ -1474,7 +1474,6 @@ int main(int argc, char *argv[])
 	}
 	if (safe_mode) printf("Safe mode activated\n");
 
-//	setupDisplayTimer(30);
 	init_blank_surface();
 
 	boot_lua(2, FALSE, argc, argv);

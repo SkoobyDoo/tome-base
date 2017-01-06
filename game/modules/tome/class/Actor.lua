@@ -887,7 +887,7 @@ function _M:defineDisplayCallback()
 	local ps = self:getParticlesList()
 
 	if not self._tactical then
-		if game.level and game.level.map.view_faction and game.always_target and game.always_target ~= "old" then
+		if game.always_target and game.always_target ~= "old" then
 			if config.settings.tome.small_frame_side then
 				self._tactical = TacticalOverlay.new(self)
 			else

@@ -350,7 +350,7 @@ function _M:init(title, w, h, x, y, alpha, font, showup, skin)
 	if showup ~= nil then
 		self.__showup = showup
 	else
-		self.__showup = 2
+		self.__showup = "outQuint"
 	end
 	self.color = self.color or {r=255, g=255, b=255}
 	if skin then self.ui = skin end
@@ -446,10 +446,12 @@ function _M:generate()
 	local w, h = self.frame.w, self.frame.h
 
 	self.renderer = core.renderer.renderer():setRendererName(self:getClassName()):countDraws(false)
+	self.full_container = core.renderer.container()
+	self.renderer:add(self.full_container)
 	self.renderer:zSort(true)
 	self.do_container = core.renderer.container()
 	self.do_container:translate(self.display_x, self.display_y, -100)
-	self.renderer:add(self.do_container)
+	self.full_container:add(self.do_container)
 
 	local b7 = self:getAtlasTexture(self.frame.b7)
 	local b9 = self:getAtlasTexture(self.frame.b9)
@@ -464,7 +466,7 @@ function _M:generate()
 	local cx, cy = self.frame.ox1, self.frame.oy1
 	self.frame_container = core.renderer.container()
 	self.frame_container:translate(self.display_x, self.display_y, -101)
-	self.renderer:add(self.frame_container)
+	self.full_container:add(self.frame_container)
 
 	self.frame_container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
 
@@ -503,7 +505,7 @@ function _M:generate()
 	if #(self.frame.overlays or {}) > 0 then
 		local overs_container = core.renderer.do_container()
 		overs_container:translate(0, 0, 1)
-		self.renderer:add(overs_container)
+		self.full_container:add(overs_container)
 
 		for i, o in ipairs(self.frame.overlays) do
 			local ov = self:getAtlasTexture(o.image)
@@ -727,6 +729,14 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 	self:updateTitle(self.title)
 
+	local mw, mh = math.floor(self.w / 2), math.floor(self.h / 2)
+	self.renderer:translate(mw, mh)
+	self.full_container:translate(-mw, -mh)
+
+	if self.__showup then
+		self.renderer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup)
+	end
+
 	self.setuped = true
 end
 
@@ -934,51 +944,9 @@ function _M:toScreen(x, y, nb_keyframes)
 
 	-- local shader = self.shadow_shader
 
-	-- local zoom = 1
-	-- if self.__showup then
-	-- 	local eff = self.__showup_effect or "pop"
-	-- 	if eff == "overpop" then
-	-- 		zoom = self.__showup / 7
-	-- 		if self.__showup >= 9 then
-	-- 			zoom = (9 - (self.__showup - 9)) / 7 - 1
-	-- 			zoom = 1 + zoom * 0.5
-	-- 		end
-	-- 		self.__showup = self.__showup + nb_keyframes
-	-- 		if self.__showup >= 11 then self.__showup = nil end
-	-- 	else
-	-- 		zoom = self.__showup / 7
-	-- 		self.__showup = self.__showup + nb_keyframes
-	-- 		if self.__showup >= 7 then self.__showup = nil end
-	-- 	end
-	-- end
-
-	-- -- We translate and scale opengl matrix to make the popup effect easily
 	local ox, oy = x, y
-	-- local hw, hh = math.floor(self.w / 2), math.floor(self.h / 2)
-	-- local tx, ty = x + hw, y + hh
-	-- x, y = -hw, -hh
-	-- core.display.glTranslate(tx, ty, 0)
-	-- if zoom < 1 then core.display.glScale(zoom, zoom, zoom) end
 
-	-- -- Draw the frame and shadow
-	-- if self.frame.shadow then self:drawFrame(x + self.frame.shadow.x, y + self.frame.shadow.y, 0, 0, 0, self.frame.shadow.a) end
-	-- self:drawFrame(x, y, self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a)
-
-	-- -- Title
-	-- if self.title then
-	-- 	if self.title_shadow then
-	-- 		if shader then
-	-- 			shader:use(true)
-	-- 			shader:uniOutlineSize(self.shadow_power, self.shadow_power)
-	-- 			shader:uniTextSize(self.title_tex.tw, self.title_tex.th)
-	-- 		else
-	-- 			self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + 3 + self.frame.title_x, y + 3 + self.frame.title_y, 0, 0, 0, 0.5)
-	-- 		end
-	-- 	end
-	-- 	self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y)
-	-- 	if self.title_shadow and shader then shader:use(false) end
-	-- end
-
+	-- DGDGDGDG
 	-- self:innerDisplayBack(x, y, nb_keyframes, tx, ty)
 
 	-- UI elements
@@ -987,13 +955,11 @@ function _M:toScreen(x, y, nb_keyframes)
 		if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
 	end
 
+	-- DGDGDGDG
 	-- self:innerDisplay(x, y, nb_keyframes, tx, ty)
 
+	-- DGDGDGDG
 	-- if self.first_display then self:firstDisplay() self.first_display = false end
-
-	-- -- Restore normal opengl matrix
-	-- if zoom < 1 then core.display.glScale() end
-	-- core.display.glTranslate(-tx, -ty, 0)
 
 	self.renderer:toScreen()
 end

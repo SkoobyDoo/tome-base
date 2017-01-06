@@ -135,15 +135,18 @@ function _M:init()
 	self.font, self.font_h = self.font_mono, self.font_mono_h
 	game:onTickEnd(function() self.key:unicodeInput(true) end)
 
+	self:setTextOutline(true)
+
 	self:setupUI(false, false)
 
+	self.renderer:zSort("full")
 	self.textinput = Input.new(nil, "", colors.simple(colors.GREEN), w - 15, self.font_h)
-	self.renderer:add(self.textinput:get())
+	self.full_container:add(self.textinput:get())
 	self.textinput:translate(0, h - self.textinput.h, 0)
 	self.textinput:onFocusChange(true)
 
 	self.history_container = core.renderer.container()
-	self.renderer:add(self.history_container)
+	self.full_container:add(self.history_container)
 
 	self.key:addCommands{
 		_RETURN = function()
@@ -336,12 +339,13 @@ function _M:display()
 
 	self.history_container:clear()
 	self.textinput:setText(self.line)
-	self.textinput:setPos(self.line_pos)
+	self.textinput:setPos(self.line_pos+1)
 
 	local i = #_M.history - _M.offset
 	local dh = self.h - self.textinput.h - self.font_h
 	while dh > 0 and i > 0 do
 		local text = core.renderer.text(self.font)
+		self:applyShadowOutline(text)
 		text:text(_M.history[i])
 		text:translate(0, dh, 0)
 		self.history_container:add(text)
