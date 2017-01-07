@@ -277,6 +277,7 @@ local function doTween(self, time, slot, from, to, easing, on_end, on_change)
 	end
 end
 local function doCancelTween(self, slot)
+	if slot == true then return self:rawcancelTween(true) end
 	local slotid = tweenslots[slot]
 	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
 	return self:rawcancelTween(slotid)

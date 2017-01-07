@@ -61,7 +61,7 @@ function _M:setTimeout(secs, cb)
 end
 
 function _M:getWaitDisplay(d)
-	d.__showup = false
+	d.__showup = false d.renderer:cancelTween(true)
 	d.unload_wait = rawget(d, "unload")
 	d.unload = function(self)
 		core.wait.disable()
@@ -77,15 +77,14 @@ function _M:getWaitDisplay(d)
 		if has_max then core.wait.addMaxTicks(has_max) end
 		local i, max, dir = 0, has_max or 20, 1
 
-		local left = {core.display.loadImage(self.base_gfx.."/waiter/left_basic.png"):glTexture()}
-		local right = {core.display.loadImage(self.base_gfx.."/waiter/right_basic.png"):glTexture()}
-		local middle = {core.display.loadImage(self.base_gfx.."/waiter/middle.png"):glTexture()}
-		local bar = {core.display.loadImage(self.base_gfx.."/waiter/bar.png"):glTexture()}
+		local left = core.display.loadImage(self.base_gfx.."/waiter/left_basic.png")
+		local right = core.display.loadImage(self.base_gfx.."/waiter/right_basic.png")
+		local middle = core.display.loadImage(self.base_gfx.."/waiter/middle.png")
+		local bar = core.display.loadImage(self.base_gfx.."/waiter/bar.png")
 
--- DGDGDGDG
 		return function()
 			-- -- Background
-			-- core.wait.drawLastFrame()
+			core.wait.drawLastFrame()
 
 			-- -- Progressbar
 			-- local x
@@ -119,10 +118,10 @@ function _M:getWaitDisplay(d)
 			-- 	txt[1]:toScreenFull(dx + (dw - txt[6]) / 2, dy + (bar[7] - txt[7]) / 2, txt[6], txt[7], txt[2], txt[3])
 			-- end
 
-			-- -- Timeout?
-			-- if self.timeout and core.game.getTime() - self.timeout_start >= self.timeout then
-			-- 	self.timeout_cb()
-			-- end
+			-- Timeout?
+			if self.timeout and core.game.getTime() - self.timeout_start >= self.timeout then
+				self.timeout_cb()
+			end
 		end
 	end
 end

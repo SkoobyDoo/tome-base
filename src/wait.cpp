@@ -117,10 +117,10 @@ static int enable(lua_State *L)
 		wait_vbo = new VBO(VBOMode::STATIC);
 		wait_vbo->setTexture(bkg_t);
 		wait_vbo->addQuad(
-			0, 0, 0, 0,
-			w / screen_zoom, 0, 1, 0,
-			w / screen_zoom, h / screen_zoom, 1, 1,
-			0, h / screen_zoom, 1, 1,
+			0, 0, 0, 1,
+			w / screen_zoom, 0, 1, 1,
+			w / screen_zoom, h / screen_zoom, 1, 0,
+			0, h / screen_zoom, 0, 0,
 			1, 1, 1, 1
 		);
 
