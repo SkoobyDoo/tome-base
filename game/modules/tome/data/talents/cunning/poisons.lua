@@ -391,7 +391,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 15, 2, 8) end, 
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 10, 40) end, -- limit < 50%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -403,7 +403,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-	return ([[Enhances your Deadly Poison with a leeching agent, causing all damage you deal to targets affected by your deadly poison to heal you for %d%%.]]):
+	return ([[Enhances your Deadly Poison with a leeching agent, causing it to heal you for %d%% of the damage it does to its target.]]):
 	format(t.getEffect(self, t))
 	end,
 }
