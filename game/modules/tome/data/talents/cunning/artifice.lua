@@ -551,7 +551,7 @@ newTalent{
 		return true
 	end,
 	short_info = function(self, t, slot_talent)
-		return ([[Throw a smokebomb creating a radius 2 cloud of smoke, lasting %d turns, that blocks sight and reduces enemies' vision by %d. 15 turn cooldown.]]):format(t.getSightLoss(self, slot_talent), t.getDuration(self, slot_talent))
+		return ([[Throw a smokebomb creating a radius 2 cloud of smoke, lasting %d turns, that blocks sight and reduces enemies' vision by %d. 15 turn cooldown.]]):format(t.getDuration(self, slot_talent), t.getSightLoss(self, slot_talent))
 	end,
 	info = function(self, t)
 		local slot = "not prepared"

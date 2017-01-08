@@ -298,7 +298,7 @@ newTalent{
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.7) end,
 	getCrit = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end,
 	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
-	range = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 3, 5)) end,
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 5.5)) end,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 }, CLOSEIN = 2 },
 	on_pre_use = function(self, t, silent) 
@@ -348,8 +348,6 @@ newTalent{
 		self.combat_critical_power = nil
 		self.combat_critical_power = critstore
 
-		
-
 		return true
 	end,
 	info = function(self, t)
@@ -369,13 +367,13 @@ newTalent{
 	stamina = 30,
 	require = techs_dex_req4,
 	tactical = { ATTACKAREA = { weapon = 2 }, CLOSEIN = 1.5 },
-	range = function(self, t) if self:getTalentLevel(t) >=3 then return 3 else return 2 end end,
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 6, 2, 4)) end,
 	radius = 1,
 	requires_target = true,
 	target = function(self, t)
 		return  {type="beam", range=self:getTalentRange(t), talent=t }
 	end,
-	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.6) end,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 0.6, 1.1) end,
 	proj_speed = 20, --not really a projectile, so make this super fast
 	on_pre_use = function(self, t, silent) 
 		if not self:hasDualWeapon() then 
@@ -389,45 +387,72 @@ newTalent{
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
+		local x, y, target = self:getTarget(tg)
+		if not (x and y) then return nil end
+		if core.fov.distance(self.x, self.y, x, y) > tg.range or not self:hasLOS(x, y) then
+			game.logPlayer(self, "The target location must be within range and within view.")
+			return nil 
+		end
 		local _ _, x, y = self:canProject(tg, x, y)
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return nil end
-		if target or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self) then return nil end
-
-		self:projectile(tg, x, y, function(px, py, tg, self)
-			local aoe = {type="ball", radius=1, friendlyfire=true, selffire=false, talent=t, display={ } }
-			
-			self:project(aoe, px, py, function(tx, ty)
-				local target = game.level.map(tx, ty, engine.Map.ACTOR)
-				if not target then return end
-				if target.turn_procs.whirlwind then return end
-				target.turn_procs.whirlwind = true
-				local oldlife = target.life
-				local hit = self:attackTarget(target, nil, t.getDamage(self,t), true)
-				local life_diff = oldlife - target.life
-				if life_diff > 0 and target:canBe('cut') then
-					target:setEffect(target.EFF_CUT, 5, {power=life_diff * 0.1, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
+		if not (x and y) or not self:hasLOS(x, y) then return nil end
+		-- make sure the grid location is valid
+		local mx, my, grids = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
+		if mx and my then
+			if core.fov.distance(self.x, self.y, mx, my) > tg.range or not self:hasLOS(mx, my) then -- not valid,  check other free grids
+				mx, my = nil, nil
+				for i, grid in ipairs(grids) do
+					if core.fov.distance(self.x, self.y, grid[1], grid[2]) <= tg.range and self:hasLOS(grid[1], grid[2]) then
+						mx, my = grid[1], grid[2]
+						break
+					end
 				end
-			end)
-			
-		end)
-		
-		local mx, my = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
-		if not mx or not mx then 
-			game.logSeen(self, "You cannot jump to that location.")
+			end
+		end
+		if not (mx and my) then 
+			game.logPlayer(self, "There is no open space in which to land near there.")
 			return nil 
 		end
 
-		self:move(mx, my, true)	
+		game.logSeen(self, "%s becomes an unstoppable whirlwind of weapons!", self.name:capitalize())
+		-- move the actor
+		self:move(mx, my, true)
 		
+		-- Create a high-speed projectile tracing a path to the destination that does the actual damage
+		local wwproj = self:projectile(tg, mx, my, function(px, py, tg, self, tmp_proj)
+			local aoe = {type="ball", radius=1, friendlyfire=false, selffire=false, talent=t, display={ } }
+			self.__project_source = nil
+			game.level.map:particleEmitter(px, py, 1, "meleestorm", {img="spinningwinds_red"})
+			self:project(aoe, px, py, function(tx, ty)
+				local target = game.level.map(tx, ty, engine.Map.ACTOR)
+				if not target or tmp_proj[target] or self.dead then return end
+				local mh, oh = self:hasDualWeapon()
+				if not (mh and oh) then return end
+				local dam = 0
+				tmp_proj.targets = (tmp_proj.targets or 0) + 1
+				tmp_proj[target] = true
+				local s, h, d = self:attackTargetWith(target, mh.combat, nil, tmp_proj.weapon_mult)
+				if h and d > 0 then dam = dam + d end
+				--print("\t WW mainhand damage", d)
+				s, h, d = self:attackTargetWith(target, oh.combat, nil, tmp_proj.weapon_mult)
+				if h and d > 0 then dam = dam + d end
+				--print("\t WW offhand damage", d)
+				if dam > 0 and target:canBe('cut') then
+					target:setEffect(target.EFF_CUT, 5, {power=dam*0.1, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
+				end
+			end)
+			
+		end
+		)
+		wwproj.tmp_proj.weapon_mult = t.getDamage(self, t)
+		wwproj.energy.value = game.energy_to_act -- make sure projectile begins moving immediately
+
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local range = self:getTalentRange(t)
-		return ([[You quickly move 2 tiles (or 3 at talent level 3 and above) to the target location, leaping around and over anyone in your path and striking any adjacent enemies with both weapons for %d%% weapon damage. All those struck will bleed for 50%% of the damage dealt over 5 turns.]]):
-		format(damage*100)
+		return ([[You quickly move up to %d tiles to arrive adjacent to a target location you can see, leaping around or over anyone in your way.  During your movement, you attack all foes within one grid of your path with both weapons for %d%% weapon damage, causing those struck to bleed for 50%% of the damage dealt over 5 turns.]]):
+		format(range, damage*100)
 	end,
 }
 
