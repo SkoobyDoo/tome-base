@@ -1344,8 +1344,8 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if not force and self:knowTalent(self.T_DEVICE_MASTERY) then
-		local power = self:callTalent(self.T_DEVICE_MASTERY,"trapPower")
+	if not force and self:knowTalent(self.T_DISARM_TRAP) then
+		local power = self:callTalent(self.T_DISARM_TRAP, "trapDetect")
 		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
 		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 			local trap = game.level.map(x, y, Map.TRAP)
@@ -1587,15 +1587,16 @@ function _M:doQuake(tg, x, y)
 end
 
 --- Attempt to detect a trap at x, y
--- param trap the trap to be detected
--- param x, y trap coordinates
--- param power detection power (optional)
+-- param (optional) trap the trap to be detected (defaults to trap at coords)
+-- param (optional) x, y trap coordinates (defaults to trap.x, trap.y)
+-- param (optional) power detection power
 -- @return the trap @ x, y if present and detected
 function _M:detectTrap(trap, x, y, power)
-	power = power or self:callTalent(self.T_DEVICE_MASTERY, "trapPower")
-	if power <= 0 then return end
 	trap = trap or game.level.map(x, y, Map.TRAP)
 	if trap then
+		power = power or self:callTalent(self.T_DANGER_SENSE, "trapDetect")
+		
+		if power <= 0 then return end
 		x, y = x or trap.x, y or trap.y
 		local known = trap:knownBy(self)
 		if not known then
@@ -6331,7 +6332,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 
 		if p.dur > 0 and e.status == "detrimental" then
 			local saved = self:checkHit(save, p.apply_power, 0, 95)
-			local hd = {"Actor:effectSave", saved = saved, save_type = save_type, eff_id = eff_id, e = e, p = p,}
+			local hd = {"Actor:effectSave", saved=saved, save=save, save_type=save_type, eff_id=eff_id, e=e, p=p,}
 			self:triggerHook(hd)
 			self:fireTalentCheck("callbackOnEffectSave", hd)
 			saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p
