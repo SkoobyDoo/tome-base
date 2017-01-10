@@ -82,9 +82,56 @@ function _M:getWaitDisplay(d)
 		local middle = core.display.loadImage(self.base_gfx.."/waiter/middle.png")
 		local bar = core.display.loadImage(self.base_gfx.."/waiter/bar.png")
 
+		-- Progressbar
+		local progressbar = core.renderer.renderer()
+
+		local left_w, bar_height = left:getSize()
+		local right_w, _ = right:getSize()
+		local _, middle_h = middle:getSize()
+		local bar_center = dx + dw / 2
+		local bar_width = dw
+		local bar_offset = math.floor(bar_width / 2)
+
+		progressbar:translate(bar_center, dy + dh / 2)
+
+		progressbar:add(core.renderer.fromSurface(left, -bar_offset -left_w, 0))
+		progressbar:add(core.renderer.fromSurface(right, bar_offset, 0))
+		progressbar:add(core.renderer.fromSurface(middle, -bar_offset, (bar_height - middle_h) / 2, bar_width, nil, true))
+		local barcontainer = core.renderer.renderer("stream"):translate(-bar_offset, (bar_height - middle_h) / 2)
+		local bar = core.renderer.fromSurface(bar, 0, 0, 1, middle_h)
+		barcontainer:add(bar)
+		progressbar:add(barcontainer)
+
+		local bartext = nil
+		if has_max then
+			local font_h = font:lineSkip()
+			bartext = core.renderer.text(font):outline(1):center():translate(math.floor(bar_width / 2), math.floor((middle_h - font_h) / 2), 1)
+			barcontainer:add(bartext)
+		end
+
+		local i, max, dir = has_max or 20, has_max or 20, -1
 		return function()
 			-- -- Background
 			core.wait.drawLastFrame()
+
+			--------------------------------------------------------------------
+			-- Update bar size
+			--------------------------------------------------------------------
+			local x
+			if has_max then
+				i, max = core.wait.getTicks()
+				i = util.bound(i, 0, max)
+			else
+				i = i + dir
+				if dir > 0 and i >= max then dir = -1
+				elseif dir < 0 and i <= -max then dir = 1
+				end
+			end
+			bar:scale(util.bound(bar_width * i / max, 1, bar_width), 1, 1)
+			if bartext then bartext:text(("%d%%"):format(i / max * 100)) end
+			--------------------------------------------------------------------
+
+			progressbar:toScreen()
 
 			-- -- Progressbar
 			-- local x
