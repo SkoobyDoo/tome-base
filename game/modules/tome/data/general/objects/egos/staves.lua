@@ -673,6 +673,9 @@ newEntity{
 	greater_ego = 1,
 	rarity = 35,
 	cost = 60,
+	combat = {
+		accuracy_effect_scale = 0.5,
+	},
 	wielder = {
 		combat_atk = resolvers.mbonus_material(10, 5),
 		combat_dam = resolvers.mbonus_material(10, 5),
