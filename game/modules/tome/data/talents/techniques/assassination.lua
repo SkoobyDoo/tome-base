@@ -66,23 +66,24 @@ newTalent{
 			end
 		end
 
-		if target.dead and self:knowTalent(self.T_STEALTH) and not self:isTalentActive(self.T_STEALTH) then
+		if target.dead and self:knowTalent(self.T_STEALTH) then
 			game:onTickEnd(function()
-				self.hide_chance = 1000
-				self.talents_cd["T_STEALTH"] = 0
-				self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, silent = true})
-				self.hide_chance = nil
+				if not self:isTalentActive(self.T_STEALTH) then
+					self.hide_chance = 1000
+					self.talents_cd["T_STEALTH"] = 0
+					game.logSeen(self, "#GREY#%s slips into shadow.", self.name:capitalize())
+					self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, silent = true})
+					self.hide_chance = nil
+				end
 			end)
 		end
-
 		return true
-
 	end,
 	info = function(self, t)
 		dam = t.getDamage(self,t)*100
 		perc = t.getPercent(self,t)*100
-		return ([[Attempt to finish off a wounded enemy, striking them with both weapons for %d%% weapon damage, plus additional physical damage for each hit that lands equal to %d%% of their missing life (divided by rank: from 1 (critter) to 5 (elite boss)). 
-		A target brought below 20%% of its maximum life may be instantly slain, which you may take advantage of to slip back into stealth.]]):
+		return ([[Attempt to finish off a wounded enemy, striking them with both weapons for %d%% weapon damage, plus additional physical damage for each hit that lands equal to %d%% of their missing life (divided by rank: from 1 (critter) to 5 (elite boss)).  A target brought below 20%% of its maximum life may be instantly slain.
+		You may take advantage of finishing your foe this way to activate stealth (if known).]]):
 		format(dam, perc)
 	end,
 }
@@ -107,7 +108,8 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self,t)
 		return ([[When you exit stealth, you reveal yourself dramatically, intimidating foes around you. 
-		All enemies that witness you leaving stealth within radius %d will be stricken with terror, which randomly inflicts stun, slow (40%% power), or confusion (50%% power) for %d turns.]])
+		All foes radius %d that witness you leaving stealth will be stricken with terror, which randomly inflicts stun, slow (40%% power), or confusion (50%% power) for %d turns.
+		The chance to terrorize improves with your combat accuracy.]])
 		:format(radius, duration)
 	end,
 }

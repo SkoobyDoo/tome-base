@@ -27,18 +27,18 @@ newTalent{
 	points = 5,
 	require = techs_dex_req1,
 	mode = "passive",
-	getDeflectChance = function(self, t) return self:combatTalentLimit(t, 100, 20, 65) end,
-	getDeflectPercent = function(self, t) return self:combatTalentLimit(t, 100, 20, 50) end,
-	getDeflect = function(self, t, fake)
-		local dam,_,weapon = 0,self:hasDualWeapon()
-		if not weapon or weapon.subtype=="mindstar" and not fake then return 0 end
-		if weapon then
-			dam = self:combatDamage(weapon.combat) * self:getOffHandMult(weapon.combat)
-		end
-		return t.getDeflectPercent(self, t) * dam/100
+	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
+		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 100, 15, 20, 60, 250) -- ~68% at TL 6.5, 55 dex
 	end,
+	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
+		return math.max(0, self:combatTalentLimit(t, 100, 15, 50))
+	end,
+	-- deflect count handled in physical effect "PARRY" in mod.data.timed_effects.physical.lua
 	getDeflects = function(self, t, fake)
-		return 2
+		if fake or self:hasDualWeapon() then
+			return self:combatStatScale("cun", 2, 3)
+		else return 0
+		end
 	end,
 	getDamageChange = function(self, t, fake)
 		local dam,_,weapon = 0,self:hasDualWeapon()
@@ -48,28 +48,38 @@ newTalent{
 		end
 		return t.getDeflectPercent(self, t) * dam/100
 	end,
-	getoffmult = function(self,t)
-		return	self:combatTalentLimit(t, 1, 0.65, 0.85)-- limit <100%
-	end,
+	getoffmult = function(self,t) return self:combatTalentLimit(t, 1, 0.6, 0.80) end, -- limit <100%
 	callbackOnActBase = function(self, t)
 		local mh, oh = self:hasDualWeapon()
---		if self:hasDualWeapon() then
 		if (mh and oh) and oh.subtype ~= "mindstar" then
 			self:setEffect(self.EFF_PARRY,1,{chance=t.getDeflectChance(self, t), dam=t.getDamageChange(self, t), deflects=t.getDeflects(self, t), parry_ranged=true})
 		end
 	end,
 	on_unlearn = function(self, t) self:removeEffect(self.EFF_PARRY) end,
 	info = function(self, t)
-		block = t.getDeflect(self,t)
+		mult = t.getoffmult(self,t)*100
+		block = t.getDamageChange(self, t, true)
 		chance = t.getDeflectChance(self,t)
 		perc = t.getDeflectPercent(self,t)
-		mult = t.getoffmult(self,t)*100
-		return ([[Up to %d times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee or ranged attack.
-		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.
-		In addition, the damage dealt by your offhand weapon is increased to %d%%.]]):
-		format(t.getDeflects(self, t, true), chance, block, perc, mult)
+		return ([[Your offhand weapon damage penalty is reduced to %d%%.
+		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee or ranged attack.  The number of parries increases with your Cunning.  (A fractional parry has a reduced chance to succeed.)
+		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.]]):
+		format(100 - mult, t.getDeflects(self, t, true), chance, block, perc)
 	end,
 }
+
+local function do_tempo(self, t, src) -- handle Tempo defensive bonuses
+--game.log("do_tempo called for %s (%s)", self.name, src and src.name)
+	if self.turn_procs.tempo then return end
+	local mh, oh = self:hasDualWeapon()
+	if mh and oh then
+		self:incStamina(t.getStamina(self,t))
+		self.energy.value = self.energy.value + game.energy_to_act*t.getSpeed(self,t)/100
+		local cooldown = self.talents_cd["T_FEINT"] or 0
+		if cooldown > 0 then self.talents_cd["T_FEINT"] = math.max(cooldown - 1, 0)	end
+	end
+	self.turn_procs.tempo = true
+end
 
 newTalent{
 	name = "Tempo",
@@ -77,46 +87,28 @@ newTalent{
 	require = techs_dex_req2,
 	points = 5,
 	mode = "passive",
-	getStamina = function(self, t) return self:combatTalentScale(t, 1, 4) end,
-	getSpeed = function(self, t) return self:combatTalentLimit(t, 50, 5, 15) end,
-	do_tempo = function(self, t, src)
-		if self.turn_procs.tempo then return end
-		self.turn_procs.tempo = true
-		self:incStamina(t.getStamina(self,t))
-		local energy = (game.energy_to_act * t.getSpeed(self,t))/100
-		self.energy.value = self.energy.value + energy
-		local cooldown = self.talents_cd["T_FEINT"] or 0
-		if cooldown > 0 then
-			self.talents_cd["T_FEINT"] = math.max(cooldown - 1, 0)
-		end
-	end,
-	callbackOnMeleeMiss = function(self, t, src)
-		if self.turn_procs.tempo then return end
-		self.turn_procs.tempo = true
-		self:incStamina(t.getStamina(self,t))
-		local energy = (game.energy_to_act * t.getSpeed(self,t))/100
-		self.energy.value = self.energy.value + energy
-		local cooldown = self.talents_cd["T_FEINT"] or 0
-		if cooldown > 0 then
-			self.talents_cd["T_FEINT"] = math.max(cooldown - 1, 0)
-		end
-	end,
-	callbackOnArcheryMiss = function(self, t, src)
-		if self.turn_procs.tempo then return end
-		self.turn_procs.tempo = true
-		self:incStamina(t.getStamina(self,t))
-		local energy = (game.energy_to_act * t.getSpeed(self,t))/100
-		self.energy.value = self.energy.value + energy
-		local cooldown = self.talents_cd["T_FEINT"] or 0
-		if cooldown > 0 then
-			self.talents_cd["T_FEINT"] = math.max(cooldown - 1, 0)
+	getStamina = function(self, t) return self:combatTalentLimit(t, 15, 1, 4) end, -- Limit < 15 (effectively scales with actor speed)
+	getSpeed = function(self, t) return self:combatTalentLimit(t, 25, 5, 10) end, -- Limit < 25% of a turn gained
+	do_tempo = do_tempo,
+	callbackOnMeleeMiss = do_tempo,
+	callbackOnArcheryMiss = do_tempo,
+	-- handle offhand crit
+	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		if crit and not self.turn_procs.tempo_attack then
+			local mh, oh = self:hasDualWeapon()
+			if oh and oh.combat == weapon then
+				self:incStamina(t.getStamina(self,t))
+			end
+			self.turn_procs.tempo_attack = true
 		end
 	end,
 	info = function(self, t)
 		local sta = t.getStamina(self,t)
 		local speed = t.getSpeed(self,t)
-		return ([[You attune yourself to the flow of battle.
-		Once per turn, on parrying, evading an attack, or avoiding damage (by Duelist's Focus), you instantly restore %0.1f stamina and gain %d%% of a turn.]]):format(sta, speed)
+		return ([[The flow of battle invigorates you, allowing you to press your advantage as the fight progresses.
+		Up to once each per turn, while dual wielding, you may:
+		Reposte -- If a melee or archery attack misses you, you parry it, or you avoid some of its damage (by Duelist's Focus), you instantly restore %0.1f stamina and gain %d%% of a turn.
+		Recover -- On performing a critical strike with your offhand weapon, you instantly restore %0.1f stamina.]]):format(sta, speed, sta)
 	end,
 }
 
@@ -130,7 +122,7 @@ newTalent{
 	cooldown = 30,
 	no_energy = true,
 	getChance = function(self, t) return self:combatTalentLimit(t, 25, 5, 15) end,
-	critResist = function(self, t) return self:combatTalentScale(t, 15, 50, 0.75) end,
+	critResist = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
 	on_pre_use = function(self, t, silent, fake)
 		local armor = self:getInven("BODY") and self:getInven("BODY")[1]
 		if armor and (armor.subtype == "heavy" or armor.subtype == "massive") then
@@ -153,8 +145,8 @@ newTalent{
 	info = function(self, t)
 		local chance = t.getChance(self,t)
 		local crit = t.critResist(self,t)
-		return ([[Your reflexes are lightning quick, giving you a %d%% chance to entirely ignore incoming damage and causing all direct critical hits (physical, mental, spells) against you to have a %d%% lower Critical multiplier (but always do at least normal damage).
-This requires unrestricted mobility, and so is not usable while in heavy or massive armor.]])
+		return ([[Your reflexes are lightning quick, giving you a %d%% chance to entirely ignore incoming damage and causing all direct critical hits (physical, mental, spells) against you to have a %d%% lower critical multiplier (but always do at least normal damage).
+		This requires unrestricted mobility, and so is not usable when wearing heavy or massive armour.]])
 		:format(chance, crit)
 	end,
 }
@@ -227,8 +219,8 @@ newTalent{
 		local speed = t.getSpeedPenalty(self,t)
 		local dur = t.getDuration(self,t)
 		return ([[Make a cunning feint that tricks your target into swapping places with you.  Taking advantage of the switch allows you to strike the target with a crippling blow, dealing %d%% offhand damage and reducing its melee, spellcasting, and mind speed by %d%% for %d turns.
-The chance to cripple your target improves with your Accuracy, while the speed penalty increases with your Dexterity.
-Tempo will reduce the cooldown of this talent by 1 turn each time it is triggered.]]):
+		The chance to cripple your target improves with your Accuracy, while the speed penalty increases with your Dexterity.
+		Tempo will reduce the cooldown of this talent by 1 turn each time it is triggered defensively.]]):
 		format(dam*100, speed, dur)
 	end,
 }

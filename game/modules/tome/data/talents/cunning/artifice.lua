@@ -551,18 +551,17 @@ newTalent{
 		return true
 	end,
 	short_info = function(self, t, slot_talent)
-		return ([[Throw a smokebomb creating a radius 2 cloud of smoke, lasting %d turns, that blocks sight and reduces enemies' vision by %d. 15 turn cooldown.]]):format(t.getSightLoss(self, slot_talent), t.getDuration(self, slot_talent))
+		return ([[Throw a smokebomb creating a radius 2 cloud of smoke, lasting %d turns, that blocks sight and reduces enemies' vision by %d. 15 turn cooldown.]]):format(t.getDuration(self, slot_talent), t.getSightLoss(self, slot_talent))
 	end,
 	info = function(self, t)
 		local slot = "not prepared"
 		for slot_id, tool_id in pairs(self.artifice_tools) do
 			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
-		return ([[Throw a vial of volatile liquid that explodes in a smoke cloud of radius %d, blocking line of sight for 5 turns. Enemies within will have their vision range reduced by %d.
-		Creatures affected by smokescreen can never prevent you from activating stealth, even if their proximity would normally forbid it.
-		Use of this talent will not break stealth.
+		return ([[Throw a vial of volatile liquid that explodes in a radius %d cloud of smoke lasting %d turns.  The smoke blocks line of sight, and enemies within will have their vision range reduced by %d.
+		Use of this talent will not break stealth, and creatures affected by the smokes can never prevent you from activating stealth, even if their proximity would normally forbid it.
 		#YELLOW#Prepared with: %s#LAST#]]):
-		format(self:getTalentRadius(t), t.getSightLoss(self,t), slot)
+		format(self:getTalentRadius(t), t.getDuration(self, t), t.getSightLoss(self,t), slot)
 	end,
 }
 

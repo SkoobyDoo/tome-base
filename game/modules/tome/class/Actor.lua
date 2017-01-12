@@ -1605,7 +1605,7 @@ function _M:detectTrap(trap, x, y, power)
 				trap:setKnown(self, true, x, y)
 				if self.player then
 					game.level.map:updateMap(x, y)
-					game.logPlayer(self, "#AQUAMARINE#You notice a trap (%s)!", trap:getName())
+					game.logPlayer(self, "#CADET_BLUE#You notice a trap (%s)!", trap:getName())
 				end
 			end
 		end
