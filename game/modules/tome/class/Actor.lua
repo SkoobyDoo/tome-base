@@ -5121,6 +5121,7 @@ function _M:fireTalentCheck(event, ...)
 	local ret = false
 	if self[store] then upgradeStore(self[store], store) end
 	if self[store] and next(self[store].__priorities) then
+		local old_ps = self.__project_source
 		for _, info in ipairs(self[store].__sorted) do
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
@@ -5133,7 +5134,7 @@ function _M:fireTalentCheck(event, ...)
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
 			end
-			self.__project_source = nil
+			self.__project_source = old_ps
 		end
 	end
 	return ret
@@ -5153,23 +5154,26 @@ function _M:iterCallbacks(event)
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = self.tmp[tid]
 					local ret = self:callEffect(tid, event, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			elseif kind == "object" then
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = tid
 					local ret = tid:check(event, self, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			else
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = self.sustain_talents[tid]
 					local ret = self:callTalent(tid, event, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			end
