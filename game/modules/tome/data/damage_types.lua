@@ -100,18 +100,29 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		print("[PROJECTOR] starting dam", dam)
 
 		local ignore_direct_crits = target:attr 'ignore_direct_crits'
-		if crit_power > 1 and ignore_direct_crits and rng.percent(ignore_direct_crits) then
+		if crit_power > 1 and ignore_direct_crits and rng.percent(ignore_direct_crits) then -- reverse crit damage
 			dam = dam / crit_power
 			crit_power = 1
 			print("[PROJECTOR] crit power reduce dam", dam)
 			game.logSeen(target, "%s shrugs off the critical damage!", target.name:capitalize())
-		elseif src.turn_procs and crit_power > 1 and src.turn_procs.shadowstrike_crit and src.x then
-			local d = core.fov.distance(src.x, src.y, x, y)
-			if d > 3 then
-				local reduc = math.scale(d, 3, 10, 0, 1)
-				dam = dam * (crit_power - reduc * src.turn_procs.shadowstrike_crit) / crit_power
-				print("[PROJECTOR] shadowstrike crit power reduce dam on range", dam, d, reduc, "::", crit_power, "=>", crit_power - reduc * src.turn_procs.shadowstrike_crit)
-				crit_power = crit_power - reduc * src.turn_procs.shadowstrike_crit
+		end
+		if crit_power > 1 then
+			-- Add crit bonus power for being unseen (direct damage only, diminished with range)
+			local unseen_crit = src.__is_actor and target.__is_actor and not src.__project_source and src.unseen_critical_power
+			if unseen_crit and not target:canSee(src) and src:canSee(target) then
+				local d, reduc = core.fov.distance(src.x, src.y, x, y), 0
+				if d > 3 then
+					reduc = math.scale(d, 3, 10, 0, 1)
+					unseen_crit = math.max(0, unseen_crit*(1 - reduc))
+				end
+				if unseen_crit > 0 then
+					if target.unseen_crit_defense and target.unseen_crit_defense > 0 then
+						unseen_crit = math.max(0, unseen_crit*(1 - target.unseen_crit_defense))
+					end
+					dam = dam * (crit_power + unseen_crit)/crit_power
+					crit_power = crit_power + unseen_crit
+					print("[PROJECTOR] after unseen_critical_power type/dam/range/power", type, dam, d, unseen_crit, "::", crit_power - unseen_crit, "=>", crit_power)
+				end
 			end
 		end
 

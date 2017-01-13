@@ -3247,23 +3247,6 @@ newEffect{
 	end,
 }
 
-
-newEffect{
-	name = "SHADOWSTRIKE", image = "talents/shadowstrike.png",
-	desc = "Shadowstrike",
-	long_desc = function(self, eff) return ("The target's critical strike damage bonus is increased by %d%%."):format(eff.power) end,
-	type = "magical",
-	subtype = { darkness=true },
-	status = "beneficial",
-	parameters = { power=1 },
-	activate = function(self, eff)
-		eff.critid = self:addTemporaryValue("combat_critical_power", eff.power)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("combat_critical_power", eff.critid)
-	end,
-}
-
 newEffect{
 	name = "SHADOW_DANCE", image = "talents/shadow_dance.png",
 	desc = "Shadow Dance", 
@@ -3280,7 +3263,6 @@ newEffect{
 		if not eff.no_cancel_stealth and not rng.percent(self.hide_chance or 0) then
 			local detect = self:stealthDetection(eff.rad)
 			local netstealth = (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
---			self:alterTalentCoolingdown(self.T_STEALTH, -20)
 			if detect > 0 and self:checkHit(detect, netstealth) then
 				game.logPlayer(self, "You have been detected!")
 				self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=false})
