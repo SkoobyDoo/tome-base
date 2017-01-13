@@ -3121,8 +3121,8 @@ newEffect{
 newEffect{
 	name = "FUMBLE", image = "talents/fumble.png",
 	desc = "Fumble",
-	long_desc = function(self, eff) return ("The target is suffering from distracting wounds, giving them a %d%% chance to fail their next talent usage and injure themself."):
-		format( eff.power*eff.stacks ) end,
+	long_desc = function(self, eff) return ("The target is suffering from distracting wounds, and has a %d%% chance to fail to use a talent and injure itself for %d physical damage."):
+		format( eff.power*eff.stacks, eff.dam ) end,
 	charges = function(self, eff) return eff.stacks end,
 	type = "other",
 	subtype = { tactic=true },

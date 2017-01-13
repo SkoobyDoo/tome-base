@@ -119,7 +119,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getFlatReduction = function(self, t) return self:combatTalentScale(t, 30, 70, 0.75) end,
-	critResist = function(self, t) return self:combatTalentScale(t, 15, 50, 0.75) end,
+	critResist = function(self, t) return self:combatTalentScale(t, 8, 25, 0.75) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "ignore_direct_crits", t.critResist(self, t))
 	end,

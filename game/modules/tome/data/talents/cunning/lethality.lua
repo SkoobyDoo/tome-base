@@ -32,7 +32,7 @@ newTalent{
 	info = function(self, t)
 		local critchance = t.getCriticalChance(self, t)
 		local power = t.critpower(self, t)
-		return ([[You have learned to find and hit weak spots. All your strikes have a %0.2f%% greater chance to be critical hits, and your critical hits do %0.1f%% more damage.
+		return ([[You have learned to find and hit weak spots. All your strikes have a %0.1f%% greater chance to be critical hits, and your critical hits do %0.1f%% more damage.
 		Also, when using knives, you now use your Cunning instead of your Strength for bonus damage.]]):
 		format(critchance, power)
 	end,
@@ -138,7 +138,7 @@ newTalent{
 	tactical = { BUFF = 1 },
 	fixed_cooldown = true,
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,
-	getMaxLevel = function(self, t) return self:getTalentLevel(t) end,
+	getMaxLevel = function(self, t) return math.max(1, self:getTalentLevelRaw(t)) end,
 	speed = "combat",
 	action = function(self, t)
 		local tids = {}
