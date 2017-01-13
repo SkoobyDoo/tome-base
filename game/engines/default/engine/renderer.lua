@@ -149,7 +149,8 @@ function core.renderer.textureTable(s)
 end
 
 function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
-	return core.renderer.fromTextureTable(core.renderer.textureTable(s), x, y, w, h, repeat_quads, r, g, b, a, v)
+	local t = core.renderer.textureTable(s)
+	return core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
 end
 
 function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
