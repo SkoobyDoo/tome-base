@@ -110,7 +110,9 @@ static int enable(lua_State *L)
 		if (lua_isfunction(L, 2))
 		{
 			lua_pushvalue(L, 2);
-			lua_call(L, 0, 1);
+			if (lua_pcall(L, 0, 1, 0)) {
+				printf("Waiter error: %s\n", lua_tostring(L, -1));
+			}
 			wait_draw_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 		}
 
