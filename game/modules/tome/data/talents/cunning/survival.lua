@@ -76,8 +76,7 @@ newTalent{
 	trapDisarm = function(self, t)
 		local tl, power = self:getTalentLevel(t), self:attr("disarm_bonus") or 0
 		if tl > 0 then 
---			power = power + self:combatScale(tl * self:getCun(25, true), 0, 0, 125, 125)
-			power = power + math.max(0, self:combatScale(tl * self:getCun(25, true), 10, 3.75, 90, 125, 0.25)) -- ~ 90 at TL 5, 100 cunning
+			power = power + self:combatScale(tl * self:getCun(25, true), 0, 0, 125, 125)
 		end
 		return power
 	end,
