@@ -1344,15 +1344,17 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if not force and self:knowTalent(self.T_DISARM_TRAP) then
-		local power = self:callTalent(self.T_DISARM_TRAP, "trapDetect")
-		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
-			local trap = game.level.map(x, y, Map.TRAP)
-			if trap then self:detectTrap(trap, x, y, power) end
-		end end
+	if not force then
+		local t_det = self:attr("see_traps")
+		if t_det then
+			local grids = core.fov.circle_grids(self.x, self.y, 1, true)
+			for x, yy in pairs(grids) do for y, _ in pairs(yy) do
+				local trap = game.level.map(x, y, Map.TRAP)
+				if trap then self:detectTrap(trap, x, y, t_det) end
+			end end
+		end
 	end
-
+	
 	-- knowing Unnatural Body allows you to get the Cursed Aura tree
 	if moved and self:knowTalent(self.T_UNNATURAL_BODY) and not self:knowTalentType("cursed/cursed-aura") and self.chooseCursedAuraTree then
 		if self.player then
@@ -1594,8 +1596,7 @@ end
 function _M:detectTrap(trap, x, y, power)
 	trap = trap or game.level.map(x, y, Map.TRAP)
 	if trap then
-		power = power or self:callTalent(self.T_DANGER_SENSE, "trapDetect")
-		
+		power = power or self:attr("see_traps") or 0
 		if power <= 0 then return end
 		x, y = x or trap.x, y or trap.y
 		local known = trap:knownBy(self)

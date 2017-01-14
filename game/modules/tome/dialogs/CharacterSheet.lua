@@ -703,6 +703,10 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		if text then
 			self:mouseTooltip(self.TOOLTIP_VISION_INFRA,  s:drawColorStringBlended(self.font, ("Heighten Senses: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 		end
+		text = compare_fields(player, actor_to_compare, function(actor) return actor:attr("see_traps") and (actor:attr("see_traps") or 0) end, "%.1f", "%+.1f")
+		if text then
+			self:mouseTooltip(self.TOOLTIP_SEE_TRAPS,  s:drawColorStringBlended(self.font, ("Detect Traps   : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		end
 		text = compare_fields(player, actor_to_compare, function(who) return who:attr("stealth") and who.stealth + (who:attr("inc_stealth") or 0) end, "%.1f", "%+.1f")
 		if text then
 			self:mouseTooltip(self.TOOLTIP_VISION_STEALTH,  s:drawColorStringBlended(self.font, ("Stealth        : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h

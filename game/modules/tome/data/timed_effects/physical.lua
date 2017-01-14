@@ -3523,26 +3523,6 @@ newEffect{
 	end,
 }
 
-newEffect {
-	name = "DANGER_SENSE", image = "talents/danger_sense.png",
-	desc = "Danger Sense",
-	type = "physical",
-	subtype = {tactic = true},
-	status = "beneficial",
-	parameters = {
-		-- percent of all damage to ignore
-		reduce = 10
-	},
-	on_gain = function(self, eff) return ("#RED##Target# instinctively senses danger, protecting %s!"):format(self:his_her_self()) end,
-	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "incoming_reduce", eff.reduce)
-	end,
-	long_desc = function(self, eff)
-		return ([[The target is extremely vigilant, avoiding %d%% of all incoming damage.]])
-		:format(eff.reduce)
-	end,
-}
-
 newEffect{
 	name = "MOBILE_DEFENCE", image = "talents/light_armour_training.png",
 	desc = "Mobile Defense",
