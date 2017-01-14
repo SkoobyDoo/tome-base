@@ -643,6 +643,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			self.__attacktargetwith_recursing = self.__attacktargetwith_recursing - 1
 		else
 			self.__attacktargetwith_recursing = weapon.attack_recurse - 1
+			self.__attacktargetwith_recursing_procs_reduce = weapon.attack_recurse_procs_reduce
 		end
 
 		if self.__attacktargetwith_recursing > 0 then
@@ -651,6 +652,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			dam = math.max(dam, newdam)
 		else
 			self.__attacktargetwith_recursing = nil
+			self.__attacktargetwith_recursing_procs_reduce = nil
 		end
 	end
 
@@ -667,6 +669,10 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if self:attr("hit_penalty_2h") then
 		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus or 1
 		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus * 0.5
+	end
+	if self.__attacktargetwith_recursing_procs_reduce then
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus or 1
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus / self.__attacktargetwith_recursing_procs_reduce
 	end
 
 	-- handle stalk targeting for hits (also handled in Actor for turn end effects)
