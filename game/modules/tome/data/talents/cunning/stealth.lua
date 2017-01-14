@@ -58,7 +58,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 3 },
 	no_break_stealth = true,
-	getStealthPower = function(self, t) return math.max(0, self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 15, 1, 64, 50)) end, --TL 5, cun 100 = 64
+	getStealthPower = function(self, t) return math.max(0, self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 15, 1, 64, 50, 0.25)) end, --TL 5, cun 100 = 64
 	getRadius = stealthRadius,
 	on_pre_use = function(self, t, silent, fake)
 		local armor = self:getInven("BODY") and self:getInven("BODY")[1]

@@ -38,8 +38,10 @@ newTalent{
 	points = 5,
 	random_boss_rarity = 50, -- make sure a reasonable number of randbosses don't take this
 	sense = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	seePower = function(self, t) return self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 5, 0, 80, 75) end,
-	trapDetect = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 75, 125) end, -- trap detection power, same formula used for trap power (gain advantage with Danger Sense)
+--	seePower = function(self, t) return self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 5, 0, 80, 75) end,
+--	trapDetect = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 75, 125) end, -- trap detection power, same formula used for trap power (gain advantage with Danger Sense)
+	seePower = function(self, t) return math.max(0, self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 10, 1, 80, 75, 0.25)) end, --TL 5, cun 100 = 80
+	trapDetect = function(self, t) return math.max(0, self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 10, 3.75, 75, 125, 0.25)) end, -- trap detection power, same formula used for trap power (gain advantage with Danger Sense)
 	callbackOnStatChange = function(self, t, stat, v)
 		if stat == self.STAT_CUN then
 			self:updateTalentPassives(t)
@@ -76,7 +78,8 @@ newTalent{
 	trapDisarm = function(self, t)
 		local tl, power = self:getTalentLevel(t), self:attr("disarm_bonus") or 0
 		if tl > 0 then 
-			power = power + self:combatScale(tl * self:getCun(25, true), 0, 0, 125, 125)
+--			power = power + self:combatScale(tl * self:getCun(25, true), 0, 0, 125, 125)
+			power = power + math.max(0, self:combatScale(tl * self:getCun(25, true), 10, 3.75, 90, 125, 0.25)) -- ~ 90 at TL 5, 100 cunning
 		end
 		return power
 	end,
@@ -120,7 +123,8 @@ newTalent{
 	points = 5,
 	random_boss_rarity = 50, -- make sure a reasonable number of randbosses don't take this
 	mode = "passive",
-	trapDetect = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 35, 125) end, -- bonus trap detection power
+--	trapDetect = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 0, 0, 35, 125) end, -- bonus trap detection power
+	trapDetect = function(self, t) return math.max(0, self:combatScale(self:getTalentLevel(t) * self:getCun(25, true), 5, 3.75, 35, 125, 0.25)) end, -- bonus trap detection power
 	critResist = function(self, t) return self:combatTalentScale(t, 1.3, 5) end,
 	getUnseenReduction = function(self, t) return self:combatTalentLimit(t, 1, .1, .25) end, -- Limit < 100%
 	savePenalty = function(self, t) return self:combatLimit(self:getTalentLevel(t) * self:getCun(25, true), 5, 20, 0, 10, 125) end, --Limit: best is save @ -5
