@@ -2710,9 +2710,22 @@ newEffect{
 	decrease = 0, no_remove = true,
 	parameters = {power=1},
 	charges = function(self, eff) return ("%0.1f%%"):format(eff.power) end,
-	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "combat_physcrit", eff.power)
+	on_merge = function(self, old_eff, new_eff)
+		self:removeTemporaryValue("combat_physcrit", old_eff.tmpid)
+		old_eff.tmpid = self:addTemporaryValue("combat_physcrit", new_eff.power)
+		old_eff.power = new_eff.power
+		return old_eff
 	end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("combat_physcrit", eff.power)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=true,  size_factor=1.5, img="tentacles_shader/berserker_aura_2"}, shader={type="tentacles", wobblingType=0, appearTime=0.3, time_factor=500, noup=2.0}})
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=1.5, img="tentacles_shader/berserker_aura_2"}, shader={type="tentacles", wobblingType=0, appearTime=0.3, time_factor=500, noup=1.0}})
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("combat_physcrit", eff.tmpid)
+	end
 }
 
 
