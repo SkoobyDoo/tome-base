@@ -158,6 +158,8 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 		speed, hit, damtype, mult = hd.speed, hd.hit, hd.damtype, hd.mult
 		if hd.stop then return hit end
 	end
+	-- Could add callback here:
+	-- self:fireTalentCheck("callbackOnMeleeAttackTarget", hd)
 
 	if not speed and self:isTalentActive(self.T_GESTURE_OF_PAIN) then
 		if self.no_gesture_of_pain_recurse then return false end
@@ -371,8 +373,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	-- if insufficient resources, try to use unarmed or cancel attack
 	local unarmed = self:getObjectCombat(nil, "barehand")
 	if (weapon or unarmed).use_resources and not self:useResources((weapon or unarmed).use_resources) then
---	if weapon.use_resources and not self:useResources(weapon.use_resources) then
---		local unarmed = self:getObjectCombat(nil, "barehand")
 		if unarmed == weapon then
 			print("[attackTargetWith] (unarmed) against ", target.name, "unarmed attack fails due to resources")
 			return self:combatSpeed(unarmed), false, 0
@@ -438,11 +438,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		repelled = t.isRepelled(target, t)
 	end
 
+	-- melee attack bonus hooks/callbacks  Note: These are post rescaleCombatStats
 	local hd = {"Combat:attackTargetWith:attackerBonuses", target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam, apr=apr, atk=atk, def=def, armor=armor}
-	if self:triggerHook(hd) then
-		target, weapon, damtype, mult, dam, apr, atk, def, armor = hd.target, hd.weapon, hd.damtype, hd.mult, hd.dam, hd.apr, hd.atk, hd.def, hd.armor
-		if hd.stop then return end
-	end
+	self:triggerHook(hd)
+	self:fireTalentCheck("callbackOMeleeAttackBonuses", hd)
+	target, weapon, damtype, mult, dam, apr, atk, def, armor = hd.target, hd.weapon, hd.damtype, hd.mult, hd.dam, hd.apr, hd.atk, hd.def, hd.armor
+	if hd.stop then return end
+	print("[ATTACK] after melee attack bonus hooks and callbacks :: ", dam, apr, armor, atk, "vs.", def, "::", mult)
 
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
 	local hitted = false
@@ -1110,13 +1112,10 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		self.logCombat(target, self, "#Source# counter attacks #Target# with %s shield shards!", string.his_her(target))
 		target:attackTarget(self, DamageType.NATURE, self:combatTalentWeaponDamage(t, 0.4, 1), true)
 	end
-	-- pass all parameters here?
---function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
-	self:fireTalentCheck("callbackOnMeleeAttack", target, hitted, crit, weapon, damtype, mult, dam)
-
+	-- post melee attack hooks/callbacks, not included: apr, armor, atk, def, evaded, repelled, old_target_life
 	local hd = {"Combat:attackTargetWith", hitted=hitted, crit=crit, target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam}
 	if self:triggerHook(hd) then hitted = hd.hitted end
-
+	self:fireTalentCheck("callbackOnMeleeAttack", target, hitted, crit, weapon, damtype, mult, dam, hd)
 	self.__global_accuracy_damage_bonus = nil
 
 	return hitted
@@ -1236,8 +1235,6 @@ function _M:combatDefenseBase(fake)
 		if self:knowTalent(self.T_MOBILE_DEFENCE) then
 			mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
 		end
-		local eff = self:hasEffect(self.EFF_MOBILE_DEFENCE)
-		if eff then	mult = mult + (eff.power/100) end
 	end
 	
 	return math.max(0, d * mult + add) -- Add bonuses last to avoid compounding defense multipliers from talents
@@ -1933,6 +1930,8 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 	end
 	return dam, crit
 end
+
+-- need to get target for spell/mind crit defense
 
 --- Computes spell crit for a damage
 function _M:spellCrit(dam, add_chance, crit_power_add)

@@ -274,7 +274,7 @@ trapping_CreateTrap = function(self, t, dur, add)
 			if self.temporary <= 0 then
 				if game.level.map(self.x, self.y, engine.Map.TRAP) == self then
 					game.level.map:remove(self.x, self.y, engine.Map.TRAP)
-					if self.summoner and self.stamina then -- Refund
+					if self.summoner and self.stamina and self.stamina > 0 then -- Refund
 						self.summoner:incStamina(self.stamina * 0.8)
 						game.logPlayer(self.summoner, "#CADET_BLUE#Your %s has expired.", self.name)
 					end

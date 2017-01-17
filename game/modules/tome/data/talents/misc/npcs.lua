@@ -3213,7 +3213,6 @@ newTalent{
 	end,
 }
 
-
 newTalent{
 	name = "Charm Mastery",
 	type = {"other/other", 1},

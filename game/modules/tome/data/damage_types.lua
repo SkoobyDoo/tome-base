@@ -322,8 +322,9 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 			local dominated = target:hasEffect(target.EFF_DOMINATED)
 			if dominated and dominated.src == src then pen = pen + (dominated.resistPenetration or 0) end
-			local exposed = target:hasEffect(target.EFF_EXPOSE_WEAKNESS)
-			if exposed then pen = pen + 50 end
+			-- Expose Weakness
+			local exposed = (state.is_melee or state.is_archery) and src.__is_actor and src:hasEffect(src.EFF_EXPOSE_WEAKNESS)
+			if exposed and exposed.target == target then pen = pen + exposed.penetration print("[PROJECTOR] expose weakness pen", exposed.penetration) end
 			if target:attr("sleep") and src.attr and src:attr("night_terror") then pen = pen + src:attr("night_terror") end
 			local res = target:combatGetResist(type)
 			pen = util.bound(pen, 0, 100)
