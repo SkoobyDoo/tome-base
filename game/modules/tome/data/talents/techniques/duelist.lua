@@ -112,6 +112,7 @@ newTalent{
 	end,
 }
 
+--This could be replaced with an APR/hit talent if more offense is needed.
 newTalent{
 	name = "Duelist's Focus",
 	type = {"technique/duelist", 3},

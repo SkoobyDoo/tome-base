@@ -84,7 +84,7 @@ newTalent{
 	points = 5,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 6.6)) end,
 	-- _M:combatSeeStealth and _M:combatSeeInvisible functions updated in mod.class.interface.Combat.lua
-	sensePower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getWil(15, true), 5, 0, 80, 75) end,
+	sensePower = function(self, t) return math.max(0, self:combatScale(self:getWil(15, true)*self:getTalentLevel(t), 10, 1, 80, 75, 0.25)) end, --TL 5, wil 100 = 80
 	info = function(self, t)
 		local range = self:getTalentRange(t)
 		local sense = t.sensePower(self, t)

@@ -58,7 +58,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 3 },
 	no_break_stealth = true,
-	getStealthPower = function(self, t) return math.max(0, self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 15, 1, 64, 50)) end, --TL 5, cun 100 = 64
+	getStealthPower = function(self, t) return math.max(0, self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 15, 1, 64, 50, 0.25)) end, --TL 5, cun 100 = 64
 	getRadius = stealthRadius,
 	on_pre_use = function(self, t, silent, fake)
 		local armor = self:getInven("BODY") and self:getInven("BODY")[1]
@@ -86,14 +86,6 @@ newTalent{
 			local dur = self:callTalent(self.T_SOOTHING_DARKNESS, "getDuration")
 			self:setEffect(self.EFF_SOOTHING_DARKNESS, dur, {life=life, stamina=sta})
 		end
-		
-		if self:knowTalent(self.T_SHADOWSTRIKE) then
-			local power = self:callTalent(self.T_SHADOWSTRIKE, "getMultiplier")
-			local dur = self:callTalent(self.T_SHADOWSTRIKE, "getDuration")
-			
-			self:setEffect(self.EFF_SHADOWSTRIKE, dur, {power=power})
-		end
-		
 		local res = {
 			stealth = self:addTemporaryValue("stealth", t.getStealthPower(self, t)),
 			lite = self:addTemporaryValue("lite", -1000),
@@ -128,14 +120,6 @@ newTalent{
 			local dur = self:callTalent(self.T_SOOTHING_DARKNESS, "getDuration")
 			self:setEffect(self.EFF_SOOTHING_DARKNESS, dur, {life=life, stamina=sta})
 		end
-		
-		if self:knowTalent(self.T_SHADOWSTRIKE) then
-			local power = self:callTalent(self.T_SHADOWSTRIKE, "getMultiplier")
-			local dur = self:callTalent(self.T_SHADOWSTRIKE, "getDuration")
-			
-			self:setEffect(self.EFF_SHADOWSTRIKE, dur, {power=power})
-		end
-
 	end,
 	info = function(self, t)
 		local stealthpower = t.getStealthPower(self, t) + (self:attr("inc_stealth") or 0)
@@ -156,13 +140,15 @@ newTalent{
 	require = cuns_req2,
 	mode = "passive",
 	points = 5,
-	getMultiplier = function(self, t) return self:combatTalentScale(t, 10, 35) end,
-	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
+	getMultiplier = function(self, t) return self:combatTalentScale(t, .10, .35) end,
+
+	passives = function(self, t, p) -- attribute that increases crit multiplier vs targets that cannot see us
+		self:talentTemporaryValue(p, "unseen_critical_power", t.getMultiplier(self, t))
+	end,
 	info = function(self, t)
-	local multiplier = t.getMultiplier(self, t)
-	return ([[When striking from stealth, the attack is automatically critical if the target does not notice you just before you land it. Spell and mind crits always critically strike, regardless of whether the target can see you.
-In addition, the surprise caused by your assault increases your critical multiplier by %d%%. This effect persists for 2 turns after exiting stealth, or 3 turns at talent level 3 and above.]]):
-		format(multiplier)
+	local multiplier = t.getMultiplier(self, t)*100
+	return ([[You know how to make the most out of being unseen.  Your critical multiplier against targets that cannot see you is increased by up to %d%%. (You must be able to see your target and the bonus is reduced from its full value at range 3 to 0 at range 10.)
+	Also, when striking from stealth, your attacks are automatically critical if the target does not notice you just before you land it.  (Spell and mind attacks critically strike even if the target notices you.)]]):format(multiplier)
 	end,
 }
 

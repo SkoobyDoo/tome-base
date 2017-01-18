@@ -499,6 +499,10 @@ TOOLTIP_VISION_SEE_INVISIBLE = [[#GOLD#See invisible#LAST#
 Your power to see invisible creatures. The higher it is, the more likely you are to see them (based on their own invisibility score).
 If you do not have any see invisible score you will never be able to see invisible creatures.
 ]]
+TOOLTIP_SEE_TRAPS = [[#GOLD#Detect Traps#LAST#
+Your power to find hidden traps. The higher it is, the more likely you are to notice a trap before setting it off  (based on its own detection score).
+If you do not have any detect traps score, you can not detect traps without triggering them.
+]]
 TOOLTIP_ANTIMAGIC_USER = [[#GOLD#Antimagic User#LAST#
 Dedicated to opposing and destroying magical and arcane influence in the world.
 The use of spells or arcane-powered equipment is impossible.

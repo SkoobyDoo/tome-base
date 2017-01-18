@@ -70,8 +70,7 @@ The support functions and tables are assigned to ActorTalents.
 -- Trap Support Functions
 ----------------------------------------------------------------
 --- get the base trap detection power
---local trapPower = function(self,t) return math.max(1,self:combatScale(self:getTalentLevel(self.T_TRAP_MASTERY) * self:getCun(15, true), 0, 0, 75, 75)) end -- Used to determine detection and disarm power, about 75 at level 50
-local trapPower = function(self,t) return math.max(1,self:combatScale(self:getTalentLevel(self.T_TRAP_MASTERY) * self:getCun(25, true), 0, 0, 75, 125)) end -- Used to determine detection and disarm power, ~ 75 at TL 5, 100 cunning
+local trapPower = function(self,t) return math.max(1, self:combatScale(self:getTalentLevel(self.T_TRAP_MASTERY) * self:getCun(25, true), 10, 3.75, 75, 125, 0.25)) end -- Used to determine detection and disarm power, ~ 75 at TL 5, 100 cunning
 
 --- get the maximum range at which a trap can be deployed
 trap_range = function(self, t)
@@ -275,7 +274,7 @@ trapping_CreateTrap = function(self, t, dur, add)
 			if self.temporary <= 0 then
 				if game.level.map(self.x, self.y, engine.Map.TRAP) == self then
 					game.level.map:remove(self.x, self.y, engine.Map.TRAP)
-					if self.summoner and self.stamina then -- Refund
+					if self.summoner and self.stamina and self.stamina > 0 then -- Refund
 						self.summoner:incStamina(self.stamina * 0.8)
 						game.logPlayer(self.summoner, "#CADET_BLUE#Your %s has expired.", self.name)
 					end

@@ -110,8 +110,7 @@ newTalent{
 	getArmorHardiness = function(self, t)
 		return math.max(0, self:combatLimit(self:getTalentLevel(t) * 4, 100, 5, 3.75, 50, 37.5))
 	end,
-	getDefense = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 45.7, 500) end,
-	getPercentageDefense = function(self, t) return self:combatTalentLimit(t, 75, 15, 45) end,
+	getDefense = function(self, t) return math.floor(self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 50, 500, 0.375)) end, -- net scaling ~^0.75 with level
 	getFatigue = function(self, t, fake)
 		-- Note: drakeskin body armour @ 8% + drakeskin leather cap @ 5% + drakeskin leather boots @ 5% = 18%
 		if fake or self:hasLightArmor() then
@@ -120,7 +119,7 @@ newTalent{
 		end
 	end,
 	callbackOnMove = function(self, t, moved, force, ox, oy)
-		if not moved or force or (ox == self.x and oy == self.y) or not self:hasLightArmor() then return end
+		if force or not moved or (ox == self.x and oy == self.y) or not self:hasLightArmor() then return end
 
 		local nb_foes = 0
 		local add_if_visible_enemy = function(x, y)
@@ -133,14 +132,15 @@ newTalent{
 		self:project(adjacent_tg, self.x, self.y, add_if_visible_enemy)
 
 		if nb_foes > 0 then
-			self:setEffect(self.EFF_MOBILE_DEFENCE, 2, {power=t.getDefense(self,t), stamina=0})
+			self:setEffect(self.EFF_MOBILE_DEFENCE, 2, {power=t.getDefense(self,t)/2, stamina=0})
 		end
 	end,
 	info = function(self, t)
+		local defense = t.getDefense(self,t)
 		return ([[You learn to maintain your agility and manage your combat posture while wearing light armour.  When wearing armour no heavier than leather, you gain %d Defense, %d%% Armour hardiness, and %d%% reduced Fatigue.
-		In addition, when you step adjacent to a (visible) enemy, you use the juxtaposition to increase your total Defense by %d%% for 2 turns.
+		In addition, when you step adjacent to a (visible) enemy, you use the juxtaposition to increase your total Defense by %d for 2 turns.
 		The Defense bonus scales with your Dexterity.]]):
-		format(t.getDefense(self,t), t.getArmorHardiness(self,t), t.getFatigue(self, t, true), t.getPercentageDefense(self,t))
+		format(defense, t.getArmorHardiness(self,t), t.getFatigue(self, t, true), defense/2)
 	end,
 }
 

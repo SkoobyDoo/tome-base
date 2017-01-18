@@ -183,34 +183,48 @@ newTalent {
 		end
 		return true
 	end,
-	getReduction = function(self, t, fake) -- get % reduction based on TL and defense
-		return self:combatTalentLimit(t, 0.9, 0.15, 0.7)*self:combatLimit(self:combatDefense(fake), 0.9, 0.20, 10, 0.70, 50) -- vs TL/def: 1/10 == ~3%, 1.3/10 == ~6%, 1.3/50 == ~19%, 6.5/50 == ~52%, 6.5/100 = ~59%
+	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
+		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.78, 50) -- vs TL/def: 1/10 == ~12%, 1.3/10 == ~17%, 1.3/50 == ~27%, 6.5/50 == ~53%, 6.5/100 = ~59%
 	end,
-	getStamina = function(self, t) return 10*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 1, 0.17, 0.8)) end, -- scales up with effectiveness (gets more efficient with TL)
+	getStamina = function(self, t) return 20*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end, -- Stamina increases in proportion to talent-based effectiveness.  Stamina Efficiency increased with level through higher Defense (Automatic from the increased Dexterity required for higher talent levels)
 	getLifeTrigger = function(self, t, cur_stam)
 		local percent_hit = self:combatTalentLimit(t, 10, 35, 20)
 		local stam_cost = t.getStamina(self, t)
 		cur_stam = cur_stam or self:getStamina()
-		return percent_hit*util.bound(10*stam_cost/cur_stam, .5, 2) -- == 1 @ 10% stamina cost
+		return percent_hit*util.bound(10*stam_cost/cur_stam, .5, 2) -- == percent_hit @ 10% stamina cost
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, state)
-		if state and (state.is_melee or state.is_archery) and not self:attr("encased_in_ice") and not self:attr("invulnerable") then
-			local stam, stam_cost = self:getStamina()
-			-- don't charge stamina more than once per attack (state set in Combat.attackTargetWith)
-			if self.turn_procs[t.id] ~= state then
-				stam_cost = t.getStamina(self, t)
-				self.turn_procs[t.id] = state
-			else
-				stam_cost = 0
+		if dam > 0 and state and not self:attr("encased_in_ice") and not self:attr("invulnerable") then
+			local psrc = src.__project_source
+			if psrc then
+				local kind = util.getval(psrc.getEntityKind)
+				if kind == "projectile" or kind == "trap" or kind == "object" then
+				else
+					return
+				end
 			end
-			--game.log("#GREY#Trained Reactions test for %s: %s %s damage from %s", self.name, dam, type, src.name)
+			local stam, stam_cost
+			local is_attk = state.is_melee or state.is_archery
+			if is_attk then
+				-- don't charge stamina more than once per melee or ranged attack (state set in Combat.attackTargetWith and Archery.archery_projectile)
+				if self.turn_procs[t.id] == state then
+					stam_cost = 0
+				else
+					self.turn_procs[t.id] = state
+				end
+			else -- intercept at most 1 non-melee/archery attack
+				if self.turn_procs.gen_trained_reactions then return end
+			end
+			stam, stam_cost = self:getStamina(), stam_cost or t.getStamina(self, t)
 			if stam_cost < stam and dam > self.life*t.getLifeTrigger(self, t, stam)/100 then
+				--print(("[PROJECTOR: Trained Reactions] PASSED life/stam test for %s: %s %s damage (%s) (%0.1f/%0.1f stam) from %s (state:%s)"):format(self.name, dam, type, is_attk, stam_cost, stam, src.name, state)) -- debugging
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
 				local reduce = t.getReduction(self, t)*(self:attr("never_move") and 0.5 or 1)
-				if stam_cost > 0 then src:logCombat(self, "#Target# reacts to an attack from #source#, avoiding some damage!") end
+				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #source#, partially avoiding it!", is_attk and "an attack" or "damage") end
 
 				dam = dam*(1-reduce)
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
+				if not is_attk then self.turn_procs.gen_trained_reactions = true end
 				return {dam = dam}
 			end
 		end
@@ -229,7 +243,7 @@ newTalent {
 		local reduce = t.getReduction(self, t, true)*100
 		return ([[You have trained to be very light on your feet and have conditioned your reflexes to react faster than thought to attacks as they strike you.
 		You permanently gain %d%% pinning immunity.
-		While this talent is active, you reduce the damage of significant melee or archery attacks hitting you by %d%% (improved with Defense).  This requires %0.1f stamina per attack.
+		While this talent is active, you reduce the direct damage of one significant attack each turn (or any number of melee or archery strikes) that hit you by %d%%.  This requires %0.1f stamina per attack and is improved with your Defense.
 		The nearly instant reactions required are both difficult and exhausting; they cannot be performed while wearing heavy armor and are only half effective if you are immobilized.
 		Larger attacks are easier to react to and you become more vigilant when wounded, but your reactions slow as your stamina is depleted.  The smallest attack your reflexes can affect, as a percent of your current life (currently %d%%), ranges from %d%% at full Stamina to %d%% with minimum Stamina.]])
 		:format(t.pinImmune(self, t)*100, reduce, stam, triggerCur, triggerFull, triggerMin)

@@ -3172,28 +3172,6 @@ newEffect{
 }
 
 newEffect{
-	name = "EXPOSE_WEAKNESS", image = "talents/expose_weakness.png",
-	desc = "Exposed",
-	long_desc = function(self, eff) return ("The target is exposed, reducing armor hardiness by 50%%, causing attackers to ignore 50%% of resistances, and causing melee attacks to deal an additional %d physical damage."):format(eff.power) end,
-	type = "physical",
-	subtype = { sunder=true },
-	status = "detrimental",
-	on_gain = function(self, err) return nil, "+Breach" end,
-	on_lose = function(self, err) return nil, "-Breach" end,
-	on_merge = function(self, old_eff, new_eff)
-		old_eff.dur = new_eff.dur
-		return old_eff
-	end,
-	activate = function(self, eff)
-	end,
-	deactivate = function(self, eff)
-	end,
-	callbackOnMeleeHit = function(self, eff, src, dam)
-		DamageType:get(DamageType.PHYSICAL).projector(eff.src, self.x, self.y, DamageType.PHYSICAL, eff.power)
-	end,
-}
-
-newEffect{
 	name = "RAZORWIRE", image = "talents/springrazor_trap.png",
 	desc = "Razorwire",
 	long_desc = function(self, eff) return ("The target's equipment has been shredded by razorwire, reducing its accuracy by %d, armour by %d, and defense by %d."):format(eff.power, eff.power, eff.power) end,
@@ -3201,7 +3179,7 @@ newEffect{
 	subtype = { physical=true },
 	status = "detrimental",
 	parameters = { power=10 }, no_ct_effect = true,
-	on_gain = function(self, err) return "#Target# is entangled in razorwire!." end,
+	on_gain = function(self, err) return "#Target# is entangled in razorwire!" end,
 	on_lose = function(self, err) return "#Target# has shook off the razorwire." end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "combat_atk", -eff.power)
@@ -3260,23 +3238,6 @@ newEffect{
 	end,
 }
 
-
-newEffect{
-	name = "SHADOWSTRIKE", image = "talents/shadowstrike.png",
-	desc = "Shadowstrike",
-	long_desc = function(self, eff) return ("The target's critical strike damage bonus is increased by %d%%."):format(eff.power) end,
-	type = "magical",
-	subtype = { darkness=true },
-	status = "beneficial",
-	parameters = { power=1 },
-	activate = function(self, eff)
-		eff.critid = self:addTemporaryValue("combat_critical_power", eff.power)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("combat_critical_power", eff.critid)
-	end,
-}
-
 newEffect{
 	name = "SHADOW_DANCE", image = "talents/shadow_dance.png",
 	desc = "Shadow Dance", 
@@ -3293,7 +3254,6 @@ newEffect{
 		if not eff.no_cancel_stealth and not rng.percent(self.hide_chance or 0) then
 			local detect = self:stealthDetection(eff.rad)
 			local netstealth = (self:callTalent(self.T_STEALTH, "getStealthPower") + (self:attr("inc_stealth") or 0))
---			self:alterTalentCoolingdown(self.T_STEALTH, -20)
 			if detect > 0 and self:checkHit(detect, netstealth) then
 				game.logPlayer(self, "You have been detected!")
 				self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=false})
@@ -3554,32 +3514,12 @@ newEffect{
 	end,
 }
 
-newEffect {
-	name = "DANGER_SENSE", image = "talents/danger_sense.png",
-	desc = "Danger Sense",
-	type = "physical",
-	subtype = {tactic = true},
-	status = "beneficial",
-	parameters = {
-		-- percent of all damage to ignore
-		reduce = 10
-	},
-	on_gain = function(self, eff) return ("#RED##Target# instinctively senses danger, protecting %s!"):format(self:his_her_self()) end,
-	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "incoming_reduce", eff.reduce)
-	end,
-	long_desc = function(self, eff)
-		return ([[The target is extremely vigilant, avoiding %d%% of all incoming damage.]])
-		:format(eff.reduce)
-	end,
-}
-
 newEffect{
 	name = "MOBILE_DEFENCE", image = "talents/light_armour_training.png",
 	desc = "Mobile Defense",
 	long_desc = function(self, eff)
 		local stam = eff.stamina > 0 and ("stamina regeneration by %0.1f and "):format(eff.stamina) or ""
-		return ("Increases %stotal defense by %d%%."):format(stam, eff.power)
+		return ("Increases %sdefense by %d."):format(stam, eff.power)
 	end,
 	type = "physical",
 	subtype = { tactic=true },
@@ -3587,6 +3527,7 @@ newEffect{
 	parameters = {stamina=1, power=10},
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "stamina_regen", eff.stamina)
+		self:effectTemporaryValue(eff, "combat_def", eff.power)
 	end,
 }
 

@@ -27,15 +27,15 @@ newTalent{
 	mode = "sustained",
 	no_break_stealth = true,
 	getChance = function(self,t) return self:combatTalentLimit(t, 50, 15, 35) end, --Limit < 50%
+	turnLoss = function(self, t) return self:combatTalentLimit(t, .25, .08, .15) end, --Limit < 25% of a turn
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if not (target and hitted and dam > 0) or self:reactionToward(target) >=0 then return nil end
-		if rng.percent(t.getChance(self, t)) then
-			if target:canBe("cut") then
-				target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam*.75 / 10)})
-				if not target.turn_procs.lacerating_strikes then
-					target:useEnergy(game.energy_to_act * 0.1)
-					target.turn_procs.lacerating_strikes = true
-				end
+		if not (target and hitted and dam > 0) or self:reactionToward(target) >= 0 then return nil end
+		if rng.percent(t.getChance(self, t)) and target:canBe("cut") then
+			target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam*.75 / 10)})
+			local turn_loss, last_tl = t.turnLoss(self, t), target.turn_procs.lacerating_strikes or 0
+			if turn_loss - last_tl > 0 then
+				target:useEnergy(game.energy_to_act * (turn_loss - last_tl))
+				target.turn_procs.lacerating_strikes = turn_loss
 			end
 		end		
 	end,
@@ -47,8 +47,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		local chance = t.getChance(self,t)
-		return ([[Your melee attacks have a %d%% chance to inflict a deep, disabling wound inflicting an additional 75%% of the damage dealt as a bleed over 10 turns, as well as causing the target (up to once per turn) to lose 10%% of a turn.]]):
-		format(chance)
+		return ([[Your melee attacks have a %d%% chance to inflict a deep, disabling wound inflicting an additional 75%% of the damage dealt as a bleed over 10 turns, as well as causing the target to lose %d%% of a turn (up to once per turn).]]):
+		format(chance, t.turnLoss(self, t)*100)
 	end,
 }
 
