@@ -184,7 +184,7 @@ newTalent {
 		return true
 	end,
 	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
-		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.78, 50) -- vs TL/def: 1/10 == ~3%, 1.3/10 == ~6%, 1.3/50 == ~19%, 6.5/50 == ~52%, 6.5/100 = ~59%
+		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.78, 50) -- vs TL/def: 1/10 == ~12%, 1.3/10 == ~17%, 1.3/50 == ~27%, 6.5/50 == ~53%, 6.5/100 = ~59%
 	end,
 	getStamina = function(self, t) return 20*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end, -- Stamina increases in proportion to talent-based effectiveness.  Stamina Efficiency increased with level through higher Defense (Automatic from the increased Dexterity required for higher talent levels)
 	getLifeTrigger = function(self, t, cur_stam)
