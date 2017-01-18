@@ -98,7 +98,7 @@ end
 -- The player (only) has a chance (improved with Trap Mastery talent) to identify the trap
 function _M:setKnown(actor, v, x, y)
 	self.known_by[actor] = v
-	if x and y and v and actor.player and game.level.map(x, y, engine.Map.TRAP) == self then
+	if x and y and v and actor.player and not self:isIdentified() and game.level.map(x, y, engine.Map.TRAP) == self then
 		game.level.map(x, y, engine.Map.TERRAIN).always_remember = true
 		if core.fov.distance(x, y, actor.x, actor.y) <= 1 then
 			if actor:checkHitOld(actor:callTalent(actor.T_TRAP_MASTERY, "getPower") + 5, self.disarm_power) then
@@ -164,14 +164,12 @@ function _M:canDisarm(x, y, who)
 	if not engine.Trap.canDisarm(self, x, y, who) then return false end
 
 	-- do we know how to disarm?
-	if (who:getTalentLevel(who.T_DEVICE_MASTERY) >= 1) or who:attr("can_disarm") then
-		local th = who:getTalentFromId(who.T_DEVICE_MASTERY)
-		local power = th.trapPower(who, th) + (who:attr("disarm_bonus") or 0)
+	if (who:getTalentLevel(who.T_DEVICE_MASTERY) > 0) or who:attr("can_disarm") then
+		local power = who:callTalent(who.T_DEVICE_MASTERY, "trapDisarm")
 		if who:checkHitOld(power, self.disarm_power) and (not self.faction or who:reactionToward(self) < 0) then
 			return true
 		end
 	end
-
 	-- False by default
 	return false
 end
@@ -193,7 +191,7 @@ function _M:onDisarm(x, y, who)
 	--table.set(game, "debug", "last_trap_disarmed", self) -- debugging
 	-- The player may unlock a trap talent when disarming a (similar) trap (uses Trap Mastery)
 	if self.unlock_talent_on_disarm and who.player and who:knowTalent(who.T_TRAP_MASTERY) and core.fov.distance(x, y, who.x, who.y) <= 1 and not game.state:unlockTalentCheck(self.unlock_talent_on_disarm.tid, who) then
-		local hit, chance = who:checkHit(who:callTalent(who.T_TRAP_MASTERY, "getPower") + who:callTalent(who.T_DEVICE_MASTERY, "trapPower")*.25, self.disarm_power)
+		local hit, chance = who:checkHit(who:callTalent(who.T_TRAP_MASTERY, "getPower") + who:callTalent(who.T_DEVICE_MASTERY, "trapDisarm")*.25, self.disarm_power)
 		local t = who:getTalentFromId(self.unlock_talent_on_disarm.tid)
 		if t and hit and chance > 20 and (not self.unlock_talent_on_disarm.chance or rng.percent(self.unlock_talent_on_disarm.chance)) and next(who:spotHostiles()) == nil then
 			local diff_level = (t.trap_mastery_level or 5)

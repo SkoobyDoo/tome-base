@@ -1344,15 +1344,17 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if not force and self:knowTalent(self.T_DEVICE_MASTERY) then
-		local power = self:callTalent(self.T_DEVICE_MASTERY,"trapPower")
-		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
-			local trap = game.level.map(x, y, Map.TRAP)
-			if trap then self:detectTrap(trap, x, y, power) end
-		end end
+	if not force then
+		local t_det = self:attr("see_traps")
+		if t_det then
+			local grids = core.fov.circle_grids(self.x, self.y, 1, true)
+			for x, yy in pairs(grids) do for y, _ in pairs(yy) do
+				local trap = game.level.map(x, y, Map.TRAP)
+				if trap then self:detectTrap(trap, x, y, t_det) end
+			end end
+		end
 	end
-
+	
 	-- knowing Unnatural Body allows you to get the Cursed Aura tree
 	if moved and self:knowTalent(self.T_UNNATURAL_BODY) and not self:knowTalentType("cursed/cursed-aura") and self.chooseCursedAuraTree then
 		if self.player then
@@ -1587,15 +1589,15 @@ function _M:doQuake(tg, x, y)
 end
 
 --- Attempt to detect a trap at x, y
--- param trap the trap to be detected
--- param x, y trap coordinates
--- param power detection power (optional)
+-- param (optional) trap the trap to be detected (defaults to trap at coords)
+-- param (optional) x, y trap coordinates (defaults to trap.x, trap.y)
+-- param (optional) power detection power
 -- @return the trap @ x, y if present and detected
 function _M:detectTrap(trap, x, y, power)
-	power = power or self:callTalent(self.T_DEVICE_MASTERY, "trapPower")
-	if power <= 0 then return end
 	trap = trap or game.level.map(x, y, Map.TRAP)
 	if trap then
+		power = power or self:attr("see_traps") or 0
+		if power <= 0 then return end
 		x, y = x or trap.x, y or trap.y
 		local known = trap:knownBy(self)
 		if not known then
@@ -5017,6 +5019,7 @@ local sustainCallbackCheck = {
 	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnDie = "talents_on_die",
 	callbackOnKill = "talents_on_kill",
+	callbackOMeleeAttackBonuses = "talents_on_melee_attack_bonus",
 	callbackOnMeleeAttack = "talents_on_melee_attack",
 	callbackOnMeleeHit = "talents_on_melee_hit",
 	callbackOnMeleeMiss = "talents_on_melee_miss",
@@ -5120,6 +5123,7 @@ function _M:fireTalentCheck(event, ...)
 	local ret = false
 	if self[store] then upgradeStore(self[store], store) end
 	if self[store] and next(self[store].__priorities) then
+		local old_ps = self.__project_source
 		for _, info in ipairs(self[store].__sorted) do
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
@@ -5132,7 +5136,7 @@ function _M:fireTalentCheck(event, ...)
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
 			end
-			self.__project_source = nil
+			self.__project_source = old_ps
 		end
 	end
 	return ret
@@ -5152,23 +5156,26 @@ function _M:iterCallbacks(event)
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = self.tmp[tid]
 					local ret = self:callEffect(tid, event, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			elseif kind == "object" then
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = tid
 					local ret = tid:check(event, self, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			else
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = self.sustain_talents[tid]
 					local ret = self:callTalent(tid, event, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			end
@@ -5667,6 +5674,19 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 				uspeed = ("%s (#LIGHT_GREEN#%d%%#LAST# of a turn)"):format(speed_type, speed * 100)
 			end
 			d:add({"color",0x6f,0xff,0x83}, "Usage Speed: ", {"color",0xFF,0xFF,0xFF}, uspeed, true)
+			if t.no_break_stealth ~= nil and no_energy ~= true and self:knowTalent(self.T_STEALTH) then
+				local nbs, chance = t.no_break_stealth
+				if type(t.no_break_stealth) == "function" then
+					nbs, chance = t.no_break_stealth(self, t)
+					if type(chance) ~= "number" then
+						chance = nbs and 100 or 0
+					end
+				else chance = nbs and 100 or 0
+				end
+				if chance > 0 then
+					d:add({"color",0x6f,0xff,0x83}, "Won't Break Stealth:  ", {"color",0xFF,0xFF,0xFF}, ("%d%%"):format(chance), true)
+				end
+			end
 		end
 		local is_a = {}
 		for is, desc in pairs(engine.interface.ActorTalents.is_a_type) do
@@ -6318,7 +6338,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 
 		if p.dur > 0 and e.status == "detrimental" then
 			local saved = self:checkHit(save, p.apply_power, 0, 95)
-			local hd = {"Actor:effectSave", saved = saved, save_type = save_type, eff_id = eff_id, e = e, p = p,}
+			local hd = {"Actor:effectSave", saved=saved, save=save, save_type=save_type, eff_id=eff_id, e=e, p=p,}
 			self:triggerHook(hd)
 			self:fireTalentCheck("callbackOnEffectSave", hd)
 			saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p

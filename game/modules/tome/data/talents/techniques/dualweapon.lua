@@ -413,10 +413,7 @@ newTalent{
 			return nil 
 		end
 
-		game.logSeen(self, "%s becomes an unstoppable whirlwind of weapons!", self.name:capitalize())
-		-- move the actor
-		self:move(mx, my, true)
-		
+		game.logSeen(self, "%s becomes a whirlwind of weapons!", self.name:capitalize())
 		-- Create a high-speed projectile tracing a path to the destination that does the actual damage
 		local wwproj = self:projectile(tg, mx, my, function(px, py, tg, self, tmp_proj)
 			local aoe = {type="ball", radius=1, friendlyfire=false, selffire=false, talent=t, display={ } }
@@ -445,6 +442,9 @@ newTalent{
 		)
 		wwproj.tmp_proj.weapon_mult = t.getDamage(self, t)
 		wwproj.energy.value = game.energy_to_act -- make sure projectile begins moving immediately
+		
+		-- move the talent user
+		self:move(mx, my, true)
 
 		return true
 	end,

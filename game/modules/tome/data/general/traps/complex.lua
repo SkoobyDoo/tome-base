@@ -31,8 +31,8 @@ newEntity{ define_as = "TRAP_COMPLEX",
 newEntity{ base = "TRAP_COMPLEX",
 	subtype = "boulder",
 	name = "giant boulder trap", image = "trap/trap_pressure_plate_01.png",
-	detect_power = resolvers.clscale(40, 50, 8),
-	disarm_power = resolvers.clscale(50, 50, 8),
+	detect_power = resolvers.clscale(30, 25, 8, 0.5),
+	disarm_power = resolvers.clscale(35, 25, 8, 0.5),
 	rarity = 3, level_range = {1, nil},
 	color = colors.UMBER,
 	message = "@Target@ walks on a trap, and there is a loud noise.",
@@ -77,14 +77,15 @@ newEntity{ base = "TRAP_COMPLEX",
 	end,
 }
 
+local spin_types = {engine.DamageType.ARCANE_SILENCE, engine.DamageType.DARKSTUN, engine.DamageType.COLDNEVERMOVE}
 newEntity{ base = "TRAP_COMPLEX",
 	subtype = "arcane",
 	name = "spinning beam trap", image = "trap/trap_glyph_explosion_01_64.png",
-	detect_power = resolvers.clscale(40, 50, 8),
-	disarm_power = resolvers.clscale(50, 50, 8),
+	detect_power = resolvers.clscale(35, 35, 8, 0.5),
+	disarm_power = resolvers.clscale(40, 35, 8, 0.5),
 	rarity = 3, level_range = {1, nil},
 	color=colors.PURPLE,
-	message = "@Target@ walks on a trap, and its magical energies change.",
+	message = "@Target@ activates a trap, and its magical energies change.",
 	unided_name = "magical emitter",
 	desc = function(self)
 		local dtype = engine.DamageType[self.dammode] and engine.DamageType:get(self.dammode)
@@ -108,14 +109,15 @@ newEntity{ base = "TRAP_COMPLEX",
 		self.list = list
 		self.on_added = nil
 	end,
-	dammode = rng.table{engine.DamageType.ARCANE_SILENCE, engine.DamageType.DARKSTUN, engine.DamageType.COLDNEVERMOVE},
+	dammodes = spin_types,
+	dammode = resolvers.rngtable(spin_types),
 	dam = resolvers.clscale(200, 50, 50, 0.75, 0),
 	mag = resolvers.mbonus(200, 30),
 	unlock_talent_on_disarm = {tid = Talents.T_BEAM_TRAP, chance = 35},
 	triggered = function(self, x, y, who)
 		if self:reactionToward(who) < 0 then
 			local dammode = self.dammode
-			while dammode == self.dammode do dammode = rng.table{engine.DamageType.ARCANE_SILENCE, engine.DamageType.DARKSTUN, engine.DamageType.COLDNEVERMOVE} end
+			while dammode == self.dammode do dammode = rng.table(self.dammodes) end
 			self.dammode = dammode
 
 			if not self.added_to_level then game.level:addEntity(self) self.added_to_level = true end
@@ -151,8 +153,8 @@ newEntity{ base = "TRAP_COMPLEX",
 newEntity{ base = "TRAP_COMPLEX",
 	subtype = "nature",
 	name = "poison spore", image = "trap/trap_acid_blast_01.png",
-	detect_power = resolvers.clscale(40, 50, 8),
-	disarm_power = resolvers.clscale(50, 50, 8),
+	detect_power = resolvers.clscale(25, 25, 8, 0.5),
+	disarm_power = resolvers.clscale(35, 25, 8, 0.5),
 	rarity = 3, level_range = {1, nil},
 	color=colors.GREEN,
 	message = "@Target@ walks on a poison spore.",
@@ -214,15 +216,15 @@ newEntity{ base = "TRAP_COMPLEX",
 newEntity{ base = "TRAP_COMPLEX",
 	subtype = "arcane",
 	name = "delayed explosion trap", image = "trap/trap_fire_rune_01.png",
-	detect_power = resolvers.clscale(40, 50, 8),
-	disarm_power = resolvers.clscale(50, 50, 8),
+	detect_power = resolvers.clscale(35, 25, 8, 0.5),
+	disarm_power = resolvers.clscale(45, 25, 8, 0.5),
 	rarity = 3, level_range = {1, nil},
 	color=colors.RED,
 	pressure_trap = true,
 	message = "Flames start to appear around @target@.",
 	unided_name = "hot spot",
 	desc = function(self)
-		return ("Releases up to 4 delayed fuse fireballs within range %d that explode for #LIGHT_RED#%d#LAST# fire damage after %d turns."):format(self.rad, self.dam, 5)
+		return ("Releases up to 4 delayed fuse fireballs within range %d that each explode for #LIGHT_RED#%d#LAST# fire damage after %d turns."):format(self.rad, self.dam, 5)
 	end,
 	rad = 3,
 	dam = resolvers.clscale(200, 50, 50, 0.75, 0),
@@ -266,8 +268,8 @@ newEntity{ base = "TRAP_COMPLEX",
 newEntity{ base = "TRAP_COMPLEX",
 	subtype = "arcane",
 	name = "cold flames trap", image = "trap/trap_frost_rune_01.png",
-	detect_power = resolvers.clscale(40, 50, 8),
-	disarm_power = resolvers.clscale(50, 50, 8),
+	detect_power = resolvers.clscale(30, 25, 8, 0.5),
+	disarm_power = resolvers.clscale(35, 25, 8, 0.5),
 	rarity = 3, level_range = {1, nil},
 	color=colors.BLUE,
 	pressure_trap = true,

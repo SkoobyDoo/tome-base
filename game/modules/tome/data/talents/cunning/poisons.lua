@@ -468,10 +468,10 @@ newTalent{
 	stoneTime = function(self, t) return math.ceil(self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 1, 10, 5.6)) end, -- Time to stone target, always > 1 turn
 	getEffect = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 3, 4)) end,
 	on_learn = function(self, t)
-		self.__show_special_talents[t.id] = true
+		table.set(self, "__show_special_talents", t.id, true)
 	end,
 	on_unlearn = function(self, t)
-		self.__show_special_talents[t.id] = false
+		table.set(self, "__show_special_talents", t.id, false)
 	end,
 	proc = function(self, t, target, weapon) -- apply when applying other poisons with the Apply Poison talent
 		local dam = t.getDOT(self, t)
