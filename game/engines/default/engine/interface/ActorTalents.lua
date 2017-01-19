@@ -446,6 +446,7 @@ end
 function _M:learnTalent(t_id, force, nb)
 --	print("[TALENT]", self.name, self.uid, "learning", t_id, force, nb)
 	local t = _M.talents_def[t_id]
+	assert(t, "Learning unknown talent: "..tostring(t_id))
 
 	if not force then
 		local ok, err = self:canLearnTalent(t)
