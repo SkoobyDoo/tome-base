@@ -1068,7 +1068,6 @@ function _M:resetAttachementSpots()
 end
 
 function _M:setTile(f, w, h, last)
-	self.replace_display = nil
 	self.actor:removeAllMOs()
 	if not f then
 		if not self.has_custom_tile then
@@ -1103,6 +1102,7 @@ function _M:setTile(f, w, h, last)
 		local ps = self.actor:getParticlesList("all")
 		for i, p in ipairs(ps) do self.actor:removeParticles(p) end
 		if self.actor.shader_auras then self.actor.shader_auras = {} end
+		self.replace_display = nil
 		if self.descriptors_by_type.subclass then
 			local d = self.birth_descriptor_def.subclass[self.descriptors_by_type.subclass]
 			if d and d.birth_example_particles then
