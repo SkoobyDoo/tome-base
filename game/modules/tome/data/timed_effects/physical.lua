@@ -2108,7 +2108,7 @@ newEffect{ -- Note: This effect is cancelled by EFF_DISARMED
 		return deflected
 	end,
 	on_merge = function(self, old_eff, new_eff)
-		new_eff.chance = math.max(old_eff.chance, new_eff.chance) + math.min(old_eff.chance, new_eff.chance)*.5
+		new_eff.chance = 100 - (100 - old_eff.chance)*(100 - new_eff.chance)/100
 		new_eff.dam = math.max(old_eff.dam, new_eff.dam)
 		new_eff.deflects = math.max(old_eff.deflects, new_eff.deflects) + math.min(old_eff.deflects, new_eff.deflects)*.5
 		new_eff.parry_ranged = old_eff.parry_ranged or new_eff.parry_ranged
@@ -3093,8 +3093,10 @@ newEffect{
 		return true
 	end,
 	on_die = function(self, eff)
-		eff.src:incStamina(eff.stam)
-		eff.src.talents_cd[eff.src.T_MARKED_FOR_DEATH] = 0
+		if eff.src then
+			eff.src:incStamina(eff.stam)
+			eff.src.talents_cd[eff.src.T_MARKED_FOR_DEATH] = 0
+		end
 	end,
 }
 
@@ -3191,10 +3193,11 @@ newEffect{
 newEffect{
 	name = "DIRTY_FIGHTING", image = "talents/dirty_fighting.png",
 	desc = "Dirty Fighting",
-	long_desc = function(self, eff) return ("The target is reeling in pain, reducing stun, pin, blindness, and confusion immunity by 50%% and physical save by %d."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is reeling in pain. Stun, pin, blindness, and confusion immunity are %d%% of normal and physical save is reduced by %d."):format((1 - eff.immune)*100, eff.power) end,
 	type = "physical",
-	subtype = { physical=true },
+	subtype = { wound=true },
 	status = "detrimental",
+	parameters = { power=5, immune = 0.1 },
 	on_gain = function(self, err) return nil, "+Dirty Fighting" end,
 	on_lose = function(self, err) return nil, "-Dirty Fighting" end,
 	on_merge = function(self, old_eff, new_eff)
@@ -3203,16 +3206,16 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		if self:attr("stun_immune") then
-			self:effectTemporaryValue(eff, "stun_immune", -self:attr("stun_immune") / 2)
+			self:effectTemporaryValue(eff, "stun_immune", -self:attr("stun_immune")*eff.immune)
 		end
 		if self:attr("confusion_immune") then
-			self:effectTemporaryValue(eff, "confusion_immune", -self:attr("confusion_immune") / 2)
+			self:effectTemporaryValue(eff, "confusion_immune", -self:attr("confusion_immune")*eff.immune)
 		end
 		if self:attr("blind_immune") then
-			self:effectTemporaryValue(eff, "blind_immune", -self:attr("blind_immune") / 2)
+			self:effectTemporaryValue(eff, "blind_immune", -self:attr("blind_immune")*eff.immune)
 		end
 		if self:attr("pin_immune") then
-			self:effectTemporaryValue(eff, "pin_immune", -self:attr("pin_immune") / 2)
+			self:effectTemporaryValue(eff, "pin_immune", -self:attr("pin_immune")*eff.immune)
 		end
 		self:effectTemporaryValue(eff, "combat_physresist", -eff.power)
 	end,

@@ -97,7 +97,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		local rsrc = src.resolveSource and src:resolveSource() or src
 		local rtarget = target.resolveSource and target:resolveSource() or target
 
-		print("[PROJECTOR] starting dam", dam)
+		print("[PROJECTOR] starting dam", type, dam)
 
 		local ignore_direct_crits = target:attr 'ignore_direct_crits'
 		if crit_power > 1 and ignore_direct_crits and rng.percent(ignore_direct_crits) then -- reverse crit damage
@@ -199,6 +199,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			if src.combatGetDamageIncrease then inc = src:combatGetDamageIncrease(type)
 			else inc = (src.inc_damage.all or 0) + (src.inc_damage[type] or 0) end
 			if src.getVim and src:attr("demonblood_dam") then inc = inc + ((src.demonblood_dam or 0) * (src:getVim() or 0)) end
+			if inc ~= 0 then print("[PROJECTOR] after DamageType increase dam", dam + (dam * inc / 100)) end
 		end
 
 		-- Increases damage for the entity type (Demon, Undead, etc)
@@ -250,7 +251,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 		end
 
-		if dam > 0 and src and src.__is_actor and src:knowTalent(src.T_BACKSTAB) and src.__CLASSNAME ~= "mod.class.Grid" then
+		if dam > 0 and src and src.__is_actor and src:knowTalent(src.T_BACKSTAB) then
 			local power = src:callTalent("T_BACKSTAB", "getDamageBoost")
 			local nb = 0
 			for eff_id, p in pairs(target.tmp) do
@@ -324,7 +325,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			if dominated and dominated.src == src then pen = pen + (dominated.resistPenetration or 0) end
 			-- Expose Weakness
 			local exposed = (state.is_melee or state.is_archery) and src.__is_actor and src:hasEffect(src.EFF_EXPOSE_WEAKNESS)
-			if exposed and exposed.target == target then pen = pen + exposed.penetration print("[PROJECTOR] expose weakness pen", exposed.penetration) end
+			if exposed and exposed.target == target then pen = pen + exposed.bonus_pen print("[PROJECTOR] expose weakness pen", exposed.bonus_pen) end
 			if target:attr("sleep") and src.attr and src:attr("night_terror") then pen = pen + src:attr("night_terror") end
 			local res = target:combatGetResist(type)
 			pen = util.bound(pen, 0, 100)

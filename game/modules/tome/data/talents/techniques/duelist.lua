@@ -28,7 +28,7 @@ newTalent{
 	require = techs_dex_req1,
 	mode = "passive",
 	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
-		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 100, 15, 20, 60, 250) -- ~68% at TL 6.5, 55 dex
+		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 90, 15, 20, 60, 250) -- ~67% at TL 6.5, 55 dex
 	end,
 	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
 		return math.max(0, self:combatTalentLimit(t, 100, 15, 50))

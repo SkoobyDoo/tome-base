@@ -226,7 +226,7 @@ newBirthDescriptor{
 		["technique/mobility"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={false, 0.1},
+--		["technique/field-control"]={false, 0.1},
 	},
 	unlockable_talents_types = {
 		["cunning/poisons"]={false, 0.2, "rogue_poisons"},
