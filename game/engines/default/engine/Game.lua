@@ -337,6 +337,7 @@ function _M:onTickEnd(f, name)
 	end
 
 	self.on_tick_end[#self.on_tick_end+1] = f
+	core.game.requestNextTick()
 end
 
 --- Returns a registered function to do on tick end by name
