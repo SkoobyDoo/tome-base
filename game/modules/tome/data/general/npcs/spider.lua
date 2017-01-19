@@ -178,7 +178,6 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	ingredient_on_death = "FAERLHING_FANG",
 }
 
--- the brethren of Ungoliant :D  tough and deadly, probably too tough, but meh <evil laughter>
 newEntity{ base = "BASE_NPC_SPIDER",
 	name = "ungolmor", color={0,0,0},  -- spider night, don't change the color
 	desc = [[Largest of all the spiderkin, its folds of skin seem nearly impenetrable.]],
