@@ -76,8 +76,8 @@ newTalent{
 
 newTalent{
 	name = "Track",
-	type = {"cunning/survival", 2},
-	require = cuns_req2,
+	type = {"cunning/survival", 3},
+	require = cuns_req3,
 	points = 5,
 	random_ego = "utility",
 	cooldown = 20,
