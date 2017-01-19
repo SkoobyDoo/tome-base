@@ -51,7 +51,7 @@ newTalent{
 		for tid, cd in pairs(self.talents_cd) do
 			local tt = self:getTalentFromId(tid)
 			if tt.type[1]:find("^celestial/") then
-				self.talents_cd[tid] = cd - t.getCooldownReduction(self, t)
+				self:alterTalentCoolingdown(tid, -t.getCooldownReduction(self, t))
 			end
 		end
 		return true
