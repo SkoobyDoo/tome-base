@@ -318,6 +318,10 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 	elseif button == "wheeldown" and click then
 		a:nextHotkeyPage()
 		return
+	elseif button == "drag-start-global" then
+		return
+	elseif button == "drag-end-global" then
+		return
 	elseif button == "drag-end" then
 		local drag = game.mouse.dragged.payload
 --		print(table.serialize(drag,nil,true))

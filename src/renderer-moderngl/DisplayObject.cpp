@@ -300,6 +300,7 @@ void DORTweener::killMe() {
 }
 
 void DisplayObject::tween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref) {
+	if (to == getDefaultTweenSlotValue(slot)) return; // If we want to go to a value we already have, no need to botehr at all
 	if (!tweener) tweener = new DORTweener(this);
 	tweener->setTween(slot, easing, from, to, time, on_end_ref, on_change_ref);
 }

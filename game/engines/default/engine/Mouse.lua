@@ -47,7 +47,7 @@ function _M:receiveMouse(button, x, y, isup, force_name, extra)
 	self.status[button] = not isup
 	if not self.allow_down and not isup then return end
 
-	if _M.drag then
+	if _M.drag and button ~= "drag-start-global" then
 		if _M.drag.prestart then _M.drag = nil
 		else return self:endDrag(x, y) end
 	end
@@ -94,8 +94,9 @@ function _M:delegate(button, mx, my, xrel, yrel, bx, by, event, name, extra)
 	local ox, oy = (self.delegate_offset_x or 0), (self.delegate_offset_y or 0)
 	mx = mx - ox
 	my = my - oy
-
-	if event == "button" then self:receiveMouse(button, mx, my, true, name, extra)
+-- DGDGDGDG fix me, turns out event value is not propagated at all!
+-- maybe merge receiveMouse & receiveMouseMotion and add an even parameter
+	if event == "button" or event == "drag-start-global" or event == "drag-end-global" or event == "out" then self:receiveMouse(button, mx, my, true, name, extra)
 	elseif event == "button-down" then self:receiveMouse(button, mx, my, false, name, extra)
 	elseif event == "motion" then self:receiveMouseMotion(button, mx, my, xrel, yrel, name, extra)
 	end
@@ -162,13 +163,16 @@ function _M:reset()
 	self.areas_name = {}
 end
 
+local drag_listeners = setmetatable({}, {__mode="k"})
+function _M:dragListener(v)
+	drag_listeners[self] = v and true or nil
+end
+
 function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 	local start = function()
 		_M.drag.prestart = nil
 		if _M.drag.cursor then
-			local w, h = _M.drag.cursor:getSize()
-			_M.drag.cursor = _M.drag.cursor:glTexture()
-			core.mouse.setMouseDrag(_M.drag.cursor, w, h)
+			core.mouse.setMouseDrag(_M.drag.cursor, 32, 32) -- DGDGDGDG hardcoded 32 size, bad bad bad !
 		end
 		print("[MOUSE] enabling drag from predrag")
 	end
@@ -183,6 +187,7 @@ function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 	_M.drag = {start_x=x, start_y=y, payload=payload, on_done=on_done, on_move=on_move, prestart=true, cursor=cursor}
 	print("[MOUSE] pre starting drag'n'drop")
 	if no_prestart then start() end
+	for m, _ in pairs(drag_listeners) do m:receiveMouse("drag-start-global", x, y, true, nil, {drag=_M.drag}) end
 end
 
 function _M:endDrag(x, y)
@@ -194,6 +199,7 @@ function _M:endDrag(x, y)
 	_M.current:receiveMouse("drag-end", x, y, true, nil, {drag=drag})
 	if drag.on_done then drag.on_done(drag, drag.used) end
 	_M.dragged = nil
+	for m, _ in pairs(drag_listeners) do m:receiveMouse("drag-end-global", x, y, true, nil, {drag=drag}) end
 end
 
 function _M:usedDrag()
