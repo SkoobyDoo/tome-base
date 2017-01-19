@@ -42,7 +42,7 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = 3 },
 	action = function(self, t)
-		if not self.can_multiply or self.can_multiply <= 0 then print("no more multiply") return nil end
+		if not self.can_multiply or self.can_multiply <= 0 then game.logPlayer(self, "You can not multiply anymore.") return nil end
 
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
@@ -51,12 +51,13 @@ newTalent{
 		-- Find a place around to clone
 		self.can_multiply = self.can_multiply - 1
 		local a
-		if self.clone_base then a = self.clone_base:clone() else a = self:clone() end
+		if self.clone_base then a = self.clone_base:cloneFull() else a = self:cloneFull() end
 		a.can_multiply = a.can_multiply - 1
 		a.energy.value = 0
 		a.exp_worth = 0.1
 		a.inven = {}
 		a.x, a.y = nil, nil
+		a.faction = self.faction
 		a:removeAllMOs()
 		a:removeTimedEffectsOnClone()
 		if a.can_multiply <= 0 then a:unlearnTalent(t.id) end
