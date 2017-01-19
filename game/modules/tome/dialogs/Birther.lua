@@ -1068,6 +1068,7 @@ function _M:resetAttachementSpots()
 end
 
 function _M:setTile(f, w, h, last)
+	self.replace_display = nil
 	self.actor:removeAllMOs()
 	if not f then
 		if not self.has_custom_tile then
@@ -1107,7 +1108,7 @@ function _M:setTile(f, w, h, last)
 			if d and d.birth_example_particles then
 				local p = d.birth_example_particles
 				if type(p) == "table" then p = rng.table(p) end
-				p = util.getval(p, self.actor)
+				p = util.getval(p, self.actor, self)
 				if type(p) == "string" then self.actor:addParticles(Particles.new(p, 1)) end
 			end
 		end
