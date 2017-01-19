@@ -70,8 +70,7 @@ The support functions and tables are assigned to ActorTalents.
 -- Trap Support Functions
 ----------------------------------------------------------------
 --- get the base trap detection power
---local trapPower = function(self,t) return math.max(1,self:combatScale(self:getTalentLevel(self.T_TRAP_MASTERY) * self:getCun(15, true), 0, 0, 75, 75)) end -- Used to determine detection and disarm power, about 75 at level 50
-local trapPower = function(self,t) return math.max(1,self:combatScale(self:getTalentLevel(self.T_TRAP_MASTERY) * self:getCun(25, true), 0, 0, 75, 125)) end -- Used to determine detection and disarm power, ~ 75 at TL 5, 100 cunning
+local trapPower = function(self,t) return math.max(1, self:combatScale(self:getTalentLevel(self.T_TRAP_MASTERY) * self:getCun(25, true), 10, 3.75, 75, 125, 0.25)) end -- Used to determine detection and disarm power, ~ 75 at TL 5, 100 cunning
 
 --- get the maximum range at which a trap can be deployed
 trap_range = function(self, t)
@@ -275,7 +274,7 @@ trapping_CreateTrap = function(self, t, dur, add)
 			if self.temporary <= 0 then
 				if game.level.map(self.x, self.y, engine.Map.TRAP) == self then
 					game.level.map:remove(self.x, self.y, engine.Map.TRAP)
-					if self.summoner and self.stamina then -- Refund
+					if self.summoner and self.stamina and self.stamina > 0 then -- Refund
 						self.summoner:incStamina(self.stamina * 0.8)
 						game.logPlayer(self.summoner, "#CADET_BLUE#Your %s has expired.", self.name)
 					end
@@ -386,7 +385,7 @@ end
 --- Create and place a bladestorm construct (Bladestorm Trap)
 summon_bladestorm = function(self, target, duration, x, y, scale )
 	local m = mod.class.NPC.new{
-		type = "construct", subtype = "trap",
+		type = "construct", subtype = "mechanical",
 		display = "^", color=colors.BROWN, image = "npc/trap_bladestorm_swish_01.png",
 		name = "bladestorm construct", faction = self.faction,
 		desc = [[A lethal contraption of whirling blades.]],
@@ -429,9 +428,9 @@ summon_bladestorm = function(self, target, duration, x, y, scale )
 		never_move = 1,
 		cant_be_moved = 1,
 		negative_status_effect_immune = 1,
-		
-		combat_armor = math.floor(self.level*.75 + 10), combat_def = self.level * 2,
-		resists = {all = self:combatTalentLimit(self:getTalentLevel(self.T_TRAP_MASTERY), 70, 40, 50)},
+		combat_armor = math.floor(2*self.level^.75),
+		combat_def = self:getCun()^.75,
+		resists = {all = self:combatStatLimit("cun", 70, 25, 50)},
 		negative_status_immune = 1,
 		
 		no_drops = 1,
@@ -1272,6 +1271,7 @@ newTalent{
 		local trap = trapping_CreateTrap(self, t, nil, {
 			type = "physical", name = "bladestorm trap", color=colors.BLACK, image = "trap/trap_bladestorm_01.png",
 			dur = dur,
+			stamina = t.stamina,
 			triggered = function(self, x, y, who)
 				local tx, ty = util.findFreeGrid(x, y, 1, true, {[engine.Map.ACTOR]=true}) -- don't activate without room
 				if not tx or not ty then return nil end
@@ -1469,7 +1469,7 @@ newTalent{
 	require = cuns_req_unlock,
 	unlock_talent = function(self, t) return self.player or self.level > 15, "You have learned how to create Freezing traps!" end,
 	no_unlearn_last = true,
-	cooldown = 10,
+	cooldown = 12,
 	stamina = 12,
 	tactical = { ATTACKAREA = { COLD = 1.5 }, ESCAPE = {pin = 1}, CLOSEIN = {pin = 1}},
 	requires_target = function(self, t) return self.trap_primed == t.id end,
@@ -1509,7 +1509,7 @@ newTalent{
 				-- Add a lasting map effect
 				game.level.map:addEffect(self,
 					x, y, 5,
-					engine.DamageType.ICE, self.dam/2,
+					engine.DamageType.ICE, self.dam/3,
 					2,
 					5, nil,
 					{type="ice_vapour"},
@@ -1536,7 +1536,7 @@ newTalent{
 	end,
 	short_info = function(self, t)
 		local dam = damDesc(self, DamageType.COLD, t.getDamage(self, t))
-		return ([[Explodes (radius 2):  Deals %0.2f cold damage and pins for 3 turns.  Area freezes (%0.2f cold damage, 25%% freeze chance) for 5 turns.]]):format(dam, dam/2)
+		return ([[Explodes (radius 2):  Deals %0.2f cold damage and pins for 3 turns.  Area freezes (%0.2f cold damage, 25%% freeze chance) for 5 turns.]]):format(dam, dam/3)
 	end,
 	info = function(self, t)
 		local dam = damDesc(self, DamageType.COLD, t.getDamage(self, t))
@@ -1544,7 +1544,7 @@ newTalent{
 		return ([[Lay a trap that explodes into a radius 2 cloud of freezing vapour when triggered.  Foes take %0.2f cold damage and are pinned for 3 turns.
 		The freezing vapour persists for 5 turns, dealing %0.2f cold damage each turn to foes with a 25%% chance to freeze.
 		This trap can use a primed trigger and a high level lure can trigger it.%s]]):
-		format(dam, dam/2, instant)
+		format(dam, dam/3, instant)
 	end,
 }
 
@@ -1651,15 +1651,16 @@ newTalent{
 	type_no_req = true,
 	require = cuns_req_unlock,
 	no_unlearn_last = true,
-	cooldown = 15,
-	stamina = 12,
+	cooldown = 20,
+	stamina = 15,
 	tactical = { ATTACKAREA = { temporal = 2 }, CLOSEIN = 1.5, ESCAPE = 1.5},
 	is_spell = true,
 	range = trap_range,
 	speed = trap_speed,
 	no_break_stealth = trap_stealth,
-	getDamage = function(self, t) return 20 + self:combatStatScale("mag", 5, 50) * self:callTalent(self.T_TRAP_MASTERY,"getTrapMastery") / 40 end,
-	getDuration = function(self, t) return math.floor(self:callTalent(self.T_TRAP_MASTERY, "getDuration")/2) end,
+	message = "@Source@ deploys a warped device.",
+	getDamage = function(self, t) return 10 + trap_effectiveness(self, t, "mag")*10 end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(self:getTalentLevel(self.T_TRAP_MASTERY), 20/2, 3, 5)) end,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=5} end, -- for AI
 	action = function(self, t)
 		local tg = {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, simple_dir_request=true, _allow_on_target=true}
@@ -1673,6 +1674,7 @@ newTalent{
 			subtype = "arcane", name = "gravitic trap", color=colors.LIGHT_RED, image = "invis.png",
 			embed_particles = {{name="wormhole", rad=5, args={image="shockbolt/trap/trap_gravitic", speed=1}}},
 			dam = dam,
+			check_hit = math.max(self:combatAttack(), self:combatSpellpower()),
 			tg = tg,
 			stamina = t.stamina,
 			dur = dur,
@@ -1693,7 +1695,7 @@ newTalent{
 						end)
 					end
 					if target then
-						self.turns_to_act = math.min(self.dur, self.gravity) self.gravity = 0
+						self.turns_to_act = math.min(self.dur, self.gravity) self.gravity, self.stamina = 0, 0
 					else -- recharge gravity level
 						self.gravity = self.gravity + 1
 						return
@@ -1719,7 +1721,7 @@ newTalent{
 						if self.summoner then self.summoner.__project_source = self end
 						engine.DamageType:get(engine.DamageType.TEMPORAL).projector(self.summoner, target.x, target.y, engine.DamageType.TEMPORAL, self.dam)
 						if self.summoner then self.summoner.__project_source = nil end
-						if target:canBe("knockback") then
+						if self:checkHitOld(self.check_hit, target:combatPhysicalResist()) and target:canBe("knockback") then
 							target:pull(self.x, self.y, 1)
 							if target.x ~= ox or target.y ~= oy then
 								target:logCombat(self, "#LIGHT_STEEL_BLUE##Target# pulls #Source# in!")
@@ -1727,6 +1729,8 @@ newTalent{
 									self:disarm(self.x, self.y, target)
 								end
 							end
+						else
+							target:logCombat(self, "#LIGHT_STEEL_BLUE##Source# resists the pull of #Target#!")
 						end
 					end
 				end)
@@ -1751,9 +1755,10 @@ newTalent{
 		format(t.getDuration(self,t), damDesc(self, engine.DamageType.TEMPORAL, t.getDamage(self, t)))
 	end,
 	info = function(self, t)
-		return ([[Lay a trap that creates a radius 5 gravitic anomaly when triggered by foes approaching within range 1.  Each turn, the anomaly deals %0.2f temporal damage (based on your Magic) to foes whle pulling them towards its center.
-		Each anomaly lasts %d turns (up to the amount of time since the last anomaly dissipated, based on your Trap Mastery skill), and the trap may trigger more than once, though it requires at least 2 turns to recharge between anomalies.
-This trap does not require advanced preparation to use.]]):
+		return ([[Lay a trap that creates a radius 5 gravitic anomaly when triggered by foes approaching within range 1.  Each turn, the anomaly deals %0.2f temporal damage (based on your Magic) to foes whle pulling them towards its center (chance increases with your combat accuracy or spell power, whichever is higher).
+		Each anomaly lasts %d turns (up to the amount of time since the last anomaly dissipated, based on your Trap Mastery skill).
+		The trap may trigger more than once, but requires at least 2 turns to recharge between activations.
+This design does not require advanced preparation to use.]]):
 		format(damDesc(self, engine.DamageType.TEMPORAL, t.getDamage(self, t)), t.getDuration(self,t))
 	end,
 }

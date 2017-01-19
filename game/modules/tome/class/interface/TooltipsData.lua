@@ -425,7 +425,7 @@ TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
 This represents your chance to completely avoid this specific effect.
 ]]
 TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
-This represents your chance to completely being stunned, dazed, or frozen.
+This represents your chance to completely avoid being stunned, dazed, or frozen.
 ]]
 TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
 This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
@@ -498,6 +498,10 @@ Invisible creatures are magically removed from the sight of all others. They can
 TOOLTIP_VISION_SEE_INVISIBLE = [[#GOLD#See invisible#LAST#
 Your power to see invisible creatures. The higher it is, the more likely you are to see them (based on their own invisibility score).
 If you do not have any see invisible score you will never be able to see invisible creatures.
+]]
+TOOLTIP_SEE_TRAPS = [[#GOLD#Detect Traps#LAST#
+Your power to find hidden traps. The higher it is, the more likely you are to notice a trap before setting it off  (based on its own detection score).
+If you do not have any detect traps score, you can not detect traps without triggering them.
 ]]
 TOOLTIP_ANTIMAGIC_USER = [[#GOLD#Antimagic User#LAST#
 Dedicated to opposing and destroying magical and arcane influence in the world.

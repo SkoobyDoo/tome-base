@@ -27,15 +27,15 @@ newTalent{
 	mode = "sustained",
 	no_break_stealth = true,
 	getChance = function(self,t) return self:combatTalentLimit(t, 50, 15, 35) end, --Limit < 50%
+	turnLoss = function(self, t) return self:combatTalentLimit(t, .25, .08, .15) end, --Limit < 25% of a turn
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if not target then return nil end
-		if self:reactionToward(target) >=0 then return nil end
-		if rng.percent(t.getChance(self, t)) then
-			if target:canBe("cut") then
-				local energyDrain = (game.energy_to_act * 0.1)
-				target.energy.value = target.energy.value - energyDrain
-				local bleed = dam*0.75
-				target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam / 10)})
+		if not (target and hitted and dam > 0) or self:reactionToward(target) >= 0 then return nil end
+		if rng.percent(t.getChance(self, t)) and target:canBe("cut") then
+			target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam*.75 / 10)})
+			local turn_loss, last_tl = t.turnLoss(self, t), target.turn_procs.lacerating_strikes or 0
+			if turn_loss - last_tl > 0 then
+				target:useEnergy(game.energy_to_act * (turn_loss - last_tl))
+				target.turn_procs.lacerating_strikes = turn_loss
 			end
 		end		
 	end,
@@ -47,8 +47,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		local chance = t.getChance(self,t)
-		return ([[Your melee attacks have a %d%% chance to inflict a deep, disabling wound inflicting an additional 75%% of the damage dealt as a bleed over 10 turns, as well as causing the target to lose 10%% of a turn.]]):
-		format(chance)
+		return ([[Your melee attacks have a %d%% chance to inflict a deep, disabling wound inflicting an additional 75%% of the damage dealt as a bleed over 10 turns, as well as causing the target to lose %d%% of a turn (up to once per turn).]]):
+		format(chance, t.turnLoss(self, t)*100)
 	end,
 }
 
@@ -59,45 +59,45 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	getCritPenalty = function(self,t) return self:combatTalentScale(t, 10, 30) end,
-	getDuration = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	getDuration = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4, "log")) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 8, 24) end, -- Limit < 100%
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if not target then return nil end
-		if self:reactionToward(target) >=0 then return nil end
-		if target then target:setEffect(target.EFF_SCOUNDREL, 10, {src=self, power=t.getCritPenalty(self,t) }) end
-		if self:knowTalent(self.T_FUMBLE) and target then
+		if not (target and hitted and dam > 0) or self:reactionToward(target) >=0 then return nil end
+		target:setEffect(target.EFF_SCOUNDREL, 10, {src=self, power=t.getCritPenalty(self,t) })
+		if self:knowTalent(self.T_FUMBLE) then
 			local dam = self:callTalent(self.T_FUMBLE, "getDamage")
 			local stacks = self:callTalent(self.T_FUMBLE, "getStacks")
 			target:setEffect(target.EFF_FUMBLE, 10, {power=3, max_power = stacks*3, dam=dam, stacks=1, max_stacks=stacks })
 		end
 
-		local nb = 0
+		if target.turn_procs.scoundrel or not rng.percent(t.getChance(self,t)) then return end
+		local bleed = false
 		for eff_id, p in pairs(target.tmp) do
 			local e = target.tempeffect_def[eff_id]
-			if e.subtype.cut then nb = nb + 1 end
+			if e.subtype.cut then bleed = true break end
 		end
 		
-		if nb <= 0 or not rng.percent(t.getChance(self,t)) or target.turn_procs.scoundrel then return end
-		local tids = {}
-		for tid, lev in pairs(target.talents) do
-			local t = target:getTalentFromId(tid)
-			if t and not target.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
+		if bleed then
+			local tids = {}
+			for tid, lev in pairs(target.talents) do
+				local t = target:getTalentFromId(tid)
+				if t and not target.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
+			end
+			
+			local cd = t.getDuration(self,t)
+			local t = rng.tableRemove(tids)
+			if not t or #tids<=0 then return end
+			target.talents_cd[t.id] = cd
+			game.logSeen(target, "#CRIMSON#%s's %s is disrupted by %s wounds!", target.name:capitalize(), t.name, target:his_her())
+			target.turn_procs.scoundrel = true
 		end
-		
-		local cd = t.getDuration(self,t)
-		local t = rng.tableRemove(tids)
-		if not t or #tids<=0 then return end
-		target.talents_cd[t.id] = cd
-		game.logSeen(target, "%s's %s is disrupted by their wounds!", target.name:capitalize(), t.name)
-		target.turn_procs.scoundrel = true
-		
 	end,
 	info = function(self, t)
 		local chance = t.getChance(self,t)
 		local crit = t.getCritPenalty(self, t)
 		local dur = t.getDuration(self,t)
 		return ([[Your melee attacks inflict distracting wounds that reduce the target’s critical strike chance by %d%% for 10 turns. 
-In addition, your attacks against bleeding targets have a %d%% chance to inflict a painful wound that causes them to forget a random talent for %d turns. This cannot affect a target more than once per turn.
+In addition, your attacks against bleeding targets have a %d%% chance to inflict a painful wound that causes them to forget a random talent for %d turns.  The last effect cannot occur more than once per turn per target.
 		]]):format(crit, chance, dur)
 	end,
 }
@@ -151,7 +151,7 @@ newTalent{
 		local stacks = t.getStacks(self, t)
 		local dam = t.getDamage(self, t)
 		return ([[Your Scoundrel's Strategies effect leaves your foes unable to focus on any complex actions, giving them a stacking 3%% chance of failure the next time they try to use a talent (to a maximum of %d%%).
-		If the talent fails, the target fumbles and injures themselves, taking %0.2f physical damage and removing the fumble effect.
+		If the talent fails, the target fumbles and injures itself, taking %0.2f physical damage and removing the fumble effect.
 		The damage dealt increases with your Cunning.
 		]]):format(stacks*3, damDesc(self, DamageType.PHYSICAL, dam))
 	end,

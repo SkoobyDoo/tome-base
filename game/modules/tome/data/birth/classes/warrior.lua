@@ -54,6 +54,12 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +3",
 	},
+	birth_example_particles = {
+		function(actor) if core.shader.active() then
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, img="tentacles_shader/berserker_aura_2"}, {type="tentacles", wobblingType=0, appearTime=0.3, time_factor=500, noup=2.0}))
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, img="tentacles_shader/berserker_aura_2"}, {type="tentacles", wobblingType=0, appearTime=0.3, time_factor=500, noup=1.0}))
+		end end,
+	},
 	power_source = {technique=true},
 	stats = { str=5, con=3, dex=1, },
 	talents_types = {
@@ -101,7 +107,7 @@ newBirthDescriptor{
 		"#GOLD#Life per level:#LIGHT_BLUE# +2",
 	},
 	birth_example_particles = {
-		function(actor) if core.shader.active(4) then
+		function(actor) if core.shader.active() then
 			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1, img="rotating_shield"}, {type="rotatingshield", noup=2.0, appearTime=0.2}))
 			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1, img="rotating_shield"}, {type="rotatingshield", noup=1.0, appearTime=0.2}))
 		end end,

@@ -328,12 +328,12 @@ function _M:use(who, typ, inven, item)
 			end
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not ret.nobreakStepUp then who:breakStepUp() end
-			if not ret.nobreakStealth then who:breakStealth() end
 			if not ret.nobreakLightningSpeed then who:breakLightningSpeed() end
 			if not ret.nobreakReloading then who:breakReloading() end
 			if not ret.nobreakSpacetimeTuning then who:breakSpacetimeTuning() end
 			if not (self.use_no_energy or ret.no_energy) then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
+				if not ret.nobreakStealth then who:breakStealth() end
 			end
 		end
 		return ret
@@ -1128,7 +1128,13 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		compare_fields(combat, compare_with, field, "lifesteal", "%+d%%", "Lifesteal (this weapon only): ", 1, false, false, add_table)
 		
+		local attack_recurse_procs_reduce_compare = function(orig, compare_with)
+			orig = 100 - 100 / orig
+			if compare_with then return ("%+d%%"):format(-(orig - (100 - 100 / compare_with)))
+			else return ("%d%%"):format(-orig) end
+		end
 		compare_fields(combat, compare_with, field, "attack_recurse", "%+d", "Multiple attacks: ", 1, false, false, add_table)
+		compare_fields(combat, compare_with, field, "attack_recurse_procs_reduce", attack_recurse_procs_reduce_compare, "Multiple attacks procs power reduction: ", 1, true, false, add_table)
 
 		if combat.tg_type and combat.tg_type == "beam" then
 			desc:add({"color","YELLOW"}, ("Shots beam through all targets."), {"color","LAST"}, true)

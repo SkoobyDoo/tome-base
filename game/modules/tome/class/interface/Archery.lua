@@ -385,38 +385,44 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 		if crit then self:logCombat(target, "#{bold}##Source# performs a ranged critical strike against #Target#!#{normal}#") end
 
-		-- Damage conversion?
-		-- Reduces base damage but converts it into another damage type
-		local conv_dam
-		local conv_damtype
-		if ammo and ammo.convert_damage then
-			for typ, conv in pairs(ammo.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
-				end
-			end
-		end
-
-		if weapon and weapon.convert_damage then
-			for typ, conv in pairs(weapon.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
-				end
-			end
-		end
-
 		if tg.archery.crushing_blow then self:attr("crushing_blow", 1) end
-		DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam), tmp)
+
+		-- Damage conversion?
+		-- Convert base damage to other damage types according to weapon and ammo
+		local ammo_conversion, weapon_conversion = 0, 0
+		if dam > 0 then
+			local conv_dam
+			local archery_state = {is_archery=true}
+			if tmp then table.merge(archery_state, tmp) end
+			if ammo and ammo.convert_damage then -- convert to ammo damage types first
+				for typ, conv in pairs(ammo.convert_damage) do
+					conv_dam = math.min(dam, dam * (conv / 100))
+					print("[ATTACK ARCHERY]\tAmmo DamageType conversion%", conv, typ, conv_dam)
+					ammo_conversion = ammo_conversion + conv_dam
+					if conv_dam > 0 then
+						DamageType:get(typ).projector(self, target.x, target.y, typ, conv_dam, archery_state)
+					end
+				end
+				dam = dam - ammo_conversion
+				print("[ATTACK ARCHERY]\t after Ammo DamageType conversion dam:", dam)
+			end
+			if weapon and weapon.convert_damage and dam > 0 then -- convert remaining damage to weapon damage types
+				for typ, conv in pairs(weapon.convert_damage) do
+					conv_dam = math.min(dam, dam * (conv / 100))
+					print("[ATTACK ARCHERY]\tWeapon DamageType conversion%", conv, typ, conv_dam)
+					weapon_conversion = weapon_conversion + conv_dam
+					if conv_dam > 0 then
+						DamageType:get(typ).projector(self, target.x, target.y, typ, conv_dam, archery_state)
+					end
+				end
+				dam = dam - weapon_conversion
+				print("[ATTACK ARCHERY]\t after Weapon DamageType conversion dam:", dam)
+			end
+
+			if dam > 0 then
+				DamageType:get(damtype).projector(self, target.x, target.y, damtype, dam, archery_state)
+			end
+		end
 		if tg.archery.crushing_blow then self:attr("crushing_blow", -1) end
 
 		if not tg.no_archery_particle then game.level.map:particleEmitter(target.x, target.y, 1, "archery") end
@@ -424,7 +430,9 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 		if talent.archery_onhit then talent.archery_onhit(self, talent, target, target.x, target.y) end
 
-		target:fireTalentCheck("callbackOnArcheryHit", self)
+		-- add damage conversion back in so the total damage still gets passed
+		dam = dam + ammo_conversion + weapon_conversion
+		target:fireTalentCheck("callbackOnArcheryHit", self, dam)
 	else
 		self:logCombat(target, "#Source# misses #target#.")
 

@@ -3345,3 +3345,53 @@ newEffect{
 		})
 	end,
 }
+
+newEffect{
+	name = "EXPOSE_WEAKNESS", image = "talents/expose_weakness.png",
+	desc = "Exploiting Weaknesses",
+	long_desc = function(self, eff)
+		local bonuses = {}
+		if eff.bonus_accuracy > 0 then table.insert(bonuses, ("have %+d accuracy"):format(eff.bonus_accuracy)) end
+		if eff.bonus_power > 0 then table.insert(bonuses, ("deal %+0.1f damage"):format(eff.bonus_power)) end
+		if eff.bonus_pen > 0 then table.insert(bonuses, ("have %+d%% resistance penetration"):format(eff.bonus_pen)) end
+		if #bonuses > 0 then bonuses = table.concatNice(bonuses, ", ", " and ") else bonuses = "are not affected" end
+		return ("You are focused on weaknesses you have found in your target's defences.  Your melee attacks against %s %s."):format(eff.target and eff.target.name:capitalize() or "noone", bonuses)
+	end,
+	type = "mental",
+	subtype = { tactical=true},
+	status = "beneficial",
+	parameters = {power=10, hardiness=10, penetration=10, accuracy=0, find_weakness=true},
+	on_gain = function(self, eff) return ("#Target# #GOLD#focuses on weaknesses#LAST# in %s's defenses!"):format(eff.target and eff.target.name:capitalize() or self:his_her().." target"), "+Expose Weakness" end,
+	on_lose = function(self, eff) return "#Target#'s attacks are less focused.", "-Expose Weakness" end,
+	on_timeout = function(self, eff)
+		eff.find_weakness = false
+		if not eff.target or eff.target.dead or not game.level:hasEntity(eff.target) then
+			self:removeEffect(eff.effect_id)
+		end
+	end,
+	activate = function(self, eff)
+		eff.bonus_power = 0
+		eff.bonus_accuracy = 0
+		eff.bonus_pen = 0
+	end,
+	deactivate = function(self, eff)
+	end,
+	-- pre attack: assign bonuses already set up  Note: This is post rescaleCombatStats (i.e. applied directly)
+	callbackOMeleeAttackBonuses = function(self, eff, hd)
+		if not eff.find_weakness then
+			hd.atk = hd.atk + eff.bonus_accuracy
+			hd.dam = hd.dam + eff.bonus_power
+		end
+	end,
+	-- after attack, accumulate weakness bonuses (1 turn only) based on combat result
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
+		if eff.find_weakness then -- compile bonuses
+			if hitted then
+				eff.bonus_power = eff.bonus_power + eff.power
+				eff.bonus_pen = eff.bonus_pen + eff.penetration
+			else -- missed, add accuracy
+				eff.bonus_accuracy = eff.bonus_accuracy + eff.accuracy
+			end
+		end
+	end,
+}
