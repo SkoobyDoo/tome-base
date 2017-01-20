@@ -429,7 +429,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	end
 	
 	local dam, apr, armor = force_dam or self:combatDamage(weapon), self:combatAPR(weapon), target:combatArmor()
-	print("[ATTACK] to ", target.name, " :: ", dam, apr, armor, atk, "vs.", def, "::", mult)
+	print("[ATTACK] to ", target.name, "dam/apr/atk/mult ::", dam, apr, atk, mult, "vs. armor/def", armor, def)
 
 	-- check repel
 	local repelled = false
@@ -444,7 +444,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	self:fireTalentCheck("callbackOMeleeAttackBonuses", hd)
 	target, weapon, damtype, mult, dam, apr, atk, def, armor = hd.target, hd.weapon, hd.damtype, hd.mult, hd.dam, hd.apr, hd.atk, hd.def, hd.armor
 	if hd.stop then return end
-	print("[ATTACK] after melee attack bonus hooks and callbacks :: ", dam, apr, armor, atk, "vs.", def, "::", mult)
+	print("[ATTACK] after melee attack bonus hooks & callbacks::", dam, apr, atk, mult, "vs. armor/def", armor, def)
 
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
 	local hitted = false
@@ -491,6 +491,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		self:logCombat(target, "#Target# evades #Source#.")
 	elseif self.turn_procs.auto_melee_hit or (self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or target:attr("blind_fighted") or rng.chance(3))) then
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
+		
+		-- Apply weapon damage range
+		-- By doing this first, variable damage is more "smooth" against high armor
+		local damrange = self:combatDamageRange(weapon)
+		dam = rng.range(dam, dam * damrange)
+		print("[ATTACK] HIT:: damrange", damrange, "==> dam/apr::", dam, apr, "vs. armor/hardiness", armor, pres)
+		
 		local eff = target.knowTalent and target:hasEffect(target.EFF_PARRY)
 		-- check if target deflects the blow (deflected blows cannot crit)
 		if eff then
@@ -503,28 +510,24 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 
 		if target.knowTalent and target:hasEffect(target.EFF_GESTURE_OF_GUARDING) and not target:attr("encased_in_ice") then
-			local deflect = math.min(dam, target:callTalent(target.T_GESTURE_OF_GUARDING, "doGuard")) or 0
-			if deflect > 0 then
-				game:delayedLogDamage(self, target, 0, ("%s(%d gestured#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
-				dam = dam - deflect
+			local g_deflect = math.min(dam, target:callTalent(target.T_GESTURE_OF_GUARDING, "doGuard")) or 0
+			if g_deflect > 0 then
+				game:delayedLogDamage(self, target, 0, ("%s(%d gestured#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", g_deflect), false)
+				dam = dam - g_deflect; deflect = deflect + g_deflect
 			end
 			print("[ATTACK] after GESTURE_OF_GUARDING", dam)
 		end
 
 		if self:isAccuracyEffect(weapon, "knife") then
 			local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 0.005, 0.25)
-			print("[ATTACK] dagger accuracy bonus", atk, def, "=", bonus, "previous", apr)
 			apr = apr * bonus
+			print("[ATTACK] dagger accuracy bonus", atk, def, "=", bonus, "apr ==>", apr)
 		end
 
-		print("[ATTACK] raw dam", dam, "versus", armor, pres, "with APR", apr)
 		armor = math.max(0, armor - apr)
 		dam = math.max(dam * pres - armor, 0) + (dam * (1 - pres))
 		print("[ATTACK] after armor", dam)
-		local damrange = self:combatDamageRange(weapon)
-		dam = rng.range(dam, dam * damrange)
-		print("[ATTACK] after range", dam)
-
+		
 		if deflect == 0 then dam, crit = self:physicalCrit(dam, weapon, target, atk, def) end
 		print("[ATTACK] after crit", dam)
 		dam = dam * mult
@@ -1281,7 +1284,7 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then add = add + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getArmorBoost") end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then add = add + self:callTalent(self["T_FORM_AND_FUNCTION"], "getArmorBoost") end
 
 	return self.combat_armor + add
 end
@@ -1325,7 +1328,7 @@ function _M:combatAttackBase(weapon, ammo)
 	weapon = weapon or self.combat or {}
 	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
 
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then atk = atk + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
 
 	if self:attr("hit_penalty_2h") then atk = atk * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
@@ -1651,17 +1654,16 @@ function _M:combatDamage(weapon, adddammod, damage)
 			totstat = totstat + self:getStat(stat) * mod
 		end
 	end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then totstat = totstat + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
 	local power = self:combatDamagePower(damage or weapon)
-	return self:rescaleDamage(0.3*(self:combatPhysicalpower(nil, weapon) + totstat) * power * talented_mod)
+	return self:rescaleDamage(0.3*self:combatPhysicalpower(nil, weapon, totstat) * power * talented_mod)
 end
 
 --- Gets the 'power' portion of the damage
 function _M:combatDamagePower(weapon_combat, add)
 	if not weapon_combat then return 1 end
 	local power = math.max((weapon_combat.dam or 1) + (add or 0), 1)
-
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then power = power + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon_combat) end
 
 	return (math.sqrt(power / 10) - 1) * 0.5 + 1
 end
@@ -1800,7 +1802,7 @@ function _M:combatFatigue()
 	local min = self.min_fatigue or 0
 	local fatigue = self.fatigue
 
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then fatigue = fatigue - self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getFatigueBoost") end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then fatigue = fatigue - self:callTalent(self["T_FORM_AND_FUNCTION"], "getFatigueBoost") end
 
 	if self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
 		fatigue = fatigue - self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getFatigue")
