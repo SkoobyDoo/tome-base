@@ -222,7 +222,9 @@ bool draw_waiting(lua_State *L)
 	if (wait_draw_ref != LUA_NOREF)
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);
-		lua_call(L, 0, 0);
+		if (lua_pcall(L, 0, 0, 0)) {
+			printf("Waiter error: %s\n", lua_tostring(L, -1));
+		}
 	}
 	else draw_last_frame(L);
 
