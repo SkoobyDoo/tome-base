@@ -105,7 +105,7 @@ function _M:setInscription(id, name, data, cooldown, vocal, src, bypass_max_same
 	if src and src.obj then data.item_name = src.obj:getName{do_color=true, no_count=true}:toTString() end
 	self.inscriptions_data[name] = data
 	self.inscriptions[id] = name
---	print("Inscribing on "..self.name..": "..tostring(name))
+	-- print("Inscribing on "..self.name.."("..self:getClassName()..")"..": "..tostring("T_"..name).." => "..tostring(self["T_"..name]))
 	self:learnTalent(self["T_"..name], true, 1, {no_unlearn=true})
 	local t = self:getTalentFromId(self["T_"..name])
 	if cooldown then self:startTalentCooldown(t) end
