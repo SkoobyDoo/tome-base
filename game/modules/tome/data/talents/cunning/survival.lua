@@ -171,9 +171,9 @@ newTalent{
 				game.logPlayer(self, "#CADET_BLUE#You don't have the skill to disarm traps.")
 			elseif (x == self.x and y == self.y) or self:canMove(x, y) then
 				local px, py = self.x, self.y
-				self:move(x, y, true) -- temporarily move to make sure trap can trigger properly
+				mod.class.Actor.move(self, x, y, true) -- temporarily move to make sure trap can trigger properly
 				trap:trigger(self.x, self.y, self) -- then attempt to disarm the trap, which may trigger it
-				self:move(px, py, true)
+				mod.class.Actor.move(self, px, py, true)
 			else
 				game.logPlayer(self, "#CADET_BLUE#You cannot disarm traps in grids you cannot enter.")
 			end
