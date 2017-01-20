@@ -1596,68 +1596,6 @@ local hex_opposed_dir = table.readonly{
 
 util = {}
 
-function util.clipOffset(w, h, total_w, total_h, loffset_x, loffset_y, dest_area)
-	w, h = math.floor(w), math.floor(h)
-	total_w, total_h, loffset_x, loffset_y = math.floor(total_w), math.floor(total_h), math.floor(loffset_x), math.floor(loffset_y)
-	dest_area.w , dest_area.h = math.floor(dest_area.w), math.floor(dest_area.h)
-	local clip_y_start = 0
-	local clip_y_end = 0
-	local clip_x_start = 0
-	local clip_x_end = 0
-	-- if its visible then compute how much of it needs to be clipped, take centering into account
-	if total_h < loffset_y then clip_y_start = loffset_y - total_h end
-
-	-- if it ended after visible area then compute its bottom clip
-	if total_h + h > loffset_y + dest_area.h then clip_y_end = total_h + h - (loffset_y + dest_area.h) end
-
-	-- if its visible then compute how much of it needs to be clipped, take centering into account
-	if total_w < loffset_x then clip_x_start = loffset_x - total_w end
-
-	-- if it ended after visible area then compute its bottom clip
-	if total_w + w > loffset_x + dest_area.w then clip_x_end = total_w + w - (loffset_x + dest_area.w) end
-
-	if clip_x_start > w then clip_x_start = w end
-	if clip_x_end < 0 then clip_x_end = 0 end
-	if clip_y_start > h then clip_y_start = h end
-	if clip_y_end < 0 then clip_y_end = 0 end
-
-	return clip_x_start, clip_x_end, clip_y_start, clip_y_end
-end
-
-function util.clipTexture(texture, x, y, w, h, total_w, total_h, loffset_x, loffset_y, dest_area, r, g, b, a)
-	if not texture then return 0, 0, 0, 0 end
-	x, y, w, h = math.floor(x), math.floor(y), math.floor(w), math.floor(h)
-	total_w, total_h, loffset_x, loffset_y = math.floor(total_w), math.floor(total_h), math.floor(loffset_x), math.floor(loffset_y)
-	dest_area.w , dest_area.h = math.floor(dest_area.w), math.floor(dest_area.h)
-	local clip_y_start = 0
-	local clip_y_end = 0
-	local clip_x_start = 0
-	local clip_x_end = 0
-	-- if its visible then compute how much of it needs to be clipped, take centering into account
-	if total_h < loffset_y then clip_y_start = loffset_y - total_h end
-
-	-- if it ended after visible area then compute its bottom clip
-	if total_h + h > loffset_y + dest_area.h then clip_y_end = total_h + h - (loffset_y + dest_area.h) end
-
-	-- if its visible then compute how much of it needs to be clipped, take centering into account
-	if total_w < loffset_x then clip_x_start = loffset_x - total_w end
-
-	-- if it ended after visible area then compute its bottom clip
-	if total_w + w > loffset_x + dest_area.w then clip_x_end = total_w + w - (loffset_x + dest_area.w) end
-
-	local one_by_tex_h = 1 / texture._tex_h
-	local one_by_tex_w = 1 / texture._tex_w
-	--talent icon
-	texture._tex:toScreenPrecise(x, y, w - (clip_x_start + clip_x_end), h - (clip_y_start + clip_y_end), clip_x_start * one_by_tex_w, (w - clip_x_end) * one_by_tex_w, clip_y_start * one_by_tex_h, (h - clip_y_end) * one_by_tex_h, r, g, b, a)
-
-	if clip_x_start > w then clip_x_start = w end
-	if clip_x_end < 0 then clip_x_end = 0 end
-	if clip_y_start > h then clip_y_start = h end
-	if clip_y_end < 0 then clip_y_end = 0 end
-
-	return clip_x_start, clip_x_end, clip_y_start, clip_y_end
-end
-
 local is_hex = 0
 function util.hexOffset(x)
 	return 0.5 * (x % 2) * is_hex

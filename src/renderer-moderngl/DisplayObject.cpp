@@ -263,7 +263,7 @@ void DORTweener::onKeyframe(int nb_keyframes) {
 		}
 	}
 	if (mat) who->recomputeModelMatrix();
-	if (changed) who->setChanged();
+	if (changed) who->setChanged(true);
 	if (!nb_tweening) {
 		killMe();
 		return; // Just safety in case something is added later. "delete this" must always be the last thing done

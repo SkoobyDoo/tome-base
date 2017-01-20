@@ -1675,7 +1675,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 		if (map->z_changed[z]) {
 			// printf("map layer %d is invalid\n", z);
 			render->resetDisplayLists();
-			render->setChanged();
+			render->setChanged(true);
 			map->z_changed[z] = false;
 
 			for (j = minj; j < maxj; j++)
