@@ -149,21 +149,6 @@ static bool float_get_lua_table(lua_State *L, int table_idx, const char *field, 
 	lua_pop(L, 1);
 	return ret;
 }
-
-static bool string_get_lua_table(lua_State *L, int table_idx, const char *field, const char **res) {
-	bool ret = false;
-	lua_pushstring(L, field);
-	lua_gettable(L, table_idx);
-	if (lua_isstring(L, -1)) {
-		*res = lua_tostring(L, -1);
-		ret = true;
-	} else {
-		ret = false;
-	}
-	lua_pop(L, 1);
-	return ret;
-}
-
 static bool float_get_lua_table(lua_State *L, int table_idx, float field, float *res) {
 	bool ret = false;
 	lua_pushnumber(L, field);
@@ -178,6 +163,36 @@ static bool float_get_lua_table(lua_State *L, int table_idx, float field, float 
 	return ret;
 }
 
+static bool bool_get_lua_table(lua_State *L, int table_idx, const char *field) {
+	bool ret = false;
+	lua_pushstring(L, field);
+	lua_gettable(L, table_idx);
+	ret = lua_toboolean(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+static bool bool_get_lua_table(lua_State *L, int table_idx, float field) {
+	bool ret = false;
+	lua_pushnumber(L, field);
+	lua_gettable(L, table_idx);
+	ret = lua_toboolean(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
+static bool string_get_lua_table(lua_State *L, int table_idx, const char *field, const char **res) {
+	bool ret = false;
+	lua_pushstring(L, field);
+	lua_gettable(L, table_idx);
+	if (lua_isstring(L, -1)) {
+		*res = lua_tostring(L, -1);
+		ret = true;
+	} else {
+		ret = false;
+	}
+	lua_pop(L, 1);
+	return ret;
+}
 static bool string_get_lua_table(lua_State *L, int table_idx, float field, const char **res) {
 	bool ret = false;
 	lua_pushnumber(L, field);
@@ -199,12 +214,12 @@ static int gl_generic_physic_enable(lua_State *L)
 	DORPhysic *physic = c->getPhysic();
 
 	float tmp;
-	b2BodyType kind = b2_dynamicBody;
+	b2BodyDef bodyDef;
 	const char *kindstr = "";
 	string_get_lua_table(L, 2, "kind", &kindstr);
-	if (!strcmp(kindstr, "static")) kind = b2_staticBody;
-	else if (!strcmp(kindstr, "dynamic")) kind = b2_dynamicBody;
-	else if (!strcmp(kindstr, "kinematic")) kind = b2_kinematicBody;
+	if (!strcmp(kindstr, "static")) bodyDef.type = b2_staticBody;
+	else if (!strcmp(kindstr, "dynamic")) bodyDef.type = b2_dynamicBody;
+	else if (!strcmp(kindstr, "kinematic")) bodyDef.type = b2_kinematicBody;
 	else {
 		lua_pushstring(L, "enablePhysic kind must be one of static/kinematic/dynamic");
 		lua_error(L);
@@ -215,6 +230,11 @@ static int gl_generic_physic_enable(lua_State *L)
 	if (float_get_lua_table(L, 2, "density", &tmp)) fixtureDef.density = tmp;
 	if (float_get_lua_table(L, 2, "friction", &tmp)) fixtureDef.friction = tmp;
 	if (float_get_lua_table(L, 2, "restitution", &tmp)) fixtureDef.restitution = tmp;
+	if (float_get_lua_table(L, 2, "gravityScale", &tmp)) bodyDef.gravityScale = tmp;
+	if (float_get_lua_table(L, 2, "linearDamping", &tmp)) bodyDef.linearDamping = tmp;
+	if (float_get_lua_table(L, 2, "angularDamping", &tmp)) bodyDef.angularDamping = tmp;
+	bodyDef.fixedRotation = bool_get_lua_table(L, 2, "fixedRotation");
+	bodyDef.bullet = bool_get_lua_table(L, 2, "bullet");
 
 	// Define the box shape
 	lua_pushstring(L, "shape");
@@ -234,12 +254,12 @@ static int gl_generic_physic_enable(lua_State *L)
 		if (float_get_lua_table(L, shape_table_idx, 3, &tmp)) h = tmp;	
 		dynamicBox.SetAsBox(w / 2 / PhysicSimulator::unit_scale, h / 2 / PhysicSimulator::unit_scale);
 		fixtureDef.shape = &dynamicBox;
-		physic->define(kind, fixtureDef);
+		physic->define(bodyDef, fixtureDef);
 	} else if (!strcmp(shapestr, "circle")) {
 		b2CircleShape dynamicBox;
 		if (float_get_lua_table(L, shape_table_idx, 2, &tmp)) dynamicBox.m_radius = tmp / 2 / PhysicSimulator::unit_scale;
 		fixtureDef.shape = &dynamicBox;
-		physic->define(kind, fixtureDef);
+		physic->define(bodyDef, fixtureDef);
 	} else {
 		lua_pushstring(L, "enablePhysic shape must be one of box/circle");
 		lua_error(L);

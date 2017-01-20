@@ -38,9 +38,11 @@ public:
 	DORPhysic(DisplayObject *d);
 	virtual ~DORPhysic();
 
-	void define(b2BodyType kind, const b2FixtureDef &fixtureDef);
+	void define(b2BodyDef &bodyDef, const b2FixtureDef &fixtureDef);
 
 	void setPos(float x, float y);
+	void setAngle(float a);
+
 	void applyForce(float fx, float fy, float apply_x, float apply_y);
 	void applyForce(float fx, float fy);
 	void applyLinearImpulse(float fx, float fy, float apply_x, float apply_y);

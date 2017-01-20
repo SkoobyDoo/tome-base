@@ -40,22 +40,24 @@ DORPhysic::DORPhysic(DisplayObject *d) {
 	me = d;
 }
 
-void DORPhysic::define(b2BodyType kind, const b2FixtureDef &fixtureDef) {
-	b2BodyDef bodyDef;
-	bodyDef.type = kind;
-	bodyDef.position.Set(0.0f, 0.0f);
+void DORPhysic::define(b2BodyDef &bodyDef, const b2FixtureDef &fixtureDef) {
+	bodyDef.angle = me->rot_z;
+	bodyDef.position.Set(me->x / PhysicSimulator::unit_scale, -me->y / PhysicSimulator::unit_scale);
+	bodyDef.userData = me;
 	body = PhysicSimulator::current->world.CreateBody(&bodyDef);
-
 	body->CreateFixture(&fixtureDef);
 }
 
 DORPhysic::~DORPhysic() {
 	physic_obj_count--;
-
 }
 
 void DORPhysic::setPos(float x, float y) {
 	body->SetTransform(b2Vec2(x / PhysicSimulator::unit_scale, -y / PhysicSimulator::unit_scale), me->rot_z);
+}
+
+void DORPhysic::setAngle(float a) {
+	body->SetTransform(b2Vec2(me->x / PhysicSimulator::unit_scale, -me->y / PhysicSimulator::unit_scale), a);
 }
 
 void DORPhysic::applyForce(float fx, float fy, float apply_x, float apply_y) {
@@ -84,9 +86,9 @@ void DORPhysic::onKeyframe(int nb_keyframes) {
 	float32 angle = body->GetAngle();
 	float unit_scale = PhysicSimulator::unit_scale;
 
-	printf("%4.2f %4.2f %4.2f\n", position.x * unit_scale, position.y * unit_scale, angle);
+	// printf("%4.2f %4.2f %4.2f\n", position.x * unit_scale, position.y * unit_scale, angle);
 	me->translate(position.x * unit_scale, -position.y * unit_scale, me->z, true);
-	me->rotate(me->rot_x, me->rot_y, angle, false);
+	me->rotate(me->rot_x, me->rot_y, angle, true);
 }
 
 /*************************************************************************

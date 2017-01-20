@@ -53,6 +53,8 @@ DisplayObject::~DisplayObject() {
 	if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
 	if (tweener) delete tweener;
 	tweener = NULL;
+	if (physic) delete physic;
+	physic = NULL;
 }
 
 void DisplayObject::removeFromParent() {
@@ -354,6 +356,18 @@ void DisplayObject::translate(float x, float y, float z, bool increment) {
 }
 
 void DisplayObject::rotate(float x, float y, float z, bool increment) {
+	if (physic) {
+		if (!increment) {
+			this->rot_x = x;
+			this->rot_y = y;
+			physic->setAngle(z);
+			recomputeModelMatrix();
+			return;
+		} else {
+			increment = false;
+		}
+	}
+
 	if (increment) {
 		this->rot_x += x;
 		this->rot_y += y;
