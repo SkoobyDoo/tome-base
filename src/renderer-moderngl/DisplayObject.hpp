@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2017 Nicolas Casalini
+	Copyright (C) 2009 - 2015 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -115,7 +115,8 @@ protected:
 	float x = 0, y = 0, z = 0;
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
-	bool changed = false;
+	bool changed = true;
+	bool changed_children = true;
 	bool stop_parent_recursing = false;
 
 	DORTweener *tweener = NULL;
@@ -137,7 +138,7 @@ public:
 	void setChanged();
 	virtual void setSortingChanged();
 	bool isChanged() { return changed; };
-	void resetChanged() { changed = false; };
+	void resetChanged() { changed = false; changed_children = false; };
 	bool independantRenderer() { return stop_parent_recursing; };
 
 	void recomputeModelMatrix();

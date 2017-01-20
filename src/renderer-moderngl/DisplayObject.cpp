@@ -82,8 +82,13 @@ void DisplayObject::setChanged() {
 			return;
 		}
 #endif
-		p->changed = true;
-		if (p->stop_parent_recursing) break;
+		if (p->stop_parent_recursing) {
+			p->changed_children = true;
+			p->changed = true;
+			break;
+		} else {
+			p->changed = true;
+		}
 		p = p->parent;
 	}
 }

@@ -191,7 +191,7 @@ void RendererGL::resetDisplayLists() {
 
 // DGDGDGDG: make that (optionally?) process in a second thread; making it nearly costless
 void RendererGL::update() {
-	// printf("Renderer %s needs updating\n", getRendererName());
+	printf("Renderer %s needs updating\n", getRendererName());
 
 	if (!manual_dl_management) {
 		resetDisplayLists();
@@ -330,9 +330,11 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 	}
 }
 
+bool ok =true;
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
-	if (changed) update();
+	printf("=====%s : %d %d\n", renderer_name, changed, changed_children);
+	if (changed_children) update();
 	if (displays.empty()) return;
 	// printf("Displaying renderer %s\n", getRendererName());
 
