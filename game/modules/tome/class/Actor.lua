@@ -4467,6 +4467,15 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 		if not self:attr("autolearn_mindslayer_done") then
 			self:unlearnTalent(self.T_TELEKINETIC_GRASP)
 			self:unlearnTalent(self.T_BEYOND_THE_FLESH)
+			function focusremove(invenid)
+				local focus = self:getInven(invenid)
+				for i = #focus, 1, -1 do
+					self:doTakeoff(focus, i, focus[i], true, nil, true)
+				end
+				self.inven[invenid] = nil
+			end
+			focusremove(self.INVEN_PSIONIC_FOCUS)
+			focusremove(self.INVEN_QS_PSIONIC_FOCUS)
 		end
 	end
 
@@ -6681,10 +6690,11 @@ end
 --	@param o = object to remove
 --	@param simple set true to skip equipment takeoff checks and energy use
 --	@param dst = actor to receive object (in dst.INVEN_INVEN)
-function _M:doTakeoff(inven, item, o, simple, dst)
+--	@param force = set to true to skip sleep & such checks
+function _M:doTakeoff(inven, item, o, simple, dst, force)
 	dst = dst or self
 	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
-	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+	if not force and self:attr("sleep") and not self:attr("lucid_dreamer") then
 		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
