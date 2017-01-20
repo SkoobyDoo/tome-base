@@ -135,6 +135,10 @@ void DisplayObject::enablePhysic() {
 	physic = new DORPhysic(this);
 }
 
+DORPhysic *DisplayObject::getPhysic() {
+	return physic;
+}
+
 void DisplayObject::shown(bool v) {
 	// if (visible != v) setSortingChanged();
 	visible = v;
@@ -323,6 +327,18 @@ void DisplayObject::cancelTween(TweenSlot slot) {
 
 
 void DisplayObject::translate(float x, float y, float z, bool increment) {
+	if (physic) {
+		if (!increment) {
+			this->z = z;
+			physic->setPos(x, y);
+			if (z != this->z) setSortingChanged();
+			recomputeModelMatrix();
+			return;
+		} else {
+			increment = false;
+		}
+	}
+
 	if (increment) {
 		this->x += x;
 		this->y += y;

@@ -145,6 +145,7 @@ public:
 	bool independantRenderer() { return stop_parent_recursing; };
 
 	void enablePhysic();
+	DORPhysic *getPhysic();
 
 	void recomputeModelMatrix();
 	recomputematrix computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur);

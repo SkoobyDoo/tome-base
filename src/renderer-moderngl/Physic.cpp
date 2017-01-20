@@ -38,27 +38,14 @@ static int physic_obj_count = 0;
 DORPhysic::DORPhysic(DisplayObject *d) {
 	physic_obj_count++;
 	me = d;
+}
 
+void DORPhysic::define(b2BodyType kind, const b2FixtureDef &fixtureDef) {
 	b2BodyDef bodyDef;
-	bodyDef.type = b2_dynamicBody;
-	bodyDef.position.Set(0.0f, 4.0f);
+	bodyDef.type = kind;
+	bodyDef.position.Set(0.0f, 0.0f);
 	body = PhysicSimulator::current->world.CreateBody(&bodyDef);
 
-	// Define another box shape for our dynamic body.
-	b2PolygonShape dynamicBox;
-	dynamicBox.SetAsBox(1.0f, 1.0f);
-
-	// Define the dynamic body fixture.
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &dynamicBox;
-
-	// Set the box density to be non-zero, so it will be dynamic.
-	fixtureDef.density = 1.0f;
-
-	// Override the default friction.
-	fixtureDef.friction = 0.3f;
-
-	// Add the shape to the body.
 	body->CreateFixture(&fixtureDef);
 }
 
@@ -67,20 +54,45 @@ DORPhysic::~DORPhysic() {
 
 }
 
+void DORPhysic::setPos(float x, float y) {
+	body->SetTransform(b2Vec2(x / PhysicSimulator::unit_scale, -y / PhysicSimulator::unit_scale), me->rot_z);
+}
+
+void DORPhysic::applyForce(float fx, float fy, float apply_x, float apply_y) {
+	body->ApplyForce(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), true);
+}
+void DORPhysic::applyForce(float fx, float fy) {
+	body->ApplyForceToCenter(b2Vec2(fx, -fy), true);
+}
+void DORPhysic::applyLinearImpulse(float fx, float fy, float apply_x, float apply_y) {
+	body->ApplyLinearImpulse(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), true);
+}
+void DORPhysic::applyLinearImpulse(float fx, float fy) {
+	body->ApplyLinearImpulseToCenter(b2Vec2(fx, -fy), true);
+}
+
+void DORPhysic::applyTorque(float t) {
+	body->ApplyTorque(t, true);
+}
+
+void DORPhysic::applyAngularImpulse(float t) {
+	body->ApplyAngularImpulse(t, true);
+}
+
 void DORPhysic::onKeyframe(int nb_keyframes) {
 	b2Vec2 position = body->GetPosition();
 	float32 angle = body->GetAngle();
-	float unit_scale = PhysicSimulator::current->unit_scale;
+	float unit_scale = PhysicSimulator::unit_scale;
 
 	printf("%4.2f %4.2f %4.2f\n", position.x * unit_scale, position.y * unit_scale, angle);
-	me->translate(position.x * unit_scale, -position.y * unit_scale, me->z, false);
+	me->translate(position.x * unit_scale, -position.y * unit_scale, me->z, true);
 	me->rotate(me->rot_x, me->rot_y, angle, false);
 }
 
 /*************************************************************************
  ** PhysicSimulator
  *************************************************************************/
-PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x, y)) {
+PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale, -y / unit_scale)) {
 }
 
 void PhysicSimulator::use() {
@@ -89,6 +101,10 @@ void PhysicSimulator::use() {
 		exit(1);
 	}
 	current = this;
+}
+
+void PhysicSimulator::setGravity(float x, float y) {
+	world.SetGravity(b2Vec2(x / unit_scale, -y / unit_scale));
 }
 
 void PhysicSimulator::setUnitScale(float scale) {
@@ -104,6 +120,8 @@ void PhysicSimulator::step(int nb_keyframes) {
 }
 
 PhysicSimulator *PhysicSimulator::current = NULL;
+float PhysicSimulator::unit_scale = 1;
+
 PhysicSimulator *PhysicSimulator::getCurrent() {
 	printf("[PhysicSimulator] getCurrent: NO CURRENT ONE !\n");
 	return current;

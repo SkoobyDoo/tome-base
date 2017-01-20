@@ -136,11 +136,130 @@ static int gl_generic_color(lua_State *L)
 	return 1;
 }
 
+static bool float_get_lua_table(lua_State *L, int table_idx, const char *field, float *res) {
+	bool ret = false;
+	lua_pushstring(L, field);
+	lua_gettable(L, table_idx);
+	if (lua_isnumber(L, -1)) {
+		*res = lua_tonumber(L, -1);
+		ret = true;
+	} else {
+		ret = false;
+	}
+	lua_pop(L, 1);
+	return ret;
+}
+
+static bool string_get_lua_table(lua_State *L, int table_idx, const char *field, const char **res) {
+	bool ret = false;
+	lua_pushstring(L, field);
+	lua_gettable(L, table_idx);
+	if (lua_isstring(L, -1)) {
+		*res = lua_tostring(L, -1);
+		ret = true;
+	} else {
+		ret = false;
+	}
+	lua_pop(L, 1);
+	return ret;
+}
+
+static bool float_get_lua_table(lua_State *L, int table_idx, float field, float *res) {
+	bool ret = false;
+	lua_pushnumber(L, field);
+	lua_gettable(L, table_idx);
+	if (lua_isnumber(L, -1)) {
+		*res = lua_tonumber(L, -1);
+		ret = true;
+	} else {
+		ret = false;
+	}
+	lua_pop(L, 1);
+	return ret;
+}
+
+static bool string_get_lua_table(lua_State *L, int table_idx, float field, const char **res) {
+	bool ret = false;
+	lua_pushnumber(L, field);
+	lua_gettable(L, table_idx);
+	if (lua_isstring(L, -1)) {
+		*res = lua_tostring(L, -1);
+		ret = true;
+	} else {
+		ret = false;
+	}
+	lua_pop(L, 1);
+	return ret;
+}
+
 static int gl_generic_physic_enable(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->enablePhysic();
+	DORPhysic *physic = c->getPhysic();
+
+	float tmp;
+	b2BodyType kind = b2_dynamicBody;
+	const char *kindstr = "";
+	string_get_lua_table(L, 2, "kind", &kindstr);
+	if (!strcmp(kindstr, "static")) kind = b2_staticBody;
+	else if (!strcmp(kindstr, "dynamic")) kind = b2_dynamicBody;
+	else if (!strcmp(kindstr, "kinematic")) kind = b2_kinematicBody;
+	else {
+		lua_pushstring(L, "enablePhysic kind must be one of static/kinematic/dynamic");
+		lua_error(L);
+	}		
+
+	// Define the body fixture.
+	b2FixtureDef fixtureDef;
+	if (float_get_lua_table(L, 2, "density", &tmp)) fixtureDef.density = tmp;
+	if (float_get_lua_table(L, 2, "friction", &tmp)) fixtureDef.friction = tmp;
+	if (float_get_lua_table(L, 2, "restitution", &tmp)) fixtureDef.restitution = tmp;
+
+	// Define the box shape
+	lua_pushstring(L, "shape");
+	lua_gettable(L, 2);
+	if (!lua_istable(L, -1)) {
+		lua_pushstring(L, "enablePhysic needs a shape definition");
+		lua_error(L);
+	}		
+	int shape_table_idx = lua_gettop(L);
+
+	const char *shapestr = "";
+	string_get_lua_table(L, shape_table_idx, 1, &shapestr);
+	if (!strcmp(shapestr, "box")) {
+		b2PolygonShape dynamicBox;
+		float w = 1, h = 1;
+		if (float_get_lua_table(L, shape_table_idx, 2, &tmp)) w = tmp;	
+		if (float_get_lua_table(L, shape_table_idx, 3, &tmp)) h = tmp;	
+		dynamicBox.SetAsBox(w / 2 / PhysicSimulator::unit_scale, h / 2 / PhysicSimulator::unit_scale);
+		fixtureDef.shape = &dynamicBox;
+		physic->define(kind, fixtureDef);
+	} else if (!strcmp(shapestr, "circle")) {
+		b2CircleShape dynamicBox;
+		if (float_get_lua_table(L, shape_table_idx, 2, &tmp)) dynamicBox.m_radius = tmp / 2 / PhysicSimulator::unit_scale;
+		fixtureDef.shape = &dynamicBox;
+		physic->define(kind, fixtureDef);
+	} else {
+		lua_pushstring(L, "enablePhysic shape must be one of box/circle");
+		lua_error(L);
+	}		
 	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_generic_get_physic(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DORPhysic *physic = c->getPhysic();
+	if (!physic) {
+		lua_pushstring(L, "physic() called without previous call to enablePhysic");
+		lua_error(L);
+	}
+
+	DORPhysic **r = (DORPhysic**)lua_newuserdata(L, sizeof(DORPhysic*));
+	auxiliar_setclass(L, "physic{body}", -1);
+	*r = physic;
 	return 1;
 }
 
@@ -974,6 +1093,40 @@ static int gl_view_use(lua_State *L)
 }
 
 /******************************************************************
+ ** Physic bodies
+ ******************************************************************/
+static int body_apply_force(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	if (lua_isnumber(L, 4)) p->applyForce(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	else p->applyForce(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int body_apply_linear_impulse(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	if (lua_isnumber(L, 4)) p->applyLinearImpulse(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	else p->applyLinearImpulse(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int body_apply_torque(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	p->applyTorque(lua_tonumber(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int body_apply_angular_impulse(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	p->applyAngularImpulse(lua_tonumber(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+/******************************************************************
  ** Generic non object functions
  ******************************************************************/
 static int gl_dos_count(lua_State *L) {
@@ -987,15 +1140,18 @@ static int gl_set_default_text_shader(lua_State *L) {
 	return 0;
 }
 
-static int physic_world(lua_State *L) {
-	PhysicSimulator *ps = new PhysicSimulator(lua_tonumber(L, 1), lua_tonumber(L, 2));
-	ps->use();
+static int physic_world_gravity(lua_State *L) {
+	if (PhysicSimulator::current) {
+		PhysicSimulator::current->setGravity(lua_tonumber(L, 1), lua_tonumber(L, 2));
+	} else {
+		PhysicSimulator *ps = new PhysicSimulator(lua_tonumber(L, 1), lua_tonumber(L, 2));
+		ps->use();
+	}
 	return 0;
 }
 
 static int physic_world_unit_to_pixel(lua_State *L) {
-	PhysicSimulator *ps = PhysicSimulator::getCurrent();
-	ps->setUnitScale(lua_tonumber(L, 1));
+	PhysicSimulator::setUnitScale(lua_tonumber(L, 1));
 	return 0;
 }
 
@@ -1017,6 +1173,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1056,6 +1213,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1082,6 +1240,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1113,6 +1272,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1148,6 +1308,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1173,6 +1334,7 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1196,6 +1358,7 @@ static const struct luaL_Reg gl_tileobject_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1219,6 +1382,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1244,6 +1408,7 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1269,6 +1434,7 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1288,6 +1454,16 @@ static const struct luaL_Reg gl_view_reg[] =
 	{NULL, NULL},
 };
 
+// Note the is no __gc because we dont actaully manage the object
+static const struct luaL_Reg physic_body_reg[] =
+{
+	{"applyForce", body_apply_force},
+	{"applyLinearImpulse", body_apply_linear_impulse},
+	{"applyTorque", body_apply_torque},
+	{"applyAngularImpulse", body_apply_angular_impulse},
+	{NULL, NULL},
+};
+
 const luaL_Reg rendererlib[] = {
 	{"renderer", gl_renderer_new},
 	{"vertexes", gl_vertexes_new},
@@ -1299,13 +1475,14 @@ const luaL_Reg rendererlib[] = {
 	{"view", gl_view_new},
 	{"countDOs", gl_dos_count},
 	{"defaultTextShader", gl_set_default_text_shader},
-	{"physicWorld", physic_world},
+	{"physicWorldGravity", physic_world_gravity},
 	{"physicWorldScale", physic_world_unit_to_pixel},
 	{NULL, NULL}
 };
 
 int luaopen_renderer(lua_State *L)
 {
+	auxiliar_newclass(L, "physic{body}", physic_body_reg);
 	auxiliar_newclass(L, "gl{renderer}", gl_renderer_reg);
 	auxiliar_newclass(L, "gl{vertexes}", gl_vertexes_reg);
 	auxiliar_newclass(L, "gl{text}", gl_text_reg);

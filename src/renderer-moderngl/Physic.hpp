@@ -24,6 +24,8 @@
 #include "renderer-moderngl/Renderer.hpp"
 #include "Box2D/Box2D.h"
 
+// DGDGDGDG: worth considering https://github.com/skitzoid/Box2D-MT ?
+
 /*************************************************************************
  ** DORPhysic
  *************************************************************************/
@@ -36,6 +38,16 @@ public:
 	DORPhysic(DisplayObject *d);
 	virtual ~DORPhysic();
 
+	void define(b2BodyType kind, const b2FixtureDef &fixtureDef);
+
+	void setPos(float x, float y);
+	void applyForce(float fx, float fy, float apply_x, float apply_y);
+	void applyForce(float fx, float fy);
+	void applyLinearImpulse(float fx, float fy, float apply_x, float apply_y);
+	void applyLinearImpulse(float fx, float fy);
+	void applyTorque(float t);
+	void applyAngularImpulse(float t);
+
 	virtual void onKeyframe(int nb_keyframes);
 };
 
@@ -47,15 +59,16 @@ private:
 
 public:
 	b2World world;
-	float unit_scale = 1;
+	static float unit_scale;
 	static PhysicSimulator *current;
 
 	PhysicSimulator(float x=0, float y=0);
+	void setGravity(float x, float y);
 	void use();
-	void setUnitScale(float scale);
 
 	void step(int nb_keyframes);
 
+	static void setUnitScale(float scale);
 	static PhysicSimulator *getCurrent();
 };
 
