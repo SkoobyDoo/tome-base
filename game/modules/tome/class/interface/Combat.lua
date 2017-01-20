@@ -1314,7 +1314,7 @@ function _M:combatArmorHardiness()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
 	end
-	if self:hasEffect(self.EFF_BREACH) or self:hasEffect(self.EXPOSE_WEAKNESS) then
+	if self:hasEffect(self.EFF_BREACH) then
 		multi = 0.5
 	end
 	return util.bound(30 + self.combat_armor_hardiness + add, 0, 100) * multi
