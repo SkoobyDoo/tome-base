@@ -30,6 +30,7 @@ extern "C" {
 }
 int donb = 0;
 #include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/Physic.hpp"
 #include "tinyobjloader/tiny_obj_loader.h"
 #include <string>
 
@@ -87,6 +88,7 @@ void DisplayObject::setChanged() {
 			p->changed = true;
 			break;
 		} else {
+			if (p->changed) return; // Dont bother, the rest of the parents are already marked
 			p->changed = true;
 		}
 		p = p->parent;
@@ -127,6 +129,10 @@ recomputematrix DisplayObject::computeParentCompositeMatrix(DisplayObject *stop_
 	cur.color = p.color * color;
 	cur.visible = p.visible && visible;
 	return cur;
+}
+
+void DisplayObject::enablePhysic() {
+	physic = new DORPhysic(this);
 }
 
 void DisplayObject::shown(bool v) {

@@ -667,6 +667,7 @@ void call_draw(int nb_keyframes)
 }
 
 
+extern void run_physic_simulation(int nb_keyframes);
 void on_redraw()
 {
 	static int last_ticks = 0;
@@ -686,6 +687,7 @@ void on_redraw()
 	frames_count += (float)(ticks - last_ticks) / (1000.0 / (float)NORMALIZED_FPS);
 	// printf("ticks %d :: %d\n", ticks - last_ticks, (int)frames_count);
 	int nb_keyframes = (int)frames_count;
+	run_physic_simulation(nb_keyframes);
 	call_draw(nb_keyframes);
 	keyframes_done += nb_keyframes;
 	frames_done++;

@@ -37,7 +37,7 @@ project "TEngine"
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-spriter", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-spriter", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader", "te4-box2d" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
@@ -659,6 +659,15 @@ project "te4-tinyobjloader"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/tinyobjloader/*.cc", }
+
+project "te4-box2d"
+	kind "StaticLib"
+	language "C++"
+	targetname "te4-box2d"
+	buildoptions { "-std=c++11" }
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+
+	files { "../src/Box2D/**.h", "../src/Box2D/**.cpp", }
 
 
 

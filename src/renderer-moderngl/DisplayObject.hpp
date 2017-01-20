@@ -40,6 +40,7 @@ using namespace std;
 class View;
 class RendererGL;
 class DisplayObject;
+class DORPhysic;
 
 #define DO_STANDARD_CLONE_METHOD(class_name) virtual DisplayObject* clone() { DisplayObject *into = new class_name(); this->cloneInto(into); return into; }
 
@@ -101,6 +102,7 @@ extern int donb;
  ** Generic display object
  ****************************************************************************/
 class DisplayObject {
+	friend class DORPhysic;
 	friend class DORTweener;
 	friend class View;
 public:
@@ -120,6 +122,7 @@ protected:
 	bool stop_parent_recursing = false;
 
 	DORTweener *tweener = NULL;
+	DORPhysic *physic = NULL;
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
@@ -140,6 +143,8 @@ public:
 	bool isChanged() { return changed; };
 	void resetChanged() { changed = false; changed_children = false; };
 	bool independantRenderer() { return stop_parent_recursing; };
+
+	void enablePhysic();
 
 	void recomputeModelMatrix();
 	recomputematrix computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur);

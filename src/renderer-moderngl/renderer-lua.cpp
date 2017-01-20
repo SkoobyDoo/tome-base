@@ -23,6 +23,7 @@
 #include "renderer-moderngl/TextObject.hpp"
 #include "renderer-moderngl/TileMap.hpp"
 #include "renderer-moderngl/Particles.hpp"
+#include "renderer-moderngl/Physic.hpp"
 #include "spriter/Spriter.hpp"
 
 extern "C" {
@@ -131,6 +132,14 @@ static int gl_generic_color(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_generic_physic_enable(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	c->enablePhysic();
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -967,16 +976,26 @@ static int gl_view_use(lua_State *L)
 /******************************************************************
  ** Generic non object functions
  ******************************************************************/
-static int gl_dos_count(lua_State *L) 
-{
+static int gl_dos_count(lua_State *L) {
 	lua_pushnumber(L, donb);
 	return 1;
 }
 
-static int gl_set_default_text_shader(lua_State *L) 
-{
+static int gl_set_default_text_shader(lua_State *L) {
 	shader_type *shader = (shader_type*)lua_touserdata(L, 1);
 	DORText::defaultShader(shader);
+	return 0;
+}
+
+static int physic_world(lua_State *L) {
+	PhysicSimulator *ps = new PhysicSimulator(lua_tonumber(L, 1), lua_tonumber(L, 2));
+	ps->use();
+	return 0;
+}
+
+static int physic_world_unit_to_pixel(lua_State *L) {
+	PhysicSimulator *ps = PhysicSimulator::getCurrent();
+	ps->setUnitScale(lua_tonumber(L, 1));
 	return 0;
 }
 
@@ -997,6 +1016,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1035,6 +1055,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1060,6 +1081,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1090,6 +1112,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1124,6 +1147,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1148,6 +1172,7 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1170,6 +1195,7 @@ static const struct luaL_Reg gl_tileobject_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1192,6 +1218,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1216,6 +1243,7 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1240,6 +1268,7 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{"shown", gl_generic_shown},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
 	{"translate", gl_generic_translate},
@@ -1270,6 +1299,8 @@ const luaL_Reg rendererlib[] = {
 	{"view", gl_view_new},
 	{"countDOs", gl_dos_count},
 	{"defaultTextShader", gl_set_default_text_shader},
+	{"physicWorld", physic_world},
+	{"physicWorldScale", physic_world_unit_to_pixel},
 	{NULL, NULL}
 };
 
