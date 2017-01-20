@@ -74,7 +74,7 @@ void DisplayObject::setParent(DisplayObject *parent) {
 	this->parent = parent;
 };
 
-void DisplayObject::setChanged() {
+void DisplayObject::setChanged(bool force) {
 	changed = true;
 	DisplayObject *p = parent;
 	while (p) {
@@ -87,10 +87,10 @@ void DisplayObject::setChanged() {
 #endif
 		if (p->stop_parent_recursing) {
 			p->changed_children = true;
-			p->changed = true;
+			if (force) p->changed = true;
 			break;
 		} else {
-			if (p->changed) return; // Dont bother, the rest of the parents are already marked
+			if (p->changed && !force) return; // Dont bother, the rest of the parents are already marked
 			p->changed = true;
 		}
 		p = p->parent;
@@ -144,7 +144,7 @@ DORPhysic *DisplayObject::getPhysic() {
 void DisplayObject::shown(bool v) {
 	// if (visible != v) setSortingChanged();
 	visible = v;
-	setChanged();
+	setChanged(true);
 }
 
 void DisplayObject::setColor(float r, float g, float b, float a) {
@@ -152,7 +152,7 @@ void DisplayObject::setColor(float r, float g, float b, float a) {
 	if (g != -1) color.g = g;
 	if (b != -1) color.b = b;
 	if (a != -1) color.a = a;
-	setChanged();
+	setChanged(true);
 }
 
 void DisplayObject::resetModelMatrix() {
