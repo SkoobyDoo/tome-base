@@ -176,7 +176,7 @@ newBirthDescriptor{
 		["technique/combat-techniques-passive"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},
 		["technique/battle-tactics"]={false, 0.2},
-		["technique/mobility"]={true, 0.3},
+		["technique/mobility"]={false, 0.3},
 		["technique/thuggery"]={true, 0.3},
 		["technique/conditioning"]={true, 0.3},
 		["technique/bloodthirst"]={false, 0.1},
@@ -234,7 +234,7 @@ newBirthDescriptor{
 		["technique/mobility"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={false, 0.1},
+		["cunning/scoundrel"]={false, 0.1},
 	},
 	unlockable_talents_types = {
 		["cunning/poisons"]={false, 0.2, "rogue_poisons"},
