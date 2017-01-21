@@ -107,6 +107,7 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.texts_layer = core.renderer.container():translate(0, 0, 20) self.renderer:add(self.texts_layer)
 	self.frames_layer = core.renderer.container():translate(0, 0, 30) self.renderer:add(self.frames_layer)
 	self.sels_layer = core.renderer.container():translate(0, 0, 40) self.renderer:add(self.sels_layer)
+	self.unseens_layer = core.renderer.container():translate(0, 0, 0):color(1, 1, 1, 0) self.renderer:add(self.unseens_layer)
 	self.sel_frames = {}
 
 	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0, self.w, self.h)) end
@@ -137,6 +138,7 @@ function _M:display()
 	self.cooldowns_layer:clear()
 	self.texts_layer:clear()
 	self.frames_layer:clear()
+	self.unseens_layer:clear()
 
 	local orient = self.orient or "down"
 	local x = 0
@@ -271,19 +273,17 @@ function _M:display()
 			local color = {190,190,190}
 			local frame = "disabled"
 
-			-- self.font:setStyle("bold")
-			-- local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
-			-- local key = self.font:draw(ks, self.font:size(ks), colors.ANTIQUE_WHITE.r, colors.ANTIQUE_WHITE.g, colors.ANTIQUE_WHITE.b, true)[1]
-			-- self.font:setStyle("normal")
+			self.unseens_layer:add(UI:makeFrameDO("ui/icon-frame/frame", self.icon_w + 8, self.icon_h + 8).container:translate(x - 4, y - 4, 0):color(unpack(frames_colors[frame])))
 
-			-- DGDGDGDG make that work
+			local sel_frame = core.renderer.colorQuad(0, 0, 1, 1, 0.5, 0.5, 1, SEL_FRAME_MAX_ALPHA):translate(x, y):scale(self.icon_w, self.icon_h, 1)
+			self.unseens_layer:add(sel_frame)
 
-			if not self.sel_frames[i] then
-				self.sel_frames[i] = core.renderer.colorQuad(0, 0, 1, 1, 0.5, 0.5, 1, 1):color(1, 1, 1, 0):translate(x, y):scale(self.icon_w, self.icon_h, 1)
-				self.sels_layer:add(self.sel_frames[i])
-			else
-				self.sel_frames[i]:translate(x, y):scale(self.icon_w, self.icon_h, 1)
-			end
+			local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
+			local key = core.renderer.text(self.fontbig)
+			self:applyShadowOutline(key)
+			key:textColor(colors.unpack1(colors.ANTIQUE_WHITE)):text(ks):scale(0.5, 0.5, 0.5) -- Scale so we can usethe same atlas for all text
+			local tw, th = key:getStats()
+			self.unseens_layer:add(key:translate(x + self.icon_w - tw/2, y + self.icon_h - th/2, 0)) -- /2 because we scale by 0.5
 
 			self.items[#self.items+1] = {show_on_drag=true, i=i, x=x, y=y, e=nil, color=color, angle=angle, key=key, gtxt=nil, frame=frame}
 			self.clics[i] = {x,y,w,h, fake=true}
@@ -333,8 +333,10 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 		a:nextHotkeyPage()
 		return
 	elseif button == "drag-start-global" then
+		self.unseens_layer:tween(7, "a", nil, 1)
 		return
 	elseif button == "drag-end-global" then
+		self.unseens_layer:tween(7, "a", nil, 0)
 		return
 	elseif button == "drag-end" then
 		local drag = game.mouse.dragged.payload
