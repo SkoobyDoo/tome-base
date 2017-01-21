@@ -40,7 +40,11 @@ end
 
 function _M:switchLocked()
 	self.locked = not self.locked
-	for i, container in ipairs(self.minicontainers) do container:locked(self.locked) end
+	for i, container in ipairs(self.minicontainers) do
+		container:lock(self.locked)
+		if not self.locked then container:getDO():add(container:getUnlockedDO())
+		else container:getDO():remove(container:getUnlockedDO()) end
+	end
 	if self.locked then
 		game.bignews:say(60, "#CRIMSON#Interface locked, mouse enabled on the map")
 	else

@@ -27,6 +27,7 @@ module(..., package.seeall, class.inherit(MiniContainer))
 
 function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
+	self.zoom_resize = false
 
 	local font, size = FontPackage:getFont("default")
 	self.logdisplay = LogDisplay.new(0, 0, self.w, self.h, nil, font, size, nil, nil)
@@ -65,8 +66,8 @@ function _M:init(minimalist)
 end
 
 function _M:getDefaultGeometry()
-	local th = 52
-	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+	local th = 60
+	if config.settings.tome.hotkey_icons then th = (19 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
 
 	local x = 0
 	local w = math.floor(game.w / 2)
@@ -81,11 +82,9 @@ end
 
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
-	self:getDO():translate(x, y, 0)
 end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
 	self.logdisplay:resize(0, 0, w, h)
-	self:getDO():translate(self.x, self.y, 0)
 end

@@ -28,6 +28,8 @@ module(..., package.seeall, class.inherit(MiniContainer))
 
 function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
+	self.container_z = 100
+	self.zoom_resize = false
 
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
@@ -85,13 +87,11 @@ end
 
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
-	self:getDO():translate(x, y, 100)
 end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
 	self.hotkeys_display_icons:resize(0, 0, w, h)
-	self:getDO():translate(self.x, self.y, 100)
 end
 
 function _M:update(nb_keyframes)

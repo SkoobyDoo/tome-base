@@ -96,7 +96,6 @@ end
 
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
-	self:getDO():translate(x, y, 0)
 end
 
 function _M:resize(w, h)

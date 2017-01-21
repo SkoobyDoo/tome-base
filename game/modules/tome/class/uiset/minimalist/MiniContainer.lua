@@ -25,19 +25,23 @@ local UI = require "engine.ui.Base"
 -- @classmod engine.LogDisplay
 module(..., package.seeall, class.make)
 
-function _M:init(minimalist, w, h)
-	if not w or not h then
-		local _ _, _, w, h = self:getDefaultGeometry()
-	end
+function _M:init(minimalist)
+	local _ _, _, w, h = self:getDefaultGeometry()
 	self.uiset = minimalist
 	self.mouse = Mouse.new()
 	self.x, self.y = 0, 0
 	self.w, self.h = w, h
+	self.base_w, self.base_h = w, h
+	self.container_z = 0
 	self.scale = 1
 	self.locked = true
 	self.focused = false
+	self.zoom_resize = true
 	self.orientation = "left"
 	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
+
+	self.unlocked_container = core.renderer.container()
+	self.unlocked_container:add(core.renderer.colorQuad(0, 0, w, h, 0, 0, 0, 0.235))
 end
 
 function _M:imageLoader(file, rw, rh)
@@ -89,10 +93,19 @@ end
 
 function _M:move(x, y)
 	self.x, self.y = x, y
+	self:getDO():translate(x, y, 0)
 	self:setupMouse()
 end
 
 function _M:resize(w, h)
+	if self.zoom_resize then
+		local ratio = self.base_w / self.base_h
+		if w / self.base_w > h / self.base_h then
+			h = w / ratio
+		else
+			w = h / ratio
+		end
+	end
 	self.w, self.h = w, h
 end
 
@@ -107,6 +120,11 @@ end
 function _M:getDO()
 	-- By default assume this name, overload if different
 	return self.do_container
+end
+
+function _M:getUnlockedDO()
+	-- By default assume this name, overload if different
+	return self.unlocked_container
 end
 
 function _M:onFocus(v)
