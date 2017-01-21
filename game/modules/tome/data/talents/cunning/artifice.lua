@@ -414,10 +414,6 @@ newTalent{
 	action = function(self, t)
 		local life = t.getHeal(self, t)
 		local sta = t.getStam(self, t)
-		self:incStamina(sta)
-		self:attr("allow_on_heal", 1)
-		self:heal(life, self)
-		self:attr("allow_on_heal", -1)
 		
 		local effs = {}
 		-- Go through all temporary effects
@@ -440,6 +436,11 @@ newTalent{
 		if known then
 			game.logSeen(self, "%s is cured!", self.name:capitalize())
 		end
+		
+		self:incStamina(sta)
+		self:attr("allow_on_heal", 1)
+		self:heal(life, self)
+		self:attr("allow_on_heal", -1)
 
 		if self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then self:setEffect(self.EFF_ROGUE_S_BREW, 8, {power = self:callTalent(self.T_ROGUE_S_BREW_MASTERY, "getDieAt")}) end
 				

@@ -39,6 +39,17 @@ newTalent{
 			end
 		end		
 	end,
+	callbackOnArcheryAttack = function(self, t, target, hitted)
+		if not (target and hitted and dam > 0) or self:reactionToward(target) >= 0 then return nil end
+		if rng.percent(t.getChance(self, t)) and target:canBe("cut") then
+			target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam*.75 / 10)})
+			local turn_loss, last_tl = t.turnLoss(self, t), target.turn_procs.lacerating_strikes or 0
+			if turn_loss - last_tl > 0 then
+				target:useEnergy(game.energy_to_act * (turn_loss - last_tl))
+				target.turn_procs.lacerating_strikes = turn_loss
+			end
+		end		
+	end,
 	activate = function(self, t)
 		return {}
 	end,
@@ -47,7 +58,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local chance = t.getChance(self,t)
-		return ([[Your melee attacks have a %d%% chance to inflict a deep, disabling wound inflicting an additional 75%% of the damage dealt as a bleed over 10 turns, as well as causing the target to lose %d%% of a turn (up to once per turn).]]):
+		return ([[Your melee and ranged attacks have a %d%% chance to inflict a deep, disabling wound inflicting an additional 75%% of the damage dealt as a bleed over 10 turns, as well as causing the target to lose %d%% of a turn (up to once per turn).]]):
 		format(chance, t.turnLoss(self, t)*100)
 	end,
 }
@@ -62,6 +73,37 @@ newTalent{
 	getDuration = function(self,t) return math.floor(self:combatTalentScale(t, 2, 4, "log")) end,
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 8, 24) end, -- Limit < 100%
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		if not (target and hitted and dam > 0) or self:reactionToward(target) >=0 then return nil end
+		target:setEffect(target.EFF_SCOUNDREL, 10, {src=self, power=t.getCritPenalty(self,t) })
+		if self:knowTalent(self.T_FUMBLE) then
+			local dam = self:callTalent(self.T_FUMBLE, "getDamage")
+			local stacks = self:callTalent(self.T_FUMBLE, "getStacks")
+			target:setEffect(target.EFF_FUMBLE, 10, {power=3, max_power = stacks*3, dam=dam, stacks=1, max_stacks=stacks })
+		end
+
+		if target.turn_procs.scoundrel or not rng.percent(t.getChance(self,t)) then return end
+		local bleed = false
+		for eff_id, p in pairs(target.tmp) do
+			local e = target.tempeffect_def[eff_id]
+			if e.subtype.cut then bleed = true break end
+		end
+		
+		if bleed then
+			local tids = {}
+			for tid, lev in pairs(target.talents) do
+				local t = target:getTalentFromId(tid)
+				if t and not target.talents_cd[tid] and t.mode == "activated" and not t.innate then tids[#tids+1] = t end
+			end
+			
+			local cd = t.getDuration(self,t)
+			local t = rng.tableRemove(tids)
+			if not t or #tids<=0 then return end
+			target.talents_cd[t.id] = cd
+			game.logSeen(target, "#CRIMSON#%s's %s is disrupted by %s wounds!", target.name:capitalize(), t.name, target:his_her())
+			target.turn_procs.scoundrel = true
+		end
+	end,
+	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if not (target and hitted and dam > 0) or self:reactionToward(target) >=0 then return nil end
 		target:setEffect(target.EFF_SCOUNDREL, 10, {src=self, power=t.getCritPenalty(self,t) })
 		if self:knowTalent(self.T_FUMBLE) then
