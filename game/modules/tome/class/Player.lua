@@ -31,6 +31,7 @@ require "mod.class.interface.PartyDeath"
 local Map = require "engine.Map"
 local Dialog = require "engine.ui.Dialog"
 local ActorTalents = require "engine.interface.ActorTalents"
+local Particles = require "engine.Particles"
 
 --- Defines the player for ToME
 -- It is a normal actor, with some redefined methods to handle user interaction.<br/>
@@ -947,7 +948,7 @@ function _M:restCheck()
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
 		for _, node in ipairs(spotted) do
-			node.entity:addParticles(engine.Particles.new("notice_enemy", 1))
+			node.entity:addParticles(Particles.new("notice_enemy", 1))
 		end
 		local dir = game.level.map:compassDirection(spotted[1].x - self.x, spotted[1].y - self.y)
 		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
@@ -1189,7 +1190,7 @@ function _M:runStopped()
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
 		for _, node in ipairs(spotted) do
-			node.entity:addParticles(engine.Particles.new("notice_enemy", 1))
+			node.entity:addParticles(Particles.new("notice_enemy", 1))
 		end
 	end
 
@@ -1204,10 +1205,8 @@ function _M:activateHotkey(id)
 	-- Visual feedback to show whcih key was pressed
 	if config.settings.tome.visual_hotkeys and game.uiset.hotkeys_display and game.uiset.hotkeys_display.clics and game.uiset.hotkeys_display.clics[id] and self.hotkey[id] then
 		local zone = game.uiset.hotkeys_display.clics[id]
-		game.uiset:addParticle(
-			game.uiset.hotkeys_display.display_x + zone[1] + zone[3] / 2, game.uiset.hotkeys_display.display_y + zone[2] + zone[4] / 2,
-			"hotkey_feedback", {w=zone[3], h=zone[4]}
-		)
+		local p = Particles.new("hotkey_feedback", 1, {w=zone[3], h=zone[4]}):getDO()
+		game.uiset.hotkeys_display.renderer:add(p:translate(zone[1] + zone[3] / 2 - 4, zone[2] + zone[4] / 2 - 4, 100))
 	end
 
 	return engine.interface.PlayerHotkeys.activateHotkey(self, id)
