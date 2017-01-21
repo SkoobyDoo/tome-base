@@ -43,6 +43,7 @@ function _M:init(minimalist)
 	self.mouse:dragListener(true)
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
 		if event == "button" and button == "left" and ((game.zone and game.zone.wilderness and not game.player.allow_talents_worldmap) or (game.key ~= game.normal_key)) then return end
+		if button == "none" then button = event end
 		self.hotkeys_display_icons:onMouse(button, mx, my, event == "button",
 			function(text)
 				text = text:toTString()

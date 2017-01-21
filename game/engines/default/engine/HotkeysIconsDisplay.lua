@@ -27,6 +27,8 @@ local UI = require "engine.ui.Base"
 -- @classmod engine.HotkeysIconsDisplay
 module(..., package.seeall, class.make)
 
+SEL_FRAME_MAX_ALPHA = 0.313
+
 --- Init
 -- @param[type=Actor] actor
 -- @number x x coordinate
@@ -104,13 +106,11 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.cooldowns_layer = core.renderer.container():translate(0, 0, 10) self.renderer:add(self.cooldowns_layer)
 	self.texts_layer = core.renderer.container():translate(0, 0, 20) self.renderer:add(self.texts_layer)
 	self.frames_layer = core.renderer.container():translate(0, 0, 30) self.renderer:add(self.frames_layer)
+	self.sels_layer = core.renderer.container():translate(0, 0, 40) self.renderer:add(self.sels_layer)
+	self.sel_frames = {}
 
 	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0, self.w, self.h)) end
 	if self.bg_color then self.bg_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.bg_color))) end
-
-	self.sel_frame = core.renderer.colorQuad(0, 0, self.icon_w, self.icon_h, 0.5, 0.5, 1, 0.313)
-	self.sel_frame:shown(false)
-	self.renderer:add(self.sel_frame)
 end
 
 local page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
@@ -256,6 +256,13 @@ function _M:display()
 				self.icons_layer:add(display_entity:getEntityDisplayObject(self.tiles, self.icon_w, self.icon_h, false, false):translate(x, y, 0))
 			end
 
+			if not self.sel_frames[i] then
+				self.sel_frames[i] = core.renderer.colorQuad(0, 0, 1, 1, 0.5, 0.5, 1, 1):color(1, 1, 1, 0):translate(x, y):scale(self.icon_w, self.icon_h, 1)
+				self.sels_layer:add(self.sel_frames[i])
+			else
+				self.sel_frames[i]:translate(x, y):scale(self.icon_w, self.icon_h, 1)
+			end
+
 			self.items[#self.items+1] = {i=i, x=x, y=y, e=display_entity or self.default_entity, pagesel=lpage==spage}
 			self.clics[i] = {x,y,w,h}
 		else
@@ -270,6 +277,13 @@ function _M:display()
 			-- self.font:setStyle("normal")
 
 			-- DGDGDGDG make that work
+
+			if not self.sel_frames[i] then
+				self.sel_frames[i] = core.renderer.colorQuad(0, 0, 1, 1, 0.5, 0.5, 1, 1):color(1, 1, 1, 0):translate(x, y):scale(self.icon_w, self.icon_h, 1)
+				self.sels_layer:add(self.sel_frames[i])
+			else
+				self.sel_frames[i]:translate(x, y):scale(self.icon_w, self.icon_h, 1)
+			end
 
 			self.items[#self.items+1] = {show_on_drag=true, i=i, x=x, y=y, e=nil, color=color, angle=angle, key=key, gtxt=nil, frame=frame}
 			self.clics[i] = {x,y,w,h, fake=true}
@@ -301,7 +315,7 @@ end
 
 --- Call when a mouse event arrives in this zone  
 -- This is optional, only if you need mouse support
--- @string button
+-- @string butto	n
 -- @number mx mouse x
 -- @number my mouse y
 -- @param[type=boolean] click did they click
@@ -324,7 +338,6 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 		return
 	elseif button == "drag-end" then
 		local drag = game.mouse.dragged.payload
---		print(table.serialize(drag,nil,true))
 		if drag.kind == "talent" or drag.kind == "inventory" then
 			for i, zone in pairs(self.dragclics) do
 				if mx >= zone[1] and mx < zone[1] + zone[3] and my >= zone[2] and my < zone[2] + zone[4] then
@@ -357,9 +370,11 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 				if on_click(i, a.hotkey[i]) then click = false end
 			end
 			local oldsel = self.cur_sel
+			if oldsel ~= i then
+				if oldsel and self.sel_frames[oldsel] then self.sel_frames[oldsel]:tween(7, "a", nil, 0) end
+				if not zone.fake and self.sel_frames[i] then self.sel_frames[i]:tween(7, "a", nil, SEL_FRAME_MAX_ALPHA) end
+			end
 			self.cur_sel = i
-			if not zone.fake then self.sel_frame:shown(true):translate(zone[1], zone[2], 100)
-			else self.sel_frame:shown(false) end
 			if button == "left" and not zone.fake then
 				if click then
 					a:activateHotkey(i)
@@ -398,6 +413,9 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 			return
 		end
 	end
+
 	self.cur_sel = nil
-	self.sel_frame:shown(false)
+	for i, f in ipairs(self.sel_frames) do
+		f:tween(7, "a", nil, 0)
+	end
 end

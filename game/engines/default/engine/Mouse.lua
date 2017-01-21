@@ -88,17 +88,31 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 	self.last_m = cur_m
 end
 
+function _M:receiveMouseGlobal(button, x, y, event, force_name, extra)
+	self.last_pos = { x = x, y = y }
+
+	for i  = 1, #self.areas do
+		local m = self.areas[i]
+		if (not m.mode or m.mode.button) and (not force_name or force_name == m.name) then
+			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, event, extra)
+			if r ~= false then
+				break
+			end
+		end
+	end
+end
+
 --- Delegate an event from an other mouse handler
 -- if self.delegate_offset_x and self.delegate_offset_y are set hey will be used to change the actual coordinates
 function _M:delegate(button, mx, my, xrel, yrel, bx, by, event, name, extra)
 	local ox, oy = (self.delegate_offset_x or 0), (self.delegate_offset_y or 0)
 	mx = mx - ox
 	my = my - oy
--- DGDGDGDG fix me, turns out event value is not propagated at all!
--- maybe merge receiveMouse & receiveMouseMotion and add an even parameter
-	if event == "button" or event == "drag-start-global" or event == "drag-end-global" or event == "out" then self:receiveMouse(button, mx, my, true, name, extra)
+
+	if event == "button" then self:receiveMouse(button, mx, my, true, name, extra)
 	elseif event == "button-down" then self:receiveMouse(button, mx, my, false, name, extra)
 	elseif event == "motion" then self:receiveMouseMotion(button, mx, my, xrel, yrel, name, extra)
+	elseif event == "drag-start-global" or event == "drag-end-global" or event == "out" then self:receiveMouseGlobal(button, mx, my, event, name, extra)
 	end
 end
 
