@@ -244,6 +244,7 @@ void RendererGL::update() {
 		// Notify we dont need to be rebuilt again unless more stuff changes
 	}
 	resetChanged();
+	changed_children = false;
 
 	// Upload each display list vertices data to the corresponding VBO on the GPU memory
 	int nb_quads = 0;

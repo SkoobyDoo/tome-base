@@ -75,16 +75,8 @@ void DisplayObject::setParent(DisplayObject *parent) {
 };
 
 void DisplayObject::setChanged(bool force) {
-	changed = true;
-	DisplayObject *p = parent;
+	DisplayObject *p = this;
 	while (p) {
-#ifdef DEBUG_CHECKPARENTS
-		if (p == this && L) {
-			lua_pushstring(L, "setChanged recursing in loop");
-			lua_error(L);
-			return;
-		}
-#endif
 		if (p->stop_parent_recursing) {
 			p->changed_children = true;
 			if (force) p->changed = true;
@@ -94,6 +86,13 @@ void DisplayObject::setChanged(bool force) {
 			p->changed = true;
 		}
 		p = p->parent;
+#ifdef DEBUG_CHECKPARENTS
+		if (p == this && L) {
+			lua_pushstring(L, "setChanged recursing in loop");
+			lua_error(L);
+			return;
+		}
+#endif
 	}
 }
 
