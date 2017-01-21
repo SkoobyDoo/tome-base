@@ -67,6 +67,13 @@ _M._no_save_fields.can_see_cache = true
 -- Activate fast regen computing
 _M._no_save_fields.regenResourcesFast = true
 
+-- Dont store resting or running
+_M._no_save_fields.running = true
+_M._no_save_fields.resting = true
+
+-- No need to save __project_source either, it's a turn by turn thing
+_M._no_save_fields.__project_source = true
+
 -- Use distance maps
 _M.__do_distance_map = true
 
