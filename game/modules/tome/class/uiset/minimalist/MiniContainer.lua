@@ -47,6 +47,8 @@ function _M:init(minimalist)
 	self.unlocked_container = core.renderer.container()
 	self.unlocked_container:add(core.renderer.colorQuad(0, 0, w, h, 0, 0, 0, 0.235))
 	self.unlocked_container:add(self.move_handle)
+	local text = core.renderer.text(self.uiset.font):outline(1):text("#{italic}#<"..self:getName()..">#{normal}#"):color(colors.smart1unpack(colors.GREY))
+	self.unlocked_container:add(text)	
 end
 
 function _M:imageLoader(file, rw, rh)
@@ -88,6 +90,10 @@ end
 function _M:update(nb_keyframes)
 end
 
+function _M:getName()
+	error("MiniContainer defined without a name")
+end
+
 function _M:getDefaultGeometry()
 	error("MiniContainer defined without a default geometry")
 end
@@ -118,6 +124,11 @@ function _M:resize(w, h)
 	self.w, self.h = w, h
 end
 
+function _M:setAlpha(a)
+	self.alpha = util.bound(a, 0.4, 1)
+	self:getDO():color(1, 1, 1, self.alpha)
+end
+
 function _M:setOrientation(dir)
 	self.orientation = dir
 end
@@ -126,18 +137,18 @@ function _M:getMoveHandleAddText()
 	return ""
 end
 
-function _M:getName()
-	return "Undefined MiniContainer name!!!"
-end
-
 function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 	if self.locked then return end
 
 	local what = self.container_id
 
+	local mhx, mhy = self:getMoveHandleLocation()
+
 	if event == "button" and button == "middle" then self.places[what].scale = 1 self.uiset:saveSettings()
+	elseif event == "button" and button == "wheelup" then self:setAlpha(self.alpha + 0.05) self.uiset:saveSettings()
+	elseif event == "button" and button == "wheeldown" then self:setAlpha(self.alpha - 0.05) self.uiset:saveSettings()
 	elseif event == "motion" and button == "left" then
-		game.mouse:startDrag(mx, my, nil, {kind="ui:move", id=what, dx=bx*self.scale, dy=by*self.scale},
+		game.mouse:startDrag(mx, my, nil, {kind="ui:move", id=what, dx=mhx*self.scale, dy=mhy*self.scale},
 			function(drag, used) self.uiset:saveSettings() if on_change then on_change("move") end end,
 			function(drag, _, x, y) self:move(x-drag.payload.dx, y-drag.payload.dy) if on_change then on_change("move") end end,
 			true
@@ -179,10 +190,16 @@ function _M:lock(v)
 
 		local fct = self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
 			self:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event)
-		end, self:getName().."\n---\nLeft mouse drag&drop to move the frame\nRight mouse drag&drop to scale up/down\nMiddle click to reset to default scale"..self:getMoveHandleAddText())
-		game.mouse:registerZone(self.x + x, self.y + y, w, h, fct, nil, zoneid, true, self.scale)
+		end, self:getName()..[[
+---
+Left mouse drag&drop to move the frame
+Right mouse drag&drop to scale up/down
+Middle click to reset to default scale
+Wheel up/down to change transparency
+]]..self:getMoveHandleAddText())
+		self.mouse:registerZone(x, y, w, h, fct, nil, zoneid, true, self.scale)
 	else
-		game.mouse:unregisterZone(zoneid)
+		self.mouse:unregisterZone(zoneid)
 	end
 end
 

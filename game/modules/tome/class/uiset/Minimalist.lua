@@ -104,11 +104,13 @@ function _M:activate()
 	local font, size = FontPackage:getFont("default")
 	local f = core.display.newFont(font, size)
 	font_h = f:lineSkip()
-	f = core.display.newFont(font_mono, size_mono)
-	font_mono_h = f:lineSkip()
+	fm = core.display.newFont(font_mono, size_mono)
+	font_mono_h = fm:lineSkip()
+	self.font = f
 	self.init_font = font
 	self.init_size_font = size
 	self.init_font_h = font_h
+	self.font_mono = fm
 	self.init_font_mono = font_mono
 	self.init_size_mono = size_mono
 	self.init_font_mono_h = font_mono_h
