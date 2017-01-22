@@ -29,7 +29,7 @@ module(..., package.seeall, class.inherit(MiniContainer))
 function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
 	self.container_z = 100
-	self.zoom_resize = false
+	self.resize_mode = "resize"
 
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
@@ -68,6 +68,10 @@ function _M:init(minimalist)
 			end
 		)
 	end, nil, "hotkeys", true, 1)
+end
+
+function _M:getName()
+	return "Hotkeys"
 end
 
 function _M:getDefaultGeometry()

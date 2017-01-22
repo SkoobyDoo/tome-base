@@ -144,7 +144,9 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 {
 	if (lua_isnil(L, 1))
 	{
-		mouse_renderer->clear();
+		if (mouse_renderer) {
+			mouse_renderer->clear();
+		}
 		mouse_drag_set = false;
 		if (mouse_drag_do) {
 			delete mouse_drag_do;

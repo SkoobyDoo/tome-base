@@ -79,6 +79,10 @@ function _M:init(minimalist, w, h)
 	end, nil, "minimap", true, 1)
 end
 
+function _M:getName()
+	return "Minimap"
+end
+
 function _M:getDefaultGeometry()
 	local y = 0
 	local w = self.def_w

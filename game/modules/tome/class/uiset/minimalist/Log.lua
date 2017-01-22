@@ -27,7 +27,7 @@ module(..., package.seeall, class.inherit(MiniContainer))
 
 function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
-	self.zoom_resize = false
+	self.resize_mode = "resize"
 
 	local font, size = FontPackage:getFont("default")
 	self.logdisplay = LogDisplay.new(0, 0, self.w, self.h, nil, font, size, nil, nil)
@@ -63,6 +63,10 @@ function _M:init(minimalist)
 		game.tooltip.old_ttmx = -100
 		game.mouse:delegate(button, mx, my, xrel, yrel, nil, nil, event, "playmap", extra)
 	end)
+end
+
+function _M:getName()
+	return "Game Log"
 end
 
 function _M:getDefaultGeometry()

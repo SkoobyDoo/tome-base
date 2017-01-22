@@ -29,14 +29,16 @@ function _M:init(minimalist)
 	local _ _, _, w, h = self:getDefaultGeometry()
 	self.uiset = minimalist
 	self.mouse = Mouse.new()
+	self.container_id = self:getClassName()
 	self.x, self.y = 0, 0
 	self.w, self.h = w, h
 	self.base_w, self.base_h = w, h
 	self.container_z = 0
 	self.scale = 1
+	self.alpha = 1
 	self.locked = true
 	self.focused = false
-	self.zoom_resize = true
+	self.resize_mode = "rescale"
 	self.orientation = "left"
 	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
 
@@ -100,12 +102,12 @@ end
 
 function _M:move(x, y)
 	self.x, self.y = x, y
-	self:getDO():translate(x, y, 0)
+	self:getDO():translate(x, y, 0):color(1, 1, 1, self.alpha)
 	self:setupMouse()
 end
 
 function _M:resize(w, h)
-	if self.zoom_resize then
+	if self.resize_mode == "rescale" then
 		local ratio = self.base_w / self.base_h
 		if w / self.base_w > h / self.base_h then
 			h = w / ratio
@@ -114,16 +116,74 @@ function _M:resize(w, h)
 		end
 	end
 	self.w, self.h = w, h
-
-	self.move_handle:translate(self:getMoveHandleLocation())
 end
 
 function _M:setOrientation(dir)
 	self.orientation = dir
 end
 
+function _M:getMoveHandleAddText()
+	return ""
+end
+
+function _M:getName()
+	return "Undefined MiniContainer name!!!"
+end
+
+function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
+	if self.locked then return end
+
+	local what = self.container_id
+
+	if event == "button" and button == "middle" then self.places[what].scale = 1 self.uiset:saveSettings()
+	elseif event == "motion" and button == "left" then
+		game.mouse:startDrag(mx, my, nil, {kind="ui:move", id=what, dx=bx*self.scale, dy=by*self.scale},
+			function(drag, used) self.uiset:saveSettings() if on_change then on_change("move") end end,
+			function(drag, _, x, y) self:move(x-drag.payload.dx, y-drag.payload.dy) if on_change then on_change("move") end end,
+			true
+		)
+	elseif event == "motion" and button == "right" then
+		if mode == "rescale" then
+			game.mouse:startDrag(mx, my, nil, {kind="ui:rescale", id=what, bx=bx, by=by},
+				function(drag, used) self.uiset:saveSettings() if on_change then on_change(mode) end end,
+				function(drag, _, x, y) if self.places[drag.payload.id] then
+					self.places[drag.payload.id].scale = util.bound(math.max((x-self.places[drag.payload.id].x)/drag.payload.bx), 0.5, 2)
+					self:boundPlaces()
+					if on_change then on_change(mode) end
+				end end,
+				true
+			)
+		elseif mode == "resize" and self.places[what] then
+			game.mouse:startDrag(mx, my, nil, {kind="ui:resize", id=what, ox=mx - (self.places[what].x + util.getval(self.mhandle_pos[what].x, self)), oy=my - (self.places[what].y + util.getval(self.mhandle_pos[what].y, self))},
+				function(drag, used) self.uiset:saveSettings() if on_change then on_change(mode) end end,
+				function(drag, _, x, y) if self.places[drag.payload.id] then
+					self.places[drag.payload.id].w = math.max(20, x - self.places[drag.payload.id].x + drag.payload.ox)
+					self.places[drag.payload.id].h = math.max(20, y - self.places[drag.payload.id].y + drag.payload.oy)
+					if on_change then on_change(mode) end
+				end end,
+				true
+			)
+		end
+	end
+end
+
 function _M:lock(v)
 	self.locked = v
+	self.mouse:enableZone(true, v)
+
+	local zoneid = self.mousezone_id.."-move_handle"
+	if not v then
+		local x, y = self:getMoveHandleLocation()
+		local w, h = self.move_handle_w, self.move_handle_h
+		self.move_handle:translate(x, y)
+
+		local fct = self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
+			self:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event)
+		end, self:getName().."\n---\nLeft mouse drag&drop to move the frame\nRight mouse drag&drop to scale up/down\nMiddle click to reset to default scale"..self:getMoveHandleAddText())
+		game.mouse:registerZone(self.x + x, self.y + y, w, h, fct, nil, zoneid, true, self.scale)
+	else
+		game.mouse:unregisterZone(zoneid)
+	end
 end
 
 function _M:getDO()

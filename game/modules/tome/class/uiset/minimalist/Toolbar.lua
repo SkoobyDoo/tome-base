@@ -86,6 +86,10 @@ function _M:update(nb_keyframes)
 	end
 end
 
+function _M:getName()
+	return "Toolbar"
+end
+
 function _M:getDefaultGeometry()
 	local w = self.icon_w
 	local h = self.icon_h * self.nb_icons

@@ -54,7 +54,7 @@ function _M:receiveMouse(button, x, y, isup, force_name, extra)
 
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
-		if (not m.mode or m.mode.button) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
+		if not m.disabled and (not m.mode or m.mode.button) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
 			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, isup and "button" or "button-down", extra)
 			if r ~= false then break end
 		end
@@ -74,7 +74,7 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 	local cur_m = nil
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
-		if (not m.mode or m.mode.move) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
+		if not m.disabled and (not m.mode or m.mode.move) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
 			local r = m.fct(button, x, y, xrel, yrel, (x-m.x1) / m.scale, (y-m.y1) / m.scale, "motion", extra)
 			if r ~= false then
 				cur_m = m
@@ -93,7 +93,7 @@ function _M:receiveMouseGlobal(button, x, y, event, force_name, extra)
 
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
-		if (not m.mode or m.mode.button) and (not force_name or force_name == m.name) then
+		if not m.disabled and (not m.mode or m.mode.button) and (not force_name or force_name == m.name) then
 			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, event, extra)
 			if r ~= false then
 				break
@@ -164,10 +164,34 @@ function _M:unregisterZone(fct)
 			local m = self.areas[i]
 			if m.fct == fct then local m = table.remove(self.areas, i) if m.name then self.areas_name[m.name] = nil end break end
 		end
-	else
+	elseif type(fct) == "string" then
 		for i  = #self.areas, 1, -1 do
 			local m = self.areas[i]
 			if m.name == fct then local m = table.remove(self.areas, i) if m.name then self.areas_name[m.name] = nil end end
+		end
+	elseif fct == true then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			local m = table.remove(self.areas, i) if m.name then self.areas_name[m.name] = nil end
+		end
+	end
+end
+
+function _M:enableZone(fct, v)
+	if type(fct) == "function" then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			if m.fct == fct then m.disabled = not v break end
+		end
+	elseif type(fct) == "string" then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			if m.name == fct then m.disabled = not v end
+		end
+	elseif fct == true then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			m.disabled = not v
 		end
 	end
 end

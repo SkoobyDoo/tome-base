@@ -74,6 +74,29 @@ _M.allcontainers = {
 	hotkeys = "mod.class.uiset.minimalist.Hotkeys",
 }
 
+function _M:saveSettings()
+	-- self:boundPlaces()
+
+	local lines = {}
+	lines[#lines+1] = ("tome.uiset_minimalist2 = {}"):format()
+	lines[#lines+1] = ("tome.uiset_minimalist2.save_size = {w=%d, h=%d}"):format(game.w, game.h)
+	lines[#lines+1] = ("tome.uiset_minimalist2.places = {}"):format(w)
+	for _, container in ipairs(self.minicontainers) do
+		local id = container.container_id
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q] = {}"):format(id)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].x = %f"):format(id, container.x)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].y = %f"):format(id, container.y)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].w = %f"):format(id, container.w)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].h = %f"):format(id, container.h)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].scale = %f"):format(id, container.scale)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].alpha = %f"):format(id, container.alpha)
+	end
+
+	self:triggerHook{"UISet:Minimalist:saveSettings", lines=lines}
+
+	game:saveSettings("tome.uiset_minimalist2", table.concat(lines, "\n"))
+end
+
 function _M:activate()
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	local font_mono_h, font_h

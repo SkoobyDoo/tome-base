@@ -107,6 +107,10 @@ function _M:init(minimalist, w, h)
 	self:update(0)
 end
 
+function _M:getName()
+	return "Player Character"
+end
+
 function _M:getDefaultGeometry()
 	local x = 0
 	local y = 0
