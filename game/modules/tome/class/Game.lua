@@ -111,6 +111,7 @@ function _M:runReal()
 	game:setFlyingText(self.flyers)
 
 	self.bignews = BigNews.new(FontPackage:getFont("bignews"))
+	self.bignews:setTextOutline(0.7)
 
 	self.nicer_tiles = NicerTiles.new()
 
@@ -1824,6 +1825,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			game.bignews:saySimple(60, "PLOPzor les loulous! Je suis tres tres long comme texte. Et en plus je suis en francais! Ohlala que vas t'il arriver!!!!")
+do return end
 			self:changeLevel(game.level.level + 1)
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
