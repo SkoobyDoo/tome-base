@@ -240,7 +240,6 @@ function _M:setupMouse(first)
 	if first then self.mouse_first_setup = true end
 	if not self.mouse_first_setup then return end
 
-	-- self.mouse.delegate_offset_x, self.mouse.delegate_offset_y = self.x, self.y
 	if not game.mouse:updateZone(self.mousezone_id, self.x, self.y, self.w, self.h, nil, self.scale) then
 		game.mouse:unregisterZone(self.mousezone_id)
 
@@ -250,6 +249,7 @@ function _M:setupMouse(first)
 				self.focused = newfocus
 				self:onFocus(self.focused)
 			end
+			-- Notice how we pass bx, by instead of mx, my! This way we always have 0x0 relative and rescaled and no need to use delegate offsets
 			self.mouse:delegate(button, bx, by, xrel, yrel, bx, by, event)
 		end
 		game.mouse:registerZone(self.x, self.y, self.w, self.h, fct, nil, self.mousezone_id, true, self.scale)
