@@ -3209,8 +3209,6 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnKill", self, death_note) end
-
 	if src and ((src.resolveSource and src:resolveSource().player) or src.player) then
 		-- Achievements
 		local p = game.party:findMember{main=true}
@@ -3259,6 +3257,8 @@ function _M:die(src, death_note)
 	end
 
 	if self.sound_die and (self.unique or rng.chance(5)) then game:playSoundNear(self, self.sound_die) end
+
+	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnKill", self, death_note) end
 
 	return true
 end

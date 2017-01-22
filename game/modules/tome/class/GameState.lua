@@ -2500,19 +2500,19 @@ end
 
 function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
 	self.id_challenge = self.id_challenge or {count=0, level_entering_id=game:getPlayer(true).level, quests={}, rewarded={}}
-	-- challenges become more rare with depth (lev 3+ :: between 20% and 70% chance, 65%@3, 45%@30, 35%@75)
-	if lev < 3 or rng.percent(30 + 50*lev/(lev + 30)) then return end
+	-- challenges become less rare with depth
+	if lev < 3 or not rng.percent(20 + math.ceil(math.log(lev*lev) * 4.5)) then return end
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
 		{ id = "exterminator", rarity = 1 },
-		{ id = "pacifist", rarity = 3 },
-		{ id = "fast-exit", rarity = 3, min_lev = 8 },
-		{ id = "near-sighted", rarity = 4, min_lev = 4 },
-		{ id = "mirror-match", rarity = 6, min_lev = 5 },
-		{ id = "multiplicity", rarity = 8, min_lev = 10 },
-		{ id = "dream-horror", rarity = 10, min_lev = 15 },
-		{ id = "headhunter", rarity = 12, min_lev = 12 },
+		{ id = "pacifist", rarity = 2 },
+		{ id = "fast-exit", rarity = 2, min_lev = 8 },
+		{ id = "near-sighted", rarity = 3, min_lev = 4 },
+		{ id = "mirror-match", rarity = 4, min_lev = 5 },
+		{ id = "multiplicity", rarity = 6, min_lev = 10 },
+		{ id = "dream-horror", rarity = 8, min_lev = 15 },
+		{ id = "headhunter", rarity = 10, min_lev = 12 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
@@ -2543,11 +2543,11 @@ function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
 		on_status_change = function(self, who, status, sub)
 			if self:isCompleted() then
 				who:setQuestStatus(self.id, engine.Quest.DONE)
-				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
 				self:check("on_challenge_success", who)
-			elseif self:isFailed() then
 				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
+			elseif self:isFailed() then
 				self:check("on_challenge_failed", who)
+				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
 			end
 		end,
 		on_exit_level = function(self, who)
@@ -2557,6 +2557,8 @@ function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
 			end
 		end,
 		on_challenge_success = function(self, who)
+			if self.rewarded then return end
+			self.rewarded = true
 			self.reward_desc = game.state:infiniteDungeonChallengeReward(self, who)
 		end,
 		popup_text = {},
