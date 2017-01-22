@@ -114,14 +114,10 @@ end
 
 function _M:resize(w, h)
 	if self.resize_mode == "rescale" then
-		local ratio = self.base_w / self.base_h
-		if w / self.base_w > h / self.base_h then
-			h = w / ratio
-		else
-			w = h / ratio
-		end
+		self.do_container:scale(self.scale, self.scale, 1)
+	else
+		self.w, self.h = w, h
 	end
-	self.w, self.h = w, h
 end
 
 function _M:setAlpha(a)
@@ -141,6 +137,7 @@ function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 	if self.locked then return end
 
 	local what = self.container_id
+	local mode = self.resize_mode
 
 	local mhx, mhy = self:getMoveHandleLocation()
 
@@ -157,11 +154,11 @@ function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 		if mode == "rescale" then
 			game.mouse:startDrag(mx, my, nil, {kind="ui:rescale", id=what, bx=bx, by=by},
 				function(drag, used) self.uiset:saveSettings() if on_change then on_change(mode) end end,
-				function(drag, _, x, y) if self.places[drag.payload.id] then
-					self.places[drag.payload.id].scale = util.bound(math.max((x-self.places[drag.payload.id].x)/drag.payload.bx), 0.5, 2)
-					self:boundPlaces()
+				function(drag, _, x, y)
+					self.scale = util.bound((x - self.x) / mhx, 0.5, 2)
+					self:resize(self.w, self.h)
 					if on_change then on_change(mode) end
-				end end,
+				end,
 				true
 			)
 		elseif mode == "resize" and self.places[what] then
