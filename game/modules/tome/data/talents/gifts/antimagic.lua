@@ -56,21 +56,37 @@ newTalent{
 	tactical = { DISABLE = { silence = 4 } },
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 5, 11.5)) end,
 	getduration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3.5, 5.6)) end, -- Limit <10
+	getEquiRegen = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end, -- Limit <10
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		self:project(tg, self.x, self.y, DamageType.SILENCE, {dur=t.getduration(self,t), power_check=self:combatMindpower()})
+		local nb = 0
+		self:project(tg, self.x, self.y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target then
+				if target:canBe("silence") then
+					target:setEffect(target.EFF_SILENCED, math.ceil(t.getduration(self,t)), {apply_power=self:combatMindpower() * 0.7})
+					if target:hasEffect(target.EFF_SILENCED) then nb = nb + 1 end
+				else
+					game.logSeen(target, "%s resists the silence!", target.name:capitalize())
+				end
+			end
+		end)
+		nb = util.bound(nb, 0, 5)
+		local regen = -t.getEquiRegen(self, t) * nb
+		if nb > 0 then game:onTickEnd(function() self:incEquilibrium(regen) end) end
 		game.level.map:particleEmitter(self.x, self.y, 1, "shout", {size=4, distorion_factor=0.3, radius=self:getTalentRadius(t), life=30, nb_circles=8, rm=0.8, rM=1, gm=0, gM=0, bm=0.5, bM=0.8, am=0.6, aM=0.8})
 		return true
 	end,
 	info = function(self, t)
 		local rad = self:getTalentRadius(t)
 		return ([[Let out a burst of sound that silences for %d turns all those affected in a radius of %d, including the user.
+		For each creature affected your equilibrium is reduced by %d (up to 5 times).
 		The silence chance will increase with your Mindpower.]]):
-		format(t.getduration(self,t), rad)
+		format(t.getduration(self,t), rad, t.getEquiRegen(self, t))
 	end,
 }
 
