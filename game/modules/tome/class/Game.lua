@@ -49,7 +49,7 @@ local NPC = require "mod.class.NPC"
 local DebugConsole = require "engine.DebugConsole"
 local FlyingText = require "engine.FlyingText"
 local Tooltip = require "mod.class.Tooltip"
-local BigNews = require "mod.class.BigNews"
+local BigNews = require "engine.BigNews"
 
 local Calendar = require "engine.Calendar"
 local Gestures = require "engine.ui.Gestures"
