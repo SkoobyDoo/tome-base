@@ -16,6 +16,7 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
+local Particles = require "engine.Particles"
 
 newBirthDescriptor{
 	type = "class",
@@ -109,6 +110,13 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +3 Magic, +0 Willpower, +3 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +0",
 	},
+	birth_example_particles = {
+		function(actor) if core.shader.active(4) then
+			local slow = rng.percent(50)
+			local h1x, h1y = actor:attachementSpot("hand1", true) if h1x then actor:addParticles(Particles.new("shader_shield", 1, {img="shadowhands_01", dir=180, a=0.7, size_factor=0.4, x=h1x, y=h1y-0.1}, {type="flamehands", time_factor=slow and 700 or 1000})) end
+			local h2x, h2y = actor:attachementSpot("hand2", true) if h2x then actor:addParticles(Particles.new("shader_shield", 1, {img="shadowhands_01", dir=180, a=0.7, size_factor=0.4, x=h2x, y=h2y-0.1}, {type="flamehands", time_factor=not slow and 700 or 1000})) end
+		end end,
+	},
 	power_source = {technique=true, arcane=true},
 	stats = { dex=3, mag=3, cun=3, },
 	talents_types = {
@@ -168,7 +176,7 @@ newBirthDescriptor{
 		["technique/combat-techniques-passive"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},
 		["technique/battle-tactics"]={false, 0.2},
-		["technique/mobility"]={true, 0.3},
+		["technique/mobility"]={false, 0.3},
 		["technique/thuggery"]={true, 0.3},
 		["technique/conditioning"]={true, 0.3},
 		["technique/bloodthirst"]={false, 0.1},
@@ -226,7 +234,7 @@ newBirthDescriptor{
 		["technique/mobility"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={false, 0.1},
+		["cunning/scoundrel"]={false, 0.1},
 	},
 	unlockable_talents_types = {
 		["cunning/poisons"]={false, 0.2, "rogue_poisons"},

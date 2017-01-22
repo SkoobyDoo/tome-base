@@ -40,8 +40,11 @@ function _M:init(minimalist)
 	self.orientation = "left"
 	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
 
+	self.move_handle, self.move_handle_w, self.move_handle_h = self:imageLoader("move_handle.png")
+
 	self.unlocked_container = core.renderer.container()
 	self.unlocked_container:add(core.renderer.colorQuad(0, 0, w, h, 0, 0, 0, 0.235))
+	self.unlocked_container:add(self.move_handle)
 end
 
 function _M:imageLoader(file, rw, rh)
@@ -87,6 +90,10 @@ function _M:getDefaultGeometry()
 	error("MiniContainer defined without a default geometry")
 end
 
+function _M:getMoveHandleLocation()
+	return self.w - self.move_handle_w, self.h - self.move_handle_h
+end
+
 function _M:getDO()
 	error("cant use MiniContainer directly")
 end
@@ -107,6 +114,8 @@ function _M:resize(w, h)
 		end
 	end
 	self.w, self.h = w, h
+
+	self.move_handle:translate(self:getMoveHandleLocation())
 end
 
 function _M:setOrientation(dir)

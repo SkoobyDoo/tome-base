@@ -3159,3 +3159,56 @@ newEffect{
 		end
 	end,
 }
+
+
+newEffect{
+	name = "TOUCH_OF_DEATH", image = "talents/touch_of_death.png",
+	desc = "Touch of Death",
+	long_desc = function(self, eff) return ("The target is taking %0.2f physical damage each turn. If they die while under this effect, they will explode!"):format(eff.dam) end,
+	type = "other", --extending this would be very bad
+	subtype = {  },
+	status = "detrimental",
+	parameters = { dur=4, dam=10, power=20, radius=1, combo=1 },
+	on_gain = function(self, err) return "#Target# is mortally wounded!", "+Touch of Death!" end,
+	on_lose = function(self, err) return "#Target# overcomes the touch of death.", "-Touch of Death" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+	on_timeout = function(self, eff)
+		DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam)
+		eff.dam = eff.dam * (1 + eff.mult)
+	end,
+	on_die = function(self, eff)
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		local tg = {type="ball", radius=eff.radius, selffire=false, x=self.x, y=self.y}
+		local dam = self.max_life * eff.power / self.rank
+		eff.src:project(tg, self.x, self.y, DamageType.PHYSICAL, dam, {type="bones"})
+		game.logSeen(eff.src, "#LIGHT_RED#%s explodes into a shower of gore!", self.name:capitalize())
+		self:removeEffect(self.EFF_TOUCH_OF_DEATH)
+	end,
+}
+
+newEffect{
+	name = "GARROTE_SILENCED", image = "talents/garrote.png",
+	desc = "Garrote - Silence",
+	long_desc = function(self, eff) return "The target is silenced, preventing it from casting spells and using some vocal talents." end,
+	type = "other",
+	subtype = { silence=true },
+	status = "detrimental",
+	parameters = {},
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("silence", 1)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("silence", eff.tmpid)
+	end,
+	on_timeout = function(self, eff)
+		if not self.x or not eff.src or not eff.src.x or core.fov.distance(self.x, self.y, eff.src.x, eff.src.y) > 1 or eff.src.dead or not game.level:hasEntity(eff.src) or not self:hasEffect(self.EFF_GARROTE) then
+			self:removeEffect(self.EFF_GARROTE_SILENCED)
+		end
+	end,
+}

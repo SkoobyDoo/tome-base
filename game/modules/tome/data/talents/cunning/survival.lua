@@ -76,8 +76,8 @@ newTalent{
 
 newTalent{
 	name = "Track",
-	type = {"cunning/survival", 2},
-	require = cuns_req2,
+	type = {"cunning/survival", 3},
+	require = cuns_req3,
 	points = 5,
 	random_ego = "utility",
 	cooldown = 20,
@@ -102,8 +102,8 @@ newTalent{
 
 newTalent{
 	name = "Danger Sense",
-	type = {"cunning/survival", 3},
-	require = cuns_req3,
+	type = {"cunning/survival", 4},
+	require = cuns_req4,
 	points = 5,
 	random_boss_rarity = 50, -- make sure a reasonable number of randbosses don't take this
 	mode = "passive",

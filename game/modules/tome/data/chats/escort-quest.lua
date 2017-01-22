@@ -119,9 +119,9 @@ local reward_types = {
 			[Stats.STAT_MAG] = 1,
 		},
 		antimagic = {
-			types = {
-				["technique/mobility"] = 0.8,
-			},
+--			types = {
+--				["technique/mobility"] = 0.8, --imagine a world where paradox mage/archmage etc could access trained reactions
+--			},
 			talents = {
 				[Talents.T_DISENGAGE] = 1,
 				[Talents.T_EVASION] = 1,

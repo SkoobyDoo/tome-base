@@ -875,7 +875,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	require = { stat = { str=25 }, },
 	level_range = {1, 10},
 	material_level = 1,
-	moddable_tile = "special/treetrunk",
+	moddable_tile = "special/%s_treetrunk",
 	moddable_tile_big = true,
 
 	rarity = 200,

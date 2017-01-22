@@ -573,7 +573,7 @@ newEffect{
 	name = "EVASION", image = "talents/evasion.png",
 	desc = "Evasion",
 	long_desc = function(self, eff)
-		return ("The target has %d%% chance to evade melee attacks"):format(eff.chance) .. ((eff.defense>0 and (" and gains %d defense"):format(eff.defense)) or "") .. "." 
+		return ("The target has %d%% chance to evade melee and ranged attacks"):format(eff.chance) .. ((eff.defense>0 and (" and gains %d defense"):format(eff.defense)) or "") .. "." 
 	end,
 	type = "physical",
 	subtype = { evade=true },
@@ -583,10 +583,14 @@ newEffect{
 	on_lose = function(self, err) return "#Target# is no longer evading attacks.", "-Evasion" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("evasion", eff.chance)
+		eff.pid = self:addTemporaryValue("projectile_evasion", eff.chance)
+		eff.psid = self:addTemporaryValue("projectile_evasion_spread", eff.chance)		
 		eff.defid = self:addTemporaryValue("combat_def", eff.defense)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("evasion", eff.tmpid)
+		self:removeTemporaryValue("projectile_evasion", eff.pid)
+		self:removeTemporaryValue("projectile_evasion_spread", eff.psid)
 		self:removeTemporaryValue("combat_def", eff.defid)
 	end,
 }
@@ -3546,5 +3550,19 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("global_speed_add", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "FEINT", image = "talents/feint.png",
+	desc = "Feint",
+	long_desc = function(self, eff) return ("The target's chance to parry and amount of damage parried is increased by %d%%."):format(eff.power) end,
+	type = "physical",
+	subtype = { tactical=true },
+	status = "beneficial",
+	parameters = { power=0.1 },
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
 	end,
 }

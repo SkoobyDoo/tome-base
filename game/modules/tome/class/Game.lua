@@ -1824,19 +1824,6 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			for _, ip in ipairs{
-				{"armor", "head"},
-			} do
-				for tier = 1, 5 do
-					local special = function(e) return e.material_level == tier and (not ip[3] or ip[3](e)) end
-					local o = game.zone:makeEntity(game.level, "object", {ignore_material_restriction=true, type=ip[1], subtype=ip[2], special=special, not_properties={"unique"}, ego_filter={ego_chance=100}}, nil, true)
-					if o then
-						o:identify(true)
-						game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y)
-					end
-				end
-			end
-do return end
 			self:changeLevel(game.level.level + 1)
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
