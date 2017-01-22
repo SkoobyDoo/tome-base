@@ -100,14 +100,15 @@ newTalent{
 	cooldown = 20,
 	range = 10,
 	tactical = { DEFEND = 2 },
+	getBurn = function(self, t) return self:combatTalentMindDamage(t, 8, 70) end,
 	getMax = function(self, t)
-		local v = self:combatTalentMindDamage(t, 20, 80)
+		local v = self:combatTalentMindDamage(t, 20, 100)
 		if self:knowTalent(self.T_TRICKY_DEFENSES) then
 			v = v * (1 + self:callTalent(self.T_TRICKY_DEFENSES,"shieldmult"))
 		end
 		return v
 	end,
-	on_damage = function(self, t, damtype, dam)
+	on_damage = function(self, t, damtype, dam, src)
 		if not DamageType:get(damtype).antimagic_resolve then return dam end
 
 		if dam <= self.antimagic_shield then
@@ -116,6 +117,11 @@ newTalent{
 		else
 			self:incEquilibrium(self.antimagic_shield / 30)
 			dam = dam - self.antimagic_shield
+		end
+
+		if src and src.x then
+			DamageType:get(DamageType.MANABURN).projector(self, src.x, src.y, DamageType.MANABURN, t.getBurn(self, t))
+			game.level.map:particleEmitter(src.x, src.y, 1, "slime")
 		end
 
 		if not self:equilibriumChance() then
@@ -137,8 +143,9 @@ newTalent{
 	info = function(self, t)
 		return ([[Surround yourself with a shield that will absorb at most %d non-physical, non-mind element damage per attack.
 		Each time damage is absorbed by the shield, your equilibrium increases by 1 for every 30 points of damage and a check is made. If the check fails, the shield will crumble and Antimagic Shield will go on cooldown.
+		Each creature whose attack on you is absorbed or reduced by the shield also takes a backlash dealing %0.2f manaburn damage (see description in the Mana Clash talent).
 		The damage the shield can absorb will increase with your Mindpower.]]):
-		format(t.getMax(self, t))
+		format(t.getMax(self, t), t.getBurn(self, t))
 	end,
 }
 
