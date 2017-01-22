@@ -137,9 +137,14 @@ newTalent{
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
-		return {
+		local ret = {
 			am = self:addTemporaryValue("antimagic_shield", t.getMax(self, t)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="antimagic_shield"}, shader={type="rotatingshield", noup=2.0, cylinderRotationSpeed=1.7, appearTime=0.2}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="antimagic_shield"}, shader={type="rotatingshield", noup=1.0, cylinderRotationSpeed=1.7, appearTime=0.2}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("antimagic_shield", p.am)
