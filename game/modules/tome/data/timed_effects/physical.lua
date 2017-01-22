@@ -573,7 +573,7 @@ newEffect{
 	name = "EVASION", image = "talents/evasion.png",
 	desc = "Evasion",
 	long_desc = function(self, eff)
-		return ("The target has %d%% chance to evade melee attacks"):format(eff.chance) .. ((eff.defense>0 and (" and gains %d defense"):format(eff.defense)) or "") .. "." 
+		return ("The target has %d%% chance to evade melee and ranged attacks"):format(eff.chance) .. ((eff.defense>0 and (" and gains %d defense"):format(eff.defense)) or "") .. "." 
 	end,
 	type = "physical",
 	subtype = { evade=true },
@@ -583,10 +583,14 @@ newEffect{
 	on_lose = function(self, err) return "#Target# is no longer evading attacks.", "-Evasion" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("evasion", eff.chance)
+		eff.pid = self:addTemporaryValue("projectile_evasion", eff.chance)
+		eff.psid = self:addTemporaryValue("projectile_evasion_spread", eff.chance)		
 		eff.defid = self:addTemporaryValue("combat_def", eff.defense)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("evasion", eff.tmpid)
+		self:removeTemporaryValue("projectile_evasion", eff.pid)
+		self:removeTemporaryValue("projectile_evasion_spread", eff.psid)
 		self:removeTemporaryValue("combat_def", eff.defid)
 	end,
 }
@@ -3549,5 +3553,38 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("global_speed_add", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "FEINT", image = "talents/feint.png",
+	desc = "Feint",
+	long_desc = function(self, eff) return ("The target's chance to parry and amount of damage parried is increased by %d%%."):format(eff.power) end,
+	type = "physical",
+	subtype = { tactical=true },
+	status = "beneficial",
+	parameters = { power=0.1 },
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "MANA_CLASH", image = "talents/mana_clash.png",
+	desc = "Mana Clash",
+	long_desc = function(self, eff) return ("All damage you do also trigget a manaburn for %d%% of the damage done."):format(eff.power * 100) end,
+	type = "physical",
+	subtype = { antimagic=true },
+	status = "beneficial",
+	parameters = { power=0.15 },
+	on_gain = function(self, err) return "#Target# exudes antimagic forces.", true end,
+	on_lose = function(self, err) return "#Target# is no longer toxic to arcane users.", true end,
+	callbackOnDealDamage = function(self, eff, val, target, dead, death_note)
+		if self._manaclashing then return end
+		if not target.x or dead then return end
+		self._manaclashing = true
+		DamageType:get(DamageType.MANABURN).projector(self, target.x, target.y, DamageType.MANABURN, val * eff.power)
+		self._manaclashing = nil
 	end,
 }

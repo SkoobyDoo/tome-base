@@ -17,18 +17,22 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local function combatTalentPhysicalMindDamage(self, t, b, s)
+	return math.max(self:combatTalentMindDamage(t, b, s), self:combatTalentPhysicalDamage(t, b, s))
+end
+
 newTalent{
 	name = "Resolve",
 	type = {"wild-gift/antimagic", 1},
 	require = gifts_req1,
 	mode = "passive",
 	points = 5,
-	getRegen = function(self, t) return 1 + (self:combatTalentMindDamage(t, 1, 10) /10) end,
-	getResist = function(self, t) return self:combatTalentMindDamage(t, 10, 40) end,
+	getRegen = function(self, t) return 1 + (combatTalentPhysicalMindDamage(self, t, 1, 10) /10) end,
+	getResist = function(self, t) return combatTalentPhysicalMindDamage(self, t, 10, 40) end,
 	on_absorb = function(self, t, damtype)
 		if not DamageType:get(damtype).antimagic_resolve then return end
 
-		if not self:isTalentActive(self.T_ANTIMAGIC_SHIELD) then
+		if not self:isTalentActive(self.T_ANTIMAGIC_SHIELD) or self:getTalentLevel(t) >= 5 then
 			self:incEquilibrium(-t.getRegen(self, t))
 			self:incStamina(t.getRegen(self, t))
 		end
@@ -41,7 +45,8 @@ newTalent{
 		return ([[You stand in the way of magical damage. That which does not kill you will make you stronger.
 		Each time you are hit by non-physical, non-mind damage, you get a %d%% resistance to that element for 7 turns.
 		If Antimagic Shield is not active, you also absorb part of the impact and use it to fuel your own powers, decreasing your equilibrium and increasing your stamina by %0.2f each hit.
-		The effects will increase with your Mindpower.]]):
+		At level 5 you absorb even if Antimagic Shield is active.
+		The effects will increase with your Mindpower or Physical power (whichever is greater).]]):
 		format(	resist, regen )
 	end,
 }
@@ -56,21 +61,37 @@ newTalent{
 	tactical = { DISABLE = { silence = 4 } },
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 5, 11.5)) end,
 	getduration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3.5, 5.6)) end, -- Limit <10
+	getEquiRegen = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end, -- Limit <10
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		self:project(tg, self.x, self.y, DamageType.SILENCE, {dur=t.getduration(self,t), power_check=self:combatMindpower()})
+		local nb = 0
+		self:project(tg, self.x, self.y, function(px, py)
+			local target = game.level.map(px, py, Map.ACTOR)
+			if target then
+				if target:canBe("silence") then
+					target:setEffect(target.EFF_SILENCED, math.ceil(t.getduration(self,t)), {apply_power=math.max(self:combatMindpower(), self:combatPhysicalpower()) * 0.7})
+					if target:hasEffect(target.EFF_SILENCED) then nb = nb + 1 end
+				else
+					game.logSeen(target, "%s resists the silence!", target.name:capitalize())
+				end
+			end
+		end)
+		nb = util.bound(nb, 0, 5)
+		local regen = -t.getEquiRegen(self, t) * nb
+		if nb > 0 then game:onTickEnd(function() self:incEquilibrium(regen) end) end
 		game.level.map:particleEmitter(self.x, self.y, 1, "shout", {size=4, distorion_factor=0.3, radius=self:getTalentRadius(t), life=30, nb_circles=8, rm=0.8, rM=1, gm=0, gM=0, bm=0.5, bM=0.8, am=0.6, aM=0.8})
 		return true
 	end,
 	info = function(self, t)
 		local rad = self:getTalentRadius(t)
 		return ([[Let out a burst of sound that silences for %d turns all those affected in a radius of %d, including the user.
-		The silence chance will increase with your Mindpower.]]):
-		format(t.getduration(self,t), rad)
+		For each creature affected your equilibrium is reduced by %d (up to 5 times).
+		The silence chance will increase with your Mindpower or Physical power (whichever is greater).]]):
+		format(t.getduration(self,t), rad, t.getEquiRegen(self, t))
 	end,
 }
 
@@ -84,14 +105,15 @@ newTalent{
 	cooldown = 20,
 	range = 10,
 	tactical = { DEFEND = 2 },
+	getBurn = function(self, t) return combatTalentPhysicalMindDamage(self, t, 8, 60) end,
 	getMax = function(self, t)
-		local v = self:combatTalentMindDamage(t, 20, 80)
+		local v = combatTalentPhysicalMindDamage(self, t, 20, 100)
 		if self:knowTalent(self.T_TRICKY_DEFENSES) then
 			v = v * (1 + self:callTalent(self.T_TRICKY_DEFENSES,"shieldmult"))
 		end
 		return v
 	end,
-	on_damage = function(self, t, damtype, dam)
+	on_damage = function(self, t, damtype, dam, src)
 		if not DamageType:get(damtype).antimagic_resolve then return dam end
 
 		if dam <= self.antimagic_shield then
@@ -102,6 +124,11 @@ newTalent{
 			dam = dam - self.antimagic_shield
 		end
 
+		if src and src.x then
+			DamageType:get(DamageType.MANABURN).projector(self, src.x, src.y, DamageType.MANABURN, t.getBurn(self, t))
+			game.level.map:particleEmitter(src.x, src.y, 1, "slime")
+		end
+
 		if not self:equilibriumChance() then
 			self:forceUseTalent(self.T_ANTIMAGIC_SHIELD, {ignore_energy=true})
 			game.logSeen(self, "#GREEN#The antimagic shield of %s crumbles.", self.name)
@@ -110,9 +137,14 @@ newTalent{
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/heal")
-		return {
+		local ret = {
 			am = self:addTemporaryValue("antimagic_shield", t.getMax(self, t)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="antimagic_shield"}, shader={type="rotatingshield", noup=2.0, cylinderRotationSpeed=1.7, appearTime=0.2}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="antimagic_shield"}, shader={type="rotatingshield", noup=1.0, cylinderRotationSpeed=1.7, appearTime=0.2}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("antimagic_shield", p.am)
@@ -121,8 +153,9 @@ newTalent{
 	info = function(self, t)
 		return ([[Surround yourself with a shield that will absorb at most %d non-physical, non-mind element damage per attack.
 		Each time damage is absorbed by the shield, your equilibrium increases by 1 for every 30 points of damage and a check is made. If the check fails, the shield will crumble and Antimagic Shield will go on cooldown.
-		The damage the shield can absorb will increase with your Mindpower.]]):
-		format(t.getMax(self, t))
+		Each creature whose attack on you is absorbed or reduced by the shield also takes a backlash dealing %0.2f manaburn damage (see description in the Mana Clash talent).
+		The damage the shield can absorb will increase with your Mindpower or Physical power (whichever is greater).]]):
+		format(t.getMax(self, t), t.getBurn(self, t))
 	end,
 }
 
@@ -131,12 +164,13 @@ newTalent{
 	type = {"wild-gift/antimagic", 4},
 	require = gifts_req4,
 	points = 5,
-	equilibrium = 10,
+	equilibrium = -15,
 	cooldown = 8,
 	range = 10,
 	tactical = { ATTACK = { ARCANE = 3 } },
 	direct_hit = true,
 	requires_target = true,
+	getDur = function(self, t) return self:combatTalentScale(t, 4, 9) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -148,22 +182,24 @@ newTalent{
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
 
-			local base = self:mindCrit(self:combatTalentMindDamage(t, 20, 460))
+			local base = self:mindCrit(combatTalentPhysicalMindDamage(self, t, 20, 460))
 			DamageType:get(DamageType.MANABURN).projector(self, px, py, DamageType.MANABURN, base)
 		end, nil, {type="slime"})
+		self:setEffect(self.EFF_MANA_CLASH, t.getDur(self, t), {power=0.15})
 		game:playSoundNear(self, "talents/heal")
 		return true
 	end,
 	info = function(self, t)
-		local base = self:combatTalentMindDamage(t, 20, 460)
+		local base = combatTalentPhysicalMindDamage(self, t, 20, 460)
 		local mana = base
 		local vim = base / 2
 		local positive = base / 4
 		local negative = base / 4
 
 		return ([[Drain %d mana, %d vim, %d positive and negative energies from your target, triggering a chain reaction that explodes in a burst of arcane damage.
-		The damage done is equal to 100%% of the mana drained, 200%% of the vim drained, or 400%% of the positive or negative energy drained, whichever is higher.
-		The effect will increase with your Mindpower.]]):
-		format(mana, vim, positive, negative)
+		The damage done is equal to 100%% of the mana drained, 200%% of the vim drained, or 400%% of the positive or negative energy drained, whichever is higher. This effect is called a manaburn.
+		In addition, for %d turns all your attacks also do 15%% manaburn damage.
+		The effect will increase with your Mindpower or Physical power (whichever is greater).]]):
+		format(mana, vim, positive, t.getDur(self, t))
 	end,
 }

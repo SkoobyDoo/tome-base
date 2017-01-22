@@ -38,17 +38,100 @@ local function mobility_stamina(self, t)
 end
 
 newTalent{
-	name = "Evasion",
+	name = "Disengage",
 	type = {"technique/mobility", 1},
-	points = 5,
 	require = techs_dex_req1,
+	points = 5,
+	random_ego = "utility",
+	cooldown = 10,
+	base_stamina = 8,
+	stamina = mobility_stamina,
+	range = 7,
+	getSpeed = function(self, t) return self:combatTalentScale(t, 100, 200, "log") end,
+	getReload = function(self, t) return math.floor(self:combatTalentScale(t, 2, 8)) end,
+	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
+	tactical = { ESCAPE = 2, AMMO = 0.5 },
+	requires_target = true,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
+	getDist = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 7)) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then return nil end
+		
+		local dist = core.fov.distance(self.x, self.y, x, y) + t.getDist(self,t)
+
+		local tg2 = {type="beam", source_actor = target, range=dist, talent=t}	
+		local tx, ty, t2 = self:getTarget(tg2)
+		if not tx or not ty or t2 or game.level.map:checkEntity(tx, ty, Map.TERRAIN, "block_move", self) then
+			game.logPlayer(self, "You must have an empty space to disengage to.")
+			return false
+		end
+		
+		if (self:attr("never_move") and self:hasHeavyArmor()) or self:attr("encased_in_ice") then
+			if not silent then game.logPlayer(self, "You must be able to move to use %s!", t.name) end
+		return end
+		
+		local check = false
+		
+		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+		local linestep = target:lineFOV(tx, ty, block_actor)
+
+		local x2, y2, lx, ly, is_corner_blocked
+		repeat  -- make sure each tile is passable
+			x2, xy = lx, ly
+			lx, ly, is_corner_blocked = linestep:step()
+			if self.x == lx and self.y == ly then check = true end
+		until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
+
+
+		if not check then
+			game.logPlayer(self, "You must disengage away from your target in a straight line.")
+			return
+		end
+		
+		self:move(tx, ty, true)
+
+		if not self:hasHeavyArmor() then		
+			game:onTickEnd(function()
+				self:setEffect(self.EFF_WILD_SPEED, 3, {power=t.getSpeed(self,t)}) 
+			end)
+		end
+		
+		local weapon, ammo, offweapon = self:hasArcheryWeapon()	
+		if weapon and ammo and not ammo.infinite then
+			ammo.combat.shots_left = math.min(ammo.combat.shots_left + t.getReload(self, t), ammo.combat.capacity)
+			game.logSeen(self, "%s reloads.", self.name:capitalize())
+		end
+
+		if self:knowTalent(self.T_THROWING_KNIVES) then
+			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
+			local reload = math.min(max, t.getReload(self,t))
+			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		return ([[Jump back up to %d grids from your target, as well as reloading up to %d of your equipped ammo or throwing knives.
+		You must disengage in a straight line (the targeting line must pass through your character).
+		If you are not wearing heavy armor, you also gain %d%% increased movement speed and may use this talent while pinned. The extra speed ends if you take any actions other than movement.]]):
+		format(t.getDist(self, t), t.getReload(self,t), t.getSpeed(self,t), t.getNb(self,t))
+	end,
+}
+
+newTalent{
+	name = "Evasion",
+	type = {"technique/mobility", 2},
+	points = 5,
+	require = techs_dex_req2,
 	random_ego = "defensive",
 	tactical = { ESCAPE = 2, DEFEND = 2 },
-	cooldown = 30,
-	base_stamina = 20,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 15, 30, 20)) end, --shorter cooldown but less duration - as especially on randbosses a long duration evasion is frustrating, this makes it a bit more useful for hit and run
+	base_stamina = 25,
 	stamina = mobility_stamina,
 	no_energy = true,
-	getDur = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 5, 9)) end, -- Limit < 30
+	getDur = function(self, t) return 5 end,
 	getChanceDef = function(self, t)
 		if self.perfect_evasion then return 100, 0 end
 		return self:combatLimit(5*self:getTalentLevel(t) + self:getDex(50,true), 50, 10, 10, 37.5, 75),
@@ -64,58 +147,13 @@ newTalent{
 	end,
 	info = function(self, t)
 		local chance, def = t.getChanceDef(self,t)
-		return ([[Your quick wit and reflexes allow you to anticipate melee attacks, granting you a %d%% chance to completely evade them plus %d defense for %d turns.
+		return ([[Your quick wit and reflexes allow you to anticipate attacks against you, granting you a %d%% chance to evade melee and ranged attacks and %d increased defense for %d turns.
 		The chance to evade and defense bonus increase with your Dexterity.]]):
 		format(chance, def,t.getDur(self,t))
 	end,
 }
 
-newTalent{
-	name = "Disengage",
-	type = {"technique/mobility", 2},
-	require = techs_dex_req2,
-	points = 5,
-	random_ego = "utility",
-	cooldown = 10,
-	base_stamina = 12,
-	stamina = mobility_stamina,
-	range = 7,
-	getSpeed = function(self, t) return self:combatTalentScale(t, 100, 200, "log") end,
-	getReload = function(self, t) return math.floor(self:combatTalentScale(t, 2, 10)) end,
-	tactical = { ESCAPE = 2, DEFEND = 0.5, AMMO = 0.5 },
-	requires_target = true,
-	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	on_pre_use = mobility_pre_use,
-	getDist = function(self, t) return math.floor(self:combatTalentLimit(t, 11, 2, 5.5)) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then return nil end
-
-		if not self:hasEffect(self.EFF_EVASION) then
-			self:forceUseTalent(self.T_EVASION, {ignore_cd=true, ignore_energy=true, silent=true, ignore_ressources=true, force_level=math.max(1, self:getTalentLevelRaw(self.T_EVASION))})
-			local eff = self:hasEffect(self.EFF_EVASION)
-			if eff then eff.dur = 1 end
-		end
-		
-		game:onTickEnd(function()
-			self:setEffect(self.EFF_WILD_SPEED, 3, {power=t.getSpeed(self,t)}) 
-		end)
-		
-		self:knockback(target.x, target.y, t.getDist(self, t))
-		self:reload()
-
-		return true
-	end,
-	info = function(self, t)
-		return ([[Jump back %d grids from your target and gain %d%% increased movement speed for 3 turns.
-		As part of this move, you will also gain 1 turn of Evasion for free and perform one turn's reloading of your equipped ammo after moving.
-		The extra speed ends if you take any actions other than movement.
-		This talent is not usable with heavy armor or while immobilized.]]):
-		format(t.getDist(self, t), t.getSpeed(self,t))
-	end,
-}
-
+--quite expensive to use repeatedly but gives a low cooldown instant movement which is super powerful, and at 4/5 the exhaustion will never stack beyond 66~%
 newTalent {
 	name = "Tumble",
 	type = {"technique/mobility", 3},
@@ -123,16 +161,16 @@ newTalent {
 	points = 5,
 	random_ego = "attack",
 	on_pre_use = mobility_pre_use,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 3, 10, 6)) end,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 4, 13, 7)) end,
 	no_energy = true,
 	no_break_stealth = true,
 	tactical = { CLOSEIN = 2 },
 --	tactical = { ESCAPE = 2, CLOSEIN = 2 }, -- update with AI
-	base_stamina = 10,
+	base_stamina = 20,
 	stamina = mobility_stamina,
-	getExhaustion = function(self, t) return self:combatTalentLimit(t, 20, 50, 35) end,
-	range = function(self, t) return math.floor(self:combatTalentScale(t, 2, 5, "log")) end,
-	getDuration = function(self, t)	return math.ceil(self:combatTalentLimit(t, 5, 20, 10)) end, -- always >=2 turns higher than cooldown
+	getExhaustion = function(self, t) return self:combatTalentLimit(t, 25, 75, 40) end,
+	range = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4, "log")) end,
+	getDuration = function(self, t)	return math.ceil(self:combatTalentLimit(t, 5, 25, 15)) end, -- always >=2 turns higher than cooldown
 	target = function(self, t)
 		return {type="beam", range=self:getTalentRange(t), talent=t}
 	end,
@@ -162,91 +200,28 @@ newTalent {
 	end
 }
 
--- Could let player/NPC select sensitivity to damage instead of simple toggle.
-newTalent {
+newTalent{
 	name = "Trained Reactions",
 	type = {"technique/mobility", 4},
-	mode = "sustained",
-	points = 5,
 	require = techs_dex_req4,
-	sustain_stamina = 10,
-	no_energy = true,
-	tactical = { DEFEND = 2 },
-	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "pin_immune", t.pinImmune(self, t))
+	points = 5,
+	mode = "passive",
+	getDamageReduction = function(self, t) 
+		return self:combatTalentLimit(t, 1, 0.15, 0.50) * self:combatLimit(self:combatDefense(), 1, 0.15, 10, 0.5, 50) -- Limit < 100%, 25% for TL 5.0 and 50 defense
 	end,
-	on_pre_use = function(self, t, silent, fake)
-		if self:hasHeavyArmor() then
-			if not silent then game.logPlayer(self, "%s is not usable while wearing heavy armour.", t.name) end
-			return
+	getDamagePct = function(self, t)
+		return self:combatTalentLimit(t, 0.1, 0.3, 0.15) -- Limit trigger > 10% life
+	end,
+	callbackOnHit = function(self, t, cb)
+		if ( cb.value > (t.getDamagePct(self, t) * self.max_life) ) then
+			local damageReduction = cb.value * t.getDamageReduction(self, t)
+			cb.value = cb.value - damageReduction
+			game.logPlayer(self, "#GREEN#You evade part of the attack, reducing the damage by #ORCHID#" .. math.ceil(damageReduction) .. "#LAST#.")
 		end
-		return true
-	end,
-	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
-		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.78, 50) -- vs TL/def: 1/10 == ~12%, 1.3/10 == ~17%, 1.3/50 == ~27%, 6.5/50 == ~53%, 6.5/100 = ~59%
-	end,
-	getStamina = function(self, t) return 20*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end, -- Stamina increases in proportion to talent-based effectiveness.  Stamina Efficiency increased with level through higher Defense (Automatic from the increased Dexterity required for higher talent levels)
-	getLifeTrigger = function(self, t, cur_stam)
-		local percent_hit = self:combatTalentLimit(t, 10, 35, 20)
-		local stam_cost = t.getStamina(self, t)
-		cur_stam = cur_stam or self:getStamina()
-		return percent_hit*util.bound(10*stam_cost/cur_stam, .5, 2) -- == percent_hit @ 10% stamina cost
-	end,
-	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, state)
-		if dam > 0 and state and not self:attr("encased_in_ice") and not self:attr("invulnerable") then
-			local psrc = src.__project_source
-			if psrc then
-				local kind = util.getval(psrc.getEntityKind)
-				if kind == "projectile" or kind == "trap" or kind == "object" then
-				else
-					return
-				end
-			end
-			local stam, stam_cost
-			local is_attk = state.is_melee or state.is_archery
-			if is_attk then
-				-- don't charge stamina more than once per melee or ranged attack (state set in Combat.attackTargetWith and Archery.archery_projectile)
-				if self.turn_procs[t.id] == state then
-					stam_cost = 0
-				else
-					self.turn_procs[t.id] = state
-				end
-			else -- intercept at most 1 non-melee/archery attack
-				if self.turn_procs.gen_trained_reactions then return end
-			end
-			stam, stam_cost = self:getStamina(), stam_cost or t.getStamina(self, t)
-			if stam_cost < stam and dam > self.life*t.getLifeTrigger(self, t, stam)/100 then
-				--print(("[PROJECTOR: Trained Reactions] PASSED life/stam test for %s: %s %s damage (%s) (%0.1f/%0.1f stam) from %s (state:%s)"):format(self.name, dam, type, is_attk, stam_cost, stam, src.name, state)) -- debugging
-				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
-				local reduce = t.getReduction(self, t)*(self:attr("never_move") and 0.5 or 1)
-				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #source#, partially avoiding it!", is_attk and "an attack" or "damage") end
-
-				dam = dam*(1-reduce)
-				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
-				if not is_attk then self.turn_procs.gen_trained_reactions = true end
-				return {dam = dam}
-			end
-		end
-	end,
-	activate = function(self, t)
-		local ret = {}
-		ret.life_trigger, ret.life_level = t.getLifeTrigger(self, t)
-		return ret
-	end,
-	deactivate = function(self, t, p)
-		return true
-	end,
+		return cb.value
+	end, 
 	info = function(self, t)
-		local stam = t.getStamina(self, t)
-		local triggerMin, triggerFull, triggerCur = t.getLifeTrigger(self, t, stam), t.getLifeTrigger(self, t, self:getMaxStamina()), t.getLifeTrigger(self, t)
-		local reduce = t.getReduction(self, t, true)*100
-		return ([[You have trained to be very light on your feet and have conditioned your reflexes to react faster than thought to attacks as they strike you.
-		You permanently gain %d%% pinning immunity.
-		While this talent is active, you reduce the direct damage of one significant attack each turn (or any number of melee or archery strikes) that hit you by %d%%.  This requires %0.1f stamina per attack and is improved with your Defense.
-		The nearly instant reactions required are both difficult and exhausting; they cannot be performed while wearing heavy armor and are only half effective if you are immobilized.
-		Larger attacks are easier to react to and you become more vigilant when wounded, but your reactions slow as your stamina is depleted.  The smallest attack your reflexes can affect, as a percent of your current life (currently %d%%), ranges from %d%% at full Stamina to %d%% with minimum Stamina.]])
-		:format(t.pinImmune(self, t)*100, reduce, stam, triggerCur, triggerFull, triggerMin)
+		return ([[While this talent is sustained, you anticipate deadly attacks against you.  Whenever you would receive damage (from any source) greater than %d%% of your maximum life you duck out of the way and assume a defensive posture, reducing that damage by %0.1f%% (based on your Defense).]]):
+		format(t.getDamagePct(self, t)*100, t.getDamageReduction(self, t)*100 )
 	end,
 }
-

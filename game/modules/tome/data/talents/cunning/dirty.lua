@@ -86,7 +86,7 @@ newTalent{
 							end
 							return
 						elseif effect == target.EFF_PINNED then	-- pin
-							if target:canBe("pinned") then
+							if target:canBe("pin") then
 								target:setEffect(effect, 2, {})
 							end
 							return

@@ -996,8 +996,8 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if not hitted and not target.dead and target:knowTalent(target.T_COUNTER_ATTACK) and not target:attr("stunned") and not target:attr("dazed") and not target:attr("stoned") and target:knowTalent(target.T_COUNTER_ATTACK) and self:isNear(target.x,target.y, 1) then --Adjacency check
 		local cadam = target:callTalent(target.T_COUNTER_ATTACK,"checkCounterAttack")
 		if cadam then
-			game.logSeen(self, "%s counters the attack!", target.name:capitalize())
-			target:attackTarget(self, nil, cadam, true)
+			local t = target:getTalentFromId(target.T_COUNTER_ATTACK)
+			t.do_counter(target, self, t)
 		end
 	end
 
@@ -2543,7 +2543,16 @@ function _M:buildCombo()
 
 	if self:knowTalent(self.T_RELENTLESS_STRIKES) then
 		local t = self:getTalentFromId(self.T_RELENTLESS_STRIKES)
-		self:incStamina(t.getStamina(self, t))
+		local sta = t.getStamina(self, t)
+		local p = self:getCombo()
+		if rng.percent(t.getChance(self, t)) then
+			power = 2
+			sta = sta + sta
+		end
+		if p>=5 or (power==2 and p>=4) then 
+			sta = sta + sta 
+		end
+		self:incStamina(sta)
 	end
 
 	self:setEffect(self.EFF_COMBO, duration, {power=power})

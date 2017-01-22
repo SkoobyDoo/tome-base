@@ -67,6 +67,13 @@ _M._no_save_fields.can_see_cache = true
 -- Activate fast regen computing
 _M._no_save_fields.regenResourcesFast = true
 
+-- Dont store resting or running
+_M._no_save_fields.running = true
+_M._no_save_fields.resting = true
+
+-- No need to save __project_source either, it's a turn by turn thing
+_M._no_save_fields.__project_source = true
+
 -- Use distance maps
 _M.__do_distance_map = true
 
@@ -3202,8 +3209,6 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnKill", self, death_note) end
-
 	if src and ((src.resolveSource and src:resolveSource().player) or src.player) then
 		-- Achievements
 		local p = game.party:findMember{main=true}
@@ -3252,6 +3257,8 @@ function _M:die(src, death_note)
 	end
 
 	if self.sound_die and (self.unique or rng.chance(5)) then game:playSoundNear(self, self.sound_die) end
+
+	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnKill", self, death_note) end
 
 	return true
 end
@@ -4467,6 +4474,15 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 		if not self:attr("autolearn_mindslayer_done") then
 			self:unlearnTalent(self.T_TELEKINETIC_GRASP)
 			self:unlearnTalent(self.T_BEYOND_THE_FLESH)
+			function focusremove(invenid)
+				local focus = self:getInven(invenid)
+				for i = #focus, 1, -1 do
+					self:doTakeoff(focus, i, focus[i], true, nil, true)
+				end
+				self.inven[invenid] = nil
+			end
+			focusremove(self.INVEN_PSIONIC_FOCUS)
+			focusremove(self.INVEN_QS_PSIONIC_FOCUS)
 		end
 	end
 
@@ -6681,10 +6697,11 @@ end
 --	@param o = object to remove
 --	@param simple set true to skip equipment takeoff checks and energy use
 --	@param dst = actor to receive object (in dst.INVEN_INVEN)
-function _M:doTakeoff(inven, item, o, simple, dst)
+--	@param force = set to true to skip sleep & such checks
+function _M:doTakeoff(inven, item, o, simple, dst, force)
 	dst = dst or self
 	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
-	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+	if not force and self:attr("sleep") and not self:attr("lucid_dreamer") then
 		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
