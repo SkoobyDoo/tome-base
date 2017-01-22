@@ -117,6 +117,12 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +4 Willpower, +5 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +0",
 	},
+	birth_example_particles = {
+		function(actor) if core.shader.active() then
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1, img="call_shadows"}, {type="rotatingshield", noup=2.0, cylinderRotationSpeed=1.7, appearTime=0.2}))
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1, img="call_shadows"}, {type="rotatingshield", noup=1.0, cylinderRotationSpeed=1.7, appearTime=0.2}))
+		end end,
+	},
 	power_source = {psionic=true},
 	random_rarity = 2,
 	stats = { wil=4, cun=5, },
