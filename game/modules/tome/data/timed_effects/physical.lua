@@ -3566,3 +3566,22 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "MANA_CLASH", image = "talents/mana_clash.png",
+	desc = "Mana Clash",
+	long_desc = function(self, eff) return ("All damage you do also trigget a manaburn for %d%% of the damage done."):format(eff.power * 100) end,
+	type = "physical",
+	subtype = { antimagic=true },
+	status = "beneficial",
+	parameters = { power=0.15 },
+	on_gain = function(self, err) return "#Target# exudes antimagic forces.", true end,
+	on_lose = function(self, err) return "#Target# is no longer toxic to arcane users.", true end,
+	callbackOnDealDamage = function(self, eff, val, target, dead, death_note)
+		if self._manaclashing then return end
+		if not target.x or dead then return end
+		self._manaclashing = true
+		DamageType:get(DamageType.MANABURN).projector(self, target.x, target.y, DamageType.MANABURN, val * eff.power)
+		self._manaclashing = nil
+	end,
+}

@@ -28,7 +28,7 @@ newTalent{
 	on_absorb = function(self, t, damtype)
 		if not DamageType:get(damtype).antimagic_resolve then return end
 
-		if not self:isTalentActive(self.T_ANTIMAGIC_SHIELD) then
+		if not self:isTalentActive(self.T_ANTIMAGIC_SHIELD) or self:getTalentLevel(t) >= 5 then
 			self:incEquilibrium(-t.getRegen(self, t))
 			self:incStamina(t.getRegen(self, t))
 		end
@@ -41,6 +41,7 @@ newTalent{
 		return ([[You stand in the way of magical damage. That which does not kill you will make you stronger.
 		Each time you are hit by non-physical, non-mind damage, you get a %d%% resistance to that element for 7 turns.
 		If Antimagic Shield is not active, you also absorb part of the impact and use it to fuel your own powers, decreasing your equilibrium and increasing your stamina by %0.2f each hit.
+		At level 5 you absorb even if Antimagic Shield is active.
 		The effects will increase with your Mindpower.]]):
 		format(	resist, regen )
 	end,
@@ -100,7 +101,7 @@ newTalent{
 	cooldown = 20,
 	range = 10,
 	tactical = { DEFEND = 2 },
-	getBurn = function(self, t) return self:combatTalentMindDamage(t, 8, 70) end,
+	getBurn = function(self, t) return self:combatTalentMindDamage(t, 8, 60) end,
 	getMax = function(self, t)
 		local v = self:combatTalentMindDamage(t, 20, 100)
 		if self:knowTalent(self.T_TRICKY_DEFENSES) then
@@ -154,12 +155,13 @@ newTalent{
 	type = {"wild-gift/antimagic", 4},
 	require = gifts_req4,
 	points = 5,
-	equilibrium = 10,
+	equilibrium = -15,
 	cooldown = 8,
 	range = 10,
 	tactical = { ATTACK = { ARCANE = 3 } },
 	direct_hit = true,
 	requires_target = true,
+	getDur = function(self, t) return self:combatTalentScale(t, 4, 9) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
 	end,
@@ -174,6 +176,7 @@ newTalent{
 			local base = self:mindCrit(self:combatTalentMindDamage(t, 20, 460))
 			DamageType:get(DamageType.MANABURN).projector(self, px, py, DamageType.MANABURN, base)
 		end, nil, {type="slime"})
+		self:setEffect(self.EFF_MANA_CLASH, t.getDur(self, t), {power=0.15})
 		game:playSoundNear(self, "talents/heal")
 		return true
 	end,
@@ -185,8 +188,9 @@ newTalent{
 		local negative = base / 4
 
 		return ([[Drain %d mana, %d vim, %d positive and negative energies from your target, triggering a chain reaction that explodes in a burst of arcane damage.
-		The damage done is equal to 100%% of the mana drained, 200%% of the vim drained, or 400%% of the positive or negative energy drained, whichever is higher.
+		The damage done is equal to 100%% of the mana drained, 200%% of the vim drained, or 400%% of the positive or negative energy drained, whichever is higher. This effect is called a manaburn.
+		In addition, for %d turns all your attacks also do 15%% manaburn damage.
 		The effect will increase with your Mindpower.]]):
-		format(mana, vim, positive, negative)
+		format(mana, vim, positive, t.getDur(self, t))
 	end,
 }
