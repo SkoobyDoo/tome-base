@@ -17,7 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local function combatPhysicalMindDamage(self, t, b, s)
+local function combatTalentPhysicalMindDamage(self, t, b, s)
 	return math.max(self:combatTalentMindDamage(t, b, s), self:combatTalentPhysicalDamage(t, b, s))
 end
 
@@ -27,8 +27,8 @@ newTalent{
 	require = gifts_req1,
 	mode = "passive",
 	points = 5,
-	getRegen = function(self, t) return 1 + (self:combatTalentPhysicalMindDamage(t, 1, 10) /10) end,
-	getResist = function(self, t) return self:combatTalentPhysicalMindDamage(t, 10, 40) end,
+	getRegen = function(self, t) return 1 + (combatTalentPhysicalMindDamage(self, t, 1, 10) /10) end,
+	getResist = function(self, t) return combatTalentPhysicalMindDamage(self, t, 10, 40) end,
 	on_absorb = function(self, t, damtype)
 		if not DamageType:get(damtype).antimagic_resolve then return end
 
@@ -105,9 +105,9 @@ newTalent{
 	cooldown = 20,
 	range = 10,
 	tactical = { DEFEND = 2 },
-	getBurn = function(self, t) return self:combatTalentPhysicalMindDamage(t, 8, 60) end,
+	getBurn = function(self, t) return combatTalentPhysicalMindDamage(self, t, 8, 60) end,
 	getMax = function(self, t)
-		local v = self:combatTalentPhysicalMindDamage(t, 20, 100)
+		local v = combatTalentPhysicalMindDamage(self, t, 20, 100)
 		if self:knowTalent(self.T_TRICKY_DEFENSES) then
 			v = v * (1 + self:callTalent(self.T_TRICKY_DEFENSES,"shieldmult"))
 		end
@@ -177,7 +177,7 @@ newTalent{
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
 
-			local base = self:mindCrit(self:combatTalentPhysicalMindDamage(t, 20, 460))
+			local base = self:mindCrit(combatTalentPhysicalMindDamage(self, t, 20, 460))
 			DamageType:get(DamageType.MANABURN).projector(self, px, py, DamageType.MANABURN, base)
 		end, nil, {type="slime"})
 		self:setEffect(self.EFF_MANA_CLASH, t.getDur(self, t), {power=0.15})
@@ -185,7 +185,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local base = self:combatTalentPhysicalMindDamage(t, 20, 460)
+		local base = combatTalentPhysicalMindDamage(self, t, 20, 460)
 		local mana = base
 		local vim = base / 2
 		local positive = base / 4
