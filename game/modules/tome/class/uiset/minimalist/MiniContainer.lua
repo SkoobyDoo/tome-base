@@ -38,6 +38,7 @@ function _M:init(minimalist)
 	self.alpha = 1
 	self.locked = true
 	self.focused = false
+	self.shutdown_mouse_on_unlock = true
 	self.resize_mode = "rescale"
 	self.orientation = "left"
 	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
@@ -118,6 +119,7 @@ function _M:resize(w, h)
 	else
 		self.w, self.h = w, h
 	end
+	self:setupMouse()
 end
 
 function _M:setAlpha(a)
@@ -133,6 +135,12 @@ function _M:getMoveHandleAddText()
 	return ""
 end
 
+function _M:setScale(s)
+	self.scale = util.bound(s, 0.5, 2)
+	-- self.mouse.scale = self.scale
+	self:resize(self.w, self.h)
+end
+
 function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 	if self.locked then return end
 
@@ -141,7 +149,7 @@ function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 
 	local mhx, mhy = self:getMoveHandleLocation()
 
-	if event == "button" and button == "middle" then self.places[what].scale = 1 self.uiset:saveSettings()
+	if event == "button" and button == "middle" then self:setScale(1) self.uiset:saveSettings()
 	elseif event == "button" and button == "wheelup" then self:setAlpha(self.alpha + 0.05) self.uiset:saveSettings()
 	elseif event == "button" and button == "wheeldown" then self:setAlpha(self.alpha - 0.05) self.uiset:saveSettings()
 	elseif event == "motion" and button == "left" then
@@ -155,8 +163,7 @@ function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 			game.mouse:startDrag(mx, my, nil, {kind="ui:rescale", id=what, bx=bx, by=by},
 				function(drag, used) self.uiset:saveSettings() if on_change then on_change(mode) end end,
 				function(drag, _, x, y)
-					self.scale = util.bound((x - self.x) / mhx, 0.5, 2)
-					self:resize(self.w, self.h)
+					self:setScale(util.bound((x - self.x) / mhx, 0.5, 2))
 					if on_change then on_change(mode) end
 				end,
 				true
@@ -177,7 +184,9 @@ end
 
 function _M:lock(v)
 	self.locked = v
-	self.mouse:enableZone(true, v)
+	if self.shutdown_mouse_on_unlock then
+		self.mouse:enableZone(true, v)
+	end
 
 	local zoneid = self.mousezone_id.."-move_handle"
 	if not v then
@@ -231,7 +240,7 @@ function _M:setupMouse(first)
 	if first then self.mouse_first_setup = true end
 	if not self.mouse_first_setup then return end
 
-	self.mouse.delegate_offset_x, self.mouse.delegate_offset_y = self.x, self.y
+	-- self.mouse.delegate_offset_x, self.mouse.delegate_offset_y = self.x, self.y
 	if not game.mouse:updateZone(self.mousezone_id, self.x, self.y, self.w, self.h, nil, self.scale) then
 		game.mouse:unregisterZone(self.mousezone_id)
 
@@ -241,7 +250,7 @@ function _M:setupMouse(first)
 				self.focused = newfocus
 				self:onFocus(self.focused)
 			end
-			self.mouse:delegate(button, mx, my, xrel, yrel, bx, by, event)
+			self.mouse:delegate(button, bx, by, xrel, yrel, bx, by, event)
 		end
 		game.mouse:registerZone(self.x, self.y, self.w, self.h, fct, nil, self.mousezone_id, true, self.scale)
 	end

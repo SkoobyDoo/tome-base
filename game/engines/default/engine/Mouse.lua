@@ -29,6 +29,7 @@ function _M:init()
 	self.areas_name = {}
 	self.status = {}
 	self.last_pos = { x = 0, y = 0 }
+	self.scale = 1
 end
 
 function _M:allowDownEvent(v)
@@ -55,7 +56,7 @@ function _M:receiveMouse(button, x, y, isup, force_name, extra)
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
 		if not m.disabled and (not m.mode or m.mode.button) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, isup and "button" or "button-down", extra)
+			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / self:getScale(m), (y-m.y1) / self:getScale(m), isup and "button" or "button-down", extra)
 			if r ~= false then break end
 		end
 	end
@@ -63,6 +64,10 @@ end
 
 function _M:getPos()
 	return self.last_pos.x, self.last_pos.y
+end
+
+function _M:getScale(m)
+	return self.scale * (m and m.scale or 1)
 end
 
 function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
@@ -75,7 +80,7 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
 		if not m.disabled and (not m.mode or m.mode.move) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			local r = m.fct(button, x, y, xrel, yrel, (x-m.x1) / m.scale, (y-m.y1) / m.scale, "motion", extra)
+			local r = m.fct(button, x, y, xrel, yrel, (x-m.x1) / self:getScale(m), (y-m.y1) / self:getScale(m), "motion", extra)
 			if r ~= false then
 				cur_m = m
 				break
@@ -83,7 +88,7 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 		end
 	end
 	if self.last_m and self.last_m.allow_out_events and self.last_m ~= cur_m then
-		self.last_m.fct("none", x, y, xrel, yrel, (x-self.last_m.x1) / self.last_m.scale, (y-self.last_m.y1) / self.last_m.scale, "out", extra)
+		self.last_m.fct("none", x, y, xrel, yrel, (x-self.last_m.x1) / self:getScale(self.last_m), (y-self.last_m.y1) / self:getScale(self.last_m), "out", extra)
 	end
 	self.last_m = cur_m
 end
@@ -94,7 +99,7 @@ function _M:receiveMouseGlobal(button, x, y, event, force_name, extra)
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
 		if not m.disabled and (not m.mode or m.mode.button) and (not force_name or force_name == m.name) then
-			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, event, extra)
+			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / self:getScale(m), (y-m.y1) / self:getScale(m), event, extra)
 			if r ~= false then
 				break
 			end
@@ -136,8 +141,8 @@ function _M:updateZone(name, x, y, w, h, fct, scale)
 	m.scale = scale or m.scale
 	m.x1 = x
 	m.y1 = y
-	m.x2 = x + w * m.scale
-	m.y2 = y + h * m.scale
+	m.x2 = x + w * self:getScale(m)
+	m.y2 = y + h * self:getScale(m)
 	m.fct = fct or m.fct
 	return true
 end

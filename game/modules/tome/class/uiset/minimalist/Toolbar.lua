@@ -31,8 +31,8 @@ _M.iconslist = {
 	{name="tb_lore", file="hotkeys/lore.png", fct=function(button) if button == "left" then game.key:triggerVirtual("SHOW_QUESTS") elseif button == "right" then game:registerDialog(require("mod.dialogs.ShowLore").new("Tales of Maj'Eyal Lore", game.party)) end end, tooltip="Left mouse to show quest log.\nRight mouse to show all known lore."},
 	{name="tb_quest", file="hotkeys/quest.png", fct=function() game.key:triggerVirtual("SHOW_MESSAGE_LOG") end, tooltip="Click to show message/chat log."},
 	{name="tb_mainmenu", file="hotkeys/mainmenu.png", fct=function() game.key:triggerVirtual("EXIT") end, tooltip="Click to show main menu"},
-	{name="tb_padlock_closed", file="padlock_closed.png", fct=function() game.uiset:switchLocked() end, tooltip="Unlock all interface elements so they can be moved and resized."},
-	{name="tb_padlock_open", file="padlock_open.png", no_increment=true, fct=function() game.uiset:switchLocked() end, tooltip="Lock all interface elements so they can not be moved nor resized."},
+	{name="tb_padlock_closed", file="padlock_closed.png", no_increment=true, fct=function() game.uiset:switchLocked() end, tooltip="Unlock all interface elements so they can be moved and resized."},
+	{name="tb_padlock_open", file="padlock_open.png", fct=function() game.uiset:switchLocked() end, tooltip="Lock all interface elements so they can not be moved nor resized."},
 }
 
 function _M:init(minimalist, w, h)
@@ -53,6 +53,7 @@ function _M:init(minimalist, w, h)
 	end
 
 	MiniContainer.init(self, minimalist)
+	self.shutdown_mouse_on_unlock = false
 
 	for _, d in ipairs(self.iconslist) do
 		self.mouse:registerZone(0, 0, self.icon_w, self.icon_h, self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
@@ -88,6 +89,10 @@ end
 
 function _M:getName()
 	return "Toolbar"
+end
+
+function _M:getMoveHandleLocation()
+	return self.w - self.move_handle_w, 0
 end
 
 function _M:getDefaultGeometry()
