@@ -380,7 +380,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		if dam > 0 and target.isTalentActive and target:isTalentActive(target.T_ANTIMAGIC_SHIELD) then
 			local t = target:getTalentFromId(target.T_ANTIMAGIC_SHIELD)
 			lastdam = dam
-			dam = t.on_damage(target, t, type, dam)
+			dam = t.on_damage(target, t, type, dam, src)
 			if lastdam - dam  > 0 then game:delayedLogDamage(src, target, 0, ("%s(%d antimagic)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", lastdam - dam), false) end
 		end
 
