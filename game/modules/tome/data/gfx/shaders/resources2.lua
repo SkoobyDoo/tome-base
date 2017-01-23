@@ -26,7 +26,6 @@ return {
 		color2 = color2 or {0,1,0},
 		p2 = distort or {1, 1},
 		speed = speed or 5000,
-		a = a or 1,
 		amp = amp or 0.2,
 	},
 	clone = false,

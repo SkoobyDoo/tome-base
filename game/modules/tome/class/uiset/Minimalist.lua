@@ -76,12 +76,12 @@ function _M:checkGameOption(name)
 end
 
 _M.allcontainers = {
-	playerframe = "mod.class.uiset.minimalist.PlayerFrame",
-	gamelog = "mod.class.uiset.minimalist.Log",
-	-- minimap = "mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
-	toolbar = "mod.class.uiset.minimalist.Toolbar",
-	hotkeys = "mod.class.uiset.minimalist.Resources",
-	hotkeys = "mod.class.uiset.minimalist.Hotkeys",
+	"mod.class.uiset.minimalist.PlayerFrame",
+	"mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
+	"mod.class.uiset.minimalist.Toolbar",
+	"mod.class.uiset.minimalist.Resources",
+	"mod.class.uiset.minimalist.Hotkeys",
+	"mod.class.uiset.minimalist.Log",
 }
 
 function _M:saveSettings()
@@ -139,10 +139,10 @@ function _M:activate()
 	self.init_size_mono = size_mono
 	self.init_font_mono_h = font_mono_h
 
-	for name, class in pairs(self.allcontainers) do
-		self[name] = require(class).new(self)
-		self.minicontainers[#self.minicontainers+1] = self[name]
-		self.renderer:add(self[name]:getDO())
+	for _, class in ipairs(self.allcontainers) do
+		local c = require(class).new(self)
+		self.minicontainers[#self.minicontainers+1] = c
+		self.renderer:add(c:getDO())
 	end
 
 	game.log = function(style, ...) if type(style) == "number" then game.uiset.logdisplay(...) else game.uiset.logdisplay(style, ...) end end
