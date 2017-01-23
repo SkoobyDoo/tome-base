@@ -2500,8 +2500,8 @@ end
 
 function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
 	self.id_challenge = self.id_challenge or {count=0, level_entering_id=game:getPlayer(true).level, quests={}, rewarded={}}
-	-- challenges become less rare with depth
-	if lev < 3 or not rng.percent(20 + math.ceil(math.log(lev*lev) * 4.5)) then return end
+	-- challenges become less rare with depth (21%@5, 24%@25, 27%@50, 30%@75, 43%@500)
+	if lev < 3 or not rng.percent(20 + 30*lev/(lev + 150)) then return end
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
