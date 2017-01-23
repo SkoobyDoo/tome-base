@@ -93,7 +93,14 @@ function _M:getDefaultGeometry()
 end
 
 function _M:onSnapChange()
-	self.hotkeys_display_icons.orient = self.orientation
+	local what = self.configs.force_orientation
+	if not what or what == "natural" then
+		self.hotkeys_display_icons.orient = self.orientation
+	elseif what == "horizontal" then
+		self.hotkeys_display_icons.orient = "down"
+	elseif what == "vertical" then
+		self.hotkeys_display_icons.orient = "left"
+	end
 	self:resize(self.w, self.h)
 end
 
@@ -116,14 +123,29 @@ function _M:update(nb_keyframes)
 	self.hotkeys_display_icons:display()
 end
 
+function _M:loadConfig(config)
+	MiniContainer.loadConfig(self, config)
+	self.frame_container:shown(not self.configs.hide_frame)
+	self:onSnapChange()
+end
+
 function _M:toggleFrame()
 	self.configs.hide_frame = not self.configs.hide_frame
 	self.frame_container:shown(not self.configs.hide_frame)
 	self.uiset:saveSettings()
 end
 
+function _M:forceOrientation(what)
+	self.configs.force_orientation = what
+	self:onSnapChange()
+	self.uiset:saveSettings()
+end
+
 function _M:editMenu()
 	return {
 		{ name = "Toggle frame", fct=function() self:toggleFrame() end },
+		{ name = "Force orientation: natural", fct=function() self:forceOrientation("natural") end },
+		{ name = "Force orientation: horizontal", fct=function() self:forceOrientation("horizontal") end },
+		{ name = "Force orientation: vertical", fct=function() self:forceOrientation("vertical") end },
 	}
 end

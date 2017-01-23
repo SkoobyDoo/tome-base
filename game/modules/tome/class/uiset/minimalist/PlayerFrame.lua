@@ -203,6 +203,11 @@ function _M:getDO()
 	return self.full_container
 end
 
+function _M:loadConfig(config)
+	MiniContainer.loadConfig(self, config)
+	self.do_container:shown(not self.configs.hide)
+end
+
 function _M:toggleDisplay()
 	self.configs.hide = not self.configs.hide
 	self.do_container:shown(not self.configs.hide)

@@ -26,35 +26,6 @@ local Dialog = require "engine.ui.Dialog"
 -- @classmod engine.LogDisplay
 module(..., package.seeall, class.make)
 
-function _M:init(minimalist)
-	local _ _, _, w, h = self:getDefaultGeometry()
-	self.uiset = minimalist
-	self.mouse = Mouse.new()
-	self.container_id = self:getClassName()
-	self.configs = {}
-	self.x, self.y = 0, 0
-	self.w, self.h = w, h
-	self.base_w, self.base_h = w, h
-	self.container_z = 0
-	self.scale = 1
-	self.alpha = 1
-	self.locked = true
-	self.focused = false
-	self.shutdown_mouse_on_unlock = true
-	self.resize_mode = "rescale"
-	self.orientation = self:getDefaultOrientation()
-	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
-
-	self.move_handle, self.move_handle_w, self.move_handle_h = self:imageLoader("move_handle.png")
-
-	self.unlocked_container = core.renderer.container()
-	self.unlocked_grey_filter = core.renderer.colorQuad(0, 0, 1, 1, 0, 0, 0, 0.235):scale(w, h, 1)
-	self.unlocked_container:add(self.unlocked_grey_filter)
-	self.unlocked_container:add(self.move_handle)
-	local text = core.renderer.text(self.uiset.font):outline(1):text("#{italic}#<"..self:getName()..">#{normal}#"):color(colors.smart1unpack(colors.GREY))
-	self.unlocked_container:add(text)	
-end
-
 function _M:imageLoader(file, rw, rh)
 	local sfile = UI.ui.."-ui/minimalist/"..file
 	if fs.exists("/data/gfx/"..sfile) then
@@ -89,6 +60,56 @@ end
 
 function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 	return UI:makeFrameDO({base=base, fct=function(s) return self:texLoader(s) end}, w, h, iw, ih, center, resizable)
+end
+
+function _M:init(minimalist)
+	local _ _, _, w, h = self:getDefaultGeometry()
+	self.uiset = minimalist
+	self.mouse = Mouse.new()
+	self.container_id = self:getClassName()
+	self.configs = {}
+	self.x, self.y = 0, 0
+	self.w, self.h = w, h
+	self.base_w, self.base_h = w, h
+	self.container_z = 0
+	self.scale = 1
+	self.alpha = 1
+	self.locked = true
+	self.focused = false
+	self.shutdown_mouse_on_unlock = true
+	self.resize_mode = "rescale"
+	self.orientation = self:getDefaultOrientation()
+	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
+
+	self.move_handle, self.move_handle_w, self.move_handle_h = self:imageLoader("move_handle.png")
+
+	self.unlocked_container = core.renderer.container()
+	self.unlocked_grey_filter = core.renderer.colorQuad(0, 0, 1, 1, 0, 0, 0, 0.235):scale(w, h, 1)
+	self.unlocked_container:add(self.unlocked_grey_filter)
+	self.unlocked_container:add(self.move_handle)
+	local text = core.renderer.text(self.uiset.font):outline(1):text("#{italic}#<"..self:getName()..">#{normal}#"):color(colors.smart1unpack(colors.GREY))
+	self.unlocked_container:add(text)	
+end
+
+function _M:loadConfig(config)
+	if self.resize_mode == "rescale" then
+		if config.scale then
+			self:setScale(config.scale)
+		end
+	elseif self.resize_mode == "resize" then
+		if config.w and config.h then
+			self:resize(config.w, config.h)
+		end
+	end
+	if config.x and config.y then
+		self:move(config.x, config.y)
+	end
+	if config.alpha then
+		self:setAlpha(config.alpha)
+	end
+	if config.configs then
+		table.merge(self.configs, config.configs)
+	end
 end
 
 function _M:update(nb_keyframes)

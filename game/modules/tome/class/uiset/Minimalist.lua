@@ -164,6 +164,9 @@ function _M:placeContainers()
 	for _, container in ipairs(self.minicontainers) do
 		local x, y = container:getDefaultGeometry()
 		container:move(x, y)
+		if config.settings.tome.uiset_minimalist2 and config.settings.tome.uiset_minimalist2.places and config.settings.tome.uiset_minimalist2.places[container.container_id] then
+			container:loadConfig(config.settings.tome.uiset_minimalist2.places[container.container_id])
+		end
 	end
 end
 
