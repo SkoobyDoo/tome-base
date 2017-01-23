@@ -80,10 +80,12 @@ function _M:update(nb_keyframes)
 			self.mouse:updateZone(d.name, x, y, self.icon_w, self.icon_h, nil, self.scale)
 			if not d.no_increment then y = y + self.icon_h end
 		end
+		self.old_orientation = self.orientation
 	end
 	if self.old_locked ~= self.locked then
 		self.tb_padlock_closed:shown(self.locked)
 		self.tb_padlock_open:shown(not self.locked)
+		self.old_locked = self.locked
 	end
 end
 

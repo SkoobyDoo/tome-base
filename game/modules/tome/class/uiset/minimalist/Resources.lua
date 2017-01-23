@@ -27,6 +27,7 @@ local FontPackage = require "engine.FontPackage"
 --- Player frame for Minimalist ui
 module(..., package.seeall, class.inherit(MiniContainer))
 
+-- DGDGDGDG this should be moved into the resources definitions no ? yes !
 _M.shader_params = {default = {name = "resources", require_shader=4, delay_load=false, speed=1000, distort={1.5,1.5}},
 	air={name = "resources", require_shader=4, delay_load=false, color={0x92/255, 0xe5, 0xe8}, speed=100, amp=0.8, distort={2,2.5}},
 	life={name = "resources", require_shader=4, delay_load=false, color={0xc0/255, 0, 0}, speed=1000, distort={1.5,1.5}},
@@ -194,6 +195,9 @@ function _M:init(minimalist, w, h)
 		res_gfx.name = rname
 		res_gfx.def = res_def
 		self.resources_defs[#self.resources_defs+1] = res_gfx
+
+		-- Setup the mouse zone, we update its position later on
+		self.mouse:registerZone(0, 0, self.rw, self.rh, self:tooltipAll(function() end, res_gfx.tooltip), nil, rname, true, 1)
 	end end
 end
 
@@ -228,10 +232,22 @@ function _M:move(x, y)
 	self.force_reordering = true
 end
 
+function _M:resize(w, h)
+	MiniContainer.resize(self, w, h)
+	self.force_reordering = true
+end
+
 function _M:toggleFrame()
 	self.configs.hide_frame = not self.configs.hide_frame
 	for _, res_gfx in ipairs(self.resources_defs) do res_gfx.old = {} end
 	self.uiset:saveSettings()
+end
+
+function _M:lock(v)
+	MiniContainer.lock(self, v)
+	if v then
+		self.force_reordering = true
+	end
 end
 
 function _M:forceOrientation(what)
@@ -245,13 +261,26 @@ function _M:loadConfig(config)
 	self:onSnapChange()
 end
 
+function _M:toggleResource(rname)
+	local player = self:getPlayer()
+	player["_hide_resource_"..rname] = not player["_hide_resource_"..rname]
+end
+
 function _M:editMenu()
-	return {
+	local player = self:getPlayer()
+	local list = {
 		{ name = "Toggle frame", fct=function() self:toggleFrame() end },
 		{ name = "Force orientation: natural", fct=function() self:forceOrientation("natural") end },
 		{ name = "Force orientation: horizontal", fct=function() self:forceOrientation("horizontal") end },
 		{ name = "Force orientation: vertical", fct=function() self:forceOrientation("vertical") end },
 	}
+	for _, res_gfx in ipairs(self.resources_defs) do
+		local res_def = res_gfx.def
+		if (not res_def.talent or player:knowTalent(res_def.talent)) and (not res_def.display.shown or res_def.display.shown(player)) then
+			table.insert(list, { name="Toggle resource: #GOLD#"..res_gfx.def.name, fct=function() self:toggleResource(res_gfx.name) end })
+		end
+	end
+	return list
 end
 
 function _M:getPlayer()
@@ -355,24 +384,31 @@ function _M:update(nb_keyframes)
 		elseif what == "vertical" then down = true
 		end
 
+		if self.locked then self.mouse:enableZone(true, false) end
 		local x, y = 0, 0
 		for _, res_gfx in ipairs(self.resources_defs) do
 			if res_gfx.shown then
 				res_gfx.container:translate(x, y)
+				if self.locked then 
+					self.mouse:enableZone(res_gfx.name, true)
+					self.mouse:updateZone(res_gfx.name, x, y, self.rw, self.rh, nil, 1)
+				end
 				if down then
 					y = y + self.rh
-					if y + self.rh > game.h - self.y then
+					if y + self.rh * self.scale > game.h - self.y then
 						y = 0
 						x = x + self.rw
 					end
 				else
 					x = x + self.rw
-					if x + self.rw > game.w - self.x then
+					if x + self.rw * self.scale > game.w - self.x then
 						x = 0
 						y = y + self.rh
 					end
 				end
 			end
 		end
+		self.mouse_zone_w = x + self.rw * self.scale
+		self.mouse_zone_h = y + self.rh * self.scale
 	end
 end

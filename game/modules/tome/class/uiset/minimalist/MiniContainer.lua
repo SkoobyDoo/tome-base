@@ -300,6 +300,10 @@ function _M:tooltipButton(fct, desc)
 	end
 end
 
+function _M:editMenu()
+	error("MiniContainer defined has having an edit menu, but no edit menu given")
+end
+
 function _M:setupMouse(first)
 	if first then self.mouse_first_setup = true end
 	if not self.mouse_first_setup then return end
