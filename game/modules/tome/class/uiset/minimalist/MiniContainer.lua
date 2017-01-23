@@ -46,7 +46,8 @@ function _M:init(minimalist)
 	self.move_handle, self.move_handle_w, self.move_handle_h = self:imageLoader("move_handle.png")
 
 	self.unlocked_container = core.renderer.container()
-	self.unlocked_container:add(core.renderer.colorQuad(0, 0, w, h, 0, 0, 0, 0.235))
+	self.unlocked_grey_filter = core.renderer.colorQuad(0, 0, 1, 1, 0, 0, 0, 0.235):scale(w, h, 1)
+	self.unlocked_container:add(self.unlocked_grey_filter)
 	self.unlocked_container:add(self.move_handle)
 	local text = core.renderer.text(self.uiset.font):outline(1):text("#{italic}#<"..self:getName()..">#{normal}#"):color(colors.smart1unpack(colors.GREY))
 	self.unlocked_container:add(text)	
@@ -113,11 +114,23 @@ function _M:move(x, y)
 	self:setupMouse()
 end
 
+function _M:setScale(s)
+	self.scale = util.bound(s, 0.5, 2)
+	self:resize(self.w, self.h)
+end
+
 function _M:resize(w, h)
 	if self.resize_mode == "rescale" then
 		self.do_container:scale(self.scale, self.scale, 1)
-	else
+	elseif self.resize_mode == "resize" then
 		self.w, self.h = w, h
+		self.unlocked_grey_filter:scale(w, h, 1)
+		local x, y = self:getMoveHandleLocation()
+		self.move_handle:translate(x, y)
+
+		local mhx, mhy = self:getMoveHandleLocation()
+		local mhw, mhh = self.move_handle_w, self.move_handle_h
+		self.mouse:updateZone("move_handle", mhx, mhy, mhw, mhh, nil, 1)
 	end
 	self:setupMouse()
 end
@@ -133,12 +146,6 @@ end
 
 function _M:getMoveHandleAddText()
 	return ""
-end
-
-function _M:setScale(s)
-	self.scale = util.bound(s, 0.5, 2)
-	-- self.mouse.scale = self.scale
-	self:resize(self.w, self.h)
 end
 
 function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
@@ -163,19 +170,18 @@ function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 			game.mouse:startDrag(mx, my, nil, {kind="ui:rescale", id=what, bx=bx, by=by},
 				function(drag, used) self.uiset:saveSettings() if on_change then on_change(mode) end end,
 				function(drag, _, x, y)
-					self:setScale(util.bound((x - self.x) / mhx, 0.5, 2))
+					self:setScale((x - self.x) / mhx)
 					if on_change then on_change(mode) end
 				end,
 				true
 			)
-		elseif mode == "resize" and self.places[what] then
-			game.mouse:startDrag(mx, my, nil, {kind="ui:resize", id=what, ox=mx - (self.places[what].x + util.getval(self.mhandle_pos[what].x, self)), oy=my - (self.places[what].y + util.getval(self.mhandle_pos[what].y, self))},
+		elseif mode == "resize" then
+			game.mouse:startDrag(mx, my, nil, {kind="ui:resize", id=what, bx=bx+self.move_handle_w, by=by+self.move_handle_h},
 				function(drag, used) self.uiset:saveSettings() if on_change then on_change(mode) end end,
-				function(drag, _, x, y) if self.places[drag.payload.id] then
-					self.places[drag.payload.id].w = math.max(20, x - self.places[drag.payload.id].x + drag.payload.ox)
-					self.places[drag.payload.id].h = math.max(20, y - self.places[drag.payload.id].y + drag.payload.oy)
+				function(drag, _, x, y)
+					self:resize(util.bound(x - self.x, 20, game.w), util.bound(y - self.y, 20, game.h))
 					if on_change then on_change(mode) end
-				end end,
+				end,
 				true
 			)
 		end
@@ -188,7 +194,7 @@ function _M:lock(v)
 		self.mouse:enableZone(true, v)
 	end
 
-	local zoneid = self.mousezone_id.."-move_handle"
+	local zoneid = "move_handle"
 	if not v then
 		local x, y = self:getMoveHandleLocation()
 		local w, h = self.move_handle_w, self.move_handle_h
@@ -203,7 +209,7 @@ Right mouse drag&drop to scale up/down
 Middle click to reset to default scale
 Wheel up/down to change transparency
 ]]..self:getMoveHandleAddText())
-		self.mouse:registerZone(x, y, w, h, fct, nil, zoneid, true, self.scale)
+		self.mouse:registerZone(x, y, w, h, fct, nil, zoneid, true, 1)
 	else
 		self.mouse:unregisterZone(zoneid)
 	end

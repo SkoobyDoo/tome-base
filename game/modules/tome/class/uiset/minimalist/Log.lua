@@ -29,11 +29,14 @@ function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
 	self.resize_mode = "resize"
 
+	self.do_container = core.renderer.container()
+
 	local font, size = FontPackage:getFont("default")
 	self.logdisplay = LogDisplay.new(0, 0, self.w, self.h, nil, font, size, nil, nil)
 	self.logdisplay.resizeToLines = function() end
 	self.logdisplay:setTextOutline(0.7)
 	self.logdisplay:enableFading(config.settings.tome.log_fade or 3)
+	self.do_container:add(self.logdisplay.renderer)
 
 	minimalist.logdisplay = self.logdisplay -- for old code compatibility
 
@@ -81,7 +84,7 @@ function _M:getDefaultGeometry()
 end
 
 function _M:getDO()
-	return self.logdisplay.renderer
+	return self.do_container
 end
 
 function _M:move(x, y)

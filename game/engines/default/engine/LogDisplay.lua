@@ -42,13 +42,6 @@ function _M:init(x, y, w, h, max, fontname, fontsize, color)
 
 	self.renderer = core.renderer.renderer("stream")
 
-	local wself = self:weakSelf()
-	local cb = core.renderer.callback(function()
-		if not wself.__getstrong then return end
-		wself.__getstrong:update()
-	end)
-	self.renderer:add(cb)
-
 	self:resize(x, y, w, h)
 
 	self.cache_next_id = 1
@@ -73,6 +66,15 @@ function _M:resize(x, y, w, h)
 	self.fw, self.fh = self.w - 4, self.font:lineSkip()
 	self.max_display = math.floor(self.h / self.fh)
 	self.changed = true
+
+	self.renderer:clear()
+
+	local wself = self:weakSelf()
+	local cb = core.renderer.callback(function()
+		if not wself.__getstrong then return end
+		wself.__getstrong:update()
+	end)
+	self.renderer:add(cb)
 
 	self.renderer:cutoff(0, 0, w, h)
 	self.renderer:translate(self.display_x, self.display_y, 0)
@@ -261,7 +263,7 @@ function _M:update()
 		h = h + fh
 
 		self.dlist[#self.dlist+1] = {item=text, date=self.log[z].reset_fade or self.log[z].timestamp, url=self.log[z].url}
-		text:translate(0, self.h - h, 10)
+		text:removeFromParent():translate(0, self.h - h, 10)
 		self.history_container:add(text)
 
 		if self.fading then text:tween(60, "wait", function(text) text:tween(30, "a", nil, 0, "linear") end) end
@@ -274,7 +276,7 @@ end
 function _M:toScreen()
 	self.renderer:toScreen()
 
-	if not self.fading then
+	if not self.fading and self.scrollbar then
 		self.scrollbar.pos = self.scroll
 		self.scrollbar.max = self.max - self.max_display + 1
 		self.scrollbar:display(self.display_x + self.w - self.scrollbar.w, self.display_y)

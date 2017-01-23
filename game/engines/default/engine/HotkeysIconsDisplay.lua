@@ -57,6 +57,8 @@ function _M:init(actor, x, y, w, h, bg_color, fontname, fontsize, icon_w, icon_h
 	self.fontname = fontname
 	self.fontsize = fontsize
 
+	self.renderer = core.renderer.renderer("stream"):zSort(false):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(false)
+
 	self.frames = {}
 	-- self.makeFrame = function() UI:makeFrame("ui/icon-frame/frame", icon_w + 8, icon_h + 8)  --doesn't really matter since we pass a different size
 
@@ -98,7 +100,8 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.max_cols = math.floor(self.w / self.frames.w)
 	self.max_rows = math.floor(self.h / self.frames.h)
 
-	self.renderer = core.renderer.renderer("stream"):zSort(false):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(false)
+	self.renderer:clear()
+
 	self.bg_container = core.renderer.container()
 	self.renderer:add(self.bg_container)
 
@@ -255,7 +258,7 @@ function _M:display()
 			end
 
 			if display_entity then
-				self.icons_layer:add(display_entity:getEntityDisplayObject(self.tiles, self.icon_w, self.icon_h, false, false):translate(x, y, 0))
+				self.icons_layer:add(display_entity:getEntityDisplayObject(self.tiles, self.icon_w, self.icon_h, false, false):removeFromParent():translate(x, y, 0))
 			end
 
 			if not self.sel_frames[i] then

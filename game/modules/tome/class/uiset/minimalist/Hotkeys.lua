@@ -31,16 +31,22 @@ function _M:init(minimalist)
 	self.container_z = 100
 	self.resize_mode = "resize"
 
+	self.do_container = core.renderer.container()
+
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
 	self.hotkeys_display_icons:setTextOutline(0.7)
 	self.hotkeys_display_icons.actor = game.player
+	self.frame_container = core.renderer.container():translate(0, 0, -5)
+	self.do_container:add(self.frame_container)
+
+	self.hkframe = self:makeFrameDO("hotkeys/hotkey_", nil, nil, self.w, self.h, false, true)
+	self.frame_container:add(self.hkframe.container:translate(-4 - self.hkframe.b7.w, -4 - self.hkframe.b7.h))
+	
+	self.do_container:add(self.hotkeys_display_icons.renderer)
 
 	minimalist.hotkeys_display_icons = self.hotkeys_display_icons -- for old code compatibility
 	minimalist.hotkeys_display = self.hotkeys_display_icons
-
-	local hkframe = self:makeFrameDO("hotkeys/hotkey_", nil, nil, self.w, self.h)
-	self.hotkeys_display_icons.bg_container:add(hkframe.container:translate(-4 - hkframe.b7.w, -4 - hkframe.b7.h))
 
 	self.mouse:dragListener(true)
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
@@ -86,7 +92,7 @@ function _M:getDefaultGeometry()
 end
 
 function _M:getDO()
-	return self.hotkeys_display_icons.renderer
+	return self.do_container
 end
 
 function _M:move(x, y)
@@ -96,6 +102,8 @@ end
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
 	self.hotkeys_display_icons:resize(0, 0, w, h)
+
+	self.hkframe:resize(nil, nil, w, h)
 end
 
 function _M:update(nb_keyframes)
