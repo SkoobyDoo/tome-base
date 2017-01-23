@@ -36,6 +36,7 @@ function _M:init(minimalist)
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
 	self.hotkeys_display_icons:setTextOutline(0.7)
+	self.hotkeys_display_icons.orient = self.orientation
 	self.hotkeys_display_icons.actor = game.player
 	self.frame_container = core.renderer.container():translate(0, 0, -5)
 	self.do_container:add(self.frame_container)
@@ -91,6 +92,11 @@ function _M:getDefaultGeometry()
 	return x, y, w, h
 end
 
+function _M:onSnapChange()
+	self.hotkeys_display_icons.orient = self.orientation
+	self:resize(self.w, self.h)
+end
+
 function _M:getDO()
 	return self.do_container
 end
@@ -108,4 +114,16 @@ end
 
 function _M:update(nb_keyframes)
 	self.hotkeys_display_icons:display()
+end
+
+function _M:toggleFrame()
+	self.configs.hide_frame = not self.configs.hide_frame
+	self.frame_container:shown(not self.configs.hide_frame)
+	self.uiset:saveSettings()
+end
+
+function _M:editMenu()
+	return {
+		{ name = "Toggle frame", fct=function() self:toggleFrame() end },
+	}
 end

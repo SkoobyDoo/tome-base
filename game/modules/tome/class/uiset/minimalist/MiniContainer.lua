@@ -20,6 +20,7 @@
 require "engine.class"
 local Mouse = require "engine.Mouse"
 local UI = require "engine.ui.Base"
+local Dialog = require "engine.ui.Dialog"
 
 --- Abstract class that defines a UI "item", like th player frame, hotkeys, ...
 -- @classmod engine.LogDisplay
@@ -30,6 +31,7 @@ function _M:init(minimalist)
 	self.uiset = minimalist
 	self.mouse = Mouse.new()
 	self.container_id = self:getClassName()
+	self.configs = {}
 	self.x, self.y = 0, 0
 	self.w, self.h = w, h
 	self.base_w, self.base_h = w, h
@@ -40,7 +42,7 @@ function _M:init(minimalist)
 	self.focused = false
 	self.shutdown_mouse_on_unlock = true
 	self.resize_mode = "rescale"
-	self.orientation = "left"
+	self.orientation = self:getDefaultOrientation()
 	self.mousezone_id = self:getClassName() -- Change that in the subclass if there has to be more than one instance
 
 	self.move_handle, self.move_handle_w, self.move_handle_h = self:imageLoader("move_handle.png")
@@ -96,6 +98,10 @@ function _M:getName()
 	error("MiniContainer defined without a name")
 end
 
+function _M:getDefaultOrientation()
+	return "down"
+end
+
 function _M:getDefaultGeometry()
 	error("MiniContainer defined without a default geometry")
 end
@@ -104,14 +110,12 @@ function _M:getMoveHandleLocation()
 	return self.w - self.move_handle_w, self.h - self.move_handle_h
 end
 
-function _M:getDO()
-	error("cant use MiniContainer directly")
-end
-
 function _M:move(x, y)
 	self.x, self.y = x, y
 	self:getDO():translate(x, y, 0):color(1, 1, 1, self.alpha)
 	self:setupMouse()
+
+	self:checkSnap()
 end
 
 function _M:setScale(s)
@@ -133,6 +137,34 @@ function _M:resize(w, h)
 		self.mouse:updateZone("move_handle", mhx, mhy, mhw, mhh, nil, 1)
 	end
 	self:setupMouse()
+	self:checkSnap()
+end
+
+function _M:getBounds()
+	local x1, y1 = self.x, self.y
+	local x2, y2
+	if self.resize_mode == "rescale" then
+		x2, y2 = x1 + self.scale * self.w, y1 + self.scale * self.h
+	elseif self.resize_mode == "resize" then
+		x2, y2 = x1 + self.w, y1 + self.h
+	end
+	return x1, y1, x2, y2
+end
+
+function _M:checkSnap()
+	local x1, y1, x2, y2 = self:getBounds()
+
+	local oldorient = self.orientation
+	self.orientation = self:getDefaultOrientation()
+	if x1 <= 4 then self.orientation = "right" end
+	if x2 >= game.w -4 then self.orientation = "left" end
+	if y1 <= 4 then self.orientation = "down" end
+	if y2 >= game.h - 4 then self.orientation = "up" end
+	if self.orientation ~= oldorient then self:onSnapChange() end
+end
+
+function _M:onSnapChange()
+	-- Override me to do stuff if needed
 end
 
 function _M:setAlpha(a)
@@ -157,6 +189,9 @@ function _M:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event, on_change)
 	local mhx, mhy = self:getMoveHandleLocation()
 
 	if event == "button" and button == "middle" then self:setScale(1) self.uiset:saveSettings()
+	elseif event == "button" and button == "right" and self.editMenu then
+		local list = self:editMenu()
+		Dialog:listPopup("Edit "..self:getName(), "Choose an option:", list, 300, 500)
 	elseif event == "button" and button == "wheelup" then self:setAlpha(self.alpha + 0.05) self.uiset:saveSettings()
 	elseif event == "button" and button == "wheeldown" then self:setAlpha(self.alpha - 0.05) self.uiset:saveSettings()
 	elseif event == "motion" and button == "left" then
@@ -202,13 +237,15 @@ function _M:lock(v)
 
 		local fct = self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
 			self:uiMoveResize(button, mx, my, xrel, yrel, bx, by, event)
-		end, self:getName()..[[
+		end, "#GOLD##{bold}#"..self:getName()..[[#LAST##{normal}#
+
 ---
 Left mouse drag&drop to move the frame
 Right mouse drag&drop to scale up/down
 Middle click to reset to default scale
 Wheel up/down to change transparency
-]]..self:getMoveHandleAddText())
+]]..(self.editMenu and "Right click to edit\n" or "")
+..self:getMoveHandleAddText())
 		self.mouse:registerZone(x, y, w, h, fct, nil, zoneid, true, 1)
 	else
 		self.mouse:unregisterZone(zoneid)
@@ -240,6 +277,10 @@ function _M:tooltipButton(fct, desc)
 		if event ~= "out" then game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, tostring(util.getval(desc))) end
 		if event == "button" then fct(button, mx, my, xrel, yrel, bx, by, event) end
 	end
+end
+
+function _M:editMenu()
+	error("MiniContainer defined has having an edit menu, but no edit menu given")
 end
 
 function _M:setupMouse(first)

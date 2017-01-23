@@ -91,7 +91,10 @@ function _M:init(minimalist, w, h)
 	self.text_money = core.renderer.text(font)
 	self.text_money:textColor(colors.unpack1(colors.GOLD))
 	self.do_container:add(self.text_money) self.text_money:translate(config.money.x, config.money.y, 10)
-	
+
+	self.full_container = core.renderer.container()
+	self.full_container:add(self.do_container)
+
 	MiniContainer.init(self, minimalist)
 
 	self.mouse:registerZone(config.attack.x, config.attack.y, pf_defend_w, pf_defend_h, self:tooltipButton(function(button, mx, my, xrel, yrel, bx, by, event)
@@ -194,4 +197,20 @@ end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
+end
+
+function _M:getDO()
+	return self.full_container
+end
+
+function _M:toggleDisplay()
+	self.configs.hide = not self.configs.hide
+	self.do_container:shown(not self.configs.hide)
+	self.uiset:saveSettings()
+end
+
+function _M:editMenu()
+	return {
+		{ name = "Toggle display", fct=function() self:toggleDisplay() end },
+	}
 end

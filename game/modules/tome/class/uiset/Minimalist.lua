@@ -23,6 +23,7 @@ local UISet = require "mod.class.uiset.UISet"
 local Dialog = require "engine.ui.Dialog"
 local Map = require "engine.Map"
 local FontPackage = require "engine.FontPackage"
+local KeyBind = require "engine.KeyBind"
 
 module(..., package.seeall, class.inherit(UISet, TooltipsData))
 
@@ -46,9 +47,17 @@ function _M:switchLocked()
 		else container:getDO():remove(container:getUnlockedDO()) end
 	end
 	if self.locked then
-		game.bignews:say(60, "#CRIMSON#Interface locked, mouse enabled on the map")
+		game.key = self.unlock_game_key_save
+		game.key:setCurrent()
+		game.bignews:say(60, "#CRIMSON#Interface locked, keyboard and mouse enabled.")
 	else
-		game.bignews:say(60, "#CRIMSON#Interface unlocked, mouse disabled on the map")
+		self.unlock_game_key_save = game.key
+		local key = KeyBind.new()
+		game.key = key
+		game.key:setCurrent()
+		game.bignews:say(60, "#CRIMSON#Interface unlocked, keyboard and mouse disabled.")
+
+		key:addCommand(key._ESCAPE, nil, function() self:switchLocked() end)
 	end
 end
 
@@ -90,6 +99,20 @@ function _M:saveSettings()
 		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].h = %f"):format(id, container.h)
 		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].scale = %f"):format(id, container.scale)
 		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].alpha = %f"):format(id, container.alpha)
+		if next(container.configs) then
+			lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs = {}"):format(id)
+			for k, v in pairs(container.configs) do
+				if type(v) == "string" then
+					lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs[%q] = %q"):format(id, k, v)
+				elseif type(v) == "number" then
+					lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs[%q] = %f"):format(id, k, v)
+				elseif type(v) == "boolean" then
+					lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs[%q] = %s"):format(id, k, v and "true" or "false")
+				else
+					error("Saving MiniContainer configs, key "..tostring(k).." has wrong value")
+				end
+			end
+		end
 	end
 
 	self:triggerHook{"UISet:Minimalist:saveSettings", lines=lines}
