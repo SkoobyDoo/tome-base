@@ -30,6 +30,7 @@ module(..., package.seeall, class.inherit(MiniContainer))
 _M.shader_params = {default = {name = "resources", require_shader=4, delay_load=false, speed=1000, distort={1.5,1.5}},
 	air={name = "resources", require_shader=4, delay_load=false, color={0x92/255, 0xe5, 0xe8}, speed=100, amp=0.8, distort={2,2.5}},
 	life={name = "resources", require_shader=4, delay_load=false, color={0xc0/255, 0, 0}, speed=1000, distort={1.5,1.5}},
+	shield={name = "resources", require_shader=4, delay_load=false, color={0.5, 0.5, 0.5}, speed=5000, a=0.5, distort={0.5,0.5}},
 	stamina={name = "resources", require_shader=4, delay_load=false, color={0xff/255, 0xcc/255, 0x80/255}, speed=700, distort={1,1.4}},
 	mana={name = "resources", require_shader=4, delay_load=false, color={106/255, 146/255, 222/255}, speed=1000, distort={0.4,0.4}},
 	soul={name = "resources", require_shader=4, delay_load=false, color={128/255, 128/255, 128/255}, speed=1200, distort={0.4,-0.4}},
@@ -71,6 +72,32 @@ function _M:init(minimalist, w, h)
 		description = "Life is good to have.",
 		color = {0xc0/255, 0, 0},
 		display = { get_values = function(player) return player.life, 0, player.max_life, player.life_regen end, },
+	})
+
+	-- Shield, let's try with it in its own, may be actually better
+	table.insert(base_defs, 3, {
+		name = "Shielding",
+		short_name = "life_armored",
+		regen_prop = "lolnope",
+		invert_values = false,
+		description = "Shielding protects your life.",
+		color = {0.5, 0.5, 0.5},
+		display = {
+			shown = function(player)
+				local shield, max_shield = 0, 0
+				if player:attr("time_shield") then shield = shield + player.time_shield_absorb max_shield = max_shield + player.time_shield_absorb_max end
+				if player:attr("damage_shield") then shield = shield + player.damage_shield_absorb max_shield = max_shield + player.damage_shield_absorb_max end
+				if player:attr("displacement_shield") then shield = shield + player.displacement_shield max_shield = max_shield + player.displacement_shield_max end
+				return shield > 0
+			end,
+			get_values = function(player)
+				local shield, max_shield = 0, 0
+				if player:attr("time_shield") then shield = shield + player.time_shield_absorb max_shield = max_shield + player.time_shield_absorb_max end
+				if player:attr("damage_shield") then shield = shield + player.damage_shield_absorb max_shield = max_shield + player.damage_shield_absorb_max end
+				if player:attr("displacement_shield") then shield = shield + player.displacement_shield max_shield = max_shield + player.displacement_shield_max end
+				return shield, 0, max_shield, 0
+			end,
+		},
 	})
 
 	-- Insert Psionic Feedback
