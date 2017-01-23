@@ -84,7 +84,7 @@ end
 -- @string hex RRGGBB format hex string, 00->FF
 -- @return {r, g, b, a}
 function colors.hex1alpha(hex)
-	local r, g, b, a = tonumber("0x"..hex:sub(1, 2)), tonumber("0x"..hex:sub(3, 4)), tonumber("0x"..hex:sub(5, 6)), tonumber("0x"..hex:sub(7, 8))
+	local r, g, b, a = tonumber("0x"..hex:sub(1, 2)), tonumber("0x"..hex:sub(3, 4)), tonumber("0x"..hex:sub(5, 6)), tonumber("0x"..hex:sub(7, 8)) or 255
 	return {r / 255, g / 255, b / 255, a / 255}
 end
 
@@ -96,7 +96,7 @@ end
 -- @return b
 -- @return a
 function colors.hex1alphaunpack(hex)
-	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255, tonumber("0x"..hex:sub(7, 8)) / 255
+	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255, (tonumber("0x"..hex:sub(7, 8)) or 255) / 255
 end
 
 --- Tries to detect the format (.r.g.b or []) and the range (255 or 1) and normalize it to a [] format of range 1
@@ -106,6 +106,12 @@ end
 -- @return b
 -- @return a
 function colors.smart1unpack(color)
+	print("===", color)
+	if type(color) == "string" then
+		if colors[color] then return colors.unpack1(colors[color])
+		else return colors.hex1alphaunpack(color)
+		end
+	end
 	if color[1] then
 		if math.max(color[1], color[2], color[3]) > 1 then
 			return color[1] / 255, color[2] / 255, color[3] / 255, (color[4] or 255) / 255

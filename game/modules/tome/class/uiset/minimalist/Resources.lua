@@ -40,7 +40,7 @@ _M.shader_params = {default = {name = "resources", require_shader=4, delay_load=
 	vim={name = "resources", require_shader=4, delay_load=false, color={210/255, 180/255, 140/255}, speed=1000, distort={0.4,0.4}},
 	hate={name = "resources", require_shader=4, delay_load=false, color={0xF5/255, 0x3C/255, 0xBE/255}, speed=1000, distort={0.4,0.4}},
 	psi={name = "resources", require_shader=4, delay_load=false, color={colors.BLUE.r/255, colors.BLUE.g/255, colors.BLUE.b/255}, speed=2000, distort={0.4,0.4}},
-	feedback={require_shader=4, delay_load=false, speed=2000, distort={0.4,0.4}},
+	feedback={name = "resources", require_shader=4, delay_load=false, color={colors.YELLOW.r/255, colors.YELLOW.g/255, colors.YELLOW.b/255}, speed=2000, distort={0.4,0.4}},
 }
 
 function _M:init(minimalist, w, h)
@@ -69,31 +69,69 @@ function _M:init(minimalist, w, h)
 		regen_prop = "life_regen",
 		invert_values = false,
 		description = "Life is good to have.",
-		display = { get_values = function(player) return player.life, 0, player.max_life, player.life_regen end, }
+		color = {0xc0/255, 0, 0},
+		display = { get_values = function(player) return player.life, 0, player.max_life, player.life_regen end, },
 	})
+
+	-- Insert Psionic Feedback
+	table.insert(base_defs, {
+		name = "Psionic Feedback",
+		short_name = "feedback",
+		regen_prop = "lolnope",
+		invert_values = false,
+		description = "Psionic feedback.",
+		color = colors.YELLOW,
+		display = {
+			shown = function(player) return player.psionic_feedback_max and player:knowTalent(player.T_FEEDBACK_POOL) end,
+			get_values = function(player) return player:getFeedback(), 0, player:getMaxFeedback(), -player:getFeedbackDecay() end,
+		},
+		Minimalist = {
+			images = {front = "resources/front_psi.png", front_dark = "resources/front_psi_dark.png"},
+		},
+	})
+
+	-- Insert FortressEnergy
+	table.insert(base_defs, {
+		name = "Fortress Energy",
+		short_name = "fortress",
+		regen_prop = "lolnope",
+		invert_values = false,
+		description = "Fortress Energy.",
+		color = {0x39/255, 0xd5/255, 0x35/255},
+		display = {
+			shown = function(player) return player.is_fortress end,
+			status_text = function(player)
+				local q = player:hasQuest("shertul-fortress")
+				return ("%d"):format(q and q.shertul_energy)
+			end,
+			highlight = function() return true end,
+			percent_compute = function(player, vc, vn, vm, vr) return 1 end,
+			get_values = function(player) local q = player:hasQuest("shertul-fortress") return q and q.shertul_energy or 0, 0, 10000, 0 end,
+		},
+		Minimalist = {
+			images = {front = "resources/front_psi.png", front_dark = "resources/front_psi_dark.png"},
+		},
+	})
+
+	-- Addons can add other "fake" entries
+	self:triggerHook{"UISet:Minimalist:Resources", base_defs=base_defs}
 
 	for res, res_def in ipairs(base_defs) do if not res_def.hidden_resource then
 		local rname = res_def.short_name
 		local res_gfx = table.clone(res_def.minimalist_gfx) or {color = {}, shader = {}} -- use the graphics defined with the resource, if possible
-		local res_color = res_def.color or "#WHITE#"
 
 		-- set up color
-		if type(res_color) == "string" then
-			local r, g, b
-			res_color = res_color:gsub("#", ""):upper()
-			if colors[res_color] then r, g, b = colors.unpack1(colors[res_color])
-			else r, g, b = colors.hex1unpack(res_color) end
-			res_gfx.color = {r, g, b}
-		else
-			res_gfx.color = res_color
-		end
-		res_gfx.color[4] = 1
+		local res_color = res_def.color
+		if type(res_color) == "string" then res_color = res_color:gsub("^#", ""):gsub("#$", "") end		
+		res_gfx.color = colors.smart1(res_color or "WHITE")
+		res_gfx.color[4] = res_gfx.color[4] or 1
 
 		res_def.display = res_def.display or {}
 		res_def.display.highlight_pct = res_def.display.highlight_pct or 0.8
 
 		local shad_params = table.clone(_M.shader_params[rname] or _M.shader_params.default)
-		shad_params.color = shad_params.color or res_gfx.color
+		shad_params.color = table.clone(shad_params.color or res_gfx.color)
+		shad_params.color[4] = nil
 		res_gfx.shader = Shader.new(shad_params.name, shad_params)
 
 		-- load graphic images
