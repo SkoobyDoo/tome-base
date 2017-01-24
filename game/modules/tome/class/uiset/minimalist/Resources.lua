@@ -176,6 +176,24 @@ function _M:init(minimalist, w, h)
 	-- Addons can add other "fake" entries
 	self:triggerHook{"UISet:Minimalist:Resources", base_defs=base_defs}
 
+	-- Insert Savefile (always at the end)
+	table.insert(base_defs, {
+		name = "Saving",
+		short_name = "save",
+		regen_prop = "lolnope",
+		invert_values = false,
+		description = "Game is being saved...",
+		color = colors.YELLOW,
+		display = {
+			shown = function(player) return savefile_pipe.saving end,
+			get_values = function(player) return savefile_pipe.current_nb, 0, savefile_pipe.total_nb, 0 end,
+			status_text = function(player, vc, vn, vm) return ("Saving... %d%%"):format(util.bound(vc / vm * 100, 0, 100)) end,
+		},
+		Minimalist = {
+			images = {front = "resources/front.png", front_dark = "resources/front_dark.png"},
+		},
+	})
+
 	for res, res_def in ipairs(base_defs) do if not res_def.hidden_resource then
 		local rname = res_def.short_name
 		local res_gfx = table.clone(res_def.minimalist_gfx) or {color = {}, shader = {}} -- use the graphics defined with the resource, if possible
@@ -384,7 +402,7 @@ function _M:update(nb_keyframes)
 			-- Update text
 			if vc ~= res_gfx.old.vc or vn ~= res_gfx.old.vn or vm ~= res_gfx.old.vm then
 				local status_text = util.getval(res_def.display.status_text, player, vc, vn, vm) or ("%d/%d"):format(vc, vm)
-				status_text = (status_text):format() -- fully resolve format codes (%%)
+				-- status_text = (status_text):format() -- fully resolve format codes (%%)
 				res_gfx.valtext:text(status_text)
 				local x, y = res_gfx.fill:getTranslate()
 				local w, h = res_gfx.valtext:getStats()
