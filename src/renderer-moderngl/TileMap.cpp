@@ -116,6 +116,17 @@ void DORTileObject::renderZ(RendererGL *container, mat4 cur_model, vec4 color, b
 	DORContainer::renderZ(container, cur_model, color, cur_visible);
 }
 
+void DORTileObject::sortZ(RendererGL *container, mat4 cur_model) {
+	cur_model *= model;
+
+	// We take a "virtual" point at zflat coordinates
+	vec4 virtualz = cur_model * vec4(0, 0, 0, 1);
+	sort_z = virtualz.z;
+	sort_shader = NULL;
+	sort_tex = {0,0,0};
+	container->sorted_dos.push_back(this);
+}
+
 
 void DORTileObject::regenData() {
 	clear();
