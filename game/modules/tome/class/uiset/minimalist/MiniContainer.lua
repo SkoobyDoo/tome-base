@@ -140,6 +140,7 @@ function _M:move(x, y)
 end
 
 function _M:setScale(s)
+	if self.resize_mode ~= "rescale" then return end
 	self.scale = util.bound(s, 0.5, 2)
 	self:resize(self.w, self.h)
 end

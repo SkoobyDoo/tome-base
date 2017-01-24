@@ -191,7 +191,7 @@ function _M:enableZone(fct, v)
 	elseif type(fct) == "string" then
 		for i  = #self.areas, 1, -1 do
 			local m = self.areas[i]
-			if m.name == fct then print("==togling zone", m.name, v) m.disabled = not v end
+			if m.name == fct then m.disabled = not v end
 		end
 	elseif fct == true then
 		for i  = #self.areas, 1, -1 do

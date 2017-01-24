@@ -141,6 +141,38 @@ function _M:init(minimalist, w, h)
 		},
 	})
 
+	-- Insert Ammo
+	table.insert(base_defs, {
+		name = "Arrows", short_name = "arrow", regen_prop = "lolnope", description = "Ammo.",
+		display = {
+			simple = true,
+			shown = function(player) local quiver = player:getInven("QUIVER") return quiver and quiver[1] and quiver[1].subtype == "arrow" end,
+			get_values = function(player) local quiver = player:getInven("QUIVER") local ammo = quiver and quiver[1] if ammo then return ammo.combat.shots_left, 0, ammo.combat.capacity, 0	else return 0, 0, 0, 0 end end,
+		},
+		Minimalist = { simple = {front = "resources/ammo_arrow.png", shadow = "resources/ammo_shadow_arrow.png"} },
+	})
+	table.insert(base_defs, {
+		name = "Shots", short_name = "shot", regen_prop = "lolnope", description = "Ammo.",
+		display = {
+			simple = true,
+			shown = function(player) local quiver = player:getInven("QUIVER") return quiver and quiver[1] and quiver[1].subtype == "shot" end,
+			get_values = function(player) local quiver = player:getInven("QUIVER") local ammo = quiver and quiver[1] if ammo then return ammo.combat.shots_left, 0, ammo.combat.capacity, 0	else return 0, 0, 0, 0 end end,
+		},
+		Minimalist = { simple = {front = "resources/ammo_shot.png", shadow = "resources/ammo_shadow_shot.png"} },
+	})
+	table.insert(base_defs, {
+		name = "Gems", short_name = "gem", regen_prop = "lolnope", description = "Ammo.",
+		display = {
+			simple = true,
+			status_text = function(player, vc)
+				return ("%d"):format(vc)
+			end,
+			shown = function(player) local quiver = player:getInven("QUIVER") return quiver and quiver[1] and quiver[1].type == "alchemist-gem" end,
+			get_values = function(player) local quiver = player:getInven("QUIVER") local ammo = quiver and quiver[1] if ammo then return ammo:getNumber(), 0, ammo:getNumber(), 0 else return 0, 0, 0, 0 end end,
+		},
+		Minimalist = { simple = {front = "resources/ammo_alchemist-gem.png", shadow = "resources/ammo_shadow_alchemist-gem.png"} },
+	})
+
 	-- Addons can add other "fake" entries
 	self:triggerHook{"UISet:Minimalist:Resources", base_defs=base_defs}
 
@@ -157,19 +189,6 @@ function _M:init(minimalist, w, h)
 		res_def.display = res_def.display or {}
 		res_def.display.highlight_pct = res_def.display.highlight_pct or 0.8
 
-		local shad_params = table.clone(_M.shader_params[rname] or _M.shader_params.default)
-		shad_params.color = table.clone(shad_params.color or res_gfx.color)
-		shad_params.color[4] = nil
-		res_gfx.shader = Shader.new(shad_params.name, shad_params)
-
-		-- load graphic images
-		local res_imgs = table.merge({front = "resources/front_"..rname..".png", front_dark = "resources/front_"..rname.."_dark.png"}, table.get(res_def, "Minimalist", "images") or {})
-		local sbase, bbase = "/data/gfx/"..UI.ui.."-ui/minimalist/", "/data/gfx/ui/"
-		for typ, file in pairs(res_imgs) do
-			res_gfx[typ] = self:imageLoader(file)
-			res_gfx[typ.."_file"] = file
-		end
-
 		-- generate default tooltip if needed
 		res_gfx.tooltip = _M["TOOLTIP_"..rname:upper()] or ([[#GOLD#%s#LAST#
 %s]]):format(res_def.name, res_def.description or "no description")
@@ -177,19 +196,42 @@ function _M:init(minimalist, w, h)
 		local rc = core.renderer.container()
 		res_gfx.container = rc
 
-		rc:add(core.renderer.fromTextureTable(bar_back_t, 0, 0))
-		rc:add(core.renderer.fromTextureTable(bar_shadow_t, -6, 8))
-		res_gfx.fill = core.renderer.fromTextureTable(bar_fill_t, 0, 0):translate(49, 10)
-		if res_gfx.shader.shad then res_gfx.fill:shader(res_gfx.shader.shad)
-		else res_gfx.fill:color(unpack(res_gfx.color))
+		if res_def.display.simple then
+			local d = table.get(res_def, "Minimalist", "simple")
+			local shadow, front = self:imageLoader(d.shadow), self:imageLoader(d.front)
+			rc:add(shadow)
+			rc:add(front)
+			res_gfx.valtext = core.renderer.text(font_r):shadow(1, 1)
+			rc:add(res_gfx.valtext)
+			res_gfx.fill = core.renderer.container():translate(31, 16) -- Only to not bork later logic
+		else
+			-- load graphic images
+			local res_imgs = table.merge({front = "resources/front_"..rname..".png", front_dark = "resources/front_"..rname.."_dark.png"}, table.get(res_def, "Minimalist", "images") or {})
+			local sbase, bbase = "/data/gfx/"..UI.ui.."-ui/minimalist/", "/data/gfx/ui/"
+			for typ, file in pairs(res_imgs) do
+				res_gfx[typ] = self:imageLoader(file)
+				res_gfx[typ.."_file"] = file
+			end
+
+			local shad_params = table.clone(_M.shader_params[rname] or _M.shader_params.default)
+			shad_params.color = table.clone(shad_params.color or res_gfx.color)
+			shad_params.color[4] = nil
+			res_gfx.shader = Shader.new(shad_params.name, shad_params)
+			
+			rc:add(core.renderer.fromTextureTable(bar_shadow_t, -6, 8))
+			rc:add(core.renderer.fromTextureTable(bar_back_t, 0, 0))
+			res_gfx.fill = core.renderer.fromTextureTable(bar_fill_t, 0, 0):translate(49, 10)
+			if res_gfx.shader.shad then res_gfx.fill:shader(res_gfx.shader.shad)
+			else res_gfx.fill:color(unpack(res_gfx.color))
+			end
+			rc:add(res_gfx.fill)
+			rc:add(res_gfx.front:shown(true))
+			rc:add(res_gfx.front_dark:shown(false))
+			res_gfx.regentext = core.renderer.text(small_font_r):shadow(1, 1)
+			rc:add(res_gfx.regentext)
+			res_gfx.valtext = core.renderer.text(font_r):shadow(1, 1)
+			rc:add(res_gfx.valtext)
 		end
-		rc:add(res_gfx.fill)
-		rc:add(res_gfx.front:shown(true))
-		rc:add(res_gfx.front_dark:shown(false))
-		res_gfx.valtext = core.renderer.text(font_r):shadow(1, 1)
-		rc:add(res_gfx.valtext)
-		res_gfx.regentext = core.renderer.text(small_font_r):shadow(1, 1)
-		rc:add(res_gfx.regentext)
 
 		res_gfx.old = {}
 		res_gfx.name = rname
@@ -311,35 +353,37 @@ function _M:update(nb_keyframes)
 			else vc, vn, vm, vr = player[res_def.getFunction](player), player[res_def.getMinFunction](player), player[res_def.getMaxFunction](player), player[res_def.regen_prop]
 			end
 
-			local p = 1 -- proportion of resource bar to display
-			if res_gfx.percent_compute then p = res_gfx.percent_compute(player, vc, vn, vm, vr)
-			elseif vn and vm then p = math.min(1, math.max(0, vc/vm)) end
-			if p ~= res_gfx.old.p then
-				res_gfx.fill:tween(7, "scale_x", nil, p)
-				res_gfx.old.p = p
-			end
-
-			-- Choose which front to use, highlighted or not
-			if not self.configs.hide_frame then
-				local is_highlight = false
-				if res_def.display.highlight then if util.getval(res_def.display.highlight, player, vc, vn, vm, vr) then is_highlight = true end
-				elseif vm and vc >= vm * res_def.display.highlight_pct then is_highlight = true end
-				if is_highlight ~= res_gfx.old.highlight then
-					res_gfx.front:shown(is_highlight)
-					res_gfx.front_dark:shown(not is_highlight)
-					res_gfx.old.highlight = is_highlight
+			if not res_def.display.simple then
+				local p = 1 -- proportion of resource bar to display
+				if res_gfx.percent_compute then p = res_gfx.percent_compute(player, vc, vn, vm, vr)
+				elseif vn and vm then p = math.min(1, math.max(0, vc/vm)) end
+				if p ~= res_gfx.old.p then
+					res_gfx.fill:tween(7, "scale_x", nil, p)
+					res_gfx.old.p = p
 				end
-			else
-				if res_gfx.old.highlight ~= "masked" then
-					res_gfx.front:shown(false)
-					res_gfx.front_dark:shown(false)
-					res_gfx.old.highlight = "masked"
+
+				-- Choose which front to use, highlighted or not
+				if not self.configs.hide_frame then
+					local is_highlight = false
+					if res_def.display.highlight then if util.getval(res_def.display.highlight, player, vc, vn, vm, vr) then is_highlight = true end
+					elseif vm and vc >= vm * res_def.display.highlight_pct then is_highlight = true end
+					if is_highlight ~= res_gfx.old.highlight then
+						res_gfx.front:shown(is_highlight)
+						res_gfx.front_dark:shown(not is_highlight)
+						res_gfx.old.highlight = is_highlight
+					end
+				else
+					if res_gfx.old.highlight ~= "masked" then
+						res_gfx.front:shown(false)
+						res_gfx.front_dark:shown(false)
+						res_gfx.old.highlight = "masked"
+					end
 				end
 			end
 
 			-- Update text
 			if vc ~= res_gfx.old.vc or vn ~= res_gfx.old.vn or vm ~= res_gfx.old.vm then
-				local status_text = util.getval(res_def.display.status_text, player) or ("%d/%d"):format(vc, vm)
+				local status_text = util.getval(res_def.display.status_text, player, vc, vn, vm) or ("%d/%d"):format(vc, vm)
 				status_text = (status_text):format() -- fully resolve format codes (%%)
 				res_gfx.valtext:text(status_text)
 				local x, y = res_gfx.fill:getTranslate()
@@ -352,20 +396,22 @@ function _M:update(nb_keyframes)
 			end
 
 			-- Update regen text
-			if vr ~= res_gfx.old.vr then
-				if vr == 0 then
-					res_gfx.regentext:shown(false)
-				else
-					local status_text = string.limit_decimals(vr, 3, "+")
-					res_gfx.regentext:text(status_text)
-					local x, y = res_gfx.fill:getTranslate()
-					local w, h = res_gfx.regentext:getStats()
-					res_gfx.regentext:translate(x + self.fw - w - 19, y + math.floor((self.fh - h) / 2)):shown(true)
-				end
-				res_gfx.old.vr = vr
+			if not res_def.display.simple then
+				if vr ~= res_gfx.old.vr then
+					if vr == 0 then
+						res_gfx.regentext:shown(false)
+					else
+						local status_text = string.limit_decimals(vr, 3, "+")
+						res_gfx.regentext:text(status_text)
+						local x, y = res_gfx.fill:getTranslate()
+						local w, h = res_gfx.regentext:getStats()
+						res_gfx.regentext:translate(x + self.fw - w - 19, y + math.floor((self.fh - h) / 2)):shown(true)
+					end
+					res_gfx.old.vr = vr
 
-				-- Update shader
-				if res_def.display.shader_update and res_gfx.shader and res_gfx.shader.shad then res_def.display.shader_update(player, res_gfx.shader) end
+					-- Update shader
+					if res_def.display.shader_update and res_gfx.shader and res_gfx.shader.shad then res_def.display.shader_update(player, res_gfx.shader) end
+				end
 			end
 		else
 			-- Disappear if was shown

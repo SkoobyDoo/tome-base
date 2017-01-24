@@ -61,10 +61,21 @@ function _M:switchLocked()
 	end
 end
 
+function _M:resetPlaces()
+	for i, container in ipairs(self.minicontainers) do
+		local x, y, w, h = container:getDefaultGeometry()
+		container:move(x, y)
+		container:resize(w, h)
+		container:setScale(1)
+		container:setAlpha(1)
+	end	
+	self:saveSettings()
+end
+
 function _M:getMainMenuItems()
 	return {
 		{"Reset interface positions", function() Dialog:yesnoPopup("Reset UI", "Reset all the interface?", function(ret) if ret then
-			self:resetPlaces() self:saveSettings() 
+			self:resetPlaces()
 		end end) end},
 	}
 end
