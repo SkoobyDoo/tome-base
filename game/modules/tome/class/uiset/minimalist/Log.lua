@@ -78,7 +78,7 @@ function _M:getDefaultGeometry()
 
 	local x = 0
 	local w = math.floor(game.w / 2)
-	local h = math.floor(game.h / 5) - th
+	local h = math.floor(game.h / 4) - th
 	local y = game.h - h - th
 	return x, y, w, h
 end

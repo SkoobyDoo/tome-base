@@ -197,7 +197,8 @@ function _M:init(minimalist, w, h)
 		self.resources_defs[#self.resources_defs+1] = res_gfx
 
 		-- Setup the mouse zone, we update its position later on
-		self.mouse:registerZone(0, 0, self.rw, self.rh, self:tooltipAll(function() end, res_gfx.tooltip), nil, rname, true, 1)
+		-- DGDGDGDG this somehow borks when moving the UI around ,wtf
+		-- self.mouse:registerZone(0, 0, self.rw, self.rh, self:tooltipAll(function() end, res_gfx.tooltip), nil, rname, true, 1)
 	end end
 end
 
@@ -384,31 +385,34 @@ function _M:update(nb_keyframes)
 		elseif what == "vertical" then down = true
 		end
 
-		if self.locked then self.mouse:enableZone(true, false) end
 		local x, y = 0, 0
 		for _, res_gfx in ipairs(self.resources_defs) do
 			if res_gfx.shown then
 				res_gfx.container:translate(x, y)
 				if self.locked then 
-					self.mouse:enableZone(res_gfx.name, true)
-					self.mouse:updateZone(res_gfx.name, x, y, self.rw, self.rh, nil, 1)
+					-- self.mouse:enableZone(res_gfx.name, true)
+					-- self.mouse:updateZone(res_gfx.name, x, y, self.rw, self.rh, nil, 1)
 				end
 				if down then
 					y = y + self.rh
-					if y + self.rh * self.scale > game.h - self.y then
+					if (y + self.rh) * self.scale > game.h - self.y then
 						y = 0
 						x = x + self.rw
 					end
 				else
 					x = x + self.rw
-					if x + self.rw * self.scale > game.w - self.x then
+					if (x + self.rw) * self.scale > game.w - self.x then
 						x = 0
 						y = y + self.rh
 					end
 				end
+			else
+				if self.locked then 
+					-- self.mouse:enableZone(res_gfx.name, false)
+				end
 			end
 		end
-		self.mouse_zone_w = x + self.rw * self.scale
-		self.mouse_zone_h = y + self.rh * self.scale
+		-- self.mouse_zone_w = x + self.rw * self.scale
+		-- self.mouse_zone_h = y + self.rh * self.scale
 	end
 end

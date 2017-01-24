@@ -83,7 +83,7 @@ function _M:init(minimalist)
 
 	self.move_handle, self.move_handle_w, self.move_handle_h = self:imageLoader("move_handle.png")
 
-	self.unlocked_container = core.renderer.container()
+	self.unlocked_container = core.renderer.renderer()
 	self.unlocked_grey_filter = core.renderer.colorQuad(0, 0, 1, 1, 0, 0, 0, 0.235):scale(w, h, 1)
 	self.unlocked_container:add(self.unlocked_grey_filter)
 	self.unlocked_container:add(self.move_handle)
@@ -146,7 +146,7 @@ end
 
 function _M:resize(w, h)
 	if self.resize_mode == "rescale" then
-		self.do_container:scale(self.scale, self.scale, 1)
+		self:getDO():scale(self.scale, self.scale, 1)
 	elseif self.resize_mode == "resize" then
 		self.w, self.h = w, h
 		self.unlocked_grey_filter:scale(w, h, 1)
@@ -159,6 +159,7 @@ function _M:resize(w, h)
 	end
 	self:setupMouse()
 	self:checkSnap()
+	self:move(self.x, self.y)
 end
 
 function _M:getBounds()
