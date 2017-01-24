@@ -555,6 +555,19 @@ function _M:playerFOV()
 		)
 	end
 
+	core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 10,
+		function(d, x, y)end, -- block
+		function(d, x, y) -- apply
+			local act = game.level.map(x, y, game.level.map.ACTOR)
+			if act then
+			local eff = act:hasEffect(act.EFF_MARKED)
+				if eff and eff.src==self then
+					game.level.map.seens(x, y, 0.6)
+				end
+			end
+		end,
+	nil)
+
 	-- Handle Preternatural Senses talent, a simple FOV, using cache.
 	if self:knowTalent(self.T_PRETERNATURAL_SENSES) then
 		local t = self:getTalentFromId(self.T_PRETERNATURAL_SENSES)

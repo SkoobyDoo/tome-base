@@ -3566,3 +3566,279 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "BULLSEYE", image = "talents/bullseye.png",
+	desc = "Bullseye",
+	long_desc = function(self, eff) return ("Increases attack speed by %d%%."):format(eff.power*100) end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	parameters = { power=0.1 },
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_physspeed", eff.power)
+	end,
+}
+
+newEffect{
+	name = "TRUESHOT", image = "talents/trueshot.png",
+	desc = "Trueshot",
+	long_desc = function(self, eff) return ("Increases attack speed by %d%%, grants infinite ammo, and causes all marking shots to have a 100%% increased chance to mark."):format(eff.power*100) end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	parameters = { power=0.1 },
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_physspeed", eff.power)
+		self:effectTemporaryValue(eff, "infinite_ammo", 1)
+	end,
+}
+
+newEffect{
+	name = "ESCAPE", image = "talents/escape.png",
+	desc = "Escape",
+	long_desc = function(self, eff) return ("Focusing on defense and mobility, reducing all damage taken by %d%%, stamina regeneration by %0.1f and movement speed by %d%%. Melee and ranged attacks will break this effect."):format(eff.power, eff.stamina, eff.speed) end,
+	type = "physical",
+	subtype = { tactic=true, speed=true },
+	status = "beneficial",
+	parameters = {power=1000},
+	on_gain = function(self, err) return "#Target# enters an evasive stance!.", "+Escape!" end,
+	on_lose = function(self, err) return "#Target# slows down.", "-Escape" end,
+	get_fractional_percent = function(self, eff)
+		local d = game.turn - eff.start_turn
+		return util.bound(360 - d / eff.possible_end_turns * 360, 0, 360)
+	end,
+	activate = function(self, eff)
+		eff.start_turn = game.turn
+		eff.possible_end_turns = 10 * (eff.dur+1)
+		eff.tmpid = self:addTemporaryValue("wild_speed", 1)
+		eff.moveid = self:addTemporaryValue("movement_speed", eff.speed/100)
+		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it
+		eff.stun = self:addTemporaryValue("stun_immune", 1)
+		eff.daze = self:addTemporaryValue("daze_immune", 1)
+		eff.pin = self:addTemporaryValue("pin_immune", 1)
+		eff.pid = self:addTemporaryValue("resists", {all=eff.power})
+		eff.staid = self:addTemporaryValue("stamina_regen", eff.stamina)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("wild_speed", eff.tmpid)
+		if eff.aiid then self:removeTemporaryValue("ai_state", eff.aiid) end
+		self:removeTemporaryValue("movement_speed", eff.moveid)
+		self:removeTemporaryValue("stun_immune", eff.stun)
+		self:removeTemporaryValue("daze_immune", eff.daze)
+		self:removeTemporaryValue("pin_immune", eff.pin)
+		self:removeTemporaryValue("resists", eff.pid)
+		self:removeTemporaryValue("stamina_regen", eff.staid)
+	end,
+	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		self:removeEffect(self.EFF_ESCAPE)
+	end,
+	callbackOnArcheryAttack = function(self, t, target, hitted)
+		self:removeEffect(self.EFF_ESCAPE)
+	end,
+}
+
+newEffect{
+	name = "SENTINEL", image = "talents/sentinel.png",
+	desc = "Sentinel",
+	long_desc = function(self, eff) return ("Target is watched, causing the next talent used to fail and trigger a counterattack."):format() end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "detrimental",
+	on_gain = function(self, err) return nil, "+Sentinel!" end,
+	on_lose = function(self, err) return nil, "-Sentinel" end,
+	do_proc = function(self, eff)
+		eff.src:callTalent(eff.src.T_SENTINEL, "doShoot", eff)
+	end,
+	activate = function(self, eff)
+		if core.shader.active(4) then
+			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={229/255, 0/255, 0/255, 1}, beamColor2={299/255, 0/255, 0/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
+			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={229/255, 0/255, 0/255, 1}, beamColor2={229/255, 0/255, 0/255, 1}, circleColor={0.8,0,0,0.8}, beamsCount=5}))
+		end
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle1)
+		self:removeParticles(eff.particle2)
+	end,
+}
+
+newEffect{
+	name = "PIN_DOWN",
+	desc = "Pinned Down", image = "talents/pin_down.png",
+	long_desc = function(self, eff) return ("Pinned down, preventing movement and giving attackers %d%% increased critical strike chance and critical strike damage."):format(eff.power) end,
+	type = "physical",
+	subtype = { pin=true },
+	status = "detrimental",
+	parameters = {power = 1},
+	on_gain = function(self, err) return nil, "+Pinned Down" end,
+	on_lose = function(self, err) return nil, "-Pinned Down" end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("never_move", 1)
+		eff.critid = self:addTemporaryValue("combat_crit_vulnerable", eff.power)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("never_move", eff.tmpid)
+		self:removeTemporaryValue("combat_crit_vulnerable", eff.critid)
+	end,
+}
+
+newEffect{
+	name = "RAPID_MOVEMENT", image = "talents/rapid_shot.png",
+	desc = "Rapid Movement",
+	long_desc = function(self, eff) return ("Increases movement speed by %d%%."):format(eff.power*100) end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	parameters = {power=10},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "movement_speed", eff.power)
+	end,
+}
+
+newEffect{
+	name = "INCENDIARY_SMOKE", image = "talents/sticky_smoke.png",
+	desc = "Incendiary Smoke",
+	long_desc = function(self, eff) return ("The target's vision range is decreased by %d and fire resistance by %d%%."):format(eff.sight, eff.resist) end,
+	type = "physical",
+	subtype = { sense=true },
+	status = "detrimental",
+	parameters = { sight=5, resist=10 },
+	on_gain = function(self, err) return "#Target# is surrounded by a thick, incendiary smoke.", "+Sticky Flame" end,
+	on_lose = function(self, err) return "The smoke around #target# dissipate.", "-Sticky Flame" end,
+	activate = function(self, eff)
+		if self.sight - eff.sight < 1 then eff.sight = self.sight - 1 end
+		eff.tmpid = self:addTemporaryValue("sight", -eff.sight)
+		eff.resid = self:addTemporaryValue("resists", {[DamageType.FIRE] = -eff.resist})
+		self:setTarget(nil) -- Loose target!
+		self:doFOV()
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("sight", eff.tmpid)
+		self:removeTemporaryValue("resists", eff.resid)
+		self:doFOV()
+	end,
+}
+
+
+newEffect{
+	name = "PUNCTURED_ARMOUR", image = "talents/piercing_ammunition.png",
+	desc = "Punctured Armour",
+	long_desc = function(self, eff) return ("Armour has been punctured, increasing all damage taken by %d%%."):format(eff.power) end,
+	type = "physical",
+	subtype = { sunder=true },
+	status = "detrimental",
+	parameters = { power=20, },
+	on_gain = function(self, err) return "#Target#'s armour is punctured!", "+Punctured Armour!" end,
+	on_lose = function(self, err) return "#Target#'s armour is more intact.", "-Punctured Armour" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "resists", {all=-eff.power})
+	end,
+}
+
+newEffect{
+	name = "LEECHING_POISON", image = "talents/leeching_poison.png",
+	desc = "Leeching Poison",
+	long_desc = function(self, eff) return ("The target is poisoned, doing %0.2f nature damage per turn and restoring life to the attacker equal to the damage dealt."):format(eff.power) end,
+	type = "physical",
+	subtype = { poison=true, nature=true }, no_ct_effect = true,
+	status = "detrimental",
+	parameters = {power=10, heal=5},
+	on_gain = function(self, err) return "#Target# is poisoned!", "+Leeching Poison" end,
+	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Leeching Poison" end,
+	-- Damage each turn
+	on_timeout = function(self, eff)
+		if self:attr("purify_poison") then 
+			self:heal(eff.power, eff.src)
+		else 
+			local dam = DamageType:get(DamageType.NATURE).projector(eff.src, self.x, self.y, DamageType.NATURE, eff.power)
+			local src = eff.src.resolveSource and eff.src:resolveSource()
+			if src then src:heal(dam, self) end
+		end
+	end,
+}
+
+newEffect{
+	name = "MAIM", image = "effects/deep_wound.png",
+	desc = "Maim",
+	long_desc = function(self, eff) return ("The target is maimed, doing %0.2f physical damage per turn. All damage it does is reduced by %d%%."):format(eff.power, eff.reduce) end,
+	type = "physical",
+	subtype = { cut=true }, no_ct_effect = true,
+	status = "detrimental",
+	parameters = {power=10, reduce=5},
+	on_gain = function(self, err) return "#Target# is maimed!", "+Maim" end,
+	on_lose = function(self, err) return "#Target# is no longer maimed.", "-Maim" end,
+	-- Damage each turn
+	on_timeout = function(self, eff)
+		if self:canBe("cut") then DamageType:get(DamageType.PHYSICAL).projector(eff.src, self.x, self.y, DamageType.PHYSICAL, eff.power) end
+	end,
+	-- There are situations this matters, such as copyEffect
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = math.max(old_eff.dur, new_eff.dur)
+		return old_eff
+	end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("numbed", eff.reduce)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("numbed", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "SNIPE", image = "talents/snipe.png",
+	desc = "Snipe",
+	long_desc = function(self, eff) return ("The target is preparing a deadly sniper shot."):format() end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	parameters = { power=50 },
+	on_gain = function(self, err) return "#Target# takes aim...", "+Snipe" end,
+	on_lose = function(self, err) return "#Target# is no longer aiming.", "-Snipe" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "negative_status_effect_immune", 1)
+		self:effectTemporaryValue(eff, "incoming_reduce", eff.power)
+
+		if self.hotkey and self.isHotkeyBound then
+			local pos = self:isHotkeyBound("talent", self.T_SNIPE)
+			if pos then
+				self.hotkey[pos] = {"talent", self.T_SNIPE_FIRE}
+			end
+		end
+
+		local ohk = self.hotkey
+		self.hotkey = nil -- Prevent assigning hotkey, we just did
+		self:learnTalent(self.T_SNIPE_FIRE, true, 1, {no_unlearn=true})
+		self.hotkey = ohk
+	end,
+	deactivate = function(self, eff)
+		if self.hotkey and self.isHotkeyBound then
+			local pos = self:isHotkeyBound("talent", self.T_SNIPE_FIRE)
+			if pos then
+				self.hotkey[pos] = {"talent", self.T_SNIPE}
+			end
+		end
+
+		self:unlearnTalent(self.T_SNIPE_FIRE, 1, nil, {no_unlearn=true})
+	end,
+}
+
+newEffect{
+	name = "TAKING_AIM", image = "talents/concealment.png",
+	desc = "Taking Aim",
+	long_desc = function(self, eff) return ("The target is taking aim, increasing the damage of their next marked shot by %d%%."):format(eff.power) end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	charges = function(self, eff) return eff.charges end,
+	parameters = { power=5, duration=1, max_power=15, charges=1 },
+	on_merge = function(self, old_eff, new_eff)
+		new_eff.charges = math.min(old_eff.charges + 1, 3)
+		new_eff.power = math.min(new_eff.power + old_eff.power, new_eff.max_power)
+		return new_eff
+	end,
+	activate = function(self, eff)
+		eff.charges = 1
+	end,
+	deactivate = function(self, eff)
+	end,
+}

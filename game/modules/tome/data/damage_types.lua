@@ -1774,11 +1774,11 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
-		if _G.type(dam) == "number" then dam = {dam=dam, dur=3} end
+		if _G.type(dam) == "number" then dam = {dam=dam, dur=3, heal_factor=dam.fail} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / dam.dur, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:canBe("poison") then
-			target:setEffect(target.EFF_CRIPPLING_POISON, dam.dur, {src=src, power=dam.dam / dam.dur, no_ct_effect=true})
+			target:setEffect(target.EFF_CRIPPLING_POISON, dam.dur, {src=src, power=dam.dam / dam.dur, fail=dam.fail or 0, no_ct_effect=true})
 		end
 	end,
 }
@@ -3991,6 +3991,78 @@ newDamageType{
 					target:setEffect(target.EFF_SILENCED, 2, {apply_power=src:combatAttack(), no_ct_effect=true})
 				end
 			end
+		end
+	end,
+}
+
+newDamageType{
+	name = "flare", type = "FLARE",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local g = game.level.map(x, y, Map.TERRAIN+1)
+		if g and g.unlit then
+			if g.unlit <= 1 then game.level.map:remove(x, y, Map.TERRAIN+1)
+			else g.unlit = g.unlit - 1 return end -- Lite wears down darkness
+		end
+		game.level.map.lites(x, y, true)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_BLINDED, math.ceil(dam), {apply_power=src:combatAttack()})
+			else
+				game.logSeen(target, "%s resists the blinding flare!", target.name:capitalize())
+			end
+			target:setEffect(target.EFF_MARKED, 2, {src=src})
+		end
+	end,
+}
+
+newDamageType{
+	name = "flare light", type = "FLARE_LIGHT",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local g = game.level.map(x, y, Map.TERRAIN+1)
+		if g and g.unlit then
+			if g.unlit <= 1 then game.level.map:remove(x, y, Map.TERRAIN+1)
+			else g.unlit = g.unlit - 1 return end -- Lite wears down darkness
+		end
+		game.level.map.lites(x, y, true)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			target:setEffect(target.EFF_FLARE, 2, {src=src, power=dam})
+		end
+	end,
+}
+
+newDamageType{
+	name = "incendiary smoke", type = "INCENDIARY_SMOKE",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_INCENDIARY_SMOKE, dam.dur, {sight=dam.dam, resist=dam.fire, apply_power=src:combatAttack()})
+			else
+				game.logSeen(target, "%s resists!", target.name:capitalize())
+			end
+		end
+	end,
+}
+
+
+newDamageType{
+	name = "fire sunder", type = "FIRE_SUNDER",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		if _G.type(dam) == "number" then dam = {dam=dam, power=10} end
+		DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam.dam, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			target:setEffect(target.EFF_SUNDER_ARMOUR, dam.dur, {src=dam.self, power=dam.power})
 		end
 	end,
 }

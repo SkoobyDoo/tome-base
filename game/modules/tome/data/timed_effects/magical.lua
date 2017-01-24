@@ -2388,7 +2388,7 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "resists", {all=-10})
-		if self:attr("poison_immune") and self:checkClassification("living") then
+		if self:attr("poison_immune") then
 			self:effectTemporaryValue(eff, "poison_immune", -self:attr("poison_immune")/2)
 		end
 	end,

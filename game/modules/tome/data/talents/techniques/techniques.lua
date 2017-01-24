@@ -46,6 +46,11 @@ newTalentType{ allow_random=true, type="technique/thuggery", name = "thuggery", 
 newTalentType{ allow_random=true, type="technique/assassination", name = "assassination", min_lev=10, description = "Bring death from the shadows." }
 newTalentType{ allow_random=true, type="technique/throwing-knives", name = "throwing knives", description = "Master the art of throwing knives to fight from a distance." }
 newTalentType{ allow_random=true, type="technique/duelist", name = "duelist", description = "Use your dual weapons to parry and counter." }
+newTalentType{ allow_random=true, type="technique/marksmanship", name = "marksmanship", description = "Training in the use of bows and slings." }
+newTalentType{ allow_random=true, type="technique/reflexes", name = "reflexes", description = "Use your reflexes to evade and counter." }
+newTalentType{ allow_random=true, type="technique/munitions", min_lev = 10, name = "munitions", description = "Equip specialised ammunition." }
+newTalentType{ allow_random=true, type="technique/agility", min_lev = 10, name = "agility", description = "Take advantage of speed and shield to fight in close quarters." }
+newTalentType{ allow_random=true, type="technique/sniper", min_lev = 10, name = "sniper", description = "Stealth and specialised long range archery techniques." }
 
 -- Skirmisher
 newTalentType {
@@ -81,7 +86,7 @@ newTalentType {
 newTalentType{ is_unarmed=true, allow_random=true, type="technique/pugilism", name = "pugilism", description = "Unarmed Boxing techniques that may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ is_unarmed=true, allow_random=true, type="technique/finishing-moves", name = "finishing moves", description = "Finishing moves that use combo points and may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ is_unarmed=true, allow_random=true, type="technique/grappling", name = "grappling", description = "Grappling techniques that may not be practiced in massive armor or while a weapon or shield is equipped." }
-newTalentType{ is_unarmed=true, allow_random=true, type="technique/unarmed-discipline", name = "unarmed discipline", description = "Advanced unarmed techniques including kicks and throw that may not be practiced in massive armor or while a weapon or shield is equipped." }
+newTalentType{ is_unarmed=true, allow_random=true, type="technique/unarmed-discipline", name = "unarmed discipline", description = "Advanced unarmed techniques including kicks and blocks that may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ is_unarmed=true, allow_random=true, generic = true, type="technique/unarmed-training", name = "unarmed training", description = "Teaches various martial arts techniques that may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ allow_random=true, type="technique/conditioning", name = "conditioning", generic = true, description = "Physical conditioning." }
 
@@ -326,6 +331,12 @@ load("/data/talents/techniques/thuggery.lua")
 load("/data/talents/techniques/assassination.lua")
 load("/data/talents/techniques/throwing-knives.lua")
 load("/data/talents/techniques/duelist.lua")
+load("/data/talents/techniques/marksmanship.lua")
+load("/data/talents/techniques/reflexes.lua")
+load("/data/talents/techniques/sniper.lua")
+load("/data/talents/techniques/agility.lua")
+load("/data/talents/techniques/munitions.lua")
+
 
 load("/data/talents/techniques/skirmisher-slings.lua")
 load("/data/talents/techniques/buckler-training.lua")

@@ -47,9 +47,8 @@ newEntity{
 	cost = 40,
 	wielder = {
 		talent_cd_reduction={
-			[Talents.T_STEADY_SHOT]=1,
-			[Talents.T_PINNING_SHOT]=1,
-			[Talents.T_VOLLEY_OF_ARROWS]=2,
+			[Talents.T_PIN_DOWN]=1,
+			[Talents.T_FRAGMENTATION_SHOT]=2,
 		},
 		inc_damage={ [DamageType.PHYSICAL] = resolvers.mbonus_material(14, 8), },
 	},

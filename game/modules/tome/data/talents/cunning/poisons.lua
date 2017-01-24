@@ -444,7 +444,7 @@ newTalent{
 	no_unlearn_last = true,
 	getDamage = function(self, t) return self:combatStatScale("mag", 20, 50, 0.75) end,
 	info = function(self, t)
-	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity (for living targets) by 50%%.]]):
+	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity by 50%%.]]):
 	format(damDesc(self, DamageType.ARCANE, t.getDamage(self,t)))
 	end,
 }

@@ -4232,6 +4232,19 @@ function _M:canWearObject(o, try_slot)
 			end
 		end end
 	end
+	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
+		oldreq = rawget(o, "require")
+		o.require = table.clone(oldreq or {}, true)
+		if o.require.stat and o.require.stat.str then
+			o.require.stat.dex, o.require.stat.str = o.require.stat.str, nil
+		end
+		if o.require.talent then for i, tr in ipairs(o.require.talent) do
+			if tr[1] == self.T_ARMOUR_TRAINING then
+				o.require.talent[i] = {self.T_AGILE_DEFENSE, 1}
+				break
+			end
+		end end
+	end
 	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
 		oldreq = rawget(o, "require")
 		o.require = table.clone(oldreq or {}, true)
@@ -4973,6 +4986,14 @@ function _M:preUseTalent(ab, silent, fake)
 				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 				return false
 			end
+		end
+		
+		if self:hasEffect(self.EFF_SENTINEL) and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
+			if not silent then game.logSeen(self, "%s's %s is interrupted by the shot!", self.name:capitalize(), ab.name) end
+			self.tempeffect_def[self.EFF_SENTINEL].do_proc(self, self:hasEffect(self.EFF_SENTINEL))
+			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", t)
+			return false
 		end
 
 	end
@@ -6156,6 +6177,14 @@ function _M:canSeeNoCache(actor, def, def_pct)
 	-- Blindness means can't see anything
 	if self:attr("blind") then
 		return false, 0
+	end
+	
+	-- Concealment
+	if actor ~= self and actor.attr and actor:attr("concealment") then
+		local dist = core.fov.distance(self.x, self.y, actor.x, actor.y)
+		if dist > actor:attr("concealment") then
+			return false, 0
+		end
 	end
 
 	local chance, hit = 100

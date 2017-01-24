@@ -138,7 +138,7 @@ newTalent{
 		local chance = t.getChance(self,t)
 		local crit = t.getCritPenalty(self, t)
 		local dur = t.getDuration(self,t)
-		return ([[Your melee attacks inflict distracting wounds that reduce the target’s critical strike chance by %d%% for 10 turns. 
+		return ([[Your melee and ranged attacks inflict distracting wounds that reduce the target’s critical strike chance by %d%% for 10 turns. 
 In addition, your attacks against bleeding targets have a %d%% chance to inflict a painful wound that causes them to forget a random talent for %d turns.  The last effect cannot occur more than once per turn per target.
 		]]):format(crit, chance, dur)
 	end,
