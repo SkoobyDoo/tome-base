@@ -135,8 +135,8 @@ newTalent{
 	is_melee = true,
 	range = 1,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 5)) end,
-	getEvasion = function(self, t) return math.floor(self:combatTalentLimit(t, 75, 15, 50)) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 5, 2, 4)) end,
+	getEvasion = function(self, t) return math.floor(self:combatTalentLimit(t, 50, 15, 40)) end,
 	on_pre_use = function(self, t)
 		if self:attr("never_move") then return false end
 		return true

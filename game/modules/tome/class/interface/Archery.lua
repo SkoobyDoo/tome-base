@@ -375,6 +375,14 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] mace accuracy bonus", atk, def, "=", bonus)
 			dam = dam * bonus
 		end
+		
+		if self and dam > 0 and self.knowTalent and self:isTalentActive(self.T_AIM) and self.__CLASSNAME ~= "mod.class.Grid" then
+			local dist = math.max(0, core.fov.distance(self.x, self.y, target.x, target.y) - 3)
+			if dist > 0 then 
+				local dammult = self:callTalent(self.T_AIM, "getDamage") * dist 
+				dam = dam * (1 + (dammult/100))
+			end
+		end
 
 		-- hook to resolve after a hit is determined, before damage has been projected
 		local hd = {"Combat:archeryDamage", hitted=hitted, target=target, weapon=weapon, ammo=ammo, damtype=damtype, mult=1, dam=dam}
@@ -670,7 +678,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 	tg.talent = tg.talent or talent
 	
 	-- Pass friendly actors
-	if self:attr("archery_pass_friendly") then
+	if self:attr("archery_pass_friendly") or self:knowTalent(self.T_SHOOT_DOWN) then
 		tg.friendlyfire=false	
 		tg.friendlyblock=false
 	end

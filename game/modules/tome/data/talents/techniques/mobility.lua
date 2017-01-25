@@ -204,16 +204,26 @@ newTalent{
 	name = "Trained Reactions",
 	type = {"technique/mobility", 4},
 	require = techs_dex_req4,
+	tactical = { BUFF = 2 },
 	points = 5,
-	mode = "passive",
+	stamina_per_use = function(self, t) return 10 end,
+	sustain_stamina = 10,
+	no_energy = true,
 	getDamageReduction = function(self, t) 
 		return self:combatTalentLimit(t, 1, 0.15, 0.50) * self:combatLimit(self:combatDefense(), 1, 0.15, 10, 0.5, 50) -- Limit < 100%, 25% for TL 5.0 and 50 defense
 	end,
 	getDamagePct = function(self, t)
 		return self:combatTalentLimit(t, 0.1, 0.3, 0.15) -- Limit trigger > 10% life
 	end,
+	activate = function(self, t)
+		return {}
+	end,
+	deactivate = function(self, t, p)
+		return true
+	end,
 	callbackOnHit = function(self, t, cb)
-		if ( cb.value > (t.getDamagePct(self, t) * self.max_life) ) then
+		local cost = t.stamina_per_use(self, t)
+		if ( cb.value > (t.getDamagePct(self, t) * self.max_life) and use_stamina(self, cost) ) then
 			local damageReduction = cb.value * t.getDamageReduction(self, t)
 			cb.value = cb.value - damageReduction
 			game.logPlayer(self, "#GREEN#You evade part of the attack, reducing the damage by #ORCHID#" .. math.ceil(damageReduction) .. "#LAST#.")
@@ -221,7 +231,9 @@ newTalent{
 		return cb.value
 	end, 
 	info = function(self, t)
-		return ([[While this talent is sustained, you anticipate deadly attacks against you.  Whenever you would receive damage (from any source) greater than %d%% of your maximum life you duck out of the way and assume a defensive posture, reducing that damage by %0.1f%% (based on your Defense).]]):
-		format(t.getDamagePct(self, t)*100, t.getDamageReduction(self, t)*100 )
+		local cost = t.stamina_per_use(self, t) * (1 + self:combatFatigue() * 0.01)
+		return ([[While this talent is sustained, you anticipate deadly attacks against you.  Whenever you would receive damage (from any source) greater than %d%% of your maximum life you duck out of the way and assume a defensive posture, reducing that damage by %0.1f%% (based on your Defense).
+		This costs %0.1f Stamina to use, and fails if you do not have enough.]]):
+		format(t.getDamagePct(self, t)*100, t.getDamageReduction(self, t)*100, cost)
 	end,
 }
