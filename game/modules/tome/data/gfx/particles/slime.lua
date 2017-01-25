@@ -17,6 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
 base_size = 32
 
 return {

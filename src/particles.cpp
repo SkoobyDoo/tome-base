@@ -37,6 +37,7 @@ extern "C" {
 #include "physfsrwops.h"
 }
 #include "renderer-moderngl/Particles.hpp"
+#include "renderer-moderngl/FBO.hpp"
 #include "particles.hpp"
 
 #ifndef M_PI_2
@@ -60,8 +61,10 @@ static particle_thread *threads = NULL;
 static int textures_ref = LUA_NOREF;
 static int nb_threads = 0;
 static int cur_thread = 0;
-static lua_fbo *main_fbo = NULL;
+static DORTarget *alter_fbo = NULL;
+static DORTarget *bloom_fbo = NULL;
 static particle_draw_last *pdls_head = NULL;
+static particle_draw_last *blooms_head = NULL;
 void thread_add(particles_type *ps);
 
 /********************************************
@@ -115,10 +118,15 @@ static int particles_flush_last(lua_State *L)
 		pdls_head = pdls_head->next;
 		free(pdl);
 	}
+	while (blooms_head) {
+		particle_draw_last *pdl = blooms_head;
+		blooms_head = blooms_head->next;
+		free(pdl);
+	}
 	return 0;
 }
 
-static int particles_main_fbo(lua_State *L)
+static int particles_alter_fbo(lua_State *L)
 {
 	while (pdls_head) {
 		particle_draw_last *pdl = pdls_head;
@@ -127,12 +135,28 @@ static int particles_main_fbo(lua_State *L)
 	}
 
 	if (lua_isnil(L, 1)) {
-		main_fbo = NULL;
+		alter_fbo = NULL;
 		return 0;
 	}
 
-	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
-	main_fbo = fbo;
+	alter_fbo = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	return 0;
+}
+
+static int particles_bloom_fbo(lua_State *L)
+{
+	while (blooms_head) {
+		particle_draw_last *pdl = blooms_head;
+		blooms_head = blooms_head->next;
+		free(pdl);
+	}
+
+	if (lua_isnil(L, 1)) {
+		bloom_fbo = NULL;
+		return 0;
+	}
+
+	bloom_fbo = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
 	return 0;
 }
 
@@ -147,6 +171,7 @@ static int particles_new(lua_State *L)
 	shader_type *s = NULL;
 	if (lua_isuserdata(L, 6)) s = (shader_type*)lua_touserdata(L, 6);
 	bool fboalter = lua_toboolean(L, 7);
+	bool allow_bloom = lua_toboolean(L, 8);
 
 	particles_type *ps = (particles_type*)lua_newuserdata(L, sizeof(particles_type));
 	auxiliar_setclass(L, "core{particles}", -1);
@@ -164,6 +189,7 @@ static int particles_new(lua_State *L)
 	ps->texture = texture->tex;
 	ps->shader = s;
 	ps->fboalter = fboalter;
+	ps->allow_bloom = allow_bloom;
 	ps->sub = NULL;
 	ps->recompile = FALSE;
 	glGenBuffers(1, &ps->vbo);
@@ -416,13 +442,10 @@ static void particles_draw(particles_type *ps, mat4 model)
 
 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0);
 	tglBindTexture(GL_TEXTURE_2D, ps->texture);
-	if (multitexture_active && main_fbo) {
+	if (alter_fbo) {
 		tglActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, main_fbo->textures[0]);
+		glBindTexture(GL_TEXTURE_2D, alter_fbo->getTexture(0));
 	}
-
-	// DGDGDGDG: we could do a kind of HDR here! pass a screenwide output texture in which all particles draw in addition to their normal drawing
-	// and then use that to do HDR kinkiness
 
 	// Make the elements vbo, but only once
 	// We do it now instead of on creation because we dont know at creation the max particles we'll need
@@ -465,8 +488,10 @@ static void particles_draw(particles_type *ps, mat4 model)
 	if (shader->p_mvp != -1) { glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp)); }
 	if (shader->p_texsize != -1) {
 		GLfloat c[2];
-		c[0] = main_fbo ? main_fbo->w : 1;
-		c[1] = main_fbo ? main_fbo->h : 1;
+		int w = 1, h = 1;
+		if (alter_fbo) alter_fbo->getDisplaySize(&w, &h);
+		c[0] = w;
+		c[1] = h;
 		glUniform2fv(shader->p_texsize, 1, c);
 	}
 	glEnableVertexAttribArray(shader->vertex_attrib);
@@ -482,7 +507,7 @@ static void particles_draw(particles_type *ps, mat4 model)
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
-	if (multitexture_active && main_fbo) {
+	if (alter_fbo) {
 		tglActiveTexture(GL_TEXTURE0);
 	}
 
@@ -497,6 +522,14 @@ void particles_to_screen(particles_type *ps, mat4 model)
 
 	if (ps->recompile) particles_update(ps, TRUE, TRUE);
 
+	if (ps->allow_bloom && bloom_fbo) {
+		particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
+		pdl->ps = ps;
+		pdl->model = model;
+		pdl->next = blooms_head;
+		blooms_head = pdl;
+		return;
+	}
 	if (ps->fboalter) {
 		particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 		pdl->ps = ps;
@@ -509,6 +542,13 @@ void particles_to_screen(particles_type *ps, mat4 model)
 
 	if (ps->sub) {
 		ps = ps->sub;
+		if (ps->allow_bloom) {
+			particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
+			pdl->ps = ps;
+			pdl->model = model;
+			pdl->next = blooms_head;
+			blooms_head = pdl;
+		}
 		if (ps->fboalter) {
 			particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 			pdl->ps = ps;
@@ -560,7 +600,7 @@ static int particles_get_do(lua_State *L)
 }
 
 // Runs into main thread
-static int particles_draw_last(lua_State *L)
+static int particles_draw_alter(lua_State *L)
 {
 	if (!pdls_head) return 0;
 	while (pdls_head) {
@@ -570,6 +610,33 @@ static int particles_draw_last(lua_State *L)
 		free(pdl);
 	}
 	return 0;
+}
+
+// Runs into main thread
+static int particles_has_alter(lua_State *L)
+{
+	lua_pushboolean(L, pdls_head ? true : false);
+	return 1;
+}
+
+// Runs into main thread
+static int particles_draw_bloom(lua_State *L)
+{
+	if (!blooms_head) return 0;
+	while (blooms_head) {
+		particle_draw_last *pdl = blooms_head;
+		particles_draw(pdl->ps, pdl->model);
+		blooms_head = blooms_head->next;
+		free(pdl);
+	}
+	return 0;
+}
+
+// Runs into main thread
+static int particles_has_bloom(lua_State *L)
+{
+	lua_pushboolean(L, blooms_head ? true : false);
+	return 1;
 }
 
 // Runs into particles thread
@@ -713,9 +780,13 @@ static int particles_emit(lua_State *L)
 static const struct luaL_Reg particleslib[] =
 {
 	{"newEmitter", particles_new},
-	{"defineFramebuffer", particles_main_fbo},
+	{"defineAlterFBO", particles_alter_fbo},
+	{"defineBloomFBO", particles_bloom_fbo},
 	{"flushLast", particles_flush_last},
-	{"drawAlterings", particles_draw_last},
+	{"drawAlterings", particles_draw_alter},
+	{"hasAlterings", particles_has_alter},
+	{"drawBlooms", particles_draw_bloom},
+	{"hasBlooms", particles_has_bloom},
 	{NULL, NULL},
 };
 

@@ -573,6 +573,14 @@ static int gl_target_free(lua_State *L)
 	return 1;
 }
 
+static int gl_target_toscreen(lua_State *L)
+{
+	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	c->toScreen(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_target_use(lua_State *L)
 {
 	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
@@ -1294,6 +1302,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 static const struct luaL_Reg gl_target_reg[] =
 {
 	{"__gc", gl_target_free},
+	{"toScreen", gl_target_toscreen},
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},

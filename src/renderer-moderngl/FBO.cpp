@@ -64,6 +64,7 @@ DORTarget::DORTarget(int w, int h, int nbt, bool hdr) {
 DORTarget::~DORTarget() {
 	delete view;
 	if (mode) delete mode;
+	if (toscreen_vbo) delete toscreen_vbo;
 
 	if (subrender_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, subrender_lua_ref);
 
@@ -216,6 +217,22 @@ void DORTarget::onScreenResize(int w, int h) {
 
 void DORTarget::setSpecialMode(TargetSpecialMode *mode) {
 	this->mode = mode;
+}
+
+void DORTarget::toScreen(int x, int y) {
+	if (!toscreen_vbo) {
+		toscreen_vbo = new VBO(VBOMode::STATIC);
+		toscreen_vbo->addQuad(
+			0, 0, 0, 1,
+			w, 0, 1, 1,
+			w, h, 1, 0,
+			0, h, 0, 0,
+			1, 1, 1, 1
+		);
+		toscreen_vbo->setTexture(fbo.textures[0]);
+		toscreen_vbo->setShader(shader);
+	}
+	toscreen_vbo->toScreen(x, y, 0, 1, 1);
 }
 
 /*************************************************************************

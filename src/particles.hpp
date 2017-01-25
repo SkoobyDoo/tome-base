@@ -92,6 +92,7 @@ struct s_particles_type {
 
 	float rotate, rotate_v;
 
+	bool allow_bloom;
 	bool fboalter;
 
 	GLuint vbo, vbo_elements;

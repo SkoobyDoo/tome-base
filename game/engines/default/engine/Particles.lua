@@ -56,6 +56,7 @@ function _M:loaded()
 	local base_size = nil
 	local gl = nil
 	local islast = false
+	local allow_bloom = false
 	local sub_particle = self.args.sub_particle
 	local sub_particle_args = self.args.sub_particle_args
 	if type(self.def) == "string" then	
@@ -74,6 +75,7 @@ function _M:loaded()
 
 		if t.use_shader then self.shader = t.use_shader end
 		if t.alterscreen then islast = true end
+		if t.allow_bloom then allow_bloom = true end
 		if t.toback then self.toback = true end
 		if t.sub_particle then sub_particle = t.sub_particle end
 		if t.sub_particle_args then sub_particle_args = t.sub_particle_args end
@@ -106,7 +108,8 @@ function _M:loaded()
 		sha = self._shader.shad
 	end
 
-	self.ps = core.particles.newEmitter("/data/gfx/particles/"..self.def..".lua", args, self.zoom, config.settings.particles_density or 100, gl, sha, islast)
+	if islast and allow_bloom then error("Particle defined with both bloom and alterscreen") end
+	self.ps = core.particles.newEmitter("/data/gfx/particles/"..self.def..".lua", args, self.zoom, config.settings.particles_density or 100, gl, sha, islast, allow_bloom)
 	self.gl_texture = gl
 
 	if sub_particle then

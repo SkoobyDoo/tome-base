@@ -594,47 +594,6 @@ function _M:createMapGridLines()
 	if self.level and self.level.map then self.level.map:regenGridLines() end
 end
 
-function _M:createFBOs()
-	print("[GAME] Creating FBOs")
---[[
-	-- Create the framebuffer
-	self.fbo = core.display.newFBO(Map.viewport.width, Map.viewport.height)
-	if self.fbo then
-		self.fbo_shader = Shader.new("main_fbo")
-		self.posteffects = {
-			wobbling = Shader.new("main_fbo/wobbling"),
-			underwater = Shader.new("main_fbo/underwater"),
-			motionblur = Shader.new("main_fbo/motionblur"),
-			blur = Shader.new("main_fbo/blur"),
-			timestop = Shader.new("main_fbo/timestop"),
-			line_grids = Shader.new("main_fbo/line_grids"),
-			gestures = Shader.new("main_fbo/gestures"),
-		}
-		self.posteffects_use = { self.fbo_shader.shad }
-		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end
-		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
-
-		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
-	end
-
-	if self.player then self.player:updateMainShader() end
-
-	self.full_fbo = core.display.newFBO(self.w, self.h)
-	if self.full_fbo then self.full_fbo_shader = Shader.new("full_fbo") if not self.full_fbo_shader.shad then self.full_fbo = nil self.full_fbo_shader = nil end end
-
-	if self.fbo and self.fbo2 then core.particles.defineFramebuffer(self.fbo)
-	else core.particles.defineFramebuffer(nil) end
-
-
-	Map:enableFBORenderer("target_fbo")
-
---	self.mm_fbo = core.display.newFBO(200, 200)
---	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
-]]
-	
-	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
-end
-
 function _M:resizeMapViewport(w, h, x, y)
 	x = x and math.floor(x) or Map.display_x
 	y = y and math.floor(y) or Map.display_y
@@ -1612,6 +1571,81 @@ function _M:updateFOV()
 	self.player:playerFOV()
 end
 
+function _M:createFBOs()
+	print("[GAME] Creating FBOs")
+--[[
+	-- Create the framebuffer
+	self.fbo = core.display.newFBO(Map.viewport.width, Map.viewport.height)
+	if self.fbo then
+		self.fbo_shader = Shader.new("main_fbo")
+		self.posteffects = {
+			wobbling = Shader.new("main_fbo/wobbling"),
+			underwater = Shader.new("main_fbo/underwater"),
+			motionblur = Shader.new("main_fbo/motionblur"),
+			blur = Shader.new("main_fbo/blur"),
+			timestop = Shader.new("main_fbo/timestop"),
+			line_grids = Shader.new("main_fbo/line_grids"),
+			gestures = Shader.new("main_fbo/gestures"),
+		}
+		self.posteffects_use = { self.fbo_shader.shad }
+		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end
+		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
+
+		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
+	end
+
+	if self.player then self.player:updateMainShader() end
+
+	self.full_fbo = core.display.newFBO(self.w, self.h)
+	if self.full_fbo then self.full_fbo_shader = Shader.new("full_fbo") if not self.full_fbo_shader.shad then self.full_fbo = nil self.full_fbo_shader = nil end end
+
+	if self.fbo and self.fbo2 then core.particles.defineFramebuffer(self.fbo)
+	else core.particles.defineFramebuffer(nil) end
+
+
+	Map:enableFBORenderer("target_fbo")
+
+--	self.mm_fbo = core.display.newFBO(200, 200)
+--	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
+]]
+	self.posteffects = {
+		wobbling = Shader.new("main_fbo/wobbling"),
+		underwater = Shader.new("main_fbo/underwater"),
+		motionblur = Shader.new("main_fbo/motionblur"),
+		blur = Shader.new("main_fbo/blur"),
+		timestop = Shader.new("main_fbo/timestop"),
+		line_grids = Shader.new("main_fbo/line_grids"),
+		gestures = Shader.new("main_fbo/gestures"),
+	}
+	local bloom_shader = Shader.new("bloom/bloom")
+	local hblur_shader = Shader.new("bloom/hblur") hblur_shader:setUniform("texSize", {w, h})
+	local vblur_shader = Shader.new("bloom/vblur") vblur_shader:setUniform("texSize", {w, h})
+	local combine_shader = Shader.new("bloom/combine")
+
+	self.fbo_shader = Shader.new("main_fbo")
+	self.full_fbo_shader = Shader.new("full_fbo")
+
+	self.fbobloom = core.renderer.target()
+	self.fbobloom:bloomMode(8, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
+	self.fbobloomrenderer = core.renderer.renderer("static"):add(self.fbobloom)
+	core.particles.defineBloomFBO(self.fbobloom)
+
+	self.fbo2 = core.renderer.target()
+	self.fbo2renderer = core.renderer.renderer("static"):add(self.fbo2):enableBlending(false)
+	core.particles.defineAlterFBO(self.fbo2)
+
+	self.fbo = core.renderer.target()
+	self.fborenderer = core.renderer.renderer("static"):add(self.fbo):enableBlending(false)
+
+	self.full_fbo = core.renderer.target()
+	self.full_fbo:shader(self.full_fbo_shader)
+	self.full_fborenderer = core.renderer.renderer("static"):add(self.full_fbo)
+
+	self.posteffects_use = { self.fbo_shader.shad }
+	
+	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
+end
+
 function _M:displayMap(nb_keyframes)
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
@@ -1630,44 +1664,32 @@ function _M:displayMap(nb_keyframes)
 		end
 
 		-- Display using Framebuffer, so that we can use shaders and all
-		if self.fbo then
-			if self.level.data.display_prepare then self.level.data.display_prepare(self.level, 0, 0, nb_keyframes) end
-			self.fbo:use(true)
-				if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
-				map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov, self.fbo)
-				if self.level.data.foreground then self.level.data.foreground(self.level, 0, 0, nb_keyframes) end
-				if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
-				if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
-			self.fbo:use(false, self.full_fbo)
-
-			-- 2nd pass to apply distorting particles
-			self.fbo2:use(true)
-				self.fbo:toScreen(0, 0, map.viewport.width, map.viewport.height)
-				core.particles.drawAlterings()
-				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
-				map._map:toScreenLineGrids(map.display_x, map.display_y)
-				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-				if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
-			self.fbo2:use(false, self.full_fbo)
-
-			_2DNoise:bind(1, false)
-			self.fbo2:postEffects(self.fbo, self.full_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
-			if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
-
-		-- Basic display; no FBOs
-		else
-			if self.level.data.background then self.level.data.background(self.level, map.display_x, map.display_y, nb_keyframes) end
-			map:display(nil, nil, nb_keyframes, config.settings.tome.smooth_fov, nil)
-			if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
-			if self.level.data.foreground then self.level.data.foreground(self.level, map.display_x, map.display_y, nb_keyframes) end
+		if self.level.data.display_prepare then self.level.data.display_prepare(self.level, 0, 0, nb_keyframes) end
+		self.fbo:use(true)
+			if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
+			map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov)
+			if core.particles.hasBlooms() then
+				self.fbobloom:use(true) core.particles.drawBlooms() self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+			end
+			if self.level.data.foreground then self.level.data.foreground(self.level, 0, 0, nb_keyframes) end
 			if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 			if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
+		self.fbo:use(false, self.full_fbo)
+
+		-- 2nd pass to apply distorting particles
+		self.fbo2:use(true)
+			self.fborenderer:toScreen()
 			core.particles.drawAlterings()
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
 			map._map:toScreenLineGrids(map.display_x, map.display_y)
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(map.display_x, map.display_y, nb_keyframes) end
-		end
+			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
+		self.fbo2:use(false, self.full_fbo)
+
+		-- _2DNoise:bind(1, false)
+		-- self.fbo2:postEffects(self.fbo, self.full_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
+		self.fbo2renderer:toScreen(map.display_x, map.display_y)
+		if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
 
 		-- Handle ambient sounds
 		if self.level.data.ambient_bg_sounds then self.state:playAmbientSounds(self.level, self.level.data.ambient_bg_sounds, nb_keyframes) end
@@ -1736,7 +1758,7 @@ function _M:display(nb_keyframes)
 
 	if self.full_fbo then
 		self.full_fbo:use(false)
-		self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad)
+		self.full_fbo:toScreen(0, 0)
 	end
 end
 

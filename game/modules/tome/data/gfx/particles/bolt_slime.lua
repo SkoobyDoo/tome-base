@@ -17,6 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
 can_shift = true
 return { generator = function()
 	local radius = 0

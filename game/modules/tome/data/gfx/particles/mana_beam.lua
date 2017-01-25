@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
+
 -- Make the ray
 local ray = {}
 local tiles = math.ceil(math.sqrt(tx*tx+ty*ty))

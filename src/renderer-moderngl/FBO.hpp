@@ -86,6 +86,8 @@ protected:
 	View *view;
 	TargetSpecialMode *mode = NULL;
 
+	VBO *toscreen_vbo = NULL;
+
 	virtual void cloneInto(DisplayObject *into);
 
 public:
@@ -108,6 +110,8 @@ public:
 	virtual void tick();
 
 	virtual void onScreenResize(int w, int h);
+
+	void toScreen(int x, int y);
 
 	void setSpecialMode(TargetSpecialMode *mode);
 

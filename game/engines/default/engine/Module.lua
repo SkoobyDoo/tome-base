@@ -900,7 +900,8 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	core.game.setRealtime(0)
 
 	-- Disable particles FBO
-	core.particles.defineFramebuffer(nil)
+	core.particles.defineAlterFBO(nil)
+	core.particles.defineBloomFBO(nil)
 
 	-- FOV Shape
 	core.fov.set_algorithm("large_ass")
