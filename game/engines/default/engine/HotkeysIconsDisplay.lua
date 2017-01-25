@@ -106,16 +106,18 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.bg_container = core.renderer.container()
 	self.renderer:add(self.bg_container)
 
-	self.icons_layer = core.renderer.container():translate(0, 0, 0) self.renderer:add(self.icons_layer)
-	self.cooldowns_layer = core.renderer.container():translate(0, 0, 10) self.renderer:add(self.cooldowns_layer)
-	self.texts_layer = core.renderer.container():translate(0, 0, 20) self.renderer:add(self.texts_layer)
-	self.frames_layer = core.renderer.container():translate(0, 0, 30) self.renderer:add(self.frames_layer)
-	self.sels_layer = core.renderer.container():translate(0, 0, 40) self.renderer:add(self.sels_layer)
-	self.unseens_layer = core.renderer.container():translate(0, 0, 0):color(1, 1, 1, 0) self.renderer:add(self.unseens_layer)
+	self.icons_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Icons"):translate(0, 0, 0) self.renderer:add(self.icons_layer)
+	self.cooldowns_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Cooldowns"):translate(0, 0, 10) self.renderer:add(self.cooldowns_layer)
+	self.texts_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Texts"):translate(0, 0, 20) self.renderer:add(self.texts_layer)
+	self.frames_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Frames"):translate(0, 0, 30) self.renderer:add(self.frames_layer)
+	self.sels_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: sels"):translate(0, 0, 40) self.renderer:add(self.sels_layer)
+	self.unseens_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Unseen"):translate(0, 0, 0):color(1, 1, 1, 0) self.renderer:add(self.unseens_layer)
 	self.sel_frames = {}
 
 	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0, self.w, self.h)) end
 	if self.bg_color then self.bg_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.bg_color))) end
+
+	self.hk_cache = {}
 end
 
 local page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
@@ -137,6 +139,8 @@ function _M:display()
 --	if bpage == 1 and core.key.modState("ctrl") then spage = 2 if self.max_cols < 24 then bpage = 2 end
 --	elseif bpage == 1 and core.key.modState("shift") then spage = 3 if self.max_cols < 36 then bpage = 3 end
 --	end
+
+LOL MAKE ME NOT SUCK !
 
 	self.icons_layer:clear()
 	self.cooldowns_layer:clear()
