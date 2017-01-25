@@ -148,6 +148,7 @@ void DORText::parseText() {
 	entities_container.clear();
 	positions.clear();
 	centered = false;
+	setChanged(true);
 
 	font_type *f = font;
 	if (!f) return;

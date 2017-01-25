@@ -1626,7 +1626,7 @@ function _M:createFBOs()
 	self.full_fbo_shader = Shader.new("full_fbo")
 
 	self.fbobloom = core.renderer.target()
-	self.fbobloom:bloomMode(8, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
+	self.fbobloom:bloomMode(20, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
 	self.fbobloomrenderer = core.renderer.renderer("static"):add(self.fbobloom)
 	core.particles.defineBloomFBO(self.fbobloom)
 
