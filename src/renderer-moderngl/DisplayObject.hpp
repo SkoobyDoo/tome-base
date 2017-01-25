@@ -234,6 +234,7 @@ public:
 		float r, float g, float b, float a
 	);
 	void loadObj(const string &filename);
+	GLuint getTexture(int id) { return tex[id]; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
@@ -307,45 +308,6 @@ public:
 	virtual void toScreen(mat4 cur_model, vec4 color) = 0;
 };
 
-/****************************************************************************
- ** A FBO that masquerades as a DORVertexes, draw stuff in it and
- ** then add it to a renderer to use the content generated
- ****************************************************************************/
-class DORTarget : public DORVertexes, public IResizable {
-protected:
-	int w, h;
-	GLuint fbo;
-	vector<GLuint> textures;
-	vector<GLenum> buffers;
-	int nbt = 0;
-	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
-	SubRenderer *subrender = NULL;
-	int subrender_lua_ref = LUA_NOREF;
-	int view_lua_ref = LUA_NOREF;
-	View *view;
-
-	virtual void cloneInto(DisplayObject *into);
-
-public:
-	DORTarget();
-	DORTarget(int w, int h, int nbt);
-	virtual ~DORTarget();
-	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
-	virtual const char* getKind() { return "DORTarget"; };
-	virtual void setTexture(GLuint tex, int lua_ref, int id);
-
-	void setView(View *view, int ref);
-	void setClearColor(float r, float g, float b, float a);
-	void displaySize(int w, int h, bool center);
-	void use(bool activate);
-	void setAutoRender(SubRenderer *subrender, int ref);
-
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void tick();
-
-	virtual void onScreenResize(int w, int h);
-};
 
 /****************************************************************************
  ** A Dummy DO taht displays nothing and instead calls a lua callback

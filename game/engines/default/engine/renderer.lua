@@ -207,6 +207,57 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 	end
 end
 
+function core.renderer.fromTextureTableCut(t, x, y, w, h, py, ph, r, g, b, a, v)
+	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
+	x = math.floor(x or 0)
+	y = math.floor(y or 0)
+	local u1, v1 = t.tx, t.ty
+	local u2, v2 = u1 + t.tw, v1 + t.th
+	w = math.floor(w or t.w)
+	h = math.floor(h or t.h)
+
+	if py > 0 then
+		v1 = t.ty + t.th * py
+		y = y + h * py
+	end
+	if ph < 1 then
+		v2 = t.ty + t.th * ph
+		h = h * ph
+	end
+
+	local x1, y1 = x, y
+	local x2, y2 = x + w, y + h
+	if not v then v = core.renderer.vertexes() end
+	v:quad(
+		x1, y1, u1, v1,
+		x2+0.1, y1, u2, v1,
+		x2+0.1, y2+0.1, u2, v2,
+		x1, y2+0.1, u1, v2,
+		r, g, b, a
+	)
+	v:texture(t.t)
+	return v, w, h
+end
+
+
+function core.renderer.targetDisplay(target)
+	local v = core.renderer.vertexes()
+	local w, h = target:displaySize()
+	local x1, x2 = 0, w
+	local y1, y2 = 0, h
+	local u1, u2 = 0, 1
+	local v1, v2 = 1, 0
+	v:quad(
+		x1, y1, u1, v1,
+		x2, y1, u2, v1,
+		x2, y2, u2, v2,
+		x1, y2, u1, v2,
+		1, 1, 1, 1
+	)
+	v:textureTarget(target, 0)
+	return v
+end
+
 -----------------------------------------------------------------------------------
 -- Tweening stuff
 -----------------------------------------------------------------------------------

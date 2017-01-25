@@ -88,6 +88,8 @@ protected:
 	bool count_time = false;
 	bool count_vertexes = false;
 
+	bool allow_blending = true;
+
 	bool cutting = false;
 	vec4 cutpos1;
 	vec4 cutpos2;
@@ -123,6 +125,7 @@ public:
 	void countTime(bool count) { count_time = count; };
 	void zSorting(bool sort) { zsort = sort ? SortMode::FAST : SortMode::NO_SORT; };
 	void zSorting(SortMode mode) { zsort = mode; };
+	void enableBlending(bool v) { allow_blending = v; };
 	void sortedToDL();
 	void update();
 	virtual void toScreen(mat4 cur_model, vec4 color);

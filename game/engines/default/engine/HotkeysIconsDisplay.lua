@@ -57,7 +57,8 @@ function _M:init(actor, x, y, w, h, bg_color, fontname, fontsize, icon_w, icon_h
 	self.fontname = fontname
 	self.fontsize = fontsize
 
-	self.renderer = core.renderer.renderer("stream"):zSort(true):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(false)
+	-- DGDGDGDG: fast sort prevents it from updating ? wut ? test it, fix it!
+	self.renderer = core.renderer.renderer("stream"):zSort("full"):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(false)
 
 	self.frames = {}
 	-- self.makeFrame = function() UI:makeFrame("ui/icon-frame/frame", icon_w + 8, icon_h + 8)  --doesn't really matter since we pass a different size

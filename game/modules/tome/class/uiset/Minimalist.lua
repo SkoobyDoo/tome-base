@@ -30,7 +30,7 @@ module(..., package.seeall, class.inherit(UISet, TooltipsData))
 function _M:init()
 	UISet.init(self)
 
-	self.renderer = core.renderer.renderer():zSort(true)
+	self.renderer = core.renderer.renderer():setRendererName("Minimalist Main Renderer"):zSort(true)
 	self.minicontainers = {}
 	self.locked = true
 end
@@ -88,11 +88,14 @@ end
 
 _M.allcontainers = {
 	"mod.class.uiset.minimalist.PlayerFrame",
-	"mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
+	-- "mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
 	"mod.class.uiset.minimalist.Toolbar",
 	"mod.class.uiset.minimalist.Resources",
+	"mod.class.uiset.minimalist.Hourglass",
 	"mod.class.uiset.minimalist.Hotkeys",
 	"mod.class.uiset.minimalist.Log",
+	-- DGDGDGDG: missing: arena special display, zone specific_ui display (can those 2 be merged? likely)
+	-- DGDGDGDG: missing: chatlog
 }
 
 function _M:saveSettings()

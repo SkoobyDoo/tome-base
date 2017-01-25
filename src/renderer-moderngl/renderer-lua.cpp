@@ -20,6 +20,7 @@
 */
 
 #include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/FBO.hpp"
 #include "renderer-moderngl/TextObject.hpp"
 #include "renderer-moderngl/TileMap.hpp"
 #include "renderer-moderngl/Particles.hpp"
@@ -445,6 +446,14 @@ static int gl_renderer_cutoff(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_blend(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	r->enableBlending(lua_toboolean(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_renderer_set_name(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
@@ -548,8 +557,9 @@ static int gl_target_new(lua_State *L)
 	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
 	if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
 	if (lua_isnumber(L, 3)) nbt = lua_tonumber(L, 3);
+	bool hdr = lua_toboolean(L, 4);
 
-	*c = new DORTarget(w, h, nbt);
+	*c = new DORTarget(w, h, nbt, hdr);
 	setWeakSelfRef(L, -1, *c);
 
 	return 1;
@@ -574,9 +584,17 @@ static int gl_target_use(lua_State *L)
 static int gl_target_displaysize(lua_State *L)
 {
 	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
-	c->displaySize(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_toboolean(L, 4));
-	lua_pushvalue(L, 1);
-	return 1;
+	if (lua_isnumber(L, 2)) {
+		c->displaySize(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_toboolean(L, 4));
+		lua_pushvalue(L, 1);
+		return 1;
+	} else {
+		int w, h;
+		c->getDisplaySize(&w, &h);
+		lua_pushnumber(L, w);
+		lua_pushnumber(L, h);
+		return 2;
+	}
 }
 
 static int gl_target_clearcolor(lua_State *L)
@@ -609,6 +627,54 @@ static int gl_target_texture(lua_State *L)
 	}
 	lua_pushvalue(L, 2);
 	v->setTexture(t->tex, luaL_ref(L, LUA_REGISTRYINDEX), id);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_target_target_texture(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *t = userdata_to_DO<DORTarget>(__FUNCTION__, L, 2, "gl{target}");
+	int id = lua_tonumber(L, 4);
+	if (!id) {
+		lua_pushstring(L, "Can not set textute 0 of a target object");
+		lua_error(L);
+	}
+	lua_pushvalue(L, 2);
+	v->setTexture(t->getTexture(lua_tonumber(L, 3)), luaL_ref(L, LUA_REGISTRYINDEX), id);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_target_mode_bloom(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+
+	int blur_passes = lua_tonumber(L, 2);
+
+	shader_type *bloom = (shader_type*)lua_touserdata(L, 3);
+	lua_pushvalue(L, 3); int bloom_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	shader_type *hblur = (shader_type*)lua_touserdata(L, 4);
+	lua_pushvalue(L, 4); int hblur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	shader_type *vblur = (shader_type*)lua_touserdata(L, 5);
+	lua_pushvalue(L, 5); int vblur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	shader_type *combine = (shader_type*)lua_touserdata(L, 6);
+	lua_pushvalue(L, 6); int combine_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	
+	TargetBloom *mode = new TargetBloom(
+		v,
+		blur_passes,
+		bloom, bloom_ref,
+		hblur, hblur_ref,
+		vblur, vblur_ref,
+		combine, combine_ref
+	);
+	v->setSpecialMode(mode);
 
 	lua_pushvalue(L, 1);
 	return 1;
@@ -731,6 +797,18 @@ static int gl_vertexes_texture(lua_State *L)
 	int id = lua_tonumber(L, 3);
 	lua_pushvalue(L, 2);
 	v->setTexture(t->tex, luaL_ref(L, LUA_REGISTRYINDEX), id);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vertexes_target_texture(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORTarget *t = userdata_to_DO<DORTarget>(__FUNCTION__, L, 2, "gl{target}");
+	int id = lua_tonumber(L, 4);
+	lua_pushvalue(L, 2);
+	v->setTexture(t->getTexture(lua_tonumber(L, 3)), luaL_ref(L, LUA_REGISTRYINDEX), id);
 
 	lua_pushvalue(L, 1);
 	return 1;
@@ -1205,6 +1283,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
 	{"cutoff", gl_renderer_cutoff},
+	{"enableBlending", gl_renderer_blend},
 	{"setRendererName", gl_renderer_set_name},
 	{"countTime", gl_renderer_count_time},
 	{"countDraws", gl_renderer_count_draws},
@@ -1220,6 +1299,8 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"clearColor", gl_target_clearcolor},
 	{"view", gl_target_view},
 	{"texture", gl_target_texture},
+	{"textureTarget", gl_target_target_texture},
+	{"bloomMode", gl_target_mode_bloom},
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},
 	{"clear", gl_vertexes_clear},
@@ -1279,6 +1360,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"quadPie", gl_vertexes_quad_pie},
 	{"loadObj", gl_vertexes_load_obj},
 	{"texture", gl_vertexes_texture},
+	{"textureTarget", gl_vertexes_target_texture},
 	{"textureFontAtlas", gl_vertexes_font_atlas_texture},
 	{"shader", gl_vertexes_shader},
 	{"clear", gl_vertexes_clear},

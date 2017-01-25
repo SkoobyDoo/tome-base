@@ -50,6 +50,10 @@ void VBO::clear() {
 	changed = true;
 }
 
+void VBO::resetTexture() {
+	textures.clear();
+}
+
 void VBO::setTexture(GLuint tex) {
 	setTexture(tex, 0);
 }

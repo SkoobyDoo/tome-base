@@ -421,6 +421,9 @@ static void particles_draw(particles_type *ps, mat4 model)
 		glBindTexture(GL_TEXTURE_2D, main_fbo->textures[0]);
 	}
 
+	// DGDGDGDG: we could do a kind of HDR here! pass a screenwide output texture in which all particles draw in addition to their normal drawing
+	// and then use that to do HDR kinkiness
+
 	// Make the elements vbo, but only once
 	// We do it now instead of on creation because we dont know at creation the max particles we'll need
 	if (!ps->vbo_elements) {

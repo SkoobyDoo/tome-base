@@ -83,7 +83,7 @@ function _M:init(minimalist)
 
 	self.move_handle, self.move_handle_w, self.move_handle_h = self:imageLoader("move_handle.png")
 
-	self.unlocked_container = core.renderer.renderer()
+	self.unlocked_container = core.renderer.renderer():setRendererName("Unlock Renderer: "..self.container_id)
 	self.unlocked_grey_filter = core.renderer.colorQuad(0, 0, 1, 1, 0, 0, 0, 0.235):scale(w, h, 1)
 	self.unlocked_container:add(self.unlocked_grey_filter)
 	self.unlocked_container:add(self.move_handle)

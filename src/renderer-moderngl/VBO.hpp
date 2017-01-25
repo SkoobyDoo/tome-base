@@ -66,6 +66,7 @@ public:
 
 	void clear();
 
+	void resetTexture();
 	void setTexture(GLuint tex);
 	void setTexture(GLuint tex, int pos);
 	void setShader(shader_type *shader);
