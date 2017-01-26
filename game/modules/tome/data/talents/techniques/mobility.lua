@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,76 +47,153 @@ newTalent{
 	base_stamina = 8,
 	stamina = mobility_stamina,
 	range = 7,
-	getSpeed = function(self, t) return self:combatTalentScale(t, 100, 200, "log") end,
-	getReload = function(self, t) return math.floor(self:combatTalentScale(t, 2, 8)) end,
+	getSpeed = function(self, t) return self:combatTalentScale(t, 100, 200, "log")/(1 + 2*self:combatFatigue()/100) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
 	tactical = { ESCAPE = 2, AMMO = 0.5 },
 	requires_target = true,
-	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
-	getDist = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 7)) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then return nil end
-		
-		local dist = core.fov.distance(self.x, self.y, x, y) + t.getDist(self,t)
-
-		local tg2 = {type="beam", source_actor = target, range=dist, talent=t}	
-		local tx, ty, t2 = self:getTarget(tg2)
-		if not tx or not ty or t2 or game.level.map:checkEntity(tx, ty, Map.TERRAIN, "block_move", self) then
-			game.logPlayer(self, "You must have an empty space to disengage to.")
-			return false
-		end
-		
-		if (self:attr("never_move") and self:hasHeavyArmor()) or self:attr("encased_in_ice") then
+	on_pre_use = function(self, t, silent, fake)
+		if self:attr("never_move") or self:attr("encased_in_ice") then
 			if not silent then game.logPlayer(self, "You must be able to move to use %s!", t.name) end
-		return end
-		
-		local check = false
-		
-		local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
-		local linestep = target:lineFOV(tx, ty, block_actor)
-
-		local x2, y2, lx, ly, is_corner_blocked
-		repeat  -- make sure each tile is passable
-			x2, xy = lx, ly
-			lx, ly, is_corner_blocked = linestep:step()
-			if self.x == lx and self.y == ly then check = true end
-		until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
-
-
-		if not check then
-			game.logPlayer(self, "You must disengage away from your target in a straight line.")
 			return
 		end
+		return true
+	end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	getDist = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 7)/(1 + self:combatFatigue()/100)) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local tx, ty, target = self:getTarget(tg)
+		if not (target and self:canSee(target) and self:canProject(tg, tx, ty)) then return end
 		
-		self:move(tx, ty, true)
+		local dist = core.fov.distance(self.x, self.y, tx, ty) + t.getDist(self,t)
+		local tgt_dist, move_dist = core.fov.distance(self.x, self.y, tx, ty), t.getDist(self,t)
 
-		if not self:hasHeavyArmor() then		
-			game:onTickEnd(function()
-				self:setEffect(self.EFF_WILD_SPEED, 3, {power=t.getSpeed(self,t)}) 
+		local block_check = function(_, bx, by)
+			return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self)
+		end
+		-- save allowed grids along line in case of end failure?
+		local linestep
+		local function check_dest(px, py)
+			local check = false
+			linestep = self:lineFOV(px, py, block_check, nil, tx, ty)
+--table.set(game, "debug", "linestep", linestep) --linestep:reset()
+			local lx, ly, is_corner_blocked
+			repeat -- make sure line passes through talent user
+print("check_dest checking", px, py)
+				lx, ly, is_corner_blocked = linestep:step()
+				if self.x == lx and self.y == ly then check = true break end
+			until is_corner_blocked or not lx or not ly or game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move", self)
+			return check
+		end
+
+		local dx, dy
+		if self.player then -- player targeting
+			local tg2 = {type="beam", source_actor=self, selffire=false, range=move_dist, talent=t}
+			tg2.display_line_step = function(self, d) -- highlight permissible grids for the player
+				local t_range = core.fov.distance(self.target_type.start_x, self.target_type.start_y, d.lx, d.ly)
+				if t_range >= 1 and t_range <= tg2.range and not d.block and check_dest(d.lx, d.ly) then
+					d.s = self.sb
+				else
+					d.s = self.sr
+				end
+				d.display_highlight(d.s, d.lx, d.ly)
+			end
+			dx, dy = self:getTarget(tg2)
+		else -- NPC gets the target location (update with AI changes)
+			-- project a cone in opposite direction from target, looking for valid grids
+			local cone_angle = 180/math.pi*math.atan(1/(tgt_dist + 1)) + 5 --5° extra angle
+			local tg2 = {type="cone", cone_angle=cone_angle, source_actor=self, selffire=false, range=0, radius=move_dist, talent=t}
+			dx, dy = self.x - (tx - self.x), self.y - (ty - self.y) -- direction away from target
+game.log("#GREY# NPC %s Disengage from (%d, %d) towards (%d, %d) cone_angle=%s", self.name, tx, ty, dx, dy, cone_angle)
+			local grids = {}
+			self:project(tg2, dx, dy, function(px, py, typ, self)
+				local act = game.level.map(px, py, Map.ACTOR)
+--game.log("#GREY# NPC projecting on grid(%d, %d), act=%s", px, py, act and act.name)
+				if not game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move", self) and (not act or not self:canSee(act)) then
+					grids[#grids+1] = {px, py, dist=core.fov.distance(px, py, self.x, self.y) + rng.float(0, 0.1)}
+				end
 			end)
+			table.sort(grids, function(a, b) return a.dist > b.dist end)
+			table.print(grids, "\tnpc_grids")
+			dx, dy = nil, nil
+			for i, grid in ipairs(grids) do
+				local chk = check_dest(grid[1], grid[2])
+				--print("\tchecking grid", grid[1], grid[2], chk)
+				if check_dest(grid[1], grid[2]) then dx, dy = grid[1], grid[2] break end
+			end
+		end
+
+		if not (dx and dy) or not game.level.map:isBound(dx, dy) or core.fov.distance(dx, dy, self.x, self.y) > move_dist then return end
+--game.log("#GREY# %s Disengage Target Grid (%s, %s)", self.name, dx, dy)
+		local allowed = check_dest(dx, dy)
+--game.log("#GREY# %s Disengage Target Grid (%d, %d) allowed:%s", self.name, dx, dy, allowed)
+		if not allowed then
+			game.logPlayer(self, "You must disengage directly away from your target in a straight line.")
+			return
+		end
+
+		local ok_grids = {}
+		repeat  -- get list of  allowed grids along path
+			local lx, ly, is_corner_blocked = linestep:step()
+			--print("linestep:", lx, ly, is_corner_blocked, "actor:", game.level.map(lx, ly, Map.ACTOR))
+			if lx and ly then
+				if game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move", self) then break
+				elseif not game.level.map(lx, ly, Map.ACTOR) then
+--game.log("#GREY#___Grid (%d, %d) unblocked", lx, ly)
+					ok_grids[#ok_grids+1]={lx, ly}
+				end
+			end
+		until is_corner_blocked or not lx or not ly
+--table.print(ok_grids, "\tok_grids\t")
+
+		local act = game.level.map(dx, dy, Map.ACTOR)
+		-- abort for known obstacles
+		if self:hasLOS(dx, dy) and (game.level.map:checkEntity(dx, dy, Map.TERRAIN, "block_move", self) or act and self:canSee(act)) then
+			game.logPlayer(self, "You must land in an empty space.")
+			return false
+		else -- move to the furthest allowed grid
+			local dest_grid = ok_grids[#ok_grids]
+			if dest_grid then -- land short
+--game.log("#GREY# %s best destination grid: (%d, %d)", self.name, dest_grid[1], dest_grid[2])
+				if dx ~= dest_grid[1] or dy ~= dest_grid[2] then
+					game.logPlayer(self, "Your Disengage was partially blocked.")
+				end
+			else
+				game.logPlayer(self, "You are not able to Disengage in that direction.")
+				return false
+			end
 		end
 		
+--if false then game.log("%s debugging abort", t.id) return true end --debugging
+
+		self:move(dx, dy, true)
+
+		game:onTickEnd(function()
+			self:setEffect(self.EFF_WILD_SPEED, 3, {power=t.getSpeed(self,t)})
+		end)
+--[[		
+		-- perform a standard reload x times based on talent level
+		local reloads = t.getReloads(self, t)
 		local weapon, ammo, offweapon = self:hasArcheryWeapon()	
 		if weapon and ammo and not ammo.infinite then
-			ammo.combat.shots_left = math.min(ammo.combat.shots_left + t.getReload(self, t), ammo.combat.capacity)
-			game.logSeen(self, "%s reloads.", self.name:capitalize())
+			for i = 1, reloads do self:reload() end
 		end
-
 		if self:knowTalent(self.T_THROWING_KNIVES) then
-			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
-			local reload = math.min(max, t.getReload(self,t))
-			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
+			for i = 1, reloads do self:callTalent(self.T_THROWING_KNIVES, "callbackOnActBase") end
 		end
-
+--]]
+		local weapon, ammo, offweapon = self:hasArcheryWeapon()	
+		if weapon and ammo and not ammo.infinite then self:reload() end
+		if self:knowTalent(self.T_THROWING_KNIVES) then self:callTalent(self.T_THROWING_KNIVES, "callbackOnMove", true, false, tx, ty) end
+	
 		return true
 	end,
 	info = function(self, t)
-		return ([[Jump back up to %d grids from your target, as well as reloading up to %d of your equipped ammo or throwing knives.
-		You must disengage in a straight line (the targeting line must pass through your character).
-		If you are not wearing heavy armor, you also gain %d%% increased movement speed and may use this talent while pinned. The extra speed ends if you take any actions other than movement.]]):
-		format(t.getDist(self, t), t.getReload(self,t), t.getSpeed(self,t), t.getNb(self,t))
+		return ([[Jump back up to %d grids from your target, springing over any creatures in your way. 
+		You must disengage in a nearly straight line directly away from your target (which you must be able to see).
+		After moving, you gain %d%% increased movement speed for 3 turns (which ends if you take any actions other than movement), and you may reload your ammo (if any).
+		The extra speed and maximum distance you can move are reduced by your Fatigue level.]]):
+		format(t.getDist(self, t), t.getSpeed(self,t), t.getNb(self,t))
 	end,
 }
 
@@ -170,7 +247,7 @@ newTalent {
 	stamina = mobility_stamina,
 	getExhaustion = function(self, t) return self:combatTalentLimit(t, 25, 75, 40) end,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4, "log")) end,
-	getDuration = function(self, t)	return math.ceil(self:combatTalentLimit(t, 5, 25, 15)) end, -- always >=2 turns higher than cooldown
+	getDuration = function(self, t)	return math.ceil(self:combatTalentLimit(t, 6, 25, 15)) end, -- always >=2 turns higher than cooldown
 	target = function(self, t)
 		return {type="beam", range=self:getTalentRange(t), talent=t}
 	end,
@@ -200,40 +277,99 @@ newTalent {
 	end
 }
 
-newTalent{
+newTalent {
 	name = "Trained Reactions",
 	type = {"technique/mobility", 4},
-	require = techs_dex_req4,
-	tactical = { BUFF = 2 },
+	mode = "sustained",
 	points = 5,
-	stamina_per_use = function(self, t) return 10 end,
+	require = techs_dex_req4,
 	sustain_stamina = 10,
 	no_energy = true,
-	getDamageReduction = function(self, t) 
-		return self:combatTalentLimit(t, 1, 0.15, 0.50) * self:combatLimit(self:combatDefense(), 1, 0.15, 10, 0.5, 50) -- Limit < 100%, 25% for TL 5.0 and 50 defense
+	tactical = { DEFEND = 2 },
+	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "pin_immune", t.pinImmune(self, t))
 	end,
-	getDamagePct = function(self, t)
-		return self:combatTalentLimit(t, 0.1, 0.3, 0.15) -- Limit trigger > 10% life
+	on_pre_use = function(self, t, silent, fake)
+		if self:hasHeavyArmor() then
+			if not silent then game.logPlayer(self, "%s is not usable while wearing heavy armour.", t.name) end
+			return
+		end
+		return true
+	end,
+	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
+		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.78, 50) -- vs TL/def: 1/10 == ~12%, 1.3/10 == ~17%, 1.3/50 == ~27%, 6.5/50 == ~53%, 6.5/100 = ~59%
+	end,
+	getStamina = function(self, t) return 20*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end, -- Stamina increases in proportion to talent-based effectiveness.  Stamina Efficiency increased with level through higher Defense (Automatic from the increased Dexterity required for higher talent levels)
+	getLifeTrigger = function(self, t)
+		return self:combatTalentLimit(t, 10, 35, 20)
+	end,
+	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, state)
+		if dam > 0 and state and not (self:attr("encased_in_ice") or self:attr("invulnerable")) then
+			local psrc = src.__project_source
+			if psrc then
+				local kind = util.getval(psrc.getEntityKind)
+				if kind == "projectile" or kind == "trap" or kind == "object" then
+				else
+					return
+				end
+			end
+			local stam, stam_cost
+			local is_attk = state.is_melee or state.is_archery
+			if is_attk then
+				-- don't charge stamina more than once per melee or ranged attack (state set in Combat.attackTargetWith and Archery.archery_projectile)
+				if self.turn_procs[t.id] == state then
+					stam_cost = 0
+				end
+			else -- intercept at most 1 non-melee/archery attack
+				if self.turn_procs.gen_trained_reactions then return end
+			end
+			stam, stam_cost = self:getStamina(), stam_cost or t.getStamina(self, t)
+			local lt = t.getLifeTrigger(self, t)/100
+			local min_dam = self.max_life*0.05
+			if stam_cost == 0 or dam > min_dam and dam > self.life*lt then
+				--print(("[PROJECTOR: Trained Reactions] PASSED life/stam test for %s: %s %s damage (%s) (%0.1f/%0.1f stam) from %s (state:%s)"):format(self.name, dam, type, is_attk, stam_cost, stam, src.name, state)) -- debugging
+				self.turn_procs[t.id] = state
+				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
+				local reduce = t.getReduction(self, t)*(self:attr("never_move") and 0.5 or 1)
+				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #source#, partially avoiding it!", is_attk and "an attack" or "damage") end
+
+--[[
+-- debugging code
+	local p = self:isTalentActive(t.id)
+	p.damage_avoided = (p.damage_avoided or 0) + dam*reduce
+	p.stam_costs = (p.stam_costs or 0) + stam_cost
+print("projector state:", state) table.print(state)
+	game.log("     %s #ORANGE#Trained Reactions %s damage avoided = %0.1f(%0.1f stam) total = %0.1f dam(%0.1f stam)", self.name, type, dam*reduce, stam_cost, p.damage_avoided, p.stam_costs)
+-- end debugging code
+--]]
+				dam = dam*(1-reduce)
+				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
+				if not is_attk then self.turn_procs.gen_trained_reactions = true end
+				return {dam = dam}
+			end
+		end
 	end,
 	activate = function(self, t)
-		return {}
+		local ret = {}
+--		ret.life_trigger, ret.life_level = t.getLifeTrigger(self, t)
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		return true
 	end,
-	callbackOnHit = function(self, t, cb)
-		local cost = t.stamina_per_use(self, t)
-		if ( cb.value > (t.getDamagePct(self, t) * self.max_life) and use_stamina(self, cost) ) then
-			local damageReduction = cb.value * t.getDamageReduction(self, t)
-			cb.value = cb.value - damageReduction
-			game.logPlayer(self, "#GREEN#You evade part of the attack, reducing the damage by #ORCHID#" .. math.ceil(damageReduction) .. "#LAST#.")
-		end
-		return cb.value
-	end, 
 	info = function(self, t)
-		local cost = t.stamina_per_use(self, t) * (1 + self:combatFatigue() * 0.01)
-		return ([[While this talent is sustained, you anticipate deadly attacks against you.  Whenever you would receive damage (from any source) greater than %d%% of your maximum life you duck out of the way and assume a defensive posture, reducing that damage by %0.1f%% (based on your Defense).
-		This costs %0.1f Stamina to use, and fails if you do not have enough.]]):
-		format(t.getDamagePct(self, t)*100, t.getDamageReduction(self, t)*100, cost)
+		local stam = t.getStamina(self, t)
+		local trigger = t.getLifeTrigger(self, t)
+		local reduce = t.getReduction(self, t, true)*100
+		return ([[You have trained to be very light on your feet and have conditioned your reflexes to react faster than thought to damage you take.
+		You permanently gain %d%% pinning immunity.
+		While this talent is active, you instantly react to any direct damage (not from status effects, etc.) that would hit you for at least %d%% of your current life or %d%% of your maximum life (whichever is greater).
+		This requires %0.1f stamina and reduces the damage by %d%%.  It can happen up to once per turn, unless the damage comes from a melee or archery strike.
+		Your reactions are too slow for this if you are wearing heavy armour and are only half effective when you are immobilized.
+		The damage reduction improves with your Defense.]])
+		:format(t.pinImmune(self, t)*100, trigger, 5, stam, reduce)
 	end,
 }
+
+

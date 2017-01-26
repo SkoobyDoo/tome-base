@@ -584,13 +584,11 @@ newEffect{
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("evasion", eff.chance)
 		eff.pid = self:addTemporaryValue("projectile_evasion", eff.chance)
-		eff.psid = self:addTemporaryValue("projectile_evasion_spread", eff.chance)		
 		eff.defid = self:addTemporaryValue("combat_def", eff.defense)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("evasion", eff.tmpid)
 		self:removeTemporaryValue("projectile_evasion", eff.pid)
-		self:removeTemporaryValue("projectile_evasion_spread", eff.psid)
 		self:removeTemporaryValue("combat_def", eff.defid)
 	end,
 }
@@ -3071,7 +3069,7 @@ newEffect{
 newEffect{
 	name = "MARKED_FOR_DEATH", image = "talents/marked_for_death.png",
 	desc = "Marked for Death",
-	long_desc = function(self, eff) return ("The target takes %d%% increased damage from all sources.  If this effect runs its full course, the target will take an additional %0.2f physical damage (%d%% of all damage taken since it was applied)."):format(eff.power, eff.dam, eff.perc*100) end,
+	long_desc = function(self, eff) return ("The target takes %d%% increased damage from all sources.  If this effect runs its full course, the target will take an additional %0.1f physical damage (increased by %d%% of all damage taken while this effect is active)."):format(eff.power, eff.dam, eff.perc*100) end,
 	type = "physical",
 	subtype = {  },
 	status = "detrimental",
@@ -3559,11 +3557,11 @@ newEffect{
 newEffect{
 	name = "FEINT", image = "talents/feint.png",
 	desc = "Feint",
-	long_desc = function(self, eff) return ("The target's chance to parry and amount of damage parried is increased by %d%%."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target gains 1 extra parry opportunity each turn, and its chance to fail each parry is reduced by %d%%."):format(eff.parry_efficiency*100) end,
 	type = "physical",
 	subtype = { tactical=true },
 	status = "beneficial",
-	parameters = { power=0.1 },
+	parameters = { power=0.1, parry_efficiency=0.1 },
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
