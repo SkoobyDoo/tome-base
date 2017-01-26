@@ -24,7 +24,7 @@ local Map = require "engine.Map"
 local function knives(self)
 	local combat = {
 		talented = "knife",
---		sound = {"actions/melee", pitch=0.6, vol=1.2}, sound_miss = {"actions/melee", pitch=0.6, vol=1.2},
+		sound = {"actions/knife_throw", vol=1}, sound_miss = {"actions/knife_throw", pitch=0.4, vol=1},
 
 		damrange = 1.4,
 		physspeed = 1,
@@ -72,7 +72,8 @@ local function throw(self, range, dam, x, y, dtype, special, fok)
 			local critstore = self.combat_critical_power or 0
 			self.combat_critical_power = nil
 			self.combat_critical_power = critstore + t2.getCritPower(self,t2)
-			local hit = self:attackTargetWith(target, t.getKnives(self, t), dtype, dam)
+			local combat = t.getKnives(self, t)
+			local hit = self:attackTargetWith(target, combat, dtype, dam)
 			self.combat_critical_power = nil
 			self.combat_critical_power = critstore
 			if hit then
@@ -80,6 +81,9 @@ local function throw(self, range, dam, x, y, dtype, special, fok)
 					self:callTalent(self.T_VENOMOUS_STRIKE, "applyVenomousEffects", target)
 				end
 			end
+
+			if combat.sound and hit then game:playSoundNear(self, combat.sound)
+			elseif combat.sound_miss then game:playSoundNear(self, combat.sound_miss) end
 		end
 	end)
 	if not fok then
