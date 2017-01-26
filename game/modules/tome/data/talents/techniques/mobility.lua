@@ -71,15 +71,13 @@ newTalent{
 		local block_check = function(_, bx, by)
 			return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self)
 		end
-		-- save allowed grids along line in case of end failure?
 		local linestep
 		local function check_dest(px, py)
 			local check = false
 			linestep = self:lineFOV(px, py, block_check, nil, tx, ty)
---table.set(game, "debug", "linestep", linestep) --linestep:reset()
 			local lx, ly, is_corner_blocked
 			repeat -- make sure line passes through talent user
-print("check_dest checking", px, py)
+			--print("check_dest checking", px, py)
 				lx, ly, is_corner_blocked = linestep:step()
 				if self.x == lx and self.y == ly then check = true break end
 			until is_corner_blocked or not lx or not ly or game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move", self)
@@ -104,11 +102,10 @@ print("check_dest checking", px, py)
 			local cone_angle = 180/math.pi*math.atan(1/(tgt_dist + 1)) + 5 --5° extra angle
 			local tg2 = {type="cone", cone_angle=cone_angle, source_actor=self, selffire=false, range=0, radius=move_dist, talent=t}
 			dx, dy = self.x - (tx - self.x), self.y - (ty - self.y) -- direction away from target
-game.log("#GREY# NPC %s Disengage from (%d, %d) towards (%d, %d) cone_angle=%s", self.name, tx, ty, dx, dy, cone_angle)
+			-- game.log("#GREY# NPC %s Disengage from (%d, %d) towards (%d, %d) cone_angle=%s", self.name, tx, ty, dx, dy, cone_angle)
 			local grids = {}
 			self:project(tg2, dx, dy, function(px, py, typ, self)
 				local act = game.level.map(px, py, Map.ACTOR)
---game.log("#GREY# NPC projecting on grid(%d, %d), act=%s", px, py, act and act.name)
 				if not game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move", self) and (not act or not self:canSee(act)) then
 					grids[#grids+1] = {px, py, dist=core.fov.distance(px, py, self.x, self.y) + rng.float(0, 0.1)}
 				end
@@ -124,9 +121,7 @@ game.log("#GREY# NPC %s Disengage from (%d, %d) towards (%d, %d) cone_angle=%s",
 		end
 
 		if not (dx and dy) or not game.level.map:isBound(dx, dy) or core.fov.distance(dx, dy, self.x, self.y) > move_dist then return end
---game.log("#GREY# %s Disengage Target Grid (%s, %s)", self.name, dx, dy)
 		local allowed = check_dest(dx, dy)
---game.log("#GREY# %s Disengage Target Grid (%d, %d) allowed:%s", self.name, dx, dy, allowed)
 		if not allowed then
 			game.logPlayer(self, "You must disengage directly away from your target in a straight line.")
 			return
@@ -139,12 +134,10 @@ game.log("#GREY# NPC %s Disengage from (%d, %d) towards (%d, %d) cone_angle=%s",
 			if lx and ly then
 				if game.level.map:checkEntity(lx, ly, Map.TERRAIN, "block_move", self) then break
 				elseif not game.level.map(lx, ly, Map.ACTOR) then
---game.log("#GREY#___Grid (%d, %d) unblocked", lx, ly)
 					ok_grids[#ok_grids+1]={lx, ly}
 				end
 			end
 		until is_corner_blocked or not lx or not ly
---table.print(ok_grids, "\tok_grids\t")
 
 		local act = game.level.map(dx, dy, Map.ACTOR)
 		-- abort for known obstacles
@@ -154,7 +147,6 @@ game.log("#GREY# NPC %s Disengage from (%d, %d) towards (%d, %d) cone_angle=%s",
 		else -- move to the furthest allowed grid
 			local dest_grid = ok_grids[#ok_grids]
 			if dest_grid then -- land short
---game.log("#GREY# %s best destination grid: (%d, %d)", self.name, dest_grid[1], dest_grid[2])
 				if dx ~= dest_grid[1] or dy ~= dest_grid[2] then
 					game.logPlayer(self, "Your Disengage was partially blocked.")
 				end
@@ -164,24 +156,12 @@ game.log("#GREY# NPC %s Disengage from (%d, %d) towards (%d, %d) cone_angle=%s",
 			end
 		end
 		
---if false then game.log("%s debugging abort", t.id) return true end --debugging
-
 		self:move(dx, dy, true)
 
 		game:onTickEnd(function()
 			self:setEffect(self.EFF_WILD_SPEED, 3, {power=t.getSpeed(self,t)})
 		end)
---[[		
-		-- perform a standard reload x times based on talent level
-		local reloads = t.getReloads(self, t)
-		local weapon, ammo, offweapon = self:hasArcheryWeapon()	
-		if weapon and ammo and not ammo.infinite then
-			for i = 1, reloads do self:reload() end
-		end
-		if self:knowTalent(self.T_THROWING_KNIVES) then
-			for i = 1, reloads do self:callTalent(self.T_THROWING_KNIVES, "callbackOnActBase") end
-		end
---]]
+
 		local weapon, ammo, offweapon = self:hasArcheryWeapon()	
 		if weapon and ammo and not ammo.infinite then self:reload() end
 		if self:knowTalent(self.T_THROWING_KNIVES) then self:callTalent(self.T_THROWING_KNIVES, "callbackOnMove", true, false, tx, ty) end
@@ -334,15 +314,6 @@ newTalent {
 				local reduce = t.getReduction(self, t)*(self:attr("never_move") and 0.5 or 1)
 				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #source#, partially avoiding it!", is_attk and "an attack" or "damage") end
 
---[[
--- debugging code
-	local p = self:isTalentActive(t.id)
-	p.damage_avoided = (p.damage_avoided or 0) + dam*reduce
-	p.stam_costs = (p.stam_costs or 0) + stam_cost
-print("projector state:", state) table.print(state)
-	game.log("     %s #ORANGE#Trained Reactions %s damage avoided = %0.1f(%0.1f stam) total = %0.1f dam(%0.1f stam)", self.name, type, dam*reduce, stam_cost, p.damage_avoided, p.stam_costs)
--- end debugging code
---]]
 				dam = dam*(1-reduce)
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
 				if not is_attk then self.turn_procs.gen_trained_reactions = true end
@@ -352,7 +323,6 @@ print("projector state:", state) table.print(state)
 	end,
 	activate = function(self, t)
 		local ret = {}
---		ret.life_trigger, ret.life_level = t.getLifeTrigger(self, t)
 		return ret
 	end,
 	deactivate = function(self, t, p)
