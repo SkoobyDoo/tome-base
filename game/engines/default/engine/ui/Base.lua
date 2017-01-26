@@ -283,7 +283,17 @@ function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 	f.w = math.floor(w)
 	f.h = math.floor(h)
 	if resizable then f.resize = resizeFrame end
+	return f
+end
 
+function _M:cloneFrameDO(of, resizable)
+	local f = {}
+	f.w, f.h = of.w, of.h
+	f.cx, f.cy = of.cx, of.cy
+	f.b7 = of.b7 f.b9 = of.b9 f.b1 = of.b1 f.b3 = of.b3 f.b8 = of.b8 f.b5 = of.b5 f.b4 = of.b4 f.b2 = of.b2 f.b6 = of.b6
+	f.container = core.renderer.container()
+	resizeFrame(f, f.w, f.h)
+	if resizable then f.resize = resizeFrame end
 	return f
 end
 

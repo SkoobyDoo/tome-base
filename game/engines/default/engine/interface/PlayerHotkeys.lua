@@ -19,6 +19,7 @@
 
 require "engine.class"
 local Dialog = require "engine.ui.Dialog"
+local HotkeysIcons = require "engine.HotkeysIcons"
 
 --- Handles player hotkey interface
 -- This provides methods to bind and manage hotkeys as well as using them<br/>
@@ -159,24 +160,9 @@ end
 -- This requires the ActorTalents interface to use talents and a method player:playerUseItem(o, item, inven) to use inventory objects
 function _M:activateHotkey(id)
 	if self.hotkey[id] then
-		self["hotkey"..self.hotkey[id][1]:capitalize()](self, self.hotkey[id][2])
+		HotkeysIcons:use(self.hotkey[id], self)
 	else
 		Dialog:simplePopup("Hotkey not defined", "You may define a hotkey by pressing 'm' and following the instructions there.")
-	end
-end
-
---- Activates a hotkey with a type "talent"
-function _M:hotkeyTalent(tid)
-	self:useTalent(tid)
-end
-
---- Activates a hotkey with a type "inventory"
-function _M:hotkeyInventory(name)
-	local o, item, inven = self:findInAllInventories(name)
-	if not o then
-		Dialog:simplePopup("Item not found", "You do not have any "..name..".")
-	else
-		self:playerUseItem(o, item, inven)
 	end
 end
 

@@ -62,6 +62,7 @@ local DamageType = require "engine.DamageType"
 local Faction = require "engine.Faction"
 local MapEffects = require "mod.class.MapEffects" -- This alters Map
 local Tiles = require "engine.Tiles"
+local HotkeysIcons = require "engine.HotkeysIcons"
 local InventoryUI = require "engine.ui.Inventory"
 local ActorStats = require "engine.interface.ActorStats"
 local ActorResource = require "engine.interface.ActorResource"
@@ -95,6 +96,7 @@ PlayerHotkeys.quickhotkeys_specifics = {
 	end,
 }
 
+HotkeysIcons:loadDefinition("/data/hotkeys/default.lua")
 
 -- Create some noise textures
 -- local n = core.noise.new(3)

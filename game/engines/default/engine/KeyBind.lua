@@ -135,10 +135,10 @@ function _M:bindKeys()
 	end
 end
 
-function _M:findBoundKeys(virtual)
+function _M:findBoundKeys(virtual, single)
 	local bs = {}
 	for ks, virt in pairs(self.binds) do
-		if virt[virtual] then bs[#bs+1] = ks end
+		if virt[virtual] then if single then return ks else bs[#bs+1] = ks end end
 	end
 	return unpack(bs)
 end

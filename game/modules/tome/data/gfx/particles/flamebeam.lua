@@ -33,7 +33,7 @@ return { generator = function()
 	local r = rng.range(1, ray.size - 32)
 
 	local ra = a + (rng.chance(2) and math.rad(-90) or math.rad(90))
-	local rr = rng.float(2, engine.Map.tile_w * 0.60)
+	local rr = rng.float(2, engine.Map.tile_w * 0.35)
 
 	local vel = rng.float(1.2, 6)
 
@@ -55,8 +55,8 @@ end, },
 function(self)
 	self.nb = (self.nb or 0) + 1
 	if self.nb < 6 then
-		self.ps:emit(9*tiles)
+		self.ps:emit(15*tiles)
 	end
 end,
-32*9*tiles,
+32*15*tiles,
 "particle_cloud"
