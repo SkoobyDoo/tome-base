@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ local ActorAI = require "engine.interface.ActorAI"
 local Faction = require "engine.Faction"
 local Emote = require("engine.Emote")
 local Chat = require "engine.Chat"
+local Particles = require "engine.Particles"
 require "mod.class.Actor"
 
 module(..., package.seeall, class.inherit(mod.class.Actor, engine.interface.ActorAI))
@@ -548,6 +549,18 @@ function _M:addedToLevel(level, x, y)
 		end
 		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
 			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})
+		end
+
+		if profile and profile.auth and profile.auth.login == "raderak" then
+			if self.rank <= 3 and self.name == "snow giant boulder thrower" then
+				local b = game.state:createRandomBoss(self, {level=self.level})
+				if b then
+					local uid = self.uid
+					self:replaceWith(b)
+					self.uid = uid
+					self.desc = self.desc.."\n#CRIMSON#Well Raderak, you wanted them buffed. I did... but ONLY FOR YOU ! :) *CACKLES EVILY*\n-- yours truly, DarkGod#LAST#"
+				end
+			end
 		end
 	end
 

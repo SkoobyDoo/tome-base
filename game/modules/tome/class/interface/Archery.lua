@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -375,6 +375,14 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] mace accuracy bonus", atk, def, "=", bonus)
 			dam = dam * bonus
 		end
+		
+		if self and dam > 0 and self.knowTalent and self:isTalentActive(self.T_AIM) and self.__CLASSNAME ~= "mod.class.Grid" then
+			local dist = math.max(0, core.fov.distance(self.x, self.y, target.x, target.y) - 3)
+			if dist > 0 then 
+				local dammult = self:callTalent(self.T_AIM, "getDamage") * dist 
+				dam = dam * (1 + (dammult/100))
+			end
+		end
 
 		-- hook to resolve after a hit is determined, before damage has been projected
 		local hd = {"Combat:archeryDamage", hitted=hitted, target=target, weapon=weapon, ammo=ammo, damtype=damtype, mult=1, dam=dam}
@@ -385,38 +393,44 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 		if crit then self:logCombat(target, "#{bold}##Source# performs a ranged critical strike against #Target#!#{normal}#") end
 
-		-- Damage conversion?
-		-- Reduces base damage but converts it into another damage type
-		local conv_dam
-		local conv_damtype
-		if ammo and ammo.convert_damage then
-			for typ, conv in pairs(ammo.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
-				end
-			end
-		end
-
-		if weapon and weapon.convert_damage then
-			for typ, conv in pairs(weapon.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
-				end
-			end
-		end
-
 		if tg.archery.crushing_blow then self:attr("crushing_blow", 1) end
-		DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam), tmp)
+
+		-- Damage conversion?
+		-- Convert base damage to other damage types according to weapon and ammo
+		local ammo_conversion, weapon_conversion = 0, 0
+		if dam > 0 then
+			local conv_dam
+			local archery_state = {is_archery=true}
+			if tmp then table.merge(archery_state, tmp) end
+			if ammo and ammo.convert_damage then -- convert to ammo damage types first
+				for typ, conv in pairs(ammo.convert_damage) do
+					conv_dam = math.min(dam, dam * (conv / 100))
+					print("[ATTACK ARCHERY]\tAmmo DamageType conversion%", conv, typ, conv_dam)
+					ammo_conversion = ammo_conversion + conv_dam
+					if conv_dam > 0 then
+						DamageType:get(typ).projector(self, target.x, target.y, typ, conv_dam, archery_state)
+					end
+				end
+				dam = dam - ammo_conversion
+				print("[ATTACK ARCHERY]\t after Ammo DamageType conversion dam:", dam)
+			end
+			if weapon and weapon.convert_damage and dam > 0 then -- convert remaining damage to weapon damage types
+				for typ, conv in pairs(weapon.convert_damage) do
+					conv_dam = math.min(dam, dam * (conv / 100))
+					print("[ATTACK ARCHERY]\tWeapon DamageType conversion%", conv, typ, conv_dam)
+					weapon_conversion = weapon_conversion + conv_dam
+					if conv_dam > 0 then
+						DamageType:get(typ).projector(self, target.x, target.y, typ, conv_dam, archery_state)
+					end
+				end
+				dam = dam - weapon_conversion
+				print("[ATTACK ARCHERY]\t after Weapon DamageType conversion dam:", dam)
+			end
+
+			if dam > 0 then
+				DamageType:get(damtype).projector(self, target.x, target.y, damtype, dam, archery_state)
+			end
+		end
 		if tg.archery.crushing_blow then self:attr("crushing_blow", -1) end
 
 		if not tg.no_archery_particle then game.level.map:particleEmitter(target.x, target.y, 1, "archery") end
@@ -424,7 +438,9 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 		if talent.archery_onhit then talent.archery_onhit(self, talent, target, target.x, target.y) end
 
-		target:fireTalentCheck("callbackOnArcheryHit", self)
+		-- add damage conversion back in so the total damage still gets passed
+		dam = dam + ammo_conversion + weapon_conversion
+		target:fireTalentCheck("callbackOnArcheryHit", self, dam)
 	else
 		self:logCombat(target, "#Source# misses #target#.")
 
@@ -662,7 +678,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 	tg.talent = tg.talent or talent
 	
 	-- Pass friendly actors
-	if self:attr("archery_pass_friendly") then
+	if self:attr("archery_pass_friendly") or self:knowTalent(self.T_SHOOT_DOWN) then
 		tg.friendlyfire=false	
 		tg.friendlyblock=false
 	end

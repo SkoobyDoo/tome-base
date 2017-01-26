@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -132,6 +132,9 @@ function applyDarkEmpathy(self, m)
 		local perc = t.getPerc(self, t)
 		for k, e in pairs(self.resists) do
 			m.resists[k] = (m.resists[k] or 0) + e * perc / 100
+		end
+		for k, e in pairs(self.resists_cap) do
+			m.resists_cap[k] = e
 		end
 		m.combat_physresist = m.combat_physresist + self:combatPhysicalResist() * perc / 100
 		m.combat_spellresist = m.combat_spellresist + self:combatSpellResist() * perc / 100

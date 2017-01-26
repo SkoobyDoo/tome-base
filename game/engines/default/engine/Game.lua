@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -337,6 +337,7 @@ function _M:onTickEnd(f, name)
 	end
 
 	self.on_tick_end[#self.on_tick_end+1] = f
+	core.game.requestNextTick()
 end
 
 --- Returns a registered function to do on tick end by name

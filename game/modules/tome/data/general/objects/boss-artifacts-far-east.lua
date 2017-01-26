@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -326,7 +326,7 @@ newEntity{ base = "BASE_LONGBOW",
 	power_source = {arcane=true},
 	define_as = "STORM_FURY",
 	name = "Storm Fury", unique=true,
-	unided_name = "crackling longbow", color=colors.BLUE,
+	unided_name = "crackling longbow", color=colors.BLUE, image = "object/artifact/storm_fury.png",
 	desc = [[This dragonbone longbow is enhanced with bands of steel, which arc with intense lightning. Bolts travel up and down the string, ignorant of you.]],
 	require = { stat = { dex=30, mag=30 }, },
 	level_range = {40, 50},

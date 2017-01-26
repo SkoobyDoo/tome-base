@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -875,7 +875,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	require = { stat = { str=25 }, },
 	level_range = {1, 10},
 	material_level = 1,
-	moddable_tile = "special/treetrunk",
+	moddable_tile = "special/%s_treetrunk",
 	moddable_tile_big = true,
 
 	rarity = 200,

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ newTalent{
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
 		if x then
-			local m = require("mod.class.NPC").new(self:clone{
+			local m = require("mod.class.NPC").new(self:cloneFull{
 				shader = "shadow_simulacrum", shader_args = {time_factor=1000, base=0.5, color={0.6, 0.3, 0.6}},
 				no_drops = true,
 				faction = self.faction,
@@ -151,7 +151,7 @@ newTalent{
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
 		if x then
-			local m = require("mod.class.NPC").new(self:clone{
+			local m = require("mod.class.NPC").new(self:cloneFull{
 				shader = "shadow_simulacrum", shader_args = {time_factor=-8000, base=0.5, color={0.6, 0.4, 0.3}},
 				no_drops = true,
 				faction = self.faction,

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,14 +81,37 @@ newTalent{
 		if ef.counterattacks <=0 then self:removeEffect(self.EFF_COUNTER_ATTACKING) end
 		return damage
 	end,
+	do_counter = function(self, target, t)
+
+		local grappled = target:isGrappled(self)
+		local hit = self:attackTarget(target, nil, t.getDamage(self,t), true)
+		
+		if not hit then return end
+		
+		if self:isUnarmed() then
+			-- if grappled stun
+			if grappled and target:canBe("stun") then
+				target:setEffect(target.EFF_STUNNED, 2, {apply_power=self:combatAttack(), min_dur=1})
+				self:logCombat(target, "#Source# slams #Target# into the ground!")
+			-- if not grappled daze
+			else
+				self:logCombat(target, "#Source# throws #Target# to the ground!")
+				-- see if the throw dazes the enemy
+				if target:canBe("stun") then
+					target:setEffect(target.EFF_DAZED, 2, {apply_power=self:combatAttack(), min_dur=1})
+				end
+			end
+		else
+			game.logSeen(self, "%s counters the attack!", target.name:capitalize())
+		end
+	end,
 	on_unlearn = function(self, t)
 		self:removeEffect(self.EFF_COUNTER_ATTACKING)
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t) * 100
-		return ([[When you avoid a melee blow from an adjacent foe, you have a %d%% chance to get a free, automatic attack against the attacker for %d%% damage, up to %0.1f times per turn.
-		Unarmed fighters using it do consider it a strike for the purpose of stance damage bonuses (if they have any), and will have a damage bonus as a result.
-		Armed fighters get a normal physical attack.
+		return ([[When you avoid a melee blow from an adjacent foe, you have a %d%% chance to get a free, automatic melee attack against the attacker for %d%% damage, up to %0.1f times per turn.
+		Unarmed fighters using it will also attempt to throw the target to the ground if the attack lands, dazing them for 2 turns or stunning them for 2 turns if the target is grappled.
 		The chance of countering and number of counter attacks increase with your Cunning.]]):format(t.counterchance(self,t), damage,  t.getCounterAttacks(self, t))
 	end,
 }

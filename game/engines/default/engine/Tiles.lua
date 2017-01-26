@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 	local dochar = char
 	local fgidx = 65536 * fr + 256 * fg + fb
 	local bgidx
-	if br >= 0 and bg >= 0 and bb >= 0 then
+	if br and bg and bb and br >= 0 and bg >= 0 and bb >= 0 then
 		bgidx = 65536 * br + 256 * bg + bb
 	else
 		bgidx = "none"

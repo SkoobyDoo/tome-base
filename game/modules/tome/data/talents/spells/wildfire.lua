@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -118,7 +118,7 @@ newTalent{
 	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { BUFF = 2 },
-	getFireDamageIncrease = function(self, t) return self:getTalentLevelRaw(t) * 2 end,
+	getFireDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
 	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 17, 50) end, --Limit < 100%
 	getResistSelf = function(self, t) return math.min(100, self:getTalentLevel(t) * 14) end,
 	activate = function(self, t)
@@ -149,7 +149,7 @@ newTalent{
 		local damageinc = t.getFireDamageIncrease(self, t)
 		local ressistpen = t.getResistPenalty(self, t)
 		local selfres = t.getResistSelf(self, t)
-		return ([[Surround yourself with Wildfire, increasing all your fire damage by %d%%, ignoring %d%% fire resistance of your targets and reducing self-inflicted fire damage by %d%%.]])
+		return ([[Surround yourself with Wildfire, increasing all your fire damage by %0.1f%%, ignoring %d%% fire resistance of your targets and reducing self-inflicted fire damage by %d%%.]])
 		:format(damageinc, ressistpen, selfres)
 	end,
 }

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -554,6 +554,19 @@ function _M:playerFOV()
 			cache and map._fovcache["block_sight"]
 		)
 	end
+
+	core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 10,
+		function(d, x, y)end, -- block
+		function(d, x, y) -- apply
+			local act = game.level.map(x, y, game.level.map.ACTOR)
+			if act then
+			local eff = act:hasEffect(act.EFF_MARKED)
+				if eff and eff.src==self then
+					game.level.map.seens(x, y, 0.6)
+				end
+			end
+		end,
+	nil)
 
 	-- Handle Preternatural Senses talent, a simple FOV, using cache.
 	if self:knowTalent(self.T_PRETERNATURAL_SENSES) then

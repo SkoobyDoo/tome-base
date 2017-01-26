@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -97,21 +97,32 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		local rsrc = src.resolveSource and src:resolveSource() or src
 		local rtarget = target.resolveSource and target:resolveSource() or target
 
-		print("[PROJECTOR] starting dam", dam)
+		print("[PROJECTOR] starting dam", type, dam)
 
 		local ignore_direct_crits = target:attr 'ignore_direct_crits'
-		if crit_power > 1 and ignore_direct_crits and rng.percent(ignore_direct_crits) then
+		if crit_power > 1 and ignore_direct_crits and rng.percent(ignore_direct_crits) then -- reverse crit damage
 			dam = dam / crit_power
 			crit_power = 1
 			print("[PROJECTOR] crit power reduce dam", dam)
 			game.logSeen(target, "%s shrugs off the critical damage!", target.name:capitalize())
-		elseif src.turn_procs and crit_power > 1 and src.turn_procs.shadowstrike_crit and src.x then
-			local d = core.fov.distance(src.x, src.y, x, y)
-			if d > 3 then
-				local reduc = math.scale(d, 3, 10, 0, 1)
-				dam = dam * (crit_power - reduc * src.turn_procs.shadowstrike_crit) / crit_power
-				print("[PROJECTOR] shadowstrike crit power reduce dam on range", dam, d, reduc, "::", crit_power, "=>", crit_power - reduc * src.turn_procs.shadowstrike_crit)
-				crit_power = crit_power - reduc * src.turn_procs.shadowstrike_crit
+		end
+		if crit_power > 1 then
+			-- Add crit bonus power for being unseen (direct damage only, diminished with range)
+			local unseen_crit = src.__is_actor and target.__is_actor and not src.__project_source and src.unseen_critical_power
+			if unseen_crit and not target:canSee(src) and src:canSee(target) then
+				local d, reduc = core.fov.distance(src.x, src.y, x, y), 0
+				if d > 3 then
+					reduc = math.scale(d, 3, 10, 0, 1)
+					unseen_crit = math.max(0, unseen_crit*(1 - reduc))
+				end
+				if unseen_crit > 0 then
+					if target.unseen_crit_defense and target.unseen_crit_defense > 0 then
+						unseen_crit = math.max(0, unseen_crit*(1 - target.unseen_crit_defense))
+					end
+					dam = dam * (crit_power + unseen_crit)/crit_power
+					crit_power = crit_power + unseen_crit
+					print("[PROJECTOR] after unseen_critical_power type/dam/range/power", type, dam, d, unseen_crit, "::", crit_power - unseen_crit, "=>", crit_power)
+				end
 			end
 		end
 
@@ -188,6 +199,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			if src.combatGetDamageIncrease then inc = src:combatGetDamageIncrease(type)
 			else inc = (src.inc_damage.all or 0) + (src.inc_damage[type] or 0) end
 			if src.getVim and src:attr("demonblood_dam") then inc = inc + ((src.demonblood_dam or 0) * (src:getVim() or 0)) end
+			if inc ~= 0 then print("[PROJECTOR] after DamageType increase dam", dam + (dam * inc / 100)) end
 		end
 
 		-- Increases damage for the entity type (Demon, Undead, etc)
@@ -239,7 +251,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 		end
 
-		if dam > 0 and src and src.__is_actor and src:knowTalent(src.T_BACKSTAB) and src.__CLASSNAME ~= "mod.class.Grid" then
+		if dam > 0 and src and src.__is_actor and src:knowTalent(src.T_BACKSTAB) then
 			local power = src:callTalent("T_BACKSTAB", "getDamageBoost")
 			local nb = 0
 			for eff_id, p in pairs(target.tmp) do
@@ -311,8 +323,9 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 			local dominated = target:hasEffect(target.EFF_DOMINATED)
 			if dominated and dominated.src == src then pen = pen + (dominated.resistPenetration or 0) end
-			local exposed = target:hasEffect(target.EFF_EXPOSE_WEAKNESS)
-			if exposed then pen = pen + 50 end
+			-- Expose Weakness
+			local exposed = (state.is_melee or state.is_archery) and src.__is_actor and src:hasEffect(src.EFF_EXPOSE_WEAKNESS)
+			if exposed and exposed.target == target then pen = pen + exposed.bonus_pen print("[PROJECTOR] expose weakness pen", exposed.bonus_pen) end
 			if target:attr("sleep") and src.attr and src:attr("night_terror") then pen = pen + src:attr("night_terror") end
 			local res = target:combatGetResist(type)
 			pen = util.bound(pen, 0, 100)
@@ -368,7 +381,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		if dam > 0 and target.isTalentActive and target:isTalentActive(target.T_ANTIMAGIC_SHIELD) then
 			local t = target:getTalentFromId(target.T_ANTIMAGIC_SHIELD)
 			lastdam = dam
-			dam = t.on_damage(target, t, type, dam)
+			dam = t.on_damage(target, t, type, dam, src)
 			if lastdam - dam  > 0 then game:delayedLogDamage(src, target, 0, ("%s(%d antimagic)#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", lastdam - dam), false) end
 		end
 
@@ -1762,11 +1775,11 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
-		if _G.type(dam) == "number" then dam = {dam=dam, dur=3} end
+		if _G.type(dam) == "number" then dam = {dam=dam, dur=3, heal_factor=dam.fail} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / dam.dur, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:canBe("poison") then
-			target:setEffect(target.EFF_CRIPPLING_POISON, dam.dur, {src=src, power=dam.dam / dam.dur, no_ct_effect=true})
+			target:setEffect(target.EFF_CRIPPLING_POISON, dam.dur, {src=src, power=dam.dam / dam.dur, fail=dam.fail or 0, no_ct_effect=true})
 		end
 	end,
 }
@@ -2559,7 +2572,7 @@ newDamageType{
 	end,
 }
 
--- Used by Bathe in Light, healing+shielding
+-- Used by Bathe in Light, healing
 -- Keep an eye on this and Weapon of Light for any infinite stack shield then engage combos
 newDamageType{
 	name = "healing light", type = "HEALING_POWER",
@@ -3861,7 +3874,7 @@ newDamageType{
 			chance = rng.range(1, 2)
 		else chance = 1
 		end
-		if target and target:canBe("poison") then
+		if target and (target:canBe("poison") or rng.percent(dam.penetration)) then
 			if chance == 1 then
 				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 2 then
@@ -3979,6 +3992,78 @@ newDamageType{
 					target:setEffect(target.EFF_SILENCED, 2, {apply_power=src:combatAttack(), no_ct_effect=true})
 				end
 			end
+		end
+	end,
+}
+
+newDamageType{
+	name = "flare", type = "FLARE",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local g = game.level.map(x, y, Map.TERRAIN+1)
+		if g and g.unlit then
+			if g.unlit <= 1 then game.level.map:remove(x, y, Map.TERRAIN+1)
+			else g.unlit = g.unlit - 1 return end -- Lite wears down darkness
+		end
+		game.level.map.lites(x, y, true)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_BLINDED, math.ceil(dam), {apply_power=src:combatAttack()})
+			else
+				game.logSeen(target, "%s resists the blinding flare!", target.name:capitalize())
+			end
+			target:setEffect(target.EFF_MARKED, 2, {src=src})
+		end
+	end,
+}
+
+newDamageType{
+	name = "flare light", type = "FLARE_LIGHT",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local g = game.level.map(x, y, Map.TERRAIN+1)
+		if g and g.unlit then
+			if g.unlit <= 1 then game.level.map:remove(x, y, Map.TERRAIN+1)
+			else g.unlit = g.unlit - 1 return end -- Lite wears down darkness
+		end
+		game.level.map.lites(x, y, true)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			target:setEffect(target.EFF_FLARE, 2, {src=src, power=dam})
+		end
+	end,
+}
+
+newDamageType{
+	name = "incendiary smoke", type = "INCENDIARY_SMOKE",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			if target:canBe("blind") then
+				target:setEffect(target.EFF_INCENDIARY_SMOKE, dam.dur, {sight=dam.dam, resist=dam.fire, apply_power=src:combatAttack()})
+			else
+				game.logSeen(target, "%s resists!", target.name:capitalize())
+			end
+		end
+	end,
+}
+
+
+newDamageType{
+	name = "fire sunder", type = "FIRE_SUNDER",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		if _G.type(dam) == "number" then dam = {dam=dam, power=10} end
+		DamageType:get(DamageType.FIRE).projector(src, x, y, DamageType.FIRE, dam.dam, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			target:setEffect(target.EFF_SUNDER_ARMOUR, dam.dur, {src=dam.self, power=dam.power})
 		end
 	end,
 }

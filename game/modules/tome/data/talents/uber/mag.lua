@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -182,7 +182,6 @@ uberTalent{
 			local tl = who:getTalentLevelRaw(who.T_EMPATHIC_HEX)
 			tl = tlevel-tl
 			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end
-			who:incVim(who:getMaxVim())
 		elseif who.type == "thought-form" then
 			who:learnTalent(who.T_FLAME_OF_URH_ROK,true,tlevel)
 		elseif who.subtype == "yeek" then
@@ -197,6 +196,7 @@ uberTalent{
 --			print("Error: attempting to apply talent Blighted Summoning to incorrect creature type")
 			return false
 		end
+		who:incVim(who:getMaxVim())
 		return true
 	end,
 	info = function(self, t)

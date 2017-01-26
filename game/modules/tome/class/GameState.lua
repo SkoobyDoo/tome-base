@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1913,7 +1913,7 @@ end
 -- 	@param data.class_filter = function(cdata, b) that must return true for any class picked.
 --		(cdata, b = subclass definition in engine.Birther.birth_descriptor_def.subclass, boss (before classes are applied))
 --	@param data.no_class_restrictions set true to skip class compatibility checks <nil>
---	@param data.add_trees = {["talent tree name 1"]=true, ["talent tree name 2"]=true, ..} additional talent trees to learn
+--	@param data.add_trees = {["talent tree name 1"]=true/mastery bonus, ["talent tree name 2"]=true/mastery bonus, ..} additional talent trees to learn
 --	@param data.check_talents_level set true to enforce talent level restrictions <nil>
 --	@param data.auto_sustain set true to activate sustained talents at birth <nil>
 --	@param data.forbid_equip set true for no equipment <nil>
@@ -1960,12 +1960,22 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 			end
 		end
 
-		-- Add talent categories
+		-- Class talent categories
 		for tt, d in pairs(mclass.talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 		for tt, d in pairs(mclass.unlockable_talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 		for tt, d in pairs(class.talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 		for tt, d in pairs(class.unlockable_talents_types or {}) do b:learnTalentType(tt, true) b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d[2]) end
 
+		-- Non-class talent categories
+		if data.add_trees then
+			for tt, d in pairs(data.add_trees) do
+				if not b:knowTalentType(tt) then
+					if type(d) ~= "number" then d = rng.range(1, 3)*0.1 end
+					b:learnTalentType(tt, true)
+					b:setTalentTypeMastery(tt, (b:getTalentTypeMastery(tt) or 1) + d)
+				end
+			end
+		end
 		-- Add starting equipment
 		local apply_resolvers = function(k, resolver)
 			if type(resolver) == "table" and resolver.__resolver then
@@ -2013,11 +2023,10 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 		for tt, d in pairs(b.talents_types) do
 			known_types[tt] = b:numberKnownTalent(tt)
 		end
-		
+
 		local list = {}
 		for _, t in pairs(b.talents_def) do
-		
-			if (b.talents_types[t.type[1]] or (data.add_trees and data.add_trees[t.type[1]])) then
+			if b.talents_types[t.type[1]] then
 				if t.no_npc_use or t.not_on_random_boss then
 					known_types[t.type[1]] = known_types[t.type[1]] + 1 -- allows higher tier talents to be learnt
 				else
@@ -2491,19 +2500,19 @@ end
 
 function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_name)
 	self.id_challenge = self.id_challenge or {count=0, level_entering_id=game:getPlayer(true).level, quests={}, rewarded={}}
-	-- challenges become more rare with depth (lev 3+ :: between 20% and 70% chance, 65%@3, 45%@30, 35%@75)
-	if lev < 3 or rng.percent(30 + 50*lev/(lev + 30)) then return end
+	-- challenges become less rare with depth
+	if lev < 3 or not rng.percent(20 + math.ceil(math.log(lev*lev) * 4.5)) then return end
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
 		{ id = "exterminator", rarity = 1 },
-		{ id = "pacifist", rarity = 3 },
-		{ id = "fast-exit", rarity = 3, min_lev = 8 },
-		{ id = "near-sighted", rarity = 4, min_lev = 4 },
-		{ id = "mirror-match", rarity = 6, min_lev = 5 },
-		{ id = "multiplicity", rarity = 8, min_lev = 10 },
-		{ id = "dream-horror", rarity = 10, min_lev = 15 },
-		{ id = "headhunter", rarity = 12, min_lev = 12 },
+		{ id = "pacifist", rarity = 2 },
+		{ id = "fast-exit", rarity = 2, min_lev = 8 },
+		{ id = "near-sighted", rarity = 3, min_lev = 4 },
+		{ id = "mirror-match", rarity = 4, min_lev = 5 },
+		{ id = "multiplicity", rarity = 6, min_lev = 10 },
+		{ id = "dream-horror", rarity = 8, min_lev = 15 },
+		{ id = "headhunter", rarity = 10, min_lev = 12 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
@@ -2534,11 +2543,11 @@ function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
 		on_status_change = function(self, who, status, sub)
 			if self:isCompleted() then
 				who:setQuestStatus(self.id, engine.Quest.DONE)
-				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
 				self:check("on_challenge_success", who)
-			elseif self:isFailed() then
 				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
+			elseif self:isFailed() then
 				self:check("on_challenge_failed", who)
+				game:getPlayer(true):removeEffect(who.EFF_ZONE_AURA_CHALLENGE, true, true)
 			end
 		end,
 		on_exit_level = function(self, who)
@@ -2548,6 +2557,8 @@ function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
 			end
 		end,
 		on_challenge_success = function(self, who)
+			if self.rewarded then return end
+			self.rewarded = true
 			self.reward_desc = game.state:infiniteDungeonChallengeReward(self, who)
 		end,
 		popup_text = {},

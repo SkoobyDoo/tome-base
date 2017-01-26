@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -773,8 +773,23 @@ function _M:onLevelLoadRun()
 	self.on_level_load_fcts[self.zone.short_name.."-"..self.level.level] = nil
 end
 
+function _M:noStairsTime()
+	local nb = 3
+	if game.difficulty == game.DIFFICULTY_EASY then nb = 0
+	elseif game.difficulty == game.DIFFICULTY_NIGHTMARE then nb = 5
+	elseif game.difficulty == game.DIFFICULTY_INSANE then nb = 7
+	elseif game.difficulty == game.DIFFICULTY_MADNESS then nb = 10
+	end
+	return nb * 10
+end
+
 function _M:changeLevel(lev, zone, params)
 	params = params or {}
+	if self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime() then
+		local left = math.ceil((10 + self:getPlayer(true).last_kill_turn - self.turn + self:noStairsTime()) / 10)
+		self.logPlayer(self.player, "#LIGHT_RED#You may not change level so soon after a kill (%d game turns left to wait)!", left)
+		return
+	end
 	if not self.player.can_change_level then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level without your own body!")
 		return
@@ -1819,19 +1834,6 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			for _, ip in ipairs{
-				{"armor", "head"},
-			} do
-				for tier = 1, 5 do
-					local special = function(e) return e.material_level == tier and (not ip[3] or ip[3](e)) end
-					local o = game.zone:makeEntity(game.level, "object", {ignore_material_restriction=true, type=ip[1], subtype=ip[2], special=special, not_properties={"unique"}, ego_filter={ego_chance=100}}, nil, true)
-					if o then
-						o:identify(true)
-						game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y)
-					end
-				end
-			end
-do return end
 			self:changeLevel(game.level.level + 1)
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
@@ -2647,6 +2649,7 @@ unlocks_list = {
 	wilder_wyrmic = "Class: Wyrmic",
 	wilder_summoner = "Class: Summoner",
 	wilder_oozemancer = "Class: Oozemancer",
+	wilder_stone_warden = "Class: Stone Warden",
 
 	corrupter_reaver = "Class: Reaver",
 	corrupter_corruptor = "Class: Corruptor",

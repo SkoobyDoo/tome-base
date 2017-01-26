@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,6 +55,24 @@ function _M:getRequirementDesc(who)
 		if self.require.talent then for i, tr in ipairs(self.require.talent) do
 			if tr[1] == who.T_ARMOUR_TRAINING then
 				self.require.talent[i] = {who.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
+				break
+			end
+		end end
+
+		local desc = base_getRequirementDesc(self, who)
+
+		self.require = oldreq
+
+		return desc
+	elseif self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_AGILE_DEFENSE) then
+		local oldreq = rawget(self, "require")
+		self.require = table.clone(oldreq, true)
+		if self.require.stat and self.require.stat.str then
+			self.require.stat.dex, self.require.stat.str = self.require.stat.str, nil
+		end
+		if self.require.talent then for i, tr in ipairs(self.require.talent) do
+			if tr[1] == who.T_ARMOUR_TRAINING then
+				self.require.talent[i] = {who.T_AGILE_DEFENSE, 1}
 				break
 			end
 		end end
@@ -328,12 +346,12 @@ function _M:use(who, typ, inven, item)
 			end
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not ret.nobreakStepUp then who:breakStepUp() end
-			if not ret.nobreakStealth then who:breakStealth() end
 			if not ret.nobreakLightningSpeed then who:breakLightningSpeed() end
 			if not ret.nobreakReloading then who:breakReloading() end
 			if not ret.nobreakSpacetimeTuning then who:breakSpacetimeTuning() end
 			if not (self.use_no_energy or ret.no_energy) then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
+				if not ret.nobreakStealth then who:breakStealth() end
 			end
 		end
 		return ret
@@ -513,6 +531,10 @@ function _M:getName(t)
 		name = name .. self.add_name:gsub("#([^#]+)#", function(attr)
 			return self:descAttribute(attr)
 		end)
+	end
+
+	if not t.no_add_name and self.tinker then
+		name = name .. ' #{italic}#<' .. self.tinker:getName(t) .. '>#{normal}#'
 	end
 
 	if not t.no_add_name and self.__tagged then
@@ -1124,7 +1146,13 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		compare_fields(combat, compare_with, field, "lifesteal", "%+d%%", "Lifesteal (this weapon only): ", 1, false, false, add_table)
 		
+		local attack_recurse_procs_reduce_compare = function(orig, compare_with)
+			orig = 100 - 100 / orig
+			if compare_with then return ("%+d%%"):format(-(orig - (100 - 100 / compare_with)))
+			else return ("%d%%"):format(-orig) end
+		end
 		compare_fields(combat, compare_with, field, "attack_recurse", "%+d", "Multiple attacks: ", 1, false, false, add_table)
+		compare_fields(combat, compare_with, field, "attack_recurse_procs_reduce", attack_recurse_procs_reduce_compare, "Multiple attacks procs power reduction: ", 1, true, false, add_table)
 
 		if combat.tg_type and combat.tg_type == "beam" then
 			desc:add({"color","YELLOW"}, ("Shots beam through all targets."), {"color","LAST"}, true)

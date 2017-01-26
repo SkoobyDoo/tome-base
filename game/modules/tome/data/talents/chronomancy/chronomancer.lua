@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -239,7 +239,7 @@ doWardenWeaponSwap = function(self, t, type, silent)
 	
 	if type == "blade" then
 		mainhand, offhand = self:hasDualWeapon()
-		if not mainhand and self:hasDualWeapon(nil, true) then  -- weird but this is lets ogers offhanding daggers still swap
+		if not mainhand and self:hasDualWeapon(nil, nil, true) then  -- weird but this is lets ogers offhanding daggers still swap
 		
 			swap = true
 		end

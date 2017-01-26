@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -234,6 +234,8 @@ newBirthDescriptor{
 newBirthDescriptor{
 	type = "subclass",
 	name = "Stone Warden",
+	locked = function() return profile.mod.allow_build.wilder_stone_warden end,
+	locked_desc = "The Spellblaze's scars may be starting to heal,\nbut little can change how the partisans feel.\nNature and arcane could bridge their divide -\nand when it comes down to it, gold won't take sides...",
 	desc = {
 		"Stone Wardens are dwarves trained in both the eldritch arts and the worship of nature.",
 		"While other races are stuck in their belief that arcane forces and natural forces are meant to oppose, dwarves have found a way to combine them in harmony.",

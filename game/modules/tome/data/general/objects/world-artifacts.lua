@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1370,7 +1370,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "crude iron battle axe",
 	name = "Crude Iron Battle Axe of Kroll", color = colors.GREY, image = "object/artifact/crude_iron_battleaxe_of_kroll.png",
-	moddable_tile = "special/crude_iron_battleaxe_of_kroll",
+	moddable_tile = "special/%s_crude_iron_battleaxe_of_kroll",
 	moddable_tile_big = true,
 	desc = [[Made in times before the Dwarves learned beautiful craftsmanship, the rough appearance of this axe belies its great power. Only Dwarves may harness its true strength, however.]],
 	require = { stat = { str=50 }, },
@@ -5529,7 +5529,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "gore stained battleaxe",
 	name = "Eksatin's Ultimatum", color = colors.GREY, image = "object/artifact/eskatins_ultimatum.png",
-	moddable_tile = "special/eskatins_ultimatum",
+	moddable_tile = "special/%s_eskatins_ultimatum",
 	moddable_tile_big = true,
 	desc = [[This gore-stained battleaxe was once used by an infamously sadistic king, who took the time to personally perform each and every execution he ordered. He kept a vault of every head he ever removed, each and every one of them carefully preserved. When he was overthrown, his own head was added as the centrepiece of the vault, which was maintained as a testament to his cruelty.]],
 	require = { stat = { str=50 }, },
@@ -6802,7 +6802,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	color = colors.BLUE,
 	name = "Tirakai's Maul", image = "object/artifact/tirakais_maul.png",
 	desc = [[This massive hammer is formed from a thick mass of strange crystalline growths. In the side of the hammer itself you see an empty slot; it looks like a gem of your own could easily fit inside it.]],
-	moddable_tile = "special/tirakais_maul", moddable_tile_big = true,
+	moddable_tile = "special/%s_tirakais_maul", moddable_tile_big = true,
 	gemDesc = "None", -- Defined by the elemental properties and used by special_desc
 	special_desc = function(self)
 		-- You'll want to color this and such

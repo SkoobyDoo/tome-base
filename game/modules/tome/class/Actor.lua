@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -66,6 +66,13 @@ _M._no_save_fields.can_see_cache = true
 
 -- Activate fast regen computing
 _M._no_save_fields.regenResourcesFast = true
+
+-- Dont store resting or running
+_M._no_save_fields.running = true
+_M._no_save_fields.resting = true
+
+-- No need to save __project_source either, it's a turn by turn thing
+_M._no_save_fields.__project_source = true
 
 -- Use distance maps
 _M.__do_distance_map = true
@@ -1162,6 +1169,14 @@ function _M:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
 	end
 end
 
+local boss_rank_circles = {
+	[3.2] = { back="npc/boss_indicators/rare_circle_back.png", front="npc/boss_indicators/rare_circle_front.png" },
+	[3.5] = { back="npc/boss_indicators/unique_circle_back.png", front="npc/boss_indicators/unique_circle_front.png" },
+	[4]   = { back="npc/boss_indicators/boss_circle_back.png", front="npc/boss_indicators/boss_circle_front.png" },
+	[5]   = { back="npc/boss_indicators/elite_boss_circle_back.png", front="npc/boss_indicators/elite_boss_circle_front.png" },
+	[10]   = { back="npc/boss_indicators/god_circle_back.png", front="npc/boss_indicators/god_circle_front.png" },
+}
+
 --- Attach or remove a display callback
 -- Defines particles to display
 function _M:defineDisplayCallback()
@@ -1216,6 +1231,12 @@ function _M:defineDisplayCallback()
 			else self:removeParticles(e)
 			end
 		end
+
+		if boss_rank_circles[self.rank or 1] then
+			local b = boss_rank_circles[self.rank]
+			if not b.ifront then b.ifront = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.front) end
+			b.ifront:toScreen(x, y + h - w * (0.616 - 0.5), w, w / 2)
+		end
 	end
 
 	local function backparticles(x, y, w, h, zoom, on_map)
@@ -1231,6 +1252,12 @@ function _M:defineDisplayCallback()
 			if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
 			else self:removeParticles(e)
 			end
+		end
+
+		if boss_rank_circles[self.rank or 1] then
+			local b = boss_rank_circles[self.rank]
+			if not b.iback then b.iback = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.back) end
+			b.iback:toScreen(x, y + h - w * 0.616, w, w / 2)
 		end
 	end
 
@@ -1324,15 +1351,17 @@ function _M:move(x, y, force)
 	self.did_energy = nil
 
 	-- Try to detect traps
-	if not force and self:knowTalent(self.T_HEIGHTENED_SENSES) then
-		local power = self:callTalent(self.T_HEIGHTENED_SENSES,"trapPower")
-		local grids = core.fov.circle_grids(self.x, self.y, 1, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(yy) do
-			local trap = game.level.map(x, y, Map.TRAP)
-			if trap then self:detectTrap(trap, x, y, power) end
-		end end
+	if not force then
+		local t_det = self:attr("see_traps")
+		if t_det then
+			local grids = core.fov.circle_grids(self.x, self.y, 1, true)
+			for x, yy in pairs(grids) do for y, _ in pairs(yy) do
+				local trap = game.level.map(x, y, Map.TRAP)
+				if trap then self:detectTrap(trap, x, y, t_det) end
+			end end
+		end
 	end
-
+	
 	-- knowing Unnatural Body allows you to get the Cursed Aura tree
 	if moved and self:knowTalent(self.T_UNNATURAL_BODY) and not self:knowTalentType("cursed/cursed-aura") and self.chooseCursedAuraTree then
 		if self.player then
@@ -1567,15 +1596,15 @@ function _M:doQuake(tg, x, y)
 end
 
 --- Attempt to detect a trap at x, y
--- param trap the trap to be detected
--- param x, y trap coordinates
--- param power detection power (optional)
+-- param (optional) trap the trap to be detected (defaults to trap at coords)
+-- param (optional) x, y trap coordinates (defaults to trap.x, trap.y)
+-- param (optional) power detection power
 -- @return the trap @ x, y if present and detected
 function _M:detectTrap(trap, x, y, power)
-	power = power or self:callTalent(self.T_HEIGHTENED_SENSES, "trapPower")
-	if power <= 0 then return end
 	trap = trap or game.level.map(x, y, Map.TRAP)
 	if trap then
+		power = power or self:attr("see_traps") or 0
+		if power <= 0 then return end
 		x, y = x or trap.x, y or trap.y
 		local known = trap:knownBy(self)
 		if not known then
@@ -1585,7 +1614,7 @@ function _M:detectTrap(trap, x, y, power)
 				trap:setKnown(self, true, x, y)
 				if self.player then
 					game.level.map:updateMap(x, y)
-					game.logPlayer(self, "#AQUAMARINE#You notice a trap (%s)!", trap:getName())
+					game.logPlayer(self, "#CADET_BLUE#You notice a trap (%s)!", trap:getName())
 				end
 			end
 		end
@@ -2176,7 +2205,7 @@ function _M:onTakeHit(value, src, death_note)
 		value = value * (util.bound(self.global_speed * self.movement_speed, 0.3, 1))
 	end
 
-	-- Reduce damage and trigger for Trained Reactions
+	-- General percent damage reduction
 	if self:attr("incoming_reduce") then
 		value = value * (100-self:attr("incoming_reduce")) / 100
 		print("[onTakeHit] After Trained Reactions effect reduction ", value)
@@ -3180,8 +3209,6 @@ function _M:die(src, death_note)
 		end)
 	end
 
-	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnKill", self, death_note) end
-
 	if src and ((src.resolveSource and src:resolveSource().player) or src.player) then
 		-- Achievements
 		local p = game.party:findMember{main=true}
@@ -3211,6 +3238,8 @@ function _M:die(src, death_note)
 		if game.level and game.level.data.record_player_kills then
 			game.level.data.record_player_kills = game.level.data.record_player_kills + 1
 		end
+
+		p.last_kill_turn = game.turn
 	end
 
 	-- Ingredients
@@ -3228,6 +3257,8 @@ function _M:die(src, death_note)
 	end
 
 	if self.sound_die and (self.unique or rng.chance(5)) then game:playSoundNear(self, self.sound_die) end
+
+	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnKill", self, death_note) end
 
 	return true
 end
@@ -3550,8 +3581,9 @@ end
 
 function _M:addShaderAura(kind, shader, shader_args, ...)
 	if not core.shader.active(4) then return false end
-
 	self.shader_auras = self.shader_auras or {}
+	if self.shader_auras[kind] then return false end
+
 	local textures = {...}
 	for i = 1, #textures do
 		if type(textures[i]) == "string" then textures[i] = {"image", textures[i]} end
@@ -4207,6 +4239,19 @@ function _M:canWearObject(o, try_slot)
 			end
 		end end
 	end
+	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
+		oldreq = rawget(o, "require")
+		o.require = table.clone(oldreq or {}, true)
+		if o.require.stat and o.require.stat.str then
+			o.require.stat.dex, o.require.stat.str = o.require.stat.str, nil
+		end
+		if o.require.talent then for i, tr in ipairs(o.require.talent) do
+			if tr[1] == self.T_ARMOUR_TRAINING then
+				o.require.talent[i] = {self.T_AGILE_DEFENSE, 1}
+				break
+			end
+		end end
+	end
 	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
 		oldreq = rawget(o, "require")
 		o.require = table.clone(oldreq or {}, true)
@@ -4442,6 +4487,15 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 		if not self:attr("autolearn_mindslayer_done") then
 			self:unlearnTalent(self.T_TELEKINETIC_GRASP)
 			self:unlearnTalent(self.T_BEYOND_THE_FLESH)
+			function focusremove(invenid)
+				local focus = self:getInven(invenid)
+				for i = #focus, 1, -1 do
+					self:doTakeoff(focus, i, focus[i], true, nil, true)
+				end
+				self.inven[invenid] = nil
+			end
+			focusremove(self.INVEN_PSIONIC_FOCUS)
+			focusremove(self.INVEN_QS_PSIONIC_FOCUS)
 		end
 	end
 
@@ -4823,7 +4877,7 @@ function _M:preUseTalent(ab, silent, fake)
 	end
 	
 	-- check resource costs (sustains can always be deactivated at no cost)
-	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) then
+	if not self:attr("force_talent_ignore_ressources") and not self:isTalentActive(ab.id) and (not self.talent_no_resources or not self.talent_no_resources[ab.id]) then
 		local rname, cost, rmin, rmax
 		-- check for sustained resources
 		self.on_preuse_checking_resources = true
@@ -4934,11 +4988,19 @@ function _M:preUseTalent(ab, silent, fake)
 		if self:attr("scoundrel_failure") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
 			local eff = self:hasEffect(self.EFF_FUMBLE)
 			if rng.percent(self:attr("scoundrel_failure")) then
-				if not silent then game.logSeen(self, "%s fumbles and fails to use %s, injuring themselves!", self.name:capitalize(), ab.name) end
+				if not silent then game.logSeen(self, "%s fumbles and fails to use %s, injuring %s!", self.name:capitalize(), ab.name, self:his_her_self()) end
 				self:useEnergy()
 				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 				return false
 			end
+		end
+		
+		if self:hasEffect(self.EFF_SENTINEL) and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) and util.getval(ab.no_energy, self, ab) ~= true and not fake and not self:attr("force_talent_ignore_ressources") then
+			if not silent then game.logSeen(self, "%s's %s is interrupted by the shot!", self.name:capitalize(), ab.name) end
+			self.tempeffect_def[self.EFF_SENTINEL].do_proc(self, self:hasEffect(self.EFF_SENTINEL))
+			self:useEnergy()
+			self:fireTalentCheck("callbackOnTalentDisturbed", t)
+			return false
 		end
 
 	end
@@ -4994,6 +5056,7 @@ local sustainCallbackCheck = {
 	callbackOnSummonDeath = "talents_on_summon_death",
 	callbackOnDie = "talents_on_die",
 	callbackOnKill = "talents_on_kill",
+	callbackOMeleeAttackBonuses = "talents_on_melee_attack_bonus",
 	callbackOnMeleeAttack = "talents_on_melee_attack",
 	callbackOnMeleeHit = "talents_on_melee_hit",
 	callbackOnMeleeMiss = "talents_on_melee_miss",
@@ -5097,6 +5160,7 @@ function _M:fireTalentCheck(event, ...)
 	local ret = false
 	if self[store] then upgradeStore(self[store], store) end
 	if self[store] and next(self[store].__priorities) then
+		local old_ps = self.__project_source
 		for _, info in ipairs(self[store].__sorted) do
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
@@ -5109,7 +5173,7 @@ function _M:fireTalentCheck(event, ...)
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
 			end
-			self.__project_source = nil
+			self.__project_source = old_ps
 		end
 	end
 	return ret
@@ -5129,23 +5193,26 @@ function _M:iterCallbacks(event)
 			local priority, kind, stringId, tid = unpack(info)
 			if kind == "effect" then
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = self.tmp[tid]
 					local ret = self:callEffect(tid, event, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			elseif kind == "object" then
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = tid
 					local ret = tid:check(event, self, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			else
 				return function(...)
+					local old_ps = self.__project_source
 					self.__project_source = self.sustain_talents[tid]
 					local ret = self:callTalent(tid, event, ...)
-					self.__project_source = nil
+					self.__project_source = old_ps
 					return ret
 				end, priority, kind
 			end
@@ -5329,7 +5396,7 @@ function _M:postUseTalent(ab, ret, silent)
 		end
 	end
 	-- deduct resource costs
-	if not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource and not self:attr("zero_resource_cost") and not self:isTalentActive(ab.id) then
+	if not self:attr("force_talent_ignore_ressources") and not ab.fake_ressource and not self:attr("zero_resource_cost") and (not self.talent_no_resources or not self.talent_no_resources[ab.id]) and not self:isTalentActive(ab.id) then
 		local rname, cost
 		
 		if ab.feedback then -- pseudo resource
@@ -5372,23 +5439,26 @@ function _M:postUseTalent(ab, ret, silent)
 		DamageType:get(DamageType.FIRE).projector(p.src, self.x, self.y, DamageType.FIRE, p.dam)
 	end
 
-	-- Cancel stealth!
-	if not util.getval(ab.no_break_stealth, self, ab) and util.getval(ab.no_energy, self, ab) ~= true then self:breakStealth() end
-	
-	if ab.id ~= self.T_LIGHTNING_SPEED then self:breakLightningSpeed() end
-	if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
-	if not ab.no_reload_break then self:breakReloading() end
-	self:breakStepUp()
-	self:breakSpacetimeTuning()
-	--if not (util.getval(ab.no_energy, self, ab) or ab.no_break_channel) and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) then self:breakPsionicChannel(ab.id) end
+	-- break stealth, channels, etc...
+	if not self.turn_procs.resetting_talents then
+		-- Cancel stealth!
+		if not util.getval(ab.no_break_stealth, self, ab) and util.getval(ab.no_energy, self, ab) ~= true then self:breakStealth() end
+		
+		if ab.id ~= self.T_LIGHTNING_SPEED then self:breakLightningSpeed() end
+		if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
+		if not ab.no_reload_break then self:breakReloading() end
+		self:breakStepUp()
+		self:breakSpacetimeTuning()
+		--if not (util.getval(ab.no_energy, self, ab) or ab.no_break_channel) and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) then self:breakPsionicChannel(ab.id) end
 
-	for tid, _ in pairs(self.sustain_talents) do
-		local t = self:getTalentFromId(tid)
-		if t and t.callbackBreakOnTalent then
-			-- Break things at the end, only if they are still on
-			game:onTickEnd(function()
-				if self.sustain_talents[t.id] then self:callTalent(tid, "callbackBreakOnTalent", ab) end
-			end)
+		for tid, _ in pairs(self.sustain_talents) do
+			local t = self:getTalentFromId(tid)
+			if t and t.callbackBreakOnTalent then
+				-- Break things at the end, only if they are still on
+				game:onTickEnd(function()
+					if self.sustain_talents[t.id] then self:callTalent(tid, "callbackBreakOnTalent", ab) end
+				end)
+			end
 		end
 	end
 
@@ -5641,6 +5711,19 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 				uspeed = ("%s (#LIGHT_GREEN#%d%%#LAST# of a turn)"):format(speed_type, speed * 100)
 			end
 			d:add({"color",0x6f,0xff,0x83}, "Usage Speed: ", {"color",0xFF,0xFF,0xFF}, uspeed, true)
+			if t.no_break_stealth ~= nil and no_energy ~= true and self:knowTalent(self.T_STEALTH) then
+				local nbs, chance = t.no_break_stealth
+				if type(t.no_break_stealth) == "function" then
+					nbs, chance = t.no_break_stealth(self, t)
+					if type(chance) ~= "number" then
+						chance = nbs and 100 or 0
+					end
+				else chance = nbs and 100 or 0
+				end
+				if chance > 0 then
+					d:add({"color",0x6f,0xff,0x83}, "Won't Break Stealth:  ", {"color",0xFF,0xFF,0xFF}, ("%d%%"):format(chance), true)
+				end
+			end
 		end
 		local is_a = {}
 		for is, desc in pairs(engine.interface.ActorTalents.is_a_type) do
@@ -6102,6 +6185,14 @@ function _M:canSeeNoCache(actor, def, def_pct)
 	if self:attr("blind") then
 		return false, 0
 	end
+	
+	-- Concealment
+	if actor ~= self and actor.attr and actor:attr("concealment") then
+		local dist = core.fov.distance(self.x, self.y, actor.x, actor.y)
+		if dist > actor:attr("concealment") then
+			return false, 0
+		end
+	end
 
 	local chance, hit = 100
 	-- Check for invisibility. This is a "simple" checkHit between invisible and see_invisible attrs
@@ -6292,7 +6383,7 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 
 		if p.dur > 0 and e.status == "detrimental" then
 			local saved = self:checkHit(save, p.apply_power, 0, 95)
-			local hd = {"Actor:effectSave", saved = saved, save_type = save_type, eff_id = eff_id, e = e, p = p,}
+			local hd = {"Actor:effectSave", saved=saved, save=save, save_type=save_type, eff_id=eff_id, e=e, p=p,}
 			self:triggerHook(hd)
 			self:fireTalentCheck("callbackOnEffectSave", hd)
 			saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p
@@ -6635,10 +6726,11 @@ end
 --	@param o = object to remove
 --	@param simple set true to skip equipment takeoff checks and energy use
 --	@param dst = actor to receive object (in dst.INVEN_INVEN)
-function _M:doTakeoff(inven, item, o, simple, dst)
+--	@param force = set to true to skip sleep & such checks
+function _M:doTakeoff(inven, item, o, simple, dst, force)
 	dst = dst or self
 	if self.no_inventory_access or not dst:canAddToInven(dst.INVEN_INVEN) then return end
-	if self:attr("sleep") and not self:attr("lucid_dreamer") then
+	if not force and self:attr("sleep") and not self:attr("lucid_dreamer") then
 		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end

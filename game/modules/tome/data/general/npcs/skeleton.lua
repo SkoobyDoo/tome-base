@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -205,7 +205,7 @@ newEntity{ base = "BASE_NPC_SKELETON",
 	
 	resolvers.inscriptions(1, "rune"),
 	resolvers.talents{
-		[Talents.T_PARRY]={base=1, every=10, max=7},
+		[Talents.T_DUAL_WEAPON_MASTERY]={base=1, every=10, max=7},
 		[Talents.T_TEMPO]={base=1, every=10, max=7},
 		[Talents.T_FLURRY]={base=1, every=10, max=7},
 		[Talents.T_DIRTY_FIGHTING]={base=1, every=10, max=7},

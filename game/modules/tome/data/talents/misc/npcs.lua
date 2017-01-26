@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = 3 },
 	action = function(self, t)
-		if not self.can_multiply or self.can_multiply <= 0 then print("no more multiply") return nil end
+		if not self.can_multiply or self.can_multiply <= 0 then game.logPlayer(self, "You can not multiply anymore.") return nil end
 
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
@@ -51,12 +51,13 @@ newTalent{
 		-- Find a place around to clone
 		self.can_multiply = self.can_multiply - 1
 		local a
-		if self.clone_base then a = self.clone_base:clone() else a = self:clone() end
+		if self.clone_base then a = self.clone_base:cloneFull() else a = self:cloneFull() end
 		a.can_multiply = a.can_multiply - 1
 		a.energy.value = 0
 		a.exp_worth = 0.1
 		a.inven = {}
 		a.x, a.y = nil, nil
+		a.faction = self.faction
 		a:removeAllMOs()
 		a:removeTimedEffectsOnClone()
 		if a.can_multiply <= 0 then a:unlearnTalent(t.id) end
@@ -2288,22 +2289,6 @@ newTalent{
 }
 
 newTalent{
-	name = "Relentless Strikes",
-	type = {"technique/other", 1},
-	points = 5,
-	mode = "passive",
-	getStamina = function(self, t) return self:combatTalentScale(t, 1/4, 5/4, 0.75) end,
-	getCooldownReduction = function(self, t) return self:combatTalentLimit(t, 0.67, 0.09, 1/3) end,  -- Limit < 67%
-	info = function(self, t)
-		local stamina = t.getStamina(self, t)
-		local cooldown = t.getCooldownReduction(self, t)
-		return ([[Reduces the cooldown on all your Pugilism talents by %d%%.  Additionally, every time you earn a combo point, you will regain %0.2f stamina.
-		Note that stamina gains from combo points occur before any talent stamina costs.]])
-		:format(cooldown * 100, stamina)
-	end,
-}
-
-newTalent{
 	name = "Combo String",
 	type = {"technique/other", 1},
 	mode = "passive",
@@ -3116,5 +3101,296 @@ newTalent{
 		Your base chance of success is 100%% if you are not directly observed, and good or bad luck may also affect it.
 		You estimate your current chance to maintain stealth as %0.1f%%.]]):
 		format(t.stealthMult(self, t), t.getChance(self, t, true), t.getChance(self, t, false, true))
+	end,
+}
+
+newTalent{
+	name = "Hack'n'Back",
+	type = {"other/other", 1},
+	points = 5,
+	cooldown = 14,
+	stamina = 30,
+	tactical = { ESCAPE = 1, ATTACK = { weapon = 0.5 } },
+--	require = techs_dex_req1,
+	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1) end,
+	getDist = function(self, t) return math.ceil(self:combatTalentScale(t, 1.2, 3.3)) end,
+	on_pre_use = function(self, t)
+		if self:attr("never_move") then return false end
+		return true
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then return nil end
+		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
+
+		if hitted then
+			self:knockback(target.x, target.y, t.getDist(self, t))
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local dist = t.getDist(self, t)
+		return ([[You hit your target, doing %d%% damage, distracting it while you jump back %d squares away.]]):
+		format(100 * damage, dist)
+	end,
+}
+
+newTalent{
+	name = "Mobile Defence",
+	type = {"other/other", 1},
+	mode = "passive",
+	points = 5,
+--	require = techs_dex_req2,
+	getDef = function(self, t) return self:getTalentLevel(t) * 0.08 end,
+	getHardiness = function(self, t) return self:getTalentLevel(t) * 0.06 end,
+	-- called by _M:combatDefenseBase function in mod\class\interface\Combat.lua
+	getDef = function(self, t) return self:combatTalentLimit(t, 1, 0.10, 0.40) end, -- Limit to <100% defense bonus
+	-- called by _M:combatArmorHardiness function in mod\class\interface\Combat.lua
+	getHardiness = function(self, t) return self:combatTalentLimit(t, 100, 6, 30) end, -- Limit < 100%
+	info = function(self, t)
+		return ([[Whilst wearing leather or lighter armour, you gain %d%% Defense and %d%% Armour hardiness.]]):
+		format(t.getDef(self, t) * 100, t.getHardiness(self, t))
+	end,
+}
+
+newTalent{
+	name = "Light of Foot",
+	type = {"other/other", 1},
+	mode = "passive",
+	points = 5,
+--	require = techs_dex_req3,
+	getFatigue = function(self, t) return self:combatTalentLimit(t, 100, 1.5, 7.5) end, -- Limit < 50%
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "fatigue", -t.getFatigue(self, t))
+	end,
+	info = function(self, t)
+		return ([[You are light on your feet, handling your armour better. Each step you take regenerates %0.2f stamina, and your fatigue is permanently reduced by %0.1f%%.
+		At level 3 you are able to walk so lightly that you never trigger traps that require pressure.]]):
+		format(self:getTalentLevelRaw(t) * 0.2, t.getFatigue(self, t))
+	end,
+
+}
+
+newTalent{
+	name = "Strider",
+	type = {"other/other", 1},
+	mode = "passive",
+	points = 5,
+--	require = techs_dex_req4,
+	incspeed = function(self, t) return self:combatTalentScale(t, 0.02, 0.10, 0.75) end,
+	CDreduce = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 1, 5)) end, -- Limit < 8
+	passives = function(self, t, p)
+		local cdr = t.CDreduce(self, t)
+		self:talentTemporaryValue(p, "movement_speed", t.incspeed(self, t))
+		self:talentTemporaryValue(p, "talent_cd_reduction",
+			{[Talents.T_RUSH]=cdr, [Talents.T_HACK_N_BACK]=cdr, [Talents.T_DISENGAGE]=cdr, [Talents.T_EVASION]=cdr})
+	end,
+	info = function(self, t)
+		return ([[You literally dance around your foes, increasing your movement speed by %d%% and reducing the cooldown of Hack'n'Back, Rush, Disengage and Evasion by %d turns.]]):
+		format(t.incspeed(self, t)*100,t.CDreduce(self, t))
+	end,
+}
+
+newTalent{
+	name = "Charm Mastery",
+	type = {"other/other", 1},
+--	require = cuns_req2,
+	mode = "passive",
+	points = 5,
+	cdReduc = function(tl)
+		if tl <=0 then return 0 end
+		return math.floor(100*tl/(tl+7.5)) -- Limit < 100%
+	end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "use_object_cooldown_reduce", t.cdReduc(self:getTalentLevel(t)))
+	end,
+--	on_unlearn = function(self, t)
+--	end,
+	info = function(self, t)
+		return ([[Your cunning manipulations allow you to use charms (wands, totems and torques) more efficiently, reducing their cooldowns by %d%%.]]):
+		format(t.cdReduc(self:getTalentLevel(t)))
+	end,
+}
+
+newTalent{
+	name = "Piercing Sight",
+	type = {"other/other", 1},
+--	require = cuns_req3,
+	mode = "passive",
+	points = 5,
+	--  called by functions _M:combatSeeStealth and _M:combatSeeInvisible functions mod\class\interface\Combat.lua
+	seePower = function(self, t) return math.max(0, self:combatScale(self:getCun(15, true)*self:getTalentLevel(t), 10, 1, 80, 75, 0.25)) end, --TL 5, cun 100 = 80
+	info = function(self, t)
+		return ([[You look at your surroundings with more intensity than most people, allowing you to see stealthed or invisible creatures.
+		Increases stealth detection by %d and invisibility detection by %d.
+		The detection power increases with your Cunning.]]):
+		format(t.seePower(self,t), t.seePower(self,t))
+	end,
+}
+
+newTalent{
+	name = "Precision",
+--	type = {"technique/dualweapon-training", 3},
+	type = {"technique/other", 1},
+	mode = "sustained",
+	points = 5,
+	require = techs_dex_req3,
+	no_energy = true,
+	cooldown = 10,
+	sustain_stamina = 20,
+	tactical = { BUFF = 2 },
+	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	getApr = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 25, 500, 0.75) end,
+	activate = function(self, t)
+		local weapon, offweapon = self:hasDualWeapon()
+		if not weapon then
+			game.logPlayer(self, "You cannot use Precision without dual wielding!")
+			return nil
+		end
+
+		return {
+			apr = self:addTemporaryValue("combat_apr",t.getApr(self, t)),
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeTemporaryValue("combat_apr", p.apr)
+		return true
+	end,
+	info = function(self, t)
+		return ([[You have learned to hit the right spot, increasing your armor penetration by %d when dual wielding.
+		The Armour penetration bonus will increase with your Dexterity.]]):format(t.getApr(self, t))
+	end,
+}
+
+newTalent{
+	name = "Momentum",
+--	type = {"technique/dualweapon-training", 4},
+	type = {"technique/other", 1},
+	mode = "sustained",
+	points = 5,
+	cooldown = 30,
+	sustain_stamina = 50,
+	require = techs_dex_req4,
+	tactical = { BUFF = 2 },
+	on_pre_use = function(self, t, silent) if self:hasArcheryWeapon() or not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two melee weapons to use this talent.") end return false end return true end,
+	getSpeed = function(self, t) return self:combatTalentScale(t, 0.11, 0.40, 0.75) end,
+	activate = function(self, t)
+		local weapon, offweapon = self:hasDualWeapon()
+		if not weapon then
+			game.logPlayer(self, "You cannot use Momentum without dual wielding melee weapons!")
+			return nil
+		end
+
+		return {
+			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
+			stamina_regen = self:addTemporaryValue("stamina_regen", -6),
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)
+		self:removeTemporaryValue("stamina_regen", p.stamina_regen)
+		return true
+	end,
+	info = function(self, t)
+		return ([[When dual wielding, increases attack speed by %d%%, but drains stamina quickly (-6 stamina/turn).]]):format(t.getSpeed(self, t)*100)
+	end,
+}
+
+newTalent{
+	name = "Defensive Throw",
+--	type = {"technique/unarmed-discipline", 2},
+	type = {"technique/other", 1},
+--	require = techs_dex_req2,
+	mode = "passive",
+	points = 5,
+	-- Limit defensive throws/turn for balance using a buff (warns attacking players of the talent)
+	-- EFF_DEFENSIVE_GRAPPLING effect is refreshed each turn in _M:actBase in mod.class.Actor.lua
+	getDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 5, 50) * getUnarmedTrainingBonus(self) end,
+	getDamageTwo = function(self, t) return self:combatTalentPhysicalDamage(t, 10, 75) * getUnarmedTrainingBonus(self) end,
+	getchance = function(self, t)
+		return self:combatLimit(self:getTalentLevel(t) * (5 + self:getCun(5, true)), 100, 0, 0, 50, 50) -- Limit < 100%
+	end,
+	getThrows = function(self, t)
+		return self:combatScale(self:getStr() + self:getDex()-20, 0, 0, 2.24, 180)
+	end,
+	-- called by _M:attackTargetWith function in mod\class\interface\Combat.lua (includes adjacency check)
+	do_throw = function(self, target, t)
+		local ef = self:hasEffect(self.EFF_DEFENSIVE_GRAPPLING)
+		if not ef or not rng.percent(self.tempeffect_def.EFF_DEFENSIVE_GRAPPLING.throwchance(self, ef)) then return end
+		local grappled = target:isGrappled(self)
+		local hit = self:checkHit(self:combatAttack(), target:combatDefense(), 0, 95) and (grappled or not self:checkEvasion(target)) -- grappled target can't evade
+		ef.throws = ef.throws - 1
+		if ef.throws <= 0 then self:removeEffect(self.EFF_DEFENSIVE_GRAPPLING) end
+
+		if hit then
+			self:project(target, target.x, target.y, DamageType.PHYSICAL, self:physicalCrit(t.getDamageTwo(self, t), nil, target, self:combatAttack(), target:combatDefense()))
+			-- if grappled stun
+			if grappled and target:canBe("stun") then
+				target:setEffect(target.EFF_STUNNED, 2, {apply_power=self:combatAttack(), min_dur=1})
+				self:logCombat(target, "#Source# slams #Target# into the ground!")
+			-- if not grappled daze
+			else
+				self:logCombat(target, "#Source# throws #Target# to the ground!")
+				-- see if the throw dazes the enemy
+				if target:canBe("stun") then
+					target:setEffect(target.EFF_DAZED, 2, {apply_power=self:combatAttack(), min_dur=1})
+				end
+			end
+		else
+			self:logCombat(target, "#Source# misses a defensive throw against #Target#!", self.name:capitalize(),target.name:capitalize())
+		end
+	end,
+	on_unlearn = function(self, t)
+		self:removeEffect(self.EFF_DEFENSIVE_GRAPPLING)
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local damagetwo = t.getDamageTwo(self, t)
+		return ([[When you avoid a melee blow while unarmed, you have a %d%% chance to throw the target to the ground.  If the throw lands, the target will take %0.2f damage and be dazed for 2 turns, or %0.2f damage and be stunned for 2 turns if the target is grappled.  You may attempt up to %0.1f throws per turn.
+		The chance of throwing increases with your Accuracy, the damage scales with your Physical Power, and the number of attempts with your Strength and Dexterity.]]):
+		format(t.getchance(self,t), damDesc(self, DamageType.PHYSICAL, (damage)), damDesc(self, DamageType.PHYSICAL, (damagetwo)), t.getThrows(self, t))
+	end,
+}
+
+newTalent{
+	name = "Roundhouse Kick",
+--	type = {"technique/unarmed-discipline", 4},
+	type = {"technique/other", 1},
+--	require = techs_dex_req4,
+	points = 5,
+	random_ego = "attack",
+	cooldown = 12,
+	stamina = 18,
+	range = 0,
+	radius = function(self, t) return 1 end,
+	tactical = { ATTACKAREA = { PHYSICAL = 2 }, DISABLE = { knockback = 2 } },
+	requires_target = true,
+	getDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 15, 150) * getUnarmedTrainingBonus(self) end,
+	target = function(self, t)
+		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
+
+		self:breakGrapples()
+
+		self:project(tg, x, y, DamageType.PHYSKNOCKBACK, {dam=t.getDamage(self, t), dist=4})
+
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		return ([[Attack your foes in a frontal arc with a roundhouse kick, which deals %0.2f physical damage and knocks your foes back.
+		This will break any grapples you're maintaining, and the damage will scale with your Physical Power.]]):
+		format(damDesc(self, DamageType.PHYSICAL, (damage)))
 	end,
 }

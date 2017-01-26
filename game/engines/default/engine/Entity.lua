@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -125,7 +125,6 @@ function _M:init(t, no_default)
 			error("Entity definition has a closure: "..err)
 		end
 	end
-
 	if self.color then
 		self.color_r = self.color.r
 		self.color_g = self.color.g
@@ -368,7 +367,6 @@ function _M:makeMapObject(tiles, idx)
 
 	-- Texture
 	local ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
-
 	local dy, dh = 0, 0
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
 
@@ -941,11 +939,11 @@ end
 -- @int id the id of the increase to delete
 -- @param[type=boolean] noupdate if true the actual property is not changed and needs to be changed by the caller
 function _M:removeTemporaryValue(prop, id, noupdate)
+	if not self.compute_vals then util.send_error_backtrace("removeTemporaryValue: attempting to remove prop "..tostring(prop).." with no temporary values initialized") return end
+	if not id then util.send_error_backtrace("removeTemporaryValue: error removing prop "..tostring(prop).." with id "..tostring(id)) return end
 	local oldval = self.compute_vals[id]
 --	print("removeTempVal", prop, oldval, " :=: ", id)
-	if not id then util.send_error_backtrace("error removing prop "..tostring(prop).." with id nil") return end
 	self.compute_vals[id] = nil
-
 	-- Find the base, one removed from the last prop
 	local initial_base, initial_prop
 	if type(prop) == "table" then
@@ -1027,9 +1025,9 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 		else
 			if config.settings.cheat then
 				if type(v) == "nil" then
-					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				else
-					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				end
 			end
 		end
@@ -1039,6 +1037,12 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 	if not noupdate then
 		recursive(initial_base, initial_prop, oldval, "add")
 	end
+end
+
+--- Returns a previously set temporary value, see addTemporaryValue()
+-- @int id the index of the previously set property
+function _M:getTemporaryValue(id)
+	return self.compute_vals and self.compute_vals[id]
 end
 
 --- Helper function to add temporary values

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1099,11 +1099,11 @@ newEffect{
 newEffect{
 	name = "CORROSIVE_WORM", image = "talents/corrosive_worm.png",
 	desc = "Corrosive Worm",
-	long_desc = function(self, eff) return ("The target is infected with a corrosive worm, reducing blight and acid resistance by %d%%. When the effect ends, the worm will explode, dealing %d acid damage in a 4 radius ball."):format(eff.power, eff.finaldam) end,
+	long_desc = function(self, eff) return ("The target is infected with a corrosive worm, reducing blight and acid resistance by %d%%. When the effect ends, the worm will explode, dealing %d acid damage in a 4 radius ball. This damage will increase by %d%% of all damage taken while under torment"):format(eff.power, eff.finaldam, eff.rate*100) end,
 	type = "magical",
 	subtype = { acid=true },
 	status = "detrimental",
-	parameters = { power=20, finaldam=50, },
+	parameters = { power=20, rate=10, finaldam=50, },
 	on_gain = function(self, err) return "#Target# is infected by a corrosive worm.", "+Corrosive Worm" end,
 	on_lose = function(self, err) return "#Target# is free from the corrosive worm.", "-Corrosive Worm" end,
 	activate = function(self, eff)
@@ -1115,6 +1115,11 @@ newEffect{
 		eff.src:project(tg, self.x, self.y, DamageType.ACID, eff.finaldam, {type="acid"})
 		self:removeParticles(eff.particle)
 	end,
+	callbackOnHit = function(self, eff, cb)
+		eff.finaldam = eff.finaldam + (cb.value * eff.rate)
+		return true
+	end,
+	
 	on_die = function(self, eff)
 		local tg = {type="ball", radius=4, selffire=false, x=self.x, y=self.y}
 		eff.src:project(tg, self.x, self.y, DamageType.ACID, eff.finaldam, {type="acid"})
@@ -2364,11 +2369,15 @@ newEffect{
 newEffect{
 	name = "VULNERABILITY_POISON", image = "talents/vulnerability_poison.png",
 	desc = "Vulnerability Poison",
-	long_desc = function(self, eff) return ("The target is afflicted with a magical poison and is suffering %0.2f arcane damage per turn.  All resistances are reduced by 10%% and poison resistance is reduced by 50%%."):format(eff.src:damDesc("ARCANE", eff.power)) end,
+	long_desc = function(self, eff)
+		local poison_id = eff.__tmpvals and eff.__tmpvals[2] and eff.__tmpvals[2][2]
+		local poison_effect = self:getTemporaryValue(poison_id)
+		return ("The target is afflicted with a magical poison and is suffering %0.2f arcane damage per turn.  All resistances are reduced by 10%%%s."):format(eff.src:damDesc("ARCANE", eff.power) , poison_effect and (" and poison resistance is reduced by %s%%"):format(-100*poison_effect) or "")
+	end,
 	type = "magical",
 	subtype = { poison=true, arcane=true },
 	status = "detrimental",
-	parameters = {power=10},
+	parameters = {power=10, unresistable=true},
 	on_gain = function(self, err) return "#Target# is magically poisoned!", "+Vulnerability Poison" end,
 	on_lose = function(self, err) return "#Target# is no longer magically poisoned.", "-Vulnerability Poison" end,
 	-- Damage each turn
@@ -2378,14 +2387,12 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("resists", {all=-10})
-		if self:attr("poison_immune") and self:checkClassification("living") then
-			eff.poisonid = self:addTemporaryValue("poison_immune", -self:attr("poison_immune") / 2)
+		self:effectTemporaryValue(eff, "resists", {all=-10})
+		if self:attr("poison_immune") then
+			self:effectTemporaryValue(eff, "poison_immune", -self:attr("poison_immune")/2)
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("resists", eff.tmpid)
-		if eff.poisonid then self:removeTemporaryValue("poison_immune", eff.poisonid) end
 	end,
 }
 
@@ -3424,6 +3431,13 @@ newEffect{
 		self.turn_procs.ogric_wrath = true
 		self:setEffect(self.EFF_OGRE_FURY, 1, {})
 	end,
+	callbackOnTalentPost = function(self, eff, t)
+		if not t.is_inscription then return end
+		if self.turn_procs.ogric_wrath then return end
+
+		self.turn_procs.ogric_wrath = true
+		self:setEffect(self.EFF_OGRE_FURY, 1, {})
+	end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "stun_immune", 0.2)
 		self:effectTemporaryValue(eff, "pin_immune", 0.2)
@@ -3939,5 +3953,39 @@ newEffect{
 		self.replace_display = nil
 		self:removeAllMOs()
 		game.level.map:updateMap(self.x, self.y)
+	end,
+}
+
+newEffect{
+	name = "BATHE_IN_LIGHT", image = "talents/bathe_in_light.png",
+	desc = "Bathe in Light",
+	long_desc = function(self, eff) return ("Fire and Light damage increased by %d%%."):format(eff.power)
+	end,
+	type = "magical",
+	subtype = { celestial=true, light=true },
+	status = "beneficial",
+	parameters = { power = 10 },
+	on_gain = function(self, err) return "#Target# glows intensely!", true end,
+	on_lose = function(self, err) return "#Target# is no longer glowing .", true end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.FIRE]=eff.power, [DamageType.LIGHT]=eff.power})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "OVERSEER_OF_NATIONS", image = "talents/overseer_of_nations.png",
+	desc = "Overseer of Nations",
+	long_desc = function(self, eff) return ("Detects creatures of type %s/%s in radius 15."):format(eff.type, eff.subtype) end,
+	type = "magical",
+	subtype = { higher=true },
+	status = "beneficial",
+	parameters = { type="humanoid", subtype="human" },
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "esp", {[eff.type.."/"..eff.subtype]=1})
+		self:effectTemporaryValue(eff, "esp_range", 5)
+	end,
+	deactivate = function(self, eff)
 	end,
 }

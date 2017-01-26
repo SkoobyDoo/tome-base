@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -446,6 +446,7 @@ end
 function _M:learnTalent(t_id, force, nb)
 --	print("[TALENT]", self.name, self.uid, "learning", t_id, force, nb)
 	local t = _M.talents_def[t_id]
+	assert(t, "Learning unknown talent: "..tostring(t_id))
 
 	if not force then
 		local ok, err = self:canLearnTalent(t)
@@ -1006,7 +1007,7 @@ function _M:talentParticles(p, ...)
 	local Particles = require "engine.Particles"
 	if not p.__tmpparticles then p.__tmpparticles = {} end
 	for _, ps in ipairs{...} do
-		p.__tmpparticles[#p.__tmpparticles+1] = self:addParticles(Particles.new(ps.type, 1, ps.args))
+		p.__tmpparticles[#p.__tmpparticles+1] = self:addParticles(Particles.new(ps.type, 1, ps.args, ps.shader))
 	end
 end
 

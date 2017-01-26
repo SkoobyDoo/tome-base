@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -95,11 +95,11 @@ function checkMaxSummon(self, silent, div, check_attr)
 	-- Count party members
 	if game.party:hasMember(self) then
 		for act, def in pairs(game.party.members) do
-			if act.summoner and act.summoner == self and act.wild_gift_summon and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
+			if act.summoner and act.summoner == self and act.wild_gift_summon and not act.wild_gift_summon_ignore_cap and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
 		end
 	elseif game.level then
 		for _, act in pairs(game.level.entities) do
-			if act.summoner and act.summoner == self and act.wild_gift_summon and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
+			if act.summoner and act.summoner == self and act.wild_gift_summon and not act.wild_gift_summon_ignore_cap and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
 		end
 	end
 

@@ -114,7 +114,7 @@ newTalent{
 	speed = "throwing",
 	proj_speed = 10,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
-	range = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4.2, 7)) end,
 	requires_target = true,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), selffire=false, talent=t, display={display='', particle="arrow", particle_args={tile="shockbolt/object/knife_steel"} }}
@@ -218,7 +218,7 @@ newTalent{
 	range = 0,
 	cooldown = 10,
 	stamina = 30,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
+	radius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4.2, 7)) end,
 	target = function(self, t) return {type="cone", range=0, stop_block = true, friendlyfire=false, radius=t.radius(self, t), display_line_step=false} end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -273,7 +273,7 @@ newTalent{
 		local power = t.getCritPower(self,t)
 		local chance = t.getChance(self,t)
 		return ([[You are able to target your throwing knives with pinpoint accuracy, increasing their critical strike chance by %d%% and critical strike damage by %d%%. 
-In addition, your critical strikes with throwing knives have a %d%% chance will to randomly disable your target, possibly disarming, silencing or pinning them for 2 turns.]])
+In addition, your critical strikes with throwing knives have a %d%% chance to randomly disable your target, possibly disarming, silencing or pinning them for 2 turns.]])
 		:format(crit, power, chance)
 	end,
 }
