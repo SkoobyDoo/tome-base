@@ -269,6 +269,7 @@ uberTalent{
 uberTalent{
 	name = "Worldly Knowledge",
 	mode = "passive",
+	cant_steal = true,
 	on_learn = function(self, t, kind)
 		local Chat = require "engine.Chat"
 		local chat = Chat.new("worldly-knowledge", {name="Worldly Knowledge"}, self)
@@ -299,6 +300,7 @@ uberTalent{
 uberTalent{
 	name = "Tricks of the Trade",
 	mode = "passive",
+	cant_steal = true,
 	require = { special={desc="Have sided with the Assassin Lord", fct=function(self) return game.state.birth.ignore_prodigies_special_reqs or (self:isQuestStatus("lost-merchant", engine.Quest.COMPLETED, "evil")) end} },
 	on_learn = function(self, t) 
 		if self:knowTalentType("cunning/stealth") then
