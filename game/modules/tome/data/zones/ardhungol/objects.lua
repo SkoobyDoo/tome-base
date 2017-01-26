@@ -28,6 +28,13 @@ newEntity{ base = "BASE_LORE",
 	rarity = false,
 	encumberance = 0,
 }
+newEntity{ base = "BASE_LORE",
+	define_as = "NOTE4",
+	name = "scrap of paper", lore="ardhungol-4",
+	desc = [[A scrap of paper.]],
+	rarity = false,
+	encumberance = 0,
+}
 end
 
 newEntity{ base = "BASE_ROD",
