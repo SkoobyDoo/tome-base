@@ -563,6 +563,8 @@ static int map_new(lua_State *L)
 	map->shown_r = map->shown_g = map->shown_b = 1;
 	map->shown_a = 1;
 
+	map->tint_r = map->tint_g = map->tint_b = map->tint_a = 1;
+
 	map->default_shader_ref = LUA_NOREF;
 	map->default_shader = NULL;
 
@@ -811,6 +813,16 @@ static int map_set_z_callback(lua_State *L)
 		lua_pushvalue(L, 3);
 		map->z_callbacks[z] = luaL_ref(L, LUA_REGISTRYINDEX);
 	}
+	return 0;
+}
+
+static int map_set_tint(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	map->tint_r = lua_tonumber(L, 2);
+	map->tint_g = lua_tonumber(L, 3);
+	map->tint_b = lua_tonumber(L, 4);
+	map->tint_a = lua_tonumber(L, 5);
 	return 0;
 }
 
@@ -1653,6 +1665,8 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 	scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx, -scrolly, 0));
 	model = model * scrollmodel;
 
+	color *= vec4(map->tint_r, map->tint_g, map->tint_b, map->tint_a);
+
 	map->used_mx = mx;
 	map->used_my = my;
 
@@ -1966,6 +1980,7 @@ static const struct luaL_Reg map_reg[] =
 	{"bindSeensTexture", map_bind_seen_texture},
 	{"drawSeensTexture", map_draw_seen_texture},
 	{"setZoom", map_set_zoom},
+	{"setTint", map_set_tint},
 	{"setShown", map_set_shown},
 	{"setObscure", map_set_obscure},
 	{"setGrid", map_set_grid},

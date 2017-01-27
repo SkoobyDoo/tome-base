@@ -139,6 +139,7 @@ typedef struct {
 	// Map parameters
 	float obscure_r, obscure_g, obscure_b, obscure_a;
 	float shown_r, shown_g, shown_b, shown_a;
+	float tint_r, tint_g, tint_b, tint_a;
 
 	// Map size
 	int w;
