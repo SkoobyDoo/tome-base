@@ -107,12 +107,12 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.bg_container = core.renderer.container()
 	self.renderer:add(self.bg_container)
 
-	self.icons_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Icons"):translate(0, 0, 0) self.renderer:add(self.icons_layer)
-	self.cooldowns_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Cooldowns"):translate(0, 0, 10) self.renderer:add(self.cooldowns_layer)
-	self.texts_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Texts"):translate(0, 0, 20) self.renderer:add(self.texts_layer)
-	self.frames_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Frames"):translate(0, 0, 30) self.renderer:add(self.frames_layer)
-	self.sels_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: sels"):translate(0, 0, 40) self.renderer:add(self.sels_layer)
-	self.unseens_layer = core.renderer.renderer("dynamic"):setRendererName("Hotkeys: Unseen"):translate(0, 0, 0):color(1, 1, 1, 0) self.renderer:add(self.unseens_layer)
+	self.icons_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Icons"):translate(0, 0, 0) self.renderer:add(self.icons_layer)
+	self.cooldowns_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Cooldowns"):translate(0, 0, 10) self.renderer:add(self.cooldowns_layer)
+	self.texts_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Texts"):zSort(true):translate(0, 0, 20) self.renderer:add(self.texts_layer)
+	self.frames_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Frames"):translate(0, 0, 30) self.renderer:add(self.frames_layer)
+	self.sels_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: sels"):translate(0, 0, 40) self.renderer:add(self.sels_layer)
+	self.unseens_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Unseen"):zSort(true):translate(0, 0, 0):color(1, 1, 1, 0) self.renderer:add(self.unseens_layer)
 	self.sel_frames = {}
 
 	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0, self.w, self.h)) end
@@ -221,7 +221,6 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 			for i, zone in pairs(self.dragclics) do
 				if mx >= zone[1] and mx < zone[1] + zone[3] and my >= zone[2] and my < zone[2] + zone[4] then
 					local old = self.actor.hotkey[i]
-
 					if i <= #self.page_to_hotkey * 12 then -- Only add this hotkey if we support a valid page for it.
 						self.actor.hotkey[i] = {drag.kind, drag.id}
 

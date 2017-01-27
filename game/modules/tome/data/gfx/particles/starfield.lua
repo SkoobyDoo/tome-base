@@ -17,6 +17,38 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+if core.shader.allow("volumetric") then ------------ Shader mode
+
+use_shader = {type="starfield", size={width, height}, speed=200}
+
+base_size = 64
+
+local x, y = width / 2, height / 2
+local size = math.max(width, height)
+
+return { generator = function()
+	return {
+		life = core.particles.ETERNAL,
+		size = size, sizev = 0, sizea = 0,
+
+		x = x, xv = 0, xa = 0,
+		y = y, yv = 0, ya = 0,
+		dir = 0, dirv = dirv, dira = 0,
+		vel = 0, velv = 0, vela = 0,
+
+		r = 1, rv = 0, ra = 0,
+		g = 1, gv = 0, ga = 0,
+		b = 1, bv = 0, ba = 0,
+		a = 1, av = 0, aa = 0,
+	}
+end, },
+function(self)
+	self.ps:emit(1)
+end,
+1
+
+else --------------------------- Normal mode
+
 local side = rng.table{4,6,2,8}
 local blur = blur or 0
 local first = true
@@ -68,3 +100,5 @@ function(self)
 	first = false
 end,
 1000
+
+end

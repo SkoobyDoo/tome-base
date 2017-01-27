@@ -36,6 +36,7 @@ function _M:init(minimalist)
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
 	self.hotkeys_display_icons:setTextOutline(0.7)
+	-- self.hotkeys_display_icons:setTextShadow(true)
 	self.hotkeys_display_icons.orient = self.orientation
 	self.hotkeys_display_icons.actor = game.player
 	self.frame_container = core.renderer.container():translate(0, 0, -5)
@@ -50,7 +51,7 @@ function _M:init(minimalist)
 	minimalist.hotkeys_display = self.hotkeys_display_icons
 
 	self.mouse:dragListener(true)
-	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
+	self.mouse:registerZone(0, 0, self.mouse.CAPTURE_ALL, self.mouse.CAPTURE_ALL, function(button, mx, my, xrel, yrel, bx, by, event)
 		if event == "button" and button == "left" and ((game.zone and game.zone.wilderness and not game.player.allow_talents_worldmap) or (game.key ~= game.normal_key)) then return end
 		if button == "none" then button = event end
 		self.hotkeys_display_icons:onMouse(button, mx, my, event == "button",

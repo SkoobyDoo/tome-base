@@ -103,7 +103,6 @@ function _M:addTo(hks, actor, page, bi, i, x, y)
 	self.txt = core.renderer.text(hks.fontbig)
 	hks:applyShadowOutline(self.txt)
 	hks.texts_layer:add(self.txt)
-	print("==add")
 
 	self:updateKeybind(hks, actor)
 end
@@ -116,7 +115,6 @@ local frames_colors = {
 }
 
 function _M:removeFrom(hks, actor)
-	print("==die")
 	self.frame.container:removeFromParent()
 	self.pie:removeFromParent()
 	self.selframe:removeFromParent()
@@ -136,18 +134,15 @@ function _M:update(hks, actor)
 			:tween(7, "a", nil, frames_colors[frame][4])
 		-- self.frame.container:color(unpack(frames_colors[frame]))
 		self.oldframe = frame
-		print("==update frame")
 	end
 
 	if pie_color[1] ~= self.oldpie_color[1] or pie_color[2] ~= self.oldpie_color[2] or pie_color[3] ~= self.oldpie_color[3] or pie_color[4] ~= self.oldpie_color[4] then
 		self.pie:color(unpack(pie_color))
 		self.oldpie_color = pie_color
-		print("==update color")
 	end
 	if self.oldpie_angle ~= pie_angle then
 		self.pie:clear():quadPie(0, 0, hks.icon_w, hks.icon_h, 0, 0, 1, 1, pie_angle, 1, 1, 1, 1)
 		self.oldpie_angle = pie_angle
-		print("==update angle")
 	end
 
 	if txt ~= self.oldtxt then
@@ -155,7 +150,6 @@ function _M:update(hks, actor)
 		local tw, th = self.txt:getStats()
 		self.txt:translate(self.x + (hks.icon_w - tw) / 2, self.y + (hks.icon_h - th) / 2, 0)
 		self.oldtxt = txt
-		print("==update txt")
 	end
 end
 
@@ -164,9 +158,8 @@ function _M:updateKeybind(hks, actor)
 	if ks ~= self.oldks then
 		self.txtkey:text(ks)
 		local tw, th = self.txtkey:getStats()
-		self.txtkey:translate(self.x + hks.icon_w - tw/2, self.y + hks.icon_h - th/2, 0) -- /2 because we scale by 0.5
+		self.txtkey:translate(self.x + hks.icon_w - tw/2, self.y + hks.icon_h - th/2, 10) -- /2 because we scale by 0.5
 		self.oldks = ks
-		print("==update key")
 	end
 end
 ------------------------------------------------------------------
@@ -205,13 +198,11 @@ function Empty:addTo(hks, actor, page, bi, i, x, y)
 	hks:applyShadowOutline(self.txtkey)
 	self.txtkey:textColor(colors.unpack1(colors.ANTIQUE_WHITE)):scale(0.5, 0.5, 0.5) -- Scale so we can usethe same atlas for all text
 	hks.unseens_layer:add(self.txtkey)
-	print("==empty add")
 
 	self:updateKeybind(hks, actor)
 end
 
 function Empty:removeFrom(hks, actor)
-	print("==empty die")
 	self.frame.container:removeFromParent()
 	self.selframe:removeFromParent()
 	self.txtkey:removeFromParent()
@@ -225,9 +216,8 @@ function Empty:updateKeybind(hks, actor)
 	if ks ~= self.oldks then
 		self.txtkey:text(ks)
 		local tw, th = self.txtkey:getStats()
-		self.txtkey:translate(self.x + hks.icon_w - tw/2, self.y + hks.icon_h - th/2, 0) -- /2 because we scale by 0.5
+		self.txtkey:translate(self.x + hks.icon_w - tw/2, self.y + hks.icon_h - th/2, 10) -- /2 because we scale by 0.5
 		self.oldks = ks
-		print("==empty update")
 	end
 end
 

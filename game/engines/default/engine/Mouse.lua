@@ -24,6 +24,8 @@ require "engine.class"
 -- @classmod engine.Mouse
 module(..., package.seeall, class.make)
 
+_M.CAPTURE_ALL = 100000
+
 function _M:init()
 	self.areas = {}
 	self.areas_name = {}
